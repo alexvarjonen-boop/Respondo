@@ -67,6 +67,7 @@ function stickyProductNav() {
       <nav>
         <a href="#how">Miten toimii</a>
         <a href="#features">Ominaisuudet</a>
+        <a href="#calculator">Laskuri</a>
         <a href="#pricing">Hinnat</a>
         <a href="#contact">Yhteystiedot</a>
       </nav>
@@ -365,6 +366,57 @@ function proofStrip() {
   </section>`;
 }
 
+function calculatorSection() {
+  return `<section class="section value-calculator" id="calculator">
+    <div class="container">
+      <div class="section-kicker">Arvolaskuri</div>
+      <div class="split-head calculator-head">
+        <h2>Mitä vastaamatta jäänyt<br><em>yhteydenotto voi maksaa?</em></h2>
+        <p>Säädä työn arvo ja päivässä vastaamatta jäävien yhteydenottojen määrä. Laskuri näyttää niiden potentiaalisen myyntiarvon.</p>
+      </div>
+
+      <div class="calculator-shell">
+        <div class="calculator-controls">
+          <div class="calc-control">
+            <div class="calc-control-head">
+              <div>
+                <small>TYÖN ARVO</small>
+                <b>Yhden työn keskimääräinen arvo</b>
+              </div>
+              <output id="jobValueOutput">500 €</output>
+            </div>
+            <input id="jobValueSlider" class="premium-range" type="range" min="0" max="10000" step="50" value="500" aria-label="Työn arvo euroina">
+            <div class="range-labels"><span>0 €</span><span>10 000 €</span></div>
+          </div>
+
+          <div class="calc-control">
+            <div class="calc-control-head">
+              <div>
+                <small>VASTAAMATTOMAT / PÄIVÄ</small>
+                <b>Vastaamatta jäävät yhteydenotot</b>
+              </div>
+              <output id="missedOutput">3</output>
+            </div>
+            <input id="missedSlider" class="premium-range" type="range" min="0" max="100" step="1" value="3" aria-label="Vastaamattomat yhteydenotot päivässä">
+            <div class="range-labels"><span>0</span><span>100</span></div>
+          </div>
+        </div>
+
+        <div class="calculator-result">
+          <small>POTENTIAALINEN ARVO / 30 PV</small>
+          <div class="calc-main-value" id="monthlyValue">45 000 €</div>
+          <div class="calc-result-grid">
+            <div><span>Päivässä</span><b id="dailyValue">1 500 €</b></div>
+            <div><span>Vuodessa</span><b id="yearlyValue">547 500 €</b></div>
+            <div><span>RESPONDO AI</span><b>${cfg.monthlyNet || 49} € / kk + alv</b></div>
+          </div>
+          <p>Arvio näyttää yhteydenottojen teoreettisen kokonaisarvon, jos yksi vastaamatta jäänyt yhteydenotto vastaisi yhtä työn arvoista kauppaa. Todellinen toteuma riippuu yrityksestä ja siitä, kuinka moni yhteydenotto muuttuu asiakkaaksi.</p>
+        </div>
+      </div>
+    </div>
+  </section>`;
+}
+
 function pricingSection() {
   return `<section class="section pricing-section" id="pricing">
     <div class="container">
@@ -440,6 +492,7 @@ async function home() {
       ${premiumVisualSection()}
       ${controlSection()}
       ${proofStrip()}
+      ${calculatorSection()}
       ${pricingSection()}
       <section class="section final-cta">
         <div class="container">
@@ -878,6 +931,41 @@ async function route() {
   else html = `<div>${nav()}<main class="notfound"><div class="container"><div class="section-kicker">404</div><h1>Sivua ei löytynyt.</h1><a class="btn ink" href="/">Takaisin etusivulle</a></div></main>${footer()}</div>`;
 
   $('#app').innerHTML = html;
+
+  if (path === '/') {
+    const jobSlider = $('#jobValueSlider');
+    const missedSlider = $('#missedSlider');
+    const euro = (n) => new Intl.NumberFormat('fi-FI', { maximumFractionDigits: 0 }).format(n) + ' €';
+
+    const updateCalculator = () => {
+      const job = Number(jobSlider?.value || 0);
+      const missed = Number(missedSlider?.value || 0);
+      const daily = job * missed;
+      const monthly = daily * 30;
+      const yearly = daily * 365;
+
+      if ($('#jobValueOutput')) $('#jobValueOutput').textContent = euro(job);
+      if ($('#missedOutput')) $('#missedOutput').textContent = String(missed);
+      if ($('#dailyValue')) $('#dailyValue').textContent = euro(daily);
+      if ($('#monthlyValue')) $('#monthlyValue').textContent = euro(monthly);
+      if ($('#yearlyValue')) $('#yearlyValue').textContent = euro(yearly);
+
+      const setRangeFill = (input) => {
+        if (!input) return;
+        const min = Number(input.min || 0);
+        const max = Number(input.max || 100);
+        const value = Number(input.value || 0);
+        const pct = ((value - min) / Math.max(1, max - min)) * 100;
+        input.style.setProperty('--range-progress', pct + '%');
+      };
+      setRangeFill(jobSlider);
+      setRangeFill(missedSlider);
+    };
+
+    jobSlider?.addEventListener('input', updateCalculator);
+    missedSlider?.addEventListener('input', updateCalculator);
+    updateCalculator();
+  }
 
   if (path === '/tilaus') {
     $('#signup')?.addEventListener('submit', async (e) => {
