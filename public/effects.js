@@ -638,6 +638,7 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
     const sections = [
       { id:'how', label:'Miten toimii' },
       { id:'features', label:'Ominaisuudet' },
+      { id:'calculator', label:'Laskuri' },
       { id:'pricing', label:'Hinnat' },
       { id:'contact', label:'Yhteystiedot' },
     ].filter(x => document.getElementById(x.id));
@@ -685,7 +686,7 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
 
   function premiumProductEffects() {
     const subnavLinks = $('.product-subnav a[href^="#"]');
-    const sections = ['how','features','pricing','contact']
+    const sections = ['how','features','calculator','pricing','contact']
       .map(id => document.getElementById(id))
       .filter(Boolean);
 
