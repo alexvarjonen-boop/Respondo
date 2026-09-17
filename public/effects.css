@@ -415,3 +415,54 @@ body.assistant-standalone{
 .fx-magnetic{transform:none!important}
 .btn::after{display:none!important}
 .fx-cube{display:none!important}
+
+
+/* =========================================================
+   RESPONDO MONOCHROME EFFECTS — NO BLUE
+   ========================================================= */
+.fx-progress>i{background:#1d1d1f!important;opacity:.45!important}
+.fx-orb.one{background:#c8c8cc!important}
+.fx-orb.two{background:#e1e1e3!important}
+.marquee-track span::after{color:#6e6e73!important}
+.fx-modal::before{background:#d8d8dc!important}
+.fx-modal-kicker{color:#5f5f64!important}
+.fx-assistant-launch i,.fx-assistant-avatar{
+  background:linear-gradient(145deg,#111114,#343438)!important;
+  color:#fff!important;
+}
+.fx-chat-bubble.user{background:#1d1d1f!important;color:#fff!important}
+.fx-quick button:hover{
+  background:#f2f2f4!important;
+  border-color:#cfcfd3!important;
+}
+.fx-assistant-form input:focus{
+  border-color:#b9b9be!important;
+  box-shadow:0 0 0 3px rgba(0,0,0,.04)!important;
+}
+.fx-assistant-form button{background:#1d1d1f!important;color:#fff!important}
+body.assistant-standalone{
+  background:
+    radial-gradient(circle at 78% 12%,rgba(0,0,0,.04),transparent 30%),
+    radial-gradient(circle at 12% 35%,rgba(0,0,0,.028),transparent 28%),
+    #f5f5f7!important;
+}
+.assistant-direct-copy small{color:#66666b!important}
+.owner-field input:focus,.owner-field textarea:focus,.service-add-row select:focus{
+  border-color:#b9b9be!important;
+  box-shadow:0 0 0 4px rgba(0,0,0,.04)!important;
+}
+.service-chip{
+  border-color:#dddddf!important;
+  background:#f2f2f3!important;
+  color:#414146!important;
+}
+.service-chip b{color:#7d7d82!important}
+.add-fact-bottom{
+  border-color:#cfcfd3!important;
+  background:#f7f7f8!important;
+  color:#3f3f43!important;
+}
+.add-fact-bottom:hover{
+  background:#efeff1!important;
+  border-color:#bdbdc1!important;
+}
