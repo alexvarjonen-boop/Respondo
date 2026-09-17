@@ -500,6 +500,12 @@ async function dashboard() {
   const t = data.tenant;
   const s = data.stats;
   const knowledge = data.knowledge || [];
+  const businessProfile = Object.fromEntries(
+    knowledge
+      .filter((x) => x.category === 'Yrityksen perustiedot')
+      .map((x) => [x.title, x.answer])
+  );
+  const profileValue = (title) => esc(businessProfile[title] || '');
 
   return `<div class="appshell">
     <aside class="appside">
@@ -507,6 +513,7 @@ async function dashboard() {
       <div class="workspace-chip"><span></span><div><small>TYÖTILA</small><b>${esc(t.name)}</b></div></div>
       <nav class="appnav">
         <a href="#overview" class="active"><span>⌂</span> Yleiskatsaus</a>
+        <a href="#business-profile"><span>✦</span> Yrityksen tiedot</a>
         <a href="#knowledge"><span>≡</span> Tietopohja <em>${knowledge.length}</em></a>
         <a href="#install"><span>&lt;/&gt;</span> Asennus</a>
         <a href="#billing"><span>€</span> Laskutus</a>
@@ -526,6 +533,65 @@ async function dashboard() {
         <article class="stat"><small>KESKUSTELUT</small><b>${s.conversations}</b><span>yhteensä</span></article>
         <article class="stat"><small>VASTATTU</small><b>${s.answeredRate}%</b><span>ilman jatko-ohjetta</span></article>
         <article class="stat"><small>JATKO-OHJE</small><b>${s.handoffRate}%</b><span>epävarmoissa tilanteissa</span></article>
+      </section>
+
+      <section class="panel business-profile-panel" id="business-profile">
+        <div class="panel-head business-profile-head">
+          <div>
+            <small>YRITYKSEN TIEDOT</small>
+            <h2>Opeta Respondolle yrityksesi perusasiat</h2>
+            <p>Täytä nämä kerran. Respondo käyttää niitä asiakkaiden kysymyksiin vastaamiseen.</p>
+          </div>
+          <span class="install-badge">Perustiedot</span>
+        </div>
+        <form id="businessProfileForm" class="business-profile-form">
+          <div class="profile-grid">
+            <div class="field profile-wide">
+              <label>Hinnat / hinnoittelu</label>
+              <textarea name="pricing" placeholder="Esim. Putkityö 65 € / h + alv. Päivystys 95 € / h + alv.">${profileValue('Hinnat')}</textarea>
+            </div>
+            <div class="field">
+              <label>Aukioloajat</label>
+              <input name="hours" value="${profileValue('Aukioloajat')}" placeholder="Ma–Pe 8–17">
+            </div>
+            <div class="field">
+              <label>Puhelinnumero</label>
+              <input name="phone" value="${profileValue('Puhelinnumero')}" placeholder="040 123 4567">
+            </div>
+            <div class="field">
+              <label>Sähköposti</label>
+              <input name="email" type="email" value="${profileValue('Sähköposti')}" placeholder="info@yritys.fi">
+            </div>
+            <div class="field">
+              <label>Verkkosivu</label>
+              <input name="website" value="${profileValue('Verkkosivu')}" placeholder="https://yritys.fi">
+            </div>
+            <div class="field profile-wide">
+              <label>Mitä palveluja teette?</label>
+              <textarea name="services" placeholder="Esim. putkityöt, LVI-asennukset, sähkötyöt, huollot, päivystys">${profileValue('Palvelut')}</textarea>
+            </div>
+            <div class="field">
+              <label>Toimialue</label>
+              <input name="serviceArea" value="${profileValue('Toimialue')}" placeholder="Esim. Tampere + 50 km">
+            </div>
+            <div class="field">
+              <label>Osoite</label>
+              <input name="address" value="${profileValue('Osoite')}" placeholder="Katuosoite, paikkakunta">
+            </div>
+            <div class="field profile-wide">
+              <label>Muut tärkeät tiedot</label>
+              <textarea name="notes" placeholder="Esim. päivystysnumero, maksutavat, takuukäytännöt, ajanvarausohjeet, poikkeukset...">${profileValue('Lisätiedot')}</textarea>
+            </div>
+          </div>
+          <div class="profile-save-row">
+            <div>
+              <b>Nämä muuttuvat automaattisesti botin hyväksytyksi tietopohjaksi.</b>
+              <small>Voit muokata tietoja myöhemmin koska tahansa.</small>
+            </div>
+            <button class="btn dashboard-action profile-save" type="submit">Tallenna yrityksen tiedot <span>→</span></button>
+          </div>
+          <div id="businessProfileMsg"></div>
+        </form>
       </section>
 
       <section class="dashboard-grid" id="knowledge">
@@ -631,6 +697,40 @@ async function route() {
   }
 
   if (path === '/app') {
+    $('#businessProfileForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.currentTarget);
+      const button = e.currentTarget.querySelector('button[type="submit"]');
+      const original = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = 'Tallennetaan…';
+      $('#businessProfileMsg').innerHTML = '';
+      try {
+        await api('/api/app/business-profile', {
+          method: 'POST',
+          body: JSON.stringify({
+            pricing: form.get('pricing'),
+            hours: form.get('hours'),
+            phone: form.get('phone'),
+            email: form.get('email'),
+            services: form.get('services'),
+            serviceArea: form.get('serviceArea'),
+            address: form.get('address'),
+            website: form.get('website'),
+            notes: form.get('notes'),
+          }),
+        });
+        $('#businessProfileMsg').innerHTML = '<div class="notice success">Yrityksen tiedot tallennettu. Respondo käyttää niitä nyt tietopohjassa.</div>';
+        button.disabled = false;
+        button.innerHTML = 'Tallennettu ✓';
+        setTimeout(() => (button.innerHTML = original), 1800);
+      } catch (err) {
+        button.disabled = false;
+        button.innerHTML = original;
+        $('#businessProfileMsg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+      }
+    });
+
     $('#knowledgeForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = new FormData(e.currentTarget);
