@@ -644,7 +644,7 @@ async function dashboard() {
             <div class="preview-chat" id="previewChat">
               <div class="preview-bubble bot">Hei! Miten voin auttaa?</div>
             </div>
-            <form class="preview-form" id="previewForm">
+            <form class="preview-form" id="previewForm" data-slug="${esc(t.slug)}">
               <input name="question" autocomplete="off" placeholder="Kysy esim. “Paljonko maksaa?”">
               <button type="submit">→</button>
             </form>
@@ -683,7 +683,7 @@ async function dashboard() {
         </div>
         <div class="unanswered-list">
           ${unanswered.length ? unanswered.map((x, i) => `
-            <article class="unanswered-item" data-question="${esc(x.question)}">
+            <article class="unanswered-item" data-id="${esc(x.id)}" data-question="${esc(x.question)}">
               <div class="unanswered-meta">
                 <span>${String(i + 1).padStart(2,'0')}</span>
                 <small>${new Date(x.created_at).toLocaleString('fi-FI', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small>
@@ -708,7 +708,7 @@ async function dashboard() {
         <div class="panel-head"><div><small>ASENNUS</small><h2>Lisää Respondo verkkosivulle</h2></div><span class="install-badge">1 rivi</span></div>
         <p>Liitä tämä koodi sivustosi HTML:ään juuri ennen sulkevaa <code>&lt;/body&gt;</code>-tagia.</p>
         <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js" data-company="${esc(t.slug)}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">Kopioi</button></div>
-        <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone">${installedDone ? '✓ Merkitty asennetuksi' : 'Merkitse asennetuksi'}</button>
+        <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? '✓ Merkitty asennetuksi' : 'Merkitse asennetuksi'}</button>
       </section>
 
       <section class="panel billing-panel" id="billing">
@@ -789,6 +789,110 @@ async function route() {
   }
 
   if (path === '/app') {
+    $('.onboarding-step').forEach((button) => {
+      button.addEventListener('click', () => {
+        const id = button.dataset.scrollTarget;
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    const previewAnswerFromForm = (question) => {
+      const form = $('#businessProfileForm');
+      if (!form) return '';
+      const q = String(question || '').toLowerCase();
+      const values = Object.fromEntries(new FormData(form).entries());
+      const pairs = [
+        [['hinta','maksaa','paljonko','hinnoittelu','€'], values.pricing],
+        [['auki','aukiolo','milloin','kello','lauantai','sunnuntai'], values.hours],
+        [['puhelin','numero','soittaa'], values.phone],
+        [['sähköposti','email','meili'], values.email],
+        [['palvelu','teette','tarjoatte','lvi','putki','sähkö'], values.services],
+        [['toimialue','alue','paikkakunta','tuletteko'], values.serviceArea],
+        [['osoite','sijainti','missä olette'], values.address],
+        [['verkkosivu','nettisivu','www'], values.website],
+        [['päivystys','takuu','maksutapa','ajanvaraus','muuta'], values.notes],
+      ];
+      for (const [keys, value] of pairs) {
+        if (value && keys.some((key) => q.includes(key))) return String(value).trim();
+      }
+      return '';
+    };
+
+    $('#previewForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = e.currentTarget.elements.question;
+      const question = String(input?.value || '').trim();
+      if (!question) return;
+      const chat = $('#previewChat');
+      chat?.insertAdjacentHTML('beforeend', '<div class="preview-bubble user"></div>');
+      if (chat?.lastElementChild) chat.lastElementChild.textContent = question;
+      input.value = '';
+
+      const localAnswer = previewAnswerFromForm(question);
+      if (localAnswer) {
+        chat?.insertAdjacentHTML('beforeend', '<div class="preview-bubble bot"></div>');
+        if (chat?.lastElementChild) chat.lastElementChild.textContent = localAnswer;
+        chat.scrollTop = chat.scrollHeight;
+        return;
+      }
+
+      chat?.insertAdjacentHTML('beforeend', '<div class="preview-bubble bot preview-thinking">Haetaan tietopohjasta…</div>');
+      const bubble = chat?.lastElementChild;
+      try {
+        const slug = e.currentTarget.dataset.slug;
+        const result = await api('/api/public/' + encodeURIComponent(slug) + '/chat', {
+          method: 'POST',
+          body: JSON.stringify({ message: question }),
+        });
+        if (bubble) {
+          bubble.classList.remove('preview-thinking');
+          bubble.textContent = result.answer || 'En löydä tähän vielä varmaa vastausta.';
+        }
+      } catch {
+        if (bubble) {
+          bubble.classList.remove('preview-thinking');
+          bubble.textContent = 'En löydä tähän vielä vastausta. Lisää tieto ensin tietopohjaan.';
+        }
+      }
+      if (chat) chat.scrollTop = chat.scrollHeight;
+    });
+
+    $('#installDone')?.addEventListener('click', (e) => {
+      const tenantId = e.currentTarget.dataset.tenantId;
+      localStorage.setItem('respondo-installed-' + tenantId, '1');
+      e.currentTarget.classList.add('done');
+      e.currentTarget.textContent = '✓ Merkitty asennetuksi';
+    });
+
+    $('.add-unanswered-answer').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const item = button.closest('.unanswered-item');
+        const answer = item?.querySelector('.unanswered-answer')?.value?.trim();
+        const msg = item?.querySelector('.unanswered-msg');
+        if (!answer) {
+          if (msg) msg.innerHTML = '<div class="notice error">Kirjoita vastaus ensin.</div>';
+          return;
+        }
+        const original = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = 'Tallennetaan…';
+        try {
+          await api('/api/app/unanswered/' + encodeURIComponent(item.dataset.id) + '/answer', {
+            method: 'POST',
+            body: JSON.stringify({ answer }),
+          });
+          item.classList.add('resolved');
+          if (msg) msg.innerHTML = '<div class="notice success">Lisätty tietopohjaan ✓</div>';
+          button.innerHTML = 'Tallennettu ✓';
+          setTimeout(() => item.remove(), 900);
+        } catch (err) {
+          button.disabled = false;
+          button.innerHTML = original;
+          if (msg) msg.innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+        }
+      });
+    });
+
     $('#businessProfileForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = new FormData(e.currentTarget);
