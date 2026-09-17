@@ -246,7 +246,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
         tax_id_collection: { enabled: true },
         billing_address_collection: 'required',
         allow_promotion_codes: false,
-        success_url: `${BASE}/app?checkout=success`,
+        success_url: `${BASE}/api/auth/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${BASE}/tilaus?cancelled=1`,
         metadata: { user_id: id, plan: plan === 'yearly' ? 'yearly' : 'monthly' },
         automatic_tax: { enabled: true },
@@ -264,6 +264,81 @@ app.post('/api/auth/start-checkout', async (req, res) => {
   } catch (e) {
     console.error('Checkout start failed', e);
     return res.status(500).json({ error: 'Tilauksen aloitus epäonnistui.' });
+  }
+});
+
+app.get('/api/auth/checkout-success', async (req, res) => {
+  if (!pool || !stripe) return res.redirect('/kirjaudu?checkout_error=1');
+
+  const sessionId = String(req.query.session_id || '').trim();
+  if (!sessionId || !sessionId.startsWith('cs_')) {
+    return res.redirect('/kirjaudu?checkout_error=1');
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const userId = session.metadata?.user_id;
+
+    if (
+      session.status !== 'complete' ||
+      session.mode !== 'subscription' ||
+      !userId ||
+      session.metadata?.auto_login_used === '1'
+    ) {
+      return res.redirect('/kirjaudu?checkout_error=1');
+    }
+
+    let subscriptionStatus = 'active';
+    let periodEnd = null;
+
+    if (session.subscription) {
+      const subscriptionId =
+        typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      subscriptionStatus = subscription.status;
+      if (subscription.current_period_end) {
+        periodEnd = new Date(subscription.current_period_end * 1000);
+      }
+    }
+
+    if (!['active', 'trialing'].includes(subscriptionStatus)) {
+      return res.redirect('/kirjaudu?checkout_error=1');
+    }
+
+    const customerId =
+      typeof session.customer === 'string' ? session.customer : session.customer?.id || null;
+    const subscriptionId =
+      typeof session.subscription === 'string'
+        ? session.subscription
+        : session.subscription?.id || null;
+
+    const updated = await q(
+      `UPDATE users
+          SET stripe_customer_id=$1,
+              stripe_subscription_id=$2,
+              status='active',
+              subscription_status=$3,
+              current_period_end=$4,
+              updated_at=NOW()
+        WHERE id=$5
+        RETURNING id,email,status,subscription_status`,
+      [customerId, subscriptionId, subscriptionStatus, periodEnd, userId],
+    );
+
+    if (!updated.rowCount) return res.redirect('/kirjaudu?checkout_error=1');
+
+    await stripe.checkout.sessions.update(sessionId, {
+      metadata: {
+        ...session.metadata,
+        auto_login_used: '1',
+      },
+    });
+
+    setSession(res, updated.rows[0]);
+    return res.redirect('/app?welcome=1');
+  } catch (e) {
+    console.error('Checkout success auto-login failed', e);
+    return res.redirect('/kirjaudu?checkout_error=1');
   }
 });
 
