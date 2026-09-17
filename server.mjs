@@ -318,7 +318,9 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
     const unanswered = await q(
       `SELECT id, question, answer, intent, confidence, created_at
          FROM conversations
-        WHERE tenant_id=$1 AND handoff=true
+        WHERE tenant_id=$1
+          AND handoff=true
+          AND COALESCE(intent,'') <> 'Resolved gap'
         ORDER BY created_at DESC
         LIMIT 20`,
       [tenant.id],
@@ -390,6 +392,51 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
     try { await client.query('ROLLBACK'); } catch {}
     console.error('Business profile save failed', e);
     return res.status(500).json({ error: 'Yrityksen tietojen tallennus epäonnistui.' });
+  } finally {
+    client.release();
+  }
+});
+
+app.post('/api/app/unanswered/:id/answer', auth, subscribed, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const answer = String(req.body.answer || '').trim();
+    if (!answer) return res.status(400).json({ error: 'Kirjoita vastaus ensin.' });
+
+    const tenantResult = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    if (!tenantResult.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
+    const tenantId = tenantResult.rows[0].id;
+
+    const conversation = await client.query(
+      'SELECT id, question FROM conversations WHERE id=$1 AND tenant_id=$2 AND handoff=true',
+      [req.params.id, tenantId],
+    );
+    if (!conversation.rowCount) return res.status(404).json({ error: 'Kysymystä ei löytynyt.' });
+
+    const question = String(conversation.rows[0].question || '').trim();
+    const keywords = question
+      .toLowerCase()
+      .split(/[^a-zA-ZåäöÅÄÖ0-9]+/)
+      .map((x) => x.trim())
+      .filter((x) => x.length > 2)
+      .slice(0, 12);
+
+    await client.query('BEGIN');
+    const added = await client.query(
+      'INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',
+      [uid(), tenantId, 'Asiakaskysymykset', question, answer, keywords],
+    );
+    await client.query(
+      "UPDATE conversations SET intent='Resolved gap' WHERE id=$1 AND tenant_id=$2",
+      [req.params.id, tenantId],
+    );
+    await client.query('COMMIT');
+
+    return res.json({ ok: true, knowledge: added.rows[0] });
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch {}
+    console.error('Resolve unanswered failed', e);
+    return res.status(500).json({ error: 'Vastauksen tallennus epäonnistui.' });
   } finally {
     client.release();
   }
