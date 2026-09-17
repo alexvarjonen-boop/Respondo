@@ -1,0 +1,22 @@
+{
+  "name": "respondo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "NODE_ENV=development node --watch server.mjs",
+    "check": "node --check server.mjs && node --check public/app.js && node --check public/widget.js"
+  },
+  "engines": {"node": ">=20"},
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "openai": "^5.20.0",
+    "pg": "^8.16.3",
+    "stripe": "^18.6.0"
+  }
+}
