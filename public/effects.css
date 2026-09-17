@@ -360,3 +360,18 @@ body.assistant-standalone{
   .service-add-row{grid-template-columns:1fr}
   .service-add-row button{width:100%}
 }
+
+
+.add-fact-bottom{
+  width:100%;
+  min-height:44px;
+  margin-top:10px;
+  border:1px dashed rgba(0,113,227,.28);
+  border-radius:14px;
+  background:#f4f9ff;
+  color:#0066c8;
+  font-weight:750;
+  cursor:pointer;
+  transition:.18s ease;
+}
+.add-fact-bottom:hover{background:#eaf4ff;border-color:rgba(0,113,227,.42)}
