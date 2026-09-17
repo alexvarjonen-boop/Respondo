@@ -141,6 +141,20 @@
   const localAiHistory = [];
   const localAiModel = 'SmolLM2-360M-Instruct-q4f32_1-MLC';
   const ownerProfileKey = 'respondoOwnerBusinessProfile';
+  const commonServices = [
+    'Ajoneuvohuolto','Autopesu','Fysioterapia','Hieronta','Ilmastointihuolto','IT-tuki',
+    'Kaivuutyöt','Kalusteasennus','Kattohuolto','Kiinteistöhuolto','Kirjanpito','Kuljetus',
+    'LVI','Maalaus','Maanrakennus','Muutto','Putkityöt','Rakennus','Remontointi','Siivous',
+    'Sähkö','Tuholaistorjunta','Valokuvaus','Verkkosivut','Viemärin avaus','Vihertyöt','Muu'
+  ].sort((a,b) => a.localeCompare(b,'fi'));
+
+  const servicesText = (services) => Array.isArray(services) ? services.join(', ') : String(services || '');
+
+  function normalizedCustomFacts(profile) {
+    return Array.isArray(profile?.customFacts)
+      ? profile.customFacts.filter(x => x && String(x.key || '').trim() && String(x.answer || '').trim())
+      : [];
+  }
 
   function getOwnerProfile() {
     try {
@@ -163,11 +177,12 @@
       p.hours && `Aukioloajat: ${p.hours}`,
       p.phone && `Puhelinnumero: ${p.phone}`,
       p.email && `Sähköposti: ${p.email}`,
-      p.services && `Palvelut: ${p.services}`,
+      servicesText(p.services) && `Palvelut: ${servicesText(p.services)}`,
       p.serviceArea && `Toimialue: ${p.serviceArea}`,
       p.address && `Osoite: ${p.address}`,
       p.website && `Verkkosivu: ${p.website}`,
       p.notes && `Muut tärkeät tiedot: ${p.notes}`,
+      ...normalizedCustomFacts(p).map(x => `${x.key}: ${x.answer}`),
     ].filter(Boolean).join('\n');
 
     return `Olet yrityksen verkkosivulla toimiva Respondo-asiakaspalveluassistentti. Vastaa suomeksi selkeästi ja lyhyesti.
@@ -194,12 +209,20 @@ YLEINEN TOIMINTAOHJE:
       pick(['auki','aukiolo','milloin','kello'], p.hours),
       pick(['puhelin','numero','soittaa'], p.phone),
       pick(['sähköposti','email'], p.email),
-      pick(['palvelu','teette','tarjoatte','lvi','putki','sähkö'], p.services),
+      pick(['palvelu','teette','tarjoatte','lvi','putki','sähkö'], servicesText(p.services)),
       pick(['toimialue','alue','missä päin','paikkakunta'], p.serviceArea),
       pick(['osoite','sijainti','missä olette'], p.address),
       pick(['verkkosivu','nettisivu','www'], p.website),
     ].filter(Boolean);
     if (hits.length) return [...new Set(hits)].join('\n');
+    const customHit = normalizedCustomFacts(p).find((x) => {
+      const title = String(x.key || '').toLowerCase().trim();
+      if (!title) return false;
+      if (q.includes(title)) return true;
+      const words = title.split(/\s+/).filter(w => w.length > 2);
+      return words.some(w => q.includes(w));
+    });
+    if (customHit) return customHit.answer;
     if (p.notes && ['muuta','lisätieto','tärkeä'].some(k => q.includes(k))) return p.notes;
     return '';
   }
@@ -299,6 +322,11 @@ YLEINEN TOIMINTAOHJE:
     const app = $('#app');
     const p = getOwnerProfile();
     const val = (x) => String(x || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const selectedServices = Array.isArray(p.services)
+      ? [...p.services]
+      : String(p.services || '').split(',').map(x => x.trim()).filter(Boolean);
+    const customFacts = normalizedCustomFacts(p).length ? normalizedCustomFacts(p) : [{key:'',answer:''}];
+
     if (app) {
       app.innerHTML = `
         <main class="assistant-direct-shell">
@@ -306,51 +334,149 @@ YLEINEN TOIMINTAOHJE:
           <section class="assistant-owner-panel">
             <div class="assistant-direct-copy">
               <small>ILMAINEN OMISTAJA / TESTI</small>
-              <h1>Opeta botille yrityksen tiedot.</h1>
-              <p>Tallenna nämä kerran tähän selaimeen. Botti käyttää niitä heti vastauksissaan.</p>
+              <h1>Rakenna botin tietopohja.</h1>
+              <p>Valitse palvelut ja tee omia hakusana + vastaus -rivejä. Botti käyttää niitä heti.</p>
             </div>
+
             <form class="owner-profile-form" id="ownerProfileForm">
               <div class="owner-field"><label>Yrityksen nimi</label><input name="companyName" value="${val(p.companyName)}" placeholder="Esim. Virtasen LVI Oy"></div>
+
+              <div class="owner-field service-builder">
+                <label>Palvelut</label>
+                <div class="service-add-row">
+                  <select id="servicePicker">
+                    <option value="">Valitse palvelu…</option>
+                    ${commonServices.map(s => `<option value="${val(s)}">${val(s)}</option>`).join('')}
+                  </select>
+                  <button type="button" id="addService">Lisää</button>
+                </div>
+                <div class="service-chips" id="serviceChips"></div>
+                <small>Voit valita useita palveluja.</small>
+              </div>
+
               <div class="owner-field"><label>Hinnat</label><textarea name="pricing" placeholder="Esim. 65 € / h + alv">${val(p.pricing)}</textarea></div>
+
               <div class="owner-two">
                 <div class="owner-field"><label>Aukioloajat</label><input name="hours" value="${val(p.hours)}" placeholder="Ma–Pe 8–17"></div>
                 <div class="owner-field"><label>Puhelinnumero</label><input name="phone" value="${val(p.phone)}" placeholder="040 123 4567"></div>
               </div>
-              <div class="owner-field"><label>Palvelut</label><textarea name="services" placeholder="Putkityöt, LVI, sähkötyöt…">${val(p.services)}</textarea></div>
+
               <div class="owner-two">
                 <div class="owner-field"><label>Sähköposti</label><input name="email" type="email" value="${val(p.email)}" placeholder="info@yritys.fi"></div>
                 <div class="owner-field"><label>Toimialue</label><input name="serviceArea" value="${val(p.serviceArea)}" placeholder="Tampere + 50 km"></div>
               </div>
+
               <div class="owner-two">
                 <div class="owner-field"><label>Osoite</label><input name="address" value="${val(p.address)}" placeholder="Katu 1, Tampere"></div>
                 <div class="owner-field"><label>Verkkosivu</label><input name="website" value="${val(p.website)}" placeholder="https://yritys.fi"></div>
               </div>
+
+              <div class="custom-facts-block">
+                <div class="custom-facts-head">
+                  <div><label>Omat hakusanat ja vastaukset</label><small>Esim. “Päivystys” → “Päivystämme 24/7 numerossa…”</small></div>
+                  <button type="button" id="addCustomFact">+ Uusi rivi</button>
+                </div>
+                <div id="customFacts">
+                  ${customFacts.map((x,i) => `
+                    <div class="custom-fact-row" data-index="${i}">
+                      <div class="owner-field"><label>Otsikko / hakusana</label><input data-fact-key value="${val(x.key)}" placeholder="Esim. Aukiolo"></div>
+                      <div class="owner-field"><label>Vastaus</label><textarea data-fact-answer placeholder="Esim. Ma–Pe 8–17">${val(x.answer)}</textarea></div>
+                      <button type="button" class="remove-fact" aria-label="Poista rivi">×</button>
+                    </div>`).join('')}
+                </div>
+              </div>
+
               <div class="owner-field"><label>Muut tärkeät tiedot</label><textarea name="notes" placeholder="Päivystys, maksutavat, takuukäytännöt, ajanvaraus…">${val(p.notes)}</textarea></div>
+
               <button class="owner-save" type="submit">Tallenna botille <span>→</span></button>
               <div class="owner-save-status" id="ownerSaveStatus"></div>
             </form>
           </section>
         </main>`;
     }
+
     assistant();
     const box = $('.fx-assistant');
     if (box) box.classList.add('open', 'standalone');
 
+    const selected = new Set(selectedServices);
+
+    const renderServices = () => {
+      const host = $('#serviceChips');
+      if (!host) return;
+      host.innerHTML = [...selected].sort((a,b) => a.localeCompare(b,'fi')).map(s =>
+        `<button type="button" class="service-chip" data-service="${val(s)}"><span>${val(s)}</span><b>×</b></button>`
+      ).join('');
+      $$('.service-chip', host).forEach(btn => btn.addEventListener('click', () => {
+        selected.delete(btn.dataset.service);
+        renderServices();
+      }));
+    };
+
+    const bindRemoveFacts = () => {
+      $$('.remove-fact').forEach(btn => {
+        btn.onclick = () => {
+          const rows = $$('.custom-fact-row');
+          const row = btn.closest('.custom-fact-row');
+          if (rows.length === 1) {
+            row.querySelector('[data-fact-key]').value = '';
+            row.querySelector('[data-fact-answer]').value = '';
+          } else {
+            row.remove();
+          }
+        };
+      });
+    };
+
+    const addFactRow = (key='', answer='') => {
+      const host = $('#customFacts');
+      if (!host) return;
+      host.insertAdjacentHTML('beforeend', `
+        <div class="custom-fact-row">
+          <div class="owner-field"><label>Otsikko / hakusana</label><input data-fact-key value="${val(key)}" placeholder="Esim. Maksutavat"></div>
+          <div class="owner-field"><label>Vastaus</label><textarea data-fact-answer placeholder="Esim. Kortti, lasku ja MobilePay">${val(answer)}</textarea></div>
+          <button type="button" class="remove-fact" aria-label="Poista rivi">×</button>
+        </div>`);
+      bindRemoveFacts();
+      host.lastElementChild?.querySelector('[data-fact-key]')?.focus();
+    };
+
+    renderServices();
+    bindRemoveFacts();
+
+    $('#addService')?.addEventListener('click', () => {
+      const picker = $('#servicePicker');
+      const service = String(picker?.value || '').trim();
+      if (!service) return;
+      selected.add(service);
+      picker.value = '';
+      renderServices();
+    });
+
+    $('#addCustomFact')?.addEventListener('click', () => addFactRow());
+
     $('#ownerProfileForm')?.addEventListener('submit', (e) => {
       e.preventDefault();
       const f = new FormData(e.currentTarget);
+      const facts = $$('.custom-fact-row').map(row => ({
+        key: row.querySelector('[data-fact-key]')?.value?.trim() || '',
+        answer: row.querySelector('[data-fact-answer]')?.value?.trim() || '',
+      })).filter(x => x.key && x.answer);
+
       saveOwnerProfile({
         companyName: f.get('companyName'),
         pricing: f.get('pricing'),
         hours: f.get('hours'),
         phone: f.get('phone'),
         email: f.get('email'),
-        services: f.get('services'),
+        services: [...selected].sort((a,b) => a.localeCompare(b,'fi')),
         serviceArea: f.get('serviceArea'),
         address: f.get('address'),
         website: f.get('website'),
         notes: f.get('notes'),
+        customFacts: facts,
       });
+
       const status = $('#ownerSaveStatus');
       if (status) {
         status.textContent = 'Tallennettu ✓ Kysy nyt botilta yrityksestä.';
@@ -358,7 +484,7 @@ YLEINEN TOIMINTAOHJE:
       }
       const messages = $('.fx-assistant-messages');
       if (messages) {
-        messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot owner-confirm">Yrityksen tiedot päivitetty. Voit nyt testata kysymyksiä kuten “Paljonko maksaa?”, “Milloin olette auki?” tai “Teettekö sähkötöitä?”.</div>');
+        messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot owner-confirm">Tietopohja päivitetty. Voit nyt testata palveluita ja omia hakusanoja suoraan chatissa.</div>');
         messages.scrollTop = messages.scrollHeight;
       }
     });
