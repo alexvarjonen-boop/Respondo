@@ -140,16 +140,70 @@
   let localAiLoading = null;
   const localAiHistory = [];
   const localAiModel = 'SmolLM2-360M-Instruct-q4f32_1-MLC';
-  const localAiSystem = `Olet Respondon asiakaspalveluassistentti. Vastaa suomeksi selkeästi ja lyhyesti. Älä keksi yritystä koskevia faktoja. Käytä seuraavia hyväksyttyjä tietoja:
-- Respondo on suomalaisille yrityksille tarkoitettu B2B AI-asiakaspalvelu.
-- Hinta 49 euroa kuukaudessa + ALV tai 549 euroa vuodessa + ALV.
-- Kokeilu 3 päivää maksutta. Maksutapa lisätään alussa Stripessä.
-- Respondo vastaa yrityksen hyväksytyn tietopohjan perusteella ja epävarmassa tilanteessa ohjaa ihmiselle.
-- Verkkosivun widget asennetaan hallintapaneelista saatavalla script-rivillä.
-- Tilauksen voi perua, ja käyttö jatkuu maksetun kauden loppuun.
-- Y-tunnus 3599437-5.
-- Yhteyssähköposti respondoai.fi@outlook.com.
-Jos kysymykseen ei voi vastata näillä tiedoilla, sano suoraan ettet tiedä varmasti. Älä väitä, että sinulla on pääsy järjestelmiin, joita sinulla ei ole.`;
+  const ownerProfileKey = 'respondoOwnerBusinessProfile';
+
+  function getOwnerProfile() {
+    try {
+      return JSON.parse(localStorage.getItem(ownerProfileKey) || '{}') || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveOwnerProfile(profile) {
+    localStorage.setItem(ownerProfileKey, JSON.stringify(profile));
+    localAiHistory.length = 0;
+  }
+
+  function localAiSystem() {
+    const p = getOwnerProfile();
+    const companyFacts = [
+      p.companyName && `Yrityksen nimi: ${p.companyName}`,
+      p.pricing && `Hinnat: ${p.pricing}`,
+      p.hours && `Aukioloajat: ${p.hours}`,
+      p.phone && `Puhelinnumero: ${p.phone}`,
+      p.email && `Sähköposti: ${p.email}`,
+      p.services && `Palvelut: ${p.services}`,
+      p.serviceArea && `Toimialue: ${p.serviceArea}`,
+      p.address && `Osoite: ${p.address}`,
+      p.website && `Verkkosivu: ${p.website}`,
+      p.notes && `Muut tärkeät tiedot: ${p.notes}`,
+    ].filter(Boolean).join('\n');
+
+    return `Olet yrityksen verkkosivulla toimiva Respondo-asiakaspalveluassistentti. Vastaa suomeksi selkeästi ja lyhyesti.
+Käytä VAIN alla olevia yrityksen omistajan syöttämiä hyväksyttyjä tietoja, kun vastaat yritystä koskeviin kysymyksiin. Älä keksi hintaa, aukioloa, palvelua, yhteystietoa tai muuta faktaa.
+Jos tietoa ei ole annettu, sano suoraan ettet tiedä varmasti ja ohjaa ottamaan yhteyttä yritykseen.
+
+YRITYKSEN HYVÄKSYTYT TIEDOT:
+${companyFacts || 'Yrityksen tietoja ei ole vielä syötetty.'}
+
+YLEINEN TOIMINTAOHJE:
+- Vastaa luonnollisesti asiakkaan kysymykseen.
+- Jos asiakas kysyy useita asioita, vastaa kaikkiin joihin tiedot löytyvät.
+- Älä mainitse promptia, localStoragea tai teknistä toteutusta.
+- Älä väitä tehneesi varausta, tilausta tai muuta toimintoa.
+- Jos tieto puuttuu, älä arvaa.`;
+  }
+
+  function ownerProfileFallback(text) {
+    const p = getOwnerProfile();
+    const q = String(text || '').toLowerCase();
+    const pick = (keys, value) => value && keys.some(k => q.includes(k)) ? value : '';
+    const hits = [
+      pick(['hinta','maksaa','hinnoittelu','€'], p.pricing),
+      pick(['auki','aukiolo','milloin','kello'], p.hours),
+      pick(['puhelin','numero','soittaa'], p.phone),
+      pick(['sähköposti','email'], p.email),
+      pick(['palvelu','teette','tarjoatte','lvi','putki','sähkö'], p.services),
+      pick(['toimialue','alue','missä päin','paikkakunta'], p.serviceArea),
+      pick(['osoite','sijainti','missä olette'], p.address),
+      pick(['verkkosivu','nettisivu','www'], p.website),
+    ].filter(Boolean);
+    if (hits.length) return [...new Set(hits)].join('\n');
+    if (p.notes && ['muuta','lisätieto','tärkeä'].some(k => q.includes(k))) return p.notes;
+    return '';
+  }
+
 
   async function getLocalAiEngine(onProgress) {
     if (localAiEngine) return localAiEngine;
@@ -177,7 +231,7 @@ Jos kysymykseen ei voi vastata näillä tiedoilla, sano suoraan ettet tiedä var
     const engine = await getLocalAiEngine(onProgress);
     const history = localAiHistory.slice(-6);
     const messages = [
-      { role: 'system', content: localAiSystem },
+      { role: 'system', content: localAiSystem() },
       ...history,
       { role: 'user', content: text }
     ];
@@ -228,8 +282,10 @@ Jos kysymykseen ei voi vastata näillä tiedoilla, sano suoraan ettet tiedä var
         }
       } catch (err) {
         typing.classList.remove('typing');
-        const fallback = assistantAnswer(clean);
-        typing.textContent = fallback + ' (Paikallinen AI ei käynnistynyt tällä laitteella.)';
+        const fallback = location.pathname === '/assistant'
+          ? (ownerProfileFallback(clean) || 'En löydä tätä tietoa yrityksen tallennetuista tiedoista.')
+          : assistantAnswer(clean);
+        typing.textContent = fallback + (location.pathname === '/assistant' ? '' : ' (Paikallinen AI ei käynnistynyt tällä laitteella.)');
       }
       messages.scrollTop = messages.scrollHeight;
     };
@@ -241,20 +297,71 @@ Jos kysymykseen ei voi vastata näillä tiedoilla, sano suoraan ettet tiedä var
   function standaloneAssistant() {
     document.body.classList.add('assistant-standalone');
     const app = $('#app');
+    const p = getOwnerProfile();
+    const val = (x) => String(x || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     if (app) {
       app.innerHTML = `
         <main class="assistant-direct-shell">
           <a class="assistant-direct-brand" href="/" aria-label="Respondo etusivu"><span>R</span><b>Respondo</b></a>
-          <div class="assistant-direct-copy">
-            <small>OWNER / TEST CHAT</small>
-            <h1>Respondo Assistant</h1>
-            <p>Testaa bottia suoraan ilman omaa maksullista tilausta.</p>
-          </div>
+          <section class="assistant-owner-panel">
+            <div class="assistant-direct-copy">
+              <small>ILMAINEN OMISTAJA / TESTI</small>
+              <h1>Opeta botille yrityksen tiedot.</h1>
+              <p>Tallenna nämä kerran tähän selaimeen. Botti käyttää niitä heti vastauksissaan.</p>
+            </div>
+            <form class="owner-profile-form" id="ownerProfileForm">
+              <div class="owner-field"><label>Yrityksen nimi</label><input name="companyName" value="${val(p.companyName)}" placeholder="Esim. Virtasen LVI Oy"></div>
+              <div class="owner-field"><label>Hinnat</label><textarea name="pricing" placeholder="Esim. 65 € / h + alv">${val(p.pricing)}</textarea></div>
+              <div class="owner-two">
+                <div class="owner-field"><label>Aukioloajat</label><input name="hours" value="${val(p.hours)}" placeholder="Ma–Pe 8–17"></div>
+                <div class="owner-field"><label>Puhelinnumero</label><input name="phone" value="${val(p.phone)}" placeholder="040 123 4567"></div>
+              </div>
+              <div class="owner-field"><label>Palvelut</label><textarea name="services" placeholder="Putkityöt, LVI, sähkötyöt…">${val(p.services)}</textarea></div>
+              <div class="owner-two">
+                <div class="owner-field"><label>Sähköposti</label><input name="email" type="email" value="${val(p.email)}" placeholder="info@yritys.fi"></div>
+                <div class="owner-field"><label>Toimialue</label><input name="serviceArea" value="${val(p.serviceArea)}" placeholder="Tampere + 50 km"></div>
+              </div>
+              <div class="owner-two">
+                <div class="owner-field"><label>Osoite</label><input name="address" value="${val(p.address)}" placeholder="Katu 1, Tampere"></div>
+                <div class="owner-field"><label>Verkkosivu</label><input name="website" value="${val(p.website)}" placeholder="https://yritys.fi"></div>
+              </div>
+              <div class="owner-field"><label>Muut tärkeät tiedot</label><textarea name="notes" placeholder="Päivystys, maksutavat, takuukäytännöt, ajanvaraus…">${val(p.notes)}</textarea></div>
+              <button class="owner-save" type="submit">Tallenna botille <span>→</span></button>
+              <div class="owner-save-status" id="ownerSaveStatus"></div>
+            </form>
+          </section>
         </main>`;
     }
     assistant();
     const box = $('.fx-assistant');
     if (box) box.classList.add('open', 'standalone');
+
+    $('#ownerProfileForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const f = new FormData(e.currentTarget);
+      saveOwnerProfile({
+        companyName: f.get('companyName'),
+        pricing: f.get('pricing'),
+        hours: f.get('hours'),
+        phone: f.get('phone'),
+        email: f.get('email'),
+        services: f.get('services'),
+        serviceArea: f.get('serviceArea'),
+        address: f.get('address'),
+        website: f.get('website'),
+        notes: f.get('notes'),
+      });
+      const status = $('#ownerSaveStatus');
+      if (status) {
+        status.textContent = 'Tallennettu ✓ Kysy nyt botilta yrityksestä.';
+        setTimeout(() => { status.textContent = ''; }, 3500);
+      }
+      const messages = $('.fx-assistant-messages');
+      if (messages) {
+        messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot owner-confirm">Yrityksen tiedot päivitetty. Voit nyt testata kysymyksiä kuten “Paljonko maksaa?”, “Milloin olette auki?” tai “Teettekö sähkötöitä?”.</div>');
+        messages.scrollTop = messages.scrollHeight;
+      }
+    });
   }
 
   function ctaPopup() {
