@@ -374,16 +374,17 @@ YLEINEN TOIMINTAOHJE:
               <div class="custom-facts-block">
                 <div class="custom-facts-head">
                   <div><label>Omat hakusanat ja vastaukset</label><small>Esim. “Päivystys” → “Päivystämme 24/7 numerossa…”</small></div>
-                  <button type="button" id="addCustomFact">+ Uusi rivi</button>
+                  <button type="button" id="addCustomFact" data-add-custom-fact>+ Uusi rivi</button>
                 </div>
                 <div id="customFacts">
                   ${customFacts.map((x,i) => `
                     <div class="custom-fact-row" data-index="${i}">
-                      <div class="owner-field"><label>Otsikko / hakusana</label><input data-fact-key value="${val(x.key)}" placeholder="Esim. Aukiolo"></div>
-                      <div class="owner-field"><label>Vastaus</label><textarea data-fact-answer placeholder="Esim. Ma–Pe 8–17">${val(x.answer)}</textarea></div>
+                      <div class="owner-field"><label>Otsikko / kysymys / hakusana</label><input data-fact-key value="${val(x.key)}" placeholder="Esim. Oletteko lauantaina auki?"></div>
+                      <div class="owner-field"><label>Vastaus</label><textarea data-fact-answer placeholder="Esim. Kyllä, lauantaisin klo 10–14.">${val(x.answer)}</textarea></div>
                       <button type="button" class="remove-fact" aria-label="Poista rivi">×</button>
                     </div>`).join('')}
                 </div>
+                <button type="button" class="add-fact-bottom" id="addCustomFactBottom" data-add-custom-fact>+ Lisää oma kysymys / hakusana</button>
               </div>
 
               <div class="owner-field"><label>Muut tärkeät tiedot</label><textarea name="notes" placeholder="Päivystys, maksutavat, takuukäytännöt, ajanvaraus…">${val(p.notes)}</textarea></div>
@@ -433,7 +434,7 @@ YLEINEN TOIMINTAOHJE:
       if (!host) return;
       host.insertAdjacentHTML('beforeend', `
         <div class="custom-fact-row">
-          <div class="owner-field"><label>Otsikko / hakusana</label><input data-fact-key value="${val(key)}" placeholder="Esim. Maksutavat"></div>
+          <div class="owner-field"><label>Otsikko / kysymys / hakusana</label><input data-fact-key value="${val(key)}" placeholder="Esim. Mitkä maksutavat käyvät?"></div>
           <div class="owner-field"><label>Vastaus</label><textarea data-fact-answer placeholder="Esim. Kortti, lasku ja MobilePay">${val(answer)}</textarea></div>
           <button type="button" class="remove-fact" aria-label="Poista rivi">×</button>
         </div>`);
@@ -453,9 +454,32 @@ YLEINEN TOIMINTAOHJE:
       renderServices();
     });
 
-    $('#addCustomFact')?.addEventListener('click', () => addFactRow());
+    const ownerForm = $('#ownerProfileForm');
+    ownerForm?.addEventListener('click', (e) => {
+      const addButton = e.target.closest('[data-add-custom-fact]');
+      if (addButton) {
+        e.preventDefault();
+        e.stopPropagation();
+        addFactRow();
+        return;
+      }
 
-    $('#ownerProfileForm')?.addEventListener('submit', (e) => {
+      const removeButton = e.target.closest('.remove-fact');
+      if (removeButton) {
+        e.preventDefault();
+        const rows = $('.custom-fact-row');
+        const row = removeButton.closest('.custom-fact-row');
+        if (!row) return;
+        if (rows.length === 1) {
+          row.querySelector('[data-fact-key]').value = '';
+          row.querySelector('[data-fact-answer]').value = '';
+        } else {
+          row.remove();
+        }
+      }
+    });
+
+    ownerForm?.addEventListener('submit', (e) => {
       e.preventDefault();
       const f = new FormData(e.currentTarget);
       const facts = $$('.custom-fact-row').map(row => ({
