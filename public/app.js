@@ -567,6 +567,7 @@ async function route() {
   let html;
 
   if (path === '/') html = await home();
+  else if (path === '/assistant') html = `<main class="assistant-route-fallback"><div class="container"><div class="section-kicker">RESPONDO / TEST</div><h1>Respondo Assistant</h1><p>Avataan testibotti…</p></div></main>`;
   else if (path === '/tilaus') html = signup();
   else if (path === '/kirjaudu') html = login();
   else if (path === '/app') html = await dashboard();
