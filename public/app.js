@@ -46,14 +46,14 @@ function nav() {
     <div class="container navin">
       ${logo()}
       <nav class="navlinks" aria-label="Päänavigaatio">
-        <a href="/#how">Miten toimii</a>
-        <a href="/#control">Hallinta</a>
-        <a href="/#pricing">Hinnoittelu</a>
+        <a href="/#how">Tuote</a>
+        <a href="/#control">Tietopohja</a>
+        <a href="/#pricing">Hinta</a>
         <a href="/tietoturva">Tietoturva</a>
       </nav>
       <div class="navactions">
         <a class="btn ghost" href="/kirjaudu">Kirjaudu</a>
-        <a class="btn ink" href="/tilaus">Aloita maksutta <span>↗</span></a>
+        <a class="btn ink" href="/tilaus">Kokeile maksutta</a>
       </div>
     </div>
   </header>`;
@@ -65,14 +65,14 @@ function footer() {
       <div class="foot-top">
         <div class="foot-brand">
           ${logo()}
-          <p>Asiakaspalvelu, joka vastaa yrityksesi omalla tiedolla — ja osaa olla arvaamatta.</p>
+          <p>Asiakaspalvelu, joka tietää vain sen minkä yrityksesi sille opettaa.</p>
           <div class="seller-chip">Respondo · Y-tunnus ${esc(cfg.businessId || '3599437-5')}</div>
         </div>
         <div class="foot-col">
           <h4>Tuote</h4>
-          <a href="/#how">Miten toimii</a>
-          <a href="/#control">Hallinta</a>
-          <a href="/#pricing">Hinnoittelu</a>
+          <a href="/#how">Tuote</a>
+          <a href="/#control">Tietopohja</a>
+          <a href="/#pricing">Hinta</a>
           <a href="/tilaus">Aloita kokeilu</a>
         </div>
         <div class="foot-col">
@@ -157,29 +157,29 @@ function heroVisual() {
 function workflow() {
   return `<section class="section workflow" id="how">
     <div class="container">
-      <div class="section-kicker">01 / Miten se toimii</div>
+      <div class="section-kicker">Tuote</div>
       <div class="split-head">
-        <h2>Yrityksesi tieto sisään.<br><em>Selkeä vastaus ulos.</em></h2>
-        <p>Respondo ei yritä tietää kaikkea. Se toimii sen tiedon varassa, jonka yrityksesi itse hyväksyy.</p>
+        <h2>Opeta kerran.<br><em>Respondo vastaa.</em></h2>
+        <p>Lisää hinnat, palvelut, aukioloajat ja omat vastaukset. Respondo käyttää vain hyväksyttyä tietoa.</p>
       </div>
       <div class="flowline">
         <article class="flowstep">
           <div class="flow-num">01</div>
           <div class="flow-glyph">＋</div>
-          <h3>Syötä faktat kerran</h3>
-          <p>Hinnat, palvelut, aukioloajat, toimitusalueet ja käytännöt muodostavat yrityksesi hallitun tietopohjan.</p>
+          <h3>Lisää yrityksesi tieto</h3>
+          <p>Hinnat, palvelut, aukioloajat ja omat kysymys–vastausparit.</p>
         </article>
         <article class="flowstep">
           <div class="flow-num">02</div>
           <div class="flow-glyph">⌁</div>
-          <h3>Asiakas kysyy normaalisti</h3>
-          <p>Ei valikkoja tai oikeita avainsanoja. Asiakas voi kirjoittaa kysymyksen omalla tavallaan.</p>
+          <h3>Asiakas kysyy</h3>
+          <p>Luonnollisesti. Omilla sanoillaan.</p>
         </article>
         <article class="flowstep">
           <div class="flow-num">03</div>
           <div class="flow-glyph">↳</div>
-          <h3>Vastaa tai pysähtyy</h3>
-          <p>Kun tieto löytyy, Respondo vastaa. Kun sitä ei löydy luotettavasti, se näyttää yrityksen oman jatko-ohjeen.</p>
+          <h3>Respondo vastaa</h3>
+          <p>Ja jos varmaa tietoa ei löydy, se ohjaa ihmiselle.</p>
         </article>
       </div>
     </div>
@@ -190,13 +190,13 @@ function controlSection() {
   return `<section class="section control" id="control">
     <div class="container control-grid">
       <div class="control-copy">
-        <div class="section-kicker light">02 / Hallinta</div>
-        <h2>AI ei päätä mitä yrityksesi tietää. <em>Sinä päätät.</em></h2>
-        <p>Muokkaa tietopohjaa yhdestä paikasta. Jokainen asiakkaalle annettava vastaus nojaa siihen sisältöön, jonka olet itse syöttänyt.</p>
+        <div class="section-kicker light">Tietopohja</div>
+        <h2>Sinä päätät.<br><em>AI vain vastaa.</em></h2>
+        <p>Kaikki asiakkaalle kerrottava tieto pysyy yrityksesi hallinnassa.</p>
         <div class="control-list">
-          <div><span>01</span><b>Oma tietopohja</b><small>Lisää ja ylläpidä vastauksia hallintapaneelista.</small></div>
-          <div><span>02</span><b>Epävarmuus näkyväksi</b><small>Respondo ei naamioi puuttuvaa tietoa varmaksi vastaukseksi.</small></div>
-          <div><span>03</span><b>Yksi asennusrivi</b><small>Chat-widget lisätään sivulle yhdellä script-tagilla.</small></div>
+          <div><span>01</span><b>Helppo ylläpitää</b><small>Muuta tietoa yhdestä paikasta.</small></div>
+          <div><span>02</span><b>Ei arvailua</b><small>Puuttuva tieto ei muutu keksityksi vastaukseksi.</small></div>
+          <div><span>03</span><b>Helppo asentaa</b><small>Yksi asennusrivi verkkosivulle.</small></div>
         </div>
       </div>
       <div class="truth-card">
@@ -215,8 +215,8 @@ function controlSection() {
 function proofStrip() {
   return `<section class="proof-strip">
     <div class="container proof-grid">
-      <div><span>VASTAA</span><b>24/7</b><small>myös kun yritys on kiinni</small></div>
-      <div><span>PERUSTUU</span><b>omaan tietoon</b><small>ei avoimeen arvailuun</small></div>
+      <div><span>VASTAA</span><b>24/7</b><small>asiakkaillesi</small></div>
+      <div><span>PERUSTUU</span><b>sinun hallinnassa</b><small>aina</small></div>
       <div><span>ALKAEN</span><b>49 € / kk</b><small>+ alv</small></div>
       <div><span>KOKEILU</span><b>3 päivää</b><small>maksutta</small></div>
     </div>
@@ -226,10 +226,10 @@ function proofStrip() {
 function pricingSection() {
   return `<section class="section pricing-section" id="pricing">
     <div class="container">
-      <div class="section-kicker">03 / Hinnoittelu</div>
+      <div class="section-kicker">Hinta</div>
       <div class="split-head">
-        <h2>Yksi Respondo.<br><em>Kaksi laskutusrytmiä.</em></h2>
-        <p>Maksutapa lisätään kokeilun alussa. Veloitus alkaa 3 päivän kokeilun jälkeen, ellet peru tilausta ennen sitä.</p>
+        <h2>Selkeä hinta.<br><em>Ei yllätyksiä.</em></h2>
+        <p>Kokeile 3 päivää maksutta. Peruuta ennen kokeilun päättymistä, jos et halua jatkaa.</p>
       </div>
       <div class="pricing-wrap">
         <article class="price-card">
@@ -244,7 +244,7 @@ function pricingSection() {
             <li>Epävarmojen tilanteiden jatko-ohje</li>
             <li>Tilauksen hallinta Stripessä</li>
           </ul>
-          <a class="btn price-btn" href="/tilaus?plan=monthly">Aloita 3 päivää maksutta <span>→</span></a>
+          <a class="btn price-btn" href="/tilaus?plan=monthly">Kokeile 3 päivää maksutta</a>
         </article>
         <article class="price-card featured">
           <div class="price-top"><span>YEARLY</span><span class="save">säästä 39 €</span></div>
@@ -255,7 +255,7 @@ function pricingSection() {
             <li>Samat ominaisuudet kuin kuukausitilauksessa</li>
             <li>Yksi vuosiveloitus</li>
             <li>3 päivän maksuton kokeilu</li>
-            <li>Peruuta koska tahansa</li>
+            <li>Peruuta milloin tahansa</li>
             <li>Käyttö jatkuu maksetun kauden loppuun</li>
           </ul>
           <a class="btn price-btn blue" href="/tilaus?plan=yearly">Valitse vuositilaus <span>→</span></a>
@@ -274,17 +274,17 @@ async function home() {
         <div class="hero-glow"></div>
         <div class="container hero-grid">
           <div class="hero-copy">
-            <div class="hero-label"><span></span> SUOMALAINEN B2B-OHJELMISTO · Y-TUNNUS ${esc(cfg.businessId || '3599437-5')}</div>
-            <h1>Asiakaspalvelu ei sulkeudu <em>klo 16.</em></h1>
-            <p class="lead">Respondo vastaa asiakkaiden kysymyksiin yrityksesi omalla hyväksytyllä tiedolla. Jos vastausta ei löydy, se ei keksi sellaista.</p>
+            <div class="hero-label"><span></span> RESPONDO · AI-ASIAKASPALVELU YRITYKSILLE</div>
+            <h1>Vastaa asiakkaalle. <em>Heti.</em></h1>
+            <p class="lead">Respondo vastaa 24/7 yrityksesi omalla tiedolla. Kun vastausta ei tiedetä, se ei arvaa.</p>
             <div class="hero-actions">
-              <a class="btn hero-primary" href="/tilaus">Aloita 3 päivää maksutta <span>→</span></a>
-              <a class="text-link" href="#how">Katso miten se toimii <span>↓</span></a>
+              <a class="btn hero-primary" href="/tilaus">Kokeile 3 päivää maksutta</a>
+              <a class="text-link" href="#how">Tutustu tuotteeseen <span>↓</span></a>
             </div>
             <div class="trust-row">
-              <span><i>✓</i> Ei asennusmaksua</span>
-              <span><i>✓</i> Peruuta koska tahansa</span>
-              <span><i>✓</i> Maksut Stripe Checkoutilla</span>
+              <span><i>✓</i> 3 päivää maksutta</span>
+              <span><i>✓</i> Peruuta milloin tahansa</span>
+              <span><i>✓</i> 49 €/kk + alv</span>
             </div>
           </div>
           ${heroVisual()}
@@ -301,11 +301,11 @@ async function home() {
         <div class="container">
           <div class="cta-shell">
             <div>
-              <div class="section-kicker light">VALMIS KOKEILEMAAN?</div>
-              <h2>Anna verkkosivullesi vastauskyky.</h2>
-              <p>Tilin luonti ja maksutapa vievät vain hetken. Kokeilu on 3 päivää maksuton.</p>
+              <div class="section-kicker light">RESPONDO</div>
+              <h2>Valmis vastaamaan.</h2>
+              <p>3 päivää maksutta. Käyttöönotto vie vain hetken.</p>
             </div>
-            <a class="cta-circle" href="/tilaus" aria-label="Aloita kokeilu"><span>ALOITA</span><b>↗</b></a>
+            <a class="cta-circle" href="/tilaus" aria-label="Aloita kokeilu"><span>KOKEILE</span><b>→</b></a>
           </div>
         </div>
       </section>
@@ -322,8 +322,8 @@ function signup() {
       <div class="container checkout-layout">
         <section class="checkout-copy">
           <div class="section-kicker">ALOITA RESPONDO</div>
-          <h1>Ensimmäiset 3 päivää ovat <em>meidän.</em></h1>
-          <p>Luo yrityksellesi tili. Seuraavaksi siirryt Stripen turvalliseen Checkoutiin lisäämään maksutavan.</p>
+          <h1>Kokeile ensin.<br><em>Päätä sitten.</em></h1>
+          <p>Luo tili ja lisää maksutapa turvallisesti Stripessä. Veloitus alkaa vasta kokeilun jälkeen.</p>
           <div class="checkout-steps">
             <div><span>01</span><b>Luo tili</b><small>Yrityksen perustiedot ja salasana.</small></div>
             <div><span>02</span><b>Lisää maksutapa</b><small>Stripe käsittelee maksutiedot.</small></div>
@@ -371,8 +371,8 @@ function login() {
       <div class="container login-layout">
         <section class="login-copy">
           <div class="section-kicker">RESPONDO CONTROL</div>
-          <h1>Yrityksesi tieto.<br><em>Yhdessä paikassa.</em></h1>
-          <p>Kirjaudu hallitsemaan tietopohjaa, asennuskoodia ja tilauksen tietoja.</p>
+          <h1>Tervetuloa<br><em>takaisin.</em></h1>
+          <p>Hallitse tietopohjaa, asennusta ja tilausta yhdestä paikasta.</p>
           <div class="login-signal"><span></span> Hallintapaneeli suojattu kirjautumisella</div>
         </section>
         <form class="formcard premium-form login-card" id="login">
