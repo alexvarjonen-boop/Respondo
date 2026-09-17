@@ -59,6 +59,148 @@ function nav() {
   </header>`;
 }
 
+
+function stickyProductNav() {
+  return `<div class="product-subnav" aria-label="Sivun osiot">
+    <div class="container product-subnav-inner">
+      <span class="subnav-title">Respondo</span>
+      <nav>
+        <a href="#how">Miten toimii</a>
+        <a href="#features">Ominaisuudet</a>
+        <a href="#pricing">Hinnat</a>
+        <a href="#contact">Yhteystiedot</a>
+      </nav>
+      <a class="subnav-cta" href="/tilaus">Kokeile maksutta</a>
+    </div>
+  </div>`;
+}
+
+function premiumVisualSection() {
+  return `<section class="section visual-showcase" id="features">
+    <div class="container">
+      <div class="section-kicker">Ominaisuudet</div>
+      <div class="split-head">
+        <h2>Vähemmän säätöä.<br><em>Enemmän vastauksia.</em></h2>
+        <p>Respondo yhdistää tietopohjan, keskustelut ja jatkuvasti paranevan asiakaspalvelun yhteen näkymään.</p>
+      </div>
+
+      <div class="visual-grid">
+        <article class="visual-card visual-card-large">
+          <div class="visual-copy">
+            <small>TIETOPOHJA</small>
+            <h3>Kaikki olennainen yhdessä paikassa.</h3>
+            <p>Hinnat, aukioloajat, palvelut ja omat kysymys–vastausparit pysyvät hallinnassa.</p>
+          </div>
+          <figure class="visual-frame knowledge-visual" aria-label="Tietopohjan esimerkkikuva">
+            <svg viewBox="0 0 760 500" role="img" aria-hidden="true">
+              <defs>
+                <linearGradient id="softBg" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#ffffff"/>
+                  <stop offset="100%" stop-color="#ececee"/>
+                </linearGradient>
+                <filter id="shadowA"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-opacity=".12"/></filter>
+              </defs>
+              <rect width="760" height="500" rx="40" fill="url(#softBg)"/>
+              <rect x="54" y="52" width="652" height="396" rx="28" fill="#fff" stroke="#d9d9dc" filter="url(#shadowA)"/>
+              <rect x="84" y="88" width="138" height="18" rx="9" fill="#1d1d1f"/>
+              <rect x="84" y="124" width="250" height="10" rx="5" fill="#c8c8cc"/>
+              <g fill="#f5f5f7" stroke="#e4e4e7">
+                <rect x="84" y="170" width="592" height="66" rx="16"/>
+                <rect x="84" y="250" width="592" height="66" rx="16"/>
+                <rect x="84" y="330" width="592" height="66" rx="16"/>
+              </g>
+              <g fill="#1d1d1f">
+                <rect x="108" y="193" width="92" height="10" rx="5"/>
+                <rect x="108" y="273" width="120" height="10" rx="5"/>
+                <rect x="108" y="353" width="84" height="10" rx="5"/>
+              </g>
+              <g fill="#b9b9bd">
+                <rect x="226" y="193" width="265" height="10" rx="5"/>
+                <rect x="254" y="273" width="300" height="10" rx="5"/>
+                <rect x="218" y="353" width="238" height="10" rx="5"/>
+              </g>
+              <g fill="#1d1d1f">
+                <circle cx="638" cy="203" r="14"/>
+                <circle cx="638" cy="283" r="14"/>
+                <circle cx="638" cy="363" r="14"/>
+              </g>
+              <g stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <path d="M631 203l5 5 9-11"/>
+                <path d="M631 283l5 5 9-11"/>
+                <path d="M631 363l5 5 9-11"/>
+              </g>
+            </svg>
+          </figure>
+        </article>
+
+        <article class="visual-card">
+          <div class="visual-copy">
+            <small>KESKUSTELUT</small>
+            <h3>Näet, mitä asiakkaat oikeasti kysyvät.</h3>
+          </div>
+          <figure class="visual-frame chat-visual" aria-label="Keskustelun esimerkkikuva">
+            <svg viewBox="0 0 560 420" role="img" aria-hidden="true">
+              <rect width="560" height="420" rx="34" fill="#f2f2f4"/>
+              <rect x="48" y="48" width="464" height="324" rx="28" fill="#fff" stroke="#dddddf"/>
+              <circle cx="88" cy="88" r="16" fill="#1d1d1f"/>
+              <rect x="116" y="78" width="102" height="9" rx="5" fill="#1d1d1f"/>
+              <rect x="116" y="96" width="72" height="7" rx="4" fill="#c1c1c5"/>
+              <rect x="172" y="148" width="300" height="54" rx="18" fill="#1d1d1f"/>
+              <rect x="194" y="169" width="214" height="10" rx="5" fill="#fff" opacity=".92"/>
+              <rect x="84" y="228" width="326" height="82" rx="20" fill="#f2f2f4"/>
+              <rect x="108" y="252" width="212" height="9" rx="5" fill="#5f5f64"/>
+              <rect x="108" y="272" width="254" height="9" rx="5" fill="#b0b0b5"/>
+              <circle cx="474" cy="334" r="15" fill="#1d1d1f"/>
+            </svg>
+          </figure>
+        </article>
+
+        <article class="visual-card">
+          <div class="visual-copy">
+            <small>KEHITYS</small>
+            <h3>Jokainen tietoaukko tekee botista paremman.</h3>
+          </div>
+          <figure class="visual-frame analytics-visual" aria-label="Analytiikan esimerkkikuva">
+            <svg viewBox="0 0 560 420" role="img" aria-hidden="true">
+              <rect width="560" height="420" rx="34" fill="#eeeeef"/>
+              <rect x="50" y="54" width="460" height="312" rx="26" fill="#fff" stroke="#d9d9dc"/>
+              <rect x="82" y="88" width="126" height="12" rx="6" fill="#1d1d1f"/>
+              <rect x="82" y="118" width="72" height="8" rx="4" fill="#c4c4c7"/>
+              <g transform="translate(84 164)">
+                <rect x="0" y="92" width="42" height="48" rx="10" fill="#d3d3d6"/>
+                <rect x="62" y="68" width="42" height="72" rx="10" fill="#bcbcc1"/>
+                <rect x="124" y="42" width="42" height="98" rx="10" fill="#9d9da2"/>
+                <rect x="186" y="16" width="42" height="124" rx="10" fill="#747479"/>
+                <rect x="248" y="0" width="42" height="140" rx="10" fill="#1d1d1f"/>
+              </g>
+              <rect x="390" y="174" width="84" height="34" rx="17" fill="#1d1d1f"/>
+              <rect x="410" y="187" width="44" height="8" rx="4" fill="#fff"/>
+            </svg>
+          </figure>
+        </article>
+      </div>
+    </div>
+  </section>`;
+}
+
+function contactSection() {
+  return `<section class="section contact-section" id="contact">
+    <div class="container">
+      <div class="contact-shell">
+        <div>
+          <div class="section-kicker">Yhteystiedot</div>
+          <h2>Kysy lisää.<br><em>Vastaamme.</em></h2>
+        </div>
+        <div class="contact-actions">
+          <a href="mailto:${esc(cfg.supportEmail)}" class="contact-mail">${esc(cfg.supportEmail)}</a>
+          <p>Respondo · Y-tunnus ${esc(cfg.businessId || '3599437-5')} · Suomi</p>
+          <a class="btn ink" href="/tilaus">Kokeile 3 päivää maksutta</a>
+        </div>
+      </div>
+    </div>
+  </section>`;
+}
+
 function footer() {
   return `<footer class="footer">
     <div class="container">
@@ -269,6 +411,7 @@ async function home() {
   await config();
   return `<div>
     ${nav()}
+    ${stickyProductNav()}
     <main>
       <section class="hero">
         <div class="hero-glow"></div>
@@ -294,6 +437,7 @@ async function home() {
         </div>
       </section>
       ${workflow()}
+      ${premiumVisualSection()}
       ${controlSection()}
       ${proofStrip()}
       ${pricingSection()}
@@ -309,6 +453,7 @@ async function home() {
           </div>
         </div>
       </section>
+      ${contactSection()}
     </main>
     ${footer()}
   </div>`;
