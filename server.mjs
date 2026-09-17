@@ -160,7 +160,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/api/health', async (req, res) => {
   const health = {
     ok: true,
-    service: 'Respondo',
+    service: 'RESPONDO AI',
     database: Boolean(pool),
     stripe: Boolean(stripe && process.env.STRIPE_WEBHOOK_SECRET),
     openai: Boolean(openai),
@@ -178,7 +178,7 @@ app.get('/api/health', async (req, res) => {
 
 app.get('/api/public/config', (req, res) =>
   res.json({
-    brand: 'Respondo',
+    brand: 'RESPONDO AI',
     supportEmail: process.env.SUPPORT_EMAIL || 'alexvarjonen@gmail.com',
     trialDays: 3,
     monthlyNet: 49,
@@ -589,4 +589,4 @@ app.use((req, res, next) => {
   next();
 });
 
-app.listen(PORT, () => console.log(`Respondo listening on ${PORT}`));
+app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
