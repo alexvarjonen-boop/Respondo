@@ -67,6 +67,7 @@ function stickyProductNav() {
       <nav>
         <a href="#how">Miten toimii</a>
         <a href="#features">Ominaisuudet</a>
+        <a href="#research">Tutkittua</a>
         <a href="#calculator">Laskuri</a>
         <a href="#pricing">Hinnat</a>
         <a href="#contact">Yhteystiedot</a>
@@ -366,6 +367,64 @@ function proofStrip() {
   </section>`;
 }
 
+function researchStatsSection() {
+  return `<section class="section research-stats" id="research">
+    <div class="container">
+      <div class="section-kicker">Tutkittua</div>
+      <div class="split-head research-head">
+        <h2>Nopea vastaus ei ole fiilis.<br><em>Sillä on mitattu vaikutus.</em></h2>
+        <p>Alla olevat luvut perustuvat julkaistuihin tutkimuksiin ja raportteihin. Lähde, vuosi ja tutkimuskonteksti näkyvät jokaisen luvun yhteydessä.</p>
+      </div>
+
+      <div class="research-grid">
+        <article class="research-stat research-stat-dark">
+          <span class="research-number">23%</span>
+          <h3>ei vastannut verkkoliidiin lainkaan</h3>
+          <p>Harvard Business Review’n auditissa 2 241 yhdysvaltalaisesta yrityksestä lähes joka neljäs ei vastannut testiliidiin 30 päivän aikana.</p>
+          <a href="https://hbr.org/2011/03/the-short-life-of-online-sales-leads" target="_blank" rel="noopener noreferrer">Harvard Business Review · 2011 <span>↗</span></a>
+        </article>
+
+        <article class="research-stat">
+          <span class="research-number">37%</span>
+          <h3>vastasi ensimmäisen tunnin aikana</h3>
+          <p>Samassa HBR-auditissa vain 37 % yrityksistä reagoi verkkoliidiin tunnin sisällä. Erillisessä 1,25 miljoonan liidin analyysissä alle tunnissa yhteyttä ottaneet olivat lähes 7× todennäköisempiä kvalifioimaan liidin kuin myöhemmin vastanneet.</p>
+          <a href="https://hbr.org/2011/03/the-short-life-of-online-sales-leads" target="_blank" rel="noopener noreferrer">Harvard Business Review · 2011 <span>↗</span></a>
+        </article>
+
+        <article class="research-stat">
+          <span class="research-number">77%</span>
+          <h3>odottaa välitöntä vuorovaikutusta</h3>
+          <p>Salesforcen asiakastutkimuksen mukaan 77 % asiakkaista odottaa voivansa olla vuorovaikutuksessa yrityksen kanssa heti yhteydenottohetkellä.</p>
+          <a href="https://www.salesforce.com/eu/service/digital-customer-engagement-platform/what-is-customer-engagement/" target="_blank" rel="noopener noreferrer">Salesforce · customer research <span>↗</span></a>
+        </article>
+
+        <article class="research-stat">
+          <span class="research-number">74%</span>
+          <h3>odottaa asiakaspalvelua 24/7</h3>
+          <p>Zendesk CX Trends 2026 -tutkimuksessa 74 % kuluttajista sanoi AI:n nostaneen odotuksen siitä, että asiakaspalvelu on saatavilla vuorokauden ympäri.</p>
+          <a href="https://cxtrends.zendesk.com/" target="_blank" rel="noopener noreferrer">Zendesk CX Trends · 2026 <span>↗</span></a>
+        </article>
+
+        <article class="research-stat research-stat-wide">
+          <div>
+            <span class="research-number">86%</span>
+            <h3>pitää nopeutta ja oikeaa ratkaisua ostopäätökseen vaikuttavana</h3>
+          </div>
+          <div>
+            <p>Zendesk raportoi yli 11 000 kuluttajan ja yritysjohtajan aineistosta 22 maassa, että 86 % kuluttajista sanoo palvelun reagointinopeuden ja oikean ratkaisun vaikuttavan vahvasti heidän ostohalukkuuteensa.</p>
+            <a href="https://www.zendesk.com/newsroom/press-releases/contextual-intelligence-becomes-the-new-standard-for-exceptional-customer-experience-in-2026/" target="_blank" rel="noopener noreferrer">Zendesk · CX Trends 2026 <span>↗</span></a>
+          </div>
+        </article>
+      </div>
+
+      <div class="research-note">
+        <span>HUOM</span>
+        <p>HBR:n lead response -tutkimus on vuodelta 2011 ja tehtiin Yhdysvalloissa, joten sitä ei esitetä nykyisten suomalaisyritysten suorana keskiarvona. Se kertoo mitatusta yhteydestä vastausnopeuden ja liidin kvalifioinnin välillä.</p>
+      </div>
+    </div>
+  </section>`;
+}
+
 function calculatorSection() {
   return `<section class="section value-calculator" id="calculator">
     <div class="container">
@@ -492,6 +551,7 @@ async function home() {
       ${premiumVisualSection()}
       ${controlSection()}
       ${proofStrip()}
+      ${researchStatsSection()}
       ${calculatorSection()}
       ${pricingSection()}
       <section class="section final-cta">
