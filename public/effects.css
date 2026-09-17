@@ -375,3 +375,43 @@ body.assistant-standalone{
   transition:.18s ease;
 }
 .add-fact-bottom:hover{background:#eaf4ff;border-color:rgba(0,113,227,.42)}
+
+
+/* =========================================================
+   LUXE MOTION REDUCTION — QUIET PREMIUM INTERACTIONS
+   ========================================================= */
+.fx-progress{height:2px!important;background:transparent!important}
+.fx-progress>i{background:#0071e3!important;box-shadow:none!important;opacity:.75!important}
+.fx-ambient{opacity:.45!important}
+.fx-orb{filter:blur(120px)!important;opacity:.035!important}
+.respondo-marquee,.hero-marquee{display:none!important}
+.fx-scroll-rail{display:none!important}
+.fx-depth::before{
+  inset:36px 0!important;
+  border-radius:44px!important;
+  background:linear-gradient(180deg,rgba(248,250,252,.75),rgba(255,255,255,.55))!important;
+  border:1px solid rgba(0,0,0,.035)!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+[data-reveal]{
+  opacity:0;
+  transform:translateY(22px) scale(.995)!important;
+  filter:blur(1.5px)!important;
+  transition:
+    opacity .78s cubic-bezier(.2,.7,.2,1),
+    transform .82s cubic-bezier(.2,.7,.2,1),
+    filter .65s ease!important;
+}
+[data-reveal="left"],[data-reveal="right"]{transform:translateY(22px) scale(.995)!important}
+[data-reveal].is-visible{opacity:1!important;transform:none!important;filter:none!important}
+[data-tilt]{
+  transform:none!important;
+  transition:transform .35s ease,box-shadow .35s ease!important;
+}
+[data-tilt]:hover{transform:translateY(-3px)!important}
+.signal-console{transform:none!important}
+.signal-console:hover{transform:translateY(-4px)!important}
+.fx-magnetic{transform:none!important}
+.btn::after{display:none!important}
+.fx-cube{display:none!important}
