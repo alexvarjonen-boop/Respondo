@@ -633,6 +633,74 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
     });
   }
 
+  function premiumProductEffects() {
+    const subnavLinks = $('.product-subnav a[href^="#"]');
+    const sections = ['how','features','pricing','contact']
+      .map(id => document.getElementById(id))
+      .filter(Boolean);
+
+    if (subnavLinks.length && sections.length) {
+      const setActive = (id) => {
+        subnavLinks.forEach(link => {
+          const active = link.getAttribute('href') === '#' + id;
+          link.classList.toggle('active', active);
+        });
+      };
+
+      const io = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter(x => x.isIntersecting)
+          .sort((a,b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]?.target?.id) setActive(visible[0].target.id);
+      }, { rootMargin: '-28% 0px -58% 0px', threshold: [0,.1,.25,.5] });
+
+      sections.forEach(section => io.observe(section));
+    }
+
+    const cards = $('.visual-card');
+    cards.forEach((card, index) => {
+      card.dataset.premiumVisual = '1';
+      const frame = $('.visual-frame', card);
+      if (frame) {
+        frame.style.setProperty('--visual-index', index);
+      }
+    });
+
+    if (!reduce) {
+      let ticking = false;
+      const updateVisuals = () => {
+        ticking = false;
+        const vh = Math.max(innerHeight, 1);
+        cards.forEach((card, index) => {
+          const frame = $('.visual-frame', card);
+          if (!frame) return;
+          const r = card.getBoundingClientRect();
+          const progress = Math.max(-1, Math.min(1, (r.top + r.height/2 - vh/2) / vh));
+          frame.style.setProperty('--visual-y', (progress * -18 * (index % 2 ? .8 : 1)) + 'px');
+          frame.style.setProperty('--visual-scale', String(1.015 - Math.abs(progress) * .012));
+        });
+      };
+      addEventListener('scroll', () => {
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(updateVisuals);
+        }
+      }, {passive:true});
+      updateVisuals();
+    }
+
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visual-visible');
+          imageObserver.unobserve(entry.target);
+        }
+      });
+    }, {threshold:.18});
+
+    cards.forEach(card => imageObserver.observe(card));
+  }
+
   function ctaPopup() {
     if ($('.fx-modal-backdrop') || sessionStorage.getItem('respondoCtaSeen')) return;
     document.body.insertAdjacentHTML('beforeend', `<div class="fx-modal-backdrop" role="dialog" aria-modal="true" aria-label="Respondo kokeilu"><div class="fx-modal"><button class="fx-modal-close" aria-label="Sulje">×</button><div class="fx-modal-kicker">RESPONDO / 3 PÄIVÄÄ</div><h3>Katso miltä 24/7-asiakaspalvelu näyttää omassa yrityksessäsi.</h3><p>Luo tili, lisää yrityksesi hyväksytty tieto ja testaa palvelua 3 päivää maksutta.</p><div class="fx-modal-actions"><a class="btn ink" href="/tilaus">Aloita maksutta →</a><button class="btn ghost fx-modal-later" type="button">Katson myöhemmin</button></div></div></div>`);
@@ -656,7 +724,7 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
       return;
     }
     if (location.pathname === '/') {
-      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); assistant(); ctaPopup();
+      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); assistant(); ctaPopup();
     } else {
       revealTargets(); magneticButtons(); assistant();
     }
