@@ -136,12 +136,69 @@
     return 'En halua keksiä vastausta. Voin auttaa Respondon hinnassa, kokeilussa, käyttöönotossa, tietoturvassa ja tilauksessa — tai voit ottaa yhteyttä osoitteeseen respondoai.fi@outlook.com.';
   }
 
+  let localAiEngine = null;
+  let localAiLoading = null;
+  const localAiHistory = [];
+  const localAiModel = 'SmolLM2-360M-Instruct-q4f32_1-MLC';
+  const localAiSystem = `Olet Respondon asiakaspalveluassistentti. Vastaa suomeksi selkeästi ja lyhyesti. Älä keksi yritystä koskevia faktoja. Käytä seuraavia hyväksyttyjä tietoja:
+- Respondo on suomalaisille yrityksille tarkoitettu B2B AI-asiakaspalvelu.
+- Hinta 49 euroa kuukaudessa + ALV tai 549 euroa vuodessa + ALV.
+- Kokeilu 3 päivää maksutta. Maksutapa lisätään alussa Stripessä.
+- Respondo vastaa yrityksen hyväksytyn tietopohjan perusteella ja epävarmassa tilanteessa ohjaa ihmiselle.
+- Verkkosivun widget asennetaan hallintapaneelista saatavalla script-rivillä.
+- Tilauksen voi perua, ja käyttö jatkuu maksetun kauden loppuun.
+- Y-tunnus 3599437-5.
+- Yhteyssähköposti respondoai.fi@outlook.com.
+Jos kysymykseen ei voi vastata näillä tiedoilla, sano suoraan ettet tiedä varmasti. Älä väitä, että sinulla on pääsy järjestelmiin, joita sinulla ei ole.`;
+
+  async function getLocalAiEngine(onProgress) {
+    if (localAiEngine) return localAiEngine;
+    if (!navigator.gpu) throw new Error('Tämä selain ei tue WebGPU:ta.');
+    if (localAiLoading) return localAiLoading;
+    localAiLoading = (async () => {
+      const webllm = await import('https://esm.run/@mlc-ai/web-llm');
+      const engine = await webllm.CreateMLCEngine(localAiModel, {
+        initProgressCallback: (p) => {
+          const pct = Math.max(0, Math.min(100, Math.round((p.progress || 0) * 100)));
+          if (onProgress) onProgress(pct, p.text || 'Ladataan paikallista AI-mallia…');
+        }
+      });
+      localAiEngine = engine;
+      return engine;
+    })();
+    try {
+      return await localAiLoading;
+    } finally {
+      localAiLoading = null;
+    }
+  }
+
+  async function localAiAnswer(text, onProgress) {
+    const engine = await getLocalAiEngine(onProgress);
+    const history = localAiHistory.slice(-6);
+    const messages = [
+      { role: 'system', content: localAiSystem },
+      ...history,
+      { role: 'user', content: text }
+    ];
+    const response = await engine.chat.completions.create({
+      messages,
+      temperature: 0.2,
+      top_p: 0.9,
+      max_tokens: 180
+    });
+    const answer = String(response?.choices?.[0]?.message?.content || '').trim();
+    const finalAnswer = answer || 'En saanut muodostettua vastausta. Kokeile uudelleen.';
+    localAiHistory.push({ role: 'user', content: text }, { role: 'assistant', content: finalAnswer });
+    return finalAnswer;
+  }
+
   function assistant() {
     if ($('.fx-assistant-launch')) return;
     document.body.insertAdjacentHTML('beforeend', `
       <button class="fx-assistant-launch" type="button" aria-label="Avaa Respondo Assistant"><i>R</i><span>Respondo Assistant</span><b class="fx-live"></b></button>
       <aside class="fx-assistant" aria-label="Respondo Assistant">
-        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar">R</span><div><b>Respondo Assistant</b><small>valmis vastaamaan</small></div></div><button class="fx-assistant-close" type="button" aria-label="Sulje">×</button></div>
+        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar">R</span><div><b>Respondo Assistant</b><small>${location.pathname === '/assistant' ? 'paikallinen AI · ei API-maksua' : 'valmis vastaamaan'}</small></div></div><button class="fx-assistant-close" type="button" aria-label="Sulje">×</button></div>
         <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">Moi 👋 Olen Respondon sivuassistentti. Kysy miten palvelu toimii tai mitä se maksaa.</div><div class="fx-quick"><button type="button">Mitä Respondo maksaa?</button><button type="button">Miten 3 päivän kokeilu toimii?</button><button type="button">Miten asennus toimii?</button></div></div>
         <form class="fx-assistant-form"><input name="message" autocomplete="off" placeholder="Kirjoita kysymys…" aria-label="Kysymys"><button type="submit" aria-label="Lähetä">→</button></form>
       </aside>`);
@@ -149,15 +206,32 @@
     const open = () => { box.classList.add('open'); setTimeout(() => form.message.focus(), 180); };
     const shut = () => box.classList.remove('open');
     launch.addEventListener('click', () => box.classList.contains('open') ? shut() : open()); close.addEventListener('click', shut);
-    const send = text => {
+    const send = async text => {
       const clean = String(text || '').trim(); if (!clean) return;
       messages.insertAdjacentHTML('beforeend', `<div class="fx-chat-bubble user"></div>`); messages.lastElementChild.textContent = clean;
       messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot typing">•••</div>');
+      const typing = messages.lastElementChild;
       messages.scrollTop = messages.scrollHeight;
-      setTimeout(() => {
-        const typing = messages.querySelector('.typing'); if (typing) { typing.classList.remove('typing'); typing.textContent = assistantAnswer(clean); }
-        messages.scrollTop = messages.scrollHeight;
-      }, 420 + Math.random()*350);
+      try {
+        if (location.pathname === '/assistant') {
+          typing.textContent = localAiEngine ? 'Mietin…' : 'Valmistellaan paikallista AI:ta…';
+          const answer = await localAiAnswer(clean, (pct) => {
+            typing.textContent = 'Ladataan paikallista AI:ta… ' + pct + '%';
+            messages.scrollTop = messages.scrollHeight;
+          });
+          typing.classList.remove('typing');
+          typing.textContent = answer;
+        } else {
+          await new Promise(r => setTimeout(r, 420 + Math.random()*350));
+          typing.classList.remove('typing');
+          typing.textContent = assistantAnswer(clean);
+        }
+      } catch (err) {
+        typing.classList.remove('typing');
+        const fallback = assistantAnswer(clean);
+        typing.textContent = fallback + ' (Paikallinen AI ei käynnistynyt tällä laitteella.)';
+      }
+      messages.scrollTop = messages.scrollHeight;
     };
     form.addEventListener('submit', e => { e.preventDefault(); const text = form.message.value; form.reset(); send(text); });
     $$('.fx-quick button').forEach(b => b.addEventListener('click', () => send(b.textContent)));
