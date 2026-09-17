@@ -10,10 +10,10 @@ const esc = (s) =>
   })[m]);
 
 let cfg = {
-  brand: 'Respondo',
+  brand: 'RESPONDO AI',
   supportEmail: 'respondoai.fi@outlook.com',
   businessId: '3599437-5',
-  sellerName: 'Respondo',
+  sellerName: 'RESPONDO AI',
   trialDays: 3,
   monthlyNet: 49,
   yearlyNet: 549,
@@ -35,9 +35,9 @@ async function config() {
 }
 
 function logo() {
-  return `<a class="logo" href="/" aria-label="Respondo etusivu">
+  return `<a class="logo" href="/" aria-label="RESPONDO AI etusivu">
     <span class="brand-mark" aria-hidden="true"><i></i><b></b></span>
-    <span class="brand-word">Respondo</span>
+    <span class="brand-word">RESPONDO AI</span>
   </a>`;
 }
 
@@ -63,7 +63,7 @@ function nav() {
 function stickyProductNav() {
   return `<div class="product-subnav" aria-label="Sivun osiot">
     <div class="container product-subnav-inner">
-      <span class="subnav-title">Respondo</span>
+      <span class="subnav-title">RESPONDO AI</span>
       <nav>
         <a href="#how">Miten toimii</a>
         <a href="#features">Ominaisuudet</a>
@@ -81,7 +81,7 @@ function premiumVisualSection() {
       <div class="section-kicker">Ominaisuudet</div>
       <div class="split-head">
         <h2>Vähemmän säätöä.<br><em>Enemmän vastauksia.</em></h2>
-        <p>Respondo yhdistää tietopohjan, keskustelut ja jatkuvasti paranevan asiakaspalvelun yhteen näkymään.</p>
+        <p>RESPONDO AI yhdistää tietopohjan, keskustelut ja jatkuvasti paranevan asiakaspalvelun yhteen näkymään.</p>
       </div>
 
       <div class="visual-grid">
@@ -193,7 +193,7 @@ function contactSection() {
         </div>
         <div class="contact-actions">
           <a href="mailto:${esc(cfg.supportEmail)}" class="contact-mail">${esc(cfg.supportEmail)}</a>
-          <p>Respondo · Y-tunnus ${esc(cfg.businessId || '3599437-5')} · Suomi</p>
+          <p>RESPONDO AI · Y-tunnus ${esc(cfg.businessId || '3599437-5')} · Suomi</p>
           <a class="btn ink" href="/tilaus">Kokeile 3 päivää maksutta</a>
         </div>
       </div>
@@ -208,7 +208,7 @@ function footer() {
         <div class="foot-brand">
           ${logo()}
           <p>Asiakaspalvelu, joka tietää vain sen minkä yrityksesi sille opettaa.</p>
-          <div class="seller-chip">Respondo · Y-tunnus ${esc(cfg.businessId || '3599437-5')}</div>
+          <div class="seller-chip">RESPONDO AI · Y-tunnus ${esc(cfg.businessId || '3599437-5')}</div>
         </div>
         <div class="foot-col">
           <h4>Tuote</h4>
@@ -232,7 +232,7 @@ function footer() {
         </div>
       </div>
       <div class="legalbar">
-        <span>© ${new Date().getFullYear()} Respondo</span>
+        <span>© ${new Date().getFullYear()} RESPONDO AI</span>
         <span>Y-tunnus ${esc(cfg.businessId || '3599437-5')} · B2B-ohjelmistopalvelu</span>
       </div>
     </div>
@@ -240,9 +240,9 @@ function footer() {
 }
 
 function heroVisual() {
-  return `<div class="signal-console" aria-label="Respondo käyttöliittymäesimerkki">
+  return `<div class="signal-console" aria-label="RESPONDO AI käyttöliittymäesimerkki">
     <div class="console-top">
-      <div class="console-brand"><span class="pulse"></span> LIVE / RESPONDO</div>
+      <div class="console-brand"><span class="pulse"></span> LIVE / RESPONDO AI</div>
       <div class="console-time">24/7</div>
     </div>
     <div class="console-grid">
@@ -271,7 +271,7 @@ function heroVisual() {
           <div class="answer-card">
             <div class="answer-head">
               <span class="mini-mark">R</span>
-              <b>Respondo</b>
+              <b>RESPONDO AI</b>
               <span class="confidence">Lähde löydetty</span>
             </div>
             <p>Perushuolto alkaa 89 eurosta. Lauantaisin palvelemme klo 10–14.</p>
@@ -283,7 +283,7 @@ function heroVisual() {
           </div>
           <div class="handoff-card">
             <span class="handoff-icon">↳</span>
-            <div><b>Ei riittävästi hyväksyttyä tietoa.</b><small>Respondo ei arvaa. Asiakas ohjataan jatkamaan ihmisen kanssa.</small></div>
+            <div><b>Ei riittävästi hyväksyttyä tietoa.</b><small>RESPONDO AI ei arvaa. Asiakas ohjataan jatkamaan ihmisen kanssa.</small></div>
           </div>
         </div>
         <div class="console-stats">
@@ -301,8 +301,8 @@ function workflow() {
     <div class="container">
       <div class="section-kicker">Tuote</div>
       <div class="split-head">
-        <h2>Opeta kerran.<br><em>Respondo vastaa.</em></h2>
-        <p>Lisää hinnat, palvelut, aukioloajat ja omat vastaukset. Respondo käyttää vain hyväksyttyä tietoa.</p>
+        <h2>Opeta kerran.<br><em>RESPONDO AI vastaa.</em></h2>
+        <p>Lisää hinnat, palvelut, aukioloajat ja omat vastaukset. RESPONDO AI käyttää vain hyväksyttyä tietoa.</p>
       </div>
       <div class="flowline">
         <article class="flowstep">
@@ -320,7 +320,7 @@ function workflow() {
         <article class="flowstep">
           <div class="flow-num">03</div>
           <div class="flow-glyph">↳</div>
-          <h3>Respondo vastaa</h3>
+          <h3>RESPONDO AI vastaa</h3>
           <p>Ja jos varmaa tietoa ei löydy, se ohjaa ihmiselle.</p>
         </article>
       </div>
@@ -417,9 +417,9 @@ async function home() {
         <div class="hero-glow"></div>
         <div class="container hero-grid">
           <div class="hero-copy">
-            <div class="hero-label"><span></span> RESPONDO · AI-ASIAKASPALVELU YRITYKSILLE</div>
+            <div class="hero-label"><span></span> RESPONDO AI · AI-ASIAKASPALVELU YRITYKSILLE</div>
             <h1>Vastaa asiakkaalle. <em>Heti.</em></h1>
-            <p class="lead">Respondo vastaa 24/7 yrityksesi omalla tiedolla. Kun vastausta ei tiedetä, se ei arvaa.</p>
+            <p class="lead">RESPONDO AI vastaa 24/7 yrityksesi omalla tiedolla. Kun vastausta ei tiedetä, se ei arvaa.</p>
             <div class="hero-actions">
               <a class="btn hero-primary" href="/tilaus">Kokeile 3 päivää maksutta</a>
               <a class="text-link" href="#how">Tutustu tuotteeseen <span>↓</span></a>
@@ -445,7 +445,7 @@ async function home() {
         <div class="container">
           <div class="cta-shell">
             <div>
-              <div class="section-kicker light">RESPONDO</div>
+              <div class="section-kicker light">RESPONDO AI</div>
               <h2>Valmis vastaamaan.</h2>
               <p>3 päivää maksutta. Käyttöönotto vie vain hetken.</p>
             </div>
@@ -466,7 +466,7 @@ function signup() {
     <main class="formpage">
       <div class="container checkout-layout">
         <section class="checkout-copy">
-          <div class="section-kicker">ALOITA RESPONDO</div>
+          <div class="section-kicker">ALOITA RESPONDO AI</div>
           <h1>Kokeile ensin.<br><em>Päätä sitten.</em></h1>
           <p>Luo tili ja lisää maksutapa turvallisesti Stripessä. Veloitus alkaa vasta kokeilun jälkeen.</p>
           <div class="checkout-steps">
@@ -476,7 +476,7 @@ function signup() {
           </div>
           <div class="seller-card">
             <span>PALVELUNTARJOAJA</span>
-            <b>${esc(cfg.sellerName || 'Respondo')}</b>
+            <b>${esc(cfg.sellerName || 'RESPONDO AI')}</b>
             <small>Y-tunnus ${esc(cfg.businessId || '3599437-5')} · Suomi</small>
           </div>
         </section>
@@ -500,7 +500,7 @@ function signup() {
             </label>
           </div>
           <button class="btn checkout-button" type="submit">Jatka Stripe Checkoutiin <span>→</span></button>
-          <div class="form-security"><span>◈</span> Maksukorttitiedot käsittelee Stripe. Respondo ei tallenna korttinumeroasi.</div>
+          <div class="form-security"><span>◈</span> Maksukorttitiedot käsittelee Stripe. RESPONDO AI ei tallenna korttinumeroasi.</div>
           <div id="msg"></div>
         </form>
       </div>
@@ -515,7 +515,7 @@ function login() {
     <main class="formpage login-page">
       <div class="container login-layout">
         <section class="login-copy">
-          <div class="section-kicker">RESPONDO CONTROL</div>
+          <div class="section-kicker">RESPONDO AI CONTROL</div>
           <h1>Tervetuloa<br><em>takaisin.</em></h1>
           <p>Hallitse tietopohjaa, asennusta ja tilausta yhdestä paikasta.</p>
           <div class="login-signal"><span></span> Hallintapaneeli suojattu kirjautumisella</div>
@@ -539,8 +539,8 @@ const LEGAL = {
     title: 'Käyttöehdot',
     intro: 'Nämä ehdot koskevat Respondon yritysasiakkaille tarjottavaa ohjelmistopalvelua.',
     sections: [
-      ['1. Palveluntarjoaja', `Respondo, Y-tunnus ${cfg.businessId || '3599437-5'}, Suomi. Yhteydenotot: ${cfg.supportEmail}.`],
-      ['2. Palvelu', 'Respondo on verkkopohjainen B2B-ohjelmistopalvelu, jonka avulla yritys voi ylläpitää hyväksyttyä tietopohjaa ja tarjota verkkosivullaan automatisoituja asiakasvastauksia.'],
+      ['1. Palveluntarjoaja', `RESPONDO AI, Y-tunnus ${cfg.businessId || '3599437-5'}, Suomi. Yhteydenotot: ${cfg.supportEmail}.`],
+      ['2. Palvelu', 'RESPONDO AI on verkkopohjainen B2B-ohjelmistopalvelu, jonka avulla yritys voi ylläpitää hyväksyttyä tietopohjaa ja tarjota verkkosivullaan automatisoituja asiakasvastauksia.'],
       ['3. Kokeilu ja tilaus', `Palveluun sisältyy ${cfg.trialDays || 3} päivän maksuton kokeilu. Maksutapa lisätään kokeilun alussa. Tilaus muuttuu maksulliseksi kokeilun päätyttyä, ellei sitä peruta ennen veloitusta.`],
       ['4. Hinnat ja verot', `Kuukausitilaus on ${cfg.monthlyNet || 49} €/kk + sovellettava arvonlisävero. Vuositilaus on ${cfg.yearlyNet || 549} €/vuosi + sovellettava arvonlisävero.`],
       ['5. Peruminen', 'Tilauksen voi perua. Kun jo maksettu laskutuskausi on alkanut, käyttö jatkuu kauden loppuun, ellei pakottavasta lainsäädännöstä muuta johdu.'],
@@ -551,12 +551,12 @@ const LEGAL = {
   tietosuoja: {
     label: 'LAKIASIAT / 02',
     title: 'Tietosuojaseloste',
-    intro: 'Tässä kuvataan, mitä tietoja Respondo käsittelee palvelun tarjoamiseksi.',
+    intro: 'Tässä kuvataan, mitä tietoja RESPONDO AI käsittelee palvelun tarjoamiseksi.',
     sections: [
-      ['Rekisterinpitäjä', `Respondo, Y-tunnus ${cfg.businessId || '3599437-5'}. Tietosuoja- ja muut yhteydenotot: ${cfg.supportEmail}.`],
+      ['Rekisterinpitäjä', `RESPONDO AI, Y-tunnus ${cfg.businessId || '3599437-5'}. Tietosuoja- ja muut yhteydenotot: ${cfg.supportEmail}.`],
       ['Käsiteltävät tiedot', 'Käyttäjätilin tiedot, yrityksen yhteystiedot, Y-tunnus, laskutukseen liittyvät tunnisteet, palveluun syötetty tietopohja sekä chat-palvelun kautta syntyvät keskustelutiedot.'],
       ['Käyttötarkoitukset', 'Palvelun toteuttaminen, käyttäjän tunnistaminen, tilauksen hallinta, asiakastuki, väärinkäytösten ehkäisy ja palvelun tekninen ylläpito.'],
-      ['Maksut', 'Maksukorttitiedot käsittelee Stripe omien ehtojensa mukaisesti. Respondo ei tallenna varsinaista korttinumeroa omaan tietokantaansa.'],
+      ['Maksut', 'Maksukorttitiedot käsittelee Stripe omien ehtojensa mukaisesti. RESPONDO AI ei tallenna varsinaista korttinumeroa omaan tietokantaansa.'],
       ['Palveluntarjoajat', 'Palvelun teknisessä toteutuksessa käytetään ulkopuolisia infrastruktuuri-, tietokanta-, maksu- ja AI-palveluntarjoajia. Tietoja voidaan käsitellä niiden sopimusehtojen ja sovellettavan tietosuojalainsäädännön mukaisesti.'],
       ['Säilytys', 'Tietoja säilytetään vain niin kauan kuin niitä tarvitaan palvelun toteuttamiseen, sopimusvelvoitteisiin, tietoturvaan tai lakisääteisiin velvoitteisiin.'],
     ],
@@ -566,7 +566,7 @@ const LEGAL = {
 LEGAL['evasteet'] = {
   label: 'LAKIASIAT / 03',
   title: 'Evästeet',
-  intro: 'Respondo käyttää tällä hetkellä vain palvelun toiminnan kannalta välttämättömiä evästeitä.',
+  intro: 'RESPONDO AI käyttää tällä hetkellä vain palvelun toiminnan kannalta välttämättömiä evästeitä.',
   sections: [
     ['Istuntoeväste', 'Kirjautumisen yhteydessä selaimeen asetetaan suojattu istuntoeväste, jolla käyttäjä pidetään kirjautuneena hallintapaneeliin.'],
     ['Markkinointievästeet', 'Respondon markkinointisivulla ei ole oletuksena käytössä ei-välttämättömiä analytiikka- tai mainosevästeitä.'],
@@ -577,10 +577,10 @@ LEGAL['evasteet'] = {
 LEGAL.dpa = {
   label: 'LAKIASIAT / 04',
   title: 'Tietojenkäsittely',
-  intro: 'Kun Respondo käsittelee yritysasiakkaan puolesta henkilötietoja, asiakas toimii lähtökohtaisesti rekisterinpitäjänä ja Respondo käsittelijänä.',
+  intro: 'Kun RESPONDO AI käsittelee yritysasiakkaan puolesta henkilötietoja, asiakas toimii lähtökohtaisesti rekisterinpitäjänä ja RESPONDO AI käsittelijänä.',
   sections: [
     ['Käsittelyn kohde', 'Käsittely liittyy palvelun käyttämiseen, yrityksen tietopohjaan sekä verkkosivun chatissa käsiteltäviin viesteihin.'],
-    ['Ohjeet', 'Respondo käsittelee asiakkaan puolesta tietoja palvelun toteuttamiseksi ja asiakkaan dokumentoitujen ohjeiden mukaisesti.'],
+    ['Ohjeet', 'RESPONDO AI käsittelee asiakkaan puolesta tietoja palvelun toteuttamiseksi ja asiakkaan dokumentoitujen ohjeiden mukaisesti.'],
     ['Luottamuksellisuus ja turvallisuus', 'Pääsy tuotantoympäristöihin ja salaisuuksiin rajataan tarpeen mukaan. Salasanoja ei tallenneta selväkielisinä.'],
     ['Alikäsittelijät', 'Palvelu nojaa infrastruktuuri-, tietokanta-, maksu- ja AI-palveluntarjoajiin.'],
   ],
@@ -601,7 +601,7 @@ LEGAL.tietoturva = {
 
 function legal(type) {
   const page = LEGAL[type] || {
-    label: 'RESPONDO',
+    label: 'RESPONDO AI',
     title: 'Sivua ei löytynyt',
     intro: 'Palaa etusivulle.',
     sections: [],
@@ -614,7 +614,7 @@ function legal(type) {
           <div class="section-kicker">${page.label}</div>
           <h1>${page.title}</h1>
           <p>${page.intro}</p>
-          <div class="legal-seller"><span>PALVELUNTARJOAJA</span><b>Respondo</b><small>Y-tunnus ${esc(cfg.businessId || '3599437-5')}</small></div>
+          <div class="legal-seller"><span>PALVELUNTARJOAJA</span><b>RESPONDO AI</b><small>Y-tunnus ${esc(cfg.businessId || '3599437-5')}</small></div>
         </aside>
         <article class="legalcopy">
           ${page.sections.map(([h, p]) => `<section><h2>${h}</h2><p>${p}</p></section>`).join('')}
@@ -686,7 +686,7 @@ async function dashboard() {
     </aside>
     <main class="appmain">
       <section class="dashboard-head" id="overview">
-        <div><div class="section-kicker">RESPONDO CONTROL</div><h1>${esc(t.name)}</h1><p>Pidä yrityksesi asiakaspalvelutieto yhdessä hallitussa paikassa.</p></div>
+        <div><div class="section-kicker">RESPONDO AI CONTROL</div><h1>${esc(t.name)}</h1><p>Pidä yrityksesi asiakaspalvelutieto yhdessä hallitussa paikassa.</p></div>
         <div class="live-chip"><span></span> Palvelu aktiivinen</div>
       </section>
 
@@ -694,7 +694,7 @@ async function dashboard() {
         <div class="onboarding-top">
           <div>
             <small>KÄYTTÖÖNOTTO</small>
-            <h2>${onboardingDone === onboarding.length ? 'Respondo on valmis.' : 'Viimeistele käyttöönotto.'}</h2>
+            <h2>${onboardingDone === onboarding.length ? 'RESPONDO AI on valmis.' : 'Viimeistele käyttöönotto.'}</h2>
             <p>${onboardingDone}/${onboarding.length} vaihetta valmiina</p>
           </div>
           <div class="onboarding-score">${onboardingPct}%</div>
@@ -722,7 +722,7 @@ async function dashboard() {
           <div>
             <small>YRITYKSEN TIEDOT</small>
             <h2>Opeta Respondolle yrityksesi perusasiat</h2>
-            <p>Täytä nämä kerran. Respondo käyttää niitä asiakkaiden kysymyksiin vastaamiseen.</p>
+            <p>Täytä nämä kerran. RESPONDO AI käyttää niitä asiakkaiden kysymyksiin vastaamiseen.</p>
           </div>
           <span class="install-badge">Perustiedot</span>
         </div>
@@ -784,7 +784,7 @@ async function dashboard() {
           <div class="preview-device">
             <div class="preview-device-top">
               <span class="preview-avatar">R</span>
-              <div><b>Respondo</b><small>valmis vastaamaan</small></div>
+              <div><b>RESPONDO AI</b><small>valmis vastaamaan</small></div>
             </div>
             <div class="preview-chat" id="previewChat">
               <div class="preview-bubble bot">Hei! Miten voin auttaa?</div>
@@ -844,13 +844,13 @@ async function dashboard() {
             <div class="unanswered-empty">
               <span>✓</span>
               <b>Ei vastaamattomia kysymyksiä.</b>
-              <p>Kun Respondo kohtaa kysymyksen, johon tietopohja ei riitä, se ilmestyy tähän.</p>
+              <p>Kun RESPONDO AI kohtaa kysymyksen, johon tietopohja ei riitä, se ilmestyy tähän.</p>
             </div>`}
         </div>
       </section>
 
       <section class="panel install-panel" id="install">
-        <div class="panel-head"><div><small>ASENNUS</small><h2>Lisää Respondo verkkosivulle</h2></div><span class="install-badge">1 rivi</span></div>
+        <div class="panel-head"><div><small>ASENNUS</small><h2>Lisää RESPONDO AI verkkosivulle</h2></div><span class="install-badge">1 rivi</span></div>
         <p>Liitä tämä koodi sivustosi HTML:ään juuri ennen sulkevaa <code>&lt;/body&gt;</code>-tagia.</p>
         <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js" data-company="${esc(t.slug)}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">Kopioi</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? '✓ Merkitty asennetuksi' : 'Merkitse asennetuksi'}</button>
@@ -870,7 +870,7 @@ async function route() {
   let html;
 
   if (path === '/') html = await home();
-  else if (path === '/assistant') html = `<main class="assistant-route-fallback"><div class="container"><div class="section-kicker">RESPONDO / TEST</div><h1>Respondo Assistant</h1><p>Avataan testibotti…</p></div></main>`;
+  else if (path === '/assistant') html = `<main class="assistant-route-fallback"><div class="container"><div class="section-kicker">RESPONDO AI / TEST</div><h1>RESPONDO AI Assistant</h1><p>Avataan testibotti…</p></div></main>`;
   else if (path === '/tilaus') html = signup();
   else if (path === '/kirjaudu') html = login();
   else if (path === '/app') html = await dashboard();
@@ -1061,7 +1061,7 @@ async function route() {
             notes: form.get('notes'),
           }),
         });
-        $('#businessProfileMsg').innerHTML = '<div class="notice success">Yrityksen tiedot tallennettu. Respondo käyttää niitä nyt tietopohjassa.</div>';
+        $('#businessProfileMsg').innerHTML = '<div class="notice success">Yrityksen tiedot tallennettu. RESPONDO AI käyttää niitä nyt tietopohjassa.</div>';
         button.disabled = false;
         button.innerHTML = 'Tallennettu ✓';
         setTimeout(() => (button.innerHTML = original), 1800);
