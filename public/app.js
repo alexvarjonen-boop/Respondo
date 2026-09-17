@@ -563,6 +563,7 @@ function signup() {
 }
 
 function login() {
+  const checkoutError = new URLSearchParams(location.search).get('checkout_error') === '1';
   return `<div>
     ${nav()}
     <main class="formpage login-page">
@@ -578,7 +579,7 @@ function login() {
           <div class="field"><label>Sähköposti</label><input name="email" type="email" autocomplete="email" required placeholder="sinä@yritys.fi"></div>
           <div class="field"><label>Salasana</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
           <button class="btn checkout-button" type="submit">Avaa hallintapaneeli <span>→</span></button>
-          <div id="msg"></div>
+          <div id="msg">${checkoutError ? '<div class="notice error">Automaattinen kirjautuminen ei onnistunut. Kirjaudu samalla sähköpostilla ja salasanalla, jonka loit ennen maksua.</div>' : ''}</div>
         </form>
       </div>
     </main>
@@ -719,6 +720,7 @@ async function dashboard() {
   ];
   const onboardingDone = onboarding.filter((x) => x.done).length;
   const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
+  const isWelcome = new URLSearchParams(location.search).get('welcome') === '1';
 
   return `<div class="appshell">
     <aside class="appside">
@@ -742,6 +744,17 @@ async function dashboard() {
         <div><div class="section-kicker">RESPONDO AI CONTROL</div><h1>${esc(t.name)}</h1><p>Pidä yrityksesi asiakaspalvelutieto yhdessä hallitussa paikassa.</p></div>
         <div class="live-chip"><span></span> Palvelu aktiivinen</div>
       </section>
+
+      ${isWelcome ? `
+      <section class="welcome-card" id="welcomeCard">
+        <div class="welcome-mark">R</div>
+        <div class="welcome-copy">
+          <small>TILAUS AKTIIVINEN</small>
+          <h2>Tervetuloa RESPONDO AI:hin.</h2>
+          <p>Tilisi on valmis. Lisää ensin yrityksesi tiedot, testaa vastaukset ja asenna botti verkkosivullesi.</p>
+        </div>
+        <button type="button" class="btn welcome-start" id="welcomeStart">Aloita käyttöönotto <span>→</span></button>
+      </section>` : ''}
 
       <section class="onboarding-card" id="onboarding">
         <div class="onboarding-top">
@@ -774,7 +787,7 @@ async function dashboard() {
         <div class="panel-head business-profile-head">
           <div>
             <small>YRITYKSEN TIEDOT</small>
-            <h2>Opeta Respondolle yrityksesi perusasiat</h2>
+            <h2>Opeta RESPONDO AI:lle yrityksesi perusasiat</h2>
             <p>Täytä nämä kerran. RESPONDO AI käyttää niitä asiakkaiden kysymyksiin vastaamiseen.</p>
           </div>
           <span class="install-badge">Perustiedot</span>
@@ -1022,6 +1035,13 @@ async function route() {
   }
 
   if (path === '/app') {
+    $('#welcomeStart')?.addEventListener('click', () => {
+      document.getElementById('business-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      history.replaceState({}, '', '/app');
+      $('#welcomeCard')?.classList.add('welcome-dismissed');
+      setTimeout(() => $('#welcomeCard')?.remove(), 320);
+    });
+
     $('.onboarding-step').forEach((button) => {
       button.addEventListener('click', () => {
         const id = button.dataset.scrollTarget;
@@ -1097,7 +1117,7 @@ async function route() {
       e.currentTarget.textContent = '✓ Merkitty asennetuksi';
     });
 
-    $('.add-unanswered-answer').forEach((button) => {
+    $$('.add-unanswered-answer').forEach((button) => {
       button.addEventListener('click', async () => {
         const item = button.closest('.unanswered-item');
         const answer = item?.querySelector('.unanswered-answer')?.value?.trim();
