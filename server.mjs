@@ -331,6 +331,61 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
   }
 });
 
+app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const t = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    if (!t.rowCount) return res.status(404).json({ error: 'Työtilaa ei löytynyt.' });
+    const tenantId = t.rows[0].id;
+
+    const fields = [
+      ['Hinnat', req.body.pricing, ['hinta','hinnasto','maksaa','alv']],
+      ['Aukioloajat', req.body.hours, ['auki','aukiolo','aukioloajat','milloin']],
+      ['Puhelinnumero', req.body.phone, ['puhelin','numero','soittaa','yhteystiedot']],
+      ['Sähköposti', req.body.email, ['sähköposti','email','yhteystiedot']],
+      ['Palvelut', req.body.services, ['palvelu','palvelut','teette','tarjoatte']],
+      ['Toimialue', req.body.serviceArea, ['toimialue','alue','missä','paikkakunta']],
+      ['Osoite', req.body.address, ['osoite','sijainti','missä']],
+      ['Verkkosivu', req.body.website, ['verkkosivu','www','nettisivu']],
+      ['Lisätiedot', req.body.notes, ['lisätieto','muuta','huomio']]
+    ];
+
+    await client.query('BEGIN');
+    await client.query(
+      "DELETE FROM knowledge WHERE tenant_id=$1 AND category='Yrityksen perustiedot'",
+      [tenantId]
+    );
+
+    for (const [title, value, keywords] of fields) {
+      const answer = String(value || '').trim();
+      if (!answer) continue;
+      await client.query(
+        'INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords) VALUES($1,$2,$3,$4,$5,$6)',
+        [uid(), tenantId, 'Yrityksen perustiedot', title, answer, keywords]
+      );
+    }
+
+    await client.query(
+      'UPDATE tenants SET contact_phone=$1, contact_email=$2, website=$3, updated_at=NOW() WHERE id=$4',
+      [
+        String(req.body.phone || '').trim() || null,
+        String(req.body.email || '').trim() || null,
+        String(req.body.website || '').trim() || null,
+        tenantId
+      ]
+    );
+
+    await client.query('COMMIT');
+    return res.json({ ok: true });
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch {}
+    console.error('Business profile save failed', e);
+    return res.status(500).json({ error: 'Yrityksen tietojen tallennus epäonnistui.' });
+  } finally {
+    client.release();
+  }
+});
+
 app.post('/api/app/knowledge', auth, subscribed, async (req, res) => {
   try {
     const t = await q('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
