@@ -533,3 +533,114 @@ body.assistant-standalone{
     opacity:1!important;
   }
 }
+
+
+/* =========================================================
+   PREMIUM LEFT SECTION RAIL
+   ========================================================= */
+.section-rail-premium{
+  position:fixed;
+  left:18px;
+  top:50%;
+  z-index:88;
+  width:120px;
+  transform:translateY(-50%);
+  pointer-events:none;
+}
+.section-rail-line{
+  position:absolute;
+  left:8px;
+  top:8px;
+  bottom:8px;
+  width:1px;
+  background:rgba(29,29,31,.14);
+  overflow:hidden;
+}
+.section-rail-line i{
+  position:absolute;
+  inset:0;
+  background:#1d1d1f;
+  transform:scaleY(0);
+  transform-origin:top;
+  transition:transform .08s linear;
+}
+.section-rail-items{
+  position:relative;
+  display:grid;
+  gap:24px;
+}
+.section-rail-items a{
+  pointer-events:auto;
+  display:grid;
+  grid-template-columns:17px 22px auto;
+  align-items:center;
+  gap:7px;
+  min-height:18px;
+  color:#a1a1a6;
+  text-decoration:none;
+}
+.rail-dot{
+  position:relative;
+  z-index:2;
+  display:block;
+  width:7px;
+  height:7px;
+  margin-left:5px;
+  border-radius:50%;
+  background:#c9c9cd;
+  box-shadow:0 0 0 4px rgba(255,255,255,.9);
+  transition:.25s ease;
+}
+.section-rail-items b{
+  font-size:8px;
+  letter-spacing:.08em;
+  font-weight:750;
+  color:#9a9a9f;
+  transition:.25s ease;
+}
+.section-rail-items em{
+  opacity:0;
+  transform:translateX(-4px);
+  white-space:nowrap;
+  font-size:9px;
+  font-style:normal;
+  font-weight:620;
+  color:#55555a;
+  transition:.25s ease;
+}
+.section-rail-items a:hover em,
+.section-rail-items a.active em{
+  opacity:1;
+  transform:none;
+}
+.section-rail-items a.active .rail-dot{
+  width:10px;
+  height:10px;
+  margin-left:3px;
+  background:#1d1d1f;
+}
+.section-rail-items a.active b{color:#1d1d1f}
+
+@media(max-width:1180px){
+  .section-rail-premium{left:8px;width:42px}
+  .section-rail-items em{display:none}
+}
+@media(max-width:760px){
+  .section-rail-premium{
+    left:5px;
+    width:22px;
+    opacity:.75;
+  }
+  .section-rail-items{
+    gap:20px;
+  }
+  .section-rail-items a{
+    grid-template-columns:17px;
+    gap:0;
+  }
+  .section-rail-items b,
+  .section-rail-items em{
+    display:none;
+  }
+  .section-rail-line{left:8px}
+}
