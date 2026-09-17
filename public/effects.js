@@ -163,6 +163,26 @@
     $$('.fx-quick button').forEach(b => b.addEventListener('click', () => send(b.textContent)));
   }
 
+
+  function standaloneAssistant() {
+    document.body.classList.add('assistant-standalone');
+    const app = $('#app');
+    if (app) {
+      app.innerHTML = `
+        <main class="assistant-direct-shell">
+          <a class="assistant-direct-brand" href="/" aria-label="Respondo etusivu"><span>R</span><b>Respondo</b></a>
+          <div class="assistant-direct-copy">
+            <small>OWNER / TEST CHAT</small>
+            <h1>Respondo Assistant</h1>
+            <p>Testaa bottia suoraan ilman omaa maksullista tilausta.</p>
+          </div>
+        </main>`;
+    }
+    assistant();
+    const box = $('.fx-assistant');
+    if (box) box.classList.add('open', 'standalone');
+  }
+
   function ctaPopup() {
     if ($('.fx-modal-backdrop') || sessionStorage.getItem('respondoCtaSeen')) return;
     document.body.insertAdjacentHTML('beforeend', `<div class="fx-modal-backdrop" role="dialog" aria-modal="true" aria-label="Respondo kokeilu"><div class="fx-modal"><button class="fx-modal-close" aria-label="Sulje">×</button><div class="fx-modal-kicker">RESPONDO / 3 PÄIVÄÄ</div><h3>Katso miltä 24/7-asiakaspalvelu näyttää omassa yrityksessäsi.</h3><p>Luo tili, lisää yrityksesi hyväksytty tieto ja testaa palvelua 3 päivää maksutta.</p><div class="fx-modal-actions"><a class="btn ink" href="/tilaus">Aloita maksutta →</a><button class="btn ghost fx-modal-later" type="button">Katson myöhemmin</button></div></div></div>`);
@@ -181,6 +201,10 @@
 
   function init() {
     injectBase();
+    if (location.pathname === '/assistant') {
+      standaloneAssistant();
+      return;
+    }
     if (location.pathname === '/') {
       marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); assistant(); ctaPopup();
     } else {
