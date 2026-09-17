@@ -633,6 +633,56 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
     });
   }
 
+  function leftSectionRail() {
+    if (location.pathname !== '/' || $('.section-rail-premium')) return;
+    const sections = [
+      { id:'how', label:'Miten toimii' },
+      { id:'features', label:'Ominaisuudet' },
+      { id:'pricing', label:'Hinnat' },
+      { id:'contact', label:'Yhteystiedot' },
+    ].filter(x => document.getElementById(x.id));
+    if (!sections.length) return;
+
+    document.body.insertAdjacentHTML('beforeend', `
+      <nav class="section-rail-premium" aria-label="Sivun eteneminen">
+        <div class="section-rail-line"><i></i></div>
+        <div class="section-rail-items">
+          ${sections.map((s,i)=>`
+            <a href="#${s.id}" data-rail-section="${s.id}">
+              <span class="rail-dot"></span>
+              <b>${String(i+1).padStart(2,'0')}</b>
+              <em>${s.label}</em>
+            </a>`).join('')}
+        </div>
+      </nav>`);
+
+    const rail = $('.section-rail-premium');
+    const fill = $('.section-rail-line i', rail);
+    const links = $('[data-rail-section]', rail);
+
+    const update = () => {
+      const max = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+      const p = Math.max(0, Math.min(1, scrollY / max));
+      if (fill) fill.style.transform = 'scaleY(' + p + ')';
+
+      let active = sections[0].id;
+      const marker = innerHeight * .38;
+      sections.forEach((s) => {
+        const el = document.getElementById(s.id);
+        if (el && el.getBoundingClientRect().top <= marker) active = s.id;
+      });
+      links.forEach(a => a.classList.toggle('active', a.dataset.railSection === active));
+    };
+
+    links.forEach(a => a.addEventListener('click', () => {
+      links.forEach(x => x.classList.remove('active'));
+      a.classList.add('active');
+    }));
+    addEventListener('scroll', update, {passive:true});
+    addEventListener('resize', update, {passive:true});
+    update();
+  }
+
   function premiumProductEffects() {
     const subnavLinks = $('.product-subnav a[href^="#"]');
     const sections = ['how','features','pricing','contact']
@@ -724,7 +774,7 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
       return;
     }
     if (location.pathname === '/') {
-      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); assistant(); ctaPopup();
+      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup();
     } else {
       revealTargets(); magneticButtons(); assistant();
     }
