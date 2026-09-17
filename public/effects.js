@@ -12,7 +12,7 @@
   function marquee() {
     const hero = $('.hero');
     if (!hero || $('.respondo-marquee')) return;
-    const words = ['24/7 ASIAKASPALVELU','HYVÄKSYTTY TIETO','EI ARVAILUA','3 PÄIVÄÄ MAKSUTTA','SUOMALAINEN B2B','RESPONDO'];
+    const words = ['24/7 ASIAKASPALVELU','HYVÄKSYTTY TIETO','EI ARVAILUA','3 PÄIVÄÄ MAKSUTTA','SUOMALAINEN B2B','RESPONDO AI'];
     const row = [...words, ...words].map(x => `<span>${x}</span>`).join('');
     hero.insertAdjacentHTML('afterend', `<div class="respondo-marquee" aria-hidden="true"><div class="marquee-track">${row}</div></div>`);
   }
@@ -119,11 +119,11 @@
   }
 
   const faq = [
-    {keys:['hinta','maksaa','49','vuosi','kuukausi'], answer:'Respondo maksaa 49 € / kk + alv tai 549 € / vuosi + alv. Molemmissa on 3 päivän maksuton kokeilu.'},
+    {keys:['hinta','maksaa','49','vuosi','kuukausi'], answer:'RESPONDO AI maksaa 49 € / kk + alv tai 549 € / vuosi + alv. Molemmissa on 3 päivän maksuton kokeilu.'},
     {keys:['kokeilu','ilmainen','3 päiv'], answer:'Saat 3 päivää maksutta. Maksutapa lisätään alussa Stripessä, ja veloitus alkaa vasta kokeilun jälkeen, ellet peru tilausta ennen sitä.'},
-    {keys:['miten toimii','toimii','tietopohja','tieto'], answer:'Lisäät yrityksesi hyväksytyt tiedot tietopohjaan. Respondo vastaa asiakkaalle niiden perusteella ja ohjaa epävarmat tilanteet ihmiselle sen sijaan, että arvaisi.'},
+    {keys:['miten toimii','toimii','tietopohja','tieto'], answer:'Lisäät yrityksesi hyväksytyt tiedot tietopohjaan. RESPONDO AI vastaa asiakkaalle niiden perusteella ja ohjaa epävarmat tilanteet ihmiselle sen sijaan, että arvaisi.'},
     {keys:['asennus','sivulle','verkkosivu','widget'], answer:'Kun tili on käytössä, saat hallintapaneelista yhden asennusrivin, jolla chat-widget lisätään verkkosivulle.'},
-    {keys:['tietoturva','gdpr','turvallinen','data'], answer:'Respondo käyttää HTTPS-yhteyksiä, salattuja palveluntarjoajia ja rajattuja käyttöoikeuksia. Maksukorttitiedot käsittelee Stripe. Lisätiedot löydät Tietoturva- ja Tietosuojasivuista.'},
+    {keys:['tietoturva','gdpr','turvallinen','data'], answer:'RESPONDO AI käyttää HTTPS-yhteyksiä, salattuja palveluntarjoajia ja rajattuja käyttöoikeuksia. Maksukorttitiedot käsittelee Stripe. Lisätiedot löydät Tietoturva- ja Tietosuojasivuista.'},
     {keys:['peru','irtisano','lopeta'], answer:'Tilauksen voi perua koska tahansa. Käyttö jatkuu maksetun laskutuskauden loppuun.'},
     {keys:['y-tunnus','ytunnus','yritys'], answer:'Respondon Y-tunnus on 3599437-5. Yhteyssähköposti on respondoai.fi@outlook.com.'}
   ];
@@ -132,7 +132,7 @@
     const q = text.toLowerCase();
     const hit = faq.find(item => item.keys.some(k => q.includes(k)));
     if (hit) return hit.answer;
-    if (q.includes('hei') || q.includes('moi')) return 'Moi! Kysy vaikka hinnasta, kokeilusta, käyttöönotosta, tietoturvasta tai siitä miten Respondo toimii.';
+    if (q.includes('hei') || q.includes('moi')) return 'Moi! Kysy vaikka hinnasta, kokeilusta, käyttöönotosta, tietoturvasta tai siitä miten RESPONDO AI toimii.';
     return 'En halua keksiä vastausta. Voin auttaa Respondon hinnassa, kokeilussa, käyttöönotossa, tietoturvassa ja tilauksessa — tai voit ottaa yhteyttä osoitteeseen respondoai.fi@outlook.com.';
   }
 
@@ -185,7 +185,7 @@
       ...normalizedCustomFacts(p).map(x => `${x.key}: ${x.answer}`),
     ].filter(Boolean).join('\n');
 
-    return `Olet yrityksen verkkosivulla toimiva Respondo-asiakaspalveluassistentti. Vastaa suomeksi selkeästi ja lyhyesti.
+    return `Olet yrityksen verkkosivulla toimiva RESPONDO AI-asiakaspalveluassistentti. Vastaa suomeksi selkeästi ja lyhyesti.
 Käytä VAIN alla olevia yrityksen omistajan syöttämiä hyväksyttyjä tietoja, kun vastaat yritystä koskeviin kysymyksiin. Älä keksi hintaa, aukioloa, palvelua, yhteystietoa tai muuta faktaa.
 Jos tietoa ei ole annettu, sano suoraan ettet tiedä varmasti ja ohjaa ottamaan yhteyttä yritykseen.
 
@@ -392,10 +392,10 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
   function assistant() {
     if ($('.fx-assistant-launch')) return;
     document.body.insertAdjacentHTML('beforeend', `
-      <button class="fx-assistant-launch" type="button" aria-label="Avaa Respondo Assistant"><i>R</i><span>Respondo Assistant</span><b class="fx-live"></b></button>
-      <aside class="fx-assistant" aria-label="Respondo Assistant">
-        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar">R</span><div><b>Respondo Assistant</b><small>${location.pathname === '/assistant' ? 'paikallinen AI · ei API-maksua' : 'valmis vastaamaan'}</small></div></div><button class="fx-assistant-close" type="button" aria-label="Sulje">×</button></div>
-        <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">${location.pathname === '/assistant' ? 'Moi 👋 Testaa nyt yrityksen omilla tiedoilla. Kysy esimerkiksi hinnasta, aukioloajoista, palveluista tai omista lisäämistäsi kysymyksistä.' : 'Moi 👋 Olen Respondon sivuassistentti. Kysy miten palvelu toimii tai mitä se maksaa.'}</div><div class="fx-quick"><button type="button">Mitä Respondo maksaa?</button><button type="button">Miten 3 päivän kokeilu toimii?</button><button type="button">Miten asennus toimii?</button></div></div>
+      <button class="fx-assistant-launch" type="button" aria-label="Avaa RESPONDO AI Assistant"><i>R</i><span>RESPONDO AI Assistant</span><b class="fx-live"></b></button>
+      <aside class="fx-assistant" aria-label="RESPONDO AI Assistant">
+        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar">R</span><div><b>RESPONDO AI Assistant</b><small>${location.pathname === '/assistant' ? 'paikallinen AI · ei API-maksua' : 'valmis vastaamaan'}</small></div></div><button class="fx-assistant-close" type="button" aria-label="Sulje">×</button></div>
+        <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">${location.pathname === '/assistant' ? 'Moi 👋 Testaa nyt yrityksen omilla tiedoilla. Kysy esimerkiksi hinnasta, aukioloajoista, palveluista tai omista lisäämistäsi kysymyksistä.' : 'Moi 👋 Olen Respondon sivuassistentti. Kysy miten palvelu toimii tai mitä se maksaa.'}</div><div class="fx-quick"><button type="button">Mitä RESPONDO AI maksaa?</button><button type="button">Miten 3 päivän kokeilu toimii?</button><button type="button">Miten asennus toimii?</button></div></div>
         <form class="fx-assistant-form"><input name="message" autocomplete="off" placeholder="Kirjoita kysymys…" aria-label="Kysymys"><button type="submit" aria-label="Lähetä">→</button></form>
       </aside>`);
     const launch = $('.fx-assistant-launch'), box = $('.fx-assistant'), close = $('.fx-assistant-close'), messages = $('.fx-assistant-messages'), form = $('.fx-assistant-form');
@@ -449,7 +449,7 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
     if (app) {
       app.innerHTML = `
         <main class="assistant-direct-shell">
-          <a class="assistant-direct-brand" href="/" aria-label="Respondo etusivu"><span>R</span><b>Respondo</b></a>
+          <a class="assistant-direct-brand" href="/" aria-label="RESPONDO AI etusivu"><span>R</span><b>RESPONDO AI</b></a>
           <section class="assistant-owner-panel">
             <div class="assistant-direct-copy">
               <small>ILMAINEN OMISTAJA / TESTI</small>
@@ -753,7 +753,7 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
 
   function ctaPopup() {
     if ($('.fx-modal-backdrop') || sessionStorage.getItem('respondoCtaSeen')) return;
-    document.body.insertAdjacentHTML('beforeend', `<div class="fx-modal-backdrop" role="dialog" aria-modal="true" aria-label="Respondo kokeilu"><div class="fx-modal"><button class="fx-modal-close" aria-label="Sulje">×</button><div class="fx-modal-kicker">RESPONDO / 3 PÄIVÄÄ</div><h3>Katso miltä 24/7-asiakaspalvelu näyttää omassa yrityksessäsi.</h3><p>Luo tili, lisää yrityksesi hyväksytty tieto ja testaa palvelua 3 päivää maksutta.</p><div class="fx-modal-actions"><a class="btn ink" href="/tilaus">Aloita maksutta →</a><button class="btn ghost fx-modal-later" type="button">Katson myöhemmin</button></div></div></div>`);
+    document.body.insertAdjacentHTML('beforeend', `<div class="fx-modal-backdrop" role="dialog" aria-modal="true" aria-label="RESPONDO AI kokeilu"><div class="fx-modal"><button class="fx-modal-close" aria-label="Sulje">×</button><div class="fx-modal-kicker">RESPONDO AI / 3 PÄIVÄÄ</div><h3>Katso miltä 24/7-asiakaspalvelu näyttää omassa yrityksessäsi.</h3><p>Luo tili, lisää yrityksesi hyväksytty tieto ja testaa palvelua 3 päivää maksutta.</p><div class="fx-modal-actions"><a class="btn ink" href="/tilaus">Aloita maksutta →</a><button class="btn ghost fx-modal-later" type="button">Katson myöhemmin</button></div></div></div>`);
     const bg = $('.fx-modal-backdrop');
     const close = () => { bg.classList.remove('open'); sessionStorage.setItem('respondoCtaSeen','1'); };
     $('.fx-modal-close').addEventListener('click', close); $('.fx-modal-later').addEventListener('click', close); bg.addEventListener('click', e => { if (e.target === bg) close(); });
