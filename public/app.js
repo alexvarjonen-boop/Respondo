@@ -11,7 +11,7 @@ const esc = (s) =>
 
 let cfg = {
   brand: 'Respondo',
-  supportEmail: 'alexvarjonen@gmail.com',
+  supportEmail: 'respondoai.fi@outlook.com',
   businessId: '3599437-5',
   sellerName: 'Respondo',
   trialDays: 3,
