@@ -315,11 +315,20 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
          FROM conversations WHERE tenant_id=$1`,
       [tenant.id],
     );
+    const unanswered = await q(
+      `SELECT id, question, answer, intent, confidence, created_at
+         FROM conversations
+        WHERE tenant_id=$1 AND handoff=true
+        ORDER BY created_at DESC
+        LIMIT 20`,
+      [tenant.id],
+    );
     const a = s.rows[0];
     const total = a.total || 0;
     return res.json({
       tenant,
       knowledge: k.rows,
+      unanswered: unanswered.rows,
       stats: {
         conversations: total,
         answeredRate: total ? Math.round((a.answered * 100) / total) : 0,
