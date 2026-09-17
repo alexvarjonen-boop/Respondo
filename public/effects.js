@@ -228,6 +228,109 @@ YLEINEN TOIMINTAOHJE:
   }
 
 
+  function normalizeText(s) {
+    return String(s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9åäö€+\s-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function tokens(s) {
+    return normalizeText(s).split(' ').filter(w => w.length > 2);
+  }
+
+  function retrieveOwnerFacts(text) {
+    const p = getOwnerProfile();
+    const q = normalizeText(text);
+    const qTokens = new Set(tokens(q));
+    const results = [];
+
+    const add = (label, value, score = 1) => {
+      const clean = String(value || '').trim();
+      if (clean) results.push({ label, value: clean, score });
+    };
+
+    const hasAny = (arr) => arr.some(x => q.includes(normalizeText(x)));
+
+    if (hasAny(['hinta','maksaa','hinnoittelu','paljonko','€'])) add('Hinnat', p.pricing, 8);
+    if (hasAny(['auki','aukiolo','milloin','kello','lauantai','sunnuntai','arkisin'])) add('Aukioloajat', p.hours, 8);
+    if (hasAny(['puhelin','numero','soittaa','yhteys'])) add('Puhelinnumero', p.phone, 8);
+    if (hasAny(['sähköposti','email','meili'])) add('Sähköposti', p.email, 8);
+    if (hasAny(['palvelu','teette','tarjoatte','saako','onnistuuko'])) add('Palvelut', servicesText(p.services), 7);
+    if (hasAny(['toimialue','alue','missä päin','paikkakunta','tuletteko'])) add('Toimialue', p.serviceArea, 7);
+    if (hasAny(['osoite','sijainti','missä olette','missä sijaitsee'])) add('Osoite', p.address, 7);
+    if (hasAny(['verkkosivu','nettisivu','www','sivut'])) add('Verkkosivu', p.website, 6);
+
+    const serviceText = servicesText(p.services);
+    if (serviceText) {
+      for (const svc of Array.isArray(p.services) ? p.services : serviceText.split(',')) {
+        const n = normalizeText(svc);
+        if (n && (q.includes(n) || tokens(n).some(t => qTokens.has(t)))) {
+          add('Palvelut', serviceText, 10);
+          break;
+        }
+      }
+    }
+
+    for (const x of normalizedCustomFacts(p)) {
+      const title = normalizeText(x.key);
+      const titleTokens = tokens(title);
+      let score = 0;
+      if (title && q.includes(title)) score += 12;
+      for (const t of titleTokens) if (qTokens.has(t)) score += 3;
+      if (score > 0) add(x.key, x.answer, score);
+    }
+
+    if (p.notes && hasAny(['muuta','lisätieto','tärkeä','päivystys','maksutapa','takuu','ajanvaraus'])) {
+      add('Lisätiedot', p.notes, 5);
+    }
+
+    const seen = new Set();
+    return results
+      .sort((a,b) => b.score - a.score)
+      .filter(x => {
+        const key = x.label + '|' + x.value;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 4);
+  }
+
+  function isBadModelOutput(text) {
+    const s = String(text || '').trim();
+    if (!s || s.length < 2) return true;
+    const lower = s.toLowerCase();
+    const badPhrases = [
+      'the code snippet is incorrect',
+      'as an ai language model',
+      'i cannot comply',
+      'system prompt',
+      'developer message'
+    ];
+    if (badPhrases.some(p => lower.includes(p))) return true;
+    const sentences = s.split(/[.!?\n]+/).map(x => x.trim()).filter(Boolean);
+    if (sentences.length >= 4) {
+      const counts = {};
+      for (const sentence of sentences) {
+        const k = sentence.toLowerCase();
+        counts[k] = (counts[k] || 0) + 1;
+        if (counts[k] >= 3) return true;
+      }
+    }
+    if (s.length > 900) return true;
+    return false;
+  }
+
+  function directFactAnswer(facts) {
+    if (!facts.length) return '';
+    if (facts.length === 1) return facts[0].value;
+    return facts.map(x => `${x.label}: ${x.value}`).join('\n');
+  }
+
   async function getLocalAiEngine(onProgress) {
     if (localAiEngine) return localAiEngine;
     if (!navigator.gpu) throw new Error('Tämä selain ei tue WebGPU:ta.');
@@ -251,23 +354,39 @@ YLEINEN TOIMINTAOHJE:
   }
 
   async function localAiAnswer(text, onProgress) {
-    const engine = await getLocalAiEngine(onProgress);
-    const history = localAiHistory.slice(-6);
-    const messages = [
-      { role: 'system', content: localAiSystem() },
-      ...history,
-      { role: 'user', content: text }
-    ];
+    const facts = retrieveOwnerFacts(text);
+    if (!facts.length) {
+      return 'En löydä tähän vastausta yrityksen tallennetuista tiedoista. Lisää vastaus tietopohjaan tai ota yhteyttä yritykseen.';
+    }
+
+    const direct = directFactAnswer(facts);
+    let engine;
+    try {
+      engine = await getLocalAiEngine(onProgress);
+    } catch {
+      return direct;
+    }
+
+    const groundedSystem = `Olet yrityksen verkkosivun asiakaspalvelija. Vastaa suomeksi lyhyesti ja luonnollisesti.
+Käytä VAIN alla olevia HAKUTULOKSIA. Älä lisää mitään muuta tietoa. Jos hakutulos jo vastaa kysymykseen, muotoile se korkeintaan 1–3 lauseeksi.
+HAKUTULOKSET:
+${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
+
     const response = await engine.chat.completions.create({
-      messages,
-      temperature: 0.2,
-      top_p: 0.9,
-      max_tokens: 180
+      messages: [
+        { role: 'system', content: groundedSystem },
+        { role: 'user', content: text }
+      ],
+      temperature: 0,
+      top_p: 0.8,
+      max_tokens: 100
     });
+
     const answer = String(response?.choices?.[0]?.message?.content || '').trim();
-    const finalAnswer = answer || 'En saanut muodostettua vastausta. Kokeile uudelleen.';
-    localAiHistory.push({ role: 'user', content: text }, { role: 'assistant', content: finalAnswer });
-    return finalAnswer;
+    if (isBadModelOutput(answer)) return direct;
+
+    localAiHistory.push({ role: 'user', content: text }, { role: 'assistant', content: answer });
+    return answer;
   }
 
   function assistant() {
@@ -276,7 +395,7 @@ YLEINEN TOIMINTAOHJE:
       <button class="fx-assistant-launch" type="button" aria-label="Avaa Respondo Assistant"><i>R</i><span>Respondo Assistant</span><b class="fx-live"></b></button>
       <aside class="fx-assistant" aria-label="Respondo Assistant">
         <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar">R</span><div><b>Respondo Assistant</b><small>${location.pathname === '/assistant' ? 'paikallinen AI · ei API-maksua' : 'valmis vastaamaan'}</small></div></div><button class="fx-assistant-close" type="button" aria-label="Sulje">×</button></div>
-        <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">Moi 👋 Olen Respondon sivuassistentti. Kysy miten palvelu toimii tai mitä se maksaa.</div><div class="fx-quick"><button type="button">Mitä Respondo maksaa?</button><button type="button">Miten 3 päivän kokeilu toimii?</button><button type="button">Miten asennus toimii?</button></div></div>
+        <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">${location.pathname === '/assistant' ? 'Moi 👋 Testaa nyt yrityksen omilla tiedoilla. Kysy esimerkiksi hinnasta, aukioloajoista, palveluista tai omista lisäämistäsi kysymyksistä.' : 'Moi 👋 Olen Respondon sivuassistentti. Kysy miten palvelu toimii tai mitä se maksaa.'}</div><div class="fx-quick"><button type="button">Mitä Respondo maksaa?</button><button type="button">Miten 3 päivän kokeilu toimii?</button><button type="button">Miten asennus toimii?</button></div></div>
         <form class="fx-assistant-form"><input name="message" autocomplete="off" placeholder="Kirjoita kysymys…" aria-label="Kysymys"><button type="submit" aria-label="Lähetä">→</button></form>
       </aside>`);
     const launch = $('.fx-assistant-launch'), box = $('.fx-assistant'), close = $('.fx-assistant-close'), messages = $('.fx-assistant-messages'), form = $('.fx-assistant-form');
@@ -291,9 +410,9 @@ YLEINEN TOIMINTAOHJE:
       messages.scrollTop = messages.scrollHeight;
       try {
         if (location.pathname === '/assistant') {
-          typing.textContent = localAiEngine ? 'Mietin…' : 'Valmistellaan paikallista AI:ta…';
+          typing.textContent = localAiEngine ? 'Mietin…' : 'Haetaan yrityksen tiedoista…';
           const answer = await localAiAnswer(clean, (pct) => {
-            typing.textContent = 'Ladataan paikallista AI:ta… ' + pct + '%';
+            if (pct >= 100) typing.textContent = 'Muotoillaan vastausta…';
             messages.scrollTop = messages.scrollHeight;
           });
           typing.classList.remove('typing');
