@@ -506,6 +506,21 @@ async function dashboard() {
       .map((x) => [x.title, x.answer])
   );
   const profileValue = (title) => esc(businessProfile[title] || '');
+  const unanswered = data.unanswered || [];
+  const nonProfileKnowledge = knowledge.filter((x) => x.category !== 'Yrityksen perustiedot');
+  const installedKey = `respondo-installed-${t.id}`;
+  const installedDone = localStorage.getItem(installedKey) === '1';
+  const profileDone = ['Hinnat','Aukioloajat','Palvelut'].filter((k) => businessProfile[k]).length >= 2;
+  const answersDone = nonProfileKnowledge.length > 0;
+  const testedDone = s.conversations > 0;
+  const onboarding = [
+    { label: 'Täytä yrityksen tiedot', done: profileDone, target: 'business-profile' },
+    { label: 'Lisää vähintään yksi oma vastaus', done: answersDone, target: 'knowledge' },
+    { label: 'Asenna botti verkkosivulle', done: installedDone, target: 'install' },
+    { label: 'Testaa ensimmäinen keskustelu', done: testedDone, target: 'live-preview' },
+  ];
+  const onboardingDone = onboarding.filter((x) => x.done).length;
+  const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
 
   return `<div class="appshell">
     <aside class="appside">
@@ -515,6 +530,7 @@ async function dashboard() {
         <a href="#overview" class="active"><span>⌂</span> Yleiskatsaus</a>
         <a href="#business-profile"><span>✦</span> Yrityksen tiedot</a>
         <a href="#knowledge"><span>≡</span> Tietopohja <em>${knowledge.length}</em></a>
+        <a href="#unanswered"><span>?</span> Vastaamattomat <em>${unanswered.length}</em></a>
         <a href="#install"><span>&lt;/&gt;</span> Asennus</a>
         <a href="#billing"><span>€</span> Laskutus</a>
       </nav>
@@ -529,13 +545,34 @@ async function dashboard() {
         <div class="live-chip"><span></span> Palvelu aktiivinen</div>
       </section>
 
+      <section class="onboarding-card" id="onboarding">
+        <div class="onboarding-top">
+          <div>
+            <small>KÄYTTÖÖNOTTO</small>
+            <h2>${onboardingDone === onboarding.length ? 'Respondo on valmis.' : 'Viimeistele käyttöönotto.'}</h2>
+            <p>${onboardingDone}/${onboarding.length} vaihetta valmiina</p>
+          </div>
+          <div class="onboarding-score">${onboardingPct}%</div>
+        </div>
+        <div class="onboarding-progress"><i style="width:${onboardingPct}%"></i></div>
+        <div class="onboarding-steps">
+          ${onboarding.map((step, i) => `
+            <button type="button" class="onboarding-step ${step.done ? 'done' : ''}" data-scroll-target="${step.target}">
+              <span>${step.done ? '✓' : String(i + 1).padStart(2,'0')}</span>
+              <b>${step.label}</b>
+              <em>→</em>
+            </button>`).join('')}
+        </div>
+      </section>
+
       <section class="stats">
         <article class="stat"><small>KESKUSTELUT</small><b>${s.conversations}</b><span>yhteensä</span></article>
         <article class="stat"><small>VASTATTU</small><b>${s.answeredRate}%</b><span>ilman jatko-ohjetta</span></article>
         <article class="stat"><small>JATKO-OHJE</small><b>${s.handoffRate}%</b><span>epävarmoissa tilanteissa</span></article>
       </section>
 
-      <section class="panel business-profile-panel" id="business-profile">
+      <section class="profile-live-grid" id="business-profile">
+        <div class="panel business-profile-panel">
         <div class="panel-head business-profile-head">
           <div>
             <small>YRITYKSEN TIEDOT</small>
@@ -592,6 +629,28 @@ async function dashboard() {
           </div>
           <div id="businessProfileMsg"></div>
         </form>
+        </div>
+
+        <aside class="panel live-preview-panel" id="live-preview">
+          <div class="panel-head">
+            <div><small>LIVE-ESIKATSELU</small><h2>Näe vastaus heti</h2></div>
+            <span class="preview-live"><i></i> Live</span>
+          </div>
+          <div class="preview-device">
+            <div class="preview-device-top">
+              <span class="preview-avatar">R</span>
+              <div><b>Respondo</b><small>valmis vastaamaan</small></div>
+            </div>
+            <div class="preview-chat" id="previewChat">
+              <div class="preview-bubble bot">Hei! Miten voin auttaa?</div>
+            </div>
+            <form class="preview-form" id="previewForm">
+              <input name="question" autocomplete="off" placeholder="Kysy esim. “Paljonko maksaa?”">
+              <button type="submit">→</button>
+            </form>
+          </div>
+          <p class="preview-note">Esikatselu käyttää juuri nyt lomakkeessa olevia tietoja ja tallennettua tietopohjaa.</p>
+        </aside>
       </section>
 
       <section class="dashboard-grid" id="knowledge">
@@ -613,10 +672,43 @@ async function dashboard() {
         </form>
       </section>
 
+      <section class="panel unanswered-panel" id="unanswered">
+        <div class="panel-head unanswered-head">
+          <div>
+            <small>VASTAAMATTOMAT</small>
+            <h2>Kysymykset, joihin tieto ei riittänyt</h2>
+            <p>Lisää vastaus suoraan tästä. Se tallentuu tietopohjaan seuraavia asiakkaita varten.</p>
+          </div>
+          <span>${unanswered.length}</span>
+        </div>
+        <div class="unanswered-list">
+          ${unanswered.length ? unanswered.map((x, i) => `
+            <article class="unanswered-item" data-question="${esc(x.question)}">
+              <div class="unanswered-meta">
+                <span>${String(i + 1).padStart(2,'0')}</span>
+                <small>${new Date(x.created_at).toLocaleString('fi-FI', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small>
+              </div>
+              <h3>${esc(x.question)}</h3>
+              <textarea class="unanswered-answer" placeholder="Kirjoita hyväksytty vastaus tähän…"></textarea>
+              <div class="unanswered-actions">
+                <span>Kun tallennat, tästä tulee uusi tietopohjan vastaus.</span>
+                <button type="button" class="btn dashboard-action add-unanswered-answer">Lisää vastaus <span>→</span></button>
+              </div>
+              <div class="unanswered-msg"></div>
+            </article>`).join('') : `
+            <div class="unanswered-empty">
+              <span>✓</span>
+              <b>Ei vastaamattomia kysymyksiä.</b>
+              <p>Kun Respondo kohtaa kysymyksen, johon tietopohja ei riitä, se ilmestyy tähän.</p>
+            </div>`}
+        </div>
+      </section>
+
       <section class="panel install-panel" id="install">
         <div class="panel-head"><div><small>ASENNUS</small><h2>Lisää Respondo verkkosivulle</h2></div><span class="install-badge">1 rivi</span></div>
         <p>Liitä tämä koodi sivustosi HTML:ään juuri ennen sulkevaa <code>&lt;/body&gt;</code>-tagia.</p>
         <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js" data-company="${esc(t.slug)}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">Kopioi</button></div>
+        <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone">${installedDone ? '✓ Merkitty asennetuksi' : 'Merkitse asennetuksi'}</button>
       </section>
 
       <section class="panel billing-panel" id="billing">
