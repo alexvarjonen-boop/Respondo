@@ -354,38 +354,23 @@ YLEINEN TOIMINTAOHJE:
   }
 
   async function localAiAnswer(text, onProgress) {
-    const facts = retrieveOwnerFacts(text);
-    if (!facts.length) {
-      return 'En löydä tähän vastausta yrityksen tallennetuista tiedoista. Lisää vastaus tietopohjaan tai ota yhteyttä yritykseen.';
-    }
-
-    const direct = directFactAnswer(facts);
-    let engine;
-    try {
-      engine = await getLocalAiEngine(onProgress);
-    } catch {
-      return direct;
-    }
-
-    const groundedSystem = `Olet yrityksen verkkosivun asiakaspalvelija. Vastaa suomeksi lyhyesti ja luonnollisesti.
-Käytä VAIN alla olevia HAKUTULOKSIA. Älä lisää mitään muuta tietoa. Jos hakutulos jo vastaa kysymykseen, muotoile se korkeintaan 1–3 lauseeksi.
-HAKUTULOKSET:
-${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
-
-    const response = await engine.chat.completions.create({
-      messages: [
-        { role: 'system', content: groundedSystem },
-        { role: 'user', content: text }
-      ],
-      temperature: 0,
-      top_p: 0.8,
-      max_tokens: 100
+    const profile = getOwnerProfile();
+    if (onProgress) onProgress(25, 'Haetaan yrityksen tiedoista…');
+    const response = await fetch('/api/public/demo-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        profile,
+        history: localAiHistory.slice(-6),
+      }),
     });
-
-    const answer = String(response?.choices?.[0]?.message?.content || '').trim();
-    if (isBadModelOutput(answer)) return direct;
-
-    localAiHistory.push({ role: 'user', content: text }, { role: 'assistant', content: answer });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Demon vastaaminen epäonnistui.');
+    if (onProgress) onProgress(100, 'Muotoillaan vastausta…');
+    const answer = String(data.answer || '').trim() || 'En löydä tähän vielä varmaa vastausta.';
+    localAiHistory.push({ question: text, answer });
+    if (localAiHistory.length > 12) localAiHistory.splice(0, localAiHistory.length - 12);
     return answer;
   }
 
@@ -394,7 +379,7 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
     document.body.insertAdjacentHTML('beforeend', `
       <button class="fx-assistant-launch" type="button" aria-label="Avaa RESPONDO AI Assistant"><i>R</i><span>RESPONDO AI Assistant</span><b class="fx-live"></b></button>
       <aside class="fx-assistant" aria-label="RESPONDO AI Assistant">
-        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar">R</span><div><b>RESPONDO AI Assistant</b><small>${location.pathname === '/assistant' ? 'paikallinen AI · ei API-maksua' : 'valmis vastaamaan'}</small></div></div><button class="fx-assistant-close" type="button" aria-label="Sulje">×</button></div>
+        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar">R</span><div><b>RESPONDO AI Assistant</b><small>${location.pathname === '/assistant' ? 'sama vastausmoottori kuin oikeassa botissa' : 'valmis vastaamaan'}</small></div></div><button class="fx-assistant-close" type="button" aria-label="Sulje">×</button></div>
         <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">${location.pathname === '/assistant' ? 'Moi 👋 Testaa nyt yrityksen omilla tiedoilla. Kysy esimerkiksi hinnasta, aukioloajoista, palveluista tai omista lisäämistäsi kysymyksistä.' : 'Moi 👋 Olen Respondon sivuassistentti. Kysy miten palvelu toimii tai mitä se maksaa.'}</div><div class="fx-quick"><button type="button">Mitä RESPONDO AI maksaa?</button><button type="button">Miten 3 päivän kokeilu toimii?</button><button type="button">Miten asennus toimii?</button></div></div>
         <form class="fx-assistant-form"><input name="message" autocomplete="off" placeholder="Kirjoita kysymys…" aria-label="Kysymys"><button type="submit" aria-label="Lähetä">→</button></form>
       </aside>`);
@@ -410,7 +395,7 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
       messages.scrollTop = messages.scrollHeight;
       try {
         if (location.pathname === '/assistant') {
-          typing.textContent = localAiEngine ? 'Mietin…' : 'Haetaan yrityksen tiedoista…';
+          typing.textContent = 'Haetaan hyväksytyistä tiedoista…';
           const answer = await localAiAnswer(clean, (pct) => {
             if (pct >= 100) typing.textContent = 'Muotoillaan vastausta…';
             messages.scrollTop = messages.scrollHeight;
@@ -488,6 +473,17 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
               <div class="owner-two">
                 <div class="owner-field"><label>Osoite</label><input name="address" value="${val(p.address)}" placeholder="Katu 1, Tampere"></div>
                 <div class="owner-field"><label>Verkkosivu</label><input name="website" value="${val(p.website)}" placeholder="https://yritys.fi"></div>
+              </div>
+
+              <div class="owner-two">
+                <div class="owner-field"><label>Tarjouspyyntölinkki</label><input name="quoteRequestUrl" value="${val(p.quoteRequestUrl)}" placeholder="https://yritys.fi/tarjouspyynto"></div>
+                <div class="owner-field"><label>Vastaustyyli</label>
+                  <select name="tone">
+                    <option value="Luonteva ja ystävällinen" ${String(p.tone || '').includes('Luonteva') ? 'selected' : ''}>Luonteva ja ystävällinen</option>
+                    <option value="Lyhyt ja suora" ${String(p.tone || '').includes('Lyhyt') ? 'selected' : ''}>Lyhyt ja suora</option>
+                    <option value="Asiallinen ja ammattimainen" ${String(p.tone || '').includes('Asiallinen') ? 'selected' : ''}>Asiallinen ja ammattimainen</option>
+                  </select>
+                </div>
               </div>
 
               <div class="custom-facts-block">
@@ -616,6 +612,8 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
         serviceArea: f.get('serviceArea'),
         address: f.get('address'),
         website: f.get('website'),
+        quoteRequestUrl: f.get('quoteRequestUrl'),
+        tone: f.get('tone') || 'Luonteva ja ystävällinen',
         notes: f.get('notes'),
         customFacts: facts,
       });
@@ -627,7 +625,7 @@ ${facts.map(x => '- ' + x.label + ': ' + x.value).join('\n')}`;
       }
       const messages = $('.fx-assistant-messages');
       if (messages) {
-        messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot owner-confirm">Tietopohja päivitetty. Voit nyt testata palveluita ja omia hakusanoja suoraan chatissa.</div>');
+        messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot owner-confirm">Tiedot päivitetty. Testaa nyt kysymällä kuten oikea asiakkaasi kysyisi.</div>');
         messages.scrollTop = messages.scrollHeight;
       }
     });
