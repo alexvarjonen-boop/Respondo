@@ -517,12 +517,20 @@ YLEINEN TOIMINTAOHJE:
               <div class="assistant-order-trust"><span>✓ Maksut turvallisesti Stripessä</span><span>✓ Ei veloitusta 3 päivän kokeilun aikana</span><span>✓ Pääset alkuun heti tilauksen jälkeen</span></div>
             </section>
           </section>
+          <div class="assistant-demo-column" id="assistantDemoColumn" aria-label="Testibotti ja tilaus"></div>
         </main>`;
     }
 
     assistant();
     const box = $('.fx-assistant');
     if (box) box.classList.add('open', 'standalone');
+
+    const demoColumn = $('#assistantDemoColumn');
+    const orderSection = $('.assistant-order');
+    if (demoColumn && box) {
+      demoColumn.appendChild(box);
+      if (orderSection) demoColumn.appendChild(orderSection);
+    }
 
     const selected = new Set(selectedServices);
 
