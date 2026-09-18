@@ -89,6 +89,232 @@ async function subscribed(req, res, next) {
   }
 }
 
+
+const OAUTH_PROFILE_COOKIE = 'respondo_oauth_profile';
+const OAUTH_STATE_COOKIE = 'respondo_oauth_state';
+
+const b64url = (input) =>
+  Buffer.from(input)
+    .toString('base64')
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+
+const decodeJwtPart = (part) =>
+  JSON.parse(Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
+
+function oauthConfig(provider) {
+  if (provider === 'google') {
+    return {
+      configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      redirectUri: BASE + '/api/auth/oauth/google/callback',
+    };
+  }
+  if (provider === 'apple') {
+    return {
+      configured: Boolean(
+        process.env.APPLE_CLIENT_ID &&
+          process.env.APPLE_TEAM_ID &&
+          process.env.APPLE_KEY_ID &&
+          process.env.APPLE_PRIVATE_KEY
+      ),
+      clientId: process.env.APPLE_CLIENT_ID,
+      teamId: process.env.APPLE_TEAM_ID,
+      keyId: process.env.APPLE_KEY_ID,
+      privateKey: String(process.env.APPLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+      redirectUri: BASE + '/api/auth/oauth/apple/callback',
+    };
+  }
+  return { configured: false };
+}
+
+function setOauthState(res, nonce) {
+  res.cookie(OAUTH_STATE_COOKIE, nonce, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 10 * 60 * 1000,
+  });
+}
+
+function setOauthProfile(res, profile) {
+  res.cookie(
+    OAUTH_PROFILE_COOKIE,
+    jwt.sign(profile, JWT, { expiresIn: '15m' }),
+    {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000,
+    }
+  );
+}
+
+function getOauthProfile(req) {
+  try {
+    const token = cookies(req)[OAUTH_PROFILE_COOKIE];
+    if (!token) return null;
+    return jwt.verify(token, JWT);
+  } catch {
+    return null;
+  }
+}
+
+function appleClientSecret(cfg) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = b64url(JSON.stringify({ alg: 'ES256', kid: cfg.keyId, typ: 'JWT' }));
+  const payload = b64url(JSON.stringify({
+    iss: cfg.teamId,
+    iat: now,
+    exp: now + 60 * 60 * 24 * 30,
+    aud: 'https://appleid.apple.com',
+    sub: cfg.clientId,
+  }));
+  const input = header + '.' + payload;
+  const key = crypto.createPrivateKey(cfg.privateKey);
+  const signature = crypto.sign('sha256', Buffer.from(input), { key, dsaEncoding: 'ieee-p1363' });
+  return input + '.' + b64url(signature);
+}
+
+async function verifyAppleIdToken(idToken, expectedAudience) {
+  const parts = String(idToken || '').split('.');
+  if (parts.length !== 3) throw new Error('Invalid Apple ID token');
+  const header = decodeJwtPart(parts[0]);
+  const payload = decodeJwtPart(parts[1]);
+  if (header.alg !== 'RS256' || !header.kid) throw new Error('Unexpected Apple token algorithm');
+
+  const keysResponse = await fetch('https://appleid.apple.com/auth/keys');
+  if (!keysResponse.ok) throw new Error('Apple keys unavailable');
+  const keyData = await keysResponse.json();
+  const jwk = (keyData.keys || []).find((k) => k.kid === header.kid);
+  if (!jwk) throw new Error('Apple signing key missing');
+
+  const publicKey = crypto.createPublicKey({ key: jwk, format: 'jwk' });
+  const signature = Buffer.from(parts[2].replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+  const valid = crypto.verify(
+    'RSA-SHA256',
+    Buffer.from(parts[0] + '.' + parts[1]),
+    publicKey,
+    signature
+  );
+  const now = Math.floor(Date.now() / 1000);
+  if (
+    !valid ||
+    payload.iss !== 'https://appleid.apple.com' ||
+    payload.aud !== expectedAudience ||
+    Number(payload.exp || 0) < now
+  ) {
+    throw new Error('Apple token verification failed');
+  }
+  return payload;
+}
+
+async function finishOauth(req, res, provider, code, state, appleUser = null) {
+  const cfg = oauthConfig(provider);
+  if (!cfg.configured) {
+    return res.redirect('/kirjaudu?oauth_error=not_configured&provider=' + encodeURIComponent(provider));
+  }
+
+  let statePayload;
+  try {
+    statePayload = jwt.verify(String(state || ''), JWT);
+  } catch {
+    return res.redirect('/kirjaudu?oauth_error=state&provider=' + encodeURIComponent(provider));
+  }
+
+  const stateCookie = cookies(req)[OAUTH_STATE_COOKIE];
+  if (!stateCookie || statePayload.nonce !== stateCookie || statePayload.provider !== provider) {
+    return res.redirect('/kirjaudu?oauth_error=state&provider=' + encodeURIComponent(provider));
+  }
+  res.clearCookie(OAUTH_STATE_COOKIE);
+
+  try {
+    let profile;
+
+    if (provider === 'google') {
+      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: cfg.clientId,
+          client_secret: cfg.clientSecret,
+          redirect_uri: cfg.redirectUri,
+          grant_type: 'authorization_code',
+        }),
+      });
+      if (!tokenResponse.ok) throw new Error('Google token exchange failed');
+      const token = await tokenResponse.json();
+
+      const userResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+        headers: { Authorization: 'Bearer ' + token.access_token },
+      });
+      if (!userResponse.ok) throw new Error('Google userinfo failed');
+      const user = await userResponse.json();
+      if (!user.email || user.email_verified === false) throw new Error('Google email not verified');
+
+      profile = {
+        provider: 'google',
+        sub: user.sub,
+        email: cleanEmail(user.email),
+        name: String(user.name || ''),
+      };
+    } else {
+      const tokenResponse = await fetch('https://appleid.apple.com/auth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: cfg.clientId,
+          client_secret: appleClientSecret(cfg),
+          code,
+          grant_type: 'authorization_code',
+          redirect_uri: cfg.redirectUri,
+        }),
+      });
+      if (!tokenResponse.ok) throw new Error('Apple token exchange failed');
+      const token = await tokenResponse.json();
+      const claims = await verifyAppleIdToken(token.id_token, cfg.clientId);
+
+      let suppliedName = '';
+      try {
+        const parsed = appleUser ? JSON.parse(appleUser) : null;
+        suppliedName = [parsed?.name?.firstName, parsed?.name?.lastName].filter(Boolean).join(' ');
+      } catch {}
+
+      profile = {
+        provider: 'apple',
+        sub: claims.sub,
+        email: cleanEmail(claims.email),
+        name: suppliedName,
+      };
+      if (!profile.email) throw new Error('Apple email missing');
+    }
+
+    if (statePayload.flow === 'login') {
+      const found = await q('SELECT * FROM users WHERE lower(email)=lower($1)', [profile.email]);
+      if (!found.rowCount) {
+        return res.redirect('/kirjaudu?oauth_error=no_account&provider=' + encodeURIComponent(provider));
+      }
+      if (found.rows[0].status === 'pending') {
+        return res.redirect('/kirjaudu?oauth_error=pending&provider=' + encodeURIComponent(provider));
+      }
+      setSession(res, found.rows[0]);
+      return res.redirect('/app');
+    }
+
+    setOauthProfile(res, profile);
+    return res.redirect('/tilaus?oauth=' + encodeURIComponent(provider));
+  } catch (e) {
+    console.error(provider + ' OAuth failed', e);
+    return res.redirect(
+      '/' + (statePayload.flow === 'signup' ? 'tilaus' : 'kirjaudu') +
+      '?oauth_error=failed&provider=' + encodeURIComponent(provider)
+    );
+  }
+}
+
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) return res.status(503).send('Stripe not configured');
 
@@ -154,6 +380,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: false }));
 app.use(rateLimit({ windowMs: 60000, limit: 180, standardHeaders: true, legacyHeaders: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -176,6 +403,74 @@ app.get('/api/health', async (req, res) => {
   res.status(health.ok ? 200 : 503).json(health);
 });
 
+
+app.get('/api/auth/oauth/:provider/start', (req, res) => {
+  const provider = String(req.params.provider || '').toLowerCase();
+  const flow = req.query.flow === 'login' ? 'login' : 'signup';
+  if (!['google', 'apple'].includes(provider)) return res.status(404).end();
+
+  const cfg = oauthConfig(provider);
+  if (!cfg.configured) {
+    return res.redirect(
+      '/' + (flow === 'signup' ? 'tilaus' : 'kirjaudu') +
+      '?oauth_error=not_configured&provider=' + encodeURIComponent(provider)
+    );
+  }
+
+  const nonce = crypto.randomBytes(20).toString('hex');
+  const state = jwt.sign({ provider, flow, nonce }, JWT, { expiresIn: '10m' });
+  setOauthState(res, nonce);
+
+  if (provider === 'google') {
+    const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    url.search = new URLSearchParams({
+      client_id: cfg.clientId,
+      redirect_uri: cfg.redirectUri,
+      response_type: 'code',
+      scope: 'openid email profile',
+      state,
+      prompt: 'select_account',
+      include_granted_scopes: 'true',
+    }).toString();
+    return res.redirect(url.toString());
+  }
+
+  const url = new URL('https://appleid.apple.com/auth/authorize');
+  url.search = new URLSearchParams({
+    client_id: cfg.clientId,
+    redirect_uri: cfg.redirectUri,
+    response_type: 'code',
+    response_mode: 'form_post',
+    scope: 'name email',
+    state,
+  }).toString();
+  return res.redirect(url.toString());
+});
+
+app.get('/api/auth/oauth/google/callback', async (req, res) => {
+  const code = String(req.query.code || '');
+  const state = String(req.query.state || '');
+  if (!code) return res.redirect('/kirjaudu?oauth_error=failed&provider=google');
+  return finishOauth(req, res, 'google', code, state);
+});
+
+app.post('/api/auth/oauth/apple/callback', async (req, res) => {
+  const code = String(req.body.code || '');
+  const state = String(req.body.state || '');
+  if (!code) return res.redirect('/kirjaudu?oauth_error=failed&provider=apple');
+  return finishOauth(req, res, 'apple', code, state, req.body.user || null);
+});
+
+app.get('/api/auth/oauth-profile', (req, res) => {
+  const profile = getOauthProfile(req);
+  if (!profile) return res.status(404).json({ error: 'OAuth-profiilia ei löytynyt.' });
+  return res.json({
+    provider: profile.provider,
+    email: profile.email,
+    name: profile.name || '',
+  });
+});
+
 app.get('/api/public/config', (req, res) =>
   res.json({
     brand: 'RESPONDO AI',
@@ -192,9 +487,13 @@ app.post('/api/auth/start-checkout', async (req, res) => {
 
   const { fullName, companyName, businessId, password, plan, acceptedTerms } = req.body;
   const email = cleanEmail(req.body.email);
-  if (!acceptedTerms || !email || !companyName || !password || password.length < 10) {
+  const oauthProfile = getOauthProfile(req);
+  const socialSignup = Boolean(oauthProfile && cleanEmail(oauthProfile.email) === email && ['google','apple'].includes(oauthProfile.provider));
+  if (!acceptedTerms || !email || !companyName || (!socialSignup && (!password || password.length < 10))) {
     return res.status(400).json({
-      error: 'Täytä kaikki pakolliset tiedot. Salasanan on oltava vähintään 10 merkkiä.',
+      error: socialSignup
+        ? 'Täytä kaikki pakolliset tiedot.'
+        : 'Täytä kaikki pakolliset tiedot. Salasanan on oltava vähintään 10 merkkiä.',
     });
   }
 
@@ -216,7 +515,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
     }
 
     const id = uid();
-    const hash = await bcrypt.hash(password, 12);
+    const hash = await bcrypt.hash(socialSignup ? crypto.randomBytes(32).toString('hex') : password, 12);
     const client = await pool.connect();
     let session;
 
