@@ -1335,7 +1335,7 @@ async function route() {
       e.currentTarget.textContent = '✓ Merkitty asennetuksi';
     });
 
-    $$$('.add-unanswered-answer').forEach((button) => {
+    $('.add-unanswered-answer').forEach((button) => {
       button.addEventListener('click', async () => {
         const item = button.closest('.unanswered-item');
         const answer = item?.querySelector('.unanswered-answer')?.value?.trim();
