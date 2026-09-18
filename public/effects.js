@@ -760,6 +760,208 @@ YLEINEN TOIMINTAOHJE:
     cards.forEach(card => imageObserver.observe(card));
   }
 
+
+  function deepScrollExperience() {
+    if (document.documentElement.dataset.deepScrollReady === '1') return;
+    document.documentElement.dataset.deepScrollReady = '1';
+
+    const route = location.pathname;
+    const home = route === '/';
+    const assistantPage = route === '/assistant';
+
+    const sceneCandidates = home
+      ? $('main > section, main > .section, .visual-card, .flowstep, .proof-grid > div, .price-card')
+      : assistantPage
+        ? $('.assistant-direct-copy, .owner-profile-form, .assistant-order, .assistant-order-card')
+        : $('main > section, main > div, .formcard, .checkout-copy, .login-copy, .panel, .legal-card');
+
+    const scenes = [...new Set(sceneCandidates)].filter((el) => {
+      if (!el || el.classList.contains('fx-assistant') || el.closest('.fx-assistant')) return false;
+      return el.getBoundingClientRect || el.nodeType === 1;
+    });
+
+    const modes = ['rise','slide-left','zoom','slide-right','tilt','wipe','float'];
+    scenes.forEach((el, i) => {
+      if (!el.dataset.fxScene) {
+        el.dataset.fxScene = modes[i % modes.length];
+        el.dataset.fxSceneIndex = String(i + 1).padStart(2,'0');
+        el.classList.add('fx-scene');
+      }
+    });
+
+    const headings = $('main h1, main h2, main h3, .assistant-direct-copy h1, .assistant-order h2')
+      .filter(el => !el.closest('.fx-assistant') && !el.dataset.fxHeadline);
+    headings.forEach((el, i) => {
+      el.dataset.fxHeadline = String(i % 4);
+      el.classList.add('fx-headline');
+    });
+
+    const depthCards = $(
+      '.visual-card,.flowstep,.truth-card,.price-card,.research-card,.stat-card,.panel,.formcard,.assistant-order-card,.owner-profile-form'
+    ).filter(el => !el.closest('.fx-assistant'));
+    depthCards.forEach((el, i) => {
+      el.classList.add('fx-depth-card');
+      el.style.setProperty('--fx-card-index', i % 7);
+    });
+
+    if (reduce) {
+      scenes.forEach(el => el.classList.add('fx-scene-live'));
+      headings.forEach(el => el.classList.add('fx-headline-live'));
+      return;
+    }
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        entry.target.classList.toggle('fx-scene-live', entry.isIntersecting);
+        if (entry.isIntersecting) entry.target.classList.add('fx-scene-seen');
+      });
+    }, {threshold:[0,.08,.22,.45,.7], rootMargin:'10% 0px 10% 0px'});
+    scenes.forEach(el => io.observe(el));
+
+    const hi = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('fx-headline-live');
+          hi.unobserve(entry.target);
+        }
+      });
+    }, {threshold:.42, rootMargin:'0px 0px -6% 0px'});
+    headings.forEach(el => hi.observe(el));
+
+    let lastY = scrollY;
+    let lastT = performance.now();
+    let raf = 0;
+
+    const update = () => {
+      raf = 0;
+      const now = performance.now();
+      const dy = scrollY - lastY;
+      const dt = Math.max(16, now - lastT);
+      const velocity = Math.max(-1, Math.min(1, (dy / dt) * .9));
+      const dir = dy === 0 ? 0 : dy > 0 ? 1 : -1;
+      lastY = scrollY;
+      lastT = now;
+
+      const maxScroll = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+      const pageP = Math.max(0, Math.min(1, scrollY / maxScroll));
+      document.documentElement.style.setProperty('--fx-page', pageP.toFixed(4));
+      document.documentElement.style.setProperty('--fx-velocity', velocity.toFixed(4));
+      document.documentElement.style.setProperty('--fx-direction', String(dir));
+
+      const vh = Math.max(innerHeight, 1);
+      scenes.forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < -vh * .7 || r.top > vh * 1.7) return;
+
+        const center = r.top + r.height * .5;
+        const normalized = (center - vh * .5) / Math.max(vh, r.height);
+        const p = Math.max(-1, Math.min(1, normalized));
+        const enter = Math.max(0, Math.min(1, 1 - Math.abs((r.top + Math.min(r.height, vh) * .35 - vh * .58) / (vh * .88))));
+        const twist = p * (i % 2 ? -1 : 1);
+
+        el.style.setProperty('--fx-local', p.toFixed(4));
+        el.style.setProperty('--fx-enter', enter.toFixed(4));
+        el.style.setProperty('--fx-shift-y', (p * 34).toFixed(2) + 'px');
+        el.style.setProperty('--fx-shift-x', (twist * 28).toFixed(2) + 'px');
+        el.style.setProperty('--fx-rot', (twist * 2.1).toFixed(2) + 'deg');
+        el.style.setProperty('--fx-scale', (1 - Math.min(.035, Math.abs(p) * .022)).toFixed(4));
+      });
+
+      const hero = $('.hero');
+      if (hero) {
+        const r = hero.getBoundingClientRect();
+        const hp = Math.max(0, Math.min(1, -r.top / Math.max(1, r.height)));
+        hero.style.setProperty('--hero-progress', hp.toFixed(4));
+      }
+
+      const order = $('.assistant-order');
+      if (order) {
+        const r = order.getBoundingClientRect();
+        const op = Math.max(0, Math.min(1, 1 - (r.top - innerHeight * .15) / innerHeight));
+        order.style.setProperty('--order-progress', op.toFixed(4));
+      }
+    };
+
+    const requestUpdate = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    addEventListener('scroll', requestUpdate, {passive:true});
+    addEventListener('resize', requestUpdate, {passive:true});
+    update();
+
+    if (!matchMedia('(pointer: coarse)').matches) {
+      depthCards.forEach(card => {
+        card.addEventListener('pointermove', (e) => {
+          const r = card.getBoundingClientRect();
+          if (!r.width || !r.height) return;
+          const x = (e.clientX - r.left) / r.width - .5;
+          const y = (e.clientY - r.top) / r.height - .5;
+          card.style.setProperty('--fx-pointer-x', (x * 9).toFixed(2) + 'deg');
+          card.style.setProperty('--fx-pointer-y', (-y * 8).toFixed(2) + 'deg');
+          card.style.setProperty('--fx-light-x', ((x + .5) * 100).toFixed(1) + '%');
+          card.style.setProperty('--fx-light-y', ((y + .5) * 100).toFixed(1) + '%');
+        });
+        card.addEventListener('pointerleave', () => {
+          card.style.setProperty('--fx-pointer-x','0deg');
+          card.style.setProperty('--fx-pointer-y','0deg');
+          card.style.setProperty('--fx-light-x','50%');
+          card.style.setProperty('--fx-light-y','50%');
+        });
+      });
+    }
+  }
+
+  function cinematicSectionAtmosphere() {
+    if (reduce || location.pathname !== '/') return;
+    const sections = $('main > section').filter(Boolean);
+    if (!sections.length) return;
+
+    sections.forEach((section, i) => {
+      section.dataset.fxAtmosphere = String(i % 6);
+      if (!section.querySelector(':scope > .fx-scene-number')) {
+        section.insertAdjacentHTML('afterbegin', '<span class="fx-scene-number" aria-hidden="true">' + String(i + 1).padStart(2,'0') + '</span>');
+      }
+    });
+
+    let active = -1;
+    const io = new IntersectionObserver(entries => {
+      const visible = entries
+        .filter(x => x.isIntersecting)
+        .sort((a,b) => b.intersectionRatio - a.intersectionRatio);
+      if (!visible.length) return;
+      const idx = sections.indexOf(visible[0].target);
+      if (idx >= 0 && idx !== active) {
+        active = idx;
+        document.documentElement.dataset.fxAtmosphere = String(idx % 6);
+      }
+    }, {threshold:[.2,.35,.55], rootMargin:'-12% 0px -28% 0px'});
+    sections.forEach(s => io.observe(s));
+  }
+
+  function kineticNavigation() {
+    if (reduce || document.body.dataset.fxNavReady === '1') return;
+    document.body.dataset.fxNavReady = '1';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'fx-route-wipe';
+    overlay.setAttribute('aria-hidden','true');
+    overlay.innerHTML = '<i></i><b></b>';
+    document.body.appendChild(overlay);
+
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href]');
+      if (!a || a.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const raw = a.getAttribute('href') || '';
+      if (!raw || raw.startsWith('#') || raw.startsWith('mailto:') || raw.startsWith('tel:') || raw.startsWith('javascript:')) return;
+      let url;
+      try { url = new URL(a.href, location.href); } catch { return; }
+      if (url.origin !== location.origin || url.pathname === location.pathname && url.hash) return;
+      e.preventDefault();
+      overlay.classList.add('go');
+      setTimeout(() => { location.href = url.href; }, 260);
+    });
+  }
+
   function ctaPopup() {
     if ($('.fx-modal-backdrop') || sessionStorage.getItem('respondoCtaSeen')) return;
     document.body.insertAdjacentHTML('beforeend', `<div class="fx-modal-backdrop" role="dialog" aria-modal="true" aria-label="RESPONDO AI kokeilu"><div class="fx-modal"><button class="fx-modal-close" aria-label="Sulje">×</button><div class="fx-modal-kicker">RESPONDO AI / 3 PÄIVÄÄ</div><h3>Katso miltä 24/7-asiakaspalvelu näyttää omassa yrityksessäsi.</h3><p>Luo tili, lisää yrityksesi hyväksytty tieto ja testaa palvelua 3 päivää maksutta.</p><div class="fx-modal-actions"><a class="btn ink" href="/tilaus">Aloita maksutta →</a><button class="btn ghost fx-modal-later" type="button">Katson myöhemmin</button></div></div></div>`);
@@ -778,14 +980,16 @@ YLEINEN TOIMINTAOHJE:
 
   function init() {
     injectBase();
+    kineticNavigation();
     if (location.pathname === '/assistant') {
       standaloneAssistant();
+      deepScrollExperience();
       return;
     }
     if (location.pathname === '/') {
-      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup();
+      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup(); cinematicSectionAtmosphere(); deepScrollExperience();
     } else {
-      revealTargets(); magneticButtons(); assistant();
+      revealTargets(); magneticButtons(); assistant(); deepScrollExperience();
     }
   }
 
