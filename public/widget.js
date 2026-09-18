@@ -6,7 +6,7 @@
   const serviceOrigin = new URL(script.src).origin;
   const side = script.dataset.side === 'left' ? 'left' : 'right';
   const fallbackAccent = script.dataset.accent || '#111113';
-  const widgetLang = String(script.dataset.lang || document.documentElement.lang || 'fi').toLowerCase().startsWith('en') ? 'en' : 'fi';
+  const widgetLang = 'fi';
   const t = (fi, en) => widgetLang === 'en' ? en : fi;
 
   const root = document.createElement('div');
@@ -28,7 +28,7 @@
       .panel{width:min(410px,calc(100vw - 24px));height:min(640px,calc(100vh - 92px));background:#fff;border:1px solid rgba(0,0,0,.11);border-radius:24px;box-shadow:0 30px 90px rgba(0,0,0,.24);overflow:hidden;display:none;flex-direction:column;margin-bottom:10px}
       .panel.open{display:flex}
       .head{padding:17px 18px;border-bottom:1px solid #e7e7e9;display:flex;align-items:center;gap:11px;background:#fff}
-      .mark{width:34px;height:34px;border-radius:10px;background:#111113;color:#fff;display:grid;place-items:center;font-weight:900}
+      .mark{width:34px;height:34px;border-radius:10px;overflow:hidden;display:grid;place-items:center;flex:0 0 auto}.mark svg{display:block;width:34px;height:34px}
       .headcopy{min-width:0;flex:1}
       .headcopy b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .headcopy small{display:flex;align-items:center;gap:6px;color:#707075;font-size:11px;margin-top:2px}
@@ -69,7 +69,7 @@
     <div class="wrap">
       <section class="panel" aria-label="${t('RESPONDO AI asiakaspalvelu', 'RESPONDO AI customer service')}">
         <header class="head">
-          <div class="mark">R</div>
+          <div class="mark" aria-hidden="true"><svg viewBox="0 0 64 64" focusable="false"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></div>
           <div class="headcopy"><b id="name">RESPONDO AI</b><small><span class="dot"></span> ${t('Asiakaspalvelu verkossa', 'Customer service online')}</small></div>
         </header>
         <div class="chat" id="chat"></div>
@@ -223,7 +223,7 @@
       token = data.token;
       ready = true;
       name.textContent = data.name || 'RESPONDO AI';
-      mark.textContent = String(data.name || 'R').trim().charAt(0).toUpperCase() || 'R';
+      mark.innerHTML = '<svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg>';
       setAccent(data.accent || fallbackAccent);
       status.textContent = t('Valmis vastaamaan', 'Ready to help');
       status.classList.add('ready');
