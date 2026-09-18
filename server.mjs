@@ -337,7 +337,7 @@ function isPrivateAddress(ip) {
 
 async function assertPublicHttpUrl(value) {
   const normalized = normalizeWebUrl(value, false);
-  if (!normalized) throw new Error('Verkkosivun osoite ei ole kelvollinen.');
+  if (!normalized) throw new Error('Tarkista verkkosivun osoite ja yritä uudelleen.');
   const url = new URL(normalized);
   const host = url.hostname.toLowerCase();
   if (host === 'localhost' || host.endsWith('.local')) throw new Error('Verkkosivua ei voi hakea.');
@@ -1176,7 +1176,7 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
     const website = websiteRaw ? normalizeWebUrl(websiteRaw, true) : '';
     const quoteRequestUrl = quoteRaw ? normalizeWebUrl(quoteRaw, false) : '';
     if (websiteRaw && !website) {
-      return res.status(400).json({ error: 'Verkkosivun osoite ei ole kelvollinen.' });
+      return res.status(400).json({ error: 'Tarkista verkkosivun osoite ja yritä uudelleen.' });
     }
     if (quoteRaw && !quoteRequestUrl) {
       return res.status(400).json({ error: 'Tarjouspyyntölomakkeen linkki ei ole kelvollinen.' });
@@ -1227,7 +1227,7 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
   } catch (e) {
     try { await client.query('ROLLBACK'); } catch {}
     console.error('Business profile save failed', e);
-    return res.status(500).json({ error: 'Yrityksen tietojen tallennus epäonnistui.' });
+    return res.status(500).json({ error: 'Yrityksen tietojen tallennus ei onnistunut.' });
   } finally {
     client.release();
   }
@@ -1237,7 +1237,7 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
 app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
   try {
     const website = normalizeWebUrl(req.body.website, false);
-    if (!website) return res.status(400).json({ error: 'Anna ensin verkkosivun osoite.' });
+    if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
     const { html, finalUrl } = await fetchPublicHtml(website);
     const text = htmlToReadableText(html).slice(0, 26000);
     if (text.length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
@@ -1397,7 +1397,7 @@ app.get('/api/public/:slug/widget-token', async (req, res) => {
     });
   } catch (e) {
     console.error('Widget token failed', e);
-    return res.status(500).json({ error: 'Widgetin aktivointi epäonnistui.' });
+    return res.status(500).json({ error: 'Chatin käynnistäminen ei onnistunut.' });
   }
 });
 
@@ -1441,7 +1441,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     });
     const handoffAnswer = lang === 'en'
       ? 'I cannot find a reliable answer to this from the provided company information. Add the answer to the knowledge base and the bot will know it next time.'
-      : 'En löydä tähän varmaa vastausta annetuista yritystiedoista. Lisää vastaus tietopohjaan, niin botti osaa sen seuraavalla kerralla.';
+      : 'Tätä tietoa ei löytynyt yrityksen tiedoista. Lisää oikea vastaus kerran, niin Respondo osaa vastata siihen jatkossa.';
     return res.json({
       answer: result.handoff ? handoffAnswer : result.answer,
       handoff: result.handoff,
@@ -1451,7 +1451,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     });
   } catch (e) {
     console.error('Demo chat failed', e);
-    return res.status(500).json({ error: 'Demon vastaaminen epäonnistui.' });
+    return res.status(500).json({ error: 'Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.' });
   }
 });
 
@@ -1471,12 +1471,12 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
     const baseHost = normalizeHost(BASE);
     const external = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
     if (external) {
-      if (!widgetOriginAllowed(req, tenant)) return res.status(403).json({ error: 'Widgetin käyttöoikeus ei ole voimassa.' });
+      if (!widgetOriginAllowed(req, tenant)) return res.status(403).json({ error: 'Chat ei ole käytössä tällä verkkosivulla.' });
       try {
         const token = jwt.verify(String(body.widgetToken || ''), JWT);
         if (token.kind !== 'widget' || token.slug !== tenant.slug || token.host !== normalizeHost(origin.hostname)) throw new Error('Invalid token');
       } catch {
-        return res.status(403).json({ error: 'Widgetin käyttöoikeus ei ole voimassa.' });
+        return res.status(403).json({ error: 'Chat ei ole käytössä tällä verkkosivulla.' });
       }
       setWidgetCors(req, res);
     }
@@ -1528,7 +1528,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
           throw new Error('Invalid widget token');
         }
       } catch {
-        return res.status(403).json({ error: 'Widgetin käyttöoikeus ei ole voimassa.' });
+        return res.status(403).json({ error: 'Chat ei ole käytössä tällä verkkosivulla.' });
       }
       setWidgetCors(req, res);
     }
@@ -1567,8 +1567,8 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
           ? 'I cannot find a reliable answer to this in the company information. You can leave your contact details and the company can get back to you.'
           : 'I cannot find a reliable answer to this yet. The company can add this information later.')
         : (hasContact
-          ? 'En löydä tähän varmaa vastausta yrityksen tiedoista. Voit jättää yhteystietosi, niin yritys voi palata asiaan.'
-          : (t.handoff_message || 'En löydä tähän varmaa vastausta. Yritys voi täydentää tämän tiedon myöhemmin.'));
+          ? 'Tätä tietoa ei löytynyt yrityksen tiedoista. Voit jättää yhteystietosi, niin joku yrityksestä voi ottaa sinuun yhteyttä.'
+          : (t.handoff_message || 'Tätä tietoa ei löytynyt vielä. Yritys voi lisätä oikean vastauksen myöhemmin.'));
     }
 
     const actions = chatActions(kr.rows, message, result.handoff, lang);
@@ -1588,7 +1588,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     });
   } catch (e) {
     console.error('Chat failed', e);
-    return res.status(500).json({ error: 'Vastaaminen epäonnistui.' });
+    return res.status(500).json({ error: 'Vastausta ei saatu juuri nyt.' });
   }
 });
 
