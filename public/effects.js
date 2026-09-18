@@ -1042,6 +1042,194 @@ YLEINEN TOIMINTAOHJE:
     update();
   }
 
+
+  function fullSitePolish() {
+    if (document.body.dataset.fxFullPolish === '1') return;
+    document.body.dataset.fxFullPolish = '1';
+
+    const route = location.pathname;
+    const home = route === '/';
+    const assistantPage = route === '/assistant';
+    const dashboardPage = route === '/app';
+
+    const motionSections = $(
+      home
+        ? '.hero,.cinema-conversation,.story-horizontal,.product-world,.trust-portal,.impact-scene,.value-calculator,.pricing-section,.final-cta-immersive,.contact-section,.footer'
+        : assistantPage
+          ? '.assistant-direct-copy,.owner-profile-form,.assistant-order,.assistant-order-grid'
+          : dashboardPage
+            ? '.dashboard-head,.welcome-card,.onboarding-card,.stats,.dashboard-insights,.profile-live-grid,.dashboard-grid,.conversation-panel,.leads-panel,.unanswered-panel,.install-panel,.billing-panel'
+            : '.checkout-copy,.formcard,.login-copy,.legal-layout,.footer'
+    );
+
+    motionSections.forEach((el, i) => {
+      el.classList.add('fx-motion-section');
+      el.style.setProperty('--fx-order', i);
+      if (!el.dataset.fxChapter) el.dataset.fxChapter = String(i + 1).padStart(2,'0');
+    });
+
+    const staggerGroups = [
+      '.calculator-controls > *',
+      '.calc-result-grid > *',
+      '.pricing-wrap > *',
+      '.contact-shell > *',
+      '.footer .foot-top > *',
+      '.checkout-steps > *',
+      '.formgrid > *',
+      '.onboarding-steps > *',
+      '.stats > *',
+      '.dashboard-insights > *',
+      '.profile-grid > *',
+      '.knowledge-list > *',
+      '.conversation-log > *',
+      '.lead-list > *',
+      '.unanswered-list > *',
+      '.assistant-order-grid > *',
+      '.owner-profile-form > *'
+    ];
+    staggerGroups.forEach(sel => {
+      $(sel).forEach((el, i) => {
+        el.classList.add('fx-stagger-item');
+        el.style.setProperty('--fx-stagger', Math.min(i, 10));
+      });
+    });
+
+    const sweepTargets = $(
+      '.section-kicker,.hero-label,.cinema-kicker,.story-panel-copy small,.world-label,.impact-kicker,.price-top,.panel-head small,.assistant-direct-copy small,.assistant-order-head small'
+    );
+    sweepTargets.forEach((el, i) => {
+      el.classList.add('fx-line-sweep');
+      el.style.setProperty('--fx-sweep-delay', (i % 6) * 55 + 'ms');
+    });
+
+    const liftTargets = $(
+      '.calculator-result,.price-card,.contact-shell,.cta-shell,.seller-card,.formcard,.panel,.assistant-order-card,.owner-profile-form'
+    ).filter(el => !el.closest('.fx-assistant'));
+    liftTargets.forEach(el => el.classList.add('fx-polish-card'));
+
+    const nav = $('.nav');
+    const subnav = $('.product-subnav');
+    const footer = $('.footer');
+    const calculator = $('.value-calculator');
+    const pricing = $('.pricing-section');
+    const finalCta = $('.final-cta-immersive');
+    const contact = $('.contact-section');
+
+    if (nav) nav.classList.add('fx-nav-polish');
+    if (subnav) subnav.classList.add('fx-subnav-polish');
+    if (footer) footer.classList.add('fx-footer-stage');
+    if (calculator) calculator.classList.add('fx-calculator-stage');
+    if (pricing) pricing.classList.add('fx-pricing-stage');
+    if (finalCta) finalCta.classList.add('fx-final-stage');
+    if (contact) contact.classList.add('fx-contact-stage');
+
+    if (reduce) {
+      [...motionSections, ...staggerGroups.flatMap(sel => $(sel)), ...sweepTargets]
+        .forEach(el => el.classList.add('fx-polish-in'));
+      return;
+    }
+
+    const reveal = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('fx-polish-in');
+        reveal.unobserve(entry.target);
+      });
+    }, {threshold:.12, rootMargin:'0px 0px -8% 0px'});
+    [...motionSections, ...$('.fx-stagger-item'), ...sweepTargets].forEach(el => reveal.observe(el));
+
+    let lastScrollY = scrollY;
+    let navHidden = false;
+    let raf = 0;
+
+    const setProgress = (el, name, vh) => {
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const raw = (vh - r.top) / Math.max(vh + r.height, 1);
+      const p = Math.max(0, Math.min(1, raw));
+      const center = Math.max(-1, Math.min(1, (r.top + r.height * .5 - vh * .5) / Math.max(vh, r.height)));
+      el.style.setProperty('--' + name + '-progress', p.toFixed(4));
+      el.style.setProperty('--' + name + '-center', center.toFixed(4));
+    };
+
+    const update = () => {
+      raf = 0;
+      const vh = Math.max(innerHeight, 1);
+      const dy = scrollY - lastScrollY;
+
+      if (nav && scrollY > 130) {
+        if (dy > 7 && !navHidden) {
+          navHidden = true;
+          nav.classList.add('fx-nav-away');
+        } else if (dy < -7 && navHidden) {
+          navHidden = false;
+          nav.classList.remove('fx-nav-away');
+        }
+        nav.classList.add('fx-nav-scrolled');
+      } else if (nav) {
+        navHidden = false;
+        nav.classList.remove('fx-nav-away','fx-nav-scrolled');
+      }
+      lastScrollY = scrollY;
+
+      motionSections.forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < -vh || r.top > vh * 2) return;
+        const center = Math.max(-1, Math.min(1, (r.top + r.height * .5 - vh * .5) / Math.max(vh, r.height)));
+        const visible = Math.max(0, Math.min(1, 1 - Math.abs(center)));
+        el.style.setProperty('--fx-section-center', center.toFixed(4));
+        el.style.setProperty('--fx-section-visible', visible.toFixed(4));
+        el.style.setProperty('--fx-section-drift', (center * (i % 2 ? -20 : 20)).toFixed(2) + 'px');
+      });
+
+      setProgress(calculator,'calc',vh);
+      setProgress(pricing,'price',vh);
+      setProgress(finalCta,'final',vh);
+      setProgress(contact,'contact',vh);
+      setProgress(footer,'footer',vh);
+
+      const calcResult = $('.calculator-result');
+      if (calculator && calcResult) {
+        const p = Number(calculator.style.getPropertyValue('--calc-progress') || 0);
+        calcResult.style.setProperty('--calc-card-y', ((1 - Math.min(1,p*1.5)) * 58).toFixed(2) + 'px');
+        calcResult.style.setProperty('--calc-card-rot', ((1 - Math.min(1,p*1.5)) * -4).toFixed(2) + 'deg');
+      }
+
+      if (pricing) {
+        const p = Number(pricing.style.getPropertyValue('--price-progress') || 0);
+        pricing.style.setProperty('--price-spread', ((1 - Math.min(1,p*1.7)) * 46).toFixed(2) + 'px');
+      }
+
+      const ctaCircle = $('.cta-circle');
+      if (finalCta && ctaCircle) {
+        const p = Number(finalCta.style.getPropertyValue('--final-progress') || 0);
+        ctaCircle.style.setProperty('--cta-spin', (p * 34).toFixed(2) + 'deg');
+        ctaCircle.style.setProperty('--cta-scale', (.84 + Math.min(1,p*1.5) * .16).toFixed(4));
+      }
+    };
+
+    const request = () => { if (!raf) raf = requestAnimationFrame(update); };
+    addEventListener('scroll', request, {passive:true});
+    addEventListener('resize', request, {passive:true});
+    update();
+
+    if (!matchMedia('(pointer: coarse)').matches) {
+      const spotlight = document.createElement('div');
+      spotlight.className = 'fx-pointer-glow';
+      spotlight.setAttribute('aria-hidden','true');
+      document.body.appendChild(spotlight);
+      let pointerRaf = 0;
+      let px = innerWidth / 2, py = innerHeight / 2;
+      addEventListener('pointermove', (e) => {
+        px = e.clientX; py = e.clientY;
+        if (!pointerRaf) pointerRaf = requestAnimationFrame(() => {
+          pointerRaf = 0;
+          spotlight.style.transform = 'translate3d(' + px + 'px,' + py + 'px,0)';
+        });
+      }, {passive:true});
+    }
+  }
+
   function ctaPopup() {
     if ($('.fx-modal-backdrop') || sessionStorage.getItem('respondoCtaSeen')) return;
     document.body.insertAdjacentHTML('beforeend', `<div class="fx-modal-backdrop" role="dialog" aria-modal="true" aria-label="RESPONDO AI kokeilu"><div class="fx-modal"><button class="fx-modal-close" aria-label="Sulje">×</button><div class="fx-modal-kicker">RESPONDO AI / 3 PÄIVÄÄ</div><h3>Kokeile, miltä Respondo näyttäisi omassa yrityksessäsi.</h3><p>Luo tili, lisää yrityksesi tiedot ja kokeile palvelua 3 päivää ilmaiseksi.</p><div class="fx-modal-actions"><a class="btn ink" href="/tilaus">Kokeile ilmaiseksi →</a><button class="btn ghost fx-modal-later" type="button">Ehkä myöhemmin</button></div></div></div>`);
@@ -1064,12 +1252,13 @@ YLEINEN TOIMINTAOHJE:
     if (location.pathname === '/assistant') {
       standaloneAssistant();
       deepScrollExperience();
+      fullSitePolish();
       return;
     }
     if (location.pathname === '/') {
-      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup(); cinematicSectionAtmosphere(); deepScrollExperience(); immersiveHomepageScenes();
+      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup(); cinematicSectionAtmosphere(); deepScrollExperience(); immersiveHomepageScenes(); fullSitePolish();
     } else {
-      revealTargets(); magneticButtons(); assistant(); deepScrollExperience();
+      revealTargets(); magneticButtons(); assistant(); deepScrollExperience(); fullSitePolish();
     }
   }
 
