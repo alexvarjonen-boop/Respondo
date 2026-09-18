@@ -999,6 +999,16 @@ YLEINEN TOIMINTAOHJE:
         const p = Math.max(0, Math.min(1, -r.top / total));
         track.style.setProperty('--story-p', p.toFixed(4));
         track.style.setProperty('--story-x', (-p * 200).toFixed(3) + 'vw');
+        track.style.setProperty('--story-km-x', ((1 - p) * 40).toFixed(2) + 'px');
+        track.style.setProperty('--story-km-back-y', ((1 - p) * -38).toFixed(2) + 'px');
+        track.style.setProperty('--story-core-scale', (.9 + p * .1).toFixed(4));
+        track.style.setProperty('--story-m1-x', (-p * 16).toFixed(2) + 'px');
+        track.style.setProperty('--story-m2-x', (p * 18).toFixed(2) + 'px');
+        track.style.setProperty('--story-m3-x', (-p * 12).toFixed(2) + 'px');
+        track.style.setProperty('--story-m4-x', (p * 15).toFixed(2) + 'px');
+        track.style.setProperty('--story-answer-scale', (.93 + p * .07).toFixed(4));
+        track.style.setProperty('--story-ring1-rot', (p * 42).toFixed(2) + 'deg');
+        track.style.setProperty('--story-ring2-rot', (-p * 32).toFixed(2) + 'deg');
         if (progress) progress.style.transform = 'scaleX(' + p.toFixed(4) + ')';
         const step = Math.min(3, Math.max(1, Math.floor(p * 3) + 1));
         if (current) current.textContent = String(step).padStart(2,'0');
@@ -1010,7 +1020,15 @@ YLEINEN TOIMINTAOHJE:
         const p = Math.max(0, Math.min(1, -r.top / total));
         worldStage.style.setProperty('--world-p', p.toFixed(4));
         worldStage.style.setProperty('--world-main-z', (40 + p * 80).toFixed(2) + 'px');
-        worldStage.style.setProperty('--world-side-x', (1 - p) * 180 + 'px');
+        worldStage.style.setProperty('--world-side-x', ((1 - p) * 180).toFixed(2) + 'px');
+        worldStage.style.setProperty('--world-main-y', (-p * 14).toFixed(2) + 'px');
+        worldStage.style.setProperty('--world-main-ry', (-4 + p * 3).toFixed(2) + 'deg');
+        worldStage.style.setProperty('--world-chat-y', (-p * 30).toFixed(2) + 'px');
+        worldStage.style.setProperty('--world-chat-rz', ((1 - p) * 4).toFixed(2) + 'deg');
+        worldStage.style.setProperty('--world-knowledge-y', (p * 24).toFixed(2) + 'px');
+        worldStage.style.setProperty('--world-knowledge-rz', ((1 - p) * -4).toFixed(2) + 'deg');
+        worldStage.style.setProperty('--world-alert-y', (-p * 18).toFixed(2) + 'px');
+        worldStage.style.setProperty('--world-alert-r', (5 - p * 4).toFixed(2) + 'deg');
         worldStage.style.setProperty('--world-tilt', ((.5 - p) * 10).toFixed(2) + 'deg');
       }
 
@@ -1027,12 +1045,25 @@ YLEINEN TOIMINTAOHJE:
         const p = Math.max(0, Math.min(1, 1 - Math.abs((r.top + r.height/2 - vh/2) / vh)));
         portal.style.setProperty('--portal-p', p.toFixed(4));
         portal.style.setProperty('--portal-spin', ((1-p) * 18).toFixed(2)+'deg');
+        portal.style.setProperty('--portal-mark-spin', ((1-p) * -12.6).toFixed(2)+'deg');
+        portal.style.setProperty('--portal-mark-scale', (.94 + p * .06).toFixed(4));
+        portal.style.setProperty('--pn1-x', (-p * 14).toFixed(2)+'px');
+        portal.style.setProperty('--pn1-y', (p * 8).toFixed(2)+'px');
+        portal.style.setProperty('--pn2-x', (p * 16).toFixed(2)+'px');
+        portal.style.setProperty('--pn2-y', (-p * 8).toFixed(2)+'px');
+        portal.style.setProperty('--pn3-x', (-p * 10).toFixed(2)+'px');
+        portal.style.setProperty('--pn3-y', (-p * 12).toFixed(2)+'px');
+        portal.style.setProperty('--pn4-x', (p * 14).toFixed(2)+'px');
+        portal.style.setProperty('--pn4-y', (p * 10).toFixed(2)+'px');
       }
 
       if (impact) {
         const r = impact.getBoundingClientRect();
         const p = Math.max(0, Math.min(1, 1 - Math.abs((r.top + r.height/2 - vh/2) / vh)));
         impact.style.setProperty('--impact-p', p.toFixed(4));
+        impact.style.setProperty('--impact-y1', ((1-p) * 70).toFixed(2)+'px');
+        impact.style.setProperty('--impact-y2', ((1-p) * 38).toFixed(2)+'px');
+        impact.style.setProperty('--impact-y3', ((1-p) * 82).toFixed(2)+'px');
       }
     };
 
@@ -1150,6 +1181,8 @@ YLEINEN TOIMINTAOHJE:
       const center = Math.max(-1, Math.min(1, (r.top + r.height * .5 - vh * .5) / Math.max(vh, r.height)));
       el.style.setProperty('--' + name + '-progress', p.toFixed(4));
       el.style.setProperty('--' + name + '-center', center.toFixed(4));
+      el.style.setProperty('--' + name + '-drift-y', (center * 22).toFixed(2) + 'px');
+      el.style.setProperty('--' + name + '-drift-neg-y', (center * -22).toFixed(2) + 'px');
     };
 
     const update = () => {
