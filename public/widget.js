@@ -23,15 +23,15 @@
       *{box-sizing:border-box}
       :host{all:initial}
       .wrap{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Arial,sans-serif;color:#111113}
-      .panel{width:min(390px,calc(100vw - 24px));height:min(610px,calc(100vh - 92px));background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:22px;box-shadow:0 28px 80px rgba(0,0,0,.22);overflow:hidden;display:none;flex-direction:column;margin-bottom:10px}
+      .panel{width:min(410px,calc(100vw - 24px));height:min(640px,calc(100vh - 92px));background:#fff;border:1px solid rgba(0,0,0,.11);border-radius:24px;box-shadow:0 30px 90px rgba(0,0,0,.24);overflow:hidden;display:none;flex-direction:column;margin-bottom:10px}
       .panel.open{display:flex}
-      .head{padding:16px 17px;border-bottom:1px solid #e7e7e9;display:flex;align-items:center;gap:11px;background:#fff}
+      .head{padding:17px 18px;border-bottom:1px solid #e7e7e9;display:flex;align-items:center;gap:11px;background:#fff}
       .mark{width:34px;height:34px;border-radius:10px;background:#111113;color:#fff;display:grid;place-items:center;font-weight:900}
       .headcopy{min-width:0;flex:1}
       .headcopy b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .headcopy small{display:flex;align-items:center;gap:6px;color:#707075;font-size:11px;margin-top:2px}
       .dot{width:7px;height:7px;border-radius:50%;background:#111113;display:inline-block}
-      .chat{padding:16px;overflow:auto;flex:1;background:#f7f7f8;display:flex;flex-direction:column;gap:10px}
+      .chat{padding:18px;overflow:auto;flex:1;background:#f7f7f8;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
       .msg{max-width:86%;padding:11px 13px;border-radius:15px;font-size:14px;line-height:1.45;word-break:break-word}
       .bot{align-self:flex-start;background:#fff;border:1px solid #e3e3e6}
       .user{align-self:flex-end;background:#111113;color:#fff}
@@ -40,27 +40,46 @@
       .composer input{min-width:0;flex:1;border:1px solid #d9d9dc;border-radius:12px;padding:12px 13px;font:inherit;font-size:14px;outline:none}
       .composer input:focus{border-color:#111113}
       .composer button{width:44px;border:0;border-radius:12px;background:#111113;color:#fff;font-size:18px;font-weight:800;cursor:pointer}
-      .launcher{border:0;border-radius:14px;padding:13px 16px;background:#111113;color:#fff;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 18px 45px rgba(0,0,0,.2)}
-      .status{font-size:12px;color:#77777c;text-align:center;padding:8px 12px;background:#fff}
+      .launcher{border:0;border-radius:999px;padding:13px 17px;background:#111113;color:#fff;font-weight:750;font-size:14px;cursor:pointer;box-shadow:0 18px 45px rgba(0,0,0,.2);display:flex;align-items:center;gap:9px}.launcher-dot{width:8px;height:8px;border-radius:50%;background:#fff;opacity:.9;box-shadow:0 0 0 4px rgba(255,255,255,.12)}
+      .status{font-size:12px;color:#77777c;text-align:center;padding:7px 12px;background:#fff}.status.ready{display:none}
       .error{color:#8b2d2d}
+      .quick{display:flex;gap:7px;flex-wrap:wrap;padding:0 16px 12px;background:#f7f7f8}
+      .quick:empty{display:none}
+      .quick button{border:1px solid #dedee2;background:#fff;border-radius:999px;padding:8px 10px;font:inherit;font-size:12px;color:#343438;cursor:pointer}
+      .quick button:hover{border-color:#a9a9af}
+      .actions{display:flex;gap:7px;flex-wrap:wrap;align-self:flex-start;max-width:92%}
+      .actions a{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6d6da;background:#fff;color:#111113;text-decoration:none;border-radius:10px;padding:9px 11px;font-size:12px;font-weight:700}
+      .leadbox{align-self:stretch;background:#fff;border:1px solid #dedee2;border-radius:16px;padding:13px;display:grid;gap:8px}
+      .leadbox b{font-size:13px}.leadbox small{font-size:11px;color:#73737a;line-height:1.4}
+      .leadbox input{width:100%;border:1px solid #d9d9dc;border-radius:10px;padding:10px 11px;font:inherit;font-size:13px;outline:none}
+      .leadbox input:focus{border-color:#111113}
+      .leadbox button{border:0;border-radius:10px;padding:10px 12px;background:#111113;color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+      .leadbox .lead-ok{font-size:12px;color:#246b45}
+      .typing-dots{display:inline-flex;gap:4px;align-items:center;height:14px}
+      .typing-dots i{width:5px;height:5px;border-radius:50%;background:#77777c;animation:rblink 1s infinite ease-in-out}
+      .typing-dots i:nth-child(2){animation-delay:.15s}.typing-dots i:nth-child(3){animation-delay:.3s}
+      @keyframes rblink{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
+      .powered{padding:0 12px 10px;text-align:center;background:#fff;color:#9a9aa0;font-size:10px;letter-spacing:.02em}
       @media(max-width:520px){
-        .panel{width:calc(100vw - 20px);height:min(640px,calc(100vh - 84px));border-radius:18px}
+        .panel{width:calc(100vw - 12px);height:calc(100dvh - 72px);border-radius:20px}
       }
     </style>
     <div class="wrap">
       <section class="panel" aria-label="RESPONDO AI asiakaspalvelu">
         <header class="head">
           <div class="mark">R</div>
-          <div class="headcopy"><b id="name">RESPONDO AI</b><small><span class="dot"></span> Vastaa yrityksen tiedoilla</small></div>
+          <div class="headcopy"><b id="name">RESPONDO AI</b><small><span class="dot"></span> Asiakaspalvelu verkossa</small></div>
         </header>
         <div class="chat" id="chat"></div>
+        <div class="quick" id="quick"></div>
         <div class="status" id="status">Yhdistetään…</div>
         <form class="composer" id="form">
           <input id="input" autocomplete="off" placeholder="Kirjoita kysymys…" aria-label="Kirjoita kysymys">
           <button type="submit" aria-label="Lähetä">→</button>
         </form>
+        <div class="powered">Powered by RESPONDO AI</div>
       </section>
-      <button class="launcher" id="launcher" type="button">Kysy meiltä&nbsp;&nbsp;↗</button>
+      <button class="launcher" id="launcher" type="button"><span class="launcher-dot"></span><span class="launcher-label">Kysy meiltä</span></button>
     </div>\`;
 
   const $ = (q) => shadow.querySelector(q);
@@ -71,6 +90,9 @@
   const form = $('#form');
   const input = $('#input');
   const name = $('#name');
+  const mark = $('.mark');
+  const quick = $('#quick');
+  const launcherLabel = $('.launcher-label');
 
   let token = '';
   let ready = false;
@@ -109,6 +131,78 @@
     return el;
   }
 
+  function safeActionUrl(value) {
+    const url = String(value || '').trim();
+    return /^(https?:\/\/|tel:|mailto:)/i.test(url) ? url : '';
+  }
+
+  function renderActions(actions = []) {
+    const valid = (Array.isArray(actions) ? actions : []).filter((x) => safeActionUrl(x?.url) && x?.label).slice(0, 3);
+    if (!valid.length) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'actions';
+    valid.forEach((action) => {
+      const a = document.createElement('a');
+      a.href = safeActionUrl(action.url);
+      a.textContent = action.label + ' →';
+      if (/^https?:\/\//i.test(a.href)) {
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+      }
+      wrap.appendChild(a);
+    });
+    chat.appendChild(wrap);
+  }
+
+  function renderQuickReplies(items = []) {
+    quick.innerHTML = '';
+    (Array.isArray(items) ? items : []).slice(0, 3).forEach((label) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.addEventListener('click', () => sendMessage(label));
+      quick.appendChild(button);
+    });
+  }
+
+  function showLeadForm(question) {
+    if (chat.querySelector('.leadbox')) return;
+    const box = document.createElement('form');
+    box.className = 'leadbox';
+    box.innerHTML = '<b>Haluatko, että yritys ottaa yhteyttä?</b><small>Jätä nimi ja puhelin tai sähköposti. Tiedot välitetään vain tälle yritykselle yhteydenottoa varten.</small><input name="name" maxlength="120" placeholder="Nimi (valinnainen)"><input name="contact" maxlength="220" required placeholder="Puhelin tai sähköposti"><button type="submit">Jätä yhteystiedot</button><div class="lead-ok"></div>';
+    box.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const contact = String(box.elements.contact.value || '').trim();
+      const person = String(box.elements.name.value || '').trim();
+      if (!contact) return;
+      const button = box.querySelector('button');
+      button.disabled = true;
+      button.textContent = 'Lähetetään…';
+      const email = contact.includes('@') ? contact : '';
+      const phone = email ? '' : contact;
+      try {
+        const res = await fetch(serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/lead', {
+          method: 'POST',
+          mode: 'cors',
+          credentials: 'omit',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify({ name: person, email, phone, message: question, widgetToken: token, visitorRef }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Lähetys epäonnistui');
+        box.querySelector('.lead-ok').textContent = 'Kiitos — yhteystiedot on lähetetty ✓';
+        box.querySelectorAll('input,button').forEach((el) => el.disabled = true);
+        button.textContent = 'Lähetetty ✓';
+      } catch {
+        box.querySelector('.lead-ok').textContent = 'Lähetys ei onnistunut. Yritä uudelleen.';
+        button.disabled = false;
+        button.textContent = 'Jätä yhteystiedot';
+      }
+    });
+    chat.appendChild(box);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
   function setAccent(value) {
     const accent = value || fallbackAccent;
     $('.mark').style.background = accent;
@@ -127,8 +221,11 @@
       token = data.token;
       ready = true;
       name.textContent = data.name || 'RESPONDO AI';
+      mark.textContent = String(data.name || 'R').trim().charAt(0).toUpperCase() || 'R';
       setAccent(data.accent || fallbackAccent);
       status.textContent = 'Valmis vastaamaan';
+      status.classList.add('ready');
+      renderQuickReplies(data.quickReplies || []);
       addMessage(data.greeting || 'Hei! Miten voin auttaa?');
     } catch {
       ready = false;
@@ -141,19 +238,20 @@
 
   launcher.addEventListener('click', () => {
     const open = panel.classList.toggle('open');
-    launcher.textContent = open ? 'Sulje' : 'Kysy meiltä  ↗';
+    launcherLabel.textContent = open ? 'Sulje' : 'Kysy meiltä';
     if (open && ready) setTimeout(() => input.focus(), 50);
   });
 
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const message = String(input.value || '').trim();
+  async function sendMessage(rawMessage) {
+    const message = String(rawMessage || '').trim();
     if (!message || !ready) return;
 
     addMessage(message, 'user');
     input.value = '';
     input.disabled = true;
-    const pending = addMessage('Hetki…');
+    const pending = addMessage('');
+    pending.innerHTML = '<span class="typing-dots"><i></i><i></i><i></i></span>';
+    chat.scrollTop = chat.scrollHeight;
 
     try {
       const res = await fetch(
@@ -166,9 +264,11 @@
           body: JSON.stringify({ message, widgetToken: token, visitorRef }),
         }
       );
-      if (!res.ok) throw new Error('Chat failed');
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Chat failed');
       pending.innerHTML = linkify(data.answer || 'En löydä tähän vielä varmaa vastausta.');
+      renderActions(data.actions || []);
+      if (data.canLeaveContact || data.handoff) showLeadForm(message);
     } catch {
       pending.textContent = 'Vastaaminen epäonnistui. Yritä hetken kuluttua uudelleen.';
     } finally {
@@ -176,7 +276,13 @@
       input.focus();
       chat.scrollTop = chat.scrollHeight;
     }
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    await sendMessage(input.value);
   });
+
 
   activate();
 })();
