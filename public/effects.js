@@ -119,7 +119,7 @@
   }
 
   const faq = [
-    {keys:['hinta','maksaa','49','vuosi','kuukausi','price','pricing','cost','month','year'], answer:'Respondo maksaa 49 € / kk + alv tai 549 € / vuosi + alv. Voit kokeilla kumpaa tahansa 3 päivää ilmaiseksi.'},
+    {keys:['hinta','maksaa','49','vuosi','kuukausi','price','pricing','cost','month','year'], answer:'Respondo maksaa 49 € / kk + alv tai vuosimaksulla 45 € / kk + alv, laskutettuna 540 € + alv kerran vuodessa. Voit kokeilla kumpaa tahansa 3 päivää ilmaiseksi.'},
     {keys:['kokeilu','ilmainen','3 päiv','trial','free','3 day'], answer:'Saat kokeilla Respondoa 3 päivää ilmaiseksi. Maksutapa lisätään alussa Stripessä, mutta veloitus alkaa vasta kokeilun jälkeen, jos et peru tilausta sitä ennen.'},
     {keys:['miten toimii','toimii','tietopohja','tieto','how does it work','how it works','knowledge base'], answer:'Lisäät yrityksesi tiedot kerran. Respondo vastaa niiden perusteella ja ohjaa asiakkaan sinulle, jos varmaa vastausta ei löydy.'},
     {keys:['asennus','sivulle','verkkosivu','widget','install','installation','website'], answer:'Kun tili on valmis, kopioit hallintapaneelista yhden koodirivin verkkosivullesi. Sen jälkeen chat on käytössä.'},
@@ -503,8 +503,8 @@ YLEINEN TOIMINTAOHJE:
                   <a class="assistant-order-btn" href="/tilaus?plan=monthly">Valitse kuukausi <span>→</span></a>
                 </article>
                 <article class="assistant-order-card featured">
-                  <div class="assistant-order-top"><div class="assistant-order-label">VUOSITILAUS</div><span class="assistant-save">Säästä 39 €</span></div>
-                  <h3>549 € <span>/ vuosi + alv</span></h3>
+                  <div class="assistant-order-top"><div class="assistant-order-label">VUOSITILAUS</div><span class="assistant-save">Säästä 48 €</span></div>
+                  <h3>45 € <span>/ kk + alv</span></h3><p class="assistant-annual-note">Laskutetaan vuosittain 540 € + alv</p>
                   <ul>
                     <li>3 päivää ilmaiseksi</li>
                     <li>Kaikki samat ominaisuudet kuin kuukausitilauksessa</li>
@@ -862,7 +862,6 @@ YLEINEN TOIMINTAOHJE:
 
         el.style.setProperty('--fx-local', p.toFixed(4));
         el.style.setProperty('--fx-enter', enter.toFixed(4));
-        el.style.setProperty('--fx-enter-opacity', (.2 + enter * .5).toFixed(4));
         el.style.setProperty('--fx-shift-y', (p * 34).toFixed(2) + 'px');
         el.style.setProperty('--fx-shift-x', (twist * 28).toFixed(2) + 'px');
         el.style.setProperty('--fx-rot', (twist * 2.1).toFixed(2) + 'deg');
@@ -1000,16 +999,6 @@ YLEINEN TOIMINTAOHJE:
         const p = Math.max(0, Math.min(1, -r.top / total));
         track.style.setProperty('--story-p', p.toFixed(4));
         track.style.setProperty('--story-x', (-p * 200).toFixed(3) + 'vw');
-        track.style.setProperty('--story-km-x', ((1 - p) * 40).toFixed(2) + 'px');
-        track.style.setProperty('--story-km-back-y', ((1 - p) * -38).toFixed(2) + 'px');
-        track.style.setProperty('--story-core-scale', (.9 + p * .1).toFixed(4));
-        track.style.setProperty('--story-m1-x', (-p * 16).toFixed(2) + 'px');
-        track.style.setProperty('--story-m2-x', (p * 18).toFixed(2) + 'px');
-        track.style.setProperty('--story-m3-x', (-p * 12).toFixed(2) + 'px');
-        track.style.setProperty('--story-m4-x', (p * 15).toFixed(2) + 'px');
-        track.style.setProperty('--story-answer-scale', (.93 + p * .07).toFixed(4));
-        track.style.setProperty('--story-ring1-rot', (p * 42).toFixed(2) + 'deg');
-        track.style.setProperty('--story-ring2-rot', (-p * 32).toFixed(2) + 'deg');
         if (progress) progress.style.transform = 'scaleX(' + p.toFixed(4) + ')';
         const step = Math.min(3, Math.max(1, Math.floor(p * 3) + 1));
         if (current) current.textContent = String(step).padStart(2,'0');
@@ -1021,15 +1010,7 @@ YLEINEN TOIMINTAOHJE:
         const p = Math.max(0, Math.min(1, -r.top / total));
         worldStage.style.setProperty('--world-p', p.toFixed(4));
         worldStage.style.setProperty('--world-main-z', (40 + p * 80).toFixed(2) + 'px');
-        worldStage.style.setProperty('--world-side-x', ((1 - p) * 180).toFixed(2) + 'px');
-        worldStage.style.setProperty('--world-main-y', (-p * 14).toFixed(2) + 'px');
-        worldStage.style.setProperty('--world-main-ry', (-4 + p * 3).toFixed(2) + 'deg');
-        worldStage.style.setProperty('--world-chat-y', (-p * 30).toFixed(2) + 'px');
-        worldStage.style.setProperty('--world-chat-rz', ((1 - p) * 4).toFixed(2) + 'deg');
-        worldStage.style.setProperty('--world-knowledge-y', (p * 24).toFixed(2) + 'px');
-        worldStage.style.setProperty('--world-knowledge-rz', ((1 - p) * -4).toFixed(2) + 'deg');
-        worldStage.style.setProperty('--world-alert-y', (-p * 18).toFixed(2) + 'px');
-        worldStage.style.setProperty('--world-alert-r', (5 - p * 4).toFixed(2) + 'deg');
+        worldStage.style.setProperty('--world-side-x', (1 - p) * 180 + 'px');
         worldStage.style.setProperty('--world-tilt', ((.5 - p) * 10).toFixed(2) + 'deg');
       }
 
@@ -1039,11 +1020,6 @@ YLEINEN TOIMINTAOHJE:
         cinema.style.setProperty('--cinema-p', p.toFixed(4));
         cinema.style.setProperty('--cinema-phone-y', ((1-p) * 70).toFixed(2)+'px');
         cinema.style.setProperty('--cinema-float', ((1-p) * 34).toFixed(2)+'px');
-        cinema.style.setProperty('--cinema-float-b', ((1-p) * -23.8).toFixed(2)+'px');
-        cinema.style.setProperty('--cinema-word-scale', (.82 + p * .35).toFixed(4));
-        cinema.style.setProperty('--cinema-orbit-a', (p * 18).toFixed(2)+'deg');
-        cinema.style.setProperty('--cinema-orbit-b', (p * -24).toFixed(2)+'deg');
-        cinema.style.setProperty('--cinema-stage-scale', (.975 + p * .025).toFixed(4));
       }
 
       if (portal) {
@@ -1051,25 +1027,12 @@ YLEINEN TOIMINTAOHJE:
         const p = Math.max(0, Math.min(1, 1 - Math.abs((r.top + r.height/2 - vh/2) / vh)));
         portal.style.setProperty('--portal-p', p.toFixed(4));
         portal.style.setProperty('--portal-spin', ((1-p) * 18).toFixed(2)+'deg');
-        portal.style.setProperty('--portal-mark-spin', ((1-p) * -12.6).toFixed(2)+'deg');
-        portal.style.setProperty('--portal-mark-scale', (.94 + p * .06).toFixed(4));
-        portal.style.setProperty('--pn1-x', (-p * 14).toFixed(2)+'px');
-        portal.style.setProperty('--pn1-y', (p * 8).toFixed(2)+'px');
-        portal.style.setProperty('--pn2-x', (p * 16).toFixed(2)+'px');
-        portal.style.setProperty('--pn2-y', (-p * 8).toFixed(2)+'px');
-        portal.style.setProperty('--pn3-x', (-p * 10).toFixed(2)+'px');
-        portal.style.setProperty('--pn3-y', (-p * 12).toFixed(2)+'px');
-        portal.style.setProperty('--pn4-x', (p * 14).toFixed(2)+'px');
-        portal.style.setProperty('--pn4-y', (p * 10).toFixed(2)+'px');
       }
 
       if (impact) {
         const r = impact.getBoundingClientRect();
         const p = Math.max(0, Math.min(1, 1 - Math.abs((r.top + r.height/2 - vh/2) / vh)));
         impact.style.setProperty('--impact-p', p.toFixed(4));
-        impact.style.setProperty('--impact-y1', ((1-p) * 70).toFixed(2)+'px');
-        impact.style.setProperty('--impact-y2', ((1-p) * 38).toFixed(2)+'px');
-        impact.style.setProperty('--impact-y3', ((1-p) * 82).toFixed(2)+'px');
       }
     };
 
@@ -1077,226 +1040,6 @@ YLEINEN TOIMINTAOHJE:
     addEventListener('scroll', request, {passive:true});
     addEventListener('resize', request, {passive:true});
     update();
-  }
-
-
-  function fullSitePolish() {
-    if (document.body.dataset.fxFullPolish === '1') return;
-    document.body.dataset.fxFullPolish = '1';
-
-    const route = location.pathname;
-    const home = route === '/';
-    const assistantPage = route === '/assistant';
-    const dashboardPage = route === '/app';
-
-    const motionSections = $(
-      home
-        ? '.hero,.cinema-conversation,.story-horizontal,.product-world,.trust-portal,.impact-scene,.value-calculator,.pricing-section,.final-cta-immersive,.contact-section,.footer'
-        : assistantPage
-          ? '.assistant-direct-copy,.owner-profile-form,.assistant-order,.assistant-order-grid'
-          : dashboardPage
-            ? '.dashboard-head,.welcome-card,.onboarding-card,.stats,.dashboard-insights,.profile-live-grid,.dashboard-grid,.conversation-panel,.leads-panel,.unanswered-panel,.install-panel,.billing-panel'
-            : '.checkout-copy,.formcard,.login-copy,.legal-layout,.footer'
-    );
-
-    motionSections.forEach((el, i) => {
-      el.classList.add('fx-motion-section');
-      el.style.setProperty('--fx-order', i);
-      if (!el.dataset.fxChapter) el.dataset.fxChapter = String(i + 1).padStart(2,'0');
-    });
-
-    const staggerGroups = [
-      '.calculator-controls > *',
-      '.calc-result-grid > *',
-      '.pricing-wrap > *',
-      '.contact-shell > *',
-      '.footer .foot-top > *',
-      '.checkout-steps > *',
-      '.formgrid > *',
-      '.onboarding-steps > *',
-      '.stats > *',
-      '.dashboard-insights > *',
-      '.profile-grid > *',
-      '.knowledge-list > *',
-      '.conversation-log > *',
-      '.lead-list > *',
-      '.unanswered-list > *',
-      '.assistant-order-grid > *',
-      '.owner-profile-form > *'
-    ];
-    staggerGroups.forEach(sel => {
-      $(sel).forEach((el, i) => {
-        el.classList.add('fx-stagger-item');
-        el.style.setProperty('--fx-stagger', Math.min(i, 10));
-        el.style.setProperty('--fx-stagger-delay', (Math.min(i, 10) * 55) + 'ms');
-      });
-    });
-
-    const sweepTargets = $(
-      '.section-kicker,.hero-label,.cinema-kicker,.story-panel-copy small,.world-label,.impact-kicker,.price-top,.panel-head small,.assistant-direct-copy small,.assistant-order-head small'
-    );
-    sweepTargets.forEach((el, i) => {
-      el.classList.add('fx-line-sweep');
-      el.style.setProperty('--fx-sweep-delay', (i % 6) * 55 + 'ms');
-    });
-
-    const liftTargets = $(
-      '.calculator-result,.price-card,.contact-shell,.cta-shell,.seller-card,.formcard,.panel,.assistant-order-card,.owner-profile-form'
-    ).filter(el => !el.closest('.fx-assistant'));
-    liftTargets.forEach(el => el.classList.add('fx-polish-card'));
-
-    const nav = $('.nav');
-    const subnav = $('.product-subnav');
-    const footer = $('.footer');
-    const calculator = $('.value-calculator');
-    const pricing = $('.pricing-section');
-    const finalCta = $('.final-cta-immersive');
-    const contact = $('.contact-section');
-
-    if (nav) nav.classList.add('fx-nav-polish');
-    if (subnav) subnav.classList.add('fx-subnav-polish');
-    if (footer) footer.classList.add('fx-footer-stage');
-    if (calculator) calculator.classList.add('fx-calculator-stage');
-    if (pricing) pricing.classList.add('fx-pricing-stage');
-    if (finalCta) finalCta.classList.add('fx-final-stage');
-    if (contact) contact.classList.add('fx-contact-stage');
-
-    if (reduce) {
-      [...motionSections, ...staggerGroups.flatMap(sel => $(sel)), ...sweepTargets]
-        .forEach(el => el.classList.add('fx-polish-in'));
-      return;
-    }
-
-    const reveal = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('fx-polish-in');
-        reveal.unobserve(entry.target);
-      });
-    }, {threshold:.12, rootMargin:'0px 0px -8% 0px'});
-    [...motionSections, ...$('.fx-stagger-item'), ...sweepTargets].forEach(el => reveal.observe(el));
-
-    let lastScrollY = scrollY;
-    let navHidden = false;
-    let raf = 0;
-
-    const setProgress = (el, name, vh) => {
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      const raw = (vh - r.top) / Math.max(vh + r.height, 1);
-      const p = Math.max(0, Math.min(1, raw));
-      const center = Math.max(-1, Math.min(1, (r.top + r.height * .5 - vh * .5) / Math.max(vh, r.height)));
-      el.style.setProperty('--' + name + '-progress', p.toFixed(4));
-      el.style.setProperty('--' + name + '-center', center.toFixed(4));
-      el.style.setProperty('--' + name + '-drift-y', (center * 22).toFixed(2) + 'px');
-      el.style.setProperty('--' + name + '-drift-neg-y', (center * -22).toFixed(2) + 'px');
-      return {p, center};
-    };
-
-    const update = () => {
-      raf = 0;
-      const vh = Math.max(innerHeight, 1);
-      const dy = scrollY - lastScrollY;
-
-      if (nav && scrollY > 130) {
-        if (dy > 7 && !navHidden) {
-          navHidden = true;
-          nav.classList.add('fx-nav-away');
-        } else if (dy < -7 && navHidden) {
-          navHidden = false;
-          nav.classList.remove('fx-nav-away');
-        }
-        nav.classList.add('fx-nav-scrolled');
-      } else if (nav) {
-        navHidden = false;
-        nav.classList.remove('fx-nav-away','fx-nav-scrolled');
-      }
-      lastScrollY = scrollY;
-
-      motionSections.forEach((el, i) => {
-        const r = el.getBoundingClientRect();
-        if (r.bottom < -vh || r.top > vh * 2) return;
-        const center = Math.max(-1, Math.min(1, (r.top + r.height * .5 - vh * .5) / Math.max(vh, r.height)));
-        const visible = Math.max(0, Math.min(1, 1 - Math.abs(center)));
-        el.style.setProperty('--fx-section-center', center.toFixed(4));
-        el.style.setProperty('--fx-section-visible', visible.toFixed(4));
-        el.style.setProperty('--fx-section-drift', (center * (i % 2 ? -20 : 20)).toFixed(2) + 'px');
-        el.style.setProperty('--fx-section-drift-neg', (center * (i % 2 ? 20 : -20)).toFixed(2) + 'px');
-        el.style.setProperty('--fx-section-rot', (center * 2.2).toFixed(2) + 'deg');
-        el.style.setProperty('--fx-section-rot-neg', (center * -2.2).toFixed(2) + 'deg');
-        el.style.setProperty('--fx-section-scale', (.88 + visible * .12).toFixed(4));
-      });
-
-      const calcState = setProgress(calculator,'calc',vh);
-      const priceState = setProgress(pricing,'price',vh);
-      const finalState = setProgress(finalCta,'final',vh);
-      const contactState = setProgress(contact,'contact',vh);
-      const footerState = setProgress(footer,'footer',vh);
-
-      const calcResult = $('.calculator-result');
-      if (calculator && calcResult && calcState) {
-        const p = calcState.p;
-        calculator.style.setProperty('--calc-orb-y', (calcState.center * -60).toFixed(2) + 'px');
-        calculator.style.setProperty('--calc-orb-scale', (.9 + p * .12).toFixed(4));
-        calculator.style.setProperty('--calc-controls-x', (calcState.center * -18).toFixed(2) + 'px');
-        calculator.style.setProperty('--calc-controls-ry', (calcState.center * 1.6).toFixed(2) + 'deg');
-        calculator.style.setProperty('--calc-result-x', (calcState.center * 18).toFixed(2) + 'px');
-        calcResult.style.setProperty('--calc-card-y', ((1 - Math.min(1,p*1.5)) * 58).toFixed(2) + 'px');
-        calcResult.style.setProperty('--calc-card-rot', ((1 - Math.min(1,p*1.5)) * -4).toFixed(2) + 'deg');
-      }
-
-      if (pricing && priceState) {
-        const p = priceState.p;
-        pricing.style.setProperty('--price-spread', ((1 - Math.min(1,p*1.7)) * 46).toFixed(2) + 'px');
-        pricing.style.setProperty('--price-y', (priceState.center * 14).toFixed(2) + 'px');
-        pricing.style.setProperty('--price-neg-y', (priceState.center * -14).toFixed(2) + 'px');
-        pricing.style.setProperty('--price-ry', (priceState.center * 2.2).toFixed(2) + 'deg');
-        pricing.style.setProperty('--price-neg-ry', (priceState.center * -2.2).toFixed(2) + 'deg');
-      }
-
-      const ctaCircle = $('.cta-circle');
-      if (finalCta && ctaCircle && finalState) {
-        const p = finalState.p;
-        finalCta.style.setProperty('--final-ring-rot', (p * 36).toFixed(2) + 'deg');
-        finalCta.style.setProperty('--final-glow-scale', (.86 + p * .18).toFixed(4));
-        finalCta.style.setProperty('--final-shell-y', (finalState.center * -26).toFixed(2) + 'px');
-        ctaCircle.style.setProperty('--cta-spin', (p * 34).toFixed(2) + 'deg');
-        ctaCircle.style.setProperty('--cta-scale', (.84 + Math.min(1,p*1.5) * .16).toFixed(4));
-      }
-
-      if (contact && contactState) {
-        contact.style.setProperty('--contact-sweep-x', ((contactState.p - .5) * 40).toFixed(2) + '%');
-        contact.style.setProperty('--contact-shell-y', (contactState.center * 22).toFixed(2) + 'px');
-        contact.style.setProperty('--contact-shell-rx', (contactState.center * -1.4).toFixed(2) + 'deg');
-      }
-
-      if (footer && footerState) {
-        footer.style.setProperty('--footer-word-y', ((1 - footerState.p) * 80).toFixed(2) + 'px');
-        footer.style.setProperty('--footer-content-y', (footerState.center * -22).toFixed(2) + 'px');
-        footer.style.setProperty('--footer-content-scale', (.985 + footerState.p * .015).toFixed(4));
-      }
-    };
-
-    const request = () => { if (!raf) raf = requestAnimationFrame(update); };
-    addEventListener('scroll', request, {passive:true});
-    addEventListener('resize', request, {passive:true});
-    update();
-
-    if (!matchMedia('(pointer: coarse)').matches) {
-      const spotlight = document.createElement('div');
-      spotlight.className = 'fx-pointer-glow';
-      spotlight.setAttribute('aria-hidden','true');
-      document.body.appendChild(spotlight);
-      let pointerRaf = 0;
-      let px = innerWidth / 2, py = innerHeight / 2;
-      addEventListener('pointermove', (e) => {
-        px = e.clientX; py = e.clientY;
-        if (!pointerRaf) pointerRaf = requestAnimationFrame(() => {
-          pointerRaf = 0;
-          spotlight.style.transform = 'translate3d(' + px + 'px,' + py + 'px,0)';
-        });
-      }, {passive:true});
-    }
   }
 
   function ctaPopup() {
@@ -1321,13 +1064,12 @@ YLEINEN TOIMINTAOHJE:
     if (location.pathname === '/assistant') {
       standaloneAssistant();
       deepScrollExperience();
-      fullSitePolish();
       return;
     }
     if (location.pathname === '/') {
-      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup(); cinematicSectionAtmosphere(); deepScrollExperience(); immersiveHomepageScenes(); fullSitePolish();
+      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup(); cinematicSectionAtmosphere(); deepScrollExperience(); immersiveHomepageScenes();
     } else {
-      revealTargets(); magneticButtons(); assistant(); deepScrollExperience(); fullSitePolish();
+      revealTargets(); magneticButtons(); assistant(); deepScrollExperience();
     }
   }
 
