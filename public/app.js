@@ -82,7 +82,7 @@ function socialAuthButtons(flow = 'signup') {
 function oauthErrorMessage() {
   const p = new URLSearchParams(location.search);
   const code = p.get('oauth_error');
-  const provider = p.get('provider') === 'apple' ? 'Apple' : 'Google';
+  const provider = 'Google';
   if (!code) return '';
   const messages = {
     not_configured: 'Google-kirjautuminen ei ole vielä käytettävissä. Voit jatkaa sähköpostilla.',
@@ -1179,7 +1179,7 @@ async function route() {
           if (form.elements.password) form.elements.password.required = false;
           const badge = document.createElement('div');
           badge.className = 'oauth-connected';
-          badge.textContent = (profile.provider === 'apple' ? 'Apple' : 'Google') + '-tili yhdistetty · ' + profile.email;
+          badge.textContent = 'Google-tili yhdistetty · ' + profile.email;
           form.querySelector('.formgrid')?.before(badge);
         })
         .catch(() => {});
