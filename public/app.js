@@ -496,7 +496,7 @@ function footer() {
 function heroVisual() {
   return `<div class="signal-console" aria-label="RESPONDO AI käyttöliittymäesimerkki">
     <div class="console-top">
-      <div class="console-brand"><span class="pulse"></span> LIVE / RESPONDO AI</div>
+      <div class="console-brand"><span class="pulse"></span> RESPONDO AI / PÄÄLLÄ</div>
       <div class="console-time">24/7</div>
     </div>
     <div class="console-grid">
@@ -1362,7 +1362,7 @@ async function dashboard() {
         <aside class="panel live-preview-panel" id="live-preview">
           <div class="panel-head">
             <div><small>KOKEILE TÄSSÄ</small><h2>Kysy kuten asiakkaasi kysyisi</h2></div>
-            <span class="preview-live"><i></i> Live</span>
+            <span class="preview-live"><i></i> Käytössä</span>
           </div>
           <div class="preview-device">
             <div class="preview-device-top">
@@ -1568,7 +1568,7 @@ async function route() {
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = 'Avataan Stripe Checkout…';
+      button.innerHTML = 'Avataan maksusivua…';
       $('#msg').innerHTML = '';
       try {
         const result = await api('/api/auth/start-checkout', {
@@ -1599,7 +1599,7 @@ async function route() {
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = 'Kirjaudutaan…';
+      button.innerHTML = 'Kirjaudutaan sisään…';
       $('#msg').innerHTML = '';
       try {
         await api('/api/auth/login', {
