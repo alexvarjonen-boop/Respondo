@@ -12,7 +12,7 @@
   function marquee() {
     const hero = $('.hero');
     if (!hero || $('.respondo-marquee')) return;
-    const words = ['24/7 ASIAKASPALVELU','HYVÄKSYTTY TIETO','EI ARVAILUA','3 PÄIVÄÄ MAKSUTTA','SUOMALAINEN B2B','RESPONDO AI'];
+    const words = ['ASIAKASPALVELU YMPÄRI VUOROKAUDEN','YRITYKSESI OMA TIETO','EI KEKSITTYJÄ VASTAUKSIA','3 PÄIVÄÄ ILMAISEKSI','TEHTY YRITYKSILLE','RESPONDO AI'];
     const row = [...words, ...words].map(x => `<span>${x}</span>`).join('');
     hero.insertAdjacentHTML('afterend', `<div class="respondo-marquee" aria-hidden="true"><div class="marquee-track">${row}</div></div>`);
   }
@@ -119,21 +119,21 @@
   }
 
   const faq = [
-    {keys:['hinta','maksaa','49','vuosi','kuukausi','price','pricing','cost','month','year'], answer:'RESPONDO AI maksaa 49 € / kk + alv tai 549 € / vuosi + alv. Molemmissa on 3 päivän maksuton kokeilu.'},
-    {keys:['kokeilu','ilmainen','3 päiv','trial','free','3 day'], answer:'Saat 3 päivää maksutta. Maksutapa lisätään alussa Stripessä, ja veloitus alkaa vasta kokeilun jälkeen, ellet peru tilausta ennen sitä.'},
-    {keys:['miten toimii','toimii','tietopohja','tieto','how does it work','how it works','knowledge base'], answer:'Lisäät yrityksesi hyväksytyt tiedot tietopohjaan. RESPONDO AI vastaa asiakkaalle niiden perusteella ja ohjaa epävarmat tilanteet ihmiselle sen sijaan, että arvaisi.'},
-    {keys:['asennus','sivulle','verkkosivu','widget','install','installation','website'], answer:'Kun tili on käytössä, saat hallintapaneelista yhden asennusrivin, jolla chat-widget lisätään verkkosivulle.'},
-    {keys:['tietoturva','gdpr','turvallinen','data','security','privacy','safe'], answer:'RESPONDO AI käyttää HTTPS-yhteyksiä, salattuja palveluntarjoajia ja rajattuja käyttöoikeuksia. Maksukorttitiedot käsittelee Stripe. Lisätiedot löydät Tietoturva- ja Tietosuojasivuista.'},
-    {keys:['peru','irtisano','lopeta','cancel','cancellation'], answer:'Tilauksen voi perua koska tahansa. Käyttö jatkuu maksetun laskutuskauden loppuun.'},
-    {keys:['y-tunnus','ytunnus','yritys','business id','company'], answer:'Respondon Y-tunnus on 3599437-5. Yhteyssähköposti on respondoai.fi@outlook.com.'}
+    {keys:['hinta','maksaa','49','vuosi','kuukausi','price','pricing','cost','month','year'], answer:'Respondo maksaa 49 € / kk + alv tai 549 € / vuosi + alv. Voit kokeilla kumpaa tahansa 3 päivää ilmaiseksi.'},
+    {keys:['kokeilu','ilmainen','3 päiv','trial','free','3 day'], answer:'Saat kokeilla Respondoa 3 päivää ilmaiseksi. Maksutapa lisätään alussa Stripessä, mutta veloitus alkaa vasta kokeilun jälkeen, jos et peru tilausta sitä ennen.'},
+    {keys:['miten toimii','toimii','tietopohja','tieto','how does it work','how it works','knowledge base'], answer:'Lisäät yrityksesi tiedot kerran. Respondo vastaa niiden perusteella ja ohjaa asiakkaan sinulle, jos varmaa vastausta ei löydy.'},
+    {keys:['asennus','sivulle','verkkosivu','widget','install','installation','website'], answer:'Kun tili on valmis, kopioit hallintapaneelista yhden koodirivin verkkosivullesi. Sen jälkeen chat on käytössä.'},
+    {keys:['tietoturva','gdpr','turvallinen','data','security','privacy','safe'], answer:'Respondo käyttää suojattuja HTTPS-yhteyksiä ja rajattuja käyttöoikeuksia. Korttitiedot käsittelee Stripe. Tarkemmat tiedot löydät tietoturva- ja tietosuojasivuilta.'},
+    {keys:['peru','irtisano','lopeta','cancel','cancellation'], answer:'Voit perua tilauksen milloin tahansa. Palvelu toimii normaalisti jo maksetun laskutuskauden loppuun asti.'},
+    {keys:['y-tunnus','ytunnus','yritys','business id','company'], answer:'Respondon Y-tunnus on 3599437-5. Saat meidät kiinni sähköpostilla osoitteesta respondoai.fi@outlook.com.'}
   ];
 
   function assistantAnswer(text) {
     const q = text.toLowerCase();
     const hit = faq.find(item => item.keys.some(k => q.includes(k)));
     if (hit) return hit.answer;
-    if (q.includes('hei') || q.includes('moi') || q.includes('hello') || q.includes('hi') || q.includes('hey')) return 'Moi! Kysy vaikka hinnasta, kokeilusta, käyttöönotosta, tietoturvasta tai siitä miten RESPONDO AI toimii.';
-    return 'En halua keksiä vastausta. Voin auttaa Respondon hinnassa, kokeilussa, käyttöönotossa, tietoturvassa ja tilauksessa — tai voit ottaa yhteyttä osoitteeseen respondoai.fi@outlook.com.';
+    if (q.includes('hei') || q.includes('moi') || q.includes('hello') || q.includes('hi') || q.includes('hey')) return 'Moi! Kysy ihan vapaasti Respondosta — esimerkiksi hinnasta, kokeilusta, käyttöönotosta tai siitä, miten palvelu toimii.';
+    return 'En löytänyt tähän varmaa vastausta. Voit kysyä hinnasta, kokeilusta, käyttöönotosta tai tilauksesta, tai laittaa meille viestiä osoitteeseen respondoai.fi@outlook.com.';
   }
 
   const localAiHistory = [];
@@ -178,7 +178,7 @@
       p.serviceArea && `Toimialue: ${p.serviceArea}`,
       p.address && `Osoite: ${p.address}`,
       p.website && `Verkkosivu: ${p.website}`,
-      p.notes && `Muut tärkeät tiedot: ${p.notes}`,
+      p.notes && `Mitä muuta asiakkaan pitäisi tietää?: ${p.notes}`,
       ...normalizedCustomFacts(p).map(x => `${x.key}: ${x.answer}`),
     ].filter(Boolean).join('\n');
 
@@ -331,7 +331,7 @@ YLEINEN TOIMINTAOHJE:
 
   async function localAiAnswer(text, onProgress) {
     const profile = getOwnerProfile();
-    if (onProgress) onProgress(25, 'Haetaan yrityksen tiedoista…');
+    if (onProgress) onProgress(25, 'Katson yrityksen tiedoista…');
     const response = await fetch('/api/public/demo-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -342,9 +342,9 @@ YLEINEN TOIMINTAOHJE:
       }),
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || 'Demon vastaaminen epäonnistui.');
-    if (onProgress) onProgress(100, 'Muotoillaan vastausta…');
-    const answer = String(data.answer || '').trim() || 'En löydä tähän vielä varmaa vastausta.';
+    if (!response.ok) throw new Error(data.error || 'Vastausta ei saatu tällä kertaa.');
+    if (onProgress) onProgress(100, 'Hetki, etsin vastausta…');
+    const answer = String(data.answer || '').trim() || 'En löytänyt tähän varmaa vastausta yrityksen tiedoista.';
     localAiHistory.push({ question: text, answer });
     if (localAiHistory.length > 12) localAiHistory.splice(0, localAiHistory.length - 12);
     return answer;
@@ -371,9 +371,9 @@ YLEINEN TOIMINTAOHJE:
       messages.scrollTop = messages.scrollHeight;
       try {
         if (location.pathname === '/assistant') {
-          typing.textContent = 'Haetaan hyväksytyistä tiedoista…';
+          typing.textContent = 'Etsin vastausta yrityksen tiedoista…';
           const answer = await localAiAnswer(clean, (pct) => {
-            if (pct >= 100) typing.textContent = 'Muotoillaan vastausta…';
+            if (pct >= 100) typing.textContent = 'Hetki, etsin vastausta…';
             messages.scrollTop = messages.scrollHeight;
           });
           typing.classList.remove('typing');
@@ -386,9 +386,9 @@ YLEINEN TOIMINTAOHJE:
       } catch (err) {
         typing.classList.remove('typing');
         const fallback = location.pathname === '/assistant'
-          ? (ownerProfileFallback(clean) || 'En löydä tätä tietoa yrityksen tallennetuista tiedoista.')
+          ? (ownerProfileFallback(clean) || 'Tätä tietoa ei löytynyt yrityksen tallentamista tiedoista.')
           : assistantAnswer(clean);
-        typing.textContent = fallback + (location.pathname === '/assistant' ? '' : ' (Yhteys vastauspalveluun katkesi.)');
+        typing.textContent = fallback + (location.pathname === '/assistant' ? '' : ' Yhteys katkesi hetkeksi.');
       }
       messages.scrollTop = messages.scrollHeight;
     };
@@ -413,9 +413,9 @@ YLEINEN TOIMINTAOHJE:
           <a class="assistant-direct-brand" href="/" aria-label="RESPONDO AI etusivu"><span class="assistant-direct-mark"><svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></span><b>RESPONDO AI</b></a>
           <section class="assistant-owner-panel">
             <div class="assistant-direct-copy">
-              <small>TESTAA OMAN YRITYKSESI TIEDOILLA</small>
-              <h1>Rakenna botin tietopohja.</h1>
-              <p>Lisää yrityksesi tiedot ja omat kysymys–vastausparit. Testibotti käyttää samaa vastauslogiikkaa kuin oikea widget.</p>
+              <small>KOKEILE OMILLA YRITYSTIEDOILLASI</small>
+              <h1>Kokeile, miten Respondo vastaisi sinun asiakkaillesi.</h1>
+              <p>Lisää alle muutama yrityksesi tieto. Sen jälkeen voit kysyä botilta ihan samalla tavalla kuin oikea asiakkaasi kysyisi.</p>
             </div>
 
             <form class="owner-profile-form" id="ownerProfileForm">
@@ -431,7 +431,7 @@ YLEINEN TOIMINTAOHJE:
                   <button type="button" id="addService">Lisää</button>
                 </div>
                 <div class="service-chips" id="serviceChips"></div>
-                <small>Voit valita useita palveluja.</small>
+                <small>Voit lisätä tähän kaikki palvelut, joita tarjoatte.</small>
               </div>
 
               <div class="owner-field"><label>Hinnat</label><textarea name="pricing" placeholder="Esim. 65 € / h + alv">${val(p.pricing)}</textarea></div>
@@ -464,57 +464,57 @@ YLEINEN TOIMINTAOHJE:
 
               <div class="custom-facts-block">
                 <div class="custom-facts-head">
-                  <div><label>Omat hakusanat ja vastaukset</label><small>Esim. “Päivystys” → “Päivystämme 24/7 numerossa…”</small></div>
-                  <button type="button" id="addCustomFact" data-add-custom-fact>+ Uusi rivi</button>
+                  <div><label>Omat kysymykset ja vastaukset</label><small>Lisää tähän asioita, joita asiakkaasi kysyvät usein.</small></div>
+                  <button type="button" id="addCustomFact" data-add-custom-fact>+ Lisää kysymys</button>
                 </div>
                 <div id="customFacts">
                   ${customFacts.map((x,i) => `
                     <div class="custom-fact-row" data-index="${i}">
-                      <div class="owner-field"><label>Otsikko / kysymys / hakusana</label><input data-fact-key value="${val(x.key)}" placeholder="Esim. Oletteko lauantaina auki?"></div>
-                      <div class="owner-field"><label>Vastaus</label><textarea data-fact-answer placeholder="Esim. Kyllä, lauantaisin klo 10–14.">${val(x.answer)}</textarea></div>
+                      <div class="owner-field"><label>Asiakkaan kysymys tai aihe</label><input data-fact-key value="${val(x.key)}" placeholder="Esim. Oletteko lauantaina auki?"></div>
+                      <div class="owner-field"><label>Vastaus</label><textarea data-fact-answer placeholder="Esim. Kyllä. Olemme lauantaisin auki klo 10–14.">${val(x.answer)}</textarea></div>
                       <button type="button" class="remove-fact" aria-label="Poista rivi">×</button>
                     </div>`).join('')}
                 </div>
-                <button type="button" class="add-fact-bottom" id="addCustomFactBottom" data-add-custom-fact>+ Lisää oma kysymys / hakusana</button>
+                <button type="button" class="add-fact-bottom" id="addCustomFactBottom" data-add-custom-fact>+ Lisää oma kysymys</button>
               </div>
 
-              <div class="owner-field"><label>Muut tärkeät tiedot</label><textarea name="notes" placeholder="Päivystys, maksutavat, takuukäytännöt, ajanvaraus…">${val(p.notes)}</textarea></div>
+              <div class="owner-field"><label>Mitä muuta asiakkaan pitäisi tietää?</label><textarea name="notes" placeholder="Esim. päivystys, maksutavat, takuu tai ajanvarausohjeet…">${val(p.notes)}</textarea></div>
 
-              <button class="owner-save" type="submit">Tallenna botille <span>→</span></button>
+              <button class="owner-save" type="submit">Tallenna ja kokeile <span>→</span></button>
               <div class="owner-save-status" id="ownerSaveStatus"></div>
             </form>
 
             <section class="assistant-order" aria-label="Tilaa RESPONDO AI">
               <div class="assistant-order-head">
-                <small>VALMIS OTTAMAAN KÄYTTÖÖN?</small>
-                <h2>Ota sama botti omalle verkkosivullesi.</h2>
-                <p>Saat 3 päivän maksuttoman kokeilun. Valitse kuukausi tai vuosi ja viimeistele tilaus turvallisesti Stripessä.</p>
+                <small>HALUATKO TÄMÄN OMALLE SIVULLESI?</small>
+                <h2>Ota Respondo käyttöön omalla verkkosivullasi.</h2>
+                <p>Kokeile 3 päivää ilmaiseksi. Valitse kuukausi- tai vuositilaus ja lisää maksutapa turvallisesti Stripessä.</p>
               </div>
               <div class="assistant-order-grid">
                 <article class="assistant-order-card">
-                  <div class="assistant-order-label">KUUKAUSI</div>
+                  <div class="assistant-order-label">KUUKAUSITILAUS</div>
                   <h3>49 € <span>/ kk + alv</span></h3>
                   <ul>
-                    <li>3 päivää maksutta</li>
-                    <li>Chat-widget verkkosivulle</li>
-                    <li>Yrityksen oma tietopohja</li>
-                    <li>Peruuta milloin tahansa</li>
+                    <li>3 päivää ilmaiseksi</li>
+                    <li>Chat suoraan omalle verkkosivullesi</li>
+                    <li>Vastaukset yrityksesi omista tiedoista</li>
+                    <li>Voit perua milloin tahansa</li>
                   </ul>
-                  <a class="assistant-order-btn" href="/tilaus?plan=monthly">Aloita kuukausitilaus <span>→</span></a>
+                  <a class="assistant-order-btn" href="/tilaus?plan=monthly">Valitse kuukausi <span>→</span></a>
                 </article>
                 <article class="assistant-order-card featured">
-                  <div class="assistant-order-top"><div class="assistant-order-label">VUOSI</div><span class="assistant-save">Säästä 39 €</span></div>
+                  <div class="assistant-order-top"><div class="assistant-order-label">VUOSITILAUS</div><span class="assistant-save">Säästä 39 €</span></div>
                   <h3>549 € <span>/ vuosi + alv</span></h3>
                   <ul>
-                    <li>3 päivää maksutta</li>
-                    <li>Samat ominaisuudet kuin kuukausitilauksessa</li>
-                    <li>Yksi vuosiveloitus</li>
-                    <li>Peruuta milloin tahansa</li>
+                    <li>3 päivää ilmaiseksi</li>
+                    <li>Kaikki samat ominaisuudet kuin kuukausitilauksessa</li>
+                    <li>Maksu kerran vuodessa</li>
+                    <li>Voit perua milloin tahansa</li>
                   </ul>
-                  <a class="assistant-order-btn primary" href="/tilaus?plan=yearly">Aloita vuositilaus <span>→</span></a>
+                  <a class="assistant-order-btn primary" href="/tilaus?plan=yearly">Valitse vuosi <span>→</span></a>
                 </article>
               </div>
-              <div class="assistant-order-trust"><span>✓ Stripe-maksu</span><span>✓ Ei veloitusta kokeilun aikana</span><span>✓ Käyttöönotto heti tilauksen jälkeen</span></div>
+              <div class="assistant-order-trust"><span>✓ Maksut turvallisesti Stripessä</span><span>✓ Ei veloitusta 3 päivän kokeilun aikana</span><span>✓ Pääset alkuun heti tilauksen jälkeen</span></div>
             </section>
           </section>
         </main>`;
@@ -558,7 +558,7 @@ YLEINEN TOIMINTAOHJE:
       if (!host) return;
       host.insertAdjacentHTML('beforeend', `
         <div class="custom-fact-row">
-          <div class="owner-field"><label>Otsikko / kysymys / hakusana</label><input data-fact-key value="${val(key)}" placeholder="Esim. Mitkä maksutavat käyvät?"></div>
+          <div class="owner-field"><label>Asiakkaan kysymys tai aihe</label><input data-fact-key value="${val(key)}" placeholder="Esim. Mitkä maksutavat käyvät?"></div>
           <div class="owner-field"><label>Vastaus</label><textarea data-fact-answer placeholder="Esim. Kortti, lasku ja MobilePay">${val(answer)}</textarea></div>
           <button type="button" class="remove-fact" aria-label="Poista rivi">×</button>
         </div>`);
@@ -629,12 +629,12 @@ YLEINEN TOIMINTAOHJE:
 
       const status = $('#ownerSaveStatus');
       if (status) {
-        status.textContent = 'Tallennettu ✓ Kysy nyt botilta yrityksestä.';
+        status.textContent = 'Tallennettu ✓ Kysy nyt botilta mitä tahansa yrityksestäsi.';
         setTimeout(() => { status.textContent = ''; }, 3500);
       }
       const messages = $('.fx-assistant-messages');
       if (messages) {
-        messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot owner-confirm">Tiedot päivitetty. Testaa nyt kysymällä kuten oikea asiakkaasi kysyisi.</div>');
+        messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot owner-confirm">Tiedot päivitettiin. Kysy nyt ihan samalla tavalla kuin oikea asiakkaasi kysyisi.</div>');
         messages.scrollTop = messages.scrollHeight;
       }
     });
@@ -1044,7 +1044,7 @@ YLEINEN TOIMINTAOHJE:
 
   function ctaPopup() {
     if ($('.fx-modal-backdrop') || sessionStorage.getItem('respondoCtaSeen')) return;
-    document.body.insertAdjacentHTML('beforeend', `<div class="fx-modal-backdrop" role="dialog" aria-modal="true" aria-label="RESPONDO AI kokeilu"><div class="fx-modal"><button class="fx-modal-close" aria-label="Sulje">×</button><div class="fx-modal-kicker">RESPONDO AI / 3 PÄIVÄÄ</div><h3>Katso miltä 24/7-asiakaspalvelu näyttää omassa yrityksessäsi.</h3><p>Luo tili, lisää yrityksesi hyväksytty tieto ja testaa palvelua 3 päivää maksutta.</p><div class="fx-modal-actions"><a class="btn ink" href="/tilaus">Aloita maksutta →</a><button class="btn ghost fx-modal-later" type="button">Katson myöhemmin</button></div></div></div>`);
+    document.body.insertAdjacentHTML('beforeend', `<div class="fx-modal-backdrop" role="dialog" aria-modal="true" aria-label="RESPONDO AI kokeilu"><div class="fx-modal"><button class="fx-modal-close" aria-label="Sulje">×</button><div class="fx-modal-kicker">RESPONDO AI / 3 PÄIVÄÄ</div><h3>Kokeile, miltä Respondo näyttäisi omassa yrityksessäsi.</h3><p>Luo tili, lisää yrityksesi hyväksytty tieto ja testaa palvelua 3 päivää ilmaiseksi.</p><div class="fx-modal-actions"><a class="btn ink" href="/tilaus">Kokeile ilmaiseksi →</a><button class="btn ghost fx-modal-later" type="button">Ehkä myöhemmin</button></div></div></div>`);
     const bg = $('.fx-modal-backdrop');
     const close = () => { bg.classList.remove('open'); sessionStorage.setItem('respondoCtaSeen','1'); };
     $('.fx-modal-close').addEventListener('click', close); $('.fx-modal-later').addEventListener('click', close); bg.addEventListener('click', e => { if (e.target === bg) close(); });
