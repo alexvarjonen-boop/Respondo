@@ -36,23 +36,24 @@ async function config() {
 
 function logo() {
   return `<a class="logo" href="/" aria-label="RESPONDO AI etusivu">
-    <span class="brand-mark" aria-hidden="true"><i></i><b></b></span>
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 64 64" focusable="false" aria-hidden="true">
+        <rect width="64" height="64" rx="18" fill="#111114"/>
+        <path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/>
+      </svg>
+    </span>
     <span class="brand-word">RESPONDO AI</span>
   </a>`;
 }
 
 
 function currentLang() {
-  return localStorage.getItem('respondo-lang') === 'en' ? 'en' : 'fi';
+  try { localStorage.removeItem('respondo-lang'); } catch {}
+  return 'fi';
 }
 
 function languageSwitch() {
-  const lang = currentLang();
-  return '<div class="lang-switch" aria-label="Language">' +
-    '<button type="button" class="lang-choice ' + (lang === 'fi' ? 'active' : '') + '" data-lang="fi">FI</button>' +
-    '<span>/</span>' +
-    '<button type="button" class="lang-choice ' + (lang === 'en' ? 'active' : '') + '" data-lang="en">EN</button>' +
-  '</div>';
+  return '';
 }
 
 const EN_TEXT = new Map(Object.entries({
@@ -221,9 +222,8 @@ const EN_PLACEHOLDERS = new Map(Object.entries({
 }));
 
 function applyLanguage() {
-  const lang = currentLang();
-  document.documentElement.lang = lang === 'en' ? 'en' : 'fi';
-  if (lang !== 'en') return;
+  document.documentElement.lang = 'fi';
+  return;
 
   document.title = 'RESPONDO AI | AI Customer Service Chatbot for Businesses 24/7';
 
@@ -255,14 +255,7 @@ function applyLanguage() {
 }
 
 function bindLanguageSwitch() {
-  document.querySelectorAll('.lang-choice').forEach((button) => {
-    button.addEventListener('click', () => {
-      const lang = button.dataset.lang === 'en' ? 'en' : 'fi';
-      if (lang === currentLang()) return;
-      localStorage.setItem('respondo-lang', lang);
-      location.reload();
-    });
-  });
+  try { localStorage.removeItem('respondo-lang'); } catch {}
 }
 
 
