@@ -42,6 +42,55 @@ const slug = (value) =>
     .replace(/^-|-$/g, '')
     .slice(0, 50) || `yritys-${crypto.randomBytes(3).toString('hex')}`;
 
+
+function normalizeWebUrl(value, originOnly = false) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    const withScheme = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
+    const u = new URL(withScheme);
+    if (!['http:', 'https:'].includes(u.protocol)) return '';
+    return originOnly ? u.origin : u.toString();
+  } catch {
+    return '';
+  }
+}
+
+function normalizeHost(value) {
+  try {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const u = raw.includes('://') ? new URL(raw) : new URL('https://' + raw);
+    return u.hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+function requestOrigin(req) {
+  const value = String(req.headers.origin || '').trim();
+  try {
+    return value ? new URL(value) : null;
+  } catch {
+    return null;
+  }
+}
+
+function widgetOriginAllowed(req, tenant) {
+  const origin = requestOrigin(req);
+  const allowedHost = normalizeHost(tenant.website);
+  if (!origin || !allowedHost) return false;
+  return normalizeHost(origin.hostname) === allowedHost;
+}
+
+function setWidgetCors(req, res) {
+  const origin = requestOrigin(req);
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin.origin);
+    res.setHeader('Vary', 'Origin');
+  }
+}
+
 function cookies(req) {
   return Object.fromEntries(
     String(req.headers.cookie || '')
@@ -381,6 +430,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
+app.use(express.text({ type: 'text/plain', limit: '20kb' }));
 app.use(rateLimit({ windowMs: 60000, limit: 180, standardHeaders: true, legacyHeaders: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -722,6 +772,16 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
     const t = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtilaa ei löytynyt.' });
     const tenantId = t.rows[0].id;
+    const websiteRaw = String(req.body.website || '').trim();
+    const quoteRaw = String(req.body.quoteRequestUrl || '').trim();
+    const website = websiteRaw ? normalizeWebUrl(websiteRaw, true) : '';
+    const quoteRequestUrl = quoteRaw ? normalizeWebUrl(quoteRaw, false) : '';
+    if (websiteRaw && !website) {
+      return res.status(400).json({ error: 'Verkkosivun osoite ei ole kelvollinen.' });
+    }
+    if (quoteRaw && !quoteRequestUrl) {
+      return res.status(400).json({ error: 'Tarjouspyyntölomakkeen linkki ei ole kelvollinen.' });
+    }
 
     const fields = [
       ['Hinnat', req.body.pricing, ['hinta','hinnasto','maksaa','alv']],
@@ -731,7 +791,8 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
       ['Palvelut', req.body.services, ['palvelu','palvelut','teette','tarjoatte']],
       ['Toimialue', req.body.serviceArea, ['toimialue','alue','missä','paikkakunta']],
       ['Osoite', req.body.address, ['osoite','sijainti','missä']],
-      ['Verkkosivu', req.body.website, ['verkkosivu','www','nettisivu']],
+      ['Verkkosivu', website, ['verkkosivu','www','nettisivu']],
+      ['Tarjouspyyntölomake', quoteRequestUrl, ['tarjous','tarjouspyyntö','tarjouspyyntölomake','pyydä tarjous','lomake']],
       ['Lisätiedot', req.body.notes, ['lisätieto','muuta','huomio']]
     ];
 
@@ -755,7 +816,7 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
       [
         String(req.body.phone || '').trim() || null,
         String(req.body.email || '').trim() || null,
-        String(req.body.website || '').trim() || null,
+        website || null,
         tenantId
       ]
     );
@@ -851,6 +912,45 @@ async function publicTenant(slugValue) {
   );
 }
 
+
+app.get('/api/public/:slug/widget-token', async (req, res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.status(404).json({ error: 'Yritystä ei löytynyt.' });
+    const tenant = tr.rows[0];
+
+    if (!tenant.website) {
+      return res.status(403).json({ error: 'Widgetille ei ole vielä määritetty verkkosivua.' });
+    }
+    if (!widgetOriginAllowed(req, tenant)) {
+      return res.status(403).json({ error: 'Tämä RESPONDO AI -lisenssi on sidottu toiseen verkkosivuun.' });
+    }
+
+    setWidgetCors(req, res);
+    const origin = requestOrigin(req);
+    const token = jwt.sign(
+      {
+        kind: 'widget',
+        slug: tenant.slug,
+        host: normalizeHost(origin.hostname),
+      },
+      JWT,
+      { expiresIn: '12h' }
+    );
+
+    return res.json({
+      token,
+      name: tenant.name,
+      greeting: tenant.greeting,
+      accent: tenant.accent,
+    });
+  } catch (e) {
+    console.error('Widget token failed', e);
+    return res.status(500).json({ error: 'Widgetin aktivointi epäonnistui.' });
+  }
+});
+
+
 app.get('/api/public/:slug', async (req, res) => {
   try {
     const r = await publicTenant(req.params.slug);
@@ -873,8 +973,37 @@ app.post('/api/public/:slug/chat', async (req, res) => {
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.status(404).json({ error: 'Yritystä ei löytynyt.' });
     const t = tr.rows[0];
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { body = {}; }
+    }
+    body = body || {};
+
+    const origin = requestOrigin(req);
+    const baseHost = normalizeHost(BASE);
+    const externalWidgetRequest = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
+
+    if (externalWidgetRequest) {
+      if (!widgetOriginAllowed(req, t)) {
+        return res.status(403).json({ error: 'Tämä RESPONDO AI -lisenssi on sidottu toiseen verkkosivuun.' });
+      }
+      try {
+        const token = jwt.verify(String(body.widgetToken || ''), JWT);
+        if (
+          token.kind !== 'widget' ||
+          token.slug !== t.slug ||
+          token.host !== normalizeHost(origin.hostname)
+        ) {
+          throw new Error('Invalid widget token');
+        }
+      } catch {
+        return res.status(403).json({ error: 'Widgetin käyttöoikeus ei ole voimassa.' });
+      }
+      setWidgetCors(req, res);
+    }
+
     const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 ORDER BY created_at ASC', [t.id]);
-    const message = String(req.body.message || '').trim();
+    const message = String(body.message || '').trim();
     if (!message) return res.status(400).json({ error: 'Kirjoita kysymys.' });
 
     let answer = t.handoff_message;
@@ -917,7 +1046,7 @@ app.post('/api/public/:slug/chat', async (req, res) => {
 
     await q(
       'INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',
-      [uid(), t.id, message, answer, intent, confidence, sources, handoff, req.body.visitorRef || null],
+      [uid(), t.id, message, answer, intent, confidence, sources, handoff, body.visitorRef || null],
     );
     return res.json({ answer, handoff, confidence, intent });
   } catch (e) {
