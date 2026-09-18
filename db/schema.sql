@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   contact_phone TEXT,
   greeting TEXT NOT NULL DEFAULT 'Hei! Miten voin auttaa?',
   handoff_message TEXT NOT NULL DEFAULT 'En halua arvata. Ohjaan tämän ihmiselle vastattavaksi.',
-  accent TEXT NOT NULL DEFAULT '#3157ff',
+  accent TEXT NOT NULL DEFAULT '#111113',
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
