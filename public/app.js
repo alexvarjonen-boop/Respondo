@@ -59,24 +59,24 @@ function languageSwitch() {
 const EN_TEXT = new Map(Object.entries({
   'Tuote':'Product',
   'Tietopohja':'Knowledge base',
-  'Testaa bottia':'Test the bot',
+  'Kokeile bottia':'Test the bot',
   'Hinta':'Pricing',
   'Tietoturva':'Security',
   'Kirjaudu':'Log in',
-  'Kokeile maksutta':'Try for free',
-  'Miten toimii':'How it works',
-  'Ominaisuudet':'Features',
-  'Tutkittua':'Research',
-  'Laskuri':'Calculator',
+  'Kokeile ilmaiseksi':'Try for free',
+  'Näin se toimii':'How it works',
+  'Mitä saat':'Features',
+  'Miksi nopeus ratkaisee':'Research',
+  'Laske itse':'Calculator',
   'Hinnat':'Pricing',
-  'Yhteystiedot':'Contact',
-  'AI-ASIAKASPALVELU YRITYKSELLESI':'AI CUSTOMER SERVICE FOR YOUR BUSINESS',
+  'Ota yhteyttä':'Contact',
+  'ASIAKASPALVELU, JOKA ON AINA PAIKALLA':'AI CUSTOMER SERVICE FOR YOUR BUSINESS',
   'Asiakas kysyy.':'Customer asks.',
   'RESPONDO vastaa.':'RESPONDO answers.',
   'Lisää yrityksesi tiedot kerran. RESPONDO vastaa asiakkaillesi ympäri vuorokauden ja ohjaa kysymyksen sinulle silloin, kun varmaa vastausta ei löydy.':'Add your company information once. RESPONDO answers your customers around the clock and hands the question to you whenever it cannot find a reliable answer.',
-  'Kokeile 3 päivää maksutta':'Try free for 3 days',
+  'Kokeile 3 päivää ilmaiseksi':'Try free for 3 days',
   'Tutustu tuotteeseen':'Explore the product',
-  '3 päivää maksutta':'3 days free',
+  '3 päivää ilmaiseksi':'3 days free',
   'Peruuta milloin tahansa':'Cancel anytime',
   '49 €/kk + alv':'€49/month + VAT',
   'TIETOPOHJA':'KNOWLEDGE BASE',
@@ -123,7 +123,7 @@ const EN_TEXT = new Map(Object.entries({
   'juuri nyt':'just now',
   'VASTAA':'ANSWERS',
   'asiakkaillesi':'your customers',
-  'PERUSTUU':'CONTROL',
+  'PERUSTUU':'HALLINTA',
   'sinun hallinnassa':'you are in control',
   'aina':'always',
   'ALKAEN':'FROM',
@@ -141,60 +141,60 @@ const EN_TEXT = new Map(Object.entries({
   'odottaa asiakaspalvelua 24/7':'expect customer service 24/7',
   'pitää nopeutta ja oikeaa ratkaisua ostopäätökseen vaikuttavana':'say speed and the right solution influence purchase decisions',
   'HUOM':'NOTE',
-  'Arvolaskuri':'Value calculator',
+  'Mitä yksi menetetty yhteydenotto voi maksaa?':'Value calculator',
   'Mitä vastaamatta jäänyt':'What could an unanswered',
   'yhteydenotto voi maksaa?':'customer inquiry cost?',
-  'Säädä työn arvo ja päivässä vastaamatta jäävien yhteydenottojen määrä. Laskuri näyttää niiden potentiaalisen myyntiarvon.':'Adjust the job value and the number of unanswered inquiries per day. The calculator shows their potential sales value.',
-  'TYÖN ARVO':'JOB VALUE',
-  'Yhden työn keskimääräinen arvo':'Average value of one job',
-  'VASTAAMATTOMAT / PÄIVÄ':'UNANSWERED / DAY',
-  'Vastaamatta jäävät yhteydenotot':'Unanswered inquiries',
-  'POTENTIAALINEN ARVO / 30 PV':'POTENTIAL VALUE / 30 DAYS',
+  'Säädä työn arvo ja päivässä vastaamatta jäävien yhteydenottojen määrä. Laske itse näyttää niiden potentiaalisen myyntiarvon.':'Adjust the job value and the number of unanswered inquiries per day. The calculator shows their potential sales value.',
+  'KESKIMÄÄRÄINEN KAUPPA':'JOB VALUE',
+  'Paljonko yksi asiakas tuo keskimäärin?':'Average value of one job',
+  'ILMAN VASTAUSTA / PÄIVÄ':'UNANSWERED / DAY',
+  'Montako yhteydenottoa jää ilman vastausta?':'Unanswered inquiries',
+  'MAHDOLLINEN ARVO / 30 PÄIVÄÄ':'POTENTIAL VALUE / 30 DAYS',
   'Päivässä':'Per day',
   'Vuodessa':'Per year',
   'Selkeä hinta.':'Simple pricing.',
   'Ei yllätyksiä.':'No surprises.',
-  'Kokeile 3 päivää maksutta. Peruuta ennen kokeilun päättymistä, jos et halua jatkaa.':'Try free for 3 days. Cancel before the trial ends if you do not want to continue.',
-  'joustava':'flexible',
+  'Kokeile 3 päivää ilmaiseksi. Peruuta ennen kokeilun päättymistä, jos et halua jatkaa.':'Try free for 3 days. Cancel before the trial ends if you do not want to continue.',
+  'maksa kuukausittain':'flexible',
   'Kuukausi':'Monthly',
-  'Verkkosivun chat-widget':'Website chat widget',
-  'Yrityksen oma tietopohja':'Your company knowledge base',
-  'Keskustelujen tilastot':'Conversation analytics',
-  'Epävarmojen tilanteiden jatko-ohje':'Fallback for uncertain questions',
-  'Tilauksen hallinta Stripessä':'Subscription management in Stripe',
+  'Chat suoraan omalle verkkosivullesi':'Website chat widget',
+  'Vastaukset yrityksesi omista tiedoista':'Your company knowledge base',
+  'Näet, mitä asiakkaat kysyvät':'Conversation analytics',
+  'Puuttuvat vastaukset ohjataan sinulle':'Fallback for uncertain questions',
+  'Hallitse tilausta turvallisesti Stripessä':'Subscription management in Stripe',
   'säästä 39 €':'save €39',
   'Vuosi':'Yearly',
-  'Samat ominaisuudet kuin kuukausitilauksessa':'Same features as the monthly plan',
-  'Yksi vuosiveloitus':'One annual payment',
-  '3 päivän maksuton kokeilu':'3-day free trial',
-  'Käyttö jatkuu maksetun kauden loppuun':'Access continues until the end of the paid period',
-  'Valitse vuositilaus':'Choose yearly plan',
+  'Kaikki samat ominaisuudet kuin kuukausitilauksessa':'Same features as the monthly plan',
+  'Maksu kerran vuodessa':'One annual payment',
+  '3 päivää ilmaiseksi':'3-day free trial',
+  'Voit käyttää palvelua maksetun kauden loppuun':'Access continues until the end of the paid period',
+  'Valitse vuosi':'Choose yearly plan',
   'Anna asiakkaillesi vastaus myös silloin, kun et itse ehdi.':'Give customers an answer even when you are busy.',
-  'Kokeile 3 päivää maksutta. Lisää tiedot, testaa bottia ja asenna se sivullesi.':'Try free for 3 days. Add your information, test the bot and install it on your website.',
+  'Kokeile 3 päivää ilmaiseksi. Lisää tiedot, testaa bottia ja asenna se sivullesi.':'Try free for 3 days. Add your information, test the bot and install it on your website.',
   'KOKEILE':'TRY FREE',
   'Kysy lisää.':'Questions?',
   'Vastaamme.':'We answer.',
-  'Asiakaspalvelubotti, joka vastaa yrityksesi omilla tiedoilla.':'A customer-service bot that answers using your company information.',
+  'Asiakaspalvelubotti, joka vastaa asiakkaillesi yrityksesi omilla tiedoilla.':'A customer-service bot that answers using your company information.',
   'Yritys':'Company',
   'Lakiasiat':'Legal',
-  'Aloita kokeilu':'Start trial',
+  'Kokeile ilmaiseksi':'Start trial',
   'Käyttöehdot':'Terms',
   'Tietosuojaseloste':'Privacy policy',
   'Evästeet':'Cookies',
   'Tietojenkäsittely':'Data processing',
   'B2B-ohjelmistopalvelu':'B2B software service',
-  'ALOITA RESPONDO AI':'GET STARTED WITH RESPONDO AI',
+  'ALOITA KOKEILU':'GET STARTED WITH RESPONDO AI',
   'Kokeile ensin.':'Try it first.',
   'Päätä sitten.':'Decide later.',
-  'Luo tili ja lisää maksutapa turvallisesti Stripessä. Veloitus alkaa vasta kokeilun jälkeen.':'Create an account and add a payment method securely in Stripe. Billing starts only after the trial.',
+  'Luo tili ja lisää maksutapa Stripessä. Sinulta ei veloiteta mitään 3 päivän kokeilun aikana.':'Create an account and add a payment method securely in Stripe. Billing starts only after the trial.',
   'Luo tili':'Create account',
-  'Yrityksen perustiedot ja salasana.':'Company basics and password.',
-  'Lisää maksutapa':'Add payment method',
-  'Stripe käsittelee maksutiedot.':'Stripe handles payment details.',
-  'Rakenna tietopohja':'Build your knowledge base',
-  'Lisää yrityksesi hyväksytyt vastaukset.':'Add your company-approved answers.',
+  'Täytä omat ja yrityksesi perustiedot.':'Company basics and password.',
+  'Lisää maksutapa Stripessä':'Add payment method',
+  'Korttitietosi menevät suoraan Stripelle.':'Stripe handles payment details.',
+  'Lisää yrityksesi tiedot':'Build your knowledge base',
+  'Kerro Respondolle, mitä asiakkaillesi saa vastata.':'Add your company-approved answers.',
   'PALVELUNTARJOAJA':'SERVICE PROVIDER',
-  'UUSI TILI':'NEW ACCOUNT',
+  'LUO TILI':'NEW ACCOUNT',
   'Nimi':'Name',
   'Sähköposti':'Email',
   'Y-tunnus':'Business ID',
@@ -206,12 +206,12 @@ const EN_TEXT = new Map(Object.entries({
   'Hallintapaneeli':'Dashboard',
   'Tervetuloa':'Welcome',
   'takaisin.':'back.',
-  'Hallitse tietopohjaa, asennusta ja tilausta yhdestä paikasta.':'Manage your knowledge base, installation and subscription in one place.',
-  'Hallintapaneeli suojattu kirjautumisella':'Dashboard protected by login',
+  'Täältä löydät yrityksesi tiedot, keskustelut, asennuksen ja tilauksen.':'Manage your knowledge base, installation and subscription in one place.',
+  'Vain sinä pääset yrityksesi hallintaan':'Dashboard protected by login',
   'KIRJAUDU':'LOG IN',
   'Tervetuloa takaisin':'Welcome back',
   'Kirjaudu Googlella':'Log in with Google',
-  'Avaa hallintapaneeli':'Open dashboard'
+  'Kirjaudu sisään':'Open dashboard'
 }));
 
 const EN_PLACEHOLDERS = new Map(Object.entries({
@@ -266,14 +266,14 @@ function nav() {
       <nav class="navlinks" aria-label="Päänavigaatio">
         <a href="/#how">Tuote</a>
         <a href="/#control">Tietopohja</a>
-        <a href="/assistant">Testaa bottia</a>
+        <a href="/assistant">Kokeile bottia</a>
         <a href="/#pricing">Hinta</a>
         <a href="/tietoturva">Tietoturva</a>
       </nav>
       <div class="navactions">
         ${languageSwitch()}
         <a class="btn ghost" href="/kirjaudu">Kirjaudu</a>
-        <a class="btn ink" href="/tilaus">Kokeile maksutta</a>
+        <a class="btn ink" href="/tilaus">Kokeile ilmaiseksi</a>
       </div>
     </div>
   </header>`;
@@ -317,14 +317,14 @@ function stickyProductNav() {
     <div class="container product-subnav-inner">
       <span class="subnav-title">RESPONDO AI</span>
       <nav>
-        <a href="#how">Miten toimii</a>
-        <a href="#features">Ominaisuudet</a>
-        <a href="#research">Tutkittua</a>
-        <a href="#calculator">Laskuri</a>
+        <a href="#how">Näin se toimii</a>
+        <a href="#features">Mitä saat</a>
+        <a href="#research">Miksi nopeus ratkaisee</a>
+        <a href="#calculator">Laske itse</a>
         <a href="#pricing">Hinnat</a>
-        <a href="#contact">Yhteystiedot</a>
+        <a href="#contact">Ota yhteyttä</a>
       </nav>
-      <a class="subnav-cta" href="/tilaus">Kokeile maksutta</a>
+      <a class="subnav-cta" href="/tilaus">Kokeile ilmaiseksi</a>
     </div>
   </div>`;
 }
@@ -332,7 +332,7 @@ function stickyProductNav() {
 function premiumVisualSection() {
   return `<section class="section visual-showcase" id="features">
     <div class="container">
-      <div class="section-kicker">Ominaisuudet</div>
+      <div class="section-kicker">Mitä saat</div>
       <div class="split-head">
         <h2>Vähemmän säätöä.<br><em>Enemmän vastauksia.</em></h2>
         <p>RESPONDO AI yhdistää tietopohjan, keskustelut ja jatkuvasti paranevan asiakaspalvelun yhteen näkymään.</p>
@@ -442,13 +442,13 @@ function contactSection() {
     <div class="container">
       <div class="contact-shell">
         <div>
-          <div class="section-kicker">Yhteystiedot</div>
-          <h2>Kysy lisää.<br><em>Vastaamme.</em></h2>
+          <div class="section-kicker">Ota yhteyttä</div>
+          <h2>Jäikö jotain mieleen?<br><em>Laita meille viestiä.</em></h2>
         </div>
         <div class="contact-actions">
           <a href="mailto:${esc(cfg.supportEmail)}" class="contact-mail">${esc(cfg.supportEmail)}</a>
           <p>RESPONDO AI · Y-tunnus ${esc(cfg.businessId || '3599437-5')} · Suomi</p>
-          <a class="btn ink" href="/tilaus">Kokeile 3 päivää maksutta</a>
+          <a class="btn ink" href="/tilaus">Kokeile 3 päivää ilmaiseksi</a>
         </div>
       </div>
     </div>
@@ -461,7 +461,7 @@ function footer() {
       <div class="foot-top">
         <div class="foot-brand">
           ${logo()}
-          <p>Asiakaspalvelubotti, joka vastaa yrityksesi omilla tiedoilla.</p>
+          <p>Asiakaspalvelubotti, joka vastaa asiakkaillesi yrityksesi omilla tiedoilla.</p>
           <div class="seller-chip">RESPONDO AI · Y-tunnus ${esc(cfg.businessId || '3599437-5')}</div>
         </div>
         <div class="foot-col">
@@ -469,7 +469,7 @@ function footer() {
           <a href="/#how">Tuote</a>
           <a href="/#control">Tietopohja</a>
           <a href="/#pricing">Hinta</a>
-          <a href="/tilaus">Aloita kokeilu</a>
+          <a href="/tilaus">Kokeile ilmaiseksi</a>
         </div>
         <div class="foot-col">
           <h4>Yritys</h4>
@@ -501,7 +501,7 @@ function heroVisual() {
     </div>
     <div class="console-grid">
       <aside class="console-rail">
-        <span class="rail-label">CONTROL</span>
+        <span class="rail-label">HALLINTA</span>
         <div class="rail-item active"><i></i> Vastaukset</div>
         <div class="rail-item"><i></i> Tietopohja</div>
         <div class="rail-item"><i></i> Epävarmat</div>
@@ -512,10 +512,10 @@ function heroVisual() {
       <div class="console-main">
         <div class="console-header">
           <div>
-            <small>ASIAKASPALVELU / LIVE</small>
-            <h3>Yksi vastaus. Oikeasta lähteestä.</h3>
+            <small>ASIAKASPALVELU</small>
+            <h3>Vastaa vain tiedolla, jonka olet itse antanut.</h3>
           </div>
-          <span class="verified">✓ hyväksytty tieto</span>
+          <span class="verified">✓ tieto löytyi</span>
         </div>
         <div class="conversation">
           <div class="msg customer">
@@ -526,7 +526,7 @@ function heroVisual() {
             <div class="answer-head">
               <span class="mini-mark">R</span>
               <b>RESPONDO AI</b>
-              <span class="confidence">Lähde löydetty</span>
+              <span class="confidence">Tieto löytyi</span>
             </div>
             <p>Perushuolto alkaa 89 eurosta. Lauantaisin palvelemme klo 10–14.</p>
             <div class="source-line"><span>01</span> Hinnasto / Aukioloajat</div>
@@ -537,13 +537,13 @@ function heroVisual() {
           </div>
           <div class="handoff-card">
             <span class="handoff-icon">↳</span>
-            <div><b>Ei riittävästi hyväksyttyä tietoa.</b><small>RESPONDO AI ei arvaa. Asiakas ohjataan jatkamaan ihmisen kanssa.</small></div>
+            <div><b>Tähän ei löydy varmaa vastausta.</b><small>Respondo ei keksi vastausta, vaan ohjaa asiakkaan sinulle.</small></div>
           </div>
         </div>
         <div class="console-stats">
           <div><b>24/7</b><span>verkossa</span></div>
-          <div><b>0</b><span>pakkoa keksiä</span></div>
-          <div><b>1</b><span>hallittu tietopohja</span></div>
+          <div><b>0</b><span>arvattua vastausta</span></div>
+          <div><b>1</b><span>oma tietopohja</span></div>
         </div>
       </div>
     </div>
@@ -622,7 +622,7 @@ function proofStrip() {
 function researchStatsSection() {
   return `<section class="section research-stats" id="research">
     <div class="container">
-      <div class="section-kicker">Tutkittua</div>
+      <div class="section-kicker">Miksi nopeus ratkaisee</div>
       <div class="split-head research-head">
         <h2>Asiakas ei halua odottaa.<br><em>Nopea vastaus näkyy kokemuksessa.</em></h2>
         <p>Alla olevat luvut perustuvat julkaistuihin tutkimuksiin ja raportteihin. Lähde, vuosi ja tutkimuskonteksti näkyvät jokaisen luvun yhteydessä.</p>
@@ -680,10 +680,10 @@ function researchStatsSection() {
 function calculatorSection() {
   return `<section class="section value-calculator" id="calculator">
     <div class="container">
-      <div class="section-kicker">Arvolaskuri</div>
+      <div class="section-kicker">Mitä yksi menetetty yhteydenotto voi maksaa?</div>
       <div class="split-head calculator-head">
-        <h2>Mitä vastaamatta jäänyt<br><em>yhteydenotto voi maksaa?</em></h2>
-        <p>Säädä työn arvo ja päivässä vastaamatta jäävien yhteydenottojen määrä. Laskuri näyttää niiden potentiaalisen myyntiarvon.</p>
+        <h2>Paljonko rahaa voi jäädä pöydälle,<br><em>jos asiakkaalle ei vastata?</em></h2>
+        <p>Säädä työn arvo ja päivässä vastaamatta jäävien yhteydenottojen määrä. Laske itse näyttää niiden potentiaalisen myyntiarvon.</p>
       </div>
 
       <div class="calculator-shell">
@@ -691,8 +691,8 @@ function calculatorSection() {
           <div class="calc-control">
             <div class="calc-control-head">
               <div>
-                <small>TYÖN ARVO</small>
-                <b>Yhden työn keskimääräinen arvo</b>
+                <small>KESKIMÄÄRÄINEN KAUPPA</small>
+                <b>Paljonko yksi asiakas tuo keskimäärin?</b>
               </div>
               <output id="jobValueOutput">500 €</output>
             </div>
@@ -703,8 +703,8 @@ function calculatorSection() {
           <div class="calc-control">
             <div class="calc-control-head">
               <div>
-                <small>VASTAAMATTOMAT / PÄIVÄ</small>
-                <b>Vastaamatta jäävät yhteydenotot</b>
+                <small>ILMAN VASTAUSTA / PÄIVÄ</small>
+                <b>Montako yhteydenottoa jää ilman vastausta?</b>
               </div>
               <output id="missedOutput">3</output>
             </div>
@@ -714,14 +714,14 @@ function calculatorSection() {
         </div>
 
         <div class="calculator-result">
-          <small>POTENTIAALINEN ARVO / 30 PV</small>
+          <small>MAHDOLLINEN ARVO / 30 PÄIVÄÄ</small>
           <div class="calc-main-value" id="monthlyValue">45 000 €</div>
           <div class="calc-result-grid">
             <div><span>Päivässä</span><b id="dailyValue">1 500 €</b></div>
             <div><span>Vuodessa</span><b id="yearlyValue">547 500 €</b></div>
             <div><span>RESPONDO AI</span><b>${cfg.monthlyNet || 49} € / kk + alv</b></div>
           </div>
-          <p>Arvio näyttää yhteydenottojen teoreettisen kokonaisarvon, jos yksi vastaamatta jäänyt yhteydenotto vastaisi yhtä työn arvoista kauppaa. Todellinen toteuma riippuu yrityksestä ja siitä, kuinka moni yhteydenotto muuttuu asiakkaaksi.</p>
+          <p>Laskelma on suuntaa-antava. Se näyttää yhteydenottojen arvon tilanteessa, jossa jokainen niistä vastaisi yhtä keskimääräistä kauppaa. Todellinen tulos riippuu siitä, kuinka moni yhteydenotto muuttuu asiakkaaksi.</p>
         </div>
       </div>
     </div>
@@ -733,37 +733,37 @@ function pricingSection() {
     <div class="container">
       <div class="section-kicker">Hinta</div>
       <div class="split-head">
-        <h2>Selkeä hinta.<br><em>Ei yllätyksiä.</em></h2>
-        <p>Kokeile 3 päivää maksutta. Peruuta ennen kokeilun päättymistä, jos et halua jatkaa.</p>
+        <h2>Yksi selkeä hinta.<br><em>Tiedät mitä maksat.</em></h2>
+        <p>Kokeile 3 päivää ilmaiseksi. Peruuta ennen kokeilun päättymistä, jos et halua jatkaa.</p>
       </div>
       <div class="pricing-wrap">
         <article class="price-card">
-          <div class="price-top"><span>MONTHLY</span><span>joustava</span></div>
+          <div class="price-top"><span>KUUKAUSITILAUS</span><span>maksa kuukausittain</span></div>
           <h3>Kuukausi</h3>
           <div class="pricevalue">49 €<small>/kk + alv</small></div>
           <div class="price-rule"></div>
           <ul>
-            <li>Verkkosivun chat-widget</li>
-            <li>Yrityksen oma tietopohja</li>
-            <li>Keskustelujen tilastot</li>
-            <li>Epävarmojen tilanteiden jatko-ohje</li>
-            <li>Tilauksen hallinta Stripessä</li>
+            <li>Chat suoraan omalle verkkosivullesi</li>
+            <li>Vastaukset yrityksesi omista tiedoista</li>
+            <li>Näet, mitä asiakkaat kysyvät</li>
+            <li>Puuttuvat vastaukset ohjataan sinulle</li>
+            <li>Hallitse tilausta turvallisesti Stripessä</li>
           </ul>
-          <a class="btn price-btn" href="/tilaus?plan=monthly">Kokeile 3 päivää maksutta</a>
+          <a class="btn price-btn" href="/tilaus?plan=monthly">Kokeile 3 päivää ilmaiseksi</a>
         </article>
         <article class="price-card featured">
-          <div class="price-top"><span>YEARLY</span><span class="save">säästä 39 €</span></div>
+          <div class="price-top"><span>VUOSITILAUS</span><span class="save">säästä 39 €</span></div>
           <h3>Vuosi</h3>
           <div class="pricevalue">549 €<small>/vuosi + alv</small></div>
           <div class="price-rule"></div>
           <ul>
-            <li>Samat ominaisuudet kuin kuukausitilauksessa</li>
-            <li>Yksi vuosiveloitus</li>
-            <li>3 päivän maksuton kokeilu</li>
+            <li>Kaikki samat ominaisuudet kuin kuukausitilauksessa</li>
+            <li>Maksu kerran vuodessa</li>
+            <li>3 päivää ilmaiseksi</li>
             <li>Peruuta milloin tahansa</li>
-            <li>Käyttö jatkuu maksetun kauden loppuun</li>
+            <li>Voit käyttää palvelua maksetun kauden loppuun</li>
           </ul>
-          <a class="btn price-btn blue" href="/tilaus?plan=yearly">Valitse vuositilaus <span>→</span></a>
+          <a class="btn price-btn blue" href="/tilaus?plan=yearly">Valitse vuosi <span>→</span></a>
         </article>
       </div>
     </div>
@@ -776,7 +776,7 @@ function cinematicConversationScene() {
     <div class="cinema-stage">
       <div class="cinema-orbit orbit-a"></div>
       <div class="cinema-orbit orbit-b"></div>
-      <div class="cinema-kicker">01 / HETKI JOLLOIN ASIAKAS KYSYY</div>
+      <div class="cinema-kicker">01 / ASIAKAS KYSYY</div>
       <div class="cinema-word">KYSYMYS</div>
       <div class="cinema-phone" aria-hidden="true">
         <div class="cinema-phone-top"><span></span><b>RESPONDO</b><i>24/7</i></div>
@@ -784,13 +784,13 @@ function cinematicConversationScene() {
           <div class="cinema-bubble customer">Paljonko huoltokäynti maksaa?</div>
           <div class="cinema-typing"><i></i><i></i><i></i></div>
           <div class="cinema-bubble bot">Perushuolto alkaa 89 eurosta. Haluatko myös vapaat ajat?</div>
-          <div class="cinema-status"><span></span> vastaus yrityksen omista tiedoista</div>
+          <div class="cinema-status"><span></span> vastaus löytyi yrityksen tiedoista</div>
         </div>
       </div>
-      <div class="cinema-float float-a"><small>ASIAKAS</small><b>22:48</b><span>kysyy nyt</span></div>
-      <div class="cinema-float float-b"><small>VASTAUS</small><b>&lt; 1 s</b><span>ei odotusta</span></div>
-      <div class="cinema-float float-c"><small>TIETO</small><b>✓</b><span>hyväksytty</span></div>
-      <a class="cinema-next" href="#how">scrollaa <span>↓</span></a>
+      <div class="cinema-float float-a"><small>ASIAKAS</small><b>22:48</b><span>kysymys tuli juuri</span></div>
+      <div class="cinema-float float-b"><small>VASTAUS</small><b>&lt; 1 s</b><span>vastaus heti</span></div>
+      <div class="cinema-float float-c"><small>TIETO</small><b>✓</b><span>tieto löytyy</span></div>
+      <a class="cinema-next" href="#how">vieritä alas <span>↓</span></a>
     </div>
   </section>`;
 }
@@ -803,8 +803,8 @@ function horizontalProductStory() {
       <div class="story-track">
         <article class="story-panel story-panel-one">
           <div class="story-panel-copy">
-            <small>01 / SYÖTÄ TIETO</small>
-            <h2>Sinä annat<br><em>faktat.</em></h2>
+            <small>01 / LISÄÄ YRITYKSESI TIEDOT</small>
+            <h2>Kerro, mitä<br><em>asiakkaalle saa vastata.</em></h2>
           </div>
           <div class="story-visual knowledge-machine" aria-hidden="true">
             <div class="km-back"></div>
@@ -822,8 +822,8 @@ function horizontalProductStory() {
 
         <article class="story-panel story-panel-two">
           <div class="story-panel-copy">
-            <small>02 / ASIAKAS KYSYY</small>
-            <h2>Omilla<br><em>sanoillaan.</em></h2>
+            <small>02 / ASIAKAS KYSYY OMILLA SANOILLAAN</small>
+            <h2>Niin kuin ihmiset<br><em>oikeasti kysyvät.</em></h2>
           </div>
           <div class="story-visual message-space" aria-hidden="true">
             <div class="msg-orb"></div>
@@ -831,20 +831,20 @@ function horizontalProductStory() {
             <div class="msg-card m2">Mitä tää maksaa?</div>
             <div class="msg-card m3">Tuletteko Nokialle asti?</div>
             <div class="msg-card m4">Saako tän viikonloppuna?</div>
-            <div class="msg-core"><span>R</span><small>ymmärtää kysymyksen</small></div>
+            <div class="msg-core"><span>R</span><small>ymmärtää, mitä asiakas tarkoittaa</small></div>
           </div>
         </article>
 
         <article class="story-panel story-panel-three">
           <div class="story-panel-copy">
-            <small>03 / RESPONDO VASTAA</small>
-            <h2>Heti.<br><em>Tai ei arvaa.</em></h2>
+            <small>03 / RESPONDO HOITAA LOPUT</small>
+            <h2>Vastaa heti.<br><em>Ei koskaan hatusta.</em></h2>
           </div>
           <div class="story-visual answer-machine" aria-hidden="true">
             <div class="am-ring r1"></div><div class="am-ring r2"></div>
             <div class="am-center"><span>R</span></div>
-            <div class="am-answer approved"><small>VARMA TIETO</small><b>Vastaa asiakkaalle</b><i>→</i></div>
-            <div class="am-answer uncertain"><small>TIETO PUUTTUU</small><b>Ohjaa ihmiselle</b><i>↗</i></div>
+            <div class="am-answer approved"><small>VASTAUS LÖYTYY</small><b>Vastaa heti</b><i>→</i></div>
+            <div class="am-answer uncertain"><small>VASTAUSTA EI LÖYDY</small><b>Ohjaa sinulle</b><i>↗</i></div>
             <div class="am-pulse"></div>
           </div>
         </article>
@@ -856,12 +856,12 @@ function horizontalProductStory() {
 function productWorldScene() {
   return `<section class="product-world" id="features">
     <div class="world-sticky">
-      <div class="world-label">02 / YKSI NÄKYMÄ</div>
-      <div class="world-title"><span>Koko asiakaspalvelu</span><b>yhdessä tilassa.</b></div>
+      <div class="world-label">02 / KAIKKI YHDESSÄ</div>
+      <div class="world-title"><span>Näet yhdellä silmäyksellä</span><b>mitä asiakkaat kysyvät.</b></div>
       <div class="world-stage" aria-hidden="true">
         <div class="world-floor"></div>
         <div class="world-window ww-main">
-          <div class="ww-top"><span>RESPONDO</span><i>● LIVE</i></div>
+          <div class="ww-top"><span>RESPONDO</span><i>● PÄÄLLÄ</i></div>
           <div class="ww-body">
             <div class="ww-side"><b></b><b></b><b></b><b></b></div>
             <div class="ww-content">
@@ -883,10 +883,10 @@ function productWorldScene() {
           <div><span>Palvelut</span><b>✓</b></div>
         </div>
         <div class="world-window ww-alert">
-          <span>!</span><div><small>EPÄVARMA KYSYMYS</small><b>Ohjattu sinulle</b></div>
+          <span>!</span><div><small>VASTAUS PUUTTUU</small><b>Asiakas ohjattu sinulle</b></div>
         </div>
       </div>
-      <div class="world-caption">Scrollaa — näkymä purkautuu kerros kerrokselta.</div>
+      <div class="world-caption">Vieritä eteenpäin ja katso, miten kaikki toimii yhdessä.</div>
     </div>
   </section>`;
 }
@@ -894,21 +894,21 @@ function productWorldScene() {
 function dataImpactScene() {
   return `<section class="impact-scene" id="research">
     <div class="impact-top">
-      <div class="impact-kicker">03 / NOPEUS NÄKYY</div>
-      <h2>Asiakas ei odota.<br><em>RESPONDO ei nuku.</em></h2>
+      <div class="impact-kicker">03 / NOPEA VASTAUS MERKITSEE</div>
+      <h2>Asiakas voi kysyä milloin vain.<br><em>Vastauksen ei tarvitse odottaa.</em></h2>
     </div>
     <div class="impact-numbers">
       <a class="impact-number n1" href="https://cxtrends.zendesk.com/" target="_blank" rel="noopener noreferrer">
-        <span>74%</span><small>odottaa 24/7-palvelua*</small><i>↗</i>
+        <span>74%</span><small>odottaa saavansa palvelua ympäri vuorokauden*</small><i>↗</i>
       </a>
       <a class="impact-number n2" href="https://www.salesforce.com/eu/service/digital-customer-engagement-platform/what-is-customer-engagement/" target="_blank" rel="noopener noreferrer">
-        <span>77%</span><small>odottaa välitöntä vuorovaikutusta*</small><i>↗</i>
+        <span>77%</span><small>odottaa saavansa vastauksen heti*</small><i>↗</i>
       </a>
       <a class="impact-number n3" href="https://hbr.org/2011/03/the-short-life-of-online-sales-leads" target="_blank" rel="noopener noreferrer">
-        <span>23%</span><small>ei vastannut testiliidiin lainkaan*</small><i>↗</i>
+        <span>23%</span><small>ei vastannut yhteydenottoon lainkaan*</small><i>↗</i>
       </a>
     </div>
-    <div class="impact-foot">* Lähteet ja tutkimuskontekstit avautuvat luvuista. HBR-aineisto on Yhdysvalloista vuodelta 2011.</div>
+    <div class="impact-foot">* Avaa luku nähdäksesi lähteen. HBR:n aineisto on Yhdysvalloista vuodelta 2011.</div>
   </section>`;
 }
 
@@ -918,16 +918,16 @@ function trustPortalScene() {
     <div class="portal-ring ring-two"></div>
     <div class="portal-ring ring-three"></div>
     <div class="portal-center">
-      <small>04 / EI ARVAILUA</small>
+      <small>04 / KUN VASTAUSTA EI LÖYDY</small>
       <div class="portal-mark">R</div>
-      <h2>Jos tietoa ei löydy,<br><em>botti pysähtyy.</em></h2>
-      <p>Vastaus perustuu hyväksyttyyn tietoon. Epävarma kysymys ohjataan ihmiselle.</p>
-      <a href="/assistant" class="portal-button">Testaa itse <span>→</span></a>
+      <h2>Jos vastausta ei löydy,<br><em>Respondo ei keksi sellaista.</em></h2>
+      <p>Respondo vastaa vain tiedoilla, jotka olet itse antanut. Jos tieto puuttuu, asiakas ohjataan sinulle.</p>
+      <a href="/assistant" class="portal-button">Kokeile itse <span>→</span></a>
     </div>
     <div class="portal-node pn1"><span>✓</span> Hinnat</div>
     <div class="portal-node pn2"><span>✓</span> Palvelut</div>
-    <div class="portal-node pn3"><span>?</span> Uusi kysymys</div>
-    <div class="portal-node pn4"><span>↗</span> Ihmiselle</div>
+    <div class="portal-node pn3"><span>?</span> Vastaus puuttuu</div>
+    <div class="portal-node pn4"><span>↗</span> Sinulle</div>
   </section>`;
 }
 
@@ -942,14 +942,14 @@ async function home() {
         <div class="hero-glow"></div>
         <div class="container hero-grid">
           <div class="hero-copy">
-            <div class="hero-label"><span></span> AI-ASIAKASPALVELU YRITYKSELLESI</div>
+            <div class="hero-label"><span></span> ASIAKASPALVELU, JOKA ON AINA PAIKALLA</div>
             <h1>Asiakas kysyy.<br><em>RESPONDO vastaa.</em></h1>
-            <p class="lead">24/7 asiakaspalvelu, joka tuntee yrityksesi hyväksytyt tiedot eikä keksi puuttuvia vastauksia.</p>
+            <p class="lead">Kerro Respondolle yrityksesi tiedot kerran. Sen jälkeen se vastaa asiakkaillesi myös silloin, kun sinä et ehdi — eikä keksi vastausta, jos tietoa ei löydy.</p>
             <div class="hero-actions">
-              <a class="btn hero-primary" href="/assistant">Testaa bottia</a>
-              <a class="btn ghost" href="/tilaus">Kokeile 3 päivää maksutta</a>
+              <a class="btn hero-primary" href="/assistant">Kokeile bottia</a>
+              <a class="btn ghost" href="/tilaus">Kokeile 3 päivää ilmaiseksi</a>
             </div>
-            <div class="hero-scroll-hint"><i></i><span>SCROLLAA KOKEMUS AUKI</span></div>
+            <div class="hero-scroll-hint"><i></i><span>VIERITÄ ALAS JA KATSO, MITEN SE TOIMII</span></div>
           </div>
           ${heroVisual()}
         </div>
@@ -967,11 +967,11 @@ async function home() {
         <div class="container">
           <div class="cta-shell">
             <div>
-              <div class="section-kicker light">05 / SINUN VUOROSI</div>
-              <h2>Seuraava kysymys voi tulla koska tahansa.</h2>
-              <p>Anna Respondon vastata siihen.</p>
+              <div class="section-kicker light">05 / KOKEILE KÄYTÄNNÖSSÄ</div>
+              <h2>Asiakkaasi seuraava kysymys voi tulla vaikka tänä iltana.</h2>
+              <p>Anna Respondon hoitaa vastaus silloin, kun sinä et ehdi.</p>
             </div>
-            <a class="cta-circle" href="/tilaus" aria-label="Aloita kokeilu"><span>KOKEILE</span><b>→</b></a>
+            <a class="cta-circle" href="/tilaus" aria-label="Kokeile ilmaiseksi"><span>KOKEILE</span><b>→</b></a>
           </div>
         </div>
       </section>
@@ -988,13 +988,13 @@ function signup() {
     <main class="formpage">
       <div class="container checkout-layout">
         <section class="checkout-copy">
-          <div class="section-kicker">ALOITA RESPONDO AI</div>
-          <h1>Kokeile ensin.<br><em>Päätä sitten.</em></h1>
-          <p>Luo tili ja lisää maksutapa turvallisesti Stripessä. Veloitus alkaa vasta kokeilun jälkeen.</p>
+          <div class="section-kicker">ALOITA KOKEILU</div>
+          <h1>Kokeile rauhassa.<br><em>Päätä vasta sen jälkeen.</em></h1>
+          <p>Luo tili ja lisää maksutapa Stripessä. Sinulta ei veloiteta mitään 3 päivän kokeilun aikana.</p>
           <div class="checkout-steps">
-            <div><span>01</span><b>Luo tili</b><small>Yrityksen perustiedot ja salasana.</small></div>
-            <div><span>02</span><b>Lisää maksutapa</b><small>Stripe käsittelee maksutiedot.</small></div>
-            <div><span>03</span><b>Rakenna tietopohja</b><small>Lisää yrityksesi hyväksytyt vastaukset.</small></div>
+            <div><span>01</span><b>Luo tili</b><small>Täytä omat ja yrityksesi perustiedot.</small></div>
+            <div><span>02</span><b>Lisää maksutapa Stripessä</b><small>Korttitietosi menevät suoraan Stripelle.</small></div>
+            <div><span>03</span><b>Lisää yrityksesi tiedot</b><small>Kerro Respondolle, mitä asiakkaillesi saa vastata.</small></div>
           </div>
           <div class="seller-card">
             <span>PALVELUNTARJOAJA</span>
@@ -1003,7 +1003,7 @@ function signup() {
           </div>
         </section>
         <form class="formcard premium-form" id="signup">
-          <div class="form-head"><span>UUSI TILI</span><b>3 päivää maksutta</b></div>
+          <div class="form-head"><span>LUO TILI</span><b>3 päivää ilmaiseksi</b></div>
           ${socialAuthButtons('signup')}
           <div class="formgrid">
             <div class="field"><label>Nimi</label><input name="fullName" autocomplete="name" required placeholder="Etunimi Sukunimi"></div>
@@ -1022,8 +1022,8 @@ function signup() {
               <span>Hyväksyn <a href="/kayttoehdot" target="_blank">käyttöehdot</a> ja <a href="/tietosuoja" target="_blank">tietosuojaselosteen</a>.</span>
             </label>
           </div>
-          <button class="btn checkout-button" type="submit">Jatka Stripe Checkoutiin <span>→</span></button>
-          <div class="form-security"><span>◈</span> Maksukorttitiedot käsittelee Stripe. RESPONDO AI ei tallenna korttinumeroasi.</div>
+          <button class="btn checkout-button" type="submit">Jatka maksutavan lisäämiseen <span>→</span></button>
+          <div class="form-security"><span>◈</span> Korttitiedot käsittelee Stripe. Respondo ei näe eikä tallenna korttinumeroasi.</div>
           <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : ''}</div>
         </form>
       </div>
@@ -1041,15 +1041,15 @@ function login() {
         <section class="login-copy">
           <div class="section-kicker">Hallintapaneeli</div>
           <h1>Tervetuloa<br><em>takaisin.</em></h1>
-          <p>Hallitse tietopohjaa, asennusta ja tilausta yhdestä paikasta.</p>
-          <div class="login-signal"><span></span> Hallintapaneeli suojattu kirjautumisella</div>
+          <p>Täältä löydät yrityksesi tiedot, keskustelut, asennuksen ja tilauksen.</p>
+          <div class="login-signal"><span></span> Vain sinä pääset yrityksesi hallintaan</div>
         </section>
         <form class="formcard premium-form login-card" id="login">
           <div class="form-head"><span>KIRJAUDU</span><b>Tervetuloa takaisin</b></div>
           ${socialAuthButtons('login')}
           <div class="field"><label>Sähköposti</label><input name="email" type="email" autocomplete="email" required placeholder="sinä@yritys.fi"></div>
           <div class="field"><label>Salasana</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
-          <button class="btn checkout-button" type="submit">Avaa hallintapaneeli <span>→</span></button>
+          <button class="btn checkout-button" type="submit">Kirjaudu sisään <span>→</span></button>
           <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : (checkoutError ? '<div class="notice error">Automaattinen kirjautuminen ei onnistunut. Kirjaudu samalla sähköpostilla ja salasanalla, jonka loit ennen maksua.</div>' : '')}</div>
         </form>
       </div>
@@ -1189,10 +1189,10 @@ async function dashboard() {
   const answersDone = nonProfileKnowledge.length > 0;
   const testedDone = s.conversations > 0;
   const onboarding = [
-    { label: 'Täytä yrityksen tiedot', done: profileDone, target: 'business-profile' },
-    { label: 'Lisää vähintään yksi oma vastaus', done: answersDone, target: 'knowledge' },
-    { label: 'Asenna botti verkkosivulle', done: installedDone, target: 'install' },
-    { label: 'Testaa ensimmäinen keskustelu', done: testedDone, target: 'live-preview' },
+    { label: 'Kerro yrityksesi perustiedot', done: profileDone, target: 'business-profile' },
+    { label: 'Lisää ensimmäinen oma vastaus', done: answersDone, target: 'knowledge' },
+    { label: 'Lisää Respondo verkkosivullesi', done: installedDone, target: 'install' },
+    { label: 'Kokeile bottia ensimmäisen kerran', done: testedDone, target: 'live-preview' },
   ];
   const onboardingDone = onboarding.filter((x) => x.done).length;
   const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
@@ -1219,8 +1219,8 @@ async function dashboard() {
     </aside>
     <main class="appmain">
       <section class="dashboard-head" id="overview">
-        <div><div class="section-kicker">Hallintapaneeli</div><h1>${esc(t.name)}</h1><p>Täältä hallitset botin vastauksia ja näet, mitä asiakkaasi kysyvät.</p></div>
-        <div class="live-chip"><span></span> Palvelu aktiivinen</div>
+        <div><div class="section-kicker">Hallintapaneeli</div><h1>${esc(t.name)}</h1><p>Täältä näet, mitä asiakkaasi kysyvät, ja päätät, mitä botti saa heille vastata.</p></div>
+        <div class="live-chip"><span></span> Botti on käytössä</div>
       </section>
 
       ${isWelcome ? `
@@ -1228,18 +1228,18 @@ async function dashboard() {
         <div class="welcome-mark">R</div>
         <div class="welcome-copy">
           <small>TILAUS AKTIIVINEN</small>
-          <h2>Tervetuloa RESPONDO AI:hin.</h2>
-          <p>Tilisi on valmis. Lisää ensin yrityksesi tiedot, testaa vastaukset ja asenna botti verkkosivullesi.</p>
+          <h2>Tervetuloa Respondoon.</h2>
+          <p>Tilisi on valmis. Lisää ensin yrityksesi tiedot, kokeile bottia itse ja lisää se sitten verkkosivullesi.</p>
         </div>
-        <button type="button" class="btn welcome-start" id="welcomeStart">Aloita käyttöönotto <span>→</span></button>
+        <button type="button" class="btn welcome-start" id="welcomeStart">Aloita tästä <span>→</span></button>
       </section>` : ''}
 
       <section class="onboarding-card" id="onboarding">
         <div class="onboarding-top">
           <div>
             <small>KÄYTTÖÖNOTTO</small>
-            <h2>${onboardingDone === onboarding.length ? 'RESPONDO AI on valmis.' : 'Viimeistele käyttöönotto.'}</h2>
-            <p>${onboardingDone}/${onboarding.length} vaihetta valmiina</p>
+            <h2>${onboardingDone === onboarding.length ? 'Kaikki on valmista.' : 'Laita loputkin kuntoon.'}</h2>
+            <p>${onboardingDone}/${onboarding.length} kohtaa valmiina</p>
           </div>
           <div class="onboarding-score">${onboardingPct}%</div>
         </div>
@@ -1257,14 +1257,14 @@ async function dashboard() {
       <section class="stats">
         <article class="stat"><small>KESKUSTELUT</small><b>${s.conversations}</b><span>yhteensä</span></article>
         <article class="stat"><small>VIIMEISET 7 PV</small><b>${s.last7 || 0}</b><span>keskustelua</span></article>
-        <article class="stat"><small>VASTATTU</small><b>${s.answeredRate}%</b><span>ilman jatko-ohjetta</span></article>
-        <article class="stat"><small>LIIDIT</small><b>${s.leads || 0}</b><span>yhteystietoa jätetty</span></article>
+        <article class="stat"><small>VASTATTU SUORAAN</small><b>${s.answeredRate}%</b><span>ilman että asiakas piti ohjata eteenpäin</span></article>
+        <article class="stat"><small>YHTEYDENOTOT</small><b>${s.leads || 0}</b><span>asiakasta jätti yhteystietonsa</span></article>
       </section>
 
       <section class="dashboard-insights">
         <article class="panel trend-panel">
           <div class="panel-head">
-            <div><small>14 PÄIVÄÄ</small><h2>Keskustelujen määrä</h2></div>
+            <div><small>14 PÄIVÄÄ</small><h2>Näin paljon asiakkaat ovat kysyneet</h2></div>
             <span>${s.last30 || 0} / 30 pv</span>
           </div>
           <div class="mini-bars" aria-label="Keskustelut viimeisen 14 päivän aikana">
@@ -1272,9 +1272,9 @@ async function dashboard() {
           </div>
         </article>
         <article class="panel gap-summary">
-          <div class="panel-head"><div><small>TÄLLÄ VIIKOLLA</small><h2>Mitä botti ei vielä tiennyt?</h2></div><span>${gaps.length}</span></div>
+          <div class="panel-head"><div><small>TÄLLÄ VIIKOLLA</small><h2>Mihin kysymyksiin vastaus vielä puuttuu?</h2></div><span>${gaps.length}</span></div>
           <div class="gap-summary-list">
-            ${gaps.length ? gaps.slice(0,5).map((x) => `<button type="button" class="gap-jump" data-gap-question="${esc(x.question)}"><span>${esc(x.question)}</span><b>${Number(x.asks || 0)}×</b></button>`).join('') : '<div class="empty-state compact"><b>Ei uusia tietoaukkoja.</b><p>Hyvältä näyttää.</p></div>'}
+            ${gaps.length ? gaps.slice(0,5).map((x) => `<button type="button" class="gap-jump" data-gap-question="${esc(x.question)}"><span>${esc(x.question)}</span><b>${Number(x.asks || 0)}×</b></button>`).join('') : '<div class="empty-state compact"><b>Kaikkiin tämän viikon kysymyksiin löytyi vastaus.</b><p>Hyvältä näyttää.</p></div>'}
           </div>
         </article>
       </section>
@@ -1284,15 +1284,15 @@ async function dashboard() {
         <div class="panel-head business-profile-head">
           <div>
             <small>YRITYKSEN TIEDOT</small>
-            <h2>Kerro botille yrityksesi perusasiat</h2>
-            <p>Täytä nämä kerran. Voit muuttaa tietoja milloin tahansa, ja botti käyttää aina tallennettua versiota.</p>
+            <h2>Kerro Respondolle tärkeimmät asiat yrityksestäsi</h2>
+            <p>Täytä nämä kerran. Jos jokin muuttuu, voit päivittää tiedot milloin tahansa.</p>
           </div>
           <span class="install-badge">Perustiedot</span>
         </div>
         <form id="businessProfileForm" class="business-profile-form">
           <div class="profile-grid">
             <div class="field profile-wide">
-              <label>Chatin tervehdys</label>
+              <label>Ensimmäinen viesti asiakkaalle</label>
               <input name="greeting" maxlength="220" value="${esc(t.greeting || 'Hei! Miten voin auttaa?')}" placeholder="Hei! Miten voin auttaa?">
             </div>
             <div class="field">
@@ -1304,7 +1304,7 @@ async function dashboard() {
               </select>
             </div>
             <div class="field">
-              <label>Hinnat / hinnoittelu</label>
+              <label>Hinnat</label>
               <textarea name="pricing" placeholder="Esim. Putkityö 65 € / h + alv. Päivystys 95 € / h + alv.">${profileValue('Hinnat')}</textarea>
             </div>
             <div class="field">
@@ -1320,19 +1320,19 @@ async function dashboard() {
               <input name="email" type="email" value="${profileValue('Sähköposti')}" placeholder="info@yritys.fi">
             </div>
             <div class="field website-import-field">
-              <label>Verkkosivu / asennusdomain</label>
+              <label>Verkkosivusi osoite</label>
               <input name="website" value="${profileValue('Verkkosivu')}" placeholder="https://yritys.fi">
-              <small class="field-hint">Asennuskoodi toimii vain tällä verkkosivulla.</small>
-              <button type="button" class="inline-import-btn" id="importWebsite">Hae tiedot verkkosivulta</button>
-              <small class="field-hint">RESPONDO ehdottaa sivulta löytyviä palveluja ja yhteystietoja. Tarkistat ne ennen tallennusta.</small>
+              <small class="field-hint">Botti toimii vain tällä verkkosivulla.</small>
+              <button type="button" class="inline-import-btn" id="importWebsite">Hae tiedot sivultani</button>
+              <small class="field-hint">Respondo etsii sivultasi palvelut ja yhteystiedot valmiiksi. Sinä tarkistat ne ennen tallennusta.</small>
             </div>
             <div class="field">
-              <label>Tarjouspyyntölomakkeen linkki</label>
+              <label>Linkki tarjouspyyntöön</label>
               <input name="quoteRequestUrl" value="${profileValue('Tarjouspyyntölomake')}" placeholder="https://yritys.fi/tarjouspyynto">
-              <small class="field-hint">Botti voi antaa tämän linkin, kun asiakas pyytää tarjousta.</small>
+              <small class="field-hint">Respondo voi lähettää tämän linkin asiakkaalle, joka haluaa pyytää tarjouksen.</small>
             </div>
             <div class="field profile-wide">
-              <label>Mitä palveluja teette?</label>
+              <label>Mitä palveluja tarjoatte?</label>
               <textarea name="services" placeholder="Esim. putkityöt, LVI-asennukset, sähkötyöt, huollot, päivystys">${profileValue('Palvelut')}</textarea>
             </div>
             <div class="field">
@@ -1350,10 +1350,10 @@ async function dashboard() {
           </div>
           <div class="profile-save-row">
             <div>
-              <b>Nämä tiedot ovat botin hyväksyttyjä vastauksia.</b>
-              <small>Voit muokata tietoja myöhemmin koska tahansa.</small>
+              <b>Respondo käyttää näitä tietoja asiakkaiden kysymyksiin vastaamiseen.</b>
+              <small>Voit muuttaa niitä milloin tahansa.</small>
             </div>
-            <button class="btn dashboard-action profile-save" type="submit">Tallenna yrityksen tiedot <span>→</span></button>
+            <button class="btn dashboard-action profile-save" type="submit">Tallenna tiedot <span>→</span></button>
           </div>
           <div id="businessProfileMsg"></div>
         </form>
@@ -1361,13 +1361,13 @@ async function dashboard() {
 
         <aside class="panel live-preview-panel" id="live-preview">
           <div class="panel-head">
-            <div><small>ESIKATSELU</small><h2>Näe vastaus heti</h2></div>
+            <div><small>KOKEILE TÄSSÄ</small><h2>Kysy kuten asiakkaasi kysyisi</h2></div>
             <span class="preview-live"><i></i> Live</span>
           </div>
           <div class="preview-device">
             <div class="preview-device-top">
               <span class="preview-avatar">${esc((t.name || 'R')[0].toUpperCase())}</span>
-              <div><b>${esc(t.name)}</b><small>asiakaspalvelu verkossa</small></div>
+              <div><b>${esc(t.name)}</b><small>paikalla nyt</small></div>
             </div>
             <div class="preview-chat" id="previewChat">
               <div class="preview-bubble bot">${esc(t.greeting || 'Hei! Miten voin auttaa?')}</div>
@@ -1377,47 +1377,47 @@ async function dashboard() {
               <button type="submit">→</button>
             </form>
           </div>
-          <p class="preview-note">Esikatselu käyttää juuri nyt lomakkeessa olevia tietoja ja tallennettua tietopohjaa.</p>
+          <p class="preview-note">Tämä kokeilu käyttää yllä olevia tietoja ja jo tallentamiasi vastauksia.</p>
         </aside>
       </section>
 
       <section class="dashboard-grid" id="knowledge">
         <div class="panel knowledge-panel">
-          <div class="panel-head"><div><small>TIETOPOHJA</small><h2>Hyväksytyt vastaukset</h2></div><span>${knowledge.length} kohdetta</span></div>
+          <div class="panel-head"><div><small>TIETOPOHJA</small><h2>Vastaukset, joita botti saa käyttää</h2></div><span>${knowledge.length} kohdetta</span></div>
           <div id="knowledgeList" class="knowledge-list">
-            ${knowledge.length ? knowledge.map((x, i) => `<div class="knowledge-item"><span class="knum">${String(i + 1).padStart(2, '0')}</span><div><b>${esc(x.title)}</b><small>${esc(x.category || 'Yleinen')}</small><p>${esc(x.answer)}</p></div><span class="approved">✓</span></div>`).join('') : `<div class="empty-state"><b>Tietopohja on vielä tyhjä.</b><p>Lisää ensimmäinen hyväksytty vastaus oikealta.</p></div>`}
+            ${knowledge.length ? knowledge.map((x, i) => `<div class="knowledge-item"><span class="knum">${String(i + 1).padStart(2, '0')}</span><div><b>${esc(x.title)}</b><small>${esc(x.category || 'Yleinen')}</small><p>${esc(x.answer)}</p></div><span class="approved">✓</span></div>`).join('') : `<div class="empty-state"><b>Et ole lisännyt vielä omia vastauksia.</b><p>Lisää ensimmäinen vastaus tästä.</p></div>`}
           </div>
         </div>
 
         <form class="panel add-knowledge" id="knowledgeForm">
-          <div class="panel-head"><div><small>UUSI TIETO</small><h2>Lisää vastaus</h2></div><span>＋</span></div>
+          <div class="panel-head"><div><small>LISÄÄ VASTAUS</small><h2>Tallenna vastaus</h2></div><span>＋</span></div>
           <div class="field"><label>Kategoria</label><input name="category" placeholder="Esim. Hinnoittelu"></div>
           <div class="field"><label>Otsikko</label><input name="title" required placeholder="Mitä asiakas kysyy?"></div>
-          <div class="field"><label>Hyväksytty vastaus</label><textarea name="answer" required placeholder="Kirjoita vastaus täsmällisesti sellaisena kuin asiakkaalle saa kertoa."></textarea></div>
-          <div class="field"><label>Avainsanat</label><input name="keywords" placeholder="hinta, maksaa, tarjous"></div>
-          <button class="btn dashboard-action" type="submit">Tallenna tietopohjaan <span>→</span></button>
+          <div class="field"><label>Hyväksytty vastaus</label><textarea name="answer" required placeholder="Kirjoita tähän se vastaus, jonka haluat asiakkaan saavan."></textarea></div>
+          <div class="field"><label>Esimerkkisanat</label><input name="keywords" placeholder="hinta, maksaa, tarjous"></div>
+          <button class="btn dashboard-action" type="submit">Tallenna vastaus <span>→</span></button>
           <div id="knowledgeMsg"></div>
         </form>
       </section>
 
       <section class="panel conversation-panel" id="conversations">
         <div class="panel-head">
-          <div><small>VIIMEISIMMÄT KESKUSTELUT</small><h2>Mitä asiakkaat kysyvät?</h2><p>Näet asiakkaan kysymyksen, botin vastauksen ja sen, tarvittiinko jatko-ohjausta.</p></div>
+          <div><small>VIIMEISIMMÄT KESKUSTELUT</small><h2>Mitä asiakkaasi ovat kysyneet?</h2><p>Näet kysymyksen, Respondon vastauksen ja sen, pitikö asiakas ohjata sinulle.</p></div>
           <span>${recentConversations.length}</span>
         </div>
         <div class="conversation-log">
           ${recentConversations.length ? recentConversations.map((x) => `
             <article class="conversation-log-item ${x.handoff ? 'needs-human' : ''}">
-              <div class="conversation-log-meta"><span>${x.handoff ? 'Tarvitsee tiedon' : 'Vastattu'}</span><small>${new Date(x.created_at).toLocaleString('fi-FI',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small></div>
+              <div class="conversation-log-meta"><span>${x.handoff ? 'Vastaus puuttui' : 'Vastattu'}</span><small>${new Date(x.created_at).toLocaleString('fi-FI',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small></div>
               <h3>${esc(x.question)}</h3>
               <p>${esc(x.answer)}</p>
-            </article>`).join('') : '<div class="empty-state"><b>Ei keskusteluja vielä.</b><p>Ensimmäiset asiakaskysymykset näkyvät täällä.</p></div>'}
+            </article>`).join('') : '<div class="empty-state"><b>Keskusteluja ei ole vielä.</b><p>Kun asiakkaat alkavat kysyä, keskustelut näkyvät tässä.</p></div>'}
         </div>
       </section>
 
       <section class="panel leads-panel" id="leads">
         <div class="panel-head">
-          <div><small>LIIDIT</small><h2>Asiakkaat, jotka jättivät yhteystietonsa</h2><p>Kun botti ei tiedä vastausta, asiakas voi jättää yhteystiedot yhteydenottoa varten.</p></div>
+          <div><small>YHTEYDENOTOT</small><h2>Asiakkaat, jotka haluavat yhteydenoton</h2><p>Jos vastaus puuttuu, asiakas voi jättää numeronsa tai sähköpostinsa, jotta voit ottaa yhteyttä.</p></div>
           <span>${leads.length}</span>
         </div>
         <div class="lead-list">
@@ -1432,16 +1432,16 @@ async function dashboard() {
                 ${x.phone ? `<a href="tel:${esc(x.phone.replace(/\s+/g,''))}">${esc(x.phone)}</a>` : ''}
                 ${x.email ? `<a href="mailto:${esc(x.email)}">${esc(x.email)}</a>` : ''}
               </div>
-            </article>`).join('') : '<div class="empty-state"><b>Ei liidejä vielä.</b><p>Yhteystietonsa jättäneet asiakkaat näkyvät tässä.</p></div>'}
+            </article>`).join('') : '<div class="empty-state"><b>Kukaan ei ole vielä jättänyt yhteystietoja.</b><p>Uudet yhteydenottopyynnöt näkyvät tässä.</p></div>'}
         </div>
       </section>
 
       <section class="panel unanswered-panel" id="unanswered">
         <div class="panel-head unanswered-head">
           <div>
-            <small>VASTAAMATTOMAT</small>
-            <h2>Kysymykset, joihin botti ei vielä osannut vastata</h2>
-            <p>Lisää vastaus suoraan tästä. Se tallentuu tietopohjaan seuraavia asiakkaita varten.</p>
+            <small>VASTAUS PUUTTUU</small>
+            <h2>Kysymykset, joihin Respondolla ei vielä ollut vastausta</h2>
+            <p>Kirjoita vastaus tähän kerran. Sen jälkeen Respondo osaa vastata samaan asiaan myös seuraaville asiakkaille.</p>
           </div>
           <span>${unanswered.length}</span>
         </div>
@@ -1453,36 +1453,36 @@ async function dashboard() {
                 <small>${new Date(x.created_at).toLocaleString('fi-FI', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small>
               </div>
               <h3>${esc(x.question)}</h3>
-              <textarea class="unanswered-answer" placeholder="Kirjoita hyväksytty vastaus tähän…"></textarea>
+              <textarea class="unanswered-answer" placeholder="Kirjoita tähän oikea vastaus…"></textarea>
               <div class="unanswered-actions">
-                <span>Kun tallennat, tästä tulee uusi tietopohjan vastaus.</span>
-                <button type="button" class="btn dashboard-action add-unanswered-answer">Lisää vastaus <span>→</span></button>
+                <span>Kun tallennat tämän, Respondo voi käyttää vastausta jatkossa.</span>
+                <button type="button" class="btn dashboard-action add-unanswered-answer">Tallenna vastaus <span>→</span></button>
               </div>
               <div class="unanswered-msg"></div>
             </article>`).join('') : `
             <div class="unanswered-empty">
               <span>✓</span>
-              <b>Ei vastaamattomia kysymyksiä.</b>
-              <p>Kun asiakkaalta tulee uusi kysymys, johon vastausta ei löydy, näet sen täällä.</p>
+              <b>Kaikkiin kysymyksiin löytyi vastaus.</b>
+              <p>Jos vastaan tulee kysymys, johon tietoa ei vielä ole, se ilmestyy tähän.</p>
             </div>`}
         </div>
       </section>
 
       <section class="panel install-panel" id="install">
-        <div class="panel-head"><div><small>ASENNUS</small><h2>Lisää botti verkkosivullesi</h2></div><span class="install-badge">1 sivusto</span></div>
-        <p>Liitä tämä koodi sivustosi HTML:ään juuri ennen sulkevaa <code>&lt;/body&gt;</code>-tagia.</p>
+        <div class="panel-head"><div><small>ASENNUS</small><h2>Lisää Respondo verkkosivullesi</h2></div><span class="install-badge">1 sivusto</span></div>
+        <p>Kopioi tämä koodi sivustosi HTML:ään juuri ennen sulkevaa <code>&lt;/body&gt;</code>-tagia.</p>
         <div class="license-lock">
-          <span>🔒 DOMAIN-LUKITUS</span>
-          <b>${t.website ? esc(t.website) : 'Verkkosivua ei ole vielä määritetty'}</b>
-          <small>${t.website ? 'Sama asennuskoodi ei aktivoidu toisella verkkosivulla.' : 'Tallenna ensin yrityksen verkkosivu yllä. Widget aktivoituu vain siihen domainiin.'}</small>
+          <span>🔒 SIDOTTU VERKKOSIVUUN</span>
+          <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
+          <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
         </div>
         <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js" data-company="${esc(t.slug)}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">Kopioi</button></div>
-        <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? '✓ Merkitty asennetuksi' : 'Merkitse asennetuksi'}</button>
+        <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? '✓ Asennus valmis' : 'Olen asentanut botin'}</button>
       </section>
 
       <section class="panel billing-panel" id="billing">
-        <div><small>LASKUTUS</small><h2>Tilauksen hallinta</h2><p>Muuta maksutapaa, tarkastele laskutusta tai hallitse tilausta turvallisesti Stripen asiakasportaalissa.</p></div>
-        <button class="btn dashboard-action" id="billingPortal" type="button">Avaa Stripe-portaali <span>↗</span></button>
+        <div><small>LASKUTUS</small><h2>Hallitse tilaustasi</h2><p>Voit vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.</p></div>
+        <button class="btn dashboard-action" id="billingPortal" type="button">Avaa tilauksen hallinta <span>↗</span></button>
       </section>
     </main>
   </div>`;
@@ -1494,12 +1494,12 @@ async function route() {
   let html;
 
   if (path === '/') html = await home();
-  else if (path === '/assistant') html = `<main class="assistant-route-fallback"><div class="container"><div class="section-kicker">TESTAA RESPONDOA</div><h1>Rakenna testibotti omilla tiedoillasi.</h1><p>Lisää muutama yrityksen tieto ja kysy kuten oikea asiakkaasi kysyisi.</p></div></main>`;
+  else if (path === '/assistant') html = `<main class="assistant-route-fallback"><div class="container"><div class="section-kicker">KOKEILE RESPONDOA</div><h1>Kokeile, miltä Respondo tuntuisi omassa yrityksessäsi.</h1><p>Lisää muutama yrityksesi tieto ja kysy sen jälkeen ihan samalla tavalla kuin asiakkaasi kysyisi.</p></div></main>`;
   else if (path === '/tilaus') html = signup();
   else if (path === '/kirjaudu') html = login();
   else if (path === '/app') html = await dashboard();
   else if (['/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa', '/tietoturva'].includes(path)) html = legal(path.slice(1));
-  else html = `<div>${nav()}<main class="notfound"><div class="container"><div class="section-kicker">404</div><h1>Sivua ei löytynyt.</h1><a class="btn ink" href="/">Takaisin etusivulle</a></div></main>${footer()}</div>`;
+  else html = `<div>${nav()}<main class="notfound"><div class="container"><div class="section-kicker">404</div><h1>Tätä sivua ei löytynyt.</h1><a class="btn ink" href="/">Palaa etusivulle</a></div></main>${footer()}</div>`;
 
   $('#app').innerHTML = html;
   applyLanguage();
@@ -1708,7 +1708,7 @@ async function route() {
       const tenantId = e.currentTarget.dataset.tenantId;
       localStorage.setItem('respondo-installed-' + tenantId, '1');
       e.currentTarget.classList.add('done');
-      e.currentTarget.textContent = '✓ Merkitty asennetuksi';
+      e.currentTarget.textContent = '✓ Asennus valmis';
     });
 
     document.querySelectorAll('.add-unanswered-answer').forEach((button) => {
