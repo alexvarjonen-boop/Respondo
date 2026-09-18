@@ -172,6 +172,88 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
     .slice(0, limit);
 }
 
+
+const knowledgeEmbeddingCache = new Map();
+
+function cosineSimilarity(a, b) {
+  let dot = 0;
+  let aa = 0;
+  let bb = 0;
+  const len = Math.min(a?.length || 0, b?.length || 0);
+  for (let i = 0; i < len; i++) {
+    dot += a[i] * b[i];
+    aa += a[i] * a[i];
+    bb += b[i] * b[i];
+  }
+  return aa && bb ? dot / (Math.sqrt(aa) * Math.sqrt(bb)) : 0;
+}
+
+function embeddingCacheKey(row) {
+  const updated = row.updated_at ? new Date(row.updated_at).getTime() : 0;
+  return [
+    String(row.id || ''),
+    updated,
+    String(row.title || ''),
+    String(row.answer || '').length,
+    String(row.answer || '').slice(0, 80),
+  ].join('|');
+}
+
+async function semanticSelectKnowledge(rows, query, limit = 6) {
+  if (!openai || !rows?.length || !String(query || '').trim()) return [];
+
+  const candidates = rows
+    .filter((x) => normalizeSearchText(x.title) !== 'vastaustyyli')
+    .slice(0, 80);
+  if (!candidates.length) return [];
+
+  const missing = [];
+  for (const row of candidates) {
+    const key = embeddingCacheKey(row);
+    if (!knowledgeEmbeddingCache.has(key)) missing.push({ row, key });
+  }
+
+  const inputs = [String(query).slice(0, 1600)];
+  for (const item of missing) {
+    inputs.push(
+      [item.row.title, item.row.answer]
+        .filter(Boolean)
+        .join('\n')
+        .slice(0, 2200)
+    );
+  }
+
+  try {
+    const response = await openai.embeddings.create({
+      model: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small',
+      input: inputs,
+    });
+
+    const queryVector = response.data?.[0]?.embedding;
+    if (!queryVector) return [];
+
+    missing.forEach((item, index) => {
+      const vector = response.data?.[index + 1]?.embedding;
+      if (vector) knowledgeEmbeddingCache.set(item.key, vector);
+    });
+
+    return candidates
+      .map((row) => {
+        const vector = knowledgeEmbeddingCache.get(embeddingCacheKey(row));
+        return {
+          ...row,
+          _semantic: vector ? cosineSimilarity(queryVector, vector) : 0,
+        };
+      })
+      .filter((row) => row._semantic >= 0.34)
+      .sort((a, b) => b._semantic - a._semantic)
+      .slice(0, limit);
+  } catch (e) {
+    console.warn('Semantic knowledge search failed', e?.message || e);
+    return [];
+  }
+}
+
 function knowledgeValue(rows, title) {
   const wanted = normalizeSearchText(title);
   const row = rows.find((x) => normalizeSearchText(x.title) === wanted);
@@ -353,8 +435,29 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const priorQuestions = history.slice(-2).map((x) => String(x.question || x.user || '')).filter(Boolean);
   const needsContext = cleanMessage.length < 55 || /^(enta|entä|ja |mites|miten sitten|siis|se |sen |sita|sitä)/i.test(cleanMessage);
   const retrievalQuery = needsContext && priorQuestions.length ? priorQuestions.slice(-1)[0] + ' ' + cleanMessage : cleanMessage;
-  const selected = selectRelevantKnowledge(rows, retrievalQuery, 6);
+  let selected = selectRelevantKnowledge(rows, retrievalQuery, 6);
   const intent = inferIntent(cleanMessage);
+
+  // If wording differs from the saved question, add semantic retrieval.
+  // This lets e.g. “Miten pyydän tarjouksen?” match a saved
+  // “Mistä voin pyytää tarjouksen?” answer even without identical wording.
+  if (openai && (!selected.length || Number(selected[0]?._score || 0) < 18 || selected.length < 2)) {
+    const semantic = await semanticSelectKnowledge(rows, retrievalQuery, 6);
+    const merged = new Map();
+    for (const row of [...semantic, ...selected]) {
+      if (!row?.id) continue;
+      const previous = merged.get(row.id);
+      if (!previous) merged.set(row.id, row);
+      else merged.set(row.id, { ...previous, ...row });
+    }
+    selected = [...merged.values()]
+      .sort((a, b) => {
+        const aRank = Number(a._semantic || 0) * 20 + Number(a._score || 0);
+        const bRank = Number(b._semantic || 0) * 20 + Number(b._score || 0);
+        return bRank - aRank;
+      })
+      .slice(0, 6);
+  }
 
   if (!selected.length) {
     return { answer: '', handoff: true, confidence: 0.2, intent, sourceIds: [], selected: [] };
