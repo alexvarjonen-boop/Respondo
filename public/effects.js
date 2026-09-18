@@ -412,7 +412,7 @@ YLEINEN TOIMINTAOHJE:
         const fallback = location.pathname === '/assistant'
           ? (ownerProfileFallback(clean) || 'En löydä tätä tietoa yrityksen tallennetuista tiedoista.')
           : assistantAnswer(clean);
-        typing.textContent = fallback + (location.pathname === '/assistant' ? '' : ' (Paikallinen AI ei käynnistynyt tällä laitteella.)');
+        typing.textContent = fallback + (location.pathname === '/assistant' ? '' : ' (Yhteys vastauspalveluun katkesi.)');
       }
       messages.scrollTop = messages.scrollHeight;
     };
@@ -437,9 +437,9 @@ YLEINEN TOIMINTAOHJE:
           <a class="assistant-direct-brand" href="/" aria-label="RESPONDO AI etusivu"><span>R</span><b>RESPONDO AI</b></a>
           <section class="assistant-owner-panel">
             <div class="assistant-direct-copy">
-              <small>ILMAINEN OMISTAJA / TESTI</small>
+              <small>TESTAA OMAN YRITYKSESI TIEDOILLA</small>
               <h1>Rakenna botin tietopohja.</h1>
-              <p>Valitse palvelut ja tee omia hakusana + vastaus -rivejä. Botti käyttää niitä heti.</p>
+              <p>Lisää yrityksesi tiedot ja omat kysymys–vastausparit. Testibotti käyttää samaa vastauslogiikkaa kuin oikea widget.</p>
             </div>
 
             <form class="owner-profile-form" id="ownerProfileForm">
