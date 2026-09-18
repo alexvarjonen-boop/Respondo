@@ -48,6 +48,7 @@ function nav() {
       <nav class="navlinks" aria-label="Päänavigaatio">
         <a href="/#how">Tuote</a>
         <a href="/#control">Tietopohja</a>
+        <a href="/assistant">AI Assistant</a>
         <a href="/#pricing">Hinta</a>
         <a href="/tietoturva">Tietoturva</a>
       </nav>
@@ -533,6 +534,7 @@ async function home() {
             <p class="lead">RESPONDO AI vastaa 24/7 yrityksesi omalla tiedolla. Kun vastausta ei tiedetä, se ei arvaa.</p>
             <div class="hero-actions">
               <a class="btn hero-primary" href="/tilaus">Kokeile 3 päivää maksutta</a>
+              <a class="btn ghost" href="/assistant">Kokeile AI Assistantia</a>
               <a class="text-link" href="#how">Tutustu tuotteeseen <span>↓</span></a>
             </div>
             <div class="trust-row">
