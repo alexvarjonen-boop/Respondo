@@ -2374,3 +2374,5 @@ body:before{opacity:.012}
   .foot-top{grid-template-columns:1fr 1fr!important}
   .foot-brand{grid-column:1/-1}
 }
+
+.annual-billing-note{margin:8px 0 0;font-size:11px;line-height:1.45;font-weight:650;color:#7d8793}.featured .annual-billing-note{color:#98a4b4}
