@@ -1267,6 +1267,12 @@ async function route() {
     });
 
     const previewHistory = [];
+    const previewCompanyName = $('.workspace-chip b')?.textContent || 'Yritys';
+    const previewFactsPromise = api('/api/app/dashboard')
+      .then((d) => (d.knowledge || [])
+        .filter((x) => x.category !== 'Yrityksen perustiedot')
+        .map((x) => ({ key: x.title, answer: x.answer })))
+      .catch(() => []);
     $('#previewForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const input = e.currentTarget.elements.question;
@@ -1282,13 +1288,13 @@ async function route() {
       try {
         const profileForm = $('#businessProfileForm');
         const values = Object.fromEntries(new FormData(profileForm).entries());
-        const customFacts = ${JSON.stringify(nonProfileKnowledge.map((x) => ({ key: x.title, answer: x.answer })))};
+        const customFacts = await previewFactsPromise;
         const result = await api('/api/public/demo-chat', {
           method: 'POST',
           body: JSON.stringify({
             message: question,
             profile: {
-              companyName: ${JSON.stringify(t.name)},
+              companyName: previewCompanyName,
               greeting: values.greeting,
               tone: values.tone,
               pricing: values.pricing,
