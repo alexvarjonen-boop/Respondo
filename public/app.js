@@ -1062,28 +1062,28 @@ const LEGAL = {
   kayttoehdot: {
     label: 'LAKIASIAT / 01',
     title: 'Käyttöehdot',
-    intro: 'Nämä ehdot koskevat Respondon yritysasiakkaille tarjottavaa ohjelmistopalvelua.',
+    intro: 'Näissä ehdoissa kerrotaan, millä ehdoilla yritysasiakkaat voivat käyttää Respondoa.',
     sections: [
       ['1. Palveluntarjoaja', `RESPONDO AI, Y-tunnus ${cfg.businessId || '3599437-5'}, Suomi. Yhteydenotot: ${cfg.supportEmail}.`],
-      ['2. Palvelu', 'RESPONDO AI on verkkopohjainen B2B-ohjelmistopalvelu, jonka avulla yritys voi ylläpitää hyväksyttyä tietopohjaa ja tarjota verkkosivullaan automatisoituja asiakasvastauksia.'],
-      ['3. Kokeilu ja tilaus', `Palveluun sisältyy ${cfg.trialDays || 3} päivän maksuton kokeilu. Maksutapa lisätään kokeilun alussa. Tilaus muuttuu maksulliseksi kokeilun päätyttyä, ellei sitä peruta ennen veloitusta.`],
-      ['4. Hinnat ja verot', `Kuukausitilaus on ${cfg.monthlyNet || 49} €/kk + sovellettava arvonlisävero. Vuositilaus on ${cfg.yearlyNet || 549} €/vuosi + sovellettava arvonlisävero.`],
-      ['5. Peruminen', 'Tilauksen voi perua. Kun jo maksettu laskutuskausi on alkanut, käyttö jatkuu kauden loppuun, ellei pakottavasta lainsäädännöstä muuta johdu.'],
-      ['6. Asiakkaan vastuu', 'Asiakas vastaa palveluun syöttämänsä tiedon oikeellisuudesta, käyttöoikeuksista sekä siitä, että palvelua käytetään lain ja näiden ehtojen mukaisesti.'],
-      ['7. Palvelun saatavuus', 'Palvelua kehitetään jatkuvasti. Huollot, palveluntarjoajien häiriöt tai muut tekniset syyt voivat aiheuttaa katkoksia.'],
+      ['2. Palvelu', 'RESPONDO AI on yrityksille tarkoitettu verkkopalvelu. Sen avulla yritys voi ylläpitää omia tietojaan ja tarjota verkkosivullaan automaattisia asiakasvastauksia.'],
+      ['3. Kokeilu ja tilaus', `Palvelua voi kokeilla ${cfg.trialDays || 3} päivää ilmaiseksi. Maksutapa lisätään kokeilun alussa, mutta veloitus alkaa vasta kokeilun jälkeen, jos tilausta ei ole peruttu sitä ennen.`],
+      ['4. Hinnat ja verot', `Kuukausitilaus maksaa ${cfg.monthlyNet || 49} €/kk + sovellettava arvonlisävero. Vuositilaus maksaa ${cfg.yearlyNet || 549} €/vuosi + sovellettava arvonlisävero.`],
+      ['5. Peruminen', 'Tilauksen voi perua milloin tahansa. Jo maksettu laskutuskausi jatkuu normaalisti kauden loppuun, ellei pakottava lainsäädäntö edellytä muuta.'],
+      ['6. Asiakkaan vastuu', 'Asiakas vastaa siitä, että palveluun lisätyt tiedot ovat oikein, että niiden käyttöön on oikeus ja että palvelua käytetään lain sekä näiden ehtojen mukaisesti.'],
+      ['7. Palvelun saatavuus', 'Palvelua kehitetään jatkuvasti. Huollot, ulkopuolisten palvelujen häiriöt tai muut tekniset syyt voivat joskus aiheuttaa käyttökatkoja.'],
     ],
   },
   tietosuoja: {
     label: 'LAKIASIAT / 02',
     title: 'Tietosuojaseloste',
-    intro: 'Tässä kuvataan, mitä tietoja RESPONDO AI käsittelee palvelun tarjoamiseksi.',
+    intro: 'Tässä kerrotaan, mitä tietoja Respondo käsittelee ja mihin niitä käytetään.',
     sections: [
       ['Rekisterinpitäjä', `RESPONDO AI, Y-tunnus ${cfg.businessId || '3599437-5'}. Tietosuoja- ja muut yhteydenotot: ${cfg.supportEmail}.`],
-      ['Käsiteltävät tiedot', 'Käyttäjätilin tiedot, yrityksen yhteystiedot, Y-tunnus, laskutukseen liittyvät tunnisteet, palveluun syötetty tietopohja sekä chat-palvelun kautta syntyvät keskustelutiedot.'],
-      ['Käyttötarkoitukset', 'Palvelun toteuttaminen, käyttäjän tunnistaminen, tilauksen hallinta, asiakastuki, väärinkäytösten ehkäisy ja palvelun tekninen ylläpito.'],
-      ['Maksut', 'Maksukorttitiedot käsittelee Stripe omien ehtojensa mukaisesti. RESPONDO AI ei tallenna varsinaista korttinumeroa omaan tietokantaansa.'],
-      ['Palveluntarjoajat', 'Palvelun teknisessä toteutuksessa käytetään ulkopuolisia infrastruktuuri-, tietokanta-, maksu- ja AI-palveluntarjoajia. Tietoja voidaan käsitellä niiden sopimusehtojen ja sovellettavan tietosuojalainsäädännön mukaisesti.'],
-      ['Säilytys', 'Tietoja säilytetään vain niin kauan kuin niitä tarvitaan palvelun toteuttamiseen, sopimusvelvoitteisiin, tietoturvaan tai lakisääteisiin velvoitteisiin.'],
+      ['Käsiteltävät tiedot', 'Käsittelemme käyttäjätilin tietoja, yrityksen yhteystietoja, Y-tunnusta, laskutukseen liittyviä tunnisteita, palveluun lisättyjä yritystietoja sekä chatissa syntyviä keskustelutietoja.'],
+      ['Käyttötarkoitukset', 'Tietoja käytetään palvelun toimittamiseen, kirjautumiseen, tilauksen hallintaan, asiakastukeen, väärinkäytösten ehkäisyyn ja tekniseen ylläpitoon.'],
+      ['Maksut', 'Korttitiedot käsittelee Stripe omien ehtojensa mukaisesti. Respondo ei tallenna varsinaista korttinumeroa omaan tietokantaansa.'],
+      ['Palveluntarjoajat', 'Palvelun toteuttamiseen käytetään ulkopuolisia infrastruktuuri-, tietokanta-, maksu- ja AI-palveluja. Ne voivat käsitellä tietoja omien sopimusehtojensa ja sovellettavan tietosuojalainsäädännön mukaisesti.'],
+      ['Säilytys', 'Tietoja säilytetään vain niin kauan kuin niitä tarvitaan palvelun toimittamiseen, sopimusvelvoitteiden hoitamiseen, tietoturvaan tai lakisääteisiin velvoitteisiin.'],
     ],
   },
 };
@@ -1091,35 +1091,35 @@ const LEGAL = {
 LEGAL['evasteet'] = {
   label: 'LAKIASIAT / 03',
   title: 'Evästeet',
-  intro: 'RESPONDO AI käyttää tällä hetkellä vain palvelun toiminnan kannalta välttämättömiä evästeitä.',
+  intro: 'Respondo käyttää tällä hetkellä vain sellaisia evästeitä, joita palvelun toiminta tarvitsee.',
   sections: [
-    ['Istuntoeväste', 'Kirjautumisen yhteydessä selaimeen asetetaan suojattu istuntoeväste, jolla käyttäjä pidetään kirjautuneena hallintapaneeliin.'],
-    ['Markkinointievästeet', 'Respondon markkinointisivulla ei ole oletuksena käytössä ei-välttämättömiä analytiikka- tai mainosevästeitä.'],
-    ['Maksaminen', 'Stripe Checkout voi käyttää omia evästeitään maksamisen, petosten torjunnan ja Link-pikamaksun toteuttamiseksi.'],
+    ['Istuntoeväste', 'Kirjautumisen yhteydessä selaimeen tallennetaan suojattu istuntoeväste, jotta käyttäjä pysyy kirjautuneena hallintapaneeliin.'],
+    ['Markkinointievästeet', 'Respondon markkinointisivulla ei oletuksena käytetä ylimääräisiä analytiikka- tai mainosevästeitä.'],
+    ['Maksaminen', 'Stripe voi käyttää omia evästeitään maksamisen, petosten torjunnan ja Link-pikamaksun toteuttamiseen.'],
   ],
 };
 
 LEGAL.dpa = {
   label: 'LAKIASIAT / 04',
   title: 'Tietojenkäsittely',
-  intro: 'Kun RESPONDO AI käsittelee yritysasiakkaan puolesta henkilötietoja, asiakas toimii lähtökohtaisesti rekisterinpitäjänä ja RESPONDO AI käsittelijänä.',
+  intro: 'Kun Respondo käsittelee henkilötietoja yritysasiakkaan puolesta, yritys toimii lähtökohtaisesti rekisterinpitäjänä ja Respondo henkilötietojen käsittelijänä.',
   sections: [
-    ['Käsittelyn kohde', 'Käsittely liittyy palvelun käyttämiseen, yrityksen tietopohjaan sekä verkkosivun chatissa käsiteltäviin viesteihin.'],
-    ['Ohjeet', 'RESPONDO AI käsittelee asiakkaan puolesta tietoja palvelun toteuttamiseksi ja asiakkaan dokumentoitujen ohjeiden mukaisesti.'],
-    ['Luottamuksellisuus ja turvallisuus', 'Pääsy tuotantoympäristöihin ja salaisuuksiin rajataan tarpeen mukaan. Salasanoja ei tallenneta selväkielisinä.'],
-    ['Alikäsittelijät', 'Palvelu nojaa infrastruktuuri-, tietokanta-, maksu- ja AI-palveluntarjoajiin.'],
+    ['Käsittelyn kohde', 'Käsittely liittyy palvelun käyttöön, yrityksen palveluun lisäämiin tietoihin sekä verkkosivun chatissa käsiteltäviin viesteihin.'],
+    ['Ohjeet', 'Respondo käsittelee tietoja asiakkaan puolesta vain palvelun toteuttamiseksi ja asiakkaan dokumentoitujen ohjeiden mukaisesti.'],
+    ['Luottamuksellisuus ja turvallisuus', 'Pääsy tuotantoympäristöihin ja salaisiin tietoihin rajataan vain niille, jotka niitä tarvitsevat. Salasanoja ei tallenneta selväkielisinä.'],
+    ['Alikäsittelijät', 'Palvelun taustalla käytetään infrastruktuuri-, tietokanta-, maksu- ja AI-palveluntarjoajia.'],
   ],
 };
 
 LEGAL.tietoturva = {
   label: 'TRUST / SECURITY',
   title: 'Tietoturva',
-  intro: 'Respondon tavoite on minimoida turha tiedonkäsittely ja pitää palvelun kriittiset salaisuudet erillään selaimesta.',
+  intro: 'Respondossa pyritään käsittelemään vain tarpeellisia tietoja ja pitämään palvelun kriittiset salaisuudet poissa selaimesta.',
   sections: [
-    ['HTTPS', 'Tuotantopalvelu toimitetaan salatun HTTPS-yhteyden kautta.'],
-    ['Salasanat', 'Käyttäjien salasanat tallennetaan yksisuuntaisesti hajautettuina, ei selväkielisinä.'],
-    ['API-avaimet', 'Maksu-, tietokanta- ja AI-palveluiden salaiset avaimet säilytetään palvelimen ympäristömuuttujissa eikä niitä toimiteta selaimelle.'],
-    ['Tietopohjaperiaate', 'Asiakasvastaukset on suunniteltu nojaamaan yrityksen hyväksyttyyn tietopohjaan. Kun varmaa tietoa ei löydy, palvelu voi palauttaa jatko-ohjeen arvauksen sijaan.'],
+    ['HTTPS', 'Palvelu toimii salatun HTTPS-yhteyden kautta.'],
+    ['Salasanat', 'Salasanat tallennetaan yksisuuntaisesti hajautettuina eikä koskaan selväkielisinä.'],
+    ['API-avaimet', 'Maksu-, tietokanta- ja AI-palveluiden salaiset avaimet säilytetään palvelimella eikä niitä lähetetä selaimeen.'],
+    ['Tietopohjaperiaate', 'Asiakasvastaukset perustuvat yrityksen itse lisäämiin tietoihin. Jos varmaa vastausta ei löydy, palvelu ohjaa eteenpäin sen sijaan, että se arvailee.'],
     ['Yhteydenotot', `Tietoturvaan liittyvät ilmoitukset: ${cfg.supportEmail}.`],
   ],
 };
@@ -1144,7 +1144,7 @@ function legal(type) {
         <article class="legalcopy">
           ${page.sections.map(([h, p]) => `<section><h2>${h}</h2><p>${p}</p></section>`).join('')}
           <section><h2>Yhteydenotot</h2><p><a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a></p></section>
-          <div class="legal-note">Päivitetty ${new Date().toLocaleDateString('fi-FI')}. Teksti kuvaa Respondon tämänhetkistä palvelua ja sitä voidaan päivittää palvelun kehittyessä.</div>
+          <div class="legal-note">Päivitetty ${new Date().toLocaleDateString('fi-FI')}. Teksti kuvaa Respondon nykyistä palvelua ja sitä voidaan päivittää palvelun kehittyessä.</div>
         </article>
       </div>
     </main>
