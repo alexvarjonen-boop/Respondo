@@ -1915,3 +1915,33 @@ linear-gradient(180deg,#fff 0%,#fbfdff 72%,#fff 100%)!important}
 @media(max-width:1050px){.dashboard-insights{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){.dashboard-insights{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.mini-bars{height:145px}.conversation-log-item,.lead-item{padding:12px}}
 @media(max-width:500px){.stats{grid-template-columns:1fr}.mini-bar small{display:none}}
+
+
+/* FI / EN language switch */
+.lang-switch{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 8px;
+  border:1px solid #d9d9dc;
+  border-radius:999px;
+  background:#fff;
+  color:#8b8b90;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+.lang-choice{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:#8b8b90;
+  font:inherit;
+  padding:3px 2px;
+  cursor:pointer;
+}
+.lang-choice.active{color:#111113}
+.lang-choice:hover{color:#111113}
+@media (max-width:900px){
+  .lang-switch{order:-1}
+}
