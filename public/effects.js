@@ -353,9 +353,9 @@ YLEINEN TOIMINTAOHJE:
   function assistant() {
     if ($('.fx-assistant-launch')) return;
     document.body.insertAdjacentHTML('beforeend', `
-      <button class="fx-assistant-launch" type="button" aria-label="Avaa RESPONDO-botti"><i>R</i><span>RESPONDO-botti</span><b class="fx-live"></b></button>
+      <button class="fx-assistant-launch" type="button" aria-label="Avaa RESPONDO-botti"><i class="fx-brand-mark"><svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></i><span>RESPONDO-botti</span><b class="fx-live"></b></button>
       <aside class="fx-assistant" aria-label="RESPONDO-botti">
-        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar">R</span><div><b>RESPONDO-botti</b><small>${location.pathname === '/assistant' ? 'sama vastausmoottori kuin oikeassa botissa' : 'valmis vastaamaan'}</small></div></div><button class="fx-assistant-close" type="button" aria-label="Sulje">×</button></div>
+        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar fx-brand-mark"><svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></span><div><b>RESPONDO-botti</b><small>${location.pathname === '/assistant' ? 'sama vastausmoottori kuin oikeassa botissa' : 'valmis vastaamaan'}</small></div></div><button class="fx-assistant-close" type="button" aria-label="Sulje">×</button></div>
         <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">${location.pathname === '/assistant' ? 'Moi 👋 Testaa nyt yrityksen omilla tiedoilla. Kysy esimerkiksi hinnasta, aukioloajoista, palveluista tai omista lisäämistäsi kysymyksistä.' : 'Moi 👋 Olen Respondon sivuassistentti. Kysy miten palvelu toimii tai mitä se maksaa.'}</div><div class="fx-quick"><button type="button">Mitä RESPONDO AI maksaa?</button><button type="button">Miten 3 päivän kokeilu toimii?</button><button type="button">Miten asennus toimii?</button></div></div>
         <form class="fx-assistant-form"><input name="message" autocomplete="off" placeholder="Kirjoita kysymys…" aria-label="Kysymys"><button type="submit" aria-label="Lähetä">→</button></form>
       </aside>`);
@@ -410,7 +410,7 @@ YLEINEN TOIMINTAOHJE:
     if (app) {
       app.innerHTML = `
         <main class="assistant-direct-shell">
-          <a class="assistant-direct-brand" href="/" aria-label="RESPONDO AI etusivu"><span>R</span><b>RESPONDO AI</b></a>
+          <a class="assistant-direct-brand" href="/" aria-label="RESPONDO AI etusivu"><span class="assistant-direct-mark"><svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></span><b>RESPONDO AI</b></a>
           <section class="assistant-owner-panel">
             <div class="assistant-direct-copy">
               <small>TESTAA OMAN YRITYKSESI TIEDOILLA</small>
@@ -483,6 +483,39 @@ YLEINEN TOIMINTAOHJE:
               <button class="owner-save" type="submit">Tallenna botille <span>→</span></button>
               <div class="owner-save-status" id="ownerSaveStatus"></div>
             </form>
+
+            <section class="assistant-order" aria-label="Tilaa RESPONDO AI">
+              <div class="assistant-order-head">
+                <small>VALMIS OTTAMAAN KÄYTTÖÖN?</small>
+                <h2>Ota sama botti omalle verkkosivullesi.</h2>
+                <p>Saat 3 päivän maksuttoman kokeilun. Valitse kuukausi tai vuosi ja viimeistele tilaus turvallisesti Stripessä.</p>
+              </div>
+              <div class="assistant-order-grid">
+                <article class="assistant-order-card">
+                  <div class="assistant-order-label">KUUKAUSI</div>
+                  <h3>49 € <span>/ kk + alv</span></h3>
+                  <ul>
+                    <li>3 päivää maksutta</li>
+                    <li>Chat-widget verkkosivulle</li>
+                    <li>Yrityksen oma tietopohja</li>
+                    <li>Peruuta milloin tahansa</li>
+                  </ul>
+                  <a class="assistant-order-btn" href="/tilaus?plan=monthly">Aloita kuukausitilaus <span>→</span></a>
+                </article>
+                <article class="assistant-order-card featured">
+                  <div class="assistant-order-top"><div class="assistant-order-label">VUOSI</div><span class="assistant-save">Säästä 39 €</span></div>
+                  <h3>549 € <span>/ vuosi + alv</span></h3>
+                  <ul>
+                    <li>3 päivää maksutta</li>
+                    <li>Samat ominaisuudet kuin kuukausitilauksessa</li>
+                    <li>Yksi vuosiveloitus</li>
+                    <li>Peruuta milloin tahansa</li>
+                  </ul>
+                  <a class="assistant-order-btn primary" href="/tilaus?plan=yearly">Aloita vuositilaus <span>→</span></a>
+                </article>
+              </div>
+              <div class="assistant-order-trust"><span>✓ Stripe-maksu</span><span>✓ Ei veloitusta kokeilun aikana</span><span>✓ Käyttöönotto heti tilauksen jälkeen</span></div>
+            </section>
           </section>
         </main>`;
     }
