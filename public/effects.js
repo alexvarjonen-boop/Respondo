@@ -136,10 +136,7 @@
     return 'En halua keksiä vastausta. Voin auttaa Respondon hinnassa, kokeilussa, käyttöönotossa, tietoturvassa ja tilauksessa — tai voit ottaa yhteyttä osoitteeseen respondoai.fi@outlook.com.';
   }
 
-  let localAiEngine = null;
-  let localAiLoading = null;
   const localAiHistory = [];
-  const localAiModel = 'SmolLM2-360M-Instruct-q4f32_1-MLC';
   const ownerProfileKey = 'respondoOwnerBusinessProfile';
   const commonServices = [
     'Ajoneuvohuolto','Autopesu','Fysioterapia','Hieronta','Ilmastointihuolto','IT-tuki',
@@ -331,27 +328,6 @@ YLEINEN TOIMINTAOHJE:
     return facts.map(x => `${x.label}: ${x.value}`).join('\n');
   }
 
-  async function getLocalAiEngine(onProgress) {
-    if (localAiEngine) return localAiEngine;
-    if (!navigator.gpu) throw new Error('Tämä selain ei tue WebGPU:ta.');
-    if (localAiLoading) return localAiLoading;
-    localAiLoading = (async () => {
-      const webllm = await import('https://esm.run/@mlc-ai/web-llm');
-      const engine = await webllm.CreateMLCEngine(localAiModel, {
-        initProgressCallback: (p) => {
-          const pct = Math.max(0, Math.min(100, Math.round((p.progress || 0) * 100)));
-          if (onProgress) onProgress(pct, p.text || 'Ladataan paikallista AI-mallia…');
-        }
-      });
-      localAiEngine = engine;
-      return engine;
-    })();
-    try {
-      return await localAiLoading;
-    } finally {
-      localAiLoading = null;
-    }
-  }
 
   async function localAiAnswer(text, onProgress) {
     const profile = getOwnerProfile();
