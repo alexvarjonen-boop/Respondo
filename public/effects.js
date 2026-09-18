@@ -862,6 +862,7 @@ YLEINEN TOIMINTAOHJE:
 
         el.style.setProperty('--fx-local', p.toFixed(4));
         el.style.setProperty('--fx-enter', enter.toFixed(4));
+        el.style.setProperty('--fx-enter-opacity', (.2 + enter * .5).toFixed(4));
         el.style.setProperty('--fx-shift-y', (p * 34).toFixed(2) + 'px');
         el.style.setProperty('--fx-shift-x', (twist * 28).toFixed(2) + 'px');
         el.style.setProperty('--fx-rot', (twist * 2.1).toFixed(2) + 'deg');
@@ -1038,6 +1039,11 @@ YLEINEN TOIMINTAOHJE:
         cinema.style.setProperty('--cinema-p', p.toFixed(4));
         cinema.style.setProperty('--cinema-phone-y', ((1-p) * 70).toFixed(2)+'px');
         cinema.style.setProperty('--cinema-float', ((1-p) * 34).toFixed(2)+'px');
+        cinema.style.setProperty('--cinema-float-b', ((1-p) * -23.8).toFixed(2)+'px');
+        cinema.style.setProperty('--cinema-word-scale', (.82 + p * .35).toFixed(4));
+        cinema.style.setProperty('--cinema-orbit-a', (p * 18).toFixed(2)+'deg');
+        cinema.style.setProperty('--cinema-orbit-b', (p * -24).toFixed(2)+'deg');
+        cinema.style.setProperty('--cinema-stage-scale', (.975 + p * .025).toFixed(4));
       }
 
       if (portal) {
@@ -1122,6 +1128,7 @@ YLEINEN TOIMINTAOHJE:
       $(sel).forEach((el, i) => {
         el.classList.add('fx-stagger-item');
         el.style.setProperty('--fx-stagger', Math.min(i, 10));
+        el.style.setProperty('--fx-stagger-delay', (Math.min(i, 10) * 55) + 'ms');
       });
     });
 
@@ -1183,6 +1190,7 @@ YLEINEN TOIMINTAOHJE:
       el.style.setProperty('--' + name + '-center', center.toFixed(4));
       el.style.setProperty('--' + name + '-drift-y', (center * 22).toFixed(2) + 'px');
       el.style.setProperty('--' + name + '-drift-neg-y', (center * -22).toFixed(2) + 'px');
+      return {p, center};
     };
 
     const update = () => {
@@ -1213,31 +1221,59 @@ YLEINEN TOIMINTAOHJE:
         el.style.setProperty('--fx-section-center', center.toFixed(4));
         el.style.setProperty('--fx-section-visible', visible.toFixed(4));
         el.style.setProperty('--fx-section-drift', (center * (i % 2 ? -20 : 20)).toFixed(2) + 'px');
+        el.style.setProperty('--fx-section-drift-neg', (center * (i % 2 ? 20 : -20)).toFixed(2) + 'px');
+        el.style.setProperty('--fx-section-rot', (center * 2.2).toFixed(2) + 'deg');
+        el.style.setProperty('--fx-section-rot-neg', (center * -2.2).toFixed(2) + 'deg');
+        el.style.setProperty('--fx-section-scale', (.88 + visible * .12).toFixed(4));
       });
 
-      setProgress(calculator,'calc',vh);
-      setProgress(pricing,'price',vh);
-      setProgress(finalCta,'final',vh);
-      setProgress(contact,'contact',vh);
-      setProgress(footer,'footer',vh);
+      const calcState = setProgress(calculator,'calc',vh);
+      const priceState = setProgress(pricing,'price',vh);
+      const finalState = setProgress(finalCta,'final',vh);
+      const contactState = setProgress(contact,'contact',vh);
+      const footerState = setProgress(footer,'footer',vh);
 
       const calcResult = $('.calculator-result');
-      if (calculator && calcResult) {
-        const p = Number(calculator.style.getPropertyValue('--calc-progress') || 0);
+      if (calculator && calcResult && calcState) {
+        const p = calcState.p;
+        calculator.style.setProperty('--calc-orb-y', (calcState.center * -60).toFixed(2) + 'px');
+        calculator.style.setProperty('--calc-orb-scale', (.9 + p * .12).toFixed(4));
+        calculator.style.setProperty('--calc-controls-x', (calcState.center * -18).toFixed(2) + 'px');
+        calculator.style.setProperty('--calc-controls-ry', (calcState.center * 1.6).toFixed(2) + 'deg');
+        calculator.style.setProperty('--calc-result-x', (calcState.center * 18).toFixed(2) + 'px');
         calcResult.style.setProperty('--calc-card-y', ((1 - Math.min(1,p*1.5)) * 58).toFixed(2) + 'px');
         calcResult.style.setProperty('--calc-card-rot', ((1 - Math.min(1,p*1.5)) * -4).toFixed(2) + 'deg');
       }
 
-      if (pricing) {
-        const p = Number(pricing.style.getPropertyValue('--price-progress') || 0);
+      if (pricing && priceState) {
+        const p = priceState.p;
         pricing.style.setProperty('--price-spread', ((1 - Math.min(1,p*1.7)) * 46).toFixed(2) + 'px');
+        pricing.style.setProperty('--price-y', (priceState.center * 14).toFixed(2) + 'px');
+        pricing.style.setProperty('--price-neg-y', (priceState.center * -14).toFixed(2) + 'px');
+        pricing.style.setProperty('--price-ry', (priceState.center * 2.2).toFixed(2) + 'deg');
+        pricing.style.setProperty('--price-neg-ry', (priceState.center * -2.2).toFixed(2) + 'deg');
       }
 
       const ctaCircle = $('.cta-circle');
-      if (finalCta && ctaCircle) {
-        const p = Number(finalCta.style.getPropertyValue('--final-progress') || 0);
+      if (finalCta && ctaCircle && finalState) {
+        const p = finalState.p;
+        finalCta.style.setProperty('--final-ring-rot', (p * 36).toFixed(2) + 'deg');
+        finalCta.style.setProperty('--final-glow-scale', (.86 + p * .18).toFixed(4));
+        finalCta.style.setProperty('--final-shell-y', (finalState.center * -26).toFixed(2) + 'px');
         ctaCircle.style.setProperty('--cta-spin', (p * 34).toFixed(2) + 'deg');
         ctaCircle.style.setProperty('--cta-scale', (.84 + Math.min(1,p*1.5) * .16).toFixed(4));
+      }
+
+      if (contact && contactState) {
+        contact.style.setProperty('--contact-sweep-x', ((contactState.p - .5) * 40).toFixed(2) + '%');
+        contact.style.setProperty('--contact-shell-y', (contactState.center * 22).toFixed(2) + 'px');
+        contact.style.setProperty('--contact-shell-rx', (contactState.center * -1.4).toFixed(2) + 'deg');
+      }
+
+      if (footer && footerState) {
+        footer.style.setProperty('--footer-word-y', ((1 - footerState.p) * 80).toFixed(2) + 'px');
+        footer.style.setProperty('--footer-content-y', (footerState.center * -22).toFixed(2) + 'px');
+        footer.style.setProperty('--footer-content-scale', (.985 + footerState.p * .015).toFixed(4));
       }
     };
 
