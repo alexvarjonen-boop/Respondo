@@ -882,7 +882,7 @@ app.get('/api/public/config', (req, res) =>
     supportEmail: process.env.SUPPORT_EMAIL || 'alexvarjonen@gmail.com',
     trialDays: 3,
     monthlyNet: 49,
-    yearlyNet: 549,
+    yearlyNet: 540,
   }),
 );
 
