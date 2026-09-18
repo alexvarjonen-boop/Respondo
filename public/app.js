@@ -904,8 +904,14 @@ async function dashboard() {
               <input name="email" type="email" value="${profileValue('Sähköposti')}" placeholder="info@yritys.fi">
             </div>
             <div class="field">
-              <label>Verkkosivu</label>
+              <label>Verkkosivu / asennusdomain</label>
               <input name="website" value="${profileValue('Verkkosivu')}" placeholder="https://yritys.fi">
+              <small class="field-hint">RESPONDO AI -koodi toimii vain tällä verkkosivulla.</small>
+            </div>
+            <div class="field">
+              <label>Tarjouspyyntölomakkeen linkki</label>
+              <input name="quoteRequestUrl" value="${profileValue('Tarjouspyyntölomake')}" placeholder="https://yritys.fi/tarjouspyynto">
+              <small class="field-hint">Botti voi antaa tämän linkin, kun asiakas pyytää tarjousta.</small>
             </div>
             <div class="field profile-wide">
               <label>Mitä palveluja teette?</label>
@@ -1009,8 +1015,13 @@ async function dashboard() {
       </section>
 
       <section class="panel install-panel" id="install">
-        <div class="panel-head"><div><small>ASENNUS</small><h2>Lisää RESPONDO AI verkkosivulle</h2></div><span class="install-badge">1 rivi</span></div>
+        <div class="panel-head"><div><small>ASENNUS</small><h2>Lisää RESPONDO AI verkkosivulle</h2></div><span class="install-badge">1 sivusto</span></div>
         <p>Liitä tämä koodi sivustosi HTML:ään juuri ennen sulkevaa <code>&lt;/body&gt;</code>-tagia.</p>
+        <div class="license-lock">
+          <span>🔒 DOMAIN-LUKITUS</span>
+          <b>${t.website ? esc(t.website) : 'Verkkosivua ei ole vielä määritetty'}</b>
+          <small>${t.website ? 'Sama asennuskoodi ei aktivoidu toisella verkkosivulla.' : 'Tallenna ensin yrityksen verkkosivu yllä. Widget aktivoituu vain siihen domainiin.'}</small>
+        </div>
         <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js" data-company="${esc(t.slug)}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">Kopioi</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? '✓ Merkitty asennetuksi' : 'Merkitse asennetuksi'}</button>
       </section>
@@ -1177,6 +1188,7 @@ async function route() {
         [['toimialue','alue','paikkakunta','tuletteko'], values.serviceArea],
         [['osoite','sijainti','missä olette'], values.address],
         [['verkkosivu','nettisivu','www'], values.website],
+        [['tarjous','tarjouspyyntö','pyydä tarjous','lomake'], values.quoteRequestUrl ? 'Voit jättää tarjouspyynnön täällä: ' + values.quoteRequestUrl : ''],
         [['päivystys','takuu','maksutapa','ajanvaraus','muuta'], values.notes],
       ];
       for (const [keys, value] of pairs) {
@@ -1280,6 +1292,7 @@ async function route() {
             serviceArea: form.get('serviceArea'),
             address: form.get('address'),
             website: form.get('website'),
+            quoteRequestUrl: form.get('quoteRequestUrl'),
             notes: form.get('notes'),
           }),
         });
