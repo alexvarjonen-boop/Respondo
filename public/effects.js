@@ -973,6 +973,75 @@ YLEINEN TOIMINTAOHJE:
     });
   }
 
+
+  function immersiveHomepageScenes() {
+    if (location.pathname !== '/' || reduce || document.body.dataset.immersiveReady === '1') return;
+    document.body.dataset.immersiveReady = '1';
+
+    const story = $('.story-horizontal');
+    const track = $('.story-track');
+    const progress = $('.story-progress i');
+    const current = $('#storyCurrent');
+    const world = $('.product-world');
+    const worldStage = $('.world-stage');
+    const cinema = $('.cinema-conversation');
+    const portal = $('.trust-portal');
+    const impact = $('.impact-scene');
+
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const vh = Math.max(innerHeight, 1);
+
+      if (story && track) {
+        const r = story.getBoundingClientRect();
+        const total = Math.max(1, story.offsetHeight - vh);
+        const p = Math.max(0, Math.min(1, -r.top / total));
+        track.style.setProperty('--story-p', p.toFixed(4));
+        track.style.setProperty('--story-x', (-p * 200).toFixed(3) + 'vw');
+        if (progress) progress.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+        const step = Math.min(3, Math.max(1, Math.floor(p * 3) + 1));
+        if (current) current.textContent = String(step).padStart(2,'0');
+      }
+
+      if (world && worldStage) {
+        const r = world.getBoundingClientRect();
+        const total = Math.max(1, world.offsetHeight - vh);
+        const p = Math.max(0, Math.min(1, -r.top / total));
+        worldStage.style.setProperty('--world-p', p.toFixed(4));
+        worldStage.style.setProperty('--world-main-z', (40 + p * 80).toFixed(2) + 'px');
+        worldStage.style.setProperty('--world-side-x', (1 - p) * 180 + 'px');
+        worldStage.style.setProperty('--world-tilt', ((.5 - p) * 10).toFixed(2) + 'deg');
+      }
+
+      if (cinema) {
+        const r = cinema.getBoundingClientRect();
+        const p = Math.max(0, Math.min(1, 1 - Math.abs((r.top + r.height/2 - vh/2) / vh)));
+        cinema.style.setProperty('--cinema-p', p.toFixed(4));
+        cinema.style.setProperty('--cinema-phone-y', ((1-p) * 70).toFixed(2)+'px');
+        cinema.style.setProperty('--cinema-float', ((1-p) * 34).toFixed(2)+'px');
+      }
+
+      if (portal) {
+        const r = portal.getBoundingClientRect();
+        const p = Math.max(0, Math.min(1, 1 - Math.abs((r.top + r.height/2 - vh/2) / vh)));
+        portal.style.setProperty('--portal-p', p.toFixed(4));
+        portal.style.setProperty('--portal-spin', ((1-p) * 18).toFixed(2)+'deg');
+      }
+
+      if (impact) {
+        const r = impact.getBoundingClientRect();
+        const p = Math.max(0, Math.min(1, 1 - Math.abs((r.top + r.height/2 - vh/2) / vh)));
+        impact.style.setProperty('--impact-p', p.toFixed(4));
+      }
+    };
+
+    const request = () => { if (!raf) raf = requestAnimationFrame(update); };
+    addEventListener('scroll', request, {passive:true});
+    addEventListener('resize', request, {passive:true});
+    update();
+  }
+
   function ctaPopup() {
     if ($('.fx-modal-backdrop') || sessionStorage.getItem('respondoCtaSeen')) return;
     document.body.insertAdjacentHTML('beforeend', `<div class="fx-modal-backdrop" role="dialog" aria-modal="true" aria-label="RESPONDO AI kokeilu"><div class="fx-modal"><button class="fx-modal-close" aria-label="Sulje">×</button><div class="fx-modal-kicker">RESPONDO AI / 3 PÄIVÄÄ</div><h3>Katso miltä 24/7-asiakaspalvelu näyttää omassa yrityksessäsi.</h3><p>Luo tili, lisää yrityksesi hyväksytty tieto ja testaa palvelua 3 päivää maksutta.</p><div class="fx-modal-actions"><a class="btn ink" href="/tilaus">Aloita maksutta →</a><button class="btn ghost fx-modal-later" type="button">Katson myöhemmin</button></div></div></div>`);
@@ -998,7 +1067,7 @@ YLEINEN TOIMINTAOHJE:
       return;
     }
     if (location.pathname === '/') {
-      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup(); cinematicSectionAtmosphere(); deepScrollExperience();
+      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup(); cinematicSectionAtmosphere(); deepScrollExperience(); immersiveHomepageScenes();
     } else {
       revealTargets(); magneticButtons(); assistant(); deepScrollExperience();
     }
