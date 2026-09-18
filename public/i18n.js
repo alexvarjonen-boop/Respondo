@@ -270,10 +270,14 @@
     if (out === trimmed) {
       out = out
         .replace(/Y-tunnus/g, 'Business ID')
+        .replace(/\/\s*kk\b/gi, '/month')
+        .replace(/\/\s*vuosi\b/gi, '/year')
         .replace(/\bkuukausi\b/gi, 'month')
         .replace(/\bvuosi\b/gi, 'year')
         .replace(/\bpäivää\b/gi, 'days')
-        .replace(/\balv\b/gi, 'VAT');
+        .replace(/\balv\b/gi, 'VAT')
+        .replace(/^Päivitetty\s+/i, 'Updated ')
+        .replace(/Teksti kuvaa Respondon tämänhetkistä palvelua ja sitä voidaan päivittää palvelun kehittyessä\./g, 'This text describes RESPONDO’s current service and may be updated as the service develops.');
     }
     return raw.replace(trimmed, out);
   }
