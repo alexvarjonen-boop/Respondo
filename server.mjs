@@ -1499,6 +1499,8 @@ async function ensureRuntimeSchema() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_leads_tenant_created ON leads(tenant_id, created_at DESC)');
+  await q("ALTER TABLE tenants ALTER COLUMN accent SET DEFAULT '#111113'");
+  await q("UPDATE tenants SET accent='#111113' WHERE accent='#3157ff'");
 }
 
 async function start() {
