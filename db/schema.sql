@@ -59,3 +59,18 @@ CREATE TABLE IF NOT EXISTS conversations (
 CREATE INDEX IF NOT EXISTS idx_knowledge_tenant ON knowledge(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_tenant_created ON conversations(tenant_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_users_stripe_customer ON users(stripe_customer_id);
+
+
+CREATE TABLE IF NOT EXISTS leads (
+  id UUID PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  visitor_ref TEXT,
+  name TEXT,
+  email TEXT,
+  phone TEXT,
+  message TEXT,
+  status TEXT NOT NULL DEFAULT 'new',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_leads_tenant_created ON leads(tenant_id, created_at DESC);
