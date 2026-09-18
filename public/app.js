@@ -61,6 +61,35 @@ function nav() {
 }
 
 
+function socialAuthButtons(flow = 'signup') {
+  const label = flow === 'login' ? 'Kirjaudu' : 'Jatka';
+  return `<div class="social-auth">
+    <a class="social-auth-btn" href="/api/auth/oauth/google/start?flow=${flow}" aria-label="${label} Googlella">
+      <span class="social-auth-icon google-icon" aria-hidden="true">G</span>
+      <span>${label} Googlella</span>
+    </a>
+    <a class="social-auth-btn social-auth-btn-dark" href="/api/auth/oauth/apple/start?flow=${flow}" aria-label="${label} Applella">
+      <span class="social-auth-icon apple-icon" aria-hidden="true"></span>
+      <span>${label} Applella</span>
+    </a>
+    <div class="auth-divider"><span>tai sähköpostilla</span></div>
+  </div>`;
+}
+
+function oauthErrorMessage() {
+  const p = new URLSearchParams(location.search);
+  const code = p.get('oauth_error');
+  const provider = p.get('provider') === 'apple' ? 'Apple' : 'Google';
+  if (!code) return '';
+  const messages = {
+    not_configured: `${provider}-kirjautuminen tarvitsee vielä OAuth-tunnukset.`,
+    state: 'Kirjautumisistunto vanheni. Yritä uudelleen.',
+    failed: `${provider}-kirjautuminen epäonnistui. Yritä uudelleen.`,
+    no_account: 'Tällä tilillä ei ole vielä RESPONDO AI -käyttäjää. Luo tili ensin.',
+    pending: 'Tili on luotu, mutta tilaus pitää vielä viimeistellä.',
+  };
+  return messages[code] || 'Kirjautuminen epäonnistui. Yritä uudelleen.';
+}
 function stickyProductNav() {
   return `<div class="product-subnav" aria-label="Sivun osiot">
     <div class="container product-subnav-inner">
@@ -597,12 +626,13 @@ function signup() {
         </section>
         <form class="formcard premium-form" id="signup">
           <div class="form-head"><span>UUSI TILI</span><b>3 päivää maksutta</b></div>
+          ${socialAuthButtons('signup')}
           <div class="formgrid">
             <div class="field"><label>Nimi</label><input name="fullName" autocomplete="name" required placeholder="Etunimi Sukunimi"></div>
             <div class="field"><label>Sähköposti</label><input name="email" type="email" autocomplete="email" required placeholder="sinä@yritys.fi"></div>
             <div class="field"><label>Yritys</label><input name="companyName" required placeholder="Yrityksen nimi"></div>
             <div class="field"><label>Y-tunnus</label><input name="businessId" placeholder="1234567-8"></div>
-            <div class="field full"><label>Salasana</label><input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="Vähintään 10 merkkiä"></div>
+            <div class="field full" id="signupPasswordField"><label>Salasana</label><input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="Vähintään 10 merkkiä"></div>
             <div class="field full"><label>Tilaus</label>
               <select name="plan">
                 <option value="monthly" ${plan === 'monthly' ? 'selected' : ''}>49 €/kk + alv · kuukausi</option>
@@ -616,7 +646,7 @@ function signup() {
           </div>
           <button class="btn checkout-button" type="submit">Jatka Stripe Checkoutiin <span>→</span></button>
           <div class="form-security"><span>◈</span> Maksukorttitiedot käsittelee Stripe. RESPONDO AI ei tallenna korttinumeroasi.</div>
-          <div id="msg"></div>
+          <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : ''}</div>
         </form>
       </div>
     </main>
@@ -638,10 +668,11 @@ function login() {
         </section>
         <form class="formcard premium-form login-card" id="login">
           <div class="form-head"><span>KIRJAUDU</span><b>Tervetuloa takaisin</b></div>
+          ${socialAuthButtons('login')}
           <div class="field"><label>Sähköposti</label><input name="email" type="email" autocomplete="email" required placeholder="sinä@yritys.fi"></div>
           <div class="field"><label>Salasana</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
           <button class="btn checkout-button" type="submit">Avaa hallintapaneeli <span>→</span></button>
-          <div id="msg">${checkoutError ? '<div class="notice error">Automaattinen kirjautuminen ei onnistunut. Kirjaudu samalla sähköpostilla ja salasanalla, jonka loit ennen maksua.</div>' : ''}</div>
+          <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : (checkoutError ? '<div class="notice error">Automaattinen kirjautuminen ei onnistunut. Kirjaudu samalla sähköpostilla ja salasanalla, jonka loit ennen maksua.</div>' : '')}</div>
         </form>
       </div>
     </main>
@@ -1043,6 +1074,27 @@ async function route() {
   }
 
   if (path === '/tilaus') {
+    const oauthProvider = new URLSearchParams(location.search).get('oauth');
+    if (oauthProvider) {
+      api('/api/auth/oauth-profile')
+        .then((profile) => {
+          const form = $('#signup');
+          if (!form) return;
+          if (profile.name && !form.elements.fullName.value) form.elements.fullName.value = profile.name;
+          form.elements.email.value = profile.email || '';
+          form.elements.email.readOnly = true;
+          form.elements.email.classList.add('oauth-locked');
+          const passwordField = $('#signupPasswordField');
+          if (passwordField) passwordField.hidden = true;
+          if (form.elements.password) form.elements.password.required = false;
+          const badge = document.createElement('div');
+          badge.className = 'oauth-connected';
+          badge.textContent = (profile.provider === 'apple' ? 'Apple' : 'Google') + '-tili yhdistetty · ' + profile.email;
+          form.querySelector('.formgrid')?.before(badge);
+        })
+        .catch(() => {});
+    }
+
     $('#signup')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = new FormData(e.currentTarget);
