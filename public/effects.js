@@ -353,9 +353,9 @@ YLEINEN TOIMINTAOHJE:
   function assistant() {
     if ($('.fx-assistant-launch')) return;
     document.body.insertAdjacentHTML('beforeend', `
-      <button class="fx-assistant-launch" type="button" aria-label="Avaa RESPONDO AI Assistant"><i>R</i><span>RESPONDO AI Assistant</span><b class="fx-live"></b></button>
-      <aside class="fx-assistant" aria-label="RESPONDO AI Assistant">
-        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar">R</span><div><b>RESPONDO AI Assistant</b><small>${location.pathname === '/assistant' ? 'sama vastausmoottori kuin oikeassa botissa' : 'valmis vastaamaan'}</small></div></div><button class="fx-assistant-close" type="button" aria-label="Sulje">×</button></div>
+      <button class="fx-assistant-launch" type="button" aria-label="Avaa RESPONDO-botti"><i>R</i><span>RESPONDO-botti</span><b class="fx-live"></b></button>
+      <aside class="fx-assistant" aria-label="RESPONDO-botti">
+        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar">R</span><div><b>RESPONDO-botti</b><small>${location.pathname === '/assistant' ? 'sama vastausmoottori kuin oikeassa botissa' : 'valmis vastaamaan'}</small></div></div><button class="fx-assistant-close" type="button" aria-label="Sulje">×</button></div>
         <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">${location.pathname === '/assistant' ? 'Moi 👋 Testaa nyt yrityksen omilla tiedoilla. Kysy esimerkiksi hinnasta, aukioloajoista, palveluista tai omista lisäämistäsi kysymyksistä.' : 'Moi 👋 Olen Respondon sivuassistentti. Kysy miten palvelu toimii tai mitä se maksaa.'}</div><div class="fx-quick"><button type="button">Mitä RESPONDO AI maksaa?</button><button type="button">Miten 3 päivän kokeilu toimii?</button><button type="button">Miten asennus toimii?</button></div></div>
         <form class="fx-assistant-form"><input name="message" autocomplete="off" placeholder="Kirjoita kysymys…" aria-label="Kysymys"><button type="submit" aria-label="Lähetä">→</button></form>
       </aside>`);
