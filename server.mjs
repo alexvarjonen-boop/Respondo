@@ -1,6 +1,8 @@
 import express from 'express';
 import path from 'path';
 import crypto from 'crypto';
+import dns from 'dns/promises';
+import net from 'net';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -89,6 +91,329 @@ function setWidgetCors(req, res) {
     res.setHeader('Access-Control-Allow-Origin', origin.origin);
     res.setHeader('Vary', 'Origin');
   }
+}
+
+
+const SEARCH_STOPWORDS = new Set([
+  'että','tämä','tassa','tässä','tuo','noi','ne','nyt','kun','kuin','jos','mutta','tai','ja','on','oli','ovat',
+  'olla','voiko','saako','miten','mika','mikä','mitä','missä','missa','paljon','paljonko','teillä','teilla','te',
+  'me','minä','mina','sinä','sina','se','sen','sitä','sita','myös','myos','vielä','viela','entä','enta'
+]);
+
+function normalizeSearchText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9åäö€+\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function searchTokens(value) {
+  return normalizeSearchText(value)
+    .split(' ')
+    .filter((x) => x.length > 2 && !SEARCH_STOPWORDS.has(x));
+}
+
+function scoreKnowledgeRow(row, query) {
+  const q = normalizeSearchText(query);
+  const qTokens = searchTokens(q);
+  const title = normalizeSearchText(row.title);
+  const answer = normalizeSearchText(row.answer);
+  const keywordText = normalizeSearchText((row.keywords || []).join(' '));
+  let score = 0;
+
+  if (title && q.includes(title)) score += 14;
+  for (const rawKeyword of row.keywords || []) {
+    const kw = normalizeSearchText(rawKeyword);
+    if (kw && (q.includes(kw) || kw.includes(q))) score += 9;
+  }
+
+  const titleTokens = new Set(searchTokens(title));
+  const answerTokens = new Set(searchTokens(answer));
+  const keywordTokens = new Set(searchTokens(keywordText));
+  for (const token of qTokens) {
+    if (titleTokens.has(token)) score += 5;
+    if (keywordTokens.has(token)) score += 5;
+    if (answerTokens.has(token)) score += 1.2;
+
+    const stem = token.slice(0, Math.min(6, token.length));
+    if (stem.length >= 4) {
+      if ([...titleTokens].some((x) => x.startsWith(stem))) score += 2;
+      if ([...keywordTokens].some((x) => x.startsWith(stem))) score += 2;
+    }
+  }
+
+  const topicHints = [
+    [['hinta','maksaa','hinnoittelu','tarjous','kustannus'], ['hinnat','hinnoittelu','tarjouspyyntölomake']],
+    [['auki','aukiolo','lauantai','sunnuntai','viikonloppu','kello'], ['aukioloajat']],
+    [['puhelin','numero','soittaa'], ['puhelinnumero']],
+    [['sahkoposti','sähköposti','email','meili'], ['sahkoposti','sähköposti']],
+    [['palvelu','teette','tarjoatte','onnistuuko'], ['palvelut']],
+    [['alue','toimialue','tuletteko','paikkakunta'], ['toimialue']],
+    [['osoite','sijainti'], ['osoite']],
+    [['tarjous','tarjouspyynto','tarjouspyyntö'], ['tarjouspyyntolomake','tarjouspyyntölomake']],
+  ];
+  for (const [needles, titles] of topicHints) {
+    if (needles.some((x) => q.includes(normalizeSearchText(x))) && titles.some((x) => title.includes(normalizeSearchText(x)))) {
+      score += 12;
+    }
+  }
+  return score;
+}
+
+function selectRelevantKnowledge(rows, query, limit = 6) {
+  return rows
+    .filter((x) => normalizeSearchText(x.title) !== 'vastaustyyli')
+    .map((x) => ({ ...x, _score: scoreKnowledgeRow(x, query) }))
+    .filter((x) => x._score >= 2)
+    .sort((a, b) => b._score - a._score)
+    .slice(0, limit);
+}
+
+function knowledgeValue(rows, title) {
+  const wanted = normalizeSearchText(title);
+  const row = rows.find((x) => normalizeSearchText(x.title) === wanted);
+  return String(row?.answer || '').trim();
+}
+
+function answerTone(rows) {
+  const value = knowledgeValue(rows, 'Vastaustyyli').toLowerCase();
+  if (value.includes('lyhyt')) return 'Pidä vastaus erittäin lyhyenä ja suorana. Tavallisesti 1–2 lausetta.';
+  if (value.includes('asial')) return 'Kirjoita asiallisesti, rauhallisesti ja ammattimaisesti. Vältä turhaa myyntikieltä.';
+  return 'Kirjoita ystävällisesti, luontevasti ja ihmisen tavoin. Vältä robottimaista tai yliyrittävää sävyä.';
+}
+
+function inferIntent(message) {
+  const q = normalizeSearchText(message);
+  if (/tarjous|tarjouspyynt|arvio/.test(q)) return 'Tarjouspyyntö';
+  if (/hinta|maksaa|hinnoittelu|kustannus/.test(q)) return 'Hinta';
+  if (/auki|lauantai|sunnuntai|viikonloppu|kello/.test(q)) return 'Aukioloajat';
+  if (/puhelin|sahkoposti|sähköposti|yhteys|soittaa/.test(q)) return 'Yhteystiedot';
+  if (/missä|missa|osoite|toimialue|alue/.test(q)) return 'Sijainti';
+  if (/palvelu|teette|tarjoatte|onnistuuko/.test(q)) return 'Palvelut';
+  return 'Asiakaskysymys';
+}
+
+function chatActions(rows, message, handoff = false) {
+  const q = normalizeSearchText(message);
+  const quote = knowledgeValue(rows, 'Tarjouspyyntölomake');
+  const phone = knowledgeValue(rows, 'Puhelinnumero');
+  const email = knowledgeValue(rows, 'Sähköposti');
+  const actions = [];
+  const push = (action) => {
+    if (!action?.url || actions.some((x) => x.url === action.url)) return;
+    actions.push(action);
+  };
+
+  if (quote && (handoff || /tarjous|hinta|arvio|kustannus/.test(q))) {
+    push({ type: 'link', label: 'Pyydä tarjous', url: quote });
+  }
+  if (phone && (handoff || /puhelin|soita|soittaa|yhteys/.test(q))) {
+    push({ type: 'phone', label: 'Soita', url: 'tel:' + phone.replace(/\s+/g, '') });
+  }
+  if (email && (handoff || /sahkoposti|sähköposti|email|meili|yhteys/.test(q))) {
+    push({ type: 'email', label: 'Lähetä sähköposti', url: 'mailto:' + email });
+  }
+  return actions.slice(0, 3);
+}
+
+function parseGroundedModelOutput(raw, selected) {
+  const text = String(raw || '').trim();
+  if (!text || /^HANDOFF\.?$/i.test(text)) return { answer: '', sourceIds: [] };
+  const match = text.match(/^SOURCES:\s*([0-9,\s]+)\s*\n+/i);
+  let answer = text;
+  let sourceIds = [];
+  if (match) {
+    answer = text.slice(match[0].length).trim();
+    const indexes = match[1].split(',').map((x) => Number(x.trim())).filter((x) => Number.isInteger(x) && x >= 1 && x <= selected.length);
+    sourceIds = [...new Set(indexes.map((i) => selected[i - 1]?.id).filter(Boolean))];
+  }
+  if (!sourceIds.length) sourceIds = selected.slice(0, 2).map((x) => x.id).filter(Boolean);
+  return { answer, sourceIds };
+}
+
+function isPrivateAddress(ip) {
+  const version = net.isIP(ip);
+  if (version === 4) {
+    const [a,b] = ip.split('.').map(Number);
+    return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  }
+  if (version === 6) {
+    const value = ip.toLowerCase();
+    return value === '::1' || value === '::' || value.startsWith('fc') || value.startsWith('fd') || value.startsWith('fe80:');
+  }
+  return true;
+}
+
+async function assertPublicHttpUrl(value) {
+  const normalized = normalizeWebUrl(value, false);
+  if (!normalized) throw new Error('Verkkosivun osoite ei ole kelvollinen.');
+  const url = new URL(normalized);
+  const host = url.hostname.toLowerCase();
+  if (host === 'localhost' || host.endsWith('.local')) throw new Error('Verkkosivua ei voi hakea.');
+  if (net.isIP(host)) {
+    if (isPrivateAddress(host)) throw new Error('Verkkosivua ei voi hakea.');
+  } else {
+    const addresses = await dns.lookup(host, { all: true });
+    if (!addresses.length || addresses.some((x) => isPrivateAddress(x.address))) throw new Error('Verkkosivua ei voi hakea.');
+  }
+  return url;
+}
+
+async function fetchPublicHtml(value) {
+  let url = await assertPublicHttpUrl(value);
+  for (let i = 0; i < 4; i++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    let response;
+    try {
+      response = await fetch(url, {
+        redirect: 'manual',
+        signal: controller.signal,
+        headers: { 'User-Agent': 'RESPONDO-AI-Website-Importer/1.0' },
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+    if ([301,302,303,307,308].includes(response.status)) {
+      const location = response.headers.get('location');
+      if (!location) throw new Error('Verkkosivun uudelleenohjaus epäonnistui.');
+      url = await assertPublicHttpUrl(new URL(location, url).toString());
+      continue;
+    }
+    if (!response.ok) throw new Error('Verkkosivua ei saatu luettua.');
+    const type = String(response.headers.get('content-type') || '');
+    if (!type.includes('text/html')) throw new Error('Osoite ei näytä HTML-verkkosivulta.');
+    const length = Number(response.headers.get('content-length') || 0);
+    if (length > 1_500_000) throw new Error('Verkkosivu on liian suuri automaattiseen tuontiin.');
+    const html = (await response.text()).slice(0, 1_500_000);
+    return { html, finalUrl: url.toString() };
+  }
+  throw new Error('Verkkosivulla on liikaa uudelleenohjauksia.');
+}
+
+function htmlToReadableText(html) {
+  return String(html || '')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, ' ')
+    .replace(/<!--([\s\S]*?)-->/g, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|section|article|h1|h2|h3|h4|tr)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s*\n+/g, '\n')
+    .trim();
+}
+
+function buildProfileKnowledge(profile = {}) {
+  const rows = [];
+  const add = (title, answer, keywords = []) => {
+    const value = String(answer || '').trim();
+    if (value) rows.push({ id: 'demo-' + rows.length, category: 'Yrityksen perustiedot', title, answer: value, keywords });
+  };
+  add('Hinnat', profile.pricing, ['hinta','maksaa','hinnoittelu']);
+  add('Aukioloajat', profile.hours, ['auki','aukiolo','lauantai','sunnuntai']);
+  add('Puhelinnumero', profile.phone, ['puhelin','numero','soittaa']);
+  add('Sähköposti', profile.email, ['sähköposti','email']);
+  add('Palvelut', Array.isArray(profile.services) ? profile.services.join(', ') : profile.services, ['palvelut','teette','tarjoatte']);
+  add('Toimialue', profile.serviceArea, ['toimialue','alue','paikkakunta']);
+  add('Osoite', profile.address, ['osoite','sijainti']);
+  add('Verkkosivu', profile.website, ['verkkosivu','www']);
+  add('Tarjouspyyntölomake', profile.quoteRequestUrl, ['tarjous','tarjouspyyntö']);
+  add('Lisätiedot', profile.notes, ['lisätieto','päivystys','maksutapa','takuu','ajanvaraus']);
+  add('Vastaustyyli', profile.tone, ['tyyli']);
+  for (const fact of Array.isArray(profile.customFacts) ? profile.customFacts.slice(0, 30) : []) {
+    add(String(fact?.key || '').slice(0, 180), String(fact?.answer || '').slice(0, 1500), searchTokens(fact?.key || '').slice(0, 12));
+  }
+  return rows;
+}
+
+async function generateGroundedAnswer({ companyName, rows, message, history = [] }) {
+  const cleanMessage = String(message || '').trim();
+  if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: 'Tyhjä', sourceIds: [], selected: [] };
+
+  const normalized = normalizeSearchText(cleanMessage);
+  if (/^(hei|moi|moikka|hello|terve)[!. ]*$/.test(normalized)) {
+    return { answer: 'Hei! Miten voin auttaa?', handoff: false, confidence: 1, intent: 'Tervehdys', sourceIds: [], selected: [] };
+  }
+  if (/^(kiitos|kiitti|thanks)[!. ]*$/.test(normalized)) {
+    return { answer: 'Ole hyvä! Autan mielelläni, jos tulee vielä jotain mieleen.', handoff: false, confidence: 1, intent: 'Kiitos', sourceIds: [], selected: [] };
+  }
+
+  const priorQuestions = history.slice(-2).map((x) => String(x.question || x.user || '')).filter(Boolean);
+  const needsContext = cleanMessage.length < 55 || /^(enta|entä|ja |mites|miten sitten|siis|se |sen |sita|sitä)/i.test(cleanMessage);
+  const retrievalQuery = needsContext && priorQuestions.length ? priorQuestions.slice(-1)[0] + ' ' + cleanMessage : cleanMessage;
+  const selected = selectRelevantKnowledge(rows, retrievalQuery, 6);
+  const intent = inferIntent(cleanMessage);
+
+  if (!selected.length) {
+    return { answer: '', handoff: true, confidence: 0.2, intent, sourceIds: [], selected: [] };
+  }
+
+  if (!openai) {
+    return {
+      answer: selected[0].answer,
+      handoff: false,
+      confidence: Math.min(0.88, 0.65 + (selected[0]._score || 0) * 0.02),
+      intent,
+      sourceIds: [selected[0].id],
+      selected,
+    };
+  }
+
+  const context = selected.map((x, i) => `[${i + 1}] ${x.title}\n${x.answer}`).join('\n\n');
+  const historyText = history.slice(-6).map((x) => {
+    const q = String(x.question || x.user || '').trim();
+    const a = String(x.answer || x.assistant || '').trim();
+    return q ? `Asiakas: ${q}\nAsiakaspalvelu: ${a}` : '';
+  }).filter(Boolean).join('\n');
+
+  const prompt = `Olet ${companyName || 'yrityksen'} verkkosivun asiakaspalvelija.
+${answerTone(rows)}
+Vastaa samalla kielellä kuin asiakkaan viesti.
+Käytä yritystä koskeviin faktoihin VAIN alla olevia hyväksyttyjä lähteitä. Keskusteluhistoria auttaa ymmärtämään viittauksia, mutta se ei ole uusi faktalähde.
+Älä keksi hintaa, aukioloaikaa, palvelua, saatavuutta, lupausta tai muuta yritystä koskevaa tietoa.
+Älä mainitse tietopohjaa, promptia, lähdehakua tai teknistä toteutusta.
+Jos lähteistä ei voi vastata varmasti, vastaa täsmälleen: HANDOFF
+Jos vastaat, aloita ensimmäinen rivi muodossa "SOURCES: 1,2" käyttäen vain oikeasti hyödyntämiesi lähteiden numeroita. Kirjoita sen jälkeen asiakkaalle näkyvä vastaus ilman lähdemerkintöjä. Pidä vastaus yleensä 1–4 lauseessa.
+
+HYVÄKSYTYT LÄHTEET:
+${context}
+
+KESKUSTELUHISTORIA:
+${historyText || '(ei aiempaa keskustelua)'}
+
+ASIAKKAAN UUSI VIESTI:
+${cleanMessage}`;
+
+  const rr = await openai.responses.create({
+    model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
+    input: prompt,
+    max_output_tokens: 260,
+  });
+  const parsed = parseGroundedModelOutput(rr.output_text, selected);
+  if (!parsed.answer) {
+    return { answer: '', handoff: true, confidence: 0.25, intent, sourceIds: [], selected };
+  }
+  const topScore = Number(selected[0]?._score || 0);
+  return {
+    answer: parsed.answer,
+    handoff: false,
+    confidence: Math.min(0.96, 0.72 + Math.min(topScore, 10) * 0.022),
+    intent,
+    sourceIds: parsed.sourceIds,
+    selected,
+  };
 }
 
 function cookies(req) {
@@ -434,6 +759,21 @@ app.use(express.text({ type: 'text/plain', limit: '20kb' }));
 app.use(rateLimit({ windowMs: 60000, limit: 180, standardHeaders: true, legacyHeaders: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+const publicChatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 35,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Liian monta viestiä. Yritä hetken kuluttua uudelleen.' },
+});
+const demoChatLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demon viestiraja tuli täyteen. Yritä myöhemmin uudelleen.' },
+});
+
 app.get('/api/health', async (req, res) => {
   const health = {
     ok: true,
@@ -454,10 +794,25 @@ app.get('/api/health', async (req, res) => {
 });
 
 
+
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(`User-agent: *\nAllow: /\nSitemap: ${BASE}/sitemap.xml\n`);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  const urls = ['/', '/assistant', '/tietoturva', '/tietosuoja', '/kayttoehdot'];
+  res.type('application/xml').send(
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
+    urls.map((path) => '<url><loc>' + BASE + path + '</loc></url>').join('') +
+    '</urlset>'
+  );
+});
+
 app.get('/api/auth/oauth/:provider/start', (req, res) => {
   const provider = String(req.params.provider || '').toLowerCase();
   const flow = req.query.flow === 'login' ? 'login' : 'signup';
-  if (!['google', 'apple'].includes(provider)) return res.status(404).end();
+  if (provider !== 'google') return res.status(404).end();
 
   const cfg = oauthConfig(provider);
   if (!cfg.configured) {
@@ -735,7 +1090,9 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
     const s = await q(
       `SELECT count(*)::int total,
               count(*) FILTER(WHERE handoff=false)::int answered,
-              count(*) FILTER(WHERE handoff=true)::int handoffs
+              count(*) FILTER(WHERE handoff=true)::int handoffs,
+              count(*) FILTER(WHERE created_at >= NOW() - INTERVAL '7 days')::int last7,
+              count(*) FILTER(WHERE created_at >= NOW() - INTERVAL '30 days')::int last30
          FROM conversations WHERE tenant_id=$1`,
       [tenant.id],
     );
@@ -746,7 +1103,42 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
           AND handoff=true
           AND COALESCE(intent,'') <> 'Resolved gap'
         ORDER BY created_at DESC
-        LIMIT 20`,
+        LIMIT 30`,
+      [tenant.id],
+    );
+    const recent = await q(
+      `SELECT id, question, answer, intent, confidence, handoff, visitor_ref, source_ids, created_at
+         FROM conversations
+        WHERE tenant_id=$1
+        ORDER BY created_at DESC
+        LIMIT 30`,
+      [tenant.id],
+    );
+    const daily = await q(
+      `SELECT date_trunc('day', created_at)::date AS day, count(*)::int total
+         FROM conversations
+        WHERE tenant_id=$1 AND created_at >= NOW() - INTERVAL '13 days'
+        GROUP BY 1 ORDER BY 1 ASC`,
+      [tenant.id],
+    );
+    const gaps = await q(
+      `SELECT question, count(*)::int asks, max(created_at) AS last_asked
+         FROM conversations
+        WHERE tenant_id=$1
+          AND handoff=true
+          AND created_at >= NOW() - INTERVAL '7 days'
+          AND COALESCE(intent,'') <> 'Resolved gap'
+        GROUP BY question
+        ORDER BY asks DESC, last_asked DESC
+        LIMIT 8`,
+      [tenant.id],
+    );
+    const leads = await q(
+      `SELECT id, visitor_ref, name, email, phone, message, status, created_at
+         FROM leads
+        WHERE tenant_id=$1
+        ORDER BY created_at DESC
+        LIMIT 30`,
       [tenant.id],
     );
     const a = s.rows[0];
@@ -755,10 +1147,17 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
       tenant,
       knowledge: k.rows,
       unanswered: unanswered.rows,
+      recentConversations: recent.rows,
+      daily: daily.rows,
+      gaps: gaps.rows,
+      leads: leads.rows,
       stats: {
         conversations: total,
         answeredRate: total ? Math.round((a.answered * 100) / total) : 0,
         handoffRate: total ? Math.round((a.handoffs * 100) / total) : 0,
+        last7: a.last7 || 0,
+        last30: a.last30 || 0,
+        leads: leads.rows.length,
       },
     });
   } catch (e) {
@@ -793,7 +1192,8 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
       ['Osoite', req.body.address, ['osoite','sijainti','missä']],
       ['Verkkosivu', website, ['verkkosivu','www','nettisivu']],
       ['Tarjouspyyntölomake', quoteRequestUrl, ['tarjous','tarjouspyyntö','tarjouspyyntölomake','pyydä tarjous','lomake']],
-      ['Lisätiedot', req.body.notes, ['lisätieto','muuta','huomio']]
+      ['Lisätiedot', req.body.notes, ['lisätieto','muuta','huomio']],
+      ['Vastaustyyli', req.body.tone, ['tyyli']]
     ];
 
     await client.query('BEGIN');
@@ -812,11 +1212,12 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
     }
 
     await client.query(
-      'UPDATE tenants SET contact_phone=$1, contact_email=$2, website=$3, updated_at=NOW() WHERE id=$4',
+      'UPDATE tenants SET contact_phone=$1, contact_email=$2, website=$3, greeting=$4, updated_at=NOW() WHERE id=$5',
       [
         String(req.body.phone || '').trim() || null,
         String(req.body.email || '').trim() || null,
         website || null,
+        String(req.body.greeting || '').trim().slice(0, 220) || 'Hei! Miten voin auttaa?',
         tenantId
       ]
     );
@@ -829,6 +1230,46 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
     return res.status(500).json({ error: 'Yrityksen tietojen tallennus epäonnistui.' });
   } finally {
     client.release();
+  }
+});
+
+
+app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
+  try {
+    const website = normalizeWebUrl(req.body.website, false);
+    if (!website) return res.status(400).json({ error: 'Anna ensin verkkosivun osoite.' });
+    const { html, finalUrl } = await fetchPublicHtml(website);
+    const text = htmlToReadableText(html).slice(0, 26000);
+    if (text.length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
+    if (!openai) return res.status(503).json({ error: 'Automaattinen tuonti ei ole juuri nyt käytettävissä.' });
+
+    const prompt = `Poimi alla olevasta yrityksen verkkosivutekstistä VAIN selvästi sivulla kerrotut tiedot.
+Älä päättele, täydennä tai keksi mitään. Palauta ainoastaan validi JSON-objekti ilman markdownia.
+Avaimet:
+pricing, hours, phone, email, services, serviceArea, address, quoteRequestUrl, notes.
+Kaikki arvot ovat merkkijonoja. Jos tietoa ei löydy varmasti, käytä tyhjää merkkijonoa.
+services voi olla yksi pilkuilla eroteltu merkkijono. quoteRequestUrl saa olla vain tekstissä näkyvä URL.
+
+VERKKOSIVU:
+${text}`;
+
+    const rr = await openai.responses.create({
+      model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
+      input: prompt,
+      max_output_tokens: 700,
+    });
+    const raw = String(rr.output_text || '').trim();
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Tuonnin vastausta ei voitu lukea.');
+    const parsed = JSON.parse(match[0]);
+    const allowed = ['pricing','hours','phone','email','services','serviceArea','address','quoteRequestUrl','notes'];
+    const profile = {};
+    for (const key of allowed) profile[key] = String(parsed[key] || '').trim().slice(0, 4000);
+    profile.website = normalizeWebUrl(finalUrl, true) || normalizeWebUrl(website, true);
+    return res.json({ ok: true, profile });
+  } catch (e) {
+    console.error('Website import failed', e);
+    return res.status(400).json({ error: e.message || 'Verkkosivun tietojen tuonti epäonnistui.' });
   }
 });
 
@@ -937,12 +1378,21 @@ app.get('/api/public/:slug/widget-token', async (req, res) => {
       JWT,
       { expiresIn: '12h' }
     );
+    const kr = await q('SELECT title, answer FROM knowledge WHERE tenant_id=$1', [tenant.id]);
+    const available = new Set(kr.rows.map((x) => normalizeSearchText(x.title)));
+    const quickReplies = [
+      available.has('hinnat') && 'Hinnat',
+      available.has('aukioloajat') && 'Aukioloajat',
+      available.has('palvelut') && 'Palvelut',
+      available.has('tarjouspyyntolomake') && 'Pyydä tarjous',
+    ].filter(Boolean).slice(0, 3);
 
     return res.json({
       token,
       name: tenant.name,
       greeting: tenant.greeting,
       accent: tenant.accent,
+      quickReplies,
     });
   } catch (e) {
     console.error('Widget token failed', e);
@@ -968,7 +1418,81 @@ app.get('/api/public/:slug', async (req, res) => {
   }
 });
 
-app.post('/api/public/:slug/chat', async (req, res) => {
+app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
+  try {
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { body = {}; }
+    }
+    body = body || {};
+    const message = String(body.message || '').trim().slice(0, 1200);
+    if (!message) return res.status(400).json({ error: 'Kirjoita kysymys.' });
+    const profile = body.profile && typeof body.profile === 'object' ? body.profile : {};
+    const rows = buildProfileKnowledge(profile).slice(0, 60);
+    const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
+    const result = await generateGroundedAnswer({
+      companyName: String(profile.companyName || 'yrityksen').slice(0, 120),
+      rows,
+      message,
+      history,
+    });
+    const handoffAnswer = 'En löydä tähän varmaa vastausta annetuista yritystiedoista. Lisää vastaus tietopohjaan, niin botti osaa sen seuraavalla kerralla.';
+    return res.json({
+      answer: result.handoff ? handoffAnswer : result.answer,
+      handoff: result.handoff,
+      confidence: result.confidence,
+      intent: result.intent,
+      actions: chatActions(rows, message, result.handoff),
+    });
+  } catch (e) {
+    console.error('Demo chat failed', e);
+    return res.status(500).json({ error: 'Demon vastaaminen epäonnistui.' });
+  }
+});
+
+app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.status(404).json({ error: 'Yritystä ei löytynyt.' });
+    const tenant = tr.rows[0];
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { body = {}; }
+    }
+    body = body || {};
+
+    const origin = requestOrigin(req);
+    const baseHost = normalizeHost(BASE);
+    const external = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
+    if (external) {
+      if (!widgetOriginAllowed(req, tenant)) return res.status(403).json({ error: 'Widgetin käyttöoikeus ei ole voimassa.' });
+      try {
+        const token = jwt.verify(String(body.widgetToken || ''), JWT);
+        if (token.kind !== 'widget' || token.slug !== tenant.slug || token.host !== normalizeHost(origin.hostname)) throw new Error('Invalid token');
+      } catch {
+        return res.status(403).json({ error: 'Widgetin käyttöoikeus ei ole voimassa.' });
+      }
+      setWidgetCors(req, res);
+    }
+
+    const name = String(body.name || '').trim().slice(0, 120);
+    const email = cleanEmail(body.email).slice(0, 220);
+    const phone = String(body.phone || '').trim().slice(0, 80);
+    const message = String(body.message || '').trim().slice(0, 1200);
+    if (!email && !phone) return res.status(400).json({ error: 'Anna sähköposti tai puhelinnumero.' });
+
+    await q(
+      'INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message) VALUES($1,$2,$3,$4,$5,$6,$7)',
+      [uid(), tenant.id, String(body.visitorRef || '').slice(0, 160) || null, name || null, email || null, phone || null, message || null],
+    );
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('Lead capture failed', e);
+    return res.status(500).json({ error: 'Yhteystietojen lähetys epäonnistui.' });
+  }
+});
+
+app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
   try {
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.status(404).json({ error: 'Yritystä ei löytynyt.' });
@@ -1002,53 +1526,54 @@ app.post('/api/public/:slug/chat', async (req, res) => {
       setWidgetCors(req, res);
     }
 
-    const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 ORDER BY created_at ASC', [t.id]);
-    const message = String(body.message || '').trim();
+    const message = String(body.message || '').trim().slice(0, 1200);
     if (!message) return res.status(400).json({ error: 'Kirjoita kysymys.' });
+    const visitorRef = String(body.visitorRef || '').trim().slice(0, 160);
 
-    let answer = t.handoff_message;
-    let handoff = true;
-    let intent = 'Tuntematon';
-    let confidence = 0.25;
-    let sources = [];
-
-    if (openai && kr.rows.length) {
-      const knowledge = kr.rows
-        .map((x, i) => `[${i + 1}] ${x.category} | ${x.title}\n${x.answer}`)
-        .join('\n\n');
-      const prompt = `Olet ${t.name}-yrityksen asiakaspalvelija. Vastaa VAIN alla olevan hyväksytyn tietopohjan perusteella. Jos vastausta ei löydy varmasti, vastaa täsmälleen: HANDOFF. Älä keksi mitään.\n\nTIETOPOHJA:\n${knowledge}\n\nKYSYMYS: ${message}`;
-      const rr = await openai.responses.create({
-        model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
-        input: prompt,
-        max_output_tokens: 220,
-      });
-      const text = (rr.output_text || '').trim();
-      if (text && text !== 'HANDOFF') {
-        answer = text;
-        handoff = false;
-        confidence = 0.93;
-        intent = 'Tietopohjakysymys';
-        sources = kr.rows.map((x) => x.id);
-      }
-    } else {
-      const norm = message.toLowerCase();
-      const hit = kr.rows.find((x) =>
-        [x.title, ...(x.keywords || [])].some((k) => norm.includes(String(k).toLowerCase())),
+    const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 ORDER BY updated_at DESC, created_at DESC', [t.id]);
+    let history = [];
+    if (visitorRef) {
+      const hr = await q(
+        `SELECT question, answer, handoff
+           FROM conversations
+          WHERE tenant_id=$1 AND visitor_ref=$2
+          ORDER BY created_at DESC
+          LIMIT 6`,
+        [t.id, visitorRef],
       );
-      if (hit) {
-        answer = hit.answer;
-        handoff = false;
-        confidence = 0.85;
-        intent = hit.title;
-        sources = [hit.id];
-      }
+      history = hr.rows.reverse();
     }
 
+    const result = await generateGroundedAnswer({
+      companyName: t.name,
+      rows: kr.rows,
+      message,
+      history,
+    });
+
+    let answer = result.answer;
+    if (result.handoff) {
+      const hasContact = knowledgeValue(kr.rows, 'Puhelinnumero') || knowledgeValue(kr.rows, 'Sähköposti') || knowledgeValue(kr.rows, 'Tarjouspyyntölomake');
+      answer = hasContact
+        ? 'En löydä tähän varmaa vastausta yrityksen tiedoista. Voit jättää yhteystietosi, niin yritys voi palata asiaan.'
+        : (t.handoff_message || 'En löydä tähän varmaa vastausta. Yritys voi täydentää tämän tiedon myöhemmin.');
+    }
+
+    const actions = chatActions(kr.rows, message, result.handoff);
     await q(
       'INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',
-      [uid(), t.id, message, answer, intent, confidence, sources, handoff, body.visitorRef || null],
+      [uid(), t.id, message, answer, result.intent, result.confidence, result.sourceIds, result.handoff, visitorRef || null],
     );
-    return res.json({ answer, handoff, confidence, intent });
+
+    return res.json({
+      answer,
+      handoff: result.handoff,
+      confidence: result.confidence,
+      intent: result.intent,
+      sourceIds: result.sourceIds,
+      actions,
+      canLeaveContact: result.handoff,
+    });
   } catch (e) {
     console.error('Chat failed', e);
     return res.status(500).json({ error: 'Vastaaminen epäonnistui.' });
@@ -1092,4 +1617,29 @@ app.use((req, res, next) => {
   next();
 });
 
-app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
+async function ensureRuntimeSchema() {
+  if (!pool) return;
+  await q(`CREATE TABLE IF NOT EXISTS leads (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    visitor_ref TEXT,
+    name TEXT,
+    email TEXT,
+    phone TEXT,
+    message TEXT,
+    status TEXT NOT NULL DEFAULT 'new',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_leads_tenant_created ON leads(tenant_id, created_at DESC)');
+}
+
+async function start() {
+  try {
+    await ensureRuntimeSchema();
+  } catch (e) {
+    console.error('Runtime schema check failed', e);
+  }
+  app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
+}
+
+start();
