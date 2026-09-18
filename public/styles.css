@@ -1746,3 +1746,101 @@ linear-gradient(180deg,#fff 0%,#fbfdff 72%,#fff 100%)!important}
     grid-template-columns:1fr;
   }
 }
+
+
+/* SOCIAL AUTH — GOOGLE / APPLE */
+.social-auth{
+  display:grid;
+  gap:10px;
+  margin:18px 0 22px;
+}
+.social-auth-btn{
+  min-height:50px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  border:1px solid #d9d9dc;
+  border-radius:14px;
+  background:#fff;
+  color:#111113;
+  font-size:14px;
+  font-weight:750;
+  letter-spacing:-.01em;
+  text-decoration:none;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.social-auth-btn:hover{
+  transform:translateY(-1px);
+  border-color:#b8b8bd;
+  box-shadow:0 10px 24px rgba(0,0,0,.06);
+}
+.social-auth-btn-dark{
+  background:#111113;
+  border-color:#111113;
+  color:#fff;
+}
+.social-auth-btn-dark:hover{
+  background:#1d1d1f;
+  border-color:#1d1d1f;
+}
+.social-auth-icon{
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 26px;
+  font-size:15px;
+  font-weight:900;
+}
+.google-icon{
+  border:1px solid #d6d6da;
+  background:#fafafa;
+  color:#111113;
+  font-family:Arial,sans-serif;
+}
+.apple-icon{
+  font-size:21px;
+  line-height:1;
+  color:inherit;
+}
+.auth-divider{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:3px 0 0;
+  color:#85858a;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.auth-divider::before,
+.auth-divider::after{
+  content:"";
+  height:1px;
+  flex:1;
+  background:#e4e4e7;
+}
+.oauth-connected{
+  margin:0 0 18px;
+  padding:12px 14px;
+  border:1px solid #d8d8dc;
+  border-radius:12px;
+  background:#f7f7f8;
+  color:#2a2a2d;
+  font-size:13px;
+  font-weight:700;
+}
+.oauth-locked{
+  background:#f3f3f5 !important;
+  color:#6f6f74 !important;
+}
+#signupPasswordField[hidden]{
+  display:none !important;
+}
+@media (max-width:640px){
+  .social-auth-btn{min-height:52px;border-radius:13px}
+}
