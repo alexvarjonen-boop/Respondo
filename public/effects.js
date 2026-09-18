@@ -558,7 +558,7 @@ YLEINEN TOIMINTAOHJE:
       const removeButton = e.target.closest('.remove-fact');
       if (removeButton) {
         e.preventDefault();
-        const rows = $('.custom-fact-row');
+        const rows = $$('.custom-fact-row');
         const row = removeButton.closest('.custom-fact-row');
         if (!row) return;
         if (rows.length === 1) {
@@ -634,7 +634,7 @@ YLEINEN TOIMINTAOHJE:
 
     const rail = $('.section-rail-premium');
     const fill = $('.section-rail-line i', rail);
-    const links = $('[data-rail-section]', rail);
+    const links = $$('[data-rail-section]', rail);
 
     const update = () => {
       const max = Math.max(1, document.documentElement.scrollHeight - innerHeight);
@@ -660,7 +660,7 @@ YLEINEN TOIMINTAOHJE:
   }
 
   function premiumProductEffects() {
-    const subnavLinks = $('.product-subnav a[href^="#"]');
+    const subnavLinks = $$('.product-subnav a[href^="#"]');
     const sections = ['how','features','research','calculator','pricing','contact']
       .map(id => document.getElementById(id))
       .filter(Boolean);
@@ -683,7 +683,7 @@ YLEINEN TOIMINTAOHJE:
       sections.forEach(section => io.observe(section));
     }
 
-    const cards = $('.visual-card');
+    const cards = $$('.visual-card');
     cards.forEach((card, index) => {
       card.dataset.premiumVisual = '1';
       const frame = $('.visual-frame', card);
