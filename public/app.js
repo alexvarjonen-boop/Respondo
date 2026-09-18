@@ -770,50 +770,206 @@ function pricingSection() {
   </section>`;
 }
 
+
+function cinematicConversationScene() {
+  return `<section class="cinema-conversation" aria-label="RESPONDO keskusteluesimerkki">
+    <div class="cinema-stage">
+      <div class="cinema-orbit orbit-a"></div>
+      <div class="cinema-orbit orbit-b"></div>
+      <div class="cinema-kicker">01 / HETKI JOLLOIN ASIAKAS KYSYY</div>
+      <div class="cinema-word">KYSYMYS</div>
+      <div class="cinema-phone" aria-hidden="true">
+        <div class="cinema-phone-top"><span></span><b>RESPONDO</b><i>24/7</i></div>
+        <div class="cinema-chat">
+          <div class="cinema-bubble customer">Paljonko huoltokäynti maksaa?</div>
+          <div class="cinema-typing"><i></i><i></i><i></i></div>
+          <div class="cinema-bubble bot">Perushuolto alkaa 89 eurosta. Haluatko myös vapaat ajat?</div>
+          <div class="cinema-status"><span></span> vastaus yrityksen omista tiedoista</div>
+        </div>
+      </div>
+      <div class="cinema-float float-a"><small>ASIAKAS</small><b>22:48</b><span>kysyy nyt</span></div>
+      <div class="cinema-float float-b"><small>VASTAUS</small><b>&lt; 1 s</b><span>ei odotusta</span></div>
+      <div class="cinema-float float-c"><small>TIETO</small><b>✓</b><span>hyväksytty</span></div>
+      <a class="cinema-next" href="#how">scrollaa <span>↓</span></a>
+    </div>
+  </section>`;
+}
+
+function horizontalProductStory() {
+  return `<section class="story-horizontal" id="how">
+    <div class="story-sticky">
+      <div class="story-progress"><i></i></div>
+      <div class="story-counter"><span id="storyCurrent">01</span><b>/ 03</b></div>
+      <div class="story-track">
+        <article class="story-panel story-panel-one">
+          <div class="story-panel-copy">
+            <small>01 / SYÖTÄ TIETO</small>
+            <h2>Sinä annat<br><em>faktat.</em></h2>
+          </div>
+          <div class="story-visual knowledge-machine" aria-hidden="true">
+            <div class="km-back"></div>
+            <div class="km-window">
+              <div class="km-bar"><span></span><span></span><span></span><b>TIETOPOHJA</b></div>
+              <div class="km-row"><i>01</i><div><small>HINNAT</small><b>Huolto alkaen 89 €</b></div><span>✓</span></div>
+              <div class="km-row"><i>02</i><div><small>AUKIOLO</small><b>Ma–Pe 08–17</b></div><span>✓</span></div>
+              <div class="km-row"><i>03</i><div><small>TOIMIALUE</small><b>Pirkanmaa</b></div><span>✓</span></div>
+            </div>
+            <div class="km-chip chip-1">HINTA</div>
+            <div class="km-chip chip-2">PALVELUT</div>
+            <div class="km-chip chip-3">AUKIOLO</div>
+          </div>
+        </article>
+
+        <article class="story-panel story-panel-two">
+          <div class="story-panel-copy">
+            <small>02 / ASIAKAS KYSYY</small>
+            <h2>Omilla<br><em>sanoillaan.</em></h2>
+          </div>
+          <div class="story-visual message-space" aria-hidden="true">
+            <div class="msg-orb"></div>
+            <div class="msg-card m1">Onks teillä vapaita aikoja huomiselle?</div>
+            <div class="msg-card m2">Mitä tää maksaa?</div>
+            <div class="msg-card m3">Tuletteko Nokialle asti?</div>
+            <div class="msg-card m4">Saako tän viikonloppuna?</div>
+            <div class="msg-core"><span>R</span><small>ymmärtää kysymyksen</small></div>
+          </div>
+        </article>
+
+        <article class="story-panel story-panel-three">
+          <div class="story-panel-copy">
+            <small>03 / RESPONDO VASTAA</small>
+            <h2>Heti.<br><em>Tai ei arvaa.</em></h2>
+          </div>
+          <div class="story-visual answer-machine" aria-hidden="true">
+            <div class="am-ring r1"></div><div class="am-ring r2"></div>
+            <div class="am-center"><span>R</span></div>
+            <div class="am-answer approved"><small>VARMA TIETO</small><b>Vastaa asiakkaalle</b><i>→</i></div>
+            <div class="am-answer uncertain"><small>TIETO PUUTTUU</small><b>Ohjaa ihmiselle</b><i>↗</i></div>
+            <div class="am-pulse"></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>`;
+}
+
+function productWorldScene() {
+  return `<section class="product-world" id="features">
+    <div class="world-sticky">
+      <div class="world-label">02 / YKSI NÄKYMÄ</div>
+      <div class="world-title"><span>Koko asiakaspalvelu</span><b>yhdessä tilassa.</b></div>
+      <div class="world-stage" aria-hidden="true">
+        <div class="world-floor"></div>
+        <div class="world-window ww-main">
+          <div class="ww-top"><span>RESPONDO</span><i>● LIVE</i></div>
+          <div class="ww-body">
+            <div class="ww-side"><b></b><b></b><b></b><b></b></div>
+            <div class="ww-content">
+              <div class="ww-stat"><small>KESKUSTELUT</small><strong>148</strong><span>+24%</span></div>
+              <div class="ww-chart"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <div class="ww-lines"><span></span><span></span><span></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="world-window ww-chat">
+          <small>UUSI KESKUSTELU</small>
+          <div class="ww-bubble dark">Paljonko maksaa?</div>
+          <div class="ww-bubble light">Palvelu alkaa 89 €.</div>
+        </div>
+        <div class="world-window ww-knowledge">
+          <small>TIETOPOHJA</small>
+          <div><span>Hinnasto</span><b>✓</b></div>
+          <div><span>Aukioloajat</span><b>✓</b></div>
+          <div><span>Palvelut</span><b>✓</b></div>
+        </div>
+        <div class="world-window ww-alert">
+          <span>!</span><div><small>EPÄVARMA KYSYMYS</small><b>Ohjattu sinulle</b></div>
+        </div>
+      </div>
+      <div class="world-caption">Scrollaa — näkymä purkautuu kerros kerrokselta.</div>
+    </div>
+  </section>`;
+}
+
+function dataImpactScene() {
+  return `<section class="impact-scene" id="research">
+    <div class="impact-top">
+      <div class="impact-kicker">03 / NOPEUS NÄKYY</div>
+      <h2>Asiakas ei odota.<br><em>RESPONDO ei nuku.</em></h2>
+    </div>
+    <div class="impact-numbers">
+      <a class="impact-number n1" href="https://cxtrends.zendesk.com/" target="_blank" rel="noopener noreferrer">
+        <span>74%</span><small>odottaa 24/7-palvelua*</small><i>↗</i>
+      </a>
+      <a class="impact-number n2" href="https://www.salesforce.com/eu/service/digital-customer-engagement-platform/what-is-customer-engagement/" target="_blank" rel="noopener noreferrer">
+        <span>77%</span><small>odottaa välitöntä vuorovaikutusta*</small><i>↗</i>
+      </a>
+      <a class="impact-number n3" href="https://hbr.org/2011/03/the-short-life-of-online-sales-leads" target="_blank" rel="noopener noreferrer">
+        <span>23%</span><small>ei vastannut testiliidiin lainkaan*</small><i>↗</i>
+      </a>
+    </div>
+    <div class="impact-foot">* Lähteet ja tutkimuskontekstit avautuvat luvuista. HBR-aineisto on Yhdysvalloista vuodelta 2011.</div>
+  </section>`;
+}
+
+function trustPortalScene() {
+  return `<section class="trust-portal" id="control">
+    <div class="portal-ring ring-one"></div>
+    <div class="portal-ring ring-two"></div>
+    <div class="portal-ring ring-three"></div>
+    <div class="portal-center">
+      <small>04 / EI ARVAILUA</small>
+      <div class="portal-mark">R</div>
+      <h2>Jos tietoa ei löydy,<br><em>botti pysähtyy.</em></h2>
+      <p>Vastaus perustuu hyväksyttyyn tietoon. Epävarma kysymys ohjataan ihmiselle.</p>
+      <a href="/assistant" class="portal-button">Testaa itse <span>→</span></a>
+    </div>
+    <div class="portal-node pn1"><span>✓</span> Hinnat</div>
+    <div class="portal-node pn2"><span>✓</span> Palvelut</div>
+    <div class="portal-node pn3"><span>?</span> Uusi kysymys</div>
+    <div class="portal-node pn4"><span>↗</span> Ihmiselle</div>
+  </section>`;
+}
+
+
 async function home() {
   await config();
   return `<div>
     ${nav()}
     ${stickyProductNav()}
-    <main>
-      <section class="hero">
+    <main class="immersive-home">
+      <section class="hero hero-immersive">
         <div class="hero-glow"></div>
         <div class="container hero-grid">
           <div class="hero-copy">
             <div class="hero-label"><span></span> AI-ASIAKASPALVELU YRITYKSELLESI</div>
-            <h1>Asiakas kysyy. <em>RESPONDO vastaa.</em></h1>
-            <p class="lead">Lisää yrityksesi tiedot kerran. RESPONDO vastaa asiakkaillesi ympäri vuorokauden ja ohjaa kysymyksen sinulle silloin, kun varmaa vastausta ei löydy.</p>
+            <h1>Asiakas kysyy.<br><em>RESPONDO vastaa.</em></h1>
+            <p class="lead">24/7 asiakaspalvelu, joka tuntee yrityksesi hyväksytyt tiedot eikä keksi puuttuvia vastauksia.</p>
             <div class="hero-actions">
-              <a class="btn hero-primary" href="/tilaus">Kokeile 3 päivää maksutta</a>
-              <a class="btn ghost" href="/assistant">Testaa bottia</a>
-              <a class="text-link" href="#how">Tutustu tuotteeseen <span>↓</span></a>
+              <a class="btn hero-primary" href="/assistant">Testaa bottia</a>
+              <a class="btn ghost" href="/tilaus">Kokeile 3 päivää maksutta</a>
             </div>
-            <div class="trust-row">
-              <span><i>✓</i> 3 päivää maksutta</span>
-              <span><i>✓</i> Peruuta milloin tahansa</span>
-              <span><i>✓</i> 49 €/kk + alv</span>
-            </div>
+            <div class="hero-scroll-hint"><i></i><span>SCROLLAA KOKEMUS AUKI</span></div>
           </div>
           ${heroVisual()}
         </div>
-        <div class="hero-marquee" aria-hidden="true">
-          <div>TIETOPOHJA <span>•</span> VASTAUKSET <span>•</span> EPÄVARMUUS <span>•</span> 24/7 <span>•</span> TIETOPOHJA <span>•</span> VASTAUKSET <span>•</span> EPÄVARMUUS <span>•</span> 24/7</div>
-        </div>
       </section>
-      ${workflow()}
-      ${premiumVisualSection()}
-      ${controlSection()}
-      ${proofStrip()}
-      ${researchStatsSection()}
+
+      ${cinematicConversationScene()}
+      ${horizontalProductStory()}
+      ${productWorldScene()}
+      ${trustPortalScene()}
+      ${dataImpactScene()}
       ${calculatorSection()}
       ${pricingSection()}
-      <section class="section final-cta">
+
+      <section class="section final-cta final-cta-immersive">
         <div class="container">
           <div class="cta-shell">
             <div>
-              <div class="section-kicker light">RESPONDO AI</div>
-              <h2>Anna asiakkaillesi vastaus myös silloin, kun et itse ehdi.</h2>
-              <p>Kokeile 3 päivää maksutta. Lisää tiedot, testaa bottia ja asenna se sivullesi.</p>
+              <div class="section-kicker light">05 / SINUN VUOROSI</div>
+              <h2>Seuraava kysymys voi tulla koska tahansa.</h2>
+              <p>Anna Respondon vastata siihen.</p>
             </div>
             <a class="cta-circle" href="/tilaus" aria-label="Aloita kokeilu"><span>KOKEILE</span><b>→</b></a>
           </div>
