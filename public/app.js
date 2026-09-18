@@ -1266,29 +1266,7 @@ async function route() {
       });
     });
 
-    const previewAnswerFromForm = (question) => {
-      const form = $('#businessProfileForm');
-      if (!form) return '';
-      const q = String(question || '').toLowerCase();
-      const values = Object.fromEntries(new FormData(form).entries());
-      const pairs = [
-        [['hinta','maksaa','paljonko','hinnoittelu','€'], values.pricing],
-        [['auki','aukiolo','milloin','kello','lauantai','sunnuntai'], values.hours],
-        [['puhelin','numero','soittaa'], values.phone],
-        [['sähköposti','email','meili'], values.email],
-        [['palvelu','teette','tarjoatte','lvi','putki','sähkö'], values.services],
-        [['toimialue','alue','paikkakunta','tuletteko'], values.serviceArea],
-        [['osoite','sijainti','missä olette'], values.address],
-        [['verkkosivu','nettisivu','www'], values.website],
-        [['tarjous','tarjouspyyntö','pyydä tarjous','lomake'], values.quoteRequestUrl ? 'Voit jättää tarjouspyynnön täällä: ' + values.quoteRequestUrl : ''],
-        [['päivystys','takuu','maksutapa','ajanvaraus','muuta'], values.notes],
-      ];
-      for (const [keys, value] of pairs) {
-        if (value && keys.some((key) => q.includes(key))) return String(value).trim();
-      }
-      return '';
-    };
-
+    const previewHistory = [];
     $('#previewForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const input = e.currentTarget.elements.question;
@@ -1299,30 +1277,45 @@ async function route() {
       if (chat?.lastElementChild) chat.lastElementChild.textContent = question;
       input.value = '';
 
-      const localAnswer = previewAnswerFromForm(question);
-      if (localAnswer) {
-        chat?.insertAdjacentHTML('beforeend', '<div class="preview-bubble bot"></div>');
-        if (chat?.lastElementChild) chat.lastElementChild.textContent = localAnswer;
-        chat.scrollTop = chat.scrollHeight;
-        return;
-      }
-
-      chat?.insertAdjacentHTML('beforeend', '<div class="preview-bubble bot preview-thinking">Haetaan tietopohjasta…</div>');
+      chat?.insertAdjacentHTML('beforeend', '<div class="preview-bubble bot preview-thinking">Haetaan hyväksytyistä tiedoista…</div>');
       const bubble = chat?.lastElementChild;
       try {
-        const slug = e.currentTarget.dataset.slug;
-        const result = await api('/api/public/' + encodeURIComponent(slug) + '/chat', {
+        const profileForm = $('#businessProfileForm');
+        const values = Object.fromEntries(new FormData(profileForm).entries());
+        const customFacts = ${JSON.stringify(nonProfileKnowledge.map((x) => ({ key: x.title, answer: x.answer })))};
+        const result = await api('/api/public/demo-chat', {
           method: 'POST',
-          body: JSON.stringify({ message: question, visitorRef: 'dashboard-preview-' + slug }),
+          body: JSON.stringify({
+            message: question,
+            profile: {
+              companyName: ${JSON.stringify(t.name)},
+              greeting: values.greeting,
+              tone: values.tone,
+              pricing: values.pricing,
+              hours: values.hours,
+              phone: values.phone,
+              email: values.email,
+              services: values.services,
+              serviceArea: values.serviceArea,
+              address: values.address,
+              website: values.website,
+              quoteRequestUrl: values.quoteRequestUrl,
+              notes: values.notes,
+              customFacts,
+            },
+            history: previewHistory.slice(-6),
+          }),
         });
         if (bubble) {
           bubble.classList.remove('preview-thinking');
           bubble.textContent = result.answer || 'En löydä tähän vielä varmaa vastausta.';
         }
-      } catch {
+        previewHistory.push({ question, answer: result.answer || '' });
+        if (previewHistory.length > 8) previewHistory.splice(0, previewHistory.length - 8);
+      } catch (err) {
         if (bubble) {
           bubble.classList.remove('preview-thinking');
-          bubble.textContent = 'En löydä tähän vielä vastausta. Lisää tieto ensin tietopohjaan.';
+          bubble.textContent = err.message || 'Vastaaminen epäonnistui. Yritä uudelleen.';
         }
       }
       if (chat) chat.scrollTop = chat.scrollHeight;
