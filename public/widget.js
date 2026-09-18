@@ -67,21 +67,21 @@
       }
     </style>
     <div class="wrap">
-      <section class="panel" aria-label="RESPONDO AI asiakaspalvelu">
+      <section class="panel" aria-label="${t('RESPONDO AI asiakaspalvelu', 'RESPONDO AI customer service')}">
         <header class="head">
           <div class="mark">R</div>
-          <div class="headcopy"><b id="name">RESPONDO AI</b><small><span class="dot"></span> Asiakaspalvelu verkossa</small></div>
+          <div class="headcopy"><b id="name">RESPONDO AI</b><small><span class="dot"></span> ${t('Asiakaspalvelu verkossa', 'Customer service online')}</small></div>
         </header>
         <div class="chat" id="chat"></div>
         <div class="quick" id="quick"></div>
-        <div class="status" id="status">Yhdistetään…</div>
+        <div class="status" id="status">${t('Yhdistetään…', 'Connecting…')}</div>
         <form class="composer" id="form">
-          <input id="input" autocomplete="off" placeholder="Kirjoita kysymys…" aria-label="Kirjoita kysymys">
-          <button type="submit" aria-label="Lähetä">→</button>
+          <input id="input" autocomplete="off" placeholder="${t('Kirjoita kysymys…', 'Type your question…')}" aria-label="${t('Kirjoita kysymys', 'Type your question')}">
+          <button type="submit" aria-label="${t('Lähetä', 'Send')}">→</button>
         </form>
         <div class="powered">Powered by RESPONDO AI</div>
       </section>
-      <button class="launcher" id="launcher" type="button"><span class="launcher-dot"></span><span class="launcher-label">Kysy meiltä</span></button>
+      <button class="launcher" id="launcher" type="button"><span class="launcher-dot"></span><span class="launcher-label">${t('Kysy meiltä', 'Ask us')}</span></button>
     </div>`;
 
   const $ = (q) => shadow.querySelector(q);
@@ -171,7 +171,7 @@
     if (chat.querySelector('.leadbox')) return;
     const box = document.createElement('form');
     box.className = 'leadbox';
-    box.innerHTML = '<b>Haluatko, että yritys ottaa yhteyttä?</b><small>Jätä nimi ja puhelin tai sähköposti. Tiedot välitetään vain tälle yritykselle yhteydenottoa varten.</small><input name="name" maxlength="120" placeholder="Nimi (valinnainen)"><input name="contact" maxlength="220" required placeholder="Puhelin tai sähköposti"><button type="submit">Jätä yhteystiedot</button><div class="lead-ok"></div>';
+    box.innerHTML = '<b>' + t('Haluatko, että yritys ottaa yhteyttä?', 'Would you like the company to contact you?') + '</b><small>' + t('Jätä nimi ja puhelin tai sähköposti. Tiedot välitetään vain tälle yritykselle yhteydenottoa varten.', 'Leave your name and phone number or email. The details are shared only with this company for contacting you.') + '</small><input name="name" maxlength="120" placeholder="' + t('Nimi (valinnainen)', 'Name (optional)') + '"><input name="contact" maxlength="220" required placeholder="' + t('Puhelin tai sähköposti', 'Phone or email') + '"><button type="submit">' + t('Jätä yhteystiedot', 'Send contact details') + '</button><div class="lead-ok"></div>';
     box.addEventListener('submit', async (event) => {
       event.preventDefault();
       const contact = String(box.elements.contact.value || '').trim();
