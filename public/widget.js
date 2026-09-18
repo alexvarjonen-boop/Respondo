@@ -70,7 +70,7 @@
       <section class="panel" aria-label="${t('Respondon asiakaspalvelu', 'RESPONDO AI customer service')}">
         <header class="head">
           <div class="mark" aria-hidden="true"><svg viewBox="0 0 64 64" focusable="false"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></div>
-          <div class="headcopy"><b id="name">RESPONDO AI</b><small><span class="dot"></span> ${t('Paikalla nyt', 'Customer service online')}</small></div>
+          <div class="headcopy"><b id="name">RESPONDO AI</b><small><span class="dot"></span> ${t('Paikalla nyt', 'Online now')}</small></div>
         </header>
         <div class="chat" id="chat"></div>
         <div class="quick" id="quick"></div>
@@ -79,9 +79,9 @@
           <input id="input" autocomplete="off" placeholder="${t('Kysy jotain…', 'Type your question…')}" aria-label="${t('Kirjoita kysymyksesi', 'Type your question')}">
           <button type="submit" aria-label="${t('Lähetä', 'Send')}">→</button>
         </form>
-        <div class="powered">Powered by RESPONDO AI</div>
+        <div class="powered">RESPONDO AI</div>
       </section>
-      <button class="launcher" id="launcher" type="button"><span class="launcher-dot"></span><span class="launcher-label">${t('Kysy meiltä', 'Ask us')}</span></button>
+      <button class="launcher" id="launcher" type="button"><span class="launcher-dot"></span><span class="launcher-label">${t('Kysy meiltä', 'Ask a question')}</span></button>
     </div>`;
 
   const $ = (q) => shadow.querySelector(q);
@@ -225,7 +225,7 @@
       name.textContent = data.name || 'RESPONDO AI';
       mark.innerHTML = '<svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg>';
       setAccent(data.accent || fallbackAccent);
-      status.textContent = t('Valmis auttamaan', 'Ready to help');
+      status.textContent = t('Valmis auttamaan', 'Ready');
       status.classList.add('ready');
       renderQuickReplies(data.quickReplies || []);
       addMessage(data.greeting || t('Hei! Miten voin auttaa?', 'Hi! How can I help?'));
@@ -240,7 +240,7 @@
 
   launcher.addEventListener('click', () => {
     const open = panel.classList.toggle('open');
-    launcherLabel.textContent = open ? t('Sulje', 'Close') : t('Kysy meiltä', 'Ask us');
+    launcherLabel.textContent = open ? t('Sulje', 'Close') : t('Kysy meiltä', 'Ask a question');
     if (open && ready) setTimeout(() => input.focus(), 50);
   });
 
