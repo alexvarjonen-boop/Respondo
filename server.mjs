@@ -360,6 +360,24 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     return { answer: '', handoff: true, confidence: 0.2, intent, sourceIds: [], selected: [] };
   }
 
+  const top = selected[0];
+  const normalizedTitle = normalizeSearchText(top?.title);
+  const exactTitleMatch = normalizedTitle && (
+    normalized === normalizedTitle ||
+    normalized.includes(normalizedTitle) ||
+    normalizedTitle.includes(normalized)
+  );
+  if (exactTitleMatch && Number(top?._score || 0) >= 14) {
+    return {
+      answer: String(top.answer || '').trim(),
+      handoff: false,
+      confidence: 0.99,
+      intent,
+      sourceIds: top.id ? [top.id] : [],
+      selected,
+    };
+  }
+
   if (!openai) {
     return {
       answer: selected[0].answer,
