@@ -41,6 +41,231 @@ function logo() {
   </a>`;
 }
 
+
+function currentLang() {
+  return localStorage.getItem('respondo-lang') === 'en' ? 'en' : 'fi';
+}
+
+function languageSwitch() {
+  const lang = currentLang();
+  return '<div class="lang-switch" aria-label="Language">' +
+    '<button type="button" class="lang-choice ' + (lang === 'fi' ? 'active' : '') + '" data-lang="fi">FI</button>' +
+    '<span>/</span>' +
+    '<button type="button" class="lang-choice ' + (lang === 'en' ? 'active' : '') + '" data-lang="en">EN</button>' +
+  '</div>';
+}
+
+const EN_TEXT = new Map(Object.entries({
+  'Tuote':'Product',
+  'Tietopohja':'Knowledge base',
+  'Testaa bottia':'Test the bot',
+  'Hinta':'Pricing',
+  'Tietoturva':'Security',
+  'Kirjaudu':'Log in',
+  'Kokeile maksutta':'Try for free',
+  'Miten toimii':'How it works',
+  'Ominaisuudet':'Features',
+  'Tutkittua':'Research',
+  'Laskuri':'Calculator',
+  'Hinnat':'Pricing',
+  'Yhteystiedot':'Contact',
+  'AI-ASIAKASPALVELU YRITYKSELLESI':'AI CUSTOMER SERVICE FOR YOUR BUSINESS',
+  'Asiakas kysyy.':'Customer asks.',
+  'RESPONDO vastaa.':'RESPONDO answers.',
+  'Lisää yrityksesi tiedot kerran. RESPONDO vastaa asiakkaillesi ympäri vuorokauden ja ohjaa kysymyksen sinulle silloin, kun varmaa vastausta ei löydy.':'Add your company information once. RESPONDO answers your customers around the clock and hands the question to you whenever it cannot find a reliable answer.',
+  'Kokeile 3 päivää maksutta':'Try free for 3 days',
+  'Tutustu tuotteeseen':'Explore the product',
+  '3 päivää maksutta':'3 days free',
+  'Peruuta milloin tahansa':'Cancel anytime',
+  '49 €/kk + alv':'€49/month + VAT',
+  'TIETOPOHJA':'KNOWLEDGE BASE',
+  'VASTAUKSET':'ANSWERS',
+  'EPÄVARMUUS':'UNCERTAINTY',
+  'Lisää tiedot kerran.':'Add the information once.',
+  'RESPONDO hoitaa toistuvat kysymykset.':'RESPONDO handles the repetitive questions.',
+  'Lisää hinnat, palvelut, aukioloajat ja omat vastaukset. Botti käyttää niitä asiakkaiden kysymyksiin vastaamiseen.':'Add prices, services, opening hours and your own answers. The bot uses them to answer customer questions.',
+  'Lisää yrityksesi tieto':'Add your company information',
+  'Hinnat, palvelut, aukioloajat ja omat kysymys–vastausparit.':'Prices, services, opening hours and your own Q&A pairs.',
+  'Asiakas kysyy':'Customer asks',
+  'Luonnollisesti. Omilla sanoillaan.':'Naturally. In their own words.',
+  'Asiakas saa vastauksen':'The customer gets an answer',
+  'Jos varmaa tietoa ei löydy, kysymys ohjataan sinulle eikä vastausta keksitä.':'If reliable information is not found, the question is handed to you instead of inventing an answer.',
+  'Vähemmän säätöä.':'Less hassle.',
+  'Enemmän vastauksia.':'More answers.',
+  'RESPONDO AI yhdistää tietopohjan, keskustelut ja jatkuvasti paranevan asiakaspalvelun yhteen näkymään.':'RESPONDO AI brings your knowledge base, conversations and continuously improving customer service into one view.',
+  'Kaikki olennainen yhdessä paikassa.':'Everything important in one place.',
+  'Hinnat, aukioloajat, palvelut ja omat kysymys–vastausparit pysyvät hallinnassa.':'Keep prices, opening hours, services and your own Q&A pairs under control.',
+  'KESKUSTELUT':'CONVERSATIONS',
+  'Näet, mitä asiakkaat oikeasti kysyvät.':'See what customers actually ask.',
+  'KEHITYS':'IMPROVEMENT',
+  'Kun vastaan tulee uusi kysymys, lisäät vastauksen kerran.':'When a new question comes up, add the answer once.',
+  'Sinun tietosi.':'Your information.',
+  'Asiakkaalle oikea vastaus.':'The right answer for the customer.',
+  'Sinä päätät, mitä yrityksestäsi kerrotaan. Muutokset päivittyvät botille yhdestä paikasta.':'You decide what is said about your company. Changes update the bot from one place.',
+  'Helppo ylläpitää':'Easy to maintain',
+  'Muuta tietoa yhdestä paikasta.':'Update information in one place.',
+  'Ei arvailua':'No guessing',
+  'Puuttuva tieto ei muutu keksityksi vastaukseksi.':'Missing information never becomes an invented answer.',
+  'Helppo asentaa':'Easy to install',
+  'Yksi asennusrivi verkkosivulle.':'One installation line for your website.',
+  '4 HYVÄKSYTTYÄ TIETOA':'4 APPROVED ITEMS',
+  'AJAN TASALLA':'UP TO DATE',
+  'Hyväksytty tietopohja':'Approved knowledge base',
+  'Hinnoittelu':'Pricing',
+  'Peruspaketti alkaa 49 €/kk + alv':'Base plan starts at €49/month + VAT',
+  'Aukioloajat':'Opening hours',
+  'Toimialue':'Service area',
+  'Suomi':'Finland',
+  'Poikkeustilanteet':'Exceptions',
+  'Ohjaa yhteydenottoon':'Direct to contact',
+  'Viimeksi päivitetty':'Last updated',
+  'juuri nyt':'just now',
+  'VASTAA':'ANSWERS',
+  'asiakkaillesi':'your customers',
+  'PERUSTUU':'CONTROL',
+  'sinun hallinnassa':'you are in control',
+  'aina':'always',
+  'ALKAEN':'FROM',
+  '49 € / kk':'€49 / month',
+  '+ alv':'+ VAT',
+  'KOKEILU':'TRIAL',
+  '3 päivää':'3 days',
+  'maksutta':'free',
+  'Asiakas ei halua odottaa.':'Customers do not want to wait.',
+  'Nopea vastaus näkyy kokemuksessa.':'Fast replies improve the experience.',
+  'Alla olevat luvut perustuvat julkaistuihin tutkimuksiin ja raportteihin. Lähde, vuosi ja tutkimuskonteksti näkyvät jokaisen luvun yhteydessä.':'The figures below are based on published research and reports. The source, year and research context are shown with each figure.',
+  'ei vastannut verkkoliidiin lainkaan':'did not respond to an online lead at all',
+  'vastasi ensimmäisen tunnin aikana':'responded within the first hour',
+  'odottaa välitöntä vuorovaikutusta':'expect immediate interaction',
+  'odottaa asiakaspalvelua 24/7':'expect customer service 24/7',
+  'pitää nopeutta ja oikeaa ratkaisua ostopäätökseen vaikuttavana':'say speed and the right solution influence purchase decisions',
+  'HUOM':'NOTE',
+  'Arvolaskuri':'Value calculator',
+  'Mitä vastaamatta jäänyt':'What could an unanswered',
+  'yhteydenotto voi maksaa?':'customer inquiry cost?',
+  'Säädä työn arvo ja päivässä vastaamatta jäävien yhteydenottojen määrä. Laskuri näyttää niiden potentiaalisen myyntiarvon.':'Adjust the job value and the number of unanswered inquiries per day. The calculator shows their potential sales value.',
+  'TYÖN ARVO':'JOB VALUE',
+  'Yhden työn keskimääräinen arvo':'Average value of one job',
+  'VASTAAMATTOMAT / PÄIVÄ':'UNANSWERED / DAY',
+  'Vastaamatta jäävät yhteydenotot':'Unanswered inquiries',
+  'POTENTIAALINEN ARVO / 30 PV':'POTENTIAL VALUE / 30 DAYS',
+  'Päivässä':'Per day',
+  'Vuodessa':'Per year',
+  'Selkeä hinta.':'Simple pricing.',
+  'Ei yllätyksiä.':'No surprises.',
+  'Kokeile 3 päivää maksutta. Peruuta ennen kokeilun päättymistä, jos et halua jatkaa.':'Try free for 3 days. Cancel before the trial ends if you do not want to continue.',
+  'joustava':'flexible',
+  'Kuukausi':'Monthly',
+  'Verkkosivun chat-widget':'Website chat widget',
+  'Yrityksen oma tietopohja':'Your company knowledge base',
+  'Keskustelujen tilastot':'Conversation analytics',
+  'Epävarmojen tilanteiden jatko-ohje':'Fallback for uncertain questions',
+  'Tilauksen hallinta Stripessä':'Subscription management in Stripe',
+  'säästä 39 €':'save €39',
+  'Vuosi':'Yearly',
+  'Samat ominaisuudet kuin kuukausitilauksessa':'Same features as the monthly plan',
+  'Yksi vuosiveloitus':'One annual payment',
+  '3 päivän maksuton kokeilu':'3-day free trial',
+  'Käyttö jatkuu maksetun kauden loppuun':'Access continues until the end of the paid period',
+  'Valitse vuositilaus':'Choose yearly plan',
+  'Anna asiakkaillesi vastaus myös silloin, kun et itse ehdi.':'Give customers an answer even when you are busy.',
+  'Kokeile 3 päivää maksutta. Lisää tiedot, testaa bottia ja asenna se sivullesi.':'Try free for 3 days. Add your information, test the bot and install it on your website.',
+  'KOKEILE':'TRY FREE',
+  'Kysy lisää.':'Questions?',
+  'Vastaamme.':'We answer.',
+  'Asiakaspalvelubotti, joka vastaa yrityksesi omilla tiedoilla.':'A customer-service bot that answers using your company information.',
+  'Yritys':'Company',
+  'Lakiasiat':'Legal',
+  'Aloita kokeilu':'Start trial',
+  'Käyttöehdot':'Terms',
+  'Tietosuojaseloste':'Privacy policy',
+  'Evästeet':'Cookies',
+  'Tietojenkäsittely':'Data processing',
+  'B2B-ohjelmistopalvelu':'B2B software service',
+  'ALOITA RESPONDO AI':'GET STARTED WITH RESPONDO AI',
+  'Kokeile ensin.':'Try it first.',
+  'Päätä sitten.':'Decide later.',
+  'Luo tili ja lisää maksutapa turvallisesti Stripessä. Veloitus alkaa vasta kokeilun jälkeen.':'Create an account and add a payment method securely in Stripe. Billing starts only after the trial.',
+  'Luo tili':'Create account',
+  'Yrityksen perustiedot ja salasana.':'Company basics and password.',
+  'Lisää maksutapa':'Add payment method',
+  'Stripe käsittelee maksutiedot.':'Stripe handles payment details.',
+  'Rakenna tietopohja':'Build your knowledge base',
+  'Lisää yrityksesi hyväksytyt vastaukset.':'Add your company-approved answers.',
+  'PALVELUNTARJOAJA':'SERVICE PROVIDER',
+  'UUSI TILI':'NEW ACCOUNT',
+  'Nimi':'Name',
+  'Sähköposti':'Email',
+  'Y-tunnus':'Business ID',
+  'Salasana':'Password',
+  'Vähintään 10 merkkiä':'At least 10 characters',
+  'Tilaus':'Plan',
+  'tai sähköpostilla':'or with email',
+  'Jatka Googlella':'Continue with Google',
+  'Hallintapaneeli':'Dashboard',
+  'Tervetuloa':'Welcome',
+  'takaisin.':'back.',
+  'Hallitse tietopohjaa, asennusta ja tilausta yhdestä paikasta.':'Manage your knowledge base, installation and subscription in one place.',
+  'Hallintapaneeli suojattu kirjautumisella':'Dashboard protected by login',
+  'KIRJAUDU':'LOG IN',
+  'Tervetuloa takaisin':'Welcome back',
+  'Kirjaudu Googlella':'Log in with Google',
+  'Avaa hallintapaneeli':'Open dashboard'
+}));
+
+const EN_PLACEHOLDERS = new Map(Object.entries({
+  'Etunimi Sukunimi':'First name Last name',
+  'sinä@yritys.fi':'you@company.com',
+  'Yrityksen nimi':'Company name',
+  'Vähintään 10 merkkiä':'At least 10 characters'
+}));
+
+function applyLanguage() {
+  const lang = currentLang();
+  document.documentElement.lang = lang === 'en' ? 'en' : 'fi';
+  if (lang !== 'en') return;
+
+  document.title = 'RESPONDO AI | AI Customer Service Chatbot for Businesses 24/7';
+
+  const root = document.getElementById('app');
+  if (!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const node of nodes) {
+    const parent = node.parentElement;
+    if (!parent || ['SCRIPT','STYLE','CODE','PRE','TEXTAREA'].includes(parent.tagName)) continue;
+    const raw = node.nodeValue || '';
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    if (EN_TEXT.has(trimmed)) {
+      node.nodeValue = raw.replace(trimmed, EN_TEXT.get(trimmed));
+    } else {
+      node.nodeValue = raw
+        .replace(/Y-tunnus/g, 'Business ID')
+        .replace(/kuukausi/g, 'month')
+        .replace(/vuosi/g, 'year');
+    }
+  }
+
+  root.querySelectorAll('input[placeholder], textarea[placeholder]').forEach((el) => {
+    const p = el.getAttribute('placeholder') || '';
+    if (EN_PLACEHOLDERS.has(p)) el.setAttribute('placeholder', EN_PLACEHOLDERS.get(p));
+  });
+}
+
+function bindLanguageSwitch() {
+  document.querySelectorAll('.lang-choice').forEach((button) => {
+    button.addEventListener('click', () => {
+      const lang = button.dataset.lang === 'en' ? 'en' : 'fi';
+      if (lang === currentLang()) return;
+      localStorage.setItem('respondo-lang', lang);
+      location.reload();
+    });
+  });
+}
+
+
 function nav() {
   return `<header class="nav">
     <div class="container navin">
@@ -53,6 +278,7 @@ function nav() {
         <a href="/tietoturva">Tietoturva</a>
       </nav>
       <div class="navactions">
+        ${languageSwitch()}
         <a class="btn ghost" href="/kirjaudu">Kirjaudu</a>
         <a class="btn ink" href="/tilaus">Kokeile maksutta</a>
       </div>
@@ -1127,6 +1353,8 @@ async function route() {
   else html = `<div>${nav()}<main class="notfound"><div class="container"><div class="section-kicker">404</div><h1>Sivua ei löytynyt.</h1><a class="btn ink" href="/">Takaisin etusivulle</a></div></main>${footer()}</div>`;
 
   $('#app').innerHTML = html;
+  applyLanguage();
+  bindLanguageSwitch();
 
   if (path === '/') {
     const jobSlider = $('#jobValueSlider');
