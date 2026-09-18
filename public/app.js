@@ -16,7 +16,7 @@ let cfg = {
   sellerName: 'RESPONDO AI',
   trialDays: 3,
   monthlyNet: 49,
-  yearlyNet: 549,
+  yearlyNet: 540,
 };
 
 async function api(url, options = {}) {
@@ -752,9 +752,9 @@ function pricingSection() {
           <a class="btn price-btn" href="/tilaus?plan=monthly">Kokeile 3 päivää ilmaiseksi</a>
         </article>
         <article class="price-card featured">
-          <div class="price-top"><span>VUOSITILAUS</span><span class="save">säästä 39 €</span></div>
+          <div class="price-top"><span>VUOSITILAUS</span><span class="save">säästä 48 €</span></div>
           <h3>Vuosi</h3>
-          <div class="pricevalue">549 €<small>/vuosi + alv</small></div>
+          <div class="pricevalue">45 €<small>/kk + alv</small></div><div class="annual-billing-note">Laskutetaan vuosittain 540 € + alv</div>
           <div class="price-rule"></div>
           <ul>
             <li>Kaikki samat ominaisuudet kuin kuukausitilauksessa</li>
@@ -1014,7 +1014,7 @@ function signup() {
             <div class="field full"><label>Tilaus</label>
               <select name="plan">
                 <option value="monthly" ${plan === 'monthly' ? 'selected' : ''}>49 €/kk + alv · kuukausi</option>
-                <option value="yearly" ${plan === 'yearly' ? 'selected' : ''}>549 €/vuosi + alv · vuosi</option>
+                <option value="yearly" ${plan === 'yearly' ? 'selected' : ''}>45 €/kk + alv · laskutetaan 540 €/vuosi</option>
               </select>
             </div>
             <label class="checkrow field full">
@@ -1067,7 +1067,7 @@ const LEGAL = {
       ['1. Palveluntarjoaja', `RESPONDO AI, Y-tunnus ${cfg.businessId || '3599437-5'}, Suomi. Yhteydenotot: ${cfg.supportEmail}.`],
       ['2. Palvelu', 'RESPONDO AI on yrityksille tarkoitettu verkkopalvelu. Sen avulla yritys voi ylläpitää omia tietojaan ja tarjota verkkosivullaan automaattisia asiakasvastauksia.'],
       ['3. Kokeilu ja tilaus', `Palvelua voi kokeilla ${cfg.trialDays || 3} päivää ilmaiseksi. Maksutapa lisätään kokeilun alussa, mutta veloitus alkaa vasta kokeilun jälkeen, jos tilausta ei ole peruttu sitä ennen.`],
-      ['4. Hinnat ja verot', `Kuukausitilaus maksaa ${cfg.monthlyNet || 49} €/kk + sovellettava arvonlisävero. Vuositilaus maksaa ${cfg.yearlyNet || 549} €/vuosi + sovellettava arvonlisävero.`],
+      ['4. Hinnat ja verot', `Kuukausitilaus maksaa ${cfg.monthlyNet || 49} €/kk + sovellettava arvonlisävero. Vuositilaus maksaa ${cfg.yearlyNet || 540} €/vuosi + sovellettava arvonlisävero.`],
       ['5. Peruminen', 'Tilauksen voi perua milloin tahansa. Jo maksettu laskutuskausi jatkuu normaalisti kauden loppuun, ellei pakottava lainsäädäntö edellytä muuta.'],
       ['6. Asiakkaan vastuu', 'Asiakas vastaa siitä, että palveluun lisätyt tiedot ovat oikein, että niiden käyttöön on oikeus ja että palvelua käytetään lain sekä näiden ehtojen mukaisesti.'],
       ['7. Palvelun saatavuus', 'Palvelua kehitetään jatkuvasti. Huollot, ulkopuolisten palvelujen häiriöt tai muut tekniset syyt voivat joskus aiheuttaa käyttökatkoja.'],
