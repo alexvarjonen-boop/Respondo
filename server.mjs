@@ -283,7 +283,8 @@ function inferIntent(message) {
   return 'Asiakaskysymys';
 }
 
-function chatActions(rows, message, handoff = false) {
+function chatActions(rows, message, handoff = false, lang = 'fi') {
+  const actionLang = lang === 'en' ? 'en' : 'fi';
   const q = normalizeSearchText(message);
   const quote = knowledgeValue(rows, 'Tarjouspyyntölomake');
   const phone = knowledgeValue(rows, 'Puhelinnumero');
@@ -295,13 +296,13 @@ function chatActions(rows, message, handoff = false) {
   };
 
   if (quote && (handoff || /tarjous|hinta|arvio|kustannus/.test(q))) {
-    push({ type: 'link', label: 'Pyydä tarjous', url: quote });
+    push({ type: 'link', label: actionLang === 'en' ? 'Request a quote' : 'Pyydä tarjous', url: quote });
   }
   if (phone && (handoff || /puhelin|soita|soittaa|yhteys/.test(q))) {
-    push({ type: 'phone', label: 'Soita', url: 'tel:' + phone.replace(/\s+/g, '') });
+    push({ type: 'phone', label: actionLang === 'en' ? 'Call' : 'Soita', url: 'tel:' + phone.replace(/\s+/g, '') });
   }
   if (email && (handoff || /sahkoposti|sähköposti|email|meili|yhteys/.test(q))) {
-    push({ type: 'email', label: 'Lähetä sähköposti', url: 'mailto:' + email });
+    push({ type: 'email', label: actionLang === 'en' ? 'Send email' : 'Lähetä sähköposti', url: 'mailto:' + email });
   }
   return actions.slice(0, 3);
 }
@@ -425,16 +426,17 @@ function buildProfileKnowledge(profile = {}) {
   return rows;
 }
 
-async function generateGroundedAnswer({ companyName, rows, message, history = [] }) {
+async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi' }) {
+  const responseLang = lang === 'en' ? 'en' : 'fi';
   const cleanMessage = String(message || '').trim();
   if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: 'Tyhjä', sourceIds: [], selected: [] };
 
   const normalized = normalizeSearchText(cleanMessage);
-  if (/^(hei|moi|moikka|hello|terve)[!. ]*$/.test(normalized)) {
-    return { answer: 'Hei! Miten voin auttaa?', handoff: false, confidence: 1, intent: 'Tervehdys', sourceIds: [], selected: [] };
+  if (/^(hei|moi|moikka|hello|hi|hey|terve)[!. ]*$/.test(normalized)) {
+    return { answer: responseLang === 'en' ? 'Hi! How can I help?' : 'Hei! Miten voin auttaa?', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Greeting' : 'Tervehdys', sourceIds: [], selected: [] };
   }
-  if (/^(kiitos|kiitti|thanks)[!. ]*$/.test(normalized)) {
-    return { answer: 'Ole hyvä! Autan mielelläni, jos tulee vielä jotain mieleen.', handoff: false, confidence: 1, intent: 'Kiitos', sourceIds: [], selected: [] };
+  if (/^(kiitos|kiitti|thanks|thank you)[!. ]*$/.test(normalized)) {
+    return { answer: responseLang === 'en' ? 'You’re welcome! I’m happy to help if you have anything else.' : 'Ole hyvä! Autan mielelläni, jos tulee vielä jotain mieleen.', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Thanks' : 'Kiitos', sourceIds: [], selected: [] };
   }
 
   const priorQuestions = history.slice(-2).map((x) => String(x.question || x.user || '')).filter(Boolean);
@@ -476,7 +478,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     normalized.includes(normalizedTitle) ||
     normalizedTitle.includes(normalized)
   );
-  if (exactTitleMatch && Number(top?._score || 0) >= 14) {
+  if (responseLang !== 'en' && exactTitleMatch && Number(top?._score || 0) >= 14) {
     return {
       answer: String(top.answer || '').trim(),
       handoff: false,
@@ -507,7 +509,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const prompt = `Olet ${companyName || 'yrityksen'} verkkosivun asiakaspalvelija.
 ${answerTone(rows)}
-Vastaa samalla kielellä kuin asiakkaan viesti.
+${responseLang === 'en' ? 'Answer in English. Translate any Finnish source information into natural English, but do not add or change facts.' : 'Vastaa samalla kielellä kuin asiakkaan viesti.'}
 Tunnista asiakkaan kysymyksen MERKITYS, älä vaadi samoja sanoja kuin lähteen otsikossa. Eri sanajärjestys, puhekieli, synonyymit, taivutusmuodot, kirjoitusvirheet ja kokonaan eri sanamuoto voivat tarkoittaa samaa asiaa.
 Jos hyväksytty lähde vastaa asiakkaan tarkoitukseen, käytä sitä vaikka asiakkaan kysymys ei muistuttaisi lähteen otsikkoa sanatasolla.
 Käytä yritystä koskeviin faktoihin VAIN alla olevia hyväksyttyjä lähteitä. Keskusteluhistoria auttaa ymmärtämään viittauksia, mutta se ei ole uusi faktalähde.
@@ -1376,19 +1378,20 @@ app.get('/api/public/:slug/widget-token', async (req, res) => {
       JWT,
       { expiresIn: '12h' }
     );
+    const lang = req.query.lang === 'en' ? 'en' : 'fi';
     const kr = await q('SELECT title, answer FROM knowledge WHERE tenant_id=$1', [tenant.id]);
     const available = new Set(kr.rows.map((x) => normalizeSearchText(x.title)));
     const quickReplies = [
-      available.has('hinnat') && 'Hinnat',
-      available.has('aukioloajat') && 'Aukioloajat',
-      available.has('palvelut') && 'Palvelut',
-      available.has('tarjouspyyntolomake') && 'Pyydä tarjous',
+      available.has('hinnat') && (lang === 'en' ? 'Pricing' : 'Hinnat'),
+      available.has('aukioloajat') && (lang === 'en' ? 'Opening hours' : 'Aukioloajat'),
+      available.has('palvelut') && (lang === 'en' ? 'Services' : 'Palvelut'),
+      available.has('tarjouspyyntolomake') && (lang === 'en' ? 'Request a quote' : 'Pyydä tarjous'),
     ].filter(Boolean).slice(0, 3);
 
     return res.json({
       token,
       name: tenant.name,
-      greeting: tenant.greeting,
+      greeting: lang === 'en' ? 'Hi! How can I help?' : tenant.greeting,
       accent: tenant.accent,
       quickReplies,
     });
@@ -1423,8 +1426,9 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       try { body = JSON.parse(body); } catch { body = {}; }
     }
     body = body || {};
+    const lang = body.lang === 'en' ? 'en' : 'fi';
     const message = String(body.message || '').trim().slice(0, 1200);
-    if (!message) return res.status(400).json({ error: 'Kirjoita kysymys.' });
+    if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : 'Kirjoita kysymys.' });
     const profile = body.profile && typeof body.profile === 'object' ? body.profile : {};
     const rows = buildProfileKnowledge(profile).slice(0, 60);
     const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
@@ -1433,14 +1437,17 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       rows,
       message,
       history,
+      lang,
     });
-    const handoffAnswer = 'En löydä tähän varmaa vastausta annetuista yritystiedoista. Lisää vastaus tietopohjaan, niin botti osaa sen seuraavalla kerralla.';
+    const handoffAnswer = lang === 'en'
+      ? 'I cannot find a reliable answer to this from the provided company information. Add the answer to the knowledge base and the bot will know it next time.'
+      : 'En löydä tähän varmaa vastausta annetuista yritystiedoista. Lisää vastaus tietopohjaan, niin botti osaa sen seuraavalla kerralla.';
     return res.json({
       answer: result.handoff ? handoffAnswer : result.answer,
       handoff: result.handoff,
       confidence: result.confidence,
       intent: result.intent,
-      actions: chatActions(rows, message, result.handoff),
+      actions: chatActions(rows, message, result.handoff, lang),
     });
   } catch (e) {
     console.error('Demo chat failed', e);
@@ -1458,6 +1465,7 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
       try { body = JSON.parse(body); } catch { body = {}; }
     }
     body = body || {};
+    const lang = body.lang === 'en' ? 'en' : 'fi';
 
     const origin = requestOrigin(req);
     const baseHost = normalizeHost(BASE);
@@ -1525,7 +1533,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     }
 
     const message = String(body.message || '').trim().slice(0, 1200);
-    if (!message) return res.status(400).json({ error: 'Kirjoita kysymys.' });
+    if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : 'Kirjoita kysymys.' });
     const visitorRef = String(body.visitorRef || '').trim().slice(0, 160);
 
     const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 ORDER BY updated_at DESC, created_at DESC', [t.id]);
@@ -1547,17 +1555,22 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       rows: kr.rows,
       message,
       history,
+      lang,
     });
 
     let answer = result.answer;
     if (result.handoff) {
       const hasContact = knowledgeValue(kr.rows, 'Puhelinnumero') || knowledgeValue(kr.rows, 'Sähköposti') || knowledgeValue(kr.rows, 'Tarjouspyyntölomake');
-      answer = hasContact
-        ? 'En löydä tähän varmaa vastausta yrityksen tiedoista. Voit jättää yhteystietosi, niin yritys voi palata asiaan.'
-        : (t.handoff_message || 'En löydä tähän varmaa vastausta. Yritys voi täydentää tämän tiedon myöhemmin.');
+      answer = lang === 'en'
+        ? (hasContact
+          ? 'I cannot find a reliable answer to this in the company information. You can leave your contact details and the company can get back to you.'
+          : 'I cannot find a reliable answer to this yet. The company can add this information later.')
+        : (hasContact
+          ? 'En löydä tähän varmaa vastausta yrityksen tiedoista. Voit jättää yhteystietosi, niin yritys voi palata asiaan.'
+          : (t.handoff_message || 'En löydä tähän varmaa vastausta. Yritys voi täydentää tämän tiedon myöhemmin.'));
     }
 
-    const actions = chatActions(kr.rows, message, result.handoff);
+    const actions = chatActions(kr.rows, message, result.handoff, lang);
     await q(
       'INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',
       [uid(), t.id, message, answer, result.intent, result.confidence, result.sourceIds, result.handoff, visitorRef || null],
