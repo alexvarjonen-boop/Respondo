@@ -129,6 +129,8 @@
   const attributeMap = new Map(Object.entries({
     'Etunimi Sukunimi':'First name Last name',
     'sinä@yritys.fi':'you@company.com',
+    'info@yritys.fi':'info@company.com',
+    'hinta, maksaa, tarjous':'price, cost, quote',
     'Yrityksen nimi':'Company name',
     'Vähintään 10 merkkiä':'At least 10 characters',
     'Kirjoita kysymys…':'Type your question…',
