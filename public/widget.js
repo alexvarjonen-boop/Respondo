@@ -18,7 +18,7 @@
   document.body.appendChild(root);
 
   const shadow = root.attachShadow({ mode: 'open' });
-  shadow.innerHTML = \`
+  shadow.innerHTML = `
     <style>
       *{box-sizing:border-box}
       :host{all:initial}
@@ -80,7 +80,7 @@
         <div class="powered">Powered by RESPONDO AI</div>
       </section>
       <button class="launcher" id="launcher" type="button"><span class="launcher-dot"></span><span class="launcher-label">Kysy meiltä</span></button>
-    </div>\`;
+    </div>`;
 
   const $ = (q) => shadow.querySelector(q);
   const panel = $('.panel');
