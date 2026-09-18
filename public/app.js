@@ -1246,7 +1246,7 @@ async function route() {
       setTimeout(() => $('#welcomeCard')?.remove(), 320);
     });
 
-    $('.gap-jump').forEach((button) => {
+    document.querySelectorAll('.gap-jump').forEach((button) => {
       button.addEventListener('click', () => {
         document.getElementById('unanswered')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         const question = button.dataset.gapQuestion;
@@ -1259,7 +1259,7 @@ async function route() {
       });
     });
 
-    $('.onboarding-step').forEach((button) => {
+    document.querySelectorAll('.onboarding-step').forEach((button) => {
       button.addEventListener('click', () => {
         const id = button.dataset.scrollTarget;
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1334,7 +1334,7 @@ async function route() {
       e.currentTarget.textContent = '✓ Merkitty asennetuksi';
     });
 
-    $('.add-unanswered-answer').forEach((button) => {
+    document.querySelectorAll('.add-unanswered-answer').forEach((button) => {
       button.addEventListener('click', async () => {
         const item = button.closest('.unanswered-item');
         const answer = item?.querySelector('.unanswered-answer')?.value?.trim();
