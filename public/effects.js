@@ -846,6 +846,7 @@ YLEINEN TOIMINTAOHJE:
       const pageP = Math.max(0, Math.min(1, scrollY / maxScroll));
       document.documentElement.style.setProperty('--fx-page', pageP.toFixed(4));
       document.documentElement.style.setProperty('--fx-velocity', velocity.toFixed(4));
+      document.documentElement.style.setProperty('--fx-motion-blur', (Math.abs(velocity) * .32).toFixed(3) + 'px');
       document.documentElement.style.setProperty('--fx-direction', String(dir));
 
       const vh = Math.max(innerHeight, 1);
@@ -872,6 +873,14 @@ YLEINEN TOIMINTAOHJE:
         const r = hero.getBoundingClientRect();
         const hp = Math.max(0, Math.min(1, -r.top / Math.max(1, r.height)));
         hero.style.setProperty('--hero-progress', hp.toFixed(4));
+        hero.style.setProperty('--hero-copy-y', (-hp * 54).toFixed(2) + 'px');
+        hero.style.setProperty('--hero-copy-z', (-hp * 40).toFixed(2) + 'px');
+        hero.style.setProperty('--hero-copy-scale', (1 - hp * .035).toFixed(4));
+        hero.style.setProperty('--hero-copy-opacity', (1 - hp * .28).toFixed(4));
+        hero.style.setProperty('--hero-console-y', (hp * 34).toFixed(2) + 'px');
+        hero.style.setProperty('--hero-console-z', (hp * 80).toFixed(2) + 'px');
+        hero.style.setProperty('--hero-console-rx', (hp * 4).toFixed(2) + 'deg');
+        hero.style.setProperty('--hero-console-scale', (1 - hp * .025).toFixed(4));
       }
 
       const order = $('.assistant-order');
@@ -879,6 +888,8 @@ YLEINEN TOIMINTAOHJE:
         const r = order.getBoundingClientRect();
         const op = Math.max(0, Math.min(1, 1 - (r.top - innerHeight * .15) / innerHeight));
         order.style.setProperty('--order-progress', op.toFixed(4));
+        order.style.setProperty('--order-glow-opacity', (.35 + op * .65).toFixed(4));
+        order.style.setProperty('--order-glow-y', ((1 - op) * 44).toFixed(2) + 'px');
       }
     };
 
