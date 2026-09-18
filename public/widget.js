@@ -6,6 +6,8 @@
   const serviceOrigin = new URL(script.src).origin;
   const side = script.dataset.side === 'left' ? 'left' : 'right';
   const fallbackAccent = script.dataset.accent || '#111113';
+  const widgetLang = String(script.dataset.lang || document.documentElement.lang || 'fi').toLowerCase().startsWith('en') ? 'en' : 'fi';
+  const t = (fi, en) => widgetLang === 'en' ? en : fi;
 
   const root = document.createElement('div');
   root.id = 'respondo-ai-widget';
@@ -177,7 +179,7 @@
       if (!contact) return;
       const button = box.querySelector('button');
       button.disabled = true;
-      button.textContent = 'Lähetetään…';
+      button.textContent = t('Lähetetään…', 'Sending…');
       const email = contact.includes('@') ? contact : '';
       const phone = email ? '' : contact;
       try {
@@ -186,17 +188,17 @@
           mode: 'cors',
           credentials: 'omit',
           headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-          body: JSON.stringify({ name: person, email, phone, message: question, widgetToken: token, visitorRef }),
+          body: JSON.stringify({ name: person, email, phone, message: question, widgetToken: token, visitorRef, lang: widgetLang }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Lähetys epäonnistui');
-        box.querySelector('.lead-ok').textContent = 'Kiitos — yhteystiedot on lähetetty ✓';
+        box.querySelector('.lead-ok').textContent = t('Kiitos — yhteystiedot on lähetetty ✓', 'Thank you — your contact details were sent ✓');
         box.querySelectorAll('input,button').forEach((el) => el.disabled = true);
-        button.textContent = 'Lähetetty ✓';
+        button.textContent = t('Lähetetty ✓', 'Sent ✓');
       } catch {
-        box.querySelector('.lead-ok').textContent = 'Lähetys ei onnistunut. Yritä uudelleen.';
+        box.querySelector('.lead-ok').textContent = t('Lähetys ei onnistunut. Yritä uudelleen.', 'Sending failed. Please try again.');
         button.disabled = false;
-        button.textContent = 'Jätä yhteystiedot';
+        button.textContent = t('Jätä yhteystiedot', 'Send contact details');
       }
     });
     chat.appendChild(box);
@@ -213,7 +215,7 @@
   async function activate() {
     try {
       const res = await fetch(
-        serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/widget-token',
+        serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/widget-token?lang=' + encodeURIComponent(widgetLang),
         { method: 'GET', mode: 'cors', credentials: 'omit' }
       );
       if (!res.ok) throw new Error('Widget not allowed');
@@ -223,22 +225,22 @@
       name.textContent = data.name || 'RESPONDO AI';
       mark.textContent = String(data.name || 'R').trim().charAt(0).toUpperCase() || 'R';
       setAccent(data.accent || fallbackAccent);
-      status.textContent = 'Valmis vastaamaan';
+      status.textContent = t('Valmis vastaamaan', 'Ready to help');
       status.classList.add('ready');
       renderQuickReplies(data.quickReplies || []);
-      addMessage(data.greeting || 'Hei! Miten voin auttaa?');
+      addMessage(data.greeting || t('Hei! Miten voin auttaa?', 'Hi! How can I help?'));
     } catch {
       ready = false;
-      status.textContent = 'Widget ei ole käytössä tällä verkkosivulla.';
+      status.textContent = t('Widget ei ole käytössä tällä verkkosivulla.', 'The widget is not active on this website.');
       status.classList.add('error');
       form.style.display = 'none';
-      addMessage('Tämä RESPONDO AI -lisenssi on sidottu toiseen verkkosivuun tai sitä ei ole vielä aktivoitu.');
+      addMessage(t('Tämä RESPONDO AI -lisenssi on sidottu toiseen verkkosivuun tai sitä ei ole vielä aktivoitu.', 'This RESPONDO AI license is linked to another website or has not been activated yet.'));
     }
   }
 
   launcher.addEventListener('click', () => {
     const open = panel.classList.toggle('open');
-    launcherLabel.textContent = open ? 'Sulje' : 'Kysy meiltä';
+    launcherLabel.textContent = open ? t('Sulje', 'Close') : t('Kysy meiltä', 'Ask us');
     if (open && ready) setTimeout(() => input.focus(), 50);
   });
 
@@ -261,16 +263,16 @@
           mode: 'cors',
           credentials: 'omit',
           headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-          body: JSON.stringify({ message, widgetToken: token, visitorRef }),
+          body: JSON.stringify({ message, widgetToken: token, visitorRef, lang: widgetLang }),
         }
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Chat failed');
-      pending.innerHTML = linkify(data.answer || 'En löydä tähän vielä varmaa vastausta.');
+      pending.innerHTML = linkify(data.answer || t('En löydä tähän vielä varmaa vastausta.', 'I cannot find a reliable answer to this yet.'));
       renderActions(data.actions || []);
       if (data.canLeaveContact || data.handoff) showLeadForm(message);
     } catch {
-      pending.textContent = 'Vastaaminen epäonnistui. Yritä hetken kuluttua uudelleen.';
+      pending.textContent = t('Vastaaminen epäonnistui. Yritä hetken kuluttua uudelleen.', 'The response failed. Please try again in a moment.');
     } finally {
       input.disabled = false;
       input.focus();
