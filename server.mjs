@@ -1508,6 +1508,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       try { body = JSON.parse(body); } catch { body = {}; }
     }
     body = body || {};
+    const lang = body.lang === 'en' ? 'en' : 'fi';
 
     const origin = requestOrigin(req);
     const baseHost = normalizeHost(BASE);
