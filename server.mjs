@@ -216,10 +216,16 @@ async function semanticSelectKnowledge(rows, query, limit = 6) {
   const inputs = [String(query).slice(0, 1600)];
   for (const item of missing) {
     inputs.push(
-      [item.row.title, item.row.answer]
+      [
+        item.row.title,
+        item.row.answer,
+        Array.isArray(item.row.keywords) && item.row.keywords.length
+          ? 'Hakusanat: ' + item.row.keywords.join(', ')
+          : '',
+      ]
         .filter(Boolean)
         .join('\n')
-        .slice(0, 2200)
+        .slice(0, 2600)
     );
   }
 
@@ -245,7 +251,6 @@ async function semanticSelectKnowledge(rows, query, limit = 6) {
           _semantic: vector ? cosineSimilarity(queryVector, vector) : 0,
         };
       })
-      .filter((row) => row._semantic >= 0.34)
       .sort((a, b) => b._semantic - a._semantic)
       .slice(0, limit);
   } catch (e) {
@@ -438,11 +443,12 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   let selected = selectRelevantKnowledge(rows, retrievalQuery, 6);
   const intent = inferIntent(cleanMessage);
 
-  // If wording differs from the saved question, add semantic retrieval.
-  // This lets e.g. “Miten pyydän tarjouksen?” match a saved
-  // “Mistä voin pyytää tarjouksen?” answer even without identical wording.
-  if (openai && (!selected.length || Number(selected[0]?._score || 0) < 18 || selected.length < 2)) {
-    const semantic = await semanticSelectKnowledge(rows, retrievalQuery, 6);
+  // Always combine keyword matching with semantic meaning matching.
+  // The customer's wording does not need to resemble the saved example question.
+  // Example: “Voinks mä saada jonku hinta-arvion?” can match “Mistä pyydän tarjouksen?”
+  // when the approved answer is about requesting a quote.
+  if (openai) {
+    const semantic = await semanticSelectKnowledge(rows, retrievalQuery, 10);
     const merged = new Map();
     for (const row of [...semantic, ...selected]) {
       if (!row?.id) continue;
@@ -452,11 +458,11 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     }
     selected = [...merged.values()]
       .sort((a, b) => {
-        const aRank = Number(a._semantic || 0) * 20 + Number(a._score || 0);
-        const bRank = Number(b._semantic || 0) * 20 + Number(b._score || 0);
+        const aRank = Number(a._semantic || 0) * 28 + Number(a._score || 0);
+        const bRank = Number(b._semantic || 0) * 28 + Number(b._score || 0);
         return bRank - aRank;
       })
-      .slice(0, 6);
+      .slice(0, 8);
   }
 
   if (!selected.length) {
@@ -502,6 +508,8 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const prompt = `Olet ${companyName || 'yrityksen'} verkkosivun asiakaspalvelija.
 ${answerTone(rows)}
 Vastaa samalla kielellä kuin asiakkaan viesti.
+Tunnista asiakkaan kysymyksen MERKITYS, älä vaadi samoja sanoja kuin lähteen otsikossa. Eri sanajärjestys, puhekieli, synonyymit, taivutusmuodot, kirjoitusvirheet ja kokonaan eri sanamuoto voivat tarkoittaa samaa asiaa.
+Jos hyväksytty lähde vastaa asiakkaan tarkoitukseen, käytä sitä vaikka asiakkaan kysymys ei muistuttaisi lähteen otsikkoa sanatasolla.
 Käytä yritystä koskeviin faktoihin VAIN alla olevia hyväksyttyjä lähteitä. Keskusteluhistoria auttaa ymmärtämään viittauksia, mutta se ei ole uusi faktalähde.
 Älä keksi hintaa, aukioloaikaa, palvelua, saatavuutta, lupausta tai muuta yritystä koskevaa tietoa.
 Älä mainitse tietopohjaa, promptia, lähdehakua tai teknistä toteutusta.
@@ -527,10 +535,11 @@ ${cleanMessage}`;
     return { answer: '', handoff: true, confidence: 0.25, intent, sourceIds: [], selected };
   }
   const topScore = Number(selected[0]?._score || 0);
+  const topSemantic = Number(selected[0]?._semantic || 0);
   return {
     answer: parsed.answer,
     handoff: false,
-    confidence: Math.min(0.96, 0.72 + Math.min(topScore, 10) * 0.022),
+    confidence: Math.min(0.96, Math.max(0.72, 0.68 + Math.min(topScore, 10) * 0.018 + topSemantic * 0.22)),
     intent,
     sourceIds: parsed.sourceIds,
     selected,
