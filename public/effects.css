@@ -948,8 +948,8 @@ form.fx-scene,
   transform:
     perspective(1500px)
     translate3d(
-      calc(var(--fx-shift-x,0px) * .18 + var(--fx-entry-x)),
-      calc(var(--fx-shift-y,0px) * .22 + var(--fx-entry-y)),
+      calc(var(--fx-shift-x,0px) + var(--fx-entry-x)),
+      calc(var(--fx-shift-y,0px) + var(--fx-entry-y)),
       var(--fx-entry-z)
     )
     rotateX(var(--fx-entry-rot-x))
@@ -1025,8 +1025,8 @@ main > section[data-fx-atmosphere]{
   color:rgba(17,17,20,.028);
   user-select:none;
   transform:
-    translate3d(0,calc(var(--fx-local,0) * -80px),0)
-    rotate(calc(var(--fx-local,0) * 2deg));
+    translate3d(0,var(--fx-shift-y,0px),0)
+    rotate(var(--fx-rot,0deg));
 }
 main > section:nth-of-type(even) .fx-scene-number{
   left:clamp(12px,3vw,54px);
@@ -1045,7 +1045,7 @@ main > section.fx-scene::after{
   z-index:1;
   pointer-events:none;
   background:linear-gradient(90deg,transparent,rgba(17,17,20,.17),transparent);
-  transform:scaleX(calc(.15 + var(--fx-enter,0) * .85));
+  transform:scaleX(var(--fx-enter,.15));
   transform-origin:50% 50%;
   opacity:calc(.2 + var(--fx-enter,0) * .5);
 }
@@ -1056,18 +1056,18 @@ main > section.fx-scene::after{
 }
 .hero-copy{
   transform:
-    translate3d(0,calc(var(--hero-progress,0) * -54px),calc(var(--hero-progress,0) * -40px))
-    scale(calc(1 - var(--hero-progress,0) * .035));
+    translate3d(0,var(--hero-copy-y,0px),var(--hero-copy-z,0px))
+    scale(var(--hero-copy-scale,1));
   transform-origin:50% 20%;
-  opacity:calc(1 - var(--hero-progress,0) * .28);
+  opacity:var(--hero-copy-opacity,1);
 }
 .signal-console{
   transform:
     perspective(1300px)
-    translate3d(0,calc(var(--lift,0px) + var(--hero-progress,0) * 34px),calc(var(--hero-progress,0) * 80px))
-    rotateX(calc(var(--rx,0deg) + var(--hero-progress,0) * 4deg))
+    translate3d(0,calc(var(--lift,0px) + var(--hero-console-y,0px)),var(--hero-console-z,0px))
+    rotateX(var(--hero-console-rx,var(--rx,0deg)))
     rotateY(var(--ry,0deg))
-    scale(calc(1 - var(--hero-progress,0) * .025))!important;
+    scale(var(--hero-console-scale,1))!important;
 }
 .hero-marquee,
 .respondo-marquee{
@@ -1110,8 +1110,8 @@ body.assistant-standalone .assistant-order::before{
   background:
     radial-gradient(circle at 80% 10%,rgba(145,163,255,.17),transparent 32%),
     linear-gradient(135deg,rgba(255,255,255,.035),transparent 45%);
-  opacity:calc(.35 + var(--order-progress,0) * .65);
-  transform:translate3d(0,calc((1 - var(--order-progress,0)) * 44px),0);
+  opacity:var(--order-glow-opacity,.35);
+  transform:translate3d(0,var(--order-glow-y,44px),0);
 }
 body.assistant-standalone .assistant-order > *{position:relative;z-index:1}
 body.assistant-standalone .assistant-order-card:nth-child(1){
@@ -1179,8 +1179,7 @@ body.assistant-standalone .assistant-order-card:nth-child(2){
 
 /* high velocity gets a tiny cinematic blur, then settles instantly */
 @media(pointer:fine){
-  html{--fx-motion-blur:calc(abs(var(--fx-velocity,0)) * .32px)}
-  .fx-scene-live{filter:blur(var(--fx-motion-blur))}
+  .fx-scene-live{filter:blur(var(--fx-motion-blur,0px))}
 }
 
 /* mobile keeps the depth, but lowers travel distances */
@@ -1193,7 +1192,7 @@ body.assistant-standalone .assistant-order-card:nth-child(2){
   .fx-scene[data-fx-scene="slide-right"]{--fx-entry-x:54px}
   .fx-scene-number{font-size:clamp(70px,24vw,130px);opacity:.7}
   .hero-copy{
-    transform:translate3d(0,calc(var(--hero-progress,0) * -28px),0) scale(calc(1 - var(--hero-progress,0) * .018));
+    transform:translate3d(0,var(--hero-copy-y,0px),0) scale(var(--hero-copy-scale,1));
   }
   body.assistant-standalone .assistant-owner-panel{padding-bottom:4vh}
 }
