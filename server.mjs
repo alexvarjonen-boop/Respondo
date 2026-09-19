@@ -479,6 +479,8 @@ function answerTone(rows) {
 
 function inferIntent(message) {
   const q = normalizeSearchText(message);
+  if (/tilausnumero|tilaukseni|tilauksen tila|order status|where is my order|seuranta/.test(q)) return 'Tilauksen tila';
+  if (/ajanvaraus|varaa aika|ajan vara|booking|appointment/.test(q)) return 'Ajanvaraus';
   if (/tarjous|tarjouspyynt|arvio/.test(q)) return 'Tarjouspyyntö';
   if (/hinta|maksaa|hinnoittelu|kustannus/.test(q)) return 'Hinta';
   if (/auki|lauantai|sunnuntai|viikonloppu|kello/.test(q)) return 'Aukioloajat';
@@ -502,22 +504,32 @@ function chatActions(rows, message, handoff = false, lang = 'fi') {
     actions.push(action);
   };
 
+  if (/tilausnumero|tilaukseni|tilauksen tila|seuranta|order status|where is my order/.test(q)) {
+    push({ type: 'order_status', mode: 'order_form', label: actionLang === 'en' ? 'Check order status' : 'Tarkista tilauksen tila' });
+  }
+
+  if (/ajanvaraus|varaa|aika|ajan|booking|appointment/.test(q)) {
+    push({ type: 'booking', mode: 'booking_form', label: actionLang === 'en' ? 'Book a time' : 'Varaa aika' });
+    if (booking) push({ type: 'booking', label: actionLang === 'en' ? 'Open calendar' : 'Avaa ajanvaraus', url: booking });
+  }
+
+  if (/tarjous|hinta-arvio|arvio|kustannusarvio|quote/.test(q)) {
+    push({ type: 'quote', mode: 'quote_form', label: actionLang === 'en' ? 'Request a quote' : 'Pyydä tarjous' });
+    if (quote) push({ type: 'quote', label: actionLang === 'en' ? 'Open quote form' : 'Avaa tarjouslomake', url: quote });
+  }
+
   if (/soittakaa|ottakaa yhteytta|ottakaa yhteyttä|yhteydenotto|call me|contact me/.test(q)) {
     push({ type: 'callback', mode: 'lead', label: actionLang === 'en' ? 'Request a callback' : 'Pyydä yhteydenottoa' });
   }
-    if (booking && /ajanvaraus|varaa|aika|ajan|booking|appointment/.test(q)) {
-    push({ type: 'booking', label: actionLang === 'en' ? 'Book a time' : 'Varaa aika', url: booking });
-  }
-  if (quote && (handoff || /tarjous|hinta|arvio|kustannus/.test(q))) {
-    push({ type: 'quote', label: actionLang === 'en' ? 'Request a quote' : 'Pyydä tarjous', url: quote });
-  }
+
   if (phone && (handoff || /puhelin|soita|soittaa|yhteys/.test(q))) {
     push({ type: 'phone', label: actionLang === 'en' ? 'Call' : 'Soita', url: 'tel:' + phone.replace(/\s+/g, '') });
   }
   if (email && (handoff || /sahkoposti|sähköposti|email|meili|yhteys/.test(q))) {
     push({ type: 'email', label: actionLang === 'en' ? 'Send email' : 'Lähetä sähköposti', url: 'mailto:' + email });
   }
-  return actions.slice(0, 3);
+
+  return actions.slice(0, 4);
 }
 
 function parseGroundedModelOutput(raw, selected) {
@@ -1567,6 +1579,15 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
         GROUP BY action_type ORDER BY total DESC`,
       [tenant.id],
     );
+    await ensureTenantActionKeys(tenant);
+    const actionRequests = await q(
+      `SELECT id,request_type,status,payload,result,delivery_status,source_channel,external_contact_id,created_at,updated_at
+         FROM action_requests
+        WHERE tenant_id=$1
+        ORDER BY created_at DESC
+        LIMIT 50`,
+      [tenant.id],
+    );
     const latestSelfTest = await q(
       `SELECT id, score, total_questions, answerable_questions, gaps, created_at
          FROM self_test_runs WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`,
@@ -1609,6 +1630,12 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
       gaps: gaps.rows,
       leads: leads.rows,
       actionStats: actionStats.rows,
+      actionRequests: actionRequests.rows,
+      integrations: {
+        webhookUrl: tenant.action_webhook_url || '',
+        webhookSecret: tenant.action_webhook_secret || '',
+        channelsApiKey: tenant.channels_api_key || '',
+      },
       latestSelfTest: latestSelfTest.rows[0] || null,
       truth: (() => {
         const row = truthStats.rows[0] || {};
@@ -1934,6 +1961,120 @@ app.post('/api/app/self-test', auth, subscribed, async (req, res) => {
   }
 });
 
+
+function cleanActionFields(type, input = {}) {
+  const src = input && typeof input === 'object' ? input : {};
+  const take = (key, max = 600) => String(src[key] || '').trim().slice(0, max);
+  if (type === 'quote') {
+    return {
+      name: take('name',120),
+      contact: take('contact',220),
+      details: take('details',1800),
+      budget: take('budget',120),
+    };
+  }
+  if (type === 'booking') {
+    return {
+      name: take('name',120),
+      contact: take('contact',220),
+      date: take('date',40),
+      time: take('time',40),
+      note: take('note',1000),
+    };
+  }
+  if (type === 'order_status') {
+    return {
+      orderNumber: take('orderNumber',120),
+      email: cleanEmail(src.email).slice(0,220),
+    };
+  }
+  return {
+    name: take('name',120),
+    contact: take('contact',220),
+    note: take('note',1000),
+  };
+}
+
+function actionContact(fields = {}) {
+  const contact = String(fields.contact || '').trim();
+  return {
+    email: contact.includes('@') ? cleanEmail(contact).slice(0,220) : cleanEmail(fields.email).slice(0,220),
+    phone: contact && !contact.includes('@') ? contact.slice(0,80) : '',
+  };
+}
+
+async function ensureTenantActionKeys(tenant) {
+  if (!tenant) return tenant;
+  const updates = [];
+  const values = [];
+  let n = 1;
+  if (!tenant.action_webhook_secret) {
+    tenant.action_webhook_secret = crypto.randomBytes(24).toString('hex');
+    updates.push('action_webhook_secret=$' + n++);
+    values.push(tenant.action_webhook_secret);
+  }
+  if (!tenant.channels_api_key) {
+    tenant.channels_api_key = 'rsp_ch_' + crypto.randomBytes(24).toString('hex');
+    updates.push('channels_api_key=$' + n++);
+    values.push(tenant.channels_api_key);
+  }
+  if (updates.length) {
+    values.push(tenant.id);
+    await q('UPDATE tenants SET ' + updates.join(',') + ',updated_at=NOW() WHERE id=$' + n, values);
+  }
+  return tenant;
+}
+
+async function dispatchActionWebhook(tenant, actionRequest) {
+  if (!tenant?.action_webhook_url) return { status:'not_configured', result:null };
+  const url = await assertPublicHttpUrl(tenant.action_webhook_url);
+  const payload = JSON.stringify({
+    event: 'respondo.action.created',
+    tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name },
+    action: actionRequest,
+  });
+  const signature = crypto
+    .createHmac('sha256', tenant.action_webhook_secret || '')
+    .update(payload)
+    .digest('hex');
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch(url, {
+      method:'POST',
+      redirect:'manual',
+      signal:controller.signal,
+      headers:{
+        'content-type':'application/json',
+        'user-agent':'RESPONDO-Actions/2.0',
+        'x-respondo-signature':'sha256=' + signature,
+      },
+      body:payload,
+    });
+    const raw = (await response.text()).slice(0,12000);
+    let parsed = null;
+    try { parsed = raw ? JSON.parse(raw) : null; } catch { parsed = raw ? { message:raw.slice(0,1000) } : null; }
+    return { status: response.ok ? 'delivered' : 'failed', result: parsed, httpStatus:response.status };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function validateWidgetActionRequest(req, tenant, body) {
+  const origin = requestOrigin(req);
+  const baseHost = normalizeHost(BASE);
+  const external = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
+  if (!external) return true;
+  if (!widgetOriginAllowed(req, tenant)) return false;
+  try {
+    const token = jwt.verify(String(body.widgetToken || ''), JWT);
+    return token.kind === 'widget' && token.slug === tenant.slug && token.host === normalizeHost(origin.hostname);
+  } catch {
+    return false;
+  }
+}
+
 async function publicTenant(slugValue) {
   return q(
     `SELECT t.*
@@ -2195,6 +2336,242 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
 });
 
 
+
+app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.status(404).json({ error:'Yritystä ei löytynyt.' });
+    const tenant = await ensureTenantActionKeys(tr.rows[0]);
+
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { body = {}; }
+    }
+    body = body || {};
+    if (!(await validateWidgetActionRequest(req, tenant, body))) {
+      return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
+    }
+    setWidgetCors(req,res);
+
+    const type = String(body.type || '').trim();
+    if (!['quote','booking','order_status','callback'].includes(type)) {
+      return res.status(400).json({ error:'Tuntematon toiminto.' });
+    }
+
+    const fields = cleanActionFields(type, body.fields);
+    if (type === 'quote' && !fields.contact) return res.status(400).json({ error:'Anna sähköposti tai puhelinnumero.' });
+    if (type === 'booking' && (!fields.contact || !fields.date)) return res.status(400).json({ error:'Anna yhteystieto ja toivottu päivä.' });
+    if (type === 'order_status' && (!fields.orderNumber || !fields.email)) return res.status(400).json({ error:'Anna tilausnumero ja tilauksessa käytetty sähköposti.' });
+
+    const id = uid();
+    const visitorRef = String(body.visitorRef || '').slice(0,160) || null;
+    const sourceChannel = String(body.sourceChannel || 'website').trim().slice(0,40) || 'website';
+    const externalContactId = String(body.externalContactId || '').trim().slice(0,220) || null;
+    const pageUrl = String(body.pageContext?.url || '').slice(0,1000) || null;
+    const payload = {
+      fields,
+      question: String(body.question || '').trim().slice(0,1200),
+      pageUrl,
+      pageTitle: String(body.pageContext?.title || '').slice(0,300) || null,
+    };
+
+    await q(
+      `INSERT INTO action_requests(id,tenant_id,visitor_ref,request_type,status,payload,source_channel,external_contact_id)
+       VALUES($1,$2,$3,$4,'new',$5::jsonb,$6,$7)`,
+      [id,tenant.id,visitorRef,type,JSON.stringify(payload),sourceChannel,externalContactId],
+    );
+
+    if (['quote','booking','callback'].includes(type)) {
+      const contact = actionContact(fields);
+      await q(
+        `INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message,status)
+         VALUES($1,$2,$3,$4,$5,$6,$7,'new')`,
+        [
+          uid(),tenant.id,visitorRef,
+          String(fields.name || '').slice(0,120) || null,
+          contact.email || null,
+          contact.phone || null,
+          String(fields.details || fields.note || payload.question || '').slice(0,1200) || null,
+        ],
+      );
+    }
+
+    const actionRequest = {
+      id,
+      type,
+      status:'new',
+      sourceChannel,
+      externalContactId,
+      visitorRef,
+      payload,
+      createdAt:new Date().toISOString(),
+    };
+
+    let delivery = { status:'not_configured', result:null };
+    try {
+      delivery = await dispatchActionWebhook(tenant, actionRequest);
+    } catch (e) {
+      console.error('Action webhook delivery failed', e);
+      delivery = { status:'failed', result:{ error:String(e?.message || 'Webhook failed').slice(0,500) } };
+    }
+
+    await q(
+      `UPDATE action_requests
+          SET delivery_status=$1,result=$2::jsonb,updated_at=NOW()
+        WHERE id=$3 AND tenant_id=$4`,
+      [delivery.status,JSON.stringify(delivery.result || {}),id,tenant.id],
+    );
+
+    await q(
+      `INSERT INTO action_events(id,tenant_id,visitor_ref,action_type,label,target,page_url)
+       VALUES($1,$2,$3,$4,$5,$6,$7)`,
+      [uid(),tenant.id,visitorRef,type,'submitted',null,pageUrl],
+    );
+
+    const customerMessage = String(
+      delivery.result?.customerMessage ||
+      delivery.result?.message ||
+      ''
+    ).trim().slice(0,1200);
+
+    return res.json({
+      ok:true,
+      id,
+      status:'new',
+      deliveryStatus:delivery.status,
+      customerMessage: customerMessage || (
+        type === 'booking' ? 'Ajanvarauspyyntösi on vastaanotettu.' :
+        type === 'quote' ? 'Tarjouspyyntösi on vastaanotettu.' :
+        type === 'order_status' ? 'Tilaustietojen tarkistuspyyntö on vastaanotettu.' :
+        'Yhteydenottopyyntösi on vastaanotettu.'
+      ),
+    });
+  } catch (e) {
+    console.error('Action request failed', e);
+    return res.status(500).json({ error:'Toiminnon lähetys epäonnistui.' });
+  }
+});
+
+app.post('/api/app/integrations', auth, subscribed, async (req,res) => {
+  try {
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const tenant = await ensureTenantActionKeys(tr.rows[0]);
+    const raw = String(req.body.webhookUrl || '').trim();
+    let url = '';
+    if (raw) {
+      const parsed = await assertPublicHttpUrl(raw);
+      if (parsed.protocol !== 'https:') return res.status(400).json({ error:'Webhookin pitää käyttää HTTPS-yhteyttä.' });
+      url = parsed.toString();
+    }
+    await q('UPDATE tenants SET action_webhook_url=$1,updated_at=NOW() WHERE id=$2',[url || null,tenant.id]);
+    return res.json({
+      ok:true,
+      webhookUrl:url,
+      webhookSecret:tenant.action_webhook_secret,
+      channelsApiKey:tenant.channels_api_key,
+    });
+  } catch (e) {
+    return res.status(400).json({ error:e.message || 'Integraation tallennus epäonnistui.' });
+  }
+});
+
+app.post('/api/app/integrations/test', auth, subscribed, async (req,res) => {
+  try {
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const tenant = await ensureTenantActionKeys(tr.rows[0]);
+    if (!tenant.action_webhook_url) return res.status(400).json({ error:'Lisää webhook-osoite ensin.' });
+    const delivery = await dispatchActionWebhook(tenant,{
+      id:'test_' + Date.now(),
+      type:'test',
+      status:'test',
+      sourceChannel:'dashboard',
+      payload:{ message:'RESPONDO Actions 2.0 test' },
+      createdAt:new Date().toISOString(),
+    });
+    if (delivery.status !== 'delivered') return res.status(400).json({ error:'Webhook ei vastannut onnistuneesti.' });
+    return res.json({ ok:true,httpStatus:delivery.httpStatus || 200 });
+  } catch (e) {
+    return res.status(400).json({ error:e.message || 'Webhook-testi epäonnistui.' });
+  }
+});
+
+app.post('/api/app/action-requests/:id/status', auth, subscribed, async (req,res) => {
+  try {
+    const status = ['new','in_progress','done'].includes(String(req.body.status)) ? String(req.body.status) : 'done';
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const updated = await q(
+      'UPDATE action_requests SET status=$1,updated_at=NOW() WHERE id=$2 AND tenant_id=$3 RETURNING id,status',
+      [status,req.params.id,tr.rows[0].id],
+    );
+    if (!updated.rowCount) return res.status(404).json({ error:'Pyyntöä ei löytynyt.' });
+    return res.json(updated.rows[0]);
+  } catch (e) {
+    return res.status(500).json({ error:'Tilaa ei voitu päivittää.' });
+  }
+});
+
+app.post('/api/channel/:slug/message', async (req,res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.status(404).json({ error:'Yritystä ei löytynyt.' });
+    const tenant = await ensureTenantActionKeys(tr.rows[0]);
+    const authHeader = String(req.headers.authorization || '');
+    if (authHeader !== 'Bearer ' + tenant.channels_api_key) return res.status(401).json({ error:'Virheellinen Channels API -avain.' });
+
+    const channel = String(req.body.channel || 'api').trim().toLowerCase().slice(0,40);
+    if (!['api','email','whatsapp','instagram','messenger','sms'].includes(channel)) {
+      return res.status(400).json({ error:'Tuntematon kanava.' });
+    }
+    const contactId = String(req.body.contactId || '').trim().slice(0,220);
+    const message = String(req.body.message || '').trim().slice(0,1200);
+    const lang = req.body.lang === 'en' ? 'en' : 'fi';
+    if (!contactId || !message) return res.status(400).json({ error:'contactId ja message tarvitaan.' });
+
+    const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC',[tenant.id]);
+    const hr = await q(
+      `SELECT question,answer,handoff
+         FROM conversations
+        WHERE tenant_id=$1 AND source_channel=$2 AND external_contact_id=$3
+        ORDER BY created_at DESC LIMIT 6`,
+      [tenant.id,channel,contactId],
+    );
+    const history = hr.rows.reverse();
+    const result = await generateGroundedAnswer({
+      companyName:tenant.name,
+      rows:kr.rows,
+      message,
+      history,
+      lang,
+      pageContext:{},
+    });
+    let answer = result.answer;
+    if (result.handoff) {
+      answer = lang === 'en'
+        ? 'I do not have a verified answer yet. A person from the company needs to handle this.'
+        : 'Tähän ei löytynyt vielä varmennettua vastausta. Yrityksen henkilön pitää käsitellä tämä.';
+    }
+    const actions = chatActions(kr.rows,message,result.handoff,lang);
+    await q(
+      `INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,source_channel,external_contact_id)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [uid(),tenant.id,message,answer,result.intent,result.confidence,result.sourceIds,result.handoff,contactId,channel,contactId],
+    );
+    return res.json({
+      answer,
+      handoff:result.handoff,
+      verified:!result.handoff && Array.isArray(result.sourceIds) && result.sourceIds.length>0,
+      intent:result.intent,
+      actions,
+    });
+  } catch (e) {
+    console.error('Channels API failed', e);
+    return res.status(500).json({ error:'Kanavaviestiä ei voitu käsitellä.' });
+  }
+});
+
 app.post('/api/public/:slug/action-event', publicChatLimiter, async (req, res) => {
   try {
     const tr = await publicTenant(req.params.slug);
@@ -2221,7 +2598,7 @@ app.post('/api/public/:slug/action-event', publicChatLimiter, async (req, res) =
     }
 
     const actionType = String(body.actionType || '').trim().slice(0, 40);
-    if (!['quote','booking','phone','email','link','callback'].includes(actionType)) {
+    if (!['quote','booking','order_status','phone','email','link','callback'].includes(actionType)) {
       return res.status(400).json({ error: 'Tuntematon toiminto.' });
     }
 
@@ -2320,12 +2697,19 @@ async function ensureRuntimeSchema() {
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_leads_tenant_created ON leads(tenant_id, created_at DESC)');
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS average_lead_value NUMERIC(12,2) NOT NULL DEFAULT 0");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS action_webhook_url TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS action_webhook_secret TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS channels_api_key TEXT");
+
   await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'manual'");
   await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS source_url TEXT");
   await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS approved BOOLEAN NOT NULL DEFAULT TRUE");
   await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ NOT NULL DEFAULT NOW()");
   await q("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS page_url TEXT");
   await q("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS page_title TEXT");
+  await q("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS source_channel TEXT NOT NULL DEFAULT 'website'");
+  await q("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS external_contact_id TEXT");
+
   await q(`CREATE TABLE IF NOT EXISTS action_events (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -2347,6 +2731,22 @@ async function ensureRuntimeSchema() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_self_test_tenant_created ON self_test_runs(tenant_id, created_at DESC)');
+  await q(`CREATE TABLE IF NOT EXISTS action_requests (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    visitor_ref TEXT,
+    request_type TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'new',
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    result JSONB NOT NULL DEFAULT '{}'::jsonb,
+    delivery_status TEXT NOT NULL DEFAULT 'not_configured',
+    source_channel TEXT NOT NULL DEFAULT 'website',
+    external_contact_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_action_requests_tenant_created ON action_requests(tenant_id, created_at DESC)');
+
   await q("ALTER TABLE tenants ALTER COLUMN accent SET DEFAULT '#111113'");
   await q("UPDATE tenants SET accent='#111113' WHERE accent='#3157ff'");
 }
