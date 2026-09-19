@@ -57,6 +57,13 @@
       .leadbox input:focus{border-color:#111113}
       .leadbox button{border:0;border-radius:10px;padding:10px 12px;background:#111113;color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
       .leadbox .lead-ok{font-size:12px;color:#246b45}
+      .actionbox{align-self:stretch;background:#fff;border:1px solid #dedee2;border-radius:16px;padding:13px;display:grid;gap:8px}
+      .actionbox b{font-size:13px}.actionbox small{font-size:11px;color:#73737a;line-height:1.4}
+      .actionbox input,.actionbox textarea{width:100%;border:1px solid #d9d9dc;border-radius:10px;padding:10px 11px;font:inherit;font-size:13px;outline:none;background:#fff;color:#111113}
+      .actionbox textarea{min-height:72px;resize:vertical}
+      .actionbox input:focus,.actionbox textarea:focus{border-color:#111113}
+      .actionbox button{border:0;border-radius:10px;padding:10px 12px;background:#111113;color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+      .actionbox .action-ok{font-size:12px;color:#246b45;line-height:1.4}
       .truth-note{align-self:flex-start;margin:-4px 0 2px 4px;color:#6f7772;font-size:10px;font-weight:700}.truth-note span{color:#2f9b63}
       .typing-dots{display:inline-flex;gap:4px;align-items:center;height:14px}
       .typing-dots i{width:5px;height:5px;border-radius:50%;background:#77777c;animation:rblink 1s infinite ease-in-out}
@@ -185,6 +192,18 @@
         return;
       }
 
+      if (['quote_form','booking_form','order_form'].includes(action.mode)) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = action.label + ' →';
+        button.addEventListener('click', () => {
+          trackAction(action);
+          showActionForm(action, question);
+        });
+        wrap.appendChild(button);
+        return;
+      }
+
       const a = document.createElement('a');
       a.href = safeActionUrl(action.url);
       a.textContent = action.label + ' →';
@@ -208,6 +227,96 @@
       button.addEventListener('click', () => sendMessage(label));
       quick.appendChild(button);
     });
+  }
+
+  function showActionForm(action, question) {
+    if (chat.querySelector('.actionbox')) return;
+
+    const box = document.createElement('form');
+    box.className = 'actionbox';
+
+    if (action.mode === 'quote_form') {
+      box.innerHTML =
+        '<b>' + t('Pyydä tarjous suoraan tästä', 'Request a quote here') + '</b>' +
+        '<small>' + t('Täytä tiedot. Yritys saa pyynnön ja tämän keskustelun kontekstin.', 'Fill in your details. The company receives the request with this conversation context.') + '</small>' +
+        '<input name="name" maxlength="120" placeholder="' + t('Nimi', 'Name') + '">' +
+        '<input name="contact" maxlength="220" required placeholder="' + t('Puhelin tai sähköposti', 'Phone or email') + '">' +
+        '<textarea name="details" maxlength="1800" placeholder="' + t('Mitä tarvitset?', 'What do you need?') + '">' + escapeHtml(question) + '</textarea>' +
+        '<input name="budget" maxlength="120" placeholder="' + t('Budjetti, jos tiedossa', 'Budget, if known') + '">' +
+        '<button type="submit">' + t('Lähetä tarjouspyyntö', 'Send quote request') + '</button>' +
+        '<div class="action-ok"></div>';
+    } else if (action.mode === 'booking_form') {
+      box.innerHTML =
+        '<b>' + t('Varaa aika', 'Book a time') + '</b>' +
+        '<small>' + t('Lähetä toivottu aika. Jos yrityksen kalenteri on yhdistetty, vahvistus voidaan palauttaa suoraan tähän.', 'Send your preferred time. If the company calendar is connected, confirmation can be returned here.') + '</small>' +
+        '<input name="name" maxlength="120" placeholder="' + t('Nimi', 'Name') + '">' +
+        '<input name="contact" maxlength="220" required placeholder="' + t('Puhelin tai sähköposti', 'Phone or email') + '">' +
+        '<input name="date" type="date" required>' +
+        '<input name="time" type="time">' +
+        '<textarea name="note" maxlength="1000" placeholder="' + t('Lisätieto', 'Additional note') + '"></textarea>' +
+        '<button type="submit">' + t('Lähetä ajanvarauspyyntö', 'Send booking request') + '</button>' +
+        '<div class="action-ok"></div>';
+    } else {
+      box.innerHTML =
+        '<b>' + t('Tarkista tilauksen tila', 'Check order status') + '</b>' +
+        '<small>' + t('Anna tilausnumero ja tilauksessa käytetty sähköposti.', 'Enter the order number and email used for the order.') + '</small>' +
+        '<input name="orderNumber" maxlength="120" required placeholder="' + t('Tilausnumero', 'Order number') + '">' +
+        '<input name="email" type="email" maxlength="220" required placeholder="' + t('Sähköposti', 'Email') + '">' +
+        '<button type="submit">' + t('Tarkista', 'Check') + '</button>' +
+        '<div class="action-ok"></div>';
+    }
+
+    box.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const fd = new FormData(box);
+      const fields = Object.fromEntries(fd.entries());
+      const button = box.querySelector('button[type="submit"]');
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = t('Lähetetään…', 'Sending…');
+
+      try {
+        const type =
+          action.mode === 'quote_form' ? 'quote' :
+          action.mode === 'booking_form' ? 'booking' :
+          'order_status';
+
+        const res = await fetch(serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/action-request', {
+          method:'POST',
+          mode:'cors',
+          credentials:'omit',
+          headers:{ 'Content-Type':'text/plain;charset=UTF-8' },
+          body:JSON.stringify({
+            type,
+            fields,
+            question,
+            widgetToken:token,
+            visitorRef,
+            sourceChannel:'website',
+            pageContext,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Action failed');
+
+        box.querySelector('.action-ok').textContent = data.customerMessage || t('Pyyntö vastaanotettu ✓', 'Request received ✓');
+        box.querySelectorAll('input,textarea,button').forEach((el) => el.disabled = true);
+        button.textContent = t('Lähetetty ✓', 'Sent ✓');
+
+        if (type === 'order_status' && data.customerMessage) {
+          addMessage(data.customerMessage);
+        }
+      } catch (err) {
+        box.querySelector('.action-ok').textContent = err.message || t('Lähetys epäonnistui.', 'Sending failed.');
+        button.disabled = false;
+        button.textContent = original;
+      }
+
+      chat.scrollTop = chat.scrollHeight;
+    });
+
+    chat.appendChild(box);
+    chat.scrollTop = chat.scrollHeight;
   }
 
   function showLeadForm(question) {
