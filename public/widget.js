@@ -9,6 +9,53 @@
   const widgetLang = 'fi';
   const t = (fi, en) => widgetLang === 'en' ? en : fi;
 
+  const ROBOT_AVATARS = [
+    ['robot-1','#111114','#ffffff','#63e6a5'],
+    ['robot-2','#172554','#dbeafe','#60a5fa'],
+    ['robot-3','#3f1d58','#f3e8ff','#d8b4fe'],
+    ['robot-4','#3b2417','#fff7ed','#fb923c'],
+    ['robot-5','#123b35','#ecfdf5','#5eead4'],
+    ['robot-6','#292524','#fafaf9','#facc15'],
+    ['robot-7','#3f1722','#fff1f2','#fb7185'],
+    ['robot-8','#182235','#f8fafc','#a5b4fc'],
+    ['robot-9','#26331d','#f7fee7','#a3e635'],
+    ['robot-10','#27272a','#fafafa','#e4e4e7'],
+  ].map(([id,bg,face,accent],i) => ({ id,bg,face,accent,i }));
+
+  function widgetAvatarMarkup(value) {
+    const raw = String(value || 'robot-1');
+    if (/^data:image\/(?:png|jpeg|webp);base64,/i.test(raw)) {
+      return '<img src="' + raw.replace(/"/g,'&quot;') + '" alt="">';
+    }
+    const p = ROBOT_AVATARS.find((x) => x.id === raw) || ROBOT_AVATARS[0];
+    const v = p.i % 5;
+    const eyes = v === 0
+      ? '<circle cx="24" cy="31" r="3.2"/><circle cx="40" cy="31" r="3.2"/>'
+      : v === 1
+        ? '<rect x="20" y="28" width="8" height="5" rx="2.5"/><rect x="36" y="28" width="8" height="5" rx="2.5"/>'
+        : v === 2
+          ? '<path d="M20 31h8M36 31h8" stroke-width="4" stroke-linecap="round"/>'
+          : v === 3
+            ? '<circle cx="24" cy="31" r="2.4"/><circle cx="40" cy="31" r="2.4"/><circle cx="24" cy="31" r="5.2" fill="none" stroke-width="1.5"/><circle cx="40" cy="31" r="5.2" fill="none" stroke-width="1.5"/>'
+            : '<path d="M20 30l4-2 4 2M36 30l4-2 4 2" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+    const mouth = p.i % 3 === 0
+      ? '<rect x="25" y="40" width="14" height="4" rx="2"/>'
+      : p.i % 3 === 1
+        ? '<path d="M25 40c4 5 10 5 14 0" fill="none" stroke-width="2.5" stroke-linecap="round"/>'
+        : '<circle cx="32" cy="41" r="3" fill="none" stroke-width="2"/>';
+    const antenna = p.i % 2 === 0
+      ? '<path d="M32 17v-6" stroke="' + p.accent + '" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="9" r="3" fill="' + p.accent + '"/>'
+      : '<path d="M24 17l-4-5M40 17l4-5" stroke="' + p.accent + '" stroke-width="3" stroke-linecap="round"/><circle cx="19" cy="11" r="2.5" fill="' + p.accent + '"/><circle cx="45" cy="11" r="2.5" fill="' + p.accent + '"/>';
+    return '<svg viewBox="0 0 64 64" aria-hidden="true">' +
+      '<rect width="64" height="64" rx="18" fill="' + p.bg + '"/>' +
+      antenna +
+      '<rect x="13" y="17" width="38" height="35" rx="12" fill="' + p.face + '"/>' +
+      '<g fill="' + p.bg + '" stroke="' + p.bg + '">' + eyes + mouth + '</g>' +
+      '<rect x="9" y="28" width="5" height="13" rx="2.5" fill="' + p.accent + '"/>' +
+      '<rect x="50" y="28" width="5" height="13" rx="2.5" fill="' + p.accent + '"/>' +
+      '</svg>';
+  }
+
   const root = document.createElement('div');
   root.id = 'respondo-ai-widget';
   Object.assign(root.style, {
@@ -28,7 +75,7 @@
       .panel{width:min(410px,calc(100vw - 24px));height:min(640px,calc(100vh - 92px));background:#fff;border:1px solid rgba(0,0,0,.11);border-radius:24px;box-shadow:0 30px 90px rgba(0,0,0,.24);overflow:hidden;display:none;flex-direction:column;margin-bottom:10px}
       .panel.open{display:flex}
       .head{padding:17px 18px;border-bottom:1px solid #e7e7e9;display:flex;align-items:center;gap:11px;background:#fff}
-      .mark{width:34px;height:34px;border-radius:10px;overflow:hidden;display:grid;place-items:center;flex:0 0 auto}.mark svg{display:block;width:34px;height:34px}
+      .mark{width:34px;height:34px;border-radius:10px;overflow:hidden;display:grid;place-items:center;flex:0 0 auto}.mark svg,.mark img{display:block;width:34px;height:34px;object-fit:cover}
       .headcopy{min-width:0;flex:1}
       .headcopy b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .headcopy small{display:flex;align-items:center;gap:6px;color:#707075;font-size:11px;margin-top:2px}
@@ -86,7 +133,7 @@
     <div class="wrap">
       <section class="panel" aria-label="${t('Respondon asiakaspalvelu', 'RESPONDO AI customer service')}">
         <header class="head">
-          <div class="mark" aria-hidden="true"><svg viewBox="0 0 64 64" focusable="false"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></div>
+          <div class="mark" aria-hidden="true">${widgetAvatarMarkup('robot-1')}</div>
           <div class="headcopy"><b id="name">RESPONDO AI</b><small><span class="dot"></span> ${t('Paikalla nyt', 'Online now')}</small></div>
         </header>
         <div class="chat" id="chat"></div>
@@ -505,7 +552,7 @@
       token = data.token;
       ready = true;
       name.textContent = data.name || 'RESPONDO AI';
-      mark.innerHTML = '<svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg>';
+      mark.innerHTML = widgetAvatarMarkup(data.avatar || 'robot-1');
       setAccent(data.accent || fallbackAccent);
       status.textContent = t('Valmis auttamaan', 'Ready');
       status.classList.add('ready');
