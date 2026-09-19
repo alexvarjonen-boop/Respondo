@@ -116,6 +116,8 @@
   let token = '';
   let ready = false;
   let visitorRef = '';
+  let livePollAfter = '';
+  let livePollTimer = null;
   const pageContext = {
     url: String(window.location.href || '').slice(0, 1000),
     title: String(document.title || '').slice(0, 300),
@@ -182,8 +184,11 @@
 
   function renderActions(actions = [], question = '') {
     const valid = (Array.isArray(actions) ? actions : [])
-      .filter((x) => x?.label && (safeActionUrl(x?.url) || x?.mode === 'lead'))
-      .slice(0, 3);
+      .filter((x) => x?.label && (
+        safeActionUrl(x?.url) ||
+        ['lead','quote_form','booking_form','order_form'].includes(x?.mode)
+      ))
+      .slice(0, 4);
     if (!valid.length) return;
     const wrap = document.createElement('div');
     wrap.className = 'actions';
@@ -453,6 +458,42 @@
     $('.composer button').style.background = accent;
   }
 
+  async function pollLiveTakeover() {
+    if (!ready || !token || !visitorRef) return;
+    try {
+      const url = serviceOrigin + '/api/public/' + encodeURIComponent(company) +
+        '/live?widgetToken=' + encodeURIComponent(token) +
+        '&visitorRef=' + encodeURIComponent(visitorRef) +
+        (livePollAfter ? '&after=' + encodeURIComponent(livePollAfter) : '');
+      const res = await fetch(url,{ method:'GET',mode:'cors',credentials:'omit' });
+      if (!res.ok) return;
+      const data = await res.json().catch(() => ({}));
+
+      if (data.mode === 'human') {
+        status.textContent = t('Asiakaspalvelija mukana', 'Human agent joined');
+        status.classList.add('ready');
+      } else if (ready) {
+        status.textContent = t('Valmis auttamaan', 'Ready');
+      }
+
+      const messages = Array.isArray(data.messages) ? data.messages : [];
+      for (const item of messages) {
+        const created = String(item.created_at || '');
+        addMessage(
+          t('Asiakaspalvelija: ', 'Support: ') + String(item.message || ''),
+          'bot'
+        );
+        if (created) livePollAfter = created;
+      }
+    } catch {}
+  }
+
+  function startLivePolling() {
+    if (livePollTimer) return;
+    livePollTimer = setInterval(pollLiveTakeover,3000);
+    pollLiveTakeover();
+  }
+
   async function activate() {
     try {
       const res = await fetch(
@@ -470,6 +511,7 @@
       status.classList.add('ready');
       renderQuickReplies(data.quickReplies || []);
       addMessage(data.greeting || t('Hei! Miten voin auttaa?', 'Hi! How can I help?'));
+      startLivePolling();
     } catch {
       ready = false;
       status.textContent = t('Chat ei ole käytössä tällä verkkosivulla.', 'The widget is not active on this website.');
@@ -517,7 +559,10 @@
         chat.appendChild(note);
       }
       renderActions(data.actions || [], message);
-      if (data.canLeaveContact || data.handoff) showLeadForm(message);
+      if ((data.canLeaveContact || data.handoff) && !data.humanTakeover) showLeadForm(message);
+      if (data.humanTakeover) {
+        status.textContent = t('Asiakaspalvelija mukana', 'Human agent joined');
+      }
     } catch {
       pending.textContent = t('Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.', 'The response failed. Please try again in a moment.');
     } finally {
