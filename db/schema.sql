@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS tenants (
   contact_email TEXT,
   contact_phone TEXT,
   greeting TEXT NOT NULL DEFAULT 'Hei! Miten voin auttaa?',
+  bot_name TEXT NOT NULL DEFAULT 'RESPONDO AI',
+  bot_avatar TEXT NOT NULL DEFAULT 'robot-1',
   handoff_message TEXT NOT NULL DEFAULT 'En halua arvata. Ohjaan tämän ihmiselle vastattavaksi.',
   accent TEXT NOT NULL DEFAULT '#111113',
   average_lead_value NUMERIC(12,2) NOT NULL DEFAULT 0,
