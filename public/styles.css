@@ -2736,3 +2736,68 @@ body:before{opacity:.012}
     font-size:28px!important;
   }
 }
+
+
+/* Mobile nav: restore colorful free-trial CTA next to login */
+@media (max-width:760px){
+  .navin{
+    gap:7px!important;
+    padding-left:8px!important;
+    padding-right:8px!important;
+  }
+  .nav .logo{
+    gap:7px!important;
+    min-width:0!important;
+  }
+  .nav .brand-mark{
+    width:29px!important;
+    height:29px!important;
+  }
+  .nav .brand-word{
+    font-size:15px!important;
+    white-space:nowrap;
+  }
+  .navactions{
+    display:flex!important;
+    align-items:center!important;
+    gap:6px!important;
+    margin-left:auto!important;
+    flex:0 0 auto!important;
+  }
+  .navactions .btn.ghost{
+    display:inline-flex!important;
+    min-height:40px!important;
+    padding:0 10px!important;
+    font-size:11px!important;
+    border-radius:999px!important;
+  }
+  .navactions .btn.ink{
+    display:inline-flex!important;
+    min-height:40px!important;
+    padding:0 11px!important;
+    font-size:11px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    border:0!important;
+    border-radius:999px!important;
+    color:#fff!important;
+    background:linear-gradient(105deg,#7f80ff 0%,#b878ff 28%,#ff6c8c 62%,#ff9b58 100%)!important;
+    box-shadow:0 10px 24px rgba(177,104,255,.24),inset 0 1px 0 rgba(255,255,255,.35)!important;
+  }
+}
+@media (max-width:400px){
+  .nav .brand-word{
+    font-size:13px!important;
+  }
+  .navactions .btn.ghost,
+  .navactions .btn.ink{
+    padding-left:8px!important;
+    padding-right:8px!important;
+    font-size:10px!important;
+  }
+}
+@media (max-width:365px){
+  .nav .brand-word{
+    display:none!important;
+  }
+}
