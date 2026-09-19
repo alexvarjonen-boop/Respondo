@@ -99,6 +99,11 @@
   let token = '';
   let ready = false;
   let visitorRef = '';
+  const pageContext = {
+    url: String(window.location.href || '').slice(0, 1000),
+    title: String(document.title || '').slice(0, 300),
+    path: String(window.location.pathname || '').slice(0, 500),
+  };
 
   try {
     const key = 'respondo-visitor-' + company;
@@ -151,6 +156,25 @@
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
       }
+      a.addEventListener('click', () => {
+        try {
+          fetch(serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/action-event', {
+            method: 'POST',
+            mode: 'cors',
+            credentials: 'omit',
+            keepalive: true,
+            headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+            body: JSON.stringify({
+              actionType: action.type || 'link',
+              label: action.label,
+              target: action.url,
+              widgetToken: token,
+              visitorRef,
+              pageContext,
+            }),
+          }).catch(() => {});
+        } catch {}
+      });
       wrap.appendChild(a);
     });
     chat.appendChild(wrap);
@@ -188,7 +212,7 @@
           mode: 'cors',
           credentials: 'omit',
           headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-          body: JSON.stringify({ name: person, email, phone, message: question, widgetToken: token, visitorRef, lang: widgetLang }),
+          body: JSON.stringify({ name: person, email, phone, message: question, widgetToken: token, visitorRef, lang: widgetLang, pageContext }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Lähetys epäonnistui');
@@ -263,7 +287,7 @@
           mode: 'cors',
           credentials: 'omit',
           headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-          body: JSON.stringify({ message, widgetToken: token, visitorRef, lang: widgetLang }),
+          body: JSON.stringify({ message, widgetToken: token, visitorRef, lang: widgetLang, pageContext }),
         }
       );
       const data = await res.json().catch(() => ({}));
