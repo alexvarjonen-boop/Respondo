@@ -9,6 +9,84 @@ const esc = (s) =>
     "'": '&#039;',
   })[m]);
 
+const BOT_AVATAR_PRESETS = [
+  ['robot-1','Nova','#111114','#ffffff','#63e6a5'],
+  ['robot-2','Bolt','#172554','#dbeafe','#60a5fa'],
+  ['robot-3','Pixel','#3f1d58','#f3e8ff','#d8b4fe'],
+  ['robot-4','Orbit','#3b2417','#fff7ed','#fb923c'],
+  ['robot-5','Mint','#123b35','#ecfdf5','#5eead4'],
+  ['robot-6','Luna','#292524','#fafaf9','#facc15'],
+  ['robot-7','Echo','#3f1722','#fff1f2','#fb7185'],
+  ['robot-8','Astra','#182235','#f8fafc','#a5b4fc'],
+  ['robot-9','Rex','#26331d','#f7fee7','#a3e635'],
+  ['robot-10','Neo','#27272a','#fafafa','#e4e4e7'],
+].map(([id,label,bg,face,accent],i) => ({ id,label,bg,face,accent,i }));
+
+function botAvatarMarkup(value, extraClass = '') {
+  const raw = String(value || 'robot-1');
+  if (/^data:image\/(?:png|jpeg|webp);base64,/i.test(raw)) {
+    return '<img class="' + esc(extraClass) + '" src="' + esc(raw) + '" alt="">';
+  }
+  const p = BOT_AVATAR_PRESETS.find((x) => x.id === raw) || BOT_AVATAR_PRESETS[0];
+  const v = p.i % 5;
+  const eyes = v === 0
+    ? '<circle cx="24" cy="31" r="3.2"/><circle cx="40" cy="31" r="3.2"/>'
+    : v === 1
+      ? '<rect x="20" y="28" width="8" height="5" rx="2.5"/><rect x="36" y="28" width="8" height="5" rx="2.5"/>'
+      : v === 2
+        ? '<path d="M20 31h8M36 31h8" stroke-width="4" stroke-linecap="round"/>'
+        : v === 3
+          ? '<circle cx="24" cy="31" r="2.4"/><circle cx="40" cy="31" r="2.4"/><circle cx="24" cy="31" r="5.2" fill="none" stroke-width="1.5"/><circle cx="40" cy="31" r="5.2" fill="none" stroke-width="1.5"/>'
+          : '<path d="M20 30l4-2 4 2M36 30l4-2 4 2" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+  const mouth = p.i % 3 === 0
+    ? '<rect x="25" y="40" width="14" height="4" rx="2"/>'
+    : p.i % 3 === 1
+      ? '<path d="M25 40c4 5 10 5 14 0" fill="none" stroke-width="2.5" stroke-linecap="round"/>'
+      : '<circle cx="32" cy="41" r="3" fill="none" stroke-width="2"/>';
+  const antenna = p.i % 2 === 0
+    ? '<path d="M32 17v-6" stroke="' + p.accent + '" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="9" r="3" fill="' + p.accent + '"/>'
+    : '<path d="M24 17l-4-5M40 17l4-5" stroke="' + p.accent + '" stroke-width="3" stroke-linecap="round"/><circle cx="19" cy="11" r="2.5" fill="' + p.accent + '"/><circle cx="45" cy="11" r="2.5" fill="' + p.accent + '"/>';
+  return '<svg class="' + esc(extraClass) + '" viewBox="0 0 64 64" aria-hidden="true">' +
+    '<rect width="64" height="64" rx="18" fill="' + p.bg + '"/>' +
+    antenna +
+    '<rect x="13" y="17" width="38" height="35" rx="12" fill="' + p.face + '"/>' +
+    '<g fill="' + p.bg + '" stroke="' + p.bg + '">' + eyes + mouth + '</g>' +
+    '<rect x="9" y="28" width="5" height="13" rx="2.5" fill="' + p.accent + '"/>' +
+    '<rect x="50" y="28" width="5" height="13" rx="2.5" fill="' + p.accent + '"/>' +
+    '</svg>';
+}
+
+async function imageFileToAvatarData(file) {
+  if (!file || !/^image\/(png|jpeg|webp)$/i.test(file.type)) {
+    throw new Error('Valitse PNG-, JPG- tai WebP-kuva.');
+  }
+  if (file.size > 10 * 1024 * 1024) throw new Error('Kuva on liian suuri. Maksimi on 10 Mt.');
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = objectUrl;
+    await new Promise((resolve,reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('Kuvaa ei voitu lukea.'));
+    });
+    const side = Math.min(img.naturalWidth,img.naturalHeight);
+    const sx = Math.max(0,(img.naturalWidth-side)/2);
+    const sy = Math.max(0,(img.naturalHeight-side)/2);
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img,sx,sy,side,side,0,0,256,256);
+    let data = canvas.toDataURL('image/webp',0.84);
+    if (!data.startsWith('data:image/webp')) data = canvas.toDataURL('image/jpeg',0.84);
+    if (data.length > 500000) throw new Error('Kuva jäi liian suureksi. Kokeile toista kuvaa.');
+    return data;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 let cfg = {
   brand: 'RESPONDO AI',
   supportEmail: 'respondoai.fi@outlook.com',
@@ -1451,6 +1529,32 @@ async function dashboard() {
         </div>
         <form id="businessProfileForm" class="business-profile-form">
           <div class="profile-grid">
+            <div class="bot-customizer profile-wide">
+              <div class="bot-customizer-head">
+                <div>
+                  <small>BOTIN ULKOASU</small>
+                  <h3>Nimeä botti ja valitse sille kuva</h3>
+                  <p>Asiakas näkee nämä tiedot verkkosivusi chatissa. Voit käyttää omaa kuvaa tai valita yhden valmiista roboteista.</p>
+                </div>
+                <div class="bot-current-avatar" id="botAvatarCurrent">${botAvatarMarkup(t.bot_avatar || 'robot-1')}</div>
+              </div>
+              <div class="field bot-name-field">
+                <label>Botin nimi</label>
+                <input name="botName" maxlength="40" value="${esc(t.bot_name || 'RESPONDO AI')}" placeholder="Esim. Aino, Roope tai Yrityksen Apuri">
+              </div>
+              <input type="hidden" name="botAvatar" value="${esc(t.bot_avatar || 'robot-1')}">
+              <div class="bot-avatar-presets" role="list" aria-label="Valmiit robottikuvat">
+                ${BOT_AVATAR_PRESETS.map((avatar) => `<button type="button" class="bot-avatar-option ${(t.bot_avatar || 'robot-1') === avatar.id ? 'selected' : ''}" data-avatar="${avatar.id}" title="${esc(avatar.label)}"><span>${botAvatarMarkup(avatar.id)}</span><small>${esc(avatar.label)}</small></button>`).join('')}
+              </div>
+              <div class="bot-avatar-upload-row">
+                <label class="bot-avatar-upload" for="botAvatarUpload">
+                  <span>＋</span>
+                  <div><b>Lataa oma kuva</b><small>PNG, JPG tai WebP · kuva rajataan automaattisesti neliöksi</small></div>
+                </label>
+                <input id="botAvatarUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                <div id="botAvatarMsg"></div>
+              </div>
+            </div>
             <div class="field profile-wide">
               <label>Ensimmäinen viesti asiakkaalle</label>
               <input name="greeting" maxlength="220" value="${esc(t.greeting || 'Hei! Miten voin auttaa?')}" placeholder="Hei! Miten voin auttaa?">
@@ -1536,8 +1640,8 @@ async function dashboard() {
           </div>
           <div class="preview-device">
             <div class="preview-device-top">
-              <span class="preview-avatar">${esc((t.name || 'R')[0].toUpperCase())}</span>
-              <div><b>${esc(t.name)}</b><small>paikalla nyt</small></div>
+              <span class="preview-avatar" id="previewAvatarVisual">${botAvatarMarkup(t.bot_avatar || 'robot-1')}</span>
+              <div><b id="previewBotName">${esc(t.bot_name || 'RESPONDO AI')}</b><small>paikalla nyt</small></div>
             </div>
             <div class="preview-chat" id="previewChat">
               <div class="preview-bubble bot">${esc(t.greeting || 'Hei! Miten voin auttaa?')}</div>
@@ -2704,6 +2808,46 @@ async function route() {
       }
     });
 
+    document.querySelectorAll('.bot-avatar-option').forEach((button) => {
+      button.addEventListener('click', () => {
+        const formEl = $('#businessProfileForm');
+        const value = button.dataset.avatar || 'robot-1';
+        if (formEl?.elements?.botAvatar) formEl.elements.botAvatar.value = value;
+        document.querySelectorAll('.bot-avatar-option').forEach((x) => x.classList.toggle('selected',x === button));
+        const current = $('#botAvatarCurrent');
+        const preview = $('#previewAvatarVisual');
+        if (current) current.innerHTML = botAvatarMarkup(value);
+        if (preview) preview.innerHTML = botAvatarMarkup(value);
+        $('#botAvatarMsg').innerHTML = '';
+      });
+    });
+
+    $('#businessProfileForm')?.elements?.botName?.addEventListener('input', (e) => {
+      const preview = $('#previewBotName');
+      if (preview) preview.textContent = String(e.currentTarget.value || '').trim() || 'RESPONDO AI';
+    });
+
+    $('#botAvatarUpload')?.addEventListener('change', async (e) => {
+      const file = e.currentTarget.files?.[0];
+      if (!file) return;
+      $('#botAvatarMsg').innerHTML = '<div class="bot-avatar-processing">Käsitellään kuvaa…</div>';
+      try {
+        const data = await imageFileToAvatarData(file);
+        const formEl = $('#businessProfileForm');
+        if (formEl?.elements?.botAvatar) formEl.elements.botAvatar.value = data;
+        document.querySelectorAll('.bot-avatar-option').forEach((x) => x.classList.remove('selected'));
+        const current = $('#botAvatarCurrent');
+        const preview = $('#previewAvatarVisual');
+        if (current) current.innerHTML = botAvatarMarkup(data);
+        if (preview) preview.innerHTML = botAvatarMarkup(data);
+        $('#botAvatarMsg').innerHTML = '<div class="bot-avatar-processing success">Oma kuva valittu ✓</div>';
+      } catch (err) {
+        $('#botAvatarMsg').innerHTML = '<div class="bot-avatar-processing error">' + esc(err.message) + '</div>';
+      } finally {
+        e.currentTarget.value = '';
+      }
+    });
+
     $('#businessProfileForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = new FormData(e.currentTarget);
@@ -2716,6 +2860,8 @@ async function route() {
         await api('/api/app/business-profile', {
           method: 'POST',
           body: JSON.stringify({
+            botName: form.get('botName'),
+            botAvatar: form.get('botAvatar'),
             greeting: form.get('greeting'),
             tone: form.get('tone'),
             pricing: form.get('pricing'),
