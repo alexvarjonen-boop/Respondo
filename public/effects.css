@@ -2384,3 +2384,397 @@ body.assistant-standalone .assistant-demo-column .assistant-order-grid{
   }
 }
 
+
+
+/* ===== RESPONDO readability typography pass — 2026-09-19 ===== */
+:root{
+  --respondo-font:"Segoe UI Variable","Segoe UI",Arial,Helvetica,sans-serif;
+  --respondo-text:#45484f;
+  --respondo-muted:#666b74;
+}
+
+html{
+  font-size:16px;
+  -webkit-text-size-adjust:100%;
+}
+
+body,
+button,
+input,
+textarea,
+select{
+  font-family:var(--respondo-font)!important;
+}
+
+body{
+  font-size:16px;
+  line-height:1.55;
+  text-rendering:optimizeLegibility;
+}
+
+h1,h2,h3,h4,h5,h6,
+.hero h1 em,
+.split-head h2 em,
+.control-copy h2 em,
+.checkout-copy h1 em,
+.login-copy h1 em{
+  font-family:var(--respondo-font)!important;
+}
+
+p,li,label,input,textarea,select,button,a{
+  -webkit-font-smoothing:antialiased;
+}
+
+small{
+  font-size:12px!important;
+  line-height:1.5!important;
+}
+
+.navlinks,
+.navlinks a{
+  font-size:14px!important;
+  font-weight:650!important;
+  letter-spacing:0!important;
+}
+
+.btn,
+.navactions .btn,
+.dashboard-action,
+.integration-test-btn,
+.portal-button,
+.inline-import-btn{
+  font-size:14px!important;
+  font-weight:700!important;
+  letter-spacing:0!important;
+}
+
+.hero-label,
+.section-kicker,
+.flow-num,
+.price-top,
+.foot-col h4,
+.form-head span,
+.seller-card span,
+.legal-seller span,
+.panel-head small,
+.billing-panel small,
+.stat small,
+.workspace-chip small,
+.user-mini small,
+.console-header small,
+.rail-label,
+.msg-meta,
+.truth-top,
+.truth-footer,
+.proof-grid span,
+.impact-kicker,
+.depth-copy small,
+.portal-center>small,
+.world-label,
+.cinema-kicker,
+.story-panel-copy small{
+  font-size:11px!important;
+  line-height:1.45!important;
+  letter-spacing:.07em!important;
+}
+
+.lead{
+  line-height:1.65!important;
+}
+
+.trust-row,
+.trust-row span{
+  font-size:12px!important;
+  line-height:1.45!important;
+}
+
+.flowstep p,
+.control-copy>p,
+.split-head p,
+.cta-shell p,
+.checkout-copy>p,
+.login-copy>p,
+.legalcopy p,
+.foot-brand p{
+  color:var(--respondo-muted)!important;
+}
+
+.flowstep p{
+  font-size:15px!important;
+}
+
+.control-copy>p,
+.split-head p,
+.checkout-copy>p,
+.login-copy>p,
+.cta-shell p{
+  font-size:17px!important;
+}
+
+.foot-col a,
+.foot-col span,
+.legalbar{
+  font-size:13px!important;
+  line-height:1.55!important;
+}
+
+.field label{
+  font-size:12px!important;
+  line-height:1.35!important;
+  letter-spacing:.045em!important;
+  color:#5f6570!important;
+}
+
+.field input,
+.field textarea,
+.field select{
+  font-size:14px!important;
+  line-height:1.45!important;
+}
+
+.checkrow,
+.form-security,
+.notice,
+.login-signal,
+.checkout-steps small,
+.seller-card small,
+.legal-note{
+  font-size:12px!important;
+  line-height:1.55!important;
+}
+
+.appshell{
+  font-size:15px;
+}
+
+.workspace-chip small,
+.user-mini small{
+  color:#9aa6b6!important;
+}
+
+.workspace-chip b,
+.user-mini b{
+  font-size:13px!important;
+}
+
+.appnav a{
+  font-size:13px!important;
+  font-weight:650!important;
+  line-height:1.4!important;
+}
+
+.appnav a em,
+.side-logout{
+  font-size:11px!important;
+}
+
+.dashboard-head p{
+  font-size:14px!important;
+  color:#626a75!important;
+}
+
+.live-chip{
+  font-size:11px!important;
+}
+
+.stat small{
+  color:#747d89!important;
+}
+
+.stat span{
+  font-size:12px!important;
+  color:#66707b!important;
+}
+
+.panel-head h2,
+.billing-panel h2{
+  font-size:20px!important;
+}
+
+.panel-head>span,
+.install-badge{
+  font-size:11px!important;
+}
+
+.knowledge-item b{
+  font-size:13px!important;
+}
+
+.knowledge-item small,
+.knowledge-item p,
+.empty-state p,
+.install-panel>p,
+.billing-panel p,
+.business-profile-head p,
+.profile-save-row small{
+  font-size:12px!important;
+  line-height:1.55!important;
+  color:#626c78!important;
+}
+
+.profile-save-row b{
+  font-size:13px!important;
+}
+
+.code-row code{
+  font-size:12px!important;
+}
+
+.code-row button{
+  font-size:12px!important;
+}
+
+.onboarding-step b,
+.onboarding-step small,
+.preview-device-top small,
+.unanswered-empty p,
+.gap-jump span,
+.gap-jump b,
+.conversation-log-meta span,
+.conversation-log-meta small,
+.lead-status,
+.lead-main small,
+.lead-contact a,
+.meta-webhook-box small,
+.meta-webhook-box code,
+.channel-config-card>b,
+.bot-customizer-head small,
+.bot-customizer-head p,
+.bot-avatar-option small,
+.bot-avatar-upload b,
+.bot-avatar-upload small,
+.bot-avatar-processing{
+  font-size:11px!important;
+  line-height:1.45!important;
+  letter-spacing:.025em!important;
+}
+
+.conversation-log-item h3,
+.lead-item h3{
+  font-size:14px!important;
+}
+
+.conversation-log-item p,
+.lead-item p{
+  font-size:13px!important;
+  line-height:1.55!important;
+}
+
+.live-thread-head b{
+  font-size:13px!important;
+}
+
+.live-thread-head small,
+.live-message small{
+  font-size:11px!important;
+  line-height:1.4!important;
+  letter-spacing:.025em!important;
+}
+
+.live-message p{
+  font-size:13px!important;
+  line-height:1.55!important;
+}
+
+.live-inbox textarea,
+.live-inbox input,
+.live-inbox button{
+  font-size:13px!important;
+}
+
+.console-top,
+.rail-item,
+.rail-health,
+.verified,
+.answer-head,
+.confidence,
+.source-line,
+.handoff-card b,
+.handoff-card small,
+.console-stats span,
+.truth-top,
+.truth-footer,
+.knowledge-row small,
+.proof-grid small{
+  font-size:11px!important;
+  line-height:1.45!important;
+  letter-spacing:.035em!important;
+}
+
+.msg,
+.answer-card p{
+  font-size:13px!important;
+  line-height:1.55!important;
+}
+
+.knowledge-row b{
+  font-size:13px!important;
+}
+
+.price-card ul{
+  font-size:14px!important;
+  line-height:1.5!important;
+}
+
+.pricevalue small,
+.annual-billing-note,
+.assistant-annual-note,
+.referral-copy>small,
+.referral-box>span{
+  font-size:12px!important;
+}
+
+.product-subnav nav a,
+.subnav-title{
+  font-size:12px!important;
+}
+
+.cinema-phone-top b,
+.cinema-status,
+.cinema-float small,
+.cinema-float span,
+.cinema-next,
+.km-bar b,
+.km-row i,
+.km-row small,
+.km-chip,
+.msg-core small,
+.am-answer small,
+.story-counter b,
+.ww-top,
+.ww-top i,
+.ww-stat small,
+.ww-stat span,
+.ww-chat small,
+.ww-knowledge small,
+.ww-bubble,
+.ww-knowledge>div,
+.ww-alert small,
+.ww-alert b,
+.world-caption,
+.depth-card small,
+.depth-card i,
+.depth-core small,
+.depth-caption,
+.depth-caption b,
+.portal-node,
+.impact-foot{
+  font-size:11px!important;
+  line-height:1.4!important;
+  letter-spacing:.035em!important;
+}
+
+.depth-copy p,
+.portal-center p{
+  font-size:15px!important;
+  line-height:1.65!important;
+}
+
+@media(max-width:760px){
+  body{font-size:16px}
+  .navlinks,.navlinks a{font-size:14px!important}
+  .field input,.field textarea,.field select{font-size:16px!important}
+  .dashboard-head p{font-size:14px!important}
+  .appnav a{font-size:14px!important}
+  small{font-size:12px!important}
+}
