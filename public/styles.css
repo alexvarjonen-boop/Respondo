@@ -3454,3 +3454,68 @@ body:before{opacity:.012}
     font-size:36px;
   }
 }
+
+
+/* Google Calendar sync */
+.calendar-sync-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-top:16px;
+  padding:14px;
+  border:1px solid rgba(17,17,20,.08);
+  border-radius:15px;
+  background:#f7f7f8;
+}
+.calendar-sync-card.connected{
+  background:#f1faf4;
+  border-color:rgba(42,125,78,.12);
+}
+.calendar-sync-card>div:first-child{
+  min-width:0;
+}
+.calendar-sync-card small{
+  display:block;
+  color:#929298;
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.1em;
+}
+.calendar-sync-card b{
+  display:block;
+  margin-top:4px;
+  font-size:12px;
+}
+.calendar-sync-card p{
+  margin:4px 0 0;
+  color:#707077;
+  font-size:10px;
+  line-height:1.45;
+}
+.calendar-sync-card.connected b{
+  color:#26724a;
+}
+.calendar-sync-actions{
+  flex:0 0 auto;
+}
+.calendar-sync-actions .dashboard-action,
+.calendar-sync-actions .integration-test-btn{
+  width:auto!important;
+  margin:0!important;
+}
+.action-booking-summary small{
+  color:#6d6d73;
+  font-size:9px;
+}
+@media(max-width:560px){
+  .calendar-sync-card{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .calendar-sync-actions .dashboard-action,
+  .calendar-sync-actions .integration-test-btn{
+    width:100%!important;
+    justify-content:center!important;
+  }
+}
