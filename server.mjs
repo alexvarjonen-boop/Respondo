@@ -1078,6 +1078,9 @@ async function finishOauth(req, res, code, state) {
     return res.redirect('/tilaus?oauth=google');
   } catch (e) {
     console.error('Google OAuth failed', e);
+    if (statePayload.flow === 'calendar') {
+      return res.redirect('/app?section=automation&calendar=failed');
+    }
     return res.redirect(
       '/' + (statePayload.flow === 'signup' ? 'tilaus' : 'kirjaudu') +
       '?oauth_error=failed&provider=google'
@@ -1325,7 +1328,15 @@ app.get('/api/auth/oauth/:provider/start', (req, res) => {
 app.get('/api/auth/oauth/google/callback', async (req, res) => {
   const code = String(req.query.code || '');
   const state = String(req.query.state || '');
-  if (!code) return res.redirect('/kirjaudu?oauth_error=failed&provider=google');
+  if (!code) {
+    try {
+      const statePayload = jwt.verify(state,JWT);
+      if (statePayload.flow === 'calendar') {
+        return res.redirect('/app?section=automation&calendar=cancelled');
+      }
+    } catch {}
+    return res.redirect('/kirjaudu?oauth_error=failed&provider=google');
+  }
   return finishOauth(req, res, code, state);
 });
 
