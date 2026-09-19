@@ -1801,8 +1801,16 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
 
     const a = s.rows[0];
     const total = a.total || 0;
+    const tenantSafe = { ...tenant };
+    [
+      'google_calendar_access_token','google_calendar_refresh_token',
+      'shopify_access_token','woo_consumer_key','woo_consumer_secret',
+      'meta_app_secret','whatsapp_access_token','instagram_access_token',
+      'twilio_auth_token','action_webhook_secret','channels_api_key'
+    ].forEach((key) => delete tenantSafe[key]);
+
     return res.json({
-      tenant,
+      tenant:tenantSafe,
       referral,
       knowledge: k.rows,
       unanswered: unanswered.rows,
@@ -1845,9 +1853,9 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
         verifyToken:tenant.meta_verify_token || '',
         webhookUrl:BASE + '/api/meta/webhook/' + encodeURIComponent(tenant.slug),
         whatsappPhoneNumberId:tenant.whatsapp_phone_number_id || '',
-        whatsappConnected:Boolean(tenant.whatsapp_access_token && tenant.whatsapp_phone_number_id),
+        whatsappConnected:Boolean(tenant.meta_app_secret && tenant.whatsapp_access_token && tenant.whatsapp_phone_number_id),
         instagramAccountId:tenant.instagram_account_id || '',
-        instagramConnected:Boolean(tenant.instagram_access_token && tenant.instagram_account_id),
+        instagramConnected:Boolean(tenant.meta_app_secret && tenant.instagram_access_token && tenant.instagram_account_id),
         appSecretConfigured:Boolean(tenant.meta_app_secret),
       },
       voice: {
@@ -3799,6 +3807,11 @@ app.post('/api/app/meta-channels', auth, subscribed, async (req,res) => {
     const appSecret = String(req.body.appSecret || '').trim();
     const waToken = String(req.body.whatsappAccessToken || '').trim();
     const igToken = String(req.body.instagramAccessToken || '').trim();
+    const waId = String(req.body.whatsappPhoneNumberId || '').trim().slice(0,120);
+    const igId = String(req.body.instagramAccountId || '').trim().slice(0,120);
+    if ((waToken || waId || igToken || igId) && !(appSecret || tenant.meta_app_secret)) {
+      return res.status(400).json({ error:'Meta App Secret tarvitaan webhook-viestien allekirjoituksen tarkistamiseen.' });
+    }
 
     await q(
       `UPDATE tenants SET
@@ -3813,9 +3826,9 @@ app.post('/api/app/meta-channels', auth, subscribed, async (req,res) => {
       [
         graphVersion,
         appSecret ? encryptSecret(appSecret) : tenant.meta_app_secret,
-        String(req.body.whatsappPhoneNumberId || '').trim().slice(0,120) || null,
+        waId || null,
         waToken ? encryptSecret(waToken) : tenant.whatsapp_access_token,
-        String(req.body.instagramAccountId || '').trim().slice(0,120) || null,
+        igId || null,
         igToken ? encryptSecret(igToken) : tenant.instagram_access_token,
         tenant.id,
       ],
@@ -4031,6 +4044,7 @@ app.post('/api/meta/webhook/:slug', async (req,res) => {
     if (!tr.rowCount) return res.sendStatus(404);
     const tenant = tr.rows[0];
 
+    if (!tenant.meta_app_secret) return res.sendStatus(503);
     if (tenant.meta_app_secret) {
       const provided = String(req.headers['x-hub-signature-256'] || '');
       const raw = req.rawBody || Buffer.from(JSON.stringify(req.body || {}));
