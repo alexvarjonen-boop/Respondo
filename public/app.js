@@ -982,7 +982,9 @@ async function home() {
 }
 
 function signup() {
-  const plan = new URLSearchParams(location.search).get('plan') || 'monthly';
+  const params = new URLSearchParams(location.search);
+  const plan = params.get('plan') || 'monthly';
+  const referralCode = String(params.get('ref') || '').trim().toUpperCase();
   return `<div>
     ${nav()}
     <main class="formpage">
@@ -1016,6 +1018,11 @@ function signup() {
                 <option value="monthly" ${plan === 'monthly' ? 'selected' : ''}>49 €/kk + alv · kuukausi</option>
                 <option value="yearly" ${plan === 'yearly' ? 'selected' : ''}>45 €/kk + alv · laskutetaan 540 €/vuosi</option>
               </select>
+            </div>
+            <div class="field full referral-signup-field">
+              <label>Suosittelukoodi <span>valinnainen</span></label>
+              <input name="referralCode" maxlength="32" autocomplete="off" value="${esc(referralCode)}" placeholder="RESPONDO-XXXXXXXX">
+              <small id="referralHint">Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.</small>
             </div>
             <label class="checkrow field full">
               <input type="checkbox" name="terms" required>
@@ -1169,6 +1176,7 @@ async function dashboard() {
 
   const t = data.tenant;
   const s = data.stats;
+  const referral = data.referral || null;
   const knowledge = data.knowledge || [];
   const businessProfile = Object.fromEntries(
     knowledge
@@ -1210,6 +1218,7 @@ async function dashboard() {
         <a href="#conversations"><span>◌</span> Keskustelut <em>${recentConversations.length}</em></a>
         <a href="#leads"><span>↗</span> Liidit <em>${leads.length}</em></a>
         <a href="#install"><span>&lt;/&gt;</span> Asennus</a>
+        ${referral ? '<a href="#referral"><span>%</span> Suosittele</a>' : ''}
         <a href="#billing"><span>€</span> Laskutus</a>
       </nav>
       <div class="appside-bottom">
@@ -1480,6 +1489,26 @@ async function dashboard() {
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? '✓ Asennus valmis' : 'Olen asentanut botin'}</button>
       </section>
 
+      ${referral ? `
+      <section class="panel referral-panel" id="referral">
+        <div class="referral-copy">
+          <small>SUOSITTELE RESPONDOA</small>
+          <h2>Kaverille −20 % ensimmäisestä kuukaudesta.</h2>
+          <p>Anna tämä henkilökohtainen koodi toiselle yritykselle. Alennus toimii vain kuukausitilauksessa ja koskee ensimmäistä maksullista kuukautta 3 päivän kokeilun jälkeen.</p>
+        </div>
+        <div class="referral-box">
+          <span>OMA SUOSITTELUKOODISI</span>
+          <div class="referral-code-row">
+            <code id="referralCode">${esc(referral.code)}</code>
+            <button type="button" id="copyReferralCode">Kopioi koodi</button>
+          </div>
+          <div class="referral-actions">
+            <button type="button" id="copyReferralLink" data-url="${esc(referral.shareUrl)}">Kopioi suosittelulinkki</button>
+            <small>${Number(referral.uses || 0)} käyttökertaa</small>
+          </div>
+        </div>
+      </section>` : ''}
+
       <section class="panel billing-panel" id="billing">
         <div><small>LASKUTUS</small><h2>Hallitse tilaustasi</h2><p>Voit vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.</p></div>
         <button class="btn dashboard-action" id="billingPortal" type="button">Avaa tilauksen hallinta <span>↗</span></button>
@@ -1562,6 +1591,23 @@ async function route() {
         .catch(() => {});
     }
 
+    const signupForm = $('#signup');
+    const signupPlan = signupForm?.elements?.plan;
+    const signupReferral = signupForm?.elements?.referralCode;
+    const referralHint = $('#referralHint');
+    const syncReferralField = () => {
+      if (!signupReferral || !signupPlan) return;
+      const monthly = signupPlan.value === 'monthly';
+      signupReferral.disabled = !monthly;
+      if (referralHint) {
+        referralHint.textContent = monthly
+          ? 'Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.'
+          : 'Suosittelualennus ei ole käytössä vuositilauksessa.';
+      }
+    };
+    signupPlan?.addEventListener('change', syncReferralField);
+    syncReferralField();
+
     $('#signup')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = new FormData(e.currentTarget);
@@ -1580,6 +1626,7 @@ async function route() {
             businessId: form.get('businessId'),
             password: form.get('password'),
             plan: form.get('plan'),
+            referralCode: form.get('referralCode'),
             acceptedTerms: !!form.get('terms'),
           }),
         });
@@ -1832,6 +1879,28 @@ async function route() {
         button.disabled = false;
         button.innerHTML = original;
         $('#knowledgeMsg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+      }
+    });
+
+    $('#copyReferralCode')?.addEventListener('click', async (e) => {
+      const code = $('#referralCode')?.textContent?.trim() || '';
+      try {
+        await navigator.clipboard.writeText(code);
+        e.currentTarget.textContent = 'Kopioitu ✓';
+        setTimeout(() => (e.currentTarget.textContent = 'Kopioi koodi'), 1400);
+      } catch {
+        e.currentTarget.textContent = 'Valitse ja kopioi';
+      }
+    });
+
+    $('#copyReferralLink')?.addEventListener('click', async (e) => {
+      const url = e.currentTarget.dataset.url || '';
+      try {
+        await navigator.clipboard.writeText(url);
+        e.currentTarget.textContent = 'Linkki kopioitu ✓';
+        setTimeout(() => (e.currentTarget.textContent = 'Kopioi suosittelulinkki'), 1400);
+      } catch {
+        e.currentTarget.textContent = 'Kopiointi ei onnistunut';
       }
     });
 

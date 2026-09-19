@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
   subscription_status TEXT,
+  subscription_plan TEXT,
+  referral_code TEXT UNIQUE,
   current_period_end TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -59,6 +61,19 @@ CREATE TABLE IF NOT EXISTS conversations (
 CREATE INDEX IF NOT EXISTS idx_knowledge_tenant ON knowledge(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_tenant_created ON conversations(tenant_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_users_stripe_customer ON users(stripe_customer_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code) WHERE referral_code IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS referral_redemptions (
+  id UUID PRIMARY KEY,
+  referrer_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  referred_user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  code TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  stripe_discount_applied BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referral_redemptions(referrer_user_id, created_at DESC);
 
 
 CREATE TABLE IF NOT EXISTS leads (

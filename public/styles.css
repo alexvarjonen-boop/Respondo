@@ -2376,3 +2376,23 @@ body:before{opacity:.012}
 }
 
 .annual-billing-note{margin:8px 0 0;font-size:11px;line-height:1.45;font-weight:650;color:#7d8793}.featured .annual-billing-note{color:#98a4b4}
+
+
+/* Referral program */
+.referral-signup-field label span{font-weight:500;color:#8b8b91;font-size:12px;margin-left:6px}
+.referral-signup-field small{display:block;margin-top:8px;color:#74747b;line-height:1.45}
+.referral-panel{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:28px;align-items:center;background:linear-gradient(135deg,#111114 0%,#1a1a1f 100%);color:#fff;border-color:#29292f;overflow:hidden;position:relative}
+.referral-panel:before{content:"";position:absolute;width:360px;height:360px;border-radius:50%;right:-160px;top:-190px;background:radial-gradient(circle,rgba(255,255,255,.10),transparent 68%);pointer-events:none}
+.referral-copy,.referral-box{position:relative;z-index:1}
+.referral-copy>small{font-size:11px;letter-spacing:.14em;color:#aaaab1;font-weight:800}
+.referral-copy h2{margin:8px 0 10px;font-size:clamp(25px,3vw,38px);letter-spacing:-.04em}
+.referral-copy p{margin:0;color:#b9b9c0;line-height:1.6;max-width:680px}
+.referral-box{background:#fff;color:#111114;border-radius:22px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.22)}
+.referral-box>span{display:block;font-size:10px;letter-spacing:.13em;font-weight:850;color:#77777e;margin-bottom:10px}
+.referral-code-row{display:flex;gap:9px;align-items:stretch}
+.referral-code-row code{flex:1;display:flex;align-items:center;padding:13px 14px;border-radius:13px;background:#f2f2f4;border:1px solid #e2e2e6;font-size:15px;font-weight:850;letter-spacing:.04em;overflow:auto}
+.referral-code-row button,.referral-actions button{border:0;border-radius:13px;background:#111114;color:#fff;font-weight:800;padding:11px 14px;cursor:pointer}
+.referral-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+.referral-actions button{background:#ececef;color:#111114}
+.referral-actions small{color:#77777e;white-space:nowrap}
+@media(max-width:800px){.referral-panel{grid-template-columns:1fr}.referral-code-row{flex-direction:column}.referral-actions{align-items:stretch;flex-direction:column}.referral-actions small{text-align:center}}

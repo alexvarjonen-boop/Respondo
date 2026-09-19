@@ -44,6 +44,118 @@ const slug = (value) =>
     .replace(/^-|-$/g, '')
     .slice(0, 50) || `yritys-${crypto.randomBytes(3).toString('hex')}`;
 
+const REFERRAL_COUPON_ID =
+  process.env.STRIPE_REFERRAL_COUPON_ID || 'RESPONDO_REFERRAL_20_FIRST_MONTH';
+
+const normalizeReferralCode = (value) =>
+  String(value || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9-]/g, '')
+    .slice(0, 32);
+
+async function ensureReferralCode(userId) {
+  const found = await q(
+    'SELECT referral_code,subscription_plan,stripe_subscription_id FROM users WHERE id=$1',
+    [userId],
+  );
+  if (!found.rowCount) return '';
+
+  let user = found.rows[0];
+  let plan = user.subscription_plan;
+
+  // Backfill the plan for customers created before referral tracking existed.
+  if (!plan && stripe && user.stripe_subscription_id) {
+    try {
+      const subscription = await stripe.subscriptions.retrieve(user.stripe_subscription_id);
+      const priceId = subscription.items?.data?.[0]?.price?.id || '';
+      if (priceId && priceId === process.env.STRIPE_MONTHLY_PRICE_ID) plan = 'monthly';
+      if (priceId && priceId === process.env.STRIPE_YEARLY_PRICE_ID) plan = 'yearly';
+      if (plan) {
+        await q('UPDATE users SET subscription_plan=$1,updated_at=NOW() WHERE id=$2', [plan, userId]);
+      }
+    } catch (e) {
+      console.warn('Referral plan backfill failed', e?.message || e);
+    }
+  }
+
+  // The referral program is intentionally available only to monthly subscribers.
+  if (plan !== 'monthly') return '';
+  if (user.referral_code) return user.referral_code;
+
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const code = 'RESPONDO-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+    try {
+      const updated = await q(
+        'UPDATE users SET referral_code=$1,updated_at=NOW() WHERE id=$2 AND referral_code IS NULL RETURNING referral_code',
+        [code, userId],
+      );
+      if (updated.rowCount) return updated.rows[0].referral_code;
+
+      const current = await q('SELECT referral_code FROM users WHERE id=$1', [userId]);
+      if (current.rows[0]?.referral_code) return current.rows[0].referral_code;
+    } catch (e) {
+      if (e?.code === '23505') continue;
+      throw e;
+    }
+  }
+  throw new Error('Suosittelukoodia ei saatu luotua.');
+}
+
+async function applyReferralDiscountIfEligible(userId, subscriptionId) {
+  if (!pool || !stripe || !subscriptionId) return false;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const redemption = await client.query(
+      `SELECT rr.id,rr.code,rr.stripe_discount_applied,u.subscription_plan
+         FROM referral_redemptions rr
+         JOIN users u ON u.id=rr.referred_user_id
+        WHERE rr.referred_user_id=$1
+        FOR UPDATE`,
+      [userId],
+    );
+
+    if (
+      !redemption.rowCount ||
+      redemption.rows[0].stripe_discount_applied ||
+      redemption.rows[0].subscription_plan !== 'monthly'
+    ) {
+      await client.query('COMMIT');
+      return false;
+    }
+
+    const row = redemption.rows[0];
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+    // Checkout has already finalized the €0 trial invoice at this point.
+    // Applying a duration=once coupon now makes it hit the first paid invoice after the trial.
+    if (subscription.metadata?.referral_code !== row.code) {
+      await stripe.subscriptions.update(subscriptionId, {
+        discounts: [{ coupon: REFERRAL_COUPON_ID }],
+        metadata: {
+          ...subscription.metadata,
+          referral_code: row.code,
+          referral_discount: '20_percent_first_paid_month',
+        },
+      });
+    }
+
+    await client.query(
+      "UPDATE referral_redemptions SET stripe_discount_applied=TRUE,status='applied' WHERE id=$1",
+      [row.id],
+    );
+    await client.query('COMMIT');
+    return true;
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch {}
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 
 function normalizeWebUrl(value, originOnly = false) {
   const raw = String(value || '').trim();
@@ -746,6 +858,17 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
            WHERE id=$5`,
           [session.customer, session.subscription, subscriptionStatus, periodEnd, userId],
         );
+
+        try {
+          await ensureReferralCode(userId);
+          const subscriptionId =
+            typeof session.subscription === 'string'
+              ? session.subscription
+              : session.subscription?.id || null;
+          if (subscriptionId) await applyReferralDiscountIfEligible(userId, subscriptionId);
+        } catch (e) {
+          console.error('Referral activation from webhook failed', e);
+        }
       }
     }
 
@@ -892,6 +1015,8 @@ app.post('/api/auth/start-checkout', async (req, res) => {
 
   const { fullName, companyName, businessId, password, plan, acceptedTerms } = req.body;
   const email = cleanEmail(req.body.email);
+  const normalizedPlan = plan === 'yearly' ? 'yearly' : 'monthly';
+  const referralCode = normalizeReferralCode(req.body.referralCode);
   const oauthProfile = getOauthProfile(req);
   const socialSignup = Boolean(oauthProfile && cleanEmail(oauthProfile.email) === email && oauthProfile.provider === 'google');
   if (!acceptedTerms || !email || !companyName || (!socialSignup && (!password || password.length < 10))) {
@@ -901,8 +1026,11 @@ app.post('/api/auth/start-checkout', async (req, res) => {
         : 'Täytä kaikki pakolliset tiedot. Salasanan on oltava vähintään 10 merkkiä.',
     });
   }
+  if (referralCode && normalizedPlan !== 'monthly') {
+    return res.status(400).json({ error: 'Suosittelukoodi toimii vain kuukausitilauksessa.' });
+  }
 
-  const price = plan === 'yearly' ? process.env.STRIPE_YEARLY_PRICE_ID : process.env.STRIPE_MONTHLY_PRICE_ID;
+  const price = normalizedPlan === 'yearly' ? process.env.STRIPE_YEARLY_PRICE_ID : process.env.STRIPE_MONTHLY_PRICE_ID;
   if (!price) return res.status(503).json({ error: 'Stripe-hintaa ei ole määritetty.' });
 
   try {
@@ -926,10 +1054,33 @@ app.post('/api/auth/start-checkout', async (req, res) => {
 
     try {
       await client.query('BEGIN');
+
+      let referrer = null;
+      if (referralCode) {
+        const ref = await client.query(
+          `SELECT id,email,status,subscription_status,subscription_plan
+             FROM users
+            WHERE referral_code=$1`,
+          [referralCode],
+        );
+        if (
+          !ref.rowCount ||
+          ref.rows[0].status !== 'active' ||
+          !['active','trialing'].includes(ref.rows[0].subscription_status) ||
+          ref.rows[0].subscription_plan !== 'monthly'
+        ) {
+          throw Object.assign(new Error('Suosittelukoodi ei ole voimassa.'), { publicStatus: 400 });
+        }
+        if (cleanEmail(ref.rows[0].email) === email) {
+          throw Object.assign(new Error('Et voi käyttää omaa suosittelukoodiasi.'), { publicStatus: 400 });
+        }
+        referrer = ref.rows[0];
+      }
+
       await client.query(
-        `INSERT INTO users(id,email,password_hash,full_name,company_name,business_id,status)
-         VALUES($1,$2,$3,$4,$5,$6,'pending')`,
-        [id, email, hash, fullName || '', companyName, businessId || null],
+        `INSERT INTO users(id,email,password_hash,full_name,company_name,business_id,status,subscription_plan)
+         VALUES($1,$2,$3,$4,$5,$6,'pending',$7)`,
+        [id, email, hash, fullName || '', companyName, businessId || null, normalizedPlan],
       );
 
       let tenantSlug = slug(companyName);
@@ -942,17 +1093,36 @@ app.post('/api/auth/start-checkout', async (req, res) => {
         [uid(), id, tenantSlug, companyName, email],
       );
 
+      if (referrer) {
+        await client.query(
+          `INSERT INTO referral_redemptions(id,referrer_user_id,referred_user_id,code,status)
+           VALUES($1,$2,$3,$4,'pending')`,
+          [uid(), referrer.id, id, referralCode],
+        );
+      }
+
       session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         customer_email: email,
         line_items: [{ price, quantity: 1 }],
-        subscription_data: { trial_period_days: 3, metadata: { user_id: id } },
+        subscription_data: {
+          trial_period_days: 3,
+          metadata: {
+            user_id: id,
+            plan: normalizedPlan,
+            ...(referralCode ? { referral_code: referralCode } : {}),
+          },
+        },
         tax_id_collection: { enabled: true },
         billing_address_collection: 'required',
         allow_promotion_codes: false,
         success_url: `${BASE}/api/auth/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${BASE}/tilaus?cancelled=1`,
-        metadata: { user_id: id, plan: plan === 'yearly' ? 'yearly' : 'monthly' },
+        metadata: {
+          user_id: id,
+          plan: normalizedPlan,
+          ...(referralCode ? { referral_code: referralCode } : {}),
+        },
         automatic_tax: { enabled: true },
       });
 
@@ -967,6 +1137,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
     return res.json({ url: session.url });
   } catch (e) {
     console.error('Checkout start failed', e);
+    if (e?.publicStatus === 400) return res.status(400).json({ error: e.message });
     return res.status(500).json({ error: 'Tilauksen aloitus epäonnistui.' });
   }
 });
@@ -1030,6 +1201,13 @@ app.get('/api/auth/checkout-success', async (req, res) => {
     );
 
     if (!updated.rowCount) return res.redirect('/kirjaudu?checkout_error=1');
+
+    try {
+      await ensureReferralCode(userId);
+      if (subscriptionId) await applyReferralDiscountIfEligible(userId, subscriptionId);
+    } catch (e) {
+      console.error('Referral activation after checkout failed', e);
+    }
 
     await stripe.checkout.sessions.update(sessionId, {
       metadata: {
@@ -1141,10 +1319,26 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
         LIMIT 30`,
       [tenant.id],
     );
+    const referralCode = await ensureReferralCode(req.user.sub);
+    let referral = null;
+    if (referralCode) {
+      const referralUses = await q(
+        'SELECT count(*)::int uses FROM referral_redemptions WHERE referrer_user_id=$1 AND stripe_discount_applied=TRUE',
+        [req.user.sub],
+      );
+      referral = {
+        code: referralCode,
+        uses: referralUses.rows[0]?.uses || 0,
+        shareUrl: `${BASE}/tilaus?plan=monthly&ref=${encodeURIComponent(referralCode)}`,
+        discountPercent: 20,
+      };
+    }
+
     const a = s.rows[0];
     const total = a.total || 0;
     return res.json({
       tenant,
+      referral,
       knowledge: k.rows,
       unanswered: unanswered.rows,
       recentConversations: recent.rows,
@@ -1631,6 +1825,21 @@ app.use((req, res, next) => {
 
 async function ensureRuntimeSchema() {
   if (!pool) return;
+
+  await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_plan TEXT');
+  await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT');
+  await q('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code) WHERE referral_code IS NOT NULL');
+  await q(`CREATE TABLE IF NOT EXISTS referral_redemptions (
+    id UUID PRIMARY KEY,
+    referrer_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    referred_user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    code TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    stripe_discount_applied BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referral_redemptions(referrer_user_id, created_at DESC)');
+
   await q(`CREATE TABLE IF NOT EXISTS leads (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
