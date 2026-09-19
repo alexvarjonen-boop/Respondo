@@ -2184,6 +2184,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       confidence: result.confidence,
       intent: result.intent,
       sourceIds: result.sourceIds,
+      verified: !result.handoff && Array.isArray(result.sourceIds) && result.sourceIds.length > 0,
       actions,
       canLeaveContact: result.handoff,
     });
