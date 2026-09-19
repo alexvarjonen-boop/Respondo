@@ -1394,7 +1394,15 @@ async function dashboard() {
             <h2>${latestSelfTest ? latestSelfTest.score + '% kattavuus' : 'Testaa ennen asiakkaita'}</h2>
             <p>${latestSelfTest ? (latestSelfTest.answerable_questions + '/' + latestSelfTest.total_questions + ' testikysymykseen löytyi varma tieto.') : 'Respondo luo realistisia asiakaskysymyksiä ja etsii tietopohjan aukot ennen oikeita asiakkaita.'}</p>
           </div>
-          <button class="btn dashboard-action self-test-button" id="runSelfTest" type="button">${latestSelfTest ? 'Testaa uudelleen' : 'Aja self-test'} <span>→</span></button>
+          <div class="self-test-controls">
+            <label>Testin laajuus
+              <select id="selfTestDepth">
+                <option value="500">500 kysymystä</option>
+                <option value="1000">1 000 kysymystä</option>
+              </select>
+            </label>
+            <button class="btn dashboard-action self-test-button" id="runSelfTest" type="button">${latestSelfTest ? 'Testaa uudelleen' : 'Aja self-test'} <span>→</span></button>
+          </div>
           <div id="selfTestResult"></div>
         </article>
         <article class="panel action-center-card">
@@ -2448,9 +2456,13 @@ async function route() {
       const original = button.innerHTML;
       button.disabled = true;
       button.innerHTML = 'Testataan…';
-      $('#selfTestResult').innerHTML = '<div class="self-test-running">Respondo generoi realistisia asiakaskysymyksiä ja etsii aukkoja.</div>';
+      const target = Number($('#selfTestDepth')?.value || 500) >= 1000 ? 1000 : 500;
+      $('#selfTestResult').innerHTML = '<div class="self-test-running">Respondo käy läpi ' + target.toLocaleString('fi-FI') + ' realistista asiakaskysymystä ja etsii aukkoja.</div>';
       try {
-        const result = await api('/api/app/self-test', { method:'POST', body:'{}' });
+        const result = await api('/api/app/self-test', {
+          method:'POST',
+          body:JSON.stringify({ target }),
+        });
         const gaps = Array.isArray(result.gaps) ? result.gaps : [];
         $('#selfTestResult').innerHTML =
           '<div class="self-test-score"><b>' + Number(result.score || 0) + '%</b><span>' +
