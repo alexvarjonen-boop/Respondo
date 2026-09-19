@@ -2435,3 +2435,45 @@ body:before{opacity:.012}
     font-size:17px!important;
   }
 }
+
+
+/* Hero mobile account actions */
+.hero-account-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.hero-account-actions .btn{
+  white-space:nowrap;
+}
+@media (max-width:760px){
+  .hero-actions{
+    width:100%!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:10px!important;
+  }
+  .hero-actions .hero-bot-cta{
+    width:100%!important;
+  }
+  .hero-account-actions{
+    width:100%;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:10px;
+  }
+  .hero-account-actions .btn{
+    width:100%!important;
+    min-width:0;
+    min-height:54px!important;
+    padding:0 10px!important;
+    font-size:13px!important;
+    justify-content:center!important;
+  }
+}
+@media (max-width:390px){
+  .hero-account-actions .btn{
+    font-size:12px!important;
+    letter-spacing:-.01em;
+  }
+}

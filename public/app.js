@@ -946,8 +946,11 @@ async function home() {
             <h1>Asiakas kysyy.<br><em>RESPONDO vastaa.</em></h1>
             <p class="lead">Kerro Respondolle yrityksesi tiedot kerran. Sen jälkeen se vastaa asiakkaillesi myös silloin, kun sinä et ehdi — eikä keksi vastausta, jos tietoa ei löydy.</p>
             <div class="hero-actions">
-              <a class="btn hero-primary" href="/assistant">Kokeile bottia</a>
-              <a class="btn ghost" href="/tilaus">Kokeile 3 päivää ilmaiseksi</a>
+              <a class="btn hero-primary hero-bot-cta" href="/assistant">Kokeile bottia</a>
+              <div class="hero-account-actions">
+                <a class="btn ghost hero-trial-cta" href="/tilaus">Kokeile maksutta</a>
+                <a class="btn ghost hero-login-cta" href="/kirjaudu">Kirjaudu</a>
+              </div>
             </div>
             <div class="hero-scroll-hint"><i></i><span>VIERITÄ ALAS JA KATSO, MITEN SE TOIMII</span></div>
           </div>
