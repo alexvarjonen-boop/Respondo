@@ -2295,7 +2295,7 @@ app.post('/api/app/self-test', auth, subscribed, async (req, res) => {
       .join('\n')
       .slice(0, 36000);
 
-    const jobs = Array.from({ length: batchCount }, (_, batchIndex) => {
+    const makeJob = (batchIndex) => {
       const count = Math.min(batchSize, target - batchIndex * batchSize);
       const prompt = 'Toimit yrityksen asiakaspalvelubotin laadun testaajana. ' +
         'Luo täsmälleen ' + count + ' realistista ja keskenään erilaista asiakaskysymystä testierään ' + (batchIndex + 1) + '/' + batchCount + '. ' +
@@ -2310,9 +2310,18 @@ app.post('/api/app/self-test', auth, subscribed, async (req, res) => {
         input: prompt,
         max_output_tokens: 6500,
       });
-    });
+    };
 
-    const batches = await Promise.allSettled(jobs);
+    const batches = [];
+    const concurrency = 4;
+    for (let offset = 0; offset < batchCount; offset += concurrency) {
+      const wave = [];
+      for (let batchIndex = offset; batchIndex < Math.min(batchCount, offset + concurrency); batchIndex++) {
+        wave.push(makeJob(batchIndex));
+      }
+      const settled = await Promise.allSettled(wave);
+      batches.push(...settled);
+    }
     const questions = [];
     const seen = new Set();
     for (const batch of batches) {
