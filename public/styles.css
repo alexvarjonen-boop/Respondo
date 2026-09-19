@@ -2396,3 +2396,42 @@ body:before{opacity:.012}
 .referral-actions button{background:#ececef;color:#111114}
 .referral-actions small{color:#77777e;white-space:nowrap}
 @media(max-width:800px){.referral-panel{grid-template-columns:1fr}.referral-code-row{flex-direction:column}.referral-actions{align-items:stretch;flex-direction:column}.referral-actions small{text-align:center}}
+
+
+/* Mobile login access */
+@media (max-width:760px){
+  .navin{
+    gap:10px!important;
+  }
+  .nav .logo{
+    flex:0 1 auto;
+    min-width:0;
+  }
+  .navactions{
+    margin-left:auto;
+    gap:7px!important;
+    flex:0 0 auto;
+  }
+  .navactions .btn.ghost{
+    display:inline-flex!important;
+    min-height:40px!important;
+    padding:0 13px!important;
+    border-radius:12px!important;
+    background:#fff!important;
+    border:1px solid rgba(17,17,20,.12)!important;
+    color:#111114!important;
+    font-size:12px!important;
+    font-weight:800!important;
+  }
+  .navactions .lang-switch{
+    display:none!important;
+  }
+}
+@media (max-width:430px){
+  .navactions .btn.ink{
+    display:none!important;
+  }
+  .nav .brand-word{
+    font-size:17px!important;
+  }
+}
