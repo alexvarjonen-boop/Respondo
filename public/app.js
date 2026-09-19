@@ -1318,7 +1318,6 @@ async function dashboard() {
   const actionStats = data.actionStats || [];
   const actionRequests = data.actionRequests || [];
   const liveThreads = data.liveThreads || [];
-  const commerce = data.commerce || { provider:'',shopifyShopDomain:'',shopifyConnected:false,wooBaseUrl:'',wooConnected:false };
   const metaChannels = data.metaChannels || { graphVersion:'v24.0',verifyToken:'',webhookUrl:'',whatsappPhoneNumberId:'',whatsappConnected:false,instagramAccountId:'',instagramConnected:false,appSecretConfigured:false };
   const voice = data.voice || {
     accountSid:'',phoneNumber:'',handoffNumber:'',credentialsConfigured:false,enabled:false,
@@ -1940,43 +1939,6 @@ async function dashboard() {
             `}
             <div id="stripeConnectMsg"></div>
           </div>
-        </article>
-
-        <article class="panel commerce-panel" id="commerce-integration">
-          <div class="panel-head">
-            <div>
-              <small>NATIVE ORDER TRACKING</small>
-              <h2>Shopify & WooCommerce</h2>
-              <p>Kun asiakas kysyy tilauksen tilaa, Respondo hakee oikean tilauksen suoraan kaupasta. Tilausnumero ja sähköposti tarkistetaan yhdessä ennen kuin tietoja näytetään.</p>
-            </div>
-            <span class="install-badge">${commerce.provider ? esc(commerce.provider === 'shopify' ? 'Shopify' : 'WooCommerce') : 'Ei yhdistetty'}</span>
-          </div>
-          <form id="commerceForm" class="integration-form">
-            <div class="field">
-              <label>Verkkokauppa</label>
-              <select name="provider" id="commerceProvider">
-                <option value="">Ei käytössä</option>
-                <option value="shopify" ${commerce.provider === 'shopify' ? 'selected' : ''}>Shopify</option>
-                <option value="woocommerce" ${commerce.provider === 'woocommerce' ? 'selected' : ''}>WooCommerce</option>
-              </select>
-            </div>
-            <div class="commerce-provider-fields shopify-fields ${commerce.provider === 'woocommerce' ? 'hidden' : ''}">
-              <div class="field"><label>Shopify domain</label><input name="shopifyShopDomain" value="${esc(commerce.shopifyShopDomain || '')}" placeholder="kauppa.myshopify.com"></div>
-              <div class="field"><label>Admin API access token</label><input name="shopifyAccessToken" type="password" placeholder="${commerce.shopifyConnected ? 'Yhdistetty — jätä tyhjäksi säilyttääksesi nykyisen' : 'shpat_…'}"></div>
-            </div>
-            <div class="commerce-provider-fields woo-fields ${commerce.provider === 'woocommerce' ? '' : 'hidden'}">
-              <div class="field"><label>WooCommerce URL</label><input name="wooBaseUrl" type="url" value="${esc(commerce.wooBaseUrl || '')}" placeholder="https://kauppa.fi"></div>
-              <div class="integration-secret-grid">
-                <div class="field"><label>Consumer key</label><input name="wooConsumerKey" type="password" placeholder="${commerce.wooConnected ? 'Tallennettu — jätä tyhjäksi säilyttääksesi' : 'ck_…'}"></div>
-                <div class="field"><label>Consumer secret</label><input name="wooConsumerSecret" type="password" placeholder="${commerce.wooConnected ? 'Tallennettu — jätä tyhjäksi säilyttääksesi' : 'cs_…'}"></div>
-              </div>
-            </div>
-            <div class="integration-buttons">
-              <button class="btn dashboard-action" type="submit">Tallenna verkkokauppa <span>→</span></button>
-              <button class="btn integration-test-btn" id="testCommerce" type="button">Testaa yhteys</button>
-            </div>
-            <div id="commerceMsg"></div>
-          </form>
         </article>
 
         <article class="panel meta-channels-panel" id="meta-channels">
@@ -3090,64 +3052,6 @@ async function route() {
         $('#stripeConnectMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
         button.disabled = false;
         button.innerHTML = original;
-      }
-    });
-
-    const syncCommerceFields = () => {
-      const provider = $('#commerceProvider')?.value || '';
-      document.querySelector('.shopify-fields')?.classList.toggle('hidden', provider === 'woocommerce');
-      document.querySelector('.woo-fields')?.classList.toggle('hidden', provider !== 'woocommerce');
-    };
-    $('#commerceProvider')?.addEventListener('change', syncCommerceFields);
-    syncCommerceFields();
-
-    $('#commerceForm')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = new FormData(e.currentTarget);
-      const button = e.currentTarget.querySelector('button[type="submit"]');
-      const original = button.innerHTML;
-      button.disabled = true;
-      button.innerHTML = 'Tallennetaan…';
-      try {
-        await api('/api/app/commerce', {
-          method:'POST',
-          body:JSON.stringify({
-            provider:form.get('provider'),
-            shopifyShopDomain:form.get('shopifyShopDomain'),
-            shopifyAccessToken:form.get('shopifyAccessToken'),
-            wooBaseUrl:form.get('wooBaseUrl'),
-            wooConsumerKey:form.get('wooConsumerKey'),
-            wooConsumerSecret:form.get('wooConsumerSecret'),
-          }),
-        });
-        $('#commerceMsg').innerHTML = '<div class="notice success">Verkkokauppayhteys tallennettu ✓</div>';
-        button.innerHTML = 'Tallennettu ✓';
-        setTimeout(() => (button.innerHTML = original), 1500);
-      } catch (err) {
-        $('#commerceMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-        button.innerHTML = original;
-      } finally {
-        button.disabled = false;
-      }
-    });
-
-    $('#testCommerce')?.addEventListener('click', async (e) => {
-      const button = e.currentTarget;
-      const original = button.textContent;
-      button.disabled = true;
-      button.textContent = 'Testataan…';
-      try {
-        const result = await api('/api/app/commerce/test', { method:'POST', body:'{}' });
-        $('#commerceMsg').innerHTML = '<div class="notice success">' +
-          (result.provider === 'shopify' ? 'Shopify-yhteys toimii ✓' : 'WooCommerce-yhteys toimii ✓') +
-          '</div>';
-        button.textContent = 'Toimii ✓';
-        setTimeout(() => (button.textContent = original), 1500);
-      } catch (err) {
-        $('#commerceMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-        button.textContent = original;
-      } finally {
-        button.disabled = false;
       }
     });
 
