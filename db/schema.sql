@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   greeting TEXT NOT NULL DEFAULT 'Hei! Miten voin auttaa?',
   handoff_message TEXT NOT NULL DEFAULT 'En halua arvata. Ohjaan tämän ihmiselle vastattavaksi.',
   accent TEXT NOT NULL DEFAULT '#111113',
+  average_lead_value NUMERIC(12,2) NOT NULL DEFAULT 0,
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -41,6 +42,10 @@ CREATE TABLE IF NOT EXISTS knowledge (
   title TEXT NOT NULL,
   answer TEXT NOT NULL,
   keywords TEXT[] NOT NULL DEFAULT '{}',
+  source_type TEXT NOT NULL DEFAULT 'manual',
+  source_url TEXT,
+  approved BOOLEAN NOT NULL DEFAULT TRUE,
+  verified_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -55,6 +60,8 @@ CREATE TABLE IF NOT EXISTS conversations (
   source_ids UUID[] NOT NULL DEFAULT '{}',
   handoff BOOLEAN NOT NULL DEFAULT FALSE,
   visitor_ref TEXT,
+  page_url TEXT,
+  page_title TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -99,3 +106,27 @@ CREATE TABLE IF NOT EXISTS leads (
 );
 
 CREATE INDEX IF NOT EXISTS idx_leads_tenant_created ON leads(tenant_id, created_at DESC);
+
+
+CREATE TABLE IF NOT EXISTS action_events (
+  id UUID PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  visitor_ref TEXT,
+  action_type TEXT NOT NULL,
+  label TEXT,
+  target TEXT,
+  page_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_action_events_tenant_created ON action_events(tenant_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS self_test_runs (
+  id UUID PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  score INTEGER NOT NULL,
+  total_questions INTEGER NOT NULL,
+  answerable_questions INTEGER NOT NULL,
+  gaps JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_self_test_tenant_created ON self_test_runs(tenant_id, created_at DESC);
