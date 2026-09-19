@@ -2801,3 +2801,116 @@ body:before{opacity:.012}
     display:none!important;
   }
 }
+
+
+/* RESPONDO 2.0 intelligence */
+.respondo-intelligence{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  margin-bottom:16px;
+}
+.respondo-intelligence .panel{
+  min-height:190px;
+  padding:22px!important;
+}
+.respondo-intelligence small{
+  display:block;
+  color:#8b8b91;
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.14em;
+}
+.respondo-intelligence h2{
+  margin:7px 0 8px;
+  font-size:22px;
+  letter-spacing:-.035em;
+}
+.respondo-intelligence p{
+  margin:0;
+  color:#73737a;
+  font-size:11px;
+  line-height:1.55;
+}
+.intelligence-icon{
+  width:36px;
+  height:36px;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+  margin-bottom:22px;
+  background:#111114;
+  color:#fff;
+  font-weight:900;
+}
+.truth-score-card{background:linear-gradient(145deg,#fff,#f4fff8)!important}
+.self-test-card{background:linear-gradient(145deg,#fff,#f7f4ff)!important}
+.action-center-card{background:linear-gradient(145deg,#fff,#fff8f2)!important}
+.self-test-button{
+  width:auto!important;
+  margin-top:18px!important;
+}
+.self-test-running{
+  margin-top:12px;
+  color:#77777e;
+  font-size:10px;
+}
+.self-test-score{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-top:14px;
+  padding:12px;
+  border-radius:14px;
+  background:#fff;
+  border:1px solid rgba(17,17,20,.08);
+}
+.self-test-score b{font-size:26px}
+.self-test-score span{font-size:10px;color:#6f6f75}
+.self-test-gaps{
+  display:grid;
+  gap:6px;
+  margin-top:10px;
+}
+.self-test-gaps strong{font-size:10px}
+.self-test-gap{
+  text-align:left;
+  border:1px solid rgba(17,17,20,.09);
+  background:#fff;
+  border-radius:10px;
+  padding:9px 10px;
+  color:#343438;
+  font-size:10px;
+}
+.self-test-gap:hover{border-color:#aaaab0}
+.gap-action-buttons{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.gap-action-buttons .btn{margin-top:0!important}
+.suggest-unanswered-answer{
+  background:#fff!important;
+  color:#111114!important;
+  border:1px solid rgba(17,17,20,.12)!important;
+}
+.conversation-page{
+  display:inline-flex;
+  margin:8px 0 0;
+  padding:5px 8px;
+  border-radius:999px;
+  background:#f3f3f5;
+  color:#77777d;
+  font-size:8px;
+  font-weight:750;
+}
+@media(max-width:900px){
+  .respondo-intelligence{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .respondo-intelligence{gap:9px}
+  .respondo-intelligence .panel{min-height:0;padding:17px!important}
+  .intelligence-icon{margin-bottom:14px}
+  .gap-action-buttons{flex-direction:column;align-items:stretch}
+  .gap-action-buttons .btn{width:100%!important}
+}
