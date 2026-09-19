@@ -1075,7 +1075,7 @@ YLEINEN TOIMINTAOHJE:
       return;
     }
     if (location.pathname === '/') {
-      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup(); cinematicSectionAtmosphere(); deepScrollExperience(); immersiveHomepageScenes();
+      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup(); cinematicSectionAtmosphere();
     } else {
       revealTargets(); magneticButtons(); assistant(); deepScrollExperience();
     }
