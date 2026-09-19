@@ -933,20 +933,78 @@ const OAUTH_PROFILE_COOKIE = 'respondo_oauth_profile';
 const OAUTH_STATE_COOKIE = 'respondo_oauth_state';
 
 function oauthConfig(provider) {
-  if (provider !== 'google') return { configured: false };
-  return {
-    configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri: BASE + '/api/auth/oauth/google/callback',
-  };
+  if (provider === 'google') {
+    return {
+      configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      redirectUri: BASE + '/api/auth/oauth/google/callback',
+    };
+  }
+  if (provider === 'apple') {
+    return {
+      configured: Boolean(process.env.APPLE_CLIENT_ID),
+      clientId: process.env.APPLE_CLIENT_ID,
+      redirectUri: BASE + '/api/auth/oauth/apple/callback',
+    };
+  }
+  return { configured: false };
 }
 
-function setOauthState(res, nonce) {
+let appleJwksCache = { expiresAt: 0, keys: [] };
+
+async function getAppleJwks() {
+  if (appleJwksCache.expiresAt > Date.now() && appleJwksCache.keys.length) {
+    return appleJwksCache.keys;
+  }
+  const response = await fetch('https://appleid.apple.com/auth/keys');
+  if (!response.ok) throw new Error('Apple signing keys unavailable');
+  const data = await response.json();
+  const keys = Array.isArray(data.keys) ? data.keys : [];
+  if (!keys.length) throw new Error('Apple signing keys missing');
+  appleJwksCache = { expiresAt: Date.now() + 6 * 60 * 60 * 1000, keys };
+  return keys;
+}
+
+function parseJwtPart(value) {
+  return JSON.parse(Buffer.from(String(value || ''), 'base64url').toString('utf8'));
+}
+
+async function verifyAppleIdentityToken(idToken, expectedNonce) {
+  const parts = String(idToken || '').split('.');
+  if (parts.length !== 3) throw new Error('Invalid Apple identity token');
+  const header = parseJwtPart(parts[0]);
+  const payload = parseJwtPart(parts[1]);
+  if (header.alg !== 'ES256' || !header.kid) throw new Error('Invalid Apple token header');
+
+  const keys = await getAppleJwks();
+  const jwk = keys.find((key) => key.kid === header.kid && key.kty === 'EC');
+  if (!jwk) throw new Error('Apple signing key not found');
+
+  const publicKey = crypto.createPublicKey({ key: jwk, format: 'jwk' });
+  const valid = crypto.verify(
+    'sha256',
+    Buffer.from(parts[0] + '.' + parts[1]),
+    { key: publicKey, dsaEncoding: 'ieee-p1363' },
+    Buffer.from(parts[2], 'base64url'),
+  );
+  if (!valid) throw new Error('Apple token signature invalid');
+
+  const now = Math.floor(Date.now() / 1000);
+  const audience = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
+  if (payload.iss !== 'https://appleid.apple.com') throw new Error('Apple token issuer invalid');
+  if (!audience.includes(process.env.APPLE_CLIENT_ID)) throw new Error('Apple token audience invalid');
+  if (!payload.exp || Number(payload.exp) <= now) throw new Error('Apple token expired');
+  if (expectedNonce && payload.nonce !== expectedNonce) throw new Error('Apple token nonce invalid');
+  return payload;
+}
+
+function setOauthState(res, nonce, provider = 'google') {
+  const apple = provider === 'apple';
   res.cookie(OAUTH_STATE_COOKIE, nonce, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: apple ? true : process.env.NODE_ENV === 'production',
+    sameSite: apple ? 'none' : 'lax',
     maxAge: 10 * 60 * 1000,
   });
 }
@@ -1264,7 +1322,7 @@ app.get('/api/app/google-calendar/start', auth, subscribed, (req,res) => {
     nonce,
     userId:req.user.sub,
   },JWT,{ expiresIn:'10m' });
-  setOauthState(res,nonce);
+  setOauthState(res,nonce,'google');
 
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.search = new URLSearchParams({
@@ -1303,19 +1361,33 @@ app.post('/api/app/google-calendar/disconnect', auth, subscribed, async (req,res
 app.get('/api/auth/oauth/:provider/start', (req, res) => {
   const provider = String(req.params.provider || '').toLowerCase();
   const flow = req.query.flow === 'login' ? 'login' : 'signup';
-  if (provider !== 'google') return res.status(404).end();
+  if (!['google','apple'].includes(provider)) return res.status(404).end();
 
-  const cfg = oauthConfig('google');
+  const cfg = oauthConfig(provider);
   if (!cfg.configured) {
     return res.redirect(
       '/' + (flow === 'signup' ? 'tilaus' : 'kirjaudu') +
-      '?oauth_error=not_configured&provider=google'
+      '?oauth_error=not_configured&provider=' + encodeURIComponent(provider)
     );
   }
 
   const nonce = crypto.randomBytes(20).toString('hex');
-  const state = jwt.sign({ provider: 'google', flow, nonce }, JWT, { expiresIn: '10m' });
-  setOauthState(res, nonce);
+  const state = jwt.sign({ provider, flow, nonce }, JWT, { expiresIn: '10m' });
+  setOauthState(res, nonce, provider);
+
+  if (provider === 'apple') {
+    const url = new URL('https://appleid.apple.com/auth/authorize');
+    url.search = new URLSearchParams({
+      client_id: cfg.clientId,
+      redirect_uri: cfg.redirectUri,
+      response_type: 'code id_token',
+      response_mode: 'form_post',
+      scope: 'name email',
+      state,
+      nonce,
+    }).toString();
+    return res.redirect(url.toString());
+  }
 
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.search = new URLSearchParams({
@@ -1343,6 +1415,65 @@ app.get('/api/auth/oauth/google/callback', async (req, res) => {
     return res.redirect('/kirjaudu?oauth_error=failed&provider=google');
   }
   return finishOauth(req, res, code, state);
+});
+
+app.post('/api/auth/oauth/apple/callback', async (req, res) => {
+  const state = String(req.body?.state || '');
+  const idToken = String(req.body?.id_token || '');
+  let statePayload;
+  try {
+    statePayload = jwt.verify(state, JWT);
+  } catch {
+    return res.redirect('/kirjaudu?oauth_error=state&provider=apple');
+  }
+
+  const target = statePayload.flow === 'signup' ? '/tilaus' : '/kirjaudu';
+  const stateCookie = cookies(req)[OAUTH_STATE_COOKIE];
+  if (
+    !stateCookie ||
+    statePayload.nonce !== stateCookie ||
+    statePayload.provider !== 'apple'
+  ) {
+    return res.redirect(target + '?oauth_error=state&provider=apple');
+  }
+  res.clearCookie(OAUTH_STATE_COOKIE);
+
+  if (req.body?.error || !idToken) {
+    return res.redirect(target + '?oauth_error=failed&provider=apple');
+  }
+
+  try {
+    const claims = await verifyAppleIdentityToken(idToken, statePayload.nonce);
+    const email = cleanEmail(claims.email);
+    if (!email) throw new Error('Apple email missing');
+
+    let name = '';
+    try {
+      const rawUser = typeof req.body?.user === 'string' ? JSON.parse(req.body.user) : req.body?.user;
+      name = [rawUser?.name?.firstName, rawUser?.name?.lastName].filter(Boolean).join(' ').trim();
+    } catch {}
+
+    const profile = {
+      provider: 'apple',
+      sub: String(claims.sub || ''),
+      email,
+      name,
+    };
+
+    if (statePayload.flow === 'login') {
+      const found = await q('SELECT * FROM users WHERE lower(email)=lower($1)', [profile.email]);
+      if (!found.rowCount) return res.redirect('/kirjaudu?oauth_error=no_account&provider=apple');
+      if (found.rows[0].status === 'pending') return res.redirect('/kirjaudu?oauth_error=pending&provider=apple');
+      setSession(res, found.rows[0]);
+      return res.redirect('/app');
+    }
+
+    setOauthProfile(res, profile);
+    return res.redirect('/tilaus?oauth=apple');
+  } catch (e) {
+    console.error('Apple OAuth failed', e);
+    return res.redirect(target + '?oauth_error=failed&provider=apple');
+  }
 });
 
 app.get('/api/auth/oauth-profile', (req, res) => {
@@ -1382,7 +1513,11 @@ app.post('/api/auth/start-checkout', async (req, res) => {
   const normalizedPlan = plan === 'owner_test' ? 'owner_test' : (plan === 'yearly' ? 'yearly' : 'monthly');
   const referralCode = normalizeReferralCode(req.body.referralCode);
   const oauthProfile = getOauthProfile(req);
-  const socialSignup = Boolean(oauthProfile && cleanEmail(oauthProfile.email) === email && oauthProfile.provider === 'google');
+  const socialSignup = Boolean(
+    oauthProfile &&
+    cleanEmail(oauthProfile.email) === email &&
+    ['google','apple'].includes(oauthProfile.provider)
+  );
   if (!acceptedTerms || !email || !companyName || (!socialSignup && (!password || password.length < 10))) {
     return res.status(400).json({
       error: socialSignup
