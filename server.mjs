@@ -2729,6 +2729,7 @@ async function ensureTenantActionKeys(tenant) {
   const updates = [];
   const values = [];
   let n = 1;
+
   if (!tenant.action_webhook_secret) {
     tenant.action_webhook_secret = crypto.randomBytes(24).toString('hex');
     updates.push('action_webhook_secret=$' + n++);
@@ -2736,9 +2737,21 @@ async function ensureTenantActionKeys(tenant) {
   }
   if (!tenant.channels_api_key) {
     tenant.channels_api_key = 'rsp_ch_' + crypto.randomBytes(24).toString('hex');
-    updates.push('channels_api_key=
+    updates.push('channels_api_key=$' + n++);
+    values.push(tenant.channels_api_key);
+  }
+  if (!tenant.meta_verify_token) {
+    tenant.meta_verify_token = 'rsp_meta_' + crypto.randomBytes(18).toString('hex');
+    updates.push('meta_verify_token=$' + n++);
+    values.push(tenant.meta_verify_token);
+  }
+
+  if (updates.length) {
     values.push(tenant.id);
-    await q('UPDATE tenants SET ' + updates.join(',') + ',updated_at=NOW() WHERE id=$' + n, values);
+    await q(
+      'UPDATE tenants SET ' + updates.join(',') + ',updated_at=NOW() WHERE id=$' + n,
+      values,
+    );
   }
   return tenant;
 }
