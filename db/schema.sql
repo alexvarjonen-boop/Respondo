@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS tenants (
   handoff_message TEXT NOT NULL DEFAULT 'En halua arvata. Ohjaan tämän ihmiselle vastattavaksi.',
   accent TEXT NOT NULL DEFAULT '#111113',
   average_lead_value NUMERIC(12,2) NOT NULL DEFAULT 0,
+  action_webhook_url TEXT,
+  action_webhook_secret TEXT,
+  channels_api_key TEXT,
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -62,6 +65,8 @@ CREATE TABLE IF NOT EXISTS conversations (
   visitor_ref TEXT,
   page_url TEXT,
   page_title TEXT,
+  source_channel TEXT NOT NULL DEFAULT 'website',
+  external_contact_id TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -130,3 +135,21 @@ CREATE TABLE IF NOT EXISTS self_test_runs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_self_test_tenant_created ON self_test_runs(tenant_id, created_at DESC);
+
+
+CREATE TABLE IF NOT EXISTS action_requests (
+  id UUID PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  visitor_ref TEXT,
+  request_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'new',
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  result JSONB NOT NULL DEFAULT '{}'::jsonb,
+  delivery_status TEXT NOT NULL DEFAULT 'not_configured',
+  source_channel TEXT NOT NULL DEFAULT 'website',
+  external_contact_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_action_requests_tenant_created
+  ON action_requests(tenant_id, created_at DESC);
