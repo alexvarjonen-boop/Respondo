@@ -36,6 +36,25 @@ const q = (text, params = []) => {
 const uid = () => crypto.randomUUID();
 const cleanEmail = (value) => String(value || '').trim().toLowerCase();
 
+function cleanBotName(value) {
+  return String(value || '').replace(/[<>]/g,'').trim().slice(0,40) || 'RESPONDO AI';
+}
+
+function cleanBotAvatar(value) {
+  const raw = String(value || '').trim();
+  if (/^robot-(?:[1-9]|10)$/.test(raw)) return raw;
+  const match = raw.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) return 'robot-1';
+  if (raw.length > 520000) return 'robot-1';
+  try {
+    const bytes = Buffer.from(match[2],'base64');
+    if (!bytes.length || bytes.length > 360000) return 'robot-1';
+    return raw;
+  } catch {
+    return 'robot-1';
+  }
+}
+
 const SECRET_KEY = crypto.createHash('sha256').update(JWT).digest();
 function encryptSecret(value) {
   const text = String(value || '');
@@ -2093,13 +2112,15 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
     }
 
     await client.query(
-      'UPDATE tenants SET contact_phone=$1, contact_email=$2, website=$3, greeting=$4, average_lead_value=$5, updated_at=NOW() WHERE id=$6',
+      'UPDATE tenants SET contact_phone=$1, contact_email=$2, website=$3, greeting=$4, average_lead_value=$5, bot_name=$6, bot_avatar=$7, updated_at=NOW() WHERE id=$8',
       [
         String(req.body.phone || '').trim() || null,
         String(req.body.email || '').trim() || null,
         website || null,
         String(req.body.greeting || '').trim().slice(0, 220) || 'Hei! Miten voin auttaa?',
         Math.max(0, Number(req.body.averageLeadValue || 0)) || 0,
+        cleanBotName(req.body.botName),
+        cleanBotAvatar(req.body.botAvatar),
         tenantId
       ]
     );
@@ -3130,7 +3151,8 @@ app.get('/api/public/:slug/widget-token', async (req, res) => {
 
     return res.json({
       token,
-      name: tenant.name,
+      name: tenant.bot_name || 'RESPONDO AI',
+      avatar: tenant.bot_avatar || 'robot-1',
       greeting: lang === 'en' ? 'Hi! How can I help?' : tenant.greeting,
       accent: tenant.accent,
       quickReplies,
@@ -3150,6 +3172,8 @@ app.get('/api/public/:slug', async (req, res) => {
     return res.json({
       slug: t.slug,
       name: t.name,
+      bot_name: t.bot_name || 'RESPONDO AI',
+      bot_avatar: t.bot_avatar || 'robot-1',
       greeting: t.greeting,
       handoff_message: t.handoff_message,
       accent: t.accent,
@@ -4690,6 +4714,8 @@ async function ensureRuntimeSchema() {
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_leads_tenant_created ON leads(tenant_id, created_at DESC)');
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS average_lead_value NUMERIC(12,2) NOT NULL DEFAULT 0");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS bot_name TEXT NOT NULL DEFAULT 'RESPONDO AI'");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS bot_avatar TEXT NOT NULL DEFAULT 'robot-1'");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS action_webhook_url TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS action_webhook_secret TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS channels_api_key TEXT");
