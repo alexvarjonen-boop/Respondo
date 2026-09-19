@@ -983,16 +983,20 @@ async function home() {
 
 function signup() {
   const params = new URLSearchParams(location.search);
-  const plan = params.get('plan') || 'monthly';
+  const ownerTestAccess = params.get('owner-test') === '1' && cfg.ownerTestEnabled === true;
+  const requestedPlan = params.get('plan') || 'monthly';
+  const plan = requestedPlan === 'owner_test' && !ownerTestAccess ? 'monthly' : requestedPlan;
   const referralCode = String(params.get('ref') || '').trim().toUpperCase();
   return `<div>
     ${nav()}
     <main class="formpage">
       <div class="container checkout-layout">
         <section class="checkout-copy">
-          <div class="section-kicker">ALOITA KOKEILU</div>
-          <h1>Kokeile rauhassa.<br><em>Päätä vasta sen jälkeen.</em></h1>
-          <p>Luo tili ja lisää maksutapa Stripessä. Sinulta ei veloiteta mitään 3 päivän kokeilun aikana.</p>
+          <div class="section-kicker">${plan === 'owner_test' ? 'OMISTAJAN TESTITILAUS' : 'ALOITA KOKEILU'}</div>
+          <h1>${plan === 'owner_test' ? 'Testaa oikea maksu.' : 'Kokeile rauhassa.<br><em>Päätä vasta sen jälkeen.</em>'}</h1>
+          <p>${plan === 'owner_test'
+            ? 'Tämä kertakäyttöinen testitilaus veloittaa heti tasan 0,50 €. Se sulkeutuu onnistuneen maksun jälkeen eikä uusiudu seuraavassa kuussa.'
+            : 'Luo tili ja lisää maksutapa Stripessä. Sinulta ei veloiteta mitään 3 päivän kokeilun aikana.'}</p>
           <div class="checkout-steps">
             <div><span>01</span><b>Luo tili</b><small>Täytä omat ja yrityksesi perustiedot.</small></div>
             <div><span>02</span><b>Lisää maksutapa Stripessä</b><small>Korttitietosi menevät suoraan Stripelle.</small></div>
@@ -1005,7 +1009,7 @@ function signup() {
           </div>
         </section>
         <form class="formcard premium-form" id="signup">
-          <div class="form-head"><span>LUO TILI</span><b>3 päivää ilmaiseksi</b></div>
+          <div class="form-head"><span>LUO TILI</span><b>${plan === 'owner_test' ? '0,50 € · veloitus heti' : '3 päivää ilmaiseksi'}</b></div>
           ${socialAuthButtons('signup')}
           <div class="formgrid">
             <div class="field"><label>Nimi</label><input name="fullName" autocomplete="name" required placeholder="Etunimi Sukunimi"></div>
@@ -1017,6 +1021,7 @@ function signup() {
               <select name="plan">
                 <option value="monthly" ${plan === 'monthly' ? 'selected' : ''}>49 €/kk + alv · kuukausi</option>
                 <option value="yearly" ${plan === 'yearly' ? 'selected' : ''}>45 €/kk + alv · laskutetaan 540 €/vuosi</option>
+                ${ownerTestAccess ? `<option value="owner_test" ${plan === 'owner_test' ? 'selected' : ''}>OMISTAJAN TESTI · 0,50 € sis. alv · veloitus heti</option>` : ''}
               </select>
             </div>
             <div class="field full referral-signup-field">
@@ -1602,7 +1607,7 @@ async function route() {
       if (referralHint) {
         referralHint.textContent = monthly
           ? 'Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.'
-          : 'Suosittelualennus ei ole käytössä vuositilauksessa.';
+          : 'Suosittelualennus toimii vain normaalissa kuukausitilauksessa.';
       }
     };
     signupPlan?.addEventListener('change', syncReferralField);

@@ -63,6 +63,16 @@ CREATE INDEX IF NOT EXISTS idx_conversations_tenant_created ON conversations(ten
 CREATE INDEX IF NOT EXISTS idx_users_stripe_customer ON users(stripe_customer_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code) WHERE referral_code IS NOT NULL;
 
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO app_settings(key,value)
+VALUES('owner_test_plan_enabled','true')
+ON CONFLICT(key) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS referral_redemptions (
   id UUID PRIMARY KEY,
   referrer_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

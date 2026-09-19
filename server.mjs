@@ -157,6 +157,36 @@ async function applyReferralDiscountIfEligible(userId, subscriptionId) {
 }
 
 
+async function ownerTestPlanEnabled() {
+  if (!pool || !process.env.STRIPE_OWNER_TEST_PRICE_ID) return false;
+  const r = await q("SELECT value FROM app_settings WHERE key='owner_test_plan_enabled'");
+  return r.rows[0]?.value === 'true';
+}
+
+async function closeOwnerTestPlan(subscriptionId) {
+  if (!pool) return;
+  await q(
+    "INSERT INTO app_settings(key,value,updated_at) VALUES('owner_test_plan_enabled','false',NOW()) ON CONFLICT(key) DO UPDATE SET value='false',updated_at=NOW()"
+  );
+
+  if (stripe && subscriptionId) {
+    try {
+      await stripe.subscriptions.update(subscriptionId, { cancel_at_period_end: true });
+    } catch (e) {
+      console.error('Owner test subscription auto-cancel failed', e?.message || e);
+    }
+  }
+
+  if (stripe && process.env.STRIPE_OWNER_TEST_PRICE_ID) {
+    try {
+      await stripe.prices.update(process.env.STRIPE_OWNER_TEST_PRICE_ID, { active: false });
+    } catch (e) {
+      console.error('Owner test price deactivation failed', e?.message || e);
+    }
+  }
+}
+
+
 function normalizeWebUrl(value, originOnly = false) {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -869,6 +899,18 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         } catch (e) {
           console.error('Referral activation from webhook failed', e);
         }
+
+        if (session.metadata?.plan === 'owner_test') {
+          const subscriptionId =
+            typeof session.subscription === 'string'
+              ? session.subscription
+              : session.subscription?.id || null;
+          try {
+            await closeOwnerTestPlan(subscriptionId);
+          } catch (e) {
+            console.error('Owner test plan close from webhook failed', e);
+          }
+        }
       }
     }
 
@@ -999,15 +1041,23 @@ app.get('/api/auth/oauth-profile', (req, res) => {
   });
 });
 
-app.get('/api/public/config', (req, res) =>
-  res.json({
+app.get('/api/public/config', async (req, res) => {
+  let ownerTestEnabled = false;
+  try {
+    ownerTestEnabled = await ownerTestPlanEnabled();
+  } catch (e) {
+    console.warn('Owner test config read failed', e?.message || e);
+  }
+  return res.json({
     brand: 'RESPONDO AI',
-    supportEmail: process.env.SUPPORT_EMAIL || 'alexvarjonen@gmail.com',
+    supportEmail: process.env.SUPPORT_EMAIL || 'respondoai.fi@outlook.com',
     trialDays: 3,
     monthlyNet: 49,
     yearlyNet: 540,
-  }),
-);
+    ownerTestEnabled,
+    ownerTestPrice: 0.50,
+  });
+});
 
 app.post('/api/auth/start-checkout', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Tietokantaa ei ole yhdistetty.' });
@@ -1015,7 +1065,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
 
   const { fullName, companyName, businessId, password, plan, acceptedTerms } = req.body;
   const email = cleanEmail(req.body.email);
-  const normalizedPlan = plan === 'yearly' ? 'yearly' : 'monthly';
+  const normalizedPlan = plan === 'owner_test' ? 'owner_test' : (plan === 'yearly' ? 'yearly' : 'monthly');
   const referralCode = normalizeReferralCode(req.body.referralCode);
   const oauthProfile = getOauthProfile(req);
   const socialSignup = Boolean(oauthProfile && cleanEmail(oauthProfile.email) === email && oauthProfile.provider === 'google');
@@ -1030,10 +1080,18 @@ app.post('/api/auth/start-checkout', async (req, res) => {
     return res.status(400).json({ error: 'Suosittelukoodi toimii vain kuukausitilauksessa.' });
   }
 
-  const price = normalizedPlan === 'yearly' ? process.env.STRIPE_YEARLY_PRICE_ID : process.env.STRIPE_MONTHLY_PRICE_ID;
-  if (!price) return res.status(503).json({ error: 'Stripe-hintaa ei ole määritetty.' });
-
   try {
+    if (normalizedPlan === 'owner_test' && !(await ownerTestPlanEnabled())) {
+      return res.status(410).json({ error: 'Omistajan testitilaus ei ole enää käytettävissä.' });
+    }
+
+    const price =
+      normalizedPlan === 'owner_test'
+        ? process.env.STRIPE_OWNER_TEST_PRICE_ID
+        : normalizedPlan === 'yearly'
+          ? process.env.STRIPE_YEARLY_PRICE_ID
+          : process.env.STRIPE_MONTHLY_PRICE_ID;
+    if (!price) return res.status(503).json({ error: 'Stripe-hintaa ei ole määritetty.' });
     const existing = await q(
       'SELECT id,status,stripe_customer_id,stripe_subscription_id FROM users WHERE lower(email)=lower($1)',
       [email],
@@ -1106,7 +1164,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
         customer_email: email,
         line_items: [{ price, quantity: 1 }],
         subscription_data: {
-          trial_period_days: 3,
+          ...(normalizedPlan === 'owner_test' ? {} : { trial_period_days: 3 }),
           metadata: {
             user_id: id,
             plan: normalizedPlan,
@@ -1117,7 +1175,10 @@ app.post('/api/auth/start-checkout', async (req, res) => {
         billing_address_collection: 'required',
         allow_promotion_codes: false,
         success_url: `${BASE}/api/auth/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${BASE}/tilaus?cancelled=1`,
+        cancel_url:
+          normalizedPlan === 'owner_test'
+            ? `${BASE}/tilaus?owner-test=1&plan=owner_test&cancelled=1`
+            : `${BASE}/tilaus?cancelled=1`,
         metadata: {
           user_id: id,
           plan: normalizedPlan,
@@ -1207,6 +1268,14 @@ app.get('/api/auth/checkout-success', async (req, res) => {
       if (subscriptionId) await applyReferralDiscountIfEligible(userId, subscriptionId);
     } catch (e) {
       console.error('Referral activation after checkout failed', e);
+    }
+
+    if (session.metadata?.plan === 'owner_test') {
+      try {
+        await closeOwnerTestPlan(subscriptionId);
+      } catch (e) {
+        console.error('Owner test plan close after checkout failed', e);
+      }
     }
 
     await stripe.checkout.sessions.update(sessionId, {
@@ -1828,6 +1897,14 @@ async function ensureRuntimeSchema() {
 
   await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_plan TEXT');
   await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT');
+  await q(`CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q(
+    "INSERT INTO app_settings(key,value) VALUES('owner_test_plan_enabled','true') ON CONFLICT(key) DO NOTHING"
+  );
   await q('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code) WHERE referral_code IS NOT NULL');
   await q(`CREATE TABLE IF NOT EXISTS referral_redemptions (
     id UUID PRIMARY KEY,
