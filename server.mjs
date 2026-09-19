@@ -2273,6 +2273,358 @@ async function createGoogleCalendarBooking(tenant, actionRequest) {
   };
 }
 
+
+function safeEqualText(a,b) {
+  const left = Buffer.from(String(a || ''));
+  const right = Buffer.from(String(b || ''));
+  return left.length === right.length && crypto.timingSafeEqual(left,right);
+}
+
+function xmlEscape(value) {
+  return String(value ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&apos;');
+}
+
+function normalizePhone(value) {
+  return String(value || '').trim().replace(/[^+\d]/g,'').slice(0,32);
+}
+
+async function shopifyGraphql(tenant, query, variables = {}) {
+  const shop = String(tenant.shopify_shop_domain || '').trim().toLowerCase()
+    .replace(/^https?:\/\//,'')
+    .replace(/\/$/,'');
+  const token = decryptSecret(tenant.shopify_access_token);
+  if (!shop || !token) throw new Error('Shopify-yhteyttä ei ole määritetty.');
+  if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop)) {
+    throw new Error('Shopify-kaupan osoite ei ole kelvollinen.');
+  }
+  const response = await fetch('https://' + shop + '/admin/api/2026-07/graphql.json', {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'X-Shopify-Access-Token':token,
+    },
+    body:JSON.stringify({ query, variables }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.errors) {
+    const message = data?.errors?.[0]?.message || 'Shopify API -kutsu epäonnistui.';
+    throw new Error(message);
+  }
+  return data.data || {};
+}
+
+async function lookupShopifyOrder(tenant, orderNumber, email) {
+  const number = String(orderNumber || '').trim().replace(/^#/,'').slice(0,120);
+  const customerEmail = cleanEmail(email);
+  const search = ['name:#' + number, customerEmail ? 'email:' + customerEmail : ''].filter(Boolean).join(' ');
+  const data = await shopifyGraphql(tenant,`
+    query RespondoOrderLookup($query:String!) {
+      orders(first:10, query:$query, sortKey:CREATED_AT, reverse:true) {
+        nodes {
+          id
+          name
+          email
+          processedAt
+          displayFinancialStatus
+          displayFulfillmentStatus
+          currentTotalPriceSet { shopMoney { amount currencyCode } }
+          fulfillments {
+            status
+            trackingInfo { company number url }
+          }
+        }
+      }
+    }`,{ query:search });
+  const nodes = data?.orders?.nodes || [];
+  const match = nodes.find((order) => {
+    const sameNumber = String(order.name || '').replace(/^#/,'') === number;
+    const sameEmail = cleanEmail(order.email) === customerEmail;
+    return sameNumber && sameEmail;
+  });
+  if (!match) return null;
+  const money = match.currentTotalPriceSet?.shopMoney || {};
+  const tracking = (match.fulfillments || []).flatMap((x) => x.trackingInfo || []).filter(Boolean);
+  return {
+    provider:'shopify',
+    orderNumber:match.name,
+    financialStatus:match.displayFinancialStatus || '',
+    fulfillmentStatus:match.displayFulfillmentStatus || '',
+    processedAt:match.processedAt || null,
+    amount:money.amount || '',
+    currency:money.currencyCode || '',
+    tracking:tracking.slice(0,5),
+  };
+}
+
+async function wooApi(tenant, pathName, params = {}) {
+  const rawBase = String(tenant.woo_base_url || '').trim();
+  const key = decryptSecret(tenant.woo_consumer_key);
+  const secret = decryptSecret(tenant.woo_consumer_secret);
+  if (!rawBase || !key || !secret) throw new Error('WooCommerce-yhteyttä ei ole määritetty.');
+  const base = await assertPublicHttpUrl(rawBase);
+  if (base.protocol !== 'https:') throw new Error('WooCommerce-kaupan pitää käyttää HTTPS-yhteyttä.');
+  const url = new URL('/wp-json/wc/v3/' + String(pathName || '').replace(/^\/+/,''),base.origin);
+  Object.entries(params).forEach(([k,v]) => {
+    if (v !== undefined && v !== null && String(v) !== '') url.searchParams.set(k,String(v));
+  });
+  const response = await fetch(url,{
+    headers:{
+      Authorization:'Basic ' + Buffer.from(key + ':' + secret).toString('base64'),
+      'User-Agent':'RESPONDO-AI/2.0',
+    },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.message || 'WooCommerce API -kutsu epäonnistui.');
+  return data;
+}
+
+async function lookupWooOrder(tenant, orderNumber, email) {
+  const number = String(orderNumber || '').trim().replace(/^#/,'').slice(0,120);
+  const customerEmail = cleanEmail(email);
+  const orders = await wooApi(tenant,'orders',{
+    search:number,
+    per_page:20,
+    orderby:'date',
+    order:'desc',
+  });
+  const match = (Array.isArray(orders) ? orders : []).find((order) => {
+    const sameNumber = String(order.number || order.id || '') === number;
+    const sameEmail = cleanEmail(order.billing?.email) === customerEmail;
+    return sameNumber && sameEmail;
+  });
+  if (!match) return null;
+  return {
+    provider:'woocommerce',
+    orderNumber:String(match.number || match.id || number),
+    financialStatus:String(match.status || ''),
+    fulfillmentStatus:String(match.status || ''),
+    processedAt:match.date_created_gmt || match.date_created || null,
+    amount:String(match.total || ''),
+    currency:String(match.currency || ''),
+    tracking:[],
+  };
+}
+
+async function lookupEcommerceOrder(tenant, orderNumber, email) {
+  const provider = String(tenant.ecommerce_provider || '').trim();
+  if (provider === 'shopify') return lookupShopifyOrder(tenant,orderNumber,email);
+  if (provider === 'woocommerce') return lookupWooOrder(tenant,orderNumber,email);
+  return null;
+}
+
+function orderStatusText(order, lang = 'fi') {
+  if (!order) {
+    return lang === 'en'
+      ? 'I could not find an order matching that order number and email.'
+      : 'Tilausta ei löytynyt tällä tilausnumerolla ja sähköpostilla.';
+  }
+  const tracking = Array.isArray(order.tracking) && order.tracking.length
+    ? order.tracking.map((x) => x.url || x.number).filter(Boolean).join(', ')
+    : '';
+  if (lang === 'en') {
+    return [
+      'Order ' + order.orderNumber + ' was found.',
+      order.fulfillmentStatus ? 'Fulfillment: ' + order.fulfillmentStatus + '.' : '',
+      order.financialStatus ? 'Payment: ' + order.financialStatus + '.' : '',
+      tracking ? 'Tracking: ' + tracking : '',
+    ].filter(Boolean).join(' ');
+  }
+  return [
+    'Tilaus ' + order.orderNumber + ' löytyi.',
+    order.fulfillmentStatus ? 'Toimitus: ' + order.fulfillmentStatus + '.' : '',
+    order.financialStatus ? 'Maksu: ' + order.financialStatus + '.' : '',
+    tracking ? 'Seuranta: ' + tracking : '',
+  ].filter(Boolean).join(' ');
+}
+
+async function getOrCreateThread(tenantId, sourceChannel, externalContactId, visitorRef = null) {
+  const channel = String(sourceChannel || 'website').slice(0,40);
+  const contact = String(externalContactId || visitorRef || '').slice(0,220);
+  if (!contact) return null;
+  const existing = await q(
+    `SELECT * FROM chat_threads
+      WHERE tenant_id=$1 AND source_channel=$2 AND external_contact_id=$3
+      LIMIT 1`,
+    [tenantId,channel,contact],
+  );
+  if (existing.rowCount) return existing.rows[0];
+  const created = await q(
+    `INSERT INTO chat_threads(id,tenant_id,source_channel,external_contact_id,visitor_ref,mode,status,last_activity_at)
+     VALUES($1,$2,$3,$4,$5,'ai','open',NOW())
+     ON CONFLICT(tenant_id,source_channel,external_contact_id)
+     DO UPDATE SET last_activity_at=NOW()
+     RETURNING *`,
+    [uid(),tenantId,channel,contact,visitorRef || contact],
+  );
+  return created.rows[0];
+}
+
+async function appendChatMessage({
+  tenantId, threadId, sourceChannel, externalContactId, visitorRef,
+  role, text, metadata = {},
+}) {
+  const row = await q(
+    `INSERT INTO chat_messages(
+       id,tenant_id,thread_id,source_channel,external_contact_id,visitor_ref,role,message,metadata
+     ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)
+     RETURNING *`,
+    [
+      uid(),tenantId,threadId || null,String(sourceChannel || 'website').slice(0,40),
+      String(externalContactId || visitorRef || '').slice(0,220) || null,
+      String(visitorRef || '').slice(0,160) || null,
+      String(role || 'user').slice(0,30),String(text || '').slice(0,4000),
+      JSON.stringify(metadata || {}),
+    ],
+  );
+  if (threadId) {
+    await q('UPDATE chat_threads SET last_activity_at=NOW(),updated_at=NOW() WHERE id=$1',[threadId]);
+  }
+  return row.rows[0];
+}
+
+async function sendMetaMessage(tenant, channel, recipientId, text) {
+  const version = String(tenant.meta_graph_version || 'v24.0').trim() || 'v24.0';
+  const message = String(text || '').trim().slice(0,1800);
+  if (!message) return { ok:false };
+
+  if (channel === 'whatsapp') {
+    const token = decryptSecret(tenant.whatsapp_access_token);
+    const phoneId = String(tenant.whatsapp_phone_number_id || '').trim();
+    if (!token || !phoneId) throw new Error('WhatsApp-yhteyttä ei ole määritetty.');
+    const response = await fetch(
+      'https://graph.facebook.com/' + encodeURIComponent(version) + '/' + encodeURIComponent(phoneId) + '/messages',
+      {
+        method:'POST',
+        headers:{ Authorization:'Bearer ' + token,'Content-Type':'application/json' },
+        body:JSON.stringify({
+          messaging_product:'whatsapp',
+          to:recipientId,
+          type:'text',
+          text:{ body:message },
+        }),
+      },
+    );
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.error?.message || 'WhatsApp-viestin lähetys epäonnistui.');
+    return { ok:true,data };
+  }
+
+  if (channel === 'instagram') {
+    const token = decryptSecret(tenant.instagram_access_token);
+    const igId = String(tenant.instagram_account_id || '').trim();
+    if (!token || !igId) throw new Error('Instagram-yhteyttä ei ole määritetty.');
+    const response = await fetch(
+      'https://graph.instagram.com/' + encodeURIComponent(version) + '/' + encodeURIComponent(igId) + '/messages',
+      {
+        method:'POST',
+        headers:{ Authorization:'Bearer ' + token,'Content-Type':'application/json' },
+        body:JSON.stringify({
+          recipient:{ id:recipientId },
+          message:{ text:message },
+        }),
+      },
+    );
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.error?.message || 'Instagram-viestin lähetys epäonnistui.');
+    return { ok:true,data };
+  }
+
+  return { ok:false };
+}
+
+async function processExternalChannelMessage(tenant, channel, contactId, message, lang = 'fi') {
+  const thread = await getOrCreateThread(tenant.id,channel,contactId,contactId);
+  await appendChatMessage({
+    tenantId:tenant.id,threadId:thread?.id,sourceChannel:channel,
+    externalContactId:contactId,visitorRef:contactId,role:'user',text:message,
+  });
+
+  if (thread?.mode === 'human') {
+    return { humanTakeover:true,answer:'' };
+  }
+
+  const kr = await q(
+    'SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC',
+    [tenant.id],
+  );
+  const hr = await q(
+    `SELECT role,message
+       FROM chat_messages
+      WHERE tenant_id=$1 AND thread_id=$2
+      ORDER BY created_at DESC LIMIT 12`,
+    [tenant.id,thread?.id],
+  );
+  const historyRows = hr.rows.reverse();
+  const history = [];
+  for (let i=0;i<historyRows.length;i+=2) {
+    const user = historyRows[i];
+    const assistant = historyRows[i+1];
+    if (user?.role === 'user') {
+      history.push({ question:user.message,answer:assistant?.message || '',handoff:false });
+    }
+  }
+
+  const result = await generateGroundedAnswer({
+    companyName:tenant.name,rows:kr.rows,message,history,lang,pageContext:{},
+  });
+  let answer = result.answer;
+  if (result.handoff) {
+    answer = lang === 'en'
+      ? 'I do not have a verified answer yet. A person from the company needs to handle this.'
+      : 'Tähän ei löytynyt vielä varmennettua vastausta. Yrityksen henkilön pitää käsitellä tämä.';
+  }
+
+  await appendChatMessage({
+    tenantId:tenant.id,threadId:thread?.id,sourceChannel:channel,
+    externalContactId:contactId,visitorRef:contactId,role:'assistant',text:answer,
+    metadata:{ handoff:result.handoff,intent:result.intent,sourceIds:result.sourceIds },
+  });
+  await q(
+    `INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,source_channel,external_contact_id)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+    [uid(),tenant.id,message,answer,result.intent,result.confidence,result.sourceIds,result.handoff,contactId,channel,contactId],
+  );
+  return {
+    answer,handoff:result.handoff,
+    verified:!result.handoff && Array.isArray(result.sourceIds) && result.sourceIds.length>0,
+    intent:result.intent,actions:chatActions(kr.rows,message,result.handoff,lang),
+  };
+}
+
+function twilioSignatureValid(req, tenant, pathSuffix = '') {
+  const authToken = decryptSecret(tenant.twilio_auth_token);
+  if (!authToken) return false;
+  const provided = String(req.headers['x-twilio-signature'] || '');
+  if (!provided) return false;
+  const url = BASE + pathSuffix;
+  const params = req.body && typeof req.body === 'object' ? req.body : {};
+  const data = url + Object.keys(params).sort().map((key) => key + String(params[key] ?? '')).join('');
+  const expected = crypto.createHmac('sha1',authToken).update(data).digest('base64');
+  return safeEqualText(expected,provided);
+}
+
+async function twilioApi(tenant, method, pathName, body = null) {
+  const sid = String(tenant.twilio_account_sid || '').trim();
+  const token = decryptSecret(tenant.twilio_auth_token);
+  if (!sid || !token) throw new Error('Twilio-yhteyttä ei ole määritetty.');
+  const response = await fetch('https://api.twilio.com/2010-04-01' + pathName,{
+    method,
+    headers:{
+      Authorization:'Basic ' + Buffer.from(sid + ':' + token).toString('base64'),
+      ...(body ? {'Content-Type':'application/x-www-form-urlencoded'} : {}),
+    },
+    body:body ? new URLSearchParams(body).toString() : undefined,
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.message || 'Twilio API -kutsu epäonnistui.');
+  return data;
+}
+
 function cleanActionFields(type, input = {}) {
   const src = input && typeof input === 'object' ? input : {};
   const take = (key, max = 600) => String(src[key] || '').trim().slice(0, max);
@@ -3407,6 +3759,25 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_token_expires_at TIMESTAMPTZ");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_email TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_id TEXT NOT NULL DEFAULT 'primary'");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ecommerce_provider TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS shopify_shop_domain TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS shopify_access_token TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS woo_base_url TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS woo_consumer_key TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS woo_consumer_secret TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS meta_graph_version TEXT NOT NULL DEFAULT 'v24.0'");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS meta_verify_token TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS meta_app_secret TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS whatsapp_phone_number_id TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS whatsapp_access_token TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS instagram_account_id TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS instagram_access_token TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS twilio_account_sid TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS twilio_auth_token TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS twilio_phone_number TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS voice_handoff_number TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS voice_enabled BOOLEAN NOT NULL DEFAULT FALSE");
+
 
 
 
@@ -3465,6 +3836,34 @@ async function ensureRuntimeSchema() {
     UNIQUE(tenant_id,starts_at)
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_booking_slots_tenant_start ON booking_slots(tenant_id, starts_at)');
+  await q(`CREATE TABLE IF NOT EXISTS chat_threads (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    source_channel TEXT NOT NULL DEFAULT 'website',
+    external_contact_id TEXT NOT NULL,
+    visitor_ref TEXT,
+    mode TEXT NOT NULL DEFAULT 'ai',
+    status TEXT NOT NULL DEFAULT 'open',
+    last_activity_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(tenant_id,source_channel,external_contact_id)
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_chat_threads_tenant_activity ON chat_threads(tenant_id,last_activity_at DESC)');
+  await q(`CREATE TABLE IF NOT EXISTS chat_messages (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    thread_id UUID REFERENCES chat_threads(id) ON DELETE CASCADE,
+    source_channel TEXT NOT NULL DEFAULT 'website',
+    external_contact_id TEXT,
+    visitor_ref TEXT,
+    role TEXT NOT NULL,
+    message TEXT NOT NULL,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_chat_messages_thread_created ON chat_messages(thread_id,created_at ASC)');
+
 
 
   await q("ALTER TABLE tenants ALTER COLUMN accent SET DEFAULT '#111113'");
