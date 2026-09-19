@@ -50,7 +50,7 @@
       .quick button{border:1px solid #dedee2;background:#fff;border-radius:999px;padding:8px 10px;font:inherit;font-size:12px;color:#343438;cursor:pointer}
       .quick button:hover{border-color:#a9a9af}
       .actions{display:flex;gap:7px;flex-wrap:wrap;align-self:flex-start;max-width:92%}
-      .actions a{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6d6da;background:#fff;color:#111113;text-decoration:none;border-radius:10px;padding:9px 11px;font-size:12px;font-weight:700}
+      .actions a,.actions button{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6d6da;background:#fff;color:#111113;text-decoration:none;border-radius:10px;padding:9px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
       .leadbox{align-self:stretch;background:#fff;border:1px solid #dedee2;border-radius:16px;padding:13px;display:grid;gap:8px}
       .leadbox b{font-size:13px}.leadbox small{font-size:11px;color:#73737a;line-height:1.4}
       .leadbox input{width:100%;border:1px solid #d9d9dc;border-radius:10px;padding:10px 11px;font:inherit;font-size:13px;outline:none}
@@ -143,12 +143,47 @@
     return /^(https?:\/\/|tel:|mailto:)/i.test(url) ? url : '';
   }
 
-  function renderActions(actions = []) {
-    const valid = (Array.isArray(actions) ? actions : []).filter((x) => safeActionUrl(x?.url) && x?.label).slice(0, 3);
+  function trackAction(action) {
+    try {
+      fetch(serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/action-event', {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        keepalive: true,
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          actionType: action.type || 'link',
+          label: action.label,
+          target: action.url || '',
+          widgetToken: token,
+          visitorRef,
+          pageContext,
+        }),
+      }).catch(() => {});
+    } catch {}
+  }
+
+  function renderActions(actions = [], question = '') {
+    const valid = (Array.isArray(actions) ? actions : [])
+      .filter((x) => x?.label && (safeActionUrl(x?.url) || x?.mode === 'lead'))
+      .slice(0, 3);
     if (!valid.length) return;
     const wrap = document.createElement('div');
     wrap.className = 'actions';
+
     valid.forEach((action) => {
+      if (action.mode === 'lead') {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = action.label + ' →';
+        button.addEventListener('click', () => {
+          trackAction(action);
+          showLeadForm(question);
+        });
+        wrap.appendChild(button);
+        return;
+      }
+
       const a = document.createElement('a');
       a.href = safeActionUrl(action.url);
       a.textContent = action.label + ' →';
@@ -156,27 +191,10 @@
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
       }
-      a.addEventListener('click', () => {
-        try {
-          fetch(serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/action-event', {
-            method: 'POST',
-            mode: 'cors',
-            credentials: 'omit',
-            keepalive: true,
-            headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-            body: JSON.stringify({
-              actionType: action.type || 'link',
-              label: action.label,
-              target: action.url,
-              widgetToken: token,
-              visitorRef,
-              pageContext,
-            }),
-          }).catch(() => {});
-        } catch {}
-      });
+      a.addEventListener('click', () => trackAction(action));
       wrap.appendChild(a);
     });
+
     chat.appendChild(wrap);
   }
 
@@ -293,7 +311,7 @@
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Chat failed');
       pending.innerHTML = linkify(data.answer || t('En löytänyt tähän varmaa vastausta.', 'I cannot find a reliable answer to this yet.'));
-      renderActions(data.actions || []);
+      renderActions(data.actions || [], message);
       if (data.canLeaveContact || data.handoff) showLeadForm(message);
     } catch {
       pending.textContent = t('Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.', 'The response failed. Please try again in a moment.');
