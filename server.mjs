@@ -1588,6 +1588,31 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
         LIMIT 50`,
       [tenant.id],
     );
+    const bookingSlots = await q(
+      `SELECT id,starts_at,ends_at,status
+         FROM booking_slots
+        WHERE tenant_id=$1 AND starts_at >= NOW()
+        ORDER BY starts_at ASC
+        LIMIT 80`,
+      [tenant.id],
+    );
+    let stripeConnect = {
+      connected:false,
+      chargesEnabled:false,
+      detailsSubmitted:false,
+      payoutsEnabled:false,
+    };
+    if (stripe && tenant.stripe_connected_account_id) {
+      try {
+        const connected = await stripe.accounts.retrieve(tenant.stripe_connected_account_id);
+        stripeConnect = {
+          connected:true,
+          chargesEnabled:Boolean(connected.charges_enabled),
+          detailsSubmitted:Boolean(connected.details_submitted),
+          payoutsEnabled:Boolean(connected.payouts_enabled),
+        };
+      } catch {}
+    }
     const latestSelfTest = await q(
       `SELECT id, score, total_questions, answerable_questions, gaps, created_at
          FROM self_test_runs WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`,
@@ -1631,6 +1656,16 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
       leads: leads.rows,
       actionStats: actionStats.rows,
       actionRequests: actionRequests.rows,
+      bookingSlots: bookingSlots.rows,
+      stripeConnect,
+      quoteEngine: {
+        serviceName: tenant.quote_service_name || '',
+        basePrice: Number(tenant.quote_base_price || 0),
+        unitPrice: Number(tenant.quote_unit_price || 0),
+        minPrice: Number(tenant.quote_min_price || 0),
+        vatPercent: Number(tenant.quote_vat_percent || 0),
+        unitLabel: tenant.quote_unit_label || 'kpl',
+      },
       integrations: {
         webhookUrl: tenant.action_webhook_url || '',
         webhookSecret: tenant.action_webhook_secret || '',
@@ -2337,6 +2372,89 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
 
 
 
+
+app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.status(404).json({ error:'Yritystä ei löytynyt.' });
+    const tenant = tr.rows[0];
+
+    const origin = requestOrigin(req);
+    const baseHost = normalizeHost(BASE);
+    const external = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
+    if (external) {
+      if (!widgetOriginAllowed(req,tenant)) return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
+      try {
+        const token = jwt.verify(String(req.query.widgetToken || ''),JWT);
+        if (token.kind !== 'widget' || token.slug !== tenant.slug || token.host !== normalizeHost(origin.hostname)) throw new Error('Invalid token');
+      } catch {
+        return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
+      }
+      setWidgetCors(req,res);
+    }
+
+    const rows = await q(
+      `SELECT id,starts_at,ends_at
+         FROM booking_slots
+        WHERE tenant_id=$1 AND status='open' AND starts_at >= NOW()
+        ORDER BY starts_at ASC
+        LIMIT 40`,
+      [tenant.id],
+    );
+    return res.json({ slots:rows.rows });
+  } catch {
+    return res.status(500).json({ error:'Vapaita aikoja ei saatu.' });
+  }
+});
+
+app.get('/api/public/payment/verify', async (req,res) => {
+  try {
+    if (!stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
+    const actionId = String(req.query.action || '').trim();
+    const sessionId = String(req.query.session_id || '').trim();
+    if (!actionId || !sessionId) return res.status(400).json({ error:'Maksutiedot puuttuvat.' });
+
+    const rr = await q(
+      `SELECT ar.id,ar.tenant_id,ar.request_type,ar.result,t.name,t.stripe_connected_account_id
+         FROM action_requests ar
+         JOIN tenants t ON t.id=ar.tenant_id
+        WHERE ar.id=$1`,
+      [actionId],
+    );
+    if (!rr.rowCount || rr.rows[0].request_type !== 'quote') return res.status(404).json({ error:'Tarjousta ei löytynyt.' });
+    const row = rr.rows[0];
+    if (!row.stripe_connected_account_id) return res.status(400).json({ error:'Maksutiliä ei löytynyt.' });
+
+    const session = await stripe.checkout.sessions.retrieve(
+      sessionId,
+      {},
+      { stripeAccount:row.stripe_connected_account_id },
+    );
+    if (session.client_reference_id !== actionId) return res.status(400).json({ error:'Maksu ei vastaa tarjousta.' });
+
+    const paid = session.payment_status === 'paid';
+    if (paid) {
+      await q(
+        `UPDATE action_requests
+            SET status='done',
+                result=COALESCE(result,'{}'::jsonb) || $1::jsonb,
+                updated_at=NOW()
+          WHERE id=$2`,
+        [JSON.stringify({ paid:true,paidAt:new Date().toISOString(),checkoutSessionId:session.id }),actionId],
+      );
+    }
+    return res.json({
+      paid,
+      companyName:row.name,
+      amountTotal:Number(session.amount_total || 0),
+      currency:String(session.currency || 'eur').toUpperCase(),
+    });
+  } catch (e) {
+    console.error('Payment verification failed',e);
+    return res.status(400).json({ error:'Maksua ei voitu vahvistaa.' });
+  }
+});
+
 app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res) => {
   try {
     const tr = await publicTenant(req.params.slug);
@@ -2359,8 +2477,14 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     }
 
     const fields = cleanActionFields(type, body.fields);
+    if (type === 'booking') {
+      fields.slotId = String(body.fields?.slotId || '').trim().slice(0,80);
+    }
+    if (type === 'quote') {
+      fields.quantity = Math.max(0, Number(body.fields?.quantity || 0));
+    }
     if (type === 'quote' && !fields.contact) return res.status(400).json({ error:'Anna sähköposti tai puhelinnumero.' });
-    if (type === 'booking' && (!fields.contact || !fields.date)) return res.status(400).json({ error:'Anna yhteystieto ja toivottu päivä.' });
+    if (type === 'booking' && (!fields.contact || !fields.slotId)) return res.status(400).json({ error:'Valitse vapaa aika ja anna yhteystieto.' });
     if (type === 'order_status' && (!fields.orderNumber || !fields.email)) return res.status(400).json({ error:'Anna tilausnumero ja tilauksessa käytetty sähköposti.' });
 
     const id = uid();
@@ -2374,11 +2498,71 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       pageUrl,
       pageTitle: String(body.pageContext?.title || '').slice(0,300) || null,
     };
+    let computedQuote = null;
+    let bookedSlot = null;
+
+    if (type === 'quote') {
+      const base = Number(tenant.quote_base_price || 0);
+      const perUnit = Number(tenant.quote_unit_price || 0);
+      const minimum = Number(tenant.quote_min_price || 0);
+      const vatPercent = Number(tenant.quote_vat_percent || 0);
+      const quantity = Number(fields.quantity || 0);
+      if (base > 0 || perUnit > 0 || minimum > 0) {
+        const net = Math.max(minimum, base + (perUnit * quantity));
+        const vat = net * (vatPercent / 100);
+        const total = net + vat;
+        computedQuote = {
+          serviceName:tenant.quote_service_name || 'Tarjous',
+          unitLabel:tenant.quote_unit_label || 'kpl',
+          quantity,
+          net:Number(net.toFixed(2)),
+          vatPercent,
+          vat:Number(vat.toFixed(2)),
+          total:Number(total.toFixed(2)),
+          totalCents:Math.max(50,Math.round(total * 100)),
+          currency:'EUR',
+        };
+      }
+    }
+
+    if (type === 'booking') {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const sr = await client.query(
+          `SELECT id,starts_at,ends_at,status
+             FROM booking_slots
+            WHERE id=$1 AND tenant_id=$2
+            FOR UPDATE`,
+          [fields.slotId,tenant.id],
+        );
+        if (!sr.rowCount || sr.rows[0].status !== 'open' || new Date(sr.rows[0].starts_at).getTime() < Date.now()) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error:'Tämä aika ei ole enää vapaa. Valitse toinen aika.' });
+        }
+        bookedSlot = sr.rows[0];
+        await client.query(
+          `UPDATE booking_slots SET status='booked' WHERE id=$1 AND tenant_id=$2`,
+          [fields.slotId,tenant.id],
+        );
+        await client.query('COMMIT');
+      } catch (e) {
+        try { await client.query('ROLLBACK'); } catch {}
+        throw e;
+      } finally {
+        client.release();
+      }
+      payload.booking = {
+        slotId:bookedSlot.id,
+        startsAt:bookedSlot.starts_at,
+        endsAt:bookedSlot.ends_at,
+      };
+    }
 
     await q(
-      `INSERT INTO action_requests(id,tenant_id,visitor_ref,request_type,status,payload,source_channel,external_contact_id)
-       VALUES($1,$2,$3,$4,'new',$5::jsonb,$6,$7)`,
-      [id,tenant.id,visitorRef,type,JSON.stringify(payload),sourceChannel,externalContactId],
+      `INSERT INTO action_requests(id,tenant_id,visitor_ref,request_type,status,payload,result,source_channel,external_contact_id)
+       VALUES($1,$2,$3,$4,'new',$5::jsonb,$6::jsonb,$7,$8)`,
+      [id,tenant.id,visitorRef,type,JSON.stringify(payload),JSON.stringify(computedQuote ? { quote:computedQuote } : {}),sourceChannel,externalContactId],
     );
 
     if (['quote','booking','callback'].includes(type)) {
@@ -2417,9 +2601,11 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
 
     await q(
       `UPDATE action_requests
-          SET delivery_status=$1,result=$2::jsonb,updated_at=NOW()
+          SET delivery_status=$1,
+              result=COALESCE(result,'{}'::jsonb) || $2::jsonb,
+              updated_at=NOW()
         WHERE id=$3 AND tenant_id=$4`,
-      [delivery.status,JSON.stringify(delivery.result || {}),id,tenant.id],
+      [delivery.status,JSON.stringify({ webhook:delivery.result || {} }),id,tenant.id],
     );
 
     await q(
@@ -2434,11 +2620,63 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       ''
     ).trim().slice(0,1200);
 
+    let checkoutUrl = '';
+    let paymentAvailable = false;
+    if (type === 'quote' && computedQuote && stripe && tenant.stripe_connected_account_id) {
+      try {
+        const connected = await stripe.accounts.retrieve(tenant.stripe_connected_account_id);
+        paymentAvailable = Boolean(connected.charges_enabled);
+        if (paymentAvailable) {
+          const checkout = await stripe.checkout.sessions.create(
+            {
+              mode:'payment',
+              client_reference_id:id,
+              customer_email:actionContact(fields).email || undefined,
+              line_items:[{
+                price_data:{
+                  currency:'eur',
+                  product_data:{
+                    name:computedQuote.serviceName || ('Tarjous · ' + tenant.name),
+                    description:payload.question ? payload.question.slice(0,450) : undefined,
+                  },
+                  unit_amount:computedQuote.totalCents,
+                },
+                quantity:1,
+              }],
+              metadata:{
+                respondo_action_request_id:id,
+                respondo_tenant_id:tenant.id,
+              },
+              success_url:BASE + '/maksu-valmis?action=' + encodeURIComponent(id) + '&session_id={CHECKOUT_SESSION_ID}',
+              cancel_url:pageUrl || tenant.website || BASE,
+            },
+            { stripeAccount:tenant.stripe_connected_account_id },
+          );
+          checkoutUrl = checkout.url || '';
+          await q(
+            `UPDATE action_requests
+                SET result=COALESCE(result,'{}'::jsonb) || $1::jsonb,updated_at=NOW()
+              WHERE id=$2`,
+            [JSON.stringify({ checkoutSessionId:checkout.id }),id],
+          );
+        }
+      } catch (e) {
+        console.error('Connected Stripe Checkout failed',e);
+      }
+    }
+
     return res.json({
       ok:true,
       id,
       status:'new',
       deliveryStatus:delivery.status,
+      quote:computedQuote,
+      booking:bookedSlot ? {
+        startsAt:bookedSlot.starts_at,
+        endsAt:bookedSlot.ends_at,
+      } : null,
+      paymentAvailable,
+      checkoutUrl,
       customerMessage: customerMessage || (
         type === 'booking' ? 'Ajanvarauspyyntösi on vastaanotettu.' :
         type === 'quote' ? 'Tarjouspyyntösi on vastaanotettu.' :
@@ -2449,6 +2687,125 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
   } catch (e) {
     console.error('Action request failed', e);
     return res.status(500).json({ error:'Toiminnon lähetys epäonnistui.' });
+  }
+});
+
+
+app.post('/api/app/quote-engine', auth, subscribed, async (req,res) => {
+  try {
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const basePrice = Math.max(0, Number(req.body.basePrice || 0));
+    const unitPrice = Math.max(0, Number(req.body.unitPrice || 0));
+    const minPrice = Math.max(0, Number(req.body.minPrice || 0));
+    const vatPercent = Math.min(30, Math.max(0, Number(req.body.vatPercent || 0)));
+    const serviceName = String(req.body.serviceName || '').trim().slice(0,120);
+    const unitLabel = String(req.body.unitLabel || 'kpl').trim().slice(0,40) || 'kpl';
+
+    await q(
+      `UPDATE tenants
+          SET quote_service_name=$1,quote_base_price=$2,quote_unit_price=$3,
+              quote_min_price=$4,quote_vat_percent=$5,quote_unit_label=$6,updated_at=NOW()
+        WHERE id=$7`,
+      [serviceName,basePrice,unitPrice,minPrice,vatPercent,unitLabel,tr.rows[0].id],
+    );
+    return res.json({ ok:true });
+  } catch (e) {
+    return res.status(400).json({ error:e.message || 'Hintalaskuria ei voitu tallentaa.' });
+  }
+});
+
+app.post('/api/app/booking-slots/generate', auth, subscribed, async (req,res) => {
+  const client = await pool.connect();
+  try {
+    const tr = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const tenantId = tr.rows[0].id;
+    const slots = (Array.isArray(req.body.slots) ? req.body.slots : []).slice(0,300);
+    if (!slots.length) return res.status(400).json({ error:'Luo vähintään yksi vapaa aika.' });
+
+    await client.query('BEGIN');
+    let saved = 0;
+    for (const slot of slots) {
+      const start = new Date(slot.start);
+      const end = new Date(slot.end);
+      if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) continue;
+      if (start.getTime() < Date.now() - 60000) continue;
+      const inserted = await client.query(
+        `INSERT INTO booking_slots(id,tenant_id,starts_at,ends_at,status)
+         VALUES($1,$2,$3,$4,'open')
+         ON CONFLICT(tenant_id,starts_at) DO NOTHING
+         RETURNING id`,
+        [uid(),tenantId,start.toISOString(),end.toISOString()],
+      );
+      saved += inserted.rowCount;
+    }
+    await client.query('COMMIT');
+    return res.json({ ok:true,saved });
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch {}
+    return res.status(400).json({ error:e.message || 'Vapaita aikoja ei voitu luoda.' });
+  } finally {
+    client.release();
+  }
+});
+
+app.delete('/api/app/booking-slots/:id', auth, subscribed, async (req,res) => {
+  try {
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const removed = await q(
+      `DELETE FROM booking_slots
+        WHERE id=$1 AND tenant_id=$2 AND status='open'
+        RETURNING id`,
+      [req.params.id,tr.rows[0].id],
+    );
+    if (!removed.rowCount) return res.status(400).json({ error:'Aikaa ei voitu poistaa.' });
+    return res.json({ ok:true });
+  } catch {
+    return res.status(500).json({ error:'Aikaa ei voitu poistaa.' });
+  }
+});
+
+app.post('/api/app/stripe-connect/onboard', auth, subscribed, async (req,res) => {
+  try {
+    if (!stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const tenant = tr.rows[0];
+    let accountId = tenant.stripe_connected_account_id;
+    if (!accountId) {
+      const country = String(req.body.country || 'FI').trim().toUpperCase().slice(0,2) || 'FI';
+      const account = await stripe.accounts.create({
+        type:'express',
+        country,
+        capabilities:{
+          card_payments:{ requested:true },
+          transfers:{ requested:true },
+        },
+        business_profile:{
+          name:tenant.name,
+          url:tenant.website || undefined,
+        },
+        metadata:{ tenant_id:tenant.id, tenant_slug:tenant.slug },
+      });
+      accountId = account.id;
+      await q(
+        'UPDATE tenants SET stripe_connected_account_id=$1,updated_at=NOW() WHERE id=$2',
+        [accountId,tenant.id],
+      );
+    }
+
+    const link = await stripe.accountLinks.create({
+      account:accountId,
+      refresh_url:BASE + '/app?section=automation&stripe=refresh',
+      return_url:BASE + '/app?section=automation&stripe=return',
+      type:'account_onboarding',
+    });
+    return res.json({ url:link.url });
+  } catch (e) {
+    console.error('Stripe Connect onboarding failed', e);
+    return res.status(400).json({ error:e.message || 'Stripe-yhdistämistä ei voitu aloittaa.' });
   }
 });
 
@@ -2700,6 +3057,14 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS action_webhook_url TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS action_webhook_secret TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS channels_api_key TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_connected_account_id TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_service_name TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_base_price NUMERIC(12,2) NOT NULL DEFAULT 0");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_unit_price NUMERIC(12,2) NOT NULL DEFAULT 0");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_min_price NUMERIC(12,2) NOT NULL DEFAULT 0");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_vat_percent NUMERIC(6,2) NOT NULL DEFAULT 0");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_unit_label TEXT NOT NULL DEFAULT 'kpl'");
+
 
   await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'manual'");
   await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS source_url TEXT");
@@ -2746,6 +3111,17 @@ async function ensureRuntimeSchema() {
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_action_requests_tenant_created ON action_requests(tenant_id, created_at DESC)');
+  await q(`CREATE TABLE IF NOT EXISTS booking_slots (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    starts_at TIMESTAMPTZ NOT NULL,
+    ends_at TIMESTAMPTZ NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(tenant_id,starts_at)
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_booking_slots_tenant_start ON booking_slots(tenant_id, starts_at)');
+
 
   await q("ALTER TABLE tenants ALTER COLUMN accent SET DEFAULT '#111113'");
   await q("UPDATE tenants SET accent='#111113' WHERE accent='#3157ff'");
