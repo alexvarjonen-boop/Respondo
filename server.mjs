@@ -2106,6 +2106,57 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
   }
 });
 
+
+app.post('/api/public/:slug/action-event', publicChatLimiter, async (req, res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.status(404).json({ error: 'Yritystä ei löytynyt.' });
+    const tenant = tr.rows[0];
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch { body = {}; }
+    }
+    body = body || {};
+
+    const origin = requestOrigin(req);
+    const baseHost = normalizeHost(BASE);
+    const external = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
+    if (external) {
+      if (!widgetOriginAllowed(req, tenant)) return res.status(403).json({ error: 'Chat ei ole käytössä tällä verkkosivulla.' });
+      try {
+        const token = jwt.verify(String(body.widgetToken || ''), JWT);
+        if (token.kind !== 'widget' || token.slug !== tenant.slug || token.host !== normalizeHost(origin.hostname)) throw new Error('Invalid token');
+      } catch {
+        return res.status(403).json({ error: 'Chat ei ole käytössä tällä verkkosivulla.' });
+      }
+      setWidgetCors(req, res);
+    }
+
+    const actionType = String(body.actionType || '').trim().slice(0, 40);
+    if (!['quote','booking','phone','email','link'].includes(actionType)) {
+      return res.status(400).json({ error: 'Tuntematon toiminto.' });
+    }
+
+    await q(
+      `INSERT INTO action_events(id,tenant_id,visitor_ref,action_type,label,target,page_url)
+       VALUES($1,$2,$3,$4,$5,$6,$7)`,
+      [
+        uid(),
+        tenant.id,
+        String(body.visitorRef || '').slice(0,160) || null,
+        actionType,
+        String(body.label || '').slice(0,120) || null,
+        String(body.target || '').slice(0,1000) || null,
+        String(body.pageContext?.url || '').slice(0,1000) || null,
+      ],
+    );
+    return res.json({ ok:true });
+  } catch (e) {
+    console.error('Action event failed', e);
+    return res.status(500).json({ error:'Toiminnon seuranta epäonnistui.' });
+  }
+});
+
 app.post('/api/billing/portal', auth, async (req, res) => {
   try {
     if (!stripe) return res.status(503).json({ error: 'Stripe ei ole vielä kytketty.' });
