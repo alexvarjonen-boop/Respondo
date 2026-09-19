@@ -1779,6 +1779,11 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
       actionRequests: actionRequests.rows,
       bookingSlots: bookingSlots.rows,
       stripeConnect,
+      googleCalendar: {
+        connected:Boolean(tenant.google_calendar_refresh_token || tenant.google_calendar_access_token),
+        email:tenant.google_calendar_email || '',
+        calendarId:tenant.google_calendar_id || 'primary',
+      },
       quoteEngine: {
         serviceName: tenant.quote_service_name || '',
         basePrice: Number(tenant.quote_base_price || 0),
@@ -2661,7 +2666,26 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
         LIMIT 40`,
       [tenant.id],
     );
-    return res.json({ slots:rows.rows });
+
+    let slots = rows.rows;
+    if (slots.length && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token)) {
+      try {
+        const events = await googleCalendarEvents(
+          tenant,
+          slots[0].starts_at,
+          slots[slots.length - 1].ends_at,
+        );
+        slots = slots.filter((slot) => {
+          const start = new Date(slot.starts_at).getTime();
+          const end = new Date(slot.ends_at).getTime();
+          return !events.some((event) => event.start.getTime() < end && event.end.getTime() > start);
+        });
+      } catch (e) {
+        console.error('Google Calendar availability filter failed',e);
+      }
+    }
+
+    return res.json({ slots });
   } catch {
     return res.status(500).json({ error:'Vapaita aikoja ei saatu.' });
   }
@@ -2786,6 +2810,32 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     }
 
     if (type === 'booking') {
+      const previewSlot = await q(
+        `SELECT id,starts_at,ends_at,status
+           FROM booking_slots
+          WHERE id=$1 AND tenant_id=$2`,
+        [fields.slotId,tenant.id],
+      );
+      if (!previewSlot.rowCount || previewSlot.rows[0].status !== 'open') {
+        return res.status(409).json({ error:'Tämä aika ei ole enää vapaa. Valitse toinen aika.' });
+      }
+
+      if (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token) {
+        try {
+          const conflict = await googleCalendarHasConflict(
+            tenant,
+            previewSlot.rows[0].starts_at,
+            previewSlot.rows[0].ends_at,
+          );
+          if (conflict) {
+            return res.status(409).json({ error:'Tämä aika on varattu Google Kalenterissa. Valitse toinen aika.' });
+          }
+        } catch (e) {
+          console.error('Google Calendar conflict check failed',e);
+          return res.status(503).json({ error:'Kalenterin vapautta ei voitu juuri nyt varmistaa. Yritä hetken päästä uudelleen.' });
+        }
+      }
+
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -2850,6 +2900,22 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       payload,
       createdAt:new Date().toISOString(),
     };
+
+    let calendarSync = { status:'not_configured' };
+    if (type === 'booking') {
+      try {
+        calendarSync = await createGoogleCalendarBooking(tenant,actionRequest);
+      } catch (e) {
+        console.error('Google Calendar booking sync failed',e);
+        calendarSync = { status:'failed', error:String(e?.message || 'Calendar sync failed').slice(0,300) };
+      }
+      await q(
+        `UPDATE action_requests
+            SET result=COALESCE(result,'{}'::jsonb) || $1::jsonb,updated_at=NOW()
+          WHERE id=$2`,
+        [JSON.stringify({ calendarSync }),id],
+      );
+    }
 
     let delivery = { status:'not_configured', result:null };
     try {
@@ -2935,6 +3001,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         startsAt:bookedSlot.starts_at,
         endsAt:bookedSlot.ends_at,
       } : null,
+      calendarSync,
       paymentAvailable,
       checkoutUrl,
       customerMessage: customerMessage || (
@@ -3324,6 +3391,12 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_min_price NUMERIC(12,2) NOT NULL DEFAULT 0");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_vat_percent NUMERIC(6,2) NOT NULL DEFAULT 0");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS quote_unit_label TEXT NOT NULL DEFAULT 'kpl'");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_access_token TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_refresh_token TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_token_expires_at TIMESTAMPTZ");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_email TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_calendar_id TEXT NOT NULL DEFAULT 'primary'");
+
 
 
   await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'manual'");
