@@ -2878,6 +2878,233 @@ async function route() {
       }
     });
 
+    const syncCommerceFields = () => {
+      const provider = $('#commerceProvider')?.value || '';
+      document.querySelector('.shopify-fields')?.classList.toggle('hidden', provider === 'woocommerce');
+      document.querySelector('.woo-fields')?.classList.toggle('hidden', provider !== 'woocommerce');
+    };
+    $('#commerceProvider')?.addEventListener('change', syncCommerceFields);
+    syncCommerceFields();
+
+    $('#commerceForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.currentTarget);
+      const button = e.currentTarget.querySelector('button[type="submit"]');
+      const original = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = 'Tallennetaan…';
+      try {
+        await api('/api/app/commerce', {
+          method:'POST',
+          body:JSON.stringify({
+            provider:form.get('provider'),
+            shopifyShopDomain:form.get('shopifyShopDomain'),
+            shopifyAccessToken:form.get('shopifyAccessToken'),
+            wooBaseUrl:form.get('wooBaseUrl'),
+            wooConsumerKey:form.get('wooConsumerKey'),
+            wooConsumerSecret:form.get('wooConsumerSecret'),
+          }),
+        });
+        $('#commerceMsg').innerHTML = '<div class="notice success">Verkkokauppayhteys tallennettu ✓</div>';
+        button.innerHTML = 'Tallennettu ✓';
+        setTimeout(() => (button.innerHTML = original), 1500);
+      } catch (err) {
+        $('#commerceMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.innerHTML = original;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    $('#testCommerce')?.addEventListener('click', async (e) => {
+      const button = e.currentTarget;
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Testataan…';
+      try {
+        const result = await api('/api/app/commerce/test', { method:'POST', body:'{}' });
+        $('#commerceMsg').innerHTML = '<div class="notice success">' +
+          (result.provider === 'shopify' ? 'Shopify-yhteys toimii ✓' : 'WooCommerce-yhteys toimii ✓') +
+          '</div>';
+        button.textContent = 'Toimii ✓';
+        setTimeout(() => (button.textContent = original), 1500);
+      } catch (err) {
+        $('#commerceMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.textContent = original;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    $('#metaChannelsForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.currentTarget);
+      const button = e.currentTarget.querySelector('button[type="submit"]');
+      const original = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = 'Tallennetaan…';
+      try {
+        await api('/api/app/meta-channels', {
+          method:'POST',
+          body:JSON.stringify({
+            graphVersion:form.get('graphVersion'),
+            appSecret:form.get('appSecret'),
+            whatsappPhoneNumberId:form.get('whatsappPhoneNumberId'),
+            whatsappAccessToken:form.get('whatsappAccessToken'),
+            instagramAccountId:form.get('instagramAccountId'),
+            instagramAccessToken:form.get('instagramAccessToken'),
+          }),
+        });
+        $('#metaChannelsMsg').innerHTML = '<div class="notice success">Meta-kanavat tallennettu ✓ Lisää yllä näkyvä Webhook URL + Verify Token Meta Developer -asetuksiin.</div>';
+        button.innerHTML = 'Tallennettu ✓';
+        setTimeout(() => (button.innerHTML = original), 1500);
+      } catch (err) {
+        $('#metaChannelsMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.innerHTML = original;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    $('#testMetaChannels')?.addEventListener('click', async (e) => {
+      const button = e.currentTarget;
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Testataan…';
+      try {
+        const result = await api('/api/app/meta-channels/test', { method:'POST', body:'{}' });
+        const parts = [];
+        if (result.results?.whatsapp) parts.push(result.results.whatsapp.ok ? 'WhatsApp ✓' : 'WhatsApp ✕');
+        if (result.results?.instagram) parts.push(result.results.instagram.ok ? 'Instagram ✓' : 'Instagram ✕');
+        $('#metaChannelsMsg').innerHTML = '<div class="notice ' + (result.ok ? 'success' : 'error') + '">' + esc(parts.join(' · ')) + '</div>';
+        button.textContent = result.ok ? 'Toimii ✓' : 'Tarkista tiedot';
+      } catch (err) {
+        $('#metaChannelsMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.textContent = original;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    $('#voiceAgentForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.currentTarget);
+      const button = e.currentTarget.querySelector('button[type="submit"]');
+      const original = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = 'Tallennetaan…';
+      try {
+        await api('/api/app/voice', {
+          method:'POST',
+          body:JSON.stringify({
+            accountSid:form.get('accountSid'),
+            authToken:form.get('authToken'),
+            phoneNumber:form.get('phoneNumber'),
+            handoffNumber:form.get('handoffNumber'),
+            enabled:form.get('enabled') === 'on',
+          }),
+        });
+        $('#voiceAgentMsg').innerHTML = '<div class="notice success">Puhelinagentin asetukset tallennettu ✓</div>';
+        button.innerHTML = 'Tallennettu ✓';
+        setTimeout(() => (button.innerHTML = original), 1500);
+      } catch (err) {
+        $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.innerHTML = original;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    $('#testVoiceAgent')?.addEventListener('click', async (e) => {
+      const button = e.currentTarget;
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Testataan…';
+      try {
+        await api('/api/app/voice/test', { method:'POST', body:'{}' });
+        $('#voiceAgentMsg').innerHTML = '<div class="notice success">Twilio-yhteys toimii ✓</div>';
+        button.textContent = 'Toimii ✓';
+        setTimeout(() => (button.textContent = original), 1500);
+      } catch (err) {
+        $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.textContent = original;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    $('#configureVoiceNumber')?.addEventListener('click', async (e) => {
+      const button = e.currentTarget;
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Aktivoidaan…';
+      try {
+        await api('/api/app/voice/configure-number', { method:'POST', body:'{}' });
+        $('#voiceAgentMsg').innerHTML = '<div class="notice success">Twilio-numero ohjaa nyt puhelut RESPONDO Voiceen ✓</div>';
+        button.textContent = 'Aktivoitu ✓';
+      } catch (err) {
+        $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.textContent = original;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.querySelectorAll('.live-mode-toggle').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const item = button.closest('.live-thread');
+        const id = item?.dataset.threadId;
+        const mode = button.dataset.mode;
+        if (!id) return;
+        button.disabled = true;
+        try {
+          await api('/api/app/live/' + encodeURIComponent(id) + '/mode', {
+            method:'POST',
+            body:JSON.stringify({ mode }),
+          });
+          item.classList.toggle('human-mode', mode === 'human');
+          item.querySelector('.live-mode').textContent = mode === 'human' ? '● Ihminen vastaa' : '● AI vastaa';
+          button.dataset.mode = mode === 'human' ? 'ai' : 'human';
+          button.textContent = mode === 'human' ? 'Palauta AI:lle' : 'Ota haltuun';
+          item.querySelectorAll('.live-reply-form input,.live-reply-form button').forEach((el) => {
+            el.disabled = mode !== 'human';
+          });
+        } catch (err) {
+          item.querySelector('.live-msg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
+
+    document.querySelectorAll('.live-reply-form').forEach((formEl) => {
+      formEl.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const item = formEl.closest('.live-thread');
+        const id = item?.dataset.threadId;
+        const input = formEl.elements.message;
+        const message = String(input?.value || '').trim();
+        if (!id || !message) return;
+        const button = formEl.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+          await api('/api/app/live/' + encodeURIComponent(id) + '/reply', {
+            method:'POST',
+            body:JSON.stringify({ message }),
+          });
+          const list = item.querySelector('.live-messages');
+          list.insertAdjacentHTML('beforeend','<div class="live-message human"><small>Sinä</small><p>' + esc(message) + '</p></div>');
+          input.value = '';
+          list.scrollTop = list.scrollHeight;
+        } catch (err) {
+          item.querySelector('.live-msg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        } finally {
+          button.disabled = false;
+          input?.focus();
+        }
+      });
+    });
+
     $('#integrationsForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const button = e.currentTarget.querySelector('button[type="submit"]');
