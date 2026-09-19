@@ -3145,3 +3145,312 @@ body:before{opacity:.012}
     justify-content:center!important;
   }
 }
+
+
+/* =========================================================
+   RESPONDO AUTOPILOT — Calendar, Quotes & Payments
+   ========================================================= */
+.quote-engine-panel,
+.booking-calendar-panel,
+.stripe-connect-panel{
+  margin:0!important;
+}
+.quote-engine-form,
+.booking-slots-form{
+  margin-top:18px;
+}
+.quote-engine-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.quote-form-bottom{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-top:12px;
+}
+.quote-formula-preview{
+  color:#7a7a80;
+  font-size:9px;
+  line-height:1.45;
+}
+.quote-form-bottom .dashboard-action{
+  width:auto!important;
+  margin:0!important;
+  flex:0 0 auto;
+}
+.action-quote-summary,
+.action-booking-summary{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:10px 0;
+  padding:11px 12px;
+  border-radius:13px;
+  background:#f6f6f8;
+  border:1px solid rgba(17,17,20,.06);
+}
+.action-quote-summary span,
+.action-booking-summary span{
+  color:#919197;
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.1em;
+}
+.action-quote-summary b,
+.action-booking-summary b{
+  margin-left:auto;
+  font-size:15px;
+}
+.action-quote-summary small{
+  color:#65656c;
+  font-size:9px;
+}
+.booking-generator-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:9px;
+}
+.booking-generator-grid select{
+  width:100%;
+  min-height:46px;
+  border:1px solid rgba(17,17,20,.11);
+  border-radius:12px;
+  padding:0 11px;
+  background:#fff;
+  color:#111114;
+  font:inherit;
+  font-size:11px;
+}
+.weekday-picker{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin:10px 0 13px;
+}
+.weekday-picker label{
+  cursor:pointer;
+}
+.weekday-picker input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+.weekday-picker span{
+  display:grid;
+  place-items:center;
+  min-width:40px;
+  height:36px;
+  padding:0 8px;
+  border:1px solid rgba(17,17,20,.11);
+  border-radius:10px;
+  background:#fff;
+  color:#67676d;
+  font-size:10px;
+  font-weight:800;
+}
+.weekday-picker input:checked + span{
+  background:#111114;
+  border-color:#111114;
+  color:#fff;
+}
+.booking-slots-form>.dashboard-action{
+  width:auto!important;
+  margin:0!important;
+}
+.booking-slot-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+  margin-top:17px;
+}
+.booking-slot-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:11px;
+  border:1px solid rgba(17,17,20,.08);
+  border-radius:12px;
+  background:#fff;
+}
+.booking-slot-item>div{
+  min-width:0;
+  display:grid;
+  gap:3px;
+}
+.booking-slot-item b{
+  font-size:10px;
+}
+.booking-slot-item small{
+  color:#6d6d73;
+  font-size:8px;
+}
+.booking-slot-item.booked{
+  background:#f4f8f5;
+  color:#49705a;
+}
+.delete-booking-slot{
+  border:0;
+  background:transparent;
+  color:#8a5d5d;
+  padding:5px;
+  font:inherit;
+  font-size:8px;
+  font-weight:800;
+  cursor:pointer;
+}
+.stripe-connect-status{
+  display:inline-flex;
+  align-items:center;
+  padding:7px 10px;
+  border-radius:999px;
+  background:#f2f2f4;
+  color:#68686e;
+  font-size:9px;
+  font-weight:850;
+  white-space:nowrap;
+}
+.stripe-connect-status.ready{
+  background:#eaf8ef;
+  color:#26724a;
+}
+.stripe-connect-body{
+  margin-top:17px;
+}
+.stripe-country-field{
+  max-width:260px;
+}
+.stripe-country-field select{
+  width:100%;
+  min-height:46px;
+  border:1px solid rgba(17,17,20,.11);
+  border-radius:12px;
+  padding:0 11px;
+  background:#fff;
+  color:#111114;
+  font:inherit;
+  font-size:11px;
+}
+.stripe-connect-body>.dashboard-action{
+  width:auto!important;
+  margin:10px 0 0!important;
+}
+.stripe-connected-ok{
+  padding:14px;
+  border-radius:14px;
+  background:#eefaf2;
+  border:1px solid rgba(37,126,78,.12);
+}
+.stripe-connected-ok b{
+  display:block;
+  color:#226742;
+  font-size:12px;
+}
+.stripe-connected-ok p{
+  margin:4px 0 0;
+  color:#5b7968;
+  font-size:10px;
+  line-height:1.5;
+}
+.payment-success-page{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  background:#f5f5f7;
+}
+.payment-success-card{
+  width:min(520px,100%);
+  padding:32px;
+  border:1px solid rgba(17,17,20,.08);
+  border-radius:26px;
+  background:#fff;
+  box-shadow:0 20px 60px rgba(20,20,24,.09);
+  text-align:center;
+}
+.payment-success-card .logo{
+  justify-content:center;
+  margin-bottom:28px;
+}
+.payment-success-icon{
+  width:58px;
+  height:58px;
+  margin:0 auto 16px;
+  display:grid;
+  place-items:center;
+  border-radius:18px;
+  background:#111114;
+  color:#fff;
+  font-size:25px;
+  font-weight:900;
+}
+.payment-success-card>small{
+  color:#87878d;
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.14em;
+}
+.payment-success-card h1{
+  margin:8px 0;
+  font-size:42px;
+  letter-spacing:-.045em;
+}
+.payment-success-card p{
+  margin:0 auto;
+  max-width:380px;
+  color:#626269;
+  font-size:13px;
+  line-height:1.6;
+}
+.payment-success-note{
+  margin-top:14px!important;
+  color:#94949a!important;
+  font-size:11px!important;
+}
+.payment-success-card.error .payment-success-icon{
+  background:#8f4343;
+}
+@media(max-width:900px){
+  .quote-engine-grid{
+    grid-template-columns:1fr 1fr;
+  }
+  .booking-generator-grid{
+    grid-template-columns:1fr 1fr;
+  }
+}
+@media(max-width:560px){
+  .quote-engine-grid,
+  .booking-generator-grid,
+  .booking-slot-list{
+    grid-template-columns:1fr;
+  }
+  .quote-form-bottom{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .quote-form-bottom .dashboard-action,
+  .booking-slots-form>.dashboard-action,
+  .stripe-connect-body>.dashboard-action{
+    width:100%!important;
+    justify-content:center!important;
+  }
+  .action-quote-summary,
+  .action-booking-summary{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .action-quote-summary b,
+  .action-booking-summary b{
+    margin-left:0;
+  }
+  .payment-success-card{
+    padding:24px 18px;
+    border-radius:22px;
+  }
+  .payment-success-card h1{
+    font-size:36px;
+  }
+}
