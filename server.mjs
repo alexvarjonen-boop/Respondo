@@ -2273,42 +2273,66 @@ app.post('/api/app/self-test', auth, subscribed, async (req, res) => {
     if (!tr.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
     const tenant = tr.rows[0];
     const kr = await q(
-      'SELECT title,answer,category FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC LIMIT 80',
+      'SELECT title,answer,category FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC LIMIT 120',
       [tenant.id],
     );
     if (!kr.rowCount) return res.status(400).json({ error: 'Lisää ensin yrityksen tietoja ja vastauksia.' });
 
+    const requested = Number(req.body?.target || 500);
+    const target = requested >= 1000 ? 1000 : 500;
+    const batchSize = 50;
+    const batchCount = Math.ceil(target / batchSize);
     const sourceText = kr.rows
       .map((x, i) => '[' + (i + 1) + '] ' + x.title + ': ' + x.answer)
       .join('\n')
-      .slice(0, 28000);
+      .slice(0, 36000);
 
-    const prompt = 'Toimit yrityksen asiakaspalvelubotin laadun testaajana. ' +
-      'Luo 12 realistista ja erilaista asiakaskysymystä. Arvioi jokaiselle, pystyykö hyväksytty tietopohja vastaamaan varmasti. ' +
-      'Älä oleta tietoa tietopohjan ulkopuolelta. Palauta vain JSON: ' +
-      '{"questions":[{"question":"...","answerable":true,"reason":"lyhyt syy"}]}' +
-      '\n\nYRITYS: ' + tenant.name +
-      '\nTOIMIALA: ' + (tenant.industry || 'Palveluyritys') +
-      '\n\nHYVÄKSYTTY TIETOPOHJA:\n' + sourceText;
-
-    const rr = await openai.responses.create({
-      model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
-      input: prompt,
-      max_output_tokens: 1400,
+    const jobs = Array.from({ length: batchCount }, (_, batchIndex) => {
+      const count = Math.min(batchSize, target - batchIndex * batchSize);
+      const prompt = 'Toimit yrityksen asiakaspalvelubotin laadun testaajana. ' +
+        'Luo täsmälleen ' + count + ' realistista ja keskenään erilaista asiakaskysymystä testierään ' + (batchIndex + 1) + '/' + batchCount + '. ' +
+        'Arvioi jokaiselle vain annetun hyväksytyn tietopohjan perusteella, pystyykö botti vastaamaan varmasti. ' +
+        'Vaihtele sanamuotoja ja asiakastilanteita laajasti. Älä oleta tietoa tietopohjan ulkopuolelta. ' +
+        'Palauta vain validi JSON muodossa {"questions":[{"question":"...","answerable":true,"reason":"lyhyt syy"}]}' +
+        '\n\nYRITYS: ' + tenant.name +
+        '\nTOIMIALA: ' + (tenant.industry || 'Palveluyritys') +
+        '\n\nHYVÄKSYTTY TIETOPOHJA:\n' + sourceText;
+      return openai.responses.create({
+        model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
+        input: prompt,
+        max_output_tokens: 6500,
+      });
     });
-    const raw = String(rr.output_text || '').trim();
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('Self-testin tulosta ei voitu lukea.');
-    const parsed = JSON.parse(match[0]);
-    const questions = (Array.isArray(parsed.questions) ? parsed.questions : [])
-      .slice(0, 12)
-      .map((x) => ({
-        question: String(x.question || '').trim().slice(0, 500),
-        answerable: Boolean(x.answerable),
-        reason: String(x.reason || '').trim().slice(0, 500),
-      }))
-      .filter((x) => x.question);
-    if (!questions.length) throw new Error('Self-test ei tuottanut testikysymyksiä.');
+
+    const batches = await Promise.allSettled(jobs);
+    const questions = [];
+    const seen = new Set();
+    for (const batch of batches) {
+      if (batch.status !== 'fulfilled') continue;
+      const raw = String(batch.value.output_text || '').trim();
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (!match) continue;
+      let parsed;
+      try { parsed = JSON.parse(match[0]); } catch { continue; }
+      for (const x of (Array.isArray(parsed.questions) ? parsed.questions : [])) {
+        const question = String(x.question || '').trim().slice(0, 500);
+        if (!question) continue;
+        const key = normalizeSearchText(question);
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        questions.push({
+          question,
+          answerable: Boolean(x.answerable),
+          reason: String(x.reason || '').trim().slice(0, 500),
+        });
+        if (questions.length >= target) break;
+      }
+      if (questions.length >= target) break;
+    }
+
+    if (questions.length < Math.min(100, Math.floor(target * 0.6))) {
+      throw new Error('Laaja self-test ei saanut riittävästi testikysymyksiä. Yritä uudelleen.');
+    }
 
     const answerable = questions.filter((x) => x.answerable).length;
     const score = Math.round((answerable / questions.length) * 100);
@@ -2319,13 +2343,18 @@ app.post('/api/app/self-test', auth, subscribed, async (req, res) => {
        RETURNING id,score,total_questions,answerable_questions,gaps,created_at`,
       [uid(), tenant.id, score, questions.length, answerable, JSON.stringify(gaps)],
     );
-    return res.json({ ...saved.rows[0], questions });
+    return res.json({
+      ...saved.rows[0],
+      targetQuestions: target,
+      generatedQuestions: questions.length,
+      failedBatches: batches.filter((x) => x.status === 'rejected').length,
+      questions: questions.slice(0, 80),
+    });
   } catch (e) {
     console.error('Self-test failed', e);
     return res.status(500).json({ error: e.message || 'Self-test epäonnistui.' });
   }
 });
-
 
 
 async function getGoogleCalendarAccessToken(tenant) {
