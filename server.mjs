@@ -616,6 +616,77 @@ function htmlToReadableText(html) {
     .trim();
 }
 
+
+function extractSameSiteLinks(html, baseUrl) {
+  const out = [];
+  let base;
+  try { base = new URL(baseUrl); } catch { return out; }
+  const seen = new Set();
+  const re = /href\s*=\s*["']([^"'#]+)["']/gi;
+  let match;
+
+  while ((match = re.exec(String(html || '')))) {
+    const raw = String(match[1] || '').replace(/&amp;/gi, '&').trim();
+    if (!raw || /^(mailto:|tel:|javascript:|data:)/i.test(raw)) continue;
+
+    try {
+      const u = new URL(raw, base);
+      if (!/^https?:$/.test(u.protocol)) continue;
+      if (u.hostname.toLowerCase() !== base.hostname.toLowerCase()) continue;
+      u.hash = '';
+      if (/\.(pdf|jpg|jpeg|png|gif|svg|webp|zip|docx?|xlsx?)$/i.test(u.pathname)) continue;
+      const key = u.origin + u.pathname.replace(/\/$/, '') + u.search;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const p = normalizeSearchText(u.pathname + ' ' + u.search);
+      let score = 0;
+      if (/ajanvaraus|booking|book|appointment/.test(p)) score += 12;
+      if (/tarjous|quote|request/.test(p)) score += 11;
+      if (/hinta|price|pricing/.test(p)) score += 10;
+      if (/palvelu|service/.test(p)) score += 9;
+      if (/yhteys|contact/.test(p)) score += 8;
+      if (/faq|ukk|kysym/.test(p)) score += 7;
+      if (/meista|about/.test(p)) score += 4;
+      out.push({ url: u.toString(), score });
+    } catch {}
+  }
+
+  return out
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.url);
+}
+
+async function fetchWebsiteBundle(value, maxPages = 4) {
+  const first = await fetchPublicHtml(value);
+  const base = new URL(first.finalUrl);
+  const links = extractSameSiteLinks(first.html, first.finalUrl);
+  const pages = [{ url: first.finalUrl, html: first.html }];
+
+  for (const link of links) {
+    if (pages.length >= maxPages) break;
+    try {
+      const page = await fetchPublicHtml(link);
+      const resolved = new URL(page.finalUrl);
+      if (resolved.hostname.toLowerCase() !== base.hostname.toLowerCase()) continue;
+      if (pages.some((x) => x.url === page.finalUrl)) continue;
+      pages.push({ url: page.finalUrl, html: page.html });
+    } catch {}
+  }
+
+  const text = pages.map((page) => {
+    const readable = htmlToReadableText(page.html).slice(0, 11000);
+    return 'SIVU: ' + page.url + '\n' + readable;
+  }).join('\n\n---\n\n').slice(0, 36000);
+
+  return {
+    finalUrl: first.finalUrl,
+    text,
+    pages: pages.map((x) => x.url),
+    links: links.slice(0, 30),
+  };
+}
+
 function buildProfileKnowledge(profile = {}) {
   const rows = [];
   const add = (title, answer, keywords = []) => {
@@ -1643,8 +1714,9 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
   try {
     const website = normalizeWebUrl(req.body.website, false);
     if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
-    const { html, finalUrl } = await fetchPublicHtml(website);
-    const text = htmlToReadableText(html).slice(0, 26000);
+    const bundle = await fetchWebsiteBundle(website, 4);
+    const text = bundle.text;
+    const finalUrl = bundle.finalUrl;
     if (text.length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
     if (!openai) return res.status(503).json({ error: 'Automaattinen tuonti ei ole juuri nyt käytettävissä.' });
 
@@ -1653,7 +1725,12 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
 Avaimet:
 pricing, hours, phone, email, services, serviceArea, address, quoteRequestUrl, bookingUrl, notes.
 Kaikki arvot ovat merkkijonoja. Jos tietoa ei löydy varmasti, käytä tyhjää merkkijonoa.
-services voi olla yksi pilkuilla eroteltu merkkijono. quoteRequestUrl ja bookingUrl saavat olla vain tekstissä näkyviä URL-osoitteita.
+services voi olla yksi pilkuilla eroteltu merkkijono.
+quoteRequestUrl ja bookingUrl saavat olla sivutekstissä näkyviä URL-osoitteita TAI alla olevasta saman sivuston linkkilistasta löytyviä osoitteita.
+Suosi täsmällistä ajanvaraus- tai tarjouspyyntölinkkiä etusivun sijaan.
+
+SIVUSTON SISÄISET LINKIT:
+${bundle.links.join('\n')}
 
 VERKKOSIVU:
 ${text}`;
@@ -1762,8 +1839,8 @@ app.post('/api/app/unanswered/:id/suggest', auth, subscribed, async (req, res) =
     );
     if (!conversation.rowCount) return res.status(404).json({ error: 'Kysymystä ei löytynyt.' });
 
-    const fetched = await fetchPublicHtml(tenant.website);
-    const pageText = htmlToReadableText(fetched.html).slice(0, 30000);
+    const bundle = await fetchWebsiteBundle(tenant.website, 4);
+    const pageText = bundle.text.slice(0, 36000);
     const question = String(conversation.rows[0].question || '').trim();
     const prompt = 'Etsi yrityksen verkkosivutekstistä vastaus asiakkaan kysymykseen. ' +
       'Käytä vain tekstissä selvästi kerrottuja faktoja. Älä päättele tai keksi. ' +
