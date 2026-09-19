@@ -45,6 +45,24 @@ CREATE TABLE IF NOT EXISTS tenants (
   google_calendar_token_expires_at TIMESTAMPTZ,
   google_calendar_email TEXT,
   google_calendar_id TEXT NOT NULL DEFAULT 'primary',
+  ecommerce_provider TEXT,
+  shopify_shop_domain TEXT,
+  shopify_access_token TEXT,
+  woo_base_url TEXT,
+  woo_consumer_key TEXT,
+  woo_consumer_secret TEXT,
+  meta_graph_version TEXT NOT NULL DEFAULT 'v24.0',
+  meta_verify_token TEXT,
+  meta_app_secret TEXT,
+  whatsapp_phone_number_id TEXT,
+  whatsapp_access_token TEXT,
+  instagram_account_id TEXT,
+  instagram_access_token TEXT,
+  twilio_account_sid TEXT,
+  twilio_auth_token TEXT,
+  twilio_phone_number TEXT,
+  voice_handoff_number TEXT,
+  voice_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -178,3 +196,35 @@ CREATE TABLE IF NOT EXISTS booking_slots (
 );
 CREATE INDEX IF NOT EXISTS idx_booking_slots_tenant_start
   ON booking_slots(tenant_id, starts_at);
+
+
+CREATE TABLE IF NOT EXISTS chat_threads (
+  id UUID PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  source_channel TEXT NOT NULL DEFAULT 'website',
+  external_contact_id TEXT NOT NULL,
+  visitor_ref TEXT,
+  mode TEXT NOT NULL DEFAULT 'ai',
+  status TEXT NOT NULL DEFAULT 'open',
+  last_activity_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(tenant_id,source_channel,external_contact_id)
+);
+CREATE INDEX IF NOT EXISTS idx_chat_threads_tenant_activity
+  ON chat_threads(tenant_id,last_activity_at DESC);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id UUID PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  thread_id UUID REFERENCES chat_threads(id) ON DELETE CASCADE,
+  source_channel TEXT NOT NULL DEFAULT 'website',
+  external_contact_id TEXT,
+  visitor_ref TEXT,
+  role TEXT NOT NULL,
+  message TEXT NOT NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_thread_created
+  ON chat_messages(thread_id,created_at ASC);
