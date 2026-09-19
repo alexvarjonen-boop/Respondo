@@ -1795,6 +1795,78 @@ async function route() {
       });
     });
 
+    $('#runSelfTest')?.addEventListener('click', async (e) => {
+      const button = e.currentTarget;
+      const original = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = 'Testataan…';
+      $('#selfTestResult').innerHTML = '<div class="self-test-running">Respondo generoi realistisia asiakaskysymyksiä ja etsii aukkoja.</div>';
+      try {
+        const result = await api('/api/app/self-test', { method:'POST', body:'{}' });
+        const gaps = Array.isArray(result.gaps) ? result.gaps : [];
+        $('#selfTestResult').innerHTML =
+          '<div class="self-test-score"><b>' + Number(result.score || 0) + '%</b><span>' +
+          Number(result.answerable_questions || 0) + '/' + Number(result.total_questions || 0) +
+          ' kysymykseen löytyy varma tieto</span></div>' +
+          (gaps.length
+            ? '<div class="self-test-gaps"><strong>Nämä kannattaa lisätä:</strong>' +
+              gaps.slice(0,6).map((x) => '<button type="button" class="self-test-gap" data-question="' +
+                esc(x.question) + '">' + esc(x.question) + '</button>').join('') + '</div>'
+            : '<div class="notice success">Hyvältä näyttää — testissä ei löytynyt selviä tietopuutteita.</div>');
+
+        document.querySelectorAll('.self-test-gap').forEach((gap) => {
+          gap.addEventListener('click', () => {
+            openDashboardTarget('knowledge');
+            setTimeout(() => {
+              const form = $('#knowledgeForm');
+              if (form?.elements?.title) {
+                form.elements.title.value = gap.dataset.question || '';
+                form.elements.title.focus();
+              }
+            }, 350);
+          });
+        });
+        button.innerHTML = 'Testaa uudelleen';
+      } catch (err) {
+        $('#selfTestResult').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.innerHTML = original;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.querySelectorAll('.suggest-unanswered-answer').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const item = button.closest('.unanswered-item');
+        const msg = item?.querySelector('.unanswered-msg');
+        const textarea = item?.querySelector('.unanswered-answer');
+        const original = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Etsitään…';
+        if (msg) msg.innerHTML = '';
+        try {
+          const result = await api('/api/app/unanswered/' + encodeURIComponent(item.dataset.id) + '/suggest', {
+            method:'POST',
+            body:'{}',
+          });
+          if (result.found && result.answer) {
+            textarea.value = result.answer;
+            textarea.focus();
+            if (msg) msg.innerHTML = '<div class="notice success">Löysin ehdotuksen yrityksesi verkkosivulta. Tarkista se ja hyväksy vasta sitten.</div>';
+            button.textContent = 'Ehdotus löytyi ✓';
+          } else {
+            if (msg) msg.innerHTML = '<div class="notice error">Verkkosivulta ei löytynyt tähän varmaa vastausta. Kirjoita oikea vastaus itse.</div>';
+            button.textContent = original;
+          }
+        } catch (err) {
+          if (msg) msg.innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+          button.textContent = original;
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
+
     const previewHistory = [];
     const previewCompanyName = $('.workspace-chip b')?.textContent || 'Yritys';
     const previewFactsPromise = api('/api/app/dashboard')
@@ -1835,6 +1907,7 @@ async function route() {
               address: values.address,
               website: values.website,
               quoteRequestUrl: values.quoteRequestUrl,
+              bookingUrl: values.bookingUrl,
               notes: values.notes,
               customFacts,
             },
