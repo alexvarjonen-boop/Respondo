@@ -1023,6 +1023,49 @@ async function finishOauth(req, res, code, state) {
       name: String(user.name || ''),
     };
 
+    if (statePayload.flow === 'calendar') {
+      let sessionUser = null;
+      try {
+        const sessionToken = cookies(req)[COOKIE];
+        sessionUser = sessionToken ? jwt.verify(sessionToken, JWT) : null;
+      } catch {}
+      if (!sessionUser?.sub || sessionUser.sub !== statePayload.userId) {
+        return res.redirect('/app?section=automation&calendar=auth_error');
+      }
+
+      const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[statePayload.userId]);
+      if (!tr.rowCount) return res.redirect('/app?section=automation&calendar=missing_tenant');
+      const tenant = tr.rows[0];
+
+      const accessToken = String(token.access_token || '');
+      const refreshToken = String(token.refresh_token || '');
+      const expiresAt = new Date(Date.now() + Number(token.expires_in || 3600) * 1000);
+      const existingRefresh = tenant.google_calendar_refresh_token || null;
+
+      if (!accessToken || (!refreshToken && !existingRefresh)) {
+        return res.redirect('/app?section=automation&calendar=no_refresh_token');
+      }
+
+      await q(
+        `UPDATE tenants
+            SET google_calendar_access_token=$1,
+                google_calendar_refresh_token=$2,
+                google_calendar_token_expires_at=$3,
+                google_calendar_email=$4,
+                google_calendar_id=COALESCE(google_calendar_id,'primary'),
+                updated_at=NOW()
+          WHERE id=$5`,
+        [
+          encryptSecret(accessToken),
+          refreshToken ? encryptSecret(refreshToken) : existingRefresh,
+          expiresAt,
+          profile.email,
+          tenant.id,
+        ],
+      );
+      return res.redirect('/app?section=automation&calendar=connected');
+    }
+
     if (statePayload.flow === 'login') {
       const found = await q('SELECT * FROM users WHERE lower(email)=lower($1)', [profile.email]);
       if (!found.rowCount) return res.redirect('/kirjaudu?oauth_error=no_account&provider=google');
@@ -1200,6 +1243,53 @@ app.get('/sitemap.xml', (req, res) => {
     urls.map((path) => '<url><loc>' + BASE + path + '</loc></url>').join('') +
     '</urlset>'
   );
+});
+
+app.get('/api/app/google-calendar/start', auth, subscribed, (req,res) => {
+  const cfg = oauthConfig('google');
+  if (!cfg.configured) return res.redirect('/app?section=automation&calendar=not_configured');
+
+  const nonce = crypto.randomBytes(20).toString('hex');
+  const state = jwt.sign({
+    provider:'google',
+    flow:'calendar',
+    nonce,
+    userId:req.user.sub,
+  },JWT,{ expiresIn:'10m' });
+  setOauthState(res,nonce);
+
+  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  url.search = new URLSearchParams({
+    client_id:cfg.clientId,
+    redirect_uri:cfg.redirectUri,
+    response_type:'code',
+    scope:'openid email profile https://www.googleapis.com/auth/calendar.events',
+    state,
+    prompt:'consent',
+    access_type:'offline',
+    include_granted_scopes:'true',
+  }).toString();
+  return res.redirect(url.toString());
+});
+
+app.post('/api/app/google-calendar/disconnect', auth, subscribed, async (req,res) => {
+  try {
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    await q(
+      `UPDATE tenants
+          SET google_calendar_access_token=NULL,
+              google_calendar_refresh_token=NULL,
+              google_calendar_token_expires_at=NULL,
+              google_calendar_email=NULL,
+              updated_at=NOW()
+        WHERE id=$1`,
+      [tr.rows[0].id],
+    );
+    return res.json({ ok:true });
+  } catch {
+    return res.status(500).json({ error:'Google Calendar -yhteyttä ei voitu katkaista.' });
+  }
 });
 
 app.get('/api/auth/oauth/:provider/start', (req, res) => {
