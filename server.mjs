@@ -961,9 +961,18 @@ function oauthConfig(provider) {
     };
   }
   if (provider === 'apple') {
+    const privateKey = String(process.env.APPLE_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim();
     return {
-      configured: Boolean(process.env.APPLE_CLIENT_ID),
-      clientId: process.env.APPLE_CLIENT_ID,
+      configured: Boolean(
+        process.env.APPLE_CLIENT_ID &&
+        process.env.APPLE_TEAM_ID &&
+        process.env.APPLE_KEY_ID &&
+        privateKey
+      ),
+      clientId: String(process.env.APPLE_CLIENT_ID || '').trim(),
+      teamId: String(process.env.APPLE_TEAM_ID || '').trim(),
+      keyId: String(process.env.APPLE_KEY_ID || '').trim(),
+      privateKey,
       redirectUri: BASE + '/api/auth/oauth/apple/callback',
     };
   }
@@ -989,22 +998,66 @@ function parseJwtPart(value) {
   return JSON.parse(Buffer.from(String(value || ''), 'base64url').toString('utf8'));
 }
 
+function appleJwtSegment(value) {
+  return Buffer.from(JSON.stringify(value)).toString('base64url');
+}
+
+function makeAppleClientSecret(cfg) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = appleJwtSegment({ alg:'ES256', kid:cfg.keyId, typ:'JWT' });
+  const payload = appleJwtSegment({
+    iss:cfg.teamId,
+    iat:now,
+    exp:now + (5 * 60),
+    aud:'https://appleid.apple.com',
+    sub:cfg.clientId,
+  });
+  const input = header + '.' + payload;
+  const signature = crypto.sign(
+    'sha256',
+    Buffer.from(input),
+    { key:cfg.privateKey, dsaEncoding:'ieee-p1363' },
+  ).toString('base64url');
+  return input + '.' + signature;
+}
+
+async function exchangeAppleCode(code, cfg) {
+  const response = await fetch('https://appleid.apple.com/auth/token', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+    body:new URLSearchParams({
+      client_id:cfg.clientId,
+      client_secret:makeAppleClientSecret(cfg),
+      code:String(code || ''),
+      grant_type:'authorization_code',
+      redirect_uri:cfg.redirectUri,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.id_token) {
+    const reason = String(data.error || 'token_exchange_failed');
+    throw new Error('Apple token exchange failed: ' + reason);
+  }
+  return data;
+}
+
 async function verifyAppleIdentityToken(idToken, expectedNonce) {
   const parts = String(idToken || '').split('.');
   if (parts.length !== 3) throw new Error('Invalid Apple identity token');
   const header = parseJwtPart(parts[0]);
   const payload = parseJwtPart(parts[1]);
-  if (header.alg !== 'ES256' || !header.kid) throw new Error('Invalid Apple token header');
+  if (header.alg !== 'RS256' || !header.kid) throw new Error('Invalid Apple token header');
 
   const keys = await getAppleJwks();
-  const jwk = keys.find((key) => key.kid === header.kid && key.kty === 'EC');
+  const jwk = keys.find((key) => key.kid === header.kid && key.kty === 'RSA');
   if (!jwk) throw new Error('Apple signing key not found');
 
-  const publicKey = crypto.createPublicKey({ key: jwk, format: 'jwk' });
+  const publicKey = crypto.createPublicKey({ key:jwk, format:'jwk' });
   const valid = crypto.verify(
-    'sha256',
+    'RSA-SHA256',
     Buffer.from(parts[0] + '.' + parts[1]),
-    { key: publicKey, dsaEncoding: 'ieee-p1363' },
+    publicKey,
     Buffer.from(parts[2], 'base64url'),
   );
   if (!valid) throw new Error('Apple token signature invalid');
@@ -1014,7 +1067,11 @@ async function verifyAppleIdentityToken(idToken, expectedNonce) {
   if (payload.iss !== 'https://appleid.apple.com') throw new Error('Apple token issuer invalid');
   if (!audience.includes(process.env.APPLE_CLIENT_ID)) throw new Error('Apple token audience invalid');
   if (!payload.exp || Number(payload.exp) <= now) throw new Error('Apple token expired');
+  if (payload.iat && Number(payload.iat) > now + 120) throw new Error('Apple token issued in the future');
   if (expectedNonce && payload.nonce !== expectedNonce) throw new Error('Apple token nonce invalid');
+  if (payload.email_verified === false || payload.email_verified === 'false') {
+    throw new Error('Apple email not verified');
+  }
   return payload;
 }
 
@@ -1399,7 +1456,7 @@ app.get('/api/auth/oauth/:provider/start', (req, res) => {
     url.search = new URLSearchParams({
       client_id: cfg.clientId,
       redirect_uri: cfg.redirectUri,
-      response_type: 'code id_token',
+      response_type: 'code',
       response_mode: 'form_post',
       scope: 'name email',
       state,
@@ -1438,7 +1495,7 @@ app.get('/api/auth/oauth/google/callback', async (req, res) => {
 
 app.post('/api/auth/oauth/apple/callback', async (req, res) => {
   const state = String(req.body?.state || '');
-  const idToken = String(req.body?.id_token || '');
+  const code = String(req.body?.code || '');
   let statePayload;
   try {
     statePayload = jwt.verify(state, JWT);
@@ -1457,12 +1514,17 @@ app.post('/api/auth/oauth/apple/callback', async (req, res) => {
   }
   res.clearCookie(OAUTH_STATE_COOKIE);
 
-  if (req.body?.error || !idToken) {
+  if (req.body?.error || !code) {
     return res.redirect(target + '?oauth_error=failed&provider=apple');
   }
 
   try {
-    const claims = await verifyAppleIdentityToken(idToken, statePayload.nonce);
+    const cfg = oauthConfig('apple');
+    if (!cfg.configured) {
+      return res.redirect(target + '?oauth_error=not_configured&provider=apple');
+    }
+    const token = await exchangeAppleCode(code, cfg);
+    const claims = await verifyAppleIdentityToken(token.id_token, statePayload.nonce);
     const email = cleanEmail(claims.email);
     if (!email) throw new Error('Apple email missing');
 
