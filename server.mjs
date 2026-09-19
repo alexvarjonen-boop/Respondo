@@ -2000,6 +2000,14 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
         credentialsConfigured:Boolean(tenant.twilio_account_sid && tenant.twilio_auth_token),
         enabled:Boolean(tenant.voice_enabled),
         webhookUrl:BASE + '/api/voice/' + encodeURIComponent(tenant.slug) + '/incoming',
+        smsWebhookUrl:BASE + '/api/sms/' + encodeURIComponent(tenant.slug) + '/incoming',
+        missedCallWebhookUrl:BASE + '/api/voice/' + encodeURIComponent(tenant.slug) + '/missed-call',
+        missedCallSmsEnabled:Boolean(tenant.missed_call_sms_enabled),
+        missedCallSmsMessage:tenant.missed_call_sms_message || 'Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.',
+        missedCallSmsMode:tenant.missed_call_sms_mode || 'immediate',
+        missedCallAfterStart:tenant.missed_call_after_start || '17:00',
+        missedCallAfterEnd:tenant.missed_call_after_end || '08:00',
+        missedCallTimezone:tenant.missed_call_timezone || 'Europe/Helsinki',
       },
       latestSelfTest: latestSelfTest.rows[0] || null,
       truth: (() => {
@@ -2845,6 +2853,99 @@ async function twilioApi(tenant, method, pathName, body = null) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data?.message || 'Twilio API -kutsu epäonnistui.');
   return data;
+}
+
+function normalizeClock(value,fallback) {
+  const raw = String(value || '').trim();
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(raw) ? raw : fallback;
+}
+
+function normalizeTimeZone(value) {
+  const zone = String(value || '').trim() || 'Europe/Helsinki';
+  try {
+    new Intl.DateTimeFormat('en-US',{ timeZone:zone }).format(new Date());
+    return zone;
+  } catch {
+    return 'Europe/Helsinki';
+  }
+}
+
+function localClockMinutes(timeZone) {
+  const parts = new Intl.DateTimeFormat('en-GB',{
+    timeZone:normalizeTimeZone(timeZone),
+    hour:'2-digit',
+    minute:'2-digit',
+    hour12:false,
+  }).formatToParts(new Date());
+  const hour = Number(parts.find((x) => x.type === 'hour')?.value || 0);
+  const minute = Number(parts.find((x) => x.type === 'minute')?.value || 0);
+  return hour * 60 + minute;
+}
+
+function isInConfiguredAfterHours(tenant) {
+  const start = normalizeClock(tenant.missed_call_after_start,'17:00');
+  const end = normalizeClock(tenant.missed_call_after_end,'08:00');
+  const parse = (clock) => {
+    const [h,m] = clock.split(':').map(Number);
+    return h * 60 + m;
+  };
+  const now = localClockMinutes(tenant.missed_call_timezone);
+  const a = parse(start);
+  const b = parse(end);
+  if (a === b) return true;
+  return a < b ? (now >= a && now < b) : (now >= a || now < b);
+}
+
+async function sendTwilioSms(tenant,to,message) {
+  const recipient = normalizePhone(to);
+  const from = normalizePhone(tenant.twilio_phone_number);
+  const body = String(message || '').trim().slice(0,1500);
+  if (!recipient || !from || !body) throw new Error('SMS-viestin tiedot puuttuvat.');
+  return twilioApi(
+    tenant,
+    'POST',
+    '/Accounts/' + encodeURIComponent(tenant.twilio_account_sid) + '/Messages.json',
+    { To:recipient, From:from, Body:body },
+  );
+}
+
+async function maybeSendMissedCallSms(tenant,{ to, status, callSid }) {
+  const normalizedStatus = String(status || '').trim().toLowerCase();
+  const phone = normalizePhone(to);
+  const sid = String(callSid || '').trim().slice(0,220);
+  if (!tenant.missed_call_sms_enabled || !phone || !sid) return { sent:false, reason:'disabled_or_missing' };
+  if (!['no-answer','busy','failed','canceled'].includes(normalizedStatus)) {
+    return { sent:false, reason:'not_missed' };
+  }
+  if (tenant.missed_call_sms_mode === 'after_hours' && !isInConfiguredAfterHours(tenant)) {
+    return { sent:false, reason:'outside_schedule' };
+  }
+
+  const inserted = await q(
+    `INSERT INTO missed_call_sms_events(id,tenant_id,call_sid,phone,call_status,delivery_status)
+     VALUES($1,$2,$3,$4,$5,'pending')
+     ON CONFLICT(tenant_id,call_sid) DO NOTHING
+     RETURNING id`,
+    [uid(),tenant.id,sid,phone,normalizedStatus],
+  );
+  if (!inserted.rowCount) return { sent:false, reason:'duplicate' };
+
+  try {
+    const text = String(tenant.missed_call_sms_message || '').trim() ||
+      'Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.';
+    const response = await sendTwilioSms(tenant,phone,text);
+    await q(
+      "UPDATE missed_call_sms_events SET delivery_status='sent',error=NULL WHERE id=$1",
+      [inserted.rows[0].id],
+    );
+    return { sent:true, sid:response.sid || '' };
+  } catch (e) {
+    await q(
+      "UPDATE missed_call_sms_events SET delivery_status='failed',error=$1 WHERE id=$2",
+      [String(e?.message || 'SMS failed').slice(0,500),inserted.rows[0].id],
+    );
+    throw e;
+  }
 }
 
 function cleanActionFields(type, input = {}) {
@@ -4063,20 +4164,40 @@ app.post('/api/app/voice', auth, subscribed, async (req,res) => {
     const phoneNumber = normalizePhone(req.body.phoneNumber);
     const handoffNumber = normalizePhone(req.body.handoffNumber);
     const enabled = Boolean(req.body.enabled);
+    const missedCallSmsEnabled = Boolean(req.body.missedCallSmsEnabled);
+    const missedCallSmsMessage = String(req.body.missedCallSmsMessage || '').trim().slice(0,1500) ||
+      'Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.';
+    const missedCallSmsMode = req.body.missedCallSmsMode === 'after_hours' ? 'after_hours' : 'immediate';
+    const missedCallAfterStart = normalizeClock(req.body.missedCallAfterStart,'17:00');
+    const missedCallAfterEnd = normalizeClock(req.body.missedCallAfterEnd,'08:00');
+    const missedCallTimezone = normalizeTimeZone(req.body.missedCallTimezone);
 
     await q(
       `UPDATE tenants SET twilio_account_sid=$1,twilio_auth_token=$2,twilio_phone_number=$3,
-         voice_handoff_number=$4,voice_enabled=$5,updated_at=NOW() WHERE id=$6`,
+         voice_handoff_number=$4,voice_enabled=$5,missed_call_sms_enabled=$6,
+         missed_call_sms_message=$7,missed_call_sms_mode=$8,missed_call_after_start=$9,
+         missed_call_after_end=$10,missed_call_timezone=$11,updated_at=NOW() WHERE id=$12`,
       [
         accountSid || null,
         authToken ? encryptSecret(authToken) : tenant.twilio_auth_token,
         phoneNumber || null,
         handoffNumber || null,
         enabled,
+        missedCallSmsEnabled,
+        missedCallSmsMessage,
+        missedCallSmsMode,
+        missedCallAfterStart,
+        missedCallAfterEnd,
+        missedCallTimezone,
         tenant.id,
       ],
     );
-    return res.json({ ok:true,webhookUrl:BASE + '/api/voice/' + encodeURIComponent(tenant.slug) + '/incoming' });
+    return res.json({
+      ok:true,
+      webhookUrl:BASE + '/api/voice/' + encodeURIComponent(tenant.slug) + '/incoming',
+      smsWebhookUrl:BASE + '/api/sms/' + encodeURIComponent(tenant.slug) + '/incoming',
+      missedCallWebhookUrl:BASE + '/api/voice/' + encodeURIComponent(tenant.slug) + '/missed-call',
+    });
   } catch (e) {
     return res.status(400).json({ error:e.message || 'Puhelinagentin asetuksia ei voitu tallentaa.' });
   }
@@ -4092,6 +4213,25 @@ app.post('/api/app/voice/test', auth, subscribed, async (req,res) => {
     return res.json({ ok:true,status:data.status || 'active',name:data.friendly_name || '' });
   } catch (e) {
     return res.status(400).json({ error:e.message || 'Twilio-yhteystesti epäonnistui.' });
+  }
+});
+
+app.post('/api/app/voice/test-sms', auth, subscribed, async (req,res) => {
+  try {
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const tenant = tr.rows[0];
+    const to = normalizePhone(req.body.to || tenant.voice_handoff_number);
+    if (!to) return res.status(400).json({ error:'Lisää ensin testinumero kohtaan numero ihmiselle siirtoa varten.' });
+    if (!tenant.twilio_account_sid || !tenant.twilio_auth_token || !tenant.twilio_phone_number) {
+      return res.status(400).json({ error:'Lisää Twilio-tunnukset ja Twilio-numero ensin.' });
+    }
+    const message = String(tenant.missed_call_sms_message || '').trim() ||
+      'Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.';
+    const sent = await sendTwilioSms(tenant,to,message);
+    return res.json({ ok:true,sid:sent.sid || '' });
+  } catch (e) {
+    return res.status(400).json({ error:e.message || 'Testi-SMS:n lähetys epäonnistui.' });
   }
 });
 
@@ -4116,10 +4256,16 @@ app.post('/api/app/voice/configure-number', auth, subscribed, async (req,res) =>
       {
         VoiceUrl:BASE + '/api/voice/' + encodeURIComponent(tenant.slug) + '/incoming',
         VoiceMethod:'POST',
+        SmsUrl:BASE + '/api/sms/' + encodeURIComponent(tenant.slug) + '/incoming',
+        SmsMethod:'POST',
       },
     );
     await q('UPDATE tenants SET voice_enabled=TRUE,updated_at=NOW() WHERE id=$1',[tenant.id]);
-    return res.json({ ok:true,webhookUrl:BASE + '/api/voice/' + encodeURIComponent(tenant.slug) + '/incoming' });
+    return res.json({
+      ok:true,
+      webhookUrl:BASE + '/api/voice/' + encodeURIComponent(tenant.slug) + '/incoming',
+      smsWebhookUrl:BASE + '/api/sms/' + encodeURIComponent(tenant.slug) + '/incoming',
+    });
   } catch (e) {
     return res.status(400).json({ error:e.message || 'Twilio-numeroa ei voitu aktivoida.' });
   }
@@ -4163,6 +4309,8 @@ app.post('/api/app/live/:id/reply', auth, subscribed, async (req,res) => {
     });
     if (['whatsapp','instagram'].includes(thread.source_channel)) {
       await sendMetaMessage(tenant,thread.source_channel,thread.external_contact_id,text);
+    } else if (thread.source_channel === 'sms') {
+      await sendTwilioSms(tenant,thread.external_contact_id,text);
     }
     return res.json({ ok:true,message });
   } catch (e) {
@@ -4285,6 +4433,17 @@ function voiceGatherTwiml(slug,prompt) {
     '</Response>';
 }
 
+function voiceHandoffTwiml(tenant,prompt) {
+  const action = BASE + '/api/voice/' + encodeURIComponent(tenant.slug) + '/missed-call';
+  return '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<Response>' +
+      '<Say language="fi-FI">' + xmlEscape(prompt) + '</Say>' +
+      '<Dial action="' + xmlEscape(action) + '" method="POST" timeout="20">' +
+        xmlEscape(tenant.voice_handoff_number) +
+      '</Dial>' +
+    '</Response>';
+}
+
 app.post('/api/voice/:slug/incoming', async (req,res) => {
   try {
     const tr = await publicTenant(req.params.slug);
@@ -4321,18 +4480,14 @@ app.post('/api/voice/:slug/respond', async (req,res) => {
     const wantsHuman = /ihminen|asiakaspalvelija|henkilö|human|person|operator/i.test(speech);
     if (wantsHuman && tenant.voice_handoff_number) {
       return res.type('text/xml').send(
-        '<?xml version="1.0" encoding="UTF-8"?><Response><Say language="fi-FI">Yhdistän sinut asiakaspalvelijalle.</Say><Dial>' +
-        xmlEscape(tenant.voice_handoff_number) +
-        '</Dial></Response>',
+        voiceHandoffTwiml(tenant,'Yhdistän sinut asiakaspalvelijalle.'),
       );
     }
 
     const result = await processExternalChannelMessage(tenant,'phone',callSid || uid(),speech,'fi');
     if ((result.handoff || result.humanTakeover) && tenant.voice_handoff_number) {
       return res.type('text/xml').send(
-        '<?xml version="1.0" encoding="UTF-8"?><Response><Say language="fi-FI">Tarvitaan ihminen avuksi. Yhdistän puhelun.</Say><Dial>' +
-        xmlEscape(tenant.voice_handoff_number) +
-        '</Dial></Response>',
+        voiceHandoffTwiml(tenant,'Tarvitaan ihminen avuksi. Yhdistän puhelun.'),
       );
     }
 
@@ -4341,6 +4496,63 @@ app.post('/api/voice/:slug/respond', async (req,res) => {
   } catch (e) {
     console.error('Voice respond failed',e);
     return res.status(500).type('text/xml').send('<Response><Say language="fi-FI">Palvelussa tapahtui virhe. Yritä myöhemmin uudelleen.</Say></Response>');
+  }
+});
+
+app.post('/api/voice/:slug/missed-call', async (req,res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.sendStatus(404);
+    const tenant = tr.rows[0];
+    const suffix = '/api/voice/' + encodeURIComponent(tenant.slug) + '/missed-call';
+    if (!twilioSignatureValid(req,tenant,suffix)) return res.sendStatus(403);
+
+    const status = String(req.body.DialCallStatus || req.body.CallStatus || '').trim();
+    const caller = normalizePhone(req.body.From);
+    const callSid = String(req.body.CallSid || req.body.ParentCallSid || '').trim();
+    let result = { sent:false };
+    try {
+      result = await maybeSendMissedCallSms(tenant,{ to:caller,status,callSid });
+    } catch (e) {
+      console.error('Missed-call SMS failed',e);
+    }
+
+    const message = result.sent
+      ? '<Say language="fi-FI">Emme saaneet asiakaspalvelijaa kiinni. Lähetimme sinulle tekstiviestin, johon voit vastata.</Say>'
+      : '';
+    return res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response>' + message + '</Response>');
+  } catch (e) {
+    console.error('Missed-call callback failed',e);
+    return res.status(500).type('text/xml').send('<Response></Response>');
+  }
+});
+
+app.post('/api/sms/:slug/incoming', async (req,res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.sendStatus(404);
+    const tenant = tr.rows[0];
+    const suffix = '/api/sms/' + encodeURIComponent(tenant.slug) + '/incoming';
+    if (!twilioSignatureValid(req,tenant,suffix)) return res.sendStatus(403);
+
+    const from = normalizePhone(req.body.From);
+    const body = String(req.body.Body || '').trim().slice(0,1200);
+    if (!from || !body) {
+      return res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+    }
+
+    const result = await processExternalChannelMessage(tenant,'sms',from,body,'fi');
+    if (result.humanTakeover || !result.answer) {
+      return res.type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+    }
+    return res.type('text/xml').send(
+      '<?xml version="1.0" encoding="UTF-8"?><Response><Message>' +
+      xmlEscape(result.answer) +
+      '</Message></Response>',
+    );
+  } catch (e) {
+    console.error('Inbound SMS failed',e);
+    return res.status(500).type('text/xml').send('<Response></Response>');
   }
 });
 
@@ -4502,6 +4714,12 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS twilio_phone_number TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS voice_handoff_number TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS voice_enabled BOOLEAN NOT NULL DEFAULT FALSE");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_sms_enabled BOOLEAN NOT NULL DEFAULT FALSE");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_sms_message TEXT NOT NULL DEFAULT 'Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.'");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_sms_mode TEXT NOT NULL DEFAULT 'immediate'");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_after_start TEXT NOT NULL DEFAULT '17:00'");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_after_end TEXT NOT NULL DEFAULT '08:00'");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_timezone TEXT NOT NULL DEFAULT 'Europe/Helsinki'");
 
 
 
@@ -4588,6 +4806,18 @@ async function ensureRuntimeSchema() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_chat_messages_thread_created ON chat_messages(thread_id,created_at ASC)');
+  await q(`CREATE TABLE IF NOT EXISTS missed_call_sms_events (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    call_sid TEXT NOT NULL,
+    phone TEXT,
+    call_status TEXT,
+    delivery_status TEXT NOT NULL DEFAULT 'pending',
+    error TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(tenant_id,call_sid)
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_missed_call_sms_tenant_created ON missed_call_sms_events(tenant_id,created_at DESC)');
 
 
 
