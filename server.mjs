@@ -492,6 +492,7 @@ function chatActions(rows, message, handoff = false, lang = 'fi') {
   const actionLang = lang === 'en' ? 'en' : 'fi';
   const q = normalizeSearchText(message);
   const quote = knowledgeValue(rows, 'Tarjouspyyntölomake');
+  const booking = knowledgeValue(rows, 'Ajanvarauslinkki');
   const phone = knowledgeValue(rows, 'Puhelinnumero');
   const email = knowledgeValue(rows, 'Sähköposti');
   const actions = [];
@@ -500,8 +501,11 @@ function chatActions(rows, message, handoff = false, lang = 'fi') {
     actions.push(action);
   };
 
+  if (booking && /ajanvaraus|varaa|aika|ajan|booking|appointment/.test(q)) {
+    push({ type: 'booking', label: actionLang === 'en' ? 'Book a time' : 'Varaa aika', url: booking });
+  }
   if (quote && (handoff || /tarjous|hinta|arvio|kustannus/.test(q))) {
-    push({ type: 'link', label: actionLang === 'en' ? 'Request a quote' : 'Pyydä tarjous', url: quote });
+    push({ type: 'quote', label: actionLang === 'en' ? 'Request a quote' : 'Pyydä tarjous', url: quote });
   }
   if (phone && (handoff || /puhelin|soita|soittaa|yhteys/.test(q))) {
     push({ type: 'phone', label: actionLang === 'en' ? 'Call' : 'Soita', url: 'tel:' + phone.replace(/\s+/g, '') });
@@ -623,6 +627,7 @@ function buildProfileKnowledge(profile = {}) {
   add('Osoite', profile.address, ['osoite','sijainti']);
   add('Verkkosivu', profile.website, ['verkkosivu','www']);
   add('Tarjouspyyntölomake', profile.quoteRequestUrl, ['tarjous','tarjouspyyntö']);
+  add('Ajanvarauslinkki', profile.bookingUrl, ['ajanvaraus','varaa','aika','booking']);
   add('Lisätiedot', profile.notes, ['lisätieto','päivystys','maksutapa','takuu','ajanvaraus']);
   add('Vastaustyyli', profile.tone, ['tyyli']);
   for (const fact of Array.isArray(profile.customFacts) ? profile.customFacts.slice(0, 30) : []) {
@@ -1519,13 +1524,18 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
     const tenantId = t.rows[0].id;
     const websiteRaw = String(req.body.website || '').trim();
     const quoteRaw = String(req.body.quoteRequestUrl || '').trim();
+    const bookingRaw = String(req.body.bookingUrl || '').trim();
     const website = websiteRaw ? normalizeWebUrl(websiteRaw, true) : '';
     const quoteRequestUrl = quoteRaw ? normalizeWebUrl(quoteRaw, false) : '';
+    const bookingUrl = bookingRaw ? normalizeWebUrl(bookingRaw, false) : '';
     if (websiteRaw && !website) {
       return res.status(400).json({ error: 'Tarkista verkkosivun osoite ja yritä uudelleen.' });
     }
     if (quoteRaw && !quoteRequestUrl) {
       return res.status(400).json({ error: 'Tarjouspyyntölomakkeen linkki ei ole kelvollinen.' });
+    }
+    if (bookingRaw && !bookingUrl) {
+      return res.status(400).json({ error: 'Ajanvarauslinkki ei ole kelvollinen.' });
     }
 
     const fields = [
@@ -1538,6 +1548,7 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
       ['Osoite', req.body.address, ['osoite','sijainti','missä']],
       ['Verkkosivu', website, ['verkkosivu','www','nettisivu']],
       ['Tarjouspyyntölomake', quoteRequestUrl, ['tarjous','tarjouspyyntö','tarjouspyyntölomake','pyydä tarjous','lomake']],
+      ['Ajanvarauslinkki', bookingUrl, ['ajanvaraus','varaa','aika','booking']],
       ['Lisätiedot', req.body.notes, ['lisätieto','muuta','huomio']],
       ['Vastaustyyli', req.body.tone, ['tyyli']]
     ];
@@ -1552,18 +1563,20 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
       const answer = String(value || '').trim();
       if (!answer) continue;
       await client.query(
-        'INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords) VALUES($1,$2,$3,$4,$5,$6)',
-        [uid(), tenantId, 'Yrityksen perustiedot', title, answer, keywords]
+        `INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords,source_type,source_url,approved,verified_at)
+         VALUES($1,$2,$3,$4,$5,$6,'profile',$7,true,NOW())`,
+        [uid(), tenantId, 'Yrityksen perustiedot', title, answer, keywords, website || null]
       );
     }
 
     await client.query(
-      'UPDATE tenants SET contact_phone=$1, contact_email=$2, website=$3, greeting=$4, updated_at=NOW() WHERE id=$5',
+      'UPDATE tenants SET contact_phone=$1, contact_email=$2, website=$3, greeting=$4, average_lead_value=$5, updated_at=NOW() WHERE id=$6',
       [
         String(req.body.phone || '').trim() || null,
         String(req.body.email || '').trim() || null,
         website || null,
         String(req.body.greeting || '').trim().slice(0, 220) || 'Hei! Miten voin auttaa?',
+        Math.max(0, Number(req.body.averageLeadValue || 0)) || 0,
         tenantId
       ]
     );
@@ -1592,9 +1605,9 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
     const prompt = `Poimi alla olevasta yrityksen verkkosivutekstistä VAIN selvästi sivulla kerrotut tiedot.
 Älä päättele, täydennä tai keksi mitään. Palauta ainoastaan validi JSON-objekti ilman markdownia.
 Avaimet:
-pricing, hours, phone, email, services, serviceArea, address, quoteRequestUrl, notes.
+pricing, hours, phone, email, services, serviceArea, address, quoteRequestUrl, bookingUrl, notes.
 Kaikki arvot ovat merkkijonoja. Jos tietoa ei löydy varmasti, käytä tyhjää merkkijonoa.
-services voi olla yksi pilkuilla eroteltu merkkijono. quoteRequestUrl saa olla vain tekstissä näkyvä URL.
+services voi olla yksi pilkuilla eroteltu merkkijono. quoteRequestUrl ja bookingUrl saavat olla vain tekstissä näkyviä URL-osoitteita.
 
 VERKKOSIVU:
 ${text}`;
@@ -1608,7 +1621,7 @@ ${text}`;
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) throw new Error('Tuonnin vastausta ei voitu lukea.');
     const parsed = JSON.parse(match[0]);
-    const allowed = ['pricing','hours','phone','email','services','serviceArea','address','quoteRequestUrl','notes'];
+    const allowed = ['pricing','hours','phone','email','services','serviceArea','address','quoteRequestUrl','bookingUrl','notes'];
     const profile = {};
     for (const key of allowed) profile[key] = String(parsed[key] || '').trim().slice(0, 4000);
     profile.website = normalizeWebUrl(finalUrl, true) || normalizeWebUrl(website, true);
@@ -1645,7 +1658,8 @@ app.post('/api/app/unanswered/:id/answer', auth, subscribed, async (req, res) =>
 
     await client.query('BEGIN');
     const added = await client.query(
-      'INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',
+      `INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords,source_type,approved,verified_at)
+       VALUES($1,$2,$3,$4,$5,$6,'owner_answer',true,NOW()) RETURNING *`,
       [uid(), tenantId, 'Asiakaskysymykset', question, answer, keywords],
     );
     await client.query(
@@ -1677,7 +1691,8 @@ app.post('/api/app/knowledge', auth, subscribed, async (req, res) => {
           .map((x) => x.trim())
           .filter(Boolean);
     const r = await q(
-      'INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',
+      `INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords,source_type,approved,verified_at)
+       VALUES($1,$2,$3,$4,$5,$6,'manual',true,NOW()) RETURNING *`,
       [uid(), t.rows[0].id, category, title, answer, ks],
     );
     return res.json(r.rows[0]);
@@ -2012,6 +2027,34 @@ async function ensureRuntimeSchema() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_leads_tenant_created ON leads(tenant_id, created_at DESC)');
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS average_lead_value NUMERIC(12,2) NOT NULL DEFAULT 0");
+  await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'manual'");
+  await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS source_url TEXT");
+  await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS approved BOOLEAN NOT NULL DEFAULT TRUE");
+  await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ NOT NULL DEFAULT NOW()");
+  await q("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS page_url TEXT");
+  await q("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS page_title TEXT");
+  await q(`CREATE TABLE IF NOT EXISTS action_events (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    visitor_ref TEXT,
+    action_type TEXT NOT NULL,
+    label TEXT,
+    target TEXT,
+    page_url TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_action_events_tenant_created ON action_events(tenant_id, created_at DESC)');
+  await q(`CREATE TABLE IF NOT EXISTS self_test_runs (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    score INTEGER NOT NULL,
+    total_questions INTEGER NOT NULL,
+    answerable_questions INTEGER NOT NULL,
+    gaps JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_self_test_tenant_created ON self_test_runs(tenant_id, created_at DESC)');
   await q("ALTER TABLE tenants ALTER COLUMN accent SET DEFAULT '#111113'");
   await q("UPDATE tenants SET accent='#111113' WHERE accent='#3157ff'");
 }
