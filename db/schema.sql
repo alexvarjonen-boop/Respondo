@@ -33,6 +33,13 @@ CREATE TABLE IF NOT EXISTS tenants (
   action_webhook_url TEXT,
   action_webhook_secret TEXT,
   channels_api_key TEXT,
+  stripe_connected_account_id TEXT,
+  quote_service_name TEXT,
+  quote_base_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+  quote_unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+  quote_min_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+  quote_vat_percent NUMERIC(6,2) NOT NULL DEFAULT 0,
+  quote_unit_label TEXT NOT NULL DEFAULT 'kpl',
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -153,3 +160,16 @@ CREATE TABLE IF NOT EXISTS action_requests (
 );
 CREATE INDEX IF NOT EXISTS idx_action_requests_tenant_created
   ON action_requests(tenant_id, created_at DESC);
+
+
+CREATE TABLE IF NOT EXISTS booking_slots (
+  id UUID PRIMARY KEY,
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  starts_at TIMESTAMPTZ NOT NULL,
+  ends_at TIMESTAMPTZ NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(tenant_id,starts_at)
+);
+CREATE INDEX IF NOT EXISTS idx_booking_slots_tenant_start
+  ON booking_slots(tenant_id, starts_at);
