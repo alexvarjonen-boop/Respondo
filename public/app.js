@@ -911,6 +911,51 @@ function dataImpactScene() {
   </section>`;
 }
 
+function motionDepthScene() {
+  return `<section class="motion-depth" aria-label="RESPONDO toimintaketju">
+    <div class="motion-depth-sticky">
+      <div class="depth-aura depth-aura-a"></div>
+      <div class="depth-aura depth-aura-b"></div>
+      <div class="depth-grid" aria-hidden="true"></div>
+
+      <div class="depth-copy">
+        <small>RESPONDO / AUTOPILOT</small>
+        <h2>Yksi keskustelu.<br><em>Koko asiakaspolku.</em></h2>
+        <p>Vieritä. Näet miten kysymys muuttuu ymmärrykseksi, toiminnaksi ja lopulta oikeaksi asiaksi yrityksen kalenterissa, tarjouksissa tai Action Inboxissa.</p>
+      </div>
+
+      <div class="depth-stage" aria-hidden="true">
+        <article class="depth-card depth-card-1">
+          <span>01</span>
+          <small>KYSYMYS</small>
+          <b>“Paljonko tämä maksaa?”</b>
+          <i>asiakas</i>
+        </article>
+        <article class="depth-card depth-card-2">
+          <span>02</span>
+          <small>YMMÄRRYS</small>
+          <b>Hinta + palvelu + konteksti</b>
+          <i>Truth Engine</i>
+        </article>
+        <article class="depth-card depth-card-3">
+          <span>03</span>
+          <small>TOIMINTA</small>
+          <b>Tarjous · aika · maksu</b>
+          <i>Actions 2.0</i>
+        </article>
+        <div class="depth-core">
+          <div class="depth-core-ring"></div>
+          <div class="depth-core-mark">R</div>
+          <small>RESPONDO</small>
+        </div>
+      </div>
+
+      <div class="depth-progress"><i></i></div>
+      <div class="depth-caption"><span>01</span><b>Kysymys muuttuu toiminnaksi</b><em>03</em></div>
+    </div>
+  </section>`;
+}
+
 function trustPortalScene() {
   return `<section class="trust-portal" id="control">
     <div class="portal-ring ring-one"></div>
@@ -956,6 +1001,7 @@ async function home() {
       ${cinematicConversationScene()}
       ${horizontalProductStory()}
       ${productWorldScene()}
+      ${motionDepthScene()}
       ${trustPortalScene()}
       ${dataImpactScene()}
       ${calculatorSection()}
@@ -1840,6 +1886,164 @@ async function paymentSuccess() {
   </div>`;
 }
 
+function initImmersiveHomeMotion() {
+  const root = document.querySelector('.immersive-home');
+  if (!root) return;
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const compact = window.matchMedia('(max-width: 760px)').matches;
+
+  document.documentElement.classList.add('respondo-motion-ready');
+
+  const revealItems = root.querySelectorAll(
+    '.hero-copy > *, .cinema-kicker, .cinema-phone, .cinema-float, ' +
+    '.story-panel-copy > *, .story-visual, .world-label, .world-title, .world-window, .world-caption, ' +
+    '.depth-copy > *, .depth-card, .depth-core, .portal-center > *, .portal-node, ' +
+    '.impact-top > *, .impact-number, .calculator-shell, .pricing-section .split-head > *, ' +
+    '.price-card, .final-cta .cta-shell > *, .contact-shell > *'
+  );
+
+  revealItems.forEach((el, index) => {
+    el.classList.add('motion-reveal');
+    el.style.setProperty('--reveal-delay', Math.min(index % 7, 6) * 45 + 'ms');
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('motion-visible');
+        observer.unobserve(entry.target);
+      }
+    }
+  }, { threshold:0.12, rootMargin:'0px 0px -8% 0px' });
+
+  revealItems.forEach((el) => observer.observe(el));
+
+  if (reduceMotion || compact) {
+    root.classList.add('motion-lite');
+    revealItems.forEach((el) => el.classList.add('motion-visible'));
+    return;
+  }
+
+  const clamp = (v, min = 0, max = 1) => Math.min(max, Math.max(min, v));
+  const progress = (el, start = 0, end = 1) => {
+    if (!el) return 0;
+    const rect = el.getBoundingClientRect();
+    const vh = window.innerHeight || 1;
+    const total = Math.max(1, rect.height - vh);
+    const passed = -rect.top;
+    return clamp((passed / total - start) / Math.max(.0001, end - start));
+  };
+
+  const hero = root.querySelector('.hero-immersive');
+  const cinema = root.querySelector('.cinema-conversation');
+  const story = root.querySelector('.story-horizontal');
+  const storyTrack = root.querySelector('.story-track');
+  const storyProgress = root.querySelector('.story-progress i');
+  const storyCurrent = document.getElementById('storyCurrent');
+  const world = root.querySelector('.product-world');
+  const depth = root.querySelector('.motion-depth');
+  const depthProgress = root.querySelector('.depth-progress i');
+  const portal = root.querySelector('.trust-portal');
+  const impact = root.querySelector('.impact-scene');
+  const calculator = root.querySelector('.value-calculator');
+  const pricing = root.querySelector('.pricing-section');
+
+  let ticking = false;
+
+  const paint = () => {
+    ticking = false;
+
+    const scrollY = window.scrollY || 0;
+    root.style.setProperty('--page-scroll', scrollY.toFixed(1));
+
+    if (hero) {
+      const r = hero.getBoundingClientRect();
+      const hp = clamp((-r.top) / Math.max(1, r.height));
+      hero.style.setProperty('--hero-p', hp.toFixed(4));
+    }
+
+    if (cinema) {
+      const p = progress(cinema);
+      cinema.style.setProperty('--scene-p', p.toFixed(4));
+    }
+
+    if (story && storyTrack) {
+      const p = progress(story);
+      story.style.setProperty('--story-p', p.toFixed(4));
+      storyTrack.style.transform = 'translate3d(' + (-p * 66.6667) + '%,0,0)';
+      if (storyProgress) storyProgress.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+      if (storyCurrent) {
+        const step = p < .333 ? 1 : p < .666 ? 2 : 3;
+        storyCurrent.textContent = String(step).padStart(2,'0');
+      }
+    }
+
+    if (world) {
+      const p = progress(world);
+      world.style.setProperty('--world-p', p.toFixed(4));
+    }
+
+    if (depth) {
+      const p = progress(depth);
+      depth.style.setProperty('--depth-p', p.toFixed(4));
+      if (depthProgress) depthProgress.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+    }
+
+    if (portal) {
+      const rect = portal.getBoundingClientRect();
+      const p = clamp(1 - Math.abs((rect.top + rect.height / 2) - window.innerHeight / 2) / (window.innerHeight + rect.height / 2));
+      portal.style.setProperty('--portal-p', p.toFixed(4));
+    }
+
+    if (impact) {
+      const p = progress(impact);
+      impact.style.setProperty('--impact-p', p.toFixed(4));
+    }
+
+    if (calculator) {
+      const rect = calculator.getBoundingClientRect();
+      const p = clamp((window.innerHeight - rect.top) / (window.innerHeight + Math.min(rect.height, window.innerHeight)));
+      calculator.style.setProperty('--section-p', p.toFixed(4));
+    }
+
+    if (pricing) {
+      const rect = pricing.getBoundingClientRect();
+      const p = clamp((window.innerHeight - rect.top) / (window.innerHeight + Math.min(rect.height, window.innerHeight)));
+      pricing.style.setProperty('--section-p', p.toFixed(4));
+    }
+  };
+
+  const onScroll = () => {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(paint);
+    }
+  };
+
+  window.addEventListener('scroll', onScroll, { passive:true });
+  window.addEventListener('resize', onScroll, { passive:true });
+  paint();
+
+  root.querySelectorAll('.price-card, .calculator-shell, .cta-shell').forEach((card) => {
+    card.classList.add('motion-tilt');
+    card.addEventListener('pointermove', (event) => {
+      if (event.pointerType === 'touch') return;
+      const rect = card.getBoundingClientRect();
+      const x = clamp((event.clientX - rect.left) / Math.max(1,rect.width), 0, 1);
+      const y = clamp((event.clientY - rect.top) / Math.max(1,rect.height), 0, 1);
+      card.style.setProperty('--tilt-x', ((.5 - y) * 5).toFixed(2) + 'deg');
+      card.style.setProperty('--tilt-y', ((x - .5) * 7).toFixed(2) + 'deg');
+      card.style.setProperty('--shine-x', (x * 100).toFixed(1) + '%');
+      card.style.setProperty('--shine-y', (y * 100).toFixed(1) + '%');
+    });
+    card.addEventListener('pointerleave', () => {
+      card.style.setProperty('--tilt-x','0deg');
+      card.style.setProperty('--tilt-y','0deg');
+    });
+  });
+}
+
 async function route() {
   await config();
   const path = location.pathname;
@@ -1891,6 +2095,7 @@ async function route() {
     jobSlider?.addEventListener('input', updateCalculator);
     missedSlider?.addEventListener('input', updateCalculator);
     updateCalculator();
+    initImmersiveHomeMotion();
   }
 
   if (path === '/tilaus') {
