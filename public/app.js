@@ -1185,6 +1185,9 @@ async function dashboard() {
   const latestSelfTest = data.latestSelfTest || null;
   const actionStats = data.actionStats || [];
   const actionRequests = data.actionRequests || [];
+  const bookingSlots = data.bookingSlots || [];
+  const stripeConnect = data.stripeConnect || { connected:false,chargesEnabled:false,detailsSubmitted:false,payoutsEnabled:false };
+  const quoteEngine = data.quoteEngine || { serviceName:'',basePrice:0,unitPrice:0,minPrice:0,vatPercent:0,unitLabel:'kpl' };
   const integrations = data.integrations || { webhookUrl:'', webhookSecret:'', channelsApiKey:'' };
   const knowledge = data.knowledge || [];
   const businessProfile = Object.fromEntries(
@@ -1215,7 +1218,14 @@ async function dashboard() {
     in_progress:'Käsittelyssä',
     done:'Hoidettu',
   })[status] || status || 'Uusi';
-  const actionFieldEntries = (payload) => Object.entries(payload?.fields || {}).filter(([,v]) => String(v || '').trim());
+  const actionFieldEntries = (payload) => Object.entries(payload?.fields || {}).filter(([key,v]) => key !== 'slotId' && String(v || '').trim());
+  const localDateInput = (date) => {
+    const d = new Date(date);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0,10);
+  };
+  const tomorrowValue = localDateInput(new Date(Date.now() + 86400000));
+  const weekValue = localDateInput(new Date(Date.now() + 8 * 86400000));
   const answersDone = nonProfileKnowledge.length > 0;
   const testedDone = s.conversations > 0;
   const onboarding = [
@@ -1574,6 +1584,19 @@ async function dashboard() {
                   ${actionFieldEntries(x.payload).map(([key,value]) => `<div><small>${esc(key)}</small><b>${esc(value)}</b></div>`).join('')}
                 </div>
                 ${x.payload?.question ? `<p class="action-origin">“${esc(x.payload.question)}”</p>` : ''}
+                ${x.result?.quote ? `
+                  <div class="action-quote-summary">
+                    <span>RESPONDO QUOTE</span>
+                    <b>${formatMoney(x.result.quote.total || 0)}</b>
+                    <small>${x.result?.paid ? 'Maksettu ✓' : 'Odottaa hyväksyntää / maksua'}</small>
+                  </div>
+                ` : ''}
+                ${x.payload?.booking?.startsAt ? `
+                  <div class="action-booking-summary">
+                    <span>VARATTU AIKA</span>
+                    <b>${new Date(x.payload.booking.startsAt).toLocaleString('fi-FI',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</b>
+                  </div>
+                ` : ''}
                 <div class="action-request-bottom">
                   <small>Integraatio: ${esc(x.delivery_status === 'delivered' ? 'lähetetty ✓' : x.delivery_status === 'failed' ? 'lähetys epäonnistui' : 'vain RESPONDOssa')}</small>
                   ${x.status !== 'done' ? `<button type="button" class="mark-action-done">Merkitse hoidetuksi</button>` : '<span class="action-done-label">✓ Hoidettu</span>'}
@@ -1585,6 +1608,87 @@ async function dashboard() {
                 <p>Kun asiakas pyytää tarjouksen, ajan, tilauksen tarkistuksen tai yhteydenoton, se ilmestyy tähän.</p>
               </div>
             `}
+          </div>
+        </article>
+
+        <article class="panel quote-engine-panel" id="quote-engine">
+          <div class="panel-head">
+            <div>
+              <small>QUOTE ENGINE</small>
+              <h2>Anna Respondon laskea hinta</h2>
+              <p>Hinta lasketaan tällä kaavalla, ei tekoälyn arvauksella: perusmaksu + määrä × yksikköhinta, kuitenkin vähintään minimihinta.</p>
+            </div>
+            <span class="install-badge">${quoteEngine.basePrice || quoteEngine.unitPrice || quoteEngine.minPrice ? 'Käytössä' : 'Ei asetettu'}</span>
+          </div>
+          <form id="quoteEngineForm" class="quote-engine-form">
+            <div class="field"><label>Palvelun nimi</label><input name="serviceName" value="${esc(quoteEngine.serviceName)}" placeholder="Esim. Muuttopalvelu"></div>
+            <div class="quote-engine-grid">
+              <div class="field"><label>Perusmaksu €</label><input name="basePrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.basePrice)}"></div>
+              <div class="field"><label>Hinta / yksikkö €</label><input name="unitPrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.unitPrice)}"></div>
+              <div class="field"><label>Yksikön nimi</label><input name="unitLabel" value="${esc(quoteEngine.unitLabel || 'kpl')}" placeholder="h, km, m², kpl"></div>
+              <div class="field"><label>Minimihinta €</label><input name="minPrice" type="number" min="0" step="0.01" value="${esc(quoteEngine.minPrice)}"></div>
+              <div class="field"><label>ALV %</label><input name="vatPercent" type="number" min="0" max="30" step="0.1" value="${esc(quoteEngine.vatPercent)}"></div>
+            </div>
+            <div class="quote-form-bottom">
+              <div class="quote-formula-preview">Hinta = max(minimi, perusmaksu + määrä × yksikköhinta) + ALV</div>
+              <button class="btn dashboard-action" type="submit">Tallenna hintalaskuri <span>→</span></button>
+            </div>
+            <div id="quoteEngineMsg"></div>
+          </form>
+        </article>
+
+        <article class="panel booking-calendar-panel" id="booking-calendar">
+          <div class="panel-head">
+            <div>
+              <small>RESPONDO CALENDAR</small>
+              <h2>Luo oikeat vapaat ajat</h2>
+              <p>Asiakas näkee chatissa vain nämä ajat. Kun yksi varataan, se lukittuu heti pois muilta.</p>
+            </div>
+            <span class="install-badge">${bookingSlots.filter((x) => x.status === 'open').length} vapaana</span>
+          </div>
+
+          <form id="bookingSlotsForm" class="booking-slots-form">
+            <div class="booking-generator-grid">
+              <div class="field"><label>Alkaen</label><input name="startDate" type="date" value="${tomorrowValue}" required></div>
+              <div class="field"><label>Päättyen</label><input name="endDate" type="date" value="${weekValue}" required></div>
+              <div class="field"><label>Päivä alkaa</label><input name="startTime" type="time" value="09:00" required></div>
+              <div class="field"><label>Päivä päättyy</label><input name="endTime" type="time" value="16:00" required></div>
+              <div class="field"><label>Ajan pituus</label><select name="duration"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>60 min</option><option value="90">90 min</option><option value="120">120 min</option></select></div>
+            </div>
+            <div class="weekday-picker">
+              ${[['1','Ma'],['2','Ti'],['3','Ke'],['4','To'],['5','Pe'],['6','La'],['0','Su']].map(([v,l]) => `<label><input type="checkbox" name="weekday" value="${v}" ${['1','2','3','4','5'].includes(v) ? 'checked' : ''}><span>${l}</span></label>`).join('')}
+            </div>
+            <button class="btn dashboard-action" type="submit">Luo vapaat ajat <span>→</span></button>
+            <div id="bookingSlotsMsg"></div>
+          </form>
+
+          <div class="booking-slot-list">
+            ${bookingSlots.length ? bookingSlots.slice(0,18).map((slot) => `
+              <div class="booking-slot-item ${slot.status}">
+                <div><b>${new Date(slot.starts_at).toLocaleString('fi-FI',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</b><small>${slot.status === 'booked' ? 'Varattu' : 'Vapaa'}</small></div>
+                ${slot.status === 'open' ? `<button type="button" class="delete-booking-slot" data-id="${esc(slot.id)}">Poista</button>` : '<span>✓</span>'}
+              </div>
+            `).join('') : '<div class="empty-state compact"><p>Et ole vielä luonut vapaita aikoja.</p></div>'}
+          </div>
+        </article>
+
+        <article class="panel stripe-connect-panel" id="stripe-connect">
+          <div class="panel-head">
+            <div>
+              <small>PAYMENTS</small>
+              <h2>Ota maksu suoraan tarjouksesta</h2>
+              <p>Yhdistä yrityksen oma Stripe. Tämän jälkeen chatissa laskettu tarjous voi avata maksun suoraan yrityksen Stripe-tilille.</p>
+            </div>
+            <span class="stripe-connect-status ${stripeConnect.chargesEnabled ? 'ready' : ''}">${stripeConnect.chargesEnabled ? '● Maksut käytössä' : stripeConnect.connected ? '○ Viimeistele Stripe' : '○ Ei yhdistetty'}</span>
+          </div>
+          <div class="stripe-connect-body">
+            ${stripeConnect.chargesEnabled ? `
+              <div class="stripe-connected-ok"><b>Stripe on valmis vastaanottamaan maksuja ✓</b><p>Kun Quote Engine laskee tarjouksen, asiakkaalle voidaan näyttää Maksa / hyväksy tarjous -painike.</p></div>
+            ` : `
+              <div class="field stripe-country-field"><label>Yrityksen maa</label><select id="stripeConnectCountry" ${stripeConnect.connected ? 'disabled' : ''}><option value="FI">Suomi</option><option value="SE">Ruotsi</option><option value="DE">Saksa</option><option value="GB">Iso-Britannia</option><option value="US">Yhdysvallat</option></select></div>
+              <button class="btn dashboard-action" id="connectStripeBusiness" type="button">${stripeConnect.connected ? 'Jatka Stripe-asetuksia' : 'Yhdistä yrityksen Stripe'} <span>↗</span></button>
+            `}
+            <div id="stripeConnectMsg"></div>
           </div>
         </article>
 
