@@ -2943,6 +2943,61 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
   }
 });
 
+
+app.get('/api/public/:slug/live', publicChatLimiter, async (req,res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.status(404).json({ error:'Yritystä ei löytynyt.' });
+    const tenant = tr.rows[0];
+    const origin = requestOrigin(req);
+    const baseHost = normalizeHost(BASE);
+    const external = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
+    if (external) {
+      if (!widgetOriginAllowed(req,tenant)) return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
+      try {
+        const token = jwt.verify(String(req.query.widgetToken || ''),JWT);
+        if (token.kind !== 'widget' || token.slug !== tenant.slug || token.host !== normalizeHost(origin.hostname)) throw new Error('Invalid token');
+      } catch {
+        return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
+      }
+      setWidgetCors(req,res);
+    }
+
+    const visitorRef = String(req.query.visitorRef || '').trim().slice(0,160);
+    const after = String(req.query.after || '').trim();
+    if (!visitorRef) return res.json({ mode:'ai',messages:[] });
+
+    const threadResult = await q(
+      `SELECT * FROM chat_threads
+        WHERE tenant_id=$1 AND source_channel='website' AND external_contact_id=$2
+        LIMIT 1`,
+      [tenant.id,visitorRef],
+    );
+    if (!threadResult.rowCount) return res.json({ mode:'ai',messages:[] });
+    const thread = threadResult.rows[0];
+
+    const params=[tenant.id,thread.id];
+    let whereAfter='';
+    if (after && !Number.isNaN(new Date(after).getTime())) {
+      params.push(new Date(after).toISOString());
+      whereAfter=' AND created_at > $3';
+    }
+    const messages = await q(
+      `SELECT id,role,message,created_at
+         FROM chat_messages
+        WHERE tenant_id=$1 AND thread_id=$2
+          AND role='human'${whereAfter}
+        ORDER BY created_at ASC
+        LIMIT 50`,
+      params,
+    );
+    return res.json({ mode:thread.mode,messages:messages.rows });
+  } catch (e) {
+    console.error('Live poll failed',e);
+    return res.status(500).json({ error:'Live-keskustelua ei saatu.' });
+  }
+});
+
 app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
   try {
     const tr = await publicTenant(req.params.slug);
@@ -2981,6 +3036,33 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const message = String(body.message || '').trim().slice(0, 1200);
     if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : 'Kirjoita kysymys.' });
     const visitorRef = String(body.visitorRef || '').trim().slice(0, 160);
+    const thread = visitorRef ? await getOrCreateThread(t.id,'website',visitorRef,visitorRef) : null;
+    if (thread) {
+      await appendChatMessage({
+        tenantId:t.id,threadId:thread.id,sourceChannel:'website',
+        externalContactId:visitorRef,visitorRef,role:'user',text:message,
+        metadata:{ pageContext:body.pageContext || {} },
+      });
+      if (thread.mode === 'human') {
+        const humanMessage = lang === 'en'
+          ? 'Your message was sent to a person from the company.'
+          : 'Viestisi lähetettiin yrityksen asiakaspalvelijalle.';
+        await q(
+          `INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,page_url,page_title,source_channel,external_contact_id)
+           VALUES($1,$2,$3,$4,'Live takeover',1,'{}',true,$5,$6,$7,'website',$8)`,
+          [
+            uid(),t.id,message,humanMessage,visitorRef || null,
+            String(body.pageContext?.url || '').slice(0,1000) || null,
+            String(body.pageContext?.title || '').slice(0,300) || null,
+            visitorRef || null,
+          ],
+        );
+        return res.json({
+          answer:humanMessage,handoff:true,humanTakeover:true,verified:false,
+          actions:[],canLeaveContact:false,
+        });
+      }
+    }
 
     const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC, created_at DESC', [t.id]);
     let history = [];
@@ -3018,14 +3100,22 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     }
 
     const actions = chatActions(kr.rows, message, result.handoff, lang);
+    if (thread) {
+      await appendChatMessage({
+        tenantId:t.id,threadId:thread.id,sourceChannel:'website',
+        externalContactId:visitorRef,visitorRef,role:'assistant',text:answer,
+        metadata:{ handoff:result.handoff,intent:result.intent,verified:!result.handoff },
+      });
+    }
     await q(
-      `INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,page_url,page_title)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      `INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,page_url,page_title,source_channel,external_contact_id)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'website',$12)`,
       [
         uid(), t.id, message, answer, result.intent, result.confidence, result.sourceIds, result.handoff,
         visitorRef || null,
         String(body.pageContext?.url || '').slice(0, 1000) || null,
         String(body.pageContext?.title || '').slice(0, 300) || null,
+        visitorRef || null,
       ],
     );
 
@@ -3194,6 +3284,18 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     };
     let computedQuote = null;
     let bookedSlot = null;
+    let ecommerceOrder = null;
+    let ecommerceLookupAttempted = false;
+
+    if (type === 'order_status' && tenant.ecommerce_provider) {
+      ecommerceLookupAttempted = true;
+      try {
+        ecommerceOrder = await lookupEcommerceOrder(tenant,fields.orderNumber,fields.email);
+      } catch (e) {
+        console.error('Native ecommerce lookup failed',e);
+        return res.status(502).json({ error:'Tilaustietoja ei saatu verkkokaupasta juuri nyt. Yritä hetken päästä uudelleen.' });
+      }
+    }
 
     if (type === 'quote') {
       const base = Number(tenant.quote_base_price || 0);
@@ -3282,7 +3384,10 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     await q(
       `INSERT INTO action_requests(id,tenant_id,visitor_ref,request_type,status,payload,result,source_channel,external_contact_id)
        VALUES($1,$2,$3,$4,'new',$5::jsonb,$6::jsonb,$7,$8)`,
-      [id,tenant.id,visitorRef,type,JSON.stringify(payload),JSON.stringify(computedQuote ? { quote:computedQuote } : {}),sourceChannel,externalContactId],
+      [id,tenant.id,visitorRef,type,JSON.stringify(payload),JSON.stringify({
+        ...(computedQuote ? { quote:computedQuote } : {}),
+        ...(ecommerceLookupAttempted ? { orderStatus:ecommerceOrder,orderLookupProvider:tenant.ecommerce_provider } : {}),
+      }),sourceChannel,externalContactId],
     );
 
     if (['quote','booking','callback'].includes(type)) {
@@ -3350,7 +3455,11 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       [uid(),tenant.id,visitorRef,type,'submitted',null,pageUrl],
     );
 
+    const nativeOrderMessage = ecommerceLookupAttempted
+      ? orderStatusText(ecommerceOrder,body.lang === 'en' ? 'en' : 'fi')
+      : '';
     const customerMessage = String(
+      nativeOrderMessage ||
       delivery.result?.customerMessage ||
       delivery.result?.message ||
       ''
@@ -3407,6 +3516,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       status:'new',
       deliveryStatus:delivery.status,
       quote:computedQuote,
+      orderStatus:ecommerceOrder,
       booking:bookedSlot ? {
         startsAt:bookedSlot.starts_at,
         endsAt:bookedSlot.ends_at,
@@ -3894,6 +4004,152 @@ app.post('/api/channel/:slug/message', async (req,res) => {
   } catch (e) {
     console.error('Channels API failed',e);
     return res.status(500).json({ error:'Kanavaviestiä ei voitu käsitellä.' });
+  }
+});
+
+
+app.get('/api/meta/webhook/:slug', async (req,res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.sendStatus(404);
+    const tenant = await ensureTenantActionKeys(tr.rows[0]);
+    const mode = String(req.query['hub.mode'] || '');
+    const verifyToken = String(req.query['hub.verify_token'] || '');
+    const challenge = String(req.query['hub.challenge'] || '');
+    if (mode === 'subscribe' && safeEqualText(verifyToken,tenant.meta_verify_token)) {
+      return res.status(200).send(challenge);
+    }
+    return res.sendStatus(403);
+  } catch {
+    return res.sendStatus(500);
+  }
+});
+
+app.post('/api/meta/webhook/:slug', async (req,res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.sendStatus(404);
+    const tenant = tr.rows[0];
+
+    if (tenant.meta_app_secret) {
+      const provided = String(req.headers['x-hub-signature-256'] || '');
+      const raw = req.rawBody || Buffer.from(JSON.stringify(req.body || {}));
+      const expected = 'sha256=' + crypto
+        .createHmac('sha256',decryptSecret(tenant.meta_app_secret))
+        .update(raw)
+        .digest('hex');
+      if (!safeEqualText(provided,expected)) return res.sendStatus(403);
+    }
+
+    const body = req.body || {};
+    const work = [];
+
+    for (const entry of (Array.isArray(body.entry) ? body.entry : [])) {
+      // WhatsApp Cloud API.
+      for (const change of (Array.isArray(entry.changes) ? entry.changes : [])) {
+        const value = change?.value || {};
+        for (const msg of (Array.isArray(value.messages) ? value.messages : [])) {
+          if (msg?.type !== 'text' || !msg?.text?.body || !msg?.from) continue;
+          work.push((async () => {
+            const result = await processExternalChannelMessage(
+              tenant,'whatsapp',String(msg.from),String(msg.text.body),'fi',
+            );
+            if (result.answer && !result.humanTakeover) {
+              await sendMetaMessage(tenant,'whatsapp',String(msg.from),result.answer);
+            }
+          })());
+        }
+      }
+
+      // Instagram Messaging webhook.
+      for (const event of (Array.isArray(entry.messaging) ? entry.messaging : [])) {
+        if (event?.message?.is_echo || !event?.message?.text || !event?.sender?.id) continue;
+        work.push((async () => {
+          const result = await processExternalChannelMessage(
+            tenant,'instagram',String(event.sender.id),String(event.message.text),'fi',
+          );
+          if (result.answer && !result.humanTakeover) {
+            await sendMetaMessage(tenant,'instagram',String(event.sender.id),result.answer);
+          }
+        })());
+      }
+    }
+
+    await Promise.allSettled(work);
+    return res.status(200).send('EVENT_RECEIVED');
+  } catch (e) {
+    console.error('Meta webhook failed',e);
+    return res.sendStatus(500);
+  }
+});
+
+function voiceGatherTwiml(slug,prompt) {
+  const action = BASE + '/api/voice/' + encodeURIComponent(slug) + '/respond';
+  return '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<Response>' +
+      '<Gather input="speech" action="' + xmlEscape(action) + '" method="POST" language="fi-FI" speechTimeout="auto" actionOnEmptyResult="true">' +
+        '<Say language="fi-FI">' + xmlEscape(prompt) + '</Say>' +
+      '</Gather>' +
+      '<Redirect method="POST">' + xmlEscape(BASE + '/api/voice/' + encodeURIComponent(slug) + '/incoming') + '</Redirect>' +
+    '</Response>';
+}
+
+app.post('/api/voice/:slug/incoming', async (req,res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.sendStatus(404);
+    const tenant = tr.rows[0];
+    if (!tenant.voice_enabled) return res.status(403).type('text/xml').send('<Response><Say>Palvelu ei ole käytössä.</Say></Response>');
+    if (!twilioSignatureValid(req,tenant,'/api/voice/' + encodeURIComponent(tenant.slug) + '/incoming')) {
+      return res.sendStatus(403);
+    }
+    const greeting = tenant.greeting || 'Hei! Olet yhteydessä yrityksen asiakaspalveluun. Miten voin auttaa?';
+    return res.type('text/xml').send(voiceGatherTwiml(tenant.slug,greeting));
+  } catch (e) {
+    console.error('Voice incoming failed',e);
+    return res.status(500).type('text/xml').send('<Response><Say>Palvelussa tapahtui virhe.</Say></Response>');
+  }
+});
+
+app.post('/api/voice/:slug/respond', async (req,res) => {
+  try {
+    const tr = await publicTenant(req.params.slug);
+    if (!tr.rowCount) return res.sendStatus(404);
+    const tenant = tr.rows[0];
+    if (!tenant.voice_enabled) return res.sendStatus(403);
+    if (!twilioSignatureValid(req,tenant,'/api/voice/' + encodeURIComponent(tenant.slug) + '/respond')) {
+      return res.sendStatus(403);
+    }
+
+    const speech = String(req.body.SpeechResult || '').trim().slice(0,1200);
+    const callSid = String(req.body.CallSid || req.body.From || '').trim().slice(0,220);
+    if (!speech) {
+      return res.type('text/xml').send(voiceGatherTwiml(tenant.slug,'En kuullut vastausta. Voitko sanoa asian uudelleen?'));
+    }
+
+    const wantsHuman = /ihminen|asiakaspalvelija|henkilö|human|person|operator/i.test(speech);
+    if (wantsHuman && tenant.voice_handoff_number) {
+      return res.type('text/xml').send(
+        '<?xml version="1.0" encoding="UTF-8"?><Response><Say language="fi-FI">Yhdistän sinut asiakaspalvelijalle.</Say><Dial>' +
+        xmlEscape(tenant.voice_handoff_number) +
+        '</Dial></Response>',
+      );
+    }
+
+    const result = await processExternalChannelMessage(tenant,'phone',callSid || uid(),speech,'fi');
+    if ((result.handoff || result.humanTakeover) && tenant.voice_handoff_number) {
+      return res.type('text/xml').send(
+        '<?xml version="1.0" encoding="UTF-8"?><Response><Say language="fi-FI">Tarvitaan ihminen avuksi. Yhdistän puhelun.</Say><Dial>' +
+        xmlEscape(tenant.voice_handoff_number) +
+        '</Dial></Response>',
+      );
+    }
+
+    const answer = result.answer || 'Tarvitsen tähän yrityksen henkilön apua. Voit jättää yhteydenottopyynnön verkkosivulla.';
+    return res.type('text/xml').send(voiceGatherTwiml(tenant.slug,answer + ' Voinko auttaa vielä jossain muussa?'));
+  } catch (e) {
+    console.error('Voice respond failed',e);
+    return res.status(500).type('text/xml').send('<Response><Say language="fi-FI">Palvelussa tapahtui virhe. Yritä myöhemmin uudelleen.</Say></Response>');
   }
 });
 
