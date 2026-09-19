@@ -79,8 +79,8 @@ async function ensureReferralCode(userId) {
     }
   }
 
-  // The referral program is intentionally available only to monthly subscribers.
-  if (plan !== 'monthly') return '';
+  // Normal monthly customers get a code. The one-use owner test also gets one so the full purchase flow can be tested.
+  if (!['monthly', 'owner_test'].includes(plan)) return '';
   if (user.referral_code) return user.referral_code;
 
   for (let attempt = 0; attempt < 8; attempt++) {
@@ -183,6 +183,69 @@ async function closeOwnerTestPlan(subscriptionId) {
     } catch (e) {
       console.error('Owner test price deactivation failed', e?.message || e);
     }
+  }
+}
+
+
+async function sendStripeReceiptForInvoice(invoiceId, fallbackEmail = '') {
+  if (!stripe || !invoiceId) return false;
+
+  const invoice = await stripe.invoices.retrieve(invoiceId, {
+    expand: ['payments.data.payment'],
+  });
+  const email = cleanEmail(invoice.customer_email || fallbackEmail);
+  if (!email || Number(invoice.amount_paid || 0) <= 0) return false;
+
+  const invoicePayment = invoice.payments?.data?.find(
+    (x) => x?.status === 'paid' && x?.payment?.type === 'payment_intent' && x?.payment?.payment_intent,
+  );
+  const paymentIntentId = invoicePayment?.payment?.payment_intent;
+  if (!paymentIntentId) return false;
+
+  const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+    expand: ['latest_charge'],
+  });
+  const charge =
+    typeof paymentIntent.latest_charge === 'string'
+      ? await stripe.charges.retrieve(paymentIntent.latest_charge)
+      : paymentIntent.latest_charge;
+
+  if (!charge?.id) return false;
+  if (cleanEmail(charge.receipt_email) === email) return true;
+
+  await stripe.charges.update(charge.id, { receipt_email: email });
+  return true;
+}
+
+async function backfillOwnerTestReceiptOnce() {
+  if (!pool || !stripe) return;
+
+  const done = await q("SELECT value FROM app_settings WHERE key='owner_test_receipt_backfill_done'");
+  if (done.rows[0]?.value === 'true') return;
+
+  const candidate = await q(
+    `SELECT email,stripe_subscription_id
+       FROM users
+      WHERE subscription_plan='owner_test'
+        AND stripe_subscription_id IS NOT NULL
+      ORDER BY updated_at DESC
+      LIMIT 1`,
+  );
+  if (!candidate.rowCount) return;
+
+  const subscription = await stripe.subscriptions.retrieve(candidate.rows[0].stripe_subscription_id);
+  const invoiceId =
+    typeof subscription.latest_invoice === 'string'
+      ? subscription.latest_invoice
+      : subscription.latest_invoice?.id || null;
+
+  if (!invoiceId) return;
+
+  const sent = await sendStripeReceiptForInvoice(invoiceId, candidate.rows[0].email);
+  if (sent) {
+    await q(
+      "INSERT INTO app_settings(key,value,updated_at) VALUES('owner_test_receipt_backfill_done','true',NOW()) ON CONFLICT(key) DO UPDATE SET value='true',updated_at=NOW()"
+    );
   }
 }
 
@@ -914,6 +977,17 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       }
     }
 
+    if (event.type === 'invoice.paid') {
+      const invoice = event.data.object;
+      if (Number(invoice.amount_paid || 0) > 0) {
+        try {
+          await sendStripeReceiptForInvoice(invoice.id, invoice.customer_email || '');
+        } catch (e) {
+          console.error('Stripe receipt email failed', e);
+        }
+      }
+    }
+
     if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object;
       const periodEnd = subscription.current_period_end
@@ -1125,12 +1199,19 @@ app.post('/api/auth/start-checkout', async (req, res) => {
           !ref.rowCount ||
           ref.rows[0].status !== 'active' ||
           !['active','trialing'].includes(ref.rows[0].subscription_status) ||
-          ref.rows[0].subscription_plan !== 'monthly'
+          !['monthly','owner_test'].includes(ref.rows[0].subscription_plan)
         ) {
           throw Object.assign(new Error('Suosittelukoodi ei ole voimassa.'), { publicStatus: 400 });
         }
         if (cleanEmail(ref.rows[0].email) === email) {
           throw Object.assign(new Error('Et voi käyttää omaa suosittelukoodiasi.'), { publicStatus: 400 });
+        }
+        const alreadyUsed = await client.query(
+          'SELECT 1 FROM referral_redemptions WHERE referrer_user_id=$1 AND stripe_discount_applied=TRUE LIMIT 1',
+          [ref.rows[0].id],
+        );
+        if (alreadyUsed.rowCount) {
+          throw Object.assign(new Error('Tämä suosittelukoodi on jo käytetty.'), { publicStatus: 400 });
         }
         referrer = ref.rows[0];
       }
@@ -1395,9 +1476,11 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
         'SELECT count(*)::int uses FROM referral_redemptions WHERE referrer_user_id=$1 AND stripe_discount_applied=TRUE',
         [req.user.sub],
       );
+      const uses = referralUses.rows[0]?.uses || 0;
       referral = {
         code: referralCode,
-        uses: referralUses.rows[0]?.uses || 0,
+        uses,
+        available: uses === 0,
         shareUrl: `${BASE}/tilaus?plan=monthly&ref=${encodeURIComponent(referralCode)}`,
         discountPercent: 20,
       };
@@ -1936,6 +2019,11 @@ async function ensureRuntimeSchema() {
 async function start() {
   try {
     await ensureRuntimeSchema();
+    try {
+      await backfillOwnerTestReceiptOnce();
+    } catch (e) {
+      console.error('Owner test receipt backfill failed', e);
+    }
   } catch (e) {
     console.error('Runtime schema check failed', e);
   }

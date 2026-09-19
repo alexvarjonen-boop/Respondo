@@ -1499,17 +1499,17 @@ async function dashboard() {
         <div class="referral-copy">
           <small>SUOSITTELE RESPONDOA</small>
           <h2>Kaverille −20 % ensimmäisestä kuukaudesta.</h2>
-          <p>Anna tämä henkilökohtainen koodi toiselle yritykselle. Alennus toimii vain kuukausitilauksessa ja koskee ensimmäistä maksullista kuukautta 3 päivän kokeilun jälkeen.</p>
+          <p>Anna tämä henkilökohtainen koodi yhdelle toiselle yritykselle. Koodi toimii kerran, vain kuukausitilauksessa, ja alennus koskee ensimmäistä maksullista kuukautta 3 päivän kokeilun jälkeen.</p>
         </div>
         <div class="referral-box">
-          <span>OMA SUOSITTELUKOODISI</span>
+          <span>OMA KERTAKÄYTTÖINEN SUOSITTELUKOODISI</span>
           <div class="referral-code-row">
             <code id="referralCode">${esc(referral.code)}</code>
-            <button type="button" id="copyReferralCode">Kopioi koodi</button>
+            <button type="button" id="copyReferralCode" ${referral.available ? '' : 'disabled'}>${referral.available ? 'Kopioi koodi' : 'Koodi käytetty'}</button>
           </div>
           <div class="referral-actions">
-            <button type="button" id="copyReferralLink" data-url="${esc(referral.shareUrl)}">Kopioi suosittelulinkki</button>
-            <small>${Number(referral.uses || 0)} käyttökertaa</small>
+            <button type="button" id="copyReferralLink" data-url="${esc(referral.shareUrl)}" ${referral.available ? '' : 'disabled'}>${referral.available ? 'Kopioi suosittelulinkki' : 'Linkki käytetty'}</button>
+            <small>${referral.available ? '1 käyttökerta jäljellä' : 'Käytetty'}</small>
           </div>
         </div>
       </section>` : ''}
