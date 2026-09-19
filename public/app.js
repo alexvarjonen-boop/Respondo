@@ -1868,7 +1868,7 @@ async function route() {
     });
 
     const previewHistory = [];
-    const previewCompanyName = $('.workspace-chip b')?.textContent || 'Yritys';
+    const previewCompanyName = $('.dashboard-workspace b')?.textContent || 'Yritys';
     const previewFactsPromise = api('/api/app/dashboard')
       .then((d) => (d.knowledge || [])
         .filter((x) => x.category !== 'Yrityksen perustiedot')
