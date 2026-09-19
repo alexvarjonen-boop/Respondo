@@ -2914,3 +2914,234 @@ body:before{opacity:.012}
   .gap-action-buttons{flex-direction:column;align-items:stretch}
   .gap-action-buttons .btn{width:100%!important}
 }
+
+
+/* =========================================================
+   RESPONDO ACTIONS 2.0
+   ========================================================= */
+.actions2-layout{
+  display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(320px,.9fr);
+  gap:16px;
+  align-items:start;
+}
+.action-inbox-panel,
+.integration-panel{
+  margin:0!important;
+}
+.action-request-list{
+  display:grid;
+  gap:10px;
+  margin-top:18px;
+}
+.action-request-item{
+  border:1px solid rgba(17,17,20,.085);
+  border-radius:16px;
+  background:#fff;
+  padding:15px;
+  transition:.18s ease;
+}
+.action-request-item.done{
+  opacity:.66;
+  background:#f7f7f8;
+}
+.action-request-top,
+.action-request-bottom{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.action-request-top>div{
+  display:grid;
+  gap:4px;
+}
+.action-request-top small,
+.action-request-bottom small{
+  color:#8b8b91;
+  font-size:9px;
+}
+.action-kind{
+  display:inline-flex;
+  width:max-content;
+  padding:6px 9px;
+  border-radius:999px;
+  background:#111114;
+  color:#fff;
+  font-size:9px;
+  font-weight:850;
+}
+.action-state{
+  padding:6px 9px;
+  border-radius:999px;
+  background:#f1f1f3;
+  color:#525258;
+  font-size:9px;
+  font-weight:800;
+  white-space:nowrap;
+}
+.action-request-fields{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin:13px 0;
+}
+.action-request-fields>div{
+  min-width:0;
+  padding:10px;
+  border-radius:12px;
+  background:#f7f7f8;
+}
+.action-request-fields small{
+  display:block;
+  margin-bottom:4px;
+  color:#99999f;
+  font-size:8px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+.action-request-fields b{
+  display:block;
+  overflow-wrap:anywhere;
+  font-size:11px;
+  line-height:1.4;
+}
+.action-origin{
+  margin:0 0 12px;
+  color:#68686e;
+  font-size:10px;
+  line-height:1.5;
+}
+.mark-action-done,
+.integration-test-btn,
+.copy-integration-value{
+  border:1px solid rgba(17,17,20,.11);
+  border-radius:10px;
+  background:#fff;
+  color:#111114;
+  padding:8px 10px;
+  font:inherit;
+  font-size:9px;
+  font-weight:800;
+  cursor:pointer;
+}
+.mark-action-done:hover,
+.integration-test-btn:hover,
+.copy-integration-value:hover{
+  background:#f3f3f5;
+}
+.action-done-label{
+  color:#2d7d52;
+  font-size:9px;
+  font-weight:850;
+}
+.integration-form{
+  margin-top:18px;
+}
+.integration-buttons{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:12px;
+}
+.integration-buttons .dashboard-action{
+  width:auto!important;
+  margin:0!important;
+}
+.integration-secret-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-top:18px;
+}
+.integration-secret{
+  min-width:0;
+  display:grid;
+  gap:8px;
+  padding:13px;
+  border:1px solid rgba(17,17,20,.08);
+  border-radius:14px;
+  background:#f7f7f8;
+}
+.integration-secret>small,
+.channels-api-box>small{
+  color:#8a8a90;
+  font-size:8px;
+  font-weight:850;
+  letter-spacing:.12em;
+}
+.integration-secret code{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#343438;
+  font-size:10px;
+}
+.channels-api-box{
+  margin-top:12px;
+  padding:15px;
+  border-radius:16px;
+  background:#111114;
+  color:#fff;
+}
+.channels-api-box>small{
+  color:#9e9ea6;
+}
+.channels-api-box h3{
+  margin:7px 0 6px;
+  font-size:17px;
+  letter-spacing:-.025em;
+}
+.channels-api-box p{
+  margin:0 0 12px;
+  color:#bdbdc4;
+  font-size:10px;
+  line-height:1.5;
+}
+.channels-api-box .code-row{
+  border-color:rgba(255,255,255,.14)!important;
+  background:rgba(255,255,255,.08)!important;
+}
+.channels-api-box .code-row code{
+  color:#fff!important;
+}
+.channels-api-box .code-row button{
+  background:#fff!important;
+  color:#111114!important;
+}
+.channel-readiness{
+  display:grid;
+  gap:6px;
+  margin-top:13px;
+}
+.channel-readiness span{
+  color:#a8a8b0;
+  font-size:9px;
+}
+.channel-readiness .ready{
+  color:#75d6a2;
+}
+@media(max-width:900px){
+  .actions2-layout{
+    grid-template-columns:1fr;
+  }
+}
+@media(max-width:560px){
+  .action-request-fields,
+  .integration-secret-grid{
+    grid-template-columns:1fr;
+  }
+  .action-request-top,
+  .action-request-bottom,
+  .integration-buttons{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .mark-action-done,
+  .integration-test-btn,
+  .integration-buttons .dashboard-action{
+    width:100%!important;
+    justify-content:center!important;
+  }
+}
