@@ -35,6 +35,37 @@ const q = (text, params = []) => {
 };
 const uid = () => crypto.randomUUID();
 const cleanEmail = (value) => String(value || '').trim().toLowerCase();
+
+const SECRET_KEY = crypto.createHash('sha256').update(JWT).digest();
+function encryptSecret(value) {
+  const text = String(value || '');
+  if (!text) return null;
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', SECRET_KEY, iv);
+  const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return [iv, tag, encrypted].map((x) => x.toString('base64url')).join('.');
+}
+function decryptSecret(value) {
+  const text = String(value || '');
+  if (!text) return '';
+  try {
+    const [ivPart, tagPart, dataPart] = text.split('.');
+    const decipher = crypto.createDecipheriv(
+      'aes-256-gcm',
+      SECRET_KEY,
+      Buffer.from(ivPart, 'base64url'),
+    );
+    decipher.setAuthTag(Buffer.from(tagPart, 'base64url'));
+    return Buffer.concat([
+      decipher.update(Buffer.from(dataPart, 'base64url')),
+      decipher.final(),
+    ]).toString('utf8');
+  } catch {
+    return '';
+  }
+}
+
 const slug = (value) =>
   String(value || 'yritys')
     .toLowerCase()
@@ -1996,6 +2027,145 @@ app.post('/api/app/self-test', auth, subscribed, async (req, res) => {
   }
 });
 
+
+
+async function getGoogleCalendarAccessToken(tenant) {
+  if (!tenant?.google_calendar_refresh_token && !tenant?.google_calendar_access_token) return '';
+
+  const existing = decryptSecret(tenant.google_calendar_access_token);
+  const expiresAt = tenant.google_calendar_token_expires_at
+    ? new Date(tenant.google_calendar_token_expires_at).getTime()
+    : 0;
+  if (existing && expiresAt > Date.now() + 60000) return existing;
+
+  const refreshToken = decryptSecret(tenant.google_calendar_refresh_token);
+  if (!refreshToken) return existing;
+
+  const cfg = oauthConfig('google');
+  if (!cfg.configured) return '';
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+    body:new URLSearchParams({
+      client_id:cfg.clientId,
+      client_secret:cfg.clientSecret,
+      refresh_token:refreshToken,
+      grant_type:'refresh_token',
+    }),
+  });
+  if (!response.ok) throw new Error('Google Calendar token refresh failed');
+  const token = await response.json();
+  const accessToken = String(token.access_token || '');
+  if (!accessToken) throw new Error('Google Calendar access token missing');
+  const expires = new Date(Date.now() + Number(token.expires_in || 3600) * 1000);
+
+  await q(
+    `UPDATE tenants
+        SET google_calendar_access_token=$1,
+            google_calendar_token_expires_at=$2,
+            updated_at=NOW()
+      WHERE id=$3`,
+    [encryptSecret(accessToken),expires,tenant.id],
+  );
+  tenant.google_calendar_access_token = encryptSecret(accessToken);
+  tenant.google_calendar_token_expires_at = expires;
+  return accessToken;
+}
+
+async function googleCalendarEvents(tenant, timeMin, timeMax) {
+  if (!tenant?.google_calendar_refresh_token && !tenant?.google_calendar_access_token) return [];
+  const token = await getGoogleCalendarAccessToken(tenant);
+  if (!token) return [];
+  const calendarId = tenant.google_calendar_id || 'primary';
+  const url = new URL('https://www.googleapis.com/calendar/v3/calendars/' + encodeURIComponent(calendarId) + '/events');
+  url.search = new URLSearchParams({
+    timeMin:new Date(timeMin).toISOString(),
+    timeMax:new Date(timeMax).toISOString(),
+    singleEvents:'true',
+    orderBy:'startTime',
+    maxResults:'250',
+  }).toString();
+
+  const response = await fetch(url, {
+    headers:{ Authorization:'Bearer ' + token },
+  });
+  if (!response.ok) throw new Error('Google Calendar events fetch failed');
+  const data = await response.json();
+  return (Array.isArray(data.items) ? data.items : [])
+    .filter((event) => event.status !== 'cancelled' && event.start?.dateTime && event.end?.dateTime)
+    .map((event) => ({
+      id:event.id,
+      start:new Date(event.start.dateTime),
+      end:new Date(event.end.dateTime),
+    }))
+    .filter((event) => Number.isFinite(event.start.getTime()) && Number.isFinite(event.end.getTime()));
+}
+
+async function googleCalendarHasConflict(tenant, start, end) {
+  if (!tenant?.google_calendar_refresh_token && !tenant?.google_calendar_access_token) return false;
+  const events = await googleCalendarEvents(tenant,start,end);
+  const a = new Date(start).getTime();
+  const b = new Date(end).getTime();
+  return events.some((event) => event.start.getTime() < b && event.end.getTime() > a);
+}
+
+async function createGoogleCalendarBooking(tenant, actionRequest) {
+  if (!tenant?.google_calendar_refresh_token && !tenant?.google_calendar_access_token) {
+    return { status:'not_configured' };
+  }
+  const booking = actionRequest?.payload?.booking;
+  if (!booking?.startsAt || !booking?.endsAt) return { status:'skipped' };
+
+  const token = await getGoogleCalendarAccessToken(tenant);
+  if (!token) return { status:'failed' };
+  const calendarId = tenant.google_calendar_id || 'primary';
+  const fields = actionRequest.payload?.fields || {};
+  const contact = actionContact(fields);
+  const attendees = contact.email ? [{ email:contact.email }] : undefined;
+
+  const eventBody = {
+    summary:(tenant.name || 'RESPONDO') + ' · ' + (fields.name || 'Asiakas'),
+    description:[
+      'Varaus luotu RESPONDO AI:n kautta.',
+      fields.note ? 'Lisätieto: ' + fields.note : '',
+      contact.email ? 'Sähköposti: ' + contact.email : '',
+      contact.phone ? 'Puhelin: ' + contact.phone : '',
+      actionRequest.payload?.question ? 'Keskustelu: ' + actionRequest.payload.question : '',
+    ].filter(Boolean).join('\n'),
+    start:{ dateTime:new Date(booking.startsAt).toISOString() },
+    end:{ dateTime:new Date(booking.endsAt).toISOString() },
+    attendees,
+    extendedProperties:{
+      private:{
+        respondo_action_request_id:actionRequest.id,
+        respondo_tenant_id:tenant.id,
+      },
+    },
+  };
+
+  const response = await fetch(
+    'https://www.googleapis.com/calendar/v3/calendars/' + encodeURIComponent(calendarId) + '/events?sendUpdates=all',
+    {
+      method:'POST',
+      headers:{
+        Authorization:'Bearer ' + token,
+        'Content-Type':'application/json',
+      },
+      body:JSON.stringify(eventBody),
+    },
+  );
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    throw new Error('Google Calendar event create failed: ' + body.slice(0,200));
+  }
+  const event = await response.json();
+  return {
+    status:'synced',
+    eventId:event.id || '',
+    htmlLink:event.htmlLink || '',
+  };
+}
 
 function cleanActionFields(type, input = {}) {
   const src = input && typeof input === 'object' ? input : {};
