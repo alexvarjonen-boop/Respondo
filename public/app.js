@@ -272,7 +272,7 @@ function nav() {
       </nav>
       <div class="navactions">
         ${languageSwitch()}
-        <a class="btn ghost" href="/kirjaudu">Kirjaudu</a>
+        <a class="btn ghost nav-login-btn" href="/kirjaudu"><span>Kirjaudu</span></a>
         <a class="btn ink" href="/tilaus">Kokeile ilmaiseksi</a>
       </div>
     </div>
@@ -324,7 +324,6 @@ function stickyProductNav() {
         <a href="#pricing">Hinnat</a>
         <a href="#contact">Ota yhteyttä</a>
       </nav>
-      <a class="subnav-cta" href="/tilaus">Kokeile ilmaiseksi</a>
     </div>
   </div>`;
 }
