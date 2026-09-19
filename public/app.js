@@ -1783,6 +1783,48 @@ async function dashboard() {
   </div>`;
 }
 
+async function paymentSuccess() {
+  const params = new URLSearchParams(location.search);
+  const action = params.get('action') || '';
+  const sessionId = params.get('session_id') || '';
+  let result = null;
+  let error = '';
+
+  try {
+    result = await api('/api/public/payment/verify?action=' + encodeURIComponent(action) + '&session_id=' + encodeURIComponent(sessionId));
+  } catch (e) {
+    error = e.message || 'Maksua ei voitu vahvistaa.';
+  }
+
+  if (result?.paid) {
+    const amount = new Intl.NumberFormat('fi-FI', {
+      style:'currency',
+      currency:result.currency || 'EUR',
+    }).format(Number(result.amountTotal || 0) / 100);
+
+    return `<div class="payment-success-page">
+      <div class="payment-success-card">
+        ${logo()}
+        <div class="payment-success-icon">✓</div>
+        <small>MAKSU VAHVISTETTU</small>
+        <h1>Valmis.</h1>
+        <p>Maksu <b>${esc(amount)}</b> yritykselle <b>${esc(result.companyName || '')}</b> onnistui.</p>
+        <p class="payment-success-note">Voit sulkea tämän sivun ja palata takaisin yrityksen verkkosivulle.</p>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="payment-success-page">
+    <div class="payment-success-card error">
+      ${logo()}
+      <div class="payment-success-icon">!</div>
+      <small>MAKSUN TARKISTUS</small>
+      <h1>Maksua ei vahvistettu.</h1>
+      <p>${esc(error || 'Maksu ei näytä olevan vielä valmis.')}</p>
+    </div>
+  </div>`;
+}
+
 async function route() {
   await config();
   const path = location.pathname;
@@ -1792,6 +1834,7 @@ async function route() {
   else if (path === '/assistant') html = `<main class="assistant-route-fallback"><div class="container"><div class="section-kicker">KOKEILE RESPONDOA</div><h1>Kokeile, miltä Respondo tuntuisi omassa yrityksessäsi.</h1><p>Lisää muutama yrityksesi tieto ja kysy sen jälkeen ihan samalla tavalla kuin asiakkaasi kysyisi.</p></div></main>`;
   else if (path === '/tilaus') html = signup();
   else if (path === '/kirjaudu') html = login();
+  else if (path === '/maksu-valmis') html = await paymentSuccess();
   else if (path === '/app') html = await dashboard();
   else if (['/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa', '/tietoturva'].includes(path)) html = legal(path.slice(1));
   else html = `<div>${nav()}<main class="notfound"><div class="container"><div class="section-kicker">404</div><h1>Tätä sivua ei löytynyt.</h1><a class="btn ink" href="/">Palaa etusivulle</a></div></main>${footer()}</div>`;
@@ -2292,6 +2335,140 @@ async function route() {
         setTimeout(() => (e.currentTarget.textContent = 'Kopioi suosittelulinkki'), 1400);
       } catch {
         e.currentTarget.textContent = 'Kopiointi ei onnistunut';
+      }
+    });
+
+    $('#quoteEngineForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.currentTarget);
+      const button = e.currentTarget.querySelector('button[type="submit"]');
+      const original = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = 'Tallennetaan…';
+      try {
+        await api('/api/app/quote-engine', {
+          method:'POST',
+          body:JSON.stringify({
+            serviceName:form.get('serviceName'),
+            basePrice:form.get('basePrice'),
+            unitPrice:form.get('unitPrice'),
+            minPrice:form.get('minPrice'),
+            vatPercent:form.get('vatPercent'),
+            unitLabel:form.get('unitLabel'),
+          }),
+        });
+        $('#quoteEngineMsg').innerHTML = '<div class="notice success">Quote Engine tallennettu ✓</div>';
+        button.innerHTML = 'Tallennettu ✓';
+        setTimeout(() => (button.innerHTML = original), 1400);
+      } catch (err) {
+        $('#quoteEngineMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.innerHTML = original;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    $('#bookingSlotsForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.currentTarget);
+      const startDateRaw = String(form.get('startDate') || '');
+      const endDateRaw = String(form.get('endDate') || '');
+      const startTimeRaw = String(form.get('startTime') || '09:00');
+      const endTimeRaw = String(form.get('endTime') || '16:00');
+      const duration = Math.max(15, Number(form.get('duration') || 60));
+      const weekdays = new Set(form.getAll('weekday').map(String));
+      const button = e.currentTarget.querySelector('button[type="submit"]');
+      const original = button.innerHTML;
+
+      if (!startDateRaw || !endDateRaw || !weekdays.size) {
+        $('#bookingSlotsMsg').innerHTML = '<div class="notice error">Valitse päivät ja vähintään yksi viikonpäivä.</div>';
+        return;
+      }
+
+      const [sy,sm,sd] = startDateRaw.split('-').map(Number);
+      const [ey,em,ed] = endDateRaw.split('-').map(Number);
+      const startDate = new Date(sy,sm-1,sd,12,0,0,0);
+      const endDate = new Date(ey,em-1,ed,12,0,0,0);
+      if (endDate < startDate) {
+        $('#bookingSlotsMsg').innerHTML = '<div class="notice error">Päättymispäivän pitää olla aloituspäivän jälkeen.</div>';
+        return;
+      }
+
+      const [sh,smin] = startTimeRaw.split(':').map(Number);
+      const [eh,emin] = endTimeRaw.split(':').map(Number);
+      const slots = [];
+      const cursor = new Date(startDate);
+
+      while (cursor <= endDate && slots.length < 300) {
+        if (weekdays.has(String(cursor.getDay()))) {
+          const dayStart = new Date(cursor.getFullYear(),cursor.getMonth(),cursor.getDate(),sh,smin,0,0);
+          const dayEnd = new Date(cursor.getFullYear(),cursor.getMonth(),cursor.getDate(),eh,emin,0,0);
+          let slotStart = new Date(dayStart);
+          while (slotStart.getTime() + duration * 60000 <= dayEnd.getTime() && slots.length < 300) {
+            const slotEnd = new Date(slotStart.getTime() + duration * 60000);
+            slots.push({ start:slotStart.toISOString(), end:slotEnd.toISOString() });
+            slotStart = slotEnd;
+          }
+        }
+        cursor.setDate(cursor.getDate() + 1);
+      }
+
+      if (!slots.length) {
+        $('#bookingSlotsMsg').innerHTML = '<div class="notice error">Näillä asetuksilla ei syntynyt yhtään aikaa.</div>';
+        return;
+      }
+
+      button.disabled = true;
+      button.innerHTML = 'Luodaan ' + slots.length + ' aikaa…';
+      try {
+        const result = await api('/api/app/booking-slots/generate', {
+          method:'POST',
+          body:JSON.stringify({ slots }),
+        });
+        $('#bookingSlotsMsg').innerHTML = '<div class="notice success">Luotiin ' + Number(result.saved || 0) + ' uutta vapaata aikaa ✓</div>';
+        setTimeout(() => {
+          location.href = '/app?section=automation';
+        }, 650);
+      } catch (err) {
+        $('#bookingSlotsMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.disabled = false;
+        button.innerHTML = original;
+      }
+    });
+
+    document.querySelectorAll('.delete-booking-slot').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const id = button.dataset.id;
+        const item = button.closest('.booking-slot-item');
+        button.disabled = true;
+        button.textContent = 'Poistetaan…';
+        try {
+          await api('/api/app/booking-slots/' + encodeURIComponent(id), { method:'DELETE' });
+          item?.remove();
+        } catch (err) {
+          button.disabled = false;
+          button.textContent = 'Poista';
+          alert(err.message);
+        }
+      });
+    });
+
+    $('#connectStripeBusiness')?.addEventListener('click', async (e) => {
+      const button = e.currentTarget;
+      const original = button.innerHTML;
+      const country = $('#stripeConnectCountry')?.value || 'FI';
+      button.disabled = true;
+      button.innerHTML = 'Avataan Stripe…';
+      try {
+        const result = await api('/api/app/stripe-connect/onboard', {
+          method:'POST',
+          body:JSON.stringify({ country }),
+        });
+        location.href = result.url;
+      } catch (err) {
+        $('#stripeConnectMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.disabled = false;
+        button.innerHTML = original;
       }
     });
 
