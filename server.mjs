@@ -1743,6 +1743,110 @@ app.post('/api/app/knowledge', auth, subscribed, async (req, res) => {
   }
 });
 
+
+app.post('/api/app/unanswered/:id/suggest', auth, subscribed, async (req, res) => {
+  try {
+    if (!openai) return res.status(503).json({ error: 'AI-ehdotus ei ole juuri nyt käytettävissä.' });
+    const tenantResult = await q('SELECT * FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    if (!tenantResult.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
+    const tenant = tenantResult.rows[0];
+    if (!tenant.website) return res.status(400).json({ error: 'Lisää ensin yrityksen verkkosivu Yrityksen tiedot -osiossa.' });
+
+    const conversation = await q(
+      'SELECT question FROM conversations WHERE id=$1 AND tenant_id=$2 AND handoff=true',
+      [req.params.id, tenant.id],
+    );
+    if (!conversation.rowCount) return res.status(404).json({ error: 'Kysymystä ei löytynyt.' });
+
+    const fetched = await fetchPublicHtml(tenant.website);
+    const pageText = htmlToReadableText(fetched.html).slice(0, 30000);
+    const question = String(conversation.rows[0].question || '').trim();
+    const prompt = 'Etsi yrityksen verkkosivutekstistä vastaus asiakkaan kysymykseen. ' +
+      'Käytä vain tekstissä selvästi kerrottuja faktoja. Älä päättele tai keksi. ' +
+      'Palauta vain JSON muodossa {"found":true/false,"answer":"..."}. ' +
+      'Jos varmaa vastausta ei ole, found=false ja answer tyhjä.\n\nKYSYMYS:\n' + question +
+      '\n\nVERKKOSIVUN TEKSTI:\n' + pageText;
+
+    const rr = await openai.responses.create({
+      model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
+      input: prompt,
+      max_output_tokens: 350,
+    });
+    const raw = String(rr.output_text || '').trim();
+    const match = raw.match(/\{[\s\S]*\}/);
+    const parsed = match ? JSON.parse(match[0]) : { found:false, answer:'' };
+    const answer = String(parsed.answer || '').trim().slice(0, 1800);
+    return res.json({
+      found: Boolean(parsed.found && answer),
+      answer: parsed.found ? answer : '',
+      sourceUrl: tenant.website,
+    });
+  } catch (e) {
+    console.error('Gap suggestion failed', e);
+    return res.status(400).json({ error: e.message || 'Vastausta ei voitu ehdottaa.' });
+  }
+});
+
+app.post('/api/app/self-test', auth, subscribed, async (req, res) => {
+  try {
+    if (!openai) return res.status(503).json({ error: 'Self-test ei ole juuri nyt käytettävissä.' });
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
+    const tenant = tr.rows[0];
+    const kr = await q(
+      'SELECT title,answer,category FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC LIMIT 80',
+      [tenant.id],
+    );
+    if (!kr.rowCount) return res.status(400).json({ error: 'Lisää ensin yrityksen tietoja ja vastauksia.' });
+
+    const sourceText = kr.rows
+      .map((x, i) => '[' + (i + 1) + '] ' + x.title + ': ' + x.answer)
+      .join('\n')
+      .slice(0, 28000);
+
+    const prompt = 'Toimit yrityksen asiakaspalvelubotin laadun testaajana. ' +
+      'Luo 12 realistista ja erilaista asiakaskysymystä. Arvioi jokaiselle, pystyykö hyväksytty tietopohja vastaamaan varmasti. ' +
+      'Älä oleta tietoa tietopohjan ulkopuolelta. Palauta vain JSON: ' +
+      '{"questions":[{"question":"...","answerable":true,"reason":"lyhyt syy"}]}' +
+      '\n\nYRITYS: ' + tenant.name +
+      '\nTOIMIALA: ' + (tenant.industry || 'Palveluyritys') +
+      '\n\nHYVÄKSYTTY TIETOPOHJA:\n' + sourceText;
+
+    const rr = await openai.responses.create({
+      model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
+      input: prompt,
+      max_output_tokens: 1400,
+    });
+    const raw = String(rr.output_text || '').trim();
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Self-testin tulosta ei voitu lukea.');
+    const parsed = JSON.parse(match[0]);
+    const questions = (Array.isArray(parsed.questions) ? parsed.questions : [])
+      .slice(0, 12)
+      .map((x) => ({
+        question: String(x.question || '').trim().slice(0, 500),
+        answerable: Boolean(x.answerable),
+        reason: String(x.reason || '').trim().slice(0, 500),
+      }))
+      .filter((x) => x.question);
+    if (!questions.length) throw new Error('Self-test ei tuottanut testikysymyksiä.');
+
+    const answerable = questions.filter((x) => x.answerable).length;
+    const score = Math.round((answerable / questions.length) * 100);
+    const gaps = questions.filter((x) => !x.answerable);
+    const saved = await q(
+      `INSERT INTO self_test_runs(id,tenant_id,score,total_questions,answerable_questions,gaps)
+       VALUES($1,$2,$3,$4,$5,$6::jsonb)
+       RETURNING id,score,total_questions,answerable_questions,gaps,created_at`,
+      [uid(), tenant.id, score, questions.length, answerable, JSON.stringify(gaps)],
+    );
+    return res.json({ ...saved.rows[0], questions });
+  } catch (e) {
+    console.error('Self-test failed', e);
+    return res.status(500).json({ error: e.message || 'Self-test epäonnistui.' });
+  }
+});
+
 async function publicTenant(slugValue) {
   return q(
     `SELECT t.*
