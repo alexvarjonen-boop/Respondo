@@ -1214,34 +1214,41 @@ async function dashboard() {
   const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
   const isWelcome = new URLSearchParams(location.search).get('welcome') === '1';
 
-  return `<div class="appshell">
-    <aside class="appside">
-      ${logo()}
-      <div class="workspace-chip"><span></span><div><small>TYÖTILA</small><b>${esc(t.name)}</b></div></div>
-      <nav class="appnav">
-        <a href="#overview" class="active"><span>⌂</span> Yleiskatsaus</a>
-        <a href="#business-profile"><span>✦</span> Yrityksen tiedot</a>
-        <a href="#knowledge"><span>≡</span> Tietopohja <em>${knowledge.length}</em></a>
-        <a href="#unanswered"><span>?</span> Vastaamattomat <em>${unanswered.length}</em></a>
-        <a href="#conversations"><span>◌</span> Keskustelut <em>${recentConversations.length}</em></a>
-        <a href="#leads"><span>↗</span> Liidit <em>${leads.length}</em></a>
-        <a href="#install"><span>&lt;/&gt;</span> Asennus</a>
-        ${referral ? '<a href="#referral"><span>%</span> Suosittele</a>' : ''}
-        <a href="#billing"><span>€</span> Laskutus</a>
-      </nav>
-      <div class="appside-bottom">
-        <div class="user-mini"><div class="avatar">${esc((me.email || 'R')[0].toUpperCase())}</div><div><b>${esc(me.company_name || t.name)}</b><small>${esc(me.email)}</small></div></div>
-        <button class="side-logout" id="logout">Kirjaudu ulos</button>
-      </div>
-    </aside>
-    <main class="appmain">
-      <section class="dashboard-head" id="overview">
-        <div><div class="section-kicker">Hallintapaneeli</div><h1>${esc(t.name)}</h1><p>Täältä näet, mitä asiakkaasi kysyvät, ja päätät, mitä botti saa heille vastata.</p></div>
-        <div class="live-chip"><span></span> Botti on käytössä</div>
+  return `<div class="appshell dashboard-simple-shell">
+    <main class="appmain dashboard-simple-main">
+      <header class="dashboard-topbar">
+        <div class="dashboard-topbar-brand">
+          ${logo()}
+          <div class="dashboard-workspace">
+            <small>TYÖTILA</small>
+            <b>${esc(me.company_name || t.name)}</b>
+          </div>
+        </div>
+        <div class="dashboard-section-picker">
+          <label for="dashboardSectionSelect">Näytä osio</label>
+          <div class="dashboard-select-wrap">
+            <select id="dashboardSectionSelect" aria-label="Valitse hallintapaneelin osio">
+              <option value="overview">Yleiskatsaus</option>
+              <option value="setup">Yrityksen tiedot & botti</option>
+              <option value="answers">Vastaukset</option>
+              <option value="customers">Asiakkaat</option>
+              <option value="account">Asennus & tili</option>
+            </select>
+            <span aria-hidden="true">⌄</span>
+          </div>
+        </div>
+        <div class="dashboard-top-actions">
+          <div class="live-chip"><span></span> Botti käytössä</div>
+          <button class="dashboard-logout" id="logoutTop" type="button">Kirjaudu ulos</button>
+        </div>
+      </header>
+
+      <section class="dashboard-head dashboard-view-section" data-dashboard-view="overview" id="overview">
+        <div><div class="section-kicker">Hallintapaneeli</div><h1>${esc(t.name)}</h1><p>Valitse ylhäältä mitä haluat tehdä. Näytämme vain siihen liittyvät asiat.</p></div>
       </section>
 
       ${isWelcome ? `
-      <section class="welcome-card" id="welcomeCard">
+      <section class="welcome-card dashboard-view-section" data-dashboard-view="overview" id="welcomeCard">
         <div class="welcome-mark">R</div>
         <div class="welcome-copy">
           <small>TILAUS AKTIIVINEN</small>
@@ -1251,7 +1258,7 @@ async function dashboard() {
         <button type="button" class="btn welcome-start" id="welcomeStart">Aloita tästä <span>→</span></button>
       </section>` : ''}
 
-      <section class="onboarding-card" id="onboarding">
+      <section class="onboarding-card dashboard-view-section" data-dashboard-view="overview" id="onboarding">
         <div class="onboarding-top">
           <div>
             <small>KÄYTTÖÖNOTTO</small>
@@ -1271,14 +1278,14 @@ async function dashboard() {
         </div>
       </section>
 
-      <section class="stats">
+      <section class="stats dashboard-view-section" data-dashboard-view="overview">
         <article class="stat"><small>KESKUSTELUT</small><b>${s.conversations}</b><span>yhteensä</span></article>
         <article class="stat"><small>VIIMEISET 7 PV</small><b>${s.last7 || 0}</b><span>keskustelua</span></article>
         <article class="stat"><small>VASTATTU SUORAAN</small><b>${s.answeredRate}%</b><span>ilman että asiakas piti ohjata eteenpäin</span></article>
         <article class="stat"><small>YHTEYDENOTOT</small><b>${s.leads || 0}</b><span>asiakasta jätti yhteystietonsa</span></article>
       </section>
 
-      <section class="dashboard-insights">
+      <section class="dashboard-insights dashboard-view-section" data-dashboard-view="overview">
         <article class="panel trend-panel">
           <div class="panel-head">
             <div><small>14 PÄIVÄÄ</small><h2>Näin paljon asiakkaat ovat kysyneet</h2></div>
@@ -1296,7 +1303,7 @@ async function dashboard() {
         </article>
       </section>
 
-      <section class="profile-live-grid" id="business-profile">
+      <section class="profile-live-grid dashboard-view-section dashboard-view-hidden" data-dashboard-view="setup" id="business-profile">
         <div class="panel business-profile-panel">
         <div class="panel-head business-profile-head">
           <div>
@@ -1398,7 +1405,7 @@ async function dashboard() {
         </aside>
       </section>
 
-      <section class="dashboard-grid" id="knowledge">
+      <section class="dashboard-grid dashboard-view-section dashboard-view-hidden" data-dashboard-view="answers" id="knowledge">
         <div class="panel knowledge-panel">
           <div class="panel-head"><div><small>TIETOPOHJA</small><h2>Vastaukset, joita botti saa käyttää</h2></div><span>${knowledge.length} kohdetta</span></div>
           <div id="knowledgeList" class="knowledge-list">
@@ -1417,7 +1424,7 @@ async function dashboard() {
         </form>
       </section>
 
-      <section class="panel conversation-panel" id="conversations">
+      <section class="panel conversation-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="customers" id="conversations">
         <div class="panel-head">
           <div><small>VIIMEISIMMÄT KESKUSTELUT</small><h2>Mitä asiakkaasi ovat kysyneet?</h2><p>Näet kysymyksen, Respondon vastauksen ja sen, pitikö asiakas ohjata sinulle.</p></div>
           <span>${recentConversations.length}</span>
@@ -1432,7 +1439,7 @@ async function dashboard() {
         </div>
       </section>
 
-      <section class="panel leads-panel" id="leads">
+      <section class="panel leads-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="customers" id="leads">
         <div class="panel-head">
           <div><small>YHTEYDENOTOT</small><h2>Asiakkaat, jotka haluavat yhteydenoton</h2><p>Jos vastaus puuttuu, asiakas voi jättää numeronsa tai sähköpostinsa, jotta voit ottaa yhteyttä.</p></div>
           <span>${leads.length}</span>
@@ -1453,7 +1460,7 @@ async function dashboard() {
         </div>
       </section>
 
-      <section class="panel unanswered-panel" id="unanswered">
+      <section class="panel unanswered-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="answers" id="unanswered">
         <div class="panel-head unanswered-head">
           <div>
             <small>VASTAUS PUUTTUU</small>
@@ -1485,7 +1492,7 @@ async function dashboard() {
         </div>
       </section>
 
-      <section class="panel install-panel" id="install">
+      <section class="panel install-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="install">
         <div class="panel-head"><div><small>ASENNUS</small><h2>Lisää Respondo verkkosivullesi</h2></div><span class="install-badge">1 sivusto</span></div>
         <p>Kopioi tämä koodi sivustosi HTML:ään juuri ennen sulkevaa <code>&lt;/body&gt;</code>-tagia.</p>
         <div class="license-lock">
@@ -1498,7 +1505,7 @@ async function dashboard() {
       </section>
 
       ${referral ? `
-      <section class="panel referral-panel" id="referral">
+      <section class="panel referral-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="referral">
         <div class="referral-copy">
           <small>SUOSITTELE RESPONDOA</small>
           <h2>Kaverille −20 % ensimmäisestä kuukaudesta.</h2>
@@ -1517,7 +1524,7 @@ async function dashboard() {
         </div>
       </section>` : ''}
 
-      <section class="panel billing-panel" id="billing">
+      <section class="panel billing-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="billing">
         <div><small>LASKUTUS</small><h2>Hallitse tilaustasi</h2><p>Voit vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.</p></div>
         <button class="btn dashboard-action" id="billingPortal" type="button">Avaa tilauksen hallinta <span>↗</span></button>
       </section>
@@ -1671,16 +1678,64 @@ async function route() {
   }
 
   if (path === '/app') {
+    const dashboardSelect = $('#dashboardSectionSelect');
+    const validDashboardViews = new Set(['overview','setup','answers','customers','account']);
+    const targetViewMap = {
+      'overview':'overview',
+      'business-profile':'setup',
+      'live-preview':'setup',
+      'knowledge':'answers',
+      'unanswered':'answers',
+      'conversations':'customers',
+      'leads':'customers',
+      'install':'account',
+      'referral':'account',
+      'billing':'account',
+    };
+
+    const showDashboardView = (view, options = {}) => {
+      const next = validDashboardViews.has(view) ? view : 'overview';
+      document.querySelectorAll('.dashboard-view-section').forEach((section) => {
+        section.classList.toggle('dashboard-view-hidden', section.dataset.dashboardView !== next);
+      });
+      if (dashboardSelect) dashboardSelect.value = next;
+
+      if (options.updateUrl !== false) {
+        const url = next === 'overview' ? '/app' : '/app?section=' + encodeURIComponent(next);
+        history.replaceState({}, '', url);
+      }
+      if (options.scrollTop !== false) {
+        document.querySelector('.dashboard-topbar')?.scrollIntoView({ behavior: options.instant ? 'auto' : 'smooth', block: 'start' });
+      }
+    };
+
+    const requestedView = new URLSearchParams(location.search).get('section');
+    showDashboardView(validDashboardViews.has(requestedView) ? requestedView : 'overview', {
+      updateUrl:false,
+      scrollTop:false,
+    });
+
+    dashboardSelect?.addEventListener('change', () => {
+      showDashboardView(dashboardSelect.value);
+    });
+
+    const openDashboardTarget = (targetId) => {
+      const view = targetViewMap[targetId] || 'overview';
+      showDashboardView(view, { scrollTop:false });
+      requestAnimationFrame(() => {
+        document.getElementById(targetId)?.scrollIntoView({ behavior:'smooth', block:'start' });
+      });
+    };
+
     $('#welcomeStart')?.addEventListener('click', () => {
-      document.getElementById('business-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      history.replaceState({}, '', '/app');
+      openDashboardTarget('business-profile');
       $('#welcomeCard')?.classList.add('welcome-dismissed');
       setTimeout(() => $('#welcomeCard')?.remove(), 320);
     });
 
     document.querySelectorAll('.gap-jump').forEach((button) => {
       button.addEventListener('click', () => {
-        document.getElementById('unanswered')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        openDashboardTarget('unanswered');
         const question = button.dataset.gapQuestion;
         const match = $('.unanswered-item').find((item) => item.dataset.question === question);
         if (match) {
@@ -1694,7 +1749,7 @@ async function route() {
     document.querySelectorAll('.onboarding-step').forEach((button) => {
       button.addEventListener('click', () => {
         const id = button.dataset.scrollTarget;
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        openDashboardTarget(id);
       });
     });
 
@@ -1927,10 +1982,12 @@ async function route() {
       }
     });
 
-    $('#logout')?.addEventListener('click', async () => {
+    const doLogout = async () => {
       try { await api('/api/auth/logout', { method: 'POST', body: '{}' }); } catch {}
       location.href = '/';
-    });
+    };
+    $('#logout')?.addEventListener('click', doLogout);
+    $('#logoutTop')?.addEventListener('click', doLogout);
 
     $('#copyCode')?.addEventListener('click', async (e) => {
       const code = $('#installCode')?.innerText || '';
