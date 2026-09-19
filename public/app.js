@@ -1230,6 +1230,10 @@ async function dashboard() {
   const latestSelfTest = data.latestSelfTest || null;
   const actionStats = data.actionStats || [];
   const actionRequests = data.actionRequests || [];
+  const liveThreads = data.liveThreads || [];
+  const commerce = data.commerce || { provider:'',shopifyShopDomain:'',shopifyConnected:false,wooBaseUrl:'',wooConnected:false };
+  const metaChannels = data.metaChannels || { graphVersion:'v24.0',verifyToken:'',webhookUrl:'',whatsappPhoneNumberId:'',whatsappConnected:false,instagramAccountId:'',instagramConnected:false,appSecretConfigured:false };
+  const voice = data.voice || { accountSid:'',phoneNumber:'',handoffNumber:'',credentialsConfigured:false,enabled:false,webhookUrl:'' };
   const bookingSlots = data.bookingSlots || [];
   const stripeConnect = data.stripeConnect || { connected:false,chargesEnabled:false,detailsSubmitted:false,payoutsEnabled:false };
   const googleCalendar = data.googleCalendar || { connected:false,email:'',calendarId:'primary' };
@@ -1264,6 +1268,16 @@ async function dashboard() {
     in_progress:'Käsittelyssä',
     done:'Hoidettu',
   })[status] || status || 'Uusi';
+  const channelLabel = (channel) => ({
+    website:'Verkkosivu',
+    whatsapp:'WhatsApp',
+    instagram:'Instagram',
+    phone:'Puhelin',
+    email:'Sähköposti',
+    api:'API',
+    messenger:'Messenger',
+    sms:'SMS',
+  })[channel] || channel || 'Kanava';
   const actionFieldEntries = (payload) => Object.entries(payload?.fields || {}).filter(([key,v]) => key !== 'slotId' && String(v || '').trim());
   const localDateInput = (date) => {
     const d = new Date(date);
@@ -1533,6 +1547,54 @@ async function dashboard() {
         </form>
       </section>
 
+      <section class="panel live-inbox-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="customers" id="live-inbox">
+        <div class="panel-head">
+          <div>
+            <small>LIVE HUMAN TAKEOVER</small>
+            <h2>Hyppää mukaan asiakkaan keskusteluun</h2>
+            <p>Kun otat keskustelun haltuun, AI lopettaa vastaamisen siihen keskusteluun. Verkkosivuasiakas saa viestisi suoraan chattiin; WhatsApp- ja Instagram-vastaus lähetetään samaan kanavaan.</p>
+          </div>
+          <span>${liveThreads.filter((x) => x.status === 'open').length} aktiivista</span>
+        </div>
+        <div class="live-thread-list">
+          ${liveThreads.length ? liveThreads.map((thread) => `
+            <article class="live-thread ${thread.mode === 'human' ? 'human-mode' : ''}" data-thread-id="${esc(thread.id)}">
+              <div class="live-thread-head">
+                <div>
+                  <span class="live-channel">${esc(channelLabel(thread.source_channel))}</span>
+                  <b>${esc(thread.external_contact_id || thread.visitor_ref || 'Asiakas')}</b>
+                  <small>${new Date(thread.last_activity_at || thread.created_at).toLocaleString('fi-FI',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small>
+                </div>
+                <span class="live-mode">${thread.mode === 'human' ? '● Ihminen vastaa' : '● AI vastaa'}</span>
+              </div>
+              <div class="live-messages">
+                ${(Array.isArray(thread.messages) ? thread.messages : []).map((m) => `
+                  <div class="live-message ${esc(m.role || 'user')}">
+                    <small>${m.role === 'user' ? 'Asiakas' : m.role === 'human' ? 'Sinä' : 'RESPONDO'}</small>
+                    <p>${esc(m.message || '')}</p>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="live-thread-actions">
+                <button type="button" class="btn live-mode-toggle" data-mode="${thread.mode === 'human' ? 'ai' : 'human'}">
+                  ${thread.mode === 'human' ? 'Palauta AI:lle' : 'Ota haltuun'}
+                </button>
+                <form class="live-reply-form">
+                  <input name="message" placeholder="Kirjoita vastaus asiakkaalle…" autocomplete="off" ${thread.mode === 'human' ? '' : 'disabled'}>
+                  <button type="submit" ${thread.mode === 'human' ? '' : 'disabled'}>Lähetä →</button>
+                </form>
+              </div>
+              <div class="live-msg"></div>
+            </article>
+          `).join('') : `
+            <div class="empty-state">
+              <b>Ei vielä aktiivisia keskusteluja.</b>
+              <p>Kun verkkosivulla, WhatsAppissa, Instagramissa tai puhelimessa alkaa keskustelu, se ilmestyy tähän.</p>
+            </div>
+          `}
+        </div>
+      </section>
+
       <section class="panel conversation-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="customers" id="conversations">
         <div class="panel-head">
           <div><small>VIIMEISIMMÄT KESKUSTELUT</small><h2>Mitä asiakkaasi ovat kysyneet?</h2><p>Näet kysymyksen, Respondon vastauksen ja sen, pitikö asiakas ohjata sinulle.</p></div>
@@ -1753,6 +1815,108 @@ async function dashboard() {
           </div>
         </article>
 
+        <article class="panel commerce-panel" id="commerce-integration">
+          <div class="panel-head">
+            <div>
+              <small>NATIVE ORDER TRACKING</small>
+              <h2>Shopify & WooCommerce</h2>
+              <p>Kun asiakas kysyy tilauksen tilaa, Respondo hakee oikean tilauksen suoraan kaupasta. Tilausnumero ja sähköposti tarkistetaan yhdessä ennen kuin tietoja näytetään.</p>
+            </div>
+            <span class="install-badge">${commerce.provider ? esc(commerce.provider === 'shopify' ? 'Shopify' : 'WooCommerce') : 'Ei yhdistetty'}</span>
+          </div>
+          <form id="commerceForm" class="integration-form">
+            <div class="field">
+              <label>Verkkokauppa</label>
+              <select name="provider" id="commerceProvider">
+                <option value="">Ei käytössä</option>
+                <option value="shopify" ${commerce.provider === 'shopify' ? 'selected' : ''}>Shopify</option>
+                <option value="woocommerce" ${commerce.provider === 'woocommerce' ? 'selected' : ''}>WooCommerce</option>
+              </select>
+            </div>
+            <div class="commerce-provider-fields shopify-fields ${commerce.provider === 'woocommerce' ? 'hidden' : ''}">
+              <div class="field"><label>Shopify domain</label><input name="shopifyShopDomain" value="${esc(commerce.shopifyShopDomain || '')}" placeholder="kauppa.myshopify.com"></div>
+              <div class="field"><label>Admin API access token</label><input name="shopifyAccessToken" type="password" placeholder="${commerce.shopifyConnected ? 'Yhdistetty — jätä tyhjäksi säilyttääksesi nykyisen' : 'shpat_…'}"></div>
+            </div>
+            <div class="commerce-provider-fields woo-fields ${commerce.provider === 'woocommerce' ? '' : 'hidden'}">
+              <div class="field"><label>WooCommerce URL</label><input name="wooBaseUrl" type="url" value="${esc(commerce.wooBaseUrl || '')}" placeholder="https://kauppa.fi"></div>
+              <div class="integration-secret-grid">
+                <div class="field"><label>Consumer key</label><input name="wooConsumerKey" type="password" placeholder="${commerce.wooConnected ? 'Tallennettu — jätä tyhjäksi säilyttääksesi' : 'ck_…'}"></div>
+                <div class="field"><label>Consumer secret</label><input name="wooConsumerSecret" type="password" placeholder="${commerce.wooConnected ? 'Tallennettu — jätä tyhjäksi säilyttääksesi' : 'cs_…'}"></div>
+              </div>
+            </div>
+            <div class="integration-buttons">
+              <button class="btn dashboard-action" type="submit">Tallenna verkkokauppa <span>→</span></button>
+              <button class="btn integration-test-btn" id="testCommerce" type="button">Testaa yhteys</button>
+            </div>
+            <div id="commerceMsg"></div>
+          </form>
+        </article>
+
+        <article class="panel meta-channels-panel" id="meta-channels">
+          <div class="panel-head">
+            <div>
+              <small>META CHANNELS</small>
+              <h2>WhatsApp & Instagram</h2>
+              <p>Meta lähettää uudet viestit tähän webhookiin. Respondo vastaa samalla Truth Enginellä ja keskustelu näkyy Live Inboxissa.</p>
+            </div>
+            <span class="install-badge">${metaChannels.whatsappConnected || metaChannels.instagramConnected ? 'Kanava yhdistetty' : 'Ei yhdistetty'}</span>
+          </div>
+          <div class="meta-webhook-box">
+            <div><small>WEBHOOK URL</small><code id="metaWebhookUrl" data-value="${esc(metaChannels.webhookUrl || '')}">${esc(metaChannels.webhookUrl || '')}</code><button type="button" class="copy-integration-value" data-target="metaWebhookUrl">Kopioi</button></div>
+            <div><small>VERIFY TOKEN</small><code id="metaVerifyToken" data-value="${esc(metaChannels.verifyToken || '')}">${esc(metaChannels.verifyToken || '')}</code><button type="button" class="copy-integration-value" data-target="metaVerifyToken">Kopioi</button></div>
+          </div>
+          <form id="metaChannelsForm" class="integration-form">
+            <div class="field"><label>Meta Graph API versio</label><input name="graphVersion" value="${esc(metaChannels.graphVersion || 'v24.0')}" placeholder="v24.0"></div>
+            <div class="field"><label>Meta App Secret</label><input name="appSecret" type="password" placeholder="${metaChannels.appSecretConfigured ? 'Tallennettu — jätä tyhjäksi säilyttääksesi' : 'Meta App Secret'}"></div>
+            <div class="channel-config-grid">
+              <div class="channel-config-card ${metaChannels.whatsappConnected ? 'connected' : ''}">
+                <b>WhatsApp Cloud API ${metaChannels.whatsappConnected ? '✓' : ''}</b>
+                <div class="field"><label>Phone Number ID</label><input name="whatsappPhoneNumberId" value="${esc(metaChannels.whatsappPhoneNumberId || '')}"></div>
+                <div class="field"><label>Access token</label><input name="whatsappAccessToken" type="password" placeholder="${metaChannels.whatsappConnected ? 'Tallennettu — jätä tyhjäksi säilyttääksesi' : 'System user access token'}"></div>
+              </div>
+              <div class="channel-config-card ${metaChannels.instagramConnected ? 'connected' : ''}">
+                <b>Instagram Messaging ${metaChannels.instagramConnected ? '✓' : ''}</b>
+                <div class="field"><label>Instagram account ID</label><input name="instagramAccountId" value="${esc(metaChannels.instagramAccountId || '')}"></div>
+                <div class="field"><label>Access token</label><input name="instagramAccessToken" type="password" placeholder="${metaChannels.instagramConnected ? 'Tallennettu — jätä tyhjäksi säilyttääksesi' : 'Instagram access token'}"></div>
+              </div>
+            </div>
+            <div class="integration-buttons">
+              <button class="btn dashboard-action" type="submit">Tallenna Meta-kanavat <span>→</span></button>
+              <button class="btn integration-test-btn" id="testMetaChannels" type="button">Testaa yhteydet</button>
+            </div>
+            <div id="metaChannelsMsg"></div>
+          </form>
+        </article>
+
+        <article class="panel voice-agent-panel" id="voice-agent">
+          <div class="panel-head">
+            <div>
+              <small>RESPONDO VOICE</small>
+              <h2>Puhelinagentti</h2>
+              <p>Twilio vastaanottaa puhelun, muuntaa asiakkaan puheen tekstiksi ja Respondo vastaa samalla varmennetulla tietopohjalla. Tarvittaessa puhelu siirtyy oikealle ihmiselle.</p>
+            </div>
+            <span class="stripe-connect-status ${voice.enabled ? 'ready' : ''}">${voice.enabled ? '● Käytössä' : '○ Ei käytössä'}</span>
+          </div>
+          <form id="voiceAgentForm" class="integration-form">
+            <div class="integration-secret-grid">
+              <div class="field"><label>Twilio Account SID</label><input name="accountSid" value="${esc(voice.accountSid || '')}" placeholder="AC…"></div>
+              <div class="field"><label>Twilio Auth Token</label><input name="authToken" type="password" placeholder="${voice.credentialsConfigured ? 'Tallennettu — jätä tyhjäksi säilyttääksesi' : 'Auth Token'}"></div>
+            </div>
+            <div class="integration-secret-grid">
+              <div class="field"><label>Twilio-puhelinnumero</label><input name="phoneNumber" value="${esc(voice.phoneNumber || '')}" placeholder="+358…"></div>
+              <div class="field"><label>Numero ihmiselle siirtoa varten</label><input name="handoffNumber" value="${esc(voice.handoffNumber || '')}" placeholder="+358…"></div>
+            </div>
+            <label class="voice-toggle"><input name="enabled" type="checkbox" ${voice.enabled ? 'checked' : ''}><span>Puhelinagentti käytössä</span></label>
+            <div class="code-row"><code id="voiceWebhookUrl" data-value="${esc(voice.webhookUrl || '')}">${esc(voice.webhookUrl || '')}</code><button type="button" class="copy-integration-value" data-target="voiceWebhookUrl">Kopioi webhook</button></div>
+            <div class="integration-buttons">
+              <button class="btn dashboard-action" type="submit">Tallenna puhelinagentti <span>→</span></button>
+              <button class="btn integration-test-btn" id="testVoiceAgent" type="button">Testaa Twilio</button>
+              <button class="btn integration-test-btn" id="configureVoiceNumber" type="button">Aktivoi numero automaattisesti</button>
+            </div>
+            <div id="voiceAgentMsg"></div>
+          </form>
+        </article>
+
         <article class="panel integration-panel" id="integrations">
           <div class="panel-head">
             <div>
@@ -1796,9 +1960,9 @@ async function dashboard() {
             <div class="code-row"><code id="channelEndpoint">${location.origin}/api/channel/${esc(t.slug)}/message</code><button type="button" class="copy-integration-value" data-target="channelEndpoint">Kopioi</button></div>
             <div class="channel-readiness">
               <span class="ready">● Verkkosivu käytössä</span>
-              <span>○ Sähköposti · adapteri tarvitaan</span>
-              <span>○ WhatsApp · provider-yhteys tarvitaan</span>
-              <span>○ Instagram · Meta-yhteys tarvitaan</span>
+              <span>${metaChannels.whatsappConnected ? '● WhatsApp yhdistetty' : '○ WhatsApp ei yhdistetty'}</span>
+              <span>${metaChannels.instagramConnected ? '● Instagram yhdistetty' : '○ Instagram ei yhdistetty'}</span>
+              <span>${voice.enabled ? '● Puhelinagentti käytössä' : '○ Puhelinagentti ei käytössä'}</span>
             </div>
           </div>
         </article>
