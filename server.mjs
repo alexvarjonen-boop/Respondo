@@ -636,7 +636,7 @@ function buildProfileKnowledge(profile = {}) {
   return rows;
 }
 
-async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi' }) {
+async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {} }) {
   const responseLang = lang === 'en' ? 'en' : 'fi';
   const cleanMessage = String(message || '').trim();
   if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: 'Tyhjä', sourceIds: [], selected: [] };
@@ -730,6 +730,11 @@ Jos vastaat, aloita ensimmäinen rivi muodossa "SOURCES: 1,2" käyttäen vain oi
 
 HYVÄKSYTYT LÄHTEET:
 ${context}
+
+SIVUKONTEKSTI:
+Sivun otsikko: ${String(pageContext?.title || '').slice(0, 180) || '(ei tiedossa)'}
+Sivun polku: ${String(pageContext?.path || '').slice(0, 300) || '(ei tiedossa)'}
+Sivukonteksti auttaa ymmärtämään, mistä asiakas puhuu, mutta se ei ole yritystä koskeva faktalähde.
 
 KESKUSTELUHISTORIA:
 ${historyText || '(ei aiempaa keskustelua)'}
@@ -1440,7 +1445,7 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
       [tenant.id],
     );
     const recent = await q(
-      `SELECT id, question, answer, intent, confidence, handoff, visitor_ref, source_ids, created_at
+      `SELECT id, question, answer, intent, confidence, handoff, visitor_ref, source_ids, page_url, page_title, created_at
          FROM conversations
         WHERE tenant_id=$1
         ORDER BY created_at DESC
@@ -1474,6 +1479,26 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
         LIMIT 30`,
       [tenant.id],
     );
+    const actionStats = await q(
+      `SELECT action_type, count(*)::int total
+         FROM action_events
+        WHERE tenant_id=$1 AND created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY action_type ORDER BY total DESC`,
+      [tenant.id],
+    );
+    const latestSelfTest = await q(
+      `SELECT id, score, total_questions, answerable_questions, gaps, created_at
+         FROM self_test_runs WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`,
+      [tenant.id],
+    );
+    const truthStats = await q(
+      `SELECT count(*)::int total,
+              count(*) FILTER (WHERE approved=true)::int approved,
+              count(*) FILTER (WHERE verified_at >= NOW() - INTERVAL '90 days')::int fresh,
+              max(verified_at) AS last_verified
+         FROM knowledge WHERE tenant_id=$1`,
+      [tenant.id],
+    );
     const referralCode = await ensureReferralCode(req.user.sub);
     let referral = null;
     if (referralCode) {
@@ -1502,6 +1527,21 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
       daily: daily.rows,
       gaps: gaps.rows,
       leads: leads.rows,
+      actionStats: actionStats.rows,
+      latestSelfTest: latestSelfTest.rows[0] || null,
+      truth: (() => {
+        const row = truthStats.rows[0] || {};
+        const truthTotal = Number(row.total || 0);
+        const approved = Number(row.approved || 0);
+        const fresh = Number(row.fresh || 0);
+        return {
+          total: truthTotal,
+          approved,
+          fresh,
+          score: truthTotal ? Math.round(((approved + fresh) / (truthTotal * 2)) * 100) : 0,
+          lastVerified: row.last_verified || null,
+        };
+      })(),
       stats: {
         conversations: total,
         answeredRate: total ? Math.round((a.answered * 100) / total) : 0,
@@ -1509,6 +1549,8 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
         last7: a.last7 || 0,
         last30: a.last30 || 0,
         leads: leads.rows.length,
+        actions30: actionStats.rows.reduce((sum, x) => sum + Number(x.total || 0), 0),
+        estimatedLeadValue: Number(tenant.average_lead_value || 0) * leads.rows.length,
       },
     });
   } catch (e) {
@@ -1740,7 +1782,7 @@ app.get('/api/public/:slug/widget-token', async (req, res) => {
       { expiresIn: '12h' }
     );
     const lang = req.query.lang === 'en' ? 'en' : 'fi';
-    const kr = await q('SELECT title, answer FROM knowledge WHERE tenant_id=$1', [tenant.id]);
+    const kr = await q('SELECT title, answer FROM knowledge WHERE tenant_id=$1 AND approved=true', [tenant.id]);
     const available = new Set(kr.rows.map((x) => normalizeSearchText(x.title)));
     const quickReplies = [
       available.has('hinnat') && (lang === 'en' ? 'Pricing' : 'Hinnat'),
@@ -1898,7 +1940,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : 'Kirjoita kysymys.' });
     const visitorRef = String(body.visitorRef || '').trim().slice(0, 160);
 
-    const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 ORDER BY updated_at DESC, created_at DESC', [t.id]);
+    const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC, created_at DESC', [t.id]);
     let history = [];
     if (visitorRef) {
       const hr = await q(
@@ -1918,6 +1960,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       message,
       history,
       lang,
+      pageContext: body.pageContext && typeof body.pageContext === 'object' ? body.pageContext : {},
     });
 
     let answer = result.answer;
@@ -1934,8 +1977,14 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
 
     const actions = chatActions(kr.rows, message, result.handoff, lang);
     await q(
-      'INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',
-      [uid(), t.id, message, answer, result.intent, result.confidence, result.sourceIds, result.handoff, visitorRef || null],
+      `INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,page_url,page_title)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [
+        uid(), t.id, message, answer, result.intent, result.confidence, result.sourceIds, result.handoff,
+        visitorRef || null,
+        String(body.pageContext?.url || '').slice(0, 1000) || null,
+        String(body.pageContext?.title || '').slice(0, 300) || null,
+      ],
     );
 
     return res.json({
