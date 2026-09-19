@@ -1187,6 +1187,7 @@ async function dashboard() {
   const actionRequests = data.actionRequests || [];
   const bookingSlots = data.bookingSlots || [];
   const stripeConnect = data.stripeConnect || { connected:false,chargesEnabled:false,detailsSubmitted:false,payoutsEnabled:false };
+  const googleCalendar = data.googleCalendar || { connected:false,email:'',calendarId:'primary' };
   const quoteEngine = data.quoteEngine || { serviceName:'',basePrice:0,unitPrice:0,minPrice:0,vatPercent:0,unitLabel:'kpl' };
   const integrations = data.integrations || { webhookUrl:'', webhookSecret:'', channelsApiKey:'' };
   const knowledge = data.knowledge || [];
@@ -1595,6 +1596,7 @@ async function dashboard() {
                   <div class="action-booking-summary">
                     <span>VARATTU AIKA</span>
                     <b>${new Date(x.payload.booking.startsAt).toLocaleString('fi-FI',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</b>
+                    <small>${x.result?.calendarSync?.status === 'synced' ? 'Google Calendar ✓' : x.result?.calendarSync?.status === 'failed' ? 'Google-sync epäonnistui' : 'RESPONDO Calendar'}</small>
                   </div>
                 ` : ''}
                 <div class="action-request-bottom">
@@ -1646,6 +1648,20 @@ async function dashboard() {
             </div>
             <span class="install-badge">${bookingSlots.filter((x) => x.status === 'open').length} vapaana</span>
           </div>
+
+          <div class="calendar-sync-card ${googleCalendar.connected ? 'connected' : ''}">
+            <div>
+              <small>GOOGLE CALENDAR SYNC</small>
+              <b>${googleCalendar.connected ? 'Yhdistetty ✓' : 'Ei yhdistetty'}</b>
+              <p>${googleCalendar.connected ? ('Varaukset synkronoidaan kalenteriin ' + esc(googleCalendar.email || '')) : 'Yhdistä Google Calendar, niin Respondo tarkistaa myös siellä olevat varaukset ja luo uudet varaukset automaattisesti.'}</p>
+            </div>
+            <div class="calendar-sync-actions">
+              ${googleCalendar.connected
+                ? '<button type="button" class="btn integration-test-btn" id="disconnectGoogleCalendar">Katkaise yhteys</button>'
+                : '<a class="btn dashboard-action" id="connectGoogleCalendar" href="/api/app/google-calendar/start">Yhdistä Google Calendar <span>↗</span></a>'}
+            </div>
+          </div>
+          <div id="calendarConnectMsg"></div>
 
           <form id="bookingSlotsForm" class="booking-slots-form">
             <div class="booking-generator-grid">
@@ -2452,6 +2468,28 @@ async function route() {
         }
       });
     });
+
+    $('#disconnectGoogleCalendar')?.addEventListener('click', async (e) => {
+      const button = e.currentTarget;
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Katkaistaan…';
+      try {
+        await api('/api/app/google-calendar/disconnect', { method:'POST', body:'{}' });
+        location.href = '/app?section=automation&calendar=disconnected';
+      } catch (err) {
+        $('#calendarConnectMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.disabled = false;
+        button.textContent = original;
+      }
+    });
+
+    const calendarParam = new URLSearchParams(location.search).get('calendar');
+    if (calendarParam === 'connected') {
+      $('#calendarConnectMsg').innerHTML = '<div class="notice success">Google Calendar yhdistetty ✓</div>';
+    } else if (calendarParam && !['disconnected'].includes(calendarParam)) {
+      $('#calendarConnectMsg').innerHTML = '<div class="notice error">Google Calendar -yhdistäminen ei valmistunut. Yritä uudelleen.</div>';
+    }
 
     $('#connectStripeBusiness')?.addEventListener('click', async (e) => {
       const button = e.currentTarget;
