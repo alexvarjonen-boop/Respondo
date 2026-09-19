@@ -57,6 +57,7 @@
       .leadbox input:focus{border-color:#111113}
       .leadbox button{border:0;border-radius:10px;padding:10px 12px;background:#111113;color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
       .leadbox .lead-ok{font-size:12px;color:#246b45}
+      .truth-note{align-self:flex-start;margin:-4px 0 2px 4px;color:#6f7772;font-size:10px;font-weight:700}.truth-note span{color:#2f9b63}
       .typing-dots{display:inline-flex;gap:4px;align-items:center;height:14px}
       .typing-dots i{width:5px;height:5px;border-radius:50%;background:#77777c;animation:rblink 1s infinite ease-in-out}
       .typing-dots i:nth-child(2){animation-delay:.15s}.typing-dots i:nth-child(3){animation-delay:.3s}
@@ -311,6 +312,12 @@
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Chat failed');
       pending.innerHTML = linkify(data.answer || t('En löytänyt tähän varmaa vastausta.', 'I cannot find a reliable answer to this yet.'));
+      if (data.verified) {
+        const note = document.createElement('div');
+        note.className = 'truth-note';
+        note.innerHTML = '<span>✓</span> ' + t('Varmennettu yrityksen tiedoista', 'Verified from company information');
+        chat.appendChild(note);
+      }
       renderActions(data.actions || [], message);
       if (data.canLeaveContact || data.handoff) showLeadForm(message);
     } catch {
