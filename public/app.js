@@ -1242,7 +1242,13 @@ async function dashboard() {
   const liveThreads = data.liveThreads || [];
   const commerce = data.commerce || { provider:'',shopifyShopDomain:'',shopifyConnected:false,wooBaseUrl:'',wooConnected:false };
   const metaChannels = data.metaChannels || { graphVersion:'v24.0',verifyToken:'',webhookUrl:'',whatsappPhoneNumberId:'',whatsappConnected:false,instagramAccountId:'',instagramConnected:false,appSecretConfigured:false };
-  const voice = data.voice || { accountSid:'',phoneNumber:'',handoffNumber:'',credentialsConfigured:false,enabled:false,webhookUrl:'' };
+  const voice = data.voice || {
+    accountSid:'',phoneNumber:'',handoffNumber:'',credentialsConfigured:false,enabled:false,
+    webhookUrl:'',smsWebhookUrl:'',missedCallWebhookUrl:'',missedCallSmsEnabled:false,
+    missedCallSmsMessage:'Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.',
+    missedCallSmsMode:'immediate',missedCallAfterStart:'17:00',missedCallAfterEnd:'08:00',
+    missedCallTimezone:'Europe/Helsinki'
+  };
   const bookingSlots = data.bookingSlots || [];
   const stripeConnect = data.stripeConnect || { connected:false,chargesEnabled:false,detailsSubmitted:false,payoutsEnabled:false };
   const googleCalendar = data.googleCalendar || { connected:false,email:'',calendarId:'primary' };
@@ -1924,10 +1930,51 @@ async function dashboard() {
               <div class="field"><label>Numero ihmiselle siirtoa varten</label><input name="handoffNumber" value="${esc(voice.handoffNumber || '')}" placeholder="+358…"></div>
             </div>
             <label class="voice-toggle"><input name="enabled" type="checkbox" ${voice.enabled ? 'checked' : ''}><span>Puhelinagentti käytössä</span></label>
-            <div class="code-row"><code id="voiceWebhookUrl" data-value="${esc(voice.webhookUrl || '')}">${esc(voice.webhookUrl || '')}</code><button type="button" class="copy-integration-value" data-target="voiceWebhookUrl">Kopioi webhook</button></div>
+
+            <div class="integration-subsection">
+              <div>
+                <small>MISSED-CALL RECOVERY</small>
+                <h3>Automaattinen SMS vastaamattoman puhelun jälkeen</h3>
+                <p>Jos siirrettyyn puheluun ei vastata, Respondo lähettää soittajalle tekstiviestin. Asiakas voi vastata SMS:llä ja sama AI jatkaa keskustelua Live Inboxissa.</p>
+              </div>
+              <label class="voice-toggle"><input name="missedCallSmsEnabled" type="checkbox" ${voice.missedCallSmsEnabled ? 'checked' : ''}><span>Missed-call SMS käytössä</span></label>
+              <div class="field">
+                <label>Automaattinen viesti</label>
+                <textarea name="missedCallSmsMessage" rows="3" maxlength="1500">${esc(voice.missedCallSmsMessage || '')}</textarea>
+              </div>
+              <div class="integration-secret-grid">
+                <div class="field">
+                  <label>Lähetystapa</label>
+                  <select name="missedCallSmsMode">
+                    <option value="immediate" ${voice.missedCallSmsMode === 'immediate' ? 'selected' : ''}>Heti kun puheluun ei vastata</option>
+                    <option value="after_hours" ${voice.missedCallSmsMode === 'after_hours' ? 'selected' : ''}>Vain aukioloajan ulkopuolella</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Aikavyöhyke</label>
+                  <input name="missedCallTimezone" value="${esc(voice.missedCallTimezone || 'Europe/Helsinki')}" placeholder="Europe/Helsinki">
+                </div>
+              </div>
+              <div class="integration-secret-grid">
+                <div class="field"><label>Ilta alkaa</label><input name="missedCallAfterStart" type="time" value="${esc(voice.missedCallAfterStart || '17:00')}"></div>
+                <div class="field"><label>Aamu päättyy</label><input name="missedCallAfterEnd" type="time" value="${esc(voice.missedCallAfterEnd || '08:00')}"></div>
+              </div>
+            </div>
+
+            <div class="integration-secret-grid">
+              <div>
+                <small>VOICE WEBHOOK</small>
+                <div class="code-row"><code id="voiceWebhookUrl" data-value="${esc(voice.webhookUrl || '')}">${esc(voice.webhookUrl || '')}</code><button type="button" class="copy-integration-value" data-target="voiceWebhookUrl">Kopioi</button></div>
+              </div>
+              <div>
+                <small>SMS WEBHOOK</small>
+                <div class="code-row"><code id="smsWebhookUrl" data-value="${esc(voice.smsWebhookUrl || '')}">${esc(voice.smsWebhookUrl || '')}</code><button type="button" class="copy-integration-value" data-target="smsWebhookUrl">Kopioi</button></div>
+              </div>
+            </div>
             <div class="integration-buttons">
               <button class="btn dashboard-action" type="submit">Tallenna puhelinagentti <span>→</span></button>
               <button class="btn integration-test-btn" id="testVoiceAgent" type="button">Testaa Twilio</button>
+              <button class="btn integration-test-btn" id="testMissedCallSms" type="button">Lähetä testi-SMS</button>
               <button class="btn integration-test-btn" id="configureVoiceNumber" type="button">Aktivoi numero automaattisesti</button>
             </div>
             <div id="voiceAgentMsg"></div>
@@ -3024,6 +3071,12 @@ async function route() {
             phoneNumber:form.get('phoneNumber'),
             handoffNumber:form.get('handoffNumber'),
             enabled:form.get('enabled') === 'on',
+            missedCallSmsEnabled:form.get('missedCallSmsEnabled') === 'on',
+            missedCallSmsMessage:form.get('missedCallSmsMessage'),
+            missedCallSmsMode:form.get('missedCallSmsMode'),
+            missedCallAfterStart:form.get('missedCallAfterStart'),
+            missedCallAfterEnd:form.get('missedCallAfterEnd'),
+            missedCallTimezone:form.get('missedCallTimezone'),
           }),
         });
         $('#voiceAgentMsg').innerHTML = '<div class="notice success">Puhelinagentin asetukset tallennettu ✓</div>';
@@ -3055,6 +3108,24 @@ async function route() {
       }
     });
 
+    $('#testMissedCallSms')?.addEventListener('click', async (e) => {
+      const button = e.currentTarget;
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Lähetetään…';
+      try {
+        await api('/api/app/voice/test-sms', { method:'POST', body:'{}' });
+        $('#voiceAgentMsg').innerHTML = '<div class="notice success">Testi-SMS lähetetty ✓</div>';
+        button.textContent = 'Lähetetty ✓';
+        setTimeout(() => (button.textContent = original), 1500);
+      } catch (err) {
+        $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.textContent = original;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
     $('#configureVoiceNumber')?.addEventListener('click', async (e) => {
       const button = e.currentTarget;
       const original = button.textContent;
@@ -3062,7 +3133,7 @@ async function route() {
       button.textContent = 'Aktivoidaan…';
       try {
         await api('/api/app/voice/configure-number', { method:'POST', body:'{}' });
-        $('#voiceAgentMsg').innerHTML = '<div class="notice success">Twilio-numero ohjaa nyt puhelut RESPONDO Voiceen ✓</div>';
+        $('#voiceAgentMsg').innerHTML = '<div class="notice success">Twilio-numero ohjaa nyt puhelut ja SMS-viestit Respondoon ✓</div>';
         button.textContent = 'Aktivoitu ✓';
       } catch (err) {
         $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
