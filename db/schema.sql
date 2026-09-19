@@ -40,6 +40,11 @@ CREATE TABLE IF NOT EXISTS tenants (
   quote_min_price NUMERIC(12,2) NOT NULL DEFAULT 0,
   quote_vat_percent NUMERIC(6,2) NOT NULL DEFAULT 0,
   quote_unit_label TEXT NOT NULL DEFAULT 'kpl',
+  google_calendar_access_token TEXT,
+  google_calendar_refresh_token TEXT,
+  google_calendar_token_expires_at TIMESTAMPTZ,
+  google_calendar_email TEXT,
+  google_calendar_id TEXT NOT NULL DEFAULT 'primary',
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
