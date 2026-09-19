@@ -1181,6 +1181,9 @@ async function dashboard() {
   const t = data.tenant;
   const s = data.stats;
   const referral = data.referral || null;
+  const truth = data.truth || { score:0,total:0,approved:0,fresh:0 };
+  const latestSelfTest = data.latestSelfTest || null;
+  const actionStats = data.actionStats || [];
   const knowledge = data.knowledge || [];
   const businessProfile = Object.fromEntries(
     knowledge
@@ -1198,6 +1201,7 @@ async function dashboard() {
   const installedKey = `respondo-installed-${t.id}`;
   const installedDone = localStorage.getItem(installedKey) === '1';
   const profileDone = ['Hinnat','Aukioloajat','Palvelut'].filter((k) => businessProfile[k]).length >= 2;
+  const formatMoney = (n) => new Intl.NumberFormat('fi-FI', { style:'currency', currency:'EUR', maximumFractionDigits:0 }).format(Number(n || 0));
   const answersDone = nonProfileKnowledge.length > 0;
   const testedDone = s.conversations > 0;
   const onboarding = [
@@ -1278,7 +1282,35 @@ async function dashboard() {
         <article class="stat"><small>KESKUSTELUT</small><b>${s.conversations}</b><span>yhteensä</span></article>
         <article class="stat"><small>VIIMEISET 7 PV</small><b>${s.last7 || 0}</b><span>keskustelua</span></article>
         <article class="stat"><small>VASTATTU SUORAAN</small><b>${s.answeredRate}%</b><span>ilman että asiakas piti ohjata eteenpäin</span></article>
-        <article class="stat"><small>YHTEYDENOTOT</small><b>${s.leads || 0}</b><span>asiakasta jätti yhteystietonsa</span></article>
+        <article class="stat"><small>YHTEYDENOTOT</small><b>${s.leads || 0}</b><span>${s.estimatedLeadValue > 0 ? 'arvioitu arvo ' + formatMoney(s.estimatedLeadValue) : 'asiakasta jätti yhteystietonsa'}</span></article>
+      </section>
+
+      <section class="respondo-intelligence dashboard-view-section" data-dashboard-view="overview">
+        <article class="panel truth-score-card">
+          <div class="intelligence-icon">✓</div>
+          <div>
+            <small>TRUTH ENGINE</small>
+            <h2>${truth.score}% varmennettu</h2>
+            <p>${truth.approved}/${truth.total} tietoa hyväksytty · ${truth.fresh} tarkistettu viimeisen 90 päivän aikana.</p>
+          </div>
+        </article>
+        <article class="panel self-test-card">
+          <div class="self-test-copy">
+            <small>BOTIN SELF-TEST</small>
+            <h2>${latestSelfTest ? latestSelfTest.score + '% kattavuus' : 'Testaa ennen asiakkaita'}</h2>
+            <p>${latestSelfTest ? (latestSelfTest.answerable_questions + '/' + latestSelfTest.total_questions + ' testikysymykseen löytyi varma tieto.') : 'Respondo luo realistisia asiakaskysymyksiä ja etsii tietopohjan aukot ennen oikeita asiakkaita.'}</p>
+          </div>
+          <button class="btn dashboard-action self-test-button" id="runSelfTest" type="button">${latestSelfTest ? 'Testaa uudelleen' : 'Aja self-test'} <span>→</span></button>
+          <div id="selfTestResult"></div>
+        </article>
+        <article class="panel action-center-card">
+          <div class="intelligence-icon">↗</div>
+          <div>
+            <small>ACTION CENTER · 30 PV</small>
+            <h2>${s.actions30 || 0} toimintoa</h2>
+            <p>${actionStats.length ? actionStats.map((x) => esc(x.action_type) + ' ' + Number(x.total || 0) + '×').join(' · ') : 'Kun asiakkaat varaavat ajan, pyytävät tarjouksen, soittavat tai lähettävät sähköpostia, näet sen tässä.'}</p>
+          </div>
+        </article>
       </section>
 
       <section class="dashboard-insights dashboard-view-section" data-dashboard-view="overview">
@@ -1351,6 +1383,16 @@ async function dashboard() {
               <input name="quoteRequestUrl" value="${profileValue('Tarjouspyyntölomake')}" placeholder="https://yritys.fi/tarjouspyynto">
               <small class="field-hint">Respondo voi lähettää tämän linkin asiakkaalle, joka haluaa pyytää tarjouksen.</small>
             </div>
+            <div class="field">
+              <label>Ajanvarauslinkki</label>
+              <input name="bookingUrl" value="${profileValue('Ajanvarauslinkki')}" placeholder="https://yritys.fi/ajanvaraus">
+              <small class="field-hint">Kun asiakas haluaa varata ajan, Respondo näyttää suoran Varaa aika -toiminnon.</small>
+            </div>
+            <div class="field">
+              <label>Yhden liidin arvioitu arvo (€)</label>
+              <input name="averageLeadValue" inputmode="decimal" value="${esc(t.average_lead_value || '')}" placeholder="Esim. 250">
+              <small class="field-hint">Dashboard arvioi yhteydenottojen arvon tämän perusteella.</small>
+            </div>
             <div class="field profile-wide">
               <label>Mitä palveluja tarjoatte?</label>
               <textarea name="services" placeholder="Esim. putkityöt, LVI-asennukset, sähkötyöt, huollot, päivystys">${profileValue('Palvelut')}</textarea>
@@ -1405,7 +1447,7 @@ async function dashboard() {
         <div class="panel knowledge-panel">
           <div class="panel-head"><div><small>TIETOPOHJA</small><h2>Vastaukset, joita botti saa käyttää</h2></div><span>${knowledge.length} kohdetta</span></div>
           <div id="knowledgeList" class="knowledge-list">
-            ${knowledge.length ? knowledge.map((x, i) => `<div class="knowledge-item"><span class="knum">${String(i + 1).padStart(2, '0')}</span><div><b>${esc(x.title)}</b><small>${esc(x.category || 'Yleinen')}</small><p>${esc(x.answer)}</p></div><span class="approved">✓</span></div>`).join('') : `<div class="empty-state"><b>Et ole lisännyt vielä omia vastauksia.</b><p>Lisää ensimmäinen vastaus tästä.</p></div>`}
+            ${knowledge.length ? knowledge.map((x, i) => `<div class="knowledge-item"><span class="knum">${String(i + 1).padStart(2, '0')}</span><div><b>${esc(x.title)}</b><small>${esc(x.category || 'Yleinen')} · ${x.source_type === 'profile' ? 'Yrityksen tiedot' : x.source_type === 'owner_answer' ? 'Omistajan hyväksymä' : 'Manuaalinen'} · tarkistettu ${x.verified_at ? new Date(x.verified_at).toLocaleDateString('fi-FI') : '—'}</small><p>${esc(x.answer)}</p></div><span class="approved" title="Hyväksytty Truth Engineen">✓</span></div>`).join('') : `<div class="empty-state"><b>Et ole lisännyt vielä omia vastauksia.</b><p>Lisää ensimmäinen vastaus tästä.</p></div>`}
           </div>
         </div>
 
@@ -1429,6 +1471,7 @@ async function dashboard() {
           ${recentConversations.length ? recentConversations.map((x) => `
             <article class="conversation-log-item ${x.handoff ? 'needs-human' : ''}">
               <div class="conversation-log-meta"><span>${x.handoff ? 'Vastaus puuttui' : 'Vastattu'}</span><small>${new Date(x.created_at).toLocaleString('fi-FI',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small></div>
+              ${x.page_title ? `<div class="conversation-page">Sivulla: ${esc(x.page_title)}</div>` : ''}
               <h3>${esc(x.question)}</h3>
               <p>${esc(x.answer)}</p>
             </article>`).join('') : '<div class="empty-state"><b>Keskusteluja ei ole vielä.</b><p>Kun asiakkaat alkavat kysyä, keskustelut näkyvät tässä.</p></div>'}
@@ -1475,8 +1518,11 @@ async function dashboard() {
               <h3>${esc(x.question)}</h3>
               <textarea class="unanswered-answer" placeholder="Kirjoita tähän oikea vastaus…"></textarea>
               <div class="unanswered-actions">
-                <span>Kun tallennat tämän, Respondo voi käyttää vastausta jatkossa.</span>
-                <button type="button" class="btn dashboard-action add-unanswered-answer">Tallenna vastaus <span>→</span></button>
+                <span>Kirjoita vastaus itse tai pyydä Respondoa etsimään se yrityksesi verkkosivulta.</span>
+                <div class="gap-action-buttons">
+                  <button type="button" class="btn suggest-unanswered-answer">Etsi vastaus sivultani</button>
+                  <button type="button" class="btn dashboard-action add-unanswered-answer">Hyväksy ja tallenna <span>→</span></button>
+                </div>
               </div>
               <div class="unanswered-msg"></div>
             </article>`).join('') : `
@@ -1865,7 +1911,7 @@ async function route() {
           body: JSON.stringify({ website }),
         });
         const p = result.profile || {};
-        ['pricing','hours','phone','email','services','serviceArea','address','website','quoteRequestUrl','notes'].forEach((name) => {
+        ['pricing','hours','phone','email','services','serviceArea','address','website','quoteRequestUrl','bookingUrl','notes'].forEach((name) => {
           if (p[name] && formEl?.elements[name]) formEl.elements[name].value = p[name];
         });
         $('#businessProfileMsg').innerHTML = '<div class="notice success">Tiedot haettu. Tarkista ehdotukset ja tallenna ne vasta sitten.</div>';
@@ -1901,6 +1947,8 @@ async function route() {
             address: form.get('address'),
             website: form.get('website'),
             quoteRequestUrl: form.get('quoteRequestUrl'),
+            bookingUrl: form.get('bookingUrl'),
+            averageLeadValue: form.get('averageLeadValue'),
             notes: form.get('notes'),
           }),
         });
