@@ -497,11 +497,15 @@ function chatActions(rows, message, handoff = false, lang = 'fi') {
   const email = knowledgeValue(rows, 'Sähköposti');
   const actions = [];
   const push = (action) => {
-    if (!action?.url || actions.some((x) => x.url === action.url)) return;
+    const key = action?.url || (action?.mode ? action.mode + ':' + action.type : '');
+    if (!key || actions.some((x) => (x.url || (x.mode ? x.mode + ':' + x.type : '')) === key)) return;
     actions.push(action);
   };
 
-  if (booking && /ajanvaraus|varaa|aika|ajan|booking|appointment/.test(q)) {
+  if (/soittakaa|ottakaa yhteytta|ottakaa yhteyttä|yhteydenotto|call me|contact me/.test(q)) {
+    push({ type: 'callback', mode: 'lead', label: actionLang === 'en' ? 'Request a callback' : 'Pyydä yhteydenottoa' });
+  }
+    if (booking && /ajanvaraus|varaa|aika|ajan|booking|appointment/.test(q)) {
     push({ type: 'booking', label: actionLang === 'en' ? 'Book a time' : 'Varaa aika', url: booking });
   }
   if (quote && (handoff || /tarjous|hinta|arvio|kustannus/.test(q))) {
@@ -2133,7 +2137,7 @@ app.post('/api/public/:slug/action-event', publicChatLimiter, async (req, res) =
     }
 
     const actionType = String(body.actionType || '').trim().slice(0, 40);
-    if (!['quote','booking','phone','email','link'].includes(actionType)) {
+    if (!['quote','booking','phone','email','link','callback'].includes(actionType)) {
       return res.status(400).json({ error: 'Tuntematon toiminto.' });
     }
 
