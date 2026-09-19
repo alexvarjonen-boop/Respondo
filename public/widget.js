@@ -64,6 +64,15 @@
       .actionbox input:focus,.actionbox textarea:focus{border-color:#111113}
       .actionbox button{border:0;border-radius:10px;padding:10px 12px;background:#111113;color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
       .actionbox .action-ok{font-size:12px;color:#246b45;line-height:1.4}
+      .actionbox select{width:100%;border:1px solid #d9d9dc;border-radius:10px;padding:10px 11px;font:inherit;font-size:13px;outline:none;background:#fff;color:#111113}
+      .actionbox select:focus{border-color:#111113}
+      .action-confirmed{font-size:12px;font-weight:750;color:#246b45;margin-top:2px}
+      .quote-result{display:grid;gap:2px;margin-top:8px;padding:12px;border-radius:12px;background:#f6f6f7;color:#111113}
+      .quote-result small{font-size:10px;color:#77777d}.quote-result strong{font-size:24px;letter-spacing:-.04em}.quote-result span{font-size:10px;color:#77777d}
+      .action-pay{display:flex;justify-content:center;margin-top:8px;border-radius:10px;padding:11px 12px;background:#111113;color:#fff!important;text-decoration:none!important;font-size:12px;font-weight:850}
+      .action-pay-note{display:block;margin-top:7px;color:#77777d!important}
+      .booking-confirmed{display:grid;gap:3px;margin-top:8px;padding:11px;border-radius:12px;background:#f2fbf6;color:#174c31}
+      .booking-confirmed strong{font-size:12px}.booking-confirmed span{font-size:11px}
       .truth-note{align-self:flex-start;margin:-4px 0 2px 4px;color:#6f7772;font-size:10px;font-weight:700}.truth-note span{color:#2f9b63}
       .typing-dots{display:inline-flex;gap:4px;align-items:center;height:14px}
       .typing-dots i{width:5px;height:5px;border-radius:50%;background:#77777c;animation:rblink 1s infinite ease-in-out}
@@ -237,24 +246,24 @@
 
     if (action.mode === 'quote_form') {
       box.innerHTML =
-        '<b>' + t('Pyydä tarjous suoraan tästä', 'Request a quote here') + '</b>' +
-        '<small>' + t('Täytä tiedot. Yritys saa pyynnön ja tämän keskustelun kontekstin.', 'Fill in your details. The company receives the request with this conversation context.') + '</small>' +
+        '<b>' + t('Laske tarjous tästä', 'Calculate a quote') + '</b>' +
+        '<small>' + t('Kerro määrä ja mitä tarvitset. Jos yritys on määrittänyt hintakaavan, Respondo laskee hinnan heti.', 'Tell us the quantity and what you need. If the company has configured pricing, Respondo calculates it immediately.') + '</small>' +
         '<input name="name" maxlength="120" placeholder="' + t('Nimi', 'Name') + '">' +
         '<input name="contact" maxlength="220" required placeholder="' + t('Puhelin tai sähköposti', 'Phone or email') + '">' +
+        '<input name="quantity" inputmode="decimal" min="0" step="0.01" placeholder="' + t('Määrä', 'Quantity') + '">' +
         '<textarea name="details" maxlength="1800" placeholder="' + t('Mitä tarvitset?', 'What do you need?') + '">' + escapeHtml(question) + '</textarea>' +
         '<input name="budget" maxlength="120" placeholder="' + t('Budjetti, jos tiedossa', 'Budget, if known') + '">' +
-        '<button type="submit">' + t('Lähetä tarjouspyyntö', 'Send quote request') + '</button>' +
+        '<button type="submit">' + t('Laske ja lähetä tarjouspyyntö', 'Calculate and send') + '</button>' +
         '<div class="action-ok"></div>';
     } else if (action.mode === 'booking_form') {
       box.innerHTML =
-        '<b>' + t('Varaa aika', 'Book a time') + '</b>' +
-        '<small>' + t('Lähetä toivottu aika. Jos yrityksen kalenteri on yhdistetty, vahvistus voidaan palauttaa suoraan tähän.', 'Send your preferred time. If the company calendar is connected, confirmation can be returned here.') + '</small>' +
+        '<b>' + t('Varaa vapaa aika', 'Book an available time') + '</b>' +
+        '<small>' + t('Respondo näyttää vain oikeasti vapaat ajat. Valittu aika poistuu heti muiden varattavista.', 'Respondo only shows truly available times. Once booked, the slot is no longer available to others.') + '</small>' +
         '<input name="name" maxlength="120" placeholder="' + t('Nimi', 'Name') + '">' +
         '<input name="contact" maxlength="220" required placeholder="' + t('Puhelin tai sähköposti', 'Phone or email') + '">' +
-        '<input name="date" type="date" required>' +
-        '<input name="time" type="time">' +
+        '<select name="slotId" required><option value="">' + t('Haetaan vapaita aikoja…', 'Loading available times…') + '</option></select>' +
         '<textarea name="note" maxlength="1000" placeholder="' + t('Lisätieto', 'Additional note') + '"></textarea>' +
-        '<button type="submit">' + t('Lähetä ajanvarauspyyntö', 'Send booking request') + '</button>' +
+        '<button type="submit" disabled>' + t('Varaa aika', 'Book time') + '</button>' +
         '<div class="action-ok"></div>';
     } else {
       box.innerHTML =
@@ -264,6 +273,44 @@
         '<input name="email" type="email" maxlength="220" required placeholder="' + t('Sähköposti', 'Email') + '">' +
         '<button type="submit">' + t('Tarkista', 'Check') + '</button>' +
         '<div class="action-ok"></div>';
+    }
+
+    if (action.mode === 'booking_form') {
+      const slotSelect = box.elements.slotId;
+      const submitButton = box.querySelector('button[type="submit"]');
+      fetch(
+        serviceOrigin + '/api/public/' + encodeURIComponent(company) +
+        '/booking-slots?widgetToken=' + encodeURIComponent(token),
+        { method:'GET', mode:'cors', credentials:'omit' }
+      )
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Slots failed');
+          const slots = Array.isArray(data.slots) ? data.slots : [];
+          if (!slots.length) {
+            slotSelect.innerHTML = '<option value="">' + t('Ei vapaita aikoja juuri nyt', 'No available times right now') + '</option>';
+            submitButton.disabled = true;
+            return;
+          }
+          slotSelect.innerHTML =
+            '<option value="">' + t('Valitse vapaa aika', 'Choose an available time') + '</option>' +
+            slots.map((slot) => {
+              const start = new Date(slot.starts_at);
+              const end = new Date(slot.ends_at);
+              const locale = widgetLang === 'en' ? 'en-GB' : 'fi-FI';
+              const date = start.toLocaleDateString(locale, { weekday:'short', day:'2-digit', month:'2-digit' });
+              const startTime = start.toLocaleTimeString(locale, { hour:'2-digit', minute:'2-digit' });
+              const endTime = end.toLocaleTimeString(locale, { hour:'2-digit', minute:'2-digit' });
+              return '<option value="' + escapeHtml(slot.id) + '">' +
+                escapeHtml(date + ' · ' + startTime + '–' + endTime) +
+                '</option>';
+            }).join('');
+          submitButton.disabled = false;
+        })
+        .catch(() => {
+          slotSelect.innerHTML = '<option value="">' + t('Vapaita aikoja ei saatu ladattua', 'Available times could not be loaded') + '</option>';
+          submitButton.disabled = true;
+        });
     }
 
     box.addEventListener('submit', async (event) => {
@@ -299,9 +346,51 @@
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Action failed');
 
-        box.querySelector('.action-ok').textContent = data.customerMessage || t('Pyyntö vastaanotettu ✓', 'Request received ✓');
-        box.querySelectorAll('input,textarea,button').forEach((el) => el.disabled = true);
-        button.textContent = t('Lähetetty ✓', 'Sent ✓');
+        const ok = box.querySelector('.action-ok');
+        let resultHtml = '<div class="action-confirmed">✓ ' +
+          escapeHtml(data.customerMessage || t('Pyyntö vastaanotettu', 'Request received')) +
+          '</div>';
+
+        if (data.quote) {
+          const q = data.quote;
+          const locale = widgetLang === 'en' ? 'en-IE' : 'fi-FI';
+          const total = new Intl.NumberFormat(locale, { style:'currency', currency:q.currency || 'EUR' }).format(Number(q.total || 0));
+          resultHtml +=
+            '<div class="quote-result">' +
+              '<small>' + escapeHtml(q.serviceName || t('Tarjous', 'Quote')) + '</small>' +
+              '<strong>' + escapeHtml(total) + '</strong>' +
+              '<span>' + escapeHtml(
+                q.vatPercent > 0
+                  ? t('sisältää ALV ' + q.vatPercent + ' %', 'includes VAT ' + q.vatPercent + '%')
+                  : t('ALV 0 %', 'VAT 0%')
+              ) + '</span>' +
+            '</div>';
+          if (data.checkoutUrl) {
+            resultHtml += '<a class="action-pay" href="' + escapeHtml(data.checkoutUrl) + '" target="_blank" rel="noopener noreferrer">' +
+              t('Maksa / hyväksy tarjous →', 'Pay / accept quote →') +
+              '</a>';
+          } else {
+            resultHtml += '<small class="action-pay-note">' +
+              t('Yritys ei ole vielä yhdistänyt maksutiliä. Tarjouspyyntö on silti lähetetty.', 'The company has not connected payments yet. The quote request was still sent.') +
+              '</small>';
+          }
+        }
+
+        if (data.booking?.startsAt) {
+          const start = new Date(data.booking.startsAt);
+          const locale = widgetLang === 'en' ? 'en-GB' : 'fi-FI';
+          const formatted = start.toLocaleString(locale, {
+            weekday:'long', day:'2-digit', month:'2-digit', year:'numeric',
+            hour:'2-digit', minute:'2-digit'
+          });
+          resultHtml += '<div class="booking-confirmed"><strong>' +
+            t('Aika varattu', 'Time booked') +
+            '</strong><span>' + escapeHtml(formatted) + '</span></div>';
+        }
+
+        ok.innerHTML = resultHtml;
+        box.querySelectorAll('input,textarea,select,button').forEach((el) => el.disabled = true);
+        button.textContent = t('Valmis ✓', 'Done ✓');
 
         if (type === 'order_status' && data.customerMessage) {
           addMessage(data.customerMessage);
