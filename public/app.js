@@ -1184,6 +1184,8 @@ async function dashboard() {
   const truth = data.truth || { score:0,total:0,approved:0,fresh:0 };
   const latestSelfTest = data.latestSelfTest || null;
   const actionStats = data.actionStats || [];
+  const actionRequests = data.actionRequests || [];
+  const integrations = data.integrations || { webhookUrl:'', webhookSecret:'', channelsApiKey:'' };
   const knowledge = data.knowledge || [];
   const businessProfile = Object.fromEntries(
     knowledge
@@ -1202,6 +1204,18 @@ async function dashboard() {
   const installedDone = localStorage.getItem(installedKey) === '1';
   const profileDone = ['Hinnat','Aukioloajat','Palvelut'].filter((k) => businessProfile[k]).length >= 2;
   const formatMoney = (n) => new Intl.NumberFormat('fi-FI', { style:'currency', currency:'EUR', maximumFractionDigits:0 }).format(Number(n || 0));
+  const actionTypeLabel = (type) => ({
+    quote:'Tarjouspyyntö',
+    booking:'Ajanvaraus',
+    order_status:'Tilauksen tila',
+    callback:'Yhteydenotto',
+  })[type] || type || 'Toiminto';
+  const actionStatusLabel = (status) => ({
+    new:'Uusi',
+    in_progress:'Käsittelyssä',
+    done:'Hoidettu',
+  })[status] || status || 'Uusi';
+  const actionFieldEntries = (payload) => Object.entries(payload?.fields || {}).filter(([,v]) => String(v || '').trim());
   const answersDone = nonProfileKnowledge.length > 0;
   const testedDone = s.conversations > 0;
   const onboarding = [
@@ -1232,6 +1246,7 @@ async function dashboard() {
               <option value="setup">Yrityksen tiedot & botti</option>
               <option value="answers">Vastaukset</option>
               <option value="customers">Asiakkaat</option>
+              <option value="automation">Actions & integraatiot</option>
               <option value="account">Asennus & tili</option>
             </select>
             <span aria-hidden="true">⌄</span>
@@ -1534,6 +1549,96 @@ async function dashboard() {
         </div>
       </section>
 
+      <section class="actions2-layout dashboard-view-section dashboard-view-hidden" data-dashboard-view="automation" id="actions2">
+        <article class="panel action-inbox-panel">
+          <div class="panel-head">
+            <div>
+              <small>ACTION INBOX</small>
+              <h2>Asiat, jotka Respondo on saanut asiakkaalta</h2>
+              <p>Tarjouspyynnöt, ajanvaraukset, tilauskyselyt ja muut tehtävät yhdessä jonossa.</p>
+            </div>
+            <span>${actionRequests.filter((x) => x.status !== 'done').length} avoinna</span>
+          </div>
+
+          <div class="action-request-list">
+            ${actionRequests.length ? actionRequests.map((x) => `
+              <article class="action-request-item ${x.status === 'done' ? 'done' : ''}" data-action-id="${esc(x.id)}">
+                <div class="action-request-top">
+                  <div>
+                    <span class="action-kind">${esc(actionTypeLabel(x.request_type))}</span>
+                    <small>${new Date(x.created_at).toLocaleString('fi-FI',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} · ${esc(x.source_channel || 'website')}</small>
+                  </div>
+                  <span class="action-state">${esc(actionStatusLabel(x.status))}</span>
+                </div>
+                <div class="action-request-fields">
+                  ${actionFieldEntries(x.payload).map(([key,value]) => `<div><small>${esc(key)}</small><b>${esc(value)}</b></div>`).join('')}
+                </div>
+                ${x.payload?.question ? `<p class="action-origin">“${esc(x.payload.question)}”</p>` : ''}
+                <div class="action-request-bottom">
+                  <small>Integraatio: ${esc(x.delivery_status === 'delivered' ? 'lähetetty ✓' : x.delivery_status === 'failed' ? 'lähetys epäonnistui' : 'vain RESPONDOssa')}</small>
+                  ${x.status !== 'done' ? `<button type="button" class="mark-action-done">Merkitse hoidetuksi</button>` : '<span class="action-done-label">✓ Hoidettu</span>'}
+                </div>
+              </article>
+            `).join('') : `
+              <div class="empty-state">
+                <b>Action Inbox on tyhjä.</b>
+                <p>Kun asiakas pyytää tarjouksen, ajan, tilauksen tarkistuksen tai yhteydenoton, se ilmestyy tähän.</p>
+              </div>
+            `}
+          </div>
+        </article>
+
+        <article class="panel integration-panel" id="integrations">
+          <div class="panel-head">
+            <div>
+              <small>INTEGRAATIOT</small>
+              <h2>Yhdistä Respondo muihin järjestelmiin</h2>
+              <p>Webhookilla voit siirtää uudet actionit esimerkiksi CRM:ään, Makeen, Zapieriin tai omaan backendisiisi.</p>
+            </div>
+            <span class="install-badge">Actions 2.0</span>
+          </div>
+
+          <form id="integrationsForm" class="integration-form">
+            <div class="field">
+              <label>Action webhook URL</label>
+              <input name="webhookUrl" type="url" value="${esc(integrations.webhookUrl || '')}" placeholder="https://api.yritys.fi/respondo">
+              <small class="field-hint">RESPONDO lähettää tarjous-, ajanvaraus-, tilaus- ja yhteydenottopyynnöt tähän HTTPS-osoitteeseen.</small>
+            </div>
+            <div class="integration-buttons">
+              <button class="btn dashboard-action" type="submit">Tallenna integraatio <span>→</span></button>
+              <button class="btn integration-test-btn" id="testIntegration" type="button">Testaa webhook</button>
+            </div>
+            <div id="integrationMsg"></div>
+          </form>
+
+          <div class="integration-secret-grid">
+            <div class="integration-secret">
+              <small>WEBHOOK SIGNING SECRET</small>
+              <code id="webhookSecret" data-value="${esc(integrations.webhookSecret || '')}">••••••••${esc(String(integrations.webhookSecret || '').slice(-8))}</code>
+              <button type="button" class="copy-integration-value" data-target="webhookSecret">Kopioi secret</button>
+            </div>
+            <div class="integration-secret">
+              <small>CHANNELS API KEY</small>
+              <code id="channelsApiKey" data-value="${esc(integrations.channelsApiKey || '')}">••••••••${esc(String(integrations.channelsApiKey || '').slice(-8))}</code>
+              <button type="button" class="copy-integration-value" data-target="channelsApiKey">Kopioi API-avain</button>
+            </div>
+          </div>
+
+          <div class="channels-api-box">
+            <small>YHTEINEN KANAVARAJAPINTA</small>
+            <h3>Sama asiakashistoria myös muille kanaville</h3>
+            <p>Adapteri voi lähettää viestin tähän endpointiin ja saada vastauksen samasta Truth Enginestä:</p>
+            <div class="code-row"><code id="channelEndpoint">${location.origin}/api/channel/${esc(t.slug)}/message</code><button type="button" class="copy-integration-value" data-target="channelEndpoint">Kopioi</button></div>
+            <div class="channel-readiness">
+              <span class="ready">● Verkkosivu käytössä</span>
+              <span>○ Sähköposti · adapteri tarvitaan</span>
+              <span>○ WhatsApp · provider-yhteys tarvitaan</span>
+              <span>○ Instagram · Meta-yhteys tarvitaan</span>
+            </div>
+          </div>
+        </article>
+      </section>
+
       <section class="panel install-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="install">
         <div class="panel-head"><div><small>ASENNUS</small><h2>Lisää Respondo verkkosivullesi</h2></div><span class="install-badge">1 sivusto</span></div>
         <p>Kopioi tämä koodi sivustosi HTML:ään juuri ennen sulkevaa <code>&lt;/body&gt;</code>-tagia.</p>
@@ -1721,7 +1826,7 @@ async function route() {
 
   if (path === '/app') {
     const dashboardSelect = $('#dashboardSectionSelect');
-    const validDashboardViews = new Set(['overview','setup','answers','customers','account']);
+    const validDashboardViews = new Set(['overview','setup','answers','customers','automation','account']);
     const targetViewMap = {
       'overview':'overview',
       'business-profile':'setup',
@@ -1730,6 +1835,8 @@ async function route() {
       'unanswered':'answers',
       'conversations':'customers',
       'leads':'customers',
+      'actions2':'automation',
+      'integrations':'automation',
       'install':'account',
       'referral':'account',
       'billing':'account',
@@ -2082,6 +2189,86 @@ async function route() {
       } catch {
         e.currentTarget.textContent = 'Kopiointi ei onnistunut';
       }
+    });
+
+    $('#integrationsForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const button = e.currentTarget.querySelector('button[type="submit"]');
+      const original = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = 'Tallennetaan…';
+      const form = new FormData(e.currentTarget);
+      try {
+        await api('/api/app/integrations', {
+          method:'POST',
+          body:JSON.stringify({ webhookUrl:form.get('webhookUrl') }),
+        });
+        $('#integrationMsg').innerHTML = '<div class="notice success">Integraatio tallennettu.</div>';
+        button.innerHTML = 'Tallennettu ✓';
+        setTimeout(() => (button.innerHTML = original), 1500);
+      } catch (err) {
+        $('#integrationMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.innerHTML = original;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    $('#testIntegration')?.addEventListener('click', async (e) => {
+      const button = e.currentTarget;
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Testataan…';
+      try {
+        await api('/api/app/integrations/test', { method:'POST', body:'{}' });
+        $('#integrationMsg').innerHTML = '<div class="notice success">Webhook vastasi onnistuneesti ✓</div>';
+        button.textContent = 'Toimii ✓';
+        setTimeout(() => (button.textContent = original), 1600);
+      } catch (err) {
+        $('#integrationMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        button.textContent = original;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.querySelectorAll('.copy-integration-value').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.target);
+        const value = target?.dataset?.value || target?.textContent || '';
+        if (!value) return;
+        const original = button.textContent;
+        try {
+          await navigator.clipboard.writeText(value);
+          button.textContent = 'Kopioitu ✓';
+          setTimeout(() => (button.textContent = original), 1300);
+        } catch {
+          button.textContent = 'Kopioi käsin';
+        }
+      });
+    });
+
+    document.querySelectorAll('.mark-action-done').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const item = button.closest('.action-request-item');
+        const id = item?.dataset.actionId;
+        if (!id) return;
+        button.disabled = true;
+        button.textContent = 'Tallennetaan…';
+        try {
+          await api('/api/app/action-requests/' + encodeURIComponent(id) + '/status', {
+            method:'POST',
+            body:JSON.stringify({ status:'done' }),
+          });
+          item.classList.add('done');
+          item.querySelector('.action-state').textContent = 'Hoidettu';
+          button.outerHTML = '<span class="action-done-label">✓ Hoidettu</span>';
+        } catch (err) {
+          button.disabled = false;
+          button.textContent = 'Merkitse hoidetuksi';
+          alert(err.message);
+        }
+      });
     });
 
     $('#billingPortal')?.addEventListener('click', async (e) => {
