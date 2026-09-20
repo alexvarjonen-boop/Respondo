@@ -1789,9 +1789,9 @@ async function dashboard() {
         <article class="panel action-inbox-panel">
           <div class="panel-head">
             <div>
-              <small>ACTION INBOX</small>
-              <h2>Asiat, jotka Respondo on saanut asiakkaalta</h2>
-              <p>Tarjouspyynnöt, ajanvaraukset, tilauskyselyt ja muut tehtävät yhdessä jonossa.</p>
+              <small>ASIAKKAIDEN PYYNNÖT</small>
+              <h2>Asiakkaiden pyynnöt</h2>
+              <p>Tarjouspyynnöt, ajanvaraukset, tilauskyselyt ja yhteydenotot näkyvät tässä.</p>
             </div>
             <span>${actionRequests.filter((x) => x.status !== 'done').length} avoinna</span>
           </div>
@@ -1831,7 +1831,7 @@ async function dashboard() {
               </article>
             `).join('') : `
               <div class="empty-state">
-                <b>Action Inbox on tyhjä.</b>
+                <b>Ei uusia pyyntöjä.</b>
                 <p>Kun asiakas pyytää tarjouksen, ajan, tilauksen tarkistuksen tai yhteydenoton, se ilmestyy tähän.</p>
               </div>
             `}
@@ -1841,9 +1841,9 @@ async function dashboard() {
         <article class="panel quote-engine-panel" id="quote-engine">
           <div class="panel-head">
             <div>
-              <small>QUOTE ENGINE</small>
+              <small>HINTALASKURI</small>
               <h2>Anna Respondon laskea hinta</h2>
-              <p>Hinta lasketaan tällä kaavalla, ei tekoälyn arvauksella: perusmaksu + määrä × yksikköhinta, kuitenkin vähintään minimihinta.</p>
+              <p>Määritä palvelun hinnat. Respondo laskee asiakkaalle hinnan antamiesi hintojen perusteella.</p>
             </div>
             <span class="install-badge">${quoteEngine.basePrice || quoteEngine.unitPrice || quoteEngine.minPrice ? 'Käytössä' : 'Ei asetettu'}</span>
           </div>
@@ -1867,7 +1867,7 @@ async function dashboard() {
         <article class="panel booking-calendar-panel" id="booking-calendar">
           <div class="panel-head">
             <div>
-              <small>RESPONDO CALENDAR</small>
+              <small>AJANVARAUKSET</small>
               <h2>Luo oikeat vapaat ajat</h2>
               <p>Asiakas näkee chatissa vain nämä ajat. Kun yksi varataan, se lukittuu heti pois muilta.</p>
             </div>
@@ -1876,7 +1876,7 @@ async function dashboard() {
 
           <div class="calendar-sync-card ${googleCalendar.connected ? 'connected' : ''}">
             <div>
-              <small>GOOGLE CALENDAR SYNC</small>
+              <small>GOOGLE CALENDAR</small>
               <b>${googleCalendar.connected ? 'Yhdistetty ✓' : 'Ei yhdistetty'}</b>
               <p>${googleCalendar.connected ? ('Varaukset synkronoidaan kalenteriin ' + esc(googleCalendar.email || '')) : 'Yhdistä Google Calendar, niin Respondo tarkistaa myös siellä olevat varaukset ja luo uudet varaukset automaattisesti.'}</p>
             </div>
@@ -1933,161 +1933,6 @@ async function dashboard() {
           </div>
         </article>
 
-        <article class="panel meta-channels-panel" id="meta-channels">
-          <div class="panel-head">
-            <div>
-              <small>META CHANNELS</small>
-              <h2>WhatsApp & Instagram</h2>
-              <p>Meta lähettää uudet viestit tähän webhookiin. Respondo vastaa samalla Truth Enginellä ja keskustelu näkyy Live Inboxissa.</p>
-            </div>
-            <span class="install-badge">${metaChannels.whatsappConnected || metaChannels.instagramConnected ? 'Kanava yhdistetty' : 'Ei yhdistetty'}</span>
-          </div>
-          <div class="meta-webhook-box">
-            <div><small>WEBHOOK URL</small><code id="metaWebhookUrl" data-value="${esc(metaChannels.webhookUrl || '')}">${esc(metaChannels.webhookUrl || '')}</code><button type="button" class="copy-integration-value" data-target="metaWebhookUrl">Kopioi</button></div>
-            <div><small>VERIFY TOKEN</small><code id="metaVerifyToken" data-value="${esc(metaChannels.verifyToken || '')}">${esc(metaChannels.verifyToken || '')}</code><button type="button" class="copy-integration-value" data-target="metaVerifyToken">Kopioi</button></div>
-          </div>
-          <form id="metaChannelsForm" class="integration-form">
-            <div class="field"><label>Meta Graph API versio</label><input name="graphVersion" value="${esc(metaChannels.graphVersion || 'v24.0')}" placeholder="v24.0"></div>
-            <div class="field"><label>Meta App Secret</label><input name="appSecret" type="password" placeholder="${metaChannels.appSecretConfigured ? 'Tallennettu — jätä tyhjäksi säilyttääksesi' : 'Meta App Secret'}"></div>
-            <div class="channel-config-grid">
-              <div class="channel-config-card ${metaChannels.whatsappConnected ? 'connected' : ''}">
-                <b>WhatsApp Cloud API ${metaChannels.whatsappConnected ? '✓' : ''}</b>
-                <div class="field"><label>Phone Number ID</label><input name="whatsappPhoneNumberId" value="${esc(metaChannels.whatsappPhoneNumberId || '')}"></div>
-                <div class="field"><label>Access token</label><input name="whatsappAccessToken" type="password" placeholder="${metaChannels.whatsappConnected ? 'Tallennettu — jätä tyhjäksi säilyttääksesi' : 'System user access token'}"></div>
-              </div>
-              <div class="channel-config-card ${metaChannels.instagramConnected ? 'connected' : ''}">
-                <b>Instagram Messaging ${metaChannels.instagramConnected ? '✓' : ''}</b>
-                <div class="field"><label>Instagram account ID</label><input name="instagramAccountId" value="${esc(metaChannels.instagramAccountId || '')}"></div>
-                <div class="field"><label>Access token</label><input name="instagramAccessToken" type="password" placeholder="${metaChannels.instagramConnected ? 'Tallennettu — jätä tyhjäksi säilyttääksesi' : 'Instagram access token'}"></div>
-              </div>
-            </div>
-            <div class="integration-buttons">
-              <button class="btn dashboard-action" type="submit">Tallenna Meta-kanavat <span>→</span></button>
-              <button class="btn integration-test-btn" id="testMetaChannels" type="button">Testaa yhteydet</button>
-            </div>
-            <div id="metaChannelsMsg"></div>
-          </form>
-        </article>
-
-        <article class="panel voice-agent-panel" id="voice-agent">
-          <div class="panel-head">
-            <div>
-              <small>RESPONDO VOICE</small>
-              <h2>Puhelinagentti</h2>
-              <p>Twilio vastaanottaa puhelun, muuntaa asiakkaan puheen tekstiksi ja Respondo vastaa samalla varmennetulla tietopohjalla. Tarvittaessa puhelu siirtyy oikealle ihmiselle.</p>
-            </div>
-            <span class="stripe-connect-status ${voice.enabled ? 'ready' : ''}">${voice.enabled ? '● Käytössä' : '○ Ei käytössä'}</span>
-          </div>
-          <form id="voiceAgentForm" class="integration-form">
-            <div class="integration-secret-grid">
-              <div class="field"><label>Twilio Account SID</label><input name="accountSid" value="${esc(voice.accountSid || '')}" placeholder="AC…"></div>
-              <div class="field"><label>Twilio Auth Token</label><input name="authToken" type="password" placeholder="${voice.credentialsConfigured ? 'Tallennettu — jätä tyhjäksi säilyttääksesi' : 'Auth Token'}"></div>
-            </div>
-            <div class="integration-secret-grid">
-              <div class="field"><label>Twilio-puhelinnumero</label><input name="phoneNumber" value="${esc(voice.phoneNumber || '')}" placeholder="+358…"></div>
-              <div class="field"><label>Numero ihmiselle siirtoa varten</label><input name="handoffNumber" value="${esc(voice.handoffNumber || '')}" placeholder="+358…"></div>
-            </div>
-            <label class="voice-toggle"><input name="enabled" type="checkbox" ${voice.enabled ? 'checked' : ''}><span>Puhelinagentti käytössä</span></label>
-
-            <div class="integration-subsection">
-              <div>
-                <small>MISSED-CALL RECOVERY</small>
-                <h3>Automaattinen SMS vastaamattoman puhelun jälkeen</h3>
-                <p>Jos siirrettyyn puheluun ei vastata, Respondo lähettää soittajalle tekstiviestin. Asiakas voi vastata SMS:llä ja sama AI jatkaa keskustelua Live Inboxissa.</p>
-              </div>
-              <label class="voice-toggle"><input name="missedCallSmsEnabled" type="checkbox" ${voice.missedCallSmsEnabled ? 'checked' : ''}><span>Missed-call SMS käytössä</span></label>
-              <div class="field">
-                <label>Automaattinen viesti</label>
-                <textarea name="missedCallSmsMessage" rows="3" maxlength="1500">${esc(voice.missedCallSmsMessage || '')}</textarea>
-              </div>
-              <div class="integration-secret-grid">
-                <div class="field">
-                  <label>Lähetystapa</label>
-                  <select name="missedCallSmsMode">
-                    <option value="immediate" ${voice.missedCallSmsMode === 'immediate' ? 'selected' : ''}>Heti kun puheluun ei vastata</option>
-                    <option value="after_hours" ${voice.missedCallSmsMode === 'after_hours' ? 'selected' : ''}>Vain aukioloajan ulkopuolella</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>Aikavyöhyke</label>
-                  <input name="missedCallTimezone" value="${esc(voice.missedCallTimezone || 'Europe/Helsinki')}" placeholder="Europe/Helsinki">
-                </div>
-              </div>
-              <div class="integration-secret-grid">
-                <div class="field"><label>Ilta alkaa</label><input name="missedCallAfterStart" type="time" value="${esc(voice.missedCallAfterStart || '17:00')}"></div>
-                <div class="field"><label>Aamu päättyy</label><input name="missedCallAfterEnd" type="time" value="${esc(voice.missedCallAfterEnd || '08:00')}"></div>
-              </div>
-            </div>
-
-            <div class="integration-secret-grid">
-              <div>
-                <small>VOICE WEBHOOK</small>
-                <div class="code-row"><code id="voiceWebhookUrl" data-value="${esc(voice.webhookUrl || '')}">${esc(voice.webhookUrl || '')}</code><button type="button" class="copy-integration-value" data-target="voiceWebhookUrl">Kopioi</button></div>
-              </div>
-              <div>
-                <small>SMS WEBHOOK</small>
-                <div class="code-row"><code id="smsWebhookUrl" data-value="${esc(voice.smsWebhookUrl || '')}">${esc(voice.smsWebhookUrl || '')}</code><button type="button" class="copy-integration-value" data-target="smsWebhookUrl">Kopioi</button></div>
-              </div>
-            </div>
-            <div class="integration-buttons">
-              <button class="btn dashboard-action" type="submit">Tallenna puhelinagentti <span>→</span></button>
-              <button class="btn integration-test-btn" id="testVoiceAgent" type="button">Testaa Twilio</button>
-              <button class="btn integration-test-btn" id="testMissedCallSms" type="button">Lähetä testi-SMS</button>
-              <button class="btn integration-test-btn" id="configureVoiceNumber" type="button">Aktivoi numero automaattisesti</button>
-            </div>
-            <div id="voiceAgentMsg"></div>
-          </form>
-        </article>
-
-        <article class="panel integration-panel" id="integrations">
-          <div class="panel-head">
-            <div>
-              <small>INTEGRAATIOT</small>
-              <h2>Yhdistä Respondo muihin järjestelmiin</h2>
-              <p>Webhookilla voit siirtää uudet actionit esimerkiksi CRM:ään, Makeen, Zapieriin tai omaan backendisiisi.</p>
-            </div>
-            <span class="install-badge">Actions 2.0</span>
-          </div>
-
-          <form id="integrationsForm" class="integration-form">
-            <div class="field">
-              <label>Action webhook URL</label>
-              <input name="webhookUrl" type="url" value="${esc(integrations.webhookUrl || '')}" placeholder="https://api.yritys.fi/respondo">
-              <small class="field-hint">RESPONDO lähettää tarjous-, ajanvaraus-, tilaus- ja yhteydenottopyynnöt tähän HTTPS-osoitteeseen.</small>
-            </div>
-            <div class="integration-buttons">
-              <button class="btn dashboard-action" type="submit">Tallenna integraatio <span>→</span></button>
-              <button class="btn integration-test-btn" id="testIntegration" type="button">Testaa webhook</button>
-            </div>
-            <div id="integrationMsg"></div>
-          </form>
-
-          <div class="integration-secret-grid">
-            <div class="integration-secret">
-              <small>WEBHOOK SIGNING SECRET</small>
-              <code id="webhookSecret" data-value="${esc(integrations.webhookSecret || '')}">••••••••${esc(String(integrations.webhookSecret || '').slice(-8))}</code>
-              <button type="button" class="copy-integration-value" data-target="webhookSecret">Kopioi secret</button>
-            </div>
-            <div class="integration-secret">
-              <small>CHANNELS API KEY</small>
-              <code id="channelsApiKey" data-value="${esc(integrations.channelsApiKey || '')}">••••••••${esc(String(integrations.channelsApiKey || '').slice(-8))}</code>
-              <button type="button" class="copy-integration-value" data-target="channelsApiKey">Kopioi API-avain</button>
-            </div>
-          </div>
-
-          <div class="channels-api-box">
-            <small>YHTEINEN KANAVARAJAPINTA</small>
-            <h3>Sama asiakashistoria myös muille kanaville</h3>
-            <p>Adapteri voi lähettää viestin tähän endpointiin ja saada vastauksen samasta Truth Enginestä:</p>
-            <div class="code-row"><code id="channelEndpoint">${location.origin}/api/channel/${esc(t.slug)}/message</code><button type="button" class="copy-integration-value" data-target="channelEndpoint">Kopioi</button></div>
-            <div class="channel-readiness">
-              <span class="ready">● Verkkosivu käytössä</span>
-              <span>${metaChannels.whatsappConnected ? '● WhatsApp yhdistetty' : '○ WhatsApp ei yhdistetty'}</span>
-              <span>${metaChannels.instagramConnected ? '● Instagram yhdistetty' : '○ Instagram ei yhdistetty'}</span>
-              <span>${voice.enabled ? '● Puhelinagentti käytössä' : '○ Puhelinagentti ei käytössä'}</span>
-            </div>
-          </div>
-        </article>
       </section>
 
       <section class="panel install-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="install">
