@@ -2072,7 +2072,13 @@ function initImmersiveHomeMotion() {
 
   if (reduceMotion || compact) {
     root.classList.add('motion-lite');
-    revealItems.forEach((el) => el.classList.add('motion-visible'));
+    revealItems.forEach((el) => {
+      el.classList.add('motion-visible');
+      el.classList.remove('motion-reveal');
+      el.style.removeProperty('--reveal-delay');
+      el.style.removeProperty('will-change');
+    });
+    observer.disconnect();
     return;
   }
 
