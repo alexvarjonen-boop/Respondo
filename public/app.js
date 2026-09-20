@@ -591,7 +591,7 @@ function heroVisual() {
         <div class="console-header">
           <div>
             <small>ASIAKASPALVELU</small>
-            <h3>Vastaa vain tiedolla, jonka olet itse antanut.</h3>
+            <h3>Vastaukset perustuvat yrityksesi antamiin tietoihin.</h3>
           </div>
           <span class="verified">✓ tieto löytyi</span>
         </div>
@@ -615,12 +615,12 @@ function heroVisual() {
           </div>
           <div class="handoff-card">
             <span class="handoff-icon">↳</span>
-            <div><b>Tähän ei löydy varmaa vastausta.</b><small>Respondo ei keksi vastausta, vaan ohjaa asiakkaan sinulle.</small></div>
+            <div><b>Tähän ei löydy varmaa vastausta.</b><small>Kysymys ohjataan sinulle vastattavaksi.</small></div>
           </div>
         </div>
         <div class="console-stats">
           <div><b>24/7</b><span>verkossa</span></div>
-          <div><b>0</b><span>arvattua vastausta</span></div>
+          <div><b>1</b><span>hallintapaneeli</span></div>
           <div><b>1</b><span>oma tietopohja</span></div>
         </div>
       </div>
@@ -909,14 +909,14 @@ function horizontalProductStory() {
             <div class="msg-card m2">Mitä tää maksaa?</div>
             <div class="msg-card m3">Tuletteko Nokialle asti?</div>
             <div class="msg-card m4">Saako tän viikonloppuna?</div>
-            <div class="msg-core"><span>R</span><small>ymmärtää, mitä asiakas tarkoittaa</small></div>
+            <div class="msg-core"><span>R</span><small>löytää vastauksen yrityksesi tiedoista</small></div>
           </div>
         </article>
 
         <article class="story-panel story-panel-three">
           <div class="story-panel-copy">
             <small>03 / RESPONDO HOITAA LOPUT</small>
-            <h2>Vastaa heti.<br><em>Ei koskaan hatusta.</em></h2>
+            <h2>Vastaa heti.<br><em>Yrityksesi tiedoilla.</em></h2>
           </div>
           <div class="story-visual answer-machine" aria-hidden="true">
             <div class="am-ring r1"></div><div class="am-ring r2"></div>
@@ -998,9 +998,9 @@ function motionDepthScene() {
       <div class="depth-grid" aria-hidden="true"></div>
 
       <div class="depth-copy">
-        <small>RESPONDO / AUTOPILOT</small>
-        <h2>Yksi keskustelu.<br><em>Koko asiakaspolku.</em></h2>
-        <p>Vieritä. Näet miten kysymys muuttuu ymmärrykseksi, toiminnaksi ja lopulta oikeaksi asiaksi yrityksen kalenterissa, tarjouksissa tai Action Inboxissa.</p>
+        <small>RESPONDO / ASIAKASPALVELU</small>
+        <h2>Kysymyksestä vastaukseen.<br><em>Yhdessä näkymässä.</em></h2>
+        <p>Asiakas kysyy, Respondo vastaa yrityksesi tiedoilla ja tallentaa tarvittaessa yhteydenoton, tarjouspyynnön tai ajanvarauksen.</p>
       </div>
 
       <div class="depth-stage" aria-hidden="true">
@@ -1012,15 +1012,15 @@ function motionDepthScene() {
         </article>
         <article class="depth-card depth-card-2">
           <span>02</span>
-          <small>YMMÄRRYS</small>
-          <b>Hinta + palvelu + konteksti</b>
-          <i>Truth Engine</i>
+          <small>YRITYKSEN TIEDOT</small>
+          <b>Hinnat · palvelut · aukioloajat</b>
+          <i>Tietopohja</i>
         </article>
         <article class="depth-card depth-card-3">
           <span>03</span>
-          <small>TOIMINTA</small>
-          <b>Tarjous · aika · maksu</b>
-          <i>Actions 2.0</i>
+          <small>JATKOTOIMI</small>
+          <b>Tarjouspyyntö · ajanvaraus · yhteydenotto</b>
+          <i>Hallintapaneeli</i>
         </article>
         <div class="depth-core">
           <div class="depth-core-ring"></div>
@@ -1030,7 +1030,7 @@ function motionDepthScene() {
       </div>
 
       <div class="depth-progress"><i></i></div>
-      <div class="depth-caption"><span>01</span><b>Kysymys muuttuu toiminnaksi</b><em>03</em></div>
+      <div class="depth-caption"><span>01</span><b>Kysymyksestä vastaukseen</b><em>03</em></div>
     </div>
   </section>`;
 }
@@ -1043,8 +1043,8 @@ function trustPortalScene() {
     <div class="portal-center">
       <small>04 / KUN VASTAUSTA EI LÖYDY</small>
       <div class="portal-mark">R</div>
-      <h2>Jos vastausta ei löydy,<br><em>Respondo ei keksi sellaista.</em></h2>
-      <p>Respondo vastaa vain tiedoilla, jotka olet itse antanut. Jos tieto puuttuu, asiakas ohjataan sinulle.</p>
+      <h2>Jos tietoa ei löydy,<br><em>kysymys ohjataan sinulle.</em></h2>
+      <p>Vastaukset perustuvat yrityksesi antamiin tietoihin. Jos tarvittava tieto puuttuu, kysymys siirtyy sinulle.</p>
       <a href="/assistant" class="portal-button">Kokeile itse <span>→</span></a>
     </div>
     <div class="portal-node pn1"><span>✓</span> Hinnat</div>
@@ -1067,7 +1067,7 @@ async function home() {
           <div class="hero-copy">
             <div class="hero-label"><span></span> ASIAKASPALVELU, JOKA ON AINA PAIKALLA</div>
             <h1>Asiakas kysyy.<br><em>RESPONDO vastaa.</em></h1>
-            <p class="lead">Kerro Respondolle yrityksesi tiedot kerran. Sen jälkeen se vastaa asiakkaillesi myös silloin, kun sinä et ehdi — eikä keksi vastausta, jos tietoa ei löydy.</p>
+            <p class="lead">Kerro Respondolle yrityksesi tiedot kerran. Sen jälkeen se vastaa asiakkaillesi myös silloin, kun sinä et ehdi. Jos tarvittava tieto puuttuu, kysymys ohjataan sinulle.</p>
             <div class="hero-actions">
               <a class="btn hero-primary hero-bot-cta" href="/assistant">Kokeile bottia</a>
             </div>
