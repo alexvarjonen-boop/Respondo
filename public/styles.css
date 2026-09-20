@@ -4653,3 +4653,76 @@ body:before{opacity:.012}
     min-width: 0 !important; max-width: 100% !important; flex-wrap: wrap !important;
   }
 }
+
+
+/* =========================================================
+   MOBILE SAFARI STABILITY GUARD
+   Prevents GPU/memory exhaustion near the bottom of the home page.
+   Keeps the layout and visual hierarchy while removing expensive
+   compositing layers on compact/touch devices.
+   ========================================================= */
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+  .motion-lite .motion-reveal,
+  .motion-lite .motion-visible,
+  .immersive-home .motion-reveal.motion-visible {
+    will-change: auto !important;
+    transition: none !important;
+  }
+
+  .cinema-stage,
+  .story-sticky,
+  .world-sticky,
+  .motion-depth-sticky,
+  .trust-portal,
+  .impact-scene,
+  .value-calculator,
+  .pricing-section,
+  .final-cta,
+  .contact-section,
+  .world-stage,
+  .story-visual,
+  .depth-stage {
+    transform-style: flat !important;
+    perspective: none !important;
+  }
+
+  .cinema-phone,
+  .world-window,
+  .depth-card,
+  .portal-node,
+  .impact-number {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .depth-aura,
+  .world-floor,
+  .value-calculator::before,
+  .pricing-section::before {
+    filter: none !important;
+  }
+
+  .cinema-stage::before,
+  .depth-grid {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+
+  .cinema-typing i,
+  .am-pulse,
+  .final-cta-immersive .cta-shell::before {
+    animation: none !important;
+  }
+
+  .hero-immersive .hero-copy,
+  .hero-immersive .hero-glow,
+  .hero-immersive .hero-scroll-hint,
+  .cinema-phone,
+  .world-stage,
+  .calculator-shell,
+  .price-card,
+  .portal-ring,
+  .portal-node {
+    will-change: auto !important;
+  }
+}
