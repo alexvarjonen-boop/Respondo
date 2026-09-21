@@ -36,33 +36,145 @@
 </head>
 <body>
 <div id="app"></div>
+<style>
+  .rc-consent-layer{position:fixed;inset:0;z-index:2147483000;pointer-events:none;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .rc-consent-layer *{box-sizing:border-box}
+  .rc-consent-banner{position:absolute;left:16px;right:16px;bottom:16px;max-width:980px;margin:auto;background:#fff;color:#111114;border:1px solid rgba(17,17,20,.12);border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.22);padding:20px;display:none;pointer-events:auto}
+  .rc-consent-banner.show{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:22px;align-items:center}
+  .rc-consent-kicker{font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#777}
+  .rc-consent-title{margin:5px 0 7px;font-size:20px;line-height:1.1;letter-spacing:-.03em}
+  .rc-consent-text{margin:0;color:#555;font-size:14px;line-height:1.55;max-width:680px}
+  .rc-consent-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .rc-btn{appearance:none;border:1px solid #d8d8d3;background:#fff;color:#111114;border-radius:12px;padding:11px 14px;font:inherit;font-weight:800;cursor:pointer}
+  .rc-btn.primary{background:#111114;color:#fff;border-color:#111114}
+  .rc-btn.link{border-color:transparent;background:transparent;text-decoration:underline;text-underline-offset:3px}
+  .rc-consent-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.38);display:none;pointer-events:auto}
+  .rc-consent-backdrop.show{display:block}
+  .rc-consent-modal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(620px,calc(100% - 28px));max-height:min(760px,calc(100% - 28px));overflow:auto;background:#fff;color:#111114;border-radius:22px;box-shadow:0 30px 100px rgba(0,0,0,.35);padding:22px}
+  .rc-consent-modal h2{font-size:28px;line-height:1;letter-spacing:-.04em;margin:5px 0 8px}.rc-consent-modal p{color:#555;line-height:1.55}
+  .rc-choice{border-top:1px solid #ecece8;padding:16px 0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:start}
+  .rc-choice:first-of-type{margin-top:14px}.rc-choice h3{font-size:15px;margin:0 0 4px}.rc-choice p{font-size:13px;margin:0}
+  .rc-always{font-size:12px;font-weight:900;color:#4f6d54;background:#eef7f0;border-radius:999px;padding:7px 9px;white-space:nowrap}
+  .rc-switch{position:relative;width:48px;height:28px}.rc-switch input{opacity:0;width:0;height:0}.rc-slider{position:absolute;inset:0;background:#c9c9c3;border-radius:999px;cursor:pointer;transition:.2s}.rc-slider:before{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:.2s}.rc-switch input:checked+.rc-slider{background:#111114}.rc-switch input:checked+.rc-slider:before{transform:translateX(20px)}
+  .rc-modal-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}.rc-more{font-size:13px;color:#333;text-decoration:underline;text-underline-offset:3px}
+  .cookie-settings-link{appearance:none;border:0;background:none;padding:0;color:inherit;font:inherit;cursor:pointer;text-align:left;text-decoration:underline;text-underline-offset:3px}
+  @media(max-width:720px){.rc-consent-banner.show{grid-template-columns:1fr}.rc-consent-actions{justify-content:stretch}.rc-consent-actions .rc-btn{flex:1 1 100%}.rc-consent-banner{left:10px;right:10px;bottom:10px;padding:16px}.rc-consent-modal{padding:18px}.rc-modal-actions .rc-btn{flex:1 1 100%}}
+</style>
 <script>
 (() => {
-  const visitPath = location.pathname || '/';
-  if (/^\/(?:app|kirjaudu|traffic(?:\.html)?)(?:\/|$)/i.test(visitPath)) return;
-  const params = new URLSearchParams(location.search);
-  const payload = {
-    path: visitPath,
-    referrer: document.referrer || '',
-    utmSource: params.get('utm_source') || '',
-    utmMedium: params.get('utm_medium') || '',
-    utmCampaign: params.get('utm_campaign') || ''
-  };
-  const send = () => fetch('/api/public/site-visit', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(payload),
-    keepalive: true,
-    credentials: 'same-origin'
-  }).catch(() => {});
-  if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', send, {once:true});
-  } else {
-    send();
+  const KEY='respondo-cookie-consent-v1';
+  const visitPath=location.pathname||'/';
+  let sent=false;
+
+  function getChoice(){
+    try{return localStorage.getItem(KEY)||'';}catch{return '';}
   }
+  function setChoice(value){
+    try{localStorage.setItem(KEY,value);}catch{}
+  }
+  function mayTrack(){return getChoice()==='all';}
+  function sendVisit(){
+    if(sent || !mayTrack()) return;
+    if(/^\/(?:app|kirjaudu|traffic(?:\.html)?)(?:\/|$)/i.test(visitPath)) return;
+    sent=true;
+    const params=new URLSearchParams(location.search);
+    const payload={
+      path:visitPath,
+      referrer:document.referrer||'',
+      utmSource:params.get('utm_source')||'',
+      utmMedium:params.get('utm_medium')||'',
+      utmCampaign:params.get('utm_campaign')||''
+    };
+    fetch('/api/public/site-visit',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload),
+      keepalive:true,
+      credentials:'same-origin'
+    }).catch(()=>{});
+  }
+  function ensureUi(){
+    if(document.getElementById('rc-consent-layer')) return;
+    const layer=document.createElement('div');
+    layer.id='rc-consent-layer';
+    layer.className='rc-consent-layer';
+    layer.innerHTML=`
+      <section class="rc-consent-banner" id="rc-consent-banner" role="dialog" aria-label="Evästevalinnat" aria-live="polite">
+        <div>
+          <div class="rc-consent-kicker">Yksityisyys</div>
+          <h2 class="rc-consent-title">Evästeet ja kävijätilastot</h2>
+          <p class="rc-consent-text">Käytämme välttämättömiä evästeitä palvelun toimintaan. Valinnaisella analytiikalla mittaamme sivuston käyttöä ja liikenteen lähteitä. Voit hyväksyä tai hylätä valinnaisen analytiikan.</p>
+        </div>
+        <div class="rc-consent-actions">
+          <button class="rc-btn link" type="button" data-rc="settings">Lisätiedot</button>
+          <button class="rc-btn" type="button" data-rc="reject">Hylkää</button>
+          <button class="rc-btn primary" type="button" data-rc="accept">Hyväksy kaikki</button>
+        </div>
+      </section>
+      <div class="rc-consent-backdrop" id="rc-consent-backdrop">
+        <section class="rc-consent-modal" role="dialog" aria-modal="true" aria-labelledby="rc-consent-heading">
+          <div class="rc-consent-kicker">Evästeasetukset</div>
+          <h2 id="rc-consent-heading">Valitse, mitä sallitaan</h2>
+          <p>Välttämättömät evästeet tarvitaan esimerkiksi kirjautumiseen ja palvelun turvalliseen toimintaan. Valinnainen analytiikka käynnistyy vain, jos hyväksyt sen.</p>
+          <div class="rc-choice">
+            <div><h3>Välttämättömät</h3><p>Istunto, kirjautuminen, tietoturva ja palvelun perustoiminnot.</p></div>
+            <span class="rc-always">Aina käytössä</span>
+          </div>
+          <div class="rc-choice">
+            <div><h3>Kävijätilastot</h3><p>Pseudonyymi kävijätunniste, sivupolku, liikenteen lähde ja mahdolliset UTM-kampanjatiedot. Raakaa IP-osoitetta ei tallenneta tilastotauluun.</p></div>
+            <label class="rc-switch" aria-label="Salli kävijätilastot"><input id="rc-analytics-toggle" type="checkbox"><span class="rc-slider"></span></label>
+          </div>
+          <a class="rc-more" href="/evasteet">Lue lisää evästeistä ja tietojen käytöstä</a>
+          <div class="rc-modal-actions">
+            <button class="rc-btn" type="button" data-rc="reject">Hylkää valinnaiset</button>
+            <button class="rc-btn primary" type="button" data-rc="save">Tallenna valinta</button>
+          </div>
+        </section>
+      </div>`;
+    document.body.appendChild(layer);
+    layer.addEventListener('click',(event)=>{
+      const action=event.target?.closest?.('[data-rc]')?.getAttribute('data-rc');
+      if(!action) return;
+      if(action==='accept'){setChoice('all');closeAll();sendVisit();}
+      if(action==='reject'){setChoice('necessary');closeAll();}
+      if(action==='settings'){openSettings();}
+      if(action==='save'){
+        const enabled=Boolean(document.getElementById('rc-analytics-toggle')?.checked);
+        setChoice(enabled?'all':'necessary');
+        closeAll();
+        if(enabled) sendVisit();
+      }
+    });
+  }
+  function showBanner(){
+    ensureUi();
+    document.getElementById('rc-consent-backdrop')?.classList.remove('show');
+    document.getElementById('rc-consent-banner')?.classList.add('show');
+  }
+  function closeAll(){
+    document.getElementById('rc-consent-banner')?.classList.remove('show');
+    document.getElementById('rc-consent-backdrop')?.classList.remove('show');
+  }
+  function openSettings(){
+    ensureUi();
+    document.getElementById('rc-consent-banner')?.classList.remove('show');
+    const toggle=document.getElementById('rc-analytics-toggle');
+    if(toggle) toggle.checked=mayTrack();
+    document.getElementById('rc-consent-backdrop')?.classList.add('show');
+  }
+  window.openRespondoCookieSettings=openSettings;
+
+  function start(){
+    ensureUi();
+    const choice=getChoice();
+    if(choice==='all') sendVisit();
+    else if(choice!=='necessary') showBanner();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
 })();
 </script>
-<script type="module" src="/app.js?v=20260921-site-traffic"></script>
+<script type="module" src="/app.js?v=20260921-cookie-consent"></script>
 <script defer src="/effects.js?v=20260919-cinematic-authority"></script>
 </body>
 </html>
