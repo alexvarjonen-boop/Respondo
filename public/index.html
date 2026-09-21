@@ -36,7 +36,33 @@
 </head>
 <body>
 <div id="app"></div>
-<script type="module" src="/app.js?v=20260919-no-apple-login"></script>
+<script>
+(() => {
+  const visitPath = location.pathname || '/';
+  if (/^\/(?:app|kirjaudu|traffic(?:\.html)?)(?:\/|$)/i.test(visitPath)) return;
+  const params = new URLSearchParams(location.search);
+  const payload = {
+    path: visitPath,
+    referrer: document.referrer || '',
+    utmSource: params.get('utm_source') || '',
+    utmMedium: params.get('utm_medium') || '',
+    utmCampaign: params.get('utm_campaign') || ''
+  };
+  const send = () => fetch('/api/public/site-visit', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload),
+    keepalive: true,
+    credentials: 'same-origin'
+  }).catch(() => {});
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', send, {once:true});
+  } else {
+    send();
+  }
+})();
+</script>
+<script type="module" src="/app.js?v=20260921-site-traffic"></script>
 <script defer src="/effects.js?v=20260919-cinematic-authority"></script>
 </body>
 </html>

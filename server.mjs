@@ -933,6 +933,36 @@ function auth(req, res, next) {
   }
 }
 
+function ownerTrafficOnly(req, res, next) {
+  const ownerEmail = cleanEmail(process.env.SUPPORT_EMAIL);
+  if (!ownerEmail || cleanEmail(req.user?.email) !== ownerEmail) {
+    return res.status(403).json({ error: 'Tämä näkymä on vain Respondo AI:n omistajalle.' });
+  }
+  next();
+}
+
+function trafficVisitorHash(req) {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  const ip = forwarded || String(req.socket?.remoteAddress || '');
+  const ua = String(req.headers['user-agent'] || '').slice(0, 400);
+  return crypto.createHmac('sha256', SECRET_KEY).update(ip + '\n' + ua).digest('hex').slice(0, 40);
+}
+
+function trafficReferrerHost(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    const host = new URL(raw).hostname.toLowerCase().replace(/^www\./, '');
+    return host.slice(0, 240);
+  } catch {
+    return '';
+  }
+}
+
+function isLikelyBotUserAgent(value) {
+  return /bot|crawler|spider|headless|preview|facebookexternalhit|slurp|bingpreview|uptimerobot|statuscake/i.test(String(value || ''));
+}
+
 async function subscribed(req, res, next) {
   try {
     const r = await q('SELECT status, subscription_status FROM users WHERE id=$1', [req.user.sub]);
@@ -1372,6 +1402,86 @@ app.get('/api/health', async (req, res) => {
 });
 
 
+
+app.post('/api/public/site-visit', async (req, res) => {
+  try {
+    if (!pool) return res.status(204).end();
+
+    const ua = String(req.headers['user-agent'] || '');
+    if (!ua || isLikelyBotUserAgent(ua)) return res.status(204).end();
+
+    try {
+      const token = cookies(req)[COOKIE];
+      if (token) {
+        const session = jwt.verify(token, JWT);
+        const ownerEmail = cleanEmail(process.env.SUPPORT_EMAIL);
+        if (ownerEmail && cleanEmail(session?.email) === ownerEmail) {
+          return res.status(204).end();
+        }
+      }
+    } catch {}
+
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const visitPath = String(body.path || '/').trim().slice(0, 500) || '/';
+    if (/^\/(?:api|app|kirjaudu|traffic(?:\.html)?)(?:\/|$)/i.test(visitPath)) {
+      return res.status(204).end();
+    }
+
+    const referrer = String(body.referrer || '').trim().slice(0, 1000);
+    const visitorHash = trafficVisitorHash(req);
+    if (!visitorHash) return res.status(204).end();
+
+    await q(
+      "INSERT INTO site_visits(id,visitor_hash,path,referrer,referrer_host,utm_source,utm_medium,utm_campaign) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",
+      [
+        uid(),
+        visitorHash,
+        visitPath,
+        referrer || null,
+        trafficReferrerHost(referrer) || null,
+        String(body.utmSource || '').trim().slice(0, 120) || null,
+        String(body.utmMedium || '').trim().slice(0, 120) || null,
+        String(body.utmCampaign || '').trim().slice(0, 180) || null,
+      ],
+    );
+    return res.status(204).end();
+  } catch (e) {
+    console.error('Site visit tracking failed', e?.message || e);
+    return res.status(204).end();
+  }
+});
+
+app.get('/api/owner/traffic', auth, ownerTrafficOnly, async (req, res) => {
+  try {
+    const summary = await q(
+      "SELECT COUNT(*)::int AS total_views, COUNT(DISTINCT visitor_hash)::int AS total_unique, COUNT(*) FILTER (WHERE created_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Helsinki'))::int AS today_views, COUNT(DISTINCT visitor_hash) FILTER (WHERE created_at >= (CURRENT_DATE AT TIME ZONE 'Europe/Helsinki'))::int AS today_unique, COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int AS week_views, COUNT(DISTINCT visitor_hash) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int AS week_unique, COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS month_views, COUNT(DISTINCT visitor_hash) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS month_unique FROM site_visits"
+    );
+
+    const daily = await q(
+      "SELECT TO_CHAR(created_at AT TIME ZONE 'Europe/Helsinki','YYYY-MM-DD') AS day, COUNT(*)::int AS views, COUNT(DISTINCT visitor_hash)::int AS visitors FROM site_visits WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY 1 ORDER BY 1 ASC"
+    );
+
+    const pages = await q(
+      "SELECT path, COUNT(*)::int AS views, COUNT(DISTINCT visitor_hash)::int AS visitors FROM site_visits WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY path ORDER BY views DESC, path ASC LIMIT 12"
+    );
+
+    const sources = await q(
+      "SELECT COALESCE(NULLIF(utm_source,''), NULLIF(referrer_host,''), 'Suora') AS source, COUNT(*)::int AS views, COUNT(DISTINCT visitor_hash)::int AS visitors FROM site_visits WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY 1 ORDER BY views DESC, source ASC LIMIT 12"
+    );
+
+    return res.json({
+      summary: summary.rows[0] || {},
+      daily: daily.rows,
+      pages: pages.rows,
+      sources: sources.rows,
+      generatedAt: new Date().toISOString(),
+      note: 'Kävijä on pseudonyymi selain/IP-yhdistelmä. Raakaa IP-osoitetta ei tallenneta.',
+    });
+  } catch (e) {
+    console.error('Owner traffic stats failed', e);
+    return res.status(500).json({ error: 'Kävijätilastojen lataaminen epäonnistui.' });
+  }
+});
 
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain').send(`User-agent: *\nAllow: /\nSitemap: ${BASE}/sitemap.xml\n`);
@@ -4829,6 +4939,20 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS page_title TEXT");
   await q("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS source_channel TEXT NOT NULL DEFAULT 'website'");
   await q("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS external_contact_id TEXT");
+
+  await q(`CREATE TABLE IF NOT EXISTS site_visits (
+    id UUID PRIMARY KEY,
+    visitor_hash TEXT NOT NULL,
+    path TEXT NOT NULL,
+    referrer TEXT,
+    referrer_host TEXT,
+    utm_source TEXT,
+    utm_medium TEXT,
+    utm_campaign TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_site_visits_created ON site_visits(created_at DESC)');
+  await q('CREATE INDEX IF NOT EXISTS idx_site_visits_visitor ON site_visits(visitor_hash, created_at DESC)');
 
   await q(`CREATE TABLE IF NOT EXISTS action_events (
     id UUID PRIMARY KEY,
