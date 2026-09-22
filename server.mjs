@@ -1331,14 +1331,16 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       const periodEnd = subscription.current_period_end
         ? new Date(subscription.current_period_end * 1000)
         : null;
+      const cancelAtPeriodEnd = Boolean(subscription.cancel_at_period_end);
       await q(
         `UPDATE users
             SET subscription_status=$1,
                 status=CASE WHEN $1 IN ('active','trialing') THEN 'active' ELSE 'inactive' END,
                 current_period_end=$2,
+                subscription_cancel_at_period_end=$3,
                 updated_at=NOW()
-          WHERE stripe_subscription_id=$3`,
-        [subscription.status, periodEnd, subscription.id],
+          WHERE stripe_subscription_id=$4`,
+        [subscription.status, periodEnd, cancelAtPeriodEnd, subscription.id],
       );
     }
 
@@ -3358,7 +3360,12 @@ async function publicTenant(slugValue) {
       WHERE t.slug=$1
         AND t.active=true
         AND u.status='active'
-        AND u.subscription_status IN ('active','trialing')`,
+        AND u.subscription_status IN ('active','trialing')
+        AND (
+          COALESCE(u.subscription_cancel_at_period_end,false)=false
+          OR u.current_period_end IS NULL
+          OR u.current_period_end > NOW()
+        )`,
     [slugValue],
   );
 }
@@ -4917,8 +4924,26 @@ app.post('/api/billing/cancel', auth, async (req, res) => {
     const r = await q('SELECT stripe_subscription_id FROM users WHERE id=$1', [req.user.sub]);
     const id = r.rows[0]?.stripe_subscription_id;
     if (!id) return res.status(400).json({ error: 'Tilausta ei löytynyt.' });
-    await stripe.subscriptions.update(id, { cancel_at_period_end: true });
-    return res.json({ ok: true });
+
+    const subscription = await stripe.subscriptions.update(id, { cancel_at_period_end: true });
+    const periodEnd = subscription.current_period_end
+      ? new Date(subscription.current_period_end * 1000)
+      : null;
+
+    await q(
+      `UPDATE users
+          SET subscription_cancel_at_period_end=true,
+              current_period_end=COALESCE($1,current_period_end),
+              updated_at=NOW()
+        WHERE id=$2`,
+      [periodEnd, req.user.sub],
+    );
+
+    return res.json({
+      ok: true,
+      cancelAtPeriodEnd: true,
+      currentPeriodEnd: periodEnd ? periodEnd.toISOString() : null,
+    });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
@@ -4936,6 +4961,7 @@ async function ensureRuntimeSchema() {
 
   await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_plan TEXT');
   await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT');
+  await q("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_cancel_at_period_end BOOLEAN NOT NULL DEFAULT FALSE");
   await q(`CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
