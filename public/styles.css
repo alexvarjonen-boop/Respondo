@@ -4820,3 +4820,162 @@ body:before{opacity:.012}
     filter:none !important;
   }
 }
+
+
+/* =========================================================
+   RESPONDO SIMPLE UI SYSTEM — 2026-09-23
+   One calm visual language across marketing, checkout, app and legal pages.
+   ========================================================= */
+:root{
+  --simple-bg:#f6f7f9;
+  --simple-surface:#ffffff;
+  --simple-text:#17181b;
+  --simple-muted:#686d76;
+  --simple-line:#e7e9ed;
+  --simple-soft:#f1f3f5;
+  --simple-radius:18px;
+  --simple-shadow:0 8px 30px rgba(17,24,39,.055);
+}
+html{scroll-behavior:smooth}
+body{background:var(--simple-bg)!important;color:var(--simple-text)!important}
+.container{width:min(1120px,calc(100% - 40px))!important}
+.section{padding:88px 0!important}
+.section-kicker,.hero-label{font-size:12px!important;letter-spacing:.04em!important;text-transform:none!important;color:var(--simple-muted)!important}
+h1,h2,h3{letter-spacing:-.035em!important}
+p{color:var(--simple-muted)}
+.btn,.checkout-button,.dashboard-action,.portal-button,.integration-test-btn{
+  min-height:46px!important;border-radius:12px!important;box-shadow:none!important;
+  font-weight:700!important;letter-spacing:0!important
+}
+.btn.ink,.hero-primary,.checkout-button{background:#17181b!important;color:#fff!important;border-color:#17181b!important}
+.btn:hover,.dashboard-action:hover{transform:none!important}
+
+/* Navigation */
+.nav{background:rgba(255,255,255,.96)!important;border-bottom:1px solid var(--simple-line)!important;box-shadow:none!important}
+.navinner{min-height:68px!important}
+.navlinks{gap:24px!important}
+.navlinks a{color:#555a63!important}
+.navactions{gap:8px!important}
+
+/* Homepage: clear product story, no visual overload */
+.product-subnav,.hero-scroll-hint,.cinema-word,.cinema-orbit,.cinema-float,.story-counter,.story-progress,
+.world-floor,.depth-grid,.depth-aura,.portal-ring,.fx-scene-number{display:none!important}
+.hero-immersive{min-height:auto!important;padding:96px 0 72px!important;overflow:visible!important}
+.hero-immersive .hero-grid{min-height:0!important;gap:64px!important;align-items:center!important}
+.hero-immersive .hero-copy h1{font-size:clamp(52px,7vw,92px)!important;line-height:.94!important;letter-spacing:-.06em!important}
+.hero-copy .lead{font-size:18px!important;line-height:1.65!important;max-width:620px!important}
+.hero-actions{margin-top:28px!important}
+.signal-console{border:1px solid var(--simple-line)!important;border-radius:22px!important;box-shadow:var(--simple-shadow)!important;background:#fff!important;transform:none!important}
+.cinema-conversation,.story-horizontal,.product-world,.motion-depth,.trust-portal,.impact-scene{
+  height:auto!important;min-height:0!important;padding:88px 0!important;overflow:hidden!important
+}
+.cinema-stage,.story-sticky,.world-sticky,.motion-depth-sticky{
+  position:relative!important;top:auto!important;height:auto!important;min-height:0!important
+}
+.story-track{position:relative!important;inset:auto!important;width:auto!important;display:grid!important;grid-template-columns:repeat(3,1fr)!important;transform:none!important;gap:16px!important;padding:0 max(20px,calc((100vw - 1120px)/2))!important}
+.story-panel{width:auto!important;height:auto!important;min-height:0!important;padding:28px!important;border:1px solid var(--simple-line)!important;border-radius:var(--simple-radius)!important;background:#fff!important;display:block!important}
+.story-visual{min-height:300px!important;margin-top:24px!important;transform:none!important}
+.world-label,.world-title,.world-stage,.world-caption,.depth-copy,.depth-stage{position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important}
+.world-stage{height:560px!important;transform:none!important}
+.depth-stage{height:auto!important;display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:14px!important;margin-top:36px!important}
+.depth-card{position:relative!important;inset:auto!important;width:auto!important;min-height:150px!important;transform:none!important;opacity:1!important}
+.depth-core{position:relative!important;inset:auto!important;transform:none!important;margin:20px auto!important}
+.trust-portal{background:#fff!important}
+.portal-center{position:relative!important;inset:auto!important;transform:none!important;max-width:760px!important;margin:auto!important}
+.portal-node{position:relative!important;inset:auto!important;display:inline-flex!important;margin:8px!important;transform:none!important}
+.impact-numbers{gap:14px!important}
+.impact-number,.calculator-shell,.price-card,.cta-shell,.contact-shell{
+  border:1px solid var(--simple-line)!important;border-radius:var(--simple-radius)!important;
+  box-shadow:none!important;transform:none!important
+}
+.final-cta-immersive .cta-shell{padding:44px!important}
+.cta-circle{width:auto!important;height:48px!important;border-radius:12px!important;padding:0 20px!important;gap:14px!important}
+.cta-circle span{writing-mode:horizontal-tb!important;transform:none!important}
+
+/* Checkout + login */
+.formpage{background:var(--simple-bg)!important;min-height:calc(100vh - 68px)!important}
+.checkout-layout,.login-layout{gap:48px!important;align-items:start!important;padding-top:72px!important;padding-bottom:72px!important}
+.checkout-copy h1,.login-copy h1{font-size:clamp(44px,5vw,68px)!important;line-height:1!important}
+.checkout-steps{display:grid!important;gap:10px!important;margin-top:30px!important}
+.checkout-steps>div,.seller-card,.login-signal{
+  background:#fff!important;border:1px solid var(--simple-line)!important;border-radius:14px!important;
+  box-shadow:none!important;padding:16px!important
+}
+.formcard,.premium-form,.login-card{
+  background:#fff!important;border:1px solid var(--simple-line)!important;border-radius:20px!important;
+  box-shadow:var(--simple-shadow)!important;padding:28px!important
+}
+.form-head{padding-bottom:18px!important;margin-bottom:20px!important;border-bottom:1px solid var(--simple-line)!important}
+.formgrid{gap:16px!important}
+.field{gap:7px!important}
+.field label{font-size:13px!important;font-weight:700!important;letter-spacing:0!important;text-transform:none!important}
+.field input,.field textarea,.field select{
+  min-height:48px!important;border:1px solid #dfe2e7!important;border-radius:11px!important;
+  background:#fff!important;box-shadow:none!important;font-size:16px!important
+}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:#777d87!important;box-shadow:0 0 0 3px rgba(23,24,27,.06)!important}
+.form-security{font-size:12px!important;color:var(--simple-muted)!important}
+
+/* Dashboard: fewer visual layers, clearer grouping */
+.dashboard-shell,.dashboard-page{background:var(--simple-bg)!important}
+.dashboard-topbar,.appnav{
+  background:#fff!important;border-color:var(--simple-line)!important;box-shadow:none!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important
+}
+.dashboard-view-section{gap:18px!important}
+.panel,.dashboard-card,.welcome-card,.stat,.billing-panel,.owner-profile-form,
+.assistant-order-card,.self-test-card,.integration-card{
+  background:#fff!important;border:1px solid var(--simple-line)!important;border-radius:16px!important;
+  box-shadow:none!important
+}
+.panel-head{border-bottom:1px solid var(--simple-line)!important}
+.dashboard-action,.integration-test-btn,.portal-button{border-radius:10px!important}
+.dashboard-view-hidden{display:none!important}
+.dashboard-section-select{border:1px solid var(--simple-line)!important;border-radius:10px!important;background:#fff!important}
+
+/* Legal, payment, 404 */
+.legal-page,.notfound,.payment-success-page{background:var(--simple-bg)!important}
+.legal-card,.payment-success-card{
+  background:#fff!important;border:1px solid var(--simple-line)!important;border-radius:20px!important;
+  box-shadow:var(--simple-shadow)!important
+}
+.legal-card h2{font-size:22px!important}
+.footer{background:#fff!important;border-top:1px solid var(--simple-line)!important}
+
+/* Remove expensive decorative processing globally */
+.fx-ambient,.fx-progress,.section-rail-premium,.respondo-marquee,.hero-marquee{display:none!important}
+[data-reveal],[data-reveal].is-visible,.motion-reveal,.motion-visible{
+  opacity:1!important;filter:none!important;clip-path:none!important;transform:none!important;
+  transition:opacity .18s ease!important;will-change:auto!important
+}
+[data-tilt],.motion-tilt,.visual-frame{transform:none!important;will-change:auto!important}
+*{-webkit-tap-highlight-color:transparent}
+
+@media(max-width:900px){
+  .container{width:min(100% - 28px,720px)!important}
+  .section{padding:64px 0!important}
+  .navlinks{display:none!important}
+  .hero-immersive{padding:62px 0 48px!important}
+  .hero-immersive .hero-grid{display:block!important}
+  .hero-immersive .signal-console{margin-top:38px!important}
+  .hero-immersive .hero-copy h1{font-size:clamp(46px,13vw,68px)!important}
+  .story-track{grid-template-columns:1fr!important;padding:0 14px!important}
+  .story-panel{padding:22px!important}
+  .story-visual{min-height:260px!important}
+  .world-stage{height:500px!important}
+  .depth-stage{grid-template-columns:1fr!important}
+  .impact-numbers{grid-template-columns:1fr!important}
+  .checkout-layout,.login-layout{display:block!important;padding-top:44px!important;padding-bottom:52px!important}
+  .checkout-copy,.login-copy{margin-bottom:28px!important}
+  .formcard,.premium-form,.login-card{padding:20px!important}
+  .formgrid,.owner-two{grid-template-columns:1fr!important}
+  .final-cta-immersive .cta-shell{padding:28px!important}
+}
+@media(max-width:520px){
+  .container{width:calc(100% - 24px)!important}
+  .navactions .btn{padding-inline:12px!important}
+  .hero-immersive .hero-copy h1{font-size:46px!important}
+  .hero-copy .lead{font-size:16px!important}
+  .formcard,.premium-form,.login-card{border-radius:16px!important;padding:16px!important}
+  .world-stage{height:440px!important}
+}
