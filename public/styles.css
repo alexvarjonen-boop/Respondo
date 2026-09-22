@@ -4746,3 +4746,77 @@ body:before{opacity:.012}
   .knowledge-item-top{align-items:flex-start;flex-direction:column}
   .knowledge-feature-btn{white-space:normal}
 }
+
+
+/* =========================================================
+   MOBILE SAFARI HARD STABILITY MODE — 2026-09-22
+   Keep the homepage visually rich but remove the largest GPU layers.
+   ========================================================= */
+@media (max-width:900px), (hover:none) and (pointer:coarse) {
+  .cinema-orbit,
+  .cinema-word,
+  .portal-ring,
+  .depth-grid,
+  .depth-aura,
+  .world-floor {
+    display:none !important;
+  }
+
+  .cinema-stage::before,
+  .story-sticky::before,
+  .trust-portal,
+  .impact-scene,
+  .hero,
+  .hero-immersive {
+    background-attachment:scroll !important;
+  }
+
+  .cinema-phone,
+  .world-window,
+  .depth-card,
+  .portal-node,
+  .impact-number,
+  .calculator-shell,
+  .price-card,
+  .cta-shell,
+  .nav,
+  .dashboard-topbar {
+    -webkit-backdrop-filter:none !important;
+    backdrop-filter:none !important;
+    will-change:auto !important;
+  }
+
+  .cinema-phone,
+  .world-stage,
+  .world-window,
+  .depth-card,
+  .depth-core,
+  .portal-node,
+  .impact-number,
+  .calculator-shell,
+  .price-card,
+  .hero-copy,
+  .hero-glow {
+    transform:none !important;
+  }
+
+  .trust-portal {
+    min-height:680px !important;
+    overflow:hidden !important;
+  }
+
+  .story-panel {
+    min-height:0 !important;
+  }
+
+  .world-stage {
+    height:560px !important;
+  }
+
+  .motion-reveal,
+  .motion-visible {
+    opacity:1 !important;
+    transition:none !important;
+    filter:none !important;
+  }
+}
