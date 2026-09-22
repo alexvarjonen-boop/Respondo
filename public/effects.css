@@ -2778,3 +2778,64 @@ small{
   .appnav a{font-size:14px!important}
   small{font-size:12px!important}
 }
+
+
+/* =========================================================
+   MOBILE SAFARI HARD STABILITY MODE — 2026-09-22
+   Removes fixed blur layers and scroll-composited effects on touch/mobile.
+   Desktop keeps the full visual treatment.
+   ========================================================= */
+@media (max-width:900px), (hover:none) and (pointer:coarse) {
+  .fx-ambient,
+  .fx-progress,
+  .section-rail-premium {
+    display:none !important;
+  }
+
+  .nav,
+  .product-subnav,
+  .fx-assistant,
+  .fx-modal-backdrop,
+  .fx-modal,
+  .owner-profile-form {
+    -webkit-backdrop-filter:none !important;
+    backdrop-filter:none !important;
+  }
+
+  [data-reveal],
+  [data-reveal].is-visible,
+  .visual-frame,
+  .visual-card.visual-visible .visual-frame,
+  .visual-card-large.visual-visible .visual-frame,
+  .hero-copy,
+  .signal-console,
+  .hero-glow {
+    will-change:auto !important;
+    filter:none !important;
+    clip-path:none !important;
+    transform:none !important;
+    transition:none !important;
+  }
+
+  .signal-console::before,
+  .signal-console::after,
+  .hero-scroll-hint i::after {
+    display:none !important;
+  }
+
+  .marquee-track,
+  .cinema-typing i,
+  .am-pulse {
+    animation:none !important;
+  }
+
+  .fx-depth,
+  .fx-depth > .container,
+  .flowstep,
+  .price-card,
+  .truth-card,
+  .control-list > div {
+    perspective:none !important;
+    transform-style:flat !important;
+  }
+}
