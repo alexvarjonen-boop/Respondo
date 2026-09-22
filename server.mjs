@@ -3670,14 +3670,9 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
 
     let answer = result.answer;
     if (result.handoff) {
-      const hasContact = knowledgeValue(kr.rows, 'Puhelinnumero') || knowledgeValue(kr.rows, 'Sähköposti') || knowledgeValue(kr.rows, 'Tarjouspyyntölomake');
       answer = lang === 'en'
-        ? (hasContact
-          ? 'I cannot find a reliable answer to this in the company information. You can leave your contact details and the company can get back to you.'
-          : 'I cannot find a reliable answer to this yet. The company can add this information later.')
-        : (hasContact
-          ? 'Tätä tietoa ei löytynyt yrityksen tiedoista. Voit jättää yhteystietosi, niin joku yrityksestä voi ottaa sinuun yhteyttä.'
-          : (t.handoff_message || 'Tätä tietoa ei löytynyt vielä. Yritys voi lisätä oikean vastauksen myöhemmin.'));
+        ? 'I cannot find a reliable answer to this in the company information. Leave your name and phone number or email below, and someone from the company can get back to you.'
+        : 'Tähän en löydä varmaa vastausta yrityksen tiedoista. Jätä alle nimesi ja puhelinnumerosi tai sähköpostisi, niin yrityksen henkilö voi palata sinulle.';
     }
 
     const actions = chatActions(kr.rows, message, result.handoff, lang);
