@@ -2424,6 +2424,83 @@ app.post('/api/app/knowledge', auth, subscribed, async (req, res) => {
 });
 
 
+app.post('/api/app/knowledge/:id/quick-reply', auth, subscribed, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const featured = req.body?.featured === true;
+    await client.query('BEGIN');
+
+    const tr = await client.query(
+      'SELECT id FROM tenants WHERE owner_user_id=$1 FOR UPDATE',
+      [req.user.sub],
+    );
+    if (!tr.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Työtila puuttuu.' });
+    }
+    const tenantId = tr.rows[0].id;
+
+    const item = await client.query(
+      'SELECT id,title,source_type,quick_reply_order FROM knowledge WHERE id=$1 AND tenant_id=$2',
+      [req.params.id, tenantId],
+    );
+    if (!item.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Vastausta ei löytynyt.' });
+    }
+    if (item.rows[0].source_type === 'profile') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Valitse etusivulle oma kysymys–vastaus tietopohjasta.' });
+    }
+
+    let quickReplyOrder = item.rows[0].quick_reply_order;
+    if (featured) {
+      if (!quickReplyOrder) {
+        const used = await client.query(
+          'SELECT quick_reply_order FROM knowledge WHERE tenant_id=$1 AND quick_reply_order IS NOT NULL ORDER BY quick_reply_order',
+          [tenantId],
+        );
+        const slots = new Set(used.rows.map((x) => Number(x.quick_reply_order)));
+        quickReplyOrder = [1,2,3].find((slot) => !slots.has(slot)) || null;
+        if (!quickReplyOrder) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'Voit valita enintään 3 kysymystä botin etusivulle.' });
+        }
+        await client.query(
+          'UPDATE knowledge SET quick_reply_order=$1,updated_at=NOW() WHERE id=$2 AND tenant_id=$3',
+          [quickReplyOrder, req.params.id, tenantId],
+        );
+      }
+    } else if (quickReplyOrder) {
+      await client.query(
+        'UPDATE knowledge SET quick_reply_order=NULL,updated_at=NOW() WHERE id=$1 AND tenant_id=$2',
+        [req.params.id, tenantId],
+      );
+      quickReplyOrder = null;
+    }
+
+    const countResult = await client.query(
+      'SELECT count(*)::int AS total FROM knowledge WHERE tenant_id=$1 AND quick_reply_order IS NOT NULL',
+      [tenantId],
+    );
+    await client.query('COMMIT');
+    return res.json({
+      ok:true,
+      featured:Boolean(quickReplyOrder),
+      quickReplyOrder,
+      selected:Number(countResult.rows[0]?.total || 0),
+      max:3,
+    });
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch {}
+    console.error('Quick reply update failed', e);
+    return res.status(500).json({ error:'Etusivun kysymystä ei voitu päivittää.' });
+  } finally {
+    client.release();
+  }
+});
+
+
 app.post('/api/app/unanswered/:id/suggest', auth, subscribed, async (req, res) => {
   try {
     if (!openai) return res.status(503).json({ error: 'AI-ehdotus ei ole juuri nyt käytettävissä.' });
@@ -3312,14 +3389,20 @@ app.get('/api/public/:slug/widget-token', async (req, res) => {
       { expiresIn: '12h' }
     );
     const lang = req.query.lang === 'en' ? 'en' : 'fi';
-    const kr = await q('SELECT title, answer FROM knowledge WHERE tenant_id=$1 AND approved=true', [tenant.id]);
-    const available = new Set(kr.rows.map((x) => normalizeSearchText(x.title)));
-    const quickReplies = [
-      available.has('hinnat') && (lang === 'en' ? 'Pricing' : 'Hinnat'),
-      available.has('aukioloajat') && (lang === 'en' ? 'Opening hours' : 'Aukioloajat'),
-      available.has('palvelut') && (lang === 'en' ? 'Services' : 'Palvelut'),
-      available.has('tarjouspyyntolomake') && (lang === 'en' ? 'Request a quote' : 'Pyydä tarjous'),
-    ].filter(Boolean).slice(0, 3);
+    const kr = await q(
+      `SELECT title
+         FROM knowledge
+        WHERE tenant_id=$1
+          AND approved=true
+          AND quick_reply_order IS NOT NULL
+        ORDER BY quick_reply_order ASC
+        LIMIT 3`,
+      [tenant.id],
+    );
+    const quickReplies = kr.rows
+      .map((x) => String(x.title || '').trim())
+      .filter(Boolean)
+      .slice(0, 3);
 
     return res.json({
       token,
@@ -4935,6 +5018,8 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS source_url TEXT");
   await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS approved BOOLEAN NOT NULL DEFAULT TRUE");
   await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ NOT NULL DEFAULT NOW()");
+  await q("ALTER TABLE knowledge ADD COLUMN IF NOT EXISTS quick_reply_order SMALLINT");
+  await q("CREATE UNIQUE INDEX IF NOT EXISTS idx_knowledge_quick_reply_slot ON knowledge(tenant_id, quick_reply_order) WHERE quick_reply_order IS NOT NULL");
   await q("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS page_url TEXT");
   await q("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS page_title TEXT");
   await q("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS source_channel TEXT NOT NULL DEFAULT 'website'");
