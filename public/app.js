@@ -1671,8 +1671,28 @@ async function dashboard() {
       <section class="dashboard-grid dashboard-view-section dashboard-view-hidden" data-dashboard-view="answers" id="knowledge">
         <div class="panel knowledge-panel">
           <div class="panel-head"><div><small>TIETOPOHJA</small><h2>Vastaukset, joita botti saa käyttää</h2></div><span>${knowledge.length} kohdetta</span></div>
+          <div class="knowledge-feature-summary">
+            <div>
+              <b>Botin etusivun kysymykset</b>
+              <small>Valitse enintään 3 omaa kysymys–vastausta. Ne näkyvät asiakkaalle heti chatin avatessa.</small>
+            </div>
+            <span id="knowledgeQuickCount">${knowledge.filter((x) => x.source_type !== 'profile' && x.quick_reply_order).length}/3 valittu</span>
+          </div>
+          <div id="knowledgeFeatureMsg"></div>
           <div id="knowledgeList" class="knowledge-list">
-            ${knowledge.length ? knowledge.map((x, i) => `<div class="knowledge-item"><span class="knum">${String(i + 1).padStart(2, '0')}</span><div><b>${esc(x.title)}</b><small>${esc(x.category || 'Yleinen')} · ${x.source_type === 'profile' ? 'Yrityksen tiedot' : x.source_type === 'owner_answer' ? 'Omistajan hyväksymä' : 'Manuaalinen'} · tarkistettu ${x.verified_at ? new Date(x.verified_at).toLocaleDateString('fi-FI') : '—'}</small><p>${esc(x.answer)}</p></div><span class="approved" title="Hyväksytty Truth Engineen">✓</span></div>`).join('') : `<div class="empty-state"><b>Et ole lisännyt vielä omia vastauksia.</b><p>Lisää ensimmäinen vastaus tästä.</p></div>`}
+            ${knowledge.length ? knowledge.map((x, i) => `
+              <div class="knowledge-item ${x.quick_reply_order ? 'featured' : ''}" data-knowledge-id="${esc(x.id)}">
+                <span class="knum">${String(i + 1).padStart(2, '0')}</span>
+                <div>
+                  <div class="knowledge-item-top">
+                    <b>${esc(x.title)}</b>
+                    ${x.source_type !== 'profile' ? `<button type="button" class="knowledge-feature-btn ${x.quick_reply_order ? 'active' : ''}" data-featured="${x.quick_reply_order ? 'true' : 'false'}">${x.quick_reply_order ? '✓ Etusivulla ' + x.quick_reply_order : '+ Lisää etusivulle'}</button>` : ''}
+                  </div>
+                  <small>${esc(x.category || 'Yleinen')} · ${x.source_type === 'profile' ? 'Yrityksen tiedot' : x.source_type === 'owner_answer' ? 'Omistajan hyväksymä' : 'Manuaalinen'} · tarkistettu ${x.verified_at ? new Date(x.verified_at).toLocaleDateString('fi-FI') : '—'}</small>
+                  <p>${esc(x.answer)}</p>
+                </div>
+                <span class="approved" title="Hyväksytty Truth Engineen">✓</span>
+              </div>`).join('') : `<div class="empty-state"><b>Et ole lisännyt vielä omia vastauksia.</b><p>Lisää ensimmäinen vastaus tästä.</p></div>`}
           </div>
         </div>
 
@@ -2714,6 +2734,47 @@ async function route() {
         button.innerHTML = original;
         $('#businessProfileMsg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
       }
+    });
+
+    document.querySelectorAll('.knowledge-feature-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const item = button.closest('.knowledge-item');
+        const knowledgeId = item?.dataset.knowledgeId;
+        if (!knowledgeId) return;
+
+        const nextFeatured = button.dataset.featured !== 'true';
+        const original = button.textContent;
+        button.disabled = true;
+        button.textContent = nextFeatured ? 'Lisätään…' : 'Poistetaan…';
+        $('#knowledgeFeatureMsg').innerHTML = '';
+
+        try {
+          const result = await api('/api/app/knowledge/' + encodeURIComponent(knowledgeId) + '/quick-reply', {
+            method:'POST',
+            body:JSON.stringify({ featured:nextFeatured }),
+          });
+          button.dataset.featured = result.featured ? 'true' : 'false';
+          button.classList.toggle('active', Boolean(result.featured));
+          item?.classList.toggle('featured', Boolean(result.featured));
+          button.textContent = result.featured
+            ? '✓ Etusivulla ' + result.quickReplyOrder
+            : '+ Lisää etusivulle';
+          const counter = $('#knowledgeQuickCount');
+          if (counter) counter.textContent = Number(result.selected || 0) + '/3 valittu';
+          $('#knowledgeFeatureMsg').innerHTML = '<div class="notice success">' +
+            (result.featured ? 'Kysymys näkyy nyt botin etusivulla.' : 'Kysymys poistettiin botin etusivulta.') +
+            '</div>';
+          setTimeout(() => {
+            const msg = $('#knowledgeFeatureMsg');
+            if (msg) msg.innerHTML = '';
+          }, 1800);
+        } catch (err) {
+          button.textContent = original;
+          $('#knowledgeFeatureMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        } finally {
+          button.disabled = false;
+        }
+      });
     });
 
     $('#knowledgeForm')?.addEventListener('submit', async (e) => {
