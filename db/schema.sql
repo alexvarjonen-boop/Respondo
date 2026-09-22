@@ -87,6 +87,7 @@ CREATE TABLE IF NOT EXISTS knowledge (
   source_url TEXT,
   approved BOOLEAN NOT NULL DEFAULT TRUE,
   verified_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  quick_reply_order SMALLINT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -109,6 +110,7 @@ CREATE TABLE IF NOT EXISTS conversations (
 );
 
 CREATE INDEX IF NOT EXISTS idx_knowledge_tenant ON knowledge(tenant_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_knowledge_quick_reply_slot ON knowledge(tenant_id, quick_reply_order) WHERE quick_reply_order IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_conversations_tenant_created ON conversations(tenant_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_users_stripe_customer ON users(stripe_customer_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code) WHERE referral_code IS NOT NULL;
