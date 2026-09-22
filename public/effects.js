@@ -1,5 +1,8 @@
 (() => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+  const compactScreen = window.matchMedia('(max-width: 900px)').matches;
+  const mobileLite = coarsePointer || compactScreen;
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
@@ -88,7 +91,7 @@
   }
 
   function parallax() {
-    if (reduce) return;
+    if (reduce || mobileLite) return;
     let ticking = false;
     const update = () => {
       ticking = false;
@@ -649,7 +652,7 @@ YLEINEN TOIMINTAOHJE:
   }
 
   function leftSectionRail() {
-    if (location.pathname !== '/' || $('.section-rail-premium')) return;
+    if (location.pathname !== '/' || mobileLite || $('.section-rail-premium')) return;
     const sections = [
       { id:'how', label:'Miten toimii' },
       { id:'features', label:'Ominaisuudet' },
@@ -733,7 +736,7 @@ YLEINEN TOIMINTAOHJE:
       }
     });
 
-    if (!reduce) {
+    if (!reduce && !mobileLite) {
       let ticking = false;
       const updateVisuals = () => {
         ticking = false;
@@ -754,6 +757,21 @@ YLEINEN TOIMINTAOHJE:
         }
       }, {passive:true});
       updateVisuals();
+    }
+
+    if (mobileLite) {
+      cards.forEach((card) => {
+        card.classList.add('visual-visible');
+        const frame = $('.visual-frame', card);
+        if (frame) {
+          frame.style.transform = 'none';
+          frame.style.clipPath = 'none';
+          frame.style.willChange = 'auto';
+          frame.style.transition = 'none';
+          frame.style.opacity = '1';
+        }
+      });
+      return;
     }
 
     const imageObserver = new IntersectionObserver((entries) => {
@@ -931,7 +949,7 @@ YLEINEN TOIMINTAOHJE:
   }
 
   function cinematicSectionAtmosphere() {
-    if (reduce || location.pathname !== '/') return;
+    if (reduce || mobileLite || location.pathname !== '/') return;
     const sections = $('main > section').filter(Boolean);
     if (!sections.length) return;
 
@@ -1051,7 +1069,7 @@ YLEINEN TOIMINTAOHJE:
   }
 
   function ctaPopup() {
-    if ($('.fx-modal-backdrop') || sessionStorage.getItem('respondoCtaSeen')) return;
+    if (mobileLite || $('.fx-modal-backdrop') || sessionStorage.getItem('respondoCtaSeen')) return;
     document.body.insertAdjacentHTML('beforeend', `<div class="fx-modal-backdrop" role="dialog" aria-modal="true" aria-label="RESPONDO AI kokeilu"><div class="fx-modal"><button class="fx-modal-close" aria-label="Sulje">×</button><div class="fx-modal-kicker">RESPONDO AI / 3 PÄIVÄÄ</div><h3>Kokeile, miltä Respondo näyttäisi omassa yrityksessäsi.</h3><p>Luo tili, lisää yrityksesi tiedot ja kokeile palvelua 3 päivää ilmaiseksi.</p><div class="fx-modal-actions"><a class="btn ink" href="/tilaus">Kokeile ilmaiseksi →</a><button class="btn ghost fx-modal-later" type="button">Ehkä myöhemmin</button></div></div></div>`);
     const bg = $('.fx-modal-backdrop');
     const close = () => { bg.classList.remove('open'); sessionStorage.setItem('respondoCtaSeen','1'); };
