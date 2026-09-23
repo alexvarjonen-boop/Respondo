@@ -4979,3 +4979,50 @@ p{color:var(--simple-muted)}
   .formcard,.premium-form,.login-card{border-radius:16px!important;padding:16px!important}
   .world-stage{height:440px!important}
 }
+
+
+/* 2026-09-24 mobile header: prevent language selector overlapping brand */
+@media (max-width:760px){
+  .navin{
+    gap:8px!important;
+    padding-left:10px!important;
+    padding-right:10px!important;
+  }
+  .nav .logo{
+    min-width:0!important;
+    flex:1 1 auto!important;
+    gap:7px!important;
+    overflow:hidden!important;
+  }
+  .nav .brand-word{
+    font-size:16px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:clip!important;
+  }
+  .navactions{
+    flex:0 0 auto!important;
+    gap:6px!important;
+  }
+  .navactions .lang-switch{
+    display:inline-flex!important;
+    order:0!important;
+    flex:0 0 auto!important;
+    padding:2px 5px!important;
+    min-width:54px!important;
+    max-width:62px!important;
+  }
+  .navactions .lang-choice{
+    padding:5px 2px!important;
+    font-size:12px!important;
+  }
+  .navactions .btn{
+    padding:0 12px!important;
+  }
+}
+@media (max-width:430px){
+  .nav .brand-word{font-size:15px!important}
+  .nav .brand-mark{width:28px!important;height:28px!important}
+  .navactions .lang-switch{min-width:52px!important;max-width:58px!important}
+  .navactions .btn{padding:0 10px!important;font-size:11px!important}
+}
