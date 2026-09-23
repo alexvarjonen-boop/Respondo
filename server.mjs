@@ -774,16 +774,16 @@ function buildProfileKnowledge(profile = {}) {
 }
 
 async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {} }) {
-  const responseLang = lang === 'en' ? 'en' : 'fi';
+  const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const cleanMessage = String(message || '').trim();
   if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: 'Tyhjä', sourceIds: [], selected: [] };
 
   const normalized = normalizeSearchText(cleanMessage);
   if (/^(hei|moi|moikka|hello|hi|hey|terve)[!. ]*$/.test(normalized)) {
-    return { answer: responseLang === 'en' ? 'Hi! How can I help?' : 'Hei! Miten voin auttaa?', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Greeting' : 'Tervehdys', sourceIds: [], selected: [] };
+    return { answer: responseLang === 'en' ? 'Hi! How can I help?' : responseLang === 'sv' ? 'Hej! Hur kan jag hjälpa?' : 'Hei! Miten voin auttaa?', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Greeting' : responseLang === 'sv' ? 'Hälsning' : 'Tervehdys', sourceIds: [], selected: [] };
   }
   if (/^(kiitos|kiitti|thanks|thank you)[!. ]*$/.test(normalized)) {
-    return { answer: responseLang === 'en' ? 'You’re welcome! I’m happy to help if you have anything else.' : 'Ole hyvä! Autan mielelläni, jos tulee vielä jotain mieleen.', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Thanks' : 'Kiitos', sourceIds: [], selected: [] };
+    return { answer: responseLang === 'en' ? 'You’re welcome! I’m happy to help if you have anything else.' : responseLang === 'sv' ? 'Varsågod! Jag hjälper gärna om du undrar över något mer.' : 'Ole hyvä! Autan mielelläni, jos tulee vielä jotain mieleen.', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Thanks' : responseLang === 'sv' ? 'Tack' : 'Kiitos', sourceIds: [], selected: [] };
   }
 
   const priorQuestions = history.slice(-2).map((x) => String(x.question || x.user || '')).filter(Boolean);
@@ -856,7 +856,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const prompt = `Olet ${companyName || 'yrityksen'} verkkosivun asiakaspalvelija.
 ${answerTone(rows)}
-${responseLang === 'en' ? 'Answer in English. Translate any Finnish source information into natural English, but do not add or change facts.' : 'Vastaa samalla kielellä kuin asiakkaan viesti.'}
+${responseLang === 'en' ? 'Answer in English. Translate source information into natural English, but do not add or change facts.' : responseLang === 'sv' ? 'Svara på svenska. Översätt källinformationen till naturlig svenska utan att lägga till eller ändra fakta.' : 'Vastaa suomeksi. Käännä tarvittaessa lähdetiedot luonnolliseksi suomeksi muuttamatta faktoja.'}
 Tunnista asiakkaan kysymyksen MERKITYS, älä vaadi samoja sanoja kuin lähteen otsikossa. Eri sanajärjestys, puhekieli, synonyymit, taivutusmuodot, kirjoitusvirheet ja kokonaan eri sanamuoto voivat tarkoittaa samaa asiaa.
 Jos hyväksytty lähde vastaa asiakkaan tarkoitukseen, käytä sitä vaikka asiakkaan kysymys ei muistuttaisi lähteen otsikkoa sanatasolla.
 Käytä yritystä koskeviin faktoihin VAIN alla olevia hyväksyttyjä lähteitä. Keskusteluhistoria auttaa ymmärtämään viittauksia, mutta se ei ole uusi faktalähde.
@@ -1368,6 +1368,50 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
   },
 }));
+
+const i18nCache = new Map();
+const i18nLimiter = rateLimit({ windowMs: 60 * 1000, limit: 12, standardHeaders:true, legacyHeaders:false });
+app.post('/api/i18n/translate', i18nLimiter, async (req,res) => {
+  try {
+    const lang = ['sv','en'].includes(String(req.body?.lang || '').toLowerCase()) ? String(req.body.lang).toLowerCase() : 'fi';
+    const texts = Array.isArray(req.body?.texts) ? req.body.texts.map((x) => String(x || '').trim().slice(0,5000)).filter(Boolean).slice(0,160) : [];
+    if (lang === 'fi' || !texts.length) return res.json({ translations:texts });
+    const target = lang === 'sv' ? 'Swedish' : 'English';
+    const translations = new Array(texts.length);
+    const pending = [];
+    const pendingIndexes = [];
+    texts.forEach((text,index) => {
+      const key = lang + ':' + text;
+      if (i18nCache.has(key)) translations[index] = i18nCache.get(key);
+      else { pending.push(text); pendingIndexes.push(index); }
+    });
+    if (pending.length) {
+      if (!openai) return res.status(503).json({ error:'Translation service unavailable' });
+      const prompt = 'Translate the following RESPONDO AI software interface strings from Finnish into ' + target + '. ' +
+        'Preserve RESPONDO AI, URLs, email addresses, prices, identifiers, placeholders, HTML-like tokens and legal meaning. ' +
+        'Do not add explanations. Return only valid JSON in the exact form {"translations":["..."]} with one translation per input, same order.\n\n' +
+        JSON.stringify(pending);
+      const rr = await openai.responses.create({ model:process.env.OPENAI_MODEL || 'gpt-5.6-luna', input:prompt, max_output_tokens:8000 });
+      const raw = String(rr.output_text || '').trim();
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('Translation response invalid');
+      const parsed = JSON.parse(match[0]);
+      if (!Array.isArray(parsed.translations) || parsed.translations.length !== pending.length) throw new Error('Translation count mismatch');
+      parsed.translations.forEach((value,i) => {
+        const translated = String(value || pending[i]).slice(0,8000);
+        translations[pendingIndexes[i]] = translated;
+        i18nCache.set(lang + ':' + pending[i], translated);
+      });
+      if (i18nCache.size > 4000) {
+        const keys=[...i18nCache.keys()].slice(0,1000); keys.forEach((key)=>i18nCache.delete(key));
+      }
+    }
+    return res.json({ translations });
+  } catch (e) {
+    console.error('UI translation failed',e);
+    return res.status(500).json({ error:'Translation failed' });
+  }
+});
 
 const publicChatLimiter = rateLimit({
   windowMs: 60 * 1000,
