@@ -1767,11 +1767,23 @@ LEGAL.tietoturva = {
 };
 
 function legal(type) {
-  const page = LEGAL[type] || {
+  const basePage = LEGAL[type] || {
     label: 'RESPONDO AI',
     title: 'Sivua ei löytynyt',
     intro: 'Palaa etusivulle.',
     sections: [],
+  };
+  const translateLegal = (value) => {
+    if (currentLang() === 'fi') return value;
+    const map = currentLang() === 'sv' ? SV_TEXT : EN_TEXT;
+    return map.get(value) || value;
+  };
+  const page = {
+    ...basePage,
+    label: translateLegal(basePage.label),
+    title: translateLegal(basePage.title),
+    intro: translateLegal(basePage.intro),
+    sections: basePage.sections.map(([h,p]) => [translateLegal(h), translateLegal(p)])
   };
   return `<div>
     ${nav()}
@@ -1781,12 +1793,12 @@ function legal(type) {
           <div class="section-kicker">${page.label}</div>
           <h1>${page.title}</h1>
           <p>${page.intro}</p>
-          <div class="legal-seller"><span>PALVELUNTARJOAJA</span><b>RESPONDO AI</b><small>Y-tunnus ${esc(cfg.businessId || '3599437-5')}</small></div>
+          <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span><b>RESPONDO AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')}</small></div>
         </aside>
         <article class="legalcopy">
           ${page.sections.map(([h, p]) => `<section><h2>${h}</h2><p>${p}</p></section>`).join('')}
-          <section><h2>Yhteydenotot</h2><p><a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a></p></section>
-          <div class="legal-note">Päivitetty ${new Date().toLocaleDateString('fi-FI')}. Teksti kuvaa Respondon nykyistä palvelua ja sitä voidaan päivittää palvelun kehittyessä.</div>
+          <section><h2>${uiText('Yhteydenotot','Kontakt','Contact')}</h2><p><a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a></p></section>
+          <div class="legal-note">${uiText('Päivitetty','Uppdaterad','Updated')} ${new Date().toLocaleDateString(currentLang()==='sv'?'sv-SE':currentLang()==='en'?'en-GB':'fi-FI')}. ${uiText('Teksti kuvaa Respondon nykyistä palvelua ja sitä voidaan päivittää palvelun kehittyessä.','Texten beskriver Respondos nuvarande tjänst och kan uppdateras när tjänsten utvecklas.','This text describes Respondos current service and may be updated as the service develops.')}</div>
         </article>
       </div>
     </main>
