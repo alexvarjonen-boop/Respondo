@@ -101,7 +101,28 @@ async function api(url, options = {}) {
   options.headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   const response = await fetch(url, options);
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+  if (!response.ok) {
+    let message = data.error || `HTTP ${response.status}`;
+    const lang = currentLang();
+    if (lang !== 'fi' && data.error && url !== '/api/i18n/translate') {
+      const map = lang === 'sv' ? SV_TEXT : EN_TEXT;
+      if (map?.has(message)) message = map.get(message);
+      else {
+        try {
+          const trResponse = await fetch('/api/i18n/translate', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({ lang, texts:[message] })
+          });
+          if (trResponse.ok) {
+            const trData = await trResponse.json();
+            if (trData?.translations?.[0]) message = trData.translations[0];
+          }
+        } catch {}
+      }
+    }
+    throw new Error(message);
+  }
   return data;
 }
 
