@@ -370,6 +370,34 @@ function applyLanguage() {
     if (placeholderMap.has(p)) el.setAttribute('placeholder', placeholderMap.get(p));
   });
   window.RespondoI18n?.apply(root);
+  // Translate any remaining rendered UI copy that is not yet in the static dictionaries.
+  // User/company-entered values in inputs, code and textareas are intentionally left untouched.
+  const missing = [];
+  const missingNodes = [];
+  const scan = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  while (scan.nextNode()) {
+    const node = scan.currentNode;
+    const parent = node.parentElement;
+    if (!parent || ['SCRIPT','STYLE','CODE','PRE','TEXTAREA','INPUT','OPTION'].includes(parent.tagName)) continue;
+    const value = (node.nodeValue || '').trim();
+    if (!value || value.length > 5000 || textMap.has(value)) continue;
+    if (!/[A-Za-zÅÄÖåäö]/.test(value)) continue;
+    missing.push(value); missingNodes.push(node);
+  }
+  if (missing.length) {
+    const unique = [...new Set(missing)].slice(0, 160);
+    fetch('/api/i18n/translate', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ lang, texts: unique })
+    }).then((res) => res.ok ? res.json() : null).then((data) => {
+      if (!data?.translations) return;
+      const translated = new Map(unique.map((x,i) => [x, data.translations[i] || x]));
+      for (const node of missingNodes) {
+        const raw = node.nodeValue || ''; const key = raw.trim();
+        if (translated.has(key)) node.nodeValue = raw.replace(key, translated.get(key));
+      }
+    }).catch(() => {});
+  }
 }
 
 window.addEventListener('respondo:languagechange', () => {
