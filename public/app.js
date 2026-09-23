@@ -126,7 +126,10 @@ function logo() {
 
 
 function currentLang() {
-  return window.RespondoI18n?.language || ['fi','sv','en'].includes(localStorage.getItem('respondo_lang')) ? localStorage.getItem('respondo_lang') : 'fi';
+  const fromShared = window.RespondoI18n?.language;
+  if (['fi','sv','en'].includes(fromShared)) return fromShared;
+  const saved = localStorage.getItem('respondo_lang');
+  return ['fi','sv','en'].includes(saved) ? saved : 'fi';
 }
 
 function languageSwitch() {
