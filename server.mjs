@@ -1829,9 +1829,9 @@ app.post('/api/auth/start-checkout', async (req, res) => {
       }
 
       await client.query(
-        `INSERT INTO users(id,email,password_hash,full_name,company_name,business_id,status,subscription_plan)
-         VALUES($1,$2,$3,$4,$5,$6,'pending',$7)`,
-        [id, email, hash, fullName || '', companyName, businessId || null, normalizedPlan],
+        `INSERT INTO users(id,email,password_hash,full_name,company_name,business_id,status,subscription_plan,preferred_language)
+         VALUES($1,$2,$3,$4,$5,$6,'pending',$7,$8)`,
+        [id, email, hash, fullName || '', companyName, businessId || null, normalizedPlan, ['fi','sv','en'].includes(String(req.body.language || '').toLowerCase()) ? String(req.body.language).toLowerCase() : 'fi'],
       );
 
       let tenantSlug = slug(companyName);
@@ -1996,11 +1996,22 @@ app.post('/api/auth/login', async (req, res) => {
     if (r.rows[0].status === 'pending') {
       return res.status(403).json({ error: 'Viimeistele tilaus ensin.' });
     }
+    const preferredLanguage = ['fi','sv','en'].includes(String(req.body.language || '').toLowerCase()) ? String(req.body.language).toLowerCase() : (r.rows[0].preferred_language || 'fi');
+    await q('UPDATE users SET preferred_language=$1,updated_at=NOW() WHERE id=$2', [preferredLanguage,r.rows[0].id]);
     setSession(res, r.rows[0]);
-    return res.json({ ok: true });
+    return res.json({ ok: true, preferred_language: preferredLanguage });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
+});
+
+app.post('/api/auth/language', auth, async (req,res) => {
+  try {
+    const language = String(req.body?.language || '').toLowerCase();
+    if (!['fi','sv','en'].includes(language)) return res.status(400).json({ error:'Unsupported language' });
+    await q('UPDATE users SET preferred_language=$1,updated_at=NOW() WHERE id=$2',[language,req.user.sub]);
+    return res.json({ ok:true, preferred_language:language });
+  } catch (e) { return res.status(500).json({ error:e.message }); }
 });
 
 app.post('/api/auth/logout', (req, res) => {
@@ -2011,7 +2022,7 @@ app.post('/api/auth/logout', (req, res) => {
 app.get('/api/auth/me', auth, async (req, res) => {
   try {
     const r = await q(
-      'SELECT id,email,full_name,company_name,business_id,status,subscription_status,current_period_end FROM users WHERE id=$1',
+      'SELECT id,email,full_name,company_name,business_id,status,subscription_status,current_period_end,preferred_language FROM users WHERE id=$1',
       [req.user.sub],
     );
     if (!r.rowCount) return res.status(404).json({ error: 'Tiliä ei löytynyt.' });
@@ -4989,6 +5000,7 @@ async function ensureRuntimeSchema() {
   if (!pool) return;
 
   await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_plan TEXT');
+  await q("ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_language TEXT NOT NULL DEFAULT 'fi'");
   await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT');
   await q("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_cancel_at_period_end BOOLEAN NOT NULL DEFAULT FALSE");
   await q(`CREATE TABLE IF NOT EXISTS app_settings (
