@@ -144,6 +144,24 @@ function languageSwitch() {
 }
 
 const EN_TEXT = new Map(Object.entries({
+  "Näissä ehdoissa kerrotaan, millä ehdoilla yritysasiakkaat voivat käyttää Respondo AI -palvelua.":"These terms describe the conditions under which business customers may use the Respondo AI service.",
+  "2. Palvelu":"2. Service",
+  "5. Kokeilu ja tilaus":"5. Trial and subscription",
+  "Maksut käsitellään Stripen kautta. Jatkuva tilaus uusiutuu valitun laskutusjakson mukaisesti, kunnes se perutaan. Maksun epäonnistuminen voi johtaa palvelun rajoittamiseen tai keskeyttämiseen.":"Payments are processed through Stripe. A recurring subscription renews according to the selected billing period until cancelled. A failed payment may result in the service being restricted or suspended.",
+  "Tilauksen voi perua milloin tahansa. Peruminen estää seuraavan laskutusjakson uusiutumisen. Jo maksettu laskutuskausi jatkuu normaalisti kauden loppuun, ellei pakottava lainsäädäntö tai erikseen sovittu ehto edellytä muuta.":"The subscription can be cancelled at any time. Cancellation prevents the next renewal. A paid billing period normally continues until its end unless mandatory law or a separately agreed term requires otherwise.",
+  "Näihin ehtoihin sovelletaan Suomen lakia. Mahdolliset erimielisyydet pyritään ensisijaisesti ratkaisemaan neuvottelemalla.":"These terms are governed by Finnish law. Any disputes should primarily be resolved through negotiation.",
+  "Respondo käyttää palvelun toiminnan kannalta tarpeellisia evästeitä ja vastaavia teknisiä tunnisteita.":"Respondo uses cookies and similar technical identifiers necessary for the service to function.",
+  "Istuntoeväste":"Session cookie",
+  "Kävijätilastointi":"Visitor analytics",
+  "Evästevalinnan muuttaminen":"Changing cookie choices",
+  "Kirjautumisen yhteydessä selaimeen tallennetaan suojattu istuntoeväste, jotta käyttäjä pysyy kirjautuneena hallintapaneeliin.":"When signing in, a secure session cookie is stored in the browser so the user remains signed in to the dashboard.",
+  "Google-kirjautuminen ja muut ulkopuoliset palvelut voivat käyttää omia välttämättömiä evästeitään omien tietosuojakäytäntöjensä mukaisesti.":"Google sign-in and other external services may use their own necessary cookies according to their privacy policies.",
+  "Stripe voi käyttää omia evästeitään maksamisen, petosten torjunnan ja maksutoimintojen toteuttamiseen.":"Stripe may use its own cookies for payments, fraud prevention, and payment functionality.",
+  "Käsittelyn kohde ja kesto":"Subject and duration of processing",
+  "Käsittelyn tarkoitus":"Purpose of processing",
+  "Alikäsittelijät":"Subprocessors",
+  "Käyttöoikeudet":"Permissions",
+
   "Testaa oikea maksu.":"Test a real payment.",
   "3 päivää ilmaiseksi":"3 days free",
   "Vain sinä pääset yrityksesi hallintaan":"Only you can access your company dashboard",
@@ -526,6 +544,24 @@ const EN_TEXT = new Map(Object.entries({
 
 
 const SV_TEXT = new Map(Object.entries({
+  "Näissä ehdoissa kerrotaan, millä ehdoilla yritysasiakkaat voivat käyttää Respondo AI -palvelua.":"Dessa villkor beskriver på vilka villkor företagskunder får använda Respondo AI-tjänsten.",
+  "2. Palvelu":"2. Tjänsten",
+  "5. Kokeilu ja tilaus":"5. Provperiod och abonnemang",
+  "Maksut käsitellään Stripen kautta. Jatkuva tilaus uusiutuu valitun laskutusjakson mukaisesti, kunnes se perutaan. Maksun epäonnistuminen voi johtaa palvelun rajoittamiseen tai keskeyttämiseen.":"Betalningar behandlas via Stripe. Ett löpande abonnemang förnyas enligt vald faktureringsperiod tills det sägs upp. En misslyckad betalning kan leda till att tjänsten begränsas eller pausas.",
+  "Tilauksen voi perua milloin tahansa. Peruminen estää seuraavan laskutusjakson uusiutumisen. Jo maksettu laskutuskausi jatkuu normaalisti kauden loppuun, ellei pakottava lainsäädäntö tai erikseen sovittu ehto edellytä muuta.":"Abonnemanget kan sägas upp när som helst. Uppsägningen förhindrar nästa förnyelse. En redan betald period fortsätter normalt till periodens slut, om inte tvingande lag eller ett separat avtal kräver annat.",
+  "Näihin ehtoihin sovelletaan Suomen lakia. Mahdolliset erimielisyydet pyritään ensisijaisesti ratkaisemaan neuvottelemalla.":"Dessa villkor regleras av finsk lag. Eventuella tvister ska i första hand försöka lösas genom förhandling.",
+  "Respondo käyttää palvelun toiminnan kannalta tarpeellisia evästeitä ja vastaavia teknisiä tunnisteita.":"Respondo använder cookies och motsvarande tekniska identifierare som är nödvändiga för tjänstens funktion.",
+  "Istuntoeväste":"Sessionscookie",
+  "Kävijätilastointi":"Besöksstatistik",
+  "Evästevalinnan muuttaminen":"Ändra cookieval",
+  "Kirjautumisen yhteydessä selaimeen tallennetaan suojattu istuntoeväste, jotta käyttäjä pysyy kirjautuneena hallintapaneeliin.":"Vid inloggning sparas en skyddad sessionscookie i webbläsaren så att användaren förblir inloggad i kontrollpanelen.",
+  "Google-kirjautuminen ja muut ulkopuoliset palvelut voivat käyttää omia välttämättömiä evästeitään omien tietosuojakäytäntöjensä mukaisesti.":"Google-inloggning och andra externa tjänster kan använda sina egna nödvändiga cookies enligt sina integritetspolicyer.",
+  "Stripe voi käyttää omia evästeitään maksamisen, petosten torjunnan ja maksutoimintojen toteuttamiseen.":"Stripe kan använda egna cookies för betalningar, bedrägeribekämpning och betalningsfunktioner.",
+  "Käsittelyn kohde ja kesto":"Behandlingens föremål och varaktighet",
+  "Käsittelyn tarkoitus":"Syftet med behandlingen",
+  "Alikäsittelijät":"Underbiträden",
+  "Käyttöoikeudet":"Behörigheter",
+
   "Testaa oikea maksu.":"Testa en riktig betalning.",
   "3 päivää ilmaiseksi":"3 dagar gratis",
   "Vain sinä pääset yrityksesi hallintaan":"Endast du har åtkomst till företagets kontrollpanel",
