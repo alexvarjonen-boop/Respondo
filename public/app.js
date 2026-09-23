@@ -144,6 +144,16 @@ function languageSwitch() {
 }
 
 const EN_TEXT = new Map(Object.entries({
+  "RESPONDO AI käyttöliittymäesimerkki":"RESPONDO AI interface example",
+  "Etunimi Sukunimi":"First name Last name",
+  "Yrityksen nimi":"Company name",
+  "Tämä kertakäyttöinen testitilaus veloittaa heti tasan 0,50 €. Se sulkeutuu onnistuneen maksun jälkeen eikä uusiudu seuraavassa kuussa.":"This one-time test subscription charges exactly €0.50 immediately. It closes after a successful payment and does not renew the following month.",
+  "Suomi":"Finland",
+  "Palaa etusivulle.":"Return to the home page.",
+  "Yhteydenotot":"Contact",
+  "Päivitetty":"Updated",
+  "Teksti kuvaa Respondon nykyistä palvelua ja sitä voidaan päivittää palvelun kehittyessä.":"This text describes Respondos current service and may be updated as the service develops.",
+
   "Valitse PNG-, JPG- tai WebP-kuva.":"Choose a PNG, JPG, or WebP image.",
   "Kuva jäi liian suureksi. Kokeile toista kuvaa.":"The image is too large. Try another image.",
   "Asetukset":"Settings",
@@ -499,6 +509,16 @@ const EN_TEXT = new Map(Object.entries({
 
 
 const SV_TEXT = new Map(Object.entries({
+  "RESPONDO AI käyttöliittymäesimerkki":"RESPONDO AI gränssnittsexempel",
+  "Etunimi Sukunimi":"Förnamn Efternamn",
+  "Yrityksen nimi":"Företagets namn",
+  "Tämä kertakäyttöinen testitilaus veloittaa heti tasan 0,50 €. Se sulkeutuu onnistuneen maksun jälkeen eikä uusiudu seuraavassa kuussa.":"Den här engångstestprenumerationen debiterar exakt 0,50 € direkt. Den avslutas efter en lyckad betalning och förnyas inte nästa månad.",
+  "Suomi":"Finland",
+  "Palaa etusivulle.":"Gå tillbaka till startsidan.",
+  "Yhteydenotot":"Kontakt",
+  "Päivitetty":"Uppdaterad",
+  "Teksti kuvaa Respondon nykyistä palvelua ja sitä voidaan päivittää palvelun kehittyessä.":"Texten beskriver Respondos nuvarande tjänst och kan uppdateras när tjänsten utvecklas.",
+
   "Valitse PNG-, JPG- tai WebP-kuva.":"Välj en PNG-, JPG- eller WebP-bild.",
   "Kuva jäi liian suureksi. Kokeile toista kuvaa.":"Bilden blev för stor. Prova en annan bild.",
   "Asetukset":"Inställningar",
