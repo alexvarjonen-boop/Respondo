@@ -682,6 +682,18 @@ window.addEventListener('respondo:languagechange', () => {
 
 function bindLanguageSwitch() {
   try { localStorage.removeItem('respondo-lang'); } catch {}
+  document.querySelectorAll('[data-lang-select]').forEach((select) => {
+    select.value = currentLang();
+    if (select.dataset.bound === '1') return;
+    select.dataset.bound = '1';
+    select.addEventListener('change', () => {
+      const lang = ['fi','sv','en'].includes(select.value) ? select.value : 'fi';
+      localStorage.setItem('respondo_lang', lang);
+      window.RespondoI18n?.setLanguage?.(lang);
+      document.documentElement.lang = lang;
+      route();
+    });
+  });
 }
 
 
@@ -2338,7 +2350,7 @@ async function dashboard() {
           <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
           <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20260919-bot-identity" data-company="${esc(t.slug)}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">Kopioi</button></div>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20260924-language" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">Kopioi</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? '✓ Asennus valmis' : 'Olen asentanut botin'}</button>
       </section>
 
