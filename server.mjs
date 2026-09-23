@@ -934,7 +934,7 @@ function auth(req, res, next) {
 }
 
 function ownerTrafficOnly(req, res, next) {
-  const ownerEmail = cleanEmail(process.env.SUPPORT_EMAIL);
+  const ownerEmail = cleanEmail(process.env.OWNER_EMAIL || process.env.SUPPORT_EMAIL);
   if (!ownerEmail || cleanEmail(req.user?.email) !== ownerEmail) {
     return res.status(403).json({ error: 'Tämä näkymä on vain Respondo AI:n omistajalle.' });
   }
@@ -1416,7 +1416,7 @@ app.post('/api/public/site-visit', async (req, res) => {
       const token = cookies(req)[COOKIE];
       if (token) {
         const session = jwt.verify(token, JWT);
-        const ownerEmail = cleanEmail(process.env.SUPPORT_EMAIL);
+        const ownerEmail = cleanEmail(process.env.OWNER_EMAIL || process.env.SUPPORT_EMAIL);
         if (ownerEmail && cleanEmail(session?.email) === ownerEmail) {
           return res.status(204).end();
         }
