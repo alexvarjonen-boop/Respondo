@@ -6,8 +6,27 @@
   const serviceOrigin = new URL(script.src).origin;
   const side = script.dataset.side === 'left' ? 'left' : 'right';
   const fallbackAccent = script.dataset.accent || '#111113';
-  const widgetLang = 'fi';
-  const t = (fi, en) => widgetLang === 'en' ? en : fi;
+  const normalizeLang = (value) => {
+    const lang = String(value || '').toLowerCase().split('-')[0];
+    return ['fi','sv','en'].includes(lang) ? lang : 'fi';
+  };
+  const requestedLang = String(script.dataset.lang || 'auto').toLowerCase();
+  const widgetLang = requestedLang === 'auto' ? normalizeLang(navigator.language) : normalizeLang(requestedLang);
+  const SV_WIDGET = new Map(Object.entries({
+    'Tarkista':'Kontrollera','Ei vapaita aikoja juuri nyt':'Inga lediga tider just nu','Valitse vapaa aika':'Välj en ledig tid',
+    'Lähetetään…':'Skickar…','Pyyntö vastaanotettu':'Begäran mottagen','Kiitos — yhteystiedot on lähetetty ✓':'Tack — dina kontaktuppgifter har skickats ✓',
+    'Lähetetty ✓':'Skickat ✓','Lähetys ei onnistunut. Yritä uudelleen.':'Det gick inte att skicka. Försök igen.','Pyydä yhteydenottoa':'Be om kontakt',
+    'Asiakaspalvelija mukana':'Kundtjänstmedarbetare ansluten','Valmis auttamaan':'Redo att hjälpa','Asiakaspalvelija: ':'Kundtjänst: ',
+    'Hei! Miten voin auttaa?':'Hej! Hur kan jag hjälpa?','Chat ei ole käytössä tällä verkkosivulla.':'Chatten är inte tillgänglig på den här webbplatsen.',
+    'En löytänyt tähän varmaa vastausta.':'Jag hittade inget säkert svar på detta.','Varmennettu yrityksen tiedoista':'Verifierat från företagets information',
+    'Nimi':'Namn','Sähköposti tai puhelin':'E-post eller telefon','Viesti':'Meddelande','Lähetä':'Skicka','Sulje':'Stäng',
+    'Sähköposti':'E-post','Puhelin':'Telefon','Valitse aika':'Välj tid','Varaa':'Boka','Lähetä tarjouspyyntö':'Skicka offertförfrågan'
+  }));
+  function t(fi, en) {
+    if (widgetLang === 'en') return en || fi;
+    if (widgetLang === 'sv') return SV_WIDGET.get(fi) || fi;
+    return fi;
+  }
 
   const ROBOT_AVATARS = [
     ['robot-1','#111114','#ffffff','#63e6a5'],
