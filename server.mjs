@@ -541,7 +541,7 @@ function inferIntent(message) {
 }
 
 function chatActions(rows, message, handoff = false, lang = 'fi') {
-  const actionLang = lang === 'en' ? 'en' : 'fi';
+  const actionLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const q = normalizeSearchText(message);
   const quote = knowledgeValue(rows, 'Tarjouspyyntölomake');
   const booking = knowledgeValue(rows, 'Ajanvarauslinkki');
