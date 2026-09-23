@@ -863,17 +863,22 @@ function premiumVisualSection() {
   </section>`;
 }
 
+function uiText(fi, sv, en) {
+  const lang = currentLang();
+  return lang === 'sv' ? sv : lang === 'en' ? en : fi;
+}
+
 function contactSection() {
   return `<section class="section contact-section" id="contact">
     <div class="container">
       <div class="contact-shell">
         <div>
-          <div class="section-kicker">Ota yhteyttä</div>
-          <h2>Jäikö jotain mieleen?<br><em>Laita meille viestiä.</em></h2>
+          <div class="section-kicker">${uiText('Ota yhteyttä','Kontakta oss','Contact')}</div>
+          <h2>${uiText('Jäikö jotain mieleen?','Har du fortfarande en fråga?','Still have a question?')}<br><em>${uiText('Laita meille viestiä.','Skicka ett meddelande till oss.','Send us a message.')}</em></h2>
         </div>
         <div class="contact-actions">
           <a href="mailto:${esc(cfg.supportEmail)}" class="contact-mail">${esc(cfg.supportEmail)}</a>
-          <p>RESPONDO AI · Suomi</p>
+          <p>RESPONDO AI · ${uiText('Suomi','Finland','Finland')}</p>
           <a class="btn ink" href="/tilaus">Kokeile 3 päivää ilmaiseksi</a>
         </div>
       </div>
@@ -1439,9 +1444,9 @@ async function home() {
         <div class="container">
           <div class="cta-shell">
             <div>
-              <div class="section-kicker light">05 / KOKEILE KÄYTÄNNÖSSÄ</div>
-              <h2>Asiakkaasi seuraava kysymys voi tulla vaikka tänä iltana.</h2>
-              <p>Anna Respondon hoitaa vastaus silloin, kun sinä et ehdi.</p>
+              <div class="section-kicker light">${uiText('05 / KOKEILE KÄYTÄNNÖSSÄ','05 / PROVA SJÄLV','05 / TRY IT YOURSELF')}</div>
+              <h2>${uiText('Asiakkaasi seuraava kysymys voi tulla vaikka tänä iltana.','Din kunds nästa fråga kan komma redan i kväll.',"Your customer's next question could arrive tonight.")}</h2>
+              <p>${uiText('Anna Respondon hoitaa vastaus silloin, kun sinä et ehdi.','Låt Respondo sköta svaret när du själv inte hinner.',"Let Respondo handle the answer when you don't have time.")}</p>
             </div>
             <a class="cta-circle" href="/tilaus" aria-label="Kokeile ilmaiseksi"><span>KOKEILE</span><b>→</b></a>
           </div>
