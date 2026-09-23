@@ -11,7 +11,10 @@
     return ['fi','sv','en'].includes(lang) ? lang : 'fi';
   };
   const requestedLang = String(script.dataset.lang || 'auto').toLowerCase();
-  const widgetLang = requestedLang === 'auto' ? normalizeLang(navigator.language) : normalizeLang(requestedLang);
+  const storedLang = (() => { try { return localStorage.getItem('respondo_lang') || ''; } catch { return ''; } })();
+  const widgetLang = requestedLang === 'auto'
+    ? normalizeLang(storedLang || document.documentElement.lang || navigator.language)
+    : normalizeLang(requestedLang);
   const SV_WIDGET = new Map(Object.entries({
     'Tarkista':'Kontrollera','Ei vapaita aikoja juuri nyt':'Inga lediga tider just nu','Valitse vapaa aika':'Välj en ledig tid',
     'Lähetetään…':'Skickar…','Pyyntö vastaanotettu':'Begäran mottagen','Kiitos — yhteystiedot on lähetetty ✓':'Tack — dina kontaktuppgifter har skickats ✓',
@@ -368,7 +371,7 @@
             slots.map((slot) => {
               const start = new Date(slot.starts_at);
               const end = new Date(slot.ends_at);
-              const locale = widgetLang === 'en' ? 'en-GB' : 'fi-FI';
+              const locale = widgetLang === 'en' ? 'en-GB' : widgetLang === 'sv' ? 'sv-SE' : 'fi-FI';
               const date = start.toLocaleDateString(locale, { weekday:'short', day:'2-digit', month:'2-digit' });
               const startTime = start.toLocaleTimeString(locale, { hour:'2-digit', minute:'2-digit' });
               const endTime = end.toLocaleTimeString(locale, { hour:'2-digit', minute:'2-digit' });
@@ -424,7 +427,7 @@
 
         if (data.quote) {
           const q = data.quote;
-          const locale = widgetLang === 'en' ? 'en-IE' : 'fi-FI';
+          const locale = widgetLang === 'en' ? 'en-IE' : widgetLang === 'sv' ? 'sv-SE' : 'fi-FI';
           const total = new Intl.NumberFormat(locale, { style:'currency', currency:q.currency || 'EUR' }).format(Number(q.total || 0));
           resultHtml +=
             '<div class="quote-result">' +
@@ -449,7 +452,7 @@
 
         if (data.booking?.startsAt) {
           const start = new Date(data.booking.startsAt);
-          const locale = widgetLang === 'en' ? 'en-GB' : 'fi-FI';
+          const locale = widgetLang === 'en' ? 'en-GB' : widgetLang === 'sv' ? 'sv-SE' : 'fi-FI';
           const formatted = start.toLocaleString(locale, {
             weekday:'long', day:'2-digit', month:'2-digit', year:'numeric',
             hour:'2-digit', minute:'2-digit'
