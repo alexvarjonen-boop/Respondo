@@ -985,6 +985,7 @@ function bindLanguageSwitch() {
       localStorage.setItem('respondo_lang', lang);
       window.RespondoI18n?.setLanguage?.(lang);
       document.documentElement.lang = lang;
+      api('/api/auth/language', { method:'POST', body:JSON.stringify({ language:lang }) }).catch(() => {});
       route();
     });
   });
@@ -1984,6 +1985,13 @@ async function dashboard() {
   let me;
   try {
     me = await api('/api/auth/me');
+    try {
+      const stored = localStorage.getItem('respondo_lang');
+      if (!stored && ['fi','sv','en'].includes(me?.preferred_language)) {
+        localStorage.setItem('respondo_lang', me.preferred_language);
+        window.RespondoI18n?.setLanguage?.(me.preferred_language);
+      }
+    } catch {}
   } catch {
     return login();
   }
@@ -3008,6 +3016,7 @@ async function route() {
             plan: form.get('plan'),
             referralCode: form.get('referralCode'),
             acceptedTerms: !!form.get('terms'),
+            language: currentLang(),
           }),
         });
         location.href = result.url;
@@ -3031,7 +3040,7 @@ async function route() {
       try {
         await api('/api/auth/login', {
           method: 'POST',
-          body: JSON.stringify({ email: form.get('email'), password: form.get('password') }),
+          body: JSON.stringify({ email: form.get('email'), password: form.get('password'), language: currentLang() }),
         });
         location.href = '/app';
       } catch (err) {
