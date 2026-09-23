@@ -555,28 +555,28 @@ function chatActions(rows, message, handoff = false, lang = 'fi') {
   };
 
   if (/tilausnumero|tilaukseni|tilauksen tila|seuranta|order status|where is my order/.test(q)) {
-    push({ type: 'order_status', mode: 'order_form', label: actionLang === 'en' ? 'Check order status' : 'Tarkista tilauksen tila' });
+    push({ type: 'order_status', mode: 'order_form', label: actionLang === 'en' ? 'Check order status' : actionLang === 'sv' ? 'Kontrollera orderstatus' : 'Tarkista tilauksen tila' });
   }
 
   if (/ajanvaraus|varaa|aika|ajan|booking|appointment/.test(q)) {
-    push({ type: 'booking', mode: 'booking_form', label: actionLang === 'en' ? 'Book a time' : 'Varaa aika' });
-    if (booking) push({ type: 'booking', label: actionLang === 'en' ? 'Open calendar' : 'Avaa ajanvaraus', url: booking });
+    push({ type: 'booking', mode: 'booking_form', label: actionLang === 'en' ? 'Book a time' : actionLang === 'sv' ? 'Boka tid' : 'Varaa aika' });
+    if (booking) push({ type: 'booking', label: actionLang === 'en' ? 'Open calendar' : actionLang === 'sv' ? 'Öppna bokningen' : 'Avaa ajanvaraus', url: booking });
   }
 
   if (/tarjous|hinta-arvio|arvio|kustannusarvio|quote/.test(q)) {
-    push({ type: 'quote', mode: 'quote_form', label: actionLang === 'en' ? 'Request a quote' : 'Pyydä tarjous' });
-    if (quote) push({ type: 'quote', label: actionLang === 'en' ? 'Open quote form' : 'Avaa tarjouslomake', url: quote });
+    push({ type: 'quote', mode: 'quote_form', label: actionLang === 'en' ? 'Request a quote' : actionLang === 'sv' ? 'Begär offert' : 'Pyydä tarjous' });
+    if (quote) push({ type: 'quote', label: actionLang === 'en' ? 'Open quote form' : actionLang === 'sv' ? 'Öppna offertformuläret' : 'Avaa tarjouslomake', url: quote });
   }
 
   if (/soittakaa|ottakaa yhteytta|ottakaa yhteyttä|yhteydenotto|call me|contact me/.test(q)) {
-    push({ type: 'callback', mode: 'lead', label: actionLang === 'en' ? 'Request a callback' : 'Pyydä yhteydenottoa' });
+    push({ type: 'callback', mode: 'lead', label: actionLang === 'en' ? 'Request a callback' : actionLang === 'sv' ? 'Be om kontakt' : 'Pyydä yhteydenottoa' });
   }
 
   if (phone && (handoff || /puhelin|soita|soittaa|yhteys/.test(q))) {
-    push({ type: 'phone', label: actionLang === 'en' ? 'Call' : 'Soita', url: 'tel:' + phone.replace(/\s+/g, '') });
+    push({ type: 'phone', label: actionLang === 'en' ? 'Call' : actionLang === 'sv' ? 'Ring' : 'Soita', url: 'tel:' + phone.replace(/\s+/g, '') });
   }
   if (email && (handoff || /sahkoposti|sähköposti|email|meili|yhteys/.test(q))) {
-    push({ type: 'email', label: actionLang === 'en' ? 'Send email' : 'Lähetä sähköposti', url: 'mailto:' + email });
+    push({ type: 'email', label: actionLang === 'en' ? 'Send email' : actionLang === 'sv' ? 'Skicka e-post' : 'Lähetä sähköposti', url: 'mailto:' + email });
   }
 
   return actions.slice(0, 4);
@@ -2973,28 +2973,18 @@ async function lookupEcommerceOrder(tenant, orderNumber, email) {
 }
 
 function orderStatusText(order, lang = 'fi') {
+  const l = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   if (!order) {
-    return lang === 'en'
-      ? 'I could not find an order matching that order number and email.'
-      : 'Tilausta ei löytynyt tällä tilausnumerolla ja sähköpostilla.';
+    if (l === 'en') return 'I could not find an order matching that order number and email.';
+    if (l === 'sv') return 'Jag kunde inte hitta en order med det ordernumret och den e-postadressen.';
+    return 'Tilausta ei löytynyt tällä tilausnumerolla ja sähköpostilla.';
   }
   const tracking = Array.isArray(order.tracking) && order.tracking.length
     ? order.tracking.map((x) => x.url || x.number).filter(Boolean).join(', ')
     : '';
-  if (lang === 'en') {
-    return [
-      'Order ' + order.orderNumber + ' was found.',
-      order.fulfillmentStatus ? 'Fulfillment: ' + order.fulfillmentStatus + '.' : '',
-      order.financialStatus ? 'Payment: ' + order.financialStatus + '.' : '',
-      tracking ? 'Tracking: ' + tracking : '',
-    ].filter(Boolean).join(' ');
-  }
-  return [
-    'Tilaus ' + order.orderNumber + ' löytyi.',
-    order.fulfillmentStatus ? 'Toimitus: ' + order.fulfillmentStatus + '.' : '',
-    order.financialStatus ? 'Maksu: ' + order.financialStatus + '.' : '',
-    tracking ? 'Seuranta: ' + tracking : '',
-  ].filter(Boolean).join(' ');
+  if (l === 'en') return ['Order ' + order.orderNumber + ' was found.',order.fulfillmentStatus ? 'Fulfillment: ' + order.fulfillmentStatus + '.' : '',order.financialStatus ? 'Payment: ' + order.financialStatus + '.' : '',tracking ? 'Tracking: ' + tracking : ''].filter(Boolean).join(' ');
+  if (l === 'sv') return ['Order ' + order.orderNumber + ' hittades.',order.fulfillmentStatus ? 'Leveransstatus: ' + order.fulfillmentStatus + '.' : '',order.financialStatus ? 'Betalning: ' + order.financialStatus + '.' : '',tracking ? 'Spårning: ' + tracking : ''].filter(Boolean).join(' ');
+  return ['Tilaus ' + order.orderNumber + ' löytyi.',order.fulfillmentStatus ? 'Toimitus: ' + order.fulfillmentStatus + '.' : '',order.financialStatus ? 'Maksu: ' + order.financialStatus + '.' : '',tracking ? 'Seuranta: ' + tracking : ''].filter(Boolean).join(' ');
 }
 
 async function getOrCreateThread(tenantId, sourceChannel, externalContactId, visitorRef = null) {
