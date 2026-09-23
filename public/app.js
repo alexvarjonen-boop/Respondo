@@ -836,7 +836,7 @@ function contactSection() {
         </div>
         <div class="contact-actions">
           <a href="mailto:${esc(cfg.supportEmail)}" class="contact-mail">${esc(cfg.supportEmail)}</a>
-          <p>RESPONDO AI · Y-tunnus ${esc(cfg.businessId || '3599437-5')} · Suomi</p>
+          <p>RESPONDO AI · Suomi</p>
           <a class="btn ink" href="/tilaus">Kokeile 3 päivää ilmaiseksi</a>
         </div>
       </div>
@@ -851,7 +851,7 @@ function footer() {
         <div class="foot-brand">
           ${logo()}
           <p>Asiakaspalvelubotti, joka vastaa asiakkaillesi yrityksesi omilla tiedoilla.</p>
-          <div class="seller-chip">RESPONDO AI · Y-tunnus ${esc(cfg.businessId || '3599437-5')}</div>
+          <div class="seller-chip">RESPONDO AI</div>
         </div>
         <div class="foot-col">
           <h4>Tuote</h4>
