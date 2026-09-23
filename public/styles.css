@@ -5026,3 +5026,22 @@ p{color:var(--simple-muted)}
   .navactions .lang-switch{min-width:52px!important;max-width:58px!important}
   .navactions .btn{padding:0 10px!important;font-size:11px!important}
 }
+
+
+/* 2026-09-24 mobile header brand must stay fully visible */
+@media (max-width:760px){
+  .navin{gap:5px!important;padding-left:8px!important;padding-right:8px!important}
+  .nav .logo{flex:0 0 auto!important;overflow:visible!important;gap:5px!important}
+  .nav .brand-word{display:inline!important;width:auto!important;max-width:none!important;overflow:visible!important;text-overflow:unset!important;white-space:nowrap!important;font-size:14px!important}
+  .nav .brand-mark{width:27px!important;height:27px!important}
+  .nav .brand-mark svg{width:27px!important;height:27px!important}
+  .navactions{gap:4px!important;min-width:0!important}
+  .navactions .lang-switch{min-width:45px!important;max-width:49px!important;padding:1px 3px!important}
+  .navactions .lang-choice{font-size:11px!important;padding:4px 1px!important}
+  .navactions .btn{padding:0 9px!important;min-height:36px!important;font-size:11px!important}
+}
+@media (max-width:390px){
+  .nav .brand-word{font-size:13px!important}
+  .navactions .lang-switch{min-width:43px!important;max-width:46px!important}
+  .navactions .btn{padding:0 7px!important;font-size:10.5px!important}
+}
