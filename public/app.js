@@ -126,12 +126,18 @@ function logo() {
 
 
 function currentLang() {
-  try { localStorage.removeItem('respondo-lang'); } catch {}
-  return 'fi';
+  return window.RespondoI18n?.language || ['fi','sv','en'].includes(localStorage.getItem('respondo_lang')) ? localStorage.getItem('respondo_lang') : 'fi';
 }
 
 function languageSwitch() {
-  return '';
+  const lang = window.RespondoI18n?.language || localStorage.getItem('respondo_lang') || 'fi';
+  return `<label class="app-language-switch" aria-label="Language">
+    <select data-lang-select aria-label="Language">
+      <option value="fi" ${lang === 'fi' ? 'selected' : ''}>FI</option>
+      <option value="sv" ${lang === 'sv' ? 'selected' : ''}>SV</option>
+      <option value="en" ${lang === 'en' ? 'selected' : ''}>EN</option>
+    </select>
+  </label>`;
 }
 
 const EN_TEXT = new Map(Object.entries({
@@ -292,6 +298,44 @@ const EN_TEXT = new Map(Object.entries({
   'Kirjaudu sisään':'Open dashboard'
 }));
 
+
+const SV_TEXT = new Map(Object.entries({
+  'Tuote':'Produkt','Tietopohja':'Kunskapsbas','Kokeile bottia':'Testa botten','Hinta':'Pris','Tietoturva':'Säkerhet',
+  'Kirjaudu':'Logga in','Kokeile ilmaiseksi':'Prova gratis','Näin se toimii':'Så fungerar det','Mitä saat':'Funktioner',
+  'Miksi nopeus ratkaisee':'Varför snabbhet spelar roll','Laske itse':'Kalkylator','Hinnat':'Priser','Ota yhteyttä':'Kontakta oss',
+  'ASIAKASPALVELU, JOKA ON AINA PAIKALLA':'KUNDSERVICE SOM ALLTID ÄR PÅ PLATS','Asiakas kysyy.':'Kunden frågar.','RESPONDO vastaa.':'RESPONDO svarar.',
+  'Lisää yrityksesi tiedot kerran. RESPONDO vastaa asiakkaillesi ympäri vuorokauden ja ohjaa kysymyksen sinulle silloin, kun varmaa vastausta ei löydy.':'Lägg till företagets information en gång. RESPONDO svarar dina kunder dygnet runt och skickar frågan vidare till dig när ett säkert svar saknas.',
+  'Kokeile 3 päivää ilmaiseksi':'Prova gratis i 3 dagar','Tutustu tuotteeseen':'Utforska produkten','3 päivää ilmaiseksi':'3 dagar gratis','Peruuta milloin tahansa':'Avsluta när som helst',
+  'TIETOPOHJA':'KUNSKAPSBAS','VASTAUKSET':'SVAR','EPÄVARMUUS':'OSÄKERHET','Lisää tiedot kerran.':'Lägg till informationen en gång.',
+  'RESPONDO hoitaa toistuvat kysymykset.':'RESPONDO hanterar återkommande frågor.','Lisää yrityksesi tieto':'Lägg till företagets information',
+  'Asiakas kysyy':'Kunden frågar','Asiakas saa vastauksen':'Kunden får ett svar','Vähemmän säätöä.':'Mindre krångel.','Enemmän vastauksia.':'Fler svar.',
+  'Kaikki olennainen yhdessä paikassa.':'Allt viktigt på ett ställe.','KESKUSTELUT':'KONVERSATIONER','Näet, mitä asiakkaat oikeasti kysyvät.':'Se vad kunderna faktiskt frågar.',
+  'KEHITYS':'UTVECKLING','Sinun tietosi.':'Din information.','Asiakkaalle oikea vastaus.':'Rätt svar till kunden.','Helppo ylläpitää':'Enkelt att underhålla',
+  'Muuta tietoa yhdestä paikasta.':'Uppdatera information på ett ställe.','Ei arvailua':'Inga gissningar','Puuttuva tieto ei muutu keksityksi vastaukseksi.':'Saknad information blir aldrig ett påhittat svar.',
+  'Helppo asentaa':'Enkelt att installera','Yksi asennusrivi verkkosivulle.':'En installationsrad på webbplatsen.','Hyväksytty tietopohja':'Godkänd kunskapsbas',
+  'Hinnoittelu':'Prissättning','Aukioloajat':'Öppettider','Toimialue':'Serviceområde','Suomi':'Finland','Poikkeustilanteet':'Undantag','Ohjaa yhteydenottoon':'Hänvisa till kontakt',
+  'Viimeksi päivitetty':'Senast uppdaterad','juuri nyt':'just nu','VASTAA':'SVARAR','asiakkaillesi':'dina kunder','sinun hallinnassa':'under din kontroll','aina':'alltid',
+  'ALKAEN':'FRÅN','49 € / kk':'49 € / mån','+ alv':'+ moms','KOKEILU':'PROVPERIOD','3 päivää':'3 dagar','maksutta':'gratis',
+  'Asiakas ei halua odottaa.':'Kunden vill inte vänta.','Nopea vastaus näkyy kokemuksessa.':'Snabba svar förbättrar kundupplevelsen.','HUOM':'OBS',
+  'Mitä yksi menetetty yhteydenotto voi maksaa?':'Vad kan en missad kontakt kosta?','Päivässä':'Per dag','Vuodessa':'Per år','Selkeä hinta.':'Tydligt pris.','Ei yllätyksiä.':'Inga överraskningar.',
+  'Kuukausi':'Månad','Vuosi':'År','Chat suoraan omalle verkkosivullesi':'Chatt direkt på din webbplats','Vastaukset yrityksesi omista tiedoista':'Svar från företagets egen information',
+  'Näet, mitä asiakkaat kysyvät':'Se vad kunderna frågar','Puuttuvat vastaukset ohjataan sinulle':'Osäkra frågor skickas vidare till dig','Hallitse tilausta turvallisesti Stripessä':'Hantera abonnemanget säkert i Stripe',
+  'Valitse vuosi':'Välj årsplan','Anna asiakkaillesi vastaus myös silloin, kun et itse ehdi.':'Ge kunderna svar även när du själv inte hinner.','KOKEILE':'PROVA GRATIS',
+  'Kysy lisää.':'Frågor?','Vastaamme.':'Vi svarar.','Yritys':'Företag','Lakiasiat':'Juridik','Käyttöehdot':'Användarvillkor','Tietosuojaseloste':'Integritetspolicy',
+  'Evästeet':'Cookies','Tietojenkäsittely':'Databehandling','B2B-ohjelmistopalvelu':'B2B-programvarutjänst','ALOITA KOKEILU':'BÖRJA PROVA RESPONDO AI',
+  'Kokeile ensin.':'Prova först.','Päätä sitten.':'Bestäm sedan.','Luo tili':'Skapa konto','Lisää maksutapa Stripessä':'Lägg till betalningsmetod i Stripe',
+  'Korttitietosi menevät suoraan Stripelle.':'Dina kortuppgifter går direkt till Stripe.','Lisää yrityksesi tiedot':'Bygg din kunskapsbas','PALVELUNTARJOAJA':'TJÄNSTELEVERANTÖR',
+  'LUO TILI':'SKAPA KONTO','Nimi':'Namn','Sähköposti':'E-post','Y-tunnus':'FO-nummer','Salasana':'Lösenord','Vähintään 10 merkkiä':'Minst 10 tecken',
+  'Tilaus':'Abonnemang','tai sähköpostilla':'eller med e-post','Jatka Googlella':'Fortsätt med Google','Hallintapaneeli':'Kontrollpanel','Tervetuloa':'Välkommen',
+  'takaisin.':'tillbaka.','KIRJAUDU':'LOGGA IN','Tervetuloa takaisin':'Välkommen tillbaka','Kirjaudu Googlella':'Logga in med Google','Kirjaudu sisään':'Öppna kontrollpanelen',
+  'Asetukset':'Inställningar','Profiili':'Profil','Keskustelut':'Konversationer','Liidit':'Leads','Integraatiot':'Integrationer','Tallenna':'Spara','Peruuta':'Avbryt',
+  'Sulje':'Stäng','Takaisin':'Tillbaka','Lähetä':'Skicka','Ladataan…':'Laddar…'
+}));
+
+const SV_PLACEHOLDERS = new Map(Object.entries({
+  'Etunimi Sukunimi':'Förnamn Efternamn','sinä@yritys.fi':'du@foretag.fi','Yrityksen nimi':'Företagets namn','Vähintään 10 merkkiä':'Minst 10 tecken'
+}));
+
 const EN_PLACEHOLDERS = new Map(Object.entries({
   'Etunimi Sukunimi':'First name Last name',
   'sinä@yritys.fi':'you@company.com',
@@ -300,11 +344,11 @@ const EN_PLACEHOLDERS = new Map(Object.entries({
 }));
 
 function applyLanguage() {
-  document.documentElement.lang = 'fi';
-  return;
-
-  document.title = 'RESPONDO AI | AI Customer Service Chatbot for Businesses 24/7';
-
+  const lang = currentLang();
+  document.documentElement.lang = lang;
+  if (lang === 'fi') return;
+  const textMap = lang === 'sv' ? SV_TEXT : EN_TEXT;
+  const placeholderMap = lang === 'sv' ? SV_PLACEHOLDERS : EN_PLACEHOLDERS;
   const root = document.getElementById('app');
   if (!root) return;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -316,21 +360,19 @@ function applyLanguage() {
     const raw = node.nodeValue || '';
     const trimmed = raw.trim();
     if (!trimmed) continue;
-    if (EN_TEXT.has(trimmed)) {
-      node.nodeValue = raw.replace(trimmed, EN_TEXT.get(trimmed));
-    } else {
-      node.nodeValue = raw
-        .replace(/Y-tunnus/g, 'Business ID')
-        .replace(/kuukausi/g, 'month')
-        .replace(/vuosi/g, 'year');
-    }
+    if (textMap.has(trimmed)) node.nodeValue = raw.replace(trimmed, textMap.get(trimmed));
   }
-
   root.querySelectorAll('input[placeholder], textarea[placeholder]').forEach((el) => {
     const p = el.getAttribute('placeholder') || '';
-    if (EN_PLACEHOLDERS.has(p)) el.setAttribute('placeholder', EN_PLACEHOLDERS.get(p));
+    if (placeholderMap.has(p)) el.setAttribute('placeholder', placeholderMap.get(p));
   });
+  window.RespondoI18n?.apply(root);
 }
+
+window.addEventListener('respondo:languagechange', () => {
+  if (typeof route === 'function') route();
+  else applyLanguage();
+});
 
 function bindLanguageSwitch() {
   try { localStorage.removeItem('respondo-lang'); } catch {}
