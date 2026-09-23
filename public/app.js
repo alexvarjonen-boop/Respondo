@@ -144,6 +144,23 @@ function languageSwitch() {
 }
 
 const EN_TEXT = new Map(Object.entries({
+  "Testaa oikea maksu.":"Test a real payment.",
+  "3 päivää ilmaiseksi":"3 days free",
+  "Vain sinä pääset yrityksesi hallintaan":"Only you can access your company dashboard",
+  "Tarjouspyyntö":"Quote request",
+  "Ajanvaraus":"Booking",
+  "Sähköposti":"Email",
+  "asiakasta jätti yhteystietonsa":"customers left their contact details",
+  "Esim. Putkityö 65 € / h + alv. Päivystys 95 € / h + alv.":"E.g. plumbing €65/h + VAT. Emergency service €95/h + VAT.",
+  "Tarjouspyyntölomake":"Quote request form",
+  "Esim. putkityöt, LVI-asennukset, sähkötyöt, huollot, päivystys":"E.g. plumbing, HVAC installation, electrical work, maintenance, emergency service",
+  "Esim. päivystysnumero, maksutavat, takuukäytännöt, ajanvarausohjeet, poikkeukset...":"E.g. emergency number, payment methods, warranty practices, booking instructions, exceptions...",
+  "hinta, maksaa, tarjous":"price, cost, quote",
+  "Asiakas":"Customer",
+  "1 käyttökerta jäljellä":"1 use remaining",
+  "Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.":"With a valid code you get 20% off the first paid month. Monthly plan only.",
+  "Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.":"Hi! We couldn't answer your call just now. Reply to this message and RESPONDO AI will help you right away.",
+
   "RESPONDO AI käyttöliittymäesimerkki":"RESPONDO AI interface example",
   "Etunimi Sukunimi":"First name Last name",
   "Yrityksen nimi":"Company name",
@@ -509,6 +526,23 @@ const EN_TEXT = new Map(Object.entries({
 
 
 const SV_TEXT = new Map(Object.entries({
+  "Testaa oikea maksu.":"Testa en riktig betalning.",
+  "3 päivää ilmaiseksi":"3 dagar gratis",
+  "Vain sinä pääset yrityksesi hallintaan":"Endast du har åtkomst till företagets kontrollpanel",
+  "Tarjouspyyntö":"Offertförfrågan",
+  "Ajanvaraus":"Bokning",
+  "Sähköposti":"E-post",
+  "asiakasta jätti yhteystietonsa":"kunder lämnade sina kontaktuppgifter",
+  "Esim. Putkityö 65 € / h + alv. Päivystys 95 € / h + alv.":"T.ex. VVS-arbete 65 €/h + moms. Jour 95 €/h + moms.",
+  "Tarjouspyyntölomake":"Offertförfrågningsformulär",
+  "Esim. putkityöt, LVI-asennukset, sähkötyöt, huollot, päivystys":"T.ex. VVS-arbeten, installationer, elarbeten, service, jour",
+  "Esim. päivystysnumero, maksutavat, takuukäytännöt, ajanvarausohjeet, poikkeukset...":"T.ex. journummer, betalningsmetoder, garantipraxis, bokningsinstruktioner, undantag...",
+  "hinta, maksaa, tarjous":"pris, kostar, offert",
+  "Asiakas":"Kund",
+  "1 käyttökerta jäljellä":"1 användning kvar",
+  "Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.":"Med en giltig kod får du 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.",
+  "Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.":"Hej! Vi kunde inte svara på ditt samtal just nu. Svara på det här meddelandet så hjälper RESPONDO AI dig direkt.",
+
   "RESPONDO AI käyttöliittymäesimerkki":"RESPONDO AI gränssnittsexempel",
   "Etunimi Sukunimi":"Förnamn Efternamn",
   "Yrityksen nimi":"Företagets namn",
