@@ -144,6 +144,22 @@ function languageSwitch() {
 }
 
 const EN_TEXT = new Map(Object.entries({
+  "Tässä kerrotaan, mitä henkilötietoja Respondo AI käsittelee, miksi niitä käsitellään ja miten Google-käyttäjädataa käytetään.":"This explains what personal data Respondo AI processes, why it is processed, and how Google user data is used.",
+  "1. Rekisterinpitäjä":"1. Data controller",
+  "2. Käsiteltävät tiedot":"2. Data processed",
+  "3. Käsittelyn tarkoitukset ja perusteet":"3. Purposes and legal bases",
+  "6. Google-tietojen jakaminen ja ihmisten pääsy":"6. Google data sharing and human access",
+  "9. Palveluntarjoajat ja alikäsittelijät":"9. Service providers and subprocessors",
+  "10. Kansainväliset siirrot":"10. International transfers",
+  "11. Säilytys":"11. Retention",
+  "13. Rekisteröidyn oikeudet":"13. Data subject rights",
+  "Tietosuojaselostetta päivitetään, kun palvelun ominaisuudet, tietojen käsittely tai sovellettavat vaatimukset muuttuvat. Ajantasainen versio julkaistaan tällä sivulla.":"The privacy policy is updated when service features, data processing, or applicable requirements change. The current version is published on this page.",
+  "Kun Respondo käsittelee henkilötietoja yritysasiakkaan puolesta, yritys toimii lähtökohtaisesti rekisterinpitäjänä ja Respondo henkilötietojen käsittelijänä.":"When Respondo processes personal data on behalf of a business customer, the business generally acts as controller and Respondo as processor.",
+  "Tietoja käsitellään yritysasiakkaan puolesta asiakasviestien käsittelyyn, tietopohjaan perustuvien vastausten tuottamiseen, yhteydenottojen ja varausten välittämiseen sekä asiakkaan käyttöön ottamien integraatioiden toteuttamiseen.":"Data is processed on behalf of the business customer to handle customer messages, produce knowledge-base-based answers, relay contacts and bookings, and provide integrations enabled by the customer.",
+  "Respondo käsittelee henkilötietoja vain asiakkaan dokumentoitujen ohjeiden ja palvelun käyttötarkoituksen mukaisesti, ellei sovellettava laki edellytä muuta.":"Respondo processes personal data only according to the customer's documented instructions and the intended use of the service unless applicable law requires otherwise.",
+  "Palvelu toimii salatun HTTPS-yhteyden kautta.":"The service operates over an encrypted HTTPS connection.",
+  "Salasanat tallennetaan yksisuuntaisesti hajautettuina eikä selväkielisinä.":"Passwords are stored using one-way hashing and not in plaintext.",
+
   "Näissä ehdoissa kerrotaan, millä ehdoilla yritysasiakkaat voivat käyttää Respondo AI -palvelua.":"These terms describe the conditions under which business customers may use the Respondo AI service.",
   "2. Palvelu":"2. Service",
   "5. Kokeilu ja tilaus":"5. Trial and subscription",
@@ -544,6 +560,22 @@ const EN_TEXT = new Map(Object.entries({
 
 
 const SV_TEXT = new Map(Object.entries({
+  "Tässä kerrotaan, mitä henkilötietoja Respondo AI käsittelee, miksi niitä käsitellään ja miten Google-käyttäjädataa käytetään.":"Här beskrivs vilka personuppgifter Respondo AI behandlar, varför de behandlas och hur Google-användardata används.",
+  "1. Rekisterinpitäjä":"1. Personuppgiftsansvarig",
+  "2. Käsiteltävät tiedot":"2. Uppgifter som behandlas",
+  "3. Käsittelyn tarkoitukset ja perusteet":"3. Syften och rättsliga grunder",
+  "6. Google-tietojen jakaminen ja ihmisten pääsy":"6. Delning av Google-data och mänsklig åtkomst",
+  "9. Palveluntarjoajat ja alikäsittelijät":"9. Tjänsteleverantörer och underbiträden",
+  "10. Kansainväliset siirrot":"10. Internationella överföringar",
+  "11. Säilytys":"11. Lagring",
+  "13. Rekisteröidyn oikeudet":"13. Den registrerades rättigheter",
+  "Tietosuojaselostetta päivitetään, kun palvelun ominaisuudet, tietojen käsittely tai sovellettavat vaatimukset muuttuvat. Ajantasainen versio julkaistaan tällä sivulla.":"Integritetspolicyn uppdateras när tjänstens funktioner, databehandlingen eller tillämpliga krav ändras. Den aktuella versionen publiceras på denna sida.",
+  "Kun Respondo käsittelee henkilötietoja yritysasiakkaan puolesta, yritys toimii lähtökohtaisesti rekisterinpitäjänä ja Respondo henkilötietojen käsittelijänä.":"När Respondo behandlar personuppgifter för en företagskunds räkning är företaget i regel personuppgiftsansvarig och Respondo personuppgiftsbiträde.",
+  "Tietoja käsitellään yritysasiakkaan puolesta asiakasviestien käsittelyyn, tietopohjaan perustuvien vastausten tuottamiseen, yhteydenottojen ja varausten välittämiseen sekä asiakkaan käyttöön ottamien integraatioiden toteuttamiseen.":"Uppgifter behandlas för företagskundens räkning för kundmeddelanden, kunskapsbaserade svar, förmedling av kontakter och bokningar samt integrationer som kunden aktiverar.",
+  "Respondo käsittelee henkilötietoja vain asiakkaan dokumentoitujen ohjeiden ja palvelun käyttötarkoituksen mukaisesti, ellei sovellettava laki edellytä muuta.":"Respondo behandlar personuppgifter endast enligt kundens dokumenterade instruktioner och tjänstens avsedda användning, om inte tillämplig lag kräver annat.",
+  "Palvelu toimii salatun HTTPS-yhteyden kautta.":"Tjänsten använder en krypterad HTTPS-anslutning.",
+  "Salasanat tallennetaan yksisuuntaisesti hajautettuina eikä selväkielisinä.":"Lösenord lagras som envägshashar och inte i klartext.",
+
   "Näissä ehdoissa kerrotaan, millä ehdoilla yritysasiakkaat voivat käyttää Respondo AI -palvelua.":"Dessa villkor beskriver på vilka villkor företagskunder får använda Respondo AI-tjänsten.",
   "2. Palvelu":"2. Tjänsten",
   "5. Kokeilu ja tilaus":"5. Provperiod och abonnemang",
