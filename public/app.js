@@ -1215,10 +1215,66 @@ const EN_PLACEHOLDERS = new Map(Object.entries({
   'Vähintään 10 merkkiä':'At least 10 characters'
 }));
 
+function restorePersistentUiToFinnish() {
+  const persistent = document.getElementById('rc-consent-layer');
+  if (!persistent) return;
+  const reverse = new Map();
+  for (const [fi, value] of SV_TEXT) reverse.set(value, fi);
+  for (const [fi, value] of EN_TEXT) reverse.set(value, fi);
+  const walker = document.createTreeWalker(persistent, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const node of nodes) {
+    const raw = node.nodeValue || '';
+    const key = raw.trim();
+    if (reverse.has(key)) node.nodeValue = raw.replace(key, reverse.get(key));
+  }
+  persistent.querySelectorAll('[title],[aria-label]').forEach((el) => {
+    ['title','aria-label'].forEach((name) => {
+      const value = el.getAttribute(name) || '';
+      if (reverse.has(value)) el.setAttribute(name, reverse.get(value));
+    });
+  });
+}
+
+function updateDocumentLanguageMeta(lang) {
+  const path = location.pathname;
+  const pageTitle = path === '/app'
+    ? appText('RESPONDO AI | Hallintapaneeli','RESPONDO AI | Kontrollpanel','RESPONDO AI | Dashboard')
+    : path === '/kirjaudu'
+      ? appText('RESPONDO AI | Kirjaudu','RESPONDO AI | Logga in','RESPONDO AI | Log in')
+      : path === '/tilaus'
+        ? appText('RESPONDO AI | Luo tili','RESPONDO AI | Skapa konto','RESPONDO AI | Create account')
+        : path === '/assistant'
+          ? appText('RESPONDO AI | Testaa bottia','RESPONDO AI | Testa botten','RESPONDO AI | Test the bot')
+          : appText('RESPONDO AI | Asiakaspalvelubotti yrityksille 24/7','RESPONDO AI | Kundservicebot för företag 24/7','RESPONDO AI | Customer service bot for businesses 24/7');
+  document.title = pageTitle;
+  const metaDescription = lang === 'sv'
+    ? 'RESPONDO AI är en kundservicebot för företag som svarar med företagets egna godkända uppgifter dygnet runt.'
+    : lang === 'en'
+      ? 'RESPONDO AI is a customer service bot for businesses that answers using the company’s own approved information around the clock.'
+      : 'RESPONDO AI on yrityksen verkkosivulle asennettava asiakaspalvelubotti, joka vastaa yrityksen omilla hyväksytyillä tiedoilla ympäri vuorokauden.';
+  const setMeta = (selector, value) => {
+    const el = document.querySelector(selector);
+    if (el && value) el.setAttribute('content', value);
+  };
+  setMeta('meta[name="description"]', metaDescription);
+  setMeta('meta[property="og:title"]', pageTitle);
+  setMeta('meta[property="og:description"]', metaDescription);
+  setMeta('meta[name="twitter:title"]', pageTitle);
+  setMeta('meta[name="twitter:description"]', metaDescription);
+  setMeta('meta[property="og:locale"]', lang === 'sv' ? 'sv_SE' : lang === 'en' ? 'en_GB' : 'fi_FI');
+}
+
 function applyLanguage() {
   const lang = currentLang();
   document.documentElement.lang = lang;
-  if (lang === 'fi') return;
+  restorePersistentUiToFinnish();
+  updateDocumentLanguageMeta(lang);
+  if (lang === 'fi') {
+    window.RespondoI18n?.apply(document);
+    return;
+  }
   const textMap = lang === 'sv' ? SV_TEXT : EN_TEXT;
   const placeholderMap = lang === 'sv' ? SV_PLACEHOLDERS : EN_PLACEHOLDERS;
   const root = document.body || document.getElementById('app');
@@ -1242,30 +1298,6 @@ function applyLanguage() {
     });
   });
   window.RespondoI18n?.apply(root);
-  const path = location.pathname;
-  const pageTitle = path === '/app'
-    ? appText('RESPONDO AI | Hallintapaneeli','RESPONDO AI | Kontrollpanel','RESPONDO AI | Dashboard')
-    : path === '/kirjaudu'
-      ? appText('RESPONDO AI | Kirjaudu','RESPONDO AI | Logga in','RESPONDO AI | Log in')
-      : path === '/tilaus'
-        ? appText('RESPONDO AI | Luo tili','RESPONDO AI | Skapa konto','RESPONDO AI | Create account')
-        : path === '/assistant'
-          ? appText('RESPONDO AI | Testaa bottia','RESPONDO AI | Testa botten','RESPONDO AI | Test the bot')
-          : appText('RESPONDO AI | Asiakaspalvelubotti yrityksille 24/7','RESPONDO AI | Kundservicebot för företag 24/7','RESPONDO AI | Customer service bot for businesses 24/7');
-  document.title = pageTitle;
-  const metaDescription = lang === 'sv'
-    ? 'RESPONDO AI är en kundservicebot för företag som svarar med företagets egna godkända uppgifter dygnet runt.'
-    : 'RESPONDO AI is a customer service bot for businesses that answers using the company’s own approved information around the clock.';
-  const setMeta = (selector, value) => {
-    const el = document.querySelector(selector);
-    if (el && value) el.setAttribute('content', value);
-  };
-  setMeta('meta[name="description"]', metaDescription);
-  setMeta('meta[property="og:title"]', pageTitle);
-  setMeta('meta[property="og:description"]', metaDescription);
-  setMeta('meta[name="twitter:title"]', pageTitle);
-  setMeta('meta[name="twitter:description"]', metaDescription);
-  setMeta('meta[property="og:locale"]', lang === 'sv' ? 'sv_SE' : 'en_GB');
   // All application UI copy is translated from static dictionaries. User and customer content is never auto-translated.
 
 }
