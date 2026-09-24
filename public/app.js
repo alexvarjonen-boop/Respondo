@@ -3905,7 +3905,7 @@ async function route() {
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = 'Tallennetaan…';
+      button.innerHTML = appText('Tallennetaan…','Sparar…','Saving…');
       $('#businessProfileMsg').innerHTML = '';
       try {
         await api('/api/app/business-profile', {
@@ -3931,7 +3931,7 @@ async function route() {
         });
         $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText('Yrityksen tiedot tallennettu. Botti käyttää nyt tallennettuja tietoja.','Företagsuppgifterna har sparats. Botten använder nu de sparade uppgifterna.','Company details saved. The bot now uses the saved information.') + '</div>';
         button.disabled = false;
-        button.innerHTML = 'Tallennettu ✓';
+        button.innerHTML = appText('Tallennettu ✓','Sparat ✓','Saved ✓');
         setTimeout(() => (button.innerHTML = original), 1800);
       } catch (err) {
         button.disabled = false;
