@@ -1332,7 +1332,7 @@ function nav() {
       <nav class="navlinks" aria-label="Päänavigaatio">
         <a href="/#how">Tuote</a>
         <a href="/#control">Tietopohja</a>
-        <a href="/assistant">Kokeile bottia</a>
+        <a href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
         <a href="/#pricing">Hinta</a>
         <a href="/tietoturva">Tietoturva</a>
       </nav>
@@ -2039,7 +2039,7 @@ function trustPortalScene() {
       <div class="portal-mark">R</div>
       <h2>Jos tietoa ei löydy,<br><em>kysymys ohjataan sinulle.</em></h2>
       <p>Vastaukset perustuvat yrityksesi antamiin tietoihin. Jos tarvittava tieto puuttuu, kysymys siirtyy sinulle.</p>
-      <a href="/assistant" class="portal-button">Kokeile itse <span>→</span></a>
+      <a href="/assistant?lang=${currentLang()}" class="portal-button">Kokeile itse <span>→</span></a>
     </div>
     <div class="portal-node pn1"><span>✓</span> Hinnat</div>
     <div class="portal-node pn2"><span>✓</span> Palvelut</div>
@@ -2063,7 +2063,7 @@ async function home() {
             <h1>Asiakas kysyy.<br><em>RESPONDO vastaa.</em></h1>
             <p class="lead">Kerro Respondolle yrityksesi tiedot kerran. Sen jälkeen se vastaa asiakkaillesi myös silloin, kun sinä et ehdi. Jos tarvittava tieto puuttuu, kysymys ohjataan sinulle.</p>
             <div class="hero-actions">
-              <a class="btn hero-primary hero-bot-cta" href="/assistant">Kokeile bottia</a>
+              <a class="btn hero-primary hero-bot-cta" href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
             </div>
             <div class="hero-scroll-hint"><i></i><span>VIERITÄ ALAS JA KATSO, MITEN SE TOIMII</span></div>
           </div>
@@ -2465,8 +2465,8 @@ async function dashboard() {
         <div class="onboarding-top">
           <div>
             <small>KÄYTTÖÖNOTTO</small>
-            <h2>${onboardingDone === onboarding.length ? 'Kaikki on valmista.' : 'Laita loputkin kuntoon.'}</h2>
-            <p>${onboardingDone}/${onboarding.length} kohtaa valmiina</p>
+            <h2>${onboardingDone === onboarding.length ? appText('Kaikki on valmista.','Allt är klart.','Everything is ready.') : appText('Laita loputkin kuntoon.','Gör klart resten.','Finish the remaining steps.')}</h2>
+            <p>${onboardingDone}/${onboarding.length} ${appText('kohtaa valmiina','steg klara','steps complete')}</p>
           </div>
           <div class="onboarding-score">${onboardingPct}%</div>
         </div>
@@ -2482,9 +2482,9 @@ async function dashboard() {
       </section>
 
       <section class="stats dashboard-view-section" data-dashboard-view="overview">
-        <article class="stat"><small>KESKUSTELUT</small><b>${s.conversations}</b><span>yhteensä</span></article>
-        <article class="stat"><small>VIIMEISET 7 PV</small><b>${s.last7 || 0}</b><span>keskustelua</span></article>
-        <article class="stat"><small>VASTATTU SUORAAN</small><b>${s.answeredRate}%</b><span>ilman että asiakas piti ohjata eteenpäin</span></article>
+        <article class="stat"><small>KESKUSTELUT</small><b>${s.conversations}</b><span>${appText('yhteensä','totalt','total')}</span></article>
+        <article class="stat"><small>VIIMEISET 7 PV</small><b>${s.last7 || 0}</b><span>${appText('keskustelua','konversationer','conversations')}</span></article>
+        <article class="stat"><small>VASTATTU SUORAAN</small><b>${s.answeredRate}%</b><span>${appText('ilman että asiakas piti ohjata eteenpäin','utan att kunden behövde skickas vidare','without routing the customer onward')}</span></article>
         <article class="stat"><small>YHTEYDENOTOT</small><b>${s.leads || 0}</b><span>${s.estimatedLeadValue > 0 ? 'arvioitu arvo ' + formatMoney(s.estimatedLeadValue) : 'asiakasta jätti yhteystietonsa'}</span></article>
       </section>
 
@@ -2493,15 +2493,15 @@ async function dashboard() {
           <div class="intelligence-icon">✓</div>
           <div>
             <small>VASTAUSTEN VARMENNUS</small>
-            <h2>${truth.score}% varmennettu</h2>
-            <p>${truth.approved}/${truth.total} tietoa hyväksytty · ${truth.fresh} tarkistettu viimeisen 90 päivän aikana.</p>
+            <h2>${truth.score}% ${appText('varmennettu','verifierat','verified')}</h2>
+            <p>${truth.approved}/${truth.total} ${appText('tietoa hyväksytty','uppgifter godkända','items approved')} · ${truth.fresh} ${appText('tarkistettu viimeisen 90 päivän aikana.','kontrollerade under de senaste 90 dagarna.','checked within the last 90 days.')}</p>
           </div>
         </article>
         <article class="panel self-test-card">
           <div class="self-test-copy">
             <small>BOTIN ITSETESTI</small>
-            <h2>${latestSelfTest ? latestSelfTest.score + '% kattavuus' : 'Testaa ennen asiakkaita'}</h2>
-            <p>${latestSelfTest ? (latestSelfTest.answerable_questions + '/' + latestSelfTest.total_questions + ' testikysymykseen löytyi varma tieto.') : 'Respondo luo realistisia asiakaskysymyksiä ja etsii tietopohjan aukot ennen oikeita asiakkaita.'}</p>
+            <h2>${latestSelfTest ? latestSelfTest.score + '% ' + appText('kattavuus','täckning','coverage') : appText('Testaa ennen asiakkaita','Testa före kunderna','Test before customers')}</h2>
+            <p>${latestSelfTest ? (latestSelfTest.answerable_questions + '/' + latestSelfTest.total_questions + ' ' + appText('testikysymykseen löytyi varma tieto.','testfrågor hade ett säkert svar.','test questions had a reliable answer.')) : appText('Respondo luo realistisia asiakaskysymyksiä ja etsii tietopohjan aukot ennen oikeita asiakkaita.','Respondo skapar realistiska kundfrågor och hittar luckor i kunskapsbasen före riktiga kunder.','Respondo creates realistic customer questions and finds gaps in the knowledge base before real customers.')}</p>
           </div>
           <div class="self-test-controls">
             <label>Testin laajuus
@@ -2510,7 +2510,7 @@ async function dashboard() {
                 <option value="1000">1 000 kysymystä</option>
               </select>
             </label>
-            <button class="btn dashboard-action self-test-button" id="runSelfTest" type="button">${latestSelfTest ? 'Testaa uudelleen' : 'Aja self-test'} <span>→</span></button>
+            <button class="btn dashboard-action self-test-button" id="runSelfTest" type="button">${latestSelfTest ? appText('Testaa uudelleen','Testa igen','Test again') : appText('Aja itse­testi','Kör självtest','Run self-test')} <span>→</span></button>
           </div>
           <div id="selfTestResult"></div>
         </article>
@@ -2518,8 +2518,8 @@ async function dashboard() {
           <div class="intelligence-icon">↗</div>
           <div>
             <small>TOIMINTOKESKUS · 30 PV</small>
-            <h2>${s.actions30 || 0} toimintoa</h2>
-            <p>${actionStats.length ? actionStats.map((x) => esc(x.action_type) + ' ' + Number(x.total || 0) + '×').join(' · ') : 'Kun asiakkaat varaavat ajan, pyytävät tarjouksen, soittavat tai lähettävät sähköpostia, näet sen tässä.'}</p>
+            <h2>${s.actions30 || 0} ${appText('toimintoa','åtgärder','actions')}</h2>
+            <p>${actionStats.length ? actionStats.map((x) => esc(x.action_type) + ' ' + Number(x.total || 0) + '×').join(' · ') : appText('Kun asiakkaat varaavat ajan, pyytävät tarjouksen, soittavat tai lähettävät sähköpostia, näet sen tässä.','När kunder bokar tid, begär offert, ringer eller skickar e-post ser du det här.','When customers book a time, request a quote, call or send email, you will see it here.')}</p>
           </div>
         </article>
       </section>
@@ -2528,16 +2528,16 @@ async function dashboard() {
         <article class="panel trend-panel">
           <div class="panel-head">
             <div><small>14 PÄIVÄÄ</small><h2>Näin paljon asiakkaat ovat kysyneet</h2></div>
-            <span>${s.last30 || 0} / 30 pv</span>
+            <span>${s.last30 || 0} / 30 ${appText('pv','dagar','days')}</span>
           </div>
-          <div class="mini-bars" aria-label="Keskustelut viimeisen 14 päivän aikana">
-            ${daily.length ? daily.map((x) => `<div class="mini-bar" title="${esc(x.day)} · ${Number(x.total || 0)}"><i style="height:${Math.max(8, Math.round((Number(x.total || 0) / maxDaily) * 100))}%"></i><small>${new Date(x.day).toLocaleDateString(appLocale(),{day:'numeric',month:'numeric'})}</small></div>`).join('') : '<div class="empty-state compact"><p>Kun keskusteluja kertyy, näet kehityksen tässä.</p></div>'}
+          <div class="mini-bars" aria-label="${esc(appText('Keskustelut viimeisen 14 päivän aikana','Konversationer under de senaste 14 dagarna','Conversations during the last 14 days'))}">
+            ${daily.length ? daily.map((x) => `<div class="mini-bar" title="${esc(x.day)} · ${Number(x.total || 0)}"><i style="height:${Math.max(8, Math.round((Number(x.total || 0) / maxDaily) * 100))}%"></i><small>${new Date(x.day).toLocaleDateString(appLocale(),{day:'numeric',month:'numeric'})}</small></div>`).join('') : '<div class="empty-state compact"><p>' + appText('Kun keskusteluja kertyy, näet kehityksen tässä.','När fler konversationer samlas ser du utvecklingen här.','As conversations accumulate, you will see the trend here.') + '</p></div>'}
           </div>
         </article>
         <article class="panel gap-summary">
           <div class="panel-head"><div><small>TÄLLÄ VIIKOLLA</small><h2>Mihin kysymyksiin vastaus vielä puuttuu?</h2></div><span>${gaps.length}</span></div>
           <div class="gap-summary-list">
-            ${gaps.length ? gaps.slice(0,5).map((x) => `<button type="button" class="gap-jump" data-gap-question="${esc(x.question)}"><span>${esc(x.question)}</span><b>${Number(x.asks || 0)}×</b></button>`).join('') : '<div class="empty-state compact"><b>Kaikkiin tämän viikon kysymyksiin löytyi vastaus.</b><p>Hyvältä näyttää.</p></div>'}
+            ${gaps.length ? gaps.slice(0,5).map((x) => `<button type="button" class="gap-jump" data-gap-question="${esc(x.question)}"><span>${esc(x.question)}</span><b>${Number(x.asks || 0)}×</b></button>`).join('') : '<div class="empty-state compact"><b>' + appText('Kaikkiin tämän viikon kysymyksiin löytyi vastaus.','Alla frågor den här veckan fick ett svar.','All questions this week had an answer.') + '</b><p>' + appText('Hyvältä näyttää.','Det ser bra ut.','Looks good.') + '</p></div>'}
           </div>
         </article>
       </section>
