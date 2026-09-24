@@ -4928,6 +4928,14 @@ p{color:var(--simple-muted)}
   background:#fff!important;border:1px solid var(--simple-line)!important;border-radius:16px!important;
   box-shadow:none!important
 }
+
+/* Standalone assistant pricing cards use the light simplified card surface. Keep all pricing text readable. */
+body.assistant-standalone .assistant-order-card h3{color:#111114!important}
+body.assistant-standalone .assistant-order-card h3 span{color:#6f7680!important}
+body.assistant-standalone .assistant-order-card ul{color:#5f6670!important}
+body.assistant-standalone .assistant-order-card .assistant-order-label{color:#8d96a6!important}
+body.assistant-standalone .assistant-order-card .assistant-annual-note{color:#69717d!important}
+body.assistant-standalone .assistant-order-card .assistant-save{color:#7c87bd!important}
 .panel-head{border-bottom:1px solid var(--simple-line)!important}
 .dashboard-action,.integration-test-btn,.portal-button{border-radius:10px!important}
 .dashboard-view-hidden{display:none!important}
