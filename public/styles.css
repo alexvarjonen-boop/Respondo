@@ -6306,3 +6306,27 @@ body{
   .immersive-home .hero-features-card h3{font-size:20px!important}
   .immersive-home .hero-features-card p{font-size:13.5px!important}
 }
+
+
+/* make the entire 145-feature promo box materially smaller */
+.immersive-home .hero-features-card{
+  width:min(100%,460px)!important;
+  padding:12px 15px!important;
+  border-radius:19px!important;
+  margin:12px auto 0!important;
+}
+.immersive-home .hero-features-card-top{margin-bottom:5px!important}
+.immersive-home .hero-features-card-top span{padding:5px 9px!important;font-size:10px!important}
+.immersive-home .hero-features-card-top b{font-size:19px!important}
+.immersive-home .hero-features-card h3{font-size:18px!important;line-height:1.08!important;margin:2px 0 5px!important}
+.immersive-home .hero-features-card p{font-size:12.5px!important;line-height:1.35!important}
+@media(max-width:760px){
+  .immersive-home .hero-features-card{
+    width:82%!important;
+    max-width:390px!important;
+    padding:11px 13px!important;
+    border-radius:18px!important;
+  }
+  .immersive-home .hero-features-card h3{font-size:17px!important}
+  .immersive-home .hero-features-card p{font-size:12px!important}
+}
