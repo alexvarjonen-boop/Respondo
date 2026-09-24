@@ -355,12 +355,16 @@ YLEINEN TOIMINTAOHJE:
 
   function assistant() {
     if ($('.fx-assistant-launch')) return;
+    const qLang = new URLSearchParams(location.search).get('lang');
+    const uiLang = ['fi','sv','en'].includes(qLang) ? qLang : (localStorage.getItem('respondo_lang') || 'fi');
+    const at = (fi,sv,en) => uiLang === 'sv' ? sv : uiLang === 'en' ? en : fi;
+    const onDemo = location.pathname === '/assistant';
     document.body.insertAdjacentHTML('beforeend', `
-      <button class="fx-assistant-launch" type="button" aria-label="Avaa Respondo"><i class="fx-brand-mark"><svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></i><span>Respondo</span><b class="fx-live"></b></button>
+      <button class="fx-assistant-launch" type="button" aria-label="${at('Avaa Respondo','Öppna Respondo','Open Respondo')}"><i class="fx-brand-mark"><svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></i><span>Respondo</span><b class="fx-live"></b></button>
       <aside class="fx-assistant" aria-label="Respondo">
-        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar fx-brand-mark"><svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></span><div><b>Respondo</b><small>${location.pathname === '/assistant' ? 'sama vastausmoottori kuin oikeassa botissa' : 'valmis vastaamaan'}</small></div></div><button class="fx-assistant-close" type="button" aria-label="Sulje">×</button></div>
-        <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">${location.pathname === '/assistant' ? 'Moi 👋 Testaa nyt yrityksen omilla tiedoilla. Kysy esimerkiksi hinnasta, aukioloajoista, palveluista tai omista lisäämistäsi kysymyksistä.' : 'Moi 👋 Olen Respondon sivuassistentti. Kysy miten palvelu toimii tai mitä se maksaa.'}</div>${location.pathname === '/assistant' ? '' : '<div class="fx-quick"><button type="button">Mitä RESPONDO AI maksaa?</button><button type="button">Miten 3 päivän kokeilu toimii?</button><button type="button">Miten asennus toimii?</button></div>'}</div>
-        <form class="fx-assistant-form"><input name="message" autocomplete="off" placeholder="Kirjoita kysymys…" aria-label="Kysymys"><button type="submit" aria-label="Lähetä">→</button></form>
+        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar fx-brand-mark"><svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></span><div><b>Respondo</b><small>${onDemo ? at('sama vastausmoottori kuin oikeassa botissa','samma svarsmotor som i den riktiga botten','the same response engine as the real bot') : at('valmis vastaamaan','redo att svara','ready to answer')}</small></div></div><button class="fx-assistant-close" type="button" aria-label="${at('Sulje','Stäng','Close')}">×</button></div>
+        <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">${onDemo ? at('Moi 👋 Testaa nyt yrityksen omilla tiedoilla. Kysy esimerkiksi hinnasta, aukioloajoista, palveluista tai omista lisäämistäsi kysymyksistä.','Hej 👋 Testa nu med företagets egna uppgifter. Fråga till exempel om priser, öppettider, tjänster eller frågor som du själv har lagt till.','Hi 👋 Test with your company details. Ask about prices, opening hours, services, or questions you added yourself.') : at('Moi 👋 Olen Respondon sivuassistentti. Kysy miten palvelu toimii tai mitä se maksaa.','Hej 👋 Jag är Respondos webbassistent. Fråga hur tjänsten fungerar eller vad den kostar.','Hi 👋 I am Respondo’s website assistant. Ask how the service works or what it costs.')}</div>${onDemo ? '' : '<div class="fx-quick"><button type="button">Mitä RESPONDO AI maksaa?</button><button type="button">Miten 3 päivän kokeilu toimii?</button><button type="button">Miten asennus toimii?</button></div>'}</div>
+        <form class="fx-assistant-form"><input name="message" autocomplete="off" placeholder="${at('Kirjoita kysymys…','Skriv en fråga…','Type a question…')}" aria-label="${at('Kysymys','Fråga','Question')}"><button type="submit" aria-label="${at('Lähetä','Skicka','Send')}">→</button></form>
       </aside>`);
     const launch = $('.fx-assistant-launch'), box = $('.fx-assistant'), close = $('.fx-assistant-close'), messages = $('.fx-assistant-messages'), form = $('.fx-assistant-form');
     const open = () => { box.classList.add('open'); setTimeout(() => form.message.focus(), 180); };
@@ -374,9 +378,9 @@ YLEINEN TOIMINTAOHJE:
       messages.scrollTop = messages.scrollHeight;
       try {
         if (location.pathname === '/assistant') {
-          typing.textContent = 'Etsin vastausta yrityksen tiedoista…';
+          typing.textContent = at('Etsin vastausta yrityksen tiedoista…','Söker svar i företagets uppgifter…','Searching the company information…');
           const answer = await localAiAnswer(clean, (pct) => {
-            if (pct >= 100) typing.textContent = 'Hetki, etsin vastausta…';
+            if (pct >= 100) typing.textContent = at('Hetki, etsin vastausta…','Ett ögonblick, jag söker svaret…','One moment, searching for the answer…');
             messages.scrollTop = messages.scrollHeight;
           });
           typing.classList.remove('typing');
