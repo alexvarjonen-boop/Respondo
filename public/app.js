@@ -164,6 +164,13 @@ function languageSwitch() {
   </label>`;
 }
 
+const APP_LOCALES = { fi:'fi-FI', sv:'sv-SE', en:'en-GB' };
+function appLocale() { return APP_LOCALES[currentLang()] || 'fi-FI'; }
+function appText(fi, sv, en) {
+  const lang = currentLang();
+  return lang === 'sv' ? (sv ?? fi) : lang === 'en' ? (en ?? fi) : fi;
+}
+
 const EN_TEXT = new Map(Object.entries({
   "Päänavigaatio":"Main navigation",
   "Kirjaudu":"Sign in",
@@ -2096,28 +2103,28 @@ async function dashboard() {
   const installedKey = `respondo-installed-${t.id}`;
   const installedDone = localStorage.getItem(installedKey) === '1';
   const profileDone = ['Hinnat','Aukioloajat','Palvelut'].filter((k) => businessProfile[k]).length >= 2;
-  const formatMoney = (n) => new Intl.NumberFormat('fi-FI', { style:'currency', currency:'EUR', maximumFractionDigits:0 }).format(Number(n || 0));
+  const formatMoney = (n) => new Intl.NumberFormat(appLocale(), { style:'currency', currency:'EUR', maximumFractionDigits:0 }).format(Number(n || 0));
   const actionTypeLabel = (type) => ({
-    quote:'Tarjouspyyntö',
-    booking:'Ajanvaraus',
-    order_status:'Tilauksen tila',
-    callback:'Yhteydenotto',
-  })[type] || type || 'Toiminto';
+    quote:appText('Tarjouspyyntö','Offertförfrågan','Quote request'),
+    booking:appText('Ajanvaraus','Bokning','Booking'),
+    order_status:appText('Tilauksen tila','Orderstatus','Order status'),
+    callback:appText('Yhteydenotto','Kontakt','Callback'),
+  })[type] || type || appText('Toiminto','Åtgärd','Action');
   const actionStatusLabel = (status) => ({
-    new:'Uusi',
-    in_progress:'Käsittelyssä',
-    done:'Hoidettu',
-  })[status] || status || 'Uusi';
+    new:appText('Uusi','Ny','New'),
+    in_progress:appText('Käsittelyssä','Behandlas','In progress'),
+    done:appText('Hoidettu','Klar','Done'),
+  })[status] || status || appText('Uusi','Ny','New');
   const channelLabel = (channel) => ({
-    website:'Verkkosivu',
+    website:appText('Verkkosivu','Webbplats','Website'),
     whatsapp:'WhatsApp',
     instagram:'Instagram',
-    phone:'Puhelin',
-    email:'Sähköposti',
+    phone:appText('Puhelin','Telefon','Phone'),
+    email:appText('Sähköposti','E-post','Email'),
     api:'API',
     messenger:'Messenger',
     sms:'SMS',
-  })[channel] || channel || 'Kanava';
+  })[channel] || channel || appText('Kanava','Kanal','Channel');
   const actionFieldEntries = (payload) => Object.entries(payload?.fields || {}).filter(([key,v]) => key !== 'slotId' && String(v || '').trim());
   const localDateInput = (date) => {
     const d = new Date(date);
@@ -2129,10 +2136,10 @@ async function dashboard() {
   const answersDone = nonProfileKnowledge.length > 0;
   const testedDone = s.conversations > 0;
   const onboarding = [
-    { label: 'Kerro yrityksesi perustiedot', done: profileDone, target: 'business-profile' },
-    { label: 'Lisää ensimmäinen oma vastaus', done: answersDone, target: 'knowledge' },
-    { label: 'Lisää Respondo verkkosivullesi', done: installedDone, target: 'install' },
-    { label: 'Kokeile bottia ensimmäisen kerran', done: testedDone, target: 'live-preview' },
+    { label: appText('Kerro yrityksesi perustiedot','Ange företagets grunduppgifter','Add your company details'), done: profileDone, target: 'business-profile' },
+    { label: appText('Lisää ensimmäinen oma vastaus','Lägg till ditt första egna svar','Add your first custom answer'), done: answersDone, target: 'knowledge' },
+    { label: appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website'), done: installedDone, target: 'install' },
+    { label: appText('Kokeile bottia ensimmäisen kerran','Testa botten för första gången','Test the bot for the first time'), done: testedDone, target: 'live-preview' },
   ];
   const onboardingDone = onboarding.filter((x) => x.done).length;
   const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
@@ -2253,7 +2260,7 @@ async function dashboard() {
             <span>${s.last30 || 0} / 30 pv</span>
           </div>
           <div class="mini-bars" aria-label="Keskustelut viimeisen 14 päivän aikana">
-            ${daily.length ? daily.map((x) => `<div class="mini-bar" title="${esc(x.day)} · ${Number(x.total || 0)}"><i style="height:${Math.max(8, Math.round((Number(x.total || 0) / maxDaily) * 100))}%"></i><small>${new Date(x.day).toLocaleDateString('fi-FI',{day:'numeric',month:'numeric'})}</small></div>`).join('') : '<div class="empty-state compact"><p>Kun keskusteluja kertyy, näet kehityksen tässä.</p></div>'}
+            ${daily.length ? daily.map((x) => `<div class="mini-bar" title="${esc(x.day)} · ${Number(x.total || 0)}"><i style="height:${Math.max(8, Math.round((Number(x.total || 0) / maxDaily) * 100))}%"></i><small>${new Date(x.day).toLocaleDateString(appLocale(),{day:'numeric',month:'numeric'})}</small></div>`).join('') : '<div class="empty-state compact"><p>Kun keskusteluja kertyy, näet kehityksen tässä.</p></div>'}
           </div>
         </article>
         <article class="panel gap-summary">
@@ -2422,7 +2429,7 @@ async function dashboard() {
                     <b>${esc(x.title)}</b>
                     ${x.source_type !== 'profile' ? `<button type="button" class="knowledge-feature-btn ${x.quick_reply_order ? 'active' : ''}" data-featured="${x.quick_reply_order ? 'true' : 'false'}">${x.quick_reply_order ? '✓ Etusivulla ' + x.quick_reply_order : '+ Lisää etusivulle'}</button>` : ''}
                   </div>
-                  <small>${esc(x.category || 'Yleinen')} · ${x.source_type === 'profile' ? 'Yrityksen tiedot' : x.source_type === 'owner_answer' ? 'Omistajan hyväksymä' : 'Manuaalinen'} · tarkistettu ${x.verified_at ? new Date(x.verified_at).toLocaleDateString('fi-FI') : '—'}</small>
+                  <small>${esc(x.category || 'Yleinen')} · ${x.source_type === 'profile' ? 'Yrityksen tiedot' : x.source_type === 'owner_answer' ? 'Omistajan hyväksymä' : 'Manuaalinen'} · tarkistettu ${x.verified_at ? new Date(x.verified_at).toLocaleDateString(appLocale()) : '—'}</small>
                   <p>${esc(x.answer)}</p>
                 </div>
                 <span class="approved" title="Hyväksytty Truth Engineen">✓</span>
@@ -2457,7 +2464,7 @@ async function dashboard() {
                 <div>
                   <span class="live-channel">${esc(channelLabel(thread.source_channel))}</span>
                   <b>${esc(thread.external_contact_id || thread.visitor_ref || 'Asiakas')}</b>
-                  <small>${new Date(thread.last_activity_at || thread.created_at).toLocaleString('fi-FI',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small>
+                  <small>${new Date(thread.last_activity_at || thread.created_at).toLocaleString(appLocale(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small>
                 </div>
                 <span class="live-mode">${thread.mode === 'human' ? '● Ihminen vastaa' : '● AI vastaa'}</span>
               </div>
@@ -2497,7 +2504,7 @@ async function dashboard() {
         <div class="conversation-log">
           ${recentConversations.length ? recentConversations.map((x) => `
             <article class="conversation-log-item ${x.handoff ? 'needs-human' : ''}">
-              <div class="conversation-log-meta"><span>${x.handoff ? 'Vastaus puuttui' : 'Vastattu'}</span><small>${new Date(x.created_at).toLocaleString('fi-FI',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small></div>
+              <div class="conversation-log-meta"><span>${x.handoff ? 'Vastaus puuttui' : 'Vastattu'}</span><small>${new Date(x.created_at).toLocaleString(appLocale(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small></div>
               ${x.page_title ? `<div class="conversation-page">Sivulla: ${esc(x.page_title)}</div>` : ''}
               <h3>${esc(x.question)}</h3>
               <p>${esc(x.answer)}</p>
@@ -2514,7 +2521,7 @@ async function dashboard() {
           ${leads.length ? leads.map((x) => `
             <article class="lead-item">
               <div class="lead-main">
-                <div><small>${new Date(x.created_at).toLocaleString('fi-FI',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small><h3>${esc(x.name || 'Asiakas')}</h3></div>
+                <div><small>${new Date(x.created_at).toLocaleString(appLocale(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small><h3>${esc(x.name || 'Asiakas')}</h3></div>
                 <span class="lead-status">Uusi</span>
               </div>
               ${x.message ? `<p>“${esc(x.message)}”</p>` : ''}
@@ -2540,7 +2547,7 @@ async function dashboard() {
             <article class="unanswered-item" data-id="${esc(x.id)}" data-question="${esc(x.question)}">
               <div class="unanswered-meta">
                 <span>${String(i + 1).padStart(2,'0')}</span>
-                <small>${new Date(x.created_at).toLocaleString('fi-FI', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small>
+                <small>${new Date(x.created_at).toLocaleString(appLocale(), {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small>
               </div>
               <h3>${esc(x.question)}</h3>
               <textarea class="unanswered-answer" placeholder="Kirjoita tähän oikea vastaus…"></textarea>
@@ -2578,7 +2585,7 @@ async function dashboard() {
                 <div class="action-request-top">
                   <div>
                     <span class="action-kind">${esc(actionTypeLabel(x.request_type))}</span>
-                    <small>${new Date(x.created_at).toLocaleString('fi-FI',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} · ${esc(x.source_channel || 'website')}</small>
+                    <small>${new Date(x.created_at).toLocaleString(appLocale(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} · ${esc(x.source_channel || 'website')}</small>
                   </div>
                   <span class="action-state">${esc(actionStatusLabel(x.status))}</span>
                 </div>
@@ -2596,7 +2603,7 @@ async function dashboard() {
                 ${x.payload?.booking?.startsAt ? `
                   <div class="action-booking-summary">
                     <span>VARATTU AIKA</span>
-                    <b>${new Date(x.payload.booking.startsAt).toLocaleString('fi-FI',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</b>
+                    <b>${new Date(x.payload.booking.startsAt).toLocaleString(appLocale(),{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</b>
                     <small>${x.result?.calendarSync?.status === 'synced' ? 'Google Calendar ✓' : x.result?.calendarSync?.status === 'failed' ? 'Google-sync epäonnistui' : 'RESPONDO Calendar'}</small>
                   </div>
                 ` : ''}
@@ -2682,7 +2689,7 @@ async function dashboard() {
           <div class="booking-slot-list">
             ${bookingSlots.length ? bookingSlots.slice(0,18).map((slot) => `
               <div class="booking-slot-item ${slot.status}">
-                <div><b>${new Date(slot.starts_at).toLocaleString('fi-FI',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</b><small>${slot.status === 'booked' ? 'Varattu' : 'Vapaa'}</small></div>
+                <div><b>${new Date(slot.starts_at).toLocaleString(appLocale(),{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</b><small>${slot.status === 'booked' ? 'Varattu' : 'Vapaa'}</small></div>
                 ${slot.status === 'open' ? `<button type="button" class="delete-booking-slot" data-id="${esc(slot.id)}">Poista</button>` : '<span>✓</span>'}
               </div>
             `).join('') : '<div class="empty-state compact"><p>Et ole vielä luonut vapaita aikoja.</p></div>'}
@@ -2765,7 +2772,7 @@ async function paymentSuccess() {
   }
 
   if (result?.paid) {
-    const amount = new Intl.NumberFormat('fi-FI', {
+    const amount = new Intl.NumberFormat(appLocale(), {
       style:'currency',
       currency:result.currency || 'EUR',
     }).format(Number(result.amountTotal || 0) / 100);
@@ -2978,7 +2985,7 @@ async function route() {
   if (path === '/') {
     const jobSlider = $('#jobValueSlider');
     const missedSlider = $('#missedSlider');
-    const euro = (n) => new Intl.NumberFormat('fi-FI', { maximumFractionDigits: 0 }).format(n) + ' €';
+    const euro = (n) => new Intl.NumberFormat(appLocale(), { maximumFractionDigits: 0 }).format(n) + ' €';
 
     const updateCalculator = () => {
       const job = Number(jobSlider?.value || 0);
@@ -3190,7 +3197,7 @@ async function route() {
       button.disabled = true;
       button.innerHTML = 'Testataan…';
       const target = Number($('#selfTestDepth')?.value || 500) >= 1000 ? 1000 : 500;
-      $('#selfTestResult').innerHTML = '<div class="self-test-running">Respondo käy läpi ' + target.toLocaleString('fi-FI') + ' realistista asiakaskysymystä ja etsii aukkoja.</div>';
+      $('#selfTestResult').innerHTML = '<div class="self-test-running">Respondo käy läpi ' + target.toLocaleString(appLocale()) + ' realistista asiakaskysymystä ja etsii aukkoja.</div>';
       try {
         const result = await api('/api/app/self-test', {
           method:'POST',
