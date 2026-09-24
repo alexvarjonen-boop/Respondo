@@ -3281,7 +3281,7 @@ async function route() {
   let html;
 
   if (path === '/') html = await home();
-  else if (path === '/assistant') html = `<main class="assistant-route-fallback"><div class="container"><div class="section-kicker">${appText('KOKEILE RESPONDOA','TESTA RESPONDO','TRY RESPONDO')}</div><h1>${appText('Kokeile, miltä Respondo tuntuisi omassa yrityksessäsi.','Testa hur Respondo skulle fungera i ditt företag.','See how Respondo would work for your business.')}</h1><p>${appText('Lisää muutama yrityksesi tieto ja kysy sen jälkeen ihan samalla tavalla kuin asiakkaasi kysyisi.','Lägg till några uppgifter om ditt företag och fråga sedan precis som en kund skulle göra.','Add a few details about your business, then ask a question just as a customer would.')}</p></div></main>`;
+  else if (path === '/assistant') html = `<div>${nav()}<main class="assistant-route-fallback"><div class="container"><div class="section-kicker">${appText('KOKEILE RESPONDOA','TESTA RESPONDO','TRY RESPONDO')}</div><h1>${appText('Kokeile, miltä Respondo tuntuisi omassa yrityksessäsi.','Testa hur Respondo skulle fungera i ditt företag.','See how Respondo would work for your business.')}</h1><p>${appText('Lisää muutama yrityksesi tieto ja kysy sen jälkeen ihan samalla tavalla kuin asiakkaasi kysyisi.','Lägg till några uppgifter om ditt företag och fråga sedan precis som en kund skulle göra.','Add a few details about your business, then ask a question just as a customer would.')}</p></div></main></div>`;
   else if (path === '/tilaus') html = signup();
   else if (path === '/kirjaudu') html = login();
   else if (path === '/maksu-valmis') html = await paymentSuccess();
