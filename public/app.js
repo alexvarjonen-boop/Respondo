@@ -2186,14 +2186,6 @@ async function home() {
             <div class="hero-actions">
               <a class="btn hero-primary hero-bot-cta" href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
             </div>
-            <a class="hero-features-card" href="/ominaisuudet?lang=${currentLang()}" aria-label="${esc(appText('Katso kaikki 145 Respondo AI:n ominaisuutta','Se alla 145 funktioner i Respondo AI','See all 145 Respondo AI features'))}">
-              <div class="hero-features-card-top">
-                <span>${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</span>
-                <b>→</b>
-              </div>
-              <h3>${appText('Katso kaikki 145 Respondo AI:n ominaisuutta','Se alla 145 funktioner i Respondo AI','See all 145 Respondo AI features')}</h3>
-              <p>${appText('Yli 145 toimintoa asiakaspalveluun, tarjouksiin, ajanvaraukseen ja yhteydenottoihin — 44,99 €/kk.','Över 145 funktioner för kundservice, offerter, bokningar och kontaktförfrågningar — 44,99 €/mån.','Over 145 features for customer service, quotes, bookings and contact requests — €44.99/month.')}</p>
-            </a>
             <div class="hero-scroll-hint"><i></i><span>VIERITÄ ALAS JA KATSO, MITEN SE TOIMII</span></div>
           </div>
           ${heroVisual()}
@@ -2207,6 +2199,15 @@ async function home() {
       ${trustPortalScene()}
       ${dataImpactScene()}
       ${calculatorSection()}
+      <section class="post-calculator-features"><div class="container">
+        <a class="hero-features-card" href="/ominaisuudet?lang=${currentLang()}" aria-label="${esc(appText('Katso kaikki 145 Respondo AI:n ominaisuutta','Se alla 145 funktioner i Respondo AI','See all 145 Respondo AI features'))}">
+          <div class="hero-features-card-top">
+            <span>${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</span><b>→</b>
+          </div>
+          <h3>${appText('Katso kaikki 145 Respondo AI:n ominaisuutta','Se alla 145 funktioner i Respondo AI','See all 145 Respondo AI features')}</h3>
+          <p>${appText('Yli 145 toimintoa asiakaspalveluun, tarjouksiin, ajanvaraukseen ja yhteydenottoihin — 44,99 €/kk.','Över 145 funktioner för kundservice, offerter, bokningar och kontaktförfrågningar — 44,99 €/mån.','Over 145 features for customer service, quotes, bookings and contact requests — €44.99/month.')}</p>
+        </a>
+      </div></section>
       ${pricingSection()}
 
       <section class="section final-cta final-cta-immersive">
