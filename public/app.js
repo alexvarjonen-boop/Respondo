@@ -3478,7 +3478,7 @@ async function route() {
             }, 350);
           });
         });
-        button.innerHTML = 'Testaa uudelleen';
+        button.innerHTML = appText('Testaa uudelleen','Testa igen','Test again');
       } catch (err) {
         $('#selfTestResult').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
         button.innerHTML = original;
@@ -3504,10 +3504,10 @@ async function route() {
           if (result.found && result.answer) {
             textarea.value = result.answer;
             textarea.focus();
-            if (msg) msg.innerHTML = '<div class="notice success">Löysin ehdotuksen yrityksesi verkkosivulta. Tarkista se ja hyväksy vasta sitten.</div>';
+            if (msg) msg.innerHTML = '<div class="notice success">' + appText('Löysin ehdotuksen yrityksesi verkkosivulta. Tarkista se ja hyväksy vasta sitten.','Jag hittade ett förslag på företagets webbplats. Kontrollera det och godkänn först därefter.','I found a suggestion on your company website. Review it and only then approve it.') + '</div>';
             button.textContent = 'Ehdotus löytyi ✓';
           } else {
-            if (msg) msg.innerHTML = '<div class="notice error">Verkkosivulta ei löytynyt tähän varmaa vastausta. Kirjoita oikea vastaus itse.</div>';
+            if (msg) msg.innerHTML = '<div class="notice error">' + appText('Verkkosivulta ei löytynyt tähän varmaa vastausta. Kirjoita oikea vastaus itse.','Det gick inte att hitta ett säkert svar på webbplatsen. Skriv det korrekta svaret själv.','A reliable answer could not be found on the website. Enter the correct answer yourself.') + '</div>';
             button.textContent = original;
           }
         } catch (err) {
@@ -3536,7 +3536,7 @@ async function route() {
       if (chat?.lastElementChild) chat.lastElementChild.textContent = question;
       input.value = '';
 
-      chat?.insertAdjacentHTML('beforeend', '<div class="preview-bubble bot preview-thinking">Haetaan hyväksytyistä tiedoista…</div>');
+      chat?.insertAdjacentHTML('beforeend', '<div class="preview-bubble bot preview-thinking">' + appText('Haetaan hyväksytyistä tiedoista…','Söker i godkänd information…','Searching approved information…') + '</div>');
       const bubble = chat?.lastElementChild;
       try {
         const profileForm = $('#businessProfileForm');
@@ -3606,7 +3606,7 @@ async function route() {
             body: JSON.stringify({ answer }),
           });
           item.classList.add('resolved');
-          if (msg) msg.innerHTML = '<div class="notice success">Lisätty tietopohjaan ✓</div>';
+          if (msg) msg.innerHTML = '<div class="notice success">' + appText('Lisätty tietopohjaan ✓','Tillagt i kunskapsbasen ✓','Added to knowledge base ✓') + '</div>';
           button.innerHTML = 'Tallennettu ✓';
           setTimeout(() => item.remove(), 900);
         } catch (err) {
@@ -3639,7 +3639,7 @@ async function route() {
         ['pricing','hours','phone','email','services','serviceArea','address','website','quoteRequestUrl','bookingUrl','notes'].forEach((name) => {
           if (p[name] && formEl?.elements[name]) formEl.elements[name].value = p[name];
         });
-        $('#businessProfileMsg').innerHTML = '<div class="notice success">Tiedot haettu. Tarkista ehdotukset ja tallenna ne vasta sitten.</div>';
+        $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText('Tiedot haettu. Tarkista ehdotukset ja tallenna ne vasta sitten.','Uppgifterna har hämtats. Kontrollera förslagen och spara dem först därefter.','Details imported. Review the suggestions and only then save them.') + '</div>';
         button.textContent = 'Tiedot haettu ✓';
         setTimeout(() => { button.textContent = original; button.disabled = false; }, 1800);
       } catch (err) {
@@ -3671,7 +3671,7 @@ async function route() {
     $('#botAvatarUpload')?.addEventListener('change', async (e) => {
       const file = e.currentTarget.files?.[0];
       if (!file) return;
-      $('#botAvatarMsg').innerHTML = '<div class="bot-avatar-processing">Käsitellään kuvaa…</div>';
+      $('#botAvatarMsg').innerHTML = '<div class="bot-avatar-processing">' + appText('Käsitellään kuvaa…','Bearbetar bilden…','Processing image…') + '</div>';
       try {
         const data = await imageFileToAvatarData(file);
         const formEl = $('#businessProfileForm');
@@ -3719,7 +3719,7 @@ async function route() {
             notes: form.get('notes'),
           }),
         });
-        $('#businessProfileMsg').innerHTML = '<div class="notice success">Yrityksen tiedot tallennettu. Botti käyttää nyt tallennettuja tietoja.</div>';
+        $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText('Yrityksen tiedot tallennettu. Botti käyttää nyt tallennettuja tietoja.','Företagsuppgifterna har sparats. Botten använder nu de sparade uppgifterna.','Company details saved. The bot now uses the saved information.') + '</div>';
         button.disabled = false;
         button.innerHTML = 'Tallennettu ✓';
         setTimeout(() => (button.innerHTML = original), 1800);
@@ -3862,7 +3862,7 @@ async function route() {
       const original = button.innerHTML;
 
       if (!startDateRaw || !endDateRaw || !weekdays.size) {
-        $('#bookingSlotsMsg').innerHTML = '<div class="notice error">Valitse päivät ja vähintään yksi viikonpäivä.</div>';
+        $('#bookingSlotsMsg').innerHTML = '<div class="notice error">' + appText('Valitse päivät ja vähintään yksi viikonpäivä.','Välj datum och minst en veckodag.','Select the dates and at least one weekday.') + '</div>';
         return;
       }
 
@@ -3871,7 +3871,7 @@ async function route() {
       const startDate = new Date(sy,sm-1,sd,12,0,0,0);
       const endDate = new Date(ey,em-1,ed,12,0,0,0);
       if (endDate < startDate) {
-        $('#bookingSlotsMsg').innerHTML = '<div class="notice error">Päättymispäivän pitää olla aloituspäivän jälkeen.</div>';
+        $('#bookingSlotsMsg').innerHTML = '<div class="notice error">' + appText('Päättymispäivän pitää olla aloituspäivän jälkeen.','Slutdatumet måste vara efter startdatumet.','The end date must be after the start date.') + '</div>';
         return;
       }
 
@@ -3895,7 +3895,7 @@ async function route() {
       }
 
       if (!slots.length) {
-        $('#bookingSlotsMsg').innerHTML = '<div class="notice error">Näillä asetuksilla ei syntynyt yhtään aikaa.</div>';
+        $('#bookingSlotsMsg').innerHTML = '<div class="notice error">' + appText('Näillä asetuksilla ei syntynyt yhtään aikaa.','De här inställningarna skapade inga tider.','These settings did not produce any available times.') + '</div>';
         return;
       }
 
@@ -3953,7 +3953,7 @@ async function route() {
     if (calendarParam === 'connected') {
       $('#calendarConnectMsg').innerHTML = '<div class="notice success">Google Calendar yhdistetty ✓</div>';
     } else if (calendarParam && !['disconnected'].includes(calendarParam)) {
-      $('#calendarConnectMsg').innerHTML = '<div class="notice error">Google Calendar -yhdistäminen ei valmistunut. Yritä uudelleen.</div>';
+      $('#calendarConnectMsg').innerHTML = '<div class="notice error">' + appText('Google Calendar -yhdistäminen ei valmistunut. Yritä uudelleen.','Anslutningen till Google Calendar slutfördes inte. Försök igen.','Google Calendar connection did not complete. Please try again.') + '</div>';
     }
 
     $('#connectStripeBusiness')?.addEventListener('click', async (e) => {
@@ -3994,7 +3994,7 @@ async function route() {
             instagramAccessToken:form.get('instagramAccessToken'),
           }),
         });
-        $('#metaChannelsMsg').innerHTML = '<div class="notice success">Meta-kanavat tallennettu ✓ Lisää yllä näkyvä Webhook URL + Verify Token Meta Developer -asetuksiin.</div>';
+        $('#metaChannelsMsg').innerHTML = '<div class="notice success">' + appText('Meta-kanavat tallennettu ✓ Lisää yllä näkyvä Webhook URL + Verify Token Meta Developer -asetuksiin.','Meta-kanaler sparade ✓ Lägg till Webhook URL och Verify Token som visas ovan i Meta Developer-inställningarna.','Meta channels saved ✓ Add the Webhook URL and Verify Token shown above in Meta Developer settings.') + '</div>';
         button.innerHTML = 'Tallennettu ✓';
         setTimeout(() => (button.innerHTML = original), 1500);
       } catch (err) {
@@ -4016,7 +4016,7 @@ async function route() {
         if (result.results?.whatsapp) parts.push(result.results.whatsapp.ok ? 'WhatsApp ✓' : 'WhatsApp ✕');
         if (result.results?.instagram) parts.push(result.results.instagram.ok ? 'Instagram ✓' : 'Instagram ✕');
         $('#metaChannelsMsg').innerHTML = '<div class="notice ' + (result.ok ? 'success' : 'error') + '">' + esc(parts.join(' · ')) + '</div>';
-        button.textContent = result.ok ? 'Toimii ✓' : 'Tarkista tiedot';
+        button.textContent = result.ok ? appText('Toimii ✓','Fungerar ✓','Working ✓') : appText('Tarkista tiedot','Kontrollera uppgifterna','Check details');
       } catch (err) {
         $('#metaChannelsMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
         button.textContent = original;
@@ -4067,7 +4067,7 @@ async function route() {
       button.textContent = 'Testataan…';
       try {
         await api('/api/app/voice/test', { method:'POST', body:'{}' });
-        $('#voiceAgentMsg').innerHTML = '<div class="notice success">Twilio-yhteys toimii ✓</div>';
+        $('#voiceAgentMsg').innerHTML = '<div class="notice success">' + appText('Twilio-yhteys toimii ✓','Twilio-anslutningen fungerar ✓','Twilio connection works ✓') + '</div>';
         button.textContent = 'Toimii ✓';
         setTimeout(() => (button.textContent = original), 1500);
       } catch (err) {
@@ -4085,7 +4085,7 @@ async function route() {
       button.textContent = 'Lähetetään…';
       try {
         await api('/api/app/voice/test-sms', { method:'POST', body:'{}' });
-        $('#voiceAgentMsg').innerHTML = '<div class="notice success">Testi-SMS lähetetty ✓</div>';
+        $('#voiceAgentMsg').innerHTML = '<div class="notice success">' + appText('Testi-SMS lähetetty ✓','Test-SMS skickat ✓','Test SMS sent ✓') + '</div>';
         button.textContent = 'Lähetetty ✓';
         setTimeout(() => (button.textContent = original), 1500);
       } catch (err) {
@@ -4156,7 +4156,7 @@ async function route() {
             body:JSON.stringify({ message }),
           });
           const list = item.querySelector('.live-messages');
-          list.insertAdjacentHTML('beforeend','<div class="live-message human"><small>Sinä</small><p>' + esc(message) + '</p></div>');
+          list.insertAdjacentHTML('beforeend','<div class="live-message human"><small>' + appText('Sinä','Du','You') + '</small><p>' + esc(message) + '</p></div>');
           input.value = '';
           list.scrollTop = list.scrollHeight;
         } catch (err) {
