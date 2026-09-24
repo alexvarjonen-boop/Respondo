@@ -5406,3 +5406,240 @@ body.assistant-standalone .assistant-order-card .assistant-order-btn{background:
   .features-final-card{display:block;padding:24px;border-radius:26px}
   .features-final-card .btn{margin-top:20px;width:100%}
 }
+
+
+/* 2026-09-25 sitewide premium dark surfaces — scoped, contrast-safe */
+body{
+  background:#0f0d15;
+}
+#app{
+  min-height:100vh;
+  background:#f5f4f7;
+}
+
+/* Home: dark cinematic bands, while preserving all existing component text colors. */
+.immersive-home{
+  background:#f4f3f7;
+}
+.immersive-home .cinematic-conversation,
+.immersive-home .product-world,
+.immersive-home .trust-portal,
+.immersive-home .data-impact,
+.immersive-home .final-cta-immersive{
+  background:
+    radial-gradient(circle at 78% 16%,rgba(132,91,255,.18),transparent 31%),
+    radial-gradient(circle at 12% 82%,rgba(83,54,118,.14),transparent 30%),
+    linear-gradient(155deg,#121018,#21152c 58%,#0d0c13)!important;
+  color:#fff;
+}
+.immersive-home .cinematic-conversation h1,
+.immersive-home .cinematic-conversation h2,
+.immersive-home .cinematic-conversation h3,
+.immersive-home .product-world h1,
+.immersive-home .product-world h2,
+.immersive-home .product-world h3,
+.immersive-home .trust-portal h1,
+.immersive-home .trust-portal h2,
+.immersive-home .trust-portal h3,
+.immersive-home .data-impact h1,
+.immersive-home .data-impact h2,
+.immersive-home .data-impact h3,
+.immersive-home .final-cta-immersive h1,
+.immersive-home .final-cta-immersive h2,
+.immersive-home .final-cta-immersive h3{
+  color:#fff!important;
+  -webkit-text-fill-color:initial!important;
+}
+.immersive-home .cinematic-conversation p,
+.immersive-home .product-world p,
+.immersive-home .trust-portal p,
+.immersive-home .data-impact p,
+.immersive-home .final-cta-immersive p{
+  color:#b8b2c1!important;
+}
+.immersive-home .cinematic-conversation .section-kicker,
+.immersive-home .product-world .section-kicker,
+.immersive-home .trust-portal .section-kicker,
+.immersive-home .data-impact .section-kicker,
+.immersive-home .final-cta-immersive .section-kicker{
+  color:#aaa0c5!important;
+}
+
+/* Checkout + login: same dark plum atmosphere, forms remain light and readable. */
+.formpage{
+  background:
+    radial-gradient(circle at 82% 8%,rgba(145,105,255,.20),transparent 28%),
+    radial-gradient(circle at 8% 52%,rgba(97,59,133,.15),transparent 32%),
+    linear-gradient(155deg,#121018,#21162c 62%,#0e0d14)!important;
+  color:#fff;
+}
+.formpage .checkout-copy,
+.formpage .login-copy{
+  color:#fff;
+}
+.formpage .checkout-copy h1,
+.formpage .login-copy h1{
+  color:#fff!important;
+}
+.formpage .checkout-copy h1 em,
+.formpage .login-copy h1 em{
+  color:#9c82ff!important;
+  -webkit-text-fill-color:#9c82ff!important;
+}
+.formpage .checkout-copy>p,
+.formpage .login-copy>p{
+  color:#b9b3c2!important;
+}
+.formpage .section-kicker{
+  color:#aaa0c5!important;
+}
+.formpage .checkout-steps>div,
+.formpage .seller-card,
+.formpage .login-signal{
+  border-color:rgba(255,255,255,.12)!important;
+  background:rgba(255,255,255,.065)!important;
+  color:#fff!important;
+}
+.formpage .checkout-steps small,
+.formpage .seller-card small{
+  color:#b8b2c1!important;
+}
+.formpage .premium-form{
+  background:#fbfbfc!important;
+  color:#111114!important;
+  box-shadow:0 34px 90px rgba(0,0,0,.28)!important;
+}
+.formpage .premium-form label,
+.formpage .premium-form .form-head,
+.formpage .premium-form .form-head b{
+  color:#111114!important;
+}
+.formpage .premium-form input,
+.formpage .premium-form textarea,
+.formpage .premium-form select{
+  color:#111114!important;
+  background:#fff!important;
+}
+
+/* Legal pages: dark shell + light reading paper. */
+.legalpage{
+  background:
+    radial-gradient(circle at 85% 5%,rgba(143,105,255,.20),transparent 28%),
+    linear-gradient(160deg,#121018,#21152b 55%,#0e0d14)!important;
+  color:#fff;
+}
+.legalpage .legal-aside{
+  color:#fff;
+}
+.legalpage .legal-aside h1{color:#fff!important}
+.legalpage .legal-aside>p{color:#b9b3c2!important}
+.legalpage .section-kicker{color:#aaa0c5!important}
+.legalpage .legal-seller{
+  border-color:rgba(255,255,255,.12)!important;
+  background:rgba(255,255,255,.07)!important;
+  color:#fff!important;
+}
+.legalpage .legal-seller span,
+.legalpage .legal-seller small{color:#b8b2c1!important}
+.legalpage .legalcopy{
+  background:#fbfbfc!important;
+  color:#111114!important;
+  box-shadow:0 34px 90px rgba(0,0,0,.24)!important;
+}
+.legalpage .legalcopy h2{color:#111114!important}
+.legalpage .legalcopy p{color:#64666d!important}
+.legalpage .legalcopy a{color:#111114!important}
+
+/* Feature directory: full dark presentation, with explicit contrast. */
+.features-page{
+  background:
+    radial-gradient(circle at 85% 6%,rgba(145,105,255,.20),transparent 27%),
+    radial-gradient(circle at 10% 42%,rgba(92,55,129,.14),transparent 30%),
+    linear-gradient(180deg,#121018,#1c1426 45%,#0e0d13)!important;
+  color:#fff;
+}
+.features-page .features-hero:before{
+  background:
+    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+}
+.features-page .features-hero-badge,
+.features-page .features-hero-stats>div{
+  background:rgba(255,255,255,.065)!important;
+  border-color:rgba(255,255,255,.10)!important;
+}
+.features-page .features-hero h1{color:#fff!important}
+.features-page .features-hero h1 em{color:#a48bff!important}
+.features-page .features-hero p,
+.features-page .features-hero-stats span,
+.features-page .features-directory-head>span{color:#b8b2c1!important}
+.features-page .features-directory-head h2{color:#fff!important}
+.features-page .feature-category{
+  background:rgba(255,255,255,.07)!important;
+  border-color:rgba(255,255,255,.10)!important;
+  color:#fff!important;
+}
+.features-page .feature-category-copy h2,
+.features-page .feature-item b{color:#fff!important}
+.features-page .feature-category-copy p{color:#b8b2c1!important}
+.features-page .feature-item{
+  background:rgba(255,255,255,.055)!important;
+  border-color:rgba(255,255,255,.075)!important;
+}
+.features-page .feature-item-number{color:#8f879c!important}
+.features-page .features-final-card{
+  background:linear-gradient(135deg,#24172f,#111017)!important;
+  border:1px solid rgba(255,255,255,.12);
+}
+
+/* Logged-in workspace: dark outer canvas, readable white working cards. */
+.dashboard-simple-shell{
+  background:
+    radial-gradient(circle at 90% 0,rgba(143,105,255,.17),transparent 24%),
+    linear-gradient(155deg,#121018,#1d1427 60%,#0e0d13)!important;
+  color:#fff;
+}
+.dashboard-simple-shell .dashboard-simple-main,
+.dashboard-simple-shell .dashboard-workspace,
+.dashboard-simple-shell .dashboard-view-section{
+  color:#111114;
+}
+.dashboard-simple-shell .dashboard-topbar{
+  border-color:rgba(255,255,255,.10)!important;
+  background:rgba(19,16,26,.90)!important;
+  color:#fff!important;
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+}
+.dashboard-simple-shell .dashboard-topbar-brand,
+.dashboard-simple-shell .dashboard-top-actions{color:#fff!important}
+
+/* Payment-success / conversation shells follow the same visual language. */
+.payment-success-page,
+.conversation-page{
+  background:
+    radial-gradient(circle at 82% 8%,rgba(145,105,255,.18),transparent 28%),
+    linear-gradient(155deg,#121018,#21162c 62%,#0e0d14)!important;
+}
+
+/* Sticky navigation remains light for maximum readability on every page. */
+.nav{
+  background:rgba(249,248,250,.92)!important;
+  border-bottom-color:rgba(20,16,28,.08)!important;
+  backdrop-filter:blur(22px)!important;
+  -webkit-backdrop-filter:blur(22px)!important;
+}
+
+@media(max-width:760px){
+  .formpage,
+  .legalpage,
+  .features-page,
+  .dashboard-simple-shell{
+    background:
+      radial-gradient(circle at 88% 4%,rgba(145,105,255,.18),transparent 23%),
+      linear-gradient(165deg,#121018,#1d1427 58%,#0e0d13)!important;
+  }
+  .legalpage .legalcopy{
+    border-radius:26px!important;
+  }
+}
