@@ -430,6 +430,11 @@ YLEINEN TOIMINTAOHJE:
     nodes.forEach(n=>{const raw=n.nodeValue||'',key=raw.trim();if(map.has(key))n.nodeValue=raw.replace(key,map.get(key));});
     const ph=sv?{'Esim. Virtasen LVI Oy':'T.ex. Virtanen VVS Ab','Esim. 65 € / h + alv':'T.ex. 65 € / h','Ma–Pe 8–17':'Mån–Fre 8–17','Katu 1, Tampere':'Gatan 1, Tammerfors','Esim. Oletteko lauantaina auki?':'T.ex. Har ni öppet på lördagar?','Esim. Kyllä. Olemme lauantaisin auki klo 10–14.':'T.ex. Ja. Vi har öppet på lördagar kl. 10–14.','Esim. päivystys, maksutavat, takuu tai ajanvarausohjeet…':'T.ex. jour, betalningssätt, garanti eller bokningsanvisningar…'}:{'Esim. Virtasen LVI Oy':'E.g. Virtanen Plumbing Ltd','Esim. 65 € / h + alv':'E.g. €65 / h','Ma–Pe 8–17':'Mon–Fri 8–17','Katu 1, Tampere':'1 Street, Tampere','Esim. Oletteko lauantaina auki?':'E.g. Are you open on Saturdays?','Esim. Kyllä. Olemme lauantaisin auki klo 10–14.':'E.g. Yes. We are open Saturdays 10–14.','Esim. päivystys, maksutavat, takuu tai ajanvarausohjeet…':'E.g. emergency service, payment methods, warranty or booking instructions…'};
     root.querySelectorAll('[placeholder]').forEach(el=>{const v=el.getAttribute('placeholder');if(ph[v])el.setAttribute('placeholder',ph[v]);});
+    const trust = root.querySelector('.assistant-order-trust');
+    if (trust) {
+      const vals = sv ? ['✓ Säkra betalningar via Stripe','✓ Ingen debitering under den 3 dagar långa provperioden','✓ Kom igång direkt efter beställningen'] : ['✓ Secure payments with Stripe','✓ No charge during the 3-day trial','✓ Get started immediately after subscribing'];
+      trust.querySelectorAll('span').forEach((el,i)=>{ if(vals[i]) el.textContent=vals[i]; });
+    }
   }
 
   function standaloneAssistant() {
