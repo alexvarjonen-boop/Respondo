@@ -148,7 +148,7 @@
         const response = await fetch('/api/i18n/translate', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({lang,texts:batch})
+          body:JSON.stringify({lang,texts:batch,context:'authenticated Respondo dashboard UI; translate every visible Finnish UI string naturally and preserve product names, URLs, emails, numbers and placeholders'})
         });
         if (!response.ok) continue;
         const data = await response.json().catch(() => ({}));
