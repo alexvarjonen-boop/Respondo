@@ -5643,3 +5643,212 @@ body{
     border-radius:26px!important;
   }
 }
+
+
+/* 2026-09-25 cinematic hero console — deep 3D, no yellow warning card */
+.immersive-home .hero-immersive{
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 72% 18%,rgba(136,92,255,.28),transparent 30%),
+    radial-gradient(circle at 15% 68%,rgba(77,45,115,.22),transparent 34%),
+    linear-gradient(165deg,#0d0b13 0%,#1b1126 55%,#0a0910 100%)!important;
+  color:#fff;
+  perspective:1200px;
+}
+.immersive-home .hero-immersive:after{
+  content:"";
+  position:absolute;
+  width:72vw;height:72vw;max-width:920px;max-height:920px;
+  left:50%;top:60%;
+  transform:translate(-50%,-50%) rotate(18deg);
+  border:1px solid rgba(174,146,255,.10);
+  border-radius:44%;
+  box-shadow:
+    0 0 0 70px rgba(159,127,255,.025),
+    0 0 0 140px rgba(159,127,255,.018);
+  pointer-events:none;
+}
+.immersive-home .hero-immersive .hero-grid,
+.immersive-home .hero-immersive .hero-copy,
+.immersive-home .hero-immersive .hero-actions,
+.immersive-home .hero-immersive .trust-row{
+  position:relative;z-index:2;
+}
+.immersive-home .hero-immersive .hero-copy h1{color:#fff!important}
+.immersive-home .hero-immersive .hero-copy h1 em{
+  color:#9d7cff!important;
+  -webkit-text-fill-color:#9d7cff!important;
+}
+.immersive-home .hero-immersive .hero-label,
+.immersive-home .hero-immersive .lead,
+.immersive-home .hero-immersive .trust-row{color:#aaa4b4!important}
+
+.immersive-home .signal-console{
+  position:relative;
+  z-index:3;
+  border:1px solid rgba(255,255,255,.14)!important;
+  border-radius:38px!important;
+  overflow:hidden;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.095),rgba(255,255,255,.035))!important;
+  box-shadow:
+    0 60px 130px rgba(0,0,0,.52),
+    0 20px 55px rgba(86,46,130,.24),
+    inset 0 1px 0 rgba(255,255,255,.13)!important;
+  backdrop-filter:blur(28px);
+  -webkit-backdrop-filter:blur(28px);
+  transform:translateZ(0) rotateX(1.2deg);
+  transform-origin:center top;
+}
+.immersive-home .signal-console:before{
+  content:"";
+  position:absolute;inset:-1px;
+  background:linear-gradient(115deg,transparent 22%,rgba(173,145,255,.09) 48%,transparent 72%);
+  transform:translateX(-65%);
+  animation:respondoConsoleSheen 7s ease-in-out infinite;
+  pointer-events:none;z-index:0;
+}
+@keyframes respondoConsoleSheen{
+  0%,25%{transform:translateX(-70%)}
+  58%,100%{transform:translateX(70%)}
+}
+.immersive-home .signal-console>*{position:relative;z-index:1}
+.immersive-home .console-top{
+  background:rgba(255,255,255,.025)!important;
+  border-bottom:1px solid rgba(255,255,255,.09)!important;
+}
+.immersive-home .console-brand,
+.immersive-home .console-time{color:#bcb5c8!important}
+.immersive-home .console-rail{
+  background:rgba(7,6,11,.28)!important;
+  border-right:1px solid rgba(255,255,255,.075)!important;
+}
+.immersive-home .console-rail,
+.immersive-home .console-rail *{color:#aaa3b2!important}
+.immersive-home .console-rail .active{
+  background:rgba(157,124,255,.14)!important;
+  color:#fff!important;
+}
+.immersive-home .console-main{
+  background:
+    radial-gradient(circle at 72% 18%,rgba(132,91,255,.11),transparent 35%),
+    rgba(11,9,16,.34)!important;
+  color:#fff!important;
+}
+.immersive-home .console-header{
+  border-bottom:1px solid rgba(255,255,255,.075)!important;
+}
+.immersive-home .console-header small,
+.immersive-home .console-header h3{color:#fff!important}
+.immersive-home .verified,
+.immersive-home .confidence{
+  background:rgba(112,239,177,.09)!important;
+  border:1px solid rgba(112,239,177,.24)!important;
+  color:#72e6ae!important;
+}
+.immersive-home .conversation{
+  background:transparent!important;
+  position:relative;
+}
+.immersive-home .conversation:before{
+  content:"";
+  position:absolute;
+  width:320px;height:320px;
+  right:-130px;top:12%;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(145,105,255,.16),transparent 67%);
+  pointer-events:none;
+}
+.immersive-home .msg.customer,
+.immersive-home .muted-msg{
+  background:rgba(255,255,255,.075)!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+  color:#f5f2fa!important;
+  box-shadow:0 18px 45px rgba(0,0,0,.16)!important;
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+.immersive-home .msg-meta{color:#91899b!important}
+.immersive-home .answer-card{
+  background:linear-gradient(145deg,rgba(32,23,43,.96),rgba(18,15,25,.96))!important;
+  border:1px solid rgba(167,134,255,.22)!important;
+  color:#fff!important;
+  box-shadow:
+    0 26px 65px rgba(0,0,0,.32),
+    0 0 55px rgba(137,94,255,.08)!important;
+  transform:translateX(-2px) translateZ(20px);
+}
+.immersive-home .answer-card b,
+.immersive-home .answer-card p{color:#fff!important}
+.immersive-home .source-line{
+  border-top-color:rgba(255,255,255,.08)!important;
+  color:#aaa3b2!important;
+}
+.immersive-home .handoff-card{
+  background:linear-gradient(135deg,rgba(154,121,255,.15),rgba(255,255,255,.055))!important;
+  border:1px solid rgba(167,135,255,.22)!important;
+  color:#f5f2fa!important;
+  box-shadow:0 22px 58px rgba(0,0,0,.25)!important;
+}
+.immersive-home .handoff-card b{color:#fff!important}
+.immersive-home .handoff-card small{color:#aaa3b2!important}
+.immersive-home .handoff-icon{color:#a98eff!important}
+.immersive-home .console-stats{
+  background:rgba(5,5,9,.22)!important;
+  border-top:1px solid rgba(255,255,255,.075)!important;
+}
+.immersive-home .console-stats div{
+  border-color:rgba(255,255,255,.07)!important;
+}
+.immersive-home .console-stats b{color:#fff!important}
+.immersive-home .console-stats span{color:#9991a3!important}
+
+/* feature CTA directly under Try the bot: make it part of the cinematic scene */
+.immersive-home .hero-features-card{
+  position:relative;z-index:4;
+  border:1px solid rgba(255,255,255,.12)!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.035))!important;
+  color:#fff!important;
+  box-shadow:0 30px 80px rgba(0,0,0,.30)!important;
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+}
+.immersive-home .hero-features-card h3{color:#fff!important}
+.immersive-home .hero-features-card p{color:#aaa3b2!important}
+.immersive-home .hero-features-card-top span{
+  background:rgba(157,124,255,.12)!important;
+  color:#bba9ff!important;
+}
+
+/* Mobile scroll depth: cards slide subtly into the scene as they enter. */
+@media(max-width:760px){
+  .immersive-home .hero-immersive{padding-bottom:78px!important}
+  .immersive-home .signal-console{
+    border-radius:31px!important;
+    transform:none!important;
+    box-shadow:
+      0 45px 95px rgba(0,0,0,.46),
+      0 16px 45px rgba(92,52,137,.24)!important;
+  }
+  .immersive-home .conversation{padding:18px 14px!important}
+  .immersive-home .msg.customer{
+    transform:translateX(10px);
+  }
+  .immersive-home .answer-card{
+    transform:translateX(-5px)!important;
+  }
+  .immersive-home .muted-msg{
+    transform:translateX(8px);
+  }
+  .immersive-home .handoff-card{
+    transform:translateX(-4px);
+  }
+  .immersive-home .hero-features-card{
+    margin-top:18px!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .immersive-home .signal-console:before{animation:none!important}
+}
