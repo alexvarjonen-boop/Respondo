@@ -2100,7 +2100,6 @@ async function home() {
         <div class="container hero-grid">
           <div class="hero-copy">
             <div class="hero-label"><span></span> ASIAKASPALVELU, JOKA ON AINA PAIKALLA</div>
-            <h1>Asiakas kysyy.<br><em>RESPONDO vastaa.</em></h1>
             <p class="lead">Kerro Respondolle yrityksesi tiedot kerran. Sen jälkeen se vastaa asiakkaillesi myös silloin, kun sinä et ehdi. Jos tarvittava tieto puuttuu, kysymys ohjataan sinulle.</p>
             <div class="hero-actions">
               <a class="btn hero-primary hero-bot-cta" href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
