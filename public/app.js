@@ -1253,6 +1253,19 @@ function applyLanguage() {
           ? appText('RESPONDO AI | Testaa bottia','RESPONDO AI | Testa botten','RESPONDO AI | Test the bot')
           : appText('RESPONDO AI | Asiakaspalvelubotti yrityksille 24/7','RESPONDO AI | Kundservicebot för företag 24/7','RESPONDO AI | Customer service bot for businesses 24/7');
   document.title = pageTitle;
+  const metaDescription = lang === 'sv'
+    ? 'RESPONDO AI är en kundservicebot för företag som svarar med företagets egna godkända uppgifter dygnet runt.'
+    : 'RESPONDO AI is a customer service bot for businesses that answers using the company’s own approved information around the clock.';
+  const setMeta = (selector, value) => {
+    const el = document.querySelector(selector);
+    if (el && value) el.setAttribute('content', value);
+  };
+  setMeta('meta[name="description"]', metaDescription);
+  setMeta('meta[property="og:title"]', pageTitle);
+  setMeta('meta[property="og:description"]', metaDescription);
+  setMeta('meta[name="twitter:title"]', pageTitle);
+  setMeta('meta[name="twitter:description"]', metaDescription);
+  setMeta('meta[property="og:locale"]', lang === 'sv' ? 'sv_SE' : 'en_GB');
   // Translate any remaining rendered UI copy that is not yet in the static dictionaries.
   // User/company-entered values in inputs, code and textareas are intentionally left untouched.
   const missing = [];
