@@ -2481,6 +2481,54 @@ app.post('/api/app/knowledge', auth, subscribed, async (req, res) => {
 });
 
 
+app.put('/api/app/knowledge/:id', auth, subscribed, async (req, res) => {
+  try {
+    const t = await q('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    if (!t.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
+    const tenantId = t.rows[0].id;
+    const existing = await q('SELECT * FROM knowledge WHERE id=$1 AND tenant_id=$2', [req.params.id, tenantId]);
+    if (!existing.rowCount) return res.status(404).json({ error: 'Vastausta ei löytynyt.' });
+    if (existing.rows[0].source_type === 'profile') return res.status(400).json({ error: 'Yrityksen perustietoja muokataan Yrityksen tiedot -osiosta.' });
+
+    const category = String(req.body.category ?? existing.rows[0].category ?? 'Yleinen').trim() || 'Yleinen';
+    const title = String(req.body.title ?? existing.rows[0].title ?? '').trim();
+    const answer = String(req.body.answer ?? existing.rows[0].answer ?? '').trim();
+    if (!title || !answer) return res.status(400).json({ error: 'Otsikko ja vastaus tarvitaan.' });
+    const rawKeywords = req.body.keywords ?? existing.rows[0].keywords ?? [];
+    const keywords = Array.isArray(rawKeywords)
+      ? rawKeywords.map((x) => String(x).trim()).filter(Boolean)
+      : String(rawKeywords).split(',').map((x) => x.trim()).filter(Boolean);
+
+    const r = await q(
+      `UPDATE knowledge
+       SET category=$1,title=$2,answer=$3,keywords=$4,approved=true,verified_at=NOW(),updated_at=NOW()
+       WHERE id=$5 AND tenant_id=$6 RETURNING *`,
+      [category,title,answer,keywords,req.params.id,tenantId],
+    );
+    return res.json({ ok:true, knowledge:r.rows[0] });
+  } catch (e) {
+    console.error('Knowledge update failed', e);
+    return res.status(500).json({ error: 'Vastauksen muokkaus epäonnistui.' });
+  }
+});
+
+app.delete('/api/app/knowledge/:id', auth, subscribed, async (req, res) => {
+  try {
+    const t = await q('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    if (!t.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
+    const tenantId = t.rows[0].id;
+    const existing = await q('SELECT source_type FROM knowledge WHERE id=$1 AND tenant_id=$2', [req.params.id, tenantId]);
+    if (!existing.rowCount) return res.status(404).json({ error: 'Vastausta ei löytynyt.' });
+    if (existing.rows[0].source_type === 'profile') return res.status(400).json({ error: 'Yrityksen perustietoja ei poisteta tästä osiosta.' });
+    await q('DELETE FROM knowledge WHERE id=$1 AND tenant_id=$2', [req.params.id, tenantId]);
+    return res.json({ ok:true });
+  } catch (e) {
+    console.error('Knowledge delete failed', e);
+    return res.status(500).json({ error: 'Vastauksen poistaminen epäonnistui.' });
+  }
+});
+
+
 app.post('/api/app/knowledge/:id/quick-reply', auth, subscribed, async (req, res) => {
   const client = await pool.connect();
   try {
