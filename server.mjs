@@ -1734,8 +1734,8 @@ app.get('/api/public/config', async (req, res) => {
     brand: 'RESPONDO AI',
     supportEmail: process.env.SUPPORT_EMAIL || 'respondoai.fi@outlook.com',
     trialDays: 3,
-    monthlyNet: 49,
-    yearlyNet: 540,
+    monthlyNet: 49.99,
+    yearlyNet: 539.88,
     ownerTestEnabled,
     ownerTestPrice: 0.50,
   });
