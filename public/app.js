@@ -2970,7 +2970,7 @@ async function route() {
   let html;
 
   if (path === '/') html = await home();
-  else if (path === '/assistant') html = `<main class="assistant-route-fallback"><div class="container"><div class="section-kicker">KOKEILE RESPONDOA</div><h1>Kokeile, miltä Respondo tuntuisi omassa yrityksessäsi.</h1><p>Lisää muutama yrityksesi tieto ja kysy sen jälkeen ihan samalla tavalla kuin asiakkaasi kysyisi.</p></div></main>`;
+  else if (path === '/assistant') html = `<main class="assistant-route-fallback"><div class="container"><div class="section-kicker">${appText('KOKEILE RESPONDOA','TESTA RESPONDO','TRY RESPONDO')}</div><h1>${appText('Kokeile, miltä Respondo tuntuisi omassa yrityksessäsi.','Testa hur Respondo skulle fungera i ditt företag.','See how Respondo would work for your business.')}</h1><p>${appText('Lisää muutama yrityksesi tieto ja kysy sen jälkeen ihan samalla tavalla kuin asiakkaasi kysyisi.','Lägg till några uppgifter om ditt företag och fråga sedan precis som en kund skulle göra.','Add a few details about your business, then ask a question just as a customer would.')}</p></div></main>`;
   else if (path === '/tilaus') html = signup();
   else if (path === '/kirjaudu') html = login();
   else if (path === '/maksu-valmis') html = await paymentSuccess();
@@ -3097,7 +3097,7 @@ async function route() {
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = 'Kirjaudutaan sisään…';
+      button.innerHTML = appText('Kirjaudutaan sisään…','Loggar in…','Signing in…');
       $('#msg').innerHTML = '';
       try {
         await api('/api/auth/login', {
@@ -3195,9 +3195,9 @@ async function route() {
       const button = e.currentTarget;
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = 'Testataan…';
+      button.innerHTML = appText('Testataan…','Testar…','Testing…');
       const target = Number($('#selfTestDepth')?.value || 500) >= 1000 ? 1000 : 500;
-      $('#selfTestResult').innerHTML = '<div class="self-test-running">Respondo käy läpi ' + target.toLocaleString(appLocale()) + ' realistista asiakaskysymystä ja etsii aukkoja.</div>';
+      $('#selfTestResult').innerHTML = '<div class="self-test-running">Respondo käy läpi ' + target.toLocaleString(appLocale()) +  + appText(' realistista asiakaskysymystä ja etsii aukkoja.',' realistiska kundfrågor och letar efter luckor.',' realistic customer questions and looks for gaps.') + '</div>';
       try {
         const result = await api('/api/app/self-test', {
           method:'POST',
