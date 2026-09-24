@@ -5852,3 +5852,87 @@ body{
 @media(prefers-reduced-motion:reduce){
   .immersive-home .signal-console:before{animation:none!important}
 }
+
+
+/* 2026-09-25 mobile readability pass for portal + final CTA */
+.immersive-home .trust-portal .portal-center h2{
+  color:#fff!important;
+  text-shadow:0 8px 32px rgba(0,0,0,.30);
+}
+.immersive-home .trust-portal .portal-center h2 em{
+  color:#8f6cff!important;
+  -webkit-text-fill-color:#8f6cff!important;
+}
+.immersive-home .trust-portal .portal-center p{
+  color:#c5bfcc!important;
+  opacity:1!important;
+}
+.immersive-home .trust-portal .portal-node{
+  background:rgba(20,16,27,.88)!important;
+  border:1px solid rgba(166,134,255,.25)!important;
+  color:#f7f4fb!important;
+  box-shadow:0 18px 44px rgba(0,0,0,.28)!important;
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+.immersive-home .trust-portal .portal-node span{
+  background:rgba(255,255,255,.10)!important;
+  color:#fff!important;
+  border-color:rgba(255,255,255,.10)!important;
+}
+.immersive-home .trust-portal .portal-button{
+  color:#fff!important;
+  background:#0d0c10!important;
+  border-color:rgba(255,255,255,.10)!important;
+}
+
+.immersive-home .final-cta-immersive .cta-shell{
+  background:
+    radial-gradient(circle at 12% 8%,rgba(255,220,113,.52),transparent 34%),
+    radial-gradient(circle at 92% 90%,rgba(141,115,255,.34),transparent 42%),
+    linear-gradient(145deg,#5a445e 0%,#3b2c48 54%,#241d32 100%)!important;
+  border:1px solid rgba(255,255,255,.20)!important;
+  box-shadow:0 34px 90px rgba(0,0,0,.34)!important;
+}
+.immersive-home .final-cta-immersive .cta-shell h2{
+  color:#fff!important;
+  text-shadow:0 10px 35px rgba(0,0,0,.26);
+}
+.immersive-home .final-cta-immersive .cta-shell p{
+  color:#eee9f1!important;
+  opacity:1!important;
+}
+.immersive-home .final-cta-immersive .section-kicker.light{
+  background:rgba(15,13,19,.72)!important;
+  border-color:rgba(255,255,255,.14)!important;
+  color:#e9e3ef!important;
+}
+.immersive-home .final-cta-immersive .cta-circle{
+  background:#0c0b0e!important;
+  color:#fff!important;
+  border-color:rgba(255,255,255,.12)!important;
+}
+
+@media(max-width:760px){
+  .immersive-home .trust-portal .portal-center h2{
+    font-size:clamp(46px,12.8vw,68px)!important;
+    line-height:.98!important;
+  }
+  .immersive-home .trust-portal .portal-center p{
+    font-size:17px!important;
+    line-height:1.55!important;
+  }
+  .immersive-home .trust-portal .portal-node{
+    min-width:0!important;
+    padding:12px 17px!important;
+    font-weight:800!important;
+  }
+  .immersive-home .final-cta-immersive .cta-shell h2{
+    font-size:clamp(48px,13vw,72px)!important;
+    line-height:.98!important;
+  }
+  .immersive-home .final-cta-immersive .cta-shell p{
+    font-size:17px!important;
+    line-height:1.5!important;
+  }
+}
