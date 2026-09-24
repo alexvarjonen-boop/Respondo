@@ -2361,12 +2361,23 @@ function legal(type) {
     const map = lang === 'sv' ? SV_TEXT : EN_TEXT;
     return map.get(value) || value;
   };
+  const translateLegalDynamic = (value) => {
+    const translated = translateLegal(value);
+    if (translated !== value || currentLang() === 'fi') return translated;
+    const lang=currentLang(), bid=esc(cfg.businessId || '3599437-5'), mail=esc(cfg.supportEmail);
+    if (/^RESPONDO AI, Y-tunnus .* Suomi\. Yhteydenotot:/.test(value)) return lang==='sv'?`RESPONDO AI, FO-nummer ${bid}, Finland. Kontakt: ${mail}.`:`RESPONDO AI, Business ID ${bid}, Finland. Contact: ${mail}.`;
+    if (/^RESPONDO AI, Y-tunnus .* Tietosuoja-/.test(value)) return lang==='sv'?`RESPONDO AI, FO-nummer ${bid}. Integritets- och övriga kontakter: ${mail}.`:`RESPONDO AI, Business ID ${bid}. Privacy and other enquiries: ${mail}.`;
+    if (/^Palvelua voi kokeilla /.test(value)) return lang==='sv'?`Tjänsten kan provas gratis i ${cfg.trialDays||3} dagar. En betalningsmetod kan läggas till i början av provperioden. Om abonnemanget inte sägs upp innan provperioden slutar fortsätter det som ett betalt abonnemang enligt vald faktureringsperiod.`:`The service can be tried free for ${cfg.trialDays||3} days. A payment method may be added at the start of the trial. Unless cancelled before the trial ends, the subscription continues as a paid subscription according to the selected billing period.`;
+    if (/^Kuukausitilaus maksaa /.test(value)) return lang==='sv'?'Månadsabonnemanget kostar 49,99 €/månad. Årsabonnemanget motsvarar 44,99 €/månad och faktureras 539,88 € en gång per år. Pris och faktureringsperiod visas före betalning.':'The monthly plan costs €49.99/month. The annual plan is equivalent to €44.99/month and is billed at €539.88 once per year. The price and billing period are shown before payment.';
+    if (/^Tietoturvaan liittyvät ilmoitukset:/.test(value)) return lang==='sv'?`Säkerhetsrelaterade meddelanden: ${mail}.`:`Security-related notices: ${mail}.`;
+    return value;
+  };
   const page = {
     ...basePage,
-    label: translateLegal(basePage.label),
-    title: translateLegal(basePage.title),
-    intro: translateLegal(basePage.intro),
-    sections: basePage.sections.map(([h,p]) => [translateLegal(h), translateLegal(p)])
+    label: translateLegalDynamic(basePage.label),
+    title: translateLegalDynamic(basePage.title),
+    intro: translateLegalDynamic(basePage.intro),
+    sections: basePage.sections.map(([h,p]) => [translateLegalDynamic(h), translateLegalDynamic(p)])
   };
   return `<div>
     ${nav()}
