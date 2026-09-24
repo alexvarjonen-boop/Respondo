@@ -2205,7 +2205,7 @@ async function home() {
             <span>${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</span><b>→</b>
           </div>
           <h3>${appText('Katso kaikki 145 Respondo AI:n ominaisuutta','Se alla 145 funktioner i Respondo AI','See all 145 Respondo AI features')}</h3>
-          <p>${appText('Yli 145 toimintoa asiakaspalveluun, tarjouksiin, ajanvaraukseen ja yhteydenottoihin — 44,99 €/kk.','Över 145 funktioner för kundservice, offerter, bokningar och kontaktförfrågningar — 44,99 €/mån.','Over 145 features for customer service, quotes, bookings and contact requests — €44.99/month.')}</p>
+          <p>${appText('Yli 145 toimintoa asiakaspalveluun, tarjouksiin, ajanvaraukseen ja yhteydenottoihin.','Över 145 funktioner för kundservice, offerter, bokningar och kontaktförfrågningar.','Over 145 features for customer service, quotes, bookings and contact requests.')}</p>
         </a>
       </div></section>
       ${pricingSection()}
