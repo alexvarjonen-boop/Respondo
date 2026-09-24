@@ -4936,6 +4936,7 @@ body.assistant-standalone .assistant-order-card ul{color:#5f6670!important}
 body.assistant-standalone .assistant-order-card .assistant-order-label{color:#8d96a6!important}
 body.assistant-standalone .assistant-order-card .assistant-annual-note{color:#69717d!important}
 body.assistant-standalone .assistant-order-card .assistant-save{color:#7c87bd!important}
+body.assistant-standalone .assistant-order-card .assistant-order-btn{background:#111114!important;color:#fff!important;border-color:#111114!important}
 .panel-head{border-bottom:1px solid var(--simple-line)!important}
 .dashboard-action,.integration-test-btn,.portal-button{border-radius:10px!important}
 .dashboard-view-hidden{display:none!important}
