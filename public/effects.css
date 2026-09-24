@@ -245,12 +245,12 @@ body.assistant-standalone{
   box-shadow:0 30px 90px rgba(0,0,0,.07)!important;
 }
 .owner-field label,.custom-facts-head label{color:#77777e!important}
-.owner-field input,.owner-field textarea,.service-add-row select{
+.owner-field input,.owner-field textarea,.service-add-row select,.service-add-row input{
   background:#fafafa!important;
   color:#111114!important;
   border-color:rgba(17,17,20,.09)!important;
 }
-.owner-field input:focus,.owner-field textarea:focus,.service-add-row select:focus{
+.owner-field input:focus,.owner-field textarea:focus,.service-add-row select:focus,.service-add-row input:focus{
   background:#fff!important;
   border-color:#8cc7ff!important;
   box-shadow:0 0 0 4px rgba(0,113,227,.08)!important;
@@ -264,7 +264,8 @@ body.assistant-standalone{
 
 /* Services dropdown + chips */
 .service-add-row{display:grid;grid-template-columns:1fr auto;gap:8px}
-.service-add-row select{min-height:44px;border-radius:12px;padding:0 12px;font:inherit;font-size:13px;outline:none}
+.service-add-row select,.service-add-row input{min-height:44px;border-radius:12px;padding:0 12px;font:inherit;font-size:13px;outline:none;border:1px solid rgba(17,17,20,.09)}
+.service-custom-row{margin-top:8px}
 .service-add-row button{
   min-height:44px;
   padding:0 16px;
