@@ -5406,3 +5406,223 @@ body.assistant-standalone .assistant-order-card .assistant-order-btn{background:
   .features-final-card{display:block;padding:24px;border-radius:26px}
   .features-final-card .btn{margin-top:20px;width:100%}
 }
+
+
+/* 2026-09-25 darker Respondo visual system */
+:root{
+  --respondo-night:#0f0d16;
+  --respondo-night-2:#171323;
+  --respondo-plum:#241831;
+  --respondo-lilac:#9b83ff;
+  --respondo-lilac-soft:#b5a6ff;
+}
+.immersive-home{
+  background:
+    radial-gradient(circle at 82% 7%,rgba(157,126,255,.18),transparent 27%),
+    radial-gradient(circle at 14% 28%,rgba(91,56,127,.13),transparent 30%),
+    #f4f3f7;
+}
+.immersive-home .hero-immersive{
+  background:
+    radial-gradient(circle at 78% 25%,rgba(141,105,255,.22),transparent 32%),
+    radial-gradient(circle at 18% 12%,rgba(102,68,138,.16),transparent 30%),
+    linear-gradient(155deg,#171220 0%,#21162b 55%,#0f0d16 100%);
+  color:#fff;
+}
+.immersive-home .hero-immersive:before{
+  opacity:.28;
+  filter:invert(1);
+}
+.immersive-home .hero-immersive .hero-label,
+.immersive-home .hero-immersive .lead,
+.immersive-home .hero-immersive .hero-scroll-hint{
+  color:rgba(255,255,255,.68)!important;
+}
+.immersive-home .hero-immersive .hero-label span{background:#a48bff!important}
+.immersive-home .hero-primary{
+  background:#fff!important;
+  color:#111114!important;
+  box-shadow:0 16px 50px rgba(0,0,0,.25)!important;
+}
+.immersive-home .hero-features-card{
+  border-color:rgba(255,255,255,.13);
+  background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.045));
+  color:#fff;
+  box-shadow:0 22px 70px rgba(0,0,0,.2);
+}
+.immersive-home .hero-features-card-top span{
+  background:rgba(255,255,255,.09);
+  color:#c9c0e5;
+}
+.immersive-home .hero-features-card p{color:rgba(255,255,255,.62)}
+.immersive-home .hero-features-card:hover{border-color:rgba(181,166,255,.42)}
+.immersive-home .hero-visual,
+.immersive-home .hero-demo,
+.immersive-home .hero-device{
+  border-color:rgba(255,255,255,.12)!important;
+  box-shadow:0 32px 90px rgba(0,0,0,.35)!important;
+}
+.immersive-home .cinematic-conversation,
+.immersive-home .product-world,
+.immersive-home .trust-portal,
+.immersive-home .data-impact,
+.immersive-home .final-cta-immersive{
+  background:
+    radial-gradient(circle at 76% 18%,rgba(130,95,220,.14),transparent 34%),
+    linear-gradient(155deg,#111018,#1d1428 62%,#0d0c13)!important;
+  color:#fff;
+}
+.immersive-home .cinematic-conversation h2,
+.immersive-home .product-world h2,
+.immersive-home .trust-portal h2,
+.immersive-home .data-impact h2,
+.immersive-home .final-cta-immersive h2{
+  color:#fff!important;
+}
+.immersive-home .cinematic-conversation p,
+.immersive-home .product-world p,
+.immersive-home .trust-portal p,
+.immersive-home .data-impact p,
+.immersive-home .final-cta-immersive p{
+  color:rgba(255,255,255,.64)!important;
+}
+.immersive-home .section-kicker.light,
+.immersive-home .cinematic-conversation .section-kicker,
+.immersive-home .product-world .section-kicker,
+.immersive-home .trust-portal .section-kicker,
+.immersive-home .data-impact .section-kicker{
+  color:#aaa0c5!important;
+}
+.immersive-home .horizontal-product-story,
+.immersive-home .motion-depth{
+  background:
+    radial-gradient(circle at 8% 20%,rgba(148,118,255,.12),transparent 28%),
+    linear-gradient(180deg,#f6f5f8,#ece9f2)!important;
+}
+.immersive-home .story-card,
+.immersive-home .depth-card,
+.immersive-home .visual-card{
+  border-color:rgba(48,34,67,.10)!important;
+  box-shadow:0 24px 70px rgba(31,20,47,.09)!important;
+}
+.immersive-home .story-card:nth-child(even),
+.immersive-home .depth-card:nth-child(even){
+  background:linear-gradient(145deg,#1a1622,#2a1c37)!important;
+  color:#fff!important;
+}
+.immersive-home .story-card:nth-child(even) p,
+.immersive-home .depth-card:nth-child(even) p{color:rgba(255,255,255,.62)!important}
+.immersive-home .pricing-section{
+  background:
+    radial-gradient(circle at 80% 20%,rgba(149,113,255,.16),transparent 30%),
+    linear-gradient(180deg,#eeebf4,#f7f6f9)!important;
+}
+.immersive-home .pricing-section .price-card.featured{
+  background:linear-gradient(145deg,#18141f,#24172f)!important;
+  border-color:rgba(155,131,255,.35)!important;
+  box-shadow:0 30px 85px rgba(28,17,42,.22)!important;
+}
+.immersive-home .pricing-section .price-card.featured,
+.immersive-home .pricing-section .price-card.featured h3,
+.immersive-home .pricing-section .price-card.featured .pricevalue{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+.immersive-home .pricing-section .price-card.featured .pricevalue small,
+.immersive-home .pricing-section .price-card.featured p,
+.immersive-home .pricing-section .price-card.featured li{
+  color:rgba(255,255,255,.68)!important;
+  -webkit-text-fill-color:rgba(255,255,255,.68)!important;
+}
+.immersive-home .cta-shell{
+  border:1px solid rgba(255,255,255,.12)!important;
+  background:linear-gradient(135deg,rgba(255,255,255,.075),rgba(255,255,255,.025))!important;
+  box-shadow:0 32px 90px rgba(0,0,0,.28)!important;
+}
+.immersive-home .cta-circle{
+  background:linear-gradient(135deg,#9a7cff,#ed65b0)!important;
+  color:#fff!important;
+}
+
+/* Darker feature catalogue to match the homepage's premium night sections */
+.features-page{
+  background:
+    radial-gradient(circle at 84% 6%,rgba(144,106,255,.20),transparent 27%),
+    radial-gradient(circle at 8% 25%,rgba(103,68,137,.14),transparent 28%),
+    linear-gradient(180deg,#121018 0,#1a1322 40%,#0e0d13 100%);
+  color:#fff;
+}
+.features-hero:before{
+  background:
+    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+}
+.features-hero-badge,
+.features-hero-stats>div{
+  border-color:rgba(255,255,255,.10);
+  background:rgba(255,255,255,.06);
+}
+.features-hero h1 em{color:#a78fff}
+.features-hero p,
+.features-hero-stats span,
+.features-directory-head>span{color:rgba(255,255,255,.60)}
+.features-directory-head small,
+.features-final-card small,
+.feature-category-copy small{color:#aaa0c5}
+.feature-category{
+  border-color:rgba(255,255,255,.10);
+  background:rgba(255,255,255,.055);
+  box-shadow:0 22px 65px rgba(0,0,0,.18);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+.feature-category-copy p{color:rgba(255,255,255,.58)}
+.feature-category-meta strong{
+  background:#a184ff;
+  color:#fff;
+}
+.feature-category-meta span{border-color:rgba(255,255,255,.13)}
+.feature-item{
+  border-color:rgba(255,255,255,.07);
+  background:rgba(255,255,255,.045);
+}
+.feature-item-number{color:#817a91}
+.feature-item i{
+  background:rgba(105,235,169,.11);
+  color:#73e4ae;
+}
+.features-final-card{
+  border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(135deg,#20152b,#111017);
+  box-shadow:0 30px 90px rgba(0,0,0,.28);
+}
+
+/* Keep the sticky navigation crisp above the darker content. */
+.nav{
+  background:rgba(248,247,250,.88)!important;
+  border-bottom-color:rgba(26,20,35,.08)!important;
+  backdrop-filter:blur(22px)!important;
+  -webkit-backdrop-filter:blur(22px)!important;
+}
+.product-subnav{
+  background:rgba(20,16,28,.90)!important;
+  border-color:rgba(255,255,255,.08)!important;
+  color:#fff!important;
+  backdrop-filter:blur(22px)!important;
+  -webkit-backdrop-filter:blur(22px)!important;
+}
+.product-subnav a,
+.product-subnav .subnav-title{color:rgba(255,255,255,.76)!important}
+
+@media(max-width:760px){
+  .immersive-home .hero-immersive{
+    background:
+      radial-gradient(circle at 80% 16%,rgba(145,108,255,.24),transparent 34%),
+      linear-gradient(165deg,#17121f,#22162d 58%,#0f0d15);
+  }
+  .features-page{
+    background:
+      radial-gradient(circle at 85% 5%,rgba(145,108,255,.19),transparent 25%),
+      linear-gradient(180deg,#121018,#1b1424 46%,#0e0d13);
+  }
+}
