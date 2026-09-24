@@ -299,7 +299,7 @@ const EN_TEXT = new Map(Object.entries({
   "Käsittelyssä":"Processing",
   "Lisää ensimmäinen oma vastaus":"Add your first custom answer",
   "Lisää Respondo verkkosivullesi":"Add Respondo to your website",
-  "Kokeile bottia ensimmäisen kerran":"Test the bot for the first time",
+  "Kokeile bottia ensimmäisen kerran":"Try the bot for the first time",
   "Valitse hallintapaneelin osio":"Choose a dashboard section",
   "Keskustelut viimeisen 14 päivän aikana":"Conversations in the last 14 days",
   "Luonteva ja ystävällinen":"Natural and friendly",
@@ -481,7 +481,7 @@ const EN_TEXT = new Map(Object.entries({
   "Vastaukset perustuvat yrityksesi antamiin tietoihin. Jos tarvittava tieto puuttuu, kysymys siirtyy sinulle.":"Answers are based on information provided by your business. If required information is missing, the question is routed to you.",
   'Tuote':'Product',
   'Tietopohja':'Knowledge base',
-  'Kokeile bottia':'Test the bot',
+  'Kokeile bottia':'Try the bot',
   'Hinta':'Pricing',
   'Tietoturva':'Security',
   'Kirjaudu':'Log in',
@@ -1286,7 +1286,7 @@ function updateDocumentLanguageMeta(lang) {
       : path === '/tilaus'
         ? appText('RESPONDO AI | Luo tili','RESPONDO AI | Skapa konto','RESPONDO AI | Create account')
         : path === '/assistant'
-          ? appText('RESPONDO AI | Testaa bottia','RESPONDO AI | Testa botten','RESPONDO AI | Test the bot')
+          ? appText('RESPONDO AI | Testaa bottia','RESPONDO AI | Testa botten','RESPONDO AI | Try the bot')
           : appText('RESPONDO AI | Asiakaspalvelubotti yrityksille 24/7','RESPONDO AI | Kundservicebot för företag 24/7','RESPONDO AI | Customer service bot for businesses 24/7');
   document.title = pageTitle;
   const metaDescription = lang === 'sv'
@@ -2508,7 +2508,7 @@ async function dashboard() {
     { label: appText('Kerro yrityksesi perustiedot','Ange företagets grunduppgifter','Add your company details'), done: profileDone, target: 'business-profile' },
     { label: appText('Lisää ensimmäinen oma vastaus','Lägg till ditt första egna svar','Add your first custom answer'), done: answersDone, target: 'knowledge' },
     { label: appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website'), done: installedDone, target: 'install' },
-    { label: appText('Kokeile bottia ensimmäisen kerran','Testa botten för första gången','Test the bot for the first time'), done: testedDone, target: 'live-preview' },
+    { label: appText('Kokeile bottia ensimmäisen kerran','Testa botten för första gången','Try the bot for the first time'), done: testedDone, target: 'live-preview' },
   ];
   const onboardingDone = onboarding.filter((x) => x.done).length;
   const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
