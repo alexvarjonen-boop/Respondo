@@ -148,6 +148,21 @@
     'Sähkö','Tuholaistorjunta','Valokuvaus','Verkkosivut','Viemärin avaus','Vihertyöt','Muu'
   ].sort((a,b) => a.localeCompare(b,'fi'));
 
+  const serviceLabels = {
+    sv: {
+      'Ajoneuvohuolto':'Fordonsservice','Autopesu':'Biltvätt','Fysioterapia':'Fysioterapi','Hieronta':'Massage','Ilmastointihuolto':'Luftkonditioneringsservice','IT-tuki':'IT-support',
+      'Kaivuutyöt':'Grävarbeten','Kalusteasennus':'Möbelmontering','Kattohuolto':'Takunderhåll','Kiinteistöhuolto':'Fastighetsskötsel','Kirjanpito':'Bokföring','Kuljetus':'Transport',
+      'LVI':'VVS','Maalaus':'Målning','Maanrakennus':'Markarbete','Muutto':'Flytt','Putkityöt':'Rörarbeten','Rakennus':'Bygg','Remontointi':'Renovering','Siivous':'Städning',
+      'Sähkö':'Elarbeten','Tuholaistorjunta':'Skadedjursbekämpning','Valokuvaus':'Fotografering','Verkkosivut':'Webbplatser','Viemärin avaus':'Avloppsrensning','Vihertyöt':'Trädgårdsarbete','Muu':'Annat'
+    },
+    en: {
+      'Ajoneuvohuolto':'Vehicle maintenance','Autopesu':'Car wash','Fysioterapia':'Physiotherapy','Hieronta':'Massage','Ilmastointihuolto':'Air conditioning service','IT-tuki':'IT support',
+      'Kaivuutyöt':'Excavation','Kalusteasennus':'Furniture installation','Kattohuolto':'Roof maintenance','Kiinteistöhuolto':'Property maintenance','Kirjanpito':'Accounting','Kuljetus':'Transport',
+      'LVI':'Plumbing & HVAC','Maalaus':'Painting','Maanrakennus':'Earthworks','Muutto':'Moving','Putkityöt':'Plumbing','Rakennus':'Construction','Remontointi':'Renovation','Siivous':'Cleaning',
+      'Sähkö':'Electrical work','Tuholaistorjunta':'Pest control','Valokuvaus':'Photography','Verkkosivut':'Websites','Viemärin avaus':'Drain unblocking','Vihertyöt':'Landscaping','Muu':'Other'
+    }
+  };
+
   const servicesText = (services) => Array.isArray(services) ? services.join(', ') : String(services || '');
 
   function normalizedCustomFacts(profile) {
@@ -363,7 +378,7 @@ YLEINEN TOIMINTAOHJE:
       <button class="fx-assistant-launch" type="button" aria-label="${at('Avaa Respondo','Öppna Respondo','Open Respondo')}"><i class="fx-brand-mark"><svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></i><span>Respondo</span><b class="fx-live"></b></button>
       <aside class="fx-assistant" aria-label="Respondo">
         <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar fx-brand-mark"><svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></span><div><b>Respondo</b><small>${onDemo ? at('sama vastausmoottori kuin oikeassa botissa','samma svarsmotor som i den riktiga botten','the same response engine as the real bot') : at('valmis vastaamaan','redo att svara','ready to answer')}</small></div></div><button class="fx-assistant-close" type="button" aria-label="${at('Sulje','Stäng','Close')}">×</button></div>
-        <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">${onDemo ? at('Moi 👋 Testaa nyt yrityksen omilla tiedoilla. Kysy esimerkiksi hinnasta, aukioloajoista, palveluista tai omista lisäämistäsi kysymyksistä.','Hej 👋 Testa nu med företagets egna uppgifter. Fråga till exempel om priser, öppettider, tjänster eller frågor som du själv har lagt till.','Hi 👋 Test with your company details. Ask about prices, opening hours, services, or questions you added yourself.') : at('Moi 👋 Olen Respondon sivuassistentti. Kysy miten palvelu toimii tai mitä se maksaa.','Hej 👋 Jag är Respondos webbassistent. Fråga hur tjänsten fungerar eller vad den kostar.','Hi 👋 I am Respondo’s website assistant. Ask how the service works or what it costs.')}</div>${onDemo ? '' : '<div class="fx-quick"><button type="button">Mitä RESPONDO AI maksaa?</button><button type="button">Miten 3 päivän kokeilu toimii?</button><button type="button">Miten asennus toimii?</button></div>'}</div>
+        <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">${onDemo ? at('Moi 👋 Testaa nyt yrityksen omilla tiedoilla. Kysy esimerkiksi hinnasta, aukioloajoista, palveluista tai omista lisäämistäsi kysymyksistä.','Hej 👋 Testa nu med företagets egna uppgifter. Fråga till exempel om priser, öppettider, tjänster eller frågor som du själv har lagt till.','Hi 👋 Test with your company details. Ask about prices, opening hours, services, or questions you added yourself.') : at('Moi 👋 Olen Respondon sivuassistentti. Kysy miten palvelu toimii tai mitä se maksaa.','Hej 👋 Jag är Respondos webbassistent. Fråga hur tjänsten fungerar eller vad den kostar.','Hi 👋 I am Respondo’s website assistant. Ask how the service works or what it costs.')}</div>${onDemo ? '' : `<div class="fx-quick"><button type="button">${at('Mitä RESPONDO AI maksaa?','Vad kostar RESPONDO AI?','What does RESPONDO AI cost?')}</button><button type="button">${at('Miten 3 päivän kokeilu toimii?','Hur fungerar den 3 dagar långa provperioden?','How does the 3-day trial work?')}</button><button type="button">${at('Miten asennus toimii?','Hur fungerar installationen?','How does setup work?')}</button></div>`}</div>
         <form class="fx-assistant-form"><input name="message" autocomplete="off" placeholder="${at('Kirjoita kysymys…','Skriv en fråga…','Type a question…')}" aria-label="${at('Kysymys','Fråga','Question')}"><button type="submit" aria-label="${at('Lähetä','Skicka','Send')}">→</button></form>
       </aside>`);
     const launch = $('.fx-assistant-launch'), box = $('.fx-assistant'), close = $('.fx-assistant-close'), messages = $('.fx-assistant-messages'), form = $('.fx-assistant-form');
@@ -441,6 +456,10 @@ YLEINEN TOIMINTAOHJE:
     document.body.classList.add('assistant-standalone');
     const app = $('#app');
     const p = getOwnerProfile();
+    const qLang = new URLSearchParams(location.search).get('lang');
+    const pageLang = ['fi','sv','en'].includes(qLang) ? qLang : (localStorage.getItem('respondo_lang') || 'fi');
+    const pageTx = (fi,sv,en) => pageLang === 'sv' ? sv : pageLang === 'en' ? en : fi;
+    const serviceDisplay = (service) => serviceLabels[pageLang]?.[service] || service;
     const val = (x) => String(x || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const selectedServices = Array.isArray(p.services)
       ? [...p.services]
@@ -465,10 +484,14 @@ YLEINEN TOIMINTAOHJE:
                 <label>Palvelut</label>
                 <div class="service-add-row">
                   <select id="servicePicker">
-                    <option value="">Valitse palvelu…</option>
-                    ${commonServices.map(s => `<option value="${val(s)}">${val(s)}</option>`).join('')}
+                    <option value="">${pageTx('Valitse palvelu…','Välj en tjänst…','Choose a service…')}</option>
+                    ${commonServices.map(s => `<option value="${val(s)}">${val(serviceDisplay(s))}</option>`).join('')}
                   </select>
-                  <button type="button" id="addService">Lisää</button>
+                  <button type="button" id="addService">${pageTx('Lisää','Lägg till','Add')}</button>
+                </div>
+                <div class="service-add-row service-custom-row">
+                  <input id="customServiceInput" type="text" autocomplete="off" placeholder="${pageTx('Tai kirjoita oma palvelu…','Eller skriv din egen tjänst…','Or type your own service…')}">
+                  <button type="button" id="addCustomService">${pageTx('Lisää oma','Lägg till egen','Add custom')}</button>
                 </div>
                 <div class="service-chips" id="serviceChips"></div>
                 <small>Voit lisätä tähän kaikki palvelut, joita tarjoatte.</small>
@@ -578,8 +601,8 @@ YLEINEN TOIMINTAOHJE:
     const renderServices = () => {
       const host = $('#serviceChips');
       if (!host) return;
-      host.innerHTML = [...selected].sort((a,b) => a.localeCompare(b,'fi')).map(s =>
-        `<button type="button" class="service-chip" data-service="${val(s)}"><span>${val(s)}</span><b>×</b></button>`
+      host.innerHTML = [...selected].sort((a,b) => serviceDisplay(a).localeCompare(serviceDisplay(b), pageLang === 'sv' ? 'sv' : pageLang === 'en' ? 'en' : 'fi')).map(s =>
+        `<button type="button" class="service-chip" data-service="${val(s)}"><span>${val(serviceDisplay(s))}</span><b>×</b></button>`
       ).join('');
       $$('.service-chip', host).forEach(btn => btn.addEventListener('click', () => {
         selected.delete(btn.dataset.service);
@@ -627,6 +650,22 @@ YLEINEN TOIMINTAOHJE:
       selected.add(service);
       picker.value = '';
       renderServices();
+    });
+    const addCustomService = () => {
+      const input = $('#customServiceInput');
+      const service = String(input?.value || '').trim();
+      if (!service) return;
+      selected.add(service);
+      input.value = '';
+      renderServices();
+      input.focus();
+    };
+    $('#addCustomService')?.addEventListener('click', addCustomService);
+    $('#customServiceInput')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addCustomService();
+      }
     });
 
     const ownerForm = $('#ownerProfileForm');
