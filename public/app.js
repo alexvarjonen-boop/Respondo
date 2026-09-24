@@ -2888,7 +2888,7 @@ async function dashboard() {
                 <div>
                   <div class="knowledge-item-top">
                     <b>${esc(x.title)}</b>
-                    ${x.source_type !== 'profile' ? `<button type="button" class="knowledge-feature-btn ${x.quick_reply_order ? 'active' : ''}" data-featured="${x.quick_reply_order ? 'true' : 'false'}">${x.quick_reply_order ? '✓ Etusivulla ' + x.quick_reply_order : '+ Lisää etusivulle'}</button>` : ''}
+                    ${x.source_type !== 'profile' ? `<div class="knowledge-item-actions"><button type="button" class="knowledge-feature-btn ${x.quick_reply_order ? 'active' : ''}" data-featured="${x.quick_reply_order ? 'true' : 'false'}">${x.quick_reply_order ? '✓ Etusivulla ' + x.quick_reply_order : '+ Lisää etusivulle'}</button><button type="button" class="knowledge-edit-btn">${appText('Muokkaa','Redigera','Edit')}</button><button type="button" class="knowledge-delete-btn">${appText('Poista','Ta bort','Delete')}</button></div>` : ''}
                   </div>
                   <small>${esc(x.category || appText('Yleinen','Allmänt','General'))} · ${x.source_type === 'profile' ? appText('Yrityksen tiedot','Företagsuppgifter','Company details') : x.source_type === 'owner_answer' ? appText('Omistajan hyväksymä','Godkänd av ägaren','Owner approved') : appText('Manuaalinen','Manuell','Manual')} · ${appText('tarkistettu','kontrollerad','verified')} ${x.verified_at ? new Date(x.verified_at).toLocaleDateString(appLocale()) : '—'}</small>
                   <p>${esc(x.answer)}</p>
@@ -3938,6 +3938,62 @@ async function route() {
         button.innerHTML = original;
         $('#businessProfileMsg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
       }
+    });
+
+    document.querySelectorAll('.knowledge-edit-btn').forEach((button) => {
+      button.addEventListener('click', () => {
+        const item = button.closest('.knowledge-item');
+        const id = item?.dataset.knowledgeId;
+        const title = item?.querySelector('.knowledge-item-top > b')?.textContent?.trim() || '';
+        const answer = item?.querySelector('p')?.textContent?.trim() || '';
+        if (!id) return;
+        const old = item.querySelector('.knowledge-inline-editor');
+        if (old) { old.remove(); return; }
+        const editor = document.createElement('form');
+        editor.className = 'knowledge-inline-editor';
+        editor.innerHTML = '<label>' + appText('Otsikko','Rubrik','Title') + '<input name="title" required></label>' +
+          '<label>' + appText('Vastaus','Svar','Answer') + '<textarea name="answer" required></textarea></label>' +
+          '<div class="knowledge-editor-actions"><button class="btn knowledge-save-edit" type="submit">' + appText('Tallenna muutokset','Spara ändringar','Save changes') + '</button>' +
+          '<button class="btn ghost knowledge-cancel-edit" type="button">' + appText('Peruuta','Avbryt','Cancel') + '</button></div><div class="knowledge-edit-msg"></div>';
+        editor.elements.title.value = title;
+        editor.elements.answer.value = answer;
+        item.querySelector('div:nth-child(2)')?.appendChild(editor);
+        editor.querySelector('.knowledge-cancel-edit')?.addEventListener('click', () => editor.remove());
+        editor.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const save = editor.querySelector('.knowledge-save-edit');
+          save.disabled = true;
+          save.textContent = appText('Tallennetaan…','Sparar…','Saving…');
+          try {
+            await api('/api/app/knowledge/' + encodeURIComponent(id), {
+              method:'PUT',
+              body:JSON.stringify({ title:editor.elements.title.value, answer:editor.elements.answer.value }),
+            });
+            location.reload();
+          } catch (err) {
+            save.disabled = false;
+            save.textContent = appText('Tallenna muutokset','Spara ändringar','Save changes');
+            editor.querySelector('.knowledge-edit-msg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+          }
+        });
+      });
+    });
+
+    document.querySelectorAll('.knowledge-delete-btn').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const item = button.closest('.knowledge-item');
+        const id = item?.dataset.knowledgeId;
+        if (!id) return;
+        if (!confirm(appText('Poistetaanko tämä vastaus?','Ta bort det här svaret?','Delete this answer?'))) return;
+        button.disabled = true;
+        try {
+          await api('/api/app/knowledge/' + encodeURIComponent(id), { method:'DELETE' });
+          location.reload();
+        } catch (err) {
+          button.disabled = false;
+          $('#knowledgeFeatureMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+        }
+      });
     });
 
     document.querySelectorAll('.knowledge-feature-btn').forEach((button) => {
