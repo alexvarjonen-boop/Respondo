@@ -1183,6 +1183,21 @@ const EXTRA_UI_TEXT = new Map(Object.entries({
   "Lue lisää evästeistä ja tietojen käytöstä": ["Läs mer om cookies och hur data används", "Read more about cookies and data use"],
   "Hylkää valinnaiset": ["Avvisa valfria", "Reject optional"],
   "Tallenna valinta": ["Spara val", "Save choice"],
+  "Ma–Pe 08:00–17:00": ["Mån–Fre 08:00–17:00", "Mon–Fri 08:00–17:00"],
+  "Salesforce · customer research": ["Salesforce · kundundersökning", "Salesforce · customer research"],
+  "€ / kk + alv": ["€ / mån + moms", "€ / month + VAT"],
+  "/kk + alv": ["/mån + moms", "/month + VAT"],
+  "RESPONDO keskusteluesimerkki": ["RESPONDO konversationsexempel", "RESPONDO conversation example"],
+  "Ma–Pe 08–17": ["Mån–Fre 08–17", "Mon–Fri 08–17"],
+  "Hinnasto": ["Prislista", "Price list"],
+  "RESPONDO toimintaketju": ["RESPONDO arbetsflöde", "RESPONDO workflow"],
+  "Täältä löydät yrityksesi tiedot, keskustelut, asennuksen ja tilauksen.": ["Här hittar du företagets uppgifter, konversationer, installation och abonnemang.", "Here you can find your company details, conversations, installation and subscription."],
+  "Hei! Miten voin auttaa?": ["Hej! Hur kan jag hjälpa?", "Hi! How can I help?"],
+  "Ma–Pe 8–17": ["Mån–Fre 8–17", "Mon–Fri 8–17"],
+  "Esim. 250": ["T.ex. 250", "E.g. 250"],
+  "Esim. Tampere + 50 km": ["T.ex. Tammerfors + 50 km", "E.g. Tampere + 50 km"],
+  "Katuosoite, paikkakunta": ["Gatuadress, ort", "Street address, city"],
+  "Esim. Muuttopalvelu": ["T.ex. Flyttjänst", "E.g. Moving service"],
 }));
 for (const [fi, pair] of EXTRA_UI_TEXT) {
   SV_TEXT.set(fi, pair[0]);
@@ -2963,7 +2978,7 @@ async function dashboard() {
           <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
           <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20260924-language" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">Kopioi</button></div>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20260924-language-v2" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">Kopioi</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? '✓ Asennus valmis' : 'Olen asentanut botin'}</button>
       </section>
 
