@@ -2333,10 +2333,31 @@ function legal(type) {
       'Istuntoeväste':'Sessionscookie','Kirjautuminen ja integraatiot':'Inloggning och integrationer','Kävijätilastointi':'Besöksstatistik','Evästevalinnan muuttaminen':'Ändra cookieval','Maksaminen':'Betalning','Käsittelyn kohde ja kesto':'Behandlingens föremål och varaktighet','Käsittelyn tarkoitus':'Behandlingens syfte','Ohjeet':'Instruktioner','Luottamuksellisuus ja turvallisuus':'Konfidentialitet och säkerhet','Alikäsittelijät':'Underbiträden','Avustaminen':'Assistans','Poistaminen ja palauttaminen':'Radering och återlämning','HTTPS':'HTTPS','Salasanat':'Lösenord','Palvelutunnisteet':'Tjänsteuppgifter','Käyttöoikeudet':'Behörigheter','Tietopohjaperiaate':'Kunskapsbasprincip','Yhteydenotot':'Kontakt'
     }
   };
+  const legalBodyTranslations = {
+    en: {
+      'LAKIASIAT / 01':'LEGAL / 01','LAKIASIAT / 02':'LEGAL / 02','LAKIASIAT / 03':'LEGAL / 03','LAKIASIAT / 04':'LEGAL / 04',
+      'Käyttöehdot':'Terms','Tietosuojaseloste':'Privacy Policy','Evästeet':'Cookies','Tietojenkäsittely':'Data Processing','Tietoturva':'Security',
+      'Näissä ehdoissa kerrotaan, millä ehdoilla yritysasiakkaat voivat käyttää Respondo AI -palvelua.':'These terms describe the conditions under which business customers may use the Respondo AI service.',
+      'Tässä kerrotaan, mitä henkilötietoja Respondo AI käsittelee, miksi niitä käsitellään ja miten Google-käyttäjädataa käytetään.':'This policy explains what personal data Respondo AI processes, why it is processed, and how Google user data is used.',
+      'Respondo käyttää palvelun toiminnan kannalta tarpeellisia evästeitä ja vastaavia teknisiä tunnisteita.':'Respondo uses cookies and similar technical identifiers that are necessary for the service to function.',
+      'Kun Respondo käsittelee henkilötietoja yritysasiakkaan puolesta, yritys toimii lähtökohtaisesti rekisterinpitäjänä ja Respondo henkilötietojen käsittelijänä.':'When Respondo processes personal data on behalf of a business customer, the business generally acts as the controller and Respondo as the processor.',
+      'Respondossa pyritään käsittelemään vain tarpeellisia tietoja ja suojaamaan palvelun tunnisteet ja henkilötiedot asianmukaisin teknisin toimin.':'Respondo aims to process only necessary data and protect service credentials and personal data with appropriate technical measures.'
+    },
+    sv: {
+      'LAKIASIAT / 01':'JURIDIK / 01','LAKIASIAT / 02':'JURIDIK / 02','LAKIASIAT / 03':'JURIDIK / 03','LAKIASIAT / 04':'JURIDIK / 04',
+      'Käyttöehdot':'Användarvillkor','Tietosuojaseloste':'Integritetspolicy','Evästeet':'Cookies','Tietojenkäsittely':'Databehandling','Tietoturva':'Informationssäkerhet',
+      'Näissä ehdoissa kerrotaan, millä ehdoilla yritysasiakkaat voivat käyttää Respondo AI -palvelua.':'Dessa villkor beskriver under vilka villkor företagskunder får använda Respondo AI-tjänsten.',
+      'Tässä kerrotaan, mitä henkilötietoja Respondo AI käsittelee, miksi niitä käsitellään ja miten Google-käyttäjädataa käytetään.':'Denna policy beskriver vilka personuppgifter Respondo AI behandlar, varför de behandlas och hur Google-användardata används.',
+      'Respondo käyttää palvelun toiminnan kannalta tarpeellisia evästeitä ja vastaavia teknisiä tunnisteita.':'Respondo använder cookies och motsvarande tekniska identifierare som är nödvändiga för tjänstens funktion.',
+      'Kun Respondo käsittelee henkilötietoja yritysasiakkaan puolesta, yritys toimii lähtökohtaisesti rekisterinpitäjänä ja Respondo henkilötietojen käsittelijänä.':'När Respondo behandlar personuppgifter för en företagskund är företaget i regel personuppgiftsansvarig och Respondo personuppgiftsbiträde.',
+      'Respondossa pyritään käsittelemään vain tarpeellisia tietoja ja suojaamaan palvelun tunnisteet ja henkilötiedot asianmukaisin teknisin toimin.':'Respondo strävar efter att endast behandla nödvändiga uppgifter och skydda tjänstens autentiseringsuppgifter och personuppgifter med lämpliga tekniska åtgärder.'
+    }
+  };
   const translateLegal = (value) => {
     if (currentLang() === 'fi') return value;
     const lang = currentLang();
     if (legalHeadings[lang]?.[value]) return legalHeadings[lang][value];
+    if (legalBodyTranslations[lang]?.[value]) return legalBodyTranslations[lang][value];
     const map = lang === 'sv' ? SV_TEXT : EN_TEXT;
     return map.get(value) || value;
   };
