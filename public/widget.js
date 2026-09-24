@@ -25,6 +25,44 @@
     'Nimi':'Namn','Sähköposti tai puhelin':'E-post eller telefon','Viesti':'Meddelande','Lähetä':'Skicka','Sulje':'Stäng',
     'Sähköposti':'E-post','Puhelin':'Telefon','Valitse aika':'Välj tid','Varaa':'Boka','Lähetä tarjouspyyntö':'Skicka offertförfrågan'
   }));
+  const EXTRA_SV_WIDGET = {
+  "Respondon asiakaspalvelu": "Respondos kundservice",
+  "Paikalla nyt": "Online nu",
+  "Yhdistetään…": "Ansluter…",
+  "Kysy jotain…": "Skriv din fråga…",
+  "Kirjoita kysymyksesi": "Skriv din fråga",
+  "Kysy meiltä": "Fråga oss",
+  "Laske tarjous tästä": "Beräkna offert här",
+  "Kerro määrä ja mitä tarvitset. Jos yritys on määrittänyt hintakaavan, Respondo laskee hinnan heti.": "Ange mängden och vad du behöver. Om företaget har angett en prisformel räknar Respondo ut priset direkt.",
+  "Puhelin tai sähköposti": "Telefon eller e-post",
+  "Määrä": "Antal",
+  "Mitä tarvitset?": "Vad behöver du?",
+  "Budjetti, jos tiedossa": "Budget, om känd",
+  "Laske ja lähetä tarjouspyyntö": "Beräkna och skicka offertförfrågan",
+  "Varaa vapaa aika": "Boka en ledig tid",
+  "Respondo näyttää vain oikeasti vapaat ajat. Valittu aika poistuu heti muiden varattavista.": "Respondo visar bara tider som faktiskt är lediga. När en tid bokas försvinner den direkt för andra.",
+  "Haetaan vapaita aikoja…": "Hämtar lediga tider…",
+  "Lisätieto": "Ytterligare information",
+  "Varaa aika": "Boka tid",
+  "Tarkista tilauksen tila": "Kontrollera orderstatus",
+  "Anna tilausnumero ja tilauksessa käytetty sähköposti.": "Ange ordernumret och e-postadressen som användes för beställningen.",
+  "Tilausnumero": "Ordernummer",
+  "Vapaita aikoja ei saatu ladattua": "Lediga tider kunde inte laddas",
+  "Tarjous": "Offert",
+  "ALV 0 %": "Moms 0 %",
+  "Maksa / hyväksy tarjous →": "Betala / godkänn offert →",
+  "Yritys ei ole vielä yhdistänyt maksutiliä. Tarjouspyyntö on silti lähetetty.": "Företaget har ännu inte anslutit ett betalkonto. Offertförfrågan skickades ändå.",
+  "Aika varattu": "Tid bokad",
+  "Valmis ✓": "Klart ✓",
+  "Lähetys epäonnistui.": "Det gick inte att skicka.",
+  "Haluatko, että joku yrityksestä ottaa sinuun yhteyttä?": "Vill du att någon från företaget kontaktar dig?",
+  "Jätä nimesi ja puhelinnumerosi tai sähköpostisi. Tiedot menevät vain tälle yritykselle yhteydenottoa varten.": "Lämna ditt namn och telefonnummer eller din e-postadress. Uppgifterna delas endast med detta företag för att de ska kunna kontakta dig.",
+  "Nimi, jos haluat": "Namn, om du vill",
+  "Puhelinnumero tai sähköposti": "Telefonnummer eller e-post",
+  "Tätä chattia ei ole vielä otettu käyttöön tällä verkkosivulla.": "Den här chatten har ännu inte aktiverats på denna webbplats.",
+  "Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.": "Det gick inte att få ett svar just nu. Försök igen om en stund."
+};
+  Object.entries(EXTRA_SV_WIDGET).forEach(([fi,sv]) => SV_WIDGET.set(fi,sv));
   function t(fi, en) {
     if (widgetLang === 'en') return en || fi;
     if (widgetLang === 'sv') return SV_WIDGET.get(fi) || fi;
@@ -470,7 +508,7 @@
           addMessage(data.customerMessage);
         }
       } catch (err) {
-        box.querySelector('.action-ok').textContent = err.message || t('Lähetys epäonnistui.', 'Sending failed.');
+        box.querySelector('.action-ok').textContent = widgetLang === 'fi' && err.message ? err.message : t('Lähetys epäonnistui.', 'Sending failed.');
         button.disabled = false;
         button.textContent = original;
       }
