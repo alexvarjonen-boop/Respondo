@@ -147,6 +147,12 @@ function logo() {
 
 
 function currentLang() {
+  const queryLang = new URLSearchParams(location.search).get('lang');
+  if (['fi','sv','en'].includes(queryLang)) {
+    if (localStorage.getItem('respondo_lang') !== queryLang) localStorage.setItem('respondo_lang', queryLang);
+    if (window.RespondoI18n?.language !== queryLang) window.RespondoI18n?.setLanguage?.(queryLang);
+    return queryLang;
+  }
   const fromShared = window.RespondoI18n?.language;
   if (['fi','sv','en'].includes(fromShared)) return fromShared;
   const saved = localStorage.getItem('respondo_lang');
