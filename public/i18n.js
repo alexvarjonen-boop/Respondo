@@ -86,5 +86,111 @@
     get language() { return current; },
     t: translate, setLanguage, apply, languageSelector
   };
-  document.addEventListener('DOMContentLoaded', () => apply());
+  // Translate dynamically rendered application UI as well as static data-i18n labels.
+  // app.js renders most authenticated views after page load, so translating only headings
+  // or data-i18n nodes leaves buttons, helper text, notices and placeholders in Finnish.
+  let dynamicRun = 0;
+  let dynamicTimer = null;
+  let dynamicBusy = false;
+  const dynamicCache = new Map();
+
+  const shouldTranslateText = (value) => {
+    const s = String(value || '').replace(/\\s+/g, ' ').trim();
+    if (!s || s.length < 2) return false;
+    if (/^(RESPONDO AI|FI|SV|EN|https?:\\/\\/|[+]?\\d[\\d .()-]*|[€$£]?\\d[\\d., %/-]*|[A-Z0-9_-]{2,20})$/.test(s)) return false;
+    return /[A-Za-zÀ-ÖØ-öø-ÿÅÄÖåäö]/.test(s);
+  };
+
+  async function translateDynamicUi(root = document) {
+    const lang = current;
+    if (lang === 'fi' || dynamicBusy) return;
+    const run = ++dynamicRun;
+    const nodes = [];
+    const attrs = [];
+    const walker = document.createTreeWalker(root.body || root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent || parent.closest('script,style,code,pre,[data-no-auto-i18n]')) return NodeFilter.FILTER_REJECT;
+        return shouldTranslateText(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    (root.querySelectorAll?.('input[placeholder],textarea[placeholder],[title],[aria-label]') || []).forEach((el) => {
+      ['placeholder','title','aria-label'].forEach((name) => {
+        const value = el.getAttribute(name);
+        if (shouldTranslateText(value) && !el.matches('[data-no-auto-i18n]')) attrs.push({el,name,value});
+      });
+    });
+
+    const entries = [];
+    nodes.forEach((node) => entries.push({kind:'text', node, value:String(node.nodeValue || '').trim()}));
+    attrs.forEach((x) => entries.push({kind:'attr', ...x}));
+    const missing = [...new Set(entries.map(x => x.value).filter(v => !dynamicCache.has(lang + '\\n' + v)))];
+    if (!missing.length) {
+      entries.forEach((x) => {
+        const tr = dynamicCache.get(lang + '\\n' + x.value);
+        if (!tr) return;
+        if (x.kind === 'text' && x.node.isConnected) {
+          const raw = x.node.nodeValue || '';
+          const lead = raw.match(/^\\s*/)?.[0] || '';
+          const tail = raw.match(/\\s*$/)?.[0] || '';
+          x.node.nodeValue = lead + tr + tail;
+        } else if (x.kind === 'attr' && x.el.isConnected) x.el.setAttribute(x.name, tr);
+      });
+      return;
+    }
+
+    dynamicBusy = true;
+    try {
+      for (let i = 0; i < missing.length; i += 80) {
+        const batch = missing.slice(i, i + 80);
+        const response = await fetch('/api/i18n/translate', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({lang,texts:batch})
+        });
+        if (!response.ok) continue;
+        const data = await response.json().catch(() => ({}));
+        (data.translations || []).forEach((tr, idx) => {
+          if (tr) dynamicCache.set(lang + '\\n' + batch[idx], tr);
+        });
+      }
+      if (run !== dynamicRun || current !== lang) return;
+      entries.forEach((x) => {
+        const tr = dynamicCache.get(lang + '\\n' + x.value);
+        if (!tr) return;
+        if (x.kind === 'text' && x.node.isConnected) {
+          const raw = x.node.nodeValue || '';
+          const lead = raw.match(/^\\s*/)?.[0] || '';
+          const tail = raw.match(/\\s*$/)?.[0] || '';
+          x.node.nodeValue = lead + tr + tail;
+        } else if (x.kind === 'attr' && x.el.isConnected) x.el.setAttribute(x.name, tr);
+      });
+    } catch (_) {
+      // Keep the original Finnish text if the translation service is temporarily unavailable.
+    } finally {
+      dynamicBusy = false;
+    }
+  }
+
+  function scheduleDynamicTranslation() {
+    clearTimeout(dynamicTimer);
+    dynamicTimer = setTimeout(() => translateDynamicUi(document), 30);
+  }
+
+  const observer = new MutationObserver((mutations) => {
+    if (current === 'fi' || dynamicBusy) return;
+    if (mutations.some(m => m.addedNodes.length || m.type === 'characterData')) scheduleDynamicTranslation();
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    apply();
+    observer.observe(document.body, {subtree:true,childList:true,characterData:true});
+    scheduleDynamicTranslation();
+  });
+  window.addEventListener('respondo:languagechange', () => {
+    // app.js already rerenders on language change; translate the complete resulting view.
+    scheduleDynamicTranslation();
+  });
 })();
