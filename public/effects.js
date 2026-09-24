@@ -400,6 +400,34 @@ YLEINEN TOIMINTAOHJE:
   }
 
 
+  function localizeStandaloneAssistant(root) {
+    const q = new URLSearchParams(location.search).get('lang');
+    let lang = ['fi','sv','en'].includes(q) ? q : (localStorage.getItem('respondo_lang') || 'fi');
+    if (!['fi','sv','en'].includes(lang)) lang='fi';
+    if (q && ['fi','sv','en'].includes(q)) localStorage.setItem('respondo_lang',q);
+    if (!root || lang === 'fi') return;
+    const sv = lang === 'sv';
+    const pairs = [
+      ['KOKEILE OMILLA YRITYSTIEDOILLASI',sv?'TESTA MED DINA FÖRETAGSUPPGIFTER':'TRY WITH YOUR COMPANY DETAILS'],
+      ['Kokeile, miten Respondo vastaisi sinun asiakkaillesi.',sv?'Testa hur Respondo skulle svara dina kunder.':'See how Respondo would answer your customers.'],
+      ['Lisää alle muutama yrityksesi tieto. Sen jälkeen voit kysyä botilta ihan samalla tavalla kuin oikea asiakkaasi kysyisi.',sv?'Lägg till några uppgifter om ditt företag nedan. Därefter kan du fråga botten precis som en riktig kund skulle göra.':'Add a few details about your company below. Then ask the bot just as a real customer would.'],
+      ['Yrityksen nimi',sv?'Företagets namn':'Company name'],['Palvelut',sv?'Tjänster':'Services'],['Valitse palvelu…',sv?'Välj tjänst…':'Choose a service…'],['Lisää',sv?'Lägg till':'Add'],
+      ['Voit lisätä tähän kaikki palvelut, joita tarjoatte.',sv?'Du kan lägga till alla tjänster ni erbjuder här.':'You can add all the services you offer here.'],
+      ['Hinnat',sv?'Priser':'Prices'],['Aukioloajat',sv?'Öppettider':'Opening hours'],['Puhelinnumero',sv?'Telefonnummer':'Phone number'],['Sähköposti',sv?'E-post':'Email'],['Toimialue',sv?'Serviceområde':'Service area'],['Osoite',sv?'Adress':'Address'],['Verkkosivu',sv?'Webbplats':'Website'],
+      ['Tarjouspyyntölinkki',sv?'Länk för offertförfrågan':'Quote request link'],['Vastaustyyli',sv?'Svarsstil':'Response style'],['Luonteva ja ystävällinen',sv?'Naturlig och vänlig':'Natural and friendly'],['Lyhyt ja suora',sv?'Kort och direkt':'Short and direct'],['Asiallinen ja ammattimainen',sv?'Saklig och professionell':'Professional and formal'],
+      ['Omat kysymykset ja vastaukset',sv?'Egna frågor och svar':'Custom questions and answers'],['Lisää tähän asioita, joita asiakkaasi kysyvät usein.',sv?'Lägg till sådant som dina kunder ofta frågar om.':'Add things your customers often ask about.'],['+ Lisää kysymys',sv?'+ Lägg till fråga':'+ Add question'],['Asiakkaan kysymys tai aihe',sv?'Kundens fråga eller ämne':'Customer question or topic'],['Vastaus',sv?'Svar':'Answer'],['+ Lisää oma kysymys',sv?'+ Lägg till egen fråga':'+ Add custom question'],
+      ['Mitä muuta asiakkaan pitäisi tietää?',sv?'Vad mer bör kunden veta?':'What else should the customer know?'],['Tallenna ja kokeile',sv?'Spara och testa':'Save and test'],
+      ['HALUATKO TÄMÄN OMALLE SIVULLESI?',sv?'VILL DU HA DETTA PÅ DIN EGEN WEBBPLATS?':'WANT THIS ON YOUR WEBSITE?'],['Ota Respondo käyttöön omalla verkkosivullasi.',sv?'Ta Respondo i bruk på din egen webbplats.':'Add Respondo to your own website.'],
+      ['Kokeile 3 päivää ilmaiseksi. Valitse kuukausi- tai vuositilaus ja lisää maksutapa turvallisesti Stripessä.',sv?'Testa gratis i 3 dagar. Välj månads- eller årsabonnemang och lägg till betalningsmetod säkert via Stripe.':'Try free for 3 days. Choose a monthly or annual plan and add your payment method securely with Stripe.'],
+      ['KUUKAUSITILAUS',sv?'MÅNADSABONNEMANG':'MONTHLY PLAN'],['VUOSITILAUS',sv?'ÅRSABONNEMANG':'ANNUAL PLAN'],['3 päivää ilmaiseksi',sv?'3 dagar gratis':'3 days free'],['Chat suoraan omalle verkkosivullesi',sv?'Chatt direkt på din webbplats':'Chat directly on your website'],['Vastaukset yrityksesi omista tiedoista',sv?'Svar från företagets egna uppgifter':'Answers from your company information'],['Voit perua milloin tahansa',sv?'Du kan säga upp när som helst':'Cancel anytime'],['Valitse kuukausi',sv?'Välj månad':'Choose monthly'],['Säästä 60 €',sv?'Spara 60 €':'Save €60'],['Kaikki samat ominaisuudet kuin kuukausitilauksessa',sv?'Alla samma funktioner som i månadsabonnemanget':'All the same features as the monthly plan'],['Maksu kerran vuodessa',sv?'Betalning en gång per år':'One payment per year'],['Valitse vuosi',sv?'Välj år':'Choose annual'],
+      ['Maksut turvallisesti Stripessä',sv?'Säkra betalningar via Stripe':'Secure payments with Stripe'],['Ei veloitusta 3 päivän kokeilun aikana',sv?'Ingen debitering under den 3 dagar långa provperioden':'No charge during the 3-day trial'],['Pääset alkuun heti tilauksen jälkeen',sv?'Kom igång direkt efter beställningen':'Get started immediately after subscribing']
+    ];
+    const map=new Map(pairs), walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT), nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(n=>{const raw=n.nodeValue||'',key=raw.trim();if(map.has(key))n.nodeValue=raw.replace(key,map.get(key));});
+    const ph=sv?{'Esim. Virtasen LVI Oy':'T.ex. Virtanen VVS Ab','Esim. 65 € / h + alv':'T.ex. 65 € / h','Ma–Pe 8–17':'Mån–Fre 8–17','Katu 1, Tampere':'Gatan 1, Tammerfors','Esim. Oletteko lauantaina auki?':'T.ex. Har ni öppet på lördagar?','Esim. Kyllä. Olemme lauantaisin auki klo 10–14.':'T.ex. Ja. Vi har öppet på lördagar kl. 10–14.','Esim. päivystys, maksutavat, takuu tai ajanvarausohjeet…':'T.ex. jour, betalningssätt, garanti eller bokningsanvisningar…'}:{'Esim. Virtasen LVI Oy':'E.g. Virtanen Plumbing Ltd','Esim. 65 € / h + alv':'E.g. €65 / h','Ma–Pe 8–17':'Mon–Fri 8–17','Katu 1, Tampere':'1 Street, Tampere','Esim. Oletteko lauantaina auki?':'E.g. Are you open on Saturdays?','Esim. Kyllä. Olemme lauantaisin auki klo 10–14.':'E.g. Yes. We are open Saturdays 10–14.','Esim. päivystys, maksutavat, takuu tai ajanvarausohjeet…':'E.g. emergency service, payment methods, warranty or booking instructions…'};
+    root.querySelectorAll('[placeholder]').forEach(el=>{const v=el.getAttribute('placeholder');if(ph[v])el.setAttribute('placeholder',ph[v]);});
+  }
+
   function standaloneAssistant() {
     document.body.classList.add('assistant-standalone');
     const app = $('#app');
@@ -496,7 +524,7 @@ YLEINEN TOIMINTAOHJE:
               <div class="assistant-order-grid">
                 <article class="assistant-order-card">
                   <div class="assistant-order-label">KUUKAUSITILAUS</div>
-                  <h3>49 € <span>/ kk + alv</span></h3>
+                  <h3>49,99 € <span>/ kk</span></h3>
                   <ul>
                     <li>3 päivää ilmaiseksi</li>
                     <li>Chat suoraan omalle verkkosivullesi</li>
@@ -506,8 +534,8 @@ YLEINEN TOIMINTAOHJE:
                   <a class="assistant-order-btn" href="/tilaus?plan=monthly">Valitse kuukausi <span>→</span></a>
                 </article>
                 <article class="assistant-order-card featured">
-                  <div class="assistant-order-top"><div class="assistant-order-label">VUOSITILAUS</div><span class="assistant-save">Säästä 48 €</span></div>
-                  <h3>45 € <span>/ kk + alv</span></h3><p class="assistant-annual-note">Laskutetaan vuosittain 540 € + alv</p>
+                  <div class="assistant-order-top"><div class="assistant-order-label">VUOSITILAUS</div><span class="assistant-save">Säästä 60 €</span></div>
+                  <h3>44,99 € <span>/ kk</span></h3><p class="assistant-annual-note">Laskutetaan vuosittain 539,88 €</p>
                   <ul>
                     <li>3 päivää ilmaiseksi</li>
                     <li>Kaikki samat ominaisuudet kuin kuukausitilauksessa</li>
@@ -522,6 +550,7 @@ YLEINEN TOIMINTAOHJE:
           </section>
           <div class="assistant-demo-column" id="assistantDemoColumn" aria-label="Testibotti ja tilaus"></div>
         </main>`;
+      localizeStandaloneAssistant(app);
     }
 
     assistant();
