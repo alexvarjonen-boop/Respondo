@@ -134,7 +134,7 @@ async function config() {
 }
 
 function logo() {
-  return `<a class="logo" href="/" aria-label="RESPONDO AI etusivu">
+  return `<a class="logo" href="/" aria-label="${esc(appText('RESPONDO AI etusivu','RESPONDO AI startsida','RESPONDO AI home'))}">
     <span class="brand-mark" aria-hidden="true">
       <svg viewBox="0 0 64 64" focusable="false" aria-hidden="true">
         <rect width="64" height="64" rx="18" fill="#111114"/>
@@ -155,8 +155,9 @@ function currentLang() {
 
 function languageSwitch() {
   const lang = window.RespondoI18n?.language || localStorage.getItem('respondo_lang') || 'fi';
-  return `<label class="app-language-switch" aria-label="Language">
-    <select data-lang-select aria-label="Language">
+  const label = appText('Kieli','Språk','Language');
+  return `<label class="app-language-switch" aria-label="${esc(label)}">
+    <select data-lang-select aria-label="${esc(label)}">
       <option value="fi" ${lang === 'fi' ? 'selected' : ''}>FI</option>
       <option value="sv" ${lang === 'sv' ? 'selected' : ''}>SV</option>
       <option value="en" ${lang === 'en' ? 'selected' : ''}>EN</option>
@@ -966,6 +967,228 @@ const SV_TEXT = new Map(Object.entries({
   'Sulje':'Stäng','Takaisin':'Tillbaka','Lähetä':'Skicka','Ladataan…':'Laddar…'
 }));
 
+const EXTRA_UI_TEXT = new Map(Object.entries({
+  "RESPONDO AI etusivu": ["RESPONDO AI startsida", "RESPONDO AI home"],
+  "Language": ["Språk", "Language"],
+  "Googlella": ["med Google", "with Google"],
+  "Sivun osiot": ["Sidans avsnitt", "Page sections"],
+  "RESPONDO AI yhdistää tietopohjan, keskustelut ja jatkuvasti paranevan asiakaspalvelun yhteen näkymään.": ["RESPONDO AI samlar kunskapsbasen, konversationerna och en kundservice som hela tiden förbättras i en och samma vy.", "RESPONDO AI brings the knowledge base, conversations and continuously improving customer service into one view."],
+  "Hinnat, aukioloajat, palvelut ja omat kysymys–vastausparit pysyvät hallinnassa.": ["Priser, öppettider, tjänster och egna fråge–svar-par hålls samlade och under kontroll.", "Prices, opening hours, services and your own question-and-answer pairs stay under control."],
+  "Kun vastaan tulee uusi kysymys, lisäät vastauksen kerran.": ["När en ny fråga dyker upp lägger du till svaret en gång.", "When a new question comes up, you add the answer once."],
+  "Tietopohjan esimerkkikuva": ["Exempelbild av kunskapsbasen", "Knowledge base example image"],
+  "Keskustelun esimerkkikuva": ["Exempelbild av en konversation", "Conversation example image"],
+  "Analytiikan esimerkkikuva": ["Exempelbild av analysvyn", "Analytics example image"],
+  "Vastaukset": ["Svar", "Answers"],
+  "Asennus": ["Installation", "Installation"],
+  "Lisää hinnat, palvelut, aukioloajat ja omat vastaukset. Botti käyttää niitä asiakkaiden kysymyksiin vastaamiseen.": ["Lägg till priser, tjänster, öppettider och egna svar. Botten använder dem för att besvara kundernas frågor.", "Add prices, services, opening hours and your own answers. The bot uses them to answer customer questions."],
+  "Hinnat, palvelut, aukioloajat ja omat kysymys–vastausparit.": ["Priser, tjänster, öppettider och egna fråge–svar-par.", "Prices, services, opening hours and your own question-and-answer pairs."],
+  "Luonnollisesti. Omilla sanoillaan.": ["Naturligt. Med sina egna ord.", "Naturally. In their own words."],
+  "Jos varmaa tietoa ei löydy, kysymys ohjataan sinulle eikä vastausta keksitä.": ["Om säker information saknas skickas frågan vidare till dig i stället för att ett svar hittas på.", "If reliable information is not available, the question is routed to you instead of inventing an answer."],
+  "Sinä päätät, mitä yrityksestäsi kerrotaan. Muutokset päivittyvät botille yhdestä paikasta.": ["Du bestämmer vad som får sägas om ditt företag. Ändringar uppdateras till botten från ett och samma ställe.", "You decide what can be said about your company. Changes are updated to the bot from one place."],
+  "4 HYVÄKSYTTYÄ TIETOA": ["4 GODKÄNDA UPPGIFTER", "4 APPROVED ITEMS"],
+  "AJAN TASALLA": ["UPPDATERAT", "UP TO DATE"],
+  "Peruspaketti alkaa 49 €/kk + alv": ["Grundpaketet börjar på 49 €/mån + moms", "The basic plan starts at €49/month + VAT"],
+  "PERUSTUU": ["BASERAS PÅ", "BASED ON"],
+  "Alla olevat luvut perustuvat julkaistuihin tutkimuksiin ja raportteihin. Lähde, vuosi ja tutkimuskonteksti näkyvät jokaisen luvun yhteydessä.": ["Siffrorna nedan bygger på publicerade studier och rapporter. Källa, år och forskningskontext visas vid varje siffra.", "The figures below are based on published studies and reports. The source, year and research context are shown with each figure."],
+  "Harvard Business Review’n auditissa 2 241 yhdysvaltalaisesta yrityksestä lähes joka neljäs ei vastannut testiliidiin 30 päivän aikana.": ["I en Harvard Business Review-granskning av 2 241 amerikanska företag svarade nästan vart fjärde företag inte på testleadet inom 30 dagar.", "In a Harvard Business Review audit of 2,241 U.S. companies, nearly one in four did not respond to the test lead within 30 days."],
+  "Samassa HBR-auditissa vain 37 % yrityksistä reagoi verkkoliidiin tunnin sisällä. Erillisessä 1,25 miljoonan liidin analyysissä alle tunnissa yhteyttä ottaneet olivat lähes 7× todennäköisempiä kvalifioimaan liidin kuin myöhemmin vastanneet.": ["I samma HBR-granskning reagerade bara 37 % av företagen på ett webblead inom en timme. I en separat analys av 1,25 miljoner leads var de som tog kontakt inom en timme nästan 7× mer benägna att kvalificera leadet än de som svarade senare.", "In the same HBR audit, only 37% of companies responded to a web lead within an hour. In a separate analysis of 1.25 million leads, those contacted within an hour were nearly 7× more likely to qualify the lead than those contacted later."],
+  "Salesforcen asiakastutkimuksen mukaan 77 % asiakkaista odottaa voivansa olla vuorovaikutuksessa yrityksen kanssa heti yhteydenottohetkellä.": ["Enligt Salesforces kundundersökning förväntar sig 77 % av kunderna att kunna interagera med ett företag direkt när de tar kontakt.", "According to Salesforce customer research, 77% of customers expect to be able to interact with a company immediately when they make contact."],
+  "Zendesk CX Trends 2026 -tutkimuksessa 74 % kuluttajista sanoi AI:n nostaneen odotuksen siitä, että asiakaspalvelu on saatavilla vuorokauden ympäri.": ["I Zendesk CX Trends 2026 uppgav 74 % av konsumenterna att AI har höjt deras förväntningar på kundservice dygnet runt.", "In Zendesk CX Trends 2026, 74% of consumers said AI had raised their expectations for round-the-clock customer service."],
+  "Zendesk raportoi yli 11 000 kuluttajan ja yritysjohtajan aineistosta 22 maassa, että 86 % kuluttajista sanoo palvelun reagointinopeuden ja oikean ratkaisun vaikuttavan vahvasti heidän ostohalukkuuteensa.": ["Zendesk rapporterar från över 11 000 konsumenter och företagsledare i 22 länder att 86 % av konsumenterna säger att snabb respons och rätt lösning starkt påverkar deras vilja att köpa.", "Zendesk reports from more than 11,000 consumers and business leaders in 22 countries that 86% of consumers say response speed and getting the right solution strongly influence their willingness to buy."],
+  "HBR:n lead response -tutkimus on vuodelta 2011 ja tehtiin Yhdysvalloissa, joten sitä ei esitetä nykyisten suomalaisyritysten suorana keskiarvona. Se kertoo mitatusta yhteydestä vastausnopeuden ja liidin kvalifioinnin välillä.": ["HBR:s studie om lead response är från 2011 och genomfördes i USA, så den presenteras inte som ett direkt genomsnitt för dagens finländska företag. Den visar ett uppmätt samband mellan svarshastighet och leadkvalificering.", "The HBR lead-response study is from 2011 and was conducted in the United States, so it is not presented as a direct average for Finnish companies today. It shows a measured relationship between response speed and lead qualification."],
+  "Työn arvo euroina": ["Värdet på arbetet i euro", "Value of the job in euros"],
+  "Vastaamattomat yhteydenotot päivässä": ["Obesvarade förfrågningar per dag", "Unanswered inquiries per day"],
+  "Täytä omat ja yrityksesi perustiedot.": ["Fyll i dina egna och företagets grunduppgifter.", "Enter your basic details and your company's details."],
+  "Kerro Respondolle, mitä asiakkaillesi saa vastata.": ["Berätta för Respondo vad som får besvaras till dina kunder.", "Tell Respondo what it may answer to your customers."],
+  "Y-tunnus · Suomi": ["FO-nummer · Finland", "Business ID · Finland"],
+  "49 €/kk + alv · kuukausi": ["49 €/mån + moms · månadsvis", "€49/month + VAT · monthly"],
+  "45 €/kk + alv · laskutetaan 540 €/vuosi": ["45 €/mån + moms · faktureras 540 €/år", "€45/month + VAT · billed €540/year"],
+  "Suosittelukoodi": ["Rekommendationskod", "Referral code"],
+  "valinnainen": ["valfritt", "optional"],
+  "Hyväksyn": ["Jag godkänner", "I accept"],
+  "käyttöehdot": ["användarvillkoren", "the terms of service"],
+  "ja": ["och", "and"],
+  "tietosuojaselosteen": ["integritetspolicyn", "the privacy policy"],
+  "Jatka maksutavan lisäämiseen": ["Fortsätt till betalningsmetod", "Continue to payment method"],
+  "Korttitiedot käsittelee Stripe. Respondo ei näe eikä tallenna korttinumeroasi.": ["Kortuppgifterna behandlas av Stripe. Respondo ser eller lagrar inte ditt kortnummer.", "Card details are processed by Stripe. Respondo does not see or store your card number."],
+  "Automaattinen kirjautuminen ei onnistunut. Kirjaudu samalla sähköpostilla ja salasanalla, jonka loit ennen maksua.": ["Den automatiska inloggningen lyckades inte. Logga in med samma e-postadress och lösenord som du skapade före betalningen.", "Automatic sign-in failed. Sign in with the same email and password you created before payment."],
+  "TYÖTILA": ["ARBETSYTA", "WORKSPACE"],
+  "Näytä osio": ["Visa avsnitt", "Show section"],
+  "Yleiskatsaus": ["Översikt", "Overview"],
+  "Yrityksen tiedot & botti": ["Företagsuppgifter & bot", "Company details & bot"],
+  "Asiakkaat": ["Kunder", "Customers"],
+  "Toiminnot & integraatiot": ["Åtgärder & integrationer", "Actions & integrations"],
+  "Asennus & tili": ["Installation & konto", "Installation & account"],
+  "Botti käytössä": ["Botten aktiv", "Bot active"],
+  "Kirjaudu ulos": ["Logga ut", "Log out"],
+  "Valitse ylhäältä mitä haluat tehdä. Näytämme vain siihen liittyvät asiat.": ["Välj ovan vad du vill göra. Vi visar bara det som hör till den delen.", "Choose what you want to do above. We only show the relevant items."],
+  "KÄYTTÖÖNOTTO": ["KOM IGÅNG", "SETUP"],
+  "/ kohtaa valmiina": ["/ steg klara", "/ steps complete"],
+  "yhteensä": ["totalt", "total"],
+  "VIIMEISET 7 PV": ["SENASTE 7 DAGARNA", "LAST 7 DAYS"],
+  "keskustelua": ["konversationer", "conversations"],
+  "VASTATTU SUORAAN": ["BESVARADE DIREKT", "ANSWERED DIRECTLY"],
+  "ilman että asiakas piti ohjata eteenpäin": ["utan att kunden behövde skickas vidare", "without routing the customer onward"],
+  "YHTEYDENOTOT": ["KONTAKTFÖRFRÅGNINGAR", "CONTACT REQUESTS"],
+  "VASTAUSTEN VARMENNUS": ["SVARSKONTROLL", "ANSWER VERIFICATION"],
+  "% varmennettu": ["% verifierat", "% verified"],
+  "/ tietoa hyväksytty · tarkistettu viimeisen 90 päivän aikana.": ["/ uppgifter godkända · kontrollerade under de senaste 90 dagarna.", "/ items approved · checked within the last 90 days."],
+  "BOTIN ITSETESTI": ["BOTTENS SJÄLVTEST", "BOT SELF-TEST"],
+  "Testin laajuus": ["Testets omfattning", "Test scope"],
+  "500 kysymystä": ["500 frågor", "500 questions"],
+  "1 000 kysymystä": ["1 000 frågor", "1,000 questions"],
+  "TOIMINTOKESKUS · 30 PV": ["ÅTGÄRDSCENTER · 30 DAGAR", "ACTION CENTER · 30 DAYS"],
+  "toimintoa": ["åtgärder", "actions"],
+  "14 PÄIVÄÄ": ["14 DAGAR", "14 DAYS"],
+  "Näin paljon asiakkaat ovat kysyneet": ["Så här mycket har kunderna frågat", "How much customers have asked"],
+  "/ 30 pv": ["/ 30 dagar", "/ 30 days"],
+  "Kun keskusteluja kertyy, näet kehityksen tässä.": ["När fler konversationer samlas ser du utvecklingen här.", "As conversations accumulate, you will see the trend here."],
+  "TÄLLÄ VIIKOLLA": ["DEN HÄR VECKAN", "THIS WEEK"],
+  "Mihin kysymyksiin vastaus vielä puuttuu?": ["Vilka frågor saknar fortfarande svar?", "Which questions still need an answer?"],
+  "Kaikkiin tämän viikon kysymyksiin löytyi vastaus.": ["Alla frågor den här veckan fick ett svar.", "All questions this week had an answer."],
+  "Hyvältä näyttää.": ["Det ser bra ut.", "Looks good."],
+  "Kerro Respondolle tärkeimmät asiat yrityksestäsi": ["Berätta det viktigaste om ditt företag för Respondo", "Tell Respondo the key facts about your company"],
+  "Täytä nämä kerran. Jos jokin muuttuu, voit päivittää tiedot milloin tahansa.": ["Fyll i detta en gång. Om något ändras kan du uppdatera uppgifterna när som helst.", "Fill these in once. If anything changes, you can update the details at any time."],
+  "Perustiedot": ["Grunduppgifter", "Basic details"],
+  "BOTIN ULKOASU": ["BOTTENS UTSEENDE", "BOT APPEARANCE"],
+  "Nimeä botti ja valitse sille kuva": ["Namnge botten och välj en bild", "Name the bot and choose an image"],
+  "Asiakas näkee nämä tiedot verkkosivusi chatissa. Voit käyttää omaa kuvaa tai valita yhden valmiista roboteista.": ["Kunden ser dessa uppgifter i chatten på din webbplats. Du kan använda en egen bild eller välja en av de färdiga robotarna.", "Customers see these details in the chat on your website. You can use your own image or choose one of the ready-made robots."],
+  "Botin nimi": ["Bottens namn", "Bot name"],
+  "Esim. Aino, Roope tai Yrityksen Apuri": ["T.ex. Aino, Roope eller Företagets Hjälpare", "E.g. Aino, Roope or Company Helper"],
+  "Valmiit robottikuvat": ["Färdiga robotbilder", "Ready-made robot images"],
+  "Lataa oma kuva": ["Ladda upp egen bild", "Upload your own image"],
+  "PNG, JPG tai WebP · kuva rajataan automaattisesti neliöksi": ["PNG, JPG eller WebP · bilden beskärs automatiskt till en kvadrat", "PNG, JPG or WebP · the image is automatically cropped to a square"],
+  "Ensimmäinen viesti asiakkaalle": ["Första meddelandet till kunden", "First message to the customer"],
+  "Vastaustyyli": ["Svarsstil", "Response style"],
+  "Lyhyt ja suora": ["Kort och direkt", "Short and direct"],
+  "Asiallinen ja ammattimainen": ["Saklig och professionell", "Professional and businesslike"],
+  "Puhelinnumero": ["Telefonnummer", "Phone number"],
+  "Verkkosivusi osoite": ["Din webbplatsadress", "Your website address"],
+  "Botti toimii vain tällä verkkosivulla.": ["Botten fungerar endast på den här webbplatsen.", "The bot only works on this website."],
+  "Hae tiedot sivultani": ["Hämta uppgifter från min webbplats", "Import details from my website"],
+  "Respondo etsii sivultasi palvelut ja yhteystiedot valmiiksi. Sinä tarkistat ne ennen tallennusta.": ["Respondo letar fram tjänster och kontaktuppgifter från din webbplats. Du granskar dem innan de sparas.", "Respondo finds services and contact details on your website for you. You review them before saving."],
+  "Linkki tarjouspyyntöön": ["Länk till offertförfrågan", "Quote request link"],
+  "Respondo voi lähettää tämän linkin asiakkaalle, joka haluaa pyytää tarjouksen.": ["Respondo kan skicka den här länken till en kund som vill be om en offert.", "Respondo can send this link to a customer who wants to request a quote."],
+  "Ajanvarauslinkki": ["Bokningslänk", "Booking link"],
+  "Kun asiakas haluaa varata ajan, Respondo näyttää suoran Varaa aika -toiminnon.": ["När en kund vill boka en tid visar Respondo en direkt Boka tid-funktion.", "When a customer wants to book, Respondo shows a direct Book time action."],
+  "Yhden liidin arvioitu arvo (€)": ["Uppskattat värde per lead (€)", "Estimated value per lead (€)"],
+  "Hallintapaneeli arvioi yhteydenottojen arvon tämän perusteella.": ["Kontrollpanelen uppskattar värdet på kontaktförfrågningar utifrån detta.", "The dashboard estimates the value of contact requests based on this."],
+  "Mitä palveluja tarjoatte?": ["Vilka tjänster erbjuder ni?", "What services do you offer?"],
+  "Osoite": ["Adress", "Address"],
+  "Muut tärkeät tiedot": ["Övrig viktig information", "Other important information"],
+  "Respondo käyttää näitä tietoja asiakkaiden kysymyksiin vastaamiseen.": ["Respondo använder dessa uppgifter för att besvara kundernas frågor.", "Respondo uses this information to answer customer questions."],
+  "Voit muuttaa niitä milloin tahansa.": ["Du kan ändra dem när som helst.", "You can change them at any time."],
+  "Tallenna tiedot": ["Spara uppgifter", "Save details"],
+  "KOKEILE TÄSSÄ": ["TESTA HÄR", "TEST HERE"],
+  "Kysy kuten asiakkaasi kysyisi": ["Fråga som en kund skulle fråga", "Ask as your customer would"],
+  "paikalla nyt": ["online nu", "online now"],
+  "Tämä kokeilu käyttää yllä olevia tietoja ja jo tallentamiasi vastauksia.": ["Det här testet använder uppgifterna ovan och de svar du redan har sparat.", "This test uses the information above and the answers you have already saved."],
+  "Vastaukset, joita botti saa käyttää": ["Svar som botten får använda", "Answers the bot may use"],
+  "kohdetta": ["objekt", "items"],
+  "Botin etusivun kysymykset": ["Frågor på bottens startsida", "Bot home-screen questions"],
+  "Valitse enintään 3 omaa kysymys–vastausta. Ne näkyvät asiakkaalle heti chatin avatessa.": ["Välj högst 3 egna fråge–svar-par. De visas för kunden direkt när chatten öppnas.", "Choose up to 3 of your own question-and-answer pairs. They are shown to the customer as soon as the chat opens."],
+  "/3 valittu": ["/3 valda", "/3 selected"],
+  "Kysy esim. “Paljonko maksaa?”": ["Fråga t.ex. ”Vad kostar det?”", "Ask e.g. “How much does it cost?”"],
+  "LISÄÄ VASTAUS": ["LÄGG TILL SVAR", "ADD ANSWER"],
+  "Tallenna vastaus": ["Spara svar", "Save answer"],
+  "Kategoria": ["Kategori", "Category"],
+  "Otsikko": ["Rubrik", "Title"],
+  "Hyväksytty vastaus": ["Godkänt svar", "Approved answer"],
+  "Esimerkkisanat": ["Exempelord", "Example words"],
+  "Esim. Hinnoittelu": ["T.ex. Prissättning", "E.g. Pricing"],
+  "ASIAKASPALVELIJAN HALTUUNOTTO": ["KUNDTJÄNST TAR ÖVER", "HUMAN TAKEOVER"],
+  "Hyppää mukaan asiakkaan keskusteluun": ["Gå in i kundens konversation", "Join the customer's conversation"],
+  "Kun otat keskustelun haltuun, Respondo lopettaa vastaamisen siihen keskusteluun. Verkkosivuasiakas saa viestisi suoraan chattiin; WhatsApp- ja Instagram-vastaus lähetetään samaan kanavaan.": ["När du tar över konversationen slutar Respondo svara i den. Webbplatskunden får ditt meddelande direkt i chatten; svar via WhatsApp och Instagram skickas i samma kanal.", "When you take over the conversation, Respondo stops replying in that conversation. Website customers receive your message directly in the chat; WhatsApp and Instagram replies are sent through the same channel."],
+  "aktiivista": ["aktiva", "active"],
+  "VIIMEISIMMÄT KESKUSTELUT": ["SENASTE KONVERSATIONERNA", "LATEST CONVERSATIONS"],
+  "Mitä asiakkaasi ovat kysyneet?": ["Vad har dina kunder frågat?", "What have your customers asked?"],
+  "Näet kysymyksen, Respondon vastauksen ja sen, pitikö asiakas ohjata sinulle.": ["Du ser frågan, Respondos svar och om kunden behövde skickas vidare till dig.", "You can see the question, Respondo's answer, and whether the customer had to be routed to you."],
+  "Sivulla:": ["På sidan:", "On page:"],
+  "Keskusteluja ei ole vielä.": ["Det finns inga konversationer ännu.", "There are no conversations yet."],
+  "Kun asiakkaat alkavat kysyä, keskustelut näkyvät tässä.": ["När kunder börjar ställa frågor visas konversationerna här.", "When customers start asking questions, the conversations will appear here."],
+  "Asiakkaat, jotka haluavat yhteydenoton": ["Kunder som vill bli kontaktade", "Customers who want to be contacted"],
+  "Jos vastaus puuttuu, asiakas voi jättää numeronsa tai sähköpostinsa, jotta voit ottaa yhteyttä.": ["Om ett svar saknas kan kunden lämna sitt telefonnummer eller sin e-postadress så att du kan ta kontakt.", "If an answer is missing, the customer can leave their phone number or email so you can contact them."],
+  "Kukaan ei ole vielä jättänyt yhteystietoja.": ["Ingen har lämnat kontaktuppgifter ännu.", "No one has left contact details yet."],
+  "Uudet yhteydenottopyynnöt näkyvät tässä.": ["Nya kontaktförfrågningar visas här.", "New contact requests will appear here."],
+  "Kysymykset, joihin Respondolla ei vielä ollut vastausta": ["Frågor som Respondo ännu inte hade svar på", "Questions Respondo could not answer yet"],
+  "Kirjoita vastaus tähän kerran. Sen jälkeen Respondo osaa vastata samaan asiaan myös seuraaville asiakkaille.": ["Skriv svaret här en gång. Därefter kan Respondo svara på samma sak även för kommande kunder.", "Write the answer here once. After that, Respondo can answer the same question for future customers too."],
+  "ASIAKKAIDEN PYYNNÖT": ["KUNDFÖRFRÅGNINGAR", "CUSTOMER REQUESTS"],
+  "Asiakkaiden pyynnöt": ["Kundförfrågningar", "Customer requests"],
+  "Tarjouspyynnöt, ajanvaraukset, tilauskyselyt ja yhteydenotot näkyvät tässä.": ["Offertförfrågningar, bokningar, orderfrågor och kontaktförfrågningar visas här.", "Quote requests, bookings, order questions and contact requests appear here."],
+  "avoinna": ["öppna", "open"],
+  "RESPONDO-TARJOUS": ["RESPONDO-OFFERT", "RESPONDO QUOTE"],
+  "VARATTU AIKA": ["BOKAD TID", "BOOKED TIME"],
+  "Merkitse hoidetuksi": ["Markera som klar", "Mark as done"],
+  "HINTALASKURI": ["PRISKALKYLATOR", "PRICE CALCULATOR"],
+  "Anna Respondon laskea hinta": ["Låt Respondo räkna ut priset", "Let Respondo calculate the price"],
+  "Määritä palvelun hinnat. Respondo laskee asiakkaalle hinnan antamiesi hintojen perusteella.": ["Ange priserna för tjänsten. Respondo räknar ut kundens pris utifrån de priser du har angett.", "Set the service prices. Respondo calculates the customer's price based on the prices you provide."],
+  "Palvelun nimi": ["Tjänstens namn", "Service name"],
+  "Perusmaksu €": ["Grundavgift €", "Base fee €"],
+  "Hinta / yksikkö €": ["Pris / enhet €", "Price / unit €"],
+  "Yksikön nimi": ["Enhetens namn", "Unit name"],
+  "Minimihinta €": ["Minimipris €", "Minimum price €"],
+  "ALV %": ["Moms %", "VAT %"],
+  "Hinta = max(minimi, perusmaksu + määrä × yksikköhinta) + ALV": ["Pris = max(minimum, grundavgift + antal × enhetspris) + moms", "Price = max(minimum, base fee + quantity × unit price) + VAT"],
+  "Tallenna hintalaskuri": ["Spara priskalkylator", "Save price calculator"],
+  "AJANVARAUKSET": ["BOKNINGAR", "BOOKINGS"],
+  "Luo oikeat vapaat ajat": ["Skapa verkliga lediga tider", "Create real available times"],
+  "Asiakas näkee chatissa vain nämä ajat. Kun yksi varataan, se lukittuu heti pois muilta.": ["Kunden ser bara dessa tider i chatten. När en tid bokas låses den direkt för andra.", "The customer only sees these times in the chat. Once one is booked, it is immediately unavailable to others."],
+  "vapaana": ["lediga", "available"],
+  "Alkaen": ["Från", "From"],
+  "Päättyen": ["Till", "Until"],
+  "Päivä alkaa": ["Dagen börjar", "Day starts"],
+  "Päivä päättyy": ["Dagen slutar", "Day ends"],
+  "Ajan pituus": ["Tidslängd", "Duration"],
+  "Luo vapaat ajat": ["Skapa lediga tider", "Create available times"],
+  "Et ole vielä luonut vapaita aikoja.": ["Du har inte skapat några lediga tider ännu.", "You have not created any available times yet."],
+  "MAKSUT": ["BETALNINGAR", "PAYMENTS"],
+  "Ota maksu suoraan tarjouksesta": ["Ta betalt direkt från offerten", "Take payment directly from the quote"],
+  "Yhdistä yrityksen oma Stripe. Tämän jälkeen chatissa laskettu tarjous voi avata maksun suoraan yrityksen Stripe-tilille.": ["Anslut företagets eget Stripe-konto. Därefter kan en offert som räknats ut i chatten öppna betalningen direkt till företagets Stripe-konto.", "Connect the company's own Stripe account. After that, a quote calculated in the chat can open payment directly to the company's Stripe account."],
+  "ASENNUS": ["INSTALLATION", "INSTALLATION"],
+  "1 sivusto": ["1 webbplats", "1 website"],
+  "Kopioi tämä koodi sivustosi HTML:ään juuri ennen sulkevaa": ["Kopiera den här koden till webbplatsens HTML precis före den avslutande", "Copy this code into your website HTML just before the closing"],
+  "-tagia.": ["-taggen.", " tag."],
+  "🔒 SIDOTTU VERKKOSIVUUN": ["🔒 KOPPLAD TILL WEBBPLATSEN", "🔒 LINKED TO WEBSITE"],
+  "Kopioi": ["Kopiera", "Copy"],
+  "LASKUTUS": ["FAKTURERING", "BILLING"],
+  "Hallitse tilaustasi": ["Hantera ditt abonnemang", "Manage your subscription"],
+  "Voit vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.": ["Du kan byta betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal.", "You can change the payment method, view invoices or cancel the subscription in Stripe's customer portal."],
+  "Avaa tilauksen hallinta": ["Öppna abonnemangshantering", "Open subscription management"],
+  "MAKSU VAHVISTETTU": ["BETALNING BEKRÄFTAD", "PAYMENT CONFIRMED"],
+  "Valmis.": ["Klart.", "Done."],
+  "Maksu": ["Betalningen", "The payment"],
+  "yritykselle": ["till företaget", "to the company"],
+  "onnistui.": ["lyckades.", "was successful."],
+  "Voit sulkea tämän sivun ja palata takaisin yrityksen verkkosivulle.": ["Du kan stänga den här sidan och återgå till företagets webbplats.", "You can close this page and return to the company's website."],
+  "MAKSUN TARKISTUS": ["BETALNINGSKONTROLL", "PAYMENT CHECK"],
+  "Maksua ei vahvistettu.": ["Betalningen kunde inte bekräftas.", "The payment was not confirmed."],
+  "Tätä sivua ei löytynyt.": ["Sidan kunde inte hittas.", "This page could not be found."],
+  "Palaa etusivulle": ["Tillbaka till startsidan", "Return to home page"],
+  "Evästevalinnat": ["Cookieval", "Cookie choices"],
+  "Yksityisyys": ["Integritet", "Privacy"],
+  "Evästeet ja kävijätilastot": ["Cookies och besöksstatistik", "Cookies and visitor analytics"],
+  "Käytämme välttämättömiä evästeitä palvelun toimintaan. Valinnaisella analytiikalla mittaamme sivuston käyttöä ja liikenteen lähteitä. Voit hyväksyä tai hylätä valinnaisen analytiikan.": ["Vi använder nödvändiga cookies för att tjänsten ska fungera. Med valfri analys mäter vi användningen av webbplatsen och trafikkällor. Du kan godkänna eller avvisa den valfria analysen.", "We use necessary cookies for the service to function. Optional analytics help us measure site usage and traffic sources. You can accept or reject optional analytics."],
+  "Lisätiedot": ["Mer information", "More information"],
+  "Hylkää": ["Avvisa", "Reject"],
+  "Hyväksy kaikki": ["Godkänn alla", "Accept all"],
+  "Evästeasetukset": ["Cookieinställningar", "Cookie settings"],
+  "Valitse, mitä sallitaan": ["Välj vad du tillåter", "Choose what to allow"],
+  "Välttämättömät evästeet tarvitaan esimerkiksi kirjautumiseen ja palvelun turvalliseen toimintaan. Valinnainen analytiikka käynnistyy vain, jos hyväksyt sen.": ["Nödvändiga cookies behövs bland annat för inloggning och säker drift av tjänsten. Valfri analys startar endast om du godkänner den.", "Necessary cookies are required for sign-in and secure operation of the service. Optional analytics only starts if you accept it."],
+  "Välttämättömät": ["Nödvändiga", "Necessary"],
+  "Istunto, kirjautuminen, tietoturva ja palvelun perustoiminnot.": ["Session, inloggning, säkerhet och tjänstens grundfunktioner.", "Session, sign-in, security and core service functions."],
+  "Aina käytössä": ["Alltid aktiva", "Always active"],
+  "Kävijätilastot": ["Besöksstatistik", "Visitor analytics"],
+  "Pseudonyymi kävijätunniste, sivupolku, liikenteen lähde ja mahdolliset UTM-kampanjatiedot. Raakaa IP-osoitetta ei tallenneta tilastotauluun.": ["Pseudonym besökaridentifierare, sidväg, trafikkälla och eventuella UTM-kampanjuppgifter. Den råa IP-adressen sparas inte i statistiktabellen.", "Pseudonymous visitor identifier, page path, traffic source and any UTM campaign data. The raw IP address is not stored in the analytics table."],
+  "Salli kävijätilastot": ["Tillåt besöksstatistik", "Allow visitor analytics"],
+  "Lue lisää evästeistä ja tietojen käytöstä": ["Läs mer om cookies och hur data används", "Read more about cookies and data use"],
+  "Hylkää valinnaiset": ["Avvisa valfria", "Reject optional"],
+  "Tallenna valinta": ["Spara val", "Save choice"],
+}));
+for (const [fi, pair] of EXTRA_UI_TEXT) {
+  SV_TEXT.set(fi, pair[0]);
+  EN_TEXT.set(fi, pair[1]);
+}
+
 const SV_PLACEHOLDERS = new Map(Object.entries({
   'Etunimi Sukunimi':'Förnamn Efternamn','sinä@yritys.fi':'du@foretag.fi','Yrityksen nimi':'Företagets namn','Vähintään 10 merkkiä':'Minst 10 tecken'
 }));
@@ -983,7 +1206,7 @@ function applyLanguage() {
   if (lang === 'fi') return;
   const textMap = lang === 'sv' ? SV_TEXT : EN_TEXT;
   const placeholderMap = lang === 'sv' ? SV_PLACEHOLDERS : EN_PLACEHOLDERS;
-  const root = document.getElementById('app');
+  const root = document.body || document.getElementById('app');
   if (!root) return;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes = [];
@@ -996,11 +1219,25 @@ function applyLanguage() {
     if (!trimmed) continue;
     if (textMap.has(trimmed)) node.nodeValue = raw.replace(trimmed, textMap.get(trimmed));
   }
-  root.querySelectorAll('input[placeholder], textarea[placeholder]').forEach((el) => {
-    const p = el.getAttribute('placeholder') || '';
-    if (placeholderMap.has(p)) el.setAttribute('placeholder', placeholderMap.get(p));
+  root.querySelectorAll('input[placeholder], textarea[placeholder], [title], [aria-label]').forEach((el) => {
+    ['placeholder','title','aria-label'].forEach((name) => {
+      const value = el.getAttribute(name) || '';
+      if (textMap.has(value)) el.setAttribute(name, textMap.get(value));
+      else if (name === 'placeholder' && placeholderMap.has(value)) el.setAttribute(name, placeholderMap.get(value));
+    });
   });
   window.RespondoI18n?.apply(root);
+  const path = location.pathname;
+  const pageTitle = path === '/app'
+    ? appText('RESPONDO AI | Hallintapaneeli','RESPONDO AI | Kontrollpanel','RESPONDO AI | Dashboard')
+    : path === '/kirjaudu'
+      ? appText('RESPONDO AI | Kirjaudu','RESPONDO AI | Logga in','RESPONDO AI | Log in')
+      : path === '/tilaus'
+        ? appText('RESPONDO AI | Luo tili','RESPONDO AI | Skapa konto','RESPONDO AI | Create account')
+        : path === '/assistant'
+          ? appText('RESPONDO AI | Testaa bottia','RESPONDO AI | Testa botten','RESPONDO AI | Test the bot')
+          : appText('RESPONDO AI | Asiakaspalvelubotti yrityksille 24/7','RESPONDO AI | Kundservicebot för företag 24/7','RESPONDO AI | Customer service bot for businesses 24/7');
+  document.title = pageTitle;
   // Translate any remaining rendered UI copy that is not yet in the static dictionaries.
   // User/company-entered values in inputs, code and textareas are intentionally left untouched.
   const missing = [];
@@ -2163,7 +2400,7 @@ async function dashboard() {
               <option value="setup">Yrityksen tiedot & botti</option>
               <option value="answers">Vastaukset</option>
               <option value="customers">Asiakkaat</option>
-              <option value="automation">Actions & integraatiot</option>
+              <option value="automation">Toiminnot & integraatiot</option>
               <option value="account">Asennus & tili</option>
             </select>
             <span aria-hidden="true">⌄</span>
@@ -2221,14 +2458,14 @@ async function dashboard() {
         <article class="panel truth-score-card">
           <div class="intelligence-icon">✓</div>
           <div>
-            <small>TRUTH ENGINE</small>
+            <small>VASTAUSTEN VARMENNUS</small>
             <h2>${truth.score}% varmennettu</h2>
             <p>${truth.approved}/${truth.total} tietoa hyväksytty · ${truth.fresh} tarkistettu viimeisen 90 päivän aikana.</p>
           </div>
         </article>
         <article class="panel self-test-card">
           <div class="self-test-copy">
-            <small>BOTIN SELF-TEST</small>
+            <small>BOTIN ITSETESTI</small>
             <h2>${latestSelfTest ? latestSelfTest.score + '% kattavuus' : 'Testaa ennen asiakkaita'}</h2>
             <p>${latestSelfTest ? (latestSelfTest.answerable_questions + '/' + latestSelfTest.total_questions + ' testikysymykseen löytyi varma tieto.') : 'Respondo luo realistisia asiakaskysymyksiä ja etsii tietopohjan aukot ennen oikeita asiakkaita.'}</p>
           </div>
@@ -2246,7 +2483,7 @@ async function dashboard() {
         <article class="panel action-center-card">
           <div class="intelligence-icon">↗</div>
           <div>
-            <small>ACTION CENTER · 30 PV</small>
+            <small>TOIMINTOKESKUS · 30 PV</small>
             <h2>${s.actions30 || 0} toimintoa</h2>
             <p>${actionStats.length ? actionStats.map((x) => esc(x.action_type) + ' ' + Number(x.total || 0) + '×').join(' · ') : 'Kun asiakkaat varaavat ajan, pyytävät tarjouksen, soittavat tai lähettävät sähköpostia, näet sen tässä.'}</p>
           </div>
@@ -2357,7 +2594,7 @@ async function dashboard() {
             <div class="field">
               <label>Yhden liidin arvioitu arvo (€)</label>
               <input name="averageLeadValue" inputmode="decimal" value="${esc(t.average_lead_value || '')}" placeholder="Esim. 250">
-              <small class="field-hint">Dashboard arvioi yhteydenottojen arvon tämän perusteella.</small>
+              <small class="field-hint">Hallintapaneeli arvioi yhteydenottojen arvon tämän perusteella.</small>
             </div>
             <div class="field profile-wide">
               <label>Mitä palveluja tarjoatte?</label>
@@ -2451,9 +2688,9 @@ async function dashboard() {
       <section class="panel live-inbox-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="customers" id="live-inbox">
         <div class="panel-head">
           <div>
-            <small>LIVE HUMAN TAKEOVER</small>
+            <small>ASIAKASPALVELIJAN HALTUUNOTTO</small>
             <h2>Hyppää mukaan asiakkaan keskusteluun</h2>
-            <p>Kun otat keskustelun haltuun, AI lopettaa vastaamisen siihen keskusteluun. Verkkosivuasiakas saa viestisi suoraan chattiin; WhatsApp- ja Instagram-vastaus lähetetään samaan kanavaan.</p>
+            <p>Kun otat keskustelun haltuun, Respondo lopettaa vastaamisen siihen keskusteluun. Verkkosivuasiakas saa viestisi suoraan chattiin; WhatsApp- ja Instagram-vastaus lähetetään samaan kanavaan.</p>
           </div>
           <span>${liveThreads.filter((x) => x.status === 'open').length} aktiivista</span>
         </div>
@@ -2595,7 +2832,7 @@ async function dashboard() {
                 ${x.payload?.question ? `<p class="action-origin">“${esc(x.payload.question)}”</p>` : ''}
                 ${x.result?.quote ? `
                   <div class="action-quote-summary">
-                    <span>RESPONDO QUOTE</span>
+                    <span>RESPONDO-TARJOUS</span>
                     <b>${formatMoney(x.result.quote.total || 0)}</b>
                     <small>${x.result?.paid ? 'Maksettu ✓' : 'Odottaa hyväksyntää / maksua'}</small>
                   </div>
@@ -2699,7 +2936,7 @@ async function dashboard() {
         <article class="panel stripe-connect-panel" id="stripe-connect">
           <div class="panel-head">
             <div>
-              <small>PAYMENTS</small>
+              <small>MAKSUT</small>
               <h2>Ota maksu suoraan tarjouksesta</h2>
               <p>Yhdistä yrityksen oma Stripe. Tämän jälkeen chatissa laskettu tarjous voi avata maksun suoraan yrityksen Stripe-tilille.</p>
             </div>
@@ -3197,7 +3434,7 @@ async function route() {
       button.disabled = true;
       button.innerHTML = appText('Testataan…','Testar…','Testing…');
       const target = Number($('#selfTestDepth')?.value || 500) >= 1000 ? 1000 : 500;
-      $('#selfTestResult').innerHTML = '<div class="self-test-running">Respondo käy läpi ' + target.toLocaleString(appLocale()) +  + appText(' realistista asiakaskysymystä ja etsii aukkoja.',' realistiska kundfrågor och letar efter luckor.',' realistic customer questions and looks for gaps.') + '</div>';
+      $('#selfTestResult').innerHTML = '<div class="self-test-running">' + appText('Respondo käy läpi ','Respondo går igenom ','Respondo is reviewing ') + target.toLocaleString(appLocale()) + appText(' realistista asiakaskysymystä ja etsii aukkoja.',' realistiska kundfrågor och letar efter luckor.',' realistic customer questions and looks for gaps.') + '</div>';
       try {
         const result = await api('/api/app/self-test', {
           method:'POST',
