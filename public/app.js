@@ -93,8 +93,8 @@ let cfg = {
   businessId: '3599437-5',
   sellerName: 'RESPONDO AI',
   trialDays: 3,
-  monthlyNet: 49,
-  yearlyNet: 540,
+  monthlyNet: 49.99,
+  yearlyNet: 539.88,
 };
 
 async function api(url, options = {}) {
@@ -394,7 +394,7 @@ const EN_TEXT = new Map(Object.entries({
   "Kuukausi":"Month",
   "VUOSITILAUS":"ANNUAL PLAN",
   "säästä 48 €":"save €48",
-  "Laskutetaan vuosittain 540 € + alv":"Billed annually at €540 + VAT",
+  "Laskutetaan vuosittain 539,88 €":"Billed annually at €539.88",
   "Kaikki samat ominaisuudet kuin kuukausitilauksessa":"All the same features as the monthly plan",
   "Maksu kerran vuodessa":"Pay once per year",
   "Voit käyttää palvelua maksetun kauden loppuun":"Use the service until the end of the paid period",
@@ -500,7 +500,7 @@ const EN_TEXT = new Map(Object.entries({
   'Tutustu tuotteeseen':'Explore the product',
   '3 päivää ilmaiseksi':'3 days free',
   'Peruuta milloin tahansa':'Cancel anytime',
-  '49 €/kk + alv':'€49/month + VAT',
+  '49,99 €/kk':'€49.99/month',
   'TIETOPOHJA':'KNOWLEDGE BASE',
   'VASTAUKSET':'ANSWERS',
   'EPÄVARMUUS':'UNCERTAINTY',
@@ -535,7 +535,7 @@ const EN_TEXT = new Map(Object.entries({
   'AJAN TASALLA':'UP TO DATE',
   'Hyväksytty tietopohja':'Approved knowledge base',
   'Hinnoittelu':'Pricing',
-  'Peruspaketti alkaa 49 €/kk + alv':'Base plan starts at €49/month + VAT',
+  'Peruspaketti alkaa 49,99 €/kk':'Base plan starts at €49.99/month',
   'Aukioloajat':'Opening hours',
   'Toimialue':'Service area',
   'Suomi':'Finland',
@@ -549,8 +549,8 @@ const EN_TEXT = new Map(Object.entries({
   'sinun hallinnassa':'you are in control',
   'aina':'always',
   'ALKAEN':'FROM',
-  '49 € / kk':'€49 / month',
-  '+ alv':'+ VAT',
+  '49,99 € / kk':'€49.99 / month',
+  
   'KOKEILU':'TRIAL',
   '3 päivää':'3 days',
   'maksutta':'free',
@@ -584,7 +584,7 @@ const EN_TEXT = new Map(Object.entries({
   'Näet, mitä asiakkaat kysyvät':'Conversation analytics',
   'Puuttuvat vastaukset ohjataan sinulle':'Fallback for uncertain questions',
   'Hallitse tilausta turvallisesti Stripessä':'Subscription management in Stripe',
-  'säästä 39 €':'save €39',
+  'säästä 60 €':'save €60',
   'Vuosi':'Yearly',
   'Kaikki samat ominaisuudet kuin kuukausitilauksessa':'Same features as the monthly plan',
   'Maksu kerran vuodessa':'One annual payment',
@@ -1852,7 +1852,7 @@ function pricingSection() {
         <article class="price-card">
           <div class="price-top"><span>KUUKAUSITILAUS</span><span>maksa kuukausittain</span></div>
           <h3>Kuukausi</h3>
-          <div class="pricevalue">49 €<small>/kk + alv</small></div>
+          <div class="pricevalue">49,99 €<small>/kk</small></div>
           <div class="price-rule"></div>
           <ul>
             <li>Chat suoraan omalle verkkosivullesi</li>
@@ -1864,9 +1864,9 @@ function pricingSection() {
           <a class="btn price-btn" href="/tilaus?plan=monthly">Kokeile 3 päivää ilmaiseksi</a>
         </article>
         <article class="price-card featured">
-          <div class="price-top"><span>VUOSITILAUS</span><span class="save">säästä 48 €</span></div>
+          <div class="price-top"><span>VUOSITILAUS</span><span class="save">säästä 60 €</span></div>
           <h3>Vuosi</h3>
-          <div class="pricevalue">45 €<small>/kk + alv</small></div><div class="annual-billing-note">Laskutetaan vuosittain 540 € + alv</div>
+          <div class="pricevalue">44,99 €<small>/kk</small></div><div class="annual-billing-note">Laskutetaan vuosittain 539,88 €</div>
           <div class="price-rule"></div>
           <ul>
             <li>Kaikki samat ominaisuudet kuin kuukausitilauksessa</li>
