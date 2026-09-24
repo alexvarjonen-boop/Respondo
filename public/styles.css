@@ -6045,3 +6045,225 @@ body{
     padding:30px 24px!important;
   }
 }
+
+
+/* 2026-09-25 ACTUAL white homepage override — match real section class names */
+.immersive-home,
+.immersive-home .hero-immersive,
+.immersive-home .cinema-conversation,
+.immersive-home .story-horizontal,
+.immersive-home .story-sticky,
+.immersive-home .story-panel,
+.immersive-home .product-world,
+.immersive-home .world-sticky,
+.immersive-home .motion-depth,
+.immersive-home .motion-depth-sticky,
+.immersive-home .trust-portal,
+.immersive-home .impact-scene,
+.immersive-home .calculator-section,
+.immersive-home .pricing-section,
+.immersive-home .final-cta-immersive{
+  background:#f7f7f8!important;
+  color:#17171b!important;
+}
+.immersive-home .hero-immersive{
+  background:
+    radial-gradient(circle at 88% 12%,rgba(127,92,255,.10),transparent 30rem),
+    radial-gradient(circle at 8% 72%,rgba(255,119,165,.07),transparent 27rem),
+    #fafafa!important;
+}
+.immersive-home .hero-immersive:after{
+  border-color:rgba(102,74,180,.08)!important;
+  box-shadow:0 0 0 70px rgba(129,96,220,.018),0 0 0 140px rgba(129,96,220,.012)!important;
+}
+.immersive-home .hero-immersive .hero-copy h1,
+.immersive-home .hero-immersive .hero-copy h2,
+.immersive-home .hero-immersive .hero-copy h3{color:#151519!important}
+.immersive-home .hero-immersive .hero-label,
+.immersive-home .hero-immersive .lead,
+.immersive-home .hero-immersive .trust-row{color:#6e6e76!important}
+.immersive-home .hero-features-card{
+  background:#fff!important;
+  border:1px solid #e7e6eb!important;
+  color:#17171b!important;
+  box-shadow:0 18px 50px rgba(28,21,43,.08)!important;
+}
+.immersive-home .hero-features-card h3{color:#17171b!important}
+.immersive-home .hero-features-card p{color:#73747b!important}
+.immersive-home .hero-features-card-top span{background:#f1eff8!important;color:#6d59c8!important}
+
+/* conversation becomes a floating white product card instead of a dark scene */
+.immersive-home .cinema-conversation{padding:72px 20px!important}
+.immersive-home .cinema-stage{
+  max-width:1180px!important;
+  margin:auto!important;
+  border-radius:42px!important;
+  background:#fff!important;
+  border:1px solid #e8e7ec!important;
+  box-shadow:0 28px 80px rgba(28,21,43,.09)!important;
+  overflow:hidden!important;
+}
+.immersive-home .cinema-kicker{color:#77737e!important}
+.immersive-home .cinema-word{color:rgba(116,88,224,.055)!important}
+.immersive-home .cinema-phone{
+  background:#fbfbfc!important;
+  border-color:#e4e2e8!important;
+  box-shadow:0 26px 65px rgba(32,24,47,.10)!important;
+}
+.immersive-home .cinema-phone-top,
+.immersive-home .cinema-phone-top b,
+.immersive-home .cinema-phone-top i,
+.immersive-home .cinema-status{color:#66636c!important}
+.immersive-home .cinema-chat{background:#f7f7f9!important}
+.immersive-home .cinema-bubble.customer{background:#fff!important;color:#17171b!important;border:1px solid #e5e3e9!important}
+.immersive-home .cinema-bubble.bot{color:#fff!important}
+.immersive-home .cinema-float{
+  background:#fff!important;color:#17171b!important;
+  border:1px solid #e6e4ea!important;
+  box-shadow:0 16px 44px rgba(31,24,45,.09)!important;
+}
+.immersive-home .cinema-float small,
+.immersive-home .cinema-float span{color:#77737d!important}
+.immersive-home .cinema-next{color:#68656e!important}
+
+/* horizontal story: white canvas + clean card panels */
+.immersive-home .story-horizontal,
+.immersive-home .story-sticky{background:#f7f7f8!important}
+.immersive-home .story-panel{
+  background:#fff!important;
+  border:1px solid #e7e6eb!important;
+  border-radius:36px!important;
+  box-shadow:0 22px 64px rgba(30,22,45,.075)!important;
+}
+.immersive-home .story-panel-copy small{color:#77737e!important}
+.immersive-home .story-panel-copy h2{color:#17171b!important}
+.immersive-home .story-panel-copy h2 em{color:#765cff!important;-webkit-text-fill-color:#765cff!important}
+
+/* product world: keep depth in the cards, not in a black background */
+.immersive-home .product-world,
+.immersive-home .world-sticky{
+  background:
+    radial-gradient(circle at 50% 46%,rgba(124,92,255,.09),transparent 35rem),
+    #f7f7f8!important;
+}
+.immersive-home .world-label,
+.immersive-home .world-caption{color:#74717a!important}
+.immersive-home .world-title span,
+.immersive-home .world-title b{color:#17171b!important}
+.immersive-home .world-window{
+  background:#fff!important;
+  border-color:#e5e3e9!important;
+  color:#17171b!important;
+  box-shadow:0 24px 65px rgba(32,23,49,.10)!important;
+}
+.immersive-home .world-window small{color:#77737e!important}
+
+/* 3D process scene */
+.immersive-home .motion-depth,
+.immersive-home .motion-depth-sticky{
+  background:
+    radial-gradient(circle at 50% 65%,rgba(126,94,255,.10),transparent 31rem),
+    #f7f7f8!important;
+}
+.immersive-home .depth-copy small,
+.immersive-home .depth-caption{color:#77737e!important}
+.immersive-home .depth-copy h2{color:#17171b!important}
+.immersive-home .depth-copy h2 em{color:#765cff!important;-webkit-text-fill-color:#765cff!important}
+.immersive-home .depth-copy p{color:#6e6e76!important}
+.immersive-home .depth-card{
+  background:#fff!important;
+  color:#17171b!important;
+  border:1px solid #e4e2e8!important;
+  box-shadow:0 22px 58px rgba(31,23,47,.09)!important;
+}
+.immersive-home .depth-card b{color:#17171b!important}
+.immersive-home .depth-card small,
+.immersive-home .depth-card i{color:#77737e!important}
+.immersive-home .depth-core-mark{background:#17171b!important;color:#fff!important}
+
+/* missing answer section */
+.immersive-home .trust-portal{
+  background:
+    radial-gradient(circle at 50% 45%,rgba(119,87,255,.09),transparent 27rem),
+    #f7f7f8!important;
+}
+.immersive-home .trust-portal .portal-center small{color:#77737e!important}
+.immersive-home .trust-portal .portal-center h2{color:#17171b!important;text-shadow:none!important}
+.immersive-home .trust-portal .portal-center p{color:#6e6e76!important}
+.immersive-home .trust-portal .portal-node{
+  background:#fff!important;
+  color:#17171b!important;
+  border:1px solid #e5e3e9!important;
+  box-shadow:0 16px 44px rgba(31,23,47,.08)!important;
+}
+.immersive-home .trust-portal .portal-node span{background:#17171b!important;color:#fff!important}
+.immersive-home .portal-mark{background:#fff!important;color:#17171b!important;box-shadow:0 20px 55px rgba(30,22,44,.09)!important}
+
+/* impact: three strong cards on white */
+.immersive-home .impact-scene{padding:96px 20px!important}
+.immersive-home .impact-top h2{color:#17171b!important}
+.immersive-home .impact-top h2 em{color:#765cff!important;-webkit-text-fill-color:#765cff!important}
+.immersive-home .impact-kicker,.immersive-home .impact-foot{color:#77737e!important}
+.immersive-home .impact-number{
+  background:#fff!important;
+  color:#17171b!important;
+  border:1px solid #e5e3e9!important;
+  box-shadow:0 20px 55px rgba(31,23,47,.08)!important;
+}
+.immersive-home .impact-number small{color:#6f6d75!important}
+
+/* final CTA stays white, but with a subtle premium glow */
+.immersive-home .final-cta-immersive{
+  background:
+    radial-gradient(circle at 12% 12%,rgba(255,192,103,.10),transparent 22rem),
+    radial-gradient(circle at 88% 82%,rgba(125,92,255,.10),transparent 24rem),
+    #f7f7f8!important;
+}
+.immersive-home .final-cta-immersive .cta-shell{
+  background:#fff!important;
+  border:1px solid #e5e3e9!important;
+  box-shadow:0 26px 75px rgba(31,23,47,.09)!important;
+}
+
+/* remove the old black console look from the hero demo too */
+.immersive-home .signal-console{
+  background:#fff!important;
+  border:1px solid #e4e2e8!important;
+  box-shadow:0 28px 75px rgba(30,22,46,.10)!important;
+  color:#17171b!important;
+}
+.immersive-home .console-top,
+.immersive-home .console-rail,
+.immersive-home .console-main,
+.immersive-home .conversation,
+.immersive-home .console-stats{background:#fff!important;color:#17171b!important}
+.immersive-home .console-brand,
+.immersive-home .console-time,
+.immersive-home .console-rail,
+.immersive-home .console-rail *,
+.immersive-home .msg-meta,
+.immersive-home .console-stats span{color:#74717a!important}
+.immersive-home .console-header small,
+.immersive-home .console-header h3,
+.immersive-home .console-stats b{color:#17171b!important}
+.immersive-home .msg.customer,
+.immersive-home .muted-msg,
+.immersive-home .answer-card,
+.immersive-home .handoff-card{
+  background:#f7f7f9!important;
+  color:#17171b!important;
+  border:1px solid #e5e3e9!important;
+  box-shadow:0 14px 38px rgba(31,23,47,.06)!important;
+}
+.immersive-home .answer-card b,
+.immersive-home .answer-card p,
+.immersive-home .handoff-card b{color:#17171b!important}
+.immersive-home .handoff-card small,.immersive-home .source-line{color:#74717a!important}
+
+@media(max-width:760px){
+  .immersive-home .cinema-conversation{padding:28px 14px!important}
+  .immersive-home .cinema-stage,
+  .immersive-home .story-panel{border-radius:28px!important}
+  .immersive-home .story-panel{margin:12px!important}
+  .immersive-home .impact-scene{padding:64px 16px!important}
+}
