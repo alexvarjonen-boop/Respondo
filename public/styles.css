@@ -6341,3 +6341,14 @@ body{
 .post-calculator-features .hero-features-card h3{font-size:18px;line-height:1.08;margin:2px 0 5px;color:#17171b}
 .post-calculator-features .hero-features-card p{font-size:12.5px;line-height:1.35;margin:0;color:#73747b}
 @media(max-width:760px){.post-calculator-features{padding:12px 16px 34px}.post-calculator-features .hero-features-card{width:82%;max-width:390px;padding:11px 13px;border-radius:18px}.post-calculator-features .hero-features-card h3{font-size:17px}.post-calculator-features .hero-features-card p{font-size:12px}}
+
+.knowledge-item-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.knowledge-edit-btn,.knowledge-delete-btn{appearance:none;border:1px solid #dddde4;background:#fff;border-radius:999px;padding:8px 11px;font:inherit;font-size:12px;font-weight:750;cursor:pointer;color:#222}
+.knowledge-delete-btn{color:#a43838}
+.knowledge-inline-editor{margin-top:14px;padding:14px;border:1px solid #e5e4e9;border-radius:18px;background:#fafafa}
+.knowledge-inline-editor label{display:block;font-size:12px;font-weight:800;color:#666;margin:0 0 10px}
+.knowledge-inline-editor input,.knowledge-inline-editor textarea{display:block;width:100%;margin-top:6px;border:1px solid #dcdbe1;border-radius:13px;background:#fff;padding:11px 12px;font:inherit;color:#17171b}
+.knowledge-inline-editor textarea{min-height:110px;resize:vertical}
+.knowledge-editor-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.knowledge-editor-actions .btn{padding:10px 14px;font-size:13px}
+@media(max-width:760px){.knowledge-item-top{align-items:flex-start!important}.knowledge-item-actions{margin-top:8px}.knowledge-edit-btn,.knowledge-delete-btn{padding:7px 10px}}
