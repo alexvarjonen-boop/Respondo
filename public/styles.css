@@ -5045,3 +5045,28 @@ p{color:var(--simple-muted)}
   .navactions .lang-switch{min-width:43px!important;max-width:46px!important}
   .navactions .btn{padding:0 7px!important;font-size:10.5px!important}
 }
+
+
+/* Pricing visibility hotfix: keep plan names and numeric prices readable on iOS/Safari. */
+.pricing-section .price-card h3,
+.pricing-section .price-card .pricevalue{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  color:#171717!important;
+  -webkit-text-fill-color:#171717!important;
+  background:none!important;
+  -webkit-background-clip:border-box!important;
+  background-clip:border-box!important;
+  filter:none!important;
+}
+.pricing-section .price-card .pricevalue{
+  min-height:72px!important;
+}
+.pricing-section .price-card .pricevalue small{
+  display:inline!important;
+  visibility:visible!important;
+  opacity:1!important;
+  color:#7d8793!important;
+  -webkit-text-fill-color:#7d8793!important;
+}
