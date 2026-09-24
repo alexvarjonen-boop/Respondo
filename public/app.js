@@ -165,9 +165,9 @@ function languageSwitch() {
   const label = appText('Kieli','Språk','Language');
   return `<label class="app-language-switch" aria-label="${esc(label)}">
     <select data-lang-select aria-label="${esc(label)}">
-      <option value="fi" ${lang === 'fi' ? 'selected' : ''}>FI</option>
-      <option value="sv" ${lang === 'sv' ? 'selected' : ''}>SV</option>
-      <option value="en" ${lang === 'en' ? 'selected' : ''}>EN</option>
+      <option value="fi" ${lang === 'fi' ? 'selected' : ''}>🇫🇮</option>
+      <option value="sv" ${lang === 'sv' ? 'selected' : ''}>🇸🇪</option>
+      <option value="en" ${lang === 'en' ? 'selected' : ''}>🇬🇧</option>
     </select>
   </label>`;
 }
