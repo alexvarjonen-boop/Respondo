@@ -974,6 +974,40 @@ const SV_TEXT = new Map(Object.entries({
 }));
 
 const EXTRA_UI_TEXT = new Map(Object.entries({
+  "Olen asentanut botin": ["Jag har installerat botten", "I have installed the bot"],
+  "✓ Asennus valmis": ["✓ Installationen är klar", "✓ Installation complete"],
+  "SUOSITTELE RESPONDOA": ["REKOMMENDERA RESPONDO", "REFER RESPONDO"],
+  "Anna tämä henkilökohtainen koodi yhdelle toiselle yritykselle. Koodi toimii kerran, vain kuukausitilauksessa, ja alennus koskee ensimmäistä maksullista kuukautta 3 päivän kokeilun jälkeen.": ["Ge den här personliga koden till ett annat företag. Koden kan användas en gång, endast med månadsabonnemang, och rabatten gäller den första betalda månaden efter den 3 dagar långa provperioden.", "Give this personal code to one other company. The code can be used once, only with the monthly plan, and the discount applies to the first paid month after the 3-day trial."],
+  "OMA KERTAKÄYTTÖINEN SUOSITTELUKOODISI": ["DIN PERSONLIGA REKOMMENDATIONSKOD FÖR ENGÅNGSBRUK", "YOUR ONE-TIME REFERRAL CODE"],
+  "Yhdistetty ✓": ["Ansluten ✓", "Connected ✓"],
+  "Ei yhdistetty": ["Inte ansluten", "Not connected"],
+  "Varaukset synkronoidaan kalenteriin": ["Bokningar synkroniseras med kalendern", "Bookings are synced to the calendar"],
+  "Katkaise yhteys": ["Koppla från", "Disconnect"],
+  "Yrityksen maa": ["Företagets land", "Company country"],
+  "Ruotsi": ["Sverige", "Sweden"],
+  "Saksa": ["Tyskland", "Germany"],
+  "Iso-Britannia": ["Storbritannien", "United Kingdom"],
+  "Yhdysvallat": ["USA", "United States"],
+  "Maksut käytössä": ["Betalningar aktiva", "Payments active"],
+  "Viimeistele Stripe": ["Slutför Stripe", "Finish Stripe setup"],
+  "Ei asetettu": ["Inte konfigurerad", "Not configured"],
+  "Käytössä": ["Aktiv", "Active"],
+  "Yksikön nimi": ["Enhetsnamn", "Unit name"],
+  "0 avoinna": ["0 öppna", "0 open"],
+  "Ei uusia pyyntöjä.": ["Inga nya förfrågningar.", "No new requests."],
+  "Kun asiakas pyytää tarjouksen, ajan, tilauksen tarkistuksen tai yhteydenoton, se ilmestyy tähän.": ["När en kund begär en offert, bokar en tid, frågar om en beställning eller tar kontakt visas det här.", "When a customer requests a quote, books a time, asks about an order or contacts you, it appears here."],
+  "kohdetta": ["poster", "items"],
+  "Yrityksen tiedot": ["Företagsuppgifter", "Company details"],
+  "Omistajan hyväksymä": ["Godkänd av ägaren", "Owner approved"],
+  "Manuaalinen": ["Manuell", "Manual"],
+  "tarkistettu": ["kontrollerad", "verified"],
+  "Kaikkiin kysymyksiin löytyi vastaus.": ["Alla frågor fick ett svar.", "All questions had an answer."],
+  "Jos vastaan tulee kysymys, johon tietoa ei vielä ole, se ilmestyy tähän.": ["Om en fråga saknar information visas den här.", "If a question comes up that does not yet have an answer, it will appear here."],
+  "Ei vielä aktiivisia keskusteluja.": ["Inga aktiva konversationer ännu.", "No active conversations yet."],
+  "Kun verkkosivulla, WhatsAppissa, Instagramissa tai puhelimessa alkaa keskustelu, se ilmestyy tähän.": ["När en konversation börjar på webbplatsen, WhatsApp, Instagram eller telefon visas den här.", "When a conversation starts on the website, WhatsApp, Instagram or by phone, it appears here."],
+  "vapaana": ["lediga", "available"],
+  "aktiivista": ["aktiva", "active"],
+
   "RESPONDO AI etusivu": ["RESPONDO AI startsida", "RESPONDO AI home"],
   "Language": ["Språk", "Language"],
   "Googlella": ["med Google", "with Google"],
@@ -2688,7 +2722,7 @@ async function dashboard() {
 
       <section class="dashboard-grid dashboard-view-section dashboard-view-hidden" data-dashboard-view="answers" id="knowledge">
         <div class="panel knowledge-panel">
-          <div class="panel-head"><div><small>TIETOPOHJA</small><h2>Vastaukset, joita botti saa käyttää</h2></div><span>${knowledge.length} kohdetta</span></div>
+          <div class="panel-head"><div><small>TIETOPOHJA</small><h2>Vastaukset, joita botti saa käyttää</h2></div><span>${knowledge.length} ${appText('kohdetta','poster','items')}</span></div>
           <div class="knowledge-feature-summary">
             <div>
               <b>Botin etusivun kysymykset</b>
@@ -2706,7 +2740,7 @@ async function dashboard() {
                     <b>${esc(x.title)}</b>
                     ${x.source_type !== 'profile' ? `<button type="button" class="knowledge-feature-btn ${x.quick_reply_order ? 'active' : ''}" data-featured="${x.quick_reply_order ? 'true' : 'false'}">${x.quick_reply_order ? '✓ Etusivulla ' + x.quick_reply_order : '+ Lisää etusivulle'}</button>` : ''}
                   </div>
-                  <small>${esc(x.category || 'Yleinen')} · ${x.source_type === 'profile' ? 'Yrityksen tiedot' : x.source_type === 'owner_answer' ? 'Omistajan hyväksymä' : 'Manuaalinen'} · tarkistettu ${x.verified_at ? new Date(x.verified_at).toLocaleDateString(appLocale()) : '—'}</small>
+                  <small>${esc(x.category || appText('Yleinen','Allmänt','General'))} · ${x.source_type === 'profile' ? appText('Yrityksen tiedot','Företagsuppgifter','Company details') : x.source_type === 'owner_answer' ? appText('Omistajan hyväksymä','Godkänd av ägaren','Owner approved') : appText('Manuaalinen','Manuell','Manual')} · ${appText('tarkistettu','kontrollerad','verified')} ${x.verified_at ? new Date(x.verified_at).toLocaleDateString(appLocale()) : '—'}</small>
                   <p>${esc(x.answer)}</p>
                 </div>
                 <span class="approved" title="Hyväksytty Truth Engineen">✓</span>
@@ -2732,7 +2766,7 @@ async function dashboard() {
             <h2>Hyppää mukaan asiakkaan keskusteluun</h2>
             <p>Kun otat keskustelun haltuun, Respondo lopettaa vastaamisen siihen keskusteluun. Verkkosivuasiakas saa viestisi suoraan chattiin; WhatsApp- ja Instagram-vastaus lähetetään samaan kanavaan.</p>
           </div>
-          <span>${liveThreads.filter((x) => x.status === 'open').length} aktiivista</span>
+          <span>${liveThreads.filter((x) => x.status === 'open').length} ${appText('aktiivista','aktiva','active')}</span>
         </div>
         <div class="live-thread-list">
           ${liveThreads.length ? liveThreads.map((thread) => `
@@ -2957,7 +2991,7 @@ async function dashboard() {
               <div class="field"><label>Ajan pituus</label><select name="duration"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>60 min</option><option value="90">90 min</option><option value="120">120 min</option></select></div>
             </div>
             <div class="weekday-picker">
-              ${[['1','Ma'],['2','Ti'],['3','Ke'],['4','To'],['5','Pe'],['6','La'],['0','Su']].map(([v,l]) => `<label><input type="checkbox" name="weekday" value="${v}" ${['1','2','3','4','5'].includes(v) ? 'checked' : ''}><span>${l}</span></label>`).join('')}
+              ${[['1',appText('Ma','Mån','Mon')],['2',appText('Ti','Tis','Tue')],['3',appText('Ke','Ons','Wed')],['4',appText('To','Tor','Thu')],['5',appText('Pe','Fre','Fri')],['6',appText('La','Lör','Sat')],['0',appText('Su','Sön','Sun')]].map(([v,l]) => `<label><input type="checkbox" name="weekday" value="${v}" ${['1','2','3','4','5'].includes(v) ? 'checked' : ''}><span>${l}</span></label>`).join('')}
             </div>
             <button class="btn dashboard-action" type="submit">Luo vapaat ajat <span>→</span></button>
             <div id="bookingSlotsMsg"></div>
