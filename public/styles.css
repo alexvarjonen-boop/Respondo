@@ -6267,3 +6267,42 @@ body{
   .immersive-home .story-panel{margin:12px!important}
   .immersive-home .impact-scene{padding:64px 16px!important}
 }
+
+
+/* compact 145-feature promo below hero CTA */
+.immersive-home .hero-features-card{
+  width:min(100%,620px)!important;
+  padding:18px 22px!important;
+  border-radius:24px!important;
+  margin-top:16px!important;
+  min-height:0!important;
+}
+.immersive-home .hero-features-card-top{margin-bottom:8px!important}
+.immersive-home .hero-features-card-top span{
+  padding:7px 12px!important;
+  font-size:12px!important;
+  letter-spacing:.12em!important;
+}
+.immersive-home .hero-features-card-top b{font-size:24px!important}
+.immersive-home .hero-features-card h3{
+  font-size:clamp(20px,2vw,27px)!important;
+  line-height:1.08!important;
+  margin:4px 0 7px!important;
+  text-align:left!important;
+}
+.immersive-home .hero-features-card p{
+  font-size:15px!important;
+  line-height:1.45!important;
+  margin:0!important;
+  text-align:left!important;
+}
+@media(max-width:760px){
+  .immersive-home .hero-features-card{
+    width:100%!important;
+    padding:15px 17px!important;
+    border-radius:21px!important;
+    margin-top:13px!important;
+  }
+  .immersive-home .hero-features-card h3{font-size:20px!important}
+  .immersive-home .hero-features-card p{font-size:13.5px!important}
+}
