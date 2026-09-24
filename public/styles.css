@@ -6330,3 +6330,14 @@ body{
   .immersive-home .hero-features-card h3{font-size:17px!important}
   .immersive-home .hero-features-card p{font-size:12px!important}
 }
+
+
+/* feature promo moved below calculator */
+.post-calculator-features{background:#f7f7f8;padding:18px 20px 44px}
+.post-calculator-features .hero-features-card{display:block;width:min(100%,460px);padding:12px 15px;border-radius:19px;margin:0 auto;background:#fff;border:1px solid #e7e6eb;color:#17171b;text-decoration:none;box-shadow:0 18px 50px rgba(28,21,43,.08)}
+.post-calculator-features .hero-features-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.post-calculator-features .hero-features-card-top span{padding:5px 9px;border-radius:999px;background:#f1eff8;color:#6d59c8;font-size:10px;font-weight:800;letter-spacing:.12em}
+.post-calculator-features .hero-features-card-top b{font-size:19px}
+.post-calculator-features .hero-features-card h3{font-size:18px;line-height:1.08;margin:2px 0 5px;color:#17171b}
+.post-calculator-features .hero-features-card p{font-size:12.5px;line-height:1.35;margin:0;color:#73747b}
+@media(max-width:760px){.post-calculator-features{padding:12px 16px 34px}.post-calculator-features .hero-features-card{width:82%;max-width:390px;padding:11px 13px;border-radius:18px}.post-calculator-features .hero-features-card h3{font-size:17px}.post-calculator-features .hero-features-card p{font-size:12px}}
