@@ -393,7 +393,7 @@ const EN_TEXT = new Map(Object.entries({
   "maksa kuukausittain":"pay monthly",
   "Kuukausi":"Month",
   "VUOSITILAUS":"ANNUAL PLAN",
-  "säästä 48 €":"save €48",
+  "säästä 60 €":"save €60",
   "Laskutetaan vuosittain 539,88 €":"Billed annually at €539.88",
   "Kaikki samat ominaisuudet kuin kuukausitilauksessa":"All the same features as the monthly plan",
   "Maksu kerran vuodessa":"Pay once per year",
@@ -855,8 +855,8 @@ const SV_TEXT = new Map(Object.entries({
   "maksa kuukausittain":"betala månadsvis",
   "Kuukausi":"Månad",
   "VUOSITILAUS":"ÅRSABONNEMANG",
-  "säästä 48 €":"spara 48 €",
-  "Laskutetaan vuosittain 540 € + alv":"Faktureras årligen 540 € + moms",
+  "säästä 60 €":"spara 60 €",
+  "Laskutetaan vuosittain 539,88 €":"Faktureras årligen 539,88 €",
   "Kaikki samat ominaisuudet kuin kuukausitilauksessa":"Alla samma funktioner som i månadsabonnemanget",
   "Maksu kerran vuodessa":"Betalning en gång per år",
   "Voit käyttää palvelua maksetun kauden loppuun":"Du kan använda tjänsten till slutet av den betalda perioden",
@@ -956,7 +956,7 @@ const SV_TEXT = new Map(Object.entries({
   'Helppo asentaa':'Enkelt att installera','Yksi asennusrivi verkkosivulle.':'En installationsrad på webbplatsen.','Hyväksytty tietopohja':'Godkänd kunskapsbas',
   'Hinnoittelu':'Prissättning','Aukioloajat':'Öppettider','Toimialue':'Serviceområde','Suomi':'Finland','Poikkeustilanteet':'Undantag','Ohjaa yhteydenottoon':'Hänvisa till kontakt',
   'Viimeksi päivitetty':'Senast uppdaterad','juuri nyt':'just nu','VASTAA':'SVARAR','asiakkaillesi':'dina kunder','sinun hallinnassa':'under din kontroll','aina':'alltid',
-  'ALKAEN':'FRÅN','49 € / kk':'49 € / mån','+ alv':'+ moms','KOKEILU':'PROVPERIOD','3 päivää':'3 dagar','maksutta':'gratis',
+  'ALKAEN':'FRÅN','49,99 € / kk':'49,99 € / mån','KOKEILU':'PROVPERIOD','3 päivää':'3 dagar','maksutta':'gratis',
   'Asiakas ei halua odottaa.':'Kunden vill inte vänta.','Nopea vastaus näkyy kokemuksessa.':'Snabba svar förbättrar kundupplevelsen.','HUOM':'OBS',
   'Mitä yksi menetetty yhteydenotto voi maksaa?':'Vad kan en missad kontakt kosta?','Päivässä':'Per dag','Vuodessa':'Per år','Selkeä hinta.':'Tydligt pris.','Ei yllätyksiä.':'Inga överraskningar.',
   'Kuukausi':'Månad','Vuosi':'År','Chat suoraan omalle verkkosivullesi':'Chatt direkt på din webbplats','Vastaukset yrityksesi omista tiedoista':'Svar från företagets egen information',
@@ -1027,7 +1027,7 @@ const EXTRA_UI_TEXT = new Map(Object.entries({
   "Sinä päätät, mitä yrityksestäsi kerrotaan. Muutokset päivittyvät botille yhdestä paikasta.": ["Du bestämmer vad som får sägas om ditt företag. Ändringar uppdateras till botten från ett och samma ställe.", "You decide what can be said about your company. Changes are updated to the bot from one place."],
   "4 HYVÄKSYTTYÄ TIETOA": ["4 GODKÄNDA UPPGIFTER", "4 APPROVED ITEMS"],
   "AJAN TASALLA": ["UPPDATERAT", "UP TO DATE"],
-  "Peruspaketti alkaa 49 €/kk + alv": ["Grundpaketet börjar på 49 €/mån + moms", "The basic plan starts at €49/month + VAT"],
+  "Peruspaketti alkaa 49,99 €/kk": ["Grundpaketet börjar på 49,99 €/mån", "The basic plan starts at €49.99/month"],
   "PERUSTUU": ["BASERAS PÅ", "BASED ON"],
   "Alla olevat luvut perustuvat julkaistuihin tutkimuksiin ja raportteihin. Lähde, vuosi ja tutkimuskonteksti näkyvät jokaisen luvun yhteydessä.": ["Siffrorna nedan bygger på publicerade studier och rapporter. Källa, år och forskningskontext visas vid varje siffra.", "The figures below are based on published studies and reports. The source, year and research context are shown with each figure."],
   "Harvard Business Review’n auditissa 2 241 yhdysvaltalaisesta yrityksestä lähes joka neljäs ei vastannut testiliidiin 30 päivän aikana.": ["I en Harvard Business Review-granskning av 2 241 amerikanska företag svarade nästan vart fjärde företag inte på testleadet inom 30 dagar.", "In a Harvard Business Review audit of 2,241 U.S. companies, nearly one in four did not respond to the test lead within 30 days."],
@@ -1041,8 +1041,8 @@ const EXTRA_UI_TEXT = new Map(Object.entries({
   "Täytä omat ja yrityksesi perustiedot.": ["Fyll i dina egna och företagets grunduppgifter.", "Enter your basic details and your company's details."],
   "Kerro Respondolle, mitä asiakkaillesi saa vastata.": ["Berätta för Respondo vad som får besvaras till dina kunder.", "Tell Respondo what it may answer to your customers."],
   "Y-tunnus · Suomi": ["FO-nummer · Finland", "Business ID · Finland"],
-  "49 €/kk + alv · kuukausi": ["49 €/mån + moms · månadsvis", "€49/month + VAT · monthly"],
-  "45 €/kk + alv · laskutetaan 540 €/vuosi": ["45 €/mån + moms · faktureras 540 €/år", "€45/month + VAT · billed €540/year"],
+  "49,99 €/kk · kuukausi": ["49,99 €/mån · månadsvis", "€49.99/month · monthly"],
+  "44,99 €/kk · laskutetaan 539,88 €/vuosi": ["44,99 €/mån · faktureras 539,88 €/år", "€44.99/month · billed €539.88/year"],
   "Suosittelukoodi": ["Rekommendationskod", "Referral code"],
   "valinnainen": ["valfritt", "optional"],
   "Hyväksyn": ["Jag godkänner", "I accept"],
@@ -1710,7 +1710,7 @@ function controlSection() {
       <div class="truth-card">
         <div class="truth-top"><span>4 HYVÄKSYTTYÄ TIETOA</span><span class="truth-status">AJAN TASALLA</span></div>
         <div class="truth-title">Hyväksytty tietopohja</div>
-        <div class="knowledge-row"><span class="k-index">01</span><div><b>Hinnoittelu</b><small>Peruspaketti alkaa 49 €/kk + alv</small></div><i>✓</i></div>
+        <div class="knowledge-row"><span class="k-index">01</span><div><b>Hinnoittelu</b><small>Peruspaketti alkaa 49,99 €/kk</small></div><i>✓</i></div>
         <div class="knowledge-row"><span class="k-index">02</span><div><b>Aukioloajat</b><small>Ma–Pe 08:00–17:00</small></div><i>✓</i></div>
         <div class="knowledge-row"><span class="k-index">03</span><div><b>Toimialue</b><small>Suomi</small></div><i>✓</i></div>
         <div class="knowledge-row"><span class="k-index">04</span><div><b>Poikkeustilanteet</b><small>Ohjaa yhteydenottoon</small></div><i>✓</i></div>
@@ -1725,7 +1725,7 @@ function proofStrip() {
     <div class="container proof-grid">
       <div><span>VASTAA</span><b>24/7</b><small>asiakkaillesi</small></div>
       <div><span>PERUSTUU</span><b>sinun hallinnassa</b><small>aina</small></div>
-      <div><span>ALKAEN</span><b>49 € / kk</b><small>+ alv</small></div>
+      <div><span>ALKAEN</span><b>49,99 € / kk</b></div>
       <div><span>KOKEILU</span><b>3 päivää</b><small>maksutta</small></div>
     </div>
   </section>`;
@@ -1831,7 +1831,7 @@ function calculatorSection() {
           <div class="calc-result-grid">
             <div><span>Päivässä</span><b id="dailyValue">1 500 €</b></div>
             <div><span>Vuodessa</span><b id="yearlyValue">547 500 €</b></div>
-            <div><span>RESPONDO AI</span><b>${cfg.monthlyNet || 49} € / kk + alv</b></div>
+            <div><span>RESPONDO AI</span><b>${cfg.monthlyNet || 49.99} € / kk</b></div>
           </div>
           <p>Laskelma on suuntaa-antava. Se näyttää yhteydenottojen arvon tilanteessa, jossa jokainen niistä vastaisi yhtä keskimääräistä kauppaa. Todellinen tulos riippuu siitä, kuinka moni yhteydenotto muuttuu asiakkaaksi.</p>
         </div>
@@ -2176,8 +2176,8 @@ function signup() {
             <div class="field full" id="signupPasswordField"><label>Salasana</label><input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="Vähintään 10 merkkiä"></div>
             <div class="field full"><label>Tilaus</label>
               <select name="plan">
-                <option value="monthly" ${plan === 'monthly' ? 'selected' : ''}>49 €/kk + alv · kuukausi</option>
-                <option value="yearly" ${plan === 'yearly' ? 'selected' : ''}>45 €/kk + alv · laskutetaan 540 €/vuosi</option>
+                <option value="monthly" ${plan === 'monthly' ? 'selected' : ''}>49,99 €/kk · kuukausi</option>
+                <option value="yearly" ${plan === 'yearly' ? 'selected' : ''}>44,99 €/kk · laskutetaan 539,88 €/vuosi</option>
                 ${ownerTestAccess ? `<option value="owner_test" ${plan === 'owner_test' ? 'selected' : ''}>OMISTAJAN TESTI · 0,50 € sis. alv · veloitus heti</option>` : ''}
               </select>
             </div>
