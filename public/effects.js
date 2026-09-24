@@ -596,11 +596,13 @@ YLEINEN TOIMINTAOHJE:
     const addFactRow = (key='', answer='') => {
       const host = $('#customFacts');
       if (!host) return;
+      const lang = (() => { const q=new URLSearchParams(location.search).get('lang'); return ['fi','sv','en'].includes(q) ? q : (localStorage.getItem('respondo_lang') || 'fi'); })();
+      const tx = (fi,sv,en) => lang === 'sv' ? sv : lang === 'en' ? en : fi;
       host.insertAdjacentHTML('beforeend', `
         <div class="custom-fact-row">
-          <div class="owner-field"><label>Asiakkaan kysymys tai aihe</label><input data-fact-key value="${val(key)}" placeholder="Esim. Mitkä maksutavat käyvät?"></div>
-          <div class="owner-field"><label>Vastaus</label><textarea data-fact-answer placeholder="Esim. Kortti, lasku ja MobilePay">${val(answer)}</textarea></div>
-          <button type="button" class="remove-fact" aria-label="Poista rivi">×</button>
+          <div class="owner-field"><label>${tx('Asiakkaan kysymys tai aihe','Kundens fråga eller ämne','Customer question or topic')}</label><input data-fact-key value="${val(key)}" placeholder="${tx('Esim. Mitkä maksutavat käyvät?','T.ex. Vilka betalningssätt accepterar ni?','E.g. Which payment methods do you accept?')}"></div>
+          <div class="owner-field"><label>${tx('Vastaus','Svar','Answer')}</label><textarea data-fact-answer placeholder="${tx('Esim. Kortti, lasku ja MobilePay','T.ex. kort, faktura och MobilePay','E.g. card, invoice and MobilePay')}">${val(answer)}</textarea></div>
+          <button type="button" class="remove-fact" aria-label="${tx('Poista rivi','Ta bort rad','Remove row')}">×</button>
         </div>`);
       bindRemoveFacts();
       host.lastElementChild?.querySelector('[data-fact-key]')?.focus();
