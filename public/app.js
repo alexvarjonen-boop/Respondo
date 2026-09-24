@@ -2148,11 +2148,13 @@ function signup() {
     <main class="formpage">
       <div class="container checkout-layout">
         <section class="checkout-copy">
-          <div class="section-kicker">${plan === 'owner_test' ? 'OMISTAJAN TESTITILAUS' : 'ALOITA KOKEILU'}</div>
-          <h1>${plan === 'owner_test' ? 'Testaa oikea maksu.' : 'Kokeile rauhassa.<br><em>Päätä vasta sen jälkeen.</em>'}</h1>
+          <div class="section-kicker">${plan === 'owner_test' ? appText('OMISTAJAN TESTITILAUS','ÄGARENS TESTABONNEMANG','OWNER TEST SUBSCRIPTION') : appText('ALOITA KOKEILU','BÖRJA PROVA RESPONDO AI','GET STARTED WITH RESPONDO AI')}</div>
+          <h1>${plan === 'owner_test'
+            ? appText('Testaa oikea maksu.','Testa en riktig betalning.','Test a real payment.')
+            : appText('Kokeile rauhassa.<br><em>Päätä vasta sen jälkeen.</em>','Prova i lugn och ro.<br><em>Bestäm dig därefter.</em>','Try it at your own pace.<br><em>Decide afterwards.</em>')}</h1>
           <p>${plan === 'owner_test'
-            ? 'Tämä kertakäyttöinen testitilaus veloittaa heti tasan 0,50 €. Se sulkeutuu onnistuneen maksun jälkeen eikä uusiudu seuraavassa kuussa.'
-            : 'Luo tili ja lisää maksutapa Stripessä. Sinulta ei veloiteta mitään 3 päivän kokeilun aikana.'}</p>
+            ? appText('Tämä kertakäyttöinen testitilaus veloittaa heti tasan 0,50 €. Se sulkeutuu onnistuneen maksun jälkeen eikä uusiudu seuraavassa kuussa.','Detta engångstestabonnemang debiterar exakt 0,50 € direkt. Det avslutas efter en lyckad betalning och förnyas inte nästa månad.','This one-time test subscription charges exactly €0.50 immediately. It closes after a successful payment and does not renew the following month.')
+            : appText('Luo tili ja lisää maksutapa Stripessä. Sinulta ei veloiteta mitään 3 päivän kokeilun aikana.','Skapa ett konto och lägg till en betalningsmetod säkert via Stripe. Du debiteras inget under den 3 dagar långa provperioden.','Create an account and add a payment method securely via Stripe. You will not be charged during the 3-day trial.')}</p>
           <div class="checkout-steps">
             <div><span>01</span><b>Luo tili</b><small>Täytä omat ja yrityksesi perustiedot.</small></div>
             <div><span>02</span><b>Lisää maksutapa Stripessä</b><small>Korttitietosi menevät suoraan Stripelle.</small></div>
