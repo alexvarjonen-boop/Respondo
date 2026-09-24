@@ -1,3 +1,4 @@
+import { FEATURE_GROUPS, FEATURE_COUNT } from './features-data.js?v=20260925-v1';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) =>
@@ -2089,6 +2090,87 @@ function trustPortalScene() {
 }
 
 
+function featuresPage() {
+  const lang = currentLang();
+  const pick = (triple) => triple[lang === 'sv' ? 1 : lang === 'en' ? 2 : 0];
+  let featureNo = 0;
+  const groups = FEATURE_GROUPS.map((group, index) => {
+    const items = group.items.map((item) => {
+      featureNo += 1;
+      return `<article class="feature-item">
+        <span class="feature-item-number">${String(featureNo).padStart(3,'0')}</span>
+        <div><b>${esc(pick(item))}</b></div>
+        <i aria-hidden="true">✓</i>
+      </article>`;
+    }).join('');
+    return `<details class="feature-category" ${index < 2 ? 'open' : ''}>
+      <summary>
+        <div class="feature-category-copy">
+          <small>${appText('OMINAISUUSKATEGORIA','FUNKTIONSKATEGORI','FEATURE CATEGORY')}</small>
+          <h2>${esc(pick(group.title))}</h2>
+          <p>${esc(pick(group.intro))}</p>
+        </div>
+        <div class="feature-category-meta">
+          <strong>${group.items.length}</strong>
+          <span aria-hidden="true">＋</span>
+        </div>
+      </summary>
+      <div class="feature-category-body">${items}</div>
+    </details>`;
+  }).join('');
+
+  return `<div class="features-page">
+    ${nav()}
+    <main>
+      <section class="features-hero">
+        <div class="container features-hero-inner">
+          <div class="features-hero-badge">${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</div>
+          <h1>${appText('145 ominaisuutta.<br><em>Yksi Respondo.</em>','145 funktioner.<br><em>En Respondo.</em>','145 features.<br><em>One Respondo.</em>')}</h1>
+          <p>${appText(
+            'Asiakaspalvelu, tietopohja, liidit, tarjoukset, ajanvaraus, live takeover, kanavat ja analytiikka yhdessä palvelussa — alle 50 €/kk.',
+            'Kundservice, kunskapsbas, leads, offerter, bokning, live takeover, kanaler och analys i en tjänst — för under 50 €/mån.',
+            'Customer service, knowledge base, leads, quotes, bookings, live takeover, channels and analytics in one service — for under €50/month.'
+          )}</p>
+          <div class="features-hero-actions">
+            <a class="btn ink" href="/tilaus?lang=${lang}">${appText('Kokeile ilmaiseksi','Prova gratis','Start trial')}</a>
+            <a class="btn ghost" href="/assistant?lang=${lang}">${appText('Kokeile bottia','Testa botten','Try the bot')}</a>
+          </div>
+          <div class="features-hero-stats">
+            <div><b>${FEATURE_COUNT}</b><span>${appText('toimintoa','funktioner','features')}</span></div>
+            <div><b>3</b><span>${appText('kieltä','språk','languages')}</span></div>
+            <div><b>&lt; 50 €</b><span>${appText('/ kk','/ mån','/ month')}</span></div>
+          </div>
+        </div>
+      </section>
+      <section class="features-directory">
+        <div class="container">
+          <div class="features-directory-head">
+            <div>
+              <small>${appText('KAIKKI TOIMINNOT','ALLA FUNKTIONER','ALL FEATURES')}</small>
+              <h2>${appText('Avaa kategoria ja tutustu yksityiskohtiin.','Öppna en kategori och se detaljerna.','Open a category and explore the details.')}</h2>
+            </div>
+            <span>${FEATURE_GROUPS.length} ${appText('kategoriaa','kategorier','categories')}</span>
+          </div>
+          <div class="features-directory-grid">${groups}</div>
+        </div>
+      </section>
+      <section class="features-final">
+        <div class="container">
+          <div class="features-final-card">
+            <div>
+              <small>${FEATURE_COUNT} ${appText('OMINAISUUTTA · ALLE 50 €/KK','FUNKTIONER · UNDER 50 €/MÅN','FEATURES · UNDER €50/MONTH')}</small>
+              <h2>${appText('Kaikki yhdessä palvelussa.','Allt i en tjänst.','Everything in one service.')}</h2>
+              <p>${appText('Kokeile Respondoa 3 päivää ja näe, miten se toimii omilla yritystiedoillasi.','Prova Respondo i 3 dagar och se hur det fungerar med ditt företags egna uppgifter.','Try Respondo for 3 days and see how it works with your own business information.')}</p>
+            </div>
+            <a class="btn ink" href="/tilaus?lang=${lang}">${appText('Aloita 3 päivän kokeilu','Starta 3 dagars provperiod','Start 3-day trial')} <span>→</span></a>
+          </div>
+        </div>
+      </section>
+    </main>
+    ${footer()}
+  </div>`;
+}
+
 async function home() {
   await config();
   return `<div>
@@ -2104,6 +2186,14 @@ async function home() {
             <div class="hero-actions">
               <a class="btn hero-primary hero-bot-cta" href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
             </div>
+            <a class="hero-features-card" href="/ominaisuudet?lang=${currentLang()}" aria-label="${esc(appText('Katso kaikki 145 Respondo AI:n ominaisuutta','Se alla 145 funktioner i Respondo AI','See all 145 Respondo AI features'))}">
+              <div class="hero-features-card-top">
+                <span>${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</span>
+                <b>→</b>
+              </div>
+              <h3>${appText('Katso kaikki 145 Respondo AI:n ominaisuutta','Se alla 145 funktioner i Respondo AI','See all 145 Respondo AI features')}</h3>
+              <p>${appText('Yli 145 toimintoa asiakaspalveluun, tarjouksiin, ajanvaraukseen ja yhteydenottoihin — alle 50 €/kk.','Över 145 funktioner för kundservice, offerter, bokningar och kontaktförfrågningar — för under 50 €/mån.','Over 145 features for customer service, quotes, bookings and contact requests — for under €50/month.')}</p>
+            </a>
             <div class="hero-scroll-hint"><i></i><span>VIERITÄ ALAS JA KATSO, MITEN SE TOIMII</span></div>
           </div>
           ${heroVisual()}
@@ -3340,6 +3430,7 @@ async function route() {
   let html;
 
   if (path === '/') html = await home();
+  else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
   else if (path === '/assistant') html = `<div>${nav()}<main class="assistant-route-fallback"><div class="container"><div class="section-kicker">${appText('KOKEILE RESPONDOA','TESTA RESPONDO','TRY RESPONDO')}</div><h1>${appText('Kokeile, miltä Respondo tuntuisi omassa yrityksessäsi.','Testa hur Respondo skulle fungera i ditt företag.','See how Respondo would work for your business.')}</h1><p>${appText('Lisää muutama yrityksesi tieto ja kysy sen jälkeen ihan samalla tavalla kuin asiakkaasi kysyisi.','Lägg till några uppgifter om ditt företag och fråga sedan precis som en kund skulle göra.','Add a few details about your business, then ask a question just as a customer would.')}</p></div></main></div>`;
   else if (path === '/tilaus') html = signup();
   else if (path === '/kirjaudu') html = login();
