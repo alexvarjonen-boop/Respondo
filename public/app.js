@@ -3494,7 +3494,7 @@ async function route() {
         const textarea = item?.querySelector('.unanswered-answer');
         const original = button.textContent;
         button.disabled = true;
-        button.textContent = 'Etsitään…';
+        button.textContent = appText('Etsitään…','Söker…','Searching…');
         if (msg) msg.innerHTML = '';
         try {
           const result = await api('/api/app/unanswered/' + encodeURIComponent(item.dataset.id) + '/suggest', {
@@ -3505,7 +3505,7 @@ async function route() {
             textarea.value = result.answer;
             textarea.focus();
             if (msg) msg.innerHTML = '<div class="notice success">' + appText('Löysin ehdotuksen yrityksesi verkkosivulta. Tarkista se ja hyväksy vasta sitten.','Jag hittade ett förslag på företagets webbplats. Kontrollera det och godkänn först därefter.','I found a suggestion on your company website. Review it and only then approve it.') + '</div>';
-            button.textContent = 'Ehdotus löytyi ✓';
+            button.textContent = appText('Ehdotus löytyi ✓','Förslag hittat ✓','Suggestion found ✓');
           } else {
             if (msg) msg.innerHTML = '<div class="notice error">' + appText('Verkkosivulta ei löytynyt tähän varmaa vastausta. Kirjoita oikea vastaus itse.','Det gick inte att hitta ett säkert svar på webbplatsen. Skriv det korrekta svaret själv.','A reliable answer could not be found on the website. Enter the correct answer yourself.') + '</div>';
             button.textContent = original;
@@ -3568,14 +3568,14 @@ async function route() {
         });
         if (bubble) {
           bubble.classList.remove('preview-thinking');
-          bubble.textContent = result.answer || 'En löydä tähän vielä varmaa vastausta.';
+          bubble.textContent = result.answer || appText('En löydä tähän vielä varmaa vastausta.','Jag hittar inget säkert svar på detta ännu.','I cannot find a reliable answer to this yet.');
         }
         previewHistory.push({ question, answer: result.answer || '' });
         if (previewHistory.length > 8) previewHistory.splice(0, previewHistory.length - 8);
       } catch (err) {
         if (bubble) {
           bubble.classList.remove('preview-thinking');
-          bubble.textContent = err.message || 'Vastaaminen epäonnistui. Yritä uudelleen.';
+          bubble.textContent = err.message || appText('Vastaaminen epäonnistui. Yritä uudelleen.','Det gick inte att svara. Försök igen.','Reply failed. Please try again.');
         }
       }
       if (chat) chat.scrollTop = chat.scrollHeight;
@@ -3739,7 +3739,7 @@ async function route() {
         const nextFeatured = button.dataset.featured !== 'true';
         const original = button.textContent;
         button.disabled = true;
-        button.textContent = nextFeatured ? 'Lisätään…' : 'Poistetaan…';
+        button.textContent = nextFeatured ? appText('Lisätään…','Lägger till…','Adding…') : appText('Poistetaan…','Tar bort…','Removing…');
         $('#knowledgeFeatureMsg').innerHTML = '';
 
         try {
@@ -4082,11 +4082,11 @@ async function route() {
       const button = e.currentTarget;
       const original = button.textContent;
       button.disabled = true;
-      button.textContent = 'Lähetetään…';
+      button.textContent = appText('Lähetetään…','Skickar…','Sending…');
       try {
         await api('/api/app/voice/test-sms', { method:'POST', body:'{}' });
         $('#voiceAgentMsg').innerHTML = '<div class="notice success">' + appText('Testi-SMS lähetetty ✓','Test-SMS skickat ✓','Test SMS sent ✓') + '</div>';
-        button.textContent = 'Lähetetty ✓';
+        button.textContent = appText('Lähetetty ✓','Skickat ✓','Sent ✓');
         setTimeout(() => (button.textContent = original), 1500);
       } catch (err) {
         $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
@@ -4220,7 +4220,7 @@ async function route() {
           button.textContent = 'Kopioitu ✓';
           setTimeout(() => (button.textContent = original), 1300);
         } catch {
-          button.textContent = 'Kopioi käsin';
+          button.textContent = appText('Kopioi käsin','Kopiera manuellt','Copy manually');
         }
       });
     });
