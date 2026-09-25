@@ -825,7 +825,10 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     normalized.includes(normalizedTitle) ||
     normalizedTitle.includes(normalized)
   );
-  if (responseLang !== 'en' && exactTitleMatch && Number(top?._score || 0) >= 14) {
+  // Only return the stored answer directly for Finnish. For Swedish and English,
+  // always pass through the language-aware generation step so source content is
+  // translated to the visitor's selected language without changing facts.
+  if (responseLang === 'fi' && exactTitleMatch && Number(top?._score || 0) >= 14) {
     return {
       answer: String(top.answer || '').trim(),
       handoff: false,
