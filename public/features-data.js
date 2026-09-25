@@ -169,14 +169,7 @@ export const FEATURE_GROUPS = [
       ['Keskustelun ottaminen ihmisen haltuun','Mänsklig takeover av konversationen','Human takeover of conversation'],
       ['Botin automaattisten vastausten pysäyttäminen takeoverissa','Stoppar botsvar vid takeover','Stops bot replies during takeover'],
       ['Ihmisen vastauksen lähettäminen verkkosivuchattiin','Skickar mänskligt svar till webbchatten','Sends human reply to website chat'],
-      ['Uusien ihmisviestien automaattinen haku ilman sivun päivitystä','Automatisk hämtning av mänskliga svar utan siduppdatering','Polls human replies without page refresh'],
-      ['WhatsApp-kanavan tuki','Stöd för WhatsApp-kanal','WhatsApp channel support'],
-      ['Instagram-kanavan tuki','Stöd för Instagram-kanal','Instagram channel support'],
-      ['SMS-kanavan tuki','Stöd för SMS-kanal','SMS channel support'],
-      ['Ulkoinen Channels API','Externt Channels API','External Channels API'],
-      ['Ihmisen live-vastaus takaisin samaan ulkoiseen kanavaan','Live-svar från människa tillbaka i samma externa kanal','Human live reply back to the same external channel'],
-      ['Automaattinen missed-call SMS','Automatiskt SMS vid missat samtal','Automatic missed-call SMS'],
-      ['Missed-call SMS:n välitön tai aukioloaikoihin perustuva lähetys','Omedelbar eller tidsstyrd sändning av missed-call-SMS','Immediate or after-hours missed-call SMS mode']
+      ['Uusien ihmisviestien automaattinen haku ilman sivun päivitystä','Automatisk hämtning av mänskliga svar utan siduppdatering','Polls human replies without page refresh']
     ]
   },
   {
