@@ -3545,9 +3545,9 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       try { body = JSON.parse(body); } catch { body = {}; }
     }
     body = body || {};
-    const lang = body.lang === 'en' ? 'en' : 'fi';
+    const lang = ['fi','sv','en'].includes(String(body.lang || '').toLowerCase()) ? String(body.lang).toLowerCase() : 'fi';
     const message = String(body.message || '').trim().slice(0, 1200);
-    if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : 'Kirjoita kysymys.' });
+    if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : lang === 'sv' ? 'Skriv en fråga.' : 'Kirjoita kysymys.' });
     const profile = body.profile && typeof body.profile === 'object' ? body.profile : {};
     const rows = buildProfileKnowledge(profile).slice(0, 60);
     const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
@@ -3560,7 +3560,9 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     });
     const handoffAnswer = lang === 'en'
       ? 'I cannot find a reliable answer to this from the provided company information. Add the answer to the knowledge base and the bot will know it next time.'
-      : 'Tätä tietoa ei löytynyt yrityksen tiedoista. Lisää oikea vastaus kerran, niin Respondo osaa vastata siihen jatkossa.';
+      : lang === 'sv'
+        ? 'Jag hittar inget säkert svar på detta i företagets information. Lägg till rätt svar i kunskapsbasen så kan Respondo svara på det nästa gång.'
+        : 'Tätä tietoa ei löytynyt yrityksen tiedoista. Lisää oikea vastaus kerran, niin Respondo osaa vastata siihen jatkossa.';
     return res.json({
       answer: result.handoff ? handoffAnswer : result.answer,
       handoff: result.handoff,
@@ -3584,7 +3586,7 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
       try { body = JSON.parse(body); } catch { body = {}; }
     }
     body = body || {};
-    const lang = body.lang === 'en' ? 'en' : 'fi';
+    const lang = ['fi','sv','en'].includes(String(body.lang || '').toLowerCase()) ? String(body.lang).toLowerCase() : 'fi';
 
     const origin = requestOrigin(req);
     const baseHost = normalizeHost(BASE);
@@ -3682,7 +3684,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       try { body = JSON.parse(body); } catch { body = {}; }
     }
     body = body || {};
-    const lang = body.lang === 'en' ? 'en' : 'fi';
+    const lang = ['fi','sv','en'].includes(String(body.lang || '').toLowerCase()) ? String(body.lang).toLowerCase() : 'fi';
 
     const origin = requestOrigin(req);
     const baseHost = normalizeHost(BASE);
@@ -3720,7 +3722,9 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       if (thread.mode === 'human') {
         const humanMessage = lang === 'en'
           ? 'Your message was sent to a person from the company.'
-          : 'Viestisi lähetettiin yrityksen asiakaspalvelijalle.';
+          : lang === 'sv'
+            ? 'Ditt meddelande skickades till företagets kundtjänst.'
+            : 'Viestisi lähetettiin yrityksen asiakaspalvelijalle.';
         await q(
           `INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,page_url,page_title,source_channel,external_contact_id)
            VALUES($1,$2,$3,$4,'Live takeover',1,'{}',true,$5,$6,$7,'website',$8)`,
@@ -3765,7 +3769,9 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     if (result.handoff) {
       answer = lang === 'en'
         ? 'I cannot find a reliable answer to this in the company information. Leave your name and phone number or email below, and someone from the company can get back to you.'
-        : 'Tähän en löydä varmaa vastausta yrityksen tiedoista. Jätä alle nimesi ja puhelinnumerosi tai sähköpostisi, niin yrityksen henkilö voi palata sinulle.';
+        : lang === 'sv'
+          ? 'Jag hittar inget säkert svar på detta i företagets information. Lämna ditt namn och telefonnummer eller din e-postadress nedan, så kan någon från företaget kontakta dig.'
+          : 'Tähän en löydä varmaa vastausta yrityksen tiedoista. Jätä alle nimesi ja puhelinnumerosi tai sähköpostisi, niin yrityksen henkilö voi palata sinulle.';
     }
 
     const actions = chatActions(kr.rows, message, result.handoff, lang);
