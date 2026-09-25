@@ -2133,7 +2133,7 @@ function featuresPage() {
       <section class="features-hero">
         <div class="container features-hero-inner">
           <div class="features-hero-badge">${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</div>
-          <h1>${appText('145 ominaisuutta.<br><em>Yksi Respondo.</em>','145 funktioner.<br><em>En Respondo.</em>','145 features.<br><em>One Respondo.</em>')}</h1>
+          <h1>${appText(`${FEATURE_COUNT} ominaisuutta.<br><em>Yksi Respondo.</em>`,`${FEATURE_COUNT} funktioner.<br><em>En Respondo.</em>`,`${FEATURE_COUNT} features.<br><em>One Respondo.</em>`)}</h1>
           <p>${appText('Asiakaspalvelu, tietopohja, liidit, tarjoukset, ajanvaraus, live takeover, kanavat ja analytiikka yhdessä palvelussa.','Kundservice, kunskapsbas, leads, offerter, bokning, live takeover, kanaler och analys i en tjänst.','Customer service, knowledge base, leads, quotes, bookings, live takeover, channels and analytics in one service.')}</p>
           <div class="features-hero-actions">
             <a class="btn ink" href="/tilaus?lang=${lang}">${appText('Kokeile ilmaiseksi','Prova gratis','Start trial')}</a>
@@ -2206,12 +2206,12 @@ async function home() {
       ${dataImpactScene()}
       ${calculatorSection()}
       <section class="post-calculator-features"><div class="container">
-        <a class="hero-features-card" href="/ominaisuudet?lang=${currentLang()}" aria-label="${esc(appText('Katso kaikki 145 Respondo AI:n ominaisuutta','Se alla 145 funktioner i Respondo AI','See all 145 Respondo AI features'))}">
+        <a class="hero-features-card" href="/ominaisuudet?lang=${currentLang()}" aria-label="${esc(appText(`Katso kaikki ${FEATURE_COUNT} Respondo AI:n ominaisuutta`,`Se alla ${FEATURE_COUNT} funktioner i Respondo AI`,`See all ${FEATURE_COUNT} Respondo AI features`))}">
           <div class="hero-features-card-top">
             <span>${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</span><b>→</b>
           </div>
-          <h3>${appText('Katso kaikki 145 Respondo AI:n ominaisuutta','Se alla 145 funktioner i Respondo AI','See all 145 Respondo AI features')}</h3>
-          <p>${appText('Yli 145 toimintoa asiakaspalveluun, tarjouksiin, ajanvaraukseen ja yhteydenottoihin.','Över 145 funktioner för kundservice, offerter, bokningar och kontaktförfrågningar.','Over 145 features for customer service, quotes, bookings and contact requests.')}</p>
+          <h3>${appText(`Katso kaikki ${FEATURE_COUNT} Respondo AI:n ominaisuutta`,`Se alla ${FEATURE_COUNT} funktioner i Respondo AI`,`See all ${FEATURE_COUNT} Respondo AI features`)}</h3>
+          <p>${appText(`${FEATURE_COUNT} toimintoa asiakaspalveluun, tarjouksiin, ajanvaraukseen ja yhteydenottoihin.`,`${FEATURE_COUNT} funktioner för kundservice, offerter, bokningar och kontaktförfrågningar.`,`${FEATURE_COUNT} features for customer service, quotes, bookings and contact requests.`)}</p>
         </a>
       </div></section>
       ${pricingSection()}
