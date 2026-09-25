@@ -2094,30 +2094,38 @@ function featuresPage() {
   const lang = currentLang();
   const pick = (triple) => triple[lang === 'sv' ? 1 : lang === 'en' ? 2 : 0];
   let featureNo = 0;
-  const groups = FEATURE_GROUPS.map((group, index) => {
-    const items = group.items.map((item) => {
+  const featured = [];
+  const restGroups = [];
+  FEATURE_GROUPS.forEach((group) => {
+    const rest = [];
+    group.items.forEach((item) => {
       featureNo += 1;
-      return `<article class="feature-item">
-        <span class="feature-item-number">${String(featureNo).padStart(3,'0')}</span>
-        <div><b>${esc(pick(item))}</b></div>
-        <i aria-hidden="true">✓</i>
-      </article>`;
-    }).join('');
-    return `<details class="feature-category" ${index < 2 ? 'open' : ''}>
-      <summary>
-        <div class="feature-category-copy">
-          <small>${appText('OMINAISUUSKATEGORIA','FUNKTIONSKATEGORI','FEATURE CATEGORY')}</small>
-          <h2>${esc(pick(group.title))}</h2>
-          <p>${esc(pick(group.intro))}</p>
-        </div>
-        <div class="feature-category-meta">
-          <strong>${group.items.length}</strong>
-          <span aria-hidden="true">＋</span>
-        </div>
-      </summary>
-      <div class="feature-category-body">${items}</div>
-    </details>`;
-  }).join('');
+      const data = { no: featureNo, item, group };
+      if (featured.length < 10) featured.push(data);
+      else rest.push(data);
+    });
+    if (rest.length) restGroups.push({ group, items: rest });
+  });
+  const featureCard = ({no,item}) => `<article class="feature-item">
+    <span class="feature-item-number">${String(no).padStart(3,'0')}</span>
+    <div><b>${esc(pick(item))}</b></div>
+    <i aria-hidden="true">✓</i>
+  </article>`;
+  const topTen = featured.map(featureCard).join('');
+  const groups = restGroups.map(({group,items}) => `<details class="feature-category">
+    <summary>
+      <div class="feature-category-copy">
+        <small>${appText('OMINAISUUSKATEGORIA','FUNKTIONSKATEGORI','FEATURE CATEGORY')}</small>
+        <h2>${esc(pick(group.title))}</h2>
+        <p>${esc(pick(group.intro))}</p>
+      </div>
+      <div class="feature-category-meta">
+        <strong>${items.length}</strong>
+        <span aria-hidden="true">＋</span>
+      </div>
+    </summary>
+    <div class="feature-category-body">${items.map(featureCard).join('')}</div>
+  </details>`).join('');
 
   return `<div class="features-page">
     ${nav()}
@@ -2126,51 +2134,49 @@ function featuresPage() {
         <div class="container features-hero-inner">
           <div class="features-hero-badge">${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</div>
           <h1>${appText('145 ominaisuutta.<br><em>Yksi Respondo.</em>','145 funktioner.<br><em>En Respondo.</em>','145 features.<br><em>One Respondo.</em>')}</h1>
-          <p>${appText(
-            'Asiakaspalvelu, tietopohja, liidit, tarjoukset, ajanvaraus, live takeover, kanavat ja analytiikka yhdessä palvelussa — alle 50 €/kk.',
-            'Kundservice, kunskapsbas, leads, offerter, bokning, live takeover, kanaler och analys i en tjänst — för under 50 €/mån.',
-            'Customer service, knowledge base, leads, quotes, bookings, live takeover, channels and analytics in one service — for under €50/month.'
-          )}</p>
+          <p>${appText('Asiakaspalvelu, tietopohja, liidit, tarjoukset, ajanvaraus, live takeover, kanavat ja analytiikka yhdessä palvelussa.','Kundservice, kunskapsbas, leads, offerter, bokning, live takeover, kanaler och analys i en tjänst.','Customer service, knowledge base, leads, quotes, bookings, live takeover, channels and analytics in one service.')}</p>
           <div class="features-hero-actions">
             <a class="btn ink" href="/tilaus?lang=${lang}">${appText('Kokeile ilmaiseksi','Prova gratis','Start trial')}</a>
             <a class="btn ghost" href="/assistant?lang=${lang}">${appText('Kokeile bottia','Testa botten','Try the bot')}</a>
           </div>
           <div class="features-hero-stats">
             <div><b>${FEATURE_COUNT}</b><span>${appText('toimintoa','funktioner','features')}</span></div>
-            <div><b>3</b><span>${appText('kieltä','språk','languages')}</span></div>
-            <div><b>&lt; 50 €</b><span>${appText('/ kk','/ mån','/ month')}</span></div>
+            <div class="languages-stat"><b>3</b><span>${appText('kieltä','språk','languages')}</span></div>
+            <div><b>24/7</b><span>${appText('asiakaspalvelu','kundservice','customer service')}</span></div>
           </div>
+        </div>
+      </section>
+      <section class="features-top10">
+        <div class="container">
+          <div class="features-directory-head">
+            <div><small>${appText('10 SUOSITUINTA','10 POPULÄRA','TOP 10')}</small>
+            <h2>${appText('Katso tärkeimmät ensin.','Se de viktigaste först.','See the essentials first.')}</h2></div>
+            <span>10 / ${FEATURE_COUNT}</span>
+          </div>
+          <div class="features-top10-grid">${topTen}</div>
         </div>
       </section>
       <section class="features-directory">
         <div class="container">
           <div class="features-directory-head">
             <div>
-              <small>${appText('KAIKKI TOIMINNOT','ALLA FUNKTIONER','ALL FEATURES')}</small>
-              <h2>${appText('Avaa kategoria ja tutustu yksityiskohtiin.','Öppna en kategori och se detaljerna.','Open a category and explore the details.')}</h2>
+              <small>${appText('LOPUT OMINAISUUDET','RESTEN AV FUNKTIONERNA','ALL OTHER FEATURES')}</small>
+              <h2>${appText('Avaa kategoria, kun haluat nähdä lisää.','Öppna en kategori när du vill se mer.','Open a category when you want to see more.')}</h2>
             </div>
-            <span>${FEATURE_GROUPS.length} ${appText('kategoriaa','kategorier','categories')}</span>
+            <span>${FEATURE_COUNT - 10} ${appText('lisää','till','more')}</span>
           </div>
           <div class="features-directory-grid">${groups}</div>
         </div>
       </section>
-      <section class="features-final">
-        <div class="container">
-          <div class="features-final-card">
-            <div>
-              <small>${FEATURE_COUNT} ${appText('OMINAISUUTTA · ALLE 50 €/KK','FUNKTIONER · UNDER 50 €/MÅN','FEATURES · UNDER €50/MONTH')}</small>
-              <h2>${appText('Kaikki yhdessä palvelussa.','Allt i en tjänst.','Everything in one service.')}</h2>
-              <p>${appText('Kokeile Respondoa 3 päivää ja näe, miten se toimii omilla yritystiedoillasi.','Prova Respondo i 3 dagar och se hur det fungerar med ditt företags egna uppgifter.','Try Respondo for 3 days and see how it works with your own business information.')}</p>
-            </div>
-            <a class="btn ink" href="/tilaus?lang=${lang}">${appText('Aloita 3 päivän kokeilu','Starta 3 dagars provperiod','Start 3-day trial')} <span>→</span></a>
-          </div>
-        </div>
-      </section>
-    </main>
-    ${footer()}
+      <section class="features-final"><div class="container"><div class="features-final-card">
+        <div><small>${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</small>
+        <h2>${appText('Kaikki yhdessä palvelussa.','Allt i en tjänst.','Everything in one service.')}</h2>
+        <p>${appText('Kokeile Respondoa 3 päivää ja näe, miten se toimii omilla yritystiedoillasi.','Prova Respondo i 3 dagar och se hur det fungerar med ditt företags egna uppgifter.','Try Respondo for 3 days and see how it works with your own business information.')}</p></div>
+        <a class="btn ink" href="/tilaus?lang=${lang}">${appText('Aloita 3 päivän kokeilu','Starta 3 dagars provperiod','Start 3-day trial')} <span>→</span></a>
+      </div></div></section>
+    </main>${footer()}
   </div>`;
 }
-
 async function home() {
   await config();
   return `<div>
