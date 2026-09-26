@@ -773,6 +773,26 @@ function buildProfileKnowledge(profile = {}) {
   return rows;
 }
 
+async function forceAnswerLanguage(answer, lang) {
+  const target = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
+  const text = String(answer || '').trim();
+  if (!text || target === 'fi' || !openai) return text;
+  try {
+    const instruction = target === 'sv'
+      ? 'Översätt följande kundtjänstsvar till naturlig svenska. Behåll exakt samma fakta, priser, länkar, e-postadresser och betydelse. Svara endast med den översatta texten.'
+      : 'Translate the following customer-service answer into natural English. Preserve exactly the same facts, prices, links, email addresses, and meaning. Return only the translated text.';
+    const rr = await openai.responses.create({
+      model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
+      input: instruction + '\n\n' + text,
+      max_output_tokens: 300,
+    });
+    return String(rr.output_text || '').trim() || text;
+  } catch (e) {
+    console.error('Answer language enforcement failed', e);
+    return text;
+  }
+}
+
 async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {} }) {
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const cleanMessage = String(message || '').trim();
@@ -3775,6 +3795,10 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         : lang === 'sv'
           ? 'Jag hittar inget säkert svar på detta i företagets information. Lämna ditt namn och telefonnummer eller din e-postadress nedan, så kan någon från företaget kontakta dig.'
           : 'Tähän en löydä varmaa vastausta yrityksen tiedoista. Jätä alle nimesi ja puhelinnumerosi tai sähköpostisi, niin yrityksen henkilö voi palata sinulle.';
+    } else {
+      // Final guardrail: never leak a Finnish stored knowledge answer into an
+      // English or Swedish widget. The selected widget language wins.
+      answer = await forceAnswerLanguage(answer, lang);
     }
 
     const actions = chatActions(kr.rows, message, result.handoff, lang);
