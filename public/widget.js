@@ -12,9 +12,14 @@
   };
   const requestedLang = String(script.dataset.lang || 'auto').toLowerCase();
   const storedLang = (() => { try { return localStorage.getItem('respondo_lang') || ''; } catch { return ''; } })();
-  const widgetLang = requestedLang === 'auto'
-    ? normalizeLang(storedLang || document.documentElement.lang || navigator.language)
-    : normalizeLang(requestedLang);
+  const pageLang = normalizeLang(document.documentElement.lang || '');
+  // The actual page language is authoritative. This prevents an old hard-coded
+  // data-lang="fi" in an embed from forcing Finnish on Swedish/English pages.
+  const widgetLang = ['fi','sv','en'].includes(pageLang)
+    ? pageLang
+    : requestedLang === 'auto'
+      ? normalizeLang(storedLang || navigator.language)
+      : normalizeLang(requestedLang);
   const SV_WIDGET = new Map(Object.entries({
     'Tarkista':'Kontrollera','Ei vapaita aikoja juuri nyt':'Inga lediga tider just nu','Valitse vapaa aika':'Välj en ledig tid',
     'Lähetetään…':'Skickar…','Pyyntö vastaanotettu':'Begäran mottagen','Kiitos — yhteystiedot on lähetetty ✓':'Tack — dina kontaktuppgifter har skickats ✓',
