@@ -3491,7 +3491,7 @@ app.get('/api/public/:slug/widget-token', async (req, res) => {
       JWT,
       { expiresIn: '12h' }
     );
-    const lang = req.query.lang === 'en' ? 'en' : 'fi';
+    const lang = ['fi','sv','en'].includes(String(req.query.lang || '').toLowerCase()) ? String(req.query.lang).toLowerCase() : 'fi';
     const kr = await q(
       `SELECT title
          FROM knowledge
