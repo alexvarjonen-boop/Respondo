@@ -479,7 +479,11 @@
               '<strong>' + escapeHtml(total) + '</strong>' +
               '<span>' + escapeHtml(
                 q.vatPercent > 0
-                  ? t('sisältää ALV ' + q.vatPercent + ' %', 'includes VAT ' + q.vatPercent + '%')
+                  ? (widgetLang === 'en'
+                      ? 'includes VAT ' + q.vatPercent + '%'
+                      : widgetLang === 'sv'
+                        ? 'inklusive moms ' + q.vatPercent + ' %'
+                        : 'sisältää ALV ' + q.vatPercent + ' %')
                   : t('ALV 0 %', 'VAT 0%')
               ) + '</span>' +
             '</div>';
