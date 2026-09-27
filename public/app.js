@@ -2317,12 +2317,22 @@ function login() {
           <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
           <div class="field"><label>Salasana</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
           <button class="btn checkout-button" type="submit">${appText('Kirjaudu sisään','Logga in','Log in')} <span>→</span></button>
+          <div class="agent-login-separator"><span>${appText('Asiakaspalvelija?','Kundservicemedarbetare?','Support agent?')}</span></div>
+          <button class="btn" type="button" id="showAgentLogin">${appText('Kirjaudu työntekijätunnuksella','Logga in med medarbetarkonto','Log in with staff account')}</button>
           <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : (checkoutError ? '<div class="notice error">Automaattinen kirjautuminen ei onnistunut. Kirjaudu samalla sähköpostilla ja salasanalla, jonka loit ennen maksua.</div>' : '')}</div>
         </form>
       </div>
     </main>
     ${footer()}
   </div>`;
+}
+
+function agentLoginDialog() {
+  const username=prompt(appText('Käyttäjänimi','Användarnamn','Username'));
+  if (!username) return;
+  const password=prompt(appText('Salasana','Lösenord','Password'));
+  if (!password) return;
+  api('/api/auth/agent-login',{method:'POST',body:JSON.stringify({username,password})}).then(()=>{ location.href='/app'; }).catch((e)=>alert(e.message));
 }
 
 const LEGAL = {
