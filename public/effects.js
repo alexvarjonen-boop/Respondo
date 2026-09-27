@@ -203,7 +203,15 @@
       const escaped = k.replace(/[.*+?^$()|[\]\\]/g, '\\    const hit = faq.find(item => item.keys.some(k => q.includes(k)));');
       return new RegExp('(^|[^a-z0-9åäö])' + escaped + '(?=$|[^a-z0-9åäö])', 'i').test(normalized);
     };
-    const hit = faq.find(item => item.keys.some(matchesKey));
+    const scored = faq
+      .map((item, index) => {
+        const matched = item.keys.filter(matchesKey);
+        const score = matched.reduce((best, key) => Math.max(best, String(key).length), 0);
+        return { item, index, score };
+      })
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score || a.index - b.index);
+    const hit = scored[0]?.item;
     if (hit) return hit.answer[lang] || hit.answer.fi;
     if (['hei','moi','moikka','hello','hi','hey','hej','hallå','halla','tjena'].some(word => q.includes(word))) {
       return assistantText(
