@@ -422,7 +422,7 @@ YLEINEN TOIMINTAOHJE:
   async function localAiAnswer(text, onProgress) {
     const profile = getOwnerProfile();
     const lang = assistantLanguage();
-    if (onProgress) onProgress(25, assistantText('Katson yrityksen tiedoista…','Katson yrityksen tiedoista…','Checking the company information…'));
+    if (onProgress) onProgress(25, assistantText('Katson yrityksen tiedoista…','Kontrollerar företagets uppgifter…','Checking the company information…'));
     const response = await fetch('/api/public/demo-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
