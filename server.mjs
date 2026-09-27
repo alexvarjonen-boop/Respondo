@@ -9,7 +9,6 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import pg from 'pg';
 import Stripe from 'stripe';
-import OpenAI from 'openai';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,7 +24,6 @@ const pool = process.env.DATABASE_URL
     })
   : null;
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 const JWT = process.env.JWT_SECRET || crypto.randomBytes(48).toString('hex');
 const COOKIE = 'respondo_session';
 
@@ -1330,7 +1328,6 @@ app.get('/api/health', async (req, res) => {
     service: 'RESPONDO AI',
     database: Boolean(pool),
     stripe: Boolean(stripe && process.env.STRIPE_WEBHOOK_SECRET),
-    openai: Boolean(openai),
   };
   if (pool) {
     try {
