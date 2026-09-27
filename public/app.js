@@ -2253,44 +2253,44 @@ function signup() {
             ? appText('Tämä kertakäyttöinen testitilaus veloittaa heti tasan 0,50 €. Se sulkeutuu onnistuneen maksun jälkeen eikä uusiudu seuraavassa kuussa.','Detta engångstestabonnemang debiterar exakt 0,50 € direkt. Det avslutas efter en lyckad betalning och förnyas inte nästa månad.','This one-time test subscription charges exactly €0.50 immediately. It closes after a successful payment and does not renew the following month.')
             : appText('Luo tili ja lisää maksutapa Stripessä. Sinulta ei veloiteta mitään 3 päivän kokeilun aikana.','Skapa ett konto och lägg till en betalningsmetod säkert via Stripe. Du debiteras inget under den 3 dagar långa provperioden.','Create an account and add a payment method securely via Stripe. You will not be charged during the 3-day trial.')}</p>
           <div class="checkout-steps">
-            <div><span>01</span><b>Luo tili</b><small>Täytä omat ja yrityksesi perustiedot.</small></div>
-            <div><span>02</span><b>Lisää maksutapa Stripessä</b><small>Korttitietosi menevät suoraan Stripelle.</small></div>
-            <div><span>03</span><b>Lisää yrityksesi tiedot</b><small>Kerro Respondolle, mitä asiakkaillesi saa vastata.</small></div>
+            <div><span>01</span><b>${appText('Luo tili','Skapa konto','Create account')}</b><small>${appText('Täytä omat ja yrityksesi perustiedot.','Fyll i dina och företagets grunduppgifter.','Enter your basic details and company information.')}</small></div>
+            <div><span>02</span><b>${appText('Lisää maksutapa Stripessä','Lägg till betalningsmetod i Stripe','Add a payment method in Stripe')}</b><small>${appText('Korttitietosi menevät suoraan Stripelle.','Dina kortuppgifter skickas direkt till Stripe.','Your card details go directly to Stripe.')}</small></div>
+            <div><span>03</span><b>${appText('Lisää yrityksesi tiedot','Lägg till företagsuppgifter','Add your business information')}</b><small>${appText('Kerro Respondolle, mitä asiakkaillesi saa vastata.','Berätta för Respondo vad den får svara dina kunder.','Tell Respondo what it may tell your customers.')}</small></div>
           </div>
           <div class="seller-card">
-            <span>PALVELUNTARJOAJA</span>
+            <span>${appText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span>
             <b>${esc(cfg.sellerName || 'RESPONDO AI')}</b>
-            <small>Y-tunnus ${esc(cfg.businessId || '3599437-5')} · Suomi</small>
+            <small>${appText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')} · ${appText('Suomi','Finland','Finland')}</small>
           </div>
         </section>
         <form class="formcard premium-form" id="signup">
-          <div class="form-head"><span>LUO TILI</span><b>${plan === 'owner_test' ? '0,50 € · veloitus heti' : '3 päivää ilmaiseksi'}</b></div>
+          <div class="form-head"><span>${appText('LUO TILI','SKAPA KONTO','CREATE ACCOUNT')}</span><b>${plan === 'owner_test' ? appText('0,50 € · veloitus heti','0,50 € · debiteras direkt','€0.50 · charged now') : appText('3 päivää ilmaiseksi','3 dagar gratis','3 days free')}</b></div>
           ${socialAuthButtons('signup')}
           <div class="formgrid">
-            <div class="field"><label>Nimi</label><input name="fullName" autocomplete="name" required placeholder="Etunimi Sukunimi"></div>
-            <div class="field"><label>Sähköposti</label><input name="email" type="email" autocomplete="email" required placeholder="sinä@yritys.fi"></div>
-            <div class="field"><label>Yritys</label><input name="companyName" required placeholder="Yrityksen nimi"></div>
-            <div class="field"><label>Y-tunnus</label><input name="businessId" placeholder="1234567-8"></div>
-            <div class="field full" id="signupPasswordField"><label>Salasana</label><input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="Vähintään 10 merkkiä"></div>
-            <div class="field full"><label>Tilaus</label>
+            <div class="field"><label>${appText('Nimi','Namn','Name')}</label><input name="fullName" autocomplete="name" required placeholder="${appText('Etunimi Sukunimi','Förnamn Efternamn','First name Last name')}"></div>
+            <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
+            <div class="field"><label>${appText('Yritys','Företag','Company')}</label><input name="companyName" required placeholder="${appText('Yrityksen nimi','Företagets namn','Company name')}"></div>
+            <div class="field"><label>${appText('Y-tunnus','FO-nummer','Business ID')}</label><input name="businessId" placeholder="1234567-8"></div>
+            <div class="field full" id="signupPasswordField"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
+            <div class="field full"><label>${appText('Tilaus','Abonnemang','Subscription')}</label>
               <select name="plan">
-                <option value="monthly" ${plan === 'monthly' ? 'selected' : ''}>49,99 €/kk · kuukausi</option>
-                <option value="yearly" ${plan === 'yearly' ? 'selected' : ''}>44,99 €/kk · laskutetaan 539,88 €/vuosi</option>
+                <option value="monthly" ${plan === 'monthly' ? 'selected' : ''}>${appText('49,99 €/kk · kuukausi','49,99 €/mån · månadsvis','€49.99/mo · monthly')}</option>
+                <option value="yearly" ${plan === 'yearly' ? 'selected' : ''}>${appText('44,99 €/kk · laskutetaan 539,88 €/vuosi','44,99 €/mån · faktureras 539,88 €/år','€44.99/mo · billed €539.88/year')}</option>
                 ${ownerTestAccess ? `<option value="owner_test" ${plan === 'owner_test' ? 'selected' : ''}>OMISTAJAN TESTI · 0,50 € sis. alv · veloitus heti</option>` : ''}
               </select>
             </div>
             <div class="field full referral-signup-field">
-              <label>Suosittelukoodi <span>valinnainen</span></label>
+              <label>${appText('Suosittelukoodi','Rekommendationskod','Referral code')} <span>${appText('valinnainen','valfri','optional')}</span></label>
               <input name="referralCode" maxlength="32" autocomplete="off" value="${esc(referralCode)}" placeholder="RESPONDO-XXXXXXXX">
-              <small id="referralHint">Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.</small>
+              <small id="referralHint">${appText('Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','Med en giltig kod får du 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid code gives you 20% off the first paid month. Monthly subscription only.')}</small>
             </div>
             <label class="checkrow field full">
               <input type="checkbox" name="terms" required>
-              <span>Hyväksyn <a href="/kayttoehdot" target="_blank">käyttöehdot</a> ja <a href="/tietosuoja" target="_blank">tietosuojaselosteen</a>.</span>
+              <span>${appText('Hyväksyn','Jag godkänner','I accept')} <a href="/kayttoehdot" target="_blank">${appText('käyttöehdot','användarvillkoren','the terms')}</a> ${appText('ja','och','and')} <a href="/tietosuoja" target="_blank">${appText('tietosuojaselosteen','integritetspolicyn','the privacy policy')}</a>.</span>
             </label>
           </div>
-          <button class="btn checkout-button" type="submit">Jatka maksutavan lisäämiseen <span>→</span></button>
-          <div class="form-security"><span>◈</span> Korttitiedot käsittelee Stripe. Respondo ei näe eikä tallenna korttinumeroasi.</div>
+          <button class="btn checkout-button" type="submit">${appText('Jatka maksutavan lisäämiseen','Fortsätt till betalningsmetod','Continue to payment method')} <span>→</span></button>
+          <div class="form-security"><span>◈</span> ${appText('Korttitiedot käsittelee Stripe. Respondo ei näe eikä tallenna korttinumeroasi.','Kortuppgifterna behandlas av Stripe. Respondo ser eller lagrar inte ditt kortnummer.','Card details are processed by Stripe. Respondo does not see or store your card number.')}</div>
           <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : ''}</div>
         </form>
       </div>
@@ -2314,7 +2314,7 @@ function login() {
         <form class="formcard premium-form login-card" id="login">
           <div class="form-head"><span>KIRJAUDU</span><b>Tervetuloa takaisin</b></div>
           ${socialAuthButtons('login')}
-          <div class="field"><label>Sähköposti</label><input name="email" type="email" autocomplete="email" required placeholder="sinä@yritys.fi"></div>
+          <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
           <div class="field"><label>Salasana</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
           <button class="btn checkout-button" type="submit">Kirjaudu sisään <span>→</span></button>
           <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : (checkoutError ? '<div class="notice error">Automaattinen kirjautuminen ei onnistunut. Kirjaudu samalla sähköpostilla ja salasanalla, jonka loit ennen maksua.</div>' : '')}</div>
@@ -2623,22 +2623,22 @@ async function dashboard() {
           </div>
         </div>
         <div class="dashboard-section-picker">
-          <label for="dashboardSectionSelect">Näytä osio</label>
+          <label for="dashboardSectionSelect">${appText('Näytä osio','Visa avsnitt','Show section')}</label>
           <div class="dashboard-select-wrap">
             <select id="dashboardSectionSelect" aria-label="Valitse hallintapaneelin osio">
-              <option value="overview">Yleiskatsaus</option>
-              <option value="setup">Yrityksen tiedot & botti</option>
-              <option value="answers">Vastaukset</option>
-              <option value="customers">Asiakkaat</option>
-              <option value="automation">Toiminnot & integraatiot</option>
-              <option value="account">Asennus & tili</option>
+              <option value="overview">${appText('Yleiskatsaus','Översikt','Overview')}</option>
+              <option value="setup">${appText('Yrityksen tiedot & botti','Företagsuppgifter & bot','Business info & bot')}</option>
+              <option value="answers">${appText('Vastaukset','Svar','Answers')}</option>
+              <option value="customers">${appText('Asiakkaat','Kunder','Customers')}</option>
+              <option value="automation">${appText('Toiminnot & integraatiot','Funktioner & integrationer','Actions & integrations')}</option>
+              <option value="account">${appText('Asennus & tili','Installation & konto','Installation & account')}</option>
             </select>
             <span aria-hidden="true">⌄</span>
           </div>
         </div>
         <div class="dashboard-top-actions">
-          <div class="live-chip"><span></span> Botti käytössä</div>
-          <button class="dashboard-logout" id="logoutTop" type="button">Kirjaudu ulos</button>
+          <div class="live-chip"><span></span> ${appText('Botti käytössä','Botten är aktiv','Bot active')}</div>
+          <button class="dashboard-logout" id="logoutTop" type="button">${appText('Kirjaudu ulos','Logga ut','Log out')}</button>
         </div>
       </header>
 
