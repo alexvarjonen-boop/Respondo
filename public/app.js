@@ -3444,7 +3444,7 @@ async function route() {
   else if (path === '/maksu-valmis') html = await paymentSuccess();
   else if (path === '/app') html = await dashboard();
   else if (['/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa', '/tietoturva'].includes(path)) html = legal(path.slice(1));
-  else html = `<div>${nav()}<main class="notfound"><div class="container"><div class="section-kicker">404</div><h1>Tätä sivua ei löytynyt.</h1><a class="btn ink" href="/">Palaa etusivulle</a></div></main>${footer()}</div>`;
+  else html = `<div>${nav()}<main class="notfound"><div class="container"><div class="section-kicker">404</div><h1>${appText('Tätä sivua ei löytynyt.','Sidan hittades inte.','Page not found.')}</h1><a class="btn ink" href="/">${appText('Palaa etusivulle','Till startsidan','Back to home')}</a></div></main>${footer()}</div>`;
 
   $('#app').innerHTML = html;
   applyLanguage();
@@ -3675,12 +3675,12 @@ async function route() {
         $('#selfTestResult').innerHTML =
           '<div class="self-test-score"><b>' + Number(result.score || 0) + '%</b><span>' +
           Number(result.answerable_questions || 0) + '/' + Number(result.total_questions || 0) +
-          ' kysymykseen löytyy varma tieto</span></div>' +
+          ' ' + appText('kysymykseen löytyy varma tieto','frågor har ett säkert svar','questions have a reliable answer') + '</span></div>' +
           (gaps.length
-            ? '<div class="self-test-gaps"><strong>Nämä kannattaa lisätä:</strong>' +
+            ? '<div class="self-test-gaps"><strong>' + appText('Nämä kannattaa lisätä:','Det här bör läggas till:','Consider adding these:') + '</strong>' +
               gaps.slice(0,6).map((x) => '<button type="button" class="self-test-gap" data-question="' +
                 esc(x.question) + '">' + esc(x.question) + '</button>').join('') + '</div>'
-            : '<div class="notice success">Hyvältä näyttää — testissä ei löytynyt selviä tietopuutteita.</div>');
+            : '<div class="notice success">' + appText('Hyvältä näyttää — testissä ei löytynyt selviä tietopuutteita.','Ser bra ut — testet hittade inga tydliga informationsluckor.','Looks good — the test found no clear information gaps.') + '</div>');
 
         document.querySelectorAll('.self-test-gap').forEach((gap) => {
           gap.addEventListener('click', () => {
@@ -3898,7 +3898,7 @@ async function route() {
         const preview = $('#previewAvatarVisual');
         if (current) current.innerHTML = botAvatarMarkup(data);
         if (preview) preview.innerHTML = botAvatarMarkup(data);
-        $('#botAvatarMsg').innerHTML = '<div class="bot-avatar-processing success">Oma kuva valittu ✓</div>';
+        $('#botAvatarMsg').innerHTML = '<div class="bot-avatar-processing success">' + appText('Oma kuva valittu ✓','Egen bild vald ✓','Custom image selected ✓') + '</div>';
       } catch (err) {
         $('#botAvatarMsg').innerHTML = '<div class="bot-avatar-processing error">' + esc(err.message) + '</div>';
       } finally {
@@ -4377,7 +4377,7 @@ async function route() {
       try {
         await api('/api/app/voice/configure-number', { method:'POST', body:'{}' });
         $('#voiceAgentMsg').innerHTML = '<div class="notice success">Twilio-numero ohjaa nyt puhelut ja SMS-viestit Respondoon ✓</div>';
-        button.textContent = 'Aktivoitu ✓';
+        button.textContent = appText('Aktivoitu ✓','Aktiverad ✓','Activated ✓');
       } catch (err) {
         $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
         button.textContent = original;
@@ -4525,7 +4525,7 @@ async function route() {
       const button = e.currentTarget;
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = 'Avataan…';
+      button.innerHTML = appText('Avataan…','Öppnar…','Opening…');
       try {
         const result = await api('/api/billing/portal', { method: 'POST', body: '{}' });
         location.href = result.url;
@@ -4548,7 +4548,7 @@ async function route() {
       try {
         await navigator.clipboard.writeText(code);
         e.currentTarget.textContent = appText('Kopioitu ✓','Kopierat ✓','Copied ✓');
-        setTimeout(() => (e.currentTarget.textContent = 'Kopioi'), 1400);
+        setTimeout(() => (e.currentTarget.textContent = appText('Kopioi','Kopiera','Copy')), 1400);
       } catch {
         e.currentTarget.textContent = appText('Valitse ja kopioi','Markera och kopiera','Select and copy');
       }
