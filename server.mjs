@@ -5138,6 +5138,10 @@ async function start() {
     }
   } catch (e) {
     console.error('Runtime schema check failed', e);
+    if (process.env.NODE_ENV === 'production') {
+      process.exitCode = 1;
+      return;
+    }
   }
   app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
 }
