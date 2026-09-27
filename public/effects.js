@@ -135,7 +135,7 @@
 
   const faq = [
     {
-      keys:['hinta','maksaa','49','vuosi','kuukausi','price','pricing','cost','month','year','pris','kostar','kostnad','månad','manad','år','ar'],
+      keys:['hinta','maksaa','49','vuosi','kuukausi','price','pricing','cost','month','year','pris','kostar','kostnad','månad','manad','årsabonnemang'],
       answer:{
         fi:'Respondo maksaa 49,99 € / kk tai vuositilauksella 44,99 € / kk, jolloin 539,88 € laskutetaan kerran vuodessa. Voit kokeilla kumpaa tahansa 3 päivää ilmaiseksi.',
         sv:'Respondo kostar 49,99 € / mån eller 44,99 € / mån med årsabonnemang, då 539,88 € faktureras en gång per år. Du kan prova båda alternativen gratis i 3 dagar.',
@@ -195,7 +195,15 @@
   function assistantAnswer(text) {
     const q = String(text || '').toLowerCase();
     const lang = assistantLanguage();
-    const hit = faq.find(item => item.keys.some(k => q.includes(k)));
+    const normalized = q.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const matchesKey = (key) => {
+      const k = String(key || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (!k) return false;
+      if (k.includes(' ') || /[^a-z0-9åäö]/i.test(k)) return normalized.includes(k);
+      const escaped = k.replace(/[.*+?^$()|[\]\\]/g, '\\    const hit = faq.find(item => item.keys.some(k => q.includes(k)));');
+      return new RegExp('(^|[^a-z0-9åäö])' + escaped + '(?=$|[^a-z0-9åäö])', 'i').test(normalized);
+    };
+    const hit = faq.find(item => item.keys.some(matchesKey));
     if (hit) return hit.answer[lang] || hit.answer.fi;
     if (['hei','moi','moikka','hello','hi','hey','hej','hallå','halla','tjena'].some(word => q.includes(word))) {
       return assistantText(
