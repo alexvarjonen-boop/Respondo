@@ -3503,7 +3503,7 @@ async function route() {
           const badge = document.createElement('div');
           badge.className = 'oauth-connected';
           const providerName = profile.provider === 'apple' ? 'Apple' : 'Google';
-          badge.textContent = providerName + '-tili yhdistetty · ' + profile.email;
+          badge.textContent = providerName + ' · ' + appText('tili yhdistetty','konto anslutet','account connected') + ' · ' + profile.email;
           form.querySelector('.formgrid')?.before(badge);
         })
         .catch(() => {});
@@ -3519,8 +3519,8 @@ async function route() {
       signupReferral.disabled = !monthly;
       if (referralHint) {
         referralHint.textContent = monthly
-          ? 'Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.'
-          : 'Suosittelualennus toimii vain normaalissa kuukausitilauksessa.';
+          ? appText('Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','Med en giltig kod får du 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid code gives you 20% off the first paid month. Monthly subscription only.')
+          : appText('Suosittelualennus toimii vain normaalissa kuukausitilauksessa.','Rekommendationsrabatten gäller endast det vanliga månadsabonnemanget.','The referral discount only applies to the standard monthly subscription.');
       }
     };
     signupPlan?.addEventListener('change', syncReferralField);
@@ -3532,7 +3532,7 @@ async function route() {
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = 'Avataan maksusivua…';
+      button.innerHTML = appText('Avataan maksusivua…','Öppnar betalningssidan…','Opening payment page…');
       $('#msg').innerHTML = '';
       try {
         const result = await api('/api/auth/start-checkout', {
@@ -3816,7 +3816,7 @@ async function route() {
         }
         const original = button.innerHTML;
         button.disabled = true;
-        button.innerHTML = 'Tallennetaan…';
+        button.innerHTML = appText('Tallennetaan…','Sparar…','Saving…');
         try {
           await api('/api/app/unanswered/' + encodeURIComponent(item.dataset.id) + '/answer', {
             method: 'POST',
@@ -3824,7 +3824,7 @@ async function route() {
           });
           item.classList.add('resolved');
           if (msg) msg.innerHTML = '<div class="notice success">' + appText('Lisätty tietopohjaan ✓','Tillagt i kunskapsbasen ✓','Added to knowledge base ✓') + '</div>';
-          button.innerHTML = 'Tallennettu ✓';
+          button.innerHTML = appText('Tallennettu ✓','Sparat ✓','Saved ✓');
           setTimeout(() => item.remove(), 900);
         } catch (err) {
           button.disabled = false;
@@ -4024,12 +4024,12 @@ async function route() {
           button.classList.toggle('active', Boolean(result.featured));
           item?.classList.toggle('featured', Boolean(result.featured));
           button.textContent = result.featured
-            ? '✓ Etusivulla ' + result.quickReplyOrder
-            : '+ Lisää etusivulle';
+            ? appText('✓ Etusivulla','✓ På startsidan','✓ On home screen') + ' ' + result.quickReplyOrder
+            : appText('+ Lisää etusivulle','+ Lägg till på startsidan','+ Add to home screen');
           const counter = $('#knowledgeQuickCount');
-          if (counter) counter.textContent = Number(result.selected || 0) + '/3 valittu';
+          if (counter) counter.textContent = Number(result.selected || 0) + '/3 ' + appText('valittu','valda','selected');
           $('#knowledgeFeatureMsg').innerHTML = '<div class="notice success">' +
-            (result.featured ? 'Kysymys näkyy nyt botin etusivulla.' : 'Kysymys poistettiin botin etusivulta.') +
+            (result.featured ? appText('Kysymys näkyy nyt botin etusivulla.','Frågan visas nu på botens startsida.','The question now appears on the bot home screen.') : appText('Kysymys poistettiin botin etusivulta.','Frågan togs bort från botens startsida.','The question was removed from the bot home screen.')) +
             '</div>';
           setTimeout(() => {
             const msg = $('#knowledgeFeatureMsg');
@@ -4050,7 +4050,7 @@ async function route() {
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = 'Tallennetaan…';
+      button.innerHTML = appText('Tallennetaan…','Sparar…','Saving…');
       try {
         await api('/api/app/knowledge', {
           method: 'POST',
@@ -4061,7 +4061,7 @@ async function route() {
             keywords: form.get('keywords'),
           }),
         });
-        $('#knowledgeMsg').innerHTML = '<div class="notice success">Tallennettu tietopohjaan.</div>';
+        $('#knowledgeMsg').innerHTML = '<div class="notice success">' + appText('Tallennettu tietopohjaan.','Sparat i kunskapsbasen.','Saved to the knowledge base.') + '</div>';
         setTimeout(() => location.reload(), 450);
       } catch (err) {
         button.disabled = false;
@@ -4074,10 +4074,10 @@ async function route() {
       const code = $('#referralCode')?.textContent?.trim() || '';
       try {
         await navigator.clipboard.writeText(code);
-        e.currentTarget.textContent = 'Kopioitu ✓';
-        setTimeout(() => (e.currentTarget.textContent = 'Kopioi koodi'), 1400);
+        e.currentTarget.textContent = appText('Kopioitu ✓','Kopierat ✓','Copied ✓');
+        setTimeout(() => (e.currentTarget.textContent = appText('Kopioi koodi','Kopiera kod','Copy code')), 1400);
       } catch {
-        e.currentTarget.textContent = 'Valitse ja kopioi';
+        e.currentTarget.textContent = appText('Valitse ja kopioi','Markera och kopiera','Select and copy');
       }
     });
 
@@ -4085,10 +4085,10 @@ async function route() {
       const url = e.currentTarget.dataset.url || '';
       try {
         await navigator.clipboard.writeText(url);
-        e.currentTarget.textContent = 'Linkki kopioitu ✓';
-        setTimeout(() => (e.currentTarget.textContent = 'Kopioi suosittelulinkki'), 1400);
+        e.currentTarget.textContent = appText('Linkki kopioitu ✓','Länken kopierad ✓','Link copied ✓');
+        setTimeout(() => (e.currentTarget.textContent = appText('Kopioi suosittelulinkki','Kopiera rekommendationslänk','Copy referral link')), 1400);
       } catch {
-        e.currentTarget.textContent = 'Kopiointi ei onnistunut';
+        e.currentTarget.textContent = appText('Kopiointi ei onnistunut','Kopieringen misslyckades','Copy failed');
       }
     });
 
@@ -4098,7 +4098,7 @@ async function route() {
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = 'Tallennetaan…';
+      button.innerHTML = appText('Tallennetaan…','Sparar…','Saving…');
       try {
         await api('/api/app/quote-engine', {
           method:'POST',
@@ -4111,8 +4111,8 @@ async function route() {
             unitLabel:form.get('unitLabel'),
           }),
         });
-        $('#quoteEngineMsg').innerHTML = '<div class="notice success">Quote Engine tallennettu ✓</div>';
-        button.innerHTML = 'Tallennettu ✓';
+        $('#quoteEngineMsg').innerHTML = '<div class="notice success">' + appText('Quote Engine tallennettu ✓','Quote Engine sparad ✓','Quote Engine saved ✓') + '</div>';
+        button.innerHTML = appText('Tallennettu ✓','Sparat ✓','Saved ✓');
         setTimeout(() => (button.innerHTML = original), 1400);
       } catch (err) {
         $('#quoteEngineMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
@@ -4173,13 +4173,13 @@ async function route() {
       }
 
       button.disabled = true;
-      button.innerHTML = 'Luodaan ' + slots.length + ' aikaa…';
+      button.innerHTML = appText('Luodaan','Skapar','Creating') + ' ' + slots.length + ' ' + appText('aikaa…','tider…','slots…');
       try {
         const result = await api('/api/app/booking-slots/generate', {
           method:'POST',
           body:JSON.stringify({ slots }),
         });
-        $('#bookingSlotsMsg').innerHTML = '<div class="notice success">Luotiin ' + Number(result.saved || 0) + ' uutta vapaata aikaa ✓</div>';
+        $('#bookingSlotsMsg').innerHTML = '<div class="notice success">' + appText('Luotiin','Skapade','Created') + ' ' + Number(result.saved || 0) + ' ' + appText('uutta vapaata aikaa ✓','nya lediga tider ✓','new available slots ✓') + '</div>';
         setTimeout(() => {
           location.href = '/app?section=automation';
         }, 650);
@@ -4195,13 +4195,13 @@ async function route() {
         const id = button.dataset.id;
         const item = button.closest('.booking-slot-item');
         button.disabled = true;
-        button.textContent = 'Poistetaan…';
+        button.textContent = appText('Poistetaan…','Tar bort…','Removing…');
         try {
           await api('/api/app/booking-slots/' + encodeURIComponent(id), { method:'DELETE' });
           item?.remove();
         } catch (err) {
           button.disabled = false;
-          button.textContent = 'Poista';
+          button.textContent = appText('Poista','Ta bort','Remove');
           alert(err.message);
         }
       });
@@ -4211,7 +4211,7 @@ async function route() {
       const button = e.currentTarget;
       const original = button.textContent;
       button.disabled = true;
-      button.textContent = 'Katkaistaan…';
+      button.textContent = appText('Katkaistaan…','Kopplar från…','Disconnecting…');
       try {
         await api('/api/app/google-calendar/disconnect', { method:'POST', body:'{}' });
         location.href = '/app?section=automation&calendar=disconnected';
@@ -4224,7 +4224,7 @@ async function route() {
 
     const calendarParam = new URLSearchParams(location.search).get('calendar');
     if (calendarParam === 'connected') {
-      $('#calendarConnectMsg').innerHTML = '<div class="notice success">Google Calendar yhdistetty ✓</div>';
+      $('#calendarConnectMsg').innerHTML = '<div class="notice success">' + appText('Google Calendar yhdistetty ✓','Google Calendar ansluten ✓','Google Calendar connected ✓') + '</div>';
     } else if (calendarParam && !['disconnected'].includes(calendarParam)) {
       $('#calendarConnectMsg').innerHTML = '<div class="notice error">' + appText('Google Calendar -yhdistäminen ei valmistunut. Yritä uudelleen.','Anslutningen till Google Calendar slutfördes inte. Försök igen.','Google Calendar connection did not complete. Please try again.') + '</div>';
     }
@@ -4234,7 +4234,7 @@ async function route() {
       const original = button.innerHTML;
       const country = $('#stripeConnectCountry')?.value || 'FI';
       button.disabled = true;
-      button.innerHTML = 'Avataan Stripe…';
+      button.innerHTML = appText('Avataan Stripe…','Öppnar Stripe…','Opening Stripe…');
       try {
         const result = await api('/api/app/stripe-connect/onboard', {
           method:'POST',
@@ -4254,7 +4254,7 @@ async function route() {
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = 'Tallennetaan…';
+      button.innerHTML = appText('Tallennetaan…','Sparar…','Saving…');
       try {
         await api('/api/app/meta-channels', {
           method:'POST',
@@ -4268,7 +4268,7 @@ async function route() {
           }),
         });
         $('#metaChannelsMsg').innerHTML = '<div class="notice success">' + appText('Meta-kanavat tallennettu ✓ Lisää yllä näkyvä Webhook URL + Verify Token Meta Developer -asetuksiin.','Meta-kanaler sparade ✓ Lägg till Webhook URL och Verify Token som visas ovan i Meta Developer-inställningarna.','Meta channels saved ✓ Add the Webhook URL and Verify Token shown above in Meta Developer settings.') + '</div>';
-        button.innerHTML = 'Tallennettu ✓';
+        button.innerHTML = appText('Tallennettu ✓','Sparat ✓','Saved ✓');
         setTimeout(() => (button.innerHTML = original), 1500);
       } catch (err) {
         $('#metaChannelsMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
@@ -4304,7 +4304,7 @@ async function route() {
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = 'Tallennetaan…';
+      button.innerHTML = appText('Tallennetaan…','Sparar…','Saving…');
       try {
         await api('/api/app/voice', {
           method:'POST',
@@ -4323,7 +4323,7 @@ async function route() {
           }),
         });
         $('#voiceAgentMsg').innerHTML = '<div class="notice success">Puhelinagentin asetukset tallennettu ✓</div>';
-        button.innerHTML = 'Tallennettu ✓';
+        button.innerHTML = appText('Tallennettu ✓','Sparat ✓','Saved ✓');
         setTimeout(() => (button.innerHTML = original), 1500);
       } catch (err) {
         $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
@@ -4341,7 +4341,7 @@ async function route() {
       try {
         await api('/api/app/voice/test', { method:'POST', body:'{}' });
         $('#voiceAgentMsg').innerHTML = '<div class="notice success">' + appText('Twilio-yhteys toimii ✓','Twilio-anslutningen fungerar ✓','Twilio connection works ✓') + '</div>';
-        button.textContent = 'Toimii ✓';
+        button.textContent = appText('Toimii ✓','Fungerar ✓','Working ✓');
         setTimeout(() => (button.textContent = original), 1500);
       } catch (err) {
         $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
@@ -4446,7 +4446,7 @@ async function route() {
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = 'Tallennetaan…';
+      button.innerHTML = appText('Tallennetaan…','Sparar…','Saving…');
       const form = new FormData(e.currentTarget);
       try {
         await api('/api/app/integrations', {
@@ -4454,7 +4454,7 @@ async function route() {
           body:JSON.stringify({ webhookUrl:form.get('webhookUrl') }),
         });
         $('#integrationMsg').innerHTML = '<div class="notice success">Integraatio tallennettu.</div>';
-        button.innerHTML = 'Tallennettu ✓';
+        button.innerHTML = appText('Tallennettu ✓','Sparat ✓','Saved ✓');
         setTimeout(() => (button.innerHTML = original), 1500);
       } catch (err) {
         $('#integrationMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
@@ -4471,8 +4471,8 @@ async function route() {
       button.textContent = 'Testataan…';
       try {
         await api('/api/app/integrations/test', { method:'POST', body:'{}' });
-        $('#integrationMsg').innerHTML = '<div class="notice success">Webhook vastasi onnistuneesti ✓</div>';
-        button.textContent = 'Toimii ✓';
+        $('#integrationMsg').innerHTML = '<div class="notice success">' + appText('Webhook vastasi onnistuneesti ✓','Webhook svarade korrekt ✓','Webhook responded successfully ✓') + '</div>';
+        button.textContent = appText('Toimii ✓','Fungerar ✓','Working ✓');
         setTimeout(() => (button.textContent = original), 1600);
       } catch (err) {
         $('#integrationMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
@@ -4490,7 +4490,7 @@ async function route() {
         const original = button.textContent;
         try {
           await navigator.clipboard.writeText(value);
-          button.textContent = 'Kopioitu ✓';
+          button.textContent = appText('Kopioitu ✓','Kopierat ✓','Copied ✓');
           setTimeout(() => (button.textContent = original), 1300);
         } catch {
           button.textContent = appText('Kopioi käsin','Kopiera manuellt','Copy manually');
@@ -4504,18 +4504,18 @@ async function route() {
         const id = item?.dataset.actionId;
         if (!id) return;
         button.disabled = true;
-        button.textContent = 'Tallennetaan…';
+        button.textContent = appText('Tallennetaan…','Sparar…','Saving…');
         try {
           await api('/api/app/action-requests/' + encodeURIComponent(id) + '/status', {
             method:'POST',
             body:JSON.stringify({ status:'done' }),
           });
           item.classList.add('done');
-          item.querySelector('.action-state').textContent = 'Hoidettu';
-          button.outerHTML = '<span class="action-done-label">✓ Hoidettu</span>';
+          item.querySelector('.action-state').textContent = appText('Hoidettu','Klart','Done');
+          button.outerHTML = '<span class="action-done-label">✓ ' + appText('Hoidettu','Klart','Done') + '</span>';
         } catch (err) {
           button.disabled = false;
-          button.textContent = 'Merkitse hoidetuksi';
+          button.textContent = appText('Merkitse hoidetuksi','Markera som klar','Mark as done');
           alert(err.message);
         }
       });
@@ -4547,10 +4547,10 @@ async function route() {
       const code = $('#installCode')?.innerText || '';
       try {
         await navigator.clipboard.writeText(code);
-        e.currentTarget.textContent = 'Kopioitu ✓';
+        e.currentTarget.textContent = appText('Kopioitu ✓','Kopierat ✓','Copied ✓');
         setTimeout(() => (e.currentTarget.textContent = 'Kopioi'), 1400);
       } catch {
-        e.currentTarget.textContent = 'Valitse ja kopioi';
+        e.currentTarget.textContent = appText('Valitse ja kopioi','Markera och kopiera','Select and copy');
       }
     });
   }
