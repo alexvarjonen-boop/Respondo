@@ -2507,6 +2507,7 @@ function legal(type) {
     intro: translateLegalDynamic(basePage.intro),
     sections: basePage.sections.map(([h,p]) => [translateLegalDynamic(h), translateLegalDynamic(p)])
   };
+  const hasOwnContactSection = basePage.sections.some(([h]) => h === 'Yhteydenotot');
   return `<div>
     ${nav()}
     <main class="legalpage">
@@ -2519,7 +2520,7 @@ function legal(type) {
         </aside>
         <article class="legalcopy">
           ${page.sections.map(([h, p]) => `<section><h2>${h}</h2><p>${p}</p></section>`).join('')}
-          <section><h2>${uiText('Yhteydenotot','Kontakt','Contact')}</h2><p><a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a></p></section>
+          ${hasOwnContactSection ? '' : `<section><h2>${uiText('Yhteydenotot','Kontakt','Contact')}</h2><p><a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a></p></section>`}
           <div class="legal-note">${uiText('Päivitetty','Uppdaterad','Updated')} ${new Date().toLocaleDateString(currentLang()==='sv'?'sv-SE':currentLang()==='en'?'en-GB':'fi-FI')}. ${uiText('Teksti kuvaa Respondon nykyistä palvelua ja sitä voidaan päivittää palvelun kehittyessä.','Texten beskriver Respondos nuvarande tjänst och kan uppdateras när tjänsten utvecklas.','This text describes Respondos current service and may be updated as the service develops.')}</div>
         </article>
       </div>
