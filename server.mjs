@@ -2118,7 +2118,20 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
       actionStats: actionStats.rows,
       actionRequests: actionRequests.rows,
       liveThreads: liveThreads.rows,
-      supportAgents: (await q('SELECT id,display_name,avatar,status,created_at FROM support_agents WHERE tenant_id=$1 ORDER BY created_at ASC',[tenant.id])).rows,
+      supportAgents: (await q(
+        `SELECT sa.id,sa.display_name,sa.avatar,sa.status,sa.created_at,sa.updated_at,
+                COUNT(DISTINCT ct.id)::int AS conversation_count,
+                COUNT(DISTINCT ct.id) FILTER (WHERE ct.status='open')::int AS open_conversations,
+                COUNT(cm.id) FILTER (WHERE cm.role='human')::int AS replies_sent,
+                MAX(ct.last_activity_at) AS last_conversation_at
+           FROM support_agents sa
+           LEFT JOIN chat_threads ct ON ct.assigned_agent_id=sa.id AND ct.tenant_id=sa.tenant_id
+           LEFT JOIN chat_messages cm ON cm.thread_id=ct.id AND cm.tenant_id=sa.tenant_id
+          WHERE sa.tenant_id=$1
+          GROUP BY sa.id
+          ORDER BY sa.created_at ASC`,
+        [tenant.id]
+      )).rows,
       bookingSlots: bookingSlots.rows,
       stripeConnect,
       googleCalendar: {
