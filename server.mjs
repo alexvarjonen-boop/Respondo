@@ -2019,7 +2019,8 @@ app.post('/api/app/agent/claim/:id', auth, async (req,res) => {
   try {
     if(req.user.role!=='agent') return res.status(403).json({error:'Ei käyttöoikeutta.'});
     const rr=await q(`UPDATE chat_threads SET assigned_agent_id=$1,mode='human',status='open',updated_at=NOW()
-      WHERE id=$2 AND tenant_id=$3 AND assigned_agent_id IS NULL RETURNING id`,
+      WHERE id=$2 AND tenant_id=$3 AND assigned_agent_id IS NULL
+        AND language = ANY((SELECT languages FROM support_agents WHERE id=$1 AND tenant_id=$3)) RETURNING id`,
       [req.user.agentId,req.params.id,req.user.tenantId]);
     if(!rr.rowCount) return res.status(409).json({error:'Toinen asiakaspalvelija ehti ottaa keskustelun tai se ei ole enää vapaa.'});
     return res.json({ok:true});
@@ -2030,13 +2031,13 @@ app.get('/api/app/agent-dashboard', auth, agentOrOwner, async (req,res) => {
   try {
     if (req.user.role !== 'agent') return res.status(403).json({ error:'Tämä näkymä on asiakaspalvelijoille.' });
     const tenantId=req.user.tenantId, agentId=req.user.agentId;
-    const agent=(await q('SELECT id,display_name,avatar,username,status FROM support_agents WHERE id=$1 AND tenant_id=$2',[agentId,tenantId])).rows[0];
+    const agent=(await q('SELECT id,display_name,avatar,username,languages,status FROM support_agents WHERE id=$1 AND tenant_id=$2',[agentId,tenantId])).rows[0];
     if (!agent) return res.status(404).json({ error:'Profiilia ei löytynyt.' });
     const threads=await q(`SELECT ct.id,ct.source_channel,ct.external_contact_id,ct.visitor_ref,ct.mode,ct.status,ct.last_activity_at,ct.created_at,
       COALESCE(json_agg(json_build_object('id',cm.id,'role',cm.role,'message',cm.message,'created_at',cm.created_at) ORDER BY cm.created_at ASC) FILTER (WHERE cm.id IS NOT NULL),'[]') AS messages
       FROM chat_threads ct LEFT JOIN chat_messages cm ON cm.thread_id=ct.id
-      WHERE ct.tenant_id=$1 AND (ct.assigned_agent_id=$2 OR ct.assigned_agent_id IS NULL)
-      GROUP BY ct.id ORDER BY (ct.assigned_agent_id=$2) DESC,ct.last_activity_at DESC LIMIT 80`,[tenantId,agentId]);
+      WHERE ct.tenant_id=$1 AND (ct.assigned_agent_id=$2 OR (ct.assigned_agent_id IS NULL AND ct.language = ANY(COALESCE($3::text[],ARRAY['fi']::text[]))))
+      GROUP BY ct.id ORDER BY (ct.assigned_agent_id=$2) DESC,ct.last_activity_at DESC LIMIT 80`,[tenantId,agentId,agent.languages||['fi']]);
     return res.json({agent,liveThreads:threads.rows,stats:{
       conversations:threads.rowCount,
       open:threads.rows.filter(x=>x.status==='open').length,
@@ -2220,7 +2221,7 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
       actionRequests: actionRequests.rows,
       liveThreads: liveThreads.rows,
       supportAgents: (await q(
-        `SELECT sa.id,sa.display_name,sa.avatar,sa.username,sa.status,sa.created_at,sa.updated_at,
+        `SELECT sa.id,sa.display_name,sa.avatar,sa.username,sa.languages,sa.status,sa.created_at,sa.updated_at,
                 COUNT(DISTINCT ct.id)::int AS conversation_count,
                 COUNT(DISTINCT ct.id) FILTER (WHERE ct.status='open')::int AS open_conversations,
                 COUNT(cm.id) FILTER (WHERE cm.role='human')::int AS replies_sent,
@@ -4699,14 +4700,16 @@ app.post('/api/app/support-agents', auth, subscribed, async (req,res) => {
     const displayName = String(req.body.displayName || '').replace(/[<>]/g,'').trim().slice(0,60);
     const username = String(req.body.username || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'').slice(0,50);
     const password = String(req.body.password || '');
+    const languages=[...new Set((Array.isArray(req.body.languages)?req.body.languages:[]).map(x=>String(x).toLowerCase()).filter(x=>['fi','sv','en'].includes(x)))];
     if (!displayName) return res.status(400).json({ error:'Anna asiakaspalvelijan nimi.' });
     if (username.length < 3) return res.status(400).json({ error:'Käyttäjänimen pitää olla vähintään 3 merkkiä.' });
     if (password.length < 10) return res.status(400).json({ error:'Salasanan pitää olla vähintään 10 merkkiä.' });
+    if (!languages.length) return res.status(400).json({ error:'Valitse vähintään yksi palvelukieli.' });
     const avatar = cleanBotAvatar(req.body.avatar || '') === 'robot-1' && !String(req.body.avatar || '').startsWith('data:image/') ? null : cleanBotAvatar(req.body.avatar || '');
     const passwordHash = await bcrypt.hash(password, 12);
     const row = await q(
-      `INSERT INTO support_agents(id,tenant_id,display_name,avatar,username,password_hash,status) VALUES($1,$2,$3,$4,$5,$6,'offline') RETURNING id,display_name,avatar,username,status,created_at`,
-      [uid(),tr.rows[0].id,displayName,avatar,username,passwordHash],
+      `INSERT INTO support_agents(id,tenant_id,display_name,avatar,username,password_hash,languages,status) VALUES($1,$2,$3,$4,$5,$6,$7,'offline') RETURNING id,display_name,avatar,username,languages,status,created_at`,
+      [uid(),tr.rows[0].id,displayName,avatar,username,passwordHash,languages],
     );
     return res.json(row.rows[0]);
   } catch (e) { return res.status(400).json({ error:e.message || 'Profiilia ei voitu luoda.' }); }
@@ -5339,6 +5342,8 @@ async function ensureRuntimeSchema() {
   )`);
   await q('ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS username TEXT');
   await q('ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS password_hash TEXT');
+  await q("ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS languages TEXT[] NOT NULL DEFAULT ARRAY['fi']::TEXT[]");
+  await q("ALTER TABLE chat_threads ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'fi'");
   await q('CREATE INDEX IF NOT EXISTS idx_support_agents_tenant ON support_agents(tenant_id,created_at ASC)');
   await q('CREATE UNIQUE INDEX IF NOT EXISTS idx_support_agents_username_unique ON support_agents(lower(username)) WHERE username IS NOT NULL');
   await q('ALTER TABLE chat_threads ADD COLUMN IF NOT EXISTS assigned_agent_id UUID REFERENCES support_agents(id) ON DELETE SET NULL');
