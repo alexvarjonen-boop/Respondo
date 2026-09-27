@@ -2285,7 +2285,7 @@ function extractFreeWebsiteProfile(bundle) {
     .join('\n')
     .slice(0,4000);
 
-  profile.pricing = collectLines(/\b(hinta|hinnat|hinnoittelu|alkaen|€/|eur|price|pricing|prices|pris|priser|prislista|från)\b/i, 8);
+  profile.pricing = collectLines(/\b(hinta|hinnat|hinnoittelu|alkaen|eur|price|pricing|prices|pris|priser|prislista|från)\b|€/i, 8);
   profile.hours = collectLines(/\b(auki|aukiolo|ma-pe|maanantai|arkisin|opening|hours|mon|monday|öppet|öppettider|mån|vardagar)\b/i, 7);
   profile.services = collectLines(/\b(palvelu|palvelut|tarjoamme|teemme|service|services|our services|tjänst|tjänster|vi erbjuder)\b/i, 10);
   profile.serviceArea = collectLines(/\b(toimialue|palvelemme|alueella|service area|we serve|verksamhetsområde|betjänar|område)\b/i, 6);
