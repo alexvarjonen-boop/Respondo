@@ -1898,6 +1898,21 @@ app.get('/api/auth/checkout-success', async (req, res) => {
   }
 });
 
+app.post('/api/auth/agent-login', async (req,res) => {
+  try {
+    const username=String(req.body.username || '').trim().toLowerCase();
+    const r=await q('SELECT sa.*,t.name AS company_name FROM support_agents sa JOIN tenants t ON t.id=sa.tenant_id WHERE lower(sa.username)=lower($1)',[username]);
+    if (!r.rowCount || !r.rows[0].password_hash || !(await bcrypt.compare(String(req.body.password||''),r.rows[0].password_hash))) {
+      return res.status(401).json({ error:'Väärä käyttäjänimi tai salasana.' });
+    }
+    res.cookie(COOKIE,jwt.sign({ sub:r.rows[0].id,tenantId:r.rows[0].tenant_id,role:'agent',agentId:r.rows[0].id },JWT,{expiresIn:'14d'}),{
+      httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax',maxAge:1209600000,
+    });
+    await q("UPDATE support_agents SET status='online',updated_at=NOW() WHERE id=$1",[r.rows[0].id]);
+    return res.json({ ok:true,role:'agent',display_name:r.rows[0].display_name,company_name:r.rows[0].company_name });
+  } catch(e) { return res.status(500).json({ error:'Kirjautuminen epäonnistui.' }); }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const email = cleanEmail(req.body.email);
@@ -2119,7 +2134,7 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
       actionRequests: actionRequests.rows,
       liveThreads: liveThreads.rows,
       supportAgents: (await q(
-        `SELECT sa.id,sa.display_name,sa.avatar,sa.status,sa.created_at,sa.updated_at,
+        `SELECT sa.id,sa.display_name,sa.avatar,sa.username,sa.status,sa.created_at,sa.updated_at,
                 COUNT(DISTINCT ct.id)::int AS conversation_count,
                 COUNT(DISTINCT ct.id) FILTER (WHERE ct.status='open')::int AS open_conversations,
                 COUNT(cm.id) FILTER (WHERE cm.role='human')::int AS replies_sent,
@@ -4596,11 +4611,16 @@ app.post('/api/app/support-agents', auth, subscribed, async (req,res) => {
     const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const displayName = String(req.body.displayName || '').replace(/[<>]/g,'').trim().slice(0,60);
+    const username = String(req.body.username || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'').slice(0,50);
+    const password = String(req.body.password || '');
     if (!displayName) return res.status(400).json({ error:'Anna asiakaspalvelijan nimi.' });
+    if (username.length < 3) return res.status(400).json({ error:'Käyttäjänimen pitää olla vähintään 3 merkkiä.' });
+    if (password.length < 10) return res.status(400).json({ error:'Salasanan pitää olla vähintään 10 merkkiä.' });
     const avatar = cleanBotAvatar(req.body.avatar || '') === 'robot-1' && !String(req.body.avatar || '').startsWith('data:image/') ? null : cleanBotAvatar(req.body.avatar || '');
+    const passwordHash = await bcrypt.hash(password, 12);
     const row = await q(
-      `INSERT INTO support_agents(id,tenant_id,display_name,avatar,status) VALUES($1,$2,$3,$4,'offline') RETURNING id,display_name,avatar,status,created_at`,
-      [uid(),tr.rows[0].id,displayName,avatar],
+      `INSERT INTO support_agents(id,tenant_id,display_name,avatar,username,password_hash,status) VALUES($1,$2,$3,$4,$5,$6,'offline') RETURNING id,display_name,avatar,username,status,created_at`,
+      [uid(),tr.rows[0].id,displayName,avatar,username,passwordHash],
     );
     return res.json(row.rows[0]);
   } catch (e) { return res.status(400).json({ error:e.message || 'Profiilia ei voitu luoda.' }); }
@@ -5211,11 +5231,16 @@ async function ensureRuntimeSchema() {
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     display_name TEXT NOT NULL,
     avatar TEXT,
+    username TEXT,
+    password_hash TEXT,
     status TEXT NOT NULL DEFAULT 'offline',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
+  await q('ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS username TEXT');
+  await q('ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS password_hash TEXT');
   await q('CREATE INDEX IF NOT EXISTS idx_support_agents_tenant ON support_agents(tenant_id,created_at ASC)');
+  await q('CREATE UNIQUE INDEX IF NOT EXISTS idx_support_agents_username_unique ON support_agents(lower(username)) WHERE username IS NOT NULL');
   await q('ALTER TABLE chat_threads ADD COLUMN IF NOT EXISTS assigned_agent_id UUID REFERENCES support_agents(id) ON DELETE SET NULL');
 
   await q(`CREATE TABLE IF NOT EXISTS chat_messages (
