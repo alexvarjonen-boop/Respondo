@@ -4188,7 +4188,7 @@ async function route() {
       const button = e.currentTarget;
       const original = button.textContent;
       button.disabled = true;
-      button.textContent = 'Testataan…';
+      button.textContent = appText('Testataan…','Testar…','Testing…');
       try {
         const result = await api('/api/app/meta-channels/test', { method:'POST', body:'{}' });
         const parts = [];
@@ -4279,10 +4279,10 @@ async function route() {
       const button = e.currentTarget;
       const original = button.textContent;
       button.disabled = true;
-      button.textContent = 'Aktivoidaan…';
+      button.textContent = appText('Aktivoidaan…','Aktiverar…','Activating…');
       try {
         await api('/api/app/voice/configure-number', { method:'POST', body:'{}' });
-        $('#voiceAgentMsg').innerHTML = '<div class="notice success">Twilio-numero ohjaa nyt puhelut ja SMS-viestit Respondoon ✓</div>';
+        $('#voiceAgentMsg').innerHTML = '<div class="notice success">' + appText('Twilio-numero ohjaa nyt puhelut ja SMS-viestit Respondoon ✓','Twilio-numret dirigerar nu samtal och SMS till Respondo ✓','The Twilio number now routes calls and SMS messages to Respondo ✓') + '</div>';
         button.textContent = appText('Aktivoitu ✓','Aktiverad ✓','Activated ✓');
       } catch (err) {
         $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
