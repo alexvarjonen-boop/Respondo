@@ -2918,9 +2918,9 @@ async function dashboard() {
       <section class="panel live-inbox-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="customers" id="live-inbox">
         <div class="panel-head">
           <div>
-            <small>ASIAKASPALVELIJAN HALTUUNOTTO</small>
-            <h2>Hyppää mukaan asiakkaan keskusteluun</h2>
-            <p>Kun otat keskustelun haltuun, Respondo lopettaa vastaamisen siihen keskusteluun. Verkkosivuasiakas saa viestisi suoraan chattiin; WhatsApp- ja Instagram-vastaus lähetetään samaan kanavaan.</p>
+            <small>${appText('ASIAKASPALVELIJAN HALTUUNOTTO','KUNDSERVICE TAR ÖVER','HUMAN TAKEOVER')}</small>
+            <h2>${appText('Hyppää mukaan asiakkaan keskusteluun','Ta över kundens konversation','Join the customer conversation')}</h2>
+            <p>${appText('Kun otat keskustelun haltuun, Respondo lopettaa vastaamisen siihen keskusteluun. Verkkosivuasiakas saa viestisi suoraan chattiin; tuetuissa viestikanavissa vastaus lähetetään samaan kanavaan.','När du tar över en konversation slutar Respondo svara i just den konversationen. Webbplatskunden får ditt svar direkt i chatten; i stödda meddelandekanaler skickas svaret i samma kanal.','When you take over a conversation, Respondo stops replying in that conversation. Website customers receive your reply directly in chat; in supported messaging channels, the reply is sent through the same channel.')}</p>
           </div>
           <span>${liveThreads.filter((x) => x.status === 'open').length} ${appText('aktiivista','aktiva','active')}</span>
         </div>
@@ -2933,31 +2933,31 @@ async function dashboard() {
                   <b>${esc(thread.external_contact_id || thread.visitor_ref || 'Asiakas')}</b>
                   <small>${new Date(thread.last_activity_at || thread.created_at).toLocaleString(appLocale(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small>
                 </div>
-                <span class="live-mode">${thread.mode === 'human' ? '● Ihminen vastaa' : '● AI vastaa'}</span>
+                <span class="live-mode">${thread.mode === 'human' ? appText('● Ihminen vastaa','● En person svarar','● Human replying') : appText('● Automaattinen vastaus','● Automatiskt svar','● Automatic reply')}</span>
               </div>
               <div class="live-messages">
                 ${(Array.isArray(thread.messages) ? thread.messages : []).map((m) => `
                   <div class="live-message ${esc(m.role || 'user')}">
-                    <small>${m.role === 'user' ? 'Asiakas' : m.role === 'human' ? 'Sinä' : 'RESPONDO'}</small>
+                    <small>${m.role === 'user' ? appText('Asiakas','Kund','Customer') : m.role === 'human' ? appText('Sinä','Du','You') : 'RESPONDO'}</small>
                     <p>${esc(m.message || '')}</p>
                   </div>
                 `).join('')}
               </div>
               <div class="live-thread-actions">
                 <button type="button" class="btn live-mode-toggle" data-mode="${thread.mode === 'human' ? 'ai' : 'human'}">
-                  ${thread.mode === 'human' ? 'Palauta AI:lle' : 'Ota haltuun'}
+                  ${thread.mode === 'human' ? appText('Palauta automaattiselle vastaukselle','Återgå till automatiskt svar','Return to automatic reply') : appText('Ota haltuun','Ta över','Take over')}
                 </button>
                 <form class="live-reply-form">
-                  <input name="message" placeholder="Kirjoita vastaus asiakkaalle…" autocomplete="off" ${thread.mode === 'human' ? '' : 'disabled'}>
-                  <button type="submit" ${thread.mode === 'human' ? '' : 'disabled'}>Lähetä →</button>
+                  <input name="message" placeholder="${appText('Kirjoita vastaus asiakkaalle…','Skriv ett svar till kunden…','Write a reply to the customer…')}" autocomplete="off" ${thread.mode === 'human' ? '' : 'disabled'}>
+                  <button type="submit" ${thread.mode === 'human' ? '' : 'disabled'}>${appText('Lähetä','Skicka','Send')} →</button>
                 </form>
               </div>
               <div class="live-msg"></div>
             </article>
           `).join('') : `
             <div class="empty-state">
-              <b>Ei vielä aktiivisia keskusteluja.</b>
-              <p>Kun verkkosivulla, WhatsAppissa, Instagramissa tai puhelimessa alkaa keskustelu, se ilmestyy tähän.</p>
+              <b>${appText('Ei vielä aktiivisia keskusteluja.','Inga aktiva konversationer ännu.','No active conversations yet.')}</b>
+              <p>${appText('Kun tuetussa kanavassa alkaa keskustelu, se ilmestyy tähän.','När en konversation börjar i en stödd kanal visas den här.','When a conversation starts in a supported channel, it appears here.')}</p>
             </div>
           `}
         </div>
@@ -4399,9 +4399,9 @@ async function route() {
             body:JSON.stringify({ mode }),
           });
           item.classList.toggle('human-mode', mode === 'human');
-          item.querySelector('.live-mode').textContent = mode === 'human' ? '● Ihminen vastaa' : '● AI vastaa';
+          item.querySelector('.live-mode').textContent = mode === 'human' ? appText('● Ihminen vastaa','● En person svarar','● Human replying') : appText('● Automaattinen vastaus','● Automatiskt svar','● Automatic reply');
           button.dataset.mode = mode === 'human' ? 'ai' : 'human';
-          button.textContent = mode === 'human' ? 'Palauta AI:lle' : 'Ota haltuun';
+          button.textContent = mode === 'human' ? appText('Palauta automaattiselle vastaukselle','Återgå till automatiskt svar','Return to automatic reply') : appText('Ota haltuun','Ta över','Take over');
           item.querySelectorAll('.live-reply-form input,.live-reply-form button').forEach((el) => {
             el.disabled = mode !== 'human';
           });
