@@ -817,9 +817,27 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // Example: “Voinks mä saada jonku hinta-arvion?” can match “Mistä pyydän tarjouksen?”
   // when the approved answer is about requesting a quote.
   if (openai) {
-    const semantic = await semanticSelectKnowledge(rows, retrievalQuery, 10);
+    // Cross-language retrieval: translate the visitor's question to Finnish for
+    // matching against Finnish knowledge titles/keywords while keeping the
+    // original question for the final response language.
+    let semanticQuery = retrievalQuery;
+    if (responseLang !== 'fi') {
+      try {
+        const qr = await openai.responses.create({
+          model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
+          input: 'Translate this customer question to Finnish for knowledge-base search. Preserve names, numbers and meaning. Return only the Finnish translation.\n\n' + retrievalQuery,
+          max_output_tokens: 120,
+        });
+        const translatedQuery = String(qr.output_text || '').trim();
+        if (translatedQuery) semanticQuery = translatedQuery;
+      } catch (e) {
+        console.warn('Cross-language retrieval translation failed', e?.message || e);
+      }
+    }
+    const translatedLexical = responseLang !== 'fi' ? selectRelevantKnowledge(rows, semanticQuery, 8) : [];
+    const semantic = await semanticSelectKnowledge(rows, semanticQuery, 10);
     const merged = new Map();
-    for (const row of [...semantic, ...selected]) {
+    for (const row of [...semantic, ...translatedLexical, ...selected]) {
       if (!row?.id) continue;
       const previous = merged.get(row.id);
       if (!previous) merged.set(row.id, row);
