@@ -563,7 +563,25 @@ async function fetchPublicHtml(value) {
     if (!type.includes('text/html')) throw new Error('Osoite ei näytä HTML-verkkosivulta.');
     const length = Number(response.headers.get('content-length') || 0);
     if (length > 1_500_000) throw new Error('Verkkosivu on liian suuri automaattiseen tuontiin.');
-    const html = (await response.text()).slice(0, 1_500_000);
+    const reader = response.body?.getReader?.();
+    if (!reader) throw new Error('Verkkosivua ei saatu luettua.');
+    const chunks = [];
+    let total = 0;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        total += value?.byteLength || 0;
+        if (total > 1_500_000) {
+          try { await reader.cancel(); } catch {}
+          throw new Error('Verkkosivu on liian suuri automaattiseen tuontiin.');
+        }
+        if (value) chunks.push(Buffer.from(value));
+      }
+    } finally {
+      try { reader.releaseLock(); } catch {}
+    }
+    const html = Buffer.concat(chunks, total).toString('utf8');
     return { html, finalUrl: url.toString() };
   }
   throw new Error('Verkkosivulla on liikaa uudelleenohjauksia.');
