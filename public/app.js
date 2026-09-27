@@ -2540,6 +2540,7 @@ async function dashboard() {
   const actionStats = data.actionStats || [];
   const actionRequests = data.actionRequests || [];
   const liveThreads = data.liveThreads || [];
+  const supportAgents = data.supportAgents || [];
   const metaChannels = data.metaChannels || { graphVersion:'v24.0',verifyToken:'',webhookUrl:'',whatsappPhoneNumberId:'',whatsappConnected:false,instagramAccountId:'',instagramConnected:false,appSecretConfigured:false };
   const voice = data.voice || {
     accountSid:'',phoneNumber:'',handoffNumber:'',credentialsConfigured:false,enabled:false,
@@ -2898,6 +2899,27 @@ async function dashboard() {
         </form>
       </section>
 
+      <section class="panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="customers" id="support-team">
+        <div class="panel-head">
+          <div><small>${appText('ASIAKASPALVELUTIIMI','KUNDSERVICETEAM','SUPPORT TEAM')}</small><h2>${appText('Ihmiset chatissa','Personer i chatten','People in live chat')}</h2><p>${appText('Luo yrityksellesi asiakaspalvelijaprofiileja. Profiili voidaan laittaa paikalle ja osoittaa keskusteluun.','Skapa kundserviceprofiler för företaget. En profil kan sättas online och tilldelas en konversation.','Create support-agent profiles for your company. A profile can be set online and assigned to a conversation.')}</p></div>
+          <span>${supportAgents.filter((x)=>x.status==='online').length} ${appText('paikalla','online','online')}</span>
+        </div>
+        <form id="supportAgentForm" class="formgrid">
+          <div class="field"><label>${appText('Nimi','Namn','Name')}</label><input name="displayName" required maxlength="60" placeholder="Alex"></div>
+          <div class="field"><label>${appText('Profiilikuva','Profilbild','Profile picture')}</label><input name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp"></div>
+          <button class="btn dashboard-action" type="submit">${appText('Luo profiili','Skapa profil','Create profile')} →</button>
+          <div id="supportAgentMsg"></div>
+        </form>
+        <div class="support-agent-list">
+          ${supportAgents.length ? supportAgents.map((agent)=>`
+            <article class="support-agent" data-agent-id="${esc(agent.id)}">
+              <div><b>${esc(agent.display_name)}</b><small>${agent.status==='online' ? appText('● Paikalla','● Online','● Online') : appText('○ Poissa','○ Offline','○ Offline')}</small></div>
+              <button type="button" class="support-agent-status" data-status="${agent.status==='online'?'offline':'online'}">${agent.status==='online'?appText('Poistu','Gå offline','Go offline'):appText('Tule paikalle','Gå online','Go online')}</button>
+              <button type="button" class="support-agent-delete">${appText('Poista','Ta bort','Delete')}</button>
+            </article>`).join('') : `<div class="empty-state"><b>${appText('Ei vielä asiakaspalvelijoita.','Inga kundservicemedarbetare ännu.','No support agents yet.')}</b></div>`}
+        </div>
+      </section>
+
       <section class="panel live-inbox-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="customers" id="live-inbox">
         <div class="panel-head">
           <div>
@@ -2927,6 +2949,10 @@ async function dashboard() {
                 `).join('')}
               </div>
               <div class="live-thread-actions">
+                <select class="live-agent-select" aria-label="${appText('Asiakaspalvelija','Kundservicemedarbetare','Support agent')}">
+                  <option value="">${appText('Ei osoitettu','Inte tilldelad','Unassigned')}</option>
+                  ${supportAgents.map((agent)=>`<option value="${esc(agent.id)}" ${thread.assigned_agent_id===agent.id?'selected':''}>${esc(agent.display_name)}${agent.status==='online'?' · '+appText('paikalla','online','online'):''}</option>`).join('')}
+                </select>
                 <button type="button" class="btn live-mode-toggle" data-mode="${thread.mode === 'human' ? 'ai' : 'human'}">
                   ${thread.mode === 'human' ? appText('Palauta automaattiselle vastaukselle','Återgå till automatiskt svar','Return to automatic reply') : appText('Ota haltuun','Ta över','Take over')}
                 </button>
@@ -4291,6 +4317,35 @@ async function route() {
         button.disabled = false;
       }
     });
+
+    $('#supportAgentForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form=e.currentTarget, fd=new FormData(form);
+      let avatar='';
+      const file=fd.get('avatarFile');
+      if (file && file.size) {
+        avatar=await new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(String(r.result||'')); r.onerror=reject; r.readAsDataURL(file); });
+      }
+      try {
+        await api('/api/app/support-agents',{method:'POST',body:JSON.stringify({displayName:fd.get('displayName'),avatar})});
+        location.reload();
+      } catch(err) { $('#supportAgentMsg').innerHTML='<div class="notice error">'+esc(err.message)+'</div>'; }
+    });
+    document.querySelectorAll('.support-agent-status').forEach((button)=>button.addEventListener('click',async()=>{
+      const item=button.closest('.support-agent'); button.disabled=true;
+      try { await api('/api/app/support-agents/'+encodeURIComponent(item.dataset.agentId)+'/status',{method:'POST',body:JSON.stringify({status:button.dataset.status})}); location.reload(); }
+      catch(err){ button.disabled=false; }
+    }));
+    document.querySelectorAll('.support-agent-delete').forEach((button)=>button.addEventListener('click',async()=>{
+      const item=button.closest('.support-agent'); button.disabled=true;
+      try { await api('/api/app/support-agents/'+encodeURIComponent(item.dataset.agentId),{method:'DELETE'}); location.reload(); }
+      catch(err){ button.disabled=false; }
+    }));
+    document.querySelectorAll('.live-agent-select').forEach((select)=>select.addEventListener('change',async()=>{
+      const item=select.closest('.live-thread'); select.disabled=true;
+      try { await api('/api/app/live/'+encodeURIComponent(item.dataset.threadId)+'/assign',{method:'POST',body:JSON.stringify({agentId:select.value})}); location.reload(); }
+      catch(err){ select.disabled=false; }
+    }));
 
     document.querySelectorAll('.live-mode-toggle').forEach((button) => {
       button.addEventListener('click', async () => {
