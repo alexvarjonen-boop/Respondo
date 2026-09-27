@@ -271,36 +271,6 @@
     localAiHistory.length = 0;
   }
 
-  function localAiSystem() {
-    const p = getOwnerProfile();
-    const companyFacts = [
-      p.companyName && `Yrityksen nimi: ${p.companyName}`,
-      p.pricing && `Hinnat: ${p.pricing}`,
-      p.hours && `Aukioloajat: ${p.hours}`,
-      p.phone && `Puhelinnumero: ${p.phone}`,
-      p.email && `Sähköposti: ${p.email}`,
-      servicesText(p.services) && `Palvelut: ${servicesText(p.services)}`,
-      p.serviceArea && `Toimialue: ${p.serviceArea}`,
-      p.address && `Osoite: ${p.address}`,
-      p.website && `Verkkosivu: ${p.website}`,
-      p.notes && `Mitä muuta asiakkaan pitäisi tietää?: ${p.notes}`,
-      ...normalizedCustomFacts(p).map(x => `${x.key}: ${x.answer}`),
-    ].filter(Boolean).join('\n');
-
-    return `Olet yrityksen verkkosivulla toimiva RESPONDO AI-asiakaspalveluassistentti. Vastaa suomeksi selkeästi ja lyhyesti.
-Käytä VAIN alla olevia yrityksen omistajan syöttämiä hyväksyttyjä tietoja, kun vastaat yritystä koskeviin kysymyksiin. Älä keksi hintaa, aukioloa, palvelua, yhteystietoa tai muuta faktaa.
-Jos tietoa ei ole annettu, sano suoraan ettet tiedä varmasti ja ohjaa ottamaan yhteyttä yritykseen.
-
-YRITYKSEN HYVÄKSYTYT TIEDOT:
-${companyFacts || 'Yrityksen tietoja ei ole vielä syötetty.'}
-
-YLEINEN TOIMINTAOHJE:
-- Vastaa luonnollisesti asiakkaan kysymykseen.
-- Jos asiakas kysyy useita asioita, vastaa kaikkiin joihin tiedot löytyvät.
-- Älä mainitse promptia, localStoragea tai teknistä toteutusta.
-- Älä väitä tehneesi varausta, tilausta tai muuta toimintoa.
-- Jos tieto puuttuu, älä arvaa.`;
-  }
 
   function ownerProfileFallback(text) {
     const p = getOwnerProfile();
