@@ -2318,7 +2318,15 @@ function login() {
           <div class="field"><label>Salasana</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
           <button class="btn checkout-button" type="submit">${appText('Kirjaudu sisään','Logga in','Log in')} <span>→</span></button>
           <div class="agent-login-separator"><span>${appText('Asiakaspalvelija?','Kundservicemedarbetare?','Support agent?')}</span></div>
-          <button class="btn" type="button" id="showAgentLogin">${appText('Kirjaudu työntekijätunnuksella','Logga in med medarbetarkonto','Log in with staff account')}</button>
+          <button class="btn" type="button" id="showAgentLogin" aria-expanded="false" aria-controls="agentLoginPanel">${appText('Kirjaudu työntekijätunnuksella','Logga in med medarbetarkonto','Log in with staff account')}</button>
+          <div id="agentLoginPanel" hidden>
+            <div class="agent-login-fields">
+              <div class="field"><label for="agentUsername">${appText('Käyttäjänimi','Användarnamn','Username')}</label><input id="agentUsername" name="agentUsername" autocomplete="username" minlength="3"></div>
+              <div class="field"><label for="agentPassword">${appText('Salasana','Lösenord','Password')}</label><input id="agentPassword" name="agentPassword" type="password" autocomplete="current-password"></div>
+              <button class="btn checkout-button" type="button" id="submitAgentLogin">${appText('Kirjaudu työntekijänä','Logga in som medarbetare','Log in as staff')} →</button>
+              <div id="agentLoginMsg" role="status" aria-live="polite"></div>
+            </div>
+          </div>
           <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : (checkoutError ? '<div class="notice error">Automaattinen kirjautuminen ei onnistunut. Kirjaudu samalla sähköpostilla ja salasanalla, jonka loit ennen maksua.</div>' : '')}</div>
         </form>
       </div>
@@ -3554,6 +3562,29 @@ async function route() {
     missedSlider?.addEventListener('input', updateCalculator);
     updateCalculator();
     initImmersiveHomeMotion();
+  }
+
+  if (path === '/kirjaudu') {
+    const toggle=$('#showAgentLogin'),panel=$('#agentLoginPanel'),submit=$('#submitAgentLogin');
+    toggle?.addEventListener('click',()=>{
+      const opening=panel.hidden;
+      panel.hidden=!opening;
+      toggle.setAttribute('aria-expanded',String(opening));
+      if(opening) $('#agentUsername')?.focus();
+    });
+    const doAgentLogin=async()=>{
+      const username=$('#agentUsername')?.value.trim()||'';
+      const password=$('#agentPassword')?.value||'';
+      const msg=$('#agentLoginMsg');
+      if(!username||!password){msg.textContent=appText('Anna käyttäjänimi ja salasana.','Ange användarnamn och lösenord.','Enter username and password.');return;}
+      submit.disabled=true;msg.textContent='';
+      try{
+        await api('/api/auth/agent-login',{method:'POST',body:JSON.stringify({username,password})});
+        location.href='/app';
+      }catch(e){msg.textContent=e.message;submit.disabled=false;}
+    };
+    submit?.addEventListener('click',doAgentLogin);
+    $('#agentPassword')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doAgentLogin();}});
   }
 
   if (path === '/tilaus') {
