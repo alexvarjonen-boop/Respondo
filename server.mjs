@@ -1976,6 +1976,45 @@ app.get('/api/auth/me', auth, async (req, res) => {
   }
 });
 
+app.post('/api/app/agent/profile', auth, async (req,res) => {
+  try {
+    if (req.user.role !== 'agent') return res.status(403).json({ error:'Ei käyttöoikeutta.' });
+    const displayName=String(req.body.displayName||'').replace(/[<>]/g,'').trim().slice(0,60);
+    if (!displayName) return res.status(400).json({ error:'Anna nimi.' });
+    let avatar;
+    if (Object.prototype.hasOwnProperty.call(req.body||{},'avatar')) {
+      const raw=String(req.body.avatar||'').trim();
+      avatar=raw ? cleanBotAvatar(raw) : null;
+      if (raw && avatar==='robot-1' && !/^robot-1$/.test(raw)) return res.status(400).json({ error:'Profiilikuva ei kelpaa.' });
+    }
+    const rr=await q(`UPDATE support_agents SET display_name=$1,avatar=COALESCE($2,avatar),updated_at=NOW()
+      WHERE id=$3 AND tenant_id=$4 RETURNING id,display_name,avatar,username,status`,
+      [displayName,avatar,req.user.agentId,req.user.tenantId]);
+    if (!rr.rowCount) return res.status(404).json({ error:'Profiilia ei löytynyt.' });
+    return res.json(rr.rows[0]);
+  } catch(e){ return res.status(500).json({ error:'Profiilia ei voitu päivittää.' }); }
+});
+
+app.post('/api/app/agent/status', auth, async (req,res) => {
+  try {
+    if (req.user.role !== 'agent') return res.status(403).json({ error:'Ei käyttöoikeutta.' });
+    const status=req.body.status==='online'?'online':'offline';
+    const rr=await q("UPDATE support_agents SET status=$1,updated_at=NOW() WHERE id=$2 AND tenant_id=$3 RETURNING status",[status,req.user.agentId,req.user.tenantId]);
+    if (!rr.rowCount) return res.status(404).json({ error:'Profiilia ei löytynyt.' });
+    return res.json(rr.rows[0]);
+  } catch(e){ return res.status(500).json({ error:'Tilaa ei voitu päivittää.' }); }
+});
+
+app.post('/api/app/support-agents/:id/force-logout', auth, ownerOnly, subscribed, async (req,res) => {
+  try {
+    const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if(!tr.rowCount) return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+    const rr=await q("UPDATE support_agents SET status='offline',updated_at=NOW() WHERE id=$1 AND tenant_id=$2 RETURNING id",[req.params.id,tr.rows[0].id]);
+    if(!rr.rowCount) return res.status(404).json({error:'Profiilia ei löytynyt.'});
+    return res.json({ok:true});
+  }catch(e){return res.status(500).json({error:'Uloskirjaus epäonnistui.'});}
+});
+
 app.get('/api/app/agent-dashboard', auth, agentOrOwner, async (req,res) => {
   try {
     if (req.user.role !== 'agent') return res.status(403).json({ error:'Tämä näkymä on asiakaspalvelijoille.' });
