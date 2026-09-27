@@ -2022,6 +2022,7 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
     );
     const liveThreads = await q(
       `SELECT ct.id,ct.source_channel,ct.external_contact_id,ct.visitor_ref,ct.mode,ct.status,
+              ct.assigned_agent_id,sa.display_name AS assigned_agent_name,sa.avatar AS assigned_agent_avatar,
               ct.last_activity_at,ct.created_at,
               COALESCE((
                 SELECT json_agg(msg ORDER BY msg.created_at)
@@ -2034,6 +2035,7 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
                 ) msg
               ),'[]'::json) AS messages
          FROM chat_threads ct
+         LEFT JOIN support_agents sa ON sa.id=ct.assigned_agent_id
         WHERE ct.tenant_id=$1
         ORDER BY ct.last_activity_at DESC
         LIMIT 30`,
@@ -2116,6 +2118,7 @@ app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
       actionStats: actionStats.rows,
       actionRequests: actionRequests.rows,
       liveThreads: liveThreads.rows,
+      supportAgents: (await q('SELECT id,display_name,avatar,status,created_at FROM support_agents WHERE tenant_id=$1 ORDER BY created_at ASC',[tenant.id])).rows,
       bookingSlots: bookingSlots.rows,
       stripeConnect,
       googleCalendar: {
@@ -4553,6 +4556,59 @@ app.post('/api/app/voice/configure-number', auth, subscribed, async (req,res) =>
   }
 });
 
+app.post('/api/app/support-agents', auth, subscribed, async (req,res) => {
+  try {
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const displayName = String(req.body.displayName || '').replace(/[<>]/g,'').trim().slice(0,60);
+    if (!displayName) return res.status(400).json({ error:'Anna asiakaspalvelijan nimi.' });
+    const avatar = cleanBotAvatar(req.body.avatar || '') === 'robot-1' && !String(req.body.avatar || '').startsWith('data:image/') ? null : cleanBotAvatar(req.body.avatar || '');
+    const row = await q(
+      `INSERT INTO support_agents(id,tenant_id,display_name,avatar,status) VALUES($1,$2,$3,$4,'offline') RETURNING id,display_name,avatar,status,created_at`,
+      [uid(),tr.rows[0].id,displayName,avatar],
+    );
+    return res.json(row.rows[0]);
+  } catch (e) { return res.status(400).json({ error:e.message || 'Profiilia ei voitu luoda.' }); }
+});
+
+app.delete('/api/app/support-agents/:id', auth, subscribed, async (req,res) => {
+  try {
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    await q('UPDATE chat_threads SET assigned_agent_id=NULL WHERE tenant_id=$1 AND assigned_agent_id=$2',[tr.rows[0].id,req.params.id]);
+    const rr = await q('DELETE FROM support_agents WHERE id=$1 AND tenant_id=$2 RETURNING id',[req.params.id,tr.rows[0].id]);
+    if (!rr.rowCount) return res.status(404).json({ error:'Profiilia ei löytynyt.' });
+    return res.json({ ok:true });
+  } catch { return res.status(500).json({ error:'Profiilia ei voitu poistaa.' }); }
+});
+
+app.post('/api/app/support-agents/:id/status', auth, subscribed, async (req,res) => {
+  try {
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const status = req.body.status === 'online' ? 'online' : 'offline';
+    const rr = await q("UPDATE support_agents SET status=$1,updated_at=NOW() WHERE id=$2 AND tenant_id=$3 RETURNING id,display_name,avatar,status",[status,req.params.id,tr.rows[0].id]);
+    if (!rr.rowCount) return res.status(404).json({ error:'Profiilia ei löytynyt.' });
+    return res.json(rr.rows[0]);
+  } catch { return res.status(500).json({ error:'Tilaa ei voitu päivittää.' }); }
+});
+
+app.post('/api/app/live/:id/assign', auth, subscribed, async (req,res) => {
+  try {
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const tenantId=tr.rows[0].id;
+    const agentId=String(req.body.agentId || '').trim() || null;
+    if (agentId) {
+      const ar=await q('SELECT id FROM support_agents WHERE id=$1 AND tenant_id=$2',[agentId,tenantId]);
+      if (!ar.rowCount) return res.status(404).json({ error:'Profiilia ei löytynyt.' });
+    }
+    const rr=await q("UPDATE chat_threads SET assigned_agent_id=$1,mode=CASE WHEN $1::uuid IS NULL THEN mode ELSE 'human' END,status='open',updated_at=NOW() WHERE id=$2 AND tenant_id=$3 RETURNING *",[agentId,req.params.id,tenantId]);
+    if (!rr.rowCount) return res.status(404).json({ error:'Keskustelua ei löytynyt.' });
+    return res.json(rr.rows[0]);
+  } catch(e) { return res.status(400).json({ error:e.message || 'Keskustelua ei voitu osoittaa.' }); }
+});
+
 app.post('/api/app/live/:id/mode', auth, subscribed, async (req,res) => {
   try {
     const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
@@ -4587,7 +4643,7 @@ app.post('/api/app/live/:id/reply', auth, subscribed, async (req,res) => {
     const message = await appendChatMessage({
       tenantId:tenant.id,threadId:thread.id,sourceChannel:thread.source_channel,
       externalContactId:thread.external_contact_id,visitorRef:thread.visitor_ref,
-      role:'human',text,
+      role:'human',text,metadata: thread.assigned_agent_id ? { agentId:thread.assigned_agent_id } : {},
     });
     if (['whatsapp','instagram'].includes(thread.source_channel)) {
       await sendMetaMessage(tenant,thread.source_channel,thread.external_contact_id,text);
@@ -5115,6 +5171,18 @@ async function ensureRuntimeSchema() {
     UNIQUE(tenant_id,source_channel,external_contact_id)
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_chat_threads_tenant_activity ON chat_threads(tenant_id,last_activity_at DESC)');
+  await q(`CREATE TABLE IF NOT EXISTS support_agents (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    display_name TEXT NOT NULL,
+    avatar TEXT,
+    status TEXT NOT NULL DEFAULT 'offline',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_support_agents_tenant ON support_agents(tenant_id,created_at ASC)');
+  await q('ALTER TABLE chat_threads ADD COLUMN IF NOT EXISTS assigned_agent_id UUID REFERENCES support_agents(id) ON DELETE SET NULL');
+
   await q(`CREATE TABLE IF NOT EXISTS chat_messages (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
