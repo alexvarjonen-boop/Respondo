@@ -2047,7 +2047,7 @@ function motionDepthScene() {
         </article>
         <article class="depth-card depth-card-2">
           <span>02</span>
-          <small>YRITYKSEN TIEDOT</small>
+          <small>${appText('YRITYKSEN TIEDOT','FÖRETAGSUPPGIFTER','BUSINESS INFORMATION')}</small>
           <b>Hinnat · palvelut · aukioloajat</b>
           <i>Tietopohja</i>
         </article>
@@ -2306,17 +2306,17 @@ function login() {
     <main class="formpage login-page">
       <div class="container login-layout">
         <section class="login-copy">
-          <div class="section-kicker">Hallintapaneeli</div>
+          <div class="section-kicker">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</div>
           <h1>Tervetuloa<br><em>takaisin.</em></h1>
-          <p>Täältä löydät yrityksesi tiedot, keskustelut, asennuksen ja tilauksen.</p>
-          <div class="login-signal"><span></span> Vain sinä pääset yrityksesi hallintaan</div>
+          <p>${appText('Täältä löydät yrityksesi tiedot, keskustelut, asennuksen ja tilauksen.','Här hittar du företagsuppgifter, konversationer, installation och abonnemang.','Here you can find your business information, conversations, installation, and subscription.')}</p>
+          <div class="login-signal"><span></span> ${appText('Vain sinä pääset yrityksesi hallintaan','Endast du kommer åt företagets kontrollpanel','Only you can access your company dashboard')}</div>
         </section>
         <form class="formcard premium-form login-card" id="login">
-          <div class="form-head"><span>KIRJAUDU</span><b>Tervetuloa takaisin</b></div>
+          <div class="form-head"><span>${appText('KIRJAUDU','LOGGA IN','LOG IN')}</span><b>${appText('Tervetuloa takaisin','Välkommen tillbaka','Welcome back')}</b></div>
           ${socialAuthButtons('login')}
           <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
           <div class="field"><label>Salasana</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
-          <button class="btn checkout-button" type="submit">Kirjaudu sisään <span>→</span></button>
+          <button class="btn checkout-button" type="submit">${appText('Kirjaudu sisään','Logga in','Log in')} <span>→</span></button>
           <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : (checkoutError ? '<div class="notice error">Automaattinen kirjautuminen ei onnistunut. Kirjaudu samalla sähköpostilla ja salasanalla, jonka loit ennen maksua.</div>' : '')}</div>
         </form>
       </div>
@@ -2742,9 +2742,9 @@ async function dashboard() {
         <div class="panel business-profile-panel">
         <div class="panel-head business-profile-head">
           <div>
-            <small>YRITYKSEN TIEDOT</small>
-            <h2>Kerro Respondolle tärkeimmät asiat yrityksestäsi</h2>
-            <p>Täytä nämä kerran. Jos jokin muuttuu, voit päivittää tiedot milloin tahansa.</p>
+            <small>${appText('YRITYKSEN TIEDOT','FÖRETAGSUPPGIFTER','BUSINESS INFORMATION')}</small>
+            <h2>${appText('Kerro Respondolle tärkeimmät asiat yrityksestäsi','Berätta det viktigaste om ditt företag för Respondo','Tell Respondo the essentials about your business')}</h2>
+            <p>${appText('Täytä nämä kerran. Jos jokin muuttuu, voit päivittää tiedot milloin tahansa.','Fyll i uppgifterna en gång. Du kan uppdatera dem när som helst.','Fill these in once. You can update them at any time.')}</p>
           </div>
           <span class="install-badge">Perustiedot</span>
         </div>
@@ -2753,14 +2753,14 @@ async function dashboard() {
             <div class="bot-customizer profile-wide">
               <div class="bot-customizer-head">
                 <div>
-                  <small>BOTIN ULKOASU</small>
-                  <h3>Nimeä botti ja valitse sille kuva</h3>
-                  <p>Asiakas näkee nämä tiedot verkkosivusi chatissa. Voit käyttää omaa kuvaa tai valita yhden valmiista roboteista.</p>
+                  <small>${appText('BOTIN ULKOASU','BOTTENS UTSEENDE','BOT APPEARANCE')}</small>
+                  <h3>${appText('Nimeä botti ja valitse sille kuva','Namnge botten och välj en bild','Name your bot and choose an image')}</h3>
+                  <p>${appText('Asiakas näkee nämä tiedot verkkosivusi chatissa. Voit käyttää omaa kuvaa tai valita yhden valmiista roboteista.','Kunden ser detta i chatten på din webbplats. Du kan använda en egen bild eller välja en färdig robot.','Customers see this in your website chat. Use your own image or choose a preset robot.')}</p>
                 </div>
                 <div class="bot-current-avatar" id="botAvatarCurrent">${botAvatarMarkup(t.bot_avatar || 'robot-1')}</div>
               </div>
               <div class="field bot-name-field">
-                <label>Botin nimi</label>
+                <label>${appText('Botin nimi','Bottens namn','Bot name')}</label>
                 <input name="botName" maxlength="40" value="${esc(t.bot_name || 'RESPONDO AI')}" placeholder="Esim. Aino, Roope tai Yrityksen Apuri">
               </div>
               <input type="hidden" name="botAvatar" value="${esc(t.bot_avatar || 'robot-1')}">
@@ -2770,14 +2770,14 @@ async function dashboard() {
               <div class="bot-avatar-upload-row">
                 <label class="bot-avatar-upload" for="botAvatarUpload">
                   <span>＋</span>
-                  <div><b>Lataa oma kuva</b><small>PNG, JPG tai WebP · kuva rajataan automaattisesti neliöksi</small></div>
+                  <div><b>${appText('Lataa oma kuva','Ladda upp egen bild','Upload your own image')}</b><small>${appText('PNG, JPG tai WebP · kuva rajataan automaattisesti neliöksi','PNG, JPG eller WebP · bilden beskärs automatiskt till en kvadrat','PNG, JPG or WebP · automatically cropped to a square')}</small></div>
                 </label>
                 <input id="botAvatarUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden>
                 <div id="botAvatarMsg"></div>
               </div>
             </div>
             <div class="field profile-wide">
-              <label>Ensimmäinen viesti asiakkaalle</label>
+              <label>${appText('Ensimmäinen viesti asiakkaalle','Första meddelandet till kunden','First message to customer')}</label>
               <input name="greeting" maxlength="220" value="${esc(t.greeting || 'Hei! Miten voin auttaa?')}" placeholder="Hei! Miten voin auttaa?">
             </div>
             <div class="field">
@@ -2848,7 +2848,7 @@ async function dashboard() {
               <b>Respondo käyttää näitä tietoja asiakkaiden kysymyksiin vastaamiseen.</b>
               <small>Voit muuttaa niitä milloin tahansa.</small>
             </div>
-            <button class="btn dashboard-action profile-save" type="submit">Tallenna tiedot <span>→</span></button>
+            <button class="btn dashboard-action profile-save" type="submit">${appText('Tallenna tiedot','Spara uppgifter','Save information')} <span>→</span></button>
           </div>
           <div id="businessProfileMsg"></div>
         </form>
@@ -2856,8 +2856,8 @@ async function dashboard() {
 
         <aside class="panel live-preview-panel" id="live-preview">
           <div class="panel-head">
-            <div><small>KOKEILE TÄSSÄ</small><h2>Kysy kuten asiakkaasi kysyisi</h2></div>
-            <span class="preview-live"><i></i> Käytössä</span>
+            <div><small>${appText('KOKEILE TÄSSÄ','PROVA HÄR','TRY IT HERE')}</small><h2>${appText('Kysy kuten asiakkaasi kysyisi','Fråga som din kund skulle fråga','Ask like your customer would')}</h2></div>
+            <span class="preview-live"><i></i> ${appText('Käytössä','Aktiv','Active')}</span>
           </div>
           <div class="preview-device">
             <div class="preview-device-top">
@@ -2872,7 +2872,7 @@ async function dashboard() {
               <button type="submit">→</button>
             </form>
           </div>
-          <p class="preview-note">Tämä kokeilu käyttää yllä olevia tietoja ja jo tallentamiasi vastauksia.</p>
+          <p class="preview-note">${appText('Tämä kokeilu käyttää yllä olevia tietoja ja jo tallentamiasi vastauksia.','Testet använder uppgifterna ovan och svar som du redan har sparat.','This test uses the information above and answers you have already saved.')}</p>
         </aside>
       </section>
 
@@ -2881,8 +2881,8 @@ async function dashboard() {
           <div class="panel-head"><div><small>TIETOPOHJA</small><h2>Vastaukset, joita botti saa käyttää</h2></div><span>${knowledge.length} ${appText('kohdetta','poster','items')}</span></div>
           <div class="knowledge-feature-summary">
             <div>
-              <b>Botin etusivun kysymykset</b>
-              <small>Valitse enintään 3 omaa kysymys–vastausta. Ne näkyvät asiakkaalle heti chatin avatessa.</small>
+              <b>${appText('Botin etusivun kysymykset','Frågor på botens startsida','Bot home questions')}</b>
+              <small>${appText('Valitse enintään 3 omaa kysymys–vastausta. Ne näkyvät asiakkaalle heti chatin avatessa.','Välj högst 3 egna frågor och svar. De visas direkt när kunden öppnar chatten.','Choose up to 3 custom Q&As. They appear as soon as the customer opens the chat.')}</small>
             </div>
             <span id="knowledgeQuickCount">${knowledge.filter((x) => x.source_type !== 'profile' && x.quick_reply_order).length}/3 valittu</span>
           </div>
@@ -2905,12 +2905,12 @@ async function dashboard() {
         </div>
 
         <form class="panel add-knowledge" id="knowledgeForm">
-          <div class="panel-head"><div><small>LISÄÄ VASTAUS</small><h2>Tallenna vastaus</h2></div><span>＋</span></div>
+          <div class="panel-head"><div><small>${appText('LISÄÄ VASTAUS','LÄGG TILL SVAR','ADD ANSWER')}</small><h2>${appText('Tallenna vastaus','Spara svar','Save answer')}</h2></div><span>＋</span></div>
           <div class="field"><label>Kategoria</label><input name="category" placeholder="Esim. Hinnoittelu"></div>
           <div class="field"><label>Otsikko</label><input name="title" required placeholder="Mitä asiakas kysyy?"></div>
           <div class="field"><label>Hyväksytty vastaus</label><textarea name="answer" required placeholder="Kirjoita tähän se vastaus, jonka haluat asiakkaan saavan."></textarea></div>
           <div class="field"><label>Esimerkkisanat</label><input name="keywords" placeholder="hinta, maksaa, tarjous"></div>
-          <button class="btn dashboard-action" type="submit">Tallenna vastaus <span>→</span></button>
+          <button class="btn dashboard-action" type="submit">${appText('Tallenna vastaus','Spara svar','Save answer')} <span>→</span></button>
           <div id="knowledgeMsg"></div>
         </form>
       </section>
@@ -3039,9 +3039,9 @@ async function dashboard() {
         <article class="panel action-inbox-panel">
           <div class="panel-head">
             <div>
-              <small>ASIAKKAIDEN PYYNNÖT</small>
-              <h2>Asiakkaiden pyynnöt</h2>
-              <p>Tarjouspyynnöt, ajanvaraukset, tilauskyselyt ja yhteydenotot näkyvät tässä.</p>
+              <small>${appText('ASIAKKAIDEN PYYNNÖT','KUNDFÖRFRÅGNINGAR','CUSTOMER REQUESTS')}</small>
+              <h2>${appText('Asiakkaiden pyynnöt','Kundförfrågningar','Customer requests')}</h2>
+              <p>${appText('Tarjouspyynnöt, ajanvaraukset, tilauskyselyt ja yhteydenotot näkyvät tässä.','Offertförfrågningar, bokningar, orderfrågor och kontaktförfrågningar visas här.','Quote requests, bookings, order questions, and contact requests appear here.')}</p>
             </div>
             <span>${actionRequests.filter((x) => x.status !== 'done').length} avoinna</span>
           </div>
@@ -3118,8 +3118,8 @@ async function dashboard() {
           <div class="panel-head">
             <div>
               <small>AJANVARAUKSET</small>
-              <h2>Luo oikeat vapaat ajat</h2>
-              <p>Asiakas näkee chatissa vain nämä ajat. Kun yksi varataan, se lukittuu heti pois muilta.</p>
+              <h2>${appText('Luo oikeat vapaat ajat','Skapa riktiga lediga tider','Create real available times')}</h2>
+              <p>${appText('Asiakas näkee chatissa vain nämä ajat. Kun yksi varataan, se lukittuu heti pois muilta.','Kunden ser endast dessa tider i chatten. När en tid bokas låses den direkt för andra.','Customers only see these times in chat. Once booked, a slot is immediately unavailable to others.')}</p>
             </div>
             <span class="install-badge">${bookingSlots.filter((x) => x.status === 'open').length} vapaana</span>
           </div>
@@ -3149,7 +3149,7 @@ async function dashboard() {
             <div class="weekday-picker">
               ${[['1',appText('Ma','Mån','Mon')],['2',appText('Ti','Tis','Tue')],['3',appText('Ke','Ons','Wed')],['4',appText('To','Tor','Thu')],['5',appText('Pe','Fre','Fri')],['6',appText('La','Lör','Sat')],['0',appText('Su','Sön','Sun')]].map(([v,l]) => `<label><input type="checkbox" name="weekday" value="${v}" ${['1','2','3','4','5'].includes(v) ? 'checked' : ''}><span>${l}</span></label>`).join('')}
             </div>
-            <button class="btn dashboard-action" type="submit">Luo vapaat ajat <span>→</span></button>
+            <button class="btn dashboard-action" type="submit">${appText('Luo vapaat ajat','Skapa lediga tider','Create available times')} <span>→</span></button>
             <div id="bookingSlotsMsg"></div>
           </form>
 
@@ -3186,15 +3186,15 @@ async function dashboard() {
       </section>
 
       <section class="panel install-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="install">
-        <div class="panel-head"><div><small>ASENNUS</small><h2>Lisää Respondo verkkosivullesi</h2></div><span class="install-badge">1 sivusto</span></div>
-        <p>Kopioi tämä koodi sivustosi HTML:ään juuri ennen sulkevaa <code>&lt;/body&gt;</code>-tagia.</p>
+        <div class="panel-head"><div><small>${appText('ASENNUS','INSTALLATION','INSTALLATION')}</small><h2>${appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website')}</h2></div><span class="install-badge">1 ${appText('sivusto','webbplats','website')}</span></div>
+        <p>${appText('Kopioi tämä koodi sivustosi HTML:ään juuri ennen sulkevaa','Kopiera koden till webbplatsens HTML precis före den avslutande','Copy this code into your website HTML just before the closing')} <code>&lt;/body&gt;</code>${appText('-tagia.','-taggen.',' tag.')}</p>
         <div class="license-lock">
           <span>🔒 SIDOTTU VERKKOSIVUUN</span>
           <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
           <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20260924-language-v2" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">Kopioi</button></div>
-        <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? '✓ Asennus valmis' : 'Olen asentanut botin'}</button>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20260924-language-v2" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
       </section>
 
       ${referral ? `
