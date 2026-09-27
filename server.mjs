@@ -428,92 +428,6 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
 }
 
 
-const knowledgeEmbeddingCache = new Map();
-
-function cosineSimilarity(a, b) {
-  let dot = 0;
-  let aa = 0;
-  let bb = 0;
-  const len = Math.min(a?.length || 0, b?.length || 0);
-  for (let i = 0; i < len; i++) {
-    dot += a[i] * b[i];
-    aa += a[i] * a[i];
-    bb += b[i] * b[i];
-  }
-  return aa && bb ? dot / (Math.sqrt(aa) * Math.sqrt(bb)) : 0;
-}
-
-function embeddingCacheKey(row) {
-  const updated = row.updated_at ? new Date(row.updated_at).getTime() : 0;
-  return [
-    String(row.id || ''),
-    updated,
-    String(row.title || ''),
-    String(row.answer || '').length,
-    String(row.answer || '').slice(0, 80),
-  ].join('|');
-}
-
-async function semanticSelectKnowledge(rows, query, limit = 6) {
-  if (!openai || !rows?.length || !String(query || '').trim()) return [];
-
-  const candidates = rows
-    .filter((x) => normalizeSearchText(x.title) !== 'vastaustyyli')
-    .slice(0, 80);
-  if (!candidates.length) return [];
-
-  const missing = [];
-  for (const row of candidates) {
-    const key = embeddingCacheKey(row);
-    if (!knowledgeEmbeddingCache.has(key)) missing.push({ row, key });
-  }
-
-  const inputs = [String(query).slice(0, 1600)];
-  for (const item of missing) {
-    inputs.push(
-      [
-        item.row.title,
-        item.row.answer,
-        Array.isArray(item.row.keywords) && item.row.keywords.length
-          ? 'Hakusanat: ' + item.row.keywords.join(', ')
-          : '',
-      ]
-        .filter(Boolean)
-        .join('\n')
-        .slice(0, 2600)
-    );
-  }
-
-  try {
-    const response = await openai.embeddings.create({
-      model: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small',
-      input: inputs,
-    });
-
-    const queryVector = response.data?.[0]?.embedding;
-    if (!queryVector) return [];
-
-    missing.forEach((item, index) => {
-      const vector = response.data?.[index + 1]?.embedding;
-      if (vector) knowledgeEmbeddingCache.set(item.key, vector);
-    });
-
-    return candidates
-      .map((row) => {
-        const vector = knowledgeEmbeddingCache.get(embeddingCacheKey(row));
-        return {
-          ...row,
-          _semantic: vector ? cosineSimilarity(queryVector, vector) : 0,
-        };
-      })
-      .sort((a, b) => b._semantic - a._semantic)
-      .slice(0, limit);
-  } catch (e) {
-    console.warn('Semantic knowledge search failed', e?.message || e);
-    return [];
-  }
-}
-
 function knowledgeValue(rows, title) {
   const wanted = normalizeSearchText(title);
   const row = rows.find((x) => normalizeSearchText(x.title) === wanted);
@@ -2348,45 +2262,61 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
 });
 
 
+
+function extractFreeWebsiteProfile(bundle) {
+  const raw = String(bundle?.text || '').replace(/\r/g, '');
+  const lines = raw.split('\n').map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const plain = lines.join('\n');
+  const profile = {
+    pricing:'', hours:'', phone:'', email:'', services:'', serviceArea:'',
+    address:'', quoteRequestUrl:'', bookingUrl:'', notes:'',
+    website: normalizeWebUrl(bundle?.finalUrl, true) || '',
+  };
+  const firstMatch = (regex) => {
+    const m = plain.match(regex);
+    return m ? String(m[1] || m[0] || '').trim() : '';
+  };
+  profile.email = firstMatch(/\b([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})\b/i).slice(0,220);
+  profile.phone = firstMatch(/(?:\+358|0)\s*(\d(?:[\s().-]*\d){6,11})/i);
+  if (profile.phone && !profile.phone.startsWith('+358') && !profile.phone.startsWith('0')) profile.phone = '0' + profile.phone;
+  profile.phone = profile.phone.slice(0,80);
+
+  const collectLines = (regex, limit=6) => lines
+    .filter((x) => regex.test(normalizeSearchText(x)))
+    .filter((x) => !/^sivu:\s/i.test(x))
+    .slice(0,limit)
+    .join('\n')
+    .slice(0,4000);
+
+  profile.pricing = collectLines(/\b(hinta|hinnat|hinnoittelu|alkaen|€/|eur|price|pricing|prices|pris|priser|prislista|från)\b/i, 8);
+  profile.hours = collectLines(/\b(auki|aukiolo|ma-pe|maanantai|arkisin|opening|hours|mon|monday|öppet|öppettider|mån|vardagar)\b/i, 7);
+  profile.services = collectLines(/\b(palvelu|palvelut|tarjoamme|teemme|service|services|our services|tjänst|tjänster|vi erbjuder)\b/i, 10);
+  profile.serviceArea = collectLines(/\b(toimialue|palvelemme|alueella|service area|we serve|verksamhetsområde|betjänar|område)\b/i, 6);
+  profile.address = collectLines(/\b(osoite|käyntiosoite|address|street|adress|besöksadress)\b/i, 4);
+
+  const allLinks = Array.isArray(bundle?.links) ? bundle.links : [];
+  const pickLink = (regex) => allLinks.find((url) => regex.test(normalizeSearchText(url))) || '';
+  profile.bookingUrl = pickLink(/ajanvaraus|varaa|booking|appointment|boka|bokning|calendar/);
+  profile.quoteRequestUrl = pickLink(/tarjous|quote|estimate|offert|prisforslag|prisförslag|contact|yhteys|kontakt/);
+
+  const useful = lines
+    .filter((x) => !/^sivu:\s/i.test(x))
+    .filter((x) => x.length >= 25 && x.length <= 500)
+    .filter((x) => !/(cookie|eväste|privacy|tietosuoja|integritet|copyright)/i.test(x))
+    .slice(0,12)
+    .join('\n');
+  profile.notes = useful.slice(0,4000);
+  return profile;
+}
+
 app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
   try {
     const website = normalizeWebUrl(req.body.website, false);
     if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
-    const bundle = await fetchWebsiteBundle(website, 4);
-    const text = bundle.text;
-    const finalUrl = bundle.finalUrl;
-    if (text.length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
-    if (!openai) return res.status(503).json({ error: 'Automaattinen tuonti ei ole juuri nyt käytettävissä.' });
-
-    const prompt = `Poimi alla olevasta yrityksen verkkosivutekstistä VAIN selvästi sivulla kerrotut tiedot.
-Älä päättele, täydennä tai keksi mitään. Palauta ainoastaan validi JSON-objekti ilman markdownia.
-Avaimet:
-pricing, hours, phone, email, services, serviceArea, address, quoteRequestUrl, bookingUrl, notes.
-Kaikki arvot ovat merkkijonoja. Jos tietoa ei löydy varmasti, käytä tyhjää merkkijonoa.
-services voi olla yksi pilkuilla eroteltu merkkijono.
-quoteRequestUrl ja bookingUrl saavat olla sivutekstissä näkyviä URL-osoitteita TAI alla olevasta saman sivuston linkkilistasta löytyviä osoitteita.
-Suosi täsmällistä ajanvaraus- tai tarjouspyyntölinkkiä etusivun sijaan.
-
-SIVUSTON SISÄISET LINKIT:
-${bundle.links.join('\n')}
-
-VERKKOSIVU:
-${text}`;
-
-    const rr = await openai.responses.create({
-      model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
-      input: prompt,
-      max_output_tokens: 700,
-    });
-    const raw = String(rr.output_text || '').trim();
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('Tuonnin vastausta ei voitu lukea.');
-    const parsed = JSON.parse(match[0]);
-    const allowed = ['pricing','hours','phone','email','services','serviceArea','address','quoteRequestUrl','bookingUrl','notes'];
-    const profile = {};
-    for (const key of allowed) profile[key] = String(parsed[key] || '').trim().slice(0, 4000);
-    profile.website = normalizeWebUrl(finalUrl, true) || normalizeWebUrl(website, true);
-    return res.json({ ok: true, profile });
+    const bundle = await fetchWebsiteBundle(website, 8);
+    if (String(bundle.text || '').length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
+    const profile = extractFreeWebsiteProfile(bundle);
+    return res.json({ ok:true, profile, pagesScanned:bundle.pages.length, extraction:'local' });
   } catch (e) {
     console.error('Website import failed', e);
     return res.status(400).json({ error: e.message || 'Verkkosivun tietojen tuonti epäonnistui.' });
@@ -2588,147 +2518,6 @@ app.post('/api/app/knowledge/:id/quick-reply', auth, subscribed, async (req, res
 });
 
 
-app.post('/api/app/unanswered/:id/suggest', auth, subscribed, async (req, res) => {
-  try {
-    if (!openai) return res.status(503).json({ error: 'AI-ehdotus ei ole juuri nyt käytettävissä.' });
-    const tenantResult = await q('SELECT * FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
-    if (!tenantResult.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
-    const tenant = tenantResult.rows[0];
-    if (!tenant.website) return res.status(400).json({ error: 'Lisää ensin yrityksen verkkosivu Yrityksen tiedot -osiossa.' });
-
-    const conversation = await q(
-      'SELECT question FROM conversations WHERE id=$1 AND tenant_id=$2 AND handoff=true',
-      [req.params.id, tenant.id],
-    );
-    if (!conversation.rowCount) return res.status(404).json({ error: 'Kysymystä ei löytynyt.' });
-
-    const bundle = await fetchWebsiteBundle(tenant.website, 4);
-    const pageText = bundle.text.slice(0, 36000);
-    const question = String(conversation.rows[0].question || '').trim();
-    const prompt = 'Etsi yrityksen verkkosivutekstistä vastaus asiakkaan kysymykseen. ' +
-      'Käytä vain tekstissä selvästi kerrottuja faktoja. Älä päättele tai keksi. ' +
-      'Palauta vain JSON muodossa {"found":true/false,"answer":"..."}. ' +
-      'Jos varmaa vastausta ei ole, found=false ja answer tyhjä.\n\nKYSYMYS:\n' + question +
-      '\n\nVERKKOSIVUN TEKSTI:\n' + pageText;
-
-    const rr = await openai.responses.create({
-      model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
-      input: prompt,
-      max_output_tokens: 350,
-    });
-    const raw = String(rr.output_text || '').trim();
-    const match = raw.match(/\{[\s\S]*\}/);
-    const parsed = match ? JSON.parse(match[0]) : { found:false, answer:'' };
-    const answer = String(parsed.answer || '').trim().slice(0, 1800);
-    return res.json({
-      found: Boolean(parsed.found && answer),
-      answer: parsed.found ? answer : '',
-      sourceUrl: tenant.website,
-    });
-  } catch (e) {
-    console.error('Gap suggestion failed', e);
-    return res.status(400).json({ error: e.message || 'Vastausta ei voitu ehdottaa.' });
-  }
-});
-
-app.post('/api/app/self-test', auth, subscribed, async (req, res) => {
-  try {
-    if (!openai) return res.status(503).json({ error: 'Self-test ei ole juuri nyt käytettävissä.' });
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
-    if (!tr.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
-    const tenant = tr.rows[0];
-    const kr = await q(
-      'SELECT title,answer,category FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC LIMIT 120',
-      [tenant.id],
-    );
-    if (!kr.rowCount) return res.status(400).json({ error: 'Lisää ensin yrityksen tietoja ja vastauksia.' });
-
-    const requested = Number(req.body?.target || 500);
-    const target = requested >= 1000 ? 1000 : 500;
-    const batchSize = 50;
-    const batchCount = Math.ceil(target / batchSize);
-    const sourceText = kr.rows
-      .map((x, i) => '[' + (i + 1) + '] ' + x.title + ': ' + x.answer)
-      .join('\n')
-      .slice(0, 36000);
-
-    const makeJob = (batchIndex) => {
-      const count = Math.min(batchSize, target - batchIndex * batchSize);
-      const prompt = 'Toimit yrityksen asiakaspalvelubotin laadun testaajana. ' +
-        'Luo täsmälleen ' + count + ' realistista ja keskenään erilaista asiakaskysymystä testierään ' + (batchIndex + 1) + '/' + batchCount + '. ' +
-        'Arvioi jokaiselle vain annetun hyväksytyn tietopohjan perusteella, pystyykö botti vastaamaan varmasti. ' +
-        'Vaihtele sanamuotoja ja asiakastilanteita laajasti. Älä oleta tietoa tietopohjan ulkopuolelta. ' +
-        'Palauta vain validi JSON muodossa {"questions":[{"question":"...","answerable":true,"reason":"lyhyt syy"}]}' +
-        '\n\nYRITYS: ' + tenant.name +
-        '\nTOIMIALA: ' + (tenant.industry || 'Palveluyritys') +
-        '\n\nHYVÄKSYTTY TIETOPOHJA:\n' + sourceText;
-      return openai.responses.create({
-        model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
-        input: prompt,
-        max_output_tokens: 6500,
-      });
-    };
-
-    const batches = [];
-    const concurrency = 4;
-    for (let offset = 0; offset < batchCount; offset += concurrency) {
-      const wave = [];
-      for (let batchIndex = offset; batchIndex < Math.min(batchCount, offset + concurrency); batchIndex++) {
-        wave.push(makeJob(batchIndex));
-      }
-      const settled = await Promise.allSettled(wave);
-      batches.push(...settled);
-    }
-    const questions = [];
-    const seen = new Set();
-    for (const batch of batches) {
-      if (batch.status !== 'fulfilled') continue;
-      const raw = String(batch.value.output_text || '').trim();
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (!match) continue;
-      let parsed;
-      try { parsed = JSON.parse(match[0]); } catch { continue; }
-      for (const x of (Array.isArray(parsed.questions) ? parsed.questions : [])) {
-        const question = String(x.question || '').trim().slice(0, 500);
-        if (!question) continue;
-        const key = normalizeSearchText(question);
-        if (!key || seen.has(key)) continue;
-        seen.add(key);
-        questions.push({
-          question,
-          answerable: Boolean(x.answerable),
-          reason: String(x.reason || '').trim().slice(0, 500),
-        });
-        if (questions.length >= target) break;
-      }
-      if (questions.length >= target) break;
-    }
-
-    if (questions.length < Math.min(100, Math.floor(target * 0.6))) {
-      throw new Error('Laaja self-test ei saanut riittävästi testikysymyksiä. Yritä uudelleen.');
-    }
-
-    const answerable = questions.filter((x) => x.answerable).length;
-    const score = Math.round((answerable / questions.length) * 100);
-    const gaps = questions.filter((x) => !x.answerable);
-    const saved = await q(
-      `INSERT INTO self_test_runs(id,tenant_id,score,total_questions,answerable_questions,gaps)
-       VALUES($1,$2,$3,$4,$5,$6::jsonb)
-       RETURNING id,score,total_questions,answerable_questions,gaps,created_at`,
-      [uid(), tenant.id, score, questions.length, answerable, JSON.stringify(gaps)],
-    );
-    return res.json({
-      ...saved.rows[0],
-      targetQuestions: target,
-      generatedQuestions: questions.length,
-      failedBatches: batches.filter((x) => x.status === 'rejected').length,
-      questions: questions.slice(0, 80),
-    });
-  } catch (e) {
-    console.error('Self-test failed', e);
-    return res.status(500).json({ error: e.message || 'Self-test epäonnistui.' });
-  }
-});
 
 
 async function getGoogleCalendarAccessToken(tenant) {
