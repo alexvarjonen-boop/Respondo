@@ -3158,27 +3158,40 @@ async function processExternalChannelMessage(tenant, channel, contactId, message
   const result = await generateGroundedAnswer({
     companyName:tenant.name,rows:kr.rows,message,history,lang,pageContext:{},
   });
+  const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   let answer = result.answer;
-  if (result.handoff) {
-    answer = lang === 'en'
+  let handoff = result.handoff;
+  if (handoff) {
+    answer = responseLang === 'en'
       ? 'I do not have a verified answer yet. A person from the company needs to handle this.'
-      : 'Tähän ei löytynyt vielä varmennettua vastausta. Yrityksen henkilön pitää käsitellä tämä.';
+      : responseLang === 'sv'
+        ? 'Jag har ännu inget verifierat svar. Någon från företaget behöver hantera detta.'
+        : 'Tähän ei löytynyt vielä varmennettua vastausta. Yrityksen henkilön pitää käsitellä tämä.';
+  } else if (responseLang !== 'fi') {
+    const translated = await forceAnswerLanguage(answer, responseLang);
+    if (translated) answer = translated;
+    else {
+      handoff = true;
+      answer = responseLang === 'en'
+        ? 'I found relevant company information, but could not translate the answer reliably right now.'
+        : 'Jag hittade relevant företagsinformation men kunde inte översätta svaret tillförlitligt just nu.';
+    }
   }
 
   await appendChatMessage({
     tenantId:tenant.id,threadId:thread?.id,sourceChannel:channel,
     externalContactId:contactId,visitorRef:contactId,role:'assistant',text:answer,
-    metadata:{ handoff:result.handoff,intent:result.intent,sourceIds:result.sourceIds },
+    metadata:{ handoff,intent:result.intent,sourceIds:result.sourceIds },
   });
   await q(
     `INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,source_channel,external_contact_id)
      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-    [uid(),tenant.id,message,answer,result.intent,result.confidence,result.sourceIds,result.handoff,contactId,channel,contactId],
+    [uid(),tenant.id,message,answer,result.intent,handoff ? Math.min(result.confidence,0.35) : result.confidence,result.sourceIds,handoff,contactId,channel,contactId],
   );
   return {
-    answer,handoff:result.handoff,
-    verified:!result.handoff && Array.isArray(result.sourceIds) && result.sourceIds.length>0,
-    intent:result.intent,actions:chatActions(kr.rows,message,result.handoff,lang),
+    answer,handoff,
+    verified:!handoff && Array.isArray(result.sourceIds) && result.sourceIds.length>0,
+    intent:result.intent,actions:chatActions(kr.rows,message,handoff,responseLang),
   };
 }
 
@@ -3970,6 +3983,9 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       try { body = JSON.parse(body); } catch { body = {}; }
     }
     body = body || {};
+    const actionLang = ['fi','sv','en'].includes(String(body.lang || '').toLowerCase())
+      ? String(body.lang).toLowerCase()
+      : 'fi';
     if (!(await validateWidgetActionRequest(req, tenant, body))) {
       return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
     }
@@ -4028,8 +4044,8 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         const vat = net * (vatPercent / 100);
         const total = net + vat;
         computedQuote = {
-          serviceName:tenant.quote_service_name || 'Tarjous',
-          unitLabel:tenant.quote_unit_label || 'kpl',
+          serviceName:tenant.quote_service_name || (actionLang === 'en' ? 'Quote' : actionLang === 'sv' ? 'Offert' : 'Tarjous'),
+          unitLabel:tenant.quote_unit_label || (actionLang === 'en' ? 'pcs' : actionLang === 'sv' ? 'st' : 'kpl'),
           quantity,
           net:Number(net.toFixed(2)),
           vatPercent,
@@ -4176,12 +4192,19 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     );
 
     const nativeOrderMessage = ecommerceLookupAttempted
-      ? orderStatusText(ecommerceOrder,body.lang === 'en' ? 'en' : 'fi')
+      ? orderStatusText(ecommerceOrder,actionLang)
       : '';
-    const customerMessage = String(
-      nativeOrderMessage ||
+    const rawDeliveryMessage = String(
       delivery.result?.customerMessage ||
       delivery.result?.message ||
+      ''
+    ).trim().slice(0,1200);
+    const translatedDeliveryMessage = rawDeliveryMessage && actionLang !== 'fi'
+      ? await forceAnswerLanguage(rawDeliveryMessage, actionLang)
+      : rawDeliveryMessage;
+    const customerMessage = String(
+      nativeOrderMessage ||
+      translatedDeliveryMessage ||
       ''
     ).trim().slice(0,1200);
 
@@ -4201,7 +4224,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
                 price_data:{
                   currency:'eur',
                   product_data:{
-                    name:computedQuote.serviceName || ('Tarjous · ' + tenant.name),
+                    name:computedQuote.serviceName || ((actionLang === 'en' ? 'Quote' : actionLang === 'sv' ? 'Offert' : 'Tarjous') + ' · ' + tenant.name),
                     description:payload.question ? payload.question.slice(0,450) : undefined,
                   },
                   unit_amount:computedQuote.totalCents,
@@ -4212,7 +4235,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
                 respondo_action_request_id:id,
                 respondo_tenant_id:tenant.id,
               },
-              success_url:BASE + '/maksu-valmis?action=' + encodeURIComponent(id) + '&session_id={CHECKOUT_SESSION_ID}',
+              success_url:BASE + '/maksu-valmis?action=' + encodeURIComponent(id) + '&session_id={CHECKOUT_SESSION_ID}&lang=' + encodeURIComponent(actionLang),
               cancel_url:pageUrl || tenant.website || BASE,
             },
             { stripeAccount:tenant.stripe_connected_account_id },
@@ -4245,10 +4268,20 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       paymentAvailable,
       checkoutUrl,
       customerMessage: customerMessage || (
-        type === 'booking' ? 'Ajanvarauspyyntösi on vastaanotettu.' :
-        type === 'quote' ? 'Tarjouspyyntösi on vastaanotettu.' :
-        type === 'order_status' ? 'Tilaustietojen tarkistuspyyntö on vastaanotettu.' :
-        'Yhteydenottopyyntösi on vastaanotettu.'
+        actionLang === 'en'
+          ? (type === 'booking' ? 'Your booking request has been received.' :
+             type === 'quote' ? 'Your quote request has been received.' :
+             type === 'order_status' ? 'Your order-status request has been received.' :
+             'Your contact request has been received.')
+          : actionLang === 'sv'
+            ? (type === 'booking' ? 'Din bokningsförfrågan har tagits emot.' :
+               type === 'quote' ? 'Din offertförfrågan har tagits emot.' :
+               type === 'order_status' ? 'Din förfrågan om orderstatus har tagits emot.' :
+               'Din kontaktförfrågan har tagits emot.')
+            : (type === 'booking' ? 'Ajanvarauspyyntösi on vastaanotettu.' :
+               type === 'quote' ? 'Tarjouspyyntösi on vastaanotettu.' :
+               type === 'order_status' ? 'Tilaustietojen tarkistuspyyntö on vastaanotettu.' :
+               'Yhteydenottopyyntösi on vastaanotettu.')
       ),
     });
   } catch (e) {
@@ -4768,7 +4801,9 @@ app.post('/api/channel/:slug/message', async (req,res) => {
     }
     const contactId = String(req.body.contactId || '').trim().slice(0,220);
     const message = String(req.body.message || '').trim().slice(0,1200);
-    const lang = req.body.lang === 'en' ? 'en' : 'fi';
+    const lang = ['fi','sv','en'].includes(String(req.body.lang || '').toLowerCase())
+      ? String(req.body.lang).toLowerCase()
+      : 'fi';
     if (!contactId || !message) return res.status(400).json({ error:'contactId ja message tarvitaan.' });
 
     const result = await processExternalChannelMessage(tenant,channel,contactId,message,lang);
