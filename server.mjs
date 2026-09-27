@@ -529,14 +529,14 @@ function answerTone(rows) {
 
 function inferIntent(message) {
   const q = normalizeSearchText(message);
-  if (/tilausnumero|tilaukseni|tilauksen tila|order status|where is my order|seuranta/.test(q)) return 'Tilauksen tila';
-  if (/ajanvaraus|varaa aika|ajan vara|booking|appointment/.test(q)) return 'Ajanvaraus';
-  if (/tarjous|tarjouspyynt|arvio/.test(q)) return 'Tarjouspyyntö';
-  if (/hinta|maksaa|hinnoittelu|kustannus/.test(q)) return 'Hinta';
-  if (/auki|lauantai|sunnuntai|viikonloppu|kello/.test(q)) return 'Aukioloajat';
-  if (/puhelin|sahkoposti|sähköposti|yhteys|soittaa/.test(q)) return 'Yhteystiedot';
-  if (/missä|missa|osoite|toimialue|alue/.test(q)) return 'Sijainti';
-  if (/palvelu|teette|tarjoatte|onnistuuko/.test(q)) return 'Palvelut';
+  if (/tilausnumero|tilaukseni|tilauksen tila|order status|where is my order|seuranta|orderstatus|var är min beställning|var ar min bestallning/.test(q)) return 'Tilauksen tila';
+  if (/ajanvaraus|varaa aika|ajan vara|booking|appointment|boka|bokning|tidsbokning/.test(q)) return 'Ajanvaraus';
+  if (/tarjous|tarjouspyynt|arvio|quote|estimate|offert|prisforslag|prisförslag/.test(q)) return 'Tarjouspyyntö';
+  if (/hinta|maksaa|hinnoittelu|kustannus|price|cost|pricing|pris|kostar|kostnad/.test(q)) return 'Hinta';
+  if (/auki|lauantai|sunnuntai|viikonloppu|kello|opening|open|hours|öppet|oppet|öppettider|oppettider/.test(q)) return 'Aukioloajat';
+  if (/puhelin|sahkoposti|sähköposti|yhteys|soittaa|phone|email|contact|telefon|e-post|kontakt|ringa/.test(q)) return 'Yhteystiedot';
+  if (/missä|missa|osoite|toimialue|alue|where|address|location|adress|område|omrade/.test(q)) return 'Sijainti';
+  if (/palvelu|teette|tarjoatte|onnistuuko|service|services|offer|tjänst|tjanst|tjänster|tjanster|erbjuder/.test(q)) return 'Palvelut';
   return 'Asiakaskysymys';
 }
 
@@ -554,28 +554,28 @@ function chatActions(rows, message, handoff = false, lang = 'fi') {
     actions.push(action);
   };
 
-  if (/tilausnumero|tilaukseni|tilauksen tila|seuranta|order status|where is my order/.test(q)) {
+  if (/tilausnumero|tilaukseni|tilauksen tila|seuranta|order status|where is my order|orderstatus|var är min beställning|var ar min bestallning/.test(q)) {
     push({ type: 'order_status', mode: 'order_form', label: actionLang === 'en' ? 'Check order status' : actionLang === 'sv' ? 'Kontrollera orderstatus' : 'Tarkista tilauksen tila' });
   }
 
-  if (/ajanvaraus|varaa|aika|ajan|booking|appointment/.test(q)) {
+  if (/ajanvaraus|varaa|aika|ajan|booking|appointment|boka|bokning|tidsbokning/.test(q)) {
     push({ type: 'booking', mode: 'booking_form', label: actionLang === 'en' ? 'Book a time' : actionLang === 'sv' ? 'Boka tid' : 'Varaa aika' });
     if (booking) push({ type: 'booking', label: actionLang === 'en' ? 'Open calendar' : actionLang === 'sv' ? 'Öppna bokningen' : 'Avaa ajanvaraus', url: booking });
   }
 
-  if (/tarjous|hinta-arvio|arvio|kustannusarvio|quote/.test(q)) {
+  if (/tarjous|hinta-arvio|arvio|kustannusarvio|quote|estimate|offert|prisförslag|prisforslag/.test(q)) {
     push({ type: 'quote', mode: 'quote_form', label: actionLang === 'en' ? 'Request a quote' : actionLang === 'sv' ? 'Begär offert' : 'Pyydä tarjous' });
     if (quote) push({ type: 'quote', label: actionLang === 'en' ? 'Open quote form' : actionLang === 'sv' ? 'Öppna offertformuläret' : 'Avaa tarjouslomake', url: quote });
   }
 
-  if (/soittakaa|ottakaa yhteytta|ottakaa yhteyttä|yhteydenotto|call me|contact me/.test(q)) {
+  if (/soittakaa|ottakaa yhteytta|ottakaa yhteyttä|yhteydenotto|call me|contact me|ring mig|kontakta mig/.test(q)) {
     push({ type: 'callback', mode: 'lead', label: actionLang === 'en' ? 'Request a callback' : actionLang === 'sv' ? 'Be om kontakt' : 'Pyydä yhteydenottoa' });
   }
 
-  if (phone && (handoff || /puhelin|soita|soittaa|yhteys/.test(q))) {
+  if (phone && (handoff || /puhelin|soita|soittaa|yhteys|phone|call|telefon|ringa|kontakt/.test(q))) {
     push({ type: 'phone', label: actionLang === 'en' ? 'Call' : actionLang === 'sv' ? 'Ring' : 'Soita', url: 'tel:' + phone.replace(/\s+/g, '') });
   }
-  if (email && (handoff || /sahkoposti|sähköposti|email|meili|yhteys/.test(q))) {
+  if (email && (handoff || /sahkoposti|sähköposti|email|e-mail|meili|yhteys|e-post|contact|kontakt/.test(q))) {
     push({ type: 'email', label: actionLang === 'en' ? 'Send email' : actionLang === 'sv' ? 'Skicka e-post' : 'Lähetä sähköposti', url: 'mailto:' + email });
   }
 
@@ -773,58 +773,108 @@ function buildProfileKnowledge(profile = {}) {
   return rows;
 }
 
+const freeTranslationCache = new Map();
+
+async function translateTextFree(text, lang, sourceLang = 'auto') {
+  const target = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
+  const source = ['fi','sv','en','auto'].includes(String(sourceLang || '').toLowerCase()) ? String(sourceLang).toLowerCase() : 'auto';
+  const input = String(text || '').trim();
+  if (!input) return '';
+  if (source === target) return input;
+
+  const key = source + '>' + target + ':' + input;
+  if (freeTranslationCache.has(key)) return freeTranslationCache.get(key);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5500);
+  try {
+    const url = new URL('https://translate.googleapis.com/translate_a/single');
+    url.search = new URLSearchParams({
+      client: 'gtx',
+      sl: source,
+      tl: target,
+      dt: 't',
+      q: input.slice(0, 5000),
+    }).toString();
+
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const payload = await response.json();
+    const translated = Array.isArray(payload?.[0])
+      ? payload[0].map((part) => Array.isArray(part) ? String(part[0] || '') : '').join('').trim()
+      : '';
+    if (!translated) throw new Error('Empty translation');
+
+    freeTranslationCache.set(key, translated);
+    if (freeTranslationCache.size > 2500) {
+      [...freeTranslationCache.keys()].slice(0, 500).forEach((cacheKey) => freeTranslationCache.delete(cacheKey));
+    }
+    return translated;
+  } catch (e) {
+    console.warn('Free translation failed', target, e?.message || e);
+    return '';
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function forceAnswerLanguage(answer, lang) {
   const target = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const text = String(answer || '').trim();
-  if (!text || target === 'fi' || !openai) return text;
-  try {
-    const instruction = target === 'sv'
-      ? 'Översätt följande kundtjänstsvar till naturlig svenska. Behåll exakt samma fakta, priser, länkar, e-postadresser och betydelse. Svara endast med den översatta texten.'
-      : 'Translate the following customer-service answer into natural English. Preserve exactly the same facts, prices, links, email addresses, and meaning. Return only the translated text.';
-    const rr = await openai.responses.create({
-      model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
-      input: instruction + '\n\n' + text,
-      max_output_tokens: 300,
-    });
-    return String(rr.output_text || '').trim() || text;
-  } catch (e) {
-    console.error('Answer language enforcement failed', e);
-    return text;
-  }
+  if (!text || target === 'fi') return text;
+  return translateTextFree(text, target, 'auto');
 }
 
 async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {} }) {
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const cleanMessage = String(message || '').trim();
-  if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: 'Tyhjä', sourceIds: [], selected: [] };
+  if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: responseLang === 'en' ? 'Empty' : responseLang === 'sv' ? 'Tom' : 'Tyhjä', sourceIds: [], selected: [] };
 
   const normalized = normalizeSearchText(cleanMessage);
-  if (/^(hei|moi|moikka|hello|hi|hey|terve)[!. ]*$/.test(normalized)) {
+  if (/^(hei|moi|moikka|hello|hi|hey|terve|hej|hallå|halla)[!. ]*$/.test(normalized)) {
     return { answer: responseLang === 'en' ? 'Hi! How can I help?' : responseLang === 'sv' ? 'Hej! Hur kan jag hjälpa?' : 'Hei! Miten voin auttaa?', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Greeting' : responseLang === 'sv' ? 'Hälsning' : 'Tervehdys', sourceIds: [], selected: [] };
   }
-  if (/^(kiitos|kiitti|thanks|thank you)[!. ]*$/.test(normalized)) {
+  if (/^(kiitos|kiitti|thanks|thank you|tack|tack så mycket|tack sa mycket)[!. ]*$/.test(normalized)) {
     return { answer: responseLang === 'en' ? 'You’re welcome! I’m happy to help if you have anything else.' : responseLang === 'sv' ? 'Varsågod! Jag hjälper gärna om du undrar över något mer.' : 'Ole hyvä! Autan mielelläni, jos tulee vielä jotain mieleen.', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Thanks' : responseLang === 'sv' ? 'Tack' : 'Kiitos', sourceIds: [], selected: [] };
   }
 
   const priorQuestions = history.slice(-2).map((x) => String(x.question || x.user || '')).filter(Boolean);
-  const needsContext = cleanMessage.length < 55 || /^(enta|entä|ja |mites|miten sitten|siis|se |sen |sita|sitä)/i.test(cleanMessage);
+  const needsContext = cleanMessage.length < 55 || /^(enta|entä|ja |mites|miten sitten|siis|se |sen |sita|sitä|what about|and |how about|och |hur är det|hur ar det)/i.test(cleanMessage);
   const retrievalQuery = needsContext && priorQuestions.length ? priorQuestions.slice(-1)[0] + ' ' + cleanMessage : cleanMessage;
-  let selected = selectRelevantKnowledge(rows, retrievalQuery, 8);
   const intent = inferIntent(cleanMessage);
 
-  // Free local retrieval: no paid model/API call is required.
-  const aliases = [
-    { re: /(hinta|maksaa|maksu|price|cost|kostar|pris)/i, add: ' hinta maksaa price cost pris kostar' },
-    { re: /(kokeilu|trial|provperiod|prova|test)/i, add: ' kokeilu trial provperiod' },
-    { re: /(asenn|install|käyttöönot|setup|implementation)/i, add: ' asennus käyttöönotto install installation setup' },
-    { re: /(tilaus|subscribe|subscription|prenumeration|beställ)/i, add: ' tilaus subscription prenumeration' },
-    { re: /(yhteys|contact|kontakt|email|e-mail|sähköposti)/i, add: ' yhteys contact kontakt sähköposti email' },
-  ];
+  // Translate only the search query into Finnish so Finnish knowledge bases can
+  // be searched in Swedish/English without a paid model. If the free translator
+  // is unavailable, the multilingual alias expansion below still covers the
+  // most common business intents.
   let localQuery = retrievalQuery;
-  for (const alias of aliases) if (alias.re.test(retrievalQuery)) localQuery += alias.add;
-  const localSelected = selectRelevantKnowledge(rows, localQuery, 8);
-  if (localSelected.length) selected = localSelected;
+  if (responseLang !== 'fi') {
+    const translatedQuery = await translateTextFree(retrievalQuery, 'fi', 'auto');
+    if (translatedQuery) localQuery += ' ' + translatedQuery;
+  }
 
+  const aliases = [
+    { re: /(hinta|maksaa|maksu|hinnoittelu|price|cost|pricing|kostar|pris|kostnad)/i, add: ' hinta maksaa maksu hinnoittelu price cost pricing pris kostar kostnad' },
+    { re: /(auki|aukiolo|avaa|sulkee|opening|open|hours|öppet|oppet|öppettider|oppettider)/i, add: ' auki aukiolo aukioloajat opening hours open öppet öppettider' },
+    { re: /(palvelu|teette|tarjoatte|service|services|offer|tjänst|tjanst|tjänster|tjanster|erbjuder)/i, add: ' palvelu palvelut teette tarjoatte service services tjänst tjänster erbjuder' },
+    { re: /(toimialue|alue|paikkakunta|where do you serve|service area|område|omrade|verksamhetsområde)/i, add: ' toimialue alue paikkakunta service area område verksamhetsområde' },
+    { re: /(osoite|sijainti|address|location|adress|var finns)/i, add: ' osoite sijainti address location adress' },
+    { re: /(puhelin|numero|soita|phone|call|telephone|telefon|ringa)/i, add: ' puhelin numero soittaa phone call telephone telefon ringa' },
+    { re: /(sähköposti|sahkoposti|email|e-mail|meili|e-post)/i, add: ' sähköposti sahkoposti email e-mail e-post' },
+    { re: /(ajanvaraus|varaa|booking|appointment|boka|bokning|tidsbokning)/i, add: ' ajanvaraus varaa aika booking appointment boka bokning tidsbokning' },
+    { re: /(tarjous|tarjouspyyntö|tarjouspyynto|quote|estimate|offert|prisförslag|prisforslag)/i, add: ' tarjous tarjouspyyntö quote estimate offert prisförslag' },
+    { re: /(kokeilu|trial|provperiod|prova|test)/i, add: ' kokeilu trial provperiod prova test' },
+    { re: /(asenn|install|käyttöönot|kayttoonot|setup|implementation|installation)/i, add: ' asennus käyttöönotto install installation setup implementation' },
+    { re: /(tilaus|subscribe|subscription|prenumeration|beställ|bestall|abonnemang)/i, add: ' tilaus subscription subscribe prenumeration beställ abonnemang' },
+    { re: /(yhteys|contact|kontakt)/i, add: ' yhteys contact kontakt' },
+    { re: /(verkkosivu|website|webbplats|hemsida)/i, add: ' verkkosivu website webbplats hemsida' },
+  ];
+  for (const alias of aliases) if (alias.re.test(localQuery)) localQuery += alias.add;
+
+  const selected = selectRelevantKnowledge(rows, localQuery, 8);
   if (!selected.length) {
     return { answer: '', handoff: true, confidence: 0.2, intent, sourceIds: [], selected: [] };
   }
@@ -838,6 +888,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     sourceIds: top.id ? [top.id] : [],
     selected,
   };
+}
 
 function cookies(req) {
   return Object.fromEntries(
@@ -1315,7 +1366,6 @@ app.post('/api/i18n/translate', i18nLimiter, async (req,res) => {
     const lang = ['sv','en'].includes(String(req.body?.lang || '').toLowerCase()) ? String(req.body.lang).toLowerCase() : 'fi';
     const texts = Array.isArray(req.body?.texts) ? req.body.texts.map((x) => String(x || '').trim().slice(0,5000)).filter(Boolean).slice(0,160) : [];
     if (lang === 'fi' || !texts.length) return res.json({ translations:texts });
-    const target = lang === 'sv' ? 'Swedish' : 'English';
     const translations = new Array(texts.length);
     const pending = [];
     const pendingIndexes = [];
@@ -1325,19 +1375,12 @@ app.post('/api/i18n/translate', i18nLimiter, async (req,res) => {
       else { pending.push(text); pendingIndexes.push(index); }
     });
     if (pending.length) {
-      if (!openai) return res.status(503).json({ error:'Translation service unavailable' });
-      const prompt = 'Translate the following RESPONDO AI software interface strings from Finnish into ' + target + '. ' +
-        'Preserve RESPONDO AI, URLs, email addresses, prices, identifiers, placeholders, HTML-like tokens and legal meaning. ' +
-        'Do not add explanations. Return only valid JSON in the exact form {"translations":["..."]} with one translation per input, same order.\n\n' +
-        JSON.stringify(pending);
-      const rr = await openai.responses.create({ model:process.env.OPENAI_MODEL || 'gpt-5.6-luna', input:prompt, max_output_tokens:8000 });
-      const raw = String(rr.output_text || '').trim();
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error('Translation response invalid');
-      const parsed = JSON.parse(match[0]);
-      if (!Array.isArray(parsed.translations) || parsed.translations.length !== pending.length) throw new Error('Translation count mismatch');
-      parsed.translations.forEach((value,i) => {
-        const translated = String(value || pending[i]).slice(0,8000);
+      const translatedBatch = await Promise.all(pending.map((text) => translateTextFree(text, lang, 'auto')));
+      if (translatedBatch.some((value) => !value)) {
+        return res.status(503).json({ error: lang === 'sv' ? 'Översättningstjänsten är tillfälligt otillgänglig.' : 'Translation service is temporarily unavailable.' });
+      }
+      translatedBatch.forEach((value,i) => {
+        const translated = String(value || '').slice(0,8000);
         translations[pendingIndexes[i]] = translated;
         i18nCache.set(lang + ':' + pending[i], translated);
       });
@@ -3438,16 +3481,28 @@ app.get('/api/public/:slug/widget-token', async (req, res) => {
         LIMIT 3`,
       [tenant.id],
     );
-    const quickReplies = kr.rows
+
+    const sourceQuickReplies = kr.rows
       .map((x) => String(x.title || '').trim())
       .filter(Boolean)
       .slice(0, 3);
+    const quickReplies = lang === 'fi'
+      ? sourceQuickReplies
+      : (await Promise.all(sourceQuickReplies.map((title) => forceAnswerLanguage(title, lang)))).filter(Boolean);
+
+    const sourceGreeting = String(tenant.greeting || 'Hei! Miten voin auttaa?').trim();
+    const translatedGreeting = lang === 'fi' ? sourceGreeting : await forceAnswerLanguage(sourceGreeting, lang);
+    const greeting = translatedGreeting || (lang === 'en'
+      ? 'Hi! How can I help?'
+      : lang === 'sv'
+        ? 'Hej! Hur kan jag hjälpa?'
+        : 'Hei! Miten voin auttaa?');
 
     return res.json({
       token,
       name: tenant.bot_name || 'RESPONDO AI',
       avatar: tenant.bot_avatar || 'robot-1',
-      greeting: lang === 'en' ? 'Hi! How can I help?' : tenant.greeting,
+      greeting,
       accent: tenant.accent,
       quickReplies,
     });
@@ -3478,6 +3533,7 @@ app.get('/api/public/:slug', async (req, res) => {
 });
 
 app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
+  let requestLang = 'fi';
   try {
     let body = req.body;
     if (typeof body === 'string') {
@@ -3485,6 +3541,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     }
     body = body || {};
     const lang = ['fi','sv','en'].includes(String(body.lang || '').toLowerCase()) ? String(body.lang).toLowerCase() : 'fi';
+    requestLang = lang;
     const message = String(body.message || '').trim().slice(0, 1200);
     if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : lang === 'sv' ? 'Skriv en fråga.' : 'Kirjoita kysymys.' });
     const profile = body.profile && typeof body.profile === 'object' ? body.profile : {};
@@ -3497,23 +3554,49 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       history,
       lang,
     });
-    const handoffAnswer = lang === 'en'
+
+    const noAnswer = lang === 'en'
       ? 'I cannot find a reliable answer to this from the provided company information. Add the answer to the knowledge base and the bot will know it next time.'
       : lang === 'sv'
         ? 'Jag hittar inget säkert svar på detta i företagets information. Lägg till rätt svar i kunskapsbasen så kan Respondo svara på det nästa gång.'
         : 'Tätä tietoa ei löytynyt yrityksen tiedoista. Lisää oikea vastaus kerran, niin Respondo osaa vastata siihen jatkossa.';
+    const translationUnavailable = lang === 'en'
+      ? 'I found the relevant company information, but could not translate the answer reliably right now. Please try again in a moment.'
+      : lang === 'sv'
+        ? 'Jag hittade relevant företagsinformation men kunde inte översätta svaret tillförlitligt just nu. Försök igen om en stund.'
+        : noAnswer;
+
+    let handoff = result.handoff;
+    let answer = result.answer;
+    if (!handoff && lang !== 'fi') {
+      const translated = await forceAnswerLanguage(answer, lang);
+      if (translated) answer = translated;
+      else {
+        handoff = true;
+        answer = translationUnavailable;
+      }
+    }
+    if (handoff && !answer) answer = noAnswer;
+
     return res.json({
-      answer: result.handoff ? handoffAnswer : result.answer,
-      handoff: result.handoff,
-      confidence: result.confidence,
+      answer,
+      handoff,
+      confidence: handoff ? Math.min(result.confidence, 0.35) : result.confidence,
       intent: result.intent,
-      actions: chatActions(rows, message, result.handoff, lang),
+      actions: chatActions(rows, message, handoff, lang),
     });
   } catch (e) {
     console.error('Demo chat failed', e);
-    return res.status(500).json({ error: 'Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.' });
+    return res.status(500).json({
+      error: requestLang === 'en'
+        ? 'The response failed. Please try again in a moment.'
+        : requestLang === 'sv'
+          ? 'Det gick inte att få ett svar just nu. Försök igen om en stund.'
+          : 'Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.'
+    });
   }
 });
+
 
 app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
   try {
@@ -3614,6 +3697,7 @@ app.get('/api/public/:slug/live', publicChatLimiter, async (req,res) => {
 });
 
 app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
+  let requestLang = 'fi';
   try {
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.status(404).json({ error: 'Yritystä ei löytynyt.' });
@@ -3624,6 +3708,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     }
     body = body || {};
     const lang = ['fi','sv','en'].includes(String(body.lang || '').toLowerCase()) ? String(body.lang).toLowerCase() : 'fi';
+    requestLang = lang;
 
     const origin = requestOrigin(req);
     const baseHost = normalizeHost(BASE);
@@ -3649,7 +3734,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     }
 
     const message = String(body.message || '').trim().slice(0, 1200);
-    if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : 'Kirjoita kysymys.' });
+    if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : lang === 'sv' ? 'Skriv en fråga.' : 'Kirjoita kysymys.' });
     const visitorRef = String(body.visitorRef || '').trim().slice(0, 160);
     const thread = visitorRef ? await getOrCreateThread(t.id,'website',visitorRef,visitorRef) : null;
     if (thread) {
@@ -3704,32 +3789,43 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       pageContext: body.pageContext && typeof body.pageContext === 'object' ? body.pageContext : {},
     });
 
+    const noAnswer = lang === 'en'
+      ? 'I cannot find a reliable answer to this in the company information. Leave your name and phone number or email below, and someone from the company can get back to you.'
+      : lang === 'sv'
+        ? 'Jag hittar inget säkert svar på detta i företagets information. Lämna ditt namn och telefonnummer eller din e-postadress nedan, så kan någon från företaget kontakta dig.'
+        : 'Tähän en löydä varmaa vastausta yrityksen tiedoista. Jätä alle nimesi ja puhelinnumerosi tai sähköpostisi, niin yrityksen henkilö voi palata sinulle.';
+    const translationUnavailable = lang === 'en'
+      ? 'I found the relevant company information, but could not translate the answer reliably right now. Leave your contact details below or try again in a moment.'
+      : lang === 'sv'
+        ? 'Jag hittade relevant företagsinformation men kunde inte översätta svaret tillförlitligt just nu. Lämna dina kontaktuppgifter nedan eller försök igen om en stund.'
+        : noAnswer;
+
     let answer = result.answer;
-    if (result.handoff) {
-      answer = lang === 'en'
-        ? 'I cannot find a reliable answer to this in the company information. Leave your name and phone number or email below, and someone from the company can get back to you.'
-        : lang === 'sv'
-          ? 'Jag hittar inget säkert svar på detta i företagets information. Lämna ditt namn och telefonnummer eller din e-postadress nedan, så kan någon från företaget kontakta dig.'
-          : 'Tähän en löydä varmaa vastausta yrityksen tiedoista. Jätä alle nimesi ja puhelinnumerosi tai sähköpostisi, niin yrityksen henkilö voi palata sinulle.';
-    } else {
-      // Final guardrail: never leak a Finnish stored knowledge answer into an
-      // English or Swedish widget. The selected widget language wins.
-      answer = await forceAnswerLanguage(answer, lang);
+    let handoff = result.handoff;
+    if (handoff) {
+      answer = noAnswer;
+    } else if (lang !== 'fi') {
+      const translated = await forceAnswerLanguage(answer, lang);
+      if (translated) answer = translated;
+      else {
+        handoff = true;
+        answer = translationUnavailable;
+      }
     }
 
-    const actions = chatActions(kr.rows, message, result.handoff, lang);
+    const actions = chatActions(kr.rows, message, handoff, lang);
     if (thread) {
       await appendChatMessage({
         tenantId:t.id,threadId:thread.id,sourceChannel:'website',
         externalContactId:visitorRef,visitorRef,role:'assistant',text:answer,
-        metadata:{ handoff:result.handoff,intent:result.intent,verified:!result.handoff },
+        metadata:{ handoff,intent:result.intent,verified:!handoff },
       });
     }
     await q(
       `INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,page_url,page_title,source_channel,external_contact_id)
        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'website',$12)`,
       [
-        uid(), t.id, message, answer, result.intent, result.confidence, result.sourceIds, result.handoff,
+        uid(), t.id, message, answer, result.intent, handoff ? Math.min(result.confidence, 0.35) : result.confidence, result.sourceIds, handoff,
         visitorRef || null,
         String(body.pageContext?.url || '').slice(0, 1000) || null,
         String(body.pageContext?.title || '').slice(0, 300) || null,
@@ -3739,17 +3835,23 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
 
     return res.json({
       answer,
-      handoff: result.handoff,
-      confidence: result.confidence,
+      handoff,
+      confidence: handoff ? Math.min(result.confidence, 0.35) : result.confidence,
       intent: result.intent,
       sourceIds: result.sourceIds,
-      verified: !result.handoff && Array.isArray(result.sourceIds) && result.sourceIds.length > 0,
+      verified: !handoff && Array.isArray(result.sourceIds) && result.sourceIds.length > 0,
       actions,
-      canLeaveContact: result.handoff,
+      canLeaveContact: handoff,
     });
   } catch (e) {
     console.error('Chat failed', e);
-    return res.status(500).json({ error: 'Vastausta ei saatu juuri nyt.' });
+    return res.status(500).json({
+      error: requestLang === 'en'
+        ? 'The response failed. Please try again in a moment.'
+        : requestLang === 'sv'
+          ? 'Det gick inte att få ett svar just nu. Försök igen om en stund.'
+          : 'Vastausta ei saatu juuri nyt.'
+    });
   }
 });
 
