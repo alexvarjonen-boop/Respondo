@@ -854,6 +854,16 @@ function auth(req, res, next) {
   }
 }
 
+function ownerOnly(req,res,next) {
+  if (req.user?.role === 'agent') return res.status(403).json({ error:'Vain yrityksen pääkäyttäjä voi käyttää tätä toimintoa.' });
+  next();
+}
+
+function agentOrOwner(req,res,next) {
+  if (req.user?.role === 'agent' && !req.user?.tenantId) return res.status(403).json({ error:'Ei käyttöoikeutta.' });
+  next();
+}
+
 function ownerTrafficOnly(req, res, next) {
   const ownerEmail = cleanEmail(process.env.OWNER_EMAIL || process.env.SUPPORT_EMAIL);
   if (!ownerEmail || cleanEmail(req.user?.email) !== ownerEmail) {
@@ -1948,6 +1958,13 @@ app.post('/api/auth/logout', (req, res) => {
 
 app.get('/api/auth/me', auth, async (req, res) => {
   try {
+    if (req.user.role === 'agent') {
+      const ar=await q(`SELECT sa.id,sa.display_name,sa.avatar,sa.username,sa.status,t.name AS company_name
+                           FROM support_agents sa JOIN tenants t ON t.id=sa.tenant_id
+                          WHERE sa.id=$1 AND sa.tenant_id=$2`,[req.user.agentId,req.user.tenantId]);
+      if (!ar.rowCount) return res.status(404).json({ error:'Profiilia ei löytynyt.' });
+      return res.json({ ...ar.rows[0],role:'agent',preferred_language:'fi' });
+    }
     const r = await q(
       'SELECT id,email,full_name,company_name,business_id,status,subscription_status,current_period_end,preferred_language FROM users WHERE id=$1',
       [req.user.sub],
@@ -1959,7 +1976,26 @@ app.get('/api/auth/me', auth, async (req, res) => {
   }
 });
 
-app.get('/api/app/dashboard', auth, subscribed, async (req, res) => {
+app.get('/api/app/agent-dashboard', auth, agentOrOwner, async (req,res) => {
+  try {
+    if (req.user.role !== 'agent') return res.status(403).json({ error:'Tämä näkymä on asiakaspalvelijoille.' });
+    const tenantId=req.user.tenantId, agentId=req.user.agentId;
+    const agent=(await q('SELECT id,display_name,avatar,username,status FROM support_agents WHERE id=$1 AND tenant_id=$2',[agentId,tenantId])).rows[0];
+    if (!agent) return res.status(404).json({ error:'Profiilia ei löytynyt.' });
+    const threads=await q(`SELECT ct.id,ct.source_channel,ct.external_contact_id,ct.visitor_ref,ct.mode,ct.status,ct.last_activity_at,ct.created_at,
+      COALESCE(json_agg(json_build_object('id',cm.id,'role',cm.role,'message',cm.message,'created_at',cm.created_at) ORDER BY cm.created_at ASC) FILTER (WHERE cm.id IS NOT NULL),'[]') AS messages
+      FROM chat_threads ct LEFT JOIN chat_messages cm ON cm.thread_id=ct.id
+      WHERE ct.tenant_id=$1 AND ct.assigned_agent_id=$2
+      GROUP BY ct.id ORDER BY ct.last_activity_at DESC LIMIT 80`,[tenantId,agentId]);
+    return res.json({agent,liveThreads:threads.rows,stats:{
+      conversations:threads.rowCount,
+      open:threads.rows.filter(x=>x.status==='open').length,
+      human:threads.rows.filter(x=>x.mode==='human').length
+    }});
+  } catch(e){ return res.status(500).json({ error:'Asiakaspalvelunäkymää ei voitu ladata.' }); }
+});
+
+app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
   try {
     const t = await q('SELECT * FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtilaa ei löytynyt.' });
