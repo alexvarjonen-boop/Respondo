@@ -4043,9 +4043,19 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         const net = Math.max(minimum, base + (perUnit * quantity));
         const vat = net * (vatPercent / 100);
         const total = net + vat;
+        const sourceServiceName = String(tenant.quote_service_name || 'Tarjous').trim();
+        const sourceUnitLabel = String(tenant.quote_unit_label || 'kpl').trim();
+        const localizedServiceName = actionLang === 'fi'
+          ? sourceServiceName
+          : (await forceAnswerLanguage(sourceServiceName, actionLang)) ||
+            (actionLang === 'en' ? 'Quote' : 'Offert');
+        const localizedUnitLabel = actionLang === 'fi'
+          ? sourceUnitLabel
+          : (await forceAnswerLanguage(sourceUnitLabel, actionLang)) ||
+            (actionLang === 'en' ? 'pcs' : 'st');
         computedQuote = {
-          serviceName:tenant.quote_service_name || (actionLang === 'en' ? 'Quote' : actionLang === 'sv' ? 'Offert' : 'Tarjous'),
-          unitLabel:tenant.quote_unit_label || (actionLang === 'en' ? 'pcs' : actionLang === 'sv' ? 'st' : 'kpl'),
+          serviceName:localizedServiceName,
+          unitLabel:localizedUnitLabel,
           quantity,
           net:Number(net.toFixed(2)),
           vatPercent,
