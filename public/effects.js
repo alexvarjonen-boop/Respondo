@@ -121,22 +121,94 @@
     update();
   }
 
+  function assistantLanguage() {
+    const queryLang = new URLSearchParams(location.search).get('lang');
+    if (['fi','sv','en'].includes(queryLang)) return queryLang;
+    const storedLang = localStorage.getItem('respondo_lang');
+    return ['fi','sv','en'].includes(storedLang) ? storedLang : 'fi';
+  }
+
+  function assistantText(fi, sv, en) {
+    const lang = assistantLanguage();
+    return lang === 'sv' ? sv : lang === 'en' ? en : fi;
+  }
+
   const faq = [
-    {keys:['hinta','maksaa','49','vuosi','kuukausi','price','pricing','cost','month','year'], answer:'Respondo maksaa 49,99 € / kk tai vuositilauksella 44,99 € / kk, jolloin 539,88 € laskutetaan kerran vuodessa. Voit kokeilla kumpaa tahansa 3 päivää ilmaiseksi.'},
-    {keys:['kokeilu','ilmainen','3 päiv','trial','free','3 day'], answer:'Saat kokeilla Respondoa 3 päivää ilmaiseksi. Maksutapa lisätään alussa Stripessä, mutta veloitus alkaa vasta kokeilun jälkeen, jos et peru tilausta sitä ennen.'},
-    {keys:['miten toimii','toimii','tietopohja','tieto','how does it work','how it works','knowledge base'], answer:'Lisäät yrityksesi tiedot kerran. Respondo vastaa niiden perusteella ja ohjaa asiakkaan sinulle, jos varmaa vastausta ei löydy.'},
-    {keys:['asennus','sivulle','verkkosivu','widget','install','installation','website'], answer:'Kun tili on valmis, kopioit hallintapaneelista yhden koodirivin verkkosivullesi. Sen jälkeen chat on käytössä.'},
-    {keys:['tietoturva','gdpr','turvallinen','data','security','privacy','safe'], answer:'Respondo käyttää suojattuja HTTPS-yhteyksiä ja rajattuja käyttöoikeuksia. Korttitiedot käsittelee Stripe. Tarkemmat tiedot löydät tietoturva- ja tietosuojasivuilta.'},
-    {keys:['peru','irtisano','lopeta','cancel','cancellation'], answer:'Voit perua tilauksen milloin tahansa. Palvelu toimii normaalisti jo maksetun laskutuskauden loppuun asti.'},
-    {keys:['y-tunnus','ytunnus','yritys','business id','company'], answer:'Respondon Y-tunnus on 3599437-5. Saat meidät kiinni sähköpostilla osoitteesta respondoai.fi@outlook.com.'}
+    {
+      keys:['hinta','maksaa','49','vuosi','kuukausi','price','pricing','cost','month','year','pris','kostar','kostnad','månad','manad','år','ar'],
+      answer:{
+        fi:'Respondo maksaa 49,99 € / kk tai vuositilauksella 44,99 € / kk, jolloin 539,88 € laskutetaan kerran vuodessa. Voit kokeilla kumpaa tahansa 3 päivää ilmaiseksi.',
+        sv:'Respondo kostar 49,99 € / mån eller 44,99 € / mån med årsabonnemang, då 539,88 € faktureras en gång per år. Du kan prova båda alternativen gratis i 3 dagar.',
+        en:'Respondo costs €49.99 per month, or €44.99 per month on the annual plan, billed as €539.88 once per year. You can try either plan free for 3 days.'
+      }
+    },
+    {
+      keys:['kokeilu','ilmainen','3 päiv','trial','free','3 day','provperiod','prova','gratis','3 dagar'],
+      answer:{
+        fi:'Saat kokeilla Respondoa 3 päivää ilmaiseksi. Maksutapa lisätään alussa Stripessä, mutta veloitus alkaa vasta kokeilun jälkeen, jos et peru tilausta sitä ennen.',
+        sv:'Du kan prova Respondo gratis i 3 dagar. Betalningsmetoden läggs till i Stripe i början, men debiteringen börjar först efter provperioden om du inte avslutar innan dess.',
+        en:'You can try Respondo free for 3 days. You add a payment method in Stripe at the start, but billing begins only after the trial unless you cancel before it ends.'
+      }
+    },
+    {
+      keys:['miten toimii','toimii','tietopohja','tieto','how does it work','how it works','knowledge base','hur fungerar','fungerar','kunskapsbas'],
+      answer:{
+        fi:'Lisäät yrityksesi tiedot kerran. Respondo vastaa niiden perusteella ja ohjaa asiakkaan sinulle, jos varmaa vastausta ei löydy.',
+        sv:'Du lägger in företagets uppgifter en gång. Respondo svarar utifrån dem och skickar kunden vidare till dig om ett säkert svar saknas.',
+        en:'You add your company information once. Respondo answers from that information and hands the customer over to you when a reliable answer is not available.'
+      }
+    },
+    {
+      keys:['asennus','sivulle','verkkosivu','widget','install','installation','website','installera','webbplats','hemsida'],
+      answer:{
+        fi:'Kun tili on valmis, kopioit hallintapaneelista yhden koodirivin verkkosivullesi. Sen jälkeen chat on käytössä.',
+        sv:'När kontot är klart kopierar du en kodrad från kontrollpanelen till din webbplats. Därefter är chatten aktiv.',
+        en:'Once your account is ready, copy one line of code from the dashboard to your website. The chat is then active.'
+      }
+    },
+    {
+      keys:['tietoturva','gdpr','turvallinen','data','security','privacy','safe','säkerhet','sakerhet','integritet','trygg'],
+      answer:{
+        fi:'Respondo käyttää suojattuja HTTPS-yhteyksiä ja rajattuja käyttöoikeuksia. Korttitiedot käsittelee Stripe. Tarkemmat tiedot löydät tietoturva- ja tietosuojasivuilta.',
+        sv:'Respondo använder skyddade HTTPS-anslutningar och begränsade åtkomsträttigheter. Kortuppgifter hanteras av Stripe. Mer information finns på sidorna om säkerhet och integritet.',
+        en:'Respondo uses secure HTTPS connections and restricted access controls. Card details are handled by Stripe. More information is available on the security and privacy pages.'
+      }
+    },
+    {
+      keys:['peru','irtisano','lopeta','cancel','cancellation','avsluta','uppsäg','uppsag'],
+      answer:{
+        fi:'Voit perua tilauksen milloin tahansa. Palvelu toimii normaalisti jo maksetun laskutuskauden loppuun asti.',
+        sv:'Du kan avsluta abonnemanget när som helst. Tjänsten fungerar normalt till slutet av den redan betalda faktureringsperioden.',
+        en:'You can cancel the subscription at any time. The service continues normally until the end of the billing period you have already paid for.'
+      }
+    },
+    {
+      keys:['y-tunnus','ytunnus','yritys','business id','company','fo-nummer','företag','foretag','kontakt'],
+      answer:{
+        fi:'Respondon Y-tunnus on 3599437-5. Saat meidät kiinni sähköpostilla osoitteesta respondoai.fi@outlook.com.',
+        sv:'Respondos FO-nummer är 3599437-5. Du når oss via e-post på respondoai.fi@outlook.com.',
+        en:'Respondo’s Business ID is 3599437-5. You can reach us by email at respondoai.fi@outlook.com.'
+      }
+    }
   ];
 
   function assistantAnswer(text) {
-    const q = text.toLowerCase();
+    const q = String(text || '').toLowerCase();
+    const lang = assistantLanguage();
     const hit = faq.find(item => item.keys.some(k => q.includes(k)));
-    if (hit) return hit.answer;
-    if (q.includes('hei') || q.includes('moi') || q.includes('hello') || q.includes('hi') || q.includes('hey')) return 'Moi! Kysy ihan vapaasti Respondosta — esimerkiksi hinnasta, kokeilusta, käyttöönotosta tai siitä, miten palvelu toimii.';
-    return 'En löytänyt tähän varmaa vastausta. Voit kysyä hinnasta, kokeilusta, käyttöönotosta tai tilauksesta, tai laittaa meille viestiä osoitteeseen respondoai.fi@outlook.com.';
+    if (hit) return hit.answer[lang] || hit.answer.fi;
+    if (['hei','moi','moikka','hello','hi','hey','hej','hallå','halla','tjena'].some(word => q.includes(word))) {
+      return assistantText(
+        'Moi! Kysy ihan vapaasti Respondosta — esimerkiksi hinnasta, kokeilusta, käyttöönotosta tai siitä, miten palvelu toimii.',
+        'Hej! Fråga gärna om Respondo – till exempel om priset, provperioden, installationen eller hur tjänsten fungerar.',
+        'Hi! Feel free to ask about Respondo — for example about pricing, the trial, installation, or how the service works.'
+      );
+    }
+    return assistantText(
+      'En löytänyt tähän varmaa vastausta. Voit kysyä hinnasta, kokeilusta, käyttöönotosta tai tilauksesta, tai laittaa meille viestiä osoitteeseen respondoai.fi@outlook.com.',
+      'Jag hittade inget säkert svar på detta. Du kan fråga om priset, provperioden, installationen eller abonnemanget, eller mejla oss på respondoai.fi@outlook.com.',
+      'I could not find a reliable answer to that. You can ask about pricing, the trial, installation or the subscription, or email us at respondoai.fi@outlook.com.'
+    );
   }
 
   const localAiHistory = [];
@@ -349,20 +421,26 @@ YLEINEN TOIMINTAOHJE:
 
   async function localAiAnswer(text, onProgress) {
     const profile = getOwnerProfile();
-    if (onProgress) onProgress(25, 'Katson yrityksen tiedoista…');
+    const lang = assistantLanguage();
+    if (onProgress) onProgress(25, assistantText('Katson yrityksen tiedoista…','Katson yrityksen tiedoista…','Checking the company information…'));
     const response = await fetch('/api/public/demo-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: text,
+        lang,
         profile,
         history: localAiHistory.slice(-6),
       }),
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || 'Vastausta ei saatu tällä kertaa.');
-    if (onProgress) onProgress(100, 'Hetki, etsin vastausta…');
-    const answer = String(data.answer || '').trim() || 'En löytänyt tähän varmaa vastausta yrityksen tiedoista.';
+    if (!response.ok) throw new Error(data.error || assistantText('Vastausta ei saatu tällä kertaa.','Det gick inte att få ett svar den här gången.','No answer was available this time.'));
+    if (onProgress) onProgress(100, assistantText('Hetki, etsin vastausta…','Ett ögonblick, jag söker svaret…','One moment, searching for the answer…'));
+    const answer = String(data.answer || '').trim() || assistantText(
+      'En löytänyt tähän varmaa vastausta yrityksen tiedoista.',
+      'Jag hittade inget säkert svar på detta i företagets information.',
+      'I could not find a reliable answer to this in the company information.'
+    );
     localAiHistory.push({ question: text, answer });
     if (localAiHistory.length > 12) localAiHistory.splice(0, localAiHistory.length - 12);
     return answer;
@@ -408,9 +486,17 @@ YLEINEN TOIMINTAOHJE:
       } catch (err) {
         typing.classList.remove('typing');
         const fallback = location.pathname === '/assistant'
-          ? (ownerProfileFallback(clean) || 'Tätä tietoa ei löytynyt yrityksen tallentamista tiedoista.')
+          ? (assistantLanguage() === 'fi'
+              ? (ownerProfileFallback(clean) || 'Tätä tietoa ei löytynyt yrityksen tallentamista tiedoista.')
+              : assistantText(
+                  'Tätä tietoa ei löytynyt yrityksen tallentamista tiedoista.',
+                  'Den här informationen hittades inte i företagets sparade uppgifter.',
+                  'This information was not found in the company’s saved details.'
+                ))
           : assistantAnswer(clean);
-        typing.textContent = fallback + (location.pathname === '/assistant' ? '' : ' Yhteys katkesi hetkeksi.');
+        typing.textContent = fallback + (location.pathname === '/assistant'
+          ? ''
+          : assistantText(' Yhteys katkesi hetkeksi.',' Anslutningen avbröts tillfälligt.',' The connection was interrupted briefly.'));
       }
       messages.scrollTop = messages.scrollHeight;
     };
