@@ -2906,6 +2906,8 @@ async function dashboard() {
         </div>
         <form id="supportAgentForm" class="formgrid">
           <div class="field"><label>${appText('Nimi','Namn','Name')}</label><input name="displayName" required maxlength="60" placeholder="Alex"></div>
+          <div class="field"><label>${appText('Käyttäjänimi','Användarnamn','Username')}</label><input name="username" required minlength="3" maxlength="50" autocomplete="off" placeholder="alex"></div>
+          <div class="field"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" required minlength="10" autocomplete="new-password" placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
           <div class="field"><label>${appText('Profiilikuva','Profilbild','Profile picture')}</label><input name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp"></div>
           <button class="btn dashboard-action" type="submit">${appText('Luo profiili','Skapa profil','Create profile')} →</button>
           <div id="supportAgentMsg"></div>
@@ -2918,7 +2920,7 @@ async function dashboard() {
             <article class="support-agent support-agent-profile" data-agent-id="${esc(agent.id)}">
               <button type="button" class="support-agent-profile-head support-agent-profile-toggle" aria-expanded="false">
                 <span class="support-agent-avatar">${agent.avatar ? `<img src="${esc(agent.avatar)}" alt="">` : esc(initials)}</span>
-                <span class="support-agent-identity"><b>${esc(agent.display_name)}</b><small>${agent.status==='online' ? appText('● Paikalla nyt','● Online nu','● Online now') : appText('○ Poissa','○ Offline','○ Offline')}</small></span>
+                <span class="support-agent-identity"><b>${esc(agent.display_name)}</b><small class="support-agent-username">@${esc(agent.username || '')}</small><small>${agent.status==='online' ? appText('● Paikalla nyt','● Online nu','● Online now') : appText('○ Poissa','○ Offline','○ Offline')}</small></span>
                 <span class="support-agent-mini-stat"><b>${Number(agent.open_conversations||0)}</b><small>${appText('aktiivista','aktiva','active')}</small></span>
                 <span class="support-agent-chevron">⌄</span>
               </button>
@@ -4374,7 +4376,7 @@ async function route() {
         avatar=await new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(String(r.result||'')); r.onerror=reject; r.readAsDataURL(file); });
       }
       try {
-        await api('/api/app/support-agents',{method:'POST',body:JSON.stringify({displayName:fd.get('displayName'),avatar})});
+        await api('/api/app/support-agents',{method:'POST',body:JSON.stringify({displayName:fd.get('displayName'),username:fd.get('username'),password:fd.get('password'),avatar})});
         location.reload();
       } catch(err) { $('#supportAgentMsg').innerHTML='<div class="notice error">'+esc(err.message)+'</div>'; }
     });
