@@ -590,7 +590,8 @@
       const data = await res.json().catch(() => ({}));
 
       if (data.mode === 'human') {
-        status.textContent = t('Asiakaspalvelija mukana', 'Human agent joined');
+        const agentName = String(data.agent?.display_name || '').trim();
+        status.textContent = agentName ? agentName + ' · ' + t('paikalla', 'online') : t('Asiakaspalvelija mukana', 'Human agent joined');
         status.classList.add('ready');
       } else if (ready) {
         status.textContent = t('Valmis auttamaan', 'Ready');
@@ -599,8 +600,9 @@
       const messages = Array.isArray(data.messages) ? data.messages : [];
       for (const item of messages) {
         const created = String(item.created_at || '');
+        const agentName = String(item.agent_name || data.agent?.display_name || '').trim();
         addMessage(
-          t('Asiakaspalvelija: ', 'Support: ') + String(item.message || ''),
+          (agentName ? agentName + ': ' : t('Asiakaspalvelija: ', 'Support: ')) + String(item.message || ''),
           'bot'
         );
         if (created) livePollAfter = created;
