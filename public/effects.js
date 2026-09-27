@@ -575,7 +575,7 @@ YLEINEN TOIMINTAOHJE:
             <div class="assistant-direct-copy">
               <small>KOKEILE OMILLA YRITYSTIEDOILLASI</small>
               <h1>Kokeile, miten Respondo vastaisi sinun asiakkaillesi.</h1>
-              <p>Lisää alle muutama yrityksesi tieto. Sen jälkeen voit kysyä botilta ihan samalla tavalla kuin oikea asiakkaasi kysyisi.</p>
+              <p>${pageTx('Lisää alle muutama yrityksesi tieto. Sen jälkeen voit kysyä botilta ihan samalla tavalla kuin oikea asiakkaasi kysyisi.','Lägg till några uppgifter om ditt företag nedan. Därefter kan du fråga botten precis som en riktig kund skulle göra.','Add a few details about your company below. Then ask the bot just as a real customer would.')}</p>
             </div>
 
             <form class="owner-profile-form" id="ownerProfileForm">
@@ -595,7 +595,7 @@ YLEINEN TOIMINTAOHJE:
                   <button type="button" id="addCustomService">${pageTx('Lisää oma','Lägg till egen','Add custom')}</button>
                 </div>
                 <div class="service-chips" id="serviceChips"></div>
-                <small>Voit lisätä tähän kaikki palvelut, joita tarjoatte.</small>
+                <small>${pageTx('Voit lisätä tähän kaikki palvelut, joita tarjoatte.','Du kan lägga till alla tjänster ni erbjuder här.','You can add all the services you offer here.')}</small>
               </div>
 
               <div class="owner-field"><label>Hinnat</label><textarea name="pricing" placeholder="Esim. 65 € / h + alv">${val(p.pricing)}</textarea></div>
@@ -606,7 +606,7 @@ YLEINEN TOIMINTAOHJE:
               </div>
 
               <div class="owner-two">
-                <div class="owner-field"><label>Sähköposti</label><input name="email" type="email" value="${val(p.email)}" placeholder="info@yritys.fi"></div>
+                <div class="owner-field"><label>${pageTx('Sähköposti','E-post','Email')}</label><input name="email" type="email" value="${val(p.email)}" placeholder="info@yritys.fi"></div>
                 <div class="owner-field"><label>Toimialue</label><input name="serviceArea" value="${val(p.serviceArea)}" placeholder="Tampere + 50 km"></div>
               </div>
 
@@ -628,8 +628,8 @@ YLEINEN TOIMINTAOHJE:
 
               <div class="custom-facts-block">
                 <div class="custom-facts-head">
-                  <div><label>Omat kysymykset ja vastaukset</label><small>Lisää tähän asioita, joita asiakkaasi kysyvät usein.</small></div>
-                  <button type="button" id="addCustomFact" data-add-custom-fact>+ Lisää kysymys</button>
+                  <div><label>${pageTx('Omat kysymykset ja vastaukset','Egna frågor och svar','Custom questions and answers')}</label><small>${pageTx('Lisää tähän asioita, joita asiakkaasi kysyvät usein.','Lägg till sådant som dina kunder ofta frågar om.','Add things your customers often ask about.')}</small></div>
+                  <button type="button" id="addCustomFact" data-add-custom-fact>${pageTx('+ Lisää kysymys','+ Lägg till fråga','+ Add question')}</button>
                 </div>
                 <div id="customFacts">
                   ${customFacts.map((x,i) => `
@@ -639,12 +639,12 @@ YLEINEN TOIMINTAOHJE:
                       <button type="button" class="remove-fact" aria-label="Poista rivi">×</button>
                     </div>`).join('')}
                 </div>
-                <button type="button" class="add-fact-bottom" id="addCustomFactBottom" data-add-custom-fact>+ Lisää oma kysymys</button>
+                <button type="button" class="add-fact-bottom" id="addCustomFactBottom" data-add-custom-fact>${pageTx('+ Lisää oma kysymys','+ Lägg till egen fråga','+ Add custom question')}</button>
               </div>
 
               <div class="owner-field"><label>Mitä muuta asiakkaan pitäisi tietää?</label><textarea name="notes" placeholder="Esim. päivystys, maksutavat, takuu tai ajanvarausohjeet…">${val(p.notes)}</textarea></div>
 
-              <button class="owner-save" type="submit">Tallenna ja kokeile <span>→</span></button>
+              <button class="owner-save" type="submit">${pageTx('Tallenna ja kokeile','Spara och testa','Save and test')} <span>→</span></button>
               <div class="owner-save-status" id="ownerSaveStatus"></div>
             </form>
 
@@ -820,12 +820,12 @@ YLEINEN TOIMINTAOHJE:
 
       const status = $('#ownerSaveStatus');
       if (status) {
-        status.textContent = 'Tallennettu ✓ Kysy nyt botilta mitä tahansa yrityksestäsi.';
+        status.textContent = pageTx('Tallennettu ✓ Kysy nyt botilta mitä tahansa yrityksestäsi.','Sparat ✓ Fråga nu botten vad som helst om ditt företag.','Saved ✓ Now ask the bot anything about your company.');
         setTimeout(() => { status.textContent = ''; }, 3500);
       }
       const messages = $('.fx-assistant-messages');
       if (messages) {
-        messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot owner-confirm">Tiedot päivitettiin. Kysy nyt ihan samalla tavalla kuin oikea asiakkaasi kysyisi.</div>');
+        messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot owner-confirm">' + pageTx('Tiedot päivitettiin. Kysy nyt ihan samalla tavalla kuin oikea asiakkaasi kysyisi.','Uppgifterna uppdaterades. Fråga nu precis som en riktig kund skulle göra.','Information updated. Now ask just like a real customer would.') + '</div>');
         messages.scrollTop = messages.scrollHeight;
       }
     });
