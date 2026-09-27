@@ -4700,9 +4700,16 @@ app.post('/api/app/live/:id/assign', auth, subscribed, async (req,res) => {
   } catch(e) { return res.status(400).json({ error:e.message || 'Keskustelua ei voitu osoittaa.' }); }
 });
 
-app.post('/api/app/live/:id/mode', auth, subscribed, async (req,res) => {
+app.post('/api/app/live/:id/mode', auth, async (req,res) => {
+  if (req.user.role === 'agent') {
+    const owned=await q('SELECT id FROM chat_threads WHERE id=$1 AND tenant_id=$2 AND assigned_agent_id=$3',[req.params.id,req.user.tenantId,req.user.agentId]);
+    if (!owned.rowCount) return res.status(403).json({ error:'Keskustelua ei ole osoitettu sinulle.' });
+  } else {
+    const sr=await q('SELECT status,subscription_status FROM users WHERE id=$1',[req.user.sub]);
+    if (!sr.rowCount || sr.rows[0].status!=='active' || !['active','trialing'].includes(sr.rows[0].subscription_status)) return res.status(402).json({ error:'Aktiivinen tilaus tarvitaan.' });
+  }
   try {
-    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = req.user.role === 'agent' ? { rowCount:1,rows:[{id:req.user.tenantId}] } : await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const mode = req.body.mode === 'human' ? 'human' : 'ai';
     const rr = await q(
@@ -4717,7 +4724,14 @@ app.post('/api/app/live/:id/mode', auth, subscribed, async (req,res) => {
   }
 });
 
-app.post('/api/app/live/:id/reply', auth, subscribed, async (req,res) => {
+app.post('/api/app/live/:id/reply', auth, async (req,res) => {
+  if (req.user.role === 'agent') {
+    const owned=await q('SELECT id FROM chat_threads WHERE id=$1 AND tenant_id=$2 AND assigned_agent_id=$3',[req.params.id,req.user.tenantId,req.user.agentId]);
+    if (!owned.rowCount) return res.status(403).json({ error:'Keskustelua ei ole osoitettu sinulle.' });
+  } else {
+    const sr=await q('SELECT status,subscription_status FROM users WHERE id=$1',[req.user.sub]);
+    if (!sr.rowCount || sr.rows[0].status!=='active' || !['active','trialing'].includes(sr.rows[0].subscription_status)) return res.status(402).json({ error:'Aktiivinen tilaus tarvitaan.' });
+  }
   try {
     const text = String(req.body.message || '').trim().slice(0,4000);
     if (!text) return res.status(400).json({ error:'Kirjoita viesti.' });
