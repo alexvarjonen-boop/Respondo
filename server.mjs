@@ -3366,7 +3366,24 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const message = String(body.message || '').trim().slice(0, 1200);
     if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : lang === 'sv' ? 'Skriv en fråga.' : 'Kirjoita kysymys.' });
     const profile = body.profile && typeof body.profile === 'object' ? body.profile : {};
-    const rows = buildProfileKnowledge(profile).slice(0, 60);
+    let rows = buildProfileKnowledge(profile).slice(0, 60);
+    // Authenticated dashboard preview must use the tenant's saved knowledge too.
+    // Otherwise a normal question such as "Paljonko maksaa?" can accidentally match
+    // an unrelated profile field when the pricing field itself is empty.
+    try {
+      const token = req.cookies?.respondo_session;
+      if (token) {
+        const session = jwt.verify(token, JWT);
+        const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[session.sub]);
+        if (tr.rowCount) {
+          const kr = await q(
+            'SELECT id,category,title,answer,keywords FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC LIMIT 120',
+            [tr.rows[0].id],
+          );
+          rows = [...kr.rows, ...rows].slice(0, 160);
+        }
+      }
+    } catch {}
     const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
     const result = await generateGroundedAnswer({
       companyName: String(profile.companyName || 'yrityksen').slice(0, 120),
