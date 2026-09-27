@@ -193,27 +193,26 @@
   ];
 
   function assistantAnswer(text) {
-    const q = String(text || '').toLowerCase();
+    const q = String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const lang = assistantLanguage();
-    const normalized = q.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const matchesKey = (key) => {
+
+    // Match specific intents before the generic "how it works" intent.
+    // This keeps equivalent FI/SV/EN questions on the same answer path.
+    const intentOrder = [3, 1, 0, 4, 5, 6, 2];
+    const wordMatch = (key) => {
       const k = String(key || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       if (!k) return false;
-      if (k.includes(' ') || /[^a-z0-9åäö]/i.test(k)) return normalized.includes(k);
-      const escaped = k.replace(/[.*+?^$()|[\]\\]/g, '\\    const hit = faq.find(item => item.keys.some(k => q.includes(k)));');
-      return new RegExp('(^|[^a-z0-9åäö])' + escaped + '(?=$|[^a-z0-9åäö])', 'i').test(normalized);
+      if (k.includes(' ')) return q.includes(k);
+      const qWords = q.split(/[^a-z0-9åäö]+/i).filter(Boolean);
+      return qWords.includes(k);
     };
-    const scored = faq
-      .map((item, index) => {
-        const matched = item.keys.filter(matchesKey);
-        const score = matched.reduce((best, key) => Math.max(best, String(key).length), 0);
-        return { item, index, score };
-      })
-      .filter(x => x.score > 0)
-      .sort((a, b) => b.score - a.score || a.index - b.index);
-    const hit = scored[0]?.item;
-    if (hit) return hit.answer[lang] || hit.answer.fi;
-    if (['hei','moi','moikka','hello','hi','hey','hej','hallå','halla','tjena'].some(word => q.includes(word))) {
+
+    for (const index of intentOrder) {
+      const item = faq[index];
+      if (item && item.keys.some(wordMatch)) return item.answer[lang] || item.answer.fi;
+    }
+
+    if (['hei','moi','moikka','hello','hi','hey','hej','halla','tjena'].some(wordMatch)) {
       return assistantText(
         'Moi! Kysy ihan vapaasti Respondosta — esimerkiksi hinnasta, kokeilusta, käyttöönotosta tai siitä, miten palvelu toimii.',
         'Hej! Fråga gärna om Respondo – till exempel om priset, provperioden, installationen eller hur tjänsten fungerar.',
