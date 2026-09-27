@@ -2015,6 +2015,17 @@ app.post('/api/app/support-agents/:id/force-logout', auth, ownerOnly, subscribed
   }catch(e){return res.status(500).json({error:'Uloskirjaus epäonnistui.'});}
 });
 
+app.post('/api/app/agent/claim/:id', auth, async (req,res) => {
+  try {
+    if(req.user.role!=='agent') return res.status(403).json({error:'Ei käyttöoikeutta.'});
+    const rr=await q(`UPDATE chat_threads SET assigned_agent_id=$1,mode='human',status='open',updated_at=NOW()
+      WHERE id=$2 AND tenant_id=$3 AND assigned_agent_id IS NULL RETURNING id`,
+      [req.user.agentId,req.params.id,req.user.tenantId]);
+    if(!rr.rowCount) return res.status(409).json({error:'Toinen asiakaspalvelija ehti ottaa keskustelun tai se ei ole enää vapaa.'});
+    return res.json({ok:true});
+  }catch(e){return res.status(500).json({error:'Keskustelua ei voitu ottaa haltuun.'});}
+});
+
 app.get('/api/app/agent-dashboard', auth, agentOrOwner, async (req,res) => {
   try {
     if (req.user.role !== 'agent') return res.status(403).json({ error:'Tämä näkymä on asiakaspalvelijoille.' });
@@ -2024,8 +2035,8 @@ app.get('/api/app/agent-dashboard', auth, agentOrOwner, async (req,res) => {
     const threads=await q(`SELECT ct.id,ct.source_channel,ct.external_contact_id,ct.visitor_ref,ct.mode,ct.status,ct.last_activity_at,ct.created_at,
       COALESCE(json_agg(json_build_object('id',cm.id,'role',cm.role,'message',cm.message,'created_at',cm.created_at) ORDER BY cm.created_at ASC) FILTER (WHERE cm.id IS NOT NULL),'[]') AS messages
       FROM chat_threads ct LEFT JOIN chat_messages cm ON cm.thread_id=ct.id
-      WHERE ct.tenant_id=$1 AND ct.assigned_agent_id=$2
-      GROUP BY ct.id ORDER BY ct.last_activity_at DESC LIMIT 80`,[tenantId,agentId]);
+      WHERE ct.tenant_id=$1 AND (ct.assigned_agent_id=$2 OR ct.assigned_agent_id IS NULL)
+      GROUP BY ct.id ORDER BY (ct.assigned_agent_id=$2) DESC,ct.last_activity_at DESC LIMIT 80`,[tenantId,agentId]);
     return res.json({agent,liveThreads:threads.rows,stats:{
       conversations:threads.rowCount,
       open:threads.rows.filter(x=>x.status==='open').length,
