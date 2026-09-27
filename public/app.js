@@ -2510,6 +2510,19 @@ function legal(type) {
   </div>`;
 }
 
+async function agentDashboard(me) {
+  let data;
+  try { data=await api('/api/app/agent-dashboard'); }
+  catch(e){ return `<div class="container"><div class="notice error">${esc(e.message)}</div></div>`; }
+  const threads=data.liveThreads||[], agent=data.agent||me;
+  return `<div class="appshell dashboard-simple-shell"><main class="appmain dashboard-simple-main">
+    <header class="dashboard-topbar"><div class="dashboard-topbar-brand">${logo()}<div><b>${esc(agent.display_name||'')}</b><small>${appText('Asiakaspalvelu','Kundservice','Customer support')}</small></div></div><button class="btn" id="logoutAgent">${appText('Kirjaudu ulos','Logga ut','Log out')}</button></header>
+    <section class="panel"><div class="panel-head"><div><small>${appText('OMA TYÖPÖYTÄ','MIN ARBETSYTA','MY WORKSPACE')}</small><h1>${appText('Omat keskustelut','Mina konversationer','My conversations')}</h1><p>${appText('Näet vain sinulle osoitetut asiakaskeskustelut.','Du ser endast kundkonversationer som tilldelats dig.','You only see customer conversations assigned to you.')}</p></div><span>${Number(data.stats?.open||0)} ${appText('avointa','öppna','open')}</span></div>
+    <div class="support-agent-metrics"><div><small>${appText('Keskustelut','Konversationer','Conversations')}</small><b>${Number(data.stats?.conversations||0)}</b></div><div><small>${appText('Avoinna','Öppna','Open')}</small><b>${Number(data.stats?.open||0)}</b></div><div><small>${appText('Ihmisen hallussa','Mänsklig hantering','Human takeover')}</small><b>${Number(data.stats?.human||0)}</b></div></div>
+    <div class="live-thread-list">${threads.length?threads.map(thread=>`<article class="live-thread ${thread.mode==='human'?'human-mode':''}" data-thread-id="${esc(thread.id)}"><div class="live-thread-head"><div><span class="live-channel">${esc(thread.source_channel||'website')}</span><b>${esc(thread.external_contact_id||thread.visitor_ref||appText('Asiakas','Kund','Customer'))}</b></div><span class="live-mode">${thread.mode==='human'?appText('● Sinä vastaat','● Du svarar','● You are replying'):appText('● Automaattinen vastaus','● Automatiskt svar','● Automatic reply')}</span></div><div class="live-messages">${(thread.messages||[]).map(m=>`<div class="live-message ${esc(m.role||'user')}"><small>${m.role==='user'?appText('Asiakas','Kund','Customer'):m.role==='human'?esc(agent.display_name||appText('Sinä','Du','You')):'RESPONDO'}</small><p>${esc(m.message||'')}</p></div>`).join('')}</div><div class="live-thread-actions"><button type="button" class="btn live-mode-toggle" data-mode="${thread.mode==='human'?'ai':'human'}">${thread.mode==='human'?appText('Palauta automaattiselle','Återgå till automatiskt','Return to automatic'):appText('Ota haltuun','Ta över','Take over')}</button><form class="live-reply-form"><input name="message" placeholder="${appText('Kirjoita vastaus…','Skriv ett svar…','Write a reply…')}" ${thread.mode==='human'?'':'disabled'}><button type="submit" ${thread.mode==='human'?'':'disabled'}>${appText('Lähetä','Skicka','Send')} →</button></form></div><div class="live-msg"></div></article>`).join(''):`<div class="empty-state"><b>${appText('Sinulle ei ole vielä osoitettu keskusteluja.','Inga konversationer har tilldelats dig ännu.','No conversations have been assigned to you yet.')}</b></div>`}</div></section>
+  </main></div>`;
+}
+
 async function dashboard() {
   let me;
   try {
@@ -2524,6 +2537,8 @@ async function dashboard() {
   } catch {
     return login();
   }
+
+  if (me?.role === 'agent') return agentDashboard(me);
 
   let data;
   try {
