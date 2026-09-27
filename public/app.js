@@ -2536,7 +2536,11 @@ async function agentDashboard(me) {
   return `<div class="appshell dashboard-simple-shell"><main class="appmain dashboard-simple-main">
     <header class="dashboard-topbar"><div class="dashboard-topbar-brand">${logo()}<div><b>${esc(agent.display_name||'')}</b><small>${appText('Asiakaspalvelu','Kundservice','Customer support')}</small></div></div><button class="btn" id="logoutAgent">${appText('Kirjaudu ulos','Logga ut','Log out')}</button></header>
     <section class="panel"><div class="panel-head"><div><small>${appText('OMA TYÖPÖYTÄ','MIN ARBETSYTA','MY WORKSPACE')}</small><h1>${appText('Omat keskustelut','Mina konversationer','My conversations')}</h1><p>${appText('Näet vain sinulle osoitetut asiakaskeskustelut.','Du ser endast kundkonversationer som tilldelats dig.','You only see customer conversations assigned to you.')}</p></div><span>${Number(data.stats?.open||0)} ${appText('avointa','öppna','open')}</span></div>
+    <section class="support-agent-self-card"><div class="support-agent-profile-head"><span class="support-agent-avatar">${agent.avatar?`<img src="${esc(agent.avatar)}" alt="">`:esc(String(agent.display_name||'?')[0].toUpperCase())}</span><span class="support-agent-identity"><b>${esc(agent.display_name||'')}</b><small>@${esc(agent.username||'')}</small></span></div>
+      <div class="support-agent-self-controls"><label class="agent-presence-toggle"><input id="agentPresence" type="checkbox" ${agent.status==='online'?'checked':''}><span>${agent.status==='online'?appText('Olen paikalla','Jag är online','I am online'):appText('Olen poissa','Jag är offline','I am offline')}</span></label><label class="btn">${appText('Vaihda profiilikuva','Byt profilbild','Change profile picture')}<input id="agentAvatarFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></label></div><div id="agentProfileMsg"></div>
+    </section>
     <div class="support-agent-metrics"><div><small>${appText('Keskustelut','Konversationer','Conversations')}</small><b>${Number(data.stats?.conversations||0)}</b></div><div><small>${appText('Avoinna','Öppna','Open')}</small><b>${Number(data.stats?.open||0)}</b></div><div><small>${appText('Ihmisen hallussa','Mänsklig hantering','Human takeover')}</small><b>${Number(data.stats?.human||0)}</b></div></div>
+    <details class="support-agent-dropdown" open><summary>${appText('Analytiikka','Analys','Analytics')}</summary><div class="support-agent-analysis"><p><b>${Number(data.stats?.conversations||0)}</b> ${appText('sinulle osoitettua keskustelua','konversationer tilldelade dig','conversations assigned to you')}</p><p><b>${Number(data.stats?.open||0)}</b> ${appText('avointa juuri nyt','öppna just nu','open right now')}</p></div></details>
     <div class="live-thread-list">${threads.length?threads.map(thread=>`<article class="live-thread ${thread.mode==='human'?'human-mode':''}" data-thread-id="${esc(thread.id)}"><div class="live-thread-head"><div><span class="live-channel">${esc(thread.source_channel||'website')}</span><b>${esc(thread.external_contact_id||thread.visitor_ref||appText('Asiakas','Kund','Customer'))}</b></div><span class="live-mode">${thread.mode==='human'?appText('● Sinä vastaat','● Du svarar','● You are replying'):appText('● Automaattinen vastaus','● Automatiskt svar','● Automatic reply')}</span></div><div class="live-messages">${(thread.messages||[]).map(m=>`<div class="live-message ${esc(m.role||'user')}"><small>${m.role==='user'?appText('Asiakas','Kund','Customer'):m.role==='human'?esc(agent.display_name||appText('Sinä','Du','You')):'RESPONDO'}</small><p>${esc(m.message||'')}</p></div>`).join('')}</div><div class="live-thread-actions"><button type="button" class="btn live-mode-toggle" data-mode="${thread.mode==='human'?'ai':'human'}">${thread.mode==='human'?appText('Palauta automaattiselle','Återgå till automatiskt','Return to automatic'):appText('Ota haltuun','Ta över','Take over')}</button><form class="live-reply-form"><input name="message" placeholder="${appText('Kirjoita vastaus…','Skriv ett svar…','Write a reply…')}" ${thread.mode==='human'?'':'disabled'}><button type="submit" ${thread.mode==='human'?'':'disabled'}>${appText('Lähetä','Skicka','Send')} →</button></form></div><div class="live-msg"></div></article>`).join(''):`<div class="empty-state"><b>${appText('Sinulle ei ole vielä osoitettu keskusteluja.','Inga konversationer har tilldelats dig ännu.','No conversations have been assigned to you yet.')}</b></div>`}</div></section>
   </main></div>`;
 }
@@ -2951,40 +2955,13 @@ async function dashboard() {
             const initials=String(agent.display_name||'?').trim().split(/\s+/).slice(0,2).map((x)=>x[0]||'').join('').toUpperCase();
             return `
             <article class="support-agent support-agent-profile" data-agent-id="${esc(agent.id)}">
-              <button type="button" class="support-agent-profile-head support-agent-profile-toggle" aria-expanded="false">
+              <div class="support-agent-profile-head">
                 <span class="support-agent-avatar">${agent.avatar ? `<img src="${esc(agent.avatar)}" alt="">` : esc(initials)}</span>
                 <span class="support-agent-identity"><b>${esc(agent.display_name)}</b><small class="support-agent-username">@${esc(agent.username || '')}</small><small>${agent.status==='online' ? appText('● Paikalla nyt','● Online nu','● Online now') : appText('○ Poissa','○ Offline','○ Offline')}</small></span>
-                <span class="support-agent-mini-stat"><b>${Number(agent.open_conversations||0)}</b><small>${appText('aktiivista','aktiva','active')}</small></span>
-                <span class="support-agent-chevron">⌄</span>
-              </button>
-              <div class="support-agent-profile-body" hidden>
-                <div class="support-agent-profile-actions">
-                  <button type="button" class="support-agent-status" data-status="${agent.status==='online'?'offline':'online'}">${agent.status==='online'?appText('Merkitse poissa','Markera offline','Go offline'):appText('Merkitse paikalle','Markera online','Go online')}</button>
-                  <button type="button" class="support-agent-delete">${appText('Poista profiili','Ta bort profil','Delete profile')}</button>
-                </div>
-                <div class="support-agent-metrics">
-                  <div><small>${appText('Keskustelut','Konversationer','Conversations')}</small><b>${Number(agent.conversation_count||0)}</b></div>
-                  <div><small>${appText('Avoinna nyt','Öppna nu','Open now')}</small><b>${Number(agent.open_conversations||0)}</b></div>
-                  <div><small>${appText('Lähetetyt vastaukset','Skickade svar','Replies sent')}</small><b>${Number(agent.replies_sent||0)}</b></div>
-                  <div><small>${appText('Viimeisin keskustelu','Senaste konversation','Last conversation')}</small><b class="support-agent-date">${agent.last_conversation_at ? new Date(agent.last_conversation_at).toLocaleDateString(appLocale(),{day:'2-digit',month:'2-digit'}) : '—'}</b></div>
-                </div>
-                <details class="support-agent-dropdown" open>
-                  <summary>${appText('Keskustelut','Konversationer','Conversations')} <span>${agentThreads.length}</span></summary>
-                  <div class="support-agent-conversations">
-                    ${agentThreads.length ? agentThreads.slice(0,12).map((thread)=>`
-                      <button type="button" class="support-agent-conversation-link" data-thread-target="${esc(thread.id)}">
-                        <span><b>${esc(thread.external_contact_id || thread.visitor_ref || appText('Asiakas','Kund','Customer'))}</b><small>${esc(channelLabel(thread.source_channel))}</small></span>
-                        <em>${thread.status==='open'?appText('Avoin','Öppen','Open'):appText('Suljettu','Stängd','Closed')}</em>
-                      </button>`).join('') : `<div class="empty-state compact"><small>${appText('Tälle profiilille ei ole vielä osoitettu keskusteluja.','Inga konversationer har tilldelats den här profilen ännu.','No conversations have been assigned to this profile yet.')}</small></div>`}
-                  </div>
-                </details>
-                <details class="support-agent-dropdown">
-                  <summary>${appText('Analytiikka','Analys','Analytics')}</summary>
-                  <div class="support-agent-analysis">
-                    <p><b>${Number(agent.replies_sent||0)}</b> ${appText('ihmisen lähettämää vastausta','svar skickade av personen','human replies sent')}</p>
-                    <p><b>${Number(agent.conversation_count||0)}</b> ${appText('osoitettua asiakaskeskustelua','tilldelade kundkonversationer','assigned customer conversations')}</p>
-                  </div>
-                </details>
+              </div>
+              <div class="support-agent-profile-actions support-agent-owner-actions">
+                <button type="button" class="support-agent-force-logout">${appText('Kirjaa asiakaspalvelija ulos','Logga ut kundservicemedarbetaren','Log out support agent')}</button>
+                <button type="button" class="support-agent-delete">${appText('Poista tili','Ta bort konto','Delete account')}</button>
               </div>
             </article>`}).join('') : `<div class="empty-state"><b>${appText('Ei vielä asiakaspalvelijoita.','Inga kundservicemedarbetare ännu.','No support agents yet.')}</b></div>`}
         </div>
@@ -4411,6 +4388,18 @@ async function route() {
       }
     });
 
+    $('#agentPresence')?.addEventListener('change',async(e)=>{
+      const input=e.currentTarget; input.disabled=true;
+      try { await api('/api/app/agent/status',{method:'POST',body:JSON.stringify({status:input.checked?'online':'offline'})}); location.reload(); }
+      catch(err){ input.checked=!input.checked; input.disabled=false; }
+    });
+    $('#agentAvatarFile')?.addEventListener('change',async(e)=>{
+      const file=e.currentTarget.files?.[0]; if(!file)return;
+      const avatar=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||''));reader.onerror=reject;reader.readAsDataURL(file);});
+      try { await api('/api/app/agent/profile',{method:'POST',body:JSON.stringify({displayName:me.display_name||agent.display_name,avatar})}); location.reload(); }
+      catch(err){ $('#agentProfileMsg').innerHTML='<div class="notice error">'+esc(err.message)+'</div>'; }
+    });
+
     document.querySelectorAll('.support-agent-profile-toggle').forEach((button)=>button.addEventListener('click',()=>{
       const body=button.closest('.support-agent-profile')?.querySelector('.support-agent-profile-body');
       if (!body) return;
@@ -4440,6 +4429,11 @@ async function route() {
       const item=button.closest('.support-agent'); button.disabled=true;
       try { await api('/api/app/support-agents/'+encodeURIComponent(item.dataset.agentId)+'/status',{method:'POST',body:JSON.stringify({status:button.dataset.status})}); location.reload(); }
       catch(err){ button.disabled=false; }
+    }));
+    document.querySelectorAll('.support-agent-force-logout').forEach((button)=>button.addEventListener('click',async()=>{
+      const item=button.closest('.support-agent'); button.disabled=true;
+      try { await api('/api/app/support-agents/'+encodeURIComponent(item.dataset.agentId)+'/force-logout',{method:'POST',body:'{}'}); location.reload(); }
+      catch(err){ button.disabled=false; alert(err.message); }
     }));
     document.querySelectorAll('.support-agent-delete').forEach((button)=>button.addEventListener('click',async()=>{
       const item=button.closest('.support-agent'); button.disabled=true;
