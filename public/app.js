@@ -1996,7 +1996,7 @@ function productWorldScene() {
           <div><span>Palvelut</span><b>✓</b></div>
         </div>
         <div class="world-window ww-alert">
-          <span>!</span><div><small>VASTAUS PUUTTUU</small><b>Asiakas ohjattu sinulle</b></div>
+          <span>!</span><div><small>${appText('VASTAUS PUUTTUU','SVAR SAKNAS','ANSWER MISSING')}</small><b>Asiakas ohjattu sinulle</b></div>
         </div>
       </div>
       <div class="world-caption">Vieritä eteenpäin ja katso, miten kaikki toimii yhdessä.</div>
@@ -2643,24 +2643,24 @@ async function dashboard() {
       </header>
 
       <section class="dashboard-head dashboard-view-section" data-dashboard-view="overview" id="overview">
-        <div><div class="section-kicker">Hallintapaneeli</div><h1>${esc(t.name)}</h1><p>Valitse ylhäältä mitä haluat tehdä. Näytämme vain siihen liittyvät asiat.</p></div>
+        <div><div class="section-kicker">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</div><h1>${esc(t.name)}</h1><p>${appText('Valitse ylhäältä mitä haluat tehdä. Näytämme vain siihen liittyvät asiat.','Välj ovan vad du vill göra. Vi visar bara det som hör till valet.','Choose what you want to do above. We only show the relevant items.')}</p></div>
       </section>
 
       ${isWelcome ? `
       <section class="welcome-card dashboard-view-section" data-dashboard-view="overview" id="welcomeCard">
         <div class="welcome-mark">R</div>
         <div class="welcome-copy">
-          <small>TILAUS AKTIIVINEN</small>
-          <h2>Tervetuloa Respondoon.</h2>
-          <p>Tilisi on valmis. Lisää ensin yrityksesi tiedot, kokeile bottia itse ja lisää se sitten verkkosivullesi.</p>
+          <small>${appText('TILAUS AKTIIVINEN','ABONNEMANGET ÄR AKTIVT','SUBSCRIPTION ACTIVE')}</small>
+          <h2>${appText('Tervetuloa Respondoon.','Välkommen till Respondo.','Welcome to Respondo.')}</h2>
+          <p>${appText('Tilisi on valmis. Lisää ensin yrityksesi tiedot, kokeile bottia itse ja lisää se sitten verkkosivullesi.','Ditt konto är klart. Lägg först till företagsuppgifterna, testa botten och lägg sedan till den på webbplatsen.','Your account is ready. Add your business information, test the bot, then add it to your website.')}</p>
         </div>
-        <button type="button" class="btn welcome-start" id="welcomeStart">Aloita tästä <span>→</span></button>
+        <button type="button" class="btn welcome-start" id="welcomeStart">${appText('Aloita tästä','Börja här','Start here')} <span>→</span></button>
       </section>` : ''}
 
       <section class="onboarding-card dashboard-view-section" data-dashboard-view="overview" id="onboarding">
         <div class="onboarding-top">
           <div>
-            <small>KÄYTTÖÖNOTTO</small>
+            <small>${appText('KÄYTTÖÖNOTTO','KOM IGÅNG','GETTING STARTED')}</small>
             <h2>${onboardingDone === onboarding.length ? appText('Kaikki on valmista.','Allt är klart.','Everything is ready.') : appText('Laita loputkin kuntoon.','Gör klart resten.','Finish the remaining steps.')}</h2>
             <p>${onboardingDone}/${onboarding.length} ${appText('kohtaa valmiina','steg klara','steps complete')}</p>
           </div>
@@ -2678,32 +2678,32 @@ async function dashboard() {
       </section>
 
       <section class="stats dashboard-view-section" data-dashboard-view="overview">
-        <article class="stat"><small>KESKUSTELUT</small><b>${s.conversations}</b><span>${appText('yhteensä','totalt','total')}</span></article>
-        <article class="stat"><small>VIIMEISET 7 PV</small><b>${s.last7 || 0}</b><span>${appText('keskustelua','konversationer','conversations')}</span></article>
-        <article class="stat"><small>VASTATTU SUORAAN</small><b>${s.answeredRate}%</b><span>${appText('ilman että asiakas piti ohjata eteenpäin','utan att kunden behövde skickas vidare','without routing the customer onward')}</span></article>
-        <article class="stat"><small>YHTEYDENOTOT</small><b>${s.leads || 0}</b><span>${s.estimatedLeadValue > 0 ? 'arvioitu arvo ' + formatMoney(s.estimatedLeadValue) : 'asiakasta jätti yhteystietonsa'}</span></article>
+        <article class="stat"><small>${appText('KESKUSTELUT','KONVERSATIONER','CONVERSATIONS')}</small><b>${s.conversations}</b><span>${appText('yhteensä','totalt','total')}</span></article>
+        <article class="stat"><small>${appText('VIIMEISET 7 PV','SENASTE 7 DAGARNA','LAST 7 DAYS')}</small><b>${s.last7 || 0}</b><span>${appText('keskustelua','konversationer','conversations')}</span></article>
+        <article class="stat"><small>${appText('VASTATTU SUORAAN','SVARADE DIREKT','ANSWERED DIRECTLY')}</small><b>${s.answeredRate}%</b><span>${appText('ilman että asiakas piti ohjata eteenpäin','utan att kunden behövde skickas vidare','without routing the customer onward')}</span></article>
+        <article class="stat"><small>${appText('YHTEYDENOTOT','KONTAKTFÖRFRÅGNINGAR','CONTACT REQUESTS')}</small><b>${s.leads || 0}</b><span>${s.estimatedLeadValue > 0 ? 'arvioitu arvo ' + formatMoney(s.estimatedLeadValue) : 'asiakasta jätti yhteystietonsa'}</span></article>
       </section>
 
       <section class="respondo-intelligence dashboard-view-section" data-dashboard-view="overview">
         <article class="panel truth-score-card">
           <div class="intelligence-icon">✓</div>
           <div>
-            <small>VASTAUSTEN VARMENNUS</small>
+            <small>${appText('VASTAUSTEN VARMENNUS','SVARSVERIFIERING','ANSWER VERIFICATION')}</small>
             <h2>${truth.score}% ${appText('varmennettu','verifierat','verified')}</h2>
             <p>${truth.approved}/${truth.total} ${appText('tietoa hyväksytty','uppgifter godkända','items approved')} · ${truth.fresh} ${appText('tarkistettu viimeisen 90 päivän aikana.','kontrollerade under de senaste 90 dagarna.','checked within the last 90 days.')}</p>
           </div>
         </article>
         <article class="panel self-test-card">
           <div class="self-test-copy">
-            <small>BOTIN ITSETESTI</small>
+            <small>${appText('BOTIN ITSETESTI','BOTTENS SJÄLVTEST','BOT SELF-TEST')}</small>
             <h2>${latestSelfTest ? latestSelfTest.score + '% ' + appText('kattavuus','täckning','coverage') : appText('Testaa ennen asiakkaita','Testa före kunderna','Test before customers')}</h2>
             <p>${latestSelfTest ? (latestSelfTest.answerable_questions + '/' + latestSelfTest.total_questions + ' ' + appText('testikysymykseen löytyi varma tieto.','testfrågor hade ett säkert svar.','test questions had a reliable answer.')) : appText('Respondo luo realistisia asiakaskysymyksiä ja etsii tietopohjan aukot ennen oikeita asiakkaita.','Respondo skapar realistiska kundfrågor och hittar luckor i kunskapsbasen före riktiga kunder.','Respondo creates realistic customer questions and finds gaps in the knowledge base before real customers.')}</p>
           </div>
           <div class="self-test-controls">
-            <label>Testin laajuus
+            <label>${appText('Testin laajuus','Testets omfattning','Test size')}
               <select id="selfTestDepth">
-                <option value="500">500 kysymystä</option>
-                <option value="1000">1 000 kysymystä</option>
+                <option value="500">500 ${appText('kysymystä','frågor','questions')}</option>
+                <option value="1000">1 000 ${appText('kysymystä','frågor','questions')}</option>
               </select>
             </label>
             <button class="btn dashboard-action self-test-button" id="runSelfTest" type="button">${latestSelfTest ? appText('Testaa uudelleen','Testa igen','Test again') : appText('Aja itse­testi','Kör självtest','Run self-test')} <span>→</span></button>
@@ -2713,7 +2713,7 @@ async function dashboard() {
         <article class="panel action-center-card">
           <div class="intelligence-icon">↗</div>
           <div>
-            <small>TOIMINTOKESKUS · 30 PV</small>
+            <small>${appText('TOIMINTOKESKUS · 30 PV','ÅTGÄRDSCENTER · 30 DAGAR','ACTION CENTER · 30 DAYS')}</small>
             <h2>${s.actions30 || 0} ${appText('toimintoa','åtgärder','actions')}</h2>
             <p>${actionStats.length ? actionStats.map((x) => esc(x.action_type) + ' ' + Number(x.total || 0) + '×').join(' · ') : appText('Kun asiakkaat varaavat ajan, pyytävät tarjouksen, soittavat tai lähettävät sähköpostia, näet sen tässä.','När kunder bokar tid, begär offert, ringer eller skickar e-post ser du det här.','When customers book a time, request a quote, call or send email, you will see it here.')}</p>
           </div>
@@ -2723,7 +2723,7 @@ async function dashboard() {
       <section class="dashboard-insights dashboard-view-section" data-dashboard-view="overview">
         <article class="panel trend-panel">
           <div class="panel-head">
-            <div><small>14 PÄIVÄÄ</small><h2>Näin paljon asiakkaat ovat kysyneet</h2></div>
+            <div><small>${appText('14 PÄIVÄÄ','14 DAGAR','14 DAYS')}</small><h2>${appText('Näin paljon asiakkaat ovat kysyneet','Så här mycket har kunderna frågat','Customer conversation volume')}</h2></div>
             <span>${s.last30 || 0} / 30 ${appText('pv','dagar','days')}</span>
           </div>
           <div class="mini-bars" aria-label="${esc(appText('Keskustelut viimeisen 14 päivän aikana','Konversationer under de senaste 14 dagarna','Conversations during the last 14 days'))}">
@@ -2731,7 +2731,7 @@ async function dashboard() {
           </div>
         </article>
         <article class="panel gap-summary">
-          <div class="panel-head"><div><small>TÄLLÄ VIIKOLLA</small><h2>Mihin kysymyksiin vastaus vielä puuttuu?</h2></div><span>${gaps.length}</span></div>
+          <div class="panel-head"><div><small>${appText('TÄLLÄ VIIKOLLA','DEN HÄR VECKAN','THIS WEEK')}</small><h2>${appText('Mihin kysymyksiin vastaus vielä puuttuu?','Vilka frågor saknar fortfarande svar?','Which questions still need an answer?')}</h2></div><span>${gaps.length}</span></div>
           <div class="gap-summary-list">
             ${gaps.length ? gaps.slice(0,5).map((x) => `<button type="button" class="gap-jump" data-gap-question="${esc(x.question)}"><span>${esc(x.question)}</span><b>${Number(x.asks || 0)}×</b></button>`).join('') : '<div class="empty-state compact"><b>' + appText('Kaikkiin tämän viikon kysymyksiin löytyi vastaus.','Alla frågor den här veckan fick ett svar.','All questions this week had an answer.') + '</b><p>' + appText('Hyvältä näyttää.','Det ser bra ut.','Looks good.') + '</p></div>'}
           </div>
@@ -2965,47 +2965,47 @@ async function dashboard() {
 
       <section class="panel conversation-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="customers" id="conversations">
         <div class="panel-head">
-          <div><small>VIIMEISIMMÄT KESKUSTELUT</small><h2>Mitä asiakkaasi ovat kysyneet?</h2><p>Näet kysymyksen, Respondon vastauksen ja sen, pitikö asiakas ohjata sinulle.</p></div>
+          <div><small>${appText('VIIMEISIMMÄT KESKUSTELUT','SENASTE KONVERSATIONER','RECENT CONVERSATIONS')}</small><h2>${appText('Mitä asiakkaasi ovat kysyneet?','Vad har dina kunder frågat?','What have your customers asked?')}</h2><p>${appText('Näet kysymyksen, Respondon vastauksen ja sen, pitikö asiakas ohjata sinulle.','Du ser frågan, Respondos svar och om kunden behövde hänvisas till dig.','See the question, Respondos answer, and whether the customer needed human help.')}</p></div>
           <span>${recentConversations.length}</span>
         </div>
         <div class="conversation-log">
           ${recentConversations.length ? recentConversations.map((x) => `
             <article class="conversation-log-item ${x.handoff ? 'needs-human' : ''}">
-              <div class="conversation-log-meta"><span>${x.handoff ? 'Vastaus puuttui' : 'Vastattu'}</span><small>${new Date(x.created_at).toLocaleString(appLocale(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small></div>
-              ${x.page_title ? `<div class="conversation-page">Sivulla: ${esc(x.page_title)}</div>` : ''}
+              <div class="conversation-log-meta"><span>${x.handoff ? appText('Vastaus puuttui','Svar saknades','Answer missing') : appText('Vastattu','Besvarad','Answered')}</span><small>${new Date(x.created_at).toLocaleString(appLocale(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small></div>
+              ${x.page_title ? `<div class="conversation-page">${appText('Sivulla','På sidan','Page')}: ${esc(x.page_title)}</div>` : ''}
               <h3>${esc(x.question)}</h3>
               <p>${esc(x.answer)}</p>
-            </article>`).join('') : '<div class="empty-state"><b>Keskusteluja ei ole vielä.</b><p>Kun asiakkaat alkavat kysyä, keskustelut näkyvät tässä.</p></div>'}
+            </article>`).join('') : '<div class="empty-state"><b>' + appText('Keskusteluja ei ole vielä.','Inga konversationer ännu.','No conversations yet.') + '</b><p>' + appText('Kun asiakkaat alkavat kysyä, keskustelut näkyvät tässä.','När kunder börjar fråga visas konversationerna här.','When customers start asking questions, conversations appear here.') + '</p></div>'}
         </div>
       </section>
 
       <section class="panel leads-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="customers" id="leads">
         <div class="panel-head">
-          <div><small>YHTEYDENOTOT</small><h2>Asiakkaat, jotka haluavat yhteydenoton</h2><p>Jos vastaus puuttuu, asiakas voi jättää numeronsa tai sähköpostinsa, jotta voit ottaa yhteyttä.</p></div>
+          <div><small>${appText('YHTEYDENOTOT','KONTAKTFÖRFRÅGNINGAR','CONTACT REQUESTS')}</small><h2>${appText('Asiakkaat, jotka haluavat yhteydenoton','Kunder som vill bli kontaktade','Customers requesting contact')}</h2><p>${appText('Jos vastaus puuttuu, asiakas voi jättää numeronsa tai sähköpostinsa, jotta voit ottaa yhteyttä.','Om ett svar saknas kan kunden lämna sitt nummer eller sin e-postadress så att du kan kontakta dem.','If an answer is missing, the customer can leave a phone number or email so you can follow up.')}</p></div>
           <span>${leads.length}</span>
         </div>
         <div class="lead-list">
           ${leads.length ? leads.map((x) => `
             <article class="lead-item">
               <div class="lead-main">
-                <div><small>${new Date(x.created_at).toLocaleString(appLocale(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small><h3>${esc(x.name || 'Asiakas')}</h3></div>
-                <span class="lead-status">Uusi</span>
+                <div><small>${new Date(x.created_at).toLocaleString(appLocale(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small><h3>${esc(x.name || appText('Asiakas','Kund','Customer'))}</h3></div>
+                <span class="lead-status">${appText('Uusi','Ny','New')}</span>
               </div>
               ${x.message ? `<p>“${esc(x.message)}”</p>` : ''}
               <div class="lead-contact">
                 ${x.phone ? `<a href="tel:${esc(x.phone.replace(/\s+/g,''))}">${esc(x.phone)}</a>` : ''}
                 ${x.email ? `<a href="mailto:${esc(x.email)}">${esc(x.email)}</a>` : ''}
               </div>
-            </article>`).join('') : '<div class="empty-state"><b>Kukaan ei ole vielä jättänyt yhteystietoja.</b><p>Uudet yhteydenottopyynnöt näkyvät tässä.</p></div>'}
+            </article>`).join('') : '<div class="empty-state"><b>' + appText('Kukaan ei ole vielä jättänyt yhteystietoja.','Ingen har lämnat kontaktuppgifter ännu.','No one has left contact details yet.') + '</b><p>' + appText('Uudet yhteydenottopyynnöt näkyvät tässä.','Nya kontaktförfrågningar visas här.','New contact requests appear here.') + '</p></div>'}
         </div>
       </section>
 
       <section class="panel unanswered-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="answers" id="unanswered">
         <div class="panel-head unanswered-head">
           <div>
-            <small>VASTAUS PUUTTUU</small>
-            <h2>Kysymykset, joihin Respondolla ei vielä ollut vastausta</h2>
-            <p>Kirjoita vastaus tähän kerran. Sen jälkeen Respondo osaa vastata samaan asiaan myös seuraaville asiakkaille.</p>
+            <small>${appText('VASTAUS PUUTTUU','SVAR SAKNAS','ANSWER MISSING')}</small>
+            <h2>${appText('Kysymykset, joihin Respondolla ei vielä ollut vastausta','Frågor som Respondo ännu inte hade svar på','Questions Respondo could not answer yet')}</h2>
+            <p>${appText('Kirjoita vastaus tähän kerran. Sen jälkeen Respondo osaa vastata samaan asiaan myös seuraaville asiakkaille.','Skriv svaret här en gång. Därefter kan Respondo svara på samma fråga för kommande kunder.','Write the answer here once. Respondo can then answer the same question for future customers.')}</p>
           </div>
           <span>${unanswered.length}</span>
         </div>
@@ -3017,20 +3017,20 @@ async function dashboard() {
                 <small>${new Date(x.created_at).toLocaleString(appLocale(), {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</small>
               </div>
               <h3>${esc(x.question)}</h3>
-              <textarea class="unanswered-answer" placeholder="Kirjoita tähän oikea vastaus…"></textarea>
+              <textarea class="unanswered-answer" placeholder="${appText('Kirjoita tähän oikea vastaus…','Skriv rätt svar här…','Write the correct answer here…')}"></textarea>
               <div class="unanswered-actions">
-                <span>Kirjoita vastaus itse tai pyydä Respondoa etsimään se yrityksesi verkkosivulta.</span>
+                <span>${appText('Kirjoita vastaus itse tai pyydä Respondoa etsimään se yrityksesi verkkosivulta.','Skriv svaret själv eller be Respondo hitta det på företagets webbplats.','Write the answer yourself or ask Respondo to find it on your company website.')}</span>
                 <div class="gap-action-buttons">
-                  <button type="button" class="btn suggest-unanswered-answer">Etsi vastaus sivultani</button>
-                  <button type="button" class="btn dashboard-action add-unanswered-answer">Hyväksy ja tallenna <span>→</span></button>
+                  <button type="button" class="btn suggest-unanswered-answer">${appText('Etsi vastaus sivultani','Sök svar på min webbplats','Find answer on my website')}</button>
+                  <button type="button" class="btn dashboard-action add-unanswered-answer">${appText('Hyväksy ja tallenna','Godkänn och spara','Approve and save')} <span>→</span></button>
                 </div>
               </div>
               <div class="unanswered-msg"></div>
             </article>`).join('') : `
             <div class="unanswered-empty">
               <span>✓</span>
-              <b>Kaikkiin kysymyksiin löytyi vastaus.</b>
-              <p>Jos vastaan tulee kysymys, johon tietoa ei vielä ole, se ilmestyy tähän.</p>
+              <b>${appText('Kaikkiin kysymyksiin löytyi vastaus.','Alla frågor fick ett svar.','All questions were answered.')}</b>
+              <p>${appText('Jos vastaan tulee kysymys, johon tietoa ei vielä ole, se ilmestyy tähän.','Om en fråga saknar information visas den här.','If a question has no known answer, it will appear here.')}</p>
             </div>`}
         </div>
       </section>
@@ -3218,8 +3218,8 @@ async function dashboard() {
       </section>` : ''}
 
       <section class="panel billing-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="billing">
-        <div><small>LASKUTUS</small><h2>Hallitse tilaustasi</h2><p>Voit vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.</p></div>
-        <button class="btn dashboard-action" id="billingPortal" type="button">Avaa tilauksen hallinta <span>↗</span></button>
+        <div><small>${appText('LASKUTUS','FAKTURERING','BILLING')}</small><h2>${appText('Hallitse tilaustasi','Hantera ditt abonnemang','Manage your subscription')}</h2><p>${appText('Voit vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.','Du kan byta betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal.','You can change your payment method, view invoices, or cancel your subscription in the Stripe customer portal.')}</p></div>
+        <button class="btn dashboard-action" id="billingPortal" type="button">${appText('Avaa tilauksen hallinta','Öppna abonnemangshantering','Open subscription management')} <span>↗</span></button>
       </section>
     </main>
   </div>`;
