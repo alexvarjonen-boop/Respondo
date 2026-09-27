@@ -3502,15 +3502,20 @@ app.get('/api/public/:slug/live', publicChatLimiter, async (req,res) => {
       whereAfter=' AND created_at > $3';
     }
     const messages = await q(
-      `SELECT id,role,message,created_at
-         FROM chat_messages
-        WHERE tenant_id=$1 AND thread_id=$2
-          AND role='human'${whereAfter}
-        ORDER BY created_at ASC
+      `SELECT cm.id,cm.role,cm.message,cm.created_at,
+              sa.display_name AS agent_name,sa.avatar AS agent_avatar
+         FROM chat_messages cm
+         LEFT JOIN support_agents sa ON sa.id = NULLIF(cm.metadata->>'agentId','')::uuid
+        WHERE cm.tenant_id=$1 AND cm.thread_id=$2
+          AND cm.role='human'${whereAfter.replaceAll('created_at','cm.created_at')}
+        ORDER BY cm.created_at ASC
         LIMIT 50`,
       params,
     );
-    return res.json({ mode:thread.mode,messages:messages.rows });
+    const assigned = thread.assigned_agent_id
+      ? await q('SELECT display_name,avatar,status FROM support_agents WHERE id=$1 AND tenant_id=$2',[thread.assigned_agent_id,tenant.id])
+      : { rowCount:0,rows:[] };
+    return res.json({ mode:thread.mode,agent:assigned.rowCount ? assigned.rows[0] : null,messages:messages.rows });
   } catch (e) {
     console.error('Live poll failed',e);
     return res.status(500).json({ error:'Live-keskustelua ei saatu.' });
