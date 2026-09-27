@@ -2951,6 +2951,24 @@ function orderStatusText(order, lang = 'fi') {
   return ['Tilaus ' + order.orderNumber + ' löytyi.',order.fulfillmentStatus ? 'Toimitus: ' + order.fulfillmentStatus + '.' : '',order.financialStatus ? 'Maksu: ' + order.financialStatus + '.' : '',tracking ? 'Seuranta: ' + tracking : ''].filter(Boolean).join(' ');
 }
 
+function detectConversationLanguage(text, hinted='') {
+  const hint=['fi','sv','en'].includes(String(hinted||'').toLowerCase()) ? String(hinted).toLowerCase() : '';
+  const raw=String(text||'').toLowerCase().replace(/[^a-zåäö\s']/g,' ');
+  const words=raw.split(/\s+/).filter(Boolean);
+  if (!words.length) return hint || 'fi';
+  const sets={
+    fi:new Set(['ja','on','ei','mitä','mikä','missä','milloin','voiko','voin','haluan','tarvitsen','apua','kiitos','moi','hei','minä','sinä','teillä','hinta','maksaa','ajan','varata','varaus','auki','aukiolo']),
+    sv:new Set(['och','är','inte','vad','vilken','var','när','kan','jag','vill','behöver','hjälp','tack','hej','ni','pris','kostar','boka','bokning','öppet','öppettider']),
+    en:new Set(['and','is','are','not','what','which','where','when','can','could','i','you','want','need','help','thanks','thank','hello','hi','price','cost','book','booking','open','hours'])
+  };
+  const score={fi:0,sv:0,en:0};
+  for(const w of words) for(const lang of ['fi','sv','en']) if(sets[lang].has(w)) score[lang]++;
+  if(/[å]/.test(raw)) score.sv+=2;
+  if(/[äö]/.test(raw)) score.fi+=1;
+  const best=Object.entries(score).sort((a,b)=>b[1]-a[1])[0];
+  return best[1]>0 ? best[0] : (hint || 'fi');
+}
+
 async function getOrCreateThread(tenantId, sourceChannel, externalContactId, visitorRef = null) {
   const channel = String(sourceChannel || 'website').slice(0,40);
   const contact = String(externalContactId || visitorRef || '').slice(0,220);
@@ -3694,7 +3712,12 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const message = String(body.message || '').trim().slice(0, 1200);
     if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : lang === 'sv' ? 'Skriv en fråga.' : 'Kirjoita kysymys.' });
     const visitorRef = String(body.visitorRef || '').trim().slice(0, 160);
+    const detectedLang=detectConversationLanguage(message,lang);
     const thread = visitorRef ? await getOrCreateThread(t.id,'website',visitorRef,visitorRef) : null;
+    if (thread && thread.language !== detectedLang && !thread.assigned_agent_id) {
+      await q('UPDATE chat_threads SET language=$1,updated_at=NOW() WHERE id=$2 AND tenant_id=$3',[detectedLang,thread.id,t.id]);
+      thread.language=detectedLang;
+    }
     if (thread) {
       await appendChatMessage({
         tenantId:t.id,threadId:thread.id,sourceChannel:'website',
