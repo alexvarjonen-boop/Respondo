@@ -2309,7 +2309,7 @@ function login() {
           <div class="section-kicker">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</div>
           <h1>Tervetuloa<br><em>takaisin.</em></h1>
           <p>${appText('Täältä löydät yrityksesi tiedot, keskustelut, asennuksen ja tilauksen.','Här hittar du företagsuppgifter, konversationer, installation och abonnemang.','Here you can find your business information, conversations, installation, and subscription.')}</p>
-          <div class="login-signal"><span></span> ${appText('Vain sinä pääset yrityksesi hallintaan','Endast du kommer åt företagets kontrollpanel','Only you can access your company dashboard')}</div>
+
         </section>
         <form class="formcard premium-form login-card" id="login">
           <div class="form-head"><span>${appText('KIRJAUDU','LOGGA IN','LOG IN')}</span><b>${appText('Tervetuloa takaisin','Välkommen tillbaka','Welcome back')}</b></div>
