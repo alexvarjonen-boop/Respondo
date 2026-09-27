@@ -2910,13 +2910,48 @@ async function dashboard() {
           <button class="btn dashboard-action" type="submit">${appText('Luo profiili','Skapa profil','Create profile')} →</button>
           <div id="supportAgentMsg"></div>
         </form>
-        <div class="support-agent-list">
-          ${supportAgents.length ? supportAgents.map((agent)=>`
-            <article class="support-agent" data-agent-id="${esc(agent.id)}">
-              <div><b>${esc(agent.display_name)}</b><small>${agent.status==='online' ? appText('● Paikalla','● Online','● Online') : appText('○ Poissa','○ Offline','○ Offline')}</small></div>
-              <button type="button" class="support-agent-status" data-status="${agent.status==='online'?'offline':'online'}">${agent.status==='online'?appText('Poistu','Gå offline','Go offline'):appText('Tule paikalle','Gå online','Go online')}</button>
-              <button type="button" class="support-agent-delete">${appText('Poista','Ta bort','Delete')}</button>
-            </article>`).join('') : `<div class="empty-state"><b>${appText('Ei vielä asiakaspalvelijoita.','Inga kundservicemedarbetare ännu.','No support agents yet.')}</b></div>`}
+        <div class="support-agent-list support-agent-professional-list">
+          ${supportAgents.length ? supportAgents.map((agent)=>{
+            const agentThreads=liveThreads.filter((thread)=>thread.assigned_agent_id===agent.id);
+            const initials=String(agent.display_name||'?').trim().split(/\s+/).slice(0,2).map((x)=>x[0]||'').join('').toUpperCase();
+            return `
+            <article class="support-agent support-agent-profile" data-agent-id="${esc(agent.id)}">
+              <button type="button" class="support-agent-profile-head support-agent-profile-toggle" aria-expanded="false">
+                <span class="support-agent-avatar">${agent.avatar ? `<img src="${esc(agent.avatar)}" alt="">` : esc(initials)}</span>
+                <span class="support-agent-identity"><b>${esc(agent.display_name)}</b><small>${agent.status==='online' ? appText('● Paikalla nyt','● Online nu','● Online now') : appText('○ Poissa','○ Offline','○ Offline')}</small></span>
+                <span class="support-agent-mini-stat"><b>${Number(agent.open_conversations||0)}</b><small>${appText('aktiivista','aktiva','active')}</small></span>
+                <span class="support-agent-chevron">⌄</span>
+              </button>
+              <div class="support-agent-profile-body" hidden>
+                <div class="support-agent-profile-actions">
+                  <button type="button" class="support-agent-status" data-status="${agent.status==='online'?'offline':'online'}">${agent.status==='online'?appText('Merkitse poissa','Markera offline','Go offline'):appText('Merkitse paikalle','Markera online','Go online')}</button>
+                  <button type="button" class="support-agent-delete">${appText('Poista profiili','Ta bort profil','Delete profile')}</button>
+                </div>
+                <div class="support-agent-metrics">
+                  <div><small>${appText('Keskustelut','Konversationer','Conversations')}</small><b>${Number(agent.conversation_count||0)}</b></div>
+                  <div><small>${appText('Avoinna nyt','Öppna nu','Open now')}</small><b>${Number(agent.open_conversations||0)}</b></div>
+                  <div><small>${appText('Lähetetyt vastaukset','Skickade svar','Replies sent')}</small><b>${Number(agent.replies_sent||0)}</b></div>
+                  <div><small>${appText('Viimeisin keskustelu','Senaste konversation','Last conversation')}</small><b class="support-agent-date">${agent.last_conversation_at ? new Date(agent.last_conversation_at).toLocaleDateString(appLocale(),{day:'2-digit',month:'2-digit'}) : '—'}</b></div>
+                </div>
+                <details class="support-agent-dropdown" open>
+                  <summary>${appText('Keskustelut','Konversationer','Conversations')} <span>${agentThreads.length}</span></summary>
+                  <div class="support-agent-conversations">
+                    ${agentThreads.length ? agentThreads.slice(0,12).map((thread)=>`
+                      <button type="button" class="support-agent-conversation-link" data-thread-target="${esc(thread.id)}">
+                        <span><b>${esc(thread.external_contact_id || thread.visitor_ref || appText('Asiakas','Kund','Customer'))}</b><small>${esc(channelLabel(thread.source_channel))}</small></span>
+                        <em>${thread.status==='open'?appText('Avoin','Öppen','Open'):appText('Suljettu','Stängd','Closed')}</em>
+                      </button>`).join('') : `<div class="empty-state compact"><small>${appText('Tälle profiilille ei ole vielä osoitettu keskusteluja.','Inga konversationer har tilldelats den här profilen ännu.','No conversations have been assigned to this profile yet.')}</small></div>`}
+                  </div>
+                </details>
+                <details class="support-agent-dropdown">
+                  <summary>${appText('Analytiikka','Analys','Analytics')}</summary>
+                  <div class="support-agent-analysis">
+                    <p><b>${Number(agent.replies_sent||0)}</b> ${appText('ihmisen lähettämää vastausta','svar skickade av personen','human replies sent')}</p>
+                    <p><b>${Number(agent.conversation_count||0)}</b> ${appText('osoitettua asiakaskeskustelua','tilldelade kundkonversationer','assigned customer conversations')}</p>
+                  </div>
+                </details>
+              </div>
+            </article>`}).join('') : `<div class="empty-state"><b>${appText('Ei vielä asiakaspalvelijoita.','Inga kundservicemedarbetare ännu.','No support agents yet.')}</b></div>`}
         </div>
       </section>
 
@@ -4317,6 +4352,18 @@ async function route() {
         button.disabled = false;
       }
     });
+
+    document.querySelectorAll('.support-agent-profile-toggle').forEach((button)=>button.addEventListener('click',()=>{
+      const body=button.closest('.support-agent-profile')?.querySelector('.support-agent-profile-body');
+      if (!body) return;
+      const open=body.hasAttribute('hidden');
+      if (open) body.removeAttribute('hidden'); else body.setAttribute('hidden','');
+      button.setAttribute('aria-expanded',open?'true':'false');
+    }));
+    document.querySelectorAll('.support-agent-conversation-link').forEach((button)=>button.addEventListener('click',()=>{
+      const thread=document.querySelector('.live-thread[data-thread-id="'+CSS.escape(button.dataset.threadTarget||'')+'"]');
+      if (thread) { thread.scrollIntoView({behavior:'smooth',block:'center'}); thread.classList.add('focus-flash'); setTimeout(()=>thread.classList.remove('focus-flash'),1600); }
+    }));
 
     $('#supportAgentForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
