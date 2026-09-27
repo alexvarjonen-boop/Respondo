@@ -3762,6 +3762,7 @@ async function route() {
           method: 'POST',
           body: JSON.stringify({
             message: question,
+            lang: currentLang(),
             profile: {
               companyName: previewCompanyName,
               greeting: values.greeting,
