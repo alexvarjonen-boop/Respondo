@@ -159,7 +159,7 @@
       }
     },
     {
-      keys:['asennus','sivulle','verkkosivu','widget','install','installation','website','installera','webbplats','hemsida'],
+      keys:['asennus','sivulle','verkkosivu','widget','install','installation','setup','set up','website','installera','webbplats','hemsida'],
       answer:{
         fi:'Kun tili on valmis, kopioit hallintapaneelista yhden koodirivin verkkosivullesi. Sen jälkeen chat on käytössä.',
         sv:'När kontot är klart kopierar du en kodrad från kontrollpanelen till din webbplats. Därefter är chatten aktiv.',
