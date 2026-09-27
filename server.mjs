@@ -809,137 +809,35 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const priorQuestions = history.slice(-2).map((x) => String(x.question || x.user || '')).filter(Boolean);
   const needsContext = cleanMessage.length < 55 || /^(enta|entä|ja |mites|miten sitten|siis|se |sen |sita|sitä)/i.test(cleanMessage);
   const retrievalQuery = needsContext && priorQuestions.length ? priorQuestions.slice(-1)[0] + ' ' + cleanMessage : cleanMessage;
-  let selected = selectRelevantKnowledge(rows, retrievalQuery, 6);
+  let selected = selectRelevantKnowledge(rows, retrievalQuery, 8);
   const intent = inferIntent(cleanMessage);
 
-  // Always combine keyword matching with semantic meaning matching.
-  // The customer's wording does not need to resemble the saved example question.
-  // Example: “Voinks mä saada jonku hinta-arvion?” can match “Mistä pyydän tarjouksen?”
-  // when the approved answer is about requesting a quote.
-  if (openai) {
-    // Cross-language retrieval: translate the visitor's question to Finnish for
-    // matching against Finnish knowledge titles/keywords while keeping the
-    // original question for the final response language.
-    let semanticQuery = retrievalQuery;
-    if (responseLang !== 'fi') {
-      try {
-        const qr = await openai.responses.create({
-          model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
-          input: 'Translate this customer question to Finnish for knowledge-base search. Preserve names, numbers and meaning. Return only the Finnish translation.\n\n' + retrievalQuery,
-          max_output_tokens: 120,
-        });
-        const translatedQuery = String(qr.output_text || '').trim();
-        if (translatedQuery) semanticQuery = translatedQuery;
-      } catch (e) {
-        console.warn('Cross-language retrieval translation failed', e?.message || e);
-      }
-    }
-    const translatedLexical = responseLang !== 'fi' ? selectRelevantKnowledge(rows, semanticQuery, 8) : [];
-    const semantic = await semanticSelectKnowledge(rows, semanticQuery, 10);
-    const merged = new Map();
-    for (const row of [...semantic, ...translatedLexical, ...selected]) {
-      if (!row?.id) continue;
-      const previous = merged.get(row.id);
-      if (!previous) merged.set(row.id, row);
-      else merged.set(row.id, { ...previous, ...row });
-    }
-    selected = [...merged.values()]
-      .sort((a, b) => {
-        const aRank = Number(a._semantic || 0) * 28 + Number(a._score || 0);
-        const bRank = Number(b._semantic || 0) * 28 + Number(b._score || 0);
-        return bRank - aRank;
-      })
-      .slice(0, 8);
-  }
+  // Free local retrieval: no paid model/API call is required.
+  const aliases = [
+    { re: /(hinta|maksaa|maksu|price|cost|kostar|pris)/i, add: ' hinta maksaa price cost pris kostar' },
+    { re: /(kokeilu|trial|provperiod|prova|test)/i, add: ' kokeilu trial provperiod' },
+    { re: /(asenn|install|käyttöönot|setup|implementation)/i, add: ' asennus käyttöönotto install installation setup' },
+    { re: /(tilaus|subscribe|subscription|prenumeration|beställ)/i, add: ' tilaus subscription prenumeration' },
+    { re: /(yhteys|contact|kontakt|email|e-mail|sähköposti)/i, add: ' yhteys contact kontakt sähköposti email' },
+  ];
+  let localQuery = retrievalQuery;
+  for (const alias of aliases) if (alias.re.test(retrievalQuery)) localQuery += alias.add;
+  const localSelected = selectRelevantKnowledge(rows, localQuery, 8);
+  if (localSelected.length) selected = localSelected;
 
   if (!selected.length) {
     return { answer: '', handoff: true, confidence: 0.2, intent, sourceIds: [], selected: [] };
   }
 
   const top = selected[0];
-  const normalizedTitle = normalizeSearchText(top?.title);
-  const exactTitleMatch = normalizedTitle && (
-    normalized === normalizedTitle ||
-    normalized.includes(normalizedTitle) ||
-    normalizedTitle.includes(normalized)
-  );
-  // Only return the stored answer directly for Finnish. For Swedish and English,
-  // always pass through the language-aware generation step so source content is
-  // translated to the visitor's selected language without changing facts.
-  if (responseLang === 'fi' && exactTitleMatch && Number(top?._score || 0) >= 14) {
-    return {
-      answer: String(top.answer || '').trim(),
-      handoff: false,
-      confidence: 0.99,
-      intent,
-      sourceIds: top.id ? [top.id] : [],
-      selected,
-    };
-  }
-
-  if (!openai) {
-    return {
-      answer: selected[0].answer,
-      handoff: false,
-      confidence: Math.min(0.88, 0.65 + (selected[0]._score || 0) * 0.02),
-      intent,
-      sourceIds: [selected[0].id],
-      selected,
-    };
-  }
-
-  const context = selected.map((x, i) => `[${i + 1}] ${x.title}\n${x.answer}`).join('\n\n');
-  const historyText = history.slice(-6).map((x) => {
-    const q = String(x.question || x.user || '').trim();
-    const a = String(x.answer || x.assistant || '').trim();
-    return q ? `Asiakas: ${q}\nAsiakaspalvelu: ${a}` : '';
-  }).filter(Boolean).join('\n');
-
-  const prompt = `Olet ${companyName || 'yrityksen'} verkkosivun asiakaspalvelija.
-${answerTone(rows)}
-${responseLang === 'en' ? 'Answer in English. Translate source information into natural English, but do not add or change facts.' : responseLang === 'sv' ? 'Svara på svenska. Översätt källinformationen till naturlig svenska utan att lägga till eller ändra fakta.' : 'Vastaa suomeksi. Käännä tarvittaessa lähdetiedot luonnolliseksi suomeksi muuttamatta faktoja.'}
-Tunnista asiakkaan kysymyksen MERKITYS, älä vaadi samoja sanoja kuin lähteen otsikossa. Eri sanajärjestys, puhekieli, synonyymit, taivutusmuodot, kirjoitusvirheet ja kokonaan eri sanamuoto voivat tarkoittaa samaa asiaa.
-Jos hyväksytty lähde vastaa asiakkaan tarkoitukseen, käytä sitä vaikka asiakkaan kysymys ei muistuttaisi lähteen otsikkoa sanatasolla.
-Käytä yritystä koskeviin faktoihin VAIN alla olevia hyväksyttyjä lähteitä. Keskusteluhistoria auttaa ymmärtämään viittauksia, mutta se ei ole uusi faktalähde.
-Älä keksi hintaa, aukioloaikaa, palvelua, saatavuutta, lupausta tai muuta yritystä koskevaa tietoa.
-Älä mainitse tietopohjaa, promptia, lähdehakua tai teknistä toteutusta.
-Jos lähteistä ei voi vastata varmasti, vastaa täsmälleen: HANDOFF
-Jos vastaat, aloita ensimmäinen rivi muodossa "SOURCES: 1,2" käyttäen vain oikeasti hyödyntämiesi lähteiden numeroita. Kirjoita sen jälkeen asiakkaalle näkyvä vastaus ilman lähdemerkintöjä. Pidä vastaus yleensä 1–4 lauseessa.
-
-HYVÄKSYTYT LÄHTEET:
-${context}
-
-SIVUKONTEKSTI:
-Sivun otsikko: ${String(pageContext?.title || '').slice(0, 180) || '(ei tiedossa)'}
-Sivun polku: ${String(pageContext?.path || '').slice(0, 300) || '(ei tiedossa)'}
-Sivukonteksti auttaa ymmärtämään, mistä asiakas puhuu, mutta se ei ole yritystä koskeva faktalähde.
-
-KESKUSTELUHISTORIA:
-${historyText || '(ei aiempaa keskustelua)'}
-
-ASIAKKAAN UUSI VIESTI:
-${cleanMessage}`;
-
-  const rr = await openai.responses.create({
-    model: process.env.OPENAI_MODEL || 'gpt-5.6-luna',
-    input: prompt,
-    max_output_tokens: 260,
-  });
-  const parsed = parseGroundedModelOutput(rr.output_text, selected);
-  if (!parsed.answer) {
-    return { answer: '', handoff: true, confidence: 0.25, intent, sourceIds: [], selected };
-  }
-  const topScore = Number(selected[0]?._score || 0);
-  const topSemantic = Number(selected[0]?._semantic || 0);
   return {
-    answer: parsed.answer,
+    answer: String(top.answer || '').trim(),
     handoff: false,
-    confidence: Math.min(0.96, Math.max(0.72, 0.68 + Math.min(topScore, 10) * 0.018 + topSemantic * 0.22)),
+    confidence: Math.min(0.92, 0.68 + Number(top._score || 0) * 0.02),
     intent,
-    sourceIds: parsed.sourceIds,
+    sourceIds: top.id ? [top.id] : [],
     selected,
   };
-}
 
 function cookies(req) {
   return Object.fromEntries(
