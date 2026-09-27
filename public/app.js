@@ -2693,23 +2693,6 @@ async function dashboard() {
             <p>${truth.approved}/${truth.total} ${appText('tietoa hyväksytty','uppgifter godkända','items approved')} · ${truth.fresh} ${appText('tarkistettu viimeisen 90 päivän aikana.','kontrollerade under de senaste 90 dagarna.','checked within the last 90 days.')}</p>
           </div>
         </article>
-        <article class="panel self-test-card">
-          <div class="self-test-copy">
-            <small>${appText('BOTIN ITSETESTI','BOTTENS SJÄLVTEST','BOT SELF-TEST')}</small>
-            <h2>${latestSelfTest ? latestSelfTest.score + '% ' + appText('kattavuus','täckning','coverage') : appText('Testaa ennen asiakkaita','Testa före kunderna','Test before customers')}</h2>
-            <p>${latestSelfTest ? (latestSelfTest.answerable_questions + '/' + latestSelfTest.total_questions + ' ' + appText('testikysymykseen löytyi varma tieto.','testfrågor hade ett säkert svar.','test questions had a reliable answer.')) : appText('Respondo luo realistisia asiakaskysymyksiä ja etsii tietopohjan aukot ennen oikeita asiakkaita.','Respondo skapar realistiska kundfrågor och hittar luckor i kunskapsbasen före riktiga kunder.','Respondo creates realistic customer questions and finds gaps in the knowledge base before real customers.')}</p>
-          </div>
-          <div class="self-test-controls">
-            <label>${appText('Testin laajuus','Testets omfattning','Test size')}
-              <select id="selfTestDepth">
-                <option value="500">500 ${appText('kysymystä','frågor','questions')}</option>
-                <option value="1000">1 000 ${appText('kysymystä','frågor','questions')}</option>
-              </select>
-            </label>
-            <button class="btn dashboard-action self-test-button" id="runSelfTest" type="button">${latestSelfTest ? appText('Testaa uudelleen','Testa igen','Test again') : appText('Aja itse­testi','Kör självtest','Run self-test')} <span>→</span></button>
-          </div>
-          <div id="selfTestResult"></div>
-        </article>
         <article class="panel action-center-card">
           <div class="intelligence-icon">↗</div>
           <div>
@@ -3019,9 +3002,8 @@ async function dashboard() {
               <h3>${esc(x.question)}</h3>
               <textarea class="unanswered-answer" placeholder="${appText('Kirjoita tähän oikea vastaus…','Skriv rätt svar här…','Write the correct answer here…')}"></textarea>
               <div class="unanswered-actions">
-                <span>${appText('Kirjoita vastaus itse tai pyydä Respondoa etsimään se yrityksesi verkkosivulta.','Skriv svaret själv eller be Respondo hitta det på företagets webbplats.','Write the answer yourself or ask Respondo to find it on your company website.')}</span>
+                <span>${appText('Kirjoita oikea vastaus ja tallenna se tietopohjaan.','Skriv rätt svar och spara det i kunskapsbasen.','Write the correct answer and save it to the knowledge base.')}</span>
                 <div class="gap-action-buttons">
-                  <button type="button" class="btn suggest-unanswered-answer">${appText('Etsi vastaus sivultani','Sök svar på min webbplats','Find answer on my website')}</button>
                   <button type="button" class="btn dashboard-action add-unanswered-answer">${appText('Hyväksy ja tallenna','Godkänn och spara','Approve and save')} <span>→</span></button>
                 </div>
               </div>
@@ -3659,82 +3641,6 @@ async function route() {
       });
     });
 
-    $('#runSelfTest')?.addEventListener('click', async (e) => {
-      const button = e.currentTarget;
-      const original = button.innerHTML;
-      button.disabled = true;
-      button.innerHTML = appText('Testataan…','Testar…','Testing…');
-      const target = Number($('#selfTestDepth')?.value || 500) >= 1000 ? 1000 : 500;
-      $('#selfTestResult').innerHTML = '<div class="self-test-running">' + appText('Respondo käy läpi ','Respondo går igenom ','Respondo is reviewing ') + target.toLocaleString(appLocale()) + appText(' realistista asiakaskysymystä ja etsii aukkoja.',' realistiska kundfrågor och letar efter luckor.',' realistic customer questions and looks for gaps.') + '</div>';
-      try {
-        const result = await api('/api/app/self-test', {
-          method:'POST',
-          body:JSON.stringify({ target }),
-        });
-        const gaps = Array.isArray(result.gaps) ? result.gaps : [];
-        $('#selfTestResult').innerHTML =
-          '<div class="self-test-score"><b>' + Number(result.score || 0) + '%</b><span>' +
-          Number(result.answerable_questions || 0) + '/' + Number(result.total_questions || 0) +
-          ' ' + appText('kysymykseen löytyy varma tieto','frågor har ett säkert svar','questions have a reliable answer') + '</span></div>' +
-          (gaps.length
-            ? '<div class="self-test-gaps"><strong>' + appText('Nämä kannattaa lisätä:','Det här bör läggas till:','Consider adding these:') + '</strong>' +
-              gaps.slice(0,6).map((x) => '<button type="button" class="self-test-gap" data-question="' +
-                esc(x.question) + '">' + esc(x.question) + '</button>').join('') + '</div>'
-            : '<div class="notice success">' + appText('Hyvältä näyttää — testissä ei löytynyt selviä tietopuutteita.','Ser bra ut — testet hittade inga tydliga informationsluckor.','Looks good — the test found no clear information gaps.') + '</div>');
-
-        document.querySelectorAll('.self-test-gap').forEach((gap) => {
-          gap.addEventListener('click', () => {
-            openDashboardTarget('knowledge');
-            setTimeout(() => {
-              const form = $('#knowledgeForm');
-              if (form?.elements?.title) {
-                form.elements.title.value = gap.dataset.question || '';
-                form.elements.title.focus();
-              }
-            }, 350);
-          });
-        });
-        button.innerHTML = appText('Testaa uudelleen','Testa igen','Test again');
-      } catch (err) {
-        $('#selfTestResult').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-        button.innerHTML = original;
-      } finally {
-        button.disabled = false;
-      }
-    });
-
-    document.querySelectorAll('.suggest-unanswered-answer').forEach((button) => {
-      button.addEventListener('click', async () => {
-        const item = button.closest('.unanswered-item');
-        const msg = item?.querySelector('.unanswered-msg');
-        const textarea = item?.querySelector('.unanswered-answer');
-        const original = button.textContent;
-        button.disabled = true;
-        button.textContent = appText('Etsitään…','Söker…','Searching…');
-        if (msg) msg.innerHTML = '';
-        try {
-          const result = await api('/api/app/unanswered/' + encodeURIComponent(item.dataset.id) + '/suggest', {
-            method:'POST',
-            body:'{}',
-          });
-          if (result.found && result.answer) {
-            textarea.value = result.answer;
-            textarea.focus();
-            if (msg) msg.innerHTML = '<div class="notice success">' + appText('Löysin ehdotuksen yrityksesi verkkosivulta. Tarkista se ja hyväksy vasta sitten.','Jag hittade ett förslag på företagets webbplats. Kontrollera det och godkänn först därefter.','I found a suggestion on your company website. Review it and only then approve it.') + '</div>';
-            button.textContent = appText('Ehdotus löytyi ✓','Förslag hittat ✓','Suggestion found ✓');
-          } else {
-            if (msg) msg.innerHTML = '<div class="notice error">' + appText('Verkkosivulta ei löytynyt tähän varmaa vastausta. Kirjoita oikea vastaus itse.','Det gick inte att hitta ett säkert svar på webbplatsen. Skriv det korrekta svaret själv.','A reliable answer could not be found on the website. Enter the correct answer yourself.') + '</div>';
-            button.textContent = original;
-          }
-        } catch (err) {
-          if (msg) msg.innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-          button.textContent = original;
-        } finally {
-          button.disabled = false;
-        }
-      });
-    });
-
     const previewHistory = [];
     const previewCompanyName = $('.dashboard-workspace b')?.textContent || 'Yritys';
     const previewFactsPromise = api('/api/app/dashboard')
@@ -3839,13 +3745,13 @@ async function route() {
       const formEl = $('#businessProfileForm');
       const website = formEl?.elements.website?.value?.trim();
       if (!website) {
-        $('#businessProfileMsg').innerHTML = '<div class="notice error">Anna ensin verkkosivun osoite.</div>';
+        $('#businessProfileMsg').innerHTML = '<div class="notice error">' + appText('Anna ensin verkkosivun osoite.','Ange först webbplatsens adress.','Enter the website address first.') + '</div>';
         formEl?.elements.website?.focus();
         return;
       }
       const original = button.textContent;
       button.disabled = true;
-      button.textContent = 'Luetaan sivua…';
+      button.textContent = appText('Luetaan sivua…','Läser webbplatsen…','Reading website…');
       $('#businessProfileMsg').innerHTML = '';
       try {
         const result = await api('/api/app/import-website', {
@@ -3857,7 +3763,7 @@ async function route() {
           if (p[name] && formEl?.elements[name]) formEl.elements[name].value = p[name];
         });
         $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText('Tiedot haettu. Tarkista ehdotukset ja tallenna ne vasta sitten.','Uppgifterna har hämtats. Kontrollera förslagen och spara dem först därefter.','Details imported. Review the suggestions and only then save them.') + '</div>';
-        button.textContent = 'Tiedot haettu ✓';
+        button.textContent = appText('Tiedot haettu ✓','Uppgifter hämtade ✓','Details imported ✓');
         setTimeout(() => { button.textContent = original; button.disabled = false; }, 1800);
       } catch (err) {
         button.disabled = false;
