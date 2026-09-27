@@ -12,10 +12,13 @@
   };
   const requestedLang = String(script.dataset.lang || 'auto').toLowerCase();
   const storedLang = (() => { try { return localStorage.getItem('respondo_lang') || ''; } catch { return ''; } })();
-  const pageLang = normalizeLang(document.documentElement.lang || '');
-  // The actual page language is authoritative. This prevents an old hard-coded
-  // data-lang="fi" in an embed from forcing Finnish on Swedish/English pages.
-  const widgetLang = ['fi','sv','en'].includes(pageLang)
+  const rawPageLang = String(document.documentElement.lang || '').toLowerCase().split('-')[0];
+  const pageLang = ['fi','sv','en'].includes(rawPageLang) ? rawPageLang : '';
+  // The actual page language is authoritative when it is explicitly Finnish,
+  // Swedish or English. If the host page does not declare a supported language,
+  // fall back to the embed setting / saved browser language instead of silently
+  // forcing Finnish.
+  const widgetLang = pageLang
     ? pageLang
     : requestedLang === 'auto'
       ? normalizeLang(storedLang || navigator.language)
