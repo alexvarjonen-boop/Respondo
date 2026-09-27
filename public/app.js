@@ -4243,7 +4243,7 @@ async function route() {
       const button = e.currentTarget;
       const original = button.textContent;
       button.disabled = true;
-      button.textContent = 'Testataan…';
+      button.textContent = appText('Testataan…','Testar…','Testing…');
       try {
         await api('/api/app/voice/test', { method:'POST', body:'{}' });
         $('#voiceAgentMsg').innerHTML = '<div class="notice success">' + appText('Twilio-yhteys toimii ✓','Twilio-anslutningen fungerar ✓','Twilio connection works ✓') + '</div>';
@@ -4374,7 +4374,7 @@ async function route() {
       const button = e.currentTarget;
       const original = button.textContent;
       button.disabled = true;
-      button.textContent = 'Testataan…';
+      button.textContent = appText('Testataan…','Testar…','Testing…');
       try {
         await api('/api/app/integrations/test', { method:'POST', body:'{}' });
         $('#integrationMsg').innerHTML = '<div class="notice success">' + appText('Webhook vastasi onnistuneesti ✓','Webhook svarade korrekt ✓','Webhook responded successfully ✓') + '</div>';
