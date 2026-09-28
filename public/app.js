@@ -2670,13 +2670,12 @@ async function dashboard() {
               <option value="answers">${appText('Vastaukset','Svar','Answers')}</option>
               <option value="customers">${appText('Asiakkaat','Kunder','Customers')}</option>
               <option value="automation">${appText('Toiminnot','Funktioner','Actions')}</option>
-              <option value="account">${appText('Asetukset','Inställningar','Settings')}</option>
+              
             </select>
             <span aria-hidden="true">⌄</span>
           </div>
         </div>
         <div class="dashboard-top-actions">
-          <div class="live-chip"><span></span> ${appText('Botti käytössä','Botten är aktiv','Bot active')}</div>
           <button class="dashboard-settings-button" id="dashboardSettingsButton" type="button" aria-label="${esc(appText('Asetukset','Inställningar','Settings'))}" title="${esc(appText('Asetukset','Inställningar','Settings'))}">⚙</button>
         </div>
       </header>
