@@ -3257,19 +3257,19 @@ async function dashboard() {
       ${referral ? `
       <section class="panel referral-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="referral">
         <div class="referral-copy">
-          <small>SUOSITTELE RESPONDOA</small>
-          <h2>Kaverille −20 % ensimmäisestä kuukaudesta.</h2>
-          <p>Anna tämä henkilökohtainen koodi yhdelle toiselle yritykselle. Koodi toimii kerran, vain kuukausitilauksessa, ja alennus koskee ensimmäistä maksullista kuukautta 3 päivän kokeilun jälkeen.</p>
+          <small>${appText('SUOSITTELE RESPONDOA','REKOMMENDERA RESPONDO','REFER RESPONDO')}</small>
+          <h2>${appText('Kaverille −20 % ensimmäisestä kuukaudesta.','Ge en vän −20 % på första månaden.','Give a friend 20% off their first month.')}</h2>
+          <p>${appText('Anna tämä henkilökohtainen koodi yhdelle toiselle yritykselle. Koodi toimii kerran, vain kuukausitilauksessa, ja alennus koskee ensimmäistä maksullista kuukautta 3 päivän kokeilun jälkeen.','Ge den här personliga koden till ett annat företag. Koden kan användas en gång, endast med månadsabonnemang, och rabatten gäller den första betalda månaden efter den 3 dagar långa provperioden.','Give this personal code to another company. It can be used once with a monthly subscription, and the discount applies to the first paid month after the 3-day trial.')}</p>
         </div>
         <div class="referral-box">
-          <span>OMA KERTAKÄYTTÖINEN SUOSITTELUKOODISI</span>
+          <span>${appText('OMA KERTAKÄYTTÖINEN SUOSITTELUKOODISI','DIN PERSONLIGA REKOMMENDATIONSKOD FÖR ENGÅNGSBRUK','YOUR ONE-TIME REFERRAL CODE')}</span>
           <div class="referral-code-row">
             <code id="referralCode">${esc(referral.code)}</code>
-            <button type="button" id="copyReferralCode" ${referral.available ? '' : 'disabled'}>${referral.available ? 'Kopioi koodi' : 'Koodi käytetty'}</button>
+            <button type="button" id="copyReferralCode" ${referral.available ? '' : 'disabled'}>${referral.available ? appText('Kopioi koodi','Kopiera kod','Copy code') : appText('Koodi käytetty','Koden är använd','Code used')}</button>
           </div>
           <div class="referral-actions">
-            <button type="button" id="copyReferralLink" data-url="${esc(referral.shareUrl)}" ${referral.available ? '' : 'disabled'}>${referral.available ? 'Kopioi suosittelulinkki' : 'Linkki käytetty'}</button>
-            <small>${referral.available ? '1 käyttökerta jäljellä' : 'Käytetty'}</small>
+            <button type="button" id="copyReferralLink" data-url="${esc(referral.shareUrl)}" ${referral.available ? '' : 'disabled'}>${referral.available ? appText('Kopioi suosittelulinkki','Kopiera rekommendationslänk','Copy referral link') : appText('Linkki käytetty','Länken är använd','Link used')}</button>
+            <small>${referral.available ? appText('1 käyttökerta jäljellä','1 användning kvar','1 use remaining') : appText('Käytetty','Använd','Used')}</small>
           </div>
         </div>
       </section>` : ''}
