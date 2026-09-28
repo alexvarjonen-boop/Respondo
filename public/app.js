@@ -2588,7 +2588,7 @@ async function agentDashboard(me) {
       </nav>
 
       <section class="dashboard-head dashboard-view-section" data-dashboard-view="overview" id="overview">
-        <div><div class="section-kicker">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</div><h1>${esc(t.name)}</h1><p>${appText('Valitse ylhäältä mitä haluat tehdä. Näytämme vain siihen liittyvät asiat.','Välj ovan vad du vill göra. Vi visar bara det som hör till valet.','Choose what you want to do above. We only show the relevant items.')}</p></div>
+        <div><div class="section-kicker">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</div><h1>${esc(t.name)}</h1><p>${appText('Kaikki tärkeä yhdessä paikassa. Valitse vain se osio, jota tarvitset.','Allt viktigt på ett ställe. Välj bara det avsnitt du behöver.','Everything important in one place. Open only the section you need.')}</p></div>
       </section>
 
       <section class="dashboard-launch-grid dashboard-view-section" data-dashboard-view="overview" aria-label="${esc(appText('Pääosiot','Huvudavsnitt','Main sections'))}">
