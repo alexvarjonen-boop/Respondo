@@ -2274,6 +2274,9 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
       voice: {
         accountSid:tenant.twilio_account_sid || '',
         phoneNumber:tenant.twilio_phone_number || '',
+        businessNumber:tenant.voice_business_number || '',
+        answerMode:tenant.voice_answer_mode || 'unanswered',
+        voiceGreeting:tenant.voice_greeting || tenant.greeting || 'Hei! Miten voin auttaa?',
         handoffNumber:tenant.voice_handoff_number || '',
         credentialsConfigured:Boolean(tenant.twilio_account_sid && tenant.twilio_auth_token),
         enabled:Boolean(tenant.voice_enabled),
@@ -4648,6 +4651,30 @@ app.post('/api/app/voice', auth, subscribed, async (req,res) => {
   }
 });
 
+app.post('/api/app/respondo-voice', auth, subscribed, async (req,res) => {
+  try {
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const tenant = tr.rows[0];
+    const businessNumber = normalizePhone(req.body.businessNumber);
+    const handoffNumber = normalizePhone(req.body.handoffNumber);
+    const answerMode = ['always','unanswered','after_hours'].includes(req.body.answerMode) ? req.body.answerMode : 'unanswered';
+    const voiceGreeting = String(req.body.voiceGreeting || '').trim().slice(0,300) || tenant.greeting || 'Hei! Miten voin auttaa?';
+    if (!businessNumber) return res.status(400).json({ error:'Lisää yrityksen puhelinnumero.' });
+    await q(
+      `UPDATE tenants SET voice_business_number=$1,voice_handoff_number=$2,voice_answer_mode=$3,voice_greeting=$4,updated_at=NOW() WHERE id=$5`,
+      [businessNumber,handoffNumber || null,answerMode,voiceGreeting,tenant.id]
+    );
+    return res.json({
+      ok:true,
+      connected:Boolean(tenant.twilio_account_sid && tenant.twilio_auth_token && tenant.twilio_phone_number),
+      status:(tenant.twilio_account_sid && tenant.twilio_auth_token && tenant.twilio_phone_number) ? 'provider_ready' : 'awaiting_carrier'
+    });
+  } catch (e) {
+    return res.status(400).json({ error:e.message || 'Respondo Voice -asetuksia ei voitu tallentaa.' });
+  }
+});
+
 app.post('/api/app/voice/test', auth, subscribed, async (req,res) => {
   try {
     const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
@@ -5256,6 +5283,9 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS twilio_auth_token TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS twilio_phone_number TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS voice_handoff_number TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS voice_business_number TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS voice_answer_mode TEXT NOT NULL DEFAULT 'unanswered'");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS voice_greeting TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS voice_enabled BOOLEAN NOT NULL DEFAULT FALSE");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_sms_enabled BOOLEAN NOT NULL DEFAULT FALSE");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_sms_message TEXT NOT NULL DEFAULT 'Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.'");
