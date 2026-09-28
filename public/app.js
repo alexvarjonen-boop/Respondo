@@ -4691,4 +4691,11 @@ async function route() {
   }
 }
 
-route();
+route().catch((error) => {
+  console.error('Respondo route failed', error);
+  const root = document.getElementById('app');
+  if (root) {
+    root.innerHTML = '<main class="app-crash-fallback"><div class="container"><div class="notice error"><b>Respondo ei saanut näkymää avattua.</b><p>Päivitä sivu. Jos ongelma jatkuu, kirjaudu ulos ja takaisin sisään.</p><button type="button" id="crashReload" class="btn">Päivitä sivu</button></div></div></main>';
+    document.getElementById('crashReload')?.addEventListener('click', () => location.reload());
+  }
+});
