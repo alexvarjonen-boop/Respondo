@@ -3663,7 +3663,7 @@ async function route() {
 
   if (path === '/app') {
     const dashboardSelect = $('#dashboardSectionSelect');
-    const validDashboardViews = new Set(['overview','setup','answers','customers','automation','account']);
+    const validDashboardViews = new Set(['overview','setup','answers','customers','automation','install','account']);
     const targetViewMap = {
       'overview':'overview',
       'business-profile':'setup',
@@ -3674,7 +3674,7 @@ async function route() {
       'leads':'customers',
       'actions2':'automation',
       'integrations':'automation',
-      'install':'account',
+      'install':'install',
       'referral':'account',
       'billing':'account',
     };
