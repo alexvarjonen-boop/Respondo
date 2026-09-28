@@ -2569,82 +2569,155 @@ async function agentDashboard(me) {
   try { data=await api('/api/app/agent-dashboard'); }
   catch(e){ return `<div class="container"><div class="notice error">${esc(e.message)}</div></div>`; }
   const threads=data.liveThreads||[], agent=data.agent||me;
-  return `<div class="appshell dashboard-simple-shell dashboard-os-shell">
-    <aside class="dashboard-os-sidebar" aria-label="${esc(appText('Hallintapaneelin navigaatio','Kontrollpanelens navigering','Dashboard navigation'))}">
-      <div class="dashboard-os-brand">
-        ${logo()}
-        <div>
-          <small>RESPONDO OS</small>
-          <b>${esc(me.company_name || t.name)}</b>
-        </div>
-      </div>
+  return `<div class="appshell dashboard-simple-shell"><main class="appmain dashboard-simple-main">
+    <header class="dashboard-topbar"><div class="dashboard-topbar-brand">${logo()}<div><b>${esc(agent.display_name||'')}</b><small>${appText('Asiakaspalvelu','Kundservice','Customer support')}</small></div></div><button class="btn" id="logoutAgent">${appText('Kirjaudu ulos','Logga ut','Log out')}</button></header>
+    <section class="panel"><div class="panel-head"><div><small>${appText('OMA TYÖPÖYTÄ','MIN ARBETSYTA','MY WORKSPACE')}</small><h1>${appText('Omat keskustelut','Mina konversationer','My conversations')}</h1><p>${appText('Näet vain sinulle osoitetut asiakaskeskustelut.','Du ser endast kundkonversationer som tilldelats dig.','You only see customer conversations assigned to you.')}</p></div><span>${Number(data.stats?.open||0)} ${appText('avointa','öppna','open')}</span></div>
+    <section class="support-agent-self-card"><div class="support-agent-profile-head"><span class="support-agent-avatar">${agent.avatar?`<img src="${esc(agent.avatar)}" alt="">`:esc(String(agent.display_name||'?')[0].toUpperCase())}</span><span class="support-agent-identity"><b>${esc(agent.display_name||'')}</b><small>@${esc(agent.username||'')}</small></span></div>
+      <div class="support-agent-self-controls"><label class="agent-presence-toggle"><input id="agentPresence" type="checkbox" ${agent.status==='online'?'checked':''}><span>${agent.status==='online'?appText('Olen paikalla','Jag är online','I am online'):appText('Olen poissa','Jag är offline','I am offline')}</span></label><label class="btn">${appText('Vaihda profiilikuva','Byt profilbild','Change profile picture')}<input id="agentAvatarFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></label></div><div id="agentProfileMsg"></div>
+    </section>
+    <div class="support-agent-metrics"><div><small>${appText('Keskustelut','Konversationer','Conversations')}</small><b>${Number(data.stats?.conversations||0)}</b></div><div><small>${appText('Avoinna','Öppna','Open')}</small><b>${Number(data.stats?.open||0)}</b></div><div><small>${appText('Ihmisen hallussa','Mänsklig hantering','Human takeover')}</small><b>${Number(data.stats?.human||0)}</b></div></div>
+    <details class="support-agent-dropdown" open><summary>${appText('Analytiikka','Analys','Analytics')}</summary><div class="support-agent-analysis"><p><b>${Number(data.stats?.conversations||0)}</b> ${appText('sinulle osoitettua keskustelua','konversationer tilldelade dig','conversations assigned to you')}</p><p><b>${Number(data.stats?.open||0)}</b> ${appText('avointa juuri nyt','öppna just nu','open right now')}</p></div></details>
+    <div class="live-thread-list">${threads.length?threads.map(thread=>`<article class="live-thread ${thread.mode==='human'?'human-mode':''}" data-thread-id="${esc(thread.id)}"><div class="live-thread-head"><div><span class="live-channel">${esc(thread.source_channel||'website')}</span><b>${esc(thread.external_contact_id||thread.visitor_ref||appText('Asiakas','Kund','Customer'))}</b></div><span class="live-mode">${thread.assigned_agent_id===agent.id?appText('● Sinulla','● Hos dig','● Assigned to you'):appText('○ Vapaa keskustelu','○ Ledig konversation','○ Available chat')}</span></div><div class="live-messages">${(thread.messages||[]).map(m=>`<div class="live-message ${esc(m.role||'user')}"><small>${m.role==='user'?appText('Asiakas','Kund','Customer'):m.role==='human'?esc(agent.display_name||appText('Sinä','Du','You')):'RESPONDO'}</small><p>${esc(m.message||'')}</p></div>`).join('')}</div><div class="live-thread-actions">${thread.assigned_agent_id===agent.id?`<button type="button" class="btn live-mode-toggle" data-mode="${thread.mode==='human'?'ai':'human'}">${thread.mode==='human'?appText('Palauta automaattiselle','Återgå till automatiskt','Return to automatic'):appText('Ota haltuun','Ta över','Take over')}</button><form class="live-reply-form"><input name="message" placeholder="${appText('Kirjoita vastaus…','Skriv ett svar…','Write a reply…')}" ${thread.mode==='human'?'':'disabled'}><button type="submit" ${thread.mode==='human'?'':'disabled'}>${appText('Lähetä','Skicka','Send')} →</button></form>`:`<button type="button" class="btn agent-claim-chat">${appText('Ota keskustelu haltuun','Ta över konversationen','Take over chat')}</button>`}</div><div class="live-msg"></div></article>`).join(''):`<div class="empty-state"><b>${appText('Sinulle ei ole vielä osoitettu keskusteluja.','Inga konversationer har tilldelats dig ännu.','No conversations have been assigned to you yet.')}</b></div>`}</div></section>
+  </main></div>`;
+}
 
-      <nav class="dashboard-os-nav">
-        <button type="button" data-dashboard-nav="overview"><span>⌂</span><b>${appText('Koti','Hem','Home')}</b></button>
-        <button type="button" data-dashboard-nav="setup"><span>◎</span><b>${appText('Yritys & botti','Företag & bot','Business & bot')}</b></button>
-        <button type="button" data-dashboard-nav="answers"><span>≡</span><b>${appText('Vastaukset','Svar','Answers')}</b></button>
-        <button type="button" data-dashboard-nav="customers"><span>◌</span><b>${appText('Asiakkaat','Kunder','Customers')}</b></button>
-        <button type="button" data-dashboard-nav="automation"><span>↗</span><b>${appText('Toiminnot','Funktioner','Actions')}</b></button>
-        <button type="button" data-dashboard-nav="install"><span>&lt;/&gt;</span><b>${appText('Asennus','Installation','Installation')}</b></button>
-        <button type="button" data-dashboard-nav="account"><span>⚙</span><b>${appText('Asetukset','Inställningar','Settings')}</b></button>
-      </nav>
+async function dashboard() {
+  let me;
+  try {
+    me = await api('/api/auth/me');
+    try {
+      const stored = localStorage.getItem('respondo_lang');
+      if (!stored && ['fi','sv','en'].includes(me?.preferred_language)) {
+        localStorage.setItem('respondo_lang', me.preferred_language);
+        window.RespondoI18n?.setLanguage?.(me.preferred_language);
+      }
+    } catch {}
+  } catch {
+    return login();
+  }
 
-      <div class="dashboard-os-sidebar-bottom">
-        <div class="dashboard-os-account">
-          <span>${String(me.email || '').slice(0,1).toUpperCase() || 'R'}</span>
-          <div><b>${esc(me.email || appText('Oma tili','Mitt konto','My account'))}</b><small>${appText('Tili aktiivinen','Kontot är aktivt','Account active')}</small></div>
-        </div>
-        <button type="button" class="dashboard-os-logout" id="logoutTop">${appText('Kirjaudu ulos','Logga ut','Log out')}</button>
-      </div>
-    </aside>
+  if (me?.role === 'agent') return agentDashboard(me);
 
+  let data;
+  try {
+    data = await api('/api/app/dashboard');
+  } catch (e) {
+    return `<div class="container"><div class="notice error">${esc(e.message)}</div></div>`;
+  }
+
+  const t = data.tenant;
+  const s = data.stats;
+  const referral = data.referral || null;
+  const truth = data.truth || { score:0,total:0,approved:0,fresh:0 };
+  const latestSelfTest = data.latestSelfTest || null;
+  const actionStats = data.actionStats || [];
+  const actionRequests = data.actionRequests || [];
+  const liveThreads = data.liveThreads || [];
+  const supportAgents = data.supportAgents || [];
+  const metaChannels = data.metaChannels || { graphVersion:'v24.0',verifyToken:'',webhookUrl:'',whatsappPhoneNumberId:'',whatsappConnected:false,instagramAccountId:'',instagramConnected:false,appSecretConfigured:false };
+  const voice = data.voice || {
+    accountSid:'',phoneNumber:'',handoffNumber:'',credentialsConfigured:false,enabled:false,
+    webhookUrl:'',smsWebhookUrl:'',missedCallWebhookUrl:'',missedCallSmsEnabled:false,
+    missedCallSmsMessage:'Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.',
+    missedCallSmsMode:'immediate',missedCallAfterStart:'17:00',missedCallAfterEnd:'08:00',
+    missedCallTimezone:'Europe/Helsinki'
+  };
+  const bookingSlots = data.bookingSlots || [];
+  const stripeConnect = data.stripeConnect || { connected:false,chargesEnabled:false,detailsSubmitted:false,payoutsEnabled:false };
+  const googleCalendar = data.googleCalendar || { connected:false,email:'',calendarId:'primary' };
+  const quoteEngine = data.quoteEngine || { serviceName:'',basePrice:0,unitPrice:0,minPrice:0,vatPercent:0,unitLabel:'kpl' };
+  const integrations = data.integrations || { webhookUrl:'', webhookSecret:'', channelsApiKey:'' };
+  const knowledge = data.knowledge || [];
+  const businessProfile = Object.fromEntries(
+    knowledge
+      .filter((x) => x.category === 'Yrityksen perustiedot')
+      .map((x) => [x.title, x.answer])
+  );
+  const profileValue = (title) => esc(businessProfile[title] || '');
+  const unanswered = data.unanswered || [];
+  const recentConversations = data.recentConversations || [];
+  const leads = data.leads || [];
+  const gaps = data.gaps || [];
+  const daily = data.daily || [];
+  const maxDaily = Math.max(1, ...daily.map((x) => Number(x.total || 0)));
+  const nonProfileKnowledge = knowledge.filter((x) => x.category !== 'Yrityksen perustiedot');
+  const installedKey = `respondo-installed-${t.id}`;
+  const installedDone = localStorage.getItem(installedKey) === '1';
+  const profileDone = ['Hinnat','Aukioloajat','Palvelut'].filter((k) => businessProfile[k]).length >= 2;
+  const formatMoney = (n) => new Intl.NumberFormat(appLocale(), { style:'currency', currency:'EUR', maximumFractionDigits:0 }).format(Number(n || 0));
+  const actionTypeLabel = (type) => ({
+    quote:appText('Tarjouspyyntö','Offertförfrågan','Quote request'),
+    booking:appText('Ajanvaraus','Bokning','Booking'),
+    order_status:appText('Tilauksen tila','Orderstatus','Order status'),
+    callback:appText('Yhteydenotto','Kontakt','Callback'),
+  })[type] || type || appText('Toiminto','Åtgärd','Action');
+  const actionStatusLabel = (status) => ({
+    new:appText('Uusi','Ny','New'),
+    in_progress:appText('Käsittelyssä','Behandlas','In progress'),
+    done:appText('Hoidettu','Klar','Done'),
+  })[status] || status || appText('Uusi','Ny','New');
+  const channelLabel = (channel) => ({
+    website:appText('Verkkosivu','Webbplats','Website'),
+    whatsapp:'WhatsApp',
+    instagram:'Instagram',
+    phone:appText('Puhelin','Telefon','Phone'),
+    email:appText('Sähköposti','E-post','Email'),
+    api:'API',
+    messenger:'Messenger',
+    sms:'SMS',
+  })[channel] || channel || appText('Kanava','Kanal','Channel');
+  const actionFieldEntries = (payload) => Object.entries(payload?.fields || {}).filter(([key,v]) => key !== 'slotId' && String(v || '').trim());
+  const localDateInput = (date) => {
+    const d = new Date(date);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0,10);
+  };
+  const tomorrowValue = localDateInput(new Date(Date.now() + 86400000));
+  const weekValue = localDateInput(new Date(Date.now() + 8 * 86400000));
+  const answersDone = nonProfileKnowledge.length > 0;
+  const testedDone = s.conversations > 0;
+  const onboarding = [
+    { label: appText('Kerro yrityksesi perustiedot','Ange företagets grunduppgifter','Add your company details'), done: profileDone, target: 'business-profile' },
+    { label: appText('Lisää ensimmäinen oma vastaus','Lägg till ditt första egna svar','Add your first custom answer'), done: answersDone, target: 'knowledge' },
+    { label: appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website'), done: installedDone, target: 'install' },
+    { label: appText('Kokeile bottia ensimmäisen kerran','Testa botten för första gången','Try the bot for the first time'), done: testedDone, target: 'live-preview' },
+  ];
+  const onboardingDone = onboarding.filter((x) => x.done).length;
+  const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
+  const isWelcome = new URLSearchParams(location.search).get('welcome') === '1';
+
+  return `<div class="appshell dashboard-simple-shell">
     <main class="appmain dashboard-simple-main">
       <header class="dashboard-topbar">
-        <div class="dashboard-mobile-brand">
+        <div class="dashboard-topbar-brand">
           ${logo()}
+          <div class="dashboard-workspace">
+            <small>TYÖTILA</small>
+            <b>${esc(me.company_name || t.name)}</b>
+          </div>
         </div>
-        <div class="dashboard-page-context">
-          <small id="dashboardPageEyebrow">RESPONDO</small>
-          <strong id="dashboardPageTitle">${appText('Koti','Hem','Home')}</strong>
+        <div class="dashboard-section-picker">
+          <label for="dashboardSectionSelect">${appText('Työtila','Arbetsyta','Workspace')}</label>
+          <div class="dashboard-select-wrap">
+            <select id="dashboardSectionSelect" aria-label="Valitse hallintapaneelin osio">
+              <option value="overview">${appText('Yleiskatsaus','Översikt','Overview')}</option>
+              <option value="setup">${appText('Yrityksen tiedot & botti','Företagsuppgifter & bot','Business info & bot')}</option>
+              <option value="answers">${appText('Vastaukset','Svar','Answers')}</option>
+              <option value="customers">${appText('Asiakkaat','Kunder','Customers')}</option>
+              <option value="automation">${appText('Toiminnot','Funktioner','Actions')}</option>
+              <option value="install">${appText('Asennus','Installation','Installation')}</option>
+              
+            </select>
+            <span aria-hidden="true">⌄</span>
+          </div>
         </div>
         <div class="dashboard-top-actions">
           <button class="dashboard-settings-button" id="dashboardSettingsButton" type="button" aria-label="${esc(appText('Asetukset','Inställningar','Settings'))}" title="${esc(appText('Asetukset','Inställningar','Settings'))}">⚙</button>
         </div>
       </header>
 
-      <nav class="dashboard-mobile-nav" aria-label="${esc(appText('Hallintapaneelin osiot','Kontrollpanelens avsnitt','Dashboard sections'))}">
-        <button type="button" data-dashboard-nav="overview"><span>⌂</span><b>${appText('Koti','Hem','Home')}</b></button>
-        <button type="button" data-dashboard-nav="setup"><span>◎</span><b>${appText('Yritys','Företag','Business')}</b></button>
-        <button type="button" data-dashboard-nav="answers"><span>≡</span><b>${appText('Vastaukset','Svar','Answers')}</b></button>
-        <button type="button" data-dashboard-nav="customers"><span>◌</span><b>${appText('Asiakkaat','Kunder','Customers')}</b></button>
-        <button type="button" data-dashboard-nav="automation"><span>↗</span><b>${appText('Toiminnot','Funktioner','Actions')}</b></button>
-        <button type="button" data-dashboard-nav="install"><span>&lt;/&gt;</span><b>${appText('Asennus','Installation','Install')}</b></button>
-        <button type="button" data-dashboard-nav="account"><span>⚙</span><b>${appText('Asetukset','Inställningar','Settings')}</b></button>
-      </nav>
-
       <section class="dashboard-head dashboard-view-section" data-dashboard-view="overview" id="overview">
-        <div><div class="section-kicker">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</div><h1>${esc(t.name)}</h1><p>${appText('Kaikki tärkeä yhdessä paikassa. Valitse vain se osio, jota tarvitset.','Allt viktigt på ett ställe. Välj bara det avsnitt du behöver.','Everything important in one place. Open only the section you need.')}</p></div>
-      </section>
-
-      <section class="dashboard-launch-grid dashboard-view-section" data-dashboard-view="overview" aria-label="${esc(appText('Pääosiot','Huvudavsnitt','Main sections'))}">
-        <button type="button" class="dashboard-launch-card" data-dashboard-open="setup">
-          <span class="dashboard-launch-icon">◎</span><div><small>${appText('YRITYS & BOTTI','FÖRETAG & BOT','BUSINESS & BOT')}</small><b>${appText('Perustiedot ja ulkoasu','Grunduppgifter och utseende','Details and appearance')}</b><p>${appText('Yrityksen tiedot, botin nimi, kuva ja oma esikatselu.','Företagsuppgifter, botnamn, bild och förhandsvisning.','Company details, bot name, avatar and preview.')}</p></div><em>›</em>
-        </button>
-        <button type="button" class="dashboard-launch-card" data-dashboard-open="answers">
-          <span class="dashboard-launch-icon">≡</span><div><small>${appText('VASTAUKSET','SVAR','ANSWERS')}</small><b>${knowledge.length} ${appText('tietoa hallinnassa','uppgifter hanteras','items managed')}</b><p>${appText('Tietopohja, etusivun kysymykset ja puuttuvat vastaukset.','Kunskapsbas, startfrågor och saknade svar.','Knowledge base, home questions and missing answers.')}</p></div><em>›</em>
-        </button>
-        <button type="button" class="dashboard-launch-card" data-dashboard-open="customers">
-          <span class="dashboard-launch-icon">◌</span><div><small>${appText('ASIAKKAAT','KUNDER','CUSTOMERS')}</small><b>${s.conversations} ${appText('keskustelua','konversationer','conversations')}</b><p>${appText('Keskustelut ja yhteydenottopyynnöt yhdessä paikassa.','Konversationer och kontaktförfrågningar på ett ställe.','Conversations and contact requests in one place.')}</p></div><em>›</em>
-        </button>
-        <button type="button" class="dashboard-launch-card" data-dashboard-open="automation">
-          <span class="dashboard-launch-icon">↗</span><div><small>${appText('TOIMINNOT','FUNKTIONER','ACTIONS')}</small><b>${actionRequests.filter((x) => x.status !== 'done').length} ${appText('avointa','öppna','open')}</b><p>${appText('Tarjoukset, ajanvaraukset ja integraatiot.','Offerter, bokningar och integrationer.','Quotes, bookings and integrations.')}</p></div><em>›</em>
-        </button>
-        <button type="button" class="dashboard-launch-card" data-dashboard-open="install">
-          <span class="dashboard-launch-icon">&lt;/&gt;</span><div><small>${appText('ASENNUS','INSTALLATION','INSTALLATION')}</small><b>${installedDone ? appText('Valmis','Klar','Ready') : appText('Lisää sivustolle','Lägg till på webbplatsen','Add to website')}</b><p>${appText('Asennuskoodi ja verkkosivuun sidottu käyttöönotto.','Installationskod och webbplatsbunden aktivering.','Install code and website-bound activation.')}</p></div><em>›</em>
-        </button>
-        <button type="button" class="dashboard-launch-card" data-dashboard-open="account">
-          <span class="dashboard-launch-icon">⚙</span><div><small>${appText('ASETUKSET','INSTÄLLNINGAR','SETTINGS')}</small><b>${appText('Tili ja laskutus','Konto och fakturering','Account and billing')}</b><p>${appText('Tilauksen hallinta, suosittelut ja uloskirjautuminen.','Abonnemang, rekommendationer och utloggning.','Subscription, referrals and sign out.')}</p></div><em>›</em>
-        </button>
+        <div><div class="section-kicker">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</div><h1>${esc(t.name)}</h1><p>${appText('Valitse ylhäältä mitä haluat tehdä. Näytämme vain siihen liittyvät asiat.','Välj ovan vad du vill göra. Vi visar bara det som hör till valet.','Choose what you want to do above. We only show the relevant items.')}</p></div>
       </section>
 
       ${isWelcome ? `
@@ -2685,7 +2758,7 @@ async function agentDashboard(me) {
         <article class="stat"><small>${appText('YHTEYDENOTOT','KONTAKTFÖRFRÅGNINGAR','CONTACT REQUESTS')}</small><b>${s.leads || 0}</b><span>${s.estimatedLeadValue > 0 ? 'arvioitu arvo ' + formatMoney(s.estimatedLeadValue) : 'asiakasta jätti yhteystietonsa'}</span></article>
       </section>
 
-      <section class="respondo-intelligence dashboard-view-section dashboard-view-hidden" data-dashboard-view="answers">
+      <section class="respondo-intelligence dashboard-view-section" data-dashboard-view="overview">
         <article class="panel truth-score-card">
           <div class="intelligence-icon">✓</div>
           <div>
@@ -2694,9 +2767,6 @@ async function agentDashboard(me) {
             <p>${truth.approved}/${truth.total} ${appText('tietoa hyväksytty','uppgifter godkända','items approved')} · ${truth.fresh} ${appText('tarkistettu viimeisen 90 päivän aikana.','kontrollerade under de senaste 90 dagarna.','checked within the last 90 days.')}</p>
           </div>
         </article>
-      </section>
-
-      <section class="respondo-intelligence dashboard-view-section dashboard-view-hidden" data-dashboard-view="automation">
         <article class="panel action-center-card">
           <div class="intelligence-icon">↗</div>
           <div>
@@ -2707,7 +2777,7 @@ async function agentDashboard(me) {
         </article>
       </section>
 
-      <section class="dashboard-insights dashboard-view-section dashboard-view-hidden" data-dashboard-view="customers">
+      <section class="dashboard-insights dashboard-view-section" data-dashboard-view="overview">
         <article class="panel trend-panel">
           <div class="panel-head">
             <div><small>${appText('14 PÄIVÄÄ','14 DAGAR','14 DAYS')}</small><h2>${appText('Näin paljon asiakkaat ovat kysyneet','Så här mycket har kunderna frågat','Customer conversation volume')}</h2></div>
@@ -2717,9 +2787,6 @@ async function agentDashboard(me) {
             ${daily.length ? daily.map((x) => `<div class="mini-bar" title="${esc(x.day)} · ${Number(x.total || 0)}"><i style="height:${Math.max(8, Math.round((Number(x.total || 0) / maxDaily) * 100))}%"></i><small>${new Date(x.day).toLocaleDateString(appLocale(),{day:'numeric',month:'numeric'})}</small></div>`).join('') : '<div class="empty-state compact"><p>' + appText('Kun keskusteluja kertyy, näet kehityksen tässä.','När fler konversationer samlas ser du utvecklingen här.','As conversations accumulate, you will see the trend here.') + '</p></div>'}
           </div>
         </article>
-      </section>
-
-      <section class="dashboard-insights dashboard-view-section dashboard-view-hidden" data-dashboard-view="answers">
         <article class="panel gap-summary">
           <div class="panel-head"><div><small>${appText('TÄLLÄ VIIKOLLA','DEN HÄR VECKAN','THIS WEEK')}</small><h2>${appText('Mihin kysymyksiin vastaus vielä puuttuu?','Vilka frågor saknar fortfarande svar?','Which questions still need an answer?')}</h2></div><span>${gaps.length}</span></div>
           <div class="gap-summary-list">
@@ -3220,18 +3287,6 @@ async function agentDashboard(me) {
         </div>
         <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20260924-language-v2" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
-      </section>
-
-      <section class="panel account-overview-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="account-overview">
-        <div class="panel-head">
-          <div><small>${appText('TILI','KONTO','ACCOUNT')}</small><h2>${appText('Asetukset','Inställningar','Settings')}</h2><p>${appText('Vain tilin tärkeimmät asiat yhdessä paikassa.','Bara de viktigaste kontoinställningarna på ett ställe.','Only the essential account settings in one place.')}</p></div>
-        </div>
-        <div class="account-overview-list">
-          <div><span>${appText('Sähköposti','E-post','Email')}</span><b>${esc(me.email || '—')}</b></div>
-          <div><span>${appText('Yritys','Företag','Business')}</span><b>${esc(me.company_name || t.name || '—')}</b></div>
-          <div><span>${appText('Tila','Status','Status')}</span><b>${appText('Aktiivinen','Aktiv','Active')}</b></div>
-        </div>
-        <button type="button" class="btn dashboard-secondary-action" id="logout">${appText('Kirjaudu ulos','Logga ut','Log out')}</button>
       </section>
 
       ${referral ? `
