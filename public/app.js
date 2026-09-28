@@ -2650,7 +2650,7 @@ async function agentDashboard(me) {
         <article class="stat"><small>${appText('YHTEYDENOTOT','KONTAKTFÖRFRÅGNINGAR','CONTACT REQUESTS')}</small><b>${s.leads || 0}</b><span>${s.estimatedLeadValue > 0 ? 'arvioitu arvo ' + formatMoney(s.estimatedLeadValue) : 'asiakasta jätti yhteystietonsa'}</span></article>
       </section>
 
-      <section class="respondo-intelligence dashboard-view-section" data-dashboard-view="overview">
+      <section class="respondo-intelligence dashboard-view-section dashboard-view-hidden" data-dashboard-view="answers">
         <article class="panel truth-score-card">
           <div class="intelligence-icon">✓</div>
           <div>
@@ -2659,6 +2659,9 @@ async function agentDashboard(me) {
             <p>${truth.approved}/${truth.total} ${appText('tietoa hyväksytty','uppgifter godkända','items approved')} · ${truth.fresh} ${appText('tarkistettu viimeisen 90 päivän aikana.','kontrollerade under de senaste 90 dagarna.','checked within the last 90 days.')}</p>
           </div>
         </article>
+      </section>
+
+      <section class="respondo-intelligence dashboard-view-section dashboard-view-hidden" data-dashboard-view="automation">
         <article class="panel action-center-card">
           <div class="intelligence-icon">↗</div>
           <div>
@@ -2669,7 +2672,7 @@ async function agentDashboard(me) {
         </article>
       </section>
 
-      <section class="dashboard-insights dashboard-view-section" data-dashboard-view="overview">
+      <section class="dashboard-insights dashboard-view-section dashboard-view-hidden" data-dashboard-view="customers">
         <article class="panel trend-panel">
           <div class="panel-head">
             <div><small>${appText('14 PÄIVÄÄ','14 DAGAR','14 DAYS')}</small><h2>${appText('Näin paljon asiakkaat ovat kysyneet','Så här mycket har kunderna frågat','Customer conversation volume')}</h2></div>
@@ -2679,6 +2682,9 @@ async function agentDashboard(me) {
             ${daily.length ? daily.map((x) => `<div class="mini-bar" title="${esc(x.day)} · ${Number(x.total || 0)}"><i style="height:${Math.max(8, Math.round((Number(x.total || 0) / maxDaily) * 100))}%"></i><small>${new Date(x.day).toLocaleDateString(appLocale(),{day:'numeric',month:'numeric'})}</small></div>`).join('') : '<div class="empty-state compact"><p>' + appText('Kun keskusteluja kertyy, näet kehityksen tässä.','När fler konversationer samlas ser du utvecklingen här.','As conversations accumulate, you will see the trend here.') + '</p></div>'}
           </div>
         </article>
+      </section>
+
+      <section class="dashboard-insights dashboard-view-section dashboard-view-hidden" data-dashboard-view="answers">
         <article class="panel gap-summary">
           <div class="panel-head"><div><small>${appText('TÄLLÄ VIIKOLLA','DEN HÄR VECKAN','THIS WEEK')}</small><h2>${appText('Mihin kysymyksiin vastaus vielä puuttuu?','Vilka frågor saknar fortfarande svar?','Which questions still need an answer?')}</h2></div><span>${gaps.length}</span></div>
           <div class="gap-summary-list">
