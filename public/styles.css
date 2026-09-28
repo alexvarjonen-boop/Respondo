@@ -7356,11 +7356,11 @@ body{
 }
 
 /* Homepage quick section dropdown */
-.home-section-jump{display:none;min-width:0}
+.home-section-jump{display:block;min-width:190px}
 .home-section-jump>span{display:block;margin:0 0 4px 2px;font-size:8px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;opacity:.62}
 .home-section-jump select{width:100%;min-height:42px;border:1px solid rgba(17,17,20,.12);border-radius:13px;background:#fff;color:#111114;padding:0 36px 0 12px;font:inherit;font-size:12px;font-weight:800;outline:none}
 @media(max-width:820px){
   .product-subnav-inner{display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;align-items:center!important;gap:12px!important}
   .product-subnav-inner>nav{display:none!important}
-  .home-section-jump{display:block!important}
+  .home-section-jump{display:block!important;min-width:0!important}
 }
