@@ -1421,16 +1421,26 @@ function oauthErrorMessage() {
   return messages[code] || 'Kirjautuminen epäonnistui. Yritä uudelleen.';
 }
 function stickyProductNav() {
-  return `<div class="product-subnav" aria-label="Sivun osiot">
+  return `<div class="product-subnav" aria-label="${esc(appText('Sivun osiot','Sidans avsnitt','Page sections'))}">
     <div class="container product-subnav-inner">
       <span class="subnav-title">RESPONDO AI</span>
+      <label class="home-section-jump">
+        <span>${appText('Siirry kohtaan','Gå till avsnitt','Jump to')}</span>
+        <select id="homeSectionJump" aria-label="${esc(appText('Siirry etusivun kohtaan','Gå till ett avsnitt på startsidan','Jump to a homepage section'))}">
+          <option value="">${appText('Valitse kohta…','Välj avsnitt…','Choose section…')}</option>
+          <option value="how">${appText('Näin se toimii','Så fungerar det','How it works')}</option>
+          <option value="features">${appText('Ominaisuudet','Funktioner','Features')}</option>
+          <option value="calculator">${appText('Laske hyöty','Beräkna nyttan','Calculate value')}</option>
+          <option value="pricing">${appText('Hinnat','Priser','Pricing')}</option>
+          <option value="contact">${appText('Ota yhteyttä','Kontakta oss','Contact')}</option>
+        </select>
+      </label>
       <nav>
-        <a href="#how">Näin se toimii</a>
-        <a href="#features">Mitä saat</a>
-        <a href="#research">Miksi nopeus ratkaisee</a>
-        <a href="#calculator">Laske itse</a>
-        <a href="#pricing">Hinnat</a>
-        <a href="#contact">Ota yhteyttä</a>
+        <a href="#how">${appText('Näin se toimii','Så fungerar det','How it works')}</a>
+        <a href="#features">${appText('Mitä saat','Vad du får','What you get')}</a>
+        <a href="#calculator">${appText('Laske itse','Räkna själv','Calculate')}</a>
+        <a href="#pricing">${appText('Hinnat','Priser','Pricing')}</a>
+        <a href="#contact">${appText('Ota yhteyttä','Kontakta oss','Contact')}</a>
       </nav>
     </div>
   </div>`;
@@ -3658,6 +3668,16 @@ async function route() {
         button.innerHTML = original;
         $('#msg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
       }
+    });
+  }
+
+  if (path === '/') {
+    $('#homeSectionJump')?.addEventListener('change', (e) => {
+      const id=String(e.currentTarget.value||'');
+      if (!id) return;
+      const target=document.getElementById(id);
+      if (target) target.scrollIntoView({behavior:'smooth',block:'start'});
+      e.currentTarget.value='';
     });
   }
 
