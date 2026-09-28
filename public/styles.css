@@ -7236,3 +7236,94 @@ body{
     display:grid!important;
   }
 }
+
+
+/* Mobile dashboard cleanup from screenshot */
+@media(max-width:760px){
+  .dashboard-simple-shell{
+    background:#f5f5f7!important;
+  }
+  .dashboard-simple-main{
+    padding-bottom:96px!important;
+  }
+  .dashboard-topbar{
+    background:rgba(255,255,255,.96)!important;
+    color:#1d1d1f!important;
+    border-color:rgba(0,0,0,.07)!important;
+    box-shadow:0 8px 28px rgba(0,0,0,.06)!important;
+    -webkit-backdrop-filter:blur(22px) saturate(180%)!important;
+    backdrop-filter:blur(22px) saturate(180%)!important;
+  }
+  .dashboard-workspace{
+    border-left-color:rgba(0,0,0,.08)!important;
+  }
+  .dashboard-workspace small{
+    color:#8e8e93!important;
+  }
+  .dashboard-workspace b{
+    color:#1d1d1f!important;
+  }
+  .dashboard-select-wrap select{
+    min-height:46px!important;
+    background:#f2f2f4!important;
+    color:#1d1d1f!important;
+    border-color:rgba(0,0,0,.08)!important;
+    box-shadow:none!important;
+  }
+  .dashboard-select-wrap>span{
+    color:#6e6e73!important;
+  }
+  .referral-panel{
+    gap:18px!important;
+    padding:20px!important;
+    border-radius:20px!important;
+  }
+  .referral-copy>small{
+    font-size:9px!important;
+  }
+  .referral-copy h2{
+    margin:7px 0 8px!important;
+    font-size:27px!important;
+    line-height:1.05!important;
+  }
+  .referral-copy p{
+    font-size:12px!important;
+    line-height:1.5!important;
+  }
+  .referral-box{
+    padding:15px!important;
+    border-radius:17px!important;
+    box-shadow:none!important;
+  }
+  .referral-box>span{
+    font-size:8px!important;
+    line-height:1.4!important;
+    margin-bottom:8px!important;
+  }
+  .referral-code-row{
+    gap:8px!important;
+  }
+  .referral-code-row code{
+    min-height:48px!important;
+    padding:11px 12px!important;
+    font-size:13px!important;
+    border-radius:12px!important;
+  }
+  .referral-code-row button,
+  .referral-actions button{
+    min-height:46px!important;
+    padding:10px 12px!important;
+    border-radius:12px!important;
+    font-size:11px!important;
+  }
+  .referral-actions{
+    gap:8px!important;
+    margin-top:8px!important;
+  }
+  .referral-actions small{
+    font-size:10px!important;
+  }
+  .billing-panel{
+    margin-top:10px!important;
+  }
+}
