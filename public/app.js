@@ -1430,6 +1430,7 @@ function stickyProductNav() {
           <option value="">${appText('Valitse kohta…','Välj avsnitt…','Choose section…')}</option>
           <option value="how">${appText('Näin se toimii','Så fungerar det','How it works')}</option>
           <option value="features">${appText('Ominaisuudet','Funktioner','Features')}</option>
+          <option value="/ominaisuudet?lang=${currentLang()}">${appText('Katso kaikki ominaisuudet','Se alla funktioner','See all features')}</option>
           <option value="calculator">${appText('Laske hyöty','Beräkna nyttan','Calculate value')}</option>
           <option value="pricing">${appText('Hinnat','Priser','Pricing')}</option>
           <option value="contact">${appText('Ota yhteyttä','Kontakta oss','Contact')}</option>
@@ -3675,6 +3676,7 @@ async function route() {
     $('#homeSectionJump')?.addEventListener('change', (e) => {
       const id=String(e.currentTarget.value||'');
       if (!id) return;
+      if (id.startsWith('/')) { location.href=id; return; }
       const target=document.getElementById(id);
       if (target) target.scrollIntoView({behavior:'smooth',block:'start'});
       e.currentTarget.value='';
