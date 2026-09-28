@@ -3131,6 +3131,25 @@ async function dashboard() {
           </div>
           <div id="respondoVoiceMsg"></div>
         </form>
+        <div class="voice-test-card">
+          <div>
+            <small>${appText('TESTAA ENNEN KÄYTTÖÖNOTTOA','TESTA FÖRE AKTIVERING','TEST BEFORE ACTIVATION')}</small>
+            <h3>${appText('Testaa puhelua','Testa ett samtal','Test a call')}</h3>
+            <p>${appText('Kirjoita mitä soittaja sanoisi. Respondo vastaa samalla tietopohjalla ja puhelulogiikalla kuin oikeassa puhelussa.','Skriv vad den som ringer skulle säga. Respondo svarar med samma kunskapsbas och samtalslogik som i ett riktigt samtal.','Type what a caller would say. Respondo answers using the same knowledge base and call logic as a real call.')}</p>
+          </div>
+          <form id="voiceTestForm" class="preview-form" data-slug="${esc(t.slug)}">
+            <input name="question" autocomplete="off" placeholder="${esc(appText('Esim. paljonko teillä maksaa?','T.ex. vad kostar det hos er?','E.g. how much does it cost?'))}">
+            <button type="submit" aria-label="${esc(appText('Testaa','Testa','Test'))}">→</button>
+          </form>
+          <div id="voiceTestConversation" class="preview-chat">
+            <div class="preview-bubble bot">${esc(voice.voiceGreeting || t.greeting || appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?'))}</div>
+          </div>
+          <div class="voice-test-actions">
+            <button type="button" class="btn" id="voiceTestSpeak">${appText('🔊 Kuuntele vastaus','🔊 Lyssna på svaret','🔊 Listen to answer')}</button>
+            ${voice.credentialsConfigured ? `<button type="button" class="btn" id="testVoiceAgent">${appText('☎ Tee oikea testipuhelu','☎ Ring ett riktigt testsamtal','☎ Make a real test call')}</button>` : `<small>${appText('Oikea testipuhelu avautuu, kun puhelinverkkoyhteys on aktivoitu.','Ett riktigt testsamtal blir tillgängligt när telefonnätsanslutningen är aktiverad.','A real test call becomes available once the phone-network connection is activated.')}</small>`}
+          </div>
+          <div id="voiceTestMsg"></div>
+        </div>
       </section>
 
       <section class="actions2-layout dashboard-view-section dashboard-view-hidden" data-dashboard-view="automation" id="actions2">
@@ -4373,6 +4392,43 @@ async function route() {
       } finally {
         button.disabled = false;
       }
+    });
+
+    let lastVoiceTestAnswer = '';
+    $('#voiceTestForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form=e.currentTarget;
+      const input=form.querySelector('input[name="question"]');
+      const question=String(input?.value||'').trim();
+      if (!question) return;
+      const box=$('#voiceTestConversation');
+      box.insertAdjacentHTML('beforeend','<div class="preview-bubble user">'+esc(question)+'</div>');
+      input.value='';
+      try {
+        const result=await api('/api/public/'+encodeURIComponent(form.dataset.slug)+'/chat',{
+          method:'POST',
+          body:JSON.stringify({question,lang:currentLang(),source:'voice_test'})
+        });
+        lastVoiceTestAnswer=String(result.answer||result.message||'');
+        box.insertAdjacentHTML('beforeend','<div class="preview-bubble bot">'+esc(lastVoiceTestAnswer)+'</div>');
+        box.scrollTop=box.scrollHeight;
+      } catch(err) {
+        $('#voiceTestMsg').innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
+      }
+    });
+    $('#voiceTestSpeak')?.addEventListener('click',()=>{
+      if (!lastVoiceTestAnswer) {
+        $('#voiceTestMsg').innerHTML='<div class="notice">'+appText('Testaa ensin yksi kysymys.','Testa först en fråga.','Test a question first.')+'</div>';
+        return;
+      }
+      if (!('speechSynthesis' in window)) {
+        $('#voiceTestMsg').innerHTML='<div class="notice error">'+appText('Tämä selain ei tue puhetoistoa.','Den här webbläsaren stöder inte taluppspelning.','This browser does not support speech playback.')+'</div>';
+        return;
+      }
+      speechSynthesis.cancel();
+      const utterance=new SpeechSynthesisUtterance(lastVoiceTestAnswer);
+      utterance.lang=currentLang()==='sv'?'sv-SE':currentLang()==='en'?'en-US':'fi-FI';
+      speechSynthesis.speak(utterance);
     });
 
     $('#respondoVoiceForm')?.addEventListener('submit', async (e) => {
