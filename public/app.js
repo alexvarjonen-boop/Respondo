@@ -2581,7 +2581,7 @@ async function dashboard() {
   const supportAgents = data.supportAgents || [];
   const metaChannels = data.metaChannels || { graphVersion:'v24.0',verifyToken:'',webhookUrl:'',whatsappPhoneNumberId:'',whatsappConnected:false,instagramAccountId:'',instagramConnected:false,appSecretConfigured:false };
   const voice = data.voice || {
-    accountSid:'',phoneNumber:'',businessNumber:'',answerMode:'unanswered',voiceGreeting:'',handoffNumber:'',credentialsConfigured:false,enabled:false,
+    accountSid:'',phoneNumber:'',handoffNumber:'',credentialsConfigured:false,enabled:false,
     webhookUrl:'',smsWebhookUrl:'',missedCallWebhookUrl:'',missedCallSmsEnabled:false,
     missedCallSmsMessage:'Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.',
     missedCallSmsMode:'immediate',missedCallAfterStart:'17:00',missedCallAfterEnd:'08:00',
@@ -3089,66 +3089,6 @@ async function dashboard() {
               <b>${appText('Kaikkiin kysymyksiin löytyi vastaus.','Alla frågor fick ett svar.','All questions were answered.')}</b>
               <p>${appText('Jos vastaan tulee kysymys, johon tietoa ei vielä ole, se ilmestyy tähän.','Om en fråga saknar information visas den här.','If a question has no known answer, it will appear here.')}</p>
             </div>`}
-        </div>
-      </section>
-
-      <section class="panel respondo-voice-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="automation" id="respondo-voice">
-        <div class="panel-head">
-          <div>
-            <small>${appText('RESPONDO VOICE','RESPONDO VOICE','RESPONDO VOICE')}</small>
-            <h2>${appText('Vastaa yrityksesi puheluihin','Svara på företagets samtal','Answer your business calls')}</h2>
-            <p>${appText('Yritys pitää nykyisen puhelinnumeronsa. Respondo käyttää samaa tietopohjaa kuin verkkosivun chat ja voi tarvittaessa siirtää puhelun ihmiselle.','Företaget behåller sitt nuvarande telefonnummer. Respondo använder samma kunskapsbas som webbchatten och kan vid behov koppla samtalet till en person.','Keep your existing business number. Respondo uses the same knowledge base as your website chat and can transfer the call to a person when needed.')}</p>
-          </div>
-          <span class="install-badge">${voice.credentialsConfigured ? appText('Puhelinverkko valmis','Telefonnät klart','Phone network ready') : appText('Odottaa puhelinverkkoyhteyttä','Väntar på telefonnätsanslutning','Awaiting phone network connection')}</span>
-        </div>
-        <form id="respondoVoiceForm" class="business-profile-form">
-          <div class="profile-grid">
-            <div class="field">
-              <label>${appText('Yrityksen nykyinen numero','Företagets nuvarande nummer','Existing business number')}</label>
-              <input name="businessNumber" value="${esc(voice.businessNumber || profileValue('Puhelinnumero') || '')}" placeholder="+358 40 123 4567">
-              <small class="field-hint">${appText('Asiakkaasi soittavat jatkossakin tähän numeroon.','Dina kunder fortsätter att ringa detta nummer.','Customers keep calling this number.')}</small>
-            </div>
-            <div class="field">
-              <label>${appText('Milloin Respondo vastaa','När svarar Respondo','When Respondo answers')}</label>
-              <select name="answerMode">
-                <option value="unanswered" ${voice.answerMode==='unanswered'?'selected':''}>${appText('Kun kukaan ei vastaa','När ingen svarar','When nobody answers')}</option>
-                <option value="always" ${voice.answerMode==='always'?'selected':''}>${appText('Kaikkiin puheluihin','Alla samtal','Every call')}</option>
-                <option value="after_hours" ${voice.answerMode==='after_hours'?'selected':''}>${appText('Aukioloaikojen ulkopuolella','Utanför öppettider','Outside opening hours')}</option>
-              </select>
-            </div>
-            <div class="field profile-wide">
-              <label>${appText('Puhelun aloitustervehdys','Samtalshälsning','Call greeting')}</label>
-              <input name="voiceGreeting" maxlength="300" value="${esc(voice.voiceGreeting || t.greeting || '')}" placeholder="${esc(appText('Hei! Olet yhteydessä asiakaspalveluun. Miten voin auttaa?','Hej! Du har kommit till kundtjänsten. Hur kan jag hjälpa?','Hi! You have reached customer service. How can I help?'))}">
-            </div>
-            <div class="field">
-              <label>${appText('Siirrä ihmiselle tähän numeroon','Koppla till en person på detta nummer','Transfer to a person at this number')}</label>
-              <input name="handoffNumber" value="${esc(voice.handoffNumber || '')}" placeholder="+358 40 123 4567">
-            </div>
-          </div>
-          <div class="profile-save-row">
-            <div><b>${appText('Sama tietopohja chatissa ja puheluissa','Samma kunskapsbas i chatt och samtal','Same knowledge base for chat and calls')}</b><small>${appText('Operaattori- ja API-tunnukset eivät näy asiakkaalle.','Operatörs- och API-uppgifter visas inte för kunden.','Carrier and API credentials are hidden from the customer.')}</small></div>
-            <button class="btn dashboard-action" type="submit">${appText('Tallenna puheluasetukset','Spara samtalsinställningar','Save call settings')} <span>→</span></button>
-          </div>
-          <div id="respondoVoiceMsg"></div>
-        </form>
-        <div class="voice-test-card">
-          <div>
-            <small>${appText('TESTAA ENNEN KÄYTTÖÖNOTTOA','TESTA FÖRE AKTIVERING','TEST BEFORE ACTIVATION')}</small>
-            <h3>${appText('Testaa puhelua','Testa ett samtal','Test a call')}</h3>
-            <p>${appText('Kirjoita mitä soittaja sanoisi. Respondo vastaa samalla tietopohjalla ja puhelulogiikalla kuin oikeassa puhelussa.','Skriv vad den som ringer skulle säga. Respondo svarar med samma kunskapsbas och samtalslogik som i ett riktigt samtal.','Type what a caller would say. Respondo answers using the same knowledge base and call logic as a real call.')}</p>
-          </div>
-          <form id="voiceTestForm" class="preview-form" data-slug="${esc(t.slug)}">
-            <input name="question" autocomplete="off" placeholder="${esc(appText('Esim. paljonko teillä maksaa?','T.ex. vad kostar det hos er?','E.g. how much does it cost?'))}">
-            <button type="submit" aria-label="${esc(appText('Testaa','Testa','Test'))}">→</button>
-          </form>
-          <div id="voiceTestConversation" class="preview-chat">
-            <div class="preview-bubble bot">${esc(voice.voiceGreeting || t.greeting || appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?'))}</div>
-          </div>
-          <div class="voice-test-actions">
-            <button type="button" class="btn" id="voiceTestSpeak">${appText('🔊 Kuuntele vastaus','🔊 Lyssna på svaret','🔊 Listen to answer')}</button>
-            ${voice.credentialsConfigured ? `<button type="button" class="btn" id="testVoiceAgent">${appText('☎ Tee oikea testipuhelu','☎ Ring ett riktigt testsamtal','☎ Make a real test call')}</button>` : `<small>${appText('Oikea testipuhelu avautuu, kun puhelinverkkoyhteys on aktivoitu.','Ett riktigt testsamtal blir tillgängligt när telefonnätsanslutningen är aktiverad.','A real test call becomes available once the phone-network connection is activated.')}</small>`}
-          </div>
-          <div id="voiceTestMsg"></div>
         </div>
       </section>
 
@@ -4392,71 +4332,6 @@ async function route() {
       } finally {
         button.disabled = false;
       }
-    });
-
-    let lastVoiceTestAnswer = '';
-    $('#voiceTestForm')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form=e.currentTarget;
-      const input=form.querySelector('input[name="question"]');
-      const question=String(input?.value||'').trim();
-      if (!question) return;
-      const box=$('#voiceTestConversation');
-      box.insertAdjacentHTML('beforeend','<div class="preview-bubble user">'+esc(question)+'</div>');
-      input.value='';
-      try {
-        const result=await api('/api/public/'+encodeURIComponent(form.dataset.slug)+'/chat',{
-          method:'POST',
-          body:JSON.stringify({question,lang:currentLang(),source:'voice_test'})
-        });
-        lastVoiceTestAnswer=String(result.answer||result.message||'');
-        box.insertAdjacentHTML('beforeend','<div class="preview-bubble bot">'+esc(lastVoiceTestAnswer)+'</div>');
-        box.scrollTop=box.scrollHeight;
-      } catch(err) {
-        $('#voiceTestMsg').innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
-      }
-    });
-    $('#voiceTestSpeak')?.addEventListener('click',()=>{
-      if (!lastVoiceTestAnswer) {
-        $('#voiceTestMsg').innerHTML='<div class="notice">'+appText('Testaa ensin yksi kysymys.','Testa först en fråga.','Test a question first.')+'</div>';
-        return;
-      }
-      if (!('speechSynthesis' in window)) {
-        $('#voiceTestMsg').innerHTML='<div class="notice error">'+appText('Tämä selain ei tue puhetoistoa.','Den här webbläsaren stöder inte taluppspelning.','This browser does not support speech playback.')+'</div>';
-        return;
-      }
-      speechSynthesis.cancel();
-      const utterance=new SpeechSynthesisUtterance(lastVoiceTestAnswer);
-      utterance.lang=currentLang()==='sv'?'sv-SE':currentLang()==='en'?'en-US':'fi-FI';
-      speechSynthesis.speak(utterance);
-    });
-
-    $('#respondoVoiceForm')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = new FormData(e.currentTarget);
-      const button = e.currentTarget.querySelector('button[type="submit"]');
-      const original = button.innerHTML;
-      button.disabled = true;
-      button.innerHTML = appText('Tallennetaan…','Sparar…','Saving…');
-      try {
-        const result = await api('/api/app/respondo-voice', {
-          method:'POST',
-          body:JSON.stringify({
-            businessNumber:form.get('businessNumber'),
-            answerMode:form.get('answerMode'),
-            voiceGreeting:form.get('voiceGreeting'),
-            handoffNumber:form.get('handoffNumber'),
-          }),
-        });
-        $('#respondoVoiceMsg').innerHTML = '<div class="notice success">' + (result.connected
-          ? appText('Puheluasetukset tallennettu ✓','Samtalsinställningarna har sparats ✓','Call settings saved ✓')
-          : appText('Asetukset tallennettu. Puhelinverkkoyhteys aktivoidaan erikseen ennen kuin Respondo voi vastata oikeisiin puheluihin.','Inställningarna har sparats. Telefonnätsanslutningen aktiveras separat innan Respondo kan svara på riktiga samtal.','Settings saved. The phone-network connection must be activated separately before Respondo can answer real calls.')) + '</div>';
-        button.innerHTML = appText('Tallennettu ✓','Sparat ✓','Saved ✓');
-        setTimeout(() => (button.innerHTML = original), 1600);
-      } catch (err) {
-        $('#respondoVoiceMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-        button.innerHTML = original;
-      } finally { button.disabled = false; }
     });
 
     $('#voiceAgentForm')?.addEventListener('submit', async (e) => {
