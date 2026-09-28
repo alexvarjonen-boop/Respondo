@@ -7327,3 +7327,30 @@ body{
     margin-top:10px!important;
   }
 }
+
+/* Mobile dashboard topbar: keep settings control clear of the section picker */
+@media(max-width:720px){
+  .dashboard-topbar{
+    grid-template-columns:minmax(0,1fr) 48px!important;
+    gap:10px!important;
+  }
+  .dashboard-topbar-brand{
+    grid-column:1 / -1!important;
+  }
+  .dashboard-section-picker{
+    grid-column:1!important;
+    min-width:0!important;
+  }
+  .dashboard-top-actions{
+    grid-column:2!important;
+    justify-content:center!important;
+    align-self:end!important;
+  }
+  .dashboard-settings-button{
+    width:46px!important;
+    height:46px!important;
+    position:relative!important;
+    inset:auto!important;
+    z-index:2!important;
+  }
+}
