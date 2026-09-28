@@ -1367,19 +1367,20 @@ function bindLanguageSwitch() {
 
 
 function nav() {
-  return `<header class="nav public-nav">
+  return `<header class="nav">
     <div class="container navin">
       ${logo()}
-      <nav class="navlinks" aria-label="${esc(appText('Päänavigaatio','Huvudnavigering','Main navigation'))}">
-        <a href="/#how">${appText('Näin toimii','Så fungerar det','How it works')}</a>
-        <a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a>
-        <a href="/#pricing">${appText('Hinta','Pris','Pricing')}</a>
-        <a href="/tietoturva?lang=${currentLang()}">${appText('Tietoturva','Säkerhet','Security')}</a>
+      <nav class="navlinks" aria-label="Päänavigaatio">
+        <a href="/#how">Tuote</a>
+        <a href="/#control">Tietopohja</a>
+        <a href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
+        <a href="/#pricing">Hinta</a>
+        <a href="/tietoturva">Tietoturva</a>
       </nav>
       <div class="navactions">
         ${languageSwitch()}
-        <a class="btn ghost nav-login-btn" href="/kirjaudu?lang=${currentLang()}"><span>${appText('Kirjaudu','Logga in','Log in')}</span></a>
-        <a class="btn ink" href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Start trial')}</a>
+        <a class="btn ghost nav-login-btn" href="/kirjaudu"><span>Kirjaudu</span></a>
+        <a class="btn ink" href="/tilaus">Kokeile ilmaiseksi</a>
       </div>
     </div>
   </header>`;
@@ -2178,91 +2179,55 @@ function featuresPage() {
 }
 async function home() {
   await config();
-  const lang = currentLang();
-  return `<div class="public-os">
+  return `<div>
     ${nav()}
-    <main class="public-os-main">
-      <section class="public-hero">
-        <div class="container public-hero-grid">
-          <div class="public-hero-copy">
-            <div class="public-hero-eyebrow"><span></span>${appText('RESPONDO ASIAKASPALVELU','RESPONDO KUNDSERVICE','RESPONDO CUSTOMER SERVICE')}</div>
-            <h1>${appText('Asiakaspalvelu,<br><em>joka vain toimii.</em>','Kundservice,<br><em>som bara fungerar.</em>','Customer service,<br><em>that simply works.</em>')}</h1>
-            <p>${appText('Lisää yrityksesi tiedot kerran. Respondo vastaa asiakkaillesi niiden perusteella, ympäri vuorokauden. Jos varmaa vastausta ei ole, asia ohjataan sinulle.','Lägg till företagets uppgifter en gång. Respondo svarar dina kunder utifrån dem, dygnet runt. Om ett säkert svar saknas skickas frågan vidare till dig.','Add your company information once. Respondo answers customers from that information around the clock. If there is no reliable answer, the question is routed to you.')}</p>
-            <div class="public-hero-actions">
-              <a class="btn public-primary" href="/tilaus?lang=${lang}">${appText('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</a>
-              <a class="btn public-secondary" href="/assistant?lang=${lang}">${appText('Kokeile bottia','Testa botten','Try the bot')}</a>
+    ${stickyProductNav()}
+    <main class="immersive-home">
+      <section class="hero hero-immersive">
+        <div class="hero-glow"></div>
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <div class="hero-label"><span></span> ASIAKASPALVELU, JOKA ON AINA PAIKALLA</div>
+            <p class="lead">Kerro Respondolle yrityksesi tiedot kerran. Sen jälkeen se vastaa asiakkaillesi myös silloin, kun sinä et ehdi. Jos tarvittava tieto puuttuu, kysymys ohjataan sinulle.</p>
+            <div class="hero-actions">
+              <a class="btn hero-primary hero-bot-cta" href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
             </div>
-            <div class="public-hero-note">${appText('Ei veloitusta kokeilun aikana · Peruuta ennen kokeilun päättymistä','Ingen debitering under provperioden · Avsluta före provperiodens slut','No charge during the trial · Cancel before the trial ends')}</div>
+            <div class="hero-scroll-hint"><i></i><span>VIERITÄ ALAS JA KATSO, MITEN SE TOIMII</span></div>
           </div>
-          <div class="public-hero-product">
-            ${heroVisual()}
-          </div>
+          ${heroVisual()}
         </div>
       </section>
 
-      <section class="public-section" id="how">
-        <div class="container">
-          <div class="public-section-head">
-            <small>${appText('NÄIN SE TOIMII','SÅ FUNGERAR DET','HOW IT WORKS')}</small>
-            <h2>${appText('Kolme vaihetta.<br><em>Siinä kaikki.</em>','Tre steg.<br><em>Det är allt.</em>','Three steps.<br><em>That is it.</em>')}</h2>
+      ${cinematicConversationScene()}
+      ${horizontalProductStory()}
+      ${productWorldScene()}
+      ${motionDepthScene()}
+      ${trustPortalScene()}
+      ${dataImpactScene()}
+      ${calculatorSection()}
+      <section class="post-calculator-features"><div class="container">
+        <a class="hero-features-card" href="/ominaisuudet?lang=${currentLang()}" aria-label="${esc(appText(`Katso kaikki ${FEATURE_COUNT} Respondo AI:n ominaisuutta`,`Se alla ${FEATURE_COUNT} funktioner i Respondo AI`,`See all ${FEATURE_COUNT} Respondo AI features`))}">
+          <div class="hero-features-card-top">
+            <span>${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</span><b>→</b>
           </div>
-          <div class="public-step-grid">
-            <article><span>01</span><div><b>${appText('Lisää yrityksen tiedot','Lägg till företagsuppgifter','Add company information')}</b><p>${appText('Hinnat, palvelut, aukioloajat ja omat vastaukset yhteen paikkaan.','Priser, tjänster, öppettider och egna svar på ett ställe.','Prices, services, opening hours and your answers in one place.')}</p></div></article>
-            <article><span>02</span><div><b>${appText('Asiakas kysyy','Kunden frågar','Customer asks')}</b><p>${appText('Asiakas kirjoittaa kysymyksen omilla sanoillaan verkkosivullasi.','Kunden skriver sin fråga med egna ord på din webbplats.','The customer asks naturally on your website.')}</p></div></article>
-            <article><span>03</span><div><b>${appText('Respondo hoitaa loput','Respondo sköter resten','Respondo handles the rest')}</b><p>${appText('Vastaus annetaan heti tai kysymys ohjataan sinulle, jos tieto puuttuu.','Svaret ges direkt eller skickas vidare till dig om information saknas.','The answer is given instantly or routed to you if information is missing.')}</p></div></article>
-          </div>
-        </div>
-      </section>
-
-      <section class="public-section public-product-section" id="features">
-        <div class="container">
-          <div class="public-section-head centered">
-            <small>${appText('YKSI JÄRJESTELMÄ','ETT SYSTEM','ONE SYSTEM')}</small>
-            <h2>${appText('Kaikki olennainen.<br><em>Nätisti omissa paikoissaan.</em>','Allt viktigt.<br><em>På rätt plats.</em>','Everything essential.<br><em>Exactly where it belongs.</em>')}</h2>
-            <p>${appText('Sama selkeä rakenne jatkuu myös kirjautumisen jälkeen.','Samma tydliga struktur fortsätter efter inloggning.','The same clear structure continues after sign-in.')}</p>
-          </div>
-          <div class="public-product-grid">
-            <a href="/ominaisuudet?lang=${lang}" class="public-product-card">
-              <span class="public-product-icon">≡</span><small>${appText('TIETOPOHJA','KUNSKAPSBAS','KNOWLEDGE')}</small>
-              <h3>${appText('Sinun tietosi. Oikeat vastaukset.','Dina uppgifter. Rätt svar.','Your information. The right answers.')}</h3>
-              <p>${appText('Pidä hinnat, palvelut ja vastaukset yhdessä hallitussa paikassa.','Håll priser, tjänster och svar samlade på ett ställe.','Keep prices, services and answers in one controlled place.')}</p><em>›</em>
-            </a>
-            <a href="/ominaisuudet?lang=${lang}" class="public-product-card">
-              <span class="public-product-icon">◌</span><small>${appText('KESKUSTELUT','KONVERSATIONER','CONVERSATIONS')}</small>
-              <h3>${appText('Näe, mitä asiakkaat kysyvät.','Se vad kunderna frågar.','See what customers ask.')}</h3>
-              <p>${appText('Keskustelut ja yhteydenotot löytyvät yhdestä selkeästä näkymästä.','Konversationer och kontaktförfrågningar finns i en tydlig vy.','Conversations and contact requests live in one clear view.')}</p><em>›</em>
-            </a>
-            <a href="/ominaisuudet?lang=${lang}" class="public-product-card">
-              <span class="public-product-icon">✓</span><small>${appText('VARMUUS','SÄKERHET','CONFIDENCE')}</small>
-              <h3>${appText('Ei arvailua.','Inga gissningar.','No guessing.')}</h3>
-              <p>${appText('Jos yrityksen tiedoista ei löydy varmaa vastausta, Respondo ei keksi sitä.','Om företagets uppgifter inte innehåller ett säkert svar hittar Respondo inte på ett.','If your company data has no reliable answer, Respondo does not invent one.')}</p><em>›</em>
-            </a>
-            <a href="/ominaisuudet?lang=${lang}" class="public-product-card">
-              <span class="public-product-icon">↗</span><small>${appText('TOIMINNOT','FUNKTIONER','ACTIONS')}</small>
-              <h3>${appText('Kysymyksestä toiminnaksi.','Från fråga till åtgärd.','From question to action.')}</h3>
-              <p>${appText('Tarjouspyynnöt, ajanvaraus ja yhteydenotot kulkevat samaa selkeää polkua.','Offerter, bokning och kontaktförfrågningar följer samma tydliga flöde.','Quotes, bookings and contact requests follow the same clear flow.')}</p><em>›</em>
-            </a>
-          </div>
-          <div class="public-section-action">
-            <a class="btn public-secondary" href="/ominaisuudet?lang=${lang}">${appText(`Katso kaikki ${FEATURE_COUNT} ominaisuutta`,`Se alla ${FEATURE_COUNT} funktioner`,`See all ${FEATURE_COUNT} features`)} <span>→</span></a>
-          </div>
-        </div>
-      </section>
-
-      <section class="public-demo-section">
-        <div class="container">
-          <div class="public-demo-card">
-            <div>
-              <small>${appText('KOKEILE ITSE','TESTA SJÄLV','TRY IT')}</small>
-              <h2>${appText('Näe vastaus ennen kuin ostat mitään.','Se svaret innan du köper något.','See the answer before you buy anything.')}</h2>
-              <p>${appText('Avaa kokeilu, lisää muutama yritystieto ja kysy kuten oikea asiakas kysyisi.','Öppna testet, lägg till några företagsuppgifter och fråga som en riktig kund.','Open the demo, add a few company details and ask exactly like a real customer would.')}</p>
-            </div>
-            <a class="btn public-demo-button" href="/assistant?lang=${lang}">${appText('Avaa kokeilu','Öppna testet','Open demo')} <span>→</span></a>
-          </div>
-        </div>
-      </section>
-
+          <h3>${appText(`Katso kaikki ${FEATURE_COUNT} Respondo AI:n ominaisuutta`,`Se alla ${FEATURE_COUNT} funktioner i Respondo AI`,`See all ${FEATURE_COUNT} Respondo AI features`)}</h3>
+          <p>${appText(`${FEATURE_COUNT} toimintoa asiakaspalveluun, tarjouksiin, ajanvaraukseen ja yhteydenottoihin.`,`${FEATURE_COUNT} funktioner för kundservice, offerter, bokningar och kontaktförfrågningar.`,`${FEATURE_COUNT} features for customer service, quotes, bookings and contact requests.`)}</p>
+        </a>
+      </div></section>
       ${pricingSection()}
+
+      <section class="section final-cta final-cta-immersive">
+        <div class="container">
+          <div class="cta-shell">
+            <div>
+              <div class="section-kicker light">${uiText('05 / KOKEILE KÄYTÄNNÖSSÄ','05 / PROVA SJÄLV','05 / TRY IT YOURSELF')}</div>
+              <h2>${uiText('Asiakkaasi seuraava kysymys voi tulla vaikka tänä iltana.','Din kunds nästa fråga kan komma redan i kväll.',"Your customer's next question could arrive tonight.")}</h2>
+              <p>${uiText('Anna Respondon hoitaa vastaus silloin, kun sinä et ehdi.','Låt Respondo sköta svaret när du själv inte hinner.',"Let Respondo handle the answer when you don't have time.")}</p>
+            </div>
+            <a class="cta-circle" href="/tilaus" aria-label="Kokeile ilmaiseksi"><span>KOKEILE</span><b>→</b></a>
+          </div>
+        </div>
+      </section>
       ${contactSection()}
     </main>
     ${footer()}
