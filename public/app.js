@@ -2585,7 +2585,7 @@ async function agentDashboard(me) {
         <button type="button" data-dashboard-nav="automation"><span>↗</span><b>${appText('Toiminnot','Funktioner','Actions')}</b></button>
         <button type="button" data-dashboard-nav="install"><span>&lt;/&gt;</span><b>${appText('Asennus','Installation','Install')}</b></button>
         <button type="button" data-dashboard-nav="account"><span>⚙</span><b>${appText('Asetukset','Inställningar','Settings')}</b></button>
-      </nav>`
+      </nav>
 
       <section class="dashboard-head dashboard-view-section" data-dashboard-view="overview" id="overview">
         <div><div class="section-kicker">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</div><h1>${esc(t.name)}</h1><p>${appText('Valitse ylhäältä mitä haluat tehdä. Näytämme vain siihen liittyvät asiat.','Välj ovan vad du vill göra. Vi visar bara det som hör till valet.','Choose what you want to do above. We only show the relevant items.')}</p></div>
