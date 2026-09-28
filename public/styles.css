@@ -6516,3 +6516,12 @@ body{
     font-size:clamp(31px,10vw,39px)!important;
   }
 }
+
+
+/* Clean dashboard controls */
+.dashboard-settings-button{width:42px;height:42px;border:1px solid rgba(17,17,20,.12);border-radius:14px;background:#fff;display:grid;place-items:center;font-size:18px;cursor:pointer;box-shadow:0 8px 24px rgba(17,17,20,.06);transition:transform .18s ease,box-shadow .18s ease}
+.dashboard-settings-button:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(17,17,20,.1)}
+.dashboard-simple-shell .dashboard-view-section{animation:dashboardCleanIn .22s ease both}
+.dashboard-simple-shell .panel,.dashboard-simple-shell .onboarding-card,.dashboard-simple-shell .welcome-card{border-radius:22px}
+@keyframes dashboardCleanIn{from{opacity:.45;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media(max-width:720px){.dashboard-settings-button{width:40px;height:40px;border-radius:12px}.dashboard-section-picker label{display:none}}
