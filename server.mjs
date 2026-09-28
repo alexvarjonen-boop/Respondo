@@ -3727,7 +3727,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       if (thread.mode === 'human') {
         const humanMessage = lang === 'en'
           ? 'Your message was sent to a person from the company.'
-          : lang === 'sv'
+          : responseLang === 'sv'
             ? 'Ditt meddelande skickades till företagets kundtjänst.'
             : 'Viestisi lähetettiin yrityksen asiakaspalvelijalle.';
         await q(
@@ -3766,16 +3766,17 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       rows: kr.rows,
       message,
       history,
-      lang,
+      lang: detectedLang,
       pageContext: body.pageContext && typeof body.pageContext === 'object' ? body.pageContext : {},
     });
 
-    const noAnswer = lang === 'en'
+    const responseLang = detectedLang;
+    const noAnswer = responseLang === 'en'
       ? 'I cannot find a reliable answer to this in the company information. Leave your name and phone number or email below, and someone from the company can get back to you.'
-      : lang === 'sv'
+      : responseLang === 'sv'
         ? 'Jag hittar inget säkert svar på detta i företagets information. Lämna ditt namn och telefonnummer eller din e-postadress nedan, så kan någon från företaget kontakta dig.'
         : 'Tähän en löydä varmaa vastausta yrityksen tiedoista. Jätä alle nimesi ja puhelinnumerosi tai sähköpostisi, niin yrityksen henkilö voi palata sinulle.';
-    const translationUnavailable = lang === 'en'
+    const translationUnavailable = responseLang === 'en'
       ? 'I found the relevant company information, but could not translate the answer reliably right now. Leave your contact details below or try again in a moment.'
       : lang === 'sv'
         ? 'Jag hittade relevant företagsinformation men kunde inte översätta svaret tillförlitligt just nu. Lämna dina kontaktuppgifter nedan eller försök igen om en stund.'
@@ -3785,8 +3786,8 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     let handoff = result.handoff;
     if (handoff) {
       answer = noAnswer;
-    } else if (lang !== 'fi') {
-      const translated = await forceAnswerLanguage(answer, lang);
+    } else if (responseLang !== 'fi') {
+      const translated = await forceAnswerLanguage(answer, responseLang);
       if (translated) answer = translated;
       else {
         handoff = true;
@@ -3794,7 +3795,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       }
     }
 
-    const actions = chatActions(kr.rows, message, handoff, lang);
+    const actions = chatActions(kr.rows, message, handoff, responseLang);
     if (thread) {
       await appendChatMessage({
         tenantId:t.id,threadId:thread.id,sourceChannel:'website',
