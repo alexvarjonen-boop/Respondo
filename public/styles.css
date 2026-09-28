@@ -7215,3 +7215,24 @@ body{
     font-size:14px;
   }
 }
+
+
+/* Respondo OS section ownership refinements */
+.dashboard-os-shell .respondo-intelligence,
+.dashboard-os-shell .dashboard-insights{
+  grid-template-columns:1fr!important;
+}
+.dashboard-os-shell .respondo-intelligence .panel,
+.dashboard-os-shell .dashboard-insights .panel{
+  min-height:0!important;
+}
+@media(min-width:921px){
+  .dashboard-os-shell .dashboard-settings-button{
+    display:none!important;
+  }
+}
+@media(max-width:920px){
+  .dashboard-os-shell .dashboard-settings-button{
+    display:grid!important;
+  }
+}
