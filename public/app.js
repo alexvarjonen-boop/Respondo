@@ -1578,7 +1578,7 @@ function footer() {
         <div class="foot-col">
           <h4>Tuote</h4>
           <a href="/#how">Tuote</a>
-          <a href="/ominaisuudet?lang=${currentLang()}">Ominaisuudet</a>
+          <a href="/#control">Tietopohja</a>
           <a href="/#pricing">Hinta</a>
           <a href="/tilaus">Kokeile ilmaiseksi</a>
         </div>
