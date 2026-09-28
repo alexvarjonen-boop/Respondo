@@ -2662,22 +2662,22 @@ async function dashboard() {
           </div>
         </div>
         <div class="dashboard-section-picker">
-          <label for="dashboardSectionSelect">${appText('Näytä osio','Visa avsnitt','Show section')}</label>
+          <label for="dashboardSectionSelect">${appText('Työtila','Arbetsyta','Workspace')}</label>
           <div class="dashboard-select-wrap">
             <select id="dashboardSectionSelect" aria-label="Valitse hallintapaneelin osio">
               <option value="overview">${appText('Yleiskatsaus','Översikt','Overview')}</option>
               <option value="setup">${appText('Yrityksen tiedot & botti','Företagsuppgifter & bot','Business info & bot')}</option>
               <option value="answers">${appText('Vastaukset','Svar','Answers')}</option>
               <option value="customers">${appText('Asiakkaat','Kunder','Customers')}</option>
-              <option value="automation">${appText('Toiminnot & integraatiot','Funktioner & integrationer','Actions & integrations')}</option>
-              <option value="account">${appText('Asennus & tili','Installation & konto','Installation & account')}</option>
+              <option value="automation">${appText('Toiminnot','Funktioner','Actions')}</option>
+              <option value="account">${appText('Asetukset','Inställningar','Settings')}</option>
             </select>
             <span aria-hidden="true">⌄</span>
           </div>
         </div>
         <div class="dashboard-top-actions">
           <div class="live-chip"><span></span> ${appText('Botti käytössä','Botten är aktiv','Bot active')}</div>
-          <button class="dashboard-logout" id="logoutTop" type="button">${appText('Kirjaudu ulos','Logga ut','Log out')}</button>
+          <button class="dashboard-settings-button" id="dashboardSettingsButton" type="button" aria-label="${esc(appText('Asetukset','Inställningar','Settings'))}" title="${esc(appText('Asetukset','Inställningar','Settings'))}">⚙</button>
         </div>
       </header>
 
@@ -3703,6 +3703,10 @@ async function route() {
 
     dashboardSelect?.addEventListener('change', () => {
       showDashboardView(dashboardSelect.value);
+    });
+
+    $('#dashboardSettingsButton')?.addEventListener('click', () => {
+      showDashboardView('account');
     });
 
     const openDashboardTarget = (targetId) => {
