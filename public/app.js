@@ -1367,20 +1367,19 @@ function bindLanguageSwitch() {
 
 
 function nav() {
-  return `<header class="nav">
+  return `<header class="nav public-nav">
     <div class="container navin">
       ${logo()}
-      <nav class="navlinks" aria-label="Päänavigaatio">
-        <a href="/#how">Tuote</a>
-        <a href="/#control">Tietopohja</a>
-        <a href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
-        <a href="/#pricing">Hinta</a>
-        <a href="/tietoturva">Tietoturva</a>
+      <nav class="navlinks" aria-label="${esc(appText('Päänavigaatio','Huvudnavigering','Main navigation'))}">
+        <a href="/#how">${appText('Näin toimii','Så fungerar det','How it works')}</a>
+        <a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a>
+        <a href="/#pricing">${appText('Hinta','Pris','Pricing')}</a>
+        <a href="/tietoturva?lang=${currentLang()}">${appText('Tietoturva','Säkerhet','Security')}</a>
       </nav>
       <div class="navactions">
         ${languageSwitch()}
-        <a class="btn ghost nav-login-btn" href="/kirjaudu"><span>Kirjaudu</span></a>
-        <a class="btn ink" href="/tilaus">Kokeile ilmaiseksi</a>
+        <a class="btn ghost nav-login-btn" href="/kirjaudu?lang=${currentLang()}"><span>${appText('Kirjaudu','Logga in','Log in')}</span></a>
+        <a class="btn ink" href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Start trial')}</a>
       </div>
     </div>
   </header>`;
@@ -1579,7 +1578,7 @@ function footer() {
         <div class="foot-col">
           <h4>Tuote</h4>
           <a href="/#how">Tuote</a>
-          <a href="/#control">Tietopohja</a>
+          <a href="/ominaisuudet?lang=${currentLang()}">Ominaisuudet</a>
           <a href="/#pricing">Hinta</a>
           <a href="/tilaus">Kokeile ilmaiseksi</a>
         </div>
