@@ -1424,22 +1424,11 @@ function stickyProductNav() {
   return `<div class="product-subnav" aria-label="${esc(appText('Sivun osiot','Sidans avsnitt','Page sections'))}">
     <div class="container product-subnav-inner">
       <span class="subnav-title">RESPONDO AI</span>
-      <label class="home-section-jump">
-        <span>${appText('Siirry kohtaan','Gå till avsnitt','Jump to')}</span>
-        <select id="homeSectionJump" aria-label="${esc(appText('Siirry etusivun kohtaan','Gå till ett avsnitt på startsidan','Jump to a homepage section'))}">
-          <option value="">${appText('Valitse kohta…','Välj avsnitt…','Choose section…')}</option>
-          <option value="how">${appText('Näin se toimii','Så fungerar det','How it works')}</option>
-          <option value="features">${appText('Ominaisuudet','Funktioner','Features')}</option>
-          <option value="/ominaisuudet?lang=${currentLang()}">${appText('Katso kaikki ominaisuudet','Se alla funktioner','See all features')}</option>
-          <option value="calculator">${appText('Laske hyöty','Beräkna nyttan','Calculate value')}</option>
-          <option value="pricing">${appText('Hinnat','Priser','Pricing')}</option>
-          <option value="contact">${appText('Ota yhteyttä','Kontakta oss','Contact')}</option>
-        </select>
-      </label>
-      <nav>
+      <nav class="home-swipe-nav" aria-label="${esc(appText('Etusivun osiot','Startsidesavsnitt','Homepage sections'))}">
         <a href="#how">${appText('Näin se toimii','Så fungerar det','How it works')}</a>
-        <a href="#features">${appText('Mitä saat','Vad du får','What you get')}</a>
-        <a href="#calculator">${appText('Laske itse','Räkna själv','Calculate')}</a>
+        <a href="#features">${appText('Ominaisuudet','Funktioner','Features')}</a>
+        <a class="all-features-link" href="/ominaisuudet?lang=${currentLang()}">${appText('Katso kaikki ominaisuudet','Se alla funktioner','See all features')}</a>
+        <a href="#calculator">${appText('Laske hyöty','Beräkna nyttan','Calculate value')}</a>
         <a href="#pricing">${appText('Hinnat','Priser','Pricing')}</a>
         <a href="#contact">${appText('Ota yhteyttä','Kontakta oss','Contact')}</a>
       </nav>
@@ -3669,17 +3658,6 @@ async function route() {
         button.innerHTML = original;
         $('#msg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
       }
-    });
-  }
-
-  if (path === '/') {
-    $('#homeSectionJump')?.addEventListener('change', (e) => {
-      const id=String(e.currentTarget.value||'');
-      if (!id) return;
-      if (id.startsWith('/')) { location.href=id; return; }
-      const target=document.getElementById(id);
-      if (target) target.scrollIntoView({behavior:'smooth',block:'start'});
-      e.currentTarget.value='';
     });
   }
 
