@@ -7364,3 +7364,14 @@ body{
   .product-subnav-inner>nav{display:none!important}
   .home-section-jump{display:block!important;min-width:0!important}
 }
+
+/* Homepage mobile navigation must remain visible */
+@media(max-width:720px){
+  .product-subnav{display:block!important;top:74px!important;z-index:1100!important}
+  .product-subnav-inner{min-height:64px!important;width:100%!important;padding:7px 13px!important;grid-template-columns:74px minmax(0,1fr)!important;gap:10px!important}
+  .product-subnav .subnav-title{display:block!important;font-size:10px!important;white-space:nowrap!important}
+  .product-subnav .home-section-jump{display:block!important;width:100%!important;min-width:0!important}
+  .product-subnav .home-section-jump>span{display:none!important}
+  .product-subnav .home-section-jump select{display:block!important;width:100%!important;min-height:46px!important;font-size:13px!important}
+  .product-subnav nav{display:none!important}
+}
