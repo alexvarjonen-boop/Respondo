@@ -2670,6 +2670,7 @@ async function dashboard() {
               <option value="answers">${appText('Vastaukset','Svar','Answers')}</option>
               <option value="customers">${appText('Asiakkaat','Kunder','Customers')}</option>
               <option value="automation">${appText('Toiminnot','Funktioner','Actions')}</option>
+              <option value="install">${appText('Asennus','Installation','Installation')}</option>
               
             </select>
             <span aria-hidden="true">⌄</span>
