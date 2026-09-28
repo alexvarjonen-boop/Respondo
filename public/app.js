@@ -3241,7 +3241,7 @@ async function dashboard() {
 
       </section>
 
-      <section class="panel install-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="install">
+      <section class="panel install-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="install" id="install">
         <div class="panel-head"><div><small>${appText('ASENNUS','INSTALLATION','INSTALLATION')}</small><h2>${appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website')}</h2></div><span class="install-badge">1 ${appText('sivusto','webbplats','website')}</span></div>
         <p>${appText('Kopioi tämä koodi sivustosi HTML:ään juuri ennen sulkevaa','Kopiera koden till webbplatsens HTML precis före den avslutande','Copy this code into your website HTML just before the closing')} <code>&lt;/body&gt;</code>${appText('-tagia.','-taggen.',' tag.')}</p>
         <div class="license-lock">
