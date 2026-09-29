@@ -1404,8 +1404,29 @@ app.post('/api/public/site-visit', async (req, res) => {
     const visitorHash = trafficVisitorHash(req);
     if (!visitorHash) return res.status(204).end();
 
+    const rawLanguage = String(body.language || '').trim().toLowerCase().split('-')[0];
+    const visitLanguage = ['fi','sv','en'].includes(rawLanguage) ? rawLanguage : null;
+
+    if (body.updateLanguage === true && visitLanguage) {
+      await q(
+        `UPDATE site_visits
+            SET language=$1
+          WHERE id=(
+            SELECT id
+              FROM site_visits
+             WHERE visitor_hash=$2
+               AND path=$3
+               AND created_at >= NOW() - INTERVAL '2 hours'
+             ORDER BY created_at DESC
+             LIMIT 1
+          )`,
+        [visitLanguage, visitorHash, visitPath],
+      );
+      return res.status(204).end();
+    }
+
     await q(
-      "INSERT INTO site_visits(id,visitor_hash,path,referrer,referrer_host,utm_source,utm_medium,utm_campaign) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",
+      "INSERT INTO site_visits(id,visitor_hash,path,referrer,referrer_host,utm_source,utm_medium,utm_campaign,language) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)",
       [
         uid(),
         visitorHash,
@@ -1415,6 +1436,7 @@ app.post('/api/public/site-visit', async (req, res) => {
         String(body.utmSource || '').trim().slice(0, 120) || null,
         String(body.utmMedium || '').trim().slice(0, 120) || null,
         String(body.utmCampaign || '').trim().slice(0, 180) || null,
+        visitLanguage,
       ],
     );
     return res.status(204).end();
@@ -1442,11 +1464,16 @@ app.get('/api/owner/traffic', auth, ownerTrafficOnly, async (req, res) => {
       "SELECT COALESCE(NULLIF(utm_source,''), NULLIF(referrer_host,''), 'Suora') AS source, COUNT(*)::int AS views, COUNT(DISTINCT visitor_hash)::int AS visitors FROM site_visits WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY 1 ORDER BY views DESC, source ASC LIMIT 12"
     );
 
+    const languages = await q(
+      "SELECT COALESCE(NULLIF(language,''),'unknown') AS language, COUNT(*)::int AS views, COUNT(DISTINCT visitor_hash)::int AS visitors FROM site_visits WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY 1 ORDER BY views DESC, language ASC"
+    );
+
     return res.json({
       summary: summary.rows[0] || {},
       daily: daily.rows,
       pages: pages.rows,
       sources: sources.rows,
+      languages: languages.rows,
       generatedAt: new Date().toISOString(),
       note: 'Kävijä on pseudonyymi selain/IP-yhdistelmä. Raakaa IP-osoitetta ei tallenneta.',
     });
@@ -5293,8 +5320,10 @@ async function ensureRuntimeSchema() {
     utm_source TEXT,
     utm_medium TEXT,
     utm_campaign TEXT,
+    language TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
+  await q("ALTER TABLE site_visits ADD COLUMN IF NOT EXISTS language TEXT");
   await q('CREATE INDEX IF NOT EXISTS idx_site_visits_created ON site_visits(created_at DESC)');
   await q('CREATE INDEX IF NOT EXISTS idx_site_visits_visitor ON site_visits(visitor_hash, created_at DESC)');
 
