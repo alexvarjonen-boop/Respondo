@@ -408,6 +408,11 @@ function scoreKnowledgeRow(row, query) {
     [['alue','toimialue','tuletteko','paikkakunta'], ['toimialue']],
     [['osoite','sijainti'], ['osoite']],
     [['tarjous','tarjouspyynto','tarjouspyyntö'], ['tarjouspyyntolomake','tarjouspyyntölomake']],
+    [['kayttoonotto','käyttöönotto','kayttoon','käyttöön','aloitus','aloittaa','aloitan','alkuun','asennus','asenna','setup','getting started','get started','installation','install','komma igang','komma igång','installation'], ['asennus','kayttoonotto','käyttöönotto','aloitus','ohje','ohjeet']],
+    [['kokeilu','kokeilla','testata','testi','trial','try','free trial','provperiod','prova'], ['kokeilu','trial','provperiod']],
+    [['tilaus','tilata','ostaa','subscribe','subscription','order','prenumeration','bestall','beställ','abonnemang'], ['tilaus','subscription','prenumeration']],
+    [['ajanvaraus','varata','varaa','booking','appointment','boka','bokning'], ['ajanvaraus','ajanvarauslinkki','booking']],
+    [['yhteys','yhteydenotto','contact','kontakt'], ['yhteys','yhteystiedot','sahkoposti','sähköposti','puhelinnumero']],
   ];
   for (const [needles, titles] of topicHints) {
     if (needles.some((x) => q.includes(normalizeSearchText(x))) && titles.some((x) => title.includes(normalizeSearchText(x)))) {
@@ -798,7 +803,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     { re: /(ajanvaraus|varaa|booking|appointment|boka|bokning|tidsbokning)/i, add: ' ajanvaraus varaa aika booking appointment boka bokning tidsbokning' },
     { re: /(tarjous|tarjouspyyntö|tarjouspyynto|quote|estimate|offert|prisförslag|prisforslag)/i, add: ' tarjous tarjouspyyntö quote estimate offert prisförslag' },
     { re: /(kokeilu|trial|provperiod|prova|test)/i, add: ' kokeilu trial provperiod prova test' },
-    { re: /(asenn|install|käyttöönot|kayttoonot|setup|implementation|installation)/i, add: ' asennus käyttöönotto install installation setup implementation' },
+    { re: /(asenn|install|käyttöönot|kayttoonot|käyttöön|kayttoon|aloit|alkuun|pääsen alkuun|paasen alkuun|setup|implementation|installation|get started|getting started|komma igång|komma igang)/i, add: ' asennus käyttöönotto kayttoonotto käyttöön kayttoon aloitus aloittaa alkuun ohje setup install installation implementation getting started get started komma igång installation' },
     { re: /(tilaus|subscribe|subscription|prenumeration|beställ|bestall|abonnemang)/i, add: ' tilaus subscription subscribe prenumeration beställ abonnemang' },
     { re: /(yhteys|contact|kontakt)/i, add: ' yhteys contact kontakt' },
     { re: /(verkkosivu|website|webbplats|hemsida)/i, add: ' verkkosivu website webbplats hemsida' },
