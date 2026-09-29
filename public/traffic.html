@@ -36,9 +36,9 @@
 </div>
 <script>
 const L={
- fi:{brand:'RESPONDO AI / KÄVIJÄT',dashboard:'Hallintapaneeli',refresh:'Päivitä',title:'Sivuston liikenne.',subtitle:'Uniikit kävijät ja sivulataukset. Oma omistajatili jätetään laskennan ulkopuolelle.',loading:'Ladataan kävijätilastoja…',today:'Tänään',days7:'7 päivää',days30:'30 päivää',all:'Kaikki',views:'sivulatausta',visitors:'kävijää',empty:'Ei dataa vielä.',last30:'Viimeiset 30 päivää',ago30:'30 pv sitten',pages:'Suosituimmat sivut',sources:'Liikenteen lähteet',login:'Kirjaudu ensin omistajatilillä.',loginHere:'Kirjaudu tästä',error:'Tilastoja ei voitu ladata.'},
- sv:{brand:'RESPONDO AI / BESÖKARE',dashboard:'Kontrollpanel',refresh:'Uppdatera',title:'Webbplatstrafik.',subtitle:'Unika besökare och sidvisningar. Ägarkontot räknas inte med.',loading:'Laddar besöksstatistik…',today:'I dag',days7:'7 dagar',days30:'30 dagar',all:'Alla',views:'sidvisningar',visitors:'besökare',empty:'Ingen data ännu.',last30:'Senaste 30 dagarna',ago30:'30 dagar sedan',pages:'Populäraste sidor',sources:'Trafikkällor',login:'Logga först in med ägarkontot.',loginHere:'Logga in här',error:'Statistiken kunde inte laddas.'},
- en:{brand:'RESPONDO AI / VISITORS',dashboard:'Dashboard',refresh:'Refresh',title:'Website traffic.',subtitle:'Unique visitors and page views. The owner account is excluded from the counts.',loading:'Loading visitor analytics…',today:'Today',days7:'7 days',days30:'30 days',all:'All time',views:'page views',visitors:'visitors',empty:'No data yet.',last30:'Last 30 days',ago30:'30 days ago',pages:'Top pages',sources:'Traffic sources',login:'Sign in with the owner account first.',loginHere:'Sign in here',error:'Analytics could not be loaded.'}
+ fi:{brand:'RESPONDO AI / KÄVIJÄT',dashboard:'Hallintapaneeli',refresh:'Päivitä',title:'Sivuston liikenne.',subtitle:'Uniikit kävijät ja sivulataukset. Oma omistajatili jätetään laskennan ulkopuolelle.',loading:'Ladataan kävijätilastoja…',today:'Tänään',days7:'7 päivää',days30:'30 päivää',all:'Kaikki',views:'sivulatausta',visitors:'kävijää',empty:'Ei dataa vielä.',last30:'Viimeiset 30 päivää',ago30:'30 pv sitten',pages:'Suosituimmat sivut',sources:'Liikenteen lähteet',languages:'Kävijöiden kielet',unknown:'Ei tietoa',languageNote:'Kieli tallentuu tästä päivityksestä eteenpäin, joten vanhemmissa käynneissä voi näkyä “Ei tietoa”.',login:'Kirjaudu ensin omistajatilillä.',loginHere:'Kirjaudu tästä',error:'Tilastoja ei voitu ladata.'},
+ sv:{brand:'RESPONDO AI / BESÖKARE',dashboard:'Kontrollpanel',refresh:'Uppdatera',title:'Webbplatstrafik.',subtitle:'Unika besökare och sidvisningar. Ägarkontot räknas inte med.',loading:'Laddar besöksstatistik…',today:'I dag',days7:'7 dagar',days30:'30 dagar',all:'Alla',views:'sidvisningar',visitors:'besökare',empty:'Ingen data ännu.',last30:'Senaste 30 dagarna',ago30:'30 dagar sedan',pages:'Populäraste sidor',sources:'Trafikkällor',languages:'Besökarnas språk',unknown:'Ingen uppgift',languageNote:'Språket sparas från och med den här uppdateringen, så äldre besök kan visas som “Ingen uppgift”.',login:'Logga först in med ägarkontot.',loginHere:'Logga in här',error:'Statistiken kunde inte laddas.'},
+ en:{brand:'RESPONDO AI / VISITORS',dashboard:'Dashboard',refresh:'Refresh',title:'Website traffic.',subtitle:'Unique visitors and page views. The owner account is excluded from the counts.',loading:'Loading visitor analytics…',today:'Today',days7:'7 days',days30:'30 days',all:'All time',views:'page views',visitors:'visitors',empty:'No data yet.',last30:'Last 30 days',ago30:'30 days ago',pages:'Top pages',sources:'Traffic sources',languages:'Visitor languages',unknown:'No data',languageNote:'Language is stored from this update onward, so older visits may appear as “No data”.',login:'Sign in with the owner account first.',loginHere:'Sign in here',error:'Analytics could not be loaded.'}
 };
 const norm=v=>['fi','sv','en'].includes(String(v||'').toLowerCase())?String(v).toLowerCase():'fi';
 let lang=norm(localStorage.getItem('respondo_lang')||document.documentElement.lang||navigator.language.split('-')[0]);
@@ -65,6 +65,17 @@ function cards(s){
 function list(title,rows,key){
   return '<div class="panel"><h2>'+title+'</h2>'+(rows.length?rows.map(r=>'<div class="row"><b>'+e(r[key]||'—')+'</b><span class="small">'+n(r.visitors)+' '+t('visitors')+'</span><span class="pill">'+n(r.views)+'</span></div>').join(''):'<div class="small">'+t('empty')+'</div>')+'</div>';
 }
+function languageLabel(code){
+  const labels={
+    fi:{fi:'Suomi (FI)',sv:'Ruotsi (SV)',en:'Englanti (EN)',unknown:t('unknown')},
+    sv:{fi:'Finska (FI)',sv:'Svenska (SV)',en:'Engelska (EN)',unknown:t('unknown')},
+    en:{fi:'Finnish (FI)',sv:'Swedish (SV)',en:'English (EN)',unknown:t('unknown')}
+  };
+  return labels[lang]?.[String(code||'unknown').toLowerCase()]||String(code||t('unknown')).toUpperCase();
+}
+function languageList(rows){
+  return '<div class="panel"><h2>'+t('languages')+'</h2>'+(rows.length?rows.map(r=>'<div class="row"><b>'+e(languageLabel(r.language))+'</b><span class="small">'+n(r.visitors)+' '+t('visitors')+'</span><span class="pill">'+n(r.views)+'</span></div>').join(''):'<div class="small">'+t('empty')+'</div>')+'<div class="note">'+t('languageNote')+'</div></div>';
+}
 function chart(rows){
   const max=Math.max(1,...rows.map(x=>Number(x.visitors||0)));
   return '<div class="panel"><h2>'+t('last30')+'</h2><div class="bars">'+rows.map(r=>'<div class="barwrap" title="'+e(r.day)+': '+n(r.visitors)+' '+t('visitors')+'"><div class="bar" style="height:'+Math.max(2,Math.round(Number(r.visitors||0)/max*100))+'%"></div></div>').join('')+'</div><div class="legend"><span>'+t('ago30')+'</span><span>'+t('today')+'</span></div></div>';
@@ -76,7 +87,7 @@ async function load(){
     const d=await r.json().catch(()=>({}));
     if(r.status===401){root.innerHTML='<div class="state">'+t('login')+' <a href="/kirjaudu">'+t('loginHere')+'</a>.</div>';return;}
     if(!r.ok) throw new Error(d.error||('HTTP '+r.status));
-    root.innerHTML=cards(d.summary||{})+'<div class="grid">'+chart(d.daily||[])+list(t('pages'),d.pages||[],'path')+list(t('sources'),d.sources||[],'source')+'</div><div class="note">'+e(d.note||'')+'</div>';
+    root.innerHTML=cards(d.summary||{})+'<div class="grid">'+chart(d.daily||[])+languageList(d.languages||[])+list(t('pages'),d.pages||[],'path')+list(t('sources'),d.sources||[],'source')+'</div><div class="note">'+e(d.note||'')+'</div>';
   }catch(err){root.innerHTML='<div class="state error">'+e((lang==='fi'&&err.message)||t('error'))+'</div>';}
 }
 document.getElementById('refresh').addEventListener('click',load);
