@@ -95,6 +95,12 @@
     try{localStorage.setItem(KEY,value);}catch{}
   }
   function mayTrack(){return getChoice()==='all';}
+  function currentSiteLanguage(){
+    let stored='';
+    try{stored=localStorage.getItem('respondo_lang')||'';}catch{}
+    const raw=String(window.RespondoI18n?.language||stored||document.documentElement.lang||navigator.language||'fi').toLowerCase().split('-')[0];
+    return ['fi','sv','en'].includes(raw)?raw:'fi';
+  }
   function sendVisit(){
     if(sent || !mayTrack()) return;
     if(/^\/(?:app|kirjaudu|traffic(?:\.html)?)(?:\/|$)/i.test(visitPath)) return;
@@ -105,7 +111,8 @@
       referrer:document.referrer||'',
       utmSource:params.get('utm_source')||'',
       utmMedium:params.get('utm_medium')||'',
-      utmCampaign:params.get('utm_campaign')||''
+      utmCampaign:params.get('utm_campaign')||'',
+      language:currentSiteLanguage()
     };
     fetch('/api/public/site-visit',{
       method:'POST',
@@ -115,6 +122,17 @@
       credentials:'same-origin'
     }).catch(()=>{});
   }
+  function syncVisitLanguage(){
+    if(!sent || !mayTrack()) return;
+    fetch('/api/public/site-visit',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({path:visitPath,language:currentSiteLanguage(),updateLanguage:true}),
+      keepalive:true,
+      credentials:'same-origin'
+    }).catch(()=>{});
+  }
+  window.addEventListener('respondo:languagechange',syncVisitLanguage);
   function ensureUi(){
     if(document.getElementById('rc-consent-layer')) return;
     const layer=document.createElement('div');
