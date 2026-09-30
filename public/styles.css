@@ -7388,3 +7388,15 @@ body{
   .product-subnav .home-swipe-nav{display:flex!important;width:100%!important;padding:5px 13px 7px!important;gap:7px!important}
   .product-subnav .home-swipe-nav a{min-height:40px!important;padding:0 13px!important;font-size:11px!important}
 }
+
+
+/* Website import review */
+.website-import-review{margin-top:18px}
+.website-import-review:empty{display:none}
+.website-import-review-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;border:1px solid rgba(17,17,19,.1);border-radius:16px;background:rgba(255,255,255,.72)}
+.website-import-review-head div{display:grid;gap:5px}.website-import-review-head small{color:#6d6d72;line-height:1.45}
+.website-import-candidates{display:grid;gap:8px;max-height:520px;overflow:auto;margin-top:10px;padding-right:4px}
+.website-import-candidate{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;padding:13px 14px;border:1px solid rgba(17,17,19,.09);border-radius:14px;background:#fff;cursor:pointer}
+.website-import-candidate input{margin-top:4px;width:18px;height:18px}
+.website-import-candidate span{min-width:0;display:grid;gap:4px}.website-import-candidate b{font-size:14px;line-height:1.3}.website-import-candidate small{font-size:11px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.website-import-candidate p{margin:2px 0 0;color:#4d4d52;font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+@media(max-width:720px){.website-import-review-head{align-items:stretch;flex-direction:column}.website-import-review-head .btn{width:100%}.website-import-candidates{max-height:430px}}
