@@ -3909,7 +3909,10 @@ async function route() {
             <div class="website-import-review-head">
               <div><b>${appText('Respondo löysi ' + candidates.length + ' tietoa ' + Number(result.pagesScanned || 0) + ' sivulta.','Respondo hittade ' + candidates.length + ' uppgifter på ' + Number(result.pagesScanned || 0) + ' sidor.','Respondo found ' + candidates.length + ' items across ' + Number(result.pagesScanned || 0) + ' pages.')}</b>
               <small>${appText('Valitse vain tiedot, jotka olet tarkistanut oikeiksi. Mitään ei lisätä bottiin ilman hyväksyntääsi.','Välj endast uppgifter som du har kontrollerat är korrekta. Inget läggs till i botten utan ditt godkännande.','Select only information you have verified as correct. Nothing is added to the bot without your approval.')}</small></div>
-              <button type="button" class="btn dashboard-action" id="approveWebsiteImport">${appText('Hyväksy valitut bottiin','Godkänn valda till botten','Approve selected for bot')} →</button>
+              <div class="website-import-review-actions">
+                <button type="button" class="btn ghost" id="selectAllWebsiteImport">${appText('Valitse kaikki','Välj alla','Select all')}</button>
+                <button type="button" class="btn dashboard-action" id="approveWebsiteImport">${appText('Hyväksy valitut bottiin','Godkänn valda till botten','Approve selected for bot')} →</button>
+              </div>
             </div>
             <div class="website-import-candidates">
               ${candidates.map((item,i)=>`<label class="website-import-candidate">
@@ -3917,6 +3920,14 @@ async function route() {
                 <span><b>${esc(item.title)}</b><small>${esc(item.category || '')} · ${esc(item.sourceUrl || '')}</small><p>${esc(item.answer)}</p></span>
               </label>`).join('')}
             </div>` : '<div class="notice">' + appText('Perustiedot löytyivät, mutta erillisiä tietopohjaehdotuksia ei löytynyt.','Grunduppgifterna hittades men inga separata kunskapsförslag hittades.','Basic details were found, but no separate knowledge suggestions were found.') + '</div>';
+          document.getElementById('selectAllWebsiteImport')?.addEventListener('click', (event) => {
+            const boxes=[...review.querySelectorAll('[data-import-index]')];
+            const shouldSelect=boxes.some((box)=>!box.checked);
+            boxes.forEach((box)=>{box.checked=shouldSelect;});
+            event.currentTarget.textContent=shouldSelect
+              ? appText('Poista kaikki valinnat','Avmarkera alla','Deselect all')
+              : appText('Valitse kaikki','Välj alla','Select all');
+          });
           document.getElementById('approveWebsiteImport')?.addEventListener('click', async (event) => {
             const approveButton = event.currentTarget;
             const selected = [...review.querySelectorAll('[data-import-index]:checked')].map((input)=>candidates[Number(input.dataset.importIndex)]).filter(Boolean);
