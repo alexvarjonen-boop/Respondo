@@ -2873,6 +2873,7 @@ async function dashboard() {
             <button class="btn dashboard-action profile-save" type="submit">${appText('Tallenna tiedot','Spara uppgifter','Save information')} <span>→</span></button>
           </div>
           <div id="businessProfileMsg"></div>
+          <div id="websiteImportReview" class="website-import-review"></div>
         </form>
         </div>
 
@@ -3892,7 +3893,40 @@ async function route() {
         ['pricing','hours','phone','email','services','serviceArea','address','website','quoteRequestUrl','bookingUrl','notes'].forEach((name) => {
           if (p[name] && formEl?.elements[name]) formEl.elements[name].value = p[name];
         });
-        $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText('Tiedot haettu. Tarkista ehdotukset ja tallenna ne vasta sitten.','Uppgifterna har hämtats. Kontrollera förslagen och spara dem först därefter.','Details imported. Review the suggestions and only then save them.') + '</div>';
+        const candidates = Array.isArray(result.candidates) ? result.candidates : [];
+        const review = document.getElementById('websiteImportReview');
+        if (review) {
+          review.innerHTML = candidates.length ? `
+            <div class="website-import-review-head">
+              <div><b>${appText('Respondo löysi ' + candidates.length + ' tietoa ' + Number(result.pagesScanned || 0) + ' sivulta.','Respondo hittade ' + candidates.length + ' uppgifter på ' + Number(result.pagesScanned || 0) + ' sidor.','Respondo found ' + candidates.length + ' items across ' + Number(result.pagesScanned || 0) + ' pages.')}</b>
+              <small>${appText('Poista valinta vain tiedoista, joita et halua botin käyttävän.','Avmarkera bara information som botten inte ska använda.','Uncheck only information you do not want the bot to use.')}</small></div>
+              <button type="button" class="btn dashboard-action" id="approveWebsiteImport">${appText('Hyväksy valitut bottiin','Godkänn valda till botten','Approve selected for bot')} →</button>
+            </div>
+            <div class="website-import-candidates">
+              ${candidates.map((item,i)=>`<label class="website-import-candidate">
+                <input type="checkbox" checked data-import-index="${i}">
+                <span><b>${esc(item.title)}</b><small>${esc(item.category || '')} · ${esc(item.sourceUrl || '')}</small><p>${esc(item.answer)}</p></span>
+              </label>`).join('')}
+            </div>` : '<div class="notice">' + appText('Perustiedot löytyivät, mutta erillisiä tietopohjaehdotuksia ei löytynyt.','Grunduppgifterna hittades men inga separata kunskapsförslag hittades.','Basic details were found, but no separate knowledge suggestions were found.') + '</div>';
+          document.getElementById('approveWebsiteImport')?.addEventListener('click', async (event) => {
+            const approveButton = event.currentTarget;
+            const selected = [...review.querySelectorAll('[data-import-index]:checked')].map((input)=>candidates[Number(input.dataset.importIndex)]).filter(Boolean);
+            if (!selected.length) return;
+            const previous = approveButton.textContent;
+            approveButton.disabled = true;
+            approveButton.textContent = appText('Tallennetaan…','Sparar…','Saving…');
+            try {
+              const saved = await api('/api/app/import-website/approve',{method:'POST',body:JSON.stringify({items:selected})});
+              approveButton.textContent = appText('Lisätty bottiin ✓','Tillagt i botten ✓','Added to bot ✓');
+              $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText(String(saved.added || selected.length) + ' verkkosivulta löydettyä tietoa lisättiin botin tietopohjaan.','Valda webbplatsuppgifter lades till i bottens kunskapsbas.','Selected website information was added to the bot knowledge base.') + '</div>';
+            } catch(err) {
+              approveButton.disabled = false;
+              approveButton.textContent = previous;
+              $('#businessProfileMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
+            }
+          });
+        }
+        $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText('Tiedot haettu. Tarkista perustiedot sekä alla olevat löydöt.','Uppgifterna har hämtats. Kontrollera grunduppgifterna och fynden nedan.','Details imported. Review the basic information and findings below.') + '</div>';
         button.textContent = appText('Tiedot haettu ✓','Uppgifter hämtade ✓','Details imported ✓');
         setTimeout(() => { button.textContent = original; button.disabled = false; }, 1800);
       } catch (err) {
