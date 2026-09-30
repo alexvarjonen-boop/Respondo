@@ -795,7 +795,7 @@ async function fetchClientRenderedSourceText(html, pageUrl) {
   return docs;
 }
 
-async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000) {
+async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000, onProgress = null) {
   const first = await fetchPublicHtml(value);
   const base = new URL(first.finalUrl);
   const pages = [];
@@ -850,6 +850,8 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000)
     queue.push({url:u.toString(),score});
   }
   queue.sort((a,b)=>b.score-a.score);
+  const totalTarget = Math.max(1, Math.min(maxPages, pages.length + queue.length));
+  if (onProgress) onProgress({scanned:pages.length,total:totalTarget});
 
   const crawlStartedAt = Date.now();
   while (queue.length && pages.length < maxPages) {
@@ -864,6 +866,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000)
       if (pages.some((x) => x.key === key)) continue;
       pages.push({ url:page.finalUrl, key, html:page.html });
       enqueue(page.html, page.finalUrl);
+      if (onProgress) onProgress({scanned:pages.length,total:Math.max(totalTarget,Math.min(maxPages,pages.length+queue.length))});
     } catch {}
   }
 
@@ -2835,6 +2838,36 @@ function extractFreeWebsiteProfile(bundle) {
   profile.notes = useful.slice(0,4000);
   return profile;
 }
+
+const websiteImportJobs = new Map();
+
+app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
+  const website=normalizeWebUrl(req.body.website,false);
+  if(!website) return res.status(400).json({error:'Lisää ensin verkkosivusi osoite.'});
+  const jobId=uid();
+  const job={id:jobId,userId:req.user.sub,website,status:'running',scanned:0,total:1,percent:0,result:null,error:null,updatedAt:Date.now()};
+  websiteImportJobs.set(jobId,job);
+  res.json({ok:true,jobId});
+  (async()=>{
+    try{
+      const bundle=await fetchWebsiteBundle(website,10000,15*60*1000,(p)=>{
+        job.scanned=p.scanned; job.total=Math.max(p.total,p.scanned,1);
+        job.percent=Math.min(99,Math.round((job.scanned/job.total)*100)); job.updatedAt=Date.now();
+      });
+      const candidates=websiteKnowledgeCandidates(bundle);
+      const detectedProfile=extractFreeWebsiteProfile(bundle);
+      job.result={ok:true,profile:{website,hours:detectedProfile.hours,phone:detectedProfile.phone,email:detectedProfile.email,address:detectedProfile.address},pagesScanned:bundle.pages.length,factsFound:candidates.length,candidates,extraction:'local'};
+      job.scanned=bundle.pages.length; job.total=Math.max(job.total,job.scanned); job.percent=100; job.status='done'; job.updatedAt=Date.now();
+    }catch(e){job.status='error';job.error=e?.message||'Verkkosivun tietojen tuonti epäonnistui.';job.updatedAt=Date.now();}
+  })();
+});
+
+app.get('/api/app/import-website/status/:jobId', auth, subscribed, (req,res)=>{
+  const job=websiteImportJobs.get(req.params.jobId);
+  if(!job||job.userId!==req.user.sub) return res.status(404).json({error:'Hakua ei löytynyt.'});
+  res.json({status:job.status,scanned:job.scanned,total:job.total,percent:job.percent,error:job.error,result:job.status==='done'?job.result:null});
+  if(job.status!=='running' && Date.now()-job.updatedAt>10*60*1000) websiteImportJobs.delete(job.id);
+});
 
 app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
   try {
