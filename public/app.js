@@ -2598,7 +2598,15 @@ async function dashboard() {
       .filter((x) => x.category === 'Yrityksen perustiedot')
       .map((x) => [x.title, x.answer])
   );
-  const profileValue = (title) => esc(businessProfile[title] || '');
+  const obviouslyCorruptProfileValue = (value) => {
+    const v = String(value || '').trim();
+    if (!v) return false;
+    return /(terms of service|privacy policy|localstorage|sessionstorage|supported\.includes|queryselector|addeventlistener|json\.(?:stringify|parse)|(?:^|[;{}])\s*(?:const|let|var)\s|function\s*\(|=>|respondo(?:'s)? own visitor analytics)/i.test(v);
+  };
+  const profileValue = (title) => {
+    const value = businessProfile[title] || '';
+    return esc(obviouslyCorruptProfileValue(value) ? '' : value);
+  };
   const unanswered = data.unanswered || [];
   const recentConversations = data.recentConversations || [];
   const leads = data.leads || [];
