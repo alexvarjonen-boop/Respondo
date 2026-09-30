@@ -2839,6 +2839,10 @@ async function dashboard() {
               <input name="website" value="${profileValue('Verkkosivu')}" placeholder="https://yritys.fi">
               <small class="field-hint">Botti toimii vain tällä verkkosivulla.</small>
               <button type="button" class="inline-import-btn" id="importWebsite">Hae tiedot sivultani</button>
+              <div id="websiteImportProgress" style="display:none;margin-top:10px">
+                <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:6px"><span id="websiteImportProgressLabel">${appText('Valmistellaan hakua…','Förbereder sökning…','Preparing scan…')}</span><b id="websiteImportProgressPercent">0%</b></div>
+                <div style="height:9px;border-radius:999px;background:rgba(127,127,127,.18);overflow:hidden"><div id="websiteImportProgressBar" style="height:100%;width:0%;background:currentColor;border-radius:999px;transition:width .45s ease"></div></div>
+              </div>
               <small class="field-hint">Respondo etsii sivultasi palvelut ja yhteystiedot valmiiksi. Sinä tarkistat ne ennen tallennusta.</small>
             </div>
             <div class="field">
@@ -3892,11 +3896,30 @@ async function route() {
       button.disabled = true;
       button.textContent = appText('Luetaan sivua…','Läser webbplatsen…','Reading website…');
       $('#businessProfileMsg').innerHTML = '';
+      const progress=document.getElementById('websiteImportProgress');
+      const progressBar=document.getElementById('websiteImportProgressBar');
+      const progressPercent=document.getElementById('websiteImportProgressPercent');
+      const progressLabel=document.getElementById('websiteImportProgressLabel');
+      if(progress) progress.style.display='block';
+      let progressValue=2;
+      const setProgress=(value,label)=>{
+        progressValue=Math.max(progressValue,Math.min(100,Math.round(value)));
+        if(progressBar) progressBar.style.width=progressValue+'%';
+        if(progressPercent) progressPercent.textContent=progressValue+'%';
+        if(progressLabel&&label) progressLabel.textContent=label;
+      };
+      setProgress(2,appText('Etsitään sivuja…','Söker sidor…','Finding pages…'));
+      const progressTimer=setInterval(()=>{
+        const step=progressValue<35?3:progressValue<70?2:1;
+        setProgress(Math.min(94,progressValue+step),appText('Käydään verkkosivua läpi…','Skannar webbplatsen…','Scanning website…'));
+      },900);
       try {
         const result = await api('/api/app/import-website', {
           method: 'POST',
           body: JSON.stringify({ website }),
         });
+        clearInterval(progressTimer);
+        setProgress(100,appText('Valmis','Klart','Complete'));
         const p = result.profile || {};
         // Never let heuristic website extraction overwrite business profile fields.
         // Imported content is reviewed below before it becomes bot knowledge.
@@ -3950,6 +3973,8 @@ async function route() {
         button.textContent = appText('Tiedot haettu ✓','Uppgifter hämtade ✓','Details imported ✓');
         setTimeout(() => { button.textContent = original; button.disabled = false; }, 1800);
       } catch (err) {
+        clearInterval(progressTimer);
+        if(progressLabel) progressLabel.textContent=appText('Haku keskeytyi','Sökningen avbröts','Scan stopped');
         button.disabled = false;
         button.textContent = original;
         $('#businessProfileMsg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
