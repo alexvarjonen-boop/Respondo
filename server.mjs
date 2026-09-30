@@ -655,6 +655,48 @@ function extractSameSiteLinks(html, baseUrl) {
     .map((x) => x.url);
 }
 
+async function fetchPublicText(value, acceptedTypes = []) {
+  let url = await assertPublicHttpUrl(value);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch(url, { redirect:'follow', signal:controller.signal, headers:{'User-Agent':'RESPONDO-AI-Website-Importer/1.1'} });
+    if (!response.ok) return '';
+    const type = String(response.headers.get('content-type') || '').toLowerCase();
+    if (acceptedTypes.length && !acceptedTypes.some((x) => type.includes(x))) return '';
+    const text = await response.text();
+    return text.slice(0, 2_000_000);
+  } catch { return ''; } finally { clearTimeout(timer); }
+}
+
+async function discoverSitemapUrls(baseUrl, limit = 120) {
+  const base = new URL(baseUrl);
+  const candidates = [new URL('/sitemap.xml',base).toString(), new URL('/sitemap_index.xml',base).toString()];
+  const robots = await fetchPublicText(new URL('/robots.txt',base).toString(), ['text/plain']);
+  for (const match of robots.matchAll(/^\s*Sitemap:\s*(\S+)/gim)) candidates.push(match[1]);
+  const found = new Set();
+  const sitemapQueue = [...new Set(candidates)].slice(0,8);
+  while (sitemapQueue.length && found.size < limit) {
+    const mapUrl = sitemapQueue.shift();
+    const xml = await fetchPublicText(mapUrl,['xml','text/plain']);
+    if (!xml) continue;
+    for (const m of xml.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)) {
+      const raw = String(m[1]||'').replace(/&amp;/g,'&').trim();
+      try {
+        const u = new URL(raw,base);
+        if (u.hostname.toLowerCase() !== base.hostname.toLowerCase()) continue;
+        if (/\.xml(?:$|\?)/i.test(u.pathname)) {
+          if (sitemapQueue.length < 20) sitemapQueue.push(u.toString());
+          continue;
+        }
+        if (!/\.(pdf|jpg|jpeg|png|gif|svg|webp|zip|docx?|xlsx?)$/i.test(u.pathname)) found.add(u.toString());
+      } catch {}
+      if (found.size >= limit) break;
+    }
+  }
+  return [...found];
+}
+
 async function fetchWebsiteBundle(value, maxPages = 24) {
   const first = await fetchPublicHtml(value);
   const base = new URL(first.finalUrl);
@@ -691,6 +733,24 @@ async function fetchWebsiteBundle(value, maxPages = 24) {
   queued.add(first.finalUrl);
   pages.push({ url:first.finalUrl, key:first.finalUrl.replace(/\/$/, ''), html:first.html });
   enqueue(first.html, first.finalUrl);
+
+  // Sitemaps expose pages that client-rendered navigation may not reveal in raw HTML.
+  const sitemapUrls = await discoverSitemapUrls(first.finalUrl, 120);
+  for (const link of sitemapUrls) {
+    let u;
+    try { u = new URL(link); } catch { continue; }
+    const key = u.origin + u.pathname.replace(/\/$/, '') + u.search;
+    if (queued.has(key) || pages.some((x) => x.key === key)) continue;
+    queued.add(key);
+    const p = normalizeSearchText(u.pathname + ' ' + u.search);
+    let score = 4;
+    if (/faq|ukk|kysym|help|ohje|support/.test(p)) score += 18;
+    if (/toimit|delivery|shipping|nouto|pickup|palaut|return|refund|vaihto/.test(p)) score += 16;
+    if (/myymala|myymälä|store|shop|location/.test(p)) score += 15;
+    if (/hinta|price|pricing|palvelu|service|yhteys|contact/.test(p)) score += 12;
+    queue.push({url:u.toString(),score});
+  }
+  queue.sort((a,b)=>b.score-a.score);
 
   while (queue.length && pages.length < maxPages) {
     const next = queue.shift();
@@ -730,7 +790,7 @@ function websiteKnowledgeCandidates(bundle) {
   const candidates = [];
   const seen = new Set();
   const categoryFor = (url, text) => {
-    const value = normalizeSearchText(url + ' ' + text.slice(0,500));
+    const value = normalizeSearchText(url + ' ' + text.slice(0,800));
     if (/toimit|delivery|shipping|nouto|pickup/.test(value)) return 'Toimitus ja nouto';
     if (/palaut|return|refund|vaihto/.test(value)) return 'Palautukset';
     if (/myymala|myymälä|store|location/.test(value)) return 'Myymälät';
@@ -740,27 +800,30 @@ function websiteKnowledgeCandidates(bundle) {
     if (/palvelu|service/.test(value)) return 'Palvelut';
     return 'Verkkosivulta tuotu';
   };
+  const junk = /(cookie|evästeaset|privacy policy|tietosuojaseloste|copyright|kaikki oikeudet pidätetään|hyväksy eväste)/i;
   for (const doc of docs) {
-    const lines = String(doc.text || '').split('\n').map((x) => x.replace(/\s+/g,' ').trim()).filter(Boolean);
     const category = categoryFor(doc.url, doc.text);
-    for (let i=0;i<lines.length;i++) {
-      const line = lines[i];
-      if (line.length < 25 || line.length > 650) continue;
-      if (/(cookie|eväste|privacy|tietosuoja|copyright|kaikki oikeudet pidätetään)/i.test(line)) continue;
-      const context = [line, lines[i+1] || ''].join(' ').trim().slice(0,1100);
-      if (context.length < 35) continue;
-      const key = normalizeSearchText(context).slice(0,220);
-      if (!key || seen.has(key)) continue;
+    let lines = String(doc.text || '').split('\n').map((x)=>x.replace(/\s+/g,' ').trim()).filter((x)=>x.length>=8&&!junk.test(x));
+    // Many modern sites render meaningful copy as short separate DOM nodes. Combine those
+    // nodes into answer-sized chunks instead of discarding them one by one.
+    const chunks=[];
+    let buf='';
+    for(const line of lines){
+      if(buf && (buf.length + line.length + 1 > 850)){ chunks.push(buf); buf=''; }
+      buf = (buf ? buf + ' ' : '') + line;
+      if(buf.length>=180){ chunks.push(buf); buf=''; }
+    }
+    if(buf.length>=35) chunks.push(buf);
+    for(const contextRaw of chunks){
+      const context=contextRaw.trim().slice(0,1100);
+      if(context.length<35) continue;
+      const key=normalizeSearchText(context).slice(0,260);
+      if(!key||seen.has(key)) continue;
       seen.add(key);
-      const title = line.length <= 120 ? line : line.slice(0,117) + '…';
-      candidates.push({
-        category,
-        title,
-        answer:context,
-        keywords:[...new Set(searchTokens(title + ' ' + context).slice(0,14))],
-        sourceUrl:doc.url,
-      });
-      if (candidates.length >= 160) return candidates;
+      const sentence=(context.match(/^.{20,120}?(?:[.!?](?:\s|$)|$)/)||[])[0] || context.slice(0,120);
+      const title=sentence.replace(/[.!?]\s*$/,'').trim().slice(0,120) || category;
+      candidates.push({category,title,answer:context,keywords:[...new Set(searchTokens(title+' '+context).slice(0,14))],sourceUrl:doc.url});
+      if(candidates.length>=160) return candidates;
     }
   }
   return candidates;
