@@ -3890,9 +3890,10 @@ async function route() {
           body: JSON.stringify({ website }),
         });
         const p = result.profile || {};
-        ['pricing','hours','phone','email','services','serviceArea','address','website','quoteRequestUrl','bookingUrl','notes'].forEach((name) => {
-          if (p[name] && formEl?.elements[name]) formEl.elements[name].value = p[name];
-        });
+        // Never let heuristic website extraction overwrite business profile fields.
+        // Imported content is reviewed below before it becomes bot knowledge.
+        // Only keep the exact website URL the user explicitly requested to import.
+        if (formEl?.elements.website) formEl.elements.website.value = website;
         const candidates = Array.isArray(result.candidates) ? result.candidates : [];
         const review = document.getElementById('websiteImportReview');
         if (review) {
@@ -3926,7 +3927,7 @@ async function route() {
             }
           });
         }
-        $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText('Tiedot haettu. Tarkista perustiedot sekä alla olevat löydöt.','Uppgifterna har hämtats. Kontrollera grunduppgifterna och fynden nedan.','Details imported. Review the basic information and findings below.') + '</div>';
+        $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText('Tiedot haettu. Tarkista alla olevat löydöt ennen hyväksymistä. Perustietokenttiä ei muutettu automaattisesti.','Uppgifterna har hämtats. Granska fynden nedan före godkännande. Grundfälten ändrades inte automatiskt.','Details imported. Review the findings below before approval. Profile fields were not changed automatically.') + '</div>';
         button.textContent = appText('Tiedot haettu ✓','Uppgifter hämtade ✓','Details imported ✓');
         setTimeout(() => { button.textContent = original; button.disabled = false; }, 1800);
       } catch (err) {
