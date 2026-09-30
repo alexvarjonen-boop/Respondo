@@ -697,6 +697,50 @@ async function discoverSitemapUrls(baseUrl, limit = 120) {
   return [...found];
 }
 
+function extractSameSiteScriptUrls(html, baseUrl) {
+  const out=[]; const seen=new Set(); let base;
+  try { base=new URL(baseUrl); } catch { return out; }
+  for(const m of String(html||'').matchAll(/<script[^>]+src\s*=\s*["']([^"']+)["'][^>]*>/gi)){
+    try{
+      const u=new URL(String(m[1]||'').replace(/&amp;/gi,'&'),base);
+      if(u.hostname.toLowerCase()!==base.hostname.toLowerCase()) continue;
+      if(!/\.m?js(?:$|\?)/i.test(u.pathname+u.search)) continue;
+      const key=u.toString(); if(seen.has(key)) continue; seen.add(key); out.push(key);
+    }catch{}
+  }
+  return out.slice(0,12);
+}
+
+function javascriptToReadableText(source) {
+  const values=[]; const seen=new Set();
+  // Extract human-facing string literals without executing third-party JavaScript.
+  const re=/(["'`])((?:\\.|(?!\1)[\s\S]){3,500}?)\1/g;
+  let m;
+  while((m=re.exec(String(source||''))) && values.length<2500){
+    let value=String(m[2]||'')
+      .replace(/\\n/g,' ').replace(/\\t/g,' ').replace(/\\(["'`\\])/g,'$1')
+      .replace(/\$\{[^}]{0,180}\}/g,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+    if(value.length<8 || value.length>420) continue;
+    if(/^(?:https?:|\/|#|\.|[a-z0-9_-]+\.(?:js|css|png|svg|webp))/.test(value.toLowerCase())) continue;
+    if(!/[A-Za-zÀ-ž]/.test(value)) continue;
+    // Keep strings likely to be customer-facing copy, especially prices, trial terms and sentences.
+    if(!(/[€$£]|\b\d+[,.]?\d*\s*(?:€|eur|%|päiv|day|dag|kk|month|mån|vuosi|year|år)\b/i.test(value) || /[.!?]/.test(value) || value.split(/\s+/).length>=3)) continue;
+    const key=normalizeSearchText(value); if(!key||seen.has(key)) continue; seen.add(key); values.push(value);
+  }
+  return values.join('\n');
+}
+
+async function fetchClientRenderedSourceText(html, pageUrl) {
+  const docs=[];
+  for(const scriptUrl of extractSameSiteScriptUrls(html,pageUrl)){
+    const js=await fetchPublicText(scriptUrl,['javascript','text/plain']);
+    if(!js) continue;
+    const text=javascriptToReadableText(js).slice(0,45000);
+    if(text.length>=30) docs.push({url:scriptUrl,text});
+  }
+  return docs;
+}
+
 async function fetchWebsiteBundle(value, maxPages = 24) {
   const first = await fetchPublicHtml(value);
   const base = new URL(first.finalUrl);
@@ -770,6 +814,12 @@ async function fetchWebsiteBundle(value, maxPages = 24) {
     url:page.url,
     text:htmlToReadableText(page.html).slice(0, 14000),
   })).filter((page) => page.text.length >= 40);
+
+  // SPA/client-rendered sites often keep their visible copy in same-origin JS bundles.
+  // Read strings from those bundles without executing them so prices, trial terms and
+  // other customer-facing facts are available to the importer.
+  const scriptDocuments = await fetchClientRenderedSourceText(first.html, first.finalUrl);
+  for (const doc of scriptDocuments) pageDocuments.push(doc);
 
   const text = pageDocuments
     .map((page) => 'SIVU: ' + page.url + '\n' + page.text)
