@@ -1027,7 +1027,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const aliases = [
     { re: /(hinta|maksaa|maksu|hinnoittelu|price|cost|pricing|kostar|pris|kostnad)/i, add: ' hinta maksaa maksu hinnoittelu price cost pricing pris kostar kostnad' },
     { re: /(auki|aukiolo|avaa|sulkee|opening|open|hours|öppet|oppet|öppettider|oppettider)/i, add: ' auki aukiolo aukioloajat opening hours open öppet öppettider' },
-    { re: /(palvelu|teette|tarjoatte|service|services|offer|tjänst|tjanst|tjänster|tjanster|erbjuder)/i, add: ' palvelu palvelut teette tarjoatte service services tjänst tjänster erbjuder' },
+    { re: /(palvelu|teette|tarjoatte|tuote|tuotte|valikoima|myytte|saa|service|services|offer|product|products|selection|sell|tjänst|tjanst|tjänster|tjanster|erbjuder|produkt|sortiment)/i, add: ' palvelu palvelut teette tarjoatte tuote tuotteet valikoima myytte service services product products selection sell tjänst tjänster erbjuder produkt sortiment' },
     { re: /(toimialue|alue|paikkakunta|where do you serve|service area|område|omrade|verksamhetsområde)/i, add: ' toimialue alue paikkakunta service area område verksamhetsområde' },
     { re: /(osoite|sijainti|address|location|adress|var finns)/i, add: ' osoite sijainti address location adress' },
     { re: /(puhelin|numero|soita|phone|call|telephone|telefon|ringa)/i, add: ' puhelin numero soittaa phone call telephone telefon ringa' },
@@ -2779,8 +2779,8 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
       );
       if (duplicate.rowCount) {
         await client.query(
-          'UPDATE knowledge SET answer=$1,keywords=$2,approved=true,verified_at=NOW(),updated_at=NOW() WHERE id=$3',
-          [answer, keywords, duplicate.rows[0].id],
+          'UPDATE knowledge SET category=$1,answer=$2,keywords=$3,source_type=\'website\',source_url=$4,approved=true,verified_at=NOW(),updated_at=NOW() WHERE id=$5',
+          [category, answer, keywords, sourceUrl, duplicate.rows[0].id],
         );
       } else {
         await client.query(
@@ -3855,7 +3855,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
         const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[session.sub]);
         if (tr.rowCount) {
           const kr = await q(
-            'SELECT id,category,title,answer,keywords FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC LIMIT 120',
+            'SELECT id,category,title,answer,keywords,source_type,source_url FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC LIMIT 120',
             [tr.rows[0].id],
           );
           rows = [...kr.rows, ...rows].slice(0, 160);
