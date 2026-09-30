@@ -370,60 +370,57 @@ function searchTokens(value) {
     .filter((x) => x.length > 2 && !SEARCH_STOPWORDS.has(x));
 }
 
+function knowledgeTopic(value) {
+  const t=normalizeSearchText(value);
+  if(/palvelu|service|services|tjanst|tjänst|tuote|product|valikoima|selection/.test(t)) return 'services';
+  if(/hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
+  if(/auki|opening|hours|oppet|öppet|oppettid/.test(t)) return 'hours';
+  if(/toimit|shipping|delivery|nouto|pickup|leverans/.test(t)) return 'delivery';
+  if(/palaut|return|refund|vaihto|retur/.test(t)) return 'returns';
+  if(/myymala|myymälä|store|location|butik/.test(t)) return 'stores';
+  if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(t)) return 'contact';
+  if(/takuu|warranty|garanti/.test(t)) return 'warranty';
+  return '';
+}
+function queryTopic(query) {
+  const q=normalizeSearchText(query);
+  if(/mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you (?:do|offer|sell)|services|vad gor ni|vad gör ni|vad erbjuder|tjanster|tjänster/.test(q)) return 'services';
+  if(/hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar/.test(q)) return 'pricing';
+  if(/auki|aukiolo|opening|hours|open|oppet|öppet|oppettid/.test(q)) return 'hours';
+  if(/toimit|shipping|delivery|nouto|pickup|leverans/.test(q)) return 'delivery';
+  if(/palaut|return|refund|vaihto|retur/.test(q)) return 'returns';
+  if(/myymala|myymälä|myymalat|myymälät|store|stores|butik/.test(q)) return 'stores';
+  if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(q)) return 'contact';
+  if(/takuu|warranty|garanti/.test(q)) return 'warranty';
+  return '';
+}
 function scoreKnowledgeRow(row, query) {
-  const q = normalizeSearchText(query);
-  const qTokens = searchTokens(q);
-  const title = normalizeSearchText(row.title);
-  const answer = normalizeSearchText(row.answer);
-  const keywordText = normalizeSearchText((row.keywords || []).join(' '));
-  let score = 0;
-
-  if (title && q.includes(title)) score += 14;
-  for (const rawKeyword of row.keywords || []) {
-    const kw = normalizeSearchText(rawKeyword);
-    if (kw && (q.includes(kw) || kw.includes(q))) score += 9;
+  const q=normalizeSearchText(query), qTokens=searchTokens(q);
+  const title=normalizeSearchText(row.title), answer=normalizeSearchText(row.answer);
+  const category=normalizeSearchText(row.category||'');
+  const keywordText=normalizeSearchText((row.keywords||[]).join(' '));
+  let score=0;
+  if(title && q.includes(title)) score+=14;
+  for(const rawKeyword of row.keywords||[]){
+    const kw=normalizeSearchText(rawKeyword);
+    if(kw && (q.includes(kw)||kw.includes(q))) score+=9;
   }
-
-  const titleTokens = new Set(searchTokens(title));
-  const answerTokens = new Set(searchTokens(answer));
-  const keywordTokens = new Set(searchTokens(keywordText));
-  for (const token of qTokens) {
-    if (titleTokens.has(token)) score += 5;
-    if (keywordTokens.has(token)) score += 5;
-    if (answerTokens.has(token)) score += 1.2;
-
-    const stem = token.slice(0, Math.min(6, token.length));
-    if (stem.length >= 4) {
-      if ([...titleTokens].some((x) => x.startsWith(stem))) score += 2;
-      if ([...keywordTokens].some((x) => x.startsWith(stem))) score += 2;
+  const titleTokens=new Set(searchTokens(title)), answerTokens=new Set(searchTokens(answer)), keywordTokens=new Set(searchTokens(keywordText));
+  for(const token of qTokens){
+    if(titleTokens.has(token)) score+=5;
+    if(keywordTokens.has(token)) score+=5;
+    if(answerTokens.has(token)) score+=1.2;
+    const stem=token.slice(0,Math.min(6,token.length));
+    if(stem.length>=4){
+      if([...titleTokens].some(x=>x.startsWith(stem))) score+=2;
+      if([...keywordTokens].some(x=>x.startsWith(stem))) score+=2;
     }
   }
-
-  if (/palvelu|teette|tarjoatte|service|services|offer|tjänst|tjanst|erbjuder/.test(q)) {
-    if (/palvelut|palvelu|services|service/.test(title + ' ' + normalizeSearchText(row.category || ''))) score += 20;
-    if (/terms of service|käyttöeh|kayttoeh|privacy|tietosuoja/.test(answer)) score -= 40;
-  }
-
-  const topicHints = [
-    [['hinta','maksaa','hinnoittelu','tarjous','kustannus'], ['hinnat','hinnoittelu','tarjouspyyntölomake']],
-    [['auki','aukiolo','lauantai','sunnuntai','viikonloppu','kello'], ['aukioloajat']],
-    [['puhelin','numero','soittaa'], ['puhelinnumero']],
-    [['sahkoposti','sähköposti','email','meili'], ['sahkoposti','sähköposti']],
-    [['palvelu','teette','tarjoatte','onnistuuko'], ['palvelut']],
-    [['alue','toimialue','tuletteko','paikkakunta'], ['toimialue']],
-    [['osoite','sijainti'], ['osoite']],
-    [['tarjous','tarjouspyynto','tarjouspyyntö'], ['tarjouspyyntolomake','tarjouspyyntölomake']],
-    [['kayttoonotto','käyttöönotto','kayttoon','käyttöön','aloitus','aloittaa','aloitan','alkuun','asennus','asenna','setup','getting started','get started','installation','install','komma igang','komma igång','installation'], ['asennus','kayttoonotto','käyttöönotto','aloitus','ohje','ohjeet']],
-    [['kokeilu','kokeilla','testata','testi','trial','try','free trial','provperiod','prova'], ['kokeilu','trial','provperiod']],
-    [['tilaus','tilata','ostaa','subscribe','subscription','order','prenumeration','bestall','beställ','abonnemang'], ['tilaus','subscription','prenumeration']],
-    [['ajanvaraus','varata','varaa','booking','appointment','boka','bokning'], ['ajanvaraus','ajanvarauslinkki','booking']],
-    [['yhteys','yhteydenotto','contact','kontakt'], ['yhteys','yhteystiedot','sahkoposti','sähköposti','puhelinnumero']],
-  ];
-  for (const [needles, titles] of topicHints) {
-    if (needles.some((x) => q.includes(normalizeSearchText(x))) && titles.some((x) => title.includes(normalizeSearchText(x)))) {
-      score += 12;
-    }
-  }
+  const wanted=queryTopic(q);
+  const rowTopic=knowledgeTopic(title+' '+category+' '+keywordText+' '+String(row.source_url||''));
+  if(wanted && rowTopic===wanted) score+=30;
+  else if(wanted && rowTopic && rowTopic!==wanted) score-=8;
+  if(/terms of service|privacy policy|kayttoeh|käyttöeh|tietosuoja|cookie policy/.test(answer)) score-=60;
   return score;
 }
 
@@ -466,7 +463,7 @@ function inferIntent(message) {
   if (/auki|lauantai|sunnuntai|viikonloppu|kello|opening|open|hours|öppet|oppet|öppettider|oppettider/.test(q)) return 'Aukioloajat';
   if (/puhelin|sahkoposti|sähköposti|yhteys|soittaa|phone|email|contact|telefon|e-post|kontakt|ringa/.test(q)) return 'Yhteystiedot';
   if (/missä|missa|osoite|toimialue|alue|where|address|location|adress|område|omrade/.test(q)) return 'Sijainti';
-  if (/palvelu|teette|tarjoatte|onnistuuko|service|services|offer|tjänst|tjanst|tjänster|tjanster|erbjuder/.test(q)) return 'Palvelut';
+  if (/palvelu|teette|tarjoatte|onnistuuko|tuote|valikoima|mitä teiltä saa|mita teilta saa|service|services|offer|product|selection|sell|tjänst|tjanst|tjänster|tjanster|erbjuder/.test(q)) return 'Palvelut';
   return 'Asiakaskysymys';
 }
 
@@ -859,7 +856,7 @@ function websiteKnowledgeCandidates(bundle) {
     if (/takuu|warranty/.test(value)) return 'Takuu';
     if (/maksu|payment/.test(value)) return 'Maksaminen';
     if (/faq|ukk|kysym|help|ohje|support/.test(value)) return 'Ohjeet';
-    if (/palvelu|service/.test(value)) return 'Palvelut';
+    if (/palvelu|service|tuote|product|valikoima|catalog|category|osasto/.test(value)) return 'Palvelut';
     return 'Verkkosivulta tuotu';
   };
   const junk = /(cookie|evästeaset|privacy policy|tietosuojaseloste|terms of service|käyttöehdot|kayttoehdot|copyright|kaikki oikeudet pidätetään|hyväksy eväste|all rights reserved)/i;
