@@ -2850,7 +2850,8 @@ app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
   res.json({ok:true,jobId});
   (async()=>{
     try{
-      const bundle=await fetchWebsiteBundle(website,10000,15*60*1000,(p)=>{
+      // Keep raw HTML memory bounded. 10k URLs may be discovered, but process a safe high-value batch per job.
+      const bundle=await fetchWebsiteBundle(website,220,4*60*1000,(p)=>{
         job.scanned=p.scanned; job.total=Math.max(p.total,p.scanned,1);
         job.percent=Math.min(99,Math.round((job.scanned/job.total)*100)); job.updatedAt=Date.now();
       });
@@ -2873,7 +2874,7 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
   try {
     const website = normalizeWebUrl(req.body.website, false);
     if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
-    const bundle = await fetchWebsiteBundle(website, 350, 65000);
+    const bundle = await fetchWebsiteBundle(website, 220, 65000);
     if (String(bundle.text || '').length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
     const candidates = websiteKnowledgeCandidates(bundle);
     const detectedProfile = extractFreeWebsiteProfile(bundle);
