@@ -827,8 +827,8 @@ async function fetchWebsiteBundle(value, maxPages = 24) {
   // SPA/client-rendered sites often keep their visible copy in same-origin JS bundles.
   // Read strings from those bundles without executing them so prices, trial terms and
   // other customer-facing facts are available to the importer.
-  const scriptDocuments = await fetchClientRenderedSourceText(first.html, first.finalUrl);
-  for (const doc of scriptDocuments) pageDocuments.push(doc);
+  // Do not ingest JavaScript bundle literals as business facts. They contain UI copy,
+  // translations and source-code fragments and are not trustworthy customer knowledge.
 
   const text = pageDocuments
     .map((page) => 'SIVU: ' + page.url + '\n' + page.text)
@@ -859,7 +859,7 @@ function websiteKnowledgeCandidates(bundle) {
     if (/palvelu|service|tuote|product|valikoima|catalog|category|osasto/.test(value)) return 'Palvelut';
     return 'Verkkosivulta tuotu';
   };
-  const junk = /(cookie|evästeaset|privacy policy|tietosuojaseloste|terms of service|käyttöehdot|kayttoehdot|copyright|kaikki oikeudet pidätetään|hyväksy eväste|all rights reserved)/i;
+  const junk = /(cookie|evästeaset|privacy policy|tietosuojaseloste|terms of service|käyttöehdot|kayttoehdot|copyright|kaikki oikeudet pidätetään|hyväksy eväste|all rights reserved|localstorage|sessionstorage|const\s|let\s|var\s|function\s|=>|\.includes\(|\.getitem\(|\.setitem\(|document\.|window\.|queryselector|addeventlistener|json\.stringify|json\.parse|supported\.includes)/i;
   for (const doc of docs) {
     const sourceKey = normalizeSearchText(String(doc.url||''));
     if (/terms|privacy|tietosuoja|kayttoeh|käyttöeh|cookie|evaste|eväste|legal/.test(sourceKey)) continue;
@@ -2723,6 +2723,16 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
     const bundle = await fetchWebsiteBundle(website, 24);
     if (String(bundle.text || '').length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
     const candidates = websiteKnowledgeCandidates(bundle);
+    // One-time self-healing: remove legacy website imports that are clearly code/legal/UI debris.
+    try {
+      const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+      if (tr.rowCount) {
+        await q(`DELETE FROM knowledge
+          WHERE tenant_id=$1 AND source_type='website'
+            AND (answer ~* '(localstorage|sessionstorage|queryselector|addeventlistener|json\\.(stringify|parse)|terms of service|privacy policy|const[[:space:]]|function[[:space:]])'
+              OR title ~* '(terms of service|privacy policy|localstorage|queryselector)')`,[tr.rows[0].id]);
+      }
+    } catch(e) { console.warn('Legacy import cleanup failed',e?.message||e); }
     return res.json({
       ok:true,
       profile:{ website },
@@ -2755,7 +2765,7 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
       const sourceUrl = normalizeWebUrl(item?.sourceUrl, false);
       if (!title || !answer || !sourceUrl) continue;
       const safetyText = normalizeSearchText(title+' '+category+' '+answer.slice(0,900)+' '+sourceUrl);
-      if (/terms of service|privacy policy|tietosuoja|kayttoeh|käyttöeh|cookie policy|evaste|eväste|legal notice|all rights reserved/.test(safetyText)) continue;
+      if (/terms of service|privacy policy|tietosuoja|kayttoeh|käyttöeh|cookie policy|evaste|eväste|legal notice|all rights reserved|localstorage|sessionstorage|const |let |var |function |\.includes\(|\.getitem\(|\.setitem\(|document\.|window\.|queryselector|addeventlistener|json\.stringify|json\.parse/.test(safetyText)) continue;
       if (answer.length < 20 || title.length < 3) continue;
       const sourceHost = normalizeHost(sourceUrl);
       const tenantWebsite = (await client.query('SELECT website FROM tenants WHERE id=$1',[tenantId])).rows[0]?.website || '';
