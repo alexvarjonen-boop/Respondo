@@ -862,7 +862,7 @@ function websiteKnowledgeCandidates(bundle) {
     if (/palvelu|service/.test(value)) return 'Palvelut';
     return 'Verkkosivulta tuotu';
   };
-  const junk = /(cookie|evästeaset|privacy policy|tietosuojaseloste|copyright|kaikki oikeudet pidätetään|hyväksy eväste)/i;
+  const junk = /(cookie|evästeaset|privacy policy|tietosuojaseloste|terms of service|käyttöehdot|kayttoehdot|copyright|kaikki oikeudet pidätetään|hyväksy eväste|all rights reserved)/i;
   for (const doc of docs) {
     const sourceKey = normalizeSearchText(String(doc.url||''));
     if (/terms|privacy|tietosuoja|kayttoeh|käyttöeh|cookie|evaste|eväste|legal/.test(sourceKey)) continue;
@@ -973,21 +973,28 @@ async function forceAnswerLanguage(answer, lang) {
 }
 
 function conciseKnowledgeAnswer(row, query) {
-  const raw=String(row?.answer||'').replace(/\s+/g,' ').trim();
+  let raw=String(row?.answer||'').replace(/\s+/g,' ').trim();
   if(!raw) return '';
-  if(raw.length<=320) return raw;
+  // Remove common navigation/heading debris left by website extraction.
+  raw=raw.replace(/^(?:palvelut?|services?|tjänster?)\s+(?:palvelut?|services?|tjänster?)\s+/i,'')
+    .replace(/^(?:mitä teemme|what we do|vad vi gör)\s+/i,'')
+    .replace(/\b(?:katso palvelut|view services|lue lisää|read more)\b\.?/gi,'')
+    .replace(/\s+/g,' ').trim();
   const qTokens=new Set(searchTokens(query));
-  const sentences=raw.match(/[^.!?]+[.!?]?/g)?.map(x=>x.trim()).filter(x=>x.length>=12) || [raw];
+  const sentences=(raw.match(/[^.!?]+[.!?]?/g)||[raw])
+    .map(x=>x.trim()).filter(x=>x.length>=12)
+    .filter(x=>!/^(?:terms of service|privacy policy|käyttöehdot|tietosuojaseloste|cookie)/i.test(x));
   const ranked=sentences.map((sentence,index)=>{
     const tokens=searchTokens(sentence); let score=0;
-    for(const token of tokens) if(qTokens.has(token)) score+=4;
+    for(const token of tokens) if(qTokens.has(token)) score+=5;
     if(/[€$£]|\b\d+[,.]?\d*\s*(?:€|eur|%|päiv|day|dag|kk|month|mån|vuosi|year|år)\b/i.test(sentence)) score+=1;
     return {sentence,index,score};
   }).sort((a,b)=>b.score-a.score||a.index-b.index);
-  const chosen=ranked.slice(0,3).sort((a,b)=>a.index-b.index).map(x=>x.sentence);
-  let answer=chosen.join(' ').replace(/\b([A-Za-zÀ-ž]{3,})\s+\1\b/gi,'$1').trim();
-  if(answer.length>420) answer=answer.slice(0,417).replace(/\s+\S*$/,'')+'…';
-  return answer || raw.slice(0,420);
+  const best=ranked.filter(x=>x.score>0).slice(0,2);
+  const chosen=(best.length?best:ranked.slice(0,2)).sort((a,b)=>a.index-b.index).map(x=>x.sentence);
+  let answer=chosen.join(' ').replace(/\b([A-Za-zÀ-ž]{3,})\s+\1\b/gi,'$1').replace(/\s+/g,' ').trim();
+  if(answer.length>340) answer=answer.slice(0,337).replace(/\s+\S*$/,'')+'…';
+  return answer;
 }
 
 async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {} }) {
@@ -1042,10 +1049,16 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   }
 
   const top = selected[0];
+  // A weak lexical coincidence must never become a confident customer answer.
+  // Generic questions need a stronger match than explicit titles/keywords.
+  const minimumScore = intent === 'Asiakaskysymys' ? 5 : 8;
+  if (Number(top._score || 0) < minimumScore) {
+    return { answer:'', handoff:true, confidence:0.3, intent, sourceIds:[], selected };
+  }
   return {
     answer: conciseKnowledgeAnswer(top, cleanMessage),
     handoff: false,
-    confidence: Math.min(0.92, 0.68 + Number(top._score || 0) * 0.02),
+    confidence: Math.min(0.94, 0.62 + Number(top._score || 0) * 0.025),
     intent,
     sourceIds: top.id ? [top.id] : [],
     selected,
