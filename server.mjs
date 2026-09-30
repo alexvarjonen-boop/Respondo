@@ -434,8 +434,8 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
     .filter((x) => normalizeSearchText(x.title) !== 'vastaustyyli')
     .filter((x) => {
       if (legalQuery) return true;
-      const hay = normalizeSearchText(String(x.title||'')+' '+String(x.category||'')+' '+String(x.source_url||x.sourceUrl||''));
-      return !/terms|privacy|tietosuoja|kayttoeh|käyttöeh|cookie|evaste|eväste|legal/.test(hay);
+      const hay = normalizeSearchText(String(x.title||'')+' '+String(x.category||'')+' '+String(x.source_url||x.sourceUrl||'')+' '+String(x.answer||'').slice(0,700));
+      return !/terms of service|privacy policy|tietosuoja|kayttoeh|käyttöeh|cookie policy|evaste|eväste|legal notice/.test(hay);
     })
     .map((x) => ({ ...x, _score: scoreKnowledgeRow(x, query) }))
     .filter((x) => x._score >= 2)
@@ -968,7 +968,9 @@ async function translateTextFree(text, lang, sourceLang = 'auto') {
 async function forceAnswerLanguage(answer, lang) {
   const target = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const text = String(answer || '').trim();
-  if (!text || target === 'fi') return text;
+  if (!text) return text;
+  // Imported website knowledge can itself be FI/SV/EN. Always normalize the
+  // final customer-facing answer to the requested language, including Finnish.
   return translateTextFree(text, target, 'auto');
 }
 
@@ -1055,8 +1057,11 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   if (Number(top._score || 0) < minimumScore) {
     return { answer:'', handoff:true, confidence:0.3, intent, sourceIds:[], selected };
   }
+  let finalAnswer = conciseKnowledgeAnswer(top, cleanMessage);
+  const localizedAnswer = await forceAnswerLanguage(finalAnswer, responseLang);
+  if (localizedAnswer) finalAnswer = localizedAnswer;
   return {
-    answer: conciseKnowledgeAnswer(top, cleanMessage),
+    answer: finalAnswer,
     handoff: false,
     confidence: Math.min(0.94, 0.62 + Number(top._score || 0) * 0.025),
     intent,
