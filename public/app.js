@@ -3900,12 +3900,12 @@ async function route() {
           review.innerHTML = candidates.length ? `
             <div class="website-import-review-head">
               <div><b>${appText('Respondo löysi ' + candidates.length + ' tietoa ' + Number(result.pagesScanned || 0) + ' sivulta.','Respondo hittade ' + candidates.length + ' uppgifter på ' + Number(result.pagesScanned || 0) + ' sidor.','Respondo found ' + candidates.length + ' items across ' + Number(result.pagesScanned || 0) + ' pages.')}</b>
-              <small>${appText('Poista valinta vain tiedoista, joita et halua botin käyttävän.','Avmarkera bara information som botten inte ska använda.','Uncheck only information you do not want the bot to use.')}</small></div>
+              <small>${appText('Valitse vain tiedot, jotka olet tarkistanut oikeiksi. Mitään ei lisätä bottiin ilman hyväksyntääsi.','Välj endast uppgifter som du har kontrollerat är korrekta. Inget läggs till i botten utan ditt godkännande.','Select only information you have verified as correct. Nothing is added to the bot without your approval.')}</small></div>
               <button type="button" class="btn dashboard-action" id="approveWebsiteImport">${appText('Hyväksy valitut bottiin','Godkänn valda till botten','Approve selected for bot')} →</button>
             </div>
             <div class="website-import-candidates">
               ${candidates.map((item,i)=>`<label class="website-import-candidate">
-                <input type="checkbox" checked data-import-index="${i}">
+                <input type="checkbox" data-import-index="${i}">
                 <span><b>${esc(item.title)}</b><small>${esc(item.category || '')} · ${esc(item.sourceUrl || '')}</small><p>${esc(item.answer)}</p></span>
               </label>`).join('')}
             </div>` : '<div class="notice">' + appText('Perustiedot löytyivät, mutta erillisiä tietopohjaehdotuksia ei löytynyt.','Grunduppgifterna hittades men inga separata kunskapsförslag hittades.','Basic details were found, but no separate knowledge suggestions were found.') + '</div>';
