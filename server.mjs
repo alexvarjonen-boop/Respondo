@@ -655,34 +655,115 @@ function extractSameSiteLinks(html, baseUrl) {
     .map((x) => x.url);
 }
 
-async function fetchWebsiteBundle(value, maxPages = 4) {
+async function fetchWebsiteBundle(value, maxPages = 24) {
   const first = await fetchPublicHtml(value);
   const base = new URL(first.finalUrl);
-  const links = extractSameSiteLinks(first.html, first.finalUrl);
-  const pages = [{ url: first.finalUrl, html: first.html }];
+  const pages = [];
+  const queued = new Set();
+  const queue = [{ url:first.finalUrl, score:100 }];
 
-  for (const link of links) {
-    if (pages.length >= maxPages) break;
+  const enqueue = (html, pageUrl) => {
+    for (const link of extractSameSiteLinks(html, pageUrl)) {
+      let u;
+      try { u = new URL(link); } catch { continue; }
+      if (u.hostname.toLowerCase() !== base.hostname.toLowerCase()) continue;
+      const key = u.origin + u.pathname.replace(/\/$/, '') + u.search;
+      if (queued.has(key) || pages.some((x) => x.key === key)) continue;
+      queued.add(key);
+      const p = normalizeSearchText(u.pathname + ' ' + u.search);
+      let score = 0;
+      if (/faq|ukk|kysym|help|ohje|support/.test(p)) score += 18;
+      if (/toimit|delivery|shipping|nouto|pickup/.test(p)) score += 16;
+      if (/palaut|return|refund|vaihto/.test(p)) score += 16;
+      if (/myymala|myymälä|store|shop|location/.test(p)) score += 15;
+      if (/ajanvaraus|booking|appointment/.test(p)) score += 14;
+      if (/tarjous|quote|request/.test(p)) score += 13;
+      if (/hinta|price|pricing/.test(p)) score += 12;
+      if (/palvelu|service/.test(p)) score += 11;
+      if (/yhteys|contact/.test(p)) score += 10;
+      if (/takuu|warranty|maksu|payment|kanta|loyal/.test(p)) score += 9;
+      if (/meista|about/.test(p)) score += 5;
+      queue.push({ url:u.toString(), score });
+    }
+    queue.sort((a,b) => b.score - a.score);
+  };
+
+  queued.add(first.finalUrl);
+  pages.push({ url:first.finalUrl, key:first.finalUrl.replace(/\/$/, ''), html:first.html });
+  enqueue(first.html, first.finalUrl);
+
+  while (queue.length && pages.length < maxPages) {
+    const next = queue.shift();
+    if (!next || pages.some((x) => x.url === next.url)) continue;
     try {
-      const page = await fetchPublicHtml(link);
+      const page = await fetchPublicHtml(next.url);
       const resolved = new URL(page.finalUrl);
       if (resolved.hostname.toLowerCase() !== base.hostname.toLowerCase()) continue;
-      if (pages.some((x) => x.url === page.finalUrl)) continue;
-      pages.push({ url: page.finalUrl, html: page.html });
+      const key = resolved.origin + resolved.pathname.replace(/\/$/, '') + resolved.search;
+      if (pages.some((x) => x.key === key)) continue;
+      pages.push({ url:page.finalUrl, key, html:page.html });
+      enqueue(page.html, page.finalUrl);
     } catch {}
   }
 
-  const text = pages.map((page) => {
-    const readable = htmlToReadableText(page.html).slice(0, 11000);
-    return 'SIVU: ' + page.url + '\n' + readable;
-  }).join('\n\n---\n\n').slice(0, 36000);
+  const pageDocuments = pages.map((page) => ({
+    url:page.url,
+    text:htmlToReadableText(page.html).slice(0, 14000),
+  })).filter((page) => page.text.length >= 40);
+
+  const text = pageDocuments
+    .map((page) => 'SIVU: ' + page.url + '\n' + page.text)
+    .join('\n\n---\n\n')
+    .slice(0, 120000);
 
   return {
-    finalUrl: first.finalUrl,
+    finalUrl:first.finalUrl,
     text,
-    pages: pages.map((x) => x.url),
-    links: links.slice(0, 30),
+    pageDocuments,
+    pages:pageDocuments.map((x) => x.url),
+    links:[...new Set(queue.map((x) => x.url))].slice(0, 80),
   };
+}
+
+function websiteKnowledgeCandidates(bundle) {
+  const docs = Array.isArray(bundle?.pageDocuments) ? bundle.pageDocuments : [];
+  const candidates = [];
+  const seen = new Set();
+  const categoryFor = (url, text) => {
+    const value = normalizeSearchText(url + ' ' + text.slice(0,500));
+    if (/toimit|delivery|shipping|nouto|pickup/.test(value)) return 'Toimitus ja nouto';
+    if (/palaut|return|refund|vaihto/.test(value)) return 'Palautukset';
+    if (/myymala|myymälä|store|location/.test(value)) return 'Myymälät';
+    if (/takuu|warranty/.test(value)) return 'Takuu';
+    if (/maksu|payment/.test(value)) return 'Maksaminen';
+    if (/faq|ukk|kysym|help|ohje|support/.test(value)) return 'Ohjeet';
+    if (/palvelu|service/.test(value)) return 'Palvelut';
+    return 'Verkkosivulta tuotu';
+  };
+  for (const doc of docs) {
+    const lines = String(doc.text || '').split('\n').map((x) => x.replace(/\s+/g,' ').trim()).filter(Boolean);
+    const category = categoryFor(doc.url, doc.text);
+    for (let i=0;i<lines.length;i++) {
+      const line = lines[i];
+      if (line.length < 25 || line.length > 650) continue;
+      if (/(cookie|eväste|privacy|tietosuoja|copyright|kaikki oikeudet pidätetään)/i.test(line)) continue;
+      const context = [line, lines[i+1] || ''].join(' ').trim().slice(0,1100);
+      if (context.length < 35) continue;
+      const key = normalizeSearchText(context).slice(0,220);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const title = line.length <= 120 ? line : line.slice(0,117) + '…';
+      candidates.push({
+        category,
+        title,
+        answer:context,
+        keywords:[...new Set(searchTokens(title + ' ' + context).slice(0,14))],
+        sourceUrl:doc.url,
+      });
+      if (candidates.length >= 160) return candidates;
+    }
+  }
+  return candidates;
 }
 
 function buildProfileKnowledge(profile = {}) {
@@ -2479,13 +2560,73 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
   try {
     const website = normalizeWebUrl(req.body.website, false);
     if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
-    const bundle = await fetchWebsiteBundle(website, 8);
+    const bundle = await fetchWebsiteBundle(website, 24);
     if (String(bundle.text || '').length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
     const profile = extractFreeWebsiteProfile(bundle);
-    return res.json({ ok:true, profile, pagesScanned:bundle.pages.length, extraction:'local' });
+    const candidates = websiteKnowledgeCandidates(bundle);
+    return res.json({
+      ok:true,
+      profile,
+      pagesScanned:bundle.pages.length,
+      factsFound:candidates.length,
+      candidates:candidates.slice(0,120),
+      extraction:'local',
+    });
   } catch (e) {
     console.error('Website import failed', e);
     return res.status(400).json({ error: e.message || 'Verkkosivun tietojen tuonti epäonnistui.' });
+  }
+});
+
+app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const tenantResult = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    if (!tenantResult.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const tenantId = tenantResult.rows[0].id;
+    const items = Array.isArray(req.body.items) ? req.body.items.slice(0,120) : [];
+    if (!items.length) return res.status(400).json({ error:'Valitse vähintään yksi tieto.' });
+
+    await client.query('BEGIN');
+    let added = 0;
+    for (const item of items) {
+      const title = String(item?.title || '').trim().slice(0,180);
+      const answer = String(item?.answer || '').trim().slice(0,1600);
+      const category = String(item?.category || 'Verkkosivulta tuotu').trim().slice(0,80) || 'Verkkosivulta tuotu';
+      const sourceUrl = normalizeWebUrl(item?.sourceUrl, false);
+      if (!title || !answer || !sourceUrl) continue;
+      const sourceHost = normalizeHost(sourceUrl);
+      const tenantWebsite = (await client.query('SELECT website FROM tenants WHERE id=$1',[tenantId])).rows[0]?.website || '';
+      if (tenantWebsite && sourceHost !== normalizeHost(tenantWebsite)) continue;
+      const keywords = Array.isArray(item?.keywords)
+        ? item.keywords.map((x) => String(x).trim()).filter(Boolean).slice(0,14)
+        : searchTokens(title + ' ' + answer).slice(0,14);
+      const duplicate = await client.query(
+        "SELECT id FROM knowledge WHERE tenant_id=$1 AND source_type='website' AND source_url=$2 AND lower(title)=lower($3) LIMIT 1",
+        [tenantId, sourceUrl, title],
+      );
+      if (duplicate.rowCount) {
+        await client.query(
+          'UPDATE knowledge SET answer=$1,keywords=$2,approved=true,verified_at=NOW(),updated_at=NOW() WHERE id=$3',
+          [answer, keywords, duplicate.rows[0].id],
+        );
+      } else {
+        await client.query(
+          `INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords,source_type,source_url,approved,verified_at)
+           VALUES($1,$2,$3,$4,$5,$6,'website',$7,true,NOW())`,
+          [uid(),tenantId,category,title,answer,keywords,sourceUrl],
+        );
+      }
+      added++;
+    }
+    await client.query('COMMIT');
+    return res.json({ok:true,added});
+  } catch(e) {
+    try { await client.query('ROLLBACK'); } catch {}
+    console.error('Website knowledge approval failed',e);
+    return res.status(500).json({error:'Verkkosivulta löydettyjen tietojen tallennus epäonnistui.'});
+  } finally {
+    client.release();
   }
 });
 
