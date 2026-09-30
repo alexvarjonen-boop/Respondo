@@ -399,6 +399,11 @@ function scoreKnowledgeRow(row, query) {
     }
   }
 
+  if (/palvelu|teette|tarjoatte|service|services|offer|tjänst|tjanst|erbjuder/.test(q)) {
+    if (/palvelut|palvelu|services|service/.test(title + ' ' + normalizeSearchText(row.category || ''))) score += 20;
+    if (/terms of service|käyttöeh|kayttoeh|privacy|tietosuoja/.test(answer)) score -= 40;
+  }
+
   const topicHints = [
     [['hinta','maksaa','hinnoittelu','tarjous','kustannus'], ['hinnat','hinnoittelu','tarjouspyyntölomake']],
     [['auki','aukiolo','lauantai','sunnuntai','viikonloppu','kello'], ['aukioloajat']],
@@ -423,8 +428,15 @@ function scoreKnowledgeRow(row, query) {
 }
 
 function selectRelevantKnowledge(rows, query, limit = 6) {
+  const q = normalizeSearchText(query);
+  const legalQuery = /tietosuoja|privacy|käyttöeh|kayttoeh|terms|ehto|cookie|eväste|evaste|gdpr/.test(q);
   return rows
     .filter((x) => normalizeSearchText(x.title) !== 'vastaustyyli')
+    .filter((x) => {
+      if (legalQuery) return true;
+      const hay = normalizeSearchText(String(x.title||'')+' '+String(x.category||'')+' '+String(x.source_url||x.sourceUrl||''));
+      return !/terms|privacy|tietosuoja|kayttoeh|käyttöeh|cookie|evaste|eväste|legal/.test(hay);
+    })
     .map((x) => ({ ...x, _score: scoreKnowledgeRow(x, query) }))
     .filter((x) => x._score >= 2)
     .sort((a, b) => b._score - a._score)
@@ -852,6 +864,8 @@ function websiteKnowledgeCandidates(bundle) {
   };
   const junk = /(cookie|evästeaset|privacy policy|tietosuojaseloste|copyright|kaikki oikeudet pidätetään|hyväksy eväste)/i;
   for (const doc of docs) {
+    const sourceKey = normalizeSearchText(String(doc.url||''));
+    if (/terms|privacy|tietosuoja|kayttoeh|käyttöeh|cookie|evaste|eväste|legal/.test(sourceKey)) continue;
     const category = categoryFor(doc.url, doc.text);
     let lines = String(doc.text || '').split('\n').map((x)=>x.replace(/\s+/g,' ').trim()).filter((x)=>x.length>=8&&!junk.test(x));
     // Many modern sites render meaningful copy as short separate DOM nodes. Combine those
