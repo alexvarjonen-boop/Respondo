@@ -2725,11 +2725,10 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
     if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
     const bundle = await fetchWebsiteBundle(website, 24);
     if (String(bundle.text || '').length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
-    const profile = extractFreeWebsiteProfile(bundle);
     const candidates = websiteKnowledgeCandidates(bundle);
     return res.json({
       ok:true,
-      profile,
+      profile:{ website },
       pagesScanned:bundle.pages.length,
       factsFound:candidates.length,
       candidates:candidates.slice(0,120),
@@ -2758,6 +2757,9 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
       const category = String(item?.category || 'Verkkosivulta tuotu').trim().slice(0,80) || 'Verkkosivulta tuotu';
       const sourceUrl = normalizeWebUrl(item?.sourceUrl, false);
       if (!title || !answer || !sourceUrl) continue;
+      const safetyText = normalizeSearchText(title+' '+category+' '+answer.slice(0,900)+' '+sourceUrl);
+      if (/terms of service|privacy policy|tietosuoja|kayttoeh|käyttöeh|cookie policy|evaste|eväste|legal notice|all rights reserved/.test(safetyText)) continue;
+      if (answer.length < 20 || title.length < 3) continue;
       const sourceHost = normalizeHost(sourceUrl);
       const tenantWebsite = (await client.query('SELECT website FROM tenants WHERE id=$1',[tenantId])).rows[0]?.website || '';
       if (tenantWebsite && sourceHost !== normalizeHost(tenantWebsite)) continue;
@@ -4063,7 +4065,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       if (thread.mode === 'human') {
         const humanMessage = lang === 'en'
           ? 'Your message was sent to a person from the company.'
-          : responseLang === 'sv'
+          : detectedLang === 'sv'
             ? 'Ditt meddelande skickades till företagets kundtjänst.'
             : 'Viestisi lähetettiin yrityksen asiakaspalvelijalle.';
         await q(
@@ -4122,7 +4124,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     let handoff = result.handoff;
     if (handoff) {
       answer = noAnswer;
-    } else if (responseLang !== 'fi') {
+    } else {
       const translated = await forceAnswerLanguage(answer, responseLang);
       if (translated) answer = translated;
       else {
