@@ -982,7 +982,7 @@ function buildProfileKnowledge(profile = {}) {
   add('Ajanvarauslinkki', profile.bookingUrl, ['ajanvaraus','varaa','aika','booking']);
   add('Lisätiedot', profile.notes, ['lisätieto','päivystys','maksutapa','takuu','ajanvaraus']);
   add('Vastaustyyli', profile.tone, ['tyyli']);
-  for (const fact of Array.isArray(profile.customFacts) ? profile.customFacts.slice(0, 30) : []) {
+  for (const fact of Array.isArray(profile.customFacts) ? profile.customFacts.slice(0, 1000) : []) {
     add(String(fact?.key || '').slice(0, 180), String(fact?.answer || '').slice(0, 1500), searchTokens(fact?.key || '').slice(0, 12));
   }
   return rows;
@@ -3972,10 +3972,10 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
         const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[session.sub]);
         if (tr.rowCount) {
           const kr = await q(
-            'SELECT id,category,title,answer,keywords,source_type,source_url FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC LIMIT 120',
+            'SELECT id,category,title,answer,keywords,source_type,source_url FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC LIMIT 1000',
             [tr.rows[0].id],
           );
-          rows = [...kr.rows, ...rows].slice(0, 160);
+          rows = [...kr.rows, ...rows].slice(0, 1100);
         }
       }
     } catch {}
