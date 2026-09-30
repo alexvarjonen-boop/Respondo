@@ -859,9 +859,9 @@ function websiteKnowledgeCandidates(bundle) {
     const chunks=[];
     let buf='';
     for(const line of lines){
-      if(buf && (buf.length + line.length + 1 > 850)){ chunks.push(buf); buf=''; }
+      if(buf && (buf.length + line.length + 1 > 420)){ chunks.push(buf); buf=''; }
       buf = (buf ? buf + ' ' : '') + line;
-      if(buf.length>=180){ chunks.push(buf); buf=''; }
+      if(buf.length>=100){ chunks.push(buf); buf=''; }
     }
     if(buf.length>=35) chunks.push(buf);
     for(const contextRaw of chunks){
@@ -958,6 +958,24 @@ async function forceAnswerLanguage(answer, lang) {
   return translateTextFree(text, target, 'auto');
 }
 
+function conciseKnowledgeAnswer(row, query) {
+  const raw=String(row?.answer||'').replace(/\s+/g,' ').trim();
+  if(!raw) return '';
+  if(raw.length<=320) return raw;
+  const qTokens=new Set(searchTokens(query));
+  const sentences=raw.match(/[^.!?]+[.!?]?/g)?.map(x=>x.trim()).filter(x=>x.length>=12) || [raw];
+  const ranked=sentences.map((sentence,index)=>{
+    const tokens=searchTokens(sentence); let score=0;
+    for(const token of tokens) if(qTokens.has(token)) score+=4;
+    if(/[€$£]|\b\d+[,.]?\d*\s*(?:€|eur|%|päiv|day|dag|kk|month|mån|vuosi|year|år)\b/i.test(sentence)) score+=1;
+    return {sentence,index,score};
+  }).sort((a,b)=>b.score-a.score||a.index-b.index);
+  const chosen=ranked.slice(0,3).sort((a,b)=>a.index-b.index).map(x=>x.sentence);
+  let answer=chosen.join(' ').replace(/\b([A-Za-zÀ-ž]{3,})\s+\1\b/gi,'$1').trim();
+  if(answer.length>420) answer=answer.slice(0,417).replace(/\s+\S*$/,'')+'…';
+  return answer || raw.slice(0,420);
+}
+
 async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {} }) {
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const cleanMessage = String(message || '').trim();
@@ -1011,7 +1029,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const top = selected[0];
   return {
-    answer: String(top.answer || '').trim(),
+    answer: conciseKnowledgeAnswer(top, cleanMessage),
     handoff: false,
     confidence: Math.min(0.92, 0.68 + Number(top._score || 0) * 0.02),
     intent,
