@@ -372,7 +372,7 @@ function searchTokens(value) {
 
 function knowledgeTopic(value) {
   const t=normalizeSearchText(value);
-  if(/palvelu|service|services|tjanst|tjänst|tuote|product|valikoima|selection/.test(t)) return 'services';
+  if(/palvelu|service|services|tjanst|tjänst|tuote|product|valikoima|selection|tarjoa|erbjud|sortiment|myy|sell/.test(t)) return 'services';
   if(/hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
   if(/auki|opening|hours|oppet|öppet|oppettid/.test(t)) return 'hours';
   if(/toimit|shipping|delivery|nouto|pickup|leverans/.test(t)) return 'delivery';
@@ -384,7 +384,7 @@ function knowledgeTopic(value) {
 }
 function queryTopic(query) {
   const q=normalizeSearchText(query);
-  if(/mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you (?:do|offer|sell)|services|vad gor ni|vad gör ni|vad erbjuder|tjanster|tjänster/.test(q)) return 'services';
+  if(/mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you (?:do|offer|sell)|services|vad gor ni|vad gör ni|vad erbjuder|vad säljer|vad saljer|vilka tjänster|vilka tjanster|tjanster|tjänster|sortiment/.test(q)) return 'services';
   if(/hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar/.test(q)) return 'pricing';
   if(/auki|aukiolo|opening|hours|open|oppet|öppet|oppettid/.test(q)) return 'hours';
   if(/toimit|shipping|delivery|nouto|pickup|leverans/.test(q)) return 'delivery';
@@ -844,6 +844,30 @@ async function fetchWebsiteBundle(value, maxPages = 24) {
   };
 }
 
+function importedKnowledgeJunk(value) {
+  const text = normalizeSearchText(value);
+  if (!text) return true;
+  if (/(cookie|evasteaset|privacy policy|tietosuojaseloste|terms of service|kayttoehdot|copyright|kaikki oikeudet pidatetaan|hyvaksy evaste|all rights reserved|localstorage|sessionstorage|queryselector|addeventlistener|json stringify|json parse|supported includes)/.test(text)) return true;
+  if (/(const |let |var |function |document |window |=>|webpack|sourceMappingURL)/i.test(String(value || ''))) return true;
+  return false;
+}
+
+function importedKnowledgeQuality(item) {
+  const title = String(item?.title || '').trim();
+  const answer = String(item?.answer || '').replace(/\s+/g,' ').trim();
+  if (!title || !answer || importedKnowledgeJunk(title + ' ' + answer)) return -1000;
+  let score = 0;
+  const topic = knowledgeTopic(String(item?.category || '') + ' ' + title + ' ' + answer.slice(0,500));
+  if (topic) score += 25;
+  if (/[€$£]|\b\d+[,.]?\d*\s*(?:eur|%|paiv|day|dag|kk|month|vuosi|year)\b/i.test(answer)) score += 7;
+  if (answer.length >= 70 && answer.length <= 700) score += 8;
+  if (title.length >= 12 && title.length <= 100) score += 4;
+  if (/^(?:respondo ai|etusivu|home|homepage)(?:\s*[-|–—:]|$)/i.test(title)) score -= 35;
+  if (/^(?:respondo ai|etusivu|home|homepage)(?:\s*[-|–—:]|$)/i.test(answer)) score -= 25;
+  if (/^(?:menu|navigation|skip to|kirjaudu|login|sign in|rekisteroidy|register)\b/i.test(answer)) score -= 25;
+  return score;
+}
+
 function websiteKnowledgeCandidates(bundle) {
   const docs = Array.isArray(bundle?.pageDocuments) ? bundle.pageDocuments : [];
   const candidates = [];
@@ -883,11 +907,16 @@ function websiteKnowledgeCandidates(bundle) {
       seen.add(key);
       const sentence=(context.match(/^.{20,120}?(?:[.!?](?:\s|$)|$)/)||[])[0] || context.slice(0,120);
       const title=sentence.replace(/[.!?]\s*$/,'').trim().slice(0,120) || category;
-      candidates.push({category,title,answer:context,keywords:[...new Set(searchTokens(title+' '+context).slice(0,14))],sourceUrl:doc.url});
-      if(candidates.length>=160) return candidates;
+      const candidate={category,title,answer:context,keywords:[...new Set(searchTokens(title+' '+context).slice(0,14))],sourceUrl:doc.url};
+      candidate._quality=importedKnowledgeQuality(candidate);
+      if(candidate._quality>-20) candidates.push(candidate);
+      if(candidates.length>=160) break;
     }
   }
-  return candidates;
+  return candidates
+    .sort((a,b)=>Number(b._quality||0)-Number(a._quality||0))
+    .slice(0,48)
+    .map(({_quality,...candidate})=>candidate);
 }
 
 function buildProfileKnowledge(profile = {}) {
@@ -973,6 +1002,13 @@ async function forceAnswerLanguage(answer, lang) {
 
 function conciseKnowledgeAnswer(row, query) {
   let raw=String(row?.answer||'').replace(/\s+/g,' ').trim();
+  if(!raw || importedKnowledgeJunk(raw)) return '';
+  const pageTitleLike = /^(?:respondo ai|etusivu|home|homepage)(?:\s*[-|–—:]|$)/i;
+  if(pageTitleLike.test(raw)) {
+    const parts=(raw.match(/[^.!?]+[.!?]?/g)||[]).map(x=>x.trim()).filter(Boolean);
+    while(parts.length && pageTitleLike.test(parts[0])) parts.shift();
+    raw=parts.join(' ').trim();
+  }
   if(!raw) return '';
   // Remove common navigation/heading debris left by website extraction.
   raw=raw.replace(/^(?:palvelut?|services?|tjänster?)\s+(?:palvelut?|services?|tjänster?)\s+/i,'')
@@ -1055,6 +1091,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     return { answer:'', handoff:true, confidence:0.3, intent, sourceIds:[], selected };
   }
   let finalAnswer = conciseKnowledgeAnswer(top, cleanMessage);
+  if (!finalAnswer) {
+    return { answer:'', handoff:true, confidence:0.25, intent, sourceIds:[], selected };
+  }
   const localizedAnswer = await forceAnswerLanguage(finalAnswer, responseLang);
   if (localizedAnswer) finalAnswer = localizedAnswer;
   return {
