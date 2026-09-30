@@ -94,8 +94,8 @@ let cfg = {
   businessId: '3599437-5',
   sellerName: 'RESPONDO AI',
   trialDays: 3,
-  monthlyNet: 49.99,
-  yearlyNet: 539.88,
+  monthlyNet: 22.99,
+  yearlyNet: 275.88,
 };
 
 async function api(url, options = {}) {
@@ -394,8 +394,8 @@ const EN_TEXT = new Map(Object.entries({
   "maksa kuukausittain":"pay monthly",
   "Kuukausi":"Month",
   "VUOSITILAUS":"ANNUAL PLAN",
-  "säästä 60 €":"save €60",
-  "Laskutetaan vuosittain 539,88 €":"Billed annually at €539.88",
+  "vuosilaskutus":"annual billing",
+  "Laskutetaan vuosittain 275,88 €":"Billed annually at €275.88",
   "Kaikki samat ominaisuudet kuin kuukausitilauksessa":"All the same features as the monthly plan",
   "Maksu kerran vuodessa":"Pay once per year",
   "Voit käyttää palvelua maksetun kauden loppuun":"Use the service until the end of the paid period",
@@ -501,7 +501,7 @@ const EN_TEXT = new Map(Object.entries({
   'Tutustu tuotteeseen':'Explore the product',
   '3 päivää ilmaiseksi':'3 days free',
   'Peruuta milloin tahansa':'Cancel anytime',
-  '49,99 €/kk':'€49.99/month',
+  '22,99 €/kk':'€22.99/month',
   'TIETOPOHJA':'KNOWLEDGE BASE',
   'VASTAUKSET':'ANSWERS',
   'EPÄVARMUUS':'UNCERTAINTY',
@@ -536,7 +536,7 @@ const EN_TEXT = new Map(Object.entries({
   'AJAN TASALLA':'UP TO DATE',
   'Hyväksytty tietopohja':'Approved knowledge base',
   'Hinnoittelu':'Pricing',
-  'Peruspaketti alkaa 49,99 €/kk':'Base plan starts at €49.99/month',
+  'Peruspaketti alkaa 22,99 €/kk':'Base plan starts at €22.99/month',
   'Aukioloajat':'Opening hours',
   'Toimialue':'Service area',
   'Suomi':'Finland',
@@ -550,7 +550,7 @@ const EN_TEXT = new Map(Object.entries({
   'sinun hallinnassa':'you are in control',
   'aina':'always',
   'ALKAEN':'FROM',
-  '49,99 € / kk':'€49.99 / month',
+  '22,99 € / kk':'€22.99 / month',
   
   'KOKEILU':'TRIAL',
   '3 päivää':'3 days',
@@ -585,7 +585,7 @@ const EN_TEXT = new Map(Object.entries({
   'Näet, mitä asiakkaat kysyvät':'Conversation analytics',
   'Puuttuvat vastaukset ohjataan sinulle':'Fallback for uncertain questions',
   'Hallitse tilausta turvallisesti Stripessä':'Subscription management in Stripe',
-  'säästä 60 €':'save €60',
+  'vuosilaskutus':'annual billing',
   'Vuosi':'Yearly',
   'Kaikki samat ominaisuudet kuin kuukausitilauksessa':'Same features as the monthly plan',
   'Maksu kerran vuodessa':'One annual payment',
@@ -856,8 +856,8 @@ const SV_TEXT = new Map(Object.entries({
   "maksa kuukausittain":"betala månadsvis",
   "Kuukausi":"Månad",
   "VUOSITILAUS":"ÅRSABONNEMANG",
-  "säästä 60 €":"spara 60 €",
-  "Laskutetaan vuosittain 539,88 €":"Faktureras årligen 539,88 €",
+  "vuosilaskutus":"spara 60 €",
+  "Laskutetaan vuosittain 275,88 €":"Faktureras årligen 539,88 €",
   "Kaikki samat ominaisuudet kuin kuukausitilauksessa":"Alla samma funktioner som i månadsabonnemanget",
   "Maksu kerran vuodessa":"Betalning en gång per år",
   "Voit käyttää palvelua maksetun kauden loppuun":"Du kan använda tjänsten till slutet av den betalda perioden",
@@ -957,7 +957,7 @@ const SV_TEXT = new Map(Object.entries({
   'Helppo asentaa':'Enkelt att installera','Yksi asennusrivi verkkosivulle.':'En installationsrad på webbplatsen.','Hyväksytty tietopohja':'Godkänd kunskapsbas',
   'Hinnoittelu':'Prissättning','Aukioloajat':'Öppettider','Toimialue':'Serviceområde','Suomi':'Finland','Poikkeustilanteet':'Undantag','Ohjaa yhteydenottoon':'Hänvisa till kontakt',
   'Viimeksi päivitetty':'Senast uppdaterad','juuri nyt':'just nu','VASTAA':'SVARAR','asiakkaillesi':'dina kunder','sinun hallinnassa':'under din kontroll','aina':'alltid',
-  'ALKAEN':'FRÅN','49,99 € / kk':'49,99 € / mån','KOKEILU':'PROVPERIOD','3 päivää':'3 dagar','maksutta':'gratis',
+  'ALKAEN':'FRÅN','22,99 € / kk':'22,99 € / mån','KOKEILU':'PROVPERIOD','3 päivää':'3 dagar','maksutta':'gratis',
   'Asiakas ei halua odottaa.':'Kunden vill inte vänta.','Nopea vastaus näkyy kokemuksessa.':'Snabba svar förbättrar kundupplevelsen.','HUOM':'OBS',
   'Mitä yksi menetetty yhteydenotto voi maksaa?':'Vad kan en missad kontakt kosta?','Päivässä':'Per dag','Vuodessa':'Per år','Selkeä hinta.':'Tydligt pris.','Ei yllätyksiä.':'Inga överraskningar.',
   'Kuukausi':'Månad','Vuosi':'År','Chat suoraan omalle verkkosivullesi':'Chatt direkt på din webbplats','Vastaukset yrityksesi omista tiedoista':'Svar från företagets egen information',
@@ -1028,7 +1028,7 @@ const EXTRA_UI_TEXT = new Map(Object.entries({
   "Sinä päätät, mitä yrityksestäsi kerrotaan. Muutokset päivittyvät botille yhdestä paikasta.": ["Du bestämmer vad som får sägas om ditt företag. Ändringar uppdateras till botten från ett och samma ställe.", "You decide what can be said about your company. Changes are updated to the bot from one place."],
   "4 HYVÄKSYTTYÄ TIETOA": ["4 GODKÄNDA UPPGIFTER", "4 APPROVED ITEMS"],
   "AJAN TASALLA": ["UPPDATERAT", "UP TO DATE"],
-  "Peruspaketti alkaa 49,99 €/kk": ["Grundpaketet börjar på 49,99 €/mån", "The basic plan starts at €49.99/month"],
+  "Peruspaketti alkaa 22,99 €/kk": ["Grundpaketet börjar på 22,99 €/mån", "The basic plan starts at €22.99/month"],
   "PERUSTUU": ["BASERAS PÅ", "BASED ON"],
   "Alla olevat luvut perustuvat julkaistuihin tutkimuksiin ja raportteihin. Lähde, vuosi ja tutkimuskonteksti näkyvät jokaisen luvun yhteydessä.": ["Siffrorna nedan bygger på publicerade studier och rapporter. Källa, år och forskningskontext visas vid varje siffra.", "The figures below are based on published studies and reports. The source, year and research context are shown with each figure."],
   "Harvard Business Review’n auditissa 2 241 yhdysvaltalaisesta yrityksestä lähes joka neljäs ei vastannut testiliidiin 30 päivän aikana.": ["I en Harvard Business Review-granskning av 2 241 amerikanska företag svarade nästan vart fjärde företag inte på testleadet inom 30 dagar.", "In a Harvard Business Review audit of 2,241 U.S. companies, nearly one in four did not respond to the test lead within 30 days."],
@@ -1042,8 +1042,8 @@ const EXTRA_UI_TEXT = new Map(Object.entries({
   "Täytä omat ja yrityksesi perustiedot.": ["Fyll i dina egna och företagets grunduppgifter.", "Enter your basic details and your company's details."],
   "Kerro Respondolle, mitä asiakkaillesi saa vastata.": ["Berätta för Respondo vad som får besvaras till dina kunder.", "Tell Respondo what it may answer to your customers."],
   "Y-tunnus · Suomi": ["FO-nummer · Finland", "Business ID · Finland"],
-  "49,99 €/kk · kuukausi": ["49,99 €/mån · månadsvis", "€49.99/month · monthly"],
-  "44,99 €/kk · laskutetaan 539,88 €/vuosi": ["44,99 €/mån · faktureras 539,88 €/år", "€44.99/month · billed €539.88/year"],
+  "22,99 €/kk · kuukausi": ["22,99 €/mån · månadsvis", "€22.99/month · monthly"],
+  "22,99 €/kk · laskutetaan 275,88 €/vuosi": ["22,99 €/mån · faktureras 275,88 €/år", "€22.99/month · billed €275.88/year"],
   "Suosittelukoodi": ["Rekommendationskod", "Referral code"],
   "valinnainen": ["valfritt", "optional"],
   "Hyväksyn": ["Jag godkänner", "I accept"],
@@ -1711,7 +1711,7 @@ function controlSection() {
       <div class="truth-card">
         <div class="truth-top"><span>4 HYVÄKSYTTYÄ TIETOA</span><span class="truth-status">AJAN TASALLA</span></div>
         <div class="truth-title">Hyväksytty tietopohja</div>
-        <div class="knowledge-row"><span class="k-index">01</span><div><b>Hinnoittelu</b><small>Peruspaketti alkaa 49,99 €/kk</small></div><i>✓</i></div>
+        <div class="knowledge-row"><span class="k-index">01</span><div><b>Hinnoittelu</b><small>Peruspaketti alkaa 22,99 €/kk</small></div><i>✓</i></div>
         <div class="knowledge-row"><span class="k-index">02</span><div><b>Aukioloajat</b><small>Ma–Pe 08:00–17:00</small></div><i>✓</i></div>
         <div class="knowledge-row"><span class="k-index">03</span><div><b>Toimialue</b><small>Suomi</small></div><i>✓</i></div>
         <div class="knowledge-row"><span class="k-index">04</span><div><b>Poikkeustilanteet</b><small>Ohjaa yhteydenottoon</small></div><i>✓</i></div>
@@ -1726,7 +1726,7 @@ function proofStrip() {
     <div class="container proof-grid">
       <div><span>VASTAA</span><b>24/7</b><small>asiakkaillesi</small></div>
       <div><span>PERUSTUU</span><b>sinun hallinnassa</b><small>aina</small></div>
-      <div><span>ALKAEN</span><b>49,99 € / kk</b></div>
+      <div><span>ALKAEN</span><b>22,99 € / kk</b></div>
       <div><span>KOKEILU</span><b>3 päivää</b><small>maksutta</small></div>
     </div>
   </section>`;
@@ -1865,9 +1865,9 @@ function pricingSection() {
           <a class="btn price-btn" href="/tilaus?plan=monthly">Kokeile 3 päivää ilmaiseksi</a>
         </article>
         <article class="price-card featured">
-          <div class="price-top"><span>VUOSITILAUS</span><span class="save">säästä 60 €</span></div>
+          <div class="price-top"><span>VUOSITILAUS</span><span class="save">vuosilaskutus</span></div>
           <h3>Vuosi</h3>
-          <div class="pricevalue">44,99 €<small>/kk</small></div><div class="annual-billing-note">Laskutetaan vuosittain 539,88 €</div>
+          <div class="pricevalue">22,99 €<small>/kk</small></div><div class="annual-billing-note">Laskutetaan vuosittain 275,88 €</div>
           <div class="price-rule"></div>
           <ul>
             <li>Kaikki samat ominaisuudet kuin kuukausitilauksessa</li>
@@ -2274,8 +2274,8 @@ function signup() {
             <div class="field full" id="signupPasswordField"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
             <div class="field full"><label>${appText('Tilaus','Abonnemang','Subscription')}</label>
               <select name="plan">
-                <option value="monthly" ${plan === 'monthly' ? 'selected' : ''}>${appText('49,99 €/kk · kuukausi','49,99 €/mån · månadsvis','€49.99/mo · monthly')}</option>
-                <option value="yearly" ${plan === 'yearly' ? 'selected' : ''}>${appText('44,99 €/kk · laskutetaan 539,88 €/vuosi','44,99 €/mån · faktureras 539,88 €/år','€44.99/mo · billed €539.88/year')}</option>
+                <option value="monthly" ${plan === 'monthly' ? 'selected' : ''}>${appText('22,99 €/kk · kuukausi','22,99 €/mån · månadsvis','€49.99/mo · monthly')}</option>
+                <option value="yearly" ${plan === 'yearly' ? 'selected' : ''}>${appText('22,99 €/kk · laskutetaan 275,88 €/vuosi','22,99 €/mån · faktureras 275,88 €/år','€44.99/mo · billed €539.88/year')}</option>
                 ${ownerTestAccess ? `<option value="owner_test" ${plan === 'owner_test' ? 'selected' : ''}>OMISTAJAN TESTI · 0,50 € sis. alv · veloitus heti</option>` : ''}
               </select>
             </div>
@@ -2496,7 +2496,7 @@ function legal(type) {
     if (/^RESPONDO AI, Y-tunnus .* Suomi\. Yhteydenotot:/.test(value)) return lang==='sv'?`RESPONDO AI, FO-nummer ${bid}, Finland. Kontakt: ${mail}.`:`RESPONDO AI, Business ID ${bid}, Finland. Contact: ${mail}.`;
     if (/^RESPONDO AI, Y-tunnus .* Tietosuoja-/.test(value)) return lang==='sv'?`RESPONDO AI, FO-nummer ${bid}. Integritets- och övriga kontakter: ${mail}.`:`RESPONDO AI, Business ID ${bid}. Privacy and other enquiries: ${mail}.`;
     if (/^Palvelua voi kokeilla /.test(value)) return lang==='sv'?`Tjänsten kan provas gratis i ${cfg.trialDays||3} dagar. En betalningsmetod kan läggas till i början av provperioden. Om abonnemanget inte sägs upp innan provperioden slutar fortsätter det som ett betalt abonnemang enligt vald faktureringsperiod.`:`The service can be tried free for ${cfg.trialDays||3} days. A payment method may be added at the start of the trial. Unless cancelled before the trial ends, the subscription continues as a paid subscription according to the selected billing period.`;
-    if (/^Kuukausitilaus maksaa /.test(value)) return lang==='sv'?'Månadsabonnemanget kostar 49,99 €/månad. Årsabonnemanget motsvarar 44,99 €/månad och faktureras 539,88 € en gång per år. Pris och faktureringsperiod visas före betalning.':'The monthly plan costs €49.99/month. The annual plan is equivalent to €44.99/month and is billed at €539.88 once per year. The price and billing period are shown before payment.';
+    if (/^Kuukausitilaus maksaa /.test(value)) return lang==='sv'?'Månadsabonnemanget kostar 22,99 €/månad. Årsabonnemanget motsvarar 44,99 €/månad och faktureras 539,88 € en gång per år. Pris och faktureringsperiod visas före betalning.':'The monthly plan costs €22.99/month. The annual plan is equivalent to €44.99/month and is billed at €539.88 once per year. The price and billing period are shown before payment.';
     if (/^Tietoturvaan liittyvät ilmoitukset:/.test(value)) return lang==='sv'?`Säkerhetsrelaterade meddelanden: ${mail}.`:`Security-related notices: ${mail}.`;
     return value;
   };
