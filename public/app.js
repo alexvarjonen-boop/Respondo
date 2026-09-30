@@ -3782,7 +3782,7 @@ async function route() {
 
     const previewHistory = [];
     const previewCompanyName = $('.dashboard-workspace b')?.textContent || 'Yritys';
-    const previewFactsPromise = api('/api/app/dashboard')
+    const loadPreviewFacts = () => api('/api/app/dashboard')
       .then((d) => (d.knowledge || [])
         .filter((x) => x.category !== 'Yrityksen perustiedot')
         .map((x) => ({ key: x.title, answer: x.answer })))
@@ -3802,7 +3802,7 @@ async function route() {
       try {
         const profileForm = $('#businessProfileForm');
         const values = Object.fromEntries(new FormData(profileForm).entries());
-        const customFacts = await previewFactsPromise;
+        const customFacts = await loadPreviewFacts();
         const result = await api('/api/public/demo-chat', {
           method: 'POST',
           body: JSON.stringify({
