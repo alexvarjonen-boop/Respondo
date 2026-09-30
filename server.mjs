@@ -622,7 +622,7 @@ async function fetchPublicHtml(value) {
     const type = String(response.headers.get('content-type') || '');
     if (!type.includes('text/html')) throw new Error('Osoite ei näytä HTML-verkkosivulta.');
     const length = Number(response.headers.get('content-length') || 0);
-    if (length > 1_500_000) throw new Error('Verkkosivu on liian suuri automaattiseen tuontiin.');
+    if (length > 8_000_000) throw new Error('Yksittäinen verkkosivu on liian suuri automaattiseen tuontiin.');
     const reader = response.body?.getReader?.();
     if (!reader) throw new Error('Verkkosivua ei saatu luettua.');
     const chunks = [];
@@ -632,9 +632,9 @@ async function fetchPublicHtml(value) {
         const { done, value } = await reader.read();
         if (done) break;
         total += value?.byteLength || 0;
-        if (total > 1_500_000) {
+        if (total > 8_000_000) {
           try { await reader.cancel(); } catch {}
-          throw new Error('Verkkosivu on liian suuri automaattiseen tuontiin.');
+          throw new Error('Yksittäinen verkkosivu on liian suuri automaattiseen tuontiin.');
         }
         if (value) chunks.push(Buffer.from(value));
       }
@@ -795,7 +795,7 @@ async function fetchClientRenderedSourceText(html, pageUrl) {
   return docs;
 }
 
-async function fetchWebsiteBundle(value, maxPages = 24) {
+async function fetchWebsiteBundle(value, maxPages = 80) {
   const first = await fetchPublicHtml(value);
   const base = new URL(first.finalUrl);
   const pages = [];
@@ -833,7 +833,7 @@ async function fetchWebsiteBundle(value, maxPages = 24) {
   enqueue(first.html, first.finalUrl);
 
   // Sitemaps expose pages that client-rendered navigation may not reveal in raw HTML.
-  const sitemapUrls = await discoverSitemapUrls(first.finalUrl, 120);
+  const sitemapUrls = await discoverSitemapUrls(first.finalUrl, 600);
   for (const link of sitemapUrls) {
     let u;
     try { u = new URL(link); } catch { continue; }
@@ -866,7 +866,7 @@ async function fetchWebsiteBundle(value, maxPages = 24) {
 
   const pageDocuments = pages.map((page) => ({
     url:page.url,
-    text:htmlToReadableText(page.html).slice(0, 14000),
+    text:htmlToReadableText(page.html).slice(0, 30000),
   })).filter((page) => page.text.length >= 40);
 
   // SPA/client-rendered sites often keep their visible copy in same-origin JS bundles.
@@ -878,14 +878,14 @@ async function fetchWebsiteBundle(value, maxPages = 24) {
   const text = pageDocuments
     .map((page) => 'SIVU: ' + page.url + '\n' + page.text)
     .join('\n\n---\n\n')
-    .slice(0, 120000);
+    .slice(0, 900000);
 
   return {
     finalUrl:first.finalUrl,
     text,
     pageDocuments,
     pages:pageDocuments.map((x) => x.url),
-    links:[...new Set(queue.map((x) => x.url))].slice(0, 80),
+    links:[...new Set(queue.map((x) => x.url))].slice(0, 500),
   };
 }
 
@@ -955,12 +955,12 @@ function websiteKnowledgeCandidates(bundle) {
       const candidate={category,title,answer:context,keywords:[...new Set(searchTokens(title+' '+context).slice(0,14))],sourceUrl:doc.url};
       candidate._quality=importedKnowledgeQuality(candidate);
       if(candidate._quality>-20) candidates.push(candidate);
-      if(candidates.length>=160) break;
+      if(candidates.length>=1200) break;
     }
   }
   return candidates
     .sort((a,b)=>Number(b._quality||0)-Number(a._quality||0))
-    .slice(0,48)
+    .slice(0,800)
     .map(({_quality,...candidate})=>candidate);
 }
 
@@ -2837,7 +2837,7 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
   try {
     const website = normalizeWebUrl(req.body.website, false);
     if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
-    const bundle = await fetchWebsiteBundle(website, 24);
+    const bundle = await fetchWebsiteBundle(website, 80);
     if (String(bundle.text || '').length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
     const candidates = websiteKnowledgeCandidates(bundle);
     // One-time self-healing: remove legacy website imports that are clearly code/legal/UI debris.
@@ -2855,7 +2855,7 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
       profile:{ website },
       pagesScanned:bundle.pages.length,
       factsFound:candidates.length,
-      candidates:candidates.slice(0,120),
+      candidates:candidates.slice(0,800),
       extraction:'local',
     });
   } catch (e) {
@@ -2870,7 +2870,7 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
     const tenantResult = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
     if (!tenantResult.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenantId = tenantResult.rows[0].id;
-    const items = Array.isArray(req.body.items) ? req.body.items.slice(0,120) : [];
+    const items = Array.isArray(req.body.items) ? req.body.items.slice(0,800) : [];
     if (!items.length) return res.status(400).json({ error:'Valitse vähintään yksi tieto.' });
 
     await client.query('BEGIN');
