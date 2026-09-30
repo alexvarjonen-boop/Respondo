@@ -795,7 +795,7 @@ async function fetchClientRenderedSourceText(html, pageUrl) {
   return docs;
 }
 
-async function fetchWebsiteBundle(value, maxPages = 80) {
+async function fetchWebsiteBundle(value, maxPages = 10000) {
   const first = await fetchPublicHtml(value);
   const base = new URL(first.finalUrl);
   const pages = [];
@@ -833,7 +833,7 @@ async function fetchWebsiteBundle(value, maxPages = 80) {
   enqueue(first.html, first.finalUrl);
 
   // Sitemaps expose pages that client-rendered navigation may not reveal in raw HTML.
-  const sitemapUrls = await discoverSitemapUrls(first.finalUrl, 600);
+  const sitemapUrls = await discoverSitemapUrls(first.finalUrl, 10000);
   for (const link of sitemapUrls) {
     let u;
     try { u = new URL(link); } catch { continue; }
@@ -885,7 +885,7 @@ async function fetchWebsiteBundle(value, maxPages = 80) {
     text,
     pageDocuments,
     pages:pageDocuments.map((x) => x.url),
-    links:[...new Set(queue.map((x) => x.url))].slice(0, 500),
+    links:[...new Set(queue.map((x) => x.url))].slice(0, 10000),
   };
 }
 
@@ -955,12 +955,12 @@ function websiteKnowledgeCandidates(bundle) {
       const candidate={category,title,answer:context,keywords:[...new Set(searchTokens(title+' '+context).slice(0,14))],sourceUrl:doc.url};
       candidate._quality=importedKnowledgeQuality(candidate);
       if(candidate._quality>-20) candidates.push(candidate);
-      if(candidates.length>=1200) break;
+      if(candidates.length>=10000) break;
     }
   }
   return candidates
     .sort((a,b)=>Number(b._quality||0)-Number(a._quality||0))
-    .slice(0,800)
+    .slice(0,10000)
     .map(({_quality,...candidate})=>candidate);
 }
 
@@ -2837,9 +2837,29 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
   try {
     const website = normalizeWebUrl(req.body.website, false);
     if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
-    const bundle = await fetchWebsiteBundle(website, 80);
+    const bundle = await fetchWebsiteBundle(website, 10000);
     if (String(bundle.text || '').length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
     const candidates = websiteKnowledgeCandidates(bundle);
+    const detectedProfile = extractFreeWebsiteProfile(bundle);
+    // Automatically save high-confidence basics so phone/email/hours/address are usable immediately.
+    try {
+      const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+      if (tr.rowCount) {
+        const tenantId=tr.rows[0].id;
+        const autoFields=[
+          ['Aukioloajat',detectedProfile.hours,['auki','aukiolo','aukioloajat','opening','hours']],
+          ['Puhelinnumero',detectedProfile.phone,['puhelin','numero','soittaa','phone']],
+          ['Sähköposti',detectedProfile.email,['sähköposti','email','e-mail']],
+          ['Osoite',detectedProfile.address,['osoite','sijainti','address']],
+        ].filter(([,value])=>String(value||'').trim());
+        for(const [title,value,keywords] of autoFields){
+          const answer=String(value).trim().slice(0,4000);
+          const existing=await q("SELECT id FROM knowledge WHERE tenant_id=$1 AND category='Yrityksen perustiedot' AND title=$2 LIMIT 1",[tenantId,title]);
+          if(existing.rowCount) await q("UPDATE knowledge SET answer=$1,keywords=$2,source_type='profile',source_url=$3,approved=true,verified_at=NOW(),updated_at=NOW() WHERE id=$4",[answer,keywords,website,existing.rows[0].id]);
+          else await q("INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords,source_type,source_url,approved,verified_at) VALUES($1,$2,'Yrityksen perustiedot',$3,$4,$5,'profile',$6,true,NOW())",[uid(),tenantId,title,answer,keywords,website]);
+        }
+      }
+    } catch(e) { console.warn('Automatic website basics save failed',e?.message||e); }
     // One-time self-healing: remove legacy website imports that are clearly code/legal/UI debris.
     try {
       const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
@@ -2852,10 +2872,10 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
     } catch(e) { console.warn('Legacy import cleanup failed',e?.message||e); }
     return res.json({
       ok:true,
-      profile:{ website },
+      profile:{ website, hours:detectedProfile.hours, phone:detectedProfile.phone, email:detectedProfile.email, address:detectedProfile.address },
       pagesScanned:bundle.pages.length,
       factsFound:candidates.length,
-      candidates:candidates.slice(0,800),
+      candidates,
       extraction:'local',
     });
   } catch (e) {
@@ -2870,7 +2890,7 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
     const tenantResult = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
     if (!tenantResult.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenantId = tenantResult.rows[0].id;
-    const items = Array.isArray(req.body.items) ? req.body.items.slice(0,800) : [];
+    const items = Array.isArray(req.body.items) ? req.body.items.slice(0,10000) : [];
     if (!items.length) return res.status(400).json({ error:'Valitse vähintään yksi tieto.' });
 
     await client.query('BEGIN');
