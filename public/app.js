@@ -3901,24 +3901,24 @@ async function route() {
       const progressPercent=document.getElementById('websiteImportProgressPercent');
       const progressLabel=document.getElementById('websiteImportProgressLabel');
       if(progress) progress.style.display='block';
-      let progressValue=2;
       const setProgress=(value,label)=>{
-        progressValue=Math.max(progressValue,Math.min(100,Math.round(value)));
-        if(progressBar) progressBar.style.width=progressValue+'%';
-        if(progressPercent) progressPercent.textContent=progressValue+'%';
+        const v=Math.max(0,Math.min(100,Math.round(value||0)));
+        if(progressBar) progressBar.style.width=v+'%';
+        if(progressPercent) progressPercent.textContent=v+'%';
         if(progressLabel&&label) progressLabel.textContent=label;
       };
-      setProgress(2,appText('Etsitään sivuja…','Söker sidor…','Finding pages…'));
-      const progressTimer=setInterval(()=>{
-        const step=progressValue<35?3:progressValue<70?2:1;
-        setProgress(Math.min(94,progressValue+step),appText('Käydään verkkosivua läpi…','Skannar webbplatsen…','Scanning website…'));
-      },900);
+      setProgress(0,appText('Valmistellaan hakua…','Förbereder sökning…','Preparing scan…'));
       try {
-        const result = await api('/api/app/import-website', {
-          method: 'POST',
-          body: JSON.stringify({ website }),
-        });
-        clearInterval(progressTimer);
+        const started=await api('/api/app/import-website/start',{method:'POST',body:JSON.stringify({website})});
+        let result=null;
+        while(!result){
+          await new Promise(resolve=>setTimeout(resolve,1000));
+          const state=await api('/api/app/import-website/status/'+encodeURIComponent(started.jobId));
+          const detail=Number(state.scanned||0)+' / '+Number(state.total||0);
+          setProgress(Number(state.percent||0),appText('Käyty läpi '+detail+' sivua','Skannat '+detail+' sidor','Scanned '+detail+' pages'));
+          if(state.status==='error') throw new Error(state.error||appText('Haku epäonnistui.','Sökningen misslyckades.','Scan failed.'));
+          if(state.status==='done') result=state.result;
+        }
         setProgress(100,appText('Valmis','Klart','Complete'));
         const p = result.profile || {};
         // Never let heuristic website extraction overwrite business profile fields.
@@ -3973,7 +3973,6 @@ async function route() {
         button.textContent = appText('Tiedot haettu ✓','Uppgifter hämtade ✓','Details imported ✓');
         setTimeout(() => { button.textContent = original; button.disabled = false; }, 1800);
       } catch (err) {
-        clearInterval(progressTimer);
         if(progressLabel) progressLabel.textContent=appText('Haku keskeytyi','Sökningen avbröts','Scan stopped');
         button.disabled = false;
         button.textContent = original;
