@@ -795,7 +795,7 @@ async function fetchClientRenderedSourceText(html, pageUrl) {
   return docs;
 }
 
-async function fetchWebsiteBundle(value, maxPages = 10000) {
+async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000) {
   const first = await fetchPublicHtml(value);
   const base = new URL(first.finalUrl);
   const pages = [];
@@ -833,7 +833,8 @@ async function fetchWebsiteBundle(value, maxPages = 10000) {
   enqueue(first.html, first.finalUrl);
 
   // Sitemaps expose pages that client-rendered navigation may not reveal in raw HTML.
-  const sitemapUrls = await discoverSitemapUrls(first.finalUrl, 10000);
+  let sitemapUrls = [];
+  try { sitemapUrls = await discoverSitemapUrls(first.finalUrl, 10000); } catch (e) { console.warn('Sitemap discovery skipped', e?.message || e); }
   for (const link of sitemapUrls) {
     let u;
     try { u = new URL(link); } catch { continue; }
@@ -850,7 +851,9 @@ async function fetchWebsiteBundle(value, maxPages = 10000) {
   }
   queue.sort((a,b)=>b.score-a.score);
 
+  const crawlStartedAt = Date.now();
   while (queue.length && pages.length < maxPages) {
+    if (Date.now() - crawlStartedAt > timeBudgetMs) break;
     const next = queue.shift();
     if (!next || pages.some((x) => x.url === next.url)) continue;
     try {
@@ -2837,7 +2840,7 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
   try {
     const website = normalizeWebUrl(req.body.website, false);
     if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
-    const bundle = await fetchWebsiteBundle(website, 10000);
+    const bundle = await fetchWebsiteBundle(website, 350, 65000);
     if (String(bundle.text || '').length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
     const candidates = websiteKnowledgeCandidates(bundle);
     const detectedProfile = extractFreeWebsiteProfile(bundle);
