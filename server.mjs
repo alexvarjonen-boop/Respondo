@@ -1078,19 +1078,52 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   ];
   for (const alias of aliases) if (alias.re.test(localQuery)) localQuery += alias.add;
 
-  const selected = selectRelevantKnowledge(rows, localQuery, 8);
+  let selected = selectRelevantKnowledge(rows, localQuery, 8);
+
+  // Broad questions such as "What do you sell?" or "Tell me about the company"
+  // should use the approved knowledge base as factual memory instead of requiring
+  // an exact pre-written Q&A pair.
+  const broadCompanyQuestion =
+    queryTopic(localQuery) === 'services' ||
+    /kerro (?:jotain )?(?:yrityksesta|yrityksestä|teista|teistä)|millainen yritys|mita yritys tekee|mitä yritys tekee|tell me about (?:the )?(?:company|business|you)|what (?:does|do) (?:the company|you) do|beratta om (?:foretaget|företaget|er)|vad gor foretaget|vad gör företaget/i.test(cleanMessage);
+
+  if (!selected.length && broadCompanyQuestion) {
+    selected = rows
+      .filter((row) => normalizeSearchText(row.title) !== 'vastaustyyli')
+      .filter((row) => !importedKnowledgeJunk(String(row.title||'')+' '+String(row.answer||'')))
+      .map((row) => ({...row,_score:scoreKnowledgeRow(row, localQuery)}))
+      .sort((a,b) => {
+        const topicA=knowledgeTopic(String(a.title||'')+' '+String(a.category||'')+' '+String(a.keywords||''));
+        const topicB=knowledgeTopic(String(b.title||'')+' '+String(b.category||'')+' '+String(b.keywords||''));
+        return (topicB==='services'?20:0)-(topicA==='services'?20:0) || Number(b._score||0)-Number(a._score||0);
+      })
+      .slice(0,8);
+  }
   if (!selected.length) {
     return { answer: '', handoff: true, confidence: 0.2, intent, sourceIds: [], selected: [] };
   }
 
   const top = selected[0];
-  // A weak lexical coincidence must never become a confident customer answer.
-  // Generic questions need a stronger match than explicit titles/keywords.
-  const minimumScore = intent === 'Asiakaskysymys' ? 5 : 8;
+  const minimumScore = broadCompanyQuestion ? 0 : (intent === 'Asiakaskysymys' ? 5 : 8);
   if (Number(top._score || 0) < minimumScore) {
     return { answer:'', handoff:true, confidence:0.3, intent, sourceIds:[], selected };
   }
-  let finalAnswer = conciseKnowledgeAnswer(top, cleanMessage);
+
+  let finalAnswer = '';
+  if (broadCompanyQuestion) {
+    const usable = selected
+      .map((row) => ({row,text:conciseKnowledgeAnswer(row, cleanMessage)}))
+      .filter((item) => item.text && !importedKnowledgeJunk(item.text))
+      .slice(0,3);
+    const unique=[];
+    for(const item of usable){
+      if(!unique.some((x)=>normalizeSearchText(x).includes(normalizeSearchText(item.text).slice(0,80)))) unique.push(item.text);
+    }
+    finalAnswer=unique.join(' ').trim();
+    if(finalAnswer.length>520) finalAnswer=finalAnswer.slice(0,517).replace(/\s+\S*$/,'')+'…';
+  } else {
+    finalAnswer = conciseKnowledgeAnswer(top, cleanMessage);
+  }
   if (!finalAnswer) {
     return { answer:'', handoff:true, confidence:0.25, intent, sourceIds:[], selected };
   }
@@ -1101,7 +1134,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     handoff: false,
     confidence: Math.min(0.94, 0.62 + Number(top._score || 0) * 0.025),
     intent,
-    sourceIds: top.id ? [top.id] : [],
+    sourceIds: broadCompanyQuestion ? selected.slice(0,3).map((x)=>x.id).filter(Boolean) : (top.id ? [top.id] : []),
     selected,
   };
 }
