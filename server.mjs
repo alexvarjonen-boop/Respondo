@@ -351,7 +351,9 @@ function setWidgetCors(req, res) {
 const SEARCH_STOPWORDS = new Set([
   'että','tämä','tassa','tässä','tuo','noi','ne','nyt','kun','kuin','jos','mutta','tai','ja','on','oli','ovat',
   'olla','voiko','saako','miten','mika','mikä','mitä','missä','missa','paljon','paljonko','teillä','teilla','te',
-  'me','minä','mina','sinä','sina','se','sen','sitä','sita','myös','myos','vielä','viela','entä','enta'
+  'me','minä','mina','sinä','sina','se','sen','sitä','sita','myös','myos','vielä','viela','entä','enta',
+  'the','a','an','and','or','is','are','do','does','you','your','we','our','what','which','where','when','how',
+  'och','eller','ar','är','ni','er','ert','vad','vilka','var','nar','när','hur','det','den','som'
 ]);
 
 function normalizeSearchText(value) {
@@ -394,8 +396,51 @@ function queryTopic(query) {
   if(/takuu|warranty|garanti/.test(q)) return 'warranty';
   return '';
 }
+function expandSearchConcepts(value) {
+  let text=' '+normalizeSearchText(value)+' ';
+  const groups=[
+    ['palvelu','palvelut','teette','tarjoatte','tarjoa','service','services','offer','offering','tjanst','tjanster','erbjuder'],
+    ['tuote','tuotteet','myytte','myy','valikoima','product','products','sell','selection','range','produkt','produkter','saljer','sortiment'],
+    ['hinta','hinnat','maksaa','hinnoittelu','price','prices','pricing','cost','pris','priser','kostar'],
+    ['auki','aukiolo','aukioloajat','opening','hours','open','oppet','oppettider'],
+    ['osoite','sijainti','missä','missa','address','location','where','adress','var'],
+    ['yhteys','puhelin','sahkoposti','sähköposti','contact','phone','email','kontakt','telefon','e-post'],
+    ['toimitus','toimitukset','nouto','shipping','delivery','pickup','leverans','avhamtning'],
+    ['palautus','palautukset','vaihto','return','returns','refund','retur','byte'],
+    ['takuu','warranty','guarantee','garanti'],
+    ['yritys','meista','meistä','company','business','about','foretag','företag','om oss']
+  ];
+  for(const group of groups){
+    if(group.some((word)=>text.includes(' '+normalizeSearchText(word)+' '))) text+=' '+group.join(' ');
+  }
+  return text.trim();
+}
+
+function genericCompanyQuestion(value) {
+  const q=normalizeSearchText(value);
+  return /kerro.*(?:yrityks|teist)|mita teette|mita tarjoatte|mita myytte|mita teilta saa|millainen yritys|what do you do|what do you offer|what do you sell|tell me about|what kind of (?:company|business)|vad gor ni|vad erbjuder ni|vad saljer ni|beratta om/.test(q);
+}
+
+function composeKnowledgeAnswer(selected, query) {
+  const topic=queryTopic(query);
+  const pieces=[];
+  for(const row of selected){
+    const rowTopic=knowledgeTopic(String(row.title||'')+' '+String(row.category||'')+' '+String(row.keywords||''));
+    if(topic && rowTopic && rowTopic!==topic) continue;
+    const text=conciseKnowledgeAnswer(row,query);
+    if(!text) continue;
+    const normalized=normalizeSearchText(text);
+    if(pieces.some((x)=>normalizeSearchText(x).includes(normalized.slice(0,90))||normalized.includes(normalizeSearchText(x).slice(0,90)))) continue;
+    pieces.push(text);
+    if(pieces.length>=3) break;
+  }
+  let answer=pieces.join(' ').replace(/\s+/g,' ').trim();
+  if(answer.length>520) answer=answer.slice(0,517).replace(/\s+\S*$/,'')+'…';
+  return answer;
+}
+
 function scoreKnowledgeRow(row, query) {
-  const q=normalizeSearchText(query), qTokens=searchTokens(q);
+  const q=expandSearchConcepts(query), qTokens=searchTokens(q);
   const title=normalizeSearchText(row.title), answer=normalizeSearchText(row.answer);
   const category=normalizeSearchText(row.category||'');
   const keywordText=normalizeSearchText((row.keywords||[]).join(' '));
@@ -1054,7 +1099,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // be searched in Swedish/English without a paid model. If the free translator
   // is unavailable, the multilingual alias expansion below still covers the
   // most common business intents.
-  let localQuery = retrievalQuery;
+  let localQuery = expandSearchConcepts(retrievalQuery);
   if (responseLang !== 'fi') {
     const translatedQuery = await translateTextFree(retrievalQuery, 'fi', 'auto');
     if (translatedQuery) localQuery += ' ' + translatedQuery;
@@ -1085,7 +1130,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // an exact pre-written Q&A pair.
   const broadCompanyQuestion =
     queryTopic(localQuery) === 'services' ||
-    /kerro (?:jotain )?(?:yrityksesta|yrityksestä|teista|teistä)|millainen yritys|mita yritys tekee|mitä yritys tekee|tell me about (?:the )?(?:company|business|you)|what (?:does|do) (?:the company|you) do|beratta om (?:foretaget|företaget|er)|vad gor foretaget|vad gör företaget/i.test(cleanMessage);
+    genericCompanyQuestion(cleanMessage);
 
   if (!selected.length && broadCompanyQuestion) {
     selected = rows
@@ -1119,7 +1164,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     for(const item of usable){
       if(!unique.some((x)=>normalizeSearchText(x).includes(normalizeSearchText(item.text).slice(0,80)))) unique.push(item.text);
     }
-    finalAnswer=unique.join(' ').trim();
+    finalAnswer=composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim();
     if(finalAnswer.length>520) finalAnswer=finalAnswer.slice(0,517).replace(/\s+\S*$/,'')+'…';
   } else {
     finalAnswer = conciseKnowledgeAnswer(top, cleanMessage);
