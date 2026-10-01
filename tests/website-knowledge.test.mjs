@@ -233,3 +233,46 @@ test('combined service request does not borrow proof from reviews or negative cl
   assert.equal(result.handoff,true);
  }
 });
+
+
+test('four-service booking with shared action and mixed verbs is independently verified',async()=>{
+ const rows=[
+  {id:'terrace',category:'Palvelut',title:'Terassin pesu ja öljyäminen',answer:'Terassin pesu ja öljyäminen onnistuvat.',source_type:'website',keywords:['palvelut']},
+  {id:'roof',category:'Palvelut',title:'Peltikattojen pesut',answer:'Hoidamme peltikattojen pesut.',source_type:'website',keywords:['palvelut']},
+  {id:'gutter',category:'Palvelut',title:'Rännien puhdistukset',answer:'Hoidamme rännien puhdistukset.',source_type:'website',keywords:['palvelut']},
+  {id:'windows',category:'Palvelut',title:'Ikkunanpesut',answer:'Tarjoamme ikkunanpesua.',source_type:'website',keywords:['palvelut']}
+ ];
+ const result=await generateGroundedAnswer({
+  rows,lang:'fi',
+  message:'voinko tilata teiltä peltikaton ja rännien pesun, ikkunoiden pesun sekä terassin öljyämisen'
+ });
+ assert.equal(result.handoff,false,JSON.stringify(result));
+ assert.equal(result.answer,'Kyllä, voit tilata meiltä peltikaton pesun, rännien pesun, ikkunoiden pesun ja terassin öljyämisen.');
+ assert.deepEqual(result.sourceIds,['roof','gutter','windows','terrace']);
+ assert.doesNotMatch(result.answer,/samalla käynnillä|terassi näyttää/i);
+});
+test('unproven fourth service produces a truthful partial handoff, not terrace marketing copy',async()=>{
+ const rows=[
+  {id:'terrace',category:'Palvelut',title:'Terassin pesu',answer:'Terassi näyttää pesun ja öljyämisen jälkeen kuin uudelta.',source_type:'website',keywords:['palvelut']},
+  {id:'roof',category:'Palvelut',title:'Peltikattojen pesut',answer:'Hoidamme peltikattojen pesut.',source_type:'website',keywords:['palvelut']},
+  {id:'gutter',category:'Palvelut',title:'Rännien puhdistukset',answer:'Hoidamme rännien puhdistukset.',source_type:'website',keywords:['palvelut']},
+  {id:'windows',category:'Palvelut',title:'Ikkunanpesut',answer:'Tarjoamme ikkunanpesua.',source_type:'website',keywords:['palvelut']}
+ ];
+ const result=await generateGroundedAnswer({rows,lang:'fi',
+  message:'voinko tilata teiltä peltikaton ja rännien pesun, ikkunoiden pesun sekä terassin öljyämisen'});
+ assert.equal(result.handoff,true);
+ assert.deepEqual(result.sourceIds,['roof','gutter','windows']);
+ assert.match(result.answer,/En pysty vielä vahvistamaan näitä palveluja: terassin öljyämisen/);
+ assert.doesNotMatch(result.answer,/terassi näyttää/i);
+ assert.doesNotMatch(result.answer,/Kyllä, voit tilata meiltä/i);
+});
+test('shared actions do not falsely turn gutter installation into gutter cleaning',async()=>{
+ const rows=[
+  {id:'mixed',category:'Palvelut',title:'Kattojen pesu ja rännien asennus',answer:'Pesemme peltikattoja ja asennamme rännejä.',source_type:'website',keywords:['palvelut']},
+  {id:'windows',category:'Palvelut',title:'Ikkunapesu',answer:'Teemme ikkunapesuja.',source_type:'website',keywords:['palvelut']}
+ ];
+ const result=await generateGroundedAnswer({rows,lang:'fi',message:'voinko tilata teiltä peltikaton ja rännien pesun, ikkunoiden pesun'});
+ assert.equal(result.handoff,true);
+ assert.match(result.answer,/rännien pesun/);
+ assert.doesNotMatch(result.answer,/Kyllä, voit tilata meiltä/i);
+});

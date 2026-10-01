@@ -1218,81 +1218,132 @@ function groundedFinnishServiceReply(message, history, rows) {
 // A customer may request two or more different services in one sentence.
 // Resolve each service against independent, approved evidence. A generic
 // snippet matching just one service must never answer the whole question.
+// Multiple-service requests must be evaluated as a set of independently
+// proven services. Finnish shared actions ("peltikaton ja rännien pesun"),
+// compounds ("ikkunanpesu"), and mixed actions must all be resolved before
+// producing a response. Never interpret a single matching snippet as proof
+// of the entire request.
 function combinedFinnishServiceRequest(message, rows) {
-  const q=normalizeSearchText(message);
-  const match=q.match(/^(?:voiko\s+teilta\s+tilata|voinko\s+teilta\s+tilata|saako\s+teilta|onnistuuko|teetteko)\s+(.+)$/);
-  if (!match || /(?:ilmais|tanaan|huomen|samalla\s+kaynnilla|yhdella\s+kaynnilla|samaan\s+aikaan|viikonlopp|paljonko|hinta|maksaa)/.test(q)) return null;
-  const parts=match[1].split(/\s+(?:ja|seka)\s+|\s*,\s*|\s*&\s*/).map(s=>s.trim()).filter(Boolean);
-  if (parts.length<2 || parts.length>4 || parts.some(part=>part.length<4 || part.length>75)) return null;
-  const actionPatterns=[
-    {kind:'puhdist',rx:/puhdist/,match:/puhdist/},
-    {kind:'pes',rx:/pesu|pesun|pesua|pesuja|pesut|pese|pesem/,match:/pesu|pese|pesem/},
-    {kind:'siivou',rx:/siivou/,match:/siivou/},
-    {kind:'huol',rx:/huol/,match:/huol/},
-    {kind:'asenn',rx:/asenn/,match:/asenn/},
-    {kind:'maal',rx:/maalau|maala/,match:/maalau|maala/},
-    {kind:'raiva',rx:/raivau|raiva/,match:/raivau|raiva/},
-    {kind:'korja',rx:/korjau|korja/,match:/korjau|korja/},
-    {kind:'kuljet',rx:/kuljet/,match:/kuljet/},
-    {kind:'poisvien',rx:/poisvien|poisvient/,match:/poisvien|poisvient|kuljet|noud/}
+  const raw=String(message||'').toLowerCase().trim().replace(/[?!.]+$/,'');
+  const q=normalizeSearchText(raw);
+  const order=raw.match(/^(?:voiko\s+teiltä\s+tilata|voiko\s+tilata\s+teiltä|voinko\s+tilata\s+teiltä|voinko\s+teiltä\s+tilata|voiko\s+tilata|voinko\s+tilata|saako\s+teiltä|saanko\s+teiltä|onnistuuko|teettekö|tarjoatteko)\s+(.+)$/i);
+  if (!order) return null;
+
+  const actionTypes=[
+    {kind:'clean',rx:/puhdist|pesu|pese|pesem|siivou/},
+    {kind:'oil',rx:/öljy|oljy/},
+    {kind:'install',rx:/asenn/},
+    {kind:'paint',rx:/maala|maalau/},
+    {kind:'repair',rx:/korja|korjau/},
+    {kind:'maintain',rx:/huol/},
+    {kind:'clear',rx:/raiva|raivau/},
+    {kind:'transport',rx:/poisvien|poisvient|kuljet|nouto/}
   ];
-  const requirements=parts.map(part=>{
-    const words=part.split(/[\s-]+/).filter(Boolean);
-    // "rännien puhdistuksen": rännien is the service subject, not
-    // some other item that happens to be cleaned in the same paragraph.
-    const explicitAction=actionPatterns.find(action=>words.some(word=>action.rx.test(word)));
-    const inferredAction=explicitAction ||
-      (/^pesetteko\b/.test(q) ? actionPatterns[1] : null);
-    const subjects=words.length===1?words:
-      words.filter(word=>!actionPatterns.some(action=>action.rx.test(word)));
-    return {part,subjects,action:inferredAction};
-  });
-  if (requirements.some(item=>!item.action || !item.subjects.length)) return null;
+  const actionOf=text=>{
+    const t=normalizeSearchText(text);
+    return actionTypes.find(action=>action.rx.test(t))||null;
+  };
+  const subjectOf=word=>{
+    const text=normalizeSearchText(word);
+    if (/^peltikat/.test(text)) return 'peltikatt';
+    if (/^tiilikat/.test(text)) return 'tiilikatt';
+    if (/^rann/.test(text)) return 'rann';
+    if (/^ikkun/.test(text)) return 'ikkun';
+    if (/^terass/.test(text)) return 'terass';
+    return finnishServiceStem(text);
+  };
+  const parseSubjects=part=>normalizeSearchText(part).split(/[\s-]+/).filter(Boolean)
+    .map(word=>{
+      // In "ikkunanpesun", the same word names both the subject and action.
+      if (/^ikkun/.test(word)) return 'ikkun';
+      if (/^peltikat/.test(word)) return 'peltikatt';
+      if (/^tiilikat/.test(word)) return 'tiilikatt';
+      if (/^rann/.test(word)) return 'rann';
+      if (/^terass/.test(word)) return 'terass';
+      if (actionTypes.some(action=>action.rx.test(word))) return '';
+      return subjectOf(word);
+    }).filter(word=>word.length>=4 && !/^(?:myos|kaikk|kerta|samal)$/.test(word));
+
+  // Commas and "sekä" separate requests. A local "ja" can share an
+  // action, e.g. "peltikaton ja rännien pesun", without copying an
+  // unrelated action from a different comma-separated service.
+  const groups=order[1].split(/\s*,\s*|\s+sekä\s+|\s+seka\s+|\s*&\s*/i).map(x=>x.trim()).filter(Boolean);
+  const parts=[];
+  for(const group of groups) {
+    const pieces=group.split(/\s+ja\s+/i).map(x=>x.trim()).filter(Boolean);
+    const own=pieces.map(piece=>actionOf(piece));
+    const shared=[...new Set(own.filter(Boolean).map(a=>a.kind))];
+    const sharedAction=shared.length===1 ? own.find(Boolean) : null;
+    const sharedWord=sharedAction && pieces.length>1 ?
+      pieces.find(piece=>actionOf(piece))?.split(/\s+/).find(word=>sharedAction.rx.test(normalizeSearchText(word))) : '';
+    for(let i=0;i<pieces.length;i++){
+      const subjects=parseSubjects(pieces[i]);
+      const action=own[i]||sharedAction||
+        (/^pesetteko\b/.test(q)?actionTypes[0]:null);
+      parts.push({subjects,action,label:own[i]||!sharedWord?pieces[i]:pieces[i]+' '+sharedWord});
+    }
+  }
+  if (parts.length<2 || parts.length>6) return null;
+  // Once recognized as a multi-service request, never fall back to
+  // generic search even if a phrase is ambiguous.
+  if (parts.some(part=>!part.action || !part.subjects.length)) return {supported:false};
+
   const approved=rows.filter(row=>{
-    if (!usableWebsiteRow(row)) return false;
     const meta=normalizeSearchText(String(row.category||'')+' '+String(row.title||''));
-    return knowledgeTopic(meta)==='services' &&
+    return usableWebsiteRow(row) && knowledgeTopic(meta)==='services' &&
       !/arvost|review|testimonial|asiakaskokem/.test(meta) &&
       !importedKnowledgeJunk(String(row.title||'')+' '+String(row.answer||'')) &&
       !/\b(?:emme|ei|eivat|not|inte|aldrig)\b/.test(normalizeSearchText(String(row.answer||'')));
   });
-  const findings=requirements.map(requirement=>{
-    // Both "ikkunanpesu" and "ikkunapesu" occur on Finnish service sites.
-    // Normalize only this established spelling pair, not arbitrary compounds.
-    const canonicalStem=word=>finnishServiceStem(word).replace(/^ikkunanpes/,'ikkunapes');
-    const queryStems=requirement.subjects.map(canonicalStem);
-    const matchesSubject=text=>{
-      const evidence=normalizeSearchText(text).split(/[\s-]+/).filter(Boolean).map(canonicalStem);
-      return queryStems.every(stem=>stem.length>=4 && evidence.includes(stem));
-    };
-    return approved.find(row=>{
-      // A precisely named, approved service row can establish availability.
-      // A vague heading like "Palvelumme" never can.
-      const title=String(row.title||'');
-      if (matchesSubject(title) && requirement.action.match.test(normalizeSearchText(title))) return true;
-      // Check action and subject within the same service clause. In
-      // "install gutters and wash roofs", neither gutter washing nor roof
-      // installation is supported by that row.
-      return String(row.answer||'')
-        .split(/(?<=[.!?;])\s+|\s+(?:ja|sekä)\s+|[,;&]/i)
-        .some(clause=>matchesSubject(clause) && requirement.action.match.test(normalizeSearchText(clause)));
+
+  const matchesAction=(text,action)=>action.kind==='clean'
+    ? /puhdist|pesu|pese|pesem|siivou/.test(normalizeSearchText(text))
+    : action.rx.test(normalizeSearchText(text));
+  const matchesSubjects=(text,subjects)=>{
+    const evidence=normalizeSearchText(text).split(/[\s-]+/).filter(Boolean).map(subjectOf);
+    return subjects.every(subject=>evidence.includes(subject));
+  };
+  const isShortActionOnly=text=>{
+    const words=normalizeSearchText(text).split(/\s+/).filter(Boolean);
+    return words.length===1 && actionOf(words[0])!=null;
+  };
+  const findings=parts.map(part=>approved.find(row=>[row.title,row.answer].some(source=>{
+    const clauses=String(source||'').split(/(?<=[.!?;])\s+|\s+(?:ja|sekä)\s+|[,;&]/i).map(s=>s.trim()).filter(Boolean);
+    return clauses.some((clause,index)=>{
+      if(!matchesAction(clause,part.action)) return false;
+      if(matchesSubjects(clause,part.subjects)) return true;
+      // "Terassin pesu ja öljyäminen": carry the terrace subject to
+      // the second action-only clause. Do not carry it into another
+      // named service such as "rännien asennus ja kattojen pesu".
+      return index>0 && isShortActionOnly(clause) &&
+        matchesSubjects(clauses[index-1],part.subjects);
     });
-  });
-  // An answer that confirms the entire request needs proof for every part.
-  if (findings.some(found=>!found)) return {supported:false};
-  const sourceRows=[...new Map(findings.map(row=>[row.id||row.title,row])).values()];
-  const requested=String(message).trim()
-    .replace(/^(?:voiko\s+teilt[aä]\s+tilata|voinko\s+teilt[aä]\s+tilata|saako\s+teilt[aä]|onnistuuko|teettekö)\s+/i,'')
-    .replace(/[?!.]+$/,'').trim();
-  const terms=requested.split(/\s+(?:ja|sekä)\s+|\s*,\s*|\s*&\s*/i).map(s=>s.trim());
-  const display=terms.length===2?'sekä '+terms[0]+' että '+terms[1] :
-    terms.slice(0,-1).join(', ')+' ja '+terms.at(-1);
+  })));
+
+  const present=parts.filter((part,i)=>Boolean(findings[i]));
+  const missing=parts.filter((part,i)=>!findings[i]);
+  const evidence=[...new Map(findings.filter(Boolean).map(row=>[row.id||row.title,row])).values()];
+  const list=items=>items.length===1?items[0]:
+    items.length===2?items.join(' ja '):
+      items.slice(0,-1).join(', ')+' ja '+items.at(-1);
+  if (missing.length) {
+    // A partial reply is still a handoff: never assert that every service
+    // can be performed, booked together, or scheduled on a specific day.
+    if (!present.length) return {supported:false};
+    return {
+      supported:false,partial:true,evidence,
+      answer:'Tiedoistamme löytyvät '+list(present.map(x=>x.label))+'. '+
+        'En pysty vielä vahvistamaan näitä palveluja: '+list(missing.map(x=>x.label))+'. '+
+        'Jätä yhteystietosi, niin yritys voi varmistaa asian.'
+    };
+  }
+  const labels=parts.map(x=>x.label);
+  const orderQuestion=/^(?:voiko|voinko|saako|saanko)/.test(q);
   return {
-    supported:true,
-    answer: /^(?:voiko|voinko|saako)/.test(q)
-      ? 'Kyllä, voit tilata meiltä '+display+'.'
-      : 'Kyllä, tarjoamme molemmat palvelut: '+display+'.',
-    evidence:sourceRows
+    supported:true,evidence,
+    answer:orderQuestion
+      ? 'Kyllä, voit tilata meiltä '+list(labels)+'.'
+      : 'Kyllä, tarjoamme seuraavat palvelut: '+list(labels)+'.'
   };
 }
 
@@ -1411,9 +1462,12 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const combinedService = responseLang==='fi' ? combinedFinnishServiceRequest(cleanMessage,rows) : null;
   if (combinedService) {
     const evidence=combinedService.evidence||[];
-    return combinedService.supported
-      ? {answer:combinedService.answer,handoff:false,confidence:0.92,intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence}
-      : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
+    return {
+      answer:combinedService.answer||'',handoff:!combinedService.supported,
+      confidence:combinedService.supported?0.92:0.2,
+      intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),
+      selected:evidence
+    };
   }
 
   const contextualService = responseLang==='fi'
@@ -4556,7 +4610,8 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     let answer = result.answer;
     let handoff = result.handoff;
     if (handoff) {
-      answer = noAnswer;
+      answer = result.intent === 'Palvelut' && result.answer
+        ? result.answer : noAnswer;
     }
 
     const actions = chatActions(kr.rows, message, handoff, responseLang);
