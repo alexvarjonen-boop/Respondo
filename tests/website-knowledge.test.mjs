@@ -275,6 +275,39 @@ test('shared actions do not falsely turn gutter installation into gutter cleanin
  ];
  const result=await generateGroundedAnswer({rows,lang:'fi',message:'voinko tilata teiltä peltikaton ja rännien pesun, ikkunoiden pesun'});
  assert.equal(result.handoff,true);
- assert.match(result.answer,/rännien pesun/);
+ assert.match(result.answer,/Nämä palvelut pitää vielä varmistaa: rännien pesu/);
  assert.doesNotMatch(result.answer,/Kyllä, voit tilata meiltä/i);
+});
+
+
+test('dashboard demo API answers verified multi-service orders and preserves partial handoffs',async()=>{
+ const {app}=await import('../server.mjs');
+ const server=app.listen(0,'127.0.0.1');
+ await new Promise(resolve=>server.once('listening',resolve));
+ const endpoint='http://127.0.0.1:'+server.address().port+'/api/public/demo-chat';
+ const question='voinko tilata teiltä peltikaton ja rännien pesun, ikkunoiden pesun sekä terassin öljyämisen';
+ const common=[
+  {key:'Peltikattojen pesut',answer:'Hoidamme peltikattojen pesut.'},
+  {key:'Rännien puhdistukset',answer:'Hoidamme rännien puhdistukset.'},
+  {key:'Ikkunanpesut',answer:'Tarjoamme ikkunanpesua.'}
+ ];
+ const ask=async customFacts=>{
+  const response=await fetch(endpoint,{method:'POST',
+   headers:{'content-type':'application/json'},
+   body:JSON.stringify({lang:'fi',message:question,profile:{customFacts}})});
+  assert.equal(response.status,200);
+  return response.json();
+ };
+ try {
+  const complete=await ask([...common,{key:'Terassin pesu ja öljyäminen',answer:'Terassin pesu ja öljyäminen onnistuvat.'}]);
+  assert.equal(complete.handoff,false,JSON.stringify(complete));
+  assert.match(complete.answer,/terassin öljyämisen/);
+  assert.doesNotMatch(complete.answer,/terassi näyttää/i);
+  const partial=await ask([...common,{key:'Terassin pesu',answer:'Terassi näyttää pesun ja öljyämisen jälkeen kuin uudelta.'}]);
+  assert.equal(partial.handoff,true,JSON.stringify(partial));
+  assert.match(partial.answer,/Nämä palvelut pitää vielä varmistaa: terassin öljyäminen/);
+  assert.equal(partial.answer.includes('Terassi näyttää'),false);
+ } finally {
+  await new Promise(resolve=>server.close(resolve));
+ }
 });
