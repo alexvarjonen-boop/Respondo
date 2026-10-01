@@ -1215,6 +1215,84 @@ function groundedFinnishServiceReply(message, history, rows) {
   return {supported:true,answer:'Kyllä, '+answerVerb+(follow?' myös':'')+' '+(found.qualifiedNoun||phrase)+'.',evidence:[found.row]};
 }
 
+// A customer may request two or more different services in one sentence.
+// Resolve each service against independent, approved evidence. A generic
+// snippet matching just one service must never answer the whole question.
+function combinedFinnishServiceRequest(message, rows) {
+  const q=normalizeSearchText(message);
+  const match=q.match(/^(?:voiko\s+teilta\s+tilata|voinko\s+teilta\s+tilata|saako\s+teilta|onnistuuko|teetteko)\s+(.+)$/);
+  if (!match || /(?:ilmais|tanaan|huomen|samalla\s+kaynnilla|yhdella\s+kaynnilla|samaan\s+aikaan|viikonlopp|paljonko|hinta|maksaa)/.test(q)) return null;
+  const parts=match[1].split(/\s+(?:ja|seka)\s+|\s*,\s*|\s*&\s*/).map(s=>s.trim()).filter(Boolean);
+  if (parts.length<2 || parts.length>4 || parts.some(part=>part.length<4 || part.length>75)) return null;
+  const actionPatterns=[
+    {kind:'puhdist',rx:/puhdist/,match:/puhdist/},
+    {kind:'pes',rx:/pesu|pesun|pesua|pesuja|pesut|pese|pesem/,match:/pesu|pese|pesem/},
+    {kind:'siivou',rx:/siivou/,match:/siivou/},
+    {kind:'huol',rx:/huol/,match:/huol/},
+    {kind:'asenn',rx:/asenn/,match:/asenn/},
+    {kind:'maal',rx:/maalau|maala/,match:/maalau|maala/},
+    {kind:'raiva',rx:/raivau|raiva/,match:/raivau|raiva/},
+    {kind:'korja',rx:/korjau|korja/,match:/korjau|korja/},
+    {kind:'kuljet',rx:/kuljet/,match:/kuljet/},
+    {kind:'poisvien',rx:/poisvien|poisvient/,match:/poisvien|poisvient|kuljet|noud/}
+  ];
+  const requirements=parts.map(part=>{
+    const words=part.split(/[\s-]+/).filter(Boolean);
+    // "rännien puhdistuksen": rännien is the service subject, not
+    // some other item that happens to be cleaned in the same paragraph.
+    const explicitAction=actionPatterns.find(action=>words.some(word=>action.rx.test(word)));
+    const inferredAction=explicitAction ||
+      (/^pesetteko\b/.test(q) ? actionPatterns[1] : null);
+    const subjects=words.length===1?words:
+      words.filter(word=>!actionPatterns.some(action=>action.rx.test(word)));
+    return {part,subjects,action:inferredAction};
+  });
+  if (requirements.some(item=>!item.action || !item.subjects.length)) return null;
+  const approved=rows.filter(row=>{
+    if (!usableWebsiteRow(row)) return false;
+    const meta=normalizeSearchText(String(row.category||'')+' '+String(row.title||''));
+    return knowledgeTopic(meta)==='services' &&
+      !/arvost|review|testimonial|asiakaskokem/.test(meta) &&
+      !importedKnowledgeJunk(String(row.title||'')+' '+String(row.answer||'')) &&
+      !/\b(?:emme|ei|eivat|not|inte|aldrig)\b/.test(normalizeSearchText(String(row.answer||'')));
+  });
+  const findings=requirements.map(requirement=>{
+    const queryStems=requirement.subjects.map(finnishServiceStem);
+    const matchesSubject=text=>{
+      const evidence=normalizeSearchText(text).split(/[\s-]+/).filter(Boolean).map(finnishServiceStem);
+      return queryStems.every(stem=>stem.length>=4 && evidence.includes(stem));
+    };
+    return approved.find(row=>{
+      // A precisely named, approved service row can establish availability.
+      // A vague heading like "Palvelumme" never can.
+      const title=String(row.title||'');
+      if (matchesSubject(title) && requirement.action.match.test(normalizeSearchText(title))) return true;
+      // Check action and subject within the same service clause. In
+      // "install gutters and wash roofs", neither gutter washing nor roof
+      // installation is supported by that row.
+      return String(row.answer||'')
+        .split(/(?<=[.!?;])\s+|\s+(?:ja|sekä)\s+|[,;&]/i)
+        .some(clause=>matchesSubject(clause) && requirement.action.match.test(normalizeSearchText(clause)));
+    });
+  });
+  // An answer that confirms the entire request needs proof for every part.
+  if (findings.some(found=>!found)) return {supported:false};
+  const sourceRows=[...new Map(findings.map(row=>[row.id||row.title,row])).values()];
+  const requested=String(message).trim()
+    .replace(/^(?:voiko\s+teilt[aä]\s+tilata|voinko\s+teilt[aä]\s+tilata|saako\s+teilt[aä]|onnistuuko|teettekö)\s+/i,'')
+    .replace(/[?!.]+$/,'').trim();
+  const terms=requested.split(/\s+(?:ja|sekä)\s+|\s*,\s*|\s*&\s*/i).map(s=>s.trim());
+  const display=terms.length===2?'sekä '+terms[0]+' että '+terms[1] :
+    terms.slice(0,-1).join(', ')+' ja '+terms.at(-1);
+  return {
+    supported:true,
+    answer: /^(?:voiko|voinko|saako)/.test(q)
+      ? 'Kyllä, voit tilata meiltä '+display+'.'
+      : 'Kyllä, tarjoamme molemmat palvelut: '+display+'.',
+    evidence:sourceRows
+  };
+}
+
 function naturalServiceAnswer(rows) {
   const found = [];
   const add = (value) => {
@@ -1325,6 +1403,16 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // Short, contextual service follow-ups need a direct yes/no answer. If there
   // is no approved proof for the exact action, hand off rather than listing
   // unrelated services or inventing a confirmation.
+  // Never pass a combined service request to generic retrieval, which can
+  // answer from an unrelated row that merely shares marketing keywords.
+  const combinedService = responseLang==='fi' ? combinedFinnishServiceRequest(cleanMessage,rows) : null;
+  if (combinedService) {
+    const evidence=combinedService.evidence||[];
+    return combinedService.supported
+      ? {answer:combinedService.answer,handoff:false,confidence:0.92,intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence}
+      : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
+  }
+
   const contextualService = responseLang==='fi'
     ? groundedFinnishServiceReply(cleanMessage,history,rows) : null;
   if (contextualService) {

@@ -198,3 +198,38 @@ test('general roof cleaning questions reject installation, negative and unrelate
  const tileReply=await generateGroundedAnswer({rows:tiled,message:'pesettekö kattoja',lang:'fi'});
  assert.equal(tileReply.answer,'Kyllä, pesemme tiilikattoja.');
 });
+
+
+test('combined customer request confirms independently documented window and gutter services only',async()=>{
+ const rows=[
+  {id:'terrace',category:'Palvelut',title:'Terassin pesu',answer:'Terassi näyttää pesun ja öljyämisen jälkeen kuin uudelta.',source_type:'website',keywords:['palvelut']},
+  {id:'windows',category:'Palvelut',title:'Ammattimaiset ikkunapesut',answer:'Ammattimaiset ikkunapesut koteihin ja yrityksille.',source_type:'website',keywords:['palvelut']},
+  {id:'gutters',category:'Palvelut',title:'Peltikattojen pesut ja rännit',answer:'Hoidamme peltikattojen pesut sekä rännien puhdistukset huolellisesti.',source_type:'website',keywords:['palvelut']}
+ ];
+ const question='voiko teiltä tilata ikkunanpesun ja rännien puhdistuksen';
+ const answer=await generateGroundedAnswer({rows,message:question,lang:'fi'});
+ assert.equal(answer.handoff,false);
+ assert.equal(answer.answer,'Kyllä, voit tilata meiltä sekä ikkunanpesun että rännien puhdistuksen.');
+ assert.deepEqual(answer.sourceIds,['windows','gutters']);
+ assert.doesNotMatch(answer.answer,/terassi/i);
+ const other=await generateGroundedAnswer({rows,message:'onnistuuko ikkunanpesu ja rännien puhdistus?',lang:'fi'});
+ assert.equal(other.handoff,false);
+ assert.doesNotMatch(other.answer,/terassi/i);
+});
+test('combined service request cannot confirm a missing second service',async()=>{
+ const windows={id:'windows',category:'Palvelut',title:'Ikkunanpesut',answer:'Teemme ikkunanpesuja.',source_type:'website',keywords:['palvelut']};
+ const gutters={id:'installation',category:'Palvelut',title:'Rännien asennus',answer:'Asennamme rännejä ja pesemme kattoja.',source_type:'website',keywords:['palvelut']};
+ const answer=await generateGroundedAnswer({rows:[windows,gutters],message:'voiko teiltä tilata ikkunanpesun ja rännien puhdistuksen',lang:'fi'});
+ assert.equal(answer.handoff,true);
+ assert.equal(answer.answer,'');
+ assert.deepEqual(answer.sourceIds,[]);
+});
+test('combined service request does not borrow proof from reviews or negative claims',async()=>{
+ const windows={id:'windows',category:'Palvelut',title:'Ikkunanpesut',answer:'Teemme ikkunanpesuja.',source_type:'website',keywords:['palvelut']};
+ const review={id:'review',category:'Arvostelut',title:'Arvostelu',answer:'Rännien puhdistus oli erinomaista!',source_type:'website',keywords:['palvelut']};
+ const negative={id:'negative',category:'Palvelut',title:'Rännien puhdistus',answer:'Emme puhdista rännejä.',source_type:'website',keywords:['palvelut']};
+ for (const other of [review,negative]) {
+  const result=await generateGroundedAnswer({rows:[windows,other],message:'voiko teiltä tilata ikkunanpesun ja rännien puhdistuksen',lang:'fi'});
+  assert.equal(result.handoff,true);
+ }
+});
