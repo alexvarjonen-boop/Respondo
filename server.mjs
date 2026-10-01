@@ -1099,6 +1099,24 @@ async function forceAnswerLanguage(answer, lang) {
   });
 }
 
+function specificServiceConfirmation(query, rows) {
+  const q=normalizeSearchText(query);
+  if(!/^(?:teetteko|teettekö|onko teilla|onko teillä|tarjoatteko|saako teilta|saako teiltä|do you|can you|har ni|erbjuder ni)/i.test(q)) return '';
+  const stop=new Set(['teetteko','teettekö','onko','teilla','teillä','tarjoatteko','saako','teilta','teiltä','do','you','offer','provide','can','har','ni','erbjuder','tjänsten','tjansten','palvelua','palvelun']);
+  const wanted=searchTokens(query).filter((x)=>!stop.has(x) && x.length>=4);
+  if(!wanted.length) return '';
+  const hay=normalizeSearchText((rows||[]).map((r)=>String(r?.title||'')+' '+String(r?.answer||'')).join(' '));
+  const matched=wanted.filter((token)=>hay.includes(token));
+  if(!matched.length) return '';
+  // Use the customer's own service wording so a yes/no question gets a direct,
+  // human answer instead of the full company service catalogue.
+  let service=String(query||'').trim()
+    .replace(/^(?:teetteko|teettekö|onko teillä|onko teilla|tarjoatteko|saako teiltä|saako teilta)\s+/i,'')
+    .replace(/[?!.]+$/,'').trim();
+  if(!service) return '';
+  return 'Kyllä, teemme '+service+'.';
+}
+
 function naturalServiceAnswer(rows) {
   const found = [];
   const add = (value) => {
@@ -1256,7 +1274,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     }
     // For service questions, answer like a person instead of echoing scraped
     // headings/navigation: "Teemme X, Y ja Z."
-    const serviceAnswer=queryTopic(localQuery)==='services' ? naturalServiceAnswer(selected) : '';
+    const serviceAnswer=queryTopic(localQuery)==='services'
+      ? (specificServiceConfirmation(cleanMessage, selected) || naturalServiceAnswer(selected))
+      : '';
     finalAnswer=serviceAnswer || composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim();
     if(finalAnswer.length>520) finalAnswer=finalAnswer.slice(0,517).replace(/\s+\S*$/,'')+'…';
   } else {
