@@ -118,3 +118,51 @@ test('broad service question gives one factual sentence without repeating import
  assert.doesNotMatch(result.answer,/Helppo ja nopea|Kaikki työmme|varaa aika|Ammattimaiset ikkunapesut/i);
  assert.ok(result.answer.length<180);
 });
+
+
+test('Finnish follow-up about another cleaning service uses preceding action and exact proof',async()=>{
+ const serviceRows=[
+  {id:'gutters',category:'Palvelut',title:'Peltikattojen pesut & rännit',source_type:'website',
+   answer:'Hoidamme peltikattojen pesut sekä rännien puhdistukset huolellisesti ja tehokkaasti.',
+   keywords:['palvelut']},
+  {id:'marketing',category:'Palvelut',title:'Palvelumme',source_type:'website',
+   answer:'Tarjoamme laadukkaita kodin ja pihan huoltopalveluja ikkunanpesuista raivauksiin.',
+   keywords:['palvelut']}
+ ];
+ const history=[{question:'pesettekö peltikattoja',answer:'Kyllä, pesemme peltikattoja.'}];
+ const follow=await generateGroundedAnswer({rows:serviceRows,message:'entä rännejä',history,lang:'fi'});
+ assert.equal(follow.handoff,false);
+ assert.equal(follow.answer,'Kyllä, puhdistamme myös rännejä.');
+ assert.deepEqual(follow.sourceIds,['gutters']);
+ const direct=await generateGroundedAnswer({rows:serviceRows,message:'pesettekö rännejä?',lang:'fi'});
+ assert.equal(direct.answer,'Kyllä, puhdistamme rännejä.');
+ assert.equal(direct.handoff,false);
+});
+test('unknown or differently performed service follow-ups must not borrow proof',async()=>{
+ const rows=[
+  {id:'roof',category:'Palvelut',title:'Peltikattojen pesut',source_type:'website',answer:'Pesemme peltikattoja.',keywords:['palvelut']},
+  {id:'installed',category:'Palvelut',title:'Rännien asennus',source_type:'website',answer:'Asennamme rännejä ja pesemme kattoja.',keywords:['palvelut']}
+ ];
+ const history=[{question:'pesettekö peltikattoja',answer:'Kyllä, pesemme peltikattoja.'}];
+ for(const message of ['entä rännejä','entä terasseja']){
+  const reply=await generateGroundedAnswer({rows,message,history,lang:'fi'});
+  assert.equal(reply.handoff,true,message);
+  assert.equal(reply.answer,'',message);
+ }
+ const unrelated=await generateGroundedAnswer({rows,message:'entä rännejä',history:[{question:'Mitä maksaa?'}],lang:'fi'});
+ assert.equal(unrelated.handoff,true);
+ const negative=await generateGroundedAnswer({rows:[{id:'no',category:'Palvelut',title:'Rännien puhdistus',source_type:'website',answer:'Emme puhdista rännejä.',keywords:['palvelut']}],message:'entä rännejä',history,lang:'fi'});
+ assert.equal(negative.handoff,true);
+});
+test('specific order requests confirm only an explicitly listed service',async()=>{
+ const rows=[
+  {id:'junk',category:'Palvelut',title:'Palvelumme',source_type:'website',answer:'Tarjoamme monipuolisia palveluja.',keywords:['palvelut']},
+  {id:'removal',category:'Palvelut',title:'Romun poisvienti',source_type:'website',answer:'Romun poisvienti: Noudamme vanhat huonekalut ja viemme tavarat kierrätykseen.',keywords:['palvelut']}
+ ];
+ const yes=await generateGroundedAnswer({rows,message:'voiko teiltä tilata romun poisviennin',lang:'fi'});
+ assert.equal(yes.handoff,false);
+ assert.equal(yes.answer,'Kyllä, voit tilata meiltä romun poisviennin.');
+ assert.deepEqual(yes.sourceIds,['removal']);
+ const no=await generateGroundedAnswer({rows,message:'voiko teiltä tilata lentokoneen maalauksen',lang:'fi'});
+ assert.equal(no.handoff,true);
+});
