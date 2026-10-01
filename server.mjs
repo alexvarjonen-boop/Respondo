@@ -1143,7 +1143,7 @@ function finnishServiceStem(word) {
 function groundedFinnishServiceReply(message, history, rows) {
   const q=normalizeSearchText(message);
   const direct=q.match(/^(teetteko|pesetteko|puhdistatteko|huollatteko|asennatteko|maalaatteko|korjaatteko|raivaatteko|vietteko)\s+([a-z-]+)$/);
-  const follow=q.match(/^(?:enta|mites|ja)\s+([a-z-]+)$/);
+  const follow=q.match(/^(?:enta|mites|ja)\s+([a-z-]+(?:\s+[a-z-]+){0,3})$/);
   const order=q.match(/^(?:voiko\s+teilta\s+tilata|voinko\s+tilata\s+teilta|voinko\s+teilta\s+tilata|voiko\s+tilata\s+teilta|voiko\s+tilata|voinko\s+tilata|saako\s+teilta|saanko\s+teilta)\s+([a-z]+(?:\s+[a-z]+){0,3})$/);
   // Accept common Finnish inflections and a doubled vowel typo. Check oiling
   // as a standalone service: a before/after marketing sentence is not proof
@@ -1153,6 +1153,19 @@ function groundedFinnishServiceReply(message, history, rows) {
   // Never interpret timing, price, a discount, or multiple requested services
   // as a simple positive service confirmation.
   if (queryTopic(message) && !direct && !order) return null;
+
+  // A follow-up can already contain the service action itself, e.g.
+  // "Entä ikkunoidenpesun?" after another order question. Resolve that phrase
+  // as a standalone order instead of requiring the previous message to start
+  // with "pesettekö/teettekö". This also covers spaced forms such as
+  // "Entä ikkunoiden pesun?".
+  if (follow) {
+    const explicitService=follow[1].trim();
+    if (/(?:puhdist|pesu|pese|pesem|ikkunanpes|ikkunapes|oljy|asenn|maal|korj|huol|raiva|poisvien|kuljet|nout)/.test(explicitService)) {
+      const resolved=groundedFinnishServiceReply('voinko tilata '+explicitService, [], rows);
+      return resolved?.supported ? resolved : {supported:false};
+    }
+  }
 
   const approved=rows.filter(row=>{
     if (!usableWebsiteRow(row)) return false;
