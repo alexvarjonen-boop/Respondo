@@ -7595,33 +7595,27 @@ body{
 }
 
 
-/* Public Try Bot workspace mirrors the purchased dashboard, while installation
-   credentials and HTML remain locked behind an account. */
-.assistant-demo-shell .dashboard-simple-main{min-height:100vh}
-.assistant-demo-shell .dashboard-topbar{position:sticky;top:0;z-index:1200}
-.assistant-demo-shell .assistant-demo-top-actions{display:flex;align-items:center}
-.assistant-demo-shell .assistant-demo-buy{white-space:nowrap}
-.assistant-demo-shell .assistant-demo-view{margin-bottom:24px}
-.assistant-demo-shell .assistant-demo-save-row small{display:block;margin-top:4px;color:#7a7f87}
+/* Public demo intentionally inherits every normal dashboard layout rule.
+   Only the locked installation contents need extra styling. */
 .assistant-demo-install-lock{
   min-height:440px;display:flex;flex-direction:column;align-items:center;justify-content:center;
   text-align:center;padding:54px!important
 }
+.assistant-demo-install-lock .panel-head{width:100%;text-align:left;margin-bottom:28px}
 .assistant-demo-install-lock .assistant-demo-lock-icon{
   width:74px;height:74px;border-radius:22px;background:#111114;color:#fff;
   display:grid;place-items:center;font-size:28px;font-weight:900;margin-bottom:18px
 }
-.assistant-demo-install-lock>small{font-size:10px;font-weight:900;letter-spacing:.14em;color:#8a9099}
-.assistant-demo-install-lock h2{max-width:650px;margin:10px auto;font-size:clamp(28px,4vw,48px);letter-spacing:-.045em;line-height:1}
-.assistant-demo-install-lock p{max-width:690px;color:#6d7480;line-height:1.65;margin:0 auto 24px}
+.assistant-demo-install-lock>h3{
+  max-width:650px;margin:10px auto;font-size:clamp(26px,3.2vw,42px);letter-spacing:-.04em;line-height:1.05
+}
+.assistant-demo-install-lock>p{max-width:690px;color:#6d7480;line-height:1.65;margin:0 auto 24px}
 .assistant-demo-shell .preview-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .assistant-demo-shell .preview-action-link{
-  display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;
-  border-radius:12px;background:#111114;color:#fff;text-decoration:none;font-weight:800;font-size:12px
+  display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;
+  border-radius:12px;background:#111114;color:#fff;text-decoration:none;font-weight:700;line-height:1.2
 }
 @media(max-width:760px){
-  .assistant-demo-shell .dashboard-topbar{position:sticky!important;top:0!important}
-  .assistant-demo-shell .dashboard-section-picker{order:3;width:100%}
-  .assistant-demo-shell .assistant-demo-buy{padding:10px 12px!important;font-size:11px!important}
-  .assistant-demo-install-lock{padding:34px 18px!important;min-height:360px}
+  .assistant-demo-install-lock{padding:28px 16px!important;min-height:360px}
 }
+
