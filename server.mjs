@@ -1266,6 +1266,23 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   let selected = selectRelevantKnowledge(rows, localQuery, 8);
 
+  // Direct service yes/no questions must be resolved against the whole approved
+  // knowledge base before generic retrieval can pick a review or unrelated row.
+  // Example: "Viettekö romut pois?" should become "Kyllä, viemme romut pois."
+  // even when a review containing "vietiin pois" happens to rank highest.
+  const directServiceAnswer = responseLang === 'fi' ? specificServiceConfirmation(cleanMessage, rows) : '';
+  if (directServiceAnswer) {
+    const evidence = selected.length ? selected : rows.filter((row) => !importedKnowledgeJunk(String(row?.title||'')+' '+String(row?.answer||''))).slice(0,3);
+    return {
+      answer: directServiceAnswer,
+      handoff: false,
+      confidence: 0.92,
+      intent: 'Palvelut',
+      sourceIds: evidence.map((row)=>row.id).filter(Boolean),
+      selected: evidence
+    };
+  }
+
   // Broad questions such as "What do you sell?" or "Tell me about the company"
   // should use the approved knowledge base as factual memory instead of requiring
   // an exact pre-written Q&A pair.
@@ -1306,8 +1323,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     }
     // For service questions, answer like a person instead of echoing scraped
     // headings/navigation: "Teemme X, Y ja Z."
-    const directServiceAnswer=specificServiceConfirmation(cleanMessage, selected);
-    const serviceAnswer=directServiceAnswer || (queryTopic(localQuery)==='services' ? naturalServiceAnswer(selected) : '');
+    const serviceAnswer=queryTopic(localQuery)==='services' ? naturalServiceAnswer(selected) : '';
     finalAnswer=serviceAnswer || composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim();
     if(finalAnswer.length>520) finalAnswer=finalAnswer.slice(0,517).replace(/\s+\S*$/,'')+'…';
   } else {
