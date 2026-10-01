@@ -1101,8 +1101,10 @@ async function forceAnswerLanguage(answer, lang) {
 
 function specificServiceConfirmation(query, rows) {
   const q=normalizeSearchText(query);
-  if(!/^(?:teetteko|teettekö|onko teilla|onko teillä|tarjoatteko|saako teilta|saako teiltä|do you|can you|har ni|erbjuder ni)/i.test(q)) return '';
-  const stop=new Set(['teetteko','teettekö','onko','teilla','teillä','tarjoatteko','saako','teilta','teiltä','do','you','offer','provide','can','har','ni','erbjuder','tjänsten','tjansten','palvelua','palvelun']);
+  // normalizeSearchText removes Finnish diacritics, so match the normalized
+  // forms here (e.g. "teettekö" -> "teetteko").
+  if(!/^(?:teetteko|onko teilla|tarjoatteko|saako teilta|do you|can you|har ni|erbjuder ni)/i.test(q)) return '';
+  const stop=new Set(['teetteko','onko','teilla','tarjoatteko','saako','teilta','do','you','offer','provide','can','har','ni','erbjuder','tjansten','palvelua','palvelun']);
   const wanted=searchTokens(query).filter((x)=>!stop.has(x) && x.length>=4);
   if(!wanted.length) return '';
   const hay=normalizeSearchText((rows||[]).map((r)=>String(r?.title||'')+' '+String(r?.answer||'')).join(' '));
