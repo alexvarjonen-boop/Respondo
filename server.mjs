@@ -433,6 +433,35 @@ function genericCompanyQuestion(value) {
   return /kerro.*(?:yrityks|teist)|mita teette|mita tarjoatte|mita myytte|mita teilta saa|millainen yritys|what do you do|what do you offer|what do you sell|tell me about|what kind of (?:company|business)|vad gor ni|vad erbjuder ni|vad saljer ni|beratta om/.test(q);
 }
 
+// Respond with one grounded service description instead of stitching together
+// several imported paragraphs, which often repeat marketing copy.
+function briefServiceAnswer(selected) {
+  const candidates = [];
+  const seen = new Set();
+  for (const row of selected) {
+    if (knowledgeTopic(String(row.title||'')+' '+String(row.category||'')+' '+String(row.keywords||'')) !== 'services') continue;
+    const raw = String(row.answer||'').replace(/\s+/g,' ').trim()
+      .replace(/^(?:palvelumme|palvelut|services|tjänster)\s*[:–—-]\s*/i,'');
+    for (const sentence of raw.split(/(?<=[.!?])\s+/)) {
+      const text=sentence.trim();
+      if (text.length<22 || text.length>260) continue;
+      if (!/(?:tarjoamme|teemme|palvelui|palveluj|palvelut|pesu|siivou|raiva|maala|huolto|asennu|korjau|kuljet|muutto|we offer|we provide|our services|vi erbjuder|våra tjänster)/i.test(text)) continue;
+      if (/(?:varaa|ota yhteyt|contact us|book now|lue lisää|read more|tutustu)/i.test(text)) continue;
+      const key=normalizeSearchText(text);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const score=(/^(?:tarjoamme|teemme|we offer|we provide|vi erbjuder)\b/i.test(text)?40:0)
+        + (/(?:ikkunanpes|siivou|raivau|maala|huolto|asennu|korjau|kuljet|muutto)/i.test(text)?20:0)
+        + (text.length<=165?10:0)
+        - (/(?:helppo|nopea palvelu|luotettavasti|ammattitaitoisesti)/i.test(text)?8:0);
+      candidates.push({text,score});
+    }
+  }
+  candidates.sort((a,b)=>b.score-a.score);
+  const best=candidates[0]?.text||'';
+  return best ? best.replace(/[.!?]+$/,'')+'.' : '';
+}
+
 function composeKnowledgeAnswer(selected, query) {
   const topic=queryTopic(query);
   const pieces=[];
@@ -1238,7 +1267,8 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     for(const item of usable){
       if(!unique.some((x)=>normalizeSearchText(x).includes(normalizeSearchText(item.text).slice(0,80)))) unique.push(item.text);
     }
-    finalAnswer=composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim();
+    finalAnswer=(queryTopic(localQuery)==='services' ? briefServiceAnswer(selected) : '')
+      || composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim();
     if(finalAnswer.length>520) finalAnswer=finalAnswer.slice(0,517).replace(/\s+\S*$/,'')+'…';
   } else {
     finalAnswer = conciseKnowledgeAnswer(top, cleanMessage);
