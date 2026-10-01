@@ -1085,6 +1085,38 @@ async function forceAnswerLanguage(answer, lang) {
   return translateTextFree(text, target, 'auto');
 }
 
+function naturalServiceAnswer(rows) {
+  const found = [];
+  const add = (value) => {
+    let s=String(value||'').replace(/\s+/g,' ').trim()
+      .replace(/^(?:palvelut?|services?|tjänster?)\s*[-–—:]?\s*/i,'')
+      .replace(/\s*\|.*$/,'').trim();
+    if(!s || s.length<4 || s.length>55) return;
+    if(/yhteystiedot|varaa aika|pyydä tarjous|tietoa meistä|mitä teemme|palvelumme|varsinais-suomi|turku|skip|toggle|menu|nav/i.test(s)) return;
+    const key=normalizeSearchText(s);
+    if(!found.some(x=>normalizeSearchText(x)===key)) found.push(s);
+  };
+  for(const row of rows||[]){
+    const raw=String(row?.answer||'').replace(/\s+/g,' ').trim();
+    const title=String(row?.title||'').trim();
+    // Page headings such as "Palvelut – Ikkunanpesu, Kattopesut, Maalaus & Raivaus | Yritys"
+    // are useful, but navigation text after the title is not.
+    const heading=(title+' '+raw.slice(0,180)).match(/palvelut?\s*[-–—:]\s*([^|.]{4,140})/i);
+    if(heading){
+      heading[1].split(/\s*(?:,|&| ja )\s*/i).forEach(add);
+    }
+    // Pick concrete service phrases from normal prose. Keep this deliberately
+    // conservative so CTA/navigation words never become part of the answer.
+    const serviceRe=/\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö-]*(?:n|jen)?\s+(?:pesu(?:t|ja)?|siistiminen|raivaus(?:työt|töitä)?|maalaus(?:työt|töitä)?|huolto(?:työt|a)?|puhdistus(?:työt|ta)?|leikkaus|poisvienti))\b/gi;
+    let m;
+    while((m=serviceRe.exec(raw))!==null) add(m[1]);
+  }
+  if(!found.length) return '';
+  const items=found.slice(0,8);
+  if(items.length===1) return 'Teemme '+items[0]+'.';
+  return 'Teemme '+items.slice(0,-1).join(', ')+' ja '+items[items.length-1]+'.';
+}
+
 function conciseKnowledgeAnswer(row, query) {
   let raw=String(row?.answer||'').replace(/\s+/g,' ').trim();
   if(!raw || importedKnowledgeJunk(raw)) return '';
@@ -1203,7 +1235,10 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     for(const item of usable){
       if(!unique.some((x)=>normalizeSearchText(x).includes(normalizeSearchText(item.text).slice(0,80)))) unique.push(item.text);
     }
-    finalAnswer=composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim();
+    // For service questions, answer like a person instead of echoing scraped
+    // headings/navigation: "Teemme X, Y ja Z."
+    const serviceAnswer=queryTopic(localQuery)==='services' ? naturalServiceAnswer(selected) : '';
+    finalAnswer=serviceAnswer || composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim();
     if(finalAnswer.length>520) finalAnswer=finalAnswer.slice(0,517).replace(/\s+\S*$/,'')+'…';
   } else {
     finalAnswer = conciseKnowledgeAnswer(top, cleanMessage);
