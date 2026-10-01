@@ -1257,9 +1257,12 @@ function combinedFinnishServiceRequest(message, rows) {
       !/\b(?:emme|ei|eivat|not|inte|aldrig)\b/.test(normalizeSearchText(String(row.answer||'')));
   });
   const findings=requirements.map(requirement=>{
-    const queryStems=requirement.subjects.map(finnishServiceStem);
+    // Both "ikkunanpesu" and "ikkunapesu" occur on Finnish service sites.
+    // Normalize only this established spelling pair, not arbitrary compounds.
+    const canonicalStem=word=>finnishServiceStem(word).replace(/^ikkunanpes/,'ikkunapes');
+    const queryStems=requirement.subjects.map(canonicalStem);
     const matchesSubject=text=>{
-      const evidence=normalizeSearchText(text).split(/[\s-]+/).filter(Boolean).map(finnishServiceStem);
+      const evidence=normalizeSearchText(text).split(/[\s-]+/).filter(Boolean).map(canonicalStem);
       return queryStems.every(stem=>stem.length>=4 && evidence.includes(stem));
     };
     return approved.find(row=>{
