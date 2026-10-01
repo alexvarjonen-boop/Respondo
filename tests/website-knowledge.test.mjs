@@ -447,3 +447,55 @@ test('dashboard preview API handles the exact pictured customer request',async()
   await new Promise(resolve=>server.close(resolve));
  }
 });
+
+
+test('single booking question "voinko tilata teiltä ikkunanpesun" returns a direct service answer, never page title text',async()=>{
+ const rows=[
+  {id:'junk',category:'Palvelut',title:'Monitoimipojat RD – Kodin huoltopalvelut Turussa | Ikkunanpesu, Kattopesut & Raivaus | Palvelut | Yhteystiedot',
+   answer:'Monitoimipojat RD – Kodin huoltopalvelut Turussa | Ikkunanpesu, Kattopesut & Raivaus Palvelut Yhteystiedot',
+   source_type:'website',keywords:['palvelut']},
+  {id:'windows',category:'Palvelut',title:'Ikkunanpesut',
+   answer:'Tarjoamme ikkunanpesua koteihin ja yrityksille.',source_type:'website',keywords:['palvelut']}
+ ];
+ for(const message of ['Voinko tilata teiltä ikkunanpesun','voinko teiltä tilata ikkunanpesun?','voiko tilata teiltä ikkunanpesun']) {
+   const reply=await generateGroundedAnswer({rows,message,lang:'fi'});
+   assert.equal(reply.handoff,false,JSON.stringify(reply));
+   assert.equal(reply.answer,'Kyllä, voit tilata meiltä ikkunanpesun.');
+   assert.deepEqual(reply.sourceIds,['windows']);
+   assert.doesNotMatch(reply.answer,/Monitoimipojat|Yhteystiedot|\|/i);
+ }
+});
+test('page title/navigation text alone can never prove that a service is orderable',async()=>{
+ const rows=[{
+  id:'junk',category:'Palvelut',
+  title:'Monitoimipojat RD – Kodin huoltopalvelut Turussa | Ikkunanpesu, Kattopesut & Raivaus | Palvelut | Yhteystiedot',
+  answer:'Monitoimipojat RD – Kodin huoltopalvelut Turussa | Ikkunanpesu, Kattopesut & Raivaus Palvelut Yhteystiedot',
+  source_type:'website',keywords:['palvelut']
+ }];
+ const reply=await generateGroundedAnswer({rows,message:'Voinko tilata teiltä ikkunanpesun',lang:'fi'});
+ assert.equal(reply.handoff,true,JSON.stringify(reply));
+ assert.equal(reply.answer,'');
+ assert.deepEqual(reply.sourceIds,[]);
+});
+test('dashboard preview API handles the exact single-service booking question from the screenshot',async()=>{
+ const {app}=await import('../server.mjs');
+ const server=app.listen(0,'127.0.0.1');
+ await new Promise(resolve=>server.once('listening',resolve));
+ try {
+  const response=await fetch('http://127.0.0.1:'+server.address().port+'/api/public/demo-chat',{
+   method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({lang:'fi',message:'Voinko tilata teiltä ikkunanpesun',profile:{customFacts:[
+    {key:'Ikkunanpesut',answer:'Tarjoamme ikkunanpesua koteihin ja yrityksille.'},
+    {key:'Monitoimipojat RD – Kodin huoltopalvelut Turussa | Ikkunanpesu, Kattopesut & Raivaus | Palvelut | Yhteystiedot',
+     answer:'Monitoimipojat RD – Kodin huoltopalvelut Turussa | Ikkunanpesu, Kattopesut & Raivaus Palvelut Yhteystiedot'}
+   ]}})
+  });
+  assert.equal(response.status,200);
+  const result=await response.json();
+  assert.equal(result.handoff,false,JSON.stringify(result));
+  assert.equal(result.answer,'Kyllä, voit tilata meiltä ikkunanpesun.');
+  assert.doesNotMatch(result.answer,/Monitoimipojat|Yhteystiedot|\|/i);
+ } finally {
+  await new Promise(resolve=>server.close(resolve));
+ }
+});

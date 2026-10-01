@@ -1112,7 +1112,7 @@ function groundedFinnishServiceReply(message, history, rows) {
   const q=normalizeSearchText(message);
   const direct=q.match(/^(teetteko|pesetteko|puhdistatteko|huollatteko|asennatteko|maalaatteko|korjaatteko|raivaatteko|vietteko)\s+([a-z-]+)$/);
   const follow=q.match(/^(?:enta|mites|ja)\s+([a-z-]+)$/);
-  const order=q.match(/^voiko\s+teilta\s+tilata\s+([a-z]+(?:\s+[a-z]+){0,2})$/);
+  const order=q.match(/^(?:voiko\s+teilta\s+tilata|voinko\s+tilata\s+teilta|voinko\s+teilta\s+tilata|voiko\s+tilata\s+teilta|voiko\s+tilata|voinko\s+tilata|saako\s+teilta|saanko\s+teilta)\s+([a-z]+(?:\s+[a-z]+){0,3})$/);
   // Accept common Finnish inflections and a doubled vowel typo. Check oiling
   // as a standalone service: a before/after marketing sentence is not proof
   // that the business actually offers the oiling work.
@@ -1162,15 +1162,79 @@ function groundedFinnishServiceReply(message, history, rows) {
 
   if (order) {
     const subject=order[1].trim();
-    const words=searchTokens(subject);
-    const found=words.length>=1 && words.length<=3 && approved.find(row=>{
-      // An explicit, approved service name is proof that the service can be
-      // requested. Similar text in a generic marketing paragraph is not.
-      const title=searchTokens(row.title);
-      return words.every(w=>title.some(t=>t.slice(0,Math.min(6,t.length))===w.slice(0,Math.min(6,w.length))));
+    // Multi-service orders are handled by combinedFinnishServiceRequest.
+    // Never collapse "A ja B" into one loose single-service match here.
+    if (/\b(?:ja|seka)\b|[,;&]/.test(subject)) return null;
+
+    const actionKind=/puhdist/.test(subject)?'clean':
+      /(?:pesu|pese|pesem|ikkunanpes|ikkunapes)/.test(subject)?'clean':
+      /oljy/.test(subject)?'oil':
+      /asenn/.test(subject)?'install':
+      /maal/.test(subject)?'paint':
+      /korj/.test(subject)?'repair':
+      /huol/.test(subject)?'maintain':
+      /raiva/.test(subject)?'clear':
+      /poisvien|kuljet|nout/.test(subject)?'transport':'';
+
+    const subjectRoots=searchTokens(subject).map(word=>{
+      const w=normalizeSearchText(word);
+      if (/^ikkun/.test(w)) return 'ikkun';
+      if (/^peltikat/.test(w)) return 'peltikatt';
+      if (/^tiilikat/.test(w)) return 'tiilikatt';
+      if (/^rann/.test(w)) return 'rann';
+      if (/^terass/.test(w)) return 'terass';
+      if (/^(?:pes|puhdist|oljy|asenn|maal|korj|huol|raiva|poisvien|kuljet|nout)/.test(w)) return '';
+      return finnishServiceStem(w);
+    }).filter(root=>root.length>=4);
+
+    const actionMatches=text=>{
+      const t=normalizeSearchText(text);
+      if(!actionKind) return true;
+      if(actionKind==='clean') return /puhdist|pesu|pese|pesem|ikkunanpes|ikkunapes/.test(t);
+      if(actionKind==='oil') return /oljy/.test(t);
+      if(actionKind==='install') return /asenn/.test(t);
+      if(actionKind==='paint') return /maal/.test(t);
+      if(actionKind==='repair') return /korj/.test(t);
+      if(actionKind==='maintain') return /huol/.test(t);
+      if(actionKind==='clear') return /raiva/.test(t);
+      return /poisvien|kuljet|nout/.test(t);
+    };
+    const subjectMatches=text=>{
+      const words=normalizeSearchText(text).split(/[\s-]+/).filter(Boolean).map(word=>{
+        if(/^ikkun/.test(word)) return 'ikkun';
+        if(/^peltikat/.test(word)) return 'peltikatt';
+        if(/^tiilikat/.test(word)) return 'tiilikatt';
+        if(/^rann/.test(word)) return 'rann';
+        if(/^terass/.test(word)) return 'terass';
+        return finnishServiceStem(word);
+      });
+      return subjectRoots.length ? subjectRoots.every(root=>words.includes(root)) : false;
+    };
+
+    const found=subjectRoots.length && approved.find(row=>{
+      const title=String(row.title||'');
+      const answer=String(row.answer||'');
+      const normalizedAnswer=normalizeSearchText(answer);
+      if(/\b(?:emme|ei|eivat|not|inte|aldrig)\b/.test(normalizedAnswer)) return false;
+
+      // A browser/page title such as "Company | Ikkunanpesu | Palvelut |
+      // Yhteystiedot" is navigation metadata, not proof that the service
+      // can actually be ordered.
+      const chromeLike=/\|/.test(title) &&
+        /(?:yhteystiedot|contact|etusivu|home|palvelut|services)/i.test(title);
+      if(chromeLike) return false;
+
+      if(subjectMatches(title) && actionMatches(title)) return true;
+      return answer.split(/[.!?;]+/).some(clause=>
+        subjectMatches(clause) && actionMatches(clause) &&
+        !importedKnowledgeJunk(clause)
+      );
     });
     if (!found) return {supported:false};
-    const requested=String(message).trim().replace(/^voiko\s+teilt[aä]\s+tilata\s+/i,'').replace(/[?!.]+$/,'').toLowerCase();
+
+    const requested=String(message).trim()
+      .replace(/^(?:voiko\s+teilt[aä]\s+tilata|voinko\s+tilata\s+teilt[aä]|voinko\s+teilt[aä]\s+tilata|voiko\s+tilata\s+teilt[aä]|voiko\s+tilata|voinko\s+tilata|saako\s+teilt[aä]|saanko\s+teilt[aä])\s+/i,'')
+      .replace(/[?!.]+$/,'').toLowerCase();
     return {supported:true,answer:'Kyllä, voit tilata meiltä '+requested+'.',evidence:[found]};
   }
 
