@@ -516,7 +516,7 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
   // A service-specific price question must not return the price of an unrelated
   // service just because both price rows share the category/keywords 'Hinnat'.
   const priceSubjects = wantedTopic === 'pricing' ? searchTokens(query).filter(word =>
-    word.length >= 4 && !/^(?:hinn|hint|maks|kustann|palvel|service|price|pricing|cost|much$|per$|hour|tunt|euro|eur$|pris|kost|vilken|mycket$|paljon|alka|from$|starting|does$|finns$|teetteko$)/.test(word)
+    word.length >= 4 && !/^(?:hinn|hint|maks|kustann|palvel|service|price|pricing|cost|much$|per$|hour|tunt|euro|eur$|pris|kost|vilken|mycket$|paljon|alka|from$|starting|does$|finns$|teetteko$|pesu|puhdist|siivou|oljy|asenn|maal|korj|huol|raiva|poisvien|kuljet)/.test(word)
   ) : [];
   const legalQuery = /tietosuoja|privacy|käyttöeh|kayttoeh|terms|ehto|cookie|eväste|evaste|gdpr/.test(q);
   return rows
