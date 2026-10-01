@@ -221,8 +221,10 @@ test('combined service request cannot confirm a missing second service',async()=
  const gutters={id:'installation',category:'Palvelut',title:'Rännien asennus',answer:'Asennamme rännejä ja pesemme kattoja.',source_type:'website',keywords:['palvelut']};
  const answer=await generateGroundedAnswer({rows:[windows,gutters],message:'voiko teiltä tilata ikkunanpesun ja rännien puhdistuksen',lang:'fi'});
  assert.equal(answer.handoff,true);
- assert.equal(answer.answer,'');
- assert.deepEqual(answer.sourceIds,[]);
+ assert.match(answer.answer,/Tiedoistamme löytyvät seuraavat palvelut: ikkunanpesu/);
+ assert.match(answer.answer,/Nämä palvelut pitää vielä varmistaa: rännien puhdistus/);
+ assert.doesNotMatch(answer.answer,/Kyllä, voit tilata/);
+ assert.deepEqual(answer.sourceIds,['windows']);
 });
 test('combined service request does not borrow proof from reviews or negative claims',async()=>{
  const windows={id:'windows',category:'Palvelut',title:'Ikkunanpesut',answer:'Teemme ikkunanpesuja.',source_type:'website',keywords:['palvelut']};
@@ -262,7 +264,7 @@ test('unproven fourth service produces a truthful partial handoff, not terrace m
   message:'voinko tilata teiltä peltikaton ja rännien pesun, ikkunoiden pesun sekä terassin öljyämisen'});
  assert.equal(result.handoff,true);
  assert.deepEqual(result.sourceIds,['roof','gutter','windows']);
- assert.match(result.answer,/En pysty vielä vahvistamaan näitä palveluja: terassin öljyämisen/);
+ assert.match(result.answer,/Nämä palvelut pitää vielä varmistaa: terassin öljyäminen/);
  assert.doesNotMatch(result.answer,/terassi näyttää/i);
  assert.doesNotMatch(result.answer,/Kyllä, voit tilata meiltä/i);
 });

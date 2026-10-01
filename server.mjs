@@ -1326,14 +1326,18 @@ function combinedFinnishServiceRequest(message, rows) {
   const list=items=>items.length===1?items[0]:
     items.length===2?items.join(' ja '):
       items.slice(0,-1).join(', ')+' ja '+items.at(-1);
+  const serviceName=label=>String(label)
+    .replace(/puhdistuksen$/,'puhdistus')
+    .replace(/öljyämisen$/,'öljyäminen')
+    .replace(/pesun$/,'pesu');
   if (missing.length) {
     // A partial reply is still a handoff: never assert that every service
     // can be performed, booked together, or scheduled on a specific day.
     if (!present.length) return {supported:false};
     return {
       supported:false,partial:true,evidence,
-      answer:'Tiedoistamme löytyvät '+list(present.map(x=>x.label))+'. '+
-        'En pysty vielä vahvistamaan näitä palveluja: '+list(missing.map(x=>x.label))+'. '+
+      answer:'Tiedoistamme löytyvät seuraavat palvelut: '+list(present.map(x=>serviceName(x.label)))+'. '+
+        'Nämä palvelut pitää vielä varmistaa: '+list(missing.map(x=>serviceName(x.label)))+'. '+
         'Jätä yhteystietosi, niin yritys voi varmistaa asian.'
     };
   }
@@ -1342,7 +1346,9 @@ function combinedFinnishServiceRequest(message, rows) {
   return {
     supported:true,evidence,
     answer:orderQuestion
-      ? 'Kyllä, voit tilata meiltä '+list(labels)+'.'
+      ? 'Kyllä, voit tilata meiltä '+(labels.length===2
+          ? 'sekä '+labels[0]+' että '+labels[1]
+          : list(labels))+'.'
       : 'Kyllä, tarjoamme seuraavat palvelut: '+list(labels)+'.'
   };
 }
