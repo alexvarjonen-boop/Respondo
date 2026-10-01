@@ -4,6 +4,16 @@ import {readFileSync} from 'node:fs';
 
 const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+const effects=readFileSync(new URL('../public/effects.js',import.meta.url),'utf8');
+
+test('legacy standalone assistant never replaces the shared Try Bot dashboard',()=>{
+  const initStart=effects.indexOf('function init()');
+  const initSource=effects.slice(initStart,initStart+1200);
+  assert.match(initSource,/location\.pathname === '\/assistant'/);
+  assert.doesNotMatch(initSource,/standaloneAssistant\(\)/);
+  assert.match(initSource,/document\.body\.classList\.remove\('assistant-standalone'\)/);
+  assert.match(html,/effects\.js\?v=20261002-assistant-dashboard-v8/);
+});
 
 test('public Try Bot has the same visible dashboard shell and default view as paid app',()=>{
   assert.match(app,/return `<div class="appshell dashboard-simple-shell">/);
