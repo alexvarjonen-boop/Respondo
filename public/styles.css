@@ -7400,3 +7400,70 @@ body{
 .website-import-candidate input{margin-top:4px;width:18px;height:18px}
 .website-import-candidate span{min-width:0;display:grid;gap:4px}.website-import-candidate b{font-size:14px;line-height:1.3}.website-import-candidate small{font-size:11px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.website-import-candidate p{margin:2px 0 0;color:#4d4d52;font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 @media(max-width:720px){.website-import-review-head{align-items:stretch;flex-direction:column}.website-import-review-head .btn{width:100%}.website-import-candidates{max-height:430px}}
+
+
+/* Desktop parity: keep the signed-in Respondo dashboard visually identical to
+   the current phone layout instead of switching to a separate desktop UI. */
+@media(min-width:921px){
+  .dashboard-os-shell{
+    display:block!important;
+    max-width:760px!important;
+    margin:0 auto!important;
+    background:#f5f5f7!important;
+  }
+  .dashboard-os-sidebar{display:none!important}
+  .dashboard-os-shell .dashboard-simple-main{
+    width:100%!important;
+    max-width:none!important;
+    padding:12px 14px 96px!important;
+  }
+  .dashboard-os-shell .dashboard-topbar{
+    top:0!important;
+    margin:0 -14px 10px!important;
+    padding:10px 14px!important;
+    border-width:0 0 1px!important;
+    border-radius:0!important;
+    background:rgba(255,255,255,.96)!important;
+    color:#1d1d1f!important;
+    box-shadow:0 8px 28px rgba(0,0,0,.06)!important;
+    -webkit-backdrop-filter:blur(22px) saturate(180%)!important;
+    backdrop-filter:blur(22px) saturate(180%)!important;
+  }
+  .dashboard-mobile-brand{display:block!important;grid-column:1!important;grid-row:1!important}
+  .dashboard-mobile-brand .brand-word{display:none!important}
+  .dashboard-mobile-brand .brand-mark{width:31px!important;height:31px!important}
+  .dashboard-page-context{grid-column:1!important;grid-row:2!important;margin-top:5px!important}
+  .dashboard-top-actions{grid-column:2!important;grid-row:1/3!important}
+  .dashboard-mobile-nav{
+    position:sticky!important;top:73px!important;z-index:69!important;
+    display:flex!important;gap:6px!important;margin:0 -2px 18px!important;
+    padding:5px 2px 8px!important;overflow-x:auto!important;scrollbar-width:none!important;
+    background:linear-gradient(to bottom,#f5f5f7 72%,rgba(245,245,247,0))!important;
+  }
+  .dashboard-mobile-nav::-webkit-scrollbar{display:none}
+  .dashboard-mobile-nav button{
+    flex:0 0 auto!important;min-height:42px!important;display:flex!important;align-items:center!important;
+    gap:7px!important;padding:0 12px!important;border:1px solid rgba(0,0,0,.07)!important;
+    border-radius:14px!important;background:#fff!important;color:#6a6a70!important;font-size:10px!important;
+    white-space:nowrap!important;
+  }
+  .dashboard-mobile-nav button.active{border-color:#1d1d1f!important;background:#1d1d1f!important;color:#fff!important}
+  .dashboard-launch-grid{grid-template-columns:1fr!important;gap:9px!important}
+  .dashboard-launch-card{min-height:100px!important;grid-template-columns:42px minmax(0,1fr) auto!important;gap:12px!important;padding:15px!important;border-radius:19px!important}
+  .dashboard-launch-icon{width:42px!important;height:42px!important;border-radius:13px!important}
+  .dashboard-os-shell .dashboard-head{padding:0 2px!important;margin-bottom:14px!important}
+  .dashboard-os-shell .dashboard-head h1{font-size:36px!important}
+  .dashboard-os-shell .panel{padding:18px!important;border-radius:20px!important}
+  .dashboard-os-shell .onboarding-card{padding:20px!important;border-radius:20px!important}
+  .dashboard-os-shell .onboarding-steps{grid-template-columns:1fr!important}
+  .dashboard-os-shell .stats{grid-template-columns:1fr 1fr!important;gap:9px!important}
+  .dashboard-os-shell .stat{padding:15px!important;border-radius:18px!important}
+  .dashboard-os-shell .stat b{font-size:26px!important}
+  .dashboard-os-shell .dashboard-settings-button{display:grid!important}
+  .dashboard-os-shell .dashboard-grid,
+  .dashboard-os-shell .profile-live-grid,
+  .dashboard-os-shell .actions2-layout{grid-template-columns:1fr!important}
+  .website-import-review-head{align-items:stretch!important;flex-direction:column!important}
+  .website-import-review-head .btn{width:100%!important}
+  .website-import-candidates{max-height:430px!important}
+}
