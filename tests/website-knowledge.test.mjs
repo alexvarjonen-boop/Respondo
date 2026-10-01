@@ -465,6 +465,70 @@ test('explicit Finnish service follow-up resolves its own action after an order 
  assert.deepEqual(spaced.sourceIds,['windows']);
 });
 
+test('normal Finnish service questions are understood without exact canned wording',async()=>{
+ const rows=[
+  {id:'windows',category:'Palvelut',title:'Ikkunanpesut',answer:'Tarjoamme ikkunanpesua koteihin ja yrityksille.',source_type:'website',keywords:['palvelut']}
+ ];
+ for(const message of ['Onnistuuko ikkunanpesu?','Pystyttekö pesemään ikkunat?','Onko teillä ikkunanpesua?','Haluaisin tilata ikkunanpesun']){
+  const reply=await generateGroundedAnswer({rows,message,lang:'fi'});
+  assert.equal(reply.handoff,false,message+' '+JSON.stringify(reply));
+  assert.match(reply.answer,/Kyllä/i,message);
+  assert.deepEqual(reply.sourceIds,['windows'],message);
+ }
+ const unknown=await generateGroundedAnswer({rows,message:'Pystyttekö pesemään lentokoneet?',lang:'fi'});
+ assert.equal(unknown.handoff,true,JSON.stringify(unknown));
+ assert.equal(unknown.answer,'');
+});
+
+test('service follow-ups inherit the previous action even when the previous question used normal order wording',async()=>{
+ const rows=[
+  {id:'roof',category:'Palvelut',title:'Peltikattojen pesut',answer:'Pesemme peltikattoja.',source_type:'website',keywords:['palvelut']},
+  {id:'windows',category:'Palvelut',title:'Ikkunanpesut',answer:'Tarjoamme ikkunanpesua koteihin ja yrityksille.',source_type:'website',keywords:['palvelut']}
+ ];
+ const history=[{question:'Voinko tilata teiltä katon pesun',answer:'Kyllä, voit tilata meiltä peltikaton pesun.'}];
+ const short=await generateGroundedAnswer({rows,message:'Entä ikkunoita?',history,lang:'fi'});
+ assert.equal(short.handoff,false,JSON.stringify(short));
+ assert.match(short.answer,/Kyllä.*ikkun/i);
+ assert.deepEqual(short.sourceIds,['windows']);
+ const compound=await generateGroundedAnswer({rows,message:'Entä ikkunoidenpesun?',history,lang:'fi'});
+ assert.equal(compound.handoff,false,JSON.stringify(compound));
+ assert.match(compound.answer,/Kyllä.*ikkunoidenpesun/i);
+ assert.deepEqual(compound.sourceIds,['windows']);
+});
+
+test('follow-up price questions keep the right subject instead of the previous service',async()=>{
+ const rows=[
+  {id:'window-service',category:'Palvelut',title:'Ikkunanpesut',answer:'Tarjoamme ikkunanpesua.',source_type:'website',keywords:['palvelut']},
+  {id:'roof-service',category:'Palvelut',title:'Katon pesu',answer:'Pesemme kattoja.',source_type:'website',keywords:['palvelut']},
+  {id:'window-price',category:'Hinnat',title:'Ikkunan pesu',answer:'Ikkunan pesu 49 €.',source_type:'website',keywords:['hinta']},
+  {id:'roof-price',category:'Hinnat',title:'Katon pesu',answer:'Katon pesu 89 €.',source_type:'website',keywords:['hinta']}
+ ];
+ const switched=await generateGroundedAnswer({rows,message:'Entä katon pesu?',history:[{question:'Mitä ikkunanpesu maksaa?',answer:'49 €.'}],lang:'fi'});
+ assert.equal(switched.handoff,false,JSON.stringify(switched));
+ assert.match(switched.answer,/89\s*€/);
+ assert.doesNotMatch(switched.answer,/49\s*€/);
+ assert.deepEqual(switched.sourceIds,['roof-price']);
+
+ const pronoun=await generateGroundedAnswer({rows,message:'Paljonko se maksaa?',history:[{question:'Voinko tilata ikkunanpesun?',answer:'Kyllä.'}],lang:'fi'});
+ assert.equal(pronoun.handoff,false,JSON.stringify(pronoun));
+ assert.match(pronoun.answer,/49\s*€/);
+ assert.deepEqual(pronoun.sourceIds,['window-price']);
+});
+
+test('topic follow-ups inherit context but unrelated standalone questions do not',async()=>{
+ const rows=[
+  {id:'hours',category:'Aukioloajat',title:'Aukioloajat',answer:'Ma–pe 9–17, la 10–14, su suljettu.',source_type:'website',keywords:['auki']},
+  {id:'windows',category:'Palvelut',title:'Ikkunanpesut',answer:'Tarjoamme ikkunanpesua.',source_type:'website',keywords:['palvelut']}
+ ];
+ const hours=await generateGroundedAnswer({rows,message:'Entä lauantaina?',history:[{question:'Milloin olette auki?',answer:'Ma–pe 9–17.'}],lang:'fi'});
+ assert.equal(hours.handoff,false,JSON.stringify(hours));
+ assert.match(hours.answer,/la 10–14/i);
+ const standalone=await generateGroundedAnswer({rows,message:'Mitä palveluja teette?',history:[{question:'Milloin olette auki?',answer:'Ma–pe 9–17.'}],lang:'fi'});
+ assert.equal(standalone.handoff,false,JSON.stringify(standalone));
+ assert.doesNotMatch(standalone.answer,/Ma–pe|10–14/i);
+ assert.match(standalone.answer,/ikkunanpes/i);
+});
+
 test('single booking question "voinko tilata teiltä ikkunanpesun" returns a direct service answer, never page title text',async()=>{
  const rows=[
   {id:'junk',category:'Palvelut',title:'Monitoimipojat RD – Kodin huoltopalvelut Turussa | Ikkunanpesu, Kattopesut & Raivaus | Palvelut | Yhteystiedot',
