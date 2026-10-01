@@ -7520,3 +7520,24 @@ body{
   body:not(.dashboard-page) .cta-shell{padding:30px!important}
   body:not(.dashboard-page) .cta-circle{width:118px!important;height:118px!important}
 }
+
+
+/* 2026-10-01: dashboard header must not hide the business form or show
+   form controls through its former translucent, dark overlay. */
+.dashboard-simple-shell .dashboard-topbar{
+  background:#fff!important;
+  color:#1d1d1f!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+.dashboard-simple-shell .dashboard-topbar-brand,
+.dashboard-simple-shell .dashboard-top-actions{color:#1d1d1f!important}
+@media(min-width:921px){
+  /* On desktop this tall two-row header scrolls with the page rather than
+     floating over text fields and the import approval controls. */
+  .dashboard-simple-shell .dashboard-topbar{
+    position:relative!important;
+    top:auto!important;
+    z-index:1!important;
+  }
+}
