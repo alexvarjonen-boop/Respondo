@@ -2698,7 +2698,7 @@ async function dashboard(options = {}) {
   const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
   const isWelcome = new URLSearchParams(location.search).get('welcome') === '1';
 
-  return `<div class="appshell dashboard-simple-shell">
+  return `<div class="appshell dashboard-simple-shell ${isDemo ? 'assistant-demo-shell' : ''}">
     <main class="appmain dashboard-simple-main">
       <header class="dashboard-topbar">
         <div class="dashboard-topbar-brand">
@@ -3307,15 +3307,15 @@ async function dashboard(options = {}) {
         <a class="btn ink" href="/tilaus?lang=${currentLang()}">${appText('Aloita 3 päivän kokeilu','Starta 3 dagars provperiod','Start 3-day trial')}</a>
       </section>` : `
       <section class="panel install-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="install" id="install">
-        <div class="panel-head"><div><small>\${appText('ASENNUS','INSTALLATION','INSTALLATION')}</small><h2>\${appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website')}</h2></div><span class="install-badge">1 \${appText('sivusto','webbplats','website')}</span></div>
-        <p>\${appText('Kopioi tämä koodi sivustosi HTML:ään juuri ennen sulkevaa','Kopiera koden till webbplatsens HTML precis före den avslutande','Copy this code into your website HTML just before the closing')} <code>&lt;/body&gt;</code>\${appText('-tagia.','-taggen.',' tag.')}</p>
+        <div class="panel-head"><div><small>${appText('ASENNUS','INSTALLATION','INSTALLATION')}</small><h2>${appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website')}</h2></div><span class="install-badge">1 ${appText('sivusto','webbplats','website')}</span></div>
+        <p>${appText('Kopioi tämä koodi sivustosi HTML:ään juuri ennen sulkevaa','Kopiera koden till webbplatsens HTML precis före den avslutande','Copy this code into your website HTML just before the closing')} <code>&lt;/body&gt;</code>${appText('-tagia.','-taggen.',' tag.')}</p>
         <div class="license-lock">
           <span>🔒 SIDOTTU VERKKOSIVUUN</span>
-          <b>\${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
-          <small>\${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
+          <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
+          <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="\${location.origin}/widget.js?v=20260924-language-v2" data-company="\${esc(t.slug)}" data-lang="\${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">\${appText('Kopioi','Kopiera','Copy')}</button></div>
-        <button type="button" class="install-done \${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="\${esc(t.id)}">\${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20260924-language-v2" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
       </section>
       `}
 
