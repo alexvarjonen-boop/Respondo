@@ -1,3 +1,4 @@
+import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow } from './website-knowledge.mjs';
 import express from 'express';
 import path from 'path';
 import crypto from 'crypto';
@@ -374,6 +375,8 @@ function searchTokens(value) {
 
 function knowledgeTopic(value) {
   const t=normalizeSearchText(value);
+  if (/^hinnat\b|hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
+  if (/tarjouspyynt|quote|estimate|offert/.test(t)) return 'quote';
   // Keep actual services separate from retail products. Previously both mapped to
   // "services", so "Mitä palveluja teette?" could rank an unrelated product card.
   if(/palvelu|service|services|tjanst|tjänst|tarjoa|erbjud|huolto|pesu|pesut|siistim|raivaus|maalaust|leikkaus|poisvienti|puhdist/.test(t)) return 'services';
@@ -390,7 +393,9 @@ function knowledgeTopic(value) {
 }
 function queryTopic(query) {
   const q=normalizeSearchText(query);
-  if(/mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|what do you (?:do|offer)|services|vad gor ni|vad gör ni|vad erbjuder|vilka tjänster|vilka tjanster|tjanster|tjänster/.test(q)) return 'services';
+  if (/tarjou[sk]|quote|estimate|offert/.test(q)) return 'quote';
+  if (/osoite|address|adress|sijainti/.test(q)) return 'contact';
+  if (!/hinta|maksaa|price|cost|pris|kostar|auki|hours|open|oppet/.test(q) && /mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|what do you (?:do|offer)|services|vad gor ni|vad gör ni|vad erbjuder|vilka tjänster|vilka tjanster|tjanster|tjänster/.test(q)) return 'services';
   if(/mita myytte|mitä myytte|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you sell|what products|vad säljer|vad saljer|sortiment/.test(q)) return 'products';
   if(/hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar/.test(q)) return 'pricing';
   if(/auki|aukiolo|opening|hours|open|oppet|öppet|oppettid/.test(q)) return 'hours';
@@ -467,7 +472,7 @@ function scoreKnowledgeRow(row, query) {
       if([...keywordTokens].some(x=>x.startsWith(stem))) score+=2;
     }
   }
-  const wanted=queryTopic(q);
+  const wanted=queryTopic(query);
   const rowTopic=knowledgeTopic(title+' '+category+' '+keywordText+' '+String(row.source_url||''));
   if(wanted && rowTopic===wanted) score+=30;
   else if(wanted && rowTopic && rowTopic!==wanted) score-=8;
@@ -479,6 +484,7 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
   const q = normalizeSearchText(query);
   const legalQuery = /tietosuoja|privacy|käyttöeh|kayttoeh|terms|ehto|cookie|eväste|evaste|gdpr/.test(q);
   return rows
+    .filter(usableWebsiteRow)
     .filter((x) => normalizeSearchText(x.title) !== 'vastaustyyli')
     .filter((x) => !importedKnowledgeJunk(String(x.title||'')+' '+String(x.answer||'')))
     .filter((x) => {
@@ -521,7 +527,7 @@ function inferIntent(message) {
   const q = normalizeSearchText(message);
   if (/tilausnumero|tilaukseni|tilauksen tila|order status|where is my order|seuranta|orderstatus|var är min beställning|var ar min bestallning/.test(q)) return 'Tilauksen tila';
   if (/ajanvaraus|varaa aika|ajan vara|booking|appointment|boka|bokning|tidsbokning/.test(q)) return 'Ajanvaraus';
-  if (/tarjous|tarjouspyynt|arvio|quote|estimate|offert|prisforslag|prisförslag/.test(q)) return 'Tarjouspyyntö';
+  if (/tarjou[sk]|arvio|quote|estimate|offert|prisforslag|prisförslag/.test(q)) return 'Tarjouspyyntö';
   if (/hinta|maksaa|hinnoittelu|kustannus|price|cost|pricing|pris|kostar|kostnad/.test(q)) return 'Hinta';
   if (/auki|lauantai|sunnuntai|viikonloppu|kello|opening|open|hours|öppet|oppet|öppettider|oppettider/.test(q)) return 'Aukioloajat';
   if (/puhelin|sahkoposti|sähköposti|yhteys|yhteytta|yhteyttä|yhteystiedot|ottaa yhteytta|ottaa yhteyttä|soittaa|phone|email|contact|contact us|get in touch|telefon|e-post|kontakt|kontakta|ringa/.test(q)) return 'Yhteystiedot';
@@ -559,8 +565,8 @@ function chatActions(rows, message, handoff = false, lang = 'fi') {
     if (booking) push({ type: 'booking', label: actionLang === 'en' ? 'Open calendar' : actionLang === 'sv' ? 'Öppna bokningen' : 'Avaa ajanvaraus', url: booking });
   }
 
-  if (/tarjous|hinta-arvio|arvio|kustannusarvio|quote|estimate|offert|prisförslag|prisforslag/.test(q)) {
-    push({ type: 'quote', mode: 'quote_form', label: actionLang === 'en' ? 'Request a quote' : actionLang === 'sv' ? 'Begär offert' : 'Pyydä tarjous' });
+  if (/tarjou[sk]|hinta-arvio|arvio|kustannusarvio|quote|estimate|offert|prisförslag|prisforslag/.test(q)) {
+    if (!quote) push({ type: 'quote', mode: 'quote_form', label: actionLang === 'en' ? 'Request a quote' : actionLang === 'sv' ? 'Begär offert' : 'Pyydä tarjous' });
     if (quote) push({ type: 'quote', label: actionLang === 'en' ? 'Open quote form' : actionLang === 'sv' ? 'Öppna offertformuläret' : 'Avaa tarjouslomake', url: quote });
   }
 
@@ -621,54 +627,45 @@ async function assertPublicHttpUrl(value) {
   return url;
 }
 
-async function fetchPublicHtml(value) {
+async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000) {
   let url = await assertPublicHttpUrl(value);
-  for (let i = 0; i < 4; i++) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-    let response;
-    try {
-      response = await fetch(url, {
-        redirect: 'manual',
-        signal: controller.signal,
-        headers: { 'User-Agent': 'RESPONDO-AI-Website-Importer/1.0' },
-      });
-    } finally {
-      clearTimeout(timer);
-    }
-    if ([301,302,303,307,308].includes(response.status)) {
-      const location = response.headers.get('location');
-      if (!location) throw new Error('Verkkosivun uudelleenohjaus epäonnistui.');
-      url = await assertPublicHttpUrl(new URL(location, url).toString());
-      continue;
-    }
-    if (!response.ok) throw new Error('Verkkosivua ei saatu luettua.');
-    const type = String(response.headers.get('content-type') || '');
-    if (!type.includes('text/html')) throw new Error('Osoite ei näytä HTML-verkkosivulta.');
-    const length = Number(response.headers.get('content-length') || 0);
-    if (length > 8_000_000) throw new Error('Yksittäinen verkkosivu on liian suuri automaattiseen tuontiin.');
-    const reader = response.body?.getReader?.();
-    if (!reader) throw new Error('Verkkosivua ei saatu luettua.');
-    const chunks = [];
-    let total = 0;
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        total += value?.byteLength || 0;
-        if (total > 8_000_000) {
-          try { await reader.cancel(); } catch {}
-          throw new Error('Yksittäinen verkkosivu on liian suuri automaattiseen tuontiin.');
-        }
-        if (value) chunks.push(Buffer.from(value));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    for (let redirects = 0; redirects < 4; redirects++) {
+      const response = await fetch(url, {redirect:'manual',signal:controller.signal,headers:{'User-Agent':'RESPONDO-Website-Importer/2.0'}});
+      if ([301,302,303,307,308].includes(response.status)) {
+        const location = response.headers.get('location');
+        await response.body?.cancel();
+        if (!location) throw new Error('Verkkosivun uudelleenohjaus epäonnistui.');
+        url = await assertPublicHttpUrl(new URL(location,url).href);
+        continue;
       }
-    } finally {
-      try { reader.releaseLock(); } catch {}
+      if (!response.ok) { await response.body?.cancel(); throw new Error('Verkkosivua ei saatu luettua.'); }
+      const type = String(response.headers.get('content-type') || '').toLowerCase();
+      if (!acceptedTypes.some(x=>type.includes(x)) || Number(response.headers.get('content-length')||0)>maxBytes) {
+        await response.body?.cancel(); throw new Error('Verkkosivun sisältöä ei voitu lukea.');
+      }
+      const reader=response.body?.getReader();
+      if (!reader) throw new Error('Verkkosivun sisältö puuttuu.');
+      const chunks=[]; let total=0;
+      try {
+        while (true) {
+          const {done,value}=await reader.read();
+          if (done) break;
+          total+=value.byteLength;
+          if (total>maxBytes) { await reader.cancel(); throw new Error('Verkkosivu on liian suuri automaattiseen tuontiin.'); }
+          chunks.push(Buffer.from(value));
+        }
+      } finally { reader.releaseLock(); }
+      return {text:Buffer.concat(chunks,total).toString('utf8'),finalUrl:url.href};
     }
-    const html = Buffer.concat(chunks, total).toString('utf8');
-    return { html, finalUrl: url.toString() };
-  }
-  throw new Error('Verkkosivulla on liikaa uudelleenohjauksia.');
+    throw new Error('Verkkosivulla on liikaa uudelleenohjauksia.');
+  } finally { clearTimeout(timer); }
+}
+async function fetchPublicHtml(value) {
+  const result=await fetchPublicResource(value,['text/html','application/xhtml+xml']);
+  return {html:result.text,finalUrl:result.finalUrl};
 }
 
 function htmlToReadableText(html) {
@@ -733,29 +730,23 @@ function extractSameSiteLinks(html, baseUrl) {
     .map((x) => x.url);
 }
 
-async function fetchPublicText(value, acceptedTypes = []) {
-  let url = await assertPublicHttpUrl(value);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
-  try {
-    const response = await fetch(url, { redirect:'follow', signal:controller.signal, headers:{'User-Agent':'RESPONDO-AI-Website-Importer/1.1'} });
-    if (!response.ok) return '';
-    const type = String(response.headers.get('content-type') || '').toLowerCase();
-    if (acceptedTypes.length && !acceptedTypes.some((x) => type.includes(x))) return '';
-    const text = await response.text();
-    return text.slice(0, 2_000_000);
-  } catch { return ''; } finally { clearTimeout(timer); }
+async function fetchPublicText(value, acceptedTypes = ['text/plain']) {
+  try { return (await fetchPublicResource(value,acceptedTypes)).text; } catch { return ''; }
 }
 
 async function discoverSitemapUrls(baseUrl, limit = 120) {
   const base = new URL(baseUrl);
+  const visited = new Set();
+  const deadline = Date.now()+12000;
   const candidates = [new URL('/sitemap.xml',base).toString(), new URL('/sitemap_index.xml',base).toString()];
   const robots = await fetchPublicText(new URL('/robots.txt',base).toString(), ['text/plain']);
   for (const match of robots.matchAll(/^\s*Sitemap:\s*(\S+)/gim)) candidates.push(match[1]);
   const found = new Set();
   const sitemapQueue = [...new Set(candidates)].slice(0,8);
-  while (sitemapQueue.length && found.size < limit) {
+  while (sitemapQueue.length && found.size < limit && visited.size < 5 && Date.now()<deadline) {
     const mapUrl = sitemapQueue.shift();
+    if (visited.has(mapUrl)) continue;
+    visited.add(mapUrl);
     const xml = await fetchPublicText(mapUrl,['xml','text/plain']);
     if (!xml) continue;
     for (const m of xml.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)) {
@@ -820,22 +811,25 @@ async function fetchClientRenderedSourceText(html, pageUrl) {
 }
 
 async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000, onProgress = null) {
+  const crawlStartedAt = Date.now();
   const first = await fetchPublicHtml(value);
   const base = new URL(first.finalUrl);
   const pages = [];
   const queued = new Set();
-  const queue = [{ url:first.finalUrl, score:100 }];
+  const queue = [];
+  const usefulPath = url => !/privacy|terms|tietosuoja|kayttoeh|cookie|arvostel|reviews|testimonial|blog|uutis|news|cart|checkout|login|register|wp-admin|\.(?:js|css|mp4|mp3|woff2?)$/i.test(new URL(url).pathname);
+  const priority = url => /tarjous|quote|offert|hinta|price|pris|palvel|service|tjanst|yhtey|contact|kontakt|auki|hours|oppet/i.test(normalizeSearchText(url)) ? 100 : 0;
 
   const enqueue = (html, pageUrl) => {
     for (const link of extractSameSiteLinks(html, pageUrl)) {
       let u;
       try { u = new URL(link); } catch { continue; }
-      if (u.hostname.toLowerCase() !== base.hostname.toLowerCase()) continue;
+      if (u.hostname.toLowerCase() !== base.hostname.toLowerCase() || !usefulPath(u.href)) continue;
       const key = u.origin + u.pathname.replace(/\/$/, '') + u.search;
       if (queued.has(key) || pages.some((x) => x.key === key)) continue;
       queued.add(key);
       const p = normalizeSearchText(u.pathname + ' ' + u.search);
-      let score = 0;
+      let score = priority(u.href);
       if (/faq|ukk|kysym|help|ohje|support/.test(p)) score += 18;
       if (/toimit|delivery|shipping|nouto|pickup/.test(p)) score += 16;
       if (/palaut|return|refund|vaihto/.test(p)) score += 16;
@@ -853,7 +847,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   };
 
   queued.add(first.finalUrl);
-  pages.push({ url:first.finalUrl, key:first.finalUrl.replace(/\/$/, ''), html:first.html });
+  pages.push({ url:first.finalUrl, key:first.finalUrl.replace(/\/$/, ''), document:extractBusinessDocument(first.html,first.finalUrl) });
   enqueue(first.html, first.finalUrl);
 
   // Sitemaps expose pages that client-rendered navigation may not reveal in raw HTML.
@@ -862,11 +856,12 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   for (const link of sitemapUrls) {
     let u;
     try { u = new URL(link); } catch { continue; }
+    if (!usefulPath(u.href)) continue;
     const key = u.origin + u.pathname.replace(/\/$/, '') + u.search;
     if (queued.has(key) || pages.some((x) => x.key === key)) continue;
     queued.add(key);
     const p = normalizeSearchText(u.pathname + ' ' + u.search);
-    let score = 4;
+    let score = 4 + priority(u.href);
     if (/faq|ukk|kysym|help|ohje|support/.test(p)) score += 18;
     if (/toimit|delivery|shipping|nouto|pickup|palaut|return|refund|vaihto/.test(p)) score += 16;
     if (/myymala|myymälä|store|shop|location/.test(p)) score += 15;
@@ -877,7 +872,6 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const totalTarget = Math.max(1, Math.min(maxPages, pages.length + queue.length));
   if (onProgress) onProgress({scanned:pages.length,total:totalTarget});
 
-  const crawlStartedAt = Date.now();
   while (queue.length && pages.length < maxPages) {
     if (Date.now() - crawlStartedAt > timeBudgetMs) break;
     const next = queue.shift();
@@ -888,7 +882,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       if (resolved.hostname.toLowerCase() !== base.hostname.toLowerCase()) continue;
       const key = resolved.origin + resolved.pathname.replace(/\/$/, '') + resolved.search;
       if (pages.some((x) => x.key === key)) continue;
-      pages.push({ url:page.finalUrl, key, html:page.html });
+      pages.push({ url:page.finalUrl, key, document:extractBusinessDocument(page.html,page.finalUrl) });
       enqueue(page.html, page.finalUrl);
       if (onProgress) onProgress({scanned:pages.length,total:Math.max(totalTarget,Math.min(maxPages,pages.length+queue.length))});
     } catch {}
@@ -896,8 +890,8 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
 
   const pageDocuments = pages.map((page) => ({
     url:page.url,
-    text:htmlToReadableText(page.html).slice(0, 30000),
-  })).filter((page) => page.text.length >= 40);
+    ...page.document,
+  })).filter((page) => page.text.length > 0 || page.links.length > 0);
 
   // SPA/client-rendered sites often keep their visible copy in same-origin JS bundles.
   // Read strings from those bundles without executing them so prices, trial terms and
@@ -915,7 +909,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     text,
     pageDocuments,
     pages:pageDocuments.map((x) => x.url),
-    links:[...new Set(queue.map((x) => x.url))].slice(0, 10000),
+    links:[...new Set(pageDocuments.flatMap(doc => doc.links.map(link => link.url)))].slice(0, 10000),
   };
 }
 
@@ -951,68 +945,7 @@ function importedKnowledgeQuality(item) {
 }
 
 function websiteKnowledgeCandidates(bundle) {
-  const docs = Array.isArray(bundle?.pageDocuments) ? bundle.pageDocuments : [];
-  const candidates = [];
-  const seen = new Set();
-  const categoryFor = (url, text) => {
-    const value = normalizeSearchText(url + ' ' + text.slice(0,800));
-    if (/toimit|delivery|shipping|nouto|pickup/.test(value)) return 'Toimitus ja nouto';
-    if (/palaut|return|refund|vaihto/.test(value)) return 'Palautukset';
-    if (/myymala|myymälä|store|location/.test(value)) return 'Myymälät';
-    if (/takuu|warranty/.test(value)) return 'Takuu';
-    if (/maksu|payment/.test(value)) return 'Maksaminen';
-    if (/faq|ukk|kysym|help|ohje|support/.test(value)) return 'Ohjeet';
-    if (/palvelu|service|tuote|product|valikoima|catalog|category|osasto/.test(value)) return 'Palvelut';
-    return 'Verkkosivulta tuotu';
-  };
-  const junk = /(cookie|evästeaset|privacy policy|tietosuojaseloste|terms of service|käyttöehdot|kayttoehdot|copyright|kaikki oikeudet pidätetään|hyväksy eväste|all rights reserved|localstorage|sessionstorage|const\s|let\s|var\s|function\s|=>|\.includes\(|\.getitem\(|\.setitem\(|document\.|window\.|queryselector|addeventlistener|json\.stringify|json\.parse|supported\.includes)/i;
-  for (const doc of docs) {
-    const sourceKey = normalizeSearchText(String(doc.url||''));
-    if (/terms|privacy|tietosuoja|kayttoeh|käyttöeh|cookie|evaste|eväste|legal/.test(sourceKey)) continue;
-    const pageCategory = categoryFor(doc.url, doc.text);
-    let lines = String(doc.text || '').split('\n').map((x)=>x.replace(/\s+/g,' ').trim()).filter((x)=>x.length>=8&&!junk.test(x));
-    // Many modern sites render meaningful copy as short separate DOM nodes. Combine those
-    // nodes into answer-sized chunks instead of discarding them one by one.
-    const chunks=[];
-    let buf='';
-    for(const line of lines){
-      if(buf && (buf.length + line.length + 1 > 420)){ chunks.push(buf); buf=''; }
-      buf = (buf ? buf + ' ' : '') + line;
-      if(buf.length>=100){ chunks.push(buf); buf=''; }
-    }
-    if(buf.length>=35) chunks.push(buf);
-    for(const contextRaw of chunks){
-      const context=contextRaw.trim().slice(0,1100);
-      if(context.length<35) continue;
-      const key=normalizeSearchText(context).slice(0,260);
-      if(!key||seen.has(key)) continue;
-      seen.add(key);
-      const sentence=(context.match(/^.{20,120}?(?:[.!?](?:\s|$)|$)/)||[])[0] || context.slice(0,120);
-      const title=sentence.replace(/[.!?]\s*$/,'').trim().slice(0,120) || pageCategory;
-      // Classify each chunk by its own content instead of inheriting one category
-      // from the whole page. This prevents CTA/navigation/product chunks from
-      // masquerading as services merely because the page also contains services.
-      const chunkTopic=knowledgeTopic(title+' '+context);
-      const category=chunkTopic==='services' ? 'Palvelut'
-        : chunkTopic==='products' ? 'Tuotteet'
-        : chunkTopic==='pricing' ? 'Hinnat'
-        : chunkTopic==='hours' ? 'Aukioloajat'
-        : chunkTopic==='delivery' ? 'Toimitus ja nouto'
-        : chunkTopic==='returns' ? 'Palautukset'
-        : chunkTopic==='stores' ? 'Myymälät'
-        : chunkTopic==='contact' ? 'Yhteystiedot'
-        : chunkTopic==='warranty' ? 'Takuu'
-        : pageCategory;
-      const candidate={category,title,answer:context,keywords:[...new Set(searchTokens(title+' '+context).slice(0,14))],sourceUrl:doc.url};
-      candidate._quality=importedKnowledgeQuality(candidate);
-      if(candidate._quality>-20 && !importedKnowledgeJunk(title+' '+context)) candidates.push(candidate);
-      if(candidates.length>=10000) break;
-    }
-  }
-  return candidates
-    .sort((a,b)=>Number(b._quality||0)-Number(a._quality||0))
-    .slice(0,10000)
-    .map(({_quality,...candidate})=>candidate);
+  return essentialWebsiteCandidates(bundle);
 }
 
 function buildProfileKnowledge(profile = {}) {
@@ -1106,71 +1039,25 @@ async function forceAnswerLanguage(answer, lang) {
 }
 
 function specificServiceConfirmation(query, rows) {
-  const normalized=normalizeSearchText(query).replace(/[?!.]+$/,'').trim();
-  const hay=normalizeSearchText((rows||[]).map((r)=>String(r?.title||'')+' '+String(r?.answer||'')).join(' '));
-  if(!normalized || !hay) return '';
-
-  // Detect broad Finnish yes/no service questions by grammar, not by one verb.
-  // This covers e.g. "Teettekö ikkunanpesuja?", "Viettekö romuja pois?",
-  // "Pesettekö kattoja?", "Leikkaatteko puskia?" and similar wording.
-  const words=normalized.split(/\s+/).filter(Boolean);
-  if(words.length<2 || words.length>9) return '';
-  const first=words[0];
-  const questionVerb=/ko$/.test(first) && !/^(?:onko|voiko|saako|paljonko|montako|miksiko)$/.test(first);
-  const explicit=/^(?:onko teilla|saako teilta|voitteko|pystytteko|onnistuuko)\b/.test(normalized);
-  if(!questionVerb && !explicit) return '';
-
-  const stop=new Set(['onko','teilla','saako','teilta','voitteko','pystytteko','onnistuuko','myos','myoskin','palveluna','palvelua']);
-  let wanted=words.slice(questionVerb?1:0).filter((x)=>!stop.has(x) && x.length>=3);
-  if(!wanted.length) return '';
-
-  const stem=(token)=>token
-    .replace(/(?:minen|mista|mista|ukset|ukset)$/i,'')
-    .replace(/(?:uja|yja|oja|eja|ia|ja|jen|ssa|sta|lla|lle|ksi|tta|t|n)$/i,'');
-  const strong=wanted.map(stem).filter((x)=>x.length>=4);
-  const matched=strong.filter((s)=>hay.includes(s));
-  if(!matched.length) return '';
-
-  // A random occurrence in a review/testimonial is not enough evidence that the
-  // company offers the service. Require the requested service to appear in a
-  // service/product row, or in multiple independent knowledge rows.
-  const supportingRows=(rows||[]).filter((row)=>{
-    const rowText=normalizeSearchText(String(row?.title||'')+' '+String(row?.answer||''));
-    return strong.some((s)=>rowText.includes(s));
+  const q = normalizeSearchText(query);
+  const m = q.match(/^(teetteko|pesetteko|leikkaatteko|maalaatteko|raivaatteko|puhdistatteko|huollatteko|asennatteko|korjaatteko|vietteko)\s+(.+)$/);
+  if (!m) return '';
+  const verbs = {teetteko:['teemme',''],pesetteko:['pesemme','pes'],leikkaatteko:['leikkaamme','leikka'],maalaatteko:['maalaamme','maal'],raivaatteko:['raivaamme','raiva'],puhdistatteko:['puhdistamme','puhdist'],huollatteko:['huollamme','huol'],asennatteko:['asennamme','asenn'],korjaatteko:['korjaamme','korja'],vietteko:['viemme','poisvienti|kuljet|viemme']};
+  const [verb, action] = verbs[m[1]];
+  const tokens = m[2].split(' ').filter(x => !['myos','ja','seka','pois','te','teilla'].includes(x));
+  if (!tokens.length || tokens.some(x => /ilmai|tanaan|huomen|heti|tunnissa|viikonlopp|yo|aina|kaikki|koko/.test(x) || /\d/.test(x))) return '';
+  const stem = token => token.replace(/(?:uja|yja|oja|eja|ia|ja|jen|ssa|sta|lla|lle|ksi|tta|t|n)$/,'');
+  const stems = tokens.map(stem);
+  if (stems.some(x => x.length < 4)) return '';
+  const support = rows.filter(usableWebsiteRow).find(row => {
+    const text = normalizeSearchText(row.answer);
+    if (/\b(?:ei|emme|eivat|not|don't|inte|aldrig)\b/.test(text)) return false;
+    if (knowledgeTopic(row.category+' '+row.title) !== 'services') return false;
+    return stems.every(x => text.includes(x)) && (!action || new RegExp(action).test(text));
   });
-  const trustedSupport=supportingRows.some((row)=>{
-    const category=normalizeSearchText(row?.category||'');
-    const sourceType=normalizeSearchText(row?.source_type||row?.sourceType||'');
-    const topic=knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.answer||''));
-    // Reviews/testimonials must never prove a service. Imported rows explicitly
-    // categorized as services/products and profile/FAQ service facts are valid.
-    if(/arvost|review|testimonial|kokemus/.test(category+' '+sourceType)) return false;
-    return topic==='services' || topic==='products' || /palvel|service|tuote|product/.test(category);
-  });
-  if(!trustedSupport && supportingRows.length<2) return '';
-
-  // If the company knowledge supports the object/service in the question,
-  // answer the actual question directly instead of listing every service.
-  let phrase=String(query||'').trim().replace(/[?!.]+$/,'').trim();
-  phrase=phrase.replace(/^\S+\s+/,'').trim().toLowerCase();
-  if(!phrase) return '';
-  const verb=first;
-  const verbMap=[
-    [/^teetteko$/,'teemme'],
-    [/^vietteko$/,'viemme'],
-    [/^pesetteko$/,'pesemme'],
-    [/^leikkaatteko$/,'leikkaamme'],
-    [/^siistitteko$/,'siistimme'],
-    [/^maalaatteko$/,'maalaamme'],
-    [/^raivaatteko$/,'raivaamme'],
-    [/^puhdistatteko$/,'puhdistamme'],
-    [/^huollatteko$/,'huollamme'],
-    [/^asennatteko$/,'asennamme'],
-    [/^korjaatteko$/,'korjaamme']
-  ];
-  const mapped=verbMap.find(([re])=>re.test(verb));
-  if(mapped) return 'Kyllä, '+mapped[1]+' '+phrase+'.';
-  return 'Kyllä, tämä onnistuu.';
+  if (!support) return '';
+  const phrase = String(query).trim().replace(/^\S+\s+/,'').replace(/[?!.]+$/,'').toLowerCase();
+  return 'Kyllä, '+verb+' '+phrase+'.';
 }
 
 function naturalServiceAnswer(rows) {
@@ -1207,7 +1094,8 @@ function naturalServiceAnswer(rows) {
 
 function conciseKnowledgeAnswer(row, query) {
   let raw=String(row?.answer||'').replace(/\s+/g,' ').trim();
-  if(!raw || importedKnowledgeJunk(raw)) return '';
+  if(!raw || importedKnowledgeJunk(raw) || !usableWebsiteRow(row)) return '';
+  if (['Hinnat','Aukioloajat','Puhelinnumero','Sähköposti','Osoite','Tarjouspyyntölomake'].includes(row.title) || ['Hinnat','Aukioloajat','Yhteystiedot'].includes(row.category)) return raw;
   const pageTitleLike = /^(?:respondo ai|etusivu|home|homepage)(?:\s*[-|–—:]|$)/i;
   if(pageTitleLike.test(raw)) {
     const parts=(raw.match(/[^.!?]+[.!?]?/g)||[]).map(x=>x.trim()).filter(Boolean);
@@ -1239,6 +1127,7 @@ function conciseKnowledgeAnswer(row, query) {
 
 async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {} }) {
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
+  rows = (rows || []).filter(usableWebsiteRow);
   const cleanMessage = String(message || '').trim();
   if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: responseLang === 'en' ? 'Empty' : responseLang === 'sv' ? 'Tom' : 'Tyhjä', sourceIds: [], selected: [] };
 
@@ -1248,6 +1137,11 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   }
   if (/^(kiitos|kiitti|thanks|thank you|tack|tack så mycket|tack sa mycket)[!. ]*$/.test(normalized)) {
     return { answer: responseLang === 'en' ? 'You’re welcome! I’m happy to help if you have anything else.' : responseLang === 'sv' ? 'Varsågod! Jag hjälper gärna om du undrar över något mer.' : 'Ole hyvä! Autan mielelläni, jos tulee vielä jotain mieleen.', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Thanks' : responseLang === 'sv' ? 'Tack' : 'Kiitos', sourceIds: [], selected: [] };
+  }
+
+  if (queryTopic(cleanMessage) === 'quote') {
+    const quoteRow = rows.find(row => row.title === 'Tarjouspyyntölomake' && normalizeWebUrl(row.answer, false));
+    if (quoteRow) return {answer:responseLang === 'en' ? 'You can request a quote using the button below.' : responseLang === 'sv' ? 'Du kan begära offert via knappen nedan.' : 'Voit pyytää tarjouksen alla olevasta painikkeesta.', handoff:false, confidence:1, intent:'Tarjouspyyntö', sourceIds:[quoteRow.id].filter(Boolean), selected:[quoteRow]};
   }
 
   const priorQuestions = history.slice(-2).map((x) => String(x.question || x.user || '')).filter(Boolean);
@@ -1264,31 +1158,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // be searched in Swedish/English without a paid model. If the free translator
   // is unavailable, the multilingual alias expansion below still covers the
   // most common business intents.
-  let localQuery = expandSearchConcepts(retrievalQuery);
+  let localQuery = retrievalQuery;
   if (responseLang !== 'fi') {
     const translatedQuery = await translateTextFree(retrievalQuery, 'fi', 'auto');
     if (translatedQuery) localQuery += ' ' + translatedQuery;
   }
 
-  const aliases = [
-    { re: /(hinta|maksaa|maksu|hinnoittelu|price|cost|pricing|kostar|pris|kostnad)/i, add: ' hinta maksaa maksu hinnoittelu price cost pricing pris kostar kostnad' },
-    { re: /(auki|aukiolo|avaa|sulkee|opening|open|hours|öppet|oppet|öppettider|oppettider)/i, add: ' auki aukiolo aukioloajat opening hours open öppet öppettider' },
-    { re: /(palvelu|teette|tarjoatte|tuote|tuotte|valikoima|myytte|saa|service|services|offer|product|products|selection|sell|tjänst|tjanst|tjänster|tjanster|erbjuder|produkt|sortiment)/i, add: ' palvelu palvelut teette tarjoatte tuote tuotteet valikoima myytte service services product products selection sell tjänst tjänster erbjuder produkt sortiment' },
-    { re: /(toimialue|alue|paikkakunta|where do you serve|service area|område|omrade|verksamhetsområde)/i, add: ' toimialue alue paikkakunta service area område verksamhetsområde' },
-    { re: /(osoite|sijainti|address|location|adress|var finns)/i, add: ' osoite sijainti address location adress' },
-    { re: /(puhelin|numero|soita|phone|call|telephone|telefon|ringa)/i, add: ' puhelin numero soittaa phone call telephone telefon ringa' },
-    { re: /(sähköposti|sahkoposti|email|e-mail|meili|e-post)/i, add: ' sähköposti sahkoposti email e-mail e-post' },
-    { re: /(ajanvaraus|varaa|booking|appointment|boka|bokning|tidsbokning)/i, add: ' ajanvaraus varaa aika booking appointment boka bokning tidsbokning' },
-    { re: /(tarjous|tarjouspyyntö|tarjouspyynto|quote|estimate|offert|prisförslag|prisforslag)/i, add: ' tarjous tarjouspyyntö quote estimate offert prisförslag' },
-    { re: /(kokeilu|trial|provperiod|prova|test)/i, add: ' kokeilu trial provperiod prova test' },
-    { re: /(asenn|install|käyttöönot|kayttoonot|käyttöön|kayttoon|aloit|alkuun|pääsen alkuun|paasen alkuun|setup|implementation|installation|get started|getting started|komma igång|komma igang)/i, add: ' asennus käyttöönotto kayttoonotto käyttöön kayttoon aloitus aloittaa alkuun ohje setup install installation implementation getting started get started komma igång installation' },
-    { re: /(tilaus|subscribe|subscription|prenumeration|beställ|bestall|abonnemang)/i, add: ' tilaus subscription subscribe prenumeration beställ abonnemang' },
-    { re: /(yhteys|contact|kontakt)/i, add: ' yhteys contact kontakt' },
-    { re: /(verkkosivu|website|webbplats|hemsida)/i, add: ' verkkosivu website webbplats hemsida' },
-  ];
-  for (const alias of aliases) if (alias.re.test(localQuery)) localQuery += alias.add;
-
   let selected = selectRelevantKnowledge(rows, localQuery, 8);
+
 
   // Direct service yes/no questions must be resolved against the whole approved
   // knowledge base before generic retrieval can pick a review or unrelated row.
@@ -1296,7 +1173,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // even when a review containing "vietiin pois" happens to rank highest.
   const directServiceAnswer = responseLang === 'fi' ? specificServiceConfirmation(cleanMessage, rows) : '';
   if (directServiceAnswer) {
-    const evidence = selected.length ? selected : rows.filter((row) => !importedKnowledgeJunk(String(row?.title||'')+' '+String(row?.answer||''))).slice(0,3);
+    const evidence = rows.filter(row => specificServiceConfirmation(cleanMessage,[row])).slice(0,3);
     return {
       answer: directServiceAnswer,
       handoff: false,
@@ -1305,6 +1182,10 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       sourceIds: evidence.map((row)=>row.id).filter(Boolean),
       selected: evidence
     };
+  }
+
+  if (responseLang === 'fi' && /^(?:teetteko|pesetteko|leikkaatteko|maalaatteko|raivaatteko|puhdistatteko|huollatteko|asennatteko|korjaatteko|vietteko)\b/.test(normalized)) {
+    return {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
   }
 
   // Broad questions such as "What do you sell?" or "Tell me about the company"
@@ -1345,10 +1226,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     for(const item of usable){
       if(!unique.some((x)=>normalizeSearchText(x).includes(normalizeSearchText(item.text).slice(0,80)))) unique.push(item.text);
     }
-    // For service questions, answer like a person instead of echoing scraped
-    // headings/navigation: "Teemme X, Y ja Z."
-    const serviceAnswer=queryTopic(localQuery)==='services' ? naturalServiceAnswer(selected) : '';
-    finalAnswer=serviceAnswer || composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim();
+    finalAnswer=composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim();
     if(finalAnswer.length>520) finalAnswer=finalAnswer.slice(0,517).replace(/\s+\S*$/,'')+'…';
   } else {
     finalAnswer = conciseKnowledgeAnswer(top, cleanMessage);
@@ -1356,8 +1234,10 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   if (!finalAnswer) {
     return { answer:'', handoff:true, confidence:0.25, intent, sourceIds:[], selected };
   }
-  const localizedAnswer = await forceAnswerLanguage(finalAnswer, responseLang);
+  const sourceLanguage = detectConversationLanguage(finalAnswer, 'fi');
+  const localizedAnswer = sourceLanguage === responseLang ? finalAnswer : await forceAnswerLanguage(finalAnswer, responseLang);
   if (localizedAnswer) finalAnswer = localizedAnswer;
+  else if (responseLang !== 'fi') return {answer:'',handoff:true,confidence:0.2,intent,sourceIds:[],selected};
   return {
     answer: finalAnswer,
     handoff: false,
@@ -2972,49 +2852,7 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
 
 
 function extractFreeWebsiteProfile(bundle) {
-  const raw = String(bundle?.text || '').replace(/\r/g, '');
-  const lines = raw.split('\n').map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean);
-  const plain = lines.join('\n');
-  const profile = {
-    pricing:'', hours:'', phone:'', email:'', services:'', serviceArea:'',
-    address:'', quoteRequestUrl:'', bookingUrl:'', notes:'',
-    website: normalizeWebUrl(bundle?.finalUrl, true) || '',
-  };
-  const firstMatch = (regex) => {
-    const m = plain.match(regex);
-    return m ? String(m[1] || m[0] || '').trim() : '';
-  };
-  profile.email = firstMatch(/\b([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})\b/i).slice(0,220);
-  profile.phone = firstMatch(/(?:\+358|0)\s*(\d(?:[\s().-]*\d){6,11})/i);
-  if (profile.phone && !profile.phone.startsWith('+358') && !profile.phone.startsWith('0')) profile.phone = '0' + profile.phone;
-  profile.phone = profile.phone.slice(0,80);
-
-  const collectLines = (regex, limit=6) => lines
-    .filter((x) => regex.test(normalizeSearchText(x)))
-    .filter((x) => !/^sivu:\s/i.test(x))
-    .slice(0,limit)
-    .join('\n')
-    .slice(0,4000);
-
-  profile.pricing = collectLines(/\b(hinta|hinnat|hinnoittelu|alkaen|eur|price|pricing|prices|pris|priser|prislista|från)\b|€/i, 8);
-  profile.hours = collectLines(/\b(auki|aukiolo|ma-pe|maanantai|arkisin|opening|hours|mon|monday|öppet|öppettider|mån|vardagar)\b/i, 7);
-  profile.services = collectLines(/\b(palvelu|palvelut|tarjoamme|teemme|service|services|our services|tjänst|tjänster|vi erbjuder)\b/i, 10);
-  profile.serviceArea = collectLines(/\b(toimialue|palvelemme|alueella|service area|we serve|verksamhetsområde|betjänar|område)\b/i, 6);
-  profile.address = collectLines(/\b(osoite|käyntiosoite|address|street|adress|besöksadress)\b/i, 4);
-
-  const allLinks = Array.isArray(bundle?.links) ? bundle.links : [];
-  const pickLink = (regex) => allLinks.find((url) => regex.test(normalizeSearchText(url))) || '';
-  profile.bookingUrl = pickLink(/ajanvaraus|varaa|booking|appointment|boka|bokning|calendar/);
-  profile.quoteRequestUrl = pickLink(/tarjous|quote|estimate|offert|prisforslag|prisförslag|contact|yhteys|kontakt/);
-
-  const useful = lines
-    .filter((x) => !/^sivu:\s/i.test(x))
-    .filter((x) => x.length >= 25 && x.length <= 500)
-    .filter((x) => !/(cookie|eväste|privacy|tietosuoja|integritet|copyright)/i.test(x))
-    .slice(0,12)
-    .join('\n');
-  profile.notes = useful.slice(0,4000);
-  return profile;
+  return essentialWebsiteProfile(bundle);
 }
 
 const websiteImportJobs = new Map();
@@ -3022,6 +2860,10 @@ const websiteImportJobs = new Map();
 app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
   const website=normalizeWebUrl(req.body.website,false);
   if(!website) return res.status(400).json({error:'Lisää ensin verkkosivusi osoite.'});
+  for (const [id, old] of websiteImportJobs) if (old.status !== 'running' && Date.now()-old.updatedAt > 10*60*1000) websiteImportJobs.delete(id);
+  const active = [...websiteImportJobs.values()].find(job => job.userId === req.user.sub && job.status === 'running');
+  if (active) return res.json({ok:true,jobId:active.id});
+  if ([...websiteImportJobs.values()].filter(job=>job.status==='running').length >= 4) return res.status(429).json({error:'Haku on ruuhkautunut. Yritä hetken kuluttua uudelleen.'});
   const jobId=uid();
   const job={id:jobId,userId:req.user.sub,website,status:'running',scanned:0,total:1,percent:0,result:null,error:null,updatedAt:Date.now()};
   websiteImportJobs.set(jobId,job);
@@ -3035,7 +2877,7 @@ app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
       });
       const candidates=websiteKnowledgeCandidates(bundle);
       const detectedProfile=extractFreeWebsiteProfile(bundle);
-      job.result={ok:true,profile:{website,hours:detectedProfile.hours,phone:detectedProfile.phone,email:detectedProfile.email,address:detectedProfile.address},pagesScanned:bundle.pages.length,factsFound:candidates.length,candidates,extraction:'local'};
+      job.result={ok:true,profile:detectedProfile,pagesScanned:bundle.pages.length,factsFound:candidates.length,candidates,extraction:'local'};
       job.scanned=bundle.pages.length; job.total=Math.max(job.total,job.scanned); job.percent=100; job.status='done'; job.updatedAt=Date.now();
     }catch(e){job.status='error';job.error=e?.message||'Verkkosivun tietojen tuonti epäonnistui.';job.updatedAt=Date.now();}
   })();
@@ -3053,41 +2895,11 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
     const website = normalizeWebUrl(req.body.website, false);
     if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
     const bundle = await fetchWebsiteBundle(website, 220, 65000);
-    if (String(bundle.text || '').length < 80) return res.status(400).json({ error: 'Verkkosivulta ei löytynyt tarpeeksi luettavaa sisältöä.' });
     const candidates = websiteKnowledgeCandidates(bundle);
     const detectedProfile = extractFreeWebsiteProfile(bundle);
-    // Automatically save high-confidence basics so phone/email/hours/address are usable immediately.
-    try {
-      const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
-      if (tr.rowCount) {
-        const tenantId=tr.rows[0].id;
-        const autoFields=[
-          ['Aukioloajat',detectedProfile.hours,['auki','aukiolo','aukioloajat','opening','hours']],
-          ['Puhelinnumero',detectedProfile.phone,['puhelin','numero','soittaa','phone']],
-          ['Sähköposti',detectedProfile.email,['sähköposti','email','e-mail']],
-          ['Osoite',detectedProfile.address,['osoite','sijainti','address']],
-        ].filter(([,value])=>String(value||'').trim());
-        for(const [title,value,keywords] of autoFields){
-          const answer=String(value).trim().slice(0,4000);
-          const existing=await q("SELECT id FROM knowledge WHERE tenant_id=$1 AND category='Yrityksen perustiedot' AND title=$2 LIMIT 1",[tenantId,title]);
-          if(existing.rowCount) await q("UPDATE knowledge SET answer=$1,keywords=$2,source_type='profile',source_url=$3,approved=true,verified_at=NOW(),updated_at=NOW() WHERE id=$4",[answer,keywords,website,existing.rows[0].id]);
-          else await q("INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords,source_type,source_url,approved,verified_at) VALUES($1,$2,'Yrityksen perustiedot',$3,$4,$5,'profile',$6,true,NOW())",[uid(),tenantId,title,answer,keywords,website]);
-        }
-      }
-    } catch(e) { console.warn('Automatic website basics save failed',e?.message||e); }
-    // One-time self-healing: remove legacy website imports that are clearly code/legal/UI debris.
-    try {
-      const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
-      if (tr.rowCount) {
-        await q(`DELETE FROM knowledge
-          WHERE tenant_id=$1 AND source_type='website'
-            AND (answer ~* '(localstorage|sessionstorage|queryselector|addeventlistener|json\\.(stringify|parse)|terms of service|privacy policy|const[[:space:]]|function[[:space:]])'
-              OR title ~* '(terms of service|privacy policy|localstorage|queryselector)')`,[tr.rows[0].id]);
-      }
-    } catch(e) { console.warn('Legacy import cleanup failed',e?.message||e); }
     return res.json({
       ok:true,
-      profile:{ website, hours:detectedProfile.hours, phone:detectedProfile.phone, email:detectedProfile.email, address:detectedProfile.address },
+      profile:detectedProfile,
       pagesScanned:bundle.pages.length,
       factsFound:candidates.length,
       candidates,
@@ -3105,7 +2917,8 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
     const tenantResult = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
     if (!tenantResult.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenantId = tenantResult.rows[0].id;
-    const items = Array.isArray(req.body.items) ? req.body.items.slice(0,10000) : [];
+    const items = Array.isArray(req.body.items) ? req.body.items.slice(0,1000) : [];
+    const tenantWebsite = (await client.query('SELECT website FROM tenants WHERE id=$1',[tenantId])).rows[0]?.website || '';
     if (!items.length) return res.status(400).json({ error:'Valitse vähintään yksi tieto.' });
 
     await client.query('BEGIN');
@@ -3118,16 +2931,15 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
       if (!title || !answer || !sourceUrl) continue;
       const safetyText = normalizeSearchText(title+' '+category+' '+answer.slice(0,900)+' '+sourceUrl);
       if (/terms of service|privacy policy|tietosuoja|kayttoeh|käyttöeh|cookie policy|evaste|eväste|legal notice|all rights reserved|localstorage|sessionstorage|const |let |var |function |\.includes\(|\.getitem\(|\.setitem\(|document\.|window\.|queryselector|addeventlistener|json\.stringify|json\.parse/.test(safetyText)) continue;
-      if (answer.length < 20 || title.length < 3) continue;
+      if (!usableWebsiteRow({title,answer,category,source_type:'website'}) || title.length < 3) continue;
       const sourceHost = normalizeHost(sourceUrl);
-      const tenantWebsite = (await client.query('SELECT website FROM tenants WHERE id=$1',[tenantId])).rows[0]?.website || '';
       if (tenantWebsite && sourceHost !== normalizeHost(tenantWebsite)) continue;
       const keywords = Array.isArray(item?.keywords)
         ? item.keywords.map((x) => String(x).trim()).filter(Boolean).slice(0,14)
         : searchTokens(title + ' ' + answer).slice(0,14);
       const duplicate = await client.query(
-        "SELECT id FROM knowledge WHERE tenant_id=$1 AND source_type='website' AND source_url=$2 AND lower(title)=lower($3) LIMIT 1",
-        [tenantId, sourceUrl, title],
+        "SELECT id FROM knowledge WHERE tenant_id=$1 AND source_type='website' AND source_url=$2 AND lower(title)=lower($3) AND answer=$4 LIMIT 1",
+        [tenantId, sourceUrl, title, answer],
       );
       if (duplicate.rowCount) {
         await client.query(
@@ -3143,6 +2955,7 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
       }
       added++;
     }
+    if (!added) { await client.query('ROLLBACK'); return res.status(400).json({error:'Valituista tiedoista ei löytynyt hyväksyttäviä yritystietoja.'}); }
     await client.query('COMMIT');
     return res.json({ok:true,added});
   } catch(e) {
@@ -3805,15 +3618,6 @@ async function processExternalChannelMessage(tenant, channel, contactId, message
       : responseLang === 'sv'
         ? 'Jag har ännu inget verifierat svar. Någon från företaget behöver hantera detta.'
         : 'Tähän ei löytynyt vielä varmennettua vastausta. Yrityksen henkilön pitää käsitellä tämä.';
-  } else if (responseLang !== 'fi') {
-    const translated = await forceAnswerLanguage(answer, responseLang);
-    if (translated) answer = translated;
-    else {
-      handoff = true;
-      answer = responseLang === 'en'
-        ? 'I found relevant company information, but could not translate the answer reliably right now.'
-        : 'Jag hittade relevant företagsinformation men kunde inte översätta svaret tillförlitligt just nu.';
-    }
   }
 
   await appendChatMessage({
@@ -4255,14 +4059,6 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
           ? (lang === 'en' ? 'You can request a quote here:' : lang === 'sv' ? 'Du kan be om en offert här:' : 'Voit pyytää tarjouksen tästä:')
           : answer;
     }
-    if (!handoff && lang !== 'fi') {
-      const translated = await forceAnswerLanguage(answer, lang);
-      if (translated) answer = translated;
-      else {
-        handoff = true;
-        answer = translationUnavailable;
-      }
-    }
     if (handoff && !answer) answer = noAnswer;
 
     return res.json({
@@ -4502,13 +4298,6 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     let handoff = result.handoff;
     if (handoff) {
       answer = noAnswer;
-    } else {
-      const translated = await forceAnswerLanguage(answer, responseLang);
-      if (translated) answer = translated;
-      else {
-        handoff = true;
-        answer = translationUnavailable;
-      }
     }
 
     const actions = chatActions(kr.rows, message, handoff, responseLang);
@@ -6140,4 +5929,6 @@ async function start() {
   app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
 }
 
-start();
+export { app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml };
+if (process.env.NODE_ENV !== 'test') start();
+

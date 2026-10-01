@@ -3942,7 +3942,9 @@ async function route() {
       try {
         const started=await api('/api/app/import-website/start',{method:'POST',body:JSON.stringify({website})});
         let result=null;
+        const scanDeadline=Date.now()+6*60*1000;
         while(!result){
+          if(Date.now()>scanDeadline) throw new Error(appText('Haku kesti liian kauan. Yritä uudelleen.','Sökningen tog för lång tid. Försök igen.','The scan took too long. Please try again.'));
           await new Promise(resolve=>setTimeout(resolve,1000));
           const state=await api('/api/app/import-website/status/'+encodeURIComponent(started.jobId));
           const detail=Number(state.scanned||0)+' / '+Number(state.total||0);
@@ -3971,9 +3973,9 @@ async function route() {
             <div class="website-import-candidates">
               ${candidates.map((item,i)=>`<label class="website-import-candidate">
                 <input type="checkbox" data-import-index="${i}">
-                <span><b>${esc(item.title)}</b><small>${esc(item.category || '')} · ${esc(item.sourceUrl || '')}</small><p>${esc(item.answer)}</p></span>
+                <span><p>${esc(item.answer)}</p><small>${esc(item.sourceUrl || '')}</small></span>
               </label>`).join('')}
-            </div>` : '<div class="notice">' + appText('Perustiedot löytyivät, mutta erillisiä tietopohjaehdotuksia ei löytynyt.','Grunduppgifterna hittades men inga separata kunskapsförslag hittades.','Basic details were found, but no separate knowledge suggestions were found.') + '</div>';
+            </div>` : '<div class="notice">' + appText('Sivustolta ei löytynyt luotettavasti poimittavia palveluita, hintoja, yhteystietoja, aukioloaikoja tai tarjouspyyntölinkkiä. Voit lisätä tiedot käsin.','Inga tillförlitliga tjänster, priser, kontaktuppgifter, öppettider eller offertlänkar kunde hämtas. Du kan lägga till uppgifterna manuellt.','No reliable services, prices, contact details, opening hours or quote link could be extracted. You can add the details manually.') + '</div>';
           document.getElementById('selectAllWebsiteImport')?.addEventListener('click', (event) => {
             const boxes=[...review.querySelectorAll('[data-import-index]')];
             const shouldSelect=boxes.some((box)=>!box.checked);
@@ -3992,7 +3994,7 @@ async function route() {
             try {
               const saved = await api('/api/app/import-website/approve',{method:'POST',body:JSON.stringify({items:selected})});
               approveButton.textContent = appText('Lisätty bottiin ✓','Tillagt i botten ✓','Added to bot ✓');
-              $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText(String(saved.added || selected.length) + ' verkkosivulta löydettyä tietoa lisättiin botin tietopohjaan.','Valda webbplatsuppgifter lades till i bottens kunskapsbas.','Selected website information was added to the bot knowledge base.') + '</div>';
+              $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText(String(saved.added || 0) + ' verkkosivulta löydettyä tietoa lisättiin botin tietopohjaan.','Valda webbplatsuppgifter lades till i bottens kunskapsbas.','Selected website information was added to the bot knowledge base.') + '</div>';
             } catch(err) {
               approveButton.disabled = false;
               approveButton.textContent = previous;
@@ -4773,3 +4775,4 @@ route().catch((error) => {
     document.getElementById('crashReload')?.addEventListener('click', () => location.reload());
   }
 });
+
