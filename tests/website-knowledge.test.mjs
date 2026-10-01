@@ -715,3 +715,29 @@ test('demo-chat HTTP endpoint answers the exact pictured service-area question f
    await new Promise(resolve=>testServer.close(resolve));
  }
 });
+
+
+
+test('polluted imported service-area text drops the repeated question and contact CTA',async()=>{
+ const rows=[{
+   id:'polluted',category:'Yrityksen perustiedot',title:'Toimialue',
+   answer:'Millä alueella toimitte? Toimimme pääasiassa Turussa ja Turun lähialueilla. Ota yhteyttä, niin kerromme tarkemmin palvelemmeko myös sinun alueellasi.',
+   source_type:'profile'
+ }];
+ const result=await generateGroundedAnswer({rows,message:'missä toimitte',lang:'fi'});
+ assert.equal(result.handoff,false,JSON.stringify(result));
+ assert.equal(result.answer,'Toimimme pääasiassa Turussa ja Turun lähialueilla.');
+ assert.deepEqual(result.sourceIds,['polluted']);
+ assert.doesNotMatch(result.answer,/Millä alueella toimitte|Ota yhteyttä/);
+});
+
+test('service-area cleaner does not invent a prefix when the saved value already is a natural sentence',async()=>{
+ const rows=[{
+   id:'natural',category:'Yrityksen perustiedot',title:'Toimialue',
+   answer:'Palvelemme Turussa, Raisiossa ja Kaarinassa. Jätä yhteystietosi, jos haluat varmistaa muun alueen.',
+   source_type:'profile'
+ }];
+ const result=await generateGroundedAnswer({rows,message:'missä toimitte',lang:'fi'});
+ assert.equal(result.answer,'Palvelemme Turussa, Raisiossa ja Kaarinassa.');
+ assert.equal(result.handoff,false);
+});

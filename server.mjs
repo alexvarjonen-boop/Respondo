@@ -593,6 +593,31 @@ function explicitServiceAreaQuestion(message) {
     || /^(?:var\s+arbetar\s+ni|vilket\s+omrade\s+(?:arbetar|betjanar)\s+ni\s+i|verksamhetsomrade|serviceomrade)$/.test(q);
 }
 
+function cleanServiceAreaValue(value) {
+  let text=String(value||'').replace(/\s+/g,' ').trim();
+  if(!text) return '';
+
+  // Website imports sometimes store a question + answer + CTA in one field:
+  // "Millä alueella toimitte? Toimimme Turussa... Ota yhteyttä..."
+  // Remove the duplicated question and keep only the factual area statement.
+  text=text.replace(
+    /^(?:millä\s+alueella\s+(?:te\s+)?toimitte|missä\s+(?:te\s+)?toimitte|mille\s+alueelle\s+(?:te\s+)?tulette|where\s+do\s+you\s+(?:operate|work|serve)|what(?:'s| is)\s+your\s+service\s+area|var\s+arbetar\s+ni)\s*[?!.:-]*\s*/i,
+    ''
+  );
+
+  const sentences=(text.match(/[^.!?]+[.!?]?/g)||[])
+    .map(part=>part.trim())
+    .filter(Boolean)
+    .filter(part=>!/(?:^|\b)(?:ota yhteyttä|jätä yhteystiet|soita meille|lähetä viesti|contact us|get in touch|leave your contact|kontakta oss|hör av dig)\b/i.test(part));
+
+  if(!sentences.length) return '';
+  const factual=sentences.find(part=>
+    /^(?:toimimme|palvelemme|palvelualueemme|toimialueemme|we operate|we serve|our service area|vi arbetar|vi betjänar|vårt serviceområde)\b/i.test(part)
+  ) || sentences[0];
+
+  return factual.replace(/[.!?]+$/,'').trim();
+}
+
 function verifiedServiceAreaValue(rows) {
   const titleAliases=new Set([
     'toimialue','palvelualue','service area','servicearea',
@@ -604,10 +629,8 @@ function verifiedServiceAreaValue(rows) {
   const candidates=rows.filter(row=>titleAliases.has(normalizeSearchText(row.title)))
     .sort((a,b)=>priority(a)-priority(b));
   for(const row of candidates) {
-    const value=String(row.answer||'').replace(/\s+/g,' ').trim();
+    const value=cleanServiceAreaValue(row.answer);
     if(!value || value.length>300) continue;
-    if(/\?$/.test(value)) continue;
-    if(/^(?:milla alueella toimitte|missa toimitte|where do you operate|where do you serve|var arbetar ni)\??$/i.test(normalizeSearchText(value))) continue;
     if(/^(?:https?:\/\/|mailto:|tel:)/i.test(value)) continue;
     return {value,row};
   }
