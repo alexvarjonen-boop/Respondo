@@ -2698,13 +2698,13 @@ async function dashboard(options = {}) {
   const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
   const isWelcome = new URLSearchParams(location.search).get('welcome') === '1';
 
-  return `<div class="appshell dashboard-simple-shell ${isDemo ? 'assistant-demo-shell' : ''}">
+  return `<div class="appshell dashboard-simple-shell">
     <main class="appmain dashboard-simple-main">
       <header class="dashboard-topbar">
         <div class="dashboard-topbar-brand">
           ${logo()}
           <div class="dashboard-workspace">
-            <small>${isDemo ? appText('KOKEILU','DEMO','DEMO') : 'TYÖTILA'}</small>
+            <small>TYÖTILA</small>
             <b>${esc(me.company_name || t.name)}</b>
           </div>
         </div>
@@ -3299,12 +3299,16 @@ async function dashboard(options = {}) {
       </section>
 
       ${isDemo ? `
-      <section class="panel install-panel dashboard-view-section dashboard-view-hidden assistant-demo-install-lock" data-dashboard-view="install" id="install">
-        <div class="panel-head"><div><small>${appText('ASENNUS','INSTALLATION','INSTALLATION')}</small><h2>${appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website')}</h2></div><span class="install-badge">${appText('Lukittu kokeilussa','Låst i demo','Locked in demo')}</span></div>
-        <div class="assistant-demo-lock-icon">R</div>
-        <h3>${appText('Asennuskoodi avautuu tilauksen jälkeen.','Installationskoden öppnas efter beställning.','Installation code unlocks after subscribing.')}</h3>
-        <p>${appText('Tässä kokeilussa näet saman asennusosion kuin asiakkaana, mutta HTML-koodia, widget-tunnistetta tai kopiointipainiketta ei näytetä.','I demon ser du samma installationsavsnitt som en kund, men HTML-koden, widget-id:t och kopieringsknappen visas inte.','The demo shows the same installation section as a customer, but the HTML code, widget identifier, and copy button are not exposed.')}</p>
-        <a class="btn ink" href="/tilaus?lang=${currentLang()}">${appText('Aloita 3 päivän kokeilu','Starta 3 dagars provperiod','Start 3-day trial')}</a>
+      <section class="panel install-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="install" id="install">
+        <div class="panel-head"><div><small>${appText('ASENNUS','INSTALLATION','INSTALLATION')}</small><h2>${appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website')}</h2></div><span class="install-badge">1 ${appText('sivusto','webbplats','website')}</span></div>
+        <p>${appText('Kopioi tämä koodi sivustosi HTML:ään juuri ennen sulkevaa','Kopiera koden till webbplatsens HTML precis före den avslutande','Copy this code into your website HTML just before the closing')} <code>&lt;/body&gt;</code>${appText('-tagia.','-taggen.',' tag.')}</p>
+        <div class="license-lock">
+          <span>🔒 SIDOTTU VERKKOSIVUUN</span>
+          <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
+          <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
+        </div>
+        <div class="code-row"><code>${appText('Asennuskoodi saatavilla tilauksen jälkeen','Installationskoden är tillgänglig efter beställning','Installation code available after subscribing')}</code><button type="button" disabled aria-disabled="true">${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <button type="button" class="install-done" disabled aria-disabled="true">${appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
       </section>` : `
       <section class="panel install-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="install" id="install">
         <div class="panel-head"><div><small>${appText('ASENNUS','INSTALLATION','INSTALLATION')}</small><h2>${appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website')}</h2></div><span class="install-badge">1 ${appText('sivusto','webbplats','website')}</span></div>
@@ -3634,12 +3638,32 @@ async function route() {
       'referral':'account',
       'billing':'account',
     };
+    const dashboardViewMeta = {
+      overview:{ eyebrow:'RESPONDO OS', title:appText('Koti','Hem','Home') },
+      setup:{ eyebrow:appText('HALLINTA','KONTROLL','CONTROL'), title:appText('Yritys & botti','Företag & bot','Business & bot') },
+      answers:{ eyebrow:appText('TIETO','KUNSKAP','KNOWLEDGE'), title:appText('Vastaukset','Svar','Answers') },
+      customers:{ eyebrow:appText('ASIAKKAAT','KUNDER','CUSTOMERS'), title:appText('Keskustelut & liidit','Konversationer & leads','Conversations & leads') },
+      automation:{ eyebrow:appText('TOIMINNOT','FUNKTIONER','ACTIONS'), title:appText('Toiminnot & integraatiot','Funktioner & integrationer','Actions & integrations') },
+      install:{ eyebrow:appText('KÄYTTÖÖNOTTO','KOM IGÅNG','SETUP'), title:appText('Asennus','Installation','Installation') },
+      account:{ eyebrow:appText('OMA TILI','MITT KONTO','MY ACCOUNT'), title:appText('Asetukset','Inställningar','Settings') },
+    };
     const showDemoDashboardView = (view, options = {}) => {
-      const next = validDashboardViews.has(view) ? view : 'setup';
+      const next = validDashboardViews.has(view) ? view : 'overview';
       document.querySelectorAll('.dashboard-view-section').forEach((section) => {
         section.classList.toggle('dashboard-view-hidden', section.dataset.dashboardView !== next);
       });
       if (dashboardSelect) dashboardSelect.value = next;
+      document.querySelectorAll('[data-dashboard-nav]').forEach((button) => {
+        const active = button.dataset.dashboardNav === next;
+        button.classList.toggle('active', active);
+        if (active) button.setAttribute('aria-current','page');
+        else button.removeAttribute('aria-current');
+      });
+      const meta = dashboardViewMeta[next] || dashboardViewMeta.overview;
+      const eyebrow = $('#dashboardPageEyebrow');
+      const title = $('#dashboardPageTitle');
+      if (eyebrow) eyebrow.textContent = meta.eyebrow;
+      if (title) title.textContent = meta.title;
       document.body.dataset.dashboardView = next;
       if (options.updateUrl !== false) {
         const params=new URLSearchParams(location.search);
@@ -3653,8 +3677,14 @@ async function route() {
     };
 
     const requestedView = new URLSearchParams(location.search).get('section');
-    showDemoDashboardView(validDashboardViews.has(requestedView) ? requestedView : 'setup', {updateUrl:false,scrollTop:false});
+    showDemoDashboardView(validDashboardViews.has(requestedView) ? requestedView : 'overview', {updateUrl:false,scrollTop:false});
     dashboardSelect?.addEventListener('change',()=>showDemoDashboardView(dashboardSelect.value));
+    document.querySelectorAll('[data-dashboard-nav]').forEach((button)=>{
+      button.addEventListener('click',()=>showDemoDashboardView(button.dataset.dashboardNav));
+    });
+    document.querySelectorAll('[data-dashboard-open]').forEach((button)=>{
+      button.addEventListener('click',()=>showDemoDashboardView(button.dataset.dashboardOpen));
+    });
     $('#dashboardSettingsButton')?.addEventListener('click',()=>showDemoDashboardView('account'));
 
     document.querySelectorAll('.onboarding-step').forEach((button)=>{
@@ -3811,7 +3841,7 @@ async function route() {
 
     // Keep every account-only action visible exactly where a paid user sees it,
     // but prevent the public demo from calling authenticated mutation endpoints.
-    document.querySelectorAll('.assistant-demo-shell form').forEach((form)=>{
+    document.querySelectorAll('#app .dashboard-simple-shell form').forEach((form)=>{
       if(['businessProfileForm','knowledgeForm','previewForm'].includes(form.id)) return;
       form.addEventListener('submit',(event)=>event.preventDefault());
     });
