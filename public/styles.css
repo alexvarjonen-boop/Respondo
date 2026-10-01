@@ -7479,12 +7479,14 @@ body{
   body:not(.dashboard-page) .brand-word{font-size:18px!important}
   body:not(.dashboard-page) .brand-mark{width:31px!important;height:31px!important}
   body:not(.dashboard-page) .navlinks{display:none!important}
-  body:not(.dashboard-page) .navactions .btn.ghost{display:none!important}
+  /* Preserve the phone-sized desktop header, but keep sign-in accessible. */
+  body:not(.dashboard-page) .navactions .nav-login-btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:38px!important;padding:0 14px!important}
   body:not(.dashboard-page) .navactions .btn.ink{padding:12px 15px!important;font-size:13px!important}
   body:not(.dashboard-page) .product-subnav{display:block!important;top:74px!important;z-index:1100!important}
-  body:not(.dashboard-page) .product-subnav-inner{display:block!important;min-height:58px!important;padding:6px 0!important;width:100%!important}
+  /* The swipe-nav used flex-start on phones; center it only on desktop. */
+  body:not(.dashboard-page) .product-subnav-inner{display:block!important;min-height:58px!important;padding:6px 0!important;width:min(calc(100% - 26px),760px)!important;margin-inline:auto!important}
   body:not(.dashboard-page) .product-subnav .subnav-title{display:none!important}
-  body:not(.dashboard-page) .product-subnav .home-swipe-nav{display:flex!important;width:100%!important;padding:5px 13px 7px!important;gap:7px!important}
+  body:not(.dashboard-page) .product-subnav .home-swipe-nav{display:flex!important;justify-content:center!important;width:100%!important;padding:5px 13px 7px!important;gap:7px!important}
   body:not(.dashboard-page) .product-subnav .home-swipe-nav a{min-height:40px!important;padding:0 13px!important;font-size:11px!important}
   body:not(.dashboard-page) .product-subnav .home-section-jump{display:none!important}
   body:not(.dashboard-page) .hero{padding-top:54px!important}
