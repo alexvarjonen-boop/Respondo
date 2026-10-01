@@ -662,3 +662,56 @@ test('dashboard exposes a separate editable business-email save and does not con
  assert.match(appSource,/Kirjautumissähköposti ei muutu/);
  assert.doesNotMatch(appSource,/id="profileContactEmail"[^>]+readonly/);
 });
+
+
+
+test('Finnish operating-area questions return the verified service area, not a reverse question',async()=>{
+ const rows=[{id:'area',category:'Yrityksen perustiedot',title:'Toimialue',answer:'Turku ja Varsinais-Suomi',source_type:'profile'}];
+ for(const message of ['missä toimitte','millä alueella toimitte?','mille alueelle tulette','toimialue']) {
+   const result=await generateGroundedAnswer({rows,message,lang:'fi'});
+   assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+   assert.equal(result.answer,'Toimialueemme on Turku ja Varsinais-Suomi.');
+   assert.deepEqual(result.sourceIds,['area']);
+   assert.doesNotMatch(result.answer,/\?$/);
+ }
+});
+
+test('a sentence-form service area stays natural instead of receiving a duplicate prefix',async()=>{
+ const rows=[{id:'area',category:'Yrityksen perustiedot',title:'Toimialue',answer:'Toimimme Turussa ja koko Varsinais-Suomen alueella.',source_type:'profile'}];
+ const result=await generateGroundedAnswer({rows,message:'missä toimitte',lang:'fi'});
+ assert.equal(result.answer,'Toimimme Turussa ja koko Varsinais-Suomen alueella.');
+ assert.equal(result.handoff,false);
+});
+
+test('service-area lookup ignores reverse questions and does not confuse product delivery with operating area',async()=>{
+ const bad=[{id:'bad',category:'Yrityksen perustiedot',title:'Toimialue',answer:'Millä alueella toimitte?',source_type:'profile'}];
+ const noArea=await generateGroundedAnswer({rows:bad,message:'missä toimitte',lang:'fi'});
+ assert.equal(noArea.handoff,true);
+ assert.match(noArea.answer,/ei löytynyt toimialuetta/);
+ assert.doesNotMatch(noArea.answer,/Millä alueella toimitte/);
+
+ const rows=[{id:'area',category:'Yrityksen perustiedot',title:'Toimialue',answer:'Turku',source_type:'profile'}];
+ const shipping=await generateGroundedAnswer({rows,message:'toimitatteko tuotteita Tampereelle?',lang:'fi'});
+ assert.equal(shipping.handoff,true);
+ assert.doesNotMatch(shipping.answer,/Toimialueemme on Turku/);
+});
+
+test('demo-chat HTTP endpoint answers the exact pictured service-area question from profile data',async()=>{
+ const {app}=await import('../server.mjs');
+ const testServer=app.listen(0,'127.0.0.1');
+ await new Promise(resolve=>testServer.once('listening',resolve));
+ try {
+   const response=await fetch('http://127.0.0.1:'+testServer.address().port+'/api/public/demo-chat',{
+     method:'POST',
+     headers:{'content-type':'application/json'},
+     body:JSON.stringify({lang:'fi',message:'missä toimitte',profile:{serviceArea:'Turku + 50 km'}})
+   });
+   assert.equal(response.status,200);
+   const result=await response.json();
+   assert.equal(result.handoff,false,JSON.stringify(result));
+   assert.equal(result.answer,'Toimialueemme on Turku + 50 km.');
+   assert.doesNotMatch(result.answer,/Millä alueella toimitte/);
+ } finally {
+   await new Promise(resolve=>testServer.close(resolve));
+ }
+});

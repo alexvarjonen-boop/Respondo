@@ -384,7 +384,7 @@ function knowledgeTopic(value) {
   if(/tuote|product|valikoima|selection|sortiment|myy|sell|sku|tuotenumero/.test(t)) return 'products';
   if(/hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
   if(/auki|opening|hours|oppet|öppet|oppettid/.test(t)) return 'hours';
-  if(/toimit|shipping|delivery|nouto|pickup|leverans/.test(t)) return 'delivery';
+  if(/toimitus|toimiteta|toimitamme|toimitatte|shipping|delivery|nouto|pickup|leverans/.test(t)) return 'delivery';
   if(/palaut|return|refund|vaihto|retur/.test(t)) return 'returns';
   if(/myymala|myymälä|store|location|butik/.test(t)) return 'stores';
   if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(t)) return 'contact';
@@ -400,7 +400,7 @@ function queryTopic(query) {
   if(/mita myytte|mitä myytte|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you sell|what products|vad säljer|vad saljer|sortiment/.test(q)) return 'products';
   if(/hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar/.test(q)) return 'pricing';
   if(/auki|aukiolo|opening|hours|open|oppet|öppet|oppettid/.test(q)) return 'hours';
-  if(/toimit|shipping|delivery|nouto|pickup|leverans/.test(q)) return 'delivery';
+  if(/toimitus|toimiteta|toimitamme|toimitatte|shipping|delivery|nouto|pickup|leverans/.test(q)) return 'delivery';
   if(/palaut|return|refund|vaihto|retur/.test(q)) return 'returns';
   if(/myymala|myymälä|myymalat|myymälät|store|stores|butik/.test(q)) return 'stores';
   if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(q)) return 'contact';
@@ -584,6 +584,44 @@ function explicitContactQuestion(message) {
   if (/(?:^|\s)(?:puhelin\w*|phone\w*|telefon\w*|soitta\w*|soita|ring\w*|numero|numeronne|numeroanne)(?:\s|$)/.test(q)) return 'phone';
   if (/(?:^|\s)(?:sahkopost\w*|email\w*|e-mail|meili\w*|epost\w*)(?:\s|$)/.test(q)) return 'email';
   return '';
+}
+
+function explicitServiceAreaQuestion(message) {
+  const q=normalizeSearchText(message);
+  return /^(?:missa\s+(?:te\s+)?toimitte|milla\s+alueella\s+(?:te\s+)?toimitte|mille\s+alueelle\s+(?:te\s+)?tulette|mika\s+(?:teidan\s+)?toimialue(?:enne)?|toimialue|palvelualue)$/.test(q)
+    || /^(?:where\s+do\s+you\s+(?:operate|work|serve)|what(?:'s| is)\s+your\s+service\s+area|service\s+area)$/.test(q)
+    || /^(?:var\s+arbetar\s+ni|vilket\s+omrade\s+(?:arbetar|betjanar)\s+ni\s+i|verksamhetsomrade|serviceomrade)$/.test(q);
+}
+
+function verifiedServiceAreaValue(rows) {
+  const titleAliases=new Set([
+    'toimialue','palvelualue','service area','servicearea',
+    'verksamhetsomrade','serviceomrade',
+    'missa toimitte','milla alueella toimitte','where do you operate','where do you serve','var arbetar ni'
+  ].map(normalizeSearchText));
+  const priority=row=>String(row.id||'').startsWith('demo-')?0:
+    (row.source_type==='profile'||row.category==='Yrityksen perustiedot')?1:2;
+  const candidates=rows.filter(row=>titleAliases.has(normalizeSearchText(row.title)))
+    .sort((a,b)=>priority(a)-priority(b));
+  for(const row of candidates) {
+    const value=String(row.answer||'').replace(/\s+/g,' ').trim();
+    if(!value || value.length>300) continue;
+    if(/\?$/.test(value)) continue;
+    if(/^(?:milla alueella toimitte|missa toimitte|where do you operate|where do you serve|var arbetar ni)\??$/i.test(normalizeSearchText(value))) continue;
+    if(/^(?:https?:\/\/|mailto:|tel:)/i.test(value)) continue;
+    return {value,row};
+  }
+  return null;
+}
+
+function serviceAreaAnswer(value, lang='fi') {
+  const clean=String(value||'').trim().replace(/[.!?]+$/,'');
+  const normalized=normalizeSearchText(clean);
+  const sentenceLike=/^(?:toimimme|palvelemme|palvelumme kattaa|we operate|we serve|our service area|vi arbetar|vi betjanar|vart serviceomrade)/.test(normalized);
+  if(sentenceLike) return clean+'.';
+  if(lang==='en') return 'Our service area is '+clean+'.';
+  if(lang==='sv') return 'Vårt serviceområde är '+clean+'.';
+  return 'Toimialueemme on '+clean+'.';
 }
 
 function answerTone(rows) {
@@ -1809,6 +1847,28 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   }
   if (/^(kiitos|kiitti|thanks|thank you|tack|tack så mycket|tack sa mycket)[!. ]*$/.test(normalized)) {
     return { answer: responseLang === 'en' ? 'You’re welcome! I’m happy to help if you have anything else.' : responseLang === 'sv' ? 'Varsågod! Jag hjälper gärna om du undrar över något mer.' : 'Ole hyvä! Autan mielelläni, jos tulee vielä jotain mieleen.', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Thanks' : responseLang === 'sv' ? 'Tack' : 'Kiitos', sourceIds: [], selected: [] };
+  }
+
+  // "Missä toimitte?" means service area, not shipping/delivery. Resolve it
+  // before generic topic matching so the Finnish verb "toimitte" cannot be
+  // mistaken for "toimitus".
+  if (explicitServiceAreaQuestion(cleanMessage)) {
+    const verifiedArea=verifiedServiceAreaValue(rows);
+    const answer=verifiedArea
+      ? serviceAreaAnswer(verifiedArea.value,responseLang)
+      : responseLang==='en'
+        ? 'There is no verified service area in the company information. Leave your contact details so the company can confirm whether your location is covered.'
+        : responseLang==='sv'
+          ? 'Det finns inget bekräftat serviceområde i företagets information. Lämna dina kontaktuppgifter så kan företaget bekräfta om ditt område omfattas.'
+          : 'Yrityksen vahvistetuista tiedoista ei löytynyt toimialuetta. Jätä yhteystietosi, niin yritys voi varmistaa kuuluuko alueesi palvelualueeseen.';
+    return {
+      answer,
+      handoff:!verifiedArea,
+      confidence:verifiedArea?1:0.2,
+      intent:'Sijainti',
+      sourceIds:verifiedArea?.row.id?[verifiedArea.row.id]:[],
+      selected:verifiedArea?[verifiedArea.row]:[]
+    };
   }
 
   // Direct phone/email requests are factual lookups, not generic FAQ
