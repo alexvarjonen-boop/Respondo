@@ -1,4 +1,4 @@
-import { FEATURE_GROUPS, FEATURE_COUNT } from './features-data.js?v=20260925-v1';
+import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261001-highlights-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -2095,24 +2095,19 @@ function featuresPage() {
   const lang = currentLang();
   const pick = (triple) => triple[lang === 'sv' ? 1 : lang === 'en' ? 2 : 0];
   let featureNo = 0;
-  const featured = [];
-  const restGroups = [];
-  FEATURE_GROUPS.forEach((group) => {
-    const rest = [];
-    group.items.forEach((item) => {
+  const restGroups = FEATURE_GROUPS.map((group) => ({
+    group,
+    items: group.items.map((item) => {
       featureNo += 1;
-      const data = { no: featureNo, item, group };
-      if (featured.length < 10) featured.push(data);
-      else rest.push(data);
-    });
-    if (rest.length) restGroups.push({ group, items: rest });
-  });
+      return { no: featureNo, item, group };
+    })
+  }));
   const featureCard = ({no,item}) => `<article class="feature-item">
     <span class="feature-item-number">${String(no).padStart(3,'0')}</span>
     <div><b>${esc(pick(item))}</b></div>
     <i aria-hidden="true">✓</i>
   </article>`;
-  const topTen = featured.map(featureCard).join('');
+  const topTen = FEATURE_HIGHLIGHTS.map((item,index) => featureCard({no:index+1,item})).join('');
   const groups = restGroups.map(({group,items}) => `<details class="feature-category">
     <summary>
       <div class="feature-category-copy">
@@ -2150,9 +2145,9 @@ function featuresPage() {
       <section class="features-top10">
         <div class="container">
           <div class="features-directory-head">
-            <div><small>${appText('10 SUOSITUINTA','10 POPULÄRA','TOP 10')}</small>
-            <h2>${appText('Katso tärkeimmät ensin.','Se de viktigaste först.','See the essentials first.')}</h2></div>
-            <span>10 / ${FEATURE_COUNT}</span>
+            <div><small>${appText('10 TÄRKEINTÄ','10 VIKTIGASTE','10 ESSENTIALS')}</small>
+            <h2>${appText('Tärkeimmät ominaisuudet ensin.','De viktigaste funktionerna först.','The most important features first.')}</h2></div>
+            <span>10 ${appText('tärkeintä','viktigaste','essentials')}</span>
           </div>
           <div class="features-top10-grid">${topTen}</div>
         </div>
@@ -2164,7 +2159,7 @@ function featuresPage() {
               <small>${appText('LOPUT OMINAISUUDET','RESTEN AV FUNKTIONERNA','ALL OTHER FEATURES')}</small>
               <h2>${appText('Avaa kategoria, kun haluat nähdä lisää.','Öppna en kategori när du vill se mer.','Open a category when you want to see more.')}</h2>
             </div>
-            <span>${FEATURE_COUNT - 10} ${appText('lisää','till','more')}</span>
+            <span>${FEATURE_COUNT} ${appText('yksityiskohtaista ominaisuutta','detaljerade funktioner','detailed features')}</span>
           </div>
           <div class="features-directory-grid">${groups}</div>
         </div>
