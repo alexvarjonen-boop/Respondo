@@ -562,8 +562,12 @@ function knowledgeValue(rows, title) {
 // scraped marketing paragraph into a telephone number.
 function verifiedContactValue(rows, title) {
   const wanted=normalizeSearchText(title);
+  // User-maintained profile values are authoritative, even when an older
+  // imported web entry was updated more recently.
+  const priority=row=>String(row.id||'').startsWith('demo-')?0:
+    (row.source_type==='profile'||row.category==='Yrityksen perustiedot')?1:2;
   const candidates=rows.filter(row=>normalizeSearchText(row.title)===wanted)
-    .sort((a,b)=>Number(String(b.id||'').startsWith('demo-'))-Number(String(a.id||'').startsWith('demo-')));
+    .sort((a,b)=>priority(a)-priority(b));
   for(const row of candidates) {
     const value=String(row.answer||'').trim();
     if (wanted===normalizeSearchText('Puhelinnumero')) {
@@ -3279,12 +3283,26 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
   }
 });
 
+// Contact edits must supersede obsolete contact details imported from the
+// customer's website. Keep manually authored knowledge entries untouched.
+function validBusinessEmail(value) {
+  return !value || (value.length<=254 && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(value));
+}
+async function retireOldImportedEmails(client, tenantId, currentEmail) {
+  await client.query(
+    "UPDATE knowledge SET approved=false,updated_at=NOW() WHERE tenant_id=$1 AND source_type='website' AND lower(title)=lower('Sähköposti') AND lower(trim(answer))<>lower($2)",
+    [tenantId,currentEmail]
+  );
+}
+
 app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
   const client = await pool.connect();
   try {
     const t = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtilaa ei löytynyt.' });
     const tenantId = t.rows[0].id;
+    const currentEmail = String(req.body.email || '').trim().toLowerCase();
+    if (!validBusinessEmail(currentEmail)) return res.status(400).json({error:'Tarkista yrityksen sähköpostiosoite.'});
     const websiteRaw = String(req.body.website || '').trim();
     const quoteRaw = String(req.body.quoteRequestUrl || '').trim();
     const bookingRaw = String(req.body.bookingUrl || '').trim();
@@ -3305,7 +3323,7 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
       ['Hinnat', req.body.pricing, ['hinta','hinnasto','maksaa','alv']],
       ['Aukioloajat', req.body.hours, ['auki','aukiolo','aukioloajat','milloin']],
       ['Puhelinnumero', req.body.phone, ['puhelin','numero','soittaa','yhteystiedot']],
-      ['Sähköposti', req.body.email, ['sähköposti','email','yhteystiedot']],
+      ['Sähköposti', currentEmail, ['sähköposti','email','yhteystiedot']],
       ['Palvelut', req.body.services, ['palvelu','palvelut','teette','tarjoatte']],
       ['Toimialue', req.body.serviceArea, ['toimialue','alue','missä','paikkakunta']],
       ['Osoite', req.body.address, ['osoite','sijainti','missä']],
@@ -3317,6 +3335,7 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
     ];
 
     await client.query('BEGIN');
+    await retireOldImportedEmails(client,tenantId,currentEmail);
     await client.query(
       "DELETE FROM knowledge WHERE tenant_id=$1 AND category='Yrityksen perustiedot'",
       [tenantId]
@@ -3336,7 +3355,7 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
       'UPDATE tenants SET contact_phone=$1, contact_email=$2, website=$3, greeting=$4, average_lead_value=$5, bot_name=$6, bot_avatar=$7, updated_at=NOW() WHERE id=$8',
       [
         String(req.body.phone || '').trim() || null,
-        String(req.body.email || '').trim() || null,
+        currentEmail || null,
         website || null,
         String(req.body.greeting || '').trim().slice(0, 220) || 'Hei! Miten voin auttaa?',
         Math.max(0, Number(req.body.averageLeadValue || 0)) || 0,
@@ -3358,6 +3377,42 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
 });
 
 
+
+// Save the public-facing email independently. Invalid booking URLs or other
+// unsaved profile fields must not prevent a simple contact-email correction.
+// This does not change the owner's login address or billing email.
+app.post('/api/app/business-email', auth, subscribed, async (req,res)=>{
+  const email=String(req.body?.email||'').trim().toLowerCase();
+  if (!validBusinessEmail(email)) return res.status(400).json({error:'Tarkista yrityksen sähköpostiosoite.'});
+  const client=await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const found=await client.query('SELECT id FROM tenants WHERE owner_user_id=$1 FOR UPDATE',[req.user.sub]);
+    if (!found.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+    }
+    const tenantId=found.rows[0].id;
+    await retireOldImportedEmails(client,tenantId,email);
+    await client.query(
+      "DELETE FROM knowledge WHERE tenant_id=$1 AND category='Yrityksen perustiedot' AND title='Sähköposti'",
+      [tenantId]
+    );
+    if (email) await client.query(
+      "INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords,source_type,approved,verified_at) VALUES($1,$2,'Yrityksen perustiedot','Sähköposti',$3,$4,'profile',true,NOW())",
+      [uid(),tenantId,email,['sähköposti','email','yhteystiedot']]
+    );
+    await client.query('UPDATE tenants SET contact_email=$1,updated_at=NOW() WHERE id=$2',[email||null,tenantId]);
+    await client.query('COMMIT');
+    return res.json({ok:true,email});
+  } catch(err) {
+    try { await client.query('ROLLBACK'); } catch {}
+    console.error('Business contact email save failed',err);
+    return res.status(500).json({error:'Sähköpostiosoitteen tallennus ei onnistunut.'});
+  } finally {
+    client.release();
+  }
+});
 
 function extractFreeWebsiteProfile(bundle) {
   return essentialWebsiteProfile(bundle);

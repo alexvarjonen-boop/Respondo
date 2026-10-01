@@ -2596,6 +2596,7 @@ async function dashboard() {
   const businessProfile = Object.fromEntries(
     knowledge
       .filter((x) => x.category === 'Yrityksen perustiedot')
+      .slice().reverse()
       .map((x) => [x.title, x.answer])
   );
   const obviouslyCorruptProfileValue = (value) => {
@@ -2830,9 +2831,12 @@ async function dashboard() {
               <label>Puhelinnumero</label>
               <input name="phone" value="${profileValue('Puhelinnumero')}" placeholder="040 123 4567">
             </div>
-            <div class="field">
-              <label>Sähköposti</label>
-              <input name="email" type="email" value="${profileValue('Sähköposti')}" placeholder="info@yritys.fi">
+            <div class="field profile-contact-email-field">
+              <label for="profileContactEmail">${appText('Yrityksen sähköposti','Företagets e-post','Company contact email')}</label>
+              <input id="profileContactEmail" name="email" type="email" autocomplete="off" spellcheck="false" value="${profileValue('Sähköposti')}" placeholder="info@yritys.fi">
+              <small class="field-hint">${appText('Tämä näkyy botin asiakkaille. Kirjautumissähköposti ei muutu.','Denna adress visas för botens kunder. Inloggningsadressen ändras inte.','This is shown to bot customers. Your login email does not change.')}</small>
+              <button type="button" class="btn ghost profile-email-save" id="saveProfileEmail">${appText('Tallenna sähköpostiosoite','Spara e-postadress','Save email address')}</button>
+              <small id="profileEmailMsg" class="profile-email-status" aria-live="polite"></small>
             </div>
             <div class="field website-import-field">
               <label>Verkkosivusi osoite</label>
@@ -4057,6 +4061,44 @@ async function route() {
       }
     });
 
+    const profileEmailInput=$('#profileContactEmail');
+    const profileEmailMsg=$('#profileEmailMsg');
+    profileEmailInput?.addEventListener('input',()=>{
+      if(profileEmailMsg) {
+        profileEmailMsg.textContent=appText('Tallentamattomia muutoksia','Osparade ändringar','Unsaved changes');
+        profileEmailMsg.dataset.status='pending';
+      }
+    });
+    $('#saveProfileEmail')?.addEventListener('click',async(event)=>{
+      const button=event.currentTarget;
+      const next=String(profileEmailInput?.value||'').trim();
+      if (next && !profileEmailInput.checkValidity()) {
+        profileEmailInput.reportValidity();
+        return;
+      }
+      const original=button.textContent;
+      button.disabled=true;
+      button.textContent=appText('Tallennetaan…','Sparar…','Saving…');
+      try {
+        const saved=await api('/api/app/business-email',{
+          method:'POST',body:JSON.stringify({email:next})
+        });
+        if(profileEmailInput) profileEmailInput.value=saved.email||'';
+        if(profileEmailMsg){
+          profileEmailMsg.dataset.status='saved';
+          profileEmailMsg.textContent=appText('Sähköposti tallennettu. Botti käyttää nyt tätä osoitetta.','E-postadressen sparades. Botten använder nu denna adress.','Email saved. The bot now uses this address.');
+        }
+      } catch(error) {
+        if(profileEmailMsg) {
+          profileEmailMsg.dataset.status='error';
+          profileEmailMsg.textContent=error.message;
+        }
+      } finally {
+        button.disabled=false;
+        button.textContent=original;
+      }
+    });
+
     $('#businessProfileForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = new FormData(e.currentTarget);
@@ -4088,6 +4130,10 @@ async function route() {
           }),
         });
         $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText('Yrityksen tiedot tallennettu. Botti käyttää nyt tallennettuja tietoja.','Företagsuppgifterna har sparats. Botten använder nu de sparade uppgifterna.','Company details saved. The bot now uses the saved information.') + '</div>';
+        if(profileEmailMsg){
+          profileEmailMsg.dataset.status='saved';
+          profileEmailMsg.textContent=appText('Sähköposti tallennettu.','E-postadressen sparades.','Email saved.');
+        }
         button.disabled = false;
         button.innerHTML = appText('Tallennettu ✓','Sparat ✓','Saved ✓');
         setTimeout(() => (button.innerHTML = original), 1800);

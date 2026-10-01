@@ -7541,3 +7541,25 @@ body{
     z-index:1!important;
   }
 }
+
+
+/* Keep the editable business contact address compact even when the
+   neighboring website-import controls make this CSS grid row taller. */
+.business-profile-form .profile-contact-email-field{
+  align-self:start!important;justify-content:flex-start!important;
+}
+.business-profile-form .profile-contact-email-field input[name="email"]{
+  flex:0 0 auto!important;height:48px!important;min-height:48px!important;
+  max-height:48px!important;width:100%!important;
+}
+.business-profile-form .profile-email-save{
+  align-self:flex-start!important;width:auto!important;min-width:0!important;
+  min-height:38px!important;padding:9px 14px!important;margin-top:4px!important;
+}
+.profile-email-status{display:block;min-height:1.25em;font-size:12px;line-height:1.45}
+.profile-email-status[data-status="saved"]{color:#24744f}
+.profile-email-status[data-status="error"]{color:#b3261e}
+.profile-email-status[data-status="pending"]{color:#626875}
+@media(max-width:760px){
+ .business-profile-form .profile-email-save{width:100%!important}
+}

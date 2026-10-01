@@ -557,3 +557,28 @@ test('demo-chat HTTP endpoint gives phone value and a phone action, or explicitl
   await new Promise(resolve=>testServer.close(resolve));
  }
 });
+
+
+test('saved company contact address outranks a later-updated website import',async()=>{
+ const rows=[
+   {id:'import-old',title:'Sähköposti',category:'Yhteystiedot',answer:'old@example.fi',source_type:'website'},
+   {id:'profile-new',title:'Sähköposti',category:'Yrityksen perustiedot',answer:'new@example.fi',source_type:'profile'}
+ ];
+ const result=await generateGroundedAnswer({rows,message:'sähköpostiosoite',lang:'fi'});
+ assert.equal(result.answer,'Sähköpostiosoitteemme on new@example.fi.');
+ assert.deepEqual(result.sourceIds,['profile-new']);
+ const action=chatActions(rows,'sähköpostiosoite',false,'fi');
+ assert.equal(action.find(a=>a.url?.startsWith('mailto:'))?.url,'mailto:new@example.fi');
+ const reOrdered=await generateGroundedAnswer({rows:[...rows].reverse(),message:'sähköpostiosoite',lang:'fi'});
+ assert.equal(reOrdered.answer,result.answer);
+});
+test('dashboard exposes a separate editable business-email save and does not confuse it with login email',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const {fileURLToPath}=await import('node:url');
+ const appSource=readFileSync(fileURLToPath(new URL('../public/app.js',import.meta.url)),'utf8');
+ assert.match(appSource,/id="profileContactEmail" name="email" type="email"/);
+ assert.match(appSource,/id="saveProfileEmail"/);
+ assert.match(appSource,/api\/app\/business-email/);
+ assert.match(appSource,/Kirjautumissähköposti ei muutu/);
+ assert.doesNotMatch(appSource,/id="profileContactEmail"[^>]+readonly/);
+});
