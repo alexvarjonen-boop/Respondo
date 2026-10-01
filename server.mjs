@@ -354,8 +354,9 @@ const SEARCH_STOPWORDS = new Set([
   'olla','voiko','saako','miten','mika','mikä','mitä','missä','missa','paljon','paljonko','teillä','teilla','te',
   'me','minä','mina','sinä','sina','se','sen','sitä','sita','myös','myos','vielä','viela','entä','enta',
   'the','a','an','and','or','is','are','do','does','you','your','we','our','what','which','where','when','how',
-  'och','eller','ar','är','ni','er','ert','vad','vilka','var','nar','när','hur','det','den','som'
-]);
+  'och','eller','ar','är','ni','er','ert','vad','vilka','var','nar','när','hur','det','den','som',
+  'this','that','these','those'
+].map(word => normalizeSearchText(word)));
 
 function normalizeSearchText(value) {
   return String(value || '')
