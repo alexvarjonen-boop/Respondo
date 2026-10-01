@@ -3526,6 +3526,7 @@ async function route() {
   else html = `<div>${nav()}<main class="notfound"><div class="container"><div class="section-kicker">404</div><h1>${appText('Tätä sivua ei löytynyt.','Sidan hittades inte.','Page not found.')}</h1><a class="btn ink" href="/">${appText('Palaa etusivulle','Till startsidan','Back to home')}</a></div></main>${footer()}</div>`;
 
   $('#app').innerHTML = html;
+  document.body.classList.toggle('public-nav-active', Boolean(document.querySelector('#app .nav')));
   applyLanguage();
   bindLanguageSwitch();
 

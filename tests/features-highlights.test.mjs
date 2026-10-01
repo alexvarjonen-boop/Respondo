@@ -30,14 +30,18 @@ test('all detailed features remain below the ten essentials',()=>{
  assert.match(app,/yksityiskohtaista ominaisuutta/);
 });
 
-test('public mobile header is sticky and dashboard header behavior is left separate',()=>{
+test('public mobile header stays fixed on phones and dashboard pages do not opt in',()=>{
  const css=readFileSync(new URL('../public/styles.css',import.meta.url),'utf8');
  const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
  const block=css.split('/* 2026-10-01 mobile public header:')[1]||'';
  assert.ok(block);
- assert.match(block,/body:not\(\.dashboard-page\) \.nav\s*\{[^}]*position:sticky!important/s);
- assert.match(block,/body:not\(\.dashboard-page\) \.nav\s*\{[^}]*top:0!important/s);
- assert.match(block,/body:not\(\.dashboard-page\) \.nav\s*\{[^}]*z-index:1800!important/s);
- assert.match(html,/styles\.css\?v=20261001-features-sticky-v1/);
- assert.match(html,/app\.js\?v=20261001-features-sticky-v1/);
+ assert.match(block,/body\.public-nav-active \.nav\s*\{[^}]*position:fixed!important/s);
+ assert.match(block,/body\.public-nav-active \.nav\s*\{[^}]*top:0!important/s);
+ assert.match(block,/body\.public-nav-active \.nav\s*\{[^}]*left:0!important/s);
+ assert.match(block,/body\.public-nav-active \.nav\s*\{[^}]*right:0!important/s);
+ assert.match(block,/body\.public-nav-active #app\s*\{[^}]*padding-top:var\(--public-mobile-header-height\)!important/s);
+ const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
+ assert.match(app,/classList\.toggle\('public-nav-active', Boolean\(document\.querySelector\('#app \.nav'\)\)\)/);
+ assert.match(html,/styles\.css\?v=20261001-mobile-fixed-header-v1/);
+ assert.match(html,/app\.js\?v=20261001-mobile-fixed-header-v1/);
 });
