@@ -3042,3 +3042,300 @@ small{
     font-size:clamp(40px,12.2vw,54px) !important;
   }
 }
+
+
+/* 2026-10-01 desktop scene layout repair.
+   The homepage now shows three ordinary cards instead of the old horizontally
+   pinned film. Size text to the real card, not to viewport width, and prevent
+   the legacy 3D positions from overlapping the following process scene. */
+@media (min-width: 901px) {
+  .immersive-home .story-horizontal {
+    height:auto !important;
+    min-height:0 !important;
+    padding:88px 20px !important;
+    overflow:hidden !important;
+  }
+  .immersive-home .story-sticky {
+    position:relative !important;
+    top:auto !important;
+    width:100% !important;
+    height:auto !important;
+    min-height:0 !important;
+    margin:0 auto !important;
+    overflow:visible !important;
+    perspective:none !important;
+  }
+  .immersive-home .story-track {
+    position:relative !important;
+    inset:auto !important;
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    align-items:stretch !important;
+    gap:16px !important;
+    width:min(100%,1120px) !important;
+    max-width:1120px !important;
+    height:auto !important;
+    margin:0 auto !important;
+    padding:0 !important;
+    transform:none !important;
+    will-change:auto !important;
+  }
+  .immersive-home .story-panel {
+    position:relative !important;
+    display:flex !important;
+    flex-direction:column !important;
+    justify-content:space-between !important;
+    flex:initial !important;
+    box-sizing:border-box !important;
+    min-width:0 !important;
+    width:100% !important;
+    max-width:100% !important;
+    height:auto !important;
+    min-height:600px !important;
+    padding:26px !important;
+    gap:20px !important;
+    overflow:hidden !important;
+    transform:none !important;
+  }
+  .immersive-home .story-panel-copy {
+    position:relative !important;
+    flex:0 0 auto !important;
+    min-width:0 !important;
+    max-width:100% !important;
+  }
+  .immersive-home .story-panel-copy h2 {
+    max-width:100% !important;
+    margin:18px 0 0 !important;
+    font-size:clamp(27px,2.35vw,39px) !important;
+    line-height:1.08 !important;
+    letter-spacing:-.052em !important;
+    overflow-wrap:anywhere !important;
+    word-break:normal !important;
+    hyphens:auto !important;
+  }
+  .immersive-home .story-panel-copy h2 em {
+    display:block !important;
+    max-width:100% !important;
+    overflow-wrap:anywhere !important;
+  }
+  .immersive-home .story-panel .story-visual {
+    flex:1 0 285px !important;
+    box-sizing:border-box !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:100% !important;
+    min-height:285px !important;
+    margin-top:6px !important;
+    transform:none !important;
+  }
+  /* Restore a centered, document-flow layout for the former 3D sequence. */
+  .immersive-home .motion-depth {
+    height:auto !important;
+    min-height:0 !important;
+    padding:92px 20px !important;
+    overflow:hidden !important;
+  }
+  .immersive-home .motion-depth-sticky {
+    position:relative !important;
+    inset:auto !important;
+    top:auto !important;
+    display:block !important;
+    box-sizing:border-box !important;
+    width:min(100%,1120px) !important;
+    max-width:1120px !important;
+    height:auto !important;
+    min-height:0 !important;
+    margin:0 auto !important;
+    padding:0 !important;
+    overflow:visible !important;
+    perspective:none !important;
+    transform:none !important;
+    transform-style:flat !important;
+  }
+  .immersive-home .depth-copy {
+    position:relative !important;
+    inset:auto !important;
+    left:auto !important;
+    right:auto !important;
+    top:auto !important;
+    width:min(100%,880px) !important;
+    max-width:880px !important;
+    margin:0 auto 40px !important;
+    text-align:center !important;
+    transform:none !important;
+  }
+  .immersive-home .depth-copy h2 {
+    width:100% !important;
+    max-width:100% !important;
+    margin:12px auto 18px !important;
+    font-size:clamp(38px,3.5vw,56px) !important;
+    line-height:1.08 !important;
+    letter-spacing:-.05em !important;
+    overflow-wrap:anywhere !important;
+    word-break:normal !important;
+  }
+  .immersive-home .depth-copy p {
+    margin:0 auto !important;
+    max-width:640px !important;
+    text-align:center !important;
+  }
+  .immersive-home .depth-stage {
+    position:relative !important;
+    inset:auto !important;
+    left:auto !important;
+    top:auto !important;
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    align-items:stretch !important;
+    gap:16px !important;
+    box-sizing:border-box !important;
+    width:100% !important;
+    max-width:1120px !important;
+    height:auto !important;
+    margin:0 auto !important;
+    padding:0 !important;
+    transform:none !important;
+    transform-style:flat !important;
+  }
+  .immersive-home .depth-card {
+    position:relative !important;
+    inset:auto !important;
+    left:auto !important;
+    right:auto !important;
+    top:auto !important;
+    bottom:auto !important;
+    box-sizing:border-box !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    min-height:186px !important;
+    margin:0 !important;
+    padding:24px !important;
+    opacity:1 !important;
+    transform:none !important;
+    transform-style:flat !important;
+    z-index:auto !important;
+  }
+  .immersive-home .depth-card b {
+    max-width:100% !important;
+    font-size:clamp(17px,1.35vw,21px) !important;
+    line-height:1.3 !important;
+    overflow-wrap:break-word !important;
+  }
+  .immersive-home .depth-core {
+    position:relative !important;
+    inset:auto !important;
+    grid-column:1/-1 !important;
+    justify-self:center !important;
+    width:170px !important;
+    height:170px !important;
+    margin:12px auto 0 !important;
+    padding:0 !important;
+    transform:none !important;
+  }
+  .immersive-home .depth-core-ring {
+    width:165px !important;
+    height:165px !important;
+  }
+  .immersive-home .depth-progress,
+  .immersive-home .depth-caption {
+    display:none !important;
+  }
+}
+@media (min-width:901px) and (max-width:1199px) {
+  .immersive-home .story-track {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    max-width:900px !important;
+  }
+  .immersive-home .story-panel-three {
+    grid-column:1/-1 !important;
+    justify-self:center !important;
+    max-width:calc((100% - 16px)/2) !important;
+  }
+  .immersive-home .depth-stage {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+  .immersive-home .depth-card-3 {
+    grid-column:1/-1 !important;
+    justify-self:center !important;
+    max-width:calc((100% - 16px)/2) !important;
+  }
+}
+@media (min-width:761px) and (max-width:900px) {
+  .immersive-home .story-track {
+    grid-template-columns:1fr !important;
+    width:min(100%,680px) !important;
+    padding:0 16px !important;
+    margin-inline:auto !important;
+    transform:none !important;
+  }
+  .immersive-home .story-panel {
+    min-width:0 !important;
+    width:100% !important;
+    max-width:100% !important;
+    margin:0 !important;
+  }
+  .immersive-home .story-panel-copy h2 {
+    max-width:100% !important;
+    font-size:clamp(40px,6vw,52px) !important;
+    overflow-wrap:anywhere !important;
+  }
+  .immersive-home .motion-depth-sticky {
+    height:auto !important;
+    min-height:0 !important;
+    width:min(100% - 32px,720px) !important;
+    margin-inline:auto !important;
+    padding:0 !important;
+    overflow:visible !important;
+  }
+  .immersive-home .depth-copy {
+    width:100% !important;
+    max-width:100% !important;
+    margin:0 auto 32px !important;
+    text-align:center !important;
+  }
+  .immersive-home .depth-copy h2 {
+    font-size:clamp(38px,6vw,52px) !important;
+    line-height:1.08 !important;
+    overflow-wrap:anywhere !important;
+  }
+  .immersive-home .depth-copy p {
+    margin-inline:auto !important;
+  }
+  .immersive-home .depth-stage {
+    grid-template-columns:1fr !important;
+    width:min(100%,560px) !important;
+    margin:0 auto !important;
+    padding:0 !important;
+  }
+  .immersive-home .depth-card {
+    min-width:0 !important;
+    width:100% !important;
+    max-width:100% !important;
+    transform:none !important;
+  }
+  .immersive-home .depth-core {
+    grid-column:1/-1 !important;
+    justify-self:center !important;
+    position:relative !important;
+    inset:auto !important;
+    transform:none !important;
+    margin:14px auto 0 !important;
+  }
+  .immersive-home .depth-progress,
+  .immersive-home .depth-caption {
+    display:none !important;
+  }
+}
+@media (max-width:760px) {
+  .immersive-home .story-panel-copy,
+  .immersive-home .depth-copy {
+    min-width:0 !important;
+    max-width:100% !important;
+  }
+  .immersive-home .story-panel-copy h2,
+  .immersive-home .depth-copy h2 {
+    max-width:100% !important;
+    overflow-wrap:anywhere !important;
+  }
+}

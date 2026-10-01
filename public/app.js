@@ -3432,13 +3432,21 @@ function initImmersiveHomeMotion() {
     }
 
     if (story && storyTrack) {
-      const p = progress(story);
-      story.style.setProperty('--story-p', p.toFixed(4));
-      storyTrack.style.transform = 'translate3d(' + (-p * 66.6667) + '%,0,0)';
-      if (storyProgress) storyProgress.style.transform = 'scaleX(' + p.toFixed(4) + ')';
-      if (storyCurrent) {
-        const step = p < .333 ? 1 : p < .666 ? 2 : 3;
-        storyCurrent.textContent = String(step).padStart(2,'0');
+      // The new responsive card grid occupies normal document flow.
+      // Never apply the old sideways, scroll-driven transform to grid cards.
+      const pinnedFilm = window.getComputedStyle(storyTrack).display === 'flex'
+        && story.offsetHeight > window.innerHeight * 1.5;
+      if (pinnedFilm) {
+        const p = progress(story);
+        story.style.setProperty('--story-p', p.toFixed(4));
+        storyTrack.style.transform = 'translate3d(' + (-p * 66.6667) + '%,0,0)';
+        if (storyProgress) storyProgress.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+        if (storyCurrent) {
+          const step = p < .333 ? 1 : p < .666 ? 2 : 3;
+          storyCurrent.textContent = String(step).padStart(2,'0');
+        }
+      } else if (storyTrack.style.transform) {
+        storyTrack.style.removeProperty('transform');
       }
     }
 
