@@ -1082,9 +1082,18 @@ async function forceAnswerLanguage(answer, lang) {
   const target = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const text = String(answer || '').trim();
   if (!text) return text;
-  // Imported website knowledge can itself be FI/SV/EN. Always normalize the
-  // final customer-facing answer to the requested language, including Finnish.
-  return translateTextFree(text, target, 'auto');
+  // Never send URLs through machine translation. Translators can turn URL path
+  // segments such as /contact-us into translated prose and break the link.
+  const urls = [];
+  const protectedText = text.replace(/https?:\/\/[^\s<>"']+/gi, (url) => {
+    const token = 'RESPONDOURLTOKEN' + urls.length + 'X';
+    urls.push(url);
+    return token;
+  });
+  return translateTextFree(protectedText, target, 'auto').then((translated) => {
+    if (!translated) return translated;
+    return translated.replace(/RESPONDOURLTOKEN(\d+)X/gi, (_, index) => urls[Number(index)] || '');
+  });
 }
 
 function naturalServiceAnswer(rows) {
