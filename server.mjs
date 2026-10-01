@@ -374,7 +374,10 @@ function searchTokens(value) {
 
 function knowledgeTopic(value) {
   const t=normalizeSearchText(value);
-  if(/palvelu|service|services|tjanst|tjänst|tuote|product|valikoima|selection|tarjoa|erbjud|sortiment|myy|sell/.test(t)) return 'services';
+  // Keep actual services separate from retail products. Previously both mapped to
+  // "services", so "Mitä palveluja teette?" could rank an unrelated product card.
+  if(/palvelu|service|services|tjanst|tjänst|tarjoa|erbjud|huolto|pesu|pesut|siistim|raivaus|maalaust|leikkaus|poisvienti|puhdist/.test(t)) return 'services';
+  if(/tuote|product|valikoima|selection|sortiment|myy|sell|sku|tuotenumero/.test(t)) return 'products';
   if(/hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
   if(/auki|opening|hours|oppet|öppet|oppettid/.test(t)) return 'hours';
   if(/toimit|shipping|delivery|nouto|pickup|leverans/.test(t)) return 'delivery';
@@ -386,7 +389,8 @@ function knowledgeTopic(value) {
 }
 function queryTopic(query) {
   const q=normalizeSearchText(query);
-  if(/mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you (?:do|offer|sell)|services|vad gor ni|vad gör ni|vad erbjuder|vad säljer|vad saljer|vilka tjänster|vilka tjanster|tjanster|tjänster|sortiment/.test(q)) return 'services';
+  if(/mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|what do you (?:do|offer)|services|vad gor ni|vad gör ni|vad erbjuder|vilka tjänster|vilka tjanster|tjanster|tjänster/.test(q)) return 'services';
+  if(/mita myytte|mitä myytte|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you sell|what products|vad säljer|vad saljer|sortiment/.test(q)) return 'products';
   if(/hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar/.test(q)) return 'pricing';
   if(/auki|aukiolo|opening|hours|open|oppet|öppet|oppettid/.test(q)) return 'hours';
   if(/toimit|shipping|delivery|nouto|pickup|leverans/.test(q)) return 'delivery';
@@ -911,7 +915,7 @@ function importedKnowledgeJunk(value) {
   // Never let navigation, widgets, product-card chrome or source-code fragments
   // become customer knowledge. These strings are common on retailer/CMS pages.
   if (/(cookie|evasteaset|privacy policy|tietosuojaseloste|terms of service|kayttoehdot|copyright|kaikki oikeudet pidatetaan|hyvaksy evaste|all rights reserved|localstorage|sessionstorage|queryselector|addeventlistener|json stringify|json parse|supported includes)/.test(text)) return true;
-  if (/(skip to content|toggle nav|toggle navigation|ved[aä] liukus[aä][aä]dint[aä]|n[aä]hd[aä]ksesi muutos|katso video ty[oö]n etenemisest[aä]|arvostelut?\s*\(\s*\)|lis[aä][aä] ostoskoriin|add to cart|tuotenumero\s*[:#]?|product code\s*[:#]?|sku\s*[:#]?)/i.test(raw)) return true;
+  if (/(skip to content|toggle nav|toggle navigation|ved[aä] liukus[aä][aä]dint[aä]|n[aä]hd[aä]ksesi muutos|katso video ty[oö]n etenemisest[aä]|arvostelut?\s*\(\s*\)|lis[aä][aä] ostoskoriin|add to cart|tuotenumero\s*[:#]?|product code\s*[:#]?|sku\s*[:#]?|varaa aika\s+ota yhteytt[aä]|helppo ja nopea palvelu\s+varaa aika)/i.test(raw)) return true;
   if (/(const |let |var |function |document |window |=>|webpack|sourceMappingURL)/i.test(raw)) return true;
   // A long run of menu/category labels without sentence punctuation is not a fact.
   const words = text.split(' ').filter(Boolean);
@@ -954,7 +958,7 @@ function websiteKnowledgeCandidates(bundle) {
   for (const doc of docs) {
     const sourceKey = normalizeSearchText(String(doc.url||''));
     if (/terms|privacy|tietosuoja|kayttoeh|käyttöeh|cookie|evaste|eväste|legal/.test(sourceKey)) continue;
-    const category = categoryFor(doc.url, doc.text);
+    const pageCategory = categoryFor(doc.url, doc.text);
     let lines = String(doc.text || '').split('\n').map((x)=>x.replace(/\s+/g,' ').trim()).filter((x)=>x.length>=8&&!junk.test(x));
     // Many modern sites render meaningful copy as short separate DOM nodes. Combine those
     // nodes into answer-sized chunks instead of discarding them one by one.
@@ -973,7 +977,21 @@ function websiteKnowledgeCandidates(bundle) {
       if(!key||seen.has(key)) continue;
       seen.add(key);
       const sentence=(context.match(/^.{20,120}?(?:[.!?](?:\s|$)|$)/)||[])[0] || context.slice(0,120);
-      const title=sentence.replace(/[.!?]\s*$/,'').trim().slice(0,120) || category;
+      const title=sentence.replace(/[.!?]\s*$/,'').trim().slice(0,120) || pageCategory;
+      // Classify each chunk by its own content instead of inheriting one category
+      // from the whole page. This prevents CTA/navigation/product chunks from
+      // masquerading as services merely because the page also contains services.
+      const chunkTopic=knowledgeTopic(title+' '+context);
+      const category=chunkTopic==='services' ? 'Palvelut'
+        : chunkTopic==='products' ? 'Tuotteet'
+        : chunkTopic==='pricing' ? 'Hinnat'
+        : chunkTopic==='hours' ? 'Aukioloajat'
+        : chunkTopic==='delivery' ? 'Toimitus ja nouto'
+        : chunkTopic==='returns' ? 'Palautukset'
+        : chunkTopic==='stores' ? 'Myymälät'
+        : chunkTopic==='contact' ? 'Yhteystiedot'
+        : chunkTopic==='warranty' ? 'Takuu'
+        : pageCategory;
       const candidate={category,title,answer:context,keywords:[...new Set(searchTokens(title+' '+context).slice(0,14))],sourceUrl:doc.url};
       candidate._quality=importedKnowledgeQuality(candidate);
       if(candidate._quality>-20 && !importedKnowledgeJunk(title+' '+context)) candidates.push(candidate);
