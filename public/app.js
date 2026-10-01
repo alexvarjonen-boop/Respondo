@@ -1,4 +1,5 @@
 import { FEATURE_GROUPS, FEATURE_COUNT } from './features-data.js?v=20260925-v1';
+import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) =>
@@ -2837,6 +2838,7 @@ async function dashboard() {
               <small class="field-hint">${appText('Tämä näkyy botin asiakkaille. Kirjautumissähköposti ei muutu.','Denna adress visas för botens kunder. Inloggningsadressen ändras inte.','This is shown to bot customers. Your login email does not change.')}</small>
               <button type="button" class="btn ghost profile-email-save" id="saveProfileEmail">${appText('Tallenna sähköpostiosoite','Spara e-postadress','Save email address')}</button>
               <small id="profileEmailMsg" class="profile-email-status" aria-live="polite"></small>
+              <div id="importEmailSuggestions" class="profile-email-suggestions" aria-live="polite"></div>
             </div>
             <div class="field website-import-field">
               <label>Verkkosivusi osoite</label>
@@ -3961,12 +3963,58 @@ async function route() {
           if(state.status==='done') result=state.result;
         }
         setProgress(100,appText('Valmis','Klart','Complete'));
-        const p = result.profile || {};
-        // Never let heuristic website extraction overwrite business profile fields.
-        // Imported content is reviewed below before it becomes bot knowledge.
-        // Only keep the exact website URL the user explicitly requested to import.
+        // Imported content must be reviewed before it enters bot knowledge.
+        // However, a single exact email can safely PRE-FILL an empty input;
+        // the customer still explicitly saves the public-facing contact email.
         if (formEl?.elements.website) formEl.elements.website.value = website;
         const candidates = Array.isArray(result.candidates) ? result.candidates : [];
+        const emailInput=formEl?.elements.email;
+        const suggestionArea=document.getElementById('importEmailSuggestions');
+        const emailStatus=document.getElementById('profileEmailMsg');
+        const emailChoice=chooseImportedContactEmail(candidates,emailInput?.value||'');
+        let emailPrefilled=false;
+        const stageImportedEmail=(email)=>{
+          if(!emailInput) return;
+          emailInput.value=email;
+          emailInput.dispatchEvent(new Event('input',{bubbles:true}));
+          if(emailStatus) {
+            emailStatus.dataset.status='pending';
+            emailStatus.textContent=appText(
+              'Sähköposti löytyi sivustolta ja lisättiin kenttään. Tarkista osoite ja paina Tallenna sähköpostiosoite.',
+              'E-postadressen hittades på webbplatsen. Kontrollera adressen och klicka på Spara e-postadress.',
+              'Email found on the website and added to the field. Verify it and click Save email address.'
+            );
+          }
+        };
+        if(emailChoice.autoFill && emailInput && !emailInput.value.trim()) {
+          stageImportedEmail(emailChoice.autoFill);
+          emailPrefilled=true;
+        }
+        if(suggestionArea) {
+          suggestionArea.replaceChildren();
+          if(emailChoice.suggestions.length) {
+            const intro=document.createElement('small');
+            intro.className='field-hint';
+            intro.textContent=appText(
+              emailChoice.foundCount>1?'Sivustolta löytyi useita sähköpostiosoitteita. Valitse oikea:':'Sivustolta löytyi myös tämä sähköpostiosoite:',
+              emailChoice.foundCount>1?'Flera e-postadresser hittades. Välj rätt adress:':'Den här e-postadressen hittades också:',
+              emailChoice.foundCount>1?'Multiple email addresses were found. Choose the correct one:':'Another email address was found:'
+            );
+            suggestionArea.appendChild(intro);
+            for(const item of emailChoice.suggestions) {
+              const pick=document.createElement('button');
+              pick.type='button';
+              pick.className='btn ghost import-email-choice';
+              pick.textContent=item.email;
+              pick.title=appText('Käytä tätä sähköpostiosoitetta','Använd den här e-postadressen','Use this email address');
+              pick.addEventListener('click',()=>{
+                stageImportedEmail(item.email);
+                suggestionArea.replaceChildren();
+              });
+              suggestionArea.appendChild(pick);
+            }
+          }
+        }
         const review = document.getElementById('websiteImportReview');
         if (review) {
           review.innerHTML = candidates.length ? `
@@ -4010,7 +4058,15 @@ async function route() {
             }
           });
         }
-        $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText('Tiedot haettu. Tarkista alla olevat löydöt ennen hyväksymistä. Perustietokenttiä ei muutettu automaattisesti.','Uppgifterna har hämtats. Granska fynden nedan före godkännande. Grundfälten ändrades inte automatiskt.','Details imported. Review the findings below before approval. Profile fields were not changed automatically.') + '</div>';
+        $('#businessProfileMsg').innerHTML = '<div class="notice success">' + (
+          emailPrefilled
+            ? appText('Tiedot haettu. Löydetty sähköposti täytettiin kenttään, mutta sitä ei ole vielä tallennettu. Tarkista osoite ja tallenna. Hyväksy muut tiedot erikseen alla.',
+                'Uppgifter hämtade. E-postadressen fylldes i men har inte sparats. Kontrollera och spara adressen. Godkänn övriga uppgifter separat nedan.',
+                'Information found. The email was filled in but is not saved yet. Verify and save it. Approve other details separately below.')
+            : appText('Tiedot haettu. Tarkista alla olevat löydöt ennen hyväksymistä. Tallennettuja perustietoja ei korvattu automaattisesti.',
+                'Uppgifter hämtade. Granska fynden nedan. Sparade företagsuppgifter har inte skrivits över.',
+                'Information found. Review the results below. Existing saved business details were not overwritten.')
+        ) + '</div>';
         button.textContent = appText('Tiedot haettu ✓','Uppgifter hämtade ✓','Details imported ✓');
         setTimeout(() => { button.textContent = original; button.disabled = false; }, 1800);
       } catch (err) {
