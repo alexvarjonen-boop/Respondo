@@ -166,3 +166,35 @@ test('specific order requests confirm only an explicitly listed service',async()
  const no=await generateGroundedAnswer({rows,message:'voiko teiltä tilata lentokoneen maalauksen',lang:'fi'});
  assert.equal(no.handoff,true);
 });
+
+
+test('general roof cleaning questions use only the specifically approved roof subtype',async()=>{
+ const roofing=[
+  {id:'metal',category:'Palvelut',title:'Peltikattojen pesut',answer:'Hoidamme peltikattojen pesut ammattitaitoisesti.',source_type:'website',keywords:['palvelut']}
+ ];
+ const broad=await generateGroundedAnswer({rows:roofing,message:'pesettekö kattoja',lang:'fi'});
+ assert.equal(broad.handoff,false);
+ assert.equal(broad.answer,'Kyllä, pesemme peltikattoja.');
+ assert.deepEqual(broad.sourceIds,['metal']);
+ const direct=await generateGroundedAnswer({rows:roofing,message:'pesettekö peltikattoja',lang:'fi'});
+ assert.equal(direct.handoff,false);
+ assert.equal(direct.answer,'Kyllä, pesemme peltikattoja.');
+ const anotherSubtype=await generateGroundedAnswer({rows:roofing,message:'pesettekö tiilikattoja',lang:'fi'});
+ assert.equal(anotherSubtype.handoff,true);
+ assert.equal(anotherSubtype.answer,'');
+});
+test('general roof cleaning questions reject installation, negative and unrelated services',async()=>{
+ const cases=[
+  [{id:'installation',category:'Palvelut',title:'Peltikattojen asennukset',answer:'Asennamme peltikattoja.',source_type:'website',keywords:['palvelut']}],
+  [{id:'negative',category:'Palvelut',title:'Peltikattojen pesut',answer:'Emme pese peltikattoja.',source_type:'website',keywords:['palvelut']}],
+  [{id:'other',category:'Palvelut',title:'Rännien puhdistus',answer:'Puhdistamme rännejä.',source_type:'website',keywords:['palvelut']}]
+ ];
+ for(const rows of cases){
+  const reply=await generateGroundedAnswer({rows,message:'pesettekö kattoja?',lang:'fi'});
+  assert.equal(reply.handoff,true,JSON.stringify(reply));
+  assert.equal(reply.answer,'');
+ }
+ const tiled=[{id:'tile',category:'Palvelut',title:'Tiilikattojen pesut',answer:'Tiilikattojen pesut tehdään huolellisesti.',source_type:'website',keywords:['palvelut']}];
+ const tileReply=await generateGroundedAnswer({rows:tiled,message:'pesettekö kattoja',lang:'fi'});
+ assert.equal(tileReply.answer,'Kyllä, pesemme tiilikattoja.');
+});

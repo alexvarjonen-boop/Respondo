@@ -1166,10 +1166,21 @@ function groundedFinnishServiceReply(message, history, rows) {
       const text=normalizeSearchText(clause);
       if (/\b(?:ei|emme|eivat|not|inte|aldrig)\b/.test(text)) continue;
       const words=text.split(/[\s-]+/).filter(Boolean);
+      let qualifiedNoun='';
       const nounFound=words.some(word=>{
         const evidenceStem=finnishServiceStem(word);
-        return evidenceStem===root ||
-          (root.length>=5 && evidenceStem.startsWith(root) && /^(?:an?|en?)(?:pes|puhdist|huolto|asenn|maala)/.test(evidenceStem.slice(root.length)));
+        if (evidenceStem===root) return true;
+        if (root.length>=5 && evidenceStem.startsWith(root) &&
+            /^(?:an?|en?)(?:pes|puhdist|huolto|asenn|maala)/.test(evidenceStem.slice(root.length))) return true;
+        // A broad roof question can be supported by a narrower, explicitly
+        // listed roof type, but the reply must name that subtype rather than
+        // claiming that every roof material is covered.
+        if (root==='katt' && evidenceStem.length>root.length+2 &&
+            evidenceStem.endsWith(root) && /^[a-z]{3,}katto(?:ja|jen)$/.test(word)) {
+          qualifiedNoun=word.replace(/kattojen$/,'kattoja');
+          return true;
+        }
+        return false;
       });
       if (!nounFound) continue;
       const cleaning= /puhdist|pesu|pese|pesem|siivou/.test(text);
@@ -1192,7 +1203,7 @@ function groundedFinnishServiceReply(message, history, rows) {
       if (verb==='korjaatteko' && type!=='korjaamme') continue;
       if (verb==='raivaatteko' && type!=='raivaamme') continue;
       if (verb==='huollatteko' && type!=='huollamme') continue;
-      candidates.push({row,type});
+      candidates.push({row,type,qualifiedNoun});
     }
   }
   const found=candidates[0];
@@ -1201,7 +1212,7 @@ function groundedFinnishServiceReply(message, history, rows) {
     .replace(/^(?:teettekö|pesettekö|puhdistatteko|huollatteko|asennatteko|maalaatteko|korjaatteko|raivaatteko|viettekö|entä|mites|ja)\s+/i,'')
     .replace(/[?!.]+$/,'').toLowerCase();
   const answerVerb=verb==='teetteko' && /(?:pesu|puhdist|siivou|asennus|huolto|maalaus|korjaus|raivaus)/.test(noun) ? 'teemme' : found.type;
-  return {supported:true,answer:'Kyllä, '+answerVerb+(follow?' myös':'')+' '+phrase+'.',evidence:[found.row]};
+  return {supported:true,answer:'Kyllä, '+answerVerb+(follow?' myös':'')+' '+(found.qualifiedNoun||phrase)+'.',evidence:[found.row]};
 }
 
 function naturalServiceAnswer(rows) {
