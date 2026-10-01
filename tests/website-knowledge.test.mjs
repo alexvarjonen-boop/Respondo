@@ -249,7 +249,7 @@ test('four-service booking with shared action and mixed verbs is independently v
   message:'voinko tilata teiltä peltikaton ja rännien pesun, ikkunoiden pesun sekä terassin öljyämisen'
  });
  assert.equal(result.handoff,false,JSON.stringify(result));
- assert.equal(result.answer,'Kyllä, voit tilata meiltä peltikaton pesun, rännien pesun, ikkunoiden pesun ja terassin öljyämisen.');
+ assert.equal(result.answer,'Kyllä, voit tilata meiltä peltikaton ja rännien pesun, ikkunoiden pesun sekä terassin öljyämisen.');
  assert.deepEqual(result.sourceIds,['roof','gutter','windows','terrace']);
  assert.doesNotMatch(result.answer,/samalla käynnillä|terassi näyttää/i);
 });
@@ -365,5 +365,85 @@ test('preview HTTP endpoint confirms explicit oiling and refuses incidental oili
    assert.doesNotMatch(uncertain.answer,/Kyllä, öljyämme/);
  } finally {
    await new Promise(resolve=>server.close(resolve));
+ }
+});
+
+
+test('customer photo wording: terrace wash and oiling, generic roof and gutter wash, and window wash',async()=>{
+ const rows=[
+   {id:'terrace',category:'Palvelut',title:'Terassin pesu ja öljyäminen',
+     answer:'Terassin pesu ja öljyäminen onnistuvat.',source_type:'website'},
+   {id:'roof',category:'Palvelut',title:'Peltikattojen pesut',
+     answer:'Hoidamme peltikattojen pesut.',source_type:'website'},
+   {id:'gutters',category:'Palvelut',title:'Rännien puhdistukset',
+     answer:'Puhdistamme rännejä.',source_type:'website'},
+   {id:'windows',category:'Palvelut',title:'Ikkunanpesut',
+     answer:'Tarjoamme ikkunanpesua.',source_type:'website'}
+ ];
+ const reply=await generateGroundedAnswer({rows,lang:'fi',
+   message:'voinko tilata teiltä terassin pesun ja öljyämisen, katon ja rännien pesun sekä ikkunoiden pesun'});
+ assert.equal(reply.handoff,false,JSON.stringify(reply));
+ assert.equal(reply.answer,'Kyllä, voit tilata meiltä terassin pesun ja öljyämisen, peltikaton ja rännien pesun sekä ikkunoiden pesun.');
+ assert.deepEqual(reply.sourceIds,['terrace','roof','gutters','windows']);
+});
+test('a generic roof must be qualified only to the roof material proven by the source',async()=>{
+ const rows=[
+   {id:'tiles',category:'Palvelut',title:'Tiilikattojen pesut',
+     answer:'Pesemme tiilikattoja.',source_type:'website'},
+   {id:'gutter',category:'Palvelut',title:'Rännien puhdistus',
+     answer:'Puhdistamme rännejä.',source_type:'website'}
+ ];
+ const tile=await generateGroundedAnswer({rows,lang:'fi',
+   message:'voinko tilata teiltä katon ja rännien pesun'});
+ assert.equal(tile.handoff,false,JSON.stringify(tile));
+ assert.equal(tile.answer,'Kyllä, voit tilata meiltä sekä tiilikaton pesun että rännien pesun.');
+ const noRoof=await generateGroundedAnswer({rows:[rows[1]],lang:'fi',
+   message:'voinko tilata teiltä katon ja rännien pesun'});
+ assert.equal(noRoof.handoff,true);
+ assert.match(noRoof.answer,/Nämä palvelut pitää vielä varmistaa: katon pesu/);
+ assert.doesNotMatch(noRoof.answer,/Kyllä, voit tilata/);
+});
+test('single terrace cleaning never proves oiling in a coordinated long request',async()=>{
+ const rows=[
+   {id:'terrace',category:'Palvelut',title:'Terassin pesu',
+     answer:'Terassi näyttää pesun ja öljyämisen jälkeen uudelta.',source_type:'website'},
+   {id:'roof',category:'Palvelut',title:'Peltikattojen pesut',
+     answer:'Hoidamme peltikattojen pesut.',source_type:'website'},
+   {id:'gutters',category:'Palvelut',title:'Rännien puhdistus',
+     answer:'Puhdistamme rännejä.',source_type:'website'},
+   {id:'windows',category:'Palvelut',title:'Ikkunapesu',
+     answer:'Pesemme ikkunoita.',source_type:'website'}
+ ];
+ const result=await generateGroundedAnswer({rows,lang:'fi',
+   message:'voinko tilata teiltä terassin pesun ja öljyämisen, katon ja rännien pesun sekä ikkunoiden pesun'});
+ assert.equal(result.handoff,true);
+ assert.match(result.answer,/Nämä palvelut pitää vielä varmistaa: terassin öljyäminen/);
+ assert.doesNotMatch(result.answer,/Kyllä, voit tilata/);
+ assert.deepEqual(result.sourceIds,['terrace','roof','gutters','windows']);
+});
+test('dashboard preview API handles the exact pictured customer request',async()=>{
+ const {app}=await import('../server.mjs');
+ const server=app.listen(0,'127.0.0.1');
+ await new Promise(resolve=>server.once('listening',resolve));
+ const facts=[
+  {key:'Terassin pesu ja öljyäminen',answer:'Terassin pesu ja öljyäminen onnistuvat.'},
+  {key:'Peltikattojen pesut',answer:'Hoidamme peltikattojen pesut.'},
+  {key:'Rännien puhdistus',answer:'Puhdistamme rännejä.'},
+  {key:'Ikkunanpesut',answer:'Tarjoamme ikkunanpesua.'}
+ ];
+ try {
+  const response=await fetch('http://127.0.0.1:'+server.address().port+'/api/public/demo-chat',{
+   method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({lang:'fi',message:'voinko tilata teiltä terassin pesun ja öljyämisen, katon ja rännien pesun sekä ikkunoiden pesun',
+      profile:{customFacts:facts}})
+  });
+  assert.equal(response.status,200);
+  const result=await response.json();
+  assert.equal(result.handoff,false,JSON.stringify(result));
+  assert.match(result.answer,/peltikaton ja rännien pesun/);
+  assert.match(result.answer,/terassin pesun ja öljyämisen/);
+  assert.doesNotMatch(result.answer,/terassi näyttää|tätä tietoa ei löytynyt/i);
+ } finally {
+  await new Promise(resolve=>server.close(resolve));
  }
 });

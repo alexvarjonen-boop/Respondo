@@ -1279,6 +1279,9 @@ function combinedFinnishServiceRequest(message, rows) {
   };
   const subjectOf=word=>{
     const text=normalizeSearchText(word);
+    // Generic "katon/kattojen" questions may match documented roof subtypes,
+    // but the reply must disclose the specific subtype actually supported.
+    if (/^(?:katon|katto|kattoa|kattoja|kattojen|kattoihin|katolla|katolta|katolle)$/.test(text)) return 'roof';
     if (/^peltikat/.test(text)) return 'peltikatt';
     if (/^tiilikat/.test(text)) return 'tiilikatt';
     if (/^rann/.test(text)) return 'rann';
@@ -1303,18 +1306,35 @@ function combinedFinnishServiceRequest(message, rows) {
   // unrelated action from a different comma-separated service.
   const groups=order[1].split(/\s*,\s*|\s+sekä\s+|\s+seka\s+|\s*&\s*/i).map(x=>x.trim()).filter(Boolean);
   const parts=[];
-  for(const group of groups) {
+  for(let groupIndex=0;groupIndex<groups.length;groupIndex++) {
+    const group=groups[groupIndex];
     const pieces=group.split(/\s+ja\s+/i).map(x=>x.trim()).filter(Boolean);
     const own=pieces.map(piece=>actionOf(piece));
     const shared=[...new Set(own.filter(Boolean).map(a=>a.kind))];
     const sharedAction=shared.length===1 ? own.find(Boolean) : null;
     const sharedWord=sharedAction && pieces.length>1 ?
       pieces.find(piece=>actionOf(piece))?.split(/\s+/).find(word=>sharedAction.rx.test(normalizeSearchText(word))) : '';
+    let previousSubjects=[];
+    let previousSubjectPhrase='';
     for(let i=0;i<pieces.length;i++){
-      const subjects=parseSubjects(pieces[i]);
+      const explicitSubjects=parseSubjects(pieces[i]);
+      // "Terassin pesu ja öljyäminen": the bare second action inherits
+      // its subject from the preceding, locally coordinated service only.
+      const actionOnly=own[i] && explicitSubjects.length===0 &&
+        pieces[i].split(/\s+/).length===1 && i>0;
+      const subjects=actionOnly ? previousSubjects : explicitSubjects;
+      const inheritedLabel=actionOnly && previousSubjectPhrase
+        ? previousSubjectPhrase+' '+pieces[i] : '';
       const action=own[i]||sharedAction||
         (/^pesetteko\b/.test(q)?actionTypes[0]:null);
-      parts.push({subjects,action,label:own[i]||!sharedWord?pieces[i]:pieces[i]+' '+sharedWord});
+      parts.push({
+        subjects,action,groupIndex,
+        label:inheritedLabel || (own[i]||!sharedWord?pieces[i]:pieces[i]+' '+sharedWord)
+      });
+      if (explicitSubjects.length) {
+        previousSubjects=explicitSubjects;
+        previousSubjectPhrase=pieces[i].split(/\s+/)[0]||'';
+      }
     }
   }
   if (parts.length<2 || parts.length>6) return null;
@@ -1335,7 +1355,9 @@ function combinedFinnishServiceRequest(message, rows) {
     : action.rx.test(normalizeSearchText(text));
   const matchesSubjects=(text,subjects)=>{
     const evidence=normalizeSearchText(text).split(/[\s-]+/).filter(Boolean).map(subjectOf);
-    return subjects.every(subject=>evidence.includes(subject));
+    return subjects.every(subject=>subject==='roof'
+      ? evidence.some(word=>['roof','peltikatt','tiilikatt','huopakatt','bitumikatt'].includes(word))
+      : evidence.includes(subject));
   };
   const isShortActionOnly=text=>{
     const words=normalizeSearchText(text).split(/\s+/).filter(Boolean);
@@ -1354,6 +1376,18 @@ function combinedFinnishServiceRequest(message, rows) {
     });
   })));
 
+  // If a broad roof question was proved only for metal or another subtype,
+  // name that subtype in the response instead of promising all roof materials.
+  for(let i=0;i<parts.length;i++) {
+    if (!findings[i] || !parts[i].subjects.includes('roof')) continue;
+    const evidence=normalizeSearchText(String(findings[i].title||'')+' '+String(findings[i].answer||''));
+    const subtype=/\bpeltikat/.test(evidence)?'peltikaton':
+      /\btiilikat/.test(evidence)?'tiilikaton':
+      /\bhuopakat/.test(evidence)?'huopakaton':
+      /\bbitumikat/.test(evidence)?'bitumikaton':'';
+    if (subtype) parts[i].qualifiedLabel=parts[i].label.replace(/^katon\b/i,subtype);
+  }
+
   const present=parts.filter((part,i)=>Boolean(findings[i]));
   const missing=parts.filter((part,i)=>!findings[i]);
   const evidence=[...new Map(findings.filter(Boolean).map(row=>[row.id||row.title,row])).values()];
@@ -1370,20 +1404,29 @@ function combinedFinnishServiceRequest(message, rows) {
     if (!present.length) return {supported:false};
     return {
       supported:false,partial:true,evidence,
-      answer:'Tiedoistamme löytyvät seuraavat palvelut: '+list(present.map(x=>serviceName(x.label)))+'. '+
+      answer:'Tiedoistamme löytyvät seuraavat palvelut: '+list(present.map(x=>serviceName(x.qualifiedLabel||x.label)))+'. '+
         'Nämä palvelut pitää vielä varmistaa: '+list(missing.map(x=>serviceName(x.label)))+'. '+
         'Jätä yhteystietosi, niin yritys voi varmistaa asian.'
     };
   }
-  const labels=parts.map(x=>x.label);
+  const labels=parts.map(x=>x.qualifiedLabel||x.label);
+  // Preserve natural shared-action groups instead of repeating their
+  // noun or losing the shared action in a long customer request.
+  const displayGroups=groups.map((group,groupIndex)=>{
+    const roofPart=parts.find((part,i)=>part.groupIndex===groupIndex &&
+      findings[i] && part.subjects.includes('roof') && part.qualifiedLabel);
+    return roofPart ? group.replace(/\bkaton\b/i,roofPart.qualifiedLabel.split(' ')[0]) : group;
+  });
+  const grouped=displayGroups.length===1 ? displayGroups[0] :
+    displayGroups.slice(0,-1).join(', ')+' sekä '+displayGroups.at(-1);
+  const display=displayGroups.length===1 && labels.length===2
+    ? 'sekä '+labels[0]+' että '+labels[1] : grouped;
   const orderQuestion=/^(?:voiko|voinko|saako|saanko)/.test(q);
   return {
     supported:true,evidence,
     answer:orderQuestion
-      ? 'Kyllä, voit tilata meiltä '+(labels.length===2
-          ? 'sekä '+labels[0]+' että '+labels[1]
-          : list(labels))+'.'
-      : 'Kyllä, tarjoamme seuraavat palvelut: '+list(labels)+'.'
+      ? 'Kyllä, voit tilata meiltä '+display+'.'
+      : 'Kyllä, tarjoamme seuraavat palvelut: '+display+'.'
   };
 }
 
