@@ -1281,33 +1281,143 @@ function restorePersistentUiToFinnish() {
 
 function updateDocumentLanguageMeta(lang) {
   const path = location.pathname;
-  const pageTitle = path === '/app'
-    ? appText('RESPONDO AI | Hallintapaneeli','RESPONDO AI | Kontrollpanel','RESPONDO AI | Dashboard')
-    : path === '/kirjaudu'
-      ? appText('RESPONDO AI | Kirjaudu','RESPONDO AI | Logga in','RESPONDO AI | Log in')
-      : path === '/tilaus'
-        ? appText('RESPONDO AI | Luo tili','RESPONDO AI | Skapa konto','RESPONDO AI | Create account')
-        : path === '/assistant'
-          ? appText('RESPONDO AI | Testaa bottia','RESPONDO AI | Testa botten','RESPONDO AI | Try the bot')
-          : appText('RESPONDO AI | Asiakaspalvelubotti yrityksille 24/7','RESPONDO AI | Kundservicebot för företag 24/7','RESPONDO AI | Customer service bot for businesses 24/7');
-  document.title = pageTitle;
-  const metaDescription = lang === 'sv'
-    ? 'RESPONDO AI är en kundservicebot för företag som svarar med företagets egna godkända uppgifter dygnet runt.'
-    : lang === 'en'
-      ? 'RESPONDO AI is a customer service bot for businesses that answers using the company’s own approved information around the clock.'
-      : 'RESPONDO AI on yrityksen verkkosivulle asennettava asiakaspalvelubotti, joka vastaa yrityksen omilla hyväksytyillä tiedoilla ympäri vuorokauden.';
-  const setMeta = (selector, value) => {
-    const el = document.querySelector(selector);
-    if (el && value) el.setAttribute('content', value);
-  };
-  setMeta('meta[name="description"]', metaDescription);
-  setMeta('meta[property="og:title"]', pageTitle);
-  setMeta('meta[property="og:description"]', metaDescription);
-  setMeta('meta[name="twitter:title"]', pageTitle);
-  setMeta('meta[name="twitter:description"]', metaDescription);
-  setMeta('meta[property="og:locale"]', lang === 'sv' ? 'sv_SE' : lang === 'en' ? 'en_GB' : 'fi_FI');
-}
+  const canonicalPath = (path === '/features' || path === '/funktioner') ? '/ominaisuudet' : path;
 
+  const metaByPath = {
+    '/': {
+      fi:['Asiakaspalvelubotti yrityksille 24/7 | Respondo AI','Respondo on verkkosivulle asennettava asiakaspalvelubotti yrityksille. Se vastaa asiakkaiden kysymyksiin 24/7 yrityksesi omilla tiedoilla.'],
+      sv:['Kundservicebot för företag 24/7 | Respondo AI','Respondo är en kundservicebot för företags webbplatser. Den svarar kunder dygnet runt med företagets egna godkända uppgifter.'],
+      en:['Customer Service Bot for Businesses 24/7 | Respondo AI','Respondo is a customer service bot for business websites. It answers customers around the clock using your company-approved information.'],
+    },
+    '/ominaisuudet': {
+      fi:['Asiakaspalvelubotin ominaisuudet | Respondo AI','Tutustu Respondon ominaisuuksiin: verkkosivubotti, yrityksen oma tietopohja, yhteydenotot, ajanvaraus, keskustelut ja asiakaspalvelun hallinta yhdessä paikassa.'],
+      sv:['Funktioner för kundservicebot | Respondo AI','Se Respondos funktioner för kundservice, kunskapsbas, kontaktförfrågningar, bokningar och kunddialoger.'],
+      en:['Customer Service Bot Features | Respondo AI','Explore Respondo features for customer service, your knowledge base, contact requests, bookings and customer conversations.'],
+    },
+    '/tietoturva': {
+      fi:['Tietoturva ja tietosuoja | Respondo AI','Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
+      sv:['Datasäkerhet och integritet | Respondo AI','Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
+      en:['Security and Privacy | Respondo AI','See how Respondo protects company and customer data, sign-ins, integrations and service usage.'],
+    },
+    '/kayttoehdot': {
+      fi:['Käyttöehdot | Respondo AI','Respondo AI -palvelun käyttöehdot yritysasiakkaille.'],
+      sv:['Användarvillkor | Respondo AI','Användarvillkor för Respondo AI:s företagstjänst.'],
+      en:['Terms of Service | Respondo AI','Terms of service for Respondo AI business customers.'],
+    },
+    '/tietosuoja': {
+      fi:['Tietosuojaseloste | Respondo AI','Tietosuojaseloste kertoo, mitä henkilötietoja Respondo käsittelee, miksi niitä käsitellään ja miten tiedot suojataan.'],
+      sv:['Integritetspolicy | Respondo AI','Information om vilka personuppgifter Respondo behandlar, varför de behandlas och hur de skyddas.'],
+      en:['Privacy Policy | Respondo AI','Learn what personal data Respondo processes, why it is processed and how it is protected.'],
+    },
+    '/evasteet': {
+      fi:['Evästeet | Respondo AI','Tietoa Respondon välttämättömistä evästeistä, valinnaisesta kävijätilastoinnista ja evästevalintojen hallinnasta.'],
+      sv:['Cookies | Respondo AI','Information om nödvändiga cookies, valfri besöksstatistik och hantering av cookieinställningar.'],
+      en:['Cookies | Respondo AI','Information about necessary cookies, optional visitor analytics and cookie preference management.'],
+    },
+    '/dpa': {
+      fi:['Tietojenkäsittely | Respondo AI','Tietoa henkilötietojen käsittelystä, kun Respondo toimii yritysasiakkaan henkilötietojen käsittelijänä.'],
+      sv:['Databehandling | Respondo AI','Information om personuppgiftsbehandling när Respondo fungerar som personuppgiftsbiträde för företagskunden.'],
+      en:['Data Processing | Respondo AI','Information about personal-data processing when Respondo acts as a processor for a business customer.'],
+    },
+    '/assistant': {
+      fi:['Testaa asiakaspalvelubottia | Respondo AI','Kokeile, miten Respondo vastaa asiakkaiden kysymyksiin yrityksen omilla tiedoilla.'],
+      sv:['Testa kundservicebotten | Respondo AI','Prova hur Respondo svarar på kundfrågor med företagets egna uppgifter.'],
+      en:['Try the Customer Service Bot | Respondo AI','Try how Respondo answers customer questions using company-provided information.'],
+    },
+    '/tilaus': {
+      fi:['Aloita kokeilu | Respondo AI','Luo Respondo-tili ja aloita palvelun kokeilu.'],
+      sv:['Starta provperiod | Respondo AI','Skapa ett Respondo-konto och starta provperioden.'],
+      en:['Start Trial | Respondo AI','Create a Respondo account and start your trial.'],
+    },
+    '/kirjaudu': {
+      fi:['Kirjaudu | Respondo AI','Kirjaudu Respondo-hallintapaneeliin.'],
+      sv:['Logga in | Respondo AI','Logga in på Respondos kontrollpanel.'],
+      en:['Log In | Respondo AI','Log in to the Respondo dashboard.'],
+    },
+    '/app': {
+      fi:['Hallintapaneeli | Respondo AI','Respondon asiakashallinta.'],
+      sv:['Kontrollpanel | Respondo AI','Respondos kundpanel.'],
+      en:['Dashboard | Respondo AI','Respondo customer dashboard.'],
+    },
+    '/maksu-valmis': {
+      fi:['Maksu vahvistettu | Respondo AI','Respondon maksuvahvistus.'],
+      sv:['Betalning bekräftad | Respondo AI','Respondos betalningsbekräftelse.'],
+      en:['Payment Confirmed | Respondo AI','Respondo payment confirmation.'],
+    },
+  };
+
+  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
+  const baseMeta = metaByPath[canonicalPath] || metaByPath['/'];
+  const pair = baseMeta[lang] || baseMeta.fi;
+  const pageTitle = pair[0];
+  const metaDescription = pair[1];
+  const robots = indexable.has(path)
+    ? 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
+    : 'noindex,nofollow';
+
+  document.title = pageTitle;
+
+  const upsertMeta = (attr, key, value) => {
+    let el = document.head.querySelector('meta[' + attr + '="' + key + '"]');
+    if (!el) {
+      el = document.createElement('meta');
+      el.setAttribute(attr, key);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('content', value);
+  };
+  const upsertLink = (rel, href) => {
+    let el = document.head.querySelector('link[rel="' + rel + '"][data-respondo-seo]');
+    if (!el) {
+      el = document.createElement('link');
+      el.rel = rel;
+      el.dataset.respondoSeo = '1';
+      document.head.appendChild(el);
+    }
+    el.href = href;
+  };
+
+  upsertMeta('name','description',metaDescription);
+  upsertMeta('name','robots',robots);
+  upsertMeta('property','og:title',pageTitle);
+  upsertMeta('property','og:description',metaDescription);
+  upsertMeta('property','og:type','website');
+  upsertMeta('property','og:site_name','RESPONDO AI');
+  upsertMeta('property','og:locale',lang === 'sv' ? 'sv_SE' : lang === 'en' ? 'en_GB' : 'fi_FI');
+  upsertMeta('name','twitter:card','summary_large_image');
+  upsertMeta('name','twitter:title',pageTitle);
+  upsertMeta('name','twitter:description',metaDescription);
+
+  const canonical = new URL(location.origin + canonicalPath);
+  if (lang !== 'fi' && path !== '/features' && path !== '/funktioner') canonical.searchParams.set('lang',lang);
+  upsertLink('canonical',canonical.toString());
+  upsertMeta('property','og:url',canonical.toString());
+
+  document.head.querySelectorAll('link[data-respondo-hreflang]').forEach((el) => el.remove());
+  if (indexable.has(path)) {
+    const alternatePaths = canonicalPath === '/ominaisuudet'
+      ? { fi:'/ominaisuudet', sv:'/funktioner', en:'/features' }
+      : {
+          fi:canonicalPath,
+          sv:canonicalPath + (canonicalPath.includes('?') ? '&' : '?') + 'lang=sv',
+          en:canonicalPath + (canonicalPath.includes('?') ? '&' : '?') + 'lang=en',
+        };
+    const alternates = [
+      ['fi', alternatePaths.fi],
+      ['sv', alternatePaths.sv],
+      ['en', alternatePaths.en],
+      ['x-default', alternatePaths.fi],
+    ];
+    alternates.forEach(([hreflang, href]) => {
+      const el = document.createElement('link');
+      el.rel = 'alternate';
+      el.hreflang = hreflang;
+      el.href = new URL(href, location.origin).toString();
+      el.dataset.respondoHreflang = '1';
+      document.head.appendChild(el);
+    });
+  }
+}
 function applyLanguage() {
   const lang = currentLang();
   document.documentElement.lang = lang;
@@ -2184,7 +2294,7 @@ async function home() {
         <div class="container hero-grid">
           <div class="hero-copy">
             <div class="hero-label"><span></span> ASIAKASPALVELU, JOKA ON AINA PAIKALLA</div>
-            <p class="lead">Kerro Respondolle yrityksesi tiedot kerran. Sen jälkeen se vastaa asiakkaillesi myös silloin, kun sinä et ehdi. Jos tarvittava tieto puuttuu, kysymys ohjataan sinulle.</p>
+            <p class="lead">${appText('Respondo on verkkosivullesi asennettava asiakaspalvelubotti yritykselle. Kerro yrityksesi tiedot kerran, niin se vastaa asiakkaillesi 24/7 myös silloin, kun sinä et ehdi. Jos tarvittava tieto puuttuu, kysymys ohjataan sinulle.','Respondo är en kundservicebot för företagets webbplats. Lägg in företagets uppgifter en gång, så svarar den kunder dygnet runt även när du själv inte hinner. Om information saknas skickas frågan vidare till dig.','Respondo is a customer service bot for your business website. Add your company information once and it answers customers 24/7, including when you are unavailable. If information is missing, the question is routed to you.')}</p>
             <div class="hero-actions">
               <a class="btn hero-primary hero-bot-cta" href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
             </div>
