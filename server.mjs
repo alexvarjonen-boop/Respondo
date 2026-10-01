@@ -385,6 +385,7 @@ function knowledgeTopic(value) {
   if(/myymala|myymälä|store|location|butik/.test(t)) return 'stores';
   if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(t)) return 'contact';
   if(/takuu|warranty|garanti/.test(t)) return 'warranty';
+  if(/ajanvaraus|ajanvarauslinkki|booking|appointment|boka|bokning|tidsbokning/.test(t)) return 'booking';
   return '';
 }
 function queryTopic(query) {
@@ -398,6 +399,7 @@ function queryTopic(query) {
   if(/myymala|myymälä|myymalat|myymälät|store|stores|butik/.test(q)) return 'stores';
   if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(q)) return 'contact';
   if(/takuu|warranty|garanti/.test(q)) return 'warranty';
+  if(/ajanvaraus|varaa aika|varata ajan|ajan vara|booking|appointment|boka|bokning|tidsbokning/.test(q)) return 'booking';
   return '';
 }
 function expandSearchConcepts(value) {
@@ -1163,9 +1165,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   }
 
   const priorQuestions = history.slice(-2).map((x) => String(x.question || x.user || '')).filter(Boolean);
-  const needsContext = cleanMessage.length < 55 || /^(enta|entä|ja |mites|miten sitten|siis|se |sen |sita|sitä|what about|and |how about|och |hur är det|hur ar det)/i.test(cleanMessage);
-  const retrievalQuery = needsContext && priorQuestions.length ? priorQuestions.slice(-1)[0] + ' ' + cleanMessage : cleanMessage;
   const intent = inferIntent(cleanMessage);
+  // Short messages are not automatically follow-ups. Explicit intents such as
+  // booking, price, hours and contact must stand on their own; otherwise
+  // "Mistä voin varata ajan?" inherits the previous service question.
+  const explicitIntent = intent !== 'Asiakaskysymys';
+  const contextualLead = /^(enta|entä|ja |mites|miten sitten|siis|se |sen |sita|sitä|what about|and |how about|och |hur är det|hur ar det)/i.test(cleanMessage);
+  const needsContext = !explicitIntent && (contextualLead || cleanMessage.length < 22);
+  const retrievalQuery = needsContext && priorQuestions.length ? priorQuestions.slice(-1)[0] + ' ' + cleanMessage : cleanMessage;
 
   // Translate only the search query into Finnish so Finnish knowledge bases can
   // be searched in Swedish/English without a paid model. If the free translator
