@@ -1100,21 +1100,26 @@ async function forceAnswerLanguage(answer, lang) {
 }
 
 function specificServiceConfirmation(query, rows) {
-  const q=normalizeSearchText(query);
-  // normalizeSearchText removes Finnish diacritics, so match the normalized
-  // forms here (e.g. "teettekö" -> "teetteko").
-  if(!/^(?:teetteko|onko teilla|tarjoatteko|saako teilta|do you|can you|har ni|erbjuder ni)/i.test(q)) return '';
-  const stop=new Set(['teetteko','onko','teilla','tarjoatteko','saako','teilta','do','you','offer','provide','can','har','ni','erbjuder','tjansten','palvelua','palvelun']);
-  const wanted=searchTokens(query).filter((x)=>!stop.has(x) && x.length>=4);
+  const normalized=normalizeSearchText(query);
+  // Handle direct Finnish yes/no service questions before the generic service
+  // summary path. Use the original text only for the customer-facing wording.
+  const direct=normalized.match(/^(?:teetteko|tarjoatteko)\s+(.+?)\??$/i);
+  if(!direct) return '';
+  const wanted=searchTokens(direct[1]).filter((x)=>x.length>=4);
   if(!wanted.length) return '';
   const hay=normalizeSearchText((rows||[]).map((r)=>String(r?.title||'')+' '+String(r?.answer||'')).join(' '));
-  const matched=wanted.filter((token)=>hay.includes(token));
-  if(!matched.length) return '';
-  // Use the customer's own service wording so a yes/no question gets a direct,
-  // human answer instead of the full company service catalogue.
+  // Require the requested service to actually exist in the selected company
+  // knowledge. One strong service token is enough for compounds such as
+  // "ikkunanpesuja" vs "ikkunanpesu".
+  const stem=(token)=>token.replace(/(?:ja|jä|jen|ssa|ssä|sta|stä|lla|llä|lle|ksi|t|n)$/i,'');
+  const exists=wanted.some((token)=>{
+    const s=stem(token);
+    return s.length>=5 && hay.includes(s);
+  });
+  if(!exists) return '';
   let service=String(query||'').trim()
-    .replace(/^(?:teetteko|teettekö|onko teillä|onko teilla|tarjoatteko|saako teiltä|saako teilta)\s+/i,'')
-    .replace(/[?!.]+$/,'').trim();
+    .replace(/^(?:teettekö|teetteko|tarjoatteko)\s+/i,'')
+    .replace(/[?!.]+$/,'').trim().toLowerCase();
   if(!service) return '';
   return 'Kyllä, teemme '+service+'.';
 }
@@ -1276,9 +1281,8 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     }
     // For service questions, answer like a person instead of echoing scraped
     // headings/navigation: "Teemme X, Y ja Z."
-    const serviceAnswer=queryTopic(localQuery)==='services'
-      ? (specificServiceConfirmation(cleanMessage, selected) || naturalServiceAnswer(selected))
-      : '';
+    const directServiceAnswer=specificServiceConfirmation(cleanMessage, selected);
+    const serviceAnswer=directServiceAnswer || (queryTopic(localQuery)==='services' ? naturalServiceAnswer(selected) : '');
     finalAnswer=serviceAnswer || composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim();
     if(finalAnswer.length>520) finalAnswer=finalAnswer.slice(0,517).replace(/\s+\S*$/,'')+'…';
   } else {
