@@ -3835,6 +3835,22 @@ async function route() {
         if (bubble) {
           bubble.classList.remove('preview-thinking');
           bubble.textContent = result.answer || appText('En löydä tähän vielä varmaa vastausta.','Jag hittar inget säkert svar på detta ännu.','I cannot find a reliable answer to this yet.');
+          const actions = Array.isArray(result.actions) ? result.actions : [];
+          const links = actions.filter((action) => action?.url && /^https?:\/\//i.test(action.url));
+          if (links.length) {
+            const actionWrap = document.createElement('div');
+            actionWrap.className = 'preview-actions';
+            links.forEach((action) => {
+              const link = document.createElement('a');
+              link.className = 'preview-action-link';
+              link.href = action.url;
+              link.target = '_blank';
+              link.rel = 'noopener noreferrer';
+              link.textContent = action.label || appText('Avaa linkki','Öppna länken','Open link');
+              actionWrap.appendChild(link);
+            });
+            bubble.appendChild(actionWrap);
+          }
         }
         previewHistory.push({ question, answer: result.answer || '' });
         if (previewHistory.length > 8) previewHistory.splice(0, previewHistory.length - 8);
