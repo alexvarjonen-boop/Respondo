@@ -3627,6 +3627,172 @@ async function route() {
     initImmersiveHomeMotion();
   }
 
+  if (path === '/assistant') {
+    const demoViews=new Set(['setup','answers','install']);
+    const demoSelect=$('#assistantDemoSectionSelect');
+    const showDemoView=(view)=>{
+      const next=demoViews.has(view)?view:'setup';
+      document.querySelectorAll('[data-assistant-demo-view]').forEach(section=>{
+        section.classList.toggle('dashboard-view-hidden',section.dataset.assistantDemoView!==next);
+      });
+      if(demoSelect) demoSelect.value=next;
+    };
+    demoSelect?.addEventListener('change',()=>showDemoView(demoSelect.value));
+    showDemoView('setup');
+
+    const demoProfile=$('#assistantDemoProfileForm');
+    const demoChat=$('#assistantDemoChat');
+    const demoHistory=[];
+    const demoFacts=[];
+    let uploadedAvatarData='';
+
+    const demoAvatarMarkup=(value)=>{
+      if(uploadedAvatarData) return '<img src="'+esc(uploadedAvatarData)+'" alt="">';
+      return botAvatarMarkup(value||'robot-1');
+    };
+    const refreshDemoIdentity=()=>{
+      if(!demoProfile) return;
+      const values=Object.fromEntries(new FormData(demoProfile).entries());
+      const name=String(values.botName||'RESPONDO AI').trim()||'RESPONDO AI';
+      const greeting=String(values.greeting||appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?')).trim();
+      const avatar=String(values.botAvatar||'robot-1');
+      const nameNode=$('#assistantDemoBotName');
+      const greetingNode=$('#assistantDemoGreeting');
+      const previewAvatar=$('#assistantDemoPreviewAvatar');
+      const currentAvatar=$('#assistantDemoAvatarCurrent');
+      if(nameNode) nameNode.textContent=name;
+      if(greetingNode) greetingNode.textContent=greeting;
+      if(previewAvatar) previewAvatar.innerHTML=demoAvatarMarkup(avatar);
+      if(currentAvatar) currentAvatar.innerHTML=demoAvatarMarkup(avatar);
+    };
+    demoProfile?.elements?.botName?.addEventListener('input',refreshDemoIdentity);
+    demoProfile?.elements?.greeting?.addEventListener('input',refreshDemoIdentity);
+    document.querySelectorAll('[data-demo-avatar]').forEach(button=>{
+      button.addEventListener('click',()=>{
+        uploadedAvatarData='';
+        const value=button.dataset.demoAvatar||'robot-1';
+        if(demoProfile?.elements?.botAvatar) demoProfile.elements.botAvatar.value=value;
+        document.querySelectorAll('[data-demo-avatar]').forEach(x=>x.classList.toggle('selected',x===button));
+        refreshDemoIdentity();
+      });
+    });
+    $('#assistantDemoAvatarUpload')?.addEventListener('change',(event)=>{
+      const file=event.currentTarget.files?.[0];
+      if(!file) return;
+      if(!/^image\/(?:png|jpeg|webp)$/i.test(file.type) || file.size>3*1024*1024){
+        $('#assistantDemoAvatarMsg').textContent=appText('Valitse PNG-, JPG- tai WebP-kuva, enintään 3 Mt.','Välj PNG, JPG eller WebP, högst 3 MB.','Choose PNG, JPG or WebP, max 3 MB.');
+        return;
+      }
+      const reader=new FileReader();
+      reader.onload=()=>{uploadedAvatarData=String(reader.result||'');refreshDemoIdentity();};
+      reader.readAsDataURL(file);
+    });
+    demoProfile?.addEventListener('submit',(event)=>{
+      event.preventDefault();
+      refreshDemoIdentity();
+      const msg=$('#assistantDemoProfileMsg');
+      if(msg) msg.innerHTML='<div class="notice success">'+appText('Kokeilu päivitetty. Voit kysyä botilta heti.','Demon uppdaterades. Du kan fråga botten direkt.','Demo updated. You can ask the bot now.')+'</div>';
+    });
+
+    const renderDemoFacts=()=>{
+      const list=$('#assistantDemoKnowledgeList');
+      const count=$('#assistantDemoKnowledgeCount');
+      if(count) count.textContent=demoFacts.length+' '+appText('kohdetta','poster','items');
+      if(!list) return;
+      if(!demoFacts.length){
+        list.innerHTML='<div class="empty-state"><b>'+appText('Ei vielä omia vastauksia.','Inga egna svar ännu.','No custom answers yet.')+'</b></div>';
+        return;
+      }
+      list.innerHTML=demoFacts.map((fact,index)=>'<div class="knowledge-item"><span class="knum">'+String(index+1).padStart(2,'0')+'</span><div><b>'+esc(fact.key)+'</b><small>'+esc(fact.category||appText('Yleinen','Allmänt','General'))+' · '+appText('vain kokeilussa','endast i demo','demo only')+'</small><p>'+esc(fact.answer)+'</p></div><button type="button" class="knowledge-delete-btn" data-demo-fact-index="'+index+'">'+appText('Poista','Ta bort','Delete')+'</button></div>').join('');
+      list.querySelectorAll('[data-demo-fact-index]').forEach(button=>{
+        button.addEventListener('click',()=>{
+          demoFacts.splice(Number(button.dataset.demoFactIndex),1);
+          renderDemoFacts();
+        });
+      });
+    };
+    $('#assistantDemoKnowledgeForm')?.addEventListener('submit',(event)=>{
+      event.preventDefault();
+      const form=new FormData(event.currentTarget);
+      const title=String(form.get('title')||'').trim();
+      const answer=String(form.get('answer')||'').trim();
+      if(!title||!answer) return;
+      demoFacts.push({key:title,answer,category:String(form.get('category')||'').trim()});
+      event.currentTarget.reset();
+      renderDemoFacts();
+      const msg=$('#assistantDemoKnowledgeMsg');
+      if(msg) msg.innerHTML='<div class="notice success">'+appText('Vastaus lisättiin kokeiluun.','Svaret lades till i demon.','Answer added to demo.')+'</div>';
+    });
+
+    $('#assistantDemoPreviewForm')?.addEventListener('submit',async(event)=>{
+      event.preventDefault();
+      const input=event.currentTarget.elements.question;
+      const question=String(input?.value||'').trim();
+      if(!question||!demoProfile) return;
+      demoChat?.insertAdjacentHTML('beforeend','<div class="preview-bubble user"></div>');
+      if(demoChat?.lastElementChild) demoChat.lastElementChild.textContent=question;
+      input.value='';
+      demoChat?.insertAdjacentHTML('beforeend','<div class="preview-bubble bot preview-thinking">'+appText('Haetaan antamistasi tiedoista…','Söker i dina uppgifter…','Searching your information…')+'</div>');
+      const bubble=demoChat?.lastElementChild;
+      try{
+        const values=Object.fromEntries(new FormData(demoProfile).entries());
+        const result=await api('/api/public/demo-chat',{
+          method:'POST',
+          body:JSON.stringify({
+            message:question,
+            lang:currentLang(),
+            profile:{
+              companyName:appText('Kokeiluyritys','Demoföretag','Demo company'),
+              greeting:values.greeting,
+              tone:values.tone,
+              pricing:values.pricing,
+              hours:values.hours,
+              phone:values.phone,
+              email:values.email,
+              services:values.services,
+              serviceArea:values.serviceArea,
+              address:values.address,
+              website:values.website,
+              quoteRequestUrl:values.quoteRequestUrl,
+              bookingUrl:values.bookingUrl,
+              notes:values.notes,
+              customFacts:demoFacts.map(x=>({key:x.key,answer:x.answer}))
+            },
+            history:demoHistory.slice(-6)
+          })
+        });
+        if(bubble){
+          bubble.classList.remove('preview-thinking');
+          bubble.textContent=result.answer||appText('En löydä tähän vielä varmaa vastausta.','Jag hittar inget säkert svar på detta ännu.','I cannot find a reliable answer yet.');
+          const actions=(Array.isArray(result.actions)?result.actions:[]).filter(action=>action?.url && /^(?:https?:\/\/|tel:|mailto:)/i.test(action.url));
+          if(actions.length){
+            const wrap=document.createElement('div');
+            wrap.className='preview-actions';
+            actions.forEach(action=>{
+              const link=document.createElement('a');
+              link.className='preview-action-link';
+              link.href=action.url;
+              if(/^https?:\/\//i.test(action.url)){link.target='_blank';link.rel='noopener noreferrer';}
+              link.textContent=action.label||appText('Avaa linkki','Öppna länken','Open link');
+              wrap.appendChild(link);
+            });
+            bubble.appendChild(wrap);
+          }
+        }
+        demoHistory.push({question,answer:result.answer||''});
+        if(demoHistory.length>8) demoHistory.splice(0,demoHistory.length-8);
+      }catch(error){
+        if(bubble){
+          bubble.classList.remove('preview-thinking');
+          bubble.textContent=error.message||appText('Vastaaminen epäonnistui.','Det gick inte att svara.','Reply failed.');
+        }
+      }
+      if(demoChat) demoChat.scrollTop=demoChat.scrollHeight;
+    });
+    refreshDemoIdentity();
+    renderDemoFacts();
+  }
+
   if (path === '/kirjaudu') {
     const toggle=$('#showAgentLogin'),panel=$('#agentLoginPanel'),submit=$('#submitAgentLogin');
     toggle?.addEventListener('click',()=>{
