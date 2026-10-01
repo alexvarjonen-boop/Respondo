@@ -105,3 +105,16 @@ test('keeps each service attached to its own table price',()=>{
 test('a general price question still finds the published price',()=>{
  assert.ok(selectRelevantKnowledge(rows,'Paljonko tämä maksaa?').some(x=>x.category==='Hinnat'));
 });
+
+test('broad service question gives one factual sentence without repeating imported marketing text',async()=>{
+ const sample=[
+  {id:'promo',category:'Palvelut',title:'Palvelut: Helppo ja nopea palvelu',answer:'Helppo ja nopea palvelu! Varaa aika helposti ja jätä loput meidän hoidettavaksi.',source_type:'website',keywords:['palvelut']},
+  {id:'services',category:'Palvelut',title:'Palvelut: kodin ja pihan huolto',answer:'Palvelumme: Tarjoamme luotettavia kodin ja pihan huoltopalveluja – ikkunanpesuista raivauksiin. Kaikki työmme ovat kotitalousvähennyskelpoisia.',source_type:'website',keywords:['palvelut']},
+  {id:'repeat',category:'Palvelut',title:'Ammattimaiset ikkunapesut',answer:'Ammattimaiset ikkunapesut koteihin, yrityksille ja taloyhtiöille. Pesemme ikkunat huolellisesti.',source_type:'website',keywords:['palvelut']}
+ ];
+ const result=await generateGroundedAnswer({rows:sample,message:'Mitä palveluja teette?',lang:'fi'});
+ assert.equal(result.handoff,false);
+ assert.match(result.answer,/Tarjoamme .*kodin ja pihan huoltopalveluja/i);
+ assert.doesNotMatch(result.answer,/Helppo ja nopea|Kaikki työmme|varaa aika|Ammattimaiset ikkunapesut/i);
+ assert.ok(result.answer.length<180);
+});
