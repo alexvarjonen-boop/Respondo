@@ -3618,22 +3618,57 @@ async function route() {
   }
 
   if (path === '/assistant') {
-    const demoViews=new Set(['setup','answers','install']);
-    const demoSelect=$('#assistantDemoSectionSelect');
-    const showDemoView=(view)=>{
-      const next=demoViews.has(view)?view:'setup';
-      document.querySelectorAll('[data-assistant-demo-view]').forEach(section=>{
-        section.classList.toggle('dashboard-view-hidden',section.dataset.assistantDemoView!==next);
-      });
-      if(demoSelect) demoSelect.value=next;
+    const dashboardSelect = $('#dashboardSectionSelect');
+    const validDashboardViews = new Set(['overview','setup','answers','customers','automation','install','account']);
+    const targetViewMap = {
+      'overview':'overview',
+      'business-profile':'setup',
+      'live-preview':'setup',
+      'knowledge':'answers',
+      'unanswered':'answers',
+      'conversations':'customers',
+      'leads':'customers',
+      'actions2':'automation',
+      'integrations':'automation',
+      'install':'install',
+      'referral':'account',
+      'billing':'account',
     };
-    demoSelect?.addEventListener('change',()=>showDemoView(demoSelect.value));
-    showDemoView('setup');
+    const showDemoDashboardView = (view, options = {}) => {
+      const next = validDashboardViews.has(view) ? view : 'setup';
+      document.querySelectorAll('.dashboard-view-section').forEach((section) => {
+        section.classList.toggle('dashboard-view-hidden', section.dataset.dashboardView !== next);
+      });
+      if (dashboardSelect) dashboardSelect.value = next;
+      document.body.dataset.dashboardView = next;
+      if (options.updateUrl !== false) {
+        const params=new URLSearchParams(location.search);
+        params.set('section',next);
+        const qs=params.toString();
+        history.replaceState({},'', '/assistant' + (qs?'?'+qs:''));
+      }
+      if (options.scrollTop !== false) {
+        document.querySelector('.dashboard-topbar')?.scrollIntoView({behavior:options.instant?'auto':'smooth',block:'start'});
+      }
+    };
 
-    const demoProfile=$('#assistantDemoProfileForm');
-    const demoChat=$('#assistantDemoChat');
-    const demoHistory=[];
+    const requestedView = new URLSearchParams(location.search).get('section');
+    showDemoDashboardView(validDashboardViews.has(requestedView) ? requestedView : 'setup', {updateUrl:false,scrollTop:false});
+    dashboardSelect?.addEventListener('change',()=>showDemoDashboardView(dashboardSelect.value));
+    $('#dashboardSettingsButton')?.addEventListener('click',()=>showDemoDashboardView('account'));
+
+    document.querySelectorAll('.onboarding-step').forEach((button)=>{
+      button.addEventListener('click',()=>{
+        const target=button.dataset.scrollTarget;
+        const view=targetViewMap[target]||'setup';
+        showDemoDashboardView(view,{scrollTop:false});
+        requestAnimationFrame(()=>document.getElementById(target)?.scrollIntoView({behavior:'smooth',block:'start'}));
+      });
+    });
+
+    const demoProfile=$('#businessProfileForm');
     const demoFacts=[];
+    const demoHistory=[];
     let uploadedAvatarData='';
 
     const demoAvatarMarkup=(value)=>{
@@ -3646,84 +3681,89 @@ async function route() {
       const name=String(values.botName||'RESPONDO AI').trim()||'RESPONDO AI';
       const greeting=String(values.greeting||appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?')).trim();
       const avatar=String(values.botAvatar||'robot-1');
-      const nameNode=$('#assistantDemoBotName');
-      const greetingNode=$('#assistantDemoGreeting');
-      const previewAvatar=$('#assistantDemoPreviewAvatar');
-      const currentAvatar=$('#assistantDemoAvatarCurrent');
-      if(nameNode) nameNode.textContent=name;
-      if(greetingNode) greetingNode.textContent=greeting;
-      if(previewAvatar) previewAvatar.innerHTML=demoAvatarMarkup(avatar);
-      if(currentAvatar) currentAvatar.innerHTML=demoAvatarMarkup(avatar);
+      if($('#previewBotName')) $('#previewBotName').textContent=name;
+      const greetingBubble=$('#previewChat')?.querySelector('.preview-bubble.bot');
+      if(greetingBubble && $('#previewChat')?.children.length===1) greetingBubble.textContent=greeting;
+      if($('#previewAvatarVisual')) $('#previewAvatarVisual').innerHTML=demoAvatarMarkup(avatar);
+      if($('#botAvatarCurrent')) $('#botAvatarCurrent').innerHTML=demoAvatarMarkup(avatar);
     };
+
     demoProfile?.elements?.botName?.addEventListener('input',refreshDemoIdentity);
     demoProfile?.elements?.greeting?.addEventListener('input',refreshDemoIdentity);
-    document.querySelectorAll('[data-demo-avatar]').forEach(button=>{
+    document.querySelectorAll('.bot-avatar-option').forEach((button)=>{
       button.addEventListener('click',()=>{
         uploadedAvatarData='';
-        const value=button.dataset.demoAvatar||'robot-1';
+        const value=button.dataset.avatar||'robot-1';
         if(demoProfile?.elements?.botAvatar) demoProfile.elements.botAvatar.value=value;
-        document.querySelectorAll('[data-demo-avatar]').forEach(x=>x.classList.toggle('selected',x===button));
+        document.querySelectorAll('.bot-avatar-option').forEach(x=>x.classList.toggle('selected',x===button));
         refreshDemoIdentity();
       });
     });
-    $('#assistantDemoAvatarUpload')?.addEventListener('change',(event)=>{
+    $('#botAvatarUpload')?.addEventListener('change',(event)=>{
       const file=event.currentTarget.files?.[0];
+      const msg=$('#botAvatarMsg');
       if(!file) return;
       if(!/^image\/(?:png|jpeg|webp)$/i.test(file.type) || file.size>3*1024*1024){
-        $('#assistantDemoAvatarMsg').textContent=appText('Valitse PNG-, JPG- tai WebP-kuva, enintään 3 Mt.','Välj PNG, JPG eller WebP, högst 3 MB.','Choose PNG, JPG or WebP, max 3 MB.');
+        if(msg) msg.innerHTML='<div class="notice error">'+appText('Valitse PNG-, JPG- tai WebP-kuva, enintään 3 Mt.','Välj PNG, JPG eller WebP, högst 3 MB.','Choose PNG, JPG or WebP, max 3 MB.')+'</div>';
         return;
       }
       const reader=new FileReader();
-      reader.onload=()=>{uploadedAvatarData=String(reader.result||'');refreshDemoIdentity();};
+      reader.onload=()=>{uploadedAvatarData=String(reader.result||'');refreshDemoIdentity();if(msg) msg.textContent='';};
       reader.readAsDataURL(file);
     });
+
     demoProfile?.addEventListener('submit',(event)=>{
       event.preventDefault();
       refreshDemoIdentity();
-      const msg=$('#assistantDemoProfileMsg');
-      if(msg) msg.innerHTML='<div class="notice success">'+appText('Kokeilu päivitetty. Voit kysyä botilta heti.','Demon uppdaterades. Du kan fråga botten direkt.','Demo updated. You can ask the bot now.')+'</div>';
+      const msg=$('#businessProfileMsg');
+      if(msg) msg.innerHTML='<div class="notice success">'+appText('Kokeilun tiedot päivitetty. Voit testata bottia heti.','Demouppgifterna uppdaterades. Du kan testa botten direkt.','Demo information updated. You can test the bot now.')+'</div>';
+    });
+    $('#saveProfileEmail')?.addEventListener('click',()=>{
+      const msg=$('#profileEmailMsg');
+      if(msg){msg.dataset.status='saved';msg.textContent=appText('Sähköposti käytössä tässä kokeilussa.','E-postadressen används i den här demon.','Email is active in this demo.');}
+    });
+    $('#importWebsite')?.addEventListener('click',()=>{
+      const review=$('#websiteImportReview');
+      if(review) review.innerHTML='<div class="notice">'+appText('Automaattinen verkkosivun tietojen haku avautuu tilauksen yhteydessä. Muut kentät ja botti toimivat tässä kokeilussa normaalisti.','Automatisk webbplatsimport öppnas med abonnemanget. Övriga fält och botten fungerar normalt i demon.','Automatic website import unlocks with a subscription. The other fields and bot work normally in this demo.')+'</div>';
     });
 
-    const renderDemoFacts=()=>{
-      const list=$('#assistantDemoKnowledgeList');
-      const count=$('#assistantDemoKnowledgeCount');
+    const renderDemoKnowledge=()=>{
+      const list=$('#knowledgeList');
+      const count=$('.knowledge-panel .panel-head > span');
       if(count) count.textContent=demoFacts.length+' '+appText('kohdetta','poster','items');
       if(!list) return;
       if(!demoFacts.length){
-        list.innerHTML='<div class="empty-state"><b>'+appText('Ei vielä omia vastauksia.','Inga egna svar ännu.','No custom answers yet.')+'</b></div>';
+        list.innerHTML='<div class="empty-state"><b>'+appText('Et ole lisännyt vielä omia vastauksia.','Du har inte lagt till egna svar ännu.','You have not added any custom answers yet.')+'</b><p>'+appText('Lisää ensimmäinen vastaus tästä.','Lägg till det första svaret här.','Add your first answer here.')+'</p></div>';
         return;
       }
-      list.innerHTML=demoFacts.map((fact,index)=>'<div class="knowledge-item"><span class="knum">'+String(index+1).padStart(2,'0')+'</span><div><b>'+esc(fact.key)+'</b><small>'+esc(fact.category||appText('Yleinen','Allmänt','General'))+' · '+appText('vain kokeilussa','endast i demo','demo only')+'</small><p>'+esc(fact.answer)+'</p></div><button type="button" class="knowledge-delete-btn" data-demo-fact-index="'+index+'">'+appText('Poista','Ta bort','Delete')+'</button></div>').join('');
-      list.querySelectorAll('[data-demo-fact-index]').forEach(button=>{
-        button.addEventListener('click',()=>{
-          demoFacts.splice(Number(button.dataset.demoFactIndex),1);
-          renderDemoFacts();
-        });
-      });
+      list.innerHTML=demoFacts.map((fact,index)=>'<div class="knowledge-item"><span class="knum">'+String(index+1).padStart(2,'0')+'</span><div><div class="knowledge-item-top"><b>'+esc(fact.title)+'</b><div class="knowledge-item-actions"><button type="button" class="knowledge-delete-btn" data-demo-delete="'+index+'">'+appText('Poista','Ta bort','Delete')+'</button></div></div><small>'+esc(fact.category||appText('Yleinen','Allmänt','General'))+' · '+appText('vain kokeilussa','endast i demo','demo only')+'</small><p>'+esc(fact.answer)+'</p></div><span class="approved">✓</span></div>').join('');
+      list.querySelectorAll('[data-demo-delete]').forEach(button=>button.addEventListener('click',()=>{demoFacts.splice(Number(button.dataset.demoDelete),1);renderDemoKnowledge();}));
     };
-    $('#assistantDemoKnowledgeForm')?.addEventListener('submit',(event)=>{
+    $('#knowledgeForm')?.addEventListener('submit',(event)=>{
       event.preventDefault();
       const form=new FormData(event.currentTarget);
       const title=String(form.get('title')||'').trim();
       const answer=String(form.get('answer')||'').trim();
       if(!title||!answer) return;
-      demoFacts.push({key:title,answer,category:String(form.get('category')||'').trim()});
+      demoFacts.push({title,answer,category:String(form.get('category')||'').trim()});
       event.currentTarget.reset();
-      renderDemoFacts();
-      const msg=$('#assistantDemoKnowledgeMsg');
-      if(msg) msg.innerHTML='<div class="notice success">'+appText('Vastaus lisättiin kokeiluun.','Svaret lades till i demon.','Answer added to demo.')+'</div>';
+      renderDemoKnowledge();
+      const msg=$('#knowledgeMsg');
+      if(msg) msg.innerHTML='<div class="notice success">'+appText('Vastaus lisättiin kokeilun tietopohjaan.','Svaret lades till i demodatabasen.','Answer added to the demo knowledge base.')+'</div>';
     });
 
-    $('#assistantDemoPreviewForm')?.addEventListener('submit',async(event)=>{
+    $('#previewForm')?.addEventListener('submit',async(event)=>{
       event.preventDefault();
+      if(!demoProfile) return;
       const input=event.currentTarget.elements.question;
       const question=String(input?.value||'').trim();
-      if(!question||!demoProfile) return;
-      demoChat?.insertAdjacentHTML('beforeend','<div class="preview-bubble user"></div>');
-      if(demoChat?.lastElementChild) demoChat.lastElementChild.textContent=question;
+      if(!question) return;
+      const chat=$('#previewChat');
+      chat?.insertAdjacentHTML('beforeend','<div class="preview-bubble user"></div>');
+      if(chat?.lastElementChild) chat.lastElementChild.textContent=question;
       input.value='';
-      demoChat?.insertAdjacentHTML('beforeend','<div class="preview-bubble bot preview-thinking">'+appText('Haetaan antamistasi tiedoista…','Söker i dina uppgifter…','Searching your information…')+'</div>');
-      const bubble=demoChat?.lastElementChild;
+      chat?.insertAdjacentHTML('beforeend','<div class="preview-bubble bot preview-thinking">'+appText('Haetaan hyväksytyistä tiedoista…','Söker i godkänd information…','Searching approved information…')+'</div>');
+      const bubble=chat?.lastElementChild;
       try{
         const values=Object.fromEntries(new FormData(demoProfile).entries());
         const result=await api('/api/public/demo-chat',{
@@ -3746,7 +3786,7 @@ async function route() {
               quoteRequestUrl:values.quoteRequestUrl,
               bookingUrl:values.bookingUrl,
               notes:values.notes,
-              customFacts:demoFacts.map(x=>({key:x.key,answer:x.answer}))
+              customFacts:demoFacts.map(x=>({key:x.title,answer:x.answer}))
             },
             history:demoHistory.slice(-6)
           })
@@ -3754,33 +3794,37 @@ async function route() {
         if(bubble){
           bubble.classList.remove('preview-thinking');
           bubble.textContent=result.answer||appText('En löydä tähän vielä varmaa vastausta.','Jag hittar inget säkert svar på detta ännu.','I cannot find a reliable answer yet.');
-          const actions=(Array.isArray(result.actions)?result.actions:[]).filter(action=>action?.url && /^(?:https?:\/\/|tel:|mailto:)/i.test(action.url));
+          const actions=(Array.isArray(result.actions)?result.actions:[]).filter(action=>action?.url&&/^(?:https?:\/\/|tel:|mailto:)/i.test(action.url));
           if(actions.length){
-            const wrap=document.createElement('div');
-            wrap.className='preview-actions';
-            actions.forEach(action=>{
-              const link=document.createElement('a');
-              link.className='preview-action-link';
-              link.href=action.url;
-              if(/^https?:\/\//i.test(action.url)){link.target='_blank';link.rel='noopener noreferrer';}
-              link.textContent=action.label||appText('Avaa linkki','Öppna länken','Open link');
-              wrap.appendChild(link);
-            });
+            const wrap=document.createElement('div');wrap.className='preview-actions';
+            actions.forEach(action=>{const link=document.createElement('a');link.className='preview-action-link';link.href=action.url;if(/^https?:\/\//i.test(action.url)){link.target='_blank';link.rel='noopener noreferrer';}link.textContent=action.label||appText('Avaa linkki','Öppna länken','Open link');wrap.appendChild(link);});
             bubble.appendChild(wrap);
           }
         }
         demoHistory.push({question,answer:result.answer||''});
         if(demoHistory.length>8) demoHistory.splice(0,demoHistory.length-8);
       }catch(error){
-        if(bubble){
-          bubble.classList.remove('preview-thinking');
-          bubble.textContent=error.message||appText('Vastaaminen epäonnistui.','Det gick inte att svara.','Reply failed.');
-        }
+        if(bubble){bubble.classList.remove('preview-thinking');bubble.textContent=error.message||appText('Vastaaminen epäonnistui.','Det gick inte att svara.','Reply failed.');}
       }
-      if(demoChat) demoChat.scrollTop=demoChat.scrollHeight;
+      if(chat) chat.scrollTop=chat.scrollHeight;
     });
+
+    // Keep every account-only action visible exactly where a paid user sees it,
+    // but prevent the public demo from calling authenticated mutation endpoints.
+    document.querySelectorAll('.assistant-demo-shell form').forEach((form)=>{
+      if(['businessProfileForm','knowledgeForm','previewForm'].includes(form.id)) return;
+      form.addEventListener('submit',(event)=>event.preventDefault());
+    });
+    ['billingPortal','connectStripeBusiness','connectGoogleCalendar','disconnectGoogleCalendar','supportAgentForm'].forEach((id)=>{
+      const el=document.getElementById(id);
+      if(!el) return;
+      el.addEventListener('click',(event)=>{event.preventDefault();});
+      if(el.tagName==='A') el.removeAttribute('href');
+      el.setAttribute('title',appText('Käytettävissä tilauksen jälkeen','Tillgängligt efter beställning','Available after subscribing'));
+    });
+
     refreshDemoIdentity();
-    renderDemoFacts();
+    renderDemoKnowledge();
   }
 
   if (path === '/kirjaudu') {
