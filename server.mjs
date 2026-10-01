@@ -396,7 +396,7 @@ function queryTopic(query) {
   const q=normalizeSearchText(query);
   if (/tarjou[sk]|quote|estimate|offert/.test(q)) return 'quote';
   if (/osoite|address|adress|sijainti/.test(q)) return 'contact';
-  if (!/hinta|maksaa|price|cost|pris|kostar|auki|hours|open|oppet/.test(q) && /mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|what do you (?:do|offer)|services|vad gor ni|vad gör ni|vad erbjuder|vilka tjänster|vilka tjanster|tjanster|tjänster/.test(q)) return 'services';
+  if (!/hinta|maksaa|price|cost|pris|kostar|auki|hours|open|oppet/.test(q) && /mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|what do you (?:do|offer)|services|vad gor ni|vad gör ni|vad erbjuder|vilka tjänster|vilka tjanster|tjanster|tjänster|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|onko teilla|loytyyko teilta|löytyykö teiltä|haluaisin tilata|haluan tilata|tarvitsen|tarviin|pesu|puhdist|siivou|oljy|öljy|asenn|maal|korj|huol|raiva|poisvien/.test(q)) return 'services';
   if(/mita myytte|mitä myytte|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you sell|what products|vad säljer|vad saljer|sortiment/.test(q)) return 'products';
   if(/hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar/.test(q)) return 'pricing';
   if(/auki|aukiolo|opening|hours|open|oppet|öppet|oppettid/.test(q)) return 'hours';
@@ -602,8 +602,67 @@ function inferIntent(message) {
   if (/auki|lauantai|sunnuntai|viikonloppu|kello|opening|open|hours|öppet|oppet|öppettider|oppettider/.test(q)) return 'Aukioloajat';
   if (/puhelin|sahkoposti|sähköposti|yhteys|yhteytta|yhteyttä|yhteystiedot|ottaa yhteytta|ottaa yhteyttä|soittaa|phone|email|contact|contact us|get in touch|telefon|e-post|kontakt|kontakta|ringa/.test(q)) return 'Yhteystiedot';
   if (/missä|missa|osoite|toimialue|alue|where|address|location|adress|område|omrade/.test(q)) return 'Sijainti';
-  if (/palvelu|teette|tarjoatte|onnistuuko|tuote|valikoima|mitä teiltä saa|mita teilta saa|service|services|offer|product|selection|sell|tjänst|tjanst|tjänster|tjanster|erbjuder/.test(q)) return 'Palvelut';
+  if (/palvelu|teette|tarjoatte|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|onko teilla|loytyyko teilta|haluaisin tilata|haluan tilata|tarvitsen|tarviin|pesu|puhdist|siivou|oljy|asenn|maal|korj|huol|raiva|poisvien|tuote|valikoima|mitä teiltä saa|mita teilta saa|service|services|offer|product|selection|sell|tjänst|tjanst|tjänster|tjanster|erbjuder/.test(q)) return 'Palvelut';
   return 'Asiakaskysymys';
+}
+
+
+function conversationTopic(value) {
+  const direct=queryTopic(value);
+  if (direct) return direct;
+  const intent=inferIntent(value);
+  const map={
+    'Hinta':'pricing','Aukioloajat':'hours','Yhteystiedot':'contact','Sijainti':'contact',
+    'Palvelut':'services','Ajanvaraus':'booking','Tarjouspyyntö':'quote'
+  };
+  if (map[intent]) return map[intent];
+  if (finnishServiceActionKind(value)) return 'services';
+  return '';
+}
+
+function contextualizeConversationQuery(message, history = []) {
+  const current=String(message||'').trim();
+  const q=normalizeSearchText(current);
+  if (!current || !q) return current;
+
+  const lead=q.match(/^(?:enta|entas|mites|miten sitten|ja enta|no enta|what about|how about|and what about|och|och da|men hur)s+(.+)$/);
+  const pronoun=/\b(?:se|sen|sita|siita|sille|siihen|tama|taman|tuo|tuota|tota|ne|niita|niiden|sama|saman|it|that|this|those|them|same|det|den|detta|dem|samma)\b/.test(q);
+  const terseTopic=/^(?:paljonko|mita maksaa|mikä hinta|mika hinta|hinta|milloin|monelta|onko auki|lauantaina|sunnuntaina|viikonloppuna|how much|what price|when|opening hours|hur mycket|vilket pris|när|nar|öppet|oppet)\b/.test(q);
+  if (!lead && !pronoun && !terseTopic) return current;
+
+  const previous=[...history].reverse()
+    .map(event=>String(event?.question||event?.user||'').trim())
+    .find(text=>{
+      const n=normalizeSearchText(text);
+      return n && !/^(?:hei|moi|moikka|hello|hi|hey|terve|hej|halla|kiitos|kiitti|thanks|thank you|tack)[!. ]*$/.test(n);
+    });
+  if (!previous) return current;
+
+  if (lead) {
+    const rest=lead[1].trim();
+    const previousTopic=conversationTopic(previous);
+    const currentTopic=conversationTopic(rest);
+    const hints={
+      pricing:'hinta maksaa',
+      hours:'aukioloajat',
+      booking:'ajanvaraus varaa aika',
+      quote:'tarjous tarjouspyynto',
+      delivery:'toimitus',
+      returns:'palautus',
+      warranty:'takuu',
+      stores:'myymala'
+    };
+    // "Entä katon pesu?" after a price question means the price of the new
+    // service, not both the old and new service. Carry the intent, not the old noun.
+    if (hints[previousTopic] && currentTopic!==previousTopic &&
+        !/\b(?:se|sen|sita|siita|sama|it|that|same|det|den|samma)\b/.test(rest)) {
+      return rest+' '+hints[previousTopic];
+    }
+  }
+
+  // Pronoun/topic follow-ups such as "Paljonko se maksaa?" need the previous
+  // subject in the retrieval query.
+  return previous+' '+current;
 }
 
 function chatActions(rows, message, handoff = false, lang = 'fi') {
@@ -1140,6 +1199,130 @@ function finnishServiceStem(word) {
     .replace(/(?:oista|eista|uista|yista|oissa|eissa|uissa|yissa|ojen|oita|eita|uita|yita|eja|oja|uja|yja|ien|jen|ita|ista|issa|illa|ille|ssa|sta|lla|lle|ksi|ja|it|n|t)$/,'');
 }
 
+
+function finnishServiceActionKind(value) {
+  const t=normalizeSearchText(value);
+  if (/oljy/.test(t)) return 'oil';
+  if (/puhdist|pesu|pese|pesem|pesta|siivou|ikkunanpes|kattopes/.test(t)) return 'clean';
+  if (/asenn/.test(t)) return 'install';
+  if (/maala|maalaus|maalat/.test(t)) return 'paint';
+  if (/korj/.test(t)) return 'repair';
+  if (/huol/.test(t)) return 'maintain';
+  if (/raiva|leikka/.test(t)) return 'clear';
+  if (/poisvien|kuljet|nout|kierrat/.test(t)) return 'transport';
+  if (/muutto|muuttopalvel/.test(t)) return 'move';
+  return '';
+}
+
+function finnishServiceSubjectRoot(word) {
+  const w=normalizeSearchText(word).replace(/[^a-z]/g,'');
+  if (!w) return '';
+  if (/^ikkun/.test(w)) return 'ikkun';
+  if (/^peltikat/.test(w)) return 'peltikatt';
+  if (/^tiilikat/.test(w)) return 'tiilikatt';
+  if (/^huopakat/.test(w)) return 'huopakatt';
+  if (/^bitumikat/.test(w)) return 'bitumikatt';
+  if (/^(?:katto|katon|kattoj|kato)/.test(w)) return 'katt';
+  if (/^rann/.test(w)) return 'rann';
+  if (/^terass/.test(w)) return 'terass';
+  const compound=w.match(/^(.{4,}?)(?:n)?(?:pesu|pesut|puhdistus|puhdistukset|huolto|huollot|maalaus|maalaukset|asennus|asennukset|korjaus|korjaukset)$/);
+  if (compound) return finnishServiceStem(compound[1]);
+  return finnishServiceStem(w);
+}
+
+function finnishServiceSubjectRoots(value) {
+  const ignored=/^(?:te|teilla|teilta|meilta|meilla|myos|myös|palvelu|palvelua|palvelun|palvelut|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|olisiko|olisko|mahdollista|onko|loytyyko|saako|saanko|haluaisin|haluan|tilata|tarvitsen|tarviin|tarvitsisin|etta|että|ja|seka|sekä|vai)$/;
+  const roots=[];
+  for (const token of normalizeSearchText(value).split(/\s+/).filter(Boolean)) {
+    if (ignored.test(token)) continue;
+    // Preserve the subject embedded in compounds such as "ikkunanpesu".
+    if (/^ikkun|^peltikat|^tiilikat|^huopakat|^bitumikat|^katto|^katon|^rann|^terass/.test(token)) {
+      const root=finnishServiceSubjectRoot(token);
+      if (root && !roots.includes(root)) roots.push(root);
+      continue;
+    }
+    if (finnishServiceActionKind(token)) continue;
+    const root=finnishServiceSubjectRoot(token);
+    if (root.length>=4 && !roots.includes(root)) roots.push(root);
+  }
+  return roots;
+}
+
+function serviceActionMatches(text, kind) {
+  const t=normalizeSearchText(text);
+  if (!kind) return true;
+  if (kind==='clean') return /puhdist|pesu|pese|pesem|pesta|siivou|ikkunanpes|kattopes/.test(t);
+  if (kind==='oil') return /oljy/.test(t);
+  if (kind==='install') return /asenn/.test(t);
+  if (kind==='paint') return /maala|maalaus|maalat/.test(t);
+  if (kind==='repair') return /korj/.test(t);
+  if (kind==='maintain') return /huol/.test(t);
+  if (kind==='clear') return /raiva|leikka/.test(t);
+  if (kind==='transport') return /poisvien|kuljet|nout|kierrat/.test(t);
+  if (kind==='move') return /muutto|muuttopalvel/.test(t);
+  return false;
+}
+
+function serviceRootMatches(root, evidenceRoot) {
+  if (!root || !evidenceRoot) return false;
+  if (root==='katt') return ['katt','peltikatt','tiilikatt','huopakatt','bitumikatt'].includes(evidenceRoot);
+  return root===evidenceRoot || (root.length>=5 && evidenceRoot.startsWith(root)) || (evidenceRoot.length>=5 && root.startsWith(evidenceRoot));
+}
+
+function serviceRowSupportsPhrase(row, phrase, actionKind = '') {
+  if (!usableWebsiteRow(row)) return false;
+  const meta=normalizeSearchText(String(row.category||'')+' '+String(row.title||''));
+  if (knowledgeTopic(meta)!=='services' || /arvost|review|testimonial|asiakaskokem/.test(meta)) return false;
+  if (importedKnowledgeJunk(String(row.title||'')+' '+String(row.answer||''))) return false;
+  const roots=finnishServiceSubjectRoots(phrase);
+  if (!roots.length) return false;
+
+  const title=String(row.title||'');
+  const titleChrome=/\|/.test(title) && /(?:yhteystiedot|contact|etusivu|home|palvelut|services)/i.test(title);
+  const sources=[
+    ...(titleChrome?[]:[title]),
+    ...String(row.answer||'').split(/[.!?;]+/)
+  ].filter(Boolean);
+
+  return sources.some(source=>{
+    const t=normalizeSearchText(source);
+    if (!t || /\b(?:emme|ei|eivat|not|inte|aldrig)\b/.test(t)) return false;
+    if (actionKind && !serviceActionMatches(t,actionKind)) return false;
+    const evidence=t.split(/[\s-]+/).map(finnishServiceSubjectRoot).filter(Boolean);
+    return roots.every(root=>evidence.some(e=>serviceRootMatches(root,e)));
+  });
+}
+
+function naturalFinnishServiceQuestion(message, rows) {
+  const q=normalizeSearchText(message);
+  const cue=/^(?:onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|olisiko mahdollista|olisko mahdollista|onko teilla|loytyyko teilta|saako teilta|saanko teilta|tarjoatteko|hoidatteko|haluaisin tilata|haluan tilata|tarvitsen|tarviin|tarvitsisin)\b/;
+  if (!cue.test(q)) return null;
+  // Price, timing and discount claims need their own exact evidence.
+  if (/\b(?:hinta|maksaa|paljonko|ilmain|alenn|tanaan|huomenna|ensi viik|viikonlopp|lauantaina|sunnuntaina)\b|\d/.test(q)) return null;
+
+  const phrase=q.replace(cue,'').replace(/^(?:te|teilla|teilta|meilta|meilla)\s+/,'').trim();
+  if (!phrase || /\b(?:ja|seka)\b|[,;&]/.test(phrase)) return null;
+  const action=finnishServiceActionKind(phrase);
+  const approved=(rows||[]).filter(row=>serviceRowSupportsPhrase(row,phrase,action));
+  const found=approved[0];
+  if (!found) return {supported:false};
+
+  const requestedRoots=finnishServiceSubjectRoots(phrase);
+  let answer='Kyllä, se onnistuu.';
+  if (requestedRoots.includes('katt')) {
+    const title=normalizeSearchText(found.title||'');
+    const subtype=/^peltikat/.test(title)?'peltikattojen':
+      /^tiilikat/.test(title)?'tiilikattojen':
+      /^huopakat/.test(title)?'huopakattojen':
+      /^bitumikat/.test(title)?'bitumikattojen':'';
+    if (subtype) {
+      const actionText=action==='clean'?'pesu':action==='oil'?'öljyäminen':action==='paint'?'maalaus':action==='repair'?'korjaus':action==='maintain'?'huolto':'palvelu';
+      answer='Kyllä, '+subtype+' '+actionText+' onnistuu.';
+    }
+  }
+  return {supported:true,answer,evidence:[found]};
+}
+
 function groundedFinnishServiceReply(message, history, rows) {
   const q=normalizeSearchText(message);
   const direct=q.match(/^(teetteko|pesetteko|puhdistatteko|huollatteko|asennatteko|maalaatteko|korjaatteko|raivaatteko|vietteko)\s+([a-z-]+)$/);
@@ -1284,21 +1467,25 @@ function groundedFinnishServiceReply(message, history, rows) {
   }
 
   let verb=direct?.[1] || '';
+  let inheritedActionKind='';
   if (follow) {
-    // Only carry the previous *service action* across a chain of adjacent
-    // follow-ups. A contact, price, or unrelated question breaks the chain.
-    for (const event of history.slice(-4).reverse()) {
+    // Carry meaning, not just an exact previous verb. This lets normal chains
+    // such as "Voinko tilata katon pesun?" -> "Entä ikkunat?" work.
+    for (const event of history.slice(-5).reverse()) {
       const previous=normalizeSearchText(event.question||event.user||'');
       const match=previous.match(/^(teetteko|pesetteko|puhdistatteko|huollatteko|asennatteko|maalaatteko|korjaatteko|raivaatteko|vietteko)\b/);
       if (match) {verb=match[1];break;}
-      if (!/^(?:enta|mites|ja)\s+[a-z-]+$/.test(previous)) break;
+      const action=finnishServiceActionKind(previous);
+      const looksLikeService=/^(?:voiko|voinko|saako|saanko|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|onko teilla|loytyyko teilta|haluaisin|haluan|tarvitsen|tarviin|enta|entas|mites|ja)\b/.test(previous);
+      if (action && looksLikeService) {inheritedActionKind=action;break;}
+      if (!/^(?:enta|entas|mites|ja)\s+.+$/.test(previous)) break;
     }
-    if (!verb) return {supported:false};
+    if (!verb && !inheritedActionKind) return {supported:false};
   }
 
   const noun=direct?.[2]||follow?.[1];
-  const root=finnishServiceStem(noun);
-  if (root.length<4 || /^(?:hinta|hinnat|ilmainen|huomenna|tanaan|lauantai|sunnuntai)$/.test(noun)) return {supported:false};
+  const nounRoots=finnishServiceSubjectRoots(noun);
+  if (!nounRoots.length || /^(?:hinta|hinnat|ilmainen|huomenna|tanaan|lauantai|sunnuntai)$/.test(normalizeSearchText(noun))) return {supported:false};
 
   const candidates=[];
   for (const row of approved) {
@@ -1309,34 +1496,27 @@ function groundedFinnishServiceReply(message, history, rows) {
       const text=normalizeSearchText(clause);
       if (/\b(?:ei|emme|eivat|not|inte|aldrig)\b/.test(text)) continue;
       const words=text.split(/[\s-]+/).filter(Boolean);
+      const evidenceRoots=words.map(finnishServiceSubjectRoot).filter(Boolean);
       let qualifiedNoun='';
-      const nounFound=words.some(word=>{
-        const evidenceStem=finnishServiceStem(word);
-        if (evidenceStem===root) return true;
-        if (root.length>=5 && evidenceStem.startsWith(root) &&
-            /^(?:an?|en?)(?:pes|puhdist|huolto|asenn|maala)/.test(evidenceStem.slice(root.length))) return true;
-        // A broad roof question can be supported by a narrower, explicitly
-        // listed roof type, but the reply must name that subtype rather than
-        // claiming that every roof material is covered.
-        if (root==='katt' && evidenceStem.length>root.length+2 &&
-            evidenceStem.endsWith(root) && /^[a-z]{3,}katto(?:ja|jen)$/.test(word)) {
-          qualifiedNoun=word.replace(/kattojen$/,'kattoja');
-          return true;
-        }
-        return false;
-      });
+      const nounFound=nounRoots.every(root=>evidenceRoots.some(e=>serviceRootMatches(root,e)));
       if (!nounFound) continue;
-      const cleaning= /puhdist|pesu|pese|pesem|siivou/.test(text);
-      const transport=/poisvien|kuljet|noud|kierraty/.test(text);
+      if (nounRoots.includes('katt')) {
+        const roofWord=words.find(word=>/^(?:pelti|tiili|huopa|bitumi)katto(?:ja|jen)?$/.test(word));
+        if (roofWord) qualifiedNoun=roofWord.replace(/kattojen$/,'kattoja');
+      }
+      const cleaning= serviceActionMatches(text,'clean');
+      const transport=serviceActionMatches(text,'transport');
       const type=/puhdist/.test(text)?'puhdistamme':
-        /pesu|pese|pesem/.test(text)?'pesemme':
+        /pesu|pese|pesem|pesta/.test(text)?'pesemme':
         /siivou/.test(text)?'siivoamme':
+        /oljy/.test(text)?'öljyämme':
         /asenn/.test(text)?'asennamme':
         /maal/.test(text)?'maalaamme':
         /korj/.test(text)?'korjaamme':
-        /raiva/.test(text)?'raivaamme':
+        /raiva|leikka/.test(text)?'raivaamme':
         /huol/.test(text)?'huollamme':
         transport?'viemme':
+        /muutto/.test(text)?'hoidamme':
         /rakenn/.test(text)?'rakennamme':'';
       if (!type) continue;
       if (['pesetteko','puhdistatteko'].includes(verb) && !cleaning) continue;
@@ -1346,6 +1526,7 @@ function groundedFinnishServiceReply(message, history, rows) {
       if (verb==='korjaatteko' && type!=='korjaamme') continue;
       if (verb==='raivaatteko' && type!=='raivaamme') continue;
       if (verb==='huollatteko' && type!=='huollamme') continue;
+      if (inheritedActionKind && !serviceActionMatches(text,inheritedActionKind)) continue;
       candidates.push({row,type,qualifiedNoun});
     }
   }
@@ -1369,7 +1550,7 @@ function groundedFinnishServiceReply(message, history, rows) {
 function combinedFinnishServiceRequest(message, rows) {
   const raw=String(message||'').toLowerCase().trim().replace(/[?!.]+$/,'');
   const q=normalizeSearchText(raw);
-  const order=raw.match(/^(?:voiko\s+teiltä\s+tilata|voiko\s+tilata\s+teiltä|voinko\s+tilata\s+teiltä|voinko\s+teiltä\s+tilata|voiko\s+tilata|voinko\s+tilata|saako\s+teiltä|saanko\s+teiltä|onnistuuko|teettekö|tarjoatteko)\s+(.+)$/i);
+  const order=raw.match(/^(?:voiko\s+teiltä\s+tilata|voiko\s+tilata\s+teiltä|voinko\s+tilata\s+teiltä|voinko\s+teiltä\s+tilata|voiko\s+tilata|voinko\s+tilata|saako\s+teiltä|saanko\s+teiltä|onnistuuko|onnistuisko|pystyttekö|voitteko|voisitteko|olisiko\s+mahdollista|olisko\s+mahdollista|onko\s+teillä|löytyykö\s+teiltä|haluaisin\s+tilata|haluan\s+tilata|tarvitsen|tarviin|teettekö|tarjoatteko)\s+(.+)$/i);
   if (!order) return null;
 
   const actionTypes=[
@@ -1530,12 +1711,15 @@ function combinedFinnishServiceRequest(message, rows) {
     displayGroups.slice(0,-1).join(', ')+' sekä '+displayGroups.at(-1);
   const display=displayGroups.length===1 && labels.length===2
     ? 'sekä '+labels[0]+' että '+labels[1] : grouped;
-  const orderQuestion=/^(?:voiko|voinko|saako|saanko)/.test(q);
+  const orderQuestion=/^(?:voiko|voinko|saako|saanko|haluaisin|haluan|tarvitsen|tarviin)/.test(q);
+  const naturalAvailability=/^(?:onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|olisiko|olisko|onko teilla|loytyyko teilta)/.test(q);
   return {
     supported:true,evidence,
     answer:orderQuestion
       ? 'Kyllä, voit tilata meiltä '+display+'.'
-      : 'Kyllä, tarjoamme seuraavat palvelut: '+display+'.'
+      : naturalAvailability
+        ? 'Kyllä, kaikki mainitsemasi palvelut onnistuvat.'
+        : 'Kyllä, tarjoamme seuraavat palvelut: '+display+'.'
   };
 }
 
@@ -1643,15 +1827,11 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     if (quoteRow) return {answer:responseLang === 'en' ? 'You can request a quote using the button below.' : responseLang === 'sv' ? 'Du kan begära offert via knappen nedan.' : 'Voit pyytää tarjouksen alla olevasta painikkeesta.', handoff:false, confidence:1, intent:'Tarjouspyyntö', sourceIds:[quoteRow.id].filter(Boolean), selected:[quoteRow]};
   }
 
-  const priorQuestions = history.slice(-2).map((x) => String(x.question || x.user || '')).filter(Boolean);
   const intent = inferIntent(cleanMessage);
-  // Short messages are not automatically follow-ups. Explicit intents such as
-  // booking, price, hours and contact must stand on their own; otherwise
-  // "Mistä voin varata ajan?" inherits the previous service question.
-  const explicitIntent = intent !== 'Asiakaskysymys';
-  const contextualLead = /^(enta|entä|ja |mites|miten sitten|siis|se |sen |sita|sitä|what about|and |how about|och |hur är det|hur ar det)/i.test(cleanMessage);
-  const needsContext = !explicitIntent && (contextualLead || cleanMessage.length < 22);
-  const retrievalQuery = needsContext && priorQuestions.length ? priorQuestions.slice(-1)[0] + ' ' + cleanMessage : cleanMessage;
+  // Resolve natural follow-ups by carrying only the missing context. Standalone
+  // questions remain standalone, while "Paljonko se maksaa?", "Entä katon pesu?"
+  // and equivalent English/Swedish follow-ups inherit the right subject/intent.
+  const retrievalQuery = contextualizeConversationQuery(cleanMessage, history);
 
   // Translate only the search query into Finnish so Finnish knowledge bases can
   // be searched in Swedish/English without a paid model. If the free translator
@@ -1688,6 +1868,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     const evidence=contextualService.evidence||[];
     return contextualService.supported
       ? {answer:contextualService.answer,handoff:false,confidence:0.92,intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence}
+      : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
+  }
+
+  const naturalService = responseLang === 'fi' ? naturalFinnishServiceQuestion(cleanMessage, rows) : null;
+  if (naturalService) {
+    const evidence=naturalService.evidence||[];
+    return naturalService.supported
+      ? {answer:naturalService.answer,handoff:false,confidence:0.92,intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence}
       : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
   }
 
