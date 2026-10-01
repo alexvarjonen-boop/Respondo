@@ -5,6 +5,15 @@ import {readFileSync} from 'node:fs';
 const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 
+test('public Try Bot has the same visible dashboard shell and default view as paid app',()=>{
+  assert.match(app,/return `\\<div class="appshell dashboard-simple-shell"\\>/);
+  assert.doesNotMatch(app,/assistant-demo-shell/);
+  const start=app.indexOf("if (path === '/assistant') {");
+  const end=app.indexOf("if (path === '/kirjaudu') {",start);
+  const source=app.slice(start,end);
+  assert.match(source,/requestedView : 'overview'/);
+  assert.match(source,/dashboardViewMeta/);
+});
 test('public Try Bot and paid app use the same dashboard renderer',()=>{
   assert.match(app,/async function dashboard\(options = \{\}\)/);
   assert.match(app,/const isDemo = Boolean\(options\.demo\)/);
@@ -49,8 +58,8 @@ test('demo bindings use the same paid-dashboard element ids and public chat endp
 });
 
 test('shared dashboard demo assets are cache-busted',()=>{
-  assert.match(html,/styles\.css\?v=20261002-shared-dashboard-demo-v2/);
-  assert.match(html,/app\.js\?v=20261002-shared-dashboard-demo-v2/);
+  assert.match(html,/styles\.css\?v=20261002-paid-dashboard-parity-v3/);
+  assert.match(html,/app\.js\?v=20261002-paid-dashboard-parity-v3/);
 });
 
 
