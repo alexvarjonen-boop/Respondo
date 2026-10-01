@@ -2530,7 +2530,7 @@ async function agentDashboard(me) {
   try { data=await api('/api/app/agent-dashboard'); }
   catch(e){ return `<div class="container"><div class="notice error">${esc(e.message)}</div></div>`; }
   const threads=data.liveThreads||[], agent=data.agent||me;
-  return `<div class="appshell dashboard-simple-shell"><main class="appmain dashboard-simple-main">
+  return `<div class="appshell dashboard-simple-shell ${isDemo ? 'assistant-demo-shell' : ''}"><main class="appmain dashboard-simple-main">
     <header class="dashboard-topbar"><div class="dashboard-topbar-brand">${logo()}<div><b>${esc(agent.display_name||'')}</b><small>${appText('Asiakaspalvelu','Kundservice','Customer support')}</small></div></div><button class="btn" id="logoutAgent">${appText('Kirjaudu ulos','Logga ut','Log out')}</button></header>
     <section class="panel"><div class="panel-head"><div><small>${appText('OMA TYÖPÖYTÄ','MIN ARBETSYTA','MY WORKSPACE')}</small><h1>${appText('Omat keskustelut','Mina konversationer','My conversations')}</h1><p>${appText('Näet vain sinulle osoitetut asiakaskeskustelut.','Du ser endast kundkonversationer som tilldelats dig.','You only see customer conversations assigned to you.')}</p></div><span>${Number(data.stats?.open||0)} ${appText('avointa','öppna','open')}</span></div>
     <section class="support-agent-self-card"><div class="support-agent-profile-head"><span class="support-agent-avatar">${agent.avatar?`<img src="${esc(agent.avatar)}" alt="">`:esc(String(agent.display_name||'?')[0].toUpperCase())}</span><span class="support-agent-identity"><b>${esc(agent.display_name||'')}</b><small>@${esc(agent.username||'')}</small></span></div>
@@ -2543,88 +2543,69 @@ async function agentDashboard(me) {
 }
 
 
-function assistantDemoPage() {
-  const lang=currentLang();
-  const defaultAvatar='robot-1';
-  return `<div class="appshell dashboard-simple-shell assistant-demo-shell">
-    <main class="appmain dashboard-simple-main">
-      <header class="dashboard-topbar">
-        <div class="dashboard-topbar-brand">${logo()}<div class="dashboard-workspace"><small>${appText('KOKEILU','DEMO','DEMO')}</small><b>${appText('Testaa Respondoa','Testa Respondo','Try Respondo')}</b></div></div>
-        <div class="dashboard-section-picker"><label for="assistantDemoSectionSelect">${appText('Työtila','Arbetsyta','Workspace')}</label><div class="dashboard-select-wrap"><select id="assistantDemoSectionSelect"><option value="setup">${appText('Yrityksen tiedot & botti','Företagsuppgifter & bot','Business info & bot')}</option><option value="answers">${appText('Vastaukset','Svar','Answers')}</option><option value="install">${appText('Asennus','Installation','Installation')}</option></select><span aria-hidden="true">⌄</span></div></div>
-        <div class="dashboard-top-actions assistant-demo-top-actions"><a class="btn ink assistant-demo-buy" href="/tilaus?lang=${lang}">${appText('Kokeile ilmaiseksi','Prova gratis','Start free trial')}</a></div>
-      </header>
-
-      <section class="profile-live-grid assistant-demo-view" data-assistant-demo-view="setup" id="assistant-demo-setup">
-        <div class="panel business-profile-panel">
-          <div class="panel-head business-profile-head"><div><small>${appText('YRITYKSEN TIEDOT','FÖRETAGSUPPGIFTER','BUSINESS INFORMATION')}</small><h2>${appText('Kerro Respondolle tärkeimmät asiat yrityksestäsi','Berätta det viktigaste om ditt företag för Respondo','Tell Respondo the essentials about your business')}</h2><p>${appText('Tämä on sama näkymä kuin hallintapaneelissa. Kokeilun tietoja ei tallenneta tilille.','Det här är samma vy som i kontrollpanelen. Demodata sparas inte på ett konto.','This is the same view as the dashboard. Demo data is not saved to an account.')}</p></div><span class="install-badge">${appText('Kokeilu','Demo','Demo')}</span></div>
-          <form id="assistantDemoProfileForm" class="business-profile-form">
-            <div class="profile-grid">
-              <div class="bot-customizer profile-wide">
-                <div class="bot-customizer-head"><div><small>${appText('BOTIN ULKOASU','BOTTENS UTSEENDE','BOT APPEARANCE')}</small><h3>${appText('Nimeä botti ja valitse sille kuva','Namnge botten och välj en bild','Name your bot and choose an image')}</h3><p>${appText('Näet muutokset heti oikealla olevassa botissa.','Du ser ändringarna direkt i botten till höger.','See changes immediately in the bot on the right.')}</p></div><div class="bot-current-avatar" id="assistantDemoAvatarCurrent">${botAvatarMarkup(defaultAvatar)}</div></div>
-                <div class="field bot-name-field"><label>${appText('Botin nimi','Bottens namn','Bot name')}</label><input name="botName" maxlength="40" value="RESPONDO AI"></div>
-                <input type="hidden" name="botAvatar" value="${defaultAvatar}">
-                <div class="bot-avatar-presets" role="list">${BOT_AVATAR_PRESETS.map((avatar)=>`<button type="button" class="bot-avatar-option ${avatar.id===defaultAvatar?'selected':''}" data-demo-avatar="${esc(avatar.id)}"><span>${botAvatarMarkup(avatar.id)}</span><small>${esc(avatar.label)}</small></button>`).join('')}</div>
-                <div class="bot-avatar-upload-row"><label class="bot-avatar-upload" for="assistantDemoAvatarUpload"><span>＋</span><div><b>${appText('Lataa oma kuva','Ladda upp egen bild','Upload your own image')}</b><small>PNG, JPG, WebP</small></div></label><input id="assistantDemoAvatarUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden><div id="assistantDemoAvatarMsg"></div></div>
-              </div>
-              <div class="field profile-wide"><label>${appText('Ensimmäinen viesti asiakkaalle','Första meddelandet till kunden','First message to customer')}</label><input name="greeting" maxlength="220" value="${esc(appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?'))}"></div>
-              <div class="field"><label>${appText('Vastaustyyli','Svarsstil','Response style')}</label><select name="tone"><option value="Luonteva ja ystävällinen">${appText('Luonteva ja ystävällinen','Naturlig och vänlig','Natural and friendly')}</option><option value="Lyhyt ja suora">${appText('Lyhyt ja suora','Kort och direkt','Short and direct')}</option><option value="Asiallinen ja ammattimainen">${appText('Asiallinen ja ammattimainen','Saklig och professionell','Professional and formal')}</option></select></div>
-              <div class="field"><label>${appText('Hinnat','Priser','Pricing')}</label><textarea name="pricing" placeholder="${esc(appText('Esim. Putkityö 65 € / h + alv.','T.ex. VVS-arbete 65 € / h + moms.','E.g. Plumbing €65 / h + VAT.'))}"></textarea></div>
-              <div class="field"><label>${appText('Aukioloajat','Öppettider','Opening hours')}</label><input name="hours" placeholder="${esc(appText('Ma–Pe 8–17','Mån–Fre 8–17','Mon–Fri 8–17'))}"></div>
-              <div class="field"><label>${appText('Puhelinnumero','Telefonnummer','Phone number')}</label><input name="phone" placeholder="040 123 4567"></div>
-              <div class="field"><label>${appText('Yrityksen sähköposti','Företagets e-post','Company contact email')}</label><input name="email" type="email" placeholder="info@yritys.fi"></div>
-              <div class="field profile-wide"><label>${appText('Verkkosivusi osoite','Din webbadress','Your website')}</label><input name="website" placeholder="https://yritys.fi"><small class="field-hint">${appText('Verkkosivun automaattinen tietojen haku on käytettävissä tilillä.','Automatisk webbplatsimport är tillgänglig på ett konto.','Automatic website import is available with an account.')}</small></div>
-              <div class="field"><label>${appText('Linkki tarjouspyyntöön','Länk till offertförfrågan','Quote request link')}</label><input name="quoteRequestUrl" placeholder="https://yritys.fi/tarjouspyynto"></div>
-              <div class="field"><label>${appText('Ajanvarauslinkki','Bokningslänk','Booking link')}</label><input name="bookingUrl" placeholder="https://yritys.fi/ajanvaraus"></div>
-              <div class="field profile-wide"><label>${appText('Mitä palveluja tarjoatte?','Vilka tjänster erbjuder ni?','What services do you offer?')}</label><textarea name="services" placeholder="${esc(appText('Esim. putkityöt, ikkunanpesu, huollot, päivystys','T.ex. VVS, fönsterputs, service, jour','E.g. plumbing, window cleaning, maintenance, emergency service'))}"></textarea></div>
-              <div class="field"><label>${appText('Toimialue','Serviceområde','Service area')}</label><input name="serviceArea" placeholder="${esc(appText('Esim. Tampere + 50 km','T.ex. Tammerfors + 50 km','E.g. Tampere + 50 km'))}"></div>
-              <div class="field"><label>${appText('Osoite','Adress','Address')}</label><input name="address" placeholder="${esc(appText('Katuosoite, paikkakunta','Gatuadress, ort','Street address, city'))}"></div>
-              <div class="field profile-wide"><label>${appText('Muut tärkeät tiedot','Övriga viktiga uppgifter','Other important information')}</label><textarea name="notes"></textarea></div>
-            </div>
-            <div class="profile-save-row assistant-demo-save-row"><div><b>${appText('Muokkaa tietoja ja testaa bottia heti oikealla.','Redigera uppgifterna och testa botten direkt till höger.','Edit the information and test the bot immediately on the right.')}</b><small>${appText('Tietoja ei tallenneta tilille tässä kokeilussa.','Uppgifterna sparas inte på ett konto i demon.','Data is not saved to an account in this demo.')}</small></div><button class="btn dashboard-action" type="submit">${appText('Päivitä kokeilu','Uppdatera demo','Update demo')} <span>→</span></button></div>
-            <div id="assistantDemoProfileMsg"></div>
-          </form>
-        </div>
-        <aside class="panel live-preview-panel" id="assistant-demo-preview">
-          <div class="panel-head"><div><small>${appText('KOKEILE TÄSSÄ','PROVA HÄR','TRY IT HERE')}</small><h2>${appText('Kysy kuten asiakkaasi kysyisi','Fråga som din kund skulle fråga','Ask like your customer would')}</h2></div><span class="preview-live"><i></i> ${appText('Käytössä','Aktiv','Active')}</span></div>
-          <div class="preview-device"><div class="preview-device-top"><span class="preview-avatar" id="assistantDemoPreviewAvatar">${botAvatarMarkup(defaultAvatar)}</span><div><b id="assistantDemoBotName">RESPONDO AI</b><small>${appText('paikalla nyt','online nu','online now')}</small></div></div><div class="preview-chat" id="assistantDemoChat"><div class="preview-bubble bot" id="assistantDemoGreeting">${esc(appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?'))}</div></div><form class="preview-form" id="assistantDemoPreviewForm"><input name="question" autocomplete="off" placeholder="${esc(appText('Kysy esim. “Paljonko maksaa?”','Fråga t.ex. “Vad kostar det?”','Ask e.g. “How much does it cost?”'))}"><button type="submit">→</button></form></div>
-          <p class="preview-note">${appText('Kokeilu käyttää vasemmalla antamiasi tietoja ja omia demo-vastauksiasi.','Demon använder uppgifterna till vänster och dina egna demosvar.','The demo uses the information on the left and your own demo answers.')}</p>
-        </aside>
-      </section>
-
-      <section class="dashboard-grid assistant-demo-view dashboard-view-hidden" data-assistant-demo-view="answers" id="assistant-demo-answers">
-        <div class="panel knowledge-panel"><div class="panel-head"><div><small>${appText('TIETOPOHJA','KUNSKAPSBAS','KNOWLEDGE BASE')}</small><h2>${appText('Vastaukset, joita botti saa käyttää','Svar som botten får använda','Answers the bot may use')}</h2></div><span id="assistantDemoKnowledgeCount">0 ${appText('kohdetta','poster','items')}</span></div><div id="assistantDemoKnowledgeList" class="knowledge-list"><div class="empty-state"><b>${appText('Ei vielä omia vastauksia.','Inga egna svar ännu.','No custom answers yet.')}</b></div></div></div>
-        <form class="panel add-knowledge" id="assistantDemoKnowledgeForm"><div class="panel-head"><div><small>${appText('LISÄÄ VASTAUS','LÄGG TILL SVAR','ADD ANSWER')}</small><h2>${appText('Tallenna demo-vastaus','Spara demosvar','Save demo answer')}</h2></div><span>＋</span></div><div class="field"><label>${appText('Kategoria','Kategori','Category')}</label><input name="category"></div><div class="field"><label>${appText('Otsikko','Rubrik','Title')}</label><input name="title" required></div><div class="field"><label>${appText('Hyväksytty vastaus','Godkänt svar','Approved answer')}</label><textarea name="answer" required></textarea></div><button class="btn dashboard-action" type="submit">${appText('Lisää kokeiluun','Lägg till i demon','Add to demo')} <span>→</span></button><div id="assistantDemoKnowledgeMsg"></div></form>
-      </section>
-
-      <section class="panel assistant-demo-view dashboard-view-hidden assistant-demo-install-lock" data-assistant-demo-view="install" id="assistant-demo-install">
-        <div class="assistant-demo-lock-icon">R</div><small>${appText('ASENNUS','INSTALLATION','INSTALLATION')}</small><h2>${appText('Asennus avautuu tilauksen jälkeen.','Installationen öppnas efter beställning.','Installation unlocks after subscribing.')}</h2><p>${appText('Kokeilusivulla ei näytetä verkkosivulle lisättävää HTML-koodia, widget-tunnistetta tai kopiointipainiketta. Kun otat Respondon käyttöön, saat yrityksellesi oman asennuksen hallintapaneeliin.','Demosidan visar inte HTML-koden, widget-id:t eller kopieringsknappen. När du börjar använda Respondo får ditt företag installationen i kontrollpanelen.','The demo does not expose website HTML code, widget identifiers, or a copy button. Once you subscribe, your company gets its installation inside the dashboard.')}</p><a class="btn ink" href="/tilaus?lang=${lang}">${appText('Aloita 3 päivän kokeilu','Starta 3 dagars provperiod','Start 3-day trial')}</a>
-      </section>
-    </main>
-  </div>`;
-}
-
-async function dashboard() {
+async function dashboard(options = {}) {
+  const isDemo = Boolean(options.demo);
   let me;
-  try {
-    me = await api('/api/auth/me');
-    try {
-      const stored = localStorage.getItem('respondo_lang');
-      if (!stored && ['fi','sv','en'].includes(me?.preferred_language)) {
-        localStorage.setItem('respondo_lang', me.preferred_language);
-        window.RespondoI18n?.setLanguage?.(me.preferred_language);
-      }
-    } catch {}
-  } catch {
-    return login();
-  }
-
-  if (me?.role === 'agent') return agentDashboard(me);
-
   let data;
-  try {
-    data = await api('/api/app/dashboard');
-  } catch (e) {
-    return `<div class="container"><div class="notice error">${esc(e.message)}</div></div>`;
+
+  if (isDemo) {
+    me = {
+      role:'owner',
+      preferred_language:currentLang(),
+      company_name:appText('Kokeiluyritys','Demoföretag','Demo company'),
+    };
+    data = {
+      tenant:{
+        id:'public-demo',
+        name:appText('Kokeiluyritys','Demoföretag','Demo company'),
+        slug:'public-demo',
+        bot_name:'RESPONDO AI',
+        bot_avatar:'robot-1',
+        greeting:appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?'),
+        average_lead_value:'',
+        website:'',
+      },
+      stats:{ conversations:0,last7:0,answeredRate:0,leads:0,estimatedLeadValue:0,actions30:0,last30:0 },
+      referral:null,
+      truth:{ score:0,total:0,approved:0,fresh:0 },
+      latestSelfTest:null,
+      actionStats:[],
+      actionRequests:[],
+      liveThreads:[],
+      supportAgents:[],
+      bookingSlots:[],
+      stripeConnect:{ connected:false,chargesEnabled:false,detailsSubmitted:false,payoutsEnabled:false },
+      googleCalendar:{ connected:false,email:'',calendarId:'primary' },
+      quoteEngine:{ serviceName:'',basePrice:0,unitPrice:0,minPrice:0,vatPercent:0,unitLabel:'kpl' },
+      integrations:{ webhookUrl:'',webhookSecret:'',channelsApiKey:'' },
+      knowledge:[],
+      unanswered:[],
+      recentConversations:[],
+      leads:[],
+      gaps:[],
+      daily:[],
+    };
+  } else {
+    try {
+      me = await api('/api/auth/me');
+      try {
+        const stored = localStorage.getItem('respondo_lang');
+        if (!stored && ['fi','sv','en'].includes(me?.preferred_language)) {
+          localStorage.setItem('respondo_lang', me.preferred_language);
+          window.RespondoI18n?.setLanguage?.(me.preferred_language);
+        }
+      } catch {}
+    } catch {
+      return login();
+    }
+
+    if (me?.role === 'agent') return agentDashboard(me);
+
+    try {
+      data = await api('/api/app/dashboard');
+    } catch (e) {
+      return `<div class="container"><div class="notice error">${esc(e.message)}</div></div>`;
+    }
   }
 
   const t = data.tenant;
@@ -2723,7 +2704,7 @@ async function dashboard() {
         <div class="dashboard-topbar-brand">
           ${logo()}
           <div class="dashboard-workspace">
-            <small>TYÖTILA</small>
+            <small>${isDemo ? appText('KOKEILU','DEMO','DEMO') : 'TYÖTILA'}</small>
             <b>${esc(me.company_name || t.name)}</b>
           </div>
         </div>
@@ -3317,17 +3298,26 @@ async function dashboard() {
 
       </section>
 
+      ${isDemo ? `
+      <section class="panel install-panel dashboard-view-section dashboard-view-hidden assistant-demo-install-lock" data-dashboard-view="install" id="install">
+        <div class="panel-head"><div><small>${appText('ASENNUS','INSTALLATION','INSTALLATION')}</small><h2>${appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website')}</h2></div><span class="install-badge">${appText('Lukittu kokeilussa','Låst i demo','Locked in demo')}</span></div>
+        <div class="assistant-demo-lock-icon">R</div>
+        <h3>${appText('Asennuskoodi avautuu tilauksen jälkeen.','Installationskoden öppnas efter beställning.','Installation code unlocks after subscribing.')}</h3>
+        <p>${appText('Tässä kokeilussa näet saman asennusosion kuin asiakkaana, mutta HTML-koodia, widget-tunnistetta tai kopiointipainiketta ei näytetä.','I demon ser du samma installationsavsnitt som en kund, men HTML-koden, widget-id:t och kopieringsknappen visas inte.','The demo shows the same installation section as a customer, but the HTML code, widget identifier, and copy button are not exposed.')}</p>
+        <a class="btn ink" href="/tilaus?lang=${currentLang()}">${appText('Aloita 3 päivän kokeilu','Starta 3 dagars provperiod','Start 3-day trial')}</a>
+      </section>` : `
       <section class="panel install-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="install" id="install">
-        <div class="panel-head"><div><small>${appText('ASENNUS','INSTALLATION','INSTALLATION')}</small><h2>${appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website')}</h2></div><span class="install-badge">1 ${appText('sivusto','webbplats','website')}</span></div>
-        <p>${appText('Kopioi tämä koodi sivustosi HTML:ään juuri ennen sulkevaa','Kopiera koden till webbplatsens HTML precis före den avslutande','Copy this code into your website HTML just before the closing')} <code>&lt;/body&gt;</code>${appText('-tagia.','-taggen.',' tag.')}</p>
+        <div class="panel-head"><div><small>\${appText('ASENNUS','INSTALLATION','INSTALLATION')}</small><h2>\${appText('Lisää Respondo verkkosivullesi','Lägg till Respondo på din webbplats','Add Respondo to your website')}</h2></div><span class="install-badge">1 \${appText('sivusto','webbplats','website')}</span></div>
+        <p>\${appText('Kopioi tämä koodi sivustosi HTML:ään juuri ennen sulkevaa','Kopiera koden till webbplatsens HTML precis före den avslutande','Copy this code into your website HTML just before the closing')} <code>&lt;/body&gt;</code>\${appText('-tagia.','-taggen.',' tag.')}</p>
         <div class="license-lock">
           <span>🔒 SIDOTTU VERKKOSIVUUN</span>
-          <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
-          <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
+          <b>\${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
+          <small>\${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20260924-language-v2" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
-        <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
+        <div class="code-row"><code id="installCode">&lt;script src="\${location.origin}/widget.js?v=20260924-language-v2" data-company="\${esc(t.slug)}" data-lang="\${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">\${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <button type="button" class="install-done \${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="\${esc(t.id)}">\${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
       </section>
+      `}
 
       ${referral ? `
       <section class="panel referral-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="referral">
@@ -3578,7 +3568,7 @@ async function route() {
 
   if (path === '/') html = await home();
   else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
-  else if (path === '/assistant') html = assistantDemoPage();
+  else if (path === '/assistant') html = await dashboard({ demo:true });
   else if (path === '/tilaus') html = signup();
   else if (path === '/kirjaudu') html = login();
   else if (path === '/maksu-valmis') html = await paymentSuccess();
