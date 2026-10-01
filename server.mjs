@@ -1139,8 +1139,13 @@ function specificServiceConfirmation(query, rows) {
     return strong.some((s)=>rowText.includes(s));
   });
   const trustedSupport=supportingRows.some((row)=>{
+    const category=normalizeSearchText(row?.category||'');
+    const sourceType=normalizeSearchText(row?.source_type||row?.sourceType||'');
     const topic=knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.answer||''));
-    return topic==='services' || topic==='products';
+    // Reviews/testimonials must never prove a service. Imported rows explicitly
+    // categorized as services/products and profile/FAQ service facts are valid.
+    if(/arvost|review|testimonial|kokemus/.test(category+' '+sourceType)) return false;
+    return topic==='services' || topic==='products' || /palvel|service|tuote|product/.test(category);
   });
   if(!trustedSupport && supportingRows.length<2) return '';
 
