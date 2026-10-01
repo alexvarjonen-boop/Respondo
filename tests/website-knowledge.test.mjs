@@ -449,6 +449,22 @@ test('dashboard preview API handles the exact pictured customer request',async()
 });
 
 
+test('explicit Finnish service follow-up resolves its own action after an order question',async()=>{
+ const rows=[
+  {id:'windows',category:'Palvelut',title:'Ikkunanpesut',
+   answer:'Tarjoamme ikkunanpesua koteihin ja yrityksille.',source_type:'website',keywords:['palvelut']}
+ ];
+ const history=[{question:'Voinko tilata teiltä katon pesun',answer:'Kyllä, voit tilata meiltä katon pesun.'}];
+ const compound=await generateGroundedAnswer({rows,message:'Entä ikkunoidenpesun',history,lang:'fi'});
+ assert.equal(compound.handoff,false,JSON.stringify(compound));
+ assert.equal(compound.answer,'Kyllä, voit tilata meiltä ikkunoidenpesun.');
+ assert.deepEqual(compound.sourceIds,['windows']);
+ const spaced=await generateGroundedAnswer({rows,message:'Entä ikkunoiden pesun?',history,lang:'fi'});
+ assert.equal(spaced.handoff,false,JSON.stringify(spaced));
+ assert.equal(spaced.answer,'Kyllä, voit tilata meiltä ikkunoiden pesun.');
+ assert.deepEqual(spaced.sourceIds,['windows']);
+});
+
 test('single booking question "voinko tilata teiltä ikkunanpesun" returns a direct service answer, never page title text',async()=>{
  const rows=[
   {id:'junk',category:'Palvelut',title:'Monitoimipojat RD – Kodin huoltopalvelut Turussa | Ikkunanpesu, Kattopesut & Raivaus | Palvelut | Yhteystiedot',
