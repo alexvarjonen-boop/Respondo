@@ -1200,7 +1200,8 @@ function groundedFinnishServiceReply(message, history, rows) {
   const phrase=String(message).trim()
     .replace(/^(?:teettekö|pesettekö|puhdistatteko|huollatteko|asennatteko|maalaatteko|korjaatteko|raivaatteko|viettekö|entä|mites|ja)\s+/i,'')
     .replace(/[?!.]+$/,'').toLowerCase();
-  return {supported:true,answer:'Kyllä, '+found.type+(follow?' myös':'')+' '+phrase+'.',evidence:[found.row]};
+  const answerVerb=verb==='teetteko' && /(?:pesu|puhdist|siivou|asennus|huolto|maalaus|korjaus|raivaus)/.test(noun) ? 'teemme' : found.type;
+  return {supported:true,answer:'Kyllä, '+answerVerb+(follow?' myös':'')+' '+phrase+'.',evidence:[found.row]};
 }
 
 function naturalServiceAnswer(rows) {
@@ -1310,6 +1311,18 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   let selected = selectRelevantKnowledge(rows, localQuery, 8);
 
 
+  // Short, contextual service follow-ups need a direct yes/no answer. If there
+  // is no approved proof for the exact action, hand off rather than listing
+  // unrelated services or inventing a confirmation.
+  const contextualService = responseLang==='fi'
+    ? groundedFinnishServiceReply(cleanMessage,history,rows) : null;
+  if (contextualService) {
+    const evidence=contextualService.evidence||[];
+    return contextualService.supported
+      ? {answer:contextualService.answer,handoff:false,confidence:0.92,intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence}
+      : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
+  }
+
   // Direct service yes/no questions must be resolved against the whole approved
   // knowledge base before generic retrieval can pick a review or unrelated row.
   // Example: "Viettekö romut pois?" should become "Kyllä, viemme romut pois."
@@ -1325,18 +1338,6 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       sourceIds: evidence.map((row)=>row.id).filter(Boolean),
       selected: evidence
     };
-  }
-
-  // Short, contextual service follow-ups need a direct yes/no answer. If there
-  // is no approved proof for the exact action, hand off rather than listing
-  // unrelated services or inventing a confirmation.
-  const contextualService = responseLang==='fi'
-    ? groundedFinnishServiceReply(cleanMessage,history,rows) : null;
-  if (contextualService) {
-    const evidence=contextualService.evidence||[];
-    return contextualService.supported
-      ? {answer:contextualService.answer,handoff:false,confidence:0.92,intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence}
-      : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
   }
 
   if (responseLang === 'fi' && /^(?:teetteko|pesetteko|leikkaatteko|maalaatteko|raivaatteko|puhdistatteko|huollatteko|asennatteko|korjaatteko|vietteko)\b/.test(normalized)) {
