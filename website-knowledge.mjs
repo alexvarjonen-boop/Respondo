@@ -47,7 +47,11 @@ export function extractBusinessDocument(html, url) {
       const a = stack.findLast(x => x.tag === 'a');
       if (a) a.text += token;
       if (h) h.text += token;
-      else if (!stack.some(x => x.tag === 'nav')) buffer += token;
+      const cell = stack.findLast(x => x.tag === 'td' || x.tag === 'th');
+      if (cell) cell.text += token;
+      // Keep table rows intact: a detached price cell without its service name
+      // must never become an independently retrievable business price.
+      if (!stack.some(x => x.tag === 'tr') && !h && !stack.some(x => x.tag === 'nav')) buffer += token;
       continue;
     }
     const match = token.match(/^<\s*(\/?)\s*([a-z0-9]+)/i);
@@ -63,6 +67,14 @@ export function extractBusinessDocument(html, url) {
         heading = clean(decodeHtml(node.text));
         suppressedHeading = review.test(norm(heading)) || junk.test(norm(heading));
       }
+      if ((tag === 'td' || tag === 'th') && !node.skip) {
+        const row = stack.findLast(x => x.tag === 'tr');
+        if (row) row.cells.push(clean(decodeHtml(node.text)));
+      }
+      if (tag === 'tr' && !node.skip && node.cells?.length > 1) {
+        const cells = node.cells.filter(Boolean);
+        if (cells.length > 1) blocks.push({text:cells.join(': '), heading});
+      }
       if (tag === 'a' && !node.skip && node.href) links.push({url:node.href, label:clean(decodeHtml(node.text)), context:heading});
       stack.splice(i);
       if (tag === 'section' || tag === 'article') { heading = ''; suppressedHeading = false; }
@@ -76,9 +88,12 @@ export function extractBusinessDocument(html, url) {
     if (tag === 'a' && a.href && !parentSkip && /^(?:mailto:|tel:)/i.test(a.href)) {
       blocks.push({text:decodeHtml(a.href.replace(/^(mailto:|tel:)/i,'').split('?')[0]), heading:'Yhteystiedot'});
     }
-    if (tag === 'br') buffer += ' ';
-    if (tag === 'td' || tag === 'th') buffer += ' ';
-    if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:''});
+    if (tag === 'br') {
+      const cell = stack.findLast(x => x.tag === 'td' || x.tag === 'th');
+      if (cell) cell.text += ' ';
+      else buffer += ' ';
+    }
+    if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
   }
   flush();
   return {url, blocks, links, text:blocks.map(x=>x.text).join('\n')};
