@@ -49,6 +49,15 @@ test('demo bindings use the same paid-dashboard element ids and public chat endp
 });
 
 test('shared dashboard demo assets are cache-busted',()=>{
-  assert.match(html,/styles\.css\?v=20261001-shared-dashboard-demo-v1/);
-  assert.match(html,/app\.js\?v=20261001-shared-dashboard-demo-v1/);
+  assert.match(html,/styles\.css\?v=20261002-shared-dashboard-demo-v2/);
+  assert.match(html,/app\.js\?v=20261002-shared-dashboard-demo-v2/);
+});
+
+
+test('agent dashboard stays independent from public demo state',()=>{
+  const start=app.indexOf('async function agentDashboard(me)');
+  const end=app.indexOf('async function dashboard(options = {})',start);
+  const source=app.slice(start,end);
+  assert.ok(start>=0 && end>start);
+  assert.doesNotMatch(source,/\bisDemo\b|assistant-demo-shell/);
 });
