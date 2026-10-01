@@ -91,3 +91,17 @@ test('full demo HTTP endpoint preserves prices and quote buttons without transla
   }
  } finally {globalThis.fetch=request; await new Promise(resolve=>server.close(resolve));}
 });
+
+test('keeps each service attached to its own table price',()=>{
+ const t=extractBusinessDocument('<section><h2>Hinnasto</h2><table><tr><th>Palvelu</th><th>Hinta</th></tr><tr><td>Ikkunanpesu</td><td>49 €/h</td></tr><tr><td>Ulkomaalaus</td><td>120 €/h</td></tr></table></section>','https://example.fi/prices');
+ const priceFacts=essentialWebsiteCandidates({pageDocuments:[t]}).filter(x=>x.category==='Hinnat');
+ assert.ok(priceFacts.some(x=>/Ikkunanpesu: 49 €\/h/.test(x.answer)));
+ assert.ok(priceFacts.some(x=>/Ulkomaalaus: 120 €\/h/.test(x.answer)));
+ assert.equal(priceFacts.some(x=>/^49 €\/h$|^120 €\/h$/.test(x.answer)),false);
+ const priceRows=priceFacts.map((x,i)=>({...x,id:String(i),source_type:'website'}));
+ assert.match(selectRelevantKnowledge(priceRows,'Mitä ulkomaalaus maksaa?')[0]?.answer||'',/120 €/);
+ assert.equal(selectRelevantKnowledge(priceRows,'Mitä putkiremontti maksaa?').length,0);
+});
+test('a general price question still finds the published price',()=>{
+ assert.ok(selectRelevantKnowledge(rows,'Paljonko tämä maksaa?').some(x=>x.category==='Hinnat'));
+});
