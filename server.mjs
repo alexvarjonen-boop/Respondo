@@ -1125,6 +1125,19 @@ function specificServiceConfirmation(query, rows) {
   const matched=strong.filter((s)=>hay.includes(s));
   if(!matched.length) return '';
 
+  // A random occurrence in a review/testimonial is not enough evidence that the
+  // company offers the service. Require the requested service to appear in a
+  // service/product row, or in multiple independent knowledge rows.
+  const supportingRows=(rows||[]).filter((row)=>{
+    const rowText=normalizeSearchText(String(row?.title||'')+' '+String(row?.answer||''));
+    return strong.some((s)=>rowText.includes(s));
+  });
+  const trustedSupport=supportingRows.some((row)=>{
+    const topic=knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.answer||''));
+    return topic==='services' || topic==='products';
+  });
+  if(!trustedSupport && supportingRows.length<2) return '';
+
   // If the company knowledge supports the object/service in the question,
   // answer the actual question directly instead of listing every service.
   let phrase=String(query||'').trim().replace(/[?!.]+$/,'').trim();
