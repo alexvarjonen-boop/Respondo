@@ -4236,6 +4236,13 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // the booking/quote URL itself as the answer, replace it with natural copy
     // and let the client render the URL only as a clickable action.
     const primaryLinkAction = actions.find((action) => action?.url && /^https?:\/\//i.test(action.url));
+    // Contact questions are actions, not scraped navigation prose. Do not let
+    // headings such as "Yhteystiedot Pyydä tarjous..." become the chat answer.
+    if (!handoff && result.intent === 'Yhteystiedot' && actions.length) {
+      answer = lang === 'en' ? 'You can contact us here:'
+        : lang === 'sv' ? 'Du kan kontakta oss här:'
+        : 'Voit ottaa yhteyttä tästä:';
+    }
     if (!handoff && primaryLinkAction && /^https?:\/\/\S+$/i.test(String(answer || '').trim())) {
       answer = result.intent === 'Ajanvaraus'
         ? (lang === 'en' ? 'You can book an appointment here:' : lang === 'sv' ? 'Du kan boka en tid här:' : 'Voit varata ajan tästä:')
