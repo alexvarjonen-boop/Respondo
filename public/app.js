@@ -3836,7 +3836,9 @@ async function route() {
           bubble.classList.remove('preview-thinking');
           bubble.textContent = result.answer || appText('En löydä tähän vielä varmaa vastausta.','Jag hittar inget säkert svar på detta ännu.','I cannot find a reliable answer to this yet.');
           const actions = Array.isArray(result.actions) ? result.actions : [];
-          const links = actions.filter((action) => action?.url && /^https?:\/\//i.test(action.url));
+          // Phone and email actions must appear in dashboard preview too,
+          // not just https links. The server sends only validated contact URLs.
+          const links = actions.filter((action) => action?.url && /^(?:https?:\/\/|tel:|mailto:)/i.test(action.url));
           if (links.length) {
             const actionWrap = document.createElement('div');
             actionWrap.className = 'preview-actions';
@@ -3844,8 +3846,10 @@ async function route() {
               const link = document.createElement('a');
               link.className = 'preview-action-link';
               link.href = action.url;
-              link.target = '_blank';
-              link.rel = 'noopener noreferrer';
+              if (/^https?:\/\//i.test(action.url)) {
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+              }
               link.textContent = action.label || appText('Avaa linkki','Öppna länken','Open link');
               // Make actions look and behave like actual CTA buttons even when
               // the surrounding dashboard stylesheet has no dedicated rule.

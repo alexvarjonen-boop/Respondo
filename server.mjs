@@ -557,6 +557,31 @@ function knowledgeValue(rows, title) {
   return String(row?.answer || '').trim();
 }
 
+// Contact values are shown only when the profile or approved knowledge
+// contains a valid, literal value. Never turn a postal code, heading, or
+// scraped marketing paragraph into a telephone number.
+function verifiedContactValue(rows, title) {
+  const wanted=normalizeSearchText(title);
+  const candidates=rows.filter(row=>normalizeSearchText(row.title)===wanted)
+    .sort((a,b)=>Number(String(b.id||'').startsWith('demo-'))-Number(String(a.id||'').startsWith('demo-')));
+  for(const row of candidates) {
+    const value=String(row.answer||'').trim();
+    if (wanted===normalizeSearchText('Puhelinnumero')) {
+      const digits=value.replace(/\D/g,'');
+      if (/^\+?[\d\s().-]+$/.test(value) && digits.length>=6 && digits.length<=15) return {value,row};
+    }
+    if (wanted===normalizeSearchText('Sähköposti') && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(value)) return {value,row};
+  }
+  return null;
+}
+
+function explicitContactQuestion(message) {
+  const q=normalizeSearchText(message);
+  if (/(?:^|\s)(?:puhelin\w*|phone\w*|telefon\w*|soitta\w*|soita|ring\w*|numero|numeronne|numeroanne)(?:\s|$)/.test(q)) return 'phone';
+  if (/(?:^|\s)(?:sahkopost\w*|email\w*|e-mail|meili\w*|epost\w*)(?:\s|$)/.test(q)) return 'email';
+  return '';
+}
+
 function answerTone(rows) {
   const value = knowledgeValue(rows, 'Vastaustyyli').toLowerCase();
   if (value.includes('lyhyt')) return 'Pidä vastaus erittäin lyhyenä ja suorana. Tavallisesti 1–2 lausetta.';
@@ -582,8 +607,9 @@ function chatActions(rows, message, handoff = false, lang = 'fi') {
   const q = normalizeSearchText(message);
   const quote = knowledgeValue(rows, 'Tarjouspyyntölomake');
   const booking = knowledgeValue(rows, 'Ajanvarauslinkki');
-  const phone = knowledgeValue(rows, 'Puhelinnumero');
-  const email = knowledgeValue(rows, 'Sähköposti');
+  const phone = verifiedContactValue(rows, 'Puhelinnumero')?.value || '';
+  const email = verifiedContactValue(rows, 'Sähköposti')?.value || '';
+  const requestedContact=explicitContactQuestion(message);
   const actions = [];
   const push = (action) => {
     const key = action?.url || (action?.mode ? action.mode + ':' + action.type : '');
@@ -591,10 +617,12 @@ function chatActions(rows, message, handoff = false, lang = 'fi') {
     actions.push(action);
   };
 
-  if (/puhelin|sahkoposti|yhteys|yhteytta|yhteystiedot|ottaa yhteytta|soittaa|phone|email|contact|get in touch|telefon|e-post|kontakt|kontakta|ringa/.test(q)) {
-    if (phone) push({ type: 'contact', mode: 'phone', label: actionLang === 'en' ? 'Call us' : actionLang === 'sv' ? 'Ring oss' : 'Soita', url: 'tel:' + phone.replace(/\s+/g,'') });
-    if (email) push({ type: 'contact', mode: 'email', label: actionLang === 'en' ? 'Send email' : actionLang === 'sv' ? 'Skicka e-post' : 'Lähetä sähköposti', url: 'mailto:' + email });
-    if (!phone && !email) push({ type: 'contact', mode: 'contact_form', label: actionLang === 'en' ? 'Leave your contact details' : actionLang === 'sv' ? 'Lämna dina kontaktuppgifter' : 'Jätä yhteystiedot' });
+  if (requestedContact || /yhteys|yhteytta|yhteystiedot|ottaa yhteytta|contact|get in touch|kontakt|kontakta/.test(q)) {
+    if (phone && requestedContact!=='email') push({ type:'contact',mode:'phone',label:actionLang==='en'?'Call us':actionLang==='sv'?'Ring oss':'Soita',url:'tel:'+phone.replace(/[^\d+]/g,'') });
+    if (email && requestedContact!=='phone') push({ type:'contact',mode:'email',label:actionLang==='en'?'Send email':actionLang==='sv'?'Skicka e-post':'Lähetä sähköposti',url:'mailto:'+email });
+    if ((requestedContact==='phone'&&!phone) || (requestedContact==='email'&&!email) || (!requestedContact&&!phone&&!email)) {
+      push({ type:'contact',mode:'contact_form',label:actionLang==='en'?'Leave your contact details':actionLang==='sv'?'Lämna dina kontaktuppgifter':'Jätä yhteystiedot' });
+    }
   }
 
   if (/tilausnumero|tilaukseni|tilauksen tila|seuranta|order status|where is my order|orderstatus|var är min beställning|var ar min bestallning/.test(q)) {
@@ -1571,6 +1599,26 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   }
   if (/^(kiitos|kiitti|thanks|thank you|tack|tack så mycket|tack sa mycket)[!. ]*$/.test(normalized)) {
     return { answer: responseLang === 'en' ? 'You’re welcome! I’m happy to help if you have anything else.' : responseLang === 'sv' ? 'Varsågod! Jag hjälper gärna om du undrar över något mer.' : 'Ole hyvä! Autan mielelläni, jos tulee vielä jotain mieleen.', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Thanks' : responseLang === 'sv' ? 'Tack' : 'Kiitos', sourceIds: [], selected: [] };
+  }
+
+  // Direct phone/email requests are factual lookups, not generic FAQ
+  // retrieval. Respond with the verified value, or disclose its absence.
+  const contactRequested=explicitContactQuestion(cleanMessage);
+  if (contactRequested) {
+    const title=contactRequested==='phone'?'Puhelinnumero':'Sähköposti';
+    const verified=verifiedContactValue(rows,title);
+    const isPhone=contactRequested==='phone';
+    const answer=verified
+      ? (responseLang==='en'?(isPhone?'Our phone number is ':'Our email address is ')
+          :responseLang==='sv'?(isPhone?'Vårt telefonnummer är ':'Vår e-postadress är ')
+          :(isPhone?'Puhelinnumeromme on ':'Sähköpostiosoitteemme on '))+verified.value+'.'
+      : responseLang==='en'
+        ? (isPhone?'There is no verified phone number in the company information. Leave your contact details so the company can get back to you.':'There is no verified email address in the company information. Leave your contact details so the company can get back to you.')
+        : responseLang==='sv'
+          ? (isPhone?'Det finns inget bekräftat telefonnummer i företagets information. Lämna dina kontaktuppgifter så kan företaget återkomma.':'Det finns ingen bekräftad e-postadress i företagets information. Lämna dina kontaktuppgifter så kan företaget återkomma.')
+          : (isPhone?'Yrityksen vahvistetuista tiedoista ei löytynyt puhelinnumeroa. Jätä yhteystietosi, niin yritys voi palata sinulle.':'Yrityksen vahvistetuista tiedoista ei löytynyt sähköpostiosoitetta. Jätä yhteystietosi, niin yritys voi palata sinulle.');
+    return {answer,handoff:!verified,confidence:verified?1:0.2,intent:'Yhteystiedot',
+      sourceIds:verified?.row.id?[verified.row.id]:[],selected:verified?[verified.row]:[]};
   }
 
   if (queryTopic(cleanMessage) === 'quote') {
@@ -4507,7 +4555,8 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const primaryLinkAction = actions.find((action) => action?.url && /^https?:\/\//i.test(action.url));
     // Contact questions are actions, not scraped navigation prose. Do not let
     // headings such as "Yhteystiedot Pyydä tarjous..." become the chat answer.
-    if (!handoff && result.intent === 'Yhteystiedot' && actions.length) {
+    if (!handoff && result.intent === 'Yhteystiedot' && !explicitContactQuestion(message)
+        && actions.some(action=>action?.url)) {
       answer = lang === 'en' ? 'You can contact us here:'
         : lang === 'sv' ? 'Du kan kontakta oss här:'
         : 'Voit ottaa yhteyttä tästä:';

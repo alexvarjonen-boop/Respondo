@@ -499,3 +499,61 @@ test('dashboard preview API handles the exact single-service booking question fr
   await new Promise(resolve=>server.close(resolve));
  }
 });
+
+
+
+test('verified phone number is answered literally and produces a callable action',async()=>{
+ const rows=[{id:'phone',category:'Yhteystiedot',title:'Puhelinnumero',answer:'+358 40 123 4567',source_type:'website'}];
+ for(const message of ['puhelinnumero','Mikä on puhelinnumeronne?']) {
+   const reply=await generateGroundedAnswer({rows,message,lang:'fi'});
+   assert.equal(reply.answer,'Puhelinnumeromme on +358 40 123 4567.');
+   assert.equal(reply.handoff,false);
+   assert.deepEqual(reply.sourceIds,['phone']);
+   const actions=chatActions(rows,message,false,'fi');
+   assert.ok(actions.some(a=>a.url==='tel:+358401234567'&&a.label==='Soita'));
+ }
+ const en=await generateGroundedAnswer({rows,message:'phone number',lang:'en'});
+ assert.match(en.answer,/\+358 40 123 4567/);
+ const sv=await generateGroundedAnswer({rows,message:'telefonnummer',lang:'sv'});
+ assert.match(sv.answer,/\+358 40 123 4567/);
+});
+test('missing or invalid number never gives an empty contact promise or arbitrary number',async()=>{
+ const rows=[{id:'email',category:'Yhteystiedot',title:'Sähköposti',answer:'info@example.fi',source_type:'website'},
+   {id:'postcode',category:'Yhteystiedot',title:'Puhelinnumero',answer:'20100 Turku',source_type:'website'}];
+ const reply=await generateGroundedAnswer({rows,message:'puhelinnumero',lang:'fi'});
+ assert.equal(reply.handoff,true);
+ assert.match(reply.answer,/ei löytynyt puhelinnumeroa/);
+ assert.doesNotMatch(reply.answer,/Voit ottaa yhteyttä tästä/);
+ const actions=chatActions(rows,'puhelinnumero',true,'fi');
+ assert.ok(actions.some(a=>a.mode==='contact_form'));
+ assert.equal(actions.some(a=>a.url?.startsWith('tel:')),false);
+ const mail=await generateGroundedAnswer({rows,message:'sähköpostiosoite',lang:'fi'});
+ assert.equal(mail.handoff,false);
+ assert.match(mail.answer,/info@example.fi/);
+});
+test('demo-chat HTTP endpoint gives phone value and a phone action, or explicitly says it is unavailable',async()=>{
+ const {app}=await import('../server.mjs');
+ const testServer=app.listen(0,'127.0.0.1');
+ await new Promise(resolve=>testServer.once('listening',resolve));
+ const ask=async profile=>{
+  const response=await fetch('http://127.0.0.1:'+testServer.address().port+'/api/public/demo-chat',{
+    method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({lang:'fi',message:'puhelinnumero',profile})
+  });
+  assert.equal(response.status,200);
+  return response.json();
+ };
+ try {
+  const found=await ask({phone:'040 123 4567'});
+  assert.equal(found.answer,'Puhelinnumeromme on 040 123 4567.');
+  assert.equal(found.handoff,false);
+  assert.ok(found.actions.some(a=>a.url==='tel:0401234567'));
+  const missing=await ask({email:'info@example.fi'});
+  assert.equal(missing.handoff,true);
+  assert.match(missing.answer,/ei löytynyt puhelinnumeroa/);
+  assert.ok(missing.actions.some(a=>a.mode==='contact_form'));
+  assert.equal(missing.actions.some(a=>a.url?.startsWith('tel:')),false);
+ } finally {
+  await new Promise(resolve=>testServer.close(resolve));
+ }
+});
