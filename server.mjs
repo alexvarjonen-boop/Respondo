@@ -1113,7 +1113,11 @@ function groundedFinnishServiceReply(message, history, rows) {
   const direct=q.match(/^(teetteko|pesetteko|puhdistatteko|huollatteko|asennatteko|maalaatteko|korjaatteko|raivaatteko|vietteko)\s+([a-z-]+)$/);
   const follow=q.match(/^(?:enta|mites|ja)\s+([a-z-]+)$/);
   const order=q.match(/^voiko\s+teilta\s+tilata\s+([a-z]+(?:\s+[a-z]+){0,2})$/);
-  if (!direct && !follow && !order) return null;
+  // Accept common Finnish inflections and a doubled vowel typo. Check oiling
+  // as a standalone service: a before/after marketing sentence is not proof
+  // that the business actually offers the oiling work.
+  const oil=q.match(/^oljya{1,2}tteko\s+([a-z-]+)$/);
+  if (!direct && !follow && !order && !oil) return null;
   // Never interpret timing, price, a discount, or multiple requested services
   // as a simple positive service confirmation.
   if (queryTopic(message) && !direct && !order) return null;
@@ -1125,6 +1129,36 @@ function groundedFinnishServiceReply(message, history, rows) {
     if (importedKnowledgeJunk(String(row.title||'')+' '+String(row.answer||''))) return false;
     return knowledgeTopic(String(row.category||'')+' '+String(row.title||''))==='services';
   });
+
+  if (oil) {
+    const requested=oil[1].trim();
+    const subjectRoot=finnishServiceStem(requested).slice(0,6);
+    if (subjectRoot.length<4 || /^(?:tanaan|huomen|ilmais|aina|kaikk)/.test(requested)) return {supported:false};
+    const matchesSubject=text=>normalizeSearchText(text).split(/[\s-]+/)
+      .map(word=>finnishServiceStem(word).slice(0,6))
+      .includes(subjectRoot);
+    const affirmative=/(?:^|[.!?]\s*)(?:oljya?mme|tarjoamme|teemme)\b/;
+    const supported=approved.find(row=>{
+      const title=normalizeSearchText(row.title||'');
+      const answer=normalizeSearchText(row.answer||'');
+      // Explicit exclusions override even an otherwise plausible heading.
+      if (/\b(?:emme|ei|eivat|not|inte|aldrig)\b/.test(answer)) return false;
+      if (matchesSubject(title) && /oljy/.test(title)) return true;
+      // The answer itself may explicitly offer the service, even if the
+      // owner stored it under the generic heading "Palvelut".
+      return String(row.answer||'').split(/[.!?]+/).some(sentence=>{
+        const clause=normalizeSearchText(sentence);
+        return matchesSubject(clause) && /oljy/.test(clause) &&
+          affirmative.test(clause);
+      });
+    });
+    if (!supported) return {supported:false};
+    return {
+      supported:true,
+      answer:'Kyllä, öljyämme '+requested+'.',
+      evidence:[supported]
+    };
+  }
 
   if (order) {
     const subject=order[1].trim();

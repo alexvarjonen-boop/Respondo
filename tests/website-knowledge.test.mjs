@@ -311,3 +311,59 @@ test('dashboard demo API answers verified multi-service orders and preserves par
   await new Promise(resolve=>server.close(resolve));
  }
 });
+
+
+test('direct terrace oiling question supports inflection and a common spelling variation when explicitly approved',async()=>{
+ const confirmed=[{id:'oil',category:'Palvelut',title:'Terassin pesu ja öljyäminen',
+   answer:'Terassin pesu ja öljyäminen onnistuvat.',source_type:'website',keywords:['palvelut']}];
+ for (const message of ['öljyättekö terasseja','öljyäättekö terasseja?']) {
+   const reply=await generateGroundedAnswer({rows:confirmed,message,lang:'fi'});
+   assert.equal(reply.handoff,false,JSON.stringify(reply));
+   assert.equal(reply.answer,'Kyllä, öljyämme terasseja.');
+   assert.deepEqual(reply.sourceIds,['oil']);
+ }
+ const generalTitle=[{id:'explicit',category:'Palvelut',title:'Palvelut',
+   answer:'Öljyämme terasseja asiakkaiden tilauksesta.',source_type:'website',keywords:['palvelut']}];
+ const explicit=await generateGroundedAnswer({rows:generalTitle,message:'öljyättekö terasseja',lang:'fi'});
+ assert.equal(explicit.answer,'Kyllä, öljyämme terasseja.');
+ assert.equal(explicit.handoff,false);
+});
+test('incidental before-and-after copy and unrelated or denied oiling never count as an oiling service',async()=>{
+ const cases=[
+  [{id:'after',category:'Palvelut',title:'Terassin pesu',
+    answer:'Terassi näyttää pesun ja öljyämisen jälkeen kuin uudelta.',source_type:'website',keywords:['palvelut']}],
+  [{id:'wrong',category:'Palvelut',title:'Laiturien öljyäminen',
+    answer:'Öljyämme laitureita.',source_type:'website',keywords:['palvelut']}],
+  [{id:'no',category:'Palvelut',title:'Terassin öljyäminen',
+    answer:'Emme öljyä terasseja, tarjoamme vain pesua.',source_type:'website',keywords:['palvelut']}],
+  [{id:'review',category:'Arvostelut',title:'Terassien öljyäminen',
+    answer:'Öljyämme terasseja.',source_type:'website',keywords:['palvelut']}]
+ ];
+ for (const rows of cases) {
+   const reply=await generateGroundedAnswer({rows,message:'öljyättekö terasseja',lang:'fi'});
+   assert.equal(reply.handoff,true,JSON.stringify(reply));
+   assert.equal(reply.answer,'');
+ }
+});
+test('preview HTTP endpoint confirms explicit oiling and refuses incidental oiling claims',async()=>{
+ const {app}=await import('../server.mjs');
+ const server=app.listen(0,'127.0.0.1');
+ await new Promise(resolve=>server.once('listening',resolve));
+ const endpoint='http://127.0.0.1:'+server.address().port+'/api/public/demo-chat';
+ const ask=async facts=>{
+   const res=await fetch(endpoint,{method:'POST',headers:{'content-type':'application/json'},
+     body:JSON.stringify({lang:'fi',message:'öljyäättekö terasseja',profile:{customFacts:facts}})});
+   assert.equal(res.status,200);
+   return res.json();
+ };
+ try {
+   const yes=await ask([{key:'Terassin pesu ja öljyäminen',answer:'Tarjoamme terassien pesua ja öljyämistä.'}]);
+   assert.equal(yes.handoff,false,JSON.stringify(yes));
+   assert.equal(yes.answer,'Kyllä, öljyämme terasseja.');
+   const uncertain=await ask([{key:'Terassin pesu',answer:'Terassi näyttää pesun ja öljyämisen jälkeen kuin uudelta.'}]);
+   assert.equal(uncertain.handoff,true);
+   assert.doesNotMatch(uncertain.answer,/Kyllä, öljyämme/);
+ } finally {
+   await new Promise(resolve=>server.close(resolve));
+ }
+});
