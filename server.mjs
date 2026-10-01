@@ -625,7 +625,7 @@ function contextualizeConversationQuery(message, history = []) {
   const q=normalizeSearchText(current);
   if (!current || !q) return current;
 
-  const lead=q.match(/^(?:enta|entas|mites|miten sitten|ja enta|no enta|what about|how about|and what about|och|och da|men hur)s+(.+)$/);
+  const lead=q.match(/^(?:enta|entas|mites|miten sitten|ja enta|no enta|what about|how about|and what about|och|och da|men hur)\s+(.+)$/);
   const pronoun=/\b(?:se|sen|sita|siita|sille|siihen|tama|taman|tuo|tuota|tota|ne|niita|niiden|sama|saman|it|that|this|those|them|same|det|den|detta|dem|samma)\b/.test(q);
   const terseTopic=/^(?:paljonko|mita maksaa|mikä hinta|mika hinta|hinta|milloin|monelta|onko auki|lauantaina|sunnuntaina|viikonloppuna|how much|what price|when|opening hours|hur mycket|vilket pris|när|nar|öppet|oppet)\b/.test(q);
   if (!lead && !pronoun && !terseTopic) return current;
@@ -1333,9 +1333,18 @@ function groundedFinnishServiceReply(message, history, rows) {
   // that the business actually offers the oiling work.
   const oil=q.match(/^oljya{1,2}tteko\s+([a-z-]+)$/);
   if (!direct && !follow && !order && !oil) return null;
-  // Never interpret timing, price, a discount, or multiple requested services
-  // as a simple positive service confirmation.
-  if (queryTopic(message) && !direct && !order) return null;
+  // Never interpret pricing, opening-hours, contact or other topic changes
+  // as service confirmations. A service-word follow-up is allowed only when
+  // the preceding conversation is also about a service.
+  const messageTopic=queryTopic(message);
+  if (messageTopic && messageTopic!=='services' && !direct && !order) return null;
+  if (follow && history.length) {
+    const previousQuestion=[...history].reverse()
+      .map(event=>String(event?.question||event?.user||'').trim())
+      .find(Boolean);
+    const previousTopic=previousQuestion ? conversationTopic(previousQuestion) : '';
+    if (previousTopic && previousTopic!=='services') return null;
+  }
 
   // A follow-up can already contain the service action itself, e.g.
   // "Entä ikkunoidenpesun?" after another order question. Resolve that phrase
