@@ -1,3 +1,15 @@
+export const FEATURE_HIGHLIGHTS = [
+  ['Oppii yrityksen verkkosivuilta ja muodostaa tietopohjan.','Lär sig från företagets webbplats och bygger en kunskapsbas.','Learns from the company website and builds a knowledge base.'],
+  ['Ymmärtää vapaasti muotoiltuja kysymyksiä.','Förstår fritt formulerade frågor.','Understands freely worded questions.'],
+  ['Vastaa yrityksen omilla tiedoilla.','Svarar med företagets egna uppgifter.','Answers using the company’s own information.'],
+  ['Toimii suomeksi, ruotsiksi ja englanniksi.','Fungerar på finska, svenska och engelska.','Works in Finnish, Swedish and English.'],
+  ['Vastaa asiakkaan kielellä, vaikka tietopohja olisi suomeksi.','Svarar på kundens språk även om kunskapsbasen är på finska.','Answers in the customer’s language even when the knowledge base is in Finnish.'],
+  ['Muistaa keskustelun kontekstia ja ymmärtää jatkokysymyksiä.','Kommer ihåg samtalskontexten och förstår följdfrågor.','Remembers conversation context and understands follow-up questions.'],
+  ['Ohjaa ihmiselle, jos vastausta ei löydy.','Hänvisar till en människa om svaret inte hittas.','Hands the conversation to a person when an answer cannot be found.'],
+  ['Kerää asiakkaan yhteystiedot jatkoyhteydenottoa varten.','Samlar kundens kontaktuppgifter för fortsatt kontakt.','Collects customer contact details for follow-up.'],
+  ['Ohjaa tarvittaessa ajanvaraukseen tai tarjouspyyntöön.','Hänvisar vid behov till bokning eller offertförfrågan.','Directs customers to booking or a quote request when needed.'],
+  ['Yritys hallitsee itse botin tietoja, asetuksia ja ulkoasua.','Företaget hanterar själv botens information, inställningar och utseende.','The company controls the bot’s information, settings and appearance.']
+];
 export const FEATURE_GROUPS = [
   {
     key: 'chat',
