@@ -482,6 +482,12 @@ function scoreKnowledgeRow(row, query) {
 
 function selectRelevantKnowledge(rows, query, limit = 6) {
   const q = normalizeSearchText(query);
+  const wantedTopic = queryTopic(query);
+  // A service-specific price question must not return the price of an unrelated
+  // service just because both price rows share the category/keywords 'Hinnat'.
+  const priceSubjects = wantedTopic === 'pricing' ? searchTokens(query).filter(word =>
+    word.length >= 4 && !/^(?:hinn|maks|kustann|palvel|hint|price|prices|pricing|cost|much|per|hour|tunt|euro|eur|pris|priser|kost|vilken|mycket|paljon|alka|alkaen|alkaa|from|starting|does|finns|teetteko)$/.test(word)
+  ) : [];
   const legalQuery = /tietosuoja|privacy|käyttöeh|kayttoeh|terms|ehto|cookie|eväste|evaste|gdpr/.test(q);
   return rows
     .filter(usableWebsiteRow)
@@ -493,12 +499,17 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
       return !/terms of service|privacy policy|tietosuoja|kayttoeh|käyttöeh|cookie policy|evaste|eväste|legal notice/.test(hay);
     })
     .filter((x) => {
-      const wanted=queryTopic(query);
+      const wanted=wantedTopic;
       if(!wanted) return true;
       const rowTopic=knowledgeTopic(String(x.title||'')+' '+String(x.category||'')+' '+String(x.keywords||'')+' '+String(x.source_url||x.sourceUrl||''));
       // For explicit intents, a row classified as another intent must never be used
       // merely because a few generic words overlap.
-      return !rowTopic || rowTopic===wanted;
+      if(rowTopic && rowTopic!==wanted) return false;
+      if(wanted==='pricing' && priceSubjects.length) {
+        const evidence=searchTokens(String(x.title||'')+' '+String(x.answer||''));
+        return priceSubjects.some(subject => evidence.some(token => token.slice(0,6)===subject.slice(0,6)));
+      }
+      return true;
     })
     .map((x) => ({ ...x, _score: scoreKnowledgeRow(x, query) }))
     .filter((x) => x._score >= 2)
