@@ -7563,3 +7563,23 @@ body{
 @media(max-width:760px){
  .business-profile-form .profile-email-save{width:100%!important}
 }
+
+
+/* 2026-10-01 mobile public header: always keep the main Respondo header visible
+   while the customer scrolls. This intentionally does not affect dashboard headers. */
+@media (max-width:760px){
+  body:not(.dashboard-page) .nav{
+    position:-webkit-sticky!important;
+    position:sticky!important;
+    top:0!important;
+    z-index:1800!important;
+    margin:0!important;
+    background:rgba(249,248,250,.96)!important;
+    -webkit-backdrop-filter:blur(22px) saturate(180%)!important;
+    backdrop-filter:blur(22px) saturate(180%)!important;
+    box-shadow:0 1px 0 rgba(17,17,20,.06)!important;
+  }
+  body:not(.dashboard-page) .navin{
+    min-height:58px!important;
+  }
+}
