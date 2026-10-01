@@ -474,10 +474,19 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
   const legalQuery = /tietosuoja|privacy|käyttöeh|kayttoeh|terms|ehto|cookie|eväste|evaste|gdpr/.test(q);
   return rows
     .filter((x) => normalizeSearchText(x.title) !== 'vastaustyyli')
+    .filter((x) => !importedKnowledgeJunk(String(x.title||'')+' '+String(x.answer||'')))
     .filter((x) => {
       if (legalQuery) return true;
       const hay = normalizeSearchText(String(x.title||'')+' '+String(x.category||'')+' '+String(x.source_url||x.sourceUrl||'')+' '+String(x.answer||'').slice(0,700));
       return !/terms of service|privacy policy|tietosuoja|kayttoeh|käyttöeh|cookie policy|evaste|eväste|legal notice/.test(hay);
+    })
+    .filter((x) => {
+      const wanted=queryTopic(query);
+      if(!wanted) return true;
+      const rowTopic=knowledgeTopic(String(x.title||'')+' '+String(x.category||'')+' '+String(x.keywords||'')+' '+String(x.source_url||x.sourceUrl||''));
+      // For explicit intents, a row classified as another intent must never be used
+      // merely because a few generic words overlap.
+      return !rowTopic || rowTopic===wanted;
     })
     .map((x) => ({ ...x, _score: scoreKnowledgeRow(x, query) }))
     .filter((x) => x._score >= 2)
@@ -896,10 +905,17 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
 }
 
 function importedKnowledgeJunk(value) {
-  const text = normalizeSearchText(value);
+  const raw = String(value || '').replace(/\s+/g, ' ').trim();
+  const text = normalizeSearchText(raw);
   if (!text) return true;
+  // Never let navigation, widgets, product-card chrome or source-code fragments
+  // become customer knowledge. These strings are common on retailer/CMS pages.
   if (/(cookie|evasteaset|privacy policy|tietosuojaseloste|terms of service|kayttoehdot|copyright|kaikki oikeudet pidatetaan|hyvaksy evaste|all rights reserved|localstorage|sessionstorage|queryselector|addeventlistener|json stringify|json parse|supported includes)/.test(text)) return true;
-  if (/(const |let |var |function |document |window |=>|webpack|sourceMappingURL)/i.test(String(value || ''))) return true;
+  if (/(skip to content|toggle nav|toggle navigation|ved[aä] liukus[aä][aä]dint[aä]|n[aä]hd[aä]ksesi muutos|katso video ty[oö]n etenemisest[aä]|arvostelut?\s*\(\s*\)|lis[aä][aä] ostoskoriin|add to cart|tuotenumero\s*[:#]?|product code\s*[:#]?|sku\s*[:#]?)/i.test(raw)) return true;
+  if (/(const |let |var |function |document |window |=>|webpack|sourceMappingURL)/i.test(raw)) return true;
+  // A long run of menu/category labels without sentence punctuation is not a fact.
+  const words = text.split(' ').filter(Boolean);
+  if (words.length >= 12 && !/[.!?]/.test(raw) && /(?:tuotteet|myymalat|myymälät|kampanja|nav|menu|kategori|category)/i.test(raw)) return true;
   return false;
 }
 
@@ -960,7 +976,7 @@ function websiteKnowledgeCandidates(bundle) {
       const title=sentence.replace(/[.!?]\s*$/,'').trim().slice(0,120) || category;
       const candidate={category,title,answer:context,keywords:[...new Set(searchTokens(title+' '+context).slice(0,14))],sourceUrl:doc.url};
       candidate._quality=importedKnowledgeQuality(candidate);
-      if(candidate._quality>-20) candidates.push(candidate);
+      if(candidate._quality>-20 && !importedKnowledgeJunk(title+' '+context)) candidates.push(candidate);
       if(candidates.length>=10000) break;
     }
   }
@@ -1142,12 +1158,11 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     selected = rows
       .filter((row) => normalizeSearchText(row.title) !== 'vastaustyyli')
       .filter((row) => !importedKnowledgeJunk(String(row.title||'')+' '+String(row.answer||'')))
-      .map((row) => ({...row,_score:scoreKnowledgeRow(row, localQuery)}))
-      .sort((a,b) => {
-        const topicA=knowledgeTopic(String(a.title||'')+' '+String(a.category||'')+' '+String(a.keywords||''));
-        const topicB=knowledgeTopic(String(b.title||'')+' '+String(b.category||'')+' '+String(b.keywords||''));
-        return (topicB==='services'?20:0)-(topicA==='services'?20:0) || Number(b._score||0)-Number(a._score||0);
-      })
+      .map((row) => ({...row,_score:scoreKnowledgeRow(row, localQuery),_topic:knowledgeTopic(String(row.title||'')+' '+String(row.category||'')+' '+String(row.keywords||'')+' '+String(row.source_url||''))}))
+      // "Mitä palveluja teette?" may only summarize rows that are actually
+      // classified as services. Never fall back to arbitrary products/UI text.
+      .filter((row) => row._topic === 'services')
+      .sort((a,b) => Number(b._score||0)-Number(a._score||0))
       .slice(0,8);
   }
   if (!selected.length) {
