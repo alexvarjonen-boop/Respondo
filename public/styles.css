@@ -7467,3 +7467,54 @@ body{
   .website-import-review-head .btn{width:100%!important}
   .website-import-candidates{max-height:430px!important}
 }
+
+
+/* Homepage desktop parity: intentionally keep the public landing page in the
+   same visual mode as the current phone layout on larger screens. */
+@media(min-width:721px){
+  body:not(.dashboard-page) .container{width:min(100% - 26px,760px)!important}
+  body:not(.dashboard-page) .section{padding:78px 0!important}
+  body:not(.dashboard-page) .nav{padding:8px 0!important}
+  body:not(.dashboard-page) .navin{padding:7px 8px 7px 11px!important;min-height:58px!important;height:auto!important;border-radius:26px!important}
+  body:not(.dashboard-page) .brand-word{font-size:18px!important}
+  body:not(.dashboard-page) .brand-mark{width:31px!important;height:31px!important}
+  body:not(.dashboard-page) .navlinks{display:none!important}
+  body:not(.dashboard-page) .navactions .btn.ghost{display:none!important}
+  body:not(.dashboard-page) .navactions .btn.ink{padding:12px 15px!important;font-size:13px!important}
+  body:not(.dashboard-page) .product-subnav{display:block!important;top:74px!important;z-index:1100!important}
+  body:not(.dashboard-page) .product-subnav-inner{display:block!important;min-height:58px!important;padding:6px 0!important;width:100%!important}
+  body:not(.dashboard-page) .product-subnav .subnav-title{display:none!important}
+  body:not(.dashboard-page) .product-subnav .home-swipe-nav{display:flex!important;width:100%!important;padding:5px 13px 7px!important;gap:7px!important}
+  body:not(.dashboard-page) .product-subnav .home-swipe-nav a{min-height:40px!important;padding:0 13px!important;font-size:11px!important}
+  body:not(.dashboard-page) .product-subnav .home-section-jump{display:none!important}
+  body:not(.dashboard-page) .hero{padding-top:54px!important}
+  body:not(.dashboard-page) .hero-grid{display:block!important}
+  body:not(.dashboard-page) .hero-copy{padding-bottom:36px!important}
+  body:not(.dashboard-page) .hero h1{font-size:clamp(50px,9vw,72px)!important}
+  body:not(.dashboard-page) .hero .lead{font-size:17px!important}
+  body:not(.dashboard-page) .hero-actions{gap:8px!important;flex-wrap:wrap!important}
+  body:not(.dashboard-page) .hero-actions .btn{width:100%!important;justify-content:center!important}
+  body:not(.dashboard-page) .hero-actions .text-link{width:100%!important;margin-top:8px!important}
+  body:not(.dashboard-page) .trust-row{gap:7px!important}
+  body:not(.dashboard-page) .trust-row span{font-size:11px!important}
+  body:not(.dashboard-page) .signal-console{margin-top:42px!important;border-radius:28px!important}
+  body:not(.dashboard-page) .console-rail{display:none!important}
+  body:not(.dashboard-page) .console-grid{display:block!important}
+  body:not(.dashboard-page) .console-main{padding:0!important}
+  body:not(.dashboard-page) .console-header{padding:18px!important}
+  body:not(.dashboard-page) .conversation{padding:14px!important}
+  body:not(.dashboard-page) .console-stats{grid-template-columns:repeat(3,1fr)!important}
+  body:not(.dashboard-page) .console-stats div{padding:14px 8px!important}
+  body:not(.dashboard-page) .flowline,
+  body:not(.dashboard-page) .control-grid,
+  body:not(.dashboard-page) .visual-grid,
+  body:not(.dashboard-page) .proof-grid,
+  body:not(.dashboard-page) .research-grid,
+  body:not(.dashboard-page) .pricing-wrap{grid-template-columns:1fr!important}
+  body:not(.dashboard-page) .split-head h2,
+  body:not(.dashboard-page) .control-copy h2,
+  body:not(.dashboard-page) .contact-shell h2,
+  body:not(.dashboard-page) .cta-shell h2{font-size:43px!important}
+  body:not(.dashboard-page) .cta-shell{padding:30px!important}
+  body:not(.dashboard-page) .cta-circle{width:118px!important;height:118px!important}
+}
