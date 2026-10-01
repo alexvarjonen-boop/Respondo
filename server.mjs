@@ -1100,28 +1100,53 @@ async function forceAnswerLanguage(answer, lang) {
 }
 
 function specificServiceConfirmation(query, rows) {
-  const normalized=normalizeSearchText(query);
-  // Handle direct Finnish yes/no service questions before the generic service
-  // summary path. Use the original text only for the customer-facing wording.
-  const direct=normalized.match(/^(?:teetteko|tarjoatteko)\s+(.+?)\??$/i);
-  if(!direct) return '';
-  const wanted=searchTokens(direct[1]).filter((x)=>x.length>=4);
-  if(!wanted.length) return '';
+  const normalized=normalizeSearchText(query).replace(/[?!.]+$/,'').trim();
   const hay=normalizeSearchText((rows||[]).map((r)=>String(r?.title||'')+' '+String(r?.answer||'')).join(' '));
-  // Require the requested service to actually exist in the selected company
-  // knowledge. One strong service token is enough for compounds such as
-  // "ikkunanpesuja" vs "ikkunanpesu".
-  const stem=(token)=>token.replace(/(?:ja|jä|jen|ssa|ssä|sta|stä|lla|llä|lle|ksi|t|n)$/i,'');
-  const exists=wanted.some((token)=>{
-    const s=stem(token);
-    return s.length>=5 && hay.includes(s);
-  });
-  if(!exists) return '';
-  let service=String(query||'').trim()
-    .replace(/^(?:teettekö|teetteko|tarjoatteko)\s+/i,'')
-    .replace(/[?!.]+$/,'').trim().toLowerCase();
-  if(!service) return '';
-  return 'Kyllä, teemme '+service+'.';
+  if(!normalized || !hay) return '';
+
+  // Detect broad Finnish yes/no service questions by grammar, not by one verb.
+  // This covers e.g. "Teettekö ikkunanpesuja?", "Viettekö romuja pois?",
+  // "Pesettekö kattoja?", "Leikkaatteko puskia?" and similar wording.
+  const words=normalized.split(/\s+/).filter(Boolean);
+  if(words.length<2 || words.length>9) return '';
+  const first=words[0];
+  const questionVerb=/ko$/.test(first) && !/^(?:onko|voiko|saako|paljonko|montako|miksiko)$/.test(first);
+  const explicit=/^(?:onko teilla|saako teilta|voitteko|pystytteko|onnistuuko)\b/.test(normalized);
+  if(!questionVerb && !explicit) return '';
+
+  const stop=new Set(['onko','teilla','saako','teilta','voitteko','pystytteko','onnistuuko','myos','myoskin','palveluna','palvelua']);
+  let wanted=words.slice(questionVerb?1:0).filter((x)=>!stop.has(x) && x.length>=3);
+  if(!wanted.length) return '';
+
+  const stem=(token)=>token
+    .replace(/(?:minen|mista|mista|ukset|ukset)$/i,'')
+    .replace(/(?:uja|yja|oja|eja|ia|ja|jen|ssa|sta|lla|lle|ksi|tta|t|n)$/i,'');
+  const strong=wanted.map(stem).filter((x)=>x.length>=4);
+  const matched=strong.filter((s)=>hay.includes(s));
+  if(!matched.length) return '';
+
+  // If the company knowledge supports the object/service in the question,
+  // answer the actual question directly instead of listing every service.
+  let phrase=String(query||'').trim().replace(/[?!.]+$/,'').trim();
+  phrase=phrase.replace(/^\S+\s+/,'').trim().toLowerCase();
+  if(!phrase) return '';
+  const verb=first;
+  const verbMap=[
+    [/^teetteko$/,'teemme'],
+    [/^vietteko$/,'viemme'],
+    [/^pesetteko$/,'pesemme'],
+    [/^leikkaatteko$/,'leikkaamme'],
+    [/^siistitteko$/,'siistimme'],
+    [/^maalaatteko$/,'maalaamme'],
+    [/^raivaatteko$/,'raivaamme'],
+    [/^puhdistatteko$/,'puhdistamme'],
+    [/^huollatteko$/,'huollamme'],
+    [/^asennatteko$/,'asennamme'],
+    [/^korjaatteko$/,'korjaamme']
+  ];
+  const mapped=verbMap.find(([re])=>re.test(verb));
+  if(mapped) return 'Kyllä, '+mapped[1]+' '+phrase+'.';
+  return 'Kyllä, tämä onnistuu.';
 }
 
 function naturalServiceAnswer(rows) {
