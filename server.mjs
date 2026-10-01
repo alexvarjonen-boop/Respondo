@@ -1,6 +1,7 @@
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow } from './website-knowledge.mjs';
 import express from 'express';
 import path from 'path';
+import fs from 'fs/promises';
 import crypto from 'crypto';
 import dns from 'dns/promises';
 import net from 'net';
@@ -18,6 +19,139 @@ const app = express();
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT || 3000);
 const BASE = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+
+const SEO_INDEXABLE_PATHS = new Set([
+  '/',
+  '/ominaisuudet',
+  '/features',
+  '/funktioner',
+  '/tietoturva',
+  '/kayttoehdot',
+  '/tietosuoja',
+  '/evasteet',
+  '/dpa',
+]);
+
+const SEO_APP_PATHS = new Set([
+  '/assistant',
+  '/tilaus',
+  '/kirjaudu',
+  '/maksu-valmis',
+  '/app',
+]);
+
+const SEO_META = {
+  fi: {
+    '/': ['Asiakaspalvelubotti yrityksille 24/7 | Respondo AI', 'Respondo on verkkosivulle asennettava asiakaspalvelubotti yrityksille. Se vastaa asiakkaiden kysymyksiin 24/7 yrityksesi omilla tiedoilla.'],
+    '/ominaisuudet': ['Asiakaspalvelubotin ominaisuudet | Respondo AI', 'Tutustu Respondon ominaisuuksiin: verkkosivubotti, yrityksen oma tietopohja, yhteydenotot, ajanvaraus, keskustelut ja asiakaspalvelun hallinta yhdessä paikassa.'],
+    '/tietoturva': ['Tietoturva ja tietosuoja | Respondo AI', 'Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
+    '/kayttoehdot': ['Käyttöehdot | Respondo AI', 'Respondo AI -palvelun käyttöehdot yritysasiakkaille.'],
+    '/tietosuoja': ['Tietosuojaseloste | Respondo AI', 'Tietosuojaseloste kertoo, mitä henkilötietoja Respondo käsittelee, miksi niitä käsitellään ja miten tiedot suojataan.'],
+    '/evasteet': ['Evästeet | Respondo AI', 'Tietoa Respondon välttämättömistä evästeistä, valinnaisesta kävijätilastoinnista ja evästevalintojen hallinnasta.'],
+    '/dpa': ['Tietojenkäsittely | Respondo AI', 'Tietoa henkilötietojen käsittelystä, kun Respondo toimii yritysasiakkaan henkilötietojen käsittelijänä.'],
+  },
+  sv: {
+    '/': ['Kundservicebot för företag 24/7 | Respondo AI', 'Respondo är en kundservicebot för företags webbplatser. Den svarar kunder dygnet runt med företagets egna godkända uppgifter.'],
+    '/ominaisuudet': ['Funktioner för kundservicebot | Respondo AI', 'Se Respondos funktioner för kundservice, kunskapsbas, kontaktförfrågningar, bokningar och kunddialoger.'],
+    '/tietoturva': ['Datasäkerhet och integritet | Respondo AI', 'Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
+    '/kayttoehdot': ['Användarvillkor | Respondo AI', 'Användarvillkor för Respondo AI:s företagstjänst.'],
+    '/tietosuoja': ['Integritetspolicy | Respondo AI', 'Information om vilka personuppgifter Respondo behandlar, varför de behandlas och hur de skyddas.'],
+    '/evasteet': ['Cookies | Respondo AI', 'Information om nödvändiga cookies, valfri besöksstatistik och hantering av cookieinställningar.'],
+    '/dpa': ['Databehandling | Respondo AI', 'Information om personuppgiftsbehandling när Respondo fungerar som personuppgiftsbiträde för företagskunden.'],
+  },
+  en: {
+    '/': ['Customer Service Bot for Businesses 24/7 | Respondo AI', 'Respondo is a customer service bot for business websites. It answers customers around the clock using your company-approved information.'],
+    '/ominaisuudet': ['Customer Service Bot Features | Respondo AI', 'Explore Respondo features for customer service, your knowledge base, contact requests, bookings and customer conversations.'],
+    '/tietoturva': ['Security and Privacy | Respondo AI', 'See how Respondo protects company and customer data, sign-ins, integrations and service usage.'],
+    '/kayttoehdot': ['Terms of Service | Respondo AI', 'Terms of service for Respondo AI business customers.'],
+    '/tietosuoja': ['Privacy Policy | Respondo AI', 'Learn what personal data Respondo processes, why it is processed and how it is protected.'],
+    '/evasteet': ['Cookies | Respondo AI', 'Information about necessary cookies, optional visitor analytics and cookie preference management.'],
+    '/dpa': ['Data Processing | Respondo AI', 'Information about personal-data processing when Respondo acts as a processor for a business customer.'],
+  },
+};
+
+function seoLanguageForRequest(req) {
+  if (req.path === '/features') return 'en';
+  if (req.path === '/funktioner') return 'sv';
+  const value = String(req.query?.lang || '').toLowerCase();
+  return ['fi','sv','en'].includes(value) ? value : 'fi';
+}
+
+function seoCanonicalPath(pathname) {
+  if (pathname === '/features' || pathname === '/funktioner') return '/ominaisuudet';
+  return pathname;
+}
+
+function requestPublicOrigin(req) {
+  const forwardedProto = String(req.get('x-forwarded-proto') || '').split(',')[0].trim();
+  const forwardedHost = String(req.get('x-forwarded-host') || '').split(',')[0].trim();
+  const protocol = forwardedProto || req.protocol || 'https';
+  const host = forwardedHost || req.get('host');
+  if (host) return protocol + '://' + host;
+  return BASE;
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function seoMetaForRequest(req) {
+  const lang = seoLanguageForRequest(req);
+  const rawPath = req.path || '/';
+  const canonicalPath = seoCanonicalPath(rawPath);
+  const languageMeta = SEO_META[lang] || SEO_META.fi;
+  const fallback = languageMeta['/'];
+  const pair = languageMeta[canonicalPath] || fallback;
+  const isIndexable = SEO_INDEXABLE_PATHS.has(rawPath);
+  const isKnown = isIndexable || SEO_APP_PATHS.has(rawPath);
+  const origin = requestPublicOrigin(req).replace(/\/$/,'');
+  const canonicalUrl = new URL(origin + canonicalPath);
+  if (lang !== 'fi' && rawPath !== '/features' && rawPath !== '/funktioner') {
+    canonicalUrl.searchParams.set('lang', lang);
+  }
+  return {
+    lang,
+    title: pair[0],
+    description: pair[1],
+    robots: isIndexable ? 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1' : 'noindex,nofollow',
+    canonical: canonicalUrl.toString(),
+    origin,
+    isKnown,
+  };
+}
+
+let cachedIndexHtml = '';
+async function renderIndexHtml(req) {
+  if (!cachedIndexHtml) {
+    cachedIndexHtml = await fs.readFile(path.join(__dirname, 'public', 'index.html'), 'utf8');
+  }
+  const seo = seoMetaForRequest(req);
+  let html = cachedIndexHtml
+    .replace(/<html\b[^>]*lang="[^"]*"[^>]*>/i, '<html lang="' + escapeHtml(seo.lang) + '">')
+    .replace(/<title>[\s\S]*?<\/title>/i, '<title>' + escapeHtml(seo.title) + '</title>')
+    .replace(/<meta name="description" content="[^"]*">/i, '<meta name="description" content="' + escapeHtml(seo.description) + '">')
+    .replace(/<meta name="robots" content="[^"]*">/i, '<meta name="robots" content="' + escapeHtml(seo.robots) + '">')
+    .replace(/<meta property="og:title" content="[^"]*">/i, '<meta property="og:title" content="' + escapeHtml(seo.title) + '">')
+    .replace(/<meta property="og:description" content="[^"]*">/i, '<meta property="og:description" content="' + escapeHtml(seo.description) + '">')
+    .replace(/<meta name="twitter:title" content="[^"]*">/i, '<meta name="twitter:title" content="' + escapeHtml(seo.title) + '">')
+    .replace(/<meta name="twitter:description" content="[^"]*">/i, '<meta name="twitter:description" content="' + escapeHtml(seo.description) + '">');
+
+  const verification = String(process.env.GOOGLE_SITE_VERIFICATION || '').trim();
+  const extraHead = [
+    '<link rel="canonical" href="' + escapeHtml(seo.canonical) + '">',
+    '<meta property="og:url" content="' + escapeHtml(seo.canonical) + '">',
+    verification ? '<meta name="google-site-verification" content="' + escapeHtml(verification) + '">' : '',
+  ].filter(Boolean).join('\n');
+
+  html = html.replace('</head>', extraHead + '\n</head>');
+  return { html, seo };
+}
+
 
 const pool = process.env.DATABASE_URL
   ? new pg.Pool({
@@ -6539,9 +6673,17 @@ app.post('/api/billing/cancel', auth, async (req, res) => {
   }
 });
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   if (req.method === 'GET' && !req.path.startsWith('/api/')) {
-    return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    try {
+      const { html, seo } = await renderIndexHtml(req);
+      res.status(seo.isKnown ? 200 : 404);
+      res.type('html').send(html);
+      return;
+    } catch (e) {
+      console.error('SEO shell render failed', e);
+      return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    }
   }
   next();
 });
