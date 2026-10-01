@@ -6,7 +6,7 @@ const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 
 test('public Try Bot has the same visible dashboard shell and default view as paid app',()=>{
-  assert.match(app,/return `\\<div class="appshell dashboard-simple-shell"\\>/);
+  assert.match(app,/return `<div class="appshell dashboard-simple-shell">/);
   assert.doesNotMatch(app,/assistant-demo-shell/);
   const start=app.indexOf("if (path === '/assistant') {");
   const end=app.indexOf("if (path === '/kirjaudu') {",start);
@@ -33,16 +33,13 @@ test('shared dashboard contains the full paid workspace navigation on demo too',
   assert.match(app,/id="billing"/);
 });
 
-test('demo locks only installation HTML while paid dashboard retains the real install code',()=>{
-  const installMarker=app.indexOf('assistant-demo-install-lock');
-  assert.ok(installMarker>0);
-  const area=app.slice(installMarker-1200,installMarker+5000);
-  assert.match(area,/isDemo \? `/);
-  assert.match(area,/HTML-koodia/);
-  assert.match(area,/widget-tunnistetta/);
-  assert.match(area,/id="installCode"/);
-  assert.match(area,/id="copyCode"/);
-  assert.ok(area.indexOf('assistant-demo-install-lock') < area.indexOf('id="installCode"'));
+test('demo keeps the paid installation layout but never exposes a usable install code',()=>{
+  assert.doesNotMatch(app,/assistant-demo-install-lock/);
+  assert.match(app,/Asennuskoodi saatavilla tilauksen jälkeen/);
+  assert.match(app,/class="code-row"><code>\$\{appText\('Asennuskoodi saatavilla tilauksen jälkeen'/);
+  assert.match(app,/button type="button" disabled aria-disabled="true">\$\{appText\('Kopioi'/);
+  assert.match(app,/id="installCode"/);
+  assert.match(app,/id="copyCode"/);
 });
 
 test('demo bindings use the same paid-dashboard element ids and public chat endpoint',()=>{
