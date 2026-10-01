@@ -436,7 +436,7 @@
     const qLang = new URLSearchParams(location.search).get('lang');
     const uiLang = ['fi','sv','en'].includes(qLang) ? qLang : (localStorage.getItem('respondo_lang') || 'fi');
     const at = (fi,sv,en) => uiLang === 'sv' ? sv : uiLang === 'en' ? en : fi;
-    const onDemo = location.pathname === '/assistant';
+    const onDemo = false;
     document.body.insertAdjacentHTML('beforeend', `
       <button class="fx-assistant-launch" type="button" aria-label="${at('Avaa Respondo','Öppna Respondo','Open Respondo')}"><i class="fx-brand-mark"><svg viewBox="0 0 64 64" focusable="false" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#111114"/><path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/></svg></i><span>Respondo</span><b class="fx-live"></b></button>
       <aside class="fx-assistant" aria-label="Respondo">
@@ -455,33 +455,13 @@
       const typing = messages.lastElementChild;
       messages.scrollTop = messages.scrollHeight;
       try {
-        if (location.pathname === '/assistant') {
-          typing.textContent = at('Etsin vastausta yrityksen tiedoista…','Söker svar i företagets uppgifter…','Searching the company information…');
-          const answer = await localAiAnswer(clean, (pct) => {
-            if (pct >= 100) typing.textContent = at('Hetki, etsin vastausta…','Ett ögonblick, jag söker svaret…','One moment, searching for the answer…');
-            messages.scrollTop = messages.scrollHeight;
-          });
-          typing.classList.remove('typing');
-          typing.textContent = answer;
-        } else {
-          await new Promise(r => setTimeout(r, 420 + Math.random()*350));
-          typing.classList.remove('typing');
-          typing.textContent = assistantAnswer(clean);
-        }
+        await new Promise(r => setTimeout(r, 420 + Math.random()*350));
+        typing.classList.remove('typing');
+        typing.textContent = assistantAnswer(clean);
       } catch (err) {
         typing.classList.remove('typing');
-        const fallback = location.pathname === '/assistant'
-          ? (assistantLanguage() === 'fi'
-              ? (ownerProfileFallback(clean) || 'Tätä tietoa ei löytynyt yrityksen tallentamista tiedoista.')
-              : assistantText(
-                  'Tätä tietoa ei löytynyt yrityksen tallentamista tiedoista.',
-                  'Den här informationen hittades inte i företagets sparade uppgifter.',
-                  'This information was not found in the company’s saved details.'
-                ))
-          : assistantAnswer(clean);
-        typing.textContent = fallback + (location.pathname === '/assistant'
-          ? ''
-          : assistantText(' Yhteys katkesi hetkeksi.',' Anslutningen avbröts tillfälligt.',' The connection was interrupted briefly.'));
+        const fallback = assistantAnswer(clean);
+        typing.textContent = fallback + assistantText(' Yhteys katkesi hetkeksi.',' Anslutningen avbröts tillfälligt.',' The connection was interrupted briefly.');
       }
       messages.scrollTop = messages.scrollHeight;
     };
@@ -1238,7 +1218,10 @@
     injectBase();
     kineticNavigation();
     if (location.pathname === '/assistant') {
-      standaloneAssistant();
+      document.body.classList.remove('assistant-standalone');
+      revealTargets();
+      magneticButtons();
+      assistant();
       deepScrollExperience();
       return;
     }
