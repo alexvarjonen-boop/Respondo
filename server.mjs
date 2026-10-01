@@ -4145,6 +4145,18 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
 
     let handoff = result.handoff;
     let answer = result.answer;
+    const actions = chatActions(rows, message, handoff, lang);
+    // Action URLs are UI data, not conversational answers. If retrieval picked
+    // the booking/quote URL itself as the answer, replace it with natural copy
+    // and let the client render the URL only as a clickable action.
+    const primaryLinkAction = actions.find((action) => action?.url && /^https?:\/\//i.test(action.url));
+    if (!handoff && primaryLinkAction && /^https?:\/\/\S+$/i.test(String(answer || '').trim())) {
+      answer = result.intent === 'Ajanvaraus'
+        ? (lang === 'en' ? 'You can book an appointment here:' : lang === 'sv' ? 'Du kan boka en tid här:' : 'Voit varata ajan tästä:')
+        : result.intent === 'Tarjouspyyntö'
+          ? (lang === 'en' ? 'You can request a quote here:' : lang === 'sv' ? 'Du kan be om en offert här:' : 'Voit pyytää tarjouksen tästä:')
+          : answer;
+    }
     if (!handoff && lang !== 'fi') {
       const translated = await forceAnswerLanguage(answer, lang);
       if (translated) answer = translated;
@@ -4160,7 +4172,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       handoff,
       confidence: handoff ? Math.min(result.confidence, 0.35) : result.confidence,
       intent: result.intent,
-      actions: chatActions(rows, message, handoff, lang),
+      actions,
     });
   } catch (e) {
     console.error('Demo chat failed', e);
