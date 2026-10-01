@@ -524,7 +524,7 @@ function inferIntent(message) {
   if (/tarjous|tarjouspyynt|arvio|quote|estimate|offert|prisforslag|prisförslag/.test(q)) return 'Tarjouspyyntö';
   if (/hinta|maksaa|hinnoittelu|kustannus|price|cost|pricing|pris|kostar|kostnad/.test(q)) return 'Hinta';
   if (/auki|lauantai|sunnuntai|viikonloppu|kello|opening|open|hours|öppet|oppet|öppettider|oppettider/.test(q)) return 'Aukioloajat';
-  if (/puhelin|sahkoposti|sähköposti|yhteys|soittaa|phone|email|contact|telefon|e-post|kontakt|ringa/.test(q)) return 'Yhteystiedot';
+  if (/puhelin|sahkoposti|sähköposti|yhteys|yhteytta|yhteyttä|yhteystiedot|ottaa yhteytta|ottaa yhteyttä|soittaa|phone|email|contact|contact us|get in touch|telefon|e-post|kontakt|kontakta|ringa/.test(q)) return 'Yhteystiedot';
   if (/missä|missa|osoite|toimialue|alue|where|address|location|adress|område|omrade/.test(q)) return 'Sijainti';
   if (/palvelu|teette|tarjoatte|onnistuuko|tuote|valikoima|mitä teiltä saa|mita teilta saa|service|services|offer|product|selection|sell|tjänst|tjanst|tjänster|tjanster|erbjuder/.test(q)) return 'Palvelut';
   return 'Asiakaskysymys';
@@ -543,6 +543,12 @@ function chatActions(rows, message, handoff = false, lang = 'fi') {
     if (!key || actions.some((x) => (x.url || (x.mode ? x.mode + ':' + x.type : '')) === key)) return;
     actions.push(action);
   };
+
+  if (/puhelin|sahkoposti|yhteys|yhteytta|yhteystiedot|ottaa yhteytta|soittaa|phone|email|contact|get in touch|telefon|e-post|kontakt|kontakta|ringa/.test(q)) {
+    if (phone) push({ type: 'contact', mode: 'phone', label: actionLang === 'en' ? 'Call us' : actionLang === 'sv' ? 'Ring oss' : 'Soita', url: 'tel:' + phone.replace(/\s+/g,'') });
+    if (email) push({ type: 'contact', mode: 'email', label: actionLang === 'en' ? 'Send email' : actionLang === 'sv' ? 'Skicka e-post' : 'Lähetä sähköposti', url: 'mailto:' + email });
+    if (!phone && !email) push({ type: 'contact', mode: 'contact_form', label: actionLang === 'en' ? 'Leave your contact details' : actionLang === 'sv' ? 'Lämna dina kontaktuppgifter' : 'Jätä yhteystiedot' });
+  }
 
   if (/tilausnumero|tilaukseni|tilauksen tila|seuranta|order status|where is my order|orderstatus|var är min beställning|var ar min bestallning/.test(q)) {
     push({ type: 'order_status', mode: 'order_form', label: actionLang === 'en' ? 'Check order status' : actionLang === 'sv' ? 'Kontrollera orderstatus' : 'Tarkista tilauksen tila' });
