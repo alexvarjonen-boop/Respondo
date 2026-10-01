@@ -3847,6 +3847,21 @@ async function route() {
               link.target = '_blank';
               link.rel = 'noopener noreferrer';
               link.textContent = action.label || appText('Avaa linkki','Öppna länken','Open link');
+              // Make actions look and behave like actual CTA buttons even when
+              // the surrounding dashboard stylesheet has no dedicated rule.
+              Object.assign(link.style, {
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: '10px',
+                padding: '11px 16px',
+                borderRadius: '12px',
+                background: '#111',
+                color: '#fff',
+                textDecoration: 'none',
+                fontWeight: '700',
+                lineHeight: '1.2'
+              });
               actionWrap.appendChild(link);
             });
             bubble.appendChild(actionWrap);
