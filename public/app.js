@@ -2530,7 +2530,7 @@ async function agentDashboard(me) {
   try { data=await api('/api/app/agent-dashboard'); }
   catch(e){ return `<div class="container"><div class="notice error">${esc(e.message)}</div></div>`; }
   const threads=data.liveThreads||[], agent=data.agent||me;
-  return `<div class="appshell dashboard-simple-shell ${isDemo ? 'assistant-demo-shell' : ''}"><main class="appmain dashboard-simple-main">
+  return `<div class="appshell dashboard-simple-shell"><main class="appmain dashboard-simple-main">
     <header class="dashboard-topbar"><div class="dashboard-topbar-brand">${logo()}<div><b>${esc(agent.display_name||'')}</b><small>${appText('Asiakaspalvelu','Kundservice','Customer support')}</small></div></div><button class="btn" id="logoutAgent">${appText('Kirjaudu ulos','Logga ut','Log out')}</button></header>
     <section class="panel"><div class="panel-head"><div><small>${appText('OMA TYÖPÖYTÄ','MIN ARBETSYTA','MY WORKSPACE')}</small><h1>${appText('Omat keskustelut','Mina konversationer','My conversations')}</h1><p>${appText('Näet vain sinulle osoitetut asiakaskeskustelut.','Du ser endast kundkonversationer som tilldelats dig.','You only see customer conversations assigned to you.')}</p></div><span>${Number(data.stats?.open||0)} ${appText('avointa','öppna','open')}</span></div>
     <section class="support-agent-self-card"><div class="support-agent-profile-head"><span class="support-agent-avatar">${agent.avatar?`<img src="${esc(agent.avatar)}" alt="">`:esc(String(agent.display_name||'?')[0].toUpperCase())}</span><span class="support-agent-identity"><b>${esc(agent.display_name||'')}</b><small>@${esc(agent.username||'')}</small></span></div>
