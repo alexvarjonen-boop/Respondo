@@ -503,7 +503,10 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
 
 function knowledgeValue(rows, title) {
   const wanted = normalizeSearchText(title);
-  const row = rows.find((x) => normalizeSearchText(x.title) === wanted);
+  const matches = rows.filter((x) => normalizeSearchText(x.title) === wanted);
+  // Prefer explicit profile/demo values over older imported/saved rows. This is
+  // especially important in dashboard preview where the form value must win.
+  const row = matches.find((x) => String(x.id || '').startsWith('demo-')) || matches[0];
   return String(row?.answer || '').trim();
 }
 
