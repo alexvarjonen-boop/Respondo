@@ -2289,18 +2289,89 @@ async function home() {
     ${nav()}
     ${stickyProductNav()}
     <main class="immersive-home">
-      <section class="hero hero-immersive">
-        <div class="hero-glow"></div>
-        <div class="container hero-grid">
-          <div class="hero-copy">
-            <div class="hero-label"><span></span> ASIAKASPALVELU, JOKA ON AINA PAIKALLA</div>
-            <p class="lead">${appText('Respondo on verkkosivullesi asennettava asiakaspalvelubotti yritykselle. Kerro yrityksesi tiedot kerran, niin se vastaa asiakkaillesi 24/7 myös silloin, kun sinä et ehdi. Jos tarvittava tieto puuttuu, kysymys ohjataan sinulle.','Respondo är en kundservicebot för företagets webbplats. Lägg in företagets uppgifter en gång, så svarar den kunder dygnet runt även när du själv inte hinner. Om information saknas skickas frågan vidare till dig.','Respondo is a customer service bot for your business website. Add your company information once and it answers customers 24/7, including when you are unavailable. If information is missing, the question is routed to you.')}</p>
-            <div class="hero-actions">
-              <a class="btn hero-primary hero-bot-cta" href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
+      <section class="hero hero-immersive reel-home-hero">
+        <div class="hero-glow reel-home-glow" aria-hidden="true"></div>
+        <div class="reel-home-grid" aria-hidden="true"></div>
+        <div class="container hero-grid reel-home-shell">
+          <div class="hero-copy reel-home-copy">
+            <div class="reel-home-kicker"><span></span>\${appText('RESPONDO AI / ASIAKASPALVELU 24/7','RESPONDO AI / KUNDSERVICE 24/7','RESPONDO AI / CUSTOMER SERVICE 24/7')}</div>
+            <h1>\${appText('Asiakas kysyy.<br><em>Respondo vastaa.</em>','Kunden frågar.<br><em>Respondo svarar.</em>','Your customer asks.<br><em>Respondo answers.</em>')}</h1>
+            <p class="lead">\${appText('Verkkosivullesi asennettava asiakaspalvelubotti, joka vastaa yrityksesi omilla tiedoilla, ymmärtää luonnollisia kysymyksiä ja on paikalla myös silloin, kun sinä et ehdi.','En kundservicebot för din webbplats som svarar med företagets egna uppgifter, förstår naturliga frågor och är på plats även när du själv inte hinner.','A customer-service bot for your website that answers with your company information, understands natural questions and stays available even when you are not.')}</p>
+            <div class="reel-home-actions">
+              <a class="btn reel-primary" href="/assistant?lang=\${currentLang()}">\${appText('Kokeile bottia','Testa botten','Try the bot')} <span>↗</span></a>
+              <a class="btn reel-secondary" href="/tilaus?lang=\${currentLang()}">\${appText('Aloita 3 päivän kokeilu','Starta 3 dagars provperiod','Start 3-day trial')}</a>
             </div>
-            <div class="hero-scroll-hint"><i></i><span>VIERITÄ ALAS JA KATSO, MITEN SE TOIMII</span></div>
+            <div class="reel-home-meta">
+              <div><b>24/7</b><span>\${appText('vastaukset','svar','answers')}</span></div>
+              <div><b>\${FEATURE_COUNT}+</b><span>\${appText('ominaisuutta','funktioner','features')}</span></div>
+              <div><b>FI · SV · EN</b><span>\${appText('samassa palvelussa','i samma tjänst','in one service')}</span></div>
+            </div>
+            <div class="hero-scroll-hint reel-scroll-hint"><i></i><span>\${appText('VIERITÄ JA KATSO, MITEN SE TOIMII','SCROLLA OCH SE HUR DET FUNGERAR','SCROLL TO SEE HOW IT WORKS')}</span></div>
           </div>
-          ${heroVisual()}
+
+          <div class="reel-home-stage" aria-hidden="true">
+            <div class="reel-stage-aura"></div>
+            <div class="reel-stage-line line-a"></div>
+            <div class="reel-stage-line line-b"></div>
+
+            <div class="reel-browser">
+              <div class="reel-browser-top">
+                <div class="reel-browser-dots"><i></i><i></i><i></i></div>
+                <span>respondo.ai</span>
+                <b>\${appText('PÄÄLLÄ','AKTIV','LIVE')}</b>
+              </div>
+              <div class="reel-browser-body">
+                <div class="reel-browser-nav">
+                  <div class="reel-mini-logo">R</div>
+                  <span>RESPONDO AI</span>
+                  <small>24/7</small>
+                </div>
+                <div class="reel-browser-main">
+                  <div class="reel-browser-copy">
+                    <small>\${appText('ASIAKASPALVELU','KUNDSERVICE','CUSTOMER SERVICE')}</small>
+                    <strong>\${appText('Yksi botti.<br>Kaikki tärkeät vastaukset.','En bot.<br>Alla viktiga svar.','One bot.<br>Every important answer.')}</strong>
+                    <span>\${appText('Hinnat · palvelut · aukioloajat · yhteydenotot','Priser · tjänster · öppettider · kontakt','Pricing · services · opening hours · contact')}</span>
+                  </div>
+                  <div class="reel-browser-orb"><span>R</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="reel-phone">
+              <div class="reel-phone-notch"></div>
+              <div class="reel-phone-head"><span class="reel-avatar">R</span><div><b>Respondo</b><small>\${appText('paikalla nyt','online nu','online now')}</small></div></div>
+              <div class="reel-chat">
+                <div class="reel-msg customer">\${appText('Onks teillä vapaita aikoja huomiselle?','Har ni lediga tider i morgon?','Do you have any openings tomorrow?')}</div>
+                <div class="reel-msg bot">\${appText('Kyllä. Huomiselle löytyy vielä kaksi vapaata aikaa. Haluatko varata?','Ja. Det finns fortfarande två lediga tider i morgon. Vill du boka?','Yes. There are still two openings tomorrow. Would you like to book?')}</div>
+              </div>
+              <div class="reel-phone-input"><span>\${appText('Kirjoita viesti…','Skriv ett meddelande…','Write a message…')}</span><b>↑</b></div>
+            </div>
+
+            <div class="reel-float-card reel-float-card-a">
+              <small>\${appText('VASTAUSAIKA','SVARSTID','RESPONSE TIME')}</small>
+              <b>&lt; 1 s</b>
+              <span>\${appText('kun tieto löytyy','när svaret finns','when the answer is known')}</span>
+            </div>
+            <div class="reel-float-card reel-float-card-b">
+              <i>✓</i>
+              <div><b>\${appText('Tieto löytyi','Svar hittat','Answer found')}</b><span>\${appText('Yrityksesi omista tiedoista','Från företagets egna uppgifter','From your company information')}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="container reel-capability-strip">
+          <div class="reel-capability-heading">
+            <small>\${appText('YHDESSÄ PALVELUSSA','I EN TJÄNST','IN ONE SERVICE')}</small>
+            <strong>\${appText('Kysymyksestä toimintaan.','Från fråga till handling.','From question to action.')}</strong>
+          </div>
+          <div class="reel-capability-items">
+            <span>\${appText('Vastaukset','Svar','Answers')}</span>
+            <span>\${appText('Tietopohja','Kunskapsbas','Knowledge')}</span>
+            <span>\${appText('Ajanvaraus','Bokning','Booking')}</span>
+            <span>\${appText('Tarjouspyynnöt','Offertförfrågningar','Quotes')}</span>
+            <span>\${appText('Yhteydenotot','Kontakter','Leads')}</span>
+            <span>Live takeover</span>
+          </div>
         </div>
       </section>
 
