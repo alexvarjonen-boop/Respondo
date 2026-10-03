@@ -65,8 +65,8 @@ test('demo bindings use the same paid-dashboard element ids and public chat endp
 });
 
 test('shared dashboard demo assets are cache-busted',()=>{
-  assert.match(html,/styles\.css\?v=20261003-reel-home-v1/);
-  assert.match(html,/app\.js\?v=20261003-reel-home-v1/);
+  assert.match(html,/styles\.css\?v=20261002-paid-dashboard-parity-v3/);
+  assert.match(html,/app\.js\?v=20261002-paid-dashboard-parity-v3/);
 });
 
 
