@@ -39,5 +39,5 @@ test('a normal three-card grid never receives a legacy sideways scroll transform
  assert.match(app,/getComputedStyle\(storyTrack\)\.display === 'flex'/);
  assert.match(app,/storyTrack\.style\.removeProperty\('transform'\)/);
  assert.match(html,/effects\.css\?v=20261001-desktop-scenes-v1/);
- assert.match(html,/app\.js\?v=20261003-reel-home-v1/);
+ assert.match(html,/app\.js\?v=20261002-paid-dashboard-parity-v3/);
 });
