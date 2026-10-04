@@ -2541,11 +2541,20 @@ function isLikelyBotUserAgent(value) {
 
 async function subscribed(req, res, next) {
   try {
-    const r = await q('SELECT status, subscription_status FROM users WHERE id=$1', [req.user.sub]);
+    const r = await q(
+      `SELECT u.status,
+              COALESCE(t.subscription_status,u.subscription_status) AS subscription_status
+         FROM users u
+         LEFT JOIN tenants t
+           ON t.id=active_tenant_for_user(u.id)
+          AND t.owner_user_id=u.id
+        WHERE u.id=$1`,
+      [req.user.sub],
+    );
     if (!r.rowCount) return res.status(404).json({ error: 'Tiliä ei löytynyt.' });
     const user = r.rows[0];
     if (user.status !== 'active' || !['active', 'trialing'].includes(user.subscription_status)) {
-      return res.status(402).json({ error: 'Aktiivinen tilaus tarvitaan.' });
+      return res.status(402).json({ error: 'Aktiivinen tilaus tarvitaan tälle yritykselle.' });
     }
     next();
   } catch (e) {
@@ -2773,7 +2782,7 @@ async function finishOauth(req, res, code, state) {
         return res.redirect('/app?section=automation&calendar=auth_error');
       }
 
-      const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[statePayload.userId]);
+      const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[statePayload.userId]);
       if (!tr.rowCount) return res.redirect('/app?section=automation&calendar=missing_tenant');
       const tenant = tr.rows[0];
 
@@ -2854,17 +2863,31 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           subscriptionStatus = subscription.status;
           if (subscription.current_period_end) periodEnd = new Date(subscription.current_period_end * 1000);
         }
+        const tenantId=String(session.metadata?.tenant_id||'');
         await q(
           `UPDATE users
-             SET stripe_customer_id=$1,
-                 stripe_subscription_id=$2,
-                 status=CASE WHEN $3 IN ('active','trialing') THEN 'active' ELSE 'pending' END,
-                 subscription_status=$3,
-                 current_period_end=$4,
+             SET stripe_customer_id=COALESCE(stripe_customer_id,$1),
+                 stripe_subscription_id=CASE WHEN $6='1' THEN stripe_subscription_id ELSE $2 END,
+                 status=CASE WHEN $3 IN ('active','trialing') THEN 'active' ELSE status END,
+                 subscription_status=CASE WHEN $6='1' THEN subscription_status ELSE $3 END,
+                 current_period_end=CASE WHEN $6='1' THEN current_period_end ELSE $4 END,
                  updated_at=NOW()
            WHERE id=$5`,
-          [session.customer, session.subscription, subscriptionStatus, periodEnd, userId],
+          [session.customer, session.subscription, subscriptionStatus, periodEnd, userId, session.metadata?.additional_workspace || '0'],
         );
+        if(tenantId){
+          await q(
+            `UPDATE tenants
+                SET stripe_subscription_id=$1,
+                    subscription_status=$2,
+                    subscription_plan=COALESCE(subscription_plan,$3),
+                    current_period_end=$4,
+                    active=CASE WHEN $2 IN ('active','trialing') THEN TRUE ELSE active END,
+                    updated_at=NOW()
+              WHERE id=$5 AND owner_user_id=$6`,
+            [session.subscription,subscriptionStatus,session.metadata?.plan||null,periodEnd,tenantId,userId],
+          );
+        }
 
         try {
           await ensureReferralCode(userId);
@@ -2909,9 +2932,19 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         : null;
       const cancelAtPeriodEnd = Boolean(subscription.cancel_at_period_end);
       await q(
+        `UPDATE tenants
+            SET subscription_status=$1,
+                current_period_end=$2,
+                subscription_cancel_at_period_end=$3,
+                active=CASE WHEN $1 IN ('active','trialing') THEN TRUE ELSE active END,
+                updated_at=NOW()
+          WHERE stripe_subscription_id=$4`,
+        [subscription.status, periodEnd, cancelAtPeriodEnd, subscription.id],
+      );
+      await q(
         `UPDATE users
             SET subscription_status=$1,
-                status=CASE WHEN $1 IN ('active','trialing') THEN 'active' ELSE 'inactive' END,
+                status=CASE WHEN $1 IN ('active','trialing') THEN 'active' ELSE status END,
                 current_period_end=$2,
                 subscription_cancel_at_period_end=$3,
                 updated_at=NOW()
@@ -3172,7 +3205,7 @@ app.get('/api/app/google-calendar/start', auth, subscribed, (req,res) => {
 
 app.post('/api/app/google-calendar/disconnect', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     await q(
       `UPDATE tenants
@@ -3434,15 +3467,17 @@ app.post('/api/auth/start-checkout', async (req, res) => {
         [id, email, hash, fullName || '', companyName, businessId || null, normalizedPlan, ['fi','sv','en'].includes(String(req.body.language || '').toLowerCase()) ? String(req.body.language).toLowerCase() : 'fi'],
       );
 
+      const tenantId = uid();
       let tenantSlug = slug(companyName);
       const slugExists = await client.query('SELECT 1 FROM tenants WHERE slug=$1', [tenantSlug]);
       if (slugExists.rowCount) tenantSlug = `${tenantSlug}-${crypto.randomBytes(3).toString('hex')}`;
 
       await client.query(
-        `INSERT INTO tenants(id,owner_user_id,slug,name,contact_email)
-         VALUES($1,$2,$3,$4,$5)`,
-        [uid(), id, tenantSlug, companyName, email],
+        `INSERT INTO tenants(id,owner_user_id,slug,name,business_id,contact_email,active,subscription_status,subscription_plan)
+         VALUES($1,$2,$3,$4,$5,$6,FALSE,'pending',$7)`,
+        [tenantId, id, tenantSlug, companyName, businessId || null, email, normalizedPlan],
       );
+      await client.query('UPDATE users SET active_tenant_id=$1 WHERE id=$2',[tenantId,id]);
 
       if (referrer) {
         await client.query(
@@ -3460,6 +3495,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
           ...(normalizedPlan === 'owner_test' ? {} : { trial_period_days: 3 }),
           metadata: {
             user_id: id,
+            tenant_id: tenantId,
             plan: normalizedPlan,
             ...(referralCode ? { referral_code: referralCode } : {}),
           },
@@ -3474,6 +3510,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
             : `${BASE}/tilaus?cancelled=1`,
         metadata: {
           user_id: id,
+          tenant_id: tenantId,
           plan: normalizedPlan,
           ...(referralCode ? { referral_code: referralCode } : {}),
         },
@@ -3555,6 +3592,22 @@ app.get('/api/auth/checkout-success', async (req, res) => {
     );
 
     if (!updated.rowCount) return res.redirect('/kirjaudu?checkout_error=1');
+
+    const checkoutTenantId=String(session.metadata?.tenant_id||'');
+    if(checkoutTenantId){
+      await q(
+        `UPDATE tenants
+            SET stripe_subscription_id=$1,
+                subscription_status=$2,
+                subscription_plan=COALESCE(subscription_plan,$3),
+                current_period_end=$4,
+                active=TRUE,
+                updated_at=NOW()
+          WHERE id=$5 AND owner_user_id=$6`,
+        [subscriptionId,subscriptionStatus,session.metadata?.plan||null,periodEnd,checkoutTenantId,userId],
+      );
+      await q('UPDATE users SET active_tenant_id=$1 WHERE id=$2',[checkoutTenantId,userId]);
+    }
 
     try {
       await ensureReferralCode(userId);
@@ -3644,13 +3697,190 @@ app.get('/api/auth/me', auth, async (req, res) => {
       return res.json({ ...ar.rows[0],role:'agent',preferred_language:'fi' });
     }
     const r = await q(
-      'SELECT id,email,full_name,company_name,business_id,status,subscription_status,current_period_end,preferred_language FROM users WHERE id=$1',
+      `SELECT u.id,u.email,u.full_name,
+              COALESCE(t.name,u.company_name) AS company_name,
+              COALESCE(t.business_id,u.business_id) AS business_id,
+              u.status,
+              COALESCE(t.subscription_status,u.subscription_status) AS subscription_status,
+              COALESCE(t.current_period_end,u.current_period_end) AS current_period_end,
+              u.preferred_language,
+              t.id AS active_tenant_id,
+              t.subscription_plan,
+              t.subscription_cancel_at_period_end
+         FROM users u
+         LEFT JOIN tenants t
+           ON t.id=active_tenant_for_user(u.id)
+          AND t.owner_user_id=u.id
+        WHERE u.id=$1`,
       [req.user.sub],
     );
     if (!r.rowCount) return res.status(404).json({ error: 'Tiliä ei löytynyt.' });
     return res.json(r.rows[0]);
   } catch (e) {
     return res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/app/workspaces', auth, ownerOnly, async (req,res) => {
+  try {
+    const rr=await q(
+      `SELECT t.id,t.name,t.slug,t.business_id,t.website,t.active,
+              COALESCE(t.subscription_status,'inactive') AS subscription_status,
+              t.subscription_plan,t.current_period_end,t.subscription_cancel_at_period_end,
+              (t.id=active_tenant_for_user($1)) AS selected
+         FROM tenants t
+        WHERE t.owner_user_id=$1
+        ORDER BY t.created_at ASC`,
+      [req.user.sub],
+    );
+    return res.json({ workspaces:rr.rows });
+  } catch(e) {
+    return res.status(500).json({ error:'Yrityksiä ei voitu ladata.' });
+  }
+});
+
+app.post('/api/app/workspaces/switch', auth, ownerOnly, async (req,res) => {
+  try {
+    const tenantId=String(req.body?.tenantId||'').trim();
+    const rr=await q(
+      `SELECT id,name,subscription_status,active
+         FROM tenants
+        WHERE id=$1 AND owner_user_id=$2
+        LIMIT 1`,
+      [tenantId,req.user.sub],
+    );
+    if(!rr.rowCount || !rr.rows[0].active) {
+      return res.status(404).json({ error:'Yritystä ei löytynyt.' });
+    }
+    if(!['active','trialing'].includes(String(rr.rows[0].subscription_status||''))) {
+      return res.status(402).json({ error:'Tällä yrityksellä ei ole aktiivista Respondo-tilausta.' });
+    }
+    await q('UPDATE users SET active_tenant_id=$1,updated_at=NOW() WHERE id=$2',[tenantId,req.user.sub]);
+    return res.json({ ok:true,tenantId,name:rr.rows[0].name });
+  } catch(e) {
+    return res.status(500).json({ error:'Yrityksen vaihtaminen epäonnistui.' });
+  }
+});
+
+app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
+  if(!stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
+  const companyName=String(req.body?.companyName||'').replace(/[<>]/g,'').trim().slice(0,120);
+  const businessId=String(req.body?.businessId||'').replace(/[<>]/g,'').trim().slice(0,40);
+  const plan=req.body?.plan==='yearly'?'yearly':'monthly';
+  if(!companyName) return res.status(400).json({ error:'Anna yrityksen nimi.' });
+  if(req.body?.acceptedTerms!==true) return res.status(400).json({ error:'Hyväksy käyttöehdot ja tietosuojaseloste.' });
+
+  const price=plan==='yearly' ? process.env.STRIPE_YEARLY_PRICE_ID : process.env.STRIPE_MONTHLY_PRICE_ID;
+  if(!price) return res.status(503).json({ error:'Stripe-hintaa ei ole määritetty.' });
+
+  const userResult=await q('SELECT id,email,stripe_customer_id FROM users WHERE id=$1',[req.user.sub]);
+  if(!userResult.rowCount) return res.status(404).json({ error:'Tiliä ei löytynyt.' });
+  const user=userResult.rows[0];
+
+  const tenantId=uid();
+  let tenantSlug=slug(companyName);
+  const exists=await q('SELECT 1 FROM tenants WHERE slug=$1',[tenantSlug]);
+  if(exists.rowCount) tenantSlug=tenantSlug+'-'+crypto.randomBytes(3).toString('hex');
+
+  await q(
+    `INSERT INTO tenants(
+       id,owner_user_id,slug,name,business_id,contact_email,active,
+       subscription_status,subscription_plan
+     ) VALUES($1,$2,$3,$4,$5,$6,FALSE,'pending',$7)`,
+    [tenantId,req.user.sub,tenantSlug,companyName,businessId||null,user.email,plan],
+  );
+
+  try {
+    const session=await stripe.checkout.sessions.create({
+      mode:'subscription',
+      ...(user.stripe_customer_id ? { customer:user.stripe_customer_id } : { customer_email:user.email }),
+      line_items:[{price,quantity:1}],
+      subscription_data:{
+        trial_period_days:3,
+        metadata:{
+          user_id:req.user.sub,
+          tenant_id:tenantId,
+          plan,
+          additional_workspace:'1',
+        },
+      },
+      tax_id_collection:{enabled:true},
+      billing_address_collection:'required',
+      allow_promotion_codes:false,
+      success_url:`${BASE}/api/app/workspaces/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:`${BASE}/app?section=account&workspace_checkout=cancelled`,
+      metadata:{
+        user_id:req.user.sub,
+        tenant_id:tenantId,
+        plan,
+        additional_workspace:'1',
+      },
+      automatic_tax:{enabled:true},
+    });
+    return res.json({url:session.url});
+  } catch(e) {
+    await q("DELETE FROM tenants WHERE id=$1 AND owner_user_id=$2 AND active=FALSE AND subscription_status='pending'",[tenantId,req.user.sub]);
+    console.error('Additional workspace checkout failed',e);
+    return res.status(500).json({error:'Uuden yrityksen tilauksen aloitus epäonnistui.'});
+  }
+});
+
+app.get('/api/app/workspaces/checkout-success', auth, ownerOnly, async (req,res) => {
+  if(!stripe) return res.redirect('/app?section=account&workspace_checkout=error');
+  try {
+    const sessionId=String(req.query.session_id||'').trim();
+    const session=await stripe.checkout.sessions.retrieve(sessionId);
+    const tenantId=String(session.metadata?.tenant_id||'');
+    const userId=String(session.metadata?.user_id||'');
+    if(
+      !tenantId ||
+      userId!==req.user.sub ||
+      session.status!=='complete' ||
+      session.mode!=='subscription'
+    ) {
+      return res.redirect('/app?section=account&workspace_checkout=error');
+    }
+
+    const subscriptionId=typeof session.subscription==='string' ? session.subscription : session.subscription?.id || null;
+    const customerId=typeof session.customer==='string' ? session.customer : session.customer?.id || null;
+    let subscriptionStatus='active';
+    let periodEnd=null;
+    if(subscriptionId){
+      const subscription=await stripe.subscriptions.retrieve(subscriptionId);
+      subscriptionStatus=subscription.status;
+      periodEnd=subscription.current_period_end ? new Date(subscription.current_period_end*1000) : null;
+    }
+    if(!['active','trialing'].includes(subscriptionStatus)) {
+      return res.redirect('/app?section=account&workspace_checkout=error');
+    }
+
+    const updated=await q(
+      `UPDATE tenants
+          SET stripe_subscription_id=$1,
+              subscription_status=$2,
+              current_period_end=$3,
+              active=TRUE,
+              updated_at=NOW()
+        WHERE id=$4 AND owner_user_id=$5
+        RETURNING id`,
+      [subscriptionId,subscriptionStatus,periodEnd,tenantId,req.user.sub],
+    );
+    if(!updated.rowCount) return res.redirect('/app?section=account&workspace_checkout=error');
+
+    await q(
+      `UPDATE users
+          SET stripe_customer_id=COALESCE(stripe_customer_id,$1),
+              active_tenant_id=$2,
+              status='active',
+              updated_at=NOW()
+        WHERE id=$3`,
+      [customerId,tenantId,req.user.sub],
+    );
+
+    return res.redirect('/app?workspace_added=1');
+  } catch(e) {
+    console.error('Additional workspace checkout success failed',e);
+    return res.redirect('/app?section=account&workspace_checkout=error');
   }
 });
 
@@ -3685,7 +3915,7 @@ app.post('/api/app/agent/status', auth, async (req,res) => {
 
 app.post('/api/app/support-agents/:id/force-logout', auth, ownerOnly, subscribed, async (req,res) => {
   try {
-    const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if(!tr.rowCount) return res.status(404).json({error:'Työtilaa ei löytynyt.'});
     const rr=await q("UPDATE support_agents SET status='offline',updated_at=NOW() WHERE id=$1 AND tenant_id=$2 RETURNING id",[req.params.id,tr.rows[0].id]);
     if(!rr.rowCount) return res.status(404).json({error:'Profiilia ei löytynyt.'});
@@ -3726,7 +3956,7 @@ app.get('/api/app/agent-dashboard', auth, agentOrOwner, async (req,res) => {
 
 app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
   try {
-    const t = await q('SELECT * FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    const t = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtilaa ei löytynyt.' });
     const tenant = t.rows[0];
     const k = await q('SELECT * FROM knowledge WHERE tenant_id=$1 ORDER BY created_at DESC', [tenant.id]);
@@ -3892,8 +4122,18 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
       'twilio_auth_token','action_webhook_secret','channels_api_key'
     ].forEach((key) => delete tenantSafe[key]);
 
+    const workspaces=(await q(
+      `SELECT id,name,slug,business_id,active,subscription_status,subscription_plan,current_period_end,subscription_cancel_at_period_end,
+              (id=$2) AS selected
+         FROM tenants
+        WHERE owner_user_id=$1
+        ORDER BY created_at ASC`,
+      [req.user.sub,tenant.id],
+    )).rows;
+
     return res.json({
       tenant:tenantSafe,
+      workspaces,
       referral,
       knowledge: k.rows,
       unanswered: dashboardUnanswered,
@@ -4016,7 +4256,7 @@ async function retireOldImportedEmails(client, tenantId, currentEmail) {
 app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
   const client = await pool.connect();
   try {
-    const t = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    const t = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtilaa ei löytynyt.' });
     const tenantId = t.rows[0].id;
     const currentEmail = String(req.body.email || '').trim().toLowerCase();
@@ -4105,7 +4345,7 @@ app.post('/api/app/business-email', auth, subscribed, async (req,res)=>{
   const client=await pool.connect();
   try {
     await client.query('BEGIN');
-    const found=await client.query('SELECT id FROM tenants WHERE owner_user_id=$1 FOR UPDATE',[req.user.sub]);
+    const found=await client.query('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1) FOR UPDATE',[req.user.sub]);
     if (!found.rowCount) {
       await client.query('ROLLBACK');
       return res.status(404).json({error:'Työtilaa ei löytynyt.'});
@@ -4203,7 +4443,7 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
 app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) => {
   const client = await pool.connect();
   try {
-    const tenantResult = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    const tenantResult = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!tenantResult.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenantId = tenantResult.rows[0].id;
     const items = Array.isArray(req.body.items) ? req.body.items.slice(0,1000) : [];
@@ -4262,7 +4502,7 @@ app.post('/api/app/unanswered/:id/answer', auth, subscribed, async (req, res) =>
     const answer = String(req.body.answer || '').trim();
     if (!answer) return res.status(400).json({ error: 'Kirjoita vastaus ensin.' });
 
-    const tenantResult = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    const tenantResult = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!tenantResult.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
     const tenantId = tenantResult.rows[0].id;
 
@@ -4304,7 +4544,7 @@ app.post('/api/app/unanswered/:id/answer', auth, subscribed, async (req, res) =>
 
 app.post('/api/app/knowledge', auth, subscribed, async (req, res) => {
   try {
-    const t = await q('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    const t = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
     const { category = 'Yleinen', title, answer, keywords = '' } = req.body;
     if (!title || !answer) return res.status(400).json({ error: 'Otsikko ja vastaus tarvitaan.' });
@@ -4328,7 +4568,7 @@ app.post('/api/app/knowledge', auth, subscribed, async (req, res) => {
 
 app.put('/api/app/knowledge/:id', auth, subscribed, async (req, res) => {
   try {
-    const t = await q('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    const t = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
     const tenantId = t.rows[0].id;
     const existing = await q('SELECT * FROM knowledge WHERE id=$1 AND tenant_id=$2', [req.params.id, tenantId]);
@@ -4359,7 +4599,7 @@ app.put('/api/app/knowledge/:id', auth, subscribed, async (req, res) => {
 
 app.delete('/api/app/knowledge/:id', auth, subscribed, async (req, res) => {
   try {
-    const t = await q('SELECT id FROM tenants WHERE owner_user_id=$1', [req.user.sub]);
+    const t = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
     const tenantId = t.rows[0].id;
     const existing = await q('SELECT source_type FROM knowledge WHERE id=$1 AND tenant_id=$2', [req.params.id, tenantId]);
@@ -4381,7 +4621,7 @@ app.post('/api/app/knowledge/:id/quick-reply', auth, subscribed, async (req, res
     await client.query('BEGIN');
 
     const tr = await client.query(
-      'SELECT id FROM tenants WHERE owner_user_id=$1 FOR UPDATE',
+      'SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1) FOR UPDATE',
       [req.user.sub],
     );
     if (!tr.rowCount) {
@@ -5297,7 +5537,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       const token = req.cookies?.respondo_session;
       if (token) {
         const session = jwt.verify(token, JWT);
-        const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[session.sub]);
+        const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[session.sub]);
         if (tr.rowCount) {
           const kr = await q(
             'SELECT id,category,title,answer,keywords,source_type,source_url FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC LIMIT 1000',
@@ -6257,7 +6497,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
 
 app.post('/api/app/quote-engine', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const basePrice = Math.max(0, Number(req.body.basePrice || 0));
     const unitPrice = Math.max(0, Number(req.body.unitPrice || 0));
@@ -6282,7 +6522,7 @@ app.post('/api/app/quote-engine', auth, subscribed, async (req,res) => {
 app.post('/api/app/booking-slots/generate', auth, subscribed, async (req,res) => {
   const client = await pool.connect();
   try {
-    const tr = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenantId = tr.rows[0].id;
     const slots = (Array.isArray(req.body.slots) ? req.body.slots : []).slice(0,300);
@@ -6316,7 +6556,7 @@ app.post('/api/app/booking-slots/generate', auth, subscribed, async (req,res) =>
 
 app.delete('/api/app/booking-slots/:id', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const removed = await q(
       `DELETE FROM booking_slots
@@ -6334,7 +6574,7 @@ app.delete('/api/app/booking-slots/:id', auth, subscribed, async (req,res) => {
 app.post('/api/app/stripe-connect/onboard', auth, subscribed, async (req,res) => {
   try {
     if (!stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     let accountId = tenant.stripe_connected_account_id;
@@ -6375,7 +6615,7 @@ app.post('/api/app/stripe-connect/onboard', auth, subscribed, async (req,res) =>
 
 app.post('/api/app/integrations', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = await ensureTenantActionKeys(tr.rows[0]);
     const raw = String(req.body.webhookUrl || '').trim();
@@ -6399,7 +6639,7 @@ app.post('/api/app/integrations', auth, subscribed, async (req,res) => {
 
 app.post('/api/app/integrations/test', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = await ensureTenantActionKeys(tr.rows[0]);
     if (!tenant.action_webhook_url) return res.status(400).json({ error:'Lisää webhook-osoite ensin.' });
@@ -6421,7 +6661,7 @@ app.post('/api/app/integrations/test', auth, subscribed, async (req,res) => {
 app.post('/api/app/action-requests/:id/status', auth, subscribed, async (req,res) => {
   try {
     const status = ['new','in_progress','done'].includes(String(req.body.status)) ? String(req.body.status) : 'done';
-    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const updated = await q(
       'UPDATE action_requests SET status=$1,updated_at=NOW() WHERE id=$2 AND tenant_id=$3 RETURNING id,status',
@@ -6437,7 +6677,7 @@ app.post('/api/app/action-requests/:id/status', auth, subscribed, async (req,res
 
 app.post('/api/app/commerce', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     const provider = ['shopify','woocommerce',''].includes(String(req.body.provider || ''))
@@ -6489,7 +6729,7 @@ app.post('/api/app/commerce', auth, subscribed, async (req,res) => {
 
 app.post('/api/app/commerce/test', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     if (tenant.ecommerce_provider === 'shopify') {
@@ -6508,7 +6748,7 @@ app.post('/api/app/commerce/test', auth, subscribed, async (req,res) => {
 
 app.post('/api/app/meta-channels', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = await ensureTenantActionKeys(tr.rows[0]);
     const versionRaw = String(req.body.graphVersion || 'v24.0').trim();
@@ -6554,7 +6794,7 @@ app.post('/api/app/meta-channels', auth, subscribed, async (req,res) => {
 
 app.post('/api/app/meta-channels/test', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     const version = tenant.meta_graph_version || 'v24.0';
@@ -6587,7 +6827,7 @@ app.post('/api/app/meta-channels/test', auth, subscribed, async (req,res) => {
 
 app.post('/api/app/voice', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     const authToken = String(req.body.authToken || '').trim();
@@ -6636,7 +6876,7 @@ app.post('/api/app/voice', auth, subscribed, async (req,res) => {
 
 app.post('/api/app/voice/test', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     if (!tenant.twilio_account_sid || !tenant.twilio_auth_token) return res.status(400).json({ error:'Lisää Twilio-tunnukset ensin.' });
@@ -6649,7 +6889,7 @@ app.post('/api/app/voice/test', auth, subscribed, async (req,res) => {
 
 app.post('/api/app/voice/test-sms', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     const to = normalizePhone(req.body.to || tenant.voice_handoff_number);
@@ -6668,7 +6908,7 @@ app.post('/api/app/voice/test-sms', auth, subscribed, async (req,res) => {
 
 app.post('/api/app/voice/configure-number', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     const number = normalizePhone(tenant.twilio_phone_number);
@@ -6704,7 +6944,7 @@ app.post('/api/app/voice/configure-number', auth, subscribed, async (req,res) =>
 
 app.post('/api/app/support-agents', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const displayName = String(req.body.displayName || '').replace(/[<>]/g,'').trim().slice(0,60);
     const username = String(req.body.username || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'').slice(0,50);
@@ -6726,7 +6966,7 @@ app.post('/api/app/support-agents', auth, subscribed, async (req,res) => {
 
 app.delete('/api/app/support-agents/:id', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     await q('UPDATE chat_threads SET assigned_agent_id=NULL WHERE tenant_id=$1 AND assigned_agent_id=$2',[tr.rows[0].id,req.params.id]);
     const rr = await q('DELETE FROM support_agents WHERE id=$1 AND tenant_id=$2 RETURNING id',[req.params.id,tr.rows[0].id]);
@@ -6737,7 +6977,7 @@ app.delete('/api/app/support-agents/:id', auth, subscribed, async (req,res) => {
 
 app.post('/api/app/support-agents/:id/status', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const status = req.body.status === 'online' ? 'online' : 'offline';
     const rr = await q("UPDATE support_agents SET status=$1,updated_at=NOW() WHERE id=$2 AND tenant_id=$3 RETURNING id,display_name,avatar,status",[status,req.params.id,tr.rows[0].id]);
@@ -6748,7 +6988,7 @@ app.post('/api/app/support-agents/:id/status', auth, subscribed, async (req,res)
 
 app.post('/api/app/live/:id/assign', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenantId=tr.rows[0].id;
     const agentId=String(req.body.agentId || '').trim() || null;
@@ -6771,7 +7011,7 @@ app.post('/api/app/live/:id/mode', auth, async (req,res) => {
     if (!sr.rowCount || sr.rows[0].status!=='active' || !['active','trialing'].includes(sr.rows[0].subscription_status)) return res.status(402).json({ error:'Aktiivinen tilaus tarvitaan.' });
   }
   try {
-    const tr = req.user.role === 'agent' ? { rowCount:1,rows:[{id:req.user.tenantId}] } : await q('SELECT id FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = req.user.role === 'agent' ? { rowCount:1,rows:[{id:req.user.tenantId}] } : await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const mode = req.body.mode === 'human' ? 'human' : 'ai';
     const rr = await q(
@@ -6797,7 +7037,7 @@ app.post('/api/app/live/:id/reply', auth, async (req,res) => {
   try {
     const text = String(req.body.message || '').trim().slice(0,4000);
     if (!text) return res.status(400).json({ error:'Kirjoita viesti.' });
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     const rr = await q(
@@ -7133,7 +7373,14 @@ app.post('/api/billing/portal', auth, async (req, res) => {
 app.post('/api/billing/cancel', auth, async (req, res) => {
   try {
     if (!stripe) return res.status(503).json({ error: 'Stripe ei ole vielä kytketty.' });
-    const r = await q('SELECT stripe_subscription_id FROM users WHERE id=$1', [req.user.sub]);
+    const r = await q(
+      `SELECT t.id AS tenant_id,
+              COALESCE(t.stripe_subscription_id,u.stripe_subscription_id) AS stripe_subscription_id
+         FROM users u
+         LEFT JOIN tenants t ON t.id=active_tenant_for_user(u.id) AND t.owner_user_id=u.id
+        WHERE u.id=$1`,
+      [req.user.sub],
+    );
     const id = r.rows[0]?.stripe_subscription_id;
     if (!id) return res.status(400).json({ error: 'Tilausta ei löytynyt.' });
 
@@ -7142,14 +7389,16 @@ app.post('/api/billing/cancel', auth, async (req, res) => {
       ? new Date(subscription.current_period_end * 1000)
       : null;
 
-    await q(
-      `UPDATE users
-          SET subscription_cancel_at_period_end=true,
-              current_period_end=COALESCE($1,current_period_end),
-              updated_at=NOW()
-        WHERE id=$2`,
-      [periodEnd, req.user.sub],
-    );
+    if(r.rows[0]?.tenant_id){
+      await q(
+        `UPDATE tenants
+            SET subscription_cancel_at_period_end=true,
+                current_period_end=COALESCE($1,current_period_end),
+                updated_at=NOW()
+          WHERE id=$2 AND owner_user_id=$3`,
+        [periodEnd,r.rows[0].tenant_id,req.user.sub],
+      );
+    }
 
     return res.json({
       ok: true,
@@ -7280,6 +7529,48 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_language TEXT NOT NULL DEFAULT 'fi'");
   await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT');
   await q("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_cancel_at_period_end BOOLEAN NOT NULL DEFAULT FALSE");
+  await q("ALTER TABLE users ADD COLUMN IF NOT EXISTS active_tenant_id UUID");
+  await q("ALTER TABLE tenants DROP CONSTRAINT IF EXISTS tenants_owner_user_id_key");
+  await q("CREATE INDEX IF NOT EXISTS idx_tenants_owner_user_id ON tenants(owner_user_id)");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS business_id TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_status TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_plan TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_cancel_at_period_end BOOLEAN NOT NULL DEFAULT FALSE");
+  await q(`UPDATE tenants t
+              SET business_id=COALESCE(t.business_id,u.business_id),
+                  stripe_subscription_id=COALESCE(t.stripe_subscription_id,u.stripe_subscription_id),
+                  subscription_status=COALESCE(t.subscription_status,u.subscription_status),
+                  subscription_plan=COALESCE(t.subscription_plan,u.subscription_plan),
+                  current_period_end=COALESCE(t.current_period_end,u.current_period_end),
+                  subscription_cancel_at_period_end=COALESCE(t.subscription_cancel_at_period_end,u.subscription_cancel_at_period_end)
+             FROM users u
+            WHERE t.owner_user_id=u.id
+              AND t.id=(SELECT t2.id FROM tenants t2 WHERE t2.owner_user_id=u.id ORDER BY t2.created_at ASC LIMIT 1)`);
+  await q(`UPDATE users u
+              SET active_tenant_id=(
+                SELECT t.id FROM tenants t
+                 WHERE t.owner_user_id=u.id
+                 ORDER BY t.created_at ASC
+                 LIMIT 1
+              )
+            WHERE u.active_tenant_id IS NULL
+               OR NOT EXISTS (
+                 SELECT 1 FROM tenants t
+                  WHERE t.id=u.active_tenant_id
+                    AND t.owner_user_id=u.id
+               )`);
+  await q(`CREATE OR REPLACE FUNCTION active_tenant_for_user(user_uuid UUID)
+            RETURNS UUID
+            LANGUAGE SQL
+            STABLE
+            AS $
+              SELECT COALESCE(
+                (SELECT active_tenant_id FROM users WHERE id=user_uuid),
+                (SELECT id FROM tenants WHERE owner_user_id=user_uuid ORDER BY created_at ASC LIMIT 1)
+              )
+            $`);
   await q(`CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
