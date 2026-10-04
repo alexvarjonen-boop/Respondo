@@ -2741,6 +2741,8 @@ async function dashboard(options = {}) {
 
   const t = data.tenant;
   const s = data.stats;
+  const workspaces = isDemo ? [] : (Array.isArray(data.workspaces) ? data.workspaces : []);
+  const activeWorkspaces = workspaces.filter((w) => w.active && ['active','trialing'].includes(String(w.subscription_status || '')));
   const referral = data.referral || null;
   const truth = data.truth || { score:0,total:0,approved:0,fresh:0 };
   const latestSelfTest = data.latestSelfTest || null;
@@ -2834,9 +2836,13 @@ async function dashboard(options = {}) {
       <header class="dashboard-topbar ${isDemo ? 'demo-sticky-topbar' : ''}">
         <div class="dashboard-topbar-brand">
           ${logo()}
-          <div class="dashboard-workspace">
-            <small>${isDemo ? appText('KOKEILE BOTTIA','TESTA BOTTEN','TRY THE BOT') : 'TYÖTILA'}</small>
-            <b>${esc(me.company_name || t.name)}</b>
+          <div class="dashboard-workspace ${isDemo ? '' : 'workspace-switcher-block'}">
+            <small>${isDemo ? appText('KOKEILE BOTTIA','TESTA BOTTEN','TRY THE BOT') : appText('YRITYS','FÖRETAG','COMPANY')}</small>
+            ${isDemo ? `<b>${esc(t.name)}</b>` : `
+              <select id="workspaceSwitcher" class="workspace-switcher" aria-label="${esc(appText('Valitse yritys','Välj företag','Choose company'))}">
+                ${activeWorkspaces.map((workspace) => `<option value="${esc(workspace.id)}" ${workspace.id===t.id?'selected':''}>${esc(workspace.name)}</option>`).join('')}
+              </select>
+            `}
           </div>
         </div>
         <div class="dashboard-section-picker">
@@ -2859,6 +2865,7 @@ async function dashboard(options = {}) {
             <a class="btn ghost demo-header-login" href="/kirjaudu?lang=${currentLang()}">${appText('Kirjaudu','Logga in','Log in')}</a>
             <a class="btn ink demo-header-trial" href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
           ` : `
+            <button class="workspace-add-button" id="workspaceAddButton" type="button">＋ <span>${appText('Lisää yritys','Lägg till företag','Add company')}</span></button>
             <button class="dashboard-settings-button" id="dashboardSettingsButton" type="button" aria-label="${esc(appText('Asetukset','Inställningar','Settings'))}" title="${esc(appText('Asetukset','Inställningar','Settings'))}">⚙</button>
           `}
         </div>
@@ -2874,6 +2881,32 @@ async function dashboard(options = {}) {
           </nav>
         ` : ''}
       </header>
+
+      ${!isDemo ? `
+      <div class="workspace-modal" id="workspaceModal" hidden>
+        <button type="button" class="workspace-modal-backdrop" id="workspaceModalBackdrop" aria-label="${esc(appText('Sulje','Stäng','Close'))}"></button>
+        <section class="workspace-modal-card" role="dialog" aria-modal="true" aria-labelledby="workspaceModalTitle">
+          <div class="workspace-modal-head">
+            <div>
+              <small>${appText('UUSI RESPONDO','NY RESPONDO','NEW RESPONDO')}</small>
+              <h2 id="workspaceModalTitle">${appText('Lisää toinen yritys','Lägg till ett annat företag','Add another company')}</h2>
+              <p>${appText('Jokaiselle yritykselle tulee oma botti, tietopohja, keskustelut ja tilaus. Kaikkia hallitaan tällä samalla käyttäjätilillä.','Varje företag får en egen bot, kunskapsbas, konversationer och abonnemang. Alla hanteras med samma användarkonto.','Each company gets its own bot, knowledge base, conversations and subscription. Manage all of them with this same account.')}</p>
+            </div>
+            <button type="button" class="workspace-modal-close" id="workspaceModalClose">×</button>
+          </div>
+          <form id="workspaceAddForm" class="workspace-add-form">
+            <label><span>${appText('Yrityksen nimi','Företagsnamn','Company name')}</span><input name="companyName" required maxlength="120" placeholder="${appText('Yrityksen nimi','Företagsnamn','Company name')}"></label>
+            <label><span>${appText('Y-tunnus (valinnainen)','FO-nummer (valfritt)','Business ID (optional)')}</span><input name="businessId" maxlength="40" placeholder="1234567-8"></label>
+            <div class="workspace-plan-grid">
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="monthly" checked><span><b>49,99 € / kk</b><small>${appText('Kuukausitilaus','Månadsabonnemang','Monthly plan')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="yearly"><span><b>539,88 € / ${appText('vuosi','år','year')}</b><small>44,99 € / kk</small></span></label>
+            </div>
+            <label class="workspace-terms"><input type="checkbox" name="acceptedTerms" required><span>${appText('Hyväksyn käyttöehdot ja tietosuojaselosteen.','Jag godkänner användarvillkoren och integritetspolicyn.','I accept the terms and privacy policy.')}</span></label>
+            <button class="btn ink workspace-checkout-button" type="submit">${appText('Jatka turvalliseen maksuun','Fortsätt till säker betalning','Continue to secure checkout')} →</button>
+            <div id="workspaceAddMsg"></div>
+          </form>
+        </section>
+      </div>` : ''}
 
       <section class="dashboard-head dashboard-view-section" data-dashboard-view="overview" id="overview">
         <div><div class="section-kicker">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</div><h1>${esc(t.name)}</h1><p>${appText('Valitse ylhäältä mitä haluat tehdä. Näytämme vain siihen liittyvät asiat.','Välj ovan vad du vill göra. Vi visar bara det som hör till valet.','Choose what you want to do above. We only show the relevant items.')}</p></div>
@@ -4179,6 +4212,68 @@ async function route() {
 
   if (path === '/app') {
     const dashboardSelect = $('#dashboardSectionSelect');
+    const workspaceSwitcher = $('#workspaceSwitcher');
+    const workspaceModal = $('#workspaceModal');
+    const openWorkspaceModal = () => {
+      if (!workspaceModal) return;
+      workspaceModal.removeAttribute('hidden');
+      document.body.classList.add('workspace-modal-open');
+      requestAnimationFrame(() => workspaceModal.querySelector('input[name="companyName"]')?.focus());
+    };
+    const closeWorkspaceModal = () => {
+      if (!workspaceModal) return;
+      workspaceModal.setAttribute('hidden','');
+      document.body.classList.remove('workspace-modal-open');
+    };
+
+    workspaceSwitcher?.addEventListener('change', async () => {
+      const tenantId=workspaceSwitcher.value;
+      if(!tenantId) return;
+      workspaceSwitcher.disabled=true;
+      try {
+        await api('/api/app/workspaces/switch',{
+          method:'POST',
+          body:JSON.stringify({tenantId})
+        });
+        location.href='/app';
+      } catch(err) {
+        workspaceSwitcher.disabled=false;
+        alert(err.message || appText('Yrityksen vaihtaminen epäonnistui.','Det gick inte att byta företag.','Failed to switch company.'));
+      }
+    });
+
+    $('#workspaceAddButton')?.addEventListener('click',openWorkspaceModal);
+    $('#workspaceModalClose')?.addEventListener('click',closeWorkspaceModal);
+    $('#workspaceModalBackdrop')?.addEventListener('click',closeWorkspaceModal);
+
+    $('#workspaceAddForm')?.addEventListener('submit',async(event)=>{
+      event.preventDefault();
+      const form=event.currentTarget;
+      const button=form.querySelector('button[type="submit"]');
+      const msg=$('#workspaceAddMsg');
+      const fd=new FormData(form);
+      const original=button.innerHTML;
+      button.disabled=true;
+      button.innerHTML=appText('Avataan maksua…','Öppnar betalning…','Opening checkout…');
+      if(msg) msg.innerHTML='';
+      try {
+        const result=await api('/api/app/workspaces/checkout',{
+          method:'POST',
+          body:JSON.stringify({
+            companyName:String(fd.get('companyName')||'').trim(),
+            businessId:String(fd.get('businessId')||'').trim(),
+            plan:String(fd.get('plan')||'monthly'),
+            acceptedTerms:fd.get('acceptedTerms')==='on'
+          })
+        });
+        if(!result?.url) throw new Error(appText('Maksusivua ei saatu avattua.','Betalningssidan kunde inte öppnas.','Could not open checkout.'));
+        location.href=result.url;
+      } catch(err) {
+        button.disabled=false;
+        button.innerHTML=original;
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
+      }
+    });
     const validDashboardViews = new Set(['overview','setup','answers','customers','automation','install','account']);
     const targetViewMap = {
       'overview':'overview',
