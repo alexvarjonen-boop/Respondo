@@ -793,19 +793,19 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
 
 function knowledgeTopic(value) {
   const t=normalizeSearchText(value);
-  if (/^hinnat\b|hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
   if (/tarjouspyynt|quote|estimate|offert/.test(t)) return 'quote';
   // Keep actual services separate from retail products. Previously both mapped to
   // "services", so "Mitä palveluja teette?" could rank an unrelated product card.
   if(/palvelu|service|services|tjanst|tjänst|tarjoa|erbjud|huolto|pesu|pesut|siistim|raivaus|maalaust|leikkaus|poisvienti|puhdist/.test(t)) return 'services';
   if(/tuote|product|valikoima|selection|sortiment|myy|sell|sku|tuotenumero/.test(t)) return 'products';
-  if(/hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
+  if(/maksutapa|maksaminen|maksuvaihtoeh|korttimaks|klarna|paypal|mobilepay|apple pay|google pay|payment method|payment options|pay with|pay by|betalning|betalningsmetod|faktura/.test(t)) return 'payment';
+  if(/^hinnat\b|hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
   if(/auki|opening|hours|oppet|öppet|oppettid/.test(t)) return 'hours';
-  if(/toimitus|toimiteta|toimitamme|toimitatte|shipping|delivery|nouto|pickup|leverans/.test(t)) return 'delivery';
-  if(/palaut|return|refund|vaihto|retur/.test(t)) return 'returns';
+  if(/toimitus|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|lahetys|sparning/.test(t)) return 'delivery';
+  if(/palaut|return|refund|vaihto|exchange|retur|aterbetal/.test(t)) return 'returns';
   if(/myymala|myymälä|store|location|butik/.test(t)) return 'stores';
   if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(t)) return 'contact';
-  if(/takuu|warranty|garanti/.test(t)) return 'warranty';
+  if(/takuu|reklamaatio|warranty|guarantee|garanti|reklamation/.test(t)) return 'warranty';
   if(/ajanvaraus|ajanvarauslinkki|booking|appointment|boka|bokning|tidsbokning/.test(t)) return 'booking';
   return '';
 }
@@ -815,13 +815,16 @@ function queryTopic(query) {
   if (/osoite|address|adress|sijainti/.test(q)) return 'contact';
   if (!/hinta|maksaa|price|cost|pris|kostar|auki|hours|open|oppet/.test(q) && /mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|what do you (?:do|offer)|services|vad gor ni|vad gör ni|vad erbjuder|vilka tjänster|vilka tjanster|tjanster|tjänster|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|onko teilla|loytyyko teilta|löytyykö teiltä|haluaisin tilata|haluan tilata|tarvitsen|tarviin|pesu|puhdist|siivou|oljy|öljy|asenn|maal|korj|huol|raiva|poisvien/.test(q)) return 'services';
   if(/mita myytte|mitä myytte|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you sell|what products|vad säljer|vad saljer|sortiment/.test(q)) return 'products';
+  // Payment-method questions such as "voiko maksaa Klarnalla?" must not be
+  // mistaken for a generic price question just because they contain "maksaa".
+  if(/maksutapa|maksaminen|maksuvaihtoeh|kortilla|korttimaks|klarn|paypal|mobilepay|apple pay|google pay|payment method|payment options|pay with|pay by|betalning|betalningsmetod|faktura/.test(q)) return 'payment';
   if(/hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar/.test(q)) return 'pricing';
   if(/auki|aukiolo|opening|hours|open|oppet|öppet|oppettid/.test(q)) return 'hours';
-  if(/toimitus|toimiteta|toimitamme|toimitatte|shipping|delivery|nouto|pickup|leverans/.test(q)) return 'delivery';
-  if(/palaut|return|refund|vaihto|retur/.test(q)) return 'returns';
+  if(/toimitus|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|where is my order|tilauksen tila|lahetys|sparning/.test(q)) return 'delivery';
+  if(/palaut|return|refund|vaihto|exchange|retur|aterbetal/.test(q)) return 'returns';
   if(/myymala|myymälä|myymalat|myymälät|store|stores|butik/.test(q)) return 'stores';
   if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(q)) return 'contact';
-  if(/takuu|warranty|garanti/.test(q)) return 'warranty';
+  if(/takuu|reklamaatio|warranty|guarantee|garanti|reklamation/.test(q)) return 'warranty';
   if(/ajanvaraus|varaa aika|varata ajan|ajan vara|booking|appointment|boka|bokning|tidsbokning/.test(q)) return 'booking';
   return '';
 }
@@ -963,9 +966,10 @@ function expandSearchConcepts(value) {
     ['auki','aukiolo','aukioloajat','opening','hours','open','oppet','oppettider'],
     ['osoite','sijainti','missä','missa','address','location','where','adress','var'],
     ['yhteys','puhelin','sahkoposti','sähköposti','contact','phone','email','kontakt','telefon','e-post'],
-    ['toimitus','toimitukset','nouto','shipping','delivery','pickup','leverans','avhamtning'],
-    ['palautus','palautukset','vaihto','return','returns','refund','retur','byte'],
-    ['takuu','warranty','guarantee','garanti'],
+    ['toimitus','toimitukset','toimitusaika','seuranta','seurantakoodi','lahetys','nouto','shipping','delivery','shipment','tracking','track order','pickup','leverans','sparning','avhamtning'],
+    ['palautus','palautukset','vaihto','hyvitys','return','returns','refund','exchange','retur','aterbetalning','byte'],
+    ['takuu','reklamaatio','warranty','guarantee','garanti','reklamation'],
+    ['maksutapa','maksaminen','kortti','lasku','klarna','paypal','mobilepay','payment','payment method','betalning','betalningsmetod','faktura'],
     ['yritys','meista','meistä','company','business','about','foretag','företag','om oss']
   ];
   for(const group of groups){
@@ -1202,7 +1206,11 @@ function answerTone(rows) {
 
 function inferIntent(message) {
   const q = normalizeSearchText(message);
-  if (/tilausnumero|tilaukseni|tilauksen tila|order status|where is my order|seuranta|orderstatus|var är min beställning|var ar min bestallning/.test(q)) return 'Tilauksen tila';
+  if (/tilausnumero|tilaukseni|tilauksen tila|order status|where is my order|seuranta|tracking|orderstatus|var är min beställning|var ar min bestallning/.test(q)) return 'Tilauksen tila';
+  if (/maksutapa|maksaminen|klarn|paypal|mobilepay|apple pay|google pay|payment method|betalningsmetod/.test(q)) return 'Maksaminen';
+  if (/palaut|return|refund|vaihto|exchange|retur/.test(q)) return 'Palautukset';
+  if (/takuu|reklamaatio|warranty|guarantee|garanti/.test(q)) return 'Takuu';
+  if (/toimitus|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans/.test(q)) return 'Toimitus';
   if (/ajanvaraus|varaa aika|ajan vara|booking|appointment|boka|bokning|tidsbokning/.test(q)) return 'Ajanvaraus';
   if (/tarjou[sk]|arvio|quote|estimate|offert|prisforslag|prisförslag/.test(q)) return 'Tarjouspyyntö';
   if (/hinta|maksaa|hinnoittelu|kustannus|price|cost|pricing|pris|kostar|kostnad/.test(q)) return 'Hinta';
@@ -1220,7 +1228,8 @@ function conversationTopic(value) {
   const intent=inferIntent(value);
   const map={
     'Hinta':'pricing','Aukioloajat':'hours','Yhteystiedot':'contact','Sijainti':'contact',
-    'Palvelut':'services','Ajanvaraus':'booking','Tarjouspyyntö':'quote'
+    'Palvelut':'services','Ajanvaraus':'booking','Tarjouspyyntö':'quote',
+    'Tilauksen tila':'delivery','Toimitus':'delivery','Palautukset':'returns','Takuu':'warranty','Maksaminen':'payment'
   };
   if (map[intent]) return map[intent];
   if (finnishServiceActionKind(value)) return 'services';
@@ -1857,6 +1866,10 @@ function buildProfileKnowledge(profile = {}) {
   add('Puhelinnumero', profile.phone, ['puhelin','numero','soittaa']);
   add('Sähköposti', profile.email, ['sähköposti','email']);
   add('Palvelut', Array.isArray(profile.services) ? profile.services.join(', ') : profile.services, ['palvelut','teette','tarjoatte']);
+  add('Toimitus ja seuranta', profile.delivery, ['toimitus','seuranta','seurantakoodi','shipping','delivery','tracking']);
+  add('Palautukset ja vaihdot', profile.returns, ['palautus','vaihto','hyvitys','return','refund','exchange']);
+  add('Takuu', profile.warranty, ['takuu','reklamaatio','warranty','guarantee']);
+  add('Maksaminen', profile.payment, ['maksutapa','maksaminen','klarna','paypal','mobilepay','payment']);
   add('Toimialue', profile.serviceArea, ['toimialue','alue','paikkakunta']);
   add('Osoite', profile.address, ['osoite','sijainti']);
   add('Verkkosivu', profile.website, ['verkkosivu','www']);
