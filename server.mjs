@@ -336,6 +336,9 @@ const normalizeReferralCode = (value) =>
     .replace(/[^A-Z0-9-]/g, '')
     .slice(0, 32);
 
+const FREE_REFERRAL_CODE = 'CEO1000';
+const isFreeReferralCode = (value) => normalizeReferralCode(value) === FREE_REFERRAL_CODE;
+
 async function ensureReferralCode(userId) {
   const found = await q(
     'SELECT referral_code,subscription_plan,stripe_subscription_id FROM users WHERE id=$1',
@@ -3400,18 +3403,19 @@ app.get('/api/public/config', async (req, res) => {
 
 app.post('/api/auth/start-checkout', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Tietokantaa ei ole yhdistetty.' });
-  if (!stripe) return res.status(503).json({ error: 'Stripe-maksuja ei ole yhdistetty.' });
 
   const { fullName, companyName, businessId, password, plan, acceptedTerms } = req.body;
   const email = cleanEmail(req.body.email);
   const normalizedPlan = plan === 'owner_test' ? 'owner_test' : (plan === 'yearly' ? 'yearly' : 'monthly');
   const referralCode = normalizeReferralCode(req.body.referralCode);
+  const freeReferral = isFreeReferralCode(referralCode);
   const oauthProfile = getOauthProfile(req);
   const socialSignup = Boolean(
     oauthProfile &&
     cleanEmail(oauthProfile.email) === email &&
     ['google','apple'].includes(oauthProfile.provider)
   );
+
   if (!acceptedTerms || !email || !companyName || (!socialSignup && (!password || password.length < 10))) {
     return res.status(400).json({
       error: socialSignup
@@ -3419,8 +3423,13 @@ app.post('/api/auth/start-checkout', async (req, res) => {
         : 'Täytä kaikki pakolliset tiedot. Salasanan on oltava vähintään 10 merkkiä.',
     });
   }
+
   if (referralCode && normalizedPlan !== 'monthly') {
     return res.status(400).json({ error: 'Suosittelukoodi toimii vain kuukausitilauksessa.' });
+  }
+
+  if (!freeReferral && !stripe) {
+    return res.status(503).json({ error: 'Stripe-maksuja ei ole yhdistetty.' });
   }
 
   try {
@@ -3428,13 +3437,18 @@ app.post('/api/auth/start-checkout', async (req, res) => {
       return res.status(410).json({ error: 'Omistajan testitilaus ei ole enää käytettävissä.' });
     }
 
-    const price =
-      normalizedPlan === 'owner_test'
+    const price = freeReferral
+      ? null
+      : normalizedPlan === 'owner_test'
         ? process.env.STRIPE_OWNER_TEST_PRICE_ID
         : normalizedPlan === 'yearly'
           ? process.env.STRIPE_YEARLY_PRICE_ID
           : process.env.STRIPE_MONTHLY_PRICE_ID;
-    if (!price) return res.status(503).json({ error: 'Stripe-hintaa ei ole määritetty.' });
+
+    if (!freeReferral && !price) {
+      return res.status(503).json({ error: 'Stripe-hintaa ei ole määritetty.' });
+    }
+
     const existing = await q(
       'SELECT id,status,stripe_customer_id,stripe_subscription_id FROM users WHERE lower(email)=lower($1)',
       [email],
@@ -3457,7 +3471,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
       await client.query('BEGIN');
 
       let referrer = null;
-      if (referralCode) {
+      if (referralCode && !freeReferral) {
         const ref = await client.query(
           `SELECT id,email,status,subscription_status,subscription_plan
              FROM users
@@ -3485,10 +3499,29 @@ app.post('/api/auth/start-checkout', async (req, res) => {
         referrer = ref.rows[0];
       }
 
+      const preferredLanguage = ['fi','sv','en'].includes(String(req.body.language || '').toLowerCase())
+        ? String(req.body.language).toLowerCase()
+        : 'fi';
+      const initialStatus = freeReferral ? 'active' : 'pending';
+      const initialSubscriptionStatus = freeReferral ? 'active' : null;
+
       await client.query(
-        `INSERT INTO users(id,email,password_hash,full_name,company_name,business_id,status,subscription_plan,preferred_language)
-         VALUES($1,$2,$3,$4,$5,$6,'pending',$7,$8)`,
-        [id, email, hash, fullName || '', companyName, businessId || null, normalizedPlan, ['fi','sv','en'].includes(String(req.body.language || '').toLowerCase()) ? String(req.body.language).toLowerCase() : 'fi'],
+        `INSERT INTO users(
+           id,email,password_hash,full_name,company_name,business_id,status,
+           subscription_status,subscription_plan,preferred_language
+         ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        [
+          id,
+          email,
+          hash,
+          fullName || '',
+          companyName,
+          businessId || null,
+          initialStatus,
+          initialSubscriptionStatus,
+          normalizedPlan,
+          preferredLanguage,
+        ],
       );
 
       const tenantId = uid();
@@ -3497,9 +3530,21 @@ app.post('/api/auth/start-checkout', async (req, res) => {
       if (slugExists.rowCount) tenantSlug = `${tenantSlug}-${crypto.randomBytes(3).toString('hex')}`;
 
       await client.query(
-        `INSERT INTO tenants(id,owner_user_id,slug,name,business_id,contact_email,active,subscription_status,subscription_plan)
-         VALUES($1,$2,$3,$4,$5,$6,FALSE,'pending',$7)`,
-        [tenantId, id, tenantSlug, companyName, businessId || null, email, normalizedPlan],
+        `INSERT INTO tenants(
+           id,owner_user_id,slug,name,business_id,contact_email,active,
+           subscription_status,subscription_plan
+         ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [
+          tenantId,
+          id,
+          tenantSlug,
+          companyName,
+          businessId || null,
+          email,
+          freeReferral,
+          freeReferral ? 'active' : 'pending',
+          normalizedPlan,
+        ],
       );
       await client.query('UPDATE users SET active_tenant_id=$1 WHERE id=$2',[tenantId,id]);
 
@@ -3509,6 +3554,16 @@ app.post('/api/auth/start-checkout', async (req, res) => {
            VALUES($1,$2,$3,$4,'pending')`,
           [uid(), referrer.id, id, referralCode],
         );
+      }
+
+      if (freeReferral) {
+        await client.query('COMMIT');
+        setSession(res, { id, email });
+        res.clearCookie(OAUTH_PROFILE_COOKIE);
+        return res.json({
+          url: '/app?welcome=1&free_code=1',
+          free: true,
+        });
       }
 
       session = await stripe.checkout.sessions.create({
@@ -3543,7 +3598,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
 
       await client.query('COMMIT');
     } catch (e) {
-      await client.query('ROLLBACK');
+      try { await client.query('ROLLBACK'); } catch {}
       throw e;
     } finally {
       client.release();
@@ -3787,21 +3842,61 @@ app.post('/api/app/workspaces/switch', auth, ownerOnly, async (req,res) => {
 });
 
 app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
-  if(!stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
   const companyName=String(req.body?.companyName||'').replace(/[<>]/g,'').trim().slice(0,120);
   const businessId=String(req.body?.businessId||'').replace(/[<>]/g,'').trim().slice(0,40);
   const plan=req.body?.plan==='yearly'?'yearly':'monthly';
   const referralCode=normalizeReferralCode(req.body?.referralCode);
+  const freeReferral=isFreeReferralCode(referralCode);
+
   if(!companyName) return res.status(400).json({ error:'Anna yrityksen nimi.' });
   if(req.body?.acceptedTerms!==true) return res.status(400).json({ error:'Hyväksy käyttöehdot ja tietosuojaseloste.' });
   if(referralCode && plan!=='monthly') return res.status(400).json({ error:'Suosittelukoodi toimii vain kuukausitilauksessa.' });
+  if(!freeReferral && !stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
 
-  const price=plan==='yearly' ? process.env.STRIPE_YEARLY_PRICE_ID : process.env.STRIPE_MONTHLY_PRICE_ID;
-  if(!price) return res.status(503).json({ error:'Stripe-hintaa ei ole määritetty.' });
+  const price=freeReferral ? null : (plan==='yearly' ? process.env.STRIPE_YEARLY_PRICE_ID : process.env.STRIPE_MONTHLY_PRICE_ID);
+  if(!freeReferral && !price) return res.status(503).json({ error:'Stripe-hintaa ei ole määritetty.' });
 
   const userResult=await q('SELECT id,email,stripe_customer_id FROM users WHERE id=$1',[req.user.sub]);
   if(!userResult.rowCount) return res.status(404).json({ error:'Tiliä ei löytynyt.' });
   const user=userResult.rows[0];
+
+  const tenantId=uid();
+  let tenantSlug=slug(companyName);
+  const exists=await q('SELECT 1 FROM tenants WHERE slug=$1',[tenantSlug]);
+  if(exists.rowCount) tenantSlug=tenantSlug+'-'+crypto.randomBytes(3).toString('hex');
+
+  if(freeReferral){
+    const client=await pool.connect();
+    try{
+      await client.query('BEGIN');
+      await client.query(
+        `INSERT INTO tenants(
+           id,owner_user_id,slug,name,business_id,contact_email,active,
+           subscription_status,subscription_plan
+         ) VALUES($1,$2,$3,$4,$5,$6,TRUE,'active','monthly')`,
+        [tenantId,req.user.sub,tenantSlug,companyName,businessId||null,user.email],
+      );
+      await client.query(
+        `UPDATE users
+            SET active_tenant_id=$1,
+                status='active',
+                updated_at=NOW()
+          WHERE id=$2`,
+        [tenantId,req.user.sub],
+      );
+      await client.query('COMMIT');
+      return res.json({
+        url:'/app?workspace_added=1&free_code=1',
+        free:true,
+      });
+    }catch(e){
+      try{await client.query('ROLLBACK');}catch{}
+      console.error('Free workspace activation failed',e);
+      return res.status(500).json({error:'Uuden yrityksen aktivointi epäonnistui.'});
+    }finally{
+      client.release();
+    }
+  }
 
   let referrer=null;
   let existingReferralReservation=false;
@@ -3835,22 +3930,17 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
       [req.user.sub],
     );
     if(alreadyReferred.rowCount){
-      const existing=alreadyReferred.rows[0];
-      if(existing.stripe_discount_applied){
+      const existingReferral=alreadyReferred.rows[0];
+      if(existingReferral.stripe_discount_applied){
         return res.status(400).json({error:'Olet jo käyttänyt suosittelukoodin tällä käyttäjätilillä.'});
       }
-      if(String(existing.code||'')!==referralCode){
+      if(String(existingReferral.code||'')!==referralCode){
         return res.status(400).json({error:'Tällä käyttäjätilillä on jo toinen keskeneräinen suosittelukoodi.'});
       }
       existingReferralReservation=true;
     }
     referrer=ref.rows[0];
   }
-
-  const tenantId=uid();
-  let tenantSlug=slug(companyName);
-  const exists=await q('SELECT 1 FROM tenants WHERE slug=$1',[tenantSlug]);
-  if(exists.rowCount) tenantSlug=tenantSlug+'-'+crypto.randomBytes(3).toString('hex');
 
   await q(
     `INSERT INTO tenants(
