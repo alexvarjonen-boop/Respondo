@@ -136,6 +136,25 @@ test('imports ecommerce shipping, tracking, returns, warranty and payment facts'
  assert.match(returning.answer,/30 päivän/i);
 });
 
+test('cart free-shipping progress text is never imported or used as tracking evidence',async()=>{
+ const doc=extractBusinessDocument(`
+  <div class="shipping-progress"><span>00 more to enjoy FREE shipping 0</span></div>
+  <section><h2>Shipping and tracking</h2>
+   <p>Kun tilaus on lähetetty, saat sähköpostiisi seurantakoodin, jolla voit seurata lähetystä.</p>
+  </section>
+ `,'https://shop.example/cart');
+ const facts=essentialWebsiteCandidates({finalUrl:'https://shop.example/',pageDocuments:[doc]});
+ assert.equal(facts.some(x=>/more to enjoy free shipping/i.test(x.answer)),false);
+ const rows=[
+  {id:'legacy-cart',category:'Toimitus ja seuranta',title:'Toimitus',answer:'00 more to enjoy FREE shipping 0',keywords:['shipping','delivery','tracking'],source_type:'website',source_url:'https://shop.example/cart'},
+  ...facts.map((item,index)=>({...item,id:'good-'+index,source_type:'website',source_url:item.sourceUrl}))
+ ];
+ const result=await generateGroundedAnswer({rows,message:'Onks tilauksessa seuranta?',lang:'fi'});
+ assert.equal(result.handoff,false,JSON.stringify(result));
+ assert.match(result.answer,/seurantakood/i);
+ assert.doesNotMatch(result.answer,/free shipping|more to enjoy/i);
+});
+
 test('ecommerce products stay complete and cheapest-product questions return a direct product link',async()=>{
  const makeProduct=(name,price,path)=>extractBusinessDocument(`
    <script type="application/ld+json">${JSON.stringify({
