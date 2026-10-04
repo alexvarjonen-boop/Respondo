@@ -2808,8 +2808,8 @@ async function dashboard(options = {}) {
   const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
   const isWelcome = new URLSearchParams(location.search).get('welcome') === '1';
 
-  return `<div class="appshell dashboard-simple-shell">
-    <main class="appmain dashboard-simple-main">
+  return `<div class="appshell dashboard-simple-shell ${isDemo ? 'demo-dashboard-shell' : ''}">
+    <main class="appmain dashboard-simple-main ${isDemo ? 'demo-dashboard-main' : ''}">
       <header class="dashboard-topbar ${isDemo ? 'demo-sticky-topbar' : ''}">
         <div class="dashboard-topbar-brand">
           ${logo()}
