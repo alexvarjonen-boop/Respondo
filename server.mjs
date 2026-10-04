@@ -896,8 +896,12 @@ function directProductAnswer(rows,message,lang='fi') {
   const tokens=productQueryTokens(message);
   const ranked=products.map((product)=>({...product,_match:productMatchScore(product,tokens)}))
     .sort((a,b)=>b._match-a._match || (Number(a.price??Infinity)-Number(b.price??Infinity)));
-  const filtered=tokens.length ? ranked.filter((product)=>product._match>0) : ranked;
-  const candidates=filtered.length?filtered:ranked;
+  // If at least one product matches the requested product name/type/brand,
+  // discard products that only mention the word incidentally in their description.
+  // Example: a towel description saying "for your new putter" is not a putter.
+  const strongMatches=tokens.length ? ranked.filter((product)=>product._match>=6) : ranked;
+  const weakMatches=tokens.length ? ranked.filter((product)=>product._match>0) : ranked;
+  const candidates=strongMatches.length?strongMatches:(weakMatches.length?weakMatches:ranked);
   const cheapest=/\b(?:halvin|edullisin|cheapest|lowest price|billigast|billigaste)\b/.test(q);
   const expensive=/\b(?:kallein|most expensive|highest price|dyrast|dyraste)\b/.test(q);
   const popularAsk=/\b(?:suosituin|suosituimmat|myydyin|myydyimmat|myydyimmät|most popular|best seller|bestseller|best-selling|top seller|populärast|bastsaljare|bästsäljare|mest sålda|mest salda)\b/.test(q);
