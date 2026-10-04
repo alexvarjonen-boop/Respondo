@@ -6107,10 +6107,10 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     });
 
     const noAnswer = lang === 'en'
-      ? 'I cannot find a reliable answer to this from the provided company information. Add the answer to the knowledge base and the bot will know it next time.'
+      ? 'I cannot find a reliable answer to this in the company information. Leave your name and phone number or email below, and someone from the company can get back to you.'
       : lang === 'sv'
-        ? 'Jag hittar inget säkert svar på detta i företagets information. Lägg till rätt svar i kunskapsbasen så kan Respondo svara på det nästa gång.'
-        : 'Tätä tietoa ei löytynyt yrityksen tiedoista. Lisää oikea vastaus kerran, niin Respondo osaa vastata siihen jatkossa.';
+        ? 'Jag hittar inget säkert svar på detta i företagets information. Lämna ditt namn och telefonnummer eller din e-postadress nedan, så kan någon från företaget kontakta dig.'
+        : 'Tähän en löydä varmaa vastausta yrityksen tiedoista. Jätä alle nimesi ja puhelinnumerosi tai sähköpostisi, niin yrityksen henkilö voi palata sinulle.';
     const translationUnavailable = lang === 'en'
       ? 'I found the relevant company information, but could not translate the answer reliably right now. Please try again in a moment.'
       : lang === 'sv'
@@ -6147,6 +6147,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       confidence: handoff ? Math.min(result.confidence, 0.35) : result.confidence,
       intent: result.intent,
       actions,
+      canLeaveContact: Boolean(handoff),
     });
   } catch (e) {
     console.error('Demo chat failed', e);
@@ -6156,6 +6157,97 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
         : requestLang === 'sv'
           ? 'Det gick inte att få ett svar just nu. Försök igen om en stund.'
           : 'Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.'
+    });
+  }
+});
+
+
+app.post('/api/public/demo-lead', publicChatLimiter, async (req,res)=>{
+  let lang='fi';
+  try {
+    let body=req.body;
+    if (typeof body === 'string') {
+      try { body=JSON.parse(body); } catch { body={}; }
+    }
+    body=body||{};
+    lang=['fi','sv','en'].includes(String(body.lang||'').toLowerCase())
+      ? String(body.lang).toLowerCase()
+      : 'fi';
+
+    const name=String(body.name||'').trim().slice(0,120);
+    const email=cleanEmail(body.email).slice(0,220);
+    const phone=String(body.phone||'').trim().slice(0,80);
+    const message=String(body.message||'').trim().slice(0,1200);
+    const visitorRef=String(body.visitorRef||'preview-contact').trim().slice(0,160) || 'preview-contact';
+    const errorText=(fi,sv,en)=>lang==='sv'?sv:lang==='en'?en:fi;
+
+    if (!email && !phone) {
+      return res.status(400).json({error:errorText(
+        'Anna puhelinnumero tai sähköpostiosoite.',
+        'Ange ett telefonnummer eller en e-postadress.',
+        'Enter a phone number or email address.'
+      )});
+    }
+
+    let tenantId='';
+    try {
+      const token=req.cookies?.respondo_session || cookies(req)[COOKIE];
+      if (token) {
+        const session=jwt.verify(token,JWT);
+        const tr=await q(
+          'SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1) AND active=true LIMIT 1',
+          [session.sub],
+        );
+        if (tr.rowCount) tenantId=tr.rows[0].id;
+      }
+    } catch {}
+
+    if (!tenantId) {
+      const ownerEmail=cleanEmail(process.env.OWNER_EMAIL||process.env.SUPPORT_EMAIL);
+      if (ownerEmail) {
+        const tr=await q(
+          `SELECT t.id
+             FROM tenants t
+             JOIN users u ON u.id=t.owner_user_id
+            WHERE lower(u.email)=lower($1)
+              AND t.active=true
+              AND u.status='active'
+            ORDER BY u.created_at ASC
+            LIMIT 1`,
+          [ownerEmail],
+        );
+        if (tr.rowCount) tenantId=tr.rows[0].id;
+      }
+    }
+
+    if (!tenantId) return res.status(503).json({error:errorText(
+      'Yhteydenotto ei ole juuri nyt käytettävissä.',
+      'Kontaktformuläret är inte tillgängligt just nu.',
+      'The contact form is not available right now.'
+    )});
+
+    await q(
+      `INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message,status)
+       VALUES($1,$2,$3,$4,$5,$6,$7,'new')`,
+      [uid(),tenantId,visitorRef,name||null,email||null,phone||null,message||null],
+    );
+
+    return res.json({
+      ok:true,
+      message:errorText(
+        'Kiitos! Yhteystietosi lähetettiin yritykselle.',
+        'Tack! Dina kontaktuppgifter skickades till företaget.',
+        'Thank you! Your contact details were sent to the company.'
+      )
+    });
+  } catch(e) {
+    console.error('Preview lead capture failed',e);
+    return res.status(500).json({
+      error:lang==='sv'
+        ? 'Kontaktuppgifterna kunde inte skickas just nu.'
+        : lang==='en'
+          ? 'Your contact details could not be sent right now.'
+          : 'Yhteystietoja ei voitu lähettää juuri nyt.'
     });
   }
 });
