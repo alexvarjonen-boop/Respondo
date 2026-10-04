@@ -7717,3 +7717,39 @@ body{
     font-size:10px;
   }
 }
+
+
+/* Public demo mobile sticky header — iPhone/Safari hardening */
+.demo-dashboard-shell,
+.demo-dashboard-main{
+  overflow:visible!important;
+}
+@media(max-width:760px){
+  .demo-dashboard-shell{
+    overflow:visible!important;
+    min-height:100vh!important;
+  }
+  .demo-dashboard-main{
+    overflow:visible!important;
+    padding-top:0!important;
+  }
+  .demo-dashboard-main > .demo-sticky-topbar{
+    position:-webkit-sticky!important;
+    position:sticky!important;
+    top:0!important;
+    z-index:2147483000!important;
+    margin-top:0!important;
+    margin-left:-12px!important;
+    margin-right:-12px!important;
+    margin-bottom:14px!important;
+    border-radius:0!important;
+    border-top:0!important;
+    background:rgba(255,255,255,.97)!important;
+    -webkit-backdrop-filter:blur(22px) saturate(180%)!important;
+    backdrop-filter:blur(22px) saturate(180%)!important;
+    box-shadow:0 8px 28px rgba(0,0,0,.08)!important;
+    transform:none!important;
+    contain:none!important;
+    isolation:isolate;
+  }
+}
