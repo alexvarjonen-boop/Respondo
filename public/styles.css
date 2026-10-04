@@ -7783,3 +7783,118 @@ body{
     min-height:58px!important;
   }
 }
+
+
+/* Homepage compact contact form */
+.contact-form-toggle{
+  width:100%;
+  min-height:54px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:0 18px;
+  border:1px solid rgba(17,17,20,.10);
+  border-radius:18px;
+  background:#fff;
+  color:#111114;
+  font:inherit;
+  font-size:13px;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:0 8px 24px rgba(17,17,20,.04);
+}
+.contact-form-toggle span{
+  flex:0 0 auto;
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#f2f2f4;
+  font-size:18px;
+  line-height:1;
+}
+.home-contact-form{
+  width:100%;
+  display:grid;
+  gap:12px;
+  padding:16px;
+  border:1px solid rgba(17,17,20,.09);
+  border-radius:20px;
+  background:#fff;
+  box-shadow:0 14px 34px rgba(17,17,20,.045);
+}
+.home-contact-form[hidden]{display:none!important}
+.home-contact-form label{
+  display:grid;
+  gap:7px;
+}
+.home-contact-form label>span{
+  color:#77777e;
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+}
+.home-contact-form input,
+.home-contact-form textarea{
+  width:100%;
+  border:1px solid rgba(17,17,20,.10);
+  border-radius:14px;
+  background:#f7f7f8;
+  color:#111114;
+  padding:13px 14px;
+  font:inherit;
+  font-size:13px;
+  outline:none;
+  resize:vertical;
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.home-contact-form input{
+  min-height:48px;
+}
+.home-contact-form textarea{
+  min-height:120px;
+}
+.home-contact-form input:focus,
+.home-contact-form textarea:focus{
+  background:#fff;
+  border-color:rgba(127,128,255,.65);
+  box-shadow:0 0 0 4px rgba(127,128,255,.10);
+}
+.home-contact-submit{
+  width:100%!important;
+  min-height:50px!important;
+  justify-content:center!important;
+  border-radius:14px!important;
+}
+.home-contact-submit:disabled{
+  opacity:.58;
+  cursor:wait;
+}
+.home-contact-status{
+  min-height:18px;
+  font-size:11px;
+  line-height:1.45;
+  color:#6e6e73;
+}
+.home-contact-status.success{color:#24744f}
+.home-contact-status.error{color:#b3261e}
+@media(max-width:760px){
+  .contact-shell{
+    gap:28px!important;
+  }
+  .contact-actions{
+    width:100%;
+  }
+  .contact-form-toggle{
+    min-height:52px;
+    border-radius:16px;
+    font-size:12px;
+  }
+  .home-contact-form{
+    padding:14px;
+    border-radius:18px;
+  }
+}
