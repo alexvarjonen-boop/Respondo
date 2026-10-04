@@ -794,6 +794,10 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
 function knowledgeTopic(value) {
   const t=normalizeSearchText(value);
   if (/tarjouspyynt|quote|estimate|offert/.test(t)) return 'quote';
+  // Explicit price categories must win over service words inside the item name
+  // (for example "Hinnat: Ikkunanpesu"). Payment-method rows use their own
+  // "Maksaminen/Maksutavat" title and are handled separately below.
+  if (/^(?:hinnat?|hinnoittelu|pricing|prices?|pris(?:er)?)\b/.test(t)) return 'pricing';
   // Keep actual services separate from retail products. Previously both mapped to
   // "services", so "Mitä palveluja teette?" could rank an unrelated product card.
   if(/palvelu|service|services|tjanst|tjänst|tarjoa|erbjud|huolto|pesu|pesut|siistim|raivaus|maalaust|leikkaus|poisvienti|puhdist/.test(t)) return 'services';
