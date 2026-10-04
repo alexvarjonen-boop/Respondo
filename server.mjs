@@ -2543,6 +2543,7 @@ async function subscribed(req, res, next) {
   try {
     const r = await q(
       `SELECT u.status,
+              t.id AS tenant_id,
               COALESCE(t.subscription_status,u.subscription_status) AS subscription_status
          FROM users u
          LEFT JOIN tenants t
@@ -2553,9 +2554,31 @@ async function subscribed(req, res, next) {
     );
     if (!r.rowCount) return res.status(404).json({ error: 'Tiliä ei löytynyt.' });
     const user = r.rows[0];
-    if (user.status !== 'active' || !['active', 'trialing'].includes(user.subscription_status)) {
-      return res.status(402).json({ error: 'Aktiivinen tilaus tarvitaan tälle yritykselle.' });
+
+    if (user.status !== 'active') {
+      return res.status(402).json({ error: 'Aktiivinen tili tarvitaan.' });
     }
+
+    if (!['active', 'trialing'].includes(String(user.subscription_status || ''))) {
+      const fallback = await q(
+        `SELECT id
+           FROM tenants
+          WHERE owner_user_id=$1
+            AND active=true
+            AND subscription_status IN ('active','trialing')
+          ORDER BY created_at ASC
+          LIMIT 1`,
+        [req.user.sub],
+      );
+      if (!fallback.rowCount) {
+        return res.status(402).json({ error: 'Aktiivinen tilaus tarvitaan vähintään yhdelle yritykselle.' });
+      }
+      await q(
+        'UPDATE users SET active_tenant_id=$1,updated_at=NOW() WHERE id=$2',
+        [fallback.rows[0].id, req.user.sub],
+      );
+    }
+
     next();
   } catch (e) {
     return res.status(500).json({ error: e.message });
@@ -7356,15 +7379,27 @@ app.post('/api/public/:slug/action-event', publicChatLimiter, async (req, res) =
 app.post('/api/billing/portal', auth, async (req, res) => {
   try {
     if (!stripe) return res.status(503).json({ error: 'Stripe ei ole vielä kytketty.' });
-    const r = await q('SELECT stripe_customer_id FROM users WHERE id=$1', [req.user.sub]);
+    const r = await q(
+      `SELECT u.stripe_customer_id,t.id AS tenant_id,t.stripe_subscription_id
+         FROM users u
+         LEFT JOIN tenants t
+           ON t.id=active_tenant_for_user(u.id)
+          AND t.owner_user_id=u.id
+        WHERE u.id=$1`,
+      [req.user.sub],
+    );
     if (!r.rows[0]?.stripe_customer_id) {
       return res.status(400).json({ error: 'Asiakkaan Stripe-tilausta ei löytynyt.' });
     }
     const session = await stripe.billingPortal.sessions.create({
       customer: r.rows[0].stripe_customer_id,
-      return_url: `${BASE}/app`,
+      return_url: `${BASE}/app?section=account`,
     });
-    return res.json({ url: session.url });
+    return res.json({
+      url: session.url,
+      tenantId: r.rows[0].tenant_id || null,
+      subscriptionId: r.rows[0].stripe_subscription_id || null,
+    });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
@@ -7382,7 +7417,7 @@ app.post('/api/billing/cancel', auth, async (req, res) => {
       [req.user.sub],
     );
     const id = r.rows[0]?.stripe_subscription_id;
-    if (!id) return res.status(400).json({ error: 'Tilausta ei löytynyt.' });
+    if (!id) return res.status(400).json({ error: 'Valitun yrityksen tilausta ei löytynyt.' });
 
     const subscription = await stripe.subscriptions.update(id, { cancel_at_period_end: true });
     const periodEnd = subscription.current_period_end
@@ -7532,6 +7567,7 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE users ADD COLUMN IF NOT EXISTS active_tenant_id UUID");
   await q("ALTER TABLE tenants DROP CONSTRAINT IF EXISTS tenants_owner_user_id_key");
   await q("CREATE INDEX IF NOT EXISTS idx_tenants_owner_user_id ON tenants(owner_user_id)");
+  await q("CREATE UNIQUE INDEX IF NOT EXISTS idx_tenants_stripe_subscription ON tenants(stripe_subscription_id) WHERE stripe_subscription_id IS NOT NULL");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS business_id TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_status TEXT");
