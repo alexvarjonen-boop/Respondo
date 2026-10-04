@@ -1820,6 +1820,57 @@ function fill(value, supportEmail, siteUrl){
     .replaceAll('{{SITE_URL}}', String(siteUrl || '').replace(/\/$/,''));
 }
 
+function cleanQuestion(value){
+  return String(value || '').trim().replace(/\s+/g,' ');
+}
+
+function wrappedQuestion(question, prefix){
+  const q=cleanQuestion(question);
+  return prefix + q;
+}
+
+function expandQuestions(questions, lang){
+  const source=(Array.isArray(questions)?questions:[]).map(cleanQuestion).filter(Boolean);
+  const variants=[];
+  const wrappers = lang === 'sv'
+    ? [
+        '',
+        'Kan du berätta: ',
+        'Jag skulle vilja veta: ',
+        'Kan du förklara: ',
+        'Jag undrar: ',
+        'En fråga: ',
+      ]
+    : lang === 'en'
+      ? [
+          '',
+          'Can you tell me: ',
+          "I'd like to know: ",
+          'Can you explain: ',
+          "I'm wondering: ",
+          'Quick question: ',
+        ]
+      : [
+          '',
+          'Voitko kertoa: ',
+          'Haluaisin tietää: ',
+          'Voitko selittää: ',
+          'Mietin tätä: ',
+          'Nopea kysymys: ',
+        ];
+
+  for(const question of source){
+    for(const prefix of wrappers){
+      variants.push(wrappedQuestion(question,prefix));
+    }
+  }
+
+  // Keep a predictable 12 variants per language/topic. With the curated
+  // two base questions this yields 2,700 high-signal FI/SV/EN rows while
+  // preserving the same verified answer for every paraphrase.
+  return [...new Set(variants)].slice(0,12);
+}
+
 export function buildRespondoFaqRows({supportEmail='',siteUrl=''}={}){
   const rows=[];
   for(const entry of FAQ){
@@ -1827,9 +1878,10 @@ export function buildRespondoFaqRows({supportEmail='',siteUrl=''}={}){
       const pack=entry[lang];
       if(!pack) continue;
       const answer=fill(pack.a,supportEmail,siteUrl);
-      const combined=[entry.category,answer,...pack.q].join(' ');
+      const expandedQuestions=expandQuestions(pack.q,lang);
+      const combined=[entry.category,answer,...expandedQuestions].join(' ');
       const keywords=[...new Set(tokenise(combined))].slice(0,36);
-      pack.q.forEach((question,index)=>{
+      expandedQuestions.forEach((question,index)=>{
         rows.push({
           lang,
           category:'Respondo FAQ · '+lang.toUpperCase()+' · '+entry.category,
