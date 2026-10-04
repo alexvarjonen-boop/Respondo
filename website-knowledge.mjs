@@ -350,10 +350,13 @@ export function essentialWebsiteCandidates(bundle) {
       if (kind === 'pricing' && docProducts.length) continue;
       let title = labels[kind];
       if (kind === 'delivery') {
-        const commerceContext=norm(block.text+' '+block.heading);
-        title=/seurant|tracking|sparning|spårning/.test(commerceContext)
+        // Classify the individual fact by its own sentence, not merely by a
+        // shared section heading. In a "Toimitus ja seuranta" section the
+        // delivery-time paragraph must not masquerade as tracking evidence.
+        const factContext=norm(block.text);
+        title=/seurant|tracking|sparning|spårning/.test(factContext)
           ? 'Tilausten seuranta'
-          : /toimitusaika|delivery time|shipping time|leveranstid/.test(commerceContext)
+          : /toimitusaika|delivery time|shipping time|leveranstid/.test(factContext)
             ? 'Toimitusaika'
             : 'Toimitus';
       }
