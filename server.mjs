@@ -1843,7 +1843,7 @@ function importedKnowledgeJunk(value) {
   // Never let navigation, widgets, product-card chrome or source-code fragments
   // become customer knowledge. These strings are common on retailer/CMS pages.
   if (/(cookie|evasteaset|privacy policy|tietosuojaseloste|terms of service|kayttoehdot|copyright|kaikki oikeudet pidatetaan|hyvaksy evaste|all rights reserved|localstorage|sessionstorage|queryselector|addeventlistener|json stringify|json parse|supported includes)/.test(text)) return true;
-  if (/(skip to content|toggle nav|toggle navigation|ved[aä] liukus[aä][aä]dint[aä]|n[aä]hd[aä]ksesi muutos|katso video ty[oö]n etenemisest[aä]|arvostelut?\s*\(\s*\)|lis[aä][aä] ostoskoriin|add to cart|tuotenumero\s*[:#]?|product code\s*[:#]?|sku\s*[:#]?|varaa aika\s+ota yhteytt[aä]|helppo ja nopea palvelu\s+varaa aika)/i.test(raw)) return true;
+  if (/(skip to content|toggle nav|toggle navigation|ved[aä] liukus[aä][aä]dint[aä]|n[aä]hd[aä]ksesi muutos|katso video ty[oö]n etenemisest[aä]|arvostelut?\s*\(\s*\)|lis[aä][aä] ostoskoriin|add to cart|tuotenumero\s*[:#]?|product code\s*[:#]?|sku\s*[:#]?|varaa aika\s+ota yhteytt[aä]|helppo ja nopea palvelu\s+varaa aika|more to (?:enjoy|get|unlock|qualify for) free shipping|away from free shipping|unlock free shipping|(?:spend|add).{0,40}more.{0,40}free shipping)/i.test(raw)) return true;
   if (/(const |let |var |function |document |window |=>|webpack|sourceMappingURL)/i.test(raw)) return true;
   // A long run of menu/category labels without sentence punctuation is not a fact.
   const words = text.split(' ').filter(Boolean);
