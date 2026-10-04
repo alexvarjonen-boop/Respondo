@@ -555,11 +555,46 @@ function isFirstPartyRespondoTenant(tenant) {
   return name === 'respondo' || name === 'respondo ai' || slug === 'respondo' || slug === 'respondoai';
 }
 
-function respondoProductFaqMatch(message, lang = 'fi') {
+function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   const q = normalizeSearchText(message);
   if (!q) return null;
   const language = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const answer = (fi, sv, en) => language === 'sv' ? sv : language === 'en' ? en : fi;
+
+  const previousQuestion = normalizeSearchText(
+    Array.isArray(history) && history.length ? history[history.length - 1]?.question : ''
+  );
+  const previousWasPricing = /(?:hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar|kuukaudessa|monthly|per month|manad|månad)/.test(previousQuestion);
+
+  if (
+    /(?:enta|ent|entäs|vuodessa|vuosi(?:hinta|tilaus)?|yearly|annual|per year|a year|arspris|årspris|per ar|per år|arsabonnemang|årsabonnemang)/.test(q) &&
+    (
+      /(?:vuodessa|vuosi|yearly|annual|per year|a year|arspris|årspris|per ar|per år|arsabonnemang|årsabonnemang)/.test(q) ||
+      previousWasPricing
+    )
+  ) {
+    return {
+      id:'respondo-faq-annual-pricing',
+      answer:answer(
+        'Vuositilaus maksaa 539,88 € vuodessa, eli 44,99 €/kk. Hinta sisältää ALV:n 25,5 %.',
+        'Årsabonnemanget kostar 539,88 € per år, alltså 44,99 €/månad. Priset inkluderar 25,5 % moms.',
+        'The annual plan costs €539.88 per year, which is €44.99/month. The price includes 25.5% VAT.'
+      )
+    };
+  }
+
+  if (
+    /(?:kuukaudessa|kuukausi(?:hinta|tilaus)?|monthly|per month|a month|manad|månad|per manad|per månad)/.test(q)
+  ) {
+    return {
+      id:'respondo-faq-monthly-pricing',
+      answer:answer(
+        'Kuukausitilaus maksaa 49,99 € kuukaudessa ja hinta sisältää ALV:n 25,5 %.',
+        'Månadsabonnemanget kostar 49,99 € per månad och priset inkluderar 25,5 % moms.',
+        'The monthly plan costs €49.99 per month and includes 25.5% VAT.'
+      )
+    };
+  }
 
   if (/(?:jatt|leave|lamna).*(?:yhteystiet|contact detail|kontaktuppgift)|(?:yhteystiet|contact detail|kontaktuppgift).*(?:jatt|leave|lamna)/.test(q)) {
     return {
@@ -5420,7 +5455,7 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
       [t.id],
     );
     const history=Array.isArray(body.history) ? body.history.slice(-6) : [];
-    const firstPartyFaq=respondoProductFaqMatch(message,detectedLang);
+    const firstPartyFaq=respondoProductFaqMatch(message,detectedLang,history);
     const result=firstPartyFaq
       ? {
           answer:firstPartyFaq.answer,
@@ -5556,7 +5591,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     }
 
     const firstPartyFaq = isFirstPartyRespondoTenant(t)
-      ? respondoProductFaqMatch(message, detectedLang)
+      ? respondoProductFaqMatch(message, detectedLang, history)
       : null;
     const result = firstPartyFaq
       ? {
