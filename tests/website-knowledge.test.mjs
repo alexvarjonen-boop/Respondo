@@ -106,6 +106,40 @@ test('a general price question still finds the published price',()=>{
  assert.ok(selectRelevantKnowledge(rows,'Paljonko tämä maksaa?').some(x=>x.category==='Hinnat'));
 });
 
+
+test('ecommerce products stay complete and cheapest-product questions return a direct product link',async()=>{
+ const makeProduct=(name,price,path)=>extractBusinessDocument(`
+   <script type="application/ld+json">${JSON.stringify({
+     '@context':'https://schema.org','@type':'Product',name,
+     description:name+' is a premium blade putter.',
+     category:'Putter',
+     offers:{'@type':'Offer',price:String(price),priceCurrency:'EUR',availability:'https://schema.org/InStock',url:'https://shop.example'+path}
+   })}</script>
+   <h1>${name}</h1><p>Regular price €${price}</p>
+ `,'https://shop.example'+path);
+ const storeBundle={finalUrl:'https://shop.example/',pageDocuments:[
+   makeProduct('JAG Bronze Putter',199,'/products/jag-bronze'),
+   makeProduct('JAG Black Putter',249,'/products/jag-black')
+ ]};
+ const productFacts=essentialWebsiteCandidates(storeBundle);
+ assert.equal(productFacts.filter(x=>x.category==='Tuotteet').length,2);
+ assert.equal(productFacts.some(x=>x.category==='Hinnat'),false);
+ const productRows=productFacts.map((item,index)=>({...item,id:'product-'+index,source_type:'website',source_url:item.sourceUrl}));
+
+ const cheapest=await generateGroundedAnswer({rows:productRows,message:'Mikä on teidän halvin putteri?',lang:'fi'});
+ assert.equal(cheapest.handoff,false,JSON.stringify(cheapest));
+ assert.match(cheapest.answer,/JAG Bronze Putter/);
+ assert.match(cheapest.answer,/199/);
+ const actions=chatActions(productRows,'Mikä on teidän halvin putteri?',false,'fi',cheapest.selected);
+ assert.equal(actions[0]?.type,'product');
+ assert.equal(actions[0]?.url,'https://shop.example/products/jag-bronze');
+
+ const black=await generateGroundedAnswer({rows:productRows,message:'Paljonko JAG Black maksaa?',lang:'fi'});
+ assert.equal(black.handoff,false,JSON.stringify(black));
+ assert.match(black.answer,/249/);
+ assert.equal(chatActions(productRows,'Paljonko JAG Black maksaa?',false,'fi',black.selected)[0]?.url,'https://shop.example/products/jag-black');
+});
+
 test('broad service question gives one factual sentence without repeating imported marketing text',async()=>{
  const sample=[
   {id:'promo',category:'Palvelut',title:'Palvelut: Helppo ja nopea palvelu',answer:'Helppo ja nopea palvelu! Varaa aika helposti ja jätä loput meidän hoidettavaksi.',source_type:'website',keywords:['palvelut']},
