@@ -3523,6 +3523,33 @@ async function dashboard(options = {}) {
         </div>
       </section>` : ''}
 
+      <section class="panel workspace-manager-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="workspaces">
+        <div class="workspace-manager-head">
+          <div>
+            <small>${appText('YRITYKSET & TILAUKSET','FÖRETAG & ABONNEMANG','COMPANIES & SUBSCRIPTIONS')}</small>
+            <h2>${appText('Hallitse kaikkia yrityksiä yhdellä profiililla','Hantera alla företag med en profil','Manage all companies with one profile')}</h2>
+            <p>${appText('Jokaisella yrityksellä on oma Respondo-tilaus, botti ja tiedot. Vaihda yritystä tästä tai yläpalkista.','Varje företag har ett eget Respondo-abonnemang, en egen bot och egna uppgifter. Byt företag här eller i toppfältet.','Each company has its own Respondo subscription, bot and data. Switch company here or from the top bar.')}</p>
+          </div>
+          <button type="button" class="btn ink" id="workspaceAddButtonAccount">＋ ${appText('Lisää yritys','Lägg till företag','Add company')}</button>
+        </div>
+        <div class="workspace-manager-list">
+          ${workspaces.filter((workspace)=>workspace.active).map((workspace)=>`
+            <article class="workspace-manager-row ${workspace.id===t.id?'active':''}">
+              <div>
+                <b>${esc(workspace.name)}</b>
+                <small>${workspace.subscription_plan==='yearly'
+                  ? appText('Vuositilaus','Årsabonnemang','Annual plan')
+                  : appText('Kuukausitilaus','Månadsabonnemang','Monthly plan')} · ${workspace.subscription_status==='trialing'
+                    ? appText('Kokeilu','Provperiod','Trial')
+                    : appText('Aktiivinen','Aktiv','Active')}</small>
+              </div>
+              ${workspace.id===t.id
+                ? `<span class="workspace-current-badge">${appText('Nykyinen','Nuvarande','Current')}</span>`
+                : `<button type="button" class="workspace-row-switch" data-workspace-id="${esc(workspace.id)}">${appText('Avaa','Öppna','Open')} →</button>`}
+            </article>`).join('')}
+        </div>
+      </section>
+
       <section class="panel billing-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="billing">
         <div><small>${appText('LASKUTUS','FAKTURERING','BILLING')}</small><h2>${appText('Hallitse tilaustasi','Hantera ditt abonnemang','Manage your subscription')}</h2><p>${appText('Voit vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.','Du kan byta betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal.','You can change your payment method, view invoices, or cancel your subscription in the Stripe customer portal.')}</p></div>
         <button class="btn dashboard-action" id="billingPortal" type="button">${appText('Avaa tilauksen hallinta','Öppna abonnemangshantering','Open subscription management')} <span>↗</span></button>
@@ -4243,6 +4270,21 @@ async function route() {
     });
 
     $('#workspaceAddButton')?.addEventListener('click',openWorkspaceModal);
+    $('#workspaceAddButtonAccount')?.addEventListener('click',openWorkspaceModal);
+    document.querySelectorAll('.workspace-row-switch').forEach((button)=>{
+      button.addEventListener('click',async()=>{
+        const tenantId=button.dataset.workspaceId;
+        if(!tenantId) return;
+        button.disabled=true;
+        try{
+          await api('/api/app/workspaces/switch',{method:'POST',body:JSON.stringify({tenantId})});
+          location.href='/app';
+        }catch(err){
+          button.disabled=false;
+          alert(err.message || appText('Yrityksen vaihtaminen epäonnistui.','Det gick inte att byta företag.','Failed to switch company.'));
+        }
+      });
+    });
     $('#workspaceModalClose')?.addEventListener('click',closeWorkspaceModal);
     $('#workspaceModalBackdrop')?.addEventListener('click',closeWorkspaceModal);
 
