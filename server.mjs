@@ -206,6 +206,68 @@ const q = (text, params = []) => {
 const uid = () => crypto.randomUUID();
 const cleanEmail = (value) => String(value || '').trim().toLowerCase();
 
+function escapeEmailHtml(value) {
+  return String(value || '')
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#39;');
+}
+
+async function sendHomepageContactEmail({ name, email, message }) {
+  const apiKey = String(process.env.RESEND_API_KEY || '').trim();
+  if (!apiKey) return { sent:false, reason:'resend_not_configured' };
+
+  const to = cleanEmail(
+    process.env.CONTACT_NOTIFICATION_TO ||
+    process.env.SUPPORT_EMAIL ||
+    process.env.OWNER_EMAIL
+  );
+  if (!to) return { sent:false, reason:'recipient_missing' };
+
+  const from = String(
+    process.env.CONTACT_NOTIFICATION_FROM ||
+    'Respondo <onboarding@resend.dev>'
+  ).trim();
+
+  const subject = 'Uusi yhteydenotto Respondon verkkosivulta';
+  const html =
+    '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#111">' +
+      '<h2 style="margin:0 0 20px">Uusi yhteydenotto</h2>' +
+      '<p><strong>Nimi:</strong> ' + escapeEmailHtml(name) + '</p>' +
+      '<p><strong>Sähköposti:</strong> ' + escapeEmailHtml(email) + '</p>' +
+      '<p><strong>Viesti:</strong></p>' +
+      '<div style="white-space:pre-wrap;padding:14px 16px;border:1px solid #ddd;border-radius:12px;background:#fafafa">' +
+        escapeEmailHtml(message) +
+      '</div>' +
+      '<p style="margin-top:20px;color:#666;font-size:13px">Lähetetty Respondon etusivun yhteydenottolomakkeesta.</p>' +
+    '</div>';
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method:'POST',
+    headers:{
+      'Authorization':'Bearer ' + apiKey,
+      'Content-Type':'application/json',
+    },
+    body:JSON.stringify({
+      from,
+      to:[to],
+      reply_to:email,
+      subject,
+      html,
+    }),
+  });
+
+  const data = await response.json().catch(()=>({}));
+  if (!response.ok) {
+    throw new Error(
+      String(data?.message || data?.error || 'Resend email failed').slice(0,500)
+    );
+  }
+  return { sent:true, id:data?.id || null };
+}
+
 function cleanBotName(value) {
   return String(value || '').replace(/[<>]/g,'').trim().slice(0,40) || 'RESPONDO AI';
 }
@@ -5361,12 +5423,27 @@ app.post('/api/public/respondo-contact', publicChatLimiter, async (req,res)=>{
       ],
     );
 
+    let emailDelivery={sent:false,reason:'not_attempted'};
+    try {
+      emailDelivery=await sendHomepageContactEmail({name,email,message});
+    } catch(mailError) {
+      console.error('Homepage contact email delivery failed',mailError);
+      emailDelivery={sent:false,reason:'delivery_failed'};
+    }
+
     return res.json({
       ok:true,
+      emailSent:Boolean(emailDelivery.sent),
       message:errorText(
-        'Kiitos! Viestisi lähetettiin.',
-        'Tack! Ditt meddelande skickades.',
-        'Thank you! Your message was sent.'
+        emailDelivery.sent
+          ? 'Kiitos! Viestisi lähetettiin sähköpostiimme.'
+          : 'Kiitos! Viestisi tallennettiin. Sähköposti-ilmoitus ei ole vielä käytössä.',
+        emailDelivery.sent
+          ? 'Tack! Ditt meddelande skickades till vår e-post.'
+          : 'Tack! Ditt meddelande sparades. E-postavisering är ännu inte aktiverad.',
+        emailDelivery.sent
+          ? 'Thank you! Your message was sent to our email.'
+          : 'Thank you! Your message was saved. Email notification is not enabled yet.'
       )
     });
   } catch(e) {
