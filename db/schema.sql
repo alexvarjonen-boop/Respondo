@@ -13,15 +13,17 @@ CREATE TABLE IF NOT EXISTS users (
   subscription_plan TEXT,
   referral_code TEXT UNIQUE,
   current_period_end TIMESTAMPTZ,
+  active_tenant_id UUID,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS tenants (
   id UUID PRIMARY KEY,
-  owner_user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
+  business_id TEXT,
   industry TEXT NOT NULL DEFAULT 'Palveluyritys',
   website TEXT,
   contact_email TEXT,
@@ -36,6 +38,11 @@ CREATE TABLE IF NOT EXISTS tenants (
   action_webhook_secret TEXT,
   channels_api_key TEXT,
   stripe_connected_account_id TEXT,
+  stripe_subscription_id TEXT,
+  subscription_status TEXT,
+  subscription_plan TEXT,
+  current_period_end TIMESTAMPTZ,
+  subscription_cancel_at_period_end BOOLEAN NOT NULL DEFAULT FALSE,
   quote_service_name TEXT,
   quote_base_price NUMERIC(12,2) NOT NULL DEFAULT 0,
   quote_unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
