@@ -8116,3 +8116,108 @@ body.workspace-modal-open{
     grid-template-columns:1fr;
   }
 }
+
+
+/* Companies & subscriptions settings card */
+.workspace-manager-panel{
+  display:grid;
+  gap:18px;
+}
+.workspace-manager-head{
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  align-items:flex-start;
+}
+.workspace-manager-head>div{
+  min-width:0;
+}
+.workspace-manager-head small{
+  display:block;
+  margin-bottom:7px;
+  color:#8a8a91;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+.workspace-manager-head h2{
+  margin:0 0 7px;
+  font-size:22px;
+  line-height:1.1;
+}
+.workspace-manager-head p{
+  margin:0;
+  max-width:700px;
+  color:#696970;
+  font-size:12px;
+  line-height:1.55;
+}
+.workspace-manager-list{
+  display:grid;
+  gap:9px;
+}
+.workspace-manager-row{
+  min-height:66px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:12px 14px;
+  border:1px solid rgba(17,17,20,.09);
+  border-radius:16px;
+  background:#fafafa;
+}
+.workspace-manager-row.active{
+  border-color:rgba(17,17,20,.20);
+  background:#fff;
+  box-shadow:0 8px 24px rgba(17,17,20,.04);
+}
+.workspace-manager-row>div{
+  min-width:0;
+  display:grid;
+  gap:4px;
+}
+.workspace-manager-row b{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:13px;
+}
+.workspace-manager-row small{
+  color:#7b7b82;
+  font-size:10px;
+}
+.workspace-current-badge{
+  flex:0 0 auto;
+  padding:7px 10px;
+  border-radius:999px;
+  background:#111114;
+  color:#fff;
+  font-size:9px;
+  font-weight:850;
+}
+.workspace-row-switch{
+  flex:0 0 auto;
+  min-height:36px;
+  padding:0 12px;
+  border:1px solid rgba(17,17,20,.10);
+  border-radius:999px;
+  background:#fff;
+  color:#111114;
+  font:inherit;
+  font-size:10px;
+  font-weight:800;
+  cursor:pointer;
+}
+@media(max-width:760px){
+  .workspace-manager-head{
+    display:grid;
+  }
+  .workspace-manager-head .btn{
+    width:100%;
+    justify-content:center;
+  }
+  .workspace-manager-row{
+    min-height:62px;
+  }
+}
