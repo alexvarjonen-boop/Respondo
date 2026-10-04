@@ -794,6 +794,11 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
 function knowledgeTopic(value) {
   const t=normalizeSearchText(value);
   if (/tarjouspyynt|quote|estimate|offert/.test(t)) return 'quote';
+  // Explicit ecommerce policy rows must be classified before generic product
+  // words in their answer ("Tuotteilla on 30 päivän palautusoikeus", etc.).
+  if (/^(?:palautukset?|palautus|returns?|refund|retur|vaihto|exchange)\b/.test(t)) return 'returns';
+  if (/^(?:takuu|warranty|guarantee|garanti|reklamaatio)\b/.test(t)) return 'warranty';
+  if (/^(?:tilausten seuranta|toimitusaika|toimitus|shipping|delivery|shipment|tracking|leverans)\b/.test(t)) return 'delivery';
   // Payment-method knowledge must win over the word "maksaa/pay", while any
   // explicit price marker must still outrank service words such as "pesu".
   if(/maksutapa|maksaminen|maksuvaihtoeh|korttimaks|klarna|paypal|mobilepay|apple pay|google pay|payment method|payment options|pay with|pay by|betalning|betalningsmetod|faktura/.test(t)) return 'payment';
