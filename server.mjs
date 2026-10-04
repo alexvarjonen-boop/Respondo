@@ -584,6 +584,50 @@ function respondoProductFaqMatch(message, lang = 'fi') {
     };
   }
 
+  if (/(?:ovatko|onko|ovatko.*tietoni|tietoni).*(?:turvassa|turvallis|suojat)|(?:tietoturva|tietosuoja|turvallinen|turvallisuus|privacy|data security|secure|safe|security|integritet|datasakerhet|datasäkerhet|saker|säker|trygg)/.test(q)) {
+    return {
+      id:'respondo-faq-security',
+      answer:answer(
+        'Kyllä. Respondo käyttää suojattuja HTTPS-yhteyksiä, salasanoja ei tallenneta selväkielisinä ja maksukortin varsinaiset tiedot käsittelee Stripe. Yrityksen tietoja käytetään palvelun toimittamiseen ja niitä käsitellään Respondon tietosuojakäytäntöjen mukaisesti.',
+        'Ja. Respondo använder skyddade HTTPS-anslutningar, lösenord lagras inte i klartext och de faktiska kortuppgifterna hanteras av Stripe. Företagets uppgifter används för att tillhandahålla tjänsten och behandlas enligt Respondos integritetspraxis.',
+        'Yes. Respondo uses secure HTTPS connections, passwords are not stored in plain text, and actual card details are handled by Stripe. Company data is used to provide the service and is processed according to Respondo’s privacy practices.'
+      )
+    };
+  }
+
+  if (/(?:mita|mitä|paljonko|paljo|what|how much|vad).*(?:maksaa|hinta|cost|price|kostar|pris)|(?:hinta|hinnoittelu|pricing|price|prices|cost|pris|priser).*(?:respondo|tilaus|subscription|abonnemang)?/.test(q)) {
+    return {
+      id:'respondo-faq-pricing',
+      answer:answer(
+        'Respondo maksaa 49,99 €/kk kuukausitilauksella. Vuositilaus vastaa hintaa 44,99 €/kk ja se laskutetaan kerran vuodessa 539,88 €. Hinnat sisältävät ALV:n 25,5 %.',
+        'Respondo kostar 49,99 €/månad med månadsabonnemang. Årsabonnemanget motsvarar 44,99 €/månad och faktureras en gång per år med 539,88 €. Priserna inkluderar 25,5 % moms.',
+        'Respondo costs €49.99/month on the monthly plan. The annual plan is equivalent to €44.99/month and is billed once per year at €539.88. Prices include 25.5% VAT.'
+      )
+    };
+  }
+
+  if (/(?:3 paivan|3 päivän|kolmen paivan|free trial|trial|gratis prov|provperiod|kokeilu).*(?:toim|maks|veloitet|peru|cancel|works|cost|charge|funger|kostar)?|(?:kokeilu|trial|provperiod)/.test(q)) {
+    return {
+      id:'respondo-faq-trial',
+      answer:answer(
+        'Respondoa voi kokeilla 3 päivää ilmaiseksi. Kokeilun aikana ei veloiteta tilausmaksua. Jos et halua tilauksen jatkuvan maksullisena, peru se ennen kokeilun päättymistä hallintapaneelin Laskutus-kohdan kautta.',
+        'Du kan prova Respondo gratis i 3 dagar. Ingen abonnemangsavgift tas ut under provperioden. Om du inte vill fortsätta med ett betalt abonnemang ska du säga upp det före provperiodens slut via Fakturering i kontrollpanelen.',
+        'You can try Respondo free for 3 days. No subscription fee is charged during the trial. If you do not want it to continue as a paid subscription, cancel before the trial ends through Billing in the dashboard.'
+      )
+    };
+  }
+
+  if (/(?:miten|how|hur).*(?:maksan|maksaa tilaus|pay|payment|betala)|(?:stripe|maksutapa|payment method|betalningsmetod)/.test(q)) {
+    return {
+      id:'respondo-faq-payment',
+      answer:answer(
+        'Respondon tilaus maksetaan Stripen kautta. Maksutiedot syötetään suoraan Stripen turvalliseen maksunäkymään, ja maksutapaa sekä laskuja voi hallita hallintapaneelin Laskutus-kohdasta.',
+        'Respondo-abonnemanget betalas via Stripe. Betalningsuppgifterna anges direkt i Stripes säkra betalningsvy, och betalningsmetod samt fakturor kan hanteras från Fakturering i kontrollpanelen.',
+        'Respondo subscriptions are paid through Stripe. Payment details are entered directly in Stripe’s secure checkout, and the payment method and invoices can be managed from Billing in the dashboard.'
+      )
+    };
+  }
+
   if (
     /(?:peru(?:a|n|t|taa|utus|uttaminen)?|lopeta|lopettaa|paattaa|päättää|irtisano|irtisanom|cancel|cancellation|unsubscribe|terminate|end subscription|stop subscription|sag upp|säga upp|avsluta).*(?:tilaus|subscription|abonnemang)/.test(q) ||
     /(?:tilaus|subscription|abonnemang).*(?:peru(?:a|n|t|taa|utus)?|lopeta|lopettaa|paattaa|päättää|irtisano|cancel|unsubscribe|terminate|end|stop|sag upp|säga upp|avsluta)/.test(q) ||
