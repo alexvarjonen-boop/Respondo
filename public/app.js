@@ -2841,6 +2841,17 @@ async function dashboard(options = {}) {
             <button class="dashboard-settings-button" id="dashboardSettingsButton" type="button" aria-label="${esc(appText('Asetukset','Inställningar','Settings'))}" title="${esc(appText('Asetukset','Inställningar','Settings'))}">⚙</button>
           `}
         </div>
+        ${isDemo ? `
+          <nav class="demo-section-strip" aria-label="${esc(appText('Kokeilusivun osiot','Demons avsnitt','Demo sections'))}">
+            <button type="button" class="active" data-dashboard-nav="overview">${appText('Yleiskatsaus','Översikt','Overview')}</button>
+            <button type="button" data-dashboard-nav="setup">${appText('Yritys & botti','Företag & bot','Business & bot')}</button>
+            <button type="button" data-dashboard-nav="answers">${appText('Vastaukset','Svar','Answers')}</button>
+            <button type="button" data-dashboard-nav="customers">${appText('Asiakkaat','Kunder','Customers')}</button>
+            <button type="button" data-dashboard-nav="automation">${appText('Toiminnot','Funktioner','Actions')}</button>
+            <button type="button" data-dashboard-nav="install">${appText('Asennus','Installation','Installation')}</button>
+            <button type="button" data-dashboard-nav="account">${appText('Asetukset','Inställningar','Settings')}</button>
+          </nav>
+        ` : ''}
       </header>
 
       <section class="dashboard-head dashboard-view-section" data-dashboard-view="overview" id="overview">
