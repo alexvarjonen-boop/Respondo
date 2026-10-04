@@ -7565,12 +7565,10 @@ async function ensureRuntimeSchema() {
             RETURNS UUID
             LANGUAGE SQL
             STABLE
-            AS $
-              SELECT COALESCE(
-                (SELECT active_tenant_id FROM users WHERE id=user_uuid),
-                (SELECT id FROM tenants WHERE owner_user_id=user_uuid ORDER BY created_at ASC LIMIT 1)
-              )
-            $`);
+            AS 'SELECT COALESCE(
+              (SELECT active_tenant_id FROM users WHERE id=user_uuid),
+              (SELECT id FROM tenants WHERE owner_user_id=user_uuid ORDER BY created_at ASC LIMIT 1)
+            )'`);
   await q(`CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
