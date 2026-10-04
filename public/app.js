@@ -1669,9 +1669,30 @@ function contactSection() {
           <h2>${uiText('Jäikö jotain mieleen?','Har du fortfarande en fråga?','Still have a question?')}<br><em>${uiText('Laita meille viestiä.','Skicka ett meddelande till oss.','Send us a message.')}</em></h2>
         </div>
         <div class="contact-actions">
-          <a href="mailto:${esc(cfg.supportEmail)}" class="contact-mail">${esc(cfg.supportEmail)}</a>
+          <button class="contact-form-toggle" id="contactFormToggle" type="button" aria-expanded="false">
+            ${uiText('Avaa yhteydenottolomake','Öppna kontaktformuläret','Open contact form')}
+            <span>＋</span>
+          </button>
+          <form class="home-contact-form" id="homeContactForm" hidden>
+            <label>
+              <span>${uiText('Nimi','Namn','Name')}</span>
+              <input name="name" type="text" autocomplete="name" maxlength="120" required placeholder="${uiText('Nimesi','Ditt namn','Your name')}">
+            </label>
+            <label>
+              <span>${uiText('Sähköposti','E-post','Email')}</span>
+              <input name="email" type="email" autocomplete="email" maxlength="220" required placeholder="${uiText('sinä@yritys.fi','du@foretag.fi','you@company.com')}">
+            </label>
+            <label>
+              <span>${uiText('Viesti','Meddelande','Message')}</span>
+              <textarea name="message" rows="5" maxlength="2000" required placeholder="${uiText('Kirjoita viestisi tähän…','Skriv ditt meddelande här…','Write your message here…')}"></textarea>
+            </label>
+            <button class="btn ink home-contact-submit" type="submit">
+              ${uiText('Lähetä viesti','Skicka meddelande','Send message')} <span>→</span>
+            </button>
+            <div class="home-contact-status" id="homeContactStatus" role="status" aria-live="polite"></div>
+          </form>
           <p>RESPONDO AI · ${uiText('Suomi','Finland','Finland')}</p>
-          <a class="btn ink" href="/tilaus">Kokeile 3 päivää ilmaiseksi</a>
+          <a class="btn ink" href="/tilaus">${uiText('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</a>
         </div>
       </div>
     </div>
@@ -3744,6 +3765,61 @@ async function route() {
     jobSlider?.addEventListener('input', updateCalculator);
     missedSlider?.addEventListener('input', updateCalculator);
     updateCalculator();
+
+    const contactToggle = $('#contactFormToggle');
+    const contactForm = $('#homeContactForm');
+    const contactStatus = $('#homeContactStatus');
+
+    contactToggle?.addEventListener('click', () => {
+      const willOpen = contactForm?.hasAttribute('hidden');
+      if (!contactForm) return;
+      if (willOpen) contactForm.removeAttribute('hidden');
+      else contactForm.setAttribute('hidden','');
+      contactToggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      const icon = contactToggle.querySelector('span');
+      if (icon) icon.textContent = willOpen ? '−' : '＋';
+      if (willOpen) requestAnimationFrame(() => contactForm.elements?.name?.focus());
+    });
+
+    contactForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const submit = contactForm.querySelector('button[type="submit"]');
+      const formData = new FormData(contactForm);
+      const payload = {
+        name:String(formData.get('name')||'').trim(),
+        email:String(formData.get('email')||'').trim(),
+        message:String(formData.get('message')||'').trim(),
+        lang:currentLang(),
+        visitorRef:'homepage-contact'
+      };
+      if (contactStatus) {
+        contactStatus.className='home-contact-status';
+        contactStatus.textContent=appText('Lähetetään…','Skickar…','Sending…');
+      }
+      if (submit) submit.disabled=true;
+      try {
+        const response=await fetch('/api/public/respondo-contact',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(payload)
+        });
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok) throw new Error(data.error||appText('Viestin lähetys epäonnistui.','Det gick inte att skicka meddelandet.','Message failed to send.'));
+        contactForm.reset();
+        if (contactStatus) {
+          contactStatus.className='home-contact-status success';
+          contactStatus.textContent=data.message||appText('Kiitos! Viestisi lähetettiin.','Tack! Ditt meddelande skickades.','Thank you! Your message was sent.');
+        }
+      } catch(err) {
+        if (contactStatus) {
+          contactStatus.className='home-contact-status error';
+          contactStatus.textContent=err.message||appText('Viestin lähetys epäonnistui.','Det gick inte att skicka meddelandet.','Message failed to send.');
+        }
+      } finally {
+        if (submit) submit.disabled=false;
+      }
+    });
+
     initImmersiveHomeMotion();
   }
 
