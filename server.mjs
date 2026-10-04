@@ -5332,6 +5332,95 @@ app.get('/api/public/:slug/live', publicChatLimiter, async (req,res) => {
   }
 });
 
+app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)=>{
+  let requestLang='fi';
+  try {
+    let body=req.body;
+    if (typeof body === 'string') {
+      try { body=JSON.parse(body); } catch { body={}; }
+    }
+    body=body||{};
+    const lang=['fi','sv','en'].includes(String(body.lang||'').toLowerCase())
+      ? String(body.lang).toLowerCase()
+      : 'fi';
+    requestLang=lang;
+    const message=String(body.message||'').trim().slice(0,1200);
+    if (!message) {
+      return res.status(400).json({
+        error:lang==='en'?'Type a question.':lang==='sv'?'Skriv en fråga.':'Kirjoita kysymys.'
+      });
+    }
+
+    const ownerEmail=cleanEmail(process.env.OWNER_EMAIL||process.env.SUPPORT_EMAIL);
+    if (!ownerEmail) return res.status(503).json({error:'Respondo-tietopohjaa ei ole määritetty.'});
+
+    const tr=await q(
+      `SELECT t.*
+         FROM tenants t
+         JOIN users u ON u.id=t.owner_user_id
+        WHERE lower(u.email)=lower($1)
+          AND t.active=true
+          AND u.status='active'
+          AND u.subscription_status IN ('active','trialing')
+        ORDER BY u.created_at ASC
+        LIMIT 1`,
+      [ownerEmail],
+    );
+    if (!tr.rowCount) return res.status(404).json({error:'Respondo-tietopohjaa ei löytynyt.'});
+
+    const t=tr.rows[0];
+    const detectedLang=detectConversationLanguage(message,lang);
+    const kr=await q(
+      'SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC',
+      [t.id],
+    );
+    const history=Array.isArray(body.history) ? body.history.slice(-6) : [];
+    const firstPartyFaq=respondoProductFaqMatch(message,detectedLang);
+    const result=firstPartyFaq
+      ? {
+          answer:firstPartyFaq.answer,
+          handoff:false,
+          confidence:1,
+          intent:'Respondo FAQ',
+          sourceIds:[firstPartyFaq.id],
+          selected:[],
+        }
+      : await generateGroundedAnswer({
+          companyName:t.name||'Respondo AI',
+          rows:kr.rows,
+          message,
+          history,
+          lang:detectedLang,
+          pageContext:body.pageContext&&typeof body.pageContext==='object'?body.pageContext:{},
+        });
+
+    const noAnswer=detectedLang==='en'
+      ? 'I cannot find a reliable answer to this yet. You can contact us at '+(cleanEmail(process.env.SUPPORT_EMAIL||ownerEmail)||ownerEmail)+'.'
+      : detectedLang==='sv'
+        ? 'Jag hittar inget säkert svar på detta ännu. Du kan kontakta oss på '+(cleanEmail(process.env.SUPPORT_EMAIL||ownerEmail)||ownerEmail)+'.'
+        : 'En löydä tähän vielä varmaa vastausta. Voit ottaa meihin yhteyttä osoitteeseen '+(cleanEmail(process.env.SUPPORT_EMAIL||ownerEmail)||ownerEmail)+'.';
+
+    const answer=String(result.answer||'').trim() || noAnswer;
+    return res.json({
+      answer,
+      handoff:Boolean(result.handoff),
+      confidence:Number(result.confidence||0),
+      intent:result.intent||'',
+      verified:!result.handoff && Array.isArray(result.sourceIds) && result.sourceIds.length>0,
+    });
+  } catch(e) {
+    console.error('Respondo public assistant chat failed',e);
+    return res.status(500).json({
+      error:requestLang==='en'
+        ? 'The response failed. Please try again in a moment.'
+        : requestLang==='sv'
+          ? 'Det gick inte att få ett svar just nu. Försök igen om en stund.'
+          : 'Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.'
+    });
+  }
+});
+
+
 app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
   let requestLang = 'fi';
   try {
