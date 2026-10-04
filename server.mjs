@@ -1069,7 +1069,7 @@ function scoreKnowledgeRow(row, query) {
     if (/seurant|tracking|sparning|spårning/.test(evidence)) score+=28;
     else score-=10;
   }
-  const rowTopic=knowledgeTopic(title+' '+category+' '+keywordText+' '+String(row.source_url||''));
+  const rowTopic=knowledgeTopic(title+' '+category+' '+keywordText);
   if(wanted && rowTopic===wanted) score+=30;
   else if(wanted && rowTopic && rowTopic!==wanted) score-=8;
   if(/terms of service|privacy policy|kayttoeh|käyttöeh|tietosuoja|cookie policy/.test(answer)) score-=60;
@@ -1097,7 +1097,7 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
     .filter((x) => {
       const wanted=wantedTopic;
       if(!wanted) return true;
-      const rowTopic=knowledgeTopic(String(x.title||'')+' '+String(x.category||'')+' '+String(x.keywords||'')+' '+String(x.source_url||x.sourceUrl||''));
+      const rowTopic=knowledgeTopic(String(x.title||'')+' '+String(x.category||'')+' '+String(x.keywords||''));
       // For explicit intents, a row classified as another intent must never be used
       // merely because a few generic words overlap.
       if(rowTopic && rowTopic!==wanted) return false;
@@ -2740,7 +2740,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     selected = rows
       .filter((row) => normalizeSearchText(row.title) !== 'vastaustyyli')
       .filter((row) => !importedKnowledgeJunk(String(row.title||'')+' '+String(row.answer||'')))
-      .map((row) => ({...row,_score:scoreKnowledgeRow(row, localQuery),_topic:knowledgeTopic(String(row.title||'')+' '+String(row.category||'')+' '+String(row.keywords||'')+' '+String(row.source_url||''))}))
+      .map((row) => ({...row,_score:scoreKnowledgeRow(row, localQuery),_topic:knowledgeTopic(String(row.title||'')+' '+String(row.category||'')+' '+String(row.keywords||''))}))
       // "Mitä palveluja teette?" may only summarize rows that are actually
       // classified as services. Never fall back to arbitrary products/UI text.
       .filter((row) => row._topic === 'services')
