@@ -445,6 +445,7 @@
         <form class="fx-assistant-form"><input name="message" autocomplete="off" placeholder="${at('Kirjoita kysymys…','Skriv en fråga…','Type a question…')}" aria-label="${at('Kysymys','Fråga','Question')}"><button type="submit" aria-label="${at('Lähetä','Skicka','Send')}">→</button></form>
       </aside>`);
     const launch = $('.fx-assistant-launch'), box = $('.fx-assistant'), close = $('.fx-assistant-close'), messages = $('.fx-assistant-messages'), form = $('.fx-assistant-form');
+    const siteAssistantHistory = [];
     const open = () => { box.classList.add('open'); setTimeout(() => form.message.focus(), 180); };
     const shut = () => box.classList.remove('open');
     launch.addEventListener('click', () => box.classList.contains('open') ? shut() : open()); close.addEventListener('click', shut);
@@ -454,19 +455,41 @@
       messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot typing">•••</div>');
       const typing = messages.lastElementChild;
       messages.scrollTop = messages.scrollHeight;
+      form.message.disabled = true;
       try {
-        await new Promise(r => setTimeout(r, 420 + Math.random()*350));
+        const response = await fetch('/api/public/respondo-assistant/chat', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            message:clean,
+            lang:uiLang,
+            history:siteAssistantHistory.slice(-6),
+            pageContext:{url:location.href,title:document.title}
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Chat failed');
+        const answer = String(data.answer || '').trim();
+        if (!answer) throw new Error('Empty answer');
         typing.classList.remove('typing');
-        typing.textContent = assistantAnswer(clean);
+        typing.textContent = answer;
+        siteAssistantHistory.push({question:clean,answer});
+        if (siteAssistantHistory.length > 12) siteAssistantHistory.splice(0,siteAssistantHistory.length-12);
       } catch (err) {
         typing.classList.remove('typing');
-        const fallback = assistantAnswer(clean);
-        typing.textContent = fallback + assistantText(' Yhteys katkesi hetkeksi.',' Anslutningen avbröts tillfälligt.',' The connection was interrupted briefly.');
+        typing.textContent = at(
+          'Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.',
+          'Det gick inte att få ett svar just nu. Försök igen om en stund.',
+          'The response failed. Please try again in a moment.'
+        );
+      } finally {
+        form.message.disabled = false;
+        form.message.focus();
       }
       messages.scrollTop = messages.scrollHeight;
     };
     form.addEventListener('submit', e => { e.preventDefault(); const text = form.message.value; form.reset(); send(text); });
-    $$('.fx-quick button').forEach(b => b.addEventListener('click', () => send(b.textContent)));
+    $('.fx-quick button').forEach(b => b.addEventListener('click', () => send(b.textContent)));
   }
 
 
