@@ -1,4 +1,4 @@
-import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow } from './website-knowledge.mjs';
+import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import express from 'express';
 import path from 'path';
@@ -825,6 +825,119 @@ function queryTopic(query) {
   if(/ajanvaraus|varaa aika|varata ajan|ajan vara|booking|appointment|boka|bokning|tidsbokning/.test(q)) return 'booking';
   return '';
 }
+
+function productStem(value) {
+  let word=normalizeSearchText(value).replace(/[^a-z0-9]/g,'');
+  word=word.replace(/(?:eista|eita|ista|issa|illa|ille|sta|ssa|lla|lle|ksi|ien|jen|ita|iat|ers|er|s)$/,'');
+  if(word.length>5 && /i$/.test(word)) word=word.slice(0,-1);
+  if(word.length>5 && /a$/.test(word)) word=word.slice(0,-1);
+  return word;
+}
+function productCatalog(rows) {
+  const out=[]; const seen=new Set();
+  for(const row of rows||[]){
+    const product=parseProductKnowledgeRow(row);
+    if(!product?.name || !product?.url) continue;
+    const key=normalizeSearchText(product.url+'|'+product.name);
+    if(seen.has(key)) continue;
+    seen.add(key);
+    out.push(product);
+  }
+  return out;
+}
+function productQueryTokens(message) {
+  const ignored=/^(?:mika|mikä|mitka|mitkä|mita|mitä|on|ovat|teidan|teidän|teilla|teillä|meidan|meidän|halvin|edullisin|kallein|paras|price|prices|cheapest|cheaper|lowest|most|expensive|what|which|your|you|have|do|cost|how|much|billigast|billigaste|dyrast|dyraste|vilken|vilka|har|ni|kostar|tuote|tuotteet|product|products)$/;
+  return [...new Set(searchTokens(message).map(productStem).filter((word)=>word.length>=3&&!ignored.test(word)))];
+}
+function productMatchScore(product, tokens) {
+  if(!tokens.length) return 1;
+  const hayTokens=searchTokens([product.name,product.productType,product.brand,product.description].filter(Boolean).join(' ')).map(productStem);
+  let score=0;
+  for(const token of tokens){
+    if(hayTokens.includes(token)) score+=6;
+    else if(hayTokens.some((word)=>word.startsWith(token)||token.startsWith(word))) score+=3;
+  }
+  return score;
+}
+function productPriceText(product,lang='fi') {
+  if(!Number.isFinite(product?.price)) return '';
+  const locale=lang==='en'?'en-US':lang==='sv'?'sv-SE':'fi-FI';
+  const currency=/^[A-Z]{3}$/.test(product.currency||'')?product.currency:'';
+  const format=(value)=>currency
+    ? new Intl.NumberFormat(locale,{style:'currency',currency,minimumFractionDigits:0,maximumFractionDigits:2}).format(value)
+    : new Intl.NumberFormat(locale,{minimumFractionDigits:0,maximumFractionDigits:2}).format(value);
+  if(Number.isFinite(product.maxPrice)&&product.maxPrice>product.price) return format(product.price)+'–'+format(product.maxPrice);
+  return format(product.price);
+}
+function directProductAnswer(rows,message,lang='fi') {
+  const products=productCatalog(rows);
+  if(!products.length) return null;
+  const q=normalizeSearchText(message);
+  const tokens=productQueryTokens(message);
+  const ranked=products.map((product)=>({...product,_match:productMatchScore(product,tokens)}))
+    .sort((a,b)=>b._match-a._match || (Number(a.price??Infinity)-Number(b.price??Infinity)));
+  const filtered=tokens.length ? ranked.filter((product)=>product._match>0) : ranked;
+  const candidates=filtered.length?filtered:ranked;
+  const cheapest=/\b(?:halvin|edullisin|cheapest|lowest price|billigast|billigaste)\b/.test(q);
+  const expensive=/\b(?:kallein|most expensive|highest price|dyrast|dyraste)\b/.test(q);
+  const priceAsk=/\b(?:hinta|maksaa|maksavat|price|cost|costs|pris|kostar)\b/.test(q);
+  const stockAsk=/\b(?:varastossa|saatavilla|saatavuus|in stock|available|lager|i lager)\b/.test(q);
+  const listAsk=/(?:mita|mitä|mitka|mitkä|what|which|vilka).*(?:tuot|product|putter|maila|sortiment|valikoim)|(?:tuotteita|products|puttereita|putters).*(?:teilla|teillä|have|har)/.test(q);
+
+  if(cheapest || expensive){
+    const priced=candidates.filter((product)=>Number.isFinite(product.price));
+    if(!priced.length) return null;
+    priced.sort((a,b)=>Number(a.price)-Number(b.price));
+    const product=expensive?priced[priced.length-1]:priced[0];
+    const price=productPriceText(product,lang);
+    const answer=lang==='en'
+      ? `The ${expensive?'most expensive':'cheapest'} matching product is ${product.name}${price?', '+price:''}.`
+      : lang==='sv'
+        ? `Den ${expensive?'dyraste':'billigaste'} matchande produkten är ${product.name}${price?', '+price:''}.`
+        : `${expensive?'Kallein':'Halvin'} sopiva tuote on ${product.name}${price?', '+price:''}.`;
+    return {answer,handoff:false,confidence:0.99,intent:'Tuotteet',sourceIds:[product.row?.id].filter(Boolean),selected:[product.row].filter(Boolean)};
+  }
+
+  if(listAsk){
+    const list=candidates.slice(0,8);
+    if(!list.length) return null;
+    const text=list.map((product)=>{
+      const price=productPriceText(product,lang);
+      return product.name+(price?' ('+price+')':'');
+    });
+    const answer=lang==='en'?'Available products include: '+text.join(', ')+'.'
+      :lang==='sv'?'I sortimentet finns bland annat: '+text.join(', ')+'.'
+      :'Valikoimasta löytyvät esimerkiksi: '+text.join(', ')+'.';
+    return {answer,handoff:false,confidence:0.96,intent:'Tuotteet',sourceIds:list.map((product)=>product.row?.id).filter(Boolean),selected:list.slice(0,4).map((product)=>product.row).filter(Boolean)};
+  }
+
+  const best=ranked[0];
+  if(!best || (tokens.length && best._match<3)) return null;
+  const exactCue=tokens.length && best._match>=3;
+  if(priceAsk && exactCue){
+    const price=productPriceText(best,lang);
+    if(!price) return null;
+    const answer=lang==='en'?best.name+' costs '+price+'.'
+      :lang==='sv'?best.name+' kostar '+price+'.'
+      :best.name+' maksaa '+price+'.';
+    return {answer,handoff:false,confidence:0.99,intent:'Tuotteet',sourceIds:[best.row?.id].filter(Boolean),selected:[best.row].filter(Boolean)};
+  }
+  if(stockAsk && exactCue && best.availability){
+    const inStock=normalizeSearchText(best.availability)==='varastossa';
+    const answer=lang==='en'?(inStock?best.name+' is in stock.':best.name+' is currently not in stock.')
+      :lang==='sv'?(inStock?best.name+' finns i lager.':best.name+' finns inte i lager just nu.')
+      :(inStock?best.name+' on varastossa.':best.name+' ei ole tällä hetkellä varastossa.');
+    return {answer,handoff:false,confidence:0.98,intent:'Tuotteet',sourceIds:[best.row?.id].filter(Boolean),selected:[best.row].filter(Boolean)};
+  }
+  if(exactCue && /(?:kerro|tell|about|mika|mikä|what|onko|have|löytyykö|loytyyko)/.test(q)){
+    const price=productPriceText(best,lang);
+    const description=String(best.description||'').split(/(?<=[.!?])\s+/)[0].trim();
+    let answer=best.name+(price?' – '+price:'')+'.';
+    if(description && description.length<240) answer+=' '+description.replace(/[.!?]+$/,'')+'.';
+    return {answer,handoff:false,confidence:0.94,intent:'Tuotteet',sourceIds:[best.row?.id].filter(Boolean),selected:[best.row].filter(Boolean)};
+  }
+  return null;
+}
 function expandSearchConcepts(value) {
   let text=' '+normalizeSearchText(value)+' ';
   const groups=[
@@ -1143,7 +1256,7 @@ function contextualizeConversationQuery(message, history = []) {
   return previous+' '+current;
 }
 
-function chatActions(rows, message, handoff = false, lang = 'fi') {
+function chatActions(rows, message, handoff = false, lang = 'fi', selected = []) {
   const actionLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const q = normalizeSearchText(message);
   const quote = knowledgeValue(rows, 'Tarjouspyyntölomake');
@@ -1157,6 +1270,16 @@ function chatActions(rows, message, handoff = false, lang = 'fi') {
     if (!key || actions.some((x) => (x.url || (x.mode ? x.mode + ':' + x.type : '')) === key)) return;
     actions.push(action);
   };
+
+  for (const row of Array.isArray(selected) ? selected : []) {
+    const product=parseProductKnowledgeRow(row);
+    if(!product?.url) continue;
+    push({
+      type:'product',
+      label:actionLang==='en'?'View '+product.name:actionLang==='sv'?'Visa '+product.name:'Katso '+product.name,
+      url:product.url,
+    });
+  }
 
   if (requestedContact || /yhteys|yhteytta|yhteystiedot|ottaa yhteytta|contact|get in touch|kontakt|kontakta/.test(q)) {
     if (phone && requestedContact!=='email') push({ type:'contact',mode:'phone',label:actionLang==='en'?'Call us':actionLang==='sv'?'Ring oss':'Soita',url:'tel:'+phone.replace(/[^\d+]/g,'') });
@@ -1420,6 +1543,129 @@ async function fetchClientRenderedSourceText(html, pageUrl) {
   return docs;
 }
 
+function detectStoreCurrency(html) {
+  const source=String(html||'');
+  const code=source.match(/(?:currency|currencyCode|currency_code)[\"']?\s*[:=]\s*[\"']([A-Z]{3})[\"']/i)?.[1];
+  if (code) return code.toUpperCase();
+  if (/€/.test(source)) return 'EUR';
+  if (/£/.test(source)) return 'GBP';
+  if (/\$/.test(source)) return 'USD';
+  return '';
+}
+function storeProductDescription(value) {
+  return htmlToReadableText(String(value||'')).replace(/\s+/g,' ').trim().slice(0,700);
+}
+function numericStorePrice(value) {
+  const number=Number(String(value??'').replace(',','.').replace(/[^0-9.-]/g,''));
+  return Number.isFinite(number) && number>=0 ? number : null;
+}
+async function fetchPublicJson(value,maxBytes=8_000_000) {
+  const result=await fetchPublicResource(value,['application/json','text/json'],maxBytes);
+  return JSON.parse(result.text);
+}
+function normalizeCatalogProduct(product, fallbackUrl='') {
+  if (!product?.name) return null;
+  const url=normalizeWebUrl(product.url || fallbackUrl,false);
+  if (!url) return null;
+  return {
+    name:String(product.name).replace(/\s+/g,' ').trim().slice(0,180),
+    url,
+    price:Number.isFinite(product.price)?Number(product.price):null,
+    maxPrice:Number.isFinite(product.maxPrice)?Number(product.maxPrice):(Number.isFinite(product.price)?Number(product.price):null),
+    currency:String(product.currency||'').trim().toUpperCase().slice(0,8),
+    availability:String(product.availability||'').trim().slice(0,60),
+    description:String(product.description||'').replace(/\s+/g,' ').trim().slice(0,700),
+    category:String(product.category||'').replace(/\s+/g,' ').trim().slice(0,120),
+    brand:String(product.brand||'').replace(/\s+/g,' ').trim().slice(0,120),
+    sku:String(product.sku||'').replace(/\s+/g,' ').trim().slice(0,120),
+  };
+}
+async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.now()+45000) {
+  const productLinks=/href\s*=\s*[\"'][^\"']*\/products\//i.test(String(firstHtml||''));
+  const shopifyLike=/cdn\.shopify|shopify-section|shopify\.theme|myshopify/i.test(String(firstHtml||'')) || productLinks;
+  if (!shopifyLike) return [];
+  const base=new URL(baseUrl);
+  const currency=detectStoreCurrency(firstHtml);
+  const out=[];
+  for(let page=1;out.length<limit && Date.now()<deadline;page++){
+    let payload;
+    try {
+      payload=await fetchPublicJson(new URL('/products.json?limit=250&page='+page,base).toString(),10_000_000);
+    } catch {
+      if(page===1) return [];
+      break;
+    }
+    const products=Array.isArray(payload?.products)?payload.products:[];
+    if(!products.length) break;
+    for(const raw of products){
+      const variants=Array.isArray(raw?.variants)?raw.variants:[];
+      const prices=variants.map((variant)=>numericStorePrice(variant?.price)).filter(Number.isFinite);
+      const availability=variants.some((variant)=>variant?.available===true)
+        ? 'varastossa'
+        : variants.some((variant)=>variant?.available===false) ? 'ei varastossa' : '';
+      const product=normalizeCatalogProduct({
+        name:raw?.title,
+        url:new URL('/products/'+String(raw?.handle||''),base).toString(),
+        price:prices.length?Math.min(...prices):null,
+        maxPrice:prices.length?Math.max(...prices):null,
+        currency,
+        availability,
+        description:storeProductDescription(raw?.body_html),
+        category:raw?.product_type,
+        brand:raw?.vendor,
+        sku:variants.find((variant)=>variant?.sku)?.sku || '',
+      });
+      if(product) out.push(product);
+      if(out.length>=limit) break;
+    }
+    if(products.length<250) break;
+  }
+  return out;
+}
+async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.now()+45000) {
+  if(!/woocommerce|wc-block|wp-content\/plugins\/woocommerce/i.test(String(firstHtml||''))) return [];
+  const base=new URL(baseUrl);
+  const out=[];
+  for(let page=1;out.length<limit && Date.now()<deadline;page++){
+    let products;
+    try {
+      const payload=await fetchPublicJson(new URL('/wp-json/wc/store/v1/products?per_page=100&page='+page,base).toString(),10_000_000);
+      products=Array.isArray(payload)?payload:[];
+    } catch {
+      if(page===1) return [];
+      break;
+    }
+    if(!products.length) break;
+    for(const raw of products){
+      const p=raw?.prices||{};
+      const minor=Math.pow(10,Number(p.currency_minor_unit||2));
+      const low=numericStorePrice(p.price);
+      const regular=numericStorePrice(p.regular_price);
+      const product=normalizeCatalogProduct({
+        name:raw?.name,
+        url:raw?.permalink,
+        price:low===null?null:low/minor,
+        maxPrice:regular===null?(low===null?null:low/minor):Math.max(low===null?0:low/minor,regular/minor),
+        currency:p.currency_code,
+        availability:raw?.is_in_stock===true?'varastossa':raw?.is_in_stock===false?'ei varastossa':'',
+        description:storeProductDescription(raw?.short_description || raw?.description),
+        category:Array.isArray(raw?.categories)?raw.categories.map((item)=>item?.name).filter(Boolean).join(', '):'',
+        brand:Array.isArray(raw?.brands)?raw.brands.map((item)=>item?.name).filter(Boolean).join(', '):'',
+        sku:raw?.sku,
+      });
+      if(product) out.push(product);
+      if(out.length>=limit) break;
+    }
+    if(products.length<100) break;
+  }
+  return out;
+}
+async function fetchStorefrontCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.now()+45000) {
+  const shopify=await fetchShopifyCatalog(firstHtml,baseUrl,limit,deadline);
+  if(shopify.length) return shopify;
+  return fetchWooCatalog(firstHtml,baseUrl,limit,deadline);
+}
+
 async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000, onProgress = null) {
   const crawlStartedAt = Date.now();
   const first = await fetchPublicHtml(value);
@@ -1428,7 +1674,11 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const queued = new Set();
   const queue = [];
   const usefulPath = url => !/privacy|terms|tietosuoja|kayttoeh|cookie|arvostel|reviews|testimonial|blog|uutis|news|cart|checkout|login|register|wp-admin|\.(?:js|css|mp4|mp3|woff2?)$/i.test(new URL(url).pathname);
-  const priority = url => /tarjous|quote|offert|hinta|price|pris|palvel|service|tjanst|yhtey|contact|kontakt|auki|hours|oppet/i.test(normalizeSearchText(url)) ? 100 : 0;
+  const priority = url => {
+    const p=normalizeSearchText(url);
+    if (/\/products?\/|\/tuotteet?\/|product|tuote|shop|kauppa/.test(p)) return 140;
+    return /tarjous|quote|offert|hinta|price|pris|palvel|service|tjanst|yhtey|contact|kontakt|auki|hours|oppet/i.test(p) ? 100 : 0;
+  };
 
   const enqueue = (html, pageUrl) => {
     for (const link of extractSameSiteLinks(html, pageUrl)) {
@@ -1460,6 +1710,18 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   pages.push({ url:first.finalUrl, key:first.finalUrl.replace(/\/$/, ''), document:extractBusinessDocument(first.html,first.finalUrl) });
   enqueue(first.html, first.finalUrl);
 
+  let storefrontProducts=[];
+  try {
+    storefrontProducts=await fetchStorefrontCatalog(
+      first.html,
+      first.finalUrl,
+      10000,
+      Date.now()+Math.min(50000,Math.max(12000,Math.floor(timeBudgetMs*0.35))),
+    );
+  } catch (e) {
+    console.warn('Storefront catalog discovery skipped',e?.message||e);
+  }
+
   // Sitemaps expose pages that client-rendered navigation may not reveal in raw HTML.
   let sitemapUrls = [];
   try { sitemapUrls = await discoverSitemapUrls(first.finalUrl, 10000); } catch (e) { console.warn('Sitemap discovery skipped', e?.message || e); }
@@ -1479,6 +1741,15 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     queue.push({url:u.toString(),score});
   }
   queue.sort((a,b)=>b.score-a.score);
+  if (storefrontProducts.length) {
+    const catalogUrls=new Set(storefrontProducts.map((product)=>{
+      try { const u=new URL(product.url); return u.origin+u.pathname.replace(/\/$/,'')+u.search; } catch { return ''; }
+    }).filter(Boolean));
+    const kept=queue.filter((item)=>{
+      try { const u=new URL(item.url); return !catalogUrls.has(u.origin+u.pathname.replace(/\/$/,'')+u.search); } catch { return true; }
+    });
+    queue.splice(0,queue.length,...kept);
+  }
   const totalTarget = Math.max(1, Math.min(maxPages, pages.length + queue.length));
   if (onProgress) onProgress({scanned:pages.length,total:totalTarget});
 
@@ -1517,6 +1788,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   return {
     finalUrl:first.finalUrl,
     text,
+    products:storefrontProducts,
     pageDocuments,
     pages:pageDocuments.map((x) => x.url),
     links:[...new Set(pageDocuments.flatMap(doc => doc.links.map(link => link.url)))].slice(0, 10000),
@@ -2335,6 +2607,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     const quoteRow = rows.find(row => row.title === 'Tarjouspyyntölomake' && normalizeWebUrl(row.answer, false));
     if (quoteRow) return {answer:responseLang === 'en' ? 'You can request a quote using the button below.' : responseLang === 'sv' ? 'Du kan begära offert via knappen nedan.' : 'Voit pyytää tarjouksen alla olevasta painikkeesta.', handoff:false, confidence:1, intent:'Tarjouspyyntö', sourceIds:[quoteRow.id].filter(Boolean), selected:[quoteRow]};
   }
+
+  const productResult=directProductAnswer(rows,cleanMessage,responseLang);
+  if(productResult) return productResult;
 
   const intent = inferIntent(cleanMessage);
   // Resolve natural follow-ups by carrying only the missing context. Standalone
@@ -4582,13 +4857,13 @@ app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
   (async()=>{
     try{
       // Keep raw HTML memory bounded. 10k URLs may be discovered, but process a safe high-value batch per job.
-      const bundle=await fetchWebsiteBundle(website,220,4*60*1000,(p)=>{
+      const bundle=await fetchWebsiteBundle(website,600,4*60*1000,(p)=>{
         job.scanned=p.scanned; job.total=Math.max(p.total,p.scanned,1);
         job.percent=Math.min(99,Math.round((job.scanned/job.total)*100)); job.updatedAt=Date.now();
       });
       const candidates=websiteKnowledgeCandidates(bundle);
       const detectedProfile=extractFreeWebsiteProfile(bundle);
-      job.result={ok:true,profile:detectedProfile,pagesScanned:bundle.pages.length,factsFound:candidates.length,candidates,extraction:'local'};
+      job.result={ok:true,jobId,profile:detectedProfile,pagesScanned:bundle.pages.length,factsFound:candidates.length,candidates,extraction:'local'};
       job.scanned=bundle.pages.length; job.total=Math.max(job.total,job.scanned); job.percent=100; job.status='done'; job.updatedAt=Date.now();
     }catch(e){job.status='error';job.error=e?.message||'Verkkosivun tietojen tuonti epäonnistui.';job.updatedAt=Date.now();}
   })();
@@ -4605,7 +4880,7 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
   try {
     const website = normalizeWebUrl(req.body.website, false);
     if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
-    const bundle = await fetchWebsiteBundle(website, 220, 65000);
+    const bundle = await fetchWebsiteBundle(website, 300, 65000);
     const candidates = websiteKnowledgeCandidates(bundle);
     const detectedProfile = extractFreeWebsiteProfile(bundle);
     return res.json({
@@ -4628,7 +4903,17 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
     const tenantResult = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!tenantResult.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenantId = tenantResult.rows[0].id;
-    const items = Array.isArray(req.body.items) ? req.body.items.slice(0,1000) : [];
+    let items=[];
+    const jobId=String(req.body?.jobId||'').trim();
+    if(jobId){
+      const job=websiteImportJobs.get(jobId);
+      if(!job || job.userId!==req.user.sub || job.status!=='done') return res.status(400).json({error:'Verkkosivun hakutulosta ei enää löytynyt. Hae tiedot uudelleen.'});
+      const indexes=[...new Set((Array.isArray(req.body?.indexes)?req.body.indexes:[])
+        .map((value)=>Number(value)).filter((value)=>Number.isInteger(value)&&value>=0&&value<job.result.candidates.length))].slice(0,10000);
+      items=indexes.map((index)=>job.result.candidates[index]).filter(Boolean);
+    } else {
+      items=Array.isArray(req.body.items)?req.body.items.slice(0,10000):[];
+    }
     const tenantWebsite = (await client.query('SELECT website FROM tenants WHERE id=$1',[tenantId])).rows[0]?.website || '';
     if (!items.length) return res.status(400).json({ error:'Valitse vähintään yksi tieto.' });
 
@@ -5344,7 +5629,7 @@ async function processExternalChannelMessage(tenant, channel, contactId, message
   return {
     answer,handoff,
     verified:!handoff && Array.isArray(result.sourceIds) && result.sourceIds.length>0,
-    intent:result.intent,actions:chatActions(kr.rows,message,handoff,responseLang),
+    intent:result.intent,actions:chatActions(kr.rows,message,handoff,responseLang,result.selected),
   };
 }
 
@@ -6202,7 +6487,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         ? result.answer : noAnswer;
     }
 
-    const actions = chatActions(kr.rows, message, handoff, responseLang);
+    const actions = chatActions(kr.rows, message, handoff, responseLang, result.selected);
     if (thread) {
       await appendChatMessage({
         tenantId:t.id,threadId:thread.id,sourceChannel:'website',
