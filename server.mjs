@@ -1,4 +1,5 @@
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow } from './website-knowledge.mjs';
+import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -6789,6 +6790,103 @@ app.use(async (req, res, next) => {
   next();
 });
 
+
+function respondoOwnerSiteUrl() {
+  const candidates = [
+    process.env.BASE_URL,
+    process.env.RAILWAY_SERVICE_RESPONDO_WEB_URL,
+    process.env.RAILWAY_STATIC_URL,
+    process.env.RAILWAY_PUBLIC_DOMAIN ? 'https://' + process.env.RAILWAY_PUBLIC_DOMAIN : '',
+    BASE,
+  ];
+  for (const candidate of candidates) {
+    const normalized = normalizeWebUrl(candidate, true);
+    if (normalized && !/localhost|127\.0\.0\.1/i.test(normalized)) return normalized;
+  }
+  return normalizeWebUrl(BASE, true) || '';
+}
+
+async function seedOwnerRespondoKnowledge() {
+  if (!pool) return { seeded:false, reason:'no_database' };
+
+  const ownerEmail = cleanEmail(process.env.OWNER_EMAIL || process.env.SUPPORT_EMAIL);
+  if (!ownerEmail) return { seeded:false, reason:'owner_email_missing' };
+
+  const owner = await q(
+    `SELECT u.id AS user_id,t.id AS tenant_id,t.name,t.slug
+       FROM users u
+       JOIN tenants t ON t.owner_user_id=u.id
+      WHERE lower(u.email)=lower($1)
+      ORDER BY u.created_at ASC
+      LIMIT 1`,
+    [ownerEmail],
+  );
+  if (!owner.rowCount) return { seeded:false, reason:'owner_account_not_found' };
+
+  const tenantId = owner.rows[0].tenant_id;
+  const siteUrl = respondoOwnerSiteUrl();
+  const supportEmail = cleanEmail(process.env.SUPPORT_EMAIL || ownerEmail) || ownerEmail;
+  const rows = buildRespondoFaqRows({ supportEmail, siteUrl });
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    await client.query(
+      `UPDATE tenants
+          SET name='Respondo AI',
+              industry='B2B-ohjelmistopalvelu',
+              website=COALESCE(NULLIF($1,''),website),
+              contact_email=COALESCE(NULLIF($2,''),contact_email),
+              updated_at=NOW()
+        WHERE id=$3`,
+      [siteUrl, supportEmail, tenantId],
+    );
+
+    await client.query(
+      "DELETE FROM knowledge WHERE tenant_id=$1 AND source_type='respondo_seed'",
+      [tenantId],
+    );
+
+    if (rows.length) {
+      const params = [];
+      const values = [];
+      rows.forEach((row,index) => {
+        const offset = index * 8;
+        values.push(
+          `($${offset+1},$${offset+2},$${offset+3},$${offset+4},$${offset+5},$${offset+6},$${offset+7},$${offset+8},true,NOW())`
+        );
+        params.push(
+          uid(),
+          tenantId,
+          String(row.category || 'Respondo FAQ').slice(0,80),
+          String(row.title || '').slice(0,180),
+          String(row.answer || '').slice(0,1600),
+          Array.isArray(row.keywords) ? row.keywords.slice(0,40) : [],
+          'respondo_seed',
+          row.source_url || siteUrl || null,
+        );
+      });
+
+      await client.query(
+        `INSERT INTO knowledge(
+           id,tenant_id,category,title,answer,keywords,source_type,source_url,approved,verified_at
+         ) VALUES ${values.join(',')}`,
+        params,
+      );
+    }
+
+    await client.query('COMMIT');
+    console.log(`Seeded ${rows.length} trilingual Respondo FAQ rows for owner tenant`);
+    return { seeded:true, count:rows.length, tenantId, siteUrl };
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch {}
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 async function ensureRuntimeSchema() {
   if (!pool) return;
 
@@ -7015,6 +7113,11 @@ async function ensureRuntimeSchema() {
 async function start() {
   try {
     await ensureRuntimeSchema();
+    try {
+      await seedOwnerRespondoKnowledge();
+    } catch (e) {
+      console.error('Owner Respondo knowledge seed failed', e);
+    }
     try {
       await backfillOwnerTestReceiptOnce();
     } catch (e) {
