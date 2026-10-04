@@ -2810,11 +2810,11 @@ async function dashboard(options = {}) {
 
   return `<div class="appshell dashboard-simple-shell">
     <main class="appmain dashboard-simple-main">
-      <header class="dashboard-topbar">
+      <header class="dashboard-topbar ${isDemo ? 'demo-sticky-topbar' : ''}">
         <div class="dashboard-topbar-brand">
           ${logo()}
           <div class="dashboard-workspace">
-            <small>TYÖTILA</small>
+            <small>${isDemo ? appText('KOKEILE BOTTIA','TESTA BOTTEN','TRY THE BOT') : 'TYÖTILA'}</small>
             <b>${esc(me.company_name || t.name)}</b>
           </div>
         </div>
@@ -2833,8 +2833,13 @@ async function dashboard(options = {}) {
             <span aria-hidden="true">⌄</span>
           </div>
         </div>
-        <div class="dashboard-top-actions">
-          <button class="dashboard-settings-button" id="dashboardSettingsButton" type="button" aria-label="${esc(appText('Asetukset','Inställningar','Settings'))}" title="${esc(appText('Asetukset','Inställningar','Settings'))}">⚙</button>
+        <div class="dashboard-top-actions ${isDemo ? 'demo-public-actions' : ''}">
+          ${isDemo ? `
+            <a class="btn ghost demo-header-login" href="/kirjaudu?lang=${currentLang()}">${appText('Kirjaudu','Logga in','Log in')}</a>
+            <a class="btn ink demo-header-trial" href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
+          ` : `
+            <button class="dashboard-settings-button" id="dashboardSettingsButton" type="button" aria-label="${esc(appText('Asetukset','Inställningar','Settings'))}" title="${esc(appText('Asetukset','Inställningar','Settings'))}">⚙</button>
+          `}
         </div>
       </header>
 
