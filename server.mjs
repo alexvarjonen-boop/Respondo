@@ -384,7 +384,7 @@ async function ensureReferralCode(userId) {
   throw new Error('Suosittelukoodia ei saatu luotua.');
 }
 
-async function applyReferralDiscountIfEligible(userId, subscriptionId) {
+async function applyReferralDiscountIfEligible(userId, subscriptionId, planOverride = '') {
   if (!pool || !stripe || !subscriptionId) return false;
 
   const client = await pool.connect();
@@ -399,10 +399,11 @@ async function applyReferralDiscountIfEligible(userId, subscriptionId) {
       [userId],
     );
 
+    const effectivePlan = String(planOverride || redemption.rows[0]?.subscription_plan || '');
     if (
       !redemption.rowCount ||
       redemption.rows[0].stripe_discount_applied ||
-      redemption.rows[0].subscription_plan !== 'monthly'
+      effectivePlan !== 'monthly'
     ) {
       await client.query('COMMIT');
       return false;
@@ -3790,8 +3791,10 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const companyName=String(req.body?.companyName||'').replace(/[<>]/g,'').trim().slice(0,120);
   const businessId=String(req.body?.businessId||'').replace(/[<>]/g,'').trim().slice(0,40);
   const plan=req.body?.plan==='yearly'?'yearly':'monthly';
+  const referralCode=normalizeReferralCode(req.body?.referralCode);
   if(!companyName) return res.status(400).json({ error:'Anna yrityksen nimi.' });
   if(req.body?.acceptedTerms!==true) return res.status(400).json({ error:'Hyväksy käyttöehdot ja tietosuojaseloste.' });
+  if(referralCode && plan!=='monthly') return res.status(400).json({ error:'Suosittelukoodi toimii vain kuukausitilauksessa.' });
 
   const price=plan==='yearly' ? process.env.STRIPE_YEARLY_PRICE_ID : process.env.STRIPE_MONTHLY_PRICE_ID;
   if(!price) return res.status(503).json({ error:'Stripe-hintaa ei ole määritetty.' });
@@ -3799,6 +3802,42 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const userResult=await q('SELECT id,email,stripe_customer_id FROM users WHERE id=$1',[req.user.sub]);
   if(!userResult.rowCount) return res.status(404).json({ error:'Tiliä ei löytynyt.' });
   const user=userResult.rows[0];
+
+  let referrer=null;
+  if(referralCode){
+    const ref=await q(
+      `SELECT id,email,status,subscription_status,subscription_plan
+         FROM users
+        WHERE referral_code=$1`,
+      [referralCode],
+    );
+    if(
+      !ref.rowCount ||
+      ref.rows[0].status!=='active' ||
+      !['active','trialing'].includes(ref.rows[0].subscription_status) ||
+      !['monthly','owner_test'].includes(ref.rows[0].subscription_plan)
+    ){
+      return res.status(400).json({error:'Suosittelukoodi ei ole voimassa.'});
+    }
+    if(ref.rows[0].id===req.user.sub){
+      return res.status(400).json({error:'Et voi käyttää omaa suosittelukoodiasi.'});
+    }
+    const codeUsed=await q(
+      'SELECT 1 FROM referral_redemptions WHERE referrer_user_id=$1 AND stripe_discount_applied=TRUE LIMIT 1',
+      [ref.rows[0].id],
+    );
+    if(codeUsed.rowCount){
+      return res.status(400).json({error:'Tämä suosittelukoodi on jo käytetty.'});
+    }
+    const alreadyReferred=await q(
+      'SELECT 1 FROM referral_redemptions WHERE referred_user_id=$1 LIMIT 1',
+      [req.user.sub],
+    );
+    if(alreadyReferred.rowCount){
+      return res.status(400).json({error:'Olet jo käyttänyt suosittelukoodin tällä käyttäjätilillä.'});
+    }
+    referrer=ref.rows[0];
+  }
 
   const tenantId=uid();
   let tenantSlug=slug(companyName);
@@ -3828,6 +3867,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
           tenant_id:tenantId,
           plan,
           additional_workspace:'1',
+          ...(referralCode ? { referral_code:referralCode } : {}),
         },
       },
       tax_id_collection:{enabled:true},
@@ -3840,9 +3880,19 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         tenant_id:tenantId,
         plan,
         additional_workspace:'1',
+        ...(referralCode ? { referral_code:referralCode } : {}),
       },
       automatic_tax:{enabled:true},
     });
+
+    if(referrer){
+      await q(
+        `INSERT INTO referral_redemptions(id,referrer_user_id,referred_user_id,code,status)
+         VALUES($1,$2,$3,$4,'pending')`,
+        [uid(),referrer.id,req.user.sub,referralCode],
+      );
+    }
+
     return res.json({url:session.url});
   } catch(e) {
     await q("DELETE FROM tenants WHERE id=$1 AND owner_user_id=$2 AND active=FALSE AND subscription_status='pending'",[tenantId,req.user.sub]);
@@ -3902,6 +3952,14 @@ app.get('/api/app/workspaces/checkout-success', auth, ownerOnly, async (req,res)
         WHERE id=$3`,
       [customerId,tenantId,req.user.sub],
     );
+
+    if(session.metadata?.referral_code && subscriptionId){
+      try{
+        await applyReferralDiscountIfEligible(req.user.sub,subscriptionId,session.metadata?.plan||'monthly');
+      }catch(referralError){
+        console.error('Additional workspace referral activation failed',referralError);
+      }
+    }
 
     return res.redirect('/app?workspace_added=1');
   } catch(e) {
