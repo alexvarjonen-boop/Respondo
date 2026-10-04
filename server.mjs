@@ -888,14 +888,30 @@ function directProductAnswer(rows,message,lang='fi') {
     const priced=candidates.filter((product)=>Number.isFinite(product.price));
     if(!priced.length) return null;
     priced.sort((a,b)=>Number(a.price)-Number(b.price));
-    const product=expensive?priced[priced.length-1]:priced[0];
-    const price=productPriceText(product,lang);
-    const answer=lang==='en'
-      ? `The ${expensive?'most expensive':'cheapest'} matching product is ${product.name}${price?', '+price:''}.`
-      : lang==='sv'
-        ? `Den ${expensive?'dyraste':'billigaste'} matchande produkten är ${product.name}${price?', '+price:''}.`
-        : `${expensive?'Kallein':'Halvin'} sopiva tuote on ${product.name}${price?', '+price:''}.`;
-    return {answer,handoff:false,confidence:0.99,intent:'Tuotteet',sourceIds:[product.row?.id].filter(Boolean),selected:[product.row].filter(Boolean)};
+    const extreme=expensive?priced[priced.length-1].price:priced[0].price;
+    const tied=priced.filter((product)=>Math.abs(Number(product.price)-Number(extreme))<0.000001).slice(0,4);
+    const price=productPriceText(tied[0],lang);
+    let answer='';
+    if(tied.length===1){
+      const product=tied[0];
+      answer=lang==='en'
+        ? `The ${expensive?'most expensive':'cheapest'} matching product is ${product.name}${price?', '+price:''}.`
+        : lang==='sv'
+          ? `Den ${expensive?'dyraste':'billigaste'} matchande produkten är ${product.name}${price?', '+price:''}.`
+          : `${expensive?'Kallein':'Halvin'} sopiva tuote on ${product.name}${price?', '+price:''}.`;
+    } else {
+      const names=tied.map((product)=>product.name).join(', ');
+      answer=lang==='en'
+        ? `The ${expensive?'highest':'lowest'} matching price is ${price}. Products at that price: ${names}.`
+        : lang==='sv'
+          ? `Det ${expensive?'högsta':'lägsta'} matchande priset är ${price}. Produkter till det priset: ${names}.`
+          : `${expensive?'Kallein':'Halvin'} sopiva hinta on ${price}. Tällä hinnalla ovat: ${names}.`;
+    }
+    return {
+      answer,handoff:false,confidence:0.99,intent:'Tuotteet',
+      sourceIds:tied.map((product)=>product.row?.id).filter(Boolean),
+      selected:tied.map((product)=>product.row).filter(Boolean)
+    };
   }
 
   if(listAsk){
@@ -4934,8 +4950,8 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
         ? item.keywords.map((x) => String(x).trim()).filter(Boolean).slice(0,14)
         : searchTokens(title + ' ' + answer).slice(0,14);
       const duplicate = await client.query(
-        "SELECT id FROM knowledge WHERE tenant_id=$1 AND source_type='website' AND source_url=$2 AND lower(title)=lower($3) AND answer=$4 LIMIT 1",
-        [tenantId, sourceUrl, title, answer],
+        "SELECT id FROM knowledge WHERE tenant_id=$1 AND source_type='website' AND source_url=$2 AND lower(title)=lower($3) LIMIT 1",
+        [tenantId, sourceUrl, title],
       );
       if (duplicate.rowCount) {
         await client.query(
@@ -7796,7 +7812,7 @@ app.post('/api/public/:slug/action-event', publicChatLimiter, async (req, res) =
     }
 
     const actionType = String(body.actionType || '').trim().slice(0, 40);
-    if (!['quote','booking','order_status','phone','email','link','callback'].includes(actionType)) {
+    if (!['quote','booking','order_status','phone','email','link','product','callback'].includes(actionType)) {
       return res.status(400).json({ error: 'Tuntematon toiminto.' });
     }
 

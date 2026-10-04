@@ -140,6 +140,24 @@ test('ecommerce products stay complete and cheapest-product questions return a d
  assert.equal(chatActions(productRows,'Paljonko JAG Black maksaa?',false,'fi',black.selected)[0]?.url,'https://shop.example/products/jag-black');
 });
 
+test('equal cheapest ecommerce products are all reported instead of choosing one arbitrarily',async()=>{
+ const productRows=[
+  {id:'black',category:'Tuotteet',title:'JAG Black Putter',answer:'Tuote: JAG Black Putter. Hinta: 199.00 EUR. Tuoteryhmä: Putter. Linkki: https://shop.example/products/jag-black.',keywords:['jag','black','putter'],source_type:'website',source_url:'https://shop.example/products/jag-black'},
+  {id:'steel',category:'Tuotteet',title:'JAG Steel Putter',answer:'Tuote: JAG Steel Putter. Hinta: 199.00 EUR. Tuoteryhmä: Putter. Linkki: https://shop.example/products/jag-steel.',keywords:['jag','steel','putter'],source_type:'website',source_url:'https://shop.example/products/jag-steel'},
+  {id:'premium',category:'Tuotteet',title:'JAG Premium Putter',answer:'Tuote: JAG Premium Putter. Hinta: 249.00 EUR. Tuoteryhmä: Putter. Linkki: https://shop.example/products/jag-premium.',keywords:['jag','premium','putter'],source_type:'website',source_url:'https://shop.example/products/jag-premium'}
+ ];
+ const result=await generateGroundedAnswer({rows:productRows,message:'Mikä on teidän halvin putteri?',lang:'fi'});
+ assert.equal(result.handoff,false,JSON.stringify(result));
+ assert.match(result.answer,/199/);
+ assert.match(result.answer,/JAG Black Putter/);
+ assert.match(result.answer,/JAG Steel Putter/);
+ assert.equal(result.selected.length,2);
+ const actions=chatActions(productRows,'Mikä on teidän halvin putteri?',false,'fi',result.selected);
+ assert.equal(actions.length,2);
+ assert.ok(actions.some(action=>action.url==='https://shop.example/products/jag-black'));
+ assert.ok(actions.some(action=>action.url==='https://shop.example/products/jag-steel'));
+});
+
 test('broad service question gives one factual sentence without repeating imported marketing text',async()=>{
  const sample=[
   {id:'promo',category:'Palvelut',title:'Palvelut: Helppo ja nopea palvelu',answer:'Helppo ja nopea palvelu! Varaa aika helposti ja jätä loput meidän hoidettavaksi.',source_type:'website',keywords:['palvelut']},
