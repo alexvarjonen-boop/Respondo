@@ -7898,3 +7898,221 @@ body{
     border-radius:18px;
   }
 }
+
+
+/* Multi-company workspace switcher */
+.workspace-switcher-block{
+  min-width:0;
+}
+.workspace-switcher{
+  max-width:220px;
+  min-width:140px;
+  height:34px;
+  border:0;
+  background:transparent;
+  color:#111114;
+  font:inherit;
+  font-size:12px;
+  font-weight:850;
+  outline:none;
+  cursor:pointer;
+  text-overflow:ellipsis;
+}
+.workspace-add-button{
+  min-height:40px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:0 13px;
+  border:1px solid rgba(17,17,20,.10);
+  border-radius:999px;
+  background:#fff;
+  color:#111114;
+  font:inherit;
+  font-size:10px;
+  font-weight:850;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.workspace-add-button:hover{
+  border-color:rgba(17,17,20,.18);
+  background:#f7f7f8;
+}
+.workspace-modal[hidden]{display:none!important}
+.workspace-modal{
+  position:fixed;
+  inset:0;
+  z-index:2147483500;
+  display:grid;
+  place-items:center;
+  padding:18px;
+}
+.workspace-modal-backdrop{
+  position:absolute;
+  inset:0;
+  border:0;
+  background:rgba(10,10,12,.42);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.workspace-modal-card{
+  position:relative;
+  width:min(560px,100%);
+  max-height:min(760px,calc(100vh - 36px));
+  overflow:auto;
+  padding:24px;
+  border:1px solid rgba(17,17,20,.09);
+  border-radius:28px;
+  background:#fff;
+  box-shadow:0 30px 90px rgba(0,0,0,.18);
+}
+.workspace-modal-head{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:flex-start;
+  margin-bottom:20px;
+}
+.workspace-modal-head small{
+  display:block;
+  margin-bottom:7px;
+  color:#8b8b92;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.13em;
+}
+.workspace-modal-head h2{
+  margin:0 0 8px;
+  font-size:26px;
+  line-height:1.05;
+}
+.workspace-modal-head p{
+  margin:0;
+  color:#66666d;
+  font-size:12px;
+  line-height:1.55;
+}
+.workspace-modal-close{
+  width:38px;
+  height:38px;
+  flex:0 0 auto;
+  border:0;
+  border-radius:50%;
+  background:#f2f2f4;
+  color:#111114;
+  font-size:23px;
+  cursor:pointer;
+}
+.workspace-add-form{
+  display:grid;
+  gap:14px;
+}
+.workspace-add-form>label:not(.workspace-terms){
+  display:grid;
+  gap:7px;
+}
+.workspace-add-form>label>span{
+  color:#6f6f76;
+  font-size:10px;
+  font-weight:800;
+}
+.workspace-add-form input[type="text"]{
+  width:100%;
+  min-height:50px;
+  padding:0 14px;
+  border:1px solid rgba(17,17,20,.10);
+  border-radius:14px;
+  background:#f7f7f8;
+  color:#111114;
+  font:inherit;
+  font-size:13px;
+  outline:none;
+}
+.workspace-add-form input[type="text"]:focus{
+  border-color:rgba(127,128,255,.7);
+  box-shadow:0 0 0 4px rgba(127,128,255,.10);
+  background:#fff;
+}
+.workspace-plan-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.workspace-plan-option{
+  position:relative;
+  display:block;
+  cursor:pointer;
+}
+.workspace-plan-option input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+.workspace-plan-option>span{
+  display:grid;
+  gap:4px;
+  min-height:78px;
+  padding:15px;
+  border:1px solid rgba(17,17,20,.10);
+  border-radius:16px;
+  background:#fafafa;
+}
+.workspace-plan-option input:checked+span{
+  border-color:#111114;
+  background:#111114;
+  color:#fff;
+}
+.workspace-plan-option b{
+  font-size:15px;
+}
+.workspace-plan-option small{
+  opacity:.66;
+  font-size:10px;
+}
+.workspace-terms{
+  display:flex!important;
+  gap:10px!important;
+  align-items:flex-start;
+  color:#66666d;
+  font-size:10px;
+  line-height:1.45;
+}
+.workspace-terms input{
+  margin-top:2px;
+}
+.workspace-checkout-button{
+  width:100%!important;
+  min-height:52px!important;
+  justify-content:center!important;
+}
+body.workspace-modal-open{
+  overflow:hidden!important;
+}
+@media(max-width:760px){
+  .workspace-switcher{
+    max-width:145px;
+    min-width:110px;
+    font-size:10px;
+  }
+  .workspace-add-button{
+    width:40px;
+    padding:0;
+  }
+  .workspace-add-button span{
+    display:none;
+  }
+  .workspace-modal{
+    align-items:end;
+    padding:0;
+  }
+  .workspace-modal-card{
+    width:100%;
+    max-height:88vh;
+    border-radius:24px 24px 0 0;
+    padding:20px 16px calc(22px + env(safe-area-inset-bottom));
+  }
+  .workspace-plan-grid{
+    grid-template-columns:1fr;
+  }
+}
