@@ -4355,17 +4355,28 @@ async function route() {
       };
       setProgress(0,appText('Valmistellaan hakua…','Förbereder sökning…','Preparing scan…'));
       try {
-        const started=await api('/api/app/import-website/start',{method:'POST',body:JSON.stringify({website})});
         let result=null;
-        const scanDeadline=Date.now()+6*60*1000;
-        while(!result){
-          if(Date.now()>scanDeadline) throw new Error(appText('Haku kesti liian kauan. Yritä uudelleen.','Sökningen tog för lång tid. Försök igen.','The scan took too long. Please try again.'));
-          await new Promise(resolve=>setTimeout(resolve,1000));
-          const state=await api('/api/app/import-website/status/'+encodeURIComponent(started.jobId));
-          const detail=Number(state.scanned||0)+' / '+Number(state.total||0);
-          setProgress(Number(state.percent||0),appText('Käyty läpi '+detail+' sivua','Skannat '+detail+' sidor','Scanned '+detail+' pages'));
-          if(state.status==='error') throw new Error(state.error||appText('Haku epäonnistui.','Sökningen misslyckades.','Scan failed.'));
-          if(state.status==='done') result=state.result;
+        let started=null;
+        try {
+          started=await api('/api/app/import-website/start',{method:'POST',body:JSON.stringify({website})});
+        } catch (startError) {
+          // Fallback for older/stale clients or a temporarily unavailable job runner.
+          // The direct endpoint uses the same local extractor and returns the same result shape.
+          setProgress(4,appText('Käynnistetään hakua uudelleen…','Startar sökningen på nytt…','Restarting scan…'));
+          result=await api('/api/app/import-website',{method:'POST',body:JSON.stringify({website})});
+        }
+        if(!result){
+          if(!started?.jobId) throw new Error(appText('Hakua ei voitu käynnistää. Yritä uudelleen.','Sökningen kunde inte startas. Försök igen.','The scan could not be started. Please try again.'));
+          const scanDeadline=Date.now()+6*60*1000;
+          while(!result){
+            if(Date.now()>scanDeadline) throw new Error(appText('Haku kesti liian kauan. Yritä uudelleen.','Sökningen tog för lång tid. Försök igen.','The scan took too long. Please try again.'));
+            await new Promise(resolve=>setTimeout(resolve,1000));
+            const state=await api('/api/app/import-website/status/'+encodeURIComponent(started.jobId));
+            const detail=Number(state.scanned||0)+' / '+Number(state.total||0);
+            setProgress(Number(state.percent||0),appText('Käyty läpi '+detail+' sivua','Skannat '+detail+' sidor','Scanned '+detail+' pages'));
+            if(state.status==='error') throw new Error(state.error||appText('Haku epäonnistui.','Sökningen misslyckades.','Scan failed.'));
+            if(state.status==='done') result=state.result;
+          }
         }
         setProgress(100,appText('Valmis','Klart','Complete'));
         // Imported content must be reviewed before it enters bot knowledge.
