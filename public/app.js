@@ -180,6 +180,82 @@ function appText(fi, sv, en) {
   return lang === 'sv' ? (sv ?? fi) : lang === 'en' ? (en ?? fi) : fi;
 }
 
+function previewContactVisitorRef() {
+  try {
+    const key='respondo-preview-contact-ref';
+    let value=sessionStorage.getItem(key);
+    if(!value) {
+      value=(globalThis.crypto?.randomUUID?.() || ('preview-'+Date.now()+'-'+Math.random().toString(36).slice(2))).slice(0,160);
+      sessionStorage.setItem(key,value);
+    }
+    return value;
+  } catch {
+    return ('preview-'+Date.now()+'-'+Math.random().toString(36).slice(2)).slice(0,160);
+  }
+}
+
+function showPreviewLeadForm(chat, question) {
+  if(!chat || chat.querySelector('.preview-leadbox')) return;
+  const form=document.createElement('form');
+  form.className='preview-leadbox';
+  form.innerHTML=
+    '<b>'+esc(appText('Haluatko, että yritys ottaa sinuun yhteyttä?','Vill du att företaget kontaktar dig?','Would you like the company to contact you?'))+'</b>'+
+    '<small>'+esc(appText('Jätä nimesi ja puhelinnumerosi tai sähköpostisi.','Lämna ditt namn och telefonnummer eller din e-postadress.','Leave your name and phone number or email.'))+'</small>'+
+    '<input name="name" maxlength="120" autocomplete="name" placeholder="'+esc(appText('Nimi, jos haluat','Namn, om du vill','Name (optional)'))+'">'+
+    '<input name="contact" maxlength="220" autocomplete="email" required placeholder="'+esc(appText('Puhelinnumero tai sähköposti','Telefonnummer eller e-post','Phone number or email'))+'">'+
+    '<button type="submit">'+esc(appText('Pyydä yhteydenottoa','Be om kontakt','Send contact details'))+'</button>'+
+    '<div class="preview-lead-status" role="status" aria-live="polite"></div>';
+
+  form.addEventListener('submit',async(event)=>{
+    event.preventDefault();
+    const contact=String(form.elements.contact?.value||'').trim();
+    const name=String(form.elements.name?.value||'').trim();
+    if(!contact) return;
+    const email=contact.includes('@')?contact:'';
+    const phone=email?'':contact;
+    const button=form.querySelector('button[type="submit"]');
+    const status=form.querySelector('.preview-lead-status');
+    if(button){
+      button.disabled=true;
+      button.textContent=appText('Lähetetään…','Skickar…','Sending…');
+    }
+    if(status){
+      status.className='preview-lead-status';
+      status.textContent='';
+    }
+    try {
+      const result=await api('/api/public/demo-lead',{
+        method:'POST',
+        body:JSON.stringify({
+          name,email,phone,
+          message:String(question||'').slice(0,1200),
+          visitorRef:previewContactVisitorRef(),
+          lang:currentLang(),
+        })
+      });
+      form.querySelectorAll('input,button').forEach((el)=>{el.disabled=true;});
+      if(button) button.textContent=appText('Lähetetty ✓','Skickat ✓','Sent ✓');
+      if(status){
+        status.className='preview-lead-status success';
+        status.textContent=result.message||appText('Kiitos! Yhteystietosi lähetettiin yritykselle.','Tack! Dina kontaktuppgifter skickades till företaget.','Thank you! Your contact details were sent to the company.');
+      }
+    } catch(error) {
+      if(button){
+        button.disabled=false;
+        button.textContent=appText('Pyydä yhteydenottoa','Be om kontakt','Send contact details');
+      }
+      if(status){
+        status.className='preview-lead-status error';
+        status.textContent=error.message||appText('Lähetys epäonnistui. Yritä uudelleen.','Det gick inte att skicka. Försök igen.','Sending failed. Please try again.');
+      }
+    }
+    chat.scrollTop=chat.scrollHeight;
+  });
+
+  chat.appendChild(form);
+  chat.scrollTop=chat.scrollHeight;
+}
+
 const EN_TEXT = new Map(Object.entries({
   "Päänavigaatio":"Main navigation",
   "Kirjaudu":"Sign in",
@@ -4098,6 +4174,7 @@ async function route() {
             bubble.appendChild(wrap);
           }
         }
+        if(result.canLeaveContact||result.handoff) showPreviewLeadForm(chat,question);
         demoHistory.push({question,answer:result.answer||''});
         if(demoHistory.length>8) demoHistory.splice(0,demoHistory.length-8);
       }catch(error){
@@ -4535,6 +4612,7 @@ async function route() {
             bubble.appendChild(actionWrap);
           }
         }
+        if (result.canLeaveContact || result.handoff) showPreviewLeadForm(chat, question);
         previewHistory.push({ question, answer: result.answer || '' });
         if (previewHistory.length > 8) previewHistory.splice(0, previewHistory.length - 8);
       } catch (err) {
