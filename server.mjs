@@ -856,18 +856,28 @@ function productCatalog(rows) {
   return out;
 }
 function productQueryTokens(message) {
-  const ignored=/^(?:mika|mikä|mitka|mitkä|mita|mitä|on|ovat|teidan|teidän|teilla|teillä|meidan|meidän|halvin|edullisin|kallein|paras|price|prices|cheapest|cheaper|lowest|most|expensive|what|which|your|you|have|do|cost|how|much|billigast|billigaste|dyrast|dyraste|vilken|vilka|har|ni|kostar|tuote|tuotteet|product|products)$/;
+  const ignored=/^(?:mika|mikä|mitka|mitkä|mita|mitä|on|ovat|teidan|teidän|teilla|teillä|meidan|meidän|halvin|edullisin|kallein|paras|suosituin|suosituimmat|myydyin|myydyimmat|popular|popularest|bestseller|bestsellers|best|selling|price|prices|cheapest|cheaper|lowest|most|expensive|what|which|your|you|have|do|cost|how|much|billigast|billigaste|dyrast|dyraste|popularast|populärast|bastsaljare|bästsäljare|vilken|vilka|har|ni|kostar|tuote|tuotteet|product|products)$/;
   return [...new Set(searchTokens(message).map(productStem).filter((word)=>word.length>=3&&!ignored.test(word)))];
 }
 function productMatchScore(product, tokens) {
   if(!tokens.length) return 1;
-  const hayTokens=searchTokens([product.name,product.productType,product.brand,product.description].filter(Boolean).join(' ')).map(productStem);
+  const primaryTokens=searchTokens([product.name,product.productType,product.brand].filter(Boolean).join(' ')).map(productStem);
+  const descriptionTokens=searchTokens(product.description||'').map(productStem);
   let score=0;
   for(const token of tokens){
-    if(hayTokens.includes(token)) score+=6;
-    else if(hayTokens.some((word)=>word.startsWith(token)||token.startsWith(word))) score+=3;
+    if(primaryTokens.includes(token)) score+=12;
+    else if(primaryTokens.some((word)=>word.startsWith(token)||token.startsWith(word))) score+=6;
+    else if(descriptionTokens.includes(token)) score+=1;
+    else if(descriptionTokens.some((word)=>word.startsWith(token)||token.startsWith(word))) score+=0.5;
   }
   return score;
+}
+function productPopularityEvidence(product) {
+  const text=normalizeSearchText([
+    product.name,product.productType,product.brand,product.description,
+    product.row?.title,product.row?.answer,(product.row?.keywords||[]).join(' ')
+  ].filter(Boolean).join(' '));
+  return /(?:bestseller|best seller|best-selling|best selling|most popular|most sold|top seller|suosituin|myydyin|myydyimp|bastsaljare|bästsäljare|populärast|mest salda|mest sålda)/.test(text);
 }
 function productPriceText(product,lang='fi') {
   if(!Number.isFinite(product?.price)) return '';
@@ -890,9 +900,33 @@ function directProductAnswer(rows,message,lang='fi') {
   const candidates=filtered.length?filtered:ranked;
   const cheapest=/\b(?:halvin|edullisin|cheapest|lowest price|billigast|billigaste)\b/.test(q);
   const expensive=/\b(?:kallein|most expensive|highest price|dyrast|dyraste)\b/.test(q);
+  const popularAsk=/\b(?:suosituin|suosituimmat|myydyin|myydyimmat|myydyimmät|most popular|best seller|bestseller|best-selling|top seller|populärast|bastsaljare|bästsäljare|mest sålda|mest salda)\b/.test(q);
   const priceAsk=/\b(?:hinta|maksaa|maksavat|price|cost|costs|pris|kostar)\b/.test(q);
   const stockAsk=/\b(?:varastossa|saatavilla|saatavuus|in stock|available|lager|i lager)\b/.test(q);
   const listAsk=/(?:mita|mitä|mitka|mitkä|what|which|vilka).*(?:tuot|product|putter|maila|sortiment|valikoim)|(?:tuotteita|products|puttereita|putters).*(?:teilla|teillä|have|har)/.test(q);
+
+  if(popularAsk){
+    const categoryMatches=tokens.length
+      ? ranked.filter((product)=>product._match>=6)
+      : ranked;
+    const pool=categoryMatches.length?categoryMatches:candidates;
+    const proven=pool.filter(productPopularityEvidence).slice(0,4);
+    if(proven.length){
+      const names=proven.map((product)=>product.name);
+      const answer=lang==='en'
+        ? (proven.length===1 ? `${names[0]} is marked as a best seller / popular product in the store information.` : `These products are marked as best sellers / popular products: ${names.join(', ')}.`)
+        : lang==='sv'
+          ? (proven.length===1 ? `${names[0]} är markerad som en bästsäljare / populär produkt i butikens information.` : `Dessa produkter är markerade som bästsäljare / populära produkter: ${names.join(', ')}.`)
+          : (proven.length===1 ? `${names[0]} on merkitty verkkokaupan tiedoissa suosituimmaksi tai bestseller-tuotteeksi.` : `Nämä tuotteet on merkitty verkkokaupan tiedoissa suosituiksi tai bestseller-tuotteiksi: ${names.join(', ')}.`);
+      return {answer,handoff:false,confidence:0.97,intent:'Tuotteet',sourceIds:proven.map((product)=>product.row?.id).filter(Boolean),selected:proven.map((product)=>product.row).filter(Boolean)};
+    }
+    const answer=lang==='en'
+      ? 'The store information does not contain a verified popularity or best-seller ranking for these products.'
+      : lang==='sv'
+        ? 'Butikens information innehåller ingen bekräftad popularitets- eller bästsäljarstatistik för de här produkterna.'
+        : 'Verkkokaupan tiedoissa ei ole vahvistettua suosio- tai myyntijärjestystä näille tuotteille.';
+    return {answer,handoff:false,confidence:0.92,intent:'Tuotteet',sourceIds:[],selected:[]};
+  }
 
   if(cheapest || expensive){
     const priced=candidates.filter((product)=>Number.isFinite(product.price));
