@@ -30,7 +30,178 @@ function httpUrl(raw, base) {
   try { const u = new URL(raw, base); return /^https?:$/.test(u.protocol) && !u.username && !u.password ? u.href : ''; } catch { return ''; }
 }
 
+function stripProductHtml(value) {
+  return clean(decodeHtml(String(value || '')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,' ')
+    .replace(/<[^>]+>/g,' ')));
+}
+function productNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  const raw=String(value ?? '').trim().replace(/\s/g,'').replace(',', '.').replace(/[^0-9.-]/g,'');
+  const number=Number(raw);
+  return Number.isFinite(number) && number >= 0 ? number : null;
+}
+function productTypeIs(node, wanted) {
+  const type=node?.['@type'];
+  const values=Array.isArray(type)?type:[type];
+  return values.some((value)=>norm(value)===norm(wanted));
+}
+function productBrand(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return clean(value);
+  return clean(value.name || value.brand || '');
+}
+function productAvailability(value) {
+  const n=norm(String(value || '').split('/').pop());
+  if (/instock|in stock|varastossa|available/.test(n)) return 'varastossa';
+  if (/outofstock|out of stock|soldout|sold out|ei varastossa|unavailable/.test(n)) return 'ei varastossa';
+  if (/preorder|pre-order|ennakkotila/.test(n)) return 'ennakkotilaus';
+  return '';
+}
+function productOffers(value) {
+  const out=[];
+  const walk=(offer)=>{
+    if (!offer) return;
+    if (Array.isArray(offer)) { offer.forEach(walk); return; }
+    if (typeof offer !== 'object') return;
+    if (Array.isArray(offer.offers)) offer.offers.forEach(walk);
+    const currency=clean(offer.priceCurrency || offer.currency || '');
+    const price=productNumber(offer.price ?? offer.lowPrice ?? offer.minPrice ?? offer.priceSpecification?.price);
+    const maxPrice=productNumber(offer.highPrice ?? offer.maxPrice ?? offer.priceSpecification?.maxPrice ?? offer.price);
+    const url=clean(offer.url || '');
+    const availability=productAvailability(offer.availability);
+    if (price !== null || maxPrice !== null || url || availability) out.push({price,maxPrice,currency,url,availability});
+  };
+  walk(value);
+  return out;
+}
+function productFromStructuredNode(node, pageUrl) {
+  if (!node || typeof node !== 'object' || (!productTypeIs(node,'Product') && !productTypeIs(node,'ProductGroup'))) return null;
+  const name=clean(node.name || node.headline || '');
+  if (!name) return null;
+  const offers=productOffers(node.offers);
+  const prices=offers.flatMap((offer)=>[offer.price,offer.maxPrice]).filter((value)=>Number.isFinite(value));
+  const price=prices.length?Math.min(...prices):null;
+  const maxPrice=prices.length?Math.max(...prices):price;
+  const currency=offers.find((offer)=>offer.currency)?.currency || clean(node.priceCurrency || '');
+  const availability=offers.find((offer)=>offer.availability)?.availability || productAvailability(node.availability);
+  const url=httpUrl(node.url || offers.find((offer)=>offer.url)?.url || pageUrl,pageUrl) || pageUrl;
+  const description=stripProductHtml(node.description || '').slice(0,700);
+  const category=clean(node.category || node.productCategory || node.additionalType || '').slice(0,120);
+  const brand=productBrand(node.brand).slice(0,120);
+  const sku=clean(node.sku || node.mpn || '').slice(0,120);
+  return {name,url,price,maxPrice,currency,availability,description,category,brand,sku};
+}
+function structuredProductNodes(html) {
+  const nodes=[];
+  for (const match of String(html || '').matchAll(/<script\b[^>]*type\s*=\s*(?:"application\/ld\+json"|'application\/ld\+json'|application\/ld\+json)[^>]*>([\s\S]*?)<\/script\s*>/gi)) {
+    const raw=String(match[1] || '').trim();
+    if (!raw) continue;
+    let data=null;
+    try { data=JSON.parse(raw); } catch {
+      try { data=JSON.parse(decodeHtml(raw)); } catch { data=null; }
+    }
+    const walk=(value)=>{
+      if (!value) return;
+      if (Array.isArray(value)) { value.forEach(walk); return; }
+      if (typeof value !== 'object') return;
+      nodes.push(value);
+      if (Array.isArray(value['@graph'])) value['@graph'].forEach(walk);
+      if (Array.isArray(value.hasVariant)) value.hasVariant.forEach(walk);
+      if (value.mainEntity && typeof value.mainEntity === 'object') walk(value.mainEntity);
+    };
+    walk(data);
+  }
+  return nodes;
+}
+function productMeta(html, key) {
+  const wanted=norm(key);
+  for (const match of String(html || '').matchAll(/<meta\b[^>]*>/gi)) {
+    const a=attrs(match[0]);
+    if (norm(a.property || a.name || a.itemprop)===wanted) return clean(a.content || '');
+  }
+  return '';
+}
+export function extractProducts(html, pageUrl) {
+  const products=[];
+  for (const node of structuredProductNodes(html)) {
+    const product=productFromStructuredNode(node,pageUrl);
+    if (product) products.push(product);
+  }
+  if (!products.length) {
+    const type=productMeta(html,'og:type');
+    const title=productMeta(html,'og:title') || productMeta(html,'twitter:title');
+    const amount=productNumber(productMeta(html,'product:price:amount') || productMeta(html,'og:price:amount'));
+    const currency=productMeta(html,'product:price:currency') || productMeta(html,'og:price:currency');
+    const productish=/product/i.test(type) || /\/(?:products?|tuotteet?|shop)\//i.test(new URL(pageUrl).pathname);
+    if (productish && title && amount !== null) {
+      products.push({
+        name:title,
+        url:httpUrl(productMeta(html,'og:url') || pageUrl,pageUrl) || pageUrl,
+        price:amount,
+        maxPrice:amount,
+        currency,
+        availability:productAvailability(productMeta(html,'product:availability')),
+        description:stripProductHtml(productMeta(html,'og:description')).slice(0,700),
+        category:'',brand:'',sku:'',
+      });
+    }
+  }
+  const seen=new Set();
+  return products.filter((product)=>{
+    const key=norm((product.url || '')+'|'+product.name);
+    if (!key || seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+}
+function productMoney(value) {
+  if (!Number.isFinite(value)) return '';
+  return Number(value).toFixed(2);
+}
+function productKeywords(product) {
+  return [...new Set(clean([product.name,product.category,product.brand,'tuote product'].filter(Boolean).join(' '))
+    .toLowerCase().split(/[^a-z0-9åäö]+/i).filter((word)=>word.length>=3))].slice(0,18);
+}
+function productKnowledgeAnswer(product) {
+  const parts=['Tuote: '+product.name+'.'];
+  if (Number.isFinite(product.price)) {
+    const range=Number.isFinite(product.maxPrice) && product.maxPrice>product.price
+      ? productMoney(product.price)+'–'+productMoney(product.maxPrice)
+      : productMoney(product.price);
+    parts.push('Hinta: '+range+(product.currency?' '+product.currency:'')+'.');
+  }
+  if (product.category) parts.push('Tuoteryhmä: '+product.category+'.');
+  if (product.brand) parts.push('Brändi: '+product.brand+'.');
+  if (product.availability) parts.push('Saatavuus: '+product.availability+'.');
+  if (product.sku) parts.push('SKU: '+product.sku+'.');
+  if (product.url) parts.push('Linkki: '+product.url+'.');
+  if (product.description) parts.push('Kuvaus: '+product.description.slice(0,520));
+  return clean(parts.join(' '));
+}
+export function parseProductKnowledgeRow(row) {
+  const category=norm(row?.category || '');
+  const answer=String(row?.answer || '');
+  if (!/(?:^|\s)(?:tuotteet|tuote|products?|produkter)(?:\s|$)/.test(category+' '+norm(row?.title || '')) && !/^Tuote:\s*/i.test(answer)) return null;
+  const name=clean(String(row?.title || '').replace(/^Tuote:\s*/i,'')) || clean(answer.match(/Tuote:\s*([^.]*)/i)?.[1] || '');
+  if (!name) return null;
+  const priceMatch=answer.match(/Hinta:\s*([0-9]+(?:[.,][0-9]+)?)(?:\s*[–-]\s*([0-9]+(?:[.,][0-9]+)?))?\s*([A-Z]{3}|€|\$|£)?/i);
+  const price=priceMatch?productNumber(priceMatch[1]):null;
+  const maxPrice=priceMatch&&priceMatch[2]?productNumber(priceMatch[2]):price;
+  const currency=clean(priceMatch?.[3] || '').toUpperCase();
+  const availability=clean(answer.match(/Saatavuus:\s*([^.]*)/i)?.[1] || '');
+  const productType=clean(answer.match(/Tuoteryhmä:\s*([^.]*)/i)?.[1] || '');
+  const brand=clean(answer.match(/Brändi:\s*([^.]*)/i)?.[1] || '');
+  const description=clean(answer.match(/Kuvaus:\s*([\s\S]*)$/i)?.[1] || '').slice(0,700);
+  const linkMatch=answer.match(/Linkki:\s*(https?:\/\/\S+)/i);
+  const rawUrl=String(row?.source_url || row?.sourceUrl || linkMatch?.[1] || '').replace(/[.,;]+$/,'');
+  const url=httpUrl(rawUrl);
+  return {name,price,maxPrice,currency,availability,productType,brand,description,url,row};
+}
+
+
 export function extractBusinessDocument(html, url) {
+  const products = extractProducts(html, url);
   const blocks = [], links = [];
   const stack = [];
   let buffer = '', heading = '', suppressedHeading = false;
@@ -96,7 +267,7 @@ export function extractBusinessDocument(html, url) {
     if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
   }
   flush();
-  return {url, blocks, links, text:blocks.map(x=>x.text).join('\n')};
+  return {url, blocks, links, products, text:blocks.map(x=>x.text).join('\n')};
 }
 
 export function businessFactKind(text, context = '') {
@@ -121,16 +292,38 @@ export function essentialWebsiteCandidates(bundle) {
     const uniqueTitle = ['services','pricing'].includes(kind) ? title + ': ' + text.slice(0,110) : title;
     out.push({category:labels[kind], title:uniqueTitle, answer:text, keywords:keywords[kind], sourceUrl});
   };
+  const addProduct = (product, fallbackUrl = '') => {
+    if (!product?.name) return;
+    const sourceUrl=httpUrl(product.url || fallbackUrl,fallbackUrl || undefined);
+    if (!sourceUrl) return;
+    const key='product:'+norm(sourceUrl+'|'+product.name);
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({
+      category:'Tuotteet',
+      title:clean(product.name).slice(0,180),
+      answer:productKnowledgeAnswer({...product,url:sourceUrl}).slice(0,1600),
+      keywords:productKeywords(product),
+      sourceUrl,
+    });
+  };
+
+  for (const product of Array.isArray(bundle?.products) ? bundle.products : []) addProduct(product,bundle?.finalUrl || '');
+
   const quoteLinks = [];
   for (const doc of bundle?.pageDocuments || []) {
     if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial|blog|uutis|news/.test(norm(new URL(doc.url).pathname))) continue;
+    const docProducts=Array.isArray(doc.products)?doc.products:[];
+    for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
     for (const block of blocks) {
       const kind = businessFactKind(block.text,block.heading);
       if (!kind) continue;
+      // Product pages are imported as complete product records. Do not create a
+      // second detached "price" fact that has lost the product name/link.
+      if (kind === 'pricing' && docProducts.length) continue;
       let title = labels[kind];
       if (kind === 'contact') title = email.test(block.text) ? 'Sähköposti' : phone.test(block.text) ? 'Puhelinnumero' : 'Osoite';
-      // Extract actual contact values; never save a whole footer as a phone number.
       if (kind === 'contact' && email.test(block.text)) add(kind,'Sähköposti',block.text.match(email)[0],doc.url);
       if (kind === 'contact' && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add(kind,'Puhelinnumero',block.text.match(phone)[0],doc.url);
       if (kind !== 'contact' || title === 'Osoite') {
@@ -148,9 +341,8 @@ export function essentialWebsiteCandidates(bundle) {
   }
   quoteLinks.sort((a,b)=>b.score-a.score);
   if (quoteLinks.length) add('quote','Tarjouspyyntölomake',quoteLinks[0].url,quoteLinks[0].sourceUrl);
-  return out.slice(0,1000);
+  return out.slice(0,10000);
 }
-
 export function essentialWebsiteProfile(bundle) {
   const facts = essentialWebsiteCandidates(bundle);
   const byKind = (kind) => facts.filter(x=>x.category===labels[kind]).map(x=>x.answer).join('\n').slice(0,4000);
@@ -162,5 +354,9 @@ export function usableWebsiteRow(row) {
   if (review.test(norm([row.category,row.title,row.answer].join(' ')))) return false;
   if (row.source_type !== 'website' && row.sourceType !== 'website') return true;
   if (row.title === 'Tarjouspyyntölomake') return !!httpUrl(row.answer);
+  if (/(?:^|\s)(?:tuotteet|products?|produkter)(?:\s|$)/.test(norm(row.category || ''))) {
+    const product=parseProductKnowledgeRow(row);
+    return !!(product?.name && product?.url);
+  }
   return !!businessFactKind(row.answer, row.category);
 }
