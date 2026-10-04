@@ -572,6 +572,18 @@ function respondoProductFaqMatch(message, lang = 'fi') {
     };
   }
 
+  if (/(?:ottaa yhteytt|saan yhteyden|mika.*sahkoposti|mika.*email|asiakaspalvelu.*yhteys|contact respondo|contact you|reach you|support email|email address|kontakta respondo|kontakta er|kontakt med er|support.*e-post|e-postadress)/.test(q)) {
+    const supportEmail = cleanEmail(process.env.SUPPORT_EMAIL || process.env.OWNER_EMAIL) || 'respondoai.fi@outlook.com';
+    return {
+      id:'respondo-faq-company-contact',
+      answer:answer(
+        'Voit ottaa meihin yhteyttä sähköpostitse osoitteeseen ' + supportEmail + ' tai Respondon verkkosivun Ota yhteyttä -osion kautta.',
+        'Du kan kontakta oss via e-post på ' + supportEmail + ' eller via kontaktsektionen på Respondos webbplats.',
+        'You can contact us by email at ' + supportEmail + ' or through the Contact section on the Respondo website.'
+      )
+    };
+  }
+
   if (/(?:bot|botti|botin).*(?:ulkoasu|appearance|utseende).*(?:muokat|custom|change|andra|anpass)|(?:ulkoasu|appearance|utseende).*(?:bot|botti)/.test(q)) {
     return {
       id:'respondo-faq-appearance',
