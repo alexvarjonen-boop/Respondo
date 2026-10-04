@@ -794,15 +794,14 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
 function knowledgeTopic(value) {
   const t=normalizeSearchText(value);
   if (/tarjouspyynt|quote|estimate|offert/.test(t)) return 'quote';
-  // Explicit price categories must win over service words inside the item name
-  // (for example "Hinnat: Ikkunanpesu"). Payment-method rows use their own
-  // "Maksaminen/Maksutavat" title and are handled separately below.
-  if (/^(?:hinnat?|hinnoittelu|pricing|prices?|pris(?:er)?)\b/.test(t)) return 'pricing';
+  // Payment-method knowledge must win over the word "maksaa/pay", while any
+  // explicit price marker must still outrank service words such as "pesu".
+  if(/maksutapa|maksaminen|maksuvaihtoeh|korttimaks|klarna|paypal|mobilepay|apple pay|google pay|payment method|payment options|pay with|pay by|betalning|betalningsmetod|faktura/.test(t)) return 'payment';
+  if (/^hinnat\b|hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
   // Keep actual services separate from retail products. Previously both mapped to
   // "services", so "Mitä palveluja teette?" could rank an unrelated product card.
   if(/palvelu|service|services|tjanst|tjänst|tarjoa|erbjud|huolto|pesu|pesut|siistim|raivaus|maalaust|leikkaus|poisvienti|puhdist/.test(t)) return 'services';
   if(/tuote|product|valikoima|selection|sortiment|myy|sell|sku|tuotenumero/.test(t)) return 'products';
-  if(/maksutapa|maksaminen|maksuvaihtoeh|korttimaks|klarna|paypal|mobilepay|apple pay|google pay|payment method|payment options|pay with|pay by|betalning|betalningsmetod|faktura/.test(t)) return 'payment';
   if(/^hinnat\b|hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
   if(/auki|opening|hours|oppet|öppet|oppettid/.test(t)) return 'hours';
   if(/toimitus|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|lahetys|sparning/.test(t)) return 'delivery';
@@ -1057,6 +1056,15 @@ function scoreKnowledgeRow(row, query) {
     }
   }
   const wanted=queryTopic(query);
+  // For store-policy questions, prefer the sentence that actually contains the
+  // requested detail. Category-wide keywords alone must not make "delivery time"
+  // outrank "tracking code" for a tracking question.
+  const normalizedQuery=normalizeSearchText(query);
+  if (wanted==='delivery' && /seurant|tracking|track order|sparning|spårning/.test(normalizedQuery)) {
+    const evidence=title+' '+answer;
+    if (/seurant|tracking|sparning|spårning/.test(evidence)) score+=28;
+    else score-=10;
+  }
   const rowTopic=knowledgeTopic(title+' '+category+' '+keywordText+' '+String(row.source_url||''));
   if(wanted && rowTopic===wanted) score+=30;
   else if(wanted && rowTopic && rowTopic!==wanted) score-=8;
