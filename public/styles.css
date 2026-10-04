@@ -7596,3 +7596,70 @@ body{
 
 
 
+
+
+/* Public "Try the bot" sticky header actions */
+.demo-sticky-topbar{
+  z-index:95!important;
+}
+.demo-public-actions{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:8px!important;
+  min-width:0;
+}
+.demo-public-actions .btn{
+  min-height:40px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0 14px!important;
+  border-radius:999px!important;
+  font-size:11px!important;
+  font-weight:800!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  text-decoration:none!important;
+}
+.demo-public-actions .demo-header-login{
+  border:1px solid rgba(17,17,20,.12)!important;
+  background:#fff!important;
+  color:#111114!important;
+}
+.demo-public-actions .demo-header-trial{
+  border:0!important;
+  color:#fff!important;
+  background:linear-gradient(105deg,#7f80ff 0%,#b878ff 28%,#ff6c8c 62%,#ff9b58 100%)!important;
+  box-shadow:0 10px 24px rgba(177,104,255,.22)!important;
+}
+@media(max-width:760px){
+  .demo-sticky-topbar{
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:8px!important;
+  }
+  .demo-sticky-topbar .dashboard-workspace{
+    display:none!important;
+  }
+  .demo-sticky-topbar .dashboard-topbar-brand .brand-word{
+    display:none!important;
+  }
+  .demo-public-actions{
+    gap:5px!important;
+  }
+  .demo-public-actions .btn{
+    min-height:38px!important;
+    padding:0 10px!important;
+    font-size:10px!important;
+  }
+  .demo-sticky-topbar .dashboard-section-picker{
+    grid-column:1/-1!important;
+    grid-row:2!important;
+  }
+}
+@media(max-width:390px){
+  .demo-public-actions .btn{
+    padding:0 8px!important;
+    font-size:9px!important;
+  }
+}
