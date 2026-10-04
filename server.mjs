@@ -584,6 +584,21 @@ function respondoProductFaqMatch(message, lang = 'fi') {
     };
   }
 
+  if (
+    /(?:peru(?:a|n|t|taa|utus|uttaminen)?|lopeta|lopettaa|paattaa|päättää|irtisano|irtisanom|cancel|cancellation|unsubscribe|terminate|end subscription|stop subscription|sag upp|säga upp|avsluta).*(?:tilaus|subscription|abonnemang)/.test(q) ||
+    /(?:tilaus|subscription|abonnemang).*(?:peru(?:a|n|t|taa|utus)?|lopeta|lopettaa|paattaa|päättää|irtisano|cancel|unsubscribe|terminate|end|stop|sag upp|säga upp|avsluta)/.test(q) ||
+    /(?:perus|peruut|peru).*(?:tilauks|tilausta)/.test(q)
+  ) {
+    return {
+      id:'respondo-faq-cancel-subscription',
+      answer:answer(
+        'Voit perua tilauksen milloin tahansa. Kirjaudu Respondoon ja avaa Asetukset → Laskutus → Avaa tilauksen hallinta. Peruminen tehdään Stripen asiakasportaalissa. Peruminen estää seuraavan uusiutumisen, ja jo maksettu laskutuskausi jatkuu normaalisti kauden loppuun.',
+        'Du kan säga upp abonnemanget när som helst. Logga in i Respondo och öppna Inställningar → Fakturering → Öppna abonnemangshantering. Uppsägningen görs i Stripes kundportal. Uppsägningen stoppar nästa förnyelse och en redan betald period fortsätter till periodens slut.',
+        'You can cancel your subscription at any time. Log in to Respondo and open Settings → Billing → Open subscription management. Cancellation is handled in the Stripe customer portal. Cancelling stops the next renewal, and any already-paid billing period continues until its end.'
+      )
+    };
+  }
+
   if (/(?:bot|botti|botin).*(?:ulkoasu|appearance|utseende).*(?:muokat|custom|change|andra|anpass)|(?:ulkoasu|appearance|utseende).*(?:bot|botti)/.test(q)) {
     return {
       id:'respondo-faq-appearance',
