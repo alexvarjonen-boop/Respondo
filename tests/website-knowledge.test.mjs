@@ -107,6 +107,35 @@ test('a general price question still finds the published price',()=>{
 });
 
 
+test('imports ecommerce shipping, tracking, returns, warranty and payment facts',async()=>{
+ const policyDoc=extractBusinessDocument(`
+  <section><h2>Toimitus ja seuranta</h2><p>Kun tilaus on lähetetty, saat sähköpostiisi seurantakoodin, jolla voit seurata lähetystä.</p><p>Toimitusaika on yleensä 2–4 arkipäivää.</p></section>
+  <section><h2>Palautukset</h2><p>Tuotteilla on 30 päivän palautusoikeus ja tuotteen voi vaihtaa toiseen kokoon.</p></section>
+  <section><h2>Takuu</h2><p>Tuotteilla on kahden vuoden takuu valmistusvirheiden varalta.</p></section>
+  <section><h2>Maksutavat</h2><p>Voit maksaa kortilla, Klarnalla tai MobilePaylla.</p></section>
+ `,'https://shop.example/pages/shipping');
+ const policyFacts=essentialWebsiteCandidates({finalUrl:'https://shop.example/',pageDocuments:[policyDoc]});
+ assert.ok(policyFacts.some(x=>x.category==='Toimitus ja seuranta'&&/seurantakood/i.test(x.answer)));
+ assert.ok(policyFacts.some(x=>x.category==='Palautukset ja vaihdot'&&/30 päivän/i.test(x.answer)));
+ assert.ok(policyFacts.some(x=>x.category==='Takuu'&&/kahden vuoden/i.test(x.answer)));
+ assert.ok(policyFacts.some(x=>x.category==='Maksaminen'&&/Klarna/i.test(x.answer)));
+ const policyRows=policyFacts.map((item,index)=>({...item,id:'policy-'+index,source_type:'website',source_url:item.sourceUrl}));
+
+ assert.equal(queryTopic('Onks tilauksissa seuranta?'),'delivery');
+ const tracking=await generateGroundedAnswer({rows:policyRows,message:'Onks tilauksissa seuranta?',lang:'fi'});
+ assert.equal(tracking.handoff,false,JSON.stringify(tracking));
+ assert.match(tracking.answer,/seurantakood/i);
+
+ assert.equal(queryTopic('Voiko maksaa Klarnalla?'),'payment');
+ const paying=await generateGroundedAnswer({rows:policyRows,message:'Voiko maksaa Klarnalla?',lang:'fi'});
+ assert.equal(paying.handoff,false,JSON.stringify(paying));
+ assert.match(paying.answer,/Klarna/i);
+
+ const returning=await generateGroundedAnswer({rows:policyRows,message:'Onko tuotteilla palautusoikeus?',lang:'fi'});
+ assert.equal(returning.handoff,false,JSON.stringify(returning));
+ assert.match(returning.answer,/30 päivän/i);
+});
+
 test('ecommerce products stay complete and cheapest-product questions return a direct product link',async()=>{
  const makeProduct=(name,price,path)=>extractBusinessDocument(`
    <script type="application/ld+json">${JSON.stringify({
