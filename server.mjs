@@ -2730,7 +2730,12 @@ app.use(express.text({ type: 'text/plain', limit: '20kb' }));
 app.use(rateLimit({ windowMs: 60000, limit: 180, standardHeaders: true, legacyHeaders: false }));
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders(res, filePath) {
-    if (filePath.endsWith('widget.js')) {
+    if (
+      filePath.endsWith('widget.js') ||
+      filePath.endsWith('app.js') ||
+      filePath.endsWith('import-email.mjs') ||
+      filePath.endsWith('index.html')
+    ) {
       res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     }
   },
@@ -3926,7 +3931,15 @@ const websiteImportJobs = new Map();
 app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
   const website=normalizeWebUrl(req.body.website,false);
   if(!website) return res.status(400).json({error:'Lisää ensin verkkosivusi osoite.'});
-  for (const [id, old] of websiteImportJobs) if (old.status !== 'running' && Date.now()-old.updatedAt > 10*60*1000) websiteImportJobs.delete(id);
+  // Remove completed jobs and also abandon a running job that has stopped
+  // updating. Otherwise one stuck crawl can make the import button appear dead
+  // forever for the same account.
+  for (const [id, old] of websiteImportJobs) {
+    const age = Date.now() - Number(old.updatedAt || 0);
+    if ((old.status !== 'running' && age > 10*60*1000) || (old.status === 'running' && age > 5*60*1000)) {
+      websiteImportJobs.delete(id);
+    }
+  }
   const active = [...websiteImportJobs.values()].find(job => job.userId === req.user.sub && job.status === 'running');
   if (active) return res.json({ok:true,jobId:active.id});
   if ([...websiteImportJobs.values()].filter(job=>job.status==='running').length >= 4) return res.status(429).json({error:'Haku on ruuhkautunut. Yritä hetken kuluttua uudelleen.'});
