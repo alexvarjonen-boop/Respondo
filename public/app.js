@@ -2901,6 +2901,11 @@ async function dashboard(options = {}) {
               <label class="workspace-plan-option"><input type="radio" name="plan" value="monthly" checked><span><b>49,99 € / kk</b><small>${appText('Kuukausitilaus','Månadsabonnemang','Monthly plan')}</small></span></label>
               <label class="workspace-plan-option"><input type="radio" name="plan" value="yearly"><span><b>539,88 € / ${appText('vuosi','år','year')}</b><small>44,99 € / kk</small></span></label>
             </div>
+            <label>
+              <span>${appText('Suosittelukoodi (valinnainen)','Rekommendationskod (valfritt)','Referral code (optional)')}</span>
+              <input name="referralCode" id="workspaceReferralCode" maxlength="40" autocomplete="off" placeholder="${appText('Syötä suosittelukoodi','Ange rekommendationskod','Enter referral code')}">
+              <small id="workspaceReferralHint">${appText('Voimassa oleva koodi antaa 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','En giltig kod ger 20 % rabatt på den första betalda månaden. Endast för månadsabonnemang.','A valid code gives 20% off the first paid month. Monthly plan only.')}</small>
+            </label>
             <label class="workspace-terms"><input type="checkbox" name="acceptedTerms" required><span>${appText('Hyväksyn käyttöehdot ja tietosuojaselosteen.','Jag godkänner användarvillkoren och integritetspolicyn.','I accept the terms and privacy policy.')}</span></label>
             <button class="btn ink workspace-checkout-button" type="submit">${appText('Jatka turvalliseen maksuun','Fortsätt till säker betalning','Continue to secure checkout')} →</button>
             <div id="workspaceAddMsg"></div>
@@ -4288,6 +4293,24 @@ async function route() {
     $('#workspaceModalClose')?.addEventListener('click',closeWorkspaceModal);
     $('#workspaceModalBackdrop')?.addEventListener('click',closeWorkspaceModal);
 
+    const workspaceAddForm=$('#workspaceAddForm');
+    const workspaceReferralCode=$('#workspaceReferralCode');
+    const workspaceReferralHint=$('#workspaceReferralHint');
+    const syncWorkspaceReferral=()=>{
+      if(!workspaceAddForm || !workspaceReferralCode) return;
+      const plan=String(new FormData(workspaceAddForm).get('plan')||'monthly');
+      const monthly=plan==='monthly';
+      workspaceReferralCode.disabled=!monthly;
+      if(!monthly) workspaceReferralCode.value='';
+      if(workspaceReferralHint){
+        workspaceReferralHint.textContent=monthly
+          ? appText('Voimassa oleva koodi antaa 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','En giltig kod ger 20 % rabatt på den första betalda månaden. Endast för månadsabonnemang.','A valid code gives 20% off the first paid month. Monthly plan only.')
+          : appText('Suosittelualennus toimii vain kuukausitilauksessa.','Rekommendationsrabatten gäller endast månadsabonnemang.','The referral discount only applies to the monthly plan.');
+      }
+    };
+    workspaceAddForm?.querySelectorAll('input[name="plan"]').forEach((radio)=>radio.addEventListener('change',syncWorkspaceReferral));
+    syncWorkspaceReferral();
+
     $('#workspaceAddForm')?.addEventListener('submit',async(event)=>{
       event.preventDefault();
       const form=event.currentTarget;
@@ -4305,6 +4328,7 @@ async function route() {
             companyName:String(fd.get('companyName')||'').trim(),
             businessId:String(fd.get('businessId')||'').trim(),
             plan:String(fd.get('plan')||'monthly'),
+            referralCode:String(fd.get('referralCode')||'').trim(),
             acceptedTerms:fd.get('acceptedTerms')==='on'
           })
         });
