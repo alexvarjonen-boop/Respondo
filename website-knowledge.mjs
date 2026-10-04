@@ -8,10 +8,27 @@ const service = /palvel|tarjoamme|teemme|service|we (?:offer|provide)|tjanst|vi 
 const hours = /auki|opening|hours|oppet|maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mandag|tisdag|onsdag|torsdag|fredag|lordag|sondag|\b(?:ma|ti|ke|to|pe|la|su|mon|tue|wed|thu|fri|sat|sun|man|tis|ons|tor|fre|lor|son)(?:\b|–|-)/;
 const clock = /\b\d{1,2}(?:[:.]\d{2})?\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\d{2})?\b|\b\d{1,2}:\d{2}\b|\b(?:closed|suljettu|stangt|24\/7)\b/i;
 const price = /(?:\d[\d\s.,]*\s*(?:€|eur\b|usd\b|sek\b|kr\b|\$|£)|[€$£]\s*\d)|(?:hinta|hinnoittelu|price|pris).*(?:sopim|tarjous|quote|offert|contact|yhtey|avtal)/i;
+const delivery = /toimitus|toimitusaika|toimitamme|toimitetaan|seurant|lahetys|lähetys|shipping|delivery|shipment|tracking|track(?:ing)?\s+(?:code|number|order)|nouto|pickup|leverans|sparning|spårning|forsand|försänd/i;
+const returns = /palaut|vaihto|hyvitys|return|refund|exchange|retur|aterbetal|återbetal|byte\b/i;
+const warranty = /takuu|reklamaatio|warranty|guarantee|garanti|reklamation/i;
+const payment = /maksutapa|maksaminen|maksuvaihtoeh|korttimaks|lasku\b|klarna|paypal|mobilepay|apple\s*pay|google\s*pay|payment|payment method|pay\s+(?:with|by)|betalning|betalningsmetod|faktura/i;
 const email = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
 const phone = /(?:\+\d{1,3}[\s().-]*|\b0)\d(?:[\s().-]*\d){5,11}\b/;
-const labels = {services:'Palvelut', pricing:'Hinnat', hours:'Aukioloajat', contact:'Yhteystiedot', quote:'Tarjouspyyntö'};
-const keywords = {services:['palvelut','teette','services','tjänster'], pricing:['hinta','maksaa','price','pris'], hours:['auki','opening','hours','öppettider'], contact:['yhteystiedot','contact','kontakt'], quote:['tarjous','tarjouspyyntö','quote','offert']};
+const labels = {
+  services:'Palvelut', pricing:'Hinnat', hours:'Aukioloajat', contact:'Yhteystiedot', quote:'Tarjouspyyntö',
+  delivery:'Toimitus ja seuranta', returns:'Palautukset ja vaihdot', warranty:'Takuu', payment:'Maksaminen'
+};
+const keywords = {
+  services:['palvelut','teette','services','tjänster'],
+  pricing:['hinta','maksaa','price','pris'],
+  hours:['auki','opening','hours','öppettider'],
+  contact:['yhteystiedot','contact','kontakt'],
+  quote:['tarjous','tarjouspyyntö','quote','offert'],
+  delivery:['toimitus','toimitusaika','seuranta','seurantakoodi','lähetys','shipping','delivery','tracking','shipment','leverans','spårning'],
+  returns:['palautus','palautukset','vaihto','hyvitys','return','returns','refund','exchange','retur','återbetalning'],
+  warranty:['takuu','reklamaatio','warranty','guarantee','garanti','reklamation'],
+  payment:['maksutapa','maksaminen','kortti','lasku','klarna','paypal','mobilepay','payment','betalning']
+};
 
 export function decodeHtml(s) {
   const named = {amp:'&', quot:'"', apos:"'", nbsp:' ', lt:'<', gt:'>', auml:'ä', ouml:'ö', aring:'å', Auml:'Ä', Ouml:'Ö', Aring:'Å', euro:'€', ndash:'–', mdash:'—'};
@@ -274,6 +291,15 @@ export function businessFactKind(text, context = '') {
   const t = clean(text), n = norm(t), c = norm(context);
   if (!t || t.length > 1600 || junk.test(n) || review.test(n) || /[★⭐]|\b\d(?:[.,]\d)?\s*\/\s*5\b/.test(t)) return '';
   if (/^(?:palvelut?|services?|tjanster|hinnat|hinnasto|pricing|prices|yhteystiedot|contact|aukioloajat|opening hours|pyyda tarjous|ota yhteytta|lue lisaa|read more|las mer|etusivu|home)$/i.test(n)) return '';
+  const commerce=n+' '+c;
+  const commerceFact=t.length>=10 && t.split(/\s+/).length>=2;
+  // Store policies must stay separate from generic prices. A shipping sentence
+  // such as "Delivery €5.90, tracking sent by email" is delivery knowledge,
+  // not an orphan price row.
+  if (commerceFact && delivery.test(commerce)) return 'delivery';
+  if (commerceFact && returns.test(commerce)) return 'returns';
+  if (commerceFact && warranty.test(commerce)) return 'warranty';
+  if (commerceFact && payment.test(commerce)) return 'payment';
   if (price.test(t)) return 'pricing';
   if (hours.test(n+' '+c) && clock.test(n)) return 'hours';
   if (email.test(t) || phone.test(t) && (/^\+\d/.test(t) || /puhel|puh\b|tel|phone|contact|yhteys|kontakt/.test(n+' '+c))) return 'contact';
@@ -347,7 +373,23 @@ export function essentialWebsiteProfile(bundle) {
   const facts = essentialWebsiteCandidates(bundle);
   const byKind = (kind) => facts.filter(x=>x.category===labels[kind]).map(x=>x.answer).join('\n').slice(0,4000);
   const byTitle = (title) => facts.find(x=>x.title===title)?.answer || '';
-  return {website:bundle.finalUrl || '', services:byKind('services'), pricing:byKind('pricing'), hours:byKind('hours'), phone:byTitle('Puhelinnumero'), email:byTitle('Sähköposti'), address:byTitle('Osoite'), quoteRequestUrl:byTitle('Tarjouspyyntölomake'), bookingUrl:'', serviceArea:'', notes:''};
+  return {
+    website:bundle.finalUrl || '',
+    services:byKind('services'),
+    pricing:byKind('pricing'),
+    hours:byKind('hours'),
+    delivery:byKind('delivery'),
+    returns:byKind('returns'),
+    warranty:byKind('warranty'),
+    payment:byKind('payment'),
+    phone:byTitle('Puhelinnumero'),
+    email:byTitle('Sähköposti'),
+    address:byTitle('Osoite'),
+    quoteRequestUrl:byTitle('Tarjouspyyntölomake'),
+    bookingUrl:'',
+    serviceArea:'',
+    notes:''
+  };
 }
 
 export function usableWebsiteRow(row) {
