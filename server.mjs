@@ -2801,6 +2801,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
     if (
       filePath.endsWith('widget.js') ||
       filePath.endsWith('app.js') ||
+      filePath.endsWith('effects.js') ||
       filePath.endsWith('import-email.mjs') ||
       filePath.endsWith('index.html')
     ) {
