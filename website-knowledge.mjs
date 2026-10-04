@@ -349,6 +349,17 @@ export function essentialWebsiteCandidates(bundle) {
       // second detached "price" fact that has lost the product name/link.
       if (kind === 'pricing' && docProducts.length) continue;
       let title = labels[kind];
+      if (kind === 'delivery') {
+        const commerceContext=norm(block.text+' '+block.heading);
+        title=/seurant|tracking|sparning|spårning/.test(commerceContext)
+          ? 'Tilausten seuranta'
+          : /toimitusaika|delivery time|shipping time|leveranstid/.test(commerceContext)
+            ? 'Toimitusaika'
+            : 'Toimitus';
+      }
+      if (kind === 'returns') title = 'Palautukset ja vaihdot';
+      if (kind === 'warranty') title = 'Takuu';
+      if (kind === 'payment') title = 'Maksutavat';
       if (kind === 'contact') title = email.test(block.text) ? 'Sähköposti' : phone.test(block.text) ? 'Puhelinnumero' : 'Osoite';
       if (kind === 'contact' && email.test(block.text)) add(kind,'Sähköposti',block.text.match(email)[0],doc.url);
       if (kind === 'contact' && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add(kind,'Puhelinnumero',block.text.match(phone)[0],doc.url);
