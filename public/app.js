@@ -2285,7 +2285,7 @@ function featuresPage() {
 }
 async function home() {
   await config();
-  return `<div>
+  return `<div class="home-page">
     ${nav()}
     ${stickyProductNav()}
     <main class="immersive-home">
