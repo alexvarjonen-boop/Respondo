@@ -508,6 +508,76 @@ function searchTokens(value) {
     .filter((x) => x.length > 2 && !SEARCH_STOPWORDS.has(x));
 }
 
+function isFirstPartyRespondoTenant(tenant) {
+  const name = normalizeSearchText(tenant?.name || '').replace(/\s+/g, ' ');
+  const slug = normalizeSearchText(tenant?.slug || '').replace(/\s+/g, '');
+  return name === 'respondo' || name === 'respondo ai' || slug === 'respondo' || slug === 'respondoai';
+}
+
+function respondoProductFaqMatch(message, lang = 'fi') {
+  const q = normalizeSearchText(message);
+  if (!q) return null;
+  const language = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
+  const answer = (fi, sv, en) => language === 'sv' ? sv : language === 'en' ? en : fi;
+
+  if (/(?:jatt|leave|lamna).*(?:yhteystiet|contact detail|kontaktuppgift)|(?:yhteystiet|contact detail|kontaktuppgift).*(?:jatt|leave|lamna)/.test(q)) {
+    return {
+      id:'respondo-faq-contact-details',
+      answer:answer(
+        'Kun botti ei löydä varmaa vastausta, se voi pyytää asiakkaalta nimen sekä puhelinnumeron tai sähköpostin. Yhteydenotto tallentuu hallintapaneeliin, jotta yritys voi palata asiakkaalle.',
+        'När botten inte hittar ett säkert svar kan den be kunden lämna namn samt telefonnummer eller e-post. Kontaktförfrågan sparas i kontrollpanelen så att företaget kan återkomma.',
+        'When the bot cannot find a reliable answer, it can ask the customer for their name and either a phone number or email address. The contact request is saved in the dashboard so the company can follow up.'
+      )
+    };
+  }
+
+  if (/(?:bot|botti|botin).*(?:ulkoasu|appearance|utseende).*(?:muokat|custom|change|andra|anpass)|(?:ulkoasu|appearance|utseende).*(?:bot|botti)/.test(q)) {
+    return {
+      id:'respondo-faq-appearance',
+      answer:answer(
+        'Kyllä. Hallintapaneelissa voit vaihtaa botin nimen ja kuvan, jotka näkyvät asiakkaalle chatissa.',
+        'Ja. I kontrollpanelen kan du ändra bottens namn och bild, som visas för kunden i chatten.',
+        'Yes. In the dashboard you can change the bot name and image that customers see in the chat.'
+      )
+    };
+  }
+
+  if (/(?:tietopohja|knowledge base|kunskapsbas).*(?:toim|work|funger)|(?:miten|how|hur).*(?:tietopohja|knowledge base|kunskapsbas)/.test(q)) {
+    return {
+      id:'respondo-faq-knowledge-base',
+      answer:answer(
+        'Tietopohjaan tallennetaan yrityksen hyväksymät tiedot ja kysymys–vastausparit. Respondo etsii kysymykseen sopivimman tiedon ja vastaa sen pohjalta. Vastauksia voi lisätä ja muokata hallintapaneelissa.',
+        'I kunskapsbasen sparas företagets godkända uppgifter och frågor med svar. Respondo hittar den information som bäst passar frågan och svarar utifrån den. Svar kan läggas till och redigeras i kontrollpanelen.',
+        'The knowledge base stores company-approved information and question-and-answer pairs. Respondo finds the information that best matches the question and answers from it. Answers can be added and edited in the dashboard.'
+      )
+    };
+  }
+
+  if (/(?:bot|botti).*(?:ei tied|ei osaa|doesn t know|does not know|cant answer|cannot answer|vet inte|kan inte svara)|(?:jos|if|om).*(?:bot|botti).*(?:ei|doesn t|does not|inte)/.test(q)) {
+    return {
+      id:'respondo-faq-unknown-answer',
+      answer:answer(
+        'Respondo ei arvaa. Jos varmaa vastausta ei löydy yrityksen tiedoista, botti kertoo sen ja voi pyytää asiakkaan yhteystiedot. Kysymys näkyy hallintapaneelissa puuttuvana vastauksena, jotta siihen voi lisätä oikean vastauksen.',
+        'Respondo gissar inte. Om ett säkert svar inte finns i företagets uppgifter säger botten det och kan be kunden lämna sina kontaktuppgifter. Frågan visas i kontrollpanelen som ett saknat svar så att rätt svar kan läggas till.',
+        'Respondo does not guess. If it cannot find a reliable answer in the company information, the bot says so and can ask for the customer’s contact details. The question appears in the dashboard as a missing answer so the correct answer can be added.'
+      )
+    };
+  }
+
+  if (/(?:asennus|asentaa|install|installation).*(?:toim|how|hur)|(?:miten|how|hur).*(?:asennus|asentaa|install|installation)/.test(q)) {
+    return {
+      id:'respondo-faq-installation',
+      answer:answer(
+        'Asennus tehdään kopioimalla hallintapaneelin Asennus-kohdan scriptikoodi verkkosivun HTML:ään juuri ennen </body>-tagia. Koodi on sidottu yrityksen määrittämään verkkosivuun.',
+        'Installationen görs genom att kopiera skriptkoden från avsnittet Installation i kontrollpanelen till webbplatsens HTML precis före </body>-taggen. Koden är bunden till den webbplats som företaget har angett.',
+        'Installation is done by copying the script code from the Installation section of the dashboard into the website HTML just before the </body> tag. The code is tied to the website configured by the company.'
+      )
+    };
+  }
+
+  return null;
+}
+
 function knowledgeTopic(value) {
   const t=normalizeSearchText(value);
   if (/^hinnat\b|hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
@@ -3593,6 +3663,12 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
 
     const a = s.rows[0];
     const total = a.total || 0;
+    const dashboardUnanswered = isFirstPartyRespondoTenant(tenant)
+      ? unanswered.rows.filter((row) => !respondoProductFaqMatch(row.question, 'fi'))
+      : unanswered.rows;
+    const dashboardGaps = isFirstPartyRespondoTenant(tenant)
+      ? gaps.rows.filter((row) => !respondoProductFaqMatch(row.question, 'fi'))
+      : gaps.rows;
     const tenantSafe = { ...tenant };
     [
       'google_calendar_access_token','google_calendar_refresh_token',
@@ -3605,10 +3681,10 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
       tenant:tenantSafe,
       referral,
       knowledge: k.rows,
-      unanswered: unanswered.rows,
+      unanswered: dashboardUnanswered,
       recentConversations: recent.rows,
       daily: daily.rows,
-      gaps: gaps.rows,
+      gaps: dashboardGaps,
       leads: leads.rows,
       actionStats: actionStats.rows,
       actionRequests: actionRequests.rows,
@@ -5264,14 +5340,26 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       history = hr.rows.reverse();
     }
 
-    const result = await generateGroundedAnswer({
-      companyName: t.name,
-      rows: kr.rows,
-      message,
-      history,
-      lang: detectedLang,
-      pageContext: body.pageContext && typeof body.pageContext === 'object' ? body.pageContext : {},
-    });
+    const firstPartyFaq = isFirstPartyRespondoTenant(t)
+      ? respondoProductFaqMatch(message, detectedLang)
+      : null;
+    const result = firstPartyFaq
+      ? {
+          answer:firstPartyFaq.answer,
+          handoff:false,
+          confidence:1,
+          intent:'Respondo FAQ',
+          sourceIds:[firstPartyFaq.id],
+          selected:[],
+        }
+      : await generateGroundedAnswer({
+          companyName: t.name,
+          rows: kr.rows,
+          message,
+          history,
+          lang: detectedLang,
+          pageContext: body.pageContext && typeof body.pageContext === 'object' ? body.pageContext : {},
+        });
 
     const responseLang = detectedLang;
     const noAnswer = responseLang === 'en'
