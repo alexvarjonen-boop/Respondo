@@ -5309,6 +5309,79 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
 });
 
 
+app.post('/api/public/respondo-contact', publicChatLimiter, async (req,res)=>{
+  let lang='fi';
+  try {
+    let body=req.body;
+    if (typeof body === 'string') {
+      try { body=JSON.parse(body); } catch { body={}; }
+    }
+    body=body||{};
+    lang=['fi','sv','en'].includes(String(body.lang||'').toLowerCase())
+      ? String(body.lang).toLowerCase()
+      : 'fi';
+
+    const name=String(body.name||'').trim().slice(0,120);
+    const email=cleanEmail(body.email).slice(0,220);
+    const message=String(body.message||'').trim().slice(0,2000);
+
+    const errorText=(fi,sv,en)=>lang==='sv'?sv:lang==='en'?en:fi;
+    if (!name) return res.status(400).json({error:errorText('Kirjoita nimesi.','Skriv ditt namn.','Enter your name.')});
+    if (!email || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) {
+      return res.status(400).json({error:errorText('Kirjoita kelvollinen sähköpostiosoite.','Skriv en giltig e-postadress.','Enter a valid email address.')});
+    }
+    if (!message) return res.status(400).json({error:errorText('Kirjoita viesti.','Skriv ett meddelande.','Enter a message.')});
+
+    const ownerEmail=cleanEmail(process.env.OWNER_EMAIL||process.env.SUPPORT_EMAIL);
+    if (!ownerEmail) return res.status(503).json({error:errorText('Yhteydenotto ei ole juuri nyt käytettävissä.','Kontaktformuläret är inte tillgängligt just nu.','The contact form is not available right now.')});
+
+    const tr=await q(
+      `SELECT t.id
+         FROM tenants t
+         JOIN users u ON u.id=t.owner_user_id
+        WHERE lower(u.email)=lower($1)
+          AND t.active=true
+          AND u.status='active'
+        ORDER BY u.created_at ASC
+        LIMIT 1`,
+      [ownerEmail],
+    );
+    if (!tr.rowCount) return res.status(503).json({error:errorText('Yhteydenotto ei ole juuri nyt käytettävissä.','Kontaktformuläret är inte tillgängligt just nu.','The contact form is not available right now.')});
+
+    await q(
+      `INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message,status)
+       VALUES($1,$2,$3,$4,$5,NULL,$6,'new')`,
+      [
+        uid(),
+        tr.rows[0].id,
+        String(body.visitorRef||'homepage-contact').slice(0,160),
+        name,
+        email,
+        message,
+      ],
+    );
+
+    return res.json({
+      ok:true,
+      message:errorText(
+        'Kiitos! Viestisi lähetettiin.',
+        'Tack! Ditt meddelande skickades.',
+        'Thank you! Your message was sent.'
+      )
+    });
+  } catch(e) {
+    console.error('Respondo homepage contact failed',e);
+    return res.status(500).json({
+      error:lang==='sv'
+        ? 'Meddelandet kunde inte skickas just nu. Försök igen om en stund.'
+        : lang==='en'
+          ? 'The message could not be sent right now. Please try again shortly.'
+          : 'Viestiä ei voitu lähettää juuri nyt. Yritä hetken päästä uudelleen.'
+    });
+  }
+});
+
+
 app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
   try {
     const tr = await publicTenant(req.params.slug);
