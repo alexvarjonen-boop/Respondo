@@ -3804,6 +3804,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const user=userResult.rows[0];
 
   let referrer=null;
+  let existingReferralReservation=false;
   if(referralCode){
     const ref=await q(
       `SELECT id,email,status,subscription_status,subscription_plan
@@ -3830,11 +3831,18 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
       return res.status(400).json({error:'Tämä suosittelukoodi on jo käytetty.'});
     }
     const alreadyReferred=await q(
-      'SELECT 1 FROM referral_redemptions WHERE referred_user_id=$1 LIMIT 1',
+      'SELECT code,status,stripe_discount_applied FROM referral_redemptions WHERE referred_user_id=$1 LIMIT 1',
       [req.user.sub],
     );
     if(alreadyReferred.rowCount){
-      return res.status(400).json({error:'Olet jo käyttänyt suosittelukoodin tällä käyttäjätilillä.'});
+      const existing=alreadyReferred.rows[0];
+      if(existing.stripe_discount_applied){
+        return res.status(400).json({error:'Olet jo käyttänyt suosittelukoodin tällä käyttäjätilillä.'});
+      }
+      if(String(existing.code||'')!==referralCode){
+        return res.status(400).json({error:'Tällä käyttäjätilillä on jo toinen keskeneräinen suosittelukoodi.'});
+      }
+      existingReferralReservation=true;
     }
     referrer=ref.rows[0];
   }
@@ -3885,7 +3893,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
       automatic_tax:{enabled:true},
     });
 
-    if(referrer){
+    if(referrer && !existingReferralReservation){
       await q(
         `INSERT INTO referral_redemptions(id,referrer_user_id,referred_user_id,code,status)
          VALUES($1,$2,$3,$4,'pending')`,
