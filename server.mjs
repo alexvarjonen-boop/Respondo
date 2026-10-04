@@ -150,6 +150,41 @@ async function renderIndexHtml(req) {
   ].filter(Boolean).join('\n');
 
   html = html.replace('</head>', extraHead + '\n</head>');
+
+  // The Respondo homepage uses the owner's real paid widget, not a separate demo.
+  // This is the same HTML snippet shown in the owner's Installation section.
+  if (req.path === '/' && pool) {
+    try {
+      const ownerEmail = cleanEmail(process.env.OWNER_EMAIL || process.env.SUPPORT_EMAIL);
+      if (ownerEmail) {
+        const ownerTenant = await q(
+          `SELECT t.slug
+             FROM tenants t
+             JOIN users u ON u.id=t.owner_user_id
+            WHERE lower(u.email)=lower($1)
+              AND t.active=true
+              AND u.status='active'
+              AND u.subscription_status IN ('active','trialing')
+            ORDER BY u.created_at ASC
+            LIMIT 1`,
+          [ownerEmail],
+        );
+        const ownerSlug = String(ownerTenant.rows[0]?.slug || '').trim();
+        if (ownerSlug) {
+          const widgetHtml =
+            '<script src="/widget.js?v=20261004-owner-home-v1" data-company="' +
+            escapeHtml(ownerSlug) +
+            '" data-lang="' +
+            escapeHtml(seo.lang) +
+            '"></script>';
+          html = html.replace('</body>', widgetHtml + '\n</body>');
+        }
+      }
+    } catch (e) {
+      console.error('Homepage owner widget injection failed', e?.message || e);
+    }
+  }
+
   return { html, seo };
 }
 
@@ -461,8 +496,13 @@ function normalizeHost(value) {
 
 function requestOrigin(req) {
   const value = String(req.headers.origin || '').trim();
+  const referer = String(req.headers.referer || '').trim();
   try {
-    return value ? new URL(value) : null;
+    if (value) return new URL(value);
+    // Same-origin GET requests do not always include an Origin header.
+    // The browser still sends Referer, which lets the first-party homepage
+    // use the exact same widget embed code as an external customer site.
+    return referer ? new URL(referer) : null;
   } catch {
     return null;
   }
