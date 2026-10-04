@@ -188,6 +188,34 @@ test('ecommerce products stay complete and cheapest-product questions return a d
  assert.equal(chatActions(productRows,'Paljonko JAG Black maksaa?',false,'fi',black.selected)[0]?.url,'https://shop.example/products/jag-black');
 });
 
+test('product type beats incidental description mentions and popularity is never guessed',async()=>{
+ const productRows=[
+  {id:'towel',category:'Tuotteet',title:'Microfiber Players Towel',answer:'Tuote: Microfiber Players Towel. Hinta: 21 USD. Tuoteryhmä: Towel. Linkki: https://shop.example/products/towel. Kuvaus: A great addition for your bag to accompany your new putter.',keywords:['microfiber','players','towel'],source_type:'website',source_url:'https://shop.example/products/towel'},
+  {id:'bronze',category:'Tuotteet',title:'JAG Bronze Putter',answer:'Tuote: JAG Bronze Putter. Hinta: 199 EUR. Tuoteryhmä: Putter. Linkki: https://shop.example/products/bronze. Kuvaus: Premium blade putter.',keywords:['jag','bronze','putter'],source_type:'website',source_url:'https://shop.example/products/bronze'},
+  {id:'black',category:'Tuotteet',title:'JAG Black Putter',answer:'Tuote: JAG Black Putter. Hinta: 249 EUR. Tuoteryhmä: Putter. Linkki: https://shop.example/products/black. Kuvaus: Premium mallet putter.',keywords:['jag','black','putter'],source_type:'website',source_url:'https://shop.example/products/black'}
+ ];
+
+ const cheapest=await generateGroundedAnswer({rows:productRows,message:'Mikä on teidän halvin putteri?',lang:'fi'});
+ assert.equal(cheapest.handoff,false,JSON.stringify(cheapest));
+ assert.match(cheapest.answer,/JAG Bronze Putter/);
+ assert.doesNotMatch(cheapest.answer,/Towel/i);
+
+ const popular=await generateGroundedAnswer({rows:productRows,message:'Mikä on teidän suosituin putteri?',lang:'fi'});
+ assert.equal(popular.handoff,false,JSON.stringify(popular));
+ assert.match(popular.answer,/ei ole vahvistettua suosio- tai myyntijärjestystä/i);
+ assert.doesNotMatch(popular.answer,/Towel/i);
+ assert.equal(popular.selected.length,0);
+
+ const bestsellerRows=productRows.map(row=>row.id==='black'
+  ? {...row,answer:row.answer+' Best seller.'}
+  : row);
+ const proven=await generateGroundedAnswer({rows:bestsellerRows,message:'Mikä on teidän suosituin putteri?',lang:'fi'});
+ assert.equal(proven.handoff,false,JSON.stringify(proven));
+ assert.match(proven.answer,/JAG Black Putter/);
+ assert.doesNotMatch(proven.answer,/Towel/i);
+ assert.deepEqual(proven.sourceIds,['black']);
+});
+
 test('equal cheapest ecommerce products are all reported instead of choosing one arbitrarily',async()=>{
  const productRows=[
   {id:'black',category:'Tuotteet',title:'JAG Black Putter',answer:'Tuote: JAG Black Putter. Hinta: 199.00 EUR. Tuoteryhmä: Putter. Linkki: https://shop.example/products/jag-black.',keywords:['jag','black','putter'],source_type:'website',source_url:'https://shop.example/products/jag-black'},
