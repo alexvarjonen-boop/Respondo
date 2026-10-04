@@ -3816,7 +3816,10 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   try {
     const session=await stripe.checkout.sessions.create({
       mode:'subscription',
-      ...(user.stripe_customer_id ? { customer:user.stripe_customer_id } : { customer_email:user.email }),
+      ...(user.stripe_customer_id ? {
+        customer:user.stripe_customer_id,
+        customer_update:{ name:'auto' },
+      } : { customer_email:user.email }),
       line_items:[{price,quantity:1}],
       subscription_data:{
         trial_period_days:3,
