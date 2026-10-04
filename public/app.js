@@ -4698,9 +4698,9 @@ async function route() {
             <div class="website-import-candidates">
               ${candidates.map((item,i)=>`<label class="website-import-candidate">
                 <input type="checkbox" data-import-index="${i}">
-                <span><p>${esc(item.answer)}</p><small>${esc(item.sourceUrl || '')}</small></span>
+                <span><b>${esc(item.title || item.category || '')}</b><p>${esc(item.answer)}</p><small>${esc(item.sourceUrl || '')}</small></span>
               </label>`).join('')}
-            </div>` : '<div class="notice">' + appText('Sivustolta ei löytynyt luotettavasti poimittavia palveluita, hintoja, yhteystietoja, aukioloaikoja tai tarjouspyyntölinkkiä. Voit lisätä tiedot käsin.','Inga tillförlitliga tjänster, priser, kontaktuppgifter, öppettider eller offertlänkar kunde hämtas. Du kan lägga till uppgifterna manuellt.','No reliable services, prices, contact details, opening hours or quote link could be extracted. You can add the details manually.') + '</div>';
+            </div>` : '<div class="notice">' + appText('Sivustolta ei löytynyt luotettavasti poimittavia tuotteita, palveluita, hintoja, yhteystietoja, aukioloaikoja tai tarjouspyyntölinkkiä. Voit lisätä tiedot käsin.','Inga tillförlitliga produkter, tjänster, priser, kontaktuppgifter, öppettider eller offertlänkar kunde hämtas. Du kan lägga till uppgifterna manuellt.','No reliable products, services, prices, contact details, opening hours or quote link could be extracted. You can add the details manually.') + '</div>';
           document.getElementById('selectAllWebsiteImport')?.addEventListener('click', (event) => {
             const boxes=[...review.querySelectorAll('[data-import-index]')];
             const shouldSelect=boxes.some((box)=>!box.checked);
@@ -4711,13 +4711,18 @@ async function route() {
           });
           document.getElementById('approveWebsiteImport')?.addEventListener('click', async (event) => {
             const approveButton = event.currentTarget;
-            const selected = [...review.querySelectorAll('[data-import-index]:checked')].map((input)=>candidates[Number(input.dataset.importIndex)]).filter(Boolean);
+            const checked=[...review.querySelectorAll('[data-import-index]:checked')];
+            const selectedIndexes=checked.map((input)=>Number(input.dataset.importIndex)).filter(Number.isInteger);
+            const selected=selectedIndexes.map((index)=>candidates[index]).filter(Boolean);
             if (!selected.length) return;
             const previous = approveButton.textContent;
             approveButton.disabled = true;
             approveButton.textContent = appText('Tallennetaan…','Sparar…','Saving…');
             try {
-              const saved = await api('/api/app/import-website/approve',{method:'POST',body:JSON.stringify({items:selected})});
+              const approvalPayload=result?.jobId
+                ? {jobId:result.jobId,indexes:selectedIndexes}
+                : {items:selected};
+              const saved = await api('/api/app/import-website/approve',{method:'POST',body:JSON.stringify(approvalPayload)});
               approveButton.textContent = appText('Lisätty bottiin ✓','Tillagt i botten ✓','Added to bot ✓');
               $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText(String(saved.added || 0) + ' verkkosivulta löydettyä tietoa lisättiin botin tietopohjaan.','Valda webbplatsuppgifter lades till i bottens kunskapsbas.','Selected website information was added to the bot knowledge base.') + '</div>';
             } catch(err) {
