@@ -149,7 +149,7 @@
       .headcopy small{display:flex;align-items:center;gap:6px;color:#707075;font-size:11px;margin-top:2px}
       .dot{width:7px;height:7px;border-radius:50%;background:#111113;display:inline-block}
       .chat{padding:18px;overflow:auto;flex:1;background:#f7f7f8;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
-      .msg{max-width:86%;padding:11px 13px;border-radius:15px;font-size:14px;line-height:1.45;word-break:break-word}
+      .msg{white-space:pre-line;max-width:86%;padding:11px 13px;border-radius:15px;font-size:14px;line-height:1.45;word-break:break-word}
       .bot{align-self:flex-start;background:#fff;border:1px solid #e3e3e6}
       .user{align-self:flex-end;background:#111113;color:#fff}
       .msg a{color:inherit;text-decoration:underline;text-underline-offset:2px}
