@@ -196,6 +196,37 @@ const pool = process.env.DATABASE_URL
     })
   : null;
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+let finnishVatTaxRateCache = '';
+async function ensureFinnishVatTaxRate() {
+  if (!stripe) return '';
+  const configured = String(process.env.STRIPE_FINLAND_VAT_TAX_RATE_ID || '').trim();
+  if (configured) return configured;
+  if (finnishVatTaxRateCache) return finnishVatTaxRateCache;
+
+  const rates = await stripe.taxRates.list({ active:true, limit:100 });
+  const existing = (rates.data || []).find((rate) =>
+    rate &&
+    rate.active !== false &&
+    rate.inclusive === true &&
+    Math.abs(Number(rate.percentage || 0) - 25.5) < 0.0001 &&
+    (!rate.country || String(rate.country).toUpperCase() === 'FI')
+  );
+  if (existing?.id) {
+    finnishVatTaxRateCache = existing.id;
+    return existing.id;
+  }
+
+  const created = await stripe.taxRates.create({
+    display_name:'ALV',
+    description:'Suomen ALV 25,5 % (sisältyy hintaan)',
+    jurisdiction:'FI',
+    country:'FI',
+    percentage:25.5,
+    inclusive:true,
+  });
+  finnishVatTaxRateCache = created.id;
+  return created.id;
+}
 const JWT = process.env.JWT_SECRET || crypto.randomBytes(48).toString('hex');
 const COOKIE = 'respondo_session';
 
@@ -4124,10 +4155,11 @@ app.post('/api/auth/start-checkout', async (req, res) => {
         });
       }
 
+      const finnishVatTaxRateId = await ensureFinnishVatTaxRate();
       session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         customer_email: email,
-        line_items: [{ price, quantity: 1 }],
+        line_items: [{ price, quantity: 1, tax_rates: [finnishVatTaxRateId] }],
         subscription_data: {
           ...(normalizedPlan === 'owner_test' ? {} : { trial_period_days: 3 }),
           metadata: {
@@ -4151,7 +4183,6 @@ app.post('/api/auth/start-checkout', async (req, res) => {
           plan: normalizedPlan,
           ...(referralCode ? { referral_code: referralCode } : {}),
         },
-        automatic_tax: { enabled: true },
       });
 
       await client.query('COMMIT');
@@ -4509,13 +4540,14 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   );
 
   try {
+    const finnishVatTaxRateId=await ensureFinnishVatTaxRate();
     const session=await stripe.checkout.sessions.create({
       mode:'subscription',
       ...(user.stripe_customer_id ? {
         customer:user.stripe_customer_id,
         customer_update:{ name:'auto' },
       } : { customer_email:user.email }),
-      line_items:[{price,quantity:1}],
+      line_items:[{price,quantity:1,tax_rates:[finnishVatTaxRateId]}],
       subscription_data:{
         trial_period_days:3,
         metadata:{
@@ -4538,7 +4570,6 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         additional_workspace:'1',
         ...(referralCode ? { referral_code:referralCode } : {}),
       },
-      automatic_tax:{enabled:true},
     });
 
     if(referrer && !existingReferralReservation){
