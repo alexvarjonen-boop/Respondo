@@ -1,0 +1,67 @@
+{
+  "status": "prepared_waiting_for_domain",
+  "launch_trigger": "nyt",
+  "domain": "https://respondoai.fi",
+  "paid_ads": false,
+  "countries": [
+    {
+      "code": "fi",
+      "name": "Finland",
+      "language": "fi",
+      "wave": 1
+    },
+    {
+      "code": "se",
+      "name": "Sweden",
+      "language": "sv",
+      "wave": 1
+    },
+    {
+      "code": "nl",
+      "name": "Netherlands",
+      "language": "en",
+      "wave": 2
+    },
+    {
+      "code": "ie",
+      "name": "Ireland",
+      "language": "en",
+      "wave": 2
+    },
+    {
+      "code": "no",
+      "name": "Norway",
+      "language": "en",
+      "wave": 2
+    }
+  ],
+  "verticals": [
+    "cleaning",
+    "moving",
+    "hvac_plumbing_electrical",
+    "auto_service",
+    "beauty_wellness",
+    "ecommerce"
+  ],
+  "sequence_days": [
+    0,
+    3,
+    8,
+    14
+  ],
+  "max_initial_batch_per_market": 25,
+  "utm": {
+    "source": "outlook",
+    "medium": "cold_email",
+    "campaign": "eu_launch_<country>_<vertical>"
+  },
+  "stop_on": [
+    "opt_out",
+    "negative_reply",
+    "hard_bounce"
+  ],
+  "notes": [
+    "No sends before explicit owner trigger 'nyt'.",
+    "Run domain and checkout sanity test immediately before launch."
+  ]
+}
