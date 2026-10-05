@@ -30,3 +30,23 @@ test('Respondo homepage purchase question answers with signup instructions inste
   assert.match(en.answer,/Try for free/i);
   assert.doesNotMatch(en.answer,/leave your contact/i);
 });
+
+
+test('Respondo homepage benefit questions return useful benefits instead of contact details',()=>{
+  const fi=respondoProductFaqMatch('Listaa jotain hyötyjä','fi',[]);
+  assert.ok(fi);
+  assert.equal(fi.id,'respondo-faq-benefits');
+  assert.match(fi.answer,/24\/7/);
+  assert.match(fi.answer,/toistuvaa asiakaspalvelutyötä/i);
+  assert.match(fi.answer,/puuttuvat kysymykset/i);
+  assert.doesNotMatch(fi.answer,/ota yhteyttä|sähköpostitse osoitteeseen/i);
+
+  const followup=respondoProductFaqMatch('Mitä hyötyä tästä on?','fi',[]);
+  assert.ok(followup);
+  assert.equal(followup.id,'respondo-faq-benefits');
+
+  const en=respondoProductFaqMatch('List some benefits','en',[]);
+  assert.ok(en);
+  assert.equal(en.id,'respondo-faq-benefits');
+  assert.match(en.answer,/Reduces repetitive customer-service work/i);
+});
