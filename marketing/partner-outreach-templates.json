@@ -1,0 +1,16 @@
+{
+  "partner": {
+    "fi": {
+      "subject": "AI-asiakaspalvelu asiakkaidesi verkkosivuille",
+      "body": "Moi,\n\nRakennan Respondoa, verkkosivuille asennettavaa AI-asiakaspalvelubottia. Ajattelin tätä mahdolliseksi lisäpalveluksi verkkosivu-/markkinointitoimistoille: voitte tarjota asiakkaalle botin ilman omaa chatbot-kehitystä.\n\nRespondo vastaa asiakkaan omista hyväksytyistä tiedoista, ja verkkosivun tiedot voidaan tuoda valmiiksi käyttöönottoa varten.\n\nKun respondoai.fi on julkaistu, voin tehdä yhdelle asiakkaallenne demon maksutta. Jos kiinnostaa, vastaan mielelläni lyhyesti miten yhteistyö voisi toimia.\n\n– Respondo AI"
+    },
+    "en": {
+      "subject": "AI customer service add-on for your web clients",
+      "body": "Hi,\n\nI'm building Respondo, an AI customer-service bot that agencies and web developers can add to client websites without building a chatbot stack from scratch.\n\nIt answers from the client's approved business information and can import useful website information to speed up onboarding.\n\nOnce respondoai.fi is live, I can build a free demo for one of your client websites. If that sounds useful, I'm happy to show you how a partner setup could work.\n\n– Respondo AI"
+    },
+    "sv": {
+      "subject": "AI-kundservice som tillägg för era webbkunder",
+      "body": "Hej,\n\nJag bygger Respondo, en AI-kundservicebot som webbyråer och utvecklare kan lägga till på kunders webbplatser utan att bygga en egen chatbotlösning.\n\nDen svarar utifrån kundens godkända företagsinformation och kan importera relevant information från webbplatsen för snabbare start.\n\nNär respondoai.fi är live kan jag skapa en gratis demo för en av era kundwebbplatser. Om det låter intressant visar jag gärna hur ett partnersamarbete kan fungera.\n\n– Respondo AI"
+    }
+  }
+}
