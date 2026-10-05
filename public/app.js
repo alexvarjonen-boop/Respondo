@@ -4061,6 +4061,7 @@ async function route() {
     const demoProfile=$('#businessProfileForm');
     const demoFacts=[];
     const demoHistory=[];
+    let demoImportId='';
     let uploadedAvatarData='';
 
     const demoAvatarMarkup=(value)=>{
@@ -4146,6 +4147,7 @@ async function route() {
           body:JSON.stringify({website,lang:currentLang()})
         });
         const candidates=Array.isArray(result.candidates)?result.candidates:[];
+        demoImportId=String(result.demoImportId||'').trim();
         setProgress(92,appText('Rakennetaan kokeilun tietopohjaa…','Bygger demots kunskapsbas…','Building demo knowledge base…'));
 
         // Replace only an earlier website scan. Manually entered demo answers remain.
@@ -4252,6 +4254,7 @@ async function route() {
           body:JSON.stringify({
             message:question,
             lang:currentLang(),
+            demoImportId,
             profile:{
               companyName:appText('Kokeiluyritys','Demoföretag','Demo company'),
               greeting:values.greeting,
@@ -4267,7 +4270,7 @@ async function route() {
               quoteRequestUrl:values.quoteRequestUrl,
               bookingUrl:values.bookingUrl,
               notes:values.notes,
-              customFacts:demoFacts.map(x=>({
+              customFacts:demoFacts.filter(x=>x.sourceType!=='demo_import').map(x=>({
                 key:x.title,
                 answer:x.answer,
                 category:x.category,
