@@ -162,7 +162,7 @@
       .error{color:#8b2d2d}
       .quick{display:flex;gap:7px;flex-wrap:wrap;padding:0 16px 12px;background:#f7f7f8}
       .quick:empty{display:none}
-      .quick button{border:1px solid #dedee2;background:#fff;border-radius:999px;padding:8px 10px;font:inherit;font-size:12px;color:#343438;cursor:pointer}
+      .quick button{position:relative;z-index:2;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border:1px solid #dedee2;background:#fff;border-radius:999px;padding:8px 10px;font:inherit;font-size:12px;color:#343438;cursor:pointer}
       .quick button:hover{border-color:#a9a9af}
       .actions{display:flex;gap:7px;flex-wrap:wrap;align-self:flex-start;max-width:92%}
       .actions a,.actions button{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6d6da;background:#fff;color:#111113;text-decoration:none;border-radius:10px;padding:9px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
@@ -353,7 +353,24 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = label;
-      button.addEventListener('click', () => sendMessage(label));
+      button.dataset.quickReply = String(label || '');
+      const submitQuickReply = (event) => {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        const value = String(button.dataset.quickReply || button.textContent || '').trim();
+        if (!value || button.disabled) return;
+        button.disabled = true;
+        Promise.resolve(sendMessage(value)).finally(() => { button.disabled = false; });
+      };
+      // iOS Safari can occasionally swallow the synthetic click on controls
+      // inside a fixed Shadow DOM panel after scrolling. touchend guarantees
+      // the tap is handled; click remains the desktop/accessibility fallback.
+      button.addEventListener('touchend', submitQuickReply, { passive:false });
+      button.addEventListener('click', (event) => {
+        if (event.detail === 0 || !('ontouchstart' in window)) submitQuickReply(event);
+      });
       quick.appendChild(button);
     });
   }
