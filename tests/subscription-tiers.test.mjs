@@ -49,9 +49,10 @@ test('homepage signup workspace and Try Bot expose all six choices',()=>{
     assert.match(effects,new RegExp(plan));
   }
   assert.match(app,/Hae tiedot automaattisesti verkkosivulta/);
-  assert.match(app,/2 .*asiakaspalvelijapaikkaa/);
-  assert.match(app,/10 .*asiakaspalvelijapaikkaa/);
-  assert.match(app,/20 .*asiakaspalvelijapaikkaa/);
+  assert.match(app,/Basic',49\.99,44\.99,539\.88,2/);
+  assert.match(app,/Advanced',64\.99,59\.99,719\.88,10/);
+  assert.match(app,/Business',79\.99,74\.99,899\.88,20/);
+  assert.match(app,/asiakaspalvelijapaikkaa/);
 });
 
 test('structured data publishes all six live plan prices',()=>{
