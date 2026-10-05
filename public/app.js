@@ -21,34 +21,55 @@ function neutralizeRestoredHomeScene() {
     document.body.style.background='#fff';
     document.body.classList.add('home-history-restoring');
     window.scrollTo({top:0,left:0,behavior:'auto'});
+
+    // Force every scroll-pinned/composited home scene back into normal flow.
+    // iOS Safari can otherwise restore an old dark GPU layer above the page
+    // before JavaScript gets a chance to repaint it.
     document.querySelectorAll(
-      '.story-track,.story-sticky,.cinema-stage,.world-sticky,.motion-depth-sticky,.trust-portal'
+      '.cinema-conversation,.cinema-stage,.story-horizontal,.story-track,.story-sticky,' +
+      '.product-world,.world-sticky,.motion-depth,.motion-depth-sticky,.trust-portal,.impact-scene'
     ).forEach((el)=>{
       el.style.setProperty('transform','none','important');
+      el.style.setProperty('transform-style','flat','important');
+      el.style.setProperty('perspective','none','important');
+      el.style.setProperty('will-change','auto','important');
       el.style.setProperty('position','relative','important');
+      el.style.setProperty('inset','auto','important');
       el.style.setProperty('top','auto','important');
+      el.style.setProperty('height','auto','important');
       el.style.setProperty('min-height','0','important');
+      el.style.setProperty('z-index','auto','important');
     });
   } catch {}
 }
 
+// Tear down the expensive sticky/compositor state *before* Safari stores the
+// homepage in the back-forward cache. This prevents a stale full-screen dark
+// scene from being snapshotted and restored over the real page.
+window.addEventListener('pagehide',(event)=>{
+  if(location.pathname!=='/' || !event.persisted) return;
+  neutralizeRestoredHomeScene();
+  try { sessionStorage.setItem(HOME_HISTORY_RESET_KEY,'suspended'); } catch {}
+});
+
 // iOS Safari can restore the homepage with the old composited sticky/3D layer
 // still covering the viewport. This can happen even when pageshow.persisted is
-// false, so also use Navigation Timing's back_forward signal.
+// false, so also use Navigation Timing's back_forward signal and our pagehide
+// marker. Hide the stale layers immediately, then reload once from clean DOM.
 window.addEventListener('pageshow',(event)=>{
   if(location.pathname!=='/') return;
-  let alreadyReloading=false;
-  try { alreadyReloading=sessionStorage.getItem(HOME_HISTORY_RESET_KEY)==='reloading'; } catch {}
-  if(alreadyReloading){
+  let resetState='';
+  try { resetState=sessionStorage.getItem(HOME_HISTORY_RESET_KEY)||''; } catch {}
+  if(resetState==='reloading'){
     try { sessionStorage.removeItem(HOME_HISTORY_RESET_KEY); } catch {}
     document.body.classList.remove('home-history-restoring');
     return;
   }
-  if(!event.persisted && !isHistoryNavigation()) return;
+  if(!event.persisted && !isHistoryNavigation() && resetState!=='suspended') return;
   neutralizeRestoredHomeScene();
   try { sessionStorage.setItem(HOME_HISTORY_RESET_KEY,'reloading'); } catch {}
   // Reload once from a clean visual state. The guard above prevents a loop.
-  location.reload();
+  requestAnimationFrame(()=>location.reload());
 });
 const esc = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (m) => ({
