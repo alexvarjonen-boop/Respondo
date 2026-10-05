@@ -1,7 +1,20 @@
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261001-highlights-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const $ = (s, r = document) => [...r.querySelectorAll(s)];
+
+const HOME_HISTORY_RESET_KEY='respondo-home-history-reset';
+if ('scrollRestoration' in history) history.scrollRestoration='manual';
+
+// iOS Safari can restore the marketing homepage from BFCache with a stale
+// full-screen scroll-animation frame. The result is a nearly black viewport
+// even though the next section is already visible underneath. On a real
+// back/forward BFCache restore, do one clean reload and return to the top.
+window.addEventListener('pageshow',(event)=>{
+  if(location.pathname!=='/' || !event.persisted) return;
+  try { sessionStorage.setItem(HOME_HISTORY_RESET_KEY,'1'); } catch {}
+  location.reload();
+});
 const esc = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (m) => ({
     '&': '&amp;',
@@ -3874,6 +3887,19 @@ async function route() {
   bindLanguageSwitch();
 
   if (path === '/') {
+    let resetReturnedHomepage=false;
+    try {
+      const navType=performance.getEntriesByType?.('navigation')?.[0]?.type || '';
+      resetReturnedHomepage=sessionStorage.getItem(HOME_HISTORY_RESET_KEY)==='1' || navType==='back_forward';
+      sessionStorage.removeItem(HOME_HISTORY_RESET_KEY);
+    } catch {}
+    if(resetReturnedHomepage){
+      const resetHomeScroll=()=>window.scrollTo({top:0,left:0,behavior:'auto'});
+      resetHomeScroll();
+      requestAnimationFrame(resetHomeScroll);
+      setTimeout(resetHomeScroll,80);
+    }
+
     const jobSlider = $('#jobValueSlider');
     const missedSlider = $('#missedSlider');
     const euro = (n) => new Intl.NumberFormat(appLocale(), { maximumFractionDigits: 0 }).format(n) + ' €';
