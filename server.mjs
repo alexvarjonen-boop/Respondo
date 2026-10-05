@@ -794,34 +794,42 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
 function knowledgeTopic(value) {
   const t=normalizeSearchText(value);
   if (/tarjouspyynt|quote|estimate|offert/.test(t)) return 'quote';
-  // Explicit ecommerce policy rows must be classified before generic product
-  // words in their answer ("Tuotteilla on 30 päivän palautusoikeus", etc.).
+  // Explicit ecommerce policy rows must be classified before generic product words.
   if (/^(?:palautukset?|palautus|returns?|refund|retur|vaihto|exchange)\b/.test(t)) return 'returns';
   if (/^(?:takuu|warranty|guarantee|garanti|reklamaatio)\b/.test(t)) return 'warranty';
   if (/^(?:tilausten seuranta|toimitusaika|toimitus|shipping|delivery|shipment|tracking|leverans)\b/.test(t)) return 'delivery';
+  if (/^(?:materiaalit?|material(?:s)?|materia)\b/.test(t)) return 'materials';
+  if (/^(?:laatu|valmistus|quality|manufactur|made in)\b/.test(t)) return 'quality';
+  if (/^(?:hoito-ohje|hoito|care|maintenance|washing|cleaning instruction)\b/.test(t)) return 'care';
+  if (/^(?:koot ja mitat|koot?|mitat|size|sizes|sizing|dimensions?|storlek)\b/.test(t)) return 'sizing';
+  if (/^(?:sijainti ja myymalat|sijainti|myymala|myymälä|osoite|store location|location|butik)\b/.test(t)) return 'stores';
   // Payment-method knowledge must win over the word "maksaa/pay", while any
   // explicit price marker must still outrank service words such as "pesu".
   if(/maksutapa|maksaminen|maksuvaihtoeh|korttimaks|klarna|paypal|mobilepay|apple pay|google pay|payment method|payment options|pay with|pay by|betalning|betalningsmetod|faktura/.test(t)) return 'payment';
   if (/^hinnat\b|hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
-  // Keep actual services separate from retail products. Previously both mapped to
-  // "services", so "Mitä palveluja teette?" could rank an unrelated product card.
+  // Keep actual services separate from retail products.
   if(/palvelu|service|services|tjanst|tjänst|tarjoa|erbjud|huolto|pesu|pesut|siistim|raivaus|maalaust|leikkaus|poisvienti|puhdist/.test(t)) return 'services';
   if(/tuote|product|valikoima|selection|sortiment|myy|sell|sku|tuotenumero/.test(t)) return 'products';
   if(/auki|opening|hours|oppet|öppet|oppettid/.test(t)) return 'hours';
   if(/toimitus|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|lahetys|sparning/.test(t)) return 'delivery';
   if(/palaut|return|refund|vaihto|exchange|retur|aterbetal/.test(t)) return 'returns';
-  if(/myymala|myymälä|store|location|butik/.test(t)) return 'stores';
+  if(/materiaali|material|made from|made of/.test(t)) return 'materials';
+  if(/laatu|quality|valmistus|manufactur|made in|handmade|cnc|precision|sertifio|certif/.test(t)) return 'quality';
+  if(/hoito-oh|care instruction|product care|maintenance instruction|washing instruction|pesuoh/.test(t)) return 'care';
+  if(/kokotauluk|koko-opas|koot\b|size guide|sizing|mitat|dimension|storlek/.test(t)) return 'sizing';
+  if(/myymala|myymälä|store|location|butik|sijainti|osoite|address|adress/.test(t)) return 'stores';
   if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(t)) return 'contact';
   if(/takuu|reklamaatio|warranty|guarantee|garanti|reklamation/.test(t)) return 'warranty';
   if(/ajanvaraus|ajanvarauslinkki|booking|appointment|boka|bokning|tidsbokning/.test(t)) return 'booking';
+  if(/usein kysytyt|faq/.test(t)) return 'faq';
   return '';
 }
 function queryTopic(query) {
   const q=normalizeSearchText(query);
   if (/tarjou[sk]|quote|estimate|offert/.test(q)) return 'quote';
-  if (/osoite|address|adress|sijainti/.test(q)) return 'contact';
+  if (/osoite|address|adress|sijainti|miss[aä]\s+sijait|where\s+(?:are|is).*located|where\s+is\s+(?:your\s+)?store|myymala|myymälä|store location|butik/.test(q)) return 'stores';
   if (!/hinta|maksaa|price|cost|pris|kostar|auki|hours|open|oppet/.test(q) && /mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|what do you (?:do|offer)|services|vad gor ni|vad gör ni|vad erbjuder|vilka tjänster|vilka tjanster|tjanster|tjänster|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|onko teilla|loytyyko teilta|löytyykö teiltä|haluaisin tilata|haluan tilata|tarvitsen|tarviin|pesu|puhdist|siivou|oljy|öljy|asenn|maal|korj|huol|raiva|poisvien/.test(q)) return 'services';
-  if(/mita myytte|mitä myytte|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you sell|what products|vad säljer|vad saljer|sortiment/.test(q)) return 'products';
+  if(/mita myytte|mitä myytte|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you sell|what products|vad säljer|vad saljer|sortiment|vari|väri|color|colour|farg|färg|saatavuus|varastossa|in stock/.test(q)) return 'products';
   // Payment-method questions such as "voiko maksaa Klarnalla?" must not be
   // mistaken for a generic price question just because they contain "maksaa".
   if(/maksutapa|maksaminen|maksuvaihtoeh|kortilla|korttimaks|klarn|paypal|mobilepay|apple pay|google pay|payment method|payment options|pay with|pay by|betalning|betalningsmetod|faktura/.test(q)) return 'payment';
@@ -829,7 +837,10 @@ function queryTopic(query) {
   if(/auki|aukiolo|opening|hours|open|oppet|öppet|oppettid/.test(q)) return 'hours';
   if(/toimitus|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|where is my order|tilauksen tila|lahetys|sparning/.test(q)) return 'delivery';
   if(/palaut|return|refund|vaihto|exchange|retur|aterbetal/.test(q)) return 'returns';
-  if(/myymala|myymälä|myymalat|myymälät|store|stores|butik/.test(q)) return 'stores';
+  if(/materiaali|materiaalista|mista tehty|mistä tehty|made of|made from|material|materials/.test(q)) return 'materials';
+  if(/laatu|laadukas|quality|valmistettu|valmistus|made in|where.*made|manufactur|handmade|käsinteht|kasinteht|cnc|precision/.test(q)) return 'quality';
+  if(/hoito-oh|miten.*(?:puhdist|pese|huolla)|care instruction|how.*(?:clean|wash|care)|maintenance instruction|pesuoh/.test(q)) return 'care';
+  if(/kokotauluk|koko-opas|mita koko|mitä koko|koot\b|size guide|what size|sizes\b|sizing|mitat|dimension|storlek/.test(q)) return 'sizing';
   if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(q)) return 'contact';
   if(/takuu|reklamaatio|warranty|guarantee|garanti|reklamation/.test(q)) return 'warranty';
   if(/ajanvaraus|varaa aika|varata ajan|ajan vara|booking|appointment|boka|bokning|tidsbokning/.test(q)) return 'booking';
