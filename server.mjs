@@ -2062,9 +2062,17 @@ function websiteKnowledgeCandidates(bundle) {
 
 function buildProfileKnowledge(profile = {}) {
   const rows = [];
-  const add = (title, answer, keywords = []) => {
+  const add = (title, answer, keywords = [], meta = {}) => {
     const value = String(answer || '').trim();
-    if (value) rows.push({ id: 'demo-' + rows.length, category: 'Yrityksen perustiedot', title, answer: value, keywords });
+    if (value) rows.push({
+      id: 'demo-' + rows.length,
+      category: String(meta.category || 'Yrityksen perustiedot').slice(0,80),
+      title,
+      answer: value,
+      keywords: Array.isArray(keywords) ? keywords.slice(0,32) : [],
+      source_type: String(meta.sourceType || 'profile').slice(0,40),
+      source_url: normalizeWebUrl(meta.sourceUrl,false) || null,
+    });
   };
   add('Hinnat', profile.pricing, ['hinta','maksaa','hinnoittelu']);
   add('Aukioloajat', profile.hours, ['auki','aukiolo','lauantai','sunnuntai']);
@@ -2082,8 +2090,17 @@ function buildProfileKnowledge(profile = {}) {
   add('Ajanvarauslinkki', profile.bookingUrl, ['ajanvaraus','varaa','aika','booking']);
   add('Lisätiedot', profile.notes, ['lisätieto','päivystys','maksutapa','takuu','ajanvaraus']);
   add('Vastaustyyli', profile.tone, ['tyyli']);
-  for (const fact of Array.isArray(profile.customFacts) ? profile.customFacts.slice(0, 1000) : []) {
-    add(String(fact?.key || '').slice(0, 180), String(fact?.answer || '').slice(0, 1500), searchTokens(fact?.key || '').slice(0, 12));
+  for (const fact of Array.isArray(profile.customFacts) ? profile.customFacts.slice(0, 2000) : []) {
+    const title=String(fact?.key || fact?.title || '').slice(0,180);
+    const answer=String(fact?.answer || '').slice(0,1600);
+    const factKeywords=Array.isArray(fact?.keywords)
+      ? fact.keywords.map((x)=>String(x||'').trim()).filter(Boolean).slice(0,32)
+      : searchTokens(title+' '+answer).slice(0,24);
+    add(title,answer,factKeywords,{
+      category:String(fact?.category || 'Yrityksen perustiedot').slice(0,80),
+      sourceType:fact?.sourceType || fact?.source_type || 'demo_import',
+      sourceUrl:fact?.sourceUrl || fact?.source_url || '',
+    });
   }
   return rows;
 }
@@ -3569,6 +3586,13 @@ const demoChatLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demon viestiraja tuli täyteen. Yritä myöhemmin uudelleen.' },
+});
+const demoImportLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 4,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demon verkkosivuhakuja on tehty liian monta. Yritä hetken kuluttua uudelleen.' },
 });
 
 app.get('/api/health', async (req, res) => {
@@ -6217,6 +6241,42 @@ app.get('/api/public/:slug', async (req, res) => {
   }
 });
 
+app.post('/api/public/demo-import-website', demoImportLimiter, async (req,res)=>{
+  const lang=['fi','sv','en'].includes(String(req.body?.lang||'').toLowerCase()) ? String(req.body.lang).toLowerCase() : 'fi';
+  const t=(fi,sv,en)=>lang==='sv'?sv:lang==='en'?en:fi;
+  try {
+    const website=normalizeWebUrl(req.body?.website,false);
+    if(!website) return res.status(400).json({error:t(
+      'Anna ensin kelvollinen verkkosivun osoite.',
+      'Ange först en giltig webbadress.',
+      'Enter a valid website address first.'
+    )});
+    // Same SSRF-safe importer as paid accounts. Demo data is returned only to
+    // this browser session and is never persisted to tenant knowledge.
+    const bundle=await fetchWebsiteBundle(website,180,55000);
+    const allCandidates=websiteKnowledgeCandidates(bundle);
+    const candidates=allCandidates.slice(0,2000);
+    const profile=extractFreeWebsiteProfile(bundle);
+    return res.json({
+      ok:true,
+      profile,
+      pagesScanned:bundle.pages.length,
+      factsFound:allCandidates.length,
+      candidates,
+      truncated:allCandidates.length>candidates.length,
+      extraction:'local-demo',
+    });
+  } catch(e) {
+    console.error('Demo website import failed',e?.message||e);
+    return res.status(400).json({error:e?.message || t(
+      'Verkkosivun tietojen haku epäonnistui.',
+      'Det gick inte att hämta webbplatsens uppgifter.',
+      'Website import failed.'
+    )});
+  }
+});
+
+
 app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
   let requestLang = 'fi';
   try {
@@ -6270,7 +6330,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
 
     let handoff = result.handoff;
     let answer = result.answer;
-    const actions = chatActions(rows, message, handoff, lang);
+    const actions = chatActions(rows, message, handoff, lang, result.selected || []);
     // Action URLs are UI data, not conversational answers. If retrieval picked
     // the booking/quote URL itself as the answer, replace it with natural copy
     // and let the client render the URL only as a clickable action.
