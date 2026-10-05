@@ -104,21 +104,21 @@ const FAQ = [
         "Mitä Respondo maksaa kuukaudessa?",
         "Paljonko kuukausitilaus maksaa?"
       ],
-      "a": "Kuukausitilaus maksaa 49,99 € kuukaudessa ja hinta sisältää ALV:n 25,5 %."
+      "a": "Kuukausihinnat ovat Basic 49,99 €/kk, Advanced 64,99 €/kk ja Business 79,99 €/kk. Hinnat sisältävät ALV:n 25,5 %."
     },
     "sv": {
       "q": [
         "Vad kostar Respondo per månad?",
         "Vad kostar månadsabonnemanget?"
       ],
-      "a": "Månadsabonnemanget kostar 49,99 € per månad och priset inkluderar 25,5 % moms."
+      "a": "Månadspriserna är Basic 49,99 €/månad, Advanced 64,99 €/månad och Business 79,99 €/månad. Priserna inkluderar 25,5 % moms."
     },
     "en": {
       "q": [
         "How much does Respondo cost per month?",
         "What is the monthly plan price?"
       ],
-      "a": "The monthly plan costs €49.99 per month and includes 25.5% VAT."
+      "a": "Monthly pricing is Basic €49.99/month, Advanced €64.99/month, and Business €79.99/month. Prices include 25.5% VAT."
     }
   },
   {
@@ -128,21 +128,21 @@ const FAQ = [
         "Mitä vuositilaus maksaa?",
         "Paljonko vuosipaketti maksaa?"
       ],
-      "a": "Vuositilaus vastaa hintaa 44,99 € kuukaudessa ja se laskutetaan kerran vuodessa yhteensä 539,88 €. Hinta sisältää ALV:n 25,5 %."
+      "a": "Vuositilaukset: Basic 44,99 €/kk (539,88 €/vuosi), Advanced 59,99 €/kk (719,88 €/vuosi) ja Business 74,99 €/kk (899,88 €/vuosi). Hinnat sisältävät ALV:n 25,5 %."
     },
     "sv": {
       "q": [
         "Vad kostar årsabonnemanget?",
         "Hur mycket kostar årsplanen?"
       ],
-      "a": "Årsabonnemanget motsvarar 44,99 € per månad och faktureras en gång per år, totalt 539,88 €. Priset inkluderar 25,5 % moms."
+      "a": "Årsabonnemangen är Basic 44,99 €/månad (539,88 €/år), Advanced 59,99 €/månad (719,88 €/år) och Business 74,99 €/månad (899,88 €/år). Priserna inkluderar 25,5 % moms."
     },
     "en": {
       "q": [
         "How much is the annual plan?",
         "What does the yearly subscription cost?"
       ],
-      "a": "The annual plan is equivalent to €44.99 per month and is billed once per year at €539.88. The price includes 25.5% VAT."
+      "a": "Annual pricing is Basic €44.99/month (€539.88/year), Advanced €59.99/month (€719.88/year), and Business €74.99/month (€899.88/year). Prices include 25.5% VAT."
     }
   },
   {
@@ -152,21 +152,21 @@ const FAQ = [
         "Sisältääkö hinta ALV:n?",
         "Tuleeko hinnan päälle vielä veroja?"
       ],
-      "a": "Sivulla ilmoitetut 49,99 €/kk ja 539,88 €/vuosi sisältävät ALV:n 25,5 %. Ennen maksamista Stripe näyttää kokonaishinnan ja laskutusjakson."
+      "a": "Kaikki Basic-, Advanced- ja Business-hinnat sisältävät ALV:n 25,5 %. Ennen maksamista Stripe näyttää valitun paketin kokonaishinnan ja laskutusjakson."
     },
     "sv": {
       "q": [
         "Ingår moms i priset?",
         "Tillkommer skatt på priset?"
       ],
-      "a": "Priserna 49,99 €/månad och 539,88 €/år som visas på webbplatsen inkluderar 25,5 % moms. Stripe visar totalpriset och faktureringsperioden före betalning."
+      "a": "Alla priser för Basic, Advanced och Business inkluderar 25,5 % moms. Stripe visar totalpriset och faktureringsperioden före betalning."
     },
     "en": {
       "q": [
         "Does the price include VAT?",
         "Are taxes added on top of the price?"
       ],
-      "a": "The displayed prices of €49.99/month and €539.88/year include 25.5% VAT. Stripe shows the total price and billing period before payment."
+      "a": "All Basic, Advanced, and Business prices include 25.5% VAT. Stripe shows the selected plan's total price and billing period before payment."
     }
   },
   {
@@ -224,21 +224,21 @@ const FAQ = [
         "Miten aloitan tilauksen?",
         "Mistä voin tilata Respondon?"
       ],
-      "a": "Aloita Respondon sivun Kokeile ilmaiseksi -painikkeesta tai avaa {{SITE_URL}}/tilaus. Valitse kuukausi- tai vuositilaus, luo tili tai jatka Googlella ja lisää maksutapa turvallisesti Stripessä."
+      "a": "Aloita Respondon sivun Kokeile ilmaiseksi -painikkeesta tai avaa {{SITE_URL}}/tilaus. Valitse Basic, Advanced tai Business sekä kuukausi- tai vuositilaus, luo tili tai jatka Googlella ja lisää maksutapa turvallisesti Stripessä."
     },
     "sv": {
       "q": [
         "Hur startar jag ett abonnemang?",
         "Var kan jag beställa Respondo?"
       ],
-      "a": "Börja med knappen Prova gratis på Respondos webbplats eller öppna {{SITE_URL}}/tilaus. Välj månads- eller årsabonnemang, skapa ett konto eller fortsätt med Google och lägg till betalningsmetoden säkert i Stripe."
+      "a": "Börja med knappen Prova gratis på Respondos webbplats eller öppna {{SITE_URL}}/tilaus. Välj Basic, Advanced eller Business och månads- eller årsabonnemang, skapa ett konto eller fortsätt med Google och lägg till betalningsmetoden säkert i Stripe."
     },
     "en": {
       "q": [
         "How do I start a subscription?",
         "Where can I subscribe to Respondo?"
       ],
-      "a": "Start from the Try for free button on the Respondo website or open {{SITE_URL}}/tilaus. Choose monthly or annual billing, create an account or continue with Google, and add your payment method securely in Stripe."
+      "a": "Start from the Try for free button on the Respondo website or open {{SITE_URL}}/tilaus. Choose Basic, Advanced, or Business and monthly or annual billing, create an account or continue with Google, and add your payment method securely in Stripe."
     }
   },
   {
@@ -1376,21 +1376,21 @@ const FAQ = [
         "Onko kuukausi- ja vuositilauksessa samat ominaisuudet?",
         "Saanko vuositilauksella enemmän ominaisuuksia?"
       ],
-      "a": "Nykyisen hinnaston mukaan kuukausi- ja vuositilauksessa ovat samat varsinaiset ominaisuudet. Ero on laskutusjaksossa ja hinnassa."
+      "a": "Saman pakettitason kuukausi- ja vuositilauksessa ovat samat ominaisuudet. Basic, Advanced ja Business eroavat toisistaan ominaisuuksien ja asiakaspalvelijapaikkojen määrän perusteella."
     },
     "sv": {
       "q": [
         "Har månads- och årsabonnemanget samma funktioner?",
         "Får jag fler funktioner med årsplanen?"
       ],
-      "a": "Enligt den nuvarande prislistan har månads- och årsabonnemanget samma huvudsakliga funktioner. Skillnaden ligger i faktureringsperiod och pris."
+      "a": "Månads- och årsabonnemanget på samma nivå har samma funktioner. Basic, Advanced och Business skiljer sig åt i funktioner och antal kundserviceplatser."
     },
     "en": {
       "q": [
         "Do the monthly and annual plans have the same features?",
         "Do I get more features on the annual plan?"
       ],
-      "a": "According to the current pricing, monthly and annual plans have the same core features. The difference is the billing period and price."
+      "a": "Monthly and annual billing for the same tier include the same features. Basic, Advanced, and Business differ in included features and support-agent seats."
     }
   },
   {
