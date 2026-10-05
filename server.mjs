@@ -1721,6 +1721,15 @@ async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Dat
       const availability=variants.some((variant)=>variant?.available===true)
         ? 'varastossa'
         : variants.some((variant)=>variant?.available===false) ? 'ei varastossa' : '';
+      const optionDefs=(Array.isArray(raw?.options)?raw.options:[]).map((option,index)=>{
+        const values=cleanCatalogValues(
+          option?.values?.length
+            ? option.values
+            : variants.map((variant)=>variant?.['option'+(index+1)]).filter(Boolean),
+          30,
+        );
+        return {name:String(option?.name||'').trim(),values};
+      }).filter((option)=>option.name&&option.values.length);
       const product=normalizeCatalogProduct({
         name:raw?.title,
         url:new URL('/products/'+String(raw?.handle||''),base).toString(),
@@ -1732,6 +1741,10 @@ async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Dat
         category:raw?.product_type,
         brand:raw?.vendor,
         sku:variants.find((variant)=>variant?.sku)?.sku || '',
+        options:optionDefs,
+        colors:catalogOptionValues(optionDefs,/vari|color|colour|farg|färg/),
+        sizes:catalogOptionValues(optionDefs,/koko|size|storlek|fit/),
+        materials:catalogOptionValues(optionDefs,/materia|material/),
       });
       if(product) out.push(product);
       if(out.length>=limit) break;
@@ -1759,6 +1772,21 @@ async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.no
       const minor=Math.pow(10,Number(p.currency_minor_unit||2));
       const low=numericStorePrice(p.price);
       const regular=numericStorePrice(p.regular_price);
+      const optionDefs=(Array.isArray(raw?.attributes)?raw.attributes:[]).map((attribute)=>({
+        name:String(attribute?.name||attribute?.label||'').trim(),
+        values:cleanCatalogValues(attribute?.terms?.length?attribute.terms:attribute?.values,30),
+      })).filter((option)=>option.name&&option.values.length);
+      const dimensions=raw?.dimensions&&typeof raw.dimensions==='object'?raw.dimensions:{};
+      const dimensionUnit=String(dimensions?.unit||'').trim();
+      const specs=[];
+      const addSpec=(name,value)=>{
+        if(value===null||value===undefined||String(value).trim()==='') return;
+        specs.push({name,value:String(value).trim()+(dimensionUnit?' '+dimensionUnit:'')});
+      };
+      addSpec('Pituus',dimensions?.length);
+      addSpec('Leveys',dimensions?.width);
+      addSpec('Korkeus',dimensions?.height);
+      if(raw?.weight) specs.push({name:'Paino',value:String(raw.weight).trim()});
       const product=normalizeCatalogProduct({
         name:raw?.name,
         url:raw?.permalink,
@@ -1770,6 +1798,11 @@ async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.no
         category:Array.isArray(raw?.categories)?raw.categories.map((item)=>item?.name).filter(Boolean).join(', '):'',
         brand:Array.isArray(raw?.brands)?raw.brands.map((item)=>item?.name).filter(Boolean).join(', '):'',
         sku:raw?.sku,
+        options:optionDefs,
+        colors:catalogOptionValues(optionDefs,/vari|color|colour|farg|färg/),
+        sizes:catalogOptionValues(optionDefs,/koko|size|storlek|fit/),
+        materials:catalogOptionValues(optionDefs,/materia|material/),
+        specs,
       });
       if(product) out.push(product);
       if(out.length>=limit) break;
