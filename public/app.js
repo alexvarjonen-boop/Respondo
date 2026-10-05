@@ -2118,42 +2118,52 @@ function calculatorSection() {
 }
 
 function pricingSection() {
+  const card=(tier,monthly,yearlyMonthly,yearlyTotal,seats,features,featured=false)=>`
+    <article class="price-card ${featured?'featured':''}">
+      <div class="price-top"><span>${tier.toUpperCase()}</span><span class="${featured?'save':''}">${featured?appText('SUOSITUIN','POPULÄRAST','MOST POPULAR'):appText('3 PÄIVÄÄ ILMAISEKSI','3 DAGAR GRATIS','3 DAYS FREE')}</span></div>
+      <h3>${tier}</h3>
+      <div class="pricevalue">${monthly.toFixed(2).replace('.',',')} €<small>/kk</small></div>
+      <div class="plan-yearly-price">${appText('Vuositilauksella','Med årsabonnemang','With annual billing')} <b>${yearlyMonthly.toFixed(2).replace('.',',')} €/kk</b> · ${yearlyTotal.toFixed(2).replace('.',',')} € / ${appText('vuosi','år','year')}</div>
+      <div class="price-rule"></div>
+      <ul>
+        ${features.map((x)=>`<li>${x}</li>`).join('')}
+        <li><b>${seats} ${appText('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</b></li>
+      </ul>
+      <div class="price-actions">
+        <a class="btn price-btn" href="/tilaus?plan=${tier.toLowerCase()}_monthly">${appText('Kuukausi','Månad','Monthly')} · ${monthly.toFixed(2).replace('.',',')} €</a>
+        <a class="btn price-btn ${featured?'blue':''}" href="/tilaus?plan=${tier.toLowerCase()}_yearly">${appText('Vuosi','År','Annual')} · ${yearlyMonthly.toFixed(2).replace('.',',')} €/kk <span>→</span></a>
+      </div>
+      <div class="annual-save-note">${appText('Vuositilauksella säästät 60 € vuodessa. Hinnat sisältävät ALV 25,5 %.','Med årsabonnemang sparar du 60 € per år. Priserna inkluderar 25,5 % moms.','Annual billing saves €60 per year. Prices include 25.5% VAT.')}</div>
+    </article>`;
   return `<section class="section pricing-section" id="pricing">
     <div class="container">
-      <div class="section-kicker">Hinta</div>
+      <div class="section-kicker">${appText('Hinta','Pris','Pricing')}</div>
       <div class="split-head">
-        <h2>Yksi selkeä hinta.<br><em>Tiedät mitä maksat.</em></h2>
-        <p>Kokeile 3 päivää ilmaiseksi. Peruuta ennen kokeilun päättymistä, jos et halua jatkaa.</p>
+        <h2>${appText('Valitse yrityksellesi sopiva taso.','Välj rätt nivå för ditt företag.','Choose the right plan for your business.')}</h2>
+        <p>${appText('Kaikissa tilauksissa on 3 päivän ilmainen kokeilu. Vuositilaus on aina 5 €/kk edullisempi.','Alla abonnemang har 3 dagars gratis provperiod. Årsabonnemanget är alltid 5 €/mån billigare.','Every plan includes a 3-day free trial. Annual billing is always €5/month cheaper.')}</p>
       </div>
       <div class="pricing-wrap">
-        <article class="price-card">
-          <div class="price-top"><span>KUUKAUSITILAUS</span><span>maksa kuukausittain</span></div>
-          <h3>Kuukausi</h3>
-          <div class="pricevalue">49,99 €<small>/kk</small></div>
-          <div class="price-rule"></div>
-          <ul>
-            <li>Chat suoraan omalle verkkosivullesi</li>
-            <li>Vastaukset yrityksesi omista tiedoista</li>
-            <li>Näet, mitä asiakkaat kysyvät</li>
-            <li>Puuttuvat vastaukset ohjataan sinulle</li>
-            <li>Hallitse tilausta turvallisesti Stripessä</li>
-          </ul>
-          <a class="btn price-btn" href="/tilaus?plan=monthly">Kokeile 3 päivää ilmaiseksi</a>
-        </article>
-        <article class="price-card featured">
-          <div class="price-top"><span>VUOSITILAUS</span><span class="save">vuosilaskutus</span></div>
-          <h3>Vuosi</h3>
-          <div class="pricevalue">44,99 €<small>/kk</small></div><div class="annual-billing-note">Laskutetaan vuosittain 539,88 €</div>
-          <div class="price-rule"></div>
-          <ul>
-            <li>Kaikki samat ominaisuudet kuin kuukausitilauksessa</li>
-            <li>Maksu kerran vuodessa</li>
-            <li>3 päivää ilmaiseksi</li>
-            <li>Peruuta milloin tahansa</li>
-            <li>Voit käyttää palvelua maksetun kauden loppuun</li>
-          </ul>
-          <a class="btn price-btn blue" href="/tilaus?plan=yearly">Valitse vuosi <span>→</span></a>
-        </article>
+        ${card('Basic',49.99,44.99,539.88,2,[
+          appText('AI-chat omalle verkkosivulle','AI-chatt på din webbplats','AI chat on your website'),
+          appText('Oma kysymys–vastaus-tietopohja','Egen fråge- och svarskunskapsbas','Manual Q&A knowledge base'),
+          appText('Ajanvaraukset','Bokningar','Appointments and booking'),
+          appText('Yhteydenottojen ja liidien keräys','Insamling av kontakter och leads','Contact and lead capture'),
+          appText('Keskusteluhistoria ja puuttuvat vastaukset','Konversationshistorik och saknade svar','Conversation history and missing answers')
+        ])}
+        ${card('Advanced',64.99,59.99,719.88,10,[
+          appText('Kaikki Basic-ominaisuudet','Alla Basic-funktioner','Everything in Basic'),
+          appText('Hae tiedot automaattisesti verkkosivulta','Hämta information automatiskt från webbplatsen','Automatic website knowledge import'),
+          appText('Google Calendar -synkronointi','Google Calendar-synkronisering','Google Calendar sync'),
+          appText('Laajempi analytiikka','Utökad analys','Expanded analytics'),
+          appText('Live-asiakaspalvelu ja työntekijäprofiilit','Live-kundservice och medarbetarprofiler','Live support and staff profiles')
+        ],true)}
+        ${card('Business',79.99,74.99,899.88,20,[
+          appText('Kaikki Respondon nykyiset ominaisuudet','Alla nuvarande Respondo-funktioner','All current Respondo features'),
+          appText('Kaikki integraatiot ja automaatiot','Alla integrationer och automationer','All integrations and automations'),
+          appText('Live takeover ja kieliohjaus','Live takeover och språkstyrning','Live takeover and language routing'),
+          appText('Täysi analytiikka','Fullständig analys','Full analytics'),
+          appText('Suurin kapasiteetti kasvavalle tiimille','Högsta kapacitet för växande team','Highest capacity for growing teams')
+        ])}
       </div>
     </div>
   </section>`;
@@ -2495,7 +2505,7 @@ async function home() {
               <h2>${uiText('Asiakkaasi seuraava kysymys voi tulla vaikka tänä iltana.','Din kunds nästa fråga kan komma redan i kväll.',"Your customer's next question could arrive tonight.")}</h2>
               <p>${uiText('Anna Respondon hoitaa vastaus silloin, kun sinä et ehdi.','Låt Respondo sköta svaret när du själv inte hinner.',"Let Respondo handle the answer when you don't have time.")}</p>
             </div>
-            <a class="cta-circle" href="/tilaus" aria-label="Kokeile ilmaiseksi"><span>KOKEILE</span><b>→</b></a>
+            <a class="cta-circle" href="/tilaus?plan=basic_monthly" aria-label="Kokeile ilmaiseksi"><span>KOKEILE</span><b>→</b></a>
           </div>
         </div>
       </section>
@@ -2508,8 +2518,10 @@ async function home() {
 function signup() {
   const params = new URLSearchParams(location.search);
   const ownerTestAccess = params.get('owner-test') === '1' && cfg.ownerTestEnabled === true;
-  const requestedPlan = params.get('plan') || 'monthly';
-  const plan = requestedPlan === 'owner_test' && !ownerTestAccess ? 'monthly' : requestedPlan;
+  const requestedPlan = params.get('plan') || 'basic_monthly';
+  const allowedPlans = new Set(['basic_monthly','basic_yearly','advanced_monthly','advanced_yearly','business_monthly','business_yearly','owner_test']);
+  const safeRequestedPlan = allowedPlans.has(requestedPlan) ? requestedPlan : (requestedPlan === 'monthly' ? 'basic_monthly' : requestedPlan === 'yearly' ? 'basic_yearly' : 'basic_monthly');
+  const plan = safeRequestedPlan === 'owner_test' && !ownerTestAccess ? 'basic_monthly' : safeRequestedPlan;
   const referralCode = String(params.get('ref') || '').trim().toUpperCase();
   return `<div>
     ${nav()}
@@ -2545,8 +2557,18 @@ function signup() {
             <div class="field full" id="signupPasswordField"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
             <div class="field full"><label>${appText('Tilaus','Abonnemang','Subscription')}</label>
               <select name="plan">
-                <option value="monthly" ${plan === 'monthly' ? 'selected' : ''}>${appText('49,99 €/kk · kuukausi','49,99 €/mån · månadsvis','€49.99/mo · monthly')}</option>
-                <option value="yearly" ${plan === 'yearly' ? 'selected' : ''}>${appText('49,99 €/kk · laskutetaan 275,88 €/vuosi','49,99 €/mån · faktureras 275,88 €/år','€44.99/mo · billed €539.88/year')}</option>
+                <optgroup label="Basic">
+                  <option value="basic_monthly" ${plan === 'basic_monthly' ? 'selected' : ''}>Basic · 49,99 €/kk</option>
+                  <option value="basic_yearly" ${plan === 'basic_yearly' ? 'selected' : ''}>Basic · 44,99 €/kk · ${appText('539,88 €/vuosi','539,88 €/år','€539.88/year')}</option>
+                </optgroup>
+                <optgroup label="Advanced">
+                  <option value="advanced_monthly" ${plan === 'advanced_monthly' ? 'selected' : ''}>Advanced · 64,99 €/kk</option>
+                  <option value="advanced_yearly" ${plan === 'advanced_yearly' ? 'selected' : ''}>Advanced · 59,99 €/kk · ${appText('719,88 €/vuosi','719,88 €/år','€719.88/year')}</option>
+                </optgroup>
+                <optgroup label="Business">
+                  <option value="business_monthly" ${plan === 'business_monthly' ? 'selected' : ''}>Business · 79,99 €/kk</option>
+                  <option value="business_yearly" ${plan === 'business_yearly' ? 'selected' : ''}>Business · 74,99 €/kk · ${appText('899,88 €/vuosi','899,88 €/år','€899.88/year')}</option>
+                </optgroup>
                 ${ownerTestAccess ? `<option value="owner_test" ${plan === 'owner_test' ? 'selected' : ''}>OMISTAJAN TESTI · 0,50 € sis. alv · veloitus heti</option>` : ''}
               </select>
             </div>
@@ -3042,8 +3064,12 @@ async function dashboard(options = {}) {
             <label><span>${appText('Yrityksen nimi','Företagsnamn','Company name')}</span><input name="companyName" required maxlength="120" placeholder="${appText('Yrityksen nimi','Företagsnamn','Company name')}"></label>
             <label><span>${appText('Y-tunnus (valinnainen)','FO-nummer (valfritt)','Business ID (optional)')}</span><input name="businessId" maxlength="40" placeholder="1234567-8"></label>
             <div class="workspace-plan-grid">
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="monthly" checked><span><b>49,99 € / kk</b><small>${appText('Kuukausitilaus','Månadsabonnemang','Monthly plan')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="yearly"><span><b>539,88 € / ${appText('vuosi','år','year')}</b><small>44,99 € / kk</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_monthly" checked><span><b>Basic · 49,99 €/kk</b><small>2 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_yearly"><span><b>Basic · 44,99 €/kk</b><small>539,88 € / ${appText('vuosi','år','year')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_monthly"><span><b>Advanced · 64,99 €/kk</b><small>10 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_yearly"><span><b>Advanced · 59,99 €/kk</b><small>719,88 € / ${appText('vuosi','år','year')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="business_monthly"><span><b>Business · 79,99 €/kk</b><small>20 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="business_yearly"><span><b>Business · 74,99 €/kk</b><small>899,88 € / ${appText('vuosi','år','year')}</small></span></label>
             </div>
             <label>
               <span>${appText('Suosittelukoodi (valinnainen)','Rekommendationskod (valfritt)','Referral code (optional)')}</span>
@@ -4461,7 +4487,7 @@ async function route() {
     const referralHint = $('#referralHint');
     const syncReferralField = () => {
       if (!signupReferral || !signupPlan) return;
-      const monthly = signupPlan.value === 'monthly';
+      const monthly = String(signupPlan.value || '').endsWith('_monthly');
       signupReferral.disabled = !monthly;
       if (referralHint) {
         referralHint.textContent = monthly
@@ -4583,8 +4609,8 @@ async function route() {
     const workspaceReferralHint=$('#workspaceReferralHint');
     const syncWorkspaceReferral=()=>{
       if(!workspaceAddForm || !workspaceReferralCode) return;
-      const plan=String(new FormData(workspaceAddForm).get('plan')||'monthly');
-      const monthly=plan==='monthly';
+      const plan=String(new FormData(workspaceAddForm).get('plan')||'basic_monthly');
+      const monthly=plan.endsWith('_monthly');
       workspaceReferralCode.disabled=!monthly;
       if(!monthly) workspaceReferralCode.value='';
       if(workspaceReferralHint){
@@ -4612,7 +4638,7 @@ async function route() {
           body:JSON.stringify({
             companyName:String(fd.get('companyName')||'').trim(),
             businessId:String(fd.get('businessId')||'').trim(),
-            plan:String(fd.get('plan')||'monthly'),
+            plan:String(fd.get('plan')||'basic_monthly'),
             referralCode:String(fd.get('referralCode')||'').trim(),
             acceptedTerms:fd.get('acceptedTerms')==='on'
           })
