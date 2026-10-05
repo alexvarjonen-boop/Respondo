@@ -24,7 +24,7 @@ const labels = {
   services:'Palvelut', pricing:'Hinnat', hours:'Aukioloajat', contact:'Yhteystiedot', quote:'Tarjouspyyntö',
   delivery:'Toimitus ja seuranta', returns:'Palautukset ja vaihdot', warranty:'Takuu', payment:'Maksaminen',
   materials:'Materiaalit', quality:'Laatu ja valmistus', care:'Hoito-ohjeet', sizing:'Koot ja mitat',
-  location:'Sijainti ja myymälät', faq:'Usein kysytyt'
+  location:'Sijainti ja myymälät', faq:'Usein kysytyt', catalog:'Verkkokauppa'
 };
 const keywords = {
   services:['palvelut','teette','services','tjänster'],
@@ -41,7 +41,8 @@ const keywords = {
   care:['hoito-ohje','huolto-ohje','care','maintenance','washing'],
   sizing:['koko','koot','mitat','size','sizes','dimensions'],
   location:['sijainti','myymälä','osoite','location','store','butik'],
-  faq:['usein kysytyt','faq','help','ohje']
+  faq:['usein kysytyt','faq','help','ohje'],
+  catalog:['tuotteet','verkkokauppa','shop','products','catalog','collection']
 };
 
 export function decodeHtml(s) {
@@ -471,6 +472,7 @@ export function essentialWebsiteCandidates(bundle) {
   for (const product of Array.isArray(bundle?.products) ? bundle.products : []) addProduct(product,bundle?.finalUrl || '');
 
   const quoteLinks = [];
+  const catalogLinks = [];
   for (const doc of bundle?.pageDocuments || []) {
     if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial|blog|uutis|news/.test(norm(new URL(doc.url).pathname))) continue;
     const docProducts=Array.isArray(doc.products)?doc.products:[];
@@ -522,14 +524,26 @@ export function essentialWebsiteCandidates(bundle) {
       }
     }
     for (const link of doc.links || []) {
-      const n = norm(link.label + ' ' + new URL(link.url).pathname);
+      const parsed=new URL(link.url);
+      const path=norm(parsed.pathname);
+      const n = norm(link.label + ' ' + parsed.pathname);
       const explicit = /tarjous|quote|estimate|offert|prisforslag/.test(n);
       const contact = /yhtey|contact|kontakt/.test(n);
       if (explicit || contact) quoteLinks.push({...link,sourceUrl:doc.url,score:explicit?10:1});
+
+      const individualProduct=/\/(?:products?|tuotteet?)\/[^/]+\/?$/.test(parsed.pathname.toLowerCase());
+      const allProducts=/collections\/all|all[-_ ]?products|shop[-_ ]?all|kaikki[-_ ]?tuotteet|alla[-_ ]?produkter/.test(n);
+      const catalogPath=/^(?:\/(?:collections|products?|tuotteet?|shop|store|kauppa)\/?$)/i.test(parsed.pathname);
+      const catalogLabel=/^(?:all products|shop all|products|shop|store|tuotteet|verkkokauppa|kaikki tuotteet|produkter|alla produkter)$/i.test(clean(link.label));
+      if(!individualProduct && (allProducts || catalogPath || catalogLabel)){
+        catalogLinks.push({...link,sourceUrl:doc.url,score:allProducts?30:catalogLabel?20:10});
+      }
     }
   }
   quoteLinks.sort((a,b)=>b.score-a.score);
   if (quoteLinks.length) add('quote','Tarjouspyyntölomake',quoteLinks[0].url,quoteLinks[0].sourceUrl);
+  catalogLinks.sort((a,b)=>b.score-a.score);
+  if (catalogLinks.length) add('catalog','Tuotekatalogi',catalogLinks[0].url,catalogLinks[0].sourceUrl);
   return out.slice(0,10000);
 }
 export function essentialWebsiteProfile(bundle) {
@@ -558,7 +572,7 @@ export function essentialWebsiteProfile(bundle) {
 export function usableWebsiteRow(row) {
   if (review.test(norm([row.category,row.title,row.answer].join(' ')))) return false;
   if (row.source_type !== 'website' && row.sourceType !== 'website') return true;
-  if (row.title === 'Tarjouspyyntölomake') return !!httpUrl(row.answer);
+  if (row.title === 'Tarjouspyyntölomake' || row.title === 'Tuotekatalogi') return !!httpUrl(row.answer);
   if (/(?:^|\s)(?:tuotteet|products?|produkter)(?:\s|$)/.test(norm(row.category || ''))) {
     const product=parseProductKnowledgeRow(row);
     return !!(product?.name && product?.url);
