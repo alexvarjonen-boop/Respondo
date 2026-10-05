@@ -1642,10 +1642,48 @@ async function fetchPublicJson(value,maxBytes=8_000_000) {
   const result=await fetchPublicResource(value,['application/json','text/json'],maxBytes);
   return JSON.parse(result.text);
 }
+function cleanCatalogValues(value,limit=30) {
+  const out=[];
+  const add=(item)=>{
+    if(item===null||item===undefined||item==='') return;
+    if(Array.isArray(item)){item.forEach(add);return;}
+    if(typeof item==='object'){add(item.name??item.value??item.label??item.slug);return;}
+    const text=String(item).replace(/\s+/g,' ').trim().slice(0,120);
+    if(text && !out.some((x)=>normalizeSearchText(x)===normalizeSearchText(text))) out.push(text);
+  };
+  add(value);
+  return out.slice(0,limit);
+}
+function normalizeCatalogOptions(value) {
+  const out=[];
+  for(const option of Array.isArray(value)?value:[]){
+    const name=String(option?.name||option?.label||'').replace(/\s+/g,' ').trim().slice(0,80);
+    const values=cleanCatalogValues(option?.values??option?.terms??option?.value,30);
+    if(!name||!values.length) continue;
+    out.push({name,values});
+  }
+  return out.slice(0,12);
+}
+function catalogOptionValues(options,matcher) {
+  const values=[];
+  for(const option of options||[]){
+    if(!matcher.test(normalizeSearchText(option?.name||''))) continue;
+    for(const item of option.values||[]) if(!values.some((x)=>normalizeSearchText(x)===normalizeSearchText(item))) values.push(item);
+  }
+  return values.slice(0,30);
+}
 function normalizeCatalogProduct(product, fallbackUrl='') {
   if (!product?.name) return null;
   const url=normalizeWebUrl(product.url || fallbackUrl,false);
   if (!url) return null;
+  const options=normalizeCatalogOptions(product.options);
+  const colors=cleanCatalogValues(product.colors?.length?product.colors:catalogOptionValues(options,/vari|color|colour|farg|färg/),30);
+  const sizes=cleanCatalogValues(product.sizes?.length?product.sizes:catalogOptionValues(options,/koko|size|storlek|fit/),30);
+  const materials=cleanCatalogValues(product.materials?.length?product.materials:catalogOptionValues(options,/materia|material/),20);
+  const specs=(Array.isArray(product.specs)?product.specs:[]).map((spec)=>({
+    name:String(spec?.name||'').replace(/\s+/g,' ').trim().slice(0,80),
+    value:String(spec?.value||'').replace(/\s+/g,' ').trim().slice(0,180),
+  })).filter((spec)=>spec.name&&spec.value).slice(0,18);
   return {
     name:String(product.name).replace(/\s+/g,' ').trim().slice(0,180),
     url,
@@ -1657,6 +1695,7 @@ function normalizeCatalogProduct(product, fallbackUrl='') {
     category:String(product.category||'').replace(/\s+/g,' ').trim().slice(0,120),
     brand:String(product.brand||'').replace(/\s+/g,' ').trim().slice(0,120),
     sku:String(product.sku||'').replace(/\s+/g,' ').trim().slice(0,120),
+    colors,sizes,materials,options,specs,
   };
 }
 async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.now()+45000) {
