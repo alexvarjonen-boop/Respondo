@@ -20,7 +20,7 @@ test('Respondo homepage purchase question answers with signup instructions inste
   assert.ok(fi);
   assert.equal(fi.id,'respondo-faq-buy');
   assert.match(fi.answer,/Kokeile ilmaiseksi/i);
-  assert.match(fi.answer,/3 päivän ilmaisen kokeilun/i);
+  assert.match(fi.answer,/3 päivän ilmainen kokeilu/i);
   assert.match(fi.answer,/49,99/);
   assert.doesNotMatch(fi.answer,/jätä.*yhteystiet|puhelinnumeron tai sähköpostin/i);
 
