@@ -6582,6 +6582,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       try { body = JSON.parse(body); } catch { body = {}; }
     }
     body = body || {};
+    const isPublicDemo = body.publicDemo === true;
     const lang = ['fi','sv','en'].includes(String(body.lang || '').toLowerCase()) ? String(body.lang).toLowerCase() : 'fi';
     const message = String(body.message || '').trim().slice(0, 1200);
     if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : lang === 'sv' ? 'Skriv en fråga.' : 'Kirjoita kysymys.' });
@@ -6616,7 +6617,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // Public Try Bot imports must stay isolated from the logged-in owner's own
     // Respondo knowledge. A deploy/restart must never make a JAG demo answer
     // with Respondo's terms, URLs, or account data.
-    if (!demoImportId) {
+    if (!isPublicDemo && !demoImportId) {
       try {
         const token = req.cookies?.respondo_session;
         if (token) {
