@@ -406,6 +406,13 @@ export function businessFactKind(text, context = '') {
   if (/^(?:palvelut?|services?|tjanster|hinnat|hinnasto|pricing|prices|yhteystiedot|contact|aukioloajat|opening hours|pyyda tarjous|ota yhteytta|lue lisaa|read more|las mer|etusivu|home)$/i.test(n)) return '';
   const commerce=n+' '+c;
   const commerceFact=t.length>=10 && t.split(/\s+/).length>=2;
+  // Explicit section headings win over incidental words inside the sentence.
+  // Example: "CNC-koneistetaan ja tarkastetaan ennen toimitusta" belongs to
+  // quality/manufacturing, not shipping merely because it mentions delivery.
+  if (commerceFact && /materia|material/.test(c) && materials.test(commerce)) return 'materials';
+  if (commerceFact && /laatu|quality|valmist|manufactur/.test(c) && quality.test(commerce)) return 'quality';
+  if (commerceFact && /hoito|care|maintenance|pesuoh|washing/.test(c) && care.test(commerce)) return 'care';
+  if (commerceFact && /koko|size|sizing|mitat|dimension|storlek/.test(c) && sizing.test(commerce)) return 'sizing';
   // Policies and concrete customer facts must stay separate from generic prices.
   if (commerceFact && delivery.test(commerce)) return 'delivery';
   if (commerceFact && returns.test(commerce)) return 'returns';
