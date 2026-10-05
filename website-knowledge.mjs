@@ -575,7 +575,9 @@ export function usableWebsiteRow(row) {
   if (row.title === 'Tarjouspyyntölomake' || row.title === 'Tuotekatalogi') return !!httpUrl(row.answer);
   if (/(?:^|\s)(?:tuotteet|products?|produkter)(?:\s|$)/.test(norm(row.category || ''))) {
     const product=parseProductKnowledgeRow(row);
-    return !!(product?.name && product?.url);
+    // A product can still be useful factual evidence even when an individual
+    // product URL is missing; the catalog CTA is handled separately.
+    return !!product?.name;
   }
   return !!businessFactKind(row.answer, String(row.category||'')+' '+String(row.title||''));
 }
