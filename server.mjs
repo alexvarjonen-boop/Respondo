@@ -197,6 +197,8 @@ const pool = process.env.DATABASE_URL
   : null;
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 let finnishVatTaxRateCache = '';
+const FINNISH_VAT_PERCENT = 25.5;
+
 async function ensureFinnishVatTaxRate() {
   if (!stripe) return '';
   const configured = String(process.env.STRIPE_FINLAND_VAT_TAX_RATE_ID || '').trim();
@@ -208,8 +210,9 @@ async function ensureFinnishVatTaxRate() {
     rate &&
     rate.active !== false &&
     rate.inclusive === true &&
-    Math.abs(Number(rate.percentage || 0) - 25.5) < 0.0001 &&
-    (!rate.country || String(rate.country).toUpperCase() === 'FI')
+    Math.abs(Number(rate.percentage || 0) - FINNISH_VAT_PERCENT) < 0.0001 &&
+    (!rate.country || String(rate.country).toUpperCase() === 'FI') &&
+    /25[,.]5/.test(String(rate.display_name || ''))
   );
   if (existing?.id) {
     finnishVatTaxRateCache = existing.id;
@@ -217,15 +220,56 @@ async function ensureFinnishVatTaxRate() {
   }
 
   const created = await stripe.taxRates.create({
-    display_name:'ALV',
+    display_name:'ALV 25,5 %',
     description:'Suomen ALV 25,5 % (sisältyy hintaan)',
     jurisdiction:'FI',
     country:'FI',
-    percentage:25.5,
+    percentage:FINNISH_VAT_PERCENT,
     inclusive:true,
   });
   finnishVatTaxRateCache = created.id;
   return created.id;
+}
+
+function checkoutEuro(cents, lang='fi') {
+  const value = Math.max(0, Number(cents || 0)) / 100;
+  const locale = lang === 'sv' ? 'sv-FI' : lang === 'en' ? 'en-FI' : 'fi-FI';
+  return new Intl.NumberFormat(locale, { style:'currency', currency:'EUR' }).format(value);
+}
+
+async function finnishVatCheckoutMessage(priceId, lang='fi') {
+  const safeLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase())
+    ? String(lang).toLowerCase()
+    : 'fi';
+
+  try {
+    const price = await stripe.prices.retrieve(priceId);
+    const amountCents = Number.isFinite(Number(price.unit_amount))
+      ? Number(price.unit_amount)
+      : Math.round(Number(price.unit_amount_decimal || 0));
+
+    if (amountCents > 0) {
+      const vatCents = Math.round(
+        amountCents * FINNISH_VAT_PERCENT / (100 + FINNISH_VAT_PERCENT)
+      );
+      const gross = checkoutEuro(amountCents, safeLang);
+      const vat = checkoutEuro(vatCents, safeLang);
+
+      if (safeLang === 'sv') {
+        return `Priset ${gross} inkluderar finsk moms 25,5 % (${vat}). Under den kostnadsfria 3-dagars provperioden är dagens skatt 0,00 €; momsen ovan gäller den betalda perioden efter provperioden.`;
+      }
+      if (safeLang === 'en') {
+        return `The ${gross} price includes Finnish VAT 25.5% (${vat}). During the free 3-day trial, tax due today is €0.00; the VAT amount above applies to the paid period after the trial.`;
+      }
+      return `Hinta ${gross} sisältää ALV 25,5 % (${vat}). Maksuttoman 3 päivän kokeilun aikana tänään maksettava vero on 0,00 €; yllä oleva ALV-osuus koskee kokeilun jälkeistä maksullista jaksoa.`;
+    }
+  } catch (e) {
+    console.warn('Stripe VAT checkout note could not read price', e?.message || e);
+  }
+
+  if (safeLang === 'sv') return 'Priset inkluderar finsk moms 25,5 %.';
+  if (safeLang === 'en') return 'The price includes Finnish VAT 25.5%.';
+  return 'Hinta sisältää ALV 25,5 %.';
 }
 const JWT = process.env.JWT_SECRET || crypto.randomBytes(48).toString('hex');
 const COOKIE = 'respondo_session';
@@ -4156,10 +4200,14 @@ app.post('/api/auth/start-checkout', async (req, res) => {
       }
 
       const finnishVatTaxRateId = await ensureFinnishVatTaxRate();
+      const finnishVatMessage = await finnishVatCheckoutMessage(price, preferredLanguage);
       session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         customer_email: email,
         line_items: [{ price, quantity: 1, tax_rates: [finnishVatTaxRateId] }],
+        custom_text: {
+          submit: { message: finnishVatMessage },
+        },
         subscription_data: {
           ...(normalizedPlan === 'owner_test' ? {} : { trial_period_days: 3 }),
           metadata: {
@@ -4445,7 +4493,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const price=freeReferral ? null : (plan==='yearly' ? process.env.STRIPE_YEARLY_PRICE_ID : process.env.STRIPE_MONTHLY_PRICE_ID);
   if(!freeReferral && !price) return res.status(503).json({ error:'Stripe-hintaa ei ole määritetty.' });
 
-  const userResult=await q('SELECT id,email,stripe_customer_id FROM users WHERE id=$1',[req.user.sub]);
+  const userResult=await q('SELECT id,email,stripe_customer_id,preferred_language FROM users WHERE id=$1',[req.user.sub]);
   if(!userResult.rowCount) return res.status(404).json({ error:'Tiliä ei löytynyt.' });
   const user=userResult.rows[0];
 
@@ -4541,6 +4589,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
 
   try {
     const finnishVatTaxRateId=await ensureFinnishVatTaxRate();
+    const finnishVatMessage=await finnishVatCheckoutMessage(price,user.preferred_language||'fi');
     const session=await stripe.checkout.sessions.create({
       mode:'subscription',
       ...(user.stripe_customer_id ? {
@@ -4548,6 +4597,9 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         customer_update:{ name:'auto' },
       } : { customer_email:user.email }),
       line_items:[{price,quantity:1,tax_rates:[finnishVatTaxRateId]}],
+      custom_text:{
+        submit:{message:finnishVatMessage},
+      },
       subscription_data:{
         trial_period_days:3,
         metadata:{
