@@ -4351,7 +4351,10 @@ async function route() {
               quoteRequestUrl:values.quoteRequestUrl,
               bookingUrl:values.bookingUrl,
               notes:values.notes,
-              customFacts:demoFacts.filter(x=>x.sourceType!=='demo_import').map(x=>({
+              // Include a compact copy of the imported facts in every demo-chat
+              // request. This keeps an already-open Try Bot session working even
+              // if Railway restarts between the import and the next question.
+              customFacts:demoFacts.slice(0,350).map(x=>({
                 key:x.title,
                 answer:x.answer,
                 category:x.category,
