@@ -928,7 +928,8 @@ function directProductAnswer(rows,message,lang='fi') {
   const sizeAsk=/\b(?:koko\w*|size\w*|sizing|storlek\w*)\b/.test(q);
   const materialAsk=/\b(?:materia\w*|material\w*|made of|made from)\b/.test(q);
   const specAsk=/\b(?:mitta\w*|mitat|dimension\w*|paino\w*|weight\w*|pituu\w*|length\w*|levey\w*|width\w*|korkeu\w*|height\w*)\b/.test(q);
-  const listAsk=/(?:mita|mitä|mitka|mitkä|what|which|vilka).*(?:tuot|product|putter|maila|sortiment|valikoim)|(?:tuotteita|products|puttereita|putters).*(?:teilla|teillä|have|har)/.test(q);
+  const generalSellAsk=/(?:^|\b)(?:mita|mitä)\s+(?:te\s+)?myytte\b|\bwhat\s+do\s+you\s+sell\b|\bvad\s+s[aä]ljer\s+ni\b|\bvad\s+har\s+ni\s+(?:for|för)\s+(?:produkter|sortiment)\b/.test(q);
+  const listAsk=generalSellAsk || /(?:mita|mitä|mitka|mitkä|what|which|vilka).*(?:tuot|product|putter|maila|sortiment|valikoim)|(?:tuotteita|products|puttereita|putters).*(?:teilla|teillä|have|har)/.test(q);
   const bestCandidate=candidates[0];
 
   if(popularAsk){
@@ -1039,14 +1040,38 @@ function directProductAnswer(rows,message,lang='fi') {
   if(listAsk){
     const list=candidates.slice(0,8);
     if(!list.length) return null;
-    const text=list.map((product)=>{
-      const price=productPriceText(product,lang);
-      return product.name+(price?' ('+price+')':'');
-    });
-    const answer=lang==='en'?'Available products include: '+text.join(', ')+'.'
-      :lang==='sv'?'I sortimentet finns bland annat: '+text.join(', ')+'.'
-      :'Valikoimasta löytyvät esimerkiksi: '+text.join(', ')+'.';
-    return {answer,handoff:false,confidence:0.96,intent:'Tuotteet',sourceIds:list.map((product)=>product.row?.id).filter(Boolean),selected:list.slice(0,4).map((product)=>product.row).filter(Boolean)};
+
+    // A broad "what do you sell?" question should sound like a shop assistant,
+    // not dump internal product records or append several product-link buttons.
+    const names=[];
+    for(const product of list){
+      const name=String(product.name||'').replace(/\s+/g,' ').trim();
+      if(!name) continue;
+      if(!names.some((item)=>normalizeSearchText(item)===normalizeSearchText(name))) names.push(name);
+      if(names.length>=5) break;
+    }
+    if(!names.length) return null;
+    const joined=names.length===1
+      ? names[0]
+      : names.slice(0,-1).join(', ')+(lang==='sv'?' och ':lang==='en'?' and ':' ja ')+names[names.length-1];
+
+    const more=products.length>names.length;
+    const answer=lang==='en'
+      ? 'Our selection includes, for example, '+joined+(more?', among other products.':'.')
+      : lang==='sv'
+        ? 'I vårt sortiment finns till exempel '+joined+(more?', bland annat.':'.')
+        : 'Valikoimassamme on esimerkiksi '+joined+(more?' sekä muita tuotteita.':'.');
+
+    return {
+      answer,
+      handoff:false,
+      confidence:0.98,
+      intent:'Tuotteet',
+      sourceIds:list.map((product)=>product.row?.id).filter(Boolean),
+      // Do not show a wall of product buttons for a generic catalog question.
+      // Specific product/price/variant questions still return direct product links.
+      selected:generalSellAsk?[]:list.slice(0,3).map((product)=>product.row).filter(Boolean)
+    };
   }
 
   const best=candidates[0];
