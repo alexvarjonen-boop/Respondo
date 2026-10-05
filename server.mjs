@@ -933,8 +933,8 @@ function productCatalog(rows) {
   const out=[]; const seen=new Set();
   for(const row of rows||[]){
     const product=parseProductKnowledgeRow(row);
-    if(!product?.name || !product?.url) continue;
-    const key=normalizeSearchText(product.url+'|'+product.name);
+    if(!product?.name) continue;
+    const key=normalizeSearchText((product.url || '')+'|'+product.name);
     if(seen.has(key)) continue;
     seen.add(key);
     out.push(product);
@@ -2982,6 +2982,9 @@ function naturalServiceAnswer(rows) {
 function conciseKnowledgeAnswer(row, query) {
   let raw=String(row?.answer||'').replace(/\s+/g,' ').trim();
   if(!raw || importedKnowledgeJunk(raw) || !usableWebsiteRow(row)) return '';
+  // Navigation/meta URLs are actions, not conversational answers. Never dump
+  // catalog or website URLs into a broad customer reply.
+  if (['Tuotekatalogi','Verkkosivu','Ajanvarauslinkki'].includes(String(row?.title||''))) return '';
   if (['Hinnat','Aukioloajat','Puhelinnumero','Sähköposti','Osoite','Tarjouspyyntölomake'].includes(row.title) || ['Hinnat','Aukioloajat','Yhteystiedot'].includes(row.category)) return raw;
   const pageTitleLike = /^(?:respondo ai|etusivu|home|homepage)(?:\s*[-|–—:]|$)/i;
   if(pageTitleLike.test(raw)) {
@@ -3075,6 +3078,25 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const productResult=directProductAnswer(rows,cleanMessage,responseLang);
   if(productResult) return productResult;
+
+  // If an ecommerce import has a verified catalog link but product rows are
+  // temporarily incomplete, still answer naturally instead of echoing raw URLs
+  // or the Respondo demo website address.
+  if (broadProductQuestion(cleanMessage)) {
+    const catalogRow=rows.find((row)=>String(row?.title||'')==='Tuotekatalogi' && /^https?:\/\//i.test(String(row?.answer||'')));
+    if (catalogRow) {
+      const answer=responseLang==='en'
+        ? 'We sell a range of products. You can view all products using the button below.'
+        : responseLang==='sv'
+          ? 'Vi säljer ett urval av produkter. Du kan se alla produkter via knappen nedan.'
+          : 'Myymme erilaisia tuotteita. Katso kaikki tuotteet alla olevasta painikkeesta.';
+      return {
+        answer,handoff:false,confidence:0.9,intent:'Tuotteet',
+        sourceIds:[catalogRow.id].filter(Boolean),
+        selected:[]
+      };
+    }
+  }
 
   const intent = inferIntent(cleanMessage);
   // Resolve natural follow-ups by carrying only the missing context. Standalone
