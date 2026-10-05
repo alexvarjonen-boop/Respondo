@@ -1352,21 +1352,21 @@ const FAQ = [
         "Mitä ominaisuuksia Respondossa on?",
         "Mitä kaikkea Respondo osaa?"
       ],
-      "a": "Keskeisiä ominaisuuksia ovat verkkosivubotti, yrityksen oma tietopohja, verkkosivulta tuotavat tiedot, keskustelut, puuttuvien vastausten seuranta, yhteydenottopyynnöt, FI/SV/EN-kielituki, botin muokkaus, työntekijäprofiilit, live-keskustelut sekä tuetut ajanvaraus-, tarjous- ja integraatiotoiminnot."
+      "a": "Ominaisuudet riippuvat paketista. Basic sisältää AI-chatin, manuaalisen tietopohjan, ajanvaraukset, yhteydenotot ja 2 asiakaspalvelijapaikkaa. Advanced lisää verkkosivutuonnin, Google Calendarin, laajemman analytiikan ja 10 paikkaa. Business sisältää kaikki Respondon nykyiset ominaisuudet ja 20 paikkaa."
     },
     "sv": {
       "q": [
         "Vilka funktioner har Respondo?",
         "Vad kan Respondo göra?"
       ],
-      "a": "Centrala funktioner är webbplatsbot, företagets kunskapsbas, webbplatsimport, konversationer, uppföljning av saknade svar, kontaktförfrågningar, stöd för FI/SV/EN, anpassning av botten, medarbetarprofiler, livekonversationer samt stödda boknings-, offert- och integrationsfunktioner."
+      "a": "Funktionerna beror på paketet. Basic innehåller AI-chatt, manuell kunskapsbas, bokningar, kontaktförfrågningar och 2 kundserviceplatser. Advanced lägger till webbplatsimport, Google Calendar, utökad analys och 10 platser. Business innehåller alla nuvarande Respondo-funktioner och 20 platser."
     },
     "en": {
       "q": [
         "What features does Respondo have?",
         "What can Respondo do?"
       ],
-      "a": "Core features include a website bot, company knowledge base, website import, conversations, missing-answer tracking, contact requests, FI/SV/EN language support, bot customization, employee profiles, live conversations, and supported booking, quote, and integration functions."
+      "a": "Features depend on the tier. Basic includes AI chat, a manual knowledge base, bookings, contact capture, and 2 support-agent seats. Advanced adds website import, Google Calendar, expanded analytics, and 10 seats. Business includes all current Respondo features and 20 seats."
     }
   },
   {
