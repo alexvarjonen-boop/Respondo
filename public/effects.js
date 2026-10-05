@@ -623,46 +623,56 @@
 
             <section class="assistant-order" aria-label="Tilaa RESPONDO AI">
               <div class="assistant-order-head">
-                <small>${pageTx('VALITSE TILAUS','VÄLJ ABONNEMANG','CHOOSE A PLAN')}</small>
+                <small>${pageTx('HALUATKO TÄMÄN OMALLE SIVULLESI?','VILL DU HA DETTA PÅ DIN EGEN WEBBPLATS?','WANT THIS ON YOUR WEBSITE?')}</small>
                 <h2>${pageTx('Valitse yrityksellesi sopiva Respondo.','Välj rätt Respondo för ditt företag.','Choose the right Respondo plan for your business.')}</h2>
-                <p>${pageTx('Kaikissa tilauksissa on 3 päivän ilmainen kokeilu. Vuositilaus on 5 €/kk halvempi.','Alla abonnemang har 3 dagars gratis provperiod. Årsabonnemanget är 5 €/mån billigare.','Every plan includes a 3-day free trial. Annual billing is €5/month cheaper.')}</p>
+                <p>${pageTx('Kaikissa tilauksissa on 3 päivän ilmainen kokeilu. Vuositilaus on aina 5 €/kk edullisempi.','Alla abonnemang har 3 dagars gratis provperiod. Årsabonnemang är alltid 5 €/mån billigare.','Every plan includes a 3-day free trial. Annual billing is always €5/month cheaper.')}</p>
               </div>
-              <div class="assistant-order-grid assistant-order-tiers">
+              <div class="assistant-order-grid assistant-order-grid-three">
                 <article class="assistant-order-card">
                   <div class="assistant-order-label">BASIC</div>
-                  <h3>49,99 € <span>/ kk</span></h3><p class="assistant-annual-note">44,99 €/kk · 539,88 € / ${pageTx('vuosi','år','year')}</p>
+                  <h3>49,99 € <span>/ kk</span></h3>
+                  <p class="assistant-annual-note">44,99 €/kk · ${pageTx('539,88 €/vuosi','539,88 €/år','€539.88/year')}</p>
                   <ul>
-                    <li>${pageTx('Ajanvaraukset','Bokningar','Appointments')}</li>
-                    <li>${pageTx('Oma kysymys–vastaus-tietopohja','Egen fråge- och svarskunskapsbas','Manual Q&A knowledge base')}</li>
-                    <li>${pageTx('Yhteydenottojen keräys','Insamling av kontaktförfrågningar','Contact capture')}</li>
-                    <li>2 ${pageTx('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</li>
+                    <li>${pageTx('Ajanvaraukset ja yhteydenotot','Bokningar och kontaktförfrågningar','Bookings and contact requests')}</li>
+                    <li>${pageTx('Omat kysymys–vastausparit','Egna frågor och svar','Your own Q&A knowledge')}</li>
+                    <li>${pageTx('2 asiakaspalvelijapaikkaa','2 kundserviceplatser','2 customer-service seats')}</li>
                   </ul>
-                  <div class="assistant-tier-actions"><a class="assistant-order-btn" href="/tilaus?plan=basic_monthly">${pageTx('Kuukausi','Månad','Monthly')} →</a><a class="assistant-order-btn" href="/tilaus?plan=basic_yearly">${pageTx('Vuosi','År','Annual')} →</a></div>
+                  <div class="assistant-order-actions">
+                    <a class="assistant-order-btn" href="/tilaus?plan=basic_monthly">${pageTx('Kuukausi','Månad','Monthly')} <span>→</span></a>
+                    <a class="assistant-order-btn" href="/tilaus?plan=basic_yearly">${pageTx('Vuosi','År','Annual')} <span>→</span></a>
+                  </div>
                 </article>
                 <article class="assistant-order-card featured">
                   <div class="assistant-order-top"><div class="assistant-order-label">ADVANCED</div><span class="assistant-save">${pageTx('SUOSITUIN','POPULÄRAST','MOST POPULAR')}</span></div>
-                  <h3>64,99 € <span>/ kk</span></h3><p class="assistant-annual-note">59,99 €/kk · 719,88 € / ${pageTx('vuosi','år','year')}</p>
+                  <h3>64,99 € <span>/ kk</span></h3>
+                  <p class="assistant-annual-note">59,99 €/kk · ${pageTx('719,88 €/vuosi','719,88 €/år','€719.88/year')}</p>
                   <ul>
                     <li>${pageTx('Kaikki Basic-ominaisuudet','Alla Basic-funktioner','Everything in Basic')}</li>
-                    <li>${pageTx('Hae tiedot verkkosivulta','Hämta information från webbplatsen','Website knowledge import')}</li>
+                    <li>${pageTx('Hae tiedot sivustolta','Hämta information från webbplatsen','Website knowledge import')}</li>
+                    <li>${pageTx('10 asiakaspalvelijapaikkaa','10 kundserviceplatser','10 customer-service seats')}</li>
                     <li>Google Calendar</li>
-                    <li>10 ${pageTx('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</li>
                   </ul>
-                  <div class="assistant-tier-actions"><a class="assistant-order-btn primary" href="/tilaus?plan=advanced_monthly">${pageTx('Kuukausi','Månad','Monthly')} →</a><a class="assistant-order-btn primary" href="/tilaus?plan=advanced_yearly">${pageTx('Vuosi','År','Annual')} →</a></div>
+                  <div class="assistant-order-actions">
+                    <a class="assistant-order-btn primary" href="/tilaus?plan=advanced_monthly">${pageTx('Kuukausi','Månad','Monthly')} <span>→</span></a>
+                    <a class="assistant-order-btn primary" href="/tilaus?plan=advanced_yearly">${pageTx('Vuosi','År','Annual')} <span>→</span></a>
+                  </div>
                 </article>
                 <article class="assistant-order-card">
                   <div class="assistant-order-label">BUSINESS</div>
-                  <h3>79,99 € <span>/ kk</span></h3><p class="assistant-annual-note">74,99 €/kk · 899,88 € / ${pageTx('vuosi','år','year')}</p>
+                  <h3>79,99 € <span>/ kk</span></h3>
+                  <p class="assistant-annual-note">74,99 €/kk · ${pageTx('899,88 €/vuosi','899,88 €/år','€899.88/year')}</p>
                   <ul>
-                    <li>${pageTx('Kaikki Respondon ominaisuudet','Alla Respondo-funktioner','All Respondo features')}</li>
-                    <li>${pageTx('Kaikki integraatiot ja automaatiot','Alla integrationer och automationer','All integrations and automations')}</li>
-                    <li>${pageTx('Täysi analytiikka','Fullständig analys','Full analytics')}</li>
-                    <li>20 ${pageTx('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</li>
+                    <li>${pageTx('Kaikki Respondon nykyiset ominaisuudet','Alla nuvarande Respondo-funktioner','All current Respondo features')}</li>
+                    <li>${pageTx('20 asiakaspalvelijapaikkaa','20 kundserviceplatser','20 customer-service seats')}</li>
+                    <li>${pageTx('Live takeover ja kieliohjaus','Live takeover och språkstyrning','Live takeover and language routing')}</li>
                   </ul>
-                  <div class="assistant-tier-actions"><a class="assistant-order-btn" href="/tilaus?plan=business_monthly">${pageTx('Kuukausi','Månad','Monthly')} →</a><a class="assistant-order-btn" href="/tilaus?plan=business_yearly">${pageTx('Vuosi','År','Annual')} →</a></div>
+                  <div class="assistant-order-actions">
+                    <a class="assistant-order-btn" href="/tilaus?plan=business_monthly">${pageTx('Kuukausi','Månad','Monthly')} <span>→</span></a>
+                    <a class="assistant-order-btn" href="/tilaus?plan=business_yearly">${pageTx('Vuosi','År','Annual')} <span>→</span></a>
+                  </div>
                 </article>
               </div>
-              <div class="assistant-order-trust"><span>✓ ${pageTx('Maksut turvallisesti Stripessä','Säkra betalningar via Stripe','Secure payments with Stripe')}</span><span>✓ ${pageTx('Ei veloitusta 3 päivän kokeilun aikana','Ingen debitering under den 3 dagar långa provperioden','No charge during the 3-day trial')}</span><span>✓ ${pageTx('Vuositilauksella säästät 60 €','Spara 60 € med årsabonnemang','Save €60 with annual billing')}</span></div>
+              <div class="assistant-order-trust"><span>✓ ${pageTx('Maksut turvallisesti Stripessä','Säkra betalningar via Stripe','Secure payments with Stripe')}</span><span>✓ ${pageTx('Ei veloitusta 3 päivän kokeilun aikana','Ingen debitering under provperioden','No charge during the 3-day trial')}</span><span>✓ ${pageTx('Hinnat sisältävät ALV 25,5 %','Priserna inkluderar 25,5 % moms','Prices include 25.5% VAT')}</span></div>
             </section>
           </section>
           <div class="assistant-demo-column" id="assistantDemoColumn" aria-label="Testibotti ja tilaus"></div>
