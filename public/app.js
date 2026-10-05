@@ -6,13 +6,48 @@ const $ = (s, r = document) => [...r.querySelectorAll(s)];
 const HOME_HISTORY_RESET_KEY='respondo-home-history-reset';
 if ('scrollRestoration' in history) history.scrollRestoration='manual';
 
-// iOS Safari can restore the marketing homepage from BFCache with a stale
-// full-screen scroll-animation frame. The result is a nearly black viewport
-// even though the next section is already visible underneath. On a real
-// back/forward BFCache restore, do one clean reload and return to the top.
+function isHistoryNavigation() {
+  try {
+    const nav=performance.getEntriesByType?.('navigation')?.[0];
+    if(nav?.type==='back_forward') return true;
+    // Safari fallback for older Navigation Timing implementations.
+    if(performance.navigation?.type===2) return true;
+  } catch {}
+  return false;
+}
+function neutralizeRestoredHomeScene() {
+  try {
+    document.documentElement.style.background='#fff';
+    document.body.style.background='#fff';
+    document.body.classList.add('home-history-restoring');
+    window.scrollTo({top:0,left:0,behavior:'auto'});
+    document.querySelectorAll(
+      '.story-track,.story-sticky,.cinema-stage,.world-sticky,.motion-depth-sticky,.trust-portal'
+    ).forEach((el)=>{
+      el.style.setProperty('transform','none','important');
+      el.style.setProperty('position','relative','important');
+      el.style.setProperty('top','auto','important');
+      el.style.setProperty('min-height','0','important');
+    });
+  } catch {}
+}
+
+// iOS Safari can restore the homepage with the old composited sticky/3D layer
+// still covering the viewport. This can happen even when pageshow.persisted is
+// false, so also use Navigation Timing's back_forward signal.
 window.addEventListener('pageshow',(event)=>{
-  if(location.pathname!=='/' || !event.persisted) return;
-  try { sessionStorage.setItem(HOME_HISTORY_RESET_KEY,'1'); } catch {}
+  if(location.pathname!=='/') return;
+  let alreadyReloading=false;
+  try { alreadyReloading=sessionStorage.getItem(HOME_HISTORY_RESET_KEY)==='reloading'; } catch {}
+  if(alreadyReloading){
+    try { sessionStorage.removeItem(HOME_HISTORY_RESET_KEY); } catch {}
+    document.body.classList.remove('home-history-restoring');
+    return;
+  }
+  if(!event.persisted && !isHistoryNavigation()) return;
+  neutralizeRestoredHomeScene();
+  try { sessionStorage.setItem(HOME_HISTORY_RESET_KEY,'reloading'); } catch {}
+  // Reload once from a clean visual state. The guard above prevents a loop.
   location.reload();
 });
 const esc = (s) =>
@@ -3890,7 +3925,7 @@ async function route() {
     let resetReturnedHomepage=false;
     try {
       const navType=performance.getEntriesByType?.('navigation')?.[0]?.type || '';
-      resetReturnedHomepage=sessionStorage.getItem(HOME_HISTORY_RESET_KEY)==='1' || navType==='back_forward';
+      resetReturnedHomepage=sessionStorage.getItem(HOME_HISTORY_RESET_KEY)==='reloading' || navType==='back_forward';
       sessionStorage.removeItem(HOME_HISTORY_RESET_KEY);
     } catch {}
     if(resetReturnedHomepage){
