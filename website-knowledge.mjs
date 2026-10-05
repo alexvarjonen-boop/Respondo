@@ -167,7 +167,8 @@ function productFromStructuredNode(node, pageUrl) {
   if (!node || typeof node !== 'object' || (!productTypeIs(node,'Product') && !productTypeIs(node,'ProductGroup'))) return null;
   const name=clean(node.name || node.headline || '');
   if (!name) return null;
-  const offers=productOffers(node.offers);
+  const variants=Array.isArray(node.hasVariant)?node.hasVariant.filter((item)=>item&&typeof item==='object'):[];
+  const offers=productOffers([node.offers,...variants.map((variant)=>variant.offers)]);
   const prices=offers.flatMap((offer)=>[offer.price,offer.maxPrice]).filter((value)=>Number.isFinite(value));
   const price=prices.length?Math.min(...prices):null;
   const maxPrice=prices.length?Math.max(...prices):price;
@@ -178,12 +179,15 @@ function productFromStructuredNode(node, pageUrl) {
   const category=clean(node.category || node.productCategory || node.additionalType || '').slice(0,120);
   const brand=productBrand(node.brand).slice(0,120);
   const sku=clean(node.sku || node.mpn || '').slice(0,120);
-  const colors=productTextValues(node.color,30);
-  const sizes=productTextValues(node.size,30);
-  const materialsList=productTextValues(node.material,20);
+  const colors=productTextValues([node.color,...variants.map((variant)=>variant.color)],30);
+  const sizes=productTextValues([node.size,...variants.map((variant)=>variant.size)],30);
+  const materialsList=productTextValues([node.material,...variants.map((variant)=>variant.material)],20);
   const options=productOptionList(node.additionalProperty);
+  if(colors.length && !options.some((option)=>/vari|color|colour|farg|färg/.test(norm(option.name)))) options.push({name:'Väri',values:colors});
+  if(sizes.length && !options.some((option)=>/koko|size|storlek/.test(norm(option.name)))) options.push({name:'Koko',values:sizes});
+  if(materialsList.length && !options.some((option)=>/materia|material/.test(norm(option.name)))) options.push({name:'Materiaali',values:materialsList});
   const specs=structuredProductSpecs(node);
-  return {name,url,price,maxPrice,currency,availability,description,category,brand,sku,colors,sizes,materials:materialsList,options,specs};
+  return {name,url,price,maxPrice,currency,availability,description,category,brand,sku,colors,sizes,materials:materialsList,options:options.slice(0,12),specs};
 }
 function structuredProductNodes(html) {
   const nodes=[];
