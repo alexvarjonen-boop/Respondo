@@ -707,6 +707,19 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   );
   const previousWasPricing = /(?:hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar|kuukaudessa|monthly|per month|manad|månad)/.test(previousQuestion);
 
+  // The first-party Respondo website must never inherit ecommerce/product
+  // answers from a Try Bot import or any accidental foreign knowledge row.
+  if (broadProductQuestion(message)) {
+    return {
+      id:'respondo-faq-what-we-sell',
+      answer:answer(
+        'Respondo myy yrityksille AI-asiakaspalvelubottipalvelua. Botti asennetaan yrityksen verkkosivulle, ja se vastaa asiakkaiden kysymyksiin yrityksen omien tietojen perusteella 24/7.',
+        'Respondo säljer en AI-kundtjänstbot för företag. Botten installeras på företagets webbplats och svarar på kundernas frågor utifrån företagets egna uppgifter dygnet runt.',
+        'Respondo sells an AI customer-service chatbot for businesses. It is installed on a company website and answers customer questions from the company’s own information 24/7.'
+      )
+    };
+  }
+
   if (
     /(?:enta|ent|entäs|vuodessa|vuosi(?:hinta|tilaus)?|yearly|annual|per year|a year|arspris|årspris|per ar|per år|arsabonnemang|årsabonnemang)/.test(q) &&
     (
@@ -7234,7 +7247,10 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         ? result.answer : noAnswer;
     }
 
-    const actions = chatActions(kr.rows, message, handoff, responseLang, result.selected);
+    const actionRows = firstPartyFaq
+      ? kr.rows.filter((row)=>String(row?.source_type||'')==='respondo_seed')
+      : kr.rows;
+    const actions = chatActions(actionRows, message, handoff, responseLang, result.selected);
     if (thread) {
       await appendChatMessage({
         tenantId:t.id,threadId:thread.id,sourceChannel:'website',
@@ -8706,6 +8722,19 @@ async function seedOwnerRespondoKnowledge() {
 
     await client.query(
       "DELETE FROM knowledge WHERE tenant_id=$1 AND source_type='respondo_seed'",
+      [tenantId],
+    );
+
+    // Remove only foreign JAG demo rows if they ever leaked into the first-party
+    // Respondo tenant. Keep manual Respondo knowledge and normal company data.
+    await client.query(
+      `DELETE FROM knowledge
+        WHERE tenant_id=$1
+          AND (
+            lower(COALESCE(source_url,'')) LIKE '%jagputters.fi%'
+            OR lower(COALESCE(answer,'')) LIKE '%jag putter%'
+            OR lower(COALESCE(answer,'')) LIKE '%jagputters%'
+          )`,
       [tenantId],
     );
 
