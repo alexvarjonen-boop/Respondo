@@ -729,6 +729,22 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     };
   }
 
+  // Benefit/value questions are a first-party sales intent. Keep these out of
+  // generic knowledge matching so phrases like "Listaa jotain hyötyjä" never
+  // drift into contact details or an unrelated FAQ row.
+  if (
+    /(?:^|\b)(?:mita|mitä|mitka|mitkä|listaa|kerro|anna|luettele).*(?:hyoty|hyöty|hyodyt|hyödyt|etu|edut)|(?:hyoty|hyöty|hyodyt|hyödyt|etu|edut).*(?:respondo|tasta|tästä|palvelu|botti)|\b(?:benefit|benefits|advantages|value)\b|\b(?:what|why).*(?:benefit|use respondo|use this|value)|\b(?:fordel|fördel|fordelar|fördelar|nytta)\b/.test(q)
+  ) {
+    return {
+      id:'respondo-faq-benefits',
+      answer:answer(
+        'Esimerkiksi:\n• Vastaa asiakkaiden kysymyksiin 24/7 yrityksen omien tietojen perusteella.\n• Vähentää toistuvaa asiakaspalvelutyötä.\n• Kerää puuttuvat kysymykset näkyviin, jotta tietopohjaa voi parantaa.\n• Voi kerätä asiakkaan yhteystiedot ja ohjata hänet oikeaan seuraavaan vaiheeseen.\n• Toimii suomeksi, ruotsiksi ja englanniksi.',
+        'Till exempel:\n• Svarar på kundfrågor dygnet runt utifrån företagets egna uppgifter.\n• Minskar repetitivt kundservicearbete.\n• Samlar obesvarade frågor så att kunskapsbasen kan förbättras.\n• Kan samla in kundens kontaktuppgifter och guida kunden till nästa steg.\n• Fungerar på finska, svenska och engelska.',
+        'For example:\n• Answers customer questions 24/7 from the company’s own information.\n• Reduces repetitive customer-service work.\n• Collects unanswered questions so the knowledge base can be improved.\n• Can collect customer contact details and guide the customer to the next step.\n• Works in Finnish, Swedish and English.'
+      )
+    };
+  }
+
   // The first-party Respondo website must never inherit ecommerce/product
   // answers from a Try Bot import or any accidental foreign knowledge row.
   if (broadProductQuestion(message)) {
