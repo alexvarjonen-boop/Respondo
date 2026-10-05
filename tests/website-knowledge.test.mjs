@@ -21,7 +21,7 @@ test('extracts only essential business facts, never page headings, menus or revi
  assert.ok(facts.some(x=>x.category==='Hinnat' && x.answer.includes('49.90 €')));
  assert.ok(facts.some(x=>x.category==='Aukioloajat'));
  assert.equal(facts.some(x=>/Etusivu|Paras palvelu|avaruusalus|putkiremont|eväste|const |oikeudet/.test(x.answer)),false);
- assert.ok(facts.every(x=>['Palvelut','Hinnat','Aukioloajat','Yhteystiedot','Tarjouspyyntö'].includes(x.category)));
+ assert.ok(facts.every(x=>['Palvelut','Hinnat','Aukioloajat','Yhteystiedot','Sijainti ja myymälät','Tarjouspyyntö'].includes(x.category)));
 });
 test('preserves exact phone/email, quote URL, query and fragment',()=>{
  const p=essentialWebsiteProfile(bundle);
