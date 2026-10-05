@@ -50,3 +50,17 @@ test('Respondo homepage benefit questions return useful benefits instead of cont
   assert.equal(en.id,'respondo-faq-benefits');
   assert.match(en.answer,/Reduces repetitive customer-service work/i);
 });
+
+
+test('Respondo homepage B2B questions answer the business model directly',()=>{
+  const fi=respondoProductFaqMatch('Onko tämä b2b','fi',[]);
+  assert.ok(fi);
+  assert.equal(fi.id,'respondo-faq-b2b');
+  assert.match(fi.answer,/B2B-palvelu yrityksille/i);
+  assert.doesNotMatch(fi.answer,/verkkosivu on https?:\/\//i);
+
+  const en=respondoProductFaqMatch('Is this B2B?','en',[]);
+  assert.ok(en);
+  assert.equal(en.id,'respondo-faq-b2b');
+  assert.match(en.answer,/B2B service for businesses/i);
+});
