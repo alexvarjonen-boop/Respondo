@@ -867,19 +867,25 @@ function productCatalog(rows) {
   return out;
 }
 function productQueryTokens(message) {
-  const ignored=/^(?:mika|mikä|mitka|mitkä|mita|mitä|on|ovat|teidan|teidän|teilla|teillä|meidan|meidän|halvin|edullisin|kallein|paras|suosituin|suosituimmat|myydyin|myydyimmat|popular|popularest|bestseller|bestsellers|best|selling|price|prices|cheapest|cheaper|lowest|most|expensive|what|which|your|you|have|do|cost|how|much|billigast|billigaste|dyrast|dyraste|popularast|populärast|bastsaljare|bästsäljare|vilken|vilka|har|ni|kostar|tuote|tuotteet|product|products)$/;
+  const ignored=/^(?:mika|mikä|mitka|mitkä|mita|mitä|on|ovat|teidan|teidän|teilla|teillä|meidan|meidän|halvin|edullisin|kallein|paras|suosituin|suosituimmat|myydyin|myydyimmat|popular|popularest|bestseller|bestsellers|best|selling|price|prices|cheapest|cheaper|lowest|most|expensive|what|which|your|you|have|do|cost|how|much|billigast|billigaste|dyrast|dyraste|popularast|populärast|bastsaljare|bästsäljare|vilken|vilka|har|ni|kostar|tuote|tuotteet|product|products|vari|väri|varit|värit|color|colors|colour|colours|farg|färg|koko|koot|size|sizes|storlek|materiaali|materiaalit|material|materials|mitat|dimensions|dimension|paino|weight)$/;
   return [...new Set(searchTokens(message).map(productStem).filter((word)=>word.length>=3&&!ignored.test(word)))];
 }
 function productMatchScore(product, tokens) {
   if(!tokens.length) return 1;
-  const primaryTokens=searchTokens([product.name,product.productType,product.brand].filter(Boolean).join(' ')).map(productStem);
-  const descriptionTokens=searchTokens(product.description||'').map(productStem);
+  const optionText=(product.options||[]).flatMap((option)=>[option?.name,...(option?.values||[])]);
+  const specText=(product.specs||[]).flatMap((spec)=>[spec?.name,spec?.value]);
+  const primaryTokens=searchTokens([
+    product.name,product.productType,product.brand,
+    ...(product.colors||[]),...(product.sizes||[]),...(product.materials||[]),
+    ...optionText
+  ].filter(Boolean).join(' ')).map(productStem);
+  const secondaryTokens=searchTokens([...(specText||[]),product.description||''].filter(Boolean).join(' ')).map(productStem);
   let score=0;
   for(const token of tokens){
     if(primaryTokens.includes(token)) score+=12;
     else if(primaryTokens.some((word)=>word.startsWith(token)||token.startsWith(word))) score+=6;
-    else if(descriptionTokens.includes(token)) score+=1;
-    else if(descriptionTokens.some((word)=>word.startsWith(token)||token.startsWith(word))) score+=0.5;
+    else if(secondaryTokens.includes(token)) score+=2;
+    else if(secondaryTokens.some((word)=>word.startsWith(token)||token.startsWith(word))) score+=1;
   }
   return score;
 }
@@ -918,7 +924,12 @@ function directProductAnswer(rows,message,lang='fi') {
   const popularAsk=/\b(?:suosituin|suosituimmat|myydyin|myydyimmat|myydyimmät|most popular|best seller|bestseller|best-selling|top seller|populärast|bastsaljare|bästsäljare|mest sålda|mest salda)\b/.test(q);
   const priceAsk=/\b(?:hinta|maksaa|maksavat|price|cost|costs|pris|kostar)\b/.test(q);
   const stockAsk=/\b(?:varastossa|saatavilla|saatavuus|in stock|available|lager|i lager)\b/.test(q);
+  const colorAsk=/\b(?:vari|väri|varit|värit|color|colors|colour|colours|farg|färg)\b/.test(q);
+  const sizeAsk=/\b(?:koko|koot|size|sizes|sizing|storlek|storlekar)\b/.test(q);
+  const materialAsk=/\b(?:materiaali|materiaalit|materiaalista|material|materials|made of|made from)\b/.test(q);
+  const specAsk=/\b(?:mitat|dimension|dimensions|paino|weight|pituus|length|leveys|width|korkeus|height)\b/.test(q);
   const listAsk=/(?:mita|mitä|mitka|mitkä|what|which|vilka).*(?:tuot|product|putter|maila|sortiment|valikoim)|(?:tuotteita|products|puttereita|putters).*(?:teilla|teillä|have|har)/.test(q);
+  const bestCandidate=candidates[0];
 
   if(popularAsk){
     const categoryMatches=tokens.length
@@ -973,6 +984,58 @@ function directProductAnswer(rows,message,lang='fi') {
     };
   }
 
+  if(bestCandidate && (colorAsk || sizeAsk || materialAsk || specAsk)){
+    const selected=[bestCandidate.row].filter(Boolean);
+    const sourceIds=[bestCandidate.row?.id].filter(Boolean);
+    if(colorAsk && bestCandidate.colors?.length){
+      const values=bestCandidate.colors.join(', ');
+      const answer=lang==='en'?bestCandidate.name+' is available in these colors: '+values+'.'
+        :lang==='sv'?bestCandidate.name+' finns i följande färger: '+values+'.'
+        :bestCandidate.name+' on saatavilla väreissä: '+values+'.';
+      return {answer,handoff:false,confidence:0.99,intent:'Tuotteet',sourceIds,selected};
+    }
+    if(sizeAsk && bestCandidate.sizes?.length){
+      const values=bestCandidate.sizes.join(', ');
+      const answer=lang==='en'?bestCandidate.name+' is available in these sizes: '+values+'.'
+        :lang==='sv'?bestCandidate.name+' finns i följande storlekar: '+values+'.'
+        :bestCandidate.name+' on saatavilla koossa/koissa: '+values+'.';
+      return {answer,handoff:false,confidence:0.99,intent:'Tuotteet',sourceIds,selected};
+    }
+    if(materialAsk && bestCandidate.materials?.length){
+      const values=bestCandidate.materials.join(', ');
+      const answer=lang==='en'?bestCandidate.name+' uses these materials: '+values+'.'
+        :lang==='sv'?bestCandidate.name+' har följande material: '+values+'.'
+        :bestCandidate.name+' materiaalit: '+values+'.';
+      return {answer,handoff:false,confidence:0.99,intent:'Tuotteet',sourceIds,selected};
+    }
+    if(specAsk && bestCandidate.specs?.length){
+      const values=bestCandidate.specs.slice(0,8).map((spec)=>spec.name+': '+spec.value).join(', ');
+      const answer=lang==='en'?bestCandidate.name+' specifications: '+values+'.'
+        :lang==='sv'?bestCandidate.name+' specifikationer: '+values+'.'
+        :bestCandidate.name+' tuotetiedot: '+values+'.';
+      return {answer,handoff:false,confidence:0.98,intent:'Tuotteet',sourceIds,selected};
+    }
+  }
+
+  // If the customer names a concrete variant value (for example "black" or "XL"),
+  // confirm only from the imported product options; never infer a variant.
+  if(bestCandidate){
+    const color=bestCandidate.colors?.find((value)=>q.includes(normalizeSearchText(value)));
+    const size=bestCandidate.sizes?.find((value)=>q.includes(normalizeSearchText(value)));
+    if(color){
+      const answer=lang==='en'?bestCandidate.name+' is listed in '+color+'.'
+        :lang==='sv'?bestCandidate.name+' finns listad i färgen '+color+'.'
+        :bestCandidate.name+' löytyy värissä '+color+'.';
+      return {answer,handoff:false,confidence:0.98,intent:'Tuotteet',sourceIds:[bestCandidate.row?.id].filter(Boolean),selected:[bestCandidate.row].filter(Boolean)};
+    }
+    if(size){
+      const answer=lang==='en'?bestCandidate.name+' is listed in size '+size+'.'
+        :lang==='sv'?bestCandidate.name+' finns listad i storlek '+size+'.'
+        :bestCandidate.name+' löytyy koossa '+size+'.';
+      return {answer,handoff:false,confidence:0.98,intent:'Tuotteet',sourceIds:[bestCandidate.row?.id].filter(Boolean),selected:[bestCandidate.row].filter(Boolean)};
+    }
+  }
+
   if(listAsk){
     const list=candidates.slice(0,8);
     if(!list.length) return null;
@@ -986,7 +1049,7 @@ function directProductAnswer(rows,message,lang='fi') {
     return {answer,handoff:false,confidence:0.96,intent:'Tuotteet',sourceIds:list.map((product)=>product.row?.id).filter(Boolean),selected:list.slice(0,4).map((product)=>product.row).filter(Boolean)};
   }
 
-  const best=ranked[0];
+  const best=candidates[0];
   if(!best || (tokens.length && best._match<3)) return null;
   const exactCue=tokens.length && best._match>=3;
   if(priceAsk && exactCue){
