@@ -713,6 +713,22 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   );
   const previousWasPricing = /(?:hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar|kuukaudessa|monthly|per month|manad|månad)/.test(previousQuestion);
 
+  // Buying/subscribing questions are a first-party sales intent. Handle them
+  // before generic contact or handoff rules so "Miten tän voi ostaa?" never
+  // turns into a request for the visitor's contact details.
+  if (
+    /(?:miten|mista|mistä|voiko|voinko|haluan|haluaisin).*\b(?:ostaa|tilata|hankkia|aloittaa)\b|\b(?:osta|tilaa|hanki)\b.*(?:respondo|tama|tämä|tan|tän|palvelu|tilaus)?|\bhow\s+(?:do|can)\s+i\s+(?:buy|subscribe|get|start)\b|\bwhere\s+can\s+i\s+(?:buy|subscribe)\b|\b(?:buy|subscribe|get started)\b.*\brespondo\b|\bhur\s+(?:koper|köper|bestaller|beställer)\s+jag\b|\bvar\s+kan\s+jag\s+(?:kopa|köpa|bestalla|beställa)\b/.test(q)
+  ) {
+    return {
+      id:'respondo-faq-buy',
+      answer:answer(
+        'Voit ottaa Respondon käyttöön suoraan verkkosivulta painamalla “Kokeile ilmaiseksi”. Saat 3 päivän ilmaisen kokeilun, jonka jälkeen kuukausitilaus maksaa 49,99 €/kk tai vuositilaus 539,88 €/vuosi. Hinnat sisältävät ALV:n 25,5 %.',
+        'Du kan börja använda Respondo direkt via webbplatsen genom att välja “Prova gratis”. Du får en kostnadsfri provperiod på 3 dagar. Därefter kostar månadsabonnemanget 49,99 €/månad eller årsabonnemanget 539,88 €/år. Priserna inkluderar 25,5 % moms.',
+        'You can start using Respondo directly from the website by choosing “Try for free”. You get a 3-day free trial. After that, the monthly plan is €49.99/month or the annual plan is €539.88/year. Prices include 25.5% VAT.'
+      )
+    };
+  }
+
   // The first-party Respondo website must never inherit ecommerce/product
   // answers from a Try Bot import or any accidental foreign knowledge row.
   if (broadProductQuestion(message)) {
@@ -7266,6 +7282,14 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
 
     const actionRows = firstPartyRespondo ? safeKnowledgeRows : kr.rows;
     const actions = chatActions(actionRows, message, handoff, responseLang, result.selected);
+    if (firstPartyFaq?.id === 'respondo-faq-buy') {
+      const signupUrl = new URL('/tilaus', BASE).href;
+      actions.unshift({
+        type:'signup',
+        label:responseLang==='en'?'Try for free':responseLang==='sv'?'Prova gratis':'Kokeile ilmaiseksi',
+        url:signupUrl,
+      });
+    }
     if (thread) {
       await appendChatMessage({
         tenantId:t.id,threadId:thread.id,sourceChannel:'website',
