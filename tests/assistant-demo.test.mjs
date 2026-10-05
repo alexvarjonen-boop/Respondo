@@ -12,7 +12,7 @@ test('legacy standalone assistant never replaces the shared Try Bot dashboard',(
   assert.match(initSource,/location\.pathname === '\/assistant'/);
   assert.doesNotMatch(initSource,/standaloneAssistant\(\)/);
   assert.match(initSource,/document\.body\.classList\.remove\('assistant-standalone'\)/);
-  assert.match(html,/effects\.js\?v=20261002-assistant-dashboard-v8/);
+  assert.match(html,/effects\.js\?v=20261005-home-quick-v9/);
 });
 
 test('public Try Bot has the same visible dashboard shell and default view as paid app',()=>{
