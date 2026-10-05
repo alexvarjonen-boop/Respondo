@@ -236,7 +236,7 @@ export function extractProducts(html, pageUrl) {
         currency,
         availability:productAvailability(productMeta(html,'product:availability')),
         description:stripProductHtml(productMeta(html,'og:description')).slice(0,700),
-        category:'',brand:'',sku:'',
+        category:'',brand:'',sku:'',colors:[],sizes:[],materials:[],options:[],specs:[],
       });
     }
   }
@@ -252,8 +252,16 @@ function productMoney(value) {
   return Number(value).toFixed(2);
 }
 function productKeywords(product) {
-  return [...new Set(clean([product.name,product.category,product.brand,'tuote product'].filter(Boolean).join(' '))
-    .toLowerCase().split(/[^a-z0-9åäö]+/i).filter((word)=>word.length>=3))].slice(0,18);
+  const optionText=(Array.isArray(product.options)?product.options:[])
+    .flatMap((option)=>[option?.name,...(Array.isArray(option?.values)?option.values:[])]);
+  const specText=(Array.isArray(product.specs)?product.specs:[])
+    .flatMap((spec)=>[spec?.name,spec?.value]);
+  return [...new Set(clean([
+    product.name,product.category,product.brand,
+    ...(product.colors||[]),...(product.sizes||[]),...(product.materials||[]),
+    ...optionText,...specText,'tuote product'
+  ].filter(Boolean).join(' '))
+    .toLowerCase().split(/[^a-z0-9åäö]+/i).filter((word)=>word.length>=3))].slice(0,32);
 }
 function productKnowledgeAnswer(product) {
   const parts=['Tuote: '+product.name+'.'];
@@ -266,6 +274,17 @@ function productKnowledgeAnswer(product) {
   if (product.category) parts.push('Tuoteryhmä: '+product.category+'.');
   if (product.brand) parts.push('Brändi: '+product.brand+'.');
   if (product.availability) parts.push('Saatavuus: '+product.availability+'.');
+  if (Array.isArray(product.colors) && product.colors.length) parts.push('Värit: '+product.colors.slice(0,30).join(', ')+'.');
+  if (Array.isArray(product.sizes) && product.sizes.length) parts.push('Koot: '+product.sizes.slice(0,30).join(', ')+'.');
+  if (Array.isArray(product.materials) && product.materials.length) parts.push('Materiaalit: '+product.materials.slice(0,20).join(', ')+'.');
+  if (Array.isArray(product.options) && product.options.length) {
+    const text=product.options.slice(0,12).map((option)=>clean(option?.name)+': '+(option?.values||[]).slice(0,20).join(', ')).filter(Boolean).join('; ');
+    if (text) parts.push('Vaihtoehdot: '+text.slice(0,420)+'.');
+  }
+  if (Array.isArray(product.specs) && product.specs.length) {
+    const text=product.specs.slice(0,18).map((spec)=>clean(spec?.name)+': '+clean(spec?.value)).filter(Boolean).join('; ');
+    if (text) parts.push('Tuotetiedot: '+text.slice(0,420)+'.');
+  }
   if (product.sku) parts.push('SKU: '+product.sku+'.');
   if (product.url) parts.push('Linkki: '+product.url+'.');
   if (product.description) parts.push('Kuvaus: '+product.description.slice(0,520));
@@ -284,11 +303,26 @@ export function parseProductKnowledgeRow(row) {
   const availability=clean(answer.match(/Saatavuus:\s*([^.]*)/i)?.[1] || '');
   const productType=clean(answer.match(/Tuoteryhmä:\s*([^.]*)/i)?.[1] || '');
   const brand=clean(answer.match(/Brändi:\s*([^.]*)/i)?.[1] || '');
+  const list=(label)=>clean(answer.match(new RegExp(label+'\\\\s*:\\\\s*([^.]*)','i'))?.[1] || '')
+    .split(',').map((item)=>clean(item)).filter(Boolean).slice(0,30);
+  const colors=list('Värit');
+  const sizes=list('Koot');
+  const materialsList=list('Materiaalit');
+  const optionsText=clean(answer.match(/Vaihtoehdot:\s*([^.]*)/i)?.[1] || '');
+  const options=optionsText ? optionsText.split(';').map((part)=>{
+    const [name,...rest]=part.split(':');
+    return {name:clean(name),values:rest.join(':').split(',').map((x)=>clean(x)).filter(Boolean)};
+  }).filter((item)=>item.name&&item.values.length).slice(0,12) : [];
+  const specsText=clean(answer.match(/Tuotetiedot:\s*([^.]*)/i)?.[1] || '');
+  const specs=specsText ? specsText.split(';').map((part)=>{
+    const [name,...rest]=part.split(':');
+    return {name:clean(name),value:clean(rest.join(':'))};
+  }).filter((item)=>item.name&&item.value).slice(0,18) : [];
   const description=clean(answer.match(/Kuvaus:\s*([\s\S]*)$/i)?.[1] || '').slice(0,700);
   const linkMatch=answer.match(/Linkki:\s*(https?:\/\/\S+)/i);
   const rawUrl=String(row?.source_url || row?.sourceUrl || linkMatch?.[1] || '').replace(/[.,;]+$/,'');
   const url=httpUrl(rawUrl);
-  return {name,price,maxPrice,currency,availability,productType,brand,description,url,row};
+  return {name,price,maxPrice,currency,availability,productType,brand,colors,sizes,materials:materialsList,options,specs,description,url,row};
 }
 
 
