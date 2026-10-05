@@ -786,7 +786,7 @@ body.assistant-standalone{
 .assistant-order-head small{display:block;color:#91a3ff;font-size:10px;font-weight:900;letter-spacing:.15em;margin-bottom:8px}
 .assistant-order-head h2{margin:0;color:#fff;font-size:clamp(26px,3vw,38px);line-height:1.05;letter-spacing:-.04em}
 .assistant-order-head p{margin:10px 0 0;color:#a6b0bf;font-size:13px;line-height:1.6}
-.assistant-order-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.assistant-order-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .assistant-order-card{
   border:1px solid rgba(255,255,255,.10);
   border-radius:18px;
@@ -1447,7 +1447,7 @@ body.assistant-standalone .assistant-demo-column .assistant-order{
   width:100%;
 }
 body.assistant-standalone .assistant-demo-column .assistant-order-grid{
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:repeat(3,minmax(0,1fr));
 }
 @media(max-width:1100px){
   body.assistant-standalone .assistant-direct-shell{
@@ -3338,4 +3338,11 @@ small{
     max-width:100% !important;
     overflow-wrap:anywhere !important;
   }
+}
+
+.assistant-tier-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:auto}
+.assistant-tier-actions .assistant-order-btn{margin-top:0;min-width:0;padding:0 9px}
+.assistant-order-tiers .assistant-order-card{min-width:0}
+@media(max-width:1150px){
+  .assistant-order-tiers{grid-template-columns:1fr!important}
 }
