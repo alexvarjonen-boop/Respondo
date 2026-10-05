@@ -12,7 +12,7 @@ test('Try Bot website import really scans and feeds imported facts into demo cha
   assert.match(server,/source_url:\s*normalizeWebUrl\(meta\.sourceUrl,false\)/);
   assert.match(server,/demoWebsiteImports\.set\(demoImportId/);
   assert.match(server,/demoWebsiteImports\.get\(demoImportId\)/);
-  assert.match(server,/chatActions\(rows, message, handoff, lang, result\.selected \|\| \[\]\)/);
+  assert.match(server,/chatActions\(rows, message, handoff, detectedLang, result\.selected \|\| \[\]\)/);
 
   assert.match(app,/\/api\/public\/demo-import-website/);
   assert.match(app,/sourceType:'demo_import'/);
