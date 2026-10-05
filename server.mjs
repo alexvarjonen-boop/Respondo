@@ -924,10 +924,10 @@ function directProductAnswer(rows,message,lang='fi') {
   const popularAsk=/\b(?:suosituin|suosituimmat|myydyin|myydyimmat|myydyimmät|most popular|best seller|bestseller|best-selling|top seller|populärast|bastsaljare|bästsäljare|mest sålda|mest salda)\b/.test(q);
   const priceAsk=/\b(?:hinta|maksaa|maksavat|price|cost|costs|pris|kostar)\b/.test(q);
   const stockAsk=/\b(?:varastossa|saatavilla|saatavuus|in stock|available|lager|i lager)\b/.test(q);
-  const colorAsk=/\b(?:vari|väri|varit|värit|color|colors|colour|colours|farg|färg)\b/.test(q);
-  const sizeAsk=/\b(?:koko|koot|size|sizes|sizing|storlek|storlekar)\b/.test(q);
-  const materialAsk=/\b(?:materiaali|materiaalit|materiaalista|material|materials|made of|made from)\b/.test(q);
-  const specAsk=/\b(?:mitat|dimension|dimensions|paino|weight|pituus|length|leveys|width|korkeus|height)\b/.test(q);
+  const colorAsk=/\b(?:var\w*|vär\w*|colo\w*|farg\w*|färg\w*)\b/.test(q);
+  const sizeAsk=/\b(?:koko\w*|size\w*|sizing|storlek\w*)\b/.test(q);
+  const materialAsk=/\b(?:materia\w*|material\w*|made of|made from)\b/.test(q);
+  const specAsk=/\b(?:mitta\w*|mitat|dimension\w*|paino\w*|weight\w*|pituu\w*|length\w*|levey\w*|width\w*|korkeu\w*|height\w*)\b/.test(q);
   const listAsk=/(?:mita|mitä|mitka|mitkä|what|which|vilka).*(?:tuot|product|putter|maila|sortiment|valikoim)|(?:tuotteita|products|puttereita|putters).*(?:teilla|teillä|have|har)/.test(q);
   const bestCandidate=candidates[0];
 
