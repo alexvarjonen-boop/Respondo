@@ -178,7 +178,7 @@ async function renderIndexHtml(req) {
         const ownerSlug = String(ownerTenant.rows[0]?.slug || '').trim();
         if (ownerSlug) {
           const widgetHtml =
-            '<script src="/widget.js?v=20261005-natural-catalog-v1" data-company="' +
+            '<script src="/widget.js?v=20261005-quick-replies-v2" data-company="' +
             escapeHtml(ownerSlug) +
             '" data-lang="' +
             escapeHtml(seo.lang) +
