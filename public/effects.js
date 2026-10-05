@@ -489,7 +489,7 @@
       messages.scrollTop = messages.scrollHeight;
     };
     form.addEventListener('submit', e => { e.preventDefault(); const text = form.message.value; form.reset(); send(text); });
-    $('.fx-quick button').forEach(b => b.addEventListener('click', () => send(b.textContent)));
+    document.querySelectorAll('.fx-quick button').forEach(b => b.addEventListener('click', () => send(b.textContent)));
   }
 
 
