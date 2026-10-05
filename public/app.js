@@ -3966,6 +3966,25 @@ async function route() {
 
   if (path === '/assistant') {
     const dashboardSelect = $('#dashboardSectionSelect');
+    const demoStickyHeader = $('.demo-sticky-topbar');
+    const demoDashboardMain = $('.demo-dashboard-main');
+    const syncDemoStickyHeaderSpace = () => {
+      if (!demoStickyHeader || !demoDashboardMain) return;
+      const mobile = window.matchMedia('(max-width:760px)').matches;
+      if (!mobile) {
+        demoDashboardMain.style.removeProperty('--demo-sticky-header-space');
+        return;
+      }
+      const height = Math.ceil(demoStickyHeader.getBoundingClientRect().height || 0);
+      if (height > 0) demoDashboardMain.style.setProperty('--demo-sticky-header-space', (height + 16) + 'px');
+    };
+    syncDemoStickyHeaderSpace();
+    requestAnimationFrame(syncDemoStickyHeaderSpace);
+    window.addEventListener('resize', syncDemoStickyHeaderSpace, { passive:true });
+    if (demoStickyHeader && 'ResizeObserver' in window) {
+      const demoHeaderObserver = new ResizeObserver(syncDemoStickyHeaderSpace);
+      demoHeaderObserver.observe(demoStickyHeader);
+    }
     const validDashboardViews = new Set(['overview','setup','answers','customers','automation','install','account']);
     const targetViewMap = {
       'overview':'overview',
@@ -4015,7 +4034,7 @@ async function route() {
         history.replaceState({},'', '/assistant' + (qs?'?'+qs:''));
       }
       if (options.scrollTop !== false) {
-        document.querySelector('.dashboard-topbar')?.scrollIntoView({behavior:options.instant?'auto':'smooth',block:'start'});
+        window.scrollTo({top:0,behavior:options.instant?'auto':'smooth'});
       }
     };
 
