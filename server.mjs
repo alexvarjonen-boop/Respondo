@@ -819,9 +819,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-buy',
       answer:answer(
-        'Voit ottaa Respondon käyttöön suoraan verkkosivulta painamalla “Kokeile ilmaiseksi”. Saat 3 päivän ilmaisen kokeilun, jonka jälkeen kuukausitilaus maksaa 49,99 €/kk tai vuositilaus 539,88 €/vuosi. Hinnat sisältävät ALV:n 25,5 %.',
-        'Du kan börja använda Respondo direkt via webbplatsen genom att välja “Prova gratis”. Du får en kostnadsfri provperiod på 3 dagar. Därefter kostar månadsabonnemanget 49,99 €/månad eller årsabonnemanget 539,88 €/år. Priserna inkluderar 25,5 % moms.',
-        'You can start using Respondo directly from the website by choosing “Try for free”. You get a 3-day free trial. After that, the monthly plan is €49.99/month or the annual plan is €539.88/year. Prices include 25.5% VAT.'
+        'Voit ottaa Respondon käyttöön suoraan verkkosivulta painamalla “Kokeile ilmaiseksi”. Kaikissa paketeissa on 3 päivän ilmainen kokeilu. Basic maksaa 49,99 €/kk, Advanced 64,99 €/kk ja Business 79,99 €/kk. Vuositilauksella hinnat ovat 44,99 €/kk, 59,99 €/kk ja 74,99 €/kk. Hinnat sisältävät ALV:n 25,5 %.',
+        'Du kan börja använda Respondo direkt via webbplatsen genom att välja “Prova gratis”. Alla paket har 3 dagars gratis provperiod. Basic kostar 49,99 €/månad, Advanced 64,99 €/månad och Business 79,99 €/månad. Med årsabonnemang är priserna 44,99 €/månad, 59,99 €/månad och 74,99 €/månad. Priserna inkluderar 25,5 % moms.',
+        'You can start using Respondo directly from the website by choosing “Try for free”. Every tier has a 3-day free trial. Basic is €49.99/month, Advanced €64.99/month, and Business €79.99/month. With annual billing they are €44.99/month, €59.99/month, and €74.99/month. Prices include 25.5% VAT.'
       )
     };
   }
@@ -878,9 +878,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-annual-pricing',
       answer:answer(
-        'Vuositilaus maksaa 539,88 € vuodessa, eli 44,99 €/kk. Hinta sisältää ALV:n 25,5 %.',
-        'Årsabonnemanget kostar 539,88 € per år, alltså 44,99 €/månad. Priset inkluderar 25,5 % moms.',
-        'The annual plan costs €539.88 per year, which is €44.99/month. The price includes 25.5% VAT.'
+        'Vuositilaukset: Basic 539,88 €/vuosi (44,99 €/kk), Advanced 719,88 €/vuosi (59,99 €/kk) ja Business 899,88 €/vuosi (74,99 €/kk). Hinnat sisältävät ALV:n 25,5 %.',
+        'Årsabonnemangen kostar: Basic 539,88 €/år (44,99 €/månad), Advanced 719,88 €/år (59,99 €/månad) och Business 899,88 €/år (74,99 €/månad). Priserna inkluderar 25,5 % moms.',
+        'Annual billing is: Basic €539.88/year (€44.99/month), Advanced €719.88/year (€59.99/month), and Business €899.88/year (€74.99/month). Prices include 25.5% VAT.'
       )
     };
   }
@@ -891,9 +891,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-monthly-pricing',
       answer:answer(
-        'Kuukausitilaus maksaa 49,99 € kuukaudessa ja hinta sisältää ALV:n 25,5 %.',
-        'Månadsabonnemanget kostar 49,99 € per månad och priset inkluderar 25,5 % moms.',
-        'The monthly plan costs €49.99 per month and includes 25.5% VAT.'
+        'Kuukausihinnat ovat Basic 49,99 €/kk, Advanced 64,99 €/kk ja Business 79,99 €/kk. Hinnat sisältävät ALV:n 25,5 %.',
+        'Månadspriserna är Basic 49,99 €/månad, Advanced 64,99 €/månad och Business 79,99 €/månad. Priserna inkluderar 25,5 % moms.',
+        'Monthly pricing is Basic €49.99/month, Advanced €64.99/month, and Business €79.99/month. Prices include 25.5% VAT.'
       )
     };
   }
@@ -936,11 +936,33 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-pricing',
       answer:answer(
-        'Respondo maksaa 49,99 €/kk kuukausitilauksella. Vuositilaus vastaa hintaa 44,99 €/kk ja se laskutetaan kerran vuodessa 539,88 €. Hinnat sisältävät ALV:n 25,5 %.',
-        'Respondo kostar 49,99 €/månad med månadsabonnemang. Årsabonnemanget motsvarar 44,99 €/månad och faktureras en gång per år med 539,88 €. Priserna inkluderar 25,5 % moms.',
-        'Respondo costs €49.99/month on the monthly plan. The annual plan is equivalent to €44.99/month and is billed once per year at €539.88. Prices include 25.5% VAT.'
+        'Respondo Basic maksaa 49,99 €/kk, Advanced 64,99 €/kk ja Business 79,99 €/kk. Vuositilauksella vastaavat hinnat ovat 44,99 €/kk, 59,99 €/kk ja 74,99 €/kk, ja ne laskutetaan kerran vuodessa. Hinnat sisältävät ALV:n 25,5 %.',
+        'Respondo Basic kostar 49,99 €/månad, Advanced 64,99 €/månad och Business 79,99 €/månad. Med årsabonnemang är priserna 44,99 €/månad, 59,99 €/månad och 74,99 €/månad och faktureras en gång per år. Priserna inkluderar 25,5 % moms.',
+        'Respondo Basic is €49.99/month, Advanced €64.99/month, and Business €79.99/month. With annual billing they are €44.99/month, €59.99/month, and €74.99/month, billed once per year. Prices include 25.5% VAT.'
       )
     };
+  }
+
+  if (/\bbasic\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
+    return {id:'respondo-faq-basic',answer:answer(
+      'Basic sisältää verkkosivun AI-chatin, oman kysymys–vastaus-tietopohjan, ajanvaraukset, yhteydenottojen keräyksen, keskusteluhistorian ja 2 asiakaspalvelijapaikkaa. Basicissa ei ole automaattista verkkosivutietojen hakua.',
+      'Basic innehåller AI-chatt på webbplatsen, egen fråge- och svarskunskapsbas, bokningar, kontaktinsamling, konversationshistorik och 2 kundserviceplatser. Automatisk webbplatsimport ingår inte i Basic.',
+      'Basic includes website AI chat, a manual Q&A knowledge base, appointments, contact capture, conversation history, and 2 support-agent seats. Automatic website import is not included in Basic.'
+    )};
+  }
+  if (/\badvanced\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
+    return {id:'respondo-faq-advanced',answer:answer(
+      'Advanced sisältää kaikki Basic-ominaisuudet sekä 10 asiakaspalvelijapaikkaa, automaattisen tietojen haun verkkosivulta, Google Calendar -synkronoinnin ja laajemman analytiikan.',
+      'Advanced innehåller allt i Basic samt 10 kundserviceplatser, automatisk import från webbplatsen, Google Calendar-synkronisering och utökad analys.',
+      'Advanced includes everything in Basic plus 10 support-agent seats, automatic website knowledge import, Google Calendar sync, and expanded analytics.'
+    )};
+  }
+  if (/\bbusiness\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
+    return {id:'respondo-faq-business',answer:answer(
+      'Business sisältää kaikki Respondon nykyiset ominaisuudet, 20 asiakaspalvelijapaikkaa, kaikki käytettävissä olevat integraatiot ja automaatiot, live takeover -toiminnot, kieliohjauksen ja täyden analytiikan.',
+      'Business innehåller alla nuvarande Respondo-funktioner, 20 kundserviceplatser, alla tillgängliga integrationer och automationer, live takeover, språkstyrning och full analys.',
+      'Business includes all current Respondo features, 20 support-agent seats, all available integrations and automations, live takeover, language routing, and full analytics.'
+    )};
   }
 
   if (/(?:3 paivan|3 päivän|kolmen paivan|free trial|trial|gratis prov|provperiod|kokeilu).*(?:toim|maks|veloitet|peru|cancel|works|cost|charge|funger|kostar)?|(?:kokeilu|trial|provperiod)/.test(q)) {
