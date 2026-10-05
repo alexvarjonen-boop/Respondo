@@ -11,5 +11,5 @@ test('homepage assistant binds all three quick question buttons',()=>{
 });
 
 test('homepage loads the cache-busted effects build with the quick question fix',()=>{
-  assert.match(index,/effects\.js\?v=20261005-plans-v1/);
+  assert.match(index,/effects\.js\?v=20261005-plans-v2/);
 });
