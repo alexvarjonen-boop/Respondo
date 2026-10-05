@@ -1,7 +1,6 @@
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261001-highlights-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 const $ = (s, r = document) => r.querySelector(s);
-const $ = (s, r = document) => [...r.querySelectorAll(s)];
 
 const HOME_HISTORY_RESET_KEY='respondo-home-history-reset';
 if ('scrollRestoration' in history) history.scrollRestoration='manual';
