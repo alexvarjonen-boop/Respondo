@@ -5,12 +5,12 @@
       {
         "day": 0,
         "subject": "Nopea idea {{company}}:lle",
-        "body": "Moi {{name_or_team}},\n\nHuomasin {{company}}:n verkkosivun. Respondo on yrityksen sivulle asennettava AI-asiakaspalvelubotti, joka vastaa asiakkaiden kysymyksiin 24/7 yrityksen omilla tiedoilla.\n\nVoin tehdä teille demon suoraan nykyisen verkkosivunne tiedoista, joten sitä ei tarvitse rakentaa käsin. Voitte kokeilla 3 päivää ilmaiseksi:\n{DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_fi_{{vertical}}&utm_content=1\n\nJos tämä ei ole teille ajankohtainen, vastaa vain “ei kiitos”, niin en laita lisää viestejä.\n\n– Respondo AI"
+        "body": "Moi {{name_or_team}},\n\n{{personalization}}\n\nRespondo on yrityksen sivulle asennettava AI-asiakaspalvelubotti, joka vastaa asiakkaiden kysymyksiin 24/7 yrityksen omilla hyväksytyillä tiedoilla. Teidän tapauksessa asiakas voisi kysyä esimerkiksi {{example_questions}} ja saada vastauksen heti.\n\nVoin tehdä teille demon suoraan nykyisen verkkosivunne tiedoista, joten tietopohjaa ei tarvitse rakentaa käsin. Voitte kokeilla 3 päivää ilmaiseksi:\n{DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_fi_{{vertical}}&utm_content=1\n\nJos tämä ei ole teille ajankohtainen, vastaa vain “ei kiitos”, niin en laita lisää viestejä.\n\n– Respondo AI"
       },
       {
         "day": 3,
         "subject": "Re: nopea idea {{company}}:lle",
-        "body": "Moi,\n\nYksi konkreettinen käyttötapa Respondolle: asiakas voi kysyä sivulla esimerkiksi hinnasta, palveluista, aukioloajoista tai vapaista ajoista ja saada vastauksen heti ilman että teidän tarvitsee vastata samaan kysymykseen käsin.\n\nDemo: {DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_fi_{{vertical}}&utm_content=2\n\n– Respondo AI"
+        "body": "Moi,\n\nAjattelin vielä yhtä konkreettista käyttötapaa juuri {{company}}:lle: asiakas voi kysyä esimerkiksi {{example_questions}} suoraan verkkosivulla ja saada vastauksen heti yrityksen omista tiedoista.\n\nDemo: {DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_fi_{{vertical}}&utm_content=2\n\n– Respondo AI"
       },
       {
         "day": 8,
@@ -27,12 +27,12 @@
       {
         "day": 0,
         "subject": "En snabb idé för {{company}}",
-        "body": "Hej {{name_or_team}},\n\nJag tittade på {{company}}s webbplats. Respondo är en AI-kundservicebot för företags webbplatser som svarar på kundfrågor dygnet runt utifrån företagets egna uppgifter.\n\nVi kan skapa en demo direkt från er nuvarande webbplats, så ni behöver inte bygga kunskapsbasen manuellt. Ni kan prova gratis i 3 dagar:\n{DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_se_{{vertical}}&utm_content=1\n\nOm det inte är relevant för er, svara bara “nej tack” så kontaktar jag er inte igen om detta.\n\n– Respondo AI"
+        "body": "Hej {{name_or_team}},\n\n{{personalization}}\n\nRespondo är en AI-kundservicebot för företags webbplatser som svarar dygnet runt utifrån företagets egna godkända uppgifter. För {{company}} skulle besökare till exempel kunna fråga om {{example_questions}} och få svar direkt.\n\nVi kan skapa en demo direkt från er nuvarande webbplats, så ni behöver inte bygga kunskapsbasen manuellt. Ni kan prova gratis i 3 dagar:\n{DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_se_{{vertical}}&utm_content=1\n\nOm det inte är relevant för er, svara bara “nej tack” så kontaktar jag er inte igen om detta.\n\n– Respondo AI"
       },
       {
         "day": 3,
         "subject": "Re: en snabb idé för {{company}}",
-        "body": "Hej,\n\nEtt konkret exempel: en kund kan fråga om pris, tjänster, öppettider eller bokning direkt på webbplatsen och få svar direkt, utan att ni behöver svara på samma frågor manuellt.\n\nDemo: {DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_se_{{vertical}}&utm_content=2\n\n– Respondo AI"
+        "body": "Hej,\n\nEtt konkret exempel för {{company}}: en besökare kan fråga om {{example_questions}} direkt på webbplatsen och få svar från era egna företagsuppgifter.\n\nDemo: {DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_se_{{vertical}}&utm_content=2\n\n– Respondo AI"
       },
       {
         "day": 8,
@@ -49,12 +49,12 @@
       {
         "day": 0,
         "subject": "Quick idea for {{company}}",
-        "body": "Hi {{name_or_team}},\n\nI came across {{company}}'s website. Respondo is an AI customer-service bot for business websites that answers customer questions 24/7 using the company's own approved information.\n\nWe can build a demo directly from your current website, so you don't need to set everything up manually. You can try it free for 3 days:\n{DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_{{country}}_{{vertical}}&utm_content=1\n\nIf this isn't relevant, just reply “no thanks” and I won't follow up again about it.\n\n– Respondo AI"
+        "body": "Hi {{name_or_team}},\n\n{{personalization}}\n\nRespondo is an AI customer-service bot for business websites that answers customer questions 24/7 using the company's own approved information. For {{company}}, visitors could ask about {{example_questions}} and get an immediate answer.\n\nWe can build a demo directly from your current website, so you don't need to set everything up manually. You can try it free for 3 days:\n{DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_{{country}}_{{vertical}}&utm_content=1\n\nIf this isn't relevant, just reply “no thanks” and I won't follow up again about it.\n\n– Respondo AI"
       },
       {
         "day": 3,
         "subject": "Re: quick idea for {{company}}",
-        "body": "Hi,\n\nOne practical example: visitors can ask about pricing, services, opening hours, availability, delivery or returns and get an immediate answer from your own business information.\n\nDemo: {DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_{{country}}_{{vertical}}&utm_content=2\n\n– Respondo AI"
+        "body": "Hi,\n\nOne practical example for {{company}}: a visitor could ask about {{example_questions}} directly on your website and get an immediate answer from your own business information.\n\nDemo: {DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_{{country}}_{{vertical}}&utm_content=2\n\n– Respondo AI"
       },
       {
         "day": 8,
@@ -67,5 +67,37 @@
         "body": "Hi,\n\nThis is my last message about this. If an AI customer-service bot becomes useful later, you can find Respondo here:\n{DOMAIN}\n\n– Respondo AI"
       }
     ]
+  },
+  "personalization": {
+    "required_fields": [
+      "company",
+      "country",
+      "vertical",
+      "website",
+      "personalization",
+      "example_questions"
+    ],
+    "rules": [
+      "Read the prospect's public website before sending.",
+      "Write one factual personalization sentence from the prospect's actual services, location, booking flow, delivery/returns, or customer FAQ.",
+      "Never invent facts, praise, traffic, customer volume, or problems that are not visible on the website.",
+      "Keep personalization to one short sentence.",
+      "Choose 2-3 example customer questions that clearly match the prospect's business.",
+      "Prefer public role-based company email addresses and stop all follow-ups after opt-out or a negative reply."
+    ],
+    "examples": {
+      "cleaning": {
+        "personalization_en": "I noticed you offer home cleaning and window cleaning, so customers are likely to have practical questions before booking.",
+        "example_questions_en": "pricing, service areas or available appointments"
+      },
+      "ecommerce": {
+        "personalization_en": "I noticed your store has multiple product categories, so visitors may need quick answers before placing an order.",
+        "example_questions_en": "products, delivery times or returns"
+      },
+      "auto_service": {
+        "personalization_en": "I noticed you offer several vehicle service options, so customers may want answers before choosing or booking a service.",
+        "example_questions_en": "service pricing, availability or what a service includes"
+      }
+    }
   }
 }
