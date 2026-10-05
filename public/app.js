@@ -4143,6 +4143,7 @@ async function route() {
     const demoFacts=[];
     const demoHistory=[];
     let demoImportId='';
+    try { demoImportId=String(sessionStorage.getItem('respondo-public-demo-import-id')||'').trim(); } catch {}
     let uploadedAvatarData='';
 
     const demoAvatarMarkup=(value)=>{
@@ -4229,6 +4230,10 @@ async function route() {
         });
         const candidates=Array.isArray(result.candidates)?result.candidates:[];
         demoImportId=String(result.demoImportId||'').trim();
+        try {
+          if(demoImportId) sessionStorage.setItem('respondo-public-demo-import-id',demoImportId);
+          else sessionStorage.removeItem('respondo-public-demo-import-id');
+        } catch {}
         setProgress(92,appText('Rakennetaan kokeilun tietopohjaa…','Bygger demots kunskapsbas…','Building demo knowledge base…'));
 
         // Replace only an earlier website scan. Manually entered demo answers remain.
@@ -4335,6 +4340,7 @@ async function route() {
           body:JSON.stringify({
             message:question,
             lang:currentLang(),
+            publicDemo:true,
             demoImportId,
             profile:{
               companyName:appText('Kokeiluyritys','Demoföretag','Demo company'),
