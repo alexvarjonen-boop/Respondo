@@ -1828,6 +1828,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const priority = url => {
     const p=normalizeSearchText(url);
     if (/\/products?\/|\/tuotteet?\/|product|tuote|shop|kauppa/.test(p)) return 140;
+    if (/faq|ukk|help|support|shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|size-guide|size\b|koko|material|materia|care|hoito|quality|laatu|store|myymala|myymälä|location|sijainti/.test(p)) return 120;
     return /tarjous|quote|offert|hinta|price|pris|palvel|service|tjanst|yhtey|contact|kontakt|auki|hours|oppet/i.test(p) ? 100 : 0;
   };
 
@@ -1841,17 +1842,20 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       queued.add(key);
       const p = normalizeSearchText(u.pathname + ' ' + u.search);
       let score = priority(u.href);
-      if (/faq|ukk|kysym|help|ohje|support/.test(p)) score += 18;
-      if (/toimit|delivery|shipping|nouto|pickup/.test(p)) score += 16;
-      if (/palaut|return|refund|vaihto/.test(p)) score += 16;
-      if (/myymala|myymälä|store|shop|location/.test(p)) score += 15;
+      if (/faq|ukk|kysym|help|ohje|support/.test(p)) score += 22;
+      if (/toimit|delivery|shipping|nouto|pickup|seurant|tracking/.test(p)) score += 20;
+      if (/palaut|return|refund|vaihto|exchange/.test(p)) score += 20;
+      if (/takuu|warranty|guarantee|reklamaatio/.test(p)) score += 18;
+      if (/maksu|payment|checkout-info|klarna|paypal/.test(p)) score += 17;
+      if (/kokotauluk|size-guide|sizing|koko|mitat|dimension/.test(p)) score += 17;
+      if (/materia|material|laatu|quality|valmist|manufactur|care|hoito|huolto-oh|pesuoh/.test(p)) score += 17;
+      if (/myymala|myymälä|store|shop|location|sijainti|showroom|noutopiste/.test(p)) score += 16;
       if (/ajanvaraus|booking|appointment/.test(p)) score += 14;
       if (/tarjous|quote|request/.test(p)) score += 13;
       if (/hinta|price|pricing/.test(p)) score += 12;
       if (/palvelu|service/.test(p)) score += 11;
       if (/yhteys|contact/.test(p)) score += 10;
-      if (/takuu|warranty|maksu|payment|kanta|loyal/.test(p)) score += 9;
-      if (/meista|about/.test(p)) score += 5;
+      if (/meista|about|yritys|company/.test(p)) score += 7;
       queue.push({ url:u.toString(), score });
     }
     queue.sort((a,b) => b.score - a.score);
@@ -1885,9 +1889,10 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     queued.add(key);
     const p = normalizeSearchText(u.pathname + ' ' + u.search);
     let score = 4 + priority(u.href);
-    if (/faq|ukk|kysym|help|ohje|support/.test(p)) score += 18;
-    if (/toimit|delivery|shipping|nouto|pickup|palaut|return|refund|vaihto/.test(p)) score += 16;
-    if (/myymala|myymälä|store|shop|location/.test(p)) score += 15;
+    if (/faq|ukk|kysym|help|ohje|support/.test(p)) score += 22;
+    if (/toimit|delivery|shipping|nouto|pickup|seurant|tracking|palaut|return|refund|vaihto|exchange/.test(p)) score += 20;
+    if (/takuu|warranty|maksu|payment|kokotauluk|size-guide|sizing|koko|mitat|dimension|materia|material|laatu|quality|care|hoito/.test(p)) score += 18;
+    if (/myymala|myymälä|store|shop|location|sijainti|showroom|noutopiste/.test(p)) score += 16;
     if (/hinta|price|pricing|palvelu|service|yhteys|contact/.test(p)) score += 12;
     queue.push({url:u.toString(),score});
   }
