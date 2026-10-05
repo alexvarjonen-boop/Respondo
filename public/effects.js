@@ -623,35 +623,46 @@
 
             <section class="assistant-order" aria-label="Tilaa RESPONDO AI">
               <div class="assistant-order-head">
-                <small>HALUATKO TÄMÄN OMALLE SIVULLESI?</small>
-                <h2>Ota Respondo käyttöön omalla verkkosivullasi.</h2>
-                <p>Kokeile 3 päivää ilmaiseksi. Valitse kuukausi- tai vuositilaus ja lisää maksutapa turvallisesti Stripessä.</p>
+                <small>${pageTx('VALITSE TILAUS','VÄLJ ABONNEMANG','CHOOSE A PLAN')}</small>
+                <h2>${pageTx('Valitse yrityksellesi sopiva Respondo.','Välj rätt Respondo för ditt företag.','Choose the right Respondo plan for your business.')}</h2>
+                <p>${pageTx('Kaikissa tilauksissa on 3 päivän ilmainen kokeilu. Vuositilaus on 5 €/kk halvempi.','Alla abonnemang har 3 dagars gratis provperiod. Årsabonnemanget är 5 €/mån billigare.','Every plan includes a 3-day free trial. Annual billing is €5/month cheaper.')}</p>
               </div>
-              <div class="assistant-order-grid">
+              <div class="assistant-order-grid assistant-order-tiers">
                 <article class="assistant-order-card">
-                  <div class="assistant-order-label">KUUKAUSITILAUS</div>
-                  <h3>49,99 € <span>/ kk</span></h3>
+                  <div class="assistant-order-label">BASIC</div>
+                  <h3>49,99 € <span>/ kk</span></h3><p class="assistant-annual-note">44,99 €/kk · 539,88 € / ${pageTx('vuosi','år','year')}</p>
                   <ul>
-                    <li>3 päivää ilmaiseksi</li>
-                    <li>Chat suoraan omalle verkkosivullesi</li>
-                    <li>Vastaukset yrityksesi omista tiedoista</li>
-                    <li>Voit perua milloin tahansa</li>
+                    <li>${pageTx('Ajanvaraukset','Bokningar','Appointments')}</li>
+                    <li>${pageTx('Oma kysymys–vastaus-tietopohja','Egen fråge- och svarskunskapsbas','Manual Q&A knowledge base')}</li>
+                    <li>${pageTx('Yhteydenottojen keräys','Insamling av kontaktförfrågningar','Contact capture')}</li>
+                    <li>2 ${pageTx('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</li>
                   </ul>
-                  <a class="assistant-order-btn" href="/tilaus?plan=monthly">Valitse kuukausi <span>→</span></a>
+                  <div class="assistant-tier-actions"><a class="assistant-order-btn" href="/tilaus?plan=basic_monthly">${pageTx('Kuukausi','Månad','Monthly')} →</a><a class="assistant-order-btn" href="/tilaus?plan=basic_yearly">${pageTx('Vuosi','År','Annual')} →</a></div>
                 </article>
                 <article class="assistant-order-card featured">
-                  <div class="assistant-order-top"><div class="assistant-order-label">VUOSITILAUS</div><span class="assistant-save">Säästä 60 €</span></div>
-                  <h3>44,99 € <span>/ kk</span></h3><p class="assistant-annual-note">Laskutetaan vuosittain 539,88 €</p>
+                  <div class="assistant-order-top"><div class="assistant-order-label">ADVANCED</div><span class="assistant-save">${pageTx('SUOSITUIN','POPULÄRAST','MOST POPULAR')}</span></div>
+                  <h3>64,99 € <span>/ kk</span></h3><p class="assistant-annual-note">59,99 €/kk · 719,88 € / ${pageTx('vuosi','år','year')}</p>
                   <ul>
-                    <li>3 päivää ilmaiseksi</li>
-                    <li>Kaikki samat ominaisuudet kuin kuukausitilauksessa</li>
-                    <li>Maksu kerran vuodessa</li>
-                    <li>Voit perua milloin tahansa</li>
+                    <li>${pageTx('Kaikki Basic-ominaisuudet','Alla Basic-funktioner','Everything in Basic')}</li>
+                    <li>${pageTx('Hae tiedot verkkosivulta','Hämta information från webbplatsen','Website knowledge import')}</li>
+                    <li>Google Calendar</li>
+                    <li>10 ${pageTx('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</li>
                   </ul>
-                  <a class="assistant-order-btn primary" href="/tilaus?plan=yearly">Valitse vuosi <span>→</span></a>
+                  <div class="assistant-tier-actions"><a class="assistant-order-btn primary" href="/tilaus?plan=advanced_monthly">${pageTx('Kuukausi','Månad','Monthly')} →</a><a class="assistant-order-btn primary" href="/tilaus?plan=advanced_yearly">${pageTx('Vuosi','År','Annual')} →</a></div>
+                </article>
+                <article class="assistant-order-card">
+                  <div class="assistant-order-label">BUSINESS</div>
+                  <h3>79,99 € <span>/ kk</span></h3><p class="assistant-annual-note">74,99 €/kk · 899,88 € / ${pageTx('vuosi','år','year')}</p>
+                  <ul>
+                    <li>${pageTx('Kaikki Respondon ominaisuudet','Alla Respondo-funktioner','All Respondo features')}</li>
+                    <li>${pageTx('Kaikki integraatiot ja automaatiot','Alla integrationer och automationer','All integrations and automations')}</li>
+                    <li>${pageTx('Täysi analytiikka','Fullständig analys','Full analytics')}</li>
+                    <li>20 ${pageTx('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</li>
+                  </ul>
+                  <div class="assistant-tier-actions"><a class="assistant-order-btn" href="/tilaus?plan=business_monthly">${pageTx('Kuukausi','Månad','Monthly')} →</a><a class="assistant-order-btn" href="/tilaus?plan=business_yearly">${pageTx('Vuosi','År','Annual')} →</a></div>
                 </article>
               </div>
-              <div class="assistant-order-trust"><span>✓ Maksut turvallisesti Stripessä</span><span>✓ Ei veloitusta 3 päivän kokeilun aikana</span><span>✓ Pääset alkuun heti tilauksen jälkeen</span></div>
+              <div class="assistant-order-trust"><span>✓ ${pageTx('Maksut turvallisesti Stripessä','Säkra betalningar via Stripe','Secure payments with Stripe')}</span><span>✓ ${pageTx('Ei veloitusta 3 päivän kokeilun aikana','Ingen debitering under den 3 dagar långa provperioden','No charge during the 3-day trial')}</span><span>✓ ${pageTx('Vuositilauksella säästät 60 €','Spara 60 € med årsabonnemang','Save €60 with annual billing')}</span></div>
             </section>
           </section>
           <div class="assistant-demo-column" id="assistantDemoColumn" aria-label="Testibotti ja tilaus"></div>
