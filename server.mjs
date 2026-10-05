@@ -6582,13 +6582,19 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       try { body = JSON.parse(body); } catch { body = {}; }
     }
     body = body || {};
-    const isPublicDemo = body.publicDemo === true;
+    const profile = body.profile && typeof body.profile === 'object' ? body.profile : {};
+    let refererPath='';
+    try { refererPath=new URL(String(req.get('referer')||''),BASE).pathname; } catch {}
+    const demoProfileName=normalizeSearchText(profile.companyName||'');
+    const isPublicDemo =
+      body.publicDemo === true ||
+      refererPath === '/assistant' ||
+      ['kokeiluyritys','demoforetag','demoföretag','demo company'].includes(demoProfileName);
     const lang = ['fi','sv','en'].includes(String(body.lang || '').toLowerCase()) ? String(body.lang).toLowerCase() : 'fi';
     const message = String(body.message || '').trim().slice(0, 1200);
     if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : lang === 'sv' ? 'Skriv en fråga.' : 'Kirjoita kysymys.' });
     const detectedLang=detectConversationLanguage(message,lang);
     requestLang=detectedLang;
-    const profile = body.profile && typeof body.profile === 'object' ? body.profile : {};
     let rows = buildProfileKnowledge(profile).slice(0, 160);
     const demoImportId=String(body.demoImportId||'').trim().slice(0,80);
     if(demoImportId){
@@ -6609,6 +6615,36 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
           source_url:normalizeWebUrl(item?.sourceUrl,false)||null,
         })).filter((row)=>row.title&&row.answer);
         rows=[...importedRows,...rows].slice(0,2160);
+      }
+    }
+
+    // Self-heal an older Try Bot tab after a Railway restart. Older tabs may
+    // have restored the JAG website field but lost the in-memory import id.
+    // For a broad product question, re-scan that same website instead of ever
+    // falling back to the logged-in Respondo owner's knowledge.
+    if (isPublicDemo && broadProductQuestion(message)) {
+      const hasProductFacts=rows.some((row)=>{
+        if(String(row?.title||'')==='Verkkosivu') return false;
+        return knowledgeTopic(String(row?.category||'')+' '+String(row?.title||''))==='products';
+      });
+      const website=normalizeWebUrl(profile.website,false);
+      if(!hasProductFacts && website){
+        try {
+          const bundle=await fetchWebsiteBundle(website,80,18000);
+          const candidates=websiteKnowledgeCandidates(bundle).slice(0,700);
+          const recoveredRows=candidates.map((item,index)=>({
+            id:'demo-recovered-'+index,
+            category:String(item?.category||'Verkkosivulta tuotu').slice(0,80),
+            title:String(item?.title||item?.category||'').slice(0,180),
+            answer:String(item?.answer||'').slice(0,1600),
+            keywords:Array.isArray(item?.keywords)?item.keywords.slice(0,32):searchTokens(String(item?.title||'')+' '+String(item?.answer||'')).slice(0,24),
+            source_type:'website',
+            source_url:normalizeWebUrl(item?.sourceUrl,false)||null,
+          })).filter((row)=>row.title&&row.answer);
+          if(recoveredRows.length) rows=[...recoveredRows,...rows].slice(0,2160);
+        } catch(e) {
+          console.warn('Public demo self-heal scan failed',e?.message||e);
+        }
       }
     }
     // Authenticated dashboard preview must use the tenant's saved knowledge too.
