@@ -303,7 +303,7 @@ export function parseProductKnowledgeRow(row) {
   const availability=clean(answer.match(/Saatavuus:\s*([^.]*)/i)?.[1] || '');
   const productType=clean(answer.match(/Tuoteryhmä:\s*([^.]*)/i)?.[1] || '');
   const brand=clean(answer.match(/Brändi:\s*([^.]*)/i)?.[1] || '');
-  const list=(label)=>clean(answer.match(new RegExp(label+'\\\\s*:\\\\s*([^.]*)','i'))?.[1] || '')
+  const list=(label)=>clean(answer.match(new RegExp(label+'\\s*:\\s*([^.]*)','i'))?.[1] || '')
     .split(',').map((item)=>clean(item)).filter(Boolean).slice(0,30);
   const colors=list('Värit');
   const sizes=list('Koot');
