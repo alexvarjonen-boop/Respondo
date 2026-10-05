@@ -4696,6 +4696,47 @@ body:before{opacity:.012}
 }
 
 
+/* Safari back/forward cache recovery.
+   This class exists only for the instant before a clean reload after history
+   navigation. Hide the heavyweight dark scenes so a stale compositor layer
+   can never cover the restored page. */
+body.home-history-restoring{
+  background:#fff!important;
+}
+body.home-history-restoring .immersive-home{
+  background:#fff!important;
+  min-height:100vh!important;
+}
+body.home-history-restoring .cinema-conversation,
+body.home-history-restoring .story-horizontal,
+body.home-history-restoring .product-world,
+body.home-history-restoring .motion-depth,
+body.home-history-restoring .trust-portal,
+body.home-history-restoring .impact-scene{
+  display:none!important;
+}
+body.home-history-restoring .cinema-stage,
+body.home-history-restoring .story-sticky,
+body.home-history-restoring .story-track,
+body.home-history-restoring .world-sticky,
+body.home-history-restoring .motion-depth-sticky{
+  position:relative!important;
+  inset:auto!important;
+  top:auto!important;
+  width:auto!important;
+  height:auto!important;
+  min-height:0!important;
+  transform:none!important;
+  transform-style:flat!important;
+  perspective:none!important;
+  will-change:auto!important;
+  z-index:auto!important;
+}
+body.home-history-restoring .cinema-stage::before,
+body.home-history-restoring .story-sticky::before{
+  display:none!important;
+}
+
 /* =========================================================
    MOBILE SAFARI STABILITY GUARD
    Prevents GPU/memory exhaustion near the bottom of the home page.
