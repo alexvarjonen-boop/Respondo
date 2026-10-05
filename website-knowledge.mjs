@@ -83,6 +83,62 @@ function productBrand(value) {
   if (typeof value === 'string') return clean(value);
   return clean(value.name || value.brand || '');
 }
+function productTextValues(value, limit = 24) {
+  const out=[];
+  const add=(item)=>{
+    if (item === null || item === undefined || item === '') return;
+    if (Array.isArray(item)) { item.forEach(add); return; }
+    if (typeof item === 'object') {
+      if ('value' in item) add(item.value);
+      else if ('name' in item) add(item.name);
+      else if ('text' in item) add(item.text);
+      return;
+    }
+    const text=clean(String(item));
+    if (!text || text.length>120) return;
+    if (!out.some((x)=>norm(x)===norm(text))) out.push(text);
+  };
+  add(value);
+  return out.slice(0,limit);
+}
+function productOptionList(value) {
+  const options=[];
+  const add=(name,values)=>{
+    const optionName=clean(String(name||'')).slice(0,80);
+    const optionValues=productTextValues(values,30);
+    if (!optionName || !optionValues.length) return;
+    const existing=options.find((item)=>norm(item.name)===norm(optionName));
+    if (existing) {
+      for (const item of optionValues) if (!existing.values.some((x)=>norm(x)===norm(item))) existing.values.push(item);
+      existing.values=existing.values.slice(0,30);
+      return;
+    }
+    options.push({name:optionName,values:optionValues});
+  };
+  for (const item of Array.isArray(value)?value:(value?[value]:[])) {
+    if (!item) continue;
+    if (typeof item === 'object') add(item.name || item.label || item.option, item.values ?? item.value ?? item.terms);
+  }
+  return options.slice(0,12);
+}
+function structuredProductSpecs(node) {
+  const specs=[];
+  const add=(name,value)=>{
+    const label=clean(String(name||'')).slice(0,80);
+    const values=productTextValues(value,8);
+    if (!label || !values.length) return;
+    const text=values.join(', ').slice(0,180);
+    if (!specs.some((item)=>norm(item.name)===norm(label) && norm(item.value)===norm(text))) specs.push({name:label,value:text});
+  };
+  for (const property of Array.isArray(node?.additionalProperty)?node.additionalProperty:[]) {
+    if (property && typeof property === 'object') add(property.name || property.propertyID, property.value ?? property.valueReference ?? property.description);
+  }
+  add('Paino',node?.weight);
+  add('Leveys',node?.width);
+  add('Korkeus',node?.height);
+  add('Syvyys',node?.depth);
+  return specs.slice(0,18);
+}
 function productAvailability(value) {
   const n=norm(String(value || '').split('/').pop());
   if (/instock|in stock|varastossa|available/.test(n)) return 'varastossa';
@@ -122,7 +178,12 @@ function productFromStructuredNode(node, pageUrl) {
   const category=clean(node.category || node.productCategory || node.additionalType || '').slice(0,120);
   const brand=productBrand(node.brand).slice(0,120);
   const sku=clean(node.sku || node.mpn || '').slice(0,120);
-  return {name,url,price,maxPrice,currency,availability,description,category,brand,sku};
+  const colors=productTextValues(node.color,30);
+  const sizes=productTextValues(node.size,30);
+  const materialsList=productTextValues(node.material,20);
+  const options=productOptionList(node.additionalProperty);
+  const specs=structuredProductSpecs(node);
+  return {name,url,price,maxPrice,currency,availability,description,category,brand,sku,colors,sizes,materials:materialsList,options,specs};
 }
 function structuredProductNodes(html) {
   const nodes=[];
