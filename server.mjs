@@ -729,6 +729,19 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     };
   }
 
+  if (
+    /(?:^|\b)(?:onko|onks|onko tama|onko tämä|tama on|tämä on).*\bb2b\b|\bb2b\b|\bbusiness\s*to\s*business\b|\bforetagskund|företagskund|foretagstjanst|företagstjänst\b/.test(q)
+  ) {
+    return {
+      id:'respondo-faq-b2b',
+      answer:answer(
+        'Kyllä. Respondo on B2B-palvelu yrityksille. Yritys ottaa Respondon käyttöön omalle verkkosivulleen, ja botti auttaa yrityksen omia asiakkaita vastaamalla kysymyksiin yrityksen hyväksymien tietojen perusteella.',
+        'Ja. Respondo är en B2B-tjänst för företag. Företaget installerar Respondo på sin egen webbplats och botten hjälper företagets kunder genom att svara utifrån företagets godkända information.',
+        'Yes. Respondo is a B2B service for businesses. A company adds Respondo to its own website, and the bot helps that company’s customers by answering from company-approved information.'
+      )
+    };
+  }
+
   // Benefit/value questions are a first-party sales intent. Keep these out of
   // generic knowledge matching so phrases like "Listaa jotain hyötyjä" never
   // drift into contact details or an unrelated FAQ row.
@@ -7097,7 +7110,13 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
           AND t.active=true
           AND u.status='active'
           AND u.subscription_status IN ('active','trialing')
-        ORDER BY u.created_at ASC
+        ORDER BY
+          CASE
+            WHEN lower(COALESCE(t.slug,'')) IN ('respondo','respondoai') THEN 0
+            WHEN lower(COALESCE(t.name,'')) IN ('respondo','respondo ai') THEN 1
+            ELSE 2
+          END,
+          t.created_at ASC
         LIMIT 1`,
       [ownerEmail],
     );
@@ -7106,12 +7125,22 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
     const t=tr.rows[0];
     const detectedLang=detectConversationLanguage(message,lang);
     const kr=await q(
-      'SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC',
+      "SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true AND source_type='respondo_seed' ORDER BY updated_at DESC,created_at DESC",
       [t.id],
     );
     const history=Array.isArray(body.history) ? body.history.slice(-6) : [];
     const firstPartyFaq=respondoProductFaqMatch(message,detectedLang,history);
-    const result=firstPartyFaq
+
+    const langTag=' · '+detectedLang.toUpperCase()+' · ';
+    const websiteQuestion=/(?:verkkosivu|verkkosivusto|website|webbplats|url|linkki|link|domain|verkkotunnus)/.test(normalizeSearchText(message));
+    const safeRows=kr.rows.filter((row)=>{
+      const category=String(row?.category||'');
+      if(!category.includes(langTag)) return false;
+      if(!websiteQuestion && category.endsWith(' · Sivusto')) return false;
+      return true;
+    });
+
+    let result=firstPartyFaq
       ? {
           answer:firstPartyFaq.answer,
           handoff:false,
@@ -7121,8 +7150,8 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
           selected:[],
         }
       : await generateGroundedAnswer({
-          companyName:t.name||'Respondo AI',
-          rows:kr.rows,
+          companyName:'Respondo AI',
+          rows:safeRows,
           message,
           history,
           lang:detectedLang,
@@ -7130,12 +7159,18 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
         });
 
     const noAnswer=detectedLang==='en'
-      ? 'I cannot find a reliable answer to this yet. You can contact us at '+(cleanEmail(process.env.SUPPORT_EMAIL||ownerEmail)||ownerEmail)+'.'
+      ? 'I do not have a reliable answer to that yet. You can ask me about Respondo pricing, the free trial, installation, features, security, or how the bot works.'
       : detectedLang==='sv'
-        ? 'Jag hittar inget säkert svar på detta ännu. Du kan kontakta oss på '+(cleanEmail(process.env.SUPPORT_EMAIL||ownerEmail)||ownerEmail)+'.'
-        : 'En löydä tähän vielä varmaa vastausta. Voit ottaa meihin yhteyttä osoitteeseen '+(cleanEmail(process.env.SUPPORT_EMAIL||ownerEmail)||ownerEmail)+'.';
+        ? 'Jag har inget säkert svar på det ännu. Du kan fråga om Respondos pris, gratis provperiod, installation, funktioner, säkerhet eller hur botten fungerar.'
+        : 'En löydä tähän vielä varmaa vastausta. Voit kysyä esimerkiksi Respondon hinnasta, ilmaisesta kokeilusta, asennuksesta, ominaisuuksista, tietoturvasta tai siitä miten botti toimii.';
 
-    const answer=String(result.answer||'').trim() || noAnswer;
+    let answer=String(result.answer||'').trim();
+    const looksLikeWebsiteDump=/^https?:\/\//i.test(answer) || /(?:verkkosivu(?:sto)? on|website is|webbplats (?:är|ar))\s+https?:\/\//i.test(answer);
+    if(!websiteQuestion && looksLikeWebsiteDump) {
+      result={...result,answer:'',handoff:true,confidence:0,sourceIds:[]};
+      answer='';
+    }
+    answer=answer || noAnswer;
     return res.json({
       answer,
       handoff:Boolean(result.handoff),
