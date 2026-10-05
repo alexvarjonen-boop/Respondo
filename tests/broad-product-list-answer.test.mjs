@@ -26,3 +26,22 @@ test('broad what-do-you-sell question answers with natural product categories an
   assert.equal(catalog.label,'View all products');
   assert.equal(catalog.url,'https://shop.example/collections/all');
 });
+
+
+test('broad catalog-only fallback never dumps raw URLs or the demo website address', async()=>{
+  const catalogRows=[
+    {id:'catalog',category:'Verkkokauppa',title:'Tuotekatalogi',answer:'https://jagputters.fi/collections/all',keywords:['tuotteet','catalog','shop'],source_type:'website',source_url:'https://jagputters.fi/'},
+    {id:'website',category:'Yrityksen perustiedot',title:'Verkkosivu',answer:'https://respondo-web-production.up.railway.app',keywords:['verkkosivu'],source_type:'profile',source_url:null},
+  ];
+  const result=await generateGroundedAnswer({rows:catalogRows,message:'Mitä myytte',lang:'fi'});
+  assert.equal(result.handoff,false,JSON.stringify(result));
+  assert.equal(result.answer,'Myymme erilaisia tuotteita. Katso kaikki tuotteet alla olevasta painikkeesta.');
+  assert.doesNotMatch(result.answer,/https?:\/\//i);
+  assert.doesNotMatch(result.answer,/Respondo|railway/i);
+
+  const actions=chatActions(catalogRows,'Mitä myytte',false,'fi',result.selected);
+  const catalog=actions.find((action)=>action.type==='catalog');
+  assert.ok(catalog,JSON.stringify(actions));
+  assert.equal(catalog.label,'Katso kaikki tuotteet');
+  assert.equal(catalog.url,'https://jagputters.fi/collections/all');
+});
