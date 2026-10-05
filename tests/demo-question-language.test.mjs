@@ -38,13 +38,13 @@ test('demo answers in the customer question language instead of the page languag
   try{
     const en=await ask('What do you sell?');
     assert.equal(en.handoff,false,JSON.stringify(en));
-    assert.match(en.answer,/^Our selection includes, for example,/);
-    assert.doesNotMatch(en.answer,/Valikoimassamme|I vårt sortiment/);
+    assert.match(en.answer,/^We sell golf equipment, including:/);
+    assert.doesNotMatch(en.answer,/Valikoimassamme|I vårt sortiment|Tuote:|Tuoteryhmä:/);
 
     const sv=await ask('Vad säljer ni?');
     assert.equal(sv.handoff,false,JSON.stringify(sv));
-    assert.match(sv.answer,/^I vårt sortiment finns till exempel/);
-    assert.doesNotMatch(sv.answer,/Valikoimassamme|Our selection includes/);
+    assert.match(sv.answer,/^Vi säljer golfutrustning, bland annat:/);
+    assert.doesNotMatch(sv.answer,/Valikoimassamme|Our selection includes|Tuote:|Tuoteryhmä:/);
   } finally {
     await new Promise(resolve=>server.close(resolve));
   }
