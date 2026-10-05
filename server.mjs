@@ -981,6 +981,70 @@ function productPriceText(product,lang='fi') {
   if(Number.isFinite(product.maxPrice)&&product.maxPrice>product.price) return format(product.price)+'–'+format(product.maxPrice);
   return format(product.price);
 }
+function broadProductQuestion(value) {
+  const q=normalizeSearchText(value);
+  return /(?:^|\b)(?:mita|mitä)\s+(?:te\s+)?myytte\b|\bwhat\s+do\s+you\s+sell\b|\bwhat\s+(?:kind|type)s?\s+of\s+products\b|\bvad\s+s[aä]ljer\s+ni\b|\bvad\s+har\s+ni\s+(?:for|för)\s+(?:produkter|sortiment)\b/.test(q);
+}
+
+function broadProductCategory(product, lang='fi') {
+  const text=normalizeSearchText([product?.productType,product?.name].filter(Boolean).join(' '));
+  const labels=[
+    [/\bputter/,['Putterit','Putters','Putters']],
+    [/\bhead\s*cover|\bheadcover/,['Mailansuojat','Headcovers','Headcovers']],
+    [/\btowel|\bpyyhe|\bhandduk/,['Pyyhkeet','Handdukar','Towels']],
+    [/\bgrip|\bkahva/,['Gripit','Grepp','Grips']],
+    [/\bgolf\s*ball|\bgolfpallo/,['Golfpallot','Golfbollar','Golf balls']],
+    [/\bgolf\s*bag|\bstand\s*bag|\bcart\s*bag/,['Golfbägit','Golfbagar','Golf bags']],
+    [/\bpolo|\bshirt|\bt[- ]?shirt|\bhoodie|\bapparel|\bvaate|\bklader|\bkläder/,['Vaatteet','Kläder','Apparel']],
+    [/\bcap\b|\bhat\b|\bpipo|\blippis|\bmössa|\bmossa/,['Päähineet','Huvudbonader','Headwear']],
+    [/\bshoe|\bkenka|\bkenkä|\bsko\b/,['Kengät','Skor','Shoes']],
+    [/\bglove|\bhanska/,['Hanskat','Handskar','Gloves']],
+  ];
+  for(const [re,values] of labels){
+    if(re.test(text)) return values[lang==='sv'?1:lang==='en'?2:0];
+  }
+
+  const raw=String(product?.productType||'').replace(/\s+/g,' ').trim();
+  if(raw && !/^(?:product|products|tuote|tuotteet|other|misc|general)$/i.test(raw) && raw.length<=45) return raw;
+  return '';
+}
+
+function broadProductStoreType(products, lang='fi') {
+  const text=normalizeSearchText(products.map((product)=>[
+    product.name,product.productType,product.brand,(product.row?.keywords||[]).join(' ')
+  ].filter(Boolean).join(' ')).join(' '));
+  const golfHits=(text.match(/\b(?:golf|putter|headcover|grip|golfball|golf bag)\b/g)||[]).length;
+  const petHits=(text.match(/\b(?:pet|dog|cat|puppy|kitten|koira|kissa|hund|katt)\b/g)||[]).length;
+  const fitnessHits=(text.match(/\b(?:fitness|gym|workout|training|resistance|dumbbell|kettlebell)\b/g)||[]).length;
+  const beautyHits=(text.match(/\b(?:beauty|skincare|cosmetic|serum|cream|makeup)\b/g)||[]).length;
+  const electronicsHits=(text.match(/\b(?:electronics|electronic|charger|headphone|keyboard|mouse|camera)\b/g)||[]).length;
+
+  if(golfHits>=2) return lang==='en'?'golf equipment':lang==='sv'?'golfutrustning':'golfvarusteita';
+  if(petHits>=2) return lang==='en'?'pet products':lang==='sv'?'husdjursprodukter':'lemmikkituotteita';
+  if(fitnessHits>=2) return lang==='en'?'fitness equipment':lang==='sv'?'träningsutrustning':'treenivarusteita';
+  if(beautyHits>=2) return lang==='en'?'beauty products':lang==='sv'?'skönhetsprodukter':'kauneustuotteita';
+  if(electronicsHits>=2) return lang==='en'?'electronics':lang==='sv'?'elektronik':'elektroniikkaa';
+  return lang==='en'?'products':lang==='sv'?'produkter':'tuotteita';
+}
+
+function productCatalogDestination(rows) {
+  const explicit=knowledgeValue(rows,'Tuotekatalogi');
+  if(/^https?:\/\//i.test(explicit)) return explicit;
+
+  const products=productCatalog(rows).filter((product)=>product?.url);
+  const first=products[0]?.url || '';
+  const website=knowledgeValue(rows,'Verkkosivu');
+  try {
+    const productUrl=new URL(first);
+    const baseUrl=/^https?:\/\//i.test(website)?new URL(website):productUrl;
+    if(productUrl.hostname.toLowerCase()!==baseUrl.hostname.toLowerCase()) return '';
+    if(/^\/products\/[^/]+/i.test(productUrl.pathname)) {
+      return new URL('/collections/all',productUrl.origin).href;
+    }
+  } catch {}
+  return '';
+}
+
 function directProductAnswer(rows,message,lang='fi') {
   const products=productCatalog(rows);
   if(!products.length) return null;
@@ -1003,7 +1067,7 @@ function directProductAnswer(rows,message,lang='fi') {
   const sizeAsk=/\b(?:koko\w*|size\w*|sizing|storlek\w*)\b/.test(q);
   const materialAsk=/\b(?:materia\w*|material\w*|made of|made from)\b/.test(q);
   const specAsk=/\b(?:mitta\w*|mitat|dimension\w*|paino\w*|weight\w*|pituu\w*|length\w*|levey\w*|width\w*|korkeu\w*|height\w*)\b/.test(q);
-  const generalSellAsk=/(?:^|\b)(?:mita|mitä)\s+(?:te\s+)?myytte\b|\bwhat\s+do\s+you\s+sell\b|\bvad\s+s[aä]ljer\s+ni\b|\bvad\s+har\s+ni\s+(?:for|för)\s+(?:produkter|sortiment)\b/.test(q);
+  const generalSellAsk=broadProductQuestion(message);
   const listAsk=generalSellAsk || /(?:mita|mitä|mitka|mitkä|what|which|vilka).*(?:tuot|product|putter|maila|sortiment|valikoim)|(?:tuotteita|products|puttereita|putters).*(?:teilla|teillä|have|har)/.test(q);
   const bestCandidate=candidates[0];
 
@@ -1113,11 +1177,54 @@ function directProductAnswer(rows,message,lang='fi') {
   }
 
   if(listAsk){
-    const list=candidates.slice(0,8);
+    const list=candidates.slice(0,12);
     if(!list.length) return null;
 
-    // A broad "what do you sell?" question should sound like a shop assistant,
-    // not dump internal product records or append several product-link buttons.
+    if(generalSellAsk){
+      const categories=[];
+      for(const product of products){
+        const label=broadProductCategory(product,lang);
+        if(!label) continue;
+        if(!categories.some((item)=>normalizeSearchText(item)===normalizeSearchText(label))) categories.push(label);
+        if(categories.length>=3) break;
+      }
+
+      const storeType=broadProductStoreType(products,lang);
+      let answer='';
+      if(categories.length){
+        const bullets=categories.map((category)=>'• '+category).join('\n');
+        answer=lang==='en'
+          ? 'We sell '+storeType+', including:\n'+bullets+'\nAmong other products.'
+          : lang==='sv'
+            ? 'Vi säljer '+storeType+', bland annat:\n'+bullets+'\nOch andra produkter.'
+            : 'Myymme '+storeType+', esimerkiksi:\n'+bullets+'\nSekä muita tuotteita.';
+      } else {
+        const names=[];
+        for(const product of list){
+          const name=String(product.name||'').replace(/\s+/g,' ').trim();
+          if(!name) continue;
+          if(!names.some((item)=>normalizeSearchText(item)===normalizeSearchText(name))) names.push(name);
+          if(names.length>=3) break;
+        }
+        if(!names.length) return null;
+        const joined=names.join(', ');
+        answer=lang==='en'
+          ? 'We sell products such as '+joined+', among other products.'
+          : lang==='sv'
+            ? 'Vi säljer bland annat '+joined+' och andra produkter.'
+            : 'Myymme esimerkiksi tuotteita kuten '+joined+' sekä muita tuotteita.';
+      }
+
+      return {
+        answer,
+        handoff:false,
+        confidence:0.99,
+        intent:'Tuotteet',
+        sourceIds:list.map((product)=>product.row?.id).filter(Boolean),
+        selected:[]
+      };
+    }
+
     const names=[];
     for(const product of list){
       const name=String(product.name||'').replace(/\s+/g,' ').trim();
@@ -1143,9 +1250,7 @@ function directProductAnswer(rows,message,lang='fi') {
       confidence:0.98,
       intent:'Tuotteet',
       sourceIds:list.map((product)=>product.row?.id).filter(Boolean),
-      // Do not show a wall of product buttons for a generic catalog question.
-      // Specific product/price/variant questions still return direct product links.
-      selected:generalSellAsk?[]:list.slice(0,3).map((product)=>product.row).filter(Boolean)
+      selected:list.slice(0,3).map((product)=>product.row).filter(Boolean)
     };
   }
 
@@ -1517,6 +1622,7 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
   const phone = verifiedContactValue(rows, 'Puhelinnumero')?.value || '';
   const email = verifiedContactValue(rows, 'Sähköposti')?.value || '';
   const requestedContact=explicitContactQuestion(message);
+  const catalogUrl=broadProductQuestion(message)?productCatalogDestination(rows):'';
   const actions = [];
   const push = (action) => {
     const key = action?.url || (action?.mode ? action.mode + ':' + action.type : '');
@@ -1531,6 +1637,14 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
       type:'product',
       label:actionLang==='en'?'View '+product.name:actionLang==='sv'?'Visa '+product.name:'Katso '+product.name,
       url:product.url,
+    });
+  }
+
+  if(catalogUrl){
+    push({
+      type:'catalog',
+      label:actionLang==='en'?'View all products':actionLang==='sv'?'Se alla produkter':'Katso kaikki tuotteet',
+      url:catalogUrl,
     });
   }
 
