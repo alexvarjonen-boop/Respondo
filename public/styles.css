@@ -7760,7 +7760,9 @@ body{
 }
 
 
-/* Public demo mobile sticky header — iPhone/Safari hardening */
+/* Public demo mobile header: use fixed positioning instead of CSS sticky.
+   iOS Safari can stop sticky descendants when browser chrome/ancestor layout changes,
+   so reserve the measured header height in the main content and pin the exact card. */
 .demo-dashboard-shell,
 .demo-dashboard-main{
   overflow:visible!important;
@@ -7772,23 +7774,22 @@ body{
   }
   .demo-dashboard-main{
     overflow:visible!important;
-    padding-top:0!important;
+    padding-top:var(--demo-sticky-header-space,164px)!important;
   }
   .demo-dashboard-main > .demo-sticky-topbar{
-    position:-webkit-sticky!important;
-    position:sticky!important;
-    top:0!important;
+    position:fixed!important;
+    top:max(8px,env(safe-area-inset-top))!important;
+    left:max(12px,env(safe-area-inset-left))!important;
+    right:max(12px,env(safe-area-inset-right))!important;
+    width:auto!important;
     z-index:2147483000!important;
-    margin-top:0!important;
-    margin-left:-12px!important;
-    margin-right:-12px!important;
-    margin-bottom:14px!important;
-    border-radius:0!important;
-    border-top:0!important;
+    margin:0!important;
+    border-radius:22px!important;
+    border:1px solid rgba(17,17,20,.08)!important;
     background:rgba(255,255,255,.97)!important;
     -webkit-backdrop-filter:blur(22px) saturate(180%)!important;
     backdrop-filter:blur(22px) saturate(180%)!important;
-    box-shadow:0 8px 28px rgba(0,0,0,.08)!important;
+    box-shadow:0 10px 30px rgba(0,0,0,.10)!important;
     transform:none!important;
     contain:none!important;
     isolation:isolate;
