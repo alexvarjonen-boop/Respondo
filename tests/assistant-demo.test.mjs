@@ -12,7 +12,7 @@ test('legacy standalone assistant never replaces the shared Try Bot dashboard',(
   assert.match(initSource,/location\.pathname === '\/assistant'/);
   assert.doesNotMatch(initSource,/standaloneAssistant\(\)/);
   assert.match(initSource,/document\.body\.classList\.remove\('assistant-standalone'\)/);
-  assert.match(html,/effects\.js\?v=20261005-plans-v1/);
+  assert.match(html,/effects\.js\?v=20261005-plans-v2/);
 });
 
 test('public Try Bot has the same visible dashboard shell and default view as paid app',()=>{
@@ -65,8 +65,8 @@ test('demo bindings use the same paid-dashboard element ids and public chat endp
 });
 
 test('shared dashboard demo assets are cache-busted',()=>{
-  assert.match(html,/styles\.css\?v=20261005-plans-v1/);
-  assert.match(html,/app\.js\?v=20261005-plans-v1/);
+  assert.match(html,/styles\.css\?v=20261005-plans-v2/);
+  assert.match(html,/app\.js\?v=20261005-plans-v2/);
 });
 
 
