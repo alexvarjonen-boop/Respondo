@@ -4114,9 +4114,97 @@ async function route() {
       const msg=$('#profileEmailMsg');
       if(msg){msg.dataset.status='saved';msg.textContent=appText('Sähköposti käytössä tässä kokeilussa.','E-postadressen används i den här demon.','Email is active in this demo.');}
     });
-    $('#importWebsite')?.addEventListener('click',()=>{
+    $('#importWebsite')?.addEventListener('click',async(event)=>{
+      const button=event.currentTarget;
       const review=$('#websiteImportReview');
-      if(review) review.innerHTML='<div class="notice">'+appText('Automaattinen verkkosivun tietojen haku avautuu tilauksen yhteydessä. Muut kentät ja botti toimivat tässä kokeilussa normaalisti.','Automatisk webbplatsimport öppnas med abonnemanget. Övriga fält och botten fungerar normalt i demon.','Automatic website import unlocks with a subscription. The other fields and bot work normally in this demo.')+'</div>';
+      const website=String(demoProfile?.elements?.website?.value||'').trim();
+      if(!website){
+        if(review) review.innerHTML='<div class="notice error">'+appText('Anna ensin verkkosivun osoite.','Ange först webbplatsens adress.','Enter the website address first.')+'</div>';
+        demoProfile?.elements?.website?.focus();
+        return;
+      }
+      const original=button.textContent;
+      const progress=$('#websiteImportProgress');
+      const progressBar=$('#websiteImportProgressBar');
+      const progressPercent=$('#websiteImportProgressPercent');
+      const progressLabel=$('#websiteImportProgressLabel');
+      const setProgress=(value,label)=>{
+        const v=Math.max(0,Math.min(100,Math.round(value||0)));
+        if(progress) progress.style.display='block';
+        if(progressBar) progressBar.style.width=v+'%';
+        if(progressPercent) progressPercent.textContent=v+'%';
+        if(progressLabel&&label) progressLabel.textContent=label;
+      };
+      button.disabled=true;
+      button.textContent=appText('Haetaan sivustoa…','Hämtar webbplatsen…','Importing website…');
+      setProgress(8,appText('Avataan verkkosivua…','Öppnar webbplatsen…','Opening website…'));
+      if(review) review.innerHTML='';
+      try{
+        setProgress(28,appText('Etsitään tuotteet ja asiakastiedot…','Söker produkter och kundinformation…','Finding products and customer information…'));
+        const result=await api('/api/public/demo-import-website',{
+          method:'POST',
+          body:JSON.stringify({website,lang:currentLang()})
+        });
+        const candidates=Array.isArray(result.candidates)?result.candidates:[];
+        setProgress(92,appText('Rakennetaan kokeilun tietopohjaa…','Bygger demots kunskapsbas…','Building demo knowledge base…'));
+
+        // Replace only an earlier website scan. Manually entered demo answers remain.
+        for(let i=demoFacts.length-1;i>=0;i--){
+          if(demoFacts[i]?.sourceType==='demo_import') demoFacts.splice(i,1);
+        }
+        for(const item of candidates){
+          demoFacts.push({
+            title:String(item?.title||item?.category||'').slice(0,180),
+            answer:String(item?.answer||'').slice(0,1600),
+            category:String(item?.category||appText('Verkkosivulta','Från webbplatsen','Website')).slice(0,80),
+            keywords:Array.isArray(item?.keywords)?item.keywords.slice(0,32):[],
+            sourceUrl:String(item?.sourceUrl||'').slice(0,1200),
+            sourceType:'demo_import'
+          });
+        }
+
+        const profile=result.profile||{};
+        const setIfEmpty=(name,value)=>{
+          const field=demoProfile?.elements?.[name];
+          const text=String(value||'').trim();
+          if(field && text && !String(field.value||'').trim()) field.value=text;
+        };
+        setIfEmpty('pricing',profile.pricing);
+        setIfEmpty('hours',profile.hours);
+        setIfEmpty('phone',profile.phone);
+        setIfEmpty('email',profile.email);
+        setIfEmpty('services',profile.services);
+        setIfEmpty('address',profile.address);
+        setIfEmpty('quoteRequestUrl',profile.quoteRequestUrl);
+
+        renderDemoKnowledge();
+        refreshDemoIdentity();
+        setProgress(100,appText('Valmis','Klart','Complete'));
+        if(review){
+          review.innerHTML=candidates.length
+            ? '<div class="notice success"><b>'+esc(appText(
+                'Valmis – '+candidates.length+' tietoa ladattiin kokeiluun.',
+                'Klart – '+candidates.length+' uppgifter laddades in i demon.',
+                'Done – '+candidates.length+' items were loaded into the demo.'
+              ))+'</b><br>'+esc(appText(
+                'Voit nyt kysyä botilta tuotteista, hinnoista, väreistä, toimituksista, palautuksista, yhteystiedoista ja muista löydetyistä tiedoista. Mitään ei tallennettu pysyvästi.',
+                'Du kan nu fråga botten om produkter, priser, färger, leveranser, returer, kontaktuppgifter och annan hittad information. Inget sparades permanent.',
+                'You can now ask the bot about products, prices, colors, shipping, returns, contact details, and other imported information. Nothing was saved permanently.'
+              ))+'</div>'
+            : '<div class="notice">'+esc(appText(
+                'Sivustolta ei löytynyt luotettavasti poimittavia tietoja.',
+                'Ingen tillförlitlig information kunde hämtas från webbplatsen.',
+                'No reliable information could be extracted from the website.'
+              ))+'</div>';
+        }
+        button.textContent=appText('Tiedot haettu ✓','Uppgifter hämtade ✓','Details imported ✓');
+        setTimeout(()=>{button.textContent=original;button.disabled=false;},1600);
+      }catch(error){
+        setProgress(0,appText('Haku epäonnistui','Sökningen misslyckades','Import failed'));
+        button.disabled=false;
+        button.textContent=original;
+        if(review) review.innerHTML='<div class="notice error">'+esc(error.message||appText('Tietojen haku epäonnistui.','Hämtningen misslyckades.','Import failed.'))+'</div>';
+      }
     });
 
     const renderDemoKnowledge=()=>{
@@ -4128,7 +4216,8 @@ async function route() {
         list.innerHTML='<div class="empty-state"><b>'+appText('Et ole lisännyt vielä omia vastauksia.','Du har inte lagt till egna svar ännu.','You have not added any custom answers yet.')+'</b><p>'+appText('Lisää ensimmäinen vastaus tästä.','Lägg till det första svaret här.','Add your first answer here.')+'</p></div>';
         return;
       }
-      list.innerHTML=demoFacts.map((fact,index)=>'<div class="knowledge-item"><span class="knum">'+String(index+1).padStart(2,'0')+'</span><div><div class="knowledge-item-top"><b>'+esc(fact.title)+'</b><div class="knowledge-item-actions"><button type="button" class="knowledge-delete-btn" data-demo-delete="'+index+'">'+appText('Poista','Ta bort','Delete')+'</button></div></div><small>'+esc(fact.category||appText('Yleinen','Allmänt','General'))+' · '+appText('vain kokeilussa','endast i demo','demo only')+'</small><p>'+esc(fact.answer)+'</p></div><span class="approved">✓</span></div>').join('');
+      const visibleFacts=demoFacts.slice(0,300);
+      list.innerHTML=visibleFacts.map((fact,index)=>'<div class="knowledge-item"><span class="knum">'+String(index+1).padStart(2,'0')+'</span><div><div class="knowledge-item-top"><b>'+esc(fact.title)+'</b><div class="knowledge-item-actions"><button type="button" class="knowledge-delete-btn" data-demo-delete="'+index+'">'+appText('Poista','Ta bort','Delete')+'</button></div></div><small>'+esc(fact.category||appText('Yleinen','Allmänt','General'))+' · '+appText('vain kokeilussa','endast i demo','demo only')+'</small><p>'+esc(fact.answer)+'</p></div><span class="approved">✓</span></div>').join('')+(demoFacts.length>visibleFacts.length?'<div class="notice">'+esc(appText('Lisäksi '+(demoFacts.length-visibleFacts.length)+' muuta tietoa on botin käytössä tässä kokeilussa.','Dessutom används '+(demoFacts.length-visibleFacts.length)+' andra uppgifter av botten i demon.','The bot is also using '+(demoFacts.length-visibleFacts.length)+' additional imported items in this demo.'))+'</div>':'');
       list.querySelectorAll('[data-demo-delete]').forEach(button=>button.addEventListener('click',()=>{demoFacts.splice(Number(button.dataset.demoDelete),1);renderDemoKnowledge();}));
     };
     $('#knowledgeForm')?.addEventListener('submit',(event)=>{
@@ -4178,7 +4267,14 @@ async function route() {
               quoteRequestUrl:values.quoteRequestUrl,
               bookingUrl:values.bookingUrl,
               notes:values.notes,
-              customFacts:demoFacts.map(x=>({key:x.title,answer:x.answer}))
+              customFacts:demoFacts.map(x=>({
+                key:x.title,
+                answer:x.answer,
+                category:x.category,
+                keywords:x.keywords,
+                sourceUrl:x.sourceUrl,
+                sourceType:x.sourceType
+              }))
             },
             history:demoHistory.slice(-6)
           })
