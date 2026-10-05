@@ -1,0 +1,71 @@
+{
+  "domain_placeholder": "{DOMAIN}",
+  "sequences": {
+    "fi": [
+      {
+        "day": 0,
+        "subject": "Nopea idea {{company}}:lle",
+        "body": "Moi {{name_or_team}},\n\nHuomasin {{company}}:n verkkosivun. Respondo on yrityksen sivulle asennettava AI-asiakaspalvelubotti, joka vastaa asiakkaiden kysymyksiin 24/7 yrityksen omilla tiedoilla.\n\nVoin tehdä teille demon suoraan nykyisen verkkosivunne tiedoista, joten sitä ei tarvitse rakentaa käsin. Voitte kokeilla 3 päivää ilmaiseksi:\n{DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_fi_{{vertical}}&utm_content=1\n\nJos tämä ei ole teille ajankohtainen, vastaa vain “ei kiitos”, niin en laita lisää viestejä.\n\n– Respondo AI"
+      },
+      {
+        "day": 3,
+        "subject": "Re: nopea idea {{company}}:lle",
+        "body": "Moi,\n\nYksi konkreettinen käyttötapa Respondolle: asiakas voi kysyä sivulla esimerkiksi hinnasta, palveluista, aukioloajoista tai vapaista ajoista ja saada vastauksen heti ilman että teidän tarvitsee vastata samaan kysymykseen käsin.\n\nDemo: {DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_fi_{{vertical}}&utm_content=2\n\n– Respondo AI"
+      },
+      {
+        "day": 8,
+        "subject": "Voisiko tämä säästää teiltä asiakaspalveluaikaa?",
+        "body": "Moi,\n\nRespondo käyttää vain yrityksen hyväksyttyjä tietoja ja voi myös kerätä asiakkaan yhteystiedot, jos varmaa vastausta ei löydy. Tavoite on vähentää toistuvia kysymyksiä ja saada verkkosivulta enemmän oikeita yhteydenottoja.\n\n3 päivän kokeilu: {DOMAIN}/tilaus?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_fi_{{vertical}}&utm_content=3\n\n– Respondo AI"
+      },
+      {
+        "day": 14,
+        "subject": "Suljen tämän tähän",
+        "body": "Moi,\n\nTämä on viimeinen viestini tästä. Jos haluatte joskus kokeilla AI-asiakaspalvelijaa omilla verkkosivutiedoillanne, Respondo löytyy täältä:\n{DOMAIN}\n\nJos ei ole ajankohtainen, ei tarvitse tehdä mitään.\n\n– Respondo AI"
+      }
+    ],
+    "sv": [
+      {
+        "day": 0,
+        "subject": "En snabb idé för {{company}}",
+        "body": "Hej {{name_or_team}},\n\nJag tittade på {{company}}s webbplats. Respondo är en AI-kundservicebot för företags webbplatser som svarar på kundfrågor dygnet runt utifrån företagets egna uppgifter.\n\nVi kan skapa en demo direkt från er nuvarande webbplats, så ni behöver inte bygga kunskapsbasen manuellt. Ni kan prova gratis i 3 dagar:\n{DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_se_{{vertical}}&utm_content=1\n\nOm det inte är relevant för er, svara bara “nej tack” så kontaktar jag er inte igen om detta.\n\n– Respondo AI"
+      },
+      {
+        "day": 3,
+        "subject": "Re: en snabb idé för {{company}}",
+        "body": "Hej,\n\nEtt konkret exempel: en kund kan fråga om pris, tjänster, öppettider eller bokning direkt på webbplatsen och få svar direkt, utan att ni behöver svara på samma frågor manuellt.\n\nDemo: {DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_se_{{vertical}}&utm_content=2\n\n– Respondo AI"
+      },
+      {
+        "day": 8,
+        "subject": "Kan detta minska ert kundservicearbete?",
+        "body": "Hej,\n\nRespondo svarar utifrån företagets godkända information och kan även samla in kontaktuppgifter när ett säkert svar saknas. Målet är färre repetitiva frågor och fler användbara leads från webbplatsen.\n\n3 dagars gratis provperiod: {DOMAIN}/tilaus?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_se_{{vertical}}&utm_content=3\n\n– Respondo AI"
+      },
+      {
+        "day": 14,
+        "subject": "Jag stänger detta här",
+        "body": "Hej,\n\nDet här är mitt sista meddelande om detta. Om ni vill prova en AI-kundservicebot på er webbplats framöver finns Respondo här:\n{DOMAIN}\n\n– Respondo AI"
+      }
+    ],
+    "en": [
+      {
+        "day": 0,
+        "subject": "Quick idea for {{company}}",
+        "body": "Hi {{name_or_team}},\n\nI came across {{company}}'s website. Respondo is an AI customer-service bot for business websites that answers customer questions 24/7 using the company's own approved information.\n\nWe can build a demo directly from your current website, so you don't need to set everything up manually. You can try it free for 3 days:\n{DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_{{country}}_{{vertical}}&utm_content=1\n\nIf this isn't relevant, just reply “no thanks” and I won't follow up again about it.\n\n– Respondo AI"
+      },
+      {
+        "day": 3,
+        "subject": "Re: quick idea for {{company}}",
+        "body": "Hi,\n\nOne practical example: visitors can ask about pricing, services, opening hours, availability, delivery or returns and get an immediate answer from your own business information.\n\nDemo: {DOMAIN}/assistant?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_{{country}}_{{vertical}}&utm_content=2\n\n– Respondo AI"
+      },
+      {
+        "day": 8,
+        "subject": "Could this reduce repetitive customer support?",
+        "body": "Hi,\n\nRespondo answers only from approved company information and can collect the visitor's contact details when it cannot give a reliable answer. The goal is fewer repetitive questions and more useful leads from the website.\n\n3-day free trial: {DOMAIN}/tilaus?utm_source=outlook&utm_medium=cold_email&utm_campaign=eu_launch_{{country}}_{{vertical}}&utm_content=3\n\n– Respondo AI"
+      },
+      {
+        "day": 14,
+        "subject": "Closing the loop",
+        "body": "Hi,\n\nThis is my last message about this. If an AI customer-service bot becomes useful later, you can find Respondo here:\n{DOMAIN}\n\n– Respondo AI"
+      }
+    ]
+  }
+}
