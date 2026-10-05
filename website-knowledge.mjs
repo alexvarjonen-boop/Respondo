@@ -12,11 +12,19 @@ const delivery = /toimitus|toimitusaika|toimitamme|toimitetaan|seurant|lahetys|l
 const returns = /palaut|vaihto|hyvitys|return|refund|exchange|retur|aterbetal|återbetal|byte\b/i;
 const warranty = /takuu|reklamaatio|warranty|guarantee|garanti|reklamation/i;
 const payment = /maksutapa|maksaminen|maksuvaihtoeh|korttimaks|lasku\b|klarna|paypal|mobilepay|apple\s*pay|google\s*pay|payment|payment method|pay\s+(?:with|by)|betalning|betalningsmetod|faktura/i;
+const materials = /materiaali|materiaalit|material|materials|made\s+(?:of|from)|valmistettu\s+(?:materiaalista|materiaalista|teräksestä|teraksesta|alumiinista|puusta)|stainless\s+steel|ruostumaton\s+teräs|ruostumaton\s+teras|alumiini|aluminum|aluminium|hiilikuitu|carbon\s*fib|puuvilla|cotton|polyester|nahka|leather|villa\b|wool\b|titaani|titanium/i;
+const quality = /laatu|quality|quality control|valmistus|manufactur|made\s+in|handmade|käsinteht|kasinteht|cnc|precision|tolerance|testattu|tested|sertifio|certif|standard(?:i|it)?\b|durab|kestävy|kestavy|viimeistely|finish/i;
+const care = /hoito-oh|käyttöoh|kayttooh|huolto-oh|pesuoh|care\s+instruction|product\s+care|maintenance\s+instruction|washing\s+instruction|cleaning\s+instruction|how\s+to\s+(?:clean|wash|care)|skötsel|skotsel|tvättråd|tvattrad/i;
+const sizing = /kokotauluk|koko-opas|mitoitus|koot\b|sizes?\b|size\s+guide|sizing|fit\b|mitat\b|dimensions?\b|pituus|leveys|korkeus|halkaisija|paino\b|weight\b|length\b|width\b|height\b|storlek|mått\b|matt\b/i;
+const location = /myymäl|myymala|showroom|noutopiste|pickup\s+point|store\s+location|our\s+store|butik|butiker|lagerbutik|sijaitsee|located\s+(?:at|in)|find\s+us|löydät\s+meidät|loydat\s+meidat/i;
+const customerQuestion = /^(?:mitä|mita|mikä|mika|miten|kuinka|voiko|saako|onko|missä|missa|milloin|paljonko|what|which|how|can|do|does|is|are|where|when|why|vad|vilken|hur|kan|har|är|ar|var|när|nar)\b/i;
 const email = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
 const phone = /(?:\+\d{1,3}[\s().-]*|\b0)\d(?:[\s().-]*\d){5,11}\b/;
 const labels = {
   services:'Palvelut', pricing:'Hinnat', hours:'Aukioloajat', contact:'Yhteystiedot', quote:'Tarjouspyyntö',
-  delivery:'Toimitus ja seuranta', returns:'Palautukset ja vaihdot', warranty:'Takuu', payment:'Maksaminen'
+  delivery:'Toimitus ja seuranta', returns:'Palautukset ja vaihdot', warranty:'Takuu', payment:'Maksaminen',
+  materials:'Materiaalit', quality:'Laatu ja valmistus', care:'Hoito-ohjeet', sizing:'Koot ja mitat',
+  location:'Sijainti ja myymälät', faq:'Usein kysytyt'
 };
 const keywords = {
   services:['palvelut','teette','services','tjänster'],
@@ -27,7 +35,13 @@ const keywords = {
   delivery:['toimitus','toimitusaika','seuranta','seurantakoodi','lähetys','shipping','delivery','tracking','shipment','leverans','spårning'],
   returns:['palautus','palautukset','vaihto','hyvitys','return','returns','refund','exchange','retur','återbetalning'],
   warranty:['takuu','reklamaatio','warranty','guarantee','garanti','reklamation'],
-  payment:['maksutapa','maksaminen','kortti','lasku','klarna','paypal','mobilepay','payment','betalning']
+  payment:['maksutapa','maksaminen','kortti','lasku','klarna','paypal','mobilepay','payment','betalning'],
+  materials:['materiaali','materiaalit','material','materials'],
+  quality:['laatu','valmistus','quality','manufacturing','made in'],
+  care:['hoito-ohje','huolto-ohje','care','maintenance','washing'],
+  sizing:['koko','koot','mitat','size','sizes','dimensions'],
+  location:['sijainti','myymälä','osoite','location','store','butik'],
+  faq:['usein kysytyt','faq','help','ohje']
 };
 
 export function decodeHtml(s) {
