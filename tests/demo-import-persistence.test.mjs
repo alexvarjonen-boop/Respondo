@@ -20,16 +20,21 @@ test('public imported demo never mixes in authenticated owner knowledge',()=>{
   assert.match(server,/Public Try Bot imports must stay isolated from the logged-in owner's own/);
 });
 
-
 test('an already-open Try Bot session sends a compact inline copy of imported facts',()=>{
   assert.match(app,/customFacts:demoFacts\.slice\(0,350\)\.map/);
   assert.doesNotMatch(app,/customFacts:demoFacts\.filter\(x=>x\.sourceType!==['"]demo_import['"]\)/);
 });
 
-
-test('public Try Bot requests are explicitly isolated even after a reload',()=>{
+test('public Try Bot requests are isolated after reload and from older tabs',()=>{
   assert.match(app,/publicDemo:true/);
   assert.match(app,/sessionStorage\.getItem\('respondo-public-demo-import-id'\)/);
   assert.match(app,/sessionStorage\.setItem\('respondo-public-demo-import-id',demoImportId\)/);
-  assert.match(server,/const isPublicDemo = body\.publicDemo === true/);
+  assert.match(server,/refererPath === '\/assistant'/);
+  assert.match(server,/body\.publicDemo === true/);
+});
+
+test('old Try Bot tabs can recover product facts from the restored website field',()=>{
+  assert.match(server,/if \(isPublicDemo && broadProductQuestion\(message\)\)/);
+  assert.match(server,/fetchWebsiteBundle\(website,80,18000\)/);
+  assert.match(server,/Public demo self-heal scan failed/);
 });
