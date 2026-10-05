@@ -5340,7 +5340,43 @@ const demoWebsiteImports = new Map();
 function cleanDemoWebsiteImports() {
   const now=Date.now();
   for(const [id,item] of demoWebsiteImports) {
-    if(!item || now-Number(item.createdAt||0)>20*60*1000) demoWebsiteImports.delete(id);
+    if(!item || now-Number(item.createdAt||0)>2*60*60*1000) demoWebsiteImports.delete(id);
+  }
+}
+async function persistDemoWebsiteImport(id,website,candidates) {
+  if(!pool) return;
+  try {
+    await q("DELETE FROM demo_website_imports WHERE created_at < NOW() - INTERVAL '2 hours'");
+    await q(
+      `INSERT INTO demo_website_imports(id,website,candidates,created_at)
+       VALUES($1,$2,$3::jsonb,NOW())
+       ON CONFLICT(id) DO UPDATE SET website=EXCLUDED.website,candidates=EXCLUDED.candidates,created_at=NOW()`,
+      [id,website,JSON.stringify(Array.isArray(candidates)?candidates:[])]
+    );
+  } catch(e) {
+    console.warn('Demo website import persistence failed',e?.message||e);
+  }
+}
+async function loadDemoWebsiteImport(id) {
+  if(!pool || !id) return null;
+  try {
+    const result=await q(
+      `SELECT website,candidates,created_at
+         FROM demo_website_imports
+        WHERE id=$1 AND created_at > NOW() - INTERVAL '2 hours'
+        LIMIT 1`,
+      [id]
+    );
+    if(!result.rowCount) return null;
+    const row=result.rows[0];
+    return {
+      createdAt:new Date(row.created_at).getTime(),
+      website:String(row.website||''),
+      candidates:Array.isArray(row.candidates)?row.candidates:[],
+    };
+  } catch(e) {
+    console.warn('Demo website import restore failed',e?.message||e);
+    return null;
   }
 }
 
@@ -6516,6 +6552,7 @@ app.post('/api/public/demo-import-website', demoImportLimiter, async (req,res)=>
       website,
       candidates,
     });
+    await persistDemoWebsiteImport(demoImportId,website,candidates);
     return res.json({
       ok:true,
       demoImportId,
@@ -6555,7 +6592,11 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const demoImportId=String(body.demoImportId||'').trim().slice(0,80);
     if(demoImportId){
       cleanDemoWebsiteImports();
-      const imported=demoWebsiteImports.get(demoImportId);
+      let imported=demoWebsiteImports.get(demoImportId);
+      if(!imported){
+        imported=await loadDemoWebsiteImport(demoImportId);
+        if(imported) demoWebsiteImports.set(demoImportId,imported);
+      }
       if(imported?.candidates?.length){
         const importedRows=imported.candidates.slice(0,2000).map((item,index)=>({
           id:'demo-import-'+index,
@@ -6572,20 +6613,25 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // Authenticated dashboard preview must use the tenant's saved knowledge too.
     // Otherwise a normal question such as "Paljonko maksaa?" can accidentally match
     // an unrelated profile field when the pricing field itself is empty.
-    try {
-      const token = req.cookies?.respondo_session;
-      if (token) {
-        const session = jwt.verify(token, JWT);
-        const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[session.sub]);
-        if (tr.rowCount) {
-          const kr = await q(
-            'SELECT id,category,title,answer,keywords,source_type,source_url FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC LIMIT 1000',
-            [tr.rows[0].id],
-          );
-          rows = [...kr.rows, ...rows].slice(0, 1100);
+    // Public Try Bot imports must stay isolated from the logged-in owner's own
+    // Respondo knowledge. A deploy/restart must never make a JAG demo answer
+    // with Respondo's terms, URLs, or account data.
+    if (!demoImportId) {
+      try {
+        const token = req.cookies?.respondo_session;
+        if (token) {
+          const session = jwt.verify(token, JWT);
+          const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[session.sub]);
+          if (tr.rowCount) {
+            const kr = await q(
+              'SELECT id,category,title,answer,keywords,source_type,source_url FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC LIMIT 1000',
+              [tr.rows[0].id],
+            );
+            rows = [...kr.rows, ...rows].slice(0, 1100);
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    }
     const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
     const result = await generateGroundedAnswer({
       companyName: String(profile.companyName || 'yrityksen').slice(0, 120),
@@ -8721,6 +8767,13 @@ async function ensureRuntimeSchema() {
   await q(
     "INSERT INTO app_settings(key,value) VALUES('owner_test_plan_enabled','true') ON CONFLICT(key) DO NOTHING"
   );
+  await q(`CREATE TABLE IF NOT EXISTS demo_website_imports (
+    id UUID PRIMARY KEY,
+    website TEXT NOT NULL,
+    candidates JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_demo_website_imports_created ON demo_website_imports(created_at DESC)');
   await q('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code) WHERE referral_code IS NOT NULL');
   await q(`CREATE TABLE IF NOT EXISTS referral_redemptions (
     id UUID PRIMARY KEY,
