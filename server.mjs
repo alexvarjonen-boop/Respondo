@@ -6327,9 +6327,10 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     }
     body = body || {};
     const lang = ['fi','sv','en'].includes(String(body.lang || '').toLowerCase()) ? String(body.lang).toLowerCase() : 'fi';
-    requestLang = lang;
     const message = String(body.message || '').trim().slice(0, 1200);
     if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : lang === 'sv' ? 'Skriv en fråga.' : 'Kirjoita kysymys.' });
+    const detectedLang=detectConversationLanguage(message,lang);
+    requestLang=detectedLang;
     const profile = body.profile && typeof body.profile === 'object' ? body.profile : {};
     let rows = buildProfileKnowledge(profile).slice(0, 160);
     const demoImportId=String(body.demoImportId||'').trim().slice(0,80);
@@ -6372,23 +6373,23 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       rows,
       message,
       history,
-      lang,
+      lang:detectedLang,
     });
 
-    const noAnswer = lang === 'en'
+    const noAnswer = detectedLang === 'en'
       ? 'I cannot find a reliable answer to this in the company information. Leave your name and phone number or email below, and someone from the company can get back to you.'
-      : lang === 'sv'
+      : detectedLang === 'sv'
         ? 'Jag hittar inget säkert svar på detta i företagets information. Lämna ditt namn och telefonnummer eller din e-postadress nedan, så kan någon från företaget kontakta dig.'
         : 'Tähän en löydä varmaa vastausta yrityksen tiedoista. Jätä alle nimesi ja puhelinnumerosi tai sähköpostisi, niin yrityksen henkilö voi palata sinulle.';
-    const translationUnavailable = lang === 'en'
+    const translationUnavailable = detectedLang === 'en'
       ? 'I found the relevant company information, but could not translate the answer reliably right now. Please try again in a moment.'
-      : lang === 'sv'
+      : detectedLang === 'sv'
         ? 'Jag hittade relevant företagsinformation men kunde inte översätta svaret tillförlitligt just nu. Försök igen om en stund.'
         : noAnswer;
 
     let handoff = result.handoff;
     let answer = result.answer;
-    const actions = chatActions(rows, message, handoff, lang, result.selected || []);
+    const actions = chatActions(rows, message, handoff, detectedLang, result.selected || []);
     // Action URLs are UI data, not conversational answers. If retrieval picked
     // the booking/quote URL itself as the answer, replace it with natural copy
     // and let the client render the URL only as a clickable action.
@@ -6397,15 +6398,15 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // headings such as "Yhteystiedot Pyydä tarjous..." become the chat answer.
     if (!handoff && result.intent === 'Yhteystiedot' && !explicitContactQuestion(message)
         && actions.some(action=>action?.url)) {
-      answer = lang === 'en' ? 'You can contact us here:'
-        : lang === 'sv' ? 'Du kan kontakta oss här:'
+      answer = detectedLang === 'en' ? 'You can contact us here:'
+        : detectedLang === 'sv' ? 'Du kan kontakta oss här:'
         : 'Voit ottaa yhteyttä tästä:';
     }
     if (!handoff && primaryLinkAction && /^https?:\/\/\S+$/i.test(String(answer || '').trim())) {
       answer = result.intent === 'Ajanvaraus'
-        ? (lang === 'en' ? 'You can book an appointment here:' : lang === 'sv' ? 'Du kan boka en tid här:' : 'Voit varata ajan tästä:')
+        ? (detectedLang === 'en' ? 'You can book an appointment here:' : detectedLang === 'sv' ? 'Du kan boka en tid här:' : 'Voit varata ajan tästä:')
         : result.intent === 'Tarjouspyyntö'
-          ? (lang === 'en' ? 'You can request a quote here:' : lang === 'sv' ? 'Du kan be om en offert här:' : 'Voit pyytää tarjouksen tästä:')
+          ? (detectedLang === 'en' ? 'You can request a quote here:' : detectedLang === 'sv' ? 'Du kan be om en offert här:' : 'Voit pyytää tarjouksen tästä:')
           : answer;
     }
     if (handoff && !answer) answer = noAnswer;
