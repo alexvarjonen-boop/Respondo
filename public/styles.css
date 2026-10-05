@@ -7808,7 +7808,7 @@ body{
 .demo-dashboard-main{
   overflow:visible!important;
 }
-@media(max-width:760px){
+@media(max-width:1024px){
   .demo-dashboard-shell{
     overflow:visible!important;
     min-height:100vh!important;
