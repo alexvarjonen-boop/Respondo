@@ -4051,8 +4051,8 @@ async function route() {
     const demoDashboardMain = $('.demo-dashboard-main');
     const syncDemoStickyHeaderSpace = () => {
       if (!demoStickyHeader || !demoDashboardMain) return;
-      const mobile = window.matchMedia('(max-width:760px)').matches;
-      if (!mobile) {
+      const pinnedViewport = window.matchMedia('(max-width:1024px)').matches;
+      if (!pinnedViewport) {
         demoDashboardMain.style.removeProperty('--demo-sticky-header-space');
         return;
       }
