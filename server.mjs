@@ -165,7 +165,13 @@ async function renderIndexHtml(req) {
               AND t.active=true
               AND u.status='active'
               AND u.subscription_status IN ('active','trialing')
-            ORDER BY u.created_at ASC
+            ORDER BY
+              CASE
+                WHEN lower(COALESCE(t.slug,'')) IN ('respondo','respondoai') THEN 0
+                WHEN lower(COALESCE(t.name,'')) IN ('respondo','respondo ai') THEN 1
+                ELSE 2
+              END,
+              t.created_at ASC
             LIMIT 1`,
           [ownerEmail],
         );
@@ -7207,7 +7213,18 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       history = hr.rows.reverse();
     }
 
-    const firstPartyFaq = isFirstPartyRespondoTenant(t)
+    let firstPartyHomepageWidget=false;
+    try {
+      const pageUrl=new URL(String(body.pageContext?.url || req.get('referer') || ''),BASE);
+      firstPartyHomepageWidget=
+        normalizeHost(pageUrl.hostname)===normalizeHost(BASE) &&
+        pageUrl.pathname==='/';
+    } catch {}
+    const firstPartyRespondo = isFirstPartyRespondoTenant(t) || firstPartyHomepageWidget;
+    const safeKnowledgeRows = firstPartyRespondo
+      ? kr.rows.filter((row)=>String(row?.source_type||'')==='respondo_seed')
+      : kr.rows;
+    const firstPartyFaq = firstPartyRespondo
       ? respondoProductFaqMatch(message, detectedLang, history)
       : null;
     const result = firstPartyFaq
@@ -7221,7 +7238,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         }
       : await generateGroundedAnswer({
           companyName: t.name,
-          rows: kr.rows,
+          rows: safeKnowledgeRows,
           message,
           history,
           lang: detectedLang,
@@ -7247,9 +7264,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         ? result.answer : noAnswer;
     }
 
-    const actionRows = firstPartyFaq
-      ? kr.rows.filter((row)=>String(row?.source_type||'')==='respondo_seed')
-      : kr.rows;
+    const actionRows = firstPartyRespondo ? safeKnowledgeRows : kr.rows;
     const actions = chatActions(actionRows, message, handoff, responseLang, result.selected);
     if (thread) {
       await appendChatMessage({
@@ -8694,7 +8709,13 @@ async function seedOwnerRespondoKnowledge() {
        FROM users u
        JOIN tenants t ON t.owner_user_id=u.id
       WHERE lower(u.email)=lower($1)
-      ORDER BY u.created_at ASC
+      ORDER BY
+        CASE
+          WHEN lower(COALESCE(t.slug,'')) IN ('respondo','respondoai') THEN 0
+          WHEN lower(COALESCE(t.name,'')) IN ('respondo','respondo ai') THEN 1
+          ELSE 2
+        END,
+        t.created_at ASC
       LIMIT 1`,
     [ownerEmail],
   );
