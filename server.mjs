@@ -420,6 +420,104 @@ const normalizeReferralCode = (value) =>
 const FREE_REFERRAL_CODE = 'CEO1000';
 const isFreeReferralCode = (value) => normalizeReferralCode(value) === FREE_REFERRAL_CODE;
 
+const PLAN_DEFINITIONS = Object.freeze({
+  basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:49.99,annualTotal:null,agentSeats:2,websiteImport:false,googleCalendar:false},
+  basic_yearly:{tier:'basic',billing:'yearly',monthlyPrice:44.99,annualTotal:539.88,agentSeats:2,websiteImport:false,googleCalendar:false},
+  advanced_monthly:{tier:'advanced',billing:'monthly',monthlyPrice:64.99,annualTotal:null,agentSeats:10,websiteImport:true,googleCalendar:true},
+  advanced_yearly:{tier:'advanced',billing:'yearly',monthlyPrice:59.99,annualTotal:719.88,agentSeats:10,websiteImport:true,googleCalendar:true},
+  business_monthly:{tier:'business',billing:'monthly',monthlyPrice:79.99,annualTotal:null,agentSeats:20,websiteImport:true,googleCalendar:true},
+  business_yearly:{tier:'business',billing:'yearly',monthlyPrice:74.99,annualTotal:899.88,agentSeats:20,websiteImport:true,googleCalendar:true},
+});
+
+function normalizeCheckoutPlan(value) {
+  const raw=String(value||'').trim().toLowerCase();
+  if(raw==='owner_test') return 'owner_test';
+  if(PLAN_DEFINITIONS[raw]) return raw;
+  // Old links/bookmarks keep the old price point by landing on Basic.
+  if(raw==='yearly') return 'basic_yearly';
+  return 'basic_monthly';
+}
+
+function planTier(value) {
+  const raw=String(value||'').trim().toLowerCase();
+  if(PLAN_DEFINITIONS[raw]) return PLAN_DEFINITIONS[raw].tier;
+  // Existing subscriptions created before tiers keep every feature they had.
+  if(['monthly','yearly','owner_test'].includes(raw)) return 'business';
+  return 'basic';
+}
+
+function planEntitlements(value) {
+  const raw=String(value||'').trim().toLowerCase();
+  const def=PLAN_DEFINITIONS[raw];
+  if(def) return {
+    code:raw,tier:def.tier,billing:def.billing,agentSeats:def.agentSeats,
+    websiteImport:def.websiteImport,googleCalendar:def.googleCalendar,
+    allCurrentFeatures:def.tier==='business'
+  };
+  if(['monthly','yearly','owner_test'].includes(raw)) {
+    return {code:raw,tier:'business',billing:raw==='yearly'?'yearly':'monthly',agentSeats:20,websiteImport:true,googleCalendar:true,allCurrentFeatures:true};
+  }
+  return {code:raw||'basic_monthly',tier:'basic',billing:'monthly',agentSeats:2,websiteImport:false,googleCalendar:false,allCurrentFeatures:false};
+}
+
+function planAllowsReferral(value) {
+  const raw=String(value||'').trim().toLowerCase();
+  return raw==='monthly' || raw==='owner_test' || raw.endsWith('_monthly');
+}
+
+function stripePriceForPlan(value) {
+  const plan=normalizeCheckoutPlan(value);
+  const map={
+    basic_monthly:process.env.STRIPE_BASIC_MONTHLY_PRICE_ID,
+    basic_yearly:process.env.STRIPE_BASIC_YEARLY_PRICE_ID,
+    advanced_monthly:process.env.STRIPE_ADVANCED_MONTHLY_PRICE_ID,
+    advanced_yearly:process.env.STRIPE_ADVANCED_YEARLY_PRICE_ID,
+    business_monthly:process.env.STRIPE_BUSINESS_MONTHLY_PRICE_ID,
+    business_yearly:process.env.STRIPE_BUSINESS_YEARLY_PRICE_ID,
+    owner_test:process.env.STRIPE_OWNER_TEST_PRICE_ID,
+  };
+  return map[plan] || '';
+}
+
+function planFromStripePriceId(priceId) {
+  const id=String(priceId||'');
+  const pairs=[
+    ['basic_monthly',process.env.STRIPE_BASIC_MONTHLY_PRICE_ID],
+    ['basic_yearly',process.env.STRIPE_BASIC_YEARLY_PRICE_ID],
+    ['advanced_monthly',process.env.STRIPE_ADVANCED_MONTHLY_PRICE_ID],
+    ['advanced_yearly',process.env.STRIPE_ADVANCED_YEARLY_PRICE_ID],
+    ['business_monthly',process.env.STRIPE_BUSINESS_MONTHLY_PRICE_ID],
+    ['business_yearly',process.env.STRIPE_BUSINESS_YEARLY_PRICE_ID],
+    ['monthly',process.env.STRIPE_MONTHLY_PRICE_ID],
+    ['yearly',process.env.STRIPE_YEARLY_PRICE_ID],
+    ['owner_test',process.env.STRIPE_OWNER_TEST_PRICE_ID],
+  ];
+  return pairs.find(([,candidate])=>candidate && candidate===id)?.[0] || '';
+}
+
+async function activeTenantPlan(userId) {
+  const rr=await q(
+    'SELECT id,subscription_plan FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1) LIMIT 1',
+    [userId],
+  );
+  return rr.rowCount ? rr.rows[0] : null;
+}
+
+async function requirePlanCapability(req,res,capability) {
+  const tenant=await activeTenantPlan(req.user.sub);
+  if(!tenant) {
+    res.status(404).json({error:'Työtilaa ei löytynyt.'});
+    return null;
+  }
+  const access=planEntitlements(tenant.subscription_plan);
+  if(!access[capability]) {
+    const need=capability==='websiteImport'?'Advanced- tai Business-tilaus':'Advanced- tai Business-tilaus';
+    res.status(403).json({error:'Tämä ominaisuus vaatii '+need+'.',upgradeRequired:true,currentPlan:access.code});
+    return null;
+  }
+  return {tenant,access};
+}
+
 async function ensureReferralCode(userId) {
   const found = await q(
     'SELECT referral_code,subscription_plan,stripe_subscription_id FROM users WHERE id=$1',
@@ -435,8 +533,7 @@ async function ensureReferralCode(userId) {
     try {
       const subscription = await stripe.subscriptions.retrieve(user.stripe_subscription_id);
       const priceId = subscription.items?.data?.[0]?.price?.id || '';
-      if (priceId && priceId === process.env.STRIPE_MONTHLY_PRICE_ID) plan = 'monthly';
-      if (priceId && priceId === process.env.STRIPE_YEARLY_PRICE_ID) plan = 'yearly';
+      plan = planFromStripePriceId(priceId) || plan;
       if (plan) {
         await q('UPDATE users SET subscription_plan=$1,updated_at=NOW() WHERE id=$2', [plan, userId]);
       }
@@ -446,7 +543,7 @@ async function ensureReferralCode(userId) {
   }
 
   // Normal monthly customers get a code. The one-use owner test also gets one so the full purchase flow can be tested.
-  if (!['monthly', 'owner_test'].includes(plan)) return '';
+  if (!planAllowsReferral(plan)) return '';
   if (user.referral_code) return user.referral_code;
 
   for (let attempt = 0; attempt < 8; attempt++) {
@@ -487,7 +584,7 @@ async function applyReferralDiscountIfEligible(userId, subscriptionId, planOverr
     if (
       !redemption.rowCount ||
       redemption.rows[0].stripe_discount_applied ||
-      effectivePlan !== 'monthly'
+      !planAllowsReferral(effectivePlan)
     ) {
       await client.query('COMMIT');
       return false;
@@ -4036,7 +4133,8 @@ app.get('/sitemap.xml', (req, res) => {
   );
 });
 
-app.get('/api/app/google-calendar/start', auth, subscribed, (req,res) => {
+app.get('/api/app/google-calendar/start', auth, subscribed, async (req,res) => {
+  if(!await requirePlanCapability(req,res,'googleCalendar')) return;
   const cfg = oauthConfig('google');
   if (!cfg.configured) return res.redirect('/app?section=automation&calendar=not_configured');
 
@@ -4064,6 +4162,7 @@ app.get('/api/app/google-calendar/start', auth, subscribed, (req,res) => {
 });
 
 app.post('/api/app/google-calendar/disconnect', auth, subscribed, async (req,res) => {
+  if(!await requirePlanCapability(req,res,'googleCalendar')) return;
   try {
     const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -4229,6 +4328,11 @@ app.get('/api/public/config', async (req, res) => {
     trialDays: 3,
     monthlyNet: 49.99,
     yearlyNet: 539.88,
+    plans:{
+      basic:{monthly:49.99,yearlyMonthly:44.99,yearlyTotal:539.88,agentSeats:2},
+      advanced:{monthly:64.99,yearlyMonthly:59.99,yearlyTotal:719.88,agentSeats:10},
+      business:{monthly:79.99,yearlyMonthly:74.99,yearlyTotal:899.88,agentSeats:20},
+    },
     ownerTestEnabled,
     ownerTestPrice: 0.50,
   });
@@ -4239,7 +4343,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
 
   const { fullName, companyName, businessId, password, plan, acceptedTerms } = req.body;
   const email = cleanEmail(req.body.email);
-  const normalizedPlan = plan === 'owner_test' ? 'owner_test' : (plan === 'yearly' ? 'yearly' : 'monthly');
+  const normalizedPlan = normalizeCheckoutPlan(plan);
   const referralCode = normalizeReferralCode(req.body.referralCode);
   const freeReferral = isFreeReferralCode(referralCode);
   const oauthProfile = getOauthProfile(req);
@@ -4257,7 +4361,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
     });
   }
 
-  if (referralCode && normalizedPlan !== 'monthly') {
+  if (referralCode && !planAllowsReferral(normalizedPlan)) {
     return res.status(400).json({ error: 'Suosittelukoodi toimii vain kuukausitilauksessa.' });
   }
 
@@ -4270,13 +4374,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
       return res.status(410).json({ error: 'Omistajan testitilaus ei ole enää käytettävissä.' });
     }
 
-    const price = freeReferral
-      ? null
-      : normalizedPlan === 'owner_test'
-        ? process.env.STRIPE_OWNER_TEST_PRICE_ID
-        : normalizedPlan === 'yearly'
-          ? process.env.STRIPE_YEARLY_PRICE_ID
-          : process.env.STRIPE_MONTHLY_PRICE_ID;
+    const price = freeReferral ? null : stripePriceForPlan(normalizedPlan);
 
     if (!freeReferral && !price) {
       return res.status(503).json({ error: 'Stripe-hintaa ei ole määritetty.' });
@@ -4315,7 +4413,7 @@ app.post('/api/auth/start-checkout', async (req, res) => {
           !ref.rowCount ||
           ref.rows[0].status !== 'active' ||
           !['active','trialing'].includes(ref.rows[0].subscription_status) ||
-          !['monthly','owner_test'].includes(ref.rows[0].subscription_plan)
+          !planAllowsReferral(ref.rows[0].subscription_plan)
         ) {
           throw Object.assign(new Error('Suosittelukoodi ei ole voimassa.'), { publicStatus: 400 });
         }
@@ -4681,16 +4779,16 @@ app.post('/api/app/workspaces/switch', auth, ownerOnly, async (req,res) => {
 app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const companyName=String(req.body?.companyName||'').replace(/[<>]/g,'').trim().slice(0,120);
   const businessId=String(req.body?.businessId||'').replace(/[<>]/g,'').trim().slice(0,40);
-  const plan=req.body?.plan==='yearly'?'yearly':'monthly';
+  const plan=normalizeCheckoutPlan(req.body?.plan);
   const referralCode=normalizeReferralCode(req.body?.referralCode);
   const freeReferral=isFreeReferralCode(referralCode);
 
   if(!companyName) return res.status(400).json({ error:'Anna yrityksen nimi.' });
   if(req.body?.acceptedTerms!==true) return res.status(400).json({ error:'Hyväksy käyttöehdot ja tietosuojaseloste.' });
-  if(referralCode && plan!=='monthly') return res.status(400).json({ error:'Suosittelukoodi toimii vain kuukausitilauksessa.' });
+  if(referralCode && !planAllowsReferral(plan)) return res.status(400).json({ error:'Suosittelukoodi toimii vain kuukausitilauksessa.' });
   if(!freeReferral && !stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
 
-  const price=freeReferral ? null : (plan==='yearly' ? process.env.STRIPE_YEARLY_PRICE_ID : process.env.STRIPE_MONTHLY_PRICE_ID);
+  const price=freeReferral ? null : stripePriceForPlan(plan);
   if(!freeReferral && !price) return res.status(503).json({ error:'Stripe-hintaa ei ole määritetty.' });
 
   const userResult=await q('SELECT id,email,stripe_customer_id,preferred_language FROM users WHERE id=$1',[req.user.sub]);
@@ -4710,8 +4808,8 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         `INSERT INTO tenants(
            id,owner_user_id,slug,name,business_id,contact_email,active,
            subscription_status,subscription_plan
-         ) VALUES($1,$2,$3,$4,$5,$6,TRUE,'active','monthly')`,
-        [tenantId,req.user.sub,tenantSlug,companyName,businessId||null,user.email],
+         ) VALUES($1,$2,$3,$4,$5,$6,TRUE,'active',$7)`,
+        [tenantId,req.user.sub,tenantSlug,companyName,businessId||null,user.email,plan],
       );
       await client.query(
         `UPDATE users
@@ -4748,7 +4846,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
       !ref.rowCount ||
       ref.rows[0].status!=='active' ||
       !['active','trialing'].includes(ref.rows[0].subscription_status) ||
-      !['monthly','owner_test'].includes(ref.rows[0].subscription_plan)
+      !planAllowsReferral(ref.rows[0].subscription_plan)
     ){
       return res.status(400).json({error:'Suosittelukoodi ei ole voimassa.'});
     }
@@ -5138,6 +5236,7 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
       ? gaps.rows.filter((row) => !respondoProductFaqMatch(row.question, 'fi'))
       : gaps.rows;
     const tenantSafe = { ...tenant };
+    const planAccess = planEntitlements(tenant.subscription_plan);
     [
       'google_calendar_access_token','google_calendar_refresh_token',
       'shopify_access_token','woo_consumer_key','woo_consumer_secret',
@@ -5156,6 +5255,7 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
 
     return res.json({
       tenant:tenantSafe,
+      planAccess,
       workspaces,
       referral,
       knowledge: k.rows,
@@ -5446,6 +5546,7 @@ async function loadDemoWebsiteImport(id) {
 
 
 app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
+  if(!await requirePlanCapability(req,res,'websiteImport')) return;
   const website=normalizeWebUrl(req.body.website,false);
   if(!website) return res.status(400).json({error:'Lisää ensin verkkosivusi osoite.'});
   // Remove completed jobs and also abandon a running job that has stopped
@@ -5479,7 +5580,8 @@ app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
   })();
 });
 
-app.get('/api/app/import-website/status/:jobId', auth, subscribed, (req,res)=>{
+app.get('/api/app/import-website/status/:jobId', auth, subscribed, async (req,res)=>{
+  if(!await requirePlanCapability(req,res,'websiteImport')) return;
   const job=websiteImportJobs.get(req.params.jobId);
   if(!job||job.userId!==req.user.sub) return res.status(404).json({error:'Hakua ei löytynyt.'});
   res.json({status:job.status,scanned:job.scanned,total:job.total,percent:job.percent,error:job.error,result:job.status==='done'?job.result:null});
@@ -5487,6 +5589,7 @@ app.get('/api/app/import-website/status/:jobId', auth, subscribed, (req,res)=>{
 });
 
 app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
+  if(!await requirePlanCapability(req,res,'websiteImport')) return;
   try {
     const website = normalizeWebUrl(req.body.website, false);
     if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
@@ -5508,6 +5611,7 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
 });
 
 app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) => {
+  if(!await requirePlanCapability(req,res,'websiteImport')) return;
   const client = await pool.connect();
   try {
     const tenantResult = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
@@ -8264,8 +8368,17 @@ app.post('/api/app/voice/configure-number', auth, subscribed, async (req,res) =>
 
 app.post('/api/app/support-agents', auth, subscribed, async (req,res) => {
   try {
-    const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+    const tr = await q('SELECT id,subscription_plan FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    const access=planEntitlements(tr.rows[0].subscription_plan);
+    const agentCount=await q('SELECT COUNT(*)::int AS count FROM support_agents WHERE tenant_id=$1',[tr.rows[0].id]);
+    if(Number(agentCount.rows[0]?.count||0)>=access.agentSeats) {
+      return res.status(403).json({
+        error:'Tilaus sisältää enintään '+access.agentSeats+' asiakaspalvelijapaikkaa.',
+        seatLimit:access.agentSeats,
+        upgradeRequired:true,
+      });
+    }
     const displayName = String(req.body.displayName || '').replace(/[<>]/g,'').trim().slice(0,60);
     const username = String(req.body.username || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'').slice(0,50);
     const password = String(req.body.password || '');
