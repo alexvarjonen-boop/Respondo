@@ -5092,6 +5092,14 @@ function extractFreeWebsiteProfile(bundle) {
 }
 
 const websiteImportJobs = new Map();
+const demoWebsiteImports = new Map();
+function cleanDemoWebsiteImports() {
+  const now=Date.now();
+  for(const [id,item] of demoWebsiteImports) {
+    if(!item || now-Number(item.createdAt||0)>20*60*1000) demoWebsiteImports.delete(id);
+  }
+}
+
 
 app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
   const website=normalizeWebUrl(req.body.website,false);
@@ -6257,8 +6265,16 @@ app.post('/api/public/demo-import-website', demoImportLimiter, async (req,res)=>
     const allCandidates=websiteKnowledgeCandidates(bundle);
     const candidates=allCandidates.slice(0,2000);
     const profile=extractFreeWebsiteProfile(bundle);
+    cleanDemoWebsiteImports();
+    const demoImportId=uid();
+    demoWebsiteImports.set(demoImportId,{
+      createdAt:Date.now(),
+      website,
+      candidates,
+    });
     return res.json({
       ok:true,
+      demoImportId,
       profile,
       pagesScanned:bundle.pages.length,
       factsFound:allCandidates.length,
@@ -6290,7 +6306,24 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const message = String(body.message || '').trim().slice(0, 1200);
     if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : lang === 'sv' ? 'Skriv en fråga.' : 'Kirjoita kysymys.' });
     const profile = body.profile && typeof body.profile === 'object' ? body.profile : {};
-    let rows = buildProfileKnowledge(profile).slice(0, 60);
+    let rows = buildProfileKnowledge(profile).slice(0, 160);
+    const demoImportId=String(body.demoImportId||'').trim().slice(0,80);
+    if(demoImportId){
+      cleanDemoWebsiteImports();
+      const imported=demoWebsiteImports.get(demoImportId);
+      if(imported?.candidates?.length){
+        const importedRows=imported.candidates.slice(0,2000).map((item,index)=>({
+          id:'demo-import-'+index,
+          category:String(item?.category||'Verkkosivulta tuotu').slice(0,80),
+          title:String(item?.title||item?.category||'').slice(0,180),
+          answer:String(item?.answer||'').slice(0,1600),
+          keywords:Array.isArray(item?.keywords)?item.keywords.slice(0,32):searchTokens(String(item?.title||'')+' '+String(item?.answer||'')).slice(0,24),
+          source_type:'website',
+          source_url:normalizeWebUrl(item?.sourceUrl,false)||null,
+        })).filter((row)=>row.title&&row.answer);
+        rows=[...importedRows,...rows].slice(0,2160);
+      }
+    }
     // Authenticated dashboard preview must use the tenant's saved knowledge too.
     // Otherwise a normal question such as "Paljonko maksaa?" can accidentally match
     // an unrelated profile field when the pricing field itself is empty.
