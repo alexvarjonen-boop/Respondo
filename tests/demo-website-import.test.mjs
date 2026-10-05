@@ -10,11 +10,15 @@ test('Try Bot website import really scans and feeds imported facts into demo cha
   assert.match(server,/fetchWebsiteBundle\(website,180,55000\)/);
   assert.match(server,/websiteKnowledgeCandidates\(bundle\)/);
   assert.match(server,/source_url:\s*normalizeWebUrl\(meta\.sourceUrl,false\)/);
+  assert.match(server,/demoWebsiteImports\.set\(demoImportId/);
+  assert.match(server,/demoWebsiteImports\.get\(demoImportId\)/);
   assert.match(server,/chatActions\(rows, message, handoff, lang, result\.selected \|\| \[\]\)/);
 
   assert.match(app,/\/api\/public\/demo-import-website/);
   assert.match(app,/sourceType:'demo_import'/);
-  assert.match(app,/customFacts:demoFacts\.map\(x=>\(\{/);
+  assert.match(app,/demoImportId=String\(result\.demoImportId\|\|''\)\.trim\(\)/);
+  assert.match(app,/demoImportId,/);
+  assert.match(app,/customFacts:demoFacts\.filter\(x=>x\.sourceType!=='demo_import'\)\.map\(x=>\(\{/);
   assert.match(app,/category:x\.category/);
   assert.match(app,/sourceUrl:x\.sourceUrl/);
   assert.doesNotMatch(app,/Automaattinen verkkosivun tietojen haku avautuu tilauksen yhteydessä/);
