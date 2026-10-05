@@ -423,9 +423,14 @@ export function businessFactKind(text, context = '') {
   if (email.test(t) || phone.test(t) && (/^\+\d/.test(t) || /puhel|puh\b|tel|phone|contact|yhteys|kontakt/.test(n+' '+c))) return 'contact';
   if (/\b\d{5}\s+[A-ZÅÄÖa-zåäö]/.test(t) || /(?:osoite|address|adress)\s*:?\s*\S+.*\d/.test(n)) return 'location';
   if (commerceFact && location.test(commerce)) return 'location';
-  // FAQ answers often contain useful facts that do not fit a fixed category.
-  // Import them only when a real question heading gives the answer context.
-  if (commerceFact && c.length>=4 && c.length<=180 && (/[?]$/.test(clean(context)) || customerQuestion.test(c))) return 'faq';
+  // FAQ and customer-info sections often contain useful facts that do not fit a
+  // fixed category (gift cards, discount codes, customisation, pre-orders, etc.).
+  // Keep the heading as retrieval context so isolated marketing copy is not imported.
+  if (commerceFact && c.length>=4 && c.length<=180 && (
+    /[?]$/.test(clean(context)) ||
+    customerQuestion.test(c) ||
+    /lahjakort|gift\s*card|alennuskood|discount\s*code|kampanjakood|promo\s*code|ennakkotila|pre-?order|tilaaminen|ordering|order\s+info|personointi|personalis|customi[sz]|räätälö|raatalo|alkuperä|alkupera|origin|turvallisuus|safety|vastuullisuus|sustainab|faq|usein kysytyt|asiakasohje|customer info/.test(c)
+  )) return 'faq';
   // Require real prose or a concrete service list, not an isolated marketing heading.
   if ((service.test(n) || service.test(c)) && t.length >= 18 && (/[.!;]/.test(t) || /[,•]/.test(t) || /tarjoamme|teemme|we offer|we provide|vi erbjuder/.test(n))) return 'services';
   return '';
