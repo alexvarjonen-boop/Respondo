@@ -9680,9 +9680,21 @@ async function ensureRuntimeSchema() {
   await q("UPDATE tenants SET accent='#111113' WHERE accent='#3157ff'");
 }
 
+async function withRuntimeSchemaLock(fn) {
+  if (!pool) return fn();
+  const client=await pool.connect();
+  try {
+    await client.query("SELECT pg_advisory_lock(hashtext('respondo_runtime_schema_v1'))");
+    return await fn();
+  } finally {
+    try { await client.query("SELECT pg_advisory_unlock(hashtext('respondo_runtime_schema_v1'))"); } catch {}
+    client.release();
+  }
+}
+
 async function start() {
   try {
-    await ensureRuntimeSchema();
+    await withRuntimeSchemaLock(() => ensureRuntimeSchema());
     try {
       await seedOwnerRespondoKnowledge();
     } catch (e) {
