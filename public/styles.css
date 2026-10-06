@@ -8770,3 +8770,23 @@ body.workspace-modal-open{
 .geo-answer-links a{font-size:12px;font-weight:850;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:900px){.geo-answer-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){.geo-answer-section{padding-top:56px;padding-bottom:56px}.geo-answer-grid{grid-template-columns:1fr}.geo-answer-grid article{padding:18px}.geo-answer-intro p{font-size:16px}}
+
+/* SEO/GEO intent landing pages */
+.seo-landing-page{background:#fff;color:#111114;min-height:100vh}
+.seo-landing-hero{padding:112px 0 82px;background:radial-gradient(circle at 80% 15%,rgba(49,87,255,.11),transparent 30rem),linear-gradient(180deg,#f8fafc,#fff);border-bottom:1px solid var(--line)}
+.seo-landing-hero-inner{max-width:980px}
+.seo-landing-hero h1{margin:18px 0 24px;font-size:clamp(48px,7vw,92px);line-height:.94;letter-spacing:-.065em;max-width:1000px}
+.seo-landing-hero h1 em{font-family:Georgia,"Times New Roman",serif;font-weight:400;color:var(--blue)}
+.seo-landing-hero p{max-width:800px;margin:0;color:#59626d;font-size:19px;line-height:1.7}
+.seo-landing-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:30px}
+.seo-landing-copy{padding-top:82px;padding-bottom:82px}
+.seo-landing-intro{max-width:860px;margin-bottom:34px}
+.seo-landing-intro h2,.seo-landing-closing-card h2{margin:0 0 14px;font-size:clamp(34px,4.4vw,58px);line-height:1;letter-spacing:-.05em}
+.seo-landing-intro p,.seo-landing-closing-card p{margin:0;color:#59626d;font-size:17px;line-height:1.75}
+.seo-landing-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.seo-landing-grid article{padding:28px;border:1px solid #e2e6eb;border-radius:20px;background:#fafbfc}
+.seo-landing-grid h3{margin:0 0 10px;font-size:21px;letter-spacing:-.03em}
+.seo-landing-grid p{margin:0;color:#606a75;font-size:15px;line-height:1.7}
+.seo-landing-closing{padding-top:0;padding-bottom:92px}
+.seo-landing-closing-card{padding:38px;border:1px solid #dfe4ea;border-radius:24px;background:linear-gradient(145deg,#f8fafc,#eef3ff)}
+@media(max-width:720px){.seo-landing-hero{padding:82px 0 58px}.seo-landing-grid{grid-template-columns:1fr}.seo-landing-grid article{padding:21px}.seo-landing-closing-card{padding:24px}.seo-landing-hero p{font-size:17px}}
