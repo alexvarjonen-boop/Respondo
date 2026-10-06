@@ -251,7 +251,7 @@ function languageSwitch() {
   </div>`;
 }
 
-const APP_LOCALES = { fi:'fi-FI', sv:'sv-SE', en:'en-GB' };
+const APP_LOCALES = { fi:'fi-FI', sv:'sv-SE', en:'en-GB-u-hc-h12' };
 function appLocale() { return APP_LOCALES[currentLang()] || 'fi-FI'; }
 function appText(fi, sv, en) {
   const lang = currentLang();
@@ -3552,7 +3552,7 @@ async function dashboard(options = {}) {
               <h2>${appText('Asiakkaiden pyynnöt','Kundförfrågningar','Customer requests')}</h2>
               <p>${appText('Tarjouspyynnöt, ajanvaraukset, tilauskyselyt ja yhteydenotot näkyvät tässä.','Offertförfrågningar, bokningar, orderfrågor och kontaktförfrågningar visas här.','Quote requests, bookings, order questions, and contact requests appear here.')}</p>
             </div>
-            <span>${actionRequests.filter((x) => x.status !== 'done').length} avoinna</span>
+            <span>${actionRequests.filter((x) => x.status !== 'done').length} ${appText('avoinna','öppna','open')}</span>
           </div>
 
           <div class="action-request-list">
@@ -3571,27 +3571,27 @@ async function dashboard(options = {}) {
                 ${x.payload?.question ? `<p class="action-origin">“${esc(x.payload.question)}”</p>` : ''}
                 ${x.result?.quote ? `
                   <div class="action-quote-summary">
-                    <span>RESPONDO-TARJOUS</span>
+                    <span>${appText('RESPONDO-TARJOUS','RESPONDO-OFFERT','RESPONDO QUOTE')}</span>
                     <b>${formatMoney(x.result.quote.total || 0)}</b>
-                    <small>${x.result?.paid ? 'Maksettu ✓' : 'Odottaa hyväksyntää / maksua'}</small>
+                    <small>${x.result?.paid ? appText('Maksettu ✓','Betald ✓','Paid ✓') : appText('Odottaa hyväksyntää / maksua','Väntar på godkännande / betalning','Awaiting approval / payment')}</small>
                   </div>
                 ` : ''}
                 ${x.payload?.booking?.startsAt ? `
                   <div class="action-booking-summary">
-                    <span>VARATTU AIKA</span>
+                    <span>${appText('VARATTU AIKA','BOKAD TID','BOOKED TIME')}</span>
                     <b>${new Date(x.payload.booking.startsAt).toLocaleString(appLocale(),{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</b>
-                    <small>${x.result?.calendarSync?.status === 'synced' ? 'Google Calendar ✓' : x.result?.calendarSync?.status === 'failed' ? 'Google-sync epäonnistui' : 'RESPONDO Calendar'}</small>
+                    <small>${x.result?.calendarSync?.status === 'synced' ? 'Google Calendar ✓' : x.result?.calendarSync?.status === 'failed' ? appText('Google-sync epäonnistui','Google-synkronisering misslyckades','Google sync failed') : 'RESPONDO Calendar'}</small>
                   </div>
                 ` : ''}
                 <div class="action-request-bottom">
-                  <small>Integraatio: ${esc(x.delivery_status === 'delivered' ? 'lähetetty ✓' : x.delivery_status === 'failed' ? 'lähetys epäonnistui' : 'vain RESPONDOssa')}</small>
-                  ${x.status !== 'done' ? `<button type="button" class="mark-action-done">Merkitse hoidetuksi</button>` : '<span class="action-done-label">✓ Hoidettu</span>'}
+                  <small>${appText('Integraatio','Integration','Integration')}: ${esc(x.delivery_status === 'delivered' ? appText('lähetetty ✓','skickad ✓','sent ✓') : x.delivery_status === 'failed' ? appText('lähetys epäonnistui','sändningen misslyckades','sending failed') : appText('vain RESPONDOssa','endast i RESPONDO','RESPONDO only'))}</small>
+                  ${x.status !== 'done' ? `<button type="button" class="mark-action-done">${appText('Merkitse hoidetuksi','Markera som klar','Mark as done')}</button>` : `<span class="action-done-label">✓ ${appText('Hoidettu','Klar','Done')}</span>`}
                 </div>
               </article>
             `).join('') : `
               <div class="empty-state">
-                <b>Ei uusia pyyntöjä.</b>
-                <p>Kun asiakas pyytää tarjouksen, ajan, tilauksen tarkistuksen tai yhteydenoton, se ilmestyy tähän.</p>
+                <b>${appText('Ei uusia pyyntöjä.','Inga nya förfrågningar.','No new requests.')}</b>
+                <p>${appText('Kun asiakas pyytää tarjouksen, ajan, tilauksen tarkistuksen tai yhteydenoton, se ilmestyy tähän.','När en kund begär en offert, bokning, orderkontroll eller kontakt visas den här.','When a customer requests a quote, booking, order check, or callback, it appears here.')}</p>
               </div>
             `}
           </div>
@@ -3667,10 +3667,10 @@ async function dashboard(options = {}) {
           <div class="booking-slot-list">
             ${bookingSlots.length ? bookingSlots.slice(0,18).map((slot) => `
               <div class="booking-slot-item ${slot.status}">
-                <div><b>${new Date(slot.starts_at).toLocaleString(appLocale(),{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</b><small>${slot.status === 'booked' ? 'Varattu' : 'Vapaa'}</small></div>
-                ${slot.status === 'open' ? `<button type="button" class="delete-booking-slot" data-id="${esc(slot.id)}">Poista</button>` : '<span>✓</span>'}
+                <div><b>${new Date(slot.starts_at).toLocaleString(appLocale(),{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</b><small>${slot.status === 'booked' ? appText('Varattu','Bokad','Booked') : appText('Vapaa','Ledig','Available')}</small></div>
+                ${slot.status === 'open' ? `<button type="button" class="delete-booking-slot" data-id="${esc(slot.id)}">${appText('Poista','Ta bort','Delete')}</button>` : '<span>✓</span>'}
               </div>
-            `).join('') : '<div class="empty-state compact"><p>Et ole vielä luonut vapaita aikoja.</p></div>'}
+            `).join('') : `<div class="empty-state compact"><p>${appText('Et ole vielä luonut vapaita aikoja.','Du har ännu inte skapat lediga tider.','You have not created any available times yet.')}</p></div>`}
           </div>
         </article>
 
