@@ -23,6 +23,14 @@ test('website imports are pinned against DNS rebinding and scoped to the active 
   assert.match(server, /job\.tenantId!==tenantId/);
 });
 
+test('website importer blocks non-public address ranges beyond RFC1918', () => {
+  assert.match(server, /a === 100 && b >= 64 && b <= 127/);
+  assert.match(server, /a === 198 && \(b === 18 \|\| b === 19\)/);
+  assert.match(server, /a >= 224/);
+  assert.match(server, /value\.startsWith\('\:\:ffff\:'\)/);
+  assert.match(server, /value\.startsWith\('ff'\)/);
+});
+
 test('agent live takeover resolves the agent tenant instead of owner_user_id=agent id', () => {
   assert.match(server, /req\.user\.role === 'agent'[\s\S]{0,500}SELECT t\.\* FROM tenants t JOIN users u ON u\.id=t\.owner_user_id WHERE t\.id=\$1/);
   assert.match(server, /ct\.assigned_agent_id=\$3 AND t\.active=true/);
