@@ -516,7 +516,7 @@ async function requirePlanCapability(req,res,capability) {
   }
   const access=planEntitlements(tenant.subscription_plan);
   if(!access[capability]) {
-    const need=capability==='websiteImport'?'Advanced- tai Business-tilaus':'Advanced- tai Business-tilaus';
+    const need=capability==='allCurrentFeatures' ? 'Business-tilaus' : 'Advanced- tai Business-tilaus';
     res.status(403).json({error:'Tämä ominaisuus vaatii '+need+'.',upgradeRequired:true,currentPlan:access.code});
     return null;
   }
@@ -5663,32 +5663,34 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
         [tenant.id]
       )).rows,
       bookingSlots: bookingSlots.rows,
-      stripeConnect,
+      stripeConnect: planAccess.allCurrentFeatures
+        ? stripeConnect
+        : { connected:false,chargesEnabled:false,detailsSubmitted:false,payoutsEnabled:false },
       googleCalendar: {
-        connected:Boolean(tenant.google_calendar_refresh_token || tenant.google_calendar_access_token),
-        email:tenant.google_calendar_email || '',
-        calendarId:tenant.google_calendar_id || 'primary',
+        connected:planAccess.googleCalendar && Boolean(tenant.google_calendar_refresh_token || tenant.google_calendar_access_token),
+        email:planAccess.googleCalendar ? (tenant.google_calendar_email || '') : '',
+        calendarId:planAccess.googleCalendar ? (tenant.google_calendar_id || 'primary') : 'primary',
       },
-      quoteEngine: {
+      quoteEngine: planAccess.allCurrentFeatures ? {
         serviceName: tenant.quote_service_name || '',
         basePrice: Number(tenant.quote_base_price || 0),
         unitPrice: Number(tenant.quote_unit_price || 0),
         minPrice: Number(tenant.quote_min_price || 0),
         vatPercent: Number(tenant.quote_vat_percent || 0),
         unitLabel: tenant.quote_unit_label || 'kpl',
-      },
-      integrations: {
+      } : { serviceName:'',basePrice:0,unitPrice:0,minPrice:0,vatPercent:0,unitLabel:'kpl' },
+      integrations: planAccess.allCurrentFeatures ? {
         webhookUrl: tenant.action_webhook_url || '',
         webhookSecret: tenant.action_webhook_secret || '',
         channelsApiKey: tenant.channels_api_key || '',
-      },
-      commerce: {
+      } : { webhookUrl:'',webhookSecret:'',channelsApiKey:'' },
+      commerce: planAccess.allCurrentFeatures ? {
         provider:tenant.ecommerce_provider || '',
         shopifyShopDomain:tenant.shopify_shop_domain || '',
         shopifyConnected:Boolean(tenant.shopify_access_token),
         wooBaseUrl:tenant.woo_base_url || '',
         wooConnected:Boolean(tenant.woo_consumer_key && tenant.woo_consumer_secret),
-      },
+      } : { provider:'',shopifyShopDomain:'',shopifyConnected:false,wooBaseUrl:'',wooConnected:false },
       latestSelfTest: latestSelfTest.rows[0] || null,
       truth: (() => {
         const row = truthStats.rows[0] || {};
@@ -7647,7 +7649,11 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     }
 
     const actionRows = firstPartyRespondo ? safeKnowledgeRows : kr.rows;
-    const actions = chatActions(actionRows, message, handoff, responseLang, result.selected);
+    let actions = chatActions(actionRows, message, handoff, responseLang, result.selected);
+    const publicPlanAccess = planEntitlements(t.subscription_plan);
+    if (!publicPlanAccess.allCurrentFeatures) {
+      actions = actions.filter((action) => action?.type !== 'order_status');
+    }
     if (firstPartyFaq?.id === 'respondo-faq-buy') {
       const signupUrl = new URL('/tilaus', BASE).href;
       actions.unshift({
@@ -7730,7 +7736,8 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
     );
 
     let slots = rows.rows;
-    if (slots.length && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token)) {
+    const bookingAccess = planEntitlements(tenant.subscription_plan);
+    if (bookingAccess.googleCalendar && slots.length && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token)) {
       try {
         const events = await googleCalendarEvents(
           tenant,
@@ -7806,6 +7813,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.status(404).json({ error:'Yritystä ei löytynyt.' });
     const tenant = await ensureTenantActionKeys(tr.rows[0]);
+    const actionAccess = planEntitlements(tenant.subscription_plan);
 
     let body = req.body;
     if (typeof body === 'string') {
@@ -7823,6 +7831,9 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     const type = String(body.type || '').trim();
     if (!['quote','booking','order_status','callback'].includes(type)) {
       return res.status(400).json({ error:'Tuntematon toiminto.' });
+    }
+    if (type === 'order_status' && !actionAccess.allCurrentFeatures) {
+      return res.status(403).json({ error:'Tilaustietojen automaattinen tarkistus vaatii Business-tilauksen.', upgradeRequired:true });
     }
 
     const fields = cleanActionFields(type, body.fields);
@@ -7862,7 +7873,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       }
     }
 
-    if (type === 'quote') {
+    if (type === 'quote' && actionAccess.allCurrentFeatures) {
       const base = Number(tenant.quote_base_price || 0);
       const perUnit = Number(tenant.quote_unit_price || 0);
       const minimum = Number(tenant.quote_min_price || 0);
@@ -7907,7 +7918,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         return res.status(409).json({ error:'Tämä aika ei ole enää vapaa. Valitse toinen aika.' });
       }
 
-      if (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token) {
+      if (actionAccess.googleCalendar && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token)) {
         try {
           const conflict = await googleCalendarHasConflict(
             tenant,
@@ -7992,7 +8003,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     };
 
     let calendarSync = { status:'not_configured' };
-    if (type === 'booking') {
+    if (type === 'booking' && actionAccess.googleCalendar) {
       try {
         calendarSync = await createGoogleCalendarBooking(tenant,actionRequest);
       } catch (e) {
@@ -8008,11 +8019,13 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     }
 
     let delivery = { status:'not_configured', result:null };
-    try {
-      delivery = await dispatchActionWebhook(tenant, actionRequest);
-    } catch (e) {
-      console.error('Action webhook delivery failed', e);
-      delivery = { status:'failed', result:{ error:String(e?.message || 'Webhook failed').slice(0,500) } };
+    if (actionAccess.allCurrentFeatures) {
+      try {
+        delivery = await dispatchActionWebhook(tenant, actionRequest);
+      } catch (e) {
+        console.error('Action webhook delivery failed', e);
+        delivery = { status:'failed', result:{ error:String(e?.message || 'Webhook failed').slice(0,500) } };
+      }
     }
 
     await q(
@@ -8049,7 +8062,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
 
     let checkoutUrl = '';
     let paymentAvailable = false;
-    if (type === 'quote' && computedQuote && stripe && tenant.stripe_connected_account_id) {
+    if (actionAccess.allCurrentFeatures && type === 'quote' && computedQuote && stripe && tenant.stripe_connected_account_id) {
       try {
         const connected = await stripe.accounts.retrieve(tenant.stripe_connected_account_id);
         paymentAvailable = Boolean(connected.charges_enabled);
@@ -8130,7 +8143,8 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
 });
 
 
-app.post('/api/app/quote-engine', auth, subscribed, async (req,res) => {
+app.post('/api/app/quote-engine', auth, ownerOnly, subscribed, async (req,res) => {
+  if(!await requirePlanCapability(req,res,'allCurrentFeatures')) return;
   try {
     const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8206,7 +8220,8 @@ app.delete('/api/app/booking-slots/:id', auth, subscribed, async (req,res) => {
   }
 });
 
-app.post('/api/app/stripe-connect/onboard', auth, subscribed, async (req,res) => {
+app.post('/api/app/stripe-connect/onboard', auth, ownerOnly, subscribed, async (req,res) => {
+  if(!await requirePlanCapability(req,res,'allCurrentFeatures')) return;
   try {
     if (!stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
     const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
@@ -8248,7 +8263,8 @@ app.post('/api/app/stripe-connect/onboard', auth, subscribed, async (req,res) =>
   }
 });
 
-app.post('/api/app/integrations', auth, subscribed, async (req,res) => {
+app.post('/api/app/integrations', auth, ownerOnly, subscribed, async (req,res) => {
+  if(!await requirePlanCapability(req,res,'allCurrentFeatures')) return;
   try {
     const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8272,7 +8288,8 @@ app.post('/api/app/integrations', auth, subscribed, async (req,res) => {
   }
 });
 
-app.post('/api/app/integrations/test', auth, subscribed, async (req,res) => {
+app.post('/api/app/integrations/test', auth, ownerOnly, subscribed, async (req,res) => {
+  if(!await requirePlanCapability(req,res,'allCurrentFeatures')) return;
   try {
     const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8310,7 +8327,8 @@ app.post('/api/app/action-requests/:id/status', auth, subscribed, async (req,res
 });
 
 
-app.post('/api/app/commerce', auth, subscribed, async (req,res) => {
+app.post('/api/app/commerce', auth, ownerOnly, subscribed, async (req,res) => {
+  if(!await requirePlanCapability(req,res,'allCurrentFeatures')) return;
   try {
     const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8362,7 +8380,8 @@ app.post('/api/app/commerce', auth, subscribed, async (req,res) => {
   }
 });
 
-app.post('/api/app/commerce/test', auth, subscribed, async (req,res) => {
+app.post('/api/app/commerce/test', auth, ownerOnly, subscribed, async (req,res) => {
+  if(!await requirePlanCapability(req,res,'allCurrentFeatures')) return;
   try {
     const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8518,6 +8537,9 @@ app.post('/api/channel/:slug/message', async (req,res) => {
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.status(404).json({ error:'Yritystä ei löytynyt.' });
     const tenant = await ensureTenantActionKeys(tr.rows[0]);
+    if (!planEntitlements(tenant.subscription_plan).allCurrentFeatures) {
+      return res.status(403).json({ error:'Channels API vaatii Business-tilauksen.', upgradeRequired:true });
+    }
     const authHeader = String(req.headers.authorization || '');
     if (authHeader !== 'Bearer ' + tenant.channels_api_key) {
       return res.status(401).json({ error:'Virheellinen Channels API -avain.' });
