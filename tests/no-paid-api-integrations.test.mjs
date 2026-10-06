@@ -26,6 +26,22 @@ test('production backend has no direct Twilio, Meta messaging or OpenAI API inte
   }
 });
 
+test('backend does not recreate removed paid-channel database schema', () => {
+  const forbidden = [
+    'ADD COLUMN IF NOT EXISTS twilio_',
+    'ADD COLUMN IF NOT EXISTS meta_',
+    'ADD COLUMN IF NOT EXISTS whatsapp_',
+    'ADD COLUMN IF NOT EXISTS instagram_',
+    'ADD COLUMN IF NOT EXISTS voice_',
+    'ADD COLUMN IF NOT EXISTS missed_call_',
+    'CREATE TABLE IF NOT EXISTS missed_call_sms_events',
+  ];
+  for (const marker of forbidden) {
+    assert.equal(server.includes(marker), false, `Unexpected removed paid-channel schema marker: ${marker}`);
+  }
+});
+
+
 test('dashboard has no dormant paid-channel controls', () => {
   const forbidden = [
     "$('#metaChannelsForm')",
