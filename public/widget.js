@@ -27,7 +27,7 @@
     'Tarkista':'Kontrollera','Ei vapaita aikoja juuri nyt':'Inga lediga tider just nu','Valitse vapaa aika':'Välj en ledig tid',
     'Lähetetään…':'Skickar…','Pyyntö vastaanotettu':'Begäran mottagen','Kiitos — yhteystiedot on lähetetty ✓':'Tack — dina kontaktuppgifter har skickats ✓',
     'Lähetetty ✓':'Skickat ✓','Lähetys ei onnistunut. Yritä uudelleen.':'Det gick inte att skicka. Försök igen.','Pyydä yhteydenottoa':'Be om kontakt',
-    'Asiakaspalvelija mukana':'Kundtjänstmedarbetare ansluten','Valmis auttamaan':'Redo att hjälpa','Asiakaspalvelija: ':'Kundtjänst: ',
+    'Asiakaspalvelija mukana':'Kundtjänstmedarbetare ansluten','Valmis auttamaan':'Redo att hjälpa','Asiakaspalvelija: ':'Kundtjänst: ','paikalla':'online',
     'Hei! Miten voin auttaa?':'Hej! Hur kan jag hjälpa?','Chat ei ole käytössä tällä verkkosivulla.':'Chatten är inte tillgänglig på den här webbplatsen.',
     'En löytänyt tähän varmaa vastausta.':'Jag hittade inget säkert svar på detta.','Varmennettu yrityksen tiedoista':'Verifierat från företagets information',
     'Nimi':'Namn','Sähköposti tai puhelin':'E-post eller telefon','Viesti':'Meddelande','Lähetä':'Skicka','Sulje':'Stäng',
@@ -434,7 +434,7 @@
             slots.map((slot) => {
               const start = new Date(slot.starts_at);
               const end = new Date(slot.ends_at);
-              const locale = widgetLang === 'en' ? 'en-GB' : widgetLang === 'sv' ? 'sv-SE' : 'fi-FI';
+              const locale = widgetLang === 'en' ? 'en-GB-u-hc-h12' : widgetLang === 'sv' ? 'sv-SE' : 'fi-FI';
               const date = start.toLocaleDateString(locale, { weekday:'short', day:'2-digit', month:'2-digit' });
               const startTime = start.toLocaleTimeString(locale, { hour:'2-digit', minute:'2-digit' });
               const endTime = end.toLocaleTimeString(locale, { hour:'2-digit', minute:'2-digit' });
@@ -520,7 +520,7 @@
 
         if (data.booking?.startsAt) {
           const start = new Date(data.booking.startsAt);
-          const locale = widgetLang === 'en' ? 'en-GB' : widgetLang === 'sv' ? 'sv-SE' : 'fi-FI';
+          const locale = widgetLang === 'en' ? 'en-GB-u-hc-h12' : widgetLang === 'sv' ? 'sv-SE' : 'fi-FI';
           const formatted = start.toLocaleString(locale, {
             weekday:'long', day:'2-digit', month:'2-digit', year:'numeric',
             hour:'2-digit', minute:'2-digit'
