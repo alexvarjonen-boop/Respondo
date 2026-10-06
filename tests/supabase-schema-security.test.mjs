@@ -11,6 +11,9 @@ test('runtime schema preserves Supabase Data API hardening', () => {
   assert.match(server, /REVOKE ALL PRIVILEGES ON TABLE public\.demo_website_imports FROM authenticated/);
   assert.match(server, /REVOKE EXECUTE ON FUNCTION public\.active_tenant_for_user\(UUID\) FROM anon/);
   assert.match(server, /REVOKE EXECUTE ON FUNCTION public\.active_tenant_for_user\(UUID\) FROM authenticated/);
+  assert.match(server, /ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated/);
+  assert.match(server, /ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated/);
+  assert.match(server, /ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated/);
 });
 
 test('runtime schema keeps indexes for important foreign keys', () => {
