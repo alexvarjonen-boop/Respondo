@@ -1621,7 +1621,11 @@ function bindLanguageSwitch() {
     localStorage.setItem('respondo_lang', lang);
     window.RespondoI18n?.setLanguage?.(lang);
     document.documentElement.lang = lang;
-    api('/api/auth/language', { method:'POST', body:JSON.stringify({ language:lang }) }).catch(() => {});
+    // Anonymous visitors already persist the language in localStorage.
+    // Only the authenticated dashboard needs to persist the preference server-side.
+    if (location.pathname === '/app') {
+      api('/api/auth/language', { method:'POST', body:JSON.stringify({ language:lang }) }).catch(() => {});
+    }
     route();
   };
 
