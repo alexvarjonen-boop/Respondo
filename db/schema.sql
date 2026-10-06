@@ -60,24 +60,6 @@ CREATE TABLE IF NOT EXISTS tenants (
   woo_base_url TEXT,
   woo_consumer_key TEXT,
   woo_consumer_secret TEXT,
-  meta_graph_version TEXT NOT NULL DEFAULT 'v24.0',
-  meta_verify_token TEXT,
-  meta_app_secret TEXT,
-  whatsapp_phone_number_id TEXT,
-  whatsapp_access_token TEXT,
-  instagram_account_id TEXT,
-  instagram_access_token TEXT,
-  twilio_account_sid TEXT,
-  twilio_auth_token TEXT,
-  twilio_phone_number TEXT,
-  voice_handoff_number TEXT,
-  voice_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-  missed_call_sms_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-  missed_call_sms_message TEXT NOT NULL DEFAULT 'Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.',
-  missed_call_sms_mode TEXT NOT NULL DEFAULT 'immediate',
-  missed_call_after_start TEXT NOT NULL DEFAULT '17:00',
-  missed_call_after_end TEXT NOT NULL DEFAULT '08:00',
-  missed_call_timezone TEXT NOT NULL DEFAULT 'Europe/Helsinki',
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -246,16 +228,28 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 CREATE INDEX IF NOT EXISTS idx_chat_messages_thread_created
   ON chat_messages(thread_id,created_at ASC);
 
-CREATE TABLE IF NOT EXISTS missed_call_sms_events (
-  id UUID PRIMARY KEY,
-  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  call_sid TEXT NOT NULL,
-  phone TEXT,
-  call_status TEXT,
-  delivery_status TEXT NOT NULL DEFAULT 'pending',
-  error TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(tenant_id,call_sid)
-);
-CREATE INDEX IF NOT EXISTS idx_missed_call_sms_tenant_created
-  ON missed_call_sms_events(tenant_id,created_at DESC);
+
+-- Respondo is accessed through the application backend, not directly through
+-- Supabase Data API roles. Existing tables are explicitly deny-by-default so a
+-- future Supabase setting cannot accidentally expose tenant/customer data.
+DO $$
+DECLARE
+  api_role TEXT;
+BEGIN
+  FOREACH api_role IN ARRAY ARRAY['anon','authenticated','service_role']
+  LOOP
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname=api_role) THEN
+      EXECUTE format('REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM %I',api_role);
+      EXECUTE format('REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM %I',api_role);
+      EXECUTE format('REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM %I',api_role);
+    END IF;
+  END LOOP;
+END
+$$;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE SELECT, INSERT, UPDATE, DELETE ON TABLES FROM anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE USAGE, SELECT ON SEQUENCES FROM anon, authenticated, service_role;
