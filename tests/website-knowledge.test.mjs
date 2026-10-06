@@ -897,3 +897,38 @@ test('policy marketing headings never become answers in website or demo imports'
  assert.match(result.answer,/45 days/i);
  assert.doesNotMatch(result.answer,/Hassle Free Returns/i);
 });
+
+
+test('retail theme chrome and detached price badges never become ecommerce answers',async()=>{
+ const doc=extractBusinessDocument(`
+   <section><h2>JAG Putters Gift Card</h2>
+     <p>Regular price</p><p>Unit price</p><p>SELECT OPTION</p><p>€199,00</p>
+   </section>
+   <section><h2>Shipping & return</h2>
+     <p>1. Fast delivery & simple checkout 2. Secure payment options 3. Save favorites & track your orders</p>
+     <p>Return within 45 days of purchase. Duties & taxes are non-refundable.</p>
+     <p>In-stock items ship within 3–5 business days. Custom orders usually take 2–6 weeks.</p>
+   </section>
+ `,'https://shop.example/products/test-putter');
+ const bundle={
+   finalUrl:'https://shop.example/',
+   products:[{name:'Test Putter',url:'https://shop.example/products/test-putter',price:199,currency:'EUR',availability:'varastossa'}],
+   pageDocuments:[doc]
+ };
+ const facts=essentialWebsiteCandidates(bundle);
+ const all=facts.map((x)=>x.answer).join(' | ');
+ assert.doesNotMatch(all,/Regular price|Unit price|SELECT OPTION|simple checkout|secure payment options|save favorites/i);
+ assert.equal(facts.some((x)=>x.category==='Hinnat' && /^€?199[,.]00€?$/i.test(x.answer.replace(/\s/g,''))),false);
+ assert.ok(facts.some((x)=>x.category==='Palautukset ja vaihdot'&&/45 days/i.test(x.answer)),JSON.stringify(facts));
+ assert.ok(facts.some((x)=>x.category==='Toimitus ja seuranta'&&/3–5 business days/i.test(x.answer)),JSON.stringify(facts));
+
+ const rows=[
+   {id:'legacy-regular',category:'Usein kysytyt',title:'Gift Card',answer:'Regular price',source_type:'demo_import'},
+   {id:'legacy-option',category:'Usein kysytyt',title:'Gift Card',answer:'SELECT OPTION',source_type:'demo_import'},
+   ...facts.map((item,index)=>({...item,id:'clean-'+index,source_type:'demo_import',source_url:item.sourceUrl}))
+ ];
+ const result=await generateGroundedAnswer({rows,message:'Miten palautus toimii?',lang:'fi'});
+ assert.equal(result.handoff,false,JSON.stringify(result));
+ assert.match(result.answer,/45 days/i);
+ assert.doesNotMatch(result.answer,/Regular price|SELECT OPTION/i);
+});
