@@ -88,3 +88,20 @@ test('workspace list labels tier and yearly billing correctly',()=>{
   assert.match(app,/planCode==='yearly' \|\| planCode\.endsWith\('_yearly'\)/);
 });
 
+
+test('Business integration controls are available in the dashboard',()=>{
+  assert.match(app,/id="business-integrations"/);
+  assert.match(app,/id="integrationsForm"/);
+  assert.match(app,/id="commerceForm"/);
+  assert.match(app,/id="testCommerce"/);
+  assert.match(app,/api\/app\/commerce/);
+  assert.match(app,/api\/app\/commerce\/test/);
+  assert.match(app,/Shopify- ja WooCommerce-tilaushaku/);
+  assert.match(app,/Webhook- ja API-integraatiot/);
+});
+
+test('pricing copy does not promise undefined analytics tiers',()=>{
+  assert.doesNotMatch(app,/Laajempi analytiikka|Täysi analytiikka/);
+  assert.match(app,/Automaattinen hintalaskuri ja Stripe-maksulinkit/);
+  assert.match(app,/Shopify- ja WooCommerce-tilaushaku/);
+});
