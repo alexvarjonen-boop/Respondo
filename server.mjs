@@ -5670,8 +5670,7 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
     [
       'google_calendar_access_token','google_calendar_refresh_token',
       'shopify_access_token','woo_consumer_key','woo_consumer_secret',
-      'meta_app_secret','whatsapp_access_token','instagram_access_token',
-      'twilio_auth_token','action_webhook_secret','channels_api_key'
+      'action_webhook_secret','channels_api_key'
     ].forEach((key) => delete tenantSafe[key]);
 
     const workspaces=(await q(
@@ -6776,12 +6775,6 @@ async function ensureTenantActionKeys(tenant) {
     updates.push('channels_api_key=$' + n++);
     values.push(tenant.channels_api_key);
   }
-  if (!tenant.meta_verify_token) {
-    tenant.meta_verify_token = 'rsp_meta_' + crypto.randomBytes(18).toString('hex');
-    updates.push('meta_verify_token=$' + n++);
-    values.push(tenant.meta_verify_token);
-  }
-
   if (updates.length) {
     values.push(tenant.id);
     await q(
