@@ -5002,6 +5002,19 @@ const publicChatLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Liian monta viestiä. Yritä hetken kuluttua uudelleen.' },
 });
+const publicContactLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator(req) {
+    const forwarded=String(req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.ip || '')
+      .split(',')[0].trim();
+    const ua=String(req.headers['user-agent'] || '').slice(0,240);
+    return crypto.createHash('sha256').update(forwarded+'|'+ua).digest('hex');
+  },
+  message: { error:'Liian monta yhteydenottoa. Yritä myöhemmin uudelleen.' },
+});
 const demoChatLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   limit: 30,
@@ -8085,7 +8098,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
 });
 
 
-app.post('/api/public/demo-lead', publicChatLimiter, async (req,res)=>{
+app.post('/api/public/demo-lead', publicContactLimiter, async (req,res)=>{
   let lang='fi';
   try {
     let body=req.body;
@@ -8176,7 +8189,7 @@ app.post('/api/public/demo-lead', publicChatLimiter, async (req,res)=>{
 });
 
 
-app.post('/api/public/respondo-contact', publicChatLimiter, async (req,res)=>{
+app.post('/api/public/respondo-contact', publicContactLimiter, async (req,res)=>{
   let lang='fi';
   try {
     let body=req.body;
