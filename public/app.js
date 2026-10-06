@@ -1436,7 +1436,19 @@ function restorePersistentUiToFinnish() {
 
 function updateDocumentLanguageMeta(lang) {
   const path = location.pathname;
-  const canonicalPath = (path === '/features' || path === '/funktioner') ? '/ominaisuudet' : path;
+  const canonicalPath = ['/ominaisuudet','/features','/funktioner'].includes(path)
+    ? (lang === 'en' ? '/features' : lang === 'sv' ? '/funktioner' : '/ominaisuudet')
+    : path;
+  const metaPath = ['/features','/funktioner'].includes(canonicalPath) ? '/ominaisuudet' : canonicalPath;
+  const canonicalOrigin = (() => {
+    try {
+      const serverCanonical = document.head.querySelector('link[rel="canonical"]')?.href;
+      if (serverCanonical) return new URL(serverCanonical).origin;
+    } catch {}
+    return /^(?:localhost|127\.0\.0\.1)$/i.test(location.hostname)
+      ? location.origin
+      : 'https://www.respondoai.fi';
+  })();
 
   const metaByPath = {
     '/': {
@@ -1502,7 +1514,7 @@ function updateDocumentLanguageMeta(lang) {
   };
 
   const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
-  const baseMeta = metaByPath[canonicalPath] || metaByPath['/'];
+  const baseMeta = metaByPath[metaPath] || metaByPath['/'];
   const pair = baseMeta[lang] || baseMeta.fi;
   const pageTitle = pair[0];
   const metaDescription = pair[1];
@@ -1522,13 +1534,13 @@ function updateDocumentLanguageMeta(lang) {
     el.setAttribute('content', value);
   };
   const upsertLink = (rel, href) => {
-    let el = document.head.querySelector('link[rel="' + rel + '"][data-respondo-seo]');
+    let el = document.head.querySelector('link[rel="' + rel + '"]');
     if (!el) {
       el = document.createElement('link');
       el.rel = rel;
-      el.dataset.respondoSeo = '1';
       document.head.appendChild(el);
     }
+    el.dataset.respondoSeo = '1';
     el.href = href;
   };
 
@@ -1543,19 +1555,19 @@ function updateDocumentLanguageMeta(lang) {
   upsertMeta('name','twitter:title',pageTitle);
   upsertMeta('name','twitter:description',metaDescription);
 
-  const canonical = new URL(location.origin + canonicalPath);
-  if (lang !== 'fi' && path !== '/features' && path !== '/funktioner') canonical.searchParams.set('lang',lang);
+  const canonical = new URL(canonicalOrigin + canonicalPath);
+  if (lang !== 'fi' && !['/features','/funktioner'].includes(canonicalPath)) canonical.searchParams.set('lang',lang);
   upsertLink('canonical',canonical.toString());
   upsertMeta('property','og:url',canonical.toString());
 
-  document.head.querySelectorAll('link[data-respondo-hreflang]').forEach((el) => el.remove());
+  document.head.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
   if (indexable.has(path)) {
-    const alternatePaths = canonicalPath === '/ominaisuudet'
+    const alternatePaths = metaPath === '/ominaisuudet'
       ? { fi:'/ominaisuudet', sv:'/funktioner', en:'/features' }
       : {
-          fi:canonicalPath,
-          sv:canonicalPath + (canonicalPath.includes('?') ? '&' : '?') + 'lang=sv',
-          en:canonicalPath + (canonicalPath.includes('?') ? '&' : '?') + 'lang=en',
+          fi:metaPath,
+          sv:metaPath + (metaPath.includes('?') ? '&' : '?') + 'lang=sv',
+          en:metaPath + (metaPath.includes('?') ? '&' : '?') + 'lang=en',
         };
     const alternates = [
       ['fi', alternatePaths.fi],
@@ -1567,7 +1579,7 @@ function updateDocumentLanguageMeta(lang) {
       const el = document.createElement('link');
       el.rel = 'alternate';
       el.hreflang = hreflang;
-      el.href = new URL(href, location.origin).toString();
+      el.href = new URL(href, canonicalOrigin).toString();
       el.dataset.respondoHreflang = '1';
       document.head.appendChild(el);
     });
