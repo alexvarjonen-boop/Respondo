@@ -495,7 +495,10 @@ export function essentialWebsiteCandidates(bundle) {
   const catalogLinks = [];
   const serviceLinks = [];
   for (const doc of bundle?.pageDocuments || []) {
-    if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial|blog|uutis|news/.test(norm(new URL(doc.url).pathname))) continue;
+    const docPath=norm(new URL(doc.url).pathname);
+    const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
+    if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial/.test(docPath)) continue;
+    if (!companyInfoDoc && /blog|uutis|news/.test(docPath)) continue;
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
