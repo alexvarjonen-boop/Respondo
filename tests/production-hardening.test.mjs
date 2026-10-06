@@ -40,13 +40,14 @@ test('agent live takeover resolves the agent tenant instead of owner_user_id=age
   assert.match(server, /ct\.assigned_agent_id=\$3 AND t\.active=true/);
 });
 
-test('free checkout bypass is never hardcoded and each configured code is single-use', () => {
+test('owner free checkout bypass is env-configured, reusable and separate from referrals', () => {
   assert.match(server, /process\.env\.OWNER_FREE_CODE/);
   assert.doesNotMatch(server, /const FREE_REFERRAL_CODE = ['"][A-Z0-9-]+['"]/);
-  assert.match(server, /async function consumeOwnerFreeCode\(client, value\)/);
-  assert.match(server, /owner_free_code_used_sha256/);
-  assert.match(server, /FOR UPDATE/);
+  assert.match(server, /async function consumeOwnerFreeCode\(_client, value\)/);
+  assert.match(server, /return isFreeReferralCode\(value\)/);
+  assert.doesNotMatch(server, /owner_free_code_used_sha256/);
   assert.ok((server.match(/consumeOwnerFreeCode\(client, referralCode\)/g)||[]).length >= 2);
+  assert.match(server, /referrer_user_id=\$1 AND stripe_discount_applied=TRUE LIMIT 1/);
 });
 
 test('production start path enables the paid-service safety guard', () => {
