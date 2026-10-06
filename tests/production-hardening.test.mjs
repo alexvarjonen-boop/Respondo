@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const server = fs.readFileSync(new URL('../server.mjs', import.meta.url), 'utf8');
+const appClient = fs.readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
 const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
 test('public widget APIs do not trust missing Origin or Referer', () => {
@@ -140,5 +141,12 @@ test('UI translation failure degrades gracefully and legacy icon requests do not
   assert.match(server, /\/favicon\.ico/);
   assert.match(server, /\/apple-touch-icon\.png/);
   assert.match(server, /\/apple-touch-icon-precomposed\.png/);
-  assert.match(server, /res\.redirect\(302,'\/favicon\.svg'\)/);
+  assert.match(server, /sendFile\(path\.join\(__dirname,'public','favicon\.svg'\)\)/);
+});
+
+
+test('anonymous language switching stays local instead of calling an authenticated API', () => {
+  assert.match(appClient, /if \(location\.pathname === '\/app'\)[\s\S]{0,220}\/api\/auth\/language/);
+  const languageBlock = appClient.slice(appClient.indexOf('function bindLanguageSwitch'), appClient.indexOf('function nav'));
+  assert.match(languageBlock, /localStorage\.setItem\('respondo_lang', lang\)/);
 });
