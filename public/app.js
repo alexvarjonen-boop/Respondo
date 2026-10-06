@@ -2170,7 +2170,6 @@ function pricingSection() {
         ${card('Basic',49.99,44.99,539.88,2,[
           appText('AI-chat omalle verkkosivulle','AI-chatt på din webbplats','AI chat on your website'),
           appText('Personoi botti yrityksesi brändiin','Anpassa botten till företagets varumärke','Personalize the bot to your company brand'),
-          appText('Hae tiedot automaattisesti verkkosivulta','Hämta information automatiskt från webbplatsen','Automatic website knowledge import'),
           appText('Oma kysymys–vastaus-tietopohja','Egen fråge- och svarskunskapsbas','Q&A knowledge base'),
           appText('Ajanvaraukset','Bokningar','Appointments and booking'),
           appText('Yhteydenottojen ja liidien keräys','Insamling av kontakter och leads','Contact and lead capture'),
