@@ -7,43 +7,59 @@ async function clearLegacyPaidChannelState() {
   if (!process.env.DATABASE_URL) return;
   const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl });
   try {
-    try {
-      await pool.query(`
-        UPDATE tenants
-           SET twilio_account_sid=NULL,
-               twilio_auth_token=NULL,
-               twilio_phone_number=NULL,
-               voice_handoff_number=NULL,
-               voice_enabled=FALSE,
-               missed_call_sms_enabled=FALSE
-         WHERE twilio_account_sid IS NOT NULL
-            OR twilio_auth_token IS NOT NULL
-            OR twilio_phone_number IS NOT NULL
-            OR voice_handoff_number IS NOT NULL
-            OR voice_enabled=TRUE
-            OR missed_call_sms_enabled=TRUE
-      `);
-      await pool.query('DELETE FROM missed_call_sms_events');
-    } catch (error) {
-      if (!['42703','42P01'].includes(String(error?.code || ''))) throw error;
+    // Old paid-channel columns may still exist in databases upgraded from older
+    // Respondo versions. Inspect the schema first so startup never references a
+    // column or table that has already been removed.
+    const nullableResetSql = new Map([
+      ['twilio_account_sid', 'twilio_account_sid=NULL'],
+      ['twilio_auth_token', 'twilio_auth_token=NULL'],
+      ['twilio_phone_number', 'twilio_phone_number=NULL'],
+      ['voice_business_number', 'voice_business_number=NULL'],
+      ['voice_greeting', 'voice_greeting=NULL'],
+      ['voice_handoff_number', 'voice_handoff_number=NULL'],
+      ['meta_app_secret', 'meta_app_secret=NULL'],
+      ['meta_verify_token', 'meta_verify_token=NULL'],
+      ['whatsapp_phone_number_id', 'whatsapp_phone_number_id=NULL'],
+      ['whatsapp_access_token', 'whatsapp_access_token=NULL'],
+      ['instagram_account_id', 'instagram_account_id=NULL'],
+      ['instagram_access_token', 'instagram_access_token=NULL'],
+    ]);
+    const booleanResetSql = new Map([
+      ['voice_enabled', 'voice_enabled=FALSE'],
+      ['missed_call_sms_enabled', 'missed_call_sms_enabled=FALSE'],
+    ]);
+    const legacyColumns = [...nullableResetSql.keys(), ...booleanResetSql.keys()];
+
+    const existingColumns = await pool.query(
+      `SELECT column_name
+         FROM information_schema.columns
+        WHERE table_schema='public'
+          AND table_name='tenants'
+          AND column_name = ANY($1::text[])`,
+      [legacyColumns],
+    );
+    const existing = new Set(existingColumns.rows.map((row) => String(row.column_name || '')));
+    const assignments = [
+      ...[...nullableResetSql].filter(([name]) => existing.has(name)).map(([,sql]) => sql),
+      ...[...booleanResetSql].filter(([name]) => existing.has(name)).map(([,sql]) => sql),
+    ];
+
+    if (assignments.length) {
+      const dirtyPredicates = [
+        ...[...nullableResetSql].filter(([name]) => existing.has(name)).map(([name]) => name + ' IS NOT NULL'),
+        ...[...booleanResetSql].filter(([name]) => existing.has(name)).map(([name]) => name + '=TRUE'),
+      ];
+      await pool.query(
+        'UPDATE tenants SET ' + assignments.join(', ') +
+        (dirtyPredicates.length ? ' WHERE ' + dirtyPredicates.join(' OR ') : ''),
+      );
     }
 
-    try {
-      await pool.query(`
-        UPDATE tenants
-           SET meta_app_secret=NULL,
-               whatsapp_phone_number_id=NULL,
-               whatsapp_access_token=NULL,
-               instagram_account_id=NULL,
-               instagram_access_token=NULL
-         WHERE meta_app_secret IS NOT NULL
-            OR whatsapp_phone_number_id IS NOT NULL
-            OR whatsapp_access_token IS NOT NULL
-            OR instagram_account_id IS NOT NULL
-            OR instagram_access_token IS NOT NULL
-      `);
-    } catch (error) {
-      if (!['42703','42P01'].includes(String(error?.code || ''))) throw error;
+    const legacySmsTable = await pool.query(
+      "SELECT to_regclass('public.missed_call_sms_events') AS relation_name",
+    );
+    if (legacySmsTable.rows[0]?.relation_name) {
+      await pool.query('DELETE FROM missed_call_sms_events');
     }
   } finally {
     await pool.end();
