@@ -3724,9 +3724,20 @@ async function dashboard(options = {}) {
             <article class="workspace-manager-row ${workspace.id===t.id?'active':''}">
               <div>
                 <b>${esc(workspace.name)}</b>
-                <small>${workspace.subscription_plan==='yearly'
-                  ? appText('Vuositilaus','Årsabonnemang','Annual plan')
-                  : appText('Kuukausitilaus','Månadsabonnemang','Monthly plan')} · ${workspace.subscription_status==='trialing'
+                <small>${(() => {
+                  const planCode=String(workspace.subscription_plan || '');
+                  const tier=planCode.startsWith('basic_')
+                    ? 'Basic'
+                    : planCode.startsWith('advanced_')
+                      ? 'Advanced'
+                      : planCode.startsWith('business_') || ['monthly','yearly','owner_test'].includes(planCode)
+                        ? 'Business'
+                        : 'Respondo';
+                  const billing=planCode==='yearly' || planCode.endsWith('_yearly')
+                    ? appText('Vuositilaus','Årsabonnemang','Annual plan')
+                    : appText('Kuukausitilaus','Månadsabonnemang','Monthly plan');
+                  return tier+' · '+billing;
+                })()} · ${workspace.subscription_status==='trialing'
                     ? appText('Kokeilu','Provperiod','Trial')
                     : appText('Aktiivinen','Aktiv','Active')}</small>
               </div>
