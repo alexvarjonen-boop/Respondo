@@ -34,13 +34,17 @@ test('first-party seed generically quarantines approved foreign website/profile 
 });
 
 test('first-party production tenant prefers the official Respondo domain over Railway URLs',()=>{
+  assert.match(
+    server,
+    /process\.env\.NODE_ENV === 'production' \? 'https:\/\/www\.respondoai\.fi' : BASE/
+  );
   const start=server.indexOf('function respondoOwnerSiteUrl()');
   assert.ok(start>=0);
   const body=server.slice(start,start+1200);
   assert.match(body,/process\.env\.RESPONDO_CANONICAL_URL/);
-  assert.match(body,/process\.env\.NODE_ENV === 'production' \? 'https:\/\/respondoai\.fi' : ''/);
+  assert.match(body,/SEO_CANONICAL_ORIGIN/);
   assert.ok(
-    body.indexOf("'https://respondoai.fi'") < body.indexOf('process.env.BASE_URL'),
-    'official domain must be preferred before BASE_URL'
+    body.indexOf('SEO_CANONICAL_ORIGIN') < body.indexOf('process.env.BASE_URL'),
+    'official canonical origin must be preferred before BASE_URL and Railway URLs'
   );
 });
