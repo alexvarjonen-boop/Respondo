@@ -2612,7 +2612,9 @@ function signup() {
 }
 
 function login() {
-  const checkoutError = new URLSearchParams(location.search).get('checkout_error') === '1';
+  const loginParams = new URLSearchParams(location.search);
+  const checkoutError = loginParams.get('checkout_error') === '1';
+  const passwordResetDone = loginParams.get('password_reset') === '1';
   return `<div>
     ${nav()}
     <main class="formpage login-page">
@@ -2627,8 +2629,24 @@ function login() {
           <div class="form-head"><span>${appText('KIRJAUDU','LOGGA IN','LOG IN')}</span><b>${appText('Tervetuloa takaisin','Välkommen tillbaka','Welcome back')}</b></div>
           ${socialAuthButtons('login')}
           <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
-          <div class="field"><label>Salasana</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
+          <div class="field"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
           <button class="btn checkout-button" type="submit">${appText('Kirjaudu sisään','Logga in','Log in')} <span>→</span></button>
+          <button class="btn ghost" type="button" id="showPasswordReset" aria-expanded="false" aria-controls="passwordResetRequestPanel">${appText('Unohtuiko salasana?','Glömt lösenordet?','Forgot password?')}</button>
+          <div id="passwordResetRequestPanel" hidden>
+            <div class="agent-login-fields">
+              <div class="field"><label for="resetEmail">${appText('Tilisi sähköposti','Kontots e-postadress','Account email')}</label><input id="resetEmail" type="email" autocomplete="email" placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
+              <button class="btn checkout-button" type="button" id="requestPasswordReset">${appText('Lähetä palautuslinkki','Skicka återställningslänk','Send reset link')} →</button>
+              <div id="passwordResetRequestMsg" role="status" aria-live="polite"></div>
+            </div>
+          </div>
+          <div id="passwordResetConfirmPanel" hidden>
+            <div class="agent-login-fields">
+              <div class="field"><label for="resetNewPassword">${appText('Uusi salasana','Nytt lösenord','New password')}</label><input id="resetNewPassword" type="password" autocomplete="new-password" minlength="10" maxlength="200"></div>
+              <div class="field"><label for="resetConfirmPassword">${appText('Uusi salasana uudelleen','Upprepa nytt lösenord','Repeat new password')}</label><input id="resetConfirmPassword" type="password" autocomplete="new-password" minlength="10" maxlength="200"></div>
+              <button class="btn checkout-button" type="button" id="confirmPasswordReset">${appText('Tallenna uusi salasana','Spara nytt lösenord','Save new password')} →</button>
+              <div id="passwordResetConfirmMsg" role="status" aria-live="polite"></div>
+            </div>
+          </div>
           <div class="agent-login-separator"><span>${appText('Asiakaspalvelija?','Kundservicemedarbetare?','Support agent?')}</span></div>
           <button class="btn" type="button" id="showAgentLogin" aria-expanded="false" aria-controls="agentLoginPanel">${appText('Kirjaudu työntekijätunnuksella','Logga in med medarbetarkonto','Log in with staff account')}</button>
           <div id="agentLoginPanel" hidden>
@@ -2636,10 +2654,15 @@ function login() {
               <div class="field"><label for="agentUsername">${appText('Käyttäjänimi','Användarnamn','Username')}</label><input id="agentUsername" name="agentUsername" autocomplete="username" minlength="3"></div>
               <div class="field"><label for="agentPassword">${appText('Salasana','Lösenord','Password')}</label><input id="agentPassword" name="agentPassword" type="password" autocomplete="current-password"></div>
               <button class="btn checkout-button" type="button" id="submitAgentLogin">${appText('Kirjaudu työntekijänä','Logga in som medarbetare','Log in as staff')} →</button>
+              <small>${appText('Unohtuiko työntekijän salasana? Yrityksen pääkäyttäjä voi vaihtaa sen hallintapaneelista.','Glömt medarbetarlösenordet? Företagets huvudanvändare kan byta det i kontrollpanelen.','Forgot the staff password? The company owner can reset it from the dashboard.')}</small>
               <div id="agentLoginMsg" role="status" aria-live="polite"></div>
             </div>
           </div>
-          <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : (checkoutError ? '<div class="notice error">Automaattinen kirjautuminen ei onnistunut. Kirjaudu samalla sähköpostilla ja salasanalla, jonka loit ennen maksua.</div>' : '')}</div>
+          <div id="msg">${passwordResetDone
+            ? `<div class="notice success">${appText('Salasana vaihdettu. Voit nyt kirjautua uudella salasanalla.','Lösenordet har ändrats. Du kan nu logga in med det nya lösenordet.','Password changed. You can now log in with your new password.')}</div>`
+            : oauthErrorMessage()
+              ? `<div class="notice error">${esc(oauthErrorMessage())}</div>`
+              : (checkoutError ? `<div class="notice error">${appText('Automaattinen kirjautuminen ei onnistunut. Kirjaudu samalla sähköpostilla ja salasanalla, jonka loit ennen maksua.','Automatisk inloggning misslyckades. Logga in med samma e-postadress och lösenord som du skapade före betalningen.','Automatic sign-in failed. Log in with the same email and password you created before payment.')}</div>` : '')}</div>
         </form>
       </div>
     </main>
@@ -4565,6 +4588,83 @@ async function route() {
   }
 
   if (path === '/kirjaudu') {
+    const resetToken=new URLSearchParams(location.search).get('reset') || '';
+    const resetToggle=$('#showPasswordReset');
+    const resetRequestPanel=$('#passwordResetRequestPanel');
+    const resetConfirmPanel=$('#passwordResetConfirmPanel');
+    const resetEmail=$('#resetEmail');
+    const requestReset=$('#requestPasswordReset');
+    const confirmReset=$('#confirmPasswordReset');
+
+    if(resetToken && resetConfirmPanel){
+      resetConfirmPanel.hidden=false;
+      resetToggle?.setAttribute('aria-expanded','true');
+      $('#resetNewPassword')?.focus();
+    }
+
+    resetToggle?.addEventListener('click',()=>{
+      if(resetToken && resetConfirmPanel){
+        resetConfirmPanel.hidden=!resetConfirmPanel.hidden;
+        resetToggle.setAttribute('aria-expanded',String(!resetConfirmPanel.hidden));
+        return;
+      }
+      if(!resetRequestPanel) return;
+      const opening=resetRequestPanel.hidden;
+      resetRequestPanel.hidden=!opening;
+      resetToggle.setAttribute('aria-expanded',String(opening));
+      if(opening){
+        const loginEmail=$('#login')?.elements?.email?.value || '';
+        if(resetEmail && !resetEmail.value) resetEmail.value=loginEmail;
+        resetEmail?.focus();
+      }
+    });
+
+    requestReset?.addEventListener('click',async()=>{
+      const msg=$('#passwordResetRequestMsg');
+      const email=String(resetEmail?.value || '').trim();
+      if(!email){
+        if(msg) msg.innerHTML='<div class="notice error">'+appText('Anna sähköpostiosoitteesi.','Ange din e-postadress.','Enter your email address.')+'</div>';
+        return;
+      }
+      const original=requestReset.innerHTML;
+      requestReset.disabled=true;
+      requestReset.innerHTML=appText('Lähetetään…','Skickar…','Sending…');
+      try{
+        const result=await api('/api/auth/password-reset/request',{method:'POST',body:JSON.stringify({email})});
+        if(msg) msg.innerHTML='<div class="notice success">'+esc(result.message || appText('Jos sähköpostilla löytyy tili, palautuslinkki lähetetään.','Om ett konto finns för e-postadressen skickas en återställningslänk.','If an account exists for that email, a reset link will be sent.'))+'</div>';
+      }catch(err){
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
+      }finally{
+        requestReset.disabled=false;
+        requestReset.innerHTML=original;
+      }
+    });
+
+    confirmReset?.addEventListener('click',async()=>{
+      const msg=$('#passwordResetConfirmMsg');
+      const newPassword=String($('#resetNewPassword')?.value || '');
+      const confirmPassword=String($('#resetConfirmPassword')?.value || '');
+      if(newPassword.length < 10){
+        if(msg) msg.innerHTML='<div class="notice error">'+appText('Salasanan pitää olla vähintään 10 merkkiä.','Lösenordet måste vara minst 10 tecken.','Password must be at least 10 characters.')+'</div>';
+        return;
+      }
+      if(newPassword !== confirmPassword){
+        if(msg) msg.innerHTML='<div class="notice error">'+appText('Salasanat eivät täsmää.','Lösenorden matchar inte.','Passwords do not match.')+'</div>';
+        return;
+      }
+      const original=confirmReset.innerHTML;
+      confirmReset.disabled=true;
+      confirmReset.innerHTML=appText('Tallennetaan…','Sparar…','Saving…');
+      try{
+        await api('/api/auth/password-reset/confirm',{method:'POST',body:JSON.stringify({token:resetToken,newPassword})});
+        location.href='/kirjaudu?password_reset=1';
+      }catch(err){
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
+        confirmReset.disabled=false;
+        confirmReset.innerHTML=original;
+      }
+    });
+
     const toggle=$('#showAgentLogin'),panel=$('#agentLoginPanel'),submit=$('#submitAgentLogin');
     toggle?.addEventListener('click',()=>{
       const opening=panel.hidden;
