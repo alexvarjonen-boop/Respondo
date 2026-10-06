@@ -249,3 +249,15 @@ test('homepage contact never claims email delivery when the mail channel is unav
   assert.match(server, /Viestisi tallennettiin Respondon yhteydenottoihin/);
   assert.match(server, /message was saved in Respondo contact requests/);
 });
+
+
+test('accepted public actions survive secondary persistence failures', () => {
+  const start=server.indexOf("app.post('/api/public/:slug/action-request'");
+  const end=server.indexOf("app.post('/api/app/quote-engine'",start);
+  const block=server.slice(start,end);
+  assert.match(block, /Action lead index write failed/);
+  assert.match(block, /Calendar sync result persistence failed/);
+  assert.match(block, /Action delivery result persistence failed/);
+  assert.match(block, /Action analytics write failed/);
+  assert.match(block, /return res\.json\(\{[\s\S]{0,120}ok:true/);
+});
