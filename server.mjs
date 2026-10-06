@@ -5402,7 +5402,7 @@ app.post('/api/auth/agent-login', loginLimiter, async (req,res) => {
     res.cookie(COOKIE,jwt.sign({ sub:r.rows[0].id,tenantId:r.rows[0].tenant_id,role:'agent',agentId:r.rows[0].id,sv:Number(r.rows[0].session_version || 0) },JWT,{expiresIn:'14d'}),{
       httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax',maxAge:1209600000,
     });
-    await q("UPDATE support_agents SET status='online',updated_at=NOW() WHERE id=$1",[r.rows[0].id]);
+    await q("UPDATE support_agents SET status='online',updated_at=NOW() WHERE id=$1 AND tenant_id=$2",[r.rows[0].id,r.rows[0].tenant_id]);
     return res.json({ ok:true,role:'agent',display_name:r.rows[0].display_name,company_name:r.rows[0].company_name });
   } catch(e) { return res.status(500).json({ error:'Kirjautuminen epäonnistui.' }); }
 });
@@ -6598,8 +6598,8 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
       );
       if (duplicate.rowCount) {
         await client.query(
-          'UPDATE knowledge SET category=$1,answer=$2,keywords=$3,source_type=\'website\',source_url=$4,approved=true,verified_at=NOW(),updated_at=NOW() WHERE id=$5',
-          [category, answer, keywords, sourceUrl, duplicate.rows[0].id],
+          'UPDATE knowledge SET category=$1,answer=$2,keywords=$3,source_type=\'website\',source_url=$4,approved=true,verified_at=NOW(),updated_at=NOW() WHERE id=$5 AND tenant_id=$6',
+          [category, answer, keywords, sourceUrl, duplicate.rows[0].id, tenantId],
         );
       } else {
         await client.query(
@@ -7185,7 +7185,7 @@ async function appendChatMessage({
     ],
   );
   if (threadId) {
-    await q('UPDATE chat_threads SET last_activity_at=NOW(),updated_at=NOW() WHERE id=$1',[threadId]);
+    await q('UPDATE chat_threads SET last_activity_at=NOW(),updated_at=NOW() WHERE id=$1 AND tenant_id=$2',[threadId,tenantId]);
   }
   return row.rows[0];
 }
@@ -8369,8 +8369,8 @@ app.get('/api/public/payment/verify', async (req,res) => {
             SET status='done',
                 result=COALESCE(result,'{}'::jsonb) || $1::jsonb,
                 updated_at=NOW()
-          WHERE id=$2`,
-        [JSON.stringify({ paid:true,paidAt:new Date().toISOString(),checkoutSessionId:session.id }),actionId],
+          WHERE id=$2 AND tenant_id=$3`,
+        [JSON.stringify({ paid:true,paidAt:new Date().toISOString(),checkoutSessionId:session.id }),actionId,row.tenant_id],
       );
     }
     return res.json({
@@ -8590,8 +8590,8 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       await q(
         `UPDATE action_requests
             SET result=COALESCE(result,'{}'::jsonb) || $1::jsonb,updated_at=NOW()
-          WHERE id=$2`,
-        [JSON.stringify({ calendarSync }),id],
+          WHERE id=$2 AND tenant_id=$3`,
+        [JSON.stringify({ calendarSync }),id,tenant.id],
       );
     }
 
@@ -8673,8 +8673,8 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
           await q(
             `UPDATE action_requests
                 SET result=COALESCE(result,'{}'::jsonb) || $1::jsonb,updated_at=NOW()
-              WHERE id=$2`,
-            [JSON.stringify({ checkoutSessionId:checkout.id }),id],
+              WHERE id=$2 AND tenant_id=$3`,
+            [JSON.stringify({ checkoutSessionId:checkout.id }),id,tenant.id],
           );
         }
       } catch (e) {
@@ -9097,7 +9097,7 @@ app.post('/api/app/live/:id/reply', auth, async (req,res) => {
     if (String(thread.source_channel || 'website') !== 'website') {
       return res.status(410).json({ error:'Tämä aiempi ulkoinen kanavaintegraatio on poistettu. Vastaa asiakkaalle alkuperäisessä kanavassa.' });
     }
-    await q("UPDATE chat_threads SET mode='human',status='open',updated_at=NOW() WHERE id=$1",[thread.id]);
+    await q("UPDATE chat_threads SET mode='human',status='open',updated_at=NOW() WHERE id=$1 AND tenant_id=$2",[thread.id,tenant.id]);
     const message = await appendChatMessage({
       tenantId:tenant.id,threadId:thread.id,sourceChannel:thread.source_channel,
       externalContactId:thread.external_contact_id,visitorRef:thread.visitor_ref,
