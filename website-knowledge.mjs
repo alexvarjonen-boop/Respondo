@@ -3,7 +3,7 @@
 const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim();
 const review = /arvostel|asiakaskokem|asiakaspalaut|testimonial|review|rating|omdomen|recension|kundberatt|aggregateRating/i;
-const junk = /cookie|evaste|privacy|tietosuoja|integritet|copyright|all rights reserved|kayttoeh|terms of|skip to|toggle nav|add to cart|ostoskori|kirjaudu|log in|sign in|uutiskirje|newsletter|localstorage|queryselector|javascript|webpack|more to (?:enjoy|get|unlock|qualify for) free shipping|away from free shipping|unlock free shipping|(?:spend|add).{0,40}more.{0,40}free shipping/i;
+const junk = /cookie|evaste|privacy|tietosuoja|integritet|copyright|all rights reserved|kayttoeh|terms of|skip to|toggle nav|add to cart|ostoskori|kirjaudu|log in|sign in|uutiskirje|newsletter|localstorage|queryselector|javascript|webpack|more to (?:enjoy|get|unlock|qualify for) free shipping|away from free shipping|unlock free shipping|(?:spend|add).{0,40}more.{0,40}free shipping|^(?:regular price|unit price|select option|choose option|product description|product description shipping (?:&|and) return)$/i;
 const service = /palvel|tarjoamme|teemme|service|we (?:offer|provide)|tjanst|vi erbjuder|pesu|siivou|puhdist|maalaus|raivaus|leikkaus|huolto|asennu|korjau|kuljet|muutto|poisvienti|purku|kartoit|kierrat|murske|asbesti|haitta.?aine|saneeraus|linjasaneeraus/;
 const hours = /auki|opening|hours|oppet|maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mandag|tisdag|onsdag|torsdag|fredag|lordag|sondag|\b(?:ma|ti|ke|to|pe|la|su|mon|tue|wed|thu|fri|sat|sun|man|tis|ons|tor|fre|lor|son)(?:\b|–|-)/;
 const clock = /\b\d{1,2}(?:[:.]\d{2})?\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\d{2})?\b|\b\d{1,2}:\d{2}\b|\b(?:closed|suljettu|stangt|24\/7)\b/i;
@@ -20,6 +20,10 @@ function policyHeadingOnly(value, kind = '') {
   const raw=clean(value);
   const n=norm(raw).replace(/[–—]/g,'-');
   if(!n) return true;
+  // Theme benefit strips and accordion headings may contain policy keywords but
+  // still do not state an actual customer rule.
+  if(/(?:simple checkout|secure payment options?|save favorites?|track your orders)/i.test(raw)) return true;
+  if(/^(?:shipping\s*(?:&|and)\s*return|product description\s+shipping\s*(?:&|and)\s*return|order processing and shipping information(?:\s+for\s*\S+|\s*for\S+)?)$/i.test(n)) return true;
   if(/\d/.test(n)) return false;
   if(kind==='payment' && /visa|mastercard|amex|american express|paypal|klarna|mobilepay|apple pay|google pay|kortti|card|lasku|invoice|faktura/.test(n)) return false;
   if(/\b(?:can|may|must|will|are|is|has|have|accept|accepted|receive|ship|shipped|return(?:ed|ing)?|refund(?:ed|s)?|exchange(?:d|s)?|voi|voidaan|saa|taytyy|täytyy|on|ovat|hyvitet|palautetaan|vaihdetaan|toimitetaan|lähetetään|lahetetaan|kan|får|far|måste|maste|är|ar|betalas|returneras|aterbetalas|återbetalas)\b/i.test(raw)) return false;
