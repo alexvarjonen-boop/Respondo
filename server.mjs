@@ -22,6 +22,15 @@ const app = express();
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT || 3000);
 const BASE = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+const SEO_CANONICAL_ORIGIN = (() => {
+  const preferred = String(process.env.RESPONDO_CANONICAL_URL || '').trim() ||
+    (process.env.NODE_ENV === 'production' ? 'https://www.respondoai.fi' : BASE);
+  try {
+    return new URL(preferred).origin.replace(/\/$/, '');
+  } catch {
+    return BASE;
+  }
+})();
 
 const SEO_INDEXABLE_PATHS = new Set([
   '/',
@@ -80,18 +89,28 @@ function seoLanguageForRequest(req) {
   return ['fi','sv','en'].includes(value) ? value : 'fi';
 }
 
-function seoCanonicalPath(pathname) {
-  if (pathname === '/features' || pathname === '/funktioner') return '/ominaisuudet';
+function seoCanonicalPath(pathname, lang='fi') {
+  if (['/ominaisuudet','/features','/funktioner'].includes(pathname)) {
+    return lang === 'en' ? '/features' : lang === 'sv' ? '/funktioner' : '/ominaisuudet';
+  }
   return pathname;
 }
 
-function requestPublicOrigin(req) {
-  const forwardedProto = String(req.get('x-forwarded-proto') || '').split(',')[0].trim();
-  const forwardedHost = String(req.get('x-forwarded-host') || '').split(',')[0].trim();
-  const protocol = forwardedProto || req.protocol || 'https';
-  const host = forwardedHost || req.get('host');
-  if (host) return protocol + '://' + host;
-  return BASE;
+function seoMetaPath(pathname) {
+  return ['/features','/funktioner'].includes(pathname) ? '/ominaisuudet' : pathname;
+}
+
+function seoLanguageUrls(pathname) {
+  const metaPath = seoMetaPath(pathname);
+  const build = (lang) => {
+    const path = metaPath === '/ominaisuudet'
+      ? (lang === 'en' ? '/features' : lang === 'sv' ? '/funktioner' : '/ominaisuudet')
+      : metaPath;
+    const url = new URL(SEO_CANONICAL_ORIGIN + path);
+    if (lang !== 'fi' && metaPath !== '/ominaisuudet') url.searchParams.set('lang', lang);
+    return url.toString();
+  };
+  return { fi:build('fi'), sv:build('sv'), en:build('en') };
 }
 
 function escapeHtml(value) {
@@ -106,15 +125,16 @@ function escapeHtml(value) {
 function seoMetaForRequest(req) {
   const lang = seoLanguageForRequest(req);
   const rawPath = req.path || '/';
-  const canonicalPath = seoCanonicalPath(rawPath);
+  const canonicalPath = seoCanonicalPath(rawPath, lang);
+  const metaPath = seoMetaPath(rawPath);
   const languageMeta = SEO_META[lang] || SEO_META.fi;
   const fallback = languageMeta['/'];
-  const pair = languageMeta[canonicalPath] || fallback;
+  const pair = languageMeta[metaPath] || fallback;
   const isIndexable = SEO_INDEXABLE_PATHS.has(rawPath);
   const isKnown = isIndexable || SEO_APP_PATHS.has(rawPath);
-  const origin = requestPublicOrigin(req).replace(/\/$/,'');
+  const origin = SEO_CANONICAL_ORIGIN;
   const canonicalUrl = new URL(origin + canonicalPath);
-  if (lang !== 'fi' && rawPath !== '/features' && rawPath !== '/funktioner') {
+  if (lang !== 'fi' && !['/features','/funktioner'].includes(canonicalPath)) {
     canonicalUrl.searchParams.set('lang', lang);
   }
   return {
@@ -125,7 +145,78 @@ function seoMetaForRequest(req) {
     canonical: canonicalUrl.toString(),
     origin,
     isKnown,
+    alternates:seoLanguageUrls(rawPath),
   };
+}
+
+function seoStructuredData(seo) {
+  const languageNames = { fi:'Finnish', sv:'Swedish', en:'English' };
+  const softwareDescription = SEO_META[seo.lang]?.['/']?.[1] || SEO_META.fi['/'][1];
+  const graph = [
+    {
+      '@type':'Organization',
+      '@id':SEO_CANONICAL_ORIGIN + '/#organization',
+      name:'Respondo AI',
+      alternateName:'RESPONDO AI',
+      url:SEO_CANONICAL_ORIGIN + '/',
+      description:'B2B customer service software for websites with automated answers, knowledge-base management, lead capture, bookings and human takeover.',
+    },
+    {
+      '@type':'WebSite',
+      '@id':SEO_CANONICAL_ORIGIN + '/#website',
+      url:SEO_CANONICAL_ORIGIN + '/',
+      name:'Respondo AI',
+      publisher:{ '@id':SEO_CANONICAL_ORIGIN + '/#organization' },
+      inLanguage:['fi','sv','en'],
+    },
+    {
+      '@type':['SoftwareApplication','WebApplication'],
+      '@id':SEO_CANONICAL_ORIGIN + '/#software',
+      name:'Respondo AI',
+      url:SEO_CANONICAL_ORIGIN + '/',
+      applicationCategory:'BusinessApplication',
+      operatingSystem:'Web',
+      browserRequirements:'Requires a modern web browser',
+      description:softwareDescription,
+      inLanguage:['fi','sv','en'],
+      availableLanguage:['Finnish','Swedish','English'],
+      audience:{ '@type':'BusinessAudience', audienceType:'Businesses with a website' },
+      featureList:[
+        '24/7 website customer service bot',
+        'Company-specific knowledge base',
+        'Website information import',
+        'Lead and contact request capture',
+        'Booking requests and calendar workflows',
+        'Human takeover and employee accounts',
+        'Finnish, Swedish and English customer conversations',
+        'Shopify and WooCommerce commerce workflows'
+      ],
+      offers:[
+        { '@type':'Offer', name:'Respondo Basic', price:'49.99', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/tilaus' },
+        { '@type':'Offer', name:'Respondo Advanced', price:'64.99', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/tilaus' },
+        { '@type':'Offer', name:'Respondo Business', price:'79.99', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/tilaus' }
+      ],
+      publisher:{ '@id':SEO_CANONICAL_ORIGIN + '/#organization' },
+    },
+    {
+      '@type':'WebPage',
+      '@id':seo.canonical + '#webpage',
+      url:seo.canonical,
+      name:seo.title,
+      description:seo.description,
+      inLanguage:seo.lang,
+      isPartOf:{ '@id':SEO_CANONICAL_ORIGIN + '/#website' },
+      about:{ '@id':SEO_CANONICAL_ORIGIN + '/#software' },
+      mainEntity:{ '@id':SEO_CANONICAL_ORIGIN + '/#software' },
+      keywords: seo.lang === 'fi'
+        ? 'asiakaspalvelubotti, AI asiakaspalvelu, chatbot yritykselle, verkkosivubotti, asiakaspalveluautomaatio'
+        : seo.lang === 'sv'
+          ? 'kundservicebot, AI kundservice, chatbot för företag, webbplatsbot, kundserviceautomatisering'
+          : 'customer service bot, AI customer service, business chatbot, website chatbot, customer service automation',
+      publisher:{ '@id':SEO_CANONICAL_ORIGIN + '/#organization' },
+    }
+  ];
+  return JSON.stringify({ '@context':'https://schema.org', '@graph':graph }).replace(/</g,'\\u003c');
 }
 
 let cachedIndexHtml = '';
@@ -136,6 +227,7 @@ async function renderIndexHtml(req) {
   const seo = seoMetaForRequest(req);
   let html = cachedIndexHtml
     .replace(/<html\b[^>]*lang="[^"]*"[^>]*>/i, '<html lang="' + escapeHtml(seo.lang) + '">')
+    .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/i, '')
     .replace(/<title>[\s\S]*?<\/title>/i, '<title>' + escapeHtml(seo.title) + '</title>')
     .replace(/<meta name="description" content="[^"]*">/i, '<meta name="description" content="' + escapeHtml(seo.description) + '">')
     .replace(/<meta name="robots" content="[^"]*">/i, '<meta name="robots" content="' + escapeHtml(seo.robots) + '">')
@@ -147,7 +239,14 @@ async function renderIndexHtml(req) {
   const verification = String(process.env.GOOGLE_SITE_VERIFICATION || '').trim();
   const extraHead = [
     '<link rel="canonical" href="' + escapeHtml(seo.canonical) + '">',
+    '<link rel="alternate" hreflang="fi" href="' + escapeHtml(seo.alternates.fi) + '" data-respondo-hreflang="1">',
+    '<link rel="alternate" hreflang="sv" href="' + escapeHtml(seo.alternates.sv) + '" data-respondo-hreflang="1">',
+    '<link rel="alternate" hreflang="en" href="' + escapeHtml(seo.alternates.en) + '" data-respondo-hreflang="1">',
+    '<link rel="alternate" hreflang="x-default" href="' + escapeHtml(seo.alternates.fi) + '" data-respondo-hreflang="1">',
     '<meta property="og:url" content="' + escapeHtml(seo.canonical) + '">',
+    '<meta property="og:locale:alternate" content="sv_SE">',
+    '<meta property="og:locale:alternate" content="en_GB">',
+    '<script type="application/ld+json" id="respondo-seo-schema">' + seoStructuredData(seo) + '</script>',
     verification ? '<meta name="google-site-verification" content="' + escapeHtml(verification) + '">' : '',
   ].filter(Boolean).join('\n');
 
@@ -4964,7 +5063,99 @@ const checkoutLimiter = rateLimit({
   keyGenerator:req=>accountRateKey(req,'checkout'),
   message:{ error:'Liian monta tilausyritystä. Yritä hetken kuluttua uudelleen.' },
 });
+app.get('/index.html', (req,res) => res.redirect(301, SEO_CANONICAL_ORIGIN + '/'));
+
+app.get('/robots.txt', (req,res) => {
+  const robots = [
+    'User-agent: OAI-SearchBot',
+    'Allow: /',
+    '',
+    'User-agent: *',
+    'Allow: /',
+    'Disallow: /api/',
+    'Disallow: /app',
+    'Disallow: /kirjaudu',
+    'Disallow: /tilaus',
+    'Disallow: /maksu-valmis',
+    'Disallow: /assistant',
+    '',
+    'Sitemap: ' + SEO_CANONICAL_ORIGIN + '/sitemap.xml',
+    'Host: ' + new URL(SEO_CANONICAL_ORIGIN).host,
+    ''
+  ].join('\\n');
+  res.setHeader('Cache-Control','public, max-age=3600');
+  res.type('text/plain').send(robots);
+});
+
+app.get('/sitemap.xml', (req,res) => {
+  const basePaths = ['/', '/ominaisuudet', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
+  const escapeXml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+  const rows = [];
+  for (const basePath of basePaths) {
+    const urls = seoLanguageUrls(basePath);
+    for (const lang of ['fi','sv','en']) {
+      const loc = urls[lang];
+      rows.push(
+        '  <url>\\n' +
+        '    <loc>' + escapeXml(loc) + '</loc>\\n' +
+        '    <xhtml:link rel="alternate" hreflang="fi" href="' + escapeXml(urls.fi) + '" />\\n' +
+        '    <xhtml:link rel="alternate" hreflang="sv" href="' + escapeXml(urls.sv) + '" />\\n' +
+        '    <xhtml:link rel="alternate" hreflang="en" href="' + escapeXml(urls.en) + '" />\\n' +
+        '    <xhtml:link rel="alternate" hreflang="x-default" href="' + escapeXml(urls.fi) + '" />\\n' +
+        '  </url>'
+      );
+    }
+  }
+  const xml = '<?xml version="1.0" encoding="UTF-8"?>\\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\\n' +
+    rows.join('\\n') + '\\n</urlset>\\n';
+  res.setHeader('Cache-Control','public, max-age=3600');
+  res.type('application/xml').send(xml);
+});
+
+app.get('/llms.txt', (req,res) => {
+  const text = [
+    '# Respondo AI',
+    '',
+    '> Respondo AI is a Finnish B2B web application for automated website customer service. It answers visitors using company-specific approved information and supports human takeover and customer-service workflows.',
+    '',
+    'Canonical website: ' + SEO_CANONICAL_ORIGIN + '/',
+    'Languages: Finnish, Swedish, English',
+    '',
+    '## Core capabilities',
+    '- Website customer service bot available 24/7',
+    '- Company knowledge base and website information import',
+    '- Lead and contact-request capture',
+    '- Booking requests and calendar workflows',
+    '- Human takeover with employee accounts',
+    '- Multilingual customer conversations',
+    '- Shopify and WooCommerce commerce workflows',
+    '',
+    '## Public pages',
+    '- Homepage: ' + SEO_CANONICAL_ORIGIN + '/',
+    '- Features (Finnish): ' + SEO_CANONICAL_ORIGIN + '/ominaisuudet',
+    '- Features (Swedish): ' + SEO_CANONICAL_ORIGIN + '/funktioner',
+    '- Features (English): ' + SEO_CANONICAL_ORIGIN + '/features',
+    '- Security: ' + SEO_CANONICAL_ORIGIN + '/tietoturva',
+    '- Privacy: ' + SEO_CANONICAL_ORIGIN + '/tietosuoja',
+    '- Terms: ' + SEO_CANONICAL_ORIGIN + '/kayttoehdot',
+    '- Data processing: ' + SEO_CANONICAL_ORIGIN + '/dpa',
+    '',
+    '## Pricing',
+    '- Basic: EUR 49.99/month',
+    '- Advanced: EUR 64.99/month',
+    '- Business: EUR 79.99/month',
+    '- A 3-day free trial is offered on the public website.',
+    '',
+    'For current product claims, pricing and policies, use the canonical public pages above as the source of truth.',
+    ''
+  ].join('\\n');
+  res.setHeader('Cache-Control','public, max-age=3600');
+  res.type('text/plain').send(text);
+});
+
 app.use(express.static(path.join(__dirname, 'public'), {
+  index:false,
   setHeaders(res, filePath) {
     if (
       filePath.endsWith('widget.js') ||
@@ -9749,6 +9940,8 @@ app.use(async (req, res, next) => {
     try {
       const { html, seo } = await renderIndexHtml(req);
       res.status(seo.isKnown ? 200 : 404);
+      res.setHeader('Link','<' + seo.canonical + '>; rel="canonical"');
+      res.setHeader('Content-Language',seo.lang);
       res.type('html').send(html);
       return;
     } catch (e) {
@@ -9763,7 +9956,7 @@ app.use(async (req, res, next) => {
 function respondoOwnerSiteUrl() {
   const candidates = [
     process.env.RESPONDO_CANONICAL_URL,
-    process.env.NODE_ENV === 'production' ? 'https://respondoai.fi' : '',
+    SEO_CANONICAL_ORIGIN,
     process.env.BASE_URL,
     process.env.RAILWAY_SERVICE_RESPONDO_WEB_URL,
     process.env.RAILWAY_STATIC_URL,
