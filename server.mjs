@@ -4967,9 +4967,21 @@ app.post('/api/i18n/translate', i18nLimiter, async (req,res) => {
   }
 });
 
+function publicRateKey(req,scope='public') {
+  const forwarded=String(req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || '')
+    .split(',')[0].trim();
+  const expressIp=String(req.ip || '').trim();
+  const clientIp=(expressIp && expressIp !== '0.0.0.0' && expressIp !== '::')
+    ? expressIp
+    : forwarded;
+  const ua=String(req.headers['user-agent'] || '').slice(0,240);
+  return crypto.createHash('sha256').update(scope+'|'+clientIp+'|'+ua).digest('hex');
+}
+
 const publicReadLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 120,
+  keyGenerator:req => publicRateKey(req,'read'),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Liian monta pyyntöä. Yritä hetken kuluttua uudelleen.' },
@@ -4977,6 +4989,7 @@ const publicReadLimiter = rateLimit({
 const siteVisitLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 120,
+  keyGenerator:req => publicRateKey(req,'visit'),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Liian monta pyyntöä. Yritä hetken kuluttua uudelleen.' },
@@ -4984,6 +4997,7 @@ const siteVisitLimiter = rateLimit({
 const paymentVerifyLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 30,
+  keyGenerator:req => publicRateKey(req,'payment-verify'),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Liian monta maksun vahvistusyritystä. Yritä hetken kuluttua uudelleen.' },
@@ -4991,6 +5005,7 @@ const paymentVerifyLimiter = rateLimit({
 const channelApiLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 300,
+  keyGenerator:req => publicRateKey(req,'channel'),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Liian monta kanavapyyntöä. Yritä hetken kuluttua uudelleen.' },
@@ -4998,6 +5013,7 @@ const channelApiLimiter = rateLimit({
 const publicChatLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 35,
+  keyGenerator:req => publicRateKey(req,'chat'),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Liian monta viestiä. Yritä hetken kuluttua uudelleen.' },
@@ -5007,17 +5023,13 @@ const publicContactLimiter = rateLimit({
   limit: 8,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator(req) {
-    const forwarded=String(req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.ip || '')
-      .split(',')[0].trim();
-    const ua=String(req.headers['user-agent'] || '').slice(0,240);
-    return crypto.createHash('sha256').update(forwarded+'|'+ua).digest('hex');
-  },
+  keyGenerator:req => publicRateKey(req,'contact'),
   message: { error:'Liian monta yhteydenottoa. Yritä myöhemmin uudelleen.' },
 });
 const demoChatLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   limit: 30,
+  keyGenerator:req => publicRateKey(req,'demo-chat'),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demon viestiraja tuli täyteen. Yritä myöhemmin uudelleen.' },
@@ -5031,10 +5043,8 @@ const demoImportLimiter = rateLimit({
   // Include the target website and forwarded client metadata so unrelated
   // visitors do not consume one shared demo-import quota.
   keyGenerator(req) {
-    const forwarded=String(req.headers['x-forwarded-for']||req.headers['x-real-ip']||'').split(',')[0].trim();
     const website=normalizeHost(req.body?.website||'') || String(req.body?.website||'').trim().toLowerCase();
-    const ua=String(req.headers['user-agent']||'').slice(0,220);
-    return crypto.createHash('sha256').update(forwarded+'|'+website+'|'+ua).digest('hex');
+    return crypto.createHash('sha256').update(publicRateKey(req,'demo-import')+'|'+website).digest('hex');
   },
   message: { error: 'Demon verkkosivuhakuja on tehty liian monta. Yritä hetken kuluttua uudelleen.' },
 });
