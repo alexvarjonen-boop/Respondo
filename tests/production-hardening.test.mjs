@@ -132,3 +132,13 @@ test('browser page traffic is canonicalized without redirecting APIs or widget t
   assert.match(server, /req\.path\.startsWith\('\/api\/'\)/);
   assert.match(server, /requestHost !== canonicalHost[\s\S]{0,120}res\.redirect\(308, BASE \+ req\.originalUrl\)/);
 });
+
+
+test('UI translation failure degrades gracefully and legacy icon requests do not 404', () => {
+  assert.doesNotMatch(server, /res\.status\(503\)\.json\(\{ error: lang === 'sv' \? 'Översättningstjänsten är tillfälligt otillgänglig\.'/);
+  assert.match(server, /String\(value \|\| pending\[i\] \|\| ''\)/);
+  assert.match(server, /\/favicon\.ico/);
+  assert.match(server, /\/apple-touch-icon\.png/);
+  assert.match(server, /\/apple-touch-icon-precomposed\.png/);
+  assert.match(server, /res\.redirect\(302,'\/favicon\.svg'\)/);
+});
