@@ -5026,6 +5026,38 @@ app.post('/api/auth/language', auth, async (req,res) => {
   } catch (e) { return res.status(500).json({ error:e.message }); }
 });
 
+app.post('/api/app/account/password', auth, ownerOnly, loginLimiter, async (req,res) => {
+  try {
+    const currentPassword=String(req.body?.currentPassword || '');
+    const newPassword=String(req.body?.newPassword || '');
+    if (!currentPassword || currentPassword.length > 200) {
+      return res.status(400).json({error:'Anna nykyinen salasana.'});
+    }
+    if (newPassword.length < 10) {
+      return res.status(400).json({error:'Uuden salasanan pitää olla vähintään 10 merkkiä.'});
+    }
+    if (newPassword.length > 200) {
+      return res.status(400).json({error:'Uusi salasana on liian pitkä.'});
+    }
+
+    const rr=await q('SELECT id,email,password_hash,session_version FROM users WHERE id=$1',[req.user.sub]);
+    if(!rr.rowCount || !rr.rows[0].password_hash || !(await bcrypt.compare(currentPassword,rr.rows[0].password_hash))) {
+      return res.status(400).json({error:'Nykyinen salasana on väärä.'});
+    }
+
+    const passwordHash=await bcrypt.hash(newPassword,12);
+    const updated=await q(
+      'UPDATE users SET password_hash=$1,session_version=session_version+1,updated_at=NOW() WHERE id=$2 RETURNING id,email,session_version',
+      [passwordHash,req.user.sub],
+    );
+    setSession(res,updated.rows[0]);
+    return res.json({ok:true});
+  } catch(e) {
+    console.error('Owner password change failed',e);
+    return res.status(500).json({error:'Salasanaa ei voitu vaihtaa.'});
+  }
+});
+
 app.post('/api/auth/logout', (req, res) => {
   res.clearCookie(COOKIE);
   res.json({ ok: true });
@@ -8349,7 +8381,7 @@ app.post('/api/app/commerce/test', auth, subscribed, async (req,res) => {
   }
 });
 
-app.post('/api/app/support-agents', auth, subscribed, async (req,res) => {
+app.post('/api/app/support-agents', auth, ownerOnly, subscribed, async (req,res) => {
   try {
     const tr = await q('SELECT id,subscription_plan FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8380,7 +8412,7 @@ app.post('/api/app/support-agents', auth, subscribed, async (req,res) => {
   } catch (e) { return res.status(400).json({ error:e.message || 'Profiilia ei voitu luoda.' }); }
 });
 
-app.delete('/api/app/support-agents/:id', auth, subscribed, async (req,res) => {
+app.delete('/api/app/support-agents/:id', auth, ownerOnly, subscribed, async (req,res) => {
   try {
     const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8391,7 +8423,7 @@ app.delete('/api/app/support-agents/:id', auth, subscribed, async (req,res) => {
   } catch { return res.status(500).json({ error:'Profiilia ei voitu poistaa.' }); }
 });
 
-app.post('/api/app/support-agents/:id/status', auth, subscribed, async (req,res) => {
+app.post('/api/app/support-agents/:id/status', auth, ownerOnly, subscribed, async (req,res) => {
   try {
     const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8402,7 +8434,7 @@ app.post('/api/app/support-agents/:id/status', auth, subscribed, async (req,res)
   } catch { return res.status(500).json({ error:'Tilaa ei voitu päivittää.' }); }
 });
 
-app.post('/api/app/live/:id/assign', auth, subscribed, async (req,res) => {
+app.post('/api/app/live/:id/assign', auth, ownerOnly, subscribed, async (req,res) => {
   try {
     const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
