@@ -2869,10 +2869,20 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     const catalogUrls=new Set(storefrontProducts.map((product)=>{
       try { const u=new URL(product.url); return u.origin+u.pathname.replace(/\/$/,'')+u.search; } catch { return ''; }
     }).filter(Boolean));
+    // Catalog APIs already give us names, prices and variants, so crawling every
+    // product page would waste the crawl budget. Keep a small representative
+    // sample, though: many stores put shipping, returns and warranty rules only
+    // inside product-page accordions.
+    const representativeProductUrls=new Set([...catalogUrls].slice(0,4));
     const kept=queue.filter((item)=>{
-      try { const u=new URL(item.url); return !catalogUrls.has(u.origin+u.pathname.replace(/\/$/,'')+u.search); } catch { return true; }
+      try {
+        const u=new URL(item.url);
+        const key=u.origin+u.pathname.replace(/\/$/,'')+u.search;
+        return !catalogUrls.has(key) || representativeProductUrls.has(key);
+      } catch { return true; }
     });
     queue.splice(0,queue.length,...kept);
+    queue.sort((a,b)=>b.score-a.score);
   }
   const totalTarget = Math.max(1, Math.min(maxPages, pages.length + queue.length));
   if (onProgress) onProgress({scanned:pages.length,total:totalTarget});
