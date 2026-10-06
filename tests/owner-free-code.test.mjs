@@ -18,3 +18,12 @@ test('normal customer referral codes remain one-use monthly referrals', () => {
   assert.match(server,/referrer_user_id=\$1 AND stripe_discount_applied=TRUE LIMIT 1/);
   assert.match(server,/Tämä suosittelukoodi on jo käytetty/);
 });
+
+test('normal referral coupon self-provisions instead of requiring manual Stripe setup', () => {
+  assert.match(server,/async function ensureReferralCoupon\(\)/);
+  assert.match(server,/stripe\.coupons\.retrieve/);
+  assert.match(server,/stripe\.coupons\.create\(\{[\s\S]{0,260}percent_off: 20,[\s\S]{0,180}duration: 'once'/);
+  assert.match(server,/stripe_referral_coupon_id/);
+  assert.match(server,/const referralCouponId = await ensureReferralCoupon\(\)/);
+  assert.doesNotMatch(server,/RESPONDO_REFERRAL_20_FIRST_MONTH/);
+});
