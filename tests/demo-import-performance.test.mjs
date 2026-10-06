@@ -20,3 +20,9 @@ test('storefront catalog still keeps a bounded sample of product pages for polic
   assert.match(server,/representativeProductUrls=new Set\(\[\.\.\.catalogUrls\]\.slice\(0,4\)\)/);
   assert.match(server,/!catalogUrls\.has\(key\) \|\| representativeProductUrls\.has\(key\)/);
 });
+
+
+test('crawler allows About pages even when a CMS stores them under blog paths', () => {
+  assert.match(server,/const companyInfo=\/about\|about-us\|meista\|meistä\|yritys\|company\|who-we-are\|our-story\//);
+  assert.match(server,/if \(companyInfo\) return !\/privacy\|terms/);
+});
