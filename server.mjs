@@ -9324,6 +9324,8 @@ app.use(async (req, res, next) => {
 
 function respondoOwnerSiteUrl() {
   const candidates = [
+    process.env.RESPONDO_CANONICAL_URL,
+    process.env.NODE_ENV === 'production' ? 'https://respondoai.fi' : '',
     process.env.BASE_URL,
     process.env.RAILWAY_SERVICE_RESPONDO_WEB_URL,
     process.env.RAILWAY_STATIC_URL,
@@ -9437,14 +9439,37 @@ async function seedOwnerRespondoKnowledge() {
       [tenantId],
     );
 
-    // Remove only foreign JAG demo rows if they ever leaked into the first-party
-    // Respondo tenant. Keep manual Respondo knowledge and normal company data.
-    await client.query(
-      `DELETE FROM knowledge
+    // First-party Respondo knowledge must never inherit an authenticated import
+    // from a customer/test website. Keep the rows for forensics, but quarantine
+    // them so they can never become answer evidence.
+    const importedRows = await client.query(
+      `SELECT id,source_url
+         FROM knowledge
         WHERE tenant_id=$1
+          AND approved=true
+          AND source_type IN ('website','profile')
+          AND source_url IS NOT NULL`,
+      [tenantId],
+    );
+    const foreignImportedIds=importedRows.rows
+      .filter((row)=>!respondoFirstPartyWebsiteAllowed(row.source_url))
+      .map((row)=>row.id);
+    if (foreignImportedIds.length) {
+      await client.query(
+        'UPDATE knowledge SET approved=false,updated_at=NOW() WHERE tenant_id=$1 AND id=ANY($2::uuid[])',
+        [tenantId,foreignImportedIds],
+      );
+    }
+
+    // Legacy JAG text that may predate source_url tracking is also quarantined.
+    await client.query(
+      `UPDATE knowledge
+          SET approved=false,updated_at=NOW()
+        WHERE tenant_id=$1
+          AND approved=true
+          AND source_type<>'respondo_seed'
           AND (
-            lower(COALESCE(source_url,'')) LIKE '%jagputters.fi%'
-            OR lower(COALESCE(answer,'')) LIKE '%jag putter%'
+            lower(COALESCE(answer,'')) LIKE '%jag putter%'
             OR lower(COALESCE(answer,'')) LIKE '%jagputters%'
           )`,
       [tenantId],
