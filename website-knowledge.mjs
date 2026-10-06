@@ -12,6 +12,21 @@ const delivery = /toimitus|toimitusaika|toimitamme|toimitetaan|seurant|lahetys|l
 const returns = /palaut|vaihto|hyvitys|return|refund|exchange|retur|aterbetal|återbetal|byte\b/i;
 const warranty = /takuu|reklamaatio|warranty|guarantee|garanti|reklamation/i;
 const payment = /maksutapa|maksaminen|maksuvaihtoeh|korttimaks|lasku\b|klarna|paypal|mobilepay|apple\s*pay|google\s*pay|payment|payment method|pay\s+(?:with|by)|betalning|betalningsmetod|faktura/i;
+
+// Policy headings and marketing badges are context, not customer-answer facts.
+// Keep short concrete rules ("Return within 45 days", "3 month warranty") and
+// real payment-method lists, but reject slogans such as "Hassle Free Returns".
+function policyHeadingOnly(value, kind = '') {
+  const raw=clean(value);
+  const n=norm(raw).replace(/[–—]/g,'-');
+  if(!n) return true;
+  if(/\d/.test(n)) return false;
+  if(kind==='payment' && /visa|mastercard|amex|american express|paypal|klarna|mobilepay|apple pay|google pay|kortti|card|lasku|invoice|faktura/.test(n)) return false;
+  if(/\b(?:can|may|must|will|are|is|has|have|accept|accepted|receive|ship|shipped|return(?:ed|ing)?|refund(?:ed|s)?|exchange(?:d|s)?|voi|voidaan|saa|taytyy|täytyy|on|ovat|hyvitet|palautetaan|vaihdetaan|toimitetaan|lähetetään|lahetetaan|kan|får|far|måste|maste|är|ar|betalas|returneras|aterbetalas|återbetalas)\b/i.test(raw)) return false;
+  if(/^(?:hassle[- ]?free returns?|easy returns?|free returns?|returns?\s*(?:&|and)\s*exchanges?|shipping\s*(?:&|and)\s*returns?|fast shipping|free shipping|secure payments?|safe payments?|warranty|guarantee|returns?|refunds?|shipping|delivery|payment|payments)$/i.test(n)) return true;
+  const words=n.split(/\s+/).filter(Boolean);
+  return words.length<=5 && !/[.!?]/.test(raw);
+}
 const materials = /materiaali|materiaalit|material|materials|made\s+(?:of|from)|valmistettu\s+(?:materiaalista|materiaalista|teräksestä|teraksesta|alumiinista|puusta)|stainless\s+steel|ruostumaton\s+teräs|ruostumaton\s+teras|alumiini|aluminum|aluminium|hiilikuitu|carbon\s*fib|puuvilla|cotton|polyester|nahka|leather|villa\b|wool\b|titaani|titanium/i;
 const quality = /laatu|quality|quality control|valmistus|manufactur|made\s+in|handmade|käsinteht|kasinteht|cnc|precision|tolerance|testattu|tested|sertifio|certif|standard(?:i|it)?\b|durab|kestävy|kestavy|viimeistely|finish/i;
 const care = /hoito-oh|käyttöoh|kayttooh|huolto-oh|pesuoh|care\s+instruction|product\s+care|maintenance\s+instruction|washing\s+instruction|cleaning\s+instruction|how\s+to\s+(?:clean|wash|care)|skötsel|skotsel|tvättråd|tvattrad/i;
@@ -415,10 +430,10 @@ export function businessFactKind(text, context = '') {
   if (commerceFact && /hoito|care|maintenance|pesuoh|washing/.test(c) && care.test(commerce)) return 'care';
   if (commerceFact && /koko|size|sizing|mitat|dimension|storlek/.test(c) && sizing.test(commerce)) return 'sizing';
   // Policies and concrete customer facts must stay separate from generic prices.
-  if (commerceFact && delivery.test(commerce)) return 'delivery';
-  if (commerceFact && returns.test(commerce)) return 'returns';
-  if (commerceFact && warranty.test(commerce)) return 'warranty';
-  if (commerceFact && payment.test(commerce)) return 'payment';
+  if (commerceFact && delivery.test(commerce) && !policyHeadingOnly(t,'delivery')) return 'delivery';
+  if (commerceFact && returns.test(commerce) && !policyHeadingOnly(t,'returns')) return 'returns';
+  if (commerceFact && warranty.test(commerce) && !policyHeadingOnly(t,'warranty')) return 'warranty';
+  if (commerceFact && payment.test(commerce) && !policyHeadingOnly(t,'payment')) return 'payment';
   if (commerceFact && care.test(commerce)) return 'care';
   if (commerceFact && sizing.test(commerce) && (/\d/.test(t) || /koko|size|mitat|dimension|fit|paino|weight|pituus|length|leveys|width|korkeus|height/.test(n))) return 'sizing';
   if (commerceFact && materials.test(commerce)) return 'materials';
@@ -584,7 +599,8 @@ export function essentialWebsiteProfile(bundle) {
 
 export function usableWebsiteRow(row) {
   if (review.test(norm([row.category,row.title,row.answer].join(' ')))) return false;
-  if (row.source_type !== 'website' && row.sourceType !== 'website') return true;
+  const sourceType=String(row.source_type || row.sourceType || '');
+  if (!['website','demo_import'].includes(sourceType)) return true;
   if (row.title === 'Tarjouspyyntölomake' || row.title === 'Tuotekatalogi') return !!httpUrl(row.answer);
   const serviceTitle=String(row.title||'').match(/^Palvelut\s*:\s*(.+)$/i);
   if (
