@@ -1495,16 +1495,12 @@ function genericCompanyQuestion(value) {
 function broadServiceListAnswer(rows) {
   const found=[];
   const seen=new Set();
-  const generic=/^(?:palvelut?|palvelumme|services?|tjänster|tjanster|mitä teemme|mita teemme|what we do|nopea ja joustava palvelu|luotettava palvelu|ammattitaitoinen palvelu)$/i;
   const concrete=/purku|kartoit|kierrat|kierrät|murske|asbesti|haitta.?aine|saneeraus|linjasaneeraus|pesu|siivou|puhdist|maala|raivau|leikkaus|huolto|asennus|korjaus|kuljet|muutto|poisvienti/i;
+  const blocked=/^(?:palvelut?|palvelumme|services?|tjänster|tjanster|mitä teemme|mita teemme|what we do)$/i;
   const add=(value)=>{
-    let text=String(value||'').replace(/\s+/g,' ').trim()
-      .replace(/^[•·▪◦-]+\s*/,'')
-      .replace(/[.!?;:]+$/,'')
-      .trim();
-    if(!text || text.length<4 || text.length>78 || generic.test(text)) return;
-    const words=text.split(/\s+/).filter(Boolean);
-    if(words.length>9 || !concrete.test(text)) return;
+    const text=String(value||'').replace(/\s+/g,' ').trim().replace(/[.!?;:]+$/,'').trim();
+    if(!text || text.length<4 || text.length>80 || blocked.test(text)) return;
+    if(text.split(/\s+/).filter(Boolean).length>10 || !concrete.test(text)) return;
     if(/(?:ota yhteytta|ota yhteyttä|pyyda tarjous|pyydä tarjous|lue lisaa|lue lisää|read more|contact|referens|ajankohtaista|toimipiste)/i.test(text)) return;
     const key=normalizeSearchText(text);
     if(!key || seen.has(key)) return;
@@ -1513,29 +1509,20 @@ function broadServiceListAnswer(rows) {
   };
 
   for(const row of rows||[]){
-    const meta=String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||'');
-    if(knowledgeTopic(meta)!=='services') continue;
-    const title=String(row?.title||'').replace(/^Palvelut\s*:\s*/i,'').trim();
+    if(knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))!=='services') continue;
     const answer=String(row?.answer||'').replace(/\s+/g,' ').trim();
-
-    if(title && title.length<=78) add(title);
-    const prefix=answer.match(/^([^:]{4,78}):\s+/);
-    if(prefix) add(prefix[1]);
-    if(answer.length<=78) add(answer);
-
-    if(/[•\n]/.test(String(row?.answer||''))) {
-      String(row.answer).split(/[•\n]/).forEach(add);
-    }
-    if(answer.length<=220 && /,/.test(answer)) {
-      answer.split(/\s*,\s*/).forEach(add);
-    }
+    const title=String(row?.title||'').replace(/\s+/g,' ').trim();
+    const explicit=title.match(/^Palvelut\s*:\s*(.+)$/i);
+    // Navigation/service-directory imports are stored as "Palvelut: <label>"
+    // with the exact same short label as the answer. Only these rows are used
+    // for a broad service list; normal prose keeps the established concise
+    // sentence logic below.
+    if(explicit && normalizeSearchText(explicit[1])===normalizeSearchText(answer)) add(answer);
   }
 
   if(!found.length) return '';
-  const items=found.slice(0,12);
-  return 'Palveluihimme kuuluvat: '+items.join(', ')+'.';
+  return 'Palveluihimme kuuluvat: '+found.slice(0,14).join(', ')+'.';
 }
-
 function briefServiceAnswer(selected) {
   const candidates = [];
   const seen = new Set();

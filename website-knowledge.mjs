@@ -586,6 +586,13 @@ export function usableWebsiteRow(row) {
   if (review.test(norm([row.category,row.title,row.answer].join(' ')))) return false;
   if (row.source_type !== 'website' && row.sourceType !== 'website') return true;
   if (row.title === 'Tarjouspyyntölomake' || row.title === 'Tuotekatalogi') return !!httpUrl(row.answer);
+  const serviceTitle=String(row.title||'').match(/^Palvelut\s*:\s*(.+)$/i);
+  if (
+    serviceTitle &&
+    norm(row.category||'')==='palvelut' &&
+    norm(serviceTitle[1])===norm(row.answer||'') &&
+    service.test(norm(row.answer||''))
+  ) return true;
   if (/(?:^|\s)(?:tuotteet|products?|produkter)(?:\s|$)/.test(norm(row.category || ''))) {
     const product=parseProductKnowledgeRow(row);
     // A product can still be useful factual evidence even when an individual
