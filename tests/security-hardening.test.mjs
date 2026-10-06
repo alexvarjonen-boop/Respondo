@@ -37,3 +37,9 @@ test('internal 500 errors are never returned verbatim to clients', () => {
   assert.doesNotMatch(server, /res\.status\(500\)\.json\(\{\s*error\s*:\s*(?:e|err|error)\.message\s*\}\)/);
   assert.doesNotMatch(server, /status\(500\)[^\n]{0,160}(?:e|err|error)\.message/);
 });
+
+
+test('Google Calendar account controls are owner-only', () => {
+  assert.match(server, /app\.get\('\/api\/app\/google-calendar\/start', auth, ownerOnly, subscribed/);
+  assert.match(server, /app\.post\('\/api\/app\/google-calendar\/disconnect', auth, ownerOnly, subscribed/);
+});
