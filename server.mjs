@@ -7771,18 +7771,21 @@ async function dispatchActionWebhook(tenant, actionRequest) {
   }
 }
 
-async function validateWidgetActionRequest(req, tenant, body) {
-  const origin = requestOrigin(req);
-  const baseHost = normalizeHost(BASE);
-  const external = !origin || normalizeHost(origin.hostname) !== baseHost;
-  if (!external) return true;
-  if (!widgetOriginAllowed(req, tenant)) return false;
+function validWidgetToken(req, tenant, tokenValue) {
+  const origin=requestOrigin(req);
+  if (!origin || !widgetOriginAllowed(req,tenant)) return false;
   try {
-    const token = jwt.verify(String(body.widgetToken || ''), JWT);
-    return token.kind === 'widget' && token.slug === tenant.slug && token.host === normalizeHost(origin.hostname);
+    const token=jwt.verify(String(tokenValue || ''),JWT);
+    return token.kind === 'widget' &&
+      token.slug === tenant.slug &&
+      token.host === normalizeHost(origin.hostname);
   } catch {
     return false;
   }
+}
+
+async function validateWidgetActionRequest(req, tenant, body) {
+  return validWidgetToken(req,tenant,body?.widgetToken);
 }
 
 async function publicTenant(slugValue) {
@@ -8299,19 +8302,10 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
     body = body || {};
     const lang = ['fi','sv','en'].includes(String(body.lang || '').toLowerCase()) ? String(body.lang).toLowerCase() : 'fi';
 
-    const origin = requestOrigin(req);
-    const baseHost = normalizeHost(BASE);
-    const external = !origin || normalizeHost(origin.hostname) !== baseHost;
-    if (external) {
-      if (!widgetOriginAllowed(req, tenant)) return res.status(403).json({ error: 'Chat ei ole käytössä tällä verkkosivulla.' });
-      try {
-        const token = jwt.verify(String(body.widgetToken || ''), JWT);
-        if (token.kind !== 'widget' || token.slug !== tenant.slug || token.host !== normalizeHost(origin.hostname)) throw new Error('Invalid token');
-      } catch {
-        return res.status(403).json({ error: 'Chat ei ole käytössä tällä verkkosivulla.' });
-      }
-      setWidgetCors(req, res);
+    if (!validWidgetToken(req,tenant,body.widgetToken)) {
+      return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
     }
+    setWidgetCors(req,res);
 
     const name = String(body.name || '').trim().slice(0, 120);
     const email = cleanEmail(body.email).slice(0, 220);
@@ -8336,19 +8330,10 @@ app.get('/api/public/:slug/live', publicChatLimiter, async (req,res) => {
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.status(404).json({ error:'Yritystä ei löytynyt.' });
     const tenant = tr.rows[0];
-    const origin = requestOrigin(req);
-    const baseHost = normalizeHost(BASE);
-    const external = !origin || normalizeHost(origin.hostname) !== baseHost;
-    if (external) {
-      if (!widgetOriginAllowed(req,tenant)) return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
-      try {
-        const token = jwt.verify(String(req.query.widgetToken || ''),JWT);
-        if (token.kind !== 'widget' || token.slug !== tenant.slug || token.host !== normalizeHost(origin.hostname)) throw new Error('Invalid token');
-      } catch {
-        return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
-      }
-      setWidgetCors(req,res);
+    if (!validWidgetToken(req,tenant,req.query.widgetToken)) {
+      return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
     }
+    setWidgetCors(req,res);
 
     const visitorRef = String(req.query.visitorRef || '').trim().slice(0,160);
     const after = String(req.query.after || '').trim();
@@ -8520,28 +8505,10 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const lang = ['fi','sv','en'].includes(String(body.lang || '').toLowerCase()) ? String(body.lang).toLowerCase() : 'fi';
     requestLang = lang;
 
-    const origin = requestOrigin(req);
-    const baseHost = normalizeHost(BASE);
-    const externalWidgetRequest = !origin || normalizeHost(origin.hostname) !== baseHost;
-
-    if (externalWidgetRequest) {
-      if (!widgetOriginAllowed(req, t)) {
-        return res.status(403).json({ error: 'Tämä RESPONDO AI -lisenssi on sidottu toiseen verkkosivuun.' });
-      }
-      try {
-        const token = jwt.verify(String(body.widgetToken || ''), JWT);
-        if (
-          token.kind !== 'widget' ||
-          token.slug !== t.slug ||
-          token.host !== normalizeHost(origin.hostname)
-        ) {
-          throw new Error('Invalid widget token');
-        }
-      } catch {
-        return res.status(403).json({ error: 'Chat ei ole käytössä tällä verkkosivulla.' });
-      }
-      setWidgetCors(req, res);
+    if (!validWidgetToken(req,t,body.widgetToken)) {
+      return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
     }
+    setWidgetCors(req,res);
 
     const message = String(body.message || '').trim().slice(0, 1200);
     if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : lang === 'sv' ? 'Skriv en fråga.' : 'Kirjoita kysymys.' });
@@ -8710,19 +8677,10 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
     if (!tr.rowCount) return res.status(404).json({ error:'Yritystä ei löytynyt.' });
     const tenant = tr.rows[0];
 
-    const origin = requestOrigin(req);
-    const baseHost = normalizeHost(BASE);
-    const external = !origin || normalizeHost(origin.hostname) !== baseHost;
-    if (external) {
-      if (!widgetOriginAllowed(req,tenant)) return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
-      try {
-        const token = jwt.verify(String(req.query.widgetToken || ''),JWT);
-        if (token.kind !== 'widget' || token.slug !== tenant.slug || token.host !== normalizeHost(origin.hostname)) throw new Error('Invalid token');
-      } catch {
-        return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
-      }
-      setWidgetCors(req,res);
+    if (!validWidgetToken(req,tenant,req.query.widgetToken)) {
+      return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
     }
+    setWidgetCors(req,res);
 
     const rows = await q(
       `SELECT id,starts_at,ends_at
@@ -9608,19 +9566,10 @@ app.post('/api/public/:slug/action-event', publicChatLimiter, async (req, res) =
     }
     body = body || {};
 
-    const origin = requestOrigin(req);
-    const baseHost = normalizeHost(BASE);
-    const external = !origin || normalizeHost(origin.hostname) !== baseHost;
-    if (external) {
-      if (!widgetOriginAllowed(req, tenant)) return res.status(403).json({ error: 'Chat ei ole käytössä tällä verkkosivulla.' });
-      try {
-        const token = jwt.verify(String(body.widgetToken || ''), JWT);
-        if (token.kind !== 'widget' || token.slug !== tenant.slug || token.host !== normalizeHost(origin.hostname)) throw new Error('Invalid token');
-      } catch {
-        return res.status(403).json({ error: 'Chat ei ole käytössä tällä verkkosivulla.' });
-      }
-      setWidgetCors(req, res);
+    if (!validWidgetToken(req,tenant,body.widgetToken)) {
+      return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
     }
+    setWidgetCors(req,res);
 
     const actionType = String(body.actionType || '').trim().slice(0, 40);
     if (!['quote','booking','order_status','phone','email','link','product','callback'].includes(actionType)) {
