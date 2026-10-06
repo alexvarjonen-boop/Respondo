@@ -8836,19 +8836,16 @@ async function seedOwnerRespondoKnowledge() {
 async function ensureRuntimeSchema() {
   if (!pool) return;
 
-  // Respondo uses PostgreSQL only through the server. On Supabase, remove the
-  // default Data API grants before creating any new public-schema objects so a
-  // future runtime schema addition cannot accidentally become browser-readable.
-  await q(`DO $$
-    BEGIN
-      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon')
-         AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
-        EXECUTE 'ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated';
-        EXECUTE 'ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated';
-        EXECUTE 'ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated';
-      END IF;
-    END
-  $$`);
+  // Keep new public-schema objects deny-by-default for Supabase Data API roles.
+  // These statements are idempotent and match Supabase's documented hardening.
+  await q(`ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+    REVOKE SELECT, INSERT, UPDATE, DELETE ON TABLES FROM anon, authenticated, service_role`);
+  await q(`ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+    REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated, service_role`);
+  await q(`ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+    REVOKE USAGE, SELECT ON SEQUENCES FROM anon, authenticated, service_role`);
+  await q(`ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+    REVOKE EXECUTE ON FUNCTIONS FROM public`);
 
   await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_plan TEXT');
   await q("ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_language TEXT NOT NULL DEFAULT 'fi'");
