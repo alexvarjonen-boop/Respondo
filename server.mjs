@@ -5046,6 +5046,7 @@ app.get('/api/public/config', async (req, res) => {
     },
     ownerTestEnabled,
     ownerTestPrice: 0.50,
+    passwordResetAvailable: Boolean(String(process.env.RESEND_API_KEY || '').trim()),
   });
 });
 
