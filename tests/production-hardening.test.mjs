@@ -186,3 +186,16 @@ test('booking serializes the slot before the final Google Calendar conflict chec
   assert.match(block,/if \(conflict\) \{[\s\S]{0,140}ROLLBACK[\s\S]{0,180}status\(409\)/);
   assert.match(block,/Google Calendar conflict check failed[\s\S]{0,220}status\(503\)/);
 });
+
+test('public non-chat endpoints are rate limited', () => {
+  assert.match(server, /const publicReadLimiter = rateLimit/);
+  assert.match(server, /const siteVisitLimiter = rateLimit/);
+  assert.match(server, /const paymentVerifyLimiter = rateLimit/);
+  assert.match(server, /const channelApiLimiter = rateLimit/);
+  assert.ok(server.includes("app.post('/api/public/site-visit', siteVisitLimiter, async"));
+  assert.ok(server.includes("app.get('/api/public/config', publicReadLimiter, async"));
+  assert.ok(server.includes("app.get('/api/public/:slug/widget-token', publicReadLimiter, async"));
+  assert.ok(server.includes("app.get('/api/public/:slug', publicReadLimiter, async"));
+  assert.ok(server.includes("app.get('/api/public/payment/verify', paymentVerifyLimiter, async"));
+  assert.ok(server.includes("app.post('/api/channel/:slug/message', channelApiLimiter, async"));
+});
