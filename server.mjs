@@ -518,27 +518,10 @@ const normalizeReferralCode = (value) =>
 const FREE_REFERRAL_CODE = normalizeReferralCode(process.env.OWNER_FREE_CODE || '');
 const isFreeReferralCode = (value) => Boolean(FREE_REFERRAL_CODE) && normalizeReferralCode(value) === FREE_REFERRAL_CODE;
 
-const ownerFreeCodeDigest = (value) => {
-  const code = normalizeReferralCode(value);
-  return code ? crypto.createHash('sha256').update(code).digest('hex') : '';
-};
-
-async function consumeOwnerFreeCode(client, value) {
-  if (!isFreeReferralCode(value)) return false;
-  const digest = ownerFreeCodeDigest(value);
-  const setting = await client.query(
-    "SELECT value FROM app_settings WHERE key='owner_free_code_used_sha256' FOR UPDATE",
-  );
-  if (setting.rowCount && String(setting.rows[0].value || '') === digest) {
-    throw Object.assign(new Error('Tämä kertakäyttöinen ilmaiskoodi on jo käytetty.'), { publicStatus: 400 });
-  }
-  await client.query(
-    `INSERT INTO app_settings(key,value,updated_at)
-     VALUES('owner_free_code_used_sha256',$1,NOW())
-     ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value,updated_at=NOW()`,
-    [digest],
-  );
-  return true;
+async function consumeOwnerFreeCode(_client, value) {
+  // OWNER_FREE_CODE is an owner/admin bypass, not a customer referral.
+  // It is intentionally reusable and does not consume a global redemption slot.
+  return isFreeReferralCode(value);
 }
 
 const PLAN_DEFINITIONS = Object.freeze({
@@ -5089,7 +5072,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
     });
   }
 
-  if (referralCode && !planAllowsReferral(normalizedPlan)) {
+  if (referralCode && !freeReferral && !planAllowsReferral(normalizedPlan)) {
     return res.status(400).json({ error: 'Suosittelukoodi toimii vain kuukausitilauksessa.' });
   }
 
@@ -5735,7 +5718,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
 
   if(!companyName) return res.status(400).json({ error:'Anna yrityksen nimi.' });
   if(req.body?.acceptedTerms!==true) return res.status(400).json({ error:'Hyväksy käyttöehdot ja tietosuojaseloste.' });
-  if(referralCode && !planAllowsReferral(plan)) return res.status(400).json({ error:'Suosittelukoodi toimii vain kuukausitilauksessa.' });
+  if(referralCode && !freeReferral && !planAllowsReferral(plan)) return res.status(400).json({ error:'Suosittelukoodi toimii vain kuukausitilauksessa.' });
   if(!freeReferral && !stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
 
   const price=freeReferral ? null : stripePriceForPlan(plan);
