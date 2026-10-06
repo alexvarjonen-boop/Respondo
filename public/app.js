@@ -1913,11 +1913,13 @@ function footer() {
           <div class="seller-chip">RESPONDO AI</div>
         </div>
         <div class="foot-col">
-          <h4>Tuote</h4>
-          <a href="/#how">Tuote</a>
-          <a href="/#control">Tietopohja</a>
-          <a href="/#pricing">Hinta</a>
-          <a href="/tilaus">Kokeile ilmaiseksi</a>
+          <h4>${appText('Tuote','Produkt','Product')}</h4>
+          <a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a>
+          <a href="/asiakaspalvelubotti?lang=${currentLang()}">${appText('Asiakaspalvelubotti','Kundservicebot','Customer service bot')}</a>
+          <a href="/verkkokauppa-chatbot?lang=${currentLang()}">${appText('Chatbot verkkokauppaan','Chatbot för webbutik','Ecommerce chatbot')}</a>
+          <a href="/ajanvaraus-chatbot?lang=${currentLang()}">${appText('Ajanvaraus-chatbot','Bokningschatbot','Booking chatbot')}</a>
+          <a href="/#pricing">${appText('Hinta','Pris','Pricing')}</a>
+          <a href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
         </div>
         <div class="foot-col">
           <h4>Yritys</h4>
