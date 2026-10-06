@@ -289,6 +289,7 @@ if (process.env.NODE_ENV === 'production' && !String(process.env.JWT_SECRET || '
 }
 const JWT = process.env.JWT_SECRET || crypto.randomBytes(48).toString('hex');
 const COOKIE = 'respondo_session';
+const SIGNUP_CHECKOUT_COOKIE = 'respondo_signup_checkout';
 
 const q = (text, params = []) => {
   if (!pool) throw new Error('Tietokantaa ei ole vielä yhdistetty.');
@@ -5451,6 +5452,16 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       client.release();
     }
 
+    res.cookie(
+      SIGNUP_CHECKOUT_COOKIE,
+      jwt.sign({ sessionId:session.id,userId:id,tenantId },JWT,{ expiresIn:'45m' }),
+      {
+        httpOnly:true,
+        secure:process.env.NODE_ENV==='production',
+        sameSite:'lax',
+        maxAge:45 * 60 * 1000,
+      },
+    );
     return res.json({ url: session.url });
   } catch (e) {
     console.error('Checkout start failed', e);
@@ -5468,11 +5479,23 @@ app.get('/api/auth/checkout-success', async (req, res) => {
   }
 
   try {
+    let checkoutState=null;
+    try {
+      const rawState=cookies(req)[SIGNUP_CHECKOUT_COOKIE];
+      checkoutState=rawState ? jwt.verify(rawState,JWT) : null;
+    } catch {}
+    if (!checkoutState || checkoutState.sessionId !== sessionId) {
+      res.clearCookie(SIGNUP_CHECKOUT_COOKIE);
+      return res.redirect('/kirjaudu?checkout_error=1');
+    }
+
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     const target = await resolveSignupCheckoutTarget(session);
     const userId = target?.userId || '';
 
     if (
+      checkoutState.userId !== userId ||
+      (checkoutState.tenantId && String(target?.tenantId || session.metadata?.tenant_id || '') !== String(checkoutState.tenantId)) ||
       session.status !== 'complete' ||
       session.mode !== 'subscription' ||
       !userId ||
@@ -5516,6 +5539,7 @@ app.get('/api/auth/checkout-success', async (req, res) => {
       } catch (duplicateCancelError) {
         console.error('Duplicate checkout-success subscription cancellation failed', duplicateCancelError);
       }
+      res.clearCookie(SIGNUP_CHECKOUT_COOKIE);
       setSession(res, target.user);
       return res.redirect('/app?welcome=1');
     }
@@ -5573,6 +5597,7 @@ app.get('/api/auth/checkout-success', async (req, res) => {
       },
     });
 
+    res.clearCookie(SIGNUP_CHECKOUT_COOKIE);
     setSession(res, updated.rows[0]);
     return res.redirect('/app?welcome=1');
   } catch (e) {
