@@ -205,5 +205,12 @@ test('production health requires database and Stripe billing configuration', () 
   assert.match(server, /DATABASE_URL is required in production/);
   assert.match(server, /Stripe billing configuration is required in production/);
   assert.match(server, /BASE_URL must be a valid HTTPS URL in production/);
-  assert.match(server, /ok: Boolean\(pool\) && Boolean\(stripe && process\.env\.STRIPE_WEBHOOK_SECRET\)/);
+  assert.match(server, /All six live Stripe price IDs are required in production/);
+  assert.match(server, /function productionStripePricesConfigured\(\)/);
+  for (const env of [
+    'STRIPE_BASIC_MONTHLY_PRICE_ID','STRIPE_BASIC_YEARLY_PRICE_ID',
+    'STRIPE_ADVANCED_MONTHLY_PRICE_ID','STRIPE_ADVANCED_YEARLY_PRICE_ID',
+    'STRIPE_BUSINESS_MONTHLY_PRICE_ID','STRIPE_BUSINESS_YEARLY_PRICE_ID',
+  ]) assert.match(server,new RegExp(env));
+  assert.match(server, /ok: Boolean\(pool\) && stripeConfigured/);
 });
