@@ -8822,6 +8822,20 @@ async function seedOwnerRespondoKnowledge() {
 async function ensureRuntimeSchema() {
   if (!pool) return;
 
+  // Respondo uses PostgreSQL only through the server. On Supabase, remove the
+  // default Data API grants before creating any new public-schema objects so a
+  // future runtime schema addition cannot accidentally become browser-readable.
+  await q(`DO $
+    BEGIN
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon')
+         AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
+        EXECUTE 'ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated';
+        EXECUTE 'ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated';
+        EXECUTE 'ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated';
+      END IF;
+    END
+  $`);
+
   await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_plan TEXT');
   await q("ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_language TEXT NOT NULL DEFAULT 'fi'");
   await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT');
