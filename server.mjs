@@ -294,6 +294,9 @@ if (process.env.NODE_ENV === 'production') {
   if (!String(process.env.STRIPE_SECRET_KEY || '').trim() || !String(process.env.STRIPE_WEBHOOK_SECRET || '').trim()) {
     throw new Error('Stripe billing configuration is required in production.');
   }
+  if (!productionStripePricesConfigured()) {
+    throw new Error('All six live Stripe price IDs are required in production.');
+  }
   let productionBase;
   try { productionBase = new URL(BASE); } catch {}
   if (!productionBase || productionBase.protocol !== 'https:' || !productionBase.hostname) {
@@ -624,6 +627,17 @@ function planEntitlements(value) {
 function planAllowsReferral(value) {
   const raw=String(value||'').trim().toLowerCase();
   return raw==='monthly' || raw==='owner_test' || raw.endsWith('_monthly');
+}
+
+function productionStripePricesConfigured() {
+  return [
+    process.env.STRIPE_BASIC_MONTHLY_PRICE_ID,
+    process.env.STRIPE_BASIC_YEARLY_PRICE_ID,
+    process.env.STRIPE_ADVANCED_MONTHLY_PRICE_ID,
+    process.env.STRIPE_ADVANCED_YEARLY_PRICE_ID,
+    process.env.STRIPE_BUSINESS_MONTHLY_PRICE_ID,
+    process.env.STRIPE_BUSINESS_YEARLY_PRICE_ID,
+  ].every((value) => /^price_[A-Za-z0-9_]+$/.test(String(value || '').trim()));
 }
 
 function stripePriceForPlan(value) {
@@ -4987,11 +5001,14 @@ const demoImportLimiter = rateLimit({
 });
 
 app.get('/api/health', async (req, res) => {
+  const stripeConfigured =
+    Boolean(stripe && process.env.STRIPE_WEBHOOK_SECRET) &&
+    productionStripePricesConfigured();
   const health = {
-    ok: Boolean(pool) && Boolean(stripe && process.env.STRIPE_WEBHOOK_SECRET),
+    ok: Boolean(pool) && stripeConfigured,
     service: 'RESPONDO AI',
     database: Boolean(pool),
-    stripe: Boolean(stripe && process.env.STRIPE_WEBHOOK_SECRET),
+    stripe: stripeConfigured,
   };
   if (pool) {
     try {
