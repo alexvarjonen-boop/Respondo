@@ -118,3 +118,9 @@ test('owner login email changes require the current password and rotate sessions
   assert.match(server, /stripe\.customers\.update\(stripeCustomerId,\{ email:newEmail \}\)/);
   assert.match(server, /setSession\(res,updated\.rows\[0\]\)/);
 });
+
+test('production requires a dedicated data encryption key while retaining legacy decryption compatibility', () => {
+  assert.match(server, /DATA_ENCRYPTION_KEY is required in production/);
+  assert.match(server, /const LEGACY_SECRET_KEY = crypto\.createHash\('sha256'\)\.update\(JWT\)\.digest\(\)/);
+  assert.match(server, /decryptSecretWithKey\(text, LEGACY_SECRET_KEY\)/);
+});
