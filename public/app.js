@@ -2173,14 +2173,14 @@ function pricingSection() {
           appText('Kaikki Basic-ominaisuudet','Alla Basic-funktioner','Everything in Basic'),
           appText('Hae tiedot automaattisesti verkkosivulta','Hämta information automatiskt från webbplatsen','Automatic website knowledge import'),
           appText('Google Calendar -synkronointi','Google Calendar-synkronisering','Google Calendar sync'),
-          appText('Laajempi analytiikka','Utökad analys','Expanded analytics'),
-          appText('Live-asiakaspalvelu ja työntekijäprofiilit','Live-kundservice och medarbetarprofiler','Live support and staff profiles')
+          appText('Useamman asiakaspalvelijan tiimikäyttö','Teamstöd för flera kundservicemedarbetare','Multi-agent team use'),
+          appText('Automaattinen sivustotuonti ja kalenterisynkronointi samassa paketissa','Automatisk webbplatsimport och kalendersynkronisering i samma paket','Automatic website import and calendar sync in one plan')
         ],true)}
         ${card('Business',79.99,74.99,899.88,20,[
           appText('Kaikki Respondon nykyiset ominaisuudet','Alla nuvarande Respondo-funktioner','All current Respondo features'),
-          appText('Kaikki integraatiot ja automaatiot','Alla integrationer och automationer','All integrations and automations'),
-          appText('Live takeover ja kieliohjaus','Live takeover och språkstyrning','Live takeover and language routing'),
-          appText('Täysi analytiikka','Fullständig analys','Full analytics'),
+          appText('Automaattinen hintalaskuri ja Stripe-maksulinkit','Automatisk prisberäkning och Stripe-betalningslänkar','Automatic quote calculator and Stripe payment links'),
+          appText('Shopify- ja WooCommerce-tilaushaku','Orderuppslag för Shopify och WooCommerce','Shopify and WooCommerce order lookup'),
+          appText('Webhook- ja API-integraatiot','Webhook- och API-integrationer','Webhook and API integrations'),
           appText('Suurin kapasiteetti kasvavalle tiimille','Högsta kapacitet för växande team','Highest capacity for growing teams')
         ])}
       </div>
@@ -2895,6 +2895,7 @@ async function dashboard(options = {}) {
       googleCalendar:{ connected:false,email:'',calendarId:'primary' },
       quoteEngine:{ serviceName:'',basePrice:0,unitPrice:0,minPrice:0,vatPercent:0,unitLabel:'kpl' },
       integrations:{ webhookUrl:'',webhookSecret:'',channelsApiKey:'' },
+      commerce:{ provider:'',shopifyShopDomain:'',shopifyConnected:false,wooBaseUrl:'',wooConnected:false },
       knowledge:[],
       unanswered:[],
       recentConversations:[],
@@ -2942,6 +2943,7 @@ async function dashboard(options = {}) {
   const googleCalendar = data.googleCalendar || { connected:false,email:'',calendarId:'primary' };
   const quoteEngine = data.quoteEngine || { serviceName:'',basePrice:0,unitPrice:0,minPrice:0,vatPercent:0,unitLabel:'kpl' };
   const integrations = data.integrations || { webhookUrl:'', webhookSecret:'', channelsApiKey:'' };
+  const commerce = data.commerce || { provider:'',shopifyShopDomain:'',shopifyConnected:false,wooBaseUrl:'',wooConnected:false };
   const knowledge = data.knowledge || [];
   const businessProfile = Object.fromEntries(
     knowledge
