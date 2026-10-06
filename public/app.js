@@ -218,6 +218,15 @@ function logo() {
 
 
 function currentLang() {
+  const pathLanguage = location.pathname === '/features'
+    ? 'en'
+    : location.pathname === '/funktioner'
+      ? 'sv'
+      : '';
+  if (pathLanguage) {
+    if (localStorage.getItem('respondo_lang') !== pathLanguage) localStorage.setItem('respondo_lang', pathLanguage);
+    return pathLanguage;
+  }
   const queryLang = new URLSearchParams(location.search).get('lang');
   if (['fi','sv','en'].includes(queryLang)) {
     if (localStorage.getItem('respondo_lang') !== queryLang) localStorage.setItem('respondo_lang', queryLang);
@@ -1452,14 +1461,14 @@ function updateDocumentLanguageMeta(lang) {
 
   const metaByPath = {
     '/': {
-      fi:['Asiakaspalvelubotti yrityksille 24/7 | Respondo AI','Respondo on verkkosivulle asennettava asiakaspalvelubotti yrityksille. Se vastaa asiakkaiden kysymyksiin 24/7 yrityksesi omilla tiedoilla.'],
-      sv:['Kundservicebot för företag 24/7 | Respondo AI','Respondo är en kundservicebot för företags webbplatser. Den svarar kunder dygnet runt med företagets egna godkända uppgifter.'],
-      en:['Customer Service Bot for Businesses 24/7 | Respondo AI','Respondo is a customer service bot for business websites. It answers customers around the clock using your company-approved information.'],
+      fi:['AI-asiakaspalvelubotti yrityksille | Respondo AI','Respondo AI vastaa verkkosivusi asiakkaiden kysymyksiin 24/7 yrityksesi tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta. Kokeile 3 päivää maksutta.'],
+      sv:['AI-kundservicebot för företag | Respondo AI','Respondo AI svarar på webbplatsens kundfrågor dygnet runt med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar. Prova gratis i 3 dagar.'],
+      en:['AI Customer Service Bot for Businesses | Respondo AI','Respondo AI answers website customer questions 24/7 using company-approved information, captures contact requests and supports bookings. Try it free for 3 days.'],
     },
     '/ominaisuudet': {
-      fi:['Asiakaspalvelubotin ominaisuudet | Respondo AI','Tutustu Respondon ominaisuuksiin: verkkosivubotti, yrityksen oma tietopohja, yhteydenotot, ajanvaraus, keskustelut ja asiakaspalvelun hallinta yhdessä paikassa.'],
-      sv:['Funktioner för kundservicebot | Respondo AI','Se Respondos funktioner för kundservice, kunskapsbas, kontaktförfrågningar, bokningar och kunddialoger.'],
-      en:['Customer Service Bot Features | Respondo AI','Explore Respondo features for customer service, your knowledge base, contact requests, bookings and customer conversations.'],
+      fi:['AI-asiakaspalvelubotin ominaisuudet | Respondo AI','Tutustu Respondon ominaisuuksiin: verkkosivubotti, yrityksen oma tietopohja, yhteydenotot, ajanvaraus, keskustelut ja asiakaspalvelun hallinta yhdessä paikassa.'],
+      sv:['Funktioner för AI-kundservicebot | Respondo AI','Se Respondos funktioner för kundservice, kunskapsbas, kontaktförfrågningar, bokningar och kunddialoger.'],
+      en:['AI Customer Service Bot Features | Respondo AI','Explore Respondo features for customer service, your knowledge base, contact requests, bookings and customer conversations.'],
     },
     '/tietoturva': {
       fi:['Tietoturva ja tietosuoja | Respondo AI','Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
