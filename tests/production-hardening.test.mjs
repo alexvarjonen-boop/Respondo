@@ -42,3 +42,23 @@ test('signup checkout can recover a recreated pending account without losing a c
   assert.match(server, /Recovered checkout for recreated pending account/);
   assert.match(server, /Duplicate signup subscription cancellation failed/);
 });
+
+
+test('user-configured WooCommerce and action webhooks use DNS-pinned outbound requests', () => {
+  assert.match(server, /async function readPinnedResponse\(/);
+  assert.match(server, /const resolved = await resolvePinnedPublicAddress\(url\);[\s\S]{0,500}pinnedPublicRequest\(url,resolved,controller\.signal/);
+  assert.doesNotMatch(server, /async function wooApi[\s\S]{0,1200}await fetch\(url/);
+  assert.doesNotMatch(server, /async function dispatchActionWebhook[\s\S]{0,1600}await fetch\(url/);
+});
+
+test('authentication and checkout routes have dedicated abuse limits', () => {
+  assert.match(server, /const loginLimiter = rateLimit\(/);
+  assert.match(server, /const checkoutLimiter = rateLimit\(/);
+  assert.match(server, /app\.post\('\/api\/auth\/login', loginLimiter,/);
+  assert.match(server, /app\.post\('\/api\/auth\/agent-login', loginLimiter,/);
+  assert.match(server, /app\.post\('\/api\/auth\/start-checkout', checkoutLimiter,/);
+});
+
+test('production refuses to start with an ephemeral JWT secret', () => {
+  assert.match(server, /NODE_ENV === 'production'[\s\S]{0,120}JWT_SECRET is required in production/);
+});
