@@ -4669,13 +4669,14 @@ app.post('/api/i18n/translate', i18nLimiter, async (req,res) => {
     });
     if (pending.length) {
       const translatedBatch = await Promise.all(pending.map((text) => translateTextFree(text, lang, 'auto')));
-      if (translatedBatch.some((value) => !value)) {
-        return res.status(503).json({ error: lang === 'sv' ? 'Översättningstjänsten är tillfälligt otillgänglig.' : 'Translation service is temporarily unavailable.' });
-      }
+      // UI translation is an enhancement, not a reason to make the interface
+      // fail. If the free translation provider is temporarily unavailable,
+      // preserve the original text and return HTTP 200 so language switching
+      // and error rendering keep working.
       translatedBatch.forEach((value,i) => {
-        const translated = String(value || '').slice(0,8000);
+        const translated = String(value || pending[i] || '').slice(0,8000);
         translations[pendingIndexes[i]] = translated;
-        i18nCache.set(lang + ':' + pending[i], translated);
+        if (value) i18nCache.set(lang + ':' + pending[i], translated);
       });
       if (i18nCache.size > 4000) {
         const keys=[...i18nCache.keys()].slice(0,1000); keys.forEach((key)=>i18nCache.delete(key));
