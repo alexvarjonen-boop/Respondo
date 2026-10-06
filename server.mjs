@@ -6,6 +6,8 @@ import fs from 'fs/promises';
 import crypto from 'crypto';
 import dns from 'dns/promises';
 import net from 'net';
+import http from 'http';
+import https from 'https';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -1955,37 +1957,75 @@ async function assertPublicHttpUrl(value) {
   return url;
 }
 
+async function resolvePinnedPublicAddress(url) {
+  const host = String(url.hostname || '').toLowerCase();
+  if (net.isIP(host)) {
+    if (isPrivateAddress(host)) throw new Error('Verkkosivua ei voi hakea.');
+    return { address:host, family:net.isIP(host) };
+  }
+  const addresses = await dns.lookup(host, { all:true, verbatim:true });
+  if (!addresses.length || addresses.some((entry) => isPrivateAddress(entry.address))) {
+    throw new Error('Verkkosivua ei voi hakea.');
+  }
+  return addresses[0];
+}
+
+function pinnedPublicRequest(url, resolved, signal) {
+  return new Promise((resolve, reject) => {
+    const client = url.protocol === 'https:' ? https : http;
+    const request = client.request(url, {
+      method:'GET',
+      signal,
+      headers:{
+        'Host':url.host,
+        'User-Agent':'RESPONDO-Website-Importer/2.0',
+        'Accept':'text/html,application/xhtml+xml,application/json,text/plain;q=0.8,*/*;q=0.1',
+      },
+      lookup(_hostname, _options, callback) {
+        callback(null, resolved.address, resolved.family);
+      },
+      ...(url.protocol === 'https:' ? { servername:url.hostname } : {}),
+    }, resolve);
+    request.on('error', reject);
+    request.end();
+  });
+}
+
 async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000) {
   let url = await assertPublicHttpUrl(value);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
   try {
     for (let redirects = 0; redirects < 4; redirects++) {
-      const response = await fetch(url, {redirect:'manual',signal:controller.signal,headers:{'User-Agent':'RESPONDO-Website-Importer/2.0'}});
-      if ([301,302,303,307,308].includes(response.status)) {
-        const location = response.headers.get('location');
-        await response.body?.cancel();
+      const resolved = await resolvePinnedPublicAddress(url);
+      const response = await pinnedPublicRequest(url, resolved, controller.signal);
+      const status = Number(response.statusCode || 0);
+      if ([301,302,303,307,308].includes(status)) {
+        const location = Array.isArray(response.headers.location) ? response.headers.location[0] : response.headers.location;
+        response.resume();
         if (!location) throw new Error('Verkkosivun uudelleenohjaus epäonnistui.');
         url = await assertPublicHttpUrl(new URL(location,url).href);
         continue;
       }
-      if (!response.ok) { await response.body?.cancel(); throw new Error('Verkkosivua ei saatu luettua.'); }
-      const type = String(response.headers.get('content-type') || '').toLowerCase();
-      if (!acceptedTypes.some(x=>type.includes(x)) || Number(response.headers.get('content-length')||0)>maxBytes) {
-        await response.body?.cancel(); throw new Error('Verkkosivun sisältöä ei voitu lukea.');
+      if (status < 200 || status >= 300) {
+        response.resume();
+        throw new Error('Verkkosivua ei saatu luettua.');
       }
-      const reader=response.body?.getReader();
-      if (!reader) throw new Error('Verkkosivun sisältö puuttuu.');
+      const type = String(response.headers['content-type'] || '').toLowerCase();
+      const declaredLength = Number(response.headers['content-length'] || 0);
+      if (!acceptedTypes.some(x=>type.includes(x)) || (declaredLength > 0 && declaredLength > maxBytes)) {
+        response.resume();
+        throw new Error('Verkkosivun sisältöä ei voitu lukea.');
+      }
       const chunks=[]; let total=0;
-      try {
-        while (true) {
-          const {done,value}=await reader.read();
-          if (done) break;
-          total+=value.byteLength;
-          if (total>maxBytes) { await reader.cancel(); throw new Error('Verkkosivu on liian suuri automaattiseen tuontiin.'); }
-          chunks.push(Buffer.from(value));
+      for await (const chunk of response) {
+        total += chunk.length;
+        if (total > maxBytes) {
+          response.destroy();
+          throw new Error('Verkkosivu on liian suuri automaattiseen tuontiin.');
         }
-      } finally { reader.releaseLock(); }
+        chunks.push(Buffer.from(chunk));
+      }
       return {text:Buffer.concat(chunks,total).toString('utf8'),finalUrl:url.href};
     }
     throw new Error('Verkkosivulla on liikaa uudelleenohjauksia.');
@@ -3965,7 +4005,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             SET subscription_status=$1,
                 current_period_end=$2,
                 subscription_cancel_at_period_end=$3,
-                active=CASE WHEN $1 IN ('active','trialing') THEN TRUE ELSE active END,
+                active=CASE WHEN $1 IN ('active','trialing') THEN TRUE ELSE FALSE END,
                 updated_at=NOW()
           WHERE stripe_subscription_id=$4`,
         [subscription.status, periodEnd, cancelAtPeriodEnd, subscription.id],
@@ -4735,7 +4775,7 @@ app.get('/api/auth/checkout-success', async (req, res) => {
 app.post('/api/auth/agent-login', async (req,res) => {
   try {
     const username=String(req.body.username || '').trim().toLowerCase();
-    const r=await q('SELECT sa.*,t.name AS company_name FROM support_agents sa JOIN tenants t ON t.id=sa.tenant_id WHERE lower(sa.username)=lower($1)',[username]);
+    const r=await q("SELECT sa.*,t.name AS company_name FROM support_agents sa JOIN tenants t ON t.id=sa.tenant_id JOIN users u ON u.id=t.owner_user_id WHERE lower(sa.username)=lower($1) AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",[username]);
     if (!r.rowCount || !r.rows[0].password_hash || !(await bcrypt.compare(String(req.body.password||''),r.rows[0].password_hash))) {
       return res.status(401).json({ error:'Väärä käyttäjänimi tai salasana.' });
     }
@@ -5628,6 +5668,9 @@ app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
   if(!await requirePlanCapability(req,res,'websiteImport')) return;
   const website=normalizeWebUrl(req.body.website,false);
   if(!website) return res.status(400).json({error:'Lisää ensin verkkosivusi osoite.'});
+  const tenantResult=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tenantResult.rowCount) return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const tenantId=tenantResult.rows[0].id;
   // Remove completed jobs and also abandon a running job that has stopped
   // updating. Otherwise one stuck crawl can make the import button appear dead
   // forever for the same account.
@@ -5637,11 +5680,11 @@ app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
       websiteImportJobs.delete(id);
     }
   }
-  const active = [...websiteImportJobs.values()].find(job => job.userId === req.user.sub && job.status === 'running');
+  const active = [...websiteImportJobs.values()].find(job => job.userId === req.user.sub && job.tenantId === tenantId && job.status === 'running');
   if (active) return res.json({ok:true,jobId:active.id});
   if ([...websiteImportJobs.values()].filter(job=>job.status==='running').length >= 4) return res.status(429).json({error:'Haku on ruuhkautunut. Yritä hetken kuluttua uudelleen.'});
   const jobId=uid();
-  const job={id:jobId,userId:req.user.sub,website,status:'running',scanned:0,total:1,percent:0,result:null,error:null,updatedAt:Date.now()};
+  const job={id:jobId,userId:req.user.sub,tenantId,website,status:'running',scanned:0,total:1,percent:0,result:null,error:null,updatedAt:Date.now()};
   websiteImportJobs.set(jobId,job);
   res.json({ok:true,jobId});
   (async()=>{
@@ -5662,7 +5705,9 @@ app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
 app.get('/api/app/import-website/status/:jobId', auth, subscribed, async (req,res)=>{
   if(!await requirePlanCapability(req,res,'websiteImport')) return;
   const job=websiteImportJobs.get(req.params.jobId);
-  if(!job||job.userId!==req.user.sub) return res.status(404).json({error:'Hakua ei löytynyt.'});
+  const tenantResult=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  const tenantId=tenantResult.rows[0]?.id || '';
+  if(!job||job.userId!==req.user.sub||job.tenantId!==tenantId) return res.status(404).json({error:'Hakua ei löytynyt.'});
   res.json({status:job.status,scanned:job.scanned,total:job.total,percent:job.percent,error:job.error,result:job.status==='done'?job.result:null});
   if(job.status!=='running' && Date.now()-job.updatedAt>10*60*1000) websiteImportJobs.delete(job.id);
 });
@@ -5700,7 +5745,7 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
     const jobId=String(req.body?.jobId||'').trim();
     if(jobId){
       const job=websiteImportJobs.get(jobId);
-      if(!job || job.userId!==req.user.sub || job.status!=='done') return res.status(400).json({error:'Verkkosivun hakutulosta ei enää löytynyt. Hae tiedot uudelleen.'});
+      if(!job || job.userId!==req.user.sub || job.tenantId!==tenantId || job.status!=='done') return res.status(400).json({error:'Verkkosivun hakutulosta ei enää löytynyt. Hae tiedot uudelleen.'});
       const indexes=[...new Set((Array.isArray(req.body?.indexes)?req.body.indexes:[])
         .map((value)=>Number(value)).filter((value)=>Number.isInteger(value)&&value>=0&&value<job.result.candidates.length))].slice(0,10000);
       items=indexes.map((index)=>job.result.candidates[index]).filter(Boolean);
@@ -6660,7 +6705,7 @@ async function dispatchActionWebhook(tenant, actionRequest) {
 async function validateWidgetActionRequest(req, tenant, body) {
   const origin = requestOrigin(req);
   const baseHost = normalizeHost(BASE);
-  const external = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
+  const external = !origin || normalizeHost(origin.hostname) !== baseHost;
   if (!external) return true;
   if (!widgetOriginAllowed(req, tenant)) return false;
   try {
@@ -6679,11 +6724,11 @@ async function publicTenant(slugValue) {
       WHERE t.slug=$1
         AND t.active=true
         AND u.status='active'
-        AND u.subscription_status IN ('active','trialing')
+        AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')
         AND (
-          COALESCE(u.subscription_cancel_at_period_end,false)=false
-          OR u.current_period_end IS NULL
-          OR u.current_period_end > NOW()
+          COALESCE(t.subscription_cancel_at_period_end,u.subscription_cancel_at_period_end,false)=false
+          OR COALESCE(t.current_period_end,u.current_period_end) IS NULL
+          OR COALESCE(t.current_period_end,u.current_period_end) > NOW()
         )`,
     [slugValue],
   );
@@ -7174,7 +7219,7 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
 
     const origin = requestOrigin(req);
     const baseHost = normalizeHost(BASE);
-    const external = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
+    const external = !origin || normalizeHost(origin.hostname) !== baseHost;
     if (external) {
       if (!widgetOriginAllowed(req, tenant)) return res.status(403).json({ error: 'Chat ei ole käytössä tällä verkkosivulla.' });
       try {
@@ -7211,7 +7256,7 @@ app.get('/api/public/:slug/live', publicChatLimiter, async (req,res) => {
     const tenant = tr.rows[0];
     const origin = requestOrigin(req);
     const baseHost = normalizeHost(BASE);
-    const external = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
+    const external = !origin || normalizeHost(origin.hostname) !== baseHost;
     if (external) {
       if (!widgetOriginAllowed(req,tenant)) return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
       try {
@@ -7390,7 +7435,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
 
     const origin = requestOrigin(req);
     const baseHost = normalizeHost(BASE);
-    const externalWidgetRequest = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
+    const externalWidgetRequest = !origin || normalizeHost(origin.hostname) !== baseHost;
 
     if (externalWidgetRequest) {
       if (!widgetOriginAllowed(req, t)) {
@@ -7576,7 +7621,7 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
 
     const origin = requestOrigin(req);
     const baseHost = normalizeHost(BASE);
-    const external = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
+    const external = !origin || normalizeHost(origin.hostname) !== baseHost;
     if (external) {
       if (!widgetOriginAllowed(req,tenant)) return res.status(403).json({ error:'Chat ei ole käytössä tällä verkkosivulla.' });
       try {
@@ -8077,7 +8122,9 @@ app.delete('/api/app/booking-slots/:id', auth, subscribed, async (req,res) => {
 app.post('/api/app/stripe-connect/onboard', auth, subscribed, async (req,res) => {
   try {
     if (!stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+    const tr = req.user.role === 'agent'
+      ? await q("SELECT t.* FROM tenants t JOIN users u ON u.id=t.owner_user_id WHERE t.id=$1 AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",[req.user.tenantId])
+      : await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     let accountId = tenant.stripe_connected_account_id;
@@ -8828,7 +8875,7 @@ app.post('/api/public/:slug/action-event', publicChatLimiter, async (req, res) =
 
     const origin = requestOrigin(req);
     const baseHost = normalizeHost(BASE);
-    const external = Boolean(origin && normalizeHost(origin.hostname) !== baseHost);
+    const external = !origin || normalizeHost(origin.hostname) !== baseHost;
     if (external) {
       if (!widgetOriginAllowed(req, tenant)) return res.status(403).json({ error: 'Chat ei ole käytössä tällä verkkosivulla.' });
       try {
