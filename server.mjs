@@ -917,6 +917,22 @@ function widgetOriginAllowed(req, tenant) {
   return normalizeHost(origin.hostname) === allowedHost;
 }
 
+function safeTenantReturnUrl(value, tenant) {
+  const raw=String(value || '').trim();
+  const tenantHost=normalizeHost(tenant?.website);
+  if (!raw || !tenantHost) return normalizeWebUrl(tenant?.website || '', false) || BASE;
+  try {
+    const url=new URL(raw);
+    if (!['http:','https:'].includes(url.protocol)) throw new Error('invalid protocol');
+    if (normalizeHost(url.hostname) !== tenantHost) throw new Error('host mismatch');
+    url.username='';
+    url.password='';
+    return url.toString();
+  } catch {
+    return normalizeWebUrl(tenant?.website || '', false) || BASE;
+  }
+}
+
 function setWidgetCors(req, res) {
   const origin = requestOrigin(req);
   if (origin) {
@@ -8874,7 +8890,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
                 respondo_tenant_id:tenant.id,
               },
               success_url:BASE + '/maksu-valmis?action=' + encodeURIComponent(id) + '&session_id={CHECKOUT_SESSION_ID}&lang=' + encodeURIComponent(actionLang),
-              cancel_url:pageUrl || tenant.website || BASE,
+              cancel_url:safeTenantReturnUrl(pageUrl,tenant),
             },
             { stripeAccount:tenant.stripe_connected_account_id },
           );
