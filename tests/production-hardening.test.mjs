@@ -282,3 +282,17 @@ test('public rate limits do not collapse Railway 0.0.0.0 clients into one bucket
   }
   assert.match(server, /publicRateKey\(req,'demo-import'\).*website/s);
 });
+
+
+test('rate limit keys separate Railway edge users and tenant widget sessions', () => {
+  assert.match(server,/function publicRateKey\(req,scope='public'\)/);
+  assert.match(server,/x-forwarded-for/);
+  assert.match(server,/cf-connecting-ip/);
+  assert.match(server,/body\.visitorRef \|\| body\.demoImportId/);
+  assert.match(server,/body\.widgetToken \|\| req\.query\?\.widgetToken/);
+  assert.match(server,/req\.params\?\.slug/);
+  assert.match(server,/keyGenerator:req=>accountRateKey\(req,'login'\)/);
+  assert.match(server,/keyGenerator:req=>accountRateKey\(req,'checkout'\)/);
+  assert.match(server,/keyGenerator:req=>publicRateKey\(req,'global'\)/);
+  assert.match(server,/keyGenerator:req=>publicRateKey\(req,'i18n'\)/);
+});
