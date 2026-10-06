@@ -770,8 +770,17 @@ async function applyReferralDiscountIfEligible(userId, subscriptionId, planOverr
 }
 
 
+function ownerTestAccessConfigured() {
+  return Boolean(String(process.env.OWNER_TEST_ACCESS_TOKEN || '').trim());
+}
+
+function validOwnerTestAccessToken(value) {
+  const configured=String(process.env.OWNER_TEST_ACCESS_TOKEN || '').trim();
+  return Boolean(configured) && safeEqualText(String(value || '').trim(),configured);
+}
+
 async function ownerTestPlanEnabled() {
-  if (!pool || !process.env.STRIPE_OWNER_TEST_PRICE_ID) return false;
+  if (!pool || !process.env.STRIPE_OWNER_TEST_PRICE_ID || !ownerTestAccessConfigured()) return false;
   const r = await q("SELECT value FROM app_settings WHERE key='owner_test_plan_enabled'");
   return r.rows[0]?.value === 'true';
 }
@@ -5210,8 +5219,10 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   }
 
   try {
-    if (normalizedPlan === 'owner_test' && !(await ownerTestPlanEnabled())) {
-      return res.status(410).json({ error: 'Omistajan testitilaus ei ole enää käytettävissä.' });
+    if (normalizedPlan === 'owner_test') {
+      if (!(await ownerTestPlanEnabled()) || !validOwnerTestAccessToken(req.body?.ownerTestAccessToken)) {
+        return res.status(404).json({ error: 'Tilausvaihtoehtoa ei löytynyt.' });
+      }
     }
 
     const price = freeReferral ? null : stripePriceForPlan(normalizedPlan);
