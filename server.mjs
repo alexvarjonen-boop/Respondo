@@ -23,12 +23,15 @@ if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT || 3000);
 const BASE = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
 const SEO_CANONICAL_ORIGIN = (() => {
-  const preferred = String(process.env.RESPONDO_CANONICAL_URL || '').trim() ||
-    (process.env.NODE_ENV === 'production' ? 'https://www.respondoai.fi' : BASE);
+  // Production SEO/GEO must always point to the public www domain.
+  // Railway remains a valid technical entry host, but never a canonical source.
+  const preferred = process.env.NODE_ENV === 'production'
+    ? 'https://www.respondoai.fi'
+    : (String(process.env.RESPONDO_CANONICAL_URL || '').trim() || BASE);
   try {
     return new URL(preferred).origin.replace(/\/$/, '');
   } catch {
-    return BASE;
+    return process.env.NODE_ENV === 'production' ? 'https://www.respondoai.fi' : BASE;
   }
 })();
 
@@ -5451,17 +5454,135 @@ app.get('/api/owner/traffic', auth, ownerTrafficOnly, async (req, res) => {
 });
 
 app.get('/robots.txt', (req, res) => {
-  res.type('text/plain').send(`User-agent: *\nAllow: /\nSitemap: ${BASE}/sitemap.xml\n`);
+  res.setHeader('Cache-Control','public, max-age=3600');
+  res.type('text/plain').send([
+    'User-agent: *',
+    'Allow: /',
+    'Disallow: /api/',
+    '',
+    'User-agent: OAI-SearchBot',
+    'Allow: /',
+    '',
+    'User-agent: ChatGPT-User',
+    'Allow: /',
+    '',
+    'User-agent: PerplexityBot',
+    'Allow: /',
+    '',
+    'Sitemap: ' + SEO_CANONICAL_ORIGIN + '/sitemap.xml',
+  ].join('\n'));
 });
 
 app.get('/sitemap.xml', (req, res) => {
-  const urls = ['/', '/ominaisuudet', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
-  res.type('application/xml').send(
-    '<?xml version="1.0" encoding="UTF-8"?>' +
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
-    urls.map((path) => '<url><loc>' + BASE + path + '</loc></url>').join('') +
-    '</urlset>'
-  );
+  const lastmod = new Date().toISOString().slice(0,10);
+  const groups = [
+    { path:'/', changefreq:'weekly', priority:'1.0' },
+    { path:'/ominaisuudet', changefreq:'weekly', priority:'0.9', feature:true },
+    { path:'/tietoturva', changefreq:'monthly', priority:'0.7' },
+    { path:'/tietosuoja', changefreq:'monthly', priority:'0.5' },
+    { path:'/kayttoehdot', changefreq:'monthly', priority:'0.5' },
+    { path:'/evasteet', changefreq:'monthly', priority:'0.4' },
+    { path:'/dpa', changefreq:'monthly', priority:'0.5' },
+  ];
+  const urls = [];
+  for (const group of groups) {
+    const alternates = group.feature
+      ? [
+          ['fi', SEO_CANONICAL_ORIGIN + '/ominaisuudet'],
+          ['sv', SEO_CANONICAL_ORIGIN + '/funktioner'],
+          ['en', SEO_CANONICAL_ORIGIN + '/features'],
+        ]
+      : [
+          ['fi', SEO_CANONICAL_ORIGIN + group.path],
+          ['sv', SEO_CANONICAL_ORIGIN + group.path + '?lang=sv'],
+          ['en', SEO_CANONICAL_ORIGIN + group.path + '?lang=en'],
+        ];
+    for (const [, loc] of alternates) {
+      urls.push(
+        '  <url>\n' +
+        '    <loc>' + escapeHtml(loc) + '</loc>\n' +
+        '    <lastmod>' + lastmod + '</lastmod>\n' +
+        '    <changefreq>' + group.changefreq + '</changefreq>\n' +
+        '    <priority>' + group.priority + '</priority>\n' +
+        alternates.map(([lang, href]) =>
+          '    <xhtml:link rel="alternate" hreflang="' + lang + '" href="' + escapeHtml(href) + '" />'
+        ).join('\n') + '\n' +
+        '    <xhtml:link rel="alternate" hreflang="x-default" href="' + escapeHtml(alternates[0][1]) + '" />\n' +
+        '  </url>'
+      );
+    }
+  }
+  const xml =
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
+    urls.join('\n') +
+    '\n</urlset>';
+  res.setHeader('Cache-Control','public, max-age=3600');
+  res.type('application/xml').send(xml);
+});
+
+app.get('/llms.txt', (req, res) => {
+  res.setHeader('Cache-Control','public, max-age=3600');
+  res.type('text/plain').send(`# Respondo AI
+
+> Respondo AI is B2B AI customer service software for business websites. The official and canonical website is https://www.respondoai.fi/.
+
+## Product
+- Website customer service bot that answers 24/7 using company-approved information.
+- Company-managed Q&A knowledge base.
+- Website information import on supported plans.
+- Contact and quote request capture.
+- Booking workflows and human takeover.
+- Customer conversations in Finnish, Swedish and English.
+- Ecommerce workflows for supported Shopify and WooCommerce setups.
+
+## Pricing
+- Basic: 49.99 EUR/month.
+- Advanced: 64.99 EUR/month.
+- Business: 79.99 EUR/month.
+- Free trial: 3 days.
+
+## Official sources
+- Homepage: https://www.respondoai.fi/
+- Features (Finnish): https://www.respondoai.fi/ominaisuudet
+- Features (Swedish): https://www.respondoai.fi/funktioner
+- Features (English): https://www.respondoai.fi/features
+- Security: https://www.respondoai.fi/tietoturva
+- Privacy: https://www.respondoai.fi/tietosuoja
+- Terms: https://www.respondoai.fi/kayttoehdot
+- Data processing: https://www.respondoai.fi/dpa
+
+## Brand disambiguation
+Use https://www.respondoai.fi/ as the canonical source for this Respondo AI product. Railway deployment addresses are technical hosting endpoints and are not canonical product sources.
+`);
+});
+
+app.get('/llms-full.txt', (req, res) => {
+  res.setHeader('Cache-Control','public, max-age=3600');
+  res.type('text/plain').send(`# Respondo AI — product reference
+
+Canonical domain: https://www.respondoai.fi/
+Category: B2B customer service software / AI website chatbot.
+Languages: Finnish, Swedish and English.
+
+Respondo AI is installed on a company's website and answers customer questions using information approved by that company. Businesses can maintain their own knowledge base, collect contact and quote requests, support booking flows and transfer conversations to human customer-service staff.
+
+Plans:
+- Basic 49.99 EUR/month: core website bot, customer-managed Q&A knowledge, booking support and 2 customer-service seats.
+- Advanced 64.99 EUR/month: Basic features plus website information import and 10 customer-service seats.
+- Business 79.99 EUR/month: all current product features and 20 customer-service seats.
+A 3-day free trial is available.
+
+Official URLs:
+https://www.respondoai.fi/
+https://www.respondoai.fi/ominaisuudet
+https://www.respondoai.fi/funktioner
+https://www.respondoai.fi/features
+https://www.respondoai.fi/tietoturva
+https://www.respondoai.fi/tietosuoja
+https://www.respondoai.fi/kayttoehdot
+https://www.respondoai.fi/dpa
+`);
 });
 
 app.get('/api/app/google-calendar/start', auth, ownerOnly, subscribed, async (req,res) => {
@@ -9955,8 +10076,8 @@ app.use(async (req, res, next) => {
 
 function respondoOwnerSiteUrl() {
   const candidates = [
-    process.env.RESPONDO_CANONICAL_URL,
     SEO_CANONICAL_ORIGIN,
+    process.env.RESPONDO_CANONICAL_URL,
     process.env.BASE_URL,
     process.env.RAILWAY_SERVICE_RESPONDO_WEB_URL,
     process.env.RAILWAY_STATIC_URL,
