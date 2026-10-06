@@ -450,6 +450,9 @@ function cleanBotAvatar(value) {
 }
 
 const DATA_ENCRYPTION_SECRET = String(process.env.DATA_ENCRYPTION_KEY || '').trim();
+if (process.env.NODE_ENV === 'production' && !DATA_ENCRYPTION_SECRET) {
+  throw new Error('DATA_ENCRYPTION_KEY is required in production.');
+}
 const SECRET_KEY = crypto.createHash('sha256').update(DATA_ENCRYPTION_SECRET || JWT).digest();
 const LEGACY_SECRET_KEY = crypto.createHash('sha256').update(JWT).digest();
 
