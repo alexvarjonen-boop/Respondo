@@ -2401,8 +2401,18 @@ async function fetchStorefrontCatalog(firstHtml, baseUrl, limit=10000, deadline=
   return fetchWooCatalog(firstHtml,baseUrl,limit,deadline);
 }
 
-async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000, onProgress = null) {
+async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000, onProgress = null, options = {}) {
   const crawlStartedAt = Date.now();
+  const opts = options && typeof options === 'object' ? options : {};
+  const storefrontLimit = Number.isFinite(Number(opts.storefrontLimit))
+    ? Math.max(0,Math.min(10000,Number(opts.storefrontLimit)))
+    : 10000;
+  const storefrontBudgetMs = Number.isFinite(Number(opts.storefrontBudgetMs))
+    ? Math.max(1000,Math.min(50000,Number(opts.storefrontBudgetMs)))
+    : Math.min(50000,Math.max(12000,Math.floor(timeBudgetMs*0.35)));
+  const sitemapLimit = Number.isFinite(Number(opts.sitemapLimit))
+    ? Math.max(0,Math.min(10000,Number(opts.sitemapLimit)))
+    : 10000;
   const first = await fetchPublicHtml(value);
   const base = new URL(first.finalUrl);
   const pages = [];
@@ -2450,20 +2460,24 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   enqueue(first.html, first.finalUrl);
 
   let storefrontProducts=[];
-  try {
-    storefrontProducts=await fetchStorefrontCatalog(
-      first.html,
-      first.finalUrl,
-      10000,
-      Date.now()+Math.min(50000,Math.max(12000,Math.floor(timeBudgetMs*0.35))),
-    );
-  } catch (e) {
-    console.warn('Storefront catalog discovery skipped',e?.message||e);
+  if (storefrontLimit > 0) {
+    try {
+      storefrontProducts=await fetchStorefrontCatalog(
+        first.html,
+        first.finalUrl,
+        storefrontLimit,
+        Date.now()+storefrontBudgetMs,
+      );
+    } catch (e) {
+      console.warn('Storefront catalog discovery skipped',e?.message||e);
+    }
   }
 
   // Sitemaps expose pages that client-rendered navigation may not reveal in raw HTML.
   let sitemapUrls = [];
-  try { sitemapUrls = await discoverSitemapUrls(first.finalUrl, 10000); } catch (e) { console.warn('Sitemap discovery skipped', e?.message || e); }
+  if (sitemapLimit > 0) {
+    try { sitemapUrls = await discoverSitemapUrls(first.finalUrl, sitemapLimit); } catch (e) { console.warn('Sitemap discovery skipped', e?.message || e); }
+  }
   for (const link of sitemapUrls) {
     let u;
     try { u = new URL(link); } catch { continue; }
@@ -6802,7 +6816,13 @@ app.post('/api/public/demo-import-website', demoImportLimiter, async (req,res)=>
     )});
     // Same SSRF-safe importer as paid accounts. Demo data is returned only to
     // this browser session and is never persisted to tenant knowledge.
-    const bundle=await fetchWebsiteBundle(website,180,55000);
+    const bundle=await fetchWebsiteBundle(
+      website,
+      40,
+      12000,
+      null,
+      { storefrontLimit:300, storefrontBudgetMs:4500, sitemapLimit:800 },
+    );
     const allCandidates=websiteKnowledgeCandidates(bundle);
     const candidates=allCandidates.slice(0,2000);
     const profile=extractFreeWebsiteProfile(bundle);
@@ -6891,7 +6911,13 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       const website=normalizeWebUrl(profile.website,false);
       if(!hasProductFacts && website){
         try {
-          const bundle=await fetchWebsiteBundle(website,80,18000);
+          const bundle=await fetchWebsiteBundle(
+            website,
+            30,
+            10000,
+            null,
+            { storefrontLimit:250, storefrontBudgetMs:4000, sitemapLimit:500 },
+          );
           const candidates=websiteKnowledgeCandidates(bundle).slice(0,700);
           const recoveredRows=candidates.map((item,index)=>({
             id:'demo-recovered-'+index,
