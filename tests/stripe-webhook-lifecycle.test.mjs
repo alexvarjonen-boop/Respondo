@@ -44,3 +44,12 @@ test('Stripe webhook retries are idempotent across replicas', () => {
   assert.match(server, /finishStripeWebhookEvent\(eventLock,event,'processed'\)/);
   assert.match(server, /finishStripeWebhookEvent\(eventLock,event,'failed'/);
 });
+
+
+test('webhook ledger runtime RLS migration uses valid PostgreSQL dollar quoting', () => {
+  const tableAt=server.indexOf('CREATE TABLE IF NOT EXISTS stripe_webhook_events');
+  const indexAt=server.indexOf('CREATE INDEX IF NOT EXISTS idx_stripe_webhook_events_updated',tableAt);
+  const migration=server.slice(tableAt,indexAt);
+  assert.match(migration,/DO \$\$[\s\S]*REVOKE ALL PRIVILEGES ON TABLE public\.stripe_webhook_events FROM anon;[\s\S]*\$\$/);
+  assert.doesNotMatch(migration,/DO \$\n/);
+});
