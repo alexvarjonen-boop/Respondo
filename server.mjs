@@ -7315,13 +7315,13 @@ app.post('/api/public/respondo-contact', publicChatLimiter, async (req,res)=>{
       message:errorText(
         emailDelivery.sent
           ? 'Kiitos! Viestisi lähetettiin sähköpostiimme.'
-          : 'Kiitos! Viestisi tallennettiin. Sähköposti-ilmoitus ei ole vielä käytössä.',
+          : 'Kiitos! Viestisi vastaanotettiin. Palaamme asiaan mahdollisimman pian.',
         emailDelivery.sent
           ? 'Tack! Ditt meddelande skickades till vår e-post.'
-          : 'Tack! Ditt meddelande sparades. E-postavisering är ännu inte aktiverad.',
+          : 'Tack! Ditt meddelande har tagits emot. Vi återkommer så snart som möjligt.',
         emailDelivery.sent
           ? 'Thank you! Your message was sent to our email.'
-          : 'Thank you! Your message was saved. Email notification is not enabled yet.'
+          : 'Thank you! Your message has been received. We will get back to you as soon as possible.'
       )
     });
   } catch(e) {
