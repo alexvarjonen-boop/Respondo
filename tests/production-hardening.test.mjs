@@ -261,3 +261,10 @@ test('accepted public actions survive secondary persistence failures', () => {
   assert.match(block, /Action analytics write failed/);
   assert.match(block, /return res\.json\(\{[\s\S]{0,120}ok:true/);
 });
+
+
+test('public contact submissions have a dedicated anti-spam limiter', () => {
+  assert.match(server, /const publicContactLimiter = rateLimit\(\{[\s\S]{0,500}windowMs: 10 \* 60 \* 1000[\s\S]{0,180}limit: 8/);
+  assert.match(server, /app\.post\('\/api\/public\/demo-lead', publicContactLimiter/);
+  assert.match(server, /app\.post\('\/api\/public\/respondo-contact', publicContactLimiter/);
+});
