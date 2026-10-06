@@ -6086,6 +6086,7 @@ async function route() {
     };
     $('#logout')?.addEventListener('click', doLogout);
     $('#logoutTop')?.addEventListener('click', doLogout);
+    $('#logoutAgent')?.addEventListener('click', doLogout);
 
     $('#copyCode')?.addEventListener('click', async (e) => {
       const code = $('#installCode')?.innerText || '';
