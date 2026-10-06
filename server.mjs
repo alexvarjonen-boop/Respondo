@@ -8122,9 +8122,7 @@ app.delete('/api/app/booking-slots/:id', auth, subscribed, async (req,res) => {
 app.post('/api/app/stripe-connect/onboard', auth, subscribed, async (req,res) => {
   try {
     if (!stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
-    const tr = req.user.role === 'agent'
-      ? await q("SELECT t.* FROM tenants t JOIN users u ON u.id=t.owner_user_id WHERE t.id=$1 AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",[req.user.tenantId])
-      : await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     let accountId = tenant.stripe_connected_account_id;
@@ -8563,14 +8561,16 @@ app.post('/api/app/live/:id/assign', auth, subscribed, async (req,res) => {
 
 app.post('/api/app/live/:id/mode', auth, async (req,res) => {
   if (req.user.role === 'agent') {
-    const owned=await q('SELECT id FROM chat_threads WHERE id=$1 AND tenant_id=$2 AND assigned_agent_id=$3',[req.params.id,req.user.tenantId,req.user.agentId]);
+    const owned=await q(
+      "SELECT ct.id FROM chat_threads ct JOIN tenants t ON t.id=ct.tenant_id JOIN users u ON u.id=t.owner_user_id WHERE ct.id=$1 AND ct.tenant_id=$2 AND ct.assigned_agent_id=$3 AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",
+      [req.params.id,req.user.tenantId,req.user.agentId],
+    );
     if (!owned.rowCount) return res.status(403).json({ error:'Keskustelua ei ole osoitettu sinulle.' });
-  } else {
-    const sr=await q('SELECT status,subscription_status FROM users WHERE id=$1',[req.user.sub]);
-    if (!sr.rowCount || sr.rows[0].status!=='active' || !['active','trialing'].includes(sr.rows[0].subscription_status)) return res.status(402).json({ error:'Aktiivinen tilaus tarvitaan.' });
   }
   try {
-    const tr = req.user.role === 'agent' ? { rowCount:1,rows:[{id:req.user.tenantId}] } : await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+    const tr = req.user.role === 'agent'
+      ? { rowCount:1,rows:[{id:req.user.tenantId}] }
+      : await q("SELECT t.id FROM tenants t JOIN users u ON u.id=t.owner_user_id WHERE t.owner_user_id=$1 AND t.id=active_tenant_for_user($1) AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const mode = req.body.mode === 'human' ? 'human' : 'ai';
     const rr = await q(
@@ -8587,16 +8587,18 @@ app.post('/api/app/live/:id/mode', auth, async (req,res) => {
 
 app.post('/api/app/live/:id/reply', auth, async (req,res) => {
   if (req.user.role === 'agent') {
-    const owned=await q('SELECT id FROM chat_threads WHERE id=$1 AND tenant_id=$2 AND assigned_agent_id=$3',[req.params.id,req.user.tenantId,req.user.agentId]);
+    const owned=await q(
+      "SELECT ct.id FROM chat_threads ct JOIN tenants t ON t.id=ct.tenant_id JOIN users u ON u.id=t.owner_user_id WHERE ct.id=$1 AND ct.tenant_id=$2 AND ct.assigned_agent_id=$3 AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",
+      [req.params.id,req.user.tenantId,req.user.agentId],
+    );
     if (!owned.rowCount) return res.status(403).json({ error:'Keskustelua ei ole osoitettu sinulle.' });
-  } else {
-    const sr=await q('SELECT status,subscription_status FROM users WHERE id=$1',[req.user.sub]);
-    if (!sr.rowCount || sr.rows[0].status!=='active' || !['active','trialing'].includes(sr.rows[0].subscription_status)) return res.status(402).json({ error:'Aktiivinen tilaus tarvitaan.' });
   }
   try {
     const text = String(req.body.message || '').trim().slice(0,4000);
     if (!text) return res.status(400).json({ error:'Kirjoita viesti.' });
-    const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+    const tr = req.user.role === 'agent'
+      ? await q("SELECT t.* FROM tenants t JOIN users u ON u.id=t.owner_user_id WHERE t.id=$1 AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",[req.user.tenantId])
+      : await q("SELECT t.* FROM tenants t JOIN users u ON u.id=t.owner_user_id WHERE t.owner_user_id=$1 AND t.id=active_tenant_for_user($1) AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     const rr = await q(
