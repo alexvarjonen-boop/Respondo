@@ -1904,105 +1904,294 @@ function conversationTopic(value) {
   return '';
 }
 
-function isConversationalAcknowledgement(value) {
-  const q=normalizeSearchText(value);
-  if (!q) return false;
+const CONVERSATION_PHRASES = Object.freeze({
+  greeting:[
+    'hei','moi','moikka','moro','morjens','terve','paivaa','hyvaa paivaa','huomenta','hyvaa huomenta','iltaa','hyvaa iltaa',
+    'hello','hi','hey','good morning','good afternoon','good evening',
+    'hej','halla','god morgon','god dag','god kvall'
+  ],
+  gratitude:[
+    'kiitos','kiitti','kiitoksia','paljon kiitoksia','kiitos paljon','kiitti paljon','suuret kiitokset','tuhannet kiitokset',
+    'kiitos avusta','kiitos avustasi','kiitti avusta','iso kiitos','jes kiitos','joo kiitos','okei kiitos','ok kiitos',
+    'thanks','thank you','thanks a lot','thank you very much','many thanks','thanks so much','thank you so much',
+    'thanks for the help','thanks for your help','thank you for the help','thank you for your help','cheers',
+    'tack','tack sa mycket','tusen tack','stort tack','tack for hjalpen','tack for din hjalp','okej tack','japp tack'
+  ],
+  acknowledgement:[
+    'ok','okei','okay','okey','selva','selkee','selkis','selva homma','asia selva','joo','juu','jep','jes','hyva','hyva homma',
+    'hyva juttu','aivan','aha','jaa','niinpa','ymmarsin','tajusin','kuulostaa hyvalta','sopii','kay','kay hyvin','sopii hyvin',
+    'yes','yeah','yep','yup','sure','alright','all right','got it','understood','i understand','makes sense','that makes sense',
+    'sounds good','great','perfect','fine','okay got it','right','exactly',
+    'okej','japp','ja','bra','bra da','forstar','jag forstar','det later bra','perfekt','precis'
+  ],
+  farewell:[
+    'moi moi','heippa','hei hei','nakemiin','nahdaan','palaillaan','ei muuta','ei muuta kiitos','kiitos hei','kiitos moi',
+    'bye','goodbye','bye bye','see you','see you later','talk to you later','that is all','thats all','thanks bye',
+    'hej da','hejda','vi ses','vi hors','tack hej'
+  ],
+  wellbeing:[
+    'mita kuuluu','miten menee','kuinka menee','mitas kuuluu','miten sulla menee','miten sinulla menee',
+    'how are you','how is it going','how are things','how are you doing','hows it going',
+    'hur mar du','hur ar laget','hur gar det'
+  ],
+  identity:[
+    'kuka olet','mika olet','mikas olet','oletko botti','ootko botti','oletko tekoaly','ootko tekoaly',
+    'who are you','what are you','are you a bot','are you ai','are you an ai',
+    'vem ar du','vad ar du','ar du en bot','ar du ai'
+  ],
+  help:[
+    'voitko auttaa','voisitko auttaa','autatko','auta minua','tarvitsen apua','tarviin apua','minulla on kysymys','mulla on kysymys',
+    'can you help','can you help me','could you help','could you help me','i need help','i have a question','help me',
+    'kan du hjalpa','kan du hjalpa mig','jag behover hjalp','jag har en fraga'
+  ],
+  capabilities:[
+    'mita osaat','mita pystyt tekemaan','missa voit auttaa','miten voit auttaa','missa asioissa voit auttaa','mita voin kysya',
+    'what can you do','what can i ask','what can you help with','how can you help','what do you know',
+    'vad kan du gora','vad kan jag fraga','vad kan du hjalpa med','hur kan du hjalpa'
+  ],
+  confusion:[
+    'en ymmarra','en tajua','en tajunnut','en ymmartanyt','mita tarkoitat','miten niin','selita','selita tarkemmin','avaa tota',
+    'i dont understand','i do not understand','what do you mean','how so','explain','explain that','can you explain',
+    'jag forstar inte','vad menar du','hur menar du','forklara','kan du forklara'
+  ],
+  repeat:[
+    'toista','toista toi','sano uudestaan','voitko toistaa','voisitko toistaa','uudestaan','mita sanoit',
+    'repeat that','say that again','can you repeat','could you repeat','what did you say',
+    'upprepa','sag det igen','kan du upprepa','vad sa du'
+  ],
+  apology:[
+    'anteeksi','sori','sori siita','pahoittelut','mun moka','oma moka',
+    'sorry','sorry about that','my bad','apologies',
+    'forlat','ursakta','mitt fel'
+  ],
+  compliment:[
+    'hyva botti','mahtavaa','hienoa','loistavaa','erinomaista','jes mahtavaa',
+    'nice','awesome','great job','good job','excellent','amazing',
+    'snyggt','toppen','fantastiskt','bra jobbat'
+  ]
+});
 
-  const shortAcknowledgements=new Set([
-    'ok','okei','okay','okey','selva','selkee','joo','juu','jes','hyva',
-    'yes','yeah','yep','sure','alright','all right','got it',
-    'okej','japp','bra'
-  ]);
-  if (shortAcknowledgements.has(q)) return true;
+const CONVERSATION_PHRASE_SETS = Object.fromEntries(
+  Object.entries(CONVERSATION_PHRASES).map(([kind,phrases])=>[
+    kind,new Set(phrases.map((phrase)=>normalizeSearchText(phrase)))
+  ])
+);
 
-  return /^(?:(?:ok|okei|okay|okey|selva|selkee|joo|juu|jes|hyva|ei|no|yes|yeah|yep|sure|alright|all right|got it|okej|japp|bra|nej)\s+)*(?:kiitos(?: paljon| avusta| avustasi)?|kiitti(?: paljon| avusta| avustasi)?|thanks(?: a lot| for (?:the )?help)?|thank you(?: very much| for (?:the )?help)?|many thanks|tack(?: sa mycket| för hjälpen| for hjalpen)?)$/.test(q);
-}
-
-function conversationalSmallTalkReply(value, lang='fi') {
+function conversationPhraseType(value) {
   const q=normalizeSearchText(value);
   if (!q) return '';
-  const replies={
-    fi:{
-      wellbeing:'Hyvin, kiitos! Miten voin auttaa?',
-      identity:'Olen yrityksen verkkosivujen asiakaspalvelubotti. Voin auttaa yrityksen palveluihin, hintoihin, yhteystietoihin ja muihin sivustolta löytyviin tietoihin liittyvissä kysymyksissä.',
-      help:'Totta kai. Kerro vain, missä asiassa tarvitset apua.',
-      bye:'Kiitos yhteydenotosta! Mukavaa päivänjatkoa!'
-    },
-    sv:{
-      wellbeing:'Bra, tack! Hur kan jag hjälpa?',
-      identity:'Jag är företagets kundservicebot på webbplatsen. Jag kan hjälpa med frågor om tjänster, priser, kontaktuppgifter och annan information på webbplatsen.',
-      help:'Självklart. Berätta bara vad du behöver hjälp med.',
-      bye:'Tack för att du kontaktade oss! Ha en bra dag!'
-    },
-    en:{
-      wellbeing:'I’m good, thanks! How can I help?',
-      identity:'I’m the company’s website support bot. I can help with questions about services, pricing, contact details, and other information available on the website.',
-      help:'Of course. Tell me what you need help with.',
-      bye:'Thanks for getting in touch! Have a great day!'
-    }
-  };
-  const r=replies[lang]||replies.fi;
-  if (/^(?:mita kuuluu|miten menee|kuinka menee|how are you|how is it going|how are things|hur mar du|hur ar laget)[?!. ]*$/.test(q)) return r.wellbeing;
-  if (/^(?:kuka olet|mika olet|oletko botti|who are you|what are you|are you a bot|vem ar du|ar du en bot)[?!. ]*$/.test(q)) return r.identity;
-  if (/^(?:voitko auttaa|voisitko auttaa|minulla on kysymys|can you help|could you help|i need help|kan du hjalpa|jag behover hjalp)[?!. ]*$/.test(q)) return r.help;
-  if (/^(?:heippa|moikka moi|nakemiin|nähdään|nahdaan|bye|goodbye|see you|hej da|hejda)[?!. ]*$/.test(q)) return r.bye;
+
+  // These are intentionally whole-message matches. A greeting/thanks prefix
+  // must never swallow a real customer question such as "moi paljonko maksaa?".
+  for (const kind of ['wellbeing','identity','help','capabilities','confusion','repeat','farewell','gratitude','apology','compliment','greeting','acknowledgement']) {
+    if (CONVERSATION_PHRASE_SETS[kind].has(q)) return kind;
+  }
+
+  if (/^(?:no|noh|siis|ihan|vaan|hei|moi|okei|ok|well|so|okay|hey|alltsa|na)\s+(?:kiitos|kiitti|thanks|thank you|tack)(?:\s+(?:paljon|avusta|avustasi|a lot|so much|for (?:the |your )?help|sa mycket|for hjalpen))?$/.test(q)) return 'gratitude';
+  if (/^(?:ei|en|no|nope|nej)\s+(?:kiitos|kiitti|thanks|thank you|tack)$/.test(q)) return 'negative_gratitude';
+  if (/^(?:no|noh|okei|ok|okay|joo|juu|jep|jes|aivan|selva|selkee|yeah|yep|yup|right|sure|okej|japp|ja)\s+(?:selva|selkee|selkis|hyva|hyva homma|got it|understood|makes sense|sounds good|bra|perfekt|precis)$/.test(q)) return 'acknowledgement';
+  if (/^(?:kiitos|kiitti|thanks|thank you|tack).*(?:avusta|help|hjalp)$/.test(q)) return 'gratitude';
+  if (/^(?:moi|hei|moikka|moro|terve|hello|hi|hey|hej|halla)\s+(?:taas|sinne|vaan|kaikille|there|again|igen)$/.test(q)) return 'greeting';
   return '';
 }
 
-function conversationalClarification(value, lang='fi') {
-  const q=normalizeSearchText(value);
+function isConversationalAcknowledgement(value) {
+  const kind=conversationPhraseType(value);
+  return kind==='acknowledgement' || kind==='gratitude' || kind==='negative_gratitude' || kind==='compliment' || kind==='apology';
+}
+
+function lastConversationAnswer(history=[]) {
+  for (let i=(Array.isArray(history)?history.length:0)-1;i>=0;i--) {
+    const answer=String(history[i]?.answer||history[i]?.assistant||'').trim();
+    if (answer) return answer;
+  }
+  return '';
+}
+
+function conversationalResponse(value, lang='fi', history=[]) {
+  const kind=conversationPhraseType(value);
+  if (!kind) return null;
+  const language=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  const lastAnswer=lastConversationAnswer(history);
+
+  const answers={
+    fi:{
+      greeting:'Hei! Miten voin auttaa?',
+      gratitude:'Ole hyvä!',
+      negative_gratitude:'Selvä!',
+      acknowledgement:'Selvä!',
+      farewell:'Kiitos yhteydenotosta! Mukavaa päivänjatkoa!',
+      wellbeing:'Hyvin, kiitos! Miten voin auttaa?',
+      identity:'Olen tämän yrityksen verkkosivujen asiakaspalvelubotti. Vastaan yrityksen omien tietojen perusteella ja pidän keskustelun kontekstin mukana jatkokysymyksissä.',
+      help:'Totta kai. Kerro vain omin sanoin, missä asiassa tarvitset apua.',
+      capabilities:'Voit kysyä omin sanoin esimerkiksi palveluista, tuotteista, hinnoista, aukioloajoista, toimituksista, palautuksista, ajanvarauksesta tai yhteystiedoista. Jos kysyt jatkokysymyksen, yhdistän sen aiempaan keskusteluun.',
+      confusion:'Voin selittää asian toisella tavalla. Kerro, mikä kohta jäi epäselväksi.',
+      repeat:lastAnswer||'Totta kai. Kerro, minkä kohdan haluat minun toistavan.',
+      apology:'Ei haittaa. Miten voin auttaa?',
+      compliment:'Kiitos! Miten voin auttaa?'
+    },
+    sv:{
+      greeting:'Hej! Hur kan jag hjälpa?',
+      gratitude:'Varsågod!',
+      negative_gratitude:'Okej!',
+      acknowledgement:'Okej!',
+      farewell:'Tack för att du kontaktade oss! Ha en bra dag!',
+      wellbeing:'Bra, tack! Hur kan jag hjälpa?',
+      identity:'Jag är kundservicebotten på det här företagets webbplats. Jag svarar utifrån företagets egna uppgifter och behåller sammanhanget i följdfrågor.',
+      help:'Självklart. Berätta med egna ord vad du behöver hjälp med.',
+      capabilities:'Du kan fråga med egna ord om till exempel tjänster, produkter, priser, öppettider, leveranser, returer, bokning eller kontaktuppgifter. Jag kopplar också följdfrågor till den tidigare diskussionen.',
+      confusion:'Jag kan förklara det på ett annat sätt. Berätta vilken del som var oklar.',
+      repeat:lastAnswer||'Självklart. Berätta vilken del du vill att jag upprepar.',
+      apology:'Ingen fara. Hur kan jag hjälpa?',
+      compliment:'Tack! Hur kan jag hjälpa?'
+    },
+    en:{
+      greeting:'Hi! How can I help?',
+      gratitude:'You’re welcome!',
+      negative_gratitude:'Got it!',
+      acknowledgement:'Got it!',
+      farewell:'Thanks for getting in touch! Have a great day!',
+      wellbeing:'I’m good, thanks! How can I help?',
+      identity:'I’m the customer-service bot on this company’s website. I answer from the company’s own information and keep conversational context for follow-up questions.',
+      help:'Of course. Tell me in your own words what you need help with.',
+      capabilities:'You can ask naturally about things such as services, products, pricing, opening hours, delivery, returns, booking, or contact details. I also connect follow-up questions to the earlier conversation.',
+      confusion:'I can explain it another way. Tell me which part was unclear.',
+      repeat:lastAnswer||'Of course. Tell me which part you want me to repeat.',
+      apology:'No problem. How can I help?',
+      compliment:'Thanks! How can I help?'
+    }
+  };
+  return {kind,answer:answers[language][kind]||answers[language].acknowledgement};
+}
+
+function conversationalSmallTalkReply(value, lang='fi', history=[]) {
+  return conversationalResponse(value,lang,history)?.answer||'';
+}
+
+function stripConversationalQueryNoise(value) {
+  let q=normalizeSearchText(value);
+  if (!q) return '';
+
+  // Greeting/acknowledgement wrappers are noise only when a substantive query
+  // remains after them. This makes "moi, paljonko maksaa?" behave like
+  // "paljonko maksaa?" without treating plain "moi" as a business query.
+  q=q.replace(/^(?:(?:hei|moi|moikka|moro|morjens|terve|hello|hi|hey|hej|halla|ok|okei|okay|joo|juu|jep|jes|selva|aivan)\s+){1,3}(?=\S)/,'');
+  q=q.replace(/^(?:voisitko|voisitko ystavallisesti|kertoisitko|kerrotko|osaatko sanoa|haluaisin tietaa|haluan tietaa|saisinko tietaa|tiedatko)\s+(?:kertoa\s+|sanoa\s+|selvittaa\s+)?/,'');
+  q=q.replace(/^(?:could you|can you|would you|please|i would like to know|i want to know|do you know)\s+(?:tell me\s+|explain\s+)?/,'');
+  q=q.replace(/^(?:kan du|skulle du kunna|jag skulle vilja veta|jag vill veta|vet du)\s+(?:beratta\s+|saga\s+|forklara\s+)?/,'');
+  q=q.replace(/\s+(?:kiitos|kiitti|thanks|thank you|please|tack)$/,'').trim();
+  return q;
+}
+
+function meaningfulConversationTurn(history=[]) {
+  for (let i=(Array.isArray(history)?history.length:0)-1;i>=0;i--) {
+    const event=history[i]||{};
+    const question=String(event.question||event.user||'').trim();
+    if (!question) continue;
+    const kind=conversationPhraseType(question);
+    if (kind) continue;
+    return {
+      question,
+      answer:String(event.answer||event.assistant||'').trim()
+    };
+  }
+  return null;
+}
+
+function conversationalClarification(value, lang='fi', history=[]) {
+  const q=stripConversationalQueryNoise(value);
+  if (!q) return '';
   const words=q.split(/\s+/).filter(Boolean);
-  if (!q || words.length>3) return '';
-  const vague=new Set(['se','tama','tuo','toi','hinta','palvelu','tuote','siita','it','that','this','price','service','product','det','den','detta','pris','tjanst','produkt']);
-  if (!words.some(word=>vague.has(word))) return '';
-  return lang==='en' ? 'Sure — what exactly would you like to know about it?'
-    : lang==='sv' ? 'Absolut — vad vill du veta om det?'
-    : 'Totta kai — mitä haluaisit tietää siitä tarkemmin?';
+  const language=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+
+  const say=(fi,sv,en)=>language==='en'?en:language==='sv'?sv:fi;
+  if (/^(?:paljonko|hinta|mika hinta|mita maksaa|how much|price|what price|hur mycket|pris|vad kostar)$/.test(q)) {
+    return say('Minkä tuotteen tai palvelun hintaa tarkoitat?','Vilken produkt eller tjänst vill du veta priset på?','Which product or service would you like the price for?');
+  }
+  if (/^(?:milloin|monelta|mihin aikaan|huomenna|tanaan|when|what time|tomorrow|today|nar|vilken tid|imorgon|idag)$/.test(q)) {
+    return say('Mitä aikaa, päivää tai palvelua tarkoitat?','Vilken tid, dag eller tjänst menar du?','Which time, day, or service do you mean?');
+  }
+  if (/^(?:missa|missapain|where|where exactly|var|var nagonstans)$/.test(q)) {
+    return say('Mitä sijaintia tai paikkaa tarkoitat?','Vilken plats menar du?','Which location do you mean?');
+  }
+  if (/^(?:mika koko|mita kokoja|koko|what size|sizes|which size|vilken storlek|storlekar)$/.test(q)) {
+    return say('Minkä tuotteen kokoa tarkoitat?','Vilken produkts storlek menar du?','Which product’s size do you mean?');
+  }
+  if (/^(?:mita vareja|vari|varit|what colors|what colours|color|colour|vilka farger|farg)$/.test(q)) {
+    return say('Minkä tuotteen värejä tarkoitat?','Vilken produkts färger menar du?','Which product’s colors do you mean?');
+  }
+
+  const vague=/\b(?:se|sen|sita|siita|sille|siihen|tama|taman|tuo|tuota|tota|toi|ne|niita|niiden|sama|it|that|this|those|them|same|det|den|detta|dem|samma)\b/.test(q);
+  if (vague && !meaningfulConversationTurn(history)) {
+    return say('Mitä asiaa tarkoitat?','Vad syftar du på?','What are you referring to?');
+  }
+  if (words.length<=3 && /^(?:palvelu|tuote|toimitus|palautus|takuu|maksu|service|product|delivery|return|warranty|payment|tjanst|produkt|leverans|retur|garanti|betalning)$/.test(q)) {
+    return say('Mitä haluaisit tietää siitä tarkemmin?','Vad vill du veta mer exakt om det?','What exactly would you like to know about it?');
+  }
+  return '';
 }
 
 function contextualizeConversationQuery(message, history = []) {
   const current=String(message||'').trim();
-  const q=normalizeSearchText(current);
+  let q=stripConversationalQueryNoise(current);
   if (!current || !q) return current;
 
-  const lead=q.match(/^(?:enta|entas|mites|miten sitten|ja enta|no enta|what about|how about|and what about|och|och da|men hur)\s+(.+)$/);
-  const pronoun=/\b(?:se|sen|sita|siita|sille|siihen|tama|taman|tuo|tuota|tota|ne|niita|niiden|sama|saman|it|that|this|those|them|same|det|den|detta|dem|samma)\b/.test(q);
-  const terseTopic=/^(?:paljonko|mita maksaa|mikä hinta|mika hinta|hinta|milloin|monelta|onko auki|lauantaina|sunnuntaina|viikonloppuna|how much|what price|when|opening hours|hur mycket|vilket pris|när|nar|öppet|oppet)\b/.test(q);
-  if (!lead && !pronoun && !terseTopic) return current;
+  const previousTurn=meaningfulConversationTurn(history);
+  const previous=previousTurn?.question||'';
+  const previousAnswer=previousTurn?.answer||'';
 
-  const previous=[...history].reverse()
-    .map(event=>String(event?.question||event?.user||'').trim())
-    .find(text=>{
-      const n=normalizeSearchText(text);
-      return n && !/^(?:hei|moi|moikka|hello|hi|hey|terve|hej|halla)$/.test(n) && !isConversationalAcknowledgement(n);
-    });
-  if (!previous) return current;
-
-  if (lead) {
-    const rest=lead[1].trim();
-    const previousTopic=conversationTopic(previous);
-    const currentTopic=conversationTopic(rest);
-    const hints={
-      pricing:'hinta maksaa',
-      hours:'aukioloajat',
-      booking:'ajanvaraus varaa aika',
-      quote:'tarjous tarjouspyynto',
-      delivery:'toimitus',
-      returns:'palautus',
-      warranty:'takuu',
-      stores:'myymala'
-    };
-    // "Entä katon pesu?" after a price question means the price of the new
-    // service, not both the old and new service. Carry the intent, not the old noun.
-    if (hints[previousTopic] && currentTopic!==previousTopic &&
-        !/\b(?:se|sen|sita|siita|sama|it|that|same|det|den|samma)\b/.test(rest)) {
-      return rest+' '+hints[previousTopic];
-    }
+  const correction=q.match(/^(?:ei vaan|eikun|ei kun|tarkoitin|siis tarkoitin|siis ei|actually|no i mean|i mean|i meant|sorry i meant|nej jag menar|jag menade|alltsa jag menar)\s+(.+)$/);
+  if (correction) {
+    const rest=correction[1].trim();
+    const referencesPrevious=/\b(?:se|sen|sita|siita|sama|toi|tuo|it|that|this|same|det|den|detta|samma)\b/.test(rest);
+    if (referencesPrevious && previous) return [previous,previousAnswer.slice(0,180),rest].filter(Boolean).join(' ');
+    return rest;
   }
 
-  // Pronoun/topic follow-ups such as "Paljonko se maksaa?" need the previous
-  // subject in the retrieval query.
-  return previous+' '+current;
+  const lead=q.match(/^(?:enta|entapa|entas|mites|miten sitten|ja enta|no enta|mut enta|mutta enta|what about|how about|and what about|and how about|what if|and then|also|och da|men hur|vad galler)\s+(.+)$/);
+  const shortContinuation=q.split(/\s+/).length<=7
+    ? q.match(/^(?:ja|and|also|then|och|sen)\s+(.+)$/)
+    : null;
+  const pronoun=/\b(?:se|sen|sita|siita|sille|siihen|tama|taman|tuo|tuota|tota|toi|ne|niita|niiden|sama|saman|it|that|this|those|them|same|det|den|detta|dem|samma)\b/.test(q);
+  const terseTopic=/^(?:paljonko|mita maksaa|mika hinta|hinta|minkahintainen|kuinka kauan|kauanko|milloin|monelta|mihin aikaan|onko auki|huomenna|tanaan|lauantaina|sunnuntaina|viikonloppuna|saako sen|saako sita|voiko sen|voiko sita|onnistuuko se|onko sita|onko niita|loytyyko sita|varastossa|mita vareja|mita kokoja|entako toimitus|entako palautus|miksi|miksi niin|how much|what price|how long|when|what time|is it open|tomorrow|today|this weekend|can i get it|can you do it|is it available|in stock|what colors|what colours|what sizes|why|why is that|hur mycket|vad kostar|hur lange|nar|vilken tid|oppet|imorgon|idag|i helgen|finns den|i lager|vilka farger|vilka storlekar|varfor)\b/.test(q);
+  const currentTopic=conversationTopic(q);
+  const likelyFollowUp=Boolean(lead||shortContinuation||pronoun||terseTopic||(currentTopic&&q.split(/\s+/).length<=5));
+
+  if (!likelyFollowUp || !previous) return q;
+
+  const rest=(lead?.[1]||shortContinuation?.[1]||q).trim();
+  const previousTopic=conversationTopic(previous);
+  const restTopic=conversationTopic(rest);
+  const hints={
+    pricing:'hinta maksaa price cost pris kostar',
+    hours:'aukioloajat opening hours oppettider',
+    booking:'ajanvaraus varaa aika booking appointment boka tid',
+    quote:'tarjous tarjouspyynto quote estimate offert',
+    delivery:'toimitus toimitusaika shipping delivery leverans',
+    returns:'palautus vaihto return refund retur',
+    warranty:'takuu warranty garanti',
+    payment:'maksutapa payment method betalningsmetod',
+    stores:'sijainti osoite location address adress',
+    contact:'yhteystiedot contact phone email kontakt',
+    products:'tuote valikoima product selection produkt sortiment',
+    services:'palvelu service tjanst',
+    materials:'materiaali material',
+    quality:'laatu quality',
+    care:'hoito puhdistus care cleaning',
+    sizing:'koko mitat size dimensions storlek'
+  };
+
+  // "Entä katon pesu?" after a pricing question means the price of the new
+  // service. Carry the old intent, not the old service noun.
+  if ((lead||shortContinuation) && hints[previousTopic] && restTopic!==previousTopic &&
+      !/\b(?:se|sen|sita|siita|sama|it|that|same|det|den|samma)\b/.test(rest)) {
+    return rest+' '+hints[previousTopic];
+  }
+
+  // For pronouns and terse ellipsis, include the previous customer question and
+  // a short slice of the previous grounded answer. That lets "entä viikonloppuna?",
+  // "saako sitä punaisena?" and "miksi?" inherit the actual subject.
+  return [previous,previousAnswer.slice(0,180),q].filter(Boolean).join(' ');
 }
 
 function chatActions(rows, message, handoff = false, lang = 'fi', selected = []) {
@@ -3515,24 +3704,13 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: responseLang === 'en' ? 'Empty' : responseLang === 'sv' ? 'Tom' : 'Tyhjä', sourceIds: [], selected: [] };
 
   const normalized = normalizeSearchText(cleanMessage);
-  if (/^(hei|moi|moikka|hello|hi|hey|terve|hej|hallå|halla)[!. ]*$/.test(normalized)) {
-    return { answer: responseLang === 'en' ? 'Hi! How can I help?' : responseLang === 'sv' ? 'Hej! Hur kan jag hjälpa?' : 'Hei! Miten voin auttaa?', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Greeting' : responseLang === 'sv' ? 'Hälsning' : 'Tervehdys', sourceIds: [], selected: [] };
-  }
-  const smallTalkReply=conversationalSmallTalkReply(normalized,responseLang);
-  if (smallTalkReply) {
-    return {answer:smallTalkReply,handoff:false,confidence:1,intent:responseLang==='en'?'Conversation':responseLang==='sv'?'Samtal':'Keskustelu',sourceIds:[],selected:[]};
-  }
-  if (isConversationalAcknowledgement(normalized)) {
-    const negativeThanks=/^(?:ei|no|nej)\s+/.test(normalized);
-    const hasThanks=/(?:^|\s)(?:kiitos|kiitti|thanks|thank you|many thanks|tack)(?:\s|$)/.test(normalized);
-    const answer = negativeThanks || !hasThanks
-      ? (responseLang === 'en' ? 'Got it!' : responseLang === 'sv' ? 'Okej!' : 'Selvä!')
-      : (responseLang === 'en' ? 'You’re welcome!' : responseLang === 'sv' ? 'Varsågod!' : 'Ole hyvä!');
+  const conversational=conversationalResponse(cleanMessage,responseLang,history);
+  if (conversational) {
     return {
-      answer,
+      answer:conversational.answer,
       handoff:false,
       confidence:1,
-      intent:responseLang === 'en' ? 'Acknowledgement' : responseLang === 'sv' ? 'Bekräftelse' : 'Kuittaus',
+      intent:responseLang==='en'?'Conversation':responseLang==='sv'?'Samtal':'Keskustelu',
       sourceIds:[],
       selected:[],
     };
@@ -3699,7 +3877,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       .slice(0,8);
   }
   if (!selected.length) {
-    const clarification=conversationalClarification(cleanMessage,responseLang);
+    const clarification=conversationalClarification(cleanMessage,responseLang,history);
     if (clarification) return {answer:clarification,handoff:false,confidence:0.75,intent:responseLang==='en'?'Clarification':responseLang==='sv'?'Förtydligande':'Tarkennus',sourceIds:[],selected:[]};
     return { answer: '', handoff: true, confidence: 0.2, intent, sourceIds: [], selected: [] };
   }
