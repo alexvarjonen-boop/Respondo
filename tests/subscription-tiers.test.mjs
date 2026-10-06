@@ -36,6 +36,26 @@ test('plan entitlements enforce requested seat limits and Advanced website impor
   assert.match(server,/requirePlanCapability\(req,res,'googleCalendar'\)/);
 });
 
+test('Business-only automations are enforced server-side and hidden on lower tiers',()=>{
+  assert.match(server,/capability==='allCurrentFeatures' \? 'Business-tilaus'/);
+  assert.ok((server.match(/requirePlanCapability\(req,res,'allCurrentFeatures'\)/g)||[]).length>=6);
+  assert.match(server,/actionAccess\.allCurrentFeatures/);
+  assert.match(server,/actionAccess\.googleCalendar/);
+  assert.match(server,/Channels API vaatii Business-tilauksen/);
+  assert.match(server,/stripeConnect:\s*planAccess\.allCurrentFeatures/);
+  assert.match(app,/const planAccess = data\.planAccess/);
+  assert.match(app,/planAccess\.websiteImport/);
+  assert.match(app,/planAccess\.googleCalendar/);
+  assert.match(app,/planAccess\.allCurrentFeatures/);
+});
+
+test('Basic keeps native booking while premium automation controls are gated',()=>{
+  assert.match(server,/app\.post\('\/api\/app\/booking-slots\/generate', auth, subscribed/);
+  assert.doesNotMatch(server,/app\.post\('\/api\/app\/booking-slots\/generate'[\s\S]{0,120}allCurrentFeatures/);
+  assert.match(app,/Respondo booking works on this plan\. Google Calendar sync is included in Advanced and Business\./);
+  assert.match(app,/Quote requests work on every plan\. Automatic quote calculation is included in Business\./);
+});
+
 test('legacy subscribers keep the full old feature set',()=>{
   assert.match(server,/\['monthly','yearly','owner_test'\]\.includes\(raw\)/);
   assert.match(server,/tier:'business'[\s\S]*agentSeats:20[\s\S]*allCurrentFeatures:true/);
