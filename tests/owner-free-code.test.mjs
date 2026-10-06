@@ -27,3 +27,10 @@ test('normal referral coupon self-provisions instead of requiring manual Stripe 
   assert.match(server,/const referralCouponId = await ensureReferralCoupon\(\)/);
   assert.doesNotMatch(server,/RESPONDO_REFERRAL_20_FIRST_MONTH/);
 });
+
+
+test('owner test checkout requires a separate server-side access secret', () => {
+  assert.match(server,/OWNER_TEST_ACCESS_TOKEN/);
+  assert.match(server,/validOwnerTestAccessToken\(req\.body\?\.ownerTestAccessToken\)/);
+  assert.match(server,/normalizedPlan === 'owner_test'[\s\S]{0,320}res\.status\(404\)/);
+});
