@@ -3741,6 +3741,23 @@ async function dashboard(options = {}) {
         <div><small>${appText('LASKUTUS','FAKTURERING','BILLING')}</small><h2>${appText('Hallitse tilaustasi','Hantera ditt abonnemang','Manage your subscription')}</h2><p>${appText('Voit vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.','Du kan byta betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal.','You can change your payment method, view invoices, or cancel your subscription in the Stripe customer portal.')}</p></div>
         <button class="btn dashboard-action" id="billingPortal" type="button">${appText('Avaa tilauksen hallinta','Öppna abonnemangshantering','Open subscription management')} <span>↗</span></button>
       </section>
+
+      <section class="panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="account-security">
+        <div class="panel-head">
+          <div>
+            <small>${appText('TILIN TURVALLISUUS','KONTOSÄKERHET','ACCOUNT SECURITY')}</small>
+            <h2>${appText('Vaihda salasana','Byt lösenord','Change password')}</h2>
+            <p>${appText('Salasanan vaihto mitätöi vanhat istunnot ja pitää nykyisen selaimesi kirjautuneena uudella istunnolla.','Ett lösenordsbyte ogiltigförklarar gamla sessioner och håller den här webbläsaren inloggad med en ny session.','Changing your password invalidates old sessions and keeps this browser signed in with a new session.')}</p>
+          </div>
+        </div>
+        <form id="accountPasswordForm" class="formgrid">
+          <div class="field"><label>${appText('Nykyinen salasana','Nuvarande lösenord','Current password')}</label><input name="currentPassword" type="password" autocomplete="current-password" required maxlength="200"></div>
+          <div class="field"><label>${appText('Uusi salasana','Nytt lösenord','New password')}</label><input name="newPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="200" placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
+          <div class="field"><label>${appText('Uusi salasana uudelleen','Upprepa nytt lösenord','Repeat new password')}</label><input name="confirmPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="200"></div>
+          <button class="btn dashboard-action" type="submit">${appText('Vaihda salasana','Byt lösenord','Change password')} →</button>
+          <div id="accountPasswordMsg"></div>
+        </form>
+      </section>
     </main>
   </div>`;
 }
@@ -5707,6 +5724,38 @@ async function route() {
           alert(err.message);
         }
       });
+    });
+
+    $('#accountPasswordForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form=e.currentTarget;
+      const button=form.querySelector('button[type="submit"]');
+      const currentPassword=String(form.elements.currentPassword?.value || '');
+      const newPassword=String(form.elements.newPassword?.value || '');
+      const confirmPassword=String(form.elements.confirmPassword?.value || '');
+      const msg=$('#accountPasswordMsg');
+      if(newPassword.length < 10){
+        if(msg) msg.innerHTML='<div class="notice error">'+appText('Uuden salasanan pitää olla vähintään 10 merkkiä.','Det nya lösenordet måste vara minst 10 tecken.','The new password must be at least 10 characters.')+'</div>';
+        return;
+      }
+      if(newPassword !== confirmPassword){
+        if(msg) msg.innerHTML='<div class="notice error">'+appText('Uudet salasanat eivät täsmää.','De nya lösenorden matchar inte.','The new passwords do not match.')+'</div>';
+        return;
+      }
+      const original=button?.innerHTML || '';
+      if(button){button.disabled=true;button.innerHTML=appText('Vaihdetaan…','Byter…','Changing…');}
+      try{
+        await api('/api/app/account/password',{
+          method:'POST',
+          body:JSON.stringify({currentPassword,newPassword}),
+        });
+        form.reset();
+        if(msg) msg.innerHTML='<div class="notice success">'+appText('Salasana vaihdettu ✓','Lösenordet har bytts ✓','Password changed ✓')+'</div>';
+      }catch(err){
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
+      }finally{
+        if(button){button.disabled=false;button.innerHTML=original;}
+      }
     });
 
     $('#billingPortal')?.addEventListener('click', async (e) => {
