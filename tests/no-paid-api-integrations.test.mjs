@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const server = await readFile(new URL('../server.mjs', import.meta.url), 'utf8');
-const app = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');\nconst entry = await readFile(new URL('../server-entry.mjs', import.meta.url), 'utf8');
+const app = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
+const entry = await readFile(new URL('../server-entry.mjs', import.meta.url), 'utf8');
 
 test('production backend has no direct Twilio, Meta messaging or OpenAI API integration', () => {
   const forbidden = [
