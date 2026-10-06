@@ -8366,3 +8366,96 @@ body.workspace-modal-open{
   .app-language-option{width:30px;height:28px}
   .app-language-flag-icon{width:20px;height:15px}
 }
+
+
+/* 2026-10-06 mobile public header fit: keep trial CTA fully visible */
+@media (max-width:760px){
+  .nav .container.navin{
+    width:calc(100% - 12px)!important;
+    max-width:none!important;
+    padding-left:6px!important;
+    padding-right:6px!important;
+    gap:4px!important;
+    box-sizing:border-box!important;
+  }
+  .nav .logo{
+    flex:0 1 auto!important;
+    min-width:0!important;
+    gap:4px!important;
+  }
+  .nav .brand-mark,
+  .nav .brand-mark svg{
+    width:26px!important;
+    height:26px!important;
+  }
+  .nav .brand-word{
+    font-size:13px!important;
+    line-height:1!important;
+    letter-spacing:-.045em!important;
+    white-space:nowrap!important;
+  }
+  .nav .navactions{
+    flex:0 0 auto!important;
+    min-width:0!important;
+    gap:3px!important;
+  }
+  .nav .navactions .app-language-switch{
+    display:inline-flex!important;
+    gap:0!important;
+    padding:2px!important;
+    min-width:0!important;
+    max-width:none!important;
+    flex:0 0 auto!important;
+  }
+  .nav .navactions .app-language-option{
+    width:25px!important;
+    height:28px!important;
+    flex:0 0 25px!important;
+  }
+  .nav .navactions .app-language-flag-icon{
+    width:18px!important;
+    height:13px!important;
+  }
+  .nav .navactions .btn{
+    min-height:36px!important;
+    padding:0 8px!important;
+    font-size:10.5px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    flex:0 0 auto!important;
+  }
+}
+@media (max-width:430px){
+  .nav .container.navin{
+    width:calc(100% - 8px)!important;
+    padding-left:4px!important;
+    padding-right:4px!important;
+    gap:3px!important;
+  }
+  .nav .brand-mark,
+  .nav .brand-mark svg{
+    width:25px!important;
+    height:25px!important;
+  }
+  .nav .brand-word{font-size:12px!important}
+  .nav .navactions{gap:2px!important}
+  .nav .navactions .app-language-switch{padding:1px!important}
+  .nav .navactions .app-language-option{
+    width:23px!important;
+    height:27px!important;
+    flex-basis:23px!important;
+  }
+  .nav .navactions .app-language-flag-icon{
+    width:17px!important;
+    height:12px!important;
+  }
+  .nav .navactions .btn{
+    min-height:34px!important;
+    padding:0 6px!important;
+    font-size:10px!important;
+  }
+}
+@media (max-width:360px){
+  .nav .brand-word{display:none!important}
+}
+
