@@ -14,3 +14,9 @@ test('public demo website import uses a bounded crawl budget', () => {
 test('paid importer keeps the wider production crawl', () => {
   assert.match(server, /fetchWebsiteBundle\(website,600,4\*60\*1000/);
 });
+
+
+test('storefront catalog still keeps a bounded sample of product pages for policy extraction', () => {
+  assert.match(server,/representativeProductUrls=new Set\(\[\.\.\.catalogUrls\]\.slice\(0,4\)\)/);
+  assert.match(server,/!catalogUrls\.has\(key\) \|\| representativeProductUrls\.has\(key\)/);
+});
