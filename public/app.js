@@ -3385,6 +3385,7 @@ async function dashboard(options = {}) {
               </div>
               <div class="support-agent-profile-actions support-agent-owner-actions">
                 <button type="button" class="support-agent-force-logout">${appText('Kirjaa asiakaspalvelija ulos','Logga ut kundservicemedarbetaren','Log out support agent')}</button>
+                <button type="button" class="support-agent-reset-password">${appText('Vaihda salasana','Byt lösenord','Change password')}</button>
                 <button type="button" class="support-agent-delete">${appText('Poista tili','Ta bort konto','Delete account')}</button>
               </div>
             </article>`}).join('') : `<div class="empty-state"><b>${appText('Ei vielä asiakaspalvelijoita.','Inga kundservicemedarbetare ännu.','No support agents yet.')}</b></div>`}
@@ -5544,6 +5545,17 @@ async function route() {
       const item=button.closest('.support-agent'); button.disabled=true;
       try { await api('/api/app/support-agents/'+encodeURIComponent(item.dataset.agentId)+'/force-logout',{method:'POST',body:'{}'}); location.reload(); }
       catch(err){ button.disabled=false; alert(err.message); }
+    }));
+    document.querySelectorAll('.support-agent-reset-password').forEach((button)=>button.addEventListener('click',async()=>{
+      const item=button.closest('.support-agent');
+      const password=prompt(appText('Anna uusi salasana (vähintään 10 merkkiä)','Ange ett nytt lösenord (minst 10 tecken)','Enter a new password (at least 10 characters)'));
+      if(!password) return;
+      button.disabled=true;
+      try {
+        await api('/api/app/support-agents/'+encodeURIComponent(item.dataset.agentId)+'/password',{method:'POST',body:JSON.stringify({password})});
+        alert(appText('Salasana vaihdettu. Vanhat istunnot on suljettu.','Lösenordet har ändrats. Gamla sessioner har stängts.','Password changed. Old sessions have been closed.'));
+      } catch(err) { alert(err.message); }
+      finally { button.disabled=false; }
     }));
     document.querySelectorAll('.support-agent-delete').forEach((button)=>button.addEventListener('click',async()=>{
       const item=button.closest('.support-agent'); button.disabled=true;
