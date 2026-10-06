@@ -8485,22 +8485,6 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         return res.status(409).json({ error:'Tämä aika ei ole enää vapaa. Valitse toinen aika.' });
       }
 
-      if (actionAccess.googleCalendar && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token)) {
-        try {
-          const conflict = await googleCalendarHasConflict(
-            tenant,
-            previewSlot.rows[0].starts_at,
-            previewSlot.rows[0].ends_at,
-          );
-          if (conflict) {
-            return res.status(409).json({ error:'Tämä aika on varattu Google Kalenterissa. Valitse toinen aika.' });
-          }
-        } catch (e) {
-          console.error('Google Calendar conflict check failed',e);
-          return res.status(503).json({ error:'Kalenterin vapautta ei voitu juuri nyt varmistaa. Yritä hetken päästä uudelleen.' });
-        }
-      }
-
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -8515,6 +8499,28 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
           await client.query('ROLLBACK');
           return res.status(409).json({ error:'Tämä aika ei ole enää vapaa. Valitse toinen aika.' });
         }
+
+        // Recheck Google Calendar only after this booking slot is row-locked.
+        // This closes the gap where an external calendar event could appear
+        // between the initial availability view and the actual reservation.
+        if (actionAccess.googleCalendar && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token)) {
+          try {
+            const conflict = await googleCalendarHasConflict(
+              tenant,
+              sr.rows[0].starts_at,
+              sr.rows[0].ends_at,
+            );
+            if (conflict) {
+              await client.query('ROLLBACK');
+              return res.status(409).json({ error:'Tämä aika on varattu Google Kalenterissa. Valitse toinen aika.' });
+            }
+          } catch (e) {
+            await client.query('ROLLBACK');
+            console.error('Google Calendar conflict check failed',e);
+            return res.status(503).json({ error:'Kalenterin vapautta ei voitu juuri nyt varmistaa. Yritä hetken päästä uudelleen.' });
+          }
+        }
+
         bookedSlot = sr.rows[0];
         await client.query(
           `UPDATE booking_slots SET status='booked' WHERE id=$1 AND tenant_id=$2`,
