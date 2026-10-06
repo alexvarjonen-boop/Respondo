@@ -35,6 +35,18 @@ test('website importer blocks non-public address ranges beyond RFC1918', () => {
   assert.match(server, /value\.startsWith\('ff'\)/);
 });
 
+test('website importer revalidates redirects and pins only vetted public DNS results', () => {
+  assert.match(server,/dns\.lookup\(host, \{ all: true \}\)/);
+  assert.match(server,/addresses\.some\(\(x\) => isPrivateAddress\(x\.address\)\)/);
+  assert.match(server,/dns\.lookup\(host, \{ all:true, verbatim:true \}\)/);
+  assert.match(server,/addresses\.some\(\(entry\) => isPrivateAddress\(entry\.address\)\)/);
+  assert.match(server,/const resolved = await resolvePinnedPublicAddress\(url\)/);
+  assert.match(server,/pinnedPublicRequest\(url, resolved, controller\.signal/);
+  assert.match(server,/url = await assertPublicHttpUrl\(new URL\(location,url\)\.href\)/);
+  assert.match(server,/for \(let redirects = 0; redirects < 4; redirects\+\+\)/);
+  assert.doesNotMatch(server,/fetchPublicResource[\s\S]{0,1800}\bfetch\(url/);
+});
+
 test('agent live takeover resolves the agent tenant instead of owner_user_id=agent id', () => {
   assert.match(server, /req\.user\.role === 'agent'[\s\S]{0,500}SELECT t\.\* FROM tenants t JOIN users u ON u\.id=t\.owner_user_id WHERE t\.id=\$1/);
   assert.match(server, /ct\.assigned_agent_id=\$3 AND t\.active=true/);
