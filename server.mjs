@@ -178,6 +178,7 @@ function seoStructuredData(seo) {
       logo:{ '@type':'ImageObject', url:SEO_CANONICAL_ORIGIN + '/favicon.svg' },
       identifier:{ '@type':'PropertyValue', propertyID:'Business ID', value:'3599437-5' },
       contactPoint:{ '@type':'ContactPoint', contactType:'customer support', email:'respondoai.fi@outlook.com', availableLanguage:['fi','sv','en'] },
+      knowsAbout:['AI customer service','customer service automation','website chatbot','business chatbot','lead capture','booking workflows','ecommerce customer service'],
     },
     {
       '@type':'WebSite',
@@ -234,6 +235,19 @@ function seoStructuredData(seo) {
       publisher:{ '@id':SEO_CANONICAL_ORIGIN + '/#organization' },
     }
   ];
+  try {
+    const pagePath = new URL(seo.canonical).pathname;
+    if (pagePath !== '/') {
+      graph.push({
+        '@type':'BreadcrumbList',
+        '@id':seo.canonical + '#breadcrumbs',
+        itemListElement:[
+          { '@type':'ListItem', position:1, name:'Respondo AI', item:SEO_CANONICAL_ORIGIN + '/' },
+          { '@type':'ListItem', position:2, name:seo.title.replace(/\\s*\\|\\s*Respondo AI$/i,''), item:seo.canonical }
+        ]
+      });
+    }
+  } catch {}
   return JSON.stringify({ '@context':'https://schema.org', '@graph':graph }).replace(/</g,'\\u003c');
 }
 
