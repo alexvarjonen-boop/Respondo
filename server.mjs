@@ -505,8 +505,51 @@ const slug = (value) =>
     .replace(/^-|-$/g, '')
     .slice(0, 50) || `yritys-${crypto.randomBytes(3).toString('hex')}`;
 
-const REFERRAL_COUPON_ID =
-  process.env.STRIPE_REFERRAL_COUPON_ID || 'RESPONDO_REFERRAL_20_FIRST_MONTH';
+let referralCouponIdCache = String(process.env.STRIPE_REFERRAL_COUPON_ID || '').trim();
+
+async function ensureReferralCoupon() {
+  if (!stripe) return '';
+  if (referralCouponIdCache) {
+    try {
+      const existing = await stripe.coupons.retrieve(referralCouponIdCache);
+      if (existing && existing.valid !== false) return referralCouponIdCache;
+    } catch {}
+    // A stale configured ID must not silently break every referral.
+    referralCouponIdCache = '';
+  }
+
+  if (pool) {
+    try {
+      const saved = await q("SELECT value FROM app_settings WHERE key='stripe_referral_coupon_id' LIMIT 1");
+      const savedId = String(saved.rows[0]?.value || '').trim();
+      if (savedId) {
+        try {
+          const existing = await stripe.coupons.retrieve(savedId);
+          if (existing && existing.valid !== false) {
+            referralCouponIdCache = savedId;
+            return savedId;
+          }
+        } catch {}
+      }
+    } catch {}
+  }
+
+  const created = await stripe.coupons.create({
+    percent_off: 20,
+    duration: 'once',
+    name: 'Respondo referral 20% first paid month',
+    metadata: { purpose:'customer_referral', version:'1' },
+  });
+  referralCouponIdCache = created.id;
+
+  if (pool && created.id) {
+    await q(
+      "INSERT INTO app_settings(key,value,updated_at) VALUES('stripe_referral_coupon_id',$1,NOW()) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value,updated_at=NOW()",
+      [created.id],
+    );
+  }
+  return created.id;
+}
 
 const normalizeReferralCode = (value) =>
   String(value || '')
@@ -700,8 +743,10 @@ async function applyReferralDiscountIfEligible(userId, subscriptionId, planOverr
     // Checkout has already finalized the €0 trial invoice at this point.
     // Applying a duration=once coupon now makes it hit the first paid invoice after the trial.
     if (subscription.metadata?.referral_code !== row.code) {
+      const referralCouponId = await ensureReferralCoupon();
+      if (!referralCouponId) throw new Error('Referral coupon is unavailable.');
       await stripe.subscriptions.update(subscriptionId, {
-        discounts: [{ coupon: REFERRAL_COUPON_ID }],
+        discounts: [{ coupon: referralCouponId }],
         metadata: {
           ...subscription.metadata,
           referral_code: row.code,
