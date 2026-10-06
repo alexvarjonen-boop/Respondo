@@ -3753,8 +3753,8 @@ async function dashboard(options = {}) {
       </section>
 
       <section class="panel billing-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="billing">
-        <div><small>${appText('LASKUTUS','FAKTURERING','BILLING')}</small><h2>${appText('Hallitse tilaustasi','Hantera ditt abonnemang','Manage your subscription')}</h2><p>${appText('Voit vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.','Du kan byta betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal.','You can change your payment method, view invoices, or cancel your subscription in the Stripe customer portal.')}</p></div>
-        <button class="btn dashboard-action" id="billingPortal" type="button">${appText('Avaa tilauksen hallinta','Öppna abonnemangshantering','Open subscription management')} <span>↗</span></button>
+        <div><small>${appText('LASKUTUS','FAKTURERING','BILLING')}</small><h2>${appText('Hallitse tilaustasi','Hantera ditt abonnemang','Manage your subscription')}</h2><p>${appText('Voit vaihtaa Basic-, Advanced- ja Business-pakettien välillä, vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.','Du kan byta mellan Basic-, Advanced- och Business-abonnemang, ändra betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal.','You can switch between Basic, Advanced and Business plans, change your payment method, view invoices, or cancel your subscription in the Stripe customer portal.')}</p></div>
+        <button class="btn dashboard-action" id="billingPortal" type="button">${appText('Hallitse tilausta ja pakettia','Hantera abonnemang och paket','Manage subscription and plan')} <span>↗</span></button>
       </section>
 
       <section class="panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="account-security">
