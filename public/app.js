@@ -5746,6 +5746,63 @@ async function route() {
       });
     });
 
+
+    $('#commerceForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form=e.currentTarget;
+      const button=form.querySelector('button[type="submit"]');
+      const original=button?.innerHTML || '';
+      if(button){button.disabled=true;button.innerHTML=appText('Tallennetaan…','Sparar…','Saving…');}
+      const data=new FormData(form);
+      try{
+        await api('/api/app/commerce',{
+          method:'POST',
+          body:JSON.stringify({
+            provider:String(data.get('provider') || ''),
+            shopifyShopDomain:String(data.get('shopifyShopDomain') || ''),
+            shopifyAccessToken:String(data.get('shopifyAccessToken') || ''),
+            wooBaseUrl:String(data.get('wooBaseUrl') || ''),
+            wooConsumerKey:String(data.get('wooConsumerKey') || ''),
+            wooConsumerSecret:String(data.get('wooConsumerSecret') || ''),
+          }),
+        });
+        const msg=$('#commerceMsg');
+        if(msg) msg.innerHTML='<div class="notice success">'+appText('Verkkokauppayhteys tallennettu ✓','E-handelsanslutningen sparades ✓','Commerce connection saved ✓')+'</div>';
+        if(button) button.innerHTML=appText('Tallennettu ✓','Sparat ✓','Saved ✓');
+        if(form.elements.shopifyAccessToken) form.elements.shopifyAccessToken.value='';
+        if(form.elements.wooConsumerKey) form.elements.wooConsumerKey.value='';
+        if(form.elements.wooConsumerSecret) form.elements.wooConsumerSecret.value='';
+        setTimeout(()=>{ if(button) button.innerHTML=original; },1500);
+      }catch(err){
+        const msg=$('#commerceMsg');
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
+        if(button) button.innerHTML=original;
+      }finally{
+        if(button) button.disabled=false;
+      }
+    });
+
+    $('#testCommerce')?.addEventListener('click', async (e) => {
+      const button=e.currentTarget;
+      const original=button.textContent;
+      button.disabled=true;
+      button.textContent=appText('Testataan…','Testar…','Testing…');
+      try{
+        const result=await api('/api/app/commerce/test',{method:'POST',body:'{}'});
+        const detail=result?.name ? ' · '+esc(result.name) : '';
+        const msg=$('#commerceMsg');
+        if(msg) msg.innerHTML='<div class="notice success">'+appText('Verkkokauppayhteys toimii ✓','E-handelsanslutningen fungerar ✓','Commerce connection works ✓')+detail+'</div>';
+        button.textContent=appText('Toimii ✓','Fungerar ✓','Working ✓');
+        setTimeout(()=>{button.textContent=original;},1600);
+      }catch(err){
+        const msg=$('#commerceMsg');
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
+        button.textContent=original;
+      }finally{
+        button.disabled=false;
+      }
+    });
+
     $('#integrationsForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const button = e.currentTarget.querySelector('button[type="submit"]');
