@@ -585,8 +585,8 @@ async function consumeOwnerFreeCode(_client, value) {
 }
 
 const PLAN_DEFINITIONS = Object.freeze({
-  basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:49.99,annualTotal:null,agentSeats:2,websiteImport:false,googleCalendar:false},
-  basic_yearly:{tier:'basic',billing:'yearly',monthlyPrice:44.99,annualTotal:539.88,agentSeats:2,websiteImport:false,googleCalendar:false},
+  basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:49.99,annualTotal:null,agentSeats:2,websiteImport:true,googleCalendar:false},
+  basic_yearly:{tier:'basic',billing:'yearly',monthlyPrice:44.99,annualTotal:539.88,agentSeats:2,websiteImport:true,googleCalendar:false},
   advanced_monthly:{tier:'advanced',billing:'monthly',monthlyPrice:64.99,annualTotal:null,agentSeats:10,websiteImport:true,googleCalendar:true},
   advanced_yearly:{tier:'advanced',billing:'yearly',monthlyPrice:59.99,annualTotal:719.88,agentSeats:10,websiteImport:true,googleCalendar:true},
   business_monthly:{tier:'business',billing:'monthly',monthlyPrice:79.99,annualTotal:null,agentSeats:20,websiteImport:true,googleCalendar:true},
@@ -621,7 +621,7 @@ function planEntitlements(value) {
   if(['monthly','yearly','owner_test'].includes(raw)) {
     return {code:raw,tier:'business',billing:raw==='yearly'?'yearly':'monthly',agentSeats:20,websiteImport:true,googleCalendar:true,allCurrentFeatures:true};
   }
-  return {code:raw||'basic_monthly',tier:'basic',billing:'monthly',agentSeats:2,websiteImport:false,googleCalendar:false,allCurrentFeatures:false};
+  return {code:raw||'basic_monthly',tier:'basic',billing:'monthly',agentSeats:2,websiteImport:true,googleCalendar:false,allCurrentFeatures:false};
 }
 
 function planAllowsReferral(value) {
