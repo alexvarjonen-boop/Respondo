@@ -4145,6 +4145,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             ? session.subscription
             : session.subscription?.id || null;
         if (
+          session.metadata?.additional_workspace !== '1' &&
           incomingSubscriptionId &&
           target?.user?.stripe_subscription_id &&
           target.user.stripe_subscription_id !== incomingSubscriptionId &&
