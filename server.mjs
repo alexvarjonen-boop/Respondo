@@ -9980,7 +9980,7 @@ async function ensureRuntimeSchema() {
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await q('ALTER TABLE public.stripe_webhook_events ENABLE ROW LEVEL SECURITY');
-  await q(`DO $
+  await q(`DO $$
     BEGIN
       IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
         REVOKE ALL PRIVILEGES ON TABLE public.stripe_webhook_events FROM anon;
@@ -9989,7 +9989,7 @@ async function ensureRuntimeSchema() {
         REVOKE ALL PRIVILEGES ON TABLE public.stripe_webhook_events FROM authenticated;
       END IF;
     END
-  $`);
+  $$`);
   await q('CREATE INDEX IF NOT EXISTS idx_stripe_webhook_events_updated ON stripe_webhook_events(updated_at DESC)');
 
   await q(`CREATE TABLE IF NOT EXISTS demo_website_imports (
