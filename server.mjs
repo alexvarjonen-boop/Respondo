@@ -3552,7 +3552,7 @@ function cookies(req) {
 function setSession(res, user) {
   res.cookie(
     COOKIE,
-    jwt.sign({ sub: user.id, email: user.email }, JWT, { expiresIn: '14d' }),
+    jwt.sign({ sub: user.id, email: user.email, sv:Number(user.session_version || 0) }, JWT, { expiresIn: '14d' }),
     {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -3562,11 +3562,23 @@ function setSession(res, user) {
   );
 }
 
-function auth(req, res, next) {
+async function auth(req, res, next) {
   try {
     const token = cookies(req)[COOKIE];
     if (!token) return res.status(401).json({ error: 'Kirjaudu sisään.' });
-    req.user = jwt.verify(token, JWT);
+    const payload = jwt.verify(token, JWT);
+    if (payload.role === 'agent') {
+      const rr = await q('SELECT id,tenant_id,session_version FROM support_agents WHERE id=$1',[payload.agentId || payload.sub]);
+      if (!rr.rowCount || rr.rows[0].tenant_id !== payload.tenantId || Number(rr.rows[0].session_version || 0) !== Number(payload.sv || 0)) {
+        return res.status(401).json({ error:'Istunto on vanhentunut.' });
+      }
+    } else {
+      const rr = await q('SELECT id,session_version FROM users WHERE id=$1',[payload.sub]);
+      if (!rr.rowCount || Number(rr.rows[0].session_version || 0) !== Number(payload.sv || 0)) {
+        return res.status(401).json({ error:'Istunto on vanhentunut.' });
+      }
+    }
+    req.user = payload;
     next();
   } catch {
     return res.status(401).json({ error: 'Istunto on vanhentunut.' });
@@ -4904,7 +4916,7 @@ app.post('/api/auth/agent-login', loginLimiter, async (req,res) => {
     if (!r.rowCount || !r.rows[0].password_hash || !(await bcrypt.compare(String(req.body.password||''),r.rows[0].password_hash))) {
       return res.status(401).json({ error:'Väärä käyttäjänimi tai salasana.' });
     }
-    res.cookie(COOKIE,jwt.sign({ sub:r.rows[0].id,tenantId:r.rows[0].tenant_id,role:'agent',agentId:r.rows[0].id },JWT,{expiresIn:'14d'}),{
+    res.cookie(COOKIE,jwt.sign({ sub:r.rows[0].id,tenantId:r.rows[0].tenant_id,role:'agent',agentId:r.rows[0].id,sv:Number(r.rows[0].session_version || 0) },JWT,{expiresIn:'14d'}),{
       httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax',maxAge:1209600000,
     });
     await q("UPDATE support_agents SET status='online',updated_at=NOW() WHERE id=$1",[r.rows[0].id]);
@@ -5282,10 +5294,29 @@ app.post('/api/app/support-agents/:id/force-logout', auth, ownerOnly, subscribed
   try {
     const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if(!tr.rowCount) return res.status(404).json({error:'Työtilaa ei löytynyt.'});
-    const rr=await q("UPDATE support_agents SET status='offline',updated_at=NOW() WHERE id=$1 AND tenant_id=$2 RETURNING id",[req.params.id,tr.rows[0].id]);
+    const rr=await q("UPDATE support_agents SET status='offline',session_version=session_version+1,updated_at=NOW() WHERE id=$1 AND tenant_id=$2 RETURNING id",[req.params.id,tr.rows[0].id]);
     if(!rr.rowCount) return res.status(404).json({error:'Profiilia ei löytynyt.'});
     return res.json({ok:true});
   }catch(e){return res.status(500).json({error:'Uloskirjaus epäonnistui.'});}
+});
+
+app.post('/api/app/support-agents/:id/password', auth, ownerOnly, subscribed, async (req,res) => {
+  try {
+    const password=String(req.body?.password || '');
+    if(password.length < 10) return res.status(400).json({error:'Salasanan pitää olla vähintään 10 merkkiä.'});
+    if(password.length > 200) return res.status(400).json({error:'Salasana on liian pitkä.'});
+    const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+    if(!tr.rowCount) return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+    const hash=await bcrypt.hash(password,12);
+    const rr=await q(
+      "UPDATE support_agents SET password_hash=$1,status='offline',session_version=session_version+1,updated_at=NOW() WHERE id=$2 AND tenant_id=$3 RETURNING id",
+      [hash,req.params.id,tr.rows[0].id],
+    );
+    if(!rr.rowCount) return res.status(404).json({error:'Profiilia ei löytynyt.'});
+    return res.json({ok:true});
+  } catch(e) {
+    return res.status(500).json({error:'Salasanaa ei voitu vaihtaa.'});
+  }
 });
 
 app.post('/api/app/agent/claim/:id', auth, async (req,res) => {
@@ -8875,8 +8906,10 @@ async function ensureRuntimeSchema() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
+  await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS session_version INTEGER NOT NULL DEFAULT 0');
   await q('ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS username TEXT');
   await q('ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS password_hash TEXT');
+  await q('ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS session_version INTEGER NOT NULL DEFAULT 0');
   await q("ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS languages TEXT[] NOT NULL DEFAULT ARRAY['fi']::TEXT[]");
   await q("ALTER TABLE chat_threads ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT 'fi'");
   await q('CREATE INDEX IF NOT EXISTS idx_support_agents_tenant ON support_agents(tenant_id,created_at ASC)');
