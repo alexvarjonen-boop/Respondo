@@ -6341,7 +6341,7 @@ async function retireOldImportedEmails(client, tenantId, currentEmail) {
   );
 }
 
-app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
+app.post('/api/app/business-profile', auth, ownerOnly, subscribed, async (req, res) => {
   const client = await pool.connect();
   try {
     const t = await client.query('SELECT id,name,slug,website FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
@@ -6430,7 +6430,7 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
 // Save the public-facing email independently. Invalid booking URLs or other
 // unsaved profile fields must not prevent a simple contact-email correction.
 // This does not change the owner's login address or billing email.
-app.post('/api/app/business-email', auth, subscribed, async (req,res)=>{
+app.post('/api/app/business-email', auth, ownerOnly, subscribed, async (req,res)=>{
   const email=String(req.body?.email||'').trim().toLowerCase();
   if (!validBusinessEmail(email)) return res.status(400).json({error:'Tarkista yrityksen sähköpostiosoite.'});
   const client=await pool.connect();
@@ -6513,7 +6513,7 @@ async function loadDemoWebsiteImport(id) {
 }
 
 
-app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
+app.post('/api/app/import-website/start', auth, ownerOnly, subscribed, async (req,res)=>{
   if(!await requirePlanCapability(req,res,'websiteImport')) return;
   const website=normalizeWebUrl(req.body.website,false);
   if(!website) return res.status(400).json({error:'Lisää ensin verkkosivusi osoite.'});
@@ -6554,7 +6554,7 @@ app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
   })();
 });
 
-app.get('/api/app/import-website/status/:jobId', auth, subscribed, async (req,res)=>{
+app.get('/api/app/import-website/status/:jobId', auth, ownerOnly, subscribed, async (req,res)=>{
   if(!await requirePlanCapability(req,res,'websiteImport')) return;
   const job=websiteImportJobs.get(req.params.jobId);
   const tenantResult=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
@@ -6564,7 +6564,7 @@ app.get('/api/app/import-website/status/:jobId', auth, subscribed, async (req,re
   if(job.status!=='running' && Date.now()-job.updatedAt>10*60*1000) websiteImportJobs.delete(job.id);
 });
 
-app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
+app.post('/api/app/import-website', auth, ownerOnly, subscribed, async (req, res) => {
   if(!await requirePlanCapability(req,res,'websiteImport')) return;
   try {
     const website = normalizeWebUrl(req.body.website, false);
@@ -6591,7 +6591,7 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
   }
 });
 
-app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) => {
+app.post('/api/app/import-website/approve', auth, ownerOnly, subscribed, async (req, res) => {
   if(!await requirePlanCapability(req,res,'websiteImport')) return;
   const client = await pool.connect();
   try {
@@ -6661,7 +6661,7 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
   }
 });
 
-app.post('/api/app/unanswered/:id/answer', auth, subscribed, async (req, res) => {
+app.post('/api/app/unanswered/:id/answer', auth, ownerOnly, subscribed, async (req, res) => {
   const client = await pool.connect();
   try {
     const answer = String(req.body.answer || '').trim();
@@ -6707,7 +6707,7 @@ app.post('/api/app/unanswered/:id/answer', auth, subscribed, async (req, res) =>
   }
 });
 
-app.post('/api/app/knowledge', auth, subscribed, async (req, res) => {
+app.post('/api/app/knowledge', auth, ownerOnly, subscribed, async (req, res) => {
   try {
     const t = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
@@ -6731,7 +6731,7 @@ app.post('/api/app/knowledge', auth, subscribed, async (req, res) => {
 });
 
 
-app.put('/api/app/knowledge/:id', auth, subscribed, async (req, res) => {
+app.put('/api/app/knowledge/:id', auth, ownerOnly, subscribed, async (req, res) => {
   try {
     const t = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
@@ -6762,7 +6762,7 @@ app.put('/api/app/knowledge/:id', auth, subscribed, async (req, res) => {
   }
 });
 
-app.delete('/api/app/knowledge/:id', auth, subscribed, async (req, res) => {
+app.delete('/api/app/knowledge/:id', auth, ownerOnly, subscribed, async (req, res) => {
   try {
     const t = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtila puuttuu.' });
@@ -6779,7 +6779,7 @@ app.delete('/api/app/knowledge/:id', auth, subscribed, async (req, res) => {
 });
 
 
-app.post('/api/app/knowledge/:id/quick-reply', auth, subscribed, async (req, res) => {
+app.post('/api/app/knowledge/:id/quick-reply', auth, ownerOnly, subscribed, async (req, res) => {
   const client = await pool.connect();
   try {
     const featured = req.body?.featured === true;
@@ -8790,7 +8790,7 @@ app.post('/api/app/quote-engine', auth, ownerOnly, subscribed, async (req,res) =
   }
 });
 
-app.post('/api/app/booking-slots/generate', auth, subscribed, async (req,res) => {
+app.post('/api/app/booking-slots/generate', auth, ownerOnly, subscribed, async (req,res) => {
   const client = await pool.connect();
   try {
     const tr = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
@@ -8825,7 +8825,7 @@ app.post('/api/app/booking-slots/generate', auth, subscribed, async (req,res) =>
   }
 });
 
-app.delete('/api/app/booking-slots/:id', auth, subscribed, async (req,res) => {
+app.delete('/api/app/booking-slots/:id', auth, ownerOnly, subscribed, async (req,res) => {
   try {
     const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8932,7 +8932,7 @@ app.post('/api/app/integrations/test', auth, ownerOnly, subscribed, async (req,r
   }
 });
 
-app.post('/api/app/action-requests/:id/status', auth, subscribed, async (req,res) => {
+app.post('/api/app/action-requests/:id/status', auth, ownerOnly, subscribed, async (req,res) => {
   try {
     const status = ['new','in_progress','done'].includes(String(req.body.status)) ? String(req.body.status) : 'done';
     const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
