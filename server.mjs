@@ -9470,9 +9470,6 @@ async function ensureRuntimeSchema() {
   await q(
     "INSERT INTO app_settings(key,value) VALUES('owner_test_plan_enabled','true') ON CONFLICT(key) DO NOTHING"
   );
-  await q(
-    "INSERT INTO app_settings(key,value) VALUES('owner_free_code_used_sha256','') ON CONFLICT(key) DO NOTHING"
-  );
   await q(`CREATE TABLE IF NOT EXISTS demo_website_imports (
     id UUID PRIMARY KEY,
     website TEXT NOT NULL,
