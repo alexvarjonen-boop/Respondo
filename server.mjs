@@ -4707,6 +4707,34 @@ app.post('/api/i18n/translate', i18nLimiter, async (req,res) => {
   }
 });
 
+const publicReadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Liian monta pyyntöä. Yritä hetken kuluttua uudelleen.' },
+});
+const siteVisitLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Liian monta pyyntöä. Yritä hetken kuluttua uudelleen.' },
+});
+const paymentVerifyLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Liian monta maksun vahvistusyritystä. Yritä hetken kuluttua uudelleen.' },
+});
+const channelApiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Liian monta kanavapyyntöä. Yritä hetken kuluttua uudelleen.' },
+});
 const publicChatLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 35,
@@ -4758,7 +4786,7 @@ app.get('/api/health', async (req, res) => {
 
 
 
-app.post('/api/public/site-visit', async (req, res) => {
+app.post('/api/public/site-visit', siteVisitLimiter, async (req, res) => {
   try {
     if (!pool) return res.status(204).end();
 
@@ -5061,7 +5089,7 @@ app.get('/api/auth/oauth-profile', (req, res) => {
   });
 });
 
-app.get('/api/public/config', async (req, res) => {
+app.get('/api/public/config', publicReadLimiter, async (req, res) => {
   let ownerTestEnabled = false;
   try {
     ownerTestEnabled = await ownerTestPlanEnabled();
@@ -7428,7 +7456,7 @@ async function publicTenant(slugValue) {
 }
 
 
-app.get('/api/public/:slug/widget-token', async (req, res) => {
+app.get('/api/public/:slug/widget-token', publicReadLimiter, async (req, res) => {
   try {
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.status(404).json({ error: 'Yritystä ei löytynyt.' });
@@ -7495,7 +7523,7 @@ app.get('/api/public/:slug/widget-token', async (req, res) => {
 });
 
 
-app.get('/api/public/:slug', async (req, res) => {
+app.get('/api/public/:slug', publicReadLimiter, async (req, res) => {
   try {
     const r = await publicTenant(req.params.slug);
     if (!r.rowCount) return res.status(404).json({ error: 'Yritystä ei löytynyt.' });
@@ -8376,7 +8404,7 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
   }
 });
 
-app.get('/api/public/payment/verify', async (req,res) => {
+app.get('/api/public/payment/verify', paymentVerifyLimiter, async (req,res) => {
   try {
     if (!stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
     const actionId = String(req.query.action || '').trim();
@@ -9154,7 +9182,7 @@ app.post('/api/app/live/:id/reply', auth, async (req,res) => {
   }
 });
 
-app.post('/api/channel/:slug/message', async (req,res) => {
+app.post('/api/channel/:slug/message', channelApiLimiter, async (req,res) => {
   try {
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.status(404).json({ error:'Yritystä ei löytynyt.' });
