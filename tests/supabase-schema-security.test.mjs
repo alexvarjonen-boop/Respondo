@@ -8,6 +8,7 @@ const schema = await readFile(new URL('../db/schema.sql', import.meta.url), 'utf
 test('runtime schema preserves Supabase Data API hardening', () => {
   assert.match(server, /SET search_path = public, pg_temp/);
   assert.match(server, /ALTER TABLE public\.demo_website_imports ENABLE ROW LEVEL SECURITY/);
+  assert.match(server, /ALTER TABLE public\.password_reset_tokens ENABLE ROW LEVEL SECURITY/);
   assert.match(server, /REVOKE ALL PRIVILEGES ON TABLE public\.demo_website_imports FROM anon/);
   assert.match(server, /REVOKE ALL PRIVILEGES ON TABLE public\.demo_website_imports FROM authenticated/);
   assert.match(server, /REVOKE EXECUTE ON FUNCTION public\.active_tenant_for_user\(UUID\) FROM anon/);
