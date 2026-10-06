@@ -23,3 +23,9 @@ test('owner dashboard renders a bound logout control', () => {
   assert.match(app, /class="dashboard-logout"/);
   assert.match(app, /\$\('#logoutTop'\)\?\.addEventListener\('click', doLogout\)/);
 });
+
+
+test('staff dashboard logout button is bound', () => {
+  assert.match(app, /id="logoutAgent"/);
+  assert.match(app, /\$\('#logoutAgent'\)\?\.addEventListener\('click', doLogout\)/);
+});
