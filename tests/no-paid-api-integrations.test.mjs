@@ -83,3 +83,16 @@ test('production safety guard blocks removed paid API hosts and stale credential
     assert.equal(entry.includes(marker), true, `Missing paid-service safety marker: ${marker}`);
   }
 });
+
+
+test('legacy paid-channel cleanup is schema-aware and does not query a removed table blindly', () => {
+  assert.match(entry, /information_schema\.columns/);
+  assert.match(entry, /column_name = ANY\(\$1::text\[\]\)/);
+  assert.match(entry, /to_regclass\('public\.missed_call_sms_events'\)/);
+  assert.match(
+    entry,
+    /if \(legacySmsTable\.rows\[0\]\?\.relation_name\) \{\s*await pool\.query\('DELETE FROM missed_call_sms_events'\);\s*\}/,
+  );
+  assert.match(entry, /writesRemovedPaidChannelState/);
+  assert.match(entry, /writesRemovedSmsEvents/);
+});
