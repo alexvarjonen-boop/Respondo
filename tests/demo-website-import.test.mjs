@@ -7,7 +7,7 @@ const app=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 
 test('Try Bot website import really scans and feeds imported facts into demo chat',()=>{
   assert.match(server,/app\.post\('\/api\/public\/demo-import-website'/);
-  assert.match(server,/fetchWebsiteBundle\(website,180,55000\)/);
+  assert.match(server,/fetchWebsiteBundle\([\s\S]{0,120}website,[\s\S]{0,80}40,[\s\S]{0,80}12000/);
   assert.match(server,/websiteKnowledgeCandidates\(bundle\)/);
   assert.match(server,/source_url:\s*normalizeWebUrl\(meta\.sourceUrl,false\)/);
   assert.match(server,/demoWebsiteImports\.set\(demoImportId/);
