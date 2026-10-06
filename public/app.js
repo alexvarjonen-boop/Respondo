@@ -3650,82 +3650,82 @@ async function dashboard(options = {}) {
         </article>
 
 
-        <article class="panel" id="business-integrations" \${planAccess.allCurrentFeatures ? '' : 'hidden'}>
+        <article class="panel" id="business-integrations" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
           <div class="panel-head">
             <div>
-              <small>\${appText('BUSINESS-INTEGRAATIOT','BUSINESS-INTEGRATIONER','BUSINESS INTEGRATIONS')}</small>
-              <h2>\${appText('Yhdistä muut järjestelmät','Anslut andra system','Connect other systems')}</h2>
-              <p>\${appText('Webhookit, API-avaimet ja verkkokauppayhteydet ovat Business-tilauksen integraatioita.','Webhooks, API-nycklar och e-handelsanslutningar är Business-integrationer.','Webhooks, API keys and commerce connections are Business integrations.')}</p>
+              <small>${appText('BUSINESS-INTEGRAATIOT','BUSINESS-INTEGRATIONER','BUSINESS INTEGRATIONS')}</small>
+              <h2>${appText('Yhdistä muut järjestelmät','Anslut andra system','Connect other systems')}</h2>
+              <p>${appText('Webhookit, API-avaimet ja verkkokauppayhteydet ovat Business-tilauksen integraatioita.','Webhooks, API-nycklar och e-handelsanslutningar är Business-integrationer.','Webhooks, API keys and commerce connections are Business integrations.')}</p>
             </div>
             <span class="install-badge">Business</span>
           </div>
           <form id="integrationsForm" class="formgrid">
             <div class="field full">
-              <label>\${appText('Webhook-osoite','Webhook-adress','Webhook URL')}</label>
-              <input name="webhookUrl" type="url" value="\${esc(integrations.webhookUrl || '')}" placeholder="https://yritys.fi/api/respondo">
-              <small>\${appText('HTTPS-osoite, johon Respondo lähettää asiakaspyyntöjen tapahtumat.','HTTPS-adress dit Respondo skickar händelser för kundförfrågningar.','HTTPS endpoint where Respondo sends customer-request events.')}</small>
+              <label>${appText('Webhook-osoite','Webhook-adress','Webhook URL')}</label>
+              <input name="webhookUrl" type="url" value="${esc(integrations.webhookUrl || '')}" placeholder="https://yritys.fi/api/respondo">
+              <small>${appText('HTTPS-osoite, johon Respondo lähettää asiakaspyyntöjen tapahtumat.','HTTPS-adress dit Respondo skickar händelser för kundförfrågningar.','HTTPS endpoint where Respondo sends customer-request events.')}</small>
             </div>
             <div class="field">
-              <label>\${appText('Webhook-salaisuus','Webhook-hemlighet','Webhook secret')}</label>
-              <div class="code-row"><code id="webhookSecretValue" data-value="\${esc(integrations.webhookSecret || '')}">\${integrations.webhookSecret ? '••••••••••••' : appText('Ei luotu','Inte skapad','Not created')}</code><button class="copy-integration-value" type="button" data-target="webhookSecretValue">\${appText('Kopioi','Kopiera','Copy')}</button></div>
+              <label>${appText('Webhook-salaisuus','Webhook-hemlighet','Webhook secret')}</label>
+              <div class="code-row"><code id="webhookSecretValue" data-value="${esc(integrations.webhookSecret || '')}">${integrations.webhookSecret ? '••••••••••••' : appText('Ei luotu','Inte skapad','Not created')}</code><button class="copy-integration-value" type="button" data-target="webhookSecretValue">${appText('Kopioi','Kopiera','Copy')}</button></div>
             </div>
             <div class="field">
-              <label>\${appText('Channels API -avain','Channels API-nyckel','Channels API key')}</label>
-              <div class="code-row"><code id="channelsApiKeyValue" data-value="\${esc(integrations.channelsApiKey || '')}">\${integrations.channelsApiKey ? '••••••••••••' : appText('Ei luotu','Inte skapad','Not created')}</code><button class="copy-integration-value" type="button" data-target="channelsApiKeyValue">\${appText('Kopioi','Kopiera','Copy')}</button></div>
+              <label>${appText('Channels API -avain','Channels API-nyckel','Channels API key')}</label>
+              <div class="code-row"><code id="channelsApiKeyValue" data-value="${esc(integrations.channelsApiKey || '')}">${integrations.channelsApiKey ? '••••••••••••' : appText('Ei luotu','Inte skapad','Not created')}</code><button class="copy-integration-value" type="button" data-target="channelsApiKeyValue">${appText('Kopioi','Kopiera','Copy')}</button></div>
             </div>
             <div class="field full">
               <div style="display:flex;gap:10px;flex-wrap:wrap">
-                <button class="btn dashboard-action" type="submit">\${appText('Tallenna integraatio','Spara integration','Save integration')} <span>→</span></button>
-                <button class="btn integration-test-btn" id="testIntegration" type="button">\${appText('Testaa webhook','Testa webhook','Test webhook')}</button>
+                <button class="btn dashboard-action" type="submit">${appText('Tallenna integraatio','Spara integration','Save integration')} <span>→</span></button>
+                <button class="btn integration-test-btn" id="testIntegration" type="button">${appText('Testaa webhook','Testa webhook','Test webhook')}</button>
               </div>
               <div id="integrationMsg"></div>
             </div>
           </form>
         </article>
 
-        <article class="panel" id="commerce-integration" \${planAccess.allCurrentFeatures ? '' : 'hidden'}>
+        <article class="panel" id="commerce-integration" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
           <div class="panel-head">
             <div>
-              <small>\${appText('VERKKOKAUPPA','E-HANDEL','ECOMMERCE')}</small>
-              <h2>\${appText('Yhdistä Shopify tai WooCommerce','Anslut Shopify eller WooCommerce','Connect Shopify or WooCommerce')}</h2>
-              <p>\${appText('Respondo voi tarkistaa tilauksen tilan tilausnumeron ja sähköpostin perusteella.','Respondo kan kontrollera orderstatus med ordernummer och e-postadress.','Respondo can check order status using the order number and email address.')}</p>
+              <small>${appText('VERKKOKAUPPA','E-HANDEL','ECOMMERCE')}</small>
+              <h2>${appText('Yhdistä Shopify tai WooCommerce','Anslut Shopify eller WooCommerce','Connect Shopify or WooCommerce')}</h2>
+              <p>${appText('Respondo voi tarkistaa tilauksen tilan tilausnumeron ja sähköpostin perusteella.','Respondo kan kontrollera orderstatus med ordernummer och e-postadress.','Respondo can check order status using the order number and email address.')}</p>
             </div>
-            <span class="install-badge">\${commerce.shopifyConnected || commerce.wooConnected ? appText('Yhdistetty','Ansluten','Connected') : appText('Ei yhdistetty','Inte ansluten','Not connected')}</span>
+            <span class="install-badge">${commerce.shopifyConnected || commerce.wooConnected ? appText('Yhdistetty','Ansluten','Connected') : appText('Ei yhdistetty','Inte ansluten','Not connected')}</span>
           </div>
           <form id="commerceForm" class="formgrid">
             <div class="field">
-              <label>\${appText('Verkkokauppa','E-handelsplattform','Commerce platform')}</label>
+              <label>${appText('Verkkokauppa','E-handelsplattform','Commerce platform')}</label>
               <select name="provider">
-                <option value="" \${!commerce.provider ? 'selected' : ''}>\${appText('Ei käytössä','Inte i bruk','Disabled')}</option>
-                <option value="shopify" \${commerce.provider==='shopify' ? 'selected' : ''}>Shopify</option>
-                <option value="woocommerce" \${commerce.provider==='woocommerce' ? 'selected' : ''}>WooCommerce</option>
+                <option value="" ${!commerce.provider ? 'selected' : ''}>${appText('Ei käytössä','Inte i bruk','Disabled')}</option>
+                <option value="shopify" ${commerce.provider==='shopify' ? 'selected' : ''}>Shopify</option>
+                <option value="woocommerce" ${commerce.provider==='woocommerce' ? 'selected' : ''}>WooCommerce</option>
               </select>
             </div>
             <div class="field">
               <label>Shopify .myshopify.com</label>
-              <input name="shopifyShopDomain" value="\${esc(commerce.shopifyShopDomain || '')}" placeholder="kauppa.myshopify.com">
+              <input name="shopifyShopDomain" value="${esc(commerce.shopifyShopDomain || '')}" placeholder="kauppa.myshopify.com">
             </div>
             <div class="field">
-              <label>\${appText('Shopify Admin API -token','Shopify Admin API-token','Shopify Admin API token')}</label>
-              <input name="shopifyAccessToken" type="password" autocomplete="off" placeholder="\${commerce.shopifyConnected ? appText('Jätä tyhjäksi säilyttääksesi nykyisen','Lämna tomt för att behålla nuvarande','Leave blank to keep current') : 'shpat_…'}">
+              <label>${appText('Shopify Admin API -token','Shopify Admin API-token','Shopify Admin API token')}</label>
+              <input name="shopifyAccessToken" type="password" autocomplete="off" placeholder="${commerce.shopifyConnected ? appText('Jätä tyhjäksi säilyttääksesi nykyisen','Lämna tomt för att behålla nuvarande','Leave blank to keep current') : 'shpat_…'}">
             </div>
             <div class="field">
               <label>WooCommerce URL</label>
-              <input name="wooBaseUrl" type="url" value="\${esc(commerce.wooBaseUrl || '')}" placeholder="https://kauppa.fi">
+              <input name="wooBaseUrl" type="url" value="${esc(commerce.wooBaseUrl || '')}" placeholder="https://kauppa.fi">
             </div>
             <div class="field">
               <label>WooCommerce Consumer Key</label>
-              <input name="wooConsumerKey" type="password" autocomplete="off" placeholder="\${commerce.wooConnected ? appText('Jätä tyhjäksi säilyttääksesi nykyisen','Lämna tomt för att behålla nuvarande','Leave blank to keep current') : 'ck_…'}">
+              <input name="wooConsumerKey" type="password" autocomplete="off" placeholder="${commerce.wooConnected ? appText('Jätä tyhjäksi säilyttääksesi nykyisen','Lämna tomt för att behålla nuvarande','Leave blank to keep current') : 'ck_…'}">
             </div>
             <div class="field">
               <label>WooCommerce Consumer Secret</label>
-              <input name="wooConsumerSecret" type="password" autocomplete="off" placeholder="\${commerce.wooConnected ? appText('Jätä tyhjäksi säilyttääksesi nykyisen','Lämna tomt för att behålla nuvarande','Leave blank to keep current') : 'cs_…'}">
+              <input name="wooConsumerSecret" type="password" autocomplete="off" placeholder="${commerce.wooConnected ? appText('Jätä tyhjäksi säilyttääksesi nykyisen','Lämna tomt för att behålla nuvarande','Leave blank to keep current') : 'cs_…'}">
             </div>
             <div class="field full">
-              <small>\${appText('Salaiset tunnisteet lähetetään vain palvelimelle ja tallennetaan suojattuina.','Hemliga uppgifter skickas endast till servern och lagras skyddat.','Secrets are sent only to the server and stored protected.')}</small>
+              <small>${appText('Salaiset tunnisteet lähetetään vain palvelimelle ja tallennetaan suojattuina.','Hemliga uppgifter skickas endast till servern och lagras skyddat.','Secrets are sent only to the server and stored protected.')}</small>
               <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
-                <button class="btn dashboard-action" type="submit">\${appText('Tallenna verkkokauppayhteys','Spara e-handelsanslutning','Save commerce connection')} <span>→</span></button>
-                <button class="btn integration-test-btn" id="testCommerce" type="button">\${appText('Testaa yhteys','Testa anslutning','Test connection')}</button>
+                <button class="btn dashboard-action" type="submit">${appText('Tallenna verkkokauppayhteys','Spara e-handelsanslutning','Save commerce connection')} <span>→</span></button>
+                <button class="btn integration-test-btn" id="testCommerce" type="button">${appText('Testaa yhteys','Testa anslutning','Test connection')}</button>
               </div>
               <div id="commerceMsg"></div>
             </div>
