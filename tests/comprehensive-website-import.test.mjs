@@ -113,3 +113,21 @@ test('structured product variants provide colors sizes materials specs and price
   assert.equal(material.handoff,false,JSON.stringify(material));
   assert.match(material.answer,/303 stainless steel/i);
 });
+
+
+test('company About content survives CMS blog paths while ordinary news stays excluded',()=>{
+  const about=extractBusinessDocument(
+    '<section><h2>What We Do</h2><p>We create fully customized blade putters in Turku for golfers worldwide.</p></section>',
+    'https://shop.example/blogs/news/about-us'
+  );
+  const news=extractBusinessDocument(
+    '<section><h2>What We Do</h2><p>We sponsor a summer golf tournament this weekend.</p></section>',
+    'https://shop.example/blogs/news/summer-tournament'
+  );
+  const facts=essentialWebsiteCandidates({
+    finalUrl:'https://shop.example/',
+    pageDocuments:[about,news]
+  });
+  assert.ok(facts.some((item)=>/fully customized blade putters/i.test(item.answer)),JSON.stringify(facts));
+  assert.equal(facts.some((item)=>/summer golf tournament/i.test(item.answer)),false,JSON.stringify(facts));
+});
