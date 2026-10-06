@@ -2649,23 +2649,23 @@ function login() {
               <div id="passwordResetConfirmMsg" role="status" aria-live="polite"></div>
             </div>
           </div>
-          <div class="agent-login-separator"><span>${appText('Asiakaspalvelija?','Kundservicemedarbetare?','Support agent?')}</span></div>
-          <button class="btn" type="button" id="showAgentLogin" aria-expanded="false" aria-controls="agentLoginPanel">${appText('Kirjaudu työntekijätunnuksella','Logga in med medarbetarkonto','Log in with staff account')}</button>
-          <div id="agentLoginPanel" hidden>
-            <div class="agent-login-fields">
-              <div class="field"><label for="agentUsername">${appText('Käyttäjänimi','Användarnamn','Username')}</label><input id="agentUsername" name="agentUsername" autocomplete="username" minlength="3"></div>
-              <div class="field"><label for="agentPassword">${appText('Salasana','Lösenord','Password')}</label><input id="agentPassword" name="agentPassword" type="password" autocomplete="current-password"></div>
-              <button class="btn checkout-button" type="button" id="submitAgentLogin">${appText('Kirjaudu työntekijänä','Logga in som medarbetare','Log in as staff')} →</button>
-              <small>${appText('Unohtuiko työntekijän salasana? Yrityksen pääkäyttäjä voi vaihtaa sen hallintapaneelista.','Glömt medarbetarlösenordet? Företagets huvudanvändare kan byta det i kontrollpanelen.','Forgot the staff password? The company owner can reset it from the dashboard.')}</small>
-              <div id="agentLoginMsg" role="status" aria-live="polite"></div>
-            </div>
-          </div>
           <div id="msg">${passwordResetDone
             ? `<div class="notice success">${appText('Salasana vaihdettu. Voit nyt kirjautua uudella salasanalla.','Lösenordet har ändrats. Du kan nu logga in med det nya lösenordet.','Password changed. You can now log in with your new password.')}</div>`
             : oauthErrorMessage()
               ? `<div class="notice error">${esc(oauthErrorMessage())}</div>`
               : (checkoutError ? `<div class="notice error">${appText('Automaattinen kirjautuminen ei onnistunut. Kirjaudu samalla sähköpostilla ja salasanalla, jonka loit ennen maksua.','Automatisk inloggning misslyckades. Logga in med samma e-postadress och lösenord som du skapade före betalningen.','Automatic sign-in failed. Log in with the same email and password you created before payment.')}</div>` : '')}</div>
         </form>
+        <section class="formcard premium-form agent-login-card">
+          <div class="form-head"><span>${appText('ASIAKASPALVELIJA','KUNDSERVICE','SUPPORT AGENT')}</span><b>${appText('Työntekijän kirjautuminen','Medarbetarinloggning','Staff login')}</b></div>
+          <p class="agent-login-intro">${appText('Kirjaudu yrityksesi työntekijätunnuksella.','Logga in med företagets medarbetarkonto.','Log in with your company staff account.')}</p>
+          <div class="agent-login-fields">
+            <div class="field"><label for="agentUsername">${appText('Käyttäjänimi','Användarnamn','Username')}</label><input id="agentUsername" name="agentUsername" autocomplete="username" minlength="3"></div>
+            <div class="field"><label for="agentPassword">${appText('Salasana','Lösenord','Password')}</label><input id="agentPassword" name="agentPassword" type="password" autocomplete="current-password"></div>
+            <button class="btn checkout-button" type="button" id="submitAgentLogin">${appText('Kirjaudu työntekijänä','Logga in som medarbetare','Log in as staff')} <span>→</span></button>
+            <small>${appText('Unohtuiko työntekijän salasana? Yrityksen pääkäyttäjä voi vaihtaa sen hallintapaneelista.','Glömt medarbetarlösenordet? Företagets huvudanvändare kan byta det i kontrollpanelen.','Forgot the staff password? The company owner can reset it from the dashboard.')}</small>
+            <div id="agentLoginMsg" role="status" aria-live="polite"></div>
+          </div>
+        </section>
       </div>
     </main>
     ${footer()}
