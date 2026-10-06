@@ -11,9 +11,11 @@ test('public widget APIs do not trust missing Origin or Referer', () => {
   assert.doesNotMatch(server, /const external = Boolean\(origin && normalizeHost\(origin\.hostname\) !== baseHost\);/);
 });
 
-test('public tenant access follows the workspace subscription', () => {
-  assert.match(server, /COALESCE\(t\.subscription_status,u\.subscription_status\) IN \('active','trialing'\)/);
-  assert.match(server, /COALESCE\(t\.current_period_end,u\.current_period_end\) > NOW\(\)/);
+test('public tenant access follows only the workspace subscription', () => {
+  assert.match(server, /WHERE t\.slug=\$1[\s\S]*AND t\.subscription_status IN \('active','trialing'\)/);
+  assert.match(server, /COALESCE\(t\.subscription_cancel_at_period_end,false\)=false/);
+  assert.match(server, /t\.current_period_end > NOW\(\)/);
+  assert.doesNotMatch(server, /COALESCE\(t\.subscription_status,u\.subscription_status\) IN \('active','trialing'\)/);
 });
 
 test('website imports are pinned against DNS rebinding and scoped to the active tenant', () => {
