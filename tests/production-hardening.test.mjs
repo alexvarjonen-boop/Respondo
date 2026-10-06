@@ -49,7 +49,7 @@ test('website importer revalidates redirects and pins only vetted public DNS res
 
 test('agent live takeover resolves the agent tenant instead of owner_user_id=agent id', () => {
   assert.match(server, /req\.user\.role === 'agent'[\s\S]{0,500}SELECT t\.\* FROM tenants t JOIN users u ON u\.id=t\.owner_user_id WHERE t\.id=\$1/);
-  assert.match(server, /ct\.assigned_agent_id=\$3 AND t\.active=true/);
+  assert.match(server, /ct\.assigned_agent_id=\$3[\s\S]{0,120}u\.status='active'[\s\S]{0,120}t\.active=true/);
 });
 
 test('owner free checkout bypass is env-configured, reusable and separate from referrals', () => {
