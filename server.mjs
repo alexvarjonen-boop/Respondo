@@ -1066,7 +1066,7 @@ function knowledgeTopic(value) {
   if(/maksutapa|maksaminen|maksuvaihtoeh|korttimaks|klarna|paypal|mobilepay|apple pay|google pay|payment method|payment options|pay with|pay by|betalning|betalningsmetod|faktura/.test(t)) return 'payment';
   if (/^hinnat\b|hinta|hinnoittelu|price|pricing|cost|pris|kostnad/.test(t)) return 'pricing';
   // Keep actual services separate from retail products.
-  if(/palvelu|service|services|tjanst|tjänst|tarjoa|erbjud|huolto|pesu|pesut|siistim|raivaus|maalaust|leikkaus|poisvienti|puhdist/.test(t)) return 'services';
+  if(/palvelu|service|services|tjanst|tjänst|tarjoa|erbjud|huolto|pesu|pesut|siistim|raivaus|maalaust|leikkaus|poisvienti|puhdist|purku|kartoit|kierrat|kierrät|murske|asbesti|haitta.?aine|saneeraus|linjasaneeraus/.test(t)) return 'services';
   if(/tuote|product|valikoima|selection|sortiment|myy|sell|sku|tuotenumero/.test(t)) return 'products';
   if(/auki|opening|hours|oppet|öppet|oppettid/.test(t)) return 'hours';
   if(/toimitus|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|lahetys|sparning/.test(t)) return 'delivery';
@@ -1492,6 +1492,50 @@ function genericCompanyQuestion(value) {
 
 // Respond with one grounded service description instead of stitching together
 // several imported paragraphs, which often repeat marketing copy.
+function broadServiceListAnswer(rows) {
+  const found=[];
+  const seen=new Set();
+  const generic=/^(?:palvelut?|palvelumme|services?|tjänster|tjanster|mitä teemme|mita teemme|what we do|nopea ja joustava palvelu|luotettava palvelu|ammattitaitoinen palvelu)$/i;
+  const concrete=/purku|kartoit|kierrat|kierrät|murske|asbesti|haitta.?aine|saneeraus|linjasaneeraus|pesu|siivou|puhdist|maala|raivau|leikkaus|huolto|asennus|korjaus|kuljet|muutto|poisvienti/i;
+  const add=(value)=>{
+    let text=String(value||'').replace(/\s+/g,' ').trim()
+      .replace(/^[•·▪◦-]+\s*/,'')
+      .replace(/[.!?;:]+$/,'')
+      .trim();
+    if(!text || text.length<4 || text.length>78 || generic.test(text)) return;
+    const words=text.split(/\s+/).filter(Boolean);
+    if(words.length>9 || !concrete.test(text)) return;
+    if(/(?:ota yhteytta|ota yhteyttä|pyyda tarjous|pyydä tarjous|lue lisaa|lue lisää|read more|contact|referens|ajankohtaista|toimipiste)/i.test(text)) return;
+    const key=normalizeSearchText(text);
+    if(!key || seen.has(key)) return;
+    seen.add(key);
+    found.push(text);
+  };
+
+  for(const row of rows||[]){
+    const meta=String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||'');
+    if(knowledgeTopic(meta)!=='services') continue;
+    const title=String(row?.title||'').replace(/^Palvelut\s*:\s*/i,'').trim();
+    const answer=String(row?.answer||'').replace(/\s+/g,' ').trim();
+
+    if(title && title.length<=78) add(title);
+    const prefix=answer.match(/^([^:]{4,78}):\s+/);
+    if(prefix) add(prefix[1]);
+    if(answer.length<=78) add(answer);
+
+    if(/[•\n]/.test(String(row?.answer||''))) {
+      String(row.answer).split(/[•\n]/).forEach(add);
+    }
+    if(answer.length<=220 && /,/.test(answer)) {
+      answer.split(/\s*,\s*/).forEach(add);
+    }
+  }
+
+  if(!found.length) return '';
+  const items=found.slice(0,12);
+  return 'Palveluihimme kuuluvat: '+items.join(', ')+'.';
+}
+
 function briefServiceAnswer(selected) {
   const candidates = [];
   const seen = new Set();
@@ -3418,7 +3462,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     for(const item of usable){
       if(!unique.some((x)=>normalizeSearchText(x).includes(normalizeSearchText(item.text).slice(0,80)))) unique.push(item.text);
     }
-    finalAnswer=(queryTopic(localQuery)==='services' ? briefServiceAnswer(selected) : '')
+    finalAnswer=(queryTopic(localQuery)==='services' ? (broadServiceListAnswer(rows) || briefServiceAnswer(selected)) : '')
       || composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim();
     if(finalAnswer.length>520) finalAnswer=finalAnswer.slice(0,517).replace(/\s+\S*$/,'')+'…';
   } else {
