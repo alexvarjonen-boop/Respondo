@@ -1918,6 +1918,48 @@ function isConversationalAcknowledgement(value) {
   return /^(?:(?:ok|okei|okay|okey|selva|selkee|joo|juu|jes|hyva|ei|no|yes|yeah|yep|sure|alright|all right|got it|okej|japp|bra|nej)\s+)*(?:kiitos(?: paljon| avusta| avustasi)?|kiitti(?: paljon| avusta| avustasi)?|thanks(?: a lot| for (?:the )?help)?|thank you(?: very much| for (?:the )?help)?|many thanks|tack(?: sa mycket| för hjälpen| for hjalpen)?)$/.test(q);
 }
 
+function conversationalSmallTalkReply(value, lang='fi') {
+  const q=normalizeSearchText(value);
+  if (!q) return '';
+  const replies={
+    fi:{
+      wellbeing:'Hyvin, kiitos! Miten voin auttaa?',
+      identity:'Olen yrityksen verkkosivujen asiakaspalvelubotti. Voin auttaa yrityksen palveluihin, hintoihin, yhteystietoihin ja muihin sivustolta löytyviin tietoihin liittyvissä kysymyksissä.',
+      help:'Totta kai. Kerro vain, missä asiassa tarvitset apua.',
+      bye:'Kiitos yhteydenotosta! Mukavaa päivänjatkoa!'
+    },
+    sv:{
+      wellbeing:'Bra, tack! Hur kan jag hjälpa?',
+      identity:'Jag är företagets kundservicebot på webbplatsen. Jag kan hjälpa med frågor om tjänster, priser, kontaktuppgifter och annan information på webbplatsen.',
+      help:'Självklart. Berätta bara vad du behöver hjälp med.',
+      bye:'Tack för att du kontaktade oss! Ha en bra dag!'
+    },
+    en:{
+      wellbeing:'I’m good, thanks! How can I help?',
+      identity:'I’m the company’s website support bot. I can help with questions about services, pricing, contact details, and other information available on the website.',
+      help:'Of course. Tell me what you need help with.',
+      bye:'Thanks for getting in touch! Have a great day!'
+    }
+  };
+  const r=replies[lang]||replies.fi;
+  if (/^(?:mita kuuluu|miten menee|kuinka menee|how are you|how is it going|how are things|hur mar du|hur ar laget)[?!. ]*$/.test(q)) return r.wellbeing;
+  if (/^(?:kuka olet|mika olet|oletko botti|who are you|what are you|are you a bot|vem ar du|ar du en bot)[?!. ]*$/.test(q)) return r.identity;
+  if (/^(?:voitko auttaa|voisitko auttaa|minulla on kysymys|can you help|could you help|i need help|kan du hjalpa|jag behover hjalp)[?!. ]*$/.test(q)) return r.help;
+  if (/^(?:heippa|moikka moi|nakemiin|nähdään|nahdaan|bye|goodbye|see you|hej da|hejda)[?!. ]*$/.test(q)) return r.bye;
+  return '';
+}
+
+function conversationalClarification(value, lang='fi') {
+  const q=normalizeSearchText(value);
+  const words=q.split(/\s+/).filter(Boolean);
+  if (!q || words.length>3) return '';
+  const vague=new Set(['se','tama','tuo','toi','hinta','palvelu','tuote','siita','it','that','this','price','service','product','det','den','detta','pris','tjanst','produkt']);
+  if (!words.some(word=>vague.has(word))) return '';
+  return lang==='en' ? 'Sure — what exactly would you like to know about it?'
+    : lang==='sv' ? 'Absolut — vad vill du veta om det?'
+    : 'Totta kai — mitä haluaisit tietää siitä tarkemmin?';
+}
+
 function contextualizeConversationQuery(message, history = []) {
   const current=String(message||'').trim();
   const q=normalizeSearchText(current);
@@ -3476,6 +3518,10 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   if (/^(hei|moi|moikka|hello|hi|hey|terve|hej|hallå|halla)[!. ]*$/.test(normalized)) {
     return { answer: responseLang === 'en' ? 'Hi! How can I help?' : responseLang === 'sv' ? 'Hej! Hur kan jag hjälpa?' : 'Hei! Miten voin auttaa?', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Greeting' : responseLang === 'sv' ? 'Hälsning' : 'Tervehdys', sourceIds: [], selected: [] };
   }
+  const smallTalkReply=conversationalSmallTalkReply(normalized,responseLang);
+  if (smallTalkReply) {
+    return {answer:smallTalkReply,handoff:false,confidence:1,intent:responseLang==='en'?'Conversation':responseLang==='sv'?'Samtal':'Keskustelu',sourceIds:[],selected:[]};
+  }
   if (isConversationalAcknowledgement(normalized)) {
     const negativeThanks=/^(?:ei|no|nej)\s+/.test(normalized);
     const hasThanks=/(?:^|\s)(?:kiitos|kiitti|thanks|thank you|many thanks|tack)(?:\s|$)/.test(normalized);
@@ -3653,6 +3699,8 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       .slice(0,8);
   }
   if (!selected.length) {
+    const clarification=conversationalClarification(cleanMessage,responseLang);
+    if (clarification) return {answer:clarification,handoff:false,confidence:0.75,intent:responseLang==='en'?'Clarification':responseLang==='sv'?'Förtydligande':'Tarkennus',sourceIds:[],selected:[]};
     return { answer: '', handoff: true, confidence: 0.2, intent, sourceIds: [], selected: [] };
   }
 
