@@ -20,7 +20,7 @@ test('public tenant access follows only the workspace subscription', () => {
 
 test('website imports are pinned against DNS rebinding and scoped to the active tenant', () => {
   assert.match(server, /function pinnedPublicRequest\(/);
-  assert.match(server, /lookup\(_hostname, _options, callback\)/);
+  assert.match(server, /lookup\(_hostname, lookupOptions, callback\)/);\n  assert.match(server, /lookupOptions && lookupOptions\.all/);
   assert.match(server, /job=\{id:jobId,userId:req\.user\.sub,tenantId,website,status:'running'/);
   assert.match(server, /job\.tenantId!==tenantId/);
 });
@@ -123,4 +123,11 @@ test('production requires a dedicated data encryption key while retaining legacy
   assert.match(server, /DATA_ENCRYPTION_KEY is required in production/);
   assert.match(server, /const LEGACY_SECRET_KEY = crypto\.createHash\('sha256'\)\.update\(JWT\)\.digest\(\)/);
   assert.match(server, /decryptSecretWithKey\(text, LEGACY_SECRET_KEY\)/);
+});
+
+
+test('browser page traffic is canonicalized without redirecting APIs or widget traffic', () => {
+  assert.match(server, /if \(process\.env\.NODE_ENV === 'production'\) \{[\s\S]{0,900}accept\.includes\('text\/html'\)/);
+  assert.match(server, /req\.path\.startsWith\('\/api\/'\)/);
+  assert.match(server, /requestHost !== canonicalHost[\s\S]{0,120}res\.redirect\(308, BASE \+ req\.originalUrl\)/);
 });
