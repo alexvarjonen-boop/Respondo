@@ -4662,9 +4662,18 @@ const demoChatLimiter = rateLimit({
 });
 const demoImportLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  limit: 4,
+  limit: 12,
   standardHeaders: true,
   legacyHeaders: false,
+  // Railway can surface the edge address as 0.0.0.0 for public requests.
+  // Include the target website and forwarded client metadata so unrelated
+  // visitors do not consume one shared demo-import quota.
+  keyGenerator(req) {
+    const forwarded=String(req.headers['x-forwarded-for']||req.headers['x-real-ip']||'').split(',')[0].trim();
+    const website=normalizeHost(req.body?.website||'') || String(req.body?.website||'').trim().toLowerCase();
+    const ua=String(req.headers['user-agent']||'').slice(0,220);
+    return crypto.createHash('sha256').update(forwarded+'|'+website+'|'+ua).digest('hex');
+  },
   message: { error: 'Demon verkkosivuhakuja on tehty liian monta. Yritä hetken kuluttua uudelleen.' },
 });
 
