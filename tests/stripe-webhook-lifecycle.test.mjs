@@ -25,3 +25,11 @@ test('billing controls are restricted to the workspace owner', () => {
   assert.match(server, /app\.post\('\/api\/billing\/portal', auth, ownerOnly/);
   assert.match(server, /app\.post\('\/api\/billing\/cancel', auth, ownerOnly/);
 });
+
+test('checkout auto-login is bound to the browser that started it', () => {
+  assert.match(server,/SIGNUP_CHECKOUT_COOKIE = 'respondo_signup_checkout'/);
+  assert.match(server,/jwt\.sign\(\{ sessionId:session\.id,userId:id,tenantId \},JWT,\{ expiresIn:'45m' \}\)/);
+  assert.match(server,/checkoutState\.sessionId !== sessionId/);
+  assert.match(server,/checkoutState\.userId !== userId/);
+  assert.match(server,/res\.clearCookie\(SIGNUP_CHECKOUT_COOKIE\)/);
+});
