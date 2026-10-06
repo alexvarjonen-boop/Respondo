@@ -6,9 +6,12 @@ const server = fs.readFileSync(new URL('../server.mjs', import.meta.url), 'utf8'
 const appClient = fs.readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
 const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
-test('public widget APIs do not trust missing Origin or Referer', () => {
-  assert.match(server, /const external = !origin \|\| normalizeHost\(origin\.hostname\) !== baseHost;/);
-  assert.match(server, /const externalWidgetRequest = !origin \|\| normalizeHost\(origin\.hostname\) !== baseHost;/);
+test('public widget APIs require an allowed origin and signed tenant token', () => {
+  assert.match(server, /function validWidgetToken\(req, tenant, tokenValue\)/);
+  assert.match(server, /if \(!origin \|\| !widgetOriginAllowed\(req,tenant\)\) return false;/);
+  assert.match(server, /token\.kind === 'widget'/);
+  assert.match(server, /token\.slug === tenant\.slug/);
+  assert.match(server, /token\.host === normalizeHost\(origin\.hostname\)/);
   assert.doesNotMatch(server, /const external = Boolean\(origin && normalizeHost\(origin\.hostname\) !== baseHost\);/);
 });
 
