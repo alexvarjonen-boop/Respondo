@@ -359,6 +359,77 @@ async function sendHomepageContactEmail({ name, email, message }) {
   return { sent:true, id:data?.id || null };
 }
 
+async function sendPasswordResetEmail({ email, token, language = 'fi' }) {
+  const apiKey = String(process.env.RESEND_API_KEY || '').trim();
+  if (!apiKey) return { sent:false, reason:'resend_not_configured' };
+
+  const safeEmail = cleanEmail(email);
+  if (!safeEmail || !token) return { sent:false, reason:'invalid_recipient' };
+
+  const lang = ['fi','sv','en'].includes(String(language || '').toLowerCase())
+    ? String(language).toLowerCase()
+    : 'fi';
+  const resetUrl = BASE + '/kirjaudu?reset=' + encodeURIComponent(token);
+  const from = String(
+    process.env.PASSWORD_RESET_FROM ||
+    process.env.CONTACT_NOTIFICATION_FROM ||
+    'Respondo <onboarding@resend.dev>'
+  ).trim();
+  const subject = lang === 'sv'
+    ? 'Återställ ditt Respondo-lösenord'
+    : lang === 'en'
+      ? 'Reset your Respondo password'
+      : 'Palauta Respondo-salasanasi';
+  const intro = lang === 'sv'
+    ? 'Du har begärt att återställa lösenordet för ditt Respondo-konto.'
+    : lang === 'en'
+      ? 'A password reset was requested for your Respondo account.'
+      : 'Respondo-tilillesi pyydettiin salasanan palautusta.';
+  const action = lang === 'sv'
+    ? 'Återställ lösenord'
+    : lang === 'en'
+      ? 'Reset password'
+      : 'Palauta salasana';
+  const expiry = lang === 'sv'
+    ? 'Länken gäller i 30 minuter och kan bara användas en gång.'
+    : lang === 'en'
+      ? 'This link is valid for 30 minutes and can only be used once.'
+      : 'Linkki on voimassa 30 minuuttia ja sen voi käyttää vain kerran.';
+  const ignore = lang === 'sv'
+    ? 'Om du inte begärde detta kan du ignorera meddelandet.'
+    : lang === 'en'
+      ? 'If you did not request this, you can ignore this message.'
+      : 'Jos et pyytänyt palautusta, voit jättää tämän viestin huomiotta.';
+
+  const html =
+    '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:28px;color:#111">' +
+      '<h2 style="margin:0 0 18px">Respondo AI</h2>' +
+      '<p>' + escapeEmailHtml(intro) + '</p>' +
+      '<p style="margin:26px 0"><a href="' + escapeEmailHtml(resetUrl) + '" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:13px 18px;border-radius:10px;font-weight:700">' + escapeEmailHtml(action) + '</a></p>' +
+      '<p style="color:#555">' + escapeEmailHtml(expiry) + '</p>' +
+      '<p style="color:#777;font-size:13px">' + escapeEmailHtml(ignore) + '</p>' +
+    '</div>';
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method:'POST',
+    headers:{
+      'Authorization':'Bearer ' + apiKey,
+      'Content-Type':'application/json',
+    },
+    body:JSON.stringify({
+      from,
+      to:[safeEmail],
+      subject,
+      html,
+    }),
+  });
+  const data = await response.json().catch(()=>({}));
+  if (!response.ok) {
+    throw new Error(String(data?.message || data?.error || 'Password reset email failed').slice(0,500));
+  }
+  return { sent:true, id:data?.id || null };
+}
+
 function cleanBotName(value) {
   return String(value || '').replace(/[<>]/g,'').trim().slice(0,40) || 'RESPONDO AI';
 }
@@ -5065,6 +5136,124 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
   }
 });
 
+app.post('/api/auth/password-reset/request', loginLimiter, async (req,res) => {
+  const generic = {
+    ok:true,
+    message:'Jos sähköpostilla löytyy tili, lähetämme salasanan palautuslinkin.'
+  };
+  try {
+    if (!String(process.env.RESEND_API_KEY || '').trim()) {
+      return res.status(503).json({ error:'Salasanan palautussähköposti ei ole juuri nyt käytettävissä. Ota yhteys Respondo-tukeen.' });
+    }
+
+    const email=cleanEmail(req.body?.email);
+    if (!email || email.length > 254 || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) {
+      return res.json(generic);
+    }
+
+    const found=await q('SELECT id,email,preferred_language,status FROM users WHERE lower(email)=lower($1) LIMIT 1',[email]);
+    if (!found.rowCount || found.rows[0].status === 'pending') return res.json(generic);
+
+    const user=found.rows[0];
+    const rawToken=crypto.randomBytes(32).toString('base64url');
+    const tokenHash=crypto.createHash('sha256').update(rawToken).digest('hex');
+    const client=await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(
+        'UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL',
+        [user.id],
+      );
+      await client.query(
+        `INSERT INTO password_reset_tokens(id,user_id,token_hash,expires_at)
+         VALUES($1,$2,$3,NOW() + INTERVAL '30 minutes')`,
+        [uid(),user.id,tokenHash],
+      );
+      await client.query('COMMIT');
+    } catch(e) {
+      try { await client.query('ROLLBACK'); } catch {}
+      throw e;
+    } finally {
+      client.release();
+    }
+
+    try {
+      const delivery=await sendPasswordResetEmail({
+        email:user.email,
+        token:rawToken,
+        language:user.preferred_language || 'fi',
+      });
+      if (!delivery.sent) {
+        await q('UPDATE password_reset_tokens SET used_at=NOW() WHERE token_hash=$1',[tokenHash]);
+        return res.status(503).json({ error:'Salasanan palautussähköpostia ei voitu lähettää juuri nyt. Ota yhteys Respondo-tukeen.' });
+      }
+    } catch(mailError) {
+      console.error('Password reset email failed',mailError);
+      await q('UPDATE password_reset_tokens SET used_at=NOW() WHERE token_hash=$1',[tokenHash]);
+      return res.status(503).json({ error:'Salasanan palautussähköpostia ei voitu lähettää juuri nyt. Ota yhteys Respondo-tukeen.' });
+    }
+
+    return res.json(generic);
+  } catch(e) {
+    console.error('Password reset request failed',e);
+    return res.status(500).json({ error:'Salasanan palautuspyyntö epäonnistui.' });
+  }
+});
+
+app.post('/api/auth/password-reset/confirm', loginLimiter, async (req,res) => {
+  const rawToken=String(req.body?.token || '').trim();
+  const newPassword=String(req.body?.newPassword || '');
+  if (rawToken.length < 32 || rawToken.length > 200) {
+    return res.status(400).json({ error:'Palautuslinkki ei ole voimassa.' });
+  }
+  if (newPassword.length < 10) {
+    return res.status(400).json({ error:'Uuden salasanan pitää olla vähintään 10 merkkiä.' });
+  }
+  if (newPassword.length > 200) {
+    return res.status(400).json({ error:'Uusi salasana on liian pitkä.' });
+  }
+
+  const tokenHash=crypto.createHash('sha256').update(rawToken).digest('hex');
+  const client=await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const tokenResult=await client.query(
+      `SELECT prt.id,prt.user_id,u.email
+         FROM password_reset_tokens prt
+         JOIN users u ON u.id=prt.user_id
+        WHERE prt.token_hash=$1
+          AND prt.used_at IS NULL
+          AND prt.expires_at > NOW()
+        FOR UPDATE OF prt`,
+      [tokenHash],
+    );
+    if (!tokenResult.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error:'Palautuslinkki on vanhentunut tai jo käytetty.' });
+    }
+
+    const row=tokenResult.rows[0];
+    const passwordHash=await bcrypt.hash(newPassword,12);
+    await client.query(
+      'UPDATE users SET password_hash=$1,session_version=session_version+1,updated_at=NOW() WHERE id=$2',
+      [passwordHash,row.user_id],
+    );
+    await client.query(
+      'UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL',
+      [row.user_id],
+    );
+    await client.query('COMMIT');
+    res.clearCookie(COOKIE);
+    return res.json({ ok:true });
+  } catch(e) {
+    try { await client.query('ROLLBACK'); } catch {}
+    console.error('Password reset confirmation failed',e);
+    return res.status(500).json({ error:'Salasanaa ei voitu palauttaa.' });
+  } finally {
+    client.release();
+  }
+});
+
 app.post('/api/auth/language', auth, async (req,res) => {
   try {
     const language = String(req.body?.language || '').toLowerCase();
@@ -9106,6 +9295,17 @@ async function ensureRuntimeSchema() {
     UNIQUE(tenant_id,source_channel,external_contact_id)
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_chat_threads_tenant_activity ON chat_threads(tenant_id,last_activity_at DESC)');
+  await q(`CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user_id,created_at DESC)');
+  await q('CREATE INDEX IF NOT EXISTS idx_password_reset_expiry ON password_reset_tokens(expires_at)');
+
   await q(`CREATE TABLE IF NOT EXISTS support_agents (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
