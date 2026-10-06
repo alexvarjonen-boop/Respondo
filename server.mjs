@@ -175,6 +175,9 @@ function seoStructuredData(seo) {
       alternateName:'RESPONDO AI',
       url:SEO_CANONICAL_ORIGIN + '/',
       description:'B2B customer service software for websites with automated answers, knowledge-base management, lead capture, bookings and human takeover.',
+      logo:{ '@type':'ImageObject', url:SEO_CANONICAL_ORIGIN + '/favicon.svg' },
+      identifier:{ '@type':'PropertyValue', propertyID:'Business ID', value:'3599437-5' },
+      contactPoint:{ '@type':'ContactPoint', contactType:'customer support', email:'respondoai.fi@outlook.com', availableLanguage:['fi','sv','en'] },
     },
     {
       '@type':'WebSite',
@@ -241,6 +244,21 @@ function seoNoScriptMarkup(seo, rawPath) {
     if (seo.lang === 'sv') return '<noscript><main><h1>AI-kundservicebot för företag</h1><p>Respondo AI automatiserar kundservice på företagets webbplats med företagets egna godkända uppgifter.</p><ul><li>Kunskapsbas</li><li>Webbplatsimport</li><li>Kontakt- och offertförfrågningar</li><li>Bokningsstöd</li><li>Mänsklig övertagning</li></ul><p><a href="/tilaus">Prova gratis i 3 dagar</a></p></main></noscript>';
     if (seo.lang === 'en') return '<noscript><main><h1>AI customer service bot for businesses</h1><p>Respondo AI automates customer service on business websites using company-approved information.</p><ul><li>Knowledge base</li><li>Website information import</li><li>Contact and quote requests</li><li>Booking support</li><li>Human takeover</li></ul><p><a href="/tilaus">Try free for 3 days</a></p></main></noscript>';
     return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille</h1><p>Respondo AI automatisoi verkkosivujen asiakaspalvelua yrityksen omilla hyväksytyillä tiedoilla.</p><ul><li>Tietopohja</li><li>Verkkosivun tietojen tuonti</li><li>Yhteydenotto- ja tarjouspyynnöt</li><li>Ajanvarauksen tuki</li><li>Keskustelun siirto ihmiselle</li></ul><p><a href="/tilaus">Kokeile 3 päivää maksutta</a></p></main></noscript>';
+  }
+  if (rawPath === '/asiakaspalvelubotti') {
+    if (seo.lang === 'sv') return '<noscript><main><h1>Kundservicebot för företag 24/7</h1><p>Respondo AI svarar på återkommande kundfrågor på företagets webbplats med företagets egna godkända uppgifter. Kunden kan fråga med egna ord om till exempel tjänster, priser, öppettider och kontaktvägar.</p><h2>Automatiserad kundservice med mänsklig överlämning</h2><p>När information saknas kan kunden lämna kontaktuppgifter eller konversationen gå vidare till en människa.</p><p><a href="/funktioner">Se alla funktioner</a> · <a href="/tilaus">Prova gratis i 3 dagar</a></p></main></noscript>';
+    if (seo.lang === 'en') return '<noscript><main><h1>Customer service bot for businesses 24/7</h1><p>Respondo AI answers recurring customer questions on a business website using company-approved information. Visitors can ask in their own words about services, prices, opening hours and contact options.</p><h2>Automated support with human handoff</h2><p>When information is missing, the customer can leave contact details or the conversation can move to a person.</p><p><a href="/features">See all features</a> · <a href="/tilaus">Try free for 3 days</a></p></main></noscript>';
+    return '<noscript><main><h1>Asiakaspalvelubotti yritykselle 24/7</h1><p>Respondo AI vastaa yrityksen verkkosivulla toistuviin asiakaskysymyksiin yrityksen omilla hyväksytyillä tiedoilla. Asiakas voi kysyä omin sanoin esimerkiksi palveluista, hinnoista, aukioloajoista ja yhteydenotosta.</p><h2>Automaattinen asiakaspalvelu ja siirto ihmiselle</h2><p>Jos tieto puuttuu, asiakas voi jättää yhteystietonsa tai keskustelu voidaan siirtää ihmiselle.</p><p><a href="/ominaisuudet">Katso kaikki ominaisuudet</a> · <a href="/tilaus">Kokeile 3 päivää maksutta</a></p></main></noscript>';
+  }
+  if (rawPath === '/verkkokauppa-chatbot') {
+    if (seo.lang === 'sv') return '<noscript><main><h1>Chatbot för webbutik</h1><p>Respondo AI kan använda webbutikens godkända information för att hjälpa kunder med produkter, priser, leveranser, returer och kontaktfrågor.</p><h2>Snabbare svar före köp</h2><p>Relevant produkt- och köpinformation kan visas i samma konversation utan att kunden behöver vänta på manuell kundservice.</p><p><a href="/funktioner">Se funktionerna</a> · <a href="/tilaus">Prova gratis i 3 dagar</a></p></main></noscript>';
+    if (seo.lang === 'en') return '<noscript><main><h1>Ecommerce chatbot for online stores</h1><p>Respondo AI can use approved store information to help shoppers with products, prices, shipping, returns and contact questions.</p><h2>Faster answers before purchase</h2><p>Relevant product and purchase information can be surfaced in the same conversation without waiting for manual support.</p><p><a href="/features">See features</a> · <a href="/tilaus">Try free for 3 days</a></p></main></noscript>';
+    return '<noscript><main><h1>Chatbot verkkokauppaan</h1><p>Respondo AI voi käyttää verkkokaupan hyväksyttyjä tietoja ja auttaa asiakkaita tuotteisiin, hintoihin, toimituksiin, palautuksiin ja yhteydenottoon liittyvissä kysymyksissä.</p><h2>Nopeammat vastaukset ennen ostoa</h2><p>Olennainen tuote- ja ostotieto voidaan näyttää samassa keskustelussa ilman manuaalisen asiakaspalvelun odottamista.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a> · <a href="/tilaus">Kokeile 3 päivää maksutta</a></p></main></noscript>';
+  }
+  if (rawPath === '/ajanvaraus-chatbot') {
+    if (seo.lang === 'sv') return '<noscript><main><h1>Bokningschatbot för företag</h1><p>Respondo AI kan hjälpa webbplatsbesökaren att gå från en fråga till en bokningsförfrågan och visa tillgängliga tider när företaget har konfigurerat dem.</p><h2>Från kundfråga till bokning</h2><p>Kunden kan först få svar och sedan fortsätta till bokning eller mänsklig kundservice när det behövs.</p><p><a href="/funktioner">Se funktionerna</a> · <a href="/tilaus">Prova gratis i 3 dagar</a></p></main></noscript>';
+    if (seo.lang === 'en') return '<noscript><main><h1>Booking chatbot for businesses</h1><p>Respondo AI can help a website visitor move from a question to a booking request and show available times when the business has configured them.</p><h2>From customer question to booking</h2><p>The customer can get an answer first and then continue to booking or human support when needed.</p><p><a href="/features">See features</a> · <a href="/tilaus">Try free for 3 days</a></p></main></noscript>';
+    return '<noscript><main><h1>Ajanvaraus-chatbot yritykselle</h1><p>Respondo AI voi auttaa verkkosivuasiakasta siirtymään kysymyksestä ajanvarauspyyntöön ja näyttää vapaita aikoja, kun yritys on määrittänyt ne palveluun.</p><h2>Asiakaskysymyksestä ajanvaraukseen</h2><p>Asiakas voi saada ensin vastauksen ja jatkaa sen jälkeen ajanvaraukseen tai ihmisen asiakaspalveluun tarvittaessa.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a> · <a href="/tilaus">Kokeile 3 päivää maksutta</a></p></main></noscript>';
   }
   if (rawPath === '/') {
     if (seo.lang === 'sv') return '<noscript><main><h1>AI-kundservicebot för företag 24/7</h1><p>Respondo AI svarar på kundfrågor med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar.</p><p>Basic 49,99 €/mån · Advanced 64,99 €/mån · Business 79,99 €/mån.</p><p><a href="/funktioner">Se funktionerna</a></p></main></noscript>';
@@ -5130,6 +5148,9 @@ app.get('/sitemap.xml', (req,res) => {
       rows.push(
         '  <url>\\n' +
         '    <loc>' + escapeXml(loc) + '</loc>\\n' +
+        '    <lastmod>' + lastmod + '</lastmod>\\n' +
+        '    <changefreq>' + (basePath === '/' ? 'weekly' : 'monthly') + '</changefreq>\\n' +
+        '    <priority>' + (basePath === '/' ? '1.0' : basePath === '/ominaisuudet' ? '0.9' : ['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot'].includes(basePath) ? '0.8' : '0.5') + '</priority>\\n' +
         '    <xhtml:link rel="alternate" hreflang="fi" href="' + escapeXml(urls.fi) + '" />\\n' +
         '    <xhtml:link rel="alternate" hreflang="sv" href="' + escapeXml(urls.sv) + '" />\\n' +
         '    <xhtml:link rel="alternate" hreflang="en" href="' + escapeXml(urls.en) + '" />\\n' +
