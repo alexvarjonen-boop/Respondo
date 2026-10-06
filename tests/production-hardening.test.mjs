@@ -268,3 +268,14 @@ test('public contact submissions have a dedicated anti-spam limiter', () => {
   assert.match(server, /app\.post\('\/api\/public\/demo-lead', publicContactLimiter/);
   assert.match(server, /app\.post\('\/api\/public\/respondo-contact', publicContactLimiter/);
 });
+
+
+test('public rate limits do not collapse Railway 0.0.0.0 clients into one bucket', () => {
+  assert.match(server, /function publicRateKey\(req,scope='public'\)/);
+  assert.match(server, /expressIp !== '0\.0\.0\.0'/);
+  assert.match(server, /req\.headers\['x-forwarded-for'\]/);
+  for (const scope of ['read','visit','payment-verify','channel','chat','contact','demo-chat']) {
+    assert.ok(server.includes("publicRateKey(req,'"+scope+"')"),scope);
+  }
+  assert.match(server, /publicRateKey\(req,'demo-import'\).*website/s);
+});
