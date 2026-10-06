@@ -2541,7 +2541,8 @@ async function home() {
 
 function signup() {
   const params = new URLSearchParams(location.search);
-  const ownerTestAccess = params.get('owner-test') === '1' && cfg.ownerTestEnabled === true;
+  const ownerTestAccessToken = String(params.get('owner-test-token') || '').trim();
+  const ownerTestAccess = params.get('owner-test') === '1' && cfg.ownerTestEnabled === true && Boolean(ownerTestAccessToken);
   const requestedPlan = params.get('plan') || 'basic_monthly';
   const allowedPlans = new Set(['basic_monthly','basic_yearly','advanced_monthly','advanced_yearly','business_monthly','business_yearly','owner_test']);
   const safeRequestedPlan = allowedPlans.has(requestedPlan) ? requestedPlan : (requestedPlan === 'monthly' ? 'basic_monthly' : requestedPlan === 'yearly' ? 'basic_yearly' : 'basic_monthly');
@@ -2606,6 +2607,7 @@ function signup() {
               <span>${appText('Hyväksyn','Jag godkänner','I accept')} <a href="/kayttoehdot" target="_blank">${appText('käyttöehdot','användarvillkoren','the terms')}</a> ${appText('ja','och','and')} <a href="/tietosuoja" target="_blank">${appText('tietosuojaselosteen','integritetspolicyn','the privacy policy')}</a>.</span>
             </label>
           </div>
+          ${ownerTestAccess ? `<input type="hidden" name="ownerTestAccessToken" value="${esc(ownerTestAccessToken)}">` : ''}
           <button class="btn checkout-button" type="submit">${appText('Jatka maksutavan lisäämiseen','Fortsätt till betalningsmetod','Continue to payment method')} <span>→</span></button>
           <div class="form-security"><span>◈</span> ${appText('Korttitiedot käsittelee Stripe. Respondo ei näe eikä tallenna korttinumeroasi.','Kortuppgifterna behandlas av Stripe. Respondo ser eller lagrar inte ditt kortnummer.','Card details are processed by Stripe. Respondo does not see or store your card number.')}</div>
           <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : ''}</div>
@@ -4764,6 +4766,7 @@ async function route() {
             plan: form.get('plan'),
             referralCode: form.get('referralCode'),
             acceptedTerms: !!form.get('terms'),
+            ownerTestAccessToken: String(form.get('ownerTestAccessToken') || ''),
             language: currentLang(),
           }),
         });
