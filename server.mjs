@@ -1915,7 +1915,7 @@ function isConversationalAcknowledgement(value) {
   ]);
   if (shortAcknowledgements.has(q)) return true;
 
-  return /^(?:(?:ok|okei|okay|okey|selva|selkee|joo|juu|jes|hyva|ei|no|yes|yeah|yep|sure|alright|all right|got it|okej|japp|bra|nej)\s+)*(?:kiitos(?: paljon)?|kiitti(?: paljon)?|thanks(?: a lot)?|thank you(?: very much)?|many thanks|tack(?: sa mycket)?)$/.test(q);
+  return /^(?:(?:ok|okei|okay|okey|selva|selkee|joo|juu|jes|hyva|ei|no|yes|yeah|yep|sure|alright|all right|got it|okej|japp|bra|nej)\s+)*(?:kiitos(?: paljon| avusta| avustasi)?|kiitti(?: paljon| avusta| avustasi)?|thanks(?: a lot| for (?:the )?help)?|thank you(?: very much| for (?:the )?help)?|many thanks|tack(?: sa mycket| för hjälpen| for hjalpen)?)$/.test(q);
 }
 
 function contextualizeConversationQuery(message, history = []) {
