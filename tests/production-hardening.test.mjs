@@ -64,19 +64,15 @@ test('production refuses to start with an ephemeral JWT secret', () => {
 });
 
 
-test('removed Twilio voice and SMS routes are blocked before handler logic', () => {
-  for (const route of [
+test('removed Twilio voice and SMS routes are absent from production server', () => {
+  for (const marker of [
     "/api/app/voice",
-    "/api/app/voice/test",
-    "/api/app/voice/test-sms",
-    "/api/app/voice/configure-number",
-    "/api/voice/:slug/incoming",
-    "/api/voice/:slug/respond",
-    "/api/voice/:slug/missed-call",
+    "/api/voice/:slug",
     "/api/sms/:slug/incoming",
+    "sendTwilioSms(",
+    "twilioApi(",
   ]) {
-    const escaped=route.replace(/[.*+?^$()|[\]\\]/g,'\\$&');
-    assert.match(server,new RegExp("app\\.post\\('"+escaped+"'[^\\n]*legacyVoiceRemoved"));
+    assert.equal(server.includes(marker), false, 'Unexpected removed voice/SMS marker: ' + marker);
   }
 });
 
