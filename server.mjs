@@ -7299,7 +7299,9 @@ async function createGoogleCalendarBooking(tenant, actionRequest) {
   const contact = actionContact(fields);
   const attendees = contact.email ? [{ email:contact.email }] : undefined;
 
+  const calendarEventId=('respondo' + String(actionRequest.id || '').replace(/[^a-f0-9]/gi,'').toLowerCase()).slice(0,120);
   const eventBody = {
+    ...(calendarEventId ? { id:calendarEventId } : {}),
     summary:(tenant.name || 'RESPONDO') + ' · ' + (fields.name || 'Asiakas'),
     description:[
       'Varaus luotu RESPONDO AI:n kautta.',
@@ -7331,6 +7333,11 @@ async function createGoogleCalendarBooking(tenant, actionRequest) {
     },
   );
   if (!response.ok) {
+    // The deterministic event id makes retries safe. Google returns 409 when
+    // the same action already created the event, which is an idempotent success.
+    if (response.status === 409 && calendarEventId) {
+      return { status:'synced', eventId:calendarEventId, htmlLink:'', duplicate:true };
+    }
     const body = await response.text().catch(() => '');
     throw new Error('Google Calendar event create failed: ' + body.slice(0,200));
   }
@@ -8828,6 +8835,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     };
     let computedQuote = null;
     let bookedSlot = null;
+    let actionInserted = false;
     let ecommerceOrder = null;
     let ecommerceLookupAttempted = false;
 
@@ -8923,10 +8931,21 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         }
 
         bookedSlot = sr.rows[0];
+        payload.booking = {
+          slotId:bookedSlot.id,
+          startsAt:bookedSlot.starts_at,
+          endsAt:bookedSlot.ends_at,
+        };
         await client.query(
           `UPDATE booking_slots SET status='booked' WHERE id=$1 AND tenant_id=$2`,
           [fields.slotId,tenant.id],
         );
+        await client.query(
+          `INSERT INTO action_requests(id,tenant_id,visitor_ref,request_type,status,payload,result,source_channel,external_contact_id)
+           VALUES($1,$2,$3,$4,'new',$5::jsonb,$6::jsonb,$7,$8)`,
+          [id,tenant.id,visitorRef,type,JSON.stringify(payload),JSON.stringify({}),sourceChannel,externalContactId],
+        );
+        actionInserted = true;
         await client.query('COMMIT');
       } catch (e) {
         try { await client.query('ROLLBACK'); } catch {}
@@ -8934,21 +8953,18 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       } finally {
         client.release();
       }
-      payload.booking = {
-        slotId:bookedSlot.id,
-        startsAt:bookedSlot.starts_at,
-        endsAt:bookedSlot.ends_at,
-      };
     }
 
-    await q(
-      `INSERT INTO action_requests(id,tenant_id,visitor_ref,request_type,status,payload,result,source_channel,external_contact_id)
-       VALUES($1,$2,$3,$4,'new',$5::jsonb,$6::jsonb,$7,$8)`,
-      [id,tenant.id,visitorRef,type,JSON.stringify(payload),JSON.stringify({
-        ...(computedQuote ? { quote:computedQuote } : {}),
-        ...(ecommerceLookupAttempted ? { orderStatus:ecommerceOrder,orderLookupProvider:tenant.ecommerce_provider } : {}),
-      }),sourceChannel,externalContactId],
-    );
+    if (!actionInserted) {
+      await q(
+        `INSERT INTO action_requests(id,tenant_id,visitor_ref,request_type,status,payload,result,source_channel,external_contact_id)
+         VALUES($1,$2,$3,$4,'new',$5::jsonb,$6::jsonb,$7,$8)`,
+        [id,tenant.id,visitorRef,type,JSON.stringify(payload),JSON.stringify({
+          ...(computedQuote ? { quote:computedQuote } : {}),
+          ...(ecommerceLookupAttempted ? { orderStatus:ecommerceOrder,orderLookupProvider:tenant.ecommerce_provider } : {}),
+        }),sourceChannel,externalContactId],
+      );
+    }
 
     if (['quote','booking','callback'].includes(type)) {
       const contact = actionContact(fields);
