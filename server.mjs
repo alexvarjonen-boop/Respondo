@@ -542,8 +542,8 @@ async function consumeOwnerFreeCode(client, value) {
 }
 
 const PLAN_DEFINITIONS = Object.freeze({
-  basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:49.99,annualTotal:null,agentSeats:2,websiteImport:false,googleCalendar:false},
-  basic_yearly:{tier:'basic',billing:'yearly',monthlyPrice:44.99,annualTotal:539.88,agentSeats:2,websiteImport:false,googleCalendar:false},
+  basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:49.99,annualTotal:null,agentSeats:2,websiteImport:true,googleCalendar:false},
+  basic_yearly:{tier:'basic',billing:'yearly',monthlyPrice:44.99,annualTotal:539.88,agentSeats:2,websiteImport:true,googleCalendar:false},
   advanced_monthly:{tier:'advanced',billing:'monthly',monthlyPrice:64.99,annualTotal:null,agentSeats:10,websiteImport:true,googleCalendar:true},
   advanced_yearly:{tier:'advanced',billing:'yearly',monthlyPrice:59.99,annualTotal:719.88,agentSeats:10,websiteImport:true,googleCalendar:true},
   business_monthly:{tier:'business',billing:'monthly',monthlyPrice:79.99,annualTotal:null,agentSeats:20,websiteImport:true,googleCalendar:true},
@@ -578,7 +578,7 @@ function planEntitlements(value) {
   if(['monthly','yearly','owner_test'].includes(raw)) {
     return {code:raw,tier:'business',billing:raw==='yearly'?'yearly':'monthly',agentSeats:20,websiteImport:true,googleCalendar:true,allCurrentFeatures:true};
   }
-  return {code:raw||'basic_monthly',tier:'basic',billing:'monthly',agentSeats:2,websiteImport:false,googleCalendar:false,allCurrentFeatures:false};
+  return {code:raw||'basic_monthly',tier:'basic',billing:'monthly',agentSeats:2,websiteImport:true,googleCalendar:false,allCurrentFeatures:false};
 }
 
 function planAllowsReferral(value) {
@@ -1066,16 +1066,16 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
 
   if (/\bbasic\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
     return {id:'respondo-faq-basic',answer:answer(
-      'Basic sisältää verkkosivun AI-chatin, oman kysymys–vastaus-tietopohjan, ajanvaraukset, yhteydenottojen keräyksen, keskusteluhistorian ja 2 asiakaspalvelijapaikkaa. Basicissa ei ole automaattista verkkosivutietojen hakua.',
-      'Basic innehåller AI-chatt på webbplatsen, egen fråge- och svarskunskapsbas, bokningar, kontaktinsamling, konversationshistorik och 2 kundserviceplatser. Automatisk webbplatsimport ingår inte i Basic.',
-      'Basic includes website AI chat, a manual Q&A knowledge base, appointments, contact capture, conversation history, and 2 support-agent seats. Automatic website import is not included in Basic.'
+      'Basic sisältää verkkosivun AI-chatin, automaattisen tietojen haun yrityksen verkkosivulta, botin personoinnin yrityksen brändiin, oman kysymys–vastaus-tietopohjan, ajanvaraukset, yhteydenottojen keräyksen, keskusteluhistorian ja 2 asiakaspalvelijapaikkaa.',
+      'Basic innehåller AI-chatt på webbplatsen, automatisk import av relevant information från företagets webbplats, anpassning av botten till företagets varumärke, egen fråge- och svarskunskapsbas, bokningar, kontaktinsamling, konversationshistorik och 2 kundserviceplatser.',
+      'Basic includes website AI chat, automatic import of relevant information from the company website, bot personalization for the company brand, a Q&A knowledge base, appointments, contact capture, conversation history, and 2 support-agent seats.'
     )};
   }
   if (/\badvanced\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
     return {id:'respondo-faq-advanced',answer:answer(
-      'Advanced sisältää kaikki Basic-ominaisuudet sekä 10 asiakaspalvelijapaikkaa, automaattisen tietojen haun verkkosivulta, Google Calendar -synkronoinnin ja laajemman analytiikan.',
-      'Advanced innehåller allt i Basic samt 10 kundserviceplatser, automatisk import från webbplatsen, Google Calendar-synkronisering och utökad analys.',
-      'Advanced includes everything in Basic plus 10 support-agent seats, automatic website knowledge import, Google Calendar sync, and expanded analytics.'
+      'Advanced sisältää kaikki Basic-ominaisuudet sekä 10 asiakaspalvelijapaikkaa, Google Calendar -synkronoinnin ja laajemman analytiikan.',
+      'Advanced innehåller allt i Basic samt 10 kundserviceplatser, Google Calendar-synkronisering och utökad analys.',
+      'Advanced includes everything in Basic plus 10 support-agent seats, Google Calendar sync, and expanded analytics.'
     )};
   }
   if (/\bbusiness\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
