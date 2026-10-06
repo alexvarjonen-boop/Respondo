@@ -4895,13 +4895,14 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.text({ type: 'text/plain', limit: '20kb' }));
-app.use(rateLimit({ windowMs: 60000, limit: 180, standardHeaders: true, legacyHeaders: false }));
+app.use(rateLimit({ windowMs:60000, limit:600, standardHeaders:true, legacyHeaders:false, keyGenerator:req=>publicRateKey(req,'global') }));
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
   skipSuccessfulRequests:true,
   standardHeaders:true,
   legacyHeaders:false,
+  keyGenerator:req=>accountRateKey(req,'login'),
   message:{ error:'Liian monta kirjautumisyritystä. Yritä myöhemmin uudelleen.' },
 });
 const checkoutLimiter = rateLimit({
@@ -4909,6 +4910,7 @@ const checkoutLimiter = rateLimit({
   limit: 12,
   standardHeaders:true,
   legacyHeaders:false,
+  keyGenerator:req=>accountRateKey(req,'checkout'),
   message:{ error:'Liian monta tilausyritystä. Yritä hetken kuluttua uudelleen.' },
 });
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -4931,7 +4933,7 @@ app.get(['/favicon.ico','/apple-touch-icon.png','/apple-touch-icon-precomposed.p
 });
 
 const i18nCache = new Map();
-const i18nLimiter = rateLimit({ windowMs: 60 * 1000, limit: 12, standardHeaders:true, legacyHeaders:false });
+const i18nLimiter = rateLimit({ windowMs:60*1000, limit:24, standardHeaders:true, legacyHeaders:false, keyGenerator:req=>publicRateKey(req,'i18n') });
 app.post('/api/i18n/translate', i18nLimiter, async (req,res) => {
   try {
     const lang = ['sv','en'].includes(String(req.body?.lang || '').toLowerCase()) ? String(req.body.lang).toLowerCase() : 'fi';
@@ -4967,15 +4969,42 @@ app.post('/api/i18n/translate', i18nLimiter, async (req,res) => {
   }
 });
 
+function rateLimitBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string' && req.body.length <= 20000) {
+    try { return JSON.parse(req.body); } catch {}
+  }
+  return {};
+}
+
 function publicRateKey(req,scope='public') {
-  const forwarded=String(req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || '')
-    .split(',')[0].trim();
-  const expressIp=String(req.ip || '').trim();
+  const forwarded=String(
+    req.headers['x-forwarded-for'] ||
+    req.headers['x-real-ip'] ||
+    req.headers['cf-connecting-ip'] ||
+    ''
+  ).split(',')[0].trim();
+  const expressIp=String(req.ip || req.socket?.remoteAddress || '').trim();
   const clientIp=(expressIp && expressIp !== '0.0.0.0' && expressIp !== '::')
     ? expressIp
     : forwarded;
   const ua=String(req.headers['user-agent'] || '').slice(0,240);
-  return crypto.createHash('sha256').update(scope+'|'+clientIp+'|'+ua).digest('hex');
+  const host=String(req.headers.host || '').slice(0,200);
+  const body=rateLimitBody(req);
+  const visitor=String(body.visitorRef || body.demoImportId || req.query?.visitorRef || '').slice(0,200);
+  const token=String(body.widgetToken || req.query?.widgetToken || '').slice(-160);
+  const slug=String(req.params?.slug || '').slice(0,120);
+  return crypto.createHash('sha256')
+    .update([scope,clientIp,host,ua,slug,visitor,token].join('|'))
+    .digest('hex');
+}
+
+function accountRateKey(req,scope='account') {
+  const body=rateLimitBody(req);
+  const email=cleanEmail(body.email || '');
+  return crypto.createHash('sha256')
+    .update(publicRateKey(req,scope)+'|'+email)
+    .digest('hex');
 }
 
 const publicReadLimiter = rateLimit({
