@@ -36,9 +36,13 @@ test('agent live takeover resolves the agent tenant instead of owner_user_id=age
   assert.match(server, /ct\.assigned_agent_id=\$3 AND t\.active=true/);
 });
 
-test('free checkout bypass is never hardcoded in source', () => {
+test('free checkout bypass is never hardcoded and each configured code is single-use', () => {
   assert.match(server, /process\.env\.OWNER_FREE_CODE/);
   assert.doesNotMatch(server, /const FREE_REFERRAL_CODE = ['"][A-Z0-9-]+['"]/);
+  assert.match(server, /async function consumeOwnerFreeCode\(client, value\)/);
+  assert.match(server, /owner_free_code_used_sha256/);
+  assert.match(server, /FOR UPDATE/);
+  assert.ok((server.match(/consumeOwnerFreeCode\(client, referralCode\)/g)||[]).length >= 2);
 });
 
 test('production start path enables the paid-service safety guard', () => {

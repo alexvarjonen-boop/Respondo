@@ -439,6 +439,29 @@ const normalizeReferralCode = (value) =>
 const FREE_REFERRAL_CODE = normalizeReferralCode(process.env.OWNER_FREE_CODE || '');
 const isFreeReferralCode = (value) => Boolean(FREE_REFERRAL_CODE) && normalizeReferralCode(value) === FREE_REFERRAL_CODE;
 
+const ownerFreeCodeDigest = (value) => {
+  const code = normalizeReferralCode(value);
+  return code ? crypto.createHash('sha256').update(code).digest('hex') : '';
+};
+
+async function consumeOwnerFreeCode(client, value) {
+  if (!isFreeReferralCode(value)) return false;
+  const digest = ownerFreeCodeDigest(value);
+  const setting = await client.query(
+    "SELECT value FROM app_settings WHERE key='owner_free_code_used_sha256' FOR UPDATE",
+  );
+  if (setting.rowCount && String(setting.rows[0].value || '') === digest) {
+    throw Object.assign(new Error('Tämä kertakäyttöinen ilmaiskoodi on jo käytetty.'), { publicStatus: 400 });
+  }
+  await client.query(
+    `INSERT INTO app_settings(key,value,updated_at)
+     VALUES('owner_free_code_used_sha256',$1,NOW())
+     ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value,updated_at=NOW()`,
+    [digest],
+  );
+  return true;
+}
+
 const PLAN_DEFINITIONS = Object.freeze({
   basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:49.99,annualTotal:null,agentSeats:2,websiteImport:false,googleCalendar:false},
   basic_yearly:{tier:'basic',billing:'yearly',monthlyPrice:44.99,annualTotal:539.88,agentSeats:2,websiteImport:false,googleCalendar:false},
@@ -4732,6 +4755,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
 
     try {
       await client.query('BEGIN');
+      if (freeReferral) await consumeOwnerFreeCode(client, referralCode);
 
       let referrer = null;
       if (referralCode && !freeReferral) {
@@ -5184,6 +5208,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
     const client=await pool.connect();
     try{
       await client.query('BEGIN');
+      await consumeOwnerFreeCode(client, referralCode);
       await client.query(
         `INSERT INTO tenants(
            id,owner_user_id,slug,name,business_id,contact_email,active,
@@ -5206,6 +5231,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
       });
     }catch(e){
       try{await client.query('ROLLBACK');}catch{}
+      if (e?.publicStatus === 400) return res.status(400).json({error:e.message});
       console.error('Free workspace activation failed',e);
       return res.status(500).json({error:'Uuden yrityksen aktivointi epäonnistui.'});
     }finally{
@@ -8910,6 +8936,9 @@ async function ensureRuntimeSchema() {
   )`);
   await q(
     "INSERT INTO app_settings(key,value) VALUES('owner_test_plan_enabled','true') ON CONFLICT(key) DO NOTHING"
+  );
+  await q(
+    "INSERT INTO app_settings(key,value) VALUES('owner_free_code_used_sha256','') ON CONFLICT(key) DO NOTHING"
   );
   await q(`CREATE TABLE IF NOT EXISTS demo_website_imports (
     id UUID PRIMARY KEY,
