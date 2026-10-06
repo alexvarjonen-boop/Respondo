@@ -229,16 +229,26 @@ function currentLang() {
   return ['fi','sv','en'].includes(saved) ? saved : 'fi';
 }
 
+function languageFlagSvg(lang) {
+  const flags = {
+    fi: `<svg class="app-language-flag-icon" viewBox="0 0 22 16" aria-hidden="true" focusable="false"><rect width="22" height="16" rx="2" fill="#fff"/><rect x="6" width="3" height="16" fill="#003580"/><rect y="6.5" width="22" height="3" fill="#003580"/></svg>`,
+    sv: `<svg class="app-language-flag-icon" viewBox="0 0 22 16" aria-hidden="true" focusable="false"><rect width="22" height="16" rx="2" fill="#006AA7"/><rect x="6" width="3" height="16" fill="#FECC00"/><rect y="6.5" width="22" height="3" fill="#FECC00"/></svg>`,
+    en: `<svg class="app-language-flag-icon" viewBox="0 0 22 16" aria-hidden="true" focusable="false"><rect width="22" height="16" rx="2" fill="#012169"/><path d="M0 0 22 16M22 0 0 16" stroke="#fff" stroke-width="4"/><path d="M0 0 22 16M22 0 0 16" stroke="#C8102E" stroke-width="2"/><path d="M11 0v16M0 8h22" stroke="#fff" stroke-width="5"/><path d="M11 0v16M0 8h22" stroke="#C8102E" stroke-width="3"/></svg>`
+  };
+  return flags[lang] || flags.fi;
+}
+
 function languageSwitch() {
   const lang = window.RespondoI18n?.language || localStorage.getItem('respondo_lang') || 'fi';
   const label = appText('Kieli','Språk','Language');
-  return `<label class="app-language-switch" aria-label="${esc(label)}">
-    <select data-lang-select aria-label="${esc(label)}">
-      <option value="fi" ${lang === 'fi' ? 'selected' : ''}>🇫🇮</option>
-      <option value="sv" ${lang === 'sv' ? 'selected' : ''}>🇸🇪</option>
-      <option value="en" ${lang === 'en' ? 'selected' : ''}>🇬🇧</option>
-    </select>
-  </label>`;
+  const options = [
+    ['fi', 'Suomi'],
+    ['sv', 'Svenska'],
+    ['en', 'English']
+  ];
+  return `<div class="app-language-switch" role="group" aria-label="${esc(label)}">
+    ${options.map(([code, name]) => `<button type="button" class="app-language-option${lang === code ? ' active' : ''}" data-lang-button="${code}" aria-label="${esc(name)}" aria-pressed="${lang === code ? 'true' : 'false'}">${languageFlagSvg(code)}</button>`).join('')}
+  </div>`;
 }
 
 const APP_LOCALES = { fi:'fi-FI', sv:'sv-SE', en:'en-GB' };
@@ -1605,18 +1615,27 @@ window.addEventListener('respondo:languagechange', () => {
 
 function bindLanguageSwitch() {
   try { localStorage.removeItem('respondo-lang'); } catch {}
+
+  const setLanguage = (value) => {
+    const lang = ['fi','sv','en'].includes(value) ? value : 'fi';
+    localStorage.setItem('respondo_lang', lang);
+    window.RespondoI18n?.setLanguage?.(lang);
+    document.documentElement.lang = lang;
+    api('/api/auth/language', { method:'POST', body:JSON.stringify({ language:lang }) }).catch(() => {});
+    route();
+  };
+
   document.querySelectorAll('[data-lang-select]').forEach((select) => {
     select.value = currentLang();
     if (select.dataset.bound === '1') return;
     select.dataset.bound = '1';
-    select.addEventListener('change', () => {
-      const lang = ['fi','sv','en'].includes(select.value) ? select.value : 'fi';
-      localStorage.setItem('respondo_lang', lang);
-      window.RespondoI18n?.setLanguage?.(lang);
-      document.documentElement.lang = lang;
-      api('/api/auth/language', { method:'POST', body:JSON.stringify({ language:lang }) }).catch(() => {});
-      route();
-    });
+    select.addEventListener('change', () => setLanguage(select.value));
+  });
+
+  document.querySelectorAll('[data-lang-button]').forEach((button) => {
+    if (button.dataset.bound === '1') return;
+    button.dataset.bound = '1';
+    button.addEventListener('click', () => setLanguage(button.getAttribute('data-lang-button')));
   });
 }
 
