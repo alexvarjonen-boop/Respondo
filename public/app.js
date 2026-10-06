@@ -2504,6 +2504,30 @@ function featuresPage() {
     </main>${footer()}
   </div>`;
 }
+function geoAnswerSection() {
+  return `<section class="section geo-answer-section" aria-labelledby="respondo-explained">
+    <div class="container">
+      <div class="geo-answer-intro">
+        <div class="section-kicker">${appText('RESPONDO AI LYHYESTI','RESPONDO AI I KORTHET','RESPONDO AI EXPLAINED')}</div>
+        <h2 id="respondo-explained">${appText('Mikä Respondo AI on?','Vad är Respondo AI?','What is Respondo AI?')}</h2>
+        <p>${appText(
+          'Respondo AI on yritysten verkkosivuille asennettava asiakaspalvelubotti. Se käyttää yrityksen hyväksyttyä tietopohjaa vastatakseen asiakkaiden kysymyksiin ympäri vuorokauden ja voi ohjata puuttuvat tai epävarmat kysymykset ihmiselle.',
+          'Respondo AI är en kundservicebot för företags webbplatser. Den använder företagets godkända kunskapsbas för att svara kunder dygnet runt och kan lämna över frågor med saknad eller osäker information till en människa.',
+          'Respondo AI is a customer service bot for business websites. It uses a company-approved knowledge base to answer customer questions around the clock and can hand off questions with missing or uncertain information to a person.'
+        )}</p>
+      </div>
+      <div class="geo-answer-grid">
+        <article><h3>${appText('Miten se toimii?','Hur fungerar det?','How does it work?')}</h3><p>${appText('Yritys lisää kysymys–vastaus-tietoja itse tai tuo olennaiset tiedot verkkosivultaan. Respondo käyttää näitä tietoja asiakasvastauksiin.','Företaget lägger själv till frågor och svar eller importerar relevant information från sin webbplats. Respondo använder informationen i kundsvaren.','The business adds question-and-answer information manually or imports relevant information from its website. Respondo uses that information in customer replies.')}</p></article>
+        <article><h3>${appText('Mitä se voi hoitaa?','Vad kan den hantera?','What can it handle?')}</h3><p>${appText('Asiakaskysymysten lisäksi Respondo voi kerätä yhteydenottopyyntöjä, tukea ajanvarausta, välittää keskustelun ihmiselle ja auttaa verkkokaupan asiakaspalvelussa.','Utöver kundfrågor kan Respondo samla kontaktförfrågningar, stödja bokning, lämna över konversationer till en människa och hjälpa e-handelskundservice.','In addition to customer questions, Respondo can capture contact requests, support bookings, hand conversations to a person and assist ecommerce customer service.')}</p></article>
+        <article><h3>${appText('Kenelle se sopii?','Vem passar det för?','Who is it for?')}</h3><p>${appText('Palvelu on tarkoitettu yrityksille, joilla on verkkosivusto ja toistuvia asiakaskysymyksiä — esimerkiksi palveluyrityksille ja verkkokaupoille.','Tjänsten är avsedd för företag med en webbplats och återkommande kundfrågor, till exempel tjänsteföretag och webbutiker.','The service is intended for businesses with a website and recurring customer questions, including service businesses and online stores.')}</p></article>
+        <article><h3>${appText('Millä kielillä?','På vilka språk?','Which languages?')}</h3><p>${appText('Respondo tukee suomea, ruotsia ja englantia sekä sivuston käyttöliittymässä että asiakaskeskusteluissa.','Respondo stöder finska, svenska och engelska i både gränssnittet och kundkonversationer.','Respondo supports Finnish, Swedish and English in both the interface and customer conversations.')}</p></article>
+        <article><h3>${appText('Paljonko se maksaa?','Vad kostar det?','How much does it cost?')}</h3><p>${appText('Kuukausihinnat ovat Basic 49,99 €, Advanced 64,99 € ja Business 79,99 €. Julkisella sivustolla tarjotaan 3 päivän maksuton kokeilu.','Månadspriserna är Basic 49,99 €, Advanced 64,99 € och Business 79,99 €. På den offentliga webbplatsen erbjuds en kostnadsfri 3-dagars provperiod.','Monthly pricing is Basic €49.99, Advanced €64.99 and Business €79.99. The public website offers a 3-day free trial.')}</p></article>
+        <article><h3>${appText('Mistä lisätiedot löytyvät?','Var finns mer information?','Where can I learn more?')}</h3><p>${appText('Katso kaikki ominaisuudet, tietoturva ja tietosuojaseloste Respondon omilta sivuilta.','Se alla funktioner, säkerhetsinformationen och integritetspolicyn på Respondos egna sidor.','See all features, security information and the privacy policy on Respondo’s own pages.')}</p><div class="geo-answer-links"><a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a><a href="/tietoturva?lang=${currentLang()}">${appText('Tietoturva','Säkerhet','Security')}</a><a href="/tietosuoja?lang=${currentLang()}">${appText('Tietosuoja','Integritet','Privacy')}</a></div></article>
+      </div>
+    </div>
+  </section>`;
+}
+
 async function home() {
   await config();
   return `<div class="home-page">
@@ -2515,6 +2539,7 @@ async function home() {
         <div class="container hero-grid">
           <div class="hero-copy">
             <div class="hero-label"><span></span> ASIAKASPALVELU, JOKA ON AINA PAIKALLA</div>
+            <h1>${appText('AI-asiakaspalvelu yritykselle.<br><em>24/7 verkkosivuillasi.</em>','AI-kundservice för företag.<br><em>På din webbplats 24/7.</em>','AI customer service for business.<br><em>On your website 24/7.</em>')}</h1>
             <p class="lead">${appText('Respondo on verkkosivullesi asennettava asiakaspalvelubotti yritykselle. Kerro yrityksesi tiedot kerran, niin se vastaa asiakkaillesi 24/7 myös silloin, kun sinä et ehdi. Jos tarvittava tieto puuttuu, kysymys ohjataan sinulle.','Respondo är en kundservicebot för företagets webbplats. Lägg in företagets uppgifter en gång, så svarar den kunder dygnet runt även när du själv inte hinner. Om information saknas skickas frågan vidare till dig.','Respondo is a customer service bot for your business website. Add your company information once and it answers customers 24/7, including when you are unavailable. If information is missing, the question is routed to you.')}</p>
             <div class="hero-actions">
               <a class="btn hero-primary hero-bot-cta" href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
@@ -2525,6 +2550,7 @@ async function home() {
         </div>
       </section>
 
+      ${geoAnswerSection()}
       ${cinematicConversationScene()}
       ${horizontalProductStory()}
       ${productWorldScene()}
