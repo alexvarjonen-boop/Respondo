@@ -903,6 +903,23 @@ function isFirstPartyRespondoTenant(tenant) {
   return name === 'respondo' || name === 'respondo ai' || slug === 'respondo' || slug === 'respondoai';
 }
 
+function respondoFirstPartyWebsiteAllowed(value) {
+  const host=normalizeHost(value);
+  if(!host) return false;
+  const allowed=new Set(['respondoai.fi']);
+  const baseHost=normalizeHost(BASE);
+  if(baseHost) allowed.add(baseHost);
+  try {
+    const ownerHost=normalizeHost(respondoOwnerSiteUrl());
+    if(ownerHost) allowed.add(ownerHost);
+  } catch {}
+  return allowed.has(host);
+}
+
+function tenantWebsiteImportAllowed(tenant,value) {
+  return !isFirstPartyRespondoTenant(tenant) || respondoFirstPartyWebsiteAllowed(value);
+}
+
 function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   const q = normalizeSearchText(message);
   if (!q) return null;
@@ -6327,7 +6344,7 @@ async function retireOldImportedEmails(client, tenantId, currentEmail) {
 app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
   const client = await pool.connect();
   try {
-    const t = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
+    const t = await client.query('SELECT id,name,slug,website FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtilaa ei löytynyt.' });
     const tenantId = t.rows[0].id;
     const currentEmail = String(req.body.email || '').trim().toLowerCase();
@@ -6346,6 +6363,9 @@ app.post('/api/app/business-profile', auth, subscribed, async (req, res) => {
     }
     if (bookingRaw && !bookingUrl) {
       return res.status(400).json({ error: 'Ajanvarauslinkki ei ole kelvollinen.' });
+    }
+    if (website && !tenantWebsiteImportAllowed(t.rows[0],website)) {
+      return res.status(400).json({ error:'Respondo AI:n omaan työtilaan ei voi vaihtaa toisen yrityksen verkkosivua. Testaa ulkopuolisia sivuja Testaa bottia -näkymässä.' });
     }
 
     const fields = [
@@ -6497,8 +6517,11 @@ app.post('/api/app/import-website/start', auth, subscribed, async (req,res)=>{
   if(!await requirePlanCapability(req,res,'websiteImport')) return;
   const website=normalizeWebUrl(req.body.website,false);
   if(!website) return res.status(400).json({error:'Lisää ensin verkkosivusi osoite.'});
-  const tenantResult=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  const tenantResult=await q('SELECT id,name,slug,website FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
   if(!tenantResult.rowCount) return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  if(!tenantWebsiteImportAllowed(tenantResult.rows[0],website)) {
+    return res.status(400).json({error:'Respondo AI:n omaan työtilaan ei voi tuoda toisen yrityksen tietoja. Käytä Testaa bottia -näkymää.'});
+  }
   const tenantId=tenantResult.rows[0].id;
   // Remove completed jobs and also abandon a running job that has stopped
   // updating. Otherwise one stuck crawl can make the import button appear dead
@@ -6546,6 +6569,11 @@ app.post('/api/app/import-website', auth, subscribed, async (req, res) => {
   try {
     const website = normalizeWebUrl(req.body.website, false);
     if (!website) return res.status(400).json({ error: 'Lisää ensin verkkosivusi osoite.' });
+    const tenantResult=await q('SELECT id,name,slug,website FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+    if(!tenantResult.rowCount) return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+    if(!tenantWebsiteImportAllowed(tenantResult.rows[0],website)) {
+      return res.status(400).json({error:'Respondo AI:n omaan työtilaan ei voi tuoda toisen yrityksen tietoja. Käytä Testaa bottia -näkymää.'});
+    }
     const bundle = await fetchWebsiteBundle(website, 300, 65000);
     const candidates = websiteKnowledgeCandidates(bundle);
     const detectedProfile = extractFreeWebsiteProfile(bundle);
@@ -6567,9 +6595,10 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
   if(!await requirePlanCapability(req,res,'websiteImport')) return;
   const client = await pool.connect();
   try {
-    const tenantResult = await client.query('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
+    const tenantResult = await client.query('SELECT id,name,slug,website FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!tenantResult.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
-    const tenantId = tenantResult.rows[0].id;
+    const tenant = tenantResult.rows[0];
+    const tenantId = tenant.id;
     let items=[];
     const jobId=String(req.body?.jobId||'').trim();
     if(jobId){
@@ -6581,7 +6610,7 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
     } else {
       items=Array.isArray(req.body.items)?req.body.items.slice(0,10000):[];
     }
-    const tenantWebsite = (await client.query('SELECT website FROM tenants WHERE id=$1',[tenantId])).rows[0]?.website || '';
+    const tenantWebsite = String(tenant.website || '');
     if (!items.length) return res.status(400).json({ error:'Valitse vähintään yksi tieto.' });
 
     await client.query('BEGIN');
@@ -6596,7 +6625,9 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
       if (/terms of service|privacy policy|tietosuoja|kayttoeh|käyttöeh|cookie policy|evaste|eväste|legal notice|all rights reserved|localstorage|sessionstorage|const |let |var |function |\.includes\(|\.getitem\(|\.setitem\(|document\.|window\.|queryselector|addeventlistener|json\.stringify|json\.parse/.test(safetyText)) continue;
       if (!usableWebsiteRow({title,answer,category,source_type:'website'}) || title.length < 3) continue;
       const sourceHost = normalizeHost(sourceUrl);
-      if (tenantWebsite && sourceHost !== normalizeHost(tenantWebsite)) continue;
+      if (isFirstPartyRespondoTenant(tenant)) {
+        if (!respondoFirstPartyWebsiteAllowed(sourceUrl)) continue;
+      } else if (tenantWebsite && sourceHost !== normalizeHost(tenantWebsite)) continue;
       const keywords = Array.isArray(item?.keywords)
         ? item.keywords.map((x) => String(x).trim()).filter(Boolean).slice(0,14)
         : searchTokens(title + ' ' + answer).slice(0,14);
