@@ -8674,3 +8674,27 @@ body.workspace-modal-open{
     box-shadow:0 13px 28px rgba(177,104,255,.30),inset 0 1px 0 rgba(255,255,255,.4)!important;
   }
 }
+
+
+/* 2026-10-06 calculator: keep large monetary values inside result card */
+.calculator-result{min-width:0!important}
+.calc-main-value{
+  max-width:100%!important;
+  font-size:clamp(40px,4.6vw,72px)!important;
+  line-height:.94!important;
+  letter-spacing:-.065em!important;
+  overflow-wrap:anywhere!important;
+}
+.calc-result-grid>div{min-width:0!important}
+.calc-result-grid b{
+  min-width:0!important;
+  max-width:100%!important;
+  overflow-wrap:anywhere!important;
+  font-variant-numeric:tabular-nums;
+}
+@media(max-width:1050px){
+  .calc-main-value{font-size:clamp(42px,8vw,72px)!important}
+}
+@media(max-width:760px){
+  .calc-main-value{font-size:clamp(38px,12vw,64px)!important}
+}
