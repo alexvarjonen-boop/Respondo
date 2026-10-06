@@ -4001,6 +4001,46 @@ async function resolveSignupCheckoutTarget(session) {
   };
 }
 
+async function syncStripeSubscriptionState(subscription) {
+  if (!subscription?.id) return;
+  const periodEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end * 1000)
+    : null;
+  const cancelAtPeriodEnd = Boolean(subscription.cancel_at_period_end);
+  const status = String(subscription.status || '');
+
+  await q(
+    `UPDATE tenants
+        SET subscription_status=$1,
+            current_period_end=$2,
+            subscription_cancel_at_period_end=$3,
+            active=CASE WHEN $1 IN ('active','trialing') THEN TRUE ELSE FALSE END,
+            updated_at=NOW()
+      WHERE stripe_subscription_id=$4`,
+    [status, periodEnd, cancelAtPeriodEnd, subscription.id],
+  );
+  await q(
+    `UPDATE users
+        SET subscription_status=$1,
+            status=CASE WHEN $1 IN ('active','trialing') THEN 'active' ELSE status END,
+            current_period_end=$2,
+            subscription_cancel_at_period_end=$3,
+            updated_at=NOW()
+      WHERE stripe_subscription_id=$4`,
+    [status, periodEnd, cancelAtPeriodEnd, subscription.id],
+  );
+}
+
+function stripeSubscriptionIdFromInvoice(invoice) {
+  const direct = invoice?.subscription;
+  if (typeof direct === 'string') return direct;
+  if (direct?.id) return direct.id;
+
+  const parent = invoice?.parent?.subscription_details?.subscription;
+  if (typeof parent === 'string') return parent;
+  return parent?.id || '';
+}
+
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) return res.status(503).send('Stripe not configured');
 
@@ -4112,34 +4152,29 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           console.error('Stripe receipt email failed', e);
         }
       }
+
+      const subscriptionId = stripeSubscriptionIdFromInvoice(invoice);
+      if (subscriptionId) {
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        await syncStripeSubscriptionState(subscription);
+      }
     }
 
-    if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
-      const subscription = event.data.object;
-      const periodEnd = subscription.current_period_end
-        ? new Date(subscription.current_period_end * 1000)
-        : null;
-      const cancelAtPeriodEnd = Boolean(subscription.cancel_at_period_end);
-      await q(
-        `UPDATE tenants
-            SET subscription_status=$1,
-                current_period_end=$2,
-                subscription_cancel_at_period_end=$3,
-                active=CASE WHEN $1 IN ('active','trialing') THEN TRUE ELSE FALSE END,
-                updated_at=NOW()
-          WHERE stripe_subscription_id=$4`,
-        [subscription.status, periodEnd, cancelAtPeriodEnd, subscription.id],
-      );
-      await q(
-        `UPDATE users
-            SET subscription_status=$1,
-                status=CASE WHEN $1 IN ('active','trialing') THEN 'active' ELSE status END,
-                current_period_end=$2,
-                subscription_cancel_at_period_end=$3,
-                updated_at=NOW()
-          WHERE stripe_subscription_id=$4`,
-        [subscription.status, periodEnd, cancelAtPeriodEnd, subscription.id],
-      );
+    if (event.type === 'invoice.payment_failed') {
+      const invoice = event.data.object;
+      const subscriptionId = stripeSubscriptionIdFromInvoice(invoice);
+      if (subscriptionId) {
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        await syncStripeSubscriptionState(subscription);
+      }
+    }
+
+    if (
+      event.type === 'customer.subscription.created' ||
+      event.type === 'customer.subscription.updated' ||
+      event.type === 'customer.subscription.deleted'
+    ) {
+      await syncStripeSubscriptionState(event.data.object);
     }
 
     return res.json({ received: true });
