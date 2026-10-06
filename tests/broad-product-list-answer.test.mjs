@@ -45,3 +45,18 @@ test('broad catalog-only fallback never dumps raw URLs or the demo website addre
   assert.equal(catalog.label,'Katso kaikki tuotteet');
   assert.equal(catalog.url,'https://jagputters.fi/collections/all');
 });
+
+
+test('generic what-do-you-do question uses product catalog for a product-only store', async()=>{
+  for (const [message,lang,pattern] of [
+    ['Mitä teette?','fi',/^Myymme golfvarusteita, esimerkiksi:/],
+    ['What do you do?','en',/^We sell golf equipment, including:/],
+    ['Vad gör ni?','sv',/^Vi säljer golfutrustning, bland annat:/],
+  ]) {
+    const result=await generateGroundedAnswer({rows,message,lang,companyName:'JAG Putters'});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.match(result.answer,pattern,message);
+    assert.match(result.answer,/Putter|Headcover|Mailansuoja|Golf/i,message);
+    assert.equal(result.intent,'Tuotteet',message);
+  }
+});
