@@ -144,10 +144,9 @@ test('production requires a dedicated data encryption key while retaining legacy
 });
 
 
-test('browser page traffic is canonicalized without redirecting APIs or widget traffic', () => {
-  assert.match(server, /if \(process\.env\.NODE_ENV === 'production'\) \{[\s\S]{0,900}accept\.includes\('text\/html'\)/);
-  assert.match(server, /req\.path\.startsWith\('\/api\/'\)/);
-  assert.match(server, /requestHost !== canonicalHost[\s\S]{0,120}res\.redirect\(308, BASE \+ req\.originalUrl\)/);
+test('www and Railway entry hosts are not forced through the apex domain', () => {
+  assert.doesNotMatch(server, /res\.redirect\(308, BASE \+ req\.originalUrl\)/);
+  assert.match(server, /function rejectCrossSiteAuthenticatedMutation/);
 });
 
 
