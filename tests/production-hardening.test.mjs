@@ -20,7 +20,8 @@ test('public tenant access follows only the workspace subscription', () => {
 
 test('website imports are pinned against DNS rebinding and scoped to the active tenant', () => {
   assert.match(server, /function pinnedPublicRequest\(/);
-  assert.match(server, /lookup\(_hostname, lookupOptions, callback\)/);\n  assert.match(server, /lookupOptions && lookupOptions\.all/);
+  assert.match(server, /lookup\(_hostname, lookupOptions, callback\)/);
+  assert.match(server, /lookupOptions && lookupOptions\.all/);
   assert.match(server, /job=\{id:jobId,userId:req\.user\.sub,tenantId,website,status:'running'/);
   assert.match(server, /job\.tenantId!==tenantId/);
 });
