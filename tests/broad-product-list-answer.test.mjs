@@ -60,3 +60,24 @@ test('generic what-do-you-do question uses product catalog for a product-only st
     assert.equal(result.intent,'Tuotteet',message);
   }
 });
+
+
+test('putter price question excludes accessories and gift cards', async()=>{
+  const categoryRows=[
+    ...rows,
+    {id:'gift50',category:'Tuotteet',title:'JAG Putters Gift Card - €50',answer:'Tuote: JAG Putters Gift Card - €50. Tuoteryhmä: Gift card. Brändi: JAG Putters. Hinta: 50 EUR. Linkki: https://shop.example/products/gift-50.',keywords:['jag','putters','gift','card'],source_type:'website',source_url:'https://shop.example/products/gift-50'},
+    {id:'gift100',category:'Tuotteet',title:'JAG Putters Gift Card - €100',answer:'Tuote: JAG Putters Gift Card - €100. Tuoteryhmä: Gift card. Brändi: JAG Putters. Hinta: 100 EUR. Linkki: https://shop.example/products/gift-100.',keywords:['jag','putters','gift','card'],source_type:'website',source_url:'https://shop.example/products/gift-100'},
+    {id:'putter2',category:'Tuotteet',title:'JAG Tour Blade Putter',answer:'Tuote: JAG Tour Blade Putter. Tuoteryhmä: Putter. Brändi: JAG Putters. Hinta: 249 EUR. Linkki: https://shop.example/products/tour-blade.',keywords:['jag','putter','golf'],source_type:'website',source_url:'https://shop.example/products/tour-blade'},
+  ];
+  const result=await generateGroundedAnswer({rows:categoryRows,message:'Mitä putterit maksaa',lang:'fi'});
+  assert.equal(result.handoff,false,JSON.stringify(result));
+  assert.match(result.answer,/JAG Satin Black - Putter – 199/);
+  assert.match(result.answer,/JAG Tour Blade Putter – 249/);
+  assert.doesNotMatch(result.answer,/Gift Card|Headcover|SuperStroke|Towel/i);
+  assert.ok(result.selected.length>=2,JSON.stringify(result));
+  assert.ok(result.selected.every((row)=>/putter/i.test(row.title)),JSON.stringify(result.selected));
+
+  const actions=chatActions(categoryRows,'Mitä putterit maksaa',false,'fi',result.selected);
+  assert.ok(actions.length>=2,JSON.stringify(actions));
+  assert.ok(actions.every((action)=>/putter|satin-black|tour-blade/i.test(action.label+' '+action.url)),JSON.stringify(actions));
+});
