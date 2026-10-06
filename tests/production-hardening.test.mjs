@@ -92,3 +92,14 @@ test('sessions can be revoked and staff password reset revokes old staff JWTs', 
   assert.match(server, /app\.post\('\/api\/app\/support-agents\/:id\/password'/);
   assert.match(server, /sv:Number\(user\.session_version \|\| 0\)/);
 });
+
+test('owner password changes rotate the session and staff administration is owner-only', () => {
+  assert.match(server, /app\.post\('\/api\/app\/account\/password', auth, ownerOnly, loginLimiter/);
+  assert.match(server, /UPDATE users SET password_hash=\$1,session_version=session_version\+1/);
+  assert.match(server, /setSession\(res,updated\.rows\[0\]\)/);
+  assert.match(server, /app\.post\('\/api\/app\/support-agents', auth, ownerOnly, subscribed/);
+  assert.match(server, /app\.delete\('\/api\/app\/support-agents\/:id', auth, ownerOnly, subscribed/);
+  assert.match(server, /app\.post\('\/api\/app\/support-agents\/:id\/status', auth, ownerOnly, subscribed/);
+  assert.match(server, /app\.post\('\/api\/app\/live\/:id\/assign', auth, ownerOnly, subscribed/);
+});
+
