@@ -31,3 +31,9 @@ test('tenant administration APIs explicitly reject agent sessions', () => {
   ];
   for (const signature of signatures) assert.ok(server.includes(signature), signature);
 });
+
+
+test('internal 500 errors are never returned verbatim to clients', () => {
+  assert.doesNotMatch(server, /res\.status\(500\)\.json\(\{\s*error\s*:\s*(?:e|err|error)\.message\s*\}\)/);
+  assert.doesNotMatch(server, /status\(500\)[^\n]{0,160}(?:e|err|error)\.message/);
+});
