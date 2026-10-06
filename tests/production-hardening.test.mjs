@@ -151,3 +151,10 @@ test('anonymous language switching stays local instead of calling an authenticat
   const languageBlock = appClient.slice(appClient.indexOf('function bindLanguageSwitch'), appClient.indexOf('function nav'));
   assert.match(languageBlock, /localStorage\.setItem\('respondo_lang', lang\)/);
 });
+
+
+test('runtime schema migration is serialized across service replicas', () => {
+  assert.match(server, /pg_advisory_lock\(hashtext\('respondo_runtime_schema_v1'\)\)/);
+  assert.match(server, /pg_advisory_unlock\(hashtext\('respondo_runtime_schema_v1'\)\)/);
+  assert.match(server, /withRuntimeSchemaLock\(\(\) => ensureRuntimeSchema\(\)\)/);
+});
