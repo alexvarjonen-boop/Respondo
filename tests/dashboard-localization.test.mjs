@@ -16,3 +16,10 @@ test('dynamic dashboard status strings are localized before rendering', () => {
   assert.match(app, /appText\('Varattu','Bokad','Booked'\)/);
   assert.match(app, /appText\('Vapaa','Ledig','Available'\)/);
 });
+
+
+test('owner dashboard renders a bound logout control', () => {
+  assert.match(app, /id="logoutTop"/);
+  assert.match(app, /class="dashboard-logout"/);
+  assert.match(app, /\$\('#logoutTop'\)\?\.addEventListener\('click', doLogout\)/);
+});
