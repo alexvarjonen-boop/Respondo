@@ -40,3 +40,11 @@ test('homepage widget injection is also scoped to the selected workspace subscri
     /SELECT t\.slug[\s\S]{0,500}u\.subscription_status IN \('active','trialing'\)/,
   );
 });
+
+
+test('additional workspace checkout is never cancelled by the duplicate signup guard', () => {
+  assert.match(
+    server,
+    /session\.metadata\?\.additional_workspace !== '1'[\s\S]*target\.user\.stripe_subscription_id !== incomingSubscriptionId[\s\S]*stripe\.subscriptions\.cancel\(incomingSubscriptionId\)/,
+  );
+});
