@@ -109,3 +109,10 @@ test('live takeover cannot outlive the workspace subscription', () => {
   assert.match(block,/WHERE id=\$2 AND tenant_id=\$3 RETURNING \*/);
   assert.match(block,/WHERE id=\$1 AND tenant_id=\$2/);
 });
+
+
+test('unsafe internal 4xx error messages are not reflected to dashboard clients', () => {
+  assert.doesNotMatch(server, /status\(400\)\.json\(\{\s*error\s*:\s*(?:e|err|error)\.message\s*\|\|/);
+  assert.match(server, /function safeWebsiteImportError\(/);
+  assert.match(server, /allowed\.has\(message\) \? message : fallback/);
+});

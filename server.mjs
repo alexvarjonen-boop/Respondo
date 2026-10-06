@@ -2394,6 +2394,20 @@ function isPrivateAddress(ip) {
   return true;
 }
 
+function safeWebsiteImportError(error, fallback='Verkkosivun tietojen tuonti epäonnistui.') {
+  const message=String(error?.message || '').trim();
+  const allowed=new Set([
+    'Tarkista verkkosivun osoite ja yritä uudelleen.',
+    'Verkkosivua ei voi hakea.',
+    'Verkkosivun uudelleenohjaus epäonnistui.',
+    'Verkkosivua ei saatu luettua.',
+    'Verkkosivun sisältöä ei voitu lukea.',
+    'Verkkosivu on liian suuri automaattiseen tuontiin.',
+    'Verkkosivulla on liikaa uudelleenohjauksia.',
+  ]);
+  return allowed.has(message) ? message : fallback;
+}
+
 async function assertPublicHttpUrl(value) {
   const normalized = normalizeWebUrl(value, false);
   if (!normalized) throw new Error('Tarkista verkkosivun osoite ja yritä uudelleen.');
@@ -6797,7 +6811,7 @@ app.post('/api/app/import-website', auth, ownerOnly, subscribed, async (req, res
     });
   } catch (e) {
     console.error('Website import failed', e);
-    return res.status(400).json({ error: e.message || 'Verkkosivun tietojen tuonti epäonnistui.' });
+    return res.status(400).json({ error: safeWebsiteImportError(e) });
   }
 });
 
@@ -9003,7 +9017,7 @@ app.post('/api/app/quote-engine', auth, ownerOnly, subscribed, async (req,res) =
     );
     return res.json({ ok:true });
   } catch (e) {
-    return res.status(400).json({ error:e.message || 'Hintalaskuria ei voitu tallentaa.' });
+    console.error('Quote engine save failed',e); return res.status(400).json({ error:'Hintalaskuria ei voitu tallentaa.' });
   }
 });
 
@@ -9036,7 +9050,7 @@ app.post('/api/app/booking-slots/generate', auth, ownerOnly, subscribed, async (
     return res.json({ ok:true,saved });
   } catch (e) {
     try { await client.query('ROLLBACK'); } catch {}
-    return res.status(400).json({ error:e.message || 'Vapaita aikoja ei voitu luoda.' });
+    console.error('Booking slot generation failed',e); return res.status(400).json({ error:'Vapaita aikoja ei voitu luoda.' });
   } finally {
     client.release();
   }
@@ -9098,7 +9112,7 @@ app.post('/api/app/stripe-connect/onboard', auth, ownerOnly, subscribed, async (
     return res.json({ url:link.url });
   } catch (e) {
     console.error('Stripe Connect onboarding failed', e);
-    return res.status(400).json({ error:e.message || 'Stripe-yhdistämistä ei voitu aloittaa.' });
+    return res.status(400).json({ error:'Stripe-yhdistämistä ei voitu aloittaa.' });
   }
 });
 
@@ -9123,7 +9137,7 @@ app.post('/api/app/integrations', auth, ownerOnly, subscribed, async (req,res) =
       channelsApiKey:tenant.channels_api_key,
     });
   } catch (e) {
-    return res.status(400).json({ error:e.message || 'Integraation tallennus epäonnistui.' });
+    console.error('Integration settings save failed',e); return res.status(400).json({ error:'Integraation tallennus epäonnistui.' });
   }
 });
 
@@ -9145,7 +9159,7 @@ app.post('/api/app/integrations/test', auth, ownerOnly, subscribed, async (req,r
     if (delivery.status !== 'delivered') return res.status(400).json({ error:'Webhook ei vastannut onnistuneesti.' });
     return res.json({ ok:true,httpStatus:delivery.httpStatus || 200 });
   } catch (e) {
-    return res.status(400).json({ error:e.message || 'Webhook-testi epäonnistui.' });
+    console.error('Webhook test failed',e); return res.status(400).json({ error:'Webhook-testi epäonnistui.' });
   }
 });
 
@@ -9215,7 +9229,7 @@ app.post('/api/app/commerce', auth, ownerOnly, subscribed, async (req,res) => {
     );
     return res.json({ ok:true });
   } catch (e) {
-    return res.status(400).json({ error:e.message || 'Verkkokauppayhteyttä ei voitu tallentaa.' });
+    console.error('Commerce settings save failed',e); return res.status(400).json({ error:'Verkkokauppayhteyttä ei voitu tallentaa.' });
   }
 });
 
@@ -9235,7 +9249,7 @@ app.post('/api/app/commerce/test', auth, ownerOnly, subscribed, async (req,res) 
     }
     return res.status(400).json({ error:'Valitse Shopify tai WooCommerce ensin.' });
   } catch (e) {
-    return res.status(400).json({ error:e.message || 'Yhteystesti epäonnistui.' });
+    console.error('Commerce connection test failed',e); return res.status(400).json({ error:'Yhteystesti epäonnistui.' });
   }
 });
 
@@ -9267,7 +9281,7 @@ app.post('/api/app/support-agents', auth, ownerOnly, subscribed, async (req,res)
       [uid(),tr.rows[0].id,displayName,avatar,username,passwordHash,languages],
     );
     return res.json(row.rows[0]);
-  } catch (e) { return res.status(400).json({ error:e.message || 'Profiilia ei voitu luoda.' }); }
+  } catch (e) { console.error('Support agent creation failed',e); return res.status(400).json({ error:'Profiilia ei voitu luoda.' }); }
 });
 
 app.delete('/api/app/support-agents/:id', auth, ownerOnly, subscribed, async (req,res) => {
@@ -9305,7 +9319,7 @@ app.post('/api/app/live/:id/assign', auth, ownerOnly, subscribed, async (req,res
     const rr=await q("UPDATE chat_threads SET assigned_agent_id=$1,mode=CASE WHEN $1::uuid IS NULL THEN mode ELSE 'human' END,status='open',updated_at=NOW() WHERE id=$2 AND tenant_id=$3 RETURNING *",[agentId,req.params.id,tenantId]);
     if (!rr.rowCount) return res.status(404).json({ error:'Keskustelua ei löytynyt.' });
     return res.json(rr.rows[0]);
-  } catch(e) { return res.status(400).json({ error:e.message || 'Keskustelua ei voitu osoittaa.' }); }
+  } catch(e) { console.error('Live assignment failed',e); return res.status(400).json({ error:'Keskustelua ei voitu osoittaa.' }); }
 });
 
 app.post('/api/app/live/:id/mode', auth, async (req,res) => {
@@ -9367,7 +9381,7 @@ app.post('/api/app/live/:id/reply', auth, async (req,res) => {
     });
     return res.json({ ok:true,message });
   } catch (e) {
-    return res.status(400).json({ error:e.message || 'Viestiä ei voitu lähettää.' });
+    console.error('Live reply failed',e); return res.status(400).json({ error:'Viestiä ei voitu lähettää.' });
   }
 });
 
