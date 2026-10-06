@@ -62,3 +62,20 @@ test('authentication and checkout routes have dedicated abuse limits', () => {
 test('production refuses to start with an ephemeral JWT secret', () => {
   assert.match(server, /NODE_ENV === 'production'[\s\S]{0,120}JWT_SECRET is required in production/);
 });
+
+
+test('removed Twilio voice and SMS routes are blocked before handler logic', () => {
+  for (const route of [
+    "/api/app/voice",
+    "/api/app/voice/test",
+    "/api/app/voice/test-sms",
+    "/api/app/voice/configure-number",
+    "/api/voice/:slug/incoming",
+    "/api/voice/:slug/respond",
+    "/api/voice/:slug/missed-call",
+    "/api/sms/:slug/incoming",
+  ]) {
+    const escaped=route.replace(/[.*+?^$()|[\]\\]/g,'\\$&');
+    assert.match(server,new RegExp("app\\.post\\('"+escaped+"'[^\\n]*legacyVoiceRemoved"));
+  }
+});
