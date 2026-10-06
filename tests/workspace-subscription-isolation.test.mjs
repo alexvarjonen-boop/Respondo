@@ -48,3 +48,12 @@ test('additional workspace checkout is never cancelled by the duplicate signup g
     /session\.metadata\?\.additional_workspace !== '1'[\s\S]*target\.user\.stripe_subscription_id !== incomingSubscriptionId[\s\S]*stripe\.subscriptions\.cancel\(incomingSubscriptionId\)/,
   );
 });
+
+test('first-party public assistant uses tenant subscription state', () => {
+  const start=server.indexOf("app.post('/api/public/respondo-assistant/chat'");
+  const end=server.indexOf("app.post('/api/public/:slug/chat'",start);
+  const block=server.slice(start,end);
+  assert.match(block,/t\.subscription_status IN \('active','trialing'\)/);
+  assert.match(block,/COALESCE\(t\.subscription_cancel_at_period_end,false\)=false/);
+  assert.doesNotMatch(block,/u\.subscription_status IN \('active','trialing'\)/);
+});
