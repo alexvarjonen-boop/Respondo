@@ -939,10 +939,20 @@ function requestOrigin(req) {
 }
 
 function widgetOriginAllowed(req, tenant) {
-  const origin = requestOrigin(req);
-  const allowedHost = normalizeHost(tenant.website);
-  if (!origin || !allowedHost) return false;
-  return normalizeHost(origin.hostname) === allowedHost;
+  const origin=requestOrigin(req);
+  if (!origin) return false;
+  const originHost=normalizeHost(origin.hostname);
+  const allowedHost=normalizeHost(tenant.website);
+  if (allowedHost && originHost === allowedHost) return true;
+
+  // Respondo's own homepage uses the real production assistant even if the
+  // first-party workspace profile has no website value saved. Only the
+  // canonical Respondo host is accepted; customer tenants still require their
+  // exact configured website.
+  if (isFirstPartyRespondoTenant(tenant) && respondoFirstPartyWebsiteAllowed(originHost)) {
+    return true;
+  }
+  return false;
 }
 
 function safeTenantReturnUrl(value, tenant) {
@@ -7842,9 +7852,6 @@ app.get('/api/public/:slug/widget-token', publicReadLimiter, async (req, res) =>
     if (!tr.rowCount) return res.status(404).json({ error: 'Yritystä ei löytynyt.' });
     const tenant = tr.rows[0];
 
-    if (!tenant.website) {
-      return res.status(403).json({ error: 'Widgetille ei ole vielä määritetty verkkosivua.' });
-    }
     if (!widgetOriginAllowed(req, tenant)) {
       return res.status(403).json({ error: 'Tämä RESPONDO AI -lisenssi on sidottu toiseen verkkosivuun.' });
     }
