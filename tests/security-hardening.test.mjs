@@ -90,3 +90,11 @@ test('connected checkout cancel URL cannot be redirected off the tenant website'
   assert.match(server,/cancel_url:safeTenantReturnUrl\(pageUrl,tenant\)/);
   assert.doesNotMatch(server,/cancel_url:pageUrl \|\| tenant\.website \|\| BASE/);
 });
+
+
+test('calendar OAuth state is bound to the selected tenant', () => {
+  assert.match(server,/flow:'calendar',[\s\S]{0,180}userId:req\.user\.sub,[\s\S]{0,100}tenantId:activeTenant\.rows\[0\]\.id/);
+  assert.match(server,/const tenantId=String\(statePayload\.tenantId \|\| ''\)/);
+  assert.match(server,/SELECT \* FROM tenants WHERE owner_user_id=\$1 AND id=\$2/);
+  assert.doesNotMatch(server,/statePayload\.flow === 'calendar'[\s\S]{0,1100}id=active_tenant_for_user\(\$1\)/);
+});
