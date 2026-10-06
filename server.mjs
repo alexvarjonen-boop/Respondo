@@ -4587,6 +4587,28 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 });
 
 app.use(helmet({ contentSecurityPolicy: false }));
+
+// Keep browser sessions and OAuth state on one canonical host. Railway service
+// domains and www remain usable as entry points, but normal page navigations
+// are redirected to BASE. API/widget traffic is deliberately not redirected.
+if (process.env.NODE_ENV === 'production') {
+  app.use((req,res,next)=>{
+    if (!['GET','HEAD'].includes(req.method)) return next();
+    if (req.path.startsWith('/api/')) return next();
+    const accept=String(req.get('accept') || '');
+    if (!accept.includes('text/html')) return next();
+
+    let canonicalHost='';
+    try { canonicalHost=new URL(BASE).hostname.toLowerCase(); } catch {}
+    const requestHost=String(req.get('x-forwarded-host') || req.get('host') || '')
+      .split(',')[0].trim().replace(/:\\d+$/,'').toLowerCase();
+    if (canonicalHost && requestHost && requestHost !== canonicalHost) {
+      return res.redirect(308, BASE + req.originalUrl);
+    }
+    return next();
+  });
+}
+
 app.use(express.json({
   limit:'1mb',
   verify(req,res,buf) {
