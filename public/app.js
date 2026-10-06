@@ -2882,6 +2882,7 @@ async function dashboard(options = {}) {
         website:'',
       },
       stats:{ conversations:0,last7:0,answeredRate:0,leads:0,estimatedLeadValue:0,actions30:0,last30:0 },
+      planAccess:{ code:'business_monthly',tier:'business',agentSeats:20,websiteImport:true,googleCalendar:true,allCurrentFeatures:true },
       referral:null,
       truth:{ score:0,total:0,approved:0,fresh:0 },
       latestSelfTest:null,
@@ -2926,6 +2927,7 @@ async function dashboard(options = {}) {
 
   const t = data.tenant;
   const s = data.stats;
+  const planAccess = data.planAccess || { code:'basic_monthly',tier:'basic',agentSeats:2,websiteImport:false,googleCalendar:false,allCurrentFeatures:false };
   const workspaces = isDemo ? [] : (Array.isArray(data.workspaces) ? data.workspaces : []);
   const activeWorkspaces = workspaces.filter((w) => w.active && ['active','trialing'].includes(String(w.subscription_status || '')));
   const referral = data.referral || null;
@@ -3247,7 +3249,7 @@ async function dashboard(options = {}) {
               <label>Verkkosivusi osoite</label>
               <input name="website" value="${profileValue('Verkkosivu')}" placeholder="https://yritys.fi">
               <small class="field-hint">Botti toimii vain tällä verkkosivulla.</small>
-              <button type="button" class="inline-import-btn" id="importWebsite">Hae tiedot sivultani</button>
+              ${planAccess.websiteImport ? `<button type="button" class="inline-import-btn" id="importWebsite">${appText('Hae tiedot sivultani','Hämta uppgifter från min webbplats','Import details from my website')}</button>` : `<div class="field-hint">${appText('Automaattinen verkkosivuhaku sisältyy Advanced- ja Business-tilauksiin.','Automatisk webbplatsimport ingår i Advanced- och Business-abonnemangen.','Automatic website import is included in Advanced and Business plans.')}</div>`}
               <div id="websiteImportProgress" style="display:none;margin-top:10px">
                 <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:6px"><span id="websiteImportProgressLabel">${appText('Valmistellaan hakua…','Förbereder sökning…','Preparing scan…')}</span><b id="websiteImportProgressPercent">0%</b></div>
                 <div style="height:9px;border-radius:999px;background:rgba(127,127,127,.18);overflow:hidden"><div id="websiteImportProgressBar" style="height:100%;width:0%;background:currentColor;border-radius:999px;transition:width .45s ease"></div></div>
@@ -3568,7 +3570,8 @@ async function dashboard(options = {}) {
           </div>
         </article>
 
-        <article class="panel quote-engine-panel" id="quote-engine">
+        ${!planAccess.allCurrentFeatures ? `<article class="panel quote-engine-panel plan-locked-panel"><div class="panel-head"><div><small>BUSINESS</small><h2>${appText('Automaattinen hintalaskuri','Automatisk prisberäkning','Automatic quote calculator')}</h2><p>${appText('Tarjouspyynnöt toimivat kaikissa paketeissa. Automaattinen hinnan laskenta kuuluu Business-tilaukseen.','Offertförfrågningar fungerar i alla abonnemang. Automatisk prisberäkning ingår i Business.','Quote requests work on every plan. Automatic quote calculation is included in Business.')}</p></div><span class="install-badge">Business</span></div></article>` : ''}
+        <article class="panel quote-engine-panel" id="quote-engine" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
           <div class="panel-head">
             <div>
               <small>HINTALASKURI</small>
@@ -3604,7 +3607,8 @@ async function dashboard(options = {}) {
             <span class="install-badge">${bookingSlots.filter((x) => x.status === 'open').length} vapaana</span>
           </div>
 
-          <div class="calendar-sync-card ${googleCalendar.connected ? 'connected' : ''}">
+          ${!planAccess.googleCalendar ? `<div class="calendar-sync-card"><div><small>GOOGLE CALENDAR</small><b>Advanced / Business</b><p>${appText('Respondon oma ajanvaraus toimii tässä paketissa. Google Calendar -synkronointi sisältyy Advanced- ja Business-tilauksiin.','Respondos egen bokning fungerar i detta abonnemang. Google Calendar-synkronisering ingår i Advanced och Business.','Respondo booking works on this plan. Google Calendar sync is included in Advanced and Business.')}</p></div></div>` : ''}
+          <div class="calendar-sync-card ${googleCalendar.connected ? 'connected' : ''}" ${planAccess.googleCalendar ? '' : 'hidden'}>
             <div>
               <small>GOOGLE CALENDAR</small>
               <b>${googleCalendar.connected ? 'Yhdistetty ✓' : 'Ei yhdistetty'}</b>
@@ -3643,7 +3647,7 @@ async function dashboard(options = {}) {
           </div>
         </article>
 
-        <article class="panel stripe-connect-panel" id="stripe-connect">
+        <article class="panel stripe-connect-panel" id="stripe-connect" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
           <div class="panel-head">
             <div>
               <small>MAKSUT</small>
