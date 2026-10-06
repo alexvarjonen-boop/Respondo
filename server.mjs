@@ -3706,7 +3706,7 @@ async function subscribed(req, res, next) {
     const r = await q(
       `SELECT u.status,
               t.id AS tenant_id,
-              COALESCE(t.subscription_status,u.subscription_status) AS subscription_status
+              t.subscription_status AS subscription_status
          FROM users u
          LEFT JOIN tenants t
            ON t.id=active_tenant_for_user(u.id)
@@ -5028,7 +5028,7 @@ app.get('/api/auth/checkout-success', async (req, res) => {
 app.post('/api/auth/agent-login', loginLimiter, async (req,res) => {
   try {
     const username=String(req.body.username || '').trim().toLowerCase();
-    const r=await q("SELECT sa.*,t.name AS company_name FROM support_agents sa JOIN tenants t ON t.id=sa.tenant_id JOIN users u ON u.id=t.owner_user_id WHERE lower(sa.username)=lower($1) AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",[username]);
+    const r=await q("SELECT sa.*,t.name AS company_name FROM support_agents sa JOIN tenants t ON t.id=sa.tenant_id JOIN users u ON u.id=t.owner_user_id WHERE lower(sa.username)=lower($1) AND t.active=true AND t.subscription_status IN ('active','trialing')",[username]);
     if (!r.rowCount || !r.rows[0].password_hash || !(await bcrypt.compare(String(req.body.password||''),r.rows[0].password_hash))) {
       return res.status(401).json({ error:'Väärä käyttäjänimi tai salasana.' });
     }
@@ -5119,8 +5119,8 @@ app.get('/api/auth/me', auth, async (req, res) => {
               COALESCE(t.name,u.company_name) AS company_name,
               COALESCE(t.business_id,u.business_id) AS business_id,
               u.status,
-              COALESCE(t.subscription_status,u.subscription_status) AS subscription_status,
-              COALESCE(t.current_period_end,u.current_period_end) AS current_period_end,
+              t.subscription_status AS subscription_status,
+              t.current_period_end AS current_period_end,
               u.preferred_language,
               t.id AS active_tenant_id,
               t.subscription_plan,
@@ -6845,11 +6845,11 @@ async function publicTenant(slugValue) {
       WHERE t.slug=$1
         AND t.active=true
         AND u.status='active'
-        AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')
+        AND t.subscription_status IN ('active','trialing')
         AND (
-          COALESCE(t.subscription_cancel_at_period_end,u.subscription_cancel_at_period_end,false)=false
-          OR COALESCE(t.current_period_end,u.current_period_end) IS NULL
-          OR COALESCE(t.current_period_end,u.current_period_end) > NOW()
+          COALESCE(t.subscription_cancel_at_period_end,false)=false
+          OR t.current_period_end IS NULL
+          OR t.current_period_end > NOW()
         )`,
     [slugValue],
   );
@@ -8516,7 +8516,7 @@ app.post('/api/app/live/:id/assign', auth, ownerOnly, subscribed, async (req,res
 app.post('/api/app/live/:id/mode', auth, async (req,res) => {
   if (req.user.role === 'agent') {
     const owned=await q(
-      "SELECT ct.id FROM chat_threads ct JOIN tenants t ON t.id=ct.tenant_id JOIN users u ON u.id=t.owner_user_id WHERE ct.id=$1 AND ct.tenant_id=$2 AND ct.assigned_agent_id=$3 AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",
+      "SELECT ct.id FROM chat_threads ct JOIN tenants t ON t.id=ct.tenant_id JOIN users u ON u.id=t.owner_user_id WHERE ct.id=$1 AND ct.tenant_id=$2 AND ct.assigned_agent_id=$3 AND t.active=true AND t.subscription_status IN ('active','trialing')",
       [req.params.id,req.user.tenantId,req.user.agentId],
     );
     if (!owned.rowCount) return res.status(403).json({ error:'Keskustelua ei ole osoitettu sinulle.' });
@@ -8524,7 +8524,7 @@ app.post('/api/app/live/:id/mode', auth, async (req,res) => {
   try {
     const tr = req.user.role === 'agent'
       ? { rowCount:1,rows:[{id:req.user.tenantId}] }
-      : await q("SELECT t.id FROM tenants t JOIN users u ON u.id=t.owner_user_id WHERE t.owner_user_id=$1 AND t.id=active_tenant_for_user($1) AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",[req.user.sub]);
+      : await q("SELECT t.id FROM tenants t JOIN users u ON u.id=t.owner_user_id WHERE t.owner_user_id=$1 AND t.id=active_tenant_for_user($1) AND t.active=true AND t.subscription_status IN ('active','trialing')",[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const mode = req.body.mode === 'human' ? 'human' : 'ai';
     const rr = await q(
@@ -8542,7 +8542,7 @@ app.post('/api/app/live/:id/mode', auth, async (req,res) => {
 app.post('/api/app/live/:id/reply', auth, async (req,res) => {
   if (req.user.role === 'agent') {
     const owned=await q(
-      "SELECT ct.id FROM chat_threads ct JOIN tenants t ON t.id=ct.tenant_id JOIN users u ON u.id=t.owner_user_id WHERE ct.id=$1 AND ct.tenant_id=$2 AND ct.assigned_agent_id=$3 AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",
+      "SELECT ct.id FROM chat_threads ct JOIN tenants t ON t.id=ct.tenant_id JOIN users u ON u.id=t.owner_user_id WHERE ct.id=$1 AND ct.tenant_id=$2 AND ct.assigned_agent_id=$3 AND t.active=true AND t.subscription_status IN ('active','trialing')",
       [req.params.id,req.user.tenantId,req.user.agentId],
     );
     if (!owned.rowCount) return res.status(403).json({ error:'Keskustelua ei ole osoitettu sinulle.' });
@@ -8551,8 +8551,8 @@ app.post('/api/app/live/:id/reply', auth, async (req,res) => {
     const text = String(req.body.message || '').trim().slice(0,4000);
     if (!text) return res.status(400).json({ error:'Kirjoita viesti.' });
     const tr = req.user.role === 'agent'
-      ? await q("SELECT t.* FROM tenants t JOIN users u ON u.id=t.owner_user_id WHERE t.id=$1 AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",[req.user.tenantId])
-      : await q("SELECT t.* FROM tenants t JOIN users u ON u.id=t.owner_user_id WHERE t.owner_user_id=$1 AND t.id=active_tenant_for_user($1) AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",[req.user.sub]);
+      ? await q("SELECT t.* FROM tenants t JOIN users u ON u.id=t.owner_user_id WHERE t.id=$1 AND t.active=true AND t.subscription_status IN ('active','trialing')",[req.user.tenantId])
+      : await q("SELECT t.* FROM tenants t JOIN users u ON u.id=t.owner_user_id WHERE t.owner_user_id=$1 AND t.id=active_tenant_for_user($1) AND t.active=true AND t.subscription_status IN ('active','trialing')",[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
     const tenant = tr.rows[0];
     const rr = await q(
