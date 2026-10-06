@@ -27,8 +27,9 @@ test('annual billing is exactly five euros per month cheaper and sixty euros per
   assert.match(app,/Business',79\.99,74\.99,899\.88,20/);
 });
 
-test('plan entitlements enforce requested seat limits and Advanced website import',()=>{
-  assert.match(server,/basic_monthly:\{[^}]*agentSeats:2,websiteImport:false,googleCalendar:false/);
+test('plan entitlements enforce requested seat limits and website import on every paid tier',()=>{
+  assert.match(server,/basic_monthly:\{[^}]*agentSeats:2,websiteImport:true,googleCalendar:false/);
+  assert.match(server,/basic_yearly:\{[^}]*agentSeats:2,websiteImport:true,googleCalendar:false/);
   assert.match(server,/advanced_monthly:\{[^}]*agentSeats:10,websiteImport:true,googleCalendar:true/);
   assert.match(server,/business_monthly:\{[^}]*agentSeats:20,websiteImport:true,googleCalendar:true/);
   assert.match(server,/COUNT\(\*\)::int AS count FROM support_agents/);
@@ -44,9 +45,17 @@ test('Business-only automations are enforced server-side and hidden on lower tie
   assert.match(server,/Channels API vaatii Business-tilauksen/);
   assert.match(server,/stripeConnect:\s*planAccess\.allCurrentFeatures/);
   assert.match(app,/const planAccess = data\.planAccess/);
-  assert.match(app,/planAccess\.websiteImport/);
+  assert.match(app,/id="importWebsite"/);
+  assert.doesNotMatch(app,/Automaattinen verkkosivuhaku sisältyy Advanced- ja Business-tilauksiin\./);
   assert.match(app,/planAccess\.googleCalendar/);
   assert.match(app,/planAccess\.allCurrentFeatures/);
+});
+
+test('bot branding stays available without a premium capability gate',()=>{
+  assert.match(server,/app\.post\('\/api\/app\/business-profile', auth, subscribed/);
+  assert.match(server,/UPDATE tenants SET[^\n]*bot_name=\$6, bot_avatar=\$7/);
+  assert.match(app,/name="botName"/);
+  assert.match(app,/name="botAvatar"/);
 });
 
 test('Basic keeps native booking while premium automation controls are gated',()=>{
