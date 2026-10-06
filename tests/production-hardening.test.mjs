@@ -214,3 +214,12 @@ test('production health requires database and Stripe billing configuration', () 
   ]) assert.match(server,new RegExp(env));
   assert.match(server, /ok: Boolean\(pool\) && stripeConfigured/);
 });
+
+
+test('dashboard mutations reject cross-site browser requests without affecting public APIs', () => {
+  assert.match(server, /function rejectCrossSiteAuthenticatedMutation/);
+  assert.match(server, /req\.path\.startsWith\('\/api\/app\/'\)/);
+  assert.match(server, /fetchSite === 'cross-site'/);
+  assert.match(server, /new URL\(originValue\)\.hostname/);
+  assert.doesNotMatch(server, /req\.path\.startsWith\('\/api\/public\/'\)[\s\S]{0,120}rejectCrossSiteAuthenticatedMutation/);
+});
