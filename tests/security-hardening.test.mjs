@@ -129,3 +129,14 @@ test('tenant public widget routes always require a signed host-bound token', () 
   assert.ok((block.match(/validWidgetToken\(/g)||[]).length>=5);
   assert.doesNotMatch(block,/externalWidgetRequest|const external =/);
 });
+
+
+test('first-party Respondo homepage can mint a signed widget token without a saved website', () => {
+  assert.match(server,/if \(allowedHost && originHost === allowedHost\) return true/);
+  assert.match(server,/isFirstPartyRespondoTenant\(tenant\) && respondoFirstPartyWebsiteAllowed\(originHost\)/);
+  const tokenStart=server.indexOf("app.get('/api/public/:slug/widget-token'");
+  const tokenEnd=server.indexOf("app.get('/api/public/:slug'",tokenStart);
+  const tokenBlock=server.slice(tokenStart,tokenEnd);
+  assert.doesNotMatch(tokenBlock,/if \(!tenant\.website\)/);
+  assert.match(tokenBlock,/if \(!widgetOriginAllowed\(req, tenant\)\)/);
+});
