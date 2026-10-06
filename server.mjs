@@ -4096,7 +4096,8 @@ async function subscribed(req, res, next) {
 
     next();
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    console.error('Subscription access check failed', e);
+    return res.status(500).json({ error: 'Tilauksen tarkistus epäonnistui.' });
   }
 }
 
@@ -5475,7 +5476,8 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
     setSession(res, r.rows[0]);
     return res.json({ ok: true, preferred_language: preferredLanguage });
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    console.error('Owner login failed', e);
+    return res.status(500).json({ error: 'Kirjautuminen epäonnistui.' });
   }
 });
 
@@ -5603,7 +5605,10 @@ app.post('/api/auth/language', auth, async (req,res) => {
     if (!['fi','sv','en'].includes(language)) return res.status(400).json({ error:'Unsupported language' });
     await q('UPDATE users SET preferred_language=$1,updated_at=NOW() WHERE id=$2',[language,req.user.sub]);
     return res.json({ ok:true, preferred_language:language });
-  } catch (e) { return res.status(500).json({ error:e.message }); }
+  } catch (e) {
+    console.error('Language preference update failed', e);
+    return res.status(500).json({ error:'Kieliasetusta ei voitu tallentaa.' });
+  }
 });
 
 app.post('/api/app/account/email', auth, ownerOnly, loginLimiter, async (req,res) => {
@@ -5728,7 +5733,8 @@ app.get('/api/auth/me', auth, async (req, res) => {
     if (!r.rowCount) return res.status(404).json({ error: 'Tiliä ei löytynyt.' });
     return res.json(r.rows[0]);
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    console.error('Authenticated profile read failed', e);
+    return res.status(500).json({ error: 'Tilin tietoja ei voitu ladata.' });
   }
 });
 
@@ -6353,7 +6359,8 @@ app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
       },
     });
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    console.error('Dashboard load failed', e);
+    return res.status(500).json({ error: 'Hallintapaneelin tietoja ei voitu ladata.' });
   }
 });
 
@@ -6754,7 +6761,8 @@ app.post('/api/app/knowledge', auth, ownerOnly, subscribed, async (req, res) => 
     );
     return res.json(r.rows[0]);
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    console.error('Knowledge create failed', e);
+    return res.status(500).json({ error: 'Vastausta ei voitu tallentaa.' });
   }
 });
 
@@ -7538,7 +7546,8 @@ app.get('/api/public/:slug', publicReadLimiter, async (req, res) => {
       accent: t.accent,
     });
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    console.error('Public tenant profile read failed', e);
+    return res.status(500).json({ error: 'Yrityksen tietoja ei voitu ladata.' });
   }
 });
 
@@ -9290,7 +9299,8 @@ app.post('/api/billing/portal', auth, ownerOnly, async (req, res) => {
       subscriptionId: r.rows[0].stripe_subscription_id || null,
     });
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    console.error('Billing portal creation failed', e);
+    return res.status(500).json({ error: 'Laskutuksen hallintaa ei voitu avata.' });
   }
 });
 
@@ -9330,7 +9340,8 @@ app.post('/api/billing/cancel', auth, ownerOnly, async (req, res) => {
       currentPeriodEnd: periodEnd ? periodEnd.toISOString() : null,
     });
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    console.error('Subscription cancellation failed', e);
+    return res.status(500).json({ error: 'Tilauksen peruutusta ei voitu tallentaa.' });
   }
 });
 
