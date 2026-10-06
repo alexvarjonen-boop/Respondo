@@ -8968,17 +8968,24 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
 
     if (['quote','booking','callback'].includes(type)) {
       const contact = actionContact(fields);
-      await q(
-        `INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message,status)
-         VALUES($1,$2,$3,$4,$5,$6,$7,'new')`,
-        [
-          uid(),tenant.id,visitorRef,
-          String(fields.name || '').slice(0,120) || null,
-          contact.email || null,
-          contact.phone || null,
-          String(fields.details || fields.note || payload.question || '').slice(0,1200) || null,
-        ],
-      );
+      try {
+        await q(
+          `INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message,status)
+           VALUES($1,$2,$3,$4,$5,$6,$7,'new')`,
+          [
+            uid(),tenant.id,visitorRef,
+            String(fields.name || '').slice(0,120) || null,
+            contact.email || null,
+            contact.phone || null,
+            String(fields.details || fields.note || payload.question || '').slice(0,1200) || null,
+          ],
+        );
+      } catch (leadError) {
+        // The canonical request already contains the contact fields. Do not
+        // tell the customer submission failed only because the dashboard lead
+        // index could not be duplicated at this moment.
+        console.error('Action lead index write failed',leadError);
+      }
     }
 
     const actionRequest = {
@@ -9000,12 +9007,16 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         console.error('Google Calendar booking sync failed',e);
         calendarSync = { status:'failed', error:String(e?.message || 'Calendar sync failed').slice(0,300) };
       }
-      await q(
-        `UPDATE action_requests
-            SET result=COALESCE(result,'{}'::jsonb) || $1::jsonb,updated_at=NOW()
-          WHERE id=$2 AND tenant_id=$3`,
-        [JSON.stringify({ calendarSync }),id,tenant.id],
-      );
+      try {
+        await q(
+          `UPDATE action_requests
+              SET result=COALESCE(result,'{}'::jsonb) || $1::jsonb,updated_at=NOW()
+            WHERE id=$2 AND tenant_id=$3`,
+          [JSON.stringify({ calendarSync }),id,tenant.id],
+        );
+      } catch (calendarResultError) {
+        console.error('Calendar sync result persistence failed',calendarResultError);
+      }
     }
 
     let delivery = { status:'not_configured', result:null };
@@ -9018,20 +9029,28 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       }
     }
 
-    await q(
-      `UPDATE action_requests
-          SET delivery_status=$1,
-              result=COALESCE(result,'{}'::jsonb) || $2::jsonb,
-              updated_at=NOW()
-        WHERE id=$3 AND tenant_id=$4`,
-      [delivery.status,JSON.stringify({ webhook:delivery.result || {} }),id,tenant.id],
-    );
+    try {
+      await q(
+        `UPDATE action_requests
+            SET delivery_status=$1,
+                result=COALESCE(result,'{}'::jsonb) || $2::jsonb,
+                updated_at=NOW()
+          WHERE id=$3 AND tenant_id=$4`,
+        [delivery.status,JSON.stringify({ webhook:delivery.result || {} }),id,tenant.id],
+      );
+    } catch (deliveryResultError) {
+      console.error('Action delivery result persistence failed',deliveryResultError);
+    }
 
-    await q(
-      `INSERT INTO action_events(id,tenant_id,visitor_ref,action_type,label,target,page_url)
-       VALUES($1,$2,$3,$4,$5,$6,$7)`,
-      [uid(),tenant.id,visitorRef,type,'submitted',null,pageUrl],
-    );
+    try {
+      await q(
+        `INSERT INTO action_events(id,tenant_id,visitor_ref,action_type,label,target,page_url)
+         VALUES($1,$2,$3,$4,$5,$6,$7)`,
+        [uid(),tenant.id,visitorRef,type,'submitted',null,pageUrl],
+      );
+    } catch (analyticsError) {
+      console.error('Action analytics write failed',analyticsError);
+    }
 
     const nativeOrderMessage = ecommerceLookupAttempted
       ? orderStatusText(ecommerceOrder,actionLang)
