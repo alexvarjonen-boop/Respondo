@@ -4650,7 +4650,26 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   }
 });
 
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy:{
+    directives:{
+      defaultSrc:["'self'"],
+      baseUri:["'self'"],
+      objectSrc:["'none'"],
+      frameAncestors:["'none'"],
+      formAction:["'self'"],
+      scriptSrc:["'self'","'unsafe-inline'"],
+      styleSrc:["'self'","'unsafe-inline'"],
+      imgSrc:["'self'","data:","blob:"],
+      fontSrc:["'self'","data:"],
+      connectSrc:["'self'"],
+      workerSrc:["'self'","blob:"],
+      manifestSrc:["'self'"],
+      upgradeInsecureRequests:[],
+    },
+  },
+  crossOriginResourcePolicy:{ policy:'cross-origin' },
+}));
 
 // Keep browser sessions and OAuth state on one canonical host. Railway service
 // domains and www remain usable as entry points, but normal page navigations
