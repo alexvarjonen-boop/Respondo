@@ -3873,6 +3873,13 @@ async function dashboard(options = {}) {
             <p>${appText('Salasanan vaihto mitätöi vanhat istunnot ja pitää nykyisen selaimesi kirjautuneena uudella istunnolla.','Ett lösenordsbyte ogiltigförklarar gamla sessioner och håller den här webbläsaren inloggad med en ny session.','Changing your password invalidates old sessions and keeps this browser signed in with a new session.')}</p>
           </div>
         </div>
+        <form id="accountEmailForm" class="formgrid" style="margin-bottom:24px">
+          <div class="field"><label>${appText('Nykyinen kirjautumissähköposti','Nuvarande inloggningsadress','Current login email')}</label><input type="email" value="${esc(me.email || '')}" readonly></div>
+          <div class="field"><label>${appText('Uusi kirjautumissähköposti','Ny inloggningsadress','New login email')}</label><input name="newEmail" type="email" autocomplete="email" required maxlength="254" placeholder="${appText('uusi@yritys.fi','ny@foretag.se','new@company.com')}"></div>
+          <div class="field"><label>${appText('Nykyinen salasana','Nuvarande lösenord','Current password')}</label><input name="currentPassword" type="password" autocomplete="current-password" required maxlength="200"></div>
+          <button class="btn dashboard-action" type="submit">${appText('Vaihda kirjautumissähköposti','Byt inloggningsadress','Change login email')} →</button>
+          <div id="accountEmailMsg"></div>
+        </form>
         <form id="accountPasswordForm" class="formgrid">
           <div class="field"><label>${appText('Nykyinen salasana','Nuvarande lösenord','Current password')}</label><input name="currentPassword" type="password" autocomplete="current-password" required maxlength="200"></div>
           <div class="field"><label>${appText('Uusi salasana','Nytt lösenord','New password')}</label><input name="newPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="200" placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
@@ -5981,6 +5988,36 @@ async function route() {
           alert(err.message);
         }
       });
+    });
+
+    $('#accountEmailForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form=e.currentTarget;
+      const button=form.querySelector('button[type="submit"]');
+      const newEmail=String(form.elements.newEmail?.value || '').trim();
+      const currentPassword=String(form.elements.currentPassword?.value || '');
+      const msg=$('#accountEmailMsg');
+      if(!newEmail || !currentPassword){
+        if(msg) msg.innerHTML='<div class="notice error">'+appText('Täytä uusi sähköposti ja nykyinen salasana.','Fyll i ny e-postadress och nuvarande lösenord.','Enter the new email and your current password.')+'</div>';
+        return;
+      }
+      const original=button?.innerHTML || '';
+      if(button){button.disabled=true;button.innerHTML=appText('Vaihdetaan…','Byter…','Changing…');}
+      try{
+        const result=await api('/api/app/account/email',{
+          method:'POST',
+          body:JSON.stringify({newEmail,currentPassword}),
+        });
+        if(msg) msg.innerHTML='<div class="notice success">'+appText('Kirjautumissähköposti vaihdettu. Muut vanhat istunnot suljettiin.','Inloggningsadressen har ändrats. Andra gamla sessioner stängdes.','Login email changed. Other old sessions were closed.')+'</div>';
+        const current=form.querySelector('input[readonly]');
+        if(current) current.value=result.email || newEmail;
+        form.elements.newEmail.value='';
+        form.elements.currentPassword.value='';
+      }catch(err){
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
+      }finally{
+        if(button){button.disabled=false;button.innerHTML=original;}
+      }
     });
 
     $('#accountPasswordForm')?.addEventListener('submit', async (e) => {
