@@ -8863,10 +8863,21 @@ async function ensureRuntimeSchema() {
             RETURNS UUID
             LANGUAGE SQL
             STABLE
+            SET search_path = public, pg_temp
             AS 'SELECT COALESCE(
               (SELECT active_tenant_id FROM users WHERE id=user_uuid),
               (SELECT id FROM tenants WHERE owner_user_id=user_uuid ORDER BY created_at ASC LIMIT 1)
             )'`);
+  await q(`DO $$
+    BEGIN
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
+        REVOKE EXECUTE ON FUNCTION public.active_tenant_for_user(UUID) FROM anon;
+      END IF;
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
+        REVOKE EXECUTE ON FUNCTION public.active_tenant_for_user(UUID) FROM authenticated;
+      END IF;
+    END
+  $$`);
   await q(`CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL,
@@ -8881,6 +8892,17 @@ async function ensureRuntimeSchema() {
     candidates JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
+  await q('ALTER TABLE public.demo_website_imports ENABLE ROW LEVEL SECURITY');
+  await q(`DO $$
+    BEGIN
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
+        REVOKE ALL PRIVILEGES ON TABLE public.demo_website_imports FROM anon;
+      END IF;
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
+        REVOKE ALL PRIVILEGES ON TABLE public.demo_website_imports FROM authenticated;
+      END IF;
+    END
+  $$`);
   await q('CREATE INDEX IF NOT EXISTS idx_demo_website_imports_created ON demo_website_imports(created_at DESC)');
   await q('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code) WHERE referral_code IS NOT NULL');
   await q(`CREATE TABLE IF NOT EXISTS referral_redemptions (
@@ -9041,6 +9063,7 @@ async function ensureRuntimeSchema() {
   await q('CREATE INDEX IF NOT EXISTS idx_support_agents_tenant ON support_agents(tenant_id,created_at ASC)');
   await q('CREATE UNIQUE INDEX IF NOT EXISTS idx_support_agents_username_unique ON support_agents(lower(username)) WHERE username IS NOT NULL');
   await q('ALTER TABLE chat_threads ADD COLUMN IF NOT EXISTS assigned_agent_id UUID REFERENCES support_agents(id) ON DELETE SET NULL');
+  await q('CREATE INDEX IF NOT EXISTS idx_chat_threads_assigned_agent_id ON chat_threads(assigned_agent_id)');
 
   await q(`CREATE TABLE IF NOT EXISTS chat_messages (
     id UUID PRIMARY KEY,
@@ -9055,6 +9078,7 @@ async function ensureRuntimeSchema() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_chat_messages_thread_created ON chat_messages(thread_id,created_at ASC)');
+  await q('CREATE INDEX IF NOT EXISTS idx_chat_messages_tenant_id ON chat_messages(tenant_id)');
 
 
   await q("ALTER TABLE tenants ALTER COLUMN accent SET DEFAULT '#111113'");
