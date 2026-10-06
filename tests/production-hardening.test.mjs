@@ -199,3 +199,11 @@ test('public non-chat endpoints are rate limited', () => {
   assert.ok(server.includes("app.get('/api/public/payment/verify', paymentVerifyLimiter, async"));
   assert.ok(server.includes("app.post('/api/channel/:slug/message', channelApiLimiter, async"));
 });
+
+
+test('production health requires database and Stripe billing configuration', () => {
+  assert.match(server, /DATABASE_URL is required in production/);
+  assert.match(server, /Stripe billing configuration is required in production/);
+  assert.match(server, /BASE_URL must be a valid HTTPS URL in production/);
+  assert.match(server, /ok: Boolean\(pool\) && Boolean\(stripe && process\.env\.STRIPE_WEBHOOK_SECRET\)/);
+});
