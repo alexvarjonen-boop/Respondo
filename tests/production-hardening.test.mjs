@@ -170,3 +170,19 @@ test('runtime schema migration is serialized across service replicas', () => {
   assert.match(server, /pg_advisory_unlock\(hashtext\('respondo_runtime_schema_v1'\)\)/);
   assert.match(server, /withRuntimeSchemaLock\(\(\) => ensureRuntimeSchema\(\)\)/);
 });
+
+
+test('booking serializes the slot before the final Google Calendar conflict check', () => {
+  const bookingStart=server.indexOf("if (type === 'booking')");
+  const bookingEnd=server.indexOf("await q(\n      `INSERT INTO action_requests",bookingStart);
+  assert.ok(bookingStart>=0 && bookingEnd>bookingStart);
+  const block=server.slice(bookingStart,bookingEnd);
+  const lock=block.indexOf('FOR UPDATE');
+  const calendarCheck=block.indexOf('googleCalendarHasConflict(');
+  const markBooked=block.indexOf("status='booked'");
+  assert.ok(lock>=0,'booking row lock missing');
+  assert.ok(calendarCheck>lock,'Google Calendar must be checked after acquiring the slot lock');
+  assert.ok(markBooked>calendarCheck,'slot must only be booked after the calendar conflict check');
+  assert.match(block,/if \(conflict\) \{[\s\S]{0,140}ROLLBACK[\s\S]{0,180}status\(409\)/);
+  assert.match(block,/Google Calendar conflict check failed[\s\S]{0,220}status\(503\)/);
+});
