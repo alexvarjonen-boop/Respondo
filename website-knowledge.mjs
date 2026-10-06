@@ -465,6 +465,7 @@ export function businessFactKind(text, context = '') {
 
 export function essentialWebsiteCandidates(bundle) {
   const out = [], seen = new Set();
+  const hasCatalogProducts=Array.isArray(bundle?.products) && bundle.products.length>0;
   const add = (kind,title,answer,sourceUrl) => {
     const text = clean(answer), key = kind+':'+norm(text);
     if (!text || seen.has(key)) return;
@@ -504,6 +505,8 @@ export function essentialWebsiteCandidates(bundle) {
       // Product pages are imported as complete product records. Do not create a
       // second detached "price" fact that has lost the product name/link.
       if (kind === 'pricing' && docProducts.length) continue;
+      const detachedNumericPrice=/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|kr|\$|£))?$/i.test(clean(block.text));
+      if (kind === 'pricing' && hasCatalogProducts && detachedNumericPrice) continue;
       let title = labels[kind];
       if (kind === 'delivery') {
         // Classify the individual fact by its own sentence, not merely by a
