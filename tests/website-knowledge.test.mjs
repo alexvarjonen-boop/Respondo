@@ -869,3 +869,31 @@ test('service-area cleaner does not invent a prefix when the saved value already
  assert.equal(result.answer,'Palvelemme Turussa, Raisiossa ja Kaarinassa.');
  assert.equal(result.handoff,false);
 });
+
+
+test('policy marketing headings never become answers in website or demo imports',async()=>{
+ const policyDoc=extractBusinessDocument(`
+   <section><h2>Returns</h2>
+     <div>Hassle Free Returns</div>
+     <p>Return within 45 days of purchase. Duties & taxes are non-refundable.</p>
+   </section>
+   <section><h2>Shipping</h2>
+     <div>Free Shipping</div>
+     <p>In-stock items ship within 3–5 business days.</p>
+   </section>
+ `,'https://shop.example/pages/policies');
+ const facts=essentialWebsiteCandidates({finalUrl:'https://shop.example/',pageDocuments:[policyDoc]});
+ assert.equal(facts.some(x=>/^Hassle Free Returns$/i.test(x.answer)),false);
+ assert.equal(facts.some(x=>/^Free Shipping$/i.test(x.answer)),false);
+ assert.ok(facts.some(x=>x.category==='Palautukset ja vaihdot'&&/45 days/i.test(x.answer)));
+ assert.ok(facts.some(x=>x.category==='Toimitus ja seuranta'&&/3–5 business days/i.test(x.answer)));
+
+ const rows=[
+   {id:'bad-demo',category:'Palautukset ja vaihdot',title:'Palautukset ja vaihdot',answer:'Hassle Free Returns',keywords:['return','refund'],source_type:'demo_import',source_url:'https://shop.example/'},
+   ...facts.map((item,index)=>({...item,id:'policy-heading-'+index,source_type:'demo_import',source_url:item.sourceUrl}))
+ ];
+ const result=await generateGroundedAnswer({rows,message:'How do returns work?',lang:'en'});
+ assert.equal(result.handoff,false,JSON.stringify(result));
+ assert.match(result.answer,/45 days/i);
+ assert.doesNotMatch(result.answer,/Hassle Free Returns/i);
+});
