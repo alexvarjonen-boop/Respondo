@@ -52,15 +52,15 @@ test('Business-only automations are enforced server-side and hidden on lower tie
 });
 
 test('bot branding stays available without a premium capability gate',()=>{
-  assert.match(server,/app\.post\('\/api\/app\/business-profile', auth, subscribed/);
+  assert.match(server,/app\.post\('\/api\/app\/business-profile', auth, ownerOnly, subscribed/);
   assert.match(server,/UPDATE tenants SET[^\n]*bot_name=\$6, bot_avatar=\$7/);
   assert.match(app,/name="botName"/);
   assert.match(app,/name="botAvatar"/);
 });
 
 test('Basic keeps native booking while premium automation controls are gated',()=>{
-  assert.match(server,/app\.post\('\/api\/app\/booking-slots\/generate', auth, subscribed/);
-  assert.doesNotMatch(server,/app\.post\('\/api\/app\/booking-slots\/generate'[\s\S]{0,120}allCurrentFeatures/);
+  assert.match(server,/app\.post\('\/api\/app\/booking-slots\/generate', auth, ownerOnly, subscribed/);
+  assert.doesNotMatch(server,/app\.post\('\/api\/app\/booking-slots\/generate'[\s\S]{0,180}requirePlanCapability\(req,res,'allCurrentFeatures'\)/);
   assert.match(app,/Respondo booking works on this plan\. Google Calendar sync is included in Advanced and Business\./);
   assert.match(app,/Quote requests work on every plan\. Automatic quote calculation is included in Business\./);
 });
