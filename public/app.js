@@ -2145,16 +2145,16 @@ function pricingSection() {
     <article class="price-card ${featured?'featured':''}">
       <div class="price-top"><span>${tier.toUpperCase()}</span><span class="${featured?'save':''}">${featured?appText('SUOSITUIN','POPULÄRAST','MOST POPULAR'):appText('3 PÄIVÄÄ ILMAISEKSI','3 DAGAR GRATIS','3 DAYS FREE')}</span></div>
       <h3>${tier}</h3>
-      <div class="pricevalue">${monthly.toFixed(2).replace('.',',')} €<small>/kk</small></div>
-      <div class="plan-yearly-price">${appText('Vuositilauksella','Med årsabonnemang','With annual billing')} <b>${yearlyMonthly.toFixed(2).replace('.',',')} €/kk</b> · ${yearlyTotal.toFixed(2).replace('.',',')} € / ${appText('vuosi','år','year')}</div>
+      <div class="pricevalue">${monthly.toLocaleString(appLocale(),{minimumFractionDigits:2,maximumFractionDigits:2})} €<small>${appText('/kk','/mån','/month')}</small></div>
+      <div class="plan-yearly-price">${appText('Vuositilauksella','Med årsabonnemang','With annual billing')} <b>${yearlyMonthly.toLocaleString(appLocale(),{minimumFractionDigits:2,maximumFractionDigits:2})} €${appText('/kk','/mån','/month')}</b> · ${yearlyTotal.toFixed(2).replace('.',',')} € / ${appText('vuosi','år','year')}</div>
       <div class="price-rule"></div>
       <ul>
         ${features.map((x)=>`<li>${x}</li>`).join('')}
         <li><b>${seats} ${appText('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</b></li>
       </ul>
       <div class="price-actions">
-        <a class="btn price-btn" href="/tilaus?plan=${tier.toLowerCase()}_monthly">${appText('Kuukausi','Månad','Monthly')} · ${monthly.toFixed(2).replace('.',',')} €</a>
-        <a class="btn price-btn ${featured?'blue':''}" href="/tilaus?plan=${tier.toLowerCase()}_yearly">${appText('Vuosi','År','Annual')} · ${yearlyMonthly.toFixed(2).replace('.',',')} €/kk <span>→</span></a>
+        <a class="btn price-btn" href="/tilaus?plan=${tier.toLowerCase()}_monthly">${appText('Kuukausi','Månad','Monthly')} · ${monthly.toLocaleString(appLocale(),{minimumFractionDigits:2,maximumFractionDigits:2})} €</a>
+        <a class="btn price-btn ${featured?'blue':''}" href="/tilaus?plan=${tier.toLowerCase()}_yearly">${appText('Vuosi','År','Annual')} · ${yearlyMonthly.toLocaleString(appLocale(),{minimumFractionDigits:2,maximumFractionDigits:2})} €${appText('/kk','/mån','/month')} <span>→</span></a>
       </div>
       <div class="annual-save-note">${appText('Vuositilauksella säästät 60 € vuodessa. Hinnat sisältävät ALV 25,5 %.','Med årsabonnemang sparar du 60 € per år. Priserna inkluderar 25,5 % moms.','Annual billing saves €60 per year. Prices include 25.5% VAT.')}</div>
     </article>`;
@@ -2583,16 +2583,16 @@ function signup() {
             <div class="field full"><label>${appText('Tilaus','Abonnemang','Subscription')}</label>
               <select name="plan">
                 <optgroup label="Basic">
-                  <option value="basic_monthly" ${plan === 'basic_monthly' ? 'selected' : ''}>Basic · 49,99 €/kk</option>
-                  <option value="basic_yearly" ${plan === 'basic_yearly' ? 'selected' : ''}>Basic · 44,99 €/kk · ${appText('539,88 €/vuosi','539,88 €/år','€539.88/year')}</option>
+                  <option value="basic_monthly" ${plan === 'basic_monthly' ? 'selected' : ''}>${appText('${appText('Basic · 49,99 €/kk','Basic · 49,99 €/mån','Basic · €49.99/month')}','Basic · 49,99 €/mån','Basic · €49.99/month')}</option>
+                  <option value="basic_yearly" ${plan === 'basic_yearly' ? 'selected' : ''}>${appText('${appText('Basic · 44,99 €/kk','Basic · 44,99 €/mån','Basic · €44.99/month')}','Basic · 44,99 €/mån','Basic · €44.99/month')} · ${appText('539,88 €/vuosi','539,88 €/år','€539.88/year')}</option>
                 </optgroup>
                 <optgroup label="Advanced">
-                  <option value="advanced_monthly" ${plan === 'advanced_monthly' ? 'selected' : ''}>Advanced · 64,99 €/kk</option>
-                  <option value="advanced_yearly" ${plan === 'advanced_yearly' ? 'selected' : ''}>Advanced · 59,99 €/kk · ${appText('719,88 €/vuosi','719,88 €/år','€719.88/year')}</option>
+                  <option value="advanced_monthly" ${plan === 'advanced_monthly' ? 'selected' : ''}>${appText('${appText('Advanced · 64,99 €/kk','Advanced · 64,99 €/mån','Advanced · €64.99/month')}','Advanced · 64,99 €/mån','Advanced · €64.99/month')}</option>
+                  <option value="advanced_yearly" ${plan === 'advanced_yearly' ? 'selected' : ''}>${appText('${appText('Advanced · 59,99 €/kk','Advanced · 59,99 €/mån','Advanced · €59.99/month')}','Advanced · 59,99 €/mån','Advanced · €59.99/month')} · ${appText('719,88 €/vuosi','719,88 €/år','€719.88/year')}</option>
                 </optgroup>
                 <optgroup label="Business">
-                  <option value="business_monthly" ${plan === 'business_monthly' ? 'selected' : ''}>Business · 79,99 €/kk</option>
-                  <option value="business_yearly" ${plan === 'business_yearly' ? 'selected' : ''}>Business · 74,99 €/kk · ${appText('899,88 €/vuosi','899,88 €/år','€899.88/year')}</option>
+                  <option value="business_monthly" ${plan === 'business_monthly' ? 'selected' : ''}>${appText('${appText('Business · 79,99 €/kk','Business · 79,99 €/mån','Business · €79.99/month')}','Business · 79,99 €/mån','Business · €79.99/month')}</option>
+                  <option value="business_yearly" ${plan === 'business_yearly' ? 'selected' : ''}>${appText('${appText('Business · 74,99 €/kk','Business · 74,99 €/mån','Business · €74.99/month')}','Business · 74,99 €/mån','Business · €74.99/month')} · ${appText('899,88 €/vuosi','899,88 €/år','€899.88/year')}</option>
                 </optgroup>
                 ${ownerTestAccess ? `<option value="owner_test" ${plan === 'owner_test' ? 'selected' : ''}>OMISTAJAN TESTI · 0,50 € sis. alv · veloitus heti</option>` : ''}
               </select>
@@ -3108,12 +3108,12 @@ async function dashboard(options = {}) {
             <label><span>${appText('Yrityksen nimi','Företagsnamn','Company name')}</span><input name="companyName" required maxlength="120" placeholder="${appText('Yrityksen nimi','Företagsnamn','Company name')}"></label>
             <label><span>${appText('Y-tunnus (valinnainen)','FO-nummer (valfritt)','Business ID (optional)')}</span><input name="businessId" maxlength="40" placeholder="1234567-8"></label>
             <div class="workspace-plan-grid">
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_monthly" checked><span><b>Basic · 49,99 €/kk</b><small>2 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_yearly"><span><b>Basic · 44,99 €/kk</b><small>539,88 € / ${appText('vuosi','år','year')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_monthly"><span><b>Advanced · 64,99 €/kk</b><small>10 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_yearly"><span><b>Advanced · 59,99 €/kk</b><small>719,88 € / ${appText('vuosi','år','year')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="business_monthly"><span><b>Business · 79,99 €/kk</b><small>20 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="business_yearly"><span><b>Business · 74,99 €/kk</b><small>899,88 € / ${appText('vuosi','år','year')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_monthly" checked><span><b>${appText('${appText('Basic · 49,99 €/kk','Basic · 49,99 €/mån','Basic · €49.99/month')}','Basic · 49,99 €/mån','Basic · €49.99/month')}</b><small>2 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_yearly"><span><b>${appText('${appText('Basic · 44,99 €/kk','Basic · 44,99 €/mån','Basic · €44.99/month')}','Basic · 44,99 €/mån','Basic · €44.99/month')}</b><small>539,88 € / ${appText('vuosi','år','year')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_monthly"><span><b>${appText('${appText('Advanced · 64,99 €/kk','Advanced · 64,99 €/mån','Advanced · €64.99/month')}','Advanced · 64,99 €/mån','Advanced · €64.99/month')}</b><small>10 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_yearly"><span><b>${appText('${appText('Advanced · 59,99 €/kk','Advanced · 59,99 €/mån','Advanced · €59.99/month')}','Advanced · 59,99 €/mån','Advanced · €59.99/month')}</b><small>719,88 € / ${appText('vuosi','år','year')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="business_monthly"><span><b>${appText('${appText('Business · 79,99 €/kk','Business · 79,99 €/mån','Business · €79.99/month')}','Business · 79,99 €/mån','Business · €79.99/month')}</b><small>20 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="business_yearly"><span><b>${appText('${appText('Business · 74,99 €/kk','Business · 74,99 €/mån','Business · €74.99/month')}','Business · 74,99 €/mån','Business · €74.99/month')}</b><small>899,88 € / ${appText('vuosi','år','year')}</small></span></label>
             </div>
             <label>
               <span>${appText('Suosittelukoodi (valinnainen)','Rekommendationskod (valfritt)','Referral code (optional)')}</span>
