@@ -166,7 +166,12 @@ async function renderIndexHtml(req) {
             WHERE lower(u.email)=lower($1)
               AND t.active=true
               AND u.status='active'
-              AND u.subscription_status IN ('active','trialing')
+              AND t.subscription_status IN ('active','trialing')
+              AND (
+                COALESCE(t.subscription_cancel_at_period_end,false)=false
+                OR t.current_period_end IS NULL
+                OR t.current_period_end > NOW()
+              )
             ORDER BY
               CASE
                 WHEN lower(COALESCE(t.slug,'')) IN ('respondo','respondoai') THEN 0
