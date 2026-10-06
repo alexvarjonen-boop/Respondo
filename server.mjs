@@ -2155,7 +2155,7 @@ function contextualizeConversationQuery(message, history = []) {
   const pronoun=/\b(?:se|sen|sita|siita|sille|siihen|tama|taman|tuo|tuota|tota|toi|ne|niita|niiden|sama|saman|it|that|this|those|them|same|det|den|detta|dem|samma)\b/.test(q);
   const terseTopic=/^(?:paljonko|mita maksaa|mika hinta|hinta|minkahintainen|kuinka kauan|kauanko|milloin|monelta|mihin aikaan|onko auki|huomenna|tanaan|lauantaina|sunnuntaina|viikonloppuna|saako sen|saako sita|voiko sen|voiko sita|onnistuuko se|onko sita|onko niita|loytyyko sita|varastossa|mita vareja|mita kokoja|entako toimitus|entako palautus|miksi|miksi niin|how much|what price|how long|when|what time|is it open|tomorrow|today|this weekend|can i get it|can you do it|is it available|in stock|what colors|what colours|what sizes|why|why is that|hur mycket|vad kostar|hur lange|nar|vilken tid|oppet|imorgon|idag|i helgen|finns den|i lager|vilka farger|vilka storlekar|varfor)\b/.test(q);
   const currentTopic=conversationTopic(q);
-  const likelyFollowUp=Boolean(lead||shortContinuation||pronoun||terseTopic||(currentTopic&&q.split(/\s+/).length<=5));
+  const likelyFollowUp=Boolean(lead||shortContinuation||pronoun||terseTopic);
 
   if (!likelyFollowUp || !previous) return q;
 
