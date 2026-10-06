@@ -2164,17 +2164,19 @@ function pricingSection() {
       <div class="pricing-wrap">
         ${card('Basic',49.99,44.99,539.88,2,[
           appText('AI-chat omalle verkkosivulle','AI-chatt på din webbplats','AI chat on your website'),
-          appText('Oma kysymys–vastaus-tietopohja','Egen fråge- och svarskunskapsbas','Manual Q&A knowledge base'),
+          appText('Hae tiedot automaattisesti verkkosivulta','Hämta information automatiskt från webbplatsen','Automatic website knowledge import'),
+          appText('Personoi botti yrityksesi brändiin','Anpassa botten till företagets varumärke','Personalize the bot to your company brand'),
+          appText('Oma kysymys–vastaus-tietopohja','Egen fråge- och svarskunskapsbas','Q&A knowledge base'),
           appText('Ajanvaraukset','Bokningar','Appointments and booking'),
           appText('Yhteydenottojen ja liidien keräys','Insamling av kontakter och leads','Contact and lead capture'),
           appText('Keskusteluhistoria ja puuttuvat vastaukset','Konversationshistorik och saknade svar','Conversation history and missing answers')
         ])}
         ${card('Advanced',64.99,59.99,719.88,10,[
           appText('Kaikki Basic-ominaisuudet','Alla Basic-funktioner','Everything in Basic'),
-          appText('Hae tiedot automaattisesti verkkosivulta','Hämta information automatiskt från webbplatsen','Automatic website knowledge import'),
+          appText('10 asiakaspalvelijapaikkaa','10 kundserviceplatser','10 support-agent seats'),
           appText('Google Calendar -synkronointi','Google Calendar-synkronisering','Google Calendar sync'),
           appText('Useamman asiakaspalvelijan tiimikäyttö','Teamstöd för flera kundservicemedarbetare','Multi-agent team use'),
-          appText('Automaattinen sivustotuonti ja kalenterisynkronointi samassa paketissa','Automatisk webbplatsimport och kalendersynkronisering i samma paket','Automatic website import and calendar sync in one plan')
+          appText('Laajempi keskustelu- ja asiakasanalytiikka','Utökad konversations- och kundanalys','Expanded conversation and customer analytics')
         ],true)}
         ${card('Business',79.99,74.99,899.88,20,[
           appText('Kaikki Respondon nykyiset ominaisuudet','Alla nuvarande Respondo-funktioner','All current Respondo features'),
@@ -2951,7 +2953,7 @@ async function dashboard(options = {}) {
 
   const t = data.tenant;
   const s = data.stats;
-  const planAccess = data.planAccess || { code:'basic_monthly',tier:'basic',agentSeats:2,websiteImport:false,googleCalendar:false,allCurrentFeatures:false };
+  const planAccess = data.planAccess || { code:'basic_monthly',tier:'basic',agentSeats:2,websiteImport:true,googleCalendar:false,allCurrentFeatures:false };
   const workspaces = isDemo ? [] : (Array.isArray(data.workspaces) ? data.workspaces : []);
   const activeWorkspaces = workspaces.filter((w) => w.active && ['active','trialing'].includes(String(w.subscription_status || '')));
   const referral = data.referral || null;
@@ -3274,7 +3276,7 @@ async function dashboard(options = {}) {
               <label>Verkkosivusi osoite</label>
               <input name="website" value="${profileValue('Verkkosivu')}" placeholder="https://yritys.fi">
               <small class="field-hint">Botti toimii vain tällä verkkosivulla.</small>
-              ${planAccess.websiteImport ? `<button type="button" class="inline-import-btn" id="importWebsite">${appText('Hae tiedot sivultani','Hämta uppgifter från min webbplats','Import details from my website')}</button>` : `<div class="field-hint">${appText('Automaattinen verkkosivuhaku sisältyy Advanced- ja Business-tilauksiin.','Automatisk webbplatsimport ingår i Advanced- och Business-abonnemangen.','Automatic website import is included in Advanced and Business plans.')}</div>`}
+              <button type="button" class="inline-import-btn" id="importWebsite">${appText('Hae tiedot sivultani','Hämta uppgifter från min webbplats','Import details from my website')}</button>
               <div id="websiteImportProgress" style="display:none;margin-top:10px">
                 <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:6px"><span id="websiteImportProgressLabel">${appText('Valmistellaan hakua…','Förbereder sökning…','Preparing scan…')}</span><b id="websiteImportProgressPercent">0%</b></div>
                 <div style="height:9px;border-radius:999px;background:rgba(127,127,127,.18);overflow:hidden"><div id="websiteImportProgressBar" style="height:100%;width:0%;background:currentColor;border-radius:999px;transition:width .45s ease"></div></div>
