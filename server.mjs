@@ -9309,6 +9309,48 @@ async function seedOwnerRespondoKnowledge() {
   const siteUrl = respondoOwnerSiteUrl();
   const supportEmail = cleanEmail(process.env.SUPPORT_EMAIL || ownerEmail) || ownerEmail;
   const rows = buildRespondoFaqRows({ supportEmail, siteUrl });
+  const seedHash = crypto.createHash('sha256').update(JSON.stringify(
+    rows.map((row) => ({
+      category:String(row.category || 'Respondo FAQ').slice(0,80),
+      title:String(row.title || '').slice(0,180),
+      answer:String(row.answer || '').slice(0,1600),
+      keywords:Array.isArray(row.keywords) ? row.keywords.slice(0,40) : [],
+      source_url:row.source_url || siteUrl || null,
+    }))
+  )).digest('hex');
+
+  // The seed runs on every Railway service. Under the cross-service advisory
+  // lock, skip the expensive DELETE + INSERT when the exact desired dataset is
+  // already present. A count mismatch also self-heals any historical duplicate
+  // seed rows created by concurrent deploys.
+  const seedState = await q(
+    `SELECT
+       (SELECT value FROM app_settings WHERE key='respondo_seed_sha256') AS seed_hash,
+       (SELECT count(*)::int FROM knowledge WHERE tenant_id=$1 AND source_type='respondo_seed') AS target_count,
+       (SELECT count(*)::int
+          FROM knowledge k
+          JOIN tenants t ON t.id=k.tenant_id
+         WHERE t.owner_user_id=$2 AND k.source_type='respondo_seed' AND k.tenant_id<>$1) AS foreign_count,
+       (SELECT count(*)::int
+          FROM knowledge
+         WHERE tenant_id=$1
+           AND (
+             lower(COALESCE(source_url,'')) LIKE '%jagputters.fi%'
+             OR lower(COALESCE(answer,'')) LIKE '%jag putter%'
+             OR lower(COALESCE(answer,'')) LIKE '%jagputters%'
+           )) AS leaked_count`,
+    [tenantId,owner.rows[0].user_id],
+  );
+  const state=seedState.rows[0] || {};
+  if (
+    state.seed_hash === seedHash &&
+    Number(state.target_count || 0) === rows.length &&
+    Number(state.foreign_count || 0) === 0 &&
+    Number(state.leaked_count || 0) === 0
+  ) {
+    console.log(`Respondo FAQ seed already current (${rows.length} rows)`);
+    return { seeded:false, reason:'already_current', count:rows.length, tenantId, siteUrl };
+  }
 
   const client = await pool.connect();
   try {
@@ -9380,6 +9422,13 @@ async function seedOwnerRespondoKnowledge() {
         params,
       );
     }
+
+    await client.query(
+      `INSERT INTO app_settings(key,value,updated_at)
+       VALUES('respondo_seed_sha256',$1,NOW())
+       ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value,updated_at=NOW()`,
+      [seedHash],
+    );
 
     await client.query('COMMIT');
     console.log(`Seeded ${rows.length} trilingual Respondo FAQ rows for owner tenant`);
@@ -9692,11 +9741,23 @@ async function withRuntimeSchemaLock(fn) {
   }
 }
 
+async function withOwnerSeedLock(fn) {
+  if (!pool) return fn();
+  const client=await pool.connect();
+  try {
+    await client.query("SELECT pg_advisory_lock(hashtext('respondo_owner_seed_v1'))");
+    return await fn();
+  } finally {
+    try { await client.query("SELECT pg_advisory_unlock(hashtext('respondo_owner_seed_v1'))"); } catch {}
+    client.release();
+  }
+}
+
 async function start() {
   try {
     await withRuntimeSchemaLock(() => ensureRuntimeSchema());
     try {
-      await seedOwnerRespondoKnowledge();
+      await withOwnerSeedLock(() => seedOwnerRespondoKnowledge());
     } catch (e) {
       console.error('Owner Respondo knowledge seed failed', e);
     }
