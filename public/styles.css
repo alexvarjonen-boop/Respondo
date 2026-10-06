@@ -8323,3 +8323,46 @@ body.workspace-modal-open{
   .pricing-wrap{grid-template-columns:1fr!important}
   .pricevalue{font-size:52px!important}
 }
+
+
+/* 2026-10-06 desktop language flags */
+.app-language-switch{
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  padding:3px;
+  border:1px solid #e5e0da;
+  border-radius:999px;
+  background:#faf9f7;
+  flex:0 0 auto;
+}
+.app-language-option{
+  appearance:none;
+  border:0;
+  background:transparent;
+  width:34px;
+  height:30px;
+  padding:0;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition:background .18s ease,transform .18s ease;
+}
+.app-language-option:hover{background:#ece8e1}
+.app-language-option:active{transform:scale(.96)}
+.app-language-option.active{background:#171717}
+.app-language-option:focus-visible{outline:2px solid #171717;outline-offset:2px}
+.app-language-flag-icon{
+  display:block;
+  width:22px;
+  height:16px;
+  border-radius:2px;
+  box-shadow:0 0 0 1px rgba(17,17,20,.12);
+  overflow:hidden;
+}
+@media(max-width:720px){
+  .app-language-switch{gap:1px;padding:2px}
+  .app-language-option{width:30px;height:28px}
+  .app-language-flag-icon{width:20px;height:15px}
+}
