@@ -6587,7 +6587,7 @@ app.post('/api/app/import-website/approve', auth, subscribed, async (req, res) =
       );
       if (duplicate.rowCount) {
         await client.query(
-          'UPDATE knowledge SET category=$1,answer=$2,keywords=$3,source_type=\'website\',source_url=$4,approved=true,verified_at=NOW(),updated_at=NOW() WHERE id=$5 AND tenant_id=$6',
+          `UPDATE knowledge SET category=$1,answer=$2,keywords=$3,source_type='website',source_url=$4,approved=true,verified_at=NOW(),updated_at=NOW() WHERE id=$5 AND tenant_id=$6`,
           [category, answer, keywords, sourceUrl, duplicate.rows[0].id, tenantId],
         );
       } else {
