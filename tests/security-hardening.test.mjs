@@ -98,3 +98,14 @@ test('calendar OAuth state is bound to the selected tenant', () => {
   assert.match(server,/SELECT \* FROM tenants WHERE owner_user_id=\$1 AND id=\$2/);
   assert.doesNotMatch(server,/statePayload\.flow === 'calendar'[\s\S]{0,1100}id=active_tenant_for_user\(\$1\)/);
 });
+
+test('live takeover cannot outlive the workspace subscription', () => {
+  const start=server.indexOf("app.post('/api/app/live/:id/mode'");
+  const end=server.indexOf("app.post('/api/channel/:slug/message'",start);
+  const block=server.slice(start,end);
+  assert.ok((block.match(/u\.status='active'/g)||[]).length >= 4);
+  assert.ok((block.match(/t\.subscription_status IN \('active','trialing'\)/g)||[]).length >= 4);
+  assert.ok((block.match(/t\.current_period_end > NOW\(\)/g)||[]).length >= 4);
+  assert.match(block,/WHERE id=\$2 AND tenant_id=\$3 RETURNING \*/);
+  assert.match(block,/WHERE id=\$1 AND tenant_id=\$2/);
+});
