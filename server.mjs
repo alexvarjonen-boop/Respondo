@@ -4908,7 +4908,7 @@ app.get('/sitemap.xml', (req, res) => {
   );
 });
 
-app.get('/api/app/google-calendar/start', auth, subscribed, async (req,res) => {
+app.get('/api/app/google-calendar/start', auth, ownerOnly, subscribed, async (req,res) => {
   if(!await requirePlanCapability(req,res,'googleCalendar')) return;
   const cfg = oauthConfig('google');
   if (!cfg.configured) return res.redirect('/app?section=automation&calendar=not_configured');
@@ -4936,7 +4936,7 @@ app.get('/api/app/google-calendar/start', auth, subscribed, async (req,res) => {
   return res.redirect(url.toString());
 });
 
-app.post('/api/app/google-calendar/disconnect', auth, subscribed, async (req,res) => {
+app.post('/api/app/google-calendar/disconnect', auth, ownerOnly, subscribed, async (req,res) => {
   if(!await requirePlanCapability(req,res,'googleCalendar')) return;
   try {
     const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
