@@ -373,7 +373,10 @@ function cleanBotAvatar(value) {
   }
 }
 
-const SECRET_KEY = crypto.createHash('sha256').update(JWT).digest();
+const DATA_ENCRYPTION_SECRET = String(process.env.DATA_ENCRYPTION_KEY || '').trim();
+const SECRET_KEY = crypto.createHash('sha256').update(DATA_ENCRYPTION_SECRET || JWT).digest();
+const LEGACY_SECRET_KEY = crypto.createHash('sha256').update(JWT).digest();
+
 function encryptSecret(value) {
   const text = String(value || '');
   if (!text) return null;
@@ -383,22 +386,33 @@ function encryptSecret(value) {
   const tag = cipher.getAuthTag();
   return [iv, tag, encrypted].map((x) => x.toString('base64url')).join('.');
 }
+
+function decryptSecretWithKey(text, key) {
+  const [ivPart, tagPart, dataPart] = String(text || '').split('.');
+  if (!ivPart || !tagPart || !dataPart) return '';
+  const decipher = crypto.createDecipheriv(
+    'aes-256-gcm',
+    key,
+    Buffer.from(ivPart, 'base64url'),
+  );
+  decipher.setAuthTag(Buffer.from(tagPart, 'base64url'));
+  return Buffer.concat([
+    decipher.update(Buffer.from(dataPart, 'base64url')),
+    decipher.final(),
+  ]).toString('utf8');
+}
+
 function decryptSecret(value) {
   const text = String(value || '');
   if (!text) return '';
   try {
-    const [ivPart, tagPart, dataPart] = text.split('.');
-    const decipher = crypto.createDecipheriv(
-      'aes-256-gcm',
-      SECRET_KEY,
-      Buffer.from(ivPart, 'base64url'),
-    );
-    decipher.setAuthTag(Buffer.from(tagPart, 'base64url'));
-    return Buffer.concat([
-      decipher.update(Buffer.from(dataPart, 'base64url')),
-      decipher.final(),
-    ]).toString('utf8');
+    return decryptSecretWithKey(text, SECRET_KEY);
   } catch {
+    if (DATA_ENCRYPTION_SECRET) {
+      try {
+        return decryptSecretWithKey(text, LEGACY_SECRET_KEY);
+      } catch {}
+    }
     return '';
   }
 }
