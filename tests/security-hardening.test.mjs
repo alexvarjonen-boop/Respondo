@@ -116,3 +116,16 @@ test('unsafe internal 4xx error messages are not reflected to dashboard clients'
   assert.match(server, /function safeWebsiteImportError\(/);
   assert.match(server, /allowed\.has\(message\) \? message : fallback/);
 });
+
+
+test('tenant public widget routes always require a signed host-bound token', () => {
+  assert.match(server,/function validWidgetToken\(req, tenant, tokenValue\)/);
+  assert.match(server,/token\.kind === 'widget'/);
+  assert.match(server,/token\.slug === tenant\.slug/);
+  assert.match(server,/token\.host === normalizeHost\(origin\.hostname\)/);
+  const start=server.indexOf("app.post('/api/public/:slug/lead'");
+  const end=server.indexOf("app.post('/api/billing/portal'",start);
+  const block=server.slice(start,end);
+  assert.ok((block.match(/validWidgetToken\(/g)||[]).length>=5);
+  assert.doesNotMatch(block,/externalWidgetRequest|const external =/);
+});
