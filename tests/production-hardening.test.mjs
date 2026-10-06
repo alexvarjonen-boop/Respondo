@@ -242,3 +242,10 @@ test('dashboard mutations reject cross-site browser requests without affecting p
   assert.match(server, /new URL\(originValue\)\.hostname/);
   assert.doesNotMatch(server, /req\.path\.startsWith\('\/api\/public\/'\)[\s\S]{0,120}rejectCrossSiteAuthenticatedMutation/);
 });
+
+
+test('homepage contact never claims email delivery when the mail channel is unavailable', () => {
+  assert.match(server, /emailSent:Boolean\(emailDelivery\.sent\)/);
+  assert.match(server, /Viestisi tallennettiin Respondon yhteydenottoihin/);
+  assert.match(server, /message was saved in Respondo contact requests/);
+});
