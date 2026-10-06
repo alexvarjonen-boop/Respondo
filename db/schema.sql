@@ -114,6 +114,20 @@ INSERT INTO app_settings(key,value)
 VALUES('owner_test_plan_enabled','true')
 ON CONFLICT(key) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS stripe_webhook_events (
+  event_id TEXT PRIMARY KEY,
+  event_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'processing',
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,
+  processed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_stripe_webhook_events_updated
+  ON stripe_webhook_events(updated_at DESC);
+ALTER TABLE stripe_webhook_events ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE IF NOT EXISTS referral_redemptions (
   id UUID PRIMARY KEY,
   referrer_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
