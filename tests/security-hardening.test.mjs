@@ -82,3 +82,11 @@ test('owner subscribed middleware selects only a currently usable workspace', ()
   assert.match(block,/subscription_status IN \('active','trialing'\)/);
   assert.match(block,/current_period_end > NOW\(\)/);
 });
+
+
+test('connected checkout cancel URL cannot be redirected off the tenant website', () => {
+  assert.match(server,/function safeTenantReturnUrl\(value, tenant\)/);
+  assert.match(server,/normalizeHost\(url\.hostname\) !== tenantHost/);
+  assert.match(server,/cancel_url:safeTenantReturnUrl\(pageUrl,tenant\)/);
+  assert.doesNotMatch(server,/cancel_url:pageUrl \|\| tenant\.website \|\| BASE/);
+});
