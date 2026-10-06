@@ -8847,24 +8847,6 @@ async function ensureRuntimeSchema() {
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS woo_base_url TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS woo_consumer_key TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS woo_consumer_secret TEXT");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS meta_graph_version TEXT NOT NULL DEFAULT 'v24.0'");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS meta_verify_token TEXT");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS meta_app_secret TEXT");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS whatsapp_phone_number_id TEXT");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS whatsapp_access_token TEXT");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS instagram_account_id TEXT");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS instagram_access_token TEXT");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS twilio_account_sid TEXT");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS twilio_auth_token TEXT");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS twilio_phone_number TEXT");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS voice_handoff_number TEXT");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS voice_enabled BOOLEAN NOT NULL DEFAULT FALSE");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_sms_enabled BOOLEAN NOT NULL DEFAULT FALSE");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_sms_message TEXT NOT NULL DEFAULT 'Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.'");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_sms_mode TEXT NOT NULL DEFAULT 'immediate'");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_after_start TEXT NOT NULL DEFAULT '17:00'");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_after_end TEXT NOT NULL DEFAULT '08:00'");
-  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS missed_call_timezone TEXT NOT NULL DEFAULT 'Europe/Helsinki'");
 
 
 
@@ -8990,19 +8972,6 @@ async function ensureRuntimeSchema() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_chat_messages_thread_created ON chat_messages(thread_id,created_at ASC)');
-  await q(`CREATE TABLE IF NOT EXISTS missed_call_sms_events (
-    id UUID PRIMARY KEY,
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    call_sid TEXT NOT NULL,
-    phone TEXT,
-    call_status TEXT,
-    delivery_status TEXT NOT NULL DEFAULT 'pending',
-    error TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(tenant_id,call_sid)
-  )`);
-  await q('CREATE INDEX IF NOT EXISTS idx_missed_call_sms_tenant_created ON missed_call_sms_events(tenant_id,created_at DESC)');
-
 
 
   await q("ALTER TABLE tenants ALTER COLUMN accent SET DEFAULT '#111113'");
