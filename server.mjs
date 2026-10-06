@@ -1752,6 +1752,20 @@ function conversationTopic(value) {
   return '';
 }
 
+function isConversationalAcknowledgement(value) {
+  const q=normalizeSearchText(value);
+  if (!q) return false;
+
+  const shortAcknowledgements=new Set([
+    'ok','okei','okay','okey','selva','selkee','joo','juu','jes','hyva',
+    'yes','yeah','yep','sure','alright','all right','got it',
+    'okej','japp','bra'
+  ]);
+  if (shortAcknowledgements.has(q)) return true;
+
+  return /^(?:(?:ok|okei|okay|okey|selva|selkee|joo|juu|jes|hyva|ei|no|yes|yeah|yep|sure|alright|all right|got it|okej|japp|bra|nej)\s+)*(?:kiitos(?: paljon)?|kiitti(?: paljon)?|thanks(?: a lot)?|thank you(?: very much)?|many thanks|tack(?: sa mycket)?)$/.test(q);
+}
+
 function contextualizeConversationQuery(message, history = []) {
   const current=String(message||'').trim();
   const q=normalizeSearchText(current);
@@ -1766,7 +1780,7 @@ function contextualizeConversationQuery(message, history = []) {
     .map(event=>String(event?.question||event?.user||'').trim())
     .find(text=>{
       const n=normalizeSearchText(text);
-      return n && !/^(?:hei|moi|moikka|hello|hi|hey|terve|hej|halla|kiitos|kiitti|thanks|thank you|tack)[!. ]*$/.test(n);
+      return n && !/^(?:hei|moi|moikka|hello|hi|hey|terve|hej|halla)$/.test(n) && !isConversationalAcknowledgement(n);
     });
   if (!previous) return current;
 
@@ -3208,8 +3222,20 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   if (/^(hei|moi|moikka|hello|hi|hey|terve|hej|hallå|halla)[!. ]*$/.test(normalized)) {
     return { answer: responseLang === 'en' ? 'Hi! How can I help?' : responseLang === 'sv' ? 'Hej! Hur kan jag hjälpa?' : 'Hei! Miten voin auttaa?', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Greeting' : responseLang === 'sv' ? 'Hälsning' : 'Tervehdys', sourceIds: [], selected: [] };
   }
-  if (/^(kiitos|kiitti|thanks|thank you|tack|tack så mycket|tack sa mycket)[!. ]*$/.test(normalized)) {
-    return { answer: responseLang === 'en' ? 'You’re welcome! I’m happy to help if you have anything else.' : responseLang === 'sv' ? 'Varsågod! Jag hjälper gärna om du undrar över något mer.' : 'Ole hyvä! Autan mielelläni, jos tulee vielä jotain mieleen.', handoff: false, confidence: 1, intent: responseLang === 'en' ? 'Thanks' : responseLang === 'sv' ? 'Tack' : 'Kiitos', sourceIds: [], selected: [] };
+  if (isConversationalAcknowledgement(normalized)) {
+    const negativeThanks=/^(?:ei|no|nej)\s+/.test(normalized);
+    const hasThanks=/(?:^|\s)(?:kiitos|kiitti|thanks|thank you|many thanks|tack)(?:\s|$)/.test(normalized);
+    const answer = negativeThanks || !hasThanks
+      ? (responseLang === 'en' ? 'Got it!' : responseLang === 'sv' ? 'Okej!' : 'Selvä!')
+      : (responseLang === 'en' ? 'You’re welcome!' : responseLang === 'sv' ? 'Varsågod!' : 'Ole hyvä!');
+    return {
+      answer,
+      handoff:false,
+      confidence:1,
+      intent:responseLang === 'en' ? 'Acknowledgement' : responseLang === 'sv' ? 'Bekräftelse' : 'Kuittaus',
+      sourceIds:[],
+      selected:[],
+    };
   }
 
   // "Missä toimitte?" means service area, not shipping/delivery. Resolve it
