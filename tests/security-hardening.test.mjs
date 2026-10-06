@@ -43,3 +43,12 @@ test('Google Calendar account controls are owner-only', () => {
   assert.match(server, /app\.get\('\/api\/app\/google-calendar\/start', auth, ownerOnly, subscribed/);
   assert.match(server, /app\.post\('\/api\/app\/google-calendar\/disconnect', auth, ownerOnly, subscribed/);
 });
+
+
+test('content security policy is enabled without blocking the cross-origin widget script', () => {
+  assert.doesNotMatch(server, /contentSecurityPolicy:\s*false/);
+  assert.match(server, /frameAncestors:\["'none'"\]/);
+  assert.match(server, /objectSrc:\["'none'"\]/);
+  assert.match(server, /scriptSrc:\["'self'","'unsafe-inline'"\]/);
+  assert.match(server, /crossOriginResourcePolicy:\{ policy:'cross-origin' \}/);
+});
