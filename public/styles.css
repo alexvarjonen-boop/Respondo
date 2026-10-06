@@ -8652,3 +8652,25 @@ body.workspace-modal-open{
   }
 }
 
+
+
+/* 2026-10-06 desktop public header polish: match mobile trial CTA and round nav pills */
+@media (min-width:761px){
+  body:not(.dashboard-page) .nav .navactions .btn,
+  body:not(.dashboard-page) .public-subnav a,
+  body:not(.dashboard-page) .public-subnav button,
+  body:not(.dashboard-page) .subnav a,
+  body:not(.dashboard-page) .subnav button{
+    border-radius:999px!important;
+  }
+  body:not(.dashboard-page) .nav .navactions .btn.ink{
+    border:0!important;
+    color:#fff!important;
+    background:linear-gradient(105deg,#7f80ff 0%,#b878ff 28%,#ff6c8c 62%,#ff9b58 100%)!important;
+    box-shadow:0 10px 24px rgba(177,104,255,.24),inset 0 1px 0 rgba(255,255,255,.35)!important;
+  }
+  body:not(.dashboard-page) .nav .navactions .btn.ink:hover{
+    transform:translateY(-1px)!important;
+    box-shadow:0 13px 28px rgba(177,104,255,.30),inset 0 1px 0 rgba(255,255,255,.4)!important;
+  }
+}
