@@ -8698,3 +8698,37 @@ body.workspace-modal-open{
 @media(max-width:760px){
   .calc-main-value{font-size:clamp(38px,12vw,64px)!important}
 }
+
+
+/* 2026-10-06 authoritative mobile nav guard.
+   Overrides older hotfixes that hid the primary trial CTA below 430px. */
+@media (max-width:760px){
+  .nav .navactions .btn.ghost,
+  .nav .navactions .btn.ink{
+    display:inline-flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    white-space:nowrap!important;
+    flex:0 0 auto!important;
+  }
+  .nav .navactions{
+    max-width:calc(100vw - 105px)!important;
+  }
+}
+@media (max-width:430px){
+  .nav .container.navin{overflow:visible!important}
+  .nav .navactions .btn.ghost{
+    min-height:34px!important;
+    padding:0 5px!important;
+    font-size:9.5px!important;
+  }
+  .nav .navactions .btn.ink{
+    min-height:34px!important;
+    padding:0 5px!important;
+    font-size:9.5px!important;
+  }
+}
+@media (max-width:370px){
+  .nav .brand-word{display:none!important}
+  .nav .navactions{max-width:calc(100vw - 48px)!important}
+}
