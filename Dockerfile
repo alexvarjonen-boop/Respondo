@@ -7,6 +7,10 @@ RUN npm install --omit=dev --no-audit --no-fund
 
 COPY . .
 
+# Production gate: syntax checks and the full regression suite must pass
+# before Railway can publish this image.
+RUN npm run check && npm test
+
 ENV NODE_ENV=production
 EXPOSE 8080
 
