@@ -187,6 +187,21 @@ test('booking serializes the slot before the final Google Calendar conflict chec
   assert.match(block,/Google Calendar conflict check failed[\s\S]{0,220}status\(503\)/);
 });
 
+test('booking slot and action request commit atomically and Calendar creation is retry-safe', () => {
+  const bookingStart=server.indexOf("if (type === 'booking')");
+  const bookingEnd=server.indexOf("if (!actionInserted)",bookingStart);
+  assert.ok(bookingStart>=0 && bookingEnd>bookingStart);
+  const block=server.slice(bookingStart,bookingEnd);
+  const markBooked=block.indexOf("UPDATE booking_slots SET status='booked'");
+  const insertAction=block.indexOf('INSERT INTO action_requests');
+  const commit=block.indexOf("client.query('COMMIT')");
+  assert.ok(markBooked>=0 && insertAction>markBooked && commit>insertAction,
+    'slot booking and action request must commit in the same transaction');
+  assert.match(server, /calendarEventId=\('respondo' \+ String\(actionRequest\.id/);
+  assert.match(server, /response\.status === 409 && calendarEventId/);
+  assert.match(server, /duplicate:true/);
+});
+
 test('public non-chat endpoints are rate limited', () => {
   assert.match(server, /const publicReadLimiter = rateLimit/);
   assert.match(server, /const siteVisitLimiter = rateLimit/);
