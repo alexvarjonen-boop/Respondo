@@ -5263,6 +5263,61 @@ app.post('/api/auth/language', auth, async (req,res) => {
   } catch (e) { return res.status(500).json({ error:e.message }); }
 });
 
+app.post('/api/app/account/email', auth, ownerOnly, loginLimiter, async (req,res) => {
+  try {
+    const currentPassword=String(req.body?.currentPassword || '');
+    const newEmail=cleanEmail(req.body?.newEmail);
+    if (!currentPassword || currentPassword.length > 200) {
+      return res.status(400).json({ error:'Anna nykyinen salasana.' });
+    }
+    if (!newEmail || newEmail.length > 254 || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(newEmail)) {
+      return res.status(400).json({ error:'Anna kelvollinen uusi sähköpostiosoite.' });
+    }
+
+    const rr=await q(
+      'SELECT id,email,password_hash,session_version,stripe_customer_id FROM users WHERE id=$1',
+      [req.user.sub],
+    );
+    if(!rr.rowCount || !rr.rows[0].password_hash || !(await bcrypt.compare(currentPassword,rr.rows[0].password_hash))) {
+      return res.status(400).json({ error:'Nykyinen salasana on väärä.' });
+    }
+    if (cleanEmail(rr.rows[0].email) === newEmail) {
+      return res.status(400).json({ error:'Uusi sähköpostiosoite on sama kuin nykyinen.' });
+    }
+
+    const duplicate=await q(
+      'SELECT 1 FROM users WHERE lower(email)=lower($1) AND id<>$2 LIMIT 1',
+      [newEmail,req.user.sub],
+    );
+    if(duplicate.rowCount) {
+      return res.status(409).json({ error:'Tällä sähköpostiosoitteella on jo käyttäjätili.' });
+    }
+
+    const updated=await q(
+      `UPDATE users
+          SET email=$1,session_version=session_version+1,updated_at=NOW()
+        WHERE id=$2
+        RETURNING id,email,session_version,stripe_customer_id`,
+      [newEmail,req.user.sub],
+    );
+
+    const stripeCustomerId=updated.rows[0]?.stripe_customer_id;
+    if (stripe && stripeCustomerId) {
+      try {
+        await stripe.customers.update(stripeCustomerId,{ email:newEmail });
+      } catch(stripeError) {
+        console.error('Stripe customer email sync failed',stripeError);
+      }
+    }
+
+    setSession(res,updated.rows[0]);
+    return res.json({ ok:true,email:newEmail });
+  } catch(e) {
+    console.error('Owner email change failed',e);
+    return res.status(500).json({ error:'Kirjautumissähköpostia ei voitu vaihtaa.' });
+  }
+});
+
 app.post('/api/app/account/password', auth, ownerOnly, loginLimiter, async (req,res) => {
   try {
     const currentPassword=String(req.body?.currentPassword || '');
