@@ -173,16 +173,20 @@ test('runtime schema migration is serialized across service replicas', () => {
 
 
 test('booking serializes the slot before the final Google Calendar conflict check', () => {
-  const bookingStart=server.indexOf("if (type === 'booking')");
-  const bookingEnd=server.indexOf("await q(\n      `INSERT INTO action_requests",bookingStart);
+  const bookingStart=server.indexOf("const previewSlot = await q(");
+  const bookingEnd=server.indexOf("if (!actionInserted)",bookingStart);
   assert.ok(bookingStart>=0 && bookingEnd>bookingStart);
   const block=server.slice(bookingStart,bookingEnd);
+  const begin=block.indexOf("await client.query('BEGIN')");
   const lock=block.indexOf('FOR UPDATE');
   const calendarCheck=block.indexOf('googleCalendarHasConflict(');
   const markBooked=block.indexOf("status='booked'");
-  assert.ok(lock>=0,'booking row lock missing');
+  const commit=block.indexOf("await client.query('COMMIT')");
+  assert.ok(begin>=0,'booking transaction missing');
+  assert.ok(lock>begin,'booking row lock must happen inside the transaction');
   assert.ok(calendarCheck>lock,'Google Calendar must be checked after acquiring the slot lock');
   assert.ok(markBooked>calendarCheck,'slot must only be booked after the calendar conflict check');
+  assert.ok(commit>markBooked,'booking must commit only after marking the slot booked');
   assert.match(block,/if \(conflict\) \{[\s\S]{0,140}ROLLBACK[\s\S]{0,180}status\(409\)/);
   assert.match(block,/Google Calendar conflict check failed[\s\S]{0,220}status\(503\)/);
 });
