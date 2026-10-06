@@ -1984,7 +1984,7 @@ const CONVERSATION_PHRASE_SETS = Object.fromEntries(
 );
 
 function conversationPhraseType(value) {
-  const q=normalizeSearchText(value);
+  const q=normalizeConversationPhrase(value);
   if (!q) return '';
 
   // These are intentionally whole-message matches. A greeting/thanks prefix
