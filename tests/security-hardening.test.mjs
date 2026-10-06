@@ -11,3 +11,23 @@ test('integration encryption key is separated from session signing with legacy d
   assert.match(server, /decryptSecretWithKey\(text, SECRET_KEY\)/);
   assert.match(server, /decryptSecretWithKey\(text, LEGACY_SECRET_KEY\)/);
 });
+
+test('tenant administration APIs explicitly reject agent sessions', () => {
+  const signatures = [
+    "app.post('/api/app/business-profile', auth, ownerOnly, subscribed,",
+    "app.post('/api/app/business-email', auth, ownerOnly, subscribed,",
+    "app.post('/api/app/import-website/start', auth, ownerOnly, subscribed,",
+    "app.get('/api/app/import-website/status/:jobId', auth, ownerOnly, subscribed,",
+    "app.post('/api/app/import-website', auth, ownerOnly, subscribed,",
+    "app.post('/api/app/import-website/approve', auth, ownerOnly, subscribed,",
+    "app.post('/api/app/unanswered/:id/answer', auth, ownerOnly, subscribed,",
+    "app.post('/api/app/knowledge', auth, ownerOnly, subscribed,",
+    "app.put('/api/app/knowledge/:id', auth, ownerOnly, subscribed,",
+    "app.delete('/api/app/knowledge/:id', auth, ownerOnly, subscribed,",
+    "app.post('/api/app/knowledge/:id/quick-reply', auth, ownerOnly, subscribed,",
+    "app.post('/api/app/booking-slots/generate', auth, ownerOnly, subscribed,",
+    "app.delete('/api/app/booking-slots/:id', auth, ownerOnly, subscribed,",
+    "app.post('/api/app/action-requests/:id/status', auth, ownerOnly, subscribed,",
+  ];
+  for (const signature of signatures) assert.ok(server.includes(signature), signature);
+});
