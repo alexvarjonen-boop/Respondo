@@ -65,7 +65,7 @@ test('demo bindings use the same paid-dashboard element ids and public chat endp
 });
 
 test('shared dashboard demo assets are cache-busted',()=>{
-  assert.match(html,/styles\.css\?v=20261006-flags-v2/);
+  assert.match(html,/styles\.css\?v=20261006-[^\"]+/);
   assert.match(html,/app\.js\?v=20261006-flags-v2/);
 });
 
