@@ -27,9 +27,9 @@ test('annual billing is exactly five euros per month cheaper and sixty euros per
   assert.match(app,/Business',79\.99,74\.99,899\.88,20/);
 });
 
-test('plan entitlements keep website import out of Basic and in Advanced or Business',()=>{
-  assert.match(server,/basic_monthly:\{[^}]*agentSeats:2,websiteImport:false,googleCalendar:false/);
-  assert.match(server,/basic_yearly:\{[^}]*agentSeats:2,websiteImport:false,googleCalendar:false/);
+test('all paid tiers include website import while calendar remains Advanced or Business',()=>{
+  assert.match(server,/basic_monthly:\{[^}]*agentSeats:2,websiteImport:true,googleCalendar:false/);
+  assert.match(server,/basic_yearly:\{[^}]*agentSeats:2,websiteImport:true,googleCalendar:false/);
   assert.match(server,/advanced_monthly:\{[^}]*agentSeats:10,websiteImport:true,googleCalendar:true/);
   assert.match(server,/business_monthly:\{[^}]*agentSeats:20,websiteImport:true,googleCalendar:true/);
   assert.match(server,/COUNT\(\*\)::int AS count FROM support_agents/);
@@ -115,16 +115,17 @@ test('pricing copy does not promise undefined analytics tiers',()=>{
   assert.match(app,/Shopify- ja WooCommerce-tilaushaku/);
 });
 
-test('Basic pricing never advertises automatic website import and Advanced does',()=>{
+test('Basic Advanced and Business all include automatic website import',()=>{
   const basicStart=app.indexOf("card('Basic'");
   const advancedStart=app.indexOf("card('Advanced'");
   const businessStart=app.indexOf("card('Business'");
   const basicBlock=app.slice(basicStart,advancedStart);
   const advancedBlock=app.slice(advancedStart,businessStart);
-  assert.doesNotMatch(basicBlock,/Hae tiedot automaattisesti verkkosivulta/);
+  assert.match(basicBlock,/Hae tiedot automaattisesti verkkosivulta/);
   assert.match(advancedBlock,/Hae tiedot automaattisesti verkkosivulta/);
   assert.match(app,/planAccess\.websiteImport/);
-  assert.doesNotMatch(server,/basic_(?:monthly|yearly):\{[^}]*websiteImport:true/);
+  assert.match(server,/basic_monthly:\{[^}]*websiteImport:true/);
+  assert.match(server,/basic_yearly:\{[^}]*websiteImport:true/);
 });
 
 test('pricing does not duplicate seat counts or advertise an unenforced analytics tier',()=>{
