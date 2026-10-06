@@ -2367,7 +2367,16 @@ function pinnedPublicRequest(url, resolved, signal, options = {}) {
       method:options.method || 'GET',
       signal,
       headers,
-      lookup(_hostname, _options, callback) {
+      lookup(_hostname, lookupOptions, callback) {
+        // Node 24 may request all DNS results when autoSelectFamily is active.
+        // In that mode the lookup callback must receive an array of
+        // { address, family } objects. Returning the legacy scalar signature
+        // makes Node read address.address from a string and fail with
+        // ERR_INVALID_IP_ADDRESS / "Invalid IP address: undefined".
+        if (lookupOptions && lookupOptions.all) {
+          callback(null, [{ address: resolved.address, family: resolved.family }]);
+          return;
+        }
         callback(null, resolved.address, resolved.family);
       },
       ...(url.protocol === 'https:' ? { servername:url.hostname } : {}),
