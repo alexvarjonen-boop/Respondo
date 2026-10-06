@@ -3081,6 +3081,7 @@ async function dashboard(options = {}) {
           ` : `
             <button class="workspace-add-button" id="workspaceAddButton" type="button">＋ <span>${appText('Lisää yritys','Lägg till företag','Add company')}</span></button>
             <button class="dashboard-settings-button" id="dashboardSettingsButton" type="button" aria-label="${esc(appText('Asetukset','Inställningar','Settings'))}" title="${esc(appText('Asetukset','Inställningar','Settings'))}">⚙</button>
+            <button class="dashboard-logout" id="logoutTop" type="button">${appText('Kirjaudu ulos','Logga ut','Log out')}</button>
           `}
         </div>
         ${isDemo ? `
