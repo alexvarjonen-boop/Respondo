@@ -4647,6 +4647,11 @@ app.use(express.static(path.join(__dirname, 'public'), {
   },
 }));
 
+app.get(['/favicon.ico','/apple-touch-icon.png','/apple-touch-icon-precomposed.png'], (req,res) => {
+  res.setHeader('Cache-Control','public, max-age=86400');
+  return res.sendFile(path.join(__dirname,'public','favicon.svg'));
+});
+
 const i18nCache = new Map();
 const i18nLimiter = rateLimit({ windowMs: 60 * 1000, limit: 12, standardHeaders:true, legacyHeaders:false });
 app.post('/api/i18n/translate', i18nLimiter, async (req,res) => {
