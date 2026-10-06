@@ -57,8 +57,8 @@ const SEO_APP_PATHS = new Set([
 
 const SEO_META = {
   fi: {
-    '/': ['Asiakaspalvelubotti yrityksille 24/7 | Respondo AI', 'Respondo on verkkosivulle asennettava asiakaspalvelubotti yrityksille. Se vastaa asiakkaiden kysymyksiin 24/7 yrityksesi omilla tiedoilla.'],
-    '/ominaisuudet': ['Asiakaspalvelubotin ominaisuudet | Respondo AI', 'Tutustu Respondon ominaisuuksiin: verkkosivubotti, yrityksen oma tietopohja, yhteydenotot, ajanvaraus, keskustelut ja asiakaspalvelun hallinta yhdessä paikassa.'],
+    '/': ['AI-asiakaspalvelubotti yrityksille | Respondo AI', 'Respondo AI vastaa verkkosivusi asiakkaiden kysymyksiin 24/7 yrityksesi tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta. Kokeile 3 päivää maksutta.'],
+    '/ominaisuudet': ['AI-asiakaspalvelubotin ominaisuudet | Respondo AI', 'Tutustu Respondon ominaisuuksiin: verkkosivubotti, yrityksen oma tietopohja, yhteydenotot, ajanvaraus, keskustelut ja asiakaspalvelun hallinta yhdessä paikassa.'],
     '/tietoturva': ['Tietoturva ja tietosuoja | Respondo AI', 'Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
     '/kayttoehdot': ['Käyttöehdot | Respondo AI', 'Respondo AI -palvelun käyttöehdot yritysasiakkaille.'],
     '/tietosuoja': ['Tietosuojaseloste | Respondo AI', 'Tietosuojaseloste kertoo, mitä henkilötietoja Respondo käsittelee, miksi niitä käsitellään ja miten tiedot suojataan.'],
@@ -66,8 +66,8 @@ const SEO_META = {
     '/dpa': ['Tietojenkäsittely | Respondo AI', 'Tietoa henkilötietojen käsittelystä, kun Respondo toimii yritysasiakkaan henkilötietojen käsittelijänä.'],
   },
   sv: {
-    '/': ['Kundservicebot för företag 24/7 | Respondo AI', 'Respondo är en kundservicebot för företags webbplatser. Den svarar kunder dygnet runt med företagets egna godkända uppgifter.'],
-    '/ominaisuudet': ['Funktioner för kundservicebot | Respondo AI', 'Se Respondos funktioner för kundservice, kunskapsbas, kontaktförfrågningar, bokningar och kunddialoger.'],
+    '/': ['AI-kundservicebot för företag | Respondo AI', 'Respondo AI svarar på webbplatsens kundfrågor dygnet runt med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar. Prova gratis i 3 dagar.'],
+    '/ominaisuudet': ['Funktioner för AI-kundservicebot | Respondo AI', 'Se Respondos funktioner för kundservice, kunskapsbas, kontaktförfrågningar, bokningar och kunddialoger.'],
     '/tietoturva': ['Datasäkerhet och integritet | Respondo AI', 'Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
     '/kayttoehdot': ['Användarvillkor | Respondo AI', 'Användarvillkor för Respondo AI:s företagstjänst.'],
     '/tietosuoja': ['Integritetspolicy | Respondo AI', 'Information om vilka personuppgifter Respondo behandlar, varför de behandlas och hur de skyddas.'],
@@ -75,8 +75,8 @@ const SEO_META = {
     '/dpa': ['Databehandling | Respondo AI', 'Information om personuppgiftsbehandling när Respondo fungerar som personuppgiftsbiträde för företagskunden.'],
   },
   en: {
-    '/': ['Customer Service Bot for Businesses 24/7 | Respondo AI', 'Respondo is a customer service bot for business websites. It answers customers around the clock using your company-approved information.'],
-    '/ominaisuudet': ['Customer Service Bot Features | Respondo AI', 'Explore Respondo features for customer service, your knowledge base, contact requests, bookings and customer conversations.'],
+    '/': ['AI Customer Service Bot for Businesses | Respondo AI', 'Respondo AI answers website customer questions 24/7 using company-approved information, captures contact requests and supports bookings. Try it free for 3 days.'],
+    '/ominaisuudet': ['AI Customer Service Bot Features | Respondo AI', 'Explore Respondo features for customer service, your knowledge base, contact requests, bookings and customer conversations.'],
     '/tietoturva': ['Security and Privacy | Respondo AI', 'See how Respondo protects company and customer data, sign-ins, integrations and service usage.'],
     '/kayttoehdot': ['Terms of Service | Respondo AI', 'Terms of service for Respondo AI business customers.'],
     '/tietosuoja': ['Privacy Policy | Respondo AI', 'Learn what personal data Respondo processes, why it is processed and how it is protected.'],
@@ -222,6 +222,22 @@ function seoStructuredData(seo) {
   return JSON.stringify({ '@context':'https://schema.org', '@graph':graph }).replace(/</g,'\\u003c');
 }
 
+function seoNoScriptMarkup(seo, rawPath) {
+  if (!SEO_INDEXABLE_PATHS.has(rawPath)) return '';
+  const featurePage=['/ominaisuudet','/features','/funktioner'].includes(rawPath);
+  if (featurePage) {
+    if (seo.lang === 'sv') return '<noscript><main><h1>AI-kundservicebot för företag</h1><p>Respondo AI automatiserar kundservice på företagets webbplats med företagets egna godkända uppgifter.</p><ul><li>Kunskapsbas</li><li>Webbplatsimport</li><li>Kontakt- och offertförfrågningar</li><li>Bokningsstöd</li><li>Mänsklig övertagning</li></ul><p><a href="/tilaus">Prova gratis i 3 dagar</a></p></main></noscript>';
+    if (seo.lang === 'en') return '<noscript><main><h1>AI customer service bot for businesses</h1><p>Respondo AI automates customer service on business websites using company-approved information.</p><ul><li>Knowledge base</li><li>Website information import</li><li>Contact and quote requests</li><li>Booking support</li><li>Human takeover</li></ul><p><a href="/tilaus">Try free for 3 days</a></p></main></noscript>';
+    return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille</h1><p>Respondo AI automatisoi verkkosivujen asiakaspalvelua yrityksen omilla hyväksytyillä tiedoilla.</p><ul><li>Tietopohja</li><li>Verkkosivun tietojen tuonti</li><li>Yhteydenotto- ja tarjouspyynnöt</li><li>Ajanvarauksen tuki</li><li>Keskustelun siirto ihmiselle</li></ul><p><a href="/tilaus">Kokeile 3 päivää maksutta</a></p></main></noscript>';
+  }
+  if (rawPath === '/') {
+    if (seo.lang === 'sv') return '<noscript><main><h1>AI-kundservicebot för företag 24/7</h1><p>Respondo AI svarar på kundfrågor med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar.</p><p>Basic 49,99 €/mån · Advanced 64,99 €/mån · Business 79,99 €/mån.</p><p><a href="/funktioner">Se funktionerna</a></p></main></noscript>';
+    if (seo.lang === 'en') return '<noscript><main><h1>AI customer service bot for businesses 24/7</h1><p>Respondo AI answers customer questions with company-approved information, captures contact requests and supports bookings.</p><p>Basic €49.99/month · Advanced €64.99/month · Business €79.99/month.</p><p><a href="/features">See features</a></p></main></noscript>';
+    return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille 24/7</h1><p>Respondo AI vastaa asiakkaiden kysymyksiin yrityksen omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.</p><p>Basic 49,99 €/kk · Advanced 64,99 €/kk · Business 79,99 €/kk.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a></p></main></noscript>';
+  }
+  return '<noscript><main><h1>' + escapeHtml(seo.title.replace(/\\s*\\|\\s*Respondo AI$/i,'')) + '</h1><p>' + escapeHtml(seo.description) + '</p><p><a href="' + SEO_CANONICAL_ORIGIN + '/">Respondo AI</a></p></main></noscript>';
+}
+
 let cachedIndexHtml = '';
 async function renderIndexHtml(req) {
   if (!cachedIndexHtml) {
@@ -254,6 +270,7 @@ async function renderIndexHtml(req) {
   ].filter(Boolean).join('\n');
 
   html = html.replace('</head>', extraHead + '\n</head>');
+  html = html.replace('<div id="app"></div>', '<div id="app">' + seoNoScriptMarkup(seo, req.path) + '</div>');
 
   // The Respondo homepage uses the owner's real paid widget, not a separate demo.
   // This is the same HTML snippet shown in the owner's Installation section.
