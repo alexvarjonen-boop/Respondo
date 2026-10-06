@@ -2594,7 +2594,7 @@ function signup() {
                   <option value="business_monthly" ${plan === 'business_monthly' ? 'selected' : ''}>${appText('Business · 79,99 €/kk','Business · 79,99 €/mån','Business · €79.99/month')}</option>
                   <option value="business_yearly" ${plan === 'business_yearly' ? 'selected' : ''}>${appText('Business · 74,99 €/kk','Business · 74,99 €/mån','Business · €74.99/month')} · ${appText('899,88 €/vuosi','899,88 €/år','€899.88/year')}</option>
                 </optgroup>
-                ${ownerTestAccess ? `<option value="owner_test" ${plan === 'owner_test' ? 'selected' : ''}>OMISTAJAN TESTI · 0,50 € sis. alv · veloitus heti</option>` : ''}
+                ${ownerTestAccess ? `<option value="owner_test" ${plan === 'owner_test' ? 'selected' : ''}>${appText('OMISTAJAN TESTI · 0,50 € sis. alv · veloitus heti','ÄGARENS TEST · 0,50 € inkl. moms · debiteras direkt','OWNER TEST · €0.50 incl. VAT · charged immediately')}</option>` : ''}
               </select>
             </div>
             <div class="field full referral-signup-field">
