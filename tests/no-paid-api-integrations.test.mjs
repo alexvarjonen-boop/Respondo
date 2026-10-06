@@ -10,6 +10,7 @@ test('production backend has no direct Twilio, Meta messaging or OpenAI API inte
     'https://api.twilio.com',
     'https://graph.facebook.com',
     'api.openai.com',
+    'OPENAI_API_KEY',
     "app.post('/api/app/voice",
     "app.post('/api/app/meta-channels",
     "app.get('/api/meta/webhook/:slug'",
