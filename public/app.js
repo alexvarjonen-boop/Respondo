@@ -343,14 +343,14 @@ const EN_TEXT = new Map(Object.entries({
   "Evästeet":"Cookies",
   "Tietojenkäsittely":"Data processing",
   "Yritys":"Company",
-  "Respondo AI on yrityksille tarkoitettu asiakaspalvelu- ja ajanvarauspalvelu. Palveluun voi kuulua verkkosivubotti, yrityksen tietopohja, asiakasviestien käsittely, live-asiakaspalvelu erillisillä työntekijätileillä, kielitaitoon perustuva keskustelujen ohjaus, tarjous- ja yhteydenottopyynnöt, ajanvaraukset sekä asiakkaan erikseen yhdistämät ulkopuoliset palvelut, kuten Google Calendar. Käytettävissä olevat ominaisuudet voivat riippua asiakkaan asetuksista ja tilauksesta.":"Respondo AI is a customer-service and booking service for businesses. The service may include a website bot, the company's knowledge base, customer-message handling, quote and contact requests, bookings, SMS features, and external services separately connected by the customer, such as Google Calendar. Available features may depend on the customer's settings and subscription.",
+  "Respondo AI on yrityksille tarkoitettu asiakaspalvelu- ja ajanvarauspalvelu. Palveluun voi kuulua verkkosivubotti, yrityksen tietopohja, asiakasviestien käsittely, live-asiakaspalvelu erillisillä työntekijätileillä, kielitaitoon perustuva keskustelujen ohjaus, tarjous- ja yhteydenottopyynnöt, ajanvaraukset sekä asiakkaan erikseen yhdistämät ulkopuoliset palvelut, kuten Google Calendar. Käytettävissä olevat ominaisuudet voivat riippua asiakkaan asetuksista ja tilauksesta.":"Respondo AI is a customer-service and booking service for businesses. The service may include a website bot, the company's knowledge base, customer-message handling, live customer service with separate employee accounts, language-based conversation routing, quote and contact requests, bookings, and external services separately connected by the customer, such as Google Calendar. Available features may depend on the customer's settings and subscription.",
   "Respondo AI tuottaa asiakasvastauksia yrityksen palveluun lisäämien tietojen ja käytössä olevien toimintojen perusteella. Automaattinen vastaus voi olla virheellinen tai puutteellinen, joten asiakasyritys vastaa omien tietojensa oikeellisuudesta ja siitä, missä tilanteissa automaattisia vastauksia käytetään. Palvelua ei tule käyttää lainvastaisiin tarkoituksiin tai sellaisiin korkean riskin päätöksiin, joissa automaattinen vastaus yksin voi aiheuttaa olennaista vahinkoa.":"Respondo AI generates customer responses based on information added by the company and the features in use. An automated response may be incorrect or incomplete, so the business customer is responsible for the accuracy of its information and for deciding when automated responses are used. The service must not be used for unlawful purposes or high-risk decisions where an automated response alone could cause material harm.",
   "Palvelun toteuttamisessa voidaan käyttää infrastruktuuri-, tietokanta-, maksu-, viestintä- ja tekoälypalveluntarjoajia. Tietoja luovutetaan niille vain siinä laajuudessa kuin kyseisen toiminnon toteuttaminen edellyttää ja sovellettavien sopimusten sekä tietosuojavaatimusten mukaisesti.":"Infrastructure, database, payment, communications, and AI service providers may be used to provide the service. Data is disclosed to them only to the extent required for the relevant function and in accordance with applicable agreements and data-protection requirements.",
   "Osa palveluntarjoajista voi käsitellä tietoja Euroopan talousalueen ulkopuolella. Tällöin siirroissa käytetään sovellettavan tietosuojalainsäädännön edellyttämiä suojatoimia, kuten Euroopan komission hyväksymiä vakiosopimuslausekkeita, kun niitä tarvitaan.":"Some service providers may process data outside the European Economic Area. In such cases, safeguards required by applicable data-protection law are used, such as European Commission standard contractual clauses where needed.",
   "Tietoja säilytetään vain niin kauan kuin niitä tarvitaan palvelun toimittamiseen, sopimus- ja kirjanpitovelvoitteiden hoitamiseen, tietoturvaan tai lakisääteisiin velvoitteisiin. Tarpeettomat tiedot poistetaan tai anonymisoidaan kohtuullisessa ajassa. Google-käyttäjädatasta ei tehdä pysyvää kopiota muihin tarkoituksiin.":"Data is retained only as long as needed to provide the service, meet contractual and accounting obligations, maintain security, or satisfy legal obligations. Unnecessary data is deleted or anonymized within a reasonable time. No permanent copy of Google user data is made for other purposes.",
   "Respondon markkinointisivun oma kävijätilastointi toteutetaan palvelinpuolella. Se käynnistyy vain käyttäjän hyväksynnän jälkeen. Tilastointiin tallennetaan pseudonyymi kävijätunniste, sivupolku, viittaava verkkotunnus ja mahdolliset UTM-kampanjatiedot. Raakaa IP-osoitetta ei tallenneta kävijätilastotauluun.":"Respondo's own visitor analytics for the marketing site is implemented server-side and starts only after user consent. A pseudonymous visitor identifier, page path, referring domain, and any UTM campaign data are stored. The raw IP address is not stored in the visitor analytics table.",
   "Käyttäjä voi hyväksyä tai hylätä valinnaisen analytiikan evästebannerissa ja muuttaa valintaansa myöhemmin sivuston alatunnisteen Evästeasetukset-linkistä. Valinta tallennetaan selaimeen, jotta samaa kysymystä ei tarvitse esittää jokaisella sivulatauksella.":"The user can accept or reject optional analytics in the cookie banner and later change the choice through the Cookie settings link in the footer. The choice is stored in the browser so the same question does not need to be shown on every page load.",
-  "Käsittely liittyy Respondo AI -palvelun tarjoamiseen sopimuksen voimassaolon ajan ja tarvittavan poistumisajan sen jälkeen. Käsittely voi koskea yrityksen palveluun lisäämiä tietoja sekä loppuasiakkaiden chat-, yhteydenotto-, SMS-, tarjous- ja ajanvaraustietoja.":"Processing relates to providing the Respondo AI service during the agreement and the necessary deletion period afterward. Processing may cover information added by the company as well as end-customer chat, contact, SMS, quote, and booking data.",
+  "Käsittely liittyy Respondo AI -palvelun tarjoamiseen sopimuksen voimassaolon ajan ja tarvittavan poistumisajan sen jälkeen. Käsittely voi koskea yrityksen palveluun lisäämiä tietoja sekä loppuasiakkaiden chat-, yhteydenotto-, tarjous- ja ajanvaraustietoja.":"Processing relates to providing the Respondo AI service during the agreement and the necessary deletion period afterward. Processing may cover information added by the company as well as end-customer chat, contact, SMS, quote, and booking data.",
 
   "Luottamuksellisuus ja turvallisuus":"Confidentiality and security",
   "Henkilötietoja käsitteleviä tahoja sitoo asianmukainen luottamuksellisuus. Pääsy tuotantoympäristöihin ja salaisiin tietoihin rajataan tarpeen mukaan. Salasanoja ei tallenneta selväkielisinä ja ulkoisten palvelujen tunnisteita suojataan teknisin keinoin.":"Parties processing personal data are subject to appropriate confidentiality. Access to production environments and secrets is restricted as necessary. Passwords are not stored in plaintext and external-service credentials are protected using technical measures.",
@@ -802,14 +802,14 @@ const SV_TEXT = new Map(Object.entries({
   "Evästeet":"Cookies",
   "Tietojenkäsittely":"Databehandling",
   "Yritys":"Företag",
-  "Respondo AI on yrityksille tarkoitettu asiakaspalvelu- ja ajanvarauspalvelu. Palveluun voi kuulua verkkosivubotti, yrityksen tietopohja, asiakasviestien käsittely, live-asiakaspalvelu erillisillä työntekijätileillä, kielitaitoon perustuva keskustelujen ohjaus, tarjous- ja yhteydenottopyynnöt, ajanvaraukset sekä asiakkaan erikseen yhdistämät ulkopuoliset palvelut, kuten Google Calendar. Käytettävissä olevat ominaisuudet voivat riippua asiakkaan asetuksista ja tilauksesta.":"Respondo AI är en kundservice- och bokningstjänst för företag. Tjänsten kan omfatta en webbplatsbot, företagets kunskapsbas, hantering av kundmeddelanden, offert- och kontaktförfrågningar, bokningar, SMS-funktioner samt externa tjänster som kunden själv ansluter, såsom Google Calendar. Tillgängliga funktioner kan bero på kundens inställningar och abonnemang.",
+  "Respondo AI on yrityksille tarkoitettu asiakaspalvelu- ja ajanvarauspalvelu. Palveluun voi kuulua verkkosivubotti, yrityksen tietopohja, asiakasviestien käsittely, live-asiakaspalvelu erillisillä työntekijätileillä, kielitaitoon perustuva keskustelujen ohjaus, tarjous- ja yhteydenottopyynnöt, ajanvaraukset sekä asiakkaan erikseen yhdistämät ulkopuoliset palvelut, kuten Google Calendar. Käytettävissä olevat ominaisuudet voivat riippua asiakkaan asetuksista ja tilauksesta.":"Respondo AI är en kundservice- och bokningstjänst för företag. Tjänsten kan omfatta en webbplatsbot, företagets kunskapsbas, hantering av kundmeddelanden, livekundservice med separata medarbetarkonton, språkbaserad dirigering av konversationer, offert- och kontaktförfrågningar, bokningar samt externa tjänster som kunden själv ansluter, såsom Google Calendar. Tillgängliga funktioner kan bero på kundens inställningar och abonnemang.",
   "Respondo AI tuottaa asiakasvastauksia yrityksen palveluun lisäämien tietojen ja käytössä olevien toimintojen perusteella. Automaattinen vastaus voi olla virheellinen tai puutteellinen, joten asiakasyritys vastaa omien tietojensa oikeellisuudesta ja siitä, missä tilanteissa automaattisia vastauksia käytetään. Palvelua ei tule käyttää lainvastaisiin tarkoituksiin tai sellaisiin korkean riskin päätöksiin, joissa automaattinen vastaus yksin voi aiheuttaa olennaista vahinkoa.":"Respondo AI skapar kundsvar utifrån information som företaget har lagt till och de funktioner som används. Ett automatiskt svar kan vara felaktigt eller ofullständigt, så företagskunden ansvarar för att den egna informationen är korrekt och för i vilka situationer automatiska svar används. Tjänsten får inte användas för olagliga ändamål eller för högriskbeslut där ett automatiskt svar ensamt kan orsaka väsentlig skada.",
   "Palvelun toteuttamisessa voidaan käyttää infrastruktuuri-, tietokanta-, maksu-, viestintä- ja tekoälypalveluntarjoajia. Tietoja luovutetaan niille vain siinä laajuudessa kuin kyseisen toiminnon toteuttaminen edellyttää ja sovellettavien sopimusten sekä tietosuojavaatimusten mukaisesti.":"Infrastruktur-, databas-, betalnings-, kommunikations- och AI-leverantörer kan användas för att tillhandahålla tjänsten. Uppgifter lämnas till dem endast i den omfattning som krävs för den aktuella funktionen och i enlighet med tillämpliga avtal och dataskyddskrav.",
   "Osa palveluntarjoajista voi käsitellä tietoja Euroopan talousalueen ulkopuolella. Tällöin siirroissa käytetään sovellettavan tietosuojalainsäädännön edellyttämiä suojatoimia, kuten Euroopan komission hyväksymiä vakiosopimuslausekkeita, kun niitä tarvitaan.":"Vissa tjänsteleverantörer kan behandla uppgifter utanför Europeiska ekonomiska samarbetsområdet. Då används de skyddsåtgärder som tillämplig dataskyddslagstiftning kräver, såsom Europeiska kommissionens standardavtalsklausuler när det behövs.",
   "Tietoja säilytetään vain niin kauan kuin niitä tarvitaan palvelun toimittamiseen, sopimus- ja kirjanpitovelvoitteiden hoitamiseen, tietoturvaan tai lakisääteisiin velvoitteisiin. Tarpeettomat tiedot poistetaan tai anonymisoidaan kohtuullisessa ajassa. Google-käyttäjädatasta ei tehdä pysyvää kopiota muihin tarkoituksiin.":"Uppgifter lagras endast så länge de behövs för att tillhandahålla tjänsten, uppfylla avtals- och bokföringsskyldigheter, säkerhet eller lagstadgade skyldigheter. Uppgifter som inte längre behövs raderas eller anonymiseras inom rimlig tid. Ingen permanent kopia av Google-användardata görs för andra ändamål.",
   "Respondon markkinointisivun oma kävijätilastointi toteutetaan palvelinpuolella. Se käynnistyy vain käyttäjän hyväksynnän jälkeen. Tilastointiin tallennetaan pseudonyymi kävijätunniste, sivupolku, viittaava verkkotunnus ja mahdolliset UTM-kampanjatiedot. Raakaa IP-osoitetta ei tallenneta kävijätilastotauluun.":"Respondos egen besöksstatistik för marknadsföringssidan genomförs på serversidan och startar endast efter användarens samtycke. En pseudonym besökaridentifierare, sidväg, hänvisande domän och eventuella UTM-kampanjuppgifter lagras. Den råa IP-adressen lagras inte i besöksstatistiktabellen.",
   "Käyttäjä voi hyväksyä tai hylätä valinnaisen analytiikan evästebannerissa ja muuttaa valintaansa myöhemmin sivuston alatunnisteen Evästeasetukset-linkistä. Valinta tallennetaan selaimeen, jotta samaa kysymystä ei tarvitse esittää jokaisella sivulatauksella.":"Användaren kan godkänna eller avvisa valfri analys i cookie-bannern och senare ändra sitt val via länken Cookieinställningar i sidfoten. Valet sparas i webbläsaren så att samma fråga inte behöver visas vid varje sidladdning.",
-  "Käsittely liittyy Respondo AI -palvelun tarjoamiseen sopimuksen voimassaolon ajan ja tarvittavan poistumisajan sen jälkeen. Käsittely voi koskea yrityksen palveluun lisäämiä tietoja sekä loppuasiakkaiden chat-, yhteydenotto-, SMS-, tarjous- ja ajanvaraustietoja.":"Behandlingen avser tillhandahållandet av Respondo AI under avtalstiden och den nödvändiga raderingsperioden därefter. Behandlingen kan omfatta uppgifter som företaget lägger till i tjänsten samt slutkunders chatt-, kontakt-, SMS-, offert- och bokningsuppgifter.",
+  "Käsittely liittyy Respondo AI -palvelun tarjoamiseen sopimuksen voimassaolon ajan ja tarvittavan poistumisajan sen jälkeen. Käsittely voi koskea yrityksen palveluun lisäämiä tietoja sekä loppuasiakkaiden chat-, yhteydenotto-, tarjous- ja ajanvaraustietoja.":"Behandlingen avser tillhandahållandet av Respondo AI under avtalstiden och den nödvändiga raderingsperioden därefter. Behandlingen kan omfatta uppgifter som företaget lägger till i tjänsten samt slutkunders chatt-, kontakt-, offert- och bokningsuppgifter.",
 
   "Luottamuksellisuus ja turvallisuus":"Sekretess och säkerhet",
   "Henkilötietoja käsitteleviä tahoja sitoo asianmukainen luottamuksellisuus. Pääsy tuotantoympäristöihin ja salaisiin tietoihin rajataan tarpeen mukaan. Salasanoja ei tallenneta selväkielisinä ja ulkoisten palvelujen tunnisteita suojataan teknisin keinoin.":"Parter som behandlar personuppgifter omfattas av lämplig sekretess. Åtkomst till produktionsmiljöer och hemliga uppgifter begränsas efter behov. Lösenord lagras inte i klartext och identifierare för externa tjänster skyddas med tekniska åtgärder.",
@@ -2718,7 +2718,7 @@ LEGAL.dpa = {
   title: 'Tietojenkäsittely',
   intro: 'Kun Respondo käsittelee henkilötietoja yritysasiakkaan puolesta, yritys toimii lähtökohtaisesti rekisterinpitäjänä ja Respondo henkilötietojen käsittelijänä.',
   sections: [
-    ['Käsittelyn kohde ja kesto', 'Käsittely liittyy Respondo AI -palvelun tarjoamiseen sopimuksen voimassaolon ajan ja tarvittavan poistumisajan sen jälkeen. Käsittely voi koskea yrityksen palveluun lisäämiä tietoja sekä loppuasiakkaiden chat-, yhteydenotto-, SMS-, tarjous- ja ajanvaraustietoja.'],
+    ['Käsittelyn kohde ja kesto', 'Käsittely liittyy Respondo AI -palvelun tarjoamiseen sopimuksen voimassaolon ajan ja tarvittavan poistumisajan sen jälkeen. Käsittely voi koskea yrityksen palveluun lisäämiä tietoja sekä loppuasiakkaiden chat-, yhteydenotto-, tarjous- ja ajanvaraustietoja.'],
     ['Käsittelyn tarkoitus', 'Tietoja käsitellään yritysasiakkaan puolesta asiakasviestien käsittelyyn, tietopohjaan perustuvien vastausten tuottamiseen, live-asiakaspalvelun toteuttamiseen, keskustelukielen tunnistamiseen ja kielitaitoon perustuvaan reititykseen, yhteydenottojen ja varausten välittämiseen sekä asiakkaan käyttöön ottamien integraatioiden toteuttamiseen.'],
     ['Ohjeet', 'Respondo käsittelee henkilötietoja vain asiakkaan dokumentoitujen ohjeiden ja palvelun käyttötarkoituksen mukaisesti, ellei sovellettava laki edellytä muuta.'],
     ['Luottamuksellisuus ja turvallisuus', 'Henkilötietoja käsitteleviä tahoja sitoo asianmukainen luottamuksellisuus. Pääsy tuotantoympäristöihin ja salaisiin tietoihin rajataan tarpeen mukaan. Salasanoja ei tallenneta selväkielisinä ja ulkoisten palvelujen tunnisteita suojataan teknisin keinoin.'],
@@ -5550,94 +5550,6 @@ async function route() {
         button.textContent = result.ok ? appText('Toimii ✓','Fungerar ✓','Working ✓') : appText('Tarkista tiedot','Kontrollera uppgifterna','Check details');
       } catch (err) {
         $('#metaChannelsMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-        button.textContent = original;
-      } finally {
-        button.disabled = false;
-      }
-    });
-
-    $('#voiceAgentForm')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = new FormData(e.currentTarget);
-      const button = e.currentTarget.querySelector('button[type="submit"]');
-      const original = button.innerHTML;
-      button.disabled = true;
-      button.innerHTML = appText('Tallennetaan…','Sparar…','Saving…');
-      try {
-        await api('/api/app/voice', {
-          method:'POST',
-          body:JSON.stringify({
-            accountSid:form.get('accountSid'),
-            authToken:form.get('authToken'),
-            phoneNumber:form.get('phoneNumber'),
-            handoffNumber:form.get('handoffNumber'),
-            enabled:form.get('enabled') === 'on',
-            missedCallSmsEnabled:form.get('missedCallSmsEnabled') === 'on',
-            missedCallSmsMessage:form.get('missedCallSmsMessage'),
-            missedCallSmsMode:form.get('missedCallSmsMode'),
-            missedCallAfterStart:form.get('missedCallAfterStart'),
-            missedCallAfterEnd:form.get('missedCallAfterEnd'),
-            missedCallTimezone:form.get('missedCallTimezone'),
-          }),
-        });
-        $('#voiceAgentMsg').innerHTML = '<div class="notice success">Puhelinagentin asetukset tallennettu ✓</div>';
-        button.innerHTML = appText('Tallennettu ✓','Sparat ✓','Saved ✓');
-        setTimeout(() => (button.innerHTML = original), 1500);
-      } catch (err) {
-        $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-        button.innerHTML = original;
-      } finally {
-        button.disabled = false;
-      }
-    });
-
-    $('#testVoiceAgent')?.addEventListener('click', async (e) => {
-      const button = e.currentTarget;
-      const original = button.textContent;
-      button.disabled = true;
-      button.textContent = appText('Testataan…','Testar…','Testing…');
-      try {
-        await api('/api/app/voice/test', { method:'POST', body:'{}' });
-        $('#voiceAgentMsg').innerHTML = '<div class="notice success">' + appText('Twilio-yhteys toimii ✓','Twilio-anslutningen fungerar ✓','Twilio connection works ✓') + '</div>';
-        button.textContent = appText('Toimii ✓','Fungerar ✓','Working ✓');
-        setTimeout(() => (button.textContent = original), 1500);
-      } catch (err) {
-        $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-        button.textContent = original;
-      } finally {
-        button.disabled = false;
-      }
-    });
-
-    $('#testMissedCallSms')?.addEventListener('click', async (e) => {
-      const button = e.currentTarget;
-      const original = button.textContent;
-      button.disabled = true;
-      button.textContent = appText('Lähetetään…','Skickar…','Sending…');
-      try {
-        await api('/api/app/voice/test-sms', { method:'POST', body:'{}' });
-        $('#voiceAgentMsg').innerHTML = '<div class="notice success">' + appText('Testi-SMS lähetetty ✓','Test-SMS skickat ✓','Test SMS sent ✓') + '</div>';
-        button.textContent = appText('Lähetetty ✓','Skickat ✓','Sent ✓');
-        setTimeout(() => (button.textContent = original), 1500);
-      } catch (err) {
-        $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-        button.textContent = original;
-      } finally {
-        button.disabled = false;
-      }
-    });
-
-    $('#configureVoiceNumber')?.addEventListener('click', async (e) => {
-      const button = e.currentTarget;
-      const original = button.textContent;
-      button.disabled = true;
-      button.textContent = appText('Aktivoidaan…','Aktiverar…','Activating…');
-      try {
-        await api('/api/app/voice/configure-number', { method:'POST', body:'{}' });
-        $('#voiceAgentMsg').innerHTML = '<div class="notice success">' + appText('Twilio-numero ohjaa nyt puhelut ja SMS-viestit Respondoon ✓','Twilio-numret dirigerar nu samtal och SMS till Respondo ✓','The Twilio number now routes calls and SMS messages to Respondo ✓') + '</div>';
-        button.textContent = appText('Aktivoitu ✓','Aktiverad ✓','Activated ✓');
-      } catch (err) {
-        $('#voiceAgentMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
         button.textContent = original;
       } finally {
         button.disabled = false;
