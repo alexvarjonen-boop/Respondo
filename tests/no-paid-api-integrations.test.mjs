@@ -26,6 +26,18 @@ test('production backend has no direct Twilio, Meta messaging or OpenAI API inte
   }
 });
 
+test('backend does not generate removed Meta or Twilio credentials at runtime', () => {
+  for (const marker of [
+    "tenant.meta_verify_token = 'rsp_meta_'",
+    'tenant.meta_app_secret =',
+    'tenant.whatsapp_access_token =',
+    'tenant.instagram_access_token =',
+    'tenant.twilio_auth_token =',
+  ]) {
+    assert.equal(server.includes(marker), false, `Unexpected removed-channel credential generation: ${marker}`);
+  }
+});
+
 test('backend does not recreate removed paid-channel database schema', () => {
   const forbidden = [
     'ADD COLUMN IF NOT EXISTS twilio_',
