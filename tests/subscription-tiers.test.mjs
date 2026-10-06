@@ -27,9 +27,9 @@ test('annual billing is exactly five euros per month cheaper and sixty euros per
   assert.match(app,/Business',79\.99,74\.99,899\.88,20/);
 });
 
-test('plan entitlements enforce requested seat limits and Advanced-or-Business website import',()=>{
-  assert.match(server,/basic_monthly:\{[^}]*agentSeats:2,websiteImport:false,googleCalendar:false/);
-  assert.match(server,/basic_yearly:\{[^}]*agentSeats:2,websiteImport:false,googleCalendar:false/);
+test('plan entitlements enforce seat limits and website import on every plan',()=>{
+  assert.match(server,/basic_monthly:\{[^}]*agentSeats:2,websiteImport:true,googleCalendar:false/);
+  assert.match(server,/basic_yearly:\{[^}]*agentSeats:2,websiteImport:true,googleCalendar:false/);
   assert.match(server,/advanced_monthly:\{[^}]*agentSeats:10,websiteImport:true,googleCalendar:true/);
   assert.match(server,/business_monthly:\{[^}]*agentSeats:20,websiteImport:true,googleCalendar:true/);
   assert.match(server,/COUNT\(\*\)::int AS count FROM support_agents/);
@@ -46,7 +46,7 @@ test('Business-only automations are enforced server-side and hidden on lower tie
   assert.match(server,/stripeConnect:\s*planAccess\.allCurrentFeatures/);
   assert.match(app,/const planAccess = data\.planAccess/);
   assert.match(app,/id="importWebsite"/);
-  assert.match(app,/Automaattinen verkkosivuhaku sisältyy Advanced- ja Business-tilauksiin\./);
+  assert.match(app,/Hae tiedot automaattisesti verkkosivulta/);
   assert.match(app,/planAccess\.googleCalendar/);
   assert.match(app,/planAccess\.allCurrentFeatures/);
 });
@@ -115,13 +115,13 @@ test('pricing copy does not promise undefined analytics tiers',()=>{
   assert.match(app,/Shopify- ja WooCommerce-tilaushaku/);
 });
 
-test('Basic pricing does not advertise automatic website import while Advanced does',()=>{
+test('Basic and Advanced pricing both advertise automatic website import',()=>{
   const basicStart=app.indexOf("card('Basic'");
   const advancedStart=app.indexOf("card('Advanced'");
   const businessStart=app.indexOf("card('Business'");
   const basicBlock=app.slice(basicStart,advancedStart);
   const advancedBlock=app.slice(advancedStart,businessStart);
-  assert.doesNotMatch(basicBlock,/Hae tiedot automaattisesti verkkosivulta/);
+  assert.match(basicBlock,/Hae tiedot automaattisesti verkkosivulta/);
   assert.match(advancedBlock,/Hae tiedot automaattisesti verkkosivulta/);
   assert.match(app,/planAccess\.websiteImport/);
 });
