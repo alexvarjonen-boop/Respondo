@@ -4220,6 +4220,10 @@ const demoImportLimiter = rateLimit({
   message: { error: 'Demon verkkosivuhakuja on tehty liian monta. Yritä hetken kuluttua uudelleen.' },
 });
 
+function legacyVoiceRemoved(req,res) {
+  return res.status(410).json({ error:'Puhelin- ja SMS-integraatio on poistettu Respondo AI:sta.' });
+}
+
 app.get('/api/health', async (req, res) => {
   const health = {
     ok: true,
@@ -8509,7 +8513,7 @@ app.post('/api/app/meta-channels/test', auth, subscribed, async (req,res) => {
   }
 });
 
-app.post('/api/app/voice', auth, subscribed, async (req,res) => {
+app.post('/api/app/voice', auth, subscribed, legacyVoiceRemoved, async (req,res) => {
   try {
     const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8558,7 +8562,7 @@ app.post('/api/app/voice', auth, subscribed, async (req,res) => {
   }
 });
 
-app.post('/api/app/voice/test', auth, subscribed, async (req,res) => {
+app.post('/api/app/voice/test', auth, subscribed, legacyVoiceRemoved, async (req,res) => {
   try {
     const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8571,7 +8575,7 @@ app.post('/api/app/voice/test', auth, subscribed, async (req,res) => {
   }
 });
 
-app.post('/api/app/voice/test-sms', auth, subscribed, async (req,res) => {
+app.post('/api/app/voice/test-sms', auth, subscribed, legacyVoiceRemoved, async (req,res) => {
   try {
     const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8590,7 +8594,7 @@ app.post('/api/app/voice/test-sms', auth, subscribed, async (req,res) => {
   }
 });
 
-app.post('/api/app/voice/configure-number', auth, subscribed, async (req,res) => {
+app.post('/api/app/voice/configure-number', auth, subscribed, legacyVoiceRemoved, async (req,res) => {
   try {
     const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
@@ -8888,7 +8892,7 @@ function voiceHandoffTwiml(tenant,prompt) {
     '</Response>';
 }
 
-app.post('/api/voice/:slug/incoming', async (req,res) => {
+app.post('/api/voice/:slug/incoming', legacyVoiceRemoved, async (req,res) => {
   try {
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.sendStatus(404);
@@ -8905,7 +8909,7 @@ app.post('/api/voice/:slug/incoming', async (req,res) => {
   }
 });
 
-app.post('/api/voice/:slug/respond', async (req,res) => {
+app.post('/api/voice/:slug/respond', legacyVoiceRemoved, async (req,res) => {
   try {
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.sendStatus(404);
@@ -8943,7 +8947,7 @@ app.post('/api/voice/:slug/respond', async (req,res) => {
   }
 });
 
-app.post('/api/voice/:slug/missed-call', async (req,res) => {
+app.post('/api/voice/:slug/missed-call', legacyVoiceRemoved, async (req,res) => {
   try {
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.sendStatus(404);
@@ -8971,7 +8975,7 @@ app.post('/api/voice/:slug/missed-call', async (req,res) => {
   }
 });
 
-app.post('/api/sms/:slug/incoming', async (req,res) => {
+app.post('/api/sms/:slug/incoming', legacyVoiceRemoved, async (req,res) => {
   try {
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.sendStatus(404);
