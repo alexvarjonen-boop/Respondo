@@ -279,6 +279,9 @@ async function finnishVatCheckoutMessage(priceId, lang='fi') {
   if (safeLang === 'en') return 'The price includes Finnish VAT 25.5%.';
   return 'Hinta sisältää ALV 25,5 %.';
 }
+if (process.env.NODE_ENV === 'production' && !String(process.env.JWT_SECRET || '').trim()) {
+  throw new Error('JWT_SECRET is required in production.');
+}
 const JWT = process.env.JWT_SECRET || crypto.randomBytes(48).toString('hex');
 const COOKIE = 'respondo_session';
 
@@ -1970,25 +1973,44 @@ async function resolvePinnedPublicAddress(url) {
   return addresses[0];
 }
 
-function pinnedPublicRequest(url, resolved, signal) {
+function pinnedPublicRequest(url, resolved, signal, options = {}) {
   return new Promise((resolve, reject) => {
     const client = url.protocol === 'https:' ? https : http;
+    const body = options.body == null ? null : Buffer.from(String(options.body));
+    const headers = {
+      'Host':url.host,
+      'User-Agent':'RESPONDO-AI/2.0',
+      ...(options.headers || {}),
+    };
+    if (body && !Object.keys(headers).some((key) => key.toLowerCase() === 'content-length')) {
+      headers['Content-Length'] = String(body.length);
+    }
     const request = client.request(url, {
-      method:'GET',
+      method:options.method || 'GET',
       signal,
-      headers:{
-        'Host':url.host,
-        'User-Agent':'RESPONDO-Website-Importer/2.0',
-        'Accept':'text/html,application/xhtml+xml,application/json,text/plain;q=0.8,*/*;q=0.1',
-      },
+      headers,
       lookup(_hostname, _options, callback) {
         callback(null, resolved.address, resolved.family);
       },
       ...(url.protocol === 'https:' ? { servername:url.hostname } : {}),
     }, resolve);
     request.on('error', reject);
+    if (body) request.write(body);
     request.end();
   });
+}
+
+async function readPinnedResponse(response, maxBytes = 64_000) {
+  const chunks=[]; let total=0;
+  for await (const chunk of response) {
+    total += chunk.length;
+    if (total > maxBytes) {
+      response.destroy();
+      throw new Error('Ulkoisen palvelun vastaus oli liian suuri.');
+    }
+    chunks.push(Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks,total).toString('utf8');
 }
 
 async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000) {
@@ -1998,7 +2020,13 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000) {
   try {
     for (let redirects = 0; redirects < 4; redirects++) {
       const resolved = await resolvePinnedPublicAddress(url);
-      const response = await pinnedPublicRequest(url, resolved, controller.signal);
+      const response = await pinnedPublicRequest(url, resolved, controller.signal, {
+        method:'GET',
+        headers:{
+          'User-Agent':'RESPONDO-Website-Importer/2.0',
+          'Accept':'text/html,application/xhtml+xml,application/json,text/plain;q=0.8,*/*;q=0.1',
+        },
+      });
       const status = Number(response.statusCode || 0);
       if ([301,302,303,307,308].includes(status)) {
         const location = Array.isArray(response.headers.location) ? response.headers.location[0] : response.headers.location;
@@ -4017,7 +4045,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                     subscription_status=$2,
                     subscription_plan=COALESCE(subscription_plan,$3),
                     current_period_end=$4,
-                    active=CASE WHEN $2 IN ('active','trialing') THEN TRUE ELSE active END,
+                    active=CASE WHEN $2 IN ('active','trialing') THEN TRUE ELSE FALSE END,
                     updated_at=NOW()
               WHERE id=$5 AND owner_user_id=$6`,
             [session.subscription,subscriptionStatus,session.metadata?.plan||null,periodEnd,tenantId,userId],
@@ -4105,6 +4133,21 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: false }));
 app.use(express.text({ type: 'text/plain', limit: '20kb' }));
 app.use(rateLimit({ windowMs: 60000, limit: 180, standardHeaders: true, legacyHeaders: false }));
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  skipSuccessfulRequests:true,
+  standardHeaders:true,
+  legacyHeaders:false,
+  message:{ error:'Liian monta kirjautumisyritystä. Yritä myöhemmin uudelleen.' },
+});
+const checkoutLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 12,
+  standardHeaders:true,
+  legacyHeaders:false,
+  message:{ error:'Liian monta tilausyritystä. Yritä hetken kuluttua uudelleen.' },
+});
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders(res, filePath) {
     if (
@@ -4523,7 +4566,7 @@ app.get('/api/public/config', async (req, res) => {
   });
 });
 
-app.post('/api/auth/start-checkout', async (req, res) => {
+app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Tietokantaa ei ole yhdistetty.' });
 
   const { fullName, companyName, businessId, password, plan, acceptedTerms } = req.body;
@@ -4854,7 +4897,7 @@ app.get('/api/auth/checkout-success', async (req, res) => {
   }
 });
 
-app.post('/api/auth/agent-login', async (req,res) => {
+app.post('/api/auth/agent-login', loginLimiter, async (req,res) => {
   try {
     const username=String(req.body.username || '').trim().toLowerCase();
     const r=await q("SELECT sa.*,t.name AS company_name FROM support_agents sa JOIN tenants t ON t.id=sa.tenant_id JOIN users u ON u.id=t.owner_user_id WHERE lower(sa.username)=lower($1) AND t.active=true AND COALESCE(t.subscription_status,u.subscription_status) IN ('active','trialing')",[username]);
@@ -4869,7 +4912,7 @@ app.post('/api/auth/agent-login', async (req,res) => {
   } catch(e) { return res.status(500).json({ error:'Kirjautuminen epäonnistui.' }); }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   try {
     const email = cleanEmail(req.body.email);
     const r = await q('SELECT * FROM users WHERE lower(email)=lower($1)', [email]);
@@ -6317,15 +6360,26 @@ async function wooApi(tenant, pathName, params = {}) {
   Object.entries(params).forEach(([k,v]) => {
     if (v !== undefined && v !== null && String(v) !== '') url.searchParams.set(k,String(v));
   });
-  const response = await fetch(url,{
-    headers:{
-      Authorization:'Basic ' + Buffer.from(key + ':' + secret).toString('base64'),
-      'User-Agent':'RESPONDO-AI/2.0',
-    },
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data?.message || 'WooCommerce API -kutsu epäonnistui.');
-  return data;
+  const resolved = await resolvePinnedPublicAddress(url);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await pinnedPublicRequest(url,resolved,controller.signal,{
+      method:'GET',
+      headers:{
+        Authorization:'Basic ' + Buffer.from(key + ':' + secret).toString('base64'),
+        'Accept':'application/json',
+      },
+    });
+    const raw = await readPinnedResponse(response,1_000_000);
+    let data={};
+    try { data=raw ? JSON.parse(raw) : {}; } catch {}
+    const status=Number(response.statusCode || 0);
+    if (status < 200 || status >= 300) throw new Error(data?.message || 'WooCommerce API -kutsu epäonnistui.');
+    return data;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function lookupWooOrder(tenant, orderNumber, email) {
@@ -6764,10 +6818,9 @@ async function dispatchActionWebhook(tenant, actionRequest) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
   try {
-    const response = await fetch(url, {
+    const resolved = await resolvePinnedPublicAddress(url);
+    const response = await pinnedPublicRequest(url,resolved,controller.signal,{
       method:'POST',
-      redirect:'manual',
-      signal:controller.signal,
       headers:{
         'content-type':'application/json',
         'user-agent':'RESPONDO-Actions/2.0',
@@ -6775,10 +6828,11 @@ async function dispatchActionWebhook(tenant, actionRequest) {
       },
       body:payload,
     });
-    const raw = (await response.text()).slice(0,12000);
+    const raw = await readPinnedResponse(response,12000);
     let parsed = null;
     try { parsed = raw ? JSON.parse(raw) : null; } catch { parsed = raw ? { message:raw.slice(0,1000) } : null; }
-    return { status: response.ok ? 'delivered' : 'failed', result: parsed, httpStatus:response.status };
+    const statusCode=Number(response.statusCode || 0);
+    return { status: statusCode >= 200 && statusCode < 300 ? 'delivered' : 'failed', result: parsed, httpStatus:statusCode };
   } finally {
     clearTimeout(timer);
   }
