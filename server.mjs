@@ -419,8 +419,8 @@ const normalizeReferralCode = (value) =>
     .replace(/[^A-Z0-9-]/g, '')
     .slice(0, 32);
 
-const FREE_REFERRAL_CODE = 'CEO1000';
-const isFreeReferralCode = (value) => normalizeReferralCode(value) === FREE_REFERRAL_CODE;
+const FREE_REFERRAL_CODE = normalizeReferralCode(process.env.OWNER_FREE_CODE || '');
+const isFreeReferralCode = (value) => Boolean(FREE_REFERRAL_CODE) && normalizeReferralCode(value) === FREE_REFERRAL_CODE;
 
 const PLAN_DEFINITIONS = Object.freeze({
   basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:49.99,annualTotal:null,agentSeats:2,websiteImport:false,googleCalendar:false},
@@ -3906,6 +3906,47 @@ async function finishOauth(req, res, code, state) {
   }
 }
 
+async function resolveSignupCheckoutTarget(session) {
+  const metadataUserId = String(session?.metadata?.user_id || '').trim();
+  const metadataTenantId = String(session?.metadata?.tenant_id || '').trim();
+  let userResult = metadataUserId
+    ? await q(
+        'SELECT id,email,status,subscription_status,stripe_subscription_id,active_tenant_id FROM users WHERE id=$1',
+        [metadataUserId],
+      )
+    : { rowCount:0, rows:[] };
+
+  if (userResult.rowCount) {
+    return {
+      userId:userResult.rows[0].id,
+      tenantId:metadataTenantId,
+      user:userResult.rows[0],
+      recovered:false,
+    };
+  }
+
+  const email = cleanEmail(session?.customer_details?.email || session?.customer_email || '');
+  if (!email) return null;
+
+  userResult = await q(
+    'SELECT id,email,status,subscription_status,stripe_subscription_id,active_tenant_id FROM users WHERE lower(email)=lower($1) LIMIT 1',
+    [email],
+  );
+  if (!userResult.rowCount) return null;
+
+  const user = userResult.rows[0];
+  const pendingTenant = await q(
+    "SELECT id FROM tenants WHERE owner_user_id=$1 AND subscription_status='pending' ORDER BY created_at DESC LIMIT 1",
+    [user.id],
+  );
+  return {
+    userId:user.id,
+    tenantId:pendingTenant.rows[0]?.id || user.active_tenant_id || metadataTenantId,
+    user,
+    recovered:true,
+  };
+}
+
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) return res.status(503).send('Stripe not configured');
 
@@ -3923,7 +3964,9 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   try {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      const userId = session.metadata?.user_id;
+      const target = await resolveSignupCheckoutTarget(session);
+      const userId = target?.userId || '';
+      let tenantId = target?.tenantId || '';
       if (userId) {
         let subscriptionStatus = 'active';
         let periodEnd = null;
@@ -3932,7 +3975,30 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           subscriptionStatus = subscription.status;
           if (subscription.current_period_end) periodEnd = new Date(subscription.current_period_end * 1000);
         }
-        const tenantId=String(session.metadata?.tenant_id||'');
+        const incomingSubscriptionId =
+          typeof session.subscription === 'string'
+            ? session.subscription
+            : session.subscription?.id || null;
+        if (
+          incomingSubscriptionId &&
+          target?.user?.stripe_subscription_id &&
+          target.user.stripe_subscription_id !== incomingSubscriptionId &&
+          ['active','trialing'].includes(String(target.user.subscription_status || ''))
+        ) {
+          try {
+            await stripe.subscriptions.cancel(incomingSubscriptionId);
+          } catch (duplicateCancelError) {
+            console.error('Duplicate signup subscription cancellation failed', duplicateCancelError);
+          }
+          return res.json({ received:true, duplicateCheckout:true });
+        }
+        if (target?.recovered) {
+          console.warn('Recovered checkout for recreated pending account', {
+            sessionId:session.id,
+            userId,
+            tenantId,
+          });
+        }
         await q(
           `UPDATE users
              SET stripe_customer_id=COALESCE(stripe_customer_id,$1),
@@ -4676,7 +4742,8 @@ app.get('/api/auth/checkout-success', async (req, res) => {
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
-    const userId = session.metadata?.user_id;
+    const target = await resolveSignupCheckoutTarget(session);
+    const userId = target?.userId || '';
 
     if (
       session.status !== 'complete' ||
@@ -4711,6 +4778,21 @@ app.get('/api/auth/checkout-success', async (req, res) => {
         ? session.subscription
         : session.subscription?.id || null;
 
+    if (
+      subscriptionId &&
+      target?.user?.stripe_subscription_id &&
+      target.user.stripe_subscription_id !== subscriptionId &&
+      ['active','trialing'].includes(String(target.user.subscription_status || ''))
+    ) {
+      try {
+        await stripe.subscriptions.cancel(subscriptionId);
+      } catch (duplicateCancelError) {
+        console.error('Duplicate checkout-success subscription cancellation failed', duplicateCancelError);
+      }
+      setSession(res, target.user);
+      return res.redirect('/app?welcome=1');
+    }
+
     const updated = await q(
       `UPDATE users
           SET stripe_customer_id=$1,
@@ -4726,7 +4808,7 @@ app.get('/api/auth/checkout-success', async (req, res) => {
 
     if (!updated.rowCount) return res.redirect('/kirjaudu?checkout_error=1');
 
-    const checkoutTenantId=String(session.metadata?.tenant_id||'');
+    const checkoutTenantId=String(target?.tenantId||session.metadata?.tenant_id||'');
     if(checkoutTenantId){
       await q(
         `UPDATE tenants
