@@ -3781,6 +3781,21 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const productResult=directProductAnswer(rows,cleanMessage,responseLang);
   if(productResult) return productResult;
 
+  // Generic company questions such as "Mitä teette?" are ambiguous. For an
+  // ecommerce site whose approved knowledge contains products but no actual
+  // service rows, interpret the question as "What do you sell?" instead of
+  // forcing the service intent and handing off. This keeps retail demos natural
+  // without making a product-only store pretend it offers services.
+  const hasImportedProducts=productCatalog(rows).length>0;
+  const hasServiceKnowledge=rows.some((row)=>
+    knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='services'
+  );
+  if (hasImportedProducts && !hasServiceKnowledge && genericCompanyQuestion(cleanMessage)) {
+    const commerceQuestion=responseLang==='en'?'What do you sell?':responseLang==='sv'?'Vad säljer ni?':'Mitä myytte?';
+    const commerceOverview=directProductAnswer(rows,commerceQuestion,responseLang);
+    if(commerceOverview) return commerceOverview;
+  }
+
   // If an ecommerce import has a verified catalog link but product rows are
   // temporarily incomplete, still answer naturally instead of echoing raw URLs
   // or the Respondo demo website address.
