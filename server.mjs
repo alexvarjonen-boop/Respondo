@@ -284,8 +284,21 @@ async function finnishVatCheckoutMessage(priceId, lang='fi') {
   if (safeLang === 'en') return 'The price includes Finnish VAT 25.5%.';
   return 'Hinta sisältää ALV 25,5 %.';
 }
-if (process.env.NODE_ENV === 'production' && !String(process.env.JWT_SECRET || '').trim()) {
-  throw new Error('JWT_SECRET is required in production.');
+if (process.env.NODE_ENV === 'production') {
+  if (!String(process.env.JWT_SECRET || '').trim()) {
+    throw new Error('JWT_SECRET is required in production.');
+  }
+  if (!String(process.env.DATABASE_URL || '').trim()) {
+    throw new Error('DATABASE_URL is required in production.');
+  }
+  if (!String(process.env.STRIPE_SECRET_KEY || '').trim() || !String(process.env.STRIPE_WEBHOOK_SECRET || '').trim()) {
+    throw new Error('Stripe billing configuration is required in production.');
+  }
+  let productionBase;
+  try { productionBase = new URL(BASE); } catch {}
+  if (!productionBase || productionBase.protocol !== 'https:' || !productionBase.hostname) {
+    throw new Error('BASE_URL must be a valid HTTPS URL in production.');
+  }
 }
 const JWT = process.env.JWT_SECRET || crypto.randomBytes(48).toString('hex');
 const COOKIE = 'respondo_session';
@@ -4910,7 +4923,7 @@ const demoImportLimiter = rateLimit({
 
 app.get('/api/health', async (req, res) => {
   const health = {
-    ok: true,
+    ok: Boolean(pool) && Boolean(stripe && process.env.STRIPE_WEBHOOK_SECRET),
     service: 'RESPONDO AI',
     database: Boolean(pool),
     stripe: Boolean(stripe && process.env.STRIPE_WEBHOOK_SECRET),
