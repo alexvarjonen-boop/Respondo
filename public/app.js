@@ -2170,6 +2170,7 @@ function pricingSection() {
         ${card('Basic',49.99,44.99,539.88,2,[
           appText('AI-chat omalle verkkosivulle','AI-chatt på din webbplats','AI chat on your website'),
           appText('Personoi botti yrityksesi brändiin','Anpassa botten till företagets varumärke','Personalize the bot to your company brand'),
+          appText('Hae tiedot automaattisesti verkkosivulta','Hämta information automatiskt från webbplatsen','Automatic website knowledge import'),
           appText('Oma kysymys–vastaus-tietopohja','Egen fråge- och svarskunskapsbas','Q&A knowledge base'),
           appText('Ajanvaraukset','Bokningar','Appointments and booking'),
           appText('Yhteydenottojen ja liidien keräys','Insamling av kontakter och leads','Contact and lead capture'),
@@ -3286,7 +3287,7 @@ async function dashboard(options = {}) {
               <small class="field-hint">Botti toimii vain tällä verkkosivulla.</small>
               ${planAccess.websiteImport
                 ? `<button type="button" class="inline-import-btn" id="importWebsite">${appText('Hae tiedot sivultani','Hämta uppgifter från min webbplats','Import details from my website')}</button>`
-                : `<div class="notice compact-plan-notice">${appText('Automaattinen verkkosivuhaku sisältyy Advanced- ja Business-tilauksiin.','Automatisk webbplatsimport ingår i Advanced och Business.','Automatic website import is included in Advanced and Business.')}</div>`}
+                : `<div class="notice compact-plan-notice">${appText('Automaattinen verkkosivuhaku ei ole käytössä tässä tilauksessa.','Automatisk webbplatsimport är inte tillgänglig i detta abonnemang.','Automatic website import is not available on this plan.')}</div>`}
               <div id="websiteImportProgress" style="display:none;margin-top:10px">
                 <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:6px"><span id="websiteImportProgressLabel">${appText('Valmistellaan hakua…','Förbereder sökning…','Preparing scan…')}</span><b id="websiteImportProgressPercent">0%</b></div>
                 <div style="height:9px;border-radius:999px;background:rgba(127,127,127,.18);overflow:hidden"><div id="websiteImportProgressBar" style="height:100%;width:0%;background:currentColor;border-radius:999px;transition:width .45s ease"></div></div>
