@@ -433,11 +433,26 @@ export function businessFactKind(text, context = '') {
   if (commerceFact && /laatu|quality|valmist|manufactur/.test(c) && quality.test(commerce)) return 'quality';
   if (commerceFact && /hoito|care|maintenance|pesuoh|washing/.test(c) && care.test(commerce)) return 'care';
   if (commerceFact && /koko|size|sizing|mitat|dimension|storlek/.test(c) && sizing.test(commerce)) return 'sizing';
-  // Policies and concrete customer facts must stay separate from generic prices.
-  if (commerceFact && delivery.test(commerce) && !policyHeadingOnly(t,'delivery')) return 'delivery';
-  if (commerceFact && returns.test(commerce) && !policyHeadingOnly(t,'returns')) return 'returns';
-  if (commerceFact && warranty.test(commerce) && !policyHeadingOnly(t,'warranty')) return 'warranty';
-  if (commerceFact && payment.test(commerce) && !policyHeadingOnly(t,'payment')) return 'payment';
+  // Policy facts are classified from the sentence itself first. A shared
+  // heading such as "Shipping & Returns" must never turn a return sentence
+  // into delivery (or vice versa). Only fall back to heading context when that
+  // heading identifies exactly one policy topic.
+  if (commerceFact && returns.test(n) && !policyHeadingOnly(t,'returns')) return 'returns';
+  if (commerceFact && warranty.test(n) && !policyHeadingOnly(t,'warranty')) return 'warranty';
+  if (commerceFact && payment.test(n) && !policyHeadingOnly(t,'payment')) return 'payment';
+  if (commerceFact && delivery.test(n) && !policyHeadingOnly(t,'delivery')) return 'delivery';
+  if (commerceFact) {
+    const contextualPolicies=[
+      ['returns',returns],
+      ['warranty',warranty],
+      ['payment',payment],
+      ['delivery',delivery],
+    ].filter(([,pattern])=>pattern.test(c));
+    if (contextualPolicies.length===1) {
+      const kind=contextualPolicies[0][0];
+      if (!policyHeadingOnly(t,kind)) return kind;
+    }
+  }
   if (commerceFact && care.test(commerce)) return 'care';
   if (commerceFact && sizing.test(commerce) && (/\d/.test(t) || /koko|size|mitat|dimension|fit|paino|weight|pituus|length|leveys|width|korkeus|height/.test(n))) return 'sizing';
   if (commerceFact && materials.test(commerce)) return 'materials';
