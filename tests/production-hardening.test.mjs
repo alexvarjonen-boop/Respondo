@@ -79,3 +79,12 @@ test('removed Twilio voice and SMS routes are blocked before handler logic', () 
     assert.match(server,new RegExp("app\\.post\\('"+escaped+"'[^\\n]*legacyVoiceRemoved"));
   }
 });
+
+
+test('sessions can be revoked and staff password reset revokes old staff JWTs', () => {
+  assert.match(server, /ALTER TABLE users ADD COLUMN IF NOT EXISTS session_version/);
+  assert.match(server, /ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS session_version/);
+  assert.match(server, /session_version=session_version\+1/);
+  assert.match(server, /app\.post\('\/api\/app\/support-agents\/:id\/password'/);
+  assert.match(server, /sv:Number\(user\.session_version \|\| 0\)/);
+});
