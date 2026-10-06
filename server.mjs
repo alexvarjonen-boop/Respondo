@@ -8242,13 +8242,13 @@ app.post('/api/public/respondo-contact', publicChatLimiter, async (req,res)=>{
       message:errorText(
         emailDelivery.sent
           ? 'Kiitos! Viestisi lähetettiin sähköpostiimme.'
-          : 'Kiitos! Viestisi vastaanotettiin. Palaamme asiaan mahdollisimman pian.',
+          : 'Kiitos! Viestisi tallennettiin Respondon yhteydenottoihin.',
         emailDelivery.sent
           ? 'Tack! Ditt meddelande skickades till vår e-post.'
-          : 'Tack! Ditt meddelande har tagits emot. Vi återkommer så snart som möjligt.',
+          : 'Tack! Ditt meddelande sparades bland Respondos kontaktförfrågningar.',
         emailDelivery.sent
           ? 'Thank you! Your message was sent to our email.'
-          : 'Thank you! Your message has been received. We will get back to you as soon as possible.'
+          : 'Thank you! Your message was saved in Respondo contact requests.'
       )
     });
   } catch(e) {
