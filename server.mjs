@@ -1971,9 +1971,15 @@ const CONVERSATION_PHRASES = Object.freeze({
   ]
 });
 
+function normalizeConversationPhrase(value) {
+  return normalizeSearchText(value)
+    .replace(/\b(don|doesn|didn|isn|aren|wasn|weren|can|couldn|wouldn|shouldn|won)\s+t\b/g,'$1t')
+    .replace(/\b(i|you|we|they|he|she|it|that|what|who|how)\s+(m|re|ve|ll|d|s)\b/g,'$1$2');
+}
+
 const CONVERSATION_PHRASE_SETS = Object.fromEntries(
   Object.entries(CONVERSATION_PHRASES).map(([kind,phrases])=>[
-    kind,new Set(phrases.map((phrase)=>normalizeSearchText(phrase)))
+    kind,new Set(phrases.map((phrase)=>normalizeConversationPhrase(phrase)))
   ])
 );
 
