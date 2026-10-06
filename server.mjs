@@ -1935,12 +1935,37 @@ function parseGroundedModelOutput(raw, selected) {
 function isPrivateAddress(ip) {
   const version = net.isIP(ip);
   if (version === 4) {
-    const [a,b] = ip.split('.').map(Number);
-    return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+    const [a,b,c] = ip.split('.').map(Number);
+    return (
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      (a === 100 && b >= 64 && b <= 127) ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 0 && (c === 0 || c === 2)) ||
+      (a === 192 && b === 168) ||
+      (a === 198 && (b === 18 || b === 19)) ||
+      (a === 198 && b === 51 && c === 100) ||
+      (a === 203 && b === 0 && c === 113) ||
+      a >= 224
+    );
   }
   if (version === 6) {
     const value = ip.toLowerCase();
-    return value === '::1' || value === '::' || value.startsWith('fc') || value.startsWith('fd') || value.startsWith('fe80:');
+    return (
+      value === '::1' ||
+      value === '::' ||
+      value.startsWith('::ffff:') ||
+      value.startsWith('fc') ||
+      value.startsWith('fd') ||
+      value.startsWith('fec') ||
+      value.startsWith('fed') ||
+      value.startsWith('fee') ||
+      value.startsWith('fef') ||
+      value.startsWith('fe80:') ||
+      value.startsWith('ff')
+    );
   }
   return true;
 }
