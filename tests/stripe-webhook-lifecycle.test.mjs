@@ -33,3 +33,14 @@ test('checkout auto-login is bound to the browser that started it', () => {
   assert.match(server,/checkoutState\.userId !== userId/);
   assert.match(server,/res\.clearCookie\(SIGNUP_CHECKOUT_COOKIE\)/);
 });
+
+
+test('Stripe webhook retries are idempotent across replicas', () => {
+  assert.match(server, /CREATE TABLE IF NOT EXISTS stripe_webhook_events/);
+  assert.match(server, /pg_advisory_lock\(hashtextextended\(\$1,0\)\)/);
+  assert.match(server, /SELECT status FROM stripe_webhook_events WHERE event_id=\$1/);
+  assert.match(server, /existing\.rows\[0\]\?\.status === 'processed'/);
+  assert.match(server, /attempts=stripe_webhook_events\.attempts\+1/);
+  assert.match(server, /finishStripeWebhookEvent\(eventLock,event,'processed'\)/);
+  assert.match(server, /finishStripeWebhookEvent\(eventLock,event,'failed'/);
+});
