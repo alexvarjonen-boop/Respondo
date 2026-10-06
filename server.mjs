@@ -40,6 +40,9 @@ const SEO_INDEXABLE_PATHS = new Set([
   '/ominaisuudet',
   '/features',
   '/funktioner',
+  '/asiakaspalvelubotti',
+  '/verkkokauppa-chatbot',
+  '/ajanvaraus-chatbot',
   '/tietoturva',
   '/kayttoehdot',
   '/tietosuoja',
@@ -59,6 +62,9 @@ const SEO_META = {
   fi: {
     '/': ['AI-asiakaspalvelubotti yrityksille | Respondo AI', 'Respondo AI vastaa verkkosivusi asiakkaiden kysymyksiin 24/7 yrityksesi tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta. Kokeile 3 päivää maksutta.'],
     '/ominaisuudet': ['AI-asiakaspalvelubotin ominaisuudet | Respondo AI', 'Tutustu Respondon ominaisuuksiin: verkkosivubotti, yrityksen oma tietopohja, yhteydenotot, ajanvaraus, keskustelut ja asiakaspalvelun hallinta yhdessä paikassa.'],
+    '/asiakaspalvelubotti': ['Asiakaspalvelubotti yritykselle | Respondo AI', 'Asiakaspalvelubotti yrityksen verkkosivuille: vastaukset 24/7 omilla yritystiedoillasi, liidit, ajanvaraus ja tarvittaessa siirto ihmiselle.'],
+    '/verkkokauppa-chatbot': ['Chatbot verkkokauppaan | Respondo AI', 'Verkkokaupan chatbot auttaa tuote-, hinta-, toimitus- ja palautuskysymyksissä sekä tukee Shopify- ja WooCommerce-asiakaspalvelua.'],
+    '/ajanvaraus-chatbot': ['Ajanvaraus-chatbot yritykselle | Respondo AI', 'Ajanvaraus-chatbot vastaa asiakkaiden kysymyksiin, kerää ajanvarauspyyntöjä ja tukee kalenteripohjaisia asiakaspalveluprosesseja 24/7.'],
     '/tietoturva': ['Tietoturva ja tietosuoja | Respondo AI', 'Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
     '/kayttoehdot': ['Käyttöehdot | Respondo AI', 'Respondo AI -palvelun käyttöehdot yritysasiakkaille.'],
     '/tietosuoja': ['Tietosuojaseloste | Respondo AI', 'Tietosuojaseloste kertoo, mitä henkilötietoja Respondo käsittelee, miksi niitä käsitellään ja miten tiedot suojataan.'],
@@ -68,6 +74,9 @@ const SEO_META = {
   sv: {
     '/': ['AI-kundservicebot för företag | Respondo AI', 'Respondo AI svarar på webbplatsens kundfrågor dygnet runt med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar. Prova gratis i 3 dagar.'],
     '/ominaisuudet': ['Funktioner för AI-kundservicebot | Respondo AI', 'Se Respondos funktioner för kundservice, kunskapsbas, kontaktförfrågningar, bokningar och kunddialoger.'],
+    '/asiakaspalvelubotti': ['Kundservicebot för företag | Respondo AI', 'Kundservicebot för företagets webbplats: svar dygnet runt med företagets egna uppgifter, leads, bokning och överlämning till människa.'],
+    '/verkkokauppa-chatbot': ['Chatbot för webbutik | Respondo AI', 'En chatbot för webbutik hjälper med produkt-, pris-, leverans- och returfrågor samt stödjer Shopify- och WooCommerce-kundservice.'],
+    '/ajanvaraus-chatbot': ['Bokningschatbot för företag | Respondo AI', 'En bokningschatbot svarar på kundfrågor, samlar bokningsförfrågningar och stödjer kalenderbaserade kundserviceflöden dygnet runt.'],
     '/tietoturva': ['Datasäkerhet och integritet | Respondo AI', 'Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
     '/kayttoehdot': ['Användarvillkor | Respondo AI', 'Användarvillkor för Respondo AI:s företagstjänst.'],
     '/tietosuoja': ['Integritetspolicy | Respondo AI', 'Information om vilka personuppgifter Respondo behandlar, varför de behandlas och hur de skyddas.'],
@@ -77,6 +86,9 @@ const SEO_META = {
   en: {
     '/': ['AI Customer Service Bot for Businesses | Respondo AI', 'Respondo AI answers website customer questions 24/7 using company-approved information, captures contact requests and supports bookings. Try it free for 3 days.'],
     '/ominaisuudet': ['AI Customer Service Bot Features | Respondo AI', 'Explore Respondo features for customer service, your knowledge base, contact requests, bookings and customer conversations.'],
+    '/asiakaspalvelubotti': ['Customer Service Bot for Business | Respondo AI', 'A customer service bot for business websites: 24/7 answers from your approved company information, lead capture, bookings and human handoff.'],
+    '/verkkokauppa-chatbot': ['Ecommerce Chatbot for Online Stores | Respondo AI', 'An ecommerce chatbot helps with product, price, delivery and return questions and supports Shopify and WooCommerce customer service.'],
+    '/ajanvaraus-chatbot': ['Booking Chatbot for Business | Respondo AI', 'A booking chatbot answers customer questions, captures booking requests and supports calendar-based customer-service workflows around the clock.'],
     '/tietoturva': ['Security and Privacy | Respondo AI', 'See how Respondo protects company and customer data, sign-ins, integrations and service usage.'],
     '/kayttoehdot': ['Terms of Service | Respondo AI', 'Terms of service for Respondo AI business customers.'],
     '/tietosuoja': ['Privacy Policy | Respondo AI', 'Learn what personal data Respondo processes, why it is processed and how it is protected.'],
@@ -5108,7 +5120,7 @@ app.get('/robots.txt', (req,res) => {
 });
 
 app.get('/sitemap.xml', (req,res) => {
-  const basePaths = ['/', '/ominaisuudet', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
+  const basePaths = ['/', '/ominaisuudet', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
   const escapeXml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
   const rows = [];
   for (const basePath of basePaths) {
@@ -5156,6 +5168,9 @@ app.get('/llms.txt', (req,res) => {
     '- Features (Finnish): ' + SEO_CANONICAL_ORIGIN + '/ominaisuudet',
     '- Features (Swedish): ' + SEO_CANONICAL_ORIGIN + '/funktioner',
     '- Features (English): ' + SEO_CANONICAL_ORIGIN + '/features',
+    '- Customer service bot: ' + SEO_CANONICAL_ORIGIN + '/asiakaspalvelubotti',
+    '- Ecommerce chatbot: ' + SEO_CANONICAL_ORIGIN + '/verkkokauppa-chatbot',
+    '- Booking chatbot: ' + SEO_CANONICAL_ORIGIN + '/ajanvaraus-chatbot',
     '- Security: ' + SEO_CANONICAL_ORIGIN + '/tietoturva',
     '- Privacy: ' + SEO_CANONICAL_ORIGIN + '/tietosuoja',
     '- Terms: ' + SEO_CANONICAL_ORIGIN + '/kayttoehdot',
