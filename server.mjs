@@ -4596,6 +4596,59 @@ function stripeSubscriptionIdFromInvoice(invoice) {
   return parent?.id || '';
 }
 
+async function lockStripeWebhookEvent(event) {
+  if (!pool || !event?.id) return null;
+  const client=await pool.connect();
+  const lockKey='stripe-webhook:' + String(event.id);
+  try {
+    await client.query('SELECT pg_advisory_lock(hashtextextended($1,0))',[lockKey]);
+    const existing=await client.query(
+      'SELECT status FROM stripe_webhook_events WHERE event_id=$1 LIMIT 1',
+      [event.id],
+    );
+    if (existing.rows[0]?.status === 'processed') {
+      await client.query('SELECT pg_advisory_unlock(hashtextextended($1,0))',[lockKey]);
+      client.release();
+      return { duplicate:true, client:null, lockKey };
+    }
+    await client.query(
+      `INSERT INTO stripe_webhook_events(event_id,event_type,status,attempts,last_error,updated_at)
+       VALUES($1,$2,'processing',1,NULL,NOW())
+       ON CONFLICT(event_id) DO UPDATE
+         SET event_type=EXCLUDED.event_type,
+             status='processing',
+             attempts=stripe_webhook_events.attempts+1,
+             last_error=NULL,
+             updated_at=NOW()`,
+      [event.id,String(event.type || '')],
+    );
+    return { duplicate:false, client, lockKey };
+  } catch (e) {
+    try { await client.query('SELECT pg_advisory_unlock(hashtextextended($1,0))',[lockKey]); } catch {}
+    client.release();
+    throw e;
+  }
+}
+
+async function finishStripeWebhookEvent(lock,event,status,error='') {
+  if (!lock?.client || !event?.id) return;
+  try {
+    await lock.client.query(
+      `UPDATE stripe_webhook_events
+          SET status=$1,
+              processed_at=CASE WHEN $1='processed' THEN NOW() ELSE processed_at END,
+              last_error=$2,
+              updated_at=NOW()
+        WHERE event_id=$3`,
+      [status,String(error || '').slice(0,500) || null,event.id],
+    );
+  } finally {
+    try { await lock.client.query('SELECT pg_advisory_unlock(hashtextextended($1,0))',[lock.lockKey]); } catch {}
+    lock.client.release();
+    lock.client=null;
+  }
+}
+
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) return res.status(503).send('Stripe not configured');
 
@@ -4610,7 +4663,13 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
     return res.status(400).send('Invalid signature');
   }
 
+  let eventLock=null;
   try {
+    eventLock=await lockStripeWebhookEvent(event);
+    if (eventLock?.duplicate) {
+      return res.json({ received:true, duplicate:true });
+    }
+
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
       const target = await resolveSignupCheckoutTarget(session);
@@ -4733,8 +4792,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       await syncStripeSubscriptionState(event.data.object);
     }
 
+    await finishStripeWebhookEvent(eventLock,event,'processed');
+    eventLock=null;
     return res.json({ received: true });
   } catch (e) {
+    if (eventLock?.client) {
+      try { await finishStripeWebhookEvent(eventLock,event,'failed',e?.message || e); } catch {}
+      eventLock=null;
+    }
     console.error('Stripe webhook failed', e);
     return res.status(500).json({ error: 'Webhook failed' });
   }
@@ -9845,6 +9910,29 @@ async function ensureRuntimeSchema() {
   await q(
     "INSERT INTO app_settings(key,value) VALUES('owner_test_plan_enabled','true') ON CONFLICT(key) DO NOTHING"
   );
+  await q(`CREATE TABLE IF NOT EXISTS stripe_webhook_events (
+    event_id TEXT PRIMARY KEY,
+    event_type TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'processing',
+    attempts INTEGER NOT NULL DEFAULT 0,
+    last_error TEXT,
+    processed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q('ALTER TABLE public.stripe_webhook_events ENABLE ROW LEVEL SECURITY');
+  await q(`DO $
+    BEGIN
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
+        REVOKE ALL PRIVILEGES ON TABLE public.stripe_webhook_events FROM anon;
+      END IF;
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
+        REVOKE ALL PRIVILEGES ON TABLE public.stripe_webhook_events FROM authenticated;
+      END IF;
+    END
+  $`);
+  await q('CREATE INDEX IF NOT EXISTS idx_stripe_webhook_events_updated ON stripe_webhook_events(updated_at DESC)');
+
   await q(`CREATE TABLE IF NOT EXISTS demo_website_imports (
     id UUID PRIMARY KEY,
     website TEXT NOT NULL,
