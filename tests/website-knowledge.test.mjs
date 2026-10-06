@@ -929,6 +929,6 @@ test('retail theme chrome and detached price badges never become ecommerce answe
  ];
  const result=await generateGroundedAnswer({rows,message:'Miten palautus toimii?',lang:'fi'});
  assert.equal(result.handoff,false,JSON.stringify(result));
- assert.match(result.answer,/45 days/i);
+ assert.match(result.answer,/45\s*(?:days|päiv)/i);
  assert.doesNotMatch(result.answer,/Regular price|SELECT OPTION/i);
 });
