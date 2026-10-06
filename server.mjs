@@ -4861,6 +4861,32 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+function rejectCrossSiteAuthenticatedMutation(req,res,next) {
+  if (!/^(?:POST|PUT|PATCH|DELETE)$/i.test(req.method)) return next();
+  if (!req.path.startsWith('/api/app/')) return next();
+
+  const fetchSite=String(req.headers['sec-fetch-site'] || '').toLowerCase();
+  if (fetchSite === 'cross-site') {
+    return res.status(403).json({ error:'Pyyntö estettiin turvallisuussyistä.' });
+  }
+
+  const originValue=String(req.headers.origin || '').trim();
+  if (originValue) {
+    try {
+      const requestHost=normalizeHost(new URL(originValue).hostname);
+      const canonicalHost=normalizeHost(new URL(BASE).hostname);
+      if (requestHost && canonicalHost && requestHost !== canonicalHost) {
+        return res.status(403).json({ error:'Pyyntö estettiin turvallisuussyistä.' });
+      }
+    } catch {
+      return res.status(403).json({ error:'Pyyntö estettiin turvallisuussyistä.' });
+    }
+  }
+  return next();
+}
+
+app.use(rejectCrossSiteAuthenticatedMutation);
+
 app.use(express.json({
   limit:'1mb',
   verify(req,res,buf) {
