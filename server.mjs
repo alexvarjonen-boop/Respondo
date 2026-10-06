@@ -4051,7 +4051,22 @@ async function auth(req, res, next) {
     if (!token) return res.status(401).json({ error: 'Kirjaudu sisään.' });
     const payload = jwt.verify(token, JWT);
     if (payload.role === 'agent') {
-      const rr = await q('SELECT id,tenant_id,session_version FROM support_agents WHERE id=$1',[payload.agentId || payload.sub]);
+      const rr = await q(
+        `SELECT sa.id,sa.tenant_id,sa.session_version
+           FROM support_agents sa
+           JOIN tenants t ON t.id=sa.tenant_id
+           JOIN users u ON u.id=t.owner_user_id
+          WHERE sa.id=$1
+            AND u.status='active'
+            AND t.active=true
+            AND t.subscription_status IN ('active','trialing')
+            AND (
+              COALESCE(t.subscription_cancel_at_period_end,false)=false
+              OR t.current_period_end IS NULL
+              OR t.current_period_end > NOW()
+            )`,
+        [payload.agentId || payload.sub],
+      );
       if (!rr.rowCount || rr.rows[0].tenant_id !== payload.tenantId || Number(rr.rows[0].session_version || 0) !== Number(payload.sv || 0)) {
         return res.status(401).json({ error:'Istunto on vanhentunut.' });
       }
@@ -4113,7 +4128,10 @@ async function subscribed(req, res, next) {
     const r = await q(
       `SELECT u.status,
               t.id AS tenant_id,
-              t.subscription_status AS subscription_status
+              t.active AS tenant_active,
+              t.subscription_status AS subscription_status,
+              t.subscription_cancel_at_period_end,
+              t.current_period_end
          FROM users u
          LEFT JOIN tenants t
            ON t.id=active_tenant_for_user(u.id)
@@ -4128,13 +4146,27 @@ async function subscribed(req, res, next) {
       return res.status(402).json({ error: 'Aktiivinen tili tarvitaan.' });
     }
 
-    if (!['active', 'trialing'].includes(String(user.subscription_status || ''))) {
+    const activeTenantAllowed =
+      user.tenant_active === true &&
+      ['active', 'trialing'].includes(String(user.subscription_status || '')) &&
+      (
+        user.subscription_cancel_at_period_end !== true ||
+        !user.current_period_end ||
+        new Date(user.current_period_end).getTime() > Date.now()
+      );
+
+    if (!activeTenantAllowed) {
       const fallback = await q(
         `SELECT id
            FROM tenants
           WHERE owner_user_id=$1
             AND active=true
             AND subscription_status IN ('active','trialing')
+            AND (
+              COALESCE(subscription_cancel_at_period_end,false)=false
+              OR current_period_end IS NULL
+              OR current_period_end > NOW()
+            )
           ORDER BY created_at ASC
           LIMIT 1`,
         [req.user.sub],
@@ -5524,7 +5556,22 @@ app.get('/api/auth/checkout-success', async (req, res) => {
 app.post('/api/auth/agent-login', loginLimiter, async (req,res) => {
   try {
     const username=String(req.body.username || '').trim().toLowerCase();
-    const r=await q("SELECT sa.*,t.name AS company_name FROM support_agents sa JOIN tenants t ON t.id=sa.tenant_id JOIN users u ON u.id=t.owner_user_id WHERE lower(sa.username)=lower($1) AND t.active=true AND t.subscription_status IN ('active','trialing')",[username]);
+    const r=await q(
+      `SELECT sa.*,t.name AS company_name
+         FROM support_agents sa
+         JOIN tenants t ON t.id=sa.tenant_id
+         JOIN users u ON u.id=t.owner_user_id
+        WHERE lower(sa.username)=lower($1)
+          AND u.status='active'
+          AND t.active=true
+          AND t.subscription_status IN ('active','trialing')
+          AND (
+            COALESCE(t.subscription_cancel_at_period_end,false)=false
+            OR t.current_period_end IS NULL
+            OR t.current_period_end > NOW()
+          )`,
+      [username],
+    );
     if (!r.rowCount || !r.rows[0].password_hash || !(await bcrypt.compare(String(req.body.password||''),r.rows[0].password_hash))) {
       return res.status(401).json({ error:'Väärä käyttäjänimi tai salasana.' });
     }
