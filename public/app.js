@@ -1470,6 +1470,21 @@ function updateDocumentLanguageMeta(lang) {
       sv:['Funktioner för AI-kundservicebot | Respondo AI','Se Respondos funktioner för kundservice, kunskapsbas, kontaktförfrågningar, bokningar och kunddialoger.'],
       en:['AI Customer Service Bot Features | Respondo AI','Explore Respondo features for customer service, your knowledge base, contact requests, bookings and customer conversations.'],
     },
+    '/asiakaspalvelubotti': {
+      fi:['Asiakaspalvelubotti yritykselle | Respondo AI','Asiakaspalvelubotti yrityksen verkkosivuille: vastaukset 24/7 omilla yritystiedoillasi, liidit, ajanvaraus ja tarvittaessa siirto ihmiselle.'],
+      sv:['Kundservicebot för företag | Respondo AI','Kundservicebot för företagets webbplats: svar dygnet runt med företagets egna uppgifter, leads, bokning och överlämning till människa.'],
+      en:['Customer Service Bot for Business | Respondo AI','A customer service bot for business websites: 24/7 answers from your approved company information, lead capture, bookings and human handoff.'],
+    },
+    '/verkkokauppa-chatbot': {
+      fi:['Chatbot verkkokauppaan | Respondo AI','Verkkokaupan chatbot auttaa tuote-, hinta-, toimitus- ja palautuskysymyksissä sekä tukee Shopify- ja WooCommerce-asiakaspalvelua.'],
+      sv:['Chatbot för webbutik | Respondo AI','En chatbot för webbutik hjälper med produkt-, pris-, leverans- och returfrågor samt stödjer Shopify- och WooCommerce-kundservice.'],
+      en:['Ecommerce Chatbot for Online Stores | Respondo AI','An ecommerce chatbot helps with product, price, delivery and return questions and supports Shopify and WooCommerce customer service.'],
+    },
+    '/ajanvaraus-chatbot': {
+      fi:['Ajanvaraus-chatbot yritykselle | Respondo AI','Ajanvaraus-chatbot vastaa asiakkaiden kysymyksiin, kerää ajanvarauspyyntöjä ja tukee kalenteripohjaisia asiakaspalveluprosesseja 24/7.'],
+      sv:['Bokningschatbot för företag | Respondo AI','En bokningschatbot svarar på kundfrågor, samlar bokningsförfrågningar och stödjer kalenderbaserade kundserviceflöden dygnet runt.'],
+      en:['Booking Chatbot for Business | Respondo AI','A booking chatbot answers customer questions, captures booking requests and supports calendar-based customer-service workflows around the clock.'],
+    },
     '/tietoturva': {
       fi:['Tietoturva ja tietosuoja | Respondo AI','Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
       sv:['Datasäkerhet och integritet | Respondo AI','Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
@@ -1522,7 +1537,7 @@ function updateDocumentLanguageMeta(lang) {
     },
   };
 
-  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
+  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
   const baseMeta = metaByPath[metaPath] || metaByPath['/'];
   const pair = baseMeta[lang] || baseMeta.fi;
   const pageTitle = pair[0];
@@ -2526,6 +2541,68 @@ function geoAnswerSection() {
       </div>
     </div>
   </section>`;
+}
+
+function seoLandingPage(path) {
+  const commonCta = {
+    primary:appText('Kokeile 3 päivää maksutta','Prova gratis i 3 dagar','Try free for 3 days'),
+    secondary:appText('Kokeile bottia','Testa botten','Try the bot')
+  };
+  const pages={
+    '/asiakaspalvelubotti':{
+      kicker:appText('ASIAKASPALVELUBOTTI YRITYKSELLE','KUNDSERVICEBOT FÖR FÖRETAG','CUSTOMER SERVICE BOT FOR BUSINESS'),
+      h1:appText('Asiakaspalvelubotti, joka käyttää <em>yrityksesi omia tietoja.</em>','En kundservicebot som använder <em>företagets egna uppgifter.</em>','A customer service bot that uses <em>your company information.</em>'),
+      lead:appText('Respondo AI vastaa verkkosivusi asiakkaiden kysymyksiin ympäri vuorokauden. Vastaukset perustuvat yrityksen hyväksyttyyn tietopohjaan, ja epävarma kysymys voidaan ohjata ihmiselle.','Respondo AI svarar på kundfrågor på företagets webbplats dygnet runt. Svaren bygger på företagets godkända kunskapsbas och osäkra frågor kan lämnas över till en människa.','Respondo AI answers customer questions on your business website around the clock. Replies are grounded in your approved company knowledge, and uncertain questions can be handed to a person.'),
+      introTitle:appText('Mitä asiakaspalvelubotti tekee?','Vad gör en kundservicebot?','What does a customer service bot do?'),
+      intro:appText('Asiakaspalvelubotti hoitaa toistuvia verkkosivukysymyksiä automaattisesti: palvelut, hinnat, toimitukset, yhteystiedot, aukioloajat ja muut yrityksen itse määrittelemät tiedot. Respondo voi lisäksi kerätä yhteydenottoja, tukea ajanvarausta ja siirtää keskustelun ihmiselle.','En kundservicebot hanterar återkommande webbfrågor automatiskt: tjänster, priser, leveranser, kontaktuppgifter, öppettider och annan information som företaget själv har godkänt. Respondo kan även samla kontaktförfrågningar, stödja bokning och lämna över samtalet till en människa.','A customer service bot handles recurring website questions automatically: services, prices, delivery, contact information, opening hours and other information approved by the business. Respondo can also capture contact requests, support bookings and hand a conversation to a person.'),
+      cards:[
+        [appText('24/7-vastaukset','Svar dygnet runt','24/7 answers'),appText('Asiakas saa vastauksen myös iltaisin ja viikonloppuisin, kun tieto löytyy yrityksen tietopohjasta.','Kunden får svar även på kvällar och helger när informationen finns i företagets kunskapsbas.','Customers can get answers evenings and weekends when the information exists in the company knowledge base.')],
+        [appText('Oma tietopohja','Egen kunskapsbas','Company knowledge base'),appText('Yritys päättää itse, mitä tietoja botti saa käyttää vastauksissa.','Företaget bestämmer själv vilken information botten får använda i sina svar.','The business decides which information the bot is allowed to use in its answers.')],
+        [appText('Yhteydenotot ja liidit','Kontaktförfrågningar och leads','Contact requests and leads'),appText('Botti voi pyytää asiakkaan yhteystiedot, kun asia vaatii ihmisen jatkokäsittelyä.','Botten kan be om kundens kontaktuppgifter när ärendet behöver hanteras vidare av en människa.','The bot can request customer contact details when the matter needs human follow-up.')],
+        [appText('Ihminen voi ottaa keskustelun','En människa kan ta över','Human takeover'),appText('Keskustelu voidaan siirtää työntekijälle ilman, että asiakas aloittaa alusta.','Konversationen kan lämnas över till en medarbetare utan att kunden behöver börja om.','The conversation can be handed to an employee without making the customer start over.')]
+      ],
+      closing:appText('Respondo sopii erityisesti yrityksille, joille tulee samoja kysymyksiä verkkosivun kautta toistuvasti ja jotka haluavat vastata nopeammin ilman jatkuvaa manuaalista päivystystä.','Respondo passar särskilt företag som får samma frågor återkommande via webbplatsen och vill svara snabbare utan ständig manuell bevakning.','Respondo is particularly suited to businesses that receive recurring website questions and want faster responses without constant manual monitoring.')
+    },
+    '/verkkokauppa-chatbot':{
+      kicker:appText('CHATBOT VERKKOKAUPPAAN','CHATBOT FÖR WEBBUTIK','ECOMMERCE CHATBOT'),
+      h1:appText('Chatbot verkkokauppaan: tuotteet, hinnat ja asiakaskysymykset <em>samassa keskustelussa.</em>','Chatbot för webbutik: produkter, priser och kundfrågor <em>i samma konversation.</em>','Ecommerce chatbot: products, prices and customer questions <em>in one conversation.</em>'),
+      lead:appText('Respondo voi käyttää verkkokaupan tietoja vastatakseen tuote-, hinta-, toimitus- ja palautuskysymyksiin sekä ohjata asiakkaan oikeaan tuotteeseen tai jatkotoimenpiteeseen.','Respondo kan använda webbutikens information för att svara på produkt-, pris-, leverans- och returfrågor och guida kunden till rätt produkt eller nästa steg.','Respondo can use online-store information to answer product, price, delivery and return questions and guide the customer to the right product or next step.'),
+      introTitle:appText('Mihin verkkokaupan chatbotia käytetään?','Vad används en chatbot i webbutiken till?','What is an ecommerce chatbot used for?'),
+      intro:appText('Verkkokaupan asiakkaat kysyvät usein samoja asioita ennen ostoa: mitä tuote maksaa, mitä vaihtoehtoja on saatavilla, miten toimitus toimii ja voiko tuotteen palauttaa. Respondo kokoaa olennaiset tiedot keskusteluun ja voi tukea myös tilaus- ja yhteydenottoprosesseja.','Webbutikskunder frågar ofta samma saker före köp: vad produkten kostar, vilka alternativ som finns, hur leveransen fungerar och om varan kan returneras. Respondo samlar den relevanta informationen i samtalet och kan även stödja order- och kontaktflöden.','Online-store customers often ask the same things before buying: price, available options, delivery and returns. Respondo brings the relevant information into the conversation and can also support order and contact workflows.'),
+      cards:[
+        [appText('Tuote- ja hintakysymykset','Produkt- och prisfrågor','Product and price questions'),appText('Asiakas voi kysyä tuotteista luonnollisella kielellä ja saada olennaiset vaihtoehdot sekä hinnat.','Kunden kan fråga om produkter med naturligt språk och få relevanta alternativ och priser.','Customers can ask about products in natural language and get relevant options and prices.')],
+        [appText('Toimitukset ja palautukset','Leverans och retur','Delivery and returns'),appText('Tietopohjaan tuodut toimitus- ja palautusehdot voidaan käyttää suoraan asiakasvastauksissa.','Leverans- och returvillkor i kunskapsbasen kan användas direkt i kundsvaren.','Delivery and return policies in the knowledge base can be used directly in customer replies.')],
+        [appText('Shopify ja WooCommerce','Shopify och WooCommerce','Shopify and WooCommerce'),appText('Business-tason työnkulut tukevat verkkokauppayhteyksiä ja tilaustiedon käsittelyä palvelun asetusten mukaan.','Business-flöden stödjer e-handelsanslutningar och hantering av orderinformation enligt tjänstens inställningar.','Business workflows support ecommerce connections and order-information handling according to the service configuration.')],
+        [appText('Ostopolun tuki','Stöd i köpresan','Purchase-path support'),appText('Botti voi ohjata asiakkaan oikealle tuote- tai yhteydenottosivulle ilman pitkää hakemista.','Botten kan guida kunden till rätt produkt- eller kontaktsida utan lång sökning.','The bot can guide customers to the right product or contact page without a long search.')]
+      ],
+      closing:appText('Verkkokaupassa tavoite ei ole vain vähentää tukikysymyksiä, vaan auttaa asiakasta löytämään oikea tieto ennen kuin ostopäätös katkeaa.','I en webbutik är målet inte bara att minska supportfrågor utan att hjälpa kunden hitta rätt information innan köpresan avbryts.','For ecommerce, the goal is not only to reduce support questions but to help customers find the right information before the purchase journey breaks.')
+    },
+    '/ajanvaraus-chatbot':{
+      kicker:appText('AJANVARAUS-CHATBOT','BOKNINGSCHATBOT','BOOKING CHATBOT'),
+      h1:appText('Ajanvaraus-chatbot vastaa ensin — ja auttaa asiakkaan <em>seuraavaan vaiheeseen.</em>','En bokningschatbot svarar först och hjälper kunden <em>till nästa steg.</em>','A booking chatbot answers first and helps the customer <em>take the next step.</em>'),
+      lead:appText('Respondo voi vastata palvelua, hintaa ja saatavuutta koskeviin kysymyksiin, kerätä ajanvarauspyyntöjä ja tukea kalenteripohjaisia työnkulkuja.','Respondo kan svara på frågor om tjänster, priser och tillgänglighet, samla bokningsförfrågningar och stödja kalenderbaserade flöden.','Respondo can answer questions about services, pricing and availability, capture booking requests and support calendar-based workflows.'),
+      introTitle:appText('Miksi ajanvaraus kannattaa yhdistää asiakaspalveluun?','Varför koppla bokning till kundservice?','Why connect booking with customer service?'),
+      intro:appText('Moni ajanvaraus alkaa kysymyksellä: paljonko palvelu maksaa, kuinka kauan se kestää tai sopiiko se asiakkaalle. Kun botti vastaa ensin ja ohjaa sitten varaamiseen, asiakkaan ei tarvitse siirtyä usean eri kanavan välillä.','Många bokningar börjar med en fråga: vad tjänsten kostar, hur länge den tar eller om den passar kunden. När botten svarar först och sedan guidar till bokning behöver kunden inte byta mellan flera kanaler.','Many bookings start with a question: price, duration or whether the service is suitable. When the bot answers first and then guides the customer to booking, the customer does not have to switch between multiple channels.'),
+      cards:[
+        [appText('Palvelukysymykset ennen varausta','Tjänstefrågor före bokning','Questions before booking'),appText('Botti voi vastata yrityksen palveluista, hinnoista ja käytännöistä ennen ajanvarausta.','Botten kan svara om företagets tjänster, priser och praktiska detaljer före bokning.','The bot can answer questions about services, prices and practical details before a booking.')],
+        [appText('Ajanvarauspyynnöt','Bokningsförfrågningar','Booking requests'),appText('Asiakkaan tiedot ja toivottu aika voidaan kerätä keskustelun aikana jatkokäsittelyä varten.','Kundens uppgifter och önskad tid kan samlas i samtalet för vidare hantering.','Customer details and a preferred time can be captured in the conversation for follow-up.')],
+        [appText('Kalenterityönkulut','Kalenderflöden','Calendar workflows'),appText('Palvelu voi tukea Google Calendar -pohjaisia varaustoimintoja asiakkaan yhdistämien asetusten mukaan.','Tjänsten kan stödja Google Calendar-baserade bokningsfunktioner enligt kundens anslutna inställningar.','The service can support Google Calendar-based booking functions according to the customer’s connected settings.')],
+        [appText('Yhteydenotto tarvittaessa','Kontakt vid behov','Contact when needed'),appText('Jos varausta ei voida ratkaista automaattisesti, botti voi kerätä yhteystiedot ihmisen jatkoa varten.','Om bokningen inte kan lösas automatiskt kan botten samla kontaktuppgifter för mänsklig uppföljning.','If a booking cannot be resolved automatically, the bot can capture contact details for human follow-up.')]
+      ],
+      closing:appText('Ajanvaraus-chatbot sopii esimerkiksi palveluyrityksille, joissa asiakkaan kysymys ja varaus kuuluvat samaan ostopolkuun.','En bokningschatbot passar exempelvis tjänsteföretag där kundens fråga och bokning är delar av samma köpresa.','A booking chatbot is useful for service businesses where the customer question and booking are part of the same purchase journey.')
+    }
+  };
+  const p=pages[path] || pages['/asiakaspalvelubotti'];
+  return `<div class="seo-landing-page">${nav()}<main>
+    <section class="seo-landing-hero"><div class="container seo-landing-hero-inner">
+      <div class="section-kicker">${p.kicker}</div><h1>${p.h1}</h1><p>${p.lead}</p>
+      <div class="seo-landing-actions"><a class="btn ink" href="/tilaus?lang=${currentLang()}">${commonCta.primary}</a><a class="btn ghost" href="/assistant?lang=${currentLang()}">${commonCta.secondary}</a></div>
+    </div></section>
+    <section class="section seo-landing-copy"><div class="container"><div class="seo-landing-intro"><h2>${p.introTitle}</h2><p>${p.intro}</p></div>
+      <div class="seo-landing-grid">${p.cards.map(([title,text])=>`<article><h3>${title}</h3><p>${text}</p></article>`).join('')}</div>
+    </div></section>
+    <section class="section seo-landing-closing"><div class="container"><div class="seo-landing-closing-card"><h2>${appText('Sopiva vastaus oikeaan aikaan.','Rätt svar vid rätt tidpunkt.','The right answer at the right time.')}</h2><p>${p.closing}</p><div class="seo-answer-links"><a href="/ominaisuudet?lang=${currentLang()}">${appText('Katso kaikki ominaisuudet','Se alla funktioner','See all features')}</a><a href="/tietoturva?lang=${currentLang()}">${appText('Tietoturva','Säkerhet','Security')}</a><a href="/tietosuoja?lang=${currentLang()}">${appText('Tietosuoja','Integritet','Privacy')}</a></div></div></div></section>
+  </main>${footer()}</div>`;
 }
 
 async function home() {
@@ -4173,6 +4250,7 @@ async function route() {
 
   if (path === '/') html = await home();
   else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
+  else if (['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot'].includes(path)) html = seoLandingPage(path);
   else if (path === '/assistant') html = await dashboard({ demo:true });
   else if (path === '/tilaus') html = signup();
   else if (path === '/kirjaudu') html = login();
