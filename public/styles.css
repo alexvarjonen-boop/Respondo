@@ -8732,3 +8732,27 @@ body.workspace-modal-open{
   .nav .brand-word{display:none!important}
   .nav .navactions{max-width:calc(100vw - 48px)!important}
 }
+
+
+/* Demo/preview action links must stay visually separate from the bot answer. */
+.preview-actions{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
+  margin-top:12px;
+}
+.preview-action-link{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  max-width:100%;
+  padding:10px 14px;
+  border-radius:12px;
+  background:#111114;
+  color:#fff !important;
+  text-decoration:none !important;
+  font-weight:700;
+  line-height:1.2;
+  white-space:normal;
+}
