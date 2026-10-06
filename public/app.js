@@ -165,6 +165,7 @@ let cfg = {
   trialDays: 3,
   monthlyNet: 49.99,
   yearlyNet: 539.88,
+  passwordResetAvailable: false,
 };
 
 async function api(url, options = {}) {
@@ -2637,14 +2638,16 @@ function login() {
           <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
           <div class="field"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
           <button class="btn checkout-button" type="submit">${appText('Kirjaudu sisään','Logga in','Log in')} <span>→</span></button>
-          <button class="password-reset-link" type="button" id="showPasswordReset" aria-expanded="false" aria-controls="passwordResetRequestPanel">${appText('Unohtuiko salasana?','Glömt lösenordet?','Forgot password?')}</button>
+          ${cfg.passwordResetAvailable
+            ? `<button class="password-reset-link" type="button" id="showPasswordReset" aria-expanded="false" aria-controls="passwordResetRequestPanel">${appText('Unohtuiko salasana?','Glömt lösenordet?','Forgot password?')}</button>
           <div id="passwordResetRequestPanel" hidden>
             <div class="agent-login-fields">
               <div class="field"><label for="resetEmail">${appText('Tilisi sähköposti','Kontots e-postadress','Account email')}</label><input id="resetEmail" type="email" autocomplete="email" placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
               <button class="btn checkout-button" type="button" id="requestPasswordReset">${appText('Lähetä palautuslinkki','Skicka återställningslänk','Send reset link')} →</button>
               <div id="passwordResetRequestMsg" role="status" aria-live="polite"></div>
             </div>
-          </div>
+          </div>`
+            : `<a class="password-reset-link" href="mailto:${esc(cfg.supportEmail)}?subject=${encodeURIComponent('Salasanan palautus / Respondo AI')}">${appText('Unohtuiko salasana? Ota yhteyttä tukeen.','Glömt lösenordet? Kontakta supporten.','Forgot password? Contact support.')}</a>`}
           <div id="passwordResetConfirmPanel" hidden>
             <div class="agent-login-fields">
               <div class="field"><label for="resetNewPassword">${appText('Uusi salasana','Nytt lösenord','New password')}</label><input id="resetNewPassword" type="password" autocomplete="new-password" minlength="10" maxlength="200"></div>
