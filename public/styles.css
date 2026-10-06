@@ -8756,3 +8756,17 @@ body.workspace-modal-open{
   line-height:1.2;
   white-space:normal;
 }
+
+/* Search/GEO answer block: visible first-party product facts for people and crawlers. */
+.geo-answer-section{background:#fff;border-bottom:1px solid var(--line)}
+.geo-answer-intro{max-width:860px;margin-bottom:34px}
+.geo-answer-intro h2{margin:10px 0 14px;font-size:clamp(34px,4vw,58px);line-height:.98;letter-spacing:-.055em}
+.geo-answer-intro p{margin:0;color:#59626d;font-size:17px;line-height:1.7}
+.geo-answer-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.geo-answer-grid article{padding:22px;border:1px solid #e2e6eb;border-radius:18px;background:#fafbfc}
+.geo-answer-grid h3{margin:0 0 10px;font-size:18px;letter-spacing:-.025em}
+.geo-answer-grid p{margin:0;color:#606a75;line-height:1.65;font-size:14px}
+.geo-answer-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:15px}
+.geo-answer-links a{font-size:12px;font-weight:850;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:900px){.geo-answer-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.geo-answer-section{padding-top:56px;padding-bottom:56px}.geo-answer-grid{grid-template-columns:1fr}.geo-answer-grid article{padding:18px}.geo-answer-intro p{font-size:16px}}
