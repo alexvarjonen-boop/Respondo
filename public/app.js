@@ -2633,7 +2633,7 @@ function login() {
           <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
           <div class="field"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
           <button class="btn checkout-button" type="submit">${appText('Kirjaudu sisään','Logga in','Log in')} <span>→</span></button>
-          <button class="btn ghost" type="button" id="showPasswordReset" aria-expanded="false" aria-controls="passwordResetRequestPanel">${appText('Unohtuiko salasana?','Glömt lösenordet?','Forgot password?')}</button>
+          <button class="password-reset-link" type="button" id="showPasswordReset" aria-expanded="false" aria-controls="passwordResetRequestPanel">${appText('Unohtuiko salasana?','Glömt lösenordet?','Forgot password?')}</button>
           <div id="passwordResetRequestPanel" hidden>
             <div class="agent-login-fields">
               <div class="field"><label for="resetEmail">${appText('Tilisi sähköposti','Kontots e-postadress','Account email')}</label><input id="resetEmail" type="email" autocomplete="email" placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
