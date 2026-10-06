@@ -1160,7 +1160,7 @@ const EXTRA_UI_TEXT = new Map(Object.entries({
   "Kaikkiin kysymyksiin löytyi vastaus.": ["Alla frågor fick ett svar.", "All questions had an answer."],
   "Jos vastaan tulee kysymys, johon tietoa ei vielä ole, se ilmestyy tähän.": ["Om en fråga saknar information visas den här.", "If a question comes up that does not yet have an answer, it will appear here."],
   "Ei vielä aktiivisia keskusteluja.": ["Inga aktiva konversationer ännu.", "No active conversations yet."],
-  "Kun verkkosivulla, WhatsAppissa, Instagramissa tai puhelimessa alkaa keskustelu, se ilmestyy tähän.": ["När en konversation börjar på webbplatsen, WhatsApp, Instagram eller telefon visas den här.", "When a conversation starts on the website, WhatsApp, Instagram or by phone, it appears here."],
+  "Kun verkkosivulla alkaa keskustelu, se ilmestyy tähän.": ["När en konversation börjar på webbplatsen visas den här.", "When a conversation starts on the website, it appears here."],
   "vapaana": ["lediga", "available"],
   "aktiivista": ["aktiva", "active"],
 
@@ -1294,7 +1294,7 @@ const EXTRA_UI_TEXT = new Map(Object.entries({
   "Esim. Hinnoittelu": ["T.ex. Prissättning", "E.g. Pricing"],
   "ASIAKASPALVELIJAN HALTUUNOTTO": ["KUNDTJÄNST TAR ÖVER", "HUMAN TAKEOVER"],
   "Hyppää mukaan asiakkaan keskusteluun": ["Gå in i kundens konversation", "Join the customer's conversation"],
-  "Kun otat keskustelun haltuun, Respondo lopettaa vastaamisen siihen keskusteluun. Verkkosivuasiakas saa viestisi suoraan chattiin; WhatsApp- ja Instagram-vastaus lähetetään samaan kanavaan.": ["När du tar över konversationen slutar Respondo svara i den. Webbplatskunden får ditt meddelande direkt i chatten; svar via WhatsApp och Instagram skickas i samma kanal.", "When you take over the conversation, Respondo stops replying in that conversation. Website customers receive your message directly in the chat; WhatsApp and Instagram replies are sent through the same channel."],
+  "Kun otat keskustelun haltuun, Respondo lopettaa vastaamisen siihen keskusteluun ja verkkosivuasiakas saa viestisi suoraan chattiin.": ["När du tar över konversationen slutar Respondo svara i den och webbplatskunden får ditt meddelande direkt i chatten.", "When you take over the conversation, Respondo stops replying in that conversation and the website customer receives your message directly in the chat."],
   "aktiivista": ["aktiva", "active"],
   "VIIMEISIMMÄT KESKUSTELUT": ["SENASTE KONVERSATIONERNA", "LATEST CONVERSATIONS"],
   "Mitä asiakkaasi ovat kysyneet?": ["Vad har dina kunder frågat?", "What have your customers asked?"],
@@ -2935,14 +2935,6 @@ async function dashboard(options = {}) {
   const actionRequests = data.actionRequests || [];
   const liveThreads = data.liveThreads || [];
   const supportAgents = data.supportAgents || [];
-  const metaChannels = data.metaChannels || { graphVersion:'v24.0',verifyToken:'',webhookUrl:'',whatsappPhoneNumberId:'',whatsappConnected:false,instagramAccountId:'',instagramConnected:false,appSecretConfigured:false };
-  const voice = data.voice || {
-    accountSid:'',phoneNumber:'',handoffNumber:'',credentialsConfigured:false,enabled:false,
-    webhookUrl:'',smsWebhookUrl:'',missedCallWebhookUrl:'',missedCallSmsEnabled:false,
-    missedCallSmsMessage:'Hei! Emme juuri nyt pystyneet vastaamaan puheluusi. Voit vastata tähän viestiin, niin RESPONDO AI auttaa heti.',
-    missedCallSmsMode:'immediate',missedCallAfterStart:'17:00',missedCallAfterEnd:'08:00',
-    missedCallTimezone:'Europe/Helsinki'
-  };
   const bookingSlots = data.bookingSlots || [];
   const stripeConnect = data.stripeConnect || { connected:false,chargesEnabled:false,detailsSubmitted:false,payoutsEnabled:false };
   const googleCalendar = data.googleCalendar || { connected:false,email:'',calendarId:'primary' };
@@ -3404,7 +3396,7 @@ async function dashboard(options = {}) {
           <div>
             <small>${appText('ASIAKASPALVELIJAN HALTUUNOTTO','KUNDSERVICE TAR ÖVER','HUMAN TAKEOVER')}</small>
             <h2>${appText('Hyppää mukaan asiakkaan keskusteluun','Ta över kundens konversation','Join the customer conversation')}</h2>
-            <p>${appText('Kun otat keskustelun haltuun, Respondo lopettaa vastaamisen siihen keskusteluun. Verkkosivuasiakas saa viestisi suoraan chattiin; tuetuissa viestikanavissa vastaus lähetetään samaan kanavaan.','När du tar över en konversation slutar Respondo svara i just den konversationen. Webbplatskunden får ditt svar direkt i chatten; i stödda meddelandekanaler skickas svaret i samma kanal.','When you take over a conversation, Respondo stops replying in that conversation. Website customers receive your reply directly in chat; in supported messaging channels, the reply is sent through the same channel.')}</p>
+            <p>${appText('Kun otat keskustelun haltuun, Respondo lopettaa vastaamisen siihen keskusteluun ja verkkosivuasiakas saa viestisi suoraan chattiin.','När du tar över en konversation slutar Respondo svara i just den konversationen och webbplatskunden får ditt svar direkt i chatten.','When you take over a conversation, Respondo stops replying in that conversation and the website customer receives your reply directly in chat.')}</p>
           </div>
           <span>${liveThreads.filter((x) => x.status === 'open').length} ${appText('aktiivista','aktiva','active')}</span>
         </div>
@@ -5503,56 +5495,6 @@ async function route() {
         $('#stripeConnectMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
         button.disabled = false;
         button.innerHTML = original;
-      }
-    });
-
-    $('#metaChannelsForm')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = new FormData(e.currentTarget);
-      const button = e.currentTarget.querySelector('button[type="submit"]');
-      const original = button.innerHTML;
-      button.disabled = true;
-      button.innerHTML = appText('Tallennetaan…','Sparar…','Saving…');
-      try {
-        await api('/api/app/meta-channels', {
-          method:'POST',
-          body:JSON.stringify({
-            graphVersion:form.get('graphVersion'),
-            appSecret:form.get('appSecret'),
-            whatsappPhoneNumberId:form.get('whatsappPhoneNumberId'),
-            whatsappAccessToken:form.get('whatsappAccessToken'),
-            instagramAccountId:form.get('instagramAccountId'),
-            instagramAccessToken:form.get('instagramAccessToken'),
-          }),
-        });
-        $('#metaChannelsMsg').innerHTML = '<div class="notice success">' + appText('Meta-kanavat tallennettu ✓ Lisää yllä näkyvä Webhook URL + Verify Token Meta Developer -asetuksiin.','Meta-kanaler sparade ✓ Lägg till Webhook URL och Verify Token som visas ovan i Meta Developer-inställningarna.','Meta channels saved ✓ Add the Webhook URL and Verify Token shown above in Meta Developer settings.') + '</div>';
-        button.innerHTML = appText('Tallennettu ✓','Sparat ✓','Saved ✓');
-        setTimeout(() => (button.innerHTML = original), 1500);
-      } catch (err) {
-        $('#metaChannelsMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-        button.innerHTML = original;
-      } finally {
-        button.disabled = false;
-      }
-    });
-
-    $('#testMetaChannels')?.addEventListener('click', async (e) => {
-      const button = e.currentTarget;
-      const original = button.textContent;
-      button.disabled = true;
-      button.textContent = appText('Testataan…','Testar…','Testing…');
-      try {
-        const result = await api('/api/app/meta-channels/test', { method:'POST', body:'{}' });
-        const parts = [];
-        if (result.results?.whatsapp) parts.push(result.results.whatsapp.ok ? 'WhatsApp ✓' : 'WhatsApp ✕');
-        if (result.results?.instagram) parts.push(result.results.instagram.ok ? 'Instagram ✓' : 'Instagram ✕');
-        $('#metaChannelsMsg').innerHTML = '<div class="notice ' + (result.ok ? 'success' : 'error') + '">' + esc(parts.join(' · ')) + '</div>';
-        button.textContent = result.ok ? appText('Toimii ✓','Fungerar ✓','Working ✓') : appText('Tarkista tiedot','Kontrollera uppgifterna','Check details');
-      } catch (err) {
-        $('#metaChannelsMsg').innerHTML = '<div class="notice error">' + esc(err.message) + '</div>';
-        button.textContent = original;
-      } finally {
-        button.disabled = false;
       }
     });
 
