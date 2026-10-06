@@ -4423,7 +4423,12 @@ async function finishOauth(req, res, code, state) {
         return res.redirect('/app?section=automation&calendar=auth_error');
       }
 
-      const tr = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[statePayload.userId]);
+      const tenantId=String(statePayload.tenantId || '');
+      if (!tenantId) return res.redirect('/app?section=automation&calendar=missing_tenant');
+      const tr = await q(
+        'SELECT * FROM tenants WHERE owner_user_id=$1 AND id=$2 AND active=true AND subscription_status IN (\'active\',\'trialing\')',
+        [statePayload.userId,tenantId],
+      );
       if (!tr.rowCount) return res.redirect('/app?section=automation&calendar=missing_tenant');
       const tenant = tr.rows[0];
 
@@ -5034,12 +5039,19 @@ app.get('/api/app/google-calendar/start', auth, ownerOnly, subscribed, async (re
   const cfg = oauthConfig('google');
   if (!cfg.configured) return res.redirect('/app?section=automation&calendar=not_configured');
 
+  const activeTenant=await q(
+    'SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1) LIMIT 1',
+    [req.user.sub],
+  );
+  if (!activeTenant.rowCount) return res.redirect('/app?section=automation&calendar=missing_tenant');
+
   const nonce = crypto.randomBytes(20).toString('hex');
   const state = jwt.sign({
     provider:'google',
     flow:'calendar',
     nonce,
     userId:req.user.sub,
+    tenantId:activeTenant.rows[0].id,
   },JWT,{ expiresIn:'10m' });
   setOauthState(res,nonce,'google');
 
