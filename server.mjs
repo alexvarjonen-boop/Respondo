@@ -1376,6 +1376,36 @@ function productMatchScore(product, tokens) {
   }
   return score;
 }
+function requestedProductFamily(value) {
+  const q=normalizeSearchText(value);
+  if (/\bputter\w*\b/.test(q)) return 'putter';
+  if (/\b(?:headcover|head cover|mailansuoja\w*)\b/.test(q)) return 'headcover';
+  if (/\bgrip\w*\b/.test(q)) return 'grip';
+  if (/\b(?:towel\w*|pyyhe\w*|handduk\w*)\b/.test(q)) return 'towel';
+  if (/\b(?:golfball\w*|golf ball\w*|golfpallo\w*)\b/.test(q)) return 'golfball';
+  if (/\b(?:golf bag\w*|golfbag\w*|golfb[aä]g\w*)\b/.test(q)) return 'golfbag';
+  if (/\b(?:gift card\w*|lahjakort\w*)\b/.test(q)) return 'giftcard';
+  return '';
+}
+
+function productMatchesFamily(product,family) {
+  if(!family) return true;
+  const name=normalizeSearchText(product?.name||'');
+  const type=normalizeSearchText(product?.productType||'');
+  const text=(name+' '+type).trim();
+  if(family==='putter'){
+    if(/\b(?:gift card|lahjakort|headcover|head cover|mailansuoja|grip|towel|pyyhe|cover)\b/.test(text)) return false;
+    return /\bputter\w*\b/.test(type) || /\bputter\b/.test(name);
+  }
+  if(family==='headcover') return /\b(?:headcover|head cover|mailansuoja\w*)\b/.test(text);
+  if(family==='grip') return /\bgrip\w*\b/.test(text);
+  if(family==='towel') return /\b(?:towel\w*|pyyhe\w*|handduk\w*)\b/.test(text);
+  if(family==='golfball') return /\b(?:golfball\w*|golf ball\w*|golfpallo\w*)\b/.test(text);
+  if(family==='golfbag') return /\b(?:golf bag\w*|golfbag\w*|golfb[aä]g\w*)\b/.test(text);
+  if(family==='giftcard') return /\b(?:gift card\w*|lahjakort\w*)\b/.test(text);
+  return true;
+}
+
 function productPopularityEvidence(product) {
   const text=normalizeSearchText([
     product.name,product.productType,product.brand,product.description,
@@ -1464,12 +1494,16 @@ function directProductAnswer(rows,message,lang='fi') {
   const tokens=productQueryTokens(message);
   const ranked=products.map((product)=>({...product,_match:productMatchScore(product,tokens)}))
     .sort((a,b)=>b._match-a._match || (Number(a.price??Infinity)-Number(b.price??Infinity)));
-  // If at least one product matches the requested product name/type/brand,
-  // discard products that only mention the word incidentally in their description.
-  // Example: a towel description saying "for your new putter" is not a putter.
+  // Product-family words such as "putterit" must match the actual product type/name,
+  // not a brand name ("JAG Putters") or an accessory description. This prevents
+  // gift cards, grips and headcovers from being returned as putters.
+  const requestedFamily=requestedProductFamily(message);
+  const familyMatches=requestedFamily ? ranked.filter((product)=>productMatchesFamily(product,requestedFamily)) : [];
   const strongMatches=tokens.length ? ranked.filter((product)=>product._match>=6) : ranked;
   const weakMatches=tokens.length ? ranked.filter((product)=>product._match>0) : ranked;
-  const candidates=strongMatches.length?strongMatches:(weakMatches.length?weakMatches:ranked);
+  const candidates=requestedFamily
+    ? familyMatches
+    : (strongMatches.length?strongMatches:(weakMatches.length?weakMatches:ranked));
   const cheapest=/\b(?:halvin|edullisin|cheapest|lowest price|billigast|billigaste)\b/.test(q);
   const expensive=/\b(?:kallein|most expensive|highest price|dyrast|dyraste)\b/.test(q);
   const popularAsk=/\b(?:suosituin|suosituimmat|myydyin|myydyimmat|myydyimmät|most popular|best seller|bestseller|best-selling|top seller|populärast|bastsaljare|bästsäljare|mest sålda|mest salda)\b/.test(q);
@@ -1586,6 +1620,34 @@ function directProductAnswer(rows,message,lang='fi') {
         :bestCandidate.name+' löytyy koossa '+size+'.';
       return {answer,handoff:false,confidence:0.98,intent:'Tuotteet',sourceIds:[bestCandidate.row?.id].filter(Boolean),selected:[bestCandidate.row].filter(Boolean)};
     }
+  }
+
+  if(priceAsk && requestedFamily && candidates.length){
+    const priced=candidates.filter((product)=>Number.isFinite(product.price))
+      .sort((a,b)=>Number(a.price)-Number(b.price))
+      .slice(0,6);
+    if(priced.length){
+      if(priced.length===1){
+        const product=priced[0];
+        const price=productPriceText(product,lang);
+        const answer=lang==='en'?product.name+' costs '+price+'.'
+          :lang==='sv'?product.name+' kostar '+price+'.'
+          :product.name+' maksaa '+price+'.';
+        return {answer,handoff:false,confidence:0.99,intent:'Tuotteet',sourceIds:[product.row?.id].filter(Boolean),selected:[product.row].filter(Boolean)};
+      }
+      const lines=priced.map((product)=>'• '+product.name+' – '+productPriceText(product,lang)).join('\n');
+      const answer=lang==='en'
+        ? 'Matching product prices:\n'+lines
+        : lang==='sv'
+          ? 'Priser för matchande produkter:\n'+lines
+          : 'Sopivien tuotteiden hinnat:\n'+lines;
+      return {
+        answer,handoff:false,confidence:0.99,intent:'Tuotteet',
+        sourceIds:priced.map((product)=>product.row?.id).filter(Boolean),
+        selected:priced.slice(0,4).map((product)=>product.row).filter(Boolean)
+      };
+    }
+    return null;
   }
 
   if(listAsk){
