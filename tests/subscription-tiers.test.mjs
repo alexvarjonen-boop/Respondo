@@ -60,3 +60,11 @@ test('structured data publishes all six live plan prices',()=>{
     assert.match(html,new RegExp('"price":"'+price.replace('.','\\.')+'"'));
   }
 });
+
+test('workspace list labels tier and yearly billing correctly',()=>{
+  assert.match(app,/planCode\.startsWith\('basic_'\)[\s\S]*'Basic'/);
+  assert.match(app,/planCode\.startsWith\('advanced_'\)[\s\S]*'Advanced'/);
+  assert.match(app,/planCode\.startsWith\('business_'\)[\s\S]*'Business'/);
+  assert.match(app,/planCode==='yearly' \|\| planCode\.endsWith\('_yearly'\)/);
+});
+
