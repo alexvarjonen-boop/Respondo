@@ -2171,7 +2171,6 @@ function pricingSection() {
           appText('AI-chat omalle verkkosivulle','AI-chatt på din webbplats','AI chat on your website'),
           appText('Personoi botti yrityksesi brändiin','Anpassa botten till företagets varumärke','Personalize the bot to your company brand'),
           appText('Oma kysymys–vastaus-tietopohja','Egen fråge- och svarskunskapsbas','Q&A knowledge base'),
-          appText('Hae tiedot automaattisesti verkkosivulta','Hämta information automatiskt från webbplatsen','Automatic website knowledge import'),
           appText('Ajanvaraukset','Bokningar','Appointments and booking'),
           appText('Yhteydenottojen ja liidien keräys','Insamling av kontakter och leads','Contact and lead capture'),
           appText('Keskusteluhistoria ja puuttuvat vastaukset','Konversationshistorik och saknade svar','Conversation history and missing answers')
@@ -2179,10 +2178,8 @@ function pricingSection() {
         ${card('Advanced',64.99,59.99,719.88,10,[
           appText('Kaikki Basic-ominaisuudet','Alla Basic-funktioner','Everything in Basic'),
           appText('Hae tiedot automaattisesti verkkosivulta','Hämta information automatiskt från webbplatsen','Automatic website knowledge import'),
-          appText('10 asiakaspalvelijapaikkaa','10 kundserviceplatser','10 support-agent seats'),
           appText('Google Calendar -synkronointi','Google Calendar-synkronisering','Google Calendar sync'),
           appText('Useamman asiakaspalvelijan tiimikäyttö','Teamstöd för flera kundservicemedarbetare','Multi-agent team use'),
-          appText('Laajempi keskustelu- ja asiakasanalytiikka','Utökad konversations- och kundanalys','Expanded conversation and customer analytics')
         ],true)}
         ${card('Business',79.99,74.99,899.88,20,[
           appText('Kaikki Respondon nykyiset ominaisuudet','Alla nuvarande Respondo-funktioner','All current Respondo features'),
@@ -2961,7 +2958,7 @@ async function dashboard(options = {}) {
 
   const t = data.tenant;
   const s = data.stats;
-  const planAccess = data.planAccess || { code:'basic_monthly',tier:'basic',agentSeats:2,websiteImport:true,googleCalendar:false,allCurrentFeatures:false };
+  const planAccess = data.planAccess || { code:'basic_monthly',tier:'basic',agentSeats:2,websiteImport:false,googleCalendar:false,allCurrentFeatures:false };
   const workspaces = isDemo ? [] : (Array.isArray(data.workspaces) ? data.workspaces : []);
   const activeWorkspaces = workspaces.filter((w) => w.active && ['active','trialing'].includes(String(w.subscription_status || '')));
   const referral = data.referral || null;
@@ -3292,7 +3289,7 @@ async function dashboard(options = {}) {
                 <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:6px"><span id="websiteImportProgressLabel">${appText('Valmistellaan hakua…','Förbereder sökning…','Preparing scan…')}</span><b id="websiteImportProgressPercent">0%</b></div>
                 <div style="height:9px;border-radius:999px;background:rgba(127,127,127,.18);overflow:hidden"><div id="websiteImportProgressBar" style="height:100%;width:0%;background:currentColor;border-radius:999px;transition:width .45s ease"></div></div>
               </div>
-              <small class="field-hint">Respondo etsii sivultasi palvelut ja yhteystiedot valmiiksi. Sinä tarkistat ne ennen tallennusta.</small>
+              ${planAccess.websiteImport ? `<small class="field-hint">${appText('Respondo etsii sivultasi palvelut ja yhteystiedot valmiiksi. Sinä tarkistat ne ennen tallennusta.','Respondo hittar tjänster och kontaktuppgifter på din webbplats. Du granskar dem innan de sparas.','Respondo finds services and contact details on your website. You review them before saving.')}</small>` : ''}
             </div>
             <div class="field">
               <label>Linkki tarjouspyyntöön</label>
