@@ -8803,6 +8803,16 @@ async function seedOwnerRespondoKnowledge() {
     );
 
     await client.query(
+      `DELETE FROM knowledge k
+        USING tenants t
+        WHERE k.tenant_id=t.id
+          AND k.source_type='respondo_seed'
+          AND t.owner_user_id=$1
+          AND t.id<>$2`,
+      [owner.rows[0].user_id, tenantId],
+    );
+
+    await client.query(
       "DELETE FROM knowledge WHERE tenant_id=$1 AND source_type='respondo_seed'",
       [tenantId],
     );
