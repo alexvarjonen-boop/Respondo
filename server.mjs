@@ -4850,6 +4850,52 @@ app.use(helmet({
   crossOriginResourcePolicy:{ policy:'cross-origin' },
 }));
 
+// Keep browser sessions and OAuth state on one canonical host. API and widget
+// traffic must remain callable without a redirect.
+if (process.env.NODE_ENV === 'production') {
+  app.use((req,res,next)=>{
+    if (!['GET','HEAD'].includes(req.method)) return next();
+    if (req.path.startsWith('/api/')) return next();
+    const accept=String(req.get('accept') || '');
+    if (!accept.includes('text/html')) return next();
+
+    let canonicalHost='';
+    try { canonicalHost=new URL(BASE).hostname.toLowerCase(); } catch {}
+    const requestHost=String(req.get('x-forwarded-host') || req.get('host') || '')
+      .split(',')[0].trim().replace(/:\d+$/,'').toLowerCase();
+    if (canonicalHost && requestHost && requestHost !== canonicalHost) {
+      return res.redirect(308, BASE + req.originalUrl);
+    }
+    return next();
+  });
+}
+
+function rejectCrossSiteAuthenticatedMutation(req,res,next) {
+  if (!/^(?:POST|PUT|PATCH|DELETE)$/i.test(req.method)) return next();
+  if (!req.path.startsWith('/api/app/')) return next();
+
+  const fetchSite=String(req.headers['sec-fetch-site'] || '').toLowerCase();
+  if (fetchSite === 'cross-site') {
+    return res.status(403).json({ error:'Pyyntö estettiin turvallisuussyistä.' });
+  }
+
+  const originValue=String(req.headers.origin || '').trim();
+  if (originValue) {
+    try {
+      const requestHost=normalizeHost(new URL(originValue).hostname);
+      const canonicalHost=normalizeHost(new URL(BASE).hostname);
+      if (requestHost && canonicalHost && requestHost !== canonicalHost) {
+        return res.status(403).json({ error:'Pyyntö estettiin turvallisuussyistä.' });
+      }
+    } catch {
+      return res.status(403).json({ error:'Pyyntö estettiin turvallisuussyistä.' });
+    }
+  }
+  return next();
+}
+
+app.use(rejectCrossSiteAuthenticatedMutation);
+
 app.use(express.json({
   limit:'1mb',
   verify(req,res,buf) {
