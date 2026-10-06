@@ -9708,6 +9708,7 @@ async function ensureRuntimeSchema() {
     used_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
+  await q('ALTER TABLE public.password_reset_tokens ENABLE ROW LEVEL SECURITY');
   await q('CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user_id,created_at DESC)');
   await q('CREATE INDEX IF NOT EXISTS idx_password_reset_expiry ON password_reset_tokens(expires_at)');
 
