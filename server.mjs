@@ -4033,16 +4033,19 @@ async function syncStripeSubscriptionState(subscription) {
     : null;
   const cancelAtPeriodEnd = Boolean(subscription.cancel_at_period_end);
   const status = String(subscription.status || '');
+  const priceId = String(subscription.items?.data?.[0]?.price?.id || '');
+  const plan = planFromStripePriceId(priceId);
 
   await q(
     `UPDATE tenants
         SET subscription_status=$1,
             current_period_end=$2,
             subscription_cancel_at_period_end=$3,
+            subscription_plan=CASE WHEN $4<>'' THEN $4 ELSE subscription_plan END,
             active=CASE WHEN $1 IN ('active','trialing') THEN TRUE ELSE FALSE END,
             updated_at=NOW()
-      WHERE stripe_subscription_id=$4`,
-    [status, periodEnd, cancelAtPeriodEnd, subscription.id],
+      WHERE stripe_subscription_id=$5`,
+    [status, periodEnd, cancelAtPeriodEnd, plan, subscription.id],
   );
   await q(
     `UPDATE users
@@ -4050,9 +4053,10 @@ async function syncStripeSubscriptionState(subscription) {
             status=CASE WHEN $1 IN ('active','trialing') THEN 'active' ELSE status END,
             current_period_end=$2,
             subscription_cancel_at_period_end=$3,
+            subscription_plan=CASE WHEN $4<>'' THEN $4 ELSE subscription_plan END,
             updated_at=NOW()
-      WHERE stripe_subscription_id=$4`,
-    [status, periodEnd, cancelAtPeriodEnd, subscription.id],
+      WHERE stripe_subscription_id=$5`,
+    [status, periodEnd, cancelAtPeriodEnd, plan, subscription.id],
   );
 }
 
@@ -8615,7 +8619,7 @@ app.post('/api/public/:slug/action-event', publicChatLimiter, async (req, res) =
   }
 });
 
-app.post('/api/billing/portal', auth, async (req, res) => {
+app.post('/api/billing/portal', auth, ownerOnly, async (req, res) => {
   try {
     if (!stripe) return res.status(503).json({ error: 'Stripe ei ole vielä kytketty.' });
     const r = await q(
@@ -8644,7 +8648,7 @@ app.post('/api/billing/portal', auth, async (req, res) => {
   }
 });
 
-app.post('/api/billing/cancel', auth, async (req, res) => {
+app.post('/api/billing/cancel', auth, ownerOnly, async (req, res) => {
   try {
     if (!stripe) return res.status(503).json({ error: 'Stripe ei ole vielä kytketty.' });
     const r = await q(
