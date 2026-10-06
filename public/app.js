@@ -2171,6 +2171,7 @@ function pricingSection() {
           appText('AI-chat omalle verkkosivulle','AI-chatt på din webbplats','AI chat on your website'),
           appText('Personoi botti yrityksesi brändiin','Anpassa botten till företagets varumärke','Personalize the bot to your company brand'),
           appText('Oma kysymys–vastaus-tietopohja','Egen fråge- och svarskunskapsbas','Q&A knowledge base'),
+          appText('Hae tiedot automaattisesti verkkosivulta','Hämta information automatiskt från webbplatsen','Automatic website knowledge import'),
           appText('Ajanvaraukset','Bokningar','Appointments and booking'),
           appText('Yhteydenottojen ja liidien keräys','Insamling av kontakter och leads','Contact and lead capture'),
           appText('Keskusteluhistoria ja puuttuvat vastaukset','Konversationshistorik och saknade svar','Conversation history and missing answers')
@@ -2960,7 +2961,7 @@ async function dashboard(options = {}) {
 
   const t = data.tenant;
   const s = data.stats;
-  const planAccess = data.planAccess || { code:'basic_monthly',tier:'basic',agentSeats:2,websiteImport:false,googleCalendar:false,allCurrentFeatures:false };
+  const planAccess = data.planAccess || { code:'basic_monthly',tier:'basic',agentSeats:2,websiteImport:true,googleCalendar:false,allCurrentFeatures:false };
   const workspaces = isDemo ? [] : (Array.isArray(data.workspaces) ? data.workspaces : []);
   const activeWorkspaces = workspaces.filter((w) => w.active && ['active','trialing'].includes(String(w.subscription_status || '')));
   const referral = data.referral || null;
