@@ -689,7 +689,11 @@ export function essentialWebsiteCandidates(bundle) {
       // second detached "price" fact that has lost the product name/link.
       if (kind === 'pricing' && docProducts.length) continue;
       const detachedNumericPrice=/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|kr|\$|£))?$/i.test(clean(block.text));
-      if (kind === 'pricing' && /^\s*[€$£]?\s*0+(?:[.,]0+)?(?:\s*(?:€|eur|usd|sek|kr|\$|£))?\s*$/i.test(clean(block.text))) continue;
+      const priceText=clean(block.text);
+      const zeroOnlyPrice=kind==='pricing' &&
+        /[€$£]|\b(?:eur|usd|sek|kr)\b/i.test(priceText) &&
+        !/[1-9]/.test(priceText.replace(/(?:eur|usd|sek|kr)/gi,''));
+      if (zeroOnlyPrice) continue;
       if (kind === 'pricing' && hasCatalogProducts && detachedNumericPrice) continue;
       let title = labels[kind];
       if (kind === 'delivery') {
