@@ -544,8 +544,26 @@ export function businessFactKind(text, context = '') {
     customerQuestion.test(c) ||
     /lahjakort|gift\s*card|alennuskood|discount\s*code|kampanjakood|promo\s*code|ennakkotila|pre-?order|tilaaminen|ordering|order\s+info|personointi|personalis|customi[sz]|räätälö|raatalo|alkuperä|alkupera|origin|turvallisuus|safety|vastuullisuus|sustainab|faq|usein kysytyt|asiakasohje|customer info/.test(c)
   )) return 'faq';
-  // Require real prose or a concrete service list, not an isolated marketing heading.
-  if ((service.test(n) || service.test(c)) && t.length >= 18 && (/[.!;]/.test(t) || /[,•]/.test(t) || /tarjoamme|teemme|we offer|we provide|vi erbjuder/.test(n))) return 'services';
+  // Service facts must describe an actual offering, not merely mention
+  // "service" inside About/brand copy. Concrete service headings and explicit
+  // offer/provide verbs are acceptable; generic marketing prose is not.
+  const concreteServiceContext=isConcreteServiceLabel(context);
+  const serviceSectionContext=/^(?:palvelut?|services?|tjanster|tjänster|palvelut ja hinnat|services and prices|tjanster och priser|tjänster och priser)$/i.test(c);
+  const explicitServiceOffering=/\b(?:tarjoamme|tarjoaa|teemme|palvelemme|saat meilta|saat meiltä|we offer|we provide|we perform|we do|offers|provides|vi erbjuder|erbjuder|vi utfor|vi utför)\b/.test(n);
+  const concreteServiceBody=service.test(n) && (
+    /\b(?:hiustenleikka|parran|parturi|kampaamo|pesu|siivou|puhdist|maala|raivau|huolto|asennu|korjau|kuljet|muutto|poisvienti|purku|kartoit|saneeraus|remont|hiero|fysioter|hoito|koulutus|konsult|suunnittel|valokuva|catering)\w*/.test(n)
+    || /\b(?:haircut|beard|barber|cleaning|washing|painting|maintenance|installation|repair|moving|transport|renovation|massage|physiotherapy|consulting|design|photography|catering)\w*/.test(n)
+    || /\b(?:harklipp|hårklipp|skagg|skägg|frisor|frisör|stadning|städning|tvatt|tvätt|rengor|rengör|malning|målning|underhall|underhåll|installation|reparation|flytt|transport|renovering|massage|fysioterapi|konsult|design|fotografering|catering)\w*/.test(n)
+  );
+  if (
+    t.length >= 3 &&
+    concreteServiceBody &&
+    (
+      explicitServiceOffering ||
+      concreteServiceContext ||
+      serviceSectionContext
+    )
+  ) return 'services';
   return '';
 }
 
