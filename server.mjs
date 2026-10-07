@@ -1671,7 +1671,7 @@ function queryTopic(query) {
   if(/materiaali|materiaalista|mista tehty|mistä tehty|made of|made from|material|materials/.test(q)) return 'materials';
   if(/laatu|laadukas|quality|valmistettu|valmistus|made in|where.*made|manufactur|handmade|käsinteht|kasinteht|cnc|precision/.test(q)) return 'quality';
   if(/hoito-oh|miten.*(?:puhdist|pese|huolla)|care instruction|how.*(?:clean|wash|care)|maintenance instruction|pesuoh/.test(q)) return 'care';
-  if(/kokotauluk|koko-opas|mita koko|mitä koko|koot\b|size guide|what size|sizes\b|sizing|mitat|dimension|storlek/.test(q)) return 'sizing';
+  if(/kokotauluk|koko-opas|mita koko|mitä koko|\b(?:koissa|koossa|kokovaihtoeht\w*)\b|koot\b|size guide|what size|sizes\b|sizing|mitat|dimension|storlek/.test(q)) return 'sizing';
   if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(q)) return 'contact';
   if(/takuu|reklamaatio|warranty|guarantee|garanti|reklamation/.test(q)) return 'warranty';
   if(/ajanvaraus|varaa aika|varata ajan|ajan vara|booking|appointment|boka|bokning|tidsbokning/.test(q)) return 'booking';
@@ -1717,7 +1717,7 @@ function productColorAliases(value) {
 }
 
 function productQueryTokens(message) {
-  const ignored=/^(?:mika|mikä|mitka|mitkä|mita|mitä|on|ovat|teidan|teidän|teilla|teillä|meidan|meidän|halvin|edullisin|kallein|paras|suosituin|suosituimmat|myydyin|myydyimmat|popular|popularest|bestseller|bestsellers|best|selling|price|prices|cheapest|cheaper|lowest|most|expensive|what|which|your|you|have|do|cost|how|much|billigast|billigaste|dyrast|dyraste|popularast|populärast|bastsaljare|bästsäljare|vilken|vilka|har|ni|kostar|tuote|tuotteet|product|products|vari|väri|varit|värit|color|colors|colour|colours|farg|färg|koko|koot|size|sizes|storlek|materiaali|materiaalit|material|materials|mitat|dimensions|dimension|paino|weight)$/;
+  const ignored=/^(?:koissa|koossa|kokovaihtoeht\w*|mika|mikä|mitka|mitkä|mita|mitä|on|ovat|teidan|teidän|teilla|teillä|meidan|meidän|halvin|edullisin|kallein|paras|suosituin|suosituimmat|myydyin|myydyimmat|popular|popularest|bestseller|bestsellers|best|selling|price|prices|cheapest|cheaper|lowest|most|expensive|what|which|your|you|have|do|cost|how|much|billigast|billigaste|dyrast|dyraste|popularast|populärast|bastsaljare|bästsäljare|vilken|vilka|har|ni|kostar|tuote|tuotteet|product|products|vari|väri|varit|värit|color|colors|colour|colours|farg|färg|koko|koot|size|sizes|storlek|materiaali|materiaalit|material|materials|mitat|dimensions|dimension|paino|weight)$/;
   const normalized=String(message||'').replace(/[-_/]+/g,' ');
   const tokens=searchTokens(normalized).map(productStem).filter((word)=>word.length>=3&&!ignored.test(word));
   for(const alias of productColorAliases(normalized)) tokens.push(alias);
@@ -2030,7 +2030,7 @@ function directProductAnswer(rows,message,lang='fi',history=[]) {
   const priceAsk=/\b(?:hinta\w*|maksaa|maksavat|price\w*|cost\w*|pris\w*|kostar)\b/.test(q) || /\bhow\s+much\b/.test(q) || /\bhur\s+mycket\b/.test(q);
   const stockAsk=/\b(?:varastossa|saatavilla|saatavuus|in stock|available|lager|i lager)\b/.test(q);
   const colorAsk=/\b(?:var\w*|vär\w*|colo\w*|farg\w*|färg\w*)\b/.test(q);
-  const sizeAsk=/\b(?:koko\w*|koo(?:ssa|issa)|size\w*|sizing|storlek\w*)\b/.test(q);
+  const sizeAsk=/\b(?:koko\w*|koissa|koossa|size\w*|sizing|storlek\w*)\b/.test(q);
   const materialAsk=/\b(?:materia\w*|material\w*|made of|made from)\b/.test(q);
   const specAsk=/\b(?:mitta\w*|mitat|dimension\w*|paino\w*|weight\w*|pituu\w*|length\w*|levey\w*|width\w*|korkeu\w*|height\w*)\b/.test(q);
   const generalSellAsk=broadProductQuestion(message);
