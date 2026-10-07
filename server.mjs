@@ -511,12 +511,12 @@ async function seedAndLoadIntentUtterances() {
     for (let offset = 0; offset < entries.length; offset += batchSize) {
       const batch = entries.slice(offset, offset + batchSize);
       await q(
-        \`INSERT INTO intent_utterances(language,intent,phrase,normalized,source,active)
+        `INSERT INTO intent_utterances(language,intent,phrase,normalized,source,active)
          SELECT x.language,x.intent,x.phrase,x.normalized,'generated',TRUE
            FROM UNNEST($1::text[],$2::text[],$3::text[],$4::text[])
                 AS x(language,intent,phrase,normalized)
          ON CONFLICT (language,normalized)
-         DO UPDATE SET intent=EXCLUDED.intent,phrase=EXCLUDED.phrase,source='generated',active=TRUE\`,
+         DO UPDATE SET intent=EXCLUDED.intent,phrase=EXCLUDED.phrase,source='generated',active=TRUE`,
         [
           batch.map((x)=>x.language),
           batch.map((x)=>x.intent),
@@ -542,7 +542,7 @@ async function seedAndLoadIntentUtterances() {
     }
   }
   intentUtteranceCache = next;
-  console.log(\`Intent core loaded: \${intentUtteranceCache.size}\`);
+  console.log(`Intent core loaded: ${intentUtteranceCache.size}`);
 }
 
 async function seedIntentPhraseTemplates() {
@@ -570,23 +570,23 @@ async function seedIntentPhraseTemplates() {
     }
 
     await q(
-      \`INSERT INTO intent_phrase_templates(language,template_type,phrase,normalized,active)
+      `INSERT INTO intent_phrase_templates(language,template_type,phrase,normalized,active)
        SELECT $1,x.template_type,x.phrase,x.normalized,TRUE
          FROM UNNEST($2::text[],$3::text[],$4::text[])
               AS x(template_type,phrase,normalized)
        ON CONFLICT(language,template_type,normalized)
-       DO UPDATE SET phrase=EXCLUDED.phrase,active=TRUE\`,
+       DO UPDATE SET phrase=EXCLUDED.phrase,active=TRUE`,
       [language,types,phrases,normalized],
     );
 
     const coreCount=[...intentUtteranceCache.keys()].filter((key)=>key.startsWith(language+'|')).length;
     const capacity=coreCount*(wrappers.prefixes.length+1)*(wrappers.suffixes.length+1);
     if(capacity<INTENT_VIRTUAL_TARGET_PER_LANGUAGE){
-      throw new Error(\`Virtual intent coverage for \${language} is only \${capacity}\`);
+      throw new Error(`Virtual intent coverage for ${language} is only ${capacity}`);
     }
 
     await q(
-      \`INSERT INTO intent_lexicon_stats(language,core_count,prefix_count,suffix_count,virtual_capacity,target,updated_at)
+      `INSERT INTO intent_lexicon_stats(language,core_count,prefix_count,suffix_count,virtual_capacity,target,updated_at)
        VALUES($1,$2,$3,$4,$5,$6,NOW())
        ON CONFLICT(language) DO UPDATE SET
          core_count=EXCLUDED.core_count,
@@ -594,10 +594,10 @@ async function seedIntentPhraseTemplates() {
          suffix_count=EXCLUDED.suffix_count,
          virtual_capacity=EXCLUDED.virtual_capacity,
          target=EXCLUDED.target,
-         updated_at=NOW()\`,
+         updated_at=NOW()`,
       [language,coreCount,wrappers.prefixes.length,wrappers.suffixes.length,capacity,INTENT_VIRTUAL_TARGET_PER_LANGUAGE],
     );
-    console.log(\`Virtual intent coverage \${language}: \${capacity}\`);
+    console.log(`Virtual intent coverage ${language}: ${capacity}`);
   }
 
   await q(
@@ -10786,16 +10786,16 @@ async function ensureRuntimeSchema() {
   )`);
   await q('ALTER TABLE public.intent_phrase_variants ENABLE ROW LEVEL SECURITY');
   await q("DO $intent_variants$ BEGIN IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN REVOKE ALL PRIVILEGES ON TABLE public.intent_phrase_variants FROM anon; END IF; IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN REVOKE ALL PRIVILEGES ON TABLE public.intent_phrase_variants FROM authenticated; END IF; END $intent_variants$");
-  await q(\`CREATE TABLE IF NOT EXISTS intent_phrase_templates (
+  await q(`CREATE TABLE IF NOT EXISTS intent_phrase_templates (
     language TEXT NOT NULL,
     template_type TEXT NOT NULL,
     phrase TEXT NOT NULL,
     normalized TEXT NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(language,template_type,normalized)
-  )\`);
+  )`);
   await q('ALTER TABLE public.intent_phrase_templates ENABLE ROW LEVEL SECURITY');
-  await q(\`CREATE TABLE IF NOT EXISTS intent_lexicon_stats (
+  await q(`CREATE TABLE IF NOT EXISTS intent_lexicon_stats (
     language TEXT PRIMARY KEY,
     core_count BIGINT NOT NULL,
     prefix_count INTEGER NOT NULL,
@@ -10803,7 +10803,7 @@ async function ensureRuntimeSchema() {
     virtual_capacity BIGINT NOT NULL,
     target BIGINT NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  )\`);
+  )`);
   await q('ALTER TABLE public.intent_lexicon_stats ENABLE ROW LEVEL SECURITY');
   await q("DO $intent_virtual$ BEGIN IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN REVOKE ALL PRIVILEGES ON TABLE public.intent_phrase_templates FROM anon; REVOKE ALL PRIVILEGES ON TABLE public.intent_lexicon_stats FROM anon; END IF; IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN REVOKE ALL PRIVILEGES ON TABLE public.intent_phrase_templates FROM authenticated; REVOKE ALL PRIVILEGES ON TABLE public.intent_lexicon_stats FROM authenticated; END IF; END $intent_virtual$");
   await q(`CREATE TABLE IF NOT EXISTS stripe_webhook_events (
