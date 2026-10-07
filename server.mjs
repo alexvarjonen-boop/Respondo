@@ -2511,9 +2511,9 @@ function explicitContactQuestion(message) {
   // so location matching must never get a chance to claim it.
   if (
     /(?:^|\s)(?:sahkopost\w*|email\w*|e-mail\w*|meili\w*|e-?post\w*|epost\w*)(?:\s|$)/.test(q) ||
-    q.includes('e-post') ||
-    q.includes('e post') ||
-    q.includes('epost')
+    /(?:^|\s)e-post\w*(?:\s|$)/.test(q) ||
+    /(?:^|\s)e\s+post\w*(?:\s|$)/.test(q) ||
+    /(?:^|\s)epost\w*(?:\s|$)/.test(q)
   ) return 'email';
   if (/(?:^|\s)(?:puhelin\w*|phone\w*|telefon\w*|soitta\w*|soita|ring\w*|numero|numeronne|numeroanne)(?:\s|$)/.test(q)) return 'phone';
   if(/\b(?:number|numret|nummer)\b/.test(q) && /\b(?:call|dial|ring|ringa|kontakta|contact|reach)\w*\b/.test(q)) return 'phone';
