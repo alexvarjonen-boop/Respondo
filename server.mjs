@@ -2674,6 +2674,8 @@ function multilingualDirectServiceRequest(message,lang='fi') {
   if(lang==='fi') {
     let m=q.match(/^(?:teetteko|tarjoatteko|onko teilla|loytyyko teilta)\s+(.+)$/);
     if(m) return {subject:m[1],mode:'offer'};
+    m=q.match(/^(leikkaatteko|pesetteko|puhdistatteko|korjaatteko|asennatteko|maalaatteko|huollatteko)\s+(.+)$/);
+    if(m) return {subject:m[2],verb:m[1],mode:'verb'};
   }
 
   if(lang==='sv') {
@@ -2703,7 +2705,10 @@ function directMultilingualServiceConfirmation(rows,message,lang='fi') {
   if(!request) return null;
 
   const requested=multilingualServiceConcepts(message);
-  if(!requested.size) return null;
+  // Finnish direct matching is used only when the request has an unambiguous
+  // action+subject concept pair (hair+cut, window+clean, roof+repair, etc.).
+  // This prevents broad phrases from being confirmed from a loosely related row.
+  if(!requested.size || (language==='fi' && requested.size<2)) return null;
   const candidates=(rows||[])
     .filter(usableWebsiteRow)
     .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='services')
@@ -2720,11 +2725,10 @@ function directMultilingualServiceConfirmation(rows,message,lang='fi') {
   const original=String(message||'').trim().replace(/[?!.]+$/,'');
   let answer='';
   if(language==='fi'){
-    if(requested.has('hair') && requested.has('cut')){
-      answer='Kyllä, tarjoamme hiustenleikkausta.';
+    if(requested.has('hair') && requested.has('cut')) {
+      answer='Kyllä, tarjoamme hiustenleikkauksia.';
     } else {
-      const subject=original
-        .replace(/^(?:teettekö|tarjoatteko|onko teillä|löytyykö teiltä)\s+/i,'');
+      const subject=String(request.subject||'').trim();
       answer='Kyllä, tarjoamme '+subject+'.';
     }
   } else if(language==='sv'){
@@ -2769,47 +2773,77 @@ function openingHoursRequestedDay(message) {
   return null;
 }
 
-function openingHoursRowDay(value) {
-  const q=normalizeSearchText(value);
-  const first=q.split(/\s+/).filter(Boolean)[0] || '';
-  for(const day of OPENING_HOUR_DAYS){
-    if(day.aliases.some((alias)=>first===normalizeSearchText(alias))) return day;
-    if(day.aliases.some((alias)=>new RegExp('(?:^|\\s)'+normalizeSearchText(alias)+'(?:\\s|$)').test(q))) return day;
-  }
-  return null;
+function openingHourDayForAlias(value) {
+  const key=normalizeSearchText(value);
+  return OPENING_HOUR_DAYS.find((day)=>day.aliases.some((alias)=>normalizeSearchText(alias)===key)) || null;
 }
 
-function openingHoursValue(value) {
+function openingHoursSegments(value) {
   const raw=cleanKnowledgeText(value);
-  const range=raw.match(/\b\d{1,2}[:.]\d{2}\s*(?:[-–—]|to|till)\s*\d{1,2}[:.]\d{2}\b/i)?.[0];
-  if(range) return range.replace(/\s*(?:-|–|—|to|till)\s*/i,' - ');
-  if(/\b(?:closed|suljettu|stangt|stängt)\b/i.test(raw)) return 'closed';
-  return raw.slice(0,120);
-}
+  if(!raw) return [];
 
-function openingHoursEntries(value) {
-  const raw=cleanKnowledgeText(value)
-    .replace(/(\d{1,2}[:.]\d{2})(?=(?:Ma|Ti|Ke|To|Pe|La|Su|Mon|Tue|Wed|Thu|Fri|Sat|Sun|Mån|Man|Tis|Ons|Tor|Fre|Lör|Lor|Sön|Son)\b)/gi,'$1 ');
-  const aliases=new Map();
-  for(const day of OPENING_HOUR_DAYS){
-    for(const alias of day.aliases) aliases.set(normalizeSearchText(alias),day);
+  // Some sites render schedules without whitespace, e.g.
+  // "Ma-Pe : 09:00–19:00La : 09:00-17:00". Parse every day/range segment
+  // independently so Saturday can never inherit Friday's hours.
+  const normalized=String(raw)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase();
+  const dayTokens=[
+    'maanantaina','maanantai','monday','mandag','mon','man','ma',
+    'tiistaina','tiistai','tuesday','tisdag','tues','tue','tis','ti',
+    'keskiviikkona','keskiviikko','wednesday','onsdag','wed','ons','ke',
+    'torstaina','torstai','thursday','torsdag','thur','thu','tor','to',
+    'perjantaina','perjantai','friday','fredag','fri','fre','pe',
+    'lauantaina','lauantai','saturday','lordag','sat','lor','la',
+    'sunnuntaina','sunnuntai','sunday','sondag','sun','son','su',
+  ].sort((a,b)=>b.length-a.length);
+  const token='(?:'+dayTokens.join('|')+')';
+  const re=new RegExp(
+    '('+token+')(?:\\s*[-–—]\\s*('+token+'))?\\s*:?[ \\t]*'+
+    '(closed|suljettu|stangt|\\d{1,2}[:.]\\d{2}\\s*(?:[-–—]|to|till)\\s*\\d{1,2}[:.]\\d{2})',
+    'gi',
+  );
+
+  const out=[];
+  const seen=new Set();
+  let match;
+  while((match=re.exec(normalized))){
+    const first=openingHourDayForAlias(match[1]);
+    const last=match[2]?openingHourDayForAlias(match[2]):first;
+    if(!first || !last) continue;
+    const start=OPENING_HOUR_DAYS.findIndex((day)=>day.key===first.key);
+    const end=OPENING_HOUR_DAYS.findIndex((day)=>day.key===last.key);
+    if(start<0 || end<0 || end<start) continue;
+
+    let hours=String(match[3]||'').trim();
+    if(/^(?:closed|suljettu|stangt)$/.test(hours)) hours='closed';
+    else hours=hours.replace(/\./g,':').replace(/\s*(?:-|–|—|to|till)\s*/i,' - ');
+
+    for(let index=start;index<=end;index++){
+      const day=OPENING_HOUR_DAYS[index];
+      const key=day.key+'|'+hours;
+      if(seen.has(key)) continue;
+      seen.add(key);
+      out.push({day,value:hours});
+    }
   }
-  const dayToken='(?:ma(?:anantai)?|ti(?:istai)?|ke(?:skiviikko)?|to(?:rstai)?|pe(?:rjantai)?|la(?:uantai)?|su(?:nnuntai)?|mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?|man(?:dag)?|mån(?:dag)?|tis(?:dag)?|ons(?:dag)?|tor(?:sdag)?|fre(?:dag)?|lor(?:dag)?|lör(?:dag)?|son(?:dag)?|sön(?:dag)?)';
-  const re=new RegExp('('+dayToken+')(?:\\s*[-–—]\\s*('+dayToken+'))?\\s*:?[\\s]*((?:\\d{1,2}[:.]\\d{2}\\s*(?:[-–—]|to|till)\\s*\\d{1,2}[:.]\\d{2})|(?:closed|suljettu|stängt|stangt))','gi');
-  const entries=[];
-  for(const match of raw.matchAll(re)){
-    const first=aliases.get(normalizeSearchText(match[1]));
-    const last=match[2]?aliases.get(normalizeSearchText(match[2])):null;
-    if(!first) continue;
-    const value=/closed|suljettu|stängt|stangt/i.test(match[3])
-      ? 'closed'
-      : match[3].replace(/\s*(?:-|–|—|to|till)\s*/i,' - ');
-    const start=OPENING_HOUR_DAYS.findIndex((x)=>x.key===first.key);
-    const end=last?OPENING_HOUR_DAYS.findIndex((x)=>x.key===last.key):start;
-    if(start<0 || end<start) continue;
-    for(let index=start;index<=end;index++) entries.push({day:OPENING_HOUR_DAYS[index],value});
-  }
-  return entries;
+
+  if(out.length) return out;
+
+  // Preserve support for simple single-day rows even when their typography is
+  // unusual enough not to match the stricter multi-segment parser above.
+  const q=normalizeSearchText(raw);
+  const first=q.split(/\s+/).filter(Boolean)[0] || '';
+  const day=OPENING_HOUR_DAYS.find((candidate)=>
+    candidate.aliases.some((alias)=>first===normalizeSearchText(alias))
+  );
+  if(!day) return [];
+  const range=raw.match(/\b\d{1,2}[:.]\d{2}\s*(?:[-–—]|to|till)\s*\d{1,2}[:.]\d{2}\b/i)?.[0];
+  const value=range
+    ? range.replace(/\./g,':').replace(/\s*(?:-|–|—|to|till)\s*/i,' - ')
+    : /\b(?:closed|suljettu|stangt|stängt)\b/i.test(raw) ? 'closed' : '';
+  return value?[{day,value}]:[];
 }
 
 function directOpeningHoursAnswer(rows,message,lang='fi') {
@@ -2824,14 +2858,15 @@ function directOpeningHoursAnswer(rows,message,lang='fi') {
   const label=(day)=>day?.[target] || '';
   const localizedClosed=target==='en'?'Closed':target==='sv'?'Stängt':'Suljettu';
 
+  const parsed=[];
+  for(const row of hourRows){
+    for(const segment of openingHoursSegments(row.answer)){
+      parsed.push({row,...segment});
+    }
+  }
+
   if(asked){
-    const match=hourRows
-      .flatMap((row)=>{
-        const entries=openingHoursEntries(row.answer);
-        if(entries.length) return entries.map((entry)=>({row,...entry}));
-        return [{row,day:openingHoursRowDay(row.answer),value:openingHoursValue(row.answer)}];
-      })
-      .find((item)=>item.day?.key===asked.key && item.value);
+    const match=parsed.find((item)=>item.day?.key===asked.key && item.value);
     if(match){
       const value=match.value==='closed'?localizedClosed:match.value;
       return {
@@ -2845,35 +2880,31 @@ function directOpeningHoursAnswer(rows,message,lang='fi') {
     }
   }
 
-  const parsed=[];
+  const unique=[];
   const seen=new Set();
-  for(const row of hourRows){
-    const entries=openingHoursEntries(row.answer);
-    const values=entries.length ? entries : [{day:openingHoursRowDay(row.answer),value:openingHoursValue(row.answer)}];
-    for(const {day,value} of values){
-      if(!day || !value || seen.has(day.key)) continue;
-      seen.add(day.key);
-      parsed.push({row,day,value});
-    }
+  for(const item of parsed){
+    if(!item.day || !item.value || seen.has(item.day.key)) continue;
+    seen.add(item.day.key);
+    unique.push(item);
   }
-  if(parsed.length){
-    parsed.sort((a,b)=>OPENING_HOUR_DAYS.findIndex((x)=>x.key===a.day.key)-OPENING_HOUR_DAYS.findIndex((x)=>x.key===b.day.key));
-    const answer=parsed.slice(0,7).map((item)=>label(item.day)+': '+(item.value==='closed'?localizedClosed:item.value)).join(', ')+'.';
+  if(unique.length){
+    unique.sort((a,b)=>OPENING_HOUR_DAYS.findIndex((x)=>x.key===a.day.key)-OPENING_HOUR_DAYS.findIndex((x)=>x.key===b.day.key));
+    const answer=unique.slice(0,7).map((item)=>label(item.day)+': '+(item.value==='closed'?localizedClosed:item.value)).join(', ')+'.';
     return {
       answer,
       handoff:false,
       confidence:0.99,
       intent:'Aukioloajat',
-      sourceIds:parsed.map((x)=>x.row.id).filter(Boolean),
-      selected:parsed.map((x)=>x.row),
+      sourceIds:[...new Set(unique.map((x)=>x.row.id).filter(Boolean))],
+      selected:[...new Map(unique.map((x)=>[x.row.id||String(x.row.source_url||x.row.answer),x.row])).values()],
     };
   }
 
   const row=hourRows[0];
   return {
-    answer:openingHoursValue(row.answer),
+    answer:cleanKnowledgeText(row.answer).slice(0,240),
     handoff:false,
-    confidence:0.9,
+    confidence:0.85,
     intent:'Aukioloajat',
     sourceIds:[row.id].filter(Boolean),
     selected:[row],
