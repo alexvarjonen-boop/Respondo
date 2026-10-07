@@ -2409,7 +2409,7 @@ function serviceAreaAnswer(value, lang='fi') {
 
 function explicitBusinessLocationQuestion(message) {
   const q=normalizeSearchText(message);
-  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?sijainti|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+location|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget))$/.test(q);
+  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?(?:sijainti|osoite)|mika\s+(?:teidan\s+)?osoite\s+on|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+(?:location|address)|where\s+exactly\s+are\s+you\s+located|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget)|vad\s+ar\s+(?:er|eran)\s+adress|vilken\s+adress\s+har\s+ni)$/.test(q);
 }
 
 function extractBusinessLocationText(value) {
@@ -2441,7 +2441,8 @@ function verifiedBusinessLocationValue(rows) {
   const scored=[];
   const scoreValue=(value,row)=>{
     const text=String(value||'').trim().replace(/[.!?]+$/,'');
-    if(!text || text.length>220 || /^https?:\/\//i.test(text)) return;
+    if(!text || text.length>220 || /^https?:\/\//i.test(text) ||
+       /verkkolask|laskutusosoite|laskutus\s*osoite|e-?lasku|e-?invoice|invoicing address|invoice address|billing address|ovt\b|operaattori|operator\b/i.test(text)) return;
     let score=0;
     const meta=normalizeSearchText(String(row?.category||'')+' '+String(row?.title||''));
     if(/osoite|address|(?:^|\s)adress(?:\s|$)/.test(meta)) score+=35;
