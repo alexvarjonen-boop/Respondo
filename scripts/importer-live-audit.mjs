@@ -53,7 +53,9 @@ function liveProductPriceExpectation(site,rows,productName){
   assert.ok(match,site.name+' could not parse current product price for '+productName+': '+row.answer);
   const raw=match[1].replace(',','.');
   const [whole,decimal='']=raw.split('.');
-  const numeric=decimal ? whole+'[.,]'+decimal : whole+'(?:[.,]00)?';
+  const numeric=!decimal || /^0+$/.test(decimal)
+    ? whole+'(?:[.,]0+)?'
+    : whole+'[.,]'+decimal;
   return new RegExp('(?:€\\s*)?'+numeric+'(?:\\s*(?:€|EUR))?','i');
 }
 
