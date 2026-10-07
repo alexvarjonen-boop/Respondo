@@ -18,6 +18,22 @@ test('import profile prefers concise concrete services over about-page marketing
   assert.doesNotMatch(profile.services,/pitkän historian|tavoitteenamme|kokonaisvaltaisesta elämyksestä/i);
 });
 
+test('service profile drops inflected prose fragments while keeping real service names',()=>{
+  const doc=extractBusinessDocument(`
+    <section><h2>Palvelut</h2>
+      <a href="/haircuts">Hiustenleikkaukset</a>
+      <a href="/beard">Partapalvelut</a>
+      <p>My M Room -palvelussa saat lisää etuja.</p>
+      <p>Lue lisää hiustenleikkauspalveluista.</p>
+      <p>Tutustu väripalvelun etuihin.</p>
+    </section>
+  `,'https://example.fi/');
+  const profile=essentialWebsiteProfile({finalUrl:'https://example.fi/',pageDocuments:[doc]});
+  assert.match(profile.services,/Hiustenleikkaukset/i);
+  assert.match(profile.services,/Partapalvelut/i);
+  assert.doesNotMatch(profile.services,/palvelussa|palveluista|väripalvelun/i);
+});
+
 test('price list can supply concise service names when navigation labels are unavailable',()=>{
   const doc=extractBusinessDocument(`
     <section><h2>Hinnasto</h2>
