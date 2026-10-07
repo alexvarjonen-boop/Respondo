@@ -10666,16 +10666,7 @@ async function ensureRuntimeSchema() {
   await q('ALTER TABLE public.intent_utterances ENABLE ROW LEVEL SECURITY');
   await q('CREATE UNIQUE INDEX IF NOT EXISTS idx_intent_utterances_language_normalized ON intent_utterances(language,normalized)');
   await q('CREATE INDEX IF NOT EXISTS idx_intent_utterances_intent_language ON intent_utterances(intent,language)');
-  await q(`DO $
-    BEGIN
-      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
-        REVOKE ALL PRIVILEGES ON TABLE public.intent_utterances FROM anon;
-      END IF;
-      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
-        REVOKE ALL PRIVILEGES ON TABLE public.intent_utterances FROM authenticated;
-      END IF;
-    END
-  $`);
+  await q("DO $intent$ BEGIN IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN REVOKE ALL PRIVILEGES ON TABLE public.intent_utterances FROM anon; END IF; IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN REVOKE ALL PRIVILEGES ON TABLE public.intent_utterances FROM authenticated; END IF; END $intent$");
   await q(`CREATE TABLE IF NOT EXISTS stripe_webhook_events (
     event_id TEXT PRIMARY KEY,
     event_type TEXT NOT NULL,
