@@ -509,7 +509,11 @@ export function businessFactKind(text, context = '') {
     /\b(?:customer|asiakas|kund|product|item|purchase|order|tuote|ostos|tilaus|days?|paiva|paivaa|päivä|päivää|dag|dagar|refund|hyvitys|exchange|vaihto|unused|unopened|receipt|kuitti|returperiod|palautusoikeus|palautusaika)\w*/i.test(n)
   );
   if (commerceFact && !giftCardCashRule && returnPolicyEvidence && !policyHeadingOnly(t,'returns')) return 'returns';
-  if (commerceFact && warranty.test(n) && !policyHeadingOnly(t,'warranty')) return 'warranty';
+  const warrantyPolicyEvidence=warranty.test(n) && (
+    warranty.test(c) ||
+    /\b(?:defect|defective|fault|faulty|virhe|viallinen|reklamaatio|material(?:s)?|workmanship|covered|coverage|valid|warranty\s+period|guarantee\s+period|takuu(?:aika|ehdot?|ehto|kattaa|voimassa)|month|months|year|years|kuukaus|vuosi|garanti(?:tid|villkor)|manad|månad|ar|år)\b/i.test(n)
+  );
+  if (commerceFact && warrantyPolicyEvidence && !policyHeadingOnly(t,'warranty')) return 'warranty';
   if (commerceFact && payment.test(n) && !policyHeadingOnly(t,'payment')) return 'payment';
   if (commerceFact && delivery.test(n) && !policyHeadingOnly(t,'delivery')) return 'delivery';
   if (commerceFact) {
@@ -817,12 +821,13 @@ export function essentialWebsiteCandidates(bundle) {
       const contact = /yhtey|contact|kontakt/.test(n);
       if (explicit || contact) quoteLinks.push({...link,sourceUrl:doc.url,score:explicit?10:1});
 
+      const individualProduct=/\/(?:products?|tuotteet?)\/[^/]+\/?$/.test(parsed.pathname.toLowerCase());
+      const catalogOrProductPath=/\/(?:collections?|products?|tuotteet?|shop|store|kauppa)(?:\/|$)/i.test(parsed.pathname);
       const serviceLabel=clean(decodeHtml(link.label));
       const sameHost=parsed.hostname===new URL(doc.url).hostname;
-      const concreteServiceLink=sameHost && isConcreteServiceLabel(serviceLabel);
+      const concreteServiceLink=sameHost && !individualProduct && !catalogOrProductPath && isConcreteServiceLabel(serviceLabel);
       if(concreteServiceLink) serviceLinks.push({...link,label:serviceLabel,sourceUrl:doc.url,score:20});
 
-      const individualProduct=/\/(?:products?|tuotteet?)\/[^/]+\/?$/.test(parsed.pathname.toLowerCase());
       const allProducts=/collections\/all|all[-_ ]?products|shop[-_ ]?all|kaikki[-_ ]?tuotteet|alla[-_ ]?produkter/.test(n);
       const catalogPath=/^(?:\/(?:collections|products?|tuotteet?|shop|store|kauppa)\/?$)/i.test(parsed.pathname);
       const catalogLabel=/^(?:all products|shop all|products|shop|store|tuotteet|verkkokauppa|kaikki tuotteet|produkter|alla produkter)$/i.test(clean(link.label));
@@ -913,7 +918,9 @@ function profileServiceLabelFromPrice(value) {
     .replace(/\s*[:–—-]?\s*(?:alkaen\s+|alk\.\s*)?(?:[€$£]\s*)?\d[\d\s.,]*(?:\s*(?:€|eur\b|usd\b|sek\b|kr\b|\$|£))?.*$/i,'')
     .replace(/[\s:–—-]+$/,'')
     .trim();
-  return pricedServiceLabel(label) ? label : '';
+  if(!pricedServiceLabel(label)) return '';
+  const serviceAction=/\b(?:hiustenleikka|leikkaus|koneajo|parran\s+(?:muotoilu|ajo|trimmaus)|muotoilu|veitsirajaus|skin\s*fade|skinfade|hieronta|puhdistus|pesu|siivou|asennus|korjaus|huolto|kuljetus|muutto|konsultointi|suunnittelu|hair\s*cut|haircut|beard\s*trim|shave|razor\s*line|massage|cleaning|washing|installation|repair|maintenance|transport|moving|consulting|design|harklipp|hårklipp|skaggtrim|skäggtrim|rakning|massage|stadning|städning|tvatt|tvätt|installation|reparation|flytt)\w*/i;
+  return serviceAction.test(norm(label)) ? label : '';
 }
 
 function conciseProfileServices(facts) {
