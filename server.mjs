@@ -4200,6 +4200,23 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     };
   }
 
+  // Ambiguous safety questions need clarification before generic retrieval.
+  // Otherwise a weakly related product row can outrank the clarification and
+  // the bot either answers from the wrong fact or falls through to handoff.
+  if (/^(?:onko\s+(?:tama|se|tuo)\s+turvallinen|onko\s+(?:tama|se|tuo)\s+turvallista|is\s+(?:this|it|that)\s+safe|are\s+(?:these|they)\s+safe|ar\s+(?:detta|det|den)\s+saker|ar\s+(?:detta|det)\s+sakert)$/.test(normalized)) {
+    const clarification=conversationalClarification(cleanMessage,responseLang,history);
+    if (clarification) {
+      return {
+        answer:clarification,
+        handoff:false,
+        confidence:0.8,
+        intent:responseLang==='en'?'Clarification':responseLang==='sv'?'Förtydligande':'Tarkennus',
+        sourceIds:[],
+        selected:[],
+      };
+    }
+  }
+
   // "Missä toimitte?" means service area, not shipping/delivery. Resolve it
   // before generic topic matching so the Finnish verb "toimitte" cannot be
   // mistaken for "toimitus".
