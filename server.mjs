@@ -2507,6 +2507,10 @@ function verifiedContactValue(rows, title) {
 
 function explicitContactQuestion(message) {
   const q=normalizeSearchText(message);
+  // Shipping/postage fee questions must never be mistaken for Swedish e-post
+  // contact wording or other contact intent aliases.
+  if(/\b(?:toimit|postikulu|postitus|shipping|delivery|postage|frakt|leverans)\w*\b/.test(q)
+      && /\b(?:hinta|maksaa|maksu|kulu|veloit|price|cost|fee|fees|charge|pris|kostar|avgift|betalt)\w*\b/.test(q)) return '';
   // Resolve e-mail first. Swedish "e-postadress" contains the word "adress",
   // so location matching must never get a chance to claim it.
   if (
@@ -3237,9 +3241,11 @@ async function directShippingCostAnswer(rows,message,lang='fi') {
     /hinta|maksaa|maksu|kulu|veloit|price|cost|fee|charge|pris|kostar|avgift|betalt/.test(q);
   if(!shippingCost) return null;
 
-  const candidates=(rows||[])
+  const deliveryRows=(rows||[])
     .filter(usableWebsiteRow)
-    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='delivery')
+    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='delivery');
+
+  const candidates=deliveryRows
     .map((row,index)=>{
       const answer=cleanKnowledgeText(row.answer);
       const evidence=normalizeSearchText(String(row.title||'')+' '+answer);
@@ -3257,7 +3263,10 @@ async function directShippingCostAnswer(rows,message,lang='fi') {
 
   if(!candidates.length) return null;
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
-  const summary=shippingCostSummary(candidates.map((item)=>item.row),target);
+  // Summarize every verified delivery-policy row, not only the highest-scoring
+  // candidates. This preserves individual paid rates alongside a free-shipping
+  // threshold when those facts are split across separate imported rows.
+  const summary=shippingCostSummary(deliveryRows,target);
   const best=candidates[0];
   let answer=summary?.answer
     || conciseKnowledgeAnswer(best.row,message)
