@@ -2356,6 +2356,48 @@ function explicitContactQuestion(message) {
   return '';
 }
 
+function generalContactQuestion(message) {
+  const q=normalizeSearchText(message);
+  return /^(?:miten\s+(?:saan|otan)\s+(?:teihin|teihinpain|yritykseen)\s+yhteyden|miten\s+voin\s+ottaa\s+(?:teihin\s+)?yhteytta|mitka\s+(?:ovat\s+)?(?:teidan\s+)?yhteystiedot|yhteystiedot|how\s+(?:can|do)\s+i\s+(?:contact|reach)\s+you|how\s+can\s+i\s+get\s+in\s+touch\s+with\s+you|what\s+are\s+your\s+contact\s+details|contact\s+details|hur\s+kontaktar\s+jag\s+er|hur\s+nar\s+jag\s+er|hur\s+far\s+jag\s+kontakt\s+med\s+er|vilka\s+ar\s+era\s+kontaktuppgifter|kontaktuppgifter)$/.test(q);
+}
+
+function directGeneralContactAnswer(rows, lang='fi') {
+  const phone=verifiedContactValue(rows,'Puhelinnumero');
+  const emailValue=verifiedContactValue(rows,'Sähköposti');
+  if(!phone && !emailValue) return null;
+
+  let answer='';
+  if(phone && emailValue) {
+    answer=lang==='en'
+      ? 'You can contact us by phone at '+phone.value+' or by email at '+emailValue.value+'.'
+      : lang==='sv'
+        ? 'Du kan kontakta oss per telefon på '+phone.value+' eller via e-post på '+emailValue.value+'.'
+        : 'Voit ottaa yhteyttä puhelimitse numeroon '+phone.value+' tai sähköpostitse osoitteeseen '+emailValue.value+'.';
+  } else if(phone) {
+    answer=lang==='en'
+      ? 'You can contact us by phone at '+phone.value+'.'
+      : lang==='sv'
+        ? 'Du kan kontakta oss per telefon på '+phone.value+'.'
+        : 'Voit ottaa yhteyttä puhelimitse numeroon '+phone.value+'.';
+  } else {
+    answer=lang==='en'
+      ? 'You can contact us by email at '+emailValue.value+'.'
+      : lang==='sv'
+        ? 'Du kan kontakta oss via e-post på '+emailValue.value+'.'
+        : 'Voit ottaa yhteyttä sähköpostitse osoitteeseen '+emailValue.value+'.';
+  }
+
+  const selected=[phone?.row,emailValue?.row].filter(Boolean);
+  return {
+    answer,
+    handoff:false,
+    confidence:1,
+    intent:'Yhteystiedot',
+    sourceIds:selected.map((row)=>row.id).filter(Boolean),
+    selected,
+  };
+}
+
 function explicitServiceAreaQuestion(message) {
   const q=normalizeSearchText(message);
   return /^(?:missa\s+(?:te\s+)?toimitte|milla\s+alueella\s+(?:te\s+)?toimitte|mille\s+alueelle\s+(?:te\s+)?tulette|mika\s+(?:teidan\s+)?toimialue(?:enne)?|toimialue|palvelualue)$/.test(q)
@@ -4834,6 +4876,11 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
           : (isPhone?'Yrityksen vahvistetuista tiedoista ei löytynyt puhelinnumeroa. Jätä yhteystietosi, niin yritys voi palata sinulle.':'Yrityksen vahvistetuista tiedoista ei löytynyt sähköpostiosoitetta. Jätä yhteystietosi, niin yritys voi palata sinulle.');
     return {answer,handoff:!verified,confidence:verified?1:0.2,intent:'Yhteystiedot',
       sourceIds:verified?.row.id?[verified.row.id]:[],selected:verified?[verified.row]:[]};
+  }
+
+  if (generalContactQuestion(cleanMessage)) {
+    const contactAnswer=directGeneralContactAnswer(rows,responseLang);
+    if(contactAnswer) return contactAnswer;
   }
 
   if (explicitBusinessLocationQuestion(cleanMessage)) {
