@@ -433,6 +433,11 @@ export function extractBusinessDocument(html, url) {
         if (cells.length > 1) blocks.push({text:cells.join(': '), heading});
       }
       if (tag === 'a' && !node.skip && node.href) links.push({url:node.href, label:clean(decodeHtml(node.text)), context:heading});
+      // Contact builders often render "email + street address" inline with no
+      // whitespace between the closing mail/phone link and the next text node.
+      // Flush the contact anchor so the following physical address is parsed as
+      // its own fact instead of becoming e.g. "info@example.fiHallituskatu".
+      if (tag === 'a' && !node.skip && (email.test(clean(decodeHtml(node.text))) || phone.test(clean(decodeHtml(node.text))))) flush();
       stack.splice(i);
       if (tag === 'section' || tag === 'article') { heading = ''; suppressedHeading = false; }
       continue;
@@ -525,6 +530,39 @@ export function businessFactKind(text, context = '') {
   return '';
 }
 
+
+function placeholderContactValue(value) {
+  const n=norm(clean(value));
+  return /(?:^|[\s@.])example\.(?:com|org|net)(?:$|\s)|hello@example|admin@example|test@example|your@email|yourmail|email@example/.test(n);
+}
+
+function templateDemoDocument(doc) {
+  const text=norm([
+    doc?.text,
+    ...(Array.isArray(doc?.blocks)?doc.blocks.map((x)=>x?.text):[]),
+    ...(Array.isArray(doc?.products)?doc.products.flatMap((x)=>[x?.name,x?.description]):[]),
+  ].filter(Boolean).join(' '));
+  if(!text) return false;
+  return /lorem ipsum/.test(text) ||
+    /128 winston st/.test(text) ||
+    /new york,\s*ny\s*05120/.test(text) ||
+    /brooklyn area/.test(text) ||
+    /1\.800\.218\.20\.20/.test(text) ||
+    /hello@example\.com/.test(text) ||
+    /admin@example\.com/.test(text);
+}
+
+function templateDemoProduct(product) {
+  const text=norm([product?.name,product?.description,product?.url].filter(Boolean).join(' '));
+  if(!text) return true;
+  if(/lorem ipsum|hello@example\.com|admin@example\.com|new york,\s*ny\s*05120|brooklyn area/.test(text)) return true;
+  const name=norm(product?.name||'');
+  if(/^(?:shop|store|products?|tuotteet)(?:\s*[-|–—:].*)?$/.test(name)) return true;
+  if(/\b(?:products?|tuotteet)\s+(?:archives?|arkistot?|arsivleri|arşivleri)\b/.test(name)) return true;
+  if(Number(product?.price)===0 && /shop|store|catalog|products?|tuotteet/.test(name)) return true;
+  return false;
+}
+
 export function essentialWebsiteCandidates(bundle) {
   const out = [], seen = new Set();
   const hasCatalogProducts=Array.isArray(bundle?.products) && bundle.products.length>0;
@@ -536,7 +574,7 @@ export function essentialWebsiteCandidates(bundle) {
     out.push({category:labels[kind], title:uniqueTitle, answer:text, keywords:keywords[kind], sourceUrl});
   };
   const addProduct = (product, fallbackUrl = '') => {
-    if (!product?.name) return;
+    if (!product?.name || templateDemoProduct(product)) return;
     const sourceUrl=httpUrl(product.url || fallbackUrl,fallbackUrl || undefined);
     if (!sourceUrl) return;
     const key='product:'+norm(sourceUrl+'|'+product.name);
@@ -557,6 +595,7 @@ export function essentialWebsiteCandidates(bundle) {
   const catalogLinks = [];
   const serviceLinks = [];
   for (const doc of bundle?.pageDocuments || []) {
+    if (templateDemoDocument(doc)) continue;
     const docPath=norm(new URL(doc.url).pathname);
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
     if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial/.test(docPath)) continue;
@@ -594,7 +633,10 @@ export function essentialWebsiteCandidates(bundle) {
       if (kind === 'location') title = /\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text) || /(?:osoite|address|adress)\s*:?\s*\S+.*\d/i.test(block.text) ? 'Osoite' : 'Sijainti ja myymälät';
       if (kind === 'faq') title = clean(block.heading).slice(0,180) || 'Usein kysytyt';
       if (kind === 'contact') title = email.test(block.text) ? 'Sähköposti' : phone.test(block.text) ? 'Puhelinnumero' : 'Yhteystiedot';
-      if (kind === 'contact' && email.test(block.text)) add(kind,'Sähköposti',block.text.match(email)[0],doc.url);
+      if (kind === 'contact' && email.test(block.text)) {
+        const foundEmail=block.text.match(email)?.[0] || '';
+        if(foundEmail && !placeholderContactValue(foundEmail)) add(kind,'Sähköposti',foundEmail,doc.url);
+      }
       if (kind === 'contact' && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add(kind,'Puhelinnumero',block.text.match(phone)[0],doc.url);
       if (kind !== 'contact') {
         const concreteHeading = clean(block.heading);
