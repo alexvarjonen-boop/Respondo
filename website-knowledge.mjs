@@ -561,8 +561,7 @@ export function businessFactKind(text, context = '') {
     (
       explicitServiceOffering ||
       concreteServiceContext ||
-      serviceSectionContext ||
-      (t.length <= 220 && /[,•;]/.test(t))
+      serviceSectionContext
     )
   ) return 'services';
   return '';
