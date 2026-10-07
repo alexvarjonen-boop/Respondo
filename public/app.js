@@ -1,4 +1,3 @@
-import { premiumHomeSections, initPremiumHomeMotion } from './premium-home.js?v=20261007-premium-v2';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261001-highlights-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 const $ = (s, r = document) => r.querySelector(s);
@@ -2522,6 +2521,30 @@ function featuresPage() {
     </main>${footer()}
   </div>`;
 }
+function geoAnswerSection() {
+  return `<section class="section geo-answer-section" aria-labelledby="respondo-explained">
+    <div class="container">
+      <div class="geo-answer-intro">
+        <div class="section-kicker">${appText('RESPONDO AI LYHYESTI','RESPONDO AI I KORTHET','RESPONDO AI EXPLAINED')}</div>
+        <h2 id="respondo-explained">${appText('Mikä Respondo AI on?','Vad är Respondo AI?','What is Respondo AI?')}</h2>
+        <p>${appText(
+          'Respondo AI on yritysten verkkosivuille asennettava asiakaspalvelubotti. Se käyttää yrityksen hyväksyttyä tietopohjaa vastatakseen asiakkaiden kysymyksiin ympäri vuorokauden ja voi ohjata puuttuvat tai epävarmat kysymykset ihmiselle.',
+          'Respondo AI är en kundservicebot för företags webbplatser. Den använder företagets godkända kunskapsbas för att svara kunder dygnet runt och kan lämna över frågor med saknad eller osäker information till en människa.',
+          'Respondo AI is a customer service bot for business websites. It uses a company-approved knowledge base to answer customer questions around the clock and can hand off questions with missing or uncertain information to a person.'
+        )}</p>
+      </div>
+      <div class="geo-answer-grid">
+        <article><h3>${appText('Miten se toimii?','Hur fungerar det?','How does it work?')}</h3><p>${appText('Yritys lisää kysymys–vastaus-tietoja itse tai tuo olennaiset tiedot verkkosivultaan. Respondo käyttää näitä tietoja asiakasvastauksiin.','Företaget lägger själv till frågor och svar eller importerar relevant information från sin webbplats. Respondo använder informationen i kundsvaren.','The business adds question-and-answer information manually or imports relevant information from its website. Respondo uses that information in customer replies.')}</p></article>
+        <article><h3>${appText('Mitä se voi hoitaa?','Vad kan den hantera?','What can it handle?')}</h3><p>${appText('Asiakaskysymysten lisäksi Respondo voi kerätä yhteydenottopyyntöjä, tukea ajanvarausta, välittää keskustelun ihmiselle ja auttaa verkkokaupan asiakaspalvelussa.','Utöver kundfrågor kan Respondo samla kontaktförfrågningar, stödja bokning, lämna över konversationer till en människa och hjälpa e-handelskundservice.','In addition to customer questions, Respondo can capture contact requests, support bookings, hand conversations to a person and assist ecommerce customer service.')}</p></article>
+        <article><h3>${appText('Kenelle se sopii?','Vem passar det för?','Who is it for?')}</h3><p>${appText('Palvelu on tarkoitettu yrityksille, joilla on verkkosivusto ja toistuvia asiakaskysymyksiä — esimerkiksi palveluyrityksille ja verkkokaupoille.','Tjänsten är avsedd för företag med en webbplats och återkommande kundfrågor, till exempel tjänsteföretag och webbutiker.','The service is intended for businesses with a website and recurring customer questions, including service businesses and online stores.')}</p></article>
+        <article><h3>${appText('Millä kielillä?','På vilka språk?','Which languages?')}</h3><p>${appText('Respondo tukee suomea, ruotsia ja englantia sekä sivuston käyttöliittymässä että asiakaskeskusteluissa.','Respondo stöder finska, svenska och engelska i både gränssnittet och kundkonversationer.','Respondo supports Finnish, Swedish and English in both the interface and customer conversations.')}</p></article>
+        <article><h3>${appText('Paljonko se maksaa?','Vad kostar det?','How much does it cost?')}</h3><p>${appText('Kuukausihinnat ovat Basic 49,99 €, Advanced 64,99 € ja Business 79,99 €. Julkisella sivustolla tarjotaan 3 päivän maksuton kokeilu.','Månadspriserna är Basic 49,99 €, Advanced 64,99 € och Business 79,99 €. På den offentliga webbplatsen erbjuds en kostnadsfri 3-dagars provperiod.','Monthly pricing is Basic €49.99, Advanced €64.99 and Business €79.99. The public website offers a 3-day free trial.')}</p></article>
+        <article><h3>${appText('Mistä lisätiedot löytyvät?','Var finns mer information?','Where can I learn more?')}</h3><p>${appText('Katso kaikki ominaisuudet, tietoturva ja tietosuojaseloste Respondon omilta sivuilta.','Se alla funktioner, säkerhetsinformationen och integritetspolicyn på Respondos egna sidor.','See all features, security information and the privacy policy on Respondo’s own pages.')}</p><div class="geo-answer-links"><a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a><a href="/tietoturva?lang=${currentLang()}">${appText('Tietoturva','Säkerhet','Security')}</a><a href="/tietosuoja?lang=${currentLang()}">${appText('Tietosuoja','Integritet','Privacy')}</a></div></article>
+      </div>
+    </div>
+  </section>`;
+}
+
 function seoLandingPage(path) {
   const commonCta = {
     primary:appText('Kokeile 3 päivää maksutta','Prova gratis i 3 dagar','Try free for 3 days'),
@@ -2586,18 +2609,57 @@ function seoLandingPage(path) {
 
 async function home() {
   await config();
-  const homeNav = nav().replace('</header>', `<details class="lp-mobile-nav"><summary>${appText('Valikko','Meny','Menu')} <span aria-hidden="true">⌄</span></summary><nav aria-label="${appText('Tuotevalikko','Produktmeny','Product menu')}"><a href="#how">${appText('Näin se toimii','Så fungerar det','How it works')}</a><a href="#control">${appText('Tietopohja','Kunskapsbas','Knowledge base')}</a><a href="/assistant?lang=${currentLang()}">${appText('Kokeile bottia','Testa botten','Try the bot')}</a><a href="#features">${appText('Ominaisuudet','Funktioner','Features')}</a><a href="#pricing">${appText('Hinnat','Priser','Pricing')}</a><a href="/tietoturva">${appText('Tietoturva','Säkerhet','Security')}</a><a href="#contact">${appText('Ota yhteyttä','Kontakta oss','Contact')}</a></nav></details></header>`);
-  return `<div class="home-page premium-home-page">
-    ${homeNav}
-    <main class="immersive-home premium-home">
-      ${premiumHomeSections(appText, currentLang(), FEATURE_COUNT)}
+  return `<div class="home-page">
+    ${nav()}
+    ${stickyProductNav()}
+    <main class="immersive-home">
+      <section class="hero hero-immersive">
+        <div class="hero-glow"></div>
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <div class="hero-label"><span></span> ASIAKASPALVELU, JOKA ON AINA PAIKALLA</div>
+            <h1>${appText('AI-asiakaspalvelu yritykselle.<br><em>24/7 verkkosivuillasi.</em>','AI-kundservice för företag.<br><em>På din webbplats 24/7.</em>','AI customer service for business.<br><em>On your website 24/7.</em>')}</h1>
+            <p class="lead">${appText('Respondo on verkkosivullesi asennettava asiakaspalvelubotti yritykselle. Kerro yrityksesi tiedot kerran, niin se vastaa asiakkaillesi 24/7 myös silloin, kun sinä et ehdi. Jos tarvittava tieto puuttuu, kysymys ohjataan sinulle.','Respondo är en kundservicebot för företagets webbplats. Lägg in företagets uppgifter en gång, så svarar den kunder dygnet runt även när du själv inte hinner. Om information saknas skickas frågan vidare till dig.','Respondo is a customer service bot for your business website. Add your company information once and it answers customers 24/7, including when you are unavailable. If information is missing, the question is routed to you.')}</p>
+            <div class="hero-actions">
+              <a class="btn hero-primary hero-bot-cta" href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
+            </div>
+            <div class="hero-scroll-hint"><i></i><span>VIERITÄ ALAS JA KATSO, MITEN SE TOIMII</span></div>
+          </div>
+          ${heroVisual()}
+        </div>
+      </section>
+
+      ${geoAnswerSection()}
+      ${cinematicConversationScene()}
+      ${horizontalProductStory()}
+      ${productWorldScene()}
+      ${motionDepthScene()}
+      ${trustPortalScene()}
+      ${dataImpactScene()}
       ${calculatorSection()}
+      <section class="post-calculator-features"><div class="container">
+        <a class="hero-features-card" href="/ominaisuudet?lang=${currentLang()}" aria-label="${esc(appText(`Katso kaikki ${FEATURE_COUNT} Respondo AI:n ominaisuutta`,`Se alla ${FEATURE_COUNT} funktioner i Respondo AI`,`See all ${FEATURE_COUNT} Respondo AI features`))}">
+          <div class="hero-features-card-top">
+            <span>${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</span><b>→</b>
+          </div>
+          <h3>${appText(`Katso kaikki ${FEATURE_COUNT} Respondo AI:n ominaisuutta`,`Se alla ${FEATURE_COUNT} funktioner i Respondo AI`,`See all ${FEATURE_COUNT} Respondo AI features`)}</h3>
+          <p>${appText(`${FEATURE_COUNT} toimintoa asiakaspalveluun, tarjouksiin, ajanvaraukseen ja yhteydenottoihin.`,`${FEATURE_COUNT} funktioner för kundservice, offerter, bokningar och kontaktförfrågningar.`,`${FEATURE_COUNT} features for customer service, quotes, bookings and contact requests.`)}</p>
+        </a>
+      </div></section>
       ${pricingSection()}
-      <section class="lp-closing"><div class="lp-wrap lp-closing-inner" data-lp-reveal><div>
-        <span class="lp-eyebrow">${appText('SEURAAVA KYSYMYS VOI TULLA TÄNÄÄN.','NÄSTA FRÅGA KAN KOMMA I DAG.','THE NEXT QUESTION COULD COME TODAY.')}</span>
-        <h2>${appText('Ole paikalla. Vaikka olisit muualla.','Var där. Även när du är någon annanstans.','Be there. Even when you’re elsewhere.')}</h2>
-        <p>${appText('Asiakkaasi saavat apua. Sinä saat aikaa keskittyä yritykseesi.','Dina kunder får hjälp. Du får tid att fokusera på ditt företag.','Your customers get help. You get time to focus on your business.')}</p>
-      </div><a class="lp-button lp-primary" href="/tilaus?plan=basic_monthly">${appText('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')} <span aria-hidden="true">→</span></a></div></section>
+
+      <section class="section final-cta final-cta-immersive">
+        <div class="container">
+          <div class="cta-shell">
+            <div>
+              <div class="section-kicker light">${uiText('05 / KOKEILE KÄYTÄNNÖSSÄ','05 / PROVA SJÄLV','05 / TRY IT YOURSELF')}</div>
+              <h2>${uiText('Asiakkaasi seuraava kysymys voi tulla vaikka tänä iltana.','Din kunds nästa fråga kan komma redan i kväll.',"Your customer's next question could arrive tonight.")}</h2>
+              <p>${uiText('Anna Respondon hoitaa vastaus silloin, kun sinä et ehdi.','Låt Respondo sköta svaret när du själv inte hinner.',"Let Respondo handle the answer when you don't have time.")}</p>
+            </div>
+            <a class="cta-circle" href="/tilaus?plan=basic_monthly" aria-label="Kokeile ilmaiseksi"><span>KOKEILE</span><b>→</b></a>
+          </div>
+        </div>
+      </section>
       ${contactSection()}
     </main>
     ${footer()}
