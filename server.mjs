@@ -2028,7 +2028,7 @@ function directProductAnswer(rows,message,lang='fi',history=[]) {
   const priceAsk=/\b(?:hinta\w*|maksaa|maksavat|price\w*|cost\w*|pris\w*|kostar)\b/.test(q) || /\bhow\s+much\b/.test(q) || /\bhur\s+mycket\b/.test(q);
   const stockAsk=/\b(?:varastossa|saatavilla|saatavuus|in stock|available|lager|i lager)\b/.test(q);
   const colorAsk=/\b(?:var\w*|vär\w*|colo\w*|farg\w*|färg\w*)\b/.test(q);
-  const sizeAsk=/\b(?:koko\w*|size\w*|sizing|storlek\w*)\b/.test(q);
+  const sizeAsk=/\b(?:koko\w*|koo(?:ssa|issa)|size\w*|sizing|storlek\w*)\b/.test(q);
   const materialAsk=/\b(?:materia\w*|material\w*|made of|made from)\b/.test(q);
   const specAsk=/\b(?:mitta\w*|mitat|dimension\w*|paino\w*|weight\w*|pituu\w*|length\w*|levey\w*|width\w*|korkeu\w*|height\w*)\b/.test(q);
   const generalSellAsk=broadProductQuestion(message);
