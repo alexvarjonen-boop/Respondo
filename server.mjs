@@ -1454,6 +1454,10 @@ function queryTopic(query) {
   if (/osoite|address|adress|sijainti|miss[aä]\s+sijait|where\s+(?:are|is).*located|where\s+is\s+(?:your\s+)?store|myymala|myymälä|store location|butik/.test(q)) return 'stores';
   if (!/hinta|maksaa|price|cost|pris|kostar|auki|hours|open|oppet/.test(q) && /mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|what do you (?:do|offer)|services|vad gor ni|vad gör ni|vad erbjuder|vilka tjänster|vilka tjanster|tjanster|tjänster|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|onko teilla|loytyyko teilta|löytyykö teiltä|haluaisin tilata|haluan tilata|tarvitsen|tarviin|pesu|puhdist|siivou|oljy|öljy|asenn|maal|korj|huol|raiva|poisvien/.test(q)) return 'services';
   if(/mita myytte|mitä myytte|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you sell|what products|vad säljer|vad saljer|sortiment|vari|väri|color|colour|farg|färg|saatavuus|varastossa|in stock/.test(q)) return 'products';
+  // Shipping-cost questions are delivery-policy questions, not generic pricing.
+  // "How much does shipping cost?" must retrieve shipping rows instead of product/service prices.
+  if(/toimitus|toimituskulu|postitus|shipping|delivery|postage|frakt|leverans/.test(q) &&
+     /hinta|maksaa|maksu|kulu|price|cost|fee|charge|pris|kostar|avgift/.test(q)) return 'delivery';
   // Payment-method questions such as "voiko maksaa Klarnalla?" must not be
   // mistaken for a generic price question just because they contain "maksaa".
   if(/maksutapa|maksaminen|maksuvaihtoeh|kortilla|korttimaks|klarn|paypal|mobilepay|apple pay|google pay|payment method|payment options|pay with|pay by|betalning|betalningsmetod|faktura/.test(q)) return 'payment';
@@ -2204,6 +2208,89 @@ function serviceAreaAnswer(value, lang='fi') {
   return 'Toimialueemme on '+clean+'.';
 }
 
+function explicitBusinessLocationQuestion(message) {
+  const q=normalizeSearchText(message);
+  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?sijainti|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+location|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget))$/.test(q);
+}
+
+function extractBusinessLocationText(value) {
+  const text=cleanKnowledgeText(value);
+  if(!text) return '';
+  const direct=text.match(/(?:home\s+base(?:\s+is)?|based|located|headquartered|head\s+office)\s+(?:in|at)\s+([^.!?]+)/i);
+  if(direct) {
+    return direct[1]
+      .replace(/,\s*(?:we|where\s+we|and\s+we|our\s+team)\b[\s\S]*$/i,'')
+      .replace(/\s+/g,' ')
+      .trim()
+      .replace(/[,:;]+$/,'');
+  }
+  const finnish=text.match(/(?:toimipaikkamme|kotipaikkamme|paakonttorimme|pääkonttorimme|sijaitsemme)\s+(?:on|sijaitsee|ovat)?\s*(?:osoitteessa\s+|kaupungissa\s+|paikkakunnalla\s+)?([^.!?]+)/i);
+  if(finnish) return finnish[1].trim().replace(/[,:;]+$/,'');
+  const postal=text.match(/([^.!?]{0,80}\b\d{5}\s+[A-ZÅÄÖa-zåäö][^.!?]{0,80})/);
+  if(postal) return postal[1].trim().replace(/^[,;:\s]+|[,;:\s]+$/g,'');
+  return '';
+}
+
+function verifiedBusinessLocationValue(rows) {
+  const candidates=(rows||[])
+    .filter(usableWebsiteRow)
+    .filter((row)=>{
+      const meta=normalizeSearchText(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''));
+      return knowledgeTopic(meta)==='stores' || /sijainti|location|store|myymala|myymälä|osoite|address|adress/.test(meta);
+    });
+  for(const row of candidates) {
+    const value=extractBusinessLocationText(row.answer);
+    if(value) return {value,row};
+    const answer=cleanKnowledgeText(row.answer);
+    if(answer && answer.length<=180 && !/^https?:\/\//i.test(answer)) return {value:answer.replace(/[.!?]+$/,''),row};
+  }
+  return null;
+}
+
+async function directShippingCostAnswer(rows,message,lang='fi') {
+  const q=normalizeSearchText(message);
+  const shippingCost=/toimitus|toimituskulu|postitus|shipping|delivery|postage|frakt|leverans/.test(q) &&
+    /hinta|maksaa|maksu|kulu|price|cost|fee|charge|pris|kostar|avgift/.test(q);
+  if(!shippingCost) return null;
+
+  const candidates=(rows||[])
+    .filter(usableWebsiteRow)
+    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='delivery')
+    .map((row)=>{
+      const answer=cleanKnowledgeText(row.answer);
+      const evidence=normalizeSearchText(String(row.title||'')+' '+answer);
+      let score=0;
+      if(/free shipping|free delivery|ilmainen toimitus|maksuton toimitus|fri frakt|fri leverans/.test(evidence)) score+=60;
+      if(/[€$£]|\b(?:eur|usd|sek|nok|dkk)\b/i.test(answer)) score+=35;
+      if(/shipping cost|delivery fee|postage|toimituskulu|toimitusmaksu|fraktkostnad|leveransavgift/.test(evidence)) score+=30;
+      if(/\b(?:over|yli|alkaen|from|minimum|minimi|orders? over|tilaukset yli)\b/.test(evidence)) score+=12;
+      if(/tracking|seurant/.test(evidence)) score-=25;
+      if(/business days|paivaa|päivää|days|viikko|weeks|delivery time|toimitusaika/.test(evidence)) score-=8;
+      return {row,answer,score};
+    })
+    .filter((item)=>item.answer && item.score>0)
+    .sort((a,b)=>b.score-a.score);
+
+  if(!candidates.length) return null;
+  const best=candidates[0];
+  let answer=conciseKnowledgeAnswer(best.row,message) || best.answer;
+  answer=cleanKnowledgeText(answer);
+  const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  const sourceLang=detectConversationLanguage(answer,'fi');
+  if(sourceLang!==target) {
+    const translated=await forceAnswerLanguage(answer,target);
+    if(translated) answer=cleanKnowledgeText(translated);
+  }
+  return {
+    answer,
+    handoff:false,
+    confidence:0.96,
+    intent:'Toimitus',
+    sourceIds:[best.row.id].filter(Boolean),
+    selected:[best.row],
+  };
+}
+
 function answerTone(rows) {
   const value = knowledgeValue(rows, 'Vastaustyyli').toLowerCase();
   if (value.includes('lyhyt')) return 'Pidä vastaus erittäin lyhyenä ja suorana. Tavallisesti 1–2 lausetta.';
@@ -2450,6 +2537,13 @@ function conversationalClarification(value, lang='fi', history=[]) {
   const language=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
 
   const say=(fi,sv,en)=>language==='en'?en:language==='sv'?sv:fi;
+  if (/^(?:onko\s+(?:tama|tämä|se|tuo)\s+turvallinen|onko\s+(?:tama|tämä|se|tuo)\s+turvallista|is\s+(?:this|it|that)\s+safe|are\s+(?:these|they)\s+safe|ar\s+(?:detta|det|den)\s+saker|är\s+(?:detta|det|den)\s+säker|ar\s+(?:detta|det)\s+säkert|är\s+(?:detta|det)\s+säkert)$/.test(q)) {
+    return say(
+      'Tarkoitatko tuotteen käyttöturvallisuutta vai tilaamisen ja maksamisen turvallisuutta?',
+      'Menar du produktens säkerhet vid användning eller säkerheten vid beställning och betalning?',
+      'Do you mean whether the product is safe to use, or whether ordering and payment are secure?'
+    );
+  }
   if (/^(?:paljonko|hinta|mika hinta|mita maksaa|how much|price|what price|hur mycket|pris|vad kostar)$/.test(q)) {
     return say('Minkä tuotteen tai palvelun hintaa tarkoitat?','Vilken produkt eller tjänst vill du veta priset på?','Which product or service would you like the price for?');
   }
@@ -4148,10 +4242,32 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       sourceIds:verified?.row.id?[verified.row.id]:[],selected:verified?[verified.row]:[]};
   }
 
+  if (explicitBusinessLocationQuestion(cleanMessage)) {
+    const location=verifiedBusinessLocationValue(rows);
+    if(location) {
+      const answer=responseLang==='en'
+        ? 'We are based in '+location.value+'.'
+        : responseLang==='sv'
+          ? 'Vi finns i '+location.value+'.'
+          : 'Toimipaikkamme on '+location.value+'.';
+      return {
+        answer,
+        handoff:false,
+        confidence:0.98,
+        intent:'Sijainti',
+        sourceIds:[location.row.id].filter(Boolean),
+        selected:[location.row],
+      };
+    }
+  }
+
   if (queryTopic(cleanMessage) === 'quote') {
     const quoteRow = rows.find(row => row.title === 'Tarjouspyyntölomake' && normalizeWebUrl(row.answer, false));
     if (quoteRow) return {answer:responseLang === 'en' ? 'You can request a quote using the button below.' : responseLang === 'sv' ? 'Du kan begära offert via knappen nedan.' : 'Voit pyytää tarjouksen alla olevasta painikkeesta.', handoff:false, confidence:1, intent:'Tarjouspyyntö', sourceIds:[quoteRow.id].filter(Boolean), selected:[quoteRow]};
   }
+
+  const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
+  if(shippingCostResult) return shippingCostResult;
 
   const ecommerceOrderResult=directEcommerceOrderingAnswer(rows,cleanMessage,responseLang);
   if(ecommerceOrderResult) return ecommerceOrderResult;
