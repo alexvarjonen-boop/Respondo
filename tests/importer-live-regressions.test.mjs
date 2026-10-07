@@ -70,6 +70,24 @@ test('feedback headings and membership counts do not become returns or opening h
 });
 
 
+
+test('direct English and Swedish haircut questions are grounded in imported services',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'svc',category:'Palvelut',title:'Palvelut: M Cut',answer:'M Cut on ylläpitävä hiustenleikkaus.',keywords:['hiustenleikkaus'],source_type:'website',source_url:'https://example.fi/services'},
+  ];
+  for(const [lang,message,expected] of [
+    ['en','Do you cut hair?',/haircut/i],
+    ['en','Do you offer a normal haircut?',/haircut/i],
+    ['sv','Klipper ni hår?',/hårklipp/i],
+    ['sv','Har ni vanlig hårklippning?',/hårklipp/i],
+  ]){
+    const result=await generateGroundedAnswer({companyName:'Example',rows,message,history:[],lang});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.match(result.answer,expected,message+' '+result.answer);
+  }
+});
+
 test('generic haircut price follow-ups prefer the base service over add-ons in all languages',async()=>{
   const { generateGroundedAnswer }=await import('../server.mjs');
   const rows=[
