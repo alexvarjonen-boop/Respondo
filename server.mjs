@@ -3201,6 +3201,74 @@ function directDeliveryTimeAnswer(rows,message,lang='fi') {
 }
 
 
+function directReturnPolicyAnswer(rows,message,lang='fi') {
+  const q=normalizeSearchText(message);
+  if(!/palaut|return|refund|retur|aterbetal|återbetal|exchange|vaihto/.test(q)) return null;
+
+  const candidates=(rows||[])
+    .filter(usableWebsiteRow)
+    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='returns')
+    .map((row,index)=>{
+      const answer=cleanKnowledgeText(row.answer);
+      const normalized=normalizeSearchText(answer);
+      const days=answer.match(/\b(\d{1,3})\s*(?:days?|day|päiv(?:ä|ää|än)|paiv(?:a|aa|an)|dagar|dag)\b/i)?.[1] || '';
+      let score=0;
+      if(days) score+=70;
+      if(/return|refund|palaut|retur|aterbetal|återbetal/.test(normalized)) score+=25;
+      if(/policy|käytäntö|kaytanto|oikeus|right|villkor/.test(normalized)) score+=8;
+      return {row,answer,normalized,days,score,index};
+    })
+    .filter((item)=>item.answer&&item.score>0)
+    .sort((a,b)=>b.score-a.score||a.index-b.index);
+
+  const best=candidates[0];
+  if(!best) return null;
+  const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  const sourceLanguage=detectConversationLanguage(best.answer,'fi');
+
+  // Preserve an already-correct same-language policy. Cross-language answers
+  // use deterministic factual templates so translator rate limits cannot cause
+  // a fallback for a clearly published return window.
+  if(sourceLanguage===target){
+    return {
+      answer:best.answer,
+      handoff:false,
+      confidence:0.98,
+      intent:'Palautukset',
+      sourceIds:[best.row.id].filter(Boolean),
+      selected:[best.row],
+    };
+  }
+
+  if(!best.days) return null;
+  let answer=target==='en'
+    ? 'You can return the product within '+best.days+' days.'
+    : target==='sv'
+      ? 'Du kan returnera produkten inom '+best.days+' dagar.'
+      : 'Tuotteen voi palauttaa '+best.days+' päivän kuluessa.';
+
+  const taxesNonRefundable=
+    /(?:duties|taxes).{0,80}(?:non-?refundable|not refunded|not refundable)/i.test(best.answer) ||
+    /(?:non-?refundable|not refunded|not refundable).{0,80}(?:duties|taxes)/i.test(best.answer);
+  if(taxesNonRefundable){
+    answer+=' '+(target==='en'
+      ? 'Duties and taxes are non-refundable.'
+      : target==='sv'
+        ? 'Tullar och skatter återbetalas inte.'
+        : 'Tulleja ja veroja ei palauteta.');
+  }
+
+  return {
+    answer,
+    handoff:false,
+    confidence:0.98,
+    intent:'Palautukset',
+    sourceIds:[best.row.id].filter(Boolean),
+    selected:[best.row],
+  };
+}
+
+
 function answerTone(rows) {
   const value = knowledgeValue(rows, 'Vastaustyyli').toLowerCase();
   if (value.includes('lyhyt')) return 'Pidä vastaus erittäin lyhyenä ja suorana. Tavallisesti 1–2 lausetta.';
@@ -5248,6 +5316,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const deliveryTimeResult=directDeliveryTimeAnswer(rows,cleanMessage,responseLang);
   if(deliveryTimeResult) return deliveryTimeResult;
+
+  const returnPolicyResult=directReturnPolicyAnswer(rows,cleanMessage,responseLang);
+  if(returnPolicyResult) return returnPolicyResult;
 
   const ecommerceOrderResult=directEcommerceOrderingAnswer(rows,cleanMessage,responseLang);
   if(ecommerceOrderResult) return ecommerceOrderResult;
