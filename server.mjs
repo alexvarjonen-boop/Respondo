@@ -2342,7 +2342,7 @@ function verifiedContactValue(rows, title) {
 function explicitContactQuestion(message) {
   const q=normalizeSearchText(message);
   if (/(?:^|\s)(?:puhelin\w*|phone\w*|telefon\w*|soitta\w*|soita|ring\w*|numero|numeronne|numeroanne)(?:\s|$)/.test(q)) return 'phone';
-  if (/(?:^|\s)(?:sahkopost\w*|email\w*|e-mail|meili\w*|epost\w*)(?:\s|$)/.test(q)) return 'email';
+  if (/(?:^|\s)(?:sahkopost\w*|email\w*|e-mail|meili\w*|e-?post\w*)(?:\s|$)/.test(q)) return 'email';
   return '';
 }
 
