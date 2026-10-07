@@ -3432,6 +3432,54 @@ function directDeliveryTimeAnswer(rows,message,lang='fi') {
 }
 
 
+function directWarrantyAnswer(rows,message,lang='fi') {
+  const q=normalizeSearchText(message);
+  if(!/\b(?:takuu\w*|taku\w*|warrant\w*|guarantee\w*|garanti\w*|reklamaatio\w*|reklamation\w*)\b/i.test(q)) return null;
+  const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  // Use only verified warranty rows, never a nearby product description or
+  // another tenant's FAQ. The public demo and paid bot share this route.
+  const candidates=(rows||[])
+    .filter(usableWebsiteRow)
+    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='warranty')
+    .map((row,index)=>{
+      const answer=cleanKnowledgeText(row.answer);
+      if(!/\b(?:takuu\w*|taku\w*|warrant\w*|guarantee\w*|garanti\w*)\b/i.test(normalizeSearchText(answer))) return null;
+      if(/\b(?:no warranty|without warranty|not covered by warranty|ei takuuta|ilman takuuta|ingen garanti)\b/i.test(answer)) return null;
+      const duration=answer.match(/\b(\d{1,3})\s*[-–]?\s*(months?|mo\.?|kuukau\w*|kk|mån(?:ad|ader)\w*|manad\w*|years?|vuos\w*|vuod\w*|år|ar|days?|päiv\w*|paiv\w*|dagar?)\b/i);
+      if(!duration) return null;
+      const unit=normalizeSearchText(duration[2]);
+      const period=/^(?:month|mo$|kuukau|kk$|manad|manader)/.test(unit)?'months'
+        :/^(?:year|vuos|vuod|ar$)/.test(unit)?'years':'days';
+      const source=normalizeSearchText(answer);
+      const manufacturingDefects=
+        /(?:defects?\s+in\s+materials?\s+and\s+workmanship|material\s+and\s+manufacturing\s+defects?|material[-\s]+and[-\s]+workmanship|materiaali[-\s]+ja[-\s]+valmistusvirh|material[-\s]+och[-\s]+tillverkningsfel)/i.test(source);
+      return {row,answer,amount:Number(duration[1]),period,manufacturingDefects,index,
+        score:(manufacturingDefects?10:0)+(index===0?1:0)};
+    })
+    .filter(Boolean)
+    .sort((a,b)=>b.score-a.score||a.index-b.index);
+  const best=candidates[0];
+  if(!best || best.amount<=0) return null;
+  const n=best.amount;
+  const duration=target==='en'
+    ? n+' '+(best.period==='months'?'month'+(n===1?'':'s'):best.period==='years'?'year'+(n===1?'':'s'):'day'+(n===1?'':'s'))
+    : target==='sv'
+      ? n+' '+(best.period==='months'?'månad'+(n===1?'':'er'):best.period==='years'?'år':'dag'+(n===1?'':'ar'))
+      : n+' '+(best.period==='months'?'kuukautta':best.period==='years'?'vuotta':'päivää');
+  let answer=target==='en'?'Yes. The listed warranty lasts '+duration+'.'
+    :target==='sv'?'Ja. Den angivna garantin gäller i '+duration+'.'
+    :'Kyllä. Tuotetiedoissa ilmoitettu takuu on '+duration+'.';
+  if(best.manufacturingDefects) answer+=' '+(target==='en'
+    ? 'It covers defects in materials and workmanship.'
+    :target==='sv'
+      ? 'Den täcker material- och tillverkningsfel.'
+      :'Se kattaa materiaali- ja valmistusvirheet.');
+  return {
+    answer,handoff:false,confidence:0.98,intent:'Takuu',
+    sourceIds:[best.row.id].filter(Boolean),selected:[best.row],
+  };
+}
+
 function directReturnPolicyAnswer(rows,message,lang='fi') {
   const q=normalizeSearchText(message);
   if(!/palaut|return|refund|retur|aterbetal|återbetal|exchange/.test(q) && !exchangeWord.test(q)) return null;
@@ -5582,6 +5630,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const returnPolicyResult=directReturnPolicyAnswer(rows,cleanMessage,responseLang);
   if(returnPolicyResult) return returnPolicyResult;
+
+  const warrantyResult=directWarrantyAnswer(rows,cleanMessage,responseLang);
+  if(warrantyResult) return warrantyResult;
 
   const servicePriceFollowup=await directServicePriceFollowup(rows,cleanMessage,history,responseLang);
   if(servicePriceFollowup) return servicePriceFollowup;
