@@ -35,8 +35,11 @@ test('intent landing pages are indexable and routed in both server and browser',
   assert.match(app,/function seoLandingPage\(path\)/);
 });
 
-test('homepage exposes a descriptive H1 and direct-answer GEO section',()=>{
-  assert.match(app,/AI-asiakaspalvelu yritykselle/);
-  assert.match(app,/function geoAnswerSection\(\)/);
-  assert.match(app,/Mikä Respondo AI on\?/);
+test('homepage exposes descriptive product content without the unwanted information-card section',()=>{
+  const homepage=fs.readFileSync(new URL('../public/premium-home.js',import.meta.url),'utf8');
+  assert.match(homepage, /<h1 id="lp-title">/);
+  assert.match(homepage,/AI-asiakaspalvelu yritykselle/);
+  assert.match(app,/premiumHomeSections\(appText, currentLang\(\), FEATURE_COUNT\)/);
+  assert.match(homepage,/AI-asiakaspalvelu yrityksesi verkkosivuille/);
+  assert.doesNotMatch(app,/geoAnswerSection|geo-answer-section|respondo-explained/);
 });

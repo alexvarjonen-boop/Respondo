@@ -826,6 +826,7 @@
   }
 
   function leftSectionRail() {
+    if (document.querySelector(".premium-home")) return;
     if (location.pathname !== '/' || mobileLite || $('.section-rail-premium')) return;
     const sections = [
       { id:'how', label:'Miten toimii' },
@@ -970,10 +971,10 @@
     const assistantPage = route === '/assistant';
 
     const sceneCandidates = home
-      ? $('main > section, main > .section, .visual-card, .flowstep, .proof-grid > div, .price-card')
+      ? $$('main > section, main > .section, .visual-card, .flowstep, .proof-grid > div, .price-card')
       : assistantPage
-        ? $('.assistant-direct-copy, .owner-profile-form, .assistant-order, .assistant-order-card')
-        : $('main > section, main > div, .formcard, .checkout-copy, .login-copy, .panel, .legal-card');
+        ? $$('.assistant-direct-copy, .owner-profile-form, .assistant-order, .assistant-order-card')
+        : $$('main > section, main > div, .formcard, .checkout-copy, .login-copy, .panel, .legal-card');
 
     const scenes = [...new Set(sceneCandidates)].filter((el) => {
       if (!el || el.classList.contains('fx-assistant') || el.closest('.fx-assistant')) return false;
@@ -989,14 +990,14 @@
       }
     });
 
-    const headings = $('main h1, main h2, main h3, .assistant-direct-copy h1, .assistant-order h2')
+    const headings = $$('main h1, main h2, main h3, .assistant-direct-copy h1, .assistant-order h2')
       .filter(el => !el.closest('.fx-assistant') && !el.dataset.fxHeadline);
     headings.forEach((el, i) => {
       el.dataset.fxHeadline = String(i % 4);
       el.classList.add('fx-headline');
     });
 
-    const depthCards = $(
+    const depthCards = $$(
       '.visual-card,.flowstep,.truth-card,.price-card,.research-card,.stat-card,.panel,.formcard,.assistant-order-card,.owner-profile-form'
     ).filter(el => !el.closest('.fx-assistant'));
     depthCards.forEach((el, i) => {
@@ -1124,7 +1125,7 @@
 
   function cinematicSectionAtmosphere() {
     if (reduce || mobileLite || location.pathname !== '/') return;
-    const sections = $('main > section').filter(Boolean);
+    const sections = $$('main > section').filter(Boolean);
     if (!sections.length) return;
 
     sections.forEach((section, i) => {
@@ -1259,6 +1260,15 @@
   }
 
   function init() {
+    if (location.pathname === '/' && document.querySelector('.premium-home')) {
+      leftSectionRail(); assistant();
+      window.addEventListener('respondo:languagechange', () => {
+        document.querySelector('.fx-assistant-launch')?.remove();
+        document.querySelector('.fx-assistant')?.remove();
+        assistant();
+      });
+      return;
+    }
     injectBase();
     kineticNavigation();
     if (location.pathname === '/assistant') {
@@ -1277,6 +1287,8 @@
   }
 
   let timer;
-  const mo = new MutationObserver(() => { clearTimeout(timer); timer = setTimeout(() => { if ($('#app')?.children.length) { mo.disconnect(); init(); } }, 60); });
-  if ($('#app')?.children.length) init(); else mo.observe($('#app') || document.documentElement, {childList:true,subtree:true});
+  // The server's noscript SEO shell precedes the asynchronously rendered app.
+  const rendered = () => location.pathname === '/' ? Boolean($('#app .premium-home')) : Boolean($('#app')?.children.length);
+  const mo = new MutationObserver(() => { clearTimeout(timer); timer = setTimeout(() => { if (rendered()) { mo.disconnect(); init(); } }, 60); });
+  if (rendered()) init(); else mo.observe($('#app') || document.documentElement, {childList:true,subtree:true});
 })();
