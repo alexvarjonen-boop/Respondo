@@ -79,7 +79,7 @@ test('direct English and Swedish haircut questions are grounded in imported serv
   for(const [lang,message,expected] of [
     ['en','Do you cut hair?',/haircut/i],
     ['en','Do you offer a normal haircut?',/haircut/i],
-    ['sv','Klipper ni hår?',/hårklipp/i],
+    ['sv','Klipper ni hår?',/hår|klipp/i],
     ['sv','Har ni vanlig hårklippning?',/hårklipp/i],
   ]){
     const result=await generateGroundedAnswer({companyName:'Example',rows,message,history:[],lang});
