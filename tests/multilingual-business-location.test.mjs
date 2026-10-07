@@ -25,3 +25,19 @@ for(const [lang,message,expected] of [
     assert.doesNotMatch(result.answer,/idrottare|vänner|företagare|athlete|friends|entrepreneur/i);
   });
 }
+
+
+for(const [lang,message] of [
+  ['fi','Missä päin yritys toimii?'],
+  ['fi','Mikä on yrityksen sijainti?'],
+  ['en','What location are you based in?'],
+  ['sv','Vilken ort finns företaget på?'],
+]){
+  test('natural company-location paraphrase resolves verified base in '+lang+' — '+message,async()=>{
+    const result=await generateGroundedAnswer({companyName:'Example',rows,message,history:[],lang});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.equal(result.intent,'Sijainti');
+    assert.match(result.answer,/Turku, Finland/i,message+' '+result.answer);
+    assert.doesNotMatch(result.answer,/athlete|friends|entrepreneur|idrottare|vänner|företagare/i,result.answer);
+  });
+}
