@@ -3113,6 +3113,9 @@ function extractDeliveryTimingFacts(value) {
   }
 
   facts.generic=deliveryDurationText(raw);
+  const normalized=normalizeSearchText(raw);
+  if(!facts.domestic && facts.generic && /domestic|kotimais|kotimaa|inrikes/.test(normalized)) facts.domestic=facts.generic;
+  if(!facts.international && facts.generic && /international|kansainval|kansainväl|utrikes/.test(normalized)) facts.international=facts.generic;
   return facts;
 }
 
