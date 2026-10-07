@@ -59,12 +59,26 @@ async function ask(site,rows,{lang,message,expect,history=[],label}){
   return result;
 }
 
+async function fetchBundleWithRetry(site){
+  let lastError=null;
+  for(let attempt=1;attempt<=3;attempt++){
+    try{
+      return await fetchWebsiteBundle(site.url,site.maxPages||55,site.budget||30000,null,{
+        storefrontLimit:site.storefrontLimit||200,
+        storefrontBudgetMs:site.storefrontBudgetMs||5000,
+        sitemapLimit:site.sitemapLimit||1000,
+      });
+    }catch(error){
+      lastError=error;
+      console.warn('LIVE_AUDIT_RETRY '+site.name+' attempt '+attempt+': '+(error?.message||error));
+      if(attempt<3) await new Promise(resolve=>setTimeout(resolve,1500*attempt));
+    }
+  }
+  throw lastError || new Error('Live audit crawl failed.');
+}
+
 async function auditServiceSite(site){
-  const bundle=await fetchWebsiteBundle(site.url,site.maxPages||55,site.budget||30000,null,{
-    storefrontLimit:site.storefrontLimit||200,
-    storefrontBudgetMs:site.storefrontBudgetMs||5000,
-    sitemapLimit:site.sitemapLimit||1000,
-  });
+  const bundle=await fetchBundleWithRetry(site);
   const candidates=websiteKnowledgeCandidates(bundle);
   const profile=extractFreeWebsiteProfile(bundle);
   const rows=rowsFromCandidates(candidates);
