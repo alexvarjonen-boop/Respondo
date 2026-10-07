@@ -485,7 +485,12 @@ export function businessFactKind(text, context = '') {
     ].filter(([,pattern])=>pattern.test(c));
     if (contextualPolicies.length===1) {
       const kind=contextualPolicies[0][0];
-      if (!policyHeadingOnly(t,kind)) return kind;
+      // A heading such as "Guarantee" must not turn ordinary marketing prose
+      // ("guarantees a good vibe", "result guaranteed") into warranty knowledge.
+      if (kind==='warranty' && !warranty.test(n) &&
+          !/\b(?:defect|defective|material(?:s)?|workmanship|covered|coverage|valid|month|months|year|years|virhe|materiaali|valmistusvirhe|kuukaus|vuosi|fel|material|tillverkningsfel|manad|månad|ar|år)\b/i.test(t)) {
+        // Ignore non-policy prose that only inherited warranty context.
+      } else if (!policyHeadingOnly(t,kind)) return kind;
     }
   }
   if (commerceFact && care.test(commerce)) return 'care';
@@ -645,7 +650,44 @@ export function essentialWebsiteCandidates(bundle) {
   if (quoteLinks.length) add('quote','Tarjouspyyntölomake',quoteLinks[0].url,quoteLinks[0].sourceUrl);
   catalogLinks.sort((a,b)=>b.score-a.score);
   if (catalogLinks.length) add('catalog','Tuotekatalogi',catalogLinks[0].url,catalogLinks[0].sourceUrl);
-  return out.slice(0,10000);
+
+  // If the user imports a branch/location-specific page, contact details,
+  // address and opening hours from other branches on the same chain must not
+  // contaminate this location. Keep the exact start page plus facts that
+  // explicitly mention the location slug (e.g. "maariankatu").
+  let scoped=out;
+  try {
+    const final=new URL(bundle?.finalUrl || '');
+    const finalKey=(final.origin+final.pathname.replace(/\/+$/,'')).toLowerCase();
+    const segments=final.pathname.split('/').map((x)=>norm(x)).filter(Boolean);
+    const generic=new Set(['fi','sv','en','contact','kontakt','yhteystiedot','about','about-us','meista','meistä','company','locations','location','stores','store','shops','shop','parturit','salons','toimipisteet']);
+    const scopeToken=[...segments].reverse().find((x)=>x.length>=4 && !generic.has(x)) || '';
+    const sourceKey=(value)=>{
+      try {
+        const u=new URL(String(value||''));
+        return (u.origin+u.pathname.replace(/\/+$/,'')).toLowerCase();
+      } catch { return ''; }
+    };
+    const sensitiveKey=(item)=>{
+      if(item.title==='Puhelinnumero') return 'phone';
+      if(item.title==='Sähköposti') return 'email';
+      if(item.title==='Osoite' || item.category===labels.location) return 'location';
+      if(item.category===labels.hours) return 'hours';
+      return '';
+    };
+    const exactKeys=new Set(out.filter((item)=>sourceKey(item.sourceUrl)===finalKey).map(sensitiveKey).filter(Boolean));
+    if(scopeToken && exactKeys.size){
+      scoped=out.filter((item)=>{
+        const key=sensitiveKey(item);
+        if(!key || !exactKeys.has(key)) return true;
+        const src=sourceKey(item.sourceUrl);
+        if(src===finalKey) return true;
+        const evidence=norm(String(item.answer||'')+' '+String(item.title||'')+' '+String(item.sourceUrl||''));
+        return evidence.includes(scopeToken);
+      });
+    }
+  } catch {}
+  return scoped.slice(0,10000);
 }
 function addressScore(value,title='') {
   const text=clean(value);
@@ -696,8 +738,24 @@ function bestAddressAnswer(facts) {
 
 export function essentialWebsiteProfile(bundle) {
   const facts = essentialWebsiteCandidates(bundle);
-  const byKind = (kind) => facts.filter(x=>x.category===labels[kind]).map(x=>x.answer).join('\n').slice(0,4000);
-  const byTitle = (title) => facts.find(x=>x.title===title)?.answer || '';
+  let preferred='';
+  try {
+    const u=new URL(bundle?.finalUrl || '');
+    preferred=(u.origin+u.pathname.replace(/\/+$/,'')).toLowerCase();
+  } catch {}
+  const sourceKey=(value)=>{
+    try {
+      const u=new URL(String(value||''));
+      return (u.origin+u.pathname.replace(/\/+$/,'')).toLowerCase();
+    } catch { return ''; }
+  };
+  const sorted=(items)=>[...items].sort((a,b)=>{
+    const ap=preferred && sourceKey(a.sourceUrl)===preferred ? 1 : 0;
+    const bp=preferred && sourceKey(b.sourceUrl)===preferred ? 1 : 0;
+    return bp-ap;
+  });
+  const byKind = (kind) => sorted(facts.filter(x=>x.category===labels[kind])).map(x=>x.answer).join('\n').slice(0,4000);
+  const byTitle = (title) => sorted(facts.filter(x=>x.title===title))[0]?.answer || '';
   return {
     website:bundle.finalUrl || '',
     services:byKind('services'),
