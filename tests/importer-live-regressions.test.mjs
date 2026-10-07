@@ -358,3 +358,56 @@ test('email inside a skipped page-builder button is still imported',()=>{
   assert.equal(profile.email,'miestenparturiturku@gmail.com');
   assert.match(profile.phone,/050\s*325\s*4690/);
 });
+
+
+test('merchant registry contact outranks unrelated branch contact on a generic ecommerce import',()=>{
+  const branch={
+    url:'https://shop.example/barbershop/riihimaki',
+    blocks:[
+      {text:'050 553 0478',heading:'Yhteystiedot'},
+      {text:'Hämeenkatu 31, 11100 Riihimäki',heading:'Yhteystiedot'},
+    ],
+    links:[],products:[],text:''
+  };
+  const registry={
+    url:'https://shop.example/pages/rekisteriseloste',
+    blocks:[
+      {text:'GF Lab Oy',heading:'Rekisterinpitäjä'},
+      {text:'Postiosoite: Hallituskatu 9, 33200 Tampere',heading:'Rekisterinpitäjä'},
+      {text:'asiakas@shop.example',heading:'Rekisterin vastaavan yhteystiedot'},
+      {text:'040 654 5654',heading:'Rekisterin vastaavan yhteystiedot'},
+    ],
+    links:[],products:[],text:''
+  };
+  const profile=essentialWebsiteProfile({
+    finalUrl:'https://shop.example/',
+    products:[],
+    pageDocuments:[branch,registry],
+  });
+  assert.equal(profile.email,'asiakas@shop.example');
+  assert.match(profile.phone,/040\s*654\s*5654/);
+  assert.equal(profile.address,'Hallituskatu 9, 33200 Tampere');
+  assert.doesNotMatch([profile.phone,profile.email,profile.address].join(' '),/050\s*553|Hämeenkatu\s*31/i);
+});
+
+test('shipping-cost answer combines paid delivery options with the free-shipping threshold',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'free',category:'Toimitus',title:'Toimitus',answer:'Ilmainen toimitus 60€ ostoksiin.',keywords:['toimitus'],source_type:'website',source_url:'https://shop.example/shipping'},
+    {id:'budbee-box',category:'Toimitus',title:'Toimitus',answer:'Budbee pakettiautomaatti: 4,80€',keywords:['toimitus'],source_type:'website',source_url:'https://shop.example/shipping'},
+    {id:'budbee-home',category:'Toimitus',title:'Toimitus',answer:'Budbee kotiinkuljetus: 6,90€',keywords:['toimitus'],source_type:'website',source_url:'https://shop.example/shipping'},
+    {id:'posti-box',category:'Toimitus',title:'Toimitus',answer:'Posti pakettiautomaatti tai noutopiste: 4,90€',keywords:['toimitus'],source_type:'website',source_url:'https://shop.example/shipping'},
+    {id:'posti-home',category:'Toimitus',title:'Toimitus',answer:'Posti kotiinkuljetus: 9,90€',keywords:['toimitus'],source_type:'website',source_url:'https://shop.example/shipping'},
+  ];
+  for(const [lang,message] of [
+    ['fi','Paljonko toimitus maksaa?'],
+    ['en','How much does shipping cost?'],
+    ['sv','Vad kostar frakten?'],
+  ]){
+    const result=await generateGroundedAnswer({companyName:'Shop',rows,message,history:[],lang});
+    assert.equal(result.handoff,false,JSON.stringify(result));
+    assert.match(result.answer,/4[.,]80/i,result.answer);
+    assert.match(result.answer,/4[.,]90/i,result.answer);
+    assert.match(result.answer,/60\s*€/i,result.answer);
+  }
+});
