@@ -464,6 +464,7 @@ export function extractBusinessDocument(html, url) {
 export function businessFactKind(text, context = '') {
   const t = clean(text), n = norm(t), c = norm(context);
   if (!t || t.length > 1600 || junk.test(n) || review.test(n) || /[★⭐]|\b\d(?:[.,]\d)?\s*\/\s*5\b/.test(t)) return '';
+  if (billingAddressNoise.test(t)) return '';
   if (/^(?:palvelut?|services?|tjanster|hinnat|hinnasto|pricing|prices|yhteystiedot|contact|aukioloajat|opening hours|pyyda tarjous|ota yhteytta|lue lisaa|read more|las mer|etusivu|home)$/i.test(n)) return '';
   const commerce=n+' '+c;
   const commerceFact=t.length>=10 && t.split(/\s+/).length>=2;

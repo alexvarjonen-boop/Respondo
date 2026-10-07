@@ -2564,7 +2564,11 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
       if(answer.length<=80) score+=22;
       if(/^[^:]{2,65}:\s*(?:alk\.?|alkaen|from)?\s*[€$£]?\s*\d/i.test(answer)) score+=34;
       if(/lisapalvel|lisäpalvel|add[- ]?on|extra\b|upgrade|korotus|supplement|tillagg|tillägg/.test(evidence)) score-=50;
+      // Generic "how much is it?" follow-ups must prefer the plain/base service
+      // over premium bundles that merely contain the same service name.
+      if(/premium|pidennetty|extended|päähier|paahier|head massage|scalp massage|razor|veitsiraj|bundle|paketti|package|with .*massage|med .*massage/.test(evidence)) score-=65;
       if(/jasen|jäsen|member|membership|student|junior|opiskel|daytime/.test(evidence)) score-=14;
+      if(/^(?:m\s*cut|hiustenleikkaus|haircut|hårklippning|harklippning)\s*[:–-]?\s*[€$£]?\s*\d/i.test(answer)) score+=24;
       return {row,answer,score,index};
     })
     .filter(Boolean)
