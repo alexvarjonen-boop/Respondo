@@ -498,3 +498,22 @@ test('natural address paraphrases resolve the same verified location in fi en sv
     assert.match(result.answer,/20100 Turku/i,message+' '+result.answer);
   }
 });
+
+
+test('natural general contact paraphrases return verified phone and email in FI EN SV',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'phone',category:'Yhteystiedot',title:'Puhelinnumero',answer:'+358 50 5774490',keywords:['puhelin'],source_type:'website',source_url:'https://example.fi/contact'},
+    {id:'email',category:'Yhteystiedot',title:'Sähköposti',answer:'info@example.fi',keywords:['sähköposti'],source_type:'website',source_url:'https://example.fi/contact'},
+  ];
+  for(const [lang,message] of [
+    ['fi','Miten voin ottaa teihin yhteyttä?'],
+    ['en','How do I get in touch with you?'],
+    ['en','How can I get in touch with you?'],
+    ['sv','Hur kan jag komma i kontakt med er?'],
+  ]){
+    const result=await generateGroundedAnswer({companyName:'Example',rows,message,history:[],lang});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.match(result.answer,/577\s*4490|info@example\.fi/i,message+' '+result.answer);
+  }
+});
