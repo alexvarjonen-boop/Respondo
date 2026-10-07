@@ -134,3 +134,19 @@ test('location-detail crawl explicitly rejects sibling branch paths',()=>{
   assert.match(server,/hasSameFamily && !sameDetail/);
   assert.match(server,/hasSameFamily && !sameDetail/);
 });
+
+
+test('opening hours are answered deterministically in English and Swedish without translation service',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'mon',category:'Aukioloajat',title:'Aukioloajat',answer:'ma 11:00 - 19:00',keywords:['auki','opening','hours','öppettider'],source_type:'website',source_url:'https://example.fi/store'},
+    {id:'sat',category:'Aukioloajat',title:'Aukioloajat',answer:'la 09:00 - 16:00',keywords:['auki','opening','hours','öppettider'],source_type:'website',source_url:'https://example.fi/store'},
+  ];
+  const en=await generateGroundedAnswer({companyName:'Example',rows,message:'What are your opening hours on Monday?',history:[],lang:'en'});
+  assert.equal(en.handoff,false);
+  assert.match(en.answer,/11:00.*19:00/);
+
+  const sv=await generateGroundedAnswer({companyName:'Example',rows,message:'Har ni öppet på lördag?',history:[],lang:'sv'});
+  assert.equal(sv.handoff,false);
+  assert.match(sv.answer,/09:00.*16:00/);
+});
