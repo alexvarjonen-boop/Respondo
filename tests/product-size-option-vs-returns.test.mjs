@@ -27,7 +27,7 @@ for (const [lang,message] of [
     const result=await generateGroundedAnswer({companyName:'Shop',rows,message,lang,history:[]});
     assert.equal(result.handoff,false,JSON.stringify(result));
     assert.match(result.answer,/MIDHEAVY 230g/);
-    assert.match(result.answer,/\bS\b|\bM\b|\bXL\b|2XL|3XL/i);
+    assert.match(result.answer,/S,\s*M,\s*L,\s*XL,\s*2XL,\s*3XL/i,result.answer);
     assert.doesNotMatch(result.answer,/100 päivän|return|palauttaa|palauttaa|returnera/i);
   });
 }
@@ -42,3 +42,12 @@ for(const [lang,message] of [
     assert.match(result.answer,/100/);
   });
 }
+
+test('an unrelated question never treats a letter inside a word as an S size request',async()=>{
+  const result=await generateGroundedAnswer({
+    companyName:'Shop',rows,
+    message:'Mitä muuta osaatte kertoa MIDHEAVY 230g -paidasta?',
+    lang:'fi',history:[],
+  });
+  assert.doesNotMatch(String(result.answer||''),/\b(?:koossa|size)\s+S\b/i,JSON.stringify(result));
+});

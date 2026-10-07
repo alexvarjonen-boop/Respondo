@@ -2129,8 +2129,19 @@ function directProductAnswer(rows,message,lang='fi',history=[]) {
   // If the customer names a concrete variant value (for example "black" or "XL"),
   // confirm only from the imported product options; never infer a variant.
   if(bestCandidate && !priceAsk){
-    const color=bestCandidate.colors?.find((value)=>q.includes(normalizeSearchText(value)));
-    const size=bestCandidate.sizes?.find((value)=>q.includes(normalizeSearchText(value)));
+    // A one-character variant such as S must be a separate word; it cannot be
+    // inferred from a letter in "missä", "paidasta" or another question word.
+    const explicitlyMentioned=(value)=>{
+      const term=normalizeSearchText(value).trim();
+      if(!term) return false;
+      const phraseWords=term.split(/[^a-z0-9]+/).filter(Boolean);
+      const queryWords=q.split(/[^a-z0-9]+/).filter(Boolean);
+      return phraseWords.length===1
+        ? queryWords.includes(phraseWords[0])
+        : q.includes(term);
+    };
+    const color=bestCandidate.colors?.find(explicitlyMentioned);
+    const size=bestCandidate.sizes?.find(explicitlyMentioned);
     if(color){
       const answer=lang==='en'?bestCandidate.name+' is listed in '+color+'.'
         :lang==='sv'?bestCandidate.name+' finns listad i färgen '+color+'.'
