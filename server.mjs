@@ -2644,6 +2644,65 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
 
 
 
+
+function directMultilingualServicePrice(rows,message,lang='fi') {
+  const q=normalizeSearchText(message);
+  const isPriceQuestion =
+    /(?:paljonko|mita maksaa|mitä maksaa|mika.*hinta|mikä.*hinta|hinta\b|how much|what.*cost|cost\b|price\b|vad kostar|hur mycket|pris\b)/.test(q);
+  if(!isPriceQuestion) return null;
+
+  const requested=multilingualServiceConcepts(message);
+  if(!requested.size) return null;
+
+  const candidates=(rows||[])
+    .filter(usableWebsiteRow)
+    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='pricing')
+    .map((row,index)=>{
+      const answer=cleanKnowledgeText(row.answer);
+      const evidence=normalizeSearchText(String(row?.title||'')+' '+answer);
+      if(!/[€$£]|\b\d+(?:[.,]\d+)?\s*(?:eur|usd|sek|nok|dkk|kr)\b/i.test(answer)) return null;
+      const available=multilingualServiceConcepts(evidence);
+      const matched=[...requested].filter((concept)=>available.has(concept)).length;
+      if(!matched) return null;
+      let score=matched*35;
+      if(matched===requested.size) score+=45;
+      if(/premium|pidennetty|extended|päähier|paahier|head massage|scalp massage|razor|veitsiraj|bundle|paketti|package|student|junior|jasen|jäsen|member/.test(evidence)) score-=30;
+      if(/^(?:m\s*cut|hiustenleikkaus|haircut|hårklippning|harklippning)\b/.test(answer)) score+=20;
+      return {row,answer,score,index};
+    })
+    .filter(Boolean)
+    .sort((a,b)=>b.score-a.score || a.index-b.index);
+
+  const best=candidates[0];
+  if(!best || best.score<55) return null;
+
+  const amountMatch=best.answer.match(/([€$£]\s*\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)?\s*(?:€|eur|usd|sek|nok|dkk|kr|\$|£))/i);
+  const amount=amountMatch?.[1]?.trim() || '';
+  let answer=best.answer;
+
+  if(amount){
+    if(lang==='en') answer='The price is '+amount+'.';
+    else if(lang==='sv') answer='Priset är '+amount+'.';
+    else answer='Hinta on '+amount+'.';
+
+    if(requested.has('hair') && requested.has('cut')){
+      if(lang==='en') answer='A haircut costs '+amount+'.';
+      else if(lang==='sv') answer='En hårklippning kostar '+amount+'.';
+      else answer='Hiustenleikkaus maksaa '+amount+'.';
+    }
+  }
+
+  return {
+    answer,
+    handoff:false,
+    confidence:0.98,
+    intent:'Hinta',
+    sourceIds:[best.row.id].filter(Boolean),
+    selected:[best.row],
+  };
+}
+
+
 function multilingualServiceConcepts(value) {
   const q=normalizeSearchText(value);
   const concepts=new Set();
@@ -4988,6 +5047,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const servicePriceFollowup=await directServicePriceFollowup(rows,cleanMessage,history,responseLang);
   if(servicePriceFollowup) return servicePriceFollowup;
+
+  const standaloneServicePrice=directMultilingualServicePrice(rows,cleanMessage,responseLang);
+  if(standaloneServicePrice) return standaloneServicePrice;
 
   const multilingualService=directMultilingualServiceConfirmation(rows,cleanMessage,responseLang);
   if(multilingualService) {
