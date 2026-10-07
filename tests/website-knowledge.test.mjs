@@ -933,6 +933,22 @@ test('retail theme chrome and detached price badges never become ecommerce answe
  assert.doesNotMatch(result.answer,/Regular price|SELECT OPTION/i);
 });
 
+test('replacement blade copy never contaminates the return-policy category',()=>{
+ const doc=extractBusinessDocument(`
+   <section><h2>Vaihtoterät</h2>
+     <p>Laadukkaat vaihtoterät partahöyliin takaavat tarkan ajon.</p>
+     <p>Vaihtoterät sopivat kaikkiin perinteisiin partahöyliin.</p>
+   </section>
+   <section><h2>Palautukset</h2>
+     <p>Tuotteilla on 100 päivän palautusoikeus.</p>
+   </section>
+ `,'https://shop.example/pages/customer-info');
+ const facts=essentialWebsiteCandidates({finalUrl:'https://shop.example/',pageDocuments:[doc]});
+ const returnsFacts=facts.filter((item)=>item.category==='Palautukset ja vaihdot');
+ assert.ok(returnsFacts.some((item)=>/100 päivän palautusoikeus/i.test(item.answer)),JSON.stringify(returnsFacts));
+ assert.equal(returnsFacts.some((item)=>/vaihtoter/i.test(item.answer)),false,JSON.stringify(returnsFacts));
+});
+
 test('about-page marketing prose mentioning service does not become a service fact',()=>{
  const marketing='<section><h2>MEISTÄ</h2><p>Parturoinnissa ei ole kyse pelkästään hiustenleikkaamisesta, vaan myös rentoutumisesta ja hyvästä tunnelmasta. Palvelussamme haluamme täyttää asiakkaidemme toiveet.</p></section><section><h2>Palvelut</h2><p>Tarjoamme hiustenleikkauksia, parran muotoilua ja muita parturipalveluita.</p></section>';
  const doc=extractBusinessDocument(marketing,'https://barber.example/about');
