@@ -81,3 +81,20 @@ test('putter price question excludes accessories and gift cards', async()=>{
   assert.ok(actions.length>=2,JSON.stringify(actions));
   assert.ok(actions.every((action)=>/putter|satin-black|tour-blade/i.test(action.label+' '+action.url)),JSON.stringify(actions));
 });
+
+
+test('broad product-range paraphrases resolve naturally in FI EN SV',async()=>{
+  for(const [lang,message] of [
+    ['fi','Mitä tuotteita teiltä löytyy?'],
+    ['fi','Millainen tuotevalikoima teillä on?'],
+    ['en','What products do you sell?'],
+    ['en','What is in your product range?'],
+    ['sv','Vilka produkter säljer ni?'],
+    ['sv','Vad finns i ert sortiment?'],
+  ]){
+    const result=await generateGroundedAnswer({rows,message,lang,companyName:'JAG Putters'});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.equal(result.intent,'Tuotteet',message);
+    assert.match(result.answer,/golf|Putter|Headcover|Grip|Towel|Mailansuoja|golfutrustning/i,message+' '+result.answer);
+  }
+});
