@@ -134,3 +134,78 @@ test('location-detail crawl explicitly rejects sibling branch paths',()=>{
   assert.match(server,/hasSameFamily && !sameDetail/);
   assert.match(server,/hasSameFamily && !sameDetail/);
 });
+
+
+test('combined CMS contact widgets yield separate verified email and physical address facts',()=>{
+  const bundle={
+    finalUrl:'https://example.fi/',
+    products:[],
+    pageDocuments:[{
+      url:'https://example.fi/',
+      blocks:[
+        {text:'info@examplebusiness.fiHallituskatu 11, 33200 Tampere, Suomi',heading:'Yhteystiedot'},
+      ],
+      links:[],products:[],text:''
+    }],
+  };
+  const candidates=essentialWebsiteCandidates(bundle);
+  assert.ok(candidates.some((row)=>row.title==='Sähköposti' && row.answer==='info@examplebusiness.fi'),JSON.stringify(candidates));
+  assert.ok(candidates.some((row)=>row.title==='Osoite' && /Hallituskatu 11/.test(row.answer) && /33200 Tampere/.test(row.answer)),JSON.stringify(candidates));
+});
+
+test('placeholder template ecommerce data never becomes company knowledge',()=>{
+  const bundle={
+    finalUrl:'https://example.fi/',
+    products:[
+      {name:'Herbal Essence Oil',price:55,currency:'USD',url:'https://example.fi/product/herbal-essence-oil/',description:'Lorem ipsum dolor sit amet, consectetur adipisicing elit.'},
+      {name:'Shop - Example',price:0,currency:'USD',url:'https://example.fi/shop/',description:''},
+    ],
+    pageDocuments:[{
+      url:'https://example.fi/home-2/',
+      blocks:[
+        {text:'admin@example.com',heading:'Contact'},
+        {text:'128 Winston st, New York',heading:'Address'},
+      ],
+      products:[],
+      links:[],
+      text:''
+    },{
+      url:'https://example.fi/',
+      blocks:[{text:'Real service information is available here.',heading:'Services'}],
+      products:[],
+      links:[],
+      text:''
+    }],
+  };
+  const candidates=essentialWebsiteCandidates(bundle);
+  const text=JSON.stringify(candidates);
+  assert.doesNotMatch(text,/Lorem ipsum|Herbal Essence Oil|admin@example\.com|128 Winston/i);
+  assert.ok(!candidates.some((row)=>row.category==='Tuotteet'),text);
+});
+
+test('returns heading does not turn unrelated membership copy into a returns policy',()=>{
+  const bundle={
+    finalUrl:'https://example.fi/',
+    products:[],
+    pageDocuments:[{
+      url:'https://example.fi/',
+      blocks:[
+        {text:'Memberships are available in Silver, Gold and Platinum tiers and can be purchased online.',heading:'Returns'},
+        {text:'Unused products can be returned within 30 days with proof of purchase.',heading:'Returns'},
+      ],
+      links:[],products:[],text:''
+    }],
+  };
+  const candidates=essentialWebsiteCandidates(bundle);
+  const returnsRows=candidates.filter((row)=>row.category==='Palautukset ja vaihdot');
+  assert.equal(returnsRows.length,1,JSON.stringify(candidates));
+  assert.match(returnsRows[0].answer,/30 days/i);
+  assert.doesNotMatch(returnsRows[0].answer,/Memberships/i);
+});
+
+test('crawler excludes obvious template and archive paths from live imports',()=>{
+  const server=fs.readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+  assert.match(server,/home\[-_\]\?\\d\+/);
+  assert.match(server,/product-tag\|product-category/);
+  assert.match(server,/Contact, location and policy pages are more valuable/);
+});
