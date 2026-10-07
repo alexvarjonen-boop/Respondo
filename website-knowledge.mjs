@@ -397,6 +397,21 @@ export function extractBusinessDocument(html, url) {
   };
   // Strip raw-text elements first, so code containing '<' cannot corrupt parsing.
   const source = String(html || '').replace(/<!--[^]*?-->/g,'').replace(/<(script|style|noscript|svg|template)\b[^>]*>[^]*?<\/\1\s*>/gi,'');
+
+  // Some page builders put contact text inside buttons/widgets that are
+  // intentionally excluded from ordinary content extraction. Recover literal
+  // email addresses from the remaining HTML before those UI nodes are skipped.
+  const sourceEmails=new Set();
+  for(const match of decodeHtml(source).matchAll(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,12}\b/gi)){
+    const value=String(match[0]||'').trim();
+    if(!value || placeholderContactValue(value) || /^(?:no-?reply|noreply)@/i.test(value)) continue;
+    const key=value.toLowerCase();
+    if(sourceEmails.has(key)) continue;
+    sourceEmails.add(key);
+    blocks.push({text:value,heading:'Yhteystiedot'});
+    if(sourceEmails.size>=12) break;
+  }
+
   for (const token of source.match(/<[^>]*>|[^<]+/g) || []) {
     if (token[0] !== '<') {
       if (stack.some(x => x.skip)) continue;
