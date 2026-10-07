@@ -578,7 +578,7 @@ async function ensureMillionIntentVariants() {
       const needed = INTENT_VARIANT_TARGET_PER_LANGUAGE - total;
       await q(
         `WITH base AS (
-           SELECT intent,normalized,row_number() OVER (ORDER BY normalized) AS rn
+           SELECT intent,normalized,id AS rn
              FROM intent_utterances
             WHERE active=TRUE
               AND source='generated'
@@ -604,7 +604,7 @@ async function ensureMillionIntentVariants() {
              b.rn,
              g
            FROM base b
-           CROSS JOIN generate_series(1,64) AS g
+           CROSS JOIN generate_series(1,32) AS g
          )
          INSERT INTO intent_phrase_variants(language,intent,normalized)
          SELECT $1,c.intent,c.normalized
@@ -618,7 +618,6 @@ async function ensureMillionIntentVariants() {
               SELECT 1 FROM intent_phrase_variants existing
                WHERE existing.language=$1 AND existing.normalized=c.normalized
             )
-          ORDER BY c.rn,c.g
           LIMIT $2
          ON CONFLICT(language,normalized) DO NOTHING`,
         [language, needed, wrappers.prefixes, wrappers.suffixes],
