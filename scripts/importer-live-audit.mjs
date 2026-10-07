@@ -118,6 +118,18 @@ function automaticScenarioVariants(scenario){
     if(lang==='fi') variants.push('Voitko antaa tarkan osoitteen?','Missä teidän toimipiste on?');
     if(lang==='en') variants.push('Can you give me your exact address?','Where is your location?');
     if(lang==='sv') variants.push('Kan jag få er exakta adress?','Var ligger ert verksamhetsställe?');
+  } else if(label.includes('location')){
+    if(lang==='fi') variants.push('Missä päin yritys toimii?','Mikä on yrityksen sijainti?');
+    if(lang==='en') variants.push('Where is the company located?','What location are you based in?');
+    if(lang==='sv') variants.push('Var ligger företaget?','Vilken ort finns företaget på?');
+  } else if(label.includes('products')){
+    if(lang==='fi') variants.push('Mitä tuotteita teiltä löytyy?','Millainen tuotevalikoima teillä on?');
+    if(lang==='en') variants.push('What products do you sell?','What is in your product range?');
+    if(lang==='sv') variants.push('Vilka produkter säljer ni?','Vad finns i ert sortiment?');
+  } else if(label.includes('sizes')){
+    if(lang==='fi') variants.push('Missä koissa MIDHEAVY 230g -paitaa saa?','Mitä kokovaihtoehtoja MIDHEAVY 230g -paidasta löytyy?');
+    if(lang==='en') variants.push('Which sizes are available for the MIDHEAVY 230g T-shirt?','What size options does the MIDHEAVY 230g T-shirt have?');
+    if(lang==='sv') variants.push('Vilka storlekar är tillgängliga för MIDHEAVY 230g t-shirten?','Vilka storleksalternativ har MIDHEAVY 230g t-shirten?');
   } else if(label.includes('phone')){
     if(lang==='fi') variants.push('Mihin numeroon voin soittaa?','Anna asiakaspalvelun puhelinnumero.');
     if(lang==='en') variants.push('Which number should I call?','Give me your customer service phone number.');
