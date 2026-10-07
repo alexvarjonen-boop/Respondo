@@ -4843,9 +4843,6 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
   }
 
-  const openingHoursResult=directOpeningHoursAnswer(rows,cleanMessage,responseLang);
-  if(openingHoursResult) return openingHoursResult;
-
   const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
   if(shippingCostResult) return shippingCostResult;
 
