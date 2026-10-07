@@ -71,12 +71,13 @@ test('feedback headings and membership counts do not become returns or opening h
 
 
 
-test('direct English and Swedish haircut questions are grounded in imported services',async()=>{
+test('direct Finnish, English and Swedish haircut questions are grounded in imported services',async()=>{
   const { generateGroundedAnswer }=await import('../server.mjs');
   const rows=[
     {id:'svc',category:'Palvelut',title:'Palvelut: M Cut',answer:'M Cut on ylläpitävä hiustenleikkaus.',keywords:['hiustenleikkaus'],source_type:'website',source_url:'https://example.fi/services'},
   ];
   for(const [lang,message,expected] of [
+    ['fi','Leikkaatteko hiuksia?',/hiustenleikka|leikka/i],
     ['en','Do you cut hair?',/haircut/i],
     ['en','Do you offer a normal haircut?',/haircut/i],
     ['sv','Klipper ni hår?',/hår|klipp/i],
