@@ -2656,7 +2656,7 @@ function directMultilingualServiceConfirmation(rows,message,lang='fi') {
   let answer='';
   if(language==='sv'){
     if(/^klipper\s+ni\s+/i.test(original)){
-      answer='Ja, vi klipper '+original.replace(/^klipper\s+ni\s+/i,'')+'.';
+      answer='Ja, vi erbjuder hårklippning.';
     } else {
       const subject=original
         .replace(/^(?:har|erbjuder)\s+ni\s+/i,'')
