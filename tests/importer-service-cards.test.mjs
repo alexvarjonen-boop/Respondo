@@ -72,3 +72,18 @@ test('a bare template shop link does not make a service company look like an eco
   const facts=essentialWebsiteCandidates(bundle);
   assert.equal(facts.some((x)=>x.title==='Tuotekatalogi'),false);
 });
+
+
+test('billing and e-invoicing details never become customer-facing services',()=>{
+  const bundle=bundleFrom(`
+    <section>
+      <h2>Yhteystiedot</h2>
+      <p>Verkkolaskutusosoite: 003726574803 Operaattori: Apix Messaging Oy (003723327487) Ostolaskujen skannauspalvelu.</p>
+      <p>Tarjoamme hiustenleikkauksia ja parran muotoilua.</p>
+    </section>
+  `);
+  const facts=essentialWebsiteCandidates(bundle);
+  const text=facts.map((x)=>x.answer).join('\n');
+  assert.doesNotMatch(text,/verkkolask|apix|skannauspalvelu/i);
+  assert.match(text,/hiustenleikkauksia/i);
+});
