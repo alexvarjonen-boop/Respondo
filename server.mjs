@@ -5519,15 +5519,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     if (quoteRow) return {answer:responseLang === 'en' ? 'You can request a quote using the button below.' : responseLang === 'sv' ? 'Du kan begära offert via knappen nedan.' : 'Voit pyytää tarjouksen alla olevasta painikkeesta.', handoff:false, confidence:1, intent:'Tarjouspyyntö', sourceIds:[quoteRow.id].filter(Boolean), selected:[quoteRow]};
   }
 
-  const servicePriceFollowup=await directServicePriceFollowup(rows,cleanMessage,history,responseLang);
-  if(servicePriceFollowup) return servicePriceFollowup;
-
-  const standaloneServicePrice=directMultilingualServicePrice(rows,cleanMessage,responseLang);
-  if(standaloneServicePrice) return standaloneServicePrice;
-
-  // Policy / fulfilment questions must outrank generic service matching.
-  // Natural phrases such as "Mitä toimituksesta veloitetaan?" contain words
-  // that can otherwise look like a service request and select unrelated prose.
+  // Fulfilment/policy questions must outrank generic price and service logic.
+  // Otherwise a shipping-price question can return only one arbitrary money row
+  // instead of the complete delivery-price summary.
   const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
   if(shippingCostResult) return shippingCostResult;
 
@@ -5536,6 +5530,12 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const returnPolicyResult=directReturnPolicyAnswer(rows,cleanMessage,responseLang);
   if(returnPolicyResult) return returnPolicyResult;
+
+  const servicePriceFollowup=await directServicePriceFollowup(rows,cleanMessage,history,responseLang);
+  if(servicePriceFollowup) return servicePriceFollowup;
+
+  const standaloneServicePrice=directMultilingualServicePrice(rows,cleanMessage,responseLang);
+  if(standaloneServicePrice) return standaloneServicePrice;
 
   const multilingualService=directMultilingualServiceConfirmation(rows,cleanMessage,responseLang);
   if(multilingualService) {
