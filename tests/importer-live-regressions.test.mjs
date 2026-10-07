@@ -285,6 +285,23 @@ test('compact weekly hours keep Saturday separate from weekday range in all lang
   }
 });
 
+test('inflected weekday paraphrases return only the requested day in fi en sv',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'hours',category:'Aukioloajat',title:'Aukioloajat',answer:'Ma-Pe : 11:00–19:00 La : 09:00-16:00',keywords:['aukioloajat'],source_type:'website',source_url:'https://example.fi/'},
+  ];
+  for(const [lang,message,label] of [
+    ['fi','Mitkä ovat maanantain aukioloajat?','Maanantai'],
+    ['en','When are you open on Mondays?','Monday'],
+    ['sv','Vilka är era öppettider på måndagar?','Måndag'],
+  ]){
+    const result=await generateGroundedAnswer({companyName:'Example',rows,message,history:[],lang});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.match(result.answer,new RegExp('^'+label+': 11:00 - 19:00'),message+' '+result.answer);
+    assert.doesNotMatch(result.answer,/Tuesday|Tiistai|Tisdag|Saturday|Lauantai|Lördag/,message+' '+result.answer);
+  }
+});
+
 test('Finnish normal haircut wording resolves from imported service evidence',async()=>{
   const { generateGroundedAnswer }=await import('../server.mjs');
   const rows=[
