@@ -17,8 +17,8 @@ const hours = /auki|opening|hours|oppet|maanantai|tiistai|keskiviikko|torstai|pe
 const clock = /\b\d{1,2}[:.]\d{2}\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\d{2})?\b|\b\d{1,2}(?:[:.]\d{2})?\s*(?:–|-|—|to|till)\s*\d{1,2}[:.]\d{2}\b|\b\d{1,2}[:.]\d{2}\b|\b(?:closed|suljettu|stangt|24\/7)\b/i;
 const price = /(?:\d[\d\s.,]*\s*(?:€|eur\b|usd\b|sek\b|kr\b|\$|£)|[€$£]\s*\d)|(?:hinta|hinnoittelu|price|pris).*(?:sopim|tarjous|quote|offert|contact|yhtey|avtal)/i;
 const delivery = /toimitus|toimitusaika|toimitamme|toimitetaan|seurant|lahetys|lähetys|\bship(?:s|ped|ping)?\b|delivery|shipment|tracking|track(?:ing)?\s+(?:code|number|order)|nouto|pickup|leverans|sparning|spårning|forsand|försänd/i;
-const returns = /palaut(?:us\w*|taa\w*|an\w*|etaan\w*|ettava\w*|taminen\w*)|vaihto(?!ehto)|vaihd(?:ot|on|ossa|oksi|ettava|etaan|taa)|hyvitys|return|refund|exchange|retur|aterbetal|återbetal|byte\b/i;
-const warranty = /takuu|reklamaatio|warranty|\bguarantee\b|garanti|reklamation/i;
+const returns = /\bpalaut(?:us\w*|taa\w*|an\w*|etaan\w*|ettava\w*|taminen\w*)\b|\bvaihto\b|\bvaihd(?:ot|on|ossa|oksi|ettava|etaan|taa)\b|\bhyvitys\w*\b|\breturns?\b|\brefund\w*\b|\bexchange\w*\b|\bretur\w*\b|\baterbetal\w*\b|\båterbetal\w*\b|\bbyte\b/i;
+const warranty = /\b(?:takuu|takuun|takuuta|takuussa|takuusta|takuuseen|takuuaika\w*|takuuehto\w*|tuotetakuu\w*|reklamaatio\w*|warrant(?:y|ies)|guarantee\w*|garanti\w*|reklamation\w*)\b/i;
 const payment = /maksutapa|maksaminen|maksuvaihtoeh|korttimaks|lasku\b|klarna|paypal|mobilepay|apple\s*pay|google\s*pay|payment|payment method|pay\s+(?:with|by)|betalning|betalningsmetod|faktura/i;
 
 // Policy headings and marketing badges are context, not customer-answer facts.
@@ -605,6 +605,11 @@ function templateDemoProduct(product) {
 }
 
 
+function foreignPartyContactContext(value) {
+  const n=norm(clean(value));
+  return /\b(?:valmistajan?\s+tiedot|valmistaja|manufacturer(?:\s+(?:information|details|contact))?|hersteller|tillverkare|maahantuoja|importer(?:\s+details)?|supplier(?:\s+details)?|eu\s+responsible\s+person|responsible\s+person|vastuuhenkilo|vastuuhenkilö)\b/.test(n);
+}
+
 function extractedContactEmail(value) {
   const raw=clean(decodeHtml(value))
     .replace(/(\.(?:fi|se|no|dk|com|net|org|eu))(?=[A-ZÅÄÖ])/g,'$1 ');
@@ -720,11 +725,12 @@ export function essentialWebsiteCandidates(bundle) {
     }
     for (let blockIndex=0; blockIndex<blocks.length; blockIndex++) {
       const block=blocks[blockIndex];
-      const directEmail=extractedContactEmail(block.text);
+      const foreignParty=foreignPartyContactContext(block.heading) || foreignPartyContactContext(block.text);
+      const directEmail=foreignParty ? '' : extractedContactEmail(block.text);
       if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
-      const directPhone=extractedContactPhone(block.text);
+      const directPhone=foreignParty ? '' : extractedContactPhone(block.text);
       if(directPhone) add('contact','Puhelinnumero',directPhone,doc.url);
-      for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
+      if(!foreignParty) for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
 
       const kind = businessFactKind(block.text,block.heading);
       if (!kind) continue;
@@ -758,7 +764,7 @@ export function essentialWebsiteCandidates(bundle) {
       if (kind === 'faq') title = clean(block.heading).slice(0,180) || 'Usein kysytyt';
       if (kind === 'contact') title = directEmail ? 'Sähköposti' : phone.test(block.text) ? 'Puhelinnumero' : 'Yhteystiedot';
       if (kind === 'contact' && directEmail) add(kind,'Sähköposti',directEmail,doc.url);
-      if (kind === 'contact' && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add(kind,'Puhelinnumero',block.text.match(phone)[0],doc.url);
+      if (kind === 'contact' && !foreignParty && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add(kind,'Puhelinnumero',block.text.match(phone)[0],doc.url);
       if (kind !== 'contact') {
         const concreteHeading = clean(block.heading);
         const normalizedHeading=norm(concreteHeading);
@@ -921,12 +927,14 @@ function conciseProfileServices(facts) {
     if(label) add(label);
   }
 
-  for(const fact of facts.filter(x=>x.category===labels.services)){
-    const answer=clean(fact.answer);
-    if(!answer || answer.length>120) continue;
-    if(/\b(?:pitkän historian|pitkan historian|tavoitteenamme|kokonaisvaltais(?:esta|en|ta)|jokainen asiakkaamme|elämys|elamyks)\b/i.test(answer)) continue;
-    for(const part of answer.split(/\s*(?:\n|[|•·])\s*/)){
-      if(part.length<=120) add(part);
+  if(!out.length){
+    for(const fact of facts.filter(x=>x.category===labels.services)){
+      const answer=clean(fact.answer);
+      if(!answer || answer.length>120) continue;
+      if(/\b(?:pitkän historian|pitkan historian|tavoitteenamme|kokonaisvaltais(?:esta|en|ta)|jokainen asiakkaamme|elämys|elamyks|palvelussa|palveluista)\b/i.test(answer)) continue;
+      for(const part of answer.split(/\s*(?:\n|[|•·])\s*/)){
+        if(part.length<=120) add(part);
+      }
     }
   }
   return out.slice(0,32).join('\n').slice(0,2600);
@@ -998,11 +1006,22 @@ export function essentialWebsiteProfile(bundle) {
       return (u.origin+u.pathname.replace(/\/+$/,'')).toLowerCase();
     } catch { return ''; }
   };
-  const sorted=(items)=>[...items].sort((a,b)=>{
-    const ap=preferred && sourceKey(a.sourceUrl)===preferred ? 1 : 0;
-    const bp=preferred && sourceKey(b.sourceUrl)===preferred ? 1 : 0;
-    return bp-ap;
-  });
+  const sourcePriority=(item)=>{
+    const src=sourceKey(item?.sourceUrl);
+    let score=0;
+    if(preferred && src===preferred) score+=120;
+    try{
+      const u=new URL(String(item?.sourceUrl||''));
+      const p=norm(u.pathname);
+      if(/(?:^|\/)(?:contact|contacts|yhteystiedot|kontakt|kundservice|customer-service|asiakaspalvelu)(?:\/|$)/.test(p)) score+=100;
+      if(u.pathname==='/' || u.pathname==='') score+=70;
+      if(/(?:^|\/)(?:about|about-us|meista|meistä|company|yritys)(?:\/|$)/.test(p)) score+=35;
+      if(/\/(?:products?|tuotteet?)\//.test(p)) score-=120;
+      if(/\/(?:blog|news|uutis)\//.test(p)) score-=45;
+    }catch{}
+    return score;
+  };
+  const sorted=(items)=>[...items].sort((a,b)=>sourcePriority(b)-sourcePriority(a));
   const byKind = (kind) => uniqueProfileFacts(sorted(facts.filter(x=>x.category===labels[kind])),4000);
   const byTitle = (title) => sorted(facts.filter(x=>x.title===title))[0]?.answer || '';
   return {
