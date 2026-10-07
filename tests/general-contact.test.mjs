@@ -41,3 +41,35 @@ for(const [lang,message,expected] of [
     assert.match(result.answer,expected);
   });
 }
+
+
+for(const [lang,message] of [
+  ['fi','Mihin numeroon voin soittaa?'],
+  ['en','Which number should I call?'],
+  ['sv','Vilket nummer ska jag ringa?'],
+]){
+  test('call-number paraphrase returns verified phone in '+lang,async()=>{
+    const result=await generateGroundedAnswer({
+      companyName:'Example',
+      rows,
+      message,
+      history:[],
+      lang,
+    });
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.equal(result.intent,'Yhteystiedot');
+    assert.match(result.answer,/\+358 50 5774490/i,result.answer);
+    assert.doesNotMatch(result.answer,/info@example\.fi/i,result.answer);
+  });
+}
+
+test('order number wording is not mistaken for a phone-number request',async()=>{
+  const result=await generateGroundedAnswer({
+    companyName:'Example',
+    rows,
+    message:'Where is my order number?',
+    history:[],
+    lang:'en',
+  });
+  assert.doesNotMatch(String(result.answer||''),/Our phone number is/i);
+});
