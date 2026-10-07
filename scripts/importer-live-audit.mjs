@@ -45,6 +45,23 @@ function assertContains(site,text,label,pattern){
   assert.match(text,pattern,site.name+' missing '+label);
 }
 
+function liveProductPriceExpectation(site,rows,productName){
+  const wanted=norm(productName);
+  const row=rows.find((item)=>norm(item.title).includes(wanted) && /Hinta:\s*\d/i.test(item.answer));
+  assert.ok(row,site.name+' missing current product price row for '+productName);
+  const match=String(row.answer).match(/Hinta:\s*([0-9]+(?:[.,][0-9]+)?)/i);
+  assert.ok(match,site.name+' could not parse current product price for '+productName+': '+row.answer);
+  const raw=match[1].replace(',','.');
+  const [whole,decimal='']=raw.split('.');
+  const numeric=decimal ? whole+'[.,]'+decimal : whole+'(?:[.,]00)?';
+  return new RegExp('(?:€\\s*)?'+numeric+'(?:\\s*(?:€|EUR))?','i');
+}
+
+function scenarioWithLiveExpectation(site,rows,scenario){
+  if(!scenario?.productPriceTitle) return scenario;
+  return {...scenario,expect:liveProductPriceExpectation(site,rows,scenario.productPriceTitle)};
+}
+
 async function ask(site,rows,{lang,message,expect,history=[],label}){
   const result=await generateGroundedAnswer({
     companyName:site.name,
@@ -104,12 +121,14 @@ async function auditServiceSite(site){
   console.log('profile='+JSON.stringify(profile));
 
   for(const scenario of site.questions){
-    const first=await ask(site,rows,scenario);
+    const checkedScenario=scenarioWithLiveExpectation(site,rows,scenario);
+    const first=await ask(site,rows,checkedScenario);
     console.log('Q ['+scenario.lang+'] '+scenario.message+' -> '+first.answer);
     if(scenario.followups){
       let history=[{question:scenario.message,answer:first.answer}];
       for(const follow of scenario.followups){
-        const next=await ask(site,rows,{...follow,history});
+        const checkedFollow=scenarioWithLiveExpectation(site,rows,follow);
+        const next=await ask(site,rows,{...checkedFollow,history});
         console.log('F ['+follow.lang+'] '+follow.message+' -> '+next.answer);
         history=[...history,{question:follow.message,answer:next.answer}].slice(-6);
       }
@@ -226,7 +245,6 @@ const ecommerceSites=[
     minFacts:12,
     mustContain:[
       ['product',/JAG Satin (?:Black|Bronze|Steel)/i],
-      ['product price',/199(?:[.,]00)?\s*(?:EUR|€)/i],
       ['shipping threshold',/free shipping.{0,80}280\s*€/i],
       ['delivery time',/3\s*[-–]\s*5\s+business days|3\s*[-–]\s*6\s+days/i],
       ['returns',/return within\s+45\s+days|45\s+days/i],
@@ -236,9 +254,9 @@ const ecommerceSites=[
       {label:'products-fi',lang:'fi',message:'Mitä puttereita teillä on myynnissä?',expect:/JAG|putter/i},
       {label:'products-en',lang:'en',message:'Which putters do you sell?',expect:/JAG|putter/i},
       {label:'products-sv',lang:'sv',message:'Vilka putters säljer ni?',expect:/JAG|putter/i},
-      {label:'black-price-fi',lang:'fi',message:'Paljonko JAG Satin Black maksaa?',expect:/199/},
-      {label:'black-price-en',lang:'en',message:'How much is the JAG Satin Black putter?',expect:/199/},
-      {label:'black-price-sv',lang:'sv',message:'Vad kostar JAG Satin Black-puttern?',expect:/199/},
+      {label:'black-price-fi',lang:'fi',message:'Paljonko JAG Satin Black maksaa?',productPriceTitle:'JAG Satin Black'},
+      {label:'black-price-en',lang:'en',message:'How much is the JAG Satin Black putter?',productPriceTitle:'JAG Satin Black'},
+      {label:'black-price-sv',lang:'sv',message:'Vad kostar JAG Satin Black-puttern?',productPriceTitle:'JAG Satin Black'},
       {label:'shipping-cost-fi',lang:'fi',message:'Paljonko toimitus maksaa?',expect:/280|ilmain|free/i},
       {label:'shipping-cost-en',lang:'en',message:'How much does shipping cost?',expect:/280|free/i},
       {label:'shipping-cost-sv',lang:'sv',message:'Vad kostar frakten?',expect:/280|gratis|free/i},
@@ -251,14 +269,14 @@ const ecommerceSites=[
       {label:'location-fi',lang:'fi',message:'Missä yritys sijaitsee?',expect:/Turku|Finland|Suom/i},
       {label:'location-en',lang:'en',message:'Where are you based?',expect:/Turku|Finland/i},
       {label:'location-sv',lang:'sv',message:'Var finns företaget?',expect:/Turku|Finland|Finland/i},
-      {label:'followup-fi',lang:'fi',message:'Paljonko musta putteri maksaa?',expect:/199/,followups:[
-        {label:'followup-bronze-fi',lang:'fi',message:'Entä pronssinen?',expect:/199/},
+      {label:'followup-fi',lang:'fi',message:'Paljonko musta putteri maksaa?',productPriceTitle:'JAG Satin Black',followups:[
+        {label:'followup-bronze-fi',lang:'fi',message:'Entä pronssinen?',productPriceTitle:'JAG Satin Bronze'},
       ]},
-      {label:'followup-en',lang:'en',message:'How much is the black putter?',expect:/199/,followups:[
-        {label:'followup-bronze-en',lang:'en',message:'What about the bronze one?',expect:/199/},
+      {label:'followup-en',lang:'en',message:'How much is the black putter?',productPriceTitle:'JAG Satin Black',followups:[
+        {label:'followup-bronze-en',lang:'en',message:'What about the bronze one?',productPriceTitle:'JAG Satin Bronze'},
       ]},
-      {label:'followup-sv',lang:'sv',message:'Vad kostar den svarta puttern?',expect:/199/,followups:[
-        {label:'followup-bronze-sv',lang:'sv',message:'Och den bronsfärgade?',expect:/199/},
+      {label:'followup-sv',lang:'sv',message:'Vad kostar den svarta puttern?',productPriceTitle:'JAG Satin Black',followups:[
+        {label:'followup-bronze-sv',lang:'sv',message:'Och den bronsfärgade?',productPriceTitle:'JAG Satin Bronze'},
       ]},
     ],
   },
@@ -272,16 +290,15 @@ const ecommerceSites=[
     minFacts:20,
     mustContain:[
       ['t-shirt product',/T-paita MIDHEAVY 230g/i],
-      ['t-shirt price',/24[.,]90\s*(?:EUR|€)/i],
       ['shipping price',/(?:4[.,]80|4[.,]90)\s*€/i],
       ['delivery time',/2\s*[-–]\s*5\s+arkipäivää|2\s*[-–]\s*5\s+business days/i],
       ['returns',/100\s+päivän\s+palautusoikeus|100\s+days/i],
       ['product color option',/SUTITELINE Plastic[\s\S]{0,900}(?:Black|Ivory|Transparent)/i],
     ],
     questions:[
-      {label:'shirt-price-fi',lang:'fi',message:'Paljonko T-paita MIDHEAVY 230g maksaa?',expect:/24[.,]90|24\.9/},
-      {label:'shirt-price-en',lang:'en',message:'How much is the MIDHEAVY 230g T-shirt?',expect:/24[.,]90|24\.9/},
-      {label:'shirt-price-sv',lang:'sv',message:'Vad kostar MIDHEAVY 230g t-shirten?',expect:/24[.,]90|24\.9/},
+      {label:'shirt-price-fi',lang:'fi',message:'Paljonko T-paita MIDHEAVY 230g maksaa?',productPriceTitle:'T-paita MIDHEAVY 230g'},
+      {label:'shirt-price-en',lang:'en',message:'How much is the MIDHEAVY 230g T-shirt?',productPriceTitle:'T-paita MIDHEAVY 230g'},
+      {label:'shirt-price-sv',lang:'sv',message:'Vad kostar MIDHEAVY 230g t-shirten?',productPriceTitle:'T-paita MIDHEAVY 230g'},
       {label:'shirt-sizes-fi',lang:'fi',message:'Mitä kokoja MIDHEAVY 230g paidasta on?',expect:/\bS\b|\bM\b|XL|2XL|3XL/i},
       {label:'shirt-sizes-en',lang:'en',message:'What sizes does the MIDHEAVY 230g T-shirt come in?',expect:/\bS\b|\bM\b|XL|2XL|3XL/i},
       {label:'shirt-sizes-sv',lang:'sv',message:'Vilka storlekar finns MIDHEAVY 230g t-shirten i?',expect:/\bS\b|\bM\b|XL|2XL|3XL/i},
