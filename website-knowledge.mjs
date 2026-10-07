@@ -112,7 +112,7 @@ export function isConcreteServiceLabel(value) {
 
   // Require a concrete service noun/stem instead of accepting every marketing
   // phrase from a card that happens to mention "service".
-  return /(?:palvelu|service|tjanst|tjänst|pesu|siivou|puhdist|maala|raivau|leikkaus|parturi|kampaamo|huolto|asennu|korjau|kuljet|muutto|varastointi|vuokraus|poisvienti|purku|kartoit|kierrat|kierrät|murske|asbesti|saneeraus|remont|rakennus|hiero|fysioter|hoito|koulutus|konsult|suunnittel|valokuva|catering|siirto|pakkaus)/.test(n);
+  return /(?:palvelu|service|tjanst|tjänst|pesu|siivou|puhdist|maala|raivau|leikkaus|parturi|kampaamo|huolto|asennu|korjau|kuljet|muut(?:to|ot|toa|toja|tojen)|varastointi|vuokraus|poisvienti|purku|kartoit|kierrat|kierrät|murske|asbesti|saneeraus|remont|rakennus|hiero|fysioter|hoito|koulutus|konsult|suunnittel|valokuva|catering|siirto|pakkaus)/.test(n);
 }
 
 function stripProductHtml(value) {
@@ -661,7 +661,7 @@ export function usableWebsiteRow(row) {
     serviceTitle &&
     norm(row.category||'')==='palvelut' &&
     norm(serviceTitle[1])===norm(row.answer||'') &&
-    service.test(norm(row.answer||''))
+    isConcreteServiceLabel(row.answer)
   ) return true;
   if (/(?:^|\s)(?:tuotteet|products?|produkter)(?:\s|$)/.test(norm(row.category || ''))) {
     const product=parseProductKnowledgeRow(row);
