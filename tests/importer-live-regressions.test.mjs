@@ -316,3 +316,34 @@ test('branded barber service heading keeps its detached base price',()=>{
   assert.match(text,/M Cut™?: 36 €/i,JSON.stringify(rows));
   assert.match(text,/M Cut XL™?: 44 €/i,JSON.stringify(rows));
 });
+
+
+test('bare Finnish phone number is imported even without a phone heading',()=>{
+  const doc={
+    url:'https://example.fi/',
+    blocks:[
+      {text:'050 325 4690',heading:''},
+      {text:'miestenparturiturku@gmail.com',heading:''},
+    ],
+    links:[],products:[],text:'050 325 4690 miestenparturiturku@gmail.com'
+  };
+  const bundle={finalUrl:'https://example.fi/',products:[],pageDocuments:[doc]};
+  const profile=essentialWebsiteProfile(bundle);
+  assert.match(profile.phone,/050\s*325\s*4690/);
+  assert.equal(profile.email,'miestenparturiturku@gmail.com');
+});
+
+test('Duda and builder metadata never becomes customer knowledge',()=>{
+  const doc={
+    url:'https://example.fi/',
+    blocks:[
+      {text:'{"ssr_script":"","headsection":" ","current_url":"","collections":"e30=","sidebarPosition":"NA","pageFontSizeStyle":"@media (min-width: 1025px) { [data-version] .size-24 {--font-size:24;} }","extensionsToRender":{}}',heading:''},
+      {text:'Hiustenleikkaus 31€',heading:'Hinnasto'},
+    ],
+    links:[],products:[],text:''
+  };
+  const rows=essentialWebsiteCandidates({finalUrl:'https://example.fi/',products:[],pageDocuments:[doc]});
+  const text=candidateTextForTest(rows);
+  assert.doesNotMatch(text,/ssr_script|pageFontSizeStyle|extensionsToRender|data-version|@media/i,JSON.stringify(rows));
+  assert.match(text,/Hiustenleikkaus 31€/i);
+});
