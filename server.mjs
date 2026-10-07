@@ -3208,19 +3208,54 @@ async function directShippingCostAnswer(rows,message,lang='fi') {
     .sort((a,b)=>b.score-a.score);
 
   if(!candidates.length) return null;
-  const best=candidates[0];
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
-  let answer=localizedShippingCostFact(best.answer,target)
-    || conciseKnowledgeAnswer(best.row,message)
-    || best.answer;
+  const freePattern=/free shipping|free delivery|ilmainen toimitus|maksuton toimitus|fri frakt|fri leverans/;
+  const paid=[];
+  const paidKeys=new Set();
+  const selected=[];
+  let freeFact='';
+
+  for(const item of candidates){
+    const normalized=normalizeSearchText(item.answer);
+    if(freePattern.test(normalized)){
+      if(!freeFact) freeFact=localizedShippingCostFact(item.answer,target);
+      continue;
+    }
+    for(const amount of shippingMoneyValues(item.answer)){
+      const key=normalizeSearchText(amount).replace(/\s+/g,'');
+      if(!key || paidKeys.has(key)) continue;
+      paidKeys.add(key);
+      paid.push(amount);
+      if(!selected.includes(item.row)) selected.push(item.row);
+      if(paid.length>=8) break;
+    }
+    if(paid.length>=8) break;
+  }
+
+  let answer='';
+  if(paid.length){
+    const joined=paid.join(', ');
+    answer=target==='en'?'The listed shipping prices are '+joined+'.'
+      :target==='sv'?'De angivna fraktpriserna är '+joined+'.'
+      :'Ilmoitetut toimitushinnat ovat '+joined+'.';
+    if(freeFact) answer+=' '+freeFact;
+  } else {
+    const best=candidates[0];
+    answer=localizedShippingCostFact(best.answer,target)
+      || conciseKnowledgeAnswer(best.row,message)
+      || best.answer;
+    selected.push(best.row);
+  }
+
   answer=cleanKnowledgeText(answer);
+  const sourceRows=selected.length?selected:[candidates[0].row];
   return {
     answer,
     handoff:false,
     confidence:0.98,
     intent:'Toimitus',
-    sourceIds:[best.row.id].filter(Boolean),
-    selected:[best.row],
+    sourceIds:sourceRows.map((row)=>row.id).filter(Boolean),
+    selected:sourceRows,
   };
 }
 
@@ -4415,7 +4450,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     const p=normalizeSearchText(url);
     // Essentials outrank product detail pages. Product APIs already provide
     // structured catalog data for real ecommerce sites.
-    if (/yhtey|contact|kontakt|osoite|address|adress|location|sijainti|myymala|myymälä|auki|hours|oppet/.test(p)) return 300;
+    if (/yhtey|contact|kontakt|asiakas(?:palvelu)?|customer[-_ ]?service|kundservice|osoite|address|adress|location|sijainti|myymala|myymälä|auki|hours|oppet/.test(p)) return 300;
     if (/shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|faq|ukk|help|support/.test(p)) return 280;
     if (/tarjous|quote|offert|hinta|price|pricing|pris|palvel|service|tjanst|about|meista|yritys|company/.test(p)) return 250;
     if (/\/products?\/|\/tuotteet?\/|product|tuote|shop|kauppa/.test(p)) return 180;
@@ -4433,7 +4468,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       queued.add(key);
       const p = normalizeSearchText(u.pathname + ' ' + u.search);
       let score = priority(u.href);
-      if (/faq|ukk|kysym|help|ohje|support/.test(p)) score += 22;
+      if (/faq|ukk|kysym|help|ohje|support|asiakas(?:palvelu)?|customer[-_ ]?service|kundservice/.test(p)) score += 22;
       if (/toimit|delivery|shipping|nouto|pickup|seurant|tracking/.test(p)) score += 20;
       if (/palaut|return|refund|vaihto|exchange/.test(p)) score += 20;
       if (/takuu|warranty|guarantee|reklamaatio/.test(p)) score += 18;
@@ -4484,7 +4519,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     queued.add(key);
     const p = normalizeSearchText(u.pathname + ' ' + u.search);
     let score = 4 + priority(u.href);
-    if (/faq|ukk|kysym|help|ohje|support/.test(p)) score += 22;
+    if (/faq|ukk|kysym|help|ohje|support|asiakas(?:palvelu)?|customer[-_ ]?service|kundservice/.test(p)) score += 22;
     if (/toimit|delivery|shipping|nouto|pickup|seurant|tracking|palaut|return|refund|vaihto|exchange/.test(p)) score += 20;
     if (/takuu|warranty|maksu|payment|kokotauluk|size-guide|sizing|koko|mitat|dimension|materia|material|laatu|quality|care|hoito/.test(p)) score += 18;
     if (/myymala|myymälä|store|shop|location|sijainti|showroom|noutopiste/.test(p)) score += 16;
