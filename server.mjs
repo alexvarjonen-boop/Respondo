@@ -2705,10 +2705,13 @@ function directMultilingualServiceConfirmation(rows,message,lang='fi') {
   if(!request) return null;
 
   const requested=multilingualServiceConcepts(message);
-  // Finnish direct matching is used only when the request has an unambiguous
-  // action+subject concept pair (hair+cut, window+clean, roof+repair, etc.).
-  // This prevents broad phrases from being confirmed from a loosely related row.
-  if(!requested.size || (language==='fi' && requested.size<2)) return null;
+  // Keep the Finnish fast-path deliberately narrow. Haircut wording is common
+  // on barber sites and maps cleanly to explicit imported service rows. Other
+  // Finnish service requests (roof washing, gutter work, terrace oiling, etc.)
+  // must continue through the richer subtype-aware Finnish grounding below so
+  // a generic noun can never erase a proven service subtype.
+  if(!requested.size) return null;
+  if(language==='fi' && !(requested.has('hair') && requested.has('cut'))) return null;
   const candidates=(rows||[])
     .filter(usableWebsiteRow)
     .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='services')
