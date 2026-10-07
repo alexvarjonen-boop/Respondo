@@ -509,9 +509,10 @@ export function businessFactKind(text, context = '') {
     /\b(?:customer|asiakas|kund|product|item|purchase|order|tuote|ostos|tilaus|days?|paiva|paivaa|päivä|päivää|dag|dagar|refund|hyvitys|exchange|vaihto|unused|unopened|receipt|kuitti|returperiod|palautusoikeus|palautusaika)\w*/i.test(n)
   );
   if (commerceFact && !giftCardCashRule && returnPolicyEvidence && !policyHeadingOnly(t,'returns')) return 'returns';
+  const warrantyHeadingEvidence=/^(?:warranty|guarantee|takuu|garanti|reklamaatio|reklamation)(?:\b|\s|[:&/-])/i.test(clean(context));
   const warrantyPolicyEvidence=warranty.test(n) && (
-    warranty.test(c) ||
-    /\b(?:defect|defective|fault|faulty|virhe|viallinen|reklamaatio|material(?:s)?|workmanship|covered|coverage|valid|warranty\s+period|guarantee\s+period|takuu(?:aika|ehdot?|ehto|kattaa|voimassa)|month|months|year|years|kuukaus|vuosi|garanti(?:tid|villkor)|manad|månad|ar|år)\b/i.test(n)
+    warrantyHeadingEvidence ||
+    /\b(?:defect|defective|fault|faulty|virhe|viallinen|reklamaatio|material(?:s)?|workmanship|covered|coverage|valid|warranty\s+period|guarantee\s+period|money[- ]?back|repair|replace(?:ment|d)?|refund|takuu(?:aika|ehdot?|ehto|kattaa|voimassa)|day|days|paiva|päivä|dag|dagar|month|months|year|years|kuukaus|vuosi|garanti(?:tid|villkor)|manad|månad|ar|år)\b/i.test(n)
   );
   if (commerceFact && warrantyPolicyEvidence && !policyHeadingOnly(t,'warranty')) return 'warranty';
   if (commerceFact && payment.test(n) && !policyHeadingOnly(t,'payment')) return 'payment';
