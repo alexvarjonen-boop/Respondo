@@ -103,3 +103,57 @@ test('About-page home base sentence is imported as location knowledge',()=>{
   const rows=essentialWebsiteCandidates({pageDocuments:[doc],products:[]});
   assert.ok(rows.some((row)=>row.category==='Sijainti ja myymälät' && /Turku, Finland/i.test(row.answer)),JSON.stringify(rows));
 });
+
+
+test('Swedish e-postadress wording resolves the verified email instead of location',async()=>{
+  const rows=[
+    {
+      id:'email-1',
+      category:'Yhteystiedot',
+      title:'Sähköposti',
+      answer:'turku@mroom.fi',
+      keywords:['yhteystiedot','contact','kontakt'],
+      source_type:'website',
+      source_url:'https://mroom.com/fi/parturit/turku/maariankatu/',
+    },
+    {
+      id:'location-1',
+      category:'Sijainti ja myymälät',
+      title:'Osoite',
+      answer:'Maariankatu 3, 20100 Turku',
+      keywords:['sijainti','osoite','location'],
+      source_type:'website',
+      source_url:'https://mroom.com/fi/parturit/turku/maariankatu/',
+    },
+  ];
+
+  for(const message of ['Vad är er e-postadress?','Vilken e-postadress har ni?','Hur kontaktar jag er via e-post?']){
+    const result=await generateGroundedAnswer({rows,message,lang:'sv'});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.equal(result.intent,'Yhteystiedot');
+    assert.match(result.answer,/turku@mroom\.fi/i);
+    assert.doesNotMatch(result.answer,/20100|Turku|Åbo/i);
+  }
+});
+
+test('specific location import combines street and postal code and rejects sibling location facts',()=>{
+  const targetUrl='https://mroom.com/fi/parturit/turku/maariankatu/';
+  const target=extractBusinessDocument(
+    '<h1>Maariankatu</h1><p>Maariankatu 3</p><p>20100 Turku</p><p>turku@mroom.fi</p><p>ma 11:00 - 19:00</p>',
+    targetUrl,
+  );
+  const sibling=extractBusinessDocument(
+    '<h1>Kamppi</h1><p>Fredrikinkatu 63</p><p>00100 Helsinki</p><p>helsinki@example.fi</p><p>Mon 09:00 - 21:00</p>',
+    'https://mroom.com/en/barbers/helsinki/kamppi/',
+  );
+  const rows=essentialWebsiteCandidates({
+    finalUrl:targetUrl,
+    products:[],
+    pageDocuments:[target,sibling],
+  });
+  const text=rows.map((row)=>row.title+' '+row.answer).join('\n');
+  assert.match(text,/Maariankatu 3,\s*20100 Turku/i);
+  assert.match(text,/turku@mroom\.fi/i);
+  assert.match(text,/11:00\s*[-–]\s*19:00/i);
+  assert.doesNotMatch(text,/Fredrikinkatu|00100 Helsinki|helsinki@example\.fi|21:00/i);
+});
