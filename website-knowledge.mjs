@@ -17,7 +17,7 @@ const hours = /auki|opening|hours|oppet|maanantai|tiistai|keskiviikko|torstai|pe
 const clock = /\b\d{1,2}[:.]\d{2}\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\d{2})?\b|\b\d{1,2}(?:[:.]\d{2})?\s*(?:–|-|—|to|till)\s*\d{1,2}[:.]\d{2}\b|\b\d{1,2}[:.]\d{2}\b|\b(?:closed|suljettu|stangt|24\/7)\b/i;
 const price = /(?:\d[\d\s.,]*\s*(?:€|eur\b|usd\b|sek\b|kr\b|\$|£)|[€$£]\s*\d)|(?:hinta|hinnoittelu|price|pris).*(?:sopim|tarjous|quote|offert|contact|yhtey|avtal)/i;
 const delivery = /toimitus|toimitusaika|toimitamme|toimitetaan|seurant|lahetys|lähetys|\bship(?:s|ped|ping)?\b|delivery|shipment|tracking|track(?:ing)?\s+(?:code|number|order)|nouto|pickup|leverans|sparning|spårning|forsand|försänd/i;
-const returns = /palaut(?:us\w*|taa\w*|an\w*|etaan\w*|ettava\w*|taminen\w*)|vaihto(?!ehto)|vaihd(?:ot|on|ossa|oksi|ettava|etaan|taa)|hyvitys|return|refund|exchange|retur|aterbetal|återbetal|byte\b/i;
+const returns = /palaut(?:us\w*|taa\w*|an\w*|etaan\w*|ettava\w*|taminen\w*)|\bvaihto\b|vaihd(?:ot|on|ossa|oksi|ettava|etaan|taa)|hyvitys|return|refund|exchange|retur|aterbetal|återbetal|byte\b/i;
 const warranty = /takuu|reklamaatio|warranty|\bguarantee\b|garanti|reklamation/i;
 const payment = /maksutapa|maksaminen|maksuvaihtoeh|korttimaks|lasku\b|klarna|paypal|mobilepay|apple\s*pay|google\s*pay|payment|payment method|pay\s+(?:with|by)|betalning|betalningsmetod|faktura/i;
 
