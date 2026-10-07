@@ -18,7 +18,7 @@ const clock = /\b\d{1,2}[:.]\d{2}\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\d{2})
 const price = /(?:\d[\d\s.,]*\s*(?:€|eur\b|usd\b|sek\b|kr\b|\$|£)|[€$£]\s*\d)|(?:hinta|hinnoittelu|price|pris).*(?:sopim|tarjous|quote|offert|contact|yhtey|avtal)/i;
 const delivery = /toimitus|toimitusaika|toimitamme|toimitetaan|seurant|lahetys|lähetys|\bship(?:s|ped|ping)?\b|delivery|shipment|tracking|track(?:ing)?\s+(?:code|number|order)|nouto|pickup|leverans|sparning|spårning|forsand|försänd/i;
 const returns = /\bpalaut(?:us\w*|taa\w*|an\w*|etaan\w*|ettava\w*|taminen\w*)\b|\bvaihto\b|\bvaihd(?:ot|on|ossa|oksi|ettava|etaan|taa)\b|\bhyvitys\w*\b|\breturns?\b|\brefund\w*\b|\bexchange\w*\b|\bretur\w*\b|\baterbetal\w*\b|\båterbetal\w*\b|\bbyte\b/i;
-const warranty = /\b(?:takuu|takuun|takuuta|takuussa|takuusta|takuuseen|takuuaika\w*|takuuehto\w*|tuotetakuu\w*|reklamaatio\w*|warrant(?:y|ies)|guarantee\w*|garanti\w*|reklamation\w*)\b/i;
+const warranty = /\b(?:takuu|takuun|takuuta|takuussa|takuusta|takuuseen|takuuaika\w*|takuuehto\w*|tuotetakuu\w*|reklamaatio\w*|warrant(?:y|ies)|guarantee|garanti\w*|reklamation\w*)\b/i;
 const payment = /maksutapa|maksaminen|maksuvaihtoeh|korttimaks|lasku\b|klarna|paypal|mobilepay|apple\s*pay|google\s*pay|payment|payment method|pay\s+(?:with|by)|betalning|betalningsmetod|faktura/i;
 
 // Policy headings and marketing badges are context, not customer-answer facts.
