@@ -9,12 +9,12 @@ const rows=[
 
 test('opening hours are localized structurally without translation service',async()=>{
   const cases=[
-    ['fi','Mihin aikaan olette auki maanantaina?',/Maanantai:\s*11:00\s*-\s*19:00/],
-    ['en','What are your opening hours on Monday?',/Monday:\s*11:00\s*-\s*19:00/],
-    ['sv','Vilka öppettider har ni på måndag?',/Måndag:\s*11:00\s*-\s*19:00/],
-    ['fi','Oletteko auki lauantaina?',/Lauantai:\s*09:00\s*-\s*16:00/],
-    ['en','Are you open on Saturday?',/Saturday:\s*09:00\s*-\s*16:00/],
-    ['sv','Har ni öppet på lördag?',/Lördag:\s*09:00\s*-\s*16:00/],
+    ['fi','Mihin aikaan olette auki maanantaina?',/Maanantai:\s*11:00\s*[-–]\s*19:00/],
+    ['en','What are your opening hours on Monday?',/Monday:\s*11:00\s*[-–]\s*19:00/],
+    ['sv','Vilka öppettider har ni på måndag?',/Måndag:\s*11:00\s*[-–]\s*19:00/],
+    ['fi','Oletteko auki lauantaina?',/Lauantai:\s*09:00\s*[-–]\s*16:00/],
+    ['en','Are you open on Saturday?',/Saturday:\s*09:00\s*[-–]\s*16:00/],
+    ['sv','Har ni öppet på lördag?',/Lördag:\s*09:00\s*[-–]\s*16:00/],
   ];
   for(const [lang,message,expected] of cases){
     const result=await generateGroundedAnswer({companyName:'Example',rows,message,history:[],lang});
