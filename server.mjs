@@ -3054,9 +3054,10 @@ async function directShippingCostAnswer(rows,message,lang='fi') {
   if(!candidates.length) return null;
   const best=candidates[0];
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
-  let answer=localizedShippingCostFact(best.answer,target)
-    || conciseKnowledgeAnswer(best.row,message)
-    || best.answer;
+  const sourceLanguage=detectConversationLanguage(best.answer,'fi');
+  let answer=sourceLanguage===target
+    ? (conciseKnowledgeAnswer(best.row,message) || best.answer)
+    : (localizedShippingCostFact(best.answer,target) || conciseKnowledgeAnswer(best.row,message) || best.answer);
   answer=cleanKnowledgeText(answer);
   return {
     answer,
@@ -3142,6 +3143,18 @@ function directDeliveryTimeAnswer(rows,message,lang='fi') {
   const best=candidates[0];
   if(!best) return null;
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  const sourceLanguage=detectConversationLanguage(best.answer,'fi');
+  if(sourceLanguage===target){
+    const answer=cleanKnowledgeText(conciseKnowledgeAnswer(best.row,message) || best.answer);
+    if(answer) return {
+      answer,
+      handoff:false,
+      confidence:0.98,
+      intent:'Toimitus',
+      sourceIds:[best.row.id].filter(Boolean),
+      selected:[best.row],
+    };
+  }
   const f=best.facts;
   const sentences=[];
 
