@@ -458,6 +458,42 @@ export function extractBusinessDocument(html, url) {
     if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
   }
   flush();
+
+  // Some site builders place the visible contact email inside a widget/button
+  // that is intentionally skipped by the structural parser. Recover only
+  // concrete contact literals from the already script/style/template-stripped
+  // HTML so a real published address is not lost.
+  const contactValues=new Set(
+    blocks
+      .filter((block)=>norm(block?.heading||'').includes('yhteystiedot'))
+      .map((block)=>clean(block?.text||''))
+      .filter(Boolean)
+  );
+  const addContactLiteral=(value)=>{
+    const candidate=clean(decodeHtml(value)).replace(/^mailto:/i,'').split('?')[0].trim();
+    if(!candidate || contactValues.has(candidate)) return;
+    if(email.test(candidate)){
+      const lower=candidate.toLowerCase();
+      if(/^(?:test|demo|example|name|email|yourname)@/.test(lower)) return;
+      if(/@(?:example\.com|example\.org|example\.net|test\.com)$/i.test(lower)) return;
+      contactValues.add(candidate);
+      blocks.push({text:candidate,heading:'Yhteystiedot'});
+    }
+  };
+
+  const decodedSource=decodeHtml(source);
+  for(const match of decodedSource.matchAll(/href\s*=\s*["']mailto:([^"'?\s<>]+)(?:\?[^"']*)?["']/gi)){
+    addContactLiteral(match[1]);
+  }
+  for(const match of decodedSource.matchAll(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi)){
+    const candidate=match[0];
+    const index=Number(match.index||0);
+    const context=clean(decodedSource.slice(Math.max(0,index-180),Math.min(decodedSource.length,index+candidate.length+180)));
+    if(/sahkopost|sähköpost|email|e-mail|e-post|contact|yhtey|ota yhtey|laheta|lähetä|viesti|message/i.test(context)){
+      addContactLiteral(candidate);
+    }
+  }
+
   return {url, blocks, links, products, text:blocks.map(x=>x.text).join('\n')};
 }
 
