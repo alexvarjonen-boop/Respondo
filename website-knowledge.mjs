@@ -114,7 +114,7 @@ export function isConcreteServiceLabel(value) {
 
   // Require a concrete service noun/stem instead of accepting every marketing
   // phrase from a card that happens to mention "service".
-  return /(?:palvelu|service|tjanst|tjänst|pesu|siivou|puhdist|maala|raivau|leikkaus|parturi|kampaamo|huolto|asennu|korjau|kuljet|muut(?:to|ot|toa|toja|tojen)|varastointi|vuokraus|poisvienti|purku|kartoit|kierrat|kierrät|murske|asbesti|saneeraus|remont|rakennus|hiero|fysioter|hoito|koulutus|konsult|suunnittel|valokuva|catering|siirto|pakkaus)/.test(n);
+  return /(?:palvelu|service|tjanst|tjänst|pesu|siivou|puhdist|maala|raivau|leikkaus|hiusten|haircut|harklipp|hårklipp|parturi|kampaamo|parran|beard|skagg|skägg|muotoil|styling|trimma|trimming|shave|ajo\b|skinfade|fade|varja|värjä|color|colour|farg|färg|wax|vaha|kynsi|nail|ripsi|lash|kulmakarv|eyebrow|huolto|asennu|korjau|kuljet|muut(?:to|ot|toa|toja|tojen)|varastointi|vuokraus|poisvienti|purku|kartoit|kierrat|kierrät|murske|asbesti|saneeraus|remont|rakennus|hiero|fysioter|hoito|koulutus|konsult|suunnittel|valokuva|catering|siirto|pakkaus)/.test(n);
 }
 
 function stripProductHtml(value) {
