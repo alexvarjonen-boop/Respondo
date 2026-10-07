@@ -932,3 +932,12 @@ test('retail theme chrome and detached price badges never become ecommerce answe
  assert.match(result.answer,/45\s*(?:days|päiv)/i);
  assert.doesNotMatch(result.answer,/Regular price|SELECT OPTION/i);
 });
+
+test('about-page marketing prose mentioning service does not become a service fact',()=>{
+ const marketing='<section><h2>MEISTÄ</h2><p>Parturoinnissa ei ole kyse pelkästään hiustenleikkaamisesta, vaan myös rentoutumisesta ja hyvästä tunnelmasta. Palvelussamme haluamme täyttää asiakkaidemme toiveet.</p></section><section><h2>Palvelut</h2><p>Tarjoamme hiustenleikkauksia, parran muotoilua ja muita parturipalveluita.</p></section>';
+ const doc=extractBusinessDocument(marketing,'https://barber.example/about');
+ const facts=essentialWebsiteCandidates({finalUrl:'https://barber.example/',pageDocuments:[doc]});
+ const services=facts.filter(x=>x.category==='Palvelut');
+ assert.ok(services.some(x=>/Tarjoamme hiustenleikkauksia/i.test(x.answer)));
+ assert.equal(services.some(x=>/Palvelussamme haluamme|Parturoinnissa ei ole kyse/i.test(x.answer)),false);
+});
