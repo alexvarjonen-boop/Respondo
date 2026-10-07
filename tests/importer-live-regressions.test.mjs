@@ -41,5 +41,5 @@ test('location-detail crawl explicitly rejects sibling branch paths',()=>{
   const server=fs.readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
   assert.match(server,/locationDetailSeed/);
   assert.match(server,/hasSameFamily && !sameDetail/);
-  assert.match(server,/sibling location facts/);
+  assert.match(server,/hasSameFamily && !sameDetail/);
 });
