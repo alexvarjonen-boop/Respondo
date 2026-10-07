@@ -2840,10 +2840,10 @@ function openingHoursSegments(value) {
   );
   if(!day) return [];
   const range=raw.match(/\b\d{1,2}[:.]\d{2}\s*(?:[-–—]|to|till)\s*\d{1,2}[:.]\d{2}\b/i)?.[0];
-  const value=range
+  const fallbackValue=range
     ? range.replace(/\./g,':').replace(/\s*(?:-|–|—|to|till)\s*/i,' - ')
     : /\b(?:closed|suljettu|stangt|stängt)\b/i.test(raw) ? 'closed' : '';
-  return value?[{day,value}]:[];
+  return fallbackValue?[{day,value:fallbackValue}]:[];
 }
 
 function directOpeningHoursAnswer(rows,message,lang='fi') {
