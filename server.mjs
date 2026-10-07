@@ -3911,6 +3911,70 @@ function specificServiceConfirmation(query, rows) {
   return 'Kyllä, '+verb+' '+phrase+'.';
 }
 
+
+function multilingualServiceConcept(value) {
+  const q=normalizeSearchText(value);
+  if(!q) return null;
+
+  const concepts=[
+    {key:'haircut',rx:/\b(?:haircuts?|hair\s*cut|cut\s+hair|klipp(?:a|er|ning)?|har\s*klipp|hår\s*klipp|hiustenleikka|leikkaa\s+hiuksia)\b/,evidence:/hius|leikka|hair|cut|klipp/},
+    {key:'beard',rx:/\b(?:beard|beard\s*trim|skagg|skägg|parta|parran)\b/,evidence:/parta|beard|skagg|skägg/},
+    {key:'cleaning',rx:/\b(?:cleaning|clean|wash|washing|tvatt|tvätt|rengor|rengör|siivou|pesu|puhdist)\b/,evidence:/siivou|pesu|puhdist|clean|wash|rengor|rengör/},
+    {key:'repair',rx:/\b(?:repair|fix|repar|korja)\b/,evidence:/korja|repair|repar/},
+    {key:'installation',rx:/\b(?:install|installation|monter|asenn)\b/,evidence:/asenn|install|monter/},
+    {key:'maintenance',rx:/\b(?:maintenance|service|underhall|underhåll|huolto)\b/,evidence:/huolto|maintenance|underhall|underhåll/},
+    {key:'moving',rx:/\b(?:moving|move|flytt|muutto)\b/,evidence:/muutto|moving|move|flytt/},
+    {key:'transport',rx:/\b(?:transport|delivery service|kuljet|transport)\b/,evidence:/kuljet|transport/},
+  ];
+  return concepts.find((item)=>item.rx.test(q)) || null;
+}
+
+function directMultilingualServiceConfirmation(rows,message,lang='fi') {
+  const language=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  if(language==='fi') return null;
+  const q=normalizeSearchText(message);
+  const questionLike=language==='en'
+    ? /^(?:do\s+you|can\s+you|could\s+you|are\s+you\s+able\s+to|do\s+you\s+offer|do\s+you\s+provide)\b/.test(q)
+    : /^(?:har\s+ni|kan\s+ni|erbjuder\s+ni|gor\s+ni|gör\s+ni|klipper\s+ni|utfor\s+ni|utför\s+ni)\b/.test(q);
+  if(!questionLike) return null;
+
+  const concept=multilingualServiceConcept(q);
+  if(!concept) return null;
+
+  const evidence=(rows||[])
+    .filter(usableWebsiteRow)
+    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='services')
+    .filter((row)=>{
+      const text=normalizeSearchText(String(row?.title||'')+' '+String(row?.answer||''));
+      return concept.evidence.test(text) &&
+        !/\b(?:ei|emme|eivat|not|don't|doesn't|inte|aldrig)\b/.test(text);
+    })
+    .slice(0,4);
+
+  if(!evidence.length) return {
+    supported:false,
+    answer:'',
+    evidence:[],
+  };
+
+  const labels={
+    haircut:{en:'haircuts',sv:'hårklippning'},
+    beard:{en:'beard grooming',sv:'skäggtrimning'},
+    cleaning:{en:'cleaning',sv:'rengöring'},
+    repair:{en:'repairs',sv:'reparationer'},
+    installation:{en:'installation',sv:'installation'},
+    maintenance:{en:'maintenance',sv:'underhåll'},
+    moving:{en:'moving services',sv:'flyttjänster'},
+    transport:{en:'transport services',sv:'transporttjänster'},
+  };
+  const label=labels[concept.key]?.[language] || (language==='sv'?'den tjänsten':'that service');
+  return {
+    supported:true,
+    answer:language==='sv'?'Ja, vi erbjuder '+label+'.':'Yes, we offer '+label+'.',
+    evidence,
+  };
+}
+
 // Short Finnish service follow-ups must be answered from service-specific evidence,
 // not by concatenating the previous question with an unrelated imported paragraph.
 function finnishServiceStem(word) {
@@ -4717,6 +4781,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     const evidence=naturalService.evidence||[];
     return naturalService.supported
       ? {answer:naturalService.answer,handoff:false,confidence:0.92,intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence}
+      : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
+  }
+
+  const multilingualService = directMultilingualServiceConfirmation(rows,cleanMessage,responseLang);
+  if(multilingualService) {
+    const evidence=multilingualService.evidence||[];
+    return multilingualService.supported
+      ? {answer:multilingualService.answer,handoff:false,confidence:0.92,intent:'Palvelut',sourceIds:evidence.map((row)=>row.id).filter(Boolean),selected:evidence}
       : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
   }
 
