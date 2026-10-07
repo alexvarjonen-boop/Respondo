@@ -2717,6 +2717,83 @@ async function directShippingCostAnswer(rows,message,lang='fi') {
   };
 }
 
+
+const BUSINESS_WEEKDAYS = Object.freeze([
+  {key:'mon',match:/^(?:ma|maanantai|mon|monday|man|mandag)\b/,query:/\b(?:maanantai|maanantaina|monday|mandag)\b/,labels:{fi:'Maanantai',sv:'Måndag',en:'Monday'}},
+  {key:'tue',match:/^(?:ti|tiistai|tue|tues|tuesday|tis|tisdag)\b/,query:/\b(?:tiistai|tiistaina|tuesday|tisdag)\b/,labels:{fi:'Tiistai',sv:'Tisdag',en:'Tuesday'}},
+  {key:'wed',match:/^(?:ke|keskiviikko|wed|wednesday|ons|onsdag)\b/,query:/\b(?:keskiviikko|keskiviikkona|wednesday|onsdag)\b/,labels:{fi:'Keskiviikko',sv:'Onsdag',en:'Wednesday'}},
+  {key:'thu',match:/^(?:to|torstai|thu|thur|thurs|thursday|tor|torsdag)\b/,query:/\b(?:torstai|torstaina|thursday|torsdag)\b/,labels:{fi:'Torstai',sv:'Torsdag',en:'Thursday'}},
+  {key:'fri',match:/^(?:pe|perjantai|fri|friday|fre|fredag)\b/,query:/\b(?:perjantai|perjantaina|friday|fredag)\b/,labels:{fi:'Perjantai',sv:'Fredag',en:'Friday'}},
+  {key:'sat',match:/^(?:la|lauantai|sat|saturday|lor|lordag)\b/,query:/\b(?:lauantai|lauantaina|saturday|lordag)\b/,labels:{fi:'Lauantai',sv:'Lördag',en:'Saturday'}},
+  {key:'sun',match:/^(?:su|sunnuntai|sun|sunday|son|sondag)\b/,query:/\b(?:sunnuntai|sunnuntaina|sunday|sondag)\b/,labels:{fi:'Sunnuntai',sv:'Söndag',en:'Sunday'}},
+]);
+
+function requestedBusinessWeekday(value) {
+  const q=normalizeSearchText(value);
+  return BUSINESS_WEEKDAYS.find((day)=>day.query.test(q)) || null;
+}
+
+function parseBusinessHoursLines(rows) {
+  const byDay=new Map();
+  for(const row of rows||[]){
+    if(!usableWebsiteRow(row)) continue;
+    if(knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))!=='hours') continue;
+    const raw=cleanKnowledgeText(row.answer);
+    if(!raw) continue;
+    for(const part of raw.split(/\n|[;|]+/).map((x)=>x.trim()).filter(Boolean)){
+      const normalized=normalizeSearchText(part);
+      const day=BUSINESS_WEEKDAYS.find((item)=>item.match.test(normalized));
+      if(!day || byDay.has(day.key)) continue;
+      const time=part
+        .replace(/^(?:ma|maanantai|mon(?:day)?|man(?:dag)?|ti|tiistai|tue(?:sday)?|tis(?:dag)?|ke|keskiviikko|wed(?:nesday)?|ons(?:dag)?|to|torstai|thu(?:rsday)?|tor(?:sdag)?|pe|perjantai|fri(?:day)?|fre(?:dag)?|la|lauantai|sat(?:urday)?|lor(?:dag)?|su|sunnuntai|sun(?:day)?|son(?:dag)?)\s*[:.-]?\s*/i,'')
+        .trim();
+      if(!time || !/\d{1,2}(?::|\.)\d{2}/.test(time)) continue;
+      byDay.set(day.key,{day,time,row});
+    }
+  }
+  return byDay;
+}
+
+function directOpeningHoursAnswer(rows,message,lang='fi') {
+  if(queryTopic(message)!=='hours') return null;
+  const parsed=parseBusinessHoursLines(rows);
+  if(!parsed.size) return null;
+
+  const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  const requested=requestedBusinessWeekday(message);
+  if(requested){
+    const found=parsed.get(requested.key);
+    if(!found) return null;
+    const answer=requested.labels[target]+': '+found.time+'.';
+    return {
+      answer,
+      handoff:false,
+      confidence:0.99,
+      intent:'Aukioloajat',
+      sourceIds:[found.row.id].filter(Boolean),
+      selected:[found.row],
+    };
+  }
+
+  const values=[];
+  const selected=[];
+  for(const day of BUSINESS_WEEKDAYS){
+    const found=parsed.get(day.key);
+    if(!found) continue;
+    values.push(day.labels[target]+': '+found.time);
+    selected.push(found.row);
+  }
+  if(!values.length) return null;
+  return {
+    answer:values.join(', ')+'.',
+    handoff:false,
+    confidence:0.98,
+    intent:'Aukioloajat',
+    sourceIds:[...new Set(selected.map((row)=>row.id).filter(Boolean))],
+    selected,
+  };
+}
+
 function answerTone(rows) {
   const value = knowledgeValue(rows, 'Vastaustyyli').toLowerCase();
   if (value.includes('lyhyt')) return 'Pidä vastaus erittäin lyhyenä ja suorana. Tavallisesti 1–2 lausetta.';
@@ -4721,6 +4798,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       };
     }
   }
+
+  const openingHoursResult=directOpeningHoursAnswer(rows,cleanMessage,responseLang);
+  if(openingHoursResult) return openingHoursResult;
 
   if (queryTopic(cleanMessage) === 'quote') {
     const quoteRow = rows.find(row => row.title === 'Tarjouspyyntölomake' && normalizeWebUrl(row.answer, false));
