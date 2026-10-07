@@ -50,3 +50,73 @@ test('profile still keeps a complete physical street and postal locality',()=>{
   const profile=essentialWebsiteProfile({finalUrl:'https://example.fi/',pageDocuments:[doc]});
   assert.equal(profile.address,'Hallituskatu 11, 33200 Tampere');
 });
+
+
+test('razor blade wording never becomes a return policy',()=>{
+  const doc=extractBusinessDocument(`
+    <section><h2>Vaihtoterät</h2>
+      <p>Laadukkaat vaihtoterät partahöyliin takaavat tarkan ajon.</p>
+      <p>Vaihtoterät (13)</p>
+    </section>
+    <section><h2>Palautukset</h2>
+      <p>Sinulla on 100 päivän palautusoikeus ja saat rahasi takaisin.</p>
+    </section>
+  `,'https://shop.example/pages/help');
+  const profile=essentialWebsiteProfile({finalUrl:'https://shop.example/',pageDocuments:[doc]});
+  assert.match(profile.returns,/100 päivän palautusoikeus/i);
+  assert.doesNotMatch(profile.returns,/vaihtoter/i);
+});
+
+test('warranty marketing words never become warranty facts',()=>{
+  const doc=extractBusinessDocument(`
+    <section><h2>Lahjaidea</h2>
+      <p>Tämä setti on takuuvarma lahja miehelle.</p>
+      <p>Takuulla! Saat kehuja uudesta tyylistäsi.</p>
+    </section>
+    <section><h2>Takuu</h2>
+      <p>Tuotteella on 2 vuoden takuu valmistusvirheiden varalta.</p>
+    </section>
+  `,'https://shop.example/pages/help');
+  const profile=essentialWebsiteProfile({finalUrl:'https://shop.example/',pageDocuments:[doc]});
+  assert.match(profile.warranty,/2 vuoden takuu/i);
+  assert.doesNotMatch(profile.warranty,/takuuvarma|Takuulla/i);
+});
+
+test('manufacturer details never override the merchant contact profile',()=>{
+  const product=extractBusinessDocument(`
+    <section><h2>Valmistajan tiedot</h2>
+      <p>Mühle GmbH, Hauptstrasse 18, 08328 Germany</p>
+      <p>+49 (0) 37462 652-0</p>
+      <p>service@muehle.example</p>
+    </section>
+  `,'https://shop.example/products/razor');
+  const contact=extractBusinessDocument(`
+    <section><h2>Asiakaspalvelu</h2>
+      <p>asiakas@shop.example</p>
+      <p>+358 40 123 4567</p>
+      <p>Osoite: Kauppakatu 4, 33100 Tampere</p>
+    </section>
+  `,'https://shop.example/pages/contact');
+  const profile=essentialWebsiteProfile({finalUrl:'https://shop.example/',pageDocuments:[product,contact]});
+  assert.equal(profile.email,'asiakas@shop.example');
+  assert.match(profile.phone,/\+358\s*40\s*123\s*4567/);
+  assert.match(profile.address,/Kauppakatu 4, 33100 Tampere/);
+  assert.doesNotMatch([profile.phone,profile.email,profile.address].join(' '),/\+49|muehle|Hauptstrasse/i);
+});
+
+test('profile service summary drops stray service-word fragments once concrete services exist',()=>{
+  const doc=extractBusinessDocument(`
+    <section><h2>Hinnasto</h2>
+      <p>Hiustenleikkaus 31€</p>
+      <p>Parran muotoilu 33€</p>
+    </section>
+    <section><h2>Info</h2>
+      <p>My M Room -palvelussa</p>
+      <p>hiustenleikkauspalveluista</p>
+    </section>
+  `,'https://example.fi/');
+  const profile=essentialWebsiteProfile({finalUrl:'https://example.fi/',pageDocuments:[doc]});
+  assert.match(profile.services,/Hiustenleikkaus/i);
+  assert.match(profile.services,/Parran muotoilu/i);
+  assert.doesNotMatch(profile.services,/palvelussa|palveluista/i);
+});
