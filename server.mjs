@@ -3001,13 +3001,13 @@ function localizedShippingCostFact(value,lang='fi') {
   const threshold=thresholdMatch?.[1]?.trim();
   if(free && threshold && /\d/.test(threshold)){
     return target==='en'
-      ? 'Shipping is free for orders over '+threshold+'.'
+      ? 'Free shipping is available for orders over '+threshold+'.'
       : target==='sv'
         ? 'Frakten är gratis för beställningar över '+threshold+'.'
         : 'Toimitus on ilmainen yli '+threshold+' tilauksille.';
   }
   if(free){
-    return target==='en'?'Shipping is free.'
+    return target==='en'?'Free shipping is available.'
       :target==='sv'?'Frakten är gratis.'
       :'Toimitus on ilmainen.';
   }
@@ -3147,7 +3147,7 @@ function directDeliveryTimeAnswer(rows,message,lang='fi') {
 
   if(f.domestic){
     const d=localizeDuration(f.domestic,target);
-    sentences.push(target==='en'?'Domestic delivery usually takes '+d+'.'
+    sentences.push(target==='en'?'Domestic orders arrive in '+d+'.'
       :target==='sv'?'Inrikes leverans tar vanligtvis '+d+'.'
       :'Kotimaan toimitus kestää yleensä '+d+'.');
   }
