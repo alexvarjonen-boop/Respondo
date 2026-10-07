@@ -253,3 +253,48 @@ test('crawler prioritizes contacts and excludes template/archive routes',()=>{
   assert.ok(server.indexOf('return 300;')>=0);
   assert.ok(server.indexOf('return 180;')>server.indexOf('return 300;'));
 });
+
+
+test('compact weekly hours keep Saturday separate from weekday range in all languages',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'hours',category:'Aukioloajat',title:'Aukioloajat',answer:'Ma-Pe : 09:00–19:00La : 09:00 -17:00',keywords:['aukioloajat'],source_type:'website',source_url:'https://example.fi/'},
+  ];
+  for(const [lang,message,label] of [
+    ['fi','Oletteko auki lauantaina?','Lauantai'],
+    ['en','Are you open on Saturday?','Saturday'],
+    ['sv','Har ni öppet på lördag?','Lördag'],
+  ]){
+    const result=await generateGroundedAnswer({companyName:'Example',rows,message,history:[],lang});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.match(result.answer,new RegExp('^'+label+': 09:00 - 17:00'),result.answer);
+    assert.doesNotMatch(result.answer,/Friday|Perjantai|Fredag/);
+  }
+});
+
+test('Finnish normal haircut wording resolves from imported service evidence',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'svc',category:'Palvelut',title:'Palvelut: HIUSTEN LEIKKAUS (Tavallinen)',answer:'HIUSTEN LEIKKAUS (Tavallinen)',keywords:['palvelut','hiustenleikkaus'],source_type:'website',source_url:'https://example.fi/'},
+    {id:'price',category:'Hinnat',title:'Hinnat: HIUSTEN LEIKKAUS (Tavallinen): €25',answer:'HIUSTEN LEIKKAUS (Tavallinen): €25',keywords:['hinta'],source_type:'website',source_url:'https://example.fi/'},
+  ];
+  const result=await generateGroundedAnswer({companyName:'Example',rows,message:'Teettekö tavallista hiustenleikkausta?',history:[],lang:'fi'});
+  assert.equal(result.handoff,false,JSON.stringify(result));
+  assert.match(result.answer,/Kyllä/i);
+  assert.match(result.answer,/hiustenleikka/i);
+});
+
+test('orphan numeric prices never enter imported knowledge',()=>{
+  const bundle={
+    finalUrl:'https://example.fi/',
+    products:[],
+    pageDocuments:[{
+      url:'https://example.fi/',
+      blocks:[{text:'Palvelut',heading:''},{text:'€40',heading:''},{text:'$0.00 0',heading:''}],
+      links:[],products:[],text:'Palvelut €40 $0.00 0'
+    }],
+  };
+  const rows=essentialWebsiteCandidates(bundle);
+  const text=candidateTextForTest(rows);
+  assert.doesNotMatch(text,/(?:^|\s)€40(?:\s|$)|\$0\.00 0/i,JSON.stringify(rows));
+});
