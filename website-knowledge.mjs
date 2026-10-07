@@ -580,13 +580,10 @@ function physicalAddressFragments(value) {
     if(!text || text.length>140 || out.some((x)=>norm(x)===norm(text))) return;
     out.push(text);
   };
-  const streetWord='(?:katu|tie|kuja|polku|väylä|vayla|raitti|ranta|kaari|aukio|tori|puisto|rinne|gatan|vägen|vagen|väg|vag|gränden|granden|street|road|avenue|lane|boulevard|drive)';
-  const full=new RegExp('\\\\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .\\\\\\'-]{1,55}'+streetWord+'\\\\s+\\\\d+[A-Za-z]?(?:\\\\s*[,|-]?\\\\s*\\\\d{5}\\\\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .\\\\\\'-]{1,55})?)\\\\b','i');
-  const street=new RegExp('\\\\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .\\\\\\'-]{1,55}'+streetWord+'\\\\s+\\\\d+[A-Za-z]?)\\\\b','i');
-  const fullHit=raw.match(full);
-  if(fullHit) add(fullHit[1]);
-  const streetHit=raw.match(street);
-  if(streetHit) add(streetHit[1]);
+  const full=raw.match(/\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}(?:katu|tie|kuja|polku|väylä|vayla|raitti|ranta|kaari|aukio|tori|puisto|rinne|gatan|vägen|vagen|väg|vag|gränden|granden|street|road|avenue|lane|boulevard|drive)\s+\d+[A-Za-z]?(?:\s*[,|-]?\s*\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55})?)\b/i);
+  if(full) add(full[1]);
+  const street=raw.match(/\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}(?:katu|tie|kuja|polku|väylä|vayla|raitti|ranta|kaari|aukio|tori|puisto|rinne|gatan|vägen|vagen|väg|vag|gränden|granden|street|road|avenue|lane|boulevard|drive)\s+\d+[A-Za-z]?)\b/i);
+  if(street) add(street[1]);
   const postal=raw.match(/\b(\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55})\b/);
   if(postal) add(postal[1]);
   return out;
