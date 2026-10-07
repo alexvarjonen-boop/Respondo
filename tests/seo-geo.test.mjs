@@ -35,12 +35,13 @@ test('intent landing pages are indexable and routed in both server and browser',
   assert.match(app,/function seoLandingPage\(path\)/);
 });
 
-test('homepage exposes descriptive product content in the restored October 6 layout',()=>{
+test('homepage keeps descriptive product content without the removed explainer section',()=>{
   assert.match(app,/AI-asiakaspalvelu yritykselle/);
-  assert.match(app,/function geoAnswerSection\(\)/);
-  assert.match(app,/geo-answer-section/);
-  assert.match(app,/id="respondo-explained"/);
-  assert.match(app,/cinematicConversationScene\(\)/);
-  assert.match(app,/horizontalProductStory\(\)/);
+  const start=app.indexOf('async function home()');
+  const end=app.indexOf('\\n\\nfunction signup()',start);
+  const home=app.slice(start,end);
+  assert.doesNotMatch(home,/geoAnswerSection\(\)|geo-answer-section|respondo-explained/);
+  assert.match(home,/cinematicConversationScene\(\)/);
+  assert.match(home,/horizontalProductStory\(\)/);
   assert.doesNotMatch(app,/premiumHomeSections\(appText, currentLang\(\), FEATURE_COUNT\)/);
 });
