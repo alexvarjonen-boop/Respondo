@@ -48,7 +48,7 @@ test('homepage keeps descriptive product content without the removed explainer s
 
 test('robots and the XML sitemap serve valid readable responses on the production routes',async(t)=>{
   const { app }=await import('../server.mjs');
-  const server=await new Promise((resolve)=> {
+  const server=await new Promise((resolve)=>{
     const handle=app.listen(0,'127.0.0.1',()=>resolve(handle));
   });
   t.after(()=>new Promise((resolve,reject)=>server.close((error)=>error?reject(error):resolve())));
@@ -58,9 +58,9 @@ test('robots and the XML sitemap serve valid readable responses on the productio
   assert.equal(robots.status,200);
   const robotsText=await robots.text();
   assert.match(robotsText,/User-agent: OAI-SearchBot/);
-  assert.match(robotsText,/Sitemap: [^\\n]+\\/sitemap\\.xml/);
-  assert.ok(robotsText.split('\\n').length>6,'robots.txt must have real line breaks');
-  assert.doesNotMatch(robotsText,/\\\\n/,'robots.txt must not return literal backslash-n');
+  assert.match(robotsText,/Sitemap: [^\n]+\/sitemap\.xml/);
+  assert.ok(robotsText.split('\n').length>6,'robots.txt must have real line breaks');
+  assert.doesNotMatch(robotsText,/\\n/,'robots.txt must not return literal backslash-n');
 
   const sitemap=await fetch(origin+'/sitemap.xml');
   assert.equal(sitemap.status,200,'sitemap endpoint must not throw a 500');
@@ -68,11 +68,11 @@ test('robots and the XML sitemap serve valid readable responses on the productio
   const xml=await sitemap.text();
   assert.ok(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>'),xml.slice(0,120));
   assert.match(xml,/<urlset[^>]+xmlns:xhtml=/);
-  assert.match(xml,/<\\/urlset>/);
-  assert.match(xml,/<loc>[^<]*\\/asiakaspalvelubotti/);
-  assert.match(xml,/<loc>[^<]*\\/verkkokauppa-chatbot/);
-  assert.match(xml,/<loc>[^<]*\\/ajanvaraus-chatbot/);
+  assert.match(xml,/<\/urlset>/);
+  assert.match(xml,/<loc>[^<]*\/asiakaspalvelubotti/);
+  assert.match(xml,/<loc>[^<]*\/verkkokauppa-chatbot/);
+  assert.match(xml,/<loc>[^<]*\/ajanvaraus-chatbot/);
   assert.match(xml,/<xhtml:link rel="alternate" hreflang="sv"/);
   assert.match(xml,/<xhtml:link rel="alternate" hreflang="en"/);
-  assert.doesNotMatch(xml,/\\\\n/,'sitemap must not return literal backslash-n');
+  assert.doesNotMatch(xml,/\\n/,'sitemap must not return literal backslash-n');
 });

@@ -1117,8 +1117,24 @@ export function essentialWebsiteProfile(bundle) {
     return score;
   };
   const sorted=(items)=>[...items].sort((a,b)=>sourcePriority(b)-sourcePriority(a));
+  // A store's product prices belong to individual product rows, not to the
+  // company-wide service price summary. Otherwise discounted product badges,
+  // orphan numeric prices and old catalog figures pollute the profile.
+  const catalogProducts=(Array.isArray(bundle?.products)?bundle.products:[])
+    .filter((product)=>product?.name && !templateDemoProduct(product));
+  const servicePricingOnly=(fact)=>{
+    if(!catalogProducts.length) return true;
+    const serviceName=profileServiceLabelFromPrice(fact.answer);
+    if(!serviceName) return false;
+    const simplified=(name)=>norm(name).replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+    const serviceKey=simplified(serviceName);
+    return !catalogProducts.some((product)=>{
+      const productKey=simplified(product.name);
+      return productKey && (serviceKey===productKey || serviceKey.startsWith(productKey+' '));
+    });
+  };
   const byKind = (kind) => uniqueProfileFacts(
-    sorted(facts.filter(x=>x.category===labels[kind])),
+    sorted(facts.filter(x=>x.category===labels[kind] && (kind!=='pricing' || servicePricingOnly(x)))),
     4000,
     {dropQuestions:['returns','warranty','delivery','payment'].includes(kind), maxFactLength:kind==='pricing'?180:0}
   );

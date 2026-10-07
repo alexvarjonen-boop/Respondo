@@ -201,3 +201,27 @@ test('pricing profile excludes long membership marketing while preserving exact 
   assert.doesNotMatch(profile.pricing,/Silver 10 Daytime|As a member|promotional products/);
   assert.ok(profile.pricing.split('\n').every(line=>line.length<=180),profile.pricing);
 });
+
+test('ecommerce profile does not mix product price badges into company service prices',()=>{
+  const bundle={
+    finalUrl:'https://shop.example/',
+    products:[
+      {name:'Hair Kit',url:'https://shop.example/products/hair-kit',price:46.99,currency:'EUR'},
+      {name:'Shave Kit',url:'https://shop.example/products/shave-kit',price:49.90,currency:'EUR'},
+    ],
+    pageDocuments:[{
+      url:'https://shop.example/services',
+      blocks:[
+        {text:'Hair Kit: 46,99 €',heading:'Hinnasto'},
+        {text:'Normaalihinta 24,99 €',heading:'Hinnasto'},
+        {text:'Hair Cut: Student: 17 €',heading:'Hinnasto'},
+        {text:'Beard Trim: Master: 40 €',heading:'Hinnasto'},
+      ],
+      links:[],products:[],text:'',
+    }]
+  };
+  const profile=essentialWebsiteProfile(bundle);
+  assert.doesNotMatch(profile.pricing,/Hair Kit|Shave Kit|Normaalihinta|24,99|46,99/);
+  assert.match(profile.pricing,/Hair Cut: Student: 17 €/);
+  assert.match(profile.pricing,/Beard Trim: Master: 40 €/);
+});
