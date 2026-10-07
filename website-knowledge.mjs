@@ -729,10 +729,11 @@ export function essentialWebsiteCandidates(bundle) {
     if(registryDoc){
       for(let index=0; index<blocks.length; index++){
         const block=blocks[index]||{};
-        const nearby=blocks.slice(Math.max(0,index-4),index+1)
+        const nearby=blocks.slice(Math.max(0,index-12),index+1)
           .map((item)=>String(item?.heading||'')+' '+String(item?.text||''))
           .join(' ');
-        if(!registryControllerContext(String(block.heading||'')+' '+nearby)) continue;
+        const explicitControllerField=/\b(?:postiosoite|postal\s+address|sahkoposti|sähköposti|email|e-mail|puhelin|phone|telefon)\b/i.test(String(block.heading||'')+' '+String(block.text||''));
+        if(!registryControllerContext(String(block.heading||'')+' '+nearby) && !explicitControllerField) continue;
         const directEmail=extractedContactEmail(block.text);
         if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
         const directPhone=extractedContactPhone(block.text);
@@ -968,13 +969,19 @@ function profileCommerceSource(value) {
 
 function conciseProfileServices(facts) {
   const out=[]; const seen=new Set();
+  const productNames=new Set(
+    (facts||[])
+      .filter((item)=>norm(item?.category||'')===norm('Tuotteet'))
+      .map((item)=>norm(item?.title||''))
+      .filter(Boolean)
+  );
   const add=(value)=>{
     const text=clean(value)
       .replace(/^[•·▪◾🔶◆◇►▶✓✔]+\s*/,'')
       .replace(/[.!?;:]+$/,'')
       .trim();
     const key=norm(text);
-    if(!text || text.length>180 || seen.has(key)) return;
+    if(!text || text.length>180 || seen.has(key) || productNames.has(key)) return;
     if(/\b(?:varaa|ota yhtey|contact us|book now|lue lisaa|lue lisää|read more|tutustu|tervetuloa|welcome|jasen|jäsen|membership|sopimuseh|terms)\b/i.test(text)) return;
     if(!isConcreteServiceLabel(text) && !pricedServiceLabel(text)) return;
     seen.add(key);
