@@ -5999,7 +5999,11 @@ function oauthConfig(provider) {
       configured: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      redirectUri: BASE + '/api/auth/oauth/google/callback',
+      // Production must use the exact redirect URI registered in Google
+      // Cloud even when BASE_URL or the inbound host is a Railway alias.
+      redirectUri: process.env.NODE_ENV === 'production'
+        ? 'https://www.respondoai.fi/api/auth/oauth/google/callback'
+        : BASE + '/api/auth/oauth/google/callback',
     };
   }
   if (provider === 'apple') {
@@ -7163,6 +7167,12 @@ https://www.respondoai.fi/dpa
 });
 
 app.get('/api/app/google-calendar/start', auth, ownerOnly, subscribed, async (req,res) => {
+  if (process.env.NODE_ENV === 'production' &&
+      String(req.hostname || '').toLowerCase() !== 'www.respondoai.fi') {
+    // Sessions and OAuth state cookies cannot cross between Railway and www.
+    // Ask to sign in on the canonical domain before authorizing Calendar.
+    return res.redirect(302, 'https://www.respondoai.fi/kirjaudu?next=calendar');
+  }
   if(!await requirePlanCapability(req,res,'googleCalendar')) return;
   const cfg = oauthConfig('google');
   if (!cfg.configured) return res.redirect('/app?section=automation&calendar=not_configured');
@@ -7222,6 +7232,14 @@ app.get('/api/auth/oauth/:provider/start', (req, res) => {
   const provider = String(req.params.provider || '').toLowerCase();
   const flow = req.query.flow === 'login' ? 'login' : 'signup';
   if (!['google','apple'].includes(provider)) return res.status(404).end();
+
+  // The public www domain and the legacy Railway URL both serve the website.
+  // OAuth, however, must start AND return on the same host because its
+  // CSRF-state cookie is host-only. Canonicalize before setting that cookie.
+  if (provider === 'google' && process.env.NODE_ENV === 'production' &&
+      String(req.hostname || '').toLowerCase() !== 'www.respondoai.fi') {
+    return res.redirect(302, 'https://www.respondoai.fi' + req.originalUrl);
+  }
 
   const cfg = oauthConfig(provider);
   if (!cfg.configured) {
