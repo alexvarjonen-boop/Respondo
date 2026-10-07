@@ -1,0 +1,38 @@
+name: Respondo production smoke
+
+on:
+  push:
+    branches: [production-respondo-fi]
+    paths:
+      - .github/workflows/production-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-site-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify public domain, API, assistants and crawl endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          origin="https://www.respondoai.fi"
+          for path in "/" "/assistant" "/api/health" "/api/public/config" "/sitemap.xml" "/robots.txt"; do
+            status="$(curl -L -sS -o "/tmp/respondo$(echo "$path" | tr / _)" -w '%{http_code}' --max-time 35 "$origin$path")"
+            echo "$path => HTTP $status"
+            test "$status" = 200
+          done
+          grep -q '"ok":true' /tmp/respondo_api_health
+          grep -q '<urlset' /tmp/respondo_sitemap.xml
+          grep -q '^Sitemap:' /tmp/respondo_robots.txt
+          python3 - <<'PY'
+          from xml.etree import ElementTree as ET
+          with open('/tmp/respondo_sitemap.xml', encoding='utf-8') as file:
+              root = ET.parse(file).getroot()
+          assert root.tag.endswith('urlset')
+          assert len(root) >= 15, 'Sitemap contains too few indexed URLs'
+          print('Sitemap parsed successfully with',len(root),'URLs')
+          PY
