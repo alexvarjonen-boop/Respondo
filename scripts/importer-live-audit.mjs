@@ -243,7 +243,8 @@ const ecommerceSites=[
     url:'https://dickjohnson.fi/',
     maxPages:70,
     budget:40000,
-    storefrontLimit:500,
+    storefrontLimit:1200,
+    storefrontBudgetMs:18000,
     minFacts:20,
     mustContain:[
       ['t-shirt product',/T-paita MIDHEAVY 230g/i],
