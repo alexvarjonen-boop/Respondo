@@ -347,3 +347,13 @@ test('Duda and builder metadata never becomes customer knowledge',()=>{
   assert.doesNotMatch(text,/ssr_script|pageFontSizeStyle|extensionsToRender|data-version|@media/i,JSON.stringify(rows));
   assert.match(text,/Hiustenleikkaus 31€/i);
 });
+
+
+test('email inside a skipped page-builder button is still imported',()=>{
+  const html='<main><button class="email-widget">Lähetä meille sähköpostia (miestenparturiturku@gmail.com)</button><p>050 325 4690</p></main>';
+  const doc=extractBusinessDocument(html,'https://example.fi/');
+  const bundle={finalUrl:'https://example.fi/',products:[],pageDocuments:[doc]};
+  const profile=essentialWebsiteProfile(bundle);
+  assert.equal(profile.email,'miestenparturiturku@gmail.com');
+  assert.match(profile.phone,/050\s*325\s*4690/);
+});
