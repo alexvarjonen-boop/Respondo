@@ -2667,7 +2667,9 @@ function directMultilingualServiceConfirmation(rows,message,lang='fi') {
     let subject=original
       .replace(/^do\s+you\s+(?:offer|provide|have)\s+/i,'')
       .replace(/^(?:do|can|could)\s+you\s+/i,'');
-    if(/^cut\s+/i.test(subject)) subject=subject.replace(/^cut\s+/i,'')+' haircuts';
+    if(/^cut\s+hair$/i.test(subject)) subject='haircuts';
+    else if(/^cut\s+/i.test(subject)) subject=subject.replace(/^cut\s+/i,'').replace(/^hair$/i,'')+' haircuts';
+    subject=subject.replace(/^hair\s+haircuts$/i,'haircuts').trim();
     answer='Yes, we offer '+subject+'.';
   }
   return {supported:true,answer,evidence:[found]};
@@ -3624,6 +3626,13 @@ function catalogOptionValues(options,matcher) {
 }
 function normalizeCatalogProduct(product, fallbackUrl='') {
   if (!product?.name) return null;
+  const name=String(product.name||'').replace(/\s+/g,' ').trim().slice(0,180);
+  const description=String(product.description||'').replace(/\s+/g,' ').trim().slice(0,700);
+  const productText=normalizeSearchText(name+' '+description);
+  if (/lorem ipsum|dummy product|sample product|demo product|placeholder product|admin@example\.(?:com|org|net)|hello@example\.(?:com|org|net)/.test(productText)) return null;
+  if (/^(?:shop|store|products?|tuotteet|verkkokauppa)(?:\s*[-|–—:]\s*[^|]{1,90})?$/i.test(name) &&
+      (!Number.isFinite(product.price) || Number(product.price)===0)) return null;
+  if (/(?:products?|tuotteet)\s+(?:arkistot?|archives?|arsivleri|arşivleri)/i.test(name)) return null;
   const url=normalizeWebUrl(product.url || fallbackUrl,false);
   if (!url) return null;
   const options=normalizeCatalogOptions(product.options);
@@ -3635,13 +3644,13 @@ function normalizeCatalogProduct(product, fallbackUrl='') {
     value:String(spec?.value||'').replace(/\s+/g,' ').trim().slice(0,180),
   })).filter((spec)=>spec.name&&spec.value).slice(0,18);
   return {
-    name:String(product.name).replace(/\s+/g,' ').trim().slice(0,180),
+    name,
     url,
     price:Number.isFinite(product.price)?Number(product.price):null,
     maxPrice:Number.isFinite(product.maxPrice)?Number(product.maxPrice):(Number.isFinite(product.price)?Number(product.price):null),
     currency:String(product.currency||'').trim().toUpperCase().slice(0,8),
     availability:String(product.availability||'').trim().slice(0,60),
-    description:String(product.description||'').replace(/\s+/g,' ').trim().slice(0,700),
+    description,
     category:String(product.category||'').replace(/\s+/g,' ').trim().slice(0,120),
     brand:String(product.brand||'').replace(/\s+/g,' ').trim().slice(0,120),
     sku:String(product.sku||'').replace(/\s+/g,' ').trim().slice(0,120),
@@ -3792,6 +3801,9 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const usefulPath = url => {
     const pathname=new URL(url).pathname;
     const normalized=normalizeSearchText(pathname);
+    const normalizedPath=pathname.toLowerCase().replace(/\/+$/,'') || '/';
+    if (/\/(?:home[-_]?\d+|demo(?:[-_][^/]*)?|sample-page|sample|template(?:[-_][^/]*)?|author|feed)(?:\/|$)/i.test(normalizedPath)) return false;
+    if (/\/(?:tag|product-tag|product-category|category)\//i.test(normalizedPath)) return false;
     if(locationDetailSeed){
       const candidatePath=pathname.replace(/\/+$/,'') || '/';
       const sameDetail=candidatePath===seedPath || candidatePath.startsWith(seedPath+'/');
@@ -3809,9 +3821,14 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   };
   const priority = url => {
     const p=normalizeSearchText(url);
-    if (/\/products?\/|\/tuotteet?\/|product|tuote|shop|kauppa/.test(p)) return 140;
-    if (/faq|ukk|help|support|shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|size-guide|size\b|koko|material|materia|care|hoito|quality|laatu|store|myymala|myymälä|location|sijainti/.test(p)) return 120;
-    return /tarjous|quote|offert|hinta|price|pris|palvel|service|tjanst|yhtey|contact|kontakt|auki|hours|oppet/i.test(p) ? 100 : 0;
+    // Contact, location and policy pages are more valuable than product-detail
+    // pages because storefront APIs already provide products for real stores.
+    if (/yhtey|contact|kontakt|osoite|address|adress|location|sijainti|myymala|myymälä|auki|hours|oppet/.test(p)) return 280;
+    if (/shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|faq|ukk|help|support/.test(p)) return 260;
+    if (/tarjous|quote|offert|hinta|price|pricing|pris|palvel|service|tjanst|about|meista|yritys|company/.test(p)) return 230;
+    if (/\/products?\/|\/tuotteet?\/|product|tuote|shop|kauppa/.test(p)) return 170;
+    if (/size-guide|size\b|koko|material|materia|care|hoito|quality|laatu/.test(p)) return 160;
+    return 0;
   };
 
   const enqueue = (html, pageUrl) => {
