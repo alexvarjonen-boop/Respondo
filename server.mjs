@@ -6559,12 +6559,13 @@ app.get('/robots.txt', (req,res) => {
     'Sitemap: ' + SEO_CANONICAL_ORIGIN + '/sitemap.xml',
     'Host: ' + new URL(SEO_CANONICAL_ORIGIN).host,
     ''
-  ].join('\\n');
+  ].join('\n');
   res.setHeader('Cache-Control','public, max-age=3600');
   res.type('text/plain').send(robots);
 });
 
 app.get('/sitemap.xml', (req,res) => {
+  const lastmod = new Date().toISOString().slice(0,10);
   const basePaths = ['/', '/ominaisuudet', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
   const escapeXml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
   const rows = [];
@@ -6573,22 +6574,22 @@ app.get('/sitemap.xml', (req,res) => {
     for (const lang of ['fi','sv','en']) {
       const loc = urls[lang];
       rows.push(
-        '  <url>\\n' +
-        '    <loc>' + escapeXml(loc) + '</loc>\\n' +
-        '    <lastmod>' + lastmod + '</lastmod>\\n' +
-        '    <changefreq>' + (basePath === '/' ? 'weekly' : 'monthly') + '</changefreq>\\n' +
-        '    <priority>' + (basePath === '/' ? '1.0' : basePath === '/ominaisuudet' ? '0.9' : ['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot'].includes(basePath) ? '0.8' : '0.5') + '</priority>\\n' +
-        '    <xhtml:link rel="alternate" hreflang="fi" href="' + escapeXml(urls.fi) + '" />\\n' +
-        '    <xhtml:link rel="alternate" hreflang="sv" href="' + escapeXml(urls.sv) + '" />\\n' +
-        '    <xhtml:link rel="alternate" hreflang="en" href="' + escapeXml(urls.en) + '" />\\n' +
-        '    <xhtml:link rel="alternate" hreflang="x-default" href="' + escapeXml(urls.fi) + '" />\\n' +
+        '  <url>\n' +
+        '    <loc>' + escapeXml(loc) + '</loc>\n' +
+        '    <lastmod>' + lastmod + '</lastmod>\n' +
+        '    <changefreq>' + (basePath === '/' ? 'weekly' : 'monthly') + '</changefreq>\n' +
+        '    <priority>' + (basePath === '/' ? '1.0' : basePath === '/ominaisuudet' ? '0.9' : ['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot'].includes(basePath) ? '0.8' : '0.5') + '</priority>\n' +
+        '    <xhtml:link rel="alternate" hreflang="fi" href="' + escapeXml(urls.fi) + '" />\n' +
+        '    <xhtml:link rel="alternate" hreflang="sv" href="' + escapeXml(urls.sv) + '" />\n' +
+        '    <xhtml:link rel="alternate" hreflang="en" href="' + escapeXml(urls.en) + '" />\n' +
+        '    <xhtml:link rel="alternate" hreflang="x-default" href="' + escapeXml(urls.fi) + '" />\n' +
         '  </url>'
       );
     }
   }
-  const xml = '<?xml version="1.0" encoding="UTF-8"?>\\n' +
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\\n' +
-    rows.join('\\n') + '\\n</urlset>\\n';
+  const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
+    rows.join('\n') + '\n</urlset>\n';
   res.setHeader('Cache-Control','public, max-age=3600');
   res.type('application/xml').send(xml);
 });

@@ -45,3 +45,34 @@ test('homepage keeps descriptive product content without the removed explainer s
   assert.match(home,/horizontalProductStory\(\)/);
   assert.doesNotMatch(app,/premiumHomeSections\(appText, currentLang\(\), FEATURE_COUNT\)/);
 });
+
+test('robots and the XML sitemap serve valid readable responses on the production routes',async(t)=>{
+  const { app }=await import('../server.mjs');
+  const server=await new Promise((resolve)=> {
+    const handle=app.listen(0,'127.0.0.1',()=>resolve(handle));
+  });
+  t.after(()=>new Promise((resolve,reject)=>server.close((error)=>error?reject(error):resolve())));
+  const origin='http://127.0.0.1:'+server.address().port;
+
+  const robots=await fetch(origin+'/robots.txt');
+  assert.equal(robots.status,200);
+  const robotsText=await robots.text();
+  assert.match(robotsText,/User-agent: OAI-SearchBot/);
+  assert.match(robotsText,/Sitemap: [^\\n]+\\/sitemap\\.xml/);
+  assert.ok(robotsText.split('\\n').length>6,'robots.txt must have real line breaks');
+  assert.doesNotMatch(robotsText,/\\\\n/,'robots.txt must not return literal backslash-n');
+
+  const sitemap=await fetch(origin+'/sitemap.xml');
+  assert.equal(sitemap.status,200,'sitemap endpoint must not throw a 500');
+  assert.match(sitemap.headers.get('content-type')||'',/xml/i);
+  const xml=await sitemap.text();
+  assert.ok(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>'),xml.slice(0,120));
+  assert.match(xml,/<urlset[^>]+xmlns:xhtml=/);
+  assert.match(xml,/<\\/urlset>/);
+  assert.match(xml,/<loc>[^<]*\\/asiakaspalvelubotti/);
+  assert.match(xml,/<loc>[^<]*\\/verkkokauppa-chatbot/);
+  assert.match(xml,/<loc>[^<]*\\/ajanvaraus-chatbot/);
+  assert.match(xml,/<xhtml:link rel="alternate" hreflang="sv"/);
+  assert.match(xml,/<xhtml:link rel="alternate" hreflang="en"/);
+  assert.doesNotMatch(xml,/\\\\n/,'sitemap must not return literal backslash-n');
+});
