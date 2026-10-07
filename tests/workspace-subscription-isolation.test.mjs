@@ -32,7 +32,7 @@ test('legacy migration may backfill the first tenant but runtime access is tenan
 
 test('homepage does not inject a second tenant widget over the site assistant', () => {
   assert.doesNotMatch(server,/Homepage owner widget injection failed/);
-  assert.doesNotMatch(server,/html = html\.replace\('<\\/body>', widgetHtml \+ '\\\\n<\\/body>'\)/);
+  assert.ok(!server.includes("html = html.replace('</body>', widgetHtml + '\\n</body>')"));
 });
 
 

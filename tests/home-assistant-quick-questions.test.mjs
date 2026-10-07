@@ -11,8 +11,9 @@ test('homepage assistant binds all three quick question buttons',()=>{
 });
 
 test('homepage loads the corrected site assistant build and creates it on the homepage',()=>{
-  assert.match(index,/effects\\.js\\?v=20261007-correct-home-chat-v2/);
+  assert.ok(index.includes('/effects.js?v=20261007-correct-home-chat-v2'));
   const initStart=effects.indexOf('function init()');
   const initSource=effects.slice(initStart,initStart+1400);
-  assert.match(initSource,/location\\.pathname === '\\/'[\\s\\S]*leftSectionRail\\(\\); assistant\\(\\);/);
+  assert.ok(initSource.includes("if (location.pathname === '/')"));
+  assert.ok(initSource.includes('leftSectionRail(); assistant();'));
 });
