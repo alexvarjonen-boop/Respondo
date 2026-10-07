@@ -1662,7 +1662,7 @@ function queryTopic(query) {
   // Payment-method questions such as "voiko maksaa Klarnalla?" must not be
   // mistaken for a generic price question just because they contain "maksaa".
   if(/maksutapa|maksaminen|maksuvaihtoeh|kortilla|korttimaks|klarn|paypal|mobilepay|apple pay|google pay|payment method|payment options|pay with|pay by|betalning|betalningsmetod|faktura/.test(q)) return 'payment';
-  if(/hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar/.test(q)) return 'pricing';
+  if(/hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar|how\s+much\s+(?:is|are)|hur\s+mycket\s+kostar/.test(q)) return 'pricing';
   if(/auki|aukiolo|opening|hours|open|oppet|öppet|oppettid/.test(q)) return 'hours';
   if(/toimitus|toimituk|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|where is my order|tilauksen tila|lahetys|sparning/.test(q)) return 'delivery';
   if(/palaut|return|refund|vaihto|exchange|retur|aterbetal/.test(q)) return 'returns';
@@ -2648,26 +2648,38 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
 function directMultilingualServicePrice(rows,message,lang='fi') {
   const q=normalizeSearchText(message);
   const isPriceQuestion =
-    /(?:paljonko|mita maksaa|mitä maksaa|mika.*hinta|mikä.*hinta|hinta\b|how much|what.*cost|cost\b|price\b|vad kostar|hur mycket|pris\b)/.test(q);
+    /(?:paljonko|mita\s+.+\s+maksaa|mitä\s+.+\s+maksaa|mika.*hinta|mikä.*hinta|hinta\b|how\s+much(?:\s+(?:is|are|does|do))?|what.*cost|cost\b|price\b|vad\s+kostar|hur\s+mycket(?:\s+kostar)?|pris\b)/.test(q);
   if(!isPriceQuestion) return null;
 
   const requested=multilingualServiceConcepts(message);
   if(!requested.size) return null;
+  const haircut=requested.has('hair') && requested.has('cut');
 
   const candidates=(rows||[])
-    .filter(usableWebsiteRow)
     .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='pricing')
     .map((row,index)=>{
       const answer=cleanKnowledgeText(row.answer);
       const evidence=normalizeSearchText(String(row?.title||'')+' '+answer);
       if(!/[€$£]|\b\d+(?:[.,]\d+)?\s*(?:eur|usd|sek|nok|dkk|kr)\b/i.test(answer)) return null;
+
       const available=multilingualServiceConcepts(evidence);
-      const matched=[...requested].filter((concept)=>available.has(concept)).length;
+      let matched=[...requested].filter((concept)=>available.has(concept)).length;
+
+      // Explicit cross-language aliases make a direct question like
+      // "How much is a haircut?" match a Finnish imported row
+      // "Hiustenleikkaus 31€" without relying on machine translation.
+      if(haircut && /hiusten?leikka|haircut|hair\s+cut|h[aå]rklipp|m\s*cut\b/.test(evidence)) {
+        matched=Math.max(matched,requested.size);
+      }
+
       if(!matched) return null;
       let score=matched*35;
-      if(matched===requested.size) score+=45;
-      if(/premium|pidennetty|extended|päähier|paahier|head massage|scalp massage|razor|veitsiraj|bundle|paketti|package|student|junior|jasen|jäsen|member/.test(evidence)) score-=30;
-      if(/^(?:m\s*cut|hiustenleikkaus|haircut|hårklippning|harklippning)\b/.test(answer)) score+=20;
+      if(matched===requested.size) score+=55;
+      if(answer.length<=90) score+=18;
+      if(/^[^:]{2,70}:\s*(?:alk\.?|alkaen|from)?\s*[€$£]?\s*\d/i.test(answer)) score+=25;
+      if(/lisapalvel|lisäpalvel|add[- ]?on|extra\b|upgrade|korotus|supplement|tillagg|tillägg/.test(evidence)) score-=55;
+      if(/premium|pidennetty|extended|päähier|paahier|head massage|scalp massage|razor|veitsiraj|bundle|paketti|package|student|junior|jasen|jäsen|member/.test(evidence)) score-=45;
+      if(haircut && /^(?:[^:]{0,30}:?\s*)?(?:m\s*cut|hiusten?leikka|haircut|h[aå]rklipp)/.test(evidence)) score+=35;
       return {row,answer,score,index};
     })
     .filter(Boolean)
@@ -2681,15 +2693,13 @@ function directMultilingualServicePrice(rows,message,lang='fi') {
   let answer=best.answer;
 
   if(amount){
-    if(lang==='en') answer='The price is '+amount+'.';
-    else if(lang==='sv') answer='Priset är '+amount+'.';
-    else answer='Hinta on '+amount+'.';
-
-    if(requested.has('hair') && requested.has('cut')){
+    if(haircut){
       if(lang==='en') answer='A haircut costs '+amount+'.';
       else if(lang==='sv') answer='En hårklippning kostar '+amount+'.';
       else answer='Hiustenleikkaus maksaa '+amount+'.';
-    }
+    } else if(lang==='en') answer='The price is '+amount+'.';
+    else if(lang==='sv') answer='Priset är '+amount+'.';
+    else answer='Hinta on '+amount+'.';
   }
 
   return {
@@ -2701,7 +2711,6 @@ function directMultilingualServicePrice(rows,message,lang='fi') {
     selected:[best.row],
   };
 }
-
 
 function multilingualServiceConcepts(value) {
   const q=normalizeSearchText(value);
@@ -3033,7 +3042,7 @@ function inferIntent(message) {
   if (/toimitus|toimituk|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans/.test(q)) return 'Toimitus';
   if (/ajanvaraus|varaa aika|ajan vara|booking|appointment|boka|bokning|tidsbokning/.test(q)) return 'Ajanvaraus';
   if (/tarjou[sk]|arvio|quote|estimate|offert|prisforslag|prisförslag/.test(q)) return 'Tarjouspyyntö';
-  if (/hinta|maksaa|hinnoittelu|kustannus|price|cost|pricing|pris|kostar|kostnad/.test(q)) return 'Hinta';
+  if (/hinta|maksaa|hinnoittelu|kustannus|price|cost|pricing|pris|kostar|kostnad|how\s+much\s+(?:is|are)|hur\s+mycket\s+kostar/.test(q)) return 'Hinta';
   if (/auki|lauantai|sunnuntai|viikonloppu|kello|opening|open|hours|öppet|oppet|öppettider|oppettider/.test(q)) return 'Aukioloajat';
   if (/puhelin|sahkoposti|sähköposti|yhteys|yhteytta|yhteyttä|yhteystiedot|ottaa yhteytta|ottaa yhteyttä|soittaa|phone|email|contact|contact us|get in touch|telefon|e-post|kontakt|kontakta|ringa/.test(q)) return 'Yhteystiedot';
   if (/missä|missa|osoite|toimialue|alue|where|address|location|adress|område|omrade/.test(q)) return 'Sijainti';
