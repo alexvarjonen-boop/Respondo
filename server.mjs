@@ -5516,14 +5516,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const standaloneServicePrice=directMultilingualServicePrice(rows,cleanMessage,responseLang);
   if(standaloneServicePrice) return standaloneServicePrice;
 
-  const multilingualService=directMultilingualServiceConfirmation(rows,cleanMessage,responseLang);
-  if(multilingualService) {
-    const evidence=multilingualService.evidence||[];
-    return multilingualService.supported
-      ? {answer:multilingualService.answer,handoff:false,confidence:0.93,intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence}
-      : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
-  }
-
+  // Policy / fulfilment questions must outrank generic service matching.
+  // Natural phrases such as "Mitä toimituksesta veloitetaan?" contain words
+  // that can otherwise look like a service request and select unrelated prose.
   const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
   if(shippingCostResult) return shippingCostResult;
 
@@ -5532,6 +5527,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const returnPolicyResult=directReturnPolicyAnswer(rows,cleanMessage,responseLang);
   if(returnPolicyResult) return returnPolicyResult;
+
+  const multilingualService=directMultilingualServiceConfirmation(rows,cleanMessage,responseLang);
+  if(multilingualService) {
+    const evidence=multilingualService.evidence||[];
+    return multilingualService.supported
+      ? {answer:multilingualService.answer,handoff:false,confidence:0.93,intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence}
+      : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
+  }
 
   const ecommerceOrderResult=directEcommerceOrderingAnswer(rows,cleanMessage,responseLang);
   if(ecommerceOrderResult) return ecommerceOrderResult;
