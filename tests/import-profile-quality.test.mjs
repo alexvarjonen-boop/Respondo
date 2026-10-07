@@ -163,8 +163,8 @@ test('product-like labels and annual membership prose stay out of service profil
       <p>PARRANSUORISTIN - MATT BLACK</p>
       <p>Shave Kit</p>
       <p>Gold: Haircuts and beard services for a year</p>
-      <p>Hair Cut</p>
-      <p>Beard Trim</p>
+      <p>Hair Cut: Student: 17 €</p>
+      <p>Beard Trim: Student: 15 €</p>
     </section>
   `,'https://shop.example/');
   const profile=essentialWebsiteProfile({finalUrl:'https://shop.example/',pageDocuments:[doc]});
