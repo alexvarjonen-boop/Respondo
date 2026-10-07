@@ -2624,7 +2624,7 @@ function serviceAreaAnswer(value, lang='fi') {
 
 function explicitBusinessLocationQuestion(message) {
   const q=normalizeSearchText(message);
-  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missa\s+te\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?(?:sijainti|osoite)|mika\s+(?:teidan\s+)?osoite\s+on|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+(?:location|address)|where\s+exactly\s+are\s+you\s+located|var\s+finns\s+(?:ni|foretaget|företaget)|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:ni|foretaget|företaget)|vad\s+ar\s+(?:er|eran)\s+(?:adress|postadress)|vad\s+har\s+ni\s+for\s+(?:adress|postadress)|vilken\s+adress\s+har\s+ni)$/.test(q);
+  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missa\s+te\s+sijaitsette|missapain\s+sijaitsette|missa\s+(?:teidan\s+)?toimipiste(?:enne)?\s+on|mika\s+on\s+(?:teidan\s+)?(?:sijainti|osoite)|mika\s+(?:teidan\s+)?osoite\s+on|voitko\s+antaa\s+(?:minulle\s+)?(?:tarkan\s+)?osoitteen|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+(?:location|address)|where\s+exactly\s+are\s+you\s+located|where\s+is\s+your\s+location|can\s+you\s+give\s+me\s+your\s+(?:exact\s+)?address|var\s+finns\s+(?:ni|foretaget|företaget)|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:ni|foretaget|företaget)|var\s+ligger\s+ert\s+verksamhetsstalle|vad\s+ar\s+(?:er|eran)\s+(?:adress|postadress)|vad\s+har\s+ni\s+for\s+(?:adress|postadress)|vilken\s+adress\s+har\s+ni|kan\s+jag\s+fa\s+er\s+(?:exakta\s+)?adress)$/.test(q);
 }
 
 function extractBusinessLocationText(value) {
