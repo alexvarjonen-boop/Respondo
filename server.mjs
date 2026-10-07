@@ -2870,7 +2870,7 @@ function multilingualServiceConcepts(value) {
   const q=normalizeSearchText(value);
   const concepts=new Set();
   const checks=[
-    ['hair',/(?:^|\b)(?:hius|hiusten|hair|har|hår)(?:\b|\w*)/],
+    ['hair',/(?:^|\b)(?:hiu(?:s|k|st)\w*|hair\w*|har\w*|hår\w*)(?:\b|\w*)/],
     ['beard',/(?:^|\b)(?:parta|beard|skagg|skägg)(?:\b|\w*)/],
     ['cut',/(?:leikka|haircut|cut\b|klipp)/],
     ['clean',/(?:puhdist|pesu|pese|wash|clean|tvatt|tvätt|rengor|rengör)/],
