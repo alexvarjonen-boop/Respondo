@@ -987,6 +987,7 @@
 
   function deepScrollExperience() {
     if (isWorkspacePage()) return;
+    if (document.querySelector('.formpage') || ['/kirjaudu','/tilaus'].includes(location.pathname)) return;
 
     const route = location.pathname;
     const compactAuthPage = ['/kirjaudu','/tilaus'].includes(route)
