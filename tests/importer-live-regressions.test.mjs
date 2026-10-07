@@ -89,6 +89,18 @@ test('direct Finnish, English and Swedish haircut questions are grounded in impo
   }
 });
 
+test('natural Finnish haircut availability paraphrases use verified service evidence',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'svc',category:'Palvelut',title:'Palvelut: M Cut',answer:'M Cut on ylläpitävä hiustenleikkaus.',keywords:['hiustenleikkaus'],source_type:'website',source_url:'https://example.fi/services'},
+  ];
+  for(const message of ['Saako teiltä tavallisen hiustenleikkauksen?','Onnistuuko hiustenleikkaus?']){
+    const result=await generateGroundedAnswer({companyName:'Example',rows,message,history:[],lang:'fi'});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.match(result.answer,/Kyllä|hiustenleikka/i,message+' '+result.answer);
+  }
+});
+
 test('generic haircut price follow-ups prefer the base service over add-ons in all languages',async()=>{
   const { generateGroundedAnswer }=await import('../server.mjs');
   const rows=[
