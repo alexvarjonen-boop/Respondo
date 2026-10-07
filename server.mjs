@@ -3233,8 +3233,8 @@ function localizedShippingCostFact(value,lang='fi') {
 
 async function directShippingCostAnswer(rows,message,lang='fi') {
   const q=normalizeSearchText(message);
-  const shippingCost=/toimitus|toimituskulu|postitus|shipping|delivery|postage|frakt|leverans/.test(q) &&
-    /hinta|maksaa|maksu|kulu|price|cost|fee|charge|pris|kostar|avgift/.test(q);
+  const shippingCost=/toimitus|toimituskulu|postikulu|postitus|shipping|delivery|postage|frakt|leverans/.test(q) &&
+    /hinta|maksaa|maksu|kulu|veloit|price|cost|fee|charge|pris|kostar|avgift|betalt/.test(q);
   if(!shippingCost) return null;
 
   const candidates=(rows||[])
