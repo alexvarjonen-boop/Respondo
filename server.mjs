@@ -2342,7 +2342,9 @@ function verifiedContactValue(rows, title) {
 function explicitContactQuestion(message) {
   const q=normalizeSearchText(message);
   if (/(?:^|\s)(?:puhelin\w*|phone\w*|telefon\w*|soitta\w*|soita|ring\w*|numero|numeronne|numeroanne)(?:\s|$)/.test(q)) return 'phone';
-  if (/(?:^|\s)(?:sahkopost\w*|email\w*|e-mail|meili\w*|e-?post\w*)(?:\s|$)/.test(q)) return 'email';
+  // Swedish "e-postadress" may normalize to either "e-postadress" or
+  // "e postadress"; accept both so it cannot be mistaken for a street address.
+  if (/(?:^|\s)(?:sahkopost\w*|email\w*|e-mail|meili\w*|e-?post\w*|e\s+post\w*|epost\w*)(?:\s|$)/.test(q)) return 'email';
   return '';
 }
 
@@ -2475,6 +2477,17 @@ function verifiedBusinessLocationValue(rows) {
       scoreValue(street+', '+postal,rowsForSource[0]);
       if(scored.length) scored[scored.length-1].score+=25;
     }
+  }
+
+  // After branch/location scoping, the street and postal line may come from
+  // two different first-party pages for the same location. Combine them so
+  // "Maariankatu 3" + "20100 Turku" becomes one useful customer answer.
+  const allValues=sourceRows.map((row)=>({row,value:cleanKnowledgeText(row.answer)})).filter((x)=>x.value);
+  const globalStreet=allValues.find((x)=>/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(x.value) && !/\b\d{5}\b/.test(x.value));
+  const globalPostal=allValues.find((x)=>/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(x.value));
+  if(globalStreet && globalPostal && normalizeSearchText(globalStreet.value)!==normalizeSearchText(globalPostal.value)){
+    scoreValue(globalStreet.value+', '+globalPostal.value,globalStreet.row);
+    if(scored.length) scored[scored.length-1].score+=30;
   }
 
   return scored.sort((a,b)=>b.score-a.score || a.value.length-b.value.length)[0] || null;
