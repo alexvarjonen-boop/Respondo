@@ -4314,59 +4314,88 @@ function normalizeCatalogProduct(product, fallbackUrl='') {
   };
 }
 async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.now()+45000) {
-  const productLinks=/href\s*=\s*[\"'][^\"']*\/products\//i.test(String(firstHtml||''));
+  const productLinks=/href\s*=\s*["'][^"']*\/products\//i.test(String(firstHtml||''));
   const shopifyLike=/cdn\.shopify|shopify-section|shopify\.theme|myshopify/i.test(String(firstHtml||'')) || productLinks;
   if (!shopifyLike) return [];
   const base=new URL(baseUrl);
   const currency=detectStoreCurrency(firstHtml);
   const out=[];
-  for(let page=1;out.length<limit && Date.now()<deadline;page++){
-    let payload;
-    try {
-      payload=await fetchPublicJson(new URL('/products.json?limit=250&page='+page,base).toString(),10_000_000);
-    } catch {
-      if(page===1) return [];
-      break;
-    }
-    const products=Array.isArray(payload?.products)?payload.products:[];
-    if(!products.length) break;
-    for(const raw of products){
-      const variants=Array.isArray(raw?.variants)?raw.variants:[];
-      const prices=variants.map((variant)=>numericStorePrice(variant?.price)).filter(Number.isFinite);
-      const availability=variants.some((variant)=>variant?.available===true)
-        ? 'varastossa'
-        : variants.some((variant)=>variant?.available===false) ? 'ei varastossa' : '';
-      const optionDefs=(Array.isArray(raw?.options)?raw.options:[]).map((option,index)=>{
-        const values=cleanCatalogValues(
-          option?.values?.length
-            ? option.values
-            : variants.map((variant)=>variant?.['option'+(index+1)]).filter(Boolean),
-          30,
+  const seen=new Set();
+
+  const addRaw=(raw)=>{
+    const variants=Array.isArray(raw?.variants)?raw.variants:[];
+    const prices=variants.map((variant)=>numericStorePrice(variant?.price)).filter(Number.isFinite);
+    const availability=variants.some((variant)=>variant?.available===true)
+      ? 'varastossa'
+      : variants.some((variant)=>variant?.available===false) ? 'ei varastossa' : '';
+    const optionDefs=(Array.isArray(raw?.options)?raw.options:[]).map((option,index)=>{
+      const values=cleanCatalogValues(
+        option?.values?.length
+          ? option.values
+          : variants.map((variant)=>variant?.['option'+(index+1)]).filter(Boolean),
+        30,
+      );
+      return {name:String(option?.name||'').trim(),values};
+    }).filter((option)=>option.name&&option.values.length);
+    const handle=String(raw?.handle||'').trim();
+    const product=normalizeCatalogProduct({
+      name:raw?.title,
+      url:new URL('/products/'+handle,base).toString(),
+      price:prices.length?Math.min(...prices):null,
+      maxPrice:prices.length?Math.max(...prices):null,
+      currency,
+      availability,
+      description:storeProductDescription(raw?.body_html),
+      category:raw?.product_type,
+      brand:raw?.vendor,
+      sku:variants.find((variant)=>variant?.sku)?.sku || '',
+      options:optionDefs,
+      colors:catalogOptionValues(optionDefs,/vari|color|colour|farg|färg/),
+      sizes:catalogOptionValues(optionDefs,/koko|size|storlek|fit/),
+      materials:catalogOptionValues(optionDefs,/materia|material/),
+    });
+    if(!product) return;
+    const key=normalizeSearchText(handle || product.url || product.name);
+    if(!key || seen.has(key)) return;
+    seen.add(key);
+    out.push(product);
+  };
+
+  // Shopify storefronts can expose slightly different product sets/orderings
+  // through the root catalog and the public "all" collection. Read both in
+  // lockstep and merge by handle so page-based pagination cannot silently omit
+  // a published product when the catalog changes between requests.
+  const feeds=['/products.json','/collections/all/products.json'];
+  const active=new Map(feeds.map((feed)=>[feed,true]));
+  for(let page=1;out.length<limit && Date.now()<deadline && [...active.values()].some(Boolean);page++){
+    const requests=feeds.map(async(feed)=>{
+      if(!active.get(feed)) return {feed,products:null,failed:false};
+      try{
+        const payload=await fetchPublicJson(
+          new URL(feed+'?limit=250&page='+page,base).toString(),
+          10_000_000,
         );
-        return {name:String(option?.name||'').trim(),values};
-      }).filter((option)=>option.name&&option.values.length);
-      const product=normalizeCatalogProduct({
-        name:raw?.title,
-        url:new URL('/products/'+String(raw?.handle||''),base).toString(),
-        price:prices.length?Math.min(...prices):null,
-        maxPrice:prices.length?Math.max(...prices):null,
-        currency,
-        availability,
-        description:storeProductDescription(raw?.body_html),
-        category:raw?.product_type,
-        brand:raw?.vendor,
-        sku:variants.find((variant)=>variant?.sku)?.sku || '',
-        options:optionDefs,
-        colors:catalogOptionValues(optionDefs,/vari|color|colour|farg|färg/),
-        sizes:catalogOptionValues(optionDefs,/koko|size|storlek|fit/),
-        materials:catalogOptionValues(optionDefs,/materia|material/),
-      });
-      if(product) out.push(product);
-      if(out.length>=limit) break;
+        return {feed,products:Array.isArray(payload?.products)?payload.products:[],failed:false};
+      }catch{
+        return {feed,products:[],failed:true};
+      }
+    });
+    const results=await Promise.all(requests);
+    for(const result of results){
+      if(!active.get(result.feed)) continue;
+      if(result.failed){
+        active.set(result.feed,false);
+        continue;
+      }
+      const products=result.products||[];
+      for(const raw of products){
+        addRaw(raw);
+        if(out.length>=limit) break;
+      }
+      if(products.length<250) active.set(result.feed,false);
     }
-    if(products.length<250) break;
   }
-  return out;
+  return out.slice(0,limit);
 }
 async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.now()+45000) {
   if(!/woocommerce|wc-block|wp-content\/plugins\/woocommerce/i.test(String(firstHtml||''))) return [];
