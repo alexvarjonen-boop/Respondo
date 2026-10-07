@@ -574,17 +574,21 @@ function extractedContactEmail(value) {
 function physicalAddressFragments(value) {
   const raw=clean(decodeHtml(value));
   if(!raw || billingAddressNoise.test(raw)) return [];
+  const addressRaw=raw
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.(?:fi|se|no|dk|com|net|org|eu)(?=[A-ZÅÄÖ]|\s|$)/gi,' ')
+    .replace(/\s+/g,' ')
+    .trim();
   const out=[];
   const add=(value)=>{
     const text=clean(value).replace(/^[,;:|–—-]+\s*|\s*[,;:|–—-]+$/g,'');
     if(!text || text.length>140 || out.some((x)=>norm(x)===norm(text))) return;
     out.push(text);
   };
-  const full=raw.match(/\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}(?:katu|tie|kuja|polku|väylä|vayla|raitti|ranta|kaari|aukio|tori|puisto|rinne|gatan|vägen|vagen|väg|vag|gränden|granden|street|road|avenue|lane|boulevard|drive)\s+\d+[A-Za-z]?(?:\s*[,|-]?\s*\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55})?)\b/i);
+  const full=addressRaw.match(/\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}(?:katu|tie|kuja|polku|väylä|vayla|raitti|ranta|kaari|aukio|tori|puisto|rinne|gatan|vägen|vagen|väg|vag|gränden|granden|street|road|avenue|lane|boulevard|drive)\s+\d+[A-Za-z]?(?:\s*[,|-]?\s*\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55})?)\b/i);
   if(full) add(full[1]);
-  const street=raw.match(/\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}(?:katu|tie|kuja|polku|väylä|vayla|raitti|ranta|kaari|aukio|tori|puisto|rinne|gatan|vägen|vagen|väg|vag|gränden|granden|street|road|avenue|lane|boulevard|drive)\s+\d+[A-Za-z]?)\b/i);
+  const street=addressRaw.match(/\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}(?:katu|tie|kuja|polku|väylä|vayla|raitti|ranta|kaari|aukio|tori|puisto|rinne|gatan|vägen|vagen|väg|vag|gränden|granden|street|road|avenue|lane|boulevard|drive)\s+\d+[A-Za-z]?)\b/i);
   if(street) add(street[1]);
-  const postal=raw.match(/\b(\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55})\b/);
+  const postal=addressRaw.match(/\b(\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55})\b/);
   if(postal) add(postal[1]);
   return out;
 }
