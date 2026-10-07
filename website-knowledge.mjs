@@ -993,6 +993,8 @@ function conciseProfileServices(facts) {
       return product===serviceKey || product.startsWith(serviceKey+' ') || serviceKey.startsWith(product+' ');
     });
     if(!text || text.length>180 || seen.has(key) || productNames.has(serviceKey) || overlapsCatalog) return;
+    if(/\b(?:kit|setti|bundle|gift\s*box|lahjapakkaus|suoristin|straightener)\b/i.test(key)) return;
+    if(/\b(?:vuodeksi|for\s+a\s+year|per\s+year)\b/i.test(key)) return;
     if(/\b[\wåäö-]*palvelu(?:ssa|sta|ista|iden|jen|n)\b/i.test(key)) return;
     if(/\b(?:varaa|ota yhtey|contact us|book now|lue lisaa|lue lisää|read more|tutustu|tervetuloa|welcome|jasen|jäsen|membership|sopimuseh|terms)\b/i.test(text)) return;
     if(!isConcreteServiceLabel(text) && !pricedServiceLabel(text)) return;
@@ -1025,12 +1027,18 @@ function conciseProfileServices(facts) {
   return out.slice(0,32).join('\n').slice(0,2600);
 }
 
-function uniqueProfileFacts(items, limit=4000) {
+function uniqueProfileFacts(items, limit=4000, options={}) {
   const out=[]; const seen=new Set();
+  const dropQuestions=Boolean(options.dropQuestions);
+  const hasStatement=dropQuestions && items.some((item)=>{
+    const value=clean(item?.answer);
+    return value && !/[?]$/.test(value);
+  });
   for(const item of items){
     const value=clean(item?.answer);
     const key=norm(value).replace(/\s+/g,' ');
     if(!value || seen.has(key)) continue;
+    if(hasStatement && /[?]$/.test(value)) continue;
     seen.add(key);
     out.push(value);
     if(out.join('\n').length>=limit) break;
@@ -1108,7 +1116,11 @@ export function essentialWebsiteProfile(bundle) {
     return score;
   };
   const sorted=(items)=>[...items].sort((a,b)=>sourcePriority(b)-sourcePriority(a));
-  const byKind = (kind) => uniqueProfileFacts(sorted(facts.filter(x=>x.category===labels[kind])),4000);
+  const byKind = (kind) => uniqueProfileFacts(
+    sorted(facts.filter(x=>x.category===labels[kind])),
+    4000,
+    {dropQuestions:['returns','warranty','delivery','payment'].includes(kind)}
+  );
   const byTitle = (title) => sorted(facts.filter(x=>x.title===title))[0]?.answer || '';
   return {
     website:bundle.finalUrl || '',
