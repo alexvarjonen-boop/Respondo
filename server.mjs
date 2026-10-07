@@ -3795,6 +3795,11 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const usefulPath = url => {
     const pathname=new URL(url).pathname;
     const normalized=normalizeSearchText(pathname);
+    const normalizedPath=pathname.toLowerCase().replace(/\/+$/,'') || '/';
+    // Ignore obvious CMS demo/template/archive routes before they can consume
+    // crawl budget or leak sample contacts/products into company knowledge.
+    if (/\/(?:home[-_]?\d+|demo(?:[-_][^/]*)?|sample-page|sample|template(?:[-_][^/]*)?|author|feed)(?:\/|$)/i.test(normalizedPath)) return false;
+    if (/\/(?:tag|product-tag|product-category|category)\//i.test(normalizedPath)) return false;
     if(locationDetailSeed){
       const candidatePath=pathname.replace(/\/+$/,'') || '/';
       const sameDetail=candidatePath===seedPath || candidatePath.startsWith(seedPath+'/');
@@ -3812,9 +3817,14 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   };
   const priority = url => {
     const p=normalizeSearchText(url);
-    if (/\/products?\/|\/tuotteet?\/|product|tuote|shop|kauppa/.test(p)) return 140;
-    if (/faq|ukk|help|support|shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|size-guide|size\b|koko|material|materia|care|hoito|quality|laatu|store|myymala|myymälä|location|sijainti/.test(p)) return 120;
-    return /tarjous|quote|offert|hinta|price|pris|palvel|service|tjanst|yhtey|contact|kontakt|auki|hours|oppet/i.test(p) ? 100 : 0;
+    // Essentials outrank product detail pages. Product APIs already provide
+    // structured catalog data for real ecommerce sites.
+    if (/yhtey|contact|kontakt|osoite|address|adress|location|sijainti|myymala|myymälä|auki|hours|oppet/.test(p)) return 300;
+    if (/shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|faq|ukk|help|support/.test(p)) return 280;
+    if (/tarjous|quote|offert|hinta|price|pricing|pris|palvel|service|tjanst|about|meista|yritys|company/.test(p)) return 250;
+    if (/\/products?\/|\/tuotteet?\/|product|tuote|shop|kauppa/.test(p)) return 180;
+    if (/size-guide|size\b|koko|material|materia|care|hoito|quality|laatu/.test(p)) return 170;
+    return 0;
   };
 
   const enqueue = (html, pageUrl) => {
