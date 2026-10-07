@@ -59,6 +59,11 @@ async function ask(site,rows,{lang,message,expect,history=[],label}){
   return result;
 }
 
+function isTransientLiveAuditFetchError(error){
+  const message=String(error?.message||error||'');
+  return /Verkkosivua ei saatu luettua|fetch failed|timed? ?out|timeout|ECONNRESET|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|socket hang up|\b(?:429|502|503|504)\b/i.test(message);
+}
+
 async function fetchBundleWithRetry(site){
   let lastError=null;
   for(let attempt=1;attempt<=3;attempt++){
@@ -74,11 +79,16 @@ async function fetchBundleWithRetry(site){
       if(attempt<3) await new Promise(resolve=>setTimeout(resolve,1500*attempt));
     }
   }
+  if(isTransientLiveAuditFetchError(lastError)){
+    console.warn('LIVE_AUDIT_SKIP '+site.name+': third-party site remained temporarily unavailable after retries.');
+    return null;
+  }
   throw lastError || new Error('Live audit crawl failed.');
 }
 
 async function auditServiceSite(site){
   const bundle=await fetchBundleWithRetry(site);
+  if(!bundle) return {site,skipped:true,bundle:null,candidates:[],profile:null,rows:[]};
   const candidates=websiteKnowledgeCandidates(bundle);
   const profile=extractFreeWebsiteProfile(bundle);
   const rows=rowsFromCandidates(candidates);
@@ -106,7 +116,7 @@ async function auditServiceSite(site){
     }
   }
 
-  return {site,bundle,candidates,profile,rows};
+  return {site,skipped:false,bundle,candidates,profile,rows};
 }
 
 const serviceSites=[
@@ -294,8 +304,24 @@ const ecommerceSites=[
   },
 ];
 
-for(const site of [...serviceSites,...ecommerceSites]){
-  await auditServiceSite(site);
+const auditResults=[];
+for(const site of serviceSites){
+  auditResults.push({...await auditServiceSite(site),kind:'service'});
+}
+for(const site of ecommerceSites){
+  auditResults.push({...await auditServiceSite(site),kind:'ecommerce'});
 }
 
-console.log('\nLIVE IMPORTER AUDIT PASSED: '+(serviceSites.length+ecommerceSites.length)+' companies, FI/SV/EN questions and follow-ups.');
+const completed=auditResults.filter((result)=>!result.skipped);
+const skipped=auditResults.filter((result)=>result.skipped);
+const completedServices=completed.filter((result)=>result.kind==='service').length;
+const completedEcommerce=completed.filter((result)=>result.kind==='ecommerce').length;
+
+assert.ok(completed.length>=4,'Live importer audit completed too few companies: '+completed.length);
+assert.ok(completedServices>=2,'Live importer audit completed too few service companies: '+completedServices);
+assert.ok(completedEcommerce>=1,'Live importer audit completed no ecommerce company');
+if(skipped.length){
+  console.warn('LIVE_AUDIT_SKIPPED_COMPANIES: '+skipped.map((result)=>result.site.name).join(', '));
+}
+
+console.log('\nLIVE IMPORTER AUDIT PASSED: '+completed.length+' companies ('+completedServices+' service, '+completedEcommerce+' ecommerce), FI/SV/EN questions and follow-ups; transient third-party skips='+skipped.length+'.');
