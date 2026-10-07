@@ -3798,7 +3798,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     const normalizedPath=pathname.toLowerCase().replace(/\/+$/,'') || '/';
     // Ignore obvious CMS demo/template/archive routes before they can consume
     // crawl budget or leak sample contacts/products into company knowledge.
-    if (/\/(?:home[-_]?\d+|demo(?:[-_][^/]*)?|sample-page|sample|template(?:[-_][^/]*)?|author|feed)(?:\/|$)/i.test(normalizedPath)) return false;
+    if (/\/(?:home[-_]?\d+|about-us[-_]?\d+|service-plus|services?[-_]?\d+|contacts?[-_]?\d+|shop[-_]?\d+|demo(?:[-_][^/]*)?|sample-page|sample|template(?:[-_][^/]*)?|author|feed)(?:\/|$)/i.test(normalizedPath)) return false;
     if (/\/(?:tag|product-tag|product-category|category)\//i.test(normalizedPath)) return false;
     if(locationDetailSeed){
       const candidatePath=pathname.replace(/\/+$/,'') || '/';
