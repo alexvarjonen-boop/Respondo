@@ -562,27 +562,42 @@ const INTENT_VARIANT_WRAPPERS = {
 
 async function ensureMillionIntentVariants() {
   if (!pool) return;
+  const chunkSize = 1500;
+  const variantsPerPhrase = 24;
+  const maxPasses = 3;
+
   for (const language of ['fi','sv','en']) {
     const coverage = await q(
       `SELECT
-         (SELECT COUNT(*)::int FROM intent_utterances WHERE active=TRUE AND language=$1) +
-         (SELECT COUNT(*)::int FROM intent_phrase_variants WHERE language=$1) AS count`,
+         (SELECT COUNT(*)::bigint FROM intent_utterances WHERE active=TRUE AND language=$1) +
+         (SELECT COUNT(*)::bigint FROM intent_phrase_variants WHERE language=$1) AS count`,
       [language],
     );
     let total = Number(coverage.rows[0]?.count || 0);
-    if (total >= INTENT_VARIANT_TARGET_PER_LANGUAGE) continue;
+    if (total >= INTENT_VARIANT_TARGET_PER_LANGUAGE) {
+      console.log(`Intent coverage ${language}: ${total}`);
+      continue;
+    }
 
     const wrappers = INTENT_VARIANT_WRAPPERS[language];
+    let pass = 0;
+    let cursor = 0;
 
-    for (let attempt=0; attempt<4 && total<INTENT_VARIANT_TARGET_PER_LANGUAGE; attempt++) {
-      const needed = INTENT_VARIANT_TARGET_PER_LANGUAGE - total;
-      await q(
+    while (total < INTENT_VARIANT_TARGET_PER_LANGUAGE && pass < maxPasses) {
+      const batch = await q(
         `WITH base AS (
-           SELECT intent,normalized,id AS rn
+           SELECT id,intent,normalized
              FROM intent_utterances
             WHERE active=TRUE
               AND source='generated'
               AND language=$1
+              AND id>$2
+            ORDER BY id
+            LIMIT $3
+         ),
+         bounds AS (
+           SELECT COALESCE(MAX(id),0)::bigint AS max_id, COUNT(*)::int AS base_count
+             FROM base
          ),
          candidate AS (
            SELECT
@@ -590,47 +605,81 @@ async function ensureMillionIntentVariants() {
              trim(
                CASE (g % 3)
                  WHEN 0 THEN
-                   ($3::text[])[1 + ((b.rn + g)::int % cardinality($3::text[]))] || ' ' ||
+                   ($4::text[])[1 + (((b.id::bigint + g + $6)::bigint % cardinality($4::text[]))::int)] || ' ' ||
                    b.normalized || ' ' ||
-                   ($4::text[])[1 + ((b.rn * 3 + g)::int % cardinality($4::text[]))]
+                   ($5::text[])[1 + (((b.id::bigint * 3 + g + $6)::bigint % cardinality($5::text[]))::int)]
                  WHEN 1 THEN
-                   ($3::text[])[1 + ((b.rn + g)::int % cardinality($3::text[]))] || ' ' ||
+                   ($4::text[])[1 + (((b.id::bigint + g * 5 + $6)::bigint % cardinality($4::text[]))::int)] || ' ' ||
                    b.normalized
                  ELSE
                    b.normalized || ' ' ||
-                   ($4::text[])[1 + ((b.rn * 5 + g)::int % cardinality($4::text[]))]
+                   ($5::text[])[1 + (((b.id::bigint * 7 + g + $6)::bigint % cardinality($5::text[]))::int)]
                END
-             ) AS normalized,
-             b.rn,
-             g
+             ) AS normalized
            FROM base b
-           CROSS JOIN generate_series(1,32) AS g
+           CROSS JOIN generate_series(1,$7::int) AS g
+         ),
+         inserted AS (
+           INSERT INTO intent_phrase_variants(language,intent,normalized)
+           SELECT $1,c.intent,c.normalized
+             FROM candidate c
+            WHERE c.normalized<>''
+              AND NOT EXISTS (
+                SELECT 1
+                  FROM intent_utterances core
+                 WHERE core.language=$1
+                   AND core.active=TRUE
+                   AND core.normalized=c.normalized
+              )
+           ON CONFLICT(language,normalized) DO NOTHING
+           RETURNING 1
          )
-         INSERT INTO intent_phrase_variants(language,intent,normalized)
-         SELECT $1,c.intent,c.normalized
-           FROM candidate c
-          WHERE c.normalized <> ''
-            AND NOT EXISTS (
-              SELECT 1 FROM intent_utterances core
-               WHERE core.language=$1 AND core.active=TRUE AND core.normalized=c.normalized
-            )
-            AND NOT EXISTS (
-              SELECT 1 FROM intent_phrase_variants existing
-               WHERE existing.language=$1 AND existing.normalized=c.normalized
-            )
-          LIMIT $2
-         ON CONFLICT(language,normalized) DO NOTHING`,
-        [language, needed, wrappers.prefixes, wrappers.suffixes],
+         SELECT
+           bounds.max_id,
+           bounds.base_count,
+           (SELECT COUNT(*)::int FROM inserted) AS inserted_count
+         FROM bounds`,
+        [
+          language,
+          cursor,
+          chunkSize,
+          wrappers.prefixes,
+          wrappers.suffixes,
+          pass * 97,
+          variantsPerPhrase,
+        ],
       );
 
-      const after = await q(
+      const row = batch.rows[0] || {};
+      const baseCount = Number(row.base_count || 0);
+      const insertedCount = Number(row.inserted_count || 0);
+      const nextCursor = Number(row.max_id || 0);
+
+      if (!baseCount) {
+        pass += 1;
+        cursor = 0;
+        continue;
+      }
+
+      cursor = nextCursor;
+      total += insertedCount;
+
+      if (insertedCount === 0 && baseCount < chunkSize) {
+        pass += 1;
+        cursor = 0;
+      }
+    }
+
+    if (total < INTENT_VARIANT_TARGET_PER_LANGUAGE) {
+      const exact = await q(
         `SELECT
-           (SELECT COUNT(*)::int FROM intent_utterances WHERE active=TRUE AND language=$1) +
-           (SELECT COUNT(*)::int FROM intent_phrase_variants WHERE language=$1) AS count`,
+           (SELECT COUNT(*)::bigint FROM intent_utterances WHERE active=TRUE AND language=$1) +
+           (SELECT COUNT(*)::bigint FROM intent_phrase_variants WHERE language=$1) AS count`,
         [language],
       );
-      total = Number(after.rows[0]?.count || 0);
+      total = Number(exact.rows[0]?.count || 0);
     }
+
     if (total < INTENT_VARIANT_TARGET_PER_LANGUAGE) {
       throw new Error(`Intent coverage for ${language} stopped at ${total}`);
     }
@@ -642,6 +691,7 @@ async function ensureMillionIntentVariants() {
     [INTENT_VARIANT_SEED_VERSION],
   );
 }
+
 const uid = () => crypto.randomUUID();
 const cleanEmail = (value) => String(value || '').trim().toLowerCase();
 
