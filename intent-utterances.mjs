@@ -183,10 +183,10 @@ export function classifyIntentByGrammar(value) {
   if (!q) return '';
 
   const orderVerb = /\b(?:tilata|tilaan|tilataan|tilattua|tilauksen|tilaaminen|tilaus|ostaa|ostan|ostetaan|ostaminen|hankkia|hankin|beställa|beställning|beställningen|bestalla|bestallning|köpa|kopa|order|ordering|buy|purchase|placing an order)\b/;
-  const orderHow = /\b(?:miten|kuinka|millä tavalla|mitenka|missä|mistä|voinko|voiko|saanko|saako|how|where|can i|could i|what do i do|hur|var|kan jag|kan man|går det)\b/;
+  const orderHow = /\b(?:miten|kuinka|milla tavalla|mitenka|missa|mista|voinko|voiko|saanko|saako|how|where|can i|could i|what do i do|hur|var|kan jag|kan man|gar det)\b/;
   const orderProcess = /\b(?:tapahtuu|toimii|tehdään|tehdaan|onnistuu|hoidetaan|menee|works|happens|is done|is completed|goes|fungerar|går till|gar till|görs|gors|sker|ordnas)\b/;
   if ((orderVerb.test(q) && orderHow.test(q)) ||
-      (/\b(?:tilaus|tilaaminen|tilauksen tekeminen|ostaminen|beställning|bestallning|beställningen|bestallningen|ordering|the order|placing an order)\b/.test(q) && orderProcess.test(q))) {
+      (/\b(?:tilaus|tilaaminen|tilauksen tekeminen|ostaminen|bestallning|bestallningen|ordering|the order|placing an order)\b/.test(q) && orderProcess.test(q))) {
     return 'order';
   }
 

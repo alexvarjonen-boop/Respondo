@@ -10936,10 +10936,8 @@ async function withOwnerSeedLock(fn) {
 
 async function start() {
   try {
-    await withRuntimeSchemaLock(async () => {
-      await ensureRuntimeSchema();
-      await seedAndLoadIntentUtterances();
-    });
+    await withRuntimeSchemaLock(() => ensureRuntimeSchema());
+    await withRuntimeSchemaLock(() => seedAndLoadIntentUtterances());
     try {
       await withOwnerSeedLock(() => seedOwnerRespondoKnowledge());
     } catch (e) {
