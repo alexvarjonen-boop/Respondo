@@ -1626,6 +1626,9 @@ function knowledgeTopic(value) {
 }
 function queryTopic(query) {
   const q=normalizeSearchText(query);
+  const explicitContact=explicitContactQuestion(q);
+  if(explicitContact) return 'contact';
+  if(explicitBusinessLocationQuestion(q)) return 'stores';
   const lexicalIntent=intentForMessage(q);
   const intentTopic={
     pricing:'pricing',
@@ -2341,10 +2344,15 @@ function verifiedContactValue(rows, title) {
 
 function explicitContactQuestion(message) {
   const q=normalizeSearchText(message);
+  // Resolve e-mail first. Swedish "e-postadress" contains the word "adress",
+  // so location matching must never get a chance to claim it.
+  if (
+    /(?:^|\s)(?:sahkopost\w*|email\w*|e-mail\w*|meili\w*|e-?post\w*|epost\w*)(?:\s|$)/.test(q) ||
+    q.includes('e-post') ||
+    q.includes('e post') ||
+    q.includes('epost')
+  ) return 'email';
   if (/(?:^|\s)(?:puhelin\w*|phone\w*|telefon\w*|soitta\w*|soita|ring\w*|numero|numeronne|numeroanne)(?:\s|$)/.test(q)) return 'phone';
-  // Swedish "e-postadress" may normalize to either "e-postadress" or
-  // "e postadress"; accept both so it cannot be mistaken for a street address.
-  if (/(?:^|\s)(?:sahkopost\w*|email\w*|e-mail|meili\w*|e-?post\w*|e\s+post\w*|epost\w*)(?:\s|$)/.test(q)) return 'email';
   return '';
 }
 
