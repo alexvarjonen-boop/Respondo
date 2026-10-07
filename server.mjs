@@ -1657,7 +1657,7 @@ function queryTopic(query) {
   if(/mita myytte|mitä myytte|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you sell|what products|vad säljer|vad saljer|sortiment|vari|väri|color|colour|farg|färg|saatavuus|varastossa|in stock/.test(q)) return 'products';
   // Shipping-cost questions are delivery-policy questions, not generic pricing.
   // "How much does shipping cost?" must retrieve shipping rows instead of product/service prices.
-  if(/toimitus|toimituskulu|postikulu|postitus|shipping|delivery|postage|frakt|leverans/.test(q) &&
+  if(/toimit|postikulu|postitus|shipping|delivery|postage|frakt|leverans/.test(q) &&
      /hinta|maksaa|maksu|kulu|veloit|price|cost|fee|charge|pris|kostar|avgift|betalt/.test(q)) return 'delivery';
   // Payment-method questions such as "voiko maksaa Klarnalla?" must not be
   // mistaken for a generic price question just because they contain "maksaa".
@@ -3233,7 +3233,7 @@ function localizedShippingCostFact(value,lang='fi') {
 
 async function directShippingCostAnswer(rows,message,lang='fi') {
   const q=normalizeSearchText(message);
-  const shippingCost=/toimitus|toimituskulu|postikulu|postitus|shipping|delivery|postage|frakt|leverans/.test(q) &&
+  const shippingCost=/toimit|postikulu|postitus|shipping|delivery|postage|frakt|leverans/.test(q) &&
     /hinta|maksaa|maksu|kulu|veloit|price|cost|fee|charge|pris|kostar|avgift|betalt/.test(q);
   if(!shippingCost) return null;
 
