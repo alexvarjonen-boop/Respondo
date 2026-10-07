@@ -645,6 +645,11 @@ function manufacturerContactContext(value) {
   return /(?:valmistajan\s+tiedot|valmistaja|manufacturer(?:\s+(?:information|details|contact))?|hersteller|tillverkare|producent|producer|maahantuoja|importer|jakelija|distributor|eu\s+responsible\s+person|responsible\s+person|vastuuhenkilo|vastuuhenkilö)/i.test(n);
 }
 
+function registryControllerContext(value) {
+  const n=norm(clean(value));
+  return /(?:rekisterinpitaja|rekisterinpitäjä|rekisterin\s+vastaavan\s+yhteystiedot|data\s+controller|controller\s+contact|personuppgiftsansvarig|registeransvarig|privacy\s+controller|gdpr\s+controller)/i.test(n);
+}
+
 function physicalAddressFragments(value) {
   const raw=clean(decodeHtml(value));
   if(!raw || billingAddressNoise.test(raw)) return [];
@@ -711,11 +716,34 @@ export function essentialWebsiteCandidates(bundle) {
     const docPath=norm(parsedDocUrl.pathname);
     const productDetailDoc=/\/(?:products?|tuotteet?)\/[^/]+\/?$/i.test(rawDocPath);
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
-    if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial/.test(docPath)) continue;
-    if (!companyInfoDoc && /blog|uutis|news/.test(docPath)) continue;
+    const registryDoc=/privacy|tietosuoja|rekisteriseloste|privacy-policy|gdpr/.test(docPath);
+    const blockedLegalDoc=/terms|kayttoeh/.test(docPath);
+    if (/arvostel|reviews|testimonial/.test(docPath) || blockedLegalDoc) continue;
     const docProducts=Array.isArray(doc.products)?doc.products:[];
-    for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
+
+    // Legal/privacy pages are otherwise excluded from knowledge, but the
+    // controller's literal contact details are often the most authoritative
+    // merchant identity on ecommerce sites. Import only those contact fields,
+    // never the surrounding legal prose.
+    if(registryDoc){
+      for(let index=0; index<blocks.length; index++){
+        const block=blocks[index]||{};
+        const nearby=blocks.slice(Math.max(0,index-4),index+1)
+          .map((item)=>String(item?.heading||'')+' '+String(item?.text||''))
+          .join(' ');
+        if(!registryControllerContext(String(block.heading||'')+' '+nearby)) continue;
+        const directEmail=extractedContactEmail(block.text);
+        if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
+        const directPhone=extractedContactPhone(block.text);
+        if(directPhone) add('contact','Puhelinnumero',directPhone,doc.url);
+        for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
+      }
+      continue;
+    }
+
+    if (!companyInfoDoc && /blog|uutis|news/.test(docPath)) continue;
+    for (const product of docProducts) addProduct(product,doc.url);
     const recoveredPriceIndexes=new Set();
     const zeroOnlyPrice=(value)=>/[0-9]/.test(String(value||'')) && /^[€$£\s0.,]+$/.test(clean(value));
     for(let index=0; index<blocks.length; index++){
@@ -886,7 +914,7 @@ export function essentialWebsiteCandidates(bundle) {
   } catch {}
   return scoped.slice(0,10000);
 }
-function addressScore(value,title='') {
+function addressScore(value,title='',sourceUrl='') {
   const text=clean(value);
   const meta=norm(title);
   if(!text || text.length>220 || /^https?:\/\//i.test(text) || billingAddressNoise.test(text)) return -1000;
@@ -897,6 +925,12 @@ function addressScore(value,title='') {
   if(/\b(?:katu|tie|kuja|polku|kaari|väylä|vayla|road|street|st\.?|avenue|ave\.?|gatan|vägen|vagen)\b/i.test(text)) score+=20;
   if(/\b\d{5}\b/.test(text)) score+=10;
   if(text.split(/\s+/).length<=8) score+=8;
+  try{
+    const p=norm(new URL(String(sourceUrl||'')).pathname);
+    if(/rekisteriseloste|privacy|tietosuoja|privacy-policy|gdpr/.test(p)) score+=150;
+    if(/(?:^|\/)(?:contact|contacts|yhteystiedot|kontakt|kundservice|customer-service|customerservice|asiakaspalvelu|asiakas)(?:\/|$)/.test(p)) score+=100;
+    if(/\/(?:products?|tuotteet?|collections?)\//.test(p)) score-=160;
+  }catch{}
   return score;
 }
 
@@ -1000,7 +1034,7 @@ function bestAddressAnswer(facts) {
   for(const [source,items] of bySource){
     for(const item of items){
       const compact=compactLocationAnswer(item.answer);
-      candidates.push({value:compact,score:addressScore(compact,item.title),source,item});
+      candidates.push({value:compact,score:addressScore(compact,item.title,source),source,item});
     }
     const street=items
       .map((item)=>clean(item.answer))
@@ -1016,7 +1050,7 @@ function bestAddressAnswer(facts) {
         : streetKey.includes(postalKey)
           ? clean(street)
           : clean(street+', '+postal);
-      candidates.push({value:combined,score:addressScore(combined,'Osoite')+25,source,item:items[0]});
+      candidates.push({value:combined,score:addressScore(combined,'Osoite',source)+25,source,item:items[0]});
     }
   }
 
@@ -1045,6 +1079,7 @@ export function essentialWebsiteProfile(bundle) {
     try{
       const u=new URL(String(item?.sourceUrl||''));
       const p=norm(u.pathname);
+      if(/rekisteriseloste|privacy|tietosuoja|privacy-policy|gdpr/.test(p)) score+=160;
       if(/(?:^|\/)(?:contact|contacts|yhteystiedot|kontakt|kundservice|customer-service|customerservice|asiakaspalvelu|asiakas)(?:\/|$)/.test(p)) score+=100;
       if(u.pathname==='/' || u.pathname==='') score+=70;
       if(/(?:^|\/)(?:about|about-us|meista|meistä|company|yritys)(?:\/|$)/.test(p)) score+=35;
