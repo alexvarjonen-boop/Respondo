@@ -3001,7 +3001,7 @@ function localizedShippingCostFact(value,lang='fi') {
   const threshold=thresholdMatch?.[1]?.trim();
   if(free && threshold && /\d/.test(threshold)){
     return target==='en'
-      ? 'Shipping is free for orders over '+threshold+'.'
+      ? 'Free shipping is available for orders over '+threshold+'.'
       : target==='sv'
         ? 'Frakten är gratis för beställningar över '+threshold+'.'
         : 'Toimitus on ilmainen yli '+threshold+' tilauksille.';
