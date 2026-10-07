@@ -106,6 +106,7 @@ export function isConcreteServiceLabel(value) {
   // a service word (for example a company name containing "muuttopalvelu").
   // They are not service names and must not be listed as company offerings.
   if (/[.!?]/.test(raw)) return false;
+  if (/^(?:palvelut?|services?|tjanster|tjänster|palvelut ja hinnat|services and prices|tjanster och priser|tjänster och priser|asiakaspalvelu|customer service|kundservice)$/i.test(n)) return false;
   if (/\b(?:tutustu|lue|katso|tilaa|varaa|pyyda|pyydä|ota\s+yhtey|contact|kontakt|sijainti|kartalla|location|map|hyppaa|hyppää|mukaan|ajankohtaista|uutis|news|blog|tietopank|etusivu|home)\b/.test(n)) return false;
   if (/\b(?:hyvasti|hyvästi|vastarinn|paras|mainioit|helppo|nopea|reippaasti|sujuvat|taydella|täydellä)\b/.test(n)) return false;
   if (/\b(?:oy|ab|ltd|inc|llc)\b/.test(n) && /sijaint|kart|location|map/.test(n)) return false;
@@ -472,7 +473,8 @@ export function businessFactKind(text, context = '') {
   // heading such as "Shipping & Returns" must never turn a return sentence
   // into delivery (or vice versa). Only fall back to heading context when that
   // heading identifies exactly one policy topic.
-  if (commerceFact && returns.test(n) && !policyHeadingOnly(t,'returns')) return 'returns';
+  const giftCardCashRule=/(?:gift\s*card|lahjakort|presentkort)[\s\S]{0,180}(?:cannot|can't|can not|ei\s+voi|inte)[\s\S]{0,100}(?:exchange(?:d)?\s+for\s+cash|cash|kateis|käteis|kontant)/i.test(t);
+  if (commerceFact && !giftCardCashRule && returns.test(n) && !policyHeadingOnly(t,'returns')) return 'returns';
   if (commerceFact && warranty.test(n) && !policyHeadingOnly(t,'warranty')) return 'warranty';
   if (commerceFact && payment.test(n) && !policyHeadingOnly(t,'payment')) return 'payment';
   if (commerceFact && delivery.test(n) && !policyHeadingOnly(t,'delivery')) return 'delivery';
