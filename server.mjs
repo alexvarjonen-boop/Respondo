@@ -2875,7 +2875,10 @@ function multilingualServiceConcepts(value) {
   const q=normalizeSearchText(value);
   const concepts=new Set();
   const checks=[
-    ['hair',/(?:^|\b)(?:hiu(?:s|k|st)\w*|hair\w*|har\w*|hår\w*)(?:\b|\w*)/],
+    // normalizeSearchText turns Swedish "hår" into "har", which is also the
+    // common Swedish auxiliary "har". Never treat a standalone "har" as hair.
+    // Compound "hårklippning" becomes "harklippning" and is unambiguous.
+    ['hair',/(?:^|\b)(?:hiu(?:s|k|st)\w*|hair\w*|harklipp\w*)(?:\b|\w*)/],
     ['beard',/(?:^|\b)(?:parta|beard|skagg|skägg)(?:\b|\w*)/],
     ['cut',/(?:leikka|haircut|cut\b|klipp)/],
     ['clean',/(?:puhdist|pesu|pese|wash|clean|tvatt|tvätt|rengor|rengör)/],
@@ -2891,6 +2894,10 @@ function multilingualServiceConcepts(value) {
     ['transport',/(?:kuljet|transport|delivery service|leveransservice)/],
   ];
   for(const [name,re] of checks) if(re.test(q)) concepts.add(name);
+  // Standalone Swedish "hår" is normalized to "har". Require an explicit
+  // hair-service context so phrases such as "Vilket pris har produkten?" do
+  // not become haircut questions.
+  if(/\bhar\b/.test(q) && /\b(?:klipp\w*|frisyr\w*|tvatt\w*|schampo\w*|barber\w*)\b/.test(q)) concepts.add('hair');
   return concepts;
 }
 
