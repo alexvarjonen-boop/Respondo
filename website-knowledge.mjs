@@ -11,7 +11,7 @@ const clean = (s) => String(s || '')
   .replace(/\s+/g, ' ')
   .trim();
 const review = /arvostel|asiakaskokem|asiakaspalaut|testimonial|review|rating|omdomen|recension|kundberatt|aggregateRating/i;
-const junk = /cookie|evaste|privacy|tietosuoja|integritet|copyright|all rights reserved|kayttoeh|terms of|skip to|toggle nav|add to cart|ostoskori|kirjaudu|log in|sign in|uutiskirje|newsletter|localstorage|queryselector|javascript|webpack|more to (?:enjoy|get|unlock|qualify for) free shipping|away from free shipping|unlock free shipping|(?:spend|add).{0,40}more.{0,40}free shipping|^(?:regular price|unit price|select option|choose option|product description|product description shipping (?:&|and) return)$/i;
+const junk = /cookie|evaste|privacy|tietosuoja|integritet|copyright|all rights reserved|kayttoeh|terms of|skip to|toggle nav|add to cart|ostoskori|kirjaudu|log in|sign in|uutiskirje|newsletter|localstorage|queryselector|javascript|webpack|themerex|theme framework|wordpress|website customization|plugins? installation|ready to use website|our templates?|support system|more to (?:enjoy|get|unlock|qualify for) free shipping|away from free shipping|unlock free shipping|(?:spend|add).{0,40}more.{0,40}free shipping|^(?:regular price|unit price|select option|choose option|product description|product description shipping (?:&|and) return)$/i;
 const service = /palvel|tarjoamme|teemme|service|we (?:offer|provide)|tjanst|vi erbjuder|pesu|siivou|puhdist|maalaus|raivaus|leikkaus|huolto|asennu|korjau|kuljet|muutto|poisvienti|purku|kartoit|kierrat|murske|asbesti|haitta.?aine|saneeraus|linjasaneeraus/;
 const hours = /auki|opening|hours|oppet|maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mandag|tisdag|onsdag|torsdag|fredag|lordag|sondag|\b(?:ma|ti|ke|to|pe|la|su|mon|tue|wed|thu|fri|sat|sun|man|tis|ons|tor|fre|lor|son)(?:\b|–|-)/;
 const clock = /\b\d{1,2}[:.]\d{2}\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\d{2})?\b|\b\d{1,2}(?:[:.]\d{2})?\s*(?:–|-|—|to|till)\s*\d{1,2}[:.]\d{2}\b|\b\d{1,2}[:.]\d{2}\b|\b(?:closed|suljettu|stangt|24\/7)\b/i;
@@ -114,7 +114,7 @@ export function isConcreteServiceLabel(value) {
 
   // Require a concrete service noun/stem instead of accepting every marketing
   // phrase from a card that happens to mention "service".
-  return /(?:palvelu|service|tjanst|tjänst|pesu|siivou|puhdist|maala|raivau|leikkaus|parturi|kampaamo|huolto|asennu|korjau|kuljet|muut(?:to|ot|toa|toja|tojen)|varastointi|vuokraus|poisvienti|purku|kartoit|kierrat|kierrät|murske|asbesti|saneeraus|remont|rakennus|hiero|fysioter|hoito|koulutus|konsult|suunnittel|valokuva|catering|siirto|pakkaus)/.test(n);
+  return /(?:palvelu|service|tjanst|tjänst|pesu|siivou|puhdist|maala|raivau|leikkaus|parturi|kampaamo|parta|beard|skagg|skägg|värjä|varja|color|colour|farg|färg|tatuointi|muotoilu|shave|ajo\b|huolto|asennu|korjau|kuljet|muut(?:to|ot|toa|toja|tojen)|varastointi|vuokraus|poisvienti|purku|kartoit|kierrat|kierrät|murske|asbesti|saneeraus|remont|rakennus|hiero|fysioter|hoito|koulutus|konsult|suunnittel|valokuva|catering|siirto|pakkaus)/.test(n);
 }
 
 function stripProductHtml(value) {
@@ -552,7 +552,13 @@ function templateDemoDocument(doc) {
     /brooklyn area/.test(text) ||
     /1\.800\.218\.20\.20/.test(text) ||
     /hello@example\.com/.test(text) ||
-    /admin@example\.com/.test(text);
+    /admin@example\.com/.test(text) ||
+    /themerex/.test(text) ||
+    /customizable theme framework/.test(text) ||
+    /minimum knowledge of wordpress/.test(text) ||
+    /website customization/.test(text) ||
+    /wp plugins installation/.test(text) ||
+    /ready to use website/.test(text);
 }
 
 function templateDemoProduct(product) {
@@ -644,7 +650,35 @@ export function essentialWebsiteCandidates(bundle) {
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
-    for (const block of blocks) {
+
+    const blockText=(index)=>clean(blocks[index]?.text||'');
+    const detachedPrice=(value)=>/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|kr|\$|£))?$/i.test(clean(value));
+    for(let index=0;index<blocks.length;index++){
+      const block=blocks[index];
+      const text=blockText(index);
+
+      // Many visual builders render e.g. "HIUSTEN LEIKKAUS" and "€25" in
+      // separate sibling nodes. Preserve that relationship instead of importing
+      // an orphan price that can answer the wrong service question.
+      if(detachedPrice(text) && !docProducts.length){
+        let label='';
+        for(let back=1;back<=3 && index-back>=0;back++){
+          const candidate=blockText(index-back);
+          if(!candidate || detachedPrice(candidate)) continue;
+          if(isConcreteServiceLabel(candidate)){
+            label=candidate;
+            break;
+          }
+          // Stop at prose or another structural boundary so a price is never
+          // paired with an unrelated earlier service card.
+          if(candidate.split(/\s+/).length>10 || /[.!?]/.test(candidate)) break;
+        }
+        if(label){
+          add('services','Palvelut',label,doc.url);
+          add('pricing','Hinnat',label+': '+text,doc.url);
+          continue;
+        }
+      }
       const directEmail=extractedContactEmail(block.text);
       if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
       for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
@@ -736,7 +770,7 @@ export function essentialWebsiteCandidates(bundle) {
   quoteLinks.sort((a,b)=>b.score-a.score);
   if (quoteLinks.length) add('quote','Tarjouspyyntölomake',quoteLinks[0].url,quoteLinks[0].sourceUrl);
   catalogLinks.sort((a,b)=>b.score-a.score);
-  if (catalogLinks.length && !catalogLooksLikeTemplate) add('catalog','Tuotekatalogi',catalogLinks[0].url,catalogLinks[0].sourceUrl);
+  if (catalogLinks.length && hasCatalogProducts && !catalogLooksLikeTemplate) add('catalog','Tuotekatalogi',catalogLinks[0].url,catalogLinks[0].sourceUrl);
 
   // If the user imports a branch/location-specific page, contact details,
   // address and opening hours from other branches on the same chain must not
