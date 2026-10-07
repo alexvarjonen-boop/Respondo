@@ -492,6 +492,9 @@ export function businessFactKind(text, context = '') {
       if (kind==='warranty' && !warranty.test(n) &&
           !/\b(?:defect|defective|material(?:s)?|workmanship|covered|coverage|valid|month|months|year|years|virhe|materiaali|valmistusvirhe|kuukaus|vuosi|fel|material|tillverkningsfel|manad|månad|ar|år)\b/i.test(t)) {
         // Ignore non-policy prose that only inherited warranty context.
+      } else if (kind==='returns' && !returns.test(n) &&
+          !/\b(?:\d+\s*(?:day|days|paiva|paivaa|päivä|päivää|dag|dagar)|unused|unopened|original condition|receipt|proof of purchase|return window|return period|palautusoikeus|palautusaika|kayttamaton|käyttämätön|avaamaton|kuitti|ostotosite|returratt|returrätt|returperiod|oanvand|oanvänd)\b/i.test(t)) {
+        // A "Returns" accordion can contain unrelated membership/gift-card copy.
       } else if (!policyHeadingOnly(t,kind)) return kind;
     }
   }
@@ -525,9 +528,49 @@ export function businessFactKind(text, context = '') {
   return '';
 }
 
+
+function placeholderBusinessEmail(value) {
+  const address=String(value||'').trim().toLowerCase();
+  if(!address) return true;
+  return /@(?:example\.(?:com|org|net)|example\.fi|test\.(?:com|fi)|invalid|localhost)$/i.test(address)
+    || /^(?:test|example|noreply|no-reply)@example\./i.test(address);
+}
+
+function normalizedEmbeddedBusinessText(value) {
+  return clean(value)
+    // Some CMS themes render adjacent widgets without whitespace, e.g.
+    // "info@company.fiHallituskatu 11". Split only after a known TLD when the
+    // next token begins with an uppercase street/locality character.
+    .replace(/(@[A-Za-z0-9.-]+\.(?:fi|se|no|dk|com|net|org|eu|io))(?=[A-ZÅÄÖ][a-zåäö])/g,'$1 ')
+    .replace(/(\+\d(?:[\d ().-]*\d))(?=[A-ZÅÄÖ][a-zåäö]{2,})/g,'$1 ');
+}
+
+function physicalAddressFromText(value) {
+  const text=normalizedEmbeddedBusinessText(value);
+  if(!text || billingAddressNoise.test(text)) return '';
+  const full=text.match(/\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\s*,?\s*\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55})\b/);
+  if(full) return clean(full[1].replace(/\s+,/g,','));
+  return '';
+}
+
+function credibleWebsiteProduct(product) {
+  if(!product?.name) return false;
+  const name=clean(decodeHtml(product.name));
+  const description=clean(decodeHtml(product.description||''));
+  const text=norm(name+' '+description);
+  if(!name) return false;
+  if(/lorem ipsum|dummy product|sample product|demo product|placeholder product|admin@example\.(?:com|org|net)|hello@example\.(?:com|org|net)/.test(text)) return false;
+  if(/(?:products?|tuotteet)\s+(?:arkistot?|archives?|arsivleri|arsivleri)/.test(text)) return false;
+  const numeric=Number(product.price);
+  if(/^(?:shop|store|products?|tuotteet|verkkokauppa)(?:\s*[-|–—:].*)?$/i.test(name) &&
+      (!Number.isFinite(numeric) || numeric===0)) return false;
+  return true;
+}
+
 export function essentialWebsiteCandidates(bundle) {
   const out = [], seen = new Set();
-  const hasCatalogProducts=Array.isArray(bundle?.products) && bundle.products.length>0;
+  const credibleCatalogProducts=(Array.isArray(bundle?.products)?bundle.products:[]).filter(credibleWebsiteProduct);
+  const hasCatalogProducts=credibleCatalogProducts.length>0;
   const add = (kind,title,answer,sourceUrl) => {
     const text = clean(answer), key = kind+':'+norm(text);
     if (!text || seen.has(key)) return;
@@ -536,7 +579,7 @@ export function essentialWebsiteCandidates(bundle) {
     out.push({category:labels[kind], title:uniqueTitle, answer:text, keywords:keywords[kind], sourceUrl});
   };
   const addProduct = (product, fallbackUrl = '') => {
-    if (!product?.name) return;
+    if (!credibleWebsiteProduct(product)) return;
     const sourceUrl=httpUrl(product.url || fallbackUrl,fallbackUrl || undefined);
     if (!sourceUrl) return;
     const key='product:'+norm(sourceUrl+'|'+product.name);
@@ -551,33 +594,56 @@ export function essentialWebsiteCandidates(bundle) {
     });
   };
 
-  for (const product of Array.isArray(bundle?.products) ? bundle.products : []) addProduct(product,bundle?.finalUrl || '');
+  for (const product of credibleCatalogProducts) addProduct(product,bundle?.finalUrl || '');
 
   const quoteLinks = [];
   const catalogLinks = [];
   const serviceLinks = [];
   for (const doc of bundle?.pageDocuments || []) {
     const docPath=norm(new URL(doc.url).pathname);
+    const rawDocPath=new URL(doc.url).pathname.toLowerCase();
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
+    if (/\/(?:home[-_]?\d+|demo(?:[-_][^/]*)?|sample-page|sample|template(?:[-_][^/]*)?|author|feed)(?:\/|$)/i.test(rawDocPath)) continue;
+    if (/\/(?:tag|product-tag|product-category|category)\//i.test(rawDocPath)) continue;
     if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial/.test(docPath)) continue;
     if (!companyInfoDoc && /blog|uutis|news/.test(docPath)) continue;
-    const docProducts=Array.isArray(doc.products)?doc.products:[];
+    const docProducts=(Array.isArray(doc.products)?doc.products:[]).filter(credibleWebsiteProduct);
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
     for (const block of blocks) {
-      const kind = businessFactKind(block.text,block.heading);
+      const blockText=normalizedEmbeddedBusinessText(block.text);
+      if(!blockText) continue;
+
+      // A single footer/contact widget often contains email + phone + address.
+      // Extract those independently before broader classification so one fact
+      // cannot hide the others.
+      const foundEmail=blockText.match(email)?.[0] || '';
+      if(foundEmail && !placeholderBusinessEmail(foundEmail)) add('contact','Sähköposti',foundEmail,doc.url);
+
+      const foundAddress=physicalAddressFromText(blockText);
+      if(foundAddress) add('location','Osoite',foundAddress,doc.url);
+
+      const foundPhone=blockText.match(phone)?.[0] || '';
+      if(foundPhone && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(foundPhone) &&
+          /(?:\+\d|\b0\d)/.test(foundPhone) &&
+          (/puhel|puh\b|tel|phone|contact|yhteys|kontakt/.test(norm(block.heading+' '+blockText)) || /^\+\d/.test(foundPhone))) {
+        add('contact','Puhelinnumero',foundPhone,doc.url);
+      }
+
+      const kind = businessFactKind(blockText,block.heading);
       if (!kind) continue;
       // Product pages are imported as complete product records. Do not create a
       // second detached "price" fact that has lost the product name/link.
       if (kind === 'pricing' && docProducts.length) continue;
-      const detachedNumericPrice=/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|kr|\$|£))?$/i.test(clean(block.text));
+      const detachedNumericPrice=/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|kr|\$|£))?$/i.test(clean(blockText));
+      if (kind === 'pricing' && /^\s*[€$£]?\s*0+(?:[.,]0+)?(?:\s*(?:€|eur|usd|sek|kr|\$|£))?\s*$/i.test(blockText)) continue;
       if (kind === 'pricing' && hasCatalogProducts && detachedNumericPrice) continue;
       let title = labels[kind];
       if (kind === 'delivery') {
         // Classify the individual fact by its own sentence, not merely by a
         // shared section heading. In a "Toimitus ja seuranta" section the
         // delivery-time paragraph must not masquerade as tracking evidence.
-        const factContext=norm(block.text);
+        const factContext=norm(blockText);
         title=/seurant|tracking|sparning|spårning/.test(factContext)
           ? 'Tilausten seuranta'
           : /toimitusaika|delivery time|shipping time|leveranstid/.test(factContext)
@@ -591,11 +657,14 @@ export function essentialWebsiteCandidates(bundle) {
       if (kind === 'quality') title = 'Laatu ja valmistus';
       if (kind === 'care') title = 'Hoito-ohjeet';
       if (kind === 'sizing') title = 'Koot ja mitat';
-      if (kind === 'location') title = /\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text) || /(?:osoite|address|adress)\s*:?\s*\S+.*\d/i.test(block.text) ? 'Osoite' : 'Sijainti ja myymälät';
+      if (kind === 'location') title = /\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(blockText) || /(?:osoite|address|adress)\s*:?\s*\S+.*\d/i.test(blockText) ? 'Osoite' : 'Sijainti ja myymälät';
       if (kind === 'faq') title = clean(block.heading).slice(0,180) || 'Usein kysytyt';
-      if (kind === 'contact') title = email.test(block.text) ? 'Sähköposti' : phone.test(block.text) ? 'Puhelinnumero' : 'Yhteystiedot';
-      if (kind === 'contact' && email.test(block.text)) add(kind,'Sähköposti',block.text.match(email)[0],doc.url);
-      if (kind === 'contact' && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add(kind,'Puhelinnumero',block.text.match(phone)[0],doc.url);
+      if (kind === 'contact') title = email.test(blockText) ? 'Sähköposti' : phone.test(blockText) ? 'Puhelinnumero' : 'Yhteystiedot';
+      if (kind === 'contact' && email.test(blockText)) {
+        const address=blockText.match(email)?.[0] || '';
+        if(address && !placeholderBusinessEmail(address)) add(kind,'Sähköposti',address,doc.url);
+      }
+      if (kind === 'contact' && phone.test(blockText) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(blockText)) add(kind,'Puhelinnumero',blockText.match(phone)[0],doc.url);
       if (kind !== 'contact') {
         const concreteHeading = clean(block.heading);
         const normalizedHeading=norm(concreteHeading);
@@ -611,15 +680,15 @@ export function essentialWebsiteCandidates(bundle) {
         const hasServiceContext = usefulCommerceHeading && (
           service.test(normalizedHeading) ||
           ['services','pricing'].includes(kind)
-        ) && !norm(block.text).includes(normalizedHeading);
+        ) && !norm(blockText).includes(normalizedHeading);
         const productContext = docProducts.length===1 && ['materials','quality','care','sizing'].includes(kind)
           ? clean(docProducts[0].name)
           : '';
         const contextualAnswer = productContext && !norm(block.text).includes(norm(productContext))
-          ? productContext+': '+block.text
+          ? productContext+': '+blockText
           : hasServiceContext && ['services','pricing'].includes(kind)
-            ? concreteHeading+': '+block.text
-            : block.text;
+            ? concreteHeading+': '+blockText
+            : blockText;
         const contextualTitle = productContext ? productContext+' – '+title : title;
         add(kind,contextualTitle,contextualAnswer,doc.url);
       }
