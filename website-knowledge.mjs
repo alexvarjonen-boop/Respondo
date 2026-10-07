@@ -11,7 +11,7 @@ const clean = (s) => String(s || '')
   .replace(/\s+/g, ' ')
   .trim();
 const review = /arvostel|asiakaskokem|asiakaspalaut|testimonial|review|rating|omdomen|recension|kundberatt|aggregateRating/i;
-const junk = /cookie|evaste|privacy|tietosuoja|integritet|copyright|all rights reserved|kayttoeh|terms of|skip to|toggle nav|add to cart|ostoskori|kirjaudu|log in|sign in|uutiskirje|newsletter|localstorage|queryselector|javascript|webpack|more to (?:enjoy|get|unlock|qualify for) free shipping|away from free shipping|unlock free shipping|(?:spend|add).{0,40}more.{0,40}free shipping|^(?:regular price|unit price|select option|choose option|product description|product description shipping (?:&|and) return)$/i;
+const junk = /cookie|evaste|privacy|tietosuoja|integritet|copyright|all rights reserved|kayttoeh|terms of|skip to|toggle nav|add to cart|ostoskori|kirjaudu|log in|sign in|uutiskirje|newsletter|localstorage|queryselector|javascript|webpack|ssr_script|headsection|pagefontsizestyle|extensionstorender|sidebarposition|current_url|data-version|@media|min-width|max-width|more to (?:enjoy|get|unlock|qualify for) free shipping|away from free shipping|unlock free shipping|(?:spend|add).{0,40}more.{0,40}free shipping|^(?:regular price|unit price|select option|choose option|product description|product description shipping (?:&|and) return)$/i;
 const service = /palvel|tarjoamme|teemme|service|we (?:offer|provide)|tjanst|vi erbjuder|pesu|siivou|puhdist|maalaus|raivaus|leikkaus|huolto|asennu|korjau|kuljet|muutto|poisvienti|purku|kartoit|kierrat|murske|asbesti|haitta.?aine|saneeraus|linjasaneeraus/;
 const hours = /auki|opening|hours|oppet|maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mandag|tisdag|onsdag|torsdag|fredag|lordag|sondag|\b(?:ma|ti|ke|to|pe|la|su|mon|tue|wed|thu|fri|sat|sun|man|tis|ons|tor|fre|lor|son)(?:\b|–|-)/;
 const clock = /\b\d{1,2}[:.]\d{2}\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\d{2})?\b|\b\d{1,2}(?:[:.]\d{2})?\s*(?:–|-|—|to|till)\s*\d{1,2}[:.]\d{2}\b|\b\d{1,2}[:.]\d{2}\b|\b(?:closed|suljettu|stangt|24\/7)\b/i;
@@ -591,6 +591,16 @@ function extractedContactEmail(value) {
   return match && !placeholderContactValue(match) ? match : '';
 }
 
+function extractedContactPhone(value) {
+  const raw=clean(decodeHtml(value));
+  if(!raw || billingAddressNoise.test(raw)) return '';
+  const match=raw.match(/(?:\+\d{1,3}[\s().-]*|\b0)\d(?:[\s().-]*\d){5,11}\b/)?.[0] || '';
+  if(!match) return '';
+  const digits=match.replace(/\D/g,'');
+  if(digits.length<7 || digits.length>15) return '';
+  return match.replace(/\s+/g,' ').trim();
+}
+
 function physicalAddressFragments(value) {
   const raw=clean(decodeHtml(value));
   if(!raw || billingAddressNoise.test(raw)) return [];
@@ -691,6 +701,8 @@ export function essentialWebsiteCandidates(bundle) {
       const block=blocks[blockIndex];
       const directEmail=extractedContactEmail(block.text);
       if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
+      const directPhone=extractedContactPhone(block.text);
+      if(directPhone) add('contact','Puhelinnumero',directPhone,doc.url);
       for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
 
       const kind = businessFactKind(block.text,block.heading);
