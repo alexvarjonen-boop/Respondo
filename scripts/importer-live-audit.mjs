@@ -156,11 +156,11 @@ function automaticScenarioVariants(scenario){
     if(lang==='fi') variants.push('Mitä '+product+' maksaa?','Paljonko hintaa on tuotteella '+product+'?');
     if(lang==='en') variants.push('What does '+product+' cost?','What is the price of '+product+'?');
     if(lang==='sv') variants.push('Vad kostar '+product+'?','Vilket pris har '+product+'?');
-  } else if(label.includes('price-followup')){
+  } else if(label.includes('price-followup') || label.includes('haircut-price')){
     if(lang==='fi') variants.push('Mitä se maksaa?','Entä hinta?');
     if(lang==='en') variants.push('What does it cost?','And the price?');
     if(lang==='sv') variants.push('Vad kostar det?','Och priset?');
-  } else if(label.includes('service-followup') || label.includes('haircut-')){
+  } else if(label.includes('service-followup') || (label.includes('haircut-') && !label.includes('price'))){
     if(lang==='fi') variants.push('Saako teiltä tavallisen hiustenleikkauksen?','Onnistuuko hiustenleikkaus?');
     if(lang==='en') variants.push('Can I get a regular haircut there?','Do you provide haircuts?');
     if(lang==='sv') variants.push('Kan jag få en vanlig hårklippning hos er?','Erbjuder ni hårklippning?');
