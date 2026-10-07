@@ -12,6 +12,10 @@ on:
       - package-lock.json
   workflow_dispatch:
 
+concurrency:
+  group: website-import-live-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
