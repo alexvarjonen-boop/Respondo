@@ -1880,8 +1880,12 @@ function directProductAnswer(rows,message,lang='fi') {
   const familyMatches=requestedFamily ? ranked.filter((product)=>productMatchesFamily(product,requestedFamily)) : [];
   const strongMatches=tokens.length ? ranked.filter((product)=>product._match>=6) : ranked;
   const weakMatches=tokens.length ? ranked.filter((product)=>product._match>0) : ranked;
+  const familyBestScore=familyMatches.length?Math.max(...familyMatches.map((product)=>Number(product._match||0))):0;
+  const familySpecificMatches=tokens.length && familyBestScore>0
+    ? familyMatches.filter((product)=>Number(product._match||0)>=Math.max(6,familyBestScore-8))
+    : familyMatches;
   const candidates=requestedFamily
-    ? familyMatches
+    ? (familySpecificMatches.length?familySpecificMatches:familyMatches)
     : (strongMatches.length?strongMatches:(weakMatches.length?weakMatches:ranked));
   const cheapest=/\b(?:halvin|edullisin|cheapest|lowest price|billigast|billigaste)\b/.test(q);
   const expensive=/\b(?:kallein|most expensive|highest price|dyrast|dyraste)\b/.test(q);
@@ -2997,19 +3001,178 @@ async function directShippingCostAnswer(rows,message,lang='fi') {
 
   if(!candidates.length) return null;
   const best=candidates[0];
-  let answer=conciseKnowledgeAnswer(best.row,message) || best.answer;
-  answer=cleanKnowledgeText(answer);
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
-  const sourceLang=detectConversationLanguage(answer,'fi');
-  if(sourceLang!==target) {
-    const translated=await forceAnswerLanguage(answer,target);
-    if(translated) answer=cleanKnowledgeText(translated);
+  const raw=best.answer;
+
+  const moneyPattern='(?:[€$£]\\s*\\d+(?:[.,]\\d+)?|\\d+(?:[.,]\\d+)?\\s*(?:€|EUR|USD|SEK|NOK|DKK|kr|\\$|£))';
+  const freeThreshold=raw.match(new RegExp(
+    '(?:free\\s+(?:shipping|delivery)|ilmainen\\s+toimitus|maksuton\\s+toimitus|fri\\s+(?:frakt|leverans))[\\\\s\\\\S]{0,90}?(?:over|yli|from|alkaen|orders?\\s+over|tilaukset\\s+yli)?\\s*('+moneyPattern+')',
+    'i'
+  ));
+  const anyMoney=raw.match(new RegExp('('+moneyPattern+')','i'));
+
+  let answer='';
+  if(freeThreshold?.[1]){
+    const amount=freeThreshold[1].replace(/\s+/g,' ').trim();
+    answer=target==='en'
+      ? 'Shipping is free for orders over '+amount+'.'
+      : target==='sv'
+        ? 'Frakten är gratis för beställningar över '+amount+'.'
+        : 'Toimitus on ilmainen yli '+amount+' tilauksille.';
+  } else if(anyMoney?.[1]){
+    const amount=anyMoney[1].replace(/\s+/g,' ').trim();
+    answer=target==='en'
+      ? 'The published shipping price is '+amount+'.'
+      : target==='sv'
+        ? 'Det angivna fraktpriset är '+amount+'.'
+        : 'Ilmoitettu toimitushinta on '+amount+'.';
+  } else {
+    answer=conciseKnowledgeAnswer(best.row,message) || raw;
+    answer=cleanKnowledgeText(answer);
+    const sourceLang=detectConversationLanguage(answer,'fi');
+    if(sourceLang!==target) {
+      const translated=await forceAnswerLanguage(answer,target);
+      if(translated) answer=cleanKnowledgeText(translated);
+    }
   }
+
   return {
     answer,
     handoff:false,
     confidence:0.96,
     intent:'Toimitus',
+    sourceIds:[best.row.id].filter(Boolean),
+    selected:[best.row],
+  };
+}
+
+function deliveryDurationFact(value) {
+  const raw=cleanKnowledgeText(value);
+  if(!raw) return null;
+  const range='(\\\\d{1,3})\\\\s*[-–—]\\\\s*(\\\\d{1,3})';
+  const dayUnit='(?:business\\\\s+days?|working\\\\s+days?|days?|arkipäiv(?:ä|ää|ät)|arkipaiv(?:a|aa|at)|päiv(?:ä|ää|ät)|paiv(?:a|aa|at)|arbetsdagar|dagar)';
+  const weekUnit='(?:weeks?|viikkoa?|veckor?)';
+  const findScoped=(word)=>{
+    const re=new RegExp(word+'[\\\\s\\\\S]{0,90}?'+range+'\\\\s*('+dayUnit+'|'+weekUnit+')','i');
+    const m=raw.match(re);
+    return m?{min:Number(m[1]),max:Number(m[2]),unit:m[3]}:null;
+  };
+  const domestic=findScoped('(?:domestic|kotimaan|suomen|inrikes)');
+  const international=findScoped('(?:international|kansainväl|kansainval|utrikes)');
+  const generic=raw.match(new RegExp(range+'\\\\s*('+dayUnit+'|'+weekUnit+')','i'));
+  const genericFact=generic?{min:Number(generic[1]),max:Number(generic[2]),unit:generic[3]}:null;
+  return {raw,domestic,international,generic:genericFact};
+}
+
+function localizedDurationRange(fact,lang='fi') {
+  if(!fact) return '';
+  const normalized=normalizeSearchText(fact.unit||'');
+  const weeks=/week|viikko|veckor/.test(normalized);
+  const unit=weeks
+    ? (lang==='en'?'weeks':lang==='sv'?'veckor':'viikkoa')
+    : (lang==='en'?'business days':lang==='sv'?'arbetsdagar':'arkipäivää');
+  return fact.min+'–'+fact.max+' '+unit;
+}
+
+function directDeliveryTimeAnswer(rows,message,lang='fi') {
+  const q=normalizeSearchText(message);
+  const asksDelivery=/toimit|shipping|delivery|shipment|leverans|frakt/.test(q);
+  const asksTime=/kuinka kauan|kauanko|toimitusaika|milloin.*saap|how long|delivery time|shipping time|when.*arrive|hur lang|hur lange|leveranstid|nar.*kommer/.test(q);
+  if(!asksDelivery || !asksTime) return null;
+
+  const candidates=(rows||[])
+    .filter(usableWebsiteRow)
+    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='delivery')
+    .map((row,index)=>{
+      const fact=deliveryDurationFact(row.answer);
+      if(!fact?.generic) return null;
+      const meta=normalizeSearchText(String(row?.title||'')+' '+String(row?.answer||''));
+      let score=0;
+      if(/toimitusaika|delivery time|shipping time|leveranstid/.test(meta)) score+=45;
+      if(fact.domestic) score+=20;
+      if(fact.international) score+=15;
+      if(/tracking|seurant|free shipping|ilmainen toimitus|fri frakt/.test(meta)) score-=30;
+      return {row,fact,score,index};
+    })
+    .filter(Boolean)
+    .sort((a,b)=>b.score-a.score || a.index-b.index);
+
+  if(!candidates.length) return null;
+  const best=candidates[0];
+  const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  const {domestic,international,generic}=best.fact;
+  let answer='';
+  if(domestic && international){
+    const d=localizedDurationRange(domestic,target);
+    const i=localizedDurationRange(international,target);
+    answer=target==='en'
+      ? 'Domestic delivery usually takes '+d+', and international delivery '+i+'.'
+      : target==='sv'
+        ? 'Inrikes leverans tar vanligtvis '+d+' och utrikes leverans '+i+'.'
+        : 'Kotimaan toimitus kestää yleensä '+d+' ja kansainvälinen toimitus '+i+'.';
+  } else {
+    const value=localizedDurationRange(domestic||international||generic,target);
+    const scope=domestic?'domestic':international?'international':'';
+    answer=target==='en'
+      ? (scope==='domestic'?'Domestic delivery usually takes ':scope==='international'?'International delivery usually takes ':'Delivery usually takes ')+value+'.'
+      : target==='sv'
+        ? (scope==='domestic'?'Inrikes leverans tar vanligtvis ':scope==='international'?'Utrikes leverans tar vanligtvis ':'Leveransen tar vanligtvis ')+value+'.'
+        : (scope==='domestic'?'Kotimaan toimitus kestää yleensä ':scope==='international'?'Kansainvälinen toimitus kestää yleensä ':'Toimitus kestää yleensä ')+value+'.';
+  }
+
+  return {
+    answer,
+    handoff:false,
+    confidence:0.98,
+    intent:'Toimitus',
+    sourceIds:[best.row.id].filter(Boolean),
+    selected:[best.row],
+  };
+}
+
+function directReturnPolicyAnswer(rows,message,lang='fi') {
+  const q=normalizeSearchText(message);
+  if(!/palaut|return|refund|retur|aterbetal|återbetal/.test(q)) return null;
+  const candidates=(rows||[])
+    .filter(usableWebsiteRow)
+    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='returns')
+    .map((row,index)=>{
+      const answer=cleanKnowledgeText(row.answer);
+      let score=0;
+      const days=answer.match(/(?:within|kuluessa|sisällä|sisalla|inom)?\s*(\d{1,3})\s*(?:days?|päiv(?:ä|ää|än)|paiv(?:a|aa|an)|dagar)/i)?.[1] || '';
+      if(days) score+=60;
+      if(/refund|return|palaut|retur|återbetal|aterbetal/.test(normalizeSearchText(answer))) score+=20;
+      if(/non-?refundable|ei.*palaut|not refunded|inte.*aterbetal|inte.*återbetal/.test(normalizeSearchText(answer))) score+=8;
+      return {row,answer,days,score,index};
+    })
+    .filter((x)=>x.answer&&x.score>0)
+    .sort((a,b)=>b.score-a.score||a.index-b.index);
+  if(!candidates.length) return null;
+
+  const best=candidates[0];
+  const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  let answer='';
+  if(best.days){
+    answer=target==='en'
+      ? 'You can return the product within '+best.days+' days of purchase.'
+      : target==='sv'
+        ? 'Du kan returnera produkten inom '+best.days+' dagar från köpet.'
+        : 'Voit palauttaa tuotteen '+best.days+' päivän kuluessa ostosta.';
+    if(/duties|taxes/.test(normalizeSearchText(best.answer)) && /non-?refundable|not refundable/.test(normalizeSearchText(best.answer))){
+      answer+=' '+(target==='en'
+        ? 'Duties and taxes are non-refundable.'
+        : target==='sv'
+          ? 'Tullar och skatter återbetalas inte.'
+          : 'Tulleja ja veroja ei palauteta.');
+    }
+  } else {
+    answer=best.answer;
+  }
+  return {
+    answer,
+    handoff:false,
+    confidence:0.97,
+    intent:'Palautukset',
     sourceIds:[best.row.id].filter(Boolean),
     selected:[best.row],
   };
@@ -5061,6 +5224,12 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
   if(shippingCostResult) return shippingCostResult;
+
+  const deliveryTimeResult=directDeliveryTimeAnswer(rows,cleanMessage,responseLang);
+  if(deliveryTimeResult) return deliveryTimeResult;
+
+  const returnPolicyResult=directReturnPolicyAnswer(rows,cleanMessage,responseLang);
+  if(returnPolicyResult) return returnPolicyResult;
 
   const ecommerceOrderResult=directEcommerceOrderingAnswer(rows,cleanMessage,responseLang);
   if(ecommerceOrderResult) return ecommerceOrderResult;
