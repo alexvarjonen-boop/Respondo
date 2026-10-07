@@ -2895,7 +2895,7 @@ function multilingualDirectServiceRequest(message,lang='fi') {
   if(!q) return null;
 
   if(lang==='fi') {
-    let m=q.match(/^(?:teetteko|tarjoatteko|onko teilla|loytyyko teilta)\s+(.+)$/);
+    let m=q.match(/^(?:teetteko|tarjoatteko|onko teilla|loytyyko teilta|saako teilta|saanko teilta|onnistuuko|onnistuisko)\s+(.+)$/);
     if(m) return {subject:m[1],mode:'offer'};
     m=q.match(/^(leikkaatteko|pesetteko|puhdistatteko|korjaatteko|asennatteko|maalaatteko|huollatteko)\s+(.+)$/);
     if(m) return {subject:m[2],verb:m[1],mode:'verb'};
