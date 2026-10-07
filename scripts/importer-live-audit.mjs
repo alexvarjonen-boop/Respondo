@@ -65,8 +65,7 @@ function scenarioWithLiveExpectation(site,rows,scenario){
 }
 
 function regexpEscape(value){
-  return String(value||'').replace(/[-/\\^$*+?.()|[\]{}]/g,'\\async function ask(site,rows,{lang,message,expect,history=[],label}){
-');
+  return String(value||'').replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&');
 }
 
 function liveProductColors(product){
