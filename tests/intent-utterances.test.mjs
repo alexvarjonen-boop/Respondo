@@ -88,7 +88,12 @@ test('intent lexicon table is private, indexed and loaded before the server star
   assert.match(server,/idx_intent_utterances_language_normalized/);
   assert.match(server,/REVOKE ALL PRIVILEGES ON TABLE public\.intent_utterances FROM anon/);
   assert.match(server,/seedAndLoadIntentUtterances\(\)/);
-  assert.match(server,/Intent utterances loaded/);
+  assert.match(server,/Intent core loaded/);
+  assert.match(server,/CREATE TABLE IF NOT EXISTS intent_phrase_variants/);
+  assert.match(server,/INTENT_VARIANT_TARGET_PER_LANGUAGE = 1000000/);
+  assert.match(server,/resolveIntentForMessage\(cleanMessage,responseLang\)/);
+  assert.match(server,/ensureMillionIntentVariants\(\)/);
+  assert.match(server,/respondo_intent_variants_v1/);
 });
 
 test('normalizer keeps the same punctuation-insensitive form used by chat matching',()=>{
