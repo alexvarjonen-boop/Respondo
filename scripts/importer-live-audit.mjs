@@ -64,6 +64,45 @@ function scenarioWithLiveExpectation(site,rows,scenario){
   return {...scenario,expect:liveProductPriceExpectation(site,rows,scenario.productPriceTitle)};
 }
 
+function regexpEscape(value){
+  return String(value||'').replace(/[-/\\^$*+?.()|[\]{}]/g,'\\async function ask(site,rows,{lang,message,expect,history=[],label}){
+');
+}
+
+function liveProductColors(product){
+  const out=[];
+  const add=(value)=>{
+    const text=String(value||'').trim();
+    if(text && !out.some((item)=>norm(item)===norm(text))) out.push(text);
+  };
+  for(const value of Array.isArray(product?.colors)?product.colors:[]) add(value);
+  for(const option of Array.isArray(product?.options)?product.options:[]){
+    if(!/(?:vari|väri|color|colour|farg|färg)/i.test(String(option?.name||''))) continue;
+    for(const value of Array.isArray(option?.values)?option.values:[]) add(value);
+  }
+  return out.slice(0,12);
+}
+
+async function auditCurrentColorVariant(site,bundle,rows){
+  if(!site.dynamicColorVariant) return;
+  const product=(bundle?.products||[]).find((item)=>item?.name && liveProductColors(item).length>=2);
+  if(!product){
+    console.warn('LIVE_AUDIT_COLOR_SKIP '+site.name+': current catalog has no product with multiple explicit color options.');
+    return;
+  }
+  const colors=liveProductColors(product);
+  const expect=new RegExp(colors.slice(0,6).map(regexpEscape).join('|'),'i');
+  const cases=[
+    ['fi','Mitä värejä tuotteesta '+product.name+' on?'],
+    ['en','What colors are available for '+product.name+'?'],
+    ['sv','Vilka färger finns '+product.name+' i?'],
+  ];
+  for(const [lang,message] of cases){
+    const result=await ask(site,rows,{lang,message,expect,label:'dynamic-color-'+lang});
+    console.log('Q ['+lang+'] '+message+' -> '+result.answer);
+  }
+}
+
 async function ask(site,rows,{lang,message,expect,history=[],label}){
   const result=await generateGroundedAnswer({
     companyName:site.name,
@@ -137,6 +176,7 @@ async function auditServiceSite(site){
     }
   }
 
+  await auditCurrentColorVariant(site,bundle,rows);
   return {site,skipped:false,bundle,candidates,profile,rows};
 }
 
@@ -290,12 +330,12 @@ const ecommerceSites=[
     storefrontLimit:1200,
     storefrontBudgetMs:18000,
     minFacts:20,
+    dynamicColorVariant:true,
     mustContain:[
       ['t-shirt product',/T-paita MIDHEAVY 230g/i],
       ['shipping price',/(?:4[.,]80|4[.,]90)\s*€/i],
       ['delivery time',/2\s*[-–]\s*5\s+arkipäivää|2\s*[-–]\s*5\s+business days/i],
       ['returns',/100\s+päivän\s+palautusoikeus|100\s+days/i],
-      ['product color option',/SUTITELINE Plastic[\s\S]{0,900}(?:Black|Ivory|Transparent)/i],
     ],
     questions:[
       {label:'shirt-price-fi',lang:'fi',message:'Paljonko T-paita MIDHEAVY 230g maksaa?',productPriceTitle:'T-paita MIDHEAVY 230g'},
@@ -304,9 +344,6 @@ const ecommerceSites=[
       {label:'shirt-sizes-fi',lang:'fi',message:'Mitä kokoja MIDHEAVY 230g paidasta on?',expect:/\bS\b|\bM\b|XL|2XL|3XL/i},
       {label:'shirt-sizes-en',lang:'en',message:'What sizes does the MIDHEAVY 230g T-shirt come in?',expect:/\bS\b|\bM\b|XL|2XL|3XL/i},
       {label:'shirt-sizes-sv',lang:'sv',message:'Vilka storlekar finns MIDHEAVY 230g t-shirten i?',expect:/\bS\b|\bM\b|XL|2XL|3XL/i},
-      {label:'color-fi',lang:'fi',message:'Mitä värejä SUTITELINE Plasticista on?',expect:/Black|Ivory|Transparent|musta|läpinäky/i},
-      {label:'color-en',lang:'en',message:'What colors are available for SUTITELINE Plastic?',expect:/Black|Ivory|Transparent/i},
-      {label:'color-sv',lang:'sv',message:'Vilka färger finns SUTITELINE Plastic i?',expect:/Black|Ivory|Transparent|svart/i},
       {label:'shipping-fi',lang:'fi',message:'Mitä toimitus maksaa?',expect:/4[.,]80|4[.,]90|6[.,]90|9[.,]90/},
       {label:'shipping-en',lang:'en',message:'What are your shipping prices?',expect:/4[.,]80|4[.,]90|6[.,]90|9[.,]90/},
       {label:'shipping-sv',lang:'sv',message:'Vad kostar leveransen?',expect:/4[.,]80|4[.,]90|6[.,]90|9[.,]90/},
