@@ -11,7 +11,7 @@ const clean = (s) => String(s || '')
   .replace(/\s+/g, ' ')
   .trim();
 const review = /arvostel|asiakaskokem|asiakaspalaut|testimonial|review|rating|omdomen|recension|kundberatt|aggregateRating/i;
-const junk = /cookie|evaste|privacy|tietosuoja|integritet|copyright|all rights reserved|kayttoeh|terms of|skip to|toggle nav|add to cart|ostoskori|kirjaudu|log in|sign in|uutiskirje|newsletter|localstorage|queryselector|javascript|webpack|more to (?:enjoy|get|unlock|qualify for) free shipping|away from free shipping|unlock free shipping|(?:spend|add).{0,40}more.{0,40}free shipping|^(?:regular price|unit price|select option|choose option|product description|product description shipping (?:&|and) return)$/i;
+const junk = /cookie|evaste|privacy|tietosuoja|integritet|copyright|all rights reserved|kayttoeh|terms of|skip to|toggle nav|add to cart|ostoskori|kirjaudu|log in|sign in|uutiskirje|newsletter|localstorage|queryselector|javascript|webpack|ssr_script|headsection|current_url|pagefontsize|extensions?torender|sidebarposition|data-version|--font-size|more to (?:enjoy|get|unlock|qualify for) free shipping|away from free shipping|unlock free shipping|(?:spend|add).{0,40}more.{0,40}free shipping|^(?:regular price|unit price|select option|choose option|product description|product description shipping (?:&|and) return)$/i;
 const service = /palvel|tarjoamme|teemme|service|we (?:offer|provide)|tjanst|vi erbjuder|pesu|siivou|puhdist|maalaus|raivaus|leikkaus|huolto|asennu|korjau|kuljet|muutto|poisvienti|purku|kartoit|kierrat|murske|asbesti|haitta.?aine|saneeraus|linjasaneeraus/;
 const hours = /auki|opening|hours|oppet|maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mandag|tisdag|onsdag|torsdag|fredag|lordag|sondag|\b(?:ma|ti|ke|to|pe|la|su|mon|tue|wed|thu|fri|sat|sun|man|tis|ons|tor|fre|lor|son)(?:\b|–|-)/;
 const clock = /\b\d{1,2}[:.]\d{2}\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\d{2})?\b|\b\d{1,2}(?:[:.]\d{2})?\s*(?:–|-|—|to|till)\s*\d{1,2}[:.]\d{2}\b|\b\d{1,2}[:.]\d{2}\b|\b(?:closed|suljettu|stangt|24\/7)\b/i;
@@ -463,7 +463,10 @@ export function extractBusinessDocument(html, url) {
 
 export function businessFactKind(text, context = '') {
   const t = clean(text), n = norm(t), c = norm(context);
-  if (!t || t.length > 1600 || junk.test(n) || review.test(n) || /[★⭐]|\b\d(?:[.,]\d)?\s*\/\s*5\b/.test(t)) return '';
+  const serializedCmsState =
+    /(?:^|[,{])\s*["']?(?:ssr_script|headsection|current_url|collections|sidebarposition|pagefontsizestyle|extensionstorender)["']?\s*:/i.test(t) ||
+    (/(?:@media|\[data-version\]|--font-size|font-size\s*:)/i.test(t) && /["'{},:]/.test(t));
+  if (!t || t.length > 1600 || serializedCmsState || junk.test(n) || review.test(n) || /[★⭐]|\b\d(?:[.,]\d)?\s*\/\s*5\b/.test(t)) return '';
   if (billingAddressNoise.test(t)) return '';
   if (/^(?:palvelut?|services?|tjanster|hinnat|hinnasto|pricing|prices|yhteystiedot|contact|aukioloajat|opening hours|pyyda tarjous|ota yhteytta|lue lisaa|read more|las mer|etusivu|home)$/i.test(n)) return '';
   const commerce=n+' '+c;
@@ -514,7 +517,11 @@ export function businessFactKind(text, context = '') {
   if (price.test(t)) return 'pricing';
   const explicitHoursContext=/aukiolo|opening hours|business hours|oppettid|öppettid/.test(c);
   if (hours.test(n+' '+c) && (clock.test(n) || (explicitHoursContext && /\b\d{1,2}\s*(?:–|-|—|to|till)\s*\d{1,2}\b/.test(n)))) return 'hours';
-  if (email.test(t) || phone.test(t) && (/^\+\d/.test(t) || /puhel|puh\b|tel|phone|contact|yhteys|kontakt/.test(n+' '+c))) return 'contact';
+  const phoneMatch=t.match(phone)?.[0] || '';
+  const phoneDigits=phoneMatch.replace(/\D/g,'');
+  const standalonePhone=phoneMatch && phoneDigits.length>=6 && phoneDigits.length<=15 &&
+    clean(t.replace(phoneMatch,'')).replace(/^[()\s:.,;+-]+|[()\s:.,;+-]+$/g,'').length<=12;
+  if (email.test(t) || (phone.test(t) && (standalonePhone || /^\+\d/.test(t) || /puhel|puh\b|tel|phone|contact|yhteys|kontakt|whatsapp|tekstiviest/.test(n+' '+c)))) return 'contact';
   if (!billingAddressNoise.test(t+' '+context) &&
       (/\b\d{5}\s+[A-ZÅÄÖa-zåäö]/.test(t) || /(?:osoite|address|adress)\s*:?\s*\S+.*\d/.test(n))) return 'location';
   if (!billingAddressNoise.test(t+' '+context) &&
