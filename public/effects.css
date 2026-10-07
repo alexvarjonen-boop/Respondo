@@ -3533,3 +3533,94 @@ html.static-workspace #app :is(.fx-depth,.fx-depth-card,.btn)::after{content:non
   }
 }
 
+
+
+/* 2026-10-07 MOBILE AUTH LAYOUT HARDENING */
+@media (max-width:900px), (hover:none) and (pointer:coarse) {
+  /* Functional auth/checkout pages must never inherit marketing-scene offsets. */
+  .formpage :is(.fx-scene,.fx-scene.fx-scene-live,.fx-headline,.fx-headline.fx-headline-live,.fx-depth-card) {
+    transform:none!important;
+    translate:none!important;
+    rotate:none!important;
+    scale:none!important;
+    perspective:none!important;
+    transform-style:flat!important;
+    opacity:1!important;
+    filter:none!important;
+    clip-path:none!important;
+    transition:none!important;
+    animation:none!important;
+    will-change:auto!important;
+  }
+
+  /* The desktop login was vertically centered. On a tall phone that created
+     a large empty band before the actual login content. */
+  .login-page {
+    display:block!important;
+    align-items:initial!important;
+    min-height:calc(100svh - 64px)!important;
+    padding:28px 0 56px!important;
+    overflow-x:clip!important;
+  }
+
+  .login-page > .login-layout {
+    display:block!important;
+    width:calc(100% - 24px)!important;
+    max-width:560px!important;
+    margin:0 auto!important;
+    padding:0!important;
+    perspective:none!important;
+    transform:none!important;
+    transform-style:flat!important;
+  }
+
+  .login-page .login-copy {
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    margin:0 0 24px!important;
+    padding:0!important;
+    transform:none!important;
+  }
+
+  .login-page .login-copy h1 {
+    max-width:100%!important;
+    margin:18px 0 18px!important;
+    font-size:clamp(42px,13vw,58px)!important;
+    line-height:.94!important;
+    overflow-wrap:normal!important;
+  }
+
+  .login-page .login-copy > p {
+    max-width:100%!important;
+    margin:0!important;
+    font-size:15px!important;
+    line-height:1.6!important;
+  }
+
+  .login-page .login-card,
+  .login-page .agent-login-card {
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    transform:none!important;
+  }
+
+  .login-page .login-card {
+    margin:0!important;
+  }
+
+  .login-page .agent-login-card {
+    margin:18px 0 0!important;
+  }
+}
+
+@media (max-width:420px) {
+  .login-page {
+    padding-top:22px!important;
+  }
+
+  .login-page .login-copy h1 {
+    font-size:clamp(40px,12.5vw,52px)!important;
+  }
+}
