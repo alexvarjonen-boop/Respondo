@@ -397,6 +397,14 @@ export function extractBusinessDocument(html, url) {
   };
   // Strip raw-text elements first, so code containing '<' cannot corrupt parsing.
   const source = String(html || '').replace(/<!--[^]*?-->/g,'').replace(/<(script|style|noscript|svg|template)\b[^>]*>[^]*?<\/\1\s*>/gi,'');
+  // Some site builders render the visible email as ordinary linked text rather
+  // than a clean mailto href. Capture literal visible addresses before the
+  // token parser can lose them at nested element boundaries.
+  const visibleSourceText=clean(decodeHtml(source.replace(/<[^>]+>/g,' ')));
+  for(const match of visibleSourceText.matchAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,12}/gi)){
+    const value=String(match[0]||'').trim();
+    if(value && !placeholderContactValue(value)) blocks.push({text:value,heading:'Yhteystiedot'});
+  }
   for (const token of source.match(/<[^>]*>|[^<]+/g) || []) {
     if (token[0] !== '<') {
       if (stack.some(x => x.skip)) continue;
