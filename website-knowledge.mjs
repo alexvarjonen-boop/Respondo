@@ -423,6 +423,12 @@ export function extractBusinessDocument(html, url) {
       if (/^h[1-6]$/.test(tag) && !node.skip) {
         heading = clean(decodeHtml(node.text));
         suppressedHeading = review.test(norm(heading)) || junk.test(norm(heading));
+        // Some page builders place the actual phone number or a concrete
+        // service name in a heading element. Headings normally remain context
+        // only, but these strictly structured values are safe business facts.
+        if(!suppressedHeading && email.test(heading)) blocks.push({text:heading,heading:'Yhteystiedot'});
+        else if(!suppressedHeading && phone.test(heading)) blocks.push({text:heading,heading:'Yhteystiedot'});
+        else if(!suppressedHeading && isConcreteServiceLabel(heading)) blocks.push({text:heading,heading:'Palvelut'});
       }
       if ((tag === 'td' || tag === 'th') && !node.skip) {
         const row = stack.findLast(x => x.tag === 'tr');
@@ -630,7 +636,11 @@ export function essentialWebsiteCandidates(bundle) {
     // puts the price/description in a separate sibling element.
     for (const block of blocks) {
       const heading=clean(decodeHtml(block?.heading||''));
-      if(heading && isConcreteServiceLabel(heading)) add('services','Palvelut',heading,doc.url);
+      const textValue=clean(decodeHtml(block?.text||''));
+      const concrete=heading && isConcreteServiceLabel(heading)
+        ? heading
+        : isConcreteServiceLabel(textValue) ? textValue : '';
+      if(concrete) add('services','Palvelut',concrete,doc.url);
     }
 
     for (const block of blocks) {
