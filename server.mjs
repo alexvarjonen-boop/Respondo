@@ -4263,6 +4263,8 @@ function finnishServiceActionKind(value) {
 function finnishServiceSubjectRoot(word) {
   const w=normalizeSearchText(word).replace(/[^a-z]/g,'');
   if (!w) return '';
+  if (/^hius|^hiusten/.test(w)) return 'hius';
+  if (/^parta|^parran/.test(w)) return 'part';
   if (/^ikkun/.test(w)) return 'ikkun';
   if (/^peltikat/.test(w)) return 'peltikatt';
   if (/^tiilikat/.test(w)) return 'tiilikatt';
@@ -4277,12 +4279,12 @@ function finnishServiceSubjectRoot(word) {
 }
 
 function finnishServiceSubjectRoots(value) {
-  const ignored=/^(?:te|teilla|teilta|meilta|meilla|myos|myös|palvelu|palvelua|palvelun|palvelut|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|olisiko|olisko|mahdollista|onko|loytyyko|saako|saanko|haluaisin|haluan|tilata|tarvitsen|tarviin|tarvitsisin|etta|että|ja|seka|sekä|vai)$/;
+  const ignored=/^(?:te|teilla|teilta|meilta|meilla|myos|myös|palvelu|palvelua|palvelun|palvelut|tavallinen|tavallista|normaali|normaalia|perus|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|teetteko|leikkaatteko|olisiko|olisko|mahdollista|onko|loytyyko|saako|saanko|haluaisin|haluan|tilata|tarvitsen|tarviin|tarvitsisin|etta|että|ja|seka|sekä|vai)$/;
   const roots=[];
   for (const token of normalizeSearchText(value).split(/\s+/).filter(Boolean)) {
     if (ignored.test(token)) continue;
     // Preserve the subject embedded in compounds such as "ikkunanpesu".
-    if (/^ikkun|^peltikat|^tiilikat|^huopakat|^bitumikat|^katto|^katon|^rann|^terass/.test(token)) {
+    if (/^hius|^hiusten|^parta|^parran|^ikkun|^peltikat|^tiilikat|^huopakat|^bitumikat|^katto|^katon|^rann|^terass/.test(token)) {
       const root=finnishServiceSubjectRoot(token);
       if (root && !roots.includes(root)) roots.push(root);
       continue;
@@ -4341,7 +4343,7 @@ function serviceRowSupportsPhrase(row, phrase, actionKind = '') {
 
 function naturalFinnishServiceQuestion(message, rows) {
   const q=normalizeSearchText(message);
-  const cue=/^(?:onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|olisiko mahdollista|olisko mahdollista|onko teilla|loytyyko teilta|saako teilta|saanko teilta|tarjoatteko|hoidatteko|haluaisin tilata|haluan tilata|tarvitsen|tarviin|tarvitsisin)\b/;
+  const cue=/^(?:teetteko|leikkaatteko|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|olisiko mahdollista|olisko mahdollista|onko teilla|loytyyko teilta|saako teilta|saanko teilta|tarjoatteko|hoidatteko|haluaisin tilata|haluan tilata|tarvitsen|tarviin|tarvitsisin)\b/;
   if (!cue.test(q)) return null;
   // Price, timing and discount claims need their own exact evidence.
   if (/\b(?:hinta|maksaa|paljonko|ilmain|alenn|tanaan|huomenna|ensi viik|viikonlopp|lauantaina|sunnuntaina)\b|\d/.test(q)) return null;
@@ -4355,6 +4357,8 @@ function naturalFinnishServiceQuestion(message, rows) {
 
   const requestedRoots=finnishServiceSubjectRoots(phrase);
   let answer='Kyllä, se onnistuu.';
+  if(requestedRoots.includes('hius') && action==='clear') answer='Kyllä, hiustenleikkaus onnistuu.';
+  if(requestedRoots.includes('part') && action==='clear') answer='Kyllä, parran leikkaus tai muotoilu onnistuu.';
   if (requestedRoots.includes('katt')) {
     const title=normalizeSearchText(found.title||'');
     const subtype=/^peltikat/.test(title)?'peltikattojen':
