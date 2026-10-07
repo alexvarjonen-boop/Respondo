@@ -772,7 +772,7 @@ export function essentialWebsiteCandidates(bundle) {
     }
     for (let blockIndex=0; blockIndex<blocks.length; blockIndex++) {
       const block=blocks[blockIndex];
-      const manufacturerContext=productDetailDoc || manufacturerContactContext(block.heading) || manufacturerContactContext(block.text);
+      const manufacturerContext=manufacturerContactContext(block.heading) || manufacturerContactContext(block.text);
       const directEmail=manufacturerContext ? '' : extractedContactEmail(block.text);
       if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
       const directPhone=manufacturerContext ? '' : extractedContactPhone(block.text);
