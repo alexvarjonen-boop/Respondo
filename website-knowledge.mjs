@@ -709,6 +709,7 @@ export function essentialWebsiteCandidates(bundle) {
     if (/\/(?:home[-_]?\d+|demo(?:[-_][^/]*)?|sample-page|sample|template(?:[-_][^/]*)?|author|feed)(?:\/|$)/i.test(rawDocPath)) continue;
     if (/\/(?:tag|product-tag|product-category|category)\//i.test(rawDocPath)) continue;
     const docPath=norm(parsedDocUrl.pathname);
+    const productDetailDoc=/\/(?:products?|tuotteet?)\/[^/]+\/?$/i.test(rawDocPath);
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
     if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial/.test(docPath)) continue;
     if (!companyInfoDoc && /blog|uutis|news/.test(docPath)) continue;
@@ -743,7 +744,7 @@ export function essentialWebsiteCandidates(bundle) {
     }
     for (let blockIndex=0; blockIndex<blocks.length; blockIndex++) {
       const block=blocks[blockIndex];
-      const manufacturerContext=manufacturerContactContext(block.heading) || manufacturerContactContext(block.text);
+      const manufacturerContext=productDetailDoc || manufacturerContactContext(block.heading) || manufacturerContactContext(block.text);
       const directEmail=manufacturerContext ? '' : extractedContactEmail(block.text);
       if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
       const directPhone=manufacturerContext ? '' : extractedContactPhone(block.text);
@@ -924,6 +925,13 @@ function profileServiceLabelFromPrice(value) {
   return serviceAction.test(norm(label)) ? label : '';
 }
 
+function profileCommerceSource(value) {
+  try {
+    const path=new URL(String(value||'')).pathname.toLowerCase();
+    return /\/(?:products?|tuotteet?|collections?|product-category|product-tag)(?:\/|$)/.test(path);
+  } catch { return false; }
+}
+
 function conciseProfileServices(facts) {
   const out=[]; const seen=new Set();
   const add=(value)=>{
@@ -939,20 +947,20 @@ function conciseProfileServices(facts) {
     out.push(text);
   };
 
-  for(const fact of facts.filter(x=>x.category===labels.services)){
+  for(const fact of facts.filter(x=>x.category===labels.services && !profileCommerceSource(x.sourceUrl))){
     const title=clean(fact.title);
     const answer=clean(fact.answer);
     const explicit=title.match(/^Palvelut\s*:\s*(.+)$/i);
     if(explicit && norm(explicit[1])===norm(answer)) add(answer);
   }
 
-  for(const fact of facts.filter(x=>x.category===labels.pricing)){
+  for(const fact of facts.filter(x=>x.category===labels.pricing && !profileCommerceSource(x.sourceUrl))){
     const label=profileServiceLabelFromPrice(fact.answer);
     if(label) add(label);
   }
 
   if(!out.length){
-    for(const fact of facts.filter(x=>x.category===labels.services)){
+    for(const fact of facts.filter(x=>x.category===labels.services && !profileCommerceSource(x.sourceUrl))){
       const answer=clean(fact.answer);
       if(!answer || answer.length>120) continue;
       if(/\b(?:pitkän historian|pitkan historian|tavoitteenamme|kokonaisvaltais(?:esta|en|ta)|jokainen asiakkaamme|elämys|elamyks|palvelussa|palveluista)\b/i.test(answer)) continue;
@@ -1037,10 +1045,10 @@ export function essentialWebsiteProfile(bundle) {
     try{
       const u=new URL(String(item?.sourceUrl||''));
       const p=norm(u.pathname);
-      if(/(?:^|\/)(?:contact|contacts|yhteystiedot|kontakt|kundservice|customer-service|asiakaspalvelu)(?:\/|$)/.test(p)) score+=100;
+      if(/(?:^|\/)(?:contact|contacts|yhteystiedot|kontakt|kundservice|customer-service|customerservice|asiakaspalvelu|asiakas)(?:\/|$)/.test(p)) score+=100;
       if(u.pathname==='/' || u.pathname==='') score+=70;
       if(/(?:^|\/)(?:about|about-us|meista|meistä|company|yritys)(?:\/|$)/.test(p)) score+=35;
-      if(/\/(?:products?|tuotteet?)\//.test(p)) score-=120;
+      if(/\/(?:products?|tuotteet?|collections?)\//.test(p)) score-=160;
       if(/\/(?:blog|news|uutis)\//.test(p)) score-=45;
     }catch{}
     return score;
