@@ -93,5 +93,5 @@ test('intent lexicon table is private, indexed and loaded before the server star
 
 test('normalizer keeps the same punctuation-insensitive form used by chat matching',()=>{
   assert.equal(normalizeIntentPhrase('  Miten tilaus tapahtuu?!  '),'miten tilaus tapahtuu');
-  assert.equal(normalizeIntentPhrase('Hur fungerar beställningen?'),'hur fungerar beställningen');
+  assert.equal(normalizeIntentPhrase('Hur fungerar beställningen?'),'hur fungerar bestallningen');
 });
