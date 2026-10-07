@@ -3001,7 +3001,7 @@ function localizedShippingCostFact(value,lang='fi') {
   const threshold=thresholdMatch?.[1]?.trim();
   if(free && threshold && /\d/.test(threshold)){
     return target==='en'
-      ? 'Shipping is free for orders over '+threshold+'.'
+      ? 'Free shipping is available for orders over '+threshold+'.'
       : target==='sv'
         ? 'Frakten är gratis för beställningar över '+threshold+'.'
         : 'Toimitus on ilmainen yli '+threshold+' tilauksille.';
@@ -3072,7 +3072,7 @@ function deliveryDurationText(value) {
   return String(value||'')
     .replace(/\s+/g,' ')
     .trim()
-    .match(/\b\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|arkipaiv[aä][aä]?|arkip[aä]iv[aä][aä]?|days?|paiv[aä][aä]?|päiv[aä][aä]?|weeks?|viikkoa?|veckor?)\b/i)?.[0] || '';
+    .match(/\b\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|arkipaiv\w*|arkip[aä]iv\w*|days?|paiv[aä][aä]?|päiv[aä][aä]?|weeks?|viikkoa?|veckor?)\b/i)?.[0] || '';
 }
 
 function localizeDuration(duration,lang='fi') {
@@ -3095,10 +3095,10 @@ function extractDeliveryTimingFacts(value) {
   const facts={domestic:'',international:'',inStock:'',custom:'',generic:''};
 
   const patterns=[
-    ['domestic',/(?:domestic|kotimaa\w*|suomen\s+sis[aä]ll[aä]|inrikes)[\s\S]{0,90}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv[aä][aä]?|päiv[aä][aä]?|veckor?|weeks?))/i],
-    ['international',/(?:international|kansainv[aä]l|ulkomaa\w*|utrikes)[\s\S]{0,90}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv[aä][aä]?|päiv[aä][aä]?|veckor?|weeks?))/i],
-    ['inStock',/(?:in stock|varastossa|i lager)[\s\S]{0,100}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv[aä][aä]?|päiv[aä][aä]?|veckor?|weeks?))/i],
-    ['custom',/(?:custom|customized|customised|larger batch|r[aä][aä]t[aä]l|tilausty[oö]|st[oö]rre parti)[\s\S]{0,120}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv[aä][aä]?|päiv[aä][aä]?|veckor?|weeks?))/i],
+    ['domestic',/(?:domestic|kotimai\w*|kotimaa\w*|suomen\s+sis[aä]ll[aä]|inrikes)[\s\S]{0,90}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv\w*|päiv[aä][aä]?|veckor?|weeks?))/i],
+    ['international',/(?:international|kansainv[aä]l|ulkomaa\w*|utrikes)[\s\S]{0,90}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv\w*|päiv[aä][aä]?|veckor?|weeks?))/i],
+    ['inStock',/(?:in stock|varastossa|i lager)[\s\S]{0,100}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv\w*|päiv[aä][aä]?|veckor?|weeks?))/i],
+    ['custom',/(?:custom|customized|customised|larger batch|r[aä][aä]t[aä]l|tilausty[oö]|st[oö]rre parti)[\s\S]{0,120}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv\w*|päiv[aä][aä]?|veckor?|weeks?))/i],
   ];
   for(const [key,re] of patterns){
     const m=raw.match(re);
@@ -3106,7 +3106,7 @@ function extractDeliveryTimingFacts(value) {
   }
 
   // Handle label-after-duration formats such as "12-26 days (International), 3-6 days (Domestic)".
-  for(const m of raw.matchAll(/(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv[aä][aä]?|päiv[aä][aä]?|weeks?|viikkoa?|veckor?))\s*\((Domestic|International|Kotimaa|Kansainv[aä]linen|Inrikes|Utrikes)\)/gi)){
+  for(const m of raw.matchAll(/(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv\w*|päiv[aä][aä]?|weeks?|viikkoa?|veckor?))\s*\((Domestic|International|Kotimaa|Kansainv[aä]linen|Inrikes|Utrikes)\)/gi)){
     const label=normalizeSearchText(m[2]);
     if(/domestic|kotimaa|inrikes/.test(label)) facts.domestic=m[1];
     if(/international|kansain|utrikes/.test(label)) facts.international=m[1];
@@ -3147,7 +3147,7 @@ function directDeliveryTimeAnswer(rows,message,lang='fi') {
 
   if(f.domestic){
     const d=localizeDuration(f.domestic,target);
-    sentences.push(target==='en'?'Domestic delivery usually takes '+d+'.'
+    sentences.push(target==='en'?'Domestic orders arrive in '+d+'.'
       :target==='sv'?'Inrikes leverans tar vanligtvis '+d+'.'
       :'Kotimaan toimitus kestää yleensä '+d+'.');
   }
