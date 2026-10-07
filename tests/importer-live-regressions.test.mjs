@@ -411,3 +411,40 @@ test('shipping-cost answer combines paid delivery options with the free-shipping
     assert.match(result.answer,/60\s*€/i,result.answer);
   }
 });
+
+
+test('same-language return FAQ question is converted into a factual return answer',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'return-faq',category:'Palautukset ja vaihdot',title:'Palautukset ja vaihdot',answer:'Mitä 100 päivän palautusoikeus tarkoittaa?',keywords:['palautus'],source_type:'website',source_url:'https://shop.example/returns'},
+  ];
+  const result=await generateGroundedAnswer({
+    companyName:'Shop',rows,message:'Millainen palautusoikeus teillä on?',history:[],lang:'fi'
+  });
+  assert.equal(result.handoff,false,JSON.stringify(result));
+  assert.match(result.answer,/100\s+päivän/i,result.answer);
+  assert.doesNotMatch(result.answer,/\?\s*$/,result.answer);
+});
+
+test('catalog product names are excluded from company service summary',()=>{
+  const bundle={
+    finalUrl:'https://shop.example/',
+    products:[
+      {name:'Hair Kit',url:'https://shop.example/products/hair-kit',price:46.99,currency:'EUR'},
+      {name:'Shave Kit',url:'https://shop.example/products/shave-kit',price:49.90,currency:'EUR'},
+    ],
+    pageDocuments:[{
+      url:'https://shop.example/',
+      blocks:[
+        {text:'Hair Kit',heading:'Palvelut'},
+        {text:'Shave Kit',heading:'Palvelut'},
+        {text:'Hair Cut',heading:'Hinnasto'},
+        {text:'40€',heading:'Hair Cut'},
+      ],
+      links:[],products:[],text:''
+    }]
+  };
+  const profile=essentialWebsiteProfile(bundle);
+  assert.doesNotMatch(profile.services,/Hair Kit|Shave Kit/i,profile.services);
+  assert.match(profile.services,/Hair Cut/i,profile.services);
+});
