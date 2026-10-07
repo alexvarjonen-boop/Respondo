@@ -30,15 +30,9 @@ test('legacy migration may backfill the first tenant but runtime access is tenan
   );
 });
 
-test('homepage widget injection is also scoped to the selected workspace subscription', () => {
-  assert.match(
-    server,
-    /SELECT t\.slug[\s\S]*lower\(u\.email\)=lower\(\$1\)[\s\S]*t\.subscription_status IN \('active','trialing'\)[\s\S]*t\.current_period_end/,
-  );
-  assert.doesNotMatch(
-    server,
-    /SELECT t\.slug[\s\S]{0,500}u\.subscription_status IN \('active','trialing'\)/,
-  );
+test('homepage does not inject a second tenant widget over the site assistant', () => {
+  assert.doesNotMatch(server,/Homepage owner widget injection failed/);
+  assert.doesNotMatch(server,/html = html\.replace\('<\\/body>', widgetHtml \+ '\\\\n<\\/body>'\)/);
 });
 
 
