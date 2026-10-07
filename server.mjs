@@ -1618,7 +1618,7 @@ function knowledgeTopic(value) {
   if(/hoito-oh|care instruction|product care|maintenance instruction|washing instruction|pesuoh/.test(t)) return 'care';
   if(/kokotauluk|koko-opas|koot\b|size guide|sizing|mitat|dimension|storlek/.test(t)) return 'sizing';
   if(/myymala|myymälä|store|location|butik|sijainti|osoite|address|adress/.test(t)) return 'stores';
-  if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(t)) return 'contact';
+  if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e[\s-]?post/.test(t)) return 'contact';
   if(/takuu|reklamaatio|warranty|guarantee|garanti|reklamation/.test(t)) return 'warranty';
   if(/ajanvaraus|ajanvarauslinkki|booking|appointment|boka|bokning|tidsbokning/.test(t)) return 'booking';
   if(/usein kysytyt|faq/.test(t)) return 'faq';
@@ -1666,7 +1666,7 @@ function queryTopic(query) {
   if(/laatu|laadukas|quality|valmistettu|valmistus|made in|where.*made|manufactur|handmade|käsinteht|kasinteht|cnc|precision/.test(q)) return 'quality';
   if(/hoito-oh|miten.*(?:puhdist|pese|huolla)|care instruction|how.*(?:clean|wash|care)|maintenance instruction|pesuoh/.test(q)) return 'care';
   if(/kokotauluk|koko-opas|mita koko|mitä koko|koot\b|size guide|what size|sizes\b|sizing|mitat|dimension|storlek/.test(q)) return 'sizing';
-  if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post/.test(q)) return 'contact';
+  if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e[\s-]?post/.test(q)) return 'contact';
   if(/takuu|reklamaatio|warranty|guarantee|garanti|reklamation/.test(q)) return 'warranty';
   if(/ajanvaraus|varaa aika|varata ajan|ajan vara|booking|appointment|boka|bokning|tidsbokning/.test(q)) return 'booking';
   return '';
@@ -2341,7 +2341,7 @@ function verifiedContactValue(rows, title) {
 function explicitContactQuestion(message) {
   const q=normalizeSearchText(message);
   if (/(?:^|\s)(?:puhelin\w*|phone\w*|telefon\w*|soitta\w*|soita|ring\w*|numero|numeronne|numeroanne)(?:\s|$)/.test(q)) return 'phone';
-  if (/(?:^|\s)(?:sahkopost\w*|email\w*|e-mail|meili\w*|epost\w*)(?:\s|$)/.test(q)) return 'email';
+  if (/(?:^|\s)(?:sahkopost\w*|email\w*|e\s*mail\w*|meili\w*|epost\w*|e\s+post\w*)(?:\s|$)/.test(q)) return 'email';
   return '';
 }
 
@@ -2408,7 +2408,7 @@ function serviceAreaAnswer(value, lang='fi') {
 
 function explicitBusinessLocationQuestion(message) {
   const q=normalizeSearchText(message);
-  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?sijainti|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+location|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget))$/.test(q);
+  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?sijainti|mika\s+on\s+(?:teidan\s+)?osoite|osoite|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+location|what\s+is\s+your\s+address|what(?:'s|\s+is)\s+the\s+address|where\s+is\s+your\s+(?:shop|store)|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget)|vad\s+ar\s+er\s+adress|vad\s+har\s+ni\s+for\s+adress|vilken\s+adress\s+har\s+ni)$/.test(q);
 }
 
 function extractBusinessLocationText(value) {
@@ -2436,13 +2436,38 @@ function verifiedBusinessLocationValue(rows) {
       const meta=normalizeSearchText(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''));
       return knowledgeTopic(meta)==='stores' || /sijainti|location|store|myymala|myymälä|osoite|address|adress/.test(meta);
     });
-  for(const row of candidates) {
-    const value=extractBusinessLocationText(row.answer);
-    if(value) return {value,row};
-    const answer=cleanKnowledgeText(row.answer);
-    if(answer && answer.length<=180 && !/^https?:\/\//i.test(answer)) return {value:answer.replace(/[.!?]+$/,''),row};
+
+  const streetPattern=/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö0-9 .'-]{1,55}(?:katu|tie|kuja|polku|vayla|väylä|gatan|vagen|vägen|street|road|avenue|lane|drive)\s+\d+[A-Za-z-]*\b/i;
+  const postalPattern=/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,45}\b/;
+  const bySource=new Map();
+  for(const row of candidates){
+    const source=String(row.source_url||row.sourceUrl||'');
+    if(!bySource.has(source)) bySource.set(source,[]);
+    bySource.get(source).push(row);
   }
-  return null;
+
+  const ranked=[];
+  for(const row of candidates){
+    const answer=cleanKnowledgeText(row.answer);
+    if(!answer || answer.length>240 || /^https?:\/\//i.test(answer)) continue;
+    const extracted=extractBusinessLocationText(answer) || answer.replace(/[.!?]+$/,'');
+    const source=String(row.source_url||row.sourceUrl||'');
+    const siblingRows=bySource.get(source)||[];
+    const street=(answer.match(streetPattern)||siblingRows.map(x=>cleanKnowledgeText(x.answer)).join(' | ').match(streetPattern))?.[0]||'';
+    const postal=(answer.match(postalPattern)||siblingRows.map(x=>cleanKnowledgeText(x.answer)).join(' | ').match(postalPattern))?.[0]||'';
+    let value=extracted;
+    if(street && postal && !normalizeSearchText(street).includes(normalizeSearchText(postal))) value=street+', '+postal;
+    else if(street) value=street;
+    else if(postal) value=postal;
+    let score=0;
+    if(street) score+=80;
+    if(postal) score+=45;
+    if(/osoite|address|adress/.test(normalizeSearchText(row.title))) score+=20;
+    if(source) score+=5;
+    if(value && value.length<=180) ranked.push({value,row,score});
+  }
+  ranked.sort((a,b)=>b.score-a.score);
+  return ranked[0]||null;
 }
 
 async function directShippingCostAnswer(rows,message,lang='fi') {
@@ -2507,7 +2532,7 @@ function inferIntent(message) {
   if (/tarjou[sk]|arvio|quote|estimate|offert|prisforslag|prisförslag/.test(q)) return 'Tarjouspyyntö';
   if (/hinta|maksaa|hinnoittelu|kustannus|price|cost|pricing|pris|kostar|kostnad/.test(q)) return 'Hinta';
   if (/auki|lauantai|sunnuntai|viikonloppu|kello|opening|open|hours|öppet|oppet|öppettider|oppettider/.test(q)) return 'Aukioloajat';
-  if (/puhelin|sahkoposti|sähköposti|yhteys|yhteytta|yhteyttä|yhteystiedot|ottaa yhteytta|ottaa yhteyttä|soittaa|phone|email|contact|contact us|get in touch|telefon|e-post|kontakt|kontakta|ringa/.test(q)) return 'Yhteystiedot';
+  if (/puhelin|sahkoposti|sähköposti|yhteys|yhteytta|yhteyttä|yhteystiedot|ottaa yhteytta|ottaa yhteyttä|soittaa|phone|email|contact|contact us|get in touch|telefon|e[\s-]?post|kontakt|kontakta|ringa/.test(q)) return 'Yhteystiedot';
   if (/missä|missa|osoite|toimialue|alue|where|address|location|adress|område|omrade/.test(q)) return 'Sijainti';
   if (/palvelu|teette|tarjoatte|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|onko teilla|loytyyko teilta|haluaisin tilata|haluan tilata|tarvitsen|tarviin|pesu|puhdist|siivou|oljy|asenn|maal|korj|huol|raiva|poisvien|tuote|valikoima|mitä teiltä saa|mita teilta saa|service|services|offer|product|selection|sell|tjänst|tjanst|tjänster|tjanster|erbjuder/.test(q)) return 'Palvelut';
   return 'Asiakaskysymys';
