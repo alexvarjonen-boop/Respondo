@@ -2934,7 +2934,10 @@ function directMultilingualServiceConfirmation(rows,message,lang='fi') {
   if(language==='fi' && !(requested.has('hair') && requested.has('cut'))) return null;
   const candidates=(rows||[])
     .filter(usableWebsiteRow)
-    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='services')
+    .filter((row)=>{
+      const topic=knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''));
+      return topic==='services' || topic==='pricing';
+    })
     .filter((row)=>{
       const evidence=normalizeSearchText(String(row?.title||'')+' '+String(row?.answer||''));
       if(/\b(?:emme|ei|eivat|not|don't|doesn't|inte|aldrig)\b/.test(evidence)) return false;
@@ -4715,7 +4718,10 @@ function specificServiceConfirmation(query, rows) {
   const support = rows.filter(usableWebsiteRow).find(row => {
     const text = normalizeSearchText(row.answer);
     if (/\b(?:ei|emme|eivat|not|don't|inte|aldrig)\b/.test(text)) return false;
-    if (knowledgeTopic(row.category+' '+row.title) !== 'services') return false;
+    const topic=knowledgeTopic(row.category+' '+row.title);
+    if (!['services','pricing'].includes(topic)) return false;
+    // A published service price is affirmative evidence that the service is
+    // offered, even when the site exposes no separate service-description row.
     return stems.every(x => text.includes(x)) && (!action || new RegExp(action).test(text));
   });
   if (!support) return '';
