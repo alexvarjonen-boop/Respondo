@@ -3095,7 +3095,7 @@ function extractDeliveryTimingFacts(value) {
   const facts={domestic:'',international:'',inStock:'',custom:'',generic:''};
 
   const patterns=[
-    ['domestic',/(?:domestic|kotimaa\w*|suomen\s+sis[aä]ll[aä]|inrikes)[\s\S]{0,90}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv[aä][aä]?|päiv[aä][aä]?|veckor?|weeks?))/i],
+    ['domestic',/(?:domestic|kotimaa\w*|kotimai\w*|suomen\s+sis[aä]ll[aä]|inrikes)[\s\S]{0,90}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv[aä][aä]?|päiv[aä][aä]?|veckor?|weeks?))/i],
     ['international',/(?:international|kansainv[aä]l|ulkomaa\w*|utrikes)[\s\S]{0,90}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv[aä][aä]?|päiv[aä][aä]?|veckor?|weeks?))/i],
     ['inStock',/(?:in stock|varastossa|i lager)[\s\S]{0,100}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv[aä][aä]?|päiv[aä][aä]?|veckor?|weeks?))/i],
     ['custom',/(?:custom|customized|customised|larger batch|r[aä][aä]t[aä]l|tilausty[oö]|st[oö]rre parti)[\s\S]{0,120}?(\d+(?:[.,]\d+)?\s*(?:[-–—]\s*\d+(?:[.,]\d+)?)?\s*(?:business\s+days?|working\s+days?|days?|arkip[aä]iv[aä][aä]?|päiv[aä][aä]?|veckor?|weeks?))/i],
@@ -3147,9 +3147,9 @@ function directDeliveryTimeAnswer(rows,message,lang='fi') {
 
   if(f.domestic){
     const d=localizeDuration(f.domestic,target);
-    sentences.push(target==='en'?'Domestic delivery usually takes '+d+'.'
-      :target==='sv'?'Inrikes leverans tar vanligtvis '+d+'.'
-      :'Kotimaan toimitus kestää yleensä '+d+'.');
+    sentences.push(target==='en'?'Domestic orders arrive in '+d+'.'
+      :target==='sv'?'Inrikes beställningar anländer inom '+d+'.'
+      :'Kotimaiset tilaukset saapuvat '+d+' kuluessa.');
   }
   if(f.international){
     const d=localizeDuration(f.international,target);
