@@ -279,7 +279,7 @@ const serviceSites=[
       ['email',/turku@mroom\.fi/i],
       ['hours',/(?:ma|mon).*11[:.]00\s*[-–]\s*19[:.]00/i],
       ['haircut service',/(?:hiustenleikka|M\s*Cut)/i],
-      ['haircut price',/36\s*€/i],
+      ['haircut price',/(?:€\s*36|36\s*€)/i],
     ],
     questions:[
       {label:'address-fi',lang:'fi',message:'Missä te sijaitsette?',expect:/Maariankatu\s*3|20100\s+Turku/i},
