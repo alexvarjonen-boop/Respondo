@@ -661,10 +661,20 @@ export function essentialWebsiteCandidates(bundle) {
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
     const recoveredPriceIndexes=new Set();
-    for(let index=1; index<blocks.length; index++){
+    const zeroOnlyPrice=(value)=>/[0-9]/.test(String(value||'')) && /^[€$£\s0.,]+$/.test(clean(value));
+    for(let index=0; index<blocks.length; index++){
       const priceText=clean(blocks[index]?.text);
       const detachedPrice=/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|nok|dkk|kr|\$|£))?$/i.test(priceText);
-      if(!detachedPrice || /^\s*[€$£]?\s*0+(?:[.,]0+)?(?:\s*(?:€|eur|usd|sek|kr|\$|£))?\s*$/i.test(priceText)) continue;
+      if(!detachedPrice || zeroOnlyPrice(priceText)) continue;
+
+      const ownHeading=clean(blocks[index]?.heading);
+      if(ownHeading && pricedServiceLabel(ownHeading)){
+        add('services','Palvelut',ownHeading,doc.url);
+        add('pricing','Hinnat',ownHeading+': '+priceText,doc.url);
+        recoveredPriceIndexes.add(index);
+        continue;
+      }
+
       for(let previous=index-1; previous>=Math.max(0,index-3); previous--){
         const label=clean(blocks[previous]?.text);
         if(!label) continue;
@@ -689,7 +699,7 @@ export function essentialWebsiteCandidates(bundle) {
       // second detached "price" fact that has lost the product name/link.
       if (kind === 'pricing' && docProducts.length) continue;
       const detachedNumericPrice=/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|kr|\$|£))?$/i.test(clean(block.text));
-      if (kind === 'pricing' && /^\s*[€$£]?\s*0+(?:[.,]0+)?(?:\s*(?:€|eur|usd|sek|kr|\$|£))?\s*$/i.test(clean(block.text))) continue;
+      if (kind === 'pricing' && zeroOnlyPrice(block.text)) continue;
       if (kind === 'pricing' && hasCatalogProducts && detachedNumericPrice) continue;
       let title = labels[kind];
       if (kind === 'delivery') {
