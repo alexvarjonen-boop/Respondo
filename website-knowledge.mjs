@@ -18,7 +18,7 @@ const clock = /\b\d{1,2}(?:[:.]\d{2})?\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\
 const price = /(?:\d[\d\s.,]*\s*(?:€|eur\b|usd\b|sek\b|kr\b|\$|£)|[€$£]\s*\d)|(?:hinta|hinnoittelu|price|pris).*(?:sopim|tarjous|quote|offert|contact|yhtey|avtal)/i;
 const delivery = /toimitus|toimitusaika|toimitamme|toimitetaan|seurant|lahetys|lähetys|\bship(?:s|ped|ping)?\b|delivery|shipment|tracking|track(?:ing)?\s+(?:code|number|order)|nouto|pickup|leverans|sparning|spårning|forsand|försänd/i;
 const returns = /palaut|vaihto|hyvitys|return|refund|exchange|retur|aterbetal|återbetal|byte\b/i;
-const warranty = /takuu|reklamaatio|warranty|guarantee|garanti|reklamation/i;
+const warranty = /takuu|reklamaatio|warranty|\bguarantee\b|garanti|reklamation/i;
 const payment = /maksutapa|maksaminen|maksuvaihtoeh|korttimaks|lasku\b|klarna|paypal|mobilepay|apple\s*pay|google\s*pay|payment|payment method|pay\s+(?:with|by)|betalning|betalningsmetod|faktura/i;
 
 // Policy headings and marketing badges are context, not customer-answer facts.
@@ -628,6 +628,53 @@ export function essentialWebsiteCandidates(bundle) {
   if (catalogLinks.length) add('catalog','Tuotekatalogi',catalogLinks[0].url,catalogLinks[0].sourceUrl);
   return out.slice(0,10000);
 }
+function addressScore(value,title='') {
+  const text=clean(value);
+  const meta=norm(title);
+  if(!text || text.length>220 || /^https?:\/\//i.test(text)) return -1000;
+  let score=0;
+  if(/osoite|address|adress/.test(meta)) score+=35;
+  if(/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(text)) score+=45;
+  if(/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(text)) score+=35;
+  if(/\b(?:katu|tie|kuja|polku|kaari|väylä|vayla|road|street|st\.?|avenue|ave\.?|gatan|vägen|vagen)\b/i.test(text)) score+=20;
+  if(/\b\d{5}\b/.test(text)) score+=10;
+  if(text.split(/\s+/).length<=8) score+=8;
+  return score;
+}
+
+function bestAddressAnswer(facts) {
+  const locationFacts=(facts||[]).filter((item)=>item?.title==='Osoite' || item?.category===labels.location);
+  if(!locationFacts.length) return '';
+
+  const bySource=new Map();
+  for(const item of locationFacts){
+    const source=String(item.sourceUrl||'');
+    if(!bySource.has(source)) bySource.set(source,[]);
+    bySource.get(source).push(item);
+  }
+
+  const candidates=[];
+  for(const [source,items] of bySource){
+    for(const item of items){
+      candidates.push({value:clean(item.answer),score:addressScore(item.answer,item.title),source,item});
+    }
+    const street=items
+      .map((item)=>clean(item.answer))
+      .find((value)=>/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(value) && !/\b\d{5}\b/.test(value));
+    const postal=items
+      .map((item)=>clean(item.answer))
+      .find((value)=>/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(value));
+    if(street && postal && norm(street)!==norm(postal)){
+      const combined=clean(street+', '+postal);
+      candidates.push({value:combined,score:addressScore(combined,'Osoite')+25,source,item:items[0]});
+    }
+  }
+
+  return candidates
+    .filter((x)=>x.value && x.score>-1000)
+    .sort((a,b)=>b.score-a.score || a.value.length-b.value.length)[0]?.value || '';
+}
+
 export function essentialWebsiteProfile(bundle) {
   const facts = essentialWebsiteCandidates(bundle);
   const byKind = (kind) => facts.filter(x=>x.category===labels[kind]).map(x=>x.answer).join('\n').slice(0,4000);
@@ -643,7 +690,7 @@ export function essentialWebsiteProfile(bundle) {
     payment:byKind('payment'),
     phone:byTitle('Puhelinnumero'),
     email:byTitle('Sähköposti'),
-    address:byTitle('Osoite'),
+    address:bestAddressAnswer(facts),
     quoteRequestUrl:byTitle('Tarjouspyyntölomake'),
     bookingUrl:'',
     serviceArea:'',
