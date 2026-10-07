@@ -4185,8 +4185,11 @@ function initImmersiveHomeMotion() {
 }
 
 async function route() {
-  await config();
   const path = location.pathname;
+  const workspacePage = ['/assistant', '/app', '/demo'].includes(path);
+  document.body.classList.toggle('dashboard-page', workspacePage);
+  document.documentElement.classList.toggle('static-workspace', workspacePage);
+  await config();
   let html;
 
   if (path === '/') html = await home();
@@ -6176,4 +6179,3 @@ route().catch((error) => {
     document.getElementById('crashReload')?.addEventListener('click', () => location.reload());
   }
 });
-

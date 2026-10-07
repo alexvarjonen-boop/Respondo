@@ -5,6 +5,29 @@
   const mobileLite = coarsePointer || compactScreen;
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const isWorkspacePage = () => ['/assistant', '/app', '/demo'].includes(location.pathname)
+    || Boolean($('#app .appshell'));
+
+  function prepareStaticWorkspace() {
+    document.documentElement.classList.add('static-workspace');
+    document.body.classList.add('dashboard-page');
+    document.body.classList.remove('assistant-standalone');
+    delete document.documentElement.dataset.deepScrollReady;
+    delete document.documentElement.dataset.fxAtmosphere;
+    $$('.fx-progress, .fx-ambient, .fx-route-wipe, .respondo-marquee, .section-rail-premium, .fx-cube, .fx-scroll-rail, .fx-scene-number, .fx-modal-backdrop').forEach(el => el.remove());
+    $$('#app .fx-scene, #app .fx-headline, #app .fx-depth-card, #app .fx-depth, #app .fx-magnetic, #app .motion-tilt, #app [data-reveal], #app [data-tilt]').forEach(el => {
+      el.classList.remove('fx-scene', 'fx-scene-live', 'fx-scene-seen', 'fx-headline', 'fx-headline-live', 'fx-depth-card', 'fx-depth', 'fx-magnetic', 'motion-tilt', 'is-visible');
+      ['data-fx-scene', 'data-fx-scene-index', 'data-fx-headline', 'data-reveal', 'data-tilt'].forEach(name => el.removeAttribute(name));
+      ['transform', 'opacity', 'filter', 'clip-path'].forEach(name => el.style.removeProperty(name));
+      [...el.style].filter(name => /^--(?:fx-|mag-|tilt-|shine-|delay$|tx$|ty$|rx$|ry$)/.test(name)).forEach(name => el.style.removeProperty(name));
+    });
+    [document.documentElement, document.body].forEach(el => {
+      [...el.style].filter(name => /^--(?:fx-|orb\d|scroll-progress$|hero-)/.test(name)).forEach(name => el.style.removeProperty(name));
+    });
+  }
+
+  // Mark workspace routes before their async renderer supplies the dashboard.
+  if (isWorkspacePage()) prepareStaticWorkspace();
 
   function injectBase() {
     if (!$('.fx-progress')) {
@@ -963,6 +986,7 @@
 
 
   function deepScrollExperience() {
+    if (isWorkspacePage()) return;
     if (document.documentElement.dataset.deepScrollReady === '1') return;
     document.documentElement.dataset.deepScrollReady = '1';
 
@@ -1260,6 +1284,16 @@
   }
 
   function init() {
+    if (isWorkspacePage()) {
+      prepareStaticWorkspace();
+      assistant();
+      window.addEventListener('respondo:languagechange', () => {
+        document.querySelector('.fx-assistant-launch')?.remove();
+        document.querySelector('.fx-assistant')?.remove();
+        assistant();
+      });
+      return;
+    }
     if (location.pathname === '/' && document.querySelector('.premium-home')) {
       leftSectionRail(); assistant();
       window.addEventListener('respondo:languagechange', () => {
@@ -1271,14 +1305,6 @@
     }
     injectBase();
     kineticNavigation();
-    if (location.pathname === '/assistant') {
-      document.body.classList.remove('assistant-standalone');
-      revealTargets();
-      magneticButtons();
-      assistant();
-      deepScrollExperience();
-      return;
-    }
     if (location.pathname === '/') {
       marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup(); cinematicSectionAtmosphere();
     } else {

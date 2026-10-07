@@ -9,9 +9,9 @@ const effects=readFileSync(new URL('../public/effects.js',import.meta.url),'utf8
 test('legacy standalone assistant never replaces the shared Try Bot dashboard',()=>{
   const initStart=effects.indexOf('function init()');
   const initSource=effects.slice(initStart,initStart+1200);
-  assert.match(initSource,/location\.pathname === '\/assistant'/);
+  assert.match(initSource,/if \(isWorkspacePage\(\)\)/);
   assert.doesNotMatch(initSource,/standaloneAssistant\(\)/);
-  assert.match(initSource,/document\.body\.classList\.remove\('assistant-standalone'\)/);
+  assert.match(effects,/document\.body\.classList\.remove\('assistant-standalone'\)/);
   assert.ok(html.includes('/effects.js?v=20261007-correct-home-chat-v2'));
 });
 

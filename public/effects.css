@@ -3350,3 +3350,52 @@ small{
 @media(max-width:1150px){
   .assistant-order-tiers{grid-template-columns:1fr!important}
 }
+
+/* Application workspaces use static layout, including content added after render. */
+html.static-workspace{scroll-behavior:auto!important}
+html.static-workspace,
+html.static-workspace body,
+html.static-workspace .appshell{background:var(--simple-bg,#f6f7f9)!important}
+html.static-workspace body,
+html.static-workspace #app,
+html.static-workspace #app *,
+html.static-workspace #app *::before,
+html.static-workspace #app *::after,
+html.static-workspace .fx-assistant-launch,
+html.static-workspace .fx-assistant,
+html.static-workspace .fx-assistant *,
+html.static-workspace .fx-assistant *::before,
+html.static-workspace .fx-assistant *::after{
+  animation:none!important;
+  transition:none!important;
+}
+html.static-workspace body,
+html.static-workspace #app,
+html.static-workspace #app :is(.appshell,.appmain,.dashboard-topbar,.dashboard-view-section,.panel,.stat,.stat-card,.formcard,h1,h2,h3,.btn,.onboarding-step,.unanswered-item,.knowledge-feature-btn,.dashboard-settings-button,.dashboard-launch-card,.app-language-option,[data-reveal],[data-tilt],.fx-scene,.fx-headline,.fx-depth-card,.fx-depth,.fx-magnetic,.motion-tilt),
+html.static-workspace .fx-assistant-launch,
+html.static-workspace .fx-assistant,
+html.static-workspace .fx-assistant *{
+  transform:none!important;
+  translate:none!important;
+  rotate:none!important;
+  scale:none!important;
+  perspective:none!important;
+  transform-style:flat!important;
+  filter:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  will-change:auto!important;
+}
+html.static-workspace main{overflow:visible}
+html.static-workspace body::before,
+html.static-workspace body::after{
+  content:none!important;
+  display:none!important;
+}
+html.static-workspace :is(.fx-progress,.fx-ambient,.fx-route-wipe,.respondo-marquee,.section-rail-premium,.fx-cube,.fx-scroll-rail,.fx-scene-number,.fx-modal-backdrop){display:none!important}
+html.static-workspace #app :is([data-reveal],.fx-scene,.fx-headline){
+  opacity:1!important;
+  clip-path:none!important;
+}
+html.static-workspace #app :is(.fx-depth,.fx-depth-card)::before,
+html.static-workspace #app :is(.fx-depth,.fx-depth-card,.btn)::after{content:none!important;display:none!important}
