@@ -1650,7 +1650,7 @@ function queryTopic(query) {
   if (/tarjou[sk]|quote|estimate|offert/.test(q)) return 'quote';
   if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post|postadress/.test(q)) return 'contact';
   if (/osoite|address|(?:^|\s)adress(?:\s|$)|sijainti|miss[aä]\s+sijait|where\s+(?:are|is).*located|where\s+is\s+(?:your\s+)?store|myymala|myymälä|store location|butik/.test(q)) return 'stores';
-  if (!/hinta|maksaa|price|cost|pris|kostar|auki|hours|open|oppet/.test(q) && /mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|what do you (?:do|offer)|services|vad gor ni|vad gör ni|vad erbjuder|vilka tjänster|vilka tjanster|tjanster|tjänster|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|onko teilla|loytyyko teilta|löytyykö teiltä|haluaisin tilata|haluan tilata|tarvitsen|tarviin|pesu|puhdist|siivou|oljy|öljy|asenn|maal|korj|huol|raiva|poisvien/.test(q)) return 'services';
+  if (!/hinta|maksaa|price|cost|pris|kostar|auki|hours|open|oppet/.test(q) && /mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|what do you (?:do|offer)|services|vad gor ni|vad gör ni|vad erbjuder|vilka tjänster|vilka tjanster|tjanster|tjänster|klipper ni|tvattar ni|rengor ni|reparerar ni|installerar ni|malar ni|underhaller ni|har ni .*(?:klipp|service|tjanst)|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|onko teilla|loytyyko teilta|löytyykö teiltä|haluaisin tilata|haluan tilata|tarvitsen|tarviin|pesu|puhdist|siivou|oljy|öljy|asenn|maal|korj|huol|raiva|poisvien/.test(q)) return 'services';
   if(/mita myytte|mitä myytte|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you sell|what products|vad säljer|vad saljer|sortiment|vari|väri|color|colour|farg|färg|saatavuus|varastossa|in stock/.test(q)) return 'products';
   // Shipping-cost questions are delivery-policy questions, not generic pricing.
   // "How much does shipping cost?" must retrieve shipping rows instead of product/service prices.
@@ -2567,6 +2567,99 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
     sourceIds:[best.row.id].filter(Boolean),
     selected:[best.row],
   };
+}
+
+
+function multilingualServiceConcepts(value) {
+  const q=normalizeSearchText(value);
+  const concepts=new Set();
+  const checks=[
+    ['hair',/(?:^|\b)(?:hius|hiusten|hair|har|hår)(?:\b|\w*)/],
+    ['beard',/(?:^|\b)(?:parta|beard|skagg|skägg)(?:\b|\w*)/],
+    ['cut',/(?:leikka|haircut|cut\b|klipp)/],
+    ['clean',/(?:puhdist|pesu|pese|wash|clean|tvatt|tvätt|rengor|rengör)/],
+    ['repair',/(?:korj|repair|reparera|reparer)/],
+    ['install',/(?:asenn|install)/],
+    ['paint',/(?:maala|paint|malning|målning|malar|målar)/],
+    ['maintain',/(?:huol|maintain|maintenance|underhall|underhåll)/],
+    ['window',/(?:ikkun|window|fonster|fönster)/],
+    ['roof',/(?:katto|katon|roof|tak\b)/],
+    ['terrace',/(?:terass|terrace|deck|altan)/],
+    ['gutter',/(?:ranni|ränni|gutter|hangrann|hängränn)/],
+    ['move',/(?:muutto|moving|move\b|flytt)/],
+    ['transport',/(?:kuljet|transport|delivery service|leveransservice)/],
+  ];
+  for(const [name,re] of checks) if(re.test(q)) concepts.add(name);
+  return concepts;
+}
+
+function multilingualDirectServiceRequest(message,lang='fi') {
+  const original=String(message||'').trim().replace(/[?!.]+$/,'');
+  const q=normalizeSearchText(original);
+  if(!q) return null;
+
+  if(lang==='sv') {
+    let m=q.match(/^(?:har|erbjuder)\s+ni\s+(.+)$/);
+    if(m) return {subject:m[1],mode:'offer'};
+    m=q.match(/^(?:kan\s+ni\s+)?(klipper|tvattar|rengor|reparerar|installerar|malar|underhaller|flyttar|transporterar)\s+(?:ni\s+)?(.+)$/);
+    if(m) return {subject:m[2],verb:m[1],mode:'verb'};
+    m=q.match(/^kan\s+ni\s+(.+)$/);
+    if(m) return {subject:m[1],mode:'can'};
+  }
+
+  if(lang==='en') {
+    let m=q.match(/^do\s+you\s+(?:offer|provide|have)\s+(.+)$/);
+    if(m) return {subject:m[1],mode:'offer'};
+    m=q.match(/^(?:do|can|could)\s+you\s+(cut|wash|clean|repair|install|paint|maintain|move|transport)\s+(.+)$/);
+    if(m) return {subject:m[2],verb:m[1],mode:'verb'};
+    m=q.match(/^(?:can|could)\s+you\s+(.+)$/);
+    if(m) return {subject:m[1],mode:'can'};
+  }
+
+  return null;
+}
+
+function directMultilingualServiceConfirmation(rows,message,lang='fi') {
+  if(!['sv','en'].includes(lang)) return null;
+  const request=multilingualDirectServiceRequest(message,lang);
+  if(!request) return null;
+
+  const requestConcepts=multilingualServiceConcepts(message);
+  if(!requestConcepts.size) return null;
+
+  const candidates=(rows||[])
+    .filter(usableWebsiteRow)
+    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='services')
+    .filter((row)=>{
+      const evidence=normalizeSearchText(String(row?.title||'')+' '+String(row?.answer||''));
+      if(/\b(?:emme|ei|eivat|not|don't|doesn't|inte|aldrig)\b/.test(evidence)) return false;
+      const evidenceConcepts=multilingualServiceConcepts(evidence);
+      return [...requestConcepts].every((concept)=>evidenceConcepts.has(concept));
+    });
+
+  const found=candidates[0];
+  if(!found) return {supported:false};
+
+  const rawSubject=String(message||'').trim().replace(/[?!.]+$/,'');
+  let answer='';
+  if(lang==='sv') {
+    if(/^klipper\s+ni\s+/i.test(rawSubject)) {
+      const subject=rawSubject.replace(/^klipper\s+ni\s+/i,'');
+      answer='Ja, vi klipper '+subject+'.';
+    } else {
+      const subject=rawSubject
+        .replace(/^(?:har|erbjuder)\s+ni\s+/i,'')
+        .replace(/^kan\s+ni\s+/i,'');
+      answer='Ja, vi erbjuder '+subject+'.';
+    }
+  } else {
+    const subject=rawSubject
+      .replace(/^do\s+you\s+(?:offer|provide|have)\s+/i,'')
+      .replace(/^(?:do|can|could)\s+you\s+/i,'');
+    answer='Yes, we offer '+subject+'.';
+  }
+
+  return {supported:true,answer,evidence:[found]};
 }
 
 async function directShippingCostAnswer(rows,message,lang='fi') {
@@ -4624,6 +4717,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const servicePriceFollowup=await directServicePriceFollowup(rows,cleanMessage,history,responseLang);
   if(servicePriceFollowup) return servicePriceFollowup;
+
+  const multilingualService=directMultilingualServiceConfirmation(rows,cleanMessage,responseLang);
+  if(multilingualService) {
+    const evidence=multilingualService.evidence||[];
+    return multilingualService.supported
+      ? {answer:multilingualService.answer,handoff:false,confidence:0.93,intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence}
+      : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
+  }
 
   const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
   if(shippingCostResult) return shippingCostResult;
