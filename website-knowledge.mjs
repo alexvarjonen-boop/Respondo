@@ -700,7 +700,7 @@ export function essentialWebsiteCandidates(bundle) {
       if (kind === 'pricing' && docProducts.length) continue;
       const detachedNumericPrice=/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|kr|\$|£))?$/i.test(clean(block.text));
       if (kind === 'pricing' && zeroOnlyPrice(block.text)) continue;
-      if (kind === 'pricing' && hasCatalogProducts && detachedNumericPrice) continue;
+      if (kind === 'pricing' && detachedNumericPrice) continue;
       let title = labels[kind];
       if (kind === 'delivery') {
         // Classify the individual fact by its own sentence, not merely by a
