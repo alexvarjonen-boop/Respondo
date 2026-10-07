@@ -2781,8 +2781,12 @@ function directMultilingualServiceConfirmation(rows,message,lang='fi') {
   if(language==='fi' && !(requested.has('hair') && requested.has('cut'))) return null;
   const candidates=(rows||[])
     .filter(usableWebsiteRow)
-    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='services')
     .filter((row)=>{
+      const topic=knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''));
+      // A concrete price row such as "M Cut – hiustenleikkaus: 36 €"
+      // is also explicit evidence that the service exists. Live sites often
+      // place the clearest service name only in their price list.
+      if(topic!=='services' && topic!=='pricing') return false;
       const evidence=normalizeSearchText(String(row?.title||'')+' '+String(row?.answer||''));
       if(/\b(?:emme|ei|eivat|not|don't|doesn't|inte|aldrig)\b/.test(evidence)) return false;
       const available=multilingualServiceConcepts(evidence);
