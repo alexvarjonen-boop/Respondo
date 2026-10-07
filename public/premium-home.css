@@ -229,9 +229,13 @@ html:has(.premium-home-page),body:has(.premium-home-page){background:var(--lp-pa
 .premium-home .price-rule{background:var(--lp-panel)!important;margin-block:24px!important}
 .premium-home .price-card ul{font-size:12px!important;color:var(--lp-muted)!important;line-height:1.65!important;gap:12px!important;flex:1!important}
 .premium-home .price-card li:before{color:var(--lp-muted)!important}
-.premium-home .price-actions{margin-top:30px!important;gap:8px!important}
-.premium-home .price-btn{border-radius:7px!important;min-height:44px!important;font-size:11px!important;background:var(--lp-surface)!important;color:var(--lp-ink)!important;border-color:var(--lp-line)!important;box-shadow:none!important}
-.premium-home .price-btn.blue{background:var(--lp-action)!important;color:var(--lp-on-action)!important;border-color:var(--lp-line)!important}
+/* Make both billing choices visible on every plan. */
+.premium-home .price-actions{margin-top:30px!important;gap:12px!important}
+.premium-home .price-actions .price-btn{border:2px solid #b8b8b8!important;border-radius:10px!important;min-height:60px!important;padding:16px 18px!important;font-size:14px!important;font-weight:750!important;line-height:1.4!important;background:#f4f4f4!important;color:var(--lp-ink)!important;box-shadow:0 3px 8px #0000000a!important;transition:background .2s,border-color .2s,box-shadow .2s!important}
+.premium-home .price-actions .price-btn:last-child{background:var(--lp-action)!important;color:var(--lp-on-action)!important;border-color:var(--lp-action)!important}
+.premium-home .price-actions .price-btn:hover{background:#e8e8e8!important;border-color:var(--lp-ink)!important;box-shadow:0 5px 14px #00000014!important}
+.premium-home .price-actions .price-btn:last-child:hover{background:var(--lp-action-hover)!important;border-color:var(--lp-action-hover)!important}
+.premium-home .price-actions .price-btn:focus-visible{outline:3px solid var(--lp-ink)!important;outline-offset:4px!important}
 .premium-home .annual-save-note{font-size:9px!important;line-height:1.7!important;color:var(--lp-muted)!important}
 .lp-closing{padding:65px 0 95px}
 .lp-closing-inner{background:#f4f4f4;border:1px solid var(--lp-line);border-radius:18px;padding:65px;display:flex;align-items:center;justify-content:space-between;gap:50px;color:var(--lp-ink);background-image:radial-gradient(ellipse at 90% 110%,#0000000a,transparent 70%);position:relative;overflow:hidden}

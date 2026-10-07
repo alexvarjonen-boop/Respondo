@@ -1417,7 +1417,7 @@ function knowledgeTopic(value) {
   if(/palvelu|service|services|tjanst|tjänst|tarjoa|erbjud|huolto|pesu|pesut|siistim|raivaus|maalaust|leikkaus|poisvienti|puhdist|purku|kartoit|kierrat|kierrät|murske|asbesti|haitta.?aine|saneeraus|linjasaneeraus/.test(t)) return 'services';
   if(/tuote|product|valikoima|selection|sortiment|myy|sell|sku|tuotenumero/.test(t)) return 'products';
   if(/auki|opening|hours|oppet|öppet|oppettid/.test(t)) return 'hours';
-  if(/toimitus|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|lahetys|sparning/.test(t)) return 'delivery';
+  if(/toimitus|toimituk|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|lahetys|sparning/.test(t)) return 'delivery';
   if(/palaut|return|refund|vaihto|exchange|retur|aterbetal/.test(t)) return 'returns';
   if(/materiaali|material|made from|made of/.test(t)) return 'materials';
   if(/laatu|quality|valmistus|manufactur|made in|handmade|cnc|precision|sertifio|certif/.test(t)) return 'quality';
@@ -1441,7 +1441,7 @@ function queryTopic(query) {
   if(/maksutapa|maksaminen|maksuvaihtoeh|kortilla|korttimaks|klarn|paypal|mobilepay|apple pay|google pay|payment method|payment options|pay with|pay by|betalning|betalningsmetod|faktura/.test(q)) return 'payment';
   if(/hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar/.test(q)) return 'pricing';
   if(/auki|aukiolo|opening|hours|open|oppet|öppet|oppettid/.test(q)) return 'hours';
-  if(/toimitus|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|where is my order|tilauksen tila|lahetys|sparning/.test(q)) return 'delivery';
+  if(/toimitus|toimituk|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|where is my order|tilauksen tila|lahetys|sparning/.test(q)) return 'delivery';
   if(/palaut|return|refund|vaihto|exchange|retur|aterbetal/.test(q)) return 'returns';
   if(/materiaali|materiaalista|mista tehty|mistä tehty|made of|made from|material|materials/.test(q)) return 'materials';
   if(/laatu|laadukas|quality|valmistettu|valmistus|made in|where.*made|manufactur|handmade|käsinteht|kasinteht|cnc|precision/.test(q)) return 'quality';
@@ -2167,7 +2167,7 @@ function inferIntent(message) {
   if (/maksutapa|maksaminen|klarn|paypal|mobilepay|apple pay|google pay|payment method|betalningsmetod/.test(q)) return 'Maksaminen';
   if (/palaut|return|refund|vaihto|exchange|retur/.test(q)) return 'Palautukset';
   if (/takuu|reklamaatio|warranty|guarantee|garanti/.test(q)) return 'Takuu';
-  if (/toimitus|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans/.test(q)) return 'Toimitus';
+  if (/toimitus|toimituk|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans/.test(q)) return 'Toimitus';
   if (/ajanvaraus|varaa aika|ajan vara|booking|appointment|boka|bokning|tidsbokning/.test(q)) return 'Ajanvaraus';
   if (/tarjou[sk]|arvio|quote|estimate|offert|prisforslag|prisförslag/.test(q)) return 'Tarjouspyyntö';
   if (/hinta|maksaa|hinnoittelu|kustannus|price|cost|pricing|pris|kostar|kostnad/.test(q)) return 'Hinta';
@@ -2457,6 +2457,10 @@ function contextualizeConversationQuery(message, history = []) {
   const rest=(lead?.[1]||shortContinuation?.[1]||q).trim();
   const previousTopic=conversationTopic(previous);
   const restTopic=conversationTopic(rest);
+
+  // An explicit new topic wins over the preceding product/service answer.
+  // Otherwise delivery questions inherit catalog keywords and retrieve products.
+  if (restTopic && restTopic !== 'services' && restTopic !== previousTopic) return rest;
   const hints={
     pricing:'hinta maksaa price cost pris kostar',
     hours:'aukioloajat opening hours oppettider',
@@ -7963,9 +7967,9 @@ function detectConversationLanguage(text, hinted='') {
   const words=raw.split(/\s+/).filter(Boolean);
   if (!words.length) return hint || 'fi';
   const sets={
-    fi:new Set(['ja','on','ei','mitä','mikä','missä','milloin','voiko','voin','haluan','tarvitsen','apua','kiitos','moi','hei','minä','sinä','teillä','hinta','maksaa','ajan','varata','varaus','auki','aukiolo']),
-    sv:new Set(['och','är','inte','vad','vilken','var','när','kan','jag','vill','behöver','hjälp','tack','hej','ni','pris','kostar','boka','bokning','öppet','öppettider']),
-    en:new Set(['and','is','are','not','what','which','where','when','can','could','i','you','want','need','help','thanks','thank','hello','hi','price','cost','book','booking','open','hours'])
+    fi:new Set(['ja','on','ei','mitä','mikä','missä','milloin','voiko','voin','haluan','tarvitsen','apua','kiitos','moi','hei','minä','sinä','teillä','hinta','maksaa','ajan','varata','varaus','auki','aukiolo','kuinka','kauan','kauanko','toimitus','toimitusaika','kestää']),
+    sv:new Set(['och','är','inte','vad','vilken','var','när','kan','jag','vill','behöver','hjälp','tack','hej','ni','pris','kostar','boka','bokning','öppet','öppettider','hur','länge','leverans','leveranstid']),
+    en:new Set(['and','is','are','not','what','which','where','when','can','could','i','you','want','need','help','thanks','thank','hello','hi','price','cost','book','booking','open','hours','how','long','does','do','delivery','shipping','take'])
   };
   const score={fi:0,sv:0,en:0};
   for(const w of words) for(const lang of ['fi','sv','en']) if(sets[lang].has(w)) score[lang]++;
