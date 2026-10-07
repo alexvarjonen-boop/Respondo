@@ -31,6 +31,45 @@ test('preserves exact phone/email, quote URL, query and fragment',()=>{
  assert.match(p.address,/Testikatu/);
  assert.equal(p.notes,'');
 });
+test('manufacturer details never override the store customer-service contacts',()=>{
+ const doc=extractBusinessDocument(`
+   <section><h2>Valmistajan tiedot</h2>
+     <p>Dovo GmbH</p>
+     <p>Hauptstraße 31, 11100 Berlin</p>
+     <p>support@dovo.de</p>
+     <p>+49 37462 652-0</p>
+   </section>
+   <section><h2>Asiakaspalvelu</h2>
+     <p>asiakas@shop.fi</p>
+     <p>040 654 5654</p>
+     <p>Osoite: Hallituskatu 9, 33200 Tampere</p>
+   </section>
+ `,'https://shop.example/products/test');
+ const b={finalUrl:'https://shop.example/',pageDocuments:[doc]};
+ const facts=essentialWebsiteCandidates(b);
+ const text=facts.map((x)=>x.answer).join('\n');
+ const profile=essentialWebsiteProfile(b);
+ assert.doesNotMatch(text,/support@dovo\.de|37462\s*652|Hauptstraße\s*31/i);
+ assert.match(text,/asiakas@shop\.fi|040\s*654\s*5654|Hallituskatu\s*9/i);
+ assert.equal(profile.email,'asiakas@shop.fi');
+ assert.match(profile.phone,/040\s*654\s*5654/);
+ assert.equal(profile.address,'Hallituskatu 9, 33200 Tampere');
+});
+test('product prose about objects returning to production is not a customer return policy',()=>{
+ const doc=extractBusinessDocument(`
+   <section><h2>Tuotetiedot</h2>
+     <p>Terät, jotka eivät läpäise tarkastusta, palautuvat linjalla takaisin syväteroitukseen.</p>
+   </section>
+   <section><h2>Palautukset</h2>
+     <p>Tuotteen voi palauttaa 100 päivän kuluessa ostosta.</p>
+   </section>
+ `,'https://shop.example/products/blade');
+ const b={finalUrl:'https://shop.example/',pageDocuments:[doc]};
+ const returnsFacts=essentialWebsiteCandidates(b).filter((x)=>x.category==='Palautukset ja vaihdot');
+ assert.ok(returnsFacts.some((x)=>/100\s+päivän/i.test(x.answer)));
+ assert.equal(returnsFacts.some((x)=>/syväteroitukseen/i.test(x.answer)),false);
+});
+
 test('finds external form and contact link in navigation without importing its menu',()=>{
  const b={pageDocuments:[extractBusinessDocument('<nav><a href="https://forms.example.com/q/abc">Request a quote</a></nav>','https://example.fi')]};
  assert.equal(essentialWebsiteCandidates(b)[0]?.answer,'https://forms.example.com/q/abc');
