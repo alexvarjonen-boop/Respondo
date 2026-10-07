@@ -1,4 +1,4 @@
-import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow } from './website-knowledge.mjs';
+import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import express from 'express';
 import path from 'path';
@@ -1118,6 +1118,24 @@ function normalizeSearchText(value) {
     .trim();
 }
 
+function sanitizeUserFacingText(value) {
+  const decoded=decodeHtml(String(value || ''))
+    // Scraped CMS content can contain literal escape sequences instead of real
+    // line breaks. They must never be visible to a chat visitor.
+    .replace(/\\(?:r\\n|n|r|t)/gi,' ')
+    .replace(/[\u00ad\u200b-\u200d\u2060\ufeff]/g,'');
+  return decoded
+    .split(/\r?\n/)
+    .map((line)=>line.replace(/[ \t]+/g,' ').replace(/\s+([,.;:!?])/g,'$1').trim())
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+}
+
+function cleanKnowledgeText(value) {
+  return sanitizeUserFacingText(value).replace(/\s+/g,' ').trim();
+}
+
 function searchTokens(value) {
   return normalizeSearchText(value)
     .split(' ')
@@ -1905,13 +1923,10 @@ function genericCompanyQuestion(value) {
 function broadServiceListAnswer(rows) {
   const found=[];
   const seen=new Set();
-  const concrete=/purku|kartoit|kierrat|kierrät|murske|asbesti|haitta.?aine|saneeraus|linjasaneeraus|pesu|siivou|puhdist|maala|raivau|leikkaus|huolto|asennus|korjaus|kuljet|muutto|poisvienti/i;
   const blocked=/^(?:palvelut?|palvelumme|services?|tjänster|tjanster|mitä teemme|mita teemme|what we do)$/i;
   const add=(value)=>{
-    const text=String(value||'').replace(/\s+/g,' ').trim().replace(/[.!?;:]+$/,'').trim();
-    if(!text || text.length<4 || text.length>80 || blocked.test(text)) return;
-    if(text.split(/\s+/).filter(Boolean).length>10 || !concrete.test(text)) return;
-    if(/(?:ota yhteytta|ota yhteyttä|pyyda tarjous|pyydä tarjous|lue lisaa|lue lisää|read more|contact|referens|ajankohtaista|toimipiste)/i.test(text)) return;
+    const text=cleanKnowledgeText(value).replace(/[»›→]+\s*$/,'').replace(/[.!?;:]+$/,'').trim();
+    if(!text || blocked.test(text) || !isConcreteServiceLabel(text)) return;
     const key=normalizeSearchText(text);
     if(!key || seen.has(key)) return;
     seen.add(key);
@@ -1920,13 +1935,12 @@ function broadServiceListAnswer(rows) {
 
   for(const row of rows||[]){
     if(knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))!=='services') continue;
-    const answer=String(row?.answer||'').replace(/\s+/g,' ').trim();
-    const title=String(row?.title||'').replace(/\s+/g,' ').trim();
+    const answer=cleanKnowledgeText(row?.answer);
+    const title=cleanKnowledgeText(row?.title);
     const explicit=title.match(/^Palvelut\s*:\s*(.+)$/i);
     // Navigation/service-directory imports are stored as "Palvelut: <label>"
-    // with the exact same short label as the answer. Only these rows are used
-    // for a broad service list; normal prose keeps the established concise
-    // sentence logic below.
+    // with the exact same short label as the answer. Keep only labels that look
+    // like concrete offerings; slogans, map links and CTA copy are discarded.
     if(explicit && normalizeSearchText(explicit[1])===normalizeSearchText(answer)) add(answer);
   }
 
@@ -1938,7 +1952,7 @@ function briefServiceAnswer(selected) {
   const seen = new Set();
   for (const row of selected) {
     if (knowledgeTopic(String(row.title||'')+' '+String(row.category||'')+' '+String(row.keywords||'')) !== 'services') continue;
-    const raw = String(row.answer||'').replace(/\s+/g,' ').trim()
+    const raw = cleanKnowledgeText(row.answer)
       .replace(/^(?:palvelumme|palvelut|services|tjänster)\s*[:–—-]\s*/i,'');
     for (const sentence of raw.split(/(?<=[.!?])\s+/)) {
       const text=sentence.trim();
@@ -3260,7 +3274,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
 }
 
 function importedKnowledgeJunk(value) {
-  const raw = String(value || '').replace(/\s+/g, ' ').trim();
+  const raw = cleanKnowledgeText(value);
   const text = normalizeSearchText(raw);
   if (!text) return true;
   // Never let navigation, widgets, product-card chrome or source-code fragments
@@ -4002,7 +4016,7 @@ function naturalServiceAnswer(rows) {
 }
 
 function conciseKnowledgeAnswer(row, query) {
-  let raw=String(row?.answer||'').replace(/\s+/g,' ').trim();
+  let raw=cleanKnowledgeText(row?.answer);
   if(!raw || importedKnowledgeJunk(raw) || !usableWebsiteRow(row)) return '';
   // Navigation/meta URLs are actions, not conversational answers. Never dump
   // catalog or website URLs into a broad customer reply.
@@ -4262,9 +4276,10 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   if (!finalAnswer) {
     return { answer:'', handoff:true, confidence:0.25, intent, sourceIds:[], selected };
   }
+  finalAnswer = cleanKnowledgeText(finalAnswer);
   const sourceLanguage = detectConversationLanguage(finalAnswer, 'fi');
   const localizedAnswer = sourceLanguage === responseLang ? finalAnswer : await forceAnswerLanguage(finalAnswer, responseLang);
-  if (localizedAnswer) finalAnswer = localizedAnswer;
+  if (localizedAnswer) finalAnswer = cleanKnowledgeText(localizedAnswer);
   else if (responseLang !== 'fi') return {answer:'',handoff:true,confidence:0.2,intent,sourceIds:[],selected};
   return {
     answer: finalAnswer,
@@ -8060,7 +8075,7 @@ async function processExternalChannelMessage(tenant, channel, contactId, message
     companyName:tenant.name,rows:kr.rows,message,history,lang,pageContext:{},
   });
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
-  let answer = result.answer;
+  let answer = sanitizeUserFacingText(result.answer);
   let handoff = result.handoff;
   if (handoff) {
     answer = responseLang === 'en'
@@ -8483,7 +8498,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
         : noAnswer;
 
     let handoff = result.handoff;
-    let answer = result.answer;
+    let answer = sanitizeUserFacingText(result.answer);
     const actions = chatActions(rows, message, handoff, detectedLang, result.selected || []);
     // Action URLs are UI data, not conversational answers. If retrieval picked
     // the booking/quote URL itself as the answer, replace it with natural copy
@@ -8880,7 +8895,7 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
         ? 'Jag har inget säkert svar på det ännu. Du kan fråga om Respondos pris, gratis provperiod, installation, funktioner, säkerhet eller hur botten fungerar.'
         : 'En löydä tähän vielä varmaa vastausta. Voit kysyä esimerkiksi Respondon hinnasta, ilmaisesta kokeilusta, asennuksesta, ominaisuuksista, tietoturvasta tai siitä miten botti toimii.';
 
-    let answer=String(result.answer||'').trim();
+    let answer=sanitizeUserFacingText(result.answer);
     const looksLikeWebsiteDump=/^https?:\/\//i.test(answer) || /(?:verkkosivu(?:sto)? on|website is|webbplats (?:är|ar))\s+https?:\/\//i.test(answer);
     if(!websiteQuestion && looksLikeWebsiteDump) {
       result={...result,answer:'',handoff:true,confidence:0,sourceIds:[]};
@@ -9022,11 +9037,11 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         ? 'Jag hittade relevant företagsinformation men kunde inte översätta svaret tillförlitligt just nu. Lämna dina kontaktuppgifter nedan eller försök igen om en stund.'
         : noAnswer;
 
-    let answer = result.answer;
+    let answer = sanitizeUserFacingText(result.answer);
     let handoff = result.handoff;
     if (handoff) {
-      answer = result.intent === 'Palvelut' && result.answer
-        ? result.answer : noAnswer;
+      answer = result.intent === 'Palvelut' && answer
+        ? answer : noAnswer;
     }
 
     const actionRows = firstPartyRespondo ? safeKnowledgeRows : kr.rows;

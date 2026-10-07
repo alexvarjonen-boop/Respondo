@@ -1,7 +1,15 @@
 // Conservative, dependency-free business fact extraction. Page headings supply
 // context only; they are never stored as answers. No remote code is executed.
 const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+const clean = (s) => String(s || '')
+  // Some CMS builders serialize line breaks into visible "\\n" text. Treat
+  // those escape sequences as whitespace before anything can reach knowledge.
+  .replace(/\\(?:r\\n|n|r|t)/gi, ' ')
+  // Soft hyphens and zero-width formatting characters must never leak into
+  // customer-facing text or split search tokens.
+  .replace(/[\u00ad\u200b-\u200d\u2060\ufeff]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim();
 const review = /arvostel|asiakaskokem|asiakaspalaut|testimonial|review|rating|omdomen|recension|kundberatt|aggregateRating/i;
 const junk = /cookie|evaste|privacy|tietosuoja|integritet|copyright|all rights reserved|kayttoeh|terms of|skip to|toggle nav|add to cart|ostoskori|kirjaudu|log in|sign in|uutiskirje|newsletter|localstorage|queryselector|javascript|webpack|more to (?:enjoy|get|unlock|qualify for) free shipping|away from free shipping|unlock free shipping|(?:spend|add).{0,40}more.{0,40}free shipping|^(?:regular price|unit price|select option|choose option|product description|product description shipping (?:&|and) return)$/i;
 const service = /palvel|tarjoamme|teemme|service|we (?:offer|provide)|tjanst|vi erbjuder|pesu|siivou|puhdist|maalaus|raivaus|leikkaus|huolto|asennu|korjau|kuljet|muutto|poisvienti|purku|kartoit|kierrat|murske|asbesti|haitta.?aine|saneeraus|linjasaneeraus/;
@@ -65,7 +73,12 @@ const keywords = {
 };
 
 export function decodeHtml(s) {
-  const named = {amp:'&', quot:'"', apos:"'", nbsp:' ', lt:'<', gt:'>', auml:'ä', ouml:'ö', aring:'å', Auml:'Ä', Ouml:'Ö', Aring:'Å', euro:'€', ndash:'–', mdash:'—'};
+  const named = {
+    amp:'&', quot:'"', apos:"'", nbsp:' ', lt:'<', gt:'>',
+    auml:'ä', ouml:'ö', aring:'å', Auml:'Ä', Ouml:'Ö', Aring:'Å',
+    euro:'€', ndash:'–', mdash:'—', shy:'', raquo:'»', laquo:'«',
+    hellip:'…', middot:'·', copy:'©', reg:'®'
+  };
   return String(s || '').replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, v) => {
     if (v[0] !== '#') return named[v] ?? m;
     const n = v[1].toLowerCase() === 'x' ? parseInt(v.slice(2),16) : Number(v.slice(1));
@@ -79,6 +92,27 @@ function attrs(tag) {
 }
 function httpUrl(raw, base) {
   try { const u = new URL(raw, base); return /^https?:$/.test(u.protocol) && !u.username && !u.password ? u.href : ''; } catch { return ''; }
+}
+
+export function isConcreteServiceLabel(value) {
+  const raw=clean(decodeHtml(value)).replace(/[»›→]+\s*$/,'').trim();
+  const n=norm(raw);
+  if (!raw || raw.length<3 || raw.length>80) return false;
+  const words=raw.split(/\s+/).filter(Boolean);
+  if (words.length>7) return false;
+
+  // Navigation CTAs, slogans, location links and blog/date links often contain
+  // a service word (for example a company name containing "muuttopalvelu").
+  // They are not service names and must not be listed as company offerings.
+  if (/[.!?]/.test(raw)) return false;
+  if (/\b(?:tutustu|lue|katso|tilaa|varaa|pyyda|pyydä|ota\s+yhtey|contact|kontakt|sijainti|kartalla|location|map|hyppaa|hyppää|mukaan|ajankohtaista|uutis|news|blog|tietopank|etusivu|home)\b/.test(n)) return false;
+  if (/\b(?:hyvasti|hyvästi|vastarinn|paras|mainioit|helppo|nopea|reippaasti|sujuvat|taydella|täydellä)\b/.test(n)) return false;
+  if (/\b(?:oy|ab|ltd|inc|llc)\b/.test(n) && /sijaint|kart|location|map/.test(n)) return false;
+  if (/\b\d{1,2}[.:]\d{2}\b|\b\d{1,2}\.\s*(?:tammi|helmi|maalis|huhti|touko|kesa|kesä|heina|heinä|elo|syys|loka|marras|joulu)/.test(n)) return false;
+
+  // Require a concrete service noun/stem instead of accepting every marketing
+  // phrase from a card that happens to mention "service".
+  return /(?:palvelu|service|tjanst|tjänst|pesu|siivou|puhdist|maala|raivau|leikkaus|parturi|kampaamo|huolto|asennu|korjau|kuljet|muut(?:to|ot|toa|toja|tojen)|varastointi|vuokraus|poisvienti|purku|kartoit|kierrat|kierrät|murske|asbesti|saneeraus|remont|rakennus|hiero|fysioter|hoito|koulutus|konsult|suunnittel|valokuva|catering|siirto|pakkaus)/.test(n);
 }
 
 function stripProductHtml(value) {
@@ -572,15 +606,10 @@ export function essentialWebsiteCandidates(bundle) {
       const contact = /yhtey|contact|kontakt/.test(n);
       if (explicit || contact) quoteLinks.push({...link,sourceUrl:doc.url,score:explicit?10:1});
 
-      const serviceLabel=clean(link.label);
-      const serviceLabelNorm=norm(serviceLabel);
+      const serviceLabel=clean(decodeHtml(link.label));
       const sameHost=parsed.hostname===new URL(doc.url).hostname;
-      const concreteServiceLink=
-        sameHost &&
-        serviceLabel.length>=4 && serviceLabel.length<=80 &&
-        !/^(?:palvelut?|services?|tjanster|tjänster|etusivu|home|ota yhteytta|contact|referenssit?|ajankohtaista|toimipisteet?|purkupiha)$/i.test(serviceLabelNorm) &&
-        service.test(serviceLabelNorm);
-      if(concreteServiceLink) serviceLinks.push({...link,sourceUrl:doc.url,score:20});
+      const concreteServiceLink=sameHost && isConcreteServiceLabel(serviceLabel);
+      if(concreteServiceLink) serviceLinks.push({...link,label:serviceLabel,sourceUrl:doc.url,score:20});
 
       const individualProduct=/\/(?:products?|tuotteet?)\/[^/]+\/?$/.test(parsed.pathname.toLowerCase());
       const allProducts=/collections\/all|all[-_ ]?products|shop[-_ ]?all|kaikki[-_ ]?tuotteet|alla[-_ ]?produkter/.test(n);
@@ -632,7 +661,7 @@ export function usableWebsiteRow(row) {
     serviceTitle &&
     norm(row.category||'')==='palvelut' &&
     norm(serviceTitle[1])===norm(row.answer||'') &&
-    service.test(norm(row.answer||''))
+    isConcreteServiceLabel(row.answer)
   ) return true;
   if (/(?:^|\s)(?:tuotteet|products?|produkter)(?:\s|$)/.test(norm(row.category || ''))) {
     const product=parseProductKnowledgeRow(row);
