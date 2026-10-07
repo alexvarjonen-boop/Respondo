@@ -915,13 +915,12 @@ function conciseProfileServices(facts) {
     if(label) add(label);
   }
 
-  if(!out.length){
-    for(const fact of facts.filter(x=>x.category===labels.services)){
-      const answer=clean(fact.answer);
-      if(answer.length>240) continue;
-      for(const sentence of answer.split(/(?<=[.!?])\s+/)){
-        if(sentence.length<=180) add(sentence);
-      }
+  for(const fact of facts.filter(x=>x.category===labels.services)){
+    const answer=clean(fact.answer);
+    if(!answer || answer.length>120) continue;
+    if(/\b(?:pitkän historian|pitkan historian|tavoitteenamme|kokonaisvaltais(?:esta|en|ta)|jokainen asiakkaamme|elämys|elamyks)\b/i.test(answer)) continue;
+    for(const part of answer.split(/\s*(?:\n|[|•·])\s*/)){
+      if(part.length<=120) add(part);
     }
   }
   return out.slice(0,32).join('\n').slice(0,2600);
@@ -964,7 +963,13 @@ function bestAddressAnswer(facts) {
       .map((item)=>clean(item.answer))
       .find((value)=>/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(value));
     if(street && postal && norm(street)!==norm(postal)){
-      const combined=clean(street+', '+postal);
+      const streetKey=norm(street);
+      const postalKey=norm(postal);
+      const combined=postalKey.includes(streetKey)
+        ? clean(postal)
+        : streetKey.includes(postalKey)
+          ? clean(street)
+          : clean(street+', '+postal);
       candidates.push({value:combined,score:addressScore(combined,'Osoite')+25,source,item:items[0]});
     }
   }
