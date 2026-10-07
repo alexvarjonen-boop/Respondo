@@ -17,8 +17,8 @@ const hours = /auki|opening|hours|oppet|maanantai|tiistai|keskiviikko|torstai|pe
 const clock = /\b\d{1,2}[:.]\d{2}\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\d{2})?\b|\b\d{1,2}(?:[:.]\d{2})?\s*(?:–|-|—|to|till)\s*\d{1,2}[:.]\d{2}\b|\b\d{1,2}[:.]\d{2}\b|\b(?:closed|suljettu|stangt|24\/7)\b/i;
 const price = /(?:\d[\d\s.,]*\s*(?:€|eur\b|usd\b|sek\b|kr\b|\$|£)|[€$£]\s*\d)|(?:hinta|hinnoittelu|price|pris).*(?:sopim|tarjous|quote|offert|contact|yhtey|avtal)/i;
 const delivery = /toimitus|toimitusaika|toimitamme|toimitetaan|seurant|lahetys|lähetys|\bship(?:s|ped|ping)?\b|delivery|shipment|tracking|track(?:ing)?\s+(?:code|number|order)|nouto|pickup|leverans|sparning|spårning|forsand|försänd/i;
-const returns = /palaut(?:us\w*|taa\w*|an\w*|etaan\w*|ettava\w*|taminen\w*)|vaihto(?!ehto)|vaihd(?:ot|on|ossa|oksi|ettava|etaan|taa)|hyvitys|return|refund|exchange|retur|aterbetal|återbetal|byte\b/i;
-const warranty = /takuu|reklamaatio|warranty|\bguarantee\b|garanti|reklamation/i;
+const returns = /palaut(?:us\w*|taa\w*|an\w*|etaan\w*|ettava\w*|taminen\w*)|\bvaihto\b|\bvaihd(?:ot|on|ossa|oksi|ettava|etaan|taa)\b|hyvitys|\breturn(?:s|ed|ing)?\b|\brefund(?:s|ed|ing)?\b|\bexchange(?:s|d)?\b|\bretur\w*|aterbetal|återbetal|\bbyte\b/i;
+const warranty = /\b(?:tuote)?takuu(?:n|ssa|sta|seen|aika\w*|ehto\w*|korv\w*)?\b|reklamaatio|\bwarrant(?:y|ies)\b|\bguarantee\b|\bgaranti\w*|reklamation/i;
 const payment = /maksutapa|maksaminen|maksuvaihtoeh|korttimaks|lasku\b|klarna|paypal|mobilepay|apple\s*pay|google\s*pay|payment|payment method|pay\s+(?:with|by)|betalning|betalningsmetod|faktura/i;
 
 // Policy headings and marketing badges are context, not customer-answer facts.
@@ -718,15 +718,24 @@ export function essentialWebsiteCandidates(bundle) {
         break;
       }
     }
+    const productDetailDoc=/\/(?:products?|product|tuotteet?|tuote)\//i.test(rawDocPath);
     for (let blockIndex=0; blockIndex<blocks.length; blockIndex++) {
       const block=blocks[blockIndex];
+      const contactContext=/yhteys|yhteystied|asiakaspalvelu|contact|customer service|kontakt|kundservice/i.test(norm(block.heading||''));
+      // Contact/address details embedded on a product detail page often belong
+      // to the manufacturer, not the merchant. Official merchant contacts are
+      // collected from the home/contact/footer pages during the same crawl.
+      const allowBusinessContact=!productDetailDoc;
       const directEmail=extractedContactEmail(block.text);
-      if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
+      if(directEmail && allowBusinessContact) add('contact','Sähköposti',directEmail,doc.url);
       const directPhone=extractedContactPhone(block.text);
-      if(directPhone) add('contact','Puhelinnumero',directPhone,doc.url);
-      for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
+      if(directPhone && allowBusinessContact) add('contact','Puhelinnumero',directPhone,doc.url);
+      if(allowBusinessContact) {
+        for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
+      }
 
       const kind = businessFactKind(block.text,block.heading);
+      if(productDetailDoc && (kind==='contact' || kind==='location')) continue;
       if (!kind) continue;
       if(kind==='pricing' && recoveredPriceIndexes.has(blockIndex)) continue;
       // Product pages are imported as complete product records. Do not create a
@@ -904,6 +913,7 @@ function conciseProfileServices(facts) {
     const key=norm(text);
     if(!text || text.length>180 || seen.has(key)) return;
     if(/\b(?:varaa|ota yhtey|contact us|book now|lue lisaa|lue lisää|read more|tutustu|tervetuloa|welcome|jasen|jäsen|membership|sopimuseh|terms)\b/i.test(text)) return;
+    if(/(?:palvelussa|palveluissa|palveluista|palveluun|services? from|services? in)$/i.test(key)) return;
     if(!isConcreteServiceLabel(text) && !pricedServiceLabel(text)) return;
     seen.add(key);
     out.push(text);
