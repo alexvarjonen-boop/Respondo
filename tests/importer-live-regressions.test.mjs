@@ -69,6 +69,47 @@ test('feedback headings and membership counts do not become returns or opening h
   assert.ok(!candidates.some((row)=>row.category==='Aukioloajat'),JSON.stringify(candidates));
 });
 
+
+test('generic haircut price follow-ups prefer the base service over add-ons in all languages',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'svc',category:'Palvelut',title:'Palvelut: M Cut',answer:'M Cut on ylläpitävä hiustenleikkaus.',keywords:['hiustenleikkaus','M Cut'],source_type:'website',source_url:'https://example.fi/prices'},
+    {id:'base',category:'Hinnat',title:'Hinnat: M Cut: 36 €',answer:'M Cut: 36 €',keywords:['hinta','maksaa'],source_type:'website',source_url:'https://example.fi/prices'},
+    {id:'addon',category:'Hinnat',title:'Hinnat: M Razor: 7 €',answer:'M Razor -lisäpalvelu hiuksiin: 7 €',keywords:['hinta','maksaa'],source_type:'website',source_url:'https://example.fi/prices'},
+  ];
+  const cases=[
+    ['fi','Leikkaatteko hiuksia?','Kyllä, leikkaamme hiuksia.','Paljonko se maksaa?'],
+    ['en','Do you cut hair?','Yes, we cut hair.','How much does that cost?'],
+    ['sv','Klipper ni hår?','Ja, vi klipper hår.','Vad kostar det?'],
+  ];
+  for(const [lang,question,answer,message] of cases){
+    const result=await generateGroundedAnswer({
+      companyName:'Example',
+      rows,
+      message,
+      history:[{question,answer}],
+      lang,
+    });
+    assert.equal(result.handoff,false,lang+' '+JSON.stringify(result));
+    assert.match(result.answer,/36\s*€/i,lang+' '+result.answer);
+    assert.doesNotMatch(result.answer,/7\s*€/i,lang+' '+result.answer);
+  }
+});
+
+test('Finnish where-are-you phrasing uses the full verified physical address',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'street',category:'Sijainti ja myymälät',title:'Osoite',answer:'Maariankatu 3',keywords:['osoite'],source_type:'website',source_url:'https://example.fi/store'},
+    {id:'postal',category:'Sijainti ja myymälät',title:'Osoite',answer:'20100 Turku',keywords:['osoite'],source_type:'website',source_url:'https://example.fi/store'},
+  ];
+  const result=await generateGroundedAnswer({
+    companyName:'Example',rows,message:'Missä te sijaitsette?',history:[],lang:'fi'
+  });
+  assert.equal(result.handoff,false);
+  assert.match(result.answer,/Maariankatu 3/);
+  assert.match(result.answer,/20100 Turku/);
+});
+
 test('location-detail crawl explicitly rejects sibling branch paths',()=>{
   const server=fs.readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
   assert.match(server,/locationDetailSeed/);
