@@ -981,7 +981,16 @@ function conciseProfileServices(facts) {
       .replace(/[.!?;:]+$/,'')
       .trim();
     const key=norm(text);
-    if(!text || text.length>180 || seen.has(key) || productNames.has(key)) return;
+    const serviceKey=key
+      .replace(/\s*:\s*(?:normaalihinta|regular price|ordinarie pris).*$/i,'')
+      .replace(/\s+/g,' ')
+      .trim();
+    const overlapsCatalog=[...productNames].some((productKey)=>{
+      const product=String(productKey||'').replace(/\s+/g,' ').trim();
+      if(!product || serviceKey.length<8) return false;
+      return product===serviceKey || product.startsWith(serviceKey+' ') || serviceKey.startsWith(product+' ');
+    });
+    if(!text || text.length>180 || seen.has(key) || productNames.has(key) || overlapsCatalog) return;
     if(/\b[\wåäö-]*palvelu(?:ssa|sta|ista|iden|jen|n)\b/i.test(key)) return;
     if(/\b(?:varaa|ota yhtey|contact us|book now|lue lisaa|lue lisää|read more|tutustu|tervetuloa|welcome|jasen|jäsen|membership|sopimuseh|terms)\b/i.test(text)) return;
     if(!isConcreteServiceLabel(text) && !pricedServiceLabel(text)) return;
