@@ -2123,7 +2123,7 @@ function directProductAnswer(rows,message,lang='fi',history=[]) {
 
   // If the customer names a concrete variant value (for example "black" or "XL"),
   // confirm only from the imported product options; never infer a variant.
-  if(bestCandidate){
+  if(bestCandidate && !priceAsk){
     const color=bestCandidate.colors?.find((value)=>q.includes(normalizeSearchText(value)));
     const size=bestCandidate.sizes?.find((value)=>q.includes(normalizeSearchText(value)));
     if(color){
