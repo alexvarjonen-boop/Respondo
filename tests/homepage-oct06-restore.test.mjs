@@ -22,8 +22,9 @@ test('public homepage uses the October 6 immersive layout',()=>{
   assert.match(home,/post-calculator-features/);
   assert.match(home,/final-cta-immersive/);
   assert.doesNotMatch(home,/premiumHomeSections|premium-home-page|lp-closing/);
-  assert.match(home,/YRITYKSESI/);
-  assert.doesNotMatch(home,/>RESPONDO(?: AI)?<\/b>/);
+  assert.match(app,/<b>YRITYKSESI<\/b>/);
+  assert.doesNotMatch(app,/<div class="cinema-phone-top"><span><\/span><b>RESPONDO<\/b>/);
+  assert.doesNotMatch(app,/<span class="mini-mark">R<\/span>\s*<b>RESPONDO AI<\/b>/);
 });
 
 test('redesigned homepage stylesheet is no longer loaded',()=>{
