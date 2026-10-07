@@ -536,6 +536,28 @@ function placeholderContactValue(value) {
   return /(?:^|[\s@.])example\.(?:com|org|net)(?:$|\s)|hello@example|admin@example|test@example|your@email|yourmail|email@example/.test(n);
 }
 
+
+function extractEmailFact(value) {
+  const raw=clean(value);
+  if(!raw) return '';
+  // Some page builders concatenate an inline e-mail link and the following
+  // street address with no whitespace (e.g. "info@site.fiHallituskatu 11").
+  // Prefer a known public TLD followed by the next capitalized text node.
+  const fused=raw.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+?\.(?:fi|se|no|dk|com|net|org|eu|co\.uk)(?=[A-ZÅÄÖ]|\s|[,;]|$)/);
+  const found=clean(fused?.[0] || raw.match(email)?.[0] || '');
+  return found && !placeholderContactValue(found) ? found : '';
+}
+
+function extractPhysicalAddressFact(value, knownEmail = '') {
+  let raw=clean(value);
+  if(!raw || billingAddressNoise.test(raw)) return '';
+  if(knownEmail) raw=clean(raw.replace(knownEmail,' '));
+  // Remove any remaining syntactically valid e-mail before looking for a street.
+  raw=clean(raw.replace(email,' '));
+  const match=raw.match(/\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö0-9 .'-]{1,70}\s+\d+[A-Za-z]?)\s*,?\s*(\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}(?:,\s*[A-ZÅÄÖa-zåäö .'-]{2,35})?)/);
+  return clean(match ? match[1]+', '+match[2] : '');
+}
+
 function templateDemoDocument(doc) {
   const text=norm([
     doc?.text,
@@ -603,7 +625,22 @@ export function essentialWebsiteCandidates(bundle) {
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
+
+    // A dedicated service heading is useful evidence even when the page builder
+    // puts the price/description in a separate sibling element.
     for (const block of blocks) {
+      const heading=clean(decodeHtml(block?.heading||''));
+      if(heading && isConcreteServiceLabel(heading)) add('services','Palvelut',heading,doc.url);
+    }
+
+    for (const block of blocks) {
+      const foundEmail=extractEmailFact(block.text);
+      const foundPhone=clean(block.text).match(phone)?.[0] || '';
+      const foundAddress=extractPhysicalAddressFact(block.text,foundEmail);
+      if(foundEmail) add('contact','Sähköposti',foundEmail,doc.url);
+      if(foundPhone && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add('contact','Puhelinnumero',foundPhone,doc.url);
+      if(foundAddress) add('location','Osoite',foundAddress,doc.url);
+
       const kind = businessFactKind(block.text,block.heading);
       if (!kind) continue;
       // Product pages are imported as complete product records. Do not create a
@@ -633,10 +670,7 @@ export function essentialWebsiteCandidates(bundle) {
       if (kind === 'location') title = /\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text) || /(?:osoite|address|adress)\s*:?\s*\S+.*\d/i.test(block.text) ? 'Osoite' : 'Sijainti ja myymälät';
       if (kind === 'faq') title = clean(block.heading).slice(0,180) || 'Usein kysytyt';
       if (kind === 'contact') title = email.test(block.text) ? 'Sähköposti' : phone.test(block.text) ? 'Puhelinnumero' : 'Yhteystiedot';
-      if (kind === 'contact' && email.test(block.text)) {
-        const foundEmail=block.text.match(email)?.[0] || '';
-        if(foundEmail && !placeholderContactValue(foundEmail)) add(kind,'Sähköposti',foundEmail,doc.url);
-      }
+      if (kind === 'contact' && foundEmail) add(kind,'Sähköposti',foundEmail,doc.url);
       if (kind === 'contact' && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add(kind,'Puhelinnumero',block.text.match(phone)[0],doc.url);
       if (kind !== 'contact') {
         const concreteHeading = clean(block.heading);
