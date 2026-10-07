@@ -87,3 +87,19 @@ test('billing and e-invoicing details never become customer-facing services',()=
   assert.doesNotMatch(text,/verkkolask|apix|skannauspalvelu/i);
   assert.match(text,/hiustenleikkauksia/i);
 });
+
+
+test('zero-only template prices such as $0.00 0 are rejected',()=>{
+  const bundle=bundleFrom(`
+    <section>
+      <h2>Hinnat</h2>
+      <p>$0.00 0</p>
+      <p>HIUSTEN LEIKKAUS</p>
+      <p>€25</p>
+    </section>
+  `);
+  const facts=essentialWebsiteCandidates(bundle);
+  const text=facts.map((x)=>x.answer).join('\n');
+  assert.doesNotMatch(text,/\$0\.00\s*0/);
+  assert.match(text,/HIUSTEN LEIKKAUS:\s*€25/i);
+});
