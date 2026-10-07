@@ -1976,7 +1976,7 @@ function heroVisual() {
           <div class="answer-card">
             <div class="answer-head">
               <span class="mini-mark">R</span>
-              <b>RESPONDO AI</b>
+              <b>YRITYKSESI</b>
               <span class="confidence">Tieto löytyi</span>
             </div>
             <p>Perushuolto alkaa 89 eurosta. Lauantaisin palvelemme klo 10–14.</p>
@@ -2241,7 +2241,7 @@ function cinematicConversationScene() {
       <div class="cinema-kicker">01 / ASIAKAS KYSYY</div>
       <div class="cinema-word">KYSYMYS</div>
       <div class="cinema-phone" aria-hidden="true">
-        <div class="cinema-phone-top"><span></span><b>RESPONDO</b><i>24/7</i></div>
+        <div class="cinema-phone-top"><span></span><b>YRITYKSESI</b><i>24/7</i></div>
         <div class="cinema-chat">
           <div class="cinema-bubble customer">Paljonko huoltokäynti maksaa?</div>
           <div class="cinema-typing"><i></i><i></i><i></i></div>
@@ -2629,7 +2629,6 @@ async function home() {
         </div>
       </section>
 
-      ${geoAnswerSection()}
       ${cinematicConversationScene()}
       ${horizontalProductStory()}
       ${productWorldScene()}
