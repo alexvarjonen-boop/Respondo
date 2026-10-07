@@ -2419,7 +2419,7 @@ function serviceAreaAnswer(value, lang='fi') {
 
 function explicitBusinessLocationQuestion(message) {
   const q=normalizeSearchText(message);
-  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missa\s+te\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?(?:sijainti|osoite)|mika\s+(?:teidan\s+)?osoite\s+on|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+(?:location|address)|where\s+exactly\s+are\s+you\s+located|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget)|vad\s+ar\s+(?:er|eran)\s+adress|vilken\s+adress\s+har\s+ni)$/.test(q);
+  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missa\s+te\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?(?:sijainti|osoite)|mika\s+(?:teidan\s+)?osoite\s+on|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+(?:location|address)|where\s+exactly\s+are\s+you\s+located|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:ni|foretaget|företaget)|vad\s+ar\s+(?:er|eran)\s+(?:adress|postadress)|vad\s+har\s+ni\s+for\s+(?:adress|postadress)|vilken\s+adress\s+har\s+ni)$/.test(q);
 }
 
 function extractBusinessLocationText(value) {
@@ -2482,7 +2482,10 @@ function verifiedBusinessLocationValue(rows) {
     const street=values.find((value)=>/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(value) && !/\b\d{5}\b/.test(value));
     const postal=values.find((value)=>/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(value));
     if(street && postal && normalizeSearchText(street)!==normalizeSearchText(postal)){
-      scoreValue(street+', '+postal,rowsForSource[0]);
+      const streetKey=normalizeSearchText(street);
+      const postalKey=normalizeSearchText(postal);
+      const combined=postalKey.includes(streetKey) ? postal : street+', '+postal;
+      scoreValue(combined,rowsForSource[0]);
       if(scored.length) scored[scored.length-1].score+=25;
     }
   }
@@ -2494,7 +2497,10 @@ function verifiedBusinessLocationValue(rows) {
   const globalStreet=allValues.find((x)=>/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(x.value) && !/\b\d{5}\b/.test(x.value));
   const globalPostal=allValues.find((x)=>/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(x.value));
   if(globalStreet && globalPostal && normalizeSearchText(globalStreet.value)!==normalizeSearchText(globalPostal.value)){
-    scoreValue(globalStreet.value+', '+globalPostal.value,globalStreet.row);
+    const streetKey=normalizeSearchText(globalStreet.value);
+    const postalKey=normalizeSearchText(globalPostal.value);
+    const combined=postalKey.includes(streetKey) ? globalPostal.value : globalStreet.value+', '+globalPostal.value;
+    scoreValue(combined,globalStreet.row);
     if(scored.length) scored[scored.length-1].score+=30;
   }
 
