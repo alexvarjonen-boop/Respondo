@@ -134,3 +134,57 @@ test('location-detail crawl explicitly rejects sibling branch paths',()=>{
   assert.match(server,/hasSameFamily && !sameDetail/);
   assert.match(server,/hasSameFamily && !sameDetail/);
 });
+
+
+test('inline email anchor does not swallow the following physical address',()=>{
+  const html='<section><h4>Sijainti</h4><p><a href="mailto:info@turkishbarber.fi">info@turkishbarber.fi</a>Hallituskatu 11, 33200 Tampere, Suomi</p><p><a href="tel:+358505774490">+358 50 5774490</a></p></section>';
+  const doc=extractBusinessDocument(html,'https://example.fi/');
+  const candidates=essentialWebsiteCandidates({finalUrl:'https://example.fi/',products:[],pageDocuments:[doc]});
+  const profile=essentialWebsiteProfile({finalUrl:'https://example.fi/',products:[],pageDocuments:[doc]});
+  assert.equal(profile.email,'info@turkishbarber.fi');
+  assert.match(profile.address,/Hallituskatu\s*11/);
+  assert.match(profile.address,/33200\s+Tampere/);
+  assert.match(profile.phone,/358\s*50\s*5774490/);
+  assert.ok(!candidateTextForTest(candidates).includes('fiHallituskatu'));
+});
+
+function candidateTextForTest(candidates){
+  return candidates.map((x)=>String(x.title||'')+' '+String(x.answer||'')).join('\n');
+}
+
+test('template demo products and placeholder contacts never become imported knowledge',()=>{
+  const fakeProduct={
+    name:'Herbal Essence Oil',
+    url:'https://example.fi/product/herbal-essence-oil/',
+    price:55,
+    currency:'USD',
+    description:'Lorem ipsum dolor sit amet, consectetur adipisicing elit.',
+  };
+  const fakeDoc={
+    url:'https://example.fi/how-to-find-a-top-notch-barbershop-2/',
+    blocks:[
+      {text:'admin@example.com',heading:'Contact'},
+      {text:'128 Winston st, New York, NY 05120',heading:'Location'},
+    ],
+    links:[],
+    products:[fakeProduct],
+    text:'admin@example.com 128 Winston st, New York, NY 05120 Lorem ipsum dolor sit amet',
+  };
+  const candidates=essentialWebsiteCandidates({
+    finalUrl:'https://example.fi/',
+    products:[fakeProduct],
+    pageDocuments:[fakeDoc],
+  });
+  const text=candidateTextForTest(candidates);
+  assert.doesNotMatch(text,/lorem ipsum|admin@example\.com|128 Winston|Herbal Essence Oil/i);
+});
+
+test('English direct haircut answer is natural and not duplicated',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'svc',category:'Palvelut',title:'Palvelut: M Cut',answer:'M Cut on ylläpitävä hiustenleikkaus.',keywords:['hiustenleikkaus'],source_type:'website',source_url:'https://example.fi/services'},
+  ];
+  const result=await generateGroundedAnswer({companyName:'Example',rows,message:'Do you cut hair?',history:[],lang:'en'});
+  assert.equal(result.handoff,false);
+  assert.equal(result.answer,'Yes, we offer haircuts.');
+});
