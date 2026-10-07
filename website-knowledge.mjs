@@ -497,6 +497,9 @@ export function businessFactKind(text, context = '') {
       if (kind==='warranty' && !warranty.test(n) &&
           !/\b(?:defect|defective|material(?:s)?|workmanship|covered|coverage|valid|month|months|year|years|virhe|materiaali|valmistusvirhe|kuukaus|vuosi|fel|material|tillverkningsfel|manad|månad|ar|år)\b/i.test(t)) {
         // Ignore non-policy prose that only inherited warranty context.
+      } else if (kind==='returns' && !returns.test(n) &&
+          !/\b(?:\d+\s*(?:day|days|paiva|paivaa|päivä|päivää|dag|dagar)|unused|unopened|original condition|receipt|proof of purchase|return window|return period|palautusoikeus|palautusaika|kayttamaton|käyttämätön|avaamaton|kuitti|ostotosite|returratt|returrätt|returperiod|oanvand|oanvänd)\b/i.test(t)) {
+        // Return-section headings sometimes wrap unrelated membership or gift-card copy.
       } else if (!policyHeadingOnly(t,kind)) return kind;
     }
   }
@@ -572,7 +575,8 @@ function extractedContactEmail(value) {
 }
 
 function physicalAddressFragments(value) {
-  const raw=clean(decodeHtml(value));
+  const raw=clean(decodeHtml(value))
+    .replace(/(@[A-Za-z0-9.-]+\.(?:fi|se|no|dk|com|net|org|eu))(?=[A-ZÅÄÖ][a-zåäö])/g,'$1 ');
   if(!raw || billingAddressNoise.test(raw)) return [];
   const out=[];
   const add=(value)=>{
@@ -629,7 +633,11 @@ export function essentialWebsiteCandidates(bundle) {
   const serviceLinks = [];
   for (const doc of bundle?.pageDocuments || []) {
     if (templateDemoDocument(doc)) continue;
-    const docPath=norm(new URL(doc.url).pathname);
+    const parsedDocUrl=new URL(doc.url);
+    const rawDocPath=parsedDocUrl.pathname.toLowerCase();
+    if (/\/(?:home[-_]?\d+|demo(?:[-_][^/]*)?|sample-page|sample|template(?:[-_][^/]*)?|author|feed)(?:\/|$)/i.test(rawDocPath)) continue;
+    if (/\/(?:tag|product-tag|product-category|category)\//i.test(rawDocPath)) continue;
+    const docPath=norm(parsedDocUrl.pathname);
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
     if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial/.test(docPath)) continue;
     if (!companyInfoDoc && /blog|uutis|news/.test(docPath)) continue;
