@@ -1664,7 +1664,7 @@ function queryTopic(query) {
   if(/maksutapa|maksaminen|maksuvaihtoeh|kortilla|korttimaks|klarn|paypal|mobilepay|apple pay|google pay|payment method|payment options|pay with|pay by|betalning|betalningsmetod|faktura/.test(q)) return 'payment';
   if(/hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar/.test(q)) return 'pricing';
   if(/auki|aukiolo|opening|hours|open|oppet|öppet|oppettid/.test(q)) return 'hours';
-  if(/toimitus|toimituk|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|where is my order|tilauksen tila|lahetys|sparning/.test(q)) return 'delivery';
+  if(/toimitus|toimituk|toimiteta|toimitamme|toimitatte|toimitusaika|tilaus.*(?:saap|perill)|shipping|delivery|shipment|order.*arriv|nouto|pickup|leverans|bestallning.*(?:kommer|komma).*fram|seurant|tracking|track order|where is my order|tilauksen tila|lahetys|sparning/.test(q)) return 'delivery';
   if(/palaut|return|refund|vaihto|exchange|retur|aterbetal/.test(q)) return 'returns';
   if(/materiaali|materiaalista|mista tehty|mistä tehty|made of|made from|material|materials/.test(q)) return 'materials';
   if(/laatu|laadukas|quality|valmistettu|valmistus|made in|where.*made|manufactur|handmade|käsinteht|kasinteht|cnc|precision/.test(q)) return 'quality';
@@ -3325,7 +3325,7 @@ function extractDeliveryTimingFacts(value) {
 function directDeliveryTimeAnswer(rows,message,lang='fi') {
   const q=normalizeSearchText(message);
   const asksTime=
-    /kuinka kauan|kauanko|toimitusaika|milloin.*(?:saap|perill)|how long|delivery time|when.*(?:arrive|delivered)|hur lang|hur lång|leveranstid|hur snabbt|nar.*kommer|när.*kommer/.test(q);
+    /kuinka kauan|kauanko|montako\s+arkipaiv|toimitusaika|milloin.*(?:saap|perill)|how long|how many\s+(?:business|working)\s+days|delivery time|when.*(?:arrive|delivered)|hur lang|hur lång|hur manga\s+arbetsdagar|hur många\s+arbetsdagar|leveranstid|hur snabbt|nar.*(?:kommer|komma).*fram|när.*(?:kommer|komma).*fram/.test(q);
   if(!asksTime || queryTopic(message)!=='delivery') return null;
 
   const candidates=(rows||[])
