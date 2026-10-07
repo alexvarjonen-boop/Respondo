@@ -1648,7 +1648,8 @@ function queryTopic(query) {
   }[lexicalIntent] || '';
   if(intentTopic) return intentTopic;
   if (/tarjou[sk]|quote|estimate|offert/.test(q)) return 'quote';
-  if (/osoite|address|adress|sijainti|miss[aä]\s+sijait|where\s+(?:are|is).*located|where\s+is\s+(?:your\s+)?store|myymala|myymälä|store location|butik/.test(q)) return 'stores';
+  if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post|postadress/.test(q)) return 'contact';
+  if (/osoite|address|(?:^|\s)adress(?:\s|$)|sijainti|miss[aä]\s+sijait|where\s+(?:are|is).*located|where\s+is\s+(?:your\s+)?store|myymala|myymälä|store location|butik/.test(q)) return 'stores';
   if (!/hinta|maksaa|price|cost|pris|kostar|auki|hours|open|oppet/.test(q) && /mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|what do you (?:do|offer)|services|vad gor ni|vad gör ni|vad erbjuder|vilka tjänster|vilka tjanster|tjanster|tjänster|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|onko teilla|loytyyko teilta|löytyykö teiltä|haluaisin tilata|haluan tilata|tarvitsen|tarviin|pesu|puhdist|siivou|oljy|öljy|asenn|maal|korj|huol|raiva|poisvien/.test(q)) return 'services';
   if(/mita myytte|mitä myytte|mita teilta saa|mitä teiltä saa|valikoima|tuotteita|products|what do you sell|what products|vad säljer|vad saljer|sortiment|vari|väri|color|colour|farg|färg|saatavuus|varastossa|in stock/.test(q)) return 'products';
   // Shipping-cost questions are delivery-policy questions, not generic pricing.
@@ -2430,19 +2431,52 @@ function extractBusinessLocationText(value) {
 }
 
 function verifiedBusinessLocationValue(rows) {
-  const candidates=(rows||[])
+  const sourceRows=(rows||[])
     .filter(usableWebsiteRow)
     .filter((row)=>{
       const meta=normalizeSearchText(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''));
-      return knowledgeTopic(meta)==='stores' || /sijainti|location|store|myymala|myymälä|osoite|address|adress/.test(meta);
+      return knowledgeTopic(meta)==='stores' || /sijainti|location|store|myymala|myymälä|osoite|address|(?:^|\s)adress(?:\s|$)/.test(meta);
     });
-  for(const row of candidates) {
-    const value=extractBusinessLocationText(row.answer);
-    if(value) return {value,row};
+
+  const scored=[];
+  const scoreValue=(value,row)=>{
+    const text=String(value||'').trim().replace(/[.!?]+$/,'');
+    if(!text || text.length>220 || /^https?:\/\//i.test(text)) return;
+    let score=0;
+    const meta=normalizeSearchText(String(row?.category||'')+' '+String(row?.title||''));
+    if(/osoite|address|(?:^|\s)adress(?:\s|$)/.test(meta)) score+=35;
+    if(/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(text)) score+=45;
+    if(/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(text)) score+=35;
+    if(/\b\d{5}\b/.test(text)) score+=10;
+    if(/home base|based in|located|sijait|toimipaik|kotipaik/.test(normalizeSearchText(row?.answer||''))) score+=12;
+    if(text.split(/\s+/).length<=8) score+=8;
+    scored.push({value:text,row,score});
+  };
+
+  for(const row of sourceRows) {
+    const extracted=extractBusinessLocationText(row.answer);
+    if(extracted) scoreValue(extracted,row);
     const answer=cleanKnowledgeText(row.answer);
-    if(answer && answer.length<=180 && !/^https?:\/\//i.test(answer)) return {value:answer.replace(/[.!?]+$/,''),row};
+    if(answer && answer.length<=180) scoreValue(answer,row);
   }
-  return null;
+
+  const grouped=new Map();
+  for(const row of sourceRows){
+    const source=String(row?.source_url||row?.sourceUrl||'');
+    if(!grouped.has(source)) grouped.set(source,[]);
+    grouped.get(source).push(row);
+  }
+  for(const rowsForSource of grouped.values()){
+    const values=rowsForSource.map((row)=>cleanKnowledgeText(row.answer)).filter(Boolean);
+    const street=values.find((value)=>/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(value) && !/\b\d{5}\b/.test(value));
+    const postal=values.find((value)=>/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(value));
+    if(street && postal && normalizeSearchText(street)!==normalizeSearchText(postal)){
+      scoreValue(street+', '+postal,rowsForSource[0]);
+      if(scored.length) scored[scored.length-1].score+=25;
+    }
+  }
+
+  return scored.sort((a,b)=>b.score-a.score || a.value.length-b.value.length)[0] || null;
 }
 
 async function directShippingCostAnswer(rows,message,lang='fi') {
@@ -3451,12 +3485,28 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     : 10000;
   const first = await fetchPublicHtml(value);
   const base = new URL(first.finalUrl);
+  const seedPath=base.pathname.replace(/\/+$/,'') || '/';
+  const seedPathNormalized=normalizeSearchText(seedPath);
+  const locationFamilyMatch=seedPath.match(/\/(parturit|barbers?|salons?|stores?|locations?|myymalat|myymälät|toimipisteet)\//i);
+  const locationFamilySegment=locationFamilyMatch ? String(locationFamilyMatch[1]||'').toLowerCase() : '';
+  const locationDetailSeed=Boolean(locationFamilySegment && seedPath.split('/').filter(Boolean).length>=3);
   const pages = [];
   const queued = new Set();
   const queue = [];
   const usefulPath = url => {
     const pathname=new URL(url).pathname;
     const normalized=normalizeSearchText(pathname);
+    if(locationDetailSeed){
+      const candidatePath=pathname.replace(/\/+$/,'') || '/';
+      const sameDetail=candidatePath===seedPath || candidatePath.startsWith(seedPath+'/');
+      const hasSameFamily=locationFamilySegment && new RegExp('/'+locationFamilySegment+'/','i').test(candidatePath);
+      const sharedUseful=/faq|ukk|help|support|hinta|price|pricing|palvel|service|tjanst|yhtey|contact|kontakt|auki|hours|oppet|shipping|delivery|toimit|return|refund|palaut|warranty|takuu|payment|maksu/.test(normalized);
+      // A branch/store page may link every sibling branch. Keep the selected
+      // location plus shared service/policy pages, but never import sibling
+      // location facts into this branch's knowledge.
+      if(hasSameFamily && !sameDetail) return false;
+      if(!sameDetail && !sharedUseful && normalized!==seedPathNormalized) return false;
+    }
     const companyInfo=/about|about-us|meista|meistä|yritys|company|who-we-are|our-story/.test(normalized);
     if (companyInfo) return !/privacy|terms|tietosuoja|kayttoeh|cookie|arvostel|reviews|testimonial|cart|checkout|login|register|wp-admin|\.(?:js|css|mp4|mp3|woff2?)$/i.test(pathname);
     return !/privacy|terms|tietosuoja|kayttoeh|cookie|arvostel|reviews|testimonial|blog|uutis|news|cart|checkout|login|register|wp-admin|\.(?:js|css|mp4|mp3|woff2?)$/i.test(pathname);
