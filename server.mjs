@@ -3420,10 +3420,10 @@ function directReturnPolicyAnswer(rows,message,lang='fi') {
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
   const sourceLanguage=detectConversationLanguage(best.answer,'fi');
 
-  // Preserve an already-correct same-language policy. Cross-language answers
-  // use deterministic factual templates so translator rate limits cannot cause
-  // a fallback for a clearly published return window.
-  if(sourceLanguage===target){
+  // Preserve a complete same-language policy, but never echo a FAQ question
+  // such as "Mitä 100 päivän palautusoikeus tarkoittaa?" as the answer.
+  const looksLikeQuestion=/[?？]\s*$/.test(best.answer) || /^(?:mita|mitä|what|how|hur|vad)\b/i.test(best.normalized);
+  if(sourceLanguage===target && !looksLikeQuestion){
     return {
       answer:best.answer,
       handoff:false,
