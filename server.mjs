@@ -1718,6 +1718,30 @@ function productMatchScore(product, tokens) {
   }
   return score;
 }
+
+function productNameMatchScore(product,tokens,family='') {
+  if(!tokens.length) return 0;
+  const familyTerms={
+    putter:/^putter/,
+    headcover:/^(?:headcover|head|cover|mailansuoja)/,
+    grip:/^grip/,
+    towel:/^(?:towel|pyyhe|handduk)/,
+    golfball:/^(?:golfball|golf|ball|golfpallo)/,
+    golfbag:/^(?:golfbag|golf|bag)/,
+    giftcard:/^(?:gift|card|lahjakort)/,
+  };
+  const ignore=familyTerms[family] || /$a/;
+  const meaningful=tokens.filter((token)=>!ignore.test(token));
+  if(!meaningful.length) return 0;
+  const nameTokens=searchTokens(product?.name||'').map(productStem);
+  let score=0;
+  for(const token of meaningful){
+    if(nameTokens.includes(token)) score+=20;
+    else if(nameTokens.some((word)=>word.startsWith(token)||token.startsWith(word))) score+=10;
+  }
+  return score;
+}
+
 function requestedProductFamily(value) {
   const q=normalizeSearchText(value);
   if (/\bputter\w*\b/.test(q)) return 'putter';
@@ -2002,6 +2026,20 @@ function directProductAnswer(rows,message,lang='fi') {
   }
 
   if(priceAsk && requestedFamily && candidates.length){
+    const nameRanked=candidates
+      .map((product)=>({...product,_nameMatch:productNameMatchScore(product,tokens,requestedFamily)}))
+      .sort((a,b)=>b._nameMatch-a._nameMatch || b._match-a._match);
+    const exactNameBest=nameRanked[0];
+    const exactNameSecond=nameRanked[1];
+    if(Number.isFinite(exactNameBest?.price) && exactNameBest._nameMatch>=20 &&
+       (!exactNameSecond || exactNameBest._nameMatch>=exactNameSecond._nameMatch+20)){
+      const price=productPriceText(exactNameBest,lang);
+      const answer=lang==='en'?exactNameBest.name+' costs '+price+'.'
+        :lang==='sv'?exactNameBest.name+' kostar '+price+'.'
+        :exactNameBest.name+' maksaa '+price+'.';
+      return {answer,handoff:false,confidence:0.998,intent:'Tuotteet',sourceIds:[exactNameBest.row?.id].filter(Boolean),selected:[exactNameBest.row].filter(Boolean)};
+    }
+
     const namedBest=candidates[0];
     const namedSecond=candidates[1];
     if(tokens.length && Number.isFinite(namedBest?.price) && namedBest._match>=12 &&
