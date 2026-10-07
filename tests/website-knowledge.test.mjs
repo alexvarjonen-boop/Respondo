@@ -70,6 +70,36 @@ test('product prose about objects returning to production is not a customer retu
  assert.equal(returnsFacts.some((x)=>/syväteroitukseen/i.test(x.answer)),false);
 });
 
+test('ecommerce product and collection links never become company services',()=>{
+ const doc=extractBusinessDocument(`
+   <nav>
+     <a href="/products/beard-care-kit">Beard Care Kit</a>
+     <a href="/collections/parranhoito">Parranhoito</a>
+     <a href="/palvelut/hiustenleikkaus">Hiustenleikkaus</a>
+   </nav>
+ `,'https://shop.example/');
+ const services=essentialWebsiteCandidates({finalUrl:'https://shop.example/',pageDocuments:[doc]})
+   .filter((x)=>x.category==='Palvelut')
+   .map((x)=>x.answer)
+   .join('\n');
+ assert.doesNotMatch(services,/Beard Care Kit|Parranhoito/i);
+ assert.match(services,/Hiustenleikkaus/i);
+});
+test('marketing guarantee wording never becomes a warranty policy',()=>{
+ const doc=extractBusinessDocument(`
+   <section><h2>Tuotekuvaus</h2>
+     <p>Tämä setti on takuuvarma lahja miehelle ja toimii takuulla hyvänä yllätyksenä.</p>
+   </section>
+   <section><h2>Takuu</h2>
+     <p>Tuotteella on 12 kuukauden takuu valmistusvirheiden varalta.</p>
+   </section>
+ `,'https://shop.example/products/test');
+ const warrantyFacts=essentialWebsiteCandidates({finalUrl:'https://shop.example/',pageDocuments:[doc]})
+   .filter((x)=>x.category==='Takuu');
+ assert.ok(warrantyFacts.some((x)=>/12\s+kuukauden/i.test(x.answer)));
+ assert.equal(warrantyFacts.some((x)=>/takuuvarma lahja|takuulla hyvänä/i.test(x.answer)),false);
+});
+
 test('finds external form and contact link in navigation without importing its menu',()=>{
  const b={pageDocuments:[extractBusinessDocument('<nav><a href="https://forms.example.com/q/abc">Request a quote</a></nav>','https://example.fi')]};
  assert.equal(essentialWebsiteCandidates(b)[0]?.answer,'https://forms.example.com/q/abc');
