@@ -4026,6 +4026,21 @@ async function fetchPublicHtml(value) {
   return {html:result.text,finalUrl:result.finalUrl};
 }
 
+async function fetchPublicHtmlWithRetry(value, attempts = 3) {
+  let lastError=null;
+  const total=Math.max(1,Math.min(4,Number(attempts)||1));
+  for(let attempt=0;attempt<total;attempt++){
+    try {
+      return await fetchPublicHtml(value);
+    } catch(e) {
+      lastError=e;
+      if(attempt>=total-1) break;
+      await new Promise((resolve)=>setTimeout(resolve,250+attempt*450));
+    }
+  }
+  throw lastError || new Error('Verkkosivua ei saatu luettua.');
+}
+
 function htmlToReadableText(html) {
   return String(html || '')
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
@@ -4375,7 +4390,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const sitemapLimit = Number.isFinite(Number(opts.sitemapLimit))
     ? Math.max(0,Math.min(10000,Number(opts.sitemapLimit)))
     : 10000;
-  const first = await fetchPublicHtml(value);
+  const first = await fetchPublicHtmlWithRetry(value,3);
   const base = new URL(first.finalUrl);
   const seedPath=base.pathname.replace(/\/+$/,'') || '/';
   const seedPathNormalized=normalizeSearchText(seedPath);
@@ -4516,7 +4531,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     const next = queue.shift();
     if (!next || pages.some((x) => x.url === next.url)) continue;
     try {
-      const page = await fetchPublicHtml(next.url);
+      const page = await fetchPublicHtmlWithRetry(next.url,2);
       const resolved = new URL(page.finalUrl);
       if (resolved.hostname.toLowerCase() !== base.hostname.toLowerCase()) continue;
       const key = resolved.origin + resolved.pathname.replace(/\/$/, '') + resolved.search;
