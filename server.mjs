@@ -4452,12 +4452,19 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       if(hasSameFamily && !sameDetail) return false;
       if(!sameDetail && !sharedUseful && normalized!==seedPathNormalized) return false;
     }
+    const registryInfo=/rekisteriseloste|privacy-policy|tietosuojaseloste|gdpr/.test(normalized);
+    // Root/company imports may use a privacy/registry page only for literal
+    // controller contact fields. The knowledge extractor discards the legal
+    // prose. A location-specific import must not replace the branch address
+    // with the company's registered-office address.
+    if (!locationDetailSeed && registryInfo) return true;
     const companyInfo=/about|about-us|meista|meistä|yritys|company|who-we-are|our-story/.test(normalized);
     if (companyInfo) return !/privacy|terms|tietosuoja|kayttoeh|cookie|arvostel|reviews|testimonial|cart|checkout|login|register|wp-admin|\.(?:js|css|mp4|mp3|woff2?)$/i.test(pathname);
     return !/privacy|terms|tietosuoja|kayttoeh|cookie|arvostel|reviews|testimonial|blog|uutis|news|cart|checkout|login|register|wp-admin|\.(?:js|css|mp4|mp3|woff2?)$/i.test(pathname);
   };
   const priority = url => {
     const p=normalizeSearchText(url);
+    if (/rekisteriseloste|privacy-policy|tietosuojaseloste|gdpr/.test(p)) return 305;
     // Essentials outrank product detail pages. Product APIs already provide
     // structured catalog data for real ecommerce sites.
     if (/yhtey|contact|kontakt|asiakas(?:palvelu)?|customer[-_ ]?service|kundservice|osoite|address|adress|location|sijainti|myymala|myymälä|auki|hours|oppet/.test(p)) return 300;
