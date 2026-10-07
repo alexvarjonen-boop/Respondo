@@ -1,5 +1,6 @@
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
+import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -430,6 +431,71 @@ const q = (text, params = []) => {
   if (!pool) throw new Error('Tietokantaa ei ole vielä yhdistetty.');
   return pool.query(text, params);
 };
+
+let intentUtteranceCache = new Map();
+
+function intentForMessage(value, language = '') {
+  const normalized = normalizeIntentPhrase(value);
+  if (!normalized) return '';
+  const requested = ['fi','sv','en'].includes(String(language || '').toLowerCase())
+    ? [String(language).toLowerCase()]
+    : ['fi','sv','en'];
+  for (const lang of requested) {
+    const hit = intentUtteranceCache.get(lang + '|' + normalized);
+    if (hit) return hit;
+  }
+  return classifyIntentByGrammar(normalized);
+}
+
+async function seedAndLoadIntentUtterances() {
+  if (!pool) return;
+  const marker = await q("SELECT value FROM app_settings WHERE key='intent_utterance_seed_version'");
+  const countResult = await q("SELECT COUNT(*)::int AS count FROM intent_utterances WHERE active=TRUE");
+  const count = Number(countResult.rows[0]?.count || 0);
+  const needsSeed = marker.rows[0]?.value !== INTENT_UTTERANCE_SEED_VERSION || count < 50000;
+
+  if (needsSeed) {
+    const entries = buildIntentUtteranceSeed();
+    if (entries.length < 50000) throw new Error('Intent utterance seed is unexpectedly small.');
+    await q("DELETE FROM intent_utterances WHERE source='generated'");
+
+    const batchSize = 4000;
+    for (let offset = 0; offset < entries.length; offset += batchSize) {
+      const batch = entries.slice(offset, offset + batchSize);
+      await q(
+        `INSERT INTO intent_utterances(language,intent,phrase,normalized,source,active)
+         SELECT x.language,x.intent,x.phrase,x.normalized,'generated',TRUE
+           FROM UNNEST($1::text[],$2::text[],$3::text[],$4::text[])
+                AS x(language,intent,phrase,normalized)
+         ON CONFLICT (language,normalized)
+         DO UPDATE SET intent=EXCLUDED.intent,phrase=EXCLUDED.phrase,source='generated',active=TRUE`,
+        [
+          batch.map((x)=>x.language),
+          batch.map((x)=>x.intent),
+          batch.map((x)=>x.phrase),
+          batch.map((x)=>x.normalized),
+        ],
+      );
+    }
+    await q(
+      "INSERT INTO app_settings(key,value,updated_at) VALUES('intent_utterance_seed_version',$1,NOW()) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value,updated_at=NOW()",
+      [INTENT_UTTERANCE_SEED_VERSION],
+    );
+  }
+
+  const rows = await q("SELECT language,intent,normalized FROM intent_utterances WHERE active=TRUE");
+  const next = new Map();
+  for (const row of rows.rows) {
+    const normalized = normalizeIntentPhrase(row.normalized);
+    const language = String(row.language || '').toLowerCase();
+    const intent = String(row.intent || '').trim();
+    if (normalized && ['fi','sv','en'].includes(language) && intent) {
+      next.set(language + '|' + normalized, intent);
+    }
+  }
+  intentUtteranceCache = next;
+  console.log(`Intent utterances loaded: ${intentUtteranceCache.size}`);
+}
 const uid = () => crypto.randomUUID();
 const cleanEmail = (value) => String(value || '').trim().toLowerCase();
 
@@ -1450,6 +1516,27 @@ function knowledgeTopic(value) {
 }
 function queryTopic(query) {
   const q=normalizeSearchText(query);
+  const lexicalIntent=intentForMessage(q);
+  const intentTopic={
+    pricing:'pricing',
+    shipping:'delivery',
+    returns:'returns',
+    location:'stores',
+    hours:'hours',
+    contact:'contact',
+    booking:'booking',
+    payment:'payment',
+    warranty:'warranty',
+    availability:'products',
+    products:'products',
+    services:'services',
+    quote:'quote',
+    care:'care',
+    size:'sizing',
+    color:'products',
+    material:'materials',
+  }[lexicalIntent] || '';
+  if(intentTopic) return intentTopic;
   if (/tarjou[sk]|quote|estimate|offert/.test(q)) return 'quote';
   if (/osoite|address|adress|sijainti|miss[aä]\s+sijait|where\s+(?:are|is).*located|where\s+is\s+(?:your\s+)?store|myymala|myymälä|store location|butik/.test(q)) return 'stores';
   if (!/hinta|maksaa|price|cost|pris|kostar|auki|hours|open|oppet/.test(q) && /mita teette|mitä teette|mita tarjoatte|mitä tarjoatte|mita palvel|mitä palvel|what do you (?:do|offer)|services|vad gor ni|vad gör ni|vad erbjuder|vilka tjänster|vilka tjanster|tjanster|tjänster|onnistuuko|onnistuisko|pystytteko|voitteko|voisitteko|onko teilla|loytyyko teilta|löytyykö teiltä|haluaisin tilata|haluan tilata|tarvitsen|tarviin|pesu|puhdist|siivou|oljy|öljy|asenn|maal|korj|huol|raiva|poisvien/.test(q)) return 'services';
@@ -1629,14 +1716,15 @@ function productCatalogDestination(rows) {
 }
 
 
-function ecommerceOrderQuestion(value) {
+function ecommerceOrderQuestion(value, lang='') {
   const q=normalizeSearchText(value);
   if(!q) return false;
+  if(intentForMessage(q,lang)==='order') return true;
   return /^(?:(?:miten|kuinka)\s+(?:voin\s+)?(?:tilata|ostaa|hankkia)(?:\s+(?:tuotteita?|tuotteen|teilta|taman|sen|niita))?|(?:miten|kuinka)\s+(?:tilaan|ostan)(?:\s+(?:tuotteita?|tuotteen|sen|taman))?|(?:miten|kuinka)\s+(?:sen|taman|tuotteen)\s+(?:voi|voin)\s+(?:tilata|ostaa)|mista\s+(?:voin\s+)?(?:tilata|ostaa|hankkia)(?:\s+(?:tuotteita?|tuotteen))?|(?:voinko|voiko)\s+(?:teilta\s+)?(?:tilata|ostaa)(?:\s+(?:tuotteita?|tuotteen|sen|taman))?|(?:haluan|haluaisin)\s+(?:tilata|ostaa)(?:\s+(?:tuotteita?|tuotteen))?|how\s+(?:do|can)\s+i\s+(?:order|buy|purchase)(?:\s+(?:products?|items?|it|this|one))?|where\s+can\s+i\s+(?:order|buy|purchase)(?:\s+(?:products?|items?))?|can\s+i\s+(?:order|buy|purchase)(?:\s+(?:products?|items?|it|this|one))?|i\s+(?:want|would like)\s+to\s+(?:order|buy|purchase)(?:\s+(?:products?|items?))?|hur\s+(?:kan\s+jag\s+)?(?:bestalla|kopa)(?:\s+(?:produkter|varor|den|det))?|var\s+kan\s+jag\s+(?:bestalla|kopa)(?:\s+(?:produkter|varor))?|kan\s+jag\s+(?:bestalla|kopa)(?:\s+(?:produkter|varor|den|det))?)$/.test(q);
 }
 
 function directEcommerceOrderingAnswer(rows,message,lang='fi') {
-  if(!ecommerceOrderQuestion(message)) return null;
+  if(!ecommerceOrderQuestion(message,lang)) return null;
   const products=productCatalog(rows).filter((product)=>product?.url);
   const catalogUrl=productCatalogDestination(rows);
   if(!catalogUrl && !products.length) return null;
@@ -10565,6 +10653,29 @@ async function ensureRuntimeSchema() {
   await q(
     "INSERT INTO app_settings(key,value) VALUES('owner_test_plan_enabled','true') ON CONFLICT(key) DO NOTHING"
   );
+  await q(`CREATE TABLE IF NOT EXISTS intent_utterances (
+    id BIGSERIAL PRIMARY KEY,
+    language TEXT NOT NULL,
+    intent TEXT NOT NULL,
+    phrase TEXT NOT NULL,
+    normalized TEXT NOT NULL,
+    source TEXT NOT NULL DEFAULT 'generated',
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  await q('ALTER TABLE public.intent_utterances ENABLE ROW LEVEL SECURITY');
+  await q('CREATE UNIQUE INDEX IF NOT EXISTS idx_intent_utterances_language_normalized ON intent_utterances(language,normalized)');
+  await q('CREATE INDEX IF NOT EXISTS idx_intent_utterances_intent_language ON intent_utterances(intent,language)');
+  await q(`DO $
+    BEGIN
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
+        REVOKE ALL PRIVILEGES ON TABLE public.intent_utterances FROM anon;
+      END IF;
+      IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
+        REVOKE ALL PRIVILEGES ON TABLE public.intent_utterances FROM authenticated;
+      END IF;
+    END
+  $`);
   await q(`CREATE TABLE IF NOT EXISTS stripe_webhook_events (
     event_id TEXT PRIMARY KEY,
     event_type TEXT NOT NULL,
@@ -10825,7 +10936,10 @@ async function withOwnerSeedLock(fn) {
 
 async function start() {
   try {
-    await withRuntimeSchemaLock(() => ensureRuntimeSchema());
+    await withRuntimeSchemaLock(async () => {
+      await ensureRuntimeSchema();
+      await seedAndLoadIntentUtterances();
+    });
     try {
       await withOwnerSeedLock(() => seedOwnerRespondoKnowledge());
     } catch (e) {
@@ -10846,6 +10960,6 @@ async function start() {
   app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
 }
 
-export { app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, respondoProductFaqMatch };
+export { app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, respondoProductFaqMatch, intentForMessage };
 if (process.env.NODE_ENV !== 'test') start();
 
