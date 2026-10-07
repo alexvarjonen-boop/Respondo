@@ -1,0 +1,27 @@
+name: Website import live audit
+
+on:
+  push:
+    branches: [production-respondo-fi]
+    paths:
+      - .github/workflows/importer-live-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  five-site-language-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout production code
+        uses: actions/checkout@v4
+      - name: Use Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install project dependencies
+        run: npm install --no-audit --no-fund
+      - name: Audit live company sites with FI SV EN and follow-ups
+        run: npm run audit:live
