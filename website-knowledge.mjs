@@ -1030,6 +1030,7 @@ function conciseProfileServices(facts) {
 function uniqueProfileFacts(items, limit=4000, options={}) {
   const out=[]; const seen=new Set();
   const dropQuestions=Boolean(options.dropQuestions);
+  const maxFactLength=Number(options.maxFactLength)||0;
   const hasStatement=dropQuestions && items.some((item)=>{
     const value=clean(item?.answer);
     return value && !/[?]$/.test(value);
@@ -1037,7 +1038,7 @@ function uniqueProfileFacts(items, limit=4000, options={}) {
   for(const item of items){
     const value=clean(item?.answer);
     const key=norm(value).replace(/\s+/g,' ');
-    if(!value || seen.has(key)) continue;
+    if(!value || seen.has(key) || (maxFactLength && value.length>maxFactLength)) continue;
     if(hasStatement && /[?]$/.test(value)) continue;
     seen.add(key);
     out.push(value);
@@ -1119,7 +1120,7 @@ export function essentialWebsiteProfile(bundle) {
   const byKind = (kind) => uniqueProfileFacts(
     sorted(facts.filter(x=>x.category===labels[kind])),
     4000,
-    {dropQuestions:['returns','warranty','delivery','payment'].includes(kind)}
+    {dropQuestions:['returns','warranty','delivery','payment'].includes(kind), maxFactLength:kind==='pricing'?180:0}
   );
   const byTitle = (title) => sorted(facts.filter(x=>x.title===title))[0]?.answer || '';
   return {

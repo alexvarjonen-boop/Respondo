@@ -183,3 +183,21 @@ test('policy profile drops FAQ question when factual policy text exists',()=>{
   assert.match(profile.returns,/100 päivän kuluessa/i);
   assert.doesNotMatch(profile.returns,/Mitä 100 päivän/i);
 });
+
+test('pricing profile excludes long membership marketing while preserving exact service prices',()=>{
+  const doc={
+    url:'https://example.fi/prices',
+    blocks:[
+      {text:'M Cut™: 36 €',heading:'Hinnasto'},
+      {text:'M Cut XL™: 44 €',heading:'Hinnasto'},
+      {text:'Silver 10 Daytime is designed for students, seniors, and schoolchildren over 12. It matches the Silver 10 membership in content but is 10% more affordable. Services are redeemable Monday–Wednesday only; on other days, a 6 € supplement applies. Please be prepared to present a valid student or senior card in-store.',heading:'Hinnasto'},
+      {text:'Yes. As a member, you receive a discount on full-priced products: Silver -1 €, Gold -2 €, Platinum -3 € off list prices. The discount does not apply to promotional products, travel-sized products, or products from other brands. The member product discount is available in-store only.',heading:'Hinnasto'},
+    ],
+    links:[],products:[],text:'',
+  };
+  const profile=essentialWebsiteProfile({finalUrl:'https://example.fi/',pageDocuments:[doc]});
+  assert.match(profile.pricing,/M Cut™: 36 €/);
+  assert.match(profile.pricing,/M Cut XL™: 44 €/);
+  assert.doesNotMatch(profile.pricing,/Silver 10 Daytime|As a member|promotional products/);
+  assert.ok(profile.pricing.split('\\n').every(line=>line.length<=180),profile.pricing);
+});
