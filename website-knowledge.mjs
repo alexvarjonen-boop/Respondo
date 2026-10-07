@@ -563,9 +563,42 @@ function templateDemoProduct(product) {
   return false;
 }
 
+
+function extractedContactEmail(value) {
+  const raw=clean(decodeHtml(value))
+    .replace(/(\.(?:fi|se|no|dk|com|net|org|eu))(?=[A-ZÅÄÖ])/g,'$1 ');
+  const match=raw.match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,12}\b/i)?.[0] || '';
+  return match && !placeholderContactValue(match) ? match : '';
+}
+
+function physicalAddressFragments(value) {
+  const raw=clean(decodeHtml(value));
+  if(!raw || billingAddressNoise.test(raw)) return [];
+  const out=[];
+  const add=(value)=>{
+    const text=clean(value).replace(/^[,;:|–—-]+\s*|\s*[,;:|–—-]+$/g,'');
+    if(!text || text.length>140 || out.some((x)=>norm(x)===norm(text))) return;
+    out.push(text);
+  };
+  const streetWord='(?:katu|tie|kuja|polku|väylä|vayla|raitti|ranta|kaari|aukio|tori|puisto|rinne|gatan|vägen|vagen|väg|vag|gränden|granden|street|road|avenue|lane|boulevard|drive)';
+  const full=new RegExp('\\\\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .\\\\\\'-]{1,55}'+streetWord+'\\\\s+\\\\d+[A-Za-z]?(?:\\\\s*[,|-]?\\\\s*\\\\d{5}\\\\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .\\\\\\'-]{1,55})?)\\\\b','i');
+  const street=new RegExp('\\\\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .\\\\\\'-]{1,55}'+streetWord+'\\\\s+\\\\d+[A-Za-z]?)\\\\b','i');
+  const fullHit=raw.match(full);
+  if(fullHit) add(fullHit[1]);
+  const streetHit=raw.match(street);
+  if(streetHit) add(streetHit[1]);
+  const postal=raw.match(/\b(\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55})\b/);
+  if(postal) add(postal[1]);
+  return out;
+}
+
 export function essentialWebsiteCandidates(bundle) {
   const out = [], seen = new Set();
-  const hasCatalogProducts=Array.isArray(bundle?.products) && bundle.products.length>0;
+  const rawCatalogProducts=Array.isArray(bundle?.products)?bundle.products:[];
+  const usableCatalogProducts=rawCatalogProducts.filter((product)=>!templateDemoProduct(product));
+  const templateProductCount=rawCatalogProducts.length-usableCatalogProducts.length;
+  const catalogLooksLikeTemplate=rawCatalogProducts.length>=3 && templateProductCount>=2 && templateProductCount>=usableCatalogProducts.length;
+  const hasCatalogProducts=usableCatalogProducts.length>0;
   const add = (kind,title,answer,sourceUrl) => {
     const text = clean(answer), key = kind+':'+norm(text);
     if (!text || seen.has(key)) return;
@@ -589,7 +622,7 @@ export function essentialWebsiteCandidates(bundle) {
     });
   };
 
-  for (const product of Array.isArray(bundle?.products) ? bundle.products : []) addProduct(product,bundle?.finalUrl || '');
+  for (const product of usableCatalogProducts) addProduct(product,bundle?.finalUrl || '');
 
   const quoteLinks = [];
   const catalogLinks = [];
@@ -604,6 +637,10 @@ export function essentialWebsiteCandidates(bundle) {
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
     for (const block of blocks) {
+      const directEmail=extractedContactEmail(block.text);
+      if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
+      for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
+
       const kind = businessFactKind(block.text,block.heading);
       if (!kind) continue;
       // Product pages are imported as complete product records. Do not create a
@@ -632,11 +669,8 @@ export function essentialWebsiteCandidates(bundle) {
       if (kind === 'sizing') title = 'Koot ja mitat';
       if (kind === 'location') title = /\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text) || /(?:osoite|address|adress)\s*:?\s*\S+.*\d/i.test(block.text) ? 'Osoite' : 'Sijainti ja myymälät';
       if (kind === 'faq') title = clean(block.heading).slice(0,180) || 'Usein kysytyt';
-      if (kind === 'contact') title = email.test(block.text) ? 'Sähköposti' : phone.test(block.text) ? 'Puhelinnumero' : 'Yhteystiedot';
-      if (kind === 'contact' && email.test(block.text)) {
-        const foundEmail=block.text.match(email)?.[0] || '';
-        if(foundEmail && !placeholderContactValue(foundEmail)) add(kind,'Sähköposti',foundEmail,doc.url);
-      }
+      if (kind === 'contact') title = directEmail ? 'Sähköposti' : phone.test(block.text) ? 'Puhelinnumero' : 'Yhteystiedot';
+      if (kind === 'contact' && directEmail) add(kind,'Sähköposti',directEmail,doc.url);
       if (kind === 'contact' && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add(kind,'Puhelinnumero',block.text.match(phone)[0],doc.url);
       if (kind !== 'contact') {
         const concreteHeading = clean(block.heading);
@@ -693,7 +727,7 @@ export function essentialWebsiteCandidates(bundle) {
   quoteLinks.sort((a,b)=>b.score-a.score);
   if (quoteLinks.length) add('quote','Tarjouspyyntölomake',quoteLinks[0].url,quoteLinks[0].sourceUrl);
   catalogLinks.sort((a,b)=>b.score-a.score);
-  if (catalogLinks.length) add('catalog','Tuotekatalogi',catalogLinks[0].url,catalogLinks[0].sourceUrl);
+  if (catalogLinks.length && !catalogLooksLikeTemplate) add('catalog','Tuotekatalogi',catalogLinks[0].url,catalogLinks[0].sourceUrl);
 
   // If the user imports a branch/location-specific page, contact details,
   // address and opening hours from other branches on the same chain must not
