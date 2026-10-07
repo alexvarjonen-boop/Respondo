@@ -253,3 +253,42 @@ test('crawler prioritizes contacts and excludes template/archive routes',()=>{
   assert.ok(server.indexOf('return 300;')>=0);
   assert.ok(server.indexOf('return 180;')>server.indexOf('return 300;'));
 });
+
+
+test('service cards rendered as sibling blocks keep their price attached',()=>{
+  const bundle={
+    finalUrl:'https://example.fi/',
+    products:[],
+    pageDocuments:[{
+      url:'https://example.fi/',
+      blocks:[
+        {text:'HIUSTEN LEIKKAUS (Tavallinen)',heading:'Hinnasto'},
+        {text:'€25',heading:'Hinnasto'},
+        {text:'PARRAN AJO',heading:'Hinnasto'},
+        {text:'€20',heading:'Hinnasto'},
+      ],
+      links:[],products:[],text:''
+    }],
+  };
+  const rows=essentialWebsiteCandidates(bundle);
+  assert.ok(rows.some((row)=>row.category==='Palvelut' && /HIUSTEN LEIKKAUS/i.test(row.answer)),JSON.stringify(rows));
+  assert.ok(rows.some((row)=>row.category==='Hinnat' && /HIUSTEN LEIKKAUS/i.test(row.answer) && /25/.test(row.answer)),JSON.stringify(rows));
+  assert.ok(rows.some((row)=>row.category==='Hinnat' && /PARRAN AJO/i.test(row.answer) && /20/.test(row.answer)),JSON.stringify(rows));
+});
+
+test('ThemeREX support/demo pages are rejected as company knowledge',()=>{
+  const bundle={
+    finalUrl:'https://example.fi/',
+    products:[],
+    pageDocuments:[{
+      url:'https://example.fi/service-plus/',
+      blocks:[
+        {text:'Our primary goal is developing a secure and customizable theme framework for WordPress.',heading:'Dear Customers'},
+        {text:'WP plugins installation: $49',heading:'Services'},
+      ],
+      links:[],products:[],text:''
+    }],
+  };
+  const rows=essentialWebsiteCandidates(bundle);
+  assert.equal(rows.length,0,JSON.stringify(rows));
+});
