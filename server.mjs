@@ -1624,6 +1624,42 @@ function productCatalogDestination(rows) {
   return '';
 }
 
+
+function ecommerceOrderQuestion(value) {
+  const q=normalizeSearchText(value);
+  if(!q) return false;
+  return /^(?:(?:miten|kuinka)\s+(?:voin\s+)?(?:tilata|ostaa|hankkia)(?:\s+(?:tuotteita?|tuotteen|teilta|taman|sen|niita))?|(?:miten|kuinka)\s+(?:tilaan|ostan)(?:\s+(?:tuotteita?|tuotteen|sen|taman))?|(?:miten|kuinka)\s+(?:sen|taman|tuotteen)\s+(?:voi|voin)\s+(?:tilata|ostaa)|mista\s+(?:voin\s+)?(?:tilata|ostaa|hankkia)(?:\s+(?:tuotteita?|tuotteen))?|(?:voinko|voiko)\s+(?:teilta\s+)?(?:tilata|ostaa)(?:\s+(?:tuotteita?|tuotteen|sen|taman))?|(?:haluan|haluaisin)\s+(?:tilata|ostaa)(?:\s+(?:tuotteita?|tuotteen))?|how\s+(?:do|can)\s+i\s+(?:order|buy|purchase)(?:\s+(?:products?|items?|it|this|one))?|where\s+can\s+i\s+(?:order|buy|purchase)(?:\s+(?:products?|items?))?|can\s+i\s+(?:order|buy|purchase)(?:\s+(?:products?|items?|it|this|one))?|i\s+(?:want|would like)\s+to\s+(?:order|buy|purchase)(?:\s+(?:products?|items?))?|hur\s+(?:kan\s+jag\s+)?(?:bestalla|kopa)(?:\s+(?:produkter|varor|den|det))?|var\s+kan\s+jag\s+(?:bestalla|kopa)(?:\s+(?:produkter|varor))?|kan\s+jag\s+(?:bestalla|kopa)(?:\s+(?:produkter|varor|den|det))?)$/.test(q);
+}
+
+function directEcommerceOrderingAnswer(rows,message,lang='fi') {
+  if(!ecommerceOrderQuestion(message)) return null;
+  const products=productCatalog(rows).filter((product)=>product?.url);
+  const catalogUrl=productCatalogDestination(rows);
+  if(!catalogUrl && !products.length) return null;
+
+  const catalogRow=rows.find((row)=>
+    String(row?.title||'')==='Tuotekatalogi' &&
+    /^https?:\/\//i.test(String(row?.answer||''))
+  );
+  const evidenceRows=products.slice(0,3).map((product)=>product.row).filter(Boolean);
+  const sourceIds=[catalogRow?.id,...evidenceRows.map((row)=>row?.id)].filter(Boolean);
+  const selected=catalogUrl ? [] : evidenceRows;
+  const answer=lang==='en'
+    ? 'You can order products directly from the online store. Open the product selection below and choose the product you want.'
+    : lang==='sv'
+      ? 'Du kan beställa produkter direkt från webbutiken. Öppna produktsortimentet nedan och välj den produkt du vill ha.'
+      : 'Voit tilata tuotteet suoraan verkkokaupasta. Avaa tuotevalikoima alta ja valitse haluamasi tuote.';
+
+  return {
+    answer,
+    handoff:false,
+    confidence:0.97,
+    intent:'Tuotteet',
+    sourceIds,
+    selected
+  };
+}
+
 function directProductAnswer(rows,message,lang='fi') {
   const products=productCatalog(rows);
   if(!products.length) return null;
@@ -2515,7 +2551,7 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
   const phone = verifiedContactValue(rows, 'Puhelinnumero')?.value || '';
   const email = verifiedContactValue(rows, 'Sähköposti')?.value || '';
   const requestedContact=explicitContactQuestion(message);
-  const catalogUrl=broadProductQuestion(message)?productCatalogDestination(rows):'';
+  const catalogUrl=(broadProductQuestion(message)||ecommerceOrderQuestion(message))?productCatalogDestination(rows):'';
   const actions = [];
   const push = (action) => {
     const key = action?.url || (action?.mode ? action.mode + ':' + action.type : '');
@@ -4116,6 +4152,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     const quoteRow = rows.find(row => row.title === 'Tarjouspyyntölomake' && normalizeWebUrl(row.answer, false));
     if (quoteRow) return {answer:responseLang === 'en' ? 'You can request a quote using the button below.' : responseLang === 'sv' ? 'Du kan begära offert via knappen nedan.' : 'Voit pyytää tarjouksen alla olevasta painikkeesta.', handoff:false, confidence:1, intent:'Tarjouspyyntö', sourceIds:[quoteRow.id].filter(Boolean), selected:[quoteRow]};
   }
+
+  const ecommerceOrderResult=directEcommerceOrderingAnswer(rows,cleanMessage,responseLang);
+  if(ecommerceOrderResult) return ecommerceOrderResult;
 
   const productResult=directProductAnswer(rows,cleanMessage,responseLang);
   if(productResult) return productResult;
