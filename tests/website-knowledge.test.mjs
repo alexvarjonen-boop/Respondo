@@ -941,3 +941,27 @@ test('about-page marketing prose mentioning service does not become a service fa
  assert.ok(services.some(x=>/Tarjoamme hiustenleikkauksia/i.test(x.answer)));
  assert.equal(services.some(x=>/Palvelussamme haluamme|Parturoinnissa ei ole kyse/i.test(x.answer)),false);
 });
+
+test('replacement-blade copy and guarantee marketing do not become return or warranty policies',()=>{
+ const doc=extractBusinessDocument('<section><h2>Vaihtoterät</h2><p>Laadukkaat vaihtoterät partahöyliin takaavat tarkan ajon.</p><p>Takuulla hyvä lahja miehelle.</p><p>Tämä on takuuvarma valinta.</p></section>','https://shop.example/collections/blades');
+ const facts=essentialWebsiteCandidates({finalUrl:'https://shop.example/',pageDocuments:[doc]});
+ assert.equal(facts.some(x=>x.category==='Palautukset ja vaihdot'),false);
+ assert.equal(facts.some(x=>x.category==='Takuu'),false);
+});
+
+test('manufacturer contacts on product pages never become merchant contact facts',()=>{
+ const product=extractBusinessDocument('<h1>German Razor</h1><p>Manufacturer DOVO GmbH, Musterstraße 12, 42651 Solingen. Tel +49 37462 6520. manufacturer@example.de</p>','https://shop.example/products/german-razor');
+ const contact=extractBusinessDocument('<h1>Yhteystiedot</h1><p>Asiakaspalvelu: +358 40 123 4567</p><p>support@shop.example</p><p>Kauppakatu 5, 20100 Turku</p>','https://shop.example/pages/contact');
+ const profile=essentialWebsiteProfile({finalUrl:'https://shop.example/',pageDocuments:[product,contact]});
+ assert.match(profile.phone,/\+358\s*40\s*123\s*4567/);
+ assert.equal(profile.email,'support@shop.example');
+ assert.match(profile.address,/Kauppakatu\s*5/);
+ assert.doesNotMatch([profile.phone,profile.email,profile.address].join(' '),/\+49|manufacturer@example\.de|Solingen/i);
+});
+
+test('compact service profile drops grammatical navigation fragments',()=>{
+ const doc=extractBusinessDocument('<nav><a href="/services/haircuts">Hiustenleikkaukset</a><a href="/my">My M Room -palvelussa</a><a href="/info">hiustenleikkauspalveluista</a></nav><section><h2>Palvelut</h2><p>Tarjoamme hiustenleikkauksia.</p></section>','https://barber.example/');
+ const profile=essentialWebsiteProfile({finalUrl:'https://barber.example/',pageDocuments:[doc]});
+ assert.match(profile.services,/Hiustenleikkaukset|Tarjoamme hiustenleikkauksia/i);
+ assert.doesNotMatch(profile.services,/palvelussa|palveluista/i);
+});
