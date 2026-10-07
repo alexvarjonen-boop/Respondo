@@ -199,5 +199,5 @@ test('pricing profile excludes long membership marketing while preserving exact 
   assert.match(profile.pricing,/M Cut™: 36 €/);
   assert.match(profile.pricing,/M Cut XL™: 44 €/);
   assert.doesNotMatch(profile.pricing,/Silver 10 Daytime|As a member|promotional products/);
-  assert.ok(profile.pricing.split('\\n').every(line=>line.length<=180),profile.pricing);
+  assert.ok(profile.pricing.split('\n').every(line=>line.length<=180),profile.pricing);
 });
