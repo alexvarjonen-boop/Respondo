@@ -2409,7 +2409,7 @@ function serviceAreaAnswer(value, lang='fi') {
 
 function explicitBusinessLocationQuestion(message) {
   const q=normalizeSearchText(message);
-  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?sijainti|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+location|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget))$/.test(q);
+  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?sijainti|mika\s+on\s+(?:teidan\s+)?osoite|mika\s+(?:teidan\s+)?osoitteenne\s+on|osoite|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+location|what\s+is\s+your\s+address|what(?:'s|\s+is)\s+the\s+address|where\s+is\s+your\s+(?:shop|store)|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget)|vad\s+ar\s+er\s+adress|vad\s+har\s+ni\s+for\s+adress|vilken\s+adress\s+har\s+ni)$/.test(q);
 }
 
 function extractBusinessLocationText(value) {
@@ -2438,18 +2438,29 @@ function verifiedBusinessLocationValue(rows) {
       return knowledgeTopic(meta)==='stores' || /sijainti|location|store|myymala|myymälä|osoite|address|(?:^|\s)adress(?:\s|$)/.test(meta);
     });
 
+  const physicalStreet=/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö0-9 .'-]{0,55}(?:katu|tie|kuja|polku|kaari|vayla|väylä|ranta|tori|gatan|vagen|vägen|granden|gränden|street|st\.?|road|rd\.?|avenue|ave\.?|lane|ln\.?|drive|dr\.?|boulevard|blvd\.?)\s+\d+[A-Za-z-]*\b/i;
+  const numberFirstStreet=/\b\d{1,6}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}(?:street|st\.?|road|rd\.?|avenue|ave\.?|lane|ln\.?|drive|dr\.?|boulevard|blvd\.?)\b/i;
+  const postalLocality=/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/;
+  const nonPhysical=(value)=>{
+    const n=normalizeSearchText(value);
+    return /e-invoic|e invoic|verkkolask|ovt\\b|operaattor|operator\\b|iban\\b|bic\\b|bank account|laskutusosoite/.test(n);
+  };
+
   const scored=[];
   const scoreValue=(value,row)=>{
     const text=String(value||'').trim().replace(/[.!?]+$/,'');
-    if(!text || text.length>220 || /^https?:\/\//i.test(text)) return;
+    if(!text || text.length>220 || /^https?:\/\//i.test(text) || nonPhysical(text)) return;
     let score=0;
     const meta=normalizeSearchText(String(row?.category||'')+' '+String(row?.title||''));
-    if(/osoite|address|(?:^|\s)adress(?:\s|$)/.test(meta)) score+=35;
-    if(/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(text)) score+=45;
-    if(/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(text)) score+=35;
+    if(/osoite|address|(?:^|\s)adress(?:\s|$)/.test(meta)) score+=25;
+    if(physicalStreet.test(text) || numberFirstStreet.test(text)) score+=85;
+    if(postalLocality.test(text)) score+=45;
     if(/\b\d{5}\b/.test(text)) score+=10;
     if(/home base|based in|located|sijait|toimipaik|kotipaik/.test(normalizeSearchText(row?.answer||''))) score+=12;
     if(text.split(/\s+/).length<=8) score+=8;
+    // An "address" label without a real street/postal locality is weak and can
+    // be an invoicing/operator identifier. Never let it beat a physical address.
+    if(!physicalStreet.test(text) && !numberFirstStreet.test(text) && !postalLocality.test(text) && !/home base|based in|located|sijait|toimipaik|kotipaik/.test(normalizeSearchText(row?.answer||''))) score-=45;
     scored.push({value:text,row,score});
   };
 
@@ -2467,16 +2478,17 @@ function verifiedBusinessLocationValue(rows) {
     grouped.get(source).push(row);
   }
   for(const rowsForSource of grouped.values()){
-    const values=rowsForSource.map((row)=>cleanKnowledgeText(row.answer)).filter(Boolean);
-    const street=values.find((value)=>/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(value) && !/\b\d{5}\b/.test(value));
-    const postal=values.find((value)=>/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(value));
+    const values=rowsForSource.map((row)=>cleanKnowledgeText(row.answer)).filter((value)=>value&&!nonPhysical(value));
+    const street=values.find((value)=>(physicalStreet.test(value)||numberFirstStreet.test(value)) && !/\b\d{5}\b/.test(value));
+    const postal=values.find((value)=>postalLocality.test(value));
     if(street && postal && normalizeSearchText(street)!==normalizeSearchText(postal)){
       scoreValue(street+', '+postal,rowsForSource[0]);
       if(scored.length) scored[scored.length-1].score+=25;
     }
   }
 
-  return scored.sort((a,b)=>b.score-a.score || a.value.length-b.value.length)[0] || null;
+  const best=scored.sort((a,b)=>b.score-a.score || a.value.length-b.value.length)[0];
+  return best && best.score>0 ? best : null;
 }
 
 async function directShippingCostAnswer(rows,message,lang='fi') {
