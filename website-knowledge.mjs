@@ -888,7 +888,7 @@ function profileServiceLabelFromPrice(value) {
   return pricedServiceLabel(label) ? label : '';
 }
 
-function conciseProfileServices(facts) {
+function conciseProfileServices(facts,bundle={}) {
   const out=[]; const seen=new Set();
   const add=(value)=>{
     const text=clean(value)
@@ -913,6 +913,16 @@ function conciseProfileServices(facts) {
   for(const fact of facts.filter(x=>x.category===labels.pricing)){
     const label=profileServiceLabelFromPrice(fact.answer);
     if(label) add(label);
+  }
+
+  // Navigation/service-card links are often the cleanest inventory of services
+  // even when the surrounding About-page prose is intentionally kept only as
+  // retrieval evidence.
+  for(const doc of Array.isArray(bundle?.pageDocuments)?bundle.pageDocuments:[]){
+    for(const link of Array.isArray(doc?.links)?doc.links:[]){
+      const label=clean(decodeHtml(link?.label||''));
+      if(isConcreteServiceLabel(label)) add(label);
+    }
   }
 
   if(!out.length){
@@ -964,8 +974,14 @@ function bestAddressAnswer(facts) {
       .map((item)=>clean(item.answer))
       .find((value)=>/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(value));
     if(street && postal && norm(street)!==norm(postal)){
-      const combined=clean(street+', '+postal);
-      candidates.push({value:combined,score:addressScore(combined,'Osoite')+25,source,item:items[0]});
+      const streetKey=norm(street).replace(/[^a-z0-9åäö]+/g,' ').trim();
+      const postalKey=norm(postal).replace(/[^a-z0-9åäö]+/g,' ').trim();
+      if(streetKey && postalKey.includes(streetKey)){
+        candidates.push({value:postal,score:addressScore(postal,'Osoite')+25,source,item:items[0]});
+      } else {
+        const combined=clean(street+', '+postal);
+        candidates.push({value:combined,score:addressScore(combined,'Osoite')+25,source,item:items[0]});
+      }
     }
   }
 
@@ -996,7 +1012,7 @@ export function essentialWebsiteProfile(bundle) {
   const byTitle = (title) => sorted(facts.filter(x=>x.title===title))[0]?.answer || '';
   return {
     website:bundle.finalUrl || '',
-    services:conciseProfileServices(sorted(facts)),
+    services:conciseProfileServices(sorted(facts),bundle),
     pricing:byKind('pricing'),
     hours:byKind('hours'),
     delivery:byKind('delivery'),
