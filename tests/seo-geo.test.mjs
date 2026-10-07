@@ -38,7 +38,7 @@ test('intent landing pages are indexable and routed in both server and browser',
 test('homepage keeps descriptive product content without the removed explainer section',()=>{
   assert.match(app,/AI-asiakaspalvelu yritykselle/);
   const start=app.indexOf('async function home()');
-  const end=app.indexOf('\\n\\nfunction signup()',start);
+  const end=app.indexOf('\n\nfunction signup()',start);
   const home=app.slice(start,end);
   assert.doesNotMatch(home,/geoAnswerSection\(\)|geo-answer-section|respondo-explained/);
   assert.match(home,/cinematicConversationScene\(\)/);
