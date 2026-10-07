@@ -1904,7 +1904,7 @@ function productPriceText(product,lang='fi') {
 }
 function broadProductQuestion(value) {
   const q=normalizeSearchText(value);
-  return /(?:^|\b)(?:mita|mitä)\s+(?:te\s+)?myytte\b|\bwhat\s+do\s+you\s+sell\b|\bwhat\s+(?:kind|type)s?\s+of\s+products\b|\bvad\s+s[aä]ljer\s+ni\b|\bvad\s+har\s+ni\s+(?:for|för)\s+(?:produkter|sortiment)\b/.test(q);
+  return /(?:^|\b)(?:mita|mitä)\s+(?:te\s+)?myytte\b|\b(?:mita|mitä)\s+tuotteita\s+teilta\s+loytyy\b|\bmillainen\s+tuotevalikoima\b|\bwhat\s+do\s+you\s+sell\b|\bwhat\s+(?:kind|type)s?\s+of\s+products\b|\bwhat\s+products\s+do\s+you\s+sell\b|\bwhat\s+is\s+in\s+your\s+product\s+range\b|\bvad\s+s[aä]ljer\s+ni\b|\bvilka\s+produkter\s+s[aä]ljer\s+ni\b|\bvad\s+har\s+ni\s+(?:for|för)\s+(?:produkter|sortiment)\b|\bvad\s+finns\s+i\s+ert\s+sortiment\b/.test(q);
 }
 
 function broadProductCategory(product, lang='fi') {
