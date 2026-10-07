@@ -2675,13 +2675,13 @@ function directMultilingualServiceConfirmation(rows,message,lang='fi') {
 
 
 const OPENING_HOUR_DAYS = [
-  {key:'mon',aliases:['ma','maanantai','mon','monday','man','mandag'],fi:'Maanantai',sv:'Måndag',en:'Monday'},
-  {key:'tue',aliases:['ti','tiistai','tue','tues','tuesday','tis','tisdag'],fi:'Tiistai',sv:'Tisdag',en:'Tuesday'},
-  {key:'wed',aliases:['ke','keskiviikko','wed','wednesday','ons','onsdag'],fi:'Keskiviikko',sv:'Onsdag',en:'Wednesday'},
-  {key:'thu',aliases:['to','torstai','thu','thur','thursday','tor','torsdag'],fi:'Torstai',sv:'Torsdag',en:'Thursday'},
-  {key:'fri',aliases:['pe','perjantai','fri','friday','fre','fredag'],fi:'Perjantai',sv:'Fredag',en:'Friday'},
-  {key:'sat',aliases:['la','lauantai','sat','saturday','lor','lordag'],fi:'Lauantai',sv:'Lördag',en:'Saturday'},
-  {key:'sun',aliases:['su','sunnuntai','sun','sunday','son','sondag'],fi:'Sunnuntai',sv:'Söndag',en:'Sunday'},
+  {key:'mon',aliases:['ma','maanantai','maanantaina','mon','monday','man','mandag'],fi:'Maanantai',sv:'Måndag',en:'Monday'},
+  {key:'tue',aliases:['ti','tiistai','tiistaina','tue','tues','tuesday','tis','tisdag'],fi:'Tiistai',sv:'Tisdag',en:'Tuesday'},
+  {key:'wed',aliases:['ke','keskiviikko','keskiviikkona','wed','wednesday','ons','onsdag'],fi:'Keskiviikko',sv:'Onsdag',en:'Wednesday'},
+  {key:'thu',aliases:['to','torstai','torstaina','thu','thur','thursday','tor','torsdag'],fi:'Torstai',sv:'Torsdag',en:'Thursday'},
+  {key:'fri',aliases:['pe','perjantai','perjantaina','fri','friday','fre','fredag'],fi:'Perjantai',sv:'Fredag',en:'Friday'},
+  {key:'sat',aliases:['la','lauantai','lauantaina','sat','saturday','lor','lordag'],fi:'Lauantai',sv:'Lördag',en:'Saturday'},
+  {key:'sun',aliases:['su','sunnuntai','sunnuntaina','sun','sunday','son','sondag'],fi:'Sunnuntai',sv:'Söndag',en:'Sunday'},
 ];
 
 function openingHoursRequestedDay(message) {
