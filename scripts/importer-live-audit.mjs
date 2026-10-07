@@ -295,13 +295,13 @@ const serviceSites=[
       {label:'hours-en',lang:'en',message:'What are your opening hours on Monday?',expect:/11[:.]00|19[:.]00/i},
       {label:'hours-sv',lang:'sv',message:'Vilka öppettider har ni på måndag?',expect:/11[:.]00|19[:.]00/i},
       {label:'service-followup-fi',lang:'fi',message:'Leikkaatteko hiuksia?',expect:/hius|leikka|M Cut/i,followups:[
-        {label:'price-followup-fi',lang:'fi',message:'Paljonko se maksaa?',expect:/36\s*€/i},
+        {label:'price-followup-fi',lang:'fi',message:'Paljonko se maksaa?',expect:/(?:36\s*€|€\s*36)/i},
       ]},
       {label:'service-followup-en',lang:'en',message:'Do you cut hair?',expect:/hair|cut|M Cut/i,followups:[
-        {label:'price-followup-en',lang:'en',message:'How much does that cost?',expect:/36\s*€/i},
+        {label:'price-followup-en',lang:'en',message:'How much does that cost?',expect:/(?:36\s*€|€\s*36)/i},
       ]},
       {label:'service-followup-sv',lang:'sv',message:'Klipper ni hår?',expect:/hår|klipp|M Cut/i,followups:[
-        {label:'price-followup-sv',lang:'sv',message:'Vad kostar det?',expect:/36\s*€/i},
+        {label:'price-followup-sv',lang:'sv',message:'Vad kostar det?',expect:/(?:36\s*€|€\s*36)/i},
       ]},
     ],
   },
@@ -357,9 +357,9 @@ const serviceSites=[
       {label:'hours-fi',lang:'fi',message:'Milloin olette auki maanantaina?',expect:/8[.:]20|16[.:]40/i},
       {label:'hours-en',lang:'en',message:'When are you open on Monday?',expect:/8[.:]20|16[.:]40/i},
       {label:'hours-sv',lang:'sv',message:'När har ni öppet på måndag?',expect:/8[.:]20|16[.:]40/i},
-      {label:'cut-fi',lang:'fi',message:'Paljonko hiustenleikkaus maksaa?',expect:/31\s*€/i},
-      {label:'cut-en',lang:'en',message:'How much is a haircut?',expect:/31\s*€/i},
-      {label:'cut-sv',lang:'sv',message:'Vad kostar en hårklippning?',expect:/31\s*€/i},
+      {label:'cut-fi',lang:'fi',message:'Paljonko hiustenleikkaus maksaa?',expect:/(?:31\s*€|€\s*31)/i},
+      {label:'cut-en',lang:'en',message:'How much is a haircut?',expect:/(?:31\s*€|€\s*31)/i},
+      {label:'cut-sv',lang:'sv',message:'Vad kostar en hårklippning?',expect:/(?:31\s*€|€\s*31)/i},
     ],
   },
 ];
