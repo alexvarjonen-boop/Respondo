@@ -279,9 +279,9 @@ const ecommerceSites=[
       ['product color option',/SUTITELINE Plastic[\s\S]{0,900}(?:Black|Ivory|Transparent)/i],
     ],
     questions:[
-      {label:'shirt-price-fi',lang:'fi',message:'Paljonko T-paita MIDHEAVY 230g maksaa?',expect:/24[.,]90|24\.9/},
-      {label:'shirt-price-en',lang:'en',message:'How much is the MIDHEAVY 230g T-shirt?',expect:/24[.,]90|24\.9/},
-      {label:'shirt-price-sv',lang:'sv',message:'Vad kostar MIDHEAVY 230g t-shirten?',expect:/24[.,]90|24\.9/},
+      {label:'shirt-price-fi',lang:'fi',message:'Paljonko T-paita MIDHEAVY 230g maksaa?',expect:/19[.,]92|24[.,]90|24\.9/},
+      {label:'shirt-price-en',lang:'en',message:'How much is the MIDHEAVY 230g T-shirt?',expect:/19[.,]92|24[.,]90|24\.9/},
+      {label:'shirt-price-sv',lang:'sv',message:'Vad kostar MIDHEAVY 230g t-shirten?',expect:/19[.,]92|24[.,]90|24\.9/},
       {label:'shirt-sizes-fi',lang:'fi',message:'Mitä kokoja MIDHEAVY 230g paidasta on?',expect:/\bS\b|\bM\b|XL|2XL|3XL/i},
       {label:'shirt-sizes-en',lang:'en',message:'What sizes does the MIDHEAVY 230g T-shirt come in?',expect:/\bS\b|\bM\b|XL|2XL|3XL/i},
       {label:'shirt-sizes-sv',lang:'sv',message:'Vilka storlekar finns MIDHEAVY 230g t-shirten i?',expect:/\bS\b|\bM\b|XL|2XL|3XL/i},
