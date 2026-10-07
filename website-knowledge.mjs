@@ -18,7 +18,7 @@ const clock = /\b\d{1,2}(?:[:.]\d{2})?\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\
 const price = /(?:\d[\d\s.,]*\s*(?:€|eur\b|usd\b|sek\b|kr\b|\$|£)|[€$£]\s*\d)|(?:hinta|hinnoittelu|price|pris).*(?:sopim|tarjous|quote|offert|contact|yhtey|avtal)/i;
 const delivery = /toimitus|toimitusaika|toimitamme|toimitetaan|seurant|lahetys|lähetys|\bship(?:s|ped|ping)?\b|delivery|shipment|tracking|track(?:ing)?\s+(?:code|number|order)|nouto|pickup|leverans|sparning|spårning|forsand|försänd/i;
 const returns = /palaut|vaihto|hyvitys|return|refund|exchange|retur|aterbetal|återbetal|byte\b/i;
-const warranty = /takuu|reklamaatio|warranty|guarantee|garanti|reklamation/i;
+const warranty = /takuu|reklamaatio|\bwarranty\b|\bgaranti\b|reklamation|money[- ]back guarantee|satisfaction guarantee|guarantee\s+(?:period|for\s+\d|of\s+\d)/i;
 const payment = /maksutapa|maksaminen|maksuvaihtoeh|korttimaks|lasku\b|klarna|paypal|mobilepay|apple\s*pay|google\s*pay|payment|payment method|pay\s+(?:with|by)|betalning|betalningsmetod|faktura/i;
 
 // Policy headings and marketing badges are context, not customer-answer facts.
@@ -265,6 +265,59 @@ function structuredProductNodes(html) {
   }
   return nodes;
 }
+
+function structuredBusinessFacts(html) {
+  const out=[];
+  const seen=new Set();
+  const add=(text,heading)=>{
+    const value=clean(text);
+    if(!value) return;
+    const key=norm(heading+'|'+value);
+    if(seen.has(key)) return;
+    seen.add(key);
+    out.push({text:value,heading});
+  };
+  const businessType=/^(?:localbusiness|store|barbershop|hairsalon|restaurant|professionalservice|medicalbusiness|healthandbeautybusiness|homeandconstructionbusiness|automotivebusiness|foodestablishment|lodgingbusiness|sportsactivitylocation|dentist|pharmacy|florist)$/i;
+  for(const node of structuredProductNodes(html)){
+    if(!node || typeof node!=='object') continue;
+    const types=Array.isArray(node['@type'])?node['@type']:[node['@type']];
+    if(!types.some((type)=>businessType.test(String(type||'')))) continue;
+
+    const address=node.address;
+    if(typeof address==='string') {
+      add(address,'Osoite');
+    } else if(address && typeof address==='object') {
+      const parts=[
+        address.streetAddress,
+        [address.postalCode,address.addressLocality].filter(Boolean).join(' '),
+        address.addressRegion,
+        typeof address.addressCountry==='string' ? address.addressCountry : address.addressCountry?.name,
+      ].map(clean).filter(Boolean);
+      if(parts.length) add(parts.join(', '),'Osoite');
+    }
+    if(node.telephone) add(String(node.telephone),'Yhteystiedot');
+    if(node.email) add(String(node.email).replace(/^mailto:/i,''),'Yhteystiedot');
+
+    const directHours=Array.isArray(node.openingHours)?node.openingHours:[node.openingHours];
+    for(const value of directHours.filter(Boolean)) add(String(value),'Aukioloajat');
+
+    const specs=Array.isArray(node.openingHoursSpecification)
+      ? node.openingHoursSpecification
+      : node.openingHoursSpecification ? [node.openingHoursSpecification] : [];
+    for(const spec of specs){
+      if(!spec || typeof spec!=='object') continue;
+      const days=(Array.isArray(spec.dayOfWeek)?spec.dayOfWeek:[spec.dayOfWeek])
+        .filter(Boolean)
+        .map((day)=>String(day).split('/').pop())
+        .join(', ');
+      const opens=clean(spec.opens||'');
+      const closes=clean(spec.closes||'');
+      if(days && opens && closes) add(days+' '+opens+'–'+closes,'Aukioloajat');
+    }
+  }
+  return out;
+}
+
 function productMeta(html, key) {
   const wanted=norm(key);
   for (const match of String(html || '').matchAll(/<meta\b[^>]*>/gi)) {
@@ -386,6 +439,7 @@ export function parseProductKnowledgeRow(row) {
 
 export function extractBusinessDocument(html, url) {
   const products = extractProducts(html, url);
+  const structuredFacts = structuredBusinessFacts(html);
   const blocks = [], links = [];
   const stack = [];
   let buffer = '', heading = '', suppressedHeading = false;
@@ -451,7 +505,8 @@ export function extractBusinessDocument(html, url) {
     if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
   }
   flush();
-  return {url, blocks, links, products, text:blocks.map(x=>x.text).join('\n')};
+  const combinedBlocks=[...structuredFacts,...blocks];
+  return {url, blocks:combinedBlocks, links, products, text:combinedBlocks.map(x=>x.text).join('\n')};
 }
 
 export function businessFactKind(text, context = '') {
@@ -512,9 +567,87 @@ export function businessFactKind(text, context = '') {
   return '';
 }
 
+
+function canonicalPageKey(value) {
+  try {
+    const url=new URL(value);
+    return (url.origin+url.pathname.replace(/\/+$/,'')+(url.search||'')).toLowerCase();
+  } catch { return ''; }
+}
+
+function locationDetailPath(value) {
+  try {
+    const segments=new URL(value).pathname.toLowerCase().split('/').filter(Boolean);
+    const markers=new Set([
+      'parturit','barbers','barber','salons','salon','stores','store','shops','shop',
+      'locations','location','myymalat','myymälät','toimipisteet','toimipiste',
+      'liikkeet','liike','butiker','butik'
+    ]);
+    for(let i=0;i<segments.length;i++){
+      if(markers.has(segments[i]) && segments.length-i>=3) return true;
+    }
+    return false;
+  } catch { return false; }
+}
+
+function siblingLocationDocument(sourceUrl,targetUrl) {
+  if(!locationDetailPath(targetUrl)) return false;
+  const sourceKey=canonicalPageKey(sourceUrl);
+  const targetKey=canonicalPageKey(targetUrl);
+  if(!sourceKey || !targetKey || sourceKey===targetKey) return false;
+  return locationDetailPath(sourceUrl);
+}
+
+const streetAddressPattern=/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö0-9 .'-]{1,55}(?:katu|tie|kuja|polku|vayla|väylä|gatan|vagen|vägen|street|road|avenue|lane|drive)\s+\d+[A-Za-z-]*\b/i;
+const numberFirstStreetPattern=/\b\d{1,6}\s+[A-Z][A-Za-z .'-]{1,55}(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Drive|Dr)\b/i;
+const postalCityPattern=/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,45}\b/;
+
+function documentAddress(blocks) {
+  const values=(blocks||[]).map((block)=>clean(block?.text||'')).filter(Boolean);
+  for(let i=0;i<values.length;i++){
+    const value=values[i];
+    const street=value.match(streetAddressPattern)?.[0] || value.match(numberFirstStreetPattern)?.[0] || '';
+    const postal=value.match(postalCityPattern)?.[0] || '';
+    if(street && postal) return clean(street+', '+postal);
+    if(street){
+      for(let d=1;d<=4;d++){
+        for(const j of [i+d,i-d]){
+          if(j<0||j>=values.length) continue;
+          const nearby=values[j].match(postalCityPattern)?.[0] || '';
+          if(nearby) return clean(street+', '+nearby);
+        }
+      }
+      return clean(street);
+    }
+  }
+  return '';
+}
+
+function sensitiveFactKey(kind,text='') {
+  if(kind==='hours') return 'hours';
+  if(kind==='location') return 'location';
+  if(kind==='contact'){
+    if(email.test(text)) return 'contact:email';
+    if(phone.test(text)) return 'contact:phone';
+    return 'contact';
+  }
+  return '';
+}
+
 export function essentialWebsiteCandidates(bundle) {
   const out = [], seen = new Set();
   const hasCatalogProducts=Array.isArray(bundle?.products) && bundle.products.length>0;
+  const targetUrl=String(bundle?.finalUrl||'');
+  const targetKey=canonicalPageKey(targetUrl);
+  const targetDoc=(bundle?.pageDocuments||[]).find((doc)=>canonicalPageKey(doc?.url)===targetKey) || null;
+  const targetSensitive=new Set();
+  if(targetDoc){
+    for(const block of targetDoc.blocks||[]){
+      const kind=businessFactKind(block?.text||'',block?.heading||'');
+      const key=sensitiveFactKey(kind,block?.text||'');
+      if(key) targetSensitive.add(key);
+    }
+  }
   const add = (kind,title,answer,sourceUrl) => {
     const text = clean(answer), key = kind+':'+norm(text);
     if (!text || seen.has(key)) return;
@@ -544,6 +677,8 @@ export function essentialWebsiteCandidates(bundle) {
   const catalogLinks = [];
   const serviceLinks = [];
   for (const doc of bundle?.pageDocuments || []) {
+    if(siblingLocationDocument(doc.url,targetUrl)) continue;
+    const isTargetDocument=canonicalPageKey(doc.url)===targetKey;
     const docPath=norm(new URL(doc.url).pathname);
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
     if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial/.test(docPath)) continue;
@@ -551,9 +686,15 @@ export function essentialWebsiteCandidates(bundle) {
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
+    if(isTargetDocument){
+      const fullAddress=documentAddress(blocks);
+      if(fullAddress) add('location','Osoite',fullAddress,doc.url);
+    }
     for (const block of blocks) {
       const kind = businessFactKind(block.text,block.heading);
       if (!kind) continue;
+      const sensitiveKey=sensitiveFactKey(kind,block.text);
+      if(!isTargetDocument && sensitiveKey && targetSensitive.has(sensitiveKey)) continue;
       // Product pages are imported as complete product records. Do not create a
       // second detached "price" fact that has lost the product name/link.
       if (kind === 'pricing' && docProducts.length) continue;
