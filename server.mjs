@@ -2409,7 +2409,7 @@ function serviceAreaAnswer(value, lang='fi') {
 
 function explicitBusinessLocationQuestion(message) {
   const q=normalizeSearchText(message);
-  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?(?:sijainti|osoite)|mika\s+(?:teidan\s+)?osoite\s+on|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+(?:location|address)|where\s+exactly\s+are\s+you\s+located|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget)|vad\s+ar\s+(?:er|eran)\s+adress|vilken\s+adress\s+har\s+ni)$/.test(q);
+  return /^(?:missa\s+(?:te\s+)?sijaitsette|missa\s+(?:te|yritys)\s+sijaitsee|missapain\s+(?:te\s+)?sijaitsette|mika\s+on\s+(?:teidan\s+)?(?:sijainti|osoite)|mika\s+(?:teidan\s+)?osoite\s+on|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+(?:location|address)|where\s+exactly\s+are\s+you\s+located|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget)|vad\s+ar\s+(?:er|eran)\s+adress|vilken\s+adress\s+har\s+ni)$/.test(q);
 }
 
 function extractBusinessLocationText(value) {
@@ -2519,6 +2519,104 @@ async function directShippingCostAnswer(rows,message,lang='fi') {
     handoff:false,
     confidence:0.96,
     intent:'Toimitus',
+    sourceIds:[best.row.id].filter(Boolean),
+    selected:[best.row],
+  };
+}
+
+
+function serviceLabelFromEvidenceRow(row) {
+  const generic=/^(?:palvelut?|services?|tjanster|tjänster|hinnat|hinnasto|pricing|prices|price list)$/i;
+  const answer=cleanKnowledgeText(row?.answer||'');
+  const title=cleanKnowledgeText(row?.title||'');
+  const answerMatch=answer.match(/^([^:]{2,60})\s*:\s+/);
+  if(answerMatch && !generic.test(normalizeSearchText(answerMatch[1]))) return answerMatch[1].trim();
+  const titleMatch=title.match(/^(?:Palvelut|Services|Tjänster)\s*:\s*([^:]{2,60})(?:\s*:|$)/i);
+  if(titleMatch && !generic.test(normalizeSearchText(titleMatch[1]))) return titleMatch[1].trim();
+  return '';
+}
+
+function priceFollowupQuestion(value) {
+  const q=normalizeSearchText(value);
+  return /^(?:paljonko\s+(?:se|tama|tämä|tuo)\s+maksaa|mita\s+(?:se|tama|tämä|tuo)\s+maksaa|mika\s+(?:sen|taman|tämän|tuon)\s+hinta|enta\s+hinta|how\s+much\s+(?:does\s+(?:it|that|this)\s+cost|is\s+(?:it|that|this))|what\s+does\s+(?:it|that|this)\s+cost|and\s+how\s+much\s+is\s+(?:it|that)|vad\s+kostar\s+(?:det|den|denna)|hur\s+mycket\s+kostar\s+(?:det|den|denna)|och\s+vad\s+kostar\s+(?:det|den))$/.test(q);
+}
+
+function directPriceFragment(value) {
+  const text=cleanKnowledgeText(value);
+  const matches=[...text.matchAll(/(?:alk\.?|alkaen|from|fran|från)?\s*(?:[€$£]\s*)?\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|nok|dkk|kr|\$|£))?/gi)]
+    .map((match)=>String(match[0]||'').trim())
+    .filter((item)=>/[€$£]|\b(?:eur|usd|sek|nok|dkk|kr)\b/i.test(item));
+  return matches.length===1 ? matches[0] : '';
+}
+
+async function contextualServicePriceAnswer(rows,message,history=[],lang='fi') {
+  if(!priceFollowupQuestion(message)) return null;
+  const previous=meaningfulConversationTurn(history);
+  if(!previous?.question) return null;
+
+  const serviceRows=(rows||[]).filter(usableWebsiteRow).filter((row)=>
+    knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='services'
+  );
+  if(!serviceRows.length) return null;
+
+  const previousContext=[previous.question,previous.answer].filter(Boolean).join(' ');
+  const rankedServices=serviceRows.map((row)=>{
+    let score=Number(scoreKnowledgeRow(row,previousContext)||0);
+    if(specificServiceConfirmation(previous.question,[row])) score+=140;
+    const label=serviceLabelFromEvidenceRow(row);
+    if(label) score+=20;
+    const source=String(row?.source_url||row?.sourceUrl||'');
+    return {row,label,source,score};
+  }).sort((a,b)=>b.score-a.score);
+
+  const service=rankedServices[0];
+  if(!service || service.score<8) return null;
+
+  const serviceText=normalizeSearchText(String(service.row?.title||'')+' '+String(service.row?.answer||''));
+  const serviceTokens=searchTokens(serviceText).filter((token)=>token.length>=4);
+  const labelNorm=normalizeSearchText(service.label);
+
+  const priceRows=(rows||[]).filter(usableWebsiteRow).filter((row)=>
+    knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='pricing'
+  );
+  const rankedPrices=priceRows.map((row,index)=>{
+    const raw=cleanKnowledgeText(row.answer);
+    const n=normalizeSearchText(raw);
+    let score=0;
+    const source=String(row?.source_url||row?.sourceUrl||'');
+    if(service.source && source===service.source) score+=18;
+    if(labelNorm){
+      if(n===labelNorm) score+=40;
+      if(n.startsWith(labelNorm+' ')) score+=115;
+      if(n.includes(labelNorm)) score+=45;
+      const remainder=n.startsWith(labelNorm+' ')?n.slice(labelNorm.length).trim():'';
+      if(remainder && /^(?:alk|alkaen|from|fran)?\s*[€$£]?\s*\d/.test(remainder)) score+=130;
+    }
+    let overlaps=0;
+    for(const token of serviceTokens){
+      if(token.length>=4 && n.includes(token)){ overlaps++; score+=4; }
+    }
+    if(overlaps>=2) score+=18;
+    const price=directPriceFragment(raw);
+    if(price) score+=24;
+    if(/\b(?:extra|add-on|addon|lisapalvel|lisäpalvel|supplement|tillagg|tillägg)\b/i.test(raw)) score-=30;
+    return {row,raw,price,score,index};
+  }).filter((item)=>item.price)
+    .sort((a,b)=>b.score-a.score || a.index-b.index);
+
+  const best=rankedPrices[0];
+  if(!best || best.score<45) return null;
+  const runnerUp=rankedPrices[1];
+  if(runnerUp && runnerUp.score===best.score && normalizeSearchText(runnerUp.raw)!==normalizeSearchText(best.raw)) return null;
+
+  let label=service.label || cleanKnowledgeText(service.row.title).replace(/^(?:Palvelut|Services|Tjänster)\s*:\s*/i,'').split(':')[0].trim();
+  if(!label || label.length>60) label='';
+  const answer=label ? label+': '+best.price : best.raw;
+  return {
+    answer,
+    handoff:false,
+    confidence:0.97,
+    intent:'Hinta',
     sourceIds:[best.row.id].filter(Boolean),
     selected:[best.row],
   };
@@ -4541,6 +4639,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const productResult=directProductAnswer(rows,cleanMessage,responseLang);
   if(productResult) return productResult;
+
+  const contextualServicePrice=await contextualServicePriceAnswer(rows,cleanMessage,history,responseLang);
+  if(contextualServicePrice) return contextualServicePrice;
 
   // Generic company questions such as "Mitä teette?" are ambiguous. For an
   // ecommerce site whose approved knowledge contains products but no actual
