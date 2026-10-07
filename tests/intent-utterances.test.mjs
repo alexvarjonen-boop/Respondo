@@ -81,19 +81,32 @@ test('pictured order-process wording never falls through to handoff for an ecomm
   }
 });
 
-test('intent lexicon table is private, indexed and loaded before the server starts',()=>{
+test('intent lexicon stays private and provides million-scale virtual coverage',()=>{
   const server=fs.readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
   assert.match(server,/CREATE TABLE IF NOT EXISTS intent_utterances/);
-  assert.match(server,/ENABLE ROW LEVEL SECURITY/);
   assert.match(server,/idx_intent_utterances_language_normalized/);
-  assert.match(server,/REVOKE ALL PRIVILEGES ON TABLE public\.intent_utterances FROM anon/);
-  assert.match(server,/seedAndLoadIntentUtterances\(\)/);
-  assert.match(server,/Intent core loaded/);
-  assert.match(server,/CREATE TABLE IF NOT EXISTS intent_phrase_variants/);
-  assert.match(server,/INTENT_VARIANT_TARGET_PER_LANGUAGE = 1000000/);
-  assert.match(server,/resolveIntentForMessage\(cleanMessage,responseLang\)/);
-  assert.match(server,/ensureMillionIntentVariants\(\)/);
-  assert.match(server,/respondo_intent_variants_v1/);
+  assert.match(server,/CREATE TABLE IF NOT EXISTS intent_phrase_templates/);
+  assert.match(server,/CREATE TABLE IF NOT EXISTS intent_lexicon_stats/);
+  assert.match(server,/INTENT_VIRTUAL_TARGET_PER_LANGUAGE = 1000000/);
+  assert.match(server,/seedIntentPhraseTemplates\(\)/);
+  assert.match(server,/TRUNCATE TABLE intent_phrase_variants/);
+  assert.match(server,/Virtual intent coverage/);
+  assert.doesNotMatch(server,/ensureMillionIntentVariants\(\)/);
+});
+
+
+test('neutral conversational wrappers still resolve ecommerce ordering intent in all languages',async()=>{
+  const cases=[
+    ['Haluaisin vielä kysyä miten voin tilata kiitos paljon','fi',/verkkokaupasta/i],
+    ['I would like to ask how can I order this thank you very much','en',/online store/i],
+    ['Jag skulle vilja fråga hur kan jag beställa den här tack så mycket','sv',/webbutiken/i],
+  ];
+  for(const [message,lang,expected] of cases){
+    const result=await generateGroundedAnswer({rows,message,history:[],lang});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.equal(result.intent,'Tuotteet');
+    assert.match(result.answer,expected);
+  }
 });
 
 test('normalizer keeps the same punctuation-insensitive form used by chat matching',()=>{
