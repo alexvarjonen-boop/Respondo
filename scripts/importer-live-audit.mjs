@@ -70,6 +70,14 @@ async function auditServiceSite(site){
   const rows=rowsFromCandidates(candidates);
   const text=candidateText(candidates);
 
+  if(site.name==='Dick Johnson') {
+    const colorProducts=(bundle.products||[])
+      .filter((product)=>Array.isArray(product?.colors)&&product.colors.length)
+      .slice(0,40)
+      .map((product)=>({name:product.name,colors:product.colors,options:product.options,url:product.url}));
+    console.log('COLOR_PRODUCTS '+JSON.stringify(colorProducts));
+  }
+
   assert.ok(bundle.pages.length>=1,site.name+' scanned no pages');
   assert.ok(candidates.length>=site.minFacts,site.name+' too few facts: '+candidates.length);
   assertNoJunk(site,candidates);
