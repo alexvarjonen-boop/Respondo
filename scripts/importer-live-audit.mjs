@@ -127,9 +127,19 @@ function automaticScenarioVariants(scenario){
     if(lang==='en') variants.push('Which email address should I use?','What email can I contact you at?');
     if(lang==='sv') variants.push('Vilken e-postadress ska jag använda?','Vilken e-post kan jag kontakta er på?');
   } else if(label.includes('hours')){
-    if(lang==='fi') variants.push('Mitkä ovat aukioloajat silloin?','Milloin liike on silloin auki?');
-    if(lang==='en') variants.push('What hours are you open then?','When is the shop open then?');
-    if(lang==='sv') variants.push('Vilka tider har ni öppet då?','När är butiken öppen då?');
+    const source=norm(scenario?.message);
+    const monday=/maanantai|maanantaina|monday|mandag|måndag/.test(source);
+    const saturday=/lauantai|lauantaina|saturday|lordag|lördag/.test(source);
+    if(lang==='fi' && monday) variants.push('Mitkä ovat maanantain aukioloajat?','Monelta olette auki maanantaina?');
+    if(lang==='fi' && saturday) variants.push('Mitkä ovat lauantain aukioloajat?','Monelta olette auki lauantaina?');
+    if(lang==='en' && monday) variants.push('What are your Monday hours?','When are you open on Mondays?');
+    if(lang==='en' && saturday) variants.push('What are your Saturday hours?','When are you open on Saturdays?');
+    if(lang==='sv' && monday) variants.push('Vilka är era öppettider på måndagar?','När har ni öppet på måndag?');
+    if(lang==='sv' && saturday) variants.push('Vilka är era öppettider på lördagar?','När har ni öppet på lördag?');
+  } else if(label.includes('contact')){
+    if(lang==='fi') variants.push('Miten voin ottaa teihin yhteyttä?','Mitkä ovat yhteystietonne?');
+    if(lang==='en') variants.push('How do I get in touch with you?','What are your contact details?');
+    if(lang==='sv') variants.push('Hur kan jag komma i kontakt med er?','Vilka är era kontaktuppgifter?');
   } else if(label.includes('shipping') && !label.includes('delivery')){
     if(lang==='fi') variants.push('Paljonko postikulut ovat?','Mitä toimituksesta veloitetaan?');
     if(lang==='en') variants.push('What do you charge for delivery?','How much are the postage fees?');
@@ -146,6 +156,14 @@ function automaticScenarioVariants(scenario){
     if(lang==='fi') variants.push('Mitä '+product+' maksaa?','Paljonko hintaa on tuotteella '+product+'?');
     if(lang==='en') variants.push('What does '+product+' cost?','What is the price of '+product+'?');
     if(lang==='sv') variants.push('Vad kostar '+product+'?','Vilket pris har '+product+'?');
+  } else if(label.includes('price-followup')){
+    if(lang==='fi') variants.push('Mitä se maksaa?','Entä hinta?');
+    if(lang==='en') variants.push('What does it cost?','And the price?');
+    if(lang==='sv') variants.push('Vad kostar det?','Och priset?');
+  } else if(label.includes('service-followup') || label.includes('haircut-')){
+    if(lang==='fi') variants.push('Saako teiltä tavallisen hiustenleikkauksen?','Onnistuuko hiustenleikkaus?');
+    if(lang==='en') variants.push('Can I get a regular haircut there?','Do you provide haircuts?');
+    if(lang==='sv') variants.push('Kan jag få en vanlig hårklippning hos er?','Erbjuder ni hårklippning?');
   }
 
   return [...new Set(variants.filter((value)=>norm(value)!==norm(scenario?.message)))];
