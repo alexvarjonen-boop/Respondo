@@ -2717,7 +2717,7 @@ function verifiedBusinessLocationValue(rows) {
 async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
   const q=normalizeSearchText(message);
   const priceFollowup=
-    /^(?:paljonko\s+(?:se|tama|tämä|tuo)\s+maksaa|mita\s+(?:se|tama|tuo)\s+maksaa|mika\s+(?:sen|taman|tuon)\s+hinta|enta\s+hinta|and\s+how\s+much\s+(?:is|does)\s+(?:it|that)|how\s+much\s+(?:is|does)\s+(?:it|that)(?:\s+cost)?|what\s+does\s+(?:it|that)\s+cost|och\s+vad\s+kostar\s+(?:den|det)|vad\s+kostar\s+(?:den|det)|hur\s+mycket\s+kostar\s+(?:den|det))$/.test(q);
+    /^(?:paljonko\s+(?:se|tama|tämä|tuo)\s+maksaa|mita\s+(?:se|tama|tuo)\s+maksaa|mika\s+(?:sen|taman|tuon)\s+hinta|enta\s+hinta|and\s+how\s+much\s+(?:is|does)\s+(?:it|that)|how\s+much\s+(?:is|does)\s+(?:it|that)(?:\s+cost)?|what\s+does\s+(?:it|that)\s+cost|and\s+(?:the\s+)?price|what\s+about\s+(?:the\s+)?price|och\s+vad\s+kostar\s+(?:den|det)|vad\s+kostar\s+(?:den|det)|hur\s+mycket\s+kostar\s+(?:den|det)|och\s+priset|vad\s+ar\s+priset)$/.test(q);
   if(!priceFollowup) return null;
 
   const previousTurn=meaningfulConversationTurn(history);
@@ -2904,6 +2904,8 @@ function multilingualDirectServiceRequest(message,lang='fi') {
   if(lang==='sv') {
     let m=q.match(/^(?:har|erbjuder)\s+ni\s+(.+)$/);
     if(m) return {subject:m[1],mode:'offer'};
+    m=q.match(/^kan\s+jag\s+fa\s+(.+?)(?:\s+hos\s+er)?$/);
+    if(m) return {subject:m[1],mode:'get'};
     m=q.match(/^(?:kan\s+ni\s+)?(klipper|tvattar|rengor|reparerar|installerar|malar|underhaller|flyttar|transporterar)\s+(?:ni\s+)?(.+)$/);
     if(m) return {subject:m[2],verb:m[1],mode:'verb'};
     m=q.match(/^kan\s+ni\s+(.+)$/);
@@ -2913,6 +2915,8 @@ function multilingualDirectServiceRequest(message,lang='fi') {
   if(lang==='en') {
     let m=q.match(/^do\s+you\s+(?:offer|provide|have)\s+(.+)$/);
     if(m) return {subject:m[1],mode:'offer'};
+    m=q.match(/^(?:can|could)\s+i\s+(?:get|book|have)\s+(.+?)(?:\s+(?:there|with\s+you|from\s+you))?$/);
+    if(m) return {subject:m[1],mode:'get'};
     m=q.match(/^(?:do|can|could)\s+you\s+(cut|wash|clean|repair|install|paint|maintain|move|transport)\s+(.+)$/);
     if(m) return {subject:m[2],verb:m[1],mode:'verb'};
     m=q.match(/^(?:can|could)\s+you\s+(.+)$/);
@@ -2959,7 +2963,7 @@ function directMultilingualServiceConfirmation(rows,message,lang='fi') {
       answer='Kyllä, tarjoamme '+subject+'.';
     }
   } else if(language==='sv'){
-    if(/^klipper\s+ni\s+/i.test(original)){
+    if(requested.has('hair') && requested.has('cut')){
       answer='Ja, vi erbjuder hårklippning.';
     } else {
       const subject=original
