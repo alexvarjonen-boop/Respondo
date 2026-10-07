@@ -1591,6 +1591,8 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   return null;
 }
 
+const exchangeWord=/\b(?:vaihto(?!eht)\w*|vaihd\w*|vaihta\w*)\b/;
+
 function knowledgeTopic(value) {
   const t=normalizeSearchText(value);
   if (/tarjouspyynt|quote|estimate|offert/.test(t)) return 'quote';
@@ -1612,7 +1614,7 @@ function knowledgeTopic(value) {
   if(/tuote|product|valikoima|selection|sortiment|myy|sell|sku|tuotenumero/.test(t)) return 'products';
   if(/auki|opening|hours|oppet|öppet|oppettid/.test(t)) return 'hours';
   if(/toimitus|toimituk|toimiteta|toimitamme|toimitatte|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans|seurant|tracking|track order|lahetys|sparning/.test(t)) return 'delivery';
-  if(/palaut|return|refund|vaihto|exchange|retur|aterbetal/.test(t)) return 'returns';
+  if(/palaut|return|refund|exchange|retur|aterbetal/.test(t) || exchangeWord.test(t)) return 'returns';
   if(/materiaali|material|made from|made of/.test(t)) return 'materials';
   if(/laatu|quality|valmistus|manufactur|made in|handmade|cnc|precision|sertifio|certif/.test(t)) return 'quality';
   if(/hoito-oh|care instruction|product care|maintenance instruction|washing instruction|pesuoh/.test(t)) return 'care';
@@ -1665,7 +1667,7 @@ function queryTopic(query) {
   if(/hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar/.test(q)) return 'pricing';
   if(/auki|aukiolo|opening|hours|open|oppet|öppet|oppettid/.test(q)) return 'hours';
   if(/toimitus|toimituk|toimiteta|toimitamme|toimitatte|toimitusaika|tilaus.*(?:saap|perill)|shipping|delivery|shipment|order.*arriv|nouto|pickup|leverans|bestallning.*(?:kommer|komma).*fram|seurant|tracking|track order|where is my order|tilauksen tila|lahetys|sparning/.test(q)) return 'delivery';
-  if(/palaut|return|refund|vaihto|exchange|retur|aterbetal/.test(q)) return 'returns';
+  if(/palaut|return|refund|exchange|retur|aterbetal/.test(q) || exchangeWord.test(q)) return 'returns';
   if(/materiaali|materiaalista|mista tehty|mistä tehty|made of|made from|material|materials/.test(q)) return 'materials';
   if(/laatu|laadukas|quality|valmistettu|valmistus|made in|where.*made|manufactur|handmade|käsinteht|kasinteht|cnc|precision/.test(q)) return 'quality';
   if(/hoito-oh|miten.*(?:puhdist|pese|huolla)|care instruction|how.*(?:clean|wash|care)|maintenance instruction|pesuoh/.test(q)) return 'care';
@@ -3418,7 +3420,7 @@ function directDeliveryTimeAnswer(rows,message,lang='fi') {
 
 function directReturnPolicyAnswer(rows,message,lang='fi') {
   const q=normalizeSearchText(message);
-  if(!/palaut|return|refund|retur|aterbetal|återbetal|exchange|vaihto/.test(q)) return null;
+  if(!/palaut|return|refund|retur|aterbetal|återbetal|exchange/.test(q) && !exchangeWord.test(q)) return null;
 
   const candidates=(rows||[])
     .filter(usableWebsiteRow)
@@ -3495,7 +3497,7 @@ function inferIntent(message) {
   const q = normalizeSearchText(message);
   if (/tilausnumero|tilaukseni|tilauksen tila|order status|where is my order|seuranta|tracking|orderstatus|var är min beställning|var ar min bestallning/.test(q)) return 'Tilauksen tila';
   if (/maksutapa|maksaminen|klarn|paypal|mobilepay|apple pay|google pay|payment method|betalningsmetod/.test(q)) return 'Maksaminen';
-  if (/palaut|return|refund|vaihto|exchange|retur/.test(q)) return 'Palautukset';
+  if (/palaut|return|refund|exchange|retur/.test(q) || exchangeWord.test(q)) return 'Palautukset';
   if (/takuu|reklamaatio|warranty|guarantee|garanti/.test(q)) return 'Takuu';
   if (/toimitus|toimituk|toimitusaika|shipping|delivery|shipment|nouto|pickup|leverans/.test(q)) return 'Toimitus';
   if (/ajanvaraus|varaa aika|ajan vara|booking|appointment|boka|bokning|tidsbokning/.test(q)) return 'Ajanvaraus';
