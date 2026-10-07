@@ -2419,7 +2419,7 @@ function serviceAreaAnswer(value, lang='fi') {
 
 function explicitBusinessLocationQuestion(message) {
   const q=normalizeSearchText(message);
-  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missa\s+te\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?(?:sijainti|osoite)|mika\s+(?:teidan\s+)?osoite\s+on|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+(?:location|address)|where\s+exactly\s+are\s+you\s+located|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget)|vad\s+ar\s+(?:er|eran)\s+adress|vilken\s+adress\s+har\s+ni)$/.test(q);
+  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missa\s+te\s+sijaitsette|missa\s+te\s+olette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?(?:sijainti|osoite)|mika\s+(?:teidan\s+)?osoite\s+on|mika\s+osoitteenne\s+on|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+(?:location|address)|what\s+address\s+do\s+you\s+have|where\s+exactly\s+are\s+you\s+located|where\s+can\s+i\s+find\s+you|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+ni|var\s+hittar\s+jag\s+er|var\s+ligger\s+(?:foretaget|företaget)|vad\s+ar\s+(?:er|eran)\s+adress|vad\s+har\s+ni\s+for\s+adress|vad\s+ar\s+adressen|vilken\s+adress\s+har\s+ni)$/.test(q);
 }
 
 function extractBusinessLocationText(value) {
@@ -2493,9 +2493,15 @@ function verifiedBusinessLocationValue(rows) {
   const allValues=sourceRows.map((row)=>({row,value:cleanKnowledgeText(row.answer)})).filter((x)=>x.value);
   const globalStreet=allValues.find((x)=>/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(x.value) && !/\b\d{5}\b/.test(x.value));
   const globalPostal=allValues.find((x)=>/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(x.value));
-  if(globalStreet && globalPostal && normalizeSearchText(globalStreet.value)!==normalizeSearchText(globalPostal.value)){
-    scoreValue(globalStreet.value+', '+globalPostal.value,globalStreet.row);
-    if(scored.length) scored[scored.length-1].score+=30;
+  if(globalStreet && globalPostal) {
+    const streetNorm=normalizeSearchText(globalStreet.value);
+    const postalNorm=normalizeSearchText(globalPostal.value);
+    // Do not prepend a street-only fragment to an already complete address,
+    // e.g. "Hallituskatu 11" + "Hallituskatu 11, 33200 Tampere".
+    if(streetNorm!==postalNorm && !postalNorm.includes(streetNorm) && !streetNorm.includes(postalNorm)){
+      scoreValue(globalStreet.value+', '+globalPostal.value,globalStreet.row);
+      if(scored.length) scored[scored.length-1].score+=30;
+    }
   }
 
   return scored.sort((a,b)=>b.score-a.score || a.value.length-b.value.length)[0] || null;
