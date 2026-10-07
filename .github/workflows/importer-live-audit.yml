@@ -5,6 +5,11 @@ on:
     branches: [production-respondo-fi]
     paths:
       - .github/workflows/importer-live-audit.yml
+      - server.mjs
+      - website-knowledge.mjs
+      - scripts/importer-live-audit.mjs
+      - package.json
+      - package-lock.json
   workflow_dispatch:
 
 permissions:
