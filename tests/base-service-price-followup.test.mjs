@@ -50,3 +50,22 @@ for(const [lang,question,followup] of [
     assert.doesNotMatch(result.answer,/46\s*€/);
   });
 }
+
+
+for(const [lang,question,followup] of [
+  ['en','Do you cut hair?','And the price?'],
+  ['sv','Klipper ni hår?','Och priset?'],
+]){
+  test('terse price follow-up keeps the prior haircut context in '+lang,async()=>{
+    const result=await generateGroundedAnswer({
+      companyName:'Example Barber',
+      rows,
+      message:followup,
+      history:[{question,answer:'Yes, haircuts are available.'}],
+      lang,
+    });
+    assert.equal(result.handoff,false,followup+' '+JSON.stringify(result));
+    assert.match(result.answer,/36\s*€/,result.answer);
+    assert.doesNotMatch(result.answer,/46\s*€/,result.answer);
+  });
+}
