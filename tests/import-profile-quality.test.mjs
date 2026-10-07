@@ -155,3 +155,31 @@ test('catalog product names cannot leak into ecommerce service summary',()=>{
   assert.doesNotMatch(profile.services,/PARRANSUORISTIN|Shave Kit/i,profile.services);
   assert.match(profile.services,/Hair Cut: Student|Beard Trim: Student/i,profile.services);
 });
+
+
+test('product-like labels and annual membership prose stay out of service profile',()=>{
+  const doc=extractBusinessDocument(`
+    <section><h2>Palvelut</h2>
+      <p>PARRANSUORISTIN - MATT BLACK</p>
+      <p>Shave Kit</p>
+      <p>Gold: Haircuts and beard services for a year</p>
+      <p>Hair Cut</p>
+      <p>Beard Trim</p>
+    </section>
+  `,'https://shop.example/');
+  const profile=essentialWebsiteProfile({finalUrl:'https://shop.example/',pageDocuments:[doc]});
+  assert.doesNotMatch(profile.services,/PARRANSUORISTIN|Shave Kit|for a year/i);
+  assert.match(profile.services,/Hair Cut|Beard Trim/i);
+});
+
+test('policy profile drops FAQ question when factual policy text exists',()=>{
+  const doc=extractBusinessDocument(`
+    <section><h2>Palautukset</h2>
+      <p>Mitä 100 päivän palautusoikeus tarkoittaa?</p>
+      <p>Tuotteen voi palauttaa 100 päivän kuluessa.</p>
+    </section>
+  `,'https://shop.example/pages/returns');
+  const profile=essentialWebsiteProfile({finalUrl:'https://shop.example/',pageDocuments:[doc]});
+  assert.match(profile.returns,/100 päivän kuluessa/i);
+  assert.doesNotMatch(profile.returns,/Mitä 100 päivän/i);
+});
