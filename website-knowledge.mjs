@@ -495,7 +495,11 @@ export function businessFactKind(text, context = '') {
   // into delivery (or vice versa). Only fall back to heading context when that
   // heading identifies exactly one policy topic.
   const giftCardCashRule=/(?:gift\s*card|lahjakort|presentkort)[\s\S]{0,180}(?:cannot|can't|can not|ei\s+voi|inte)[\s\S]{0,100}(?:exchange(?:d)?\s+for\s+cash|cash|kateis|käteis|kontant)/i.test(t);
-  if (commerceFact && !giftCardCashRule && returns.test(n) && !policyHeadingOnly(t,'returns')) return 'returns';
+  const returnPolicyEvidence=returns.test(n) && (
+    returns.test(c) ||
+    /\b(?:customer|asiakas|kund|product|item|purchase|order|tuote|ostos|tilaus|days?|paiva|paivaa|päivä|päivää|dag|dagar|refund|hyvitys|exchange|vaihto|unused|unopened|receipt|kuitti|returperiod|palautusoikeus|palautusaika)\w*/i.test(n)
+  );
+  if (commerceFact && !giftCardCashRule && returnPolicyEvidence && !policyHeadingOnly(t,'returns')) return 'returns';
   if (commerceFact && warranty.test(n) && !policyHeadingOnly(t,'warranty')) return 'warranty';
   if (commerceFact && payment.test(n) && !policyHeadingOnly(t,'payment')) return 'payment';
   if (commerceFact && delivery.test(n) && !policyHeadingOnly(t,'delivery')) return 'delivery';
@@ -622,6 +626,11 @@ function extractedContactPhone(value) {
   return match.replace(/\s+/g,' ').trim();
 }
 
+function manufacturerContactContext(value) {
+  const n=norm(clean(value));
+  return /(?:valmistajan\s+tiedot|valmistaja|manufacturer(?:\s+(?:information|details|contact))?|hersteller|tillverkare|producent|producer|maahantuoja|importer|jakelija|distributor)/i.test(n);
+}
+
 function physicalAddressFragments(value) {
   const raw=clean(decodeHtml(value));
   if(!raw || billingAddressNoise.test(raw)) return [];
@@ -720,14 +729,18 @@ export function essentialWebsiteCandidates(bundle) {
     }
     for (let blockIndex=0; blockIndex<blocks.length; blockIndex++) {
       const block=blocks[blockIndex];
-      const directEmail=extractedContactEmail(block.text);
+      const manufacturerContext=manufacturerContactContext(block.heading);
+      const directEmail=manufacturerContext ? '' : extractedContactEmail(block.text);
       if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
-      const directPhone=extractedContactPhone(block.text);
+      const directPhone=manufacturerContext ? '' : extractedContactPhone(block.text);
       if(directPhone) add('contact','Puhelinnumero',directPhone,doc.url);
-      for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
+      if(!manufacturerContext) {
+        for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
+      }
 
       const kind = businessFactKind(block.text,block.heading);
       if (!kind) continue;
+      if(manufacturerContext && (kind==='contact' || kind==='location')) continue;
       if(kind==='pricing' && recoveredPriceIndexes.has(blockIndex)) continue;
       // Product pages are imported as complete product records. Do not create a
       // second detached "price" fact that has lost the product name/link.
