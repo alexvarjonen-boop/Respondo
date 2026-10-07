@@ -865,6 +865,81 @@ function addressScore(value,title='') {
   return score;
 }
 
+function compactLocationAnswer(value) {
+  const text=clean(value);
+  if(!text) return '';
+  const based=text.match(/(?:home\s+base(?:\s+is)?|based|located|headquartered|head\s+office)\s+(?:in|at)\s+([^.!?]+)/i);
+  if(based){
+    return clean(based[1])
+      .replace(/,\s*(?:we|where\s+we|and\s+we|our\s+team)\b[\s\S]*$/i,'')
+      .replace(/[,;:]+$/,'')
+      .trim();
+  }
+  return text;
+}
+
+function profileServiceLabelFromPrice(value) {
+  const raw=clean(value).replace(/^[^A-ZÅÄÖa-zåäö0-9]+/,'');
+  if(!raw) return '';
+  const label=raw
+    .replace(/\s*[:–—-]?\s*(?:alkaen\s+|alk\.\s*)?(?:[€$£]\s*)?\d[\d\s.,]*(?:\s*(?:€|eur\b|usd\b|sek\b|kr\b|\$|£))?.*$/i,'')
+    .replace(/[\s:–—-]+$/,'')
+    .trim();
+  return pricedServiceLabel(label) ? label : '';
+}
+
+function conciseProfileServices(facts) {
+  const out=[]; const seen=new Set();
+  const add=(value)=>{
+    const text=clean(value)
+      .replace(/^[•·▪◾🔶◆◇►▶✓✔]+\s*/,'')
+      .replace(/[.!?;:]+$/,'')
+      .trim();
+    const key=norm(text);
+    if(!text || text.length>180 || seen.has(key)) return;
+    if(/\b(?:varaa|ota yhtey|contact us|book now|lue lisaa|lue lisää|read more|tutustu|tervetuloa|welcome|jasen|jäsen|membership|sopimuseh|terms)\b/i.test(text)) return;
+    if(!isConcreteServiceLabel(text) && !pricedServiceLabel(text)) return;
+    seen.add(key);
+    out.push(text);
+  };
+
+  for(const fact of facts.filter(x=>x.category===labels.services)){
+    const title=clean(fact.title);
+    const answer=clean(fact.answer);
+    const explicit=title.match(/^Palvelut\s*:\s*(.+)$/i);
+    if(explicit && norm(explicit[1])===norm(answer)) add(answer);
+  }
+
+  for(const fact of facts.filter(x=>x.category===labels.pricing)){
+    const label=profileServiceLabelFromPrice(fact.answer);
+    if(label) add(label);
+  }
+
+  if(!out.length){
+    for(const fact of facts.filter(x=>x.category===labels.services)){
+      const answer=clean(fact.answer);
+      if(answer.length>240) continue;
+      for(const sentence of answer.split(/(?<=[.!?])\s+/)){
+        if(sentence.length<=180) add(sentence);
+      }
+    }
+  }
+  return out.slice(0,32).join('\n').slice(0,2600);
+}
+
+function uniqueProfileFacts(items, limit=4000) {
+  const out=[]; const seen=new Set();
+  for(const item of items){
+    const value=clean(item?.answer);
+    const key=norm(value).replace(/\s+/g,' ');
+    if(!value || seen.has(key)) continue;
+    seen.add(key);
+    out.push(value);
+    if(out.join('\n').length>=limit) break;
+  }
+  return out.join('\n').slice(0,limit);
+}
+
 function bestAddressAnswer(facts) {
   const locationFacts=(facts||[]).filter((item)=>item?.title==='Osoite' || item?.category===labels.location);
   if(!locationFacts.length) return '';
@@ -879,7 +954,8 @@ function bestAddressAnswer(facts) {
   const candidates=[];
   for(const [source,items] of bySource){
     for(const item of items){
-      candidates.push({value:clean(item.answer),score:addressScore(item.answer,item.title),source,item});
+      const compact=compactLocationAnswer(item.answer);
+      candidates.push({value:compact,score:addressScore(compact,item.title),source,item});
     }
     const street=items
       .map((item)=>clean(item.answer))
@@ -916,11 +992,11 @@ export function essentialWebsiteProfile(bundle) {
     const bp=preferred && sourceKey(b.sourceUrl)===preferred ? 1 : 0;
     return bp-ap;
   });
-  const byKind = (kind) => sorted(facts.filter(x=>x.category===labels[kind])).map(x=>x.answer).join('\n').slice(0,4000);
+  const byKind = (kind) => uniqueProfileFacts(sorted(facts.filter(x=>x.category===labels[kind])),4000);
   const byTitle = (title) => sorted(facts.filter(x=>x.title===title))[0]?.answer || '';
   return {
     website:bundle.finalUrl || '',
-    services:byKind('services'),
+    services:conciseProfileServices(sorted(facts)),
     pricing:byKind('pricing'),
     hours:byKind('hours'),
     delivery:byKind('delivery'),
