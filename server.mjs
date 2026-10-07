@@ -3917,7 +3917,7 @@ function multilingualServiceConcept(value) {
   if(!q) return null;
 
   const concepts=[
-    {key:'haircut',rx:/\b(?:haircuts?|hair\s*cut|cut\s+hair|klipp(?:a|er|ning)?|har\s*klipp|hår\s*klipp|hiustenleikka|leikkaa\s+hiuksia)\b/,evidence:/hius|leikka|hair|cut|klipp/},
+    {key:'haircut',rx:/\b(?:haircuts?|hair\s*cut|cut\s+hair|klipp(?:a|er|ning)?|har\s*klipp(?:ning)?|hår\s*klipp(?:ning)?|hiustenleikka|leikkaa\s+hiuksia)\b/,evidence:/hius|leikka|hair|cut|klipp/},
     {key:'beard',rx:/\b(?:beard|beard\s*trim|skagg|skägg|parta|parran)\b/,evidence:/parta|beard|skagg|skägg/},
     {key:'cleaning',rx:/\b(?:cleaning|clean|wash|washing|tvatt|tvätt|rengor|rengör|siivou|pesu|puhdist)\b/,evidence:/siivou|pesu|puhdist|clean|wash|rengor|rengör/},
     {key:'repair',rx:/\b(?:repair|fix|repar|korja)\b/,evidence:/korja|repair|repar/},
