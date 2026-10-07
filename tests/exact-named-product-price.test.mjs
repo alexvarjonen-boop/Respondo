@@ -34,3 +34,17 @@ for(const [lang,message] of [
     assert.equal(result.selected?.length,1,JSON.stringify(result));
   });
 }
+
+
+test('inflected Finnish product price wording still returns the exact price',async()=>{
+  const result=await generateGroundedAnswer({
+    rows,
+    message:'Paljonko hintaa on tuotteella JAG Satin Black?',
+    history:[],
+    lang:'fi',
+  });
+  assert.equal(result.handoff,false,JSON.stringify(result));
+  assert.match(result.answer,/JAG Satin Black/i);
+  assert.match(result.answer,/199/);
+  assert.doesNotMatch(result.answer,/Bronze|Steel|koossa/i);
+});
