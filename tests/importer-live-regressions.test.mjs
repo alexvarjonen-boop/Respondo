@@ -448,3 +448,24 @@ test('catalog product names are excluded from company service summary',()=>{
   assert.doesNotMatch(profile.services,/Hair Kit|Shave Kit/i,profile.services);
   assert.match(profile.services,/Hair Cut/i,profile.services);
 });
+
+
+test('natural address paraphrases resolve the same verified location in fi en sv',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'addr',category:'Sijainti ja myymälät',title:'Osoite',answer:'Maariankatu 3, 20100 Turku',keywords:['osoite'],source_type:'website',source_url:'https://example.fi/contact'},
+  ];
+  for(const [lang,message] of [
+    ['fi','Voitko antaa tarkan osoitteen?'],
+    ['fi','Missä teidän toimipiste on?'],
+    ['en','Can you give me your exact address?'],
+    ['en','Where is your location?'],
+    ['sv','Kan jag få er exakta adress?'],
+    ['sv','Var ligger ert verksamhetsställe?'],
+  ]){
+    const result=await generateGroundedAnswer({companyName:'Example',rows,message,history:[],lang});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.match(result.answer,/Maariankatu 3/i,message+' '+result.answer);
+    assert.match(result.answer,/20100 Turku/i,message+' '+result.answer);
+  }
+});
