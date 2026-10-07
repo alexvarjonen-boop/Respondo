@@ -552,7 +552,8 @@ function templateDemoDocument(doc) {
     /brooklyn area/.test(text) ||
     /1\.800\.218\.20\.20/.test(text) ||
     /hello@example\.com/.test(text) ||
-    /admin@example\.com/.test(text);
+    /admin@example\.com/.test(text) ||
+    /themerex\.net|theme framework|wordpress and coding|wp plugins installation|ready to use website/.test(text);
 }
 
 function templateDemoProduct(product) {
@@ -635,7 +636,7 @@ export function essentialWebsiteCandidates(bundle) {
     if (templateDemoDocument(doc)) continue;
     const parsedDocUrl=new URL(doc.url);
     const rawDocPath=parsedDocUrl.pathname.toLowerCase();
-    if (/\/(?:home[-_]?\d+|demo(?:[-_][^/]*)?|sample-page|sample|template(?:[-_][^/]*)?|author|feed)(?:\/|$)/i.test(rawDocPath)) continue;
+    if (/\/(?:home[-_]?\d+|about-us[-_]?\d+|service-plus|services?[-_]?\d+|contacts?[-_]?\d+|shop[-_]?\d+|demo(?:[-_][^/]*)?|sample-page|sample|template(?:[-_][^/]*)?|author|feed)(?:\/|$)/i.test(rawDocPath)) continue;
     if (/\/(?:tag|product-tag|product-category|category)\//i.test(rawDocPath)) continue;
     const docPath=norm(parsedDocUrl.pathname);
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
@@ -644,6 +645,26 @@ export function essentialWebsiteCandidates(bundle) {
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
+
+    // Price cards often render the service name and price as sibling divs
+    // instead of a semantic table. Recover the pair before generic fact
+    // classification so "HIUSTEN LEIKKAUS" + "€25" becomes one grounded row.
+    const simpleServicePrice=/^\s*(?:[€$£]\s*)?\d{1,5}(?:[.,]\d{1,2})?\s*(?:€|eur|usd|sek|nok|dkk|kr|\$|£)?\s*$/i;
+    for(let index=0;index<blocks.length;index++){
+      const label=clean(decodeHtml(blocks[index]?.text||''));
+      if(!isConcreteServiceLabel(label)) continue;
+      add('services','Palvelut',label,doc.url);
+      for(let offset=1;offset<=3 && index+offset<blocks.length;offset++){
+        const next=clean(decodeHtml(blocks[index+offset]?.text||''));
+        if(!next) continue;
+        if(isConcreteServiceLabel(next)) break;
+        if(simpleServicePrice.test(next) && !/^\s*[€$£]?\s*0+(?:[.,]0+)?/i.test(next)){
+          add('pricing','Hinnat',label+': '+next,doc.url);
+          break;
+        }
+      }
+    }
+
     for (const block of blocks) {
       const directEmail=extractedContactEmail(block.text);
       if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
