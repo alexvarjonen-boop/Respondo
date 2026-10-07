@@ -188,3 +188,39 @@ test('English direct haircut answer is natural and not duplicated',async()=>{
   assert.equal(result.handoff,false);
   assert.equal(result.answer,'Yes, we offer haircuts.');
 });
+
+
+test('concatenated rendered contact text still yields the real email and physical address',()=>{
+  const doc={
+    url:'https://example.fi/',
+    blocks:[{text:'info@turkishbarber.fiHallituskatu 11, 33200 Tampere, Suomi',heading:'Yhteystiedot'}],
+    links:[],
+    products:[],
+    text:'info@turkishbarber.fiHallituskatu 11, 33200 Tampere, Suomi',
+  };
+  const bundle={finalUrl:'https://example.fi/',products:[],pageDocuments:[doc]};
+  const candidates=essentialWebsiteCandidates(bundle);
+  const profile=essentialWebsiteProfile(bundle);
+  const text=candidateTextForTest(candidates);
+  assert.equal(profile.email,'info@turkishbarber.fi');
+  assert.match(text,/Hallituskatu\s*11/i);
+  assert.match(text,/33200\s+Tampere/i);
+  assert.match(profile.address,/Hallituskatu\s*11/i);
+  assert.match(profile.address,/33200\s+Tampere/i);
+  assert.doesNotMatch(text,/fiHallituskatu/i);
+});
+
+test('template-dominated catalog never adds a storefront link to a service business',()=>{
+  const fake=(name)=>({name,url:'https://example.fi/product/'+name.toLowerCase().replace(/\s+/g,'-')+'/',price:55,currency:'USD',description:'Lorem ipsum dolor sit amet.'});
+  const root={
+    url:'https://example.fi/',
+    blocks:[{text:'Hiustenleikkaus 25 €',heading:'Palvelut ja hinnat'}],
+    links:[{url:'https://example.fi/shop/',label:'Shop',context:''}],
+    products:[],
+    text:'Hiustenleikkaus 25 €',
+  };
+  const bundle={finalUrl:'https://example.fi/',products:[fake('Demo One'),fake('Demo Two'),fake('Demo Three')],pageDocuments:[root]};
+  const candidates=essentialWebsiteCandidates(bundle);
+  const text=candidateTextForTest(candidates);
+  assert.doesNotMatch(text,/Tuotekatalogi|\/shop\//i);
+});
