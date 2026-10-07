@@ -3054,10 +3054,9 @@ async function directShippingCostAnswer(rows,message,lang='fi') {
   if(!candidates.length) return null;
   const best=candidates[0];
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
-  const sourceLanguage=detectConversationLanguage(best.answer,'fi');
-  let answer=sourceLanguage===target
-    ? (conciseKnowledgeAnswer(best.row,message) || best.answer)
-    : (localizedShippingCostFact(best.answer,target) || conciseKnowledgeAnswer(best.row,message) || best.answer);
+  let answer=localizedShippingCostFact(best.answer,target)
+    || conciseKnowledgeAnswer(best.row,message)
+    || best.answer;
   answer=cleanKnowledgeText(answer);
   return {
     answer,
@@ -3161,8 +3160,8 @@ function directDeliveryTimeAnswer(rows,message,lang='fi') {
   if(f.domestic){
     const d=localizeDuration(f.domestic,target);
     sentences.push(target==='en'?'Domestic orders arrive in '+d+'.'
-      :target==='sv'?'Inrikes beställningar anländer inom '+d+'.'
-      :'Kotimaiset tilaukset saapuvat '+d+' kuluessa.');
+      :target==='sv'?'Inrikes leverans tar vanligtvis '+d+'.'
+      :'Kotimaan toimitus kestää yleensä '+d+'.');
   }
   if(f.international){
     const d=localizeDuration(f.international,target);
