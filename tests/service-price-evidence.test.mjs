@@ -39,6 +39,6 @@ for(const [lang,question,follow] of [
       lang,
     });
     assert.equal(result.handoff,false,JSON.stringify(result));
-    assert.match(result.answer,/36\s*€/);
+    assert.match(result.answer,/(?:36\s*€|€\s*36)/);
   });
 }
