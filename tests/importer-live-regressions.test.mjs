@@ -188,3 +188,18 @@ test('English direct haircut answer is natural and not duplicated',async()=>{
   assert.equal(result.handoff,false);
   assert.equal(result.answer,'Yes, we offer haircuts.');
 });
+
+
+test('fused email plus street text and phone/service headings are split into clean facts',()=>{
+  const html='<section><h4>Sijainti</h4><p>info@turkishbarber.fiHallituskatu 11, 33200 Tampere, Suomi</p><h4>+358 50 5774490</h4><h4>HIUSTEN LEIKKAUS (Tavallinen)</h4></section>';
+  const doc=extractBusinessDocument(html,'https://example.fi/');
+  const bundle={finalUrl:'https://example.fi/',products:[],pageDocuments:[doc]};
+  const candidates=essentialWebsiteCandidates(bundle);
+  const profile=essentialWebsiteProfile(bundle);
+  const text=candidateTextForTest(candidates);
+  assert.equal(profile.email,'info@turkishbarber.fi');
+  assert.match(profile.address,/Hallituskatu\s*11,\s*33200\s+Tampere/i);
+  assert.match(profile.phone,/358\s*50\s*5774490/);
+  assert.match(text,/HIUSTEN LEIKKAUS\s*\(Tavallinen\)/i);
+  assert.doesNotMatch(text,/info@turkishbarber\.fiHallituskatu/i);
+});
