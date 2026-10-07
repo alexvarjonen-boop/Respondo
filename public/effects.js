@@ -1270,7 +1270,7 @@
       return;
     }
     if (location.pathname === '/') {
-      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); ctaPopup(); cinematicSectionAtmosphere();
+      marquee(); decorateSections(); revealTargets(); tilts(); magneticButtons(); parallax(); premiumProductEffects(); leftSectionRail(); assistant(); ctaPopup(); cinematicSectionAtmosphere();
     } else {
       revealTargets(); magneticButtons(); assistant(); deepScrollExperience();
     }
