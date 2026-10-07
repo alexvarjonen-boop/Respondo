@@ -634,13 +634,16 @@ function addressScore(value,title='') {
   const text=clean(value);
   const meta=norm(title);
   if(!text || text.length>220 || /^https?:\/\//i.test(text)) return -1000;
+  if(/e-invoic|e invoic|verkkolask|ovt\b|operaattor|operator\b|iban\b|bic\b|bank account|laskutusosoite/.test(norm(text))) return -1000;
+  const physicalStreet=/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö0-9 .'-]{0,55}(?:katu|tie|kuja|polku|kaari|vayla|väylä|ranta|tori|gatan|vagen|vägen|granden|gränden|street|st\.?|road|rd\.?|avenue|ave\.?|lane|ln\.?|drive|dr\.?|boulevard|blvd\.?)\s+\d+[A-Za-z-]*\b/i;
+  const numberFirstStreet=/\b\d{1,6}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}(?:street|st\.?|road|rd\.?|avenue|ave\.?|lane|ln\.?|drive|dr\.?|boulevard|blvd\.?)\b/i;
   let score=0;
-  if(/osoite|address|adress/.test(meta)) score+=35;
-  if(/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(text)) score+=45;
-  if(/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(text)) score+=35;
-  if(/\b(?:katu|tie|kuja|polku|kaari|väylä|vayla|road|street|st\.?|avenue|ave\.?|gatan|vägen|vagen)\b/i.test(text)) score+=20;
+  if(/osoite|address|adress/.test(meta)) score+=25;
+  if(physicalStreet.test(text)||numberFirstStreet.test(text)) score+=85;
+  if(/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(text)) score+=45;
   if(/\b\d{5}\b/.test(text)) score+=10;
   if(text.split(/\s+/).length<=8) score+=8;
+  if(!(physicalStreet.test(text)||numberFirstStreet.test(text)||/\b\d{5}\s+[A-ZÅÄÖa-zåäö]/.test(text))) score-=45;
   return score;
 }
 
@@ -655,6 +658,8 @@ function bestAddressAnswer(facts) {
     bySource.get(source).push(item);
   }
 
+  const physicalStreet=/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö0-9 .'-]{0,55}(?:katu|tie|kuja|polku|kaari|vayla|väylä|ranta|tori|gatan|vagen|vägen|granden|gränden|street|st\.?|road|rd\.?|avenue|ave\.?|lane|ln\.?|drive|dr\.?|boulevard|blvd\.?)\s+\d+[A-Za-z-]*\b/i;
+  const numberFirstStreet=/\b\d{1,6}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}(?:street|st\.?|road|rd\.?|avenue|ave\.?|lane|ln\.?|drive|dr\.?|boulevard|blvd\.?)\b/i;
   const candidates=[];
   for(const [source,items] of bySource){
     for(const item of items){
@@ -662,7 +667,7 @@ function bestAddressAnswer(facts) {
     }
     const street=items
       .map((item)=>clean(item.answer))
-      .find((value)=>/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(value) && !/\b\d{5}\b/.test(value));
+      .find((value)=>(physicalStreet.test(value)||numberFirstStreet.test(value)) && !/\b\d{5}\b/.test(value));
     const postal=items
       .map((item)=>clean(item.answer))
       .find((value)=>/\b\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\b/.test(value));
@@ -673,7 +678,7 @@ function bestAddressAnswer(facts) {
   }
 
   return candidates
-    .filter((x)=>x.value && x.score>-1000)
+    .filter((x)=>x.value && x.score>0)
     .sort((a,b)=>b.score-a.score || a.value.length-b.value.length)[0]?.value || '';
 }
 
