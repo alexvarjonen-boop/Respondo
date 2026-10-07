@@ -573,54 +573,65 @@ async function ensureMillionIntentVariants() {
     if (total >= INTENT_VARIANT_TARGET_PER_LANGUAGE) continue;
 
     const wrappers = INTENT_VARIANT_WRAPPERS[language];
-    const needed = INTENT_VARIANT_TARGET_PER_LANGUAGE - total;
-    await q(
-      `WITH base AS (
-         SELECT intent,normalized,row_number() OVER (ORDER BY normalized) AS rn
-           FROM intent_utterances
-          WHERE active=TRUE
-            AND source='generated'
-            AND language=$1
-       ),
-       candidate AS (
-         SELECT
-           b.intent,
-           trim(
-             CASE (g % 3)
-               WHEN 0 THEN
-                 ($3::text[])[1 + ((b.rn + g)::int % cardinality($3::text[]))] || ' ' ||
-                 b.normalized || ' ' ||
-                 ($4::text[])[1 + ((b.rn * 3 + g)::int % cardinality($4::text[]))]
-               WHEN 1 THEN
-                 ($3::text[])[1 + ((b.rn + g)::int % cardinality($3::text[]))] || ' ' ||
-                 b.normalized
-               ELSE
-                 b.normalized || ' ' ||
-                 ($4::text[])[1 + ((b.rn * 5 + g)::int % cardinality($4::text[]))]
-             END
-           ) AS normalized,
-           b.rn,
-           g
-         FROM base b
-         CROSS JOIN generate_series(1,48) AS g
-       )
-       INSERT INTO intent_phrase_variants(language,intent,normalized)
-       SELECT $1,intent,normalized
-         FROM candidate
-        WHERE normalized <> ''
-        ORDER BY rn,g
-        LIMIT $2
-       ON CONFLICT(language,normalized) DO NOTHING`,
-      [language, needed, wrappers.prefixes, wrappers.suffixes],
-    );
 
-    const after = await q(
-      `SELECT
-         (SELECT COUNT(*)::int FROM intent_utterances WHERE active=TRUE AND language=$1) +
-         (SELECT COUNT(*)::int FROM intent_phrase_variants WHERE language=$1) AS count`,
-      [language],
-    );
-    total = Number(after.rows[0]?.count || 0);
+    for (let attempt=0; attempt<4 && total<INTENT_VARIANT_TARGET_PER_LANGUAGE; attempt++) {
+      const needed = INTENT_VARIANT_TARGET_PER_LANGUAGE - total;
+      await q(
+        `WITH base AS (
+           SELECT intent,normalized,row_number() OVER (ORDER BY normalized) AS rn
+             FROM intent_utterances
+            WHERE active=TRUE
+              AND source='generated'
+              AND language=$1
+         ),
+         candidate AS (
+           SELECT
+             b.intent,
+             trim(
+               CASE (g % 3)
+                 WHEN 0 THEN
+                   ($3::text[])[1 + ((b.rn + g)::int % cardinality($3::text[]))] || ' ' ||
+                   b.normalized || ' ' ||
+                   ($4::text[])[1 + ((b.rn * 3 + g)::int % cardinality($4::text[]))]
+                 WHEN 1 THEN
+                   ($3::text[])[1 + ((b.rn + g)::int % cardinality($3::text[]))] || ' ' ||
+                   b.normalized
+                 ELSE
+                   b.normalized || ' ' ||
+                   ($4::text[])[1 + ((b.rn * 5 + g)::int % cardinality($4::text[]))]
+               END
+             ) AS normalized,
+             b.rn,
+             g
+           FROM base b
+           CROSS JOIN generate_series(1,64) AS g
+         )
+         INSERT INTO intent_phrase_variants(language,intent,normalized)
+         SELECT $1,c.intent,c.normalized
+           FROM candidate c
+          WHERE c.normalized <> ''
+            AND NOT EXISTS (
+              SELECT 1 FROM intent_utterances core
+               WHERE core.language=$1 AND core.active=TRUE AND core.normalized=c.normalized
+            )
+            AND NOT EXISTS (
+              SELECT 1 FROM intent_phrase_variants existing
+               WHERE existing.language=$1 AND existing.normalized=c.normalized
+            )
+          ORDER BY c.rn,c.g
+          LIMIT $2
+         ON CONFLICT(language,normalized) DO NOTHING`,
+        [language, needed, wrappers.prefixes, wrappers.suffixes],
+      );
+
+      const after = await q(
+        `SELECT
+           (SELECT COUNT(*)::int FROM intent_utterances WHERE active=TRUE AND language=$1) +
+           (SELECT COUNT(*)::int FROM intent_phrase_variants WHERE language=$1) AS count`,
+        [language],
+      );
+      total = Number(after.rows[0]?.count || 0);
+    }
     if (total < INTENT_VARIANT_TARGET_PER_LANGUAGE) {
       throw new Error(`Intent coverage for ${language} stopped at ${total}`);
     }
