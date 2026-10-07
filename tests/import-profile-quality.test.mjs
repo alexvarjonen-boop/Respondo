@@ -148,7 +148,7 @@ test('catalog product names cannot leak into ecommerce service summary',()=>{
     </section>
   `,'https://shop.example/');
   const products=[
-    {name:'PARRANSUORISTIN - MATT BLACK PRO',url:'https://shop.example/products/parransuoristin',price:29.9,currency:'EUR'},
+    {name:'PARRANSUORISTIN MATT BLACK PRO',url:'https://shop.example/products/parransuoristin',price:29.9,currency:'EUR'},
     {name:'Shave Kit',url:'https://shop.example/products/shave-kit',price:49.9,currency:'EUR'},
   ];
   const profile=essentialWebsiteProfile({finalUrl:'https://shop.example/',products,pageDocuments:[doc]});
