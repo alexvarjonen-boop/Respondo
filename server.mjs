@@ -3144,43 +3144,86 @@ function shippingMoneyValues(value) {
     const cleaned=raw.replace(/\s+/g,' ').trim();
     if(!out.some((item)=>normalizeSearchText(item)===normalizeSearchText(cleaned))) out.push(cleaned);
   }
-  return out.slice(0,6);
+  return out.slice(0,8);
 }
 
-function localizedShippingCostFact(value,lang='fi') {
-  const raw=cleanKnowledgeText(value);
-  const q=normalizeSearchText(raw);
-  const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+function shippingMoneyKey(value) {
+  const raw=String(value||'').replace(/\s+/g,'').replace(',','.').replace(/[^0-9.]/g,'');
+  const number=Number(raw);
+  return Number.isFinite(number)?number.toFixed(2):normalizeSearchText(value);
+}
 
-  const free=/free shipping|free delivery|ilmainen toimitus|maksuton toimitus|fri frakt|fri leverans/.test(q);
-  const thresholdMatch=raw.match(/(?:over|yli|över|minimum|minimi|orders? over|tilaukset yli|beställningar över)?\s*([€$£]?\s*\d+(?:[.,]\d+)?\s*(?:€|EUR|USD|SEK|NOK|DKK|kr|\$|£)?)/i);
-  const threshold=thresholdMatch?.[1]?.trim();
-  if(free && threshold && /\d/.test(threshold)){
-    return target==='en'
+function freeShippingThreshold(value) {
+  const raw=cleanKnowledgeText(value);
+  const patterns=[
+    /(?:free\s+(?:shipping|delivery)|ilmainen\s+toimitus|maksuton\s+toimitus|fri\s+(?:frakt|leverans))[\s\S]{0,90}?([€$£]?\s*\d+(?:[.,]\d+)?\s*(?:€|EUR|USD|SEK|NOK|DKK|kr|\$|£)?)/i,
+    /([€$£]?\s*\d+(?:[.,]\d+)?\s*(?:€|EUR|USD|SEK|NOK|DKK|kr|\$|£)?)[\s\S]{0,55}?(?:free\s+(?:shipping|delivery)|ilmainen\s+toimitus|maksuton\s+toimitus|fri\s+(?:frakt|leverans))/i,
+  ];
+  for(const re of patterns){
+    const match=raw.match(re);
+    if(match?.[1] && /\d/.test(match[1])) return match[1].replace(/\s+/g,' ').trim();
+  }
+  return '';
+}
+
+function shippingCostSummary(rows,lang='fi') {
+  const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  const paid=[];
+  let threshold='';
+  const selected=[];
+
+  for(const row of rows||[]){
+    const raw=cleanKnowledgeText(row.answer);
+    if(!raw) continue;
+    const normalized=normalizeSearchText(raw);
+    const isFree=/free shipping|free delivery|ilmainen toimitus|maksuton toimitus|fri frakt|fri leverans/.test(normalized);
+    const rowThreshold=isFree?freeShippingThreshold(raw):'';
+    if(rowThreshold && !threshold) threshold=rowThreshold;
+    const thresholdKey=rowThreshold?shippingMoneyKey(rowThreshold):'';
+
+    for(const amount of shippingMoneyValues(raw)){
+      if(thresholdKey && shippingMoneyKey(amount)===thresholdKey) continue;
+      const key=shippingMoneyKey(amount);
+      if(!paid.some((item)=>item.key===key)) paid.push({value:amount,key});
+    }
+    if(isFree || shippingMoneyValues(raw).length) selected.push(row);
+  }
+
+  const prices=paid.slice(0,6).map((item)=>item.value);
+  const joinPrices=(values)=>{
+    if(values.length<=1) return values[0]||'';
+    if(values.length===2) return values[0]+' '+(target==='en'?'or':target==='sv'?'eller':'tai')+' '+values[1];
+    return values.slice(0,-1).join(', ')+' '+(target==='en'?'or':target==='sv'?'eller':'tai')+' '+values.at(-1);
+  };
+
+  let answer='';
+  if(prices.length && threshold){
+    const listed=joinPrices(prices);
+    answer=target==='en'
+      ? 'Listed shipping options cost '+listed+'. Free shipping is available for orders over '+threshold+'.'
+      : target==='sv'
+        ? 'De angivna fraktalternativen kostar '+listed+'. Frakten är gratis för beställningar över '+threshold+'.'
+        : 'Ilmoitetut toimitusvaihtoehdot maksavat '+listed+'. Toimitus on ilmainen yli '+threshold+' tilauksille.';
+  } else if(prices.length){
+    const listed=joinPrices(prices);
+    answer=target==='en'
+      ? 'The listed shipping prices are '+listed+'.'
+      : target==='sv'
+        ? 'De angivna fraktpriserna är '+listed+'.'
+        : 'Ilmoitetut toimitushinnat ovat '+listed+'.';
+  } else if(threshold){
+    answer=target==='en'
       ? 'Free shipping is available for orders over '+threshold+'.'
       : target==='sv'
         ? 'Frakten är gratis för beställningar över '+threshold+'.'
         : 'Toimitus on ilmainen yli '+threshold+' tilauksille.';
   }
-  if(free){
-    return target==='en'?'Shipping is free.'
-      :target==='sv'?'Frakten är gratis.'
-      :'Toimitus on ilmainen.';
-  }
+  return answer?{answer,selected}:null;
+}
 
-  const amounts=shippingMoneyValues(raw);
-  if(amounts.length===1){
-    return target==='en'?'The listed shipping price is '+amounts[0]+'.'
-      :target==='sv'?'Det angivna fraktpriset är '+amounts[0]+'.'
-      :'Ilmoitettu toimitushinta on '+amounts[0]+'.';
-  }
-  if(amounts.length>1){
-    const joined=amounts.join(', ');
-    return target==='en'?'The listed shipping prices are '+joined+'.'
-      :target==='sv'?'De angivna fraktpriserna är '+joined+'.'
-      :'Ilmoitetut toimitushinnat ovat '+joined+'.';
-  }
-  return '';
+function localizedShippingCostFact(value,lang='fi') {
+  const summary=shippingCostSummary([{answer:value}],lang);
+  return summary?.answer || '';
 }
 
 async function directShippingCostAnswer(rows,message,lang='fi') {
@@ -3192,70 +3235,37 @@ async function directShippingCostAnswer(rows,message,lang='fi') {
   const candidates=(rows||[])
     .filter(usableWebsiteRow)
     .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='delivery')
-    .map((row)=>{
+    .map((row,index)=>{
       const answer=cleanKnowledgeText(row.answer);
       const evidence=normalizeSearchText(String(row.title||'')+' '+answer);
       let score=0;
       if(/free shipping|free delivery|ilmainen toimitus|maksuton toimitus|fri frakt|fri leverans/.test(evidence)) score+=60;
       if(/[€$£]|\b(?:eur|usd|sek|nok|dkk)\b/i.test(answer)) score+=35;
-      if(/shipping cost|delivery fee|postage|toimituskulu|toimitusmaksu|fraktkostnad|leveransavgift/.test(evidence)) score+=30;
+      if(/shipping cost|delivery fee|postage|toimituskulu|toimitusmaksu|fraktkostnad|leveransavgift|pakettiautomaatti|kotiinkuljetus|parcel locker|home delivery|pickup point|noutopiste/.test(evidence)) score+=30;
       if(/\b(?:over|yli|alkaen|from|minimum|minimi|orders? over|tilaukset yli)\b/.test(evidence)) score+=12;
       if(/tracking|seurant/.test(evidence)) score-=25;
       if(/business days|paivaa|päivää|days|viikko|weeks|delivery time|toimitusaika/.test(evidence)) score-=8;
-      return {row,answer,score};
+      return {row,answer,score,index};
     })
     .filter((item)=>item.answer && item.score>0)
-    .sort((a,b)=>b.score-a.score);
+    .sort((a,b)=>b.score-a.score||a.index-b.index);
 
   if(!candidates.length) return null;
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
-  const freePattern=/free shipping|free delivery|ilmainen toimitus|maksuton toimitus|fri frakt|fri leverans/;
-  const paid=[];
-  const paidKeys=new Set();
-  const selected=[];
-  let freeFact='';
-
-  for(const item of candidates){
-    const normalized=normalizeSearchText(item.answer);
-    if(freePattern.test(normalized)){
-      if(!freeFact) freeFact=localizedShippingCostFact(item.answer,target);
-      continue;
-    }
-    for(const amount of shippingMoneyValues(item.answer)){
-      const key=normalizeSearchText(amount).replace(/\s+/g,'');
-      if(!key || paidKeys.has(key)) continue;
-      paidKeys.add(key);
-      paid.push(amount);
-      if(!selected.includes(item.row)) selected.push(item.row);
-      if(paid.length>=8) break;
-    }
-    if(paid.length>=8) break;
-  }
-
-  let answer='';
-  if(paid.length){
-    const joined=paid.join(', ');
-    answer=target==='en'?'The listed shipping prices are '+joined+'.'
-      :target==='sv'?'De angivna fraktpriserna är '+joined+'.'
-      :'Ilmoitetut toimitushinnat ovat '+joined+'.';
-    if(freeFact) answer+=' '+freeFact;
-  } else {
-    const best=candidates[0];
-    answer=localizedShippingCostFact(best.answer,target)
-      || conciseKnowledgeAnswer(best.row,message)
-      || best.answer;
-    selected.push(best.row);
-  }
-
+  const summary=shippingCostSummary(candidates.map((item)=>item.row),target);
+  const best=candidates[0];
+  let answer=summary?.answer
+    || conciseKnowledgeAnswer(best.row,message)
+    || best.answer;
   answer=cleanKnowledgeText(answer);
-  const sourceRows=selected.length?selected:[candidates[0].row];
+  const selected=(summary?.selected?.length?summary.selected:[best.row]).slice(0,8);
   return {
     answer,
     handoff:false,
     confidence:0.98,
     intent:'Toimitus',
-    sourceIds:sourceRows.map((row)=>row.id).filter(Boolean),
-    selected:sourceRows,
+    sourceIds:selected.map((row)=>row.id).filter(Boolean),
+    selected,
   };
 }
 
