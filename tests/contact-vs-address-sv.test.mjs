@@ -35,7 +35,7 @@ test('Swedish e-postadress is contact intent, never street-address intent',async
   assert.equal(result.handoff,false);
   assert.equal(result.intent,'Yhteystiedot');
   assert.match(result.answer,/turku@mroom\.fi/i);
-  assert.doesNotMatch(result.answer,/Maariankatu|20100|Åbo|Turku/i);
+  assert.doesNotMatch(result.answer,/Maariankatu|20100|Åbo/i);
 });
 
 test('Swedish physical address question still routes to location',async()=>{
