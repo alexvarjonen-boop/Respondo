@@ -2554,10 +2554,14 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
   const q=normalizeSearchText(message);
   const priceFollowup=
     /^(?:paljonko\s+(?:se|tama|tämä|tuo)\s+maksaa|mita\s+(?:se|tama|tuo)\s+maksaa|mika\s+(?:sen|taman|tuon)\s+hinta|enta\s+hinta|and\s+how\s+much\s+(?:is|does)\s+(?:it|that)|how\s+much\s+(?:is|does)\s+(?:it|that)(?:\s+cost)?|what\s+does\s+(?:it|that)\s+cost|och\s+vad\s+kostar\s+(?:den|det)|vad\s+kostar\s+(?:den|det)|hur\s+mycket\s+kostar\s+(?:den|det))$/.test(q);
-  if(!priceFollowup) return null;
+  const explicitServicePrice=
+    /^(?:paljonko\s+.+\s+maksaa|mita\s+.+\s+maksaa|mika\s+on\s+.+\s+hinta|how\s+much\s+(?:is|are)\s+.+|what\s+does\s+.+\s+cost|vad\s+kostar\s+.+|hur\s+mycket\s+kostar\s+.+)$/.test(q);
+  if(!priceFollowup && !explicitServicePrice) return null;
 
   const previousTurn=meaningfulConversationTurn(history);
-  const previous=normalizeSearchText(previousTurn?.question||'');
+  const previous=priceFollowup
+    ? normalizeSearchText(previousTurn?.question||'')
+    : q;
   if(!previous) return null;
   const looksLikeService=
     queryTopic(previous)==='services' ||
@@ -2627,10 +2631,20 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
 
   let answer=best.answer;
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
-  const sourceLang=detectConversationLanguage(answer,'fi');
-  if(sourceLang!==target){
-    const translated=await forceAnswerLanguage(answer,target);
-    if(translated) answer=cleanKnowledgeText(translated);
+  const priceToken=best.answer.match(/(?:[€$£]\s*\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)?\s*(?:€|eur|usd|sek|nok|dkk|kr|\$|£))/i)?.[0] || '';
+  const haircutIntent=[...aliases].some((token)=>['leikka','hius','hair','cut','klipp','mcut'].includes(token));
+  if(explicitServicePrice && haircutIntent && priceToken){
+    answer=target==='en'
+      ? 'A haircut costs '+priceToken+'.'
+      : target==='sv'
+        ? 'En hårklippning kostar '+priceToken+'.'
+        : 'Hiustenleikkaus maksaa '+priceToken+'.';
+  } else {
+    const sourceLang=detectConversationLanguage(answer,'fi');
+    if(sourceLang!==target){
+      const translated=await forceAnswerLanguage(answer,target);
+      if(translated) answer=cleanKnowledgeText(translated);
+    }
   }
   return {
     answer,
