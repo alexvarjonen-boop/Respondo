@@ -2565,6 +2565,15 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
       if(/^[^:]{2,65}:\s*(?:alk\.?|alkaen|from)?\s*[€$£]?\s*\d/i.test(answer)) score+=34;
       if(/lisapalvel|lisäpalvel|add[- ]?on|extra\b|upgrade|korotus|supplement|tillagg|tillägg/.test(evidence)) score-=50;
       if(/jasen|jäsen|member|membership|student|junior|opiskel|daytime/.test(evidence)) score-=14;
+
+      // A generic haircut/service follow-up means the base service, not a
+      // premium bundle or extended variant that happens to contain more of the
+      // same keywords. Only keep those modifiers competitive when the customer
+      // explicitly asked for them in the previous turn.
+      const requestedVariant=/\b(?:xl|premium|student|junior|buzz|extended|pidennetty|hieronta|massage|razor|veitsi|paketti|package|bundle|skinfade|fade)\b/.test(previous);
+      if(!requestedVariant && /\b(?:xl|premium|student|junior|buzz|extended|pidennetty|hieronta|massage|razor|veitsi|paketti|package|bundle|skinfade|fade)\b/.test(evidence)) score-=75;
+      if(!requestedVariant && /^(?:m\s*cut(?:™)?\s*[:;-]|hiustenleikkaus\s*[:;-]|haircut\s*[:;-]|hårklippning\s*[:;-]|harklippning\s*[:;-])/i.test(answer)) score+=30;
+
       return {row,answer,score,index};
     })
     .filter(Boolean)
