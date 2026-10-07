@@ -30,3 +30,30 @@ test('English delivery questions override Finnish page language, including the s
     }
   } finally {await new Promise(resolve=>server.close(resolve));}
 });
+
+
+test('natural multilingual delivery-time paraphrases keep delivery intent and duration',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[{
+    id:'delivery',
+    category:'Toimitus',
+    title:'Toimitusaika',
+    answer:'Domestic orders usually arrive within 3-5 business days.',
+    keywords:['delivery','toimitus','leverans'],
+    source_type:'website',
+    source_url:'https://shop.example/shipping',
+  }];
+  for(const [lang,message] of [
+    ['fi','Montako arkipäivää toimitus kestää?'],
+    ['fi','Milloin tilaus yleensä saapuu?'],
+    ['en','How many business days does delivery take?'],
+    ['en','When should an order usually arrive?'],
+    ['sv','Hur många arbetsdagar tar leveransen?'],
+    ['sv','När brukar en beställning komma fram?'],
+  ]){
+    const result=await generateGroundedAnswer({companyName:'Shop',rows,message,history:[],lang});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.equal(result.intent,'Toimitus',message+' '+JSON.stringify(result));
+    assert.match(result.answer,/3\s*[-–]\s*5/,message+' '+result.answer);
+  }
+});
