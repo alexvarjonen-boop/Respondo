@@ -93,13 +93,62 @@ async function auditCurrentColorVariant(site,bundle,rows){
   const expect=new RegExp(colors.slice(0,6).map(regexpEscape).join('|'),'i');
   const cases=[
     ['fi','Mitä värejä tuotteesta '+product.name+' on?'],
+    ['fi','Missä väreissä '+product.name+' on saatavilla?'],
+    ['fi','Onko '+product.name+' tuotteesta eri värivaihtoehtoja?'],
     ['en','What colors are available for '+product.name+'?'],
+    ['en','Which colour options does '+product.name+' have?'],
+    ['en','Does '+product.name+' come in different colors?'],
     ['sv','Vilka färger finns '+product.name+' i?'],
+    ['sv','Vilka färgalternativ har '+product.name+'?'],
+    ['sv','Finns '+product.name+' i flera färger?'],
   ];
   for(const [lang,message] of cases){
     const result=await ask(site,rows,{lang,message,expect,label:'dynamic-color-'+lang});
     console.log('Q ['+lang+'] '+message+' -> '+result.answer);
   }
+}
+
+function automaticScenarioVariants(scenario){
+  const lang=String(scenario?.lang||'fi').toLowerCase();
+  const label=String(scenario?.label||'').toLowerCase();
+  const product=String(scenario?.productPriceTitle||'').trim();
+  const variants=[];
+
+  if(label.includes('address')){
+    if(lang==='fi') variants.push('Voitko antaa tarkan osoitteen?','Missä teidän toimipiste on?');
+    if(lang==='en') variants.push('Can you give me your exact address?','Where is your location?');
+    if(lang==='sv') variants.push('Kan jag få er exakta adress?','Var ligger ert verksamhetsställe?');
+  } else if(label.includes('phone')){
+    if(lang==='fi') variants.push('Mihin numeroon voin soittaa?','Anna asiakaspalvelun puhelinnumero.');
+    if(lang==='en') variants.push('Which number should I call?','Give me your customer service phone number.');
+    if(lang==='sv') variants.push('Vilket nummer ska jag ringa?','Ge mig kundtjänstens telefonnummer.');
+  } else if(label.includes('email')){
+    if(lang==='fi') variants.push('Mikä sähköpostiosoite teillä on?','Mihin sähköpostiin otan yhteyttä?');
+    if(lang==='en') variants.push('Which email address should I use?','What email can I contact you at?');
+    if(lang==='sv') variants.push('Vilken e-postadress ska jag använda?','Vilken e-post kan jag kontakta er på?');
+  } else if(label.includes('hours')){
+    if(lang==='fi') variants.push('Mitkä ovat aukioloajat silloin?','Milloin liike on silloin auki?');
+    if(lang==='en') variants.push('What hours are you open then?','When is the shop open then?');
+    if(lang==='sv') variants.push('Vilka tider har ni öppet då?','När är butiken öppen då?');
+  } else if(label.includes('shipping') && !label.includes('delivery')){
+    if(lang==='fi') variants.push('Paljonko postikulut ovat?','Mitä toimituksesta veloitetaan?');
+    if(lang==='en') variants.push('What do you charge for delivery?','How much are the postage fees?');
+    if(lang==='sv') variants.push('Hur mycket kostar frakten?','Vad tar ni betalt för leveransen?');
+  } else if(label.includes('delivery')){
+    if(lang==='fi') variants.push('Montako arkipäivää toimitus kestää?','Milloin tilaus yleensä saapuu?');
+    if(lang==='en') variants.push('How many business days does delivery take?','When should an order usually arrive?');
+    if(lang==='sv') variants.push('Hur många arbetsdagar tar leveransen?','När brukar en beställning komma fram?');
+  } else if(label.includes('return')){
+    if(lang==='fi') variants.push('Kuinka pitkä palautusaika on?','Saako tuotteen palauttaa ja kuinka kauan siihen on aikaa?');
+    if(lang==='en') variants.push('How long is the return window?','Can I return a product and how many days do I have?');
+    if(lang==='sv') variants.push('Hur lång är returtiden?','Kan jag returnera en produkt och hur många dagar har jag på mig?');
+  } else if(product && label.includes('price')){
+    if(lang==='fi') variants.push('Mitä '+product+' maksaa?','Paljonko hintaa on tuotteella '+product+'?');
+    if(lang==='en') variants.push('What does '+product+' cost?','What is the price of '+product+'?');
+    if(lang==='sv') variants.push('Vad kostar '+product+'?','Vilket pris har '+product+'?');
+  }
+
+  return [...new Set(variants.filter((value)=>norm(value)!==norm(scenario?.message)))];
 }
 
 async function ask(site,rows,{lang,message,expect,history=[],label}){
@@ -164,12 +213,33 @@ async function auditServiceSite(site){
     const checkedScenario=scenarioWithLiveExpectation(site,rows,scenario);
     const first=await ask(site,rows,checkedScenario);
     console.log('Q ['+scenario.lang+'] '+scenario.message+' -> '+first.answer);
+
+    for(const [variantIndex,variantMessage] of automaticScenarioVariants(scenario).entries()){
+      const variant=await ask(site,rows,{
+        ...checkedScenario,
+        message:variantMessage,
+        label:scenario.label+'-variant-'+(variantIndex+1),
+      });
+      console.log('V ['+scenario.lang+'] '+variantMessage+' -> '+variant.answer);
+    }
+
     if(scenario.followups){
       let history=[{question:scenario.message,answer:first.answer}];
       for(const follow of scenario.followups){
         const checkedFollow=scenarioWithLiveExpectation(site,rows,follow);
         const next=await ask(site,rows,{...checkedFollow,history});
         console.log('F ['+follow.lang+'] '+follow.message+' -> '+next.answer);
+
+        for(const [variantIndex,variantMessage] of automaticScenarioVariants(follow).entries()){
+          const variant=await ask(site,rows,{
+            ...checkedFollow,
+            message:variantMessage,
+            history,
+            label:follow.label+'-variant-'+(variantIndex+1),
+          });
+          console.log('FV ['+follow.lang+'] '+variantMessage+' -> '+variant.answer);
+        }
+
         history=[...history,{question:follow.message,answer:next.answer}].slice(-6);
       }
     }
