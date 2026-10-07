@@ -479,6 +479,24 @@ test('catalog product names are excluded from company service summary',()=>{
 });
 
 
+test('general contact paraphrases return both verified phone and email in fi en sv',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {id:'phone',category:'Yhteystiedot',title:'Puhelinnumero',answer:'+358 50 123 4567',keywords:['puhelin'],source_type:'website',source_url:'https://example.fi/contact'},
+    {id:'email',category:'Yhteystiedot',title:'Sähköposti',answer:'info@example.fi',keywords:['sähköposti'],source_type:'website',source_url:'https://example.fi/contact'},
+  ];
+  for(const [lang,message] of [
+    ['fi','Mitkä ovat yhteystietonne?'],
+    ['en','How do I get in touch with you?'],
+    ['sv','Hur kan jag komma i kontakt med er?'],
+  ]){
+    const result=await generateGroundedAnswer({companyName:'Example',rows,message,history:[],lang});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.match(result.answer,/358\s*50\s*123\s*4567/,message+' '+result.answer);
+    assert.match(result.answer,/info@example\.fi/i,message+' '+result.answer);
+  }
+});
+
 test('natural address paraphrases resolve the same verified location in fi en sv',async()=>{
   const { generateGroundedAnswer }=await import('../server.mjs');
   const rows=[
