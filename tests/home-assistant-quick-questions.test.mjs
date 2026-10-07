@@ -11,7 +11,7 @@ test('homepage assistant binds all three quick question buttons',()=>{
 });
 
 test('homepage loads the corrected site assistant build and creates it on the homepage',()=>{
-  assert.ok(index.includes('/effects.js?v=20261007-mobile-auth-v2'));
+  assert.ok(index.includes('/effects.js?v=20261007-restore-oct06-v1'));
   const initStart=effects.indexOf('function init()');
   const initSource=effects.slice(initStart,initStart+1400);
   assert.ok(initSource.includes("if (location.pathname === '/')"));
