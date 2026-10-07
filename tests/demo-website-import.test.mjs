@@ -23,3 +23,15 @@ test('Try Bot website import really scans and feeds imported facts into demo cha
   assert.match(app,/sourceUrl:x\.sourceUrl/);
   assert.doesNotMatch(app,/Automaattinen verkkosivun tietojen haku avautuu tilauksen yhteydessä/);
 });
+
+
+test('mobile Try Bot header remains pinned but does not duplicate large section dropdown above the tabs',()=>{
+  const css=fs.readFileSync(new URL('../public/styles.css',import.meta.url),'utf8');
+  const responsive=css.slice(css.lastIndexOf('/* Keep the Try Bot preview usable on small phones:'));
+  assert.match(responsive,/@media\(max-width:760px\)/);
+  assert.match(responsive,/\.demo-sticky-topbar \.dashboard-section-picker\s*\{\s*display:none!important;/);
+  assert.match(responsive,/\.demo-sticky-topbar \.demo-section-strip\s*\{[^}]*grid-row:2!important;/s);
+  assert.match(responsive,/\.demo-sticky-topbar \.demo-public-actions\s*\{[^}]*grid-row:1!important;/s);
+  assert.match(css,/\.demo-dashboard-main > \.demo-sticky-topbar\s*\{[^}]*position:fixed!important;/s);
+  assert.match(app,/demo-sticky-header-space/);
+});
