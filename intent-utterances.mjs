@@ -247,9 +247,9 @@ export function classifyIntentByGrammar(value) {
   if (/\b(?:toimitus|toimituskulu|postitus|shipping|delivery|postage|frakt|leverans)\b/.test(q) &&
       /\b(?:hinta|maksaa|maksu|kulu|price|cost|fee|charge|pris|kostar|avgift)\b/.test(q)) return 'shipping';
   if (/\b(?:palautus|palauttaa|palautan|returns?|refund|retur|returnera|vaihto|exchange|återbetalning)\b/.test(q)) return 'returns';
+  if (/\b(?:puhelin|phone number|telefon|sähköposti|sahkoposti|email|e-post|e-postadress|yhteystiedot|contact details|kontaktuppgifter)\b/.test(q)) return 'contact';
   if (/\b(?:sijainti|osoite|missä sijait|missä olette|where are you located|where is the company|store location|var finns ni|var ligger ni|adress)\b/.test(q)) return 'location';
   if (/\b(?:aukiolo|auki|opening hours|open today|open tomorrow|öppettider|oppettider|öppet|oppet)\b/.test(q)) return 'hours';
-  if (/\b(?:puhelin|phone number|telefon|sähköposti|sahkoposti|email|e-post|yhteystiedot|contact details|kontaktuppgifter)\b/.test(q)) return 'contact';
   if (/\b(?:ajanvaraus|varaa aika|varata aika|booking|appointment|boka tid|bokning|tidsbokning)\b/.test(q)) return 'booking';
   if (/\b(?:maksutapa|maksutavat|payment method|payment methods|betalningsmetod|betalningssätt|betalningssatt|klarna|mobilepay|apple pay|google pay)\b/.test(q)) return 'payment';
   if (/\b(?:takuu|warranty|garanti|reklamaatio|reklamation)\b/.test(q)) return 'warranty';
