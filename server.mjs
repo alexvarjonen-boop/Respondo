@@ -2516,6 +2516,7 @@ function explicitContactQuestion(message) {
     q.includes('epost')
   ) return 'email';
   if (/(?:^|\s)(?:puhelin\w*|phone\w*|telefon\w*|soitta\w*|soita|ring\w*|numero|numeronne|numeroanne)(?:\s|$)/.test(q)) return 'phone';
+  if(/\b(?:number|numret|nummer)\b/.test(q) && /\b(?:call|dial|ring|ringa|kontakta|contact|reach)\w*\b/.test(q)) return 'phone';
   return '';
 }
 
