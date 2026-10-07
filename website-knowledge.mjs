@@ -591,7 +591,20 @@ export function essentialWebsiteCandidates(bundle) {
       if (kind === 'contact' && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add(kind,'Puhelinnumero',block.text.match(phone)[0],doc.url);
       if (kind !== 'contact') {
         const concreteHeading = clean(block.heading);
-        const hasServiceContext = concreteHeading && concreteHeading.length < 65 && service.test(norm(concreteHeading)) && !/^(?:palvelut?|services?|tjanster|hinnat|hinnasto)$/i.test(norm(concreteHeading)) && !norm(block.text).includes(norm(concreteHeading));
+        const normalizedHeading=norm(concreteHeading);
+        const genericCommerceHeading=/^(?:palvelut?|services?|tjanster|hinnat|hinnasto|pricing|prices|price list|palvelut ja hinnasto|services and prices)$/i.test(normalizedHeading);
+        const usefulCommerceHeading=Boolean(
+          concreteHeading &&
+          concreteHeading.length < 65 &&
+          !genericCommerceHeading &&
+          !junk.test(normalizedHeading) &&
+          !review.test(normalizedHeading) &&
+          !/^(?:ota yhteytta|contact|read more|lue lisaa|varaa aika|book now)$/i.test(normalizedHeading)
+        );
+        const hasServiceContext = usefulCommerceHeading && (
+          service.test(normalizedHeading) ||
+          ['services','pricing'].includes(kind)
+        ) && !norm(block.text).includes(normalizedHeading);
         const productContext = docProducts.length===1 && ['materials','quality','care','sizing'].includes(kind)
           ? clean(docProducts[0].name)
           : '';
