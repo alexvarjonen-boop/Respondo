@@ -987,10 +987,22 @@
 
   function deepScrollExperience() {
     if (isWorkspacePage()) return;
+
+    const route = location.pathname;
+    const compactAuthPage = ['/kirjaudu','/tilaus'].includes(route)
+      && matchMedia('(max-width: 900px), (hover: none) and (pointer: coarse)').matches;
+
+    // Login and checkout are utility screens, not cinematic scenes. On mobile
+    // the 3D scene offsets can move the copy/forms outside the viewport before
+    // IntersectionObserver settles, especially in iOS Safari.
+    if (compactAuthPage) {
+      document.documentElement.dataset.deepScrollReady = '1';
+      return;
+    }
+
     if (document.documentElement.dataset.deepScrollReady === '1') return;
     document.documentElement.dataset.deepScrollReady = '1';
 
-    const route = location.pathname;
     const home = route === '/';
     const assistantPage = route === '/assistant';
 
