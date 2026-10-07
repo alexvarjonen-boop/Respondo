@@ -15,3 +15,22 @@ test('public demo header stays fixed on phone and tablet widths and reserves its
   assert.match(app,/getBoundingClientRect\(\)\.height/);
   assert.match(app,/new ResizeObserver\(syncDemoStickyHeaderSpace\)/);
 });
+
+
+test('mobile Try Bot navigation collapses on scroll but keeps an accessible section picker',()=>{
+  assert.match(app,/const syncDemoCompactHeader = \(\) =>/);
+  assert.match(app,/classList\.toggle\('is-condensed',condensed\)/);
+  assert.match(app,/window\.addEventListener\('scroll',syncDemoCompactHeader,\{passive:true\}\)/);
+  assert.match(css,/\.demo-sticky-topbar\.is-condensed \.dashboard-section-picker/);
+  assert.match(css,/\.demo-sticky-topbar\.is-condensed \.demo-section-strip/);
+  assert.match(css,/\.demo-sticky-topbar\.is-condensed \.demo-header-trial/);
+});
+
+test('public Try Bot never overlays the separate Respondo marketing chat launcher',()=>{
+  const effects=fs.readFileSync(new URL('../public/effects.js',import.meta.url),'utf8');
+  const init=effects.slice(effects.indexOf('function init()'),effects.indexOf('let timer;',effects.indexOf('function init()')));
+  const demoGuard=init.indexOf("if (location.pathname === '/assistant')");
+  const firstAssistant=init.indexOf('      assistant();');
+  assert.ok(demoGuard>=0 && firstAssistant>demoGuard);
+  assert.match(init,/if \(location\.pathname === '\/assistant'\) \{[\s\S]*?\.fx-assistant-launch[\s\S]*?\.fx-assistant[\s\S]*?return;/);
+});

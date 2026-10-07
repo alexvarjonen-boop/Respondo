@@ -1299,6 +1299,13 @@
   function init() {
     if (isWorkspacePage()) {
       prepareStaticWorkspace();
+      // The public Try Bot already contains a full interactive chat.
+      // Never overlay a second Respondo marketing assistant on this page.
+      if (location.pathname === '/assistant') {
+        $('.fx-assistant-launch')?.remove();
+        $('.fx-assistant')?.remove();
+        return;
+      }
       assistant();
       window.addEventListener('respondo:languagechange', () => {
         document.querySelector('.fx-assistant-launch')?.remove();

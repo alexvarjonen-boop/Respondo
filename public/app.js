@@ -4394,6 +4394,21 @@ async function route() {
       const demoHeaderObserver = new ResizeObserver(syncDemoStickyHeaderSpace);
       demoHeaderObserver.observe(demoStickyHeader);
     }
+    // Keep the navigation accessible but reduce its footprint while a visitor
+    // scrolls through the Try Bot's conversation on a narrow phone.
+    const syncDemoCompactHeader = () => {
+      if (!demoStickyHeader) return;
+      if (!window.matchMedia('(max-width:760px)').matches) {
+        demoStickyHeader.classList.remove('is-condensed');
+        return;
+      }
+      const alreadyCondensed = demoStickyHeader.classList.contains('is-condensed');
+      const condensed = window.scrollY > (alreadyCondensed ? 100 : 260);
+      demoStickyHeader.classList.toggle('is-condensed',condensed);
+    };
+    syncDemoCompactHeader();
+    window.addEventListener('scroll',syncDemoCompactHeader,{passive:true});
+    window.addEventListener('resize',syncDemoCompactHeader,{passive:true});
     const validDashboardViews = new Set(['overview','setup','answers','customers','automation','install','account']);
     const targetViewMap = {
       'overview':'overview',
