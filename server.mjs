@@ -316,50 +316,6 @@ async function renderIndexHtml(req) {
   html = html.replace('</head>', extraHead + '\n</head>');
   html = html.replace('<div id="app"></div>', '<div id="app">' + seoNoScriptMarkup(seo, req.path) + '</div>');
 
-  // The Respondo homepage uses the owner's real paid widget, not a separate demo.
-  // This is the same HTML snippet shown in the owner's Installation section.
-  if (req.path === '/' && pool) {
-    try {
-      const ownerEmail = cleanEmail(process.env.OWNER_EMAIL || process.env.SUPPORT_EMAIL);
-      if (ownerEmail) {
-        const ownerTenant = await q(
-          `SELECT t.slug
-             FROM tenants t
-             JOIN users u ON u.id=t.owner_user_id
-            WHERE lower(u.email)=lower($1)
-              AND t.active=true
-              AND u.status='active'
-              AND t.subscription_status IN ('active','trialing')
-              AND (
-                COALESCE(t.subscription_cancel_at_period_end,false)=false
-                OR t.current_period_end IS NULL
-                OR t.current_period_end > NOW()
-              )
-            ORDER BY
-              CASE
-                WHEN lower(COALESCE(t.slug,'')) IN ('respondo','respondoai') THEN 0
-                WHEN lower(COALESCE(t.name,'')) IN ('respondo','respondo ai') THEN 1
-                ELSE 2
-              END,
-              t.created_at ASC
-            LIMIT 1`,
-          [ownerEmail],
-        );
-        const ownerSlug = String(ownerTenant.rows[0]?.slug || '').trim();
-        if (ownerSlug) {
-          const widgetHtml =
-            '<script src="/widget.js?v=20261005-quick-replies-v2" data-company="' +
-            escapeHtml(ownerSlug) +
-            '" data-lang="' +
-            escapeHtml(seo.lang) +
-            '"></script>';
-          html = html.replace('</body>', widgetHtml + '\n</body>');
-        }
-      }
-    } catch (e) {
-      console.error('Homepage owner widget injection failed', e?.message || e);
-    }
-  }
 
   return { html, seo };
 }
