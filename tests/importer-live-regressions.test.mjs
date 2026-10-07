@@ -224,3 +224,32 @@ test('template-dominated catalog never adds a storefront link to a service busin
   const text=candidateTextForTest(candidates);
   assert.doesNotMatch(text,/Tuotekatalogi|\/shop\//i);
 });
+
+
+test('returns heading requires a concrete return rule',()=>{
+  const bundle={
+    finalUrl:'https://example.fi/',
+    products:[],
+    pageDocuments:[{
+      url:'https://example.fi/',
+      blocks:[
+        {text:'Memberships are available in Silver, Gold and Platinum tiers and can be purchased online.',heading:'Returns'},
+        {text:'Unused products can be returned within 30 days with proof of purchase.',heading:'Returns'},
+      ],
+      links:[],products:[],text:''
+    }],
+  };
+  const rows=essentialWebsiteCandidates(bundle).filter((row)=>row.category==='Palautukset ja vaihdot');
+  assert.equal(rows.length,1,JSON.stringify(rows));
+  assert.match(rows[0].answer,/30 days/i);
+  assert.doesNotMatch(rows[0].answer,/Memberships/i);
+});
+
+test('crawler prioritizes contacts and excludes template/archive routes',()=>{
+  const server=fs.readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+  assert.match(server,/Essentials outrank product detail pages/);
+  assert.match(server,/product-tag\|product-category/);
+  assert.match(server,/home\[-_\]\?\\d\+/);
+  assert.ok(server.indexOf('return 300;')>=0);
+  assert.ok(server.indexOf('return 180;')>server.indexOf('return 300;'));
+});
