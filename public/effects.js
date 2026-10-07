@@ -455,7 +455,10 @@
   }
 
   function assistant() {
+    // Public Try Bot renders its own company-specific chat. Keep the marketing
+    // launcher on the homepage only, never create a second chat in the demo.
     if ($('.fx-assistant-launch')) return;
+    if (location.pathname === '/assistant') return;
     const qLang = new URLSearchParams(location.search).get('lang');
     const uiLang = ['fi','sv','en'].includes(qLang) ? qLang : (localStorage.getItem('respondo_lang') || 'fi');
     const at = (fi,sv,en) => uiLang === 'sv' ? sv : uiLang === 'en' ? en : fi;
@@ -1299,13 +1302,6 @@
   function init() {
     if (isWorkspacePage()) {
       prepareStaticWorkspace();
-      // The public Try Bot already contains a full interactive chat.
-      // Never overlay a second Respondo marketing assistant on this page.
-      if (location.pathname === '/assistant') {
-        $('.fx-assistant-launch')?.remove();
-        $('.fx-assistant')?.remove();
-        return;
-      }
       assistant();
       window.addEventListener('respondo:languagechange', () => {
         document.querySelector('.fx-assistant-launch')?.remove();

@@ -26,11 +26,11 @@ test('mobile Try Bot navigation collapses on scroll but keeps an accessible sect
   assert.match(css,/\.demo-sticky-topbar\.is-condensed \.demo-header-trial/);
 });
 
-test('public Try Bot never overlays the separate Respondo marketing chat launcher',()=>{
+test('public Try Bot never injects the separate Respondo marketing chat launcher',()=>{
   const effects=fs.readFileSync(new URL('../public/effects.js',import.meta.url),'utf8');
+  const assistant=effects.slice(effects.indexOf('function assistant()'),effects.indexOf('function localizeStandaloneAssistant'));
+  assert.match(assistant,/if \(location\.pathname === '\/assistant'\) return;/);
+  assert.ok(assistant.indexOf("if (location.pathname === '/assistant') return;")<assistant.indexOf("document.body.insertAdjacentHTML('beforeend'"));
   const init=effects.slice(effects.indexOf('function init()'),effects.indexOf('let timer;',effects.indexOf('function init()')));
-  const demoGuard=init.indexOf("if (location.pathname === '/assistant')");
-  const firstAssistant=init.indexOf('      assistant();');
-  assert.ok(demoGuard>=0 && firstAssistant>demoGuard);
-  assert.match(init,/if \(location\.pathname === '\/assistant'\) \{[\s\S]*?\.fx-assistant-launch[\s\S]*?\.fx-assistant[\s\S]*?return;/);
+  assert.match(init,/if \(isWorkspacePage\(\)\) \{[\s\S]*?prepareStaticWorkspace\(\);[\s\S]*?assistant\(\);/);
 });
