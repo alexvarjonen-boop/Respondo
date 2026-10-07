@@ -2522,7 +2522,7 @@ function explicitContactQuestion(message) {
 
 function generalContactQuestion(message) {
   const q=normalizeSearchText(message);
-  return /^(?:miten\s+(?:saan|otan)\s+(?:teihin|teihinpain|yritykseen)\s+yhteyden|miten\s+voin\s+ottaa\s+(?:teihin\s+)?yhteytta|mitka\s+(?:ovat\s+)?(?:teidan\s+)?yhteystiedot(?:nne)?|yhteystiedot(?:nne)?|how\s+(?:can|do)\s+i\s+(?:contact|reach)\s+you|how\s+(?:can|do)\s+i\s+get\s+in\s+touch\s+with\s+you|what\s+are\s+your\s+contact\s+details|contact\s+details|hur\s+kontaktar\s+jag\s+er|hur\s+nar\s+jag\s+er|hur\s+far\s+jag\s+kontakt\s+med\s+er|hur\s+kan\s+jag\s+komma\s+i\s+kontakt\s+med\s+er|vilka\s+ar\s+era\s+kontaktuppgifter|kontaktuppgifter)$/.test(q);
+  return /^(?:miten\s+(?:saan|otan)\s+(?:teihin|teihinpain|yritykseen)\s+yhteyden|miten\s+voin\s+ottaa\s+(?:teihin\s+)?yhteytta|mitka\s+(?:ovat\s+)?(?:teidan\s+)?yhteystieto(?:t|nne)|yhteystieto(?:t|nne)|how\s+(?:can|do)\s+i\s+(?:contact|reach)\s+you|how\s+(?:can|do)\s+i\s+get\s+in\s+touch\s+with\s+you|what\s+are\s+your\s+contact\s+details|contact\s+details|hur\s+kontaktar\s+jag\s+er|hur\s+nar\s+jag\s+er|hur\s+far\s+jag\s+kontakt\s+med\s+er|hur\s+kan\s+jag\s+komma\s+i\s+kontakt\s+med\s+er|vilka\s+ar\s+era\s+kontaktuppgifter|kontaktuppgifter)$/.test(q);
 }
 
 function directGeneralContactAnswer(rows, lang='fi') {
