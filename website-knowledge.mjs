@@ -498,6 +498,8 @@ export function businessFactKind(text, context = '') {
   if (hours.test(n+' '+c) && clock.test(n)) return 'hours';
   if (email.test(t) || phone.test(t) && (/^\+\d/.test(t) || /puhel|puh\b|tel|phone|contact|yhteys|kontakt/.test(n+' '+c))) return 'contact';
   if (/\b\d{5}\s+[A-ZÅÄÖa-zåäö]/.test(t) || /(?:osoite|address|adress)\s*:?\s*\S+.*\d/.test(n)) return 'location';
+  if (/\b[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}\s+\d+[A-Za-z]?\b/.test(t) &&
+      /osoite|address|adress|yhteystiedot|contact|kontakt/.test(c)) return 'location';
   if (commerceFact && location.test(commerce)) return 'location';
   // FAQ and customer-info sections often contain useful facts that do not fit a
   // fixed category (gift cards, discount codes, customisation, pre-orders, etc.).
