@@ -3399,3 +3399,137 @@ html.static-workspace #app :is([data-reveal],.fx-scene,.fx-headline){
 }
 html.static-workspace #app :is(.fx-depth,.fx-depth-card)::before,
 html.static-workspace #app :is(.fx-depth,.fx-depth-card,.btn)::after{content:none!important;display:none!important}
+
+/* MOBILE AUTH VIEWPORT STABILITY — 2026-10-07 */
+@media (max-width:900px), (hover:none) and (pointer:coarse) {
+  /* Keep login/checkout utility screens in normal document flow on phones.
+     This overrides the cinematic scene transforms that can push content
+     outside the iOS Safari viewport before observers settle. */
+  .formpage.login-page {
+    display:block!important;
+    align-items:initial!important;
+    min-height:calc(100dvh - 64px)!important;
+    padding:28px 0 56px!important;
+    overflow-x:clip!important;
+  }
+
+  .login-page > .login-layout,
+  .login-page .login-layout {
+    display:block!important;
+    width:calc(100% - 32px)!important;
+    max-width:520px!important;
+    min-width:0!important;
+    margin:0 auto!important;
+    padding:0!important;
+    perspective:none!important;
+    transform:none!important;
+    transform-style:flat!important;
+  }
+
+  .login-page .login-copy {
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0 0 28px!important;
+    padding:0!important;
+    transform:none!important;
+    translate:none!important;
+    rotate:none!important;
+    scale:none!important;
+    opacity:1!important;
+    filter:none!important;
+    clip-path:none!important;
+    animation:none!important;
+    transition:none!important;
+    will-change:auto!important;
+  }
+
+  .login-page .login-copy h1 {
+    max-width:100%!important;
+    margin:18px 0 18px!important;
+    font-size:clamp(44px,13vw,58px)!important;
+    line-height:.94!important;
+    overflow-wrap:normal!important;
+  }
+
+  .login-page .login-copy > p {
+    max-width:100%!important;
+    margin:0!important;
+    font-size:15px!important;
+    line-height:1.65!important;
+  }
+
+  .login-page .section-kicker {
+    max-width:100%!important;
+    overflow:hidden!important;
+  }
+
+  .login-page .login-card,
+  .login-page .agent-login-card,
+  .login-page .formcard,
+  .login-page .premium-form,
+  .login-page .fx-scene,
+  .login-page .fx-scene.fx-scene-live,
+  .login-page .fx-depth-card {
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    left:auto!important;
+    right:auto!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    transform:none!important;
+    translate:none!important;
+    rotate:none!important;
+    scale:none!important;
+    perspective:none!important;
+    transform-style:flat!important;
+    opacity:1!important;
+    filter:none!important;
+    clip-path:none!important;
+    animation:none!important;
+    transition:none!important;
+    will-change:auto!important;
+  }
+
+  .login-page .login-card {
+    margin-top:0!important;
+  }
+
+  .login-page .agent-login-card {
+    margin-top:18px!important;
+  }
+
+  .login-page .fx-depth-card::after {
+    content:none!important;
+    display:none!important;
+  }
+
+  .login-page input,
+  .login-page select,
+  .login-page textarea,
+  .login-page button {
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+}
+
+@media (max-width:520px) {
+  .login-page > .login-layout,
+  .login-page .login-layout {
+    width:calc(100% - 24px)!important;
+  }
+
+  .login-page .login-copy h1 {
+    font-size:clamp(42px,13.5vw,54px)!important;
+  }
+
+  .login-page .formcard,
+  .login-page .premium-form,
+  .login-page .login-card,
+  .login-page .agent-login-card {
+    padding:18px!important;
+    border-radius:20px!important;
+  }
+}
+
