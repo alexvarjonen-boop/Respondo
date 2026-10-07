@@ -51,3 +51,49 @@ test('Swedish physical address question still routes to location',async()=>{
   assert.equal(result.intent,'Sijainti');
   assert.match(result.answer,/Maariankatu 3|20100 Turku/i);
 });
+
+
+test('common Swedish address wording returns one complete address without duplicating the street',async()=>{
+  const locationRows=[
+    {
+      id:'street',
+      category:'Sijainti ja myymälät',
+      title:'Osoite',
+      answer:'Hallituskatu 11',
+      keywords:['osoite','address','adress'],
+      source_type:'website',
+      source_url:'https://www.turkishbarber.fi/',
+    },
+    {
+      id:'full-address',
+      category:'Sijainti ja myymälät',
+      title:'Osoite',
+      answer:'Hallituskatu 11, 33200 Tampere',
+      keywords:['osoite','address','adress'],
+      source_type:'website',
+      source_url:'https://www.turkishbarber.fi/contacts/',
+    },
+    {
+      id:'postal',
+      category:'Sijainti ja myymälät',
+      title:'Osoite',
+      answer:'33200 Tampere',
+      keywords:['osoite','address','adress'],
+      source_type:'website',
+      source_url:'https://www.turkishbarber.fi/contacts/',
+    },
+  ];
+  for(const message of ['Vad har ni för adress?','Var ligger ni?','Var hittar jag er?']){
+    assert.equal(queryTopic(message),'stores',message);
+    const result=await generateGroundedAnswer({
+      companyName:'Turkish Barber Shop',
+      rows:locationRows,
+      message,
+      history:[],
+      lang:'sv',
+    });
+    assert.equal(result.handoff,false,message);
+    assert.match(result.answer,/Hallituskatu 11, 33200 Tampere/i);
+    assert.doesNotMatch(result.answer,/Hallituskatu 11,\s*Hallituskatu 11/i);
+  }
+});
