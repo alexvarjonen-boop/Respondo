@@ -17,7 +17,7 @@ const hours = /auki|opening|hours|oppet|maanantai|tiistai|keskiviikko|torstai|pe
 const clock = /\b\d{1,2}[:.]\d{2}\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\d{2})?\b|\b\d{1,2}(?:[:.]\d{2})?\s*(?:–|-|—|to|till)\s*\d{1,2}[:.]\d{2}\b|\b\d{1,2}[:.]\d{2}\b|\b(?:closed|suljettu|stangt|24\/7)\b/i;
 const price = /(?:\d[\d\s.,]*\s*(?:€|eur\b|usd\b|sek\b|kr\b|\$|£)|[€$£]\s*\d)|(?:hinta|hinnoittelu|price|pris).*(?:sopim|tarjous|quote|offert|contact|yhtey|avtal)/i;
 const delivery = /toimitus|toimitusaika|toimitamme|toimitetaan|seurant|lahetys|lähetys|\bship(?:s|ped|ping)?\b|delivery|shipment|tracking|track(?:ing)?\s+(?:code|number|order)|nouto|pickup|leverans|sparning|spårning|forsand|försänd/i;
-const returns = /palaut(?:us\w*|taa\w*|an\w*|etaan\w*|ettava\w*|taminen\w*)|vaihto|hyvitys|return|refund|exchange|retur|aterbetal|återbetal|byte\b/i;
+const returns = /palaut(?:us\w*|taa\w*|an\w*|etaan\w*|ettava\w*|taminen\w*)|vaihto(?!ehto)|vaihd(?:ot|on|ossa|oksi|ettava|etaan|taa)|hyvitys|return|refund|exchange|retur|aterbetal|återbetal|byte\b/i;
 const warranty = /takuu|reklamaatio|warranty|\bguarantee\b|garanti|reklamation/i;
 const payment = /maksutapa|maksaminen|maksuvaihtoeh|korttimaks|lasku\b|klarna|paypal|mobilepay|apple\s*pay|google\s*pay|payment|payment method|pay\s+(?:with|by)|betalning|betalningsmetod|faktura/i;
 
@@ -552,7 +552,22 @@ function templateDemoDocument(doc) {
     /brooklyn area/.test(text) ||
     /1\.800\.218\.20\.20/.test(text) ||
     /hello@example\.com/.test(text) ||
-    /admin@example\.com/.test(text);
+    /admin@example\.com/.test(text) ||
+    /our primary goal is developing a secure and customizable theme framework/.test(text) ||
+    /create websites using our templates as easy as 1-2-3/.test(text) ||
+    /installation \+ logo change/.test(text) ||
+    /wp plugins installation/.test(text) ||
+    /ready to use website/.test(text) ||
+    /themerex\.net\/support/.test(text);
+}
+
+function pricedServiceLabel(value) {
+  const raw=clean(decodeHtml(value)).replace(/[»›→]+\s*$/,'').trim();
+  const n=norm(raw);
+  if(!raw || raw.length<3 || raw.length>90 || /[.!?]/.test(raw)) return false;
+  if(/^(?:kaikki|hiukset|parta|muu palvelu|all|hair|beard|other services?)$/i.test(n)) return false;
+  if(isConcreteServiceLabel(raw)) return true;
+  return /(?:hiust|hair|hår|har\b|parran|beard|skägg|skagg|skinfade|fade|värjä|varja|color|colour|färg|farg|muotoil|styling|shave|ajo\b|tatuoin|tattoo|kulmakarv|eyebrow|kasvokarv|facial hair|hieronta|massage|wax|vaha)/.test(n);
 }
 
 function templateDemoProduct(product) {
@@ -644,13 +659,31 @@ export function essentialWebsiteCandidates(bundle) {
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
-    for (const block of blocks) {
+    const recoveredPriceIndexes=new Set();
+    for(let index=1; index<blocks.length; index++){
+      const priceText=clean(blocks[index]?.text);
+      const detachedPrice=/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|nok|dkk|kr|\$|£))?$/i.test(priceText);
+      if(!detachedPrice || /^\s*[€$£]?\s*0+(?:[.,]0+)?(?:\s*(?:€|eur|usd|sek|kr|\$|£))?\s*$/i.test(priceText)) continue;
+      for(let previous=index-1; previous>=Math.max(0,index-3); previous--){
+        const label=clean(blocks[previous]?.text);
+        if(!label) continue;
+        if(/^[€$£]?\s*\d/.test(label)) continue;
+        if(!pricedServiceLabel(label)) break;
+        add('services','Palvelut',label,doc.url);
+        add('pricing','Hinnat',label+': '+priceText,doc.url);
+        recoveredPriceIndexes.add(index);
+        break;
+      }
+    }
+    for (let blockIndex=0; blockIndex<blocks.length; blockIndex++) {
+      const block=blocks[blockIndex];
       const directEmail=extractedContactEmail(block.text);
       if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
       for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
 
       const kind = businessFactKind(block.text,block.heading);
       if (!kind) continue;
+      if(kind==='pricing' && recoveredPriceIndexes.has(blockIndex)) continue;
       // Product pages are imported as complete product records. Do not create a
       // second detached "price" fact that has lost the product name/link.
       if (kind === 'pricing' && docProducts.length) continue;
@@ -736,7 +769,10 @@ export function essentialWebsiteCandidates(bundle) {
   quoteLinks.sort((a,b)=>b.score-a.score);
   if (quoteLinks.length) add('quote','Tarjouspyyntölomake',quoteLinks[0].url,quoteLinks[0].sourceUrl);
   catalogLinks.sort((a,b)=>b.score-a.score);
-  if (catalogLinks.length && !catalogLooksLikeTemplate) add('catalog','Tuotekatalogi',catalogLinks[0].url,catalogLinks[0].sourceUrl);
+  const extractedProductCount=out.filter((item)=>item.category==='Tuotteet').length;
+  if (catalogLinks.length && !catalogLooksLikeTemplate && (hasCatalogProducts || extractedProductCount>0)) {
+    add('catalog','Tuotekatalogi',catalogLinks[0].url,catalogLinks[0].sourceUrl);
+  }
 
   // If the user imports a branch/location-specific page, contact details,
   // address and opening hours from other branches on the same chain must not
