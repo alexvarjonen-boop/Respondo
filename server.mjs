@@ -2664,11 +2664,14 @@ function directMultilingualServiceConfirmation(rows,message,lang='fi') {
       answer='Ja, vi erbjuder '+subject+'.';
     }
   } else {
-    let subject=original
-      .replace(/^do\s+you\s+(?:offer|provide|have)\s+/i,'')
-      .replace(/^(?:do|can|could)\s+you\s+/i,'');
-    if(/^cut\s+/i.test(subject)) subject=subject.replace(/^cut\s+/i,'')+' haircuts';
-    answer='Yes, we offer '+subject+'.';
+    if(requested.has('hair') && requested.has('cut')) {
+      answer='Yes, we offer haircuts.';
+    } else {
+      let subject=original
+        .replace(/^do\s+you\s+(?:offer|provide|have)\s+/i,'')
+        .replace(/^(?:do|can|could)\s+you\s+/i,'');
+      answer='Yes, we offer '+subject+'.';
+    }
   }
   return {supported:true,answer,evidence:[found]};
 }
