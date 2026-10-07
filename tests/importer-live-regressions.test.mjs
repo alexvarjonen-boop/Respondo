@@ -357,3 +357,28 @@ test('email inside a skipped page-builder button is still imported',()=>{
   assert.equal(profile.email,'miestenparturiturku@gmail.com');
   assert.match(profile.phone,/050\s*325\s*4690/);
 });
+
+
+test('direct haircut price questions work cross-language against Finnish imported pricing',async()=>{
+  const { generateGroundedAnswer }=await import('../server.mjs');
+  const rows=[
+    {
+      id:'price',
+      category:'Hinnat',
+      title:'Hinnat: 🔶Hiustenleikkaus 31€',
+      answer:'🔶Hiustenleikkaus 31€',
+      keywords:['hinta','maksaa','price','pris'],
+      source_type:'website',
+      source_url:'https://example.fi/'
+    },
+  ];
+  for(const [lang,message,expected] of [
+    ['fi','Paljonko hiustenleikkaus maksaa?',/31\s*€/],
+    ['en','How much is a haircut?',/31\s*€/],
+    ['sv','Vad kostar en hårklippning?',/31\s*€/],
+  ]){
+    const result=await generateGroundedAnswer({companyName:'Example',rows,message,history:[],lang});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.match(result.answer,expected,message+' '+result.answer);
+  }
+});
