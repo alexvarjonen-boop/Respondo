@@ -55,3 +55,22 @@ test('Swedish haircut price follow-up stays attached to the prior service',async
   assert.equal(second.intent,'Hinta');
   assert.match(second.answer,/36\s*€/);
 });
+
+
+for(const [lang,message] of [
+  ['en','Can I get a regular haircut there?'],
+  ['sv','Kan jag få en vanlig hårklippning hos er?'],
+]){
+  test('natural get-a-haircut request is grounded in '+lang,async()=>{
+    const result=await generateGroundedAnswer({
+      companyName:'Example Barber',
+      rows,
+      message,
+      history:[],
+      lang,
+    });
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.equal(result.intent,'Palvelut');
+    assert.match(result.answer,/haircut|hårklipp|klipp/i,result.answer);
+  });
+}
