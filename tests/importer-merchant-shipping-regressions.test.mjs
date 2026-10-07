@@ -65,3 +65,20 @@ test('product-detail service-like product names do not enter the company service
   assert.match(profile.services,/hiustenleikka/i);
   assert.doesNotMatch(profile.services,/Shave Kit|Beard Care Kit/i);
 });
+
+
+for(const [lang,message] of [
+  ['fi','Paljonko postikulut ovat?'],
+  ['fi','Mitä toimituksesta veloitetaan?'],
+  ['en','What do you charge for delivery?'],
+  ['en','How much are the postage fees?'],
+  ['sv','Hur mycket kostar frakten?'],
+  ['sv','Vad tar ni betalt för leveransen?'],
+]){
+  test('natural shipping-cost paraphrase resolves in '+lang+' — '+message,async()=>{
+    const result=await generateGroundedAnswer({companyName:'Shop',rows:shippingRows,message,history:[],lang});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.match(result.answer,/4[.,]80|4[.,]90|6[.,]90/,result.answer);
+    assert.match(result.answer,/60/,result.answer);
+  });
+}
