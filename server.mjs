@@ -2409,7 +2409,7 @@ function serviceAreaAnswer(value, lang='fi') {
 
 function explicitBusinessLocationQuestion(message) {
   const q=normalizeSearchText(message);
-  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?(?:sijainti|osoite)|mika\s+(?:teidan\s+)?osoite\s+on|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+(?:location|address)|where\s+exactly\s+are\s+you\s+located|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget)|vad\s+ar\s+(?:er|eran)\s+adress|vilken\s+adress\s+har\s+ni)$/.test(q);
+  return /^(?:missa\s+(?:te|yritys)\s+sijaitsee|missa\s+sijaitsette|missa\s+te\s+sijaitsette|missapain\s+sijaitsette|mika\s+on\s+(?:teidan\s+)?(?:sijainti|osoite)|mika\s+(?:teidan\s+)?osoite\s+on|where\s+(?:are\s+you|is\s+(?:the\s+)?(?:company|business))\s+located|where\s+are\s+you\s+based|what\s+is\s+your\s+(?:location|address)|where\s+exactly\s+are\s+you\s+located|var\s+finns\s+ni|var\s+ar\s+ni\s+belagna|var\s+ligger\s+(?:foretaget|företaget)|vad\s+ar\s+(?:er|eran)\s+adress|vilken\s+adress\s+har\s+ni)$/.test(q);
 }
 
 function extractBusinessLocationText(value) {
@@ -2478,6 +2478,95 @@ function verifiedBusinessLocationValue(rows) {
   }
 
   return scored.sort((a,b)=>b.score-a.score || a.value.length-b.value.length)[0] || null;
+}
+
+
+async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
+  const q=normalizeSearchText(message);
+  const priceFollowup=
+    /^(?:paljonko\s+(?:se|tama|tämä|tuo)\s+maksaa|mita\s+(?:se|tama|tuo)\s+maksaa|mika\s+(?:sen|taman|tuon)\s+hinta|enta\s+hinta|and\s+how\s+much\s+(?:is|does)\s+(?:it|that)|how\s+much\s+(?:is|does)\s+(?:it|that)(?:\s+cost)?|what\s+does\s+(?:it|that)\s+cost|och\s+vad\s+kostar\s+(?:den|det)|vad\s+kostar\s+(?:den|det)|hur\s+mycket\s+kostar\s+(?:den|det))$/.test(q);
+  if(!priceFollowup) return null;
+
+  const previousTurn=meaningfulConversationTurn(history);
+  const previous=normalizeSearchText(previousTurn?.question||'');
+  if(!previous) return null;
+  const looksLikeService=
+    queryTopic(previous)==='services' ||
+    /leikka|hius|parta|pesu|puhdist|siivou|huol|asenn|korj|maal|raiva|kuljet|muutto|service|hair|cut|barber|clean|repair|install|maintenance|klipp|har\b|hår|skagg|skägg|tjanst|tjänst/.test(previous);
+  if(!looksLikeService) return null;
+
+  const aliases=new Set();
+  const addAlias=(value)=>{
+    const token=normalizeSearchText(value).replace(/[^a-z0-9åäö]/g,'');
+    if(token.length>=3) aliases.add(token);
+  };
+  const ignored=new Set([
+    'teetteko','leikkaatteko','onko','teilla','teillä','mita','mitä','palvelua','palvelu',
+    'do','you','offer','have','a','an','the','service','services',
+    'har','ni','vanlig','tjanst','tjänst'
+  ]);
+  for(const word of previous.split(/\s+/)){
+    if(ignored.has(word)) continue;
+    addAlias(word);
+    if(/leikka|hius/.test(word)) ['leikka','hius','hair','cut','klipp','mcut'].forEach(addAlias);
+    if(/hair|cut|barber/.test(word)) ['leikka','hius','hair','cut','klipp','mcut'].forEach(addAlias);
+    if(/klipp|hår|har$/.test(word)) ['leikka','hius','hair','cut','klipp','mcut'].forEach(addAlias);
+    if(/parta|beard|skagg|skägg/.test(word)) ['parta','beard','skagg','mbeard'].forEach(addAlias);
+  }
+
+  const serviceSources=new Set(
+    (rows||[])
+      .filter(usableWebsiteRow)
+      .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='services')
+      .filter((row)=>{
+        const evidence=normalizeSearchText(String(row?.title||'')+' '+String(row?.answer||''));
+        return [...aliases].some((token)=>token.length>=3 && evidence.includes(token));
+      })
+      .map((row)=>String(row?.source_url||row?.sourceUrl||''))
+      .filter(Boolean)
+  );
+
+  const candidates=(rows||[])
+    .filter(usableWebsiteRow)
+    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='pricing')
+    .map((row,index)=>{
+      const answer=cleanKnowledgeText(row.answer);
+      const evidence=normalizeSearchText(String(row?.title||'')+' '+answer);
+      if(!/[€$£]|\b\d+(?:[.,]\d+)?\s*(?:eur|usd|sek|nok|dkk|kr)\b/i.test(answer)) return null;
+      let score=20;
+      let aliasHits=0;
+      for(const token of aliases){
+        if(token.length>=3 && evidence.includes(token)) aliasHits++;
+      }
+      score+=Math.min(70,aliasHits*18);
+      if(serviceSources.has(String(row?.source_url||row?.sourceUrl||''))) score+=12;
+      if(answer.length<=80) score+=22;
+      if(/^[^:]{2,65}:\s*(?:alk\.?|alkaen|from)?\s*[€$£]?\s*\d/i.test(answer)) score+=34;
+      if(/lisapalvel|lisäpalvel|add[- ]?on|extra\b|upgrade|korotus|supplement|tillagg|tillägg/.test(evidence)) score-=50;
+      if(/jasen|jäsen|member|membership|student|junior|opiskel|daytime/.test(evidence)) score-=14;
+      return {row,answer,score,index};
+    })
+    .filter(Boolean)
+    .sort((a,b)=>b.score-a.score || a.index-b.index);
+
+  const best=candidates[0];
+  if(!best || best.score<35) return null;
+
+  let answer=best.answer;
+  const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  const sourceLang=detectConversationLanguage(answer,'fi');
+  if(sourceLang!==target){
+    const translated=await forceAnswerLanguage(answer,target);
+    if(translated) answer=cleanKnowledgeText(translated);
+  }
+  return {
+    answer,
+    handoff:false,
+    confidence:0.95,
+    intent:'Hinta',
+    sourceIds:[best.row.id].filter(Boolean),
+    selected:[best.row],
+  };
 }
 
 async function directShippingCostAnswer(rows,message,lang='fi') {
@@ -4532,6 +4621,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     const quoteRow = rows.find(row => row.title === 'Tarjouspyyntölomake' && normalizeWebUrl(row.answer, false));
     if (quoteRow) return {answer:responseLang === 'en' ? 'You can request a quote using the button below.' : responseLang === 'sv' ? 'Du kan begära offert via knappen nedan.' : 'Voit pyytää tarjouksen alla olevasta painikkeesta.', handoff:false, confidence:1, intent:'Tarjouspyyntö', sourceIds:[quoteRow.id].filter(Boolean), selected:[quoteRow]};
   }
+
+  const servicePriceFollowup=await directServicePriceFollowup(rows,cleanMessage,history,responseLang);
+  if(servicePriceFollowup) return servicePriceFollowup;
 
   const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
   if(shippingCostResult) return shippingCostResult;
