@@ -722,7 +722,10 @@ export function essentialWebsiteCandidates(bundle) {
     for (let blockIndex=0; blockIndex<blocks.length; blockIndex++) {
       const block=blocks[blockIndex];
       const contactContext=/yhteys|yhteystied|asiakaspalvelu|contact|customer service|kontakt|kundservice/i.test(norm(block.heading||''));
-      const allowBusinessContact=!productDetailDoc || contactContext;
+      // Contact/address details embedded on a product detail page often belong
+      // to the manufacturer, not the merchant. Official merchant contacts are
+      // collected from the home/contact/footer pages during the same crawl.
+      const allowBusinessContact=!productDetailDoc;
       const directEmail=extractedContactEmail(block.text);
       if(directEmail && allowBusinessContact) add('contact','Sähköposti',directEmail,doc.url);
       const directPhone=extractedContactPhone(block.text);
@@ -732,7 +735,7 @@ export function essentialWebsiteCandidates(bundle) {
       }
 
       const kind = businessFactKind(block.text,block.heading);
-      if(productDetailDoc && !contactContext && (kind==='contact' || kind==='location')) continue;
+      if(productDetailDoc && (kind==='contact' || kind==='location')) continue;
       if (!kind) continue;
       if(kind==='pricing' && recoveredPriceIndexes.has(blockIndex)) continue;
       // Product pages are imported as complete product records. Do not create a
