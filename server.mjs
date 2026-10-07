@@ -3004,12 +3004,8 @@ async function directShippingCostAnswer(rows,message,lang='fi') {
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
   const raw=best.answer;
 
-  const moneyPattern='(?:[€$£]\\s*\\d+(?:[.,]\\d+)?|\\d+(?:[.,]\\d+)?\\s*(?:€|EUR|USD|SEK|NOK|DKK|kr|\\$|£))';
-  const freeThreshold=raw.match(new RegExp(
-    '(?:free\\s+(?:shipping|delivery)|ilmainen\\s+toimitus|maksuton\\s+toimitus|fri\\s+(?:frakt|leverans))[\\\\s\\\\S]{0,90}?(?:over|yli|from|alkaen|orders?\\s+over|tilaukset\\s+yli)?\\s*('+moneyPattern+')',
-    'i'
-  ));
-  const anyMoney=raw.match(new RegExp('('+moneyPattern+')','i'));
+  const freeThreshold=raw.match(/(?:free\s+(?:shipping|delivery)|ilmainen\s+toimitus|maksuton\s+toimitus|fri\s+(?:frakt|leverans))[\s\S]{0,90}?(?:over|yli|from|alkaen|orders?\s+over|tilaukset\s+yli)?\s*([€$£]\s*\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)?\s*(?:€|EUR|USD|SEK|NOK|DKK|kr|\$|£))/i);
+  const anyMoney=raw.match(/([€$£]\s*\d+(?:[.,]\d+)?|\d+(?:[.,]\d+)?\s*(?:€|EUR|USD|SEK|NOK|DKK|kr|\$|£))/i);
 
   let answer='';
   if(freeThreshold?.[1]){
@@ -3049,17 +3045,15 @@ async function directShippingCostAnswer(rows,message,lang='fi') {
 function deliveryDurationFact(value) {
   const raw=cleanKnowledgeText(value);
   if(!raw) return null;
-  const range='(\\\\d{1,3})\\\\s*[-–—]\\\\s*(\\\\d{1,3})';
-  const dayUnit='(?:business\\\\s+days?|working\\\\s+days?|days?|arkipäiv(?:ä|ää|ät)|arkipaiv(?:a|aa|at)|päiv(?:ä|ää|ät)|paiv(?:a|aa|at)|arbetsdagar|dagar)';
-  const weekUnit='(?:weeks?|viikkoa?|veckor?)';
-  const findScoped=(word)=>{
-    const re=new RegExp(word+'[\\\\s\\\\S]{0,90}?'+range+'\\\\s*('+dayUnit+'|'+weekUnit+')','i');
+  const unit='(?:business\\s+days?|working\\s+days?|days?|arkipäiv(?:ä|ää|ät)|arkipaiv(?:a|aa|at)|päiv(?:ä|ää|ät)|paiv(?:a|aa|at)|arbetsdagar|dagar|weeks?|viikkoa?|veckor?)';
+  const scoped=(scope)=>{
+    const re=new RegExp(scope+'[\\s\\S]{0,90}?(\\d{1,3})\\s*[-–—]\\s*(\\d{1,3})\\s*('+unit+')','i');
     const m=raw.match(re);
     return m?{min:Number(m[1]),max:Number(m[2]),unit:m[3]}:null;
   };
-  const domestic=findScoped('(?:domestic|kotimaan|suomen|inrikes)');
-  const international=findScoped('(?:international|kansainväl|kansainval|utrikes)');
-  const generic=raw.match(new RegExp(range+'\\\\s*('+dayUnit+'|'+weekUnit+')','i'));
+  const domestic=scoped('(?:domestic|kotimaan|suomen|inrikes)');
+  const international=scoped('(?:international|kansainväl|kansainval|utrikes)');
+  const generic=raw.match(new RegExp('(\\d{1,3})\\s*[-–—]\\s*(\\d{1,3})\\s*('+unit+')','i'));
   const genericFact=generic?{min:Number(generic[1]),max:Number(generic[2]),unit:generic[3]}:null;
   return {raw,domestic,international,generic:genericFact};
 }
