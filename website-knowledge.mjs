@@ -31,6 +31,8 @@ function policyHeadingOnly(value, kind = '') {
   // Theme benefit strips and accordion headings may contain policy keywords but
   // still do not state an actual customer rule.
   if(/(?:simple checkout|secure payment options?|save favorites?|track your orders)/i.test(raw)) return true;
+  // Policy section buttons are navigation instructions, not customer terms.
+  if(/\b(?:paina|klikkaa|click|press|tryck)\s+(?:tasta|tästä|here|har|här)\b/i.test(n)) return true;
   if(/^(?:shipping\s*(?:&|and)\s*return|product description\s+shipping\s*(?:&|and)\s*return|order processing and shipping information(?:\s+for\s*\S+|\s*for\S+)?)$/i.test(n)) return true;
   if(/\d/.test(n)) return false;
   if(kind==='payment' && /visa|mastercard|amex|american express|paypal|klarna|mobilepay|apple pay|google pay|kortti|card|lasku|invoice|faktura/.test(n)) return false;

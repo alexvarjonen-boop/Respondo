@@ -225,3 +225,19 @@ test('ecommerce profile does not mix product price badges into company service p
   assert.match(profile.pricing,/Hair Cut: Student: 17 €/);
   assert.match(profile.pricing,/Beard Trim: Master: 40 €/);
 });
+
+test('return and warranty form CTA banners never become warranty policy facts',()=>{
+  const doc={
+    url:'https://shop.example/pages/returns',
+    blocks:[
+      {text:'PALAUTUS TAI REKLAMAATIO? PAINA TÄSTÄ!',heading:'Reklamaatio'},
+      {text:'RETURN OR WARRANTY CLAIM? CLICK HERE!',heading:'Warranty'},
+      {text:'Tuotteella on 2 vuoden takuu valmistusvirheiden varalta.',heading:'Takuu'},
+    ],
+    links:[],products:[],text:'',
+  };
+  const profile=essentialWebsiteProfile({finalUrl:'https://shop.example/',pageDocuments:[doc]});
+  assert.match(profile.warranty,/2 vuoden takuu/);
+  assert.doesNotMatch(profile.warranty,/PAINA TÄSTÄ|CLICK HERE/);
+  assert.doesNotMatch(profile.returns,/PAINA TÄSTÄ|CLICK HERE/);
+});
