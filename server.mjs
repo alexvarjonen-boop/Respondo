@@ -1697,7 +1697,17 @@ function productCatalog(rows) {
 }
 function productQueryTokens(message) {
   const ignored=/^(?:mika|mikä|mitka|mitkä|mita|mitä|on|ovat|teidan|teidän|teilla|teillä|meidan|meidän|halvin|edullisin|kallein|paras|suosituin|suosituimmat|myydyin|myydyimmat|popular|popularest|bestseller|bestsellers|best|selling|price|prices|cheapest|cheaper|lowest|most|expensive|what|which|your|you|have|do|cost|how|much|billigast|billigaste|dyrast|dyraste|popularast|populärast|bastsaljare|bästsäljare|vilken|vilka|har|ni|kostar|tuote|tuotteet|product|products|vari|väri|varit|värit|color|colors|colour|colours|farg|färg|koko|koot|size|sizes|storlek|materiaali|materiaalit|material|materials|mitat|dimensions|dimension|paino|weight)$/;
-  return [...new Set(searchTokens(message).map(productStem).filter((word)=>word.length>=3&&!ignored.test(word)))];
+  const normalized=String(message||'').replace(/[-‐‑‒–—]/g,' ');
+  const tokens=searchTokens(normalized).map(productStem).filter((word)=>word.length>=3&&!ignored.test(word));
+  const q=normalizeSearchText(normalized);
+  const aliases=[];
+  if(/\b(?:musta|mustan|mustaa|black|svart|svarta|svartfargad|svartfärgad)\b/.test(q)) aliases.push('black');
+  if(/\b(?:pronssi|pronssinen|pronssia|pronssisen|bronze|brons|bronsfargad|bronsfärgad)\b/.test(q)) aliases.push('bronze');
+  if(/\b(?:teras|teräs|teraksinen|teräksinen|steel|stal|stål)\b/.test(q)) aliases.push('steel');
+  if(/\b(?:valkoinen|valkoisen|white|vit|vita)\b/.test(q)) aliases.push('white');
+  if(/\b(?:punainen|punaisen|red|rod|röd|roda|röda)\b/.test(q)) aliases.push('red');
+  if(/\b(?:sininen|sinisen|blue|bla|blå)\b/.test(q)) aliases.push('blue');
+  return [...new Set([...tokens,...aliases])];
 }
 function productMatchScore(product, tokens) {
   if(!tokens.length) return 1;
@@ -3632,6 +3642,18 @@ function contextualizeConversationQuery(message, history = []) {
     care:'hoito puhdistus care cleaning',
     sizing:'koko mitat size dimensions storlek'
   };
+
+  // Color/variant follow-ups after a product-price question need the previous
+  // product family as context: "Paljonko musta putteri maksaa?" -> "Entä pronssinen?".
+  const previousFamily=requestedProductFamily(previous);
+  const variantFollowup=/\b(?:musta|black|svart|pronssi|pronssinen|bronze|brons|teras|teräs|steel|stal|stål|valkoinen|white|vit|punainen|red|röd|sininen|blue|blå)\b/.test(rest);
+  if ((lead||shortContinuation) && previousTopic==='pricing' && previousFamily && variantFollowup) {
+    const familyWords={
+      putter:'putter',headcover:'headcover',grip:'grip',towel:'towel',
+      golfball:'golfball',golfbag:'golfbag',giftcard:'gift card'
+    };
+    return rest+' '+(familyWords[previousFamily]||previousFamily)+' '+hints.pricing;
+  }
 
   // "Entä katon pesu?" after a pricing question means the price of the new
   // service. Carry the old intent, not the old service noun.
