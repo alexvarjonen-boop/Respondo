@@ -550,11 +550,11 @@ export function businessFactKind(text, context = '') {
   const concreteServiceContext=isConcreteServiceLabel(context);
   const serviceSectionContext=/^(?:palvelut?|services?|tjanster|tjänster|palvelut ja hinnat|services and prices|tjanster och priser|tjänster och priser)$/i.test(c);
   const explicitServiceOffering=/\b(?:tarjoamme|tarjoaa|teemme|palvelemme|saat meilta|saat meiltä|we offer|we provide|we perform|we do|offers|provides|vi erbjuder|erbjuder|vi utfor|vi utför)\b/.test(n);
-  const concreteServiceBody=service.test(n) && (
+  const concreteServiceBody=isConcreteServiceLabel(t) || (service.test(n) && (
     /\b(?:hiustenleikka|parran|parturi|kampaamo|pesu|siivou|puhdist|maala|raivau|huolto|asennu|korjau|kuljet|muutto|poisvienti|purku|kartoit|saneeraus|remont|hiero|fysioter|hoito|koulutus|konsult|suunnittel|valokuva|catering)\w*/.test(n)
     || /\b(?:haircut|beard|barber|cleaning|washing|painting|maintenance|installation|repair|moving|transport|renovation|massage|physiotherapy|consulting|design|photography|catering)\w*/.test(n)
     || /\b(?:harklipp|hårklipp|skagg|skägg|frisor|frisör|stadning|städning|tvatt|tvätt|rengor|rengör|malning|målning|underhall|underhåll|installation|reparation|flytt|transport|renovering|massage|fysioterapi|konsult|design|fotografering|catering)\w*/.test(n)
-  );
+  ));
   if (
     t.length >= 3 &&
     concreteServiceBody &&
