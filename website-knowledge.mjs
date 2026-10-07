@@ -45,9 +45,56 @@ const care = /hoito-oh|käyttöoh|kayttooh|huolto-oh|pesuoh|care\s+instruction|p
 const sizing = /kokotauluk|koko-opas|mitoitus|koot\b|sizes?\b|size\s+guide|sizing|fit\b|mitat\b|dimensions?\b|pituus|leveys|korkeus|halkaisija|paino\b|weight\b|length\b|width\b|height\b|storlek|mått\b|matt\b/i;
 const location = /myymäl|myymala|showroom|noutopiste|pickup\s+point|store\s+location|our\s+store|butik|butiker|lagerbutik|sijaitsee|located\s+(?:at|in)|find\s+us|löydät\s+meidät|loydat\s+meidat|home\s+base\s+(?:is\s+)?(?:in|at)|based\s+(?:in|at)|headquartered\s+(?:in|at)|head\s+office\s+(?:in|at)|kotipaikka|toimipaikka|paakonttori|pääkonttori/i;
 const customerQuestion = /^(?:mitä|mita|mikä|mika|miten|kuinka|voiko|saako|onko|missä|missa|milloin|paljonko|what|which|how|can|do|does|is|are|where|when|why|vad|vilken|hur|kan|har|är|ar|var|när|nar)\b/i;
-const email = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
+const email = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,12}\b/i;
 const phone = /(?:\+\d{1,3}[\s().-]*|\b0)\d(?:[\s().-]*\d){5,11}\b/;
 const billingAddressNoise = /verkkolask|laskutusosoite|laskutus\s*osoite|e-?lasku|e-?invoice|invoicing address|invoice address|billing address|ovt\b|operaattori|operator\b/i;
+
+const placeholderCommerce = /lorem ipsum|example(?:\.com|\s+product)|dummy (?:product|content)|sample product|placeholder(?:\s+product|\s+text)|demo product|woocommerce placeholder/i;
+const genericProductName = /^(?:shop|store|products?|tuotteet|kauppa)(?:\s*[-–—|].*)?$|(?:products?|tuotteet)\s+(?:archive|archives|arkisto|arkistot|arşivleri)$/i;
+
+function extractedBusinessEmail(value) {
+  const raw=clean(decodeHtml(value))
+    // Some themes concatenate the next address line directly after the e-mail
+    // TLD in rendered text: "info@example.fiHallituskatu 11".
+    .replace(/(\.(?:fi|se|no|dk|com|net|org|eu))(?=[A-ZÅÄÖ])/g,'$1 ');
+  const found=raw.match(email)?.[0] || '';
+  if(!found || /@(example|examplemail|test|invalid)\.(?:com|org|net|fi)$/i.test(found)) return '';
+  return found;
+}
+
+function physicalAddressFragments(value) {
+  const raw=clean(decodeHtml(value));
+  if(!raw || billingAddressNoise.test(raw)) return [];
+  const out=[];
+  const add=(value)=>{
+    const text=clean(value).replace(/^[,;:|–—-]+\s*|\s*[,;:|–—-]+$/g,'');
+    if(!text || text.length>140 || out.some((x)=>norm(x)===norm(text))) return;
+    out.push(text);
+  };
+
+  // Prefer complete street + postal locality when it is present.
+  const full=raw.match(/\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}(?:katu|tie|kuja|polku|väylä|vayla|raitti|ranta|kaari|aukio|tori|puisto|rinne|gatan|vägen|vagen|väg|vag|gränden|granden|street|road|avenue|lane|boulevard|drive)\s+\d+[A-Za-z]?(?:\s*[,|-]?\s*\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55})?)\b/i);
+  if(full) add(full[1]);
+
+  const street=raw.match(/\b([A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55}(?:katu|tie|kuja|polku|väylä|vayla|raitti|ranta|kaari|aukio|tori|puisto|rinne|gatan|vägen|vagen|väg|vag|gränden|granden|street|road|avenue|lane|boulevard|drive)\s+\d+[A-Za-z]?)\b/i);
+  if(street) add(street[1]);
+
+  const postal=raw.match(/\b(\d{5}\s+[A-ZÅÄÖa-zåäö][A-ZÅÄÖa-zåäö .'-]{1,55})\b/);
+  if(postal) add(postal[1]);
+  return out;
+}
+
+function catalogProductJunk(product) {
+  const name=clean(product?.name||'');
+  const description=clean(product?.description||'');
+  if(!name) return true;
+  if(placeholderCommerce.test(name+' '+description)) return true;
+  if(genericProductName.test(name)) return true;
+  const price=Number(product?.price);
+  const maxPrice=Number(product?.maxPrice);
+  if(Number.isFinite(price) && price===0 && (!Number.isFinite(maxPrice) || maxPrice===0)) return true;
+  return false;
+}
 const labels = {
   services:'Palvelut', pricing:'Hinnat', hours:'Aukioloajat', contact:'Yhteystiedot', quote:'Tarjouspyyntö',
   delivery:'Toimitus ja seuranta', returns:'Palautukset ja vaihdot', warranty:'Takuu', payment:'Maksaminen',
@@ -527,7 +574,11 @@ export function businessFactKind(text, context = '') {
 
 export function essentialWebsiteCandidates(bundle) {
   const out = [], seen = new Set();
-  const hasCatalogProducts=Array.isArray(bundle?.products) && bundle.products.length>0;
+  const rawCatalogProducts=Array.isArray(bundle?.products)?bundle.products:[];
+  const catalogJunkCount=rawCatalogProducts.filter(catalogProductJunk).length;
+  const catalogLooksLikeTemplate=rawCatalogProducts.length>=3 && catalogJunkCount>=2 && catalogJunkCount/rawCatalogProducts.length>=0.35;
+  const catalogProducts=catalogLooksLikeTemplate?[]:rawCatalogProducts.filter((product)=>!catalogProductJunk(product));
+  const hasCatalogProducts=catalogProducts.length>0;
   const add = (kind,title,answer,sourceUrl) => {
     const text = clean(answer), key = kind+':'+norm(text);
     if (!text || seen.has(key)) return;
@@ -551,7 +602,7 @@ export function essentialWebsiteCandidates(bundle) {
     });
   };
 
-  for (const product of Array.isArray(bundle?.products) ? bundle.products : []) addProduct(product,bundle?.finalUrl || '');
+  for (const product of catalogProducts) addProduct(product,bundle?.finalUrl || '');
 
   const quoteLinks = [];
   const catalogLinks = [];
@@ -561,10 +612,18 @@ export function essentialWebsiteCandidates(bundle) {
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
     if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial/.test(docPath)) continue;
     if (!companyInfoDoc && /blog|uutis|news/.test(docPath)) continue;
-    const docProducts=Array.isArray(doc.products)?doc.products:[];
+    const docPathIsCommerce=/\/(?:product|products|shop|store|product-category|product-tag|tag\/products)(?:\/|$)/.test(new URL(doc.url).pathname.toLowerCase());
+    const docProducts=catalogLooksLikeTemplate
+      ? []
+      : (Array.isArray(doc.products)?doc.products:[]).filter((product)=>!catalogProductJunk(product));
+    if(catalogLooksLikeTemplate && docPathIsCommerce) continue;
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
     for (const block of blocks) {
+      const directEmail=extractedBusinessEmail(block.text);
+      if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
+      for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
+
       const kind = businessFactKind(block.text,block.heading);
       if (!kind) continue;
       // Product pages are imported as complete product records. Do not create a
@@ -572,6 +631,12 @@ export function essentialWebsiteCandidates(bundle) {
       if (kind === 'pricing' && docProducts.length) continue;
       const detachedNumericPrice=/^[€$£]?\s*\d[\d\s.,]*(?:\s*(?:€|eur|usd|sek|kr|\$|£))?$/i.test(clean(block.text));
       if (kind === 'pricing' && hasCatalogProducts && detachedNumericPrice) continue;
+      if (kind === 'pricing' && /^(?:[€$£]\s*)?0(?:[.,]0+)?(?:\s*(?:€|eur|usd|sek|kr|\$|£))?$/i.test(clean(block.text))) continue;
+      if (kind === 'faq') {
+        const faqContext=norm(docPath+' '+block.heading);
+        const faqPage=/faq|ukk|usein-kysytyt|usein kysytyt|help|support|asiakasohje|customer-info|customer info/.test(faqContext);
+        if(!faqPage && !docProducts.length) continue;
+      }
       let title = labels[kind];
       if (kind === 'delivery') {
         // Classify the individual fact by its own sentence, not merely by a
@@ -593,8 +658,8 @@ export function essentialWebsiteCandidates(bundle) {
       if (kind === 'sizing') title = 'Koot ja mitat';
       if (kind === 'location') title = /\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text) || /(?:osoite|address|adress)\s*:?\s*\S+.*\d/i.test(block.text) ? 'Osoite' : 'Sijainti ja myymälät';
       if (kind === 'faq') title = clean(block.heading).slice(0,180) || 'Usein kysytyt';
-      if (kind === 'contact') title = email.test(block.text) ? 'Sähköposti' : phone.test(block.text) ? 'Puhelinnumero' : 'Yhteystiedot';
-      if (kind === 'contact' && email.test(block.text)) add(kind,'Sähköposti',block.text.match(email)[0],doc.url);
+      if (kind === 'contact') title = extractedBusinessEmail(block.text) ? 'Sähköposti' : phone.test(block.text) ? 'Puhelinnumero' : 'Yhteystiedot';
+      if (kind === 'contact' && extractedBusinessEmail(block.text)) add(kind,'Sähköposti',extractedBusinessEmail(block.text),doc.url);
       if (kind === 'contact' && phone.test(block.text) && !/\b\d{5}\s+[A-Za-zÅÄÖåäö]/.test(block.text)) add(kind,'Puhelinnumero',block.text.match(phone)[0],doc.url);
       if (kind !== 'contact') {
         const concreteHeading = clean(block.heading);
