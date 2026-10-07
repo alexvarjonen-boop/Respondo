@@ -3820,6 +3820,8 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       if(!sameDetail && !sharedUseful && normalized!==seedPathNormalized) return false;
     }
     const companyInfo=/about|about-us|meista|meistä|yritys|company|who-we-are|our-story/.test(normalized);
+    const templatePath=/\/(?:service-plus|about-us-2|shortcodes?|typography|elements?|theme(?:-demo)?|demo-content|sample-page|home-\d+|page-\d+)(?:\/|$)/i.test(pathname);
+    if(templatePath) return false;
     if (companyInfo) return !/privacy|terms|tietosuoja|kayttoeh|cookie|arvostel|reviews|testimonial|cart|checkout|login|register|wp-admin|\.(?:js|css|mp4|mp3|woff2?)$/i.test(pathname);
     return !/privacy|terms|tietosuoja|kayttoeh|cookie|arvostel|reviews|testimonial|blog|uutis|news|cart|checkout|login|register|wp-admin|\.(?:js|css|mp4|mp3|woff2?)$/i.test(pathname);
   };
