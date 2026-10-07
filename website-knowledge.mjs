@@ -18,7 +18,7 @@ const clock = /\b\d{1,2}[:.]\d{2}\s*(?:–|-|—|to|till)\s*\d{1,2}(?:[:.]\d{2})
 const price = /(?:\d[\d\s.,]*\s*(?:€|eur\b|usd\b|sek\b|kr\b|\$|£)|[€$£]\s*\d)|(?:hinta|hinnoittelu|price|pris).*(?:sopim|tarjous|quote|offert|contact|yhtey|avtal)/i;
 const delivery = /toimitus|toimitusaika|toimitamme|toimitetaan|seurant|lahetys|lähetys|\bship(?:s|ped|ping)?\b|delivery|shipment|tracking|track(?:ing)?\s+(?:code|number|order)|nouto|pickup|leverans|sparning|spårning|forsand|försänd/i;
 const returns = /palaut(?:us\w*|taa\w*|an\w*|etaan\w*|ettava\w*|taminen\w*)|\bvaihto\b|vaihd(?:ot|on|ossa|oksi|ettava|etaan|taa)|hyvitys|return|refund|exchange|retur|aterbetal|återbetal|byte\b/i;
-const warranty = /takuu|reklamaatio|warranty|\bguarantee\b|garanti|reklamation/i;
+const warranty = /\b(?:tuote)?takuu(?:n|ssa|sta|seen|aika\w*|ehto\w*|korv\w*)?\b|reklamaatio|\bwarrant(?:y|ies)\b|\bguarantee\b|\bgaranti\w*|reklamation/i;
 const payment = /maksutapa|maksaminen|maksuvaihtoeh|korttimaks|lasku\b|klarna|paypal|mobilepay|apple\s*pay|google\s*pay|payment|payment method|pay\s+(?:with|by)|betalning|betalningsmetod|faktura/i;
 
 // Policy headings and marketing badges are context, not customer-answer facts.
@@ -727,20 +727,25 @@ export function essentialWebsiteCandidates(bundle) {
         break;
       }
     }
+    const productDetailDoc=/\/(?:products?|product|tuotteet?|tuote)\//i.test(rawDocPath);
     for (let blockIndex=0; blockIndex<blocks.length; blockIndex++) {
       const block=blocks[blockIndex];
       const manufacturerContext=manufacturerContactContext(block.heading);
-      const directEmail=manufacturerContext ? '' : extractedContactEmail(block.text);
+      // Product-detail pages can contain the manufacturer/importer's legal
+      // contact card. Those details are not safe evidence for the merchant.
+      // The crawler collects the merchant's own home/contact/footer pages too.
+      const allowBusinessContact=!productDetailDoc && !manufacturerContext;
+      const directEmail=allowBusinessContact ? extractedContactEmail(block.text) : '';
       if(directEmail) add('contact','Sähköposti',directEmail,doc.url);
-      const directPhone=manufacturerContext ? '' : extractedContactPhone(block.text);
+      const directPhone=allowBusinessContact ? extractedContactPhone(block.text) : '';
       if(directPhone) add('contact','Puhelinnumero',directPhone,doc.url);
-      if(!manufacturerContext) {
+      if(allowBusinessContact) {
         for(const address of physicalAddressFragments(block.text)) add('location','Osoite',address,doc.url);
       }
 
       const kind = businessFactKind(block.text,block.heading);
       if (!kind) continue;
-      if(manufacturerContext && (kind==='contact' || kind==='location')) continue;
+      if((manufacturerContext || productDetailDoc) && (kind==='contact' || kind==='location')) continue;
       if(kind==='pricing' && recoveredPriceIndexes.has(blockIndex)) continue;
       // Product pages are imported as complete product records. Do not create a
       // second detached "price" fact that has lost the product name/link.
@@ -917,6 +922,7 @@ function conciseProfileServices(facts) {
     const key=norm(text);
     if(!text || text.length>180 || seen.has(key)) return;
     if(/\b(?:varaa|ota yhtey|contact us|book now|lue lisaa|lue lisää|read more|tutustu|tervetuloa|welcome|jasen|jäsen|membership|sopimuseh|terms)\b/i.test(text)) return;
+    if(/(?:palvelussa|palveluissa|palveluista|palveluun|services? from|services? in)$/i.test(key)) return;
     if(!isConcreteServiceLabel(text) && !pricedServiceLabel(text)) return;
     seen.add(key);
     out.push(text);
