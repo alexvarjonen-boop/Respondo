@@ -982,7 +982,7 @@ function conciseProfileServices(facts) {
       .trim();
     const key=norm(text);
     if(!text || text.length>180 || seen.has(key) || productNames.has(key)) return;
-    if(/(?:palvelussa|palvelusta|palveluista|palveluiden|palvelujen|palvelun)$/i.test(key)) return;
+    if(/\b(?:palvelussa|palvelusta|palveluista|palveluiden|palvelujen|palvelun)\b/i.test(key)) return;
     if(/\b(?:varaa|ota yhtey|contact us|book now|lue lisaa|lue lisää|read more|tutustu|tervetuloa|welcome|jasen|jäsen|membership|sopimuseh|terms)\b/i.test(text)) return;
     if(!isConcreteServiceLabel(text) && !pricedServiceLabel(text)) return;
     seen.add(key);
