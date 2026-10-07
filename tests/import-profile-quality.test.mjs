@@ -136,3 +136,22 @@ test('profile service summary does not append stray service-word fragments',()=>
   assert.match(profile.services,/Parran muotoilu/i);
   assert.doesNotMatch(profile.services,/palvelussa|palveluista/i);
 });
+
+
+test('catalog product names cannot leak into ecommerce service summary',()=>{
+  const doc=extractBusinessDocument(`
+    <section><h2>Palvelut ja hinnasto</h2>
+      <p>PARRANSUORISTIN - MATT BLACK</p>
+      <p>Shave Kit: Normaalihinta 49,90 €</p>
+      <p>Hair Cut: Student: 17 €</p>
+      <p>Beard Trim: Student: 15 €</p>
+    </section>
+  `,'https://shop.example/');
+  const products=[
+    {name:'PARRANSUORISTIN - MATT BLACK PRO',url:'https://shop.example/products/parransuoristin',price:29.9,currency:'EUR'},
+    {name:'Shave Kit',url:'https://shop.example/products/shave-kit',price:49.9,currency:'EUR'},
+  ];
+  const profile=essentialWebsiteProfile({finalUrl:'https://shop.example/',products,pageDocuments:[doc]});
+  assert.doesNotMatch(profile.services,/PARRANSUORISTIN|Shave Kit/i,profile.services);
+  assert.match(profile.services,/Hair Cut: Student|Beard Trim: Student/i,profile.services);
+});
