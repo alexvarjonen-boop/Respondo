@@ -432,6 +432,9 @@ const q = (text, params = []) => {
   return pool.query(text, params);
 };
 
+const INTENT_VARIANT_TARGET_PER_LANGUAGE = 1000000;
+const INTENT_VARIANT_SEED_VERSION = '2026-10-07-million-v1';
+const INTENT_RUNTIME_CACHE_LIMIT = 350000;
 let intentUtteranceCache = new Map();
 
 function intentForMessage(value, language = '') {
@@ -447,10 +450,52 @@ function intentForMessage(value, language = '') {
   return classifyIntentByGrammar(normalized);
 }
 
+async function resolveIntentForMessage(value, language = '') {
+  const normalized = normalizeIntentPhrase(value);
+  if (!normalized) return '';
+  const requested = ['fi','sv','en'].includes(String(language || '').toLowerCase())
+    ? [String(language).toLowerCase()]
+    : ['fi','sv','en'];
+
+  const immediate = intentForMessage(normalized, language);
+  if (immediate) return immediate;
+  if (!pool) return '';
+
+  try {
+    const found = await q(
+      `SELECT language,intent
+         FROM (
+           SELECT language,intent,0 AS priority
+             FROM intent_utterances
+            WHERE active=TRUE
+              AND normalized=$1
+              AND language=ANY($2::text[])
+           UNION ALL
+           SELECT language,intent,1 AS priority
+             FROM intent_phrase_variants
+            WHERE normalized=$1
+              AND language=ANY($2::text[])
+         ) candidate
+        ORDER BY priority
+        LIMIT 1`,
+      [normalized, requested],
+    );
+    const row = found.rows[0];
+    if (!row?.intent) return '';
+    if (intentUtteranceCache.size < INTENT_RUNTIME_CACHE_LIMIT) {
+      intentUtteranceCache.set(String(row.language) + '|' + normalized, String(row.intent));
+    }
+    return String(row.intent);
+  } catch (e) {
+    console.warn('Intent variant lookup failed', e?.message || e);
+    return '';
+  }
+}
+
 async function seedAndLoadIntentUtterances() {
   if (!pool) return;
   const marker = await q("SELECT value FROM app_settings WHERE key='intent_utterance_seed_version'");
-  const countResult = await q("SELECT COUNT(*)::int AS count FROM intent_utterances WHERE active=TRUE");
+  const countResult = await q("SELECT COUNT(*)::int AS count FROM intent_utterances WHERE active=TRUE AND source='generated'");
   const count = Number(countResult.rows[0]?.count || 0);
   const needsSeed = marker.rows[0]?.value !== INTENT_UTTERANCE_SEED_VERSION || count < 240000;
 
@@ -483,7 +528,10 @@ async function seedAndLoadIntentUtterances() {
     );
   }
 
-  const rows = await q("SELECT language,intent,normalized FROM intent_utterances WHERE active=TRUE");
+  // Keep only the compact 250k core in process memory. The million-per-language
+  // long tail stays indexed in Postgres and is fetched only when an exact phrase
+  // is actually asked, preventing Railway memory growth from millions of strings.
+  const rows = await q("SELECT language,intent,normalized FROM intent_utterances WHERE active=TRUE AND source='generated'");
   const next = new Map();
   for (const row of rows.rows) {
     const normalized = normalizeIntentPhrase(row.normalized);
@@ -494,7 +542,106 @@ async function seedAndLoadIntentUtterances() {
     }
   }
   intentUtteranceCache = next;
-  console.log(`Intent utterances loaded: ${intentUtteranceCache.size}`);
+  console.log(`Intent core loaded: ${intentUtteranceCache.size}`);
+}
+
+const INTENT_VARIANT_WRAPPERS = {
+  fi:{
+    prefixes:['haluaisin viela kysya','voisitteko kertoa','osaatteko neuvoa','minulla olisi kysymys','haluaisin varmistaa','voitteko selventaa','tarvitsisin tietoa','olen miettinyt','kertoisitteko','voisinko saada tietoa','auttaisitteko tassa','yritan selvittaa','pieni tarkennus','viela yksi asia','ennen kuin etenen','asiakkaana haluaisin tietaa'],
+    suffixes:['kiitos paljon','jos vain mahdollista','ennen kuin paatan','ennen tilausta','ennen kuin etenen','ihan varmuuden vuoksi','olisi hyva tietaa','haluaisin varmistaa taman','asiakkaana','ennen ostoa','ennen varausta','mahdollisimman pian','selkeasti','lyhyesti','tarkemmin','kiitos avusta']
+  },
+  sv:{
+    prefixes:['jag skulle vilja fraga','kan ni beratta','kan ni rada mig','jag har en fraga','jag vill forsakra mig','kan ni forklara','jag behover information','jag har funderat pa','skulle ni kunna beratta','kan jag fa information','kan ni hjalpa mig med detta','jag forsoker ta reda pa','en liten precisering','en sak till','innan jag gar vidare','som kund vill jag veta'],
+    suffixes:['tack sa mycket','om det ar mojligt','innan jag bestammer mig','fore bestallningen','innan jag gar vidare','for sakerhets skull','det vore bra att veta','jag vill forsakra mig om detta','som kund','fore kopet','fore bokningen','sa snart som mojligt','tydligt','kortfattat','mer detaljerat','tack for hjalpen']
+  },
+  en:{
+    prefixes:['i would like to ask','could you tell me','could you advise me','i have a question','i want to make sure','could you clarify','i need some information','i have been wondering','would you tell me','could i get information','could you help me with this','i am trying to find out','a small clarification','one more thing','before i continue','as a customer i would like to know'],
+    suffixes:['thank you very much','if possible','before i decide','before ordering','before i continue','just to make sure','it would be good to know','i want to confirm this','as a customer','before buying','before booking','as soon as possible','clearly','briefly','in more detail','thanks for the help']
+  }
+};
+
+async function ensureMillionIntentVariants() {
+  if (!pool) return;
+  for (const language of ['fi','sv','en']) {
+    const coverage = await q(
+      `SELECT
+         (SELECT COUNT(*)::int FROM intent_utterances WHERE active=TRUE AND language=$1) +
+         (SELECT COUNT(*)::int FROM intent_phrase_variants WHERE language=$1) AS count`,
+      [language],
+    );
+    let total = Number(coverage.rows[0]?.count || 0);
+    if (total >= INTENT_VARIANT_TARGET_PER_LANGUAGE) continue;
+
+    const wrappers = INTENT_VARIANT_WRAPPERS[language];
+
+    for (let attempt=0; attempt<4 && total<INTENT_VARIANT_TARGET_PER_LANGUAGE; attempt++) {
+      const needed = INTENT_VARIANT_TARGET_PER_LANGUAGE - total;
+      await q(
+        `WITH base AS (
+           SELECT intent,normalized,row_number() OVER (ORDER BY normalized) AS rn
+             FROM intent_utterances
+            WHERE active=TRUE
+              AND source='generated'
+              AND language=$1
+         ),
+         candidate AS (
+           SELECT
+             b.intent,
+             trim(
+               CASE (g % 3)
+                 WHEN 0 THEN
+                   ($3::text[])[1 + ((b.rn + g)::int % cardinality($3::text[]))] || ' ' ||
+                   b.normalized || ' ' ||
+                   ($4::text[])[1 + ((b.rn * 3 + g)::int % cardinality($4::text[]))]
+                 WHEN 1 THEN
+                   ($3::text[])[1 + ((b.rn + g)::int % cardinality($3::text[]))] || ' ' ||
+                   b.normalized
+                 ELSE
+                   b.normalized || ' ' ||
+                   ($4::text[])[1 + ((b.rn * 5 + g)::int % cardinality($4::text[]))]
+               END
+             ) AS normalized,
+             b.rn,
+             g
+           FROM base b
+           CROSS JOIN generate_series(1,64) AS g
+         )
+         INSERT INTO intent_phrase_variants(language,intent,normalized)
+         SELECT $1,c.intent,c.normalized
+           FROM candidate c
+          WHERE c.normalized <> ''
+            AND NOT EXISTS (
+              SELECT 1 FROM intent_utterances core
+               WHERE core.language=$1 AND core.active=TRUE AND core.normalized=c.normalized
+            )
+            AND NOT EXISTS (
+              SELECT 1 FROM intent_phrase_variants existing
+               WHERE existing.language=$1 AND existing.normalized=c.normalized
+            )
+          ORDER BY c.rn,c.g
+          LIMIT $2
+         ON CONFLICT(language,normalized) DO NOTHING`,
+        [language, needed, wrappers.prefixes, wrappers.suffixes],
+      );
+
+      const after = await q(
+        `SELECT
+           (SELECT COUNT(*)::int FROM intent_utterances WHERE active=TRUE AND language=$1) +
+           (SELECT COUNT(*)::int FROM intent_phrase_variants WHERE language=$1) AS count`,
+        [language],
+      );
+      total = Number(after.rows[0]?.count || 0);
+    }
+    if (total < INTENT_VARIANT_TARGET_PER_LANGUAGE) {
+      throw new Error(`Intent coverage for ${language} stopped at ${total}`);
+    }
+    console.log(`Intent coverage ${language}: ${total}`);
+  }
+
+  await q(
+    "INSERT INTO app_settings(key,value,updated_at) VALUES('intent_variant_seed_version',$1,NOW()) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value,updated_at=NOW()",
+    [INTENT_VARIANT_SEED_VERSION],
+  );
 }
 const uid = () => crypto.randomUUID();
 const cleanEmail = (value) => String(value || '').trim().toLowerCase();
@@ -4275,6 +4422,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const cleanMessage = String(message || '').trim();
   if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: responseLang === 'en' ? 'Empty' : responseLang === 'sv' ? 'Tom' : 'Tyhjä', sourceIds: [], selected: [] };
 
+  await resolveIntentForMessage(cleanMessage,responseLang);
   const normalized = normalizeSearchText(cleanMessage);
   const conversational=conversationalResponse(cleanMessage,responseLang,history);
   if (conversational) {
@@ -10667,6 +10815,14 @@ async function ensureRuntimeSchema() {
   await q('CREATE UNIQUE INDEX IF NOT EXISTS idx_intent_utterances_language_normalized ON intent_utterances(language,normalized)');
   await q('CREATE INDEX IF NOT EXISTS idx_intent_utterances_intent_language ON intent_utterances(intent,language)');
   await q("DO $intent$ BEGIN IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN REVOKE ALL PRIVILEGES ON TABLE public.intent_utterances FROM anon; END IF; IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN REVOKE ALL PRIVILEGES ON TABLE public.intent_utterances FROM authenticated; END IF; END $intent$");
+  await q(`CREATE TABLE IF NOT EXISTS intent_phrase_variants (
+    language TEXT NOT NULL,
+    intent TEXT NOT NULL,
+    normalized TEXT NOT NULL,
+    PRIMARY KEY(language,normalized)
+  )`);
+  await q('ALTER TABLE public.intent_phrase_variants ENABLE ROW LEVEL SECURITY');
+  await q("DO $intent_variants$ BEGIN IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN REVOKE ALL PRIVILEGES ON TABLE public.intent_phrase_variants FROM anon; END IF; IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN REVOKE ALL PRIVILEGES ON TABLE public.intent_phrase_variants FROM authenticated; END IF; END $intent_variants$");
   await q(`CREATE TABLE IF NOT EXISTS stripe_webhook_events (
     event_id TEXT PRIMARY KEY,
     event_type TEXT NOT NULL,
@@ -10925,6 +11081,18 @@ async function withOwnerSeedLock(fn) {
   }
 }
 
+async function withIntentVariantLock(fn) {
+  if (!pool) return fn();
+  const client=await pool.connect();
+  try {
+    await client.query("SELECT pg_advisory_lock(hashtext('respondo_intent_variants_v1'))");
+    return await fn();
+  } finally {
+    try { await client.query("SELECT pg_advisory_unlock(hashtext('respondo_intent_variants_v1'))"); } catch {}
+    client.release();
+  }
+}
+
 async function start() {
   try {
     await withRuntimeSchemaLock(() => ensureRuntimeSchema());
@@ -10946,9 +11114,17 @@ async function start() {
       return;
     }
   }
-  app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
+  app.listen(PORT, () => {
+    console.log(`RESPONDO AI listening on ${PORT}`);
+    // Million-scale expansion is intentionally post-listen so Railway health
+    // checks are never blocked by a one-time database population job.
+    setImmediate(() => {
+      withIntentVariantLock(() => ensureMillionIntentVariants())
+        .catch((e)=>console.error('Intent million-scale expansion failed',e));
+    });
+  });
 }
 
-export { app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, respondoProductFaqMatch, intentForMessage };
+export { app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
 if (process.env.NODE_ENV !== 'test') start();
 
