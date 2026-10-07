@@ -2673,6 +2673,106 @@ function directMultilingualServiceConfirmation(rows,message,lang='fi') {
   return {supported:true,answer,evidence:[found]};
 }
 
+
+const OPENING_HOUR_DAYS = [
+  {key:'mon',aliases:['ma','maanantai','mon','monday','man','mandag'],fi:'Maanantai',sv:'Måndag',en:'Monday'},
+  {key:'tue',aliases:['ti','tiistai','tue','tues','tuesday','tis','tisdag'],fi:'Tiistai',sv:'Tisdag',en:'Tuesday'},
+  {key:'wed',aliases:['ke','keskiviikko','wed','wednesday','ons','onsdag'],fi:'Keskiviikko',sv:'Onsdag',en:'Wednesday'},
+  {key:'thu',aliases:['to','torstai','thu','thur','thursday','tor','torsdag'],fi:'Torstai',sv:'Torsdag',en:'Thursday'},
+  {key:'fri',aliases:['pe','perjantai','fri','friday','fre','fredag'],fi:'Perjantai',sv:'Fredag',en:'Friday'},
+  {key:'sat',aliases:['la','lauantai','sat','saturday','lor','lordag'],fi:'Lauantai',sv:'Lördag',en:'Saturday'},
+  {key:'sun',aliases:['su','sunnuntai','sun','sunday','son','sondag'],fi:'Sunnuntai',sv:'Söndag',en:'Sunday'},
+];
+
+function openingHoursRequestedDay(message) {
+  const q=normalizeSearchText(message);
+  const tokens=new Set(q.split(/\s+/).filter(Boolean));
+  for(const day of OPENING_HOUR_DAYS){
+    if(day.aliases.some((alias)=>tokens.has(normalizeSearchText(alias)))) return day;
+  }
+  return null;
+}
+
+function openingHoursRowDay(value) {
+  const q=normalizeSearchText(value);
+  const first=q.split(/\s+/).filter(Boolean)[0] || '';
+  for(const day of OPENING_HOUR_DAYS){
+    if(day.aliases.some((alias)=>first===normalizeSearchText(alias))) return day;
+    if(day.aliases.some((alias)=>new RegExp('(?:^|\\s)'+normalizeSearchText(alias)+'(?:\\s|$)').test(q))) return day;
+  }
+  return null;
+}
+
+function openingHoursValue(value) {
+  const raw=cleanKnowledgeText(value);
+  const range=raw.match(/\b\d{1,2}[:.]\d{2}\s*(?:[-–—]|to|till)\s*\d{1,2}[:.]\d{2}\b/i)?.[0];
+  if(range) return range.replace(/\s*(?:-|–|—|to|till)\s*/i,'–');
+  if(/\b(?:closed|suljettu|stangt|stängt)\b/i.test(raw)) return 'closed';
+  return raw.slice(0,120);
+}
+
+function directOpeningHoursAnswer(rows,message,lang='fi') {
+  if(queryTopic(message)!=='hours') return null;
+  const hourRows=(rows||[])
+    .filter(usableWebsiteRow)
+    .filter((row)=>knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='hours');
+  if(!hourRows.length) return null;
+
+  const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  const asked=openingHoursRequestedDay(message);
+  const label=(day)=>day?.[target] || '';
+  const localizedClosed=target==='en'?'Closed':target==='sv'?'Stängt':'Suljettu';
+
+  if(asked){
+    const match=hourRows
+      .map((row)=>({row,day:openingHoursRowDay(row.answer),value:openingHoursValue(row.answer)}))
+      .find((item)=>item.day?.key===asked.key && item.value);
+    if(match){
+      const value=match.value==='closed'?localizedClosed:match.value;
+      return {
+        answer:label(asked)+': '+value+'.',
+        handoff:false,
+        confidence:1,
+        intent:'Aukioloajat',
+        sourceIds:[match.row.id].filter(Boolean),
+        selected:[match.row],
+      };
+    }
+  }
+
+  const parsed=[];
+  const seen=new Set();
+  for(const row of hourRows){
+    const day=openingHoursRowDay(row.answer);
+    const value=openingHoursValue(row.answer);
+    if(!day || !value || seen.has(day.key)) continue;
+    seen.add(day.key);
+    parsed.push({row,day,value});
+  }
+  if(parsed.length){
+    parsed.sort((a,b)=>OPENING_HOUR_DAYS.findIndex((x)=>x.key===a.day.key)-OPENING_HOUR_DAYS.findIndex((x)=>x.key===b.day.key));
+    const answer=parsed.slice(0,7).map((item)=>label(item.day)+': '+(item.value==='closed'?localizedClosed:item.value)).join(', ')+'.';
+    return {
+      answer,
+      handoff:false,
+      confidence:0.99,
+      intent:'Aukioloajat',
+      sourceIds:parsed.map((x)=>x.row.id).filter(Boolean),
+      selected:parsed.map((x)=>x.row),
+    };
+  }
+
+  const row=hourRows[0];
+  return {
+    answer:openingHoursValue(row.answer),
+    handoff:false,
+    confidence:0.9,
+    intent:'Aukioloajat',
+    sourceIds:[row.id].filter(Boolean),
+    selected:[row],
+  };
+}
+
 async function directShippingCostAnswer(rows,message,lang='fi') {
   const q=normalizeSearchText(message);
   const shippingCost=/toimitus|toimituskulu|postitus|shipping|delivery|postage|frakt|leverans/.test(q) &&
@@ -4817,6 +4917,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       ? {answer:multilingualService.answer,handoff:false,confidence:0.93,intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence}
       : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
   }
+
+  const openingHoursResult=directOpeningHoursAnswer(rows,cleanMessage,responseLang);
+  if(openingHoursResult) return openingHoursResult;
 
   const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
   if(shippingCostResult) return shippingCostResult;
