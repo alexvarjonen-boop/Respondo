@@ -298,3 +298,21 @@ test('orphan numeric prices never enter imported knowledge',()=>{
   const text=candidateTextForTest(rows);
   assert.doesNotMatch(text,/(?:^|\s)€40(?:\s|$)|\$0\.00 0/i,JSON.stringify(rows));
 });
+
+
+test('branded barber service heading keeps its detached base price',()=>{
+  const doc={
+    url:'https://example.fi/prices',
+    blocks:[
+      {text:'M Cut™',heading:''},
+      {text:'36 €',heading:'M Cut™'},
+      {text:'M Cut XL™',heading:''},
+      {text:'44 €',heading:'M Cut XL™'},
+    ],
+    links:[],products:[],text:'M Cut™ 36 € M Cut XL™ 44 €'
+  };
+  const rows=essentialWebsiteCandidates({finalUrl:'https://example.fi/',products:[],pageDocuments:[doc]});
+  const text=candidateTextForTest(rows);
+  assert.match(text,/M Cut™?: 36 €/i,JSON.stringify(rows));
+  assert.match(text,/M Cut XL™?: 44 €/i,JSON.stringify(rows));
+});

@@ -568,6 +568,7 @@ function pricedServiceLabel(value) {
   if(!raw || raw.length<3 || raw.length>90 || /[.!?]/.test(raw)) return false;
   if(/^(?:kaikki|hiukset|parta|muu palvelu|all|hair|beard|other services?)$/i.test(n)) return false;
   if(isConcreteServiceLabel(raw)) return true;
+  if(/^(?:m\s*(?:cut|buzz\s*cut|beard|special\s*shave|color|special\s*color))(?:\s*(?:xl|junior|student))?(?:™)?$/i.test(raw)) return true;
   return /(?:hiust|hair|hår|har\b|parran|beard|skägg|skagg|skinfade|fade|värjä|varja|color|colour|färg|farg|muotoil|styling|shave|ajo\b|tatuoin|tattoo|kulmakarv|eyebrow|kasvokarv|facial hair|hieronta|massage|wax|vaha)/.test(n);
 }
 
