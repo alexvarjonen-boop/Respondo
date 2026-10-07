@@ -2673,6 +2673,82 @@ function directMultilingualServiceConfirmation(rows,message,lang='fi') {
   return {supported:true,answer,evidence:[found]};
 }
 
+
+const WEEKDAY_META = [
+  {fi:'maanantaina',sv:'på måndag',en:'on Monday',query:/\b(?:maanantai|maanantaina|monday|mon|mandag|mandagen|man)\b/,row:/^(?:ma|maanantai|mon|monday|man|mandag)\b/},
+  {fi:'tiistaina',sv:'på tisdag',en:'on Tuesday',query:/\b(?:tiistai|tiistaina|tuesday|tue|tisdag|tisdagen|tis)\b/,row:/^(?:ti|tiistai|tue|tuesday|tis|tisdag)\b/},
+  {fi:'keskiviikkona',sv:'på onsdag',en:'on Wednesday',query:/\b(?:keskiviikko|keskiviikkona|wednesday|wed|onsdag|onsdagen|ons)\b/,row:/^(?:ke|keskiviikko|wed|wednesday|ons|onsdag)\b/},
+  {fi:'torstaina',sv:'på torsdag',en:'on Thursday',query:/\b(?:torstai|torstaina|thursday|thu|thur|torsdag|torsdagen|tor)\b/,row:/^(?:to|torstai|thu|thur|thursday|tor|torsdag)\b/},
+  {fi:'perjantaina',sv:'på fredag',en:'on Friday',query:/\b(?:perjantai|perjantaina|friday|fri|fredag|fredagen|fre)\b/,row:/^(?:pe|perjantai|fri|friday|fre|fredag)\b/},
+  {fi:'lauantaina',sv:'på lördag',en:'on Saturday',query:/\b(?:lauantai|lauantaina|saturday|sat|lordag|lordagen|lor)\b/,row:/^(?:la|lauantai|sat|saturday|lor|lordag)\b/},
+  {fi:'sunnuntaina',sv:'på söndag',en:'on Sunday',query:/\b(?:sunnuntai|sunnuntaina|sunday|sun|sondag|sondagen|son)\b/,row:/^(?:su|sunnuntai|sun|sunday|son|sondag)\b/},
+];
+
+function directOpeningHoursAnswer(rows,message,lang='fi') {
+  if(queryTopic(message)!=='hours') return null;
+  const candidates=(rows||[])
+    .filter(usableWebsiteRow)
+    .filter((row)=>{
+      const meta=normalizeSearchText(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''));
+      return knowledgeTopic(meta)==='hours' || normalizeSearchText(row?.title||'')==='aukioloajat';
+    })
+    .map((row)=>({row,text:cleanKnowledgeText(row.answer)}))
+    .filter((item)=>item.text && /\d{1,2}(?::|\.)\d{2}|suljettu|closed|stangt|stängt/.test(item.text));
+
+  if(!candidates.length) return null;
+  const q=normalizeSearchText(message);
+  const requested=WEEKDAY_META.find((day)=>day.query.test(q));
+  let chosen=requested
+    ? candidates.find((item)=>requested.row.test(normalizeSearchText(item.text)))
+    : null;
+
+  if(requested && !chosen) return null;
+
+  const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  if(chosen){
+    const range=chosen.text.match(/(\d{1,2}(?::|\.)\d{2})\s*[-–—]\s*(\d{1,2}(?::|\.)\d{2})/);
+    let answer='';
+    if(range){
+      const hours=range[1].replace('.',':')+'–'+range[2].replace('.',':');
+      answer=target==='en'
+        ? 'We are open '+requested.en+' '+hours+'.'
+        : target==='sv'
+          ? 'Vi har öppet '+requested.sv+' '+hours+'.'
+          : 'Olemme auki '+requested.fi+' '+hours+'.';
+    } else {
+      answer=chosen.text;
+    }
+    return {
+      answer,
+      handoff:false,
+      confidence:0.98,
+      intent:'Aukioloajat',
+      sourceIds:[chosen.row.id].filter(Boolean),
+      selected:[chosen.row],
+    };
+  }
+
+  const unique=[];
+  for(const item of candidates){
+    if(!unique.some((x)=>normalizeSearchText(x.text)===normalizeSearchText(item.text))) unique.push(item);
+    if(unique.length>=7) break;
+  }
+  const schedule=unique.map((item)=>item.text).join('\n');
+  const answer=target==='en'
+    ? 'Our opening hours are:\n'+schedule
+    : target==='sv'
+      ? 'Våra öppettider är:\n'+schedule
+      : 'Aukioloaikamme ovat:\n'+schedule;
+  return {
+    answer,
+    handoff:false,
+    confidence:0.95,
+    intent:'Aukioloajat',
+    sourceIds:unique.map((item)=>item.row.id).filter(Boolean),
+    selected:unique.map((item)=>item.row),
+  };
+}
+
 async function directShippingCostAnswer(rows,message,lang='fi') {
   const q=normalizeSearchText(message);
   const shippingCost=/toimitus|toimituskulu|postitus|shipping|delivery|postage|frakt|leverans/.test(q) &&
@@ -4729,6 +4805,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const servicePriceFollowup=await directServicePriceFollowup(rows,cleanMessage,history,responseLang);
   if(servicePriceFollowup) return servicePriceFollowup;
+
+  const hoursResult=directOpeningHoursAnswer(rows,cleanMessage,responseLang);
+  if(hoursResult) return hoursResult;
 
   const multilingualService=directMultilingualServiceConfirmation(rows,cleanMessage,responseLang);
   if(multilingualService) {
