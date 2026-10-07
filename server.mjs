@@ -3479,8 +3479,20 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const pages = [];
   const queued = new Set();
   const queue = [];
+  const locationDetailPath=(urlValue)=>{
+    try {
+      const segments=new URL(urlValue,base).pathname.toLowerCase().split('/').filter(Boolean);
+      const markers=new Set(['parturit','barbers','barber','salons','salon','stores','store','shops','shop','locations','location','myymalat','myymälät','toimipisteet','toimipiste','liikkeet','liike','butiker','butik']);
+      return segments.some((segment,index)=>markers.has(segment) && segments.length-index>=3);
+    } catch { return false; }
+  };
+  const targetLocationDetail=locationDetailPath(first.finalUrl);
+  const targetPageKey=(base.origin+base.pathname.replace(/\/+$/,'')+base.search).toLowerCase();
   const usefulPath = url => {
-    const pathname=new URL(url).pathname;
+    const parsed=new URL(url);
+    const pathname=parsed.pathname;
+    const pageKey=(parsed.origin+parsed.pathname.replace(/\/+$/,'')+parsed.search).toLowerCase();
+    if(targetLocationDetail && pageKey!==targetPageKey && locationDetailPath(parsed.href)) return false;
     const normalized=normalizeSearchText(pathname);
     const companyInfo=/about|about-us|meista|meistä|yritys|company|who-we-are|our-story/.test(normalized);
     if (companyInfo) return !/privacy|terms|tietosuoja|kayttoeh|cookie|arvostel|reviews|testimonial|cart|checkout|login|register|wp-admin|\.(?:js|css|mp4|mp3|woff2?)$/i.test(pathname);
