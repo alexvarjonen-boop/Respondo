@@ -1695,9 +1695,122 @@ function productCatalog(rows) {
   }
   return out;
 }
+function productColorAliases(value) {
+  const q=normalizeSearchText(value).replace(/[-_/]+/g,' ');
+  const out=new Set();
+  const add=(canonical,re)=>{ if(re.test(q)) out.add(canonical); };
+  add('black',/\b(?:black|musta\w*|svart\w*)\b/);
+  add('bronze',/\b(?:bronze|pronssi\w*|pronss\w*|brons\w*)\b/);
+  add('steel',/\b(?:steel|teras\w*|teräs\w*|stal\w*|stål\w*)\b/);
+  add('white',/\b(?:white|valko\w*|vit\w*)\b/);
+  add('red',/\b(?:red|punai\w*|rod\w*|röd\w*)\b/);
+  add('blue',/\b(?:blue|sini\w*|bla\w*|blå\w*)\b/);
+  add('green',/\b(?:green|vihre\w*|gron\w*|grön\w*)\b/);
+  add('grey',/\b(?:grey|gray|harmaa\w*|gra\w*|grå\w*)\b/);
+  add('silver',/\b(?:silver|hopea\w*)\b/);
+  add('gold',/\b(?:gold|kulta\w*|guld\w*)\b/);
+  add('brown',/\b(?:brown|ruskea\w*|brun\w*)\b/);
+  add('pink',/\b(?:pink|vaaleanpunai\w*|rosa\w*)\b/);
+  return [...out];
+}
+
 function productQueryTokens(message) {
   const ignored=/^(?:mika|mikä|mitka|mitkä|mita|mitä|on|ovat|teidan|teidän|teilla|teillä|meidan|meidän|halvin|edullisin|kallein|paras|suosituin|suosituimmat|myydyin|myydyimmat|popular|popularest|bestseller|bestsellers|best|selling|price|prices|cheapest|cheaper|lowest|most|expensive|what|which|your|you|have|do|cost|how|much|billigast|billigaste|dyrast|dyraste|popularast|populärast|bastsaljare|bästsäljare|vilken|vilka|har|ni|kostar|tuote|tuotteet|product|products|vari|väri|varit|värit|color|colors|colour|colours|farg|färg|koko|koot|size|sizes|storlek|materiaali|materiaalit|material|materials|mitat|dimensions|dimension|paino|weight)$/;
-  return [...new Set(searchTokens(message).map(productStem).filter((word)=>word.length>=3&&!ignored.test(word)))];
+  const normalized=String(message||'').replace(/[-_/]+/g,' ');
+  const tokens=searchTokens(normalized).map(productStem).filter((word)=>word.length>=3&&!ignored.test(word));
+  for(const alias of productColorAliases(normalized)) tokens.push(alias);
+  return [...new Set(tokens)];
+}
+
+function productHasColorAlias(product, aliases=[]) {
+  if(!aliases.length) return false;
+  const values=[
+    product?.name,
+    ...(product?.colors||[]),
+    ...((product?.options||[]).flatMap((option)=>option?.values||[])),
+  ].filter(Boolean).map((value)=>normalizeSearchText(value));
+  return aliases.some((alias)=>values.some((value)=>value.includes(alias)));
+}
+
+function productFamilyFromProduct(product) {
+  const text=normalizeSearchText((product?.name||'')+' '+(product?.productType||''));
+  if(/\bputter\w*\b/.test(text)) return 'putter';
+  if(/\b(?:headcover|head cover|mailansuoja\w*)\b/.test(text)) return 'headcover';
+  if(/\bgrip\w*\b/.test(text)) return 'grip';
+  if(/\b(?:towel\w*|pyyhe\w*|handduk\w*)\b/.test(text)) return 'towel';
+  if(/\b(?:golfball\w*|golf ball\w*|golfpallo\w*)\b/.test(text)) return 'golfball';
+  if(/\b(?:golf bag\w*|golfbag\w*)\b/.test(text)) return 'golfbag';
+  return '';
+}
+
+function latestHistoryQuestionAnswer(history=[]) {
+  if(!Array.isArray(history)) return {question:'',answer:''};
+  let answer='';
+  for(let i=history.length-1;i>=0;i--){
+    const item=history[i]||{};
+    if(item.question) return {question:String(item.question||''),answer:String(item.answer||answer||'')};
+    if(item.role==='assistant' && !answer) answer=String(item.content||'');
+    if(item.role==='user') return {question:String(item.content||''),answer};
+  }
+  return {question:'',answer:''};
+}
+
+function directProductVariantFollowup(products,message,history=[],lang='fi') {
+  const q=normalizeSearchText(message);
+  const aliases=productColorAliases(message);
+  if(!aliases.length) return null;
+  const continuation=/^(?:enta|entapa|entas|ja enta|no enta|what about|and what about|how about|and how about|och|och da|men den|men det)\b/.test(q);
+  if(!continuation && q.split(/\s+/).length>4) return null;
+
+  const previous=latestHistoryQuestionAnswer(history);
+  if(!previous.question) return null;
+  const previousQ=normalizeSearchText(previous.question);
+  const previousPrice=/\b(?:hinta|maksaa|maksavat|price|cost|costs|pris|kostar)\b/.test(previousQ) || /\bhow\s+much\b/.test(previousQ) || /\bhur\s+mycket\b/.test(previousQ);
+  const previousStock=/\b(?:varastossa|saatavilla|saatavuus|in stock|available|lager|i lager)\b/.test(previousQ);
+  const previousFamily=requestedProductFamily(previous.question);
+
+  let previousProduct=products.find((product)=>normalizeSearchText(previous.answer).includes(normalizeSearchText(product.name)));
+  if(!previousProduct){
+    const previousTokens=productQueryTokens(previous.question);
+    previousProduct=[...products]
+      .map((product)=>({...product,_score:productMatchScore(product,previousTokens)}))
+      .sort((a,b)=>b._score-a._score)[0] || null;
+  }
+  const family=previousFamily || productFamilyFromProduct(previousProduct);
+  let candidates=products.filter((product)=>productHasColorAlias(product,aliases));
+  if(family) candidates=candidates.filter((product)=>productMatchesFamily(product,family));
+  if(!candidates.length) return null;
+
+  if(previousProduct){
+    const ignoredColor=new Set(['black','bronze','steel','white','red','blue','green','grey','gray','silver','gold','brown','pink']);
+    const shared=searchTokens(previousProduct.name).map(productStem)
+      .filter((token)=>token.length>=3 && !ignoredColor.has(token) && !/^putter/.test(token));
+    candidates=candidates.map((product)=>{
+      const nameTokens=searchTokens(product.name).map(productStem);
+      const score=shared.reduce((sum,token)=>sum+(nameTokens.includes(token)?10:0),0);
+      return {...product,_contextScore:score};
+    }).sort((a,b)=>b._contextScore-a._contextScore);
+  }
+
+  const best=candidates[0];
+  if(!best) return null;
+  if(previousPrice && Number.isFinite(best.price)){
+    const price=productPriceText(best,lang);
+    const answer=lang==='en'?best.name+' costs '+price+'.'
+      :lang==='sv'?best.name+' kostar '+price+'.'
+      :best.name+' maksaa '+price+'.';
+    return {answer,handoff:false,confidence:0.995,intent:'Tuotteet',sourceIds:[best.row?.id].filter(Boolean),selected:[best.row].filter(Boolean)};
+  }
+  if(previousStock && best.availability){
+    const inStock=normalizeSearchText(best.availability)==='varastossa';
+    const answer=lang==='en'?(inStock?best.name+' is in stock.':best.name+' is currently not in stock.')
+      :lang==='sv'?(inStock?best.name+' finns i lager.':best.name+' finns inte i lager just nu.')
+      :(inStock?best.name+' on varastossa.':best.name+' ei ole tällä hetkellä varastossa.');
+    return {answer,handoff:false,confidence:0.99,intent:'Tuotteet',sourceIds:[best.row?.id].filter(Boolean),selected:[best.row].filter(Boolean)};
+  }
+  const price=productPriceText(best,lang);
+  const answer=best.name+(price?' – '+price:'')+'.';
+  return {answer,handoff:false,confidence:0.96,intent:'Tuotteet',sourceIds:[best.row?.id].filter(Boolean),selected:[best.row].filter(Boolean)};
 }
 function productMatchScore(product, tokens) {
   if(!tokens.length) return 1;
@@ -1866,9 +1979,11 @@ function directEcommerceOrderingAnswer(rows,message,lang='fi') {
   };
 }
 
-function directProductAnswer(rows,message,lang='fi') {
+function directProductAnswer(rows,message,lang='fi',history=[]) {
   const products=productCatalog(rows);
   if(!products.length) return null;
+  const followup=directProductVariantFollowup(products,message,history,lang);
+  if(followup) return followup;
   const q=normalizeSearchText(message);
   const tokens=productQueryTokens(message);
   const ranked=products.map((product)=>({...product,_match:productMatchScore(product,tokens)}))
@@ -5316,7 +5431,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const ecommerceOrderResult=directEcommerceOrderingAnswer(rows,cleanMessage,responseLang);
   if(ecommerceOrderResult) return ecommerceOrderResult;
 
-  const productResult=directProductAnswer(rows,cleanMessage,responseLang);
+  const productResult=directProductAnswer(rows,cleanMessage,responseLang,history);
   if(productResult) return productResult;
 
   // Generic company questions such as "Mitä teette?" are ambiguous. For an
