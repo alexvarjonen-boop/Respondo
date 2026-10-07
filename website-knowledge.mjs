@@ -402,9 +402,12 @@ export function extractBusinessDocument(html, url) {
   // intentionally excluded from ordinary content extraction. Recover literal
   // email addresses from the remaining HTML before those UI nodes are skipped.
   const sourceEmails=new Set();
-  for(const match of decodeHtml(source).matchAll(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,12}\b/gi)){
+  const decodedSource=decodeHtml(source);
+  for(const match of decodedSource.matchAll(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,12}\b/gi)){
     const value=String(match[0]||'').trim();
     if(!value || placeholderContactValue(value) || /^(?:no-?reply|noreply)@/i.test(value)) continue;
+    const around=decodedSource.slice(Math.max(0,(match.index||0)-420),(match.index||0)+value.length+420);
+    if(manufacturerContactContext(around)) continue;
     const key=value.toLowerCase();
     if(sourceEmails.has(key)) continue;
     sourceEmails.add(key);
@@ -463,7 +466,13 @@ export function extractBusinessDocument(html, url) {
     const skip = parentSkip || /^(head|title|button|select|option|blockquote|iframe)$/.test(tag) || review.test(marker) || junk.test(marker) || a['aria-hidden'] === 'true' || /display\s*:\s*none|visibility\s*:\s*hidden/i.test(a.style || '') || /\bhidden\b/i.test(token.replace(/"[^"]*"|'[^']*'/g,''));
     const href = tag === 'a' ? httpUrl(a.href, url) : '';
     if (tag === 'a' && a.href && !parentSkip && /^(?:mailto:|tel:)/i.test(a.href)) {
-      blocks.push({text:decodeHtml(a.href.replace(/^(mailto:|tel:)/i,'').split('?')[0]), heading:'Yhteystiedot'});
+      const contactHeading=clean(heading || 'Yhteystiedot');
+      if(!manufacturerContactContext(contactHeading)){
+        blocks.push({
+          text:decodeHtml(a.href.replace(/^(mailto:|tel:)/i,'').split('?')[0]),
+          heading:contactHeading || 'Yhteystiedot'
+        });
+      }
     }
     if (tag === 'br') {
       const cell = stack.findLast(x => x.tag === 'td' || x.tag === 'th');
