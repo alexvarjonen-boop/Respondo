@@ -452,11 +452,11 @@ async function seedAndLoadIntentUtterances() {
   const marker = await q("SELECT value FROM app_settings WHERE key='intent_utterance_seed_version'");
   const countResult = await q("SELECT COUNT(*)::int AS count FROM intent_utterances WHERE active=TRUE");
   const count = Number(countResult.rows[0]?.count || 0);
-  const needsSeed = marker.rows[0]?.value !== INTENT_UTTERANCE_SEED_VERSION || count < 50000;
+  const needsSeed = marker.rows[0]?.value !== INTENT_UTTERANCE_SEED_VERSION || count < 240000;
 
   if (needsSeed) {
     const entries = buildIntentUtteranceSeed();
-    if (entries.length < 50000) throw new Error('Intent utterance seed is unexpectedly small.');
+    if (entries.length < 240000) throw new Error('Intent utterance seed is unexpectedly small.');
     await q("DELETE FROM intent_utterances WHERE source='generated'");
 
     const batchSize = 4000;

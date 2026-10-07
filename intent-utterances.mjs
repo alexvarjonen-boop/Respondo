@@ -1,4 +1,4 @@
-export const INTENT_UTTERANCE_SEED_VERSION = '2026-10-07-v1';
+export const INTENT_UTTERANCE_SEED_VERSION = '2026-10-07-v2';
 
 export function normalizeIntentPhrase(value) {
   return String(value || '')
@@ -43,6 +43,59 @@ function addCartesian(store, language, intent, groups, limit = LIMIT_PER_INTENT_
 
 function addSimple(store, language, intent, questions, subjects, tails = ['']) {
   addCartesian(store, language, intent, [questions, subjects, tails], 2400);
+}
+
+
+const CONVERSATIONAL_VARIANTS = {
+  fi: {
+    prefixes:['hei','moi','morjens','anteeksi','no hei','yksi kysymys','sellainen kysymys','sellanen kysymys','saanko kysyä','voisitko auttaa'],
+    suffixes:['kiitos','jos mahdollista','ihan nopeasti','vielä','teiltä','tästä asiasta','nyt','käytännössä']
+  },
+  sv: {
+    prefixes:['hej','hallå','ursäkta','hej hej','en snabb fråga','jag har en fråga','får jag fråga','kan ni hjälpa mig','kan du hjälpa mig','förresten'],
+    suffixes:['tack','om möjligt','snabbt','också','hos er','om detta','nu','i praktiken']
+  },
+  en: {
+    prefixes:['hi','hello','hey','sorry','quick question','i have a question','can i ask','could you help me','can you help me','by the way'],
+    suffixes:['please','thanks','if possible','quickly','as well','with you','about this','right now']
+  }
+};
+
+function addExpandedVariant(store, entry, phrase) {
+  const normalized=normalizeIntentPhrase(phrase);
+  if(!normalized || normalized.length<2) return false;
+  const key=entry.language+'|'+normalized;
+  if(store.has(key)) return false;
+  store.set(key,{
+    language:entry.language,
+    intent:entry.intent,
+    phrase:String(phrase).replace(/\s+/g,' ').trim(),
+    normalized,
+  });
+  return true;
+}
+
+function expandConversationalVariants(store, target = 250000) {
+  const base=[...store.values()];
+  if(!base.length || store.size>=target) return;
+
+  // These wrappers are semantically neutral conversational fillers. They
+  // multiply realistic customer wording without changing the underlying intent.
+  for(let pass=0; pass<4 && store.size<target; pass++){
+    for(let i=0;i<base.length && store.size<target;i++){
+      const entry=base[i];
+      const variants=CONVERSATIONAL_VARIANTS[entry.language] || CONVERSATIONAL_VARIANTS.en;
+      const prefix=variants.prefixes[(i+pass*3)%variants.prefixes.length];
+      const suffix=variants.suffixes[(i*3+pass)%variants.suffixes.length];
+      if(pass===0) addExpandedVariant(store,entry,prefix+' '+entry.phrase);
+      else if(pass===1) addExpandedVariant(store,entry,entry.phrase+' '+suffix);
+      else if(pass===2) addExpandedVariant(store,entry,prefix+' '+entry.phrase+' '+suffix);
+      else {
+        const prefix2=variants.prefixes[(i+7)%variants.prefixes.length];
+        addExpandedVariant(store,entry,prefix+' '+prefix2+' '+entry.phrase);
+      }
+    }
+  }
 }
 
 export function buildIntentUtteranceSeed() {
@@ -175,6 +228,7 @@ export function buildIntentUtteranceSeed() {
     addSimple(out,'sv',intent,svQ,sv,['','hos er','från er','om detta','för den här produkten','i praktiken']);
   }
 
+  expandConversationalVariants(out,250000);
   return [...out.values()];
 }
 

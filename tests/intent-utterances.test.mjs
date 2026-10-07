@@ -31,7 +31,7 @@ const rows=[
 
 test('generated multilingual intent lexicon contains tens of thousands of real utterances',()=>{
   const seed=buildIntentUtteranceSeed();
-  assert.ok(seed.length>=80000,'expected at least 80k utterances, got '+seed.length);
+  assert.ok(seed.length>=240000,'expected at least 240k utterances, got '+seed.length);
   const unique=new Set(seed.map((x)=>x.language+'|'+x.normalized));
   assert.equal(unique.size,seed.length);
   for(const lang of ['fi','sv','en']){
