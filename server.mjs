@@ -2774,6 +2774,39 @@ function openingHoursValue(value) {
   return raw.slice(0,120);
 }
 
+function openingHoursEntries(value) {
+  const raw=cleanKnowledgeText(value)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/(?<=\d)(?=[a-z])/g,' ');
+  const aliasPattern='maanantaina|maanantai|monday|mandag|tiistaina|tiistai|tuesday|tisdag|keskiviikkona|keskiviikko|wednesday|onsdag|torstaina|torstai|thursday|torsdag|perjantaina|perjantai|friday|fredag|lauantaina|lauantai|saturday|lordag|sunnuntaina|sunnuntai|sunday|sondag|tues|thur|mon|tue|wed|thu|fri|sat|sun|man|tis|ons|tor|fre|lor|son|ma|ti|ke|to|pe|la|su';
+  const re=new RegExp(
+    '(?:^|\\s)('+aliasPattern+')\\s*(?:-\\s*('+aliasPattern+'))?\\s*:?\\s*'+
+    '(closed|suljettu|stangt|\\d{1,2}[:.]\\d{2}\\s*(?:-|–|—|to|till)\\s*\\d{1,2}[:.]\\d{2})',
+    'g'
+  );
+  const findDay=(token)=>{
+    const wanted=normalizeSearchText(token);
+    return OPENING_HOUR_DAYS.find((day)=>day.aliases.some((alias)=>normalizeSearchText(alias)===wanted)) || null;
+  };
+  const entries=[];
+  let match;
+  while((match=re.exec(raw))) {
+    const start=findDay(match[1]);
+    const end=findDay(match[2]||match[1]);
+    if(!start || !end) continue;
+    const startIndex=OPENING_HOUR_DAYS.findIndex((x)=>x.key===start.key);
+    const endIndex=OPENING_HOUR_DAYS.findIndex((x)=>x.key===end.key);
+    if(startIndex<0 || endIndex<startIndex) continue;
+    const parsed=/^(?:closed|suljettu|stangt)$/.test(match[3])
+      ? 'closed'
+      : match[3].replace(/\s*(?:-|–|—|to|till)\s*/i,' - ');
+    for(let index=startIndex; index<=endIndex; index++) entries.push({day:OPENING_HOUR_DAYS[index],value:parsed});
+  }
+  return entries;
+}
+
 function directOpeningHoursAnswer(rows,message,lang='fi') {
   if(queryTopic(message)!=='hours') return null;
   const hourRows=(rows||[])
@@ -2787,6 +2820,20 @@ function directOpeningHoursAnswer(rows,message,lang='fi') {
   const localizedClosed=target==='en'?'Closed':target==='sv'?'Stängt':'Suljettu';
 
   if(asked){
+    for(const row of hourRows) {
+      const parsedEntry=openingHoursEntries(row.answer).find((item)=>item.day?.key===asked.key && item.value);
+      if(parsedEntry) {
+        const value=parsedEntry.value==='closed'?localizedClosed:parsedEntry.value;
+        return {
+          answer:label(asked)+': '+value+'.',
+          handoff:false,
+          confidence:1,
+          intent:'Aukioloajat',
+          sourceIds:[row.id].filter(Boolean),
+          selected:[row],
+        };
+      }
+    }
     const match=hourRows
       .map((row)=>({row,day:openingHoursRowDay(row.answer),value:openingHoursValue(row.answer)}))
       .find((item)=>item.day?.key===asked.key && item.value);
