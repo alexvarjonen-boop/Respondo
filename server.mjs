@@ -4749,6 +4749,10 @@ function finnishServiceActionKind(value) {
 function finnishServiceSubjectRoot(word) {
   const w=normalizeSearchText(word).replace(/[^a-z]/g,'');
   if (!w) return '';
+  // Finnish hair inflections vary strongly (hiuksia, hiusten, hiukset).
+  // Collapse them to one subject root so "Leikkaatteko hiuksia?" matches
+  // imported labels such as "Hiustenleikkaukset".
+  if (/^hiu/.test(w)) return 'hius';
   if (/^ikkun/.test(w)) return 'ikkun';
   if (/^peltikat/.test(w)) return 'peltikatt';
   if (/^tiilikat/.test(w)) return 'tiilikatt';
