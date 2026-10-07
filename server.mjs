@@ -1631,6 +1631,9 @@ function queryTopic(query) {
   const explicitContact=explicitContactQuestion(q);
   if(explicitContact) return 'contact';
   if(explicitBusinessLocationQuestion(q)) return 'stores';
+  // A size question remains about sizes even if the customer also says
+  // "available": availability must not override product dimensions.
+  if(/\b(?:koko\w*|koissa|koossa|sizes?\b|sizing|storlek\w*)\b/.test(q)) return 'sizing';
   const lexicalIntent=intentForMessage(q);
   const intentTopic={
     pricing:'pricing',
