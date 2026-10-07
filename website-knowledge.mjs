@@ -993,7 +993,7 @@ function conciseProfileServices(facts) {
       return product===serviceKey || product.startsWith(serviceKey+' ') || serviceKey.startsWith(product+' ');
     });
     if(!text || text.length>180 || seen.has(key) || productNames.has(serviceKey) || overlapsCatalog) return;
-    if(/\b(?:kit|setti|bundle|gift\s*box|lahjapakkaus|suoristin|straightener)\b/i.test(key)) return;
+    if(/(?:\b(?:kit|setti|bundle|gift\s*box|lahjapakkaus)\b|suoristin|straightener)/i.test(key)) return;
     if(/\b(?:vuodeksi|for\s+a\s+year|per\s+year)\b/i.test(key)) return;
     if(/\b[\wåäö-]*palvelu(?:ssa|sta|ista|iden|jen|n)\b/i.test(key)) return;
     if(/\b(?:varaa|ota yhtey|contact us|book now|lue lisaa|lue lisää|read more|tutustu|tervetuloa|welcome|jasen|jäsen|membership|sopimuseh|terms)\b/i.test(text)) return;
