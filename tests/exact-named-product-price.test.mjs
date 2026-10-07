@@ -48,3 +48,29 @@ test('inflected Finnish product price wording still returns the exact price',asy
   assert.match(result.answer,/199/);
   assert.doesNotMatch(result.answer,/Bronze|Steel|koossa/i);
 });
+
+
+test('Swedish product-price phrase with auxiliary har is not mistaken for hair service pricing',async()=>{
+  const mixedRows=[
+    {
+      id:'shirt',category:'Tuotteet',title:'T-paita MIDHEAVY 230g',
+      answer:'Tuote: T-paita MIDHEAVY 230g. Hinta: 19.92 EUR. Linkki: https://example.fi/products/midheavy.',
+      keywords:['t-paita','midheavy','230g','product'],source_type:'website',source_url:'https://example.fi/products/midheavy'
+    },
+    {
+      id:'hair-kit',category:'Hinnat',title:'Hair Kit',
+      answer:'Hair Kit: 46,99 €',
+      keywords:['hair','price'],source_type:'website',source_url:'https://example.fi/hair'
+    },
+  ];
+  const result=await generateGroundedAnswer({
+    rows:mixedRows,
+    message:'Vilket pris har T-paita MIDHEAVY 230g?',
+    history:[],
+    lang:'sv',
+  });
+  assert.equal(result.handoff,false,JSON.stringify(result));
+  assert.match(result.answer,/MIDHEAVY 230g/i,result.answer);
+  assert.match(result.answer,/19[.,]92/,result.answer);
+  assert.doesNotMatch(result.answer,/46[.,]99/,result.answer);
+});
