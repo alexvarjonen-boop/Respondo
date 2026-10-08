@@ -183,7 +183,7 @@ function seoStructuredData(seo) {
       description:'B2B customer service software for websites with automated answers, knowledge-base management, lead capture, bookings and human takeover.',
       logo:{ '@type':'ImageObject', url:SEO_CANONICAL_ORIGIN + '/favicon.svg' },
       identifier:{ '@type':'PropertyValue', propertyID:'Business ID', value:'3599437-5' },
-      contactPoint:{ '@type':'ContactPoint', contactType:'customer support', email:'respondoai.fi@outlook.com', availableLanguage:['fi','sv','en'] },
+      contactPoint:{ '@type':'ContactPoint', contactType:'customer support', email:'info@respondoai.fi', availableLanguage:['fi','sv','en'] },
       knowsAbout:['AI customer service','customer service automation','website chatbot','business chatbot','lead capture','booking workflows','ecommerce customer service'],
     },
     {
@@ -1610,7 +1610,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   }
 
   if (/(?:ottaa yhteytt|saan yhteyden|mika.*sahkoposti|mika.*email|asiakaspalvelu.*yhteys|contact respondo|contact you|reach you|support email|email address|kontakta respondo|kontakta er|kontakt med er|support.*e-post|e-postadress)/.test(q)) {
-    const supportEmail = cleanEmail(process.env.SUPPORT_EMAIL || process.env.OWNER_EMAIL) || 'respondoai.fi@outlook.com';
+    const supportEmail = cleanEmail(process.env.SUPPORT_EMAIL || process.env.OWNER_EMAIL) || 'info@respondoai.fi';
     return {
       id:'respondo-faq-company-contact',
       answer:answer(
@@ -7699,7 +7699,7 @@ app.get('/api/public/config', publicReadLimiter, async (req, res) => {
   }
   return res.json({
     brand: 'RESPONDO AI',
-    supportEmail: process.env.SUPPORT_EMAIL || 'respondoai.fi@outlook.com',
+    supportEmail: process.env.SUPPORT_EMAIL || 'info@respondoai.fi',
     trialDays: 3,
     monthlyNet: 29.90,
     yearlyNet: 358.80,
