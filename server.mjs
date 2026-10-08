@@ -339,6 +339,44 @@ const pool = process.env.DATABASE_URL
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 // No Finnish VAT is charged by Respondo while its seller is not VAT registered.
 // International sales and the VAT threshold must be reviewed separately.
+// Do not silently assume an overseas sale is tax-free: the seller has no foreign
+// VAT/GST/sales-tax registrations in Stripe, and Stripe Tax is not enabled.
+// Country approval requires confirming local obligations and updating this policy.
+const TAX_CHECKOUT_COUNTRIES = new Set(['FI']);
+const TAX_COUNTRY_POLICY_VERSION = 'fi-only-20261008';
+function checkoutCountryPolicy(input) {
+  const country = String(input || '').trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(country)) {
+    return { ok:false, country, error:'Valitse yrityksen laskutusmaa ennen tilauksen aloittamista.' };
+  }
+  if (!TAX_CHECKOUT_COUNTRIES.has(country)) {
+    return { ok:false, country, error:'Kansainvälisten tilausten verotus tarkistetaan maakohtaisesti. Tilaus on toistaiseksi saatavilla vain Suomessa. Ota yhteyttä info@respondoai.fi.' };
+  }
+  return { ok:true, country };
+}
+function checkoutIsCountryPolicyCompliant(session) {
+  if (session?.metadata?.tax_country_policy !== TAX_COUNTRY_POLICY_VERSION) return true; // Pre-existing checkouts.
+  const stated = String(session.metadata?.billing_country || '').toUpperCase();
+  const actual = String(session.customer_details?.address?.country || '').toUpperCase();
+  return stated && actual && actual === stated && TAX_CHECKOUT_COUNTRIES.has(actual);
+}
+async function enforceCompletedCheckoutCountryPolicy(session) {
+  if (checkoutIsCountryPolicyCompliant(session)) return true;
+  // Subscriptions can be trialing. Cancel before the first renewal, and fail closed.
+  const subscriptionId = typeof session?.subscription === 'string' ? session.subscription : session?.subscription?.id;
+  if (subscriptionId && stripe) {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    if (!['canceled','incomplete_expired'].includes(subscription.status)) {
+      await stripe.subscriptions.cancel(subscriptionId);
+    }
+  }
+  console.error('Checkout country mismatch; subscription blocked', {
+    checkoutSessionId:session?.id,
+    declaredCountry:session?.metadata?.billing_country,
+    billedCountry:session?.customer_details?.address?.country,
+  });
+  return false;
+}
 function checkoutTaxExemptionMessage(lang='fi') {
   const safeLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase())
     ? String(lang).toLowerCase() : 'fi';
@@ -5367,6 +5405,9 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
+      if (!(await enforceCompletedCheckoutCountryPolicy(session))) {
+        return res.json({ received:true, taxCountryBlocked:true });
+      }
       const target = await resolveSignupCheckoutTarget(session);
       const userId = target?.userId || '';
       let tenantId = target?.tenantId || '';
@@ -6510,6 +6551,8 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   const normalizedPlan = normalizeCheckoutPlan(plan);
   const referralCode = normalizeReferralCode(req.body.referralCode);
   const freeReferral = isFreeReferralCode(referralCode);
+  const checkoutCountry = checkoutCountryPolicy(req.body?.billingCountry);
+  if (!checkoutCountry.ok) return res.status(422).json({ error:checkoutCountry.error });
   const oauthProfile = getOauthProfile(req);
   const socialSignup = Boolean(
     oauthProfile &&
@@ -6678,6 +6721,8 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             user_id: id,
             tenant_id: tenantId,
             plan: normalizedPlan,
+            tax_country_policy: TAX_COUNTRY_POLICY_VERSION,
+            billing_country: checkoutCountry.country,
             ...(referralCode ? { referral_code: referralCode } : {}),
           },
         },
@@ -6693,6 +6738,8 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           user_id: id,
           tenant_id: tenantId,
           plan: normalizedPlan,
+          tax_country_policy: TAX_COUNTRY_POLICY_VERSION,
+          billing_country: checkoutCountry.country,
           ...(referralCode ? { referral_code: referralCode } : {}),
         },
       });
@@ -6743,6 +6790,9 @@ app.get('/api/auth/checkout-success', async (req, res) => {
     }
 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (!(await enforceCompletedCheckoutCountryPolicy(session))) {
+      return res.redirect('/tilaus?country_not_supported=1');
+    }
     const target = await resolveSignupCheckoutTarget(session);
     const userId = target?.userId || '';
 
@@ -7346,6 +7396,8 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const plan=normalizeCheckoutPlan(req.body?.plan);
   const referralCode=normalizeReferralCode(req.body?.referralCode);
   const freeReferral=isFreeReferralCode(referralCode);
+  const checkoutCountry=checkoutCountryPolicy(req.body?.billingCountry);
+  if(!checkoutCountry.ok) return res.status(422).json({error:checkoutCountry.error});
 
   if(!companyName) return res.status(400).json({ error:'Anna yrityksen nimi.' });
   if(req.body?.acceptedTerms!==true) return res.status(400).json({ error:'Hyväksy käyttöehdot ja tietosuojaseloste.' });
@@ -7471,6 +7523,8 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
           tenant_id:tenantId,
           plan,
           additional_workspace:'1',
+          tax_country_policy:TAX_COUNTRY_POLICY_VERSION,
+          billing_country:checkoutCountry.country,
           ...(referralCode ? { referral_code:referralCode } : {}),
         },
       },
@@ -7484,6 +7538,8 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         tenant_id:tenantId,
         plan,
         additional_workspace:'1',
+        tax_country_policy:TAX_COUNTRY_POLICY_VERSION,
+        billing_country:checkoutCountry.country,
         ...(referralCode ? { referral_code:referralCode } : {}),
       },
     });
@@ -7509,6 +7565,9 @@ app.get('/api/app/workspaces/checkout-success', auth, ownerOnly, async (req,res)
   try {
     const sessionId=String(req.query.session_id||'').trim();
     const session=await stripe.checkout.sessions.retrieve(sessionId);
+    if (!(await enforceCompletedCheckoutCountryPolicy(session))) {
+      return res.redirect('/app?section=account&workspace_checkout=country_not_supported');
+    }
     const tenantId=String(session.metadata?.tenant_id||'');
     const userId=String(session.metadata?.user_id||'');
     if(
