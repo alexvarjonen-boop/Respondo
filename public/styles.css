@@ -8663,13 +8663,13 @@ body.workspace-modal-open{
   body:not(.dashboard-page) .subnav button{
     border-radius:999px!important;
   }
-  body:not(.dashboard-page) .nav .navactions .btn.ink{
+  body:not(.dashboard-page) .nav .navactions .btn.ink:not(.nav-home-scroll-trial){
     border:0!important;
     color:#fff!important;
     background:linear-gradient(105deg,#7f80ff 0%,#b878ff 28%,#ff6c8c 62%,#ff9b58 100%)!important;
     box-shadow:0 10px 24px rgba(177,104,255,.24),inset 0 1px 0 rgba(255,255,255,.35)!important;
   }
-  body:not(.dashboard-page) .nav .navactions .btn.ink:hover{
+  body:not(.dashboard-page) .nav .navactions .btn.ink:not(.nav-home-scroll-trial):hover{
     transform:translateY(-1px)!important;
     box-shadow:0 13px 28px rgba(177,104,255,.30),inset 0 1px 0 rgba(255,255,255,.4)!important;
   }
@@ -9114,3 +9114,22 @@ body.deletion-modal-open{overflow:hidden!important}
 .dashboard-empty-workspaces .workspace-add-form input:not([type="checkbox"]){min-height:48px;font-size:16px}
 #emptyWorkspaceMsg:not(:empty){padding:12px;background:#fff0e5;border-radius:12px;color:#942e18;font-size:13px}
 @media(max-width:640px){.dashboard-empty-workspaces .workspace-manager-panel{padding:19px!important}}
+
+/* 2026-10-08: dark feature closeout has white foreground at all times. */
+.features-page .features-final-card h2,
+.features-page .features-final-card h2 *{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  background-image:none!important;
+}
+.features-page .features-final-card small,
+.features-page .features-final-card p{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+/* On the dark footer the brand text must not inherit the light-page black. */
+.features-page .footer .logo,
+.features-page .footer .brand-word{
+  color:#f5f5f7!important;
+  -webkit-text-fill-color:#f5f5f7!important;
+}

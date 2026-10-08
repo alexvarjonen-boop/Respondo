@@ -211,3 +211,20 @@ body.public-nav-active .navin{border:0!important;box-shadow:none!important;borde
 }
 .apple-home-page .apple-hero :is(.apple-stage-halo,.apple-stage-typography){pointer-events:none!important}
 .apple-home-page .apple-hero::before,.apple-home-page .apple-hero::after{pointer-events:none!important}
+
+/* Sticky homepage CTA: match the flat blue hero CTA, not desktop gradient. */
+body.public-nav-active .apple-home-page .nav .navactions a.btn.ink.nav-home-scroll-trial.is-visible{
+  background:#0071e3!important;
+  background-color:#0071e3!important;
+  background-image:none!important;
+  border:1px solid #0071e3!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+body.public-nav-active .apple-home-page .nav .navactions a.btn.ink.nav-home-scroll-trial.is-visible:hover{
+  background:#0077ed!important;
+  background-color:#0077ed!important;
+  background-image:none!important;
+  border-color:#0077ed!important;
+  box-shadow:none!important;
+}
