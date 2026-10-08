@@ -6,7 +6,7 @@ Production-oriented B2B customer-service SaaS for Finnish, Swedish and English w
 
 Respondo answers from the business's approved knowledge base and imported website facts. It does not use the OpenAI API in production. FI/SV/EN answer-language support may use Google's translation endpoint when a stored answer needs translation.
 
-Current plans, including Finnish VAT 25.5% (October 2026):
+Current subscription prices (October 2026; no VAT charged because the seller is not VAT registered):
 
 | Plan | Monthly | Annual billing (no discount) | Support-agent seats | Website import | Google Calendar |
 | --- | ---: | ---: | ---: | --- | --- |
