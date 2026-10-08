@@ -12696,6 +12696,8 @@ async function ensureRuntimeSchema() {
   await q('ALTER TABLE email_verification_tokens ENABLE ROW LEVEL SECURITY');
   await q('CREATE INDEX IF NOT EXISTS idx_email_verification_email_time ON email_verification_tokens(email,purpose,created_at DESC)');
   await q('CREATE INDEX IF NOT EXISTS idx_email_verification_expiry ON email_verification_tokens(expires_at)');
+  // Do not retain sign-up email addresses or unusable verification hashes indefinitely.
+  await q("DELETE FROM email_verification_tokens WHERE expires_at < NOW() - INTERVAL '7 days'");
 
   await q(`CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id UUID PRIMARY KEY,
