@@ -5165,6 +5165,85 @@ async function route() {
         }
       });
     });
+    // Destructive actions always require an explicit password confirmation.
+    const deletionModal=$('#deleteModal');
+    const deletionForm=$('#deleteConfirmForm');
+    let deletionTarget=null;
+    let deletionBusy=false;
+    const closeDeletionModal=()=>{
+      if(deletionBusy || !deletionModal) return;
+      deletionModal.setAttribute('hidden','');
+      document.body.classList.remove('deletion-modal-open');
+      deletionTarget=null;
+      deletionForm?.reset();
+    };
+    const openDeletionModal=(target)=>{
+      if(!deletionModal || !deletionForm) return;
+      deletionTarget=target;
+      deletionForm.reset();
+      const account=target.kind==='account';
+      const emailField=$('#deleteEmailField');
+      emailField?.toggleAttribute('hidden',!account);
+      const emailInput=deletionForm.elements.email;
+      if(emailInput) {emailInput.disabled=!account;emailInput.required=account;}
+      $('#deleteModalTitle').textContent=account
+        ? appText('Poista Respondo-käyttäjä','Radera Respondo-kontot','Delete Respondo account')
+        : appText('Poista yritys: ','Radera företag: ','Delete company: ')+target.name;
+      $('#deleteModalDescription').textContent=account
+        ? appText('Tämä peruuttaa heti KAIKKI yritystesi tilaukset ja poistaa kaikki yritysten tiedot, botit, keskustelut sekä koko käyttäjätilin pysyvästi. Vahvista kirjoittamalla kirjautumissähköpostisi ja nykyinen salasanasi.','Detta avslutar ALLA abonnemang omedelbart och tar bort alla företagsuppgifter, bottar, konversationer och kontot permanent. Bekräfta med din inloggningsadress och ditt lösenord.','This immediately cancels ALL subscriptions and permanently deletes all company data, bots, conversations and the entire user account. Enter your login email and current password.')
+        : appText('Tämä peruuttaa tämän yrityksen tilauksen heti ja poistaa sen botin, tiedot, keskustelut ja asiakaspalvelijat pysyvästi. Muut yrityksesi säilyvät. Vahvista nykyisellä salasanallasi.','Företagets abonnemang avslutas omedelbart och dess bot, uppgifter, konversationer och medarbetare raderas permanent. Dina andra företag påverkas inte. Bekräfta med ditt lösenord.','This immediately cancels this company subscription and permanently deletes its bot, data, conversations and agents. Your other companies remain. Confirm with your current password.');
+      const msg=$('#deleteConfirmMsg');
+      if(msg) msg.textContent='';
+      deletionModal.removeAttribute('hidden');
+      document.body.classList.add('deletion-modal-open');
+      requestAnimationFrame(()=>deletionForm.elements[account?'email':'password']?.focus());
+    };
+    document.querySelectorAll('.workspace-delete-trigger').forEach(button=>{
+      button.addEventListener('click',()=>openDeletionModal({
+        kind:'workspace',
+        tenantId:button.dataset.workspaceId,
+        name:button.dataset.workspaceName||''
+      }));
+    });
+    $('#deleteAccountTrigger')?.addEventListener('click',()=>openDeletionModal({kind:'account'}));
+    $('#deleteModalBackdrop')?.addEventListener('click',closeDeletionModal);
+    $('#deleteModalClose')?.addEventListener('click',closeDeletionModal);
+    $('#deleteCancel')?.addEventListener('click',closeDeletionModal);
+    document.addEventListener('keydown',(e)=>{if(e.key==='Escape' && deletionModal && !deletionModal.hasAttribute('hidden')) closeDeletionModal();});
+    deletionForm?.addEventListener('submit',async(e)=>{
+      e.preventDefault();
+      if(deletionBusy || !deletionTarget) return;
+      const target=deletionTarget;
+      const button=$('#deleteConfirmSubmit');
+      const msg=$('#deleteConfirmMsg');
+      deletionBusy=true;
+      button.disabled=true;
+      const original=button.textContent;
+      button.textContent=appText('Poistetaan…','Raderar…','Deleting…');
+      if(msg) msg.textContent='';
+      try{
+        await api(target.kind==='account'
+          ? '/api/app/account'
+          : '/api/app/workspaces/'+encodeURIComponent(target.tenantId),{
+          method:'DELETE',
+          body:JSON.stringify({
+            email:String(deletionForm.elements.email?.value||'').trim(),
+            password:String(deletionForm.elements.password?.value||''),
+          }),
+        });
+        if(target.kind==='workspace'){
+          try{localStorage.removeItem('respondo-installed-'+target.tenantId);}catch{}
+          location.href='/app?section=account&company_deleted=1';
+        }else{
+          location.replace('/?account_deleted=1');
+        }
+      }catch(err){
+        if(msg) msg.textContent=err.message||appText('Poisto epäonnistui.','Raderingen misslyckades.','Deletion failed.');
+        button.disabled=false;
+        button.textContent=original;
+        deletionBusy=false;
+      }
+    });
     $('#workspaceModalClose')?.addEventListener('click',closeWorkspaceModal);
     $('#workspaceModalBackdrop')?.addEventListener('click',closeWorkspaceModal);
 
