@@ -213,7 +213,7 @@ async function imageFileToAvatarData(file) {
 
 let cfg = {
   brand: 'RESPONDO AI',
-  supportEmail: 'respondoai.fi@outlook.com',
+  supportEmail: 'info@respondoai.fi',
   businessId: '3599437-5',
   sellerName: 'RESPONDO AI',
   trialDays: 3,
@@ -2988,7 +2988,7 @@ function legal(type) {
     const select=(triple)=>esc(Array.isArray(triple)?triple[column]||triple[0]:'');
     const updated=new Date(LEGAL_UPDATE_DATE+'T12:00:00Z')
       .toLocaleDateString(language==='sv'?'sv-SE':language==='en'?'en-GB':'fi-FI',{timeZone:'UTC'});
-    const email=esc(cfg.supportEmail||'respondoai.fi@outlook.com');
+    const email=esc(cfg.supportEmail||'info@respondoai.fi');
     const sections=revised.sections.map(({heading,body})=>
       '<section><h2>'+select(heading)+'</h2><p>'+select(body)+'</p></section>'
     ).join('');
