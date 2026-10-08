@@ -1,0 +1,174 @@
+/* Compact service-language choices and a custom booking duration selector. */
+#app .dashboard-simple-shell #supportAgentForm .support-agent-languages{
+  grid-column:1 / -1!important;
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+}
+#app .dashboard-simple-shell #supportAgentForm .support-agent-languages legend{
+  margin:0 0 10px!important;
+  padding:0!important;
+  color:#515969!important;
+  font-size:13px!important;
+  font-weight:650!important;
+  line-height:1.4!important;
+}
+#app .dashboard-simple-shell #supportAgentForm .support-agent-language-options{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+  width:100%!important;
+}
+#app .dashboard-simple-shell #supportAgentForm label.support-agent-language-choice{
+  position:relative!important;
+  display:block!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  cursor:pointer!important;
+}
+#app .dashboard-simple-shell #supportAgentForm .support-agent-language-choice input[type="checkbox"]{
+  position:absolute!important;
+  opacity:0!important;
+  width:1px!important;
+  height:1px!important;
+  min-width:1px!important;
+  min-height:1px!important;
+  margin:0!important;
+  padding:0!important;
+  pointer-events:none!important;
+}
+#app .dashboard-simple-shell #supportAgentForm .support-agent-language-pill{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:42px!important;
+  padding:9px 6px!important;
+  border:1px solid #dce2ec!important;
+  border-radius:13px!important;
+  background:#fff!important;
+  color:#354155!important;
+  box-sizing:border-box!important;
+  box-shadow:none!important;
+  transition:background .16s,border-color .16s!important;
+}
+#app .dashboard-simple-shell #supportAgentForm .support-agent-language-choice .support-language-flag{
+  flex:none!important;
+  font-size:16px!important;
+  line-height:1!important;
+  letter-spacing:normal!important;
+}
+#app .dashboard-simple-shell #supportAgentForm .support-agent-language-choice .support-language-text{
+  font-size:clamp(10px,2.7vw,13px)!important;
+  line-height:1.2!important;
+  font-weight:650!important;
+  letter-spacing:normal!important;
+  white-space:nowrap!important;
+}
+#app .dashboard-simple-shell #supportAgentForm .support-agent-language-choice .support-language-check{
+  display:none!important;
+  flex:none!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:16px!important;
+  height:16px!important;
+  border-radius:50%!important;
+  background:#2776ef!important;
+  color:#fff!important;
+  font-size:11px!important;
+  font-weight:850!important;
+  line-height:1!important;
+}
+#app .dashboard-simple-shell #supportAgentForm .support-agent-language-choice input:checked + .support-agent-language-pill{
+  border-color:#77a9f9!important;
+  background:#eff6ff!important;
+  color:#1d4f9d!important;
+}
+#app .dashboard-simple-shell #supportAgentForm .support-agent-language-choice input:checked + .support-agent-language-pill .support-language-check{
+  display:inline-flex!important;
+}
+#app .dashboard-simple-shell #supportAgentForm .support-agent-language-choice input:focus-visible + .support-agent-language-pill{
+  outline:3px solid rgba(37,99,235,.3)!important;
+  outline-offset:2px!important;
+}
+#app .dashboard-simple-shell .booking-duration-custom[hidden]{
+  display:none!important;
+}
+#app .dashboard-simple-shell .booking-duration-custom{
+  display:grid!important;
+  gap:11px!important;
+  max-width:440px!important;
+  width:100%!important;
+  margin:13px 0 16px!important;
+  padding:15px!important;
+  border:1px solid #b8d3ff!important;
+  border-radius:16px!important;
+  background:#f3f8ff!important;
+  box-sizing:border-box!important;
+}
+#app .dashboard-simple-shell .booking-duration-custom-heading{
+  display:flex!important;
+  align-items:center!important;
+  gap:9px!important;
+  color:#173d79!important;
+  font-size:14px!important;
+}
+#app .dashboard-simple-shell .booking-duration-custom-indicator{
+  display:grid!important;
+  place-items:center!important;
+  width:21px!important;
+  height:21px!important;
+  border-radius:50%!important;
+  color:#fff!important;
+  background:#2676ec!important;
+  font-size:13px!important;
+}
+#app .dashboard-simple-shell .booking-duration-custom-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;
+}
+#app .dashboard-simple-shell .booking-duration-custom-grid .field{
+  min-width:0!important;
+  margin:0!important;
+}
+#app .dashboard-simple-shell .booking-duration-custom-grid label{
+  display:block!important;
+  margin:0 0 6px!important;
+  color:#45556f!important;
+  font-size:12px!important;
+  font-weight:650!important;
+}
+#app .dashboard-simple-shell .booking-duration-custom-grid input[type="number"]{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:45px!important;
+  padding:9px 12px!important;
+  background:#fff!important;
+  border:1px solid #cbd8eb!important;
+  border-radius:11px!important;
+  color:#1f2937!important;
+  font-size:16px!important;
+  box-sizing:border-box!important;
+}
+#app .dashboard-simple-shell .booking-duration-custom>small{
+  color:#60728c!important;
+  font-size:11px!important;
+  line-height:1.5!important;
+  letter-spacing:normal!important;
+}
+@media(max-width:420px){
+  #app .dashboard-simple-shell #supportAgentForm .support-agent-language-options{gap:5px!important;}
+  #app .dashboard-simple-shell #supportAgentForm .support-agent-language-pill{padding:9px 3px!important;gap:3px!important;min-height:40px!important;}
+  #app .dashboard-simple-shell #supportAgentForm .support-agent-language-choice .support-language-text{font-size:10.5px!important;}
+  #app .dashboard-simple-shell #supportAgentForm .support-agent-language-choice .support-language-flag{font-size:14px!important;}
+  #app .dashboard-simple-shell #supportAgentForm .support-agent-language-choice .support-language-check{width:13px!important;height:13px!important;font-size:9px!important;}
+}

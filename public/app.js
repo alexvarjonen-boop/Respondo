@@ -3,6 +3,7 @@ import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-ser
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261008-new-ra-logo-v1';
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261009-business-only-terms-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
+import { parseBookingDurationMinutes } from './booking-duration.mjs?v=20261009-v1';
 const $ = (s, r = document) => r.querySelector(s);
 
 const HOME_HISTORY_RESET_KEY='respondo-home-history-reset';
@@ -3812,7 +3813,16 @@ async function dashboard(options = {}) {
           <div class="field"><label>${appText('Nimi','Namn','Name')}</label><input name="displayName" required maxlength="60" placeholder="${appText('Asiakaspalvelijan nimi','Medarbetarens namn','Support agent name')}"></div>
           <div class="field"><label>${appText('Käyttäjänimi','Användarnamn','Username')}</label><input name="username" required minlength="3" maxlength="50" autocomplete="off" placeholder="${appText('Valitse käyttäjänimi','Välj användarnamn','Choose a username')}"></div>
           <div class="field"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" required minlength="10" autocomplete="new-password" placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
-          <fieldset class="field support-agent-languages"><legend>${appText('Palvelukielet','Servicespråk','Service languages')}</legend><label><input type="checkbox" name="languages" value="fi" checked> 🇫🇮 Suomi</label><label><input type="checkbox" name="languages" value="sv"> 🇸🇪 Svenska</label><label><input type="checkbox" name="languages" value="en"> 🇬🇧 English</label></fieldset>
+          <fieldset class="field support-agent-languages">
+            <legend>${appText('Palvelukielet','Servicespråk','Service languages')}</legend>
+            <div class="support-agent-language-options">
+              ${[['fi','🇫🇮','Suomi'],['sv','🇸🇪','Svenska'],['en','🇬🇧','English']].map(([value,flag,label])=>`
+                <label class="support-agent-language-choice">
+                  <input type="checkbox" name="languages" value="${value}" ${value==='fi'?'checked':''}>
+                  <span class="support-agent-language-pill"><span aria-hidden="true" class="support-language-flag">${flag}</span><span class="support-language-text">${label}</span><span class="support-language-check" aria-hidden="true">✓</span></span>
+                </label>`).join('')}
+            </div>
+          </fieldset>
           <div class="field"><label>${appText('Profiilikuva','Profilbild','Profile picture')}</label><input name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp"></div>
           <button class="btn dashboard-action" type="submit">${appText('Luo profiili','Skapa profil','Create profile')} →</button>
           <div id="supportAgentMsg"></div>
@@ -4070,7 +4080,15 @@ async function dashboard(options = {}) {
               <div class="field"><label>Päättyen</label><input name="endDate" type="date" value="${weekValue}" required></div>
               <div class="field"><label>Päivä alkaa</label><input name="startTime" type="time" value="09:00" required></div>
               <div class="field"><label>Päivä päättyy</label><input name="endTime" type="time" value="16:00" required></div>
-              <div class="field"><label>Ajan pituus</label><select name="duration"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>60 min</option><option value="90">90 min</option><option value="120">120 min</option></select></div>
+              <div class="field booking-duration-field"><label for="bookingDurationSelect">${appText('Ajan pituus','Tidslängd','Duration')}</label><select name="duration" id="bookingDurationSelect"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>60 min</option><option value="90">90 min</option><option value="120">120 min</option><option value="custom">Custom</option></select></div>
+            </div>
+            <div class="booking-duration-custom" id="bookingDurationCustom" hidden>
+              <div class="booking-duration-custom-heading"><span class="booking-duration-custom-indicator" aria-hidden="true">✓</span><strong>Custom</strong></div>
+              <div class="booking-duration-custom-grid">
+                <div class="field"><label for="bookingDurationHours">${appText('Tunnit','Timmar','Hours')}</label><input id="bookingDurationHours" name="durationHours" type="number" inputmode="numeric" min="0" max="23" step="1" value="1" disabled></div>
+                <div class="field"><label for="bookingDurationMinutes">${appText('Minuutit','Minuter','Minutes')}</label><input id="bookingDurationMinutes" name="durationMinutes" type="number" inputmode="numeric" min="0" max="59" step="1" value="0" disabled></div>
+              </div>
+              <small>${appText('Valitse kesto tunneissa ja minuuteissa.','Välj tid i timmar och minuter.','Set a duration in hours and minutes.')}</small>
             </div>
             <div class="weekday-picker">
               ${[['1',appText('Ma','Mån','Mon')],['2',appText('Ti','Tis','Tue')],['3',appText('Ke','Ons','Wed')],['4',appText('To','Tor','Thu')],['5',appText('Pe','Fre','Fri')],['6',appText('La','Lör','Sat')],['0',appText('Su','Sön','Sun')]].map(([v,l]) => `<label><input type="checkbox" name="weekday" value="${v}" ${['1','2','3','4','5'].includes(v) ? 'checked' : ''}><span>${l}</span></label>`).join('')}
@@ -6413,6 +6431,20 @@ async function route() {
       }
     });
 
+    const bookingDurationSelect=$('#bookingDurationSelect');
+    const bookingDurationCustom=$('#bookingDurationCustom');
+    const syncBookingDuration=()=>{
+      if(!bookingDurationSelect||!bookingDurationCustom) return;
+      const isCustom=bookingDurationSelect.value==='custom';
+      bookingDurationCustom.hidden=!isCustom;
+      for(const input of bookingDurationCustom.querySelectorAll('input')){
+        input.disabled=!isCustom;
+        input.required=isCustom;
+      }
+    };
+    bookingDurationSelect?.addEventListener('change',syncBookingDuration);
+    syncBookingDuration();
+
     $('#bookingSlotsForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = new FormData(e.currentTarget);
@@ -6420,10 +6452,15 @@ async function route() {
       const endDateRaw = String(form.get('endDate') || '');
       const startTimeRaw = String(form.get('startTime') || '09:00');
       const endTimeRaw = String(form.get('endTime') || '16:00');
-      const duration = Math.max(15, Number(form.get('duration') || 60));
+      const duration = parseBookingDurationMinutes(form.get('duration'),form.get('durationHours'),form.get('durationMinutes'));
       const weekdays = new Set(form.getAll('weekday').map(String));
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
+
+      if (duration===null) {
+        $('#bookingSlotsMsg').innerHTML='<div class="notice error">'+appText('Anna kelvollinen kesto (1 min – 23 h 59 min).','Ange en giltig tidslängd (1 min – 23 h 59 min).','Enter a valid duration (1 min – 23 h 59 min).')+'</div>';
+        return;
+      }
 
       if (!startDateRaw || !endDateRaw || !weekdays.size) {
         $('#bookingSlotsMsg').innerHTML = '<div class="notice error">' + appText('Valitse päivät ja vähintään yksi viikonpäivä.','Välj datum och minst en veckodag.','Select the dates and at least one weekday.') + '</div>';
