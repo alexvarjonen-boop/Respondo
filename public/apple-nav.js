@@ -1,4 +1,5 @@
 // Public fullscreen navigation shared by all marketing pages.
+// Menu items use plain text labels, without decorative external-link arrows.
 export function publicMenuMarkup(t,lang){
  const entries=[
   [t('Etusivu','Startsida','Home'),'/'],
