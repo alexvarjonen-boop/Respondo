@@ -1755,6 +1755,7 @@ function nav() {
         <a href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
         <a href="/#pricing">Hinta</a>
         <a href="/tietoturva">Tietoturva</a>
+        <a href="/yhteystiedot">${appText("Yhteystiedot","Kontakt","Contact")}</a>
       </nav>
       <div class="navactions">
         ${languageSwitch()}
@@ -1809,7 +1810,7 @@ function stickyProductNav() {
         <a class="all-features-link" href="/ominaisuudet?lang=${currentLang()}">${appText('Katso kaikki ominaisuudet','Se alla funktioner','See all features')}</a>
         <a href="#calculator">${appText('Laske hyöty','Beräkna nyttan','Calculate value')}</a>
         <a href="#pricing">${appText('Hinnat','Priser','Pricing')}</a>
-        <a href="#contact">${appText('Ota yhteyttä','Kontakta oss','Contact')}</a>
+        <a href="/yhteystiedot">${appText('Ota yhteyttä','Kontakta oss','Contact')}</a>
       </nav>
     </div>
   </div>`;
@@ -1967,6 +1968,31 @@ function contactSection() {
   </section>`;
 }
 
+function contactPage() {
+  return `<div class="contact-page">${nav()}<main style="padding:clamp(70px,9vw,130px) 0 110px;min-height:65vh;background:#f8fafc"><div class="container" style="max-width:1050px">
+    <div class="section-kicker">${appText('YHTEYSTIEDOT','KONTAKT','CONTACT')}</div>
+    <h1 style="font-size:clamp(38px,6vw,68px);letter-spacing:-.05em;line-height:1.1;margin:14px 0 20px">${appText('Miten voimme auttaa?','Hur kan vi hjälpa dig?','How can we help?')}</h1>
+    <p style="font-size:clamp(16px,2vw,20px);color:#64748b;line-height:1.7;max-width:670px;margin-bottom:44px">${appText('Kysyttävää Respondo AI:sta, tilauksista tai käyttöönotosta? Lähetä meille viesti.','Frågor om Respondo AI, abonnemang eller installation? Skicka ett meddelande.','Questions about Respondo AI, subscriptions or setup? Send us a message.')}</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:24px;align-items:start">
+      <section style="background:white;border:1px solid #e2e8f0;border-radius:24px;padding:clamp(24px,4vw,40px);box-shadow:0 14px 35px rgba(15,23,42,.04)"><h2 style="font-size:23px;margin:0 0 16px">${appText('Lähetä viesti','Skicka meddelande','Send a message')}</h2>
+        <form class="home-contact-form" id="homeContactForm" style="display:grid;gap:17px">
+          <label><span>${appText('Nimi','Namn','Name')}</span><input name="name" type="text" autocomplete="name" maxlength="120" required></label>
+          <label><span>${appText('Sähköposti','E-post','Email')}</span><input name="email" type="email" autocomplete="email" maxlength="220" required></label>
+          <label><span>${appText('Viesti','Meddelande','Message')}</span><textarea name="message" rows="6" maxlength="2000" required></textarea></label>
+          <button class="btn ink home-contact-submit" type="submit">${appText('Lähetä viesti','Skicka meddelande','Send message')} →</button>
+          <div class="home-contact-status" id="homeContactStatus" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+      <aside style="background:white;border:1px solid #e2e8f0;border-radius:24px;padding:clamp(24px,4vw,40px)"><h2 style="font-size:23px;margin:0 0 22px">${appText('Ota yhteyttä','Kontakta oss','Get in touch')}</h2>
+        <p style="color:#64748b;font-size:13px;margin:0 0 8px">${appText('Sähköposti','E-post','Email')}</p><a style="font-size:18px;overflow-wrap:anywhere;color:#2563eb" href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a>
+        <p style="color:#64748b;font-size:13px;margin:30px 0 8px">${appText('Sijainti','Plats','Location')}</p><p style="font-weight:650;margin:0">${appText('Suomi','Finland','Finland')}</p>
+        <div style="border-top:1px solid #e2e8f0;margin:30px 0"></div><p style="line-height:1.7;color:#64748b">${appText('Voit myös tutustua usein kysyttyihin kysymyksiin ja palvelun ominaisuuksiin.','Du kan också läsa om tjänstens funktioner.','You can also explore the service features.')}</p>
+        <a class="btn ghost" href="/ominaisuudet?lang=${currentLang()}">${appText('Tutustu ominaisuuksiin','Se funktionerna','Explore features')} →</a>
+      </aside>
+    </div>
+  </div></main>${footer()}</div>`;
+}
+
 function footer() {
   return `<footer class="footer">
     <div class="container">
@@ -1986,7 +2012,8 @@ function footer() {
           <a href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
         </div>
         <div class="foot-col">
-          <h4>Yritys</h4>
+          <h4>${appText("Yritys","Företag","Company")}</h4>
+          <a href="/yhteystiedot">${appText("Yhteystiedot","Kontakt","Contact")}</a>
           <a href="/tietoturva">Tietoturva</a>
           <a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a>
           <span>Suomi</span>
@@ -2724,7 +2751,6 @@ async function home() {
           </div>
         </div>
       </section>
-      ${contactSection()}
     </main>
     ${footer()}
   </div>`;
@@ -4465,6 +4491,7 @@ async function route() {
   if (path === '/') html = await home();
   else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
   else if (['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot'].includes(path)) html = seoLandingPage(path);
+  else if (path === '/yhteystiedot') html = contactPage();
   else if (path === '/assistant') html = await dashboard({ demo:true });
   else if (path === '/tilaus') html = signup();
   else if (path === '/kirjaudu') html = login();
@@ -4525,6 +4552,10 @@ async function route() {
     missedSlider?.addEventListener('input', updateCalculator);
     updateCalculator();
 
+    initImmersiveHomeMotion();
+  }
+
+  if (path === '/yhteystiedot') {
     const contactToggle = $('#contactFormToggle');
     const contactForm = $('#homeContactForm');
     const contactStatus = $('#homeContactStatus');
@@ -4579,7 +4610,6 @@ async function route() {
       }
     });
 
-    initImmersiveHomeMotion();
   }
 
   if (path === '/assistant') {
