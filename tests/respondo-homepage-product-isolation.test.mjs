@@ -21,7 +21,7 @@ test('Respondo homepage purchase question answers with signup instructions inste
   assert.equal(fi.id,'respondo-faq-buy');
   assert.match(fi.answer,/Kokeile ilmaiseksi/i);
   assert.match(fi.answer,/3 päivän ilmainen kokeilu/i);
-  assert.match(fi.answer,/49,99/);
+  assert.match(fi.answer,/29,90/);
   assert.doesNotMatch(fi.answer,/jätä.*yhteystiet|puhelinnumeron tai sähköpostin/i);
 
   const en=respondoProductFaqMatch('How can I buy this?','en',[]);
