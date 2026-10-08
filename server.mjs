@@ -4329,9 +4329,9 @@ function groundedToiletInstallationQuestion(message, rows, lang) {
   // These questions require their own verified price or schedule evidence.
   if(/(?:\bhinta\b|\bpaljonko\b|\bmaksaa\b|\bprice\b|\bcost\b|\bpris\b|\bkostar\b|\bmilloin\b|\bwhen\b|\bnar\b|\btanaan\b|\bhuomenna\b)/.test(q)) return null;
 
-  const positiveFixture=/(?:\bwc[- ]?(?:istui|pont|pytt|asenn)|\bvessan(?:pont|pytt)|\btoalett(?:stol|installation|montering)?\b|\btoilets?\b|\basenn[a-z]*\s+wc\b|\bwc\s+asenn)/;
+  const positiveFixture=/(?:\bwc[- ]?(?:istui|pont|pytt|asenn)|\bvessan(?:pont|pytt)|\btoalett(?:stol|er|en|installation|montering)?\b|\btoilets?\b|\basenn[a-z]*\s+wc\b|\bwc\s+asenn)/;
   const positiveInstall=/(?:asenn|install|monter|\bfit\b|\bfitting\b)/;
-  const negation=/\b(?:emme|ei|eivat|not|never|dont|don't|inte|aldrig)\b/;
+  const negation=/\b(?:emme|ei|eivat|not|never|dont|don t|doesn t|do not|cannot|inte|aldrig)\b/;
   const verified=(rows||[]).find(row=>{
     if(!usableWebsiteRow(row)) return false;
     const meta=normalizeSearchText(String(row.category||'')+' '+String(row.title||''));
