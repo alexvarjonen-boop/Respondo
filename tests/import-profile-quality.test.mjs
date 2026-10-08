@@ -253,3 +253,17 @@ test('real cleaning-service profile excludes generic navigation headings',()=>{
   assert.match(profile.services,/Peltikattojen pesut/i);
   assert.doesNotMatch(profile.services,/^(?:Kaikki palvelut|Palvelumme)$/mi);
 });
+
+test('FAQ heading is stripped from price explanation but the useful quote-based pricing remains',()=>{
+  const doc={
+    url:'https://monitoimipojatrd.fi/',
+    blocks:[
+      {text:'Usein Kysytyt Kysymykset: Hinnoittelu perustuu työn laajuuteen. Pyydä tarjous ja kerromme hinnan ennen kuin aloitamme mitään.',heading:'Hinnoittelu'},
+      {text:'Ikkunanpesu: 35 €',heading:'Hinnasto'},
+    ],
+    links:[],products:[],text:'',
+  };
+  const profile=essentialWebsiteProfile({finalUrl:'https://monitoimipojatrd.fi/',pageDocuments:[doc]});
+  assert.match(profile.pricing,/Hinnoittelu perustuu työn laajuuteen/i,profile.pricing);
+  assert.doesNotMatch(profile.pricing,/Usein Kysytyt Kysymykset:/i,profile.pricing);
+});

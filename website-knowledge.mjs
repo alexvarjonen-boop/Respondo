@@ -1139,7 +1139,14 @@ export function essentialWebsiteProfile(bundle) {
     });
   };
   const byKind = (kind) => uniqueProfileFacts(
-    sorted(facts.filter(x=>x.category===labels[kind] && (kind!=='pricing' || servicePricingOnly(x)))),
+    sorted(facts.filter(x=>x.category===labels[kind] && (kind!=='pricing' || servicePricingOnly(x))))
+      .map((row)=>kind!=='pricing' ? row : ({
+        ...row,
+        // FAQ headings are source context, not part of a merchant's price.
+        // Preserve the useful text ("Hinnoittelu perustuu työn laajuuteen")
+        // while dropping a misleading leading "Usein kysytyt kysymykset:".
+        answer:clean(row.answer).replace(/^(?:usein\s+kysytyt\s+kysymykset|faq|frequently\s+asked\s+questions|vanliga\s+frågor|vanliga\s+fragor)\s*:\s*/i,''),
+      })),
     4000,
     {dropQuestions:['returns','warranty','delivery','payment'].includes(kind), maxFactLength:kind==='pricing'?180:0}
   );
