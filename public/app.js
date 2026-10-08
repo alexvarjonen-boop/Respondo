@@ -1716,20 +1716,40 @@ window.addEventListener('respondo:languagechange', () => {
   else applyLanguage();
 });
 
+function languageChangeUrl(language, href = location.href) {
+  const lang = ['fi','sv','en'].includes(language) ? language : 'fi';
+  const next = new URL(href, location.origin);
+  // Feature page aliases represent a particular language and would otherwise
+  // override the visitor's freshly selected locale.
+  if (['/ominaisuudet','/features','/funktioner'].includes(next.pathname)) {
+    next.pathname = lang === 'en' ? '/features' : lang === 'sv' ? '/funktioner' : '/ominaisuudet';
+  }
+  // Keep checkout plan, referral code, fragment and unrelated URL options.
+  next.searchParams.set('lang', lang);
+  return next.pathname + next.search + next.hash;
+}
+
 function bindLanguageSwitch() {
   try { localStorage.removeItem('respondo-lang'); } catch {}
 
   const setLanguage = (value) => {
     const lang = ['fi','sv','en'].includes(value) ? value : 'fi';
+    // Rewrite the current URL first: a stale ?lang=fi used to cancel
+    // language-switch clicks on the contact, pricing and legal pages.
+    const nextUrl = languageChangeUrl(lang);
+    if (nextUrl !== location.pathname + location.search + location.hash) {
+      history.replaceState(history.state, '', nextUrl);
+    }
     localStorage.setItem('respondo_lang', lang);
-    window.RespondoI18n?.setLanguage?.(lang);
     document.documentElement.lang = lang;
+    // The shared setter emits respondo:languagechange and rerenders once.
+    if (window.RespondoI18n?.setLanguage) window.RespondoI18n.setLanguage(lang);
+    else route();
     // Anonymous visitors already persist the language in localStorage.
     // Only the authenticated dashboard needs to persist the preference server-side.
     if (location.pathname === '/app') {
       api('/api/auth/language', { method:'POST', body:JSON.stringify({ language:lang }) }).catch(() => {});
     }
-    route();
   };
 
   document.querySelectorAll('[data-lang-select]').forEach((select) => {
