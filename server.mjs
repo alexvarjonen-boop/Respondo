@@ -4347,7 +4347,14 @@ function groundedToiletInstallationQuestion(message, rows, lang) {
     });
   });
 
-  if(!verified) return {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
+  if(!verified) {
+    const answer=lang==='en'
+      ? "I couldn't confirm toilet installation from the company's information. Leave your contact details and the company can check."
+      :lang==='sv'
+        ? 'Jag kunde inte bekräfta toalettinstallation utifrån företagets uppgifter. Lämna dina kontaktuppgifter så kan företaget kontrollera detta.'
+        : 'Yrityksen tiedoista ei löytynyt vahvistusta WC-istuimen asennukselle. Jätä yhteystietosi, niin yritys voi varmistaa asian.';
+    return {answer,handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
+  }
   const answer=lang==='en'?'Yes, we install toilets.'
     :lang==='sv'?'Ja, vi installerar toaletter.'
       :'Kyllä, asennamme WC-istuimia.';
