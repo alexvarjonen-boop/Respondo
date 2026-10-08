@@ -13,9 +13,9 @@ export const LEGAL_20261008 = {
     ],
     sections: [
       S(['1. Palveluntarjoaja','1. Tjänsteleverantör','1. Service provider'],[
-        'RESPONDO AI, Y-tunnus 3599437-5, Suomi. Yhteydenotot: info@respondoai.fi.',
-        'RESPONDO AI, FO-nummer 3599437-5, Finland. Kontakt: info@respondoai.fi.',
-        'RESPONDO AI, Business ID 3599437-5, Finland. Contact: info@respondoai.fi.'
+        'Alex Varjonen (Respondo AI -palvelu), Y-tunnus 3599437-5, Suomi. Yhteydenotot: info@respondoai.fi.',
+        'Alex Varjonen (tjänsten Respondo AI), FO-nummer 3599437-5, Finland. Kontakt: info@respondoai.fi.',
+        'Alex Varjonen (Respondo AI service), Business ID 3599437-5, Finland. Contact: info@respondoai.fi.'
       ]),
       S(['2. Palvelu ja käyttötarkoitus','2. Tjänsten och användningsområdet','2. Service and intended use'],[
         'Respondo on yritysten verkkosivuille tarkoitettu asiakaspalvelu- ja ajanvarausohjelmisto. Toimintoja ovat esimerkiksi chat, hyväksytty tietopohja, verkkosivujen tietojen tuonti, asiakasviestien ja yhteydenottojen käsittely, tarjouspyynnöt, ajanvaraukset sekä erikseen käyttöön otettavat työntekijä- ja integraatiotoiminnot. Osa ominaisuuksista edellyttää tiettyä tilauspakettia tai erillisiä tunnuksia.',
