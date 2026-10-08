@@ -3147,7 +3147,7 @@ function dashboardWithoutCompany(me, workspaces = []) {
           <div class="deletion-modal-header"><div><small>${appText('VAHVISTA POISTAMINEN','BEKRÄFTA RADERING','CONFIRM DELETION')}</small><h2 id="deleteModalTitle"></h2></div><button type="button" id="deleteModalClose" class="deletion-modal-close" aria-label="${appText('Sulje','Stäng','Close')}">×</button></div>
           <p id="deleteModalDescription"></p>
           <form id="deleteConfirmForm" class="deletion-confirm-form">
-            <label id="deleteEmailField" hidden><span>${appText('Kirjautumissähköposti','Inloggningsadress','Login email')}</span><input name="email" type="email" autocomplete="email" maxlength="254" placeholder="${esc(me.email||'')}"></label>
+            <label id="deleteEmailField" hidden><span>${appText('Kirjautumissähköposti','Inloggningsadress','Login email')}</span><input name="email" type="email" autocomplete="off" maxlength="254" placeholder="${appText('Kirjoita kirjautumissähköpostisi','Ange din inloggningsadress','Enter your login email')}"></label>
             <label><span>${appText('Nykyinen salasana','Nuvarande lösenord','Current password')}</span><input name="password" type="password" autocomplete="current-password" required maxlength="200"></label>
             <div id="deleteConfirmMsg" aria-live="polite" role="alert"></div>
             <button type="submit" class="deletion-confirm-submit" id="deleteConfirmSubmit">${appText('Poista pysyvästi','Radera permanent','Delete permanently')}</button>
@@ -3701,8 +3701,8 @@ async function dashboard(options = {}) {
           <span>${supportAgents.filter((x)=>x.status==='online').length} ${appText('paikalla','online','online')}</span>
         </div>
         <form id="supportAgentForm" class="formgrid">
-          <div class="field"><label>${appText('Nimi','Namn','Name')}</label><input name="displayName" required maxlength="60" placeholder="Alex"></div>
-          <div class="field"><label>${appText('Käyttäjänimi','Användarnamn','Username')}</label><input name="username" required minlength="3" maxlength="50" autocomplete="off" placeholder="alex"></div>
+          <div class="field"><label>${appText('Nimi','Namn','Name')}</label><input name="displayName" required maxlength="60" placeholder="${appText('Asiakaspalvelijan nimi','Medarbetarens namn','Support agent name')}"></div>
+          <div class="field"><label>${appText('Käyttäjänimi','Användarnamn','Username')}</label><input name="username" required minlength="3" maxlength="50" autocomplete="off" placeholder="${appText('Valitse käyttäjänimi','Välj användarnamn','Choose a username')}"></div>
           <div class="field"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" required minlength="10" autocomplete="new-password" placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
           <fieldset class="field support-agent-languages"><legend>${appText('Palvelukielet','Servicespråk','Service languages')}</legend><label><input type="checkbox" name="languages" value="fi" checked> 🇫🇮 Suomi</label><label><input type="checkbox" name="languages" value="sv"> 🇸🇪 Svenska</label><label><input type="checkbox" name="languages" value="en"> 🇬🇧 English</label></fieldset>
           <div class="field"><label>${appText('Profiilikuva','Profilbild','Profile picture')}</label><input name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp"></div>
@@ -4188,7 +4188,7 @@ async function dashboard(options = {}) {
           </div>
           <p id="deleteModalDescription"></p>
           <form id="deleteConfirmForm" class="deletion-confirm-form">
-            <label id="deleteEmailField" hidden><span>${appText('Kirjautumissähköposti','Inloggningsadress','Login email')}</span><input name="email" type="email" autocomplete="email" maxlength="254" placeholder="${esc(me.email||'')}"></label>
+            <label id="deleteEmailField" hidden><span>${appText('Kirjautumissähköposti','Inloggningsadress','Login email')}</span><input name="email" type="email" autocomplete="off" maxlength="254" placeholder="${appText('Kirjoita kirjautumissähköpostisi','Ange din inloggningsadress','Enter your login email')}"></label>
             <label><span>${appText('Nykyinen salasana','Nuvarande lösenord','Current password')}</span><input name="password" type="password" autocomplete="current-password" maxlength="200" required></label>
             <div id="deleteConfirmMsg" role="alert" aria-live="polite"></div>
             <button type="submit" id="deleteConfirmSubmit" class="deletion-confirm-submit">${appText('Poista pysyvästi','Radera permanent','Delete permanently')}</button>
