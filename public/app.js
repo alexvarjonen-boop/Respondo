@@ -5320,6 +5320,34 @@ async function route() {
     workspaceAddForm?.querySelectorAll('input[name="plan"]').forEach((radio)=>radio.addEventListener('change',syncWorkspaceReferral));
     syncWorkspaceReferral();
 
+    $('#emptyWorkspaceForm')?.addEventListener('submit',async(event)=>{
+      event.preventDefault();
+      const form=event.currentTarget;
+      const button=form.querySelector('button[type="submit"]');
+      const msg=$('#emptyWorkspaceMsg');
+      const fd=new FormData(form);
+      const original=button.textContent;
+      button.disabled=true;
+      button.textContent=appText('Avataan maksua…','Öppnar betalning…','Opening checkout…');
+      if(msg) msg.textContent='';
+      try{
+        const result=await api('/api/app/workspaces/checkout',{
+          method:'POST',
+          body:JSON.stringify({
+            companyName:String(fd.get('companyName')||'').trim(),
+            businessId:String(fd.get('businessId')||'').trim(),
+            plan:String(fd.get('plan')||'basic_monthly'),
+            acceptedTerms:fd.get('acceptedTerms')==='on',
+          }),
+        });
+        if(!result?.url) throw new Error(appText('Maksusivua ei voitu avata.','Betalningssidan kunde inte öppnas.','Could not open checkout.'));
+        location.href=result.url;
+      }catch(err){
+        button.disabled=false;
+        button.textContent=original;
+        if(msg) msg.textContent=err.message||appText('Yritä uudelleen.','Försök igen.','Try again.');
+      }
+    });
     $('#workspaceAddForm')?.addEventListener('submit',async(event)=>{
       event.preventDefault();
       const form=event.currentTarget;
