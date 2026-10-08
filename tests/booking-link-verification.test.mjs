@@ -35,6 +35,9 @@ test('public Try Bot omits a misleading calendar action for a generic contact li
     const wrong=await ask('https://example.fi/contact-us','https://example.fi/contact-us');
     assert.ok((wrong.actions||[]).some(x=>x.type==='booking'&&x.mode==='booking_form'),JSON.stringify(wrong));
     assert.ok(!(wrong.actions||[]).some(x=>x.type==='booking'&&x.url==='https://example.fi/contact-us'),JSON.stringify(wrong));
+    const htmlContact=await ask('https://example.fi/contact-us.html','https://example.fi/tarjous');
+    assert.ok(!(htmlContact.actions||[]).some(x=>x.type==='booking'&&x.url==='https://example.fi/contact-us.html'),JSON.stringify(htmlContact));
+    assert.match(appJs,/\.html\?/);
     const right=await ask('https://example.fi/ajanvaraus','https://example.fi/contact-us');
     assert.ok((right.actions||[]).some(x=>x.type==='booking'&&x.url==='https://example.fi/ajanvaraus'),JSON.stringify(right));
   }finally{

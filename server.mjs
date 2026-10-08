@@ -3903,7 +3903,7 @@ function bookingLinkLooksLikeContactForm(raw) {
     if(!['https:','http:'].includes(parsed.protocol)) return false;
     if(/(?:booking|appointment|calendar|schedule|ajanvaraus|varaa[-_]?aika|tidsbokning|bokning)/i.test(parsed.search)) return false;
     const path=decodeURIComponent(parsed.pathname).replace(/\/+$/,'').toLowerCase();
-    return /\/(?:contact(?:[-_]?us)?|get[-_]?in[-_]?touch|yhteystiedot|ota[-_]?yhteytta|ota[-_]?yhteyttä|kontakt(?:[-_]?oss)?|kontakta[-_]?oss)$/.test(path);
+    return /\/(?:contact(?:[-_]?us)?|get[-_]?in[-_]?touch|yhteystiedot|ota[-_]?yhteytta|ota[-_]?yhteyttä|kontakt(?:[-_]?oss)?|kontakta[-_]?oss)(?:\.html?)?$/.test(path);
   } catch { return false; }
 }
 

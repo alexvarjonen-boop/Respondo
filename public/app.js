@@ -3124,7 +3124,7 @@ async function dashboard(options = {}) {
   const quoteValue=String(businessProfile['Tarjouspyyntölomake']||'').trim();
   const bookingLinkNeedsReview=Boolean(bookingValue && (
     (quoteValue && bookingValue===quoteValue) ||
-    /\/(?:contact(?:[-_]?us)?|get[-_]?in[-_]?touch|yhteystiedot|ota[-_]?yhteytta|ota[-_]?yhteyttä|kontakt(?:[-_]?oss)?)\/?(?:[?#].*)?$/i.test(bookingValue)
+    /\/(?:contact(?:[-_]?us)?|get[-_]?in[-_]?touch|yhteystiedot|ota[-_]?yhteytta|ota[-_]?yhteyttä|kontakt(?:[-_]?oss)?)(?:\.html?)?\/?(?:[?#].*)?$/i.test(bookingValue)
   ));
   const unanswered = data.unanswered || [];
   const recentConversations = data.recentConversations || [];
