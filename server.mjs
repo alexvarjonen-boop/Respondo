@@ -6026,6 +6026,67 @@ app.get('/api/owner/traffic', auth, ownerTrafficOnly, async (req, res) => {
   }
 });
 
+app.get('/api/owner/companies', auth, ownerTrafficOnly, async (req, res) => {
+  res.set('Cache-Control','private, no-store');
+  try {
+    const pageSize=25;
+    const requestedPage=Number.parseInt(String(req.query.page||'1'),10);
+    const page=Number.isFinite(requestedPage)?Math.max(1,Math.min(10000,requestedPage)):1;
+    const search=String(req.query.search||'').trim().slice(0,100);
+    const requestedStatus=String(req.query.status||'all').toLowerCase();
+    const status=['all','active','trialing','ended'].includes(requestedStatus)?requestedStatus:'all';
+
+    const baseSql=`
+      SELECT t.id,t.name,t.business_id,t.website,t.subscription_plan,
+             t.subscription_status,t.created_at,
+             CASE
+               WHEN t.active=true AND u.status='active'
+                 AND t.subscription_status='trialing'
+                 AND (COALESCE(t.subscription_cancel_at_period_end,false)=false
+                      OR t.current_period_end IS NULL OR t.current_period_end>NOW())
+                 THEN 'trialing'
+               WHEN t.active=true AND u.status='active'
+                 AND t.subscription_status='active'
+                 AND (COALESCE(t.subscription_cancel_at_period_end,false)=false
+                      OR t.current_period_end IS NULL OR t.current_period_end>NOW())
+                 THEN 'active'
+               ELSE 'ended'
+             END AS usage_status
+        FROM tenants t
+        JOIN users u ON u.id=t.owner_user_id
+       WHERE COALESCE(t.subscription_status,'pending')<>'pending'
+         AND COALESCE(t.subscription_plan,'')<>'owner_test'
+         AND u.status<>'pending'`;
+    const filterSql=`($1='' OR name ILIKE '%' || $1 || '%'
+                    OR COALESCE(business_id,'') ILIKE '%' || $1 || '%'
+                    OR COALESCE(website,'') ILIKE '%' || $1 || '%')
+                   AND ($2='all' OR usage_status=$2)`;
+
+    const [overview,matching,items]=await Promise.all([
+      q(`SELECT COUNT(*)::int AS total,
+                COUNT(*) FILTER(WHERE usage_status='active')::int AS active,
+                COUNT(*) FILTER(WHERE usage_status='trialing')::int AS trialing,
+                COUNT(*) FILTER(WHERE usage_status='ended')::int AS ended
+           FROM (${baseSql}) company_list`),
+      q(`SELECT COUNT(*)::int AS total FROM (${baseSql}) company_list WHERE ${filterSql}`,[search,status]),
+      q(`SELECT id,name,business_id,website,subscription_plan,usage_status,created_at
+           FROM (${baseSql}) company_list
+          WHERE ${filterSql}
+          ORDER BY created_at DESC,id DESC
+          LIMIT $3 OFFSET $4`,[search,status,pageSize,(page-1)*pageSize]),
+    ]);
+    const total=Number(matching.rows[0]?.total||0);
+    return res.json({
+      summary:overview.rows[0]||{total:0,active:0,trialing:0,ended:0},
+      companies:items.rows,
+      pagination:{page,pageSize,total,totalPages:Math.max(1,Math.ceil(total/pageSize))},
+    });
+  } catch (e) {
+    console.error('Owner company listing failed',e?.message||e);
+    return res.status(500).json({error:'Yritysluetteloa ei voitu ladata.'});
+  }
+});
+
 app.get('/robots.txt', (req, res) => {
   res.setHeader('Cache-Control','public, max-age=3600');
   res.type('text/plain').send([
