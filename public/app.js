@@ -333,9 +333,20 @@ function previewContactVisitorRef() {
 }
 
 function showPreviewLeadForm(chat, question) {
-  if(!chat || chat.querySelector('.preview-leadbox')) return;
+  if(!chat) return;
+  // Keep the lead form directly below the newest unanswered message. A
+  // previous handoff may already have inserted the form higher in the chat.
+  // Reuse an unsent form while updating the question attached to the lead.
+  const existing=[...chat.querySelectorAll('.preview-leadbox')]
+    .find(item=>!item.querySelector('button[type="submit"]')?.disabled);
+  if(existing){
+    existing.dataset.question=String(question||'').slice(0,1200);
+    chat.appendChild(existing);
+    return;
+  }
   const form=document.createElement('form');
   form.className='preview-leadbox';
+  form.dataset.question=String(question||'').slice(0,1200);
   form.innerHTML=
     '<b>'+esc(appText('Haluatko, että yritys ottaa sinuun yhteyttä?','Vill du att företaget kontaktar dig?','Would you like the company to contact you?'))+'</b>'+
     '<small>'+esc(appText('Jätä nimesi ja puhelinnumerosi tai sähköpostisi.','Lämna ditt namn och telefonnummer eller din e-postadress.','Leave your name and phone number or email.'))+'</small>'+
@@ -366,7 +377,7 @@ function showPreviewLeadForm(chat, question) {
         method:'POST',
         body:JSON.stringify({
           name,email,phone,
-          message:String(question||'').slice(0,1200),
+          message:String(form.dataset.question||'').slice(0,1200),
           visitorRef:previewContactVisitorRef(),
           lang:currentLang(),
         })
