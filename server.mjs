@@ -5713,6 +5713,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const standaloneServicePrice=directMultilingualServicePrice(rows,cleanMessage,responseLang);
   if(standaloneServicePrice) return standaloneServicePrice;
 
+  const toiletInstallation = groundedToiletInstallationQuestion(cleanMessage, rows, responseLang);
+  if (toiletInstallation) return toiletInstallation;
+
   const multilingualService=directMultilingualServiceConfirmation(rows,cleanMessage,responseLang);
   if(multilingualService) {
     const evidence=multilingualService.evidence||[];
@@ -5779,9 +5782,6 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   let selected = selectRelevantKnowledge(rows, localQuery, 8);
 
-
-  const toiletInstallation = groundedToiletInstallationQuestion(cleanMessage, rows, responseLang);
-  if (toiletInstallation) return toiletInstallation;
 
   // Short, contextual service follow-ups need a direct yes/no answer. If there
   // is no approved proof for the exact action, hand off rather than listing
