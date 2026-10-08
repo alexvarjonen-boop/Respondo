@@ -77,4 +77,5 @@ test('legal sole-trader seller is disclosed in fallback app',()=>{
   assert.match(server,/sellerName: 'Alex Varjonen/);
   assert.match(html,/seller-b2b-v2/);
   assert.equal((server.match(/automatic_tax:\s*\{\s*enabled:\s*false\s*\}/g)||[]).length,2);
+  assert.equal((server.match(/business_purchase:\s*'1'/g)||[]).length,4);
 });
