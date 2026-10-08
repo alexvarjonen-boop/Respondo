@@ -79,8 +79,8 @@ test('seller is identifiable and domestic VAT status is disclosed',()=>{
   assert.match(terms,/Alex Varjonen \(Respondo AI -palvelu\), Y-tunnus 3599437-5/);
   assert.match(terms,/Maksulliset tilaukset ovat nyt saatavilla vain Suomessa/);
   assert.match(terms,/Paid subscriptions are currently available only to businesses in Finland/);
-  assert.match(app,/sellerName: 'Alex Varjonen/);
-  assert.match(server,/sellerName: 'Alex Varjonen/);
+  assert.match(app,/sellerName: 'Respondo AI'/);
+  assert.match(server,/sellerName: 'Respondo AI'/);
   assert.match(server,/automatic_tax:\s*\{\s*enabled:\s*false\s*\}/);
   assert.equal((server.match(/business_purchase:\s*'1'/g)||[]).length,4);
 });

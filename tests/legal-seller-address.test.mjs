@@ -17,5 +17,5 @@ test('configured postal address appears in checkout, legal disclosures and foote
   assert.match(app,/sellerPostalAddress\?'<small>'\+esc\(cfg\.sellerPostalAddress\)/);
   assert.match(app,/sellerPostalAddress\?'<span>'\+esc\(cfg\.sellerPostalAddress\)/);
   assert.match(app,/sellerPostalAddress\?'<p>'\+esc\(cfg\.sellerPostalAddress\)/);
-  assert.match(app,/sellerName\|\|'Alex Varjonen/);
+  assert.match(app,/sellerName\|\|'Respondo AI'/);
 });

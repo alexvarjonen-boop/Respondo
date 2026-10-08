@@ -7898,7 +7898,7 @@ app.get('/api/public/config', publicReadLimiter, async (req, res) => {
   }
   return res.json({
     brand: 'RESPONDO AI',
-    sellerName: 'Alex Varjonen · Respondo AI',
+    sellerName: 'Respondo AI',
     // Optional publicly displayed business mailing address. Do not populate from private payment/KYC data.
     sellerPostalAddress: String(process.env.RESPONDO_SELLER_POSTAL_ADDRESS || '').trim().slice(0,200),
     supportEmail: process.env.SUPPORT_EMAIL || 'info@respondoai.fi',
