@@ -62,3 +62,19 @@ test('signup and both workspace forms collect and send country',()=>{
   assert.match(server,/enforceCompletedCheckoutCountryPolicy\(session\)/);
   assert.match(server,/checkoutCountryPolicy\(req.body\?\.billingCountry\)/);
 });
+
+test('only declared Finnish business customers can enter either checkout',()=>{
+  assert.equal((app.match(/name="businessPurchase"/g)||[]).length,3);
+  assert.equal((app.match(/businessPurchase:\s*(?:form.get|fd.get)/g)||[]).length,3);
+  assert.match(server,/if\s*\(req\.body\?\.businessPurchase !== true\)/);
+  assert.match(server,/if\s*\(req\.body\?\.businessPurchase!==true\)/);
+  assert.match(app,/Maksulliset tilaukset ovat toistaiseksi saatavilla vain Suomessa sijaitseville yrityksille/);
+});
+
+test('legal sole-trader seller is disclosed in fallback app',()=>{
+  assert.match(app,/Alex Varjonen \(Respondo AI -palvelu\), Y-tunnus/);
+  assert.match(app,/sellerName: 'Alex Varjonen/);
+  assert.match(server,/sellerName: 'Alex Varjonen/);
+  assert.match(html,/seller-b2b-v1/);
+  assert.equal((server.match(/automatic_tax:\s*\{\s*enabled:\s*false\s*\}/g)||[]).length,2);
+});
