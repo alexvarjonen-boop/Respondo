@@ -2343,10 +2343,26 @@ function verifiedContactValue(rows, title) {
   return null;
 }
 
+
+// Form/page links are approved website facts, not guesses inferred from the
+// company's homepage URL. Never synthesize a Shopify /pages/contact endpoint.
+function verifiedContactPage(rows) {
+  for (const title of ['Yhteydenottolomake','Yhteydenottosivu']) {
+    for (const row of rows || []) {
+      if (String(row?.title || '') !== title) continue;
+      const raw=String(row?.answer || '').trim();
+      if(!/^https?:\/\//i.test(raw)) continue;
+      const value=normalizeWebUrl(raw,false);
+      if(value) return {value,row,form:title==='Yhteydenottolomake'};
+    }
+  }
+  return null;
+}
+
 function explicitContactQuestion(message) {
   const q=normalizeSearchText(message);
   if (/(?:^|\s)(?:puhelin\w*|phone\w*|telefon\w*|soitta\w*|soita|ring\w*|numero|numeronne|numeroanne)(?:\s|$)/.test(q)) return 'phone';
-  if (/(?:^|\s)(?:sahkopost\w*|email\w*|e-mail|meili\w*|epost\w*)(?:\s|$)/.test(q)) return 'email';
+  if (/(?:^|\s)(?:sahkopost\w*|email\w*|e-mail|e-post\w*|meili\w*|epost\w*)(?:\s|$)/.test(q)) return 'email';
   return '';
 }
 
@@ -2847,6 +2863,7 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
   const booking = knowledgeValue(rows, 'Ajanvarauslinkki');
   const phone = verifiedContactValue(rows, 'Puhelinnumero')?.value || '';
   const email = verifiedContactValue(rows, 'Sähköposti')?.value || '';
+  const contactPage=verifiedContactPage(rows);
   const requestedContact=explicitContactQuestion(message);
   const catalogUrl=(broadProductQuestion(message)||ecommerceOrderQuestion(message))?productCatalogDestination(rows):'';
   const actions = [];
@@ -2875,9 +2892,16 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
   }
 
   if (requestedContact || /yhteys|yhteytta|yhteystiedot|ottaa yhteytta|contact|get in touch|kontakt|kontakta/.test(q)) {
+    if (contactPage) push({
+      type:'contact',mode:'website_contact',
+      label:actionLang==='en'?(contactPage.form?'Open contact form':'Open contact page')
+        :actionLang==='sv'?(contactPage.form?'Öppna kontaktformulär':'Öppna kontaktsidan')
+        :(contactPage.form?'Avaa yhteydenottolomake':'Avaa yhteydenottosivu'),
+      url:contactPage.value,
+    });
     if (phone && requestedContact!=='email') push({ type:'contact',mode:'phone',label:actionLang==='en'?'Call us':actionLang==='sv'?'Ring oss':'Soita',url:'tel:'+phone.replace(/[^\d+]/g,'') });
     if (email && requestedContact!=='phone') push({ type:'contact',mode:'email',label:actionLang==='en'?'Send email':actionLang==='sv'?'Skicka e-post':'Lähetä sähköposti',url:'mailto:'+email });
-    if ((requestedContact==='phone'&&!phone) || (requestedContact==='email'&&!email) || (!requestedContact&&!phone&&!email)) {
+    if (!contactPage && ((requestedContact==='phone'&&!phone) || (requestedContact==='email'&&!email) || (!requestedContact&&!phone&&!email))) {
       push({ type:'contact',mode:'contact_form',label:actionLang==='en'?'Leave your contact details':actionLang==='sv'?'Lämna dina kontaktuppgifter':'Jätä yhteystiedot' });
     }
   }
@@ -2892,7 +2916,11 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
   }
 
   if (/tarjou[sk]|hinta-arvio|arvio|kustannusarvio|quote|estimate|offert|prisförslag|prisforslag/.test(q)) {
-    if (!quote) push({ type: 'quote', mode: 'quote_form', label: actionLang === 'en' ? 'Request a quote' : actionLang === 'sv' ? 'Begär offert' : 'Pyydä tarjous' });
+    if (!quote && contactPage) push({type:'quote',
+      label:actionLang==='en'?'Contact for a quote':actionLang==='sv'?'Kontakta för offert':'Kysy tarjousta',
+      url:contactPage.value,
+    });
+    else if (!quote) push({ type: 'quote', mode: 'quote_form', label: actionLang === 'en' ? 'Request a quote' : actionLang === 'sv' ? 'Begär offert' : 'Pyydä tarjous' });
     if (quote) push({ type: 'quote', label: actionLang === 'en' ? 'Open quote form' : actionLang === 'sv' ? 'Öppna offertformuläret' : 'Avaa tarjouslomake', url: quote });
   }
 
@@ -3468,6 +3496,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   };
   const priority = url => {
     const p=normalizeSearchText(url);
+    if (/(?:\/contact(?:-us)?|\/contactus|\/kontakt|\/kontakta-oss|\/ota-yhteytta|\/yhteystiedot|\/yhteydenotto)(?:\/|[?#]|$)/.test(p)) return 175;
     if (/\/products?\/|\/tuotteet?\/|product|tuote|shop|kauppa/.test(p)) return 140;
     if (/faq|ukk|help|support|shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|size-guide|size\b|koko|material|materia|care|hoito|quality|laatu|store|myymala|myymälä|location|sijainti/.test(p)) return 120;
     return /tarjous|quote|offert|hinta|price|pris|palvel|service|tjanst|yhtey|contact|kontakt|auki|hours|oppet/i.test(p) ? 100 : 0;
@@ -3505,6 +3534,16 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   queued.add(first.finalUrl);
   pages.push({ url:first.finalUrl, key:first.finalUrl.replace(/\/$/, ''), document:extractBusinessDocument(first.html,first.finalUrl) });
   enqueue(first.html, first.finalUrl);
+
+  // Contact pages must not disappear behind long catalog/sitemap scans. Start
+  // loading the highest-priority contact page alongside other discovery work.
+  // The company URL comes from an actual page link, never from a guessed path.
+  const contactCandidate=queue.find(item=>
+    /\/(?:pages\/)?(?:contact(?:-us)?|contactus|kontakt|kontakta-oss|ota-yhteytta|yhteystiedot|yhteydenotto)(?:\/|[?#]|$)/i.test(item.url)
+  );
+  const preloadedContact=contactCandidate
+    ? fetchPublicHtml(contactCandidate.url).catch(()=>null)
+    : Promise.resolve(null);
 
   let storefrontProducts=[];
   if (storefrontLimit > 0) {
@@ -3561,6 +3600,18 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     queue.splice(0,queue.length,...kept);
     queue.sort((a,b)=>b.score-a.score);
   }
+  const contactPage=await preloadedContact;
+  if(contactPage && pages.length < maxPages){
+    try {
+      const parsed=new URL(contactPage.finalUrl);
+      const key=parsed.origin+parsed.pathname.replace(/\/$/,'')+parsed.search;
+      if(parsed.hostname.toLowerCase()===base.hostname.toLowerCase() && !pages.some(page=>page.key===key)){
+        pages.push({url:contactPage.finalUrl,key,document:extractBusinessDocument(contactPage.html,contactPage.finalUrl)});
+        enqueue(contactPage.html,contactPage.finalUrl);
+      }
+    } catch {}
+  }
+
   const totalTarget = Math.max(1, Math.min(maxPages, pages.length + queue.length));
   if (onProgress) onProgress({scanned:pages.length,total:totalTarget});
 
@@ -3670,6 +3721,7 @@ function buildProfileKnowledge(profile = {}) {
   add('Osoite', profile.address, ['osoite','sijainti']);
   add('Verkkosivu', profile.website, ['verkkosivu','www']);
   add('Tarjouspyyntölomake', profile.quoteRequestUrl, ['tarjous','tarjouspyyntö']);
+  add('Yhteydenottolomake', profile.contactUrl, ['yhteystiedot','yhteydenotto','contact','kontakt']);
   add('Ajanvarauslinkki', profile.bookingUrl, ['ajanvaraus','varaa','aika','booking']);
   add('Lisätiedot', profile.notes, ['lisätieto','päivystys','maksutapa','takuu','ajanvaraus']);
   add('Vastaustyyli', profile.tone, ['tyyli']);
@@ -4498,17 +4550,40 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     const title=contactRequested==='phone'?'Puhelinnumero':'Sähköposti';
     const verified=verifiedContactValue(rows,title);
     const isPhone=contactRequested==='phone';
+    const fallbackPage=verified?null:verifiedContactPage(rows);
     const answer=verified
       ? (responseLang==='en'?(isPhone?'Our phone number is ':'Our email address is ')
           :responseLang==='sv'?(isPhone?'Vårt telefonnummer är ':'Vår e-postadress är ')
           :(isPhone?'Puhelinnumeromme on ':'Sähköpostiosoitteemme on '))+verified.value+'.'
+      : fallbackPage
+        ? responseLang==='en'
+          ? (isPhone?'No verified phone number is available. You can contact the company through its website using the button below.':'No verified email address is available. You can contact the company through its website using the button below.')
+          : responseLang==='sv'
+            ? (isPhone?'Inget bekräftat telefonnummer finns. Du kan kontakta företaget via webbplatsen med knappen nedan.':'Ingen bekräftad e-postadress finns. Du kan kontakta företaget via webbplatsen med knappen nedan.')
+            : (isPhone?'Yrityksen puhelinnumeroa ei löytynyt. Voit kuitenkin ottaa yhteyttä yrityksen verkkosivujen kautta alla olevasta painikkeesta.':'Yrityksen sähköpostiosoitetta ei löytynyt. Voit kuitenkin ottaa yhteyttä yrityksen verkkosivujen kautta alla olevasta painikkeesta.')
       : responseLang==='en'
         ? (isPhone?'There is no verified phone number in the company information. Leave your contact details so the company can get back to you.':'There is no verified email address in the company information. Leave your contact details so the company can get back to you.')
         : responseLang==='sv'
           ? (isPhone?'Det finns inget bekräftat telefonnummer i företagets information. Lämna dina kontaktuppgifter så kan företaget återkomma.':'Det finns ingen bekräftad e-postadress i företagets information. Lämna dina kontaktuppgifter så kan företaget återkomma.')
           : (isPhone?'Yrityksen vahvistetuista tiedoista ei löytynyt puhelinnumeroa. Jätä yhteystietosi, niin yritys voi palata sinulle.':'Yrityksen vahvistetuista tiedoista ei löytynyt sähköpostiosoitetta. Jätä yhteystietosi, niin yritys voi palata sinulle.');
-    return {answer,handoff:!verified,confidence:verified?1:0.2,intent:'Yhteystiedot',
-      sourceIds:verified?.row.id?[verified.row.id]:[],selected:verified?[verified.row]:[]};
+    return {answer,handoff:!verified&&!fallbackPage,confidence:verified?1:fallbackPage?0.95:0.2,intent:'Yhteystiedot',
+      sourceIds:[verified?.row?.id || fallbackPage?.row?.id].filter(Boolean),
+      selected:[verified?.row || fallbackPage?.row].filter(Boolean)};
+  }
+
+  // A website contact page answers "How can I contact you?" even without
+  // a public email/phone. Resolve it before broad retrieval can hand off.
+  if (queryTopic(cleanMessage)==='contact' || /yhtey(?:s|tt|denot)|contact|kontakt|kontakta|e-post|epost|sahkopost|puhelin|phone|telefon/.test(normalized)) {
+    const page=verifiedContactPage(rows);
+    if(page) {
+      const answer=responseLang==='en'
+        ? (page.form?'You can contact the company using the contact form on its website. Open it below.':'You can contact the company through its website contact page. Open it below.')
+        : responseLang==='sv'
+          ? (page.form?'Du kan kontakta företaget via kontaktformuläret på webbplatsen. Öppna det nedan.':'Du kan kontakta företaget via kontaktsidan på webbplatsen. Öppna den nedan.')
+          : (page.form?'Voit ottaa yhteyttä yritykseen sen verkkosivujen yhteydenottolomakkeella. Avaa lomake alta.':'Voit ottaa yhteyttä yritykseen sen verkkosivujen yhteydenottosivun kautta. Avaa sivu alta.');
+      return {answer,handoff:false,confidence:0.98,intent:'Yhteystiedot',
+        sourceIds:[page.row.id].filter(Boolean),selected:[page.row]};
+    }
   }
 
   if (explicitBusinessLocationQuestion(cleanMessage)) {
@@ -4533,6 +4608,16 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   if (queryTopic(cleanMessage) === 'quote') {
     const quoteRow = rows.find(row => row.title === 'Tarjouspyyntölomake' && normalizeWebUrl(row.answer, false));
     if (quoteRow) return {answer:responseLang === 'en' ? 'You can request a quote using the button below.' : responseLang === 'sv' ? 'Du kan begära offert via knappen nedan.' : 'Voit pyytää tarjouksen alla olevasta painikkeesta.', handoff:false, confidence:1, intent:'Tarjouspyyntö', sourceIds:[quoteRow.id].filter(Boolean), selected:[quoteRow]};
+    // Contact pages are a valid way to ask for a quote, but never label them
+    // as verified quote-specific forms unless the actual link says so.
+    const page=verifiedContactPage(rows);
+    if(page) return {
+      answer:responseLang==='en'?'You can ask the company for a quote through its contact page using the button below.'
+        :responseLang==='sv'?'Du kan be företaget om en offert via kontaktsidan med knappen nedan.'
+        :'Voit pyytää tarjousta yrityksen yhteydenottosivun kautta alla olevasta painikkeesta.',
+      handoff:false,confidence:0.9,intent:'Tarjouspyyntö',
+      sourceIds:[page.row.id].filter(Boolean),selected:[page.row],
+    };
   }
 
   const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
@@ -8855,20 +8940,23 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // have restored the JAG website field but lost the in-memory import id.
     // For a broad product question, re-scan that same website instead of ever
     // falling back to the logged-in Respondo owner's knowledge.
-    if (isPublicDemo && broadProductQuestion(message)) {
+    const needsProductRecovery=broadProductQuestion(message);
+    const needsContactRecovery=queryTopic(message)==='contact' &&
+      !rows.some(row=>['Yhteydenottolomake','Yhteydenottosivu'].includes(String(row?.title||'')));
+    if (isPublicDemo && (needsProductRecovery || needsContactRecovery)) {
       const hasProductFacts=rows.some((row)=>{
         if(String(row?.title||'')==='Verkkosivu') return false;
         return knowledgeTopic(String(row?.category||'')+' '+String(row?.title||''))==='products';
       });
       const website=normalizeWebUrl(profile.website,false);
-      if(!hasProductFacts && website){
+      if((needsContactRecovery || (needsProductRecovery && !hasProductFacts)) && website){
         try {
           const bundle=await fetchWebsiteBundle(
             website,
-            30,
-            10000,
+            needsContactRecovery ? 12 : 30,
+            needsContactRecovery ? 7000 : 10000,
             null,
-            { storefrontLimit:250, storefrontBudgetMs:4000, sitemapLimit:500 },
+            { storefrontLimit:needsContactRecovery?0:250, storefrontBudgetMs:4000, sitemapLimit:needsContactRecovery?0:500 },
           );
           const candidates=websiteKnowledgeCandidates(bundle).slice(0,700);
           const recoveredRows=candidates.map((item,index)=>({
@@ -8938,7 +9026,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // Contact questions are actions, not scraped navigation prose. Do not let
     // headings such as "Yhteystiedot Pyydä tarjous..." become the chat answer.
     if (!handoff && result.intent === 'Yhteystiedot' && !explicitContactQuestion(message)
-        && actions.some(action=>action?.url)) {
+        && actions.some(action=>action?.url) && !actions.some(action=>action?.mode==='website_contact')) {
       answer = detectedLang === 'en' ? 'You can contact us here:'
         : detectedLang === 'sv' ? 'Du kan kontakta oss här:'
         : 'Voit ottaa yhteyttä tästä:';

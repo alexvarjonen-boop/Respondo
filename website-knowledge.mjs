@@ -384,6 +384,32 @@ export function parseProductKnowledgeRow(row) {
 }
 
 
+
+// A contact form is a real customer contact route even if a site publishes no
+// telephone number or public email address. Do not mistake signup/search forms
+// (which commonly contain email inputs) for contact forms.
+function hasContactForm(html) {
+  for (const match of String(html || '').matchAll(/<form\b[^>]*>[\s\S]*?<\/form\s*>/gi)) {
+    const form=match[0];
+    const opening=norm(form.slice(0,form.indexOf('>')+1));
+    if (/newsletter|subscribe|search|login|register|customer_login|discount|cart|product-form|klaviyo|mailchimp/.test(opening)) continue;
+    const fields=[...form.matchAll(/<(?:input|textarea)\b[^>]*>/gi)].map(x=>norm(x[0])).join(' ');
+    const hasReply=/email|e-mail|e.post|sahkopost|phone|puhel|telefon/.test(fields);
+    const hasMessage=/<textarea\b/i.test(form) || /message|viesti|meddelande|comment|contact\[body\]/.test(fields);
+    if(hasReply && hasMessage) return true;
+  }
+  return false;
+}
+
+function isContactPageLink(link) {
+  const label=norm(clean(link?.label));
+  if(/^(?:contact(?: us)?|get in touch|send us a message|contact form|ota yhteytta|yhteystiedot|laheta viesti|yhteydenotto|kontakt|kontakta oss|skicka meddelande|hor av dig)$/.test(label)) return true;
+  try {
+    const path=norm(decodeURIComponent(new URL(link.url).pathname)).replace(/_/g,'-');
+    return /(?:^|\/)(?:contact(?:-us)?|contactus|contact-form|kontakt|kontakta-oss|ota-yhteytta|yhteystiedot|yhteydenotto)(?:\/|$)/.test(path);
+  } catch { return false; }
+}
+
 export function extractBusinessDocument(html, url) {
   const products = extractProducts(html, url);
   const blocks = [], links = [];
@@ -451,7 +477,7 @@ export function extractBusinessDocument(html, url) {
     if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
   }
   flush();
-  return {url, blocks, links, products, text:blocks.map(x=>x.text).join('\n')};
+  return {url, blocks, links, products, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
 }
 
 export function businessFactKind(text, context = '') {
@@ -541,6 +567,7 @@ export function essentialWebsiteCandidates(bundle) {
   for (const product of Array.isArray(bundle?.products) ? bundle.products : []) addProduct(product,bundle?.finalUrl || '');
 
   const quoteLinks = [];
+  const contactLinks = [];
   const catalogLinks = [];
   const serviceLinks = [];
   for (const doc of bundle?.pageDocuments || []) {
@@ -548,6 +575,9 @@ export function essentialWebsiteCandidates(bundle) {
     const companyInfoDoc=/about|about-us|meista|yritys|company|who-we-are|our-story/.test(docPath);
     if (/privacy|terms|tietosuoja|kayttoeh|arvostel|reviews|testimonial/.test(docPath)) continue;
     if (!companyInfoDoc && /blog|uutis|news/.test(docPath)) continue;
+    if (doc.contactForm && httpUrl(doc.url)) {
+      contactLinks.push({url:doc.url,sourceUrl:doc.url,score:30,hasForm:true});
+    }
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     for (const product of docProducts) addProduct(product,doc.url);
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
@@ -603,8 +633,10 @@ export function essentialWebsiteCandidates(bundle) {
       const path=norm(parsed.pathname);
       const n = norm(link.label + ' ' + parsed.pathname);
       const explicit = /tarjous|quote|estimate|offert|prisforslag/.test(n);
-      const contact = /yhtey|contact|kontakt/.test(n);
-      if (explicit || contact) quoteLinks.push({...link,sourceUrl:doc.url,score:explicit?10:1});
+      if (explicit) quoteLinks.push({...link,sourceUrl:doc.url,score:10});
+      if (isContactPageLink(link)) {
+        contactLinks.push({...link,sourceUrl:doc.url,score:12,hasForm:false});
+      }
 
       const serviceLabel=clean(decodeHtml(link.label));
       const sameHost=parsed.hostname===new URL(doc.url).hostname;
@@ -624,6 +656,11 @@ export function essentialWebsiteCandidates(bundle) {
   for (const link of serviceLinks) add('services','Palvelut',clean(link.label),link.sourceUrl || link.url);
   quoteLinks.sort((a,b)=>b.score-a.score);
   if (quoteLinks.length) add('quote','Tarjouspyyntölomake',quoteLinks[0].url,quoteLinks[0].sourceUrl);
+  contactLinks.sort((a,b)=>b.score-a.score);
+  if (contactLinks.length) {
+    const link=contactLinks[0];
+    add('contact',link.hasForm?'Yhteydenottolomake':'Yhteydenottosivu',link.url,link.sourceUrl);
+  }
   catalogLinks.sort((a,b)=>b.score-a.score);
   if (catalogLinks.length) add('catalog','Tuotekatalogi',catalogLinks[0].url,catalogLinks[0].sourceUrl);
   return out.slice(0,10000);
@@ -645,6 +682,7 @@ export function essentialWebsiteProfile(bundle) {
     email:byTitle('Sähköposti'),
     address:byTitle('Osoite'),
     quoteRequestUrl:byTitle('Tarjouspyyntölomake'),
+    contactUrl:byTitle('Yhteydenottolomake') || byTitle('Yhteydenottosivu'),
     bookingUrl:'',
     serviceArea:'',
     notes:''
@@ -655,7 +693,7 @@ export function usableWebsiteRow(row) {
   if (review.test(norm([row.category,row.title,row.answer].join(' ')))) return false;
   const sourceType=String(row.source_type || row.sourceType || '');
   if (!['website','demo_import'].includes(sourceType)) return true;
-  if (row.title === 'Tarjouspyyntölomake' || row.title === 'Tuotekatalogi') return !!httpUrl(row.answer);
+  if (['Tarjouspyyntölomake','Tuotekatalogi','Yhteydenottolomake','Yhteydenottosivu'].includes(row.title)) return !!httpUrl(row.answer);
   const serviceTitle=String(row.title||'').match(/^Palvelut\s*:\s*(.+)$/i);
   if (
     serviceTitle &&
