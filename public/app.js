@@ -5184,6 +5184,9 @@ async function route() {
     };
     let requestedSignupEmail = '';
     let verifiedSignupEmail = '';
+    // Freeze the selected signup language for both verification and the welcome email.
+    // The server persists this value as users.preferred_language.
+    let signupLanguage = currentLang();
     const signupEmail = () => String(signupForm?.elements?.email?.value || '').trim().toLowerCase();
     const startSignupCheckout = async () => {
       const form = new FormData(signupForm);
@@ -5204,7 +5207,7 @@ async function route() {
             referralCode:form.get('referralCode'),
             acceptedTerms:!!form.get('terms'),
             ownerTestAccessToken:String(form.get('ownerTestAccessToken') || ''),
-            language:currentLang(),
+            language:signupLanguage,
           }),
         });
         location.href = result.url;
@@ -5219,7 +5222,7 @@ async function route() {
     const requestSignupVerification = async () => {
       const email = signupEmail();
       const sent = await api('/api/auth/email-verification/request',{
-        method:'POST',body:JSON.stringify({email,language:currentLang()})
+        method:'POST',body:JSON.stringify({email,language:signupLanguage})
       });
       requestedSignupEmail = email;
       verifiedSignupEmail = '';
@@ -5237,6 +5240,7 @@ async function route() {
     };
     signupForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      signupLanguage = currentLang();
       $('#msg').innerHTML = '';
       if (!cfg.emailVerificationAvailable || signupForm.dataset.oauthVerified === 'true' || verifiedSignupEmail === signupEmail()) {
         await startSignupCheckout();
