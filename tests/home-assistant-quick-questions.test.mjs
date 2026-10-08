@@ -11,9 +11,9 @@ test('homepage assistant binds all three quick question buttons',()=>{
 });
 
 test('homepage loads the corrected site assistant build and creates it on the homepage',()=>{
-  assert.ok(index.includes('/effects.js?v=20261007-restore-oct06-v1'));
+  assert.ok(index.includes('/effects.js?v=20261008-apple-production-v1'));
   const initStart=effects.indexOf('function init()');
   const initSource=effects.slice(initStart,initStart+1400);
-  assert.ok(initSource.includes("if (location.pathname === '/')"));
-  assert.ok(initSource.includes('leftSectionRail(); assistant();'));
+  assert.ok(initSource.includes("document.querySelector('.apple-home')"));
+  assert.ok(initSource.includes('assistant();'));
 });

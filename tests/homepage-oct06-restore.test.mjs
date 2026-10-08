@@ -5,29 +5,20 @@ import fs from 'node:fs';
 const app=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const index=fs.readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 
-test('public homepage uses the October 6 immersive layout',()=>{
+test('public homepage renders a compact 3-card feature story instead of legacy immersive sections',()=>{
   const start=app.indexOf('async function home()');
   const end=app.indexOf('\n\nfunction signup()',start);
   assert.ok(start>=0 && end>start);
   const home=app.slice(start,end);
-
-  assert.match(home,/hero-immersive/);
-  assert.doesNotMatch(home,/geoAnswerSection\(\)/);
-  assert.match(home,/cinematicConversationScene\(\)/);
-  assert.match(home,/horizontalProductStory\(\)/);
-  assert.match(home,/productWorldScene\(\)/);
-  assert.match(home,/motionDepthScene\(\)/);
-  assert.match(home,/trustPortalScene\(\)/);
-  assert.match(home,/dataImpactScene\(\)/);
-  assert.match(home,/post-calculator-features/);
-  assert.match(home,/final-cta-immersive/);
-  assert.doesNotMatch(home,/premiumHomeSections|premium-home-page|lp-closing/);
-  assert.match(app,/<b>YRITYKSESI<\/b>/);
-  assert.doesNotMatch(app,/<div class="cinema-phone-top"><span><\/span><b>RESPONDO<\/b>/);
-  assert.doesNotMatch(app,/<span class="mini-mark">R<\/span>\s*<b>RESPONDO AI<\/b>/);
+  assert.match(home,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT\)/);
+  assert.match(home,/apple-home-page/);
+  assert.doesNotMatch(home,/cinematicConversationScene\(\)|horizontalProductStory\(\)|productWorldScene\(\)|motionDepthScene\(\)|trustPortalScene\(\)|dataImpactScene\(\)/);
+  assert.doesNotMatch(home,/calculatorSection\(\)|pricingSection\(\)|contactSection\(\)/);
 });
 
-test('redesigned homepage stylesheet is no longer loaded',()=>{
-  assert.doesNotMatch(index,/premium-home\.css/);
-  assert.match(index,/app\.js\?v=20261007-home-cleanup-v1/);
+test('Apple-inspired homepage and fullscreen menu styles are loaded',()=>{
+  assert.match(index,/apple-home\.css\?v=20261008-apple-production-v1/);
+  assert.match(index,/app\.js\?v=20261008-apple-production-v1/);
+  assert.match(app,/publicMenuMarkup\(appText,currentLang\(\)\)/);
+  assert.match(app,/bindPublicMenu\(\)/);
 });

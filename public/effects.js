@@ -1315,6 +1315,15 @@
       });
       return;
     }
+    if (location.pathname === '/' && document.querySelector('.apple-home')) {
+      assistant();
+      window.addEventListener('respondo:languagechange', () => {
+        document.querySelector('.fx-assistant-launch')?.remove();
+        document.querySelector('.fx-assistant')?.remove();
+        assistant();
+      });
+      return;
+    }
     if (location.pathname === '/' && document.querySelector('.premium-home')) {
       leftSectionRail(); assistant();
       window.addEventListener('respondo:languagechange', () => {
@@ -1335,7 +1344,7 @@
 
   let timer;
   // The server's noscript SEO shell precedes the asynchronously rendered app.
-  const rendered = () => location.pathname === '/' ? Boolean($('#app .premium-home')) : Boolean($('#app')?.children.length);
+  const rendered = () => location.pathname === '/' ? Boolean($('#app .apple-home, #app .premium-home')) : Boolean($('#app')?.children.length);
   const mo = new MutationObserver(() => { clearTimeout(timer); timer = setTimeout(() => { if (rendered()) { mo.disconnect(); init(); } }, 60); });
   if (rendered()) init(); else mo.observe($('#app') || document.documentElement, {childList:true,subtree:true});
 })();

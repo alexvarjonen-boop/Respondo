@@ -35,15 +35,15 @@ test('intent landing pages are indexable and routed in both server and browser',
   assert.match(app,/function seoLandingPage\(path\)/);
 });
 
-test('homepage keeps descriptive product content without the removed explainer section',()=>{
-  assert.match(app,/AI-asiakaspalvelu yritykselle/);
+test('redesigned homepage keeps supporting content on separate indexed pages',()=>{
   const start=app.indexOf('async function home()');
   const end=app.indexOf('\n\nfunction signup()',start);
+  assert.ok(start>=0 && end>start);
   const home=app.slice(start,end);
-  assert.doesNotMatch(home,/geoAnswerSection\(\)|geo-answer-section|respondo-explained/);
-  assert.match(home,/cinematicConversationScene\(\)/);
-  assert.match(home,/horizontalProductStory\(\)/);
-  assert.doesNotMatch(app,/premiumHomeSections\(appText, currentLang\(\), FEATURE_COUNT\)/);
+  assert.match(home,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT\)/);
+  assert.doesNotMatch(home,/cinematicConversationScene\(\)|horizontalProductStory\(\)/);
+  assert.match(server,/\'\/hinnat\'/);
+  assert.match(server,/\'\/yhteystiedot\'/);
 });
 
 test('robots and the XML sitemap serve valid readable responses on the production routes',async(t)=>{
