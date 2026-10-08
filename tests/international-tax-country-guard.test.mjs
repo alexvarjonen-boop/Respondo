@@ -53,8 +53,11 @@ test('mismatched Checkout address cancels subscription before account activation
   assert.deepEqual(canceled,['sub_test_foreign']);
 });
 
-test('signup and both workspace forms collect and send country',()=>{
-  assert.equal((app.match(/name="billingCountry"/g)||[]).length,3);
+test('signup and both workspace forms submit FI silently without visible billing country UI',()=>{
+  assert.equal((app.match(/<input type="hidden" name="billingCountry" value="FI">/g)||[]).length,3);
+  assert.equal((app.match(/<select name="billingCountry"/g)||[]).length,0);
+  assert.doesNotMatch(app, /<label>\\$\\{appText\\('Laskutusmaa'/);
+  assert.match(html,/billing-hidden-v1/);
   assert.equal((app.match(/billingCountry:(?:form.get|String\(fd.get)/g)||[]).length,3);
   assert.match(app,/billingCountryNotice/);
   assert.match(html,/tax-country-guard-v1/);

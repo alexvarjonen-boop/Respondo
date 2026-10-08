@@ -2780,17 +2780,8 @@ async function home(){
   </div>`;
 }
 
-// Country choice is explicit; non-FI checkout needs a verified tax policy first.
-const RESPONDO_BILLING_COUNTRY_CODES = 'AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW'.split(' ');
-function billingCountryFieldOptions() {
-  const language=currentLang()==='sv'?'sv':currentLang()==='en'?'en':'fi';
-  const displayNames=new Intl.DisplayNames([language],{type:'region'});
-  const selected='<option value="FI" selected>'+appText('Suomi','Finland','Finland')+' (FI)</option>';
-  const other=RESPONDO_BILLING_COUNTRY_CODES.filter(code=>code!=='FI').map(code=>({code,name:displayNames.of(code)||code}))
-    .sort((a,b)=>a.name.localeCompare(b.name,language))
-    .map(c=>'<option value="'+c.code+'">'+esc(c.name)+' ('+c.code+')</option>').join('');
-  return selected+other;
-}
+// The current checkout accepts Finnish business purchases only. Country is submitted
+// as a hidden default, while Stripe's actual billing country is verified server-side.
 function billingCountryNotice() {
   return appText(
     'Maksulliset tilaukset ovat tällä hetkellä saatavilla vain Suomeen. Muiden maiden verotus ja mahdolliset rekisteröinnit tarkistetaan ennen myynnin avaamista. Kysy: info@respondoai.fi.',
@@ -2856,7 +2847,7 @@ function signup() {
             <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
             <div class="field"><label>${appText('Yritys','Företag','Company')}</label><input name="companyName" required placeholder="${appText('Yrityksen nimi','Företagets namn','Company name')}"></div>
             <div class="field"><label>${appText('Y-tunnus','FO-nummer','Business ID')}</label><input name="businessId" placeholder="1234567-8"></div>
-            <div class="field full"><label>${appText('Laskutusmaa','Faktureringsland','Billing country')}</label><select name="billingCountry" required>${billingCountryFieldOptions()}</select><small>${billingCountryNotice()}</small></div>
+            <input type="hidden" name="billingCountry" value="FI">
             <div class="field full" id="signupPasswordField"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
             <div class="field full"><label>${appText('Tilaus','Abonnemang','Subscription')}</label>
               <select name="plan">
@@ -3220,7 +3211,7 @@ function dashboardWithoutCompany(me, workspaces = []) {
         <form id="emptyWorkspaceForm" class="workspace-add-form">
           <label><span>${appText('Yrityksen nimi','Företagsnamn','Company name')}</span><input name="companyName" required maxlength="120"></label>
           <label><span>${appText('Y-tunnus (valinnainen)','FO-nummer (valfritt)','Business ID (optional)')}</span><input name="businessId" maxlength="40"></label>
-          <label><span>${appText('Laskutusmaa','Faktureringsland','Billing country')}</span><select name="billingCountry" required>${billingCountryFieldOptions()}</select><small>${billingCountryNotice()}</small></label>
+          <input type="hidden" name="billingCountry" value="FI">
           <label><span>${appText('Tilaus','Abonnemang','Subscription')}</span><select name="plan">
             <option value="basic_monthly">Starter 29,90 € / kk</option>
             <option value="basic_yearly">Starter 358,80 € / ${appText('vuosi','år','year')}</option>
@@ -3502,7 +3493,7 @@ async function dashboard(options = {}) {
           <form id="workspaceAddForm" class="workspace-add-form">
             <label><span>${appText('Yrityksen nimi','Företagsnamn','Company name')}</span><input name="companyName" required maxlength="120" placeholder="${appText('Yrityksen nimi','Företagsnamn','Company name')}"></label>
             <label><span>${appText('Y-tunnus (valinnainen)','FO-nummer (valfritt)','Business ID (optional)')}</span><input name="businessId" maxlength="40" placeholder="1234567-8"></label>
-          <label><span>${appText('Laskutusmaa','Faktureringsland','Billing country')}</span><select name="billingCountry" required>${billingCountryFieldOptions()}</select><small>${billingCountryNotice()}</small></label>
+          <input type="hidden" name="billingCountry" value="FI">
             <div class="workspace-plan-grid">
               <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_monthly" checked><span><b>${appText('Starter · 29,90 €/kk','Starter · 29,90 €/mån','Starter · €29.90/month')}</b><small>2 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
               <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_yearly"><span><b>${appText('Starter · 29,90 €/kk','Starter · 29,90 €/mån','Starter · €29.90/month')}</b><small>358,80 € / ${appText('vuosi','år','year')}</small></span></label>
