@@ -59,7 +59,7 @@ test('plans and features are synchronized to the server access gates',()=>{
   assert.match(app,/Basic',49\.99,44\.99,539\.88,2/);
   assert.match(app,/Advanced',64\.99,59\.99,719\.88,10/);
   assert.match(app,/Business',79\.99,74\.99,899\.88,20/);
-  for(const label of ['Botin värin','Google Calendar','20 asiakaspalvelijapaikkaa']){
+  for(const label of ['botin väriä','Google Calendar','20 asiakaspalvelijapaikkaa']){
     assert.ok((app+server+JSON.stringify(LEGAL_20261008)).includes(label),label);
   }
   const advanced=app.slice(app.indexOf("card('Advanced'"),app.indexOf("card('Business'"));
@@ -76,7 +76,7 @@ test('terms specify billing and avoid unsupported guarantees',()=>{
     assert.ok(terms.includes(token),'missing '+token);
   }
   assert.match(terms,/kaikkien tuotteiden|kaikkien.*tietojen/);
-  assert.match(terms,/perua|peruminen/);
+  assert.match(terms,/peruta|peruu|peruminen/);
   assert.ok(!/WhatsApp.*toimii|Instagram.*toimii/i.test(terms));
 });
 
