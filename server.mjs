@@ -7386,7 +7386,7 @@ app.get('/api/owner/companies', auth, ownerTrafficOnly, async (req, res) => {
              END AS usage_status
         FROM tenants t
         JOIN users u ON u.id=t.owner_user_id
-       WHERE COALESCE(t.subscription_status,'pending')<>'pending'
+       WHERE COALESCE(t.subscription_status,'pending') NOT IN ('pending','incomplete','incomplete_expired')
          AND COALESCE(t.subscription_plan,'')<>'owner_test'
          AND u.status<>'pending'`;
     const filterSql=`($1='' OR name ILIKE '%' || $1 || '%'
