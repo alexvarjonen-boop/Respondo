@@ -3957,7 +3957,7 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
 
   // "aika" is part of toimitusaika (delivery time) and aukioloaika
   // (opening time). Never show booking actions for ordinary time questions.
-  const wantsBooking=/(?:ajanvaraus|ajan\s+varaus|ajan\s+varaam|ajan\s+varaa|varata\s+(?:aika|ajan|aikaa)|varaan\s+(?:aika|ajan)|varaa\s+(?:aika|ajan)|varais\w*\s+(?:aika|ajan)|aika\s+varattua|ajan\s+saa\s+varattua|(?:booking|book\s+(?:an?\s+)?(?:appointment|time|slot)|appointment|schedule\s+(?:a|an\s+)?(?:visit|appointment|time)|tidsbokning|bokning|boka\s+(?:en\s+)?tid))\b)/i.test(q);
+  const wantsBooking=/(?:ajanvaraus|ajan\s+varaus|ajan\s+varaam|ajan\s+varaa|varata\s+(?:aika|ajan|aikaa)|varaan\s+(?:aika|ajan)|varaa\s+(?:aika|ajan)|varais\w*\s+(?:aika|ajan)|aika\s+varattua|ajan\s+saa\s+varattua|(?:booking|book\s+(?:an?\s+)?(?:appointment|time|slot)|appointment|schedule\s+(?:a|an\s+)?(?:visit|appointment|time)|tidsbokning|bokning|boka\s+(?:en\s+)?tid)\b)/i.test(q);
   if (wantsBooking) {
     push({ type: 'booking', mode: 'booking_form', label: actionLang === 'en' ? 'Book a time' : actionLang === 'sv' ? 'Boka tid' : 'Varaa aika' });
     if (booking) push({ type: 'booking', label: actionLang === 'en' ? 'Open calendar' : actionLang === 'sv' ? 'Öppna bokningen' : 'Avaa ajanvaraus', url: booking });
