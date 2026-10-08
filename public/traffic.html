@@ -18,6 +18,44 @@
 .bars{height:220px;display:flex;align-items:flex-end;gap:5px;padding-top:16px}.barwrap{flex:1;min-width:0;height:100%;display:flex;align-items:flex-end}.bar{width:100%;min-height:2px;background:#111114;border-radius:5px 5px 2px 2px;opacity:.88}.legend{display:flex;justify-content:space-between;color:#777;font-size:11px;margin-top:8px}
 .state{padding:28px;background:white;border:1px solid #e2e2dc;border-radius:18px}.error{color:#8a1c1c}.note{margin-top:14px;font-size:12px;color:#777}
 @media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.top{align-items:flex-start}.num{font-size:32px}}
+
+/* Private company directory */
+.company-section{margin-top:24px;background:#fff;border:1px solid #e2e2dc;border-radius:22px;box-shadow:0 12px 35px rgba(0,0,0,.045);padding:24px;min-width:0}
+.company-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px}
+.company-heading h2{margin:0 0 7px;font-size:24px;font-weight:780;letter-spacing:-.045em}
+.company-heading p{margin:0;max-width:700px;color:#73757b;font-size:13px;line-height:1.6}
+.company-label{display:inline-block;font-size:10px;letter-spacing:.12em;font-weight:850;color:#8b8d93;margin-bottom:9px;text-transform:uppercase}
+.company-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px}
+.company-metric{padding:17px;background:#f8f8fa;border:1px solid #ededf1;border-radius:15px}
+.company-metric strong{display:block;font-size:29px;font-weight:820;letter-spacing:-.05em;margin:7px 0 2px;font-variant-numeric:tabular-nums}
+.company-metric span{font-size:11px;color:#666a73;font-weight:710}
+.company-controls{display:flex;gap:10px;align-items:center;margin-bottom:11px;flex-wrap:wrap}
+.company-controls input,.company-controls select{min-height:43px;border:1px solid #e0e1e6;border-radius:12px;padding:10px 14px;background:#fff;color:#24252a;font:inherit;font-size:13px;outline-offset:2px}
+.company-controls input{flex:1;min-width:210px}.company-controls select{min-width:165px;cursor:pointer}
+.company-table{border:1px solid #ececf0;border-radius:15px;overflow:hidden}
+.company-row{display:grid;grid-template-columns:minmax(0,2.3fr) minmax(100px,.8fr) minmax(104px,.8fr) minmax(115px,.9fr);gap:16px;align-items:center;padding:14px 16px;border-top:1px solid #eff0f2}
+.company-row:first-child{border-top:0}
+.company-person{display:flex;gap:12px;align-items:center;min-width:0}
+.company-symbol{flex:0 0 38px;width:38px;height:38px;border-radius:11px;background:#f1f3f7;display:grid;place-items:center;color:#34415b;font-size:14px;font-weight:800}
+.company-info{min-width:0}.company-name{display:block;font-size:14px;color:#191b20;font-weight:750;overflow-wrap:anywhere}
+.company-subline{display:block;font-size:11px;color:#777b84;margin-top:4px;overflow-wrap:anywhere}
+.company-row .company-col{font-size:12px;color:#525965;overflow-wrap:anywhere}
+.company-col-heading{display:none;color:#9295a0;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+.company-status{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:760;background:#f3f4f6;color:#555a62;white-space:nowrap}
+.company-status:before{content:'';height:6px;width:6px;background:currentColor;border-radius:50%}
+.company-status.active{background:#e9f7ef;color:#197448}.company-status.trialing{background:#ecf3ff;color:#2766c0}
+.company-footer{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:14px;font-size:12px;color:#777b84}
+.company-pagination{display:flex;align-items:center;gap:9px}.company-pagination button{appearance:none;background:#fff;border:1px solid #dcdde3;border-radius:10px;padding:8px 11px;color:#292d34;font:inherit;font-weight:710;cursor:pointer}
+.company-pagination button:disabled{opacity:.38;cursor:default}
+.company-loading{border:1px dashed #e3e5e9;border-radius:12px;padding:22px;color:#737780;font-size:13px}
+@media(max-width:730px){
+.company-section{padding:17px;border-radius:17px}.company-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.company-metric{padding:13px}.company-metric strong{font-size:25px}
+.company-controls input,.company-controls select{min-width:0;width:100%;flex:1 1 100%}
+.company-row{grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:13px 12px}.company-row .company-col:nth-child(2){display:none}
+.company-row .company-col:nth-child(3){grid-column:2;grid-row:1;text-align:right}
+.company-row .company-col:nth-child(4){grid-column:1 / -1;margin-left:50px}
+.company-symbol{width:38px}.company-footer{align-items:flex-start;flex-direction:column}
+}
 </style>
 </head>
 <body>
@@ -80,6 +118,106 @@ function chart(rows){
   const max=Math.max(1,...rows.map(x=>Number(x.visitors||0)));
   return '<div class="panel"><h2>'+t('last30')+'</h2><div class="bars">'+rows.map(r=>'<div class="barwrap" title="'+e(r.day)+': '+n(r.visitors)+' '+t('visitors')+'"><div class="bar" style="height:'+Math.max(2,Math.round(Number(r.visitors||0)/max*100))+'%"></div></div>').join('')+'</div><div class="legend"><span>'+t('ago30')+'</span><span>'+t('today')+'</span></div></div>';
 }
+
+/* Company data is requested only after owner traffic authorization succeeds.
+   Statuses reflect subscription eligibility, not a claim about installation. */
+const CL={
+ fi:{section:'Käyttöönotetut yritykset',eyebrow:'YRITYSREKISTERI',info:'Palvelun käyttöön ottaneet yritykset. Keskeneräiset rekisteröitymiset ja testitilaukset eivät näy.',total:'Yrityksiä yhteensä',active:'Aktiivinen',trialing:'Kokeilussa',ended:'Päättynyt',search:'Hae yrityksen nimellä, Y-tunnuksella tai sivustolla',all:'Kaikki tilat',plan:'Paketti',added:'Lisätty',businessId:'Y-tunnus',loading:'Ladataan yrityksiä…',empty:'Yhtään yritystä ei löytynyt.',failed:'Yritysluetteloa ei voitu ladata.',matches:'yritystä',previous:'Edellinen',next:'Seuraava',page:'Sivu',of:'/',noWebsite:'Ei verkkosivustoa'},
+ sv:{section:'Företag som använder Respondo',eyebrow:'FÖRETAGSREGISTER',info:'Företag som har börjat använda tjänsten. Ofärdiga registreringar och testabonnemang visas inte.',total:'Företag totalt',active:'Aktiv',trialing:'Provperiod',ended:'Avslutad',search:'Sök efter företag, FO-nummer eller webbplats',all:'Alla statusar',plan:'Paket',added:'Tillagd',businessId:'FO-nummer',loading:'Laddar företag…',empty:'Inga företag hittades.',failed:'Kunde inte ladda företag.',matches:'företag',previous:'Föregående',next:'Nästa',page:'Sida',of:'/',noWebsite:'Ingen webbplats'},
+ en:{section:'Companies using Respondo',eyebrow:'COMPANY DIRECTORY',info:'Companies that have started using the service. Incomplete signups and test subscriptions are excluded.',total:'Total companies',active:'Active',trialing:'Trial',ended:'Ended',search:'Search by company name, business ID or website',all:'All statuses',plan:'Plan',added:'Added',businessId:'Business ID',loading:'Loading companies…',empty:'No companies found.',failed:'Could not load companies.',matches:'companies',previous:'Previous',next:'Next',page:'Page',of:'/',noWebsite:'No website'}
+};
+const ct=key=>CL[lang]?.[key]||CL.fi[key]||key;
+let companyPage=1,companySearch='',companyStatus='all',companyRequest=0,companyTimer;
+const companyDate=value=>{
+  const date=new Date(value);
+  return Number.isNaN(date.getTime())?'—':new Intl.DateTimeFormat(locale(),{year:'numeric',month:'short',day:'numeric'}).format(date);
+};
+const companyPlan=value=>{
+  const plan=String(value||'').toLowerCase();
+  if(plan.startsWith('basic')||plan.startsWith('starter')) return 'Starter';
+  if(plan.startsWith('advanced')) return 'Advanced';
+  if(plan.startsWith('business')) return 'Business';
+  return value||'—';
+};
+function companiesShell(){
+  const opts=[['all',ct('all')],['active',ct('active')],['trialing',ct('trialing')],['ended',ct('ended')]];
+  return '<section class="company-section" id="companiesSection" aria-labelledby="companiesTitle">'+
+    '<div class="company-heading"><div><span class="company-label">'+ct('eyebrow')+'</span><h2 id="companiesTitle">'+ct('section')+'</h2><p>'+ct('info')+'</p></div></div>'+
+    '<div id="companyMetrics" class="company-metrics" aria-live="polite"></div>'+
+    '<div class="company-controls"><input id="companySearch" type="search" autocomplete="off" maxlength="100" placeholder="'+e(ct('search'))+'" aria-label="'+e(ct('search'))+'" value="'+e(companySearch)+'">'+
+    '<select id="companyFilter" aria-label="'+e(ct('all'))+'">'+opts.map(([value,label])=>'<option value="'+value+'"'+(companyStatus===value?' selected':'')+'>'+e(label)+'</option>').join('')+'</select></div>'+
+    '<div id="companyResults" aria-live="polite"><div class="company-loading">'+ct('loading')+'</div></div></section>';
+}
+function companySummaryCards(s){
+  const data=[[ct('total'),s.total],[ct('active'),s.active],[ct('trialing'),s.trialing],[ct('ended'),s.ended]];
+  return data.map(([label,value])=>'<div class="company-metric"><span>'+e(label)+'</span><strong>'+n(value)+'</strong></div>').join('');
+}
+function companyRow(c){
+  const status=['active','trialing'].includes(c.usage_status)?c.usage_status:'ended';
+  const name=String(c.name||'—');
+  const initial=(name.trim().slice(0,1)||'R').toUpperCase();
+  const meta=[c.business_id ? ct('businessId')+': '+c.business_id : '',c.website||''].filter(Boolean).join(' · ');
+  return '<article class="company-row">'+
+    '<div class="company-person"><span class="company-symbol" aria-hidden="true">'+e(initial)+'</span><div class="company-info"><b class="company-name">'+e(name)+'</b><span class="company-subline">'+e(meta||ct('noWebsite'))+'</span></div></div>'+
+    '<span class="company-col">'+e(companyPlan(c.subscription_plan))+'</span>'+
+    '<div class="company-col"><span class="company-status '+status+'">'+e(ct(status))+'</span></div>'+
+    '<div class="company-col">'+e(ct('added'))+': '+e(companyDate(c.created_at))+'</div>'+
+    '</article>';
+}
+function paintCompanies(data){
+  const metrics=document.getElementById('companyMetrics');
+  const results=document.getElementById('companyResults');
+  if(!metrics||!results)return;
+  metrics.innerHTML=companySummaryCards(data.summary||{});
+  const rows=Array.isArray(data.companies)?data.companies:[];
+  const p=data.pagination||{page:1,total:0,totalPages:1};
+  const count=Number(p.total||0),page=Number(p.page||1),pages=Number(p.totalPages||1);
+  const start=count?(page-1)*25+1:0,end=count?Math.min(count,page*25):0;
+  results.innerHTML=(rows.length?'<div class="company-table">'+rows.map(companyRow).join('')+'</div>':'<div class="company-loading">'+e(ct('empty'))+'</div>')+
+    '<div class="company-footer"><span>'+n(start)+'–'+n(end)+' / '+n(count)+' '+ct('matches')+'</span>'+
+    '<div class="company-pagination"><button type="button" data-page="'+(page-1)+'"'+(page<=1?' disabled':'')+'>'+ct('previous')+'</button>'+
+    '<span>'+ct('page')+' '+n(page)+' '+ct('of')+' '+n(pages)+'</span>'+
+    '<button type="button" data-page="'+(page+1)+'"'+(page>=pages?' disabled':'')+'>'+ct('next')+'</button></div></div>';
+}
+async function loadCompanies(){
+  const requestId=++companyRequest;
+  const results=document.getElementById('companyResults');
+  if(!results)return;
+  results.innerHTML='<div class="company-loading">'+e(ct('loading'))+'</div>';
+  try{
+    const query=new URLSearchParams({page:String(companyPage),search:companySearch,status:companyStatus});
+    const response=await fetch('/api/owner/companies?'+query.toString(),{credentials:'same-origin',headers:{Accept:'application/json'}});
+    const data=await response.json().catch(()=>({}));
+    if(requestId!==companyRequest)return;
+    if(!response.ok)throw new Error(ct('failed'));
+    paintCompanies(data);
+  }catch(error){
+    if(requestId!==companyRequest)return;
+    const target=document.getElementById('companyResults');
+    if(target)target.innerHTML='<div class="company-loading error">'+e(error.message||ct('failed'))+'</div>';
+  }
+}
+function bindCompanyControls(){
+  const search=document.getElementById('companySearch');
+  const filter=document.getElementById('companyFilter');
+  const results=document.getElementById('companyResults');
+  if(!search||!filter||!results)return;
+  search.addEventListener('input',()=>{
+    companySearch=search.value.trim();companyPage=1;
+    clearTimeout(companyTimer);companyTimer=setTimeout(loadCompanies,260);
+  });
+  filter.addEventListener('change',()=>{
+    companyStatus=filter.value;companyPage=1;loadCompanies();
+  });
+  results.addEventListener('click',event=>{
+    const button=event.target.closest('button[data-page]');
+    if(!button||button.disabled)return;
+    const page=Number(button.dataset.page);
+    if(!Number.isInteger(page)||page<1)return;
+    companyPage=page;loadCompanies();
+  });
+}
+
 async function load(){
   root.innerHTML='<div class="state">'+t('loading')+'</div>';
   try{
@@ -87,7 +225,9 @@ async function load(){
     const d=await r.json().catch(()=>({}));
     if(r.status===401){root.innerHTML='<div class="state">'+t('login')+' <a href="/kirjaudu">'+t('loginHere')+'</a>.</div>';return;}
     if(!r.ok) throw new Error(d.error||('HTTP '+r.status));
-    root.innerHTML=cards(d.summary||{})+'<div class="grid">'+chart(d.daily||[])+languageList(d.languages||[])+list(t('pages'),d.pages||[],'path')+list(t('sources'),d.sources||[],'source')+'</div><div class="note">'+e(d.note||'')+'</div>';
+    root.innerHTML=cards(d.summary||{})+'<div class="grid">'+chart(d.daily||[])+languageList(d.languages||[])+list(t('pages'),d.pages||[],'path')+list(t('sources'),d.sources||[],'source')+'</div>'+companiesShell()+'<div class="note">'+e(d.note||'')+'</div>';
+    bindCompanyControls();
+    loadCompanies();
   }catch(err){root.innerHTML='<div class="state error">'+e((lang==='fi'&&err.message)||t('error'))+'</div>';}
 }
 document.getElementById('refresh').addEventListener('click',load);
