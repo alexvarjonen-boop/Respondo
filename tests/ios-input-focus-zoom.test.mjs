@@ -30,5 +30,5 @@ test('embedded widget inputs remain readable on iOS and preserve normal pinch zo
 test('updated CSS and JS references invalidate old mobile caches', () => {
   assert.match(html, /styles\.css\?v=20261008-ios-focus-nozoom-v1/);
   assert.match(html, /effects\.css\?v=20261008-ios-focus-nozoom-v1/);
-  assert.match(html, /app\.js\?v=20261008-ios-focus-nozoom-v1/);
+  assert.match(html, /app\.js\?v=20261008-apple-three-cards-v1/);
 });
