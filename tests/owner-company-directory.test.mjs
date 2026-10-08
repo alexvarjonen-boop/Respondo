@@ -13,7 +13,7 @@ test('company registry API requires verified session and Respondo owner email',(
   assert.match(endpoint,/Cache-Control','private, no-store'/);
 });
 test('directory excludes incomplete signups and owner test subscriptions',()=>{
-  assert.match(endpoint,/COALESCE\(t\.subscription_status,'pending'\)<>'pending'/);
+  assert.match(endpoint,/COALESCE\(t\.subscription_status,'pending'\) NOT IN \('pending','incomplete','incomplete_expired'\)/);
   assert.match(endpoint,/COALESCE\(t\.subscription_plan,''\)<>'owner_test'/);
   assert.match(endpoint,/u\.status<>'pending'/);
 });
