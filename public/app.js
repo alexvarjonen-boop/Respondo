@@ -1,6 +1,6 @@
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261008-apple-production-v1';
-import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261008-no-menu-arrows-v1';
+import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261008-new-ra-logo-v1';
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261008-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 const $ = (s, r = document) => r.querySelector(s);
@@ -262,12 +262,7 @@ async function config() {
 
 function logo() {
   return `<a class="logo" href="/" aria-label="${esc(appText('RESPONDO AI etusivu','RESPONDO AI startsida','RESPONDO AI home'))}">
-    <span class="brand-mark" aria-hidden="true">
-      <svg viewBox="0 0 64 64" focusable="false" aria-hidden="true">
-        <rect width="64" height="64" rx="18" fill="#111114"/>
-        <path d="M19 17h17c8 0 13 4 13 11 0 5-3 9-8 10l10 10H39L30 39h-1v9H19V17zm10 8v7h7c2 0 3-1 3-3s-1-4-4-4h-6z" fill="#fff"/>
-      </svg>
-    </span>
+    <span class="brand-mark" aria-hidden="true"><img src="/favicon.svg?v=20261008-ra-logo-v1" alt="" width="34" height="34" style="width:100%;height:100%;display:block;object-fit:contain"></span>
     <span class="brand-word">RESPONDO AI</span>
   </a>`;
 }

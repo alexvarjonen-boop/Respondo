@@ -160,3 +160,7 @@ body.public-nav-active .navin{border:0!important;box-shadow:none!important;borde
  .apple-bottom-cta{padding:70px 22px 75px}
 }
 @media(prefers-reduced-motion:reduce){.apple-chat-preview{animation:none}.apple-menu-overlay,.apple-menu-links a,.apple-pill{transition:none}}
+
+/* Respondo RA symbol in fullscreen navigation. */
+.apple-menu-logo{display:inline-flex;align-items:center;gap:10px}
+.apple-menu-logo img{display:block;width:28px;height:28px;flex:0 0 28px;border-radius:8px}
