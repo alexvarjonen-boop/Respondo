@@ -3274,6 +3274,37 @@ body:before{opacity:.012}
   font:inherit;
   font-size:11px;
 }
+.booking-custom-duration{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin:12px 0 4px;
+  padding:14px;
+  border:1px solid rgba(17,17,20,.1);
+  border-radius:14px;
+  background:#f8f9fb;
+}
+.booking-custom-duration[hidden]{
+  display:none!important;
+}
+.booking-custom-duration .field{
+  min-width:0;
+}
+.booking-custom-duration input{
+  width:100%;
+  box-sizing:border-box;
+  min-width:0;
+  min-height:46px;
+  font-size:16px;
+  background:#fff;
+}
+.booking-custom-duration-hint{
+  grid-column:1 / -1;
+  margin:0;
+  color:#5f6570;
+  font-size:12px;
+  line-height:1.5;
+}
 .weekday-picker{
   display:flex;
   gap:6px;
