@@ -64,8 +64,12 @@ test('signup and both workspace forms collect and send country',()=>{
 });
 
 test('business-only order declaration is required for both checkout endpoints',()=>{
-  assert.equal((app.match(/name="businessPurchase"/g)||[]).length,3);
-  assert.equal((app.match(/businessPurchase:(?:form.get|fd.get)/g)||[]).length,3);
+  // Terms acceptance includes the business-only purchase declaration; only one checkbox is shown.
+  assert.equal((app.match(/name="businessPurchase"/g)||[]).length,0);
+  assert.equal((app.match(/checkoutBusinessTerms\('(?:terms|acceptedTerms)', '(?:checkrow field full|workspace-terms)'\)/g)||[]).length,3);
+  assert.equal((app.match(/businessPurchase:/g)||[]).length,3);
+  assert.match(app,/businessPurchase:!!form\.get\('terms'\)/);
+  assert.equal((app.match(/businessPurchase:fd\.get\('acceptedTerms'\)==='on'/g)||[]).length,2);
   assert.match(server,/if\s*\(req\.body\?\.businessPurchase !== true\)/);
   assert.match(server,/if\s*\(req\.body\?\.businessPurchase!==true\)/);
 });

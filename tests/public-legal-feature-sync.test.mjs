@@ -9,7 +9,7 @@ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
 const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 
 test('all five public policy pages have complete human-written FI SV EN headings and bodies',()=>{
-  assert.equal(LEGAL_UPDATE_DATE,'2026-10-08');
+  assert.equal(LEGAL_UPDATE_DATE,'2026-10-09');
   const expected={kayttoehdot:12,tietosuoja:14,evasteet:5,dpa:8,tietoturva:6};
   for(const [page,count] of Object.entries(expected)){
     const document=LEGAL_20261008[page];
