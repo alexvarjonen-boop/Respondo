@@ -3,16 +3,25 @@
 body.apple-menu-open{overflow:hidden!important}
 #app:has(.apple-home-page){background:#050506!important}
 .apple-home-page{background:#050506!important;color:#f5f5f7;isolation:isolate}
-.apple-home-page .nav{background:rgba(18,18,20,.94)!important;border-bottom:1px solid rgba(255,255,255,.1)!important;color:#f5f5f7!important}
-.apple-home-page .nav .brand-word{color:#f5f5f7!important}
-.apple-home-page .nav .logo{color:#f5f5f7!important}
-.apple-home-page .nav .navactions .btn.ghost{color:#f5f5f7!important;border-color:rgba(255,255,255,.25)!important;background:transparent!important}
+.apple-home-page .nav{background:#f5f5f7!important;border-bottom:1px solid rgba(0,0,0,.08)!important;color:#1d1d1f!important}
+.apple-home-page .nav .brand-word{color:#1d1d1f!important;-webkit-text-fill-color:#1d1d1f!important;opacity:1!important;text-shadow:none!important}
+.apple-home-page .nav .logo{color:#1d1d1f!important;opacity:1!important}
+.apple-home-page .nav .navactions .btn.ghost{color:#1d1d1f!important;border-color:rgba(0,0,0,.18)!important;background:transparent!important}
 .apple-home-page .nav .navactions .btn.ink{background:#0071e3!important;border-color:#0071e3!important;color:#fff!important;box-shadow:none!important}
+/* The public mobile header is pale in styles.css and has a more specific rule.
+   Keep the Apple homepage header consistently pale across all breakpoints,
+   while the wordmark and menu icon stay dark and fully opaque. */
+body.public-nav-active .apple-home-page .nav{
+  background:#f5f5f7!important;
+  border-bottom-color:rgba(0,0,0,.08)!important;
+  color:#1d1d1f!important;
+}
 body.public-nav-active .nav{z-index:1900!important}
 body.public-nav-active .navin{border:0!important;box-shadow:none!important;border-radius:0!important;background:transparent!important}
 .nav .navlinks{display:none!important}
 .nav .apple-menu-toggle{display:grid!important;place-content:center;gap:6px;flex:none;width:42px;height:42px;padding:0;border:0;border-radius:11px;background:transparent;color:#222326;box-shadow:none;cursor:pointer}
-.apple-home-page .nav .apple-menu-toggle{color:#f5f5f7}
+.apple-home-page .nav .apple-menu-toggle{color:#1d1d1f!important;opacity:1!important}
+.apple-home-page .nav .apple-menu-toggle span{background:#1d1d1f!important;opacity:1!important}
 .apple-menu-toggle span{display:block;width:22px;height:2px;border-radius:99px;background:currentColor;transition:transform .25s}
 .apple-menu-toggle:hover{background:rgba(128,128,128,.15)}
 .apple-menu-toggle:focus-visible,.apple-menu-close:focus-visible,.apple-menu-links a:focus-visible{outline:3px solid #2997ff;outline-offset:4px}
