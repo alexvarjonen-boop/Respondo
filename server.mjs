@@ -4673,6 +4673,15 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   pages.push({ url:first.finalUrl, key:first.finalUrl.replace(/\/$/, ''), document:extractBusinessDocument(first.html,first.finalUrl) });
   enqueue(first.html, first.finalUrl);
 
+  // Fetch only a contact page confirmed by an actual link, before a slow
+  // product/sitemap crawl can exhaust the page/time budget.
+  const contactCandidate=queue.find(item=>
+    /\/(?:pages\/)?(?:contact(?:-us)?|contactus|kontakt|kontakta-oss|ota-yhteytta|yhteystiedot|yhteydenotto)(?:\/|[?#]|$)/i.test(item.url)
+  );
+  const preloadedContact=contactCandidate
+    ? fetchPublicHtml(contactCandidate.url).catch(()=>null)
+    : Promise.resolve(null);
+
   let storefrontProducts=[];
   if (storefrontLimit > 0) {
     try {
@@ -4728,6 +4737,18 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     queue.splice(0,queue.length,...kept);
     queue.sort((a,b)=>b.score-a.score);
   }
+  const contactPage=await preloadedContact;
+  if(contactPage && pages.length<maxPages) {
+    try {
+      const parsed=new URL(contactPage.finalUrl);
+      const key=parsed.origin+parsed.pathname.replace(/\/$/,'')+parsed.search;
+      if(parsed.hostname.toLowerCase()===base.hostname.toLowerCase() && !pages.some(page=>page.key===key)){
+        pages.push({url:contactPage.finalUrl,key,document:extractBusinessDocument(contactPage.html,contactPage.finalUrl)});
+        enqueue(contactPage.html,contactPage.finalUrl);
+      }
+    } catch {}
+  }
+
   const totalTarget = Math.max(1, Math.min(maxPages, pages.length + queue.length));
   if (onProgress) onProgress({scanned:pages.length,total:totalTarget});
 
@@ -10108,20 +10129,23 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // have restored the JAG website field but lost the in-memory import id.
     // For a broad product question, re-scan that same website instead of ever
     // falling back to the logged-in Respondo owner's knowledge.
-    if (isPublicDemo && broadProductQuestion(message)) {
+    const needsProductRecovery=broadProductQuestion(message);
+    const needsContactRecovery=generalContactQuestion(message) &&
+      !rows.some(row=>['Yhteydenottolomake','Yhteydenottosivu'].includes(String(row?.title||'')));
+    if (isPublicDemo && (needsProductRecovery || needsContactRecovery)) {
       const hasProductFacts=rows.some((row)=>{
         if(String(row?.title||'')==='Verkkosivu') return false;
         return knowledgeTopic(String(row?.category||'')+' '+String(row?.title||''))==='products';
       });
       const website=normalizeWebUrl(profile.website,false);
-      if(!hasProductFacts && website){
+      if ((needsContactRecovery || (needsProductRecovery && !hasProductFacts)) && website){
         try {
           const bundle=await fetchWebsiteBundle(
             website,
-            30,
-            10000,
+            needsContactRecovery ? 12 : 30,
+            needsContactRecovery ? 7000 : 10000,
             null,
-            { storefrontLimit:250, storefrontBudgetMs:4000, sitemapLimit:500 },
+            { storefrontLimit:needsContactRecovery?0:250, storefrontBudgetMs:4000, sitemapLimit:needsContactRecovery?0:500 },
           );
           const candidates=websiteKnowledgeCandidates(bundle).slice(0,700);
           const recoveredRows=candidates.map((item,index)=>({
