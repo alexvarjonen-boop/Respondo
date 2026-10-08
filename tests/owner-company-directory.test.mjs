@@ -4,7 +4,7 @@ import fs from 'node:fs';
 
 const server=fs.readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
 const dashboard=fs.readFileSync(new URL('../public/traffic.html',import.meta.url),'utf8');
-const endpoint=server.split("app.get('/api/owner/companies', auth, ownerTrafficOnly, async (req, res) => {")[1]?.split("app.get('/robots.txt'")[0]||'';
+const endpoint=server.split("app.get('/api/owner/companies', auth, ownerTrafficOnly, async (req, res) => {")[1]?.split('/* Administrative actions are intentionally restricted')[0]||'';
 
 test('company registry API requires verified session and Respondo owner email',()=>{
   assert.ok(endpoint,'Owner company listing endpoint is present');
