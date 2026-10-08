@@ -43,5 +43,5 @@ test('public mobile header stays fixed on phones and dashboard pages do not opt 
  const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
  assert.match(app,/classList\.toggle\('public-nav-active', Boolean\(document\.querySelector\('#app \.nav'\)\)\)/);
  assert.match(html,/styles\.css\?v=20261008-ios-focus-nozoom-v1/);
- assert.match(html,/app\.js\?v=20261008-ios-focus-nozoom-v1/);
+ assert.match(html,/app\.js\?v=20261008-apple-three-cards-v1/);
 });
