@@ -216,6 +216,7 @@ let cfg = {
   supportEmail: 'info@respondoai.fi',
   businessId: '3599437-5',
   sellerName: 'Alex Varjonen · Respondo AI',
+  sellerPostalAddress: '',
   trialDays: 3,
   monthlyNet: 29.90,
   yearlyNet: 358.80,
@@ -2069,6 +2070,7 @@ function footer() {
           ${logo()}
           <p>${uiText('Asiakaspalvelubotti, joka vastaa asiakkaillesi yrityksesi omilla tiedoilla.','Kundservicebot som svarar dina kunder med information från ditt företag.','Customer service bot that answers your customers using your company information.')}</p>
           <div class="seller-chip">RESPONDO AI</div>
+          <small>${esc(cfg.sellerName||'Alex Varjonen · Respondo AI')}${cfg.sellerPostalAddress?' · '+esc(cfg.sellerPostalAddress):''}</small>
         </div>
         <div class="foot-col">
           <h4>${appText('Tuote','Produkt','Product')}</h4>
@@ -2084,6 +2086,8 @@ function footer() {
           <a href="/yhteystiedot">${appText("Yhteystiedot","Kontakt","Contact")}</a>
           <a href="/tietoturva">Tietoturva</a>
           <a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a>
+          <span>${esc(cfg.sellerName||'Alex Varjonen · Respondo AI')}</span>
+          ${cfg.sellerPostalAddress?'<span>'+esc(cfg.sellerPostalAddress)+'</span>':''}
           <span>Suomi</span>
         </div>
         <div class="foot-col">
@@ -2825,6 +2829,7 @@ function signup() {
           <div class="seller-card">
             <span>${appText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span>
             <b>${esc(cfg.sellerName || 'RESPONDO AI')}</b>
+            ${cfg.sellerPostalAddress?'<small>'+esc(cfg.sellerPostalAddress)+'</small>':''}
             <small>${appText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')} · ${appText('Suomi','Finland','Finland')}</small>
           </div>
         </section>
@@ -3066,11 +3071,13 @@ function legal(type) {
         <h1>${select(revised.title)}</h1><p>${select(revised.intro)}</p>
         <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span>
           <b>Alex Varjonen · Respondo AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId||'3599437-5')}</small>
+          ${cfg.sellerPostalAddress?'<small>'+esc(cfg.sellerPostalAddress)+'</small>':''}
         </div>
       </aside>
       <article class="legalcopy">${sections}
         <section><h2>${uiText('Yhteydenotot','Kontakt','Contact')}</h2>
-          <p><a href="mailto:${email}">${email}</a></p></section>
+          <p><a href="mailto:${email}">${email}</a></p>
+          ${cfg.sellerPostalAddress?'<p>'+esc(cfg.sellerPostalAddress)+'</p>':''}</section>
         <div class="legal-note">${uiText('Päivitetty','Uppdaterad','Updated')} ${updated}.
           ${uiText('Kuvaus perustuu palvelun nykyisiin toteutettuihin toimintoihin.','Beskrivningen baseras på tjänstens aktuella funktioner.','This text reflects the service’s currently implemented functionality.')}
         </div>
