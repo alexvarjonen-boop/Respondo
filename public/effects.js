@@ -208,9 +208,9 @@
     {
       keys:['y-tunnus','ytunnus','yritys','business id','company','fo-nummer','företag','foretag','kontakt'],
       answer:{
-        fi:'Respondon Y-tunnus on 3599437-5. Saat meidät kiinni sähköpostilla osoitteesta respondoai.fi@outlook.com.',
-        sv:'Respondos FO-nummer är 3599437-5. Du når oss via e-post på respondoai.fi@outlook.com.',
-        en:'Respondo’s Business ID is 3599437-5. You can reach us by email at respondoai.fi@outlook.com.'
+        fi:'Respondon Y-tunnus on 3599437-5. Saat meidät kiinni sähköpostilla osoitteesta info@respondoai.fi.',
+        sv:'Respondos FO-nummer är 3599437-5. Du når oss via e-post på info@respondoai.fi.',
+        en:'Respondo’s Business ID is 3599437-5. You can reach us by email at info@respondoai.fi.'
       }
     }
   ];
@@ -243,9 +243,9 @@
       );
     }
     return assistantText(
-      'En löytänyt tähän varmaa vastausta. Voit kysyä hinnasta, kokeilusta, käyttöönotosta tai tilauksesta, tai laittaa meille viestiä osoitteeseen respondoai.fi@outlook.com.',
-      'Jag hittade inget säkert svar på detta. Du kan fråga om priset, provperioden, installationen eller abonnemanget, eller mejla oss på respondoai.fi@outlook.com.',
-      'I could not find a reliable answer to that. You can ask about pricing, the trial, installation or the subscription, or email us at respondoai.fi@outlook.com.'
+      'En löytänyt tähän varmaa vastausta. Voit kysyä hinnasta, kokeilusta, käyttöönotosta tai tilauksesta, tai laittaa meille viestiä osoitteeseen info@respondoai.fi.',
+      'Jag hittade inget säkert svar på detta. Du kan fråga om priset, provperioden, installationen eller abonnemanget, eller mejla oss på info@respondoai.fi.',
+      'I could not find a reliable answer to that. You can ask about pricing, the trial, installation or the subscription, or email us at info@respondoai.fi.'
     );
   }
 
