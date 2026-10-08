@@ -6,7 +6,7 @@ Production-oriented B2B customer-service SaaS for Finnish, Swedish and English w
 
 Respondo answers from the business's approved knowledge base and imported website facts. It does not use the OpenAI API in production. FI/SV/EN answer-language support may use Google's translation endpoint when a stored answer needs translation.
 
-Current plans (including Finnish VAT 25.5%):
+Current plans (no VAT charged; seller is not registered for VAT due to small-scale business activity):
 
 | Plan | Monthly | Annual billing without discounts | Support-agent seats | Website import | Google Calendar |
 | --- | ---: | ---: | ---: | --- | --- |
@@ -21,11 +21,11 @@ All plans include a three-day trial.
 
 | Plan | Monthly price ID | Annual price ID |
 | --- | --- | --- |
-| Starter | `price_1UOLwuV05brJ7mTPUcIxZKE6` | `price_1UOLx1V05brJ7mTPETqeexmn` |
-| Advanced | `price_1UOLx3V05brJ7mTPODsTKyC5` | `price_1UOLx6V05brJ7mTPIgyqDymD` |
-| Business | `price_1UOLx8V05brJ7mTPDq47ha22` | `price_1UOLxBV05brJ7mTPSsDPLXTM` |
+| Starter | `price_1UONnqV05brJ7mTPu5MvqQaP` | `price_1UONnxV05brJ7mTPMVHkrpf5` |
+| Advanced | `price_1UONo0V05brJ7mTPesqzKl1q` | `price_1UONrlV05brJ7mTPsUqKaQIB` |
+| Business | `price_1UONrnV05brJ7mTPR01BklbN` | `price_1UONrqV05brJ7mTPWmGhW2lP` |
 
-Historical Stripe prices remain recognized for existing subscribers.
+Historical Stripe prices remain recognized for existing subscribers. New checkouts disable automatic tax and attach no VAT rates. Review cross-border VAT requirements and Finland's turnover threshold before expanding overseas.
 
 ## Production services
 
