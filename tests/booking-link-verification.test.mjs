@@ -83,9 +83,12 @@ test('delivery time and opening-hours questions never show a booking widget',asy
     }
     for(const [message,lang] of [
       ['Voinko varata ajan?','fi'],
+      ['Voinko varata siivouksen?','fi'],
+      ['Miten varaan kotikäynnin?','fi'],
       ['Miten ajanvaraus toimii?','fi'],
       ['Can I book an appointment?','en'],
       ['Kan jag boka en tid?','sv'],
+      ['Kan jag boka städning?','sv'],
     ]){
       const answer=await ask(message,lang);
       assert.ok((answer.actions||[]).some(x=>x.type==='booking'&&x.mode==='booking_form'),
