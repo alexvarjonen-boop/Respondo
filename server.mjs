@@ -742,6 +742,112 @@ async function sendPasswordResetEmail({ email, token, language = 'fi' }) {
   return { sent:true, id:data?.id || null };
 }
 
+
+// Address ownership verification is required before a new paid or free account
+// can be created. Tokens are random, single-use and only their hashes are stored.
+const VERIFIED_EMAIL_COOKIE='respondo_verified_signup_email';
+const VERIFICATION_LIFETIME_MINUTES=30;
+const VERIFICATION_MAX_HOURLY=4;
+
+function normalizedVerificationLanguage(value) {
+  const language=String(value||'fi').trim().toLowerCase();
+  return ['fi','sv','en'].includes(language) ? language : 'fi';
+}
+
+function verificationEmailAvailable() {
+  return Boolean(String(process.env.RESEND_API_KEY||'').trim() &&
+    String(process.env.EMAIL_VERIFICATION_FROM||
+      process.env.PASSWORD_RESET_FROM||
+      process.env.CONTACT_NOTIFICATION_FROM||'').trim());
+}
+
+function validVerificationAddress(value) {
+  const email=cleanEmail(value);
+  return email.length>3 && email.length<=254 &&
+    /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email) ? email : '';
+}
+
+async function sendAccountVerificationEmail({email,token,language='fi',purpose='signup'}) {
+  if(!verificationEmailAvailable()) {
+    return {sent:false,reason:'email_delivery_not_configured'};
+  }
+  const lang=normalizedVerificationLanguage(language);
+  const change=purpose==='change_email';
+  const subject=change
+    ? (lang==='sv'?'Bekräfta din nya Respondo-e-postadress':lang==='en'?'Confirm your new Respondo email address':'Vahvista uusi Respondo-sähköpostiosoitteesi')
+    : (lang==='sv'?'Bekräfta din e-postadress – Respondo AI':lang==='en'?'Confirm your email address – Respondo AI':'Vahvista sähköpostiosoitteesi – Respondo AI');
+  const message=change
+    ? (lang==='sv'?'Du har begärt att ändra din inloggningsadress för Respondo. Bekräfta den nya adressen för att slutföra ändringen.':lang==='en'?'You requested to change your Respondo login email. Confirm the new address to complete the change.':'Olet pyytänyt Respondo-kirjautumissähköpostisi vaihtamista. Vahvista uusi osoite, jotta muutos tulee voimaan.')
+    : (lang==='sv'?'Bekräfta att den här e-postadressen tillhör dig innan du skapar ett Respondo-konto och fortsätter till betalningen.':lang==='en'?'Confirm that this email address belongs to you before creating a Respondo account and proceeding to checkout.':'Vahvista, että tämä sähköpostiosoite kuuluu sinulle, ennen kuin luot Respondo-tilin ja jatkat maksutavan lisäämiseen.');
+  const button=lang==='sv'?'Bekräfta e-postadress':lang==='en'?'Verify email':'Vahvista sähköposti';
+  const expire=lang==='sv'?'Länken gäller i 30 minuter och kan användas bara en gång.':lang==='en'?'The link expires in 30 minutes and can only be used once.':'Linkki on voimassa 30 minuuttia ja sen voi käyttää vain kerran.';
+  const ignore=lang==='sv'?'Om du inte begärde detta kan du ignorera meddelandet.':lang==='en'?'If you did not request this, you can ignore the message.':'Jos et pyytänyt tätä, voit jättää viestin huomiotta.';
+  const url=SEO_CANONICAL_ORIGIN+'/api/auth/email-verification/confirm?token='+encodeURIComponent(token);
+  const response=await fetch('https://api.resend.com/emails',{
+    method:'POST',
+    headers:{
+      Authorization:'Bearer '+String(process.env.RESEND_API_KEY).trim(),
+      'Content-Type':'application/json',
+    },
+    body:JSON.stringify({
+      from:String(process.env.EMAIL_VERIFICATION_FROM||
+        process.env.PASSWORD_RESET_FROM||
+        process.env.CONTACT_NOTIFICATION_FROM).trim(),
+      to:[email],
+      subject,
+      html:'<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:28px;color:#151515">'+
+        '<h2>Respondo AI</h2><p>'+escapeEmailHtml(message)+'</p>'+
+        '<p style="margin:26px 0"><a href="'+escapeEmailHtml(url)+'" style="display:inline-block;padding:14px 22px;color:#fff;background:#161616;border-radius:10px;text-decoration:none;font-weight:bold">'+escapeEmailHtml(button)+'</a></p>'+
+        '<p style="font-size:13px;color:#555">'+escapeEmailHtml(expire)+'</p>'+
+        '<p style="font-size:13px;color:#777">'+escapeEmailHtml(ignore)+'</p></div>',
+    }),
+  });
+  if(!response.ok){
+    const error=await response.json().catch(()=>({}));
+    throw new Error('Verification mail delivery failed: '+String(error.message||response.status).slice(0,120));
+  }
+  return {sent:true};
+}
+
+async function issueEmailVerificationToken({email,language='fi',purpose='signup',userId=null}) {
+  if(!verificationEmailAvailable()){
+    throw Object.assign(new Error('Sähköpostivahvistus ei ole vielä käytettävissä. Ota yhteys tukeen.'),{publicStatus:503});
+  }
+  const now=await q(
+    'SELECT created_at FROM email_verification_tokens WHERE email=$1 AND purpose=$2 AND created_at>NOW() - INTERVAL \'1 hour\' ORDER BY created_at DESC LIMIT 5',
+    [email,purpose],
+  );
+  if(now.rowCount>=VERIFICATION_MAX_HOURLY ||
+    (now.rowCount && Date.now()-new Date(now.rows[0].created_at).getTime()<60000)) {
+    throw Object.assign(new Error('Vahvistusviesti on jo lähetetty. Odota hetki ennen uutta yritystä.'),{publicStatus:429});
+  }
+  const raw=crypto.randomBytes(32).toString('base64url');
+  const hash=crypto.createHash('sha256').update(raw).digest('hex');
+  const id=uid();
+  await q(
+    "INSERT INTO email_verification_tokens(id,email,user_id,purpose,language,token_hash,expires_at) VALUES($1,$2,$3,$4,$5,$6,NOW()+INTERVAL '30 minutes')",
+    [id,email,userId,purpose,normalizedVerificationLanguage(language),hash],
+  );
+  try {
+    const result=await sendAccountVerificationEmail({email,token:raw,language,purpose});
+    if(!result.sent) throw new Error('Verification mail provider unavailable');
+  }catch(error){
+    await q('DELETE FROM email_verification_tokens WHERE id=$1',[id]).catch(()=>{});
+    throw Object.assign(new Error('Vahvistussähköpostin lähetys epäonnistui. Yritä uudelleen myöhemmin.'),{publicStatus:503,cause:error});
+  }
+  return {sent:true};
+}
+
+function signupEmailVerified(req,email) {
+  try{
+    const raw=cookies(req)[VERIFIED_EMAIL_COOKIE];
+    if(!raw) return false;
+    const payload=jwt.verify(raw,JWT,{algorithms:['HS256']});
+    return payload.kind==='signup_email_verified' &&
+      validVerificationAddress(payload.email)===email;
+  }catch{return false;}
+}
+
 function cleanBotAccent(value) {
   const raw=String(value||'').trim();
   return /^#[0-9a-fA-F]{6}$/.test(raw) ? raw.toUpperCase() : null;
@@ -6886,6 +6992,16 @@ app.get('/llms.txt', (req,res) => {
   res.type('text/plain').send(text);
 });
 
+// Email verification is bound to a secure, host-only signup cookie.
+// Keep signup on the public www host so email links and checkout share it.
+app.get('/tilaus', (req,res,next) => {
+  if(process.env.NODE_ENV === 'production' &&
+     String(req.hostname||'').toLowerCase() !== 'www.respondoai.fi'){
+    return res.redirect(302,'https://www.respondoai.fi'+req.originalUrl);
+  }
+  return next();
+});
+
 app.use(express.static(path.join(__dirname, 'public'), {
   index:false,
   setHeaders(res, filePath) {
@@ -7538,7 +7654,112 @@ app.get('/api/public/config', publicReadLimiter, async (req, res) => {
     ownerTestEnabled,
     ownerTestPrice: 0.50,
     passwordResetAvailable: Boolean(String(process.env.RESEND_API_KEY || '').trim()),
+    emailVerificationAvailable: verificationEmailAvailable(),
   });
+});
+
+
+app.get('/api/auth/email-verification/status', publicReadLimiter, (req,res) => {
+  res.set('Cache-Control','no-store');
+  const token=cookies(req)[VERIFIED_EMAIL_COOKIE];
+  let verifiedEmail='';
+  if(token){
+    try{
+      const payload=jwt.verify(token,JWT,{algorithms:['HS256']});
+      if(payload.kind==='signup_email_verified') {
+        verifiedEmail=validVerificationAddress(payload.email);
+      }
+    }catch{}
+  }
+  return res.json({verified:Boolean(verifiedEmail),email:verifiedEmail});
+});
+
+app.post('/api/auth/email-verification/request', checkoutLimiter, async (req,res) => {
+  const email=validVerificationAddress(req.body?.email);
+  if(!email) return res.status(400).json({error:'Anna kelvollinen sähköpostiosoite.'});
+  try{
+    const exists=await q('SELECT status,stripe_customer_id,stripe_subscription_id FROM users WHERE lower(email)=lower($1)',[email]);
+    if(exists.rowCount && (exists.rows[0].status!=='pending' || exists.rows[0].stripe_customer_id || exists.rows[0].stripe_subscription_id)){
+      return res.json({ok:true,message:'Jos osoitteella voi luoda uuden tilin, siihen on lähetetty vahvistusviesti.'});
+    }
+    await issueEmailVerificationToken({email,language:req.body?.language});
+    return res.json({ok:true,message:'Vahvistusviesti lähetettiin sähköpostiisi. Avaa Vahvista sähköposti -linkki ja jatka tilausta.'});
+  }catch(e){
+    if(e.publicStatus) return res.status(e.publicStatus).json({error:e.message});
+    console.error('Verification request failed',e?.message||e);
+    return res.status(503).json({error:'Vahvistusviestiä ei voitu lähettää. Yritä myöhemmin.'});
+  }
+});
+
+app.get('/api/auth/email-verification/confirm', async (req,res) => {
+  const token=String(req.query?.token||'').trim();
+  res.set({
+    'Cache-Control':'no-store','Referrer-Policy':'no-referrer',
+    'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+  });
+  if(!/^[A-Za-z0-9_-]{32,140}$/.test(token)) return res.status(400).type('html').send('<p>Vahvistuslinkki on virheellinen.</p>');
+  const hash=crypto.createHash('sha256').update(token).digest('hex');
+  try{
+    const rows=await q('SELECT language,used_at,expires_at FROM email_verification_tokens WHERE token_hash=$1',[hash]);
+    const row=rows.rows[0];
+    if(!row || row.used_at || new Date(row.expires_at)<=new Date()){
+      return res.status(400).type('html').send('<p>Linkki on vanhentunut tai käytetty. Pyydä uusi vahvistusviesti.</p>');
+    }
+    const lang=normalizedVerificationLanguage(row.language);
+    const title=lang==='sv'?'Bekräfta din e-postadress':lang==='en'?'Confirm your email address':'Vahvista sähköpostiosoitteesi';
+    const button=lang==='sv'?'Bekräfta e-post':lang==='en'?'Verify email':'Vahvista sähköposti';
+    return res.type('html').send('<!doctype html><html lang="'+lang+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Respondo AI</title></head>'+
+      '<body style="font-family:system-ui,Arial,sans-serif;max-width:520px;margin:12vh auto;padding:24px;color:#111">'+
+      '<h1>'+escapeEmailHtml(title)+'</h1><p>Respondo AI</p>'+
+      '<form method="POST" action="/api/auth/email-verification/confirm">'+
+      '<input type="hidden" name="token" value="'+escapeEmailHtml(token)+'">'+
+      '<button type="submit" style="padding:16px 24px;background:#111;color:#fff;border:0;border-radius:12px;font-size:16px;font-weight:bold">'+escapeEmailHtml(button)+'</button>'+
+      '</form></body></html>');
+  }catch{return res.status(503).type('html').send('<p>Vahvistusta ei voitu avata.</p>');}
+});
+
+// POST instead of GET prevents email-scanner link previews from consuming a link.
+app.post('/api/auth/email-verification/confirm', checkoutLimiter, async (req,res) => {
+  const token=String(req.body?.token||'').trim();
+  if(!/^[A-Za-z0-9_-]{32,140}$/.test(token)) return res.status(400).json({error:'Vahvistuslinkki on virheellinen.'});
+  const hash=crypto.createHash('sha256').update(token).digest('hex');
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const result=await client.query(
+      'SELECT id,email,user_id,purpose FROM email_verification_tokens WHERE token_hash=$1 AND used_at IS NULL AND expires_at>NOW() FOR UPDATE',[hash]);
+    if(!result.rowCount){
+      await client.query('ROLLBACK');
+      return res.status(400).json({error:'Vahvistuslinkki on vanhentunut tai jo käytetty.'});
+    }
+    const claim=result.rows[0];
+    if(claim.purpose==='change_email'){
+      const user=await client.query('SELECT id,stripe_customer_id FROM users WHERE id=$1 FOR UPDATE',[claim.user_id]);
+      if(!user.rowCount){await client.query('ROLLBACK');return res.status(404).json({error:'Käyttäjää ei löytynyt.'});}
+      const taken=await client.query('SELECT 1 FROM users WHERE lower(email)=lower($1) AND id<>$2',[claim.email,claim.user_id]);
+      if(taken.rowCount){await client.query('ROLLBACK');return res.status(409).json({error:'Sähköpostiosoite on jo käytössä.'});}
+      await client.query('UPDATE users SET email=$1,email_verified_at=NOW(),session_version=session_version+1,updated_at=NOW() WHERE id=$2',[claim.email,claim.user_id]);
+      await client.query('UPDATE email_verification_tokens SET used_at=NOW() WHERE id=$1',[claim.id]);
+      await client.query('COMMIT');
+      if(stripe && user.rows[0].stripe_customer_id){
+        try{await stripe.customers.update(user.rows[0].stripe_customer_id,{email:claim.email});}
+        catch(e){console.error('Stripe customer email update failed',e?.message||e);}
+      }
+      res.clearCookie(COOKIE);
+      return res.redirect(303,'/kirjaudu?email_changed=1');
+    }
+    if(claim.purpose!=='signup'){await client.query('ROLLBACK');return res.status(400).json({error:'Vahvistuslinkki on virheellinen.'});}
+    await client.query('UPDATE email_verification_tokens SET used_at=NOW() WHERE id=$1',[claim.id]);
+    await client.query('COMMIT');
+    res.cookie(VERIFIED_EMAIL_COOKIE,jwt.sign({kind:'signup_email_verified',email:claim.email},JWT,{expiresIn:'2h'}),{
+      httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax',maxAge:7200000,
+    });
+    return res.redirect(303,'/tilaus?email_verified=1');
+  }catch(e){
+    try{await client.query('ROLLBACK');}catch{}
+    console.error('Verification confirmation failed',e?.message||e);
+    return res.status(503).json({error:'Sähköpostin vahvistaminen epäonnistui.'});
+  }finally{client.release();}
 });
 
 app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
@@ -7561,6 +7782,14 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       error: socialSignup
         ? 'Täytä kaikki pakolliset tiedot.'
         : 'Täytä kaikki pakolliset tiedot. Salasanan on oltava vähintään 10 merkkiä.',
+    });
+  }
+
+  if(!validVerificationAddress(email)) return res.status(400).json({error:'Anna kelvollinen sähköpostiosoite.'});
+  if(!socialSignup && !signupEmailVerified(req,email)) {
+    return res.status(403).json({
+      error:'Vahvista sähköpostiosoitteesi ennen tilauksen aloittamista.',
+      code:'EMAIL_VERIFICATION_REQUIRED',
     });
   }
 
@@ -7645,8 +7874,8 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       await client.query(
         `INSERT INTO users(
            id,email,password_hash,full_name,company_name,business_id,status,
-           subscription_status,subscription_plan,preferred_language
-         ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+           subscription_status,subscription_plan,preferred_language,email_verified_at
+         ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW())`,
         [
           id,
           email,
@@ -7696,6 +7925,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       if (freeReferral) {
         await client.query('COMMIT');
         setSession(res, { id, email });
+        res.clearCookie(VERIFIED_EMAIL_COOKIE);
         res.clearCookie(OAUTH_PROFILE_COOKIE);
         return res.json({
           url: '/app?welcome=1&free_code=1',
@@ -7745,6 +7975,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       client.release();
     }
 
+    res.clearCookie(VERIFIED_EMAIL_COOKIE);
     res.cookie(
       SIGNUP_CHECKOUT_COOKIE,
       jwt.sign({ sessionId:session.id,userId:id,tenantId },JWT,{ expiresIn:'45m' }),
@@ -8109,28 +8340,21 @@ app.post('/api/app/account/email', auth, ownerOnly, loginLimiter, async (req,res
       return res.status(409).json({ error:'Tällä sähköpostiosoitteella on jo käyttäjätili.' });
     }
 
-    const updated=await q(
-      `UPDATE users
-          SET email=$1,session_version=session_version+1,updated_at=NOW()
-        WHERE id=$2
-        RETURNING id,email,session_version,stripe_customer_id`,
-      [newEmail,req.user.sub],
-    );
-
-    const stripeCustomerId=updated.rows[0]?.stripe_customer_id;
-    if (stripe && stripeCustomerId) {
-      try {
-        await stripe.customers.update(stripeCustomerId,{ email:newEmail });
-      } catch(stripeError) {
-        console.error('Stripe customer email sync failed',stripeError);
-      }
-    }
-
-    setSession(res,updated.rows[0]);
-    return res.json({ ok:true,email:newEmail });
+    await issueEmailVerificationToken({
+      email:newEmail,
+      language:req.body?.language,
+      purpose:'change_email',
+      userId:req.user.sub,
+    });
+    return res.json({
+      ok:true,
+      pendingVerification:true,
+      message:'Vahvistusviesti lähetettiin uuteen osoitteeseen. Sähköpostiosoite vaihtuu vasta vahvistamisen jälkeen.',
+    });
   } catch(e) {
-    console.error('Owner email change failed',e);
-    return res.status(500).json({ error:'Kirjautumissähköpostia ei voitu vaihtaa.' });
+    console.error('Owner email change failed',e?.message||e);
+    if(e.publicStatus) return res.status(e.publicStatus).json({error:e.message});
+    return res.status(500).json({ error:'Kirjautumissähköpostin vahvistusta ei voitu lähettää.' });
   }
 });
 
@@ -12457,6 +12681,24 @@ async function ensureRuntimeSchema() {
     UNIQUE(tenant_id,source_channel,external_contact_id)
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_chat_threads_tenant_activity ON chat_threads(tenant_id,last_activity_at DESC)');
+  await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ');
+  // Keep pre-verification accounts unmarked; only a completed ownership check populates this field.
+  await q("CREATE TABLE IF NOT EXISTS email_verification_tokens ("+
+    "id UUID PRIMARY KEY,"+
+    "email TEXT NOT NULL,"+
+    "user_id UUID REFERENCES users(id) ON DELETE CASCADE,"+
+    "purpose TEXT NOT NULL CHECK(purpose IN ('signup','change_email')),"+
+    "language TEXT NOT NULL DEFAULT 'fi',"+
+    "token_hash TEXT NOT NULL UNIQUE,"+
+    "expires_at TIMESTAMPTZ NOT NULL,"+
+    "used_at TIMESTAMPTZ,"+
+    "created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
+  await q('ALTER TABLE email_verification_tokens ENABLE ROW LEVEL SECURITY');
+  await q('CREATE INDEX IF NOT EXISTS idx_email_verification_email_time ON email_verification_tokens(email,purpose,created_at DESC)');
+  await q('CREATE INDEX IF NOT EXISTS idx_email_verification_expiry ON email_verification_tokens(expires_at)');
+  // Do not retain sign-up email addresses or unusable verification hashes indefinitely.
+  await q("DELETE FROM email_verification_tokens WHERE expires_at < NOW() - INTERVAL '7 days'");
+
   await q(`CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

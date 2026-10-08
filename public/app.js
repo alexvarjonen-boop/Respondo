@@ -2768,6 +2768,7 @@ function signup() {
           <div class="formgrid">
             <div class="field"><label>${appText('Nimi','Namn','Name')}</label><input name="fullName" autocomplete="name" required placeholder="${appText('Etunimi Sukunimi','Förnamn Efternamn','First name Last name')}"></div>
             <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
+            <div class="field full signup-email-verification" id="signupEmailVerification"><span id="signupEmailVerificationStatus" role="status" aria-live="polite">${appText('Vahvista sähköposti ennen maksua.','Bekräfta e-post före betalning.','Verify email before payment.')}</span><button id="signupSendVerification" class="btn ghost" type="button">${appText('Lähetä vahvistusviesti','Skicka verifiering','Send verification email')}</button></div>
             <div class="field"><label>${appText('Yritys','Företag','Company')}</label><input name="companyName" required placeholder="${appText('Yrityksen nimi','Företagets namn','Company name')}"></div>
             <div class="field"><label>${appText('Y-tunnus','FO-nummer','Business ID')}</label><input name="businessId" placeholder="1234567-8"></div>
             <div class="field full" id="signupPasswordField"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
@@ -2801,7 +2802,7 @@ function signup() {
           ${ownerTestAccess ? `<input type="hidden" name="ownerTestAccessToken" value="${esc(ownerTestAccessToken)}">` : ''}
           <button class="btn checkout-button" type="submit">${appText('Jatka maksutavan lisäämiseen','Fortsätt till betalningsmetod','Continue to payment method')} <span>→</span></button>
           <div class="form-security"><span>◈</span> ${appText('Korttitiedot käsittelee Stripe. Respondo ei näe eikä tallenna korttinumeroasi.','Kortuppgifterna behandlas av Stripe. Respondo ser eller lagrar inte ditt kortnummer.','Card details are processed by Stripe. Respondo does not see or store your card number.')}</div>
-          <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : ''}</div>
+          <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : ''}${params.get('email_verified')==='1' ? `<div class="notice success">${appText('Sähköposti vahvistettu! Täytä lomake tarvittaessa uudelleen ja paina Jatka maksutavan lisäämiseen.','E-postadressen har bekräftats! Fyll i formuläret igen om det behövs och fortsätt till betalningsmetoden.','Email verified! Fill out the form again if needed, then continue to payment method.')}</div>` : ''}</div>
         </form>
       </div>
     </main>
@@ -5096,6 +5097,7 @@ async function route() {
           badge.className = 'oauth-connected';
           const providerName = profile.provider === 'apple' ? 'Apple' : 'Google';
           badge.textContent = providerName + ' · ' + appText('tili yhdistetty','konto anslutet','account connected') + ' · ' + profile.email;
+          syncSignupEmailStatus();
           form.querySelector('.formgrid')?.before(badge);
         })
         .catch(() => {});
@@ -5118,15 +5120,87 @@ async function route() {
     signupPlan?.addEventListener('change', syncReferralField);
     syncReferralField();
 
+    const signupEmailStatus=$('#signupEmailVerificationStatus');
+    const signupVerificationButton=$('#signupSendVerification');
+    const signupEmailInput=signupForm?.elements?.email;
+    let verifiedSignupEmail='';
+    const isSocialSignup=()=>signupEmailInput?.readOnly === true;
+    const syncSignupEmailStatus=()=>{
+      const email=String(signupEmailInput?.value||'').trim().toLowerCase();
+      const verified=Boolean(email && email===verifiedSignupEmail);
+      const box=$('#signupEmailVerification');
+      if(box) box.hidden=isSocialSignup();
+      if(signupEmailStatus){
+        signupEmailStatus.textContent=verified
+          ? appText('✓ Sähköpostiosoite vahvistettu','✓ E-postadressen bekräftad','✓ Email verified')
+          : appText('Vahvista sähköposti ennen maksua.','Bekräfta e-post före betalning.','Verify email before payment.');
+        signupEmailStatus.dataset.verified=String(verified);
+      }
+      if(signupVerificationButton) signupVerificationButton.hidden=verified || isSocialSignup();
+    };
+    const refreshSignupVerification=async()=>{
+      try{
+        const state=await api('/api/auth/email-verification/status');
+        verifiedSignupEmail=state.verified ? String(state.email||'').trim().toLowerCase() : '';
+        if(verifiedSignupEmail && signupEmailInput && !signupEmailInput.value) {
+          signupEmailInput.value=verifiedSignupEmail;
+        }
+      }catch{verifiedSignupEmail='';}
+      syncSignupEmailStatus();
+    };
+    const requestSignupVerification=async()=>{
+      const email=String(signupEmailInput?.value||'').trim();
+      const msg=$('#msg');
+      if(!signupEmailInput?.checkValidity()){
+        signupEmailInput?.reportValidity();
+        return false;
+      }
+      if(signupVerificationButton) signupVerificationButton.disabled=true;
+      if(signupEmailStatus) signupEmailStatus.textContent=appText('Lähetetään vahvistusta…','Skickar verifiering…','Sending verification…');
+      try{
+        await api('/api/auth/email-verification/request',{
+          method:'POST',
+          body:JSON.stringify({email,language:currentLang()}),
+        });
+        if(msg) msg.innerHTML='<div class="notice success">'+esc(appText(
+          'Avaa sähköpostiisi lähetetty vahvistuslinkki ja vahvista osoite. Palaa sen jälkeen jatkamaan tilausta. Linkki on voimassa 30 minuuttia.',
+          'Öppna bekräftelselänken i ditt mejl och bekräfta adressen. Kom sedan tillbaka för att fortsätta. Länken gäller i 30 minuter.',
+          'Open the verification link in your email, confirm the address, then return to continue checkout. The link expires in 30 minutes.'
+        ))+'</div>';
+        return true;
+      }catch(err){
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(err.message||appText('Viestin lähetys epäonnistui.','Det gick inte att skicka mejlet.','Failed to send email.'))+'</div>';
+        return false;
+      }finally{
+        if(signupVerificationButton) signupVerificationButton.disabled=false;
+        syncSignupEmailStatus();
+      }
+    };
+    signupEmailInput?.addEventListener('input',syncSignupEmailStatus);
+    signupVerificationButton?.addEventListener('click',requestSignupVerification);
+    document.addEventListener('visibilitychange',()=>{
+      if(!document.hidden && location.pathname==='/tilaus') refreshSignupVerification();
+    });
+    window.addEventListener('pageshow',()=>{if(location.pathname==='/tilaus') refreshSignupVerification();});
+    refreshSignupVerification();
+
     $('#signup')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = new FormData(e.currentTarget);
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = appText('Avataan maksusivua…','Öppnar betalningssidan…','Opening payment page…');
       $('#msg').innerHTML = '';
       try {
+        if(!isSocialSignup()){
+          await refreshSignupVerification();
+          const supplied=String(form.get('email')||'').trim().toLowerCase();
+          if(!verifiedSignupEmail || verifiedSignupEmail!==supplied){
+            await requestSignupVerification();
+            return;
+          }
+        }
+        button.innerHTML = appText('Avataan maksusivua…','Öppnar betalningssidan…','Opening payment page…');
         const result = await api('/api/auth/start-checkout', {
           method: 'POST',
           body: JSON.stringify({
@@ -5142,11 +5216,13 @@ async function route() {
             language: currentLang(),
           }),
         });
+        if(!result?.url) throw new Error(appText('Maksusivua ei voitu avata.','Betalningssidan kunde inte öppnas.','Could not open checkout.'));
         location.href = result.url;
       } catch (err) {
+        $('#msg').innerHTML = '<div class="notice error">'+esc(err.message)+'</div>';
+      } finally {
         button.disabled = false;
         button.innerHTML = original;
-        $('#msg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
       }
     });
   }
@@ -6578,11 +6654,9 @@ async function route() {
       try{
         const result=await api('/api/app/account/email',{
           method:'POST',
-          body:JSON.stringify({newEmail,currentPassword}),
+          body:JSON.stringify({newEmail,currentPassword,language:currentLang()}),
         });
-        if(msg) msg.innerHTML='<div class="notice success">'+appText('Kirjautumissähköposti vaihdettu. Muut vanhat istunnot suljettiin.','Inloggningsadressen har ändrats. Andra gamla sessioner stängdes.','Login email changed. Other old sessions were closed.')+'</div>';
-        const current=form.querySelector('input[readonly]');
-        if(current) current.value=result.email || newEmail;
+        if(msg) msg.innerHTML='<div class="notice success">'+appText('Vahvistuslinkki lähetetty uuteen sähköpostiin. Osoite vaihtuu vasta, kun vahvistat sen.','En verifieringslänk har skickats till din nya adress. Adressen ändras först när du bekräftar den.','A confirmation link was sent to the new address. Your login email changes only after you confirm it.')+'</div>';
         form.elements.newEmail.value='';
         form.elements.currentPassword.value='';
       }catch(err){
