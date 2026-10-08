@@ -10,7 +10,7 @@ test('home header has no login and only a conditionally visible trial CTA',()=>{
   assert.match(app,/const isHomePage = location\.pathname === '\/'/);
   assert.match(app,/isHomePage\s*\? `<a class="btn ink nav-home-scroll-trial"/);
   assert.match(app,/aria-hidden="true" tabindex="-1"/);
-  assert.match(app,/if \(path === '\/'\) bindHomeScrollTrial\(\)/);
+  assert.match(app,/if \(path === '\/'\) \{[\s\S]*?bindHomeHeroActions\(\);[\s\S]*?bindHomeScrollTrial\(\);[\s\S]*?\}/);
   assert.match(homeCss,/\.nav-home-scroll-trial\{display:none!important\}/);
   assert.match(homeCss,/\.nav-home-scroll-trial\.is-visible\{/);
   assert.match(homeCss,/@media\(max-width:800px\)[\s\S]*?\.nav-home-scroll-trial\.is-visible/);
