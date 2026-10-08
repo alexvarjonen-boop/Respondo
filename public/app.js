@@ -4106,12 +4106,38 @@ async function dashboard(options = {}) {
                     ? appText('Kokeilu','Provperiod','Trial')
                     : appText('Aktiivinen','Aktiv','Active')}</small>
               </div>
-              ${workspace.id===t.id
-                ? `<span class="workspace-current-badge">${appText('Nykyinen','Nuvarande','Current')}</span>`
-                : `<button type="button" class="workspace-row-switch" data-workspace-id="${esc(workspace.id)}">${appText('Avaa','Öppna','Open')} →</button>`}
+              <div class="workspace-row-controls">
+                ${workspace.id===t.id
+                  ? `<span class="workspace-current-badge">${appText('Nykyinen','Nuvarande','Current')}</span>`
+                  : `<button type="button" class="workspace-row-switch" data-workspace-id="${esc(workspace.id)}">${appText('Avaa','Öppna','Open')} →</button>`}
+                <button type="button" class="workspace-delete-trigger" data-workspace-id="${esc(workspace.id)}" data-workspace-name="${esc(workspace.name)}" aria-label="${esc(appText('Poista yritys','Radera företag','Delete company')+' '+workspace.name)}" title="${esc(appText('Peru tilaus ja poista yritys','Avsluta abonnemang och radera företag','Cancel subscription and delete company'))}">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 6.5h17M9 6.5v-2h6v2m-9 0 1 13h10l1-13M10 10.5v6M14 10.5v6"/></svg>
+                </button>
+              </div>
             </article>`).join('')}
         </div>
+        <div class="workspace-delete-account-area">
+          <button class="workspace-account-delete-trigger" id="deleteAccountTrigger" type="button">${appText('Poista käyttäjä','Radera användarkonto','Delete account')}</button>
+          <p>${appText('Poistaa kaikki tämän käyttäjän yritykset, peruuttaa niiden tilaukset ja poistaa Respondo-tilin pysyvästi.','Raderar alla företag, avslutar deras abonnemang och raderar ditt Respondo-konto permanent.','Permanently deletes all companies, cancels their subscriptions and removes your Respondo account.')}</p>
+        </div>
       </section>
+      <div class="deletion-modal" id="deleteModal" hidden>
+        <button type="button" class="deletion-modal-backdrop" id="deleteModalBackdrop" aria-label="${esc(appText('Sulje','Stäng','Close'))}"></button>
+        <section class="deletion-modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalDescription">
+          <div class="deletion-modal-header">
+            <div><small>${appText('VAHVISTA POISTAMINEN','BEKRÄFTA RADERING','CONFIRM DELETION')}</small><h2 id="deleteModalTitle"></h2></div>
+            <button type="button" class="deletion-modal-close" id="deleteModalClose" aria-label="${esc(appText('Sulje','Stäng','Close'))}">×</button>
+          </div>
+          <p id="deleteModalDescription"></p>
+          <form id="deleteConfirmForm" class="deletion-confirm-form">
+            <label id="deleteEmailField" hidden><span>${appText('Kirjautumissähköposti','Inloggningsadress','Login email')}</span><input name="email" type="email" autocomplete="email" maxlength="254" placeholder="${esc(me.email||'')}"></label>
+            <label><span>${appText('Nykyinen salasana','Nuvarande lösenord','Current password')}</span><input name="password" type="password" autocomplete="current-password" maxlength="200" required></label>
+            <div id="deleteConfirmMsg" role="alert" aria-live="polite"></div>
+            <button type="submit" id="deleteConfirmSubmit" class="deletion-confirm-submit">${appText('Poista pysyvästi','Radera permanent','Delete permanently')}</button>
+            <button type="button" class="deletion-cancel" id="deleteCancel">${appText('Peruuta','Avbryt','Cancel')}</button>
+          </form>
+        </section>
+      </div>
 
       <section class="panel billing-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="billing">
         <div><small>${appText('LASKUTUS','FAKTURERING','BILLING')}</small><h2>${appText('Hallitse tilaustasi','Hantera ditt abonnemang','Manage your subscription')}</h2><p>${appText('Voit vaihtaa Basic-, Advanced- ja Business-pakettien välillä, vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.','Du kan byta mellan Basic-, Advanced- och Business-abonnemang, ändra betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal.','You can switch between Basic, Advanced and Business plans, change your payment method, view invoices, or cancel your subscription in the Stripe customer portal.')}</p></div>
