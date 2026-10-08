@@ -648,7 +648,7 @@
               <div class="assistant-order-head">
                 <small>${pageTx('HALUATKO TÄMÄN OMALLE SIVULLESI?','VILL DU HA DETTA PÅ DIN EGEN WEBBPLATS?','WANT THIS ON YOUR WEBSITE?')}</small>
                 <h2>${pageTx('Valitse yrityksellesi sopiva Respondo.','Välj rätt Respondo för ditt företag.','Choose the right Respondo plan for your business.')}</h2>
-                <p>${pageTx('Kaikissa tilauksissa on 3 päivän ilmainen kokeilu. Vuositilaus on aina 5 €/kk edullisempi.','Alla abonnemang har 3 dagars gratis provperiod. Årsabonnemang är alltid 5 €/mån billigare.','Every plan includes a 3-day free trial. Annual billing is always €5/month cheaper.')}</p>
+                <p>${pageTx('Kaikissa tilauksissa on 3 päivän ilmainen kokeilu. Vuositilauksessa ei ole alennusta.','Alla abonnemang har 3 dagars gratis provperiod. Årsabonnemang har ingen rabatt.','Every plan includes a 3-day free trial. Annual billing has no discount.')}</p>
               </div>
               <div class="assistant-order-grid assistant-order-grid-three">
                 <article class="assistant-order-card">
