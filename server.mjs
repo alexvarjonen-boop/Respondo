@@ -7973,6 +7973,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   const freeReferral = isFreeReferralCode(referralCode);
   const checkoutCountry = checkoutCountryPolicy(req.body?.billingCountry);
   if (!checkoutCountry.ok) return res.status(422).json({ error:checkoutCountry.error });
+  if (req.body?.businessPurchase !== true) return res.status(422).json({ error:'Vahvista, että tilaat palvelun yrityskäyttöön.' });
   const oauthProfile = getOauthProfile(req);
   const socialSignup = Boolean(
     oauthProfile &&
