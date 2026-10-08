@@ -742,6 +742,11 @@ async function sendPasswordResetEmail({ email, token, language = 'fi' }) {
   return { sent:true, id:data?.id || null };
 }
 
+function cleanBotAccent(value) {
+  const raw=String(value||'').trim();
+  return /^#[0-9a-fA-F]{6}$/.test(raw) ? raw.toUpperCase() : null;
+}
+
 function cleanBotName(value) {
   return String(value || '').replace(/[<>]/g,'').trim().slice(0,40) || 'RESPONDO AI';
 }
@@ -8722,6 +8727,9 @@ app.post('/api/app/business-profile', auth, ownerOnly, subscribed, async (req, r
     const t = await client.query('SELECT id,name,slug,website FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
     if (!t.rowCount) return res.status(404).json({ error: 'Työtilaa ei löytynyt.' });
     const tenantId = t.rows[0].id;
+    if(req.body.botColor != null && !cleanBotAccent(req.body.botColor)) {
+      return res.status(400).json({error:'Botin väri ei ole kelvollinen.'});
+    }
     const currentEmail = String(req.body.email || '').trim().toLowerCase();
     if (!validBusinessEmail(currentEmail)) return res.status(400).json({error:'Tarkista yrityksen sähköpostiosoite.'});
     const websiteRaw = String(req.body.website || '').trim();
@@ -8776,7 +8784,7 @@ app.post('/api/app/business-profile', auth, ownerOnly, subscribed, async (req, r
     }
 
     await client.query(
-      'UPDATE tenants SET contact_phone=$1, contact_email=$2, website=$3, greeting=$4, average_lead_value=$5, bot_name=$6, bot_avatar=$7, updated_at=NOW() WHERE id=$8',
+      'UPDATE tenants SET contact_phone=$1, contact_email=$2, website=$3, greeting=$4, average_lead_value=$5, bot_name=$6, bot_avatar=$7, accent=COALESCE($8,accent), updated_at=NOW() WHERE id=$9',
       [
         String(req.body.phone || '').trim() || null,
         currentEmail || null,
@@ -8785,6 +8793,7 @@ app.post('/api/app/business-profile', auth, ownerOnly, subscribed, async (req, r
         Math.max(0, Number(req.body.averageLeadValue || 0)) || 0,
         cleanBotName(req.body.botName),
         cleanBotAvatar(req.body.botAvatar),
+        cleanBotAccent(req.body.botColor),
         tenantId
       ]
     );
