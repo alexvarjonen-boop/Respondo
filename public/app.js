@@ -2765,7 +2765,7 @@ function seoLandingPage(path) {
     <section class="section seo-landing-copy"><div class="container"><div class="seo-landing-intro"><h2>${p.introTitle}</h2><p>${p.intro}</p></div>
       <div class="seo-landing-grid">${p.cards.map(([title,text])=>`<article><h3>${title}</h3><p>${text}</p></article>`).join('')}</div>
     </div></section>
-    <section class="section seo-landing-closing"><div class="container"><div class="seo-landing-closing-card"><h2>${appText('Sopiva vastaus oikeaan aikaan.','Rätt svar vid rätt tidpunkt.','The right answer at the right time.')}</h2><p>${p.closing}</p><div class="seo-answer-links"><a href="/ominaisuudet?lang=${currentLang()}">${appText('Katso kaikki ominaisuudet','Se alla funktioner','See all features')}</a><a href="/tietoturva?lang=${currentLang()}">${appText('Tietoturva','Säkerhet','Security')}</a><a href="/tietosuoja?lang=${currentLang()}">${appText('Tietosuoja','Integritet','Privacy')}</a></div></div></div></section>
+    <section class="section seo-landing-closing"><div class="container"><div class="seo-landing-closing-card"><h2>${appText('Sopiva vastaus oikeaan aikaan.','Rätt svar vid rätt tidpunkt.','The right answer at the right time.')}</h2><p>${p.closing}</p></div></div></section>
   </main>${footer()}</div>`;
 }
 
