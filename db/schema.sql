@@ -268,3 +268,19 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   REVOKE USAGE, SELECT ON SEQUENCES FROM anon, authenticated, service_role;
+
+-- Email ownership verification before signup and login-email updates.
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+ id UUID PRIMARY KEY,
+ email TEXT NOT NULL,
+ user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+ purpose TEXT NOT NULL,
+ language TEXT NOT NULL DEFAULT 'fi',
+ token_hash TEXT NOT NULL UNIQUE,
+ expires_at TIMESTAMPTZ NOT NULL,
+ used_at TIMESTAMPTZ,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE email_verification_tokens ENABLE ROW LEVEL SECURITY;
+CREATE INDEX IF NOT EXISTS idx_email_verification_email_time ON email_verification_tokens(email,purpose,created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_email_verification_expiry ON email_verification_tokens(expires_at);
