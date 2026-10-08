@@ -3078,6 +3078,53 @@ async function agentDashboard(me) {
 }
 
 
+function dashboardWithoutCompany(me, workspaces = []) {
+  return `<div class="dashboard-empty-workspaces dashboard-simple-shell">
+    <main class="dashboard-empty-main">
+      <div class="dashboard-empty-head">${logo()} <button type="button" class="btn ghost" id="logoutTop">${appText('Kirjaudu ulos','Logga ut','Log out')}</button></div>
+      <section class="panel workspace-manager-panel">
+        <small>${appText('YRITYKSET & TILAUKSET','FÖRETAG & ABONNEMANG','COMPANIES & SUBSCRIPTIONS')}</small>
+        <h1>${appText('Lisää Respondo-yritys','Lägg till ett Respondo-företag','Add a Respondo company')}</h1>
+        <p>${appText('Sinulla ei ole tällä hetkellä aktiivisia yrityksiä. Voit avata uuden yritystilauksen tai poistaa koko käyttäjätilisi.','Du har för närvarande inga aktiva företag. Du kan starta ett nytt abonnemang eller radera ditt konto.','You have no active companies. You can create a new subscription or delete your account.')}</p>
+        ${workspaces.length ? `<div class="workspace-manager-list">${workspaces.map(w=>`<article class="workspace-manager-row"><div><b>${esc(w.name)}</b><small>${appText('Ei aktiivista tilausta','Inget aktivt abonnemang','No active subscription')}</small></div><div class="workspace-row-controls"><button type="button" class="workspace-delete-trigger" data-workspace-id="${esc(w.id)}" data-workspace-name="${esc(w.name)}" aria-label="${appText('Poista yritys','Radera företag','Delete company')} ${esc(w.name)}">▤</button></div></article>`).join('')}</div>` : ''}
+        <form id="emptyWorkspaceForm" class="workspace-add-form">
+          <label><span>${appText('Yrityksen nimi','Företagsnamn','Company name')}</span><input name="companyName" required maxlength="120"></label>
+          <label><span>${appText('Y-tunnus (valinnainen)','FO-nummer (valfritt)','Business ID (optional)')}</span><input name="businessId" maxlength="40"></label>
+          <label><span>${appText('Tilaus','Abonnemang','Subscription')}</span><select name="plan">
+            <option value="basic_monthly">Basic 49,99 € / kk</option>
+            <option value="basic_yearly">Basic 539,88 € / ${appText('vuosi','år','year')}</option>
+            <option value="advanced_monthly">Advanced 64,99 € / kk</option>
+            <option value="advanced_yearly">Advanced 719,88 € / ${appText('vuosi','år','year')}</option>
+            <option value="business_monthly">Business 79,99 € / kk</option>
+            <option value="business_yearly">Business 899,88 € / ${appText('vuosi','år','year')}</option>
+          </select></label>
+          <label class="workspace-terms"><input type="checkbox" name="acceptedTerms" required><span>${appText('Hyväksyn käyttöehdot ja tietosuojaselosteen.','Jag godkänner användarvillkoren och integritetspolicyn.','I accept the terms and privacy policy.')}</span></label>
+          <button type="submit" class="btn ink workspace-checkout-button">${appText('Lisää yritys','Lägg till företag','Add company')} →</button>
+          <div id="emptyWorkspaceMsg" role="alert"></div>
+        </form>
+        <div class="workspace-delete-account-area">
+          <button type="button" id="deleteAccountTrigger" class="workspace-account-delete-trigger">${appText('Poista käyttäjä','Radera användarkonto','Delete account')}</button>
+          <p>${appText('Poistaa käyttäjän ja kaikki yritykset sekä peruuttaa tilaukset pysyvästi.','Raderar kontot och alla företag och avslutar abonnemangen.','Permanently removes your account and all companies, cancelling subscriptions.')}</p>
+        </div>
+      </section>
+      <div id="deleteModal" class="deletion-modal" hidden>
+        <button type="button" class="deletion-modal-backdrop" id="deleteModalBackdrop" aria-label="${appText('Sulje','Stäng','Close')}"></button>
+        <section role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalDescription" class="deletion-modal-card">
+          <div class="deletion-modal-header"><div><small>${appText('VAHVISTA POISTAMINEN','BEKRÄFTA RADERING','CONFIRM DELETION')}</small><h2 id="deleteModalTitle"></h2></div><button type="button" id="deleteModalClose" class="deletion-modal-close" aria-label="${appText('Sulje','Stäng','Close')}">×</button></div>
+          <p id="deleteModalDescription"></p>
+          <form id="deleteConfirmForm" class="deletion-confirm-form">
+            <label id="deleteEmailField" hidden><span>${appText('Kirjautumissähköposti','Inloggningsadress','Login email')}</span><input name="email" type="email" autocomplete="email" maxlength="254" placeholder="${esc(me.email||'')}"></label>
+            <label><span>${appText('Nykyinen salasana','Nuvarande lösenord','Current password')}</span><input name="password" type="password" autocomplete="current-password" required maxlength="200"></label>
+            <div id="deleteConfirmMsg" aria-live="polite" role="alert"></div>
+            <button type="submit" class="deletion-confirm-submit" id="deleteConfirmSubmit">${appText('Poista pysyvästi','Radera permanent','Delete permanently')}</button>
+            <button type="button" class="deletion-cancel" id="deleteCancel">${appText('Peruuta','Avbryt','Cancel')}</button>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>`;
+}
+
 async function dashboard(options = {}) {
   const isDemo = Boolean(options.demo);
   let me;
@@ -3142,6 +3189,13 @@ async function dashboard(options = {}) {
     try {
       data = await api('/api/app/dashboard');
     } catch (e) {
+      try {
+        const listing=await api('/api/app/workspaces');
+        const all=Array.isArray(listing.workspaces) ? listing.workspaces : [];
+        if(!all.some(w=>w.active && ['active','trialing'].includes(String(w.subscription_status||'')))) {
+          return dashboardWithoutCompany(me,all);
+        }
+      } catch {}
       return `<div class="container"><div class="notice error">${esc(e.message)}</div></div>`;
     }
   }
@@ -4066,12 +4120,40 @@ async function dashboard(options = {}) {
                     ? appText('Kokeilu','Provperiod','Trial')
                     : appText('Aktiivinen','Aktiv','Active')}</small>
               </div>
-              ${workspace.id===t.id
-                ? `<span class="workspace-current-badge">${appText('Nykyinen','Nuvarande','Current')}</span>`
-                : `<button type="button" class="workspace-row-switch" data-workspace-id="${esc(workspace.id)}">${appText('Avaa','Öppna','Open')} →</button>`}
+              <div class="workspace-row-controls">
+                ${workspace.id===t.id
+                  ? `<span class="workspace-current-badge">${appText('Nykyinen','Nuvarande','Current')}</span>`
+                  : `<button type="button" class="workspace-row-switch" data-workspace-id="${esc(workspace.id)}">${appText('Avaa','Öppna','Open')} →</button>`}
+                <button type="button" class="workspace-delete-trigger" data-workspace-id="${esc(workspace.id)}" data-workspace-name="${esc(workspace.name)}" aria-label="${esc(appText('Poista yritys','Radera företag','Delete company')+' '+workspace.name)}" title="${esc(appText('Peru tilaus ja poista yritys','Avsluta abonnemang och radera företag','Cancel subscription and delete company'))}">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 6.5h17M9 6.5v-2h6v2m-9 0 1 13h10l1-13M10 10.5v6M14 10.5v6"/></svg>
+                </button>
+              </div>
             </article>`).join('')}
         </div>
+        ${!isDemo ? `
+        <div class="workspace-delete-account-area">
+          <button class="workspace-account-delete-trigger" id="deleteAccountTrigger" type="button">${appText('Poista käyttäjä','Radera användarkonto','Delete account')}</button>
+          <p>${appText('Poistaa kaikki tämän käyttäjän yritykset, peruuttaa niiden tilaukset ja poistaa Respondo-tilin pysyvästi.','Raderar alla företag, avslutar deras abonnemang och raderar ditt Respondo-konto permanent.','Permanently deletes all companies, cancels their subscriptions and removes your Respondo account.')}</p>
+        </div>` : ''}
       </section>
+      ${!isDemo ? `
+      <div class="deletion-modal" id="deleteModal" hidden>
+        <button type="button" class="deletion-modal-backdrop" id="deleteModalBackdrop" aria-label="${esc(appText('Sulje','Stäng','Close'))}"></button>
+        <section class="deletion-modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalDescription">
+          <div class="deletion-modal-header">
+            <div><small>${appText('VAHVISTA POISTAMINEN','BEKRÄFTA RADERING','CONFIRM DELETION')}</small><h2 id="deleteModalTitle"></h2></div>
+            <button type="button" class="deletion-modal-close" id="deleteModalClose" aria-label="${esc(appText('Sulje','Stäng','Close'))}">×</button>
+          </div>
+          <p id="deleteModalDescription"></p>
+          <form id="deleteConfirmForm" class="deletion-confirm-form">
+            <label id="deleteEmailField" hidden><span>${appText('Kirjautumissähköposti','Inloggningsadress','Login email')}</span><input name="email" type="email" autocomplete="email" maxlength="254" placeholder="${esc(me.email||'')}"></label>
+            <label><span>${appText('Nykyinen salasana','Nuvarande lösenord','Current password')}</span><input name="password" type="password" autocomplete="current-password" maxlength="200" required></label>
+            <div id="deleteConfirmMsg" role="alert" aria-live="polite"></div>
+            <button type="submit" id="deleteConfirmSubmit" class="deletion-confirm-submit">${appText('Poista pysyvästi','Radera permanent','Delete permanently')}</button>
+            <button type="button" class="deletion-cancel" id="deleteCancel">${appText('Peruuta','Avbryt','Cancel')}</button>
+          </form>
+        </section>
+      </div>` : ''}
 
       <section class="panel billing-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="billing">
         <div><small>${appText('LASKUTUS','FAKTURERING','BILLING')}</small><h2>${appText('Hallitse tilaustasi','Hantera ditt abonnemang','Manage your subscription')}</h2><p>${appText('Voit vaihtaa Basic-, Advanced- ja Business-pakettien välillä, vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.','Du kan byta mellan Basic-, Advanced- och Business-abonnemang, ändra betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal.','You can switch between Basic, Advanced and Business plans, change your payment method, view invoices, or cancel your subscription in the Stripe customer portal.')}</p></div>
@@ -5057,6 +5139,85 @@ async function route() {
         }
       });
     });
+    // Destructive actions always require an explicit password confirmation.
+    const deletionModal=$('#deleteModal');
+    const deletionForm=$('#deleteConfirmForm');
+    let deletionTarget=null;
+    let deletionBusy=false;
+    const closeDeletionModal=()=>{
+      if(deletionBusy || !deletionModal) return;
+      deletionModal.setAttribute('hidden','');
+      document.body.classList.remove('deletion-modal-open');
+      deletionTarget=null;
+      deletionForm?.reset();
+    };
+    const openDeletionModal=(target)=>{
+      if(!deletionModal || !deletionForm) return;
+      deletionTarget=target;
+      deletionForm.reset();
+      const account=target.kind==='account';
+      const emailField=$('#deleteEmailField');
+      emailField?.toggleAttribute('hidden',!account);
+      const emailInput=deletionForm.elements.email;
+      if(emailInput) {emailInput.disabled=!account;emailInput.required=account;}
+      $('#deleteModalTitle').textContent=account
+        ? appText('Poista Respondo-käyttäjä','Radera Respondo-kontot','Delete Respondo account')
+        : appText('Poista yritys: ','Radera företag: ','Delete company: ')+target.name;
+      $('#deleteModalDescription').textContent=account
+        ? appText('Tämä peruuttaa heti KAIKKI yritystesi tilaukset ja poistaa kaikki yritysten tiedot, botit, keskustelut sekä koko käyttäjätilin pysyvästi. Vahvista kirjoittamalla kirjautumissähköpostisi ja nykyinen salasanasi.','Detta avslutar ALLA abonnemang omedelbart och tar bort alla företagsuppgifter, bottar, konversationer och kontot permanent. Bekräfta med din inloggningsadress och ditt lösenord.','This immediately cancels ALL subscriptions and permanently deletes all company data, bots, conversations and the entire user account. Enter your login email and current password.')
+        : appText('Tämä peruuttaa tämän yrityksen tilauksen heti ja poistaa sen botin, tiedot, keskustelut ja asiakaspalvelijat pysyvästi. Muut yrityksesi säilyvät. Vahvista nykyisellä salasanallasi.','Företagets abonnemang avslutas omedelbart och dess bot, uppgifter, konversationer och medarbetare raderas permanent. Dina andra företag påverkas inte. Bekräfta med ditt lösenord.','This immediately cancels this company subscription and permanently deletes its bot, data, conversations and agents. Your other companies remain. Confirm with your current password.');
+      const msg=$('#deleteConfirmMsg');
+      if(msg) msg.textContent='';
+      deletionModal.removeAttribute('hidden');
+      document.body.classList.add('deletion-modal-open');
+      requestAnimationFrame(()=>deletionForm.elements[account?'email':'password']?.focus());
+    };
+    document.querySelectorAll('.workspace-delete-trigger').forEach(button=>{
+      button.addEventListener('click',()=>openDeletionModal({
+        kind:'workspace',
+        tenantId:button.dataset.workspaceId,
+        name:button.dataset.workspaceName||''
+      }));
+    });
+    $('#deleteAccountTrigger')?.addEventListener('click',()=>openDeletionModal({kind:'account'}));
+    $('#deleteModalBackdrop')?.addEventListener('click',closeDeletionModal);
+    $('#deleteModalClose')?.addEventListener('click',closeDeletionModal);
+    $('#deleteCancel')?.addEventListener('click',closeDeletionModal);
+    document.addEventListener('keydown',(e)=>{if(e.key==='Escape' && deletionModal && !deletionModal.hasAttribute('hidden')) closeDeletionModal();});
+    deletionForm?.addEventListener('submit',async(e)=>{
+      e.preventDefault();
+      if(deletionBusy || !deletionTarget) return;
+      const target=deletionTarget;
+      const button=$('#deleteConfirmSubmit');
+      const msg=$('#deleteConfirmMsg');
+      deletionBusy=true;
+      button.disabled=true;
+      const original=button.textContent;
+      button.textContent=appText('Poistetaan…','Raderar…','Deleting…');
+      if(msg) msg.textContent='';
+      try{
+        await api(target.kind==='account'
+          ? '/api/app/account'
+          : '/api/app/workspaces/'+encodeURIComponent(target.tenantId),{
+          method:'DELETE',
+          body:JSON.stringify({
+            email:String(deletionForm.elements.email?.value||'').trim(),
+            password:String(deletionForm.elements.password?.value||''),
+          }),
+        });
+        if(target.kind==='workspace'){
+          try{localStorage.removeItem('respondo-installed-'+target.tenantId);}catch{}
+          location.href='/app?section=account&company_deleted=1';
+        }else{
+          location.replace('/?account_deleted=1');
+        }
+      }catch(err){
+        if(msg) msg.textContent=err.message||appText('Poisto epäonnistui.','Raderingen misslyckades.','Deletion failed.');
+        button.disabled=false;
+        button.textContent=original;
+        deletionBusy=false;
+      }
+    });
     $('#workspaceModalClose')?.addEventListener('click',closeWorkspaceModal);
     $('#workspaceModalBackdrop')?.addEventListener('click',closeWorkspaceModal);
 
@@ -5078,6 +5239,34 @@ async function route() {
     workspaceAddForm?.querySelectorAll('input[name="plan"]').forEach((radio)=>radio.addEventListener('change',syncWorkspaceReferral));
     syncWorkspaceReferral();
 
+    $('#emptyWorkspaceForm')?.addEventListener('submit',async(event)=>{
+      event.preventDefault();
+      const form=event.currentTarget;
+      const button=form.querySelector('button[type="submit"]');
+      const msg=$('#emptyWorkspaceMsg');
+      const fd=new FormData(form);
+      const original=button.textContent;
+      button.disabled=true;
+      button.textContent=appText('Avataan maksua…','Öppnar betalning…','Opening checkout…');
+      if(msg) msg.textContent='';
+      try{
+        const result=await api('/api/app/workspaces/checkout',{
+          method:'POST',
+          body:JSON.stringify({
+            companyName:String(fd.get('companyName')||'').trim(),
+            businessId:String(fd.get('businessId')||'').trim(),
+            plan:String(fd.get('plan')||'basic_monthly'),
+            acceptedTerms:fd.get('acceptedTerms')==='on',
+          }),
+        });
+        if(!result?.url) throw new Error(appText('Maksusivua ei voitu avata.','Betalningssidan kunde inte öppnas.','Could not open checkout.'));
+        location.href=result.url;
+      }catch(err){
+        button.disabled=false;
+        button.textContent=original;
+        if(msg) msg.textContent=err.message||appText('Yritä uudelleen.','Försök igen.','Try again.');
+      }
+    });
     $('#workspaceAddForm')?.addEventListener('submit',async(event)=>{
       event.preventDefault();
       const form=event.currentTarget;
