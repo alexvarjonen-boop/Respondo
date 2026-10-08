@@ -164,3 +164,31 @@ body.public-nav-active .navin{border:0!important;box-shadow:none!important;borde
 /* Respondo RA symbol in fullscreen navigation. */
 .apple-menu-logo{display:inline-flex;align-items:center;gap:10px}
 .apple-menu-logo img{display:block;width:28px;height:28px;flex:0 0 28px;border-radius:8px}
+
+/* The home header starts with branding/languages/menu only. The trial CTA
+   appears exclusively after the hero trial link has passed behind the header. */
+.apple-home-page .nav .nav-home-scroll-trial{display:none!important}
+.apple-home-page .nav .nav-home-scroll-trial.is-visible{
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+  min-height:38px!important;
+  padding:0 15px!important;
+  white-space:nowrap;
+}
+@media(max-width:800px){
+  body.public-nav-active .apple-home-page .nav .navactions .nav-home-scroll-trial.is-visible{
+    display:inline-flex!important;
+  }
+}
+@media(max-width:520px){
+  .apple-home-page .nav .nav-home-scroll-trial.is-visible{
+    min-height:34px!important;
+    padding:0 9px!important;
+    font-size:11px!important;
+  }
+}
+@media(max-width:385px){
+  .apple-home-page .nav .brand-word{font-size:11px!important}
+  .apple-home-page .nav .nav-home-scroll-trial.is-visible{font-size:10px!important;padding:0 7px!important}
+}

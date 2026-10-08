@@ -1763,6 +1763,7 @@ function bindLanguageSwitch() {
 
 
 function nav() {
+  const isHomePage = location.pathname === '/';
   return `<header class="nav">
     <div class="container navin">
       ${logo()}
@@ -1776,14 +1777,45 @@ function nav() {
       </nav>
       <div class="navactions">
         ${languageSwitch()}
-        <a class="btn ghost nav-login-btn" href="/kirjaudu"><span>Kirjaudu</span></a>
-        <a class="btn ink" href="/tilaus">Kokeile ilmaiseksi</a>
+        ${isHomePage
+          ? `<a class="btn ink nav-home-scroll-trial" href="/tilaus?lang=${currentLang()}" aria-hidden="true" tabindex="-1">${appText('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</a>`
+          : `<a class="btn ghost nav-login-btn" href="/kirjaudu"><span>${appText('Kirjaudu','Logga in','Log in')}</span></a>
+             <a class="btn ink" href="/tilaus">${appText('Kokeile ilmaiseksi','Prova gratis','Start free trial')}</a>`}
       </div>
       <button type="button" class="apple-menu-toggle" data-apple-menu-open aria-controls="apple-nav-overlay" aria-expanded="false" aria-label="${appText('Avaa valikko','Öppna menyn','Open menu')}"><span></span><span></span></button>
     </div>
   </header>${publicMenuMarkup(appText,currentLang())}`;
 }
 
+
+// The homepage CTA is shown in the sticky header only after its hero counterpart
+// has scrolled behind the header. Scrolling back restores the uncluttered header.
+function bindHomeScrollTrial() {
+  const header = document.querySelector('.apple-home-page .nav');
+  const heroTrial = document.querySelector('.apple-home-page .apple-hero-actions .apple-pill-primary');
+  const stickyTrial = header?.querySelector('.nav-home-scroll-trial');
+  if (!header || !heroTrial || !stickyTrial) return;
+
+  let scheduled = false;
+  const update = () => {
+    scheduled = false;
+    if (!header.isConnected || !heroTrial.isConnected) return;
+    const heroBottom = heroTrial.getBoundingClientRect().bottom;
+    const headerBottom = header.getBoundingClientRect().bottom;
+    const show = heroBottom <= headerBottom;
+    stickyTrial.classList.toggle('is-visible', show);
+    stickyTrial.setAttribute('aria-hidden', String(!show));
+    stickyTrial.tabIndex = show ? 0 : -1;
+  };
+  const scheduleUpdate = () => {
+    if (scheduled) return;
+    scheduled = true;
+    window.requestAnimationFrame(update);
+  };
+  update();
+  window.addEventListener('scroll', scheduleUpdate, { passive:true });
+  window.addEventListener('resize', scheduleUpdate, { passive:true });
+}
 
 function socialAuthButtons(flow = 'signup') {
   const label = flow === 'login' ? 'Kirjaudu' : 'Jatka';
@@ -4497,6 +4529,7 @@ async function route() {
   applyLanguage();
   bindLanguageSwitch();
   bindPublicMenu();
+  if (path === '/') bindHomeScrollTrial();
 
   if (path === '/') {
     let resetReturnedHomepage=false;

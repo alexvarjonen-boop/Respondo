@@ -406,3 +406,34 @@
     animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important;
   }
 }
+
+/* 2026-10-08 checkout contrast: old dark-theme white text must not appear
+   on the iOS light signup surface. Scope to login/signup only. */
+#app .formpage :is(.checkout-copy,.login-copy){color:#1d1d1f!important}
+#app .formpage :is(.checkout-copy,.login-copy) h1{
+  color:#1d1d1f!important;
+  -webkit-text-fill-color:#1d1d1f!important;
+}
+#app .formpage :is(.checkout-copy,.login-copy) h1 em{
+  color:#49515f!important;
+  -webkit-text-fill-color:#49515f!important;
+}
+#app .formpage :is(.checkout-copy,.login-copy)>p{color:#4b5563!important}
+#app .formpage :is(.checkout-steps>div,.seller-card,.login-signal){
+  color:#1d1d1f!important;
+  background:#fff!important;
+}
+#app .formpage .checkout-steps b,
+#app .formpage .seller-card b,
+#app .formpage .login-signal b{color:#242833!important}
+#app .formpage .checkout-steps span,
+#app .formpage .seller-card span,
+#app .formpage .login-signal span{color:#575f6c!important}
+#app .formpage .checkout-steps small,
+#app .formpage .seller-card small,
+#app .formpage .login-signal small{color:#4b5563!important}
+#app .formpage .formcard .form-head>span{color:#525866!important}
+#app .formpage .formcard :is(.referral-signup-field small,.referral-signup-field label span,.form-security){
+  color:#505867!important;
+}
+#app .formpage .formcard input::placeholder{color:#676e79!important;opacity:1}
