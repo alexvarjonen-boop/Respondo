@@ -16,14 +16,14 @@ for (const [lang,index] of [['fi',0],['sv',1],['en',2]]) {
   });
 }
 test('CTA links sit above noninteractive decorations and retain pointer input',()=>{
-  assert.match(css,/\\.apple-home-page \\.apple-hero-actions\\{position:relative!important;z-index:30!important/);
+  assert.match(css,/\.apple-home-page \.apple-hero-actions\{position:relative!important;z-index:30!important/);
   assert.match(css,/pointer-events:auto!important/);
-  assert.match(css,/\\.apple-stage-typography\\)\\{pointer-events:none!important/);
+  assert.match(css,/\.apple-stage-typography\)\{pointer-events:none!important/);
 });
 test('hero CTA navigation keeps regular clicks working and modified clicks native',()=>{
   const source=app.slice(app.indexOf('function bindHomeHeroActions()'),app.indexOf('function bindHomeScrollTrial()'));
   assert.ok(source.includes("window.location.assign(destination.href)"));
   assert.ok(source.includes("event.metaKey || event.ctrlKey"));
   assert.ok(app.includes("bindHomeHeroActions();"));
-  assert.match(html,/app\\.js\\?v=[^"]+hero-cta-v1/);
+  assert.match(html,/app\.js\?v=[^"]+hero-cta-v1/);
 });
