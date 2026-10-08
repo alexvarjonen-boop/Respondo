@@ -4171,6 +4171,7 @@ async function dashboard(options = {}) {
               </div>
             </article>`).join('')}
         </div>
+        ${!isDemo ? `
         <div class="workspace-delete-account-area">
           <button class="workspace-account-delete-trigger" id="deleteAccountTrigger" type="button">${appText('Poista käyttäjä','Radera användarkonto','Delete account')}</button>
           <p>${appText('Poistaa kaikki tämän käyttäjän yritykset, peruuttaa niiden tilaukset ja poistaa Respondo-tilin pysyvästi.','Raderar alla företag, avslutar deras abonnemang och raderar ditt Respondo-konto permanent.','Permanently deletes all companies, cancels their subscriptions and removes your Respondo account.')}</p>
@@ -4192,7 +4193,7 @@ async function dashboard(options = {}) {
             <button type="button" class="deletion-cancel" id="deleteCancel">${appText('Peruuta','Avbryt','Cancel')}</button>
           </form>
         </section>
-      </div>
+      </div>` : ''}
 
       <section class="panel billing-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="billing">
         <div><small>${appText('LASKUTUS','FAKTURERING','BILLING')}</small><h2>${appText('Hallitse tilaustasi','Hantera ditt abonnemang','Manage your subscription')}</h2><p>${appText('Voit vaihtaa Basic-, Advanced- ja Business-pakettien välillä, vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.','Du kan byta mellan Basic-, Advanced- och Business-abonnemang, ändra betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal.','You can switch between Basic, Advanced and Business plans, change your payment method, view invoices, or cancel your subscription in the Stripe customer portal.')}</p></div>
