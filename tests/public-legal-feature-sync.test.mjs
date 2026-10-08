@@ -72,7 +72,7 @@ test('plans and features are synchronized to the server access gates',()=>{
 
 test('terms specify billing and avoid unsupported guarantees',()=>{
   const terms=LEGAL_20261008.kayttoehdot.sections.map(x=>x.body[0]).join(' ');
-  for(const token of ['29,90','39,90','49,90','358,80','478,80','598,80','25,5','3 päivän','Stripe','Google Calendar']){
+  for(const token of ['29,90','39,90','49,90','358,80','478,80','598,80','arvonlisäveroa ei peritä','3 päivän','Stripe','Google Calendar']){
     assert.ok(terms.includes(token),'missing '+token);
   }
   assert.match(terms,/kaikkien tuotteiden|kaikkien.*tietojen/);
