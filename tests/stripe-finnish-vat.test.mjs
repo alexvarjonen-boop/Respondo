@@ -6,6 +6,7 @@ const server=fs.readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
 const app=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const terms=fs.readFileSync(new URL('../public/legal-content.js',import.meta.url),'utf8');
 const firstPartyFaq=fs.readFileSync(new URL('../respondo-faq.mjs',import.meta.url),'utf8');
+const assistantOrderingPage=fs.readFileSync(new URL('../public/effects.js',import.meta.url),'utf8');
 
 test('new Stripe subscriptions do not charge Finnish VAT when seller is not VAT registered',()=>{
   assert.match(server,/function checkoutTaxExemptionMessage\(lang='fi'\)/);
@@ -44,6 +45,8 @@ test('historical inclusive-tax Stripe prices stay associated with their plans',(
 
 test('Respondos first-party answers clearly state the seller does not charge VAT',()=>{
   assert.doesNotMatch(firstPartyFaq,/25[.,]5\s*%/);
+  assert.doesNotMatch(assistantOrderingPage,/25[.,]5\s*%/);
+  assert.match(assistantOrderingPage,/No VAT is charged due to small-scale business activity/);
   assert.match(firstPartyFaq,/myyjä ei ole alv-rekisterissä/);
   assert.match(firstPartyFaq,/säljaren inte är momsregistrerad/);
   assert.match(firstPartyFaq,/seller is not VAT-registered/);
