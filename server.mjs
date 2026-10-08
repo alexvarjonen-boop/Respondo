@@ -5465,6 +5465,54 @@ function combinedFinnishServiceRequest(message, rows) {
   };
 }
 
+// Resolve a short, natural toilet-installation question from an explicit
+// service fact. "WC" is a two-letter abbreviation and generic Finnish word
+// stemmers deliberately ignore it; don't turn that omission into a handoff
+// when the business actually documents WC-istuin installation. Equally, never
+// infer installation merely from a bathroom renovation or a plumbing category.
+function groundedToiletInstallationQuestion(message, rows, lang) {
+  const q=normalizeSearchText(message);
+  const subject=/(?:\bwc\b|\bwc[- ]?(?:istui|pont|pytt)|\bvessan(?:pont|pytt)|\btoilet\b|\btoilets\b|\btoalett)/;
+  const install=/(?:asenn|asent|install|monter|\bfit\b|\bfitting\b|\breplace\b|\bbyta\b|\bbyter\b)/;
+  if(!subject.test(q) || !install.test(q)) return null;
+  // These questions require their own verified price or schedule evidence.
+  if(/(?:\bhinta\b|\bpaljonko\b|\bmaksaa\b|\bprice\b|\bcost\b|\bpris\b|\bkostar\b|\bmilloin\b|\bwhen\b|\bnar\b|\btanaan\b|\bhuomenna\b)/.test(q)) return null;
+
+  const positiveFixture=/(?:\bwc[- ]?(?:istui|pont|pytt|asenn)|\bvessan(?:pont|pytt)|\btoalett(?:stol|er|en|installation|montering)?\b|\btoilets?\b|\basenn[a-z]*\s+wc\b|\bwc\s+asenn)/;
+  const positiveInstall=/(?:asenn|install|monter|\bfit\b|\bfitting\b)/;
+  const negation=/\b(?:emme|ei|eivat|not|never|dont|don t|doesn t|do not|cannot|inte|aldrig)\b/;
+  const verified=(rows||[]).find(row=>{
+    if(!usableWebsiteRow(row)) return false;
+    const meta=normalizeSearchText(String(row.category||'')+' '+String(row.title||''));
+    if(knowledgeTopic(meta)!=='services' || /arvost|review|testimonial|asiakaskokem/.test(meta)) return false;
+    if(importedKnowledgeJunk(String(row.title||'')+' '+String(row.answer||''))) return false;
+    if(negation.test(normalizeSearchText(row.answer))) return false;
+    const clauses=[String(row.title||''),...String(row.answer||'').split(/(?<=[.!?;])\s+|\s+(?:ja|seka|and|och)\s+|[;&]/i)];
+    return clauses.some(clause=>{
+      const t=normalizeSearchText(clause);
+      // The installation verb and the toilet fixture must describe the same
+      // service, not unrelated work elsewhere on the page.
+      return !negation.test(t) && positiveFixture.test(t) && positiveInstall.test(t);
+    });
+  });
+
+  if(!verified) {
+    const answer=lang==='en'
+      ? "I couldn't confirm toilet installation from the company's information. Leave your contact details and the company can check."
+      :lang==='sv'
+        ? 'Jag kunde inte bekräfta toalettinstallation utifrån företagets uppgifter. Lämna dina kontaktuppgifter så kan företaget kontrollera detta.'
+        : 'Yrityksen tiedoista ei löytynyt vahvistusta WC-istuimen asennukselle. Jätä yhteystietosi, niin yritys voi varmistaa asian.';
+    return {answer,handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
+  }
+  const answer=lang==='en'?'Yes, we install toilets.'
+    :lang==='sv'?'Ja, vi installerar toaletter.'
+      :'Kyllä, asennamme WC-istuimia.';
+  return {
+    answer,handoff:false,confidence:0.94,intent:'Palvelut',
+    sourceIds:verified.id?[verified.id]:[],selected:[verified],
+  };
+}
+
 function naturalServiceAnswer(rows) {
   const found = [];
   const add = (value) => {
@@ -5731,6 +5779,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   let selected = selectRelevantKnowledge(rows, localQuery, 8);
 
+
+  const toiletInstallation = groundedToiletInstallationQuestion(cleanMessage, rows, responseLang);
+  if (toiletInstallation) return toiletInstallation;
 
   // Short, contextual service follow-ups need a direct yes/no answer. If there
   // is no approved proof for the exact action, hand off rather than listing
