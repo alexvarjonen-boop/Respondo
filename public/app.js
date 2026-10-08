@@ -2801,7 +2801,7 @@ function signup() {
           ${ownerTestAccess ? `<input type="hidden" name="ownerTestAccessToken" value="${esc(ownerTestAccessToken)}">` : ''}
           <button class="btn checkout-button" type="submit">${appText('Jatka maksutavan lisäämiseen','Fortsätt till betalningsmetod','Continue to payment method')} <span>→</span></button>
           <div class="form-security"><span>◈</span> ${appText('Korttitiedot käsittelee Stripe. Respondo ei näe eikä tallenna korttinumeroasi.','Kortuppgifterna behandlas av Stripe. Respondo ser eller lagrar inte ditt kortnummer.','Card details are processed by Stripe. Respondo does not see or store your card number.')}</div>
-          <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : ''}</div>
+          <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : ''}${params.get('email_verified')==='1' ? `<div class="notice success">${appText('Sähköposti vahvistettu! Täytä lomake tarvittaessa uudelleen ja paina Jatka maksutavan lisäämiseen.','E-postadressen har bekräftats! Fyll i formuläret igen om det behövs och fortsätt till betalningsmetoden.','Email verified! Fill out the form again if needed, then continue to payment method.')}</div>` : ''}</div>
         </form>
       </div>
     </main>
@@ -5146,7 +5146,23 @@ async function route() {
       } catch (err) {
         button.disabled = false;
         button.innerHTML = original;
-        $('#msg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+        if(err.status===403){
+          try{
+            const delivery=await api('/api/auth/email-verification/request',{
+              method:'POST',
+              body:JSON.stringify({email:String(form.get('email')||'').trim(),language:currentLang()}),
+            });
+            $('#msg').innerHTML = '<div class="notice success">'+esc(appText(
+              'Vahvistusviesti lähetetty. Avaa sähköpostisi ja paina viestissä Vahvista sähköposti. Palaa sen jälkeen tähän lomakkeeseen ja jatka tilausta.',
+              'Ett verifieringsmejl har skickats. Öppna mejlet, tryck på Bekräfta e-post och kom tillbaka hit för att fortsätta.',
+              'Verification email sent. Open your inbox, select Verify email, then return to this form to continue.'
+            ))+'</div>';
+          }catch(mailError){
+            $('#msg').innerHTML = '<div class="notice error">'+esc(mailError.message)+'</div>';
+          }
+        }else{
+          $('#msg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+        }
       }
     });
   }
@@ -6578,11 +6594,9 @@ async function route() {
       try{
         const result=await api('/api/app/account/email',{
           method:'POST',
-          body:JSON.stringify({newEmail,currentPassword}),
+          body:JSON.stringify({newEmail,currentPassword,language:currentLang()}),
         });
-        if(msg) msg.innerHTML='<div class="notice success">'+appText('Kirjautumissähköposti vaihdettu. Muut vanhat istunnot suljettiin.','Inloggningsadressen har ändrats. Andra gamla sessioner stängdes.','Login email changed. Other old sessions were closed.')+'</div>';
-        const current=form.querySelector('input[readonly]');
-        if(current) current.value=result.email || newEmail;
+        if(msg) msg.innerHTML='<div class="notice success">'+appText('Vahvistuslinkki lähetetty uuteen sähköpostiin. Osoite vaihtuu vasta, kun vahvistat sen.','En verifieringslänk har skickats till din nya adress. Adressen ändras först när du bekräftar den.','A confirmation link was sent to the new address. Your login email changes only after you confirm it.')+'</div>';
         form.elements.newEmail.value='';
         form.elements.currentPassword.value='';
       }catch(err){
