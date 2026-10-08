@@ -1,0 +1,29 @@
+/* High-contrast footer brand on dark surfaces, without changing the light legal-page footer. */
+#app .footer .foot-brand .logo .brand-word {
+  color:#17181c!important;
+  -webkit-text-fill-color:#17181c!important;
+  opacity:1!important;
+  text-shadow:none!important;
+}
+#app :is(.apple-home-page,.features-page,.contact-page,.seo-landing-page,.pricing-page) .footer .foot-brand .logo .brand-word {
+  color:#f8fafc!important;
+  -webkit-text-fill-color:#f8fafc!important;
+  opacity:1!important;
+  text-shadow:none!important;
+}
+/* Improve the muted text contrast on the dark background for mobile readers. */
+#app :is(.apple-home-page,.features-page,.contact-page,.seo-landing-page,.pricing-page) .footer .foot-brand p {
+  color:#c5c9d1!important;
+  -webkit-text-fill-color:#c5c9d1!important;
+}
+#app :is(.apple-home-page,.features-page,.contact-page,.seo-landing-page,.pricing-page) .footer .foot-col a,
+#app :is(.apple-home-page,.features-page,.contact-page,.seo-landing-page,.pricing-page) .footer .foot-col span {
+  color:#c4c7cf!important;
+}
+#app :is(.apple-home-page,.features-page,.contact-page,.seo-landing-page,.pricing-page) .footer .foot-col a:hover,
+#app :is(.apple-home-page,.features-page,.contact-page,.seo-landing-page,.pricing-page) .footer .foot-col a:focus-visible {
+  color:#fff!important;
+}
+#app .footer .legalbar {
+  justify-content:flex-start;
+}

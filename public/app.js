@@ -2070,8 +2070,6 @@ function footer() {
         <div class="foot-brand">
           ${logo()}
           <p>${uiText('Asiakaspalvelubotti, joka vastaa asiakkaillesi yrityksesi omilla tiedoilla.','Kundservicebot som svarar dina kunder med information från ditt företag.','Customer service bot that answers your customers using your company information.')}</p>
-          <div class="seller-chip">RESPONDO AI</div>
-          <small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId||'3599437-5')}${cfg.sellerPostalAddress?' · '+esc(cfg.sellerPostalAddress):''}</small>
         </div>
         <div class="foot-col">
           <h4>${appText('Tuote','Produkt','Product')}</h4>
@@ -2102,7 +2100,6 @@ function footer() {
       </div>
       <div class="legalbar">
         <span>© ${new Date().getFullYear()} RESPONDO AI</span>
-        <span>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')} · ${uiText('B2B-ohjelmistopalvelu','B2B-programvarutjänst','B2B software service')}</span>
       </div>
     </div>
   </footer>`;
