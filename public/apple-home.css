@@ -185,3 +185,13 @@ body.public-nav-active .navin{border:0!important;box-shadow:none!important;borde
  .apple-home-page .nav:has(.nav-home-scroll-trial.is-visible) .brand-word{display:none!important}
  .apple-home-page .nav .nav-home-scroll-trial.is-visible{white-space:nowrap!important;min-width:0!important;max-width:130px}
 }
+
+/* Put working hero links above any decorative scene overlays. */
+.apple-home-page .apple-hero-inner{position:relative;z-index:3}
+.apple-home-page .apple-hero-actions{position:relative!important;z-index:30!important;isolation:isolate;pointer-events:auto!important}
+.apple-home-page .apple-hero-actions a.apple-pill{
+ position:relative!important;z-index:31!important;pointer-events:auto!important;
+ cursor:pointer!important;touch-action:manipulation;
+}
+.apple-home-page .apple-hero :is(.apple-stage-halo,.apple-stage-typography){pointer-events:none!important}
+.apple-home-page .apple-hero::before,.apple-home-page .apple-hero::after{pointer-events:none!important}
