@@ -104,21 +104,21 @@ const FAQ = [
         "Mitä Respondo maksaa kuukaudessa?",
         "Paljonko kuukausitilaus maksaa?"
       ],
-      "a": "Kuukausihinnat ovat Starter 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Hinnat sisältävät ALV:n 25,5 %."
+      "a": "Kuukausihinnat ovat Starter 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Hintoihin ei sisälly eikä niihin lisätä arvonlisäveroa, koska myyjä ei ole alv-rekisterissä vähäisen toiminnan vuoksi."
     },
     "sv": {
       "q": [
         "Vad kostar Respondo per månad?",
         "Vad kostar månadsabonnemanget?"
       ],
-      "a": "Månadspriserna är Starter 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Priserna inkluderar 25,5 % moms."
+      "a": "Månadspriserna är Starter 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Priserna är utan moms eftersom säljaren inte är momsregistrerad på grund av verksamhet i liten skala."
     },
     "en": {
       "q": [
         "How much does Respondo cost per month?",
         "What is the monthly plan price?"
       ],
-      "a": "Monthly pricing is Starter €29.90/month, Advanced €39.90/month, and Business €49.90/month. Prices include 25.5% VAT."
+      "a": "Monthly pricing is Starter €29.90/month, Advanced €39.90/month, and Business €49.90/month. No VAT is charged because the seller is not VAT-registered due to small-scale business activity."
     }
   },
   {
@@ -128,21 +128,21 @@ const FAQ = [
         "Mitä vuositilaus maksaa?",
         "Paljonko vuosipaketti maksaa?"
       ],
-      "a": "Vuositilaukset: Starter 29,90 €/kk (358,80 €/vuosi), Advanced 39,90 €/kk (478,80 €/vuosi) ja Business 49,90 €/kk (598,80 €/vuosi). Hinnat sisältävät ALV:n 25,5 %."
+      "a": "Vuositilaukset: Starter 29,90 €/kk (358,80 €/vuosi), Advanced 39,90 €/kk (478,80 €/vuosi) ja Business 49,90 €/kk (598,80 €/vuosi). Hintoihin ei sisälly eikä niihin lisätä arvonlisäveroa, koska myyjä ei ole alv-rekisterissä vähäisen toiminnan vuoksi."
     },
     "sv": {
       "q": [
         "Vad kostar årsabonnemanget?",
         "Hur mycket kostar årsplanen?"
       ],
-      "a": "Årsabonnemangen är Starter 29,90 €/månad (358,80 €/år), Advanced 39,90 €/månad (478,80 €/år) och Business 49,90 €/månad (598,80 €/år). Priserna inkluderar 25,5 % moms."
+      "a": "Årsabonnemangen är Starter 29,90 €/månad (358,80 €/år), Advanced 39,90 €/månad (478,80 €/år) och Business 49,90 €/månad (598,80 €/år). Priserna är utan moms eftersom säljaren inte är momsregistrerad på grund av verksamhet i liten skala."
     },
     "en": {
       "q": [
         "How much is the annual plan?",
         "What does the yearly subscription cost?"
       ],
-      "a": "Annual pricing is Starter €29.90/month (€358.80/year), Advanced €39.90/month (€478.80/year), and Business €49.90/month (€598.80/year). Prices include 25.5% VAT."
+      "a": "Annual pricing is Starter €29.90/month (€358.80/year), Advanced €39.90/month (€478.80/year), and Business €49.90/month (€598.80/year). No VAT is charged because the seller is not VAT-registered due to small-scale business activity."
     }
   },
   {
@@ -152,21 +152,21 @@ const FAQ = [
         "Sisältääkö hinta ALV:n?",
         "Tuleeko hinnan päälle vielä veroja?"
       ],
-      "a": "Kaikki Starter-, Advanced- ja Business-hinnat sisältävät ALV:n 25,5 %. Ennen maksamista Stripe näyttää valitun paketin kokonaishinnan ja laskutusjakson."
+      "a": "Starter-, Advanced- ja Business-hintoihin ei lisätä arvonlisäveroa, koska myyjä ei ole alv-rekisterissä vähäisen toiminnan vuoksi. Ennen maksamista Stripe näyttää valitun paketin kokonaishinnan ja laskutusjakson."
     },
     "sv": {
       "q": [
         "Ingår moms i priset?",
         "Tillkommer skatt på priset?"
       ],
-      "a": "Alla priser för Starter, Advanced och Business inkluderar 25,5 % moms. Stripe visar totalpriset och faktureringsperioden före betalning."
+      "a": "Ingen moms tas ut på Starter-, Advanced- eller Business-priserna eftersom säljaren inte är momsregistrerad på grund av verksamhet i liten skala. Stripe visar totalpriset och faktureringsperioden före betalning."
     },
     "en": {
       "q": [
         "Does the price include VAT?",
         "Are taxes added on top of the price?"
       ],
-      "a": "All Starter, Advanced, and Business prices include 25.5% VAT. Stripe shows the selected plan's total price and billing period before payment."
+      "a": "No VAT is charged on Starter, Advanced or Business because the seller is not VAT-registered due to small-scale business activity. Stripe shows the selected plan's total price and billing period before payment."
     }
   },
   {
