@@ -7419,6 +7419,131 @@ app.get('/api/owner/companies', auth, ownerTrafficOnly, async (req, res) => {
   }
 });
 
+
+/* Administrative actions are intentionally restricted to the dedicated Respondo
+   owner session; editing does not alter billing plans or payment records. */
+app.patch('/api/owner/companies/:tenantId', auth, ownerTrafficOnly, loginLimiter, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  const id=String(req.params.tenantId||'');
+  const name=String(req.body?.name||'').trim();
+  const businessId=String(req.body?.businessId||'').trim();
+  const websiteRaw=String(req.body?.website||'').trim();
+  const website=websiteRaw ? normalizeWebUrl(websiteRaw,true) : '';
+  if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id)
+    || name.length<2 || name.length>120 || /[<>]/.test(name)
+    || businessId.length>40 || /[<>]/.test(businessId)
+    || websiteRaw.length>260 || (websiteRaw && !website)
+    || (website && !/^https:\/\//i.test(website))) {
+    return res.status(400).json({error:'Tarkista yrityksen nimi, Y-tunnus ja HTTPS-verkkosivusto.'});
+  }
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const existing=await client.query(
+      "SELECT id,owner_user_id,subscription_status FROM tenants WHERE id=$1 AND COALESCE(subscription_status,'pending') NOT IN ('pending','incomplete','incomplete_expired') FOR UPDATE",
+      [id]
+    );
+    if(!existing.rowCount){await client.query('ROLLBACK');return res.status(404).json({error:'Yritystä ei löytynyt.'});}
+    const update=await client.query(
+      "UPDATE tenants SET name=$1,business_id=$2,website=$3,updated_at=NOW() WHERE id=$4 RETURNING id,name,business_id,website",
+      [name,businessId||null,website||null,id]
+    );
+    // Preserve the account's current selected-company display information.
+    await client.query(
+      "UPDATE users SET company_name=$1,business_id=$2,updated_at=NOW() WHERE id=$3 AND active_tenant_id=$4",
+      [name,businessId||null,existing.rows[0].owner_user_id,id]
+    );
+    await client.query('COMMIT');
+    return res.json({ok:true,company:update.rows[0]});
+  }catch(error){
+    try{await client.query('ROLLBACK');}catch{}
+    console.error('Owner company edit failed',error?.message||error);
+    return res.status(500).json({error:'Yrityksen tietojen muokkaus epäonnistui.'});
+  }finally{client.release();}
+});
+
+/* Explicit destructive confirmation: matching company name and current owner
+   password required. Cancel the exact Stripe subscription before removing
+   tenant-dependent data; never alter another workspace's subscription. */
+app.delete('/api/owner/companies/:tenantId', auth, ownerTrafficOnly, loginLimiter, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  const id=String(req.params.tenantId||'');
+  const confirmation=String(req.body?.confirmName||'').trim();
+  const password=String(req.body?.password||'');
+  if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id) || !confirmation || !password || password.length>200)
+    return res.status(400).json({error:'Kirjoita yrityksen nimi ja vahvista poistaminen omalla salasanallasi.'});
+  if(!pool)return res.status(503).json({error:'Tietokanta ei ole käytettävissä.'});
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const admin=await client.query('SELECT password_hash FROM users WHERE id=$1 FOR UPDATE',[req.user.sub]);
+    if(!admin.rowCount || !admin.rows[0].password_hash || !(await bcrypt.compare(password,admin.rows[0].password_hash))){
+      await client.query('ROLLBACK');
+      return res.status(403).json({error:'Omistajatilin salasana on väärä tai sitä ei ole asetettu.'});
+    }
+    const target=await client.query(
+      "SELECT t.id,t.name,t.owner_user_id,t.stripe_subscription_id, t.subscription_status,"+
+      " u.stripe_customer_id,u.stripe_subscription_id AS user_subscription_id,u.active_tenant_id"+
+      " FROM tenants t JOIN users u ON u.id=t.owner_user_id WHERE t.id=$1 FOR UPDATE OF t,u",
+      [id]
+    );
+    if(!target.rowCount){await client.query('ROLLBACK');return res.status(404).json({error:'Yritystä ei löytynyt.'});}
+    const tenant=target.rows[0];
+    if(confirmation!==tenant.name){
+      await client.query('ROLLBACK');
+      return res.status(400).json({error:'Yrityksen nimi ei täsmää. Poistoa ei tehty.'});
+    }
+    let subscriptionId=tenant.stripe_subscription_id;
+    // Legacy: if the only tenant's Stripe ID is stored on users, use exactly it.
+    if(!subscriptionId && tenant.user_subscription_id){
+      const linked=await client.query(
+        "SELECT COUNT(*)::int AS count FROM tenants WHERE owner_user_id=$1 AND id<>$2",
+        [tenant.owner_user_id,id]
+      );
+      if(Number(linked.rows[0]?.count||0)>0){
+        await client.query('ROLLBACK');
+        return res.status(409).json({error:'Tilausta ei voitu yhdistää tähän yritykseen varmasti. Poisto estettiin.'});
+      }
+      subscriptionId=tenant.user_subscription_id;
+    }
+    if(subscriptionId){
+      const other=await client.query('SELECT 1 FROM tenants WHERE stripe_subscription_id=$1 AND id<>$2 LIMIT 1',[subscriptionId,id]);
+      if(other.rowCount){
+        await client.query('ROLLBACK');
+        return res.status(409).json({error:'Stripe-tilaus kuuluu myös toiselle yritykselle. Poisto estettiin.'});
+      }
+    }
+    // A live Stripe subscription must never be orphaned by deleting its company.
+    if(!subscriptionId && ['active','trialing'].includes(String(tenant.subscription_status||'')) && tenant.stripe_customer_id){
+      await client.query('ROLLBACK');
+      return res.status(409).json({error:'Aktiivisen tilauksen Stripe-tunnistetta ei löytynyt. Poisto estettiin turvallisuussyistä.'});
+    }
+    const canceledSubscriptions=await cancelOwnedSubscriptionsForDeletion([subscriptionId],tenant.stripe_customer_id);
+    await client.query('DELETE FROM tenants WHERE id=$1',[id]);
+    const next=await client.query(
+      "SELECT id,name,business_id FROM tenants WHERE owner_user_id=$1 AND active=true AND subscription_status IN ('active','trialing') ORDER BY created_at ASC LIMIT 1",
+      [tenant.owner_user_id]
+    );
+    await client.query(
+      "UPDATE users SET active_tenant_id=CASE WHEN active_tenant_id=$2 THEN $3 ELSE active_tenant_id END,"+
+      " company_name=CASE WHEN active_tenant_id=$2 THEN $4 ELSE company_name END,"+
+      " business_id=CASE WHEN active_tenant_id=$2 THEN $5 ELSE business_id END,"+
+      " stripe_subscription_id=CASE WHEN stripe_subscription_id=$6 THEN NULL ELSE stripe_subscription_id END,"+
+      " subscription_status=CASE WHEN stripe_subscription_id=$6 THEN NULL ELSE subscription_status END,"+
+      " subscription_plan=CASE WHEN stripe_subscription_id=$6 THEN NULL ELSE subscription_plan END,"+
+      " current_period_end=CASE WHEN stripe_subscription_id=$6 THEN NULL ELSE current_period_end END,"+
+      " updated_at=NOW() WHERE id=$1",
+      [tenant.owner_user_id,id,next.rows[0]?.id||null,next.rows[0]?.name||'Yritys',next.rows[0]?.business_id||null,subscriptionId||'__no_subscription__']
+    );
+    await client.query('COMMIT');
+    return res.json({ok:true,deletedTenantId:id,canceledSubscriptions});
+  }catch(error){
+    try{await client.query('ROLLBACK');}catch{}
+    console.error('Owner company removal failed',error?.message||error);
+    return res.status(503).json({error:'Yrityksen poistaminen ei onnistunut. Tarkista tilauksen tila ennen uutta yritystä.'});
+  }finally{client.release();}
+});
+
 app.get('/robots.txt', (req, res) => {
   res.setHeader('Cache-Control','public, max-age=3600');
   res.type('text/plain').send([
