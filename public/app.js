@@ -192,7 +192,9 @@ async function api(url, options = {}) {
         } catch {}
       }
     }
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
   return data;
 }
@@ -3118,6 +3120,12 @@ async function dashboard(options = {}) {
     const value = businessProfile[title] || '';
     return esc(obviouslyCorruptProfileValue(value) ? '' : value);
   };
+  const bookingValue=String(businessProfile['Ajanvarauslinkki']||'').trim();
+  const quoteValue=String(businessProfile['Tarjouspyyntölomake']||'').trim();
+  const bookingLinkNeedsReview=Boolean(bookingValue && (
+    (quoteValue && bookingValue===quoteValue) ||
+    /\/(?:contact(?:[-_]?us)?|get[-_]?in[-_]?touch|yhteystiedot|ota[-_]?yhteytta|ota[-_]?yhteyttä|kontakt(?:[-_]?oss)?)(?:\.html?)?\/?(?:[?#].*)?$/i.test(bookingValue)
+  ));
   const unanswered = data.unanswered || [];
   const recentConversations = data.recentConversations || [];
   const leads = data.leads || [];
@@ -3346,7 +3354,7 @@ async function dashboard(options = {}) {
           </div>
           <span class="install-badge">Perustiedot</span>
         </div>
-        <form id="businessProfileForm" class="business-profile-form">
+        <form id="businessProfileForm" class="business-profile-form" data-respondo-owner="${!isDemo && (['respondo','respondoai'].includes(String(t.slug||'').toLowerCase()) || ['respondo','respondo ai'].includes(String(t.name||'').toLowerCase())) ? '1' : '0'}">
           <div class="profile-grid">
             <div class="bot-customizer profile-wide">
               <div class="bot-customizer-head">
@@ -3413,6 +3421,7 @@ async function dashboard(options = {}) {
               ${planAccess.websiteImport
                 ? `<button type="button" class="inline-import-btn" id="importWebsite">${appText('Hae tiedot sivultani','Hämta uppgifter från min webbplats','Import details from my website')}</button>`
                 : `<div class="notice compact-plan-notice">${appText('Automaattinen verkkosivuhaku ei ole käytössä tässä tilauksessa.','Automatisk webbplatsimport är inte tillgänglig i detta abonnemang.','Automatic website import is not available on this plan.')}</div>`}
+              <div id="websiteImportProgressError" class="notice error" role="alert" style="display:none;margin-top:10px"></div>
               <div id="websiteImportProgress" style="display:none;margin-top:10px">
                 <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:6px"><span id="websiteImportProgressLabel">${appText('Valmistellaan hakua…','Förbereder sökning…','Preparing scan…')}</span><b id="websiteImportProgressPercent">0%</b></div>
                 <div style="height:9px;border-radius:999px;background:rgba(127,127,127,.18);overflow:hidden"><div id="websiteImportProgressBar" style="height:100%;width:0%;background:currentColor;border-radius:999px;transition:width .45s ease"></div></div>
@@ -3428,6 +3437,7 @@ async function dashboard(options = {}) {
               <label>Ajanvarauslinkki</label>
               <input name="bookingUrl" value="${profileValue('Ajanvarauslinkki')}" placeholder="https://yritys.fi/ajanvaraus">
               <small class="field-hint">Kun asiakas haluaa varata ajan, Respondo näyttää suoran Varaa aika -toiminnon.</small>
+              ${bookingLinkNeedsReview ? `<small class="field-hint" style="color:#a33c22;font-weight:700">${appText('Tämä osoite näyttää yleiseltä yhteydenottosivulta, ei ajanvarauskalenterilta. Lisää oikea ajanvarauslinkki tai jätä kenttä tyhjäksi.','Adressen verkar vara en kontaktsida, inte en bokningskalender. Ange en riktig bokningslänk eller lämna fältet tomt.','This looks like a contact page rather than a booking calendar. Add a booking link or leave this blank.')}</small>` : ''}
             </div>
             <div class="field">
               <label>Yhden liidin arvioitu arvo (€)</label>
@@ -3935,7 +3945,7 @@ async function dashboard(options = {}) {
           <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
           <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261008-ios-focus-nozoom-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261005-quick-replies-v2" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
       </section>
       `}
@@ -4394,6 +4404,21 @@ async function route() {
       const demoHeaderObserver = new ResizeObserver(syncDemoStickyHeaderSpace);
       demoHeaderObserver.observe(demoStickyHeader);
     }
+    // Keep the navigation accessible but reduce its footprint while a visitor
+    // scrolls through the Try Bot's conversation on a narrow phone.
+    const syncDemoCompactHeader = () => {
+      if (!demoStickyHeader) return;
+      if (!window.matchMedia('(max-width:760px)').matches) {
+        demoStickyHeader.classList.remove('is-condensed');
+        return;
+      }
+      const alreadyCondensed = demoStickyHeader.classList.contains('is-condensed');
+      const condensed = window.scrollY > (alreadyCondensed ? 100 : 260);
+      demoStickyHeader.classList.toggle('is-condensed',condensed);
+    };
+    syncDemoCompactHeader();
+    window.addEventListener('scroll',syncDemoCompactHeader,{passive:true});
+    window.addEventListener('resize',syncDemoCompactHeader,{passive:true});
     const validDashboardViews = new Set(['overview','setup','answers','customers','automation','install','account']);
     const targetViewMap = {
       'overview':'overview',
@@ -4468,6 +4493,17 @@ async function route() {
     });
 
     const demoProfile=$('#businessProfileForm');
+    // A link from the Respondo owner workspace can carry an external URL
+    // into the isolated public demo; it never writes to the owner knowledge.
+    const demoWebsiteFromLink=new URLSearchParams(location.search).get('website')||'';
+    if(demoProfile?.elements?.website && demoWebsiteFromLink.length<=2048){
+      try{
+        const parsed=new URL(/^https?:\/\//i.test(demoWebsiteFromLink)?demoWebsiteFromLink:'https://'+demoWebsiteFromLink);
+        if(['http:','https:'].includes(parsed.protocol) && parsed.hostname){
+          demoProfile.elements.website.value=parsed.href;
+        }
+      }catch{}
+    }
     const demoFacts=[];
     const demoHistory=[];
     let demoImportId='';
@@ -4649,6 +4685,30 @@ async function route() {
       if(msg) msg.innerHTML='<div class="notice success">'+appText('Vastaus lisättiin kokeilun tietopohjaan.','Svaret lades till i demodatabasen.','Answer added to the demo knowledge base.')+'</div>';
     });
 
+    const previewFallbackFacts=(question)=>{
+      // The full imported catalog is loaded server-side via demoImportId.
+      // A browser-side fallback is intentionally small: sending 350 complete
+      // product rows caused a 413 Payload Too Large error on iOS.
+      const terms=[...new Set((String(question||'').toLowerCase().match(/[\\p{L}\\p{N}]{3,}/gu)||[]))].slice(0,14);
+      const manual=demoFacts.filter(f=>f.sourceType!=='demo_import').slice(-24);
+      const imported=demoFacts.filter(f=>f.sourceType==='demo_import')
+        .map((fact,index)=>{
+          const haystack=(String(fact.title||'')+' '+String(fact.category||'')+' '+String((fact.keywords||[]).join(' '))).toLowerCase();
+          return {fact,index,score:terms.reduce((score,term)=>score+(haystack.includes(term)?1:0),0)};
+        })
+        .sort((a,b)=>b.score-a.score||a.index-b.index)
+        .slice(0,32)
+        .map(item=>item.fact);
+      return [...manual,...imported].map(fact=>({
+        key:String(fact.title||'').slice(0,120),
+        answer:String(fact.answer||'').slice(0,650),
+        category:String(fact.category||'').slice(0,64),
+        keywords:(Array.isArray(fact.keywords)?fact.keywords:[]).slice(0,8).map(v=>String(v).slice(0,48)),
+        sourceUrl:String(fact.sourceUrl||'').slice(0,350),
+        sourceType:fact.sourceType
+      }));
+    };
+
     $('#previewForm')?.addEventListener('submit',async(event)=>{
       event.preventDefault();
       if(!demoProfile) return;
@@ -4685,17 +4745,9 @@ async function route() {
               quoteRequestUrl:values.quoteRequestUrl,
               bookingUrl:values.bookingUrl,
               notes:values.notes,
-              // Include a compact copy of the imported facts in every demo-chat
-              // request. This keeps an already-open Try Bot session working even
-              // if Railway restarts between the import and the next question.
-              customFacts:demoFacts.slice(0,350).map(x=>({
-                key:x.title,
-                answer:x.answer,
-                category:x.category,
-                keywords:x.keywords,
-                sourceUrl:x.sourceUrl,
-                sourceType:x.sourceType
-              }))
+              // Inline fallback never sends more than 56 short rows. The
+              // server restores the complete catalog using demoImportId.
+              customFacts:previewFallbackFacts(question)
             },
             history:demoHistory.slice(-6)
           })
@@ -5283,6 +5335,47 @@ async function route() {
         formEl?.elements.website?.focus();
         return;
       }
+      // The first-party Respondo tenant must never ingest another company.
+      // Detect this before POST /start to avoid a fake 4% scan and route the
+      // example website to the isolated Try Bot instead.
+      if(formEl?.dataset?.respondoOwner==='1'){
+        let externalHost='';
+        try{
+          const parsed=new URL(/^https?:\/\//i.test(website)?website:'https://'+website);
+          externalHost=parsed.hostname.toLowerCase().replace(/^www\./,'');
+        }catch{}
+        if(externalHost && externalHost!=='respondoai.fi'){
+          const feedback=$('#websiteImportProgressError');
+          const message=appText(
+            'Tämä on Respondon oma yritystyötila. Toisen yrityksen tiedot eivät saa sekoittua Respondon tietoihin. Voit testata antamaasi osoitetta erillisessä demossa tai luoda yritykselle oman työtilan.',
+            'Detta är Respondos egen arbetsyta. Andra företags uppgifter får inte blandas med Respondos. Testa webbplatsen i en separat demo eller skapa en egen arbetsyta.',
+            'This is the Respondo company workspace. Another company’s knowledge cannot be mixed with it. Test this website in the separate demo or create its own workspace.'
+          );
+          if(feedback){
+            feedback.replaceChildren();
+            const paragraph=document.createElement('p');
+            paragraph.textContent=message;
+            feedback.appendChild(paragraph);
+            const demo=document.createElement('a');
+            demo.className='btn ghost';
+            demo.href='/assistant?section=setup&website='+encodeURIComponent(website);
+            demo.textContent=appText('Testaa sivua demossa','Testa webbplatsen i demon','Try this website in demo');
+            feedback.appendChild(demo);
+            const workspaceButton=$('#workspaceAddButton');
+            if(workspaceButton){
+              const add=document.createElement('button');
+              add.type='button';
+              add.className='btn ghost';
+              add.textContent=appText('Lisää uusi yritys','Lägg till nytt företag','Add a new company');
+              add.addEventListener('click',()=>workspaceButton.click());
+              feedback.appendChild(add);
+            }
+            feedback.style.display='block';
+          }
+          $('#websiteImportProgress').style.display='none';
+          return;
+        }
+      }
       const original = button.textContent;
       button.disabled = true;
       button.textContent = appText('Luetaan sivua…','Läser webbplatsen…','Reading website…');
@@ -5291,6 +5384,8 @@ async function route() {
       const progressBar=document.getElementById('websiteImportProgressBar');
       const progressPercent=document.getElementById('websiteImportProgressPercent');
       const progressLabel=document.getElementById('websiteImportProgressLabel');
+      const progressError=document.getElementById('websiteImportProgressError');
+      if(progressError){progressError.style.display='none';progressError.replaceChildren();}
       if(progress) progress.style.display='block';
       const setProgress=(value,label)=>{
         const v=Math.max(0,Math.min(100,Math.round(value||0)));
@@ -5305,9 +5400,12 @@ async function route() {
         try {
           started=await api('/api/app/import-website/start',{method:'POST',body:JSON.stringify({website})});
         } catch (startError) {
-          // Fallback for older/stale clients or a temporarily unavailable job runner.
-          // The direct endpoint uses the same local extractor and returns the same result shape.
-          setProgress(4,appText('Käynnistetään hakua uudelleen…','Startar sökningen på nytt…','Restarting scan…'));
+          // 4xx responses are actionable validation, billing or tenant-isolation
+          // failures. Retrying through the direct endpoint is not a scan and
+          // previously left customers looking at a fictitious "4% progress".
+          const retryable = [404,405,500,502,503,504].includes(Number(startError?.status));
+          if(!retryable) throw startError;
+          setProgress(0,appText('Yritetään toista hakutapaa…','Försöker en annan sökmetod…','Trying another scan method…'));
           result=await api('/api/app/import-website',{method:'POST',body:JSON.stringify({website})});
         }
         if(!result){
@@ -5436,10 +5534,42 @@ async function route() {
         button.textContent = appText('Tiedot haettu ✓','Uppgifter hämtade ✓','Details imported ✓');
         setTimeout(() => { button.textContent = original; button.disabled = false; }, 1800);
       } catch (err) {
-        if(progressLabel) progressLabel.textContent=appText('Haku keskeytyi','Sökningen avbröts','Scan stopped');
+        if(progress) progress.style.display='none';
+        if(progressBar) progressBar.style.width='0%';
+        if(progressPercent) progressPercent.textContent='0%';
+        if(progressError){
+          progressError.replaceChildren();
+          progressError.style.display='block';
+          const reason=document.createElement('div');
+          reason.textContent=err?.message || appText('Haku ei onnistunut.','Importen misslyckades.','Import failed.');
+          progressError.appendChild(reason);
+          if(/Respondo AI:n omaan työtilaan/i.test(String(err?.message||''))){
+            const details=document.createElement('p');
+            details.textContent=appText(
+              'Respondo AI:n omat tiedot ja muiden yritysten tiedot pidetään erillään. Kokeile ulkopuolista sivua demossa tai lisää sille oma yritystyötila.',
+              'Respondos egna uppgifter och andra företags uppgifter hålls åtskilda. Testa en extern webbplats i demon eller skapa en separat företagsarbetsyta.',
+              'Respondo company data is kept separate from other companies. Test another website in the demo or create a separate business workspace.'
+            );
+            progressError.appendChild(details);
+            const demoLink=document.createElement('a');
+            demoLink.href='/assistant?section=setup';
+            demoLink.textContent=appText('Avaa Testaa bottia','Öppna Testa botten','Open Try Bot');
+            demoLink.className='btn ghost';
+            progressError.appendChild(demoLink);
+            const addWorkspace=document.getElementById('workspaceAddButton');
+            if(addWorkspace){
+              const addButton=document.createElement('button');
+              addButton.type='button';
+              addButton.className='btn ghost';
+              addButton.textContent=appText('Lisää yritys','Lägg till företag','Add company');
+              addButton.addEventListener('click',()=>addWorkspace.click());
+              progressError.appendChild(addButton);
+            }
+          }
+        }
         button.disabled = false;
         button.textContent = original;
-        $('#businessProfileMsg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+        $('#businessProfileMsg').innerHTML = '';
       }
     });
 

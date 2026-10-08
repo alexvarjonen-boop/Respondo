@@ -3625,19 +3625,23 @@ html.static-workspace #app :is(.fx-depth,.fx-depth-card,.btn)::after{content:non
   }
 }
 
-/* 2026-10-08: Keep iOS Safari from auto-zooming focused form controls.
-   iOS magnifies the entire page when a text field computes below 16px.
-   Preserve normal user pinch-zoom and fix the inputs instead. */
-@media (max-width:1024px), (hover:none) and (pointer:coarse) {
+/* iOS input focus guard: 16px avoids automatic WebKit page magnification.
+   Keep pinch zoom enabled; this only changes editable control text size. */
+@media screen and (max-width:1024px) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
-  textarea,
-  select {
+  textarea {
     font-size:16px!important;
   }
-  .preview-form {
-    grid-template-columns:minmax(0,1fr) 42px;
+  #app .preview-device, #app .live-preview-panel, #app .preview-form{
+    min-width:0!important;
+    max-width:100%!important;
   }
-  .preview-form input {
-    min-width:0;
+  #app .preview-form{grid-template-columns:minmax(0,1fr) 42px!important;}
+  #app .preview-form input, #app .preview-leadbox input{
+    width:100%!important;
+    min-width:0!important;
+    font-size:16px!important;
+    touch-action:manipulation;
   }
+  #app .preview-note{max-width:100%;overflow-wrap:anywhere;}
 }

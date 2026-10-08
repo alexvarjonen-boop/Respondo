@@ -194,9 +194,9 @@
       .typing-dots i:nth-child(2){animation-delay:.15s}.typing-dots i:nth-child(3){animation-delay:.3s}
       @keyframes rblink{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
       .powered{padding:0 12px 10px;text-align:center;background:#fff;color:#9a9aa0;font-size:10px;letter-spacing:.02em}
-      /* Prevent iPhone Safari from zooming the host page on input focus. */
-      @media(max-width:900px), (hover:none) and (pointer:coarse){
-        .composer input,.leadbox input,.actionbox input,.actionbox textarea,.actionbox select{font-size:16px}
+      /* iOS Safari: preserve viewport scale when keyboard opens. */
+      @media(max-width:1024px), (hover:none) and (pointer:coarse){
+        .composer input,.leadbox input,.actionbox input,.actionbox textarea,.actionbox select{font-size:16px!important}
       }
       @media(max-width:520px){
         .panel{width:calc(100vw - 12px);height:calc(100dvh - 72px);border-radius:20px}
