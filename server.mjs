@@ -12248,7 +12248,6 @@ async function ensureRuntimeSchema() {
 
 
   await q("ALTER TABLE tenants ALTER COLUMN accent SET DEFAULT '#111113'");
-  await q("UPDATE tenants SET accent='#111113' WHERE accent='#3157ff'");
 }
 
 async function withRuntimeSchemaLock(fn) {
