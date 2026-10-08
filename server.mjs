@@ -8151,6 +8151,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             plan: normalizedPlan,
             tax_country_policy: TAX_COUNTRY_POLICY_VERSION,
             billing_country: checkoutCountry.country,
+            business_purchase: '1',
             ...(referralCode ? { referral_code: referralCode } : {}),
           },
         },
@@ -8168,6 +8169,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           plan: normalizedPlan,
           tax_country_policy: TAX_COUNTRY_POLICY_VERSION,
           billing_country: checkoutCountry.country,
+          business_purchase: '1',
           ...(referralCode ? { referral_code: referralCode } : {}),
         },
       });
@@ -8958,6 +8960,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
           additional_workspace:'1',
           tax_country_policy:TAX_COUNTRY_POLICY_VERSION,
           billing_country:checkoutCountry.country,
+          business_purchase:'1',
           ...(referralCode ? { referral_code:referralCode } : {}),
         },
       },
@@ -8973,6 +8976,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         additional_workspace:'1',
         tax_country_policy:TAX_COUNTRY_POLICY_VERSION,
         billing_country:checkoutCountry.country,
+        business_purchase:'1',
         ...(referralCode ? { referral_code:referralCode } : {}),
       },
     });
