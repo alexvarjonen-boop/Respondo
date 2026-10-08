@@ -7759,6 +7759,14 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
     });
   }
 
+  if(!validVerificationAddress(email)) return res.status(400).json({error:'Anna kelvollinen sähköpostiosoite.'});
+  if(!socialSignup && !signupEmailVerified(req,email)) {
+    return res.status(403).json({
+      error:'Vahvista sähköpostiosoitteesi ennen tilauksen aloittamista.',
+      code:'EMAIL_VERIFICATION_REQUIRED',
+    });
+  }
+
   if (referralCode && !freeReferral && !planAllowsReferral(normalizedPlan)) {
     return res.status(400).json({ error: 'Suosittelukoodi toimii vain kuukausitilauksessa.' });
   }
@@ -7840,8 +7848,8 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       await client.query(
         `INSERT INTO users(
            id,email,password_hash,full_name,company_name,business_id,status,
-           subscription_status,subscription_plan,preferred_language
-         ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+           subscription_status,subscription_plan,preferred_language,email_verified_at
+         ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW())`,
         [
           id,
           email,
@@ -7891,6 +7899,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       if (freeReferral) {
         await client.query('COMMIT');
         setSession(res, { id, email });
+        res.clearCookie(VERIFIED_EMAIL_COOKIE);
         res.clearCookie(OAUTH_PROFILE_COOKIE);
         return res.json({
           url: '/app?welcome=1&free_code=1',
@@ -7940,6 +7949,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       client.release();
     }
 
+    res.clearCookie(VERIFIED_EMAIL_COOKIE);
     res.cookie(
       SIGNUP_CHECKOUT_COOKIE,
       jwt.sign({ sessionId:session.id,userId:id,tenantId },JWT,{ expiresIn:'45m' }),
