@@ -62,3 +62,12 @@ test('signup and both workspace forms collect and send country',()=>{
   assert.match(server,/enforceCompletedCheckoutCountryPolicy\(session\)/);
   assert.match(server,/checkoutCountryPolicy\(req.body\?\.billingCountry\)/);
 });
+
+test('both billing endpoints require a business-use declaration',()=>{
+  assert.equal((app.match(/name="businessPurchase"/g)||[]).length,3);
+  assert.equal((app.match(/businessPurchase:(?:form.get|fd.get)/g)||[]).length,3);
+  assert.match(server,/businessPurchase !== true/);
+  assert.match(server,/businessPurchase!==true/);
+  assert.match(server,/sellerName: 'Alex Varjonen/);
+  assert.match(app,/sellerName: 'Alex Varjonen/);
+});
