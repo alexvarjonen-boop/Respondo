@@ -691,6 +691,38 @@ async function sendSignupVerificationEmail({ email, code, language = 'fi' }) {
   return { sent:true, id:data?.id || null };
 }
 
+// Send the onboarding message once per activated account, regardless of whether
+// Stripe's webhook or the checkout success redirect completes first.
+async function sendWelcomeEmailOnce(userId) {
+  if (!pool || !String(process.env.RESEND_API_KEY || '').trim()) return false;
+  await q(`CREATE TABLE IF NOT EXISTS signup_welcome_emails (
+    user_id TEXT PRIMARY KEY, sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  const claimed = await q(`INSERT INTO signup_welcome_emails(user_id)
+    SELECT id::text FROM users WHERE id=$1 AND status='active'
+    ON CONFLICT (user_id) DO NOTHING RETURNING user_id`, [userId]);
+  if (!claimed.rowCount) return false;
+  try {
+    const found = await q('SELECT email,full_name,preferred_language,referral_code,subscription_plan FROM users WHERE id=$1',[userId]);
+    const user=found.rows[0];
+    if (!user?.email) throw new Error('Welcome recipient missing');
+    const lang=['fi','sv','en'].includes(user.preferred_language) ? user.preferred_language : 'fi';
+    const firstName=String(user.full_name||'').trim().split(/\\s+/)[0];
+    const greeting=lang==='sv'?'Välkommen till Respondo AI!':lang==='en'?'Welcome to Respondo AI!':'Tervetuloa Respondo AI:hin!';
+    const intro=lang==='sv'?'Ditt konto är klart. Du kan nu logga in och börja konfigurera din kundtjänstbot.':lang==='en'?'Your account is ready. You can now sign in and set up your customer service bot.':'Tilisi on nyt valmis. Voit kirjautua sisään ja aloittaa asiakaspalvelubottisi käyttöönoton.';
+    const steps=lang==='sv'?'Lägg till företagets uppgifter, anpassa botens utseende och installera den på din webbplats.':lang==='en'?'Add your company details, customize the bot and install it on your website.':'Lisää yrityksesi tiedot, muokkaa botin ulkoasua ja asenna se verkkosivuillesi.';
+    const referralEligible=Boolean(user.referral_code && planAllowsReferral(user.subscription_plan));
+    const referralText=lang==='sv'?'Dela din personliga rekommendationskod. En ny kund får 20 % rabatt på sin första betalda månad med ett kvalificerat månadsabonnemang. Koden kan användas en gång.':lang==='en'?'Share your personal referral code. A new customer gets 20% off their first paid month on an eligible monthly plan. The code can be redeemed once.':'Jaa henkilökohtainen suosittelukoodisi. Uusi asiakas saa 20 % alennuksen ensimmäisestä maksullisesta kuukaudesta soveltuvassa kuukausitilauksessa. Koodi on kertakäyttöinen.';
+    const html='<div style="background:#f5f7fb;padding:32px 12px;font-family:Arial,sans-serif;color:#17243b"><div style="max-width:560px;margin:auto;background:#fff;border-radius:20px;padding:36px 30px;border:1px solid #e8edf4"><div style="font-size:19px;font-weight:800;color:#2563eb;margin-bottom:28px">Respondo AI</div><h1 style="font-size:28px;line-height:1.2;margin:0 0 20px">'+escapeEmailHtml(greeting)+'</h1>'+(firstName?'<p>'+escapeEmailHtml(firstName)+',</p>':'')+'<p style="line-height:1.7">'+escapeEmailHtml(intro)+'</p><p style="line-height:1.7">'+escapeEmailHtml(steps)+'</p><p style="margin:28px 0"><a href="'+escapeEmailHtml(BASE+'/app')+'" style="display:inline-block;background:#2563eb;color:white;padding:14px 22px;border-radius:10px;text-decoration:none;font-weight:bold">'+escapeEmailHtml(lang==='sv'?'Öppna instrumentpanelen':lang==='en'?'Open dashboard':'Avaa hallintapaneeli')+'</a></p>'+(referralEligible?'<div style="background:#f0f5ff;padding:20px;border-radius:14px"><strong>'+escapeEmailHtml(lang==='sv'?'Din rekommendationskod':lang==='en'?'Your referral code':'Suosittelukoodisi')+'</strong><p style="font-size:21px;font-weight:800;letter-spacing:1px">'+escapeEmailHtml(user.referral_code)+'</p><p style="font-size:13px;line-height:1.6">'+escapeEmailHtml(referralText)+'</p></div>':'')+'<p style="margin-top:28px;font-size:12px;color:#667085">'+escapeEmailHtml(lang==='sv'?'Tack för att du valde Respondo AI.':lang==='en'?'Thank you for choosing Respondo AI.':'Kiitos, että valitsit Respondo AI:n.')+'</p></div></div>';
+    const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+String(process.env.RESEND_API_KEY).trim(),'Content-Type':'application/json'},body:JSON.stringify({from:String(process.env.EMAIL_VERIFICATION_FROM||'Respondo AI <noreply@respondoai.fi>').trim(),to:[user.email],subject:greeting,html})});
+    if(!response.ok) throw new Error('Welcome email provider returned status '+response.status);
+    return true;
+  } catch(e) {
+    await q('DELETE FROM signup_welcome_emails WHERE user_id=$1',[userId]).catch(()=>{});
+    throw e;
+  }
+}
+
 async function sendHomepageContactEmail({ name, email, message }) {
   const apiKey = String(process.env.RESEND_API_KEY || '').trim();
   if (!apiKey) return { sent:false, reason:'resend_not_configured' };
@@ -6727,6 +6759,10 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           console.error('Referral activation from webhook failed', e);
         }
 
+        if (session.metadata?.additional_workspace !== '1' && ['active','trialing'].includes(subscriptionStatus)) {
+          try { await sendWelcomeEmailOnce(userId); } catch(e) { console.error('Welcome email after checkout webhook failed:',e?.message); }
+        }
+
         if (session.metadata?.plan === 'owner_test') {
           const subscriptionId =
             typeof session.subscription === 'string'
@@ -7863,6 +7899,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
 
       if (freeReferral) {
         await client.query('COMMIT');
+        try { await ensureReferralCode(id); await sendWelcomeEmailOnce(id); } catch(e) { console.error('Welcome email for free signup failed:',e?.message); }
         setSession(res, { id, email });
         res.clearCookie(SIGNUP_VERIFY_PROOF_COOKIE,{path:'/'});
         res.clearCookie(OAUTH_PROFILE_COOKIE);
@@ -8044,6 +8081,8 @@ app.get('/api/auth/checkout-success', async (req, res) => {
     } catch (e) {
       console.error('Referral activation after checkout failed', e);
     }
+
+    try { await sendWelcomeEmailOnce(userId); } catch(e) { console.error('Welcome email after checkout redirect failed:',e?.message); }
 
     if (session.metadata?.plan === 'owner_test') {
       try {
