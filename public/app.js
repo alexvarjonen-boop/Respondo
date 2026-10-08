@@ -3390,6 +3390,18 @@ async function dashboard(options = {}) {
       </header>
 
       ${!isDemo ? `
+      <nav class="ios-workspace-tabs" aria-label="${esc(appText('Hallintapaneelin osiot','Arbetsytans avsnitt','Workspace sections'))}">
+        <button type="button" class="active" data-dashboard-nav="overview" aria-current="page">${appText('Yleiskatsaus','Översikt','Overview')}</button>
+        <button type="button" data-dashboard-nav="setup">${appText('Yritys & botti','Företag & bot','Business & bot')}</button>
+        <button type="button" data-dashboard-nav="answers">${appText('Vastaukset','Svar','Answers')}</button>
+        <button type="button" data-dashboard-nav="customers">${appText('Asiakkaat','Kunder','Customers')}</button>
+        <button type="button" data-dashboard-nav="automation">${appText('Toiminnot','Åtgärder','Actions')}</button>
+        <button type="button" data-dashboard-nav="install">${appText('Asennus','Installation','Installation')}</button>
+        <button type="button" data-dashboard-nav="account">${appText('Asetukset','Inställningar','Settings')}</button>
+      </nav>
+      ` : ''}
+
+      ${!isDemo ? `
       <div class="workspace-modal" id="workspaceModal" hidden>
         <button type="button" class="workspace-modal-backdrop" id="workspaceModalBackdrop" aria-label="${esc(appText('Sulje','Stäng','Close'))}"></button>
         <section class="workspace-modal-card" role="dialog" aria-modal="true" aria-labelledby="workspaceModalTitle">
