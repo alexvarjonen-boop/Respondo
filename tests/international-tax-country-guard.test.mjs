@@ -78,4 +78,5 @@ test('seller is identifiable and domestic VAT status is disclosed',()=>{
   assert.match(app,/sellerName: 'Alex Varjonen/);
   assert.match(server,/sellerName: 'Alex Varjonen/);
   assert.match(server,/automatic_tax:\s*\{\s*enabled:\s*false\s*\}/);
+  assert.equal((server.match(/business_purchase:\s*'1'/g)||[]).length,4);
 });
