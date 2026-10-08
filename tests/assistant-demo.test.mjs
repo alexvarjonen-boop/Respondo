@@ -12,7 +12,7 @@ test('legacy standalone assistant never replaces the shared Try Bot dashboard',(
   assert.match(initSource,/if \(isWorkspacePage\(\)\)/);
   assert.doesNotMatch(initSource,/standaloneAssistant\(\)/);
   assert.match(effects,/document\.body\.classList\.remove\('assistant-standalone'\)/);
-  assert.ok(html.includes('/effects.js?v=20261007-restore-oct06-v1'));
+  assert.ok(html.includes('/effects.js?v=20261008-apple-three-cards-v1'));
 });
 
 test('public Try Bot has the same visible dashboard shell and default view as paid app',()=>{
