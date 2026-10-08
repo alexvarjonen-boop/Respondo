@@ -337,80 +337,14 @@ const pool = process.env.DATABASE_URL
     })
   : null;
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
-let finnishVatTaxRateCache = '';
-const FINNISH_VAT_PERCENT = 25.5;
-
-async function ensureFinnishVatTaxRate() {
-  if (!stripe) return '';
-  const configured = String(process.env.STRIPE_FINLAND_VAT_TAX_RATE_ID || '').trim();
-  if (configured) return configured;
-  if (finnishVatTaxRateCache) return finnishVatTaxRateCache;
-
-  const rates = await stripe.taxRates.list({ active:true, limit:100 });
-  const existing = (rates.data || []).find((rate) =>
-    rate &&
-    rate.active !== false &&
-    rate.inclusive === true &&
-    Math.abs(Number(rate.percentage || 0) - FINNISH_VAT_PERCENT) < 0.0001 &&
-    (!rate.country || String(rate.country).toUpperCase() === 'FI') &&
-    /25[,.]5/.test(String(rate.display_name || ''))
-  );
-  if (existing?.id) {
-    finnishVatTaxRateCache = existing.id;
-    return existing.id;
-  }
-
-  const created = await stripe.taxRates.create({
-    display_name:'ALV 25,5 %',
-    description:'Suomen ALV 25,5 % (sisältyy hintaan)',
-    jurisdiction:'FI',
-    country:'FI',
-    percentage:FINNISH_VAT_PERCENT,
-    inclusive:true,
-  });
-  finnishVatTaxRateCache = created.id;
-  return created.id;
-}
-
-function checkoutEuro(cents, lang='fi') {
-  const value = Math.max(0, Number(cents || 0)) / 100;
-  const locale = lang === 'sv' ? 'sv-FI' : lang === 'en' ? 'en-FI' : 'fi-FI';
-  return new Intl.NumberFormat(locale, { style:'currency', currency:'EUR' }).format(value);
-}
-
-async function finnishVatCheckoutMessage(priceId, lang='fi') {
+// No Finnish VAT is charged by Respondo while its seller is not VAT registered.
+// International sales and the VAT threshold must be reviewed separately.
+function checkoutTaxExemptionMessage(lang='fi') {
   const safeLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase())
-    ? String(lang).toLowerCase()
-    : 'fi';
-
-  try {
-    const price = await stripe.prices.retrieve(priceId);
-    const amountCents = Number.isFinite(Number(price.unit_amount))
-      ? Number(price.unit_amount)
-      : Math.round(Number(price.unit_amount_decimal || 0));
-
-    if (amountCents > 0) {
-      const vatCents = Math.round(
-        amountCents * FINNISH_VAT_PERCENT / (100 + FINNISH_VAT_PERCENT)
-      );
-      const gross = checkoutEuro(amountCents, safeLang);
-      const vat = checkoutEuro(vatCents, safeLang);
-
-      if (safeLang === 'sv') {
-        return `Priset ${gross} inkluderar finsk moms 25,5 % (${vat}). Under den kostnadsfria 3-dagars provperioden är dagens skatt 0,00 €; momsen ovan gäller den betalda perioden efter provperioden.`;
-      }
-      if (safeLang === 'en') {
-        return `The ${gross} price includes Finnish VAT 25.5% (${vat}). During the free 3-day trial, tax due today is €0.00; the VAT amount above applies to the paid period after the trial.`;
-      }
-      return `Hinta ${gross} sisältää ALV 25,5 % (${vat}). Maksuttoman 3 päivän kokeilun aikana tänään maksettava vero on 0,00 €; yllä oleva ALV-osuus koskee kokeilun jälkeistä maksullista jaksoa.`;
-    }
-  } catch (e) {
-    console.warn('Stripe VAT checkout note could not read price', e?.message || e);
-  }
-
-  if (safeLang === 'sv') return 'Priset inkluderar finsk moms 25,5 %.';
-  if (safeLang === 'en') return 'The price includes Finnish VAT 25.5%.';
-  return 'Hinta sisältää ALV 25,5 %.';
+    ? String(lang).toLowerCase() : 'fi';
+  if (safeLang === 'sv') return 'Ingen moms debiteras. Säljaren är inte momsregistrerad på grund av verksamhet i liten skala.';
+  if (safeLang === 'en') return 'No VAT is charged. The seller is not VAT-registered due to small-scale business activity.';
+  return 'Arvonlisäveroa ei peritä. Myyjä ei ole alv-rekisterissä vähäisen liiketoiminnan vuoksi.';
 }
 if (process.env.NODE_ENV === 'production') {
   if (!String(process.env.JWT_SECRET || '').trim()) {
@@ -1383,9 +1317,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-buy',
       answer:answer(
-        'Voit ottaa Respondon käyttöön suoraan verkkosivulta painamalla “Kokeile ilmaiseksi”. Kaikissa paketeissa on 3 päivän ilmainen kokeilu. Starter maksaa 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Vuositilauksissa kuukausihinta on sama ilman vuosialennusta. Hinnat sisältävät ALV:n 25,5 %.',
-        'Du kan börja använda Respondo direkt via webbplatsen genom att välja “Prova gratis”. Alla paket har 3 dagars gratis provperiod. Starter kostar 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Årsabonnemang har samma månadskostnad utan årsrabatt. Priserna inkluderar 25,5 % moms.',
-        'You can start using Respondo directly from the website by choosing “Try for free”. Every tier has a 3-day free trial. Starter is €29.90/month, Advanced €39.90/month, and Business €49.90/month. Annual billing has the same monthly rate without a discount. Prices include 25.5% VAT.'
+        'Voit ottaa Respondon käyttöön suoraan verkkosivulta painamalla “Kokeile ilmaiseksi”. Kaikissa paketeissa on 3 päivän ilmainen kokeilu. Starter maksaa 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Vuositilauksissa kuukausihinta on sama ilman vuosialennusta. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
+        'Du kan börja använda Respondo direkt via webbplatsen genom att välja “Prova gratis”. Alla paket har 3 dagars gratis provperiod. Starter kostar 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Årsabonnemang har samma månadskostnad utan årsrabatt. Ingen moms debiteras på grund av verksamhet i liten skala.',
+        'You can start using Respondo directly from the website by choosing “Try for free”. Every tier has a 3-day free trial. Starter is €29.90/month, Advanced €39.90/month, and Business €49.90/month. Annual billing has the same monthly rate without a discount. No VAT is charged due to the small-scale business exemption.'
       )
     };
   }
@@ -1442,9 +1376,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-annual-pricing',
       answer:answer(
-        'Vuositilaukset: Starter 358,80 €/vuosi (29,90 €/kk), Advanced 478,80 €/vuosi (39,90 €/kk) ja Business 598,80 €/vuosi (49,90 €/kk). Hinnat sisältävät ALV:n 25,5 %.',
-        'Årsabonnemangen kostar: Starter 358,80 €/år (29,90 €/månad), Advanced 478,80 €/år (39,90 €/månad) och Business 598,80 €/år (49,90 €/månad). Priserna inkluderar 25,5 % moms.',
-        'Annual billing is: Starter €358.80/year (€29.90/month), Advanced €478.80/year (€39.90/month), and Business €598.80/year (€49.90/month). Prices include 25.5% VAT.'
+        'Vuositilaukset: Starter 358,80 €/vuosi (29,90 €/kk), Advanced 478,80 €/vuosi (39,90 €/kk) ja Business 598,80 €/vuosi (49,90 €/kk). Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
+        'Årsabonnemangen kostar: Starter 358,80 €/år (29,90 €/månad), Advanced 478,80 €/år (39,90 €/månad) och Business 598,80 €/år (49,90 €/månad). Ingen moms debiteras på grund av verksamhet i liten skala.',
+        'Annual billing is: Starter €358.80/year (€29.90/month), Advanced €478.80/year (€39.90/month), and Business €598.80/year (€49.90/month). No VAT is charged due to the small-scale business exemption.'
       )
     };
   }
@@ -1455,9 +1389,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-monthly-pricing',
       answer:answer(
-        'Kuukausihinnat ovat Starter 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Hinnat sisältävät ALV:n 25,5 %.',
-        'Månadspriserna är Starter 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Priserna inkluderar 25,5 % moms.',
-        'Monthly pricing is Starter €29.90/month, Advanced €39.90/month, and Business €49.90/month. Prices include 25.5% VAT.'
+        'Kuukausihinnat ovat Starter 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
+        'Månadspriserna är Starter 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Ingen moms debiteras på grund av verksamhet i liten skala.',
+        'Monthly pricing is Starter €29.90/month, Advanced €39.90/month, and Business €49.90/month. No VAT is charged due to the small-scale business exemption.'
       )
     };
   }
@@ -1500,9 +1434,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-pricing',
       answer:answer(
-        'Respondo Starter maksaa 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Vuositilauksissa laskutetaan 12 kuukauden hinta kerralla, ilman vuosialennusta. Hinnat sisältävät ALV:n 25,5 %.',
-        'Respondo Starter kostar 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Årsabonnemang faktureras för 12 månader utan årsrabatt. Priserna inkluderar 25,5 % moms.',
-        'Respondo Starter is €29.90/month, Advanced €39.90/month, and Business €49.90/month. Annual plans are billed for 12 months without an annual discount. Prices include 25.5% VAT.'
+        'Respondo Starter maksaa 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Vuositilauksissa laskutetaan 12 kuukauden hinta kerralla, ilman vuosialennusta. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
+        'Respondo Starter kostar 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Årsabonnemang faktureras för 12 månader utan årsrabatt. Ingen moms debiteras på grund av verksamhet i liten skala.',
+        'Respondo Starter is €29.90/month, Advanced €39.90/month, and Business €49.90/month. Annual plans are billed for 12 months without an annual discount. No VAT is charged due to the small-scale business exemption.'
       )
     };
   }
@@ -6721,15 +6655,14 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           free: true,
         });
       }
-
-      const finnishVatTaxRateId = await ensureFinnishVatTaxRate();
-      const finnishVatMessage = await finnishVatCheckoutMessage(price, preferredLanguage);
+      const taxExemptionMessage = checkoutTaxExemptionMessage(preferredLanguage);
       session = await stripe.checkout.sessions.create({
         mode: 'subscription',
+        automatic_tax: { enabled: false },
         customer_email: email,
-        line_items: [{ price, quantity: 1, tax_rates: [finnishVatTaxRateId] }],
+        line_items: [{ price, quantity: 1 }],
         custom_text: {
-          submit: { message: finnishVatMessage },
+          submit: { message: taxExemptionMessage },
         },
         subscription_data: {
           ...(normalizedPlan === 'owner_test' ? {} : { trial_period_days: 3 }),
@@ -7511,17 +7444,17 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   );
 
   try {
-    const finnishVatTaxRateId=await ensureFinnishVatTaxRate();
-    const finnishVatMessage=await finnishVatCheckoutMessage(price,user.preferred_language||'fi');
+    const taxExemptionMessage=checkoutTaxExemptionMessage(user.preferred_language||'fi');
     const session=await stripe.checkout.sessions.create({
       mode:'subscription',
+      automatic_tax:{enabled:false},
       ...(user.stripe_customer_id ? {
         customer:user.stripe_customer_id,
         customer_update:{ name:'auto' },
       } : { customer_email:user.email }),
-      line_items:[{price,quantity:1,tax_rates:[finnishVatTaxRateId]}],
+      line_items:[{price,quantity:1}],
       custom_text:{
-        submit:{message:finnishVatMessage},
+        submit:{message: taxExemptionMessage},
       },
       subscription_data:{
         trial_period_days:3,
