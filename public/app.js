@@ -1,5 +1,5 @@
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
-import { appleHomeMarkup } from './apple-home.js?v=20261008-apple-production-v1-hero-cta-v1';
+import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261008-new-ra-logo-v1';
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261008-v2-seller-b2b';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
