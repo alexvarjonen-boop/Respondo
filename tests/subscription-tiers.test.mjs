@@ -7,7 +7,7 @@ const app=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const html=fs.readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 const effects=fs.readFileSync(new URL('../public/effects.js',import.meta.url),'utf8');
 
-test('six Basic Advanced Business plan codes and Stripe price envs are wired',()=>{
+test('six Starter Advanced Business plan codes and Stripe price envs are wired',()=>{
   for(const plan of [
     'basic_monthly','basic_yearly','advanced_monthly','advanced_yearly','business_monthly','business_yearly'
   ]) assert.match(server,new RegExp(plan.replace('_','_')));
@@ -18,13 +18,13 @@ test('six Basic Advanced Business plan codes and Stripe price envs are wired',()
   ]) assert.match(server,new RegExp(env));
 });
 
-test('annual billing is exactly five euros per month cheaper and sixty euros per year',()=>{
-  assert.match(server,/basic_yearly:\{tier:'basic',billing:'yearly',monthlyPrice:44\.99,annualTotal:539\.88/);
-  assert.match(server,/advanced_yearly:\{tier:'advanced',billing:'yearly',monthlyPrice:59\.99,annualTotal:719\.88/);
-  assert.match(server,/business_yearly:\{tier:'business',billing:'yearly',monthlyPrice:74\.99,annualTotal:899\.88/);
-  assert.match(app,/Basic',49\.99,44\.99,539\.88,2/);
-  assert.match(app,/Advanced',64\.99,59\.99,719\.88,10/);
-  assert.match(app,/Business',79\.99,74\.99,899\.88,20/);
+test('annual billing has no discount and is exactly twelve times the monthly rate',()=>{
+  assert.match(server,/basic_yearly:\{tier:'basic',billing:'yearly',monthlyPrice:29\.90,annualTotal:358\.80/);
+  assert.match(server,/advanced_yearly:\{tier:'advanced',billing:'yearly',monthlyPrice:39\.90,annualTotal:478\.80/);
+  assert.match(server,/business_yearly:\{tier:'business',billing:'yearly',monthlyPrice:49\.90,annualTotal:598\.80/);
+  assert.match(app,/Starter',29\.90,29\.90,358\.80,2/);
+  assert.match(app,/Advanced',39\.90,39\.90,478\.80,10/);
+  assert.match(app,/Business',49\.90,49\.90,598\.80,20/);
 });
 
 test('all paid tiers include website import while calendar remains Advanced or Business',()=>{
@@ -58,7 +58,7 @@ test('bot branding stays available without a premium capability gate',()=>{
   assert.match(app,/name="botAvatar"/);
 });
 
-test('Basic keeps native booking while premium automation controls are gated',()=>{
+test('Starter keeps native booking while premium automation controls are gated',()=>{
   assert.match(server,/app\.post\('\/api\/app\/booking-slots\/generate', auth, ownerOnly, subscribed/);
   assert.doesNotMatch(server,/app\.post\('\/api\/app\/booking-slots\/generate'[\s\S]{0,180}requirePlanCapability\(req,res,'allCurrentFeatures'\)/);
   assert.match(app,/Respondo booking works on this plan\. Google Calendar sync is included in Advanced and Business\./);
@@ -78,20 +78,20 @@ test('homepage signup workspace and Try Bot expose all six choices',()=>{
     assert.match(effects,new RegExp(plan));
   }
   assert.match(app,/Hae tiedot automaattisesti verkkosivulta/);
-  assert.match(app,/Basic',49\.99,44\.99,539\.88,2/);
-  assert.match(app,/Advanced',64\.99,59\.99,719\.88,10/);
-  assert.match(app,/Business',79\.99,74\.99,899\.88,20/);
+  assert.match(app,/Starter',29\.90,29\.90,358\.80,2/);
+  assert.match(app,/Advanced',39\.90,39\.90,478\.80,10/);
+  assert.match(app,/Business',49\.90,49\.90,598\.80,20/);
   assert.match(app,/asiakaspalvelijapaikkaa/);
 });
 
 test('structured data publishes all six live plan prices',()=>{
-  for(const price of ['49.99','539.88','64.99','719.88','79.99','899.88']){
+  for(const price of ['29.90','358.80','39.90','478.80','49.90','598.80']){
     assert.match(html,new RegExp('"price":"'+price.replace('.','\\.')+'"'));
   }
 });
 
 test('workspace list labels tier and yearly billing correctly',()=>{
-  assert.match(app,/planCode\.startsWith\('basic_'\)[\s\S]*'Basic'/);
+  assert.match(app,/planCode\.startsWith\('basic_'\)[\s\S]*'Starter'/);
   assert.match(app,/planCode\.startsWith\('advanced_'\)[\s\S]*'Advanced'/);
   assert.match(app,/planCode\.startsWith\('business_'\)[\s\S]*'Business'/);
   assert.match(app,/planCode==='yearly' \|\| planCode\.endsWith\('_yearly'\)/);
@@ -115,8 +115,8 @@ test('pricing copy does not promise undefined analytics tiers',()=>{
   assert.match(app,/Shopify- ja WooCommerce-tilaushaku/);
 });
 
-test('Basic Advanced and Business all include automatic website import',()=>{
-  const basicStart=app.indexOf("card('Basic'");
+test('Starter Advanced and Business all include automatic website import',()=>{
+  const basicStart=app.indexOf("card('Starter'");
   const advancedStart=app.indexOf("card('Advanced'");
   const businessStart=app.indexOf("card('Business'");
   const basicBlock=app.slice(basicStart,advancedStart);
