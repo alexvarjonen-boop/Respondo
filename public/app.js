@@ -4175,8 +4175,9 @@ async function dashboard(options = {}) {
         <div class="workspace-delete-account-area">
           <button class="workspace-account-delete-trigger" id="deleteAccountTrigger" type="button">${appText('Poista käyttäjä','Radera användarkonto','Delete account')}</button>
           <p>${appText('Poistaa kaikki tämän käyttäjän yritykset, peruuttaa niiden tilaukset ja poistaa Respondo-tilin pysyvästi.','Raderar alla företag, avslutar deras abonnemang och raderar ditt Respondo-konto permanent.','Permanently deletes all companies, cancels their subscriptions and removes your Respondo account.')}</p>
-        </div>
+        </div>` : ''}
       </section>
+      ${!isDemo ? `
       <div class="deletion-modal" id="deleteModal" hidden>
         <button type="button" class="deletion-modal-backdrop" id="deleteModalBackdrop" aria-label="${esc(appText('Sulje','Stäng','Close'))}"></button>
         <section class="deletion-modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalDescription">
