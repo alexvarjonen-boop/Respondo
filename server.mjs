@@ -7648,6 +7648,21 @@ app.get('/api/public/config', publicReadLimiter, async (req, res) => {
 });
 
 
+app.get('/api/auth/email-verification/status', publicReadLimiter, (req,res) => {
+  res.set('Cache-Control','no-store');
+  const token=cookies(req)[VERIFIED_EMAIL_COOKIE];
+  let verifiedEmail='';
+  if(token){
+    try{
+      const payload=jwt.verify(token,JWT,{algorithms:['HS256']});
+      if(payload.kind==='signup_email_verified') {
+        verifiedEmail=validVerificationAddress(payload.email);
+      }
+    }catch{}
+  }
+  return res.json({verified:Boolean(verifiedEmail),email:verifiedEmail});
+});
+
 app.post('/api/auth/email-verification/request', checkoutLimiter, async (req,res) => {
   const email=validVerificationAddress(req.body?.email);
   if(!email) return res.status(400).json({error:'Anna kelvollinen sähköpostiosoite.'});
