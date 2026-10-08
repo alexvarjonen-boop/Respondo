@@ -13,7 +13,7 @@ export function publicMenuMarkup(t,lang){
   [t('Kirjaudu','Logga in','Log in'),`/kirjaudu?lang=${lang}`]
  ];
  return `<div class="apple-menu-overlay" id="apple-nav-overlay" aria-hidden="true" inert>
-  <div class="apple-menu-head"><a href="/" class="apple-menu-logo">RESPONDO AI</a><button class="apple-menu-close" data-apple-menu-close type="button" aria-label="${t('Sulje valikko','Stäng menyn','Close menu')}">×</button></div>
+  <div class="apple-menu-head"><a href="/" class="apple-menu-logo"><img src="/favicon.svg?v=20261008-ra-logo-v1" width="28" height="28" alt="" aria-hidden="true">RESPONDO AI</a><button class="apple-menu-close" data-apple-menu-close type="button" aria-label="${t('Sulje valikko','Stäng menyn','Close menu')}">×</button></div>
   <nav class="apple-menu-body" aria-label="${t('Sivuston valikko','Webbplatsmeny','Site navigation')}">
     <p class="apple-menu-label">${t('Tutustu Respondoon','Upptäck Respondo','Explore Respondo')}</p>
     <div class="apple-menu-links">${entries.map(([label,href])=>`<a href="${href}">${label} <span aria-hidden="true">↗</span></a>`).join('')}</div>
