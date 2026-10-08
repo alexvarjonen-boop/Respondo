@@ -7063,6 +7063,26 @@ async function cancelOwnedSubscriptionsForDeletion(ids, customerId) {
   return unique.length;
 }
 
+// Stripe may contain an active subscription not yet synchronized into tenants
+// (for example, a recently completed checkout). Include those before deleting an account.
+async function allStripeSubscriptionIdsForCustomer(customerId) {
+  if(!customerId) return [];
+  if(!stripe) throw new Error('Stripe is unavailable: subscription inventory cannot be verified');
+  const ids=[];
+  let cursor='';
+  do{
+    const page=await stripe.subscriptions.list({
+      customer:customerId,status:'all',limit:100,
+      ...(cursor ? {starting_after:cursor} : {}),
+    });
+    ids.push(...page.data.map(item=>item.id));
+    if(!page.has_more) break;
+    if(!page.data.length) throw new Error('Stripe subscription pagination failed');
+    cursor=page.data[page.data.length-1].id;
+  }while(true);
+  return ids;
+}
+
 app.delete('/api/app/workspaces/:tenantId', auth, ownerOnly, loginLimiter, async (req,res) => {
   const tenantId=String(req.params.tenantId||'');
   const password=String(req.body?.password||'');
@@ -7093,15 +7113,15 @@ app.delete('/api/app/workspaces/:tenantId', auth, ownerOnly, loginLimiter, async
     }
     const canceled=await cancelOwnedSubscriptionsForDeletion([subscriptionId],user.stripe_customer_id);
     await client.query('DELETE FROM tenants WHERE id=$1 AND owner_user_id=$2',[tenantId,req.user.sub]);
-    const next=await client.query("SELECT id FROM tenants WHERE owner_user_id=$1 AND active=TRUE AND subscription_status IN ('active','trialing') ORDER BY created_at ASC LIMIT 1",[req.user.sub]);
+    const next=await client.query("SELECT id,name,business_id FROM tenants WHERE owner_user_id=$1 AND active=TRUE AND subscription_status IN ('active','trialing') ORDER BY created_at ASC LIMIT 1",[req.user.sub]);
     await client.query(
-      "UPDATE users SET active_tenant_id=$1,"+
+      "UPDATE users SET active_tenant_id=$1,company_name=$4,business_id=$5,"+
       "stripe_subscription_id=CASE WHEN stripe_subscription_id=$3 THEN NULL ELSE stripe_subscription_id END,"+
       "subscription_status=CASE WHEN stripe_subscription_id=$3 THEN NULL ELSE subscription_status END,"+
       "subscription_plan=CASE WHEN stripe_subscription_id=$3 THEN NULL ELSE subscription_plan END,"+
       "current_period_end=CASE WHEN stripe_subscription_id=$3 THEN NULL ELSE current_period_end END,"+
       "updated_at=NOW() WHERE id=$2",
-      [next.rows[0]?.id||null,req.user.sub,subscriptionId],
+      [next.rows[0]?.id||null,req.user.sub,subscriptionId,next.rows[0]?.name||'Yritys',next.rows[0]?.business_id||null],
     );
     await client.query('COMMIT');
     return res.json({ok:true,deletedTenantId:tenantId,canceledSubscriptions:canceled,remainingActiveWorkspaces:Boolean(next.rowCount)});
@@ -7128,6 +7148,7 @@ app.delete('/api/app/account', auth, ownerOnly, loginLimiter, async (req,res) =>
     }
     const rr=await client.query('SELECT id,stripe_subscription_id FROM tenants WHERE owner_user_id=$1 FOR UPDATE',[req.user.sub]);
     const subscriptions=[...new Set([user.stripe_subscription_id,...rr.rows.map(x=>x.stripe_subscription_id)].filter(Boolean))];
+    subscriptions.push(...(await allStripeSubscriptionIdsForCustomer(user.stripe_customer_id)).filter(id=>!subscriptions.includes(id)));
     if(subscriptions.length){
       const shared=await client.query('SELECT 1 FROM tenants WHERE stripe_subscription_id=ANY($1::text[]) AND owner_user_id<>$2 LIMIT 1',[subscriptions,req.user.sub]);
       if(shared.rowCount){
