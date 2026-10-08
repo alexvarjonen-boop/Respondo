@@ -2804,6 +2804,10 @@ function signup() {
               <small id="referralHint">${appText('Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','Med en giltig kod får du 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid code gives you 20% off the first paid month. Monthly subscription only.')}</small>
             </div>
             <label class="checkrow field full">
+              <input type="checkbox" name="businessPurchase" required>
+              <span>${appText('Vahvistan tilaavani palvelun yritystoimintaan.','Jag bekräftar att jag beställer tjänsten för företagsverksamhet.','I confirm this subscription is for business use.')}</span>
+            </label>
+            <label class="checkrow field full">
               <input type="checkbox" name="terms" required>
               <span>${appText('Hyväksyn','Jag godkänner','I accept')} <a href="/kayttoehdot" target="_blank">${appText('käyttöehdot','användarvillkoren','the terms')}</a> ${appText('ja','och','and')} <a href="/tietosuoja" target="_blank">${appText('tietosuojaselosteen','integritetspolicyn','the privacy policy')}</a>.</span>
             </label>
@@ -2899,7 +2903,7 @@ const LEGAL = {
       ['3. Automaattiset vastaukset', 'Respondo AI tuottaa asiakasvastauksia yrityksen palveluun lisäämien tietojen ja käytössä olevien toimintojen perusteella. Automaattinen vastaus voi olla virheellinen tai puutteellinen, joten asiakasyritys vastaa omien tietojensa oikeellisuudesta ja siitä, missä tilanteissa automaattisia vastauksia käytetään. Palvelua ei tule käyttää lainvastaisiin tarkoituksiin tai sellaisiin korkean riskin päätöksiin, joissa automaattinen vastaus yksin voi aiheuttaa olennaista vahinkoa.'],
       ['4. Google Calendar ja muut integraatiot', 'Asiakas voi vapaaehtoisesti yhdistää Google Calendarin tai muun tuetun palvelun. Respondo käyttää asiakkaan myöntämiä oikeuksia vain kyseisen käyttäjälle näkyvän toiminnon toteuttamiseen, kuten varausten saatavuuden tarkistamiseen ja kalenteritapahtumien luomiseen. Asiakas voi poistaa integraation käytöstä palvelun asetuksista tai kyseisen ulkopuolisen palvelun tiliasetuksista.'],
       ['5. Kokeilu ja tilaus', `Palvelua voi kokeilla ${cfg.trialDays || 3} päivää ilmaiseksi. Maksutapa voidaan lisätä kokeilun alussa. Ellei tilausta peruta ennen kokeilun päättymistä, tilaus jatkuu valitun laskutusjakson mukaisena maksullisena tilauksena.`],
-      ['6. Hinnat ja verot', 'Respondo tarjoaa Starter-, Advanced- ja Business-paketit kuukausi- ja vuositilauksina. Kuukausihinnat ovat 29,90 €/kk, 39,90 €/kk ja 49,90 €/kk. Vuosihinnat ovat 358,80 €, 478,80 € ja 598,80 €; vuosialennuksia ei ole. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi. Ennen maksamista asiakkaalle näytetään valittu paketti, kokonaishinta ja laskutusjakso.'],
+      ['6. Hinnat ja verot', 'Respondo tarjoaa Starter-, Advanced- ja Business-paketit kuukausi- ja vuositilauksina. Kuukausihinnat ovat 29,90 €/kk, 39,90 €/kk ja 49,90 €/kk. Vuosihinnat ovat 358,80 €, 478,80 € ja 598,80 €; vuosialennuksia ei ole. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi. Maksulliset tilaukset ovat toistaiseksi saatavilla vain Suomessa sijaitseville yrityksille. Myyjä ei kuulu arvonlisäverorekisteriin; verokohtelu tarkistetaan toiminnan muuttuessa. Ennen maksamista asiakkaalle näytetään valittu paketti, kokonaishinta ja laskutusjakso.'],
       ['7. Maksaminen ja uusiminen', 'Maksut käsitellään Stripen kautta. Jatkuva tilaus uusiutuu valitun laskutusjakson mukaisesti, kunnes se perutaan. Maksun epäonnistuminen voi johtaa palvelun rajoittamiseen tai keskeyttämiseen.'],
       ['8. Peruminen', 'Tilauksen voi perua milloin tahansa. Peruminen estää seuraavan laskutusjakson uusiutumisen. Jo maksettu laskutuskausi jatkuu normaalisti kauden loppuun, ellei pakottava lainsäädäntö tai erikseen sovittu ehto edellytä muuta.'],
       ['9. Asiakkaan vastuu', 'Asiakas vastaa käyttäjätilinsä suojaamisesta, palveluun lisäämiensä tietojen oikeellisuudesta, tarvittavista oikeuksista ja suostumuksista sekä siitä, että palvelun käyttö, asiakasviestintä ja henkilötietojen käsittely ovat sovellettavan lain mukaisia.'],
@@ -3113,6 +3117,7 @@ function dashboardWithoutCompany(me, workspaces = []) {
             <option value="business_monthly">Business 49,90 € / kk</option>
             <option value="business_yearly">Business 598,80 € / ${appText('vuosi','år','year')}</option>
           </select></label>
+          <label class="workspace-terms"><input type="checkbox" name="businessPurchase" required><span>${appText('Vahvistan ostavani yrityksen käyttöön.','Jag bekräftar att köpet görs för företagets bruk.','I confirm this is a business purchase.')}</span></label>
           <label class="workspace-terms"><input type="checkbox" name="acceptedTerms" required><span>${appText('Hyväksyn käyttöehdot ja tietosuojaselosteen.','Jag godkänner användarvillkoren och integritetspolicyn.','I accept the terms and privacy policy.')}</span></label>
           <button type="submit" class="btn ink workspace-checkout-button">${appText('Lisää yritys','Lägg till företag','Add company')} →</button>
           <div id="emptyWorkspaceMsg" role="alert"></div>
@@ -3382,7 +3387,8 @@ async function dashboard(options = {}) {
               <input name="referralCode" id="workspaceReferralCode" maxlength="40" autocomplete="off" placeholder="${appText('Syötä suosittelukoodi','Ange rekommendationskod','Enter referral code')}">
               <small id="workspaceReferralHint">${appText('Voimassa oleva koodi antaa 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','En giltig kod ger 20 % rabatt på den första betalda månaden. Endast för månadsabonnemang.','A valid code gives 20% off the first paid month. Monthly plan only.')}</small>
             </label>
-            <label class="workspace-terms"><input type="checkbox" name="acceptedTerms" required><span>${appText('Hyväksyn käyttöehdot ja tietosuojaselosteen.','Jag godkänner användarvillkoren och integritetspolicyn.','I accept the terms and privacy policy.')}</span></label>
+            <label class="workspace-terms"><input type="checkbox" name="businessPurchase" required><span>${appText('Vahvistan ostavani yrityksen käyttöön.','Jag bekräftar att köpet görs för företagets bruk.','I confirm this is a business purchase.')}</span></label>
+          <label class="workspace-terms"><input type="checkbox" name="acceptedTerms" required><span>${appText('Hyväksyn käyttöehdot ja tietosuojaselosteen.','Jag godkänner användarvillkoren och integritetspolicyn.','I accept the terms and privacy policy.')}</span></label>
             <button class="btn ink workspace-checkout-button" type="submit">${appText('Jatka turvalliseen maksuun','Fortsätt till säker betalning','Continue to secure checkout')} →</button>
             <div id="workspaceAddMsg"></div>
           </form>
@@ -5089,6 +5095,7 @@ async function route() {
             plan: form.get('plan'),
             referralCode: form.get('referralCode'),
             acceptedTerms: !!form.get('terms'),
+            businessPurchase:form.get('businessPurchase')==='on',
             ownerTestAccessToken: String(form.get('ownerTestAccessToken') || ''),
             language: currentLang(),
           }),
@@ -5292,6 +5299,7 @@ async function route() {
             billingCountry:String(fd.get('billingCountry')||'').trim(),
             plan:String(fd.get('plan')||'basic_monthly'),
             acceptedTerms:fd.get('acceptedTerms')==='on',
+            businessPurchase:fd.get('businessPurchase')==='on',
           }),
         });
         if(!result?.url) throw new Error(appText('Maksusivua ei voitu avata.','Betalningssidan kunde inte öppnas.','Could not open checkout.'));
@@ -5321,7 +5329,8 @@ async function route() {
             billingCountry:String(fd.get('billingCountry')||'').trim(),
             plan:String(fd.get('plan')||'basic_monthly'),
             referralCode:String(fd.get('referralCode')||'').trim(),
-            acceptedTerms:fd.get('acceptedTerms')==='on'
+            acceptedTerms:fd.get('acceptedTerms')==='on',
+            businessPurchase:fd.get('businessPurchase')==='on'
           })
         });
         if(!result?.url) throw new Error(appText('Maksusivua ei saatu avattua.','Betalningssidan kunde inte öppnas.','Could not open checkout.'));
