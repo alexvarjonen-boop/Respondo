@@ -1,7 +1,7 @@
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261008-apple-production-v1-hero-cta-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261008-new-ra-logo-v1';
-import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261008-v1';
+import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261008-v2-seller-b2b';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -215,7 +215,7 @@ let cfg = {
   brand: 'RESPONDO AI',
   supportEmail: 'info@respondoai.fi',
   businessId: '3599437-5',
-  sellerName: 'RESPONDO AI',
+  sellerName: 'Alex Varjonen · Respondo AI',
   trialDays: 3,
   monthlyNet: 29.90,
   yearlyNet: 358.80,
@@ -2861,6 +2861,10 @@ function signup() {
               <small id="referralHint">${appText('Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','Med en giltig kod får du 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid code gives you 20% off the first paid month. Monthly subscription only.')}</small>
             </div>
             <label class="checkrow field full">
+              <input type="checkbox" name="businessPurchase" required>
+              <span>${appText('Vahvistan tilaavani palvelun yritystoimintaan.','Jag bekräftar att jag beställer tjänsten för företagsverksamhet.','I confirm this subscription is for business use.')}</span>
+            </label>
+            <label class="checkrow field full">
               <input type="checkbox" name="terms" required>
               <span>${appText('Hyväksyn','Jag godkänner','I accept')} <a href="/kayttoehdot" target="_blank">${appText('käyttöehdot','användarvillkoren','the terms')}</a> ${appText('ja','och','and')} <a href="/tietosuoja" target="_blank">${appText('tietosuojaselosteen','integritetspolicyn','the privacy policy')}</a>.</span>
             </label>
@@ -2962,7 +2966,7 @@ const LEGAL = {
     title: 'Käyttöehdot',
     intro: 'Näissä ehdoissa kerrotaan, millä ehdoilla yritysasiakkaat voivat käyttää Respondo AI -palvelua.',
     sections: [
-      ['1. Palveluntarjoaja', `RESPONDO AI, Y-tunnus ${cfg.businessId || '3599437-5'}, Suomi. Yhteydenotot: ${cfg.supportEmail}.`],
+      ['1. Palveluntarjoaja', `Alex Varjonen (Respondo AI -palvelu), Y-tunnus ${cfg.businessId || '3599437-5'}, Suomi. Yhteydenotot: ${cfg.supportEmail}.`],
       ['2. Palvelu', 'Respondo AI on yrityksille tarkoitettu asiakaspalvelu- ja ajanvarauspalvelu. Palveluun voi kuulua verkkosivubotti, yrityksen tietopohja, asiakasviestien käsittely, live-asiakaspalvelu erillisillä työntekijätileillä, kielitaitoon perustuva keskustelujen ohjaus, tarjous- ja yhteydenottopyynnöt, ajanvaraukset sekä asiakkaan erikseen yhdistämät ulkopuoliset palvelut, kuten Google Calendar. Käytettävissä olevat ominaisuudet voivat riippua asiakkaan asetuksista ja tilauksesta.'],
       ['3. Automaattiset vastaukset', 'Respondo AI tuottaa asiakasvastauksia yrityksen palveluun lisäämien tietojen ja käytössä olevien toimintojen perusteella. Automaattinen vastaus voi olla virheellinen tai puutteellinen, joten asiakasyritys vastaa omien tietojensa oikeellisuudesta ja siitä, missä tilanteissa automaattisia vastauksia käytetään. Palvelua ei tule käyttää lainvastaisiin tarkoituksiin tai sellaisiin korkean riskin päätöksiin, joissa automaattinen vastaus yksin voi aiheuttaa olennaista vahinkoa.'],
       ['4. Google Calendar ja muut integraatiot', 'Asiakas voi vapaaehtoisesti yhdistää Google Calendarin tai muun tuetun palvelun. Respondo käyttää asiakkaan myöntämiä oikeuksia vain kyseisen käyttäjälle näkyvän toiminnon toteuttamiseen, kuten varausten saatavuuden tarkistamiseen ja kalenteritapahtumien luomiseen. Asiakas voi poistaa integraation käytöstä palvelun asetuksista tai kyseisen ulkopuolisen palvelun tiliasetuksista.'],
@@ -2982,7 +2986,7 @@ const LEGAL = {
     title: 'Tietosuojaseloste',
     intro: 'Tässä kerrotaan, mitä henkilötietoja Respondo AI käsittelee, miksi niitä käsitellään ja miten Google-käyttäjädataa käytetään.',
     sections: [
-      ['1. Rekisterinpitäjä', `RESPONDO AI, Y-tunnus ${cfg.businessId || '3599437-5'}. Tietosuoja- ja muut yhteydenotot: ${cfg.supportEmail}.`],
+      ['1. Rekisterinpitäjä', `Alex Varjonen (Respondo AI -palvelu), Y-tunnus ${cfg.businessId || '3599437-5'}. Tietosuoja- ja muut yhteydenotot: ${cfg.supportEmail}.`],
       ['2. Käsiteltävät tiedot', 'Voimme käsitellä käyttäjän nimeä, sähköpostiosoitetta, kirjautumis- ja tilitietoja, yrityksen nimeä, yhteystietoja ja Y-tunnusta, tilaus- ja laskutustunnisteita, yrityksen tietopohjaan lisäämiä tietoja, palvelun asetuksia sekä asiakkaiden chat-, yhteydenotto-, tarjous- ja ajanvaraustietoja siltä osin kuin yritys käyttää näitä toimintoja. Markkinointisivun kävijätilastointia varten käsitellään lisäksi vierailun ajankohtaa, avattua sivupolkua, viittaavaa verkkotunnusta, mahdollisia UTM-kampanjatietoja ja yksisuuntaisesti pseudonymisoitua kävijätunnistetta. Raakaa IP-osoitetta ei tallenneta kävijätilastotauluun.'],
       ['3. Käsittelyn tarkoitukset ja perusteet', 'Tietoja käsitellään palvelun toimittamiseen ja sopimuksen täyttämiseen, käyttäjän tunnistamiseen, asiakaspalveluun, tilausten ja maksujen hallintaan, ajanvarausten toteuttamiseen, palvelun turvallisuuden ylläpitämiseen, väärinkäytösten ehkäisyyn sekä lakisääteisten velvoitteiden hoitamiseen. Pseudonyymia, palvelinpuolista kävijätilastointia käytetään käyttäjän suostumuksella sivuston käytön, markkinointikanavien ja teknisen toimivuuden ymmärtämiseen. Ilman suostumusta valinnaista kävijätilastointia ei käynnistetä. Tarvittaessa muu käsittely voi perustua myös käyttäjän suostumukseen.'],
       ['4. Google-tili ja Google Calendar', 'Kun käyttäjä yhdistää Google Calendarin, Respondo pyytää Google OAuth -oikeuden calendar.events sekä kirjautumiseen tarvittavat openid-, email- ja profile-oikeudet. Calendar-oikeus mahdollistaa kalenteritapahtumien tarkastelun ja muokkaamisen. Respondo käyttää kalenteritietoja vain käyttäjälle näkyvien ajanvaraustoimintojen toteuttamiseen: olemassa olevia tapahtumia tarkastetaan päällekkäisten varausten estämiseksi ja hyväksytyistä varauksista voidaan luoda tapahtumia käyttäjän kalenteriin. Google Calendarin yhdistäminen on vapaaehtoista.'],
@@ -3061,7 +3065,7 @@ function legal(type) {
       <aside class="legal-aside"><div class="section-kicker">${select(revised.label)}</div>
         <h1>${select(revised.title)}</h1><p>${select(revised.intro)}</p>
         <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span>
-          <b>RESPONDO AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId||'3599437-5')}</small>
+          <b>Alex Varjonen · Respondo AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId||'3599437-5')}</small>
         </div>
       </aside>
       <article class="legalcopy">${sections}
@@ -3134,8 +3138,8 @@ function legal(type) {
     const translated = translateLegal(value);
     if (translated !== value || currentLang() === 'fi') return translated;
     const lang=currentLang(), bid=esc(cfg.businessId || '3599437-5'), mail=esc(cfg.supportEmail);
-    if (/^RESPONDO AI, Y-tunnus .* Suomi\. Yhteydenotot:/.test(value)) return lang==='sv'?`RESPONDO AI, FO-nummer ${bid}, Finland. Kontakt: ${mail}.`:`RESPONDO AI, Business ID ${bid}, Finland. Contact: ${mail}.`;
-    if (/^RESPONDO AI, Y-tunnus .* Tietosuoja-/.test(value)) return lang==='sv'?`RESPONDO AI, FO-nummer ${bid}. Integritets- och övriga kontakter: ${mail}.`:`RESPONDO AI, Business ID ${bid}. Privacy and other enquiries: ${mail}.`;
+    if (/^RESPONDO AI, Y-tunnus .* Suomi\. Yhteydenotot:/.test(value)) return lang==='sv'?`Alex Varjonen (Respondo AI), FO-nummer ${bid}, Finland. Kontakt: ${mail}.`:`Alex Varjonen (Respondo AI), Business ID ${bid}, Finland. Contact: ${mail}.`;
+    if (/^RESPONDO AI, Y-tunnus .* Tietosuoja-/.test(value)) return lang==='sv'?`Alex Varjonen (Respondo AI), FO-nummer ${bid}. Integritets- och övriga kontakter: ${mail}.`:`Alex Varjonen (Respondo AI), Business ID ${bid}. Privacy and other enquiries: ${mail}.`;
     if (/^Palvelua voi kokeilla /.test(value)) return lang==='sv'?`Tjänsten kan provas gratis i ${cfg.trialDays||3} dagar. En betalningsmetod kan läggas till i början av provperioden. Om abonnemanget inte sägs upp innan provperioden slutar fortsätter det som ett betalt abonnemang enligt vald faktureringsperiod.`:`The service can be tried free for ${cfg.trialDays||3} days. A payment method may be added at the start of the trial. Unless cancelled before the trial ends, the subscription continues as a paid subscription according to the selected billing period.`;
     if (/^Respondo tarjoaa Starter-/.test(value)) return lang==='sv'?'Respondo erbjuder Starter, Advanced och Business med månads- eller årsfakturering. Priserna är 29,90 €, 39,90 € och 49,90 € per månad. Årsfakturering kostar 358,80 €, 478,80 € respektive 598,80 € per år utan årsrabatt. Ingen moms debiteras på grund av verksamhet i liten skala.':'Respondo offers Starter, Advanced and Business at €29.90, €39.90 and €49.90 per month. Annual billing charges €358.80, €478.80 or €598.80 for twelve months with no annual discount. No VAT is charged due to the small-scale business exemption.';
     if (/^Tietoturvaan liittyvät ilmoitukset:/.test(value)) return lang==='sv'?`Säkerhetsrelaterade meddelanden: ${mail}.`:`Security-related notices: ${mail}.`;
@@ -3157,7 +3161,7 @@ function legal(type) {
           <div class="section-kicker">${page.label}</div>
           <h1>${page.title}</h1>
           <p>${page.intro}</p>
-          <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span><b>RESPONDO AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')}</small></div>
+          <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span><b>Alex Varjonen · Respondo AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')}</small></div>
         </aside>
         <article class="legalcopy">
           ${page.sections.map(([h, p]) => `<section><h2>${h}</h2><p>${p}</p></section>`).join('')}
@@ -3210,6 +3214,7 @@ function dashboardWithoutCompany(me, workspaces = []) {
             <option value="business_monthly">Business 49,90 € / kk</option>
             <option value="business_yearly">Business 598,80 € / ${appText('vuosi','år','year')}</option>
           </select></label>
+          <label class="workspace-terms"><input type="checkbox" name="businessPurchase" required><span>${appText('Vahvistan ostavani yrityksen käyttöön.','Jag bekräftar att köpet görs för företagets bruk.','I confirm this is a business purchase.')}</span></label>
           <label class="workspace-terms"><input type="checkbox" name="acceptedTerms" required><span>${appText('Hyväksyn käyttöehdot ja tietosuojaselosteen.','Jag godkänner användarvillkoren och integritetspolicyn.','I accept the terms and privacy policy.')}</span></label>
           <button type="submit" class="btn ink workspace-checkout-button">${appText('Lisää yritys','Lägg till företag','Add company')} →</button>
           <div id="emptyWorkspaceMsg" role="alert"></div>
@@ -3497,6 +3502,7 @@ async function dashboard(options = {}) {
               <input name="referralCode" id="workspaceReferralCode" maxlength="40" autocomplete="off" placeholder="${appText('Syötä suosittelukoodi','Ange rekommendationskod','Enter referral code')}">
               <small id="workspaceReferralHint">${appText('Voimassa oleva koodi antaa 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','En giltig kod ger 20 % rabatt på den första betalda månaden. Endast för månadsabonnemang.','A valid code gives 20% off the first paid month. Monthly plan only.')}</small>
             </label>
+            <label class="workspace-terms"><input type="checkbox" name="businessPurchase" required><span>${appText('Vahvistan ostavani yrityksen käyttöön.','Jag bekräftar att köpet görs för företagets bruk.','I confirm this is a business purchase.')}</span></label>
             <label class="workspace-terms"><input type="checkbox" name="acceptedTerms" required><span>${appText('Hyväksyn käyttöehdot ja tietosuojaselosteen.','Jag godkänner användarvillkoren och integritetspolicyn.','I accept the terms and privacy policy.')}</span></label>
             <button class="btn ink workspace-checkout-button" type="submit">${appText('Jatka turvalliseen maksuun','Fortsätt till säker betalning','Continue to secure checkout')} →</button>
             <div id="workspaceAddMsg"></div>
@@ -5276,6 +5282,7 @@ async function route() {
             plan:form.get('plan'),
             referralCode:form.get('referralCode'),
             acceptedTerms:!!form.get('terms'),
+            businessPurchase:form.get('businessPurchase')==='on',
             ownerTestAccessToken:String(form.get('ownerTestAccessToken') || ''),
             language:signupLanguage,
           }),
@@ -5570,6 +5577,7 @@ async function route() {
             billingCountry:String(fd.get('billingCountry')||'').trim(),
             plan:String(fd.get('plan')||'basic_monthly'),
             acceptedTerms:fd.get('acceptedTerms')==='on',
+            businessPurchase:fd.get('businessPurchase')==='on',
           }),
         });
         if(!result?.url) throw new Error(appText('Maksusivua ei voitu avata.','Betalningssidan kunde inte öppnas.','Could not open checkout.'));
@@ -5599,7 +5607,8 @@ async function route() {
             billingCountry:String(fd.get('billingCountry')||'').trim(),
             plan:String(fd.get('plan')||'basic_monthly'),
             referralCode:String(fd.get('referralCode')||'').trim(),
-            acceptedTerms:fd.get('acceptedTerms')==='on'
+            acceptedTerms:fd.get('acceptedTerms')==='on',
+            businessPurchase:fd.get('businessPurchase')==='on'
           })
         });
         if(!result?.url) throw new Error(appText('Maksusivua ei saatu avattua.','Betalningssidan kunde inte öppnas.','Could not open checkout.'));
