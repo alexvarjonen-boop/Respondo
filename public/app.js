@@ -5097,6 +5097,7 @@ async function route() {
           badge.className = 'oauth-connected';
           const providerName = profile.provider === 'apple' ? 'Apple' : 'Google';
           badge.textContent = providerName + ' · ' + appText('tili yhdistetty','konto anslutet','account connected') + ' · ' + profile.email;
+          syncSignupEmailStatus();
           form.querySelector('.formgrid')?.before(badge);
         })
         .catch(() => {});
