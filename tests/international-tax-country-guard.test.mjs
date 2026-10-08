@@ -56,7 +56,7 @@ test('mismatched Checkout address cancels subscription before account activation
 test('signup and both workspace forms submit FI silently without visible billing country UI',()=>{
   assert.equal((app.match(/<input type="hidden" name="billingCountry" value="FI">/g)||[]).length,3);
   assert.equal((app.match(/<select name="billingCountry"/g)||[]).length,0);
-  assert.doesNotMatch(app, /<label>\\$\\{appText\\('Laskutusmaa'/);
+  assert.doesNotMatch(app, /Laskutusmaa','Faktureringsland','Billing country/);
   assert.match(html,/billing-hidden-v1/);
   assert.equal((app.match(/billingCountry:(?:form.get|String\(fd.get)/g)||[]).length,3);
   assert.match(app,/billingCountryNotice/);
