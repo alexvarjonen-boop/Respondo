@@ -377,6 +377,22 @@ async function enforceCompletedCheckoutCountryPolicy(session) {
   });
   return false;
 }
+// Applies only to newly created, verified Finnish B2B subscriptions.
+// Do not silently rewrite finalized invoices or historical subscriptions.
+const RESPONDO_DOMESTIC_INVOICE_FOOTER =
+  'Myyjä / Seller: Alex Varjonen (Respondo AI). Y-tunnus / Business ID: 3599437-5. ' +
+  'Myyjä ei ole arvonlisäverorekisterissä; arvonlisäveroa ei peritä vähäisen toiminnan vuoksi. ' +
+  'The seller is not VAT-registered; no Finnish VAT is charged.';
+async function ensureNewDomesticSubscriptionSellerFooter(subscriptionId, session) {
+  if (!stripe || !subscriptionId ||
+      session?.metadata?.tax_country_policy !== TAX_COUNTRY_POLICY_VERSION ||
+      session?.metadata?.billing_country !== 'FI' ||
+      session?.metadata?.business_purchase !== '1') return false;
+  await stripe.subscriptions.update(subscriptionId, {
+    invoice_settings: { footer:RESPONDO_DOMESTIC_INVOICE_FOOTER },
+  });
+  return true;
+}
 function checkoutTaxExemptionMessage(lang='fi') {
   const safeLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase())
     ? String(lang).toLowerCase() : 'fi';
@@ -5436,6 +5452,15 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             console.error('Duplicate signup subscription cancellation failed', duplicateCancelError);
           }
           return res.json({ received:true, duplicateCheckout:true });
+        }
+        if (incomingSubscriptionId) {
+          try {
+            await ensureNewDomesticSubscriptionSellerFooter(incomingSubscriptionId, session);
+          } catch(invoiceSetupError) {
+            // Do not interrupt checkout accounting if the invoice layout API is unavailable.
+            // Dashboard account-wide invoice merchant details must still be verified.
+            console.error('New subscription invoice seller footer update failed',invoiceSetupError);
+          }
         }
         if (target?.recovered) {
           console.warn('Recovered checkout for recreated pending account', {
