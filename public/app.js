@@ -3436,6 +3436,13 @@ async function dashboard(options = {}) {
         </section>
       </div>` : ''}
 
+      ${!isDemo ? `
+      <div class="dashboard-page-heading" aria-live="polite" aria-atomic="true">
+        <small id="dashboardPageEyebrow">RESPONDO OS</small>
+        <h1 id="dashboardPageTitle">${appText('Yleiskatsaus','Översikt','Overview')}</h1>
+      </div>
+      ` : ''}
+
       <section class="dashboard-head dashboard-view-section" data-dashboard-view="overview" id="overview">
         <div><div class="section-kicker">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</div><h1>${esc(t.name)}</h1><p>${appText('Valitse ylhäältä mitä haluat tehdä. Näytämme vain siihen liittyvät asiat.','Välj ovan vad du vill göra. Vi visar bara det som hör till valet.','Choose what you want to do above. We only show the relevant items.')}</p></div>
       </section>
@@ -4654,7 +4661,7 @@ async function route() {
       'billing':'account',
     };
     const dashboardViewMeta = {
-      overview:{ eyebrow:'RESPONDO OS', title:appText('Koti','Hem','Home') },
+      overview:{ eyebrow:'RESPONDO OS', title:appText('Yleiskatsaus','Översikt','Overview') },
       setup:{ eyebrow:appText('HALLINTA','KONTROLL','CONTROL'), title:appText('Yritys & botti','Företag & bot','Business & bot') },
       answers:{ eyebrow:appText('TIETO','KUNSKAP','KNOWLEDGE'), title:appText('Vastaukset','Svar','Answers') },
       customers:{ eyebrow:appText('ASIAKKAAT','KUNDER','CUSTOMERS'), title:appText('Keskustelut & liidit','Konversationer & leads','Conversations & leads') },
@@ -5540,7 +5547,7 @@ async function route() {
       'billing':'account',
     };
     const dashboardViewMeta = {
-      overview:{ eyebrow:'RESPONDO OS', title:appText('Koti','Hem','Home') },
+      overview:{ eyebrow:'RESPONDO OS', title:appText('Yleiskatsaus','Översikt','Overview') },
       setup:{ eyebrow:appText('HALLINTA','KONTROLL','CONTROL'), title:appText('Yritys & botti','Företag & bot','Business & bot') },
       answers:{ eyebrow:appText('TIETO','KUNSKAP','KNOWLEDGE'), title:appText('Vastaukset','Svar','Answers') },
       customers:{ eyebrow:appText('ASIAKKAAT','KUNDER','CUSTOMERS'), title:appText('Keskustelut & liidit','Konversationer & leads','Conversations & leads') },
