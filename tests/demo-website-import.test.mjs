@@ -18,9 +18,10 @@ test('Try Bot website import really scans and feeds imported facts into demo cha
   assert.match(app,/sourceType:'demo_import'/);
   assert.match(app,/demoImportId=String\(result\.demoImportId\|\|''\)\.trim\(\)/);
   assert.match(app,/demoImportId,/);
-  assert.match(app,/customFacts:demoFacts\.slice\(0,350\)\.map\(x=>\(\{/);
-  assert.match(app,/category:x\.category/);
-  assert.match(app,/sourceUrl:x\.sourceUrl/);
+  assert.match(app,/customFacts:previewFallbackFacts\(question\)/);
+  assert.match(app,/const previewFallbackFacts=\(question\)=>/);
+  assert.match(app,/category:String\(fact\.category\|\|''\)\.slice\(0,64\)/);
+  assert.match(app,/sourceUrl:String\(fact\.sourceUrl\|\|''\)\.slice\(0,350\)/);
   assert.doesNotMatch(app,/Automaattinen verkkosivun tietojen haku avautuu tilauksen yhteydessä/);
 });
 

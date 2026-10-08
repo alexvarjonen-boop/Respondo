@@ -21,7 +21,11 @@ test('public imported demo never mixes in authenticated owner knowledge',()=>{
 });
 
 test('an already-open Try Bot session sends a compact inline copy of imported facts',()=>{
-  assert.match(app,/customFacts:demoFacts\.slice\(0,350\)\.map/);
+  assert.match(app,/customFacts:previewFallbackFacts\(question\)/);
+  assert.match(app,/\.filter\(f=>f\.sourceType==='demo_import'\)/);
+  assert.match(app,/\.slice\(0,32\)/);
+  assert.match(app,/answer:String\(fact\.answer\|\|''\)\.slice\(0,650\)/);
+  assert.doesNotMatch(app,/customFacts:demoFacts\.slice\(0,350\)/);
   assert.doesNotMatch(app,/customFacts:demoFacts\.filter\(x=>x\.sourceType!==['"]demo_import['"]\)/);
 });
 
