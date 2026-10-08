@@ -3894,11 +3894,26 @@ function contextualizeConversationQuery(message, history = []) {
   return [previous,previousAnswer.slice(0,180),q].filter(Boolean).join(' ');
 }
 
+function bookingLinkLooksLikeContactForm(raw) {
+  // A generic contact/quote page cannot be represented as a real calendar
+  // just because an old imported profile has stored it in the booking field.
+  // Do not block dedicated scheduling services or explicitly booking URLs.
+  try {
+    const parsed=new URL(String(raw||'').trim());
+    if(!['https:','http:'].includes(parsed.protocol)) return false;
+    if(/(?:booking|appointment|calendar|schedule|ajanvaraus|varaa[-_]?aika|tidsbokning|bokning)/i.test(parsed.search)) return false;
+    const path=decodeURIComponent(parsed.pathname).replace(/\/+$/,'').toLowerCase();
+    return /\/(?:contact(?:[-_]?us)?|get[-_]?in[-_]?touch|yhteystiedot|ota[-_]?yhteytta|ota[-_]?yhteyttä|kontakt(?:[-_]?oss)?|kontakta[-_]?oss)$/.test(path);
+  } catch { return false; }
+}
+
 function chatActions(rows, message, handoff = false, lang = 'fi', selected = []) {
   const actionLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const q = normalizeSearchText(message);
   const quote = knowledgeValue(rows, 'Tarjouspyyntölomake');
-  const booking = knowledgeValue(rows, 'Ajanvarauslinkki');
+  const bookingCandidate = knowledgeValue(rows, 'Ajanvarauslinkki');
+  const booking = bookingCandidate && !bookingLinkLooksLikeContactForm(bookingCandidate) &&
+    bookingCandidate !== quote ? bookingCandidate : '';
   const phone = verifiedContactValue(rows, 'Puhelinnumero')?.value || '';
   const email = verifiedContactValue(rows, 'Sähköposti')?.value || '';
   const requestedContact=explicitContactQuestion(message);
@@ -3947,7 +3962,9 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
 
   if (/tarjou[sk]|hinta-arvio|arvio|kustannusarvio|quote|estimate|offert|prisförslag|prisforslag/.test(q)) {
     if (!quote) push({ type: 'quote', mode: 'quote_form', label: actionLang === 'en' ? 'Request a quote' : actionLang === 'sv' ? 'Begär offert' : 'Pyydä tarjous' });
-    if (quote) push({ type: 'quote', label: actionLang === 'en' ? 'Open quote form' : actionLang === 'sv' ? 'Öppna offertformuläret' : 'Avaa tarjouslomake', url: quote });
+    if (quote) push({ type: 'quote', label: bookingLinkLooksLikeContactForm(quote)
+      ? (actionLang === 'en' ? 'Open contact page' : actionLang === 'sv' ? 'Öppna kontaktsidan' : 'Avaa yhteydenottosivu')
+      : (actionLang === 'en' ? 'Open quote form' : actionLang === 'sv' ? 'Öppna offertformuläret' : 'Avaa tarjouslomake'), url: quote });
   }
 
   if (/soittakaa|ottakaa yhteytta|ottakaa yhteyttä|yhteydenotto|call me|contact me|ring mig|kontakta mig/.test(q)) {

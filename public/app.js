@@ -3120,6 +3120,12 @@ async function dashboard(options = {}) {
     const value = businessProfile[title] || '';
     return esc(obviouslyCorruptProfileValue(value) ? '' : value);
   };
+  const bookingValue=String(businessProfile['Ajanvarauslinkki']||'').trim();
+  const quoteValue=String(businessProfile['Tarjouspyyntölomake']||'').trim();
+  const bookingLinkNeedsReview=Boolean(bookingValue && (
+    (quoteValue && bookingValue===quoteValue) ||
+    /\/(?:contact(?:[-_]?us)?|get[-_]?in[-_]?touch|yhteystiedot|ota[-_]?yhteytta|ota[-_]?yhteyttä|kontakt(?:[-_]?oss)?)\/?(?:[?#].*)?$/i.test(bookingValue)
+  ));
   const unanswered = data.unanswered || [];
   const recentConversations = data.recentConversations || [];
   const leads = data.leads || [];
@@ -3431,6 +3437,7 @@ async function dashboard(options = {}) {
               <label>Ajanvarauslinkki</label>
               <input name="bookingUrl" value="${profileValue('Ajanvarauslinkki')}" placeholder="https://yritys.fi/ajanvaraus">
               <small class="field-hint">Kun asiakas haluaa varata ajan, Respondo näyttää suoran Varaa aika -toiminnon.</small>
+              ${bookingLinkNeedsReview ? `<small class="field-hint" style="color:#a33c22;font-weight:700">${appText('Tämä osoite näyttää yleiseltä yhteydenottosivulta, ei ajanvarauskalenterilta. Lisää oikea ajanvarauslinkki tai jätä kenttä tyhjäksi.','Adressen verkar vara en kontaktsida, inte en bokningskalender. Ange en riktig bokningslänk eller lämna fältet tomt.','This looks like a contact page rather than a booking calendar. Add a booking link or leave this blank.')}</small>` : ''}
             </div>
             <div class="field">
               <label>Yhden liidin arvioitu arvo (€)</label>
