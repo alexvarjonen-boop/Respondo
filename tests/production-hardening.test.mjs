@@ -128,13 +128,15 @@ test('owner password changes rotate the session and staff administration is owne
 });
 
 
-test('owner login email changes require the current password and rotate sessions', () => {
+test('owner login email changes require password and verified ownership before rotation', () => {
   assert.match(server, /app\.post\('\/api\/app\/account\/email', auth, ownerOnly, loginLimiter/);
   assert.match(server, /bcrypt\.compare\(currentPassword,rr\.rows\[0\]\.password_hash\)/);
   assert.match(server, /SELECT 1 FROM users WHERE lower\(email\)=lower\(\$1\) AND id<>\$2 LIMIT 1/);
-  assert.match(server, /SET email=\$1,session_version=session_version\+1,updated_at=NOW\(\)/);
-  assert.match(server, /stripe\.customers\.update\(stripeCustomerId,\{ email:newEmail \}\)/);
-  assert.match(server, /setSession\(res,updated\.rows\[0\]\)/);
+  const action=server.slice(server.indexOf("app.post('/api/app/account/email'"),server.indexOf("app.post('/api/app/account/password'"));
+  assert.match(action, /issueEmailVerificationToken\(/);
+  assert.doesNotMatch(action, /SET email=\$1/);
+  assert.match(server, /UPDATE users SET email=\$1,email_verified_at=NOW\(\),session_version=session_version\+1/);
+  assert.match(server, /stripe\.customers\.update\(user\.rows\[0\]\.stripe_customer_id,\{email:claim\.email\}\)/);
 });
 
 test('production requires a dedicated data encryption key while retaining legacy decryption compatibility', () => {
