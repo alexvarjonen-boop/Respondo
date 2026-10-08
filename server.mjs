@@ -1043,6 +1043,14 @@ function planFromStripePriceId(priceId) {
     ['advanced_yearly',process.env.STRIPE_ADVANCED_YEARLY_PRICE_ID],
     ['business_monthly',process.env.STRIPE_BUSINESS_MONTHLY_PRICE_ID],
     ['business_yearly',process.env.STRIPE_BUSINESS_YEARLY_PRICE_ID],
+    // Previous October 2026 VAT-inclusive prices must still map to the correct tier
+    // after the live checkout price IDs are rotated.
+    ['basic_monthly','price_1UOLwuV05brJ7mTPUcIxZKE6'],
+    ['basic_yearly','price_1UOLx1V05brJ7mTPETqeexmn'],
+    ['advanced_monthly','price_1UOLx3V05brJ7mTPODsTKyC5'],
+    ['advanced_yearly','price_1UOLx6V05brJ7mTPIgyqDymD'],
+    ['business_monthly','price_1UOLx8V05brJ7mTPDq47ha22'],
+    ['business_yearly','price_1UOLxBV05brJ7mTPSsDPLXTM'],
     // Retain the historical six price IDs for existing customer subscriptions.
     // New checkout always uses the current environment-configured prices.
     ['basic_monthly','price_1UNGlQV05brJ7mTPOsgm1BPT'],
