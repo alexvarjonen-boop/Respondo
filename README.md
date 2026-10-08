@@ -22,16 +22,16 @@ Trial: 3 days.
 ## Live Stripe products and current prices
 
 - Starter: `prod_VO2qWi6HFkLrqj`
-  - Monthly: `price_1UOLwuV05brJ7mTPUcIxZKE6`
-  - Annual (no discount): `price_1UOLx1V05brJ7mTPETqeexmn`
+  - Monthly: `price_1UONnqV05brJ7mTPu5MvqQaP`
+  - Annual (no discount): `price_1UONnxV05brJ7mTPMVHkrpf5`
 - Advanced: `prod_VO2qKqvwOQtz2m`
-  - Monthly: `price_1UOLx3V05brJ7mTPODsTKyC5`
-  - Annual (no discount): `price_1UOLx6V05brJ7mTPIgyqDymD`
+  - Monthly: `price_1UONo0V05brJ7mTPesqzKl1q`
+  - Annual (no discount): `price_1UONrlV05brJ7mTPsUqKaQIB`
 - Business: `prod_VO2q7QXcuFoW9R`
-  - Monthly: `price_1UOLx8V05brJ7mTPDq47ha22`
-  - Annual (no discount): `price_1UOLxBV05brJ7mTPSsDPLXTM`
+  - Monthly: `price_1UONrnV05brJ7mTPR01BklbN`
+  - Annual (no discount): `price_1UONrqV05brJ7mTPWmGhW2lP`
 
-Historical price IDs remain available for recognizing existing subscriptions; they must not be offered for new checkouts.
+Historical Stripe price IDs remain available for recognizing existing subscriptions; they must not be offered for new checkouts. The six active new prices have tax_behavior=exclusive, and both subscription checkouts explicitly disable automatic tax and attach no tax rates. This domestic small-business tax treatment must be re-evaluated before EU cross-border sales or exceeding Finland's registration threshold.
 
 ## Production services
 
