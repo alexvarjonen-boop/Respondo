@@ -6528,6 +6528,7 @@ app.get('/api/public/config', publicReadLimiter, async (req, res) => {
   }
   return res.json({
     brand: 'RESPONDO AI',
+    sellerName: 'Alex Varjonen · Respondo AI',
     supportEmail: process.env.SUPPORT_EMAIL || 'info@respondoai.fi',
     trialDays: 3,
     monthlyNet: 29.90,
@@ -6553,6 +6554,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   const freeReferral = isFreeReferralCode(referralCode);
   const checkoutCountry = checkoutCountryPolicy(req.body?.billingCountry);
   if (!checkoutCountry.ok) return res.status(422).json({ error:checkoutCountry.error });
+  if (req.body?.businessPurchase !== true) return res.status(422).json({ error:'Vahvista yrityskäyttö ennen tilaamista.' });
   const oauthProfile = getOauthProfile(req);
   const socialSignup = Boolean(
     oauthProfile &&
@@ -7398,6 +7400,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const freeReferral=isFreeReferralCode(referralCode);
   const checkoutCountry=checkoutCountryPolicy(req.body?.billingCountry);
   if(!checkoutCountry.ok) return res.status(422).json({error:checkoutCountry.error});
+  if(req.body?.businessPurchase!==true) return res.status(422).json({error:'Vahvista yrityskäyttö ennen tilaamista.'});
 
   if(!companyName) return res.status(400).json({ error:'Anna yrityksen nimi.' });
   if(req.body?.acceptedTerms!==true) return res.status(400).json({ error:'Hyväksy käyttöehdot ja tietosuojaseloste.' });
