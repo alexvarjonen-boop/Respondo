@@ -104,21 +104,21 @@ const FAQ = [
         "Mitä Respondo maksaa kuukaudessa?",
         "Paljonko kuukausitilaus maksaa?"
       ],
-      "a": "Kuukausihinnat ovat Basic 49,99 €/kk, Advanced 64,99 €/kk ja Business 79,99 €/kk. Hinnat sisältävät ALV:n 25,5 %."
+      "a": "Kuukausihinnat ovat Starter 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Hintoihin ei sisälly eikä niihin lisätä arvonlisäveroa, koska myyjä ei ole alv-rekisterissä vähäisen toiminnan vuoksi."
     },
     "sv": {
       "q": [
         "Vad kostar Respondo per månad?",
         "Vad kostar månadsabonnemanget?"
       ],
-      "a": "Månadspriserna är Basic 49,99 €/månad, Advanced 64,99 €/månad och Business 79,99 €/månad. Priserna inkluderar 25,5 % moms."
+      "a": "Månadspriserna är Starter 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Priserna är utan moms eftersom säljaren inte är momsregistrerad på grund av verksamhet i liten skala."
     },
     "en": {
       "q": [
         "How much does Respondo cost per month?",
         "What is the monthly plan price?"
       ],
-      "a": "Monthly pricing is Basic €49.99/month, Advanced €64.99/month, and Business €79.99/month. Prices include 25.5% VAT."
+      "a": "Monthly pricing is Starter €29.90/month, Advanced €39.90/month, and Business €49.90/month. No VAT is charged because the seller is not VAT-registered due to small-scale business activity."
     }
   },
   {
@@ -128,21 +128,21 @@ const FAQ = [
         "Mitä vuositilaus maksaa?",
         "Paljonko vuosipaketti maksaa?"
       ],
-      "a": "Vuositilaukset: Basic 44,99 €/kk (539,88 €/vuosi), Advanced 59,99 €/kk (719,88 €/vuosi) ja Business 74,99 €/kk (899,88 €/vuosi). Hinnat sisältävät ALV:n 25,5 %."
+      "a": "Vuositilaukset: Starter 29,90 €/kk (358,80 €/vuosi), Advanced 39,90 €/kk (478,80 €/vuosi) ja Business 49,90 €/kk (598,80 €/vuosi). Hintoihin ei sisälly eikä niihin lisätä arvonlisäveroa, koska myyjä ei ole alv-rekisterissä vähäisen toiminnan vuoksi."
     },
     "sv": {
       "q": [
         "Vad kostar årsabonnemanget?",
         "Hur mycket kostar årsplanen?"
       ],
-      "a": "Årsabonnemangen är Basic 44,99 €/månad (539,88 €/år), Advanced 59,99 €/månad (719,88 €/år) och Business 74,99 €/månad (899,88 €/år). Priserna inkluderar 25,5 % moms."
+      "a": "Årsabonnemangen är Starter 29,90 €/månad (358,80 €/år), Advanced 39,90 €/månad (478,80 €/år) och Business 49,90 €/månad (598,80 €/år). Priserna är utan moms eftersom säljaren inte är momsregistrerad på grund av verksamhet i liten skala."
     },
     "en": {
       "q": [
         "How much is the annual plan?",
         "What does the yearly subscription cost?"
       ],
-      "a": "Annual pricing is Basic €44.99/month (€539.88/year), Advanced €59.99/month (€719.88/year), and Business €74.99/month (€899.88/year). Prices include 25.5% VAT."
+      "a": "Annual pricing is Starter €29.90/month (€358.80/year), Advanced €39.90/month (€478.80/year), and Business €49.90/month (€598.80/year). No VAT is charged because the seller is not VAT-registered due to small-scale business activity."
     }
   },
   {
@@ -152,21 +152,21 @@ const FAQ = [
         "Sisältääkö hinta ALV:n?",
         "Tuleeko hinnan päälle vielä veroja?"
       ],
-      "a": "Kaikki Basic-, Advanced- ja Business-hinnat sisältävät ALV:n 25,5 %. Ennen maksamista Stripe näyttää valitun paketin kokonaishinnan ja laskutusjakson."
+      "a": "Starter-, Advanced- ja Business-hintoihin ei lisätä arvonlisäveroa, koska myyjä ei ole alv-rekisterissä vähäisen toiminnan vuoksi. Ennen maksamista Stripe näyttää valitun paketin kokonaishinnan ja laskutusjakson."
     },
     "sv": {
       "q": [
         "Ingår moms i priset?",
         "Tillkommer skatt på priset?"
       ],
-      "a": "Alla priser för Basic, Advanced och Business inkluderar 25,5 % moms. Stripe visar totalpriset och faktureringsperioden före betalning."
+      "a": "Ingen moms tas ut på Starter-, Advanced- eller Business-priserna eftersom säljaren inte är momsregistrerad på grund av verksamhet i liten skala. Stripe visar totalpriset och faktureringsperioden före betalning."
     },
     "en": {
       "q": [
         "Does the price include VAT?",
         "Are taxes added on top of the price?"
       ],
-      "a": "All Basic, Advanced, and Business prices include 25.5% VAT. Stripe shows the selected plan's total price and billing period before payment."
+      "a": "No VAT is charged on Starter, Advanced or Business because the seller is not VAT-registered due to small-scale business activity. Stripe shows the selected plan's total price and billing period before payment."
     }
   },
   {
@@ -224,21 +224,21 @@ const FAQ = [
         "Miten aloitan tilauksen?",
         "Mistä voin tilata Respondon?"
       ],
-      "a": "Aloita Respondon sivun Kokeile ilmaiseksi -painikkeesta tai avaa {{SITE_URL}}/tilaus. Valitse Basic, Advanced tai Business sekä kuukausi- tai vuositilaus, luo tili tai jatka Googlella ja lisää maksutapa turvallisesti Stripessä."
+      "a": "Aloita Respondon sivun Kokeile ilmaiseksi -painikkeesta tai avaa {{SITE_URL}}/tilaus. Valitse Starter, Advanced tai Business sekä kuukausi- tai vuositilaus, luo tili tai jatka Googlella ja lisää maksutapa turvallisesti Stripessä."
     },
     "sv": {
       "q": [
         "Hur startar jag ett abonnemang?",
         "Var kan jag beställa Respondo?"
       ],
-      "a": "Börja med knappen Prova gratis på Respondos webbplats eller öppna {{SITE_URL}}/tilaus. Välj Basic, Advanced eller Business och månads- eller årsabonnemang, skapa ett konto eller fortsätt med Google och lägg till betalningsmetoden säkert i Stripe."
+      "a": "Börja med knappen Prova gratis på Respondos webbplats eller öppna {{SITE_URL}}/tilaus. Välj Starter, Advanced eller Business och månads- eller årsabonnemang, skapa ett konto eller fortsätt med Google och lägg till betalningsmetoden säkert i Stripe."
     },
     "en": {
       "q": [
         "How do I start a subscription?",
         "Where can I subscribe to Respondo?"
       ],
-      "a": "Start from the Try for free button on the Respondo website or open {{SITE_URL}}/tilaus. Choose Basic, Advanced, or Business and monthly or annual billing, create an account or continue with Google, and add your payment method securely in Stripe."
+      "a": "Start from the Try for free button on the Respondo website or open {{SITE_URL}}/tilaus. Choose Starter, Advanced, or Business and monthly or annual billing, create an account or continue with Google, and add your payment method securely in Stripe."
     }
   },
   {
@@ -1352,21 +1352,21 @@ const FAQ = [
         "Mitä ominaisuuksia Respondossa on?",
         "Mitä kaikkea Respondo osaa?"
       ],
-      "a": "Ominaisuudet riippuvat paketista. Basic sisältää AI-chatin, manuaalisen tietopohjan, ajanvaraukset, yhteydenotot ja 2 asiakaspalvelijapaikkaa. Advanced lisää verkkosivutuonnin, Google Calendarin, laajemman analytiikan ja 10 paikkaa. Business sisältää kaikki Respondon nykyiset ominaisuudet ja 20 paikkaa."
+      "a": "Ominaisuudet riippuvat paketista. Starter sisältää AI-chatin, manuaalisen tietopohjan, ajanvaraukset, yhteydenotot ja 2 asiakaspalvelijapaikkaa. Advanced lisää verkkosivutuonnin, Google Calendarin, laajemman analytiikan ja 10 paikkaa. Business sisältää kaikki Respondon nykyiset ominaisuudet ja 20 paikkaa."
     },
     "sv": {
       "q": [
         "Vilka funktioner har Respondo?",
         "Vad kan Respondo göra?"
       ],
-      "a": "Funktionerna beror på paketet. Basic innehåller AI-chatt, manuell kunskapsbas, bokningar, kontaktförfrågningar och 2 kundserviceplatser. Advanced lägger till webbplatsimport, Google Calendar, utökad analys och 10 platser. Business innehåller alla nuvarande Respondo-funktioner och 20 platser."
+      "a": "Funktionerna beror på paketet. Starter innehåller AI-chatt, manuell kunskapsbas, bokningar, kontaktförfrågningar och 2 kundserviceplatser. Advanced lägger till webbplatsimport, Google Calendar, utökad analys och 10 platser. Business innehåller alla nuvarande Respondo-funktioner och 20 platser."
     },
     "en": {
       "q": [
         "What features does Respondo have?",
         "What can Respondo do?"
       ],
-      "a": "Features depend on the tier. Basic includes AI chat, a manual knowledge base, bookings, contact capture, and 2 support-agent seats. Advanced adds website import, Google Calendar, expanded analytics, and 10 seats. Business includes all current Respondo features and 20 seats."
+      "a": "Features depend on the tier. Starter includes AI chat, a manual knowledge base, bookings, contact capture, and 2 support-agent seats. Advanced adds website import, Google Calendar, expanded analytics, and 10 seats. Business includes all current Respondo features and 20 seats."
     }
   },
   {
@@ -1376,21 +1376,21 @@ const FAQ = [
         "Onko kuukausi- ja vuositilauksessa samat ominaisuudet?",
         "Saanko vuositilauksella enemmän ominaisuuksia?"
       ],
-      "a": "Saman pakettitason kuukausi- ja vuositilauksessa ovat samat ominaisuudet. Basic, Advanced ja Business eroavat toisistaan ominaisuuksien ja asiakaspalvelijapaikkojen määrän perusteella."
+      "a": "Saman pakettitason kuukausi- ja vuositilauksessa ovat samat ominaisuudet. Starter, Advanced ja Business eroavat toisistaan ominaisuuksien ja asiakaspalvelijapaikkojen määrän perusteella."
     },
     "sv": {
       "q": [
         "Har månads- och årsabonnemanget samma funktioner?",
         "Får jag fler funktioner med årsplanen?"
       ],
-      "a": "Månads- och årsabonnemanget på samma nivå har samma funktioner. Basic, Advanced och Business skiljer sig åt i funktioner och antal kundserviceplatser."
+      "a": "Månads- och årsabonnemanget på samma nivå har samma funktioner. Starter, Advanced och Business skiljer sig åt i funktioner och antal kundserviceplatser."
     },
     "en": {
       "q": [
         "Do the monthly and annual plans have the same features?",
         "Do I get more features on the annual plan?"
       ],
-      "a": "Monthly and annual billing for the same tier include the same features. Basic, Advanced, and Business differ in included features and support-agent seats."
+      "a": "Monthly and annual billing for the same tier include the same features. Starter, Advanced, and Business differ in included features and support-agent seats."
     }
   },
   {
