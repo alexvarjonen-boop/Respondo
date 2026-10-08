@@ -38,7 +38,9 @@ test('public Try Bot requests are isolated after reload and from older tabs',()=
 });
 
 test('old Try Bot tabs can recover product facts from the restored website field',()=>{
-  assert.match(server,/if \(isPublicDemo && broadProductQuestion\(message\)\)/);
-  assert.match(server,/fetchWebsiteBundle\([\s\S]{0,120}website,[\s\S]{0,80}30,[\s\S]{0,80}10000/);
+  assert.match(server,/const needsProductRecovery=broadProductQuestion\(message\)/);
+  assert.match(server,/if \(isPublicDemo && \(needsProductRecovery \|\| needsContactRecovery\)\)/);
+  assert.match(server,/needsContactRecovery \? 12 : 30/);
+  assert.match(server,/needsContactRecovery \? 7000 : 10000/);
   assert.match(server,/Public demo self-heal scan failed/);
 });
