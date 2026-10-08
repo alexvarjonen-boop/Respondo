@@ -703,7 +703,7 @@
                   </div>
                 </article>
               </div>
-              <div class="assistant-order-trust"><span>✓ ${pageTx('Maksut turvallisesti Stripessä','Säkra betalningar via Stripe','Secure payments with Stripe')}</span><span>✓ ${pageTx('Ei veloitusta 3 päivän kokeilun aikana','Ingen debitering under provperioden','No charge during the 3-day trial')}</span><span>✓ ${pageTx('Hinnat sisältävät ALV 25,5 %','Priserna inkluderar 25,5 % moms','Prices include 25.5% VAT')}</span></div>
+              <div class="assistant-order-trust"><span>✓ ${pageTx('Maksut turvallisesti Stripessä','Säkra betalningar via Stripe','Secure payments with Stripe')}</span><span>✓ ${pageTx('Ei veloitusta 3 päivän kokeilun aikana','Ingen debitering under provperioden','No charge during the 3-day trial')}</span><span>✓ ${pageTx('Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi','Ingen moms debiteras på grund av verksamhet i liten skala','No VAT is charged due to small-scale business activity')}</span></div>
             </section>
           </section>
           <div class="assistant-demo-column" id="assistantDemoColumn" aria-label="Testibotti ja tilaus"></div>
