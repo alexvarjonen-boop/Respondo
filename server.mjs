@@ -7647,6 +7647,95 @@ app.get('/api/public/config', publicReadLimiter, async (req, res) => {
   });
 });
 
+
+app.post('/api/auth/email-verification/request', checkoutLimiter, async (req,res) => {
+  const email=validVerificationAddress(req.body?.email);
+  if(!email) return res.status(400).json({error:'Anna kelvollinen sähköpostiosoite.'});
+  try{
+    const exists=await q('SELECT status,stripe_customer_id,stripe_subscription_id FROM users WHERE lower(email)=lower($1)',[email]);
+    if(exists.rowCount && (exists.rows[0].status!=='pending' || exists.rows[0].stripe_customer_id || exists.rows[0].stripe_subscription_id)){
+      return res.json({ok:true,message:'Jos osoitteella voi luoda uuden tilin, siihen on lähetetty vahvistusviesti.'});
+    }
+    await issueEmailVerificationToken({email,language:req.body?.language});
+    return res.json({ok:true,message:'Vahvistusviesti lähetettiin sähköpostiisi. Avaa Vahvista sähköposti -linkki ja jatka tilausta.'});
+  }catch(e){
+    if(e.publicStatus) return res.status(e.publicStatus).json({error:e.message});
+    console.error('Verification request failed',e?.message||e);
+    return res.status(503).json({error:'Vahvistusviestiä ei voitu lähettää. Yritä myöhemmin.'});
+  }
+});
+
+app.get('/api/auth/email-verification/confirm', async (req,res) => {
+  const token=String(req.query?.token||'').trim();
+  res.set({
+    'Cache-Control':'no-store','Referrer-Policy':'no-referrer',
+    'Content-Security-Policy':"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+  });
+  if(!/^[A-Za-z0-9_-]{32,140}$/.test(token)) return res.status(400).type('html').send('<p>Vahvistuslinkki on virheellinen.</p>');
+  const hash=crypto.createHash('sha256').update(token).digest('hex');
+  try{
+    const rows=await q('SELECT language,used_at,expires_at FROM email_verification_tokens WHERE token_hash=$1',[hash]);
+    const row=rows.rows[0];
+    if(!row || row.used_at || new Date(row.expires_at)<=new Date()){
+      return res.status(400).type('html').send('<p>Linkki on vanhentunut tai käytetty. Pyydä uusi vahvistusviesti.</p>');
+    }
+    const lang=normalizedVerificationLanguage(row.language);
+    const title=lang==='sv'?'Bekräfta din e-postadress':lang==='en'?'Confirm your email address':'Vahvista sähköpostiosoitteesi';
+    const button=lang==='sv'?'Bekräfta e-post':lang==='en'?'Verify email':'Vahvista sähköposti';
+    return res.type('html').send('<!doctype html><html lang="'+lang+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Respondo AI</title></head>'+
+      '<body style="font-family:system-ui,Arial,sans-serif;max-width:520px;margin:12vh auto;padding:24px;color:#111">'+
+      '<h1>'+escapeEmailHtml(title)+'</h1><p>Respondo AI</p>'+
+      '<form method="POST" action="/api/auth/email-verification/confirm">'+
+      '<input type="hidden" name="token" value="'+escapeEmailHtml(token)+'">'+
+      '<button type="submit" style="padding:16px 24px;background:#111;color:#fff;border:0;border-radius:12px;font-size:16px;font-weight:bold">'+escapeEmailHtml(button)+'</button>'+
+      '</form></body></html>');
+  }catch{return res.status(503).type('html').send('<p>Vahvistusta ei voitu avata.</p>');}
+});
+
+// POST instead of GET prevents email-scanner link previews from consuming a link.
+app.post('/api/auth/email-verification/confirm', checkoutLimiter, async (req,res) => {
+  const token=String(req.body?.token||'').trim();
+  if(!/^[A-Za-z0-9_-]{32,140}$/.test(token)) return res.status(400).json({error:'Vahvistuslinkki on virheellinen.'});
+  const hash=crypto.createHash('sha256').update(token).digest('hex');
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const result=await client.query(
+      'SELECT id,email,user_id,purpose FROM email_verification_tokens WHERE token_hash=$1 AND used_at IS NULL AND expires_at>NOW() FOR UPDATE',[hash]);
+    if(!result.rowCount){
+      await client.query('ROLLBACK');
+      return res.status(400).json({error:'Vahvistuslinkki on vanhentunut tai jo käytetty.'});
+    }
+    const claim=result.rows[0];
+    if(claim.purpose==='change_email'){
+      const user=await client.query('SELECT id,stripe_customer_id FROM users WHERE id=$1 FOR UPDATE',[claim.user_id]);
+      if(!user.rowCount){await client.query('ROLLBACK');return res.status(404).json({error:'Käyttäjää ei löytynyt.'});}
+      const taken=await client.query('SELECT 1 FROM users WHERE lower(email)=lower($1) AND id<>$2',[claim.email,claim.user_id]);
+      if(taken.rowCount){await client.query('ROLLBACK');return res.status(409).json({error:'Sähköpostiosoite on jo käytössä.'});}
+      await client.query('UPDATE users SET email=$1,email_verified_at=NOW(),session_version=session_version+1,updated_at=NOW() WHERE id=$2',[claim.email,claim.user_id]);
+      await client.query('UPDATE email_verification_tokens SET used_at=NOW() WHERE id=$1',[claim.id]);
+      await client.query('COMMIT');
+      if(stripe && user.rows[0].stripe_customer_id){
+        try{await stripe.customers.update(user.rows[0].stripe_customer_id,{email:claim.email});}
+        catch(e){console.error('Stripe customer email update failed',e?.message||e);}
+      }
+      res.clearCookie(COOKIE);
+      return res.redirect(303,'/kirjaudu?email_changed=1');
+    }
+    if(claim.purpose!=='signup'){await client.query('ROLLBACK');return res.status(400).json({error:'Vahvistuslinkki on virheellinen.'});}
+    await client.query('UPDATE email_verification_tokens SET used_at=NOW() WHERE id=$1',[claim.id]);
+    await client.query('COMMIT');
+    res.cookie(VERIFIED_EMAIL_COOKIE,jwt.sign({kind:'signup_email_verified',email:claim.email},JWT,{expiresIn:'2h'}),{
+      httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax',maxAge:7200000,
+    });
+    return res.redirect(303,'/tilaus?email_verified=1');
+  }catch(e){
+    try{await client.query('ROLLBACK');}catch{}
+    console.error('Verification confirmation failed',e?.message||e);
+    return res.status(503).json({error:'Sähköpostin vahvistaminen epäonnistui.'});
+  }finally{client.release();}
+});
+
 app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Tietokantaa ei ole yhdistetty.' });
 
