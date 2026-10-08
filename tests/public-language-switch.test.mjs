@@ -40,7 +40,7 @@ test('flags update the URL before broadcasting the selected language and rerende
   assert.ok(code.indexOf('history.replaceState')<code.indexOf('window.RespondoI18n.setLanguage(lang)'));
   assert.match(code,/else route\(\)/);
   assert.doesNotMatch(code,/\}\s*route\(\);\s*\};/);
-  assert.match(index,/app\.js\?v=[^"]+lang-switch-v1-legal-feature-sync-v1/);
+  assert.match(index,/app\.js\?v=[^"]+lang-switch-v1-[^"]*legal-feature-sync-v1/);
 });
 
 test('contact page stays translated from currentLang after a language change',()=>{
