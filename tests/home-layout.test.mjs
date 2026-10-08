@@ -39,5 +39,5 @@ test('a normal three-card grid never receives a legacy sideways scroll transform
  assert.match(app,/getComputedStyle\(storyTrack\)\.display === 'flex'/);
  assert.match(app,/storyTrack\.style\.removeProperty\('transform'\)/);
  assert.match(html,/effects\.css\?v=20261008-ios-focus-nozoom-v1/);
- assert.match(html,/app\.js\?v=20261008-ios-focus-nozoom-v1/);
+ assert.match(html,/app\.js\?v=20261008-apple-three-cards-v1/);
 });
