@@ -1,0 +1,78 @@
+/* 2026-10-09: one compact checkout consent across signup and workspace flows. */
+#app .business-terms-consent,
+#app .workspace-add-form .business-terms-consent {
+  display:grid!important;
+  grid-template-columns:20px minmax(0,1fr)!important;
+  align-items:start!important;
+  gap:12px!important;
+  padding:15px 16px!important;
+  margin:0!important;
+  min-height:0!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  border:1px solid #dde5ef!important;
+  border-radius:14px!important;
+  background:#f8fafc!important;
+  color:#334155!important;
+  font:inherit!important;
+  font-size:14px!important;
+  line-height:1.55!important;
+  letter-spacing:normal!important;
+  text-transform:none!important;
+  cursor:pointer;
+}
+#app .formpage .formcard .business-terms-consent input[type="checkbox"],
+#app .workspace-add-form .business-terms-consent input[type="checkbox"] {
+  appearance:checkbox!important;
+  -webkit-appearance:checkbox!important;
+  display:block!important;
+  box-sizing:border-box!important;
+  position:static!important;
+  opacity:1!important;
+  width:20px!important;
+  height:20px!important;
+  min-width:20px!important;
+  min-height:20px!important;
+  max-width:20px!important;
+  max-height:20px!important;
+  margin:2px 0 0!important;
+  padding:0!important;
+  border-radius:5px!important;
+  flex:none!important;
+  box-shadow:none!important;
+  transform:none!important;
+  accent-color:#2563eb!important;
+  cursor:pointer;
+}
+#app .business-terms-consent>span,
+#app .workspace-add-form>label.business-terms-consent>span {
+  display:block!important;
+  min-width:0!important;
+  max-width:100%!important;
+  font-size:14px!important;
+  line-height:1.55!important;
+  font-weight:450!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
+  color:#334155!important;
+  overflow-wrap:break-word;
+}
+#app .business-terms-consent a {
+  color:#195ed1!important;
+  text-decoration:underline!important;
+  text-underline-offset:3px!important;
+  font-weight:650!important;
+}
+#app .business-terms-consent a:focus-visible,
+#app .business-terms-consent input:focus-visible {
+  outline:3px solid rgba(37,99,235,.32)!important;
+  outline-offset:3px!important;
+}
+@media (max-width:640px) {
+  #app .business-terms-consent,
+  #app .workspace-add-form .business-terms-consent {
+    grid-template-columns:20px minmax(0,1fr)!important;
+    padding:13px 14px!important;
+    gap:10px!important;
+  }
+}
