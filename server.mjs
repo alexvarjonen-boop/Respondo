@@ -687,11 +687,21 @@ async function sendSignupVerificationEmail({ email, code, language = 'fi' }) {
   const ignore = lang === 'sv' ? 'Om du inte försökte skapa ett konto kan du ignorera detta meddelande.'
     : lang === 'en' ? 'If you did not try to create an account, you can ignore this message.'
     : 'Jos et yrittänyt luoda tiliä, voit jättää tämän viestin huomiotta.';
-  const html = brandedEmailHtml({language:lang,eyebrow:lang==='sv'?'Säker verifiering':lang==='en'?'Secure verification':'Turvallinen vahvistus',title:subject,content:
+  const securityLabel = lang === 'sv' ? 'Säkerhetstips' : lang === 'en' ? 'Security reminder' : 'Turvallisuusmuistutus';
+  const securityNote = lang === 'sv' ? 'Dela aldrig koden med någon. Respondo AI ber dig aldrig om din verifieringskod via telefon, chatt eller e-post.'
+    : lang === 'en' ? 'Never share this code. Respondo AI will never ask you for your verification code by phone, chat, or email.'
+    : 'Älä koskaan jaa tätä koodia kenellekään. Respondo AI ei koskaan pyydä vahvistuskoodiasi puhelimitse, chatissa tai sähköpostitse.';
+  const codeLabel = lang === 'sv' ? 'Din verifieringskod' : lang === 'en' ? 'Your verification code' : 'Vahvistuskoodisi';
+  const html = brandedEmailHtml({language:lang,eyebrow:lang==='sv'?'Kontosäkerhet':lang==='en'?'Account security':'Tilin turvallisuus',title:subject,content:
     '<p style="font-size:15px;line-height:1.75;color:#475569">'+escapeEmailHtml(intro)+'</p>'+
-    '<div style="text-align:center;background:#eff5ff;border:1px solid #dce8ff;border-radius:14px;padding:22px 10px;margin:24px 0"><span style="font-size:34px;font-weight:800;letter-spacing:7px;color:#1d4ed8">'+escapeEmailHtml(code)+'</span></div>'+
+    '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:26px 0"><tr><td align="center" style="background:#eff5ff;border:1px solid #dce8ff;border-radius:14px;padding:22px 8px">'+
+    '<div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#475569;margin-bottom:12px">'+escapeEmailHtml(codeLabel)+'</div>'+
+    '<div style="font-size:clamp(25px,6vw,34px);font-weight:800;letter-spacing:6px;color:#1d4ed8;font-family:Arial,Helvetica,sans-serif">'+escapeEmailHtml(code)+'</div></td></tr></table>'+
     '<p style="font-size:14px;line-height:1.7;color:#475569">'+escapeEmailHtml(expiry)+'</p>'+
-    '<p style="font-size:12px;line-height:1.7;color:#64748b;margin-top:26px">'+escapeEmailHtml(ignore)+'</p>'});
+    '<div style="border-top:1px solid #e5ebf3;margin:28px 0 20px"></div>'+
+    '<p style="font-size:13px;font-weight:700;color:#17243b;margin-bottom:6px">'+escapeEmailHtml(securityLabel)+'</p>'+
+    '<p style="font-size:13px;line-height:1.7;color:#64748b;margin-top:0">'+escapeEmailHtml(securityNote)+'</p>'+
+    '<p style="font-size:12px;line-height:1.7;color:#64748b;margin-top:18px">'+escapeEmailHtml(ignore)+'</p>'});
   const response = await fetch('https://api.resend.com/emails', {
     method:'POST',
     headers:{
