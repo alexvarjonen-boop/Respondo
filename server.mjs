@@ -6992,6 +6992,16 @@ app.get('/llms.txt', (req,res) => {
   res.type('text/plain').send(text);
 });
 
+// Email verification is bound to a secure, host-only signup cookie.
+// Keep signup on the public www host so email links and checkout share it.
+app.get('/tilaus', (req,res,next) => {
+  if(process.env.NODE_ENV === 'production' &&
+     String(req.hostname||'').toLowerCase() !== 'www.respondoai.fi'){
+    return res.redirect(302,'https://www.respondoai.fi'+req.originalUrl);
+  }
+  return next();
+});
+
 app.use(express.static(path.join(__dirname, 'public'), {
   index:false,
   setHeaders(res, filePath) {
@@ -7644,6 +7654,7 @@ app.get('/api/public/config', publicReadLimiter, async (req, res) => {
     ownerTestEnabled,
     ownerTestPrice: 0.50,
     passwordResetAvailable: Boolean(String(process.env.RESEND_API_KEY || '').trim()),
+    emailVerificationAvailable: verificationEmailAvailable(),
   });
 });
 
