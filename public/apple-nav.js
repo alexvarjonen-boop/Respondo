@@ -16,7 +16,7 @@ export function publicMenuMarkup(t,lang){
   <div class="apple-menu-head"><a href="/" class="apple-menu-logo">RESPONDO AI</a><button class="apple-menu-close" data-apple-menu-close type="button" aria-label="${t('Sulje valikko','Stäng menyn','Close menu')}">×</button></div>
   <nav class="apple-menu-body" aria-label="${t('Sivuston valikko','Webbplatsmeny','Site navigation')}">
     <p class="apple-menu-label">${t('Tutustu Respondoon','Upptäck Respondo','Explore Respondo')}</p>
-    <div class="apple-menu-links">${entries.map(([label,href])=>`<a href="${href}">${label} <span aria-hidden="true">↗</span></a>`).join('')}</div>
+    <div class="apple-menu-links">${entries.map(([label,href])=>`<a href="${href}">${label}</a>`).join('')}</div>
     <div class="apple-menu-footer"><a class="apple-menu-cta" href="/tilaus">${t('Aloita ilmainen kokeilu','Börja gratis provperiod','Start free trial')}</a></div>
   </nav>
  </div>`;

@@ -29,6 +29,7 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
     assert.ok(html.includes('/verkkokauppa-chatbot?lang='+lang));
     assert.ok(html.includes('/kirjaudu?lang='+lang));
     assert.match(html,/aria-hidden="true" inert/);
+    assert.ok(!html.includes('↗'), 'fullscreen navigation should display labels without arrow icons');
   });
 }
 
