@@ -92,6 +92,56 @@ const BOT_AVATAR_PRESETS = [
   ['robot-10','Neo','#27272a','#fafafa','#e4e4e7'],
 ].map(([id,label,bg,face,accent],i) => ({ id,label,bg,face,accent,i }));
 
+const BOT_COLOR_PRESETS = [
+  ['#111113','Musta','Svart','Black'],
+  ['#6D28D9','Violetti','Violett','Violet'],
+  ['#1D4ED8','Sininen','Blå','Blue'],
+  ['#0F766E','Turkoosi','Turkos','Teal'],
+  ['#15803D','Vihreä','Grön','Green'],
+  ['#BE123C','Punainen','Röd','Red'],
+  ['#C2410C','Oranssi','Orange','Orange'],
+  ['#BE185D','Pinkki','Rosa','Pink'],
+];
+function botColorSafe(value) {
+  const raw=String(value||'').trim();
+  return /^#[0-9a-f]{6}$/i.test(raw) ? raw.toUpperCase() : '#111113';
+}
+function botColorInk(value) {
+  const hex=botColorSafe(value);
+  const rgb=[1,3,5].map((index)=>parseInt(hex.slice(index,index+2),16)/255);
+  const linear=rgb.map((v)=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4);
+  const lum=0.2126*linear[0]+0.7152*linear[1]+0.0722*linear[2];
+  return lum>0.179?'#111113':'#FFFFFF';
+}
+function refreshBotColorPreview(value) {
+  const accent=botColorSafe(value);
+  const preview=document.getElementById('live-preview');
+  if(preview) {
+    preview.style.setProperty('--bot-accent',accent);
+    preview.style.setProperty('--bot-accent-ink',botColorInk(accent));
+  }
+  const hex=document.getElementById('botColorHex');
+  if(hex)hex.textContent=accent;
+  document.querySelectorAll('.bot-color-swatch').forEach((button)=>{
+    const selected=button.dataset.color===accent;
+    button.classList.toggle('selected',selected);
+    button.setAttribute('aria-pressed',String(selected));
+  });
+}
+function bindBotColorPicker(form) {
+  const picker=form?.elements?.botColor;
+  if(!picker) return;
+  form.querySelectorAll('.bot-color-swatch').forEach((button)=>{
+    button.addEventListener('click',()=>{
+      picker.value=button.dataset.color;
+      refreshBotColorPreview(picker.value);
+    });
+  });
+  picker.addEventListener('input',()=>refreshBotColorPreview(picker.value));
+  picker.addEventListener('change',()=>refreshBotColorPreview(picker.value));
+  refreshBotColorPreview(picker.value);
+}
+
 function botAvatarMarkup(value, extraClass = '') {
   const raw = String(value || 'robot-1');
   if (/^data:image\/(?:png|jpeg|webp);base64,/i.test(raw)) {
@@ -3035,6 +3085,7 @@ async function dashboard(options = {}) {
         slug:'public-demo',
         bot_name:'RESPONDO AI',
         bot_avatar:'robot-1',
+        accent:'#111113',
         greeting:appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?'),
         average_lead_value:'',
         website:'',
@@ -3352,7 +3403,7 @@ async function dashboard(options = {}) {
               <div class="bot-customizer-head">
                 <div>
                   <small>${appText('BOTIN ULKOASU','BOTTENS UTSEENDE','BOT APPEARANCE')}</small>
-                  <h3>${appText('Nimeä botti ja valitse sille kuva','Namnge botten och välj en bild','Name your bot and choose an image')}</h3>
+                  <h3>${appText('Nimeä botti, valitse kuva ja väri','Namnge botten och välj bild och färg','Choose your bot name, avatar and color')}</h3>
                   <p>${appText('Asiakas näkee nämä tiedot verkkosivusi chatissa. Voit käyttää omaa kuvaa tai valita yhden valmiista roboteista.','Kunden ser detta i chatten på din webbplats. Du kan använda en egen bild eller välja en färdig robot.','Customers see this in your website chat. Use your own image or choose a preset robot.')}</p>
                 </div>
                 <div class="bot-current-avatar" id="botAvatarCurrent">${botAvatarMarkup(t.bot_avatar || 'robot-1')}</div>
@@ -3372,6 +3423,18 @@ async function dashboard(options = {}) {
                 </label>
                 <input id="botAvatarUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden>
                 <div id="botAvatarMsg"></div>
+              </div>
+              <div class="bot-color-picker field">
+                <label id="botColorLabel" for="botColorInput">${appText('Botin väri','Bottens färg','Bot color')}</label>
+                <p class="bot-color-description">${appText('Valitse chat-painikkeen ja viestien korostusväri.','Välj färg på chattknappen och meddelandena.','Choose the accent color for the chat button and messages.')}</p>
+                <div class="bot-color-presets" role="group" aria-labelledby="botColorLabel">
+                  ${BOT_COLOR_PRESETS.map(([color,fi,sv,en])=>`<button type="button" class="bot-color-swatch ${botColorSafe(t.accent)===color?'selected':''}" data-color="${color}" style="--swatch-color:${color}" aria-label="${esc(appText(fi,sv,en))}" aria-pressed="${botColorSafe(t.accent)===color}"><span></span></button>`).join('')}
+                </div>
+                <div class="bot-color-custom">
+                  <label for="botColorInput">${appText('Oma väri','Egen färg','Custom color')}</label>
+                  <input id="botColorInput" name="botColor" type="color" value="${esc(botColorSafe(t.accent))}" aria-label="${esc(appText('Valitse botin väri','Välj bottens färg','Choose bot color'))}">
+                  <output id="botColorHex" for="botColorInput">${esc(botColorSafe(t.accent))}</output>
+                </div>
               </div>
             </div>
             <div class="field website-import-field profile-wide">
@@ -3936,7 +3999,7 @@ async function dashboard(options = {}) {
           <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
           <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261008-ios-focus-nozoom-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261008-ios-focus-nozoom-v1-bot-color-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
       </section>
       `}
@@ -4469,6 +4532,7 @@ async function route() {
     });
 
     const demoProfile=$('#businessProfileForm');
+    bindBotColorPicker(demoProfile);
     const demoFacts=[];
     const demoHistory=[];
     let demoImportId='';
@@ -5444,6 +5508,7 @@ async function route() {
       }
     });
 
+    bindBotColorPicker($('#businessProfileForm'));
     document.querySelectorAll('.bot-avatar-option').forEach((button) => {
       button.addEventListener('click', () => {
         const formEl = $('#businessProfileForm');
@@ -5536,6 +5601,7 @@ async function route() {
           body: JSON.stringify({
             botName: form.get('botName'),
             botAvatar: form.get('botAvatar'),
+            botColor: form.get('botColor'),
             greeting: form.get('greeting'),
             tone: form.get('tone'),
             pricing: form.get('pricing'),
