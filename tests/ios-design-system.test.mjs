@@ -12,7 +12,7 @@ test('public iOS theme is loaded after existing styles without replacing the hom
   const marketing=index.indexOf('/ios-public.css?v=20261008-ios-design-v1');
   const workspace=index.indexOf('/ios-workspace.css?v=20261008-ios-design-v1');
   assert.ok(home>=0 && marketing>home && workspace>marketing);
-  assert.match(index,/app\.js\?v=[^"]+-ios-design-v1-legal-feature-sync-v1/);
+  assert.match(index,/app\.js\?v=[^"]+-ios-design-v2-legal-feature-sync-v1/);
   assert.doesNotMatch(publicCss,/#app\s+\.apple-home-page\s*\{/);
   assert.match(publicCss,/--ios-canvas:#f5f5f7/);
   assert.match(publicCss,/--ios-blue:#0071e3/);
