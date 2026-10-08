@@ -214,6 +214,7 @@ let cfg = {
   supportEmail: 'info@respondoai.fi',
   businessId: '3599437-5',
   sellerName: 'Alex Varjonen · Respondo AI',
+  sellerPostalAddress: '',
   trialDays: 3,
   monthlyNet: 29.90,
   yearlyNet: 358.80,
@@ -2015,6 +2016,7 @@ function footer() {
           ${logo()}
           <p>${uiText('Asiakaspalvelubotti, joka vastaa asiakkaillesi yrityksesi omilla tiedoilla.','Kundservicebot som svarar dina kunder med information från ditt företag.','Customer service bot that answers your customers using your company information.')}</p>
           <div class="seller-chip">RESPONDO AI</div>
+          <small>${esc(cfg.sellerName||'Alex Varjonen · Respondo AI')}${cfg.sellerPostalAddress?' · '+esc(cfg.sellerPostalAddress):''}</small>
         </div>
         <div class="foot-col">
           <h4>${appText('Tuote','Produkt','Product')}</h4>
@@ -2029,6 +2031,8 @@ function footer() {
           <h4>Yritys</h4>
           <a href="/tietoturva">Tietoturva</a>
           <a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a>
+          <span>${esc(cfg.sellerName||'Alex Varjonen · Respondo AI')}</span>
+          ${cfg.sellerPostalAddress?'<span>'+esc(cfg.sellerPostalAddress)+'</span>':''}
           <span>Suomi</span>
         </div>
         <div class="foot-col">
@@ -2768,6 +2772,7 @@ function signup() {
           <div class="seller-card">
             <span>${appText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span>
             <b>${esc(cfg.sellerName || 'RESPONDO AI')}</b>
+            ${cfg.sellerPostalAddress?'<small>'+esc(cfg.sellerPostalAddress)+'</small>':''}
             <small>${appText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')} · ${appText('Suomi','Finland','Finland')}</small>
           </div>
         </section>
@@ -3065,11 +3070,11 @@ function legal(type) {
           <div class="section-kicker">${page.label}</div>
           <h1>${page.title}</h1>
           <p>${page.intro}</p>
-          <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span><b>Alex Varjonen · Respondo AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')}</small></div>
+          <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span><b>Alex Varjonen · Respondo AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')}</small>${cfg.sellerPostalAddress?'<small>'+esc(cfg.sellerPostalAddress)+'</small>':''}</div>
         </aside>
         <article class="legalcopy">
           ${page.sections.map(([h, p]) => `<section><h2>${h}</h2><p>${p}</p></section>`).join('')}
-          ${hasOwnContactSection ? '' : `<section><h2>${uiText('Yhteydenotot','Kontakt','Contact')}</h2><p><a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a></p></section>`}
+          ${hasOwnContactSection ? '' : `<section><h2>${uiText('Yhteydenotot','Kontakt','Contact')}</h2><p><a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a></p>${cfg.sellerPostalAddress?'<p>'+esc(cfg.sellerPostalAddress)+'</p>':''}</section>`}
           <div class="legal-note">${uiText('Päivitetty','Uppdaterad','Updated')} ${new Date().toLocaleDateString(currentLang()==='sv'?'sv-SE':currentLang()==='en'?'en-GB':'fi-FI')}. ${uiText('Teksti kuvaa Respondon nykyistä palvelua ja sitä voidaan päivittää palvelun kehittyessä.','Texten beskriver Respondos nuvarande tjänst och kan uppdateras när tjänsten utvecklas.','This text describes Respondos current service and may be updated as the service develops.')}</div>
         </article>
       </div>
