@@ -44,3 +44,56 @@ test('public Try Bot omits a misleading calendar action for a generic contact li
     await new Promise(resolve=>server.close(resolve));
   }
 });
+
+
+test('delivery time and opening-hours questions never show a booking widget',async()=>{
+  const {app}=await import('../server.mjs');
+  const server=app.listen(0,'127.0.0.1');
+  await new Promise(resolve=>server.once('listening',resolve));
+  try{
+    const endpoint='http://127.0.0.1:'+server.address().port+'/api/public/demo-chat';
+    const ask=async(message,lang='fi')=>{
+      const response=await fetch(endpoint,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({message,lang,profile:{
+          companyName:'Testipalvelut',
+          bookingUrl:'https://example.fi/ajanvaraus',
+          customFacts:[
+            {key:'Toimitusaika',answer:'Toimitus kestää 2–4 arkipäivää.',category:'Toimitus'},
+            {key:'Aukioloajat',answer:'Auki ma-pe 8–18.',category:'Aukioloajat'},
+            {key:'Palvelut',answer:'Tarjoamme siivouspalveluja.',category:'Palvelut'},
+          ]
+        }})
+      });
+      assert.equal(response.status,200,message);
+      return response.json();
+    };
+    for(const [message,lang] of [
+      ['Mikä on toimitusaika?','fi'],
+      ['Kuinka pitkä toimitusaika tuotteilla on?','fi'],
+      ['Mitkä ovat aukioloajat?','fi'],
+      ['Paljonko aikaa toimitukseen menee?','fi'],
+      ['What is the delivery time?','en'],
+      ['What time are you open?','en'],
+      ['Vad är leveranstiden?','sv'],
+    ]){
+      const answer=await ask(message,lang);
+      assert.ok(!(answer.actions||[]).some(x=>x.type==='booking'),message+': '+JSON.stringify(answer.actions));
+    }
+    for(const [message,lang] of [
+      ['Voinko varata ajan?','fi'],
+      ['Miten ajanvaraus toimii?','fi'],
+      ['Can I book an appointment?','en'],
+      ['Kan jag boka en tid?','sv'],
+    ]){
+      const answer=await ask(message,lang);
+      assert.ok((answer.actions||[]).some(x=>x.type==='booking'&&x.mode==='booking_form'),
+        message+': '+JSON.stringify(answer.actions));
+      assert.ok((answer.actions||[]).some(x=>x.type==='booking'&&x.url==='https://example.fi/ajanvaraus'),
+        message+': '+JSON.stringify(answer.actions));
+    }
+  }finally{
+    await new Promise(resolve=>server.close(resolve));
+  }
+});
