@@ -3492,6 +3492,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   };
   const priority = url => {
     const p=normalizeSearchText(url);
+    if (/(?:\/contact(?:-us)?|\/contactus|\/kontakt|\/kontakta-oss|\/ota-yhteytta|\/yhteystiedot|\/yhteydenotto)(?:\/|[?#]|$)/.test(p)) return 175;
     if (/\/products?\/|\/tuotteet?\/|product|tuote|shop|kauppa/.test(p)) return 140;
     if (/faq|ukk|help|support|shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|size-guide|size\b|koko|material|materia|care|hoito|quality|laatu|store|myymala|myymälä|location|sijainti/.test(p)) return 120;
     return /tarjous|quote|offert|hinta|price|pris|palvel|service|tjanst|yhtey|contact|kontakt|auki|hours|oppet/i.test(p) ? 100 : 0;
@@ -3529,6 +3530,16 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   queued.add(first.finalUrl);
   pages.push({ url:first.finalUrl, key:first.finalUrl.replace(/\/$/, ''), document:extractBusinessDocument(first.html,first.finalUrl) });
   enqueue(first.html, first.finalUrl);
+
+  // Contact pages must not disappear behind long catalog/sitemap scans. Start
+  // loading the highest-priority contact page alongside other discovery work.
+  // The company URL comes from an actual page link, never from a guessed path.
+  const contactCandidate=queue.find(item=>
+    /\/(?:pages\/)?(?:contact(?:-us)?|contactus|kontakt|kontakta-oss|ota-yhteytta|yhteystiedot|yhteydenotto)(?:\/|[?#]|$)/i.test(item.url)
+  );
+  const preloadedContact=contactCandidate
+    ? fetchPublicHtml(contactCandidate.url).catch(()=>null)
+    : Promise.resolve(null);
 
   let storefrontProducts=[];
   if (storefrontLimit > 0) {
@@ -3585,6 +3596,18 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     queue.splice(0,queue.length,...kept);
     queue.sort((a,b)=>b.score-a.score);
   }
+  const contactPage=await preloadedContact;
+  if(contactPage && pages.length < maxPages){
+    try {
+      const parsed=new URL(contactPage.finalUrl);
+      const key=parsed.origin+parsed.pathname.replace(/\/$/,'')+parsed.search;
+      if(parsed.hostname.toLowerCase()===base.hostname.toLowerCase() && !pages.some(page=>page.key===key)){
+        pages.push({url:contactPage.finalUrl,key,document:extractBusinessDocument(contactPage.html,contactPage.finalUrl)});
+        enqueue(contactPage.html,contactPage.finalUrl);
+      }
+    } catch {}
+  }
+
   const totalTarget = Math.max(1, Math.min(maxPages, pages.length + queue.length));
   if (onProgress) onProgress({scanned:pages.length,total:totalTarget});
 
