@@ -44,6 +44,8 @@ const SEO_INDEXABLE_PATHS = new Set([
   '/asiakaspalvelubotti',
   '/verkkokauppa-chatbot',
   '/ajanvaraus-chatbot',
+  '/hinnat',
+  '/yhteystiedot',
   '/tietoturva',
   '/kayttoehdot',
   '/tietosuoja',
@@ -66,6 +68,8 @@ const SEO_META = {
     '/asiakaspalvelubotti': ['Asiakaspalvelubotti yritykselle | Respondo AI', 'Asiakaspalvelubotti yrityksen verkkosivuille: vastaukset 24/7 omilla yritystiedoillasi, liidit, ajanvaraus ja tarvittaessa siirto ihmiselle.'],
     '/verkkokauppa-chatbot': ['Chatbot verkkokauppaan | Respondo AI', 'Verkkokaupan chatbot auttaa tuote-, hinta-, toimitus- ja palautuskysymyksissä sekä tukee Shopify- ja WooCommerce-asiakaspalvelua.'],
     '/ajanvaraus-chatbot': ['Ajanvaraus-chatbot yritykselle | Respondo AI', 'Ajanvaraus-chatbot vastaa asiakkaiden kysymyksiin, kerää ajanvarauspyyntöjä ja tukee kalenteripohjaisia asiakaspalveluprosesseja 24/7.'],
+    '/hinnat': ["Respondo AI hinnat | Basic, Advanced ja Business", "Katso Respondon tilauspaketit, kuukausi- ja vuositilaukset sekä kolmen päivän ilmainen kokeilu."],
+    '/yhteystiedot': ["Yhteystiedot | Respondo AI", "Ota yhteyttä Respondo AI:n asiakaspalveluun yhteydenottolomakkeella."],
     '/tietoturva': ['Tietoturva ja tietosuoja | Respondo AI', 'Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
     '/kayttoehdot': ['Käyttöehdot | Respondo AI', 'Respondo AI -palvelun käyttöehdot yritysasiakkaille.'],
     '/tietosuoja': ['Tietosuojaseloste | Respondo AI', 'Tietosuojaseloste kertoo, mitä henkilötietoja Respondo käsittelee, miksi niitä käsitellään ja miten tiedot suojataan.'],
@@ -78,6 +82,8 @@ const SEO_META = {
     '/asiakaspalvelubotti': ['Kundservicebot för företag | Respondo AI', 'Kundservicebot för företagets webbplats: svar dygnet runt med företagets egna uppgifter, leads, bokning och överlämning till människa.'],
     '/verkkokauppa-chatbot': ['Chatbot för webbutik | Respondo AI', 'En chatbot för webbutik hjälper med produkt-, pris-, leverans- och returfrågor samt stödjer Shopify- och WooCommerce-kundservice.'],
     '/ajanvaraus-chatbot': ['Bokningschatbot för företag | Respondo AI', 'En bokningschatbot svarar på kundfrågor, samlar bokningsförfrågningar och stödjer kalenderbaserade kundserviceflöden dygnet runt.'],
+    '/hinnat': ["Respondo AI priser | Basic, Advanced och Business", "Jämför abonnemang, månads- och årspriser samt tre dagars gratis provperiod."],
+    '/yhteystiedot': ["Kontakt | Respondo AI", "Kontakta Respondo AI med hjälp av kontaktformuläret."],
     '/tietoturva': ['Datasäkerhet och integritet | Respondo AI', 'Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
     '/kayttoehdot': ['Användarvillkor | Respondo AI', 'Användarvillkor för Respondo AI:s företagstjänst.'],
     '/tietosuoja': ['Integritetspolicy | Respondo AI', 'Information om vilka personuppgifter Respondo behandlar, varför de behandlas och hur de skyddas.'],
@@ -90,6 +96,8 @@ const SEO_META = {
     '/asiakaspalvelubotti': ['Customer Service Bot for Business | Respondo AI', 'A customer service bot for business websites: 24/7 answers from your approved company information, lead capture, bookings and human handoff.'],
     '/verkkokauppa-chatbot': ['Ecommerce Chatbot for Online Stores | Respondo AI', 'An ecommerce chatbot helps with product, price, delivery and return questions and supports Shopify and WooCommerce customer service.'],
     '/ajanvaraus-chatbot': ['Booking Chatbot for Business | Respondo AI', 'A booking chatbot answers customer questions, captures booking requests and supports calendar-based customer-service workflows around the clock.'],
+    '/hinnat': ["Respondo AI Pricing | Basic, Advanced and Business", "Compare monthly and annual subscription plans, with a three-day free trial."],
+    '/yhteystiedot': ["Contact | Respondo AI", "Contact the Respondo AI team using the contact form."],
     '/tietoturva': ['Security and Privacy | Respondo AI', 'See how Respondo protects company and customer data, sign-ins, integrations and service usage.'],
     '/kayttoehdot': ['Terms of Service | Respondo AI', 'Terms of service for Respondo AI business customers.'],
     '/tietosuoja': ['Privacy Policy | Respondo AI', 'Learn what personal data Respondo processes, why it is processed and how it is protected.'],
@@ -5639,7 +5647,7 @@ app.get('/robots.txt', (req,res) => {
 });
 
 app.get('/sitemap.xml', (req,res) => {
-  const basePaths = ['/', '/ominaisuudet', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
+  const basePaths = ['/', '/ominaisuudet', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
   const escapeXml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
   const rows = [];
   for (const basePath of basePaths) {
@@ -5693,6 +5701,8 @@ app.get('/llms.txt', (req,res) => {
     '- Customer service bot: ' + SEO_CANONICAL_ORIGIN + '/asiakaspalvelubotti',
     '- Ecommerce chatbot: ' + SEO_CANONICAL_ORIGIN + '/verkkokauppa-chatbot',
     '- Booking chatbot: ' + SEO_CANONICAL_ORIGIN + '/ajanvaraus-chatbot',
+    '- Pricing: ' + SEO_CANONICAL_ORIGIN + '/hinnat',
+    '- Contact: ' + SEO_CANONICAL_ORIGIN + '/yhteystiedot',
     '- Security: ' + SEO_CANONICAL_ORIGIN + '/tietoturva',
     '- Privacy: ' + SEO_CANONICAL_ORIGIN + '/tietosuoja',
     '- Terms: ' + SEO_CANONICAL_ORIGIN + '/kayttoehdot',
@@ -6032,6 +6042,8 @@ app.get('/sitemap.xml', (req, res) => {
   const groups = [
     { path:'/', changefreq:'weekly', priority:'1.0' },
     { path:'/ominaisuudet', changefreq:'weekly', priority:'0.9', feature:true },
+    { path:'/hinnat', changefreq:'monthly', priority:'0.8' },
+    { path:'/yhteystiedot', changefreq:'monthly', priority:'0.6' },
     { path:'/tietoturva', changefreq:'monthly', priority:'0.7' },
     { path:'/tietosuoja', changefreq:'monthly', priority:'0.5' },
     { path:'/kayttoehdot', changefreq:'monthly', priority:'0.5' },
