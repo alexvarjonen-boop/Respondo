@@ -1778,7 +1778,7 @@ function nav() {
       <div class="navactions">
         ${languageSwitch()}
         ${isHomePage
-          ? `<a class="btn ink nav-home-scroll-trial" href="/tilaus?lang=${currentLang()}" aria-hidden="true" tabindex="-1">${appText('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</a>`
+          ? `<a class="btn ink nav-home-scroll-trial" href="/tilaus?lang=${currentLang()}" aria-hidden="true" tabindex="-1"><span class="nav-trial-full">${appText('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</span><span class="nav-trial-compact" aria-hidden="true">${appText('3 pv ilmaiseksi','3 dagar gratis','3 days free')}</span></a>`
           : `<a class="btn ghost nav-login-btn" href="/kirjaudu"><span>${appText('Kirjaudu','Logga in','Log in')}</span></a>
              <a class="btn ink" href="/tilaus">${appText('Kokeile ilmaiseksi','Prova gratis','Start free trial')}</a>`}
       </div>
