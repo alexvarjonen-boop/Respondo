@@ -48,7 +48,9 @@ test('email change is not applied before the new address is verified',()=>{
 test('unconfigured email provider fails closed and signup UI explains verification',()=>{
   assert.match(server,/if\(!verificationEmailAvailable\(\)\)/);
   assert.match(server,/publicStatus:503/);
-  assert.match(app,/if\(err\.status===403\)/);
+  assert.match(server,/app\.get\('\/api\/auth\/email-verification\/status'/);
+  assert.match(app,/refreshSignupVerification\(\)/);
+  assert.match(app,/verifiedSignupEmail!==supplied/);
   assert.match(app,/\/api\/auth\/email-verification\/request/);
-  assert.match(app,/email_verified/);
+  assert.match(app,/signupEmailVerificationStatus/);
 });
