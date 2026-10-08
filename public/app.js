@@ -1,5 +1,5 @@
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
-import { appleHomeMarkup } from './apple-home.js?v=20261008-apple-production-v1';
+import { appleHomeMarkup } from './apple-home.js?v=20261008-apple-production-v1-hero-cta-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261008-new-ra-logo-v1';
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261008-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
@@ -1790,6 +1790,24 @@ function nav() {
 
 // The homepage CTA is shown in the sticky header only after its hero counterpart
 // has scrolled behind the header. Scrolling back restores the uncluttered header.
+// First-party hero actions must remain navigable even if another effects layer
+// installs delegated navigation handlers. Modifier clicks preserve native behavior.
+function bindHomeHeroActions() {
+  document.querySelectorAll('.apple-home-page .apple-hero-actions a[data-respondo-hero-cta]').forEach((link) => {
+    if (link.dataset.respondoHeroBound === '1') return;
+    link.dataset.respondoHeroBound = '1';
+    link.addEventListener('click', (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (link.target === '_blank' || link.hasAttribute('download')) return;
+      let destination;
+      try { destination = new URL(link.href, location.href); } catch { return; }
+      if (destination.origin !== location.origin) return;
+      event.preventDefault();
+      window.location.assign(destination.href);
+    });
+  });
+}
+
 function bindHomeScrollTrial() {
   const header = document.querySelector('.apple-home-page .nav');
   const heroTrial = document.querySelector('.apple-home-page .apple-hero-actions .apple-pill-primary');
@@ -4529,7 +4547,10 @@ async function route() {
   applyLanguage();
   bindLanguageSwitch();
   bindPublicMenu();
-  if (path === '/') bindHomeScrollTrial();
+  if (path === '/') {
+    bindHomeHeroActions();
+    bindHomeScrollTrial();
+  }
 
   if (path === '/') {
     let resetReturnedHomepage=false;

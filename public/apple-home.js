@@ -8,7 +8,7 @@ export function appleHomeMarkup(t,lang,count){
       <p class="apple-eyebrow">RESPONDO AI</p>
       <h1 id="apple-home-title">${t('Asiakaspalvelu.','Kundservice.','Customer service.')}<br><span>${t('Uudella tasolla.','På en ny nivå.','Taken further.')}</span></h1>
       <p class="apple-hero-description">${t('AI-asiakaspalvelubotti yrityksesi verkkosivuille. Vastaa kysymyksiin vuorokauden ympäri yrityksesi omilla tiedoilla.','AI-kundservice på ditt företags webbplats. Svarar dygnet runt med information från ditt företag.','AI customer service for your business website. Available around the clock, with answers based on your company information.')}</p>
-      <div class="apple-hero-actions"><a class="apple-pill apple-pill-primary" href="/tilaus">${t('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</a><a class="apple-pill apple-pill-secondary" href="${demo}">${t('Kokeile bottia','Testa botten','Try the bot')}</a></div>
+      <div class="apple-hero-actions"><a class="apple-pill apple-pill-primary" data-respondo-hero-cta="signup" href="/tilaus?lang=${lang}">${t('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</a><a class="apple-pill apple-pill-secondary" data-respondo-hero-cta="demo" href="${demo}">${t('Kokeile bottia','Testa botten','Try the bot')}</a></div>
       <div class="apple-product-stage" aria-label="${t('Havainnollistava esimerkki chatbotista','Illustrativt exempel på en chattbot','Illustrative chatbot example')}">
         <div class="apple-stage-halo" aria-hidden="true"></div>
         <div class="apple-stage-typography" aria-hidden="true">AI</div>
