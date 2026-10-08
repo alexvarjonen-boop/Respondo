@@ -6529,6 +6529,7 @@ app.get('/api/public/config', publicReadLimiter, async (req, res) => {
   return res.json({
     brand: 'RESPONDO AI',
     sellerName: 'Alex Varjonen · Respondo AI',
+    sellerPostalAddress: String(process.env.RESPONDO_SELLER_POSTAL_ADDRESS || '').trim().slice(0,200),
     supportEmail: process.env.SUPPORT_EMAIL || 'info@respondoai.fi',
     trialDays: 3,
     monthlyNet: 29.90,
