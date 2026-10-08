@@ -8815,3 +8815,77 @@ body.workspace-modal-open{
 .live-preview-panel .preview-device .preview-bubble.user{background:var(--bot-accent,#111113)!important;color:var(--bot-accent-ink,#fff)!important}
 .live-preview-panel .preview-device .preview-form button{background:var(--bot-accent,#111113)!important;color:var(--bot-accent-ink,#fff)!important}
 @media(max-width:760px){.bot-color-swatch{width:43px;height:43px}.bot-color-custom input[type="color"]{width:60px;height:44px}}
+
+
+/* Mobile signed-in dashboard: keep logout inside the header and controls on-screen. */
+@media (max-width:720px){
+  .dashboard-simple-shell:not(.demo-dashboard-shell) .dashboard-topbar{
+    position:sticky!important;
+    grid-template-columns:minmax(0,1fr) 40px 46px!important;
+    grid-template-rows:auto auto!important;
+    column-gap:8px!important;
+    row-gap:10px!important;
+    overflow:visible;
+  }
+  .dashboard-simple-shell:not(.demo-dashboard-shell) .dashboard-topbar-brand{
+    grid-column:1 / -1!important;
+    grid-row:1!important;
+    min-width:0;
+    min-height:56px;
+    padding-right:108px;
+    box-sizing:border-box;
+  }
+  .dashboard-simple-shell:not(.demo-dashboard-shell) .dashboard-workspace{
+    flex:1 1 auto;
+    min-width:0;
+  }
+  .dashboard-simple-shell:not(.demo-dashboard-shell) .workspace-switcher{
+    display:block;
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+  .dashboard-simple-shell:not(.demo-dashboard-shell) .dashboard-section-picker{
+    grid-column:1!important;
+    grid-row:2!important;
+    min-width:0!important;
+    align-self:end;
+  }
+  .dashboard-simple-shell:not(.demo-dashboard-shell) .dashboard-top-actions{
+    grid-column:2 / 4!important;
+    grid-row:2!important;
+    display:flex!important;
+    justify-content:flex-end!important;
+    align-items:flex-end!important;
+    align-self:end!important;
+    gap:8px!important;
+    min-width:0;
+  }
+  .dashboard-simple-shell:not(.demo-dashboard-shell) .workspace-add-button{
+    flex:0 0 40px;
+    width:40px;
+    height:46px;
+    min-height:46px;
+    padding:0;
+  }
+  .dashboard-simple-shell:not(.demo-dashboard-shell) .dashboard-settings-button{
+    flex:0 0 46px;
+    width:46px!important;
+    height:46px!important;
+  }
+  .dashboard-simple-shell:not(.demo-dashboard-shell) .dashboard-logout{
+    position:absolute!important;
+    top:16px!important;
+    right:12px!important;
+    left:auto!important;
+    bottom:auto!important;
+    width:auto;
+    min-width:0;
+    min-height:42px;
+    padding:0 12px;
+    white-space:nowrap;
+    font-size:12px;
+    line-height:1;
+    z-index:3;
+  }
+}
