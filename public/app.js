@@ -1,4 +1,6 @@
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261001-highlights-v1';
+import { appleHomeMarkup } from './apple-home.js?v=20261008-apple-home-v1';
+import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261008-apple-nav-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -1747,10 +1749,10 @@ function nav() {
     <div class="container navin">
       ${logo()}
       <nav class="navlinks" aria-label="Päänavigaatio">
-        <a href="/#how">Tuote</a>
-        <a href="/#control">Tietopohja</a>
+        <a href="/asiakaspalvelubotti">Tuote</a>
+        <a href="/ominaisuudet">Tietopohja</a>
         <a href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
-        <a href="/#pricing">Hinta</a>
+        <a href="/hinnat">Hinta</a>
         <a href="/tietoturva">Tietoturva</a>
       </nav>
       <div class="navactions">
@@ -1758,8 +1760,9 @@ function nav() {
         <a class="btn ghost nav-login-btn" href="/kirjaudu"><span>Kirjaudu</span></a>
         <a class="btn ink" href="/tilaus">Kokeile ilmaiseksi</a>
       </div>
+      <button class="apple-menu-toggle" type="button" data-apple-menu-open aria-controls="apple-nav-overlay" aria-expanded="false" aria-label="${appText('Avaa valikko','Öppna menyn','Open menu')}"><span></span><span></span></button>
     </div>
-  </header>`;
+  </header>${publicMenuMarkup(appText,currentLang())}`;
 }
 
 
@@ -2668,60 +2671,10 @@ function seoLandingPage(path) {
   </main>${footer()}</div>`;
 }
 
-async function home() {
-  await config();
-  return `<div class="home-page">
+async function home(){
+  return `<div class="home-page apple-home-page">
     ${nav()}
-    ${stickyProductNav()}
-    <main class="immersive-home">
-      <section class="hero hero-immersive">
-        <div class="hero-glow"></div>
-        <div class="container hero-grid">
-          <div class="hero-copy">
-            <div class="hero-label"><span></span> ASIAKASPALVELU, JOKA ON AINA PAIKALLA</div>
-            <h1>${appText('AI-asiakaspalvelu yritykselle.<br><em>24/7 verkkosivuillasi.</em>','AI-kundservice för företag.<br><em>På din webbplats 24/7.</em>','AI customer service for business.<br><em>On your website 24/7.</em>')}</h1>
-            <p class="lead">${appText('Respondo on verkkosivullesi asennettava asiakaspalvelubotti yritykselle. Kerro yrityksesi tiedot kerran, niin se vastaa asiakkaillesi 24/7 myös silloin, kun sinä et ehdi. Jos tarvittava tieto puuttuu, kysymys ohjataan sinulle.','Respondo är en kundservicebot för företagets webbplats. Lägg in företagets uppgifter en gång, så svarar den kunder dygnet runt även när du själv inte hinner. Om information saknas skickas frågan vidare till dig.','Respondo is a customer service bot for your business website. Add your company information once and it answers customers 24/7, including when you are unavailable. If information is missing, the question is routed to you.')}</p>
-            <div class="hero-actions">
-              <a class="btn hero-primary hero-bot-cta" href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
-            </div>
-            <div class="hero-scroll-hint"><i></i><span>VIERITÄ ALAS JA KATSO, MITEN SE TOIMII</span></div>
-          </div>
-          ${heroVisual()}
-        </div>
-      </section>
-
-      ${cinematicConversationScene()}
-      ${horizontalProductStory()}
-      ${productWorldScene()}
-      ${motionDepthScene()}
-      ${trustPortalScene()}
-      ${dataImpactScene()}
-      ${calculatorSection()}
-      <section class="post-calculator-features"><div class="container">
-        <a class="hero-features-card" href="/ominaisuudet?lang=${currentLang()}" aria-label="${esc(appText(`Katso kaikki ${FEATURE_COUNT} Respondo AI:n ominaisuutta`,`Se alla ${FEATURE_COUNT} funktioner i Respondo AI`,`See all ${FEATURE_COUNT} Respondo AI features`))}">
-          <div class="hero-features-card-top">
-            <span>${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</span><b>→</b>
-          </div>
-          <h3>${appText(`Katso kaikki ${FEATURE_COUNT} Respondo AI:n ominaisuutta`,`Se alla ${FEATURE_COUNT} funktioner i Respondo AI`,`See all ${FEATURE_COUNT} Respondo AI features`)}</h3>
-          <p>${appText(`${FEATURE_COUNT} toimintoa asiakaspalveluun, tarjouksiin, ajanvaraukseen ja yhteydenottoihin.`,`${FEATURE_COUNT} funktioner för kundservice, offerter, bokningar och kontaktförfrågningar.`,`${FEATURE_COUNT} features for customer service, quotes, bookings and contact requests.`)}</p>
-        </a>
-      </div></section>
-      ${pricingSection()}
-
-      <section class="section final-cta final-cta-immersive">
-        <div class="container">
-          <div class="cta-shell">
-            <div>
-              <div class="section-kicker light">${uiText('05 / KOKEILE KÄYTÄNNÖSSÄ','05 / PROVA SJÄLV','05 / TRY IT YOURSELF')}</div>
-              <h2>${uiText('Asiakkaasi seuraava kysymys voi tulla vaikka tänä iltana.','Din kunds nästa fråga kan komma redan i kväll.',"Your customer's next question could arrive tonight.")}</h2>
-              <p>${uiText('Anna Respondon hoitaa vastaus silloin, kun sinä et ehdi.','Låt Respondo sköta svaret när du själv inte hinner.',"Let Respondo handle the answer when you don't have time.")}</p>
-            </div>
-            <a class="cta-circle" href="/tilaus?plan=basic_monthly" aria-label="Kokeile ilmaiseksi"><span>KOKEILE</span><b>→</b></a>
-          </div>
-        </div>
-      </section>
-      ${contactSection()}
-    </main>
+    <main class="immersive-home apple-home">${appleHomeMarkup(appText,currentLang(),FEATURE_COUNT)}</main>
     ${footer()}
   </div>`;
 }
@@ -4232,6 +4185,7 @@ async function paymentSuccess() {
 function initImmersiveHomeMotion() {
   const root = document.querySelector('.immersive-home');
   if (!root) return;
+  if (root.classList.contains('apple-home')) return;
   if (root.classList.contains('premium-home')) { initPremiumHomeMotion(root); return; }
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -4411,6 +4365,8 @@ async function route() {
   let html;
 
   if (path === '/') html = await home();
+  else if (path === '/hinnat') html = `<div class="public-pricing-page">${nav()}<main>${pricingSection()}</main>${footer()}</div>`;
+  else if (path === '/yhteystiedot') html = `<div class="public-contact-page">${nav()}<main>${contactSection()}</main>${footer()}</div>`;
   else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
   else if (['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot'].includes(path)) html = seoLandingPage(path);
   else if (path === '/assistant') html = await dashboard({ demo:true });
@@ -4425,8 +4381,9 @@ async function route() {
   document.body.classList.toggle('public-nav-active', Boolean(document.querySelector('#app .nav')));
   applyLanguage();
   bindLanguageSwitch();
+  bindPublicMenu();
 
-  if (path === '/') {
+  if (path === '/' || path === '/yhteystiedot') {
     let resetReturnedHomepage=false;
     try {
       const navType=performance.getEntriesByType?.('navigation')?.[0]?.type || '';
