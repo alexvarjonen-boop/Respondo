@@ -2803,6 +2803,7 @@ function signup() {
               <input name="referralCode" maxlength="32" autocomplete="off" value="${esc(referralCode)}" placeholder="RESPONDO-XXXXXXXX">
               <small id="referralHint">${appText('Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','Med en giltig kod får du 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid code gives you 20% off the first paid month. Monthly subscription only.')}</small>
             </div>
+            <label class="checkrow field full"><input type="checkbox" name="businessPurchase" required><span>${appText('Vahvistan tilaavani yritystoimintaan.','Jag beställer för företagsverksamhet.','I am purchasing for business use.')}</span></label>
             <label class="checkrow field full">
               <input type="checkbox" name="terms" required>
               <span>${appText('Hyväksyn','Jag godkänner','I accept')} <a href="/kayttoehdot" target="_blank">${appText('käyttöehdot','användarvillkoren','the terms')}</a> ${appText('ja','och','and')} <a href="/tietosuoja" target="_blank">${appText('tietosuojaselosteen','integritetspolicyn','the privacy policy')}</a>.</span>
@@ -3113,6 +3114,7 @@ function dashboardWithoutCompany(me, workspaces = []) {
             <option value="business_monthly">Business 49,90 € / kk</option>
             <option value="business_yearly">Business 598,80 € / ${appText('vuosi','år','year')}</option>
           </select></label>
+          <label class="workspace-terms"><input type="checkbox" name="businessPurchase" required><span>${appText('Vahvistan tilaavani yritykselle.','Jag beställer för ett företag.','I am purchasing for a business.')}</span></label>
           <label class="workspace-terms"><input type="checkbox" name="acceptedTerms" required><span>${appText('Hyväksyn käyttöehdot ja tietosuojaselosteen.','Jag godkänner användarvillkoren och integritetspolicyn.','I accept the terms and privacy policy.')}</span></label>
           <button type="submit" class="btn ink workspace-checkout-button">${appText('Lisää yritys','Lägg till företag','Add company')} →</button>
           <div id="emptyWorkspaceMsg" role="alert"></div>
@@ -3382,6 +3384,7 @@ async function dashboard(options = {}) {
               <input name="referralCode" id="workspaceReferralCode" maxlength="40" autocomplete="off" placeholder="${appText('Syötä suosittelukoodi','Ange rekommendationskod','Enter referral code')}">
               <small id="workspaceReferralHint">${appText('Voimassa oleva koodi antaa 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','En giltig kod ger 20 % rabatt på den första betalda månaden. Endast för månadsabonnemang.','A valid code gives 20% off the first paid month. Monthly plan only.')}</small>
             </label>
+            <label class="workspace-terms"><input type="checkbox" name="businessPurchase" required><span>${appText('Vahvistan tilaavani yritykselle.','Jag beställer för ett företag.','I am purchasing for a business.')}</span></label>
             <label class="workspace-terms"><input type="checkbox" name="acceptedTerms" required><span>${appText('Hyväksyn käyttöehdot ja tietosuojaselosteen.','Jag godkänner användarvillkoren och integritetspolicyn.','I accept the terms and privacy policy.')}</span></label>
             <button class="btn ink workspace-checkout-button" type="submit">${appText('Jatka turvalliseen maksuun','Fortsätt till säker betalning','Continue to secure checkout')} →</button>
             <div id="workspaceAddMsg"></div>
@@ -5089,6 +5092,7 @@ async function route() {
             plan: form.get('plan'),
             referralCode: form.get('referralCode'),
             acceptedTerms: !!form.get('terms'),
+            businessPurchase:form.get('businessPurchase')==='on',
             ownerTestAccessToken: String(form.get('ownerTestAccessToken') || ''),
             language: currentLang(),
           }),
@@ -5292,6 +5296,7 @@ async function route() {
             billingCountry:String(fd.get('billingCountry')||'').trim(),
             plan:String(fd.get('plan')||'basic_monthly'),
             acceptedTerms:fd.get('acceptedTerms')==='on',
+            businessPurchase:fd.get('businessPurchase')==='on',
           }),
         });
         if(!result?.url) throw new Error(appText('Maksusivua ei voitu avata.','Betalningssidan kunde inte öppnas.','Could not open checkout.'));
@@ -5321,7 +5326,8 @@ async function route() {
             billingCountry:String(fd.get('billingCountry')||'').trim(),
             plan:String(fd.get('plan')||'basic_monthly'),
             referralCode:String(fd.get('referralCode')||'').trim(),
-            acceptedTerms:fd.get('acceptedTerms')==='on'
+            acceptedTerms:fd.get('acceptedTerms')==='on',
+            businessPurchase:fd.get('businessPurchase')==='on'
           })
         });
         if(!result?.url) throw new Error(appText('Maksusivua ei saatu avattua.','Betalningssidan kunde inte öppnas.','Could not open checkout.'));
