@@ -1,4 +1,5 @@
-import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261001-highlights-v1';
+import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
+import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261008-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -2270,7 +2271,7 @@ function pricingSection() {
       <div class="pricing-wrap">
         ${card('Basic',49.99,44.99,539.88,2,[
           appText('AI-chat omalle verkkosivulle','AI-chatt på din webbplats','AI chat on your website'),
-          appText('Personoi botti yrityksesi brändiin','Anpassa botten till företagets varumärke','Personalize the bot to your company brand'),
+          appText('Muokkaa botin väriä, nimeä ja kuvaa','Anpassa bottens färg, namn och bild','Customize bot color, name and image'),
           appText('Oma kysymys–vastaus-tietopohja','Egen fråge- och svarskunskapsbas','Q&A knowledge base'),
           appText('Hae tiedot automaattisesti verkkosivulta','Hämta information automatiskt från webbplatsen','Automatic website knowledge import'),
           appText('Ajanvaraukset','Bokningar','Appointments and booking'),
@@ -2279,8 +2280,8 @@ function pricingSection() {
         ])}
         ${card('Advanced',64.99,59.99,719.88,10,[
           appText('Kaikki Basic-ominaisuudet','Alla Basic-funktioner','Everything in Basic'),
-          appText('Hae tiedot automaattisesti verkkosivulta','Hämta information automatiskt från webbplatsen','Automatic website knowledge import'),
           appText('Google Calendar -synkronointi','Google Calendar-synkronisering','Google Calendar sync'),
+          appText('Varausten yhdistäminen kalenteritapahtumiin','Koppla bokningar till kalenderhändelser','Connect bookings to calendar events'),
           appText('Useamman asiakaspalvelijan tiimikäyttö','Teamstöd för flera kundservicemedarbetare','Multi-agent team use'),
         ],true)}
         ${card('Business',79.99,74.99,899.88,20,[
@@ -2541,7 +2542,7 @@ function featuresPage() {
         <div class="container features-hero-inner">
           <div class="features-hero-badge">${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</div>
           <h1>${appText(`${FEATURE_COUNT} ominaisuutta.<br><em>Yksi Respondo.</em>`,`${FEATURE_COUNT} funktioner.<br><em>En Respondo.</em>`,`${FEATURE_COUNT} features.<br><em>One Respondo.</em>`)}</h1>
-          <p>${appText('Asiakaspalvelu, tietopohja, liidit, tarjoukset, ajanvaraus, live takeover, kanavat ja analytiikka yhdessä palvelussa.','Kundservice, kunskapsbas, leads, offerter, bokning, live takeover, kanaler och analys i en tjänst.','Customer service, knowledge base, leads, quotes, bookings, live takeover, channels and analytics in one service.')}</p>
+          <p>${appText('Asiakaspalvelu, tietopohja, verkkosivujen tietojen tuonti, liidit, ajanvaraus ja live-asiakaspalvelu samassa palvelussa.','Kundservice, kunskapsbas, webbplatsimport, leads, bokning och mänsklig kundservice i samma tjänst.','Customer service, knowledge base, website import, leads, bookings and human takeover in one service.')}</p>
           <div class="features-hero-actions">
             <a class="btn ink" href="/tilaus?lang=${lang}">${appText('Kokeile ilmaiseksi','Prova gratis','Start trial')}</a>
             <a class="btn ghost" href="/assistant?lang=${lang}">${appText('Kokeile bottia','Testa botten','Try the bot')}</a>
@@ -2561,6 +2562,7 @@ function featuresPage() {
             <span>10 ${appText('tärkeintä','viktigaste','essentials')}</span>
           </div>
           <div class="features-top10-grid">${topTen}</div>
+          <p class="feature-plan-note">${appText('Ominaisuuksien saatavuus riippuu tilauspaketista ja yrityksen tekemistä asetuksista. Basic: 2 asiakaspalvelijapaikkaa, tuonti ja oma ajanvaraus. Advanced: 10 paikkaa ja Google Calendar. Business: 20 paikkaa ja Business-automaatiot.','Tillgängligheten beror på abonnemang och företagets inställningar. Basic: 2 platser, import och egna bokningar. Advanced: 10 platser och Google Kalender. Business: 20 platser och Business-automationer.','Availability depends on the subscription and configuration. Basic: 2 seats, website import and native bookings. Advanced: 10 seats and Google Calendar. Business: 20 seats and Business-tier automations.')}</p>
         </div>
       </section>
       <section class="features-directory">
@@ -2964,6 +2966,34 @@ LEGAL.tietoturva = {
 };
 
 function legal(type) {
+  // Versioned, fully localized legal copy replaces legacy FI-only content.
+  // Never send binding legal text through the automatic translator.
+  const revised=LEGAL_20261008[type];
+  if(revised){
+    const language=currentLang();
+    const column=language==='sv'?1:language==='en'?2:0;
+    const select=(triple)=>esc(Array.isArray(triple)?triple[column]||triple[0]:'');
+    const updated=new Date(LEGAL_UPDATE_DATE+'T12:00:00Z')
+      .toLocaleDateString(language==='sv'?'sv-SE':language==='en'?'en-GB':'fi-FI',{timeZone:'UTC'});
+    const email=esc(cfg.supportEmail||'respondoai.fi@outlook.com');
+    const sections=revised.sections.map(({heading,body})=>
+      '<section><h2>'+select(heading)+'</h2><p>'+select(body)+'</p></section>'
+    ).join('');
+    return `<div>${nav()}<main class="legalpage"><div class="container legal-layout">
+      <aside class="legal-aside"><div class="section-kicker">${select(revised.label)}</div>
+        <h1>${select(revised.title)}</h1><p>${select(revised.intro)}</p>
+        <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span>
+          <b>RESPONDO AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId||'3599437-5')}</small>
+        </div>
+      </aside>
+      <article class="legalcopy">${sections}
+        <section><h2>${uiText('Yhteydenotot','Kontakt','Contact')}</h2>
+          <p><a href="mailto:${email}">${email}</a></p></section>
+        <div class="legal-note">${uiText('Päivitetty','Uppdaterad','Updated')} ${updated}.
+          ${uiText('Kuvaus perustuu palvelun nykyisiin toteutettuihin toimintoihin.','Beskrivningen baseras på tjänstens aktuella funktioner.','This text reflects the service’s currently implemented functionality.')}
+        </div>
+      </article></div></main>${footer()}</div>`;
+  }
   const basePage = LEGAL[type] || {
     label: 'RESPONDO AI',
     title: 'Sivua ei löytynyt',
