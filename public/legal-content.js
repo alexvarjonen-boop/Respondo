@@ -13,9 +13,9 @@ export const LEGAL_20261008 = {
     ],
     sections: [
       S(['1. Palveluntarjoaja','1. Tjänsteleverantör','1. Service provider'],[
-        'RESPONDO AI, Y-tunnus 3599437-5, Suomi. Yhteydenotot: respondoai.fi@outlook.com.',
-        'RESPONDO AI, FO-nummer 3599437-5, Finland. Kontakt: respondoai.fi@outlook.com.',
-        'RESPONDO AI, Business ID 3599437-5, Finland. Contact: respondoai.fi@outlook.com.'
+        'RESPONDO AI, Y-tunnus 3599437-5, Suomi. Yhteydenotot: info@respondoai.fi.',
+        'RESPONDO AI, FO-nummer 3599437-5, Finland. Kontakt: info@respondoai.fi.',
+        'RESPONDO AI, Business ID 3599437-5, Finland. Contact: info@respondoai.fi.'
       ]),
       S(['2. Palvelu ja käyttötarkoitus','2. Tjänsten och användningsområdet','2. Service and intended use'],[
         'Respondo on yritysten verkkosivuille tarkoitettu asiakaspalvelu- ja ajanvarausohjelmisto. Toimintoja ovat esimerkiksi chat, hyväksytty tietopohja, verkkosivujen tietojen tuonti, asiakasviestien ja yhteydenottojen käsittely, tarjouspyynnöt, ajanvaraukset sekä erikseen käyttöön otettavat työntekijä- ja integraatiotoiminnot. Osa ominaisuuksista edellyttää tiettyä tilauspakettia tai erillisiä tunnuksia.',
@@ -84,9 +84,9 @@ export const LEGAL_20261008 = {
     ],
     sections: [
       S(['1. Rekisterinpitäjä ja yhteys','1. Personuppgiftsansvarig och kontakt','1. Controller and contact'],[
-        'RESPONDO AI, Y-tunnus 3599437-5. Tietosuojapyynnöt: respondoai.fi@outlook.com. Respondo toimii yleensä rekisterinpitäjänä omien käyttäjätiliensä, maksuhallintansa ja sivustonsa osalta. Yritysasiakas on lähtökohtaisesti rekisterinpitäjä oman bottinsa loppuasiakkaiden tiedoille, jolloin Respondo toimii henkilötietojen käsittelijänä.',
-        'RESPONDO AI, FO-nummer 3599437-5. Dataskyddsförfrågningar: respondoai.fi@outlook.com. Respondo är i regel personuppgiftsansvarig för sina egna konton, sin fakturering och webbplats. Företagskunden är normalt ansvarig för uppgifter om slutkunder i den egna botten, medan Respondo är personuppgiftsbiträde.',
-        'RESPONDO AI, Business ID 3599437-5. Privacy requests: respondoai.fi@outlook.com. Respondo is generally the controller for its own user accounts, billing and website. The business customer is generally controller for end-customer information collected by its bot, with Respondo acting as processor.'
+        'RESPONDO AI, Y-tunnus 3599437-5. Tietosuojapyynnöt: info@respondoai.fi. Respondo toimii yleensä rekisterinpitäjänä omien käyttäjätiliensä, maksuhallintansa ja sivustonsa osalta. Yritysasiakas on lähtökohtaisesti rekisterinpitäjä oman bottinsa loppuasiakkaiden tiedoille, jolloin Respondo toimii henkilötietojen käsittelijänä.',
+        'RESPONDO AI, FO-nummer 3599437-5. Dataskyddsförfrågningar: info@respondoai.fi. Respondo är i regel personuppgiftsansvarig för sina egna konton, sin fakturering och webbplats. Företagskunden är normalt ansvarig för uppgifter om slutkunder i den egna botten, medan Respondo är personuppgiftsbiträde.',
+        'RESPONDO AI, Business ID 3599437-5. Privacy requests: info@respondoai.fi. Respondo is generally the controller for its own user accounts, billing and website. The business customer is generally controller for end-customer information collected by its bot, with Respondo acting as processor.'
       ]),
       S(['2. Käsiteltävät tiedot','2. Uppgifter som behandlas','2. Data categories'],[
         'Tietoja voivat olla nimi, sähköposti, puhelinnumero, yritys ja Y-tunnus, käyttäjä- ja työntekijätilit, tunnistautumis- ja tilaustunnisteet, yrityksen verkkosivulta tuodut ja itse lisätyt tietopohjatiedot, botin asetukset, keskustelut, yhteydenottopyynnöt, tarjoukset, ajanvaraukset, kävijätunnisteet, tekniset lokit ja vapaaehtoisiin integraatioihin liittyvät tunnisteet. Chat-viesti tai tuotu verkkosivu voi sisältää henkilötietoja.',
@@ -227,9 +227,9 @@ export const LEGAL_20261008 = {
         'Delivery may involve infrastructure such as Railway, Stripe for payments, Google services, email delivery and customer-connected services. EEA-external transfers may occur subject to applicable safeguards. Ask the provider for subprocessor details and any separate processing agreement.'
       ]),
       S(['Avustaminen ja tietoturvatilanteet','Hjälp och säkerhetsincidenter','Assistance and incidents'],[
-        'Respondo avustaa soveltuvien sopimusten ja lain mukaisesti yritystä rekisteröityjen pyyntöjen ja käsittelyyn liittyvien tietoturvatapahtumien selvittämisessä. Ilmoitukset ja pyynnöt: respondoai.fi@outlook.com.',
-        'Respondo bistår enligt tillämpligt avtal och lag vid registrerades begäranden och utredningar av säkerhetsincidenter. Förfrågningar: respondoai.fi@outlook.com.',
-        'Respondo assists with data-subject requests and security incidents as required by contract and applicable law. Requests and incident reports: respondoai.fi@outlook.com.'
+        'Respondo avustaa soveltuvien sopimusten ja lain mukaisesti yritystä rekisteröityjen pyyntöjen ja käsittelyyn liittyvien tietoturvatapahtumien selvittämisessä. Ilmoitukset ja pyynnöt: info@respondoai.fi.',
+        'Respondo bistår enligt tillämpligt avtal och lag vid registrerades begäranden och utredningar av säkerhetsincidenter. Förfrågningar: info@respondoai.fi.',
+        'Respondo assists with data-subject requests and security incidents as required by contract and applicable law. Requests and incident reports: info@respondoai.fi.'
       ]),
       S(['Tietojen palauttaminen ja poistaminen','Återlämning och radering','Return and deletion'],[
         'Sopimuksen päättyessä asiakas voi pyytää tietojensa palauttamista tai poistamista. Tietoja käsitellään voimassa olevien sopimusten, teknisen toteutuksen sekä soveltuvien lakisääteisten säilytysvelvoitteiden mukaan. Ajankohdat ja menettely on sovittava tarvittaessa erikseen.',
@@ -269,9 +269,9 @@ export const LEGAL_20261008 = {
         'Payment, database and OAuth credentials are handled server-side. Businesses choose which supported third-party connections to enable. Permissions are limited to those needed where practicable.'
       ]),
       S(['Vastuullinen käyttö ja ilmoitukset','Ansvarsfull användning och rapportering','Responsible use and reporting'],[
-        'Yrityksen tulee tarkistaa tuodut tiedot, rajata henkilötietojen käsittely tarpeelliseen ja hallita työntekijätiliensä oikeuksia. Ilmoita epäillyistä tietoturvaongelmista osoitteeseen respondoai.fi@outlook.com.',
-        'Företaget bör granska importerade uppgifter, begränsa personuppgifter till det nödvändiga och hantera personalens behörigheter. Rapportera misstänkta säkerhetsproblem till respondoai.fi@outlook.com.',
-        'Businesses should review imported content, minimize personal data and manage staff access. Report suspected security issues to respondoai.fi@outlook.com.'
+        'Yrityksen tulee tarkistaa tuodut tiedot, rajata henkilötietojen käsittely tarpeelliseen ja hallita työntekijätiliensä oikeuksia. Ilmoita epäillyistä tietoturvaongelmista osoitteeseen info@respondoai.fi.',
+        'Företaget bör granska importerade uppgifter, begränsa personuppgifter till det nödvändiga och hantera personalens behörigheter. Rapportera misstänkta säkerhetsproblem till info@respondoai.fi.',
+        'Businesses should review imported content, minimize personal data and manage staff access. Report suspected security issues to info@respondoai.fi.'
       ])
     ]
   }
