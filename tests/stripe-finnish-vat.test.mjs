@@ -24,3 +24,10 @@ test('visible prices remain unchanged and do not claim to include VAT',()=>{
   assert.match(app,/Advanced',39\.90,39\.90,478\.80/);
   assert.match(app,/Business',49\.90,49\.90,598\.80/);
 });
+
+test('old VAT-era recurring prices are recognized for existing accounts',()=>{
+  const mapping=server.slice(server.indexOf('function planFromStripePriceId'),server.indexOf('async function activeTenantPlan'));
+  for(const id of ['price_1UOLwuV05brJ7mTPUcIxZKE6','price_1UOLx1V05brJ7mTPETqeexmn','price_1UOLx3V05brJ7mTPODsTKyC5','price_1UOLx6V05brJ7mTPIgyqDymD','price_1UOLx8V05brJ7mTPDq47ha22','price_1UOLxBV05brJ7mTPSsDPLXTM']){
+    assert.ok(mapping.includes(id),'missing '+id);
+  }
+});
