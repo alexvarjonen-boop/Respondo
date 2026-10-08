@@ -62,3 +62,20 @@ test('signup and both workspace forms collect and send country',()=>{
   assert.match(server,/enforceCompletedCheckoutCountryPolicy\(session\)/);
   assert.match(server,/checkoutCountryPolicy\(req.body\?\.billingCountry\)/);
 });
+
+test('business-only order declaration is required for both checkout endpoints',()=>{
+  assert.equal((app.match(/name="businessPurchase"/g)||[]).length,3);
+  assert.equal((app.match(/businessPurchase:(?:form.get|fd.get)/g)||[]).length,3);
+  assert.match(server,/if\s*\(req\.body\?\.businessPurchase !== true\)/);
+  assert.match(server,/if\s*\(req\.body\?\.businessPurchase!==true\)/);
+});
+
+test('seller is identifiable and domestic VAT status is disclosed',()=>{
+  const terms=fs.readFileSync(new URL('../public/legal-content.js',import.meta.url),'utf8');
+  assert.match(terms,/Alex Varjonen \(Respondo AI -palvelu\), Y-tunnus 3599437-5/);
+  assert.match(terms,/Maksulliset tilaukset ovat nyt saatavilla vain Suomessa/);
+  assert.match(terms,/Paid subscriptions are currently available only to businesses in Finland/);
+  assert.match(app,/sellerName: 'Alex Varjonen/);
+  assert.match(server,/sellerName: 'Alex Varjonen/);
+  assert.match(server,/automatic_tax:\s*\{\s*enabled:\s*false\s*\}/);
+});
