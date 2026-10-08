@@ -227,6 +227,9 @@ async function auditServiceSite(site){
   if(!bundle) return {site,skipped:true,bundle:null,candidates:[],profile:null,rows:[]};
   const candidates=websiteKnowledgeCandidates(bundle);
   const profile=extractFreeWebsiteProfile(bundle);
+  for(const pattern of site.profileServicesMustNotContain||[]){
+    assert.doesNotMatch(String(profile.services||''),pattern,site.name+' profile includes navigation junk');
+  }
   const rows=rowsFromCandidates(candidates);
   const text=candidateText(candidates);
 
@@ -283,6 +286,7 @@ const serviceSites=[
   {
     name:'Monitoimipojat RD',
     url:'https://monitoimipojatrd.fi/',
+    profileServicesMustNotContain:[/^(?:Palvelumme|Kaikki palvelut)$/mi],
     maxPages:20,
     budget:26000,
     minFacts:4,

@@ -241,3 +241,15 @@ test('return and warranty form CTA banners never become warranty policy facts',(
   assert.doesNotMatch(profile.warranty,/PAINA TÄSTÄ|CLICK HERE/);
   assert.doesNotMatch(profile.returns,/PAINA TÄSTÄ|CLICK HERE/);
 });
+
+
+test('real cleaning-service profile excludes generic navigation headings',()=>{
+  const html='<nav><a href="/services">Palvelumme</a><a href="/services">Kaikki palvelut</a></nav>'+
+    '<section><h2>Palvelumme</h2><a href="/window-cleaning">Ikkunanpesut</a>'+
+    '<a href="/roof-cleaning">Peltikattojen pesut</a><a href="/garden">Raivaustyöt</a></section>';
+  const doc=extractBusinessDocument(html,'https://cleaning.example/');
+  const profile=essentialWebsiteProfile({finalUrl:'https://cleaning.example/',pageDocuments:[doc]});
+  assert.match(profile.services,/Ikkunanpesut/i);
+  assert.match(profile.services,/Peltikattojen pesut/i);
+  assert.doesNotMatch(profile.services,/^(?:Kaikki palvelut|Palvelumme)$/mi);
+});

@@ -995,6 +995,9 @@ function conciseProfileServices(facts) {
       return product===serviceKey || product.startsWith(serviceKey+' ') || serviceKey.startsWith(product+' ');
     });
     if(!text || text.length>180 || seen.has(key) || productNames.has(serviceKey) || overlapsCatalog) return;
+    // Service navigation headings are not customer-facing service names.
+    if(/^(?:(?:kaikki|meidan|our|all|vara)\s+)?(?:palvelumme|palvelut|palvelu|services?|tjanster|tjansterna)$/.test(key)) return;
+    if(/\b(?:hinta\s+(?:maaraytyy|vaihtelee)|price\s+(?:depends|varies))\b/i.test(key)) return;
     if(/(?:\b(?:kit|setti|bundle|gift\s*box|lahjapakkaus)\b|suoristin|straightener)/i.test(key)) return;
     if(/\b(?:vuodeksi|for\s+a\s+year|per\s+year)\b/i.test(key)) return;
     if(/\b[\wåäö-]*palvelu(?:ssa|sta|ista|iden|jen|n)\b/i.test(key)) return;
