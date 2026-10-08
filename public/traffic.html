@@ -56,6 +56,36 @@
 .company-row .company-col:nth-child(4){grid-column:1 / -1;margin-left:50px}
 .company-symbol{width:38px}.company-footer{align-items:flex-start;flex-direction:column}
 }
+
+/* Compact management controls: only on authenticated owner's traffic view. */
+.company-row{grid-template-columns:minmax(0,2.2fr) minmax(90px,.75fr) minmax(100px,.8fr) minmax(105px,.9fr) auto}
+.company-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.company-action{border:1px solid #e1e3e9;background:#fff;color:#303849;border-radius:10px;padding:8px 10px;font:inherit;font-size:11px;font-weight:730;cursor:pointer;white-space:nowrap}
+.company-action:hover,.company-action:focus-visible{background:#f3f5fa;border-color:#b9c8e7}
+.company-action.danger{color:#ae3131}.company-action.danger:hover,.company-action.danger:focus-visible{background:#fff0f0;border-color:#e9b9b9}
+.company-notice{margin-bottom:12px;color:#116641;font-weight:670;font-size:13px}
+.company-notice:empty{display:none}
+.company-notice.error{color:#a22b2b}
+.company-dialog{width:min(100% - 28px,480px);max-height:min(90vh,760px);border:1px solid #e2e4e9;border-radius:22px;background:#fff;box-shadow:0 32px 90px rgba(16,22,32,.23);padding:25px;color:#20232a}
+.company-dialog::backdrop{background:rgba(20,26,38,.48);backdrop-filter:blur(5px)}
+.company-dialog h3{font-size:24px;letter-spacing:-.04em;margin:0 0 10px}
+.company-dialog p{color:#656b76;font-size:13px;line-height:1.55;margin:0 0 18px}
+.company-field{display:block;margin:12px 0;color:#30343d;font-size:12px;font-weight:720}
+.company-field input{display:block;width:100%;min-height:43px;margin-top:7px;padding:10px 12px;border:1px solid #dfe1e8;border-radius:11px;background:#fff;color:#17191e;font:inherit;font-size:14px;outline-offset:2px}
+.company-dialog-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;margin-top:19px}
+.company-dialog-actions button{min-height:41px;min-width:85px;padding:9px 16px;border-radius:11px;background:#fff;border:1px solid #dfe2e7;color:#242b37;font:inherit;font-size:13px;font-weight:730;cursor:pointer}
+.company-dialog-actions button.primary{background:#0071e3;border-color:#0071e3;color:white}
+.company-dialog-actions button.danger{background:#b42328;border-color:#b42328;color:white}
+.company-dialog-actions button:disabled{opacity:.5;cursor:wait}
+.company-dialog-error{min-height:0;color:#a92828;font-size:12px;font-weight:620}
+.company-dialog-error:empty{display:none}
+@media(max-width:730px){
+  .company-row{grid-template-columns:minmax(0,1fr) auto}
+  .company-row .company-col:nth-child(4){grid-column:1;grid-row:2;margin-left:50px}
+  .company-row .company-actions{grid-column:2;grid-row:2;margin-left:0}
+  .company-action{padding:8px}
+  .company-dialog{padding:19px}
+}
 </style>
 </head>
 <body>
@@ -127,6 +157,13 @@ const CL={
  en:{section:'Companies using Respondo',eyebrow:'COMPANY DIRECTORY',info:'Companies that have started using the service. Incomplete signups and test subscriptions are excluded.',total:'Total companies',active:'Active',trialing:'Trial',ended:'Ended',search:'Search by company name, business ID or website',all:'All statuses',plan:'Plan',added:'Added',businessId:'Business ID',loading:'Loading companies…',empty:'No companies found.',failed:'Could not load companies.',matches:'companies',previous:'Previous',next:'Next',page:'Page',of:'/',noWebsite:'No website'}
 };
 const ct=key=>CL[lang]?.[key]||CL.fi[key]||key;
+const CM={
+ fi:{manage:'Hallinnoi',edit:'Muokkaa',remove:'Poista',editTitle:'Muokkaa yritystä',deleteTitle:'Poista yritys',details:'Muokkaa yrityksen perustietoja. Tilauspakettia ja laskutusta ei muuteta.',warning:'Yrityksen poistaminen on lopullista. Myös sen botti, vastaukset, keskustelut ja muut yritystiedot poistetaan. Yritykseen liittyvä Stripe-tilaus perutaan välittömästi, jos sellainen on.',name:'Yrityksen nimi',businessId:'Y-tunnus',website:'Verkkosivusto (HTTPS)',confirmName:'Kirjoita yrityksen nimi täsmälleen',password:'Oman omistajatilisi salasana',cancel:'Peruuta',save:'Tallenna muutokset',confirmRemove:'Poista yritys ja peruuta tilaus',saving:'Käsitellään…',saved:'Yrityksen tiedot päivitettiin.',deleted:'Yritys poistettiin. Mahdollinen tilaus peruttiin.',error:'Toiminto epäonnistui. Yritä uudelleen.',passwordNote:'Jos käytät pelkkää Google-kirjautumista, aseta ensin salasana omalle käyttäjätilillesi.'},
+ sv:{manage:'Hantera',edit:'Redigera',remove:'Ta bort',editTitle:'Redigera företag',deleteTitle:'Ta bort företag',details:'Redigera företagets basuppgifter. Abonnemang och fakturering ändras inte.',warning:'Borttagningen är permanent. Företagets bot, svar och konversationer raderas. En kopplad Stripe-prenumeration avslutas omedelbart.',name:'Företagets namn',businessId:'FO-nummer',website:'Webbplats (HTTPS)',confirmName:'Skriv företagets namn exakt',password:'Ditt ägarkontos lösenord',cancel:'Avbryt',save:'Spara ändringar',confirmRemove:'Ta bort företag och avsluta abonnemang',saving:'Behandlar…',saved:'Företaget uppdaterades.',deleted:'Företaget togs bort. Ett kopplat abonnemang avslutades.',error:'Åtgärden misslyckades. Försök igen.',passwordNote:'Om du endast använder Google-inloggning, lägg först till ett lösenord för ditt konto.'},
+ en:{manage:'Manage',edit:'Edit',remove:'Delete',editTitle:'Edit company',deleteTitle:'Delete company',details:'Edit basic company details. This does not change the plan or billing.',warning:'Deletion is permanent. The company bot, answers, conversations and other company data will be erased. Any linked Stripe subscription will be canceled immediately.',name:'Company name',businessId:'Business ID',website:'Website (HTTPS)',confirmName:'Type the exact company name',password:'Your owner account password',cancel:'Cancel',save:'Save changes',confirmRemove:'Delete company and cancel subscription',saving:'Processing…',saved:'Company updated.',deleted:'Company deleted. Any linked subscription was canceled.',error:'Action failed. Please try again.',passwordNote:'If you only use Google sign-in, first set a password for your own account.'}
+};
+const cm=k=>CM[lang]?.[k]||CM.fi[k]||k;
+let companyCache=new Map();
 let companyPage=1,companySearch='',companyStatus='all',companyRequest=0,companyTimer;
 const companyDate=value=>{
   const date=new Date(value);
@@ -146,7 +183,13 @@ function companiesShell(){
     '<div id="companyMetrics" class="company-metrics" aria-live="polite"></div>'+
     '<div class="company-controls"><input id="companySearch" type="search" autocomplete="off" maxlength="100" placeholder="'+e(ct('search'))+'" aria-label="'+e(ct('search'))+'" value="'+e(companySearch)+'">'+
     '<select id="companyFilter" aria-label="'+e(ct('all'))+'">'+opts.map(([value,label])=>'<option value="'+value+'"'+(companyStatus===value?' selected':'')+'>'+e(label)+'</option>').join('')+'</select></div>'+
-    '<div id="companyResults" aria-live="polite"><div class="company-loading">'+ct('loading')+'</div></div></section>';
+    '<div id="companyNotice" class="company-notice" role="status" aria-live="polite"></div>'+
+    '<div id="companyResults" aria-live="polite"><div class="company-loading">'+ct('loading')+'</div></div>'+
+    '<dialog id="companyManageDialog" class="company-dialog" aria-labelledby="companyDialogTitle">'+
+      '<form id="companyManageForm" novalidate><h3 id="companyDialogTitle"></h3><p id="companyDialogDescription"></p>'+
+      '<div id="companyDialogFields"></div><div id="companyDialogError" class="company-dialog-error" role="alert"></div>'+
+      '<div class="company-dialog-actions"><button type="button" id="companyDialogClose">'+e(cm('cancel'))+'</button>'+
+      '<button type="submit" class="primary" id="companyDialogSubmit"></button></div></form></dialog></section>';
 }
 function companySummaryCards(s){
   const data=[[ct('total'),s.total],[ct('active'),s.active],[ct('trialing'),s.trialing],[ct('ended'),s.ended]];
@@ -162,6 +205,8 @@ function companyRow(c){
     '<span class="company-col">'+e(companyPlan(c.subscription_plan))+'</span>'+
     '<div class="company-col"><span class="company-status '+status+'">'+e(ct(status))+'</span></div>'+
     '<div class="company-col">'+e(ct('added'))+': '+e(companyDate(c.created_at))+'</div>'+
+    '<div class="company-actions"><button class="company-action" type="button" data-company-action="edit" data-company-id="'+e(c.id)+'" aria-label="'+e(cm('edit')+' '+name)+'">'+e(cm('edit'))+'</button>'+
+    '<button class="company-action danger" type="button" data-company-action="delete" data-company-id="'+e(c.id)+'" aria-label="'+e(cm('remove')+' '+name)+'">'+e(cm('remove'))+'</button></div>'+
     '</article>';
 }
 function paintCompanies(data){
@@ -170,6 +215,7 @@ function paintCompanies(data){
   if(!metrics||!results)return;
   metrics.innerHTML=companySummaryCards(data.summary||{});
   const rows=Array.isArray(data.companies)?data.companies:[];
+  companyCache=new Map(rows.map(c=>[String(c.id),c]));
   const p=data.pagination||{page:1,total:0,totalPages:1};
   const count=Number(p.total||0),page=Number(p.page||1),pages=Number(p.totalPages||1);
   const start=count?(page-1)*25+1:0,end=count?Math.min(count,page*25):0;
@@ -197,6 +243,82 @@ async function loadCompanies(){
     if(target)target.innerHTML='<div class="company-loading error">'+e(error.message||ct('failed'))+'</div>';
   }
 }
+
+function companyField(name,label,value,type='text',required=false){
+  return '<label class="company-field">'+e(label)+
+    '<input name="'+name+'" type="'+type+'" value="'+e(value||'')+'"'+
+    (required?' required':'')+' autocomplete="off" maxlength="260"></label>';
+}
+function showCompanyManager(id,mode){
+  const data=companyCache.get(String(id));
+  const dialog=document.getElementById('companyManageDialog');
+  const form=document.getElementById('companyManageForm');
+  if(!data||!dialog||!form)return;
+  form.dataset.companyId=String(data.id);
+  form.dataset.mode=mode;
+  document.getElementById('companyDialogError').textContent='';
+  const danger=mode==='delete';
+  const title=document.getElementById('companyDialogTitle');
+  const description=document.getElementById('companyDialogDescription');
+  const fields=document.getElementById('companyDialogFields');
+  const submit=document.getElementById('companyDialogSubmit');
+  title.textContent=cm(danger?'deleteTitle':'editTitle');
+  description.textContent=danger?cm('warning'):cm('details');
+  submit.className=danger?'danger':'primary';
+  submit.textContent=cm(danger?'confirmRemove':'save');
+  if(danger){
+    fields.innerHTML='<p><strong>'+e(data.name)+'</strong></p>'+
+      companyField('confirmName',cm('confirmName'),'','text',true)+
+      companyField('password',cm('password'),'','password',true)+
+      '<p>'+e(cm('passwordNote'))+'</p>';
+  }else{
+    fields.innerHTML=companyField('name',cm('name'),data.name,'text',true)+
+      companyField('businessId',cm('businessId'),data.business_id)+
+      companyField('website',cm('website'),data.website);
+  }
+  dialog.showModal();
+  fields.querySelector('input')?.focus();
+}
+async function submitCompanyManagement(event){
+  event.preventDefault();
+  const form=event.currentTarget;
+  const id=form.dataset.companyId;
+  const mode=form.dataset.mode;
+  const data=companyCache.get(id);
+  if(!data)return;
+  const danger=mode==='delete';
+  const values=new FormData(form);
+  const payload=danger
+    ? {confirmName:String(values.get('confirmName')||''),password:String(values.get('password')||'')}
+    : {name:String(values.get('name')||'').trim(),businessId:String(values.get('businessId')||'').trim(),website:String(values.get('website')||'').trim()};
+  const submit=document.getElementById('companyDialogSubmit');
+  const close=document.getElementById('companyDialogClose');
+  const errorElement=document.getElementById('companyDialogError');
+  errorElement.textContent='';
+  submit.disabled=true;close.disabled=true;
+  const oldLabel=submit.textContent;submit.textContent=cm('saving');
+  try{
+    const response=await fetch('/api/owner/companies/'+encodeURIComponent(id),{
+      method:danger?'DELETE':'PATCH',
+      credentials:'same-origin',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const responseData=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(String(responseData.error||cm('error')));
+    form.reset();
+    document.getElementById('companyManageDialog').close();
+    companyPage=1;
+    await loadCompanies();
+    const notice=document.getElementById('companyNotice');
+    if(notice){notice.classList.remove('error');notice.textContent=cm(danger?'deleted':'saved');}
+  }catch(error){
+    errorElement.textContent=error.message||cm('error');
+  }finally{
+    submit.disabled=false;close.disabled=false;submit.textContent=oldLabel;
+  }
+}
+
 function bindCompanyControls(){
   const search=document.getElementById('companySearch');
   const filter=document.getElementById('companyFilter');
@@ -210,12 +332,17 @@ function bindCompanyControls(){
     companyStatus=filter.value;companyPage=1;loadCompanies();
   });
   results.addEventListener('click',event=>{
+    const action=event.target.closest('button[data-company-action]');
+    if(action){showCompanyManager(action.dataset.companyId,action.dataset.companyAction);return;}
     const button=event.target.closest('button[data-page]');
     if(!button||button.disabled)return;
     const page=Number(button.dataset.page);
     if(!Number.isInteger(page)||page<1)return;
     companyPage=page;loadCompanies();
   });
+  const dialog=document.getElementById('companyManageDialog');
+  document.getElementById('companyDialogClose').addEventListener('click',()=>dialog.close());
+  document.getElementById('companyManageForm').addEventListener('submit',submitCompanyManagement);
 }
 
 async function load(){
