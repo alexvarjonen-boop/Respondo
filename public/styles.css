@@ -9099,3 +9099,18 @@ body.deletion-modal-open{overflow:hidden!important}
   .deletion-modal{align-items:end;padding:0}
   .deletion-modal-card{width:100%;max-height:90dvh;border-radius:22px 22px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom))}
 }
+
+/* No active company: keep account deletion and new checkout accessible. */
+.dashboard-empty-workspaces{min-height:100vh;padding:20px 14px 85px}
+.dashboard-empty-main{width:min(100%,720px);margin:auto}
+.dashboard-empty-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 18px}
+.dashboard-empty-head .brand-mark{width:40px;height:40px}
+.dashboard-empty-workspaces .workspace-manager-panel{display:grid;gap:18px;padding:24px!important}
+.dashboard-empty-workspaces .workspace-manager-panel>small{color:#909098;font-size:11px;letter-spacing:.09em;font-weight:800}
+.dashboard-empty-workspaces .workspace-manager-panel h1{font-size:clamp(28px,5vw,40px);line-height:1.08;margin:0}
+.dashboard-empty-workspaces .workspace-manager-panel>p{margin:0;color:#676771;font-size:14px;line-height:1.55}
+.dashboard-empty-workspaces .workspace-add-form{margin-top:12px}
+.dashboard-empty-workspaces .workspace-add-form select{min-height:48px;width:100%;padding:10px 12px;border-radius:12px;border:1px solid #d4d4d9;background:#fff;font-size:16px}
+.dashboard-empty-workspaces .workspace-add-form input:not([type="checkbox"]){min-height:48px;font-size:16px}
+#emptyWorkspaceMsg:not(:empty){padding:12px;background:#fff0e5;border-radius:12px;color:#942e18;font-size:13px}
+@media(max-width:640px){.dashboard-empty-workspaces .workspace-manager-panel{padding:19px!important}}
