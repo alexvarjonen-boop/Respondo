@@ -281,6 +281,27 @@ async function auditServiceSite(site){
 
 const serviceSites=[
   {
+    name:'Monitoimipojat RD',
+    url:'https://monitoimipojatrd.fi/',
+    maxPages:20,
+    budget:26000,
+    minFacts:4,
+    mustContain:[
+      ['company email',/monitoimipojatrd\.yhteydenotto@gmail\.com/i],
+      ['contact phone',/045\s*800\s*5059/i],
+      ['window cleaning',/ikkunanpesu/i],
+      ['roof cleaning',/peltikattojen\s+pesu|kattojen\s+pesu/i],
+    ],
+    questions:[
+      {label:'phone-fi',lang:'fi',message:'Mihin numeroon voin soittaa?',expect:/045\s*800\s*5059/i},
+      {label:'phone-en',lang:'en',message:'What is your phone number?',expect:/045\s*800\s*5059/i},
+      {label:'phone-sv',lang:'sv',message:'Vad är ert telefonnummer?',expect:/045\s*800\s*5059/i},
+      {label:'email-fi',lang:'fi',message:'Mihin sähköpostiin voin laittaa viestiä?',expect:/monitoimipojatrd\.yhteydenotto@gmail\.com/i},
+      {label:'email-en',lang:'en',message:'What is your email address?',expect:/monitoimipojatrd\.yhteydenotto@gmail\.com/i},
+      {label:'email-sv',lang:'sv',message:'Vilken e-postadress har ni?',expect:/monitoimipojatrd\.yhteydenotto@gmail\.com/i},
+    ],
+  },
+  {
     name:'M Room Maariankatu',
     url:'https://mroom.com/fi/parturit/turku/maariankatu/',
     minFacts:5,
