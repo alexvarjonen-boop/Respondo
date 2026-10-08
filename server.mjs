@@ -12662,6 +12662,22 @@ async function ensureRuntimeSchema() {
     UNIQUE(tenant_id,source_channel,external_contact_id)
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_chat_threads_tenant_activity ON chat_threads(tenant_id,last_activity_at DESC)');
+  await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ');
+  await q("UPDATE users SET email_verified_at=created_at WHERE email_verified_at IS NULL AND status='active'");
+  await q("CREATE TABLE IF NOT EXISTS email_verification_tokens ("+
+    "id UUID PRIMARY KEY,"+
+    "email TEXT NOT NULL,"+
+    "user_id UUID REFERENCES users(id) ON DELETE CASCADE,"+
+    "purpose TEXT NOT NULL CHECK(purpose IN ('signup','change_email')),"+
+    "language TEXT NOT NULL DEFAULT 'fi',"+
+    "token_hash TEXT NOT NULL UNIQUE,"+
+    "expires_at TIMESTAMPTZ NOT NULL,"+
+    "used_at TIMESTAMPTZ,"+
+    "created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
+  await q('ALTER TABLE email_verification_tokens ENABLE ROW LEVEL SECURITY');
+  await q('CREATE INDEX IF NOT EXISTS idx_email_verification_email_time ON email_verification_tokens(email,purpose,created_at DESC)');
+  await q('CREATE INDEX IF NOT EXISTS idx_email_verification_expiry ON email_verification_tokens(expires_at)');
+
   await q(`CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
