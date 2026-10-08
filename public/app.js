@@ -3374,6 +3374,20 @@ async function dashboard(options = {}) {
                 <div id="botAvatarMsg"></div>
               </div>
             </div>
+            <div class="field website-import-field profile-wide">
+              <label>Verkkosivusi osoite</label>
+              <input name="website" value="${profileValue('Verkkosivu')}" placeholder="https://yritys.fi">
+              <small class="field-hint">Botti toimii vain tällä verkkosivulla.</small>
+              ${planAccess.websiteImport
+                ? `<button type="button" class="inline-import-btn" id="importWebsite">${appText('Hae tiedot sivultani','Hämta uppgifter från min webbplats','Import details from my website')}</button>`
+                : `<div class="notice compact-plan-notice">${appText('Automaattinen verkkosivuhaku ei ole käytössä tässä tilauksessa.','Automatisk webbplatsimport är inte tillgänglig i detta abonnemang.','Automatic website import is not available on this plan.')}</div>`}
+              <div id="websiteImportProgress" style="display:none;margin-top:10px">
+                <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:6px"><span id="websiteImportProgressLabel">${appText('Valmistellaan hakua…','Förbereder sökning…','Preparing scan…')}</span><b id="websiteImportProgressPercent">0%</b></div>
+                <div style="height:9px;border-radius:999px;background:rgba(127,127,127,.18);overflow:hidden"><div id="websiteImportProgressBar" style="height:100%;width:0%;background:currentColor;border-radius:999px;transition:width .45s ease"></div></div>
+              </div>
+              ${planAccess.websiteImport ? `<small class="field-hint">${appText('Respondo etsii sivultasi palvelut ja yhteystiedot valmiiksi. Sinä tarkistat ne ennen tallennusta.','Respondo hittar tjänster och kontaktuppgifter på din webbplats. Du granskar dem innan de sparas.','Respondo finds services and contact details on your website. You review them before saving.')}</small>` : ''}
+            </div>
+            <div id="websiteImportReview" class="website-import-review profile-wide"></div>
             <div class="field profile-wide">
               <label>${appText('Ensimmäinen viesti asiakkaalle','Första meddelandet till kunden','First message to customer')}</label>
               <input name="greeting" maxlength="220" value="${esc(t.greeting || 'Hei! Miten voin auttaa?')}" placeholder="Hei! Miten voin auttaa?">
@@ -3405,19 +3419,6 @@ async function dashboard(options = {}) {
               <button type="button" class="btn ghost profile-email-save" id="saveProfileEmail">${appText('Tallenna sähköpostiosoite','Spara e-postadress','Save email address')}</button>
               <small id="profileEmailMsg" class="profile-email-status" aria-live="polite"></small>
               <div id="importEmailSuggestions" class="profile-email-suggestions" aria-live="polite"></div>
-            </div>
-            <div class="field website-import-field">
-              <label>Verkkosivusi osoite</label>
-              <input name="website" value="${profileValue('Verkkosivu')}" placeholder="https://yritys.fi">
-              <small class="field-hint">Botti toimii vain tällä verkkosivulla.</small>
-              ${planAccess.websiteImport
-                ? `<button type="button" class="inline-import-btn" id="importWebsite">${appText('Hae tiedot sivultani','Hämta uppgifter från min webbplats','Import details from my website')}</button>`
-                : `<div class="notice compact-plan-notice">${appText('Automaattinen verkkosivuhaku ei ole käytössä tässä tilauksessa.','Automatisk webbplatsimport är inte tillgänglig i detta abonnemang.','Automatic website import is not available on this plan.')}</div>`}
-              <div id="websiteImportProgress" style="display:none;margin-top:10px">
-                <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:6px"><span id="websiteImportProgressLabel">${appText('Valmistellaan hakua…','Förbereder sökning…','Preparing scan…')}</span><b id="websiteImportProgressPercent">0%</b></div>
-                <div style="height:9px;border-radius:999px;background:rgba(127,127,127,.18);overflow:hidden"><div id="websiteImportProgressBar" style="height:100%;width:0%;background:currentColor;border-radius:999px;transition:width .45s ease"></div></div>
-              </div>
-              ${planAccess.websiteImport ? `<small class="field-hint">${appText('Respondo etsii sivultasi palvelut ja yhteystiedot valmiiksi. Sinä tarkistat ne ennen tallennusta.','Respondo hittar tjänster och kontaktuppgifter på din webbplats. Du granskar dem innan de sparas.','Respondo finds services and contact details on your website. You review them before saving.')}</small>` : ''}
             </div>
             <div class="field">
               <label>Linkki tarjouspyyntöön</label>
@@ -3459,7 +3460,7 @@ async function dashboard(options = {}) {
             <button class="btn dashboard-action profile-save" type="submit">${appText('Tallenna tiedot','Spara uppgifter','Save information')} <span>→</span></button>
           </div>
           <div id="businessProfileMsg"></div>
-          <div id="websiteImportReview" class="website-import-review"></div>
+
         </form>
         </div>
 
