@@ -50,3 +50,15 @@ test('public Try Bot prefills the URL supplied by the first-party owner workspac
   assert.match(app,/const demoWebsiteFromLink=new URLSearchParams\(location\.search\)\.get\('website'\)/);
   assert.match(app,/demoProfile\.elements\.website\.value=parsed\.href/);
 });
+
+
+test('public Try Bot sends a bounded, question-relevant fallback while reading the full persisted import by id',()=>{
+  assert.match(app,/const previewFallbackFacts=\(question\)=>/);
+  assert.match(app,/\.filter\(f=>f\.sourceType!=='demo_import'\)\.slice\(-24\)/);
+  assert.match(app,/\.filter\(f=>f\.sourceType==='demo_import'\)/);
+  assert.match(app,/\.slice\(0,32\)/);
+  assert.match(app,/answer:String\(fact\.answer\|\|''\)\.slice\(0,650\)/);
+  assert.match(app,/customFacts:previewFallbackFacts\(question\)/);
+  assert.match(app,/demoImportId,/);
+  assert.doesNotMatch(app,/customFacts:demoFacts\.slice\(0,350\)/);
+});

@@ -4678,6 +4678,30 @@ async function route() {
       if(msg) msg.innerHTML='<div class="notice success">'+appText('Vastaus lisättiin kokeilun tietopohjaan.','Svaret lades till i demodatabasen.','Answer added to the demo knowledge base.')+'</div>';
     });
 
+    const previewFallbackFacts=(question)=>{
+      // The full imported catalog is loaded server-side via demoImportId.
+      // A browser-side fallback is intentionally small: sending 350 complete
+      // product rows caused a 413 Payload Too Large error on iOS.
+      const terms=[...new Set((String(question||'').toLowerCase().match(/[\\p{L}\\p{N}]{3,}/gu)||[]))].slice(0,14);
+      const manual=demoFacts.filter(f=>f.sourceType!=='demo_import').slice(-24);
+      const imported=demoFacts.filter(f=>f.sourceType==='demo_import')
+        .map((fact,index)=>{
+          const haystack=(String(fact.title||'')+' '+String(fact.category||'')+' '+String((fact.keywords||[]).join(' '))).toLowerCase();
+          return {fact,index,score:terms.reduce((score,term)=>score+(haystack.includes(term)?1:0),0)};
+        })
+        .sort((a,b)=>b.score-a.score||a.index-b.index)
+        .slice(0,32)
+        .map(item=>item.fact);
+      return [...manual,...imported].map(fact=>({
+        key:String(fact.title||'').slice(0,120),
+        answer:String(fact.answer||'').slice(0,650),
+        category:String(fact.category||'').slice(0,64),
+        keywords:(Array.isArray(fact.keywords)?fact.keywords:[]).slice(0,8).map(v=>String(v).slice(0,48)),
+        sourceUrl:String(fact.sourceUrl||'').slice(0,350),
+        sourceType:fact.sourceType
+      }));
+    };
+
     $('#previewForm')?.addEventListener('submit',async(event)=>{
       event.preventDefault();
       if(!demoProfile) return;
@@ -4714,17 +4738,9 @@ async function route() {
               quoteRequestUrl:values.quoteRequestUrl,
               bookingUrl:values.bookingUrl,
               notes:values.notes,
-              // Include a compact copy of the imported facts in every demo-chat
-              // request. This keeps an already-open Try Bot session working even
-              // if Railway restarts between the import and the next question.
-              customFacts:demoFacts.slice(0,350).map(x=>({
-                key:x.title,
-                answer:x.answer,
-                category:x.category,
-                keywords:x.keywords,
-                sourceUrl:x.sourceUrl,
-                sourceType:x.sourceType
-              }))
+              // Inline fallback never sends more than 56 short rows. The
+              // server restores the complete catalog using demoImportId.
+              customFacts:previewFallbackFacts(question)
             },
             history:demoHistory.slice(-6)
           })
