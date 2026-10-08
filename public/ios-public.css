@@ -1,0 +1,408 @@
+/* Respondo iOS Design System — public pages. Scoped to marketing / account entry.
+   Preserve the dark Apple-style home hero and all functional UI elements. */
+:root{
+  --ios-canvas:#f5f5f7;
+  --ios-surface:#fff;
+  --ios-surface-soft:#fafafa;
+  --ios-ink:#1d1d1f;
+  --ios-secondary:#6e6e73;
+  --ios-tertiary:#92929a;
+  --ios-blue:#0071e3;
+  --ios-blue-hover:#0077ed;
+  --ios-line:rgba(29,29,31,.09);
+  --ios-radius:26px;
+  --ios-soft-shadow:0 10px 40px rgba(30,35,50,.035);
+  --ios-font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Arial,sans-serif;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.legalpage,.formpage){
+  font-family:var(--ios-font)!important;color:var(--ios-ink);
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page) {
+  background:var(--ios-canvas)!important;color:var(--ios-ink);
+  min-height:100vh;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) :is(h1,h2,h3){
+  font-family:var(--ios-font)!important;letter-spacing:-.046em!important;text-wrap:balance;
+  color:var(--ios-ink);
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) :is(p,li){
+  text-wrap:pretty;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) .section-kicker{
+  display:inline-flex;align-items:center;min-height:31px;width:max-content;max-width:100%;
+  padding:7px 13px!important;margin-bottom:17px!important;
+  border:1px solid var(--ios-line)!important;border-radius:99px!important;
+  background:rgba(255,255,255,.82)!important;
+  color:var(--ios-secondary)!important;font-size:10px!important;font-weight:710!important;
+  letter-spacing:.125em!important;line-height:1.3!important;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) .container{
+  max-width:1160px;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage)
+ :is(a,button,input,textarea,select):focus-visible{
+  outline:3px solid rgba(0,113,227,.55)!important;outline-offset:3px!important;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) a:not(.btn):hover{
+  color:var(--ios-blue);
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) :is(.btn.ink,.btn.blue,.checkout-button,.price-btn.blue){
+  background:var(--ios-blue)!important;color:#fff!important;border:1px solid var(--ios-blue)!important;
+  border-radius:999px!important;box-shadow:none!important;font-weight:630!important;
+  transition:background .2s,transform .2s,box-shadow .2s;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) :is(.btn.ink,.checkout-button,.price-btn.blue):hover{
+  background:var(--ios-blue-hover)!important;transform:translateY(-1px);
+  box-shadow:0 7px 18px rgba(0,113,227,.17)!important;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) .btn.ghost{
+  color:var(--ios-blue)!important;border:1px solid rgba(0,113,227,.33)!important;
+  border-radius:999px!important;background:rgba(255,255,255,.86)!important;
+  box-shadow:none!important;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage)
+ :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),textarea,select){
+  background:#f7f7f9!important;color:var(--ios-ink)!important;
+  border:1px solid rgba(29,29,31,.105)!important;border-radius:15px!important;
+  box-shadow:none!important;max-width:100%;min-width:0;
+  font-family:var(--ios-font)!important;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage)
+ :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),textarea,select):focus{
+  border-color:var(--ios-blue)!important;
+  box-shadow:0 0 0 4px rgba(0,113,227,.09)!important;outline:none;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) :is(input,textarea)::placeholder{
+  color:#8e8e93!important;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) :is(.field label,form label>span){
+  color:#575a63;font-weight:630;
+}
+
+/* A consistent translucent, high-contrast navigation for every secondary page */
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page) .nav,
+#app > div:has(> .formpage) .nav,
+#app > div:has(> .legalpage) .nav{
+  background:rgba(250,250,252,.87)!important;
+  border-bottom:1px solid rgba(29,29,31,.08)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(180%)!important;
+  backdrop-filter:blur(22px) saturate(180%)!important;
+}
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page) .nav .brand-word,
+#app > div:has(> :is(.formpage,.legalpage)) .nav .brand-word{
+  color:#1d1d1f!important;-webkit-text-fill-color:#1d1d1f!important;
+}
+
+/* Contact. Open white iOS cards on a silver-grey canvas. */
+#app .contact-page main{
+  background:linear-gradient(180deg,#f8f9fc 0%,var(--ios-canvas) 100%)!important;
+  padding-top:clamp(65px,8vw,112px)!important;padding-bottom:110px!important;
+}
+#app .contact-page main>.container{
+  max-width:1110px!important;
+}
+#app .contact-page main h1{
+  max-width:760px;font-size:clamp(42px,6.2vw,75px)!important;
+  line-height:1.06!important;letter-spacing:-.057em!important;font-weight:720!important;
+}
+#app .contact-page main>.container>p{
+  font-size:clamp(16px,1.9vw,20px)!important;color:var(--ios-secondary)!important;
+  max-width:650px!important;line-height:1.6!important;
+}
+#app .contact-page main section,
+#app .contact-page main aside{
+  min-width:0;background:var(--ios-surface)!important;
+  border:1px solid rgba(29,29,31,.07)!important;
+  border-radius:var(--ios-radius)!important;
+  padding:clamp(24px,4vw,46px)!important;
+  box-shadow:var(--ios-soft-shadow)!important;
+}
+#app .contact-page main :is(section,aside)>h2{
+  margin-bottom:25px!important;font-size:clamp(23px,2.4vw,30px)!important;
+  font-weight:700!important;
+}
+#app .contact-page .home-contact-form{
+  display:grid;gap:19px!important;
+}
+#app .contact-page .home-contact-form label{
+  display:grid;gap:8px;
+}
+#app .contact-page .home-contact-form :is(input,textarea){
+  width:100%;min-height:49px!important;padding:13px 16px!important;
+  font-size:16px!important;line-height:1.4!important;
+}
+#app .contact-page .home-contact-form textarea{min-height:150px!important;resize:vertical!important}
+#app .contact-page .home-contact-form .btn{justify-self:start;min-height:46px;padding:12px 23px!important}
+#app .contact-page main aside a[href^="mailto:"]{color:var(--ios-blue)!important;text-decoration:none!important}
+
+/* Legal documents. Comfortable editorial measure and grouped iOS cells. */
+#app .legalpage{
+  background:var(--ios-canvas)!important;
+  padding:clamp(55px,8vw,105px) 0 110px!important;min-height:calc(100vh - 70px);
+}
+#app .legalpage .legal-layout{
+  display:grid!important;grid-template-columns:minmax(235px,.85fr) minmax(0,1.75fr)!important;
+  gap:clamp(20px,4vw,58px)!important;align-items:start!important;
+}
+#app .legalpage .legal-aside{position:sticky;top:100px;min-width:0;padding:10px 0!important}
+#app .legalpage .legal-aside h1{
+  font-size:clamp(38px,4vw,58px)!important;line-height:1.06!important;
+  margin:0 0 17px!important;font-weight:740!important;
+}
+#app .legalpage .legal-aside>p{font-size:15px!important;line-height:1.75!important;color:var(--ios-secondary)!important}
+#app .legalpage .legal-seller{
+  background:#fff!important;border:1px solid var(--ios-line)!important;
+  border-radius:19px!important;box-shadow:none!important;padding:21px!important;margin-top:25px;
+}
+#app .legalpage .legalcopy{
+  background:#fff!important;border:1px solid var(--ios-line)!important;
+  border-radius:28px!important;padding:clamp(26px,4vw,57px)!important;
+  min-width:0;box-shadow:var(--ios-soft-shadow)!important;
+}
+#app .legalpage .legalcopy>section{
+  border-bottom:1px solid var(--ios-line)!important;padding:0 0 27px!important;
+  margin:0 0 27px!important;background:transparent!important;box-shadow:none!important;
+}
+#app .legalpage .legalcopy>section:last-of-type{border-bottom:0!important}
+#app .legalpage .legalcopy h2{
+  font-size:clamp(20px,2vw,25px)!important;line-height:1.23!important;
+  font-weight:675!important;margin:0 0 13px!important;
+}
+#app .legalpage .legalcopy p{
+  color:#575a63!important;font-size:15.5px!important;line-height:1.85!important;
+  overflow-wrap:anywhere;
+}
+#app .legalpage .legal-note{color:var(--ios-secondary);font-size:13px;line-height:1.65}
+
+/* Product / commerce / booking landing pages. */
+#app .seo-landing-page{background:var(--ios-canvas)!important;overflow:clip}
+#app .seo-landing-page .seo-landing-hero{
+  background:radial-gradient(ellipse at 50% 0%,rgba(145,179,233,.19),transparent 64%),#f8f9fc!important;
+  padding:clamp(72px,10vw,132px) 0 clamp(68px,9vw,112px)!important;min-height:0!important;
+}
+#app .seo-landing-page .seo-landing-hero-inner{max-width:1010px}
+#app .seo-landing-page .seo-landing-hero h1{
+  font-size:clamp(42px,5.9vw,75px)!important;
+  line-height:1.08!important;font-weight:735!important;letter-spacing:-.065em!important;
+  max-width:920px!important;
+}
+#app .seo-landing-page .seo-landing-hero h1 em{
+  color:#7c8290!important;-webkit-text-fill-color:#7c8290!important;
+  font-style:normal!important;background:none!important;
+}
+#app .seo-landing-page .seo-landing-hero p{
+  color:#5b6270!important;font-size:clamp(16px,2vw,21px)!important;
+  line-height:1.7!important;max-width:720px!important;
+}
+#app .seo-landing-page .seo-landing-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:29px}
+#app .seo-landing-page .seo-landing-actions .btn{min-height:47px!important;padding:13px 23px!important}
+#app .seo-landing-page :is(.seo-landing-copy,.seo-landing-closing){
+  background:var(--ios-canvas)!important;padding:clamp(70px,8vw,104px) 0!important;
+}
+#app .seo-landing-page .seo-landing-intro{
+  max-width:850px!important;margin-bottom:36px!important;
+}
+#app .seo-landing-page .seo-landing-intro h2{
+  font-size:clamp(28px,3.8vw,47px)!important;line-height:1.15!important;
+}
+#app .seo-landing-page .seo-landing-intro p{color:var(--ios-secondary)!important;line-height:1.75!important}
+#app .seo-landing-page .seo-landing-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px!important;
+}
+#app .seo-landing-page .seo-landing-grid>article{
+  background:#fff!important;border:1px solid var(--ios-line)!important;
+  border-radius:23px!important;padding:clamp(24px,3vw,36px)!important;
+  box-shadow:var(--ios-soft-shadow)!important;min-width:0;
+}
+#app .seo-landing-page .seo-landing-grid>article h3{
+  font-size:clamp(20px,2.15vw,27px)!important;font-weight:690!important;margin:0 0 12px!important;
+}
+#app .seo-landing-page .seo-landing-grid>article p{font-size:15px!important;color:var(--ios-secondary)!important;line-height:1.7!important}
+#app .seo-landing-page .seo-landing-closing-card{
+  border-radius:30px!important;background:#16171a!important;color:#f5f5f7!important;
+  border:1px solid rgba(255,255,255,.09)!important;
+  padding:clamp(33px,6vw,69px)!important;box-shadow:none!important;
+}
+#app .seo-landing-page .seo-landing-closing-card :is(h2,h3){
+  color:#f5f5f7!important;
+}
+#app .seo-landing-page .seo-landing-closing-card p{color:#c2c3cd!important}
+
+/* Feature catalog. */
+#app .features-page .features-hero{
+  background:radial-gradient(ellipse at 50% 0%,rgba(104,151,227,.16),transparent 62%),var(--ios-canvas)!important;
+  padding:clamp(70px,9vw,114px) 0 76px!important;
+}
+#app .features-page .features-hero h1{
+  font-size:clamp(43px,6.1vw,75px)!important;line-height:1.06!important;font-weight:735!important;
+}
+#app .features-page .features-hero h1 em{
+  color:#8a8c96!important;-webkit-text-fill-color:#8a8c96!important;
+  background:none!important;font-style:normal!important;
+}
+#app .features-page .features-hero p{color:var(--ios-secondary)!important;line-height:1.7!important}
+#app .features-page .features-hero-badge{
+  background:#fff!important;color:#575e6b!important;border:1px solid var(--ios-line)!important;
+  border-radius:99px!important;box-shadow:none!important;
+}
+#app .features-page :is(.features-hero-stats,.features-groups,.features-list,.features-categories){max-width:1160px}
+#app .features-page .feature-category{
+  background:#fff!important;border:1px solid var(--ios-line)!important;
+  border-radius:23px!important;box-shadow:var(--ios-soft-shadow)!important;overflow:hidden;
+}
+#app .features-page .feature-category summary{
+  padding:clamp(21px,3vw,32px)!important;cursor:pointer;
+}
+#app .features-page .feature-category summary h2{
+  font-size:clamp(22px,2.6vw,32px)!important;font-weight:690!important;line-height:1.18!important;
+}
+#app .features-page .feature-category summary p{color:var(--ios-secondary)!important;line-height:1.65!important}
+#app .features-page .feature-category-body{
+  background:#fff!important;border-top:1px solid var(--ios-line)!important;
+}
+#app .features-page .feature-item{border-bottom:1px solid var(--ios-line)!important;padding:17px 22px!important}
+#app .features-page .feature-item:last-child{border-bottom:0!important}
+#app .features-page .feature-item b{font-weight:580!important;color:#35353c!important}
+#app .features-page .feature-item-number{color:var(--ios-tertiary)!important}
+
+/* Pricing cards: restrained hierarchy and real comparisons. */
+#app .pricing-page .pricing-section{
+  padding:clamp(75px,9vw,115px) 0 clamp(100px,10vw,145px)!important;
+  background:radial-gradient(ellipse at 50% -5%,rgba(119,168,237,.12),transparent 57%),var(--ios-canvas)!important;
+}
+#app .pricing-page .pricing-section .split-head{
+  max-width:950px!important;margin:0 auto 48px!important;text-align:center;
+}
+#app .pricing-page .pricing-section .split-head h2{
+  font-size:clamp(38px,5.25vw,66px)!important;line-height:1.1!important;
+  font-weight:730!important;letter-spacing:-.059em!important;
+}
+#app .pricing-page .pricing-section .split-head p{color:var(--ios-secondary)!important;font-size:17px!important;line-height:1.7!important}
+#app .pricing-page .pricing-wrap{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  align-items:stretch!important;gap:17px!important;
+}
+#app .pricing-page .price-card{
+  display:flex!important;flex-direction:column!important;min-width:0;
+  background:#fff!important;color:var(--ios-ink)!important;
+  border:1px solid var(--ios-line)!important;border-radius:27px!important;
+  padding:clamp(23px,2.7vw,35px)!important;
+  box-shadow:var(--ios-soft-shadow)!important;transform:none!important;
+}
+#app .pricing-page .price-card.featured{
+  border-color:rgba(0,113,227,.45)!important;
+  box-shadow:0 13px 50px rgba(0,113,227,.11)!important;
+}
+#app .pricing-page .price-card :is(h3,.pricevalue,.pricevalue *,li,b,small){color:var(--ios-ink)}
+#app .pricing-page .price-card h3{font-weight:750!important;font-size:31px!important;margin:12px 0!important}
+#app .pricing-page .price-card .pricevalue{font-size:clamp(34px,3.3vw,47px)!important;letter-spacing:-.055em!important;white-space:normal!important}
+#app .pricing-page .price-card .pricevalue small{font-size:13px!important;letter-spacing:0!important;color:var(--ios-secondary)!important}
+#app .pricing-page .price-card ul{margin-bottom:23px!important;padding-left:0!important}
+#app .pricing-page .price-card li{color:#5e6068!important;line-height:1.57!important}
+#app .pricing-page .price-card .price-actions{display:grid!important;gap:9px!important;margin-top:auto!important}
+#app .pricing-page .price-card .price-btn{
+  border-radius:999px!important;min-height:45px!important;padding:12px 14px!important;
+  text-align:center;justify-content:center!important;background:#f5f5f7!important;
+  color:#25262c!important;border:1px solid rgba(29,29,31,.1)!important;box-shadow:none!important;
+  font-size:13px!important;font-weight:640!important;
+}
+#app .pricing-page .price-card .price-btn.blue{
+  background:var(--ios-blue)!important;color:#fff!important;border-color:var(--ios-blue)!important;
+}
+#app .pricing-page .price-card .price-top :is(span,small){
+  letter-spacing:.085em!important;font-size:10px!important;font-weight:760!important;
+}
+#app .pricing-page .price-card .annual-save-note,
+#app .pricing-page .price-card .plan-yearly-price{color:var(--ios-secondary)!important;font-size:12px!important;line-height:1.65!important}
+#app .pricing-page .price-card .price-rule{border-color:var(--ios-line)!important;background:var(--ios-line)!important}
+
+/* Login & signup. The same clean, high-trust layout as the rest of the site. */
+#app .formpage{
+  background:radial-gradient(ellipse at 45% 0%,rgba(95,153,235,.1),transparent 55%),var(--ios-canvas)!important;
+  padding:clamp(70px,9vw,115px) 0 110px!important;min-height:calc(100vh - 70px)!important;
+}
+#app .formpage :is(.login-layout,.checkout-layout){
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(340px,.95fr)!important;
+  align-items:start!important;gap:clamp(32px,5vw,85px)!important;
+  max-width:1100px!important;
+}
+#app .formpage :is(.login-copy,.checkout-copy) h1{
+  font-size:clamp(41px,5vw,66px)!important;line-height:1.075!important;font-weight:730!important;
+}
+#app .formpage :is(.login-copy,.checkout-copy) h1 em{
+  color:#858995!important;-webkit-text-fill-color:#858995!important;
+  background:none!important;font-style:normal!important;
+}
+#app .formpage :is(.login-copy,.checkout-copy)>p{
+  font-size:clamp(16px,1.6vw,19px)!important;
+  line-height:1.7!important;color:var(--ios-secondary)!important;
+}
+#app .formpage .formcard{
+  background:#fff!important;border:1px solid var(--ios-line)!important;
+  border-radius:28px!important;padding:clamp(25px,3.2vw,42px)!important;
+  box-shadow:var(--ios-soft-shadow)!important;max-width:100%!important;
+}
+#app .formpage .form-head{margin-bottom:22px!important}
+#app .formpage .form-head>b{font-size:clamp(24px,2.3vw,29px)!important;font-weight:700!important;line-height:1.2!important}
+#app .formpage .form-head>span{color:#787981!important}
+#app .formpage .formcard :is(input:not([type="checkbox"]):not([type="radio"]),select){
+  width:100%;min-height:48px!important;padding:12px 15px!important;font-size:16px!important;
+}
+#app .formpage .formcard .field{min-width:0}
+#app .formpage .formcard .checkout-button{
+  min-height:49px!important;padding:12px 23px!important;font-size:15px!important;
+}
+#app .formpage .checkout-steps>div,
+#app .formpage .seller-card{
+  background:#fff!important;border:1px solid var(--ios-line)!important;
+  border-radius:20px!important;box-shadow:none!important;padding:18px!important;
+}
+#app .formpage .social-auth-btn{
+  border-radius:16px!important;background:#fff!important;
+  border:1px solid var(--ios-line)!important;box-shadow:none!important;
+}
+#app .formpage :is(.password-reset-link,.form-security){color:var(--ios-secondary)!important}
+#app .formpage .password-reset-link:hover{color:var(--ios-blue)!important}
+
+/* Shared footer stays legible and quiet on light secondary pages. */
+#app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page) .footer{
+  background:#161618!important;color:#f5f5f7!important;
+}
+
+/* Public mobile: generous touch sizes, bounded cards and safe viewport width. */
+@media(max-width:900px){
+  #app .legalpage .legal-layout{grid-template-columns:1fr!important;gap:27px!important}
+  #app .legalpage .legal-aside{position:static!important;padding:0!important}
+  #app .legalpage .legalcopy{padding:clamp(22px,5vw,38px)!important}
+  #app .pricing-page .pricing-wrap{grid-template-columns:1fr!important;max-width:570px;margin:auto}
+  #app .seo-landing-page .seo-landing-grid{grid-template-columns:1fr}
+  #app .formpage :is(.login-layout,.checkout-layout){grid-template-columns:1fr!important;max-width:610px!important}
+}
+@media(max-width:600px){
+  #app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) .container{
+    width:calc(100% - 36px)!important;max-width:100%!important;
+  }
+  #app .contact-page main{padding:65px 0 80px!important}
+  #app .contact-page main h1{font-size:clamp(42px,11vw,58px)!important}
+  #app .contact-page main>.container>p{font-size:16px!important}
+  #app .contact-page main section,#app .contact-page main aside{padding:25px!important;border-radius:22px!important}
+  #app .seo-landing-page .seo-landing-hero{padding:66px 0 70px!important}
+  #app .seo-landing-page .seo-landing-hero h1{font-size:clamp(39px,10vw,55px)!important}
+  #app .seo-landing-page .seo-landing-actions .btn{width:100%;justify-content:center}
+  #app .features-page .features-hero{padding:60px 0!important}
+  #app .features-page .features-hero h1{font-size:clamp(40px,10vw,54px)!important}
+  #app .pricing-page .pricing-section{padding:67px 0 100px!important}
+  #app .pricing-page .pricing-section .split-head{margin-bottom:26px!important}
+  #app .pricing-page .price-card{padding:25px!important}
+  #app .legalpage{padding:65px 0 85px!important}
+  #app .legalpage .legal-aside h1{font-size:clamp(38px,10vw,49px)!important}
+  #app .formpage{padding:63px 0 80px!important}
+  #app .formpage :is(.login-copy,.checkout-copy) h1{font-size:clamp(42px,10.2vw,57px)!important}
+  #app .formpage .formcard{padding:24px!important;border-radius:22px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  #app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) *,
+  #app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) *::before{
+    animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important;
+  }
+}
