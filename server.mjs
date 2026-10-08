@@ -12682,7 +12682,7 @@ async function ensureRuntimeSchema() {
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_chat_threads_tenant_activity ON chat_threads(tenant_id,last_activity_at DESC)');
   await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ');
-  await q("UPDATE users SET email_verified_at=created_at WHERE email_verified_at IS NULL AND status='active'");
+  // Keep pre-verification accounts unmarked; only a completed ownership check populates this field.
   await q("CREATE TABLE IF NOT EXISTS email_verification_tokens ("+
     "id UUID PRIMARY KEY,"+
     "email TEXT NOT NULL,"+
