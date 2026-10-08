@@ -7,7 +7,7 @@ const index=readFileSync(new URL('../public/index.html',import.meta.url),'utf8')
 const first=app.indexOf('function languageChangeUrl(');
 const last=app.indexOf('\nfunction bindLanguageSwitch()',first);
 assert.ok(first>=0 && last>first, 'Expected shared language URL helper');
-const languageChangeUrl=Function(app.slice(first,last)+'\nreturn languageChangeUrl')();
+const languageChangeUrl=Function('location',app.slice(first,last)+'\nreturn languageChangeUrl')({origin:'https://www.respondoai.fi'});
 
 for(const page of [
   '/', '/yhteystiedot', '/hinnat', '/ominaisuudet', '/features', '/funktioner',
