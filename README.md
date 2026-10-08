@@ -6,31 +6,26 @@ Production-oriented B2B customer-service SaaS for Finnish, Swedish and English w
 
 Respondo answers from the business's approved knowledge base and imported website facts. It does not use the OpenAI API in production. FI/SV/EN answer-language support may use Google's translation endpoint when a stored answer needs translation.
 
-Current plans, including Finnish VAT 25.5%:
+Current plans (including Finnish VAT 25.5%):
 
-| Plan | Monthly | Annual billing | Support-agent seats | Website import | Google Calendar |
+| Plan | Monthly | Annual billing without discounts | Support-agent seats | Website import | Google Calendar |
 | --- | ---: | ---: | ---: | --- | --- |
-| Basic | 49.99 €/mo | 539.88 €/yr (44.99 €/mo) | 2 | No | No |
-| Advanced | 64.99 €/mo | 719.88 €/yr (59.99 €/mo) | 10 | Yes | Yes |
-| Business | 79.99 €/mo | 899.88 €/yr (74.99 €/mo) | 20 | Yes | Yes |
+| Starter | 29.90 €/month | 358.80 €/year | 2 | Yes | No |
+| Advanced | 39.90 €/month | 478.80 €/year | 10 | Yes | Yes |
+| Business | 49.90 €/month | 598.80 €/year | 20 | Yes | Yes |
 
-Business also unlocks the current premium automations and integrations, including automatic quote calculation, Stripe Connect payment automation, commerce integrations, webhooks and Channels API.
+Annual billing has no price discount; existing subscriptions are not automatically repriced.
+All plans include a three-day trial.
 
-Trial: 3 days.
+## Stripe live price IDs
 
-## Live Stripe products and prices
+| Plan | Monthly price ID | Annual price ID |
+| --- | --- | --- |
+| Starter | `price_1UOLwuV05brJ7mTPUcIxZKE6` | `price_1UOLx1V05brJ7mTPETqeexmn` |
+| Advanced | `price_1UOLx3V05brJ7mTPODsTKyC5` | `price_1UOLx6V05brJ7mTPIgyqDymD` |
+| Business | `price_1UOLx8V05brJ7mTPDq47ha22` | `price_1UOLxBV05brJ7mTPSsDPLXTM` |
 
-- Basic product: `prod_VO2qWi6HFkLrqj`
-  - Monthly: `price_1UNGlQV05brJ7mTPOsgm1BPT`
-  - Annual: `price_1UNGlSV05brJ7mTPtQR50utm`
-- Advanced product: `prod_VO2qKqvwOQtz2m`
-  - Monthly: `price_1UNGlVV05brJ7mTPOuMPEquL`
-  - Annual: `price_1UNGlXV05brJ7mTPyxDcmE3Y`
-- Business product: `prod_VO2q7QXcuFoW9R`
-  - Monthly: `price_1UNGlaV05brJ7mTP8byQ8XQq`
-  - Annual: `price_1UNGlgV05brJ7mTPpC6jkGRD`
-
-Obsolete legacy prices are inactive and must not be reused for new subscriptions.
+Historical Stripe prices remain recognized for existing subscribers.
 
 ## Production services
 
