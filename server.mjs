@@ -7519,10 +7519,11 @@ app.delete('/api/owner/companies/:tenantId', auth, ownerTrafficOnly, loginLimite
       return res.status(409).json({error:'Aktiivisen tilauksen Stripe-tunnistetta ei löytynyt. Poisto estettiin turvallisuussyistä.'});
     }
     const canceledSubscriptions=await cancelOwnedSubscriptionsForDeletion([subscriptionId],tenant.stripe_customer_id);
-    await client.query('DELETE FROM tenants WHERE id=$1',[id]);
+    // Move a user's selected tenant away before the target is deleted,
+    // including databases that enforce a foreign-key on active_tenant_id.
     const next=await client.query(
-      "SELECT id,name,business_id FROM tenants WHERE owner_user_id=$1 AND active=true AND subscription_status IN ('active','trialing') ORDER BY created_at ASC LIMIT 1",
-      [tenant.owner_user_id]
+      "SELECT id,name,business_id FROM tenants WHERE owner_user_id=$1 AND id<>$2 AND active=true AND subscription_status IN ('active','trialing') ORDER BY created_at ASC LIMIT 1",
+      [tenant.owner_user_id,id]
     );
     await client.query(
       "UPDATE users SET active_tenant_id=CASE WHEN active_tenant_id=$2 THEN $3 ELSE active_tenant_id END,"+
@@ -7535,6 +7536,7 @@ app.delete('/api/owner/companies/:tenantId', auth, ownerTrafficOnly, loginLimite
       " updated_at=NOW() WHERE id=$1",
       [tenant.owner_user_id,id,next.rows[0]?.id||null,next.rows[0]?.name||'Yritys',next.rows[0]?.business_id||null,subscriptionId||'__no_subscription__']
     );
+    await client.query('DELETE FROM tenants WHERE id=$1',[id]);
     await client.query('COMMIT');
     return res.json({ok:true,deletedTenantId:id,canceledSubscriptions});
   }catch(error){
