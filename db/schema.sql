@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   current_period_end TIMESTAMPTZ,
   active_tenant_id UUID,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  email_verified_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
