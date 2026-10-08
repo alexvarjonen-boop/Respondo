@@ -2362,7 +2362,7 @@ function verifiedContactPage(rows) {
 function explicitContactQuestion(message) {
   const q=normalizeSearchText(message);
   if (/(?:^|\s)(?:puhelin\w*|phone\w*|telefon\w*|soitta\w*|soita|ring\w*|numero|numeronne|numeroanne)(?:\s|$)/.test(q)) return 'phone';
-  if (/(?:^|\s)(?:sahkopost\w*|email\w*|e-mail|meili\w*|epost\w*)(?:\s|$)/.test(q)) return 'email';
+  if (/(?:^|\s)(?:sahkopost\w*|email\w*|e-mail|e-post\w*|meili\w*|epost\w*)(?:\s|$)/.test(q)) return 'email';
   return '';
 }
 
@@ -2916,7 +2916,11 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
   }
 
   if (/tarjou[sk]|hinta-arvio|arvio|kustannusarvio|quote|estimate|offert|prisförslag|prisforslag/.test(q)) {
-    if (!quote) push({ type: 'quote', mode: 'quote_form', label: actionLang === 'en' ? 'Request a quote' : actionLang === 'sv' ? 'Begär offert' : 'Pyydä tarjous' });
+    if (!quote && contactPage) push({type:'quote',
+      label:actionLang==='en'?'Contact for a quote':actionLang==='sv'?'Kontakta för offert':'Kysy tarjousta',
+      url:contactPage.value,
+    });
+    else if (!quote) push({ type: 'quote', mode: 'quote_form', label: actionLang === 'en' ? 'Request a quote' : actionLang === 'sv' ? 'Begär offert' : 'Pyydä tarjous' });
     if (quote) push({ type: 'quote', label: actionLang === 'en' ? 'Open quote form' : actionLang === 'sv' ? 'Öppna offertformuläret' : 'Avaa tarjouslomake', url: quote });
   }
 
@@ -4569,7 +4573,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   // A website contact page answers "How can I contact you?" even without
   // a public email/phone. Resolve it before broad retrieval can hand off.
-  if (queryTopic(cleanMessage)==='contact') {
+  if (queryTopic(cleanMessage)==='contact' || /yhtey(?:s|tt|denot)|contact|kontakt|kontakta|e-post|epost|sahkopost|puhelin|phone|telefon/.test(normalized)) {
     const page=verifiedContactPage(rows);
     if(page) {
       const answer=responseLang==='en'
@@ -4604,6 +4608,16 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   if (queryTopic(cleanMessage) === 'quote') {
     const quoteRow = rows.find(row => row.title === 'Tarjouspyyntölomake' && normalizeWebUrl(row.answer, false));
     if (quoteRow) return {answer:responseLang === 'en' ? 'You can request a quote using the button below.' : responseLang === 'sv' ? 'Du kan begära offert via knappen nedan.' : 'Voit pyytää tarjouksen alla olevasta painikkeesta.', handoff:false, confidence:1, intent:'Tarjouspyyntö', sourceIds:[quoteRow.id].filter(Boolean), selected:[quoteRow]};
+    // Contact pages are a valid way to ask for a quote, but never label them
+    // as verified quote-specific forms unless the actual link says so.
+    const page=verifiedContactPage(rows);
+    if(page) return {
+      answer:responseLang==='en'?'You can ask the company for a quote through its contact page using the button below.'
+        :responseLang==='sv'?'Du kan be företaget om en offert via kontaktsidan med knappen nedan.'
+        :'Voit pyytää tarjousta yrityksen yhteydenottosivun kautta alla olevasta painikkeesta.',
+      handoff:false,confidence:0.9,intent:'Tarjouspyyntö',
+      sourceIds:[page.row.id].filter(Boolean),selected:[page.row],
+    };
   }
 
   const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
