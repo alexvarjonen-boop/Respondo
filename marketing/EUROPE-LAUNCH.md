@@ -25,11 +25,11 @@ Germany, Denmark and additional EU markets are held for a later country-specific
 ## Offer
 - Personalized website bot demo using the prospect's own public website information.
 - 3-day free trial.
-- Basic €49.99/mo, Advanced €64.99/mo, Business €79.99/mo.
-- Annual billing is €5/mo cheaper per tier:
-  - Basic €44.99/mo billed €539.88/year
-  - Advanced €59.99/mo billed €719.88/year
-  - Business €74.99/mo billed €899.88/year
+- Starter €29.90/mo, Advanced €39.90/mo, Business €49.90/mo.
+- Annual billing has no discount and costs the equivalent of twelve monthly payments:
+  - Starter €29.90/mo billed €358.80/year
+  - Advanced €39.90/mo billed €478.80/year
+  - Business €49.90/mo billed €598.80/year
 
 ## Outreach rules
 - Prefer public company-role addresses such as info@, sales@, hello@ or contact forms.
