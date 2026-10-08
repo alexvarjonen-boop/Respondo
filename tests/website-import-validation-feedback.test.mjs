@@ -33,3 +33,20 @@ test('marketing Respondo bubble is removed on paid and public workspace pages',(
   assert.match(code,/\.fx-assistant/);
   assert.match(code,/return;/);
 });
+
+
+test('Respondo owner workspace routes foreign websites to an isolated public demo before starting a scan',()=>{
+  assert.match(app,/data-respondo-owner=/);
+  assert.match(app,/formEl\?\.dataset\?\.respondoOwner==='1'/);
+  assert.match(app,/externalHost!=='respondoai\.fi'/);
+  assert.match(app,/demo\.href='\/assistant\?section=setup&website='\+encodeURIComponent\(website\)/);
+  assert.match(app,/feedback\.style\.display='block'/);
+  const scanClick=app.lastIndexOf("$('#importWebsite')?.addEventListener('click'");
+  const handler=app.slice(scanClick,scanClick+12500);
+  assert.ok(handler.indexOf("if(formEl?.dataset?.respondoOwner==='1')") < handler.indexOf("started=await api('/api/app/import-website/start'"));
+});
+
+test('public Try Bot prefills the URL supplied by the first-party owner workspace',()=>{
+  assert.match(app,/const demoWebsiteFromLink=new URLSearchParams\(location\.search\)\.get\('website'\)/);
+  assert.match(app,/demoProfile\.elements\.website\.value=parsed\.href/);
+});

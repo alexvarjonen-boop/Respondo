@@ -3348,7 +3348,7 @@ async function dashboard(options = {}) {
           </div>
           <span class="install-badge">Perustiedot</span>
         </div>
-        <form id="businessProfileForm" class="business-profile-form">
+        <form id="businessProfileForm" class="business-profile-form" data-respondo-owner="${!isDemo && (['respondo','respondoai'].includes(String(t.slug||'').toLowerCase()) || ['respondo','respondo ai'].includes(String(t.name||'').toLowerCase())) ? '1' : '0'}">
           <div class="profile-grid">
             <div class="bot-customizer profile-wide">
               <div class="bot-customizer-head">
@@ -4486,6 +4486,17 @@ async function route() {
     });
 
     const demoProfile=$('#businessProfileForm');
+    // A link from the Respondo owner workspace can carry an external URL
+    // into the isolated public demo; it never writes to the owner knowledge.
+    const demoWebsiteFromLink=new URLSearchParams(location.search).get('website')||'';
+    if(demoProfile?.elements?.website && demoWebsiteFromLink.length<=2048){
+      try{
+        const parsed=new URL(/^https?:\/\//i.test(demoWebsiteFromLink)?demoWebsiteFromLink:'https://'+demoWebsiteFromLink);
+        if(['http:','https:'].includes(parsed.protocol) && parsed.hostname){
+          demoProfile.elements.website.value=parsed.href;
+        }
+      }catch{}
+    }
     const demoFacts=[];
     const demoHistory=[];
     let demoImportId='';
@@ -5300,6 +5311,47 @@ async function route() {
         $('#businessProfileMsg').innerHTML = '<div class="notice error">' + appText('Anna ensin verkkosivun osoite.','Ange först webbplatsens adress.','Enter the website address first.') + '</div>';
         formEl?.elements.website?.focus();
         return;
+      }
+      // The first-party Respondo tenant must never ingest another company.
+      // Detect this before POST /start to avoid a fake 4% scan and route the
+      // example website to the isolated Try Bot instead.
+      if(formEl?.dataset?.respondoOwner==='1'){
+        let externalHost='';
+        try{
+          const parsed=new URL(/^https?:\/\//i.test(website)?website:'https://'+website);
+          externalHost=parsed.hostname.toLowerCase().replace(/^www\./,'');
+        }catch{}
+        if(externalHost && externalHost!=='respondoai.fi'){
+          const feedback=$('#websiteImportProgressError');
+          const message=appText(
+            'Tämä on Respondon oma yritystyötila. Toisen yrityksen tiedot eivät saa sekoittua Respondon tietoihin. Voit testata antamaasi osoitetta erillisessä demossa tai luoda yritykselle oman työtilan.',
+            'Detta är Respondos egen arbetsyta. Andra företags uppgifter får inte blandas med Respondos. Testa webbplatsen i en separat demo eller skapa en egen arbetsyta.',
+            'This is the Respondo company workspace. Another company’s knowledge cannot be mixed with it. Test this website in the separate demo or create its own workspace.'
+          );
+          if(feedback){
+            feedback.replaceChildren();
+            const paragraph=document.createElement('p');
+            paragraph.textContent=message;
+            feedback.appendChild(paragraph);
+            const demo=document.createElement('a');
+            demo.className='btn ghost';
+            demo.href='/assistant?section=setup&website='+encodeURIComponent(website);
+            demo.textContent=appText('Testaa sivua demossa','Testa webbplatsen i demon','Try this website in demo');
+            feedback.appendChild(demo);
+            const workspaceButton=$('#workspaceAddButton');
+            if(workspaceButton){
+              const add=document.createElement('button');
+              add.type='button';
+              add.className='btn ghost';
+              add.textContent=appText('Lisää uusi yritys','Lägg till nytt företag','Add a new company');
+              add.addEventListener('click',()=>workspaceButton.click());
+              feedback.appendChild(add);
+            }
+            feedback.style.display='block';
+          }
+          $('#websiteImportProgress').style.display='none';
+          return;
+        }
       }
       const original = button.textContent;
       button.disabled = true;
