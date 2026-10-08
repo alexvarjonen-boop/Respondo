@@ -22,9 +22,12 @@ export function publicMenuMarkup(t,lang){
  </div>`;
 }
 export function bindPublicMenu(){
- const opener=document.querySelector('[data-apple-menu-open]');
- const overlay=document.querySelector('#apple-nav-overlay');
- if(!opener||!overlay)return;
+ const opener=document.querySelector('#app [data-apple-menu-open]');
+ const overlay=document.querySelector('#app #apple-nav-overlay');
+ document.querySelectorAll('body > #apple-nav-overlay').forEach(old=>old.remove());
+ if(!opener||!overlay){document.body.classList.remove('apple-menu-open');return;}
+ // Move the overlay outside the header's sticky/transform stacking contexts.
+ document.body.appendChild(overlay);
  document.body.classList.remove('apple-menu-open');
  const closeButton=overlay.querySelector('[data-apple-menu-close]');
  function close(restoreFocus){
