@@ -1492,23 +1492,23 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
 
   if (/\bbasic\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
     return {id:'respondo-faq-basic',answer:answer(
-      'Basic sisältää verkkosivun AI-chatin, automaattisen tietojen haun yrityksen verkkosivulta, botin personoinnin yrityksen brändiin, oman kysymys–vastaus-tietopohjan, ajanvaraukset, yhteydenottojen keräyksen, keskusteluhistorian ja 2 asiakaspalvelijapaikkaa.',
-      'Basic innehåller AI-chatt på webbplatsen, automatisk import av relevant information från företagets webbplats, anpassning av botten till företagets varumärke, egen fråge- och svarskunskapsbas, bokningar, kontaktinsamling, konversationshistorik och 2 kundserviceplatser.',
-      'Basic includes website AI chat, automatic import of relevant information from the company website, bot personalization for the company brand, a Q&A knowledge base, appointments, contact capture, conversation history, and 2 support-agent seats.'
+      'Basic sisältää verkkosivun AI-chatin, yrityksen verkkosivun tietojen tuonnin, botin värin, nimen ja kuvan muokkauksen, oman tietopohjan, Respondon ajanvarauksen, liidit, keskusteluhistorian ja 2 asiakaspalvelijapaikkaa.',
+      'Basic omfattar webbchatt, import av företagets webbplatsuppgifter, anpassning av färg, namn och bild, egen kunskapsbas, Respondos bokningar, leads, konversationshistorik och 2 kundserviceplatser.',
+      'Basic includes website AI chat, website knowledge import, editable bot color, name and image, a business knowledge base, Respondo-native bookings, leads, conversation history and 2 support-agent seats.'
     )};
   }
   if (/\badvanced\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
     return {id:'respondo-faq-advanced',answer:answer(
-      'Advanced sisältää kaikki Basic-ominaisuudet sekä 10 asiakaspalvelijapaikkaa, Google Calendar -synkronoinnin ja laajemman analytiikan.',
-      'Advanced innehåller allt i Basic samt 10 kundserviceplatser, Google Calendar-synkronisering och utökad analys.',
-      'Advanced includes everything in Basic plus 10 support-agent seats, Google Calendar sync, and expanded analytics.'
+      'Advanced sisältää kaikki Basic-ominaisuudet, 10 asiakaspalvelijapaikkaa ja Google Calendar -synkronoinnin ajanvarauksiin.',
+      'Advanced innehåller allt i Basic, 10 kundserviceplatser och Google Kalender-synkronisering för bokningar.',
+      'Advanced includes everything in Basic, 10 support-agent seats and Google Calendar synchronization for bookings.'
     )};
   }
   if (/\bbusiness\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
     return {id:'respondo-faq-business',answer:answer(
-      'Business sisältää kaikki Respondon nykyiset ominaisuudet, 20 asiakaspalvelijapaikkaa, kaikki käytettävissä olevat integraatiot ja automaatiot, live takeover -toiminnot, kieliohjauksen ja täyden analytiikan.',
-      'Business innehåller alla nuvarande Respondo-funktioner, 20 kundserviceplatser, alla tillgängliga integrationer och automationer, live takeover, språkstyrning och full analys.',
-      'Business includes all current Respondo features, 20 support-agent seats, all available integrations and automations, live takeover, language routing, and full analytics.'
+      'Business sisältää Basic- ja Advanced-toiminnot sekä 20 asiakaspalvelijapaikkaa, automaattisen tarjouslaskennan, Stripe-maksulinkit, verkkokaupan tilaushaut ja saatavilla olevat webhook- ja API-työnkulut. Toiminnot edellyttävät tarvittavia määrityksiä.',
+      'Business innehåller Basic och Advanced samt 20 kundserviceplatser, automatisk offertberäkning, Stripe-betalningslänkar, orderuppslag och tillgängliga webhook- och API-flöden. Funktionerna kräver rätt inställningar.',
+      'Business includes Basic and Advanced features plus 20 support-agent seats, automated quote calculations, Stripe payment links, ecommerce order lookup and supported webhook/API workflows. These capabilities require proper configuration.'
     )};
   }
 

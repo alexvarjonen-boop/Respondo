@@ -122,7 +122,8 @@ test('Basic Advanced and Business all include automatic website import',()=>{
   const basicBlock=app.slice(basicStart,advancedStart);
   const advancedBlock=app.slice(advancedStart,businessStart);
   assert.match(basicBlock,/Hae tiedot automaattisesti verkkosivulta/);
-  assert.match(advancedBlock,/Hae tiedot automaattisesti verkkosivulta/);
+  assert.match(advancedBlock,/Kaikki Basic-ominaisuudet/);
+  assert.doesNotMatch(advancedBlock,/Hae tiedot automaattisesti verkkosivulta/);
   assert.match(app,/planAccess\.websiteImport/);
   assert.match(server,/basic_monthly:\{[^}]*websiteImport:true/);
   assert.match(server,/basic_yearly:\{[^}]*websiteImport:true/);

@@ -28,6 +28,7 @@ export const FEATURE_GROUPS = [
       ['Yrityksen itse nimeämä botti','Företaget kan namnge botten','Custom bot name'],
       ['Valmiit robotti-avatarit','Färdiga robotavatarer','Preset robot avatars'],
       ['Oman botin kuvan lataaminen','Ladda upp en egen botbild','Upload a custom bot image'],
+      ['Botin värin valinta ja tallennus','Välj och spara bottens färg','Choose and save the bot’s accent color'],
       ['Suomenkielinen asiakaspalvelu','Kundservice på finska','Finnish customer service'],
       ['Ruotsinkielinen asiakaspalvelu','Kundservice på svenska','Swedish customer service'],
       ['Englanninkielinen asiakaspalvelu','Kundservice på engelska','English customer service'],
@@ -44,6 +45,7 @@ export const FEATURE_GROUPS = [
     intro: ['Miten Respondo ymmärtää kysymyksen, löytää oikean tiedon ja estää arvailun.','Hur Respondo förstår frågan, hittar rätt information och undviker gissningar.','How Respondo understands questions, retrieves the right information and avoids guessing.'],
     items: [
       ['Kysymyksen tarkoituksen tunnistaminen','Identifiering av frågans avsikt','Question intent detection'],
+      ['Palvelukysymysten lyhenteiden tunnistus (esim. WC-asennus)','Känner igen förkortningar i servicefrågor (t.ex. WC-installation)','Recognizes abbreviations in service questions (e.g. WC installation)'],
       ['Tervehdysten tunnistaminen','Identifiering av hälsningar','Greeting detection'],
       ['Kiitosten tunnistaminen','Identifiering av tack','Thank-you detection'],
       ['Hinta-aiheisten kysymysten tunnistaminen','Identifiering av prisfrågor','Pricing intent detection'],
@@ -169,8 +171,8 @@ export const FEATURE_GROUPS = [
   },
   {
     key: 'live',
-    title: ['Live takeover & kanavat','Live takeover & kanaler','Live takeover & channels'],
-    intro: ['Keskustelu voidaan siirtää ihmiselle ja sama vastausjärjestelmä toimii useissa kanavissa.','Konversationen kan tas över av en människa och samma svarssystem fungerar i flera kanaler.','A human can take over and the same response system can work across multiple channels.'],
+    title: ['Live-asiakaspalvelu & työntekijät','Livekundservice & personal','Human takeover & support staff'],
+    intro: ['Keskustelu voidaan siirtää yrityksen työntekijälle, jolla on oma kirjautuminen ja saatavuustila.','Konversationer kan tas över av personal med egna inloggningar och tillgänglighetsstatus.','A staff member can take over a chat using an individual account and availability status.'],
     items: [
       ['Oman keskusteluthreadin luominen asiakkaalle','Egen konversationstråd för kunden','Dedicated conversation thread per customer'],
       ['AI-tila keskustelulle','AI-läge för konversationen','AI conversation mode'],
