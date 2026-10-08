@@ -742,6 +742,112 @@ async function sendPasswordResetEmail({ email, token, language = 'fi' }) {
   return { sent:true, id:data?.id || null };
 }
 
+
+// Address ownership verification is required before a new paid or free account
+// can be created. Tokens are random, single-use and only their hashes are stored.
+const VERIFIED_EMAIL_COOKIE='respondo_verified_signup_email';
+const VERIFICATION_LIFETIME_MINUTES=30;
+const VERIFICATION_MAX_HOURLY=4;
+
+function normalizedVerificationLanguage(value) {
+  const language=String(value||'fi').trim().toLowerCase();
+  return ['fi','sv','en'].includes(language) ? language : 'fi';
+}
+
+function verificationEmailAvailable() {
+  return Boolean(String(process.env.RESEND_API_KEY||'').trim() &&
+    String(process.env.EMAIL_VERIFICATION_FROM||
+      process.env.PASSWORD_RESET_FROM||
+      process.env.CONTACT_NOTIFICATION_FROM||'').trim());
+}
+
+function validVerificationAddress(value) {
+  const email=cleanEmail(value);
+  return email.length>3 && email.length<=254 &&
+    /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email) ? email : '';
+}
+
+async function sendAccountVerificationEmail({email,token,language='fi',purpose='signup'}) {
+  if(!verificationEmailAvailable()) {
+    return {sent:false,reason:'email_delivery_not_configured'};
+  }
+  const lang=normalizedVerificationLanguage(language);
+  const change=purpose==='change_email';
+  const subject=change
+    ? (lang==='sv'?'Bekräfta din nya Respondo-e-postadress':lang==='en'?'Confirm your new Respondo email address':'Vahvista uusi Respondo-sähköpostiosoitteesi')
+    : (lang==='sv'?'Bekräfta din e-postadress – Respondo AI':lang==='en'?'Confirm your email address – Respondo AI':'Vahvista sähköpostiosoitteesi – Respondo AI');
+  const message=change
+    ? (lang==='sv'?'Du har begärt att ändra din inloggningsadress för Respondo. Bekräfta den nya adressen för att slutföra ändringen.':lang==='en'?'You requested to change your Respondo login email. Confirm the new address to complete the change.':'Olet pyytänyt Respondo-kirjautumissähköpostisi vaihtamista. Vahvista uusi osoite, jotta muutos tulee voimaan.')
+    : (lang==='sv'?'Bekräfta att den här e-postadressen tillhör dig innan du skapar ett Respondo-konto och fortsätter till betalningen.':lang==='en'?'Confirm that this email address belongs to you before creating a Respondo account and proceeding to checkout.':'Vahvista, että tämä sähköpostiosoite kuuluu sinulle, ennen kuin luot Respondo-tilin ja jatkat maksutavan lisäämiseen.');
+  const button=lang==='sv'?'Bekräfta e-postadress':lang==='en'?'Verify email':'Vahvista sähköposti';
+  const expire=lang==='sv'?'Länken gäller i 30 minuter och kan användas bara en gång.':lang==='en'?'The link expires in 30 minutes and can only be used once.':'Linkki on voimassa 30 minuuttia ja sen voi käyttää vain kerran.';
+  const ignore=lang==='sv'?'Om du inte begärde detta kan du ignorera meddelandet.':lang==='en'?'If you did not request this, you can ignore the message.':'Jos et pyytänyt tätä, voit jättää viestin huomiotta.';
+  const url=SEO_CANONICAL_ORIGIN+'/api/auth/email-verification/confirm?token='+encodeURIComponent(token);
+  const response=await fetch('https://api.resend.com/emails',{
+    method:'POST',
+    headers:{
+      Authorization:'Bearer '+String(process.env.RESEND_API_KEY).trim(),
+      'Content-Type':'application/json',
+    },
+    body:JSON.stringify({
+      from:String(process.env.EMAIL_VERIFICATION_FROM||
+        process.env.PASSWORD_RESET_FROM||
+        process.env.CONTACT_NOTIFICATION_FROM).trim(),
+      to:[email],
+      subject,
+      html:'<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:28px;color:#151515">'+
+        '<h2>Respondo AI</h2><p>'+escapeEmailHtml(message)+'</p>'+
+        '<p style="margin:26px 0"><a href="'+escapeEmailHtml(url)+'" style="display:inline-block;padding:14px 22px;color:#fff;background:#161616;border-radius:10px;text-decoration:none;font-weight:bold">'+escapeEmailHtml(button)+'</a></p>'+
+        '<p style="font-size:13px;color:#555">'+escapeEmailHtml(expire)+'</p>'+
+        '<p style="font-size:13px;color:#777">'+escapeEmailHtml(ignore)+'</p></div>',
+    }),
+  });
+  if(!response.ok){
+    const error=await response.json().catch(()=>({}));
+    throw new Error('Verification mail delivery failed: '+String(error.message||response.status).slice(0,120));
+  }
+  return {sent:true};
+}
+
+async function issueEmailVerificationToken({email,language='fi',purpose='signup',userId=null}) {
+  if(!verificationEmailAvailable()){
+    throw Object.assign(new Error('Sähköpostivahvistus ei ole vielä käytettävissä. Ota yhteys tukeen.'),{publicStatus:503});
+  }
+  const now=await q(
+    'SELECT created_at FROM email_verification_tokens WHERE email=$1 AND purpose=$2 AND created_at>NOW() - INTERVAL \'1 hour\' ORDER BY created_at DESC LIMIT 5',
+    [email,purpose],
+  );
+  if(now.rowCount>=VERIFICATION_MAX_HOURLY ||
+    (now.rowCount && Date.now()-new Date(now.rows[0].created_at).getTime()<60000)) {
+    throw Object.assign(new Error('Vahvistusviesti on jo lähetetty. Odota hetki ennen uutta yritystä.'),{publicStatus:429});
+  }
+  const raw=crypto.randomBytes(32).toString('base64url');
+  const hash=crypto.createHash('sha256').update(raw).digest('hex');
+  const id=uid();
+  await q(
+    "INSERT INTO email_verification_tokens(id,email,user_id,purpose,language,token_hash,expires_at) VALUES($1,$2,$3,$4,$5,$6,NOW()+INTERVAL '30 minutes')",
+    [id,email,userId,purpose,normalizedVerificationLanguage(language),hash],
+  );
+  try {
+    const result=await sendAccountVerificationEmail({email,token:raw,language,purpose});
+    if(!result.sent) throw new Error('Verification mail provider unavailable');
+  }catch(error){
+    await q('DELETE FROM email_verification_tokens WHERE id=$1',[id]).catch(()=>{});
+    throw Object.assign(new Error('Vahvistussähköpostin lähetys epäonnistui. Yritä uudelleen myöhemmin.'),{publicStatus:503,cause:error});
+  }
+  return {sent:true};
+}
+
+function signupEmailVerified(req,email) {
+  try{
+    const raw=cookies(req)[VERIFIED_EMAIL_COOKIE];
+    if(!raw) return false;
+    const payload=jwt.verify(raw,JWT,{algorithms:['HS256']});
+    return payload.kind==='signup_email_verified' &&
+      validVerificationAddress(payload.email)===email;
+  }catch{return false;}
+}
+
 function cleanBotAccent(value) {
   const raw=String(value||'').trim();
   return /^#[0-9a-fA-F]{6}$/.test(raw) ? raw.toUpperCase() : null;
