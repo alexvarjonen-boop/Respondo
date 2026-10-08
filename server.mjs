@@ -650,6 +650,25 @@ function escapeEmailHtml(value) {
     .replaceAll("'",'&#39;');
 }
 
+function brandedEmailHtml({ language='fi', eyebrow='', title='', content='' }) {
+  const lang=['fi','sv','en'].includes(language)?language:'fi';
+  const links=[
+    [BASE,lang==='sv'?'Webbplats':lang==='en'?'Website':'Verkkosivut'],
+    [BASE+'/tietosuoja',lang==='sv'?'Integritetspolicy':lang==='en'?'Privacy policy':'Tietosuoja'],
+    [BASE+'/kayttoehdot',lang==='sv'?'Användarvillkor':lang==='en'?'Terms of service':'Käyttöehdot'],
+    [BASE+'/yhteystiedot',lang==='sv'?'Kontakt':lang==='en'?'Contact':'Yhteystiedot']
+  ];
+  const footerLinks=links.map(([url,label])=>'<a href="'+escapeEmailHtml(url)+'" style="color:#64748b;text-decoration:underline;margin:0 9px;display:inline-block;line-height:28px">'+escapeEmailHtml(label)+'</a>').join('');
+  const disclaimer=lang==='sv'?'Det här är ett automatiskt servicemeddelande från Respondo AI.':lang==='en'?'This is an automated service email from Respondo AI.':'Tämä on Respondo AI:n automaattinen palveluviesti.';
+  return '<!doctype html><html lang="'+lang+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f3f6fb;font-family:Arial,Helvetica,sans-serif;color:#17243b">'+
+    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f3f6fb"><tr><td align="center" style="padding:38px 14px">'+
+    '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:580px"><tr><td align="center" style="padding:0 0 24px"><a href="'+escapeEmailHtml(BASE)+'" style="text-decoration:none;color:#12223f;font-weight:800;font-size:24px;letter-spacing:-.8px"><span style="display:inline-block;background:#2563eb;color:#fff;border-radius:11px;padding:7px 11px;margin-right:8px;font-size:20px">R</span>Respondo <span style="color:#2563eb">AI</span></a></td></tr>'+ 
+    '<tr><td style="background:#fff;border:1px solid #e5ebf3;border-radius:18px;padding:42px 36px">'+
+    (eyebrow?'<div style="font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#2563eb;margin-bottom:14px">'+escapeEmailHtml(eyebrow)+'</div>':'')+
+    '<h1 style="font-size:27px;line-height:1.25;letter-spacing:-.6px;margin:0 0 22px;color:#14243d">'+escapeEmailHtml(title)+'</h1>'+content+'</td></tr>'+ 
+    '<tr><td align="center" style="padding:28px 14px 4px;color:#64748b;font-size:12px;line-height:1.8"><div style="margin-bottom:10px">'+footerLinks+'</div><div>'+escapeEmailHtml(disclaimer)+'</div><div style="margin-top:8px">© '+new Date().getUTCFullYear()+' Respondo AI · <a href="'+escapeEmailHtml(BASE)+'" style="color:#64748b;text-decoration:none">respondoai.fi</a></div></td></tr></table></td></tr></table></body></html>';
+}
+
 async function sendSignupVerificationEmail({ email, code, language = 'fi' }) {
   if (!signupEmailVerificationReady()) {
     return { sent:false, reason:'email_verification_not_configured' };
@@ -668,13 +687,11 @@ async function sendSignupVerificationEmail({ email, code, language = 'fi' }) {
   const ignore = lang === 'sv' ? 'Om du inte försökte skapa ett konto kan du ignorera detta meddelande.'
     : lang === 'en' ? 'If you did not try to create an account, you can ignore this message.'
     : 'Jos et yrittänyt luoda tiliä, voit jättää tämän viestin huomiotta.';
-  const html = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:28px;color:#111">' +
-    '<h2 style="margin:0 0 18px">Respondo AI</h2>' +
-    '<p>' + escapeEmailHtml(intro) + '</p>' +
-    '<p style="font-size:34px;font-weight:800;letter-spacing:7px;padding:16px 0">' + escapeEmailHtml(code) + '</p>' +
-    '<p>' + escapeEmailHtml(expiry) + '</p>' +
-    '<p style="color:#666;font-size:13px">' + escapeEmailHtml(ignore) + '</p>' +
-    '</div>';
+  const html = brandedEmailHtml({language:lang,eyebrow:lang==='sv'?'Säker verifiering':lang==='en'?'Secure verification':'Turvallinen vahvistus',title:subject,content:
+    '<p style="font-size:15px;line-height:1.75;color:#475569">'+escapeEmailHtml(intro)+'</p>'+
+    '<div style="text-align:center;background:#eff5ff;border:1px solid #dce8ff;border-radius:14px;padding:22px 10px;margin:24px 0"><span style="font-size:34px;font-weight:800;letter-spacing:7px;color:#1d4ed8">'+escapeEmailHtml(code)+'</span></div>'+
+    '<p style="font-size:14px;line-height:1.7;color:#475569">'+escapeEmailHtml(expiry)+'</p>'+
+    '<p style="font-size:12px;line-height:1.7;color:#64748b;margin-top:26px">'+escapeEmailHtml(ignore)+'</p>'});
   const response = await fetch('https://api.resend.com/emails', {
     method:'POST',
     headers:{
@@ -713,7 +730,13 @@ async function sendWelcomeEmailOnce(userId) {
     const steps=lang==='sv'?'Lägg till företagets uppgifter, anpassa botens utseende och installera den på din webbplats.':lang==='en'?'Add your company details, customize the bot and install it on your website.':'Lisää yrityksesi tiedot, muokkaa botin ulkoasua ja asenna se verkkosivuillesi.';
     const referralEligible=Boolean(user.referral_code && planAllowsReferral(user.subscription_plan));
     const referralText=lang==='sv'?'Dela din personliga rekommendationskod. En ny kund får 20 % rabatt på sin första betalda månad med ett kvalificerat månadsabonnemang. Koden kan användas en gång.':lang==='en'?'Share your personal referral code. A new customer gets 20% off their first paid month on an eligible monthly plan. The code can be redeemed once.':'Jaa henkilökohtainen suosittelukoodisi. Uusi asiakas saa 20 % alennuksen ensimmäisestä maksullisesta kuukaudesta soveltuvassa kuukausitilauksessa. Koodi on kertakäyttöinen.';
-    const html='<div style="background:#f5f7fb;padding:32px 12px;font-family:Arial,sans-serif;color:#17243b"><div style="max-width:560px;margin:auto;background:#fff;border-radius:20px;padding:36px 30px;border:1px solid #e8edf4"><div style="font-size:19px;font-weight:800;color:#2563eb;margin-bottom:28px">Respondo AI</div><h1 style="font-size:28px;line-height:1.2;margin:0 0 20px">'+escapeEmailHtml(greeting)+'</h1>'+(firstName?'<p>'+escapeEmailHtml(firstName)+',</p>':'')+'<p style="line-height:1.7">'+escapeEmailHtml(intro)+'</p><p style="line-height:1.7">'+escapeEmailHtml(steps)+'</p><p style="margin:28px 0"><a href="'+escapeEmailHtml(BASE+'/app')+'" style="display:inline-block;background:#2563eb;color:white;padding:14px 22px;border-radius:10px;text-decoration:none;font-weight:bold">'+escapeEmailHtml(lang==='sv'?'Öppna instrumentpanelen':lang==='en'?'Open dashboard':'Avaa hallintapaneeli')+'</a></p>'+(referralEligible?'<div style="background:#f0f5ff;padding:20px;border-radius:14px"><strong>'+escapeEmailHtml(lang==='sv'?'Din rekommendationskod':lang==='en'?'Your referral code':'Suosittelukoodisi')+'</strong><p style="font-size:21px;font-weight:800;letter-spacing:1px">'+escapeEmailHtml(user.referral_code)+'</p><p style="font-size:13px;line-height:1.6">'+escapeEmailHtml(referralText)+'</p></div>':'')+'<p style="margin-top:28px;font-size:12px;color:#667085">'+escapeEmailHtml(lang==='sv'?'Tack för att du valde Respondo AI.':lang==='en'?'Thank you for choosing Respondo AI.':'Kiitos, että valitsit Respondo AI:n.')+'</p></div></div>';
+    const html=brandedEmailHtml({language:lang,eyebrow:lang==='sv'?'Ditt konto är klart':lang==='en'?'Your account is ready':'Tilisi on valmis',title:greeting,content:
+      (firstName?'<p style="font-size:16px;font-weight:600">'+escapeEmailHtml(firstName)+',</p>':'')+
+      '<p style="font-size:15px;line-height:1.8;color:#475569">'+escapeEmailHtml(intro)+'</p>'+
+      '<p style="font-size:15px;line-height:1.8;color:#475569">'+escapeEmailHtml(steps)+'</p>'+
+      '<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0"><tr><td style="background:#2563eb;border-radius:10px"><a href="'+escapeEmailHtml(BASE+'/app')+'" style="display:inline-block;padding:15px 24px;color:#fff;font-size:14px;font-weight:700;text-decoration:none">'+escapeEmailHtml(lang==='sv'?'Öppna instrumentpanelen':lang==='en'?'Open dashboard':'Avaa hallintapaneeli')+' →</a></td></tr></table>'+
+      (referralEligible?'<div style="background:#eff5ff;border:1px solid #dce8ff;border-radius:14px;padding:22px;margin:24px 0"><div style="font-size:13px;font-weight:700;color:#1d4ed8">'+escapeEmailHtml(lang==='sv'?'Din rekommendationskod · 20 %':lang==='en'?'Your referral code · 20%':'Suosittelukoodisi · 20 %')+'</div><p style="font-size:22px;font-weight:800;letter-spacing:1px;color:#14243d;overflow-wrap:anywhere">'+escapeEmailHtml(user.referral_code)+'</p><p style="font-size:13px;line-height:1.7;color:#475569;margin-bottom:0">'+escapeEmailHtml(referralText)+'</p></div>':'')+
+      '<p style="margin-top:30px;font-size:13px;color:#64748b">'+escapeEmailHtml(lang==='sv'?'Tack för att du valde Respondo AI.':lang==='en'?'Thank you for choosing Respondo AI.':'Kiitos, että valitsit Respondo AI:n.')+'</p>'});
     const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+String(process.env.RESEND_API_KEY).trim(),'Content-Type':'application/json'},body:JSON.stringify({from:String(process.env.EMAIL_VERIFICATION_FROM||'Respondo AI <noreply@respondoai.fi>').trim(),to:[user.email],subject:greeting,html})});
     if(!response.ok) throw new Error('Welcome email provider returned status '+response.status);
     return true;
