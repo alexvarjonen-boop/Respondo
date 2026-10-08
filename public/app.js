@@ -211,7 +211,7 @@ async function imageFileToAvatarData(file) {
 
 let cfg = {
   brand: 'RESPONDO AI',
-  supportEmail: 'respondoai.fi@outlook.com',
+  supportEmail: 'info@respondoai.fi',
   businessId: '3599437-5',
   sellerName: 'RESPONDO AI',
   trialDays: 3,
