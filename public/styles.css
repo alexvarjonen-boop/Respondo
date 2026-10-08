@@ -8889,3 +8889,123 @@ body.workspace-modal-open{
     z-index:3;
   }
 }
+
+
+/* Workspace and account deletion controls */
+.workspace-manager-row>.workspace-row-controls{
+  display:flex;
+  flex:0 0 auto;
+  align-items:center;
+  justify-content:flex-end;
+  gap:9px;
+  min-width:0;
+}
+.workspace-delete-trigger{
+  display:inline-grid;
+  place-items:center;
+  flex:0 0 44px;
+  width:44px;
+  height:44px;
+  padding:0;
+  border:1px solid #ffcc9f;
+  border-radius:12px;
+  background:#fff0df;
+  color:#bb4e0c;
+  cursor:pointer;
+  transition:background .16s ease,border-color .16s ease;
+}
+.workspace-delete-trigger:hover,.workspace-delete-trigger:focus-visible{
+  background:#ffdcc1;
+  border-color:#edac72;
+}
+.workspace-delete-trigger:focus-visible,
+.workspace-account-delete-trigger:focus-visible,
+.deletion-confirm-submit:focus-visible,
+.deletion-cancel:focus-visible{
+  outline:3px solid #d97706;
+  outline-offset:2px;
+}
+.workspace-delete-account-area{display:grid;gap:8px;margin-top:24px;padding-top:20px;border-top:1px solid rgba(0,0,0,.08)}
+.workspace-account-delete-trigger{
+  display:block;
+  width:100%;
+  min-height:54px;
+  padding:12px 18px;
+  border:1px solid #ac3d1f;
+  border-radius:15px;
+  background:#b84724;
+  color:#fff;
+  font-size:15px;
+  font-weight:800;
+  cursor:pointer;
+}
+.workspace-account-delete-trigger:hover{background:#a4371b}
+.workspace-delete-account-area>p{margin:0;color:#77777e;font-size:12px;line-height:1.5}
+.deletion-modal[hidden],.deletion-confirm-form label[hidden]{display:none!important}
+.deletion-modal{
+  position:fixed;
+  inset:0;
+  z-index:2147483550;
+  display:grid;
+  place-items:center;
+  padding:16px;
+}
+.deletion-modal-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(10,10,15,.55);
+  border:0;
+  backdrop-filter:blur(5px);
+}
+.deletion-modal-card{
+  position:relative;
+  width:min(475px,100%);
+  max-height:calc(100dvh - 32px);
+  overflow:auto;
+  padding:24px;
+  border-radius:22px;
+  background:#fff;
+  color:#171719;
+  box-shadow:0 30px 90px rgba(0,0,0,.24);
+}
+.deletion-modal-header{display:flex;gap:16px;align-items:flex-start;justify-content:space-between}
+.deletion-modal-header small{color:#a45226;font-size:11px;font-weight:800;letter-spacing:.09em}
+.deletion-modal-header h2{font-size:24px;line-height:1.1;margin:7px 0 14px}
+.deletion-modal-close{width:38px;height:38px;flex:0 0 38px;border:0;border-radius:50%;background:#f1f1f3;color:#222;font-size:24px;cursor:pointer}
+.deletion-modal-card>p{margin:0 0 20px;font-size:13px;line-height:1.55;color:#5d5d63}
+.deletion-confirm-form{display:grid;gap:14px}
+.deletion-confirm-form label{display:grid;gap:7px;font-size:12px;font-weight:750}
+.deletion-confirm-form input{width:100%;min-height:48px;min-width:0;padding:10px 13px;border:1px solid #d7d7dd;border-radius:12px;background:#fbfbfc;color:#111;font:inherit;font-size:16px}
+.deletion-confirm-form input:focus-visible{outline:3px solid rgba(217,119,6,.20);border-color:#d97706}
+.deletion-confirm-submit{width:100%;min-height:48px;border:0;border-radius:12px;background:#b84724;color:#fff;font-size:14px;font-weight:800;cursor:pointer}
+.deletion-confirm-submit:hover{background:#9e351b}
+.deletion-confirm-submit:disabled{opacity:.56;cursor:wait}
+.deletion-cancel{width:100%;min-height:44px;border:1px solid #e2e2e5;border-radius:12px;background:#fff;color:#333;font-size:13px;font-weight:750;cursor:pointer}
+#deleteConfirmMsg:not(:empty){padding:12px;border-radius:10px;background:#fff1e8;color:#9f3120;font-size:12px;line-height:1.5}
+body.deletion-modal-open{overflow:hidden!important}
+@media(max-width:640px){
+  .workspace-manager-row{gap:8px!important;padding:12px!important}
+  .workspace-manager-row>.workspace-row-controls{gap:7px}
+  .workspace-row-switch{min-height:40px;padding:0 10px}
+  .workspace-delete-trigger{flex-basis:42px;width:42px;height:42px}
+  .workspace-current-badge{padding:8px 9px;white-space:nowrap}
+  .workspace-manager-row>div:first-child{min-width:0}
+  .workspace-manager-row b,.workspace-manager-row small{overflow:hidden;text-overflow:ellipsis}
+  .deletion-modal{align-items:end;padding:0}
+  .deletion-modal-card{width:100%;max-height:90dvh;border-radius:22px 22px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom))}
+}
+
+/* No active company: keep account deletion and new checkout accessible. */
+.dashboard-empty-workspaces{min-height:100vh;padding:20px 14px 85px}
+.dashboard-empty-main{width:min(100%,720px);margin:auto}
+.dashboard-empty-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 18px}
+.dashboard-empty-head .brand-mark{width:40px;height:40px}
+.dashboard-empty-workspaces .workspace-manager-panel{display:grid;gap:18px;padding:24px!important}
+.dashboard-empty-workspaces .workspace-manager-panel>small{color:#909098;font-size:11px;letter-spacing:.09em;font-weight:800}
+.dashboard-empty-workspaces .workspace-manager-panel h1{font-size:clamp(28px,5vw,40px);line-height:1.08;margin:0}
+.dashboard-empty-workspaces .workspace-manager-panel>p{margin:0;color:#676771;font-size:14px;line-height:1.55}
+.dashboard-empty-workspaces .workspace-add-form{margin-top:12px}
+.dashboard-empty-workspaces .workspace-add-form select{min-height:48px;width:100%;padding:10px 12px;border-radius:12px;border:1px solid #d4d4d9;background:#fff;font-size:16px}
+.dashboard-empty-workspaces .workspace-add-form input:not([type="checkbox"]){min-height:48px;font-size:16px}
+#emptyWorkspaceMsg:not(:empty){padding:12px;background:#fff0e5;border-radius:12px;color:#942e18;font-size:13px}
+@media(max-width:640px){.dashboard-empty-workspaces .workspace-manager-panel{padding:19px!important}}
