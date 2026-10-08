@@ -8314,28 +8314,21 @@ app.post('/api/app/account/email', auth, ownerOnly, loginLimiter, async (req,res
       return res.status(409).json({ error:'Tällä sähköpostiosoitteella on jo käyttäjätili.' });
     }
 
-    const updated=await q(
-      `UPDATE users
-          SET email=$1,session_version=session_version+1,updated_at=NOW()
-        WHERE id=$2
-        RETURNING id,email,session_version,stripe_customer_id`,
-      [newEmail,req.user.sub],
-    );
-
-    const stripeCustomerId=updated.rows[0]?.stripe_customer_id;
-    if (stripe && stripeCustomerId) {
-      try {
-        await stripe.customers.update(stripeCustomerId,{ email:newEmail });
-      } catch(stripeError) {
-        console.error('Stripe customer email sync failed',stripeError);
-      }
-    }
-
-    setSession(res,updated.rows[0]);
-    return res.json({ ok:true,email:newEmail });
+    await issueEmailVerificationToken({
+      email:newEmail,
+      language:req.body?.language,
+      purpose:'change_email',
+      userId:req.user.sub,
+    });
+    return res.json({
+      ok:true,
+      pendingVerification:true,
+      message:'Vahvistusviesti lähetettiin uuteen osoitteeseen. Sähköpostiosoite vaihtuu vasta vahvistamisen jälkeen.',
+    });
   } catch(e) {
-    console.error('Owner email change failed',e);
-    return res.status(500).json({ error:'Kirjautumissähköpostia ei voitu vaihtaa.' });
+    console.error('Owner email change failed',e?.message||e);
+    if(e.publicStatus) return res.status(e.publicStatus).json({error:e.message});
+    return res.status(500).json({ error:'Kirjautumissähköpostin vahvistusta ei voitu lähettää.' });
   }
 });
 
