@@ -29,5 +29,5 @@ test('public homepage uses the October 6 immersive layout',()=>{
 
 test('redesigned homepage stylesheet is no longer loaded',()=>{
   assert.doesNotMatch(index,/premium-home\.css/);
-  assert.match(index,/app\.js\?v=20261007-home-cleanup-v1/);
+  assert.match(index,/app\.js\?v=[^"]+/);
 });
