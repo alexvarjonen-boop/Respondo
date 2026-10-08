@@ -151,13 +151,13 @@
       .chat{padding:18px;overflow:auto;flex:1;background:#f7f7f8;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
       .msg{white-space:pre-line;max-width:86%;padding:11px 13px;border-radius:15px;font-size:14px;line-height:1.45;word-break:break-word}
       .bot{align-self:flex-start;background:#fff;border:1px solid #e3e3e6}
-      .user{align-self:flex-end;background:#111113;color:#fff}
+      .user{align-self:flex-end;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff)}
       .msg a{color:inherit;text-decoration:underline;text-underline-offset:2px}
       .composer{padding:12px;border-top:1px solid #e7e7e9;background:#fff;display:flex;gap:8px}
       .composer input{min-width:0;flex:1;border:1px solid #d9d9dc;border-radius:12px;padding:12px 13px;font:inherit;font-size:14px;outline:none}
-      .composer input:focus{border-color:#111113}
-      .composer button{width:44px;border:0;border-radius:12px;background:#111113;color:#fff;font-size:18px;font-weight:800;cursor:pointer}
-      .launcher{border:0;border-radius:999px;padding:13px 17px;background:#111113;color:#fff;font-weight:750;font-size:14px;cursor:pointer;box-shadow:0 18px 45px rgba(0,0,0,.2);display:flex;align-items:center;gap:9px}.launcher-dot{width:8px;height:8px;border-radius:50%;background:#fff;opacity:.9;box-shadow:0 0 0 4px rgba(255,255,255,.12)}
+      .composer input:focus{border-color:var(--bot-accent,#111113)}
+      .composer button{width:44px;border:0;border-radius:12px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font-size:18px;font-weight:800;cursor:pointer}
+      .launcher{border:0;border-radius:999px;padding:13px 17px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font-weight:750;font-size:14px;cursor:pointer;box-shadow:0 18px 45px rgba(0,0,0,.2);display:flex;align-items:center;gap:9px}.launcher-dot{width:8px;height:8px;border-radius:50%;background:#fff;opacity:.9;box-shadow:0 0 0 4px rgba(255,255,255,.12)}
       .status{font-size:12px;color:#77777c;text-align:center;padding:7px 12px;background:#fff}.status.ready{display:none}
       .error{color:#8b2d2d}
       .quick{display:flex;gap:7px;flex-wrap:wrap;padding:0 16px 12px;background:#f7f7f8}
@@ -170,21 +170,21 @@
       .leadbox b{font-size:13px}.leadbox small{font-size:11px;color:#73737a;line-height:1.4}
       .leadbox input{width:100%;border:1px solid #d9d9dc;border-radius:10px;padding:10px 11px;font:inherit;font-size:13px;outline:none}
       .leadbox input:focus{border-color:#111113}
-      .leadbox button{border:0;border-radius:10px;padding:10px 12px;background:#111113;color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+      .leadbox button{border:0;border-radius:10px;padding:10px 12px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font:inherit;font-size:13px;font-weight:800;cursor:pointer}
       .leadbox .lead-ok{font-size:12px;color:#246b45}
       .actionbox{align-self:stretch;background:#fff;border:1px solid #dedee2;border-radius:16px;padding:13px;display:grid;gap:8px}
       .actionbox b{font-size:13px}.actionbox small{font-size:11px;color:#73737a;line-height:1.4}
       .actionbox input,.actionbox textarea{width:100%;border:1px solid #d9d9dc;border-radius:10px;padding:10px 11px;font:inherit;font-size:13px;outline:none;background:#fff;color:#111113}
       .actionbox textarea{min-height:72px;resize:vertical}
       .actionbox input:focus,.actionbox textarea:focus{border-color:#111113}
-      .actionbox button{border:0;border-radius:10px;padding:10px 12px;background:#111113;color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+      .actionbox button{border:0;border-radius:10px;padding:10px 12px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font:inherit;font-size:13px;font-weight:800;cursor:pointer}
       .actionbox .action-ok{font-size:12px;color:#246b45;line-height:1.4}
       .actionbox select{width:100%;border:1px solid #d9d9dc;border-radius:10px;padding:10px 11px;font:inherit;font-size:13px;outline:none;background:#fff;color:#111113}
       .actionbox select:focus{border-color:#111113}
       .action-confirmed{font-size:12px;font-weight:750;color:#246b45;margin-top:2px}
       .quote-result{display:grid;gap:2px;margin-top:8px;padding:12px;border-radius:12px;background:#f6f6f7;color:#111113}
       .quote-result small{font-size:10px;color:#77777d}.quote-result strong{font-size:24px;letter-spacing:-.04em}.quote-result span{font-size:10px;color:#77777d}
-      .action-pay{display:flex;justify-content:center;margin-top:8px;border-radius:10px;padding:11px 12px;background:#111113;color:#fff!important;text-decoration:none!important;font-size:12px;font-weight:850}
+      .action-pay{display:flex;justify-content:center;margin-top:8px;border-radius:10px;padding:11px 12px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff)!important;text-decoration:none!important;font-size:12px;font-weight:850}
       .action-pay-note{display:block;margin-top:7px;color:#77777d!important}
       .booking-confirmed{display:grid;gap:3px;margin-top:8px;padding:11px;border-radius:12px;background:#f2fbf6;color:#174c31}
       .booking-confirmed strong{font-size:12px}.booking-confirmed span{font-size:11px}
@@ -593,10 +593,15 @@
   }
 
   function setAccent(value) {
-    const accent = value || fallbackAccent;
-    $('.mark').style.background = accent;
-    launcher.style.background = accent;
-    $('.composer button').style.background = accent;
+    const valid=(v)=>/^#[0-9a-f]{6}$/i.test(String(v||''));
+    const accent=valid(value)?String(value):valid(fallbackAccent)?fallbackAccent:'#111113';
+    const channels=[1,3,5].map((i)=>parseInt(accent.slice(i,i+2),16)/255);
+    const linear=channels.map((v)=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4);
+    const luminance=0.2126*linear[0]+0.7152*linear[1]+0.0722*linear[2];
+    root.style.setProperty('--bot-accent',accent);
+    root.style.setProperty('--bot-accent-ink',luminance>0.179?'#111113':'#ffffff');
+    $('.mark').style.background=accent;
+    $('.dot').style.background=accent;
   }
 
   async function pollLiveTakeover() {
