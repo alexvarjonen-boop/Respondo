@@ -1,0 +1,99 @@
+/* 2026-10-08 — mobile layout and legibility regressions.
+   Keep these fixes after the theme stylesheets so that old dark-theme
+   declarations cannot make text invisible on the new light iOS pages. */
+
+/* The public demo header must occupy real layout space. The previous fixed
+   header relied on an asynchronously measured padding offset which could
+   leave the "Demo company" title hidden behind the glass card in Safari. */
+@media (max-width: 1024px) {
+  #app .demo-dashboard-main {
+    padding-top: max(12px, env(safe-area-inset-top)) !important;
+    overflow: visible !important;
+  }
+
+  #app .demo-dashboard-main > .demo-sticky-topbar {
+    position: sticky !important;
+    top: 8px !important;
+    left: auto !important;
+    right: auto !important;
+    width: 100% !important;
+    margin: 0 0 22px !important;
+    z-index: 100 !important;
+    border: 1px solid #e3e3e7 !important;
+    border-radius: 20px !important;
+    background: #fff !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: 0 8px 24px rgba(18, 18, 23, .08) !important;
+    transform: none !important;
+  }
+
+  #app .demo-dashboard-main .dashboard-head {
+    position: relative;
+    margin-top: 0 !important;
+    padding-top: 6px !important;
+  }
+
+  #app .demo-dashboard-main :is(.dashboard-view-section, [id]) {
+    scroll-margin-top: calc(var(--demo-sticky-header-space, 164px) + 18px);
+  }
+}
+
+/* Public legal/security pages share the light background, so they must not
+   inherit white typography or pale provider-card labels from the dark theme. */
+#app .legalpage,
+#app .formpage.login-page {
+  color: #1d1d1f !important;
+  background: radial-gradient(ellipse at 50% 9%, #eaf0fc 0, #f5f5f7 55%) !important;
+}
+
+#app .legalpage .legal-aside h1,
+#app .login-page .login-copy h1 {
+  color: #1d1d1f !important;
+  -webkit-text-fill-color: #1d1d1f !important;
+  background-image: none !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+#app .login-page .login-copy h1 em {
+  color: #555c69 !important;
+  -webkit-text-fill-color: #555c69 !important;
+  background: none !important;
+}
+
+#app .legalpage .legal-aside > p,
+#app .formpage.login-page .login-copy > p {
+  color: #505660 !important;
+  -webkit-text-fill-color: #505660 !important;
+  opacity: 1 !important;
+}
+
+#app .legalpage .section-kicker,
+#app .formpage.login-page .section-kicker {
+  color: #505765 !important;
+  -webkit-text-fill-color: #505765 !important;
+}
+
+#app .legalpage .legal-seller {
+  color: #1d1d1f !important;
+  background: #fff !important;
+  border: 1px solid #e0e2e8 !important;
+}
+
+#app .legalpage .legal-seller b {
+  color: #1d1d1f !important;
+  -webkit-text-fill-color: #1d1d1f !important;
+}
+
+#app .legalpage .legal-seller span,
+#app .legalpage .legal-seller small {
+  color: #555c69 !important;
+  -webkit-text-fill-color: #555c69 !important;
+  opacity: 1 !important;
+}
+
+#app .legalpage .legalcopy {
+  color: #1d1d1f !important;
+  background: #fff !important;
+}
