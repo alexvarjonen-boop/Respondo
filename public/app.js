@@ -5119,15 +5119,87 @@ async function route() {
     signupPlan?.addEventListener('change', syncReferralField);
     syncReferralField();
 
+    const signupEmailStatus=$('#signupEmailVerificationStatus');
+    const signupVerificationButton=$('#signupSendVerification');
+    const signupEmailInput=signupForm?.elements?.email;
+    let verifiedSignupEmail='';
+    const isSocialSignup=()=>signupEmailInput?.readOnly === true;
+    const syncSignupEmailStatus=()=>{
+      const email=String(signupEmailInput?.value||'').trim().toLowerCase();
+      const verified=Boolean(email && email===verifiedSignupEmail);
+      const box=$('#signupEmailVerification');
+      if(box) box.hidden=isSocialSignup();
+      if(signupEmailStatus){
+        signupEmailStatus.textContent=verified
+          ? appText('✓ Sähköpostiosoite vahvistettu','✓ E-postadressen bekräftad','✓ Email verified')
+          : appText('Vahvista sähköposti ennen maksua.','Bekräfta e-post före betalning.','Verify email before payment.');
+        signupEmailStatus.dataset.verified=String(verified);
+      }
+      if(signupVerificationButton) signupVerificationButton.hidden=verified || isSocialSignup();
+    };
+    const refreshSignupVerification=async()=>{
+      try{
+        const state=await api('/api/auth/email-verification/status');
+        verifiedSignupEmail=state.verified ? String(state.email||'').trim().toLowerCase() : '';
+        if(verifiedSignupEmail && signupEmailInput && !signupEmailInput.value) {
+          signupEmailInput.value=verifiedSignupEmail;
+        }
+      }catch{verifiedSignupEmail='';}
+      syncSignupEmailStatus();
+    };
+    const requestSignupVerification=async()=>{
+      const email=String(signupEmailInput?.value||'').trim();
+      const msg=$('#msg');
+      if(!signupEmailInput?.checkValidity()){
+        signupEmailInput?.reportValidity();
+        return false;
+      }
+      if(signupVerificationButton) signupVerificationButton.disabled=true;
+      if(signupEmailStatus) signupEmailStatus.textContent=appText('Lähetetään vahvistusta…','Skickar verifiering…','Sending verification…');
+      try{
+        await api('/api/auth/email-verification/request',{
+          method:'POST',
+          body:JSON.stringify({email,language:currentLang()}),
+        });
+        if(msg) msg.innerHTML='<div class="notice success">'+esc(appText(
+          'Avaa sähköpostiisi lähetetty vahvistuslinkki ja vahvista osoite. Palaa sen jälkeen jatkamaan tilausta. Linkki on voimassa 30 minuuttia.',
+          'Öppna bekräftelselänken i ditt mejl och bekräfta adressen. Kom sedan tillbaka för att fortsätta. Länken gäller i 30 minuter.',
+          'Open the verification link in your email, confirm the address, then return to continue checkout. The link expires in 30 minutes.'
+        ))+'</div>';
+        return true;
+      }catch(err){
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(err.message||appText('Viestin lähetys epäonnistui.','Det gick inte att skicka mejlet.','Failed to send email.'))+'</div>';
+        return false;
+      }finally{
+        if(signupVerificationButton) signupVerificationButton.disabled=false;
+        syncSignupEmailStatus();
+      }
+    };
+    signupEmailInput?.addEventListener('input',syncSignupEmailStatus);
+    signupVerificationButton?.addEventListener('click',requestSignupVerification);
+    document.addEventListener('visibilitychange',()=>{
+      if(!document.hidden && location.pathname==='/tilaus') refreshSignupVerification();
+    });
+    window.addEventListener('pageshow',()=>{if(location.pathname==='/tilaus') refreshSignupVerification();});
+    refreshSignupVerification();
+
     $('#signup')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = new FormData(e.currentTarget);
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
       button.disabled = true;
-      button.innerHTML = appText('Avataan maksusivua…','Öppnar betalningssidan…','Opening payment page…');
       $('#msg').innerHTML = '';
       try {
+        if(!isSocialSignup()){
+          await refreshSignupVerification();
+          const supplied=String(form.get('email')||'').trim().toLowerCase();
+          if(!verifiedSignupEmail || verifiedSignupEmail!==supplied){
+            await requestSignupVerification();
+            return;
+          }
+        }
+        button.innerHTML = appText('Avataan maksusivua…','Öppnar betalningssidan…','Opening payment page…');
         const result = await api('/api/auth/start-checkout', {
           method: 'POST',
           body: JSON.stringify({
@@ -5143,27 +5215,13 @@ async function route() {
             language: currentLang(),
           }),
         });
+        if(!result?.url) throw new Error(appText('Maksusivua ei voitu avata.','Betalningssidan kunde inte öppnas.','Could not open checkout.'));
         location.href = result.url;
       } catch (err) {
+        $('#msg').innerHTML = '<div class="notice error">'+esc(err.message)+'</div>';
+      } finally {
         button.disabled = false;
         button.innerHTML = original;
-        if(err.status===403){
-          try{
-            const delivery=await api('/api/auth/email-verification/request',{
-              method:'POST',
-              body:JSON.stringify({email:String(form.get('email')||'').trim(),language:currentLang()}),
-            });
-            $('#msg').innerHTML = '<div class="notice success">'+esc(appText(
-              'Vahvistusviesti lähetetty. Avaa sähköpostisi ja paina viestissä Vahvista sähköposti. Palaa sen jälkeen tähän lomakkeeseen ja jatka tilausta.',
-              'Ett verifieringsmejl har skickats. Öppna mejlet, tryck på Bekräfta e-post och kom tillbaka hit för att fortsätta.',
-              'Verification email sent. Open your inbox, select Verify email, then return to this form to continue.'
-            ))+'</div>';
-          }catch(mailError){
-            $('#msg').innerHTML = '<div class="notice error">'+esc(mailError.message)+'</div>';
-          }
-        }else{
-          $('#msg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
-        }
       }
     });
   }
