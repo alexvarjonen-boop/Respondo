@@ -5135,6 +5135,23 @@ async function route() {
     const verifyPanel = $('#signupVerifyPanel');
     const verifyCodeInput = $('#signupVerifyCode');
     const verifyMessage = $('#signupVerifyMsg');
+    // Dedicated verification step: preserve the signup form behind a full-screen view.
+    const verifyScreen = document.createElement('section');
+    verifyScreen.id = 'signupVerifyScreen';
+    verifyScreen.setAttribute('role', 'dialog');
+    verifyScreen.setAttribute('aria-modal', 'true');
+    verifyScreen.setAttribute('aria-labelledby', 'signupVerifyTitle');
+    verifyScreen.hidden = true;
+    verifyScreen.innerHTML = '<div class="signup-verify-card"><div class="signup-verify-mark" aria-hidden="true">✉</div></div>';
+    const verifyCard = verifyScreen.firstElementChild;
+    verifyPanel?.querySelector('h3')?.setAttribute('id','signupVerifyTitle');
+    if (verifyPanel) { verifyCard.appendChild(verifyPanel); document.body.appendChild(verifyScreen); }
+    const verificationStep = (open) => {
+      verifyScreen.hidden = !open;
+      if (verifyPanel) { verifyPanel.hidden = !open; verifyPanel.style.display = open ? 'block' : 'none'; }
+      document.body.classList.toggle('signup-verifying', open);
+      if (open) { window.scrollTo(0,0); verifyCodeInput?.focus(); }
+    };
     let requestedSignupEmail = '';
     let verifiedSignupEmail = '';
     const signupEmail = () => String(signupForm?.elements?.email?.value || '').trim().toLowerCase();
@@ -5176,8 +5193,7 @@ async function route() {
       });
       requestedSignupEmail = email;
       verifiedSignupEmail = '';
-      verifyPanel.hidden = false;
-      verifyPanel.style.display = 'block';
+      verificationStep(true);
       $('#signupVerifyInfo').textContent = appText(
         'Lähetimme kuusinumeroisen vahvistuskoodin osoitteeseen ' + sent.email + '. Tarkista myös roskaposti.',
         'Vi har skickat en sexsiffrig kod till ' + sent.email + '. Kontrollera även skräpposten.',
@@ -5219,8 +5235,7 @@ async function route() {
           method:'POST',body:JSON.stringify({email:requestedSignupEmail,code})
         });
         verifiedSignupEmail = requestedSignupEmail;
-        verifyPanel.hidden = true;
-        verifyPanel.style.display = 'none';
+        verificationStep(false);
         if (signupSubmitButton) signupSubmitButton.hidden = false;
         await startSignupCheckout();
       } catch (err) {
@@ -5250,8 +5265,7 @@ async function route() {
     $('#signupVerifyChange')?.addEventListener('click',() => {
       requestedSignupEmail = '';
       verifiedSignupEmail = '';
-      verifyPanel.hidden = true;
-      verifyPanel.style.display = 'none';
+      verificationStep(false);
       signupForm.elements.email.readOnly = false;
       if (signupSubmitButton) signupSubmitButton.hidden = false;
       signupForm.elements.email.focus();
