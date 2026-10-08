@@ -7035,6 +7035,118 @@ app.get('/api/app/workspaces', auth, ownerOnly, async (req,res) => {
   }
 });
 
+/* Destructive account actions: confirm the account password and cancel the
+   exact owned Stripe subscriptions before deleting tenant/user data. */
+async function verifyDeletionPassword(client, userId, email, password, requireEmail) {
+  const rr=await client.query('SELECT id,email,password_hash,stripe_customer_id,stripe_subscription_id FROM users WHERE id=$1 FOR UPDATE',[userId]);
+  const user=rr.rows[0];
+  if(!user || !user.password_hash || !password || password.length>200 ||
+     (requireEmail && cleanEmail(email)!==cleanEmail(user.email)) ||
+     !(await bcrypt.compare(password,user.password_hash))) return null;
+  return user;
+}
+
+async function cancelOwnedSubscriptionsForDeletion(ids, customerId) {
+  const unique=[...new Set(ids.filter(Boolean))];
+  if(!unique.length) return 0;
+  if(!stripe) throw new Error('Stripe is unavailable: deletion cannot safely continue');
+  for(const subscriptionId of unique){
+    const subscription=await stripe.subscriptions.retrieve(subscriptionId);
+    const ownerCustomer=typeof subscription.customer==='string' ? subscription.customer : subscription.customer?.id;
+    if(!customerId || ownerCustomer!==customerId){
+      throw new Error('Subscription customer mismatch: refusing to cancel');
+    }
+    if(subscription.status!=='canceled'){
+      await stripe.subscriptions.cancel(subscriptionId);
+    }
+  }
+  return unique.length;
+}
+
+app.delete('/api/app/workspaces/:tenantId', auth, ownerOnly, loginLimiter, async (req,res) => {
+  const tenantId=String(req.params.tenantId||'');
+  const password=String(req.body?.password||'');
+  if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(tenantId) || !password || password.length>200) {
+    return res.status(400).json({error:'Valitse yritys ja anna nykyinen salasana.'});
+  }
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const user=await verifyDeletionPassword(client,req.user.sub,'',password,false);
+    if(!user){
+      await client.query('ROLLBACK');
+      return res.status(403).json({error:'Väärä salasana.'});
+    }
+    const tr=await client.query('SELECT id,name,stripe_subscription_id FROM tenants WHERE id=$1 AND owner_user_id=$2 FOR UPDATE',[tenantId,req.user.sub]);
+    if(!tr.rowCount){
+      await client.query('ROLLBACK');
+      return res.status(404).json({error:'Yritystä ei löytynyt.'});
+    }
+    const tenant=tr.rows[0];
+    const subscriptionId=tenant.stripe_subscription_id;
+    if(subscriptionId){
+      const shared=await client.query('SELECT 1 FROM tenants WHERE stripe_subscription_id=$1 AND id<>$2 LIMIT 1',[subscriptionId,tenantId]);
+      if(shared.rowCount){
+        await client.query('ROLLBACK');
+        return res.status(409).json({error:'Tilauksella on toinenkin yritys. Ota yhteys tukeen ennen poistamista.'});
+      }
+    }
+    const canceled=await cancelOwnedSubscriptionsForDeletion([subscriptionId],user.stripe_customer_id);
+    await client.query('DELETE FROM tenants WHERE id=$1 AND owner_user_id=$2',[tenantId,req.user.sub]);
+    const next=await client.query("SELECT id FROM tenants WHERE owner_user_id=$1 AND active=TRUE AND subscription_status IN ('active','trialing') ORDER BY created_at ASC LIMIT 1",[req.user.sub]);
+    await client.query(
+      "UPDATE users SET active_tenant_id=$1,"+
+      "stripe_subscription_id=CASE WHEN stripe_subscription_id=$3 THEN NULL ELSE stripe_subscription_id END,"+
+      "subscription_status=CASE WHEN stripe_subscription_id=$3 THEN NULL ELSE subscription_status END,"+
+      "subscription_plan=CASE WHEN stripe_subscription_id=$3 THEN NULL ELSE subscription_plan END,"+
+      "current_period_end=CASE WHEN stripe_subscription_id=$3 THEN NULL ELSE current_period_end END,"+
+      "updated_at=NOW() WHERE id=$2",
+      [next.rows[0]?.id||null,req.user.sub,subscriptionId],
+    );
+    await client.query('COMMIT');
+    return res.json({ok:true,deletedTenantId:tenantId,canceledSubscriptions:canceled,remainingActiveWorkspaces:Boolean(next.rowCount)});
+  }catch(e){
+    try{await client.query('ROLLBACK');}catch{}
+    console.error('Workspace deletion failed',e?.message||e);
+    return res.status(503).json({error:'Yrityksen poistaminen ei onnistunut. Tilausta tai tietoja ei poisteta, jos tilauksen peruutusta ei voida varmistaa. Yritä uudelleen tai ota yhteys tukeen.'});
+  }finally{client.release();}
+});
+
+app.delete('/api/app/account', auth, ownerOnly, loginLimiter, async (req,res) => {
+  const email=String(req.body?.email||'');
+  const password=String(req.body?.password||'');
+  if(!email || email.length>254 || !password || password.length>200){
+    return res.status(400).json({error:'Vahvista poistaminen sähköpostilla ja salasanalla.'});
+  }
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const user=await verifyDeletionPassword(client,req.user.sub,email,password,true);
+    if(!user){
+      await client.query('ROLLBACK');
+      return res.status(403).json({error:'Sähköposti tai salasana on väärä.'});
+    }
+    const rr=await client.query('SELECT id,stripe_subscription_id FROM tenants WHERE owner_user_id=$1 FOR UPDATE',[req.user.sub]);
+    const subscriptions=[...new Set([user.stripe_subscription_id,...rr.rows.map(x=>x.stripe_subscription_id)].filter(Boolean))];
+    if(subscriptions.length){
+      const shared=await client.query('SELECT 1 FROM tenants WHERE stripe_subscription_id=ANY($1::text[]) AND owner_user_id<>$2 LIMIT 1',[subscriptions,req.user.sub]);
+      if(shared.rowCount){
+        await client.query('ROLLBACK');
+        return res.status(409).json({error:'Tilauksia ei voida erottaa turvallisesti. Ota yhteys tukeen.'});
+      }
+    }
+    const canceled=await cancelOwnedSubscriptionsForDeletion(subscriptions,user.stripe_customer_id);
+    await client.query('DELETE FROM users WHERE id=$1',[req.user.sub]);
+    await client.query('COMMIT');
+    res.clearCookie(COOKIE,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax'});
+    return res.json({ok:true,canceledSubscriptions:canceled});
+  }catch(e){
+    try{await client.query('ROLLBACK');}catch{}
+    console.error('Account deletion failed',e?.message||e);
+    return res.status(503).json({error:'Käyttäjätiliä ei poistettu, koska tilausten peruuttamista tai tietojen poistamista ei voitu vahvistaa. Yritä uudelleen tai ota yhteys tukeen.'});
+  }finally{client.release();}
+});
+
 app.post('/api/app/workspaces/switch', auth, ownerOnly, async (req,res) => {
   try {
     const tenantId=String(req.body?.tenantId||'').trim();
