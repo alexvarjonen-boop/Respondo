@@ -192,7 +192,9 @@ async function api(url, options = {}) {
         } catch {}
       }
     }
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
   return data;
 }
@@ -3413,6 +3415,7 @@ async function dashboard(options = {}) {
               ${planAccess.websiteImport
                 ? `<button type="button" class="inline-import-btn" id="importWebsite">${appText('Hae tiedot sivultani','Hämta uppgifter från min webbplats','Import details from my website')}</button>`
                 : `<div class="notice compact-plan-notice">${appText('Automaattinen verkkosivuhaku ei ole käytössä tässä tilauksessa.','Automatisk webbplatsimport är inte tillgänglig i detta abonnemang.','Automatic website import is not available on this plan.')}</div>`}
+              <div id="websiteImportProgressError" class="notice error" role="alert" style="display:none;margin-top:10px"></div>
               <div id="websiteImportProgress" style="display:none;margin-top:10px">
                 <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:6px"><span id="websiteImportProgressLabel">${appText('Valmistellaan hakua…','Förbereder sökning…','Preparing scan…')}</span><b id="websiteImportProgressPercent">0%</b></div>
                 <div style="height:9px;border-radius:999px;background:rgba(127,127,127,.18);overflow:hidden"><div id="websiteImportProgressBar" style="height:100%;width:0%;background:currentColor;border-radius:999px;transition:width .45s ease"></div></div>
@@ -5306,6 +5309,8 @@ async function route() {
       const progressBar=document.getElementById('websiteImportProgressBar');
       const progressPercent=document.getElementById('websiteImportProgressPercent');
       const progressLabel=document.getElementById('websiteImportProgressLabel');
+      const progressError=document.getElementById('websiteImportProgressError');
+      if(progressError){progressError.style.display='none';progressError.replaceChildren();}
       if(progress) progress.style.display='block';
       const setProgress=(value,label)=>{
         const v=Math.max(0,Math.min(100,Math.round(value||0)));
@@ -5320,9 +5325,12 @@ async function route() {
         try {
           started=await api('/api/app/import-website/start',{method:'POST',body:JSON.stringify({website})});
         } catch (startError) {
-          // Fallback for older/stale clients or a temporarily unavailable job runner.
-          // The direct endpoint uses the same local extractor and returns the same result shape.
-          setProgress(4,appText('Käynnistetään hakua uudelleen…','Startar sökningen på nytt…','Restarting scan…'));
+          // 4xx responses are actionable validation, billing or tenant-isolation
+          // failures. Retrying through the direct endpoint is not a scan and
+          // previously left customers looking at a fictitious "4% progress".
+          const retryable = [404,405,500,502,503,504].includes(Number(startError?.status));
+          if(!retryable) throw startError;
+          setProgress(0,appText('Yritetään toista hakutapaa…','Försöker en annan sökmetod…','Trying another scan method…'));
           result=await api('/api/app/import-website',{method:'POST',body:JSON.stringify({website})});
         }
         if(!result){
@@ -5451,10 +5459,42 @@ async function route() {
         button.textContent = appText('Tiedot haettu ✓','Uppgifter hämtade ✓','Details imported ✓');
         setTimeout(() => { button.textContent = original; button.disabled = false; }, 1800);
       } catch (err) {
-        if(progressLabel) progressLabel.textContent=appText('Haku keskeytyi','Sökningen avbröts','Scan stopped');
+        if(progress) progress.style.display='none';
+        if(progressBar) progressBar.style.width='0%';
+        if(progressPercent) progressPercent.textContent='0%';
+        if(progressError){
+          progressError.replaceChildren();
+          progressError.style.display='block';
+          const reason=document.createElement('div');
+          reason.textContent=err?.message || appText('Haku ei onnistunut.','Importen misslyckades.','Import failed.');
+          progressError.appendChild(reason);
+          if(/Respondo AI:n omaan työtilaan/i.test(String(err?.message||''))){
+            const details=document.createElement('p');
+            details.textContent=appText(
+              'Respondo AI:n omat tiedot ja muiden yritysten tiedot pidetään erillään. Kokeile ulkopuolista sivua demossa tai lisää sille oma yritystyötila.',
+              'Respondos egna uppgifter och andra företags uppgifter hålls åtskilda. Testa en extern webbplats i demon eller skapa en separat företagsarbetsyta.',
+              'Respondo company data is kept separate from other companies. Test another website in the demo or create a separate business workspace.'
+            );
+            progressError.appendChild(details);
+            const demoLink=document.createElement('a');
+            demoLink.href='/assistant?section=setup';
+            demoLink.textContent=appText('Avaa Testaa bottia','Öppna Testa botten','Open Try Bot');
+            demoLink.className='btn ghost';
+            progressError.appendChild(demoLink);
+            const addWorkspace=document.getElementById('workspaceAddButton');
+            if(addWorkspace){
+              const addButton=document.createElement('button');
+              addButton.type='button';
+              addButton.className='btn ghost';
+              addButton.textContent=appText('Lisää yritys','Lägg till företag','Add company');
+              addButton.addEventListener('click',()=>addWorkspace.click());
+              progressError.appendChild(addButton);
+            }
+          }
+        }
         button.disabled = false;
         button.textContent = original;
-        $('#businessProfileMsg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+        $('#businessProfileMsg').innerHTML = '';
       }
     });
 

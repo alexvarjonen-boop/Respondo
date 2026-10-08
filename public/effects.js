@@ -455,10 +455,15 @@
   }
 
   function assistant() {
-    // Public Try Bot renders its own company-specific chat. Keep the marketing
-    // launcher on the homepage only, never create a second chat in the demo.
+    // Workspaces already include their own contextual chat. The marketing
+    // launcher overlaps profile controls on iPhone and must never appear in
+    // any authenticated dashboard or the public Try Bot workspace.
+    if (isWorkspacePage()) {
+      $('.fx-assistant-launch')?.remove();
+      $('.fx-assistant')?.remove();
+      return;
+    }
     if ($('.fx-assistant-launch')) return;
-    if (location.pathname === '/assistant') return;
     const qLang = new URLSearchParams(location.search).get('lang');
     const uiLang = ['fi','sv','en'].includes(qLang) ? qLang : (localStorage.getItem('respondo_lang') || 'fi');
     const at = (fi,sv,en) => uiLang === 'sv' ? sv : uiLang === 'en' ? en : fi;

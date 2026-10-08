@@ -61,7 +61,7 @@ test('demo and owner/support workspaces skip visual effect setup and preserve ch
     assert.ok(state.body.classList.contains('dashboard-page'),route);
     assert.ok(!state.body.classList.contains('assistant-standalone'),route);
     assert.ok(state.decoration.removed,route);
-    assert.ok(!state.assistant.removed,'Functional assistant must remain');
+    assert.ok(state.assistant.removed,'Marketing chat launcher must not cover workspace controls');
     assert.deepEqual(state.listeners,['respondo:languagechange']);
     assert.equal(state.html.dataset.deepScrollReady,undefined);
     assert.equal(state.html.style.get('--fx-page'),undefined);
