@@ -79,7 +79,7 @@ test('business-only order declaration is required for both checkout endpoints',(
 
 test('seller is identifiable and domestic VAT status is disclosed',()=>{
   const terms=fs.readFileSync(new URL('../public/legal-content.js',import.meta.url),'utf8');
-  assert.match(terms,/Alex Varjonen \(Respondo AI -palvelu\), Y-tunnus 3599437-5/);
+  assert.match(terms,/Respondo AI, Y-tunnus 3599437-5/);
   assert.match(terms,/Maksulliset tilaukset ovat nyt saatavilla vain Suomessa/);
   assert.match(terms,/Paid subscriptions are currently available only to businesses in Finland/);
   assert.match(app,/sellerName: 'Respondo AI'/);

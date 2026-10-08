@@ -27,7 +27,7 @@ test('verified new domestic business subscription gets seller footer on future i
   assert.equal(changes.length,1);
   assert.equal(changes[0].id,'sub_new');
   const footer=changes[0].params.invoice_settings.footer;
-  for(const text of ['Alex Varjonen','Respondo AI','3599437-5','ei ole arvonlisäverorekisterissä']){
+  for(const text of ['Respondo AI','3599437-5','ei ole arvonlisäverorekisterissä']){
     assert.ok(footer.includes(text),text);
   }
 });

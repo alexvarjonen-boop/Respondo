@@ -378,7 +378,7 @@ async function enforceCompletedCheckoutCountryPolicy(session) {
 // Applies only to newly created, verified Finnish B2B subscriptions.
 // Do not silently rewrite finalized invoices or historical subscriptions.
 const RESPONDO_DOMESTIC_INVOICE_FOOTER =
-  'Myyjä / Seller: Alex Varjonen (Respondo AI). Y-tunnus / Business ID: 3599437-5. ' +
+  'Myyjä / Seller: Respondo AI. Y-tunnus / Business ID: 3599437-5. ' +
   'Myyjä ei ole arvonlisäverorekisterissä; arvonlisäveroa ei peritä vähäisen toiminnan vuoksi. ' +
   'The seller is not VAT-registered; no Finnish VAT is charged.';
 async function ensureNewDomesticSubscriptionSellerFooter(subscriptionId, session) {

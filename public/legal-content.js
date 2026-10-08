@@ -13,9 +13,9 @@ export const LEGAL_20261008 = {
     ],
     sections: [
       S(['1. Palveluntarjoaja','1. Tjänsteleverantör','1. Service provider'],[
-        'Alex Varjonen (Respondo AI -palvelu), Y-tunnus 3599437-5, Suomi. Yhteydenotot: info@respondoai.fi.',
-        'Alex Varjonen (tjänsten Respondo AI), FO-nummer 3599437-5, Finland. Kontakt: info@respondoai.fi.',
-        'Alex Varjonen (Respondo AI service), Business ID 3599437-5, Finland. Contact: info@respondoai.fi.'
+        'Respondo AI, Y-tunnus 3599437-5, Suomi. Yhteydenotot: info@respondoai.fi.',
+        'Respondo AI, FO-nummer 3599437-5, Finland. Kontakt: info@respondoai.fi.',
+        'Respondo AI, Business ID 3599437-5, Finland. Contact: info@respondoai.fi.'
       ]),
       S(['2. Yrityskäyttö ja palvelun tarkoitus','2. Företagsanvändning och tjänstens syfte','2. Business-only use and service purpose'],[
         'Respondo AI on tarkoitettu yksinomaan yrityksille ja elinkeinotoimintaa harjoittaville tilaajille yritystoiminnan käyttöön, ei yksityiseen kuluttajakäyttöön. Hyväksymällä käyttöehdot tilaaja vahvistaa hankkivansa palvelun yritystoimintaansa tai edustamansa yrityksen käyttöön ja että hänellä on oikeus tehdä tilaus kyseisen yrityksen puolesta. Jos tilaus tehdään yksityiskäyttöön, tilaajan tulee jättää tilaus tekemättä. Respondo on yritysten verkkosivuille tarkoitettu asiakaspalvelu- ja ajanvarausohjelmisto. Toimintoja ovat esimerkiksi chat, hyväksytty tietopohja, verkkosivujen tietojen tuonti, asiakasviestien ja yhteydenottojen käsittely, tarjouspyynnöt, ajanvaraukset sekä erikseen käyttöön otettavat työntekijä- ja integraatiotoiminnot. Osa ominaisuuksista edellyttää tiettyä tilauspakettia tai erillisiä tunnuksia.',
@@ -84,9 +84,9 @@ export const LEGAL_20261008 = {
     ],
     sections: [
       S(['1. Rekisterinpitäjä ja yhteys','1. Personuppgiftsansvarig och kontakt','1. Controller and contact'],[
-        'Alex Varjonen (Respondo AI -palvelu), Y-tunnus 3599437-5. Tietosuojapyynnöt: info@respondoai.fi. Respondo toimii yleensä rekisterinpitäjänä omien käyttäjätiliensä, maksuhallintansa ja sivustonsa osalta. Yritysasiakas on lähtökohtaisesti rekisterinpitäjä oman bottinsa loppuasiakkaiden tiedoille, jolloin Respondo toimii henkilötietojen käsittelijänä.',
-        'Alex Varjonen (tjänsten Respondo AI), FO-nummer 3599437-5. Dataskyddsförfrågningar: info@respondoai.fi. Respondo är i regel personuppgiftsansvarig för sina egna konton, sin fakturering och webbplats. Företagskunden är normalt ansvarig för uppgifter om slutkunder i den egna botten, medan Respondo är personuppgiftsbiträde.',
-        'Alex Varjonen (Respondo AI service), Business ID 3599437-5. Privacy requests: info@respondoai.fi. Respondo is generally the controller for its own user accounts, billing and website. The business customer is generally controller for end-customer information collected by its bot, with Respondo acting as processor.'
+        'Respondo AI, Y-tunnus 3599437-5. Tietosuojapyynnöt: info@respondoai.fi. Respondo toimii yleensä rekisterinpitäjänä omien käyttäjätiliensä, maksuhallintansa ja sivustonsa osalta. Yritysasiakas on lähtökohtaisesti rekisterinpitäjä oman bottinsa loppuasiakkaiden tiedoille, jolloin Respondo toimii henkilötietojen käsittelijänä.',
+        'Respondo AI, FO-nummer 3599437-5. Dataskyddsförfrågningar: info@respondoai.fi. Respondo är i regel personuppgiftsansvarig för sina egna konton, sin fakturering och webbplats. Företagskunden är normalt ansvarig för uppgifter om slutkunder i den egna botten, medan Respondo är personuppgiftsbiträde.',
+        'Respondo AI, Business ID 3599437-5. Privacy requests: info@respondoai.fi. Respondo is generally the controller for its own user accounts, billing and website. The business customer is generally controller for end-customer information collected by its bot, with Respondo acting as processor.'
       ]),
       S(['2. Käsiteltävät tiedot','2. Uppgifter som behandlas','2. Data categories'],[
         'Tietoja voivat olla nimi, sähköposti, puhelinnumero, yritys ja Y-tunnus, käyttäjä- ja työntekijätilit, tunnistautumis- ja tilaustunnisteet, yrityksen verkkosivulta tuodut ja itse lisätyt tietopohjatiedot, botin asetukset, keskustelut, yhteydenottopyynnöt, tarjoukset, ajanvaraukset, kävijätunnisteet, tekniset lokit ja vapaaehtoisiin integraatioihin liittyvät tunnisteet. Chat-viesti tai tuotu verkkosivu voi sisältää henkilötietoja.',

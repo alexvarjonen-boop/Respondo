@@ -1,7 +1,7 @@
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261008-new-ra-logo-v1';
-import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261009-business-only-terms-v1';
+import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261009-official-seller-name-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 import { parseBookingDurationMinutes } from './booking-duration.mjs?v=20261009-v1';
 const $ = (s, r = document) => r.querySelector(s);

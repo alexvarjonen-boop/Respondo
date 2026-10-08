@@ -13,5 +13,5 @@ test('public site does not display the sole proprietor personal name in signup, 
 });
 test('the public configuration is brand-only, while statutory invoice seller identity remains accurate',()=>{
   assert.match(server,/sellerName: 'Respondo AI'/);
-  assert.match(server,/Myyjä \/ Seller: Alex Varjonen \(Respondo AI\)/);
+  assert.match(server,/Myyjä \/ Seller: Respondo AI/);
 });
