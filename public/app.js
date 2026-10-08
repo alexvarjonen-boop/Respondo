@@ -213,7 +213,7 @@ let cfg = {
   brand: 'RESPONDO AI',
   supportEmail: 'info@respondoai.fi',
   businessId: '3599437-5',
-  sellerName: 'RESPONDO AI',
+  sellerName: 'Alex Varjonen · Respondo AI',
   trialDays: 3,
   monthlyNet: 29.90,
   yearlyNet: 358.80,
@@ -3061,7 +3061,7 @@ function legal(type) {
           <div class="section-kicker">${page.label}</div>
           <h1>${page.title}</h1>
           <p>${page.intro}</p>
-          <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span><b>RESPONDO AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')}</small></div>
+          <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span><b>Alex Varjonen · Respondo AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')}</small></div>
         </aside>
         <article class="legalcopy">
           ${page.sections.map(([h, p]) => `<section><h2>${h}</h2><p>${p}</p></section>`).join('')}
