@@ -176,7 +176,7 @@ export const LEGAL_20261008 = {
         'First-party marketing-site analytics start only if you accept. They use page path, timestamp, referral source, UTM fields and a pseudonymous identifier; the raw IP is not stored in the visitor analytics table. You can reject or withdraw consent using Cookie Settings.'
       ]),
       S(['Ulkopuoliset sivustot','Externa tjänster','External services'],[
-        'Google-kirjautuminen, Google Calendar ja Strapen maksusivut voivat käyttää omia evästeitään silloin, kun käytät näitä palveluja. Näiden palvelujen evästeisiin sovelletaan niiden omia käytäntöjä.',
+        'Google-kirjautuminen, Google Calendar ja Stripen maksusivut voivat käyttää omia evästeitään silloin, kun käytät näitä palveluja. Näiden palvelujen evästeisiin sovelletaan niiden omia käytäntöjä.',
         'Google-inloggning, Google Kalender och Stripes betalsidor kan använda egna cookies när du använder dem. Deras egna policyer gäller.',
         'Google sign-in, Google Calendar and Stripe checkout may set their own cookies when you use those services. Their own cookie policies apply.'
       ]),
