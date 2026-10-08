@@ -426,6 +426,38 @@ if (process.env.NODE_ENV === 'production') {
 const JWT = process.env.JWT_SECRET || crypto.randomBytes(48).toString('hex');
 const COOKIE = 'respondo_session';
 const SIGNUP_CHECKOUT_COOKIE = 'respondo_signup_checkout';
+const SIGNUP_VERIFY_PENDING_COOKIE = 'respondo_signup_verify_pending';
+const SIGNUP_VERIFY_PROOF_COOKIE = 'respondo_signup_verify_proof';
+const SIGNUP_VERIFY_TTL_MS = 15 * 60 * 1000;
+const SIGNUP_VERIFY_PROOF_TTL_MS = 45 * 60 * 1000;
+
+function signupEmailVerificationReady() {
+  return Boolean(
+    String(process.env.RESEND_API_KEY || '').trim() &&
+    String(process.env.EMAIL_VERIFICATION_FROM || '').trim()
+  );
+}
+
+function signupVerifyCookieOptions(maxAge) {
+  return {
+    httpOnly:true,
+    secure:process.env.NODE_ENV === 'production',
+    sameSite:'lax',
+    path:'/',
+    maxAge,
+  };
+}
+
+function validSignupVerificationProof(req, email) {
+  try {
+    const token = cookies(req)[SIGNUP_VERIFY_PROOF_COOKIE];
+    const payload = jwt.verify(token, JWT, { algorithms:['HS256'] });
+    return payload.type === 'signup-email-verified' && payload.email === cleanEmail(email);
+  } catch {
+    return false;
+  }
+}
+
 
 const q = (text, params = []) => {
   if (!pool) throw new Error('Tietokantaa ei ole vielä yhdistetty.');
@@ -616,6 +648,47 @@ function escapeEmailHtml(value) {
     .replaceAll('>','&gt;')
     .replaceAll('"','&quot;')
     .replaceAll("'",'&#39;');
+}
+
+async function sendSignupVerificationEmail({ email, code, language = 'fi' }) {
+  if (!signupEmailVerificationReady()) {
+    return { sent:false, reason:'email_verification_not_configured' };
+  }
+  const lang = ['fi','sv','en'].includes(String(language).toLowerCase()) ? String(language).toLowerCase() : 'fi';
+  const from = String(process.env.EMAIL_VERIFICATION_FROM).trim();
+  const subject = lang === 'sv' ? 'Bekräfta din e-postadress – Respondo AI'
+    : lang === 'en' ? 'Verify your email address – Respondo AI'
+    : 'Vahvista sähköpostiosoitteesi – Respondo AI';
+  const intro = lang === 'sv' ? 'Bekräfta din e-postadress för att skapa ditt Respondo-konto.'
+    : lang === 'en' ? 'Verify your email address to create your Respondo account.'
+    : 'Vahvista sähköpostiosoitteesi luodaksesi Respondo-tilisi.';
+  const expiry = lang === 'sv' ? 'Koden gäller i 15 minuter. Ange den i registreringsformuläret.'
+    : lang === 'en' ? 'The code is valid for 15 minutes. Enter it on the signup page.'
+    : 'Koodi on voimassa 15 minuuttia. Syötä se rekisteröitymissivulle.';
+  const ignore = lang === 'sv' ? 'Om du inte försökte skapa ett konto kan du ignorera detta meddelande.'
+    : lang === 'en' ? 'If you did not try to create an account, you can ignore this message.'
+    : 'Jos et yrittänyt luoda tiliä, voit jättää tämän viestin huomiotta.';
+  const html = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:28px;color:#111">' +
+    '<h2 style="margin:0 0 18px">Respondo AI</h2>' +
+    '<p>' + escapeEmailHtml(intro) + '</p>' +
+    '<p style="font-size:34px;font-weight:800;letter-spacing:7px;padding:16px 0">' + escapeEmailHtml(code) + '</p>' +
+    '<p>' + escapeEmailHtml(expiry) + '</p>' +
+    '<p style="color:#666;font-size:13px">' + escapeEmailHtml(ignore) + '</p>' +
+    '</div>';
+  const response = await fetch('https://api.resend.com/emails', {
+    method:'POST',
+    headers:{
+      'Authorization':'Bearer ' + String(process.env.RESEND_API_KEY).trim(),
+      'Content-Type':'application/json',
+    },
+    body:JSON.stringify({ from, to:[email], subject, html }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    // Never log the recipient, code, provider response, or API credentials.
+    throw new Error('Verification email provider rejected request (status ' + response.status + ')');
+  }
+  return { sent:true, id:data?.id || null };
 }
 
 async function sendHomepageContactEmail({ name, email, message }) {
@@ -6780,6 +6853,22 @@ const loginLimiter = rateLimit({
   keyGenerator:req=>accountRateKey(req,'login'),
   message:{ error:'Liian monta kirjautumisyritystä. Yritä myöhemmin uudelleen.' },
 });
+const signupVerificationRequestLimiter = rateLimit({
+  windowMs:15 * 60 * 1000,
+  limit:5,
+  standardHeaders:true,
+  legacyHeaders:false,
+  keyGenerator:req=>accountRateKey(req,'signup-email-request'),
+  message:{ error:'Liian monta vahvistuspyyntöä. Yritä myöhemmin uudelleen.' },
+});
+const signupVerificationConfirmLimiter = rateLimit({
+  windowMs:15 * 60 * 1000,
+  limit:12,
+  standardHeaders:true,
+  legacyHeaders:false,
+  keyGenerator:req=>accountRateKey(req,'signup-email-confirm'),
+  message:{ error:'Liian monta vahvistusyritystä. Yritä myöhemmin uudelleen.' },
+});
 const checkoutLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   limit: 12,
@@ -7538,7 +7627,82 @@ app.get('/api/public/config', publicReadLimiter, async (req, res) => {
     ownerTestEnabled,
     ownerTestPrice: 0.50,
     passwordResetAvailable: Boolean(String(process.env.RESEND_API_KEY || '').trim()),
+    emailVerificationAvailable: signupEmailVerificationReady(),
   });
+});
+
+
+app.post('/api/auth/email-verification/request', signupVerificationRequestLimiter, async (req,res) => {
+  if (!signupEmailVerificationReady()) {
+    return res.status(503).json({ error:'Sähköpostivahvistus ei ole vielä käytettävissä. Ota yhteyttä Respondo-tukeen.' });
+  }
+  const email = cleanEmail(req.body?.email);
+  if (!email || email.length > 254 || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) {
+    return res.status(400).json({ error:'Anna kelvollinen sähköpostiosoite.' });
+  }
+  try {
+    const found = await q('SELECT id,status FROM users WHERE lower(email)=lower($1) LIMIT 1',[email]);
+    if (found.rowCount && found.rows[0].status !== 'pending') {
+      return res.status(409).json({ error:'Tällä sähköpostilla on jo tili.' });
+    }
+    const code = crypto.randomInt(0,1000000).toString().padStart(6,'0');
+    const codeHash = crypto.createHmac('sha256',JWT).update(email + '\n' + code).digest('hex');
+    const challenge = jwt.sign(
+      { type:'signup-email-pending', email, codeHash, attempts:0 },
+      JWT, { expiresIn:'15m', algorithm:'HS256' }
+    );
+    await sendSignupVerificationEmail({
+      email, code,
+      language:['fi','sv','en'].includes(req.body?.language) ? req.body.language : 'fi',
+    });
+    res.clearCookie(SIGNUP_VERIFY_PROOF_COOKIE,{path:'/'});
+    res.cookie(SIGNUP_VERIFY_PENDING_COOKIE,challenge,signupVerifyCookieOptions(SIGNUP_VERIFY_TTL_MS));
+    return res.json({ ok:true, email, expiresInMinutes:15 });
+  } catch (e) {
+    console.error('Signup email verification request failed:', e?.message || 'unknown error');
+    return res.status(503).json({ error:'Vahvistusviestiä ei voitu lähettää. Yritä uudelleen myöhemmin.' });
+  }
+});
+
+app.post('/api/auth/email-verification/confirm', signupVerificationConfirmLimiter, (req,res) => {
+  if (!signupEmailVerificationReady()) {
+    return res.status(503).json({ error:'Sähköpostivahvistus ei ole käytettävissä.' });
+  }
+  const email = cleanEmail(req.body?.email);
+  const code = String(req.body?.code || '').trim();
+  if (!/^\d{6}$/.test(code)) {
+    return res.status(400).json({ error:'Syötä kuusinumeroinen vahvistuskoodi.' });
+  }
+  let challenge;
+  try {
+    challenge = jwt.verify(cookies(req)[SIGNUP_VERIFY_PENDING_COOKIE],JWT,{algorithms:['HS256']});
+  } catch {
+    return res.status(400).json({ error:'Vahvistuskoodi on vanhentunut. Pyydä uusi koodi.' });
+  }
+  if (challenge.type !== 'signup-email-pending' || challenge.email !== email ||
+      !/^[a-f0-9]{64}$/.test(String(challenge.codeHash || '')) ||
+      !Number.isInteger(challenge.attempts) || challenge.attempts < 0 || challenge.attempts >= 5) {
+    res.clearCookie(SIGNUP_VERIFY_PENDING_COOKIE,{path:'/'});
+    return res.status(400).json({ error:'Vahvistus ei onnistunut. Pyydä uusi koodi.' });
+  }
+  const submittedHash = crypto.createHmac('sha256',JWT).update(email + '\n' + code).digest('hex');
+  const correct = crypto.timingSafeEqual(Buffer.from(submittedHash,'hex'),Buffer.from(challenge.codeHash,'hex'));
+  if (!correct) {
+    if (challenge.attempts >= 4) {
+      res.clearCookie(SIGNUP_VERIFY_PENDING_COOKIE,{path:'/'});
+      return res.status(400).json({ error:'Liian monta virheellistä koodia. Pyydä uusi koodi.' });
+    }
+    const retryToken = jwt.sign(
+      { type:'signup-email-pending',email,codeHash:challenge.codeHash,attempts:challenge.attempts+1 },
+      JWT,{expiresIn:Math.max(1,challenge.exp-Math.floor(Date.now()/1000)),algorithm:'HS256'}
+    );
+    res.cookie(SIGNUP_VERIFY_PENDING_COOKIE,retryToken,signupVerifyCookieOptions(SIGNUP_VERIFY_TTL_MS));
+    return res.status(400).json({ error:'Väärä vahvistuskoodi. Tarkista viesti ja yritä uudelleen.' });
+  }
+  res.clearCookie(SIGNUP_VERIFY_PENDING_COOKIE,{path:'/'});
+  const proof = jwt.sign({type:'signup-email-verified',email},JWT,{expiresIn:'45m',algorithm:'HS256'});
+  res.cookie(SIGNUP_VERIFY_PROOF_COOKIE,proof,signupVerifyCookieOptions(SIGNUP_VERIFY_PROOF_TTL_MS));
+  return res.json({ ok:true, email });
 });
 
 app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
@@ -7562,6 +7726,10 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
         ? 'Täytä kaikki pakolliset tiedot.'
         : 'Täytä kaikki pakolliset tiedot. Salasanan on oltava vähintään 10 merkkiä.',
     });
+  }
+
+  if (!socialSignup && signupEmailVerificationReady() && !validSignupVerificationProof(req,email)) {
+    return res.status(403).json({ error:'Vahvista sähköpostiosoitteesi ennen tilauksen aloittamista.' });
   }
 
   if (referralCode && !freeReferral && !planAllowsReferral(normalizedPlan)) {
@@ -7696,6 +7864,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       if (freeReferral) {
         await client.query('COMMIT');
         setSession(res, { id, email });
+        res.clearCookie(SIGNUP_VERIFY_PROOF_COOKIE,{path:'/'});
         res.clearCookie(OAUTH_PROFILE_COOKIE);
         return res.json({
           url: '/app?welcome=1&free_code=1',
@@ -7745,6 +7914,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       client.release();
     }
 
+    res.clearCookie(SIGNUP_VERIFY_PROOF_COOKIE,{path:'/'});
     res.cookie(
       SIGNUP_CHECKOUT_COOKIE,
       jwt.sign({ sessionId:session.id,userId:id,tenantId },JWT,{ expiresIn:'45m' }),

@@ -2800,6 +2800,17 @@ function signup() {
           </div>
           ${ownerTestAccess ? `<input type="hidden" name="ownerTestAccessToken" value="${esc(ownerTestAccessToken)}">` : ''}
           <button class="btn checkout-button" type="submit">${appText('Jatka maksutavan lisäämiseen','Fortsätt till betalningsmetod','Continue to payment method')} <span>→</span></button>
+          <div id="signupVerifyPanel" class="notice" hidden style="display:none;margin-top:20px">
+            <h3>${appText( 'Vahvista sähköpostisi','Bekräfta din e-postadress','Verify your email' )}</h3>
+            <p id="signupVerifyInfo"></p>
+            <label class="field" for="signupVerifyCode">${appText('Vahvistuskoodi','Bekräftelsekod','Verification code')}
+              <input id="signupVerifyCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="123456">
+            </label>
+            <button type="button" id="signupVerifyConfirm" class="btn checkout-button">${appText('Vahvista ja jatka','Bekräfta och fortsätt','Verify and continue')} →</button>
+            <button type="button" id="signupVerifyResend" class="password-reset-link">${appText('Lähetä uusi koodi','Skicka ny kod','Send a new code')}</button>
+            <button type="button" id="signupVerifyChange" class="password-reset-link">${appText('Vaihda sähköpostiosoitetta','Ändra e-postadress','Change email address')}</button>
+            <div id="signupVerifyMsg" role="status" aria-live="polite"></div>
+          </div>
           <div class="form-security"><span>◈</span> ${appText('Korttitiedot käsittelee Stripe. Respondo ei näe eikä tallenna korttinumeroasi.','Kortuppgifterna behandlas av Stripe. Respondo ser eller lagrar inte ditt kortnummer.','Card details are processed by Stripe. Respondo does not see or store your card number.')}</div>
           <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : ''}</div>
         </form>
@@ -5089,6 +5100,7 @@ async function route() {
           form.elements.email.value = profile.email || '';
           form.elements.email.readOnly = true;
           form.elements.email.classList.add('oauth-locked');
+          form.dataset.oauthVerified = 'true';
           const passwordField = $('#signupPasswordField');
           if (passwordField) passwordField.hidden = true;
           if (form.elements.password) form.elements.password.required = false;
@@ -5118,36 +5130,131 @@ async function route() {
     signupPlan?.addEventListener('change', syncReferralField);
     syncReferralField();
 
-    $('#signup')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = new FormData(e.currentTarget);
-      const button = e.currentTarget.querySelector('button[type="submit"]');
-      const original = button.innerHTML;
-      button.disabled = true;
-      button.innerHTML = appText('Avataan maksusivua…','Öppnar betalningssidan…','Opening payment page…');
-      $('#msg').innerHTML = '';
+    const signupSubmitButton = signupForm?.querySelector('button[type="submit"]');
+    const signupSubmitOriginal = signupSubmitButton?.innerHTML || '';
+    const verifyPanel = $('#signupVerifyPanel');
+    const verifyCodeInput = $('#signupVerifyCode');
+    const verifyMessage = $('#signupVerifyMsg');
+    let requestedSignupEmail = '';
+    let verifiedSignupEmail = '';
+    const signupEmail = () => String(signupForm?.elements?.email?.value || '').trim().toLowerCase();
+    const startSignupCheckout = async () => {
+      const form = new FormData(signupForm);
+      if (signupSubmitButton) {
+        signupSubmitButton.disabled = true;
+        signupSubmitButton.innerHTML = appText('Avataan maksusivua…','Öppnar betalningssidan…','Opening payment page…');
+      }
       try {
         const result = await api('/api/auth/start-checkout', {
-          method: 'POST',
-          body: JSON.stringify({
-            fullName: form.get('fullName'),
-            email: form.get('email'),
-            companyName: form.get('companyName'),
-            businessId: form.get('businessId'),
-            password: form.get('password'),
-            plan: form.get('plan'),
-            referralCode: form.get('referralCode'),
-            acceptedTerms: !!form.get('terms'),
-            ownerTestAccessToken: String(form.get('ownerTestAccessToken') || ''),
-            language: currentLang(),
+          method:'POST',
+          body:JSON.stringify({
+            fullName:form.get('fullName'),
+            email:form.get('email'),
+            companyName:form.get('companyName'),
+            businessId:form.get('businessId'),
+            password:form.get('password'),
+            plan:form.get('plan'),
+            referralCode:form.get('referralCode'),
+            acceptedTerms:!!form.get('terms'),
+            ownerTestAccessToken:String(form.get('ownerTestAccessToken') || ''),
+            language:currentLang(),
           }),
         });
         location.href = result.url;
       } catch (err) {
-        button.disabled = false;
-        button.innerHTML = original;
+        if (signupSubmitButton) {
+          signupSubmitButton.disabled = false;
+          signupSubmitButton.innerHTML = signupSubmitOriginal;
+        }
         $('#msg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
       }
+    };
+    const requestSignupVerification = async () => {
+      const email = signupEmail();
+      const sent = await api('/api/auth/email-verification/request',{
+        method:'POST',body:JSON.stringify({email,language:currentLang()})
+      });
+      requestedSignupEmail = email;
+      verifiedSignupEmail = '';
+      verifyPanel.hidden = false;
+      verifyPanel.style.display = 'block';
+      $('#signupVerifyInfo').textContent = appText(
+        'Lähetimme kuusinumeroisen vahvistuskoodin osoitteeseen ' + sent.email + '. Tarkista myös roskaposti.',
+        'Vi har skickat en sexsiffrig kod till ' + sent.email + '. Kontrollera även skräpposten.',
+        'We sent a six-digit code to ' + sent.email + '. Check your spam folder too.'
+      );
+      verifyMessage.textContent = '';
+      verifyCodeInput.value = '';
+      signupForm.elements.email.readOnly = true;
+      if (signupSubmitButton) signupSubmitButton.hidden = true;
+      verifyCodeInput.focus();
+    };
+    signupForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('#msg').innerHTML = '';
+      if (!cfg.emailVerificationAvailable || signupForm.dataset.oauthVerified === 'true' || verifiedSignupEmail === signupEmail()) {
+        await startSignupCheckout();
+        return;
+      }
+      if (signupSubmitButton) signupSubmitButton.disabled = true;
+      try {
+        await requestSignupVerification();
+      } catch (err) {
+        $('#msg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+      } finally {
+        if (signupSubmitButton) signupSubmitButton.disabled = false;
+      }
+    });
+    $('#signupVerifyConfirm')?.addEventListener('click',async () => {
+      const code = String(verifyCodeInput.value || '').trim();
+      if (!/^\d{6}$/.test(code)) {
+        verifyMessage.textContent = appText('Syötä kuusinumeroinen koodi.','Ange en sexsiffrig kod.','Enter the six-digit code.');
+        return;
+      }
+      const button=$('#signupVerifyConfirm');
+      button.disabled = true;
+      verifyMessage.textContent = '';
+      try {
+        await api('/api/auth/email-verification/confirm',{
+          method:'POST',body:JSON.stringify({email:requestedSignupEmail,code})
+        });
+        verifiedSignupEmail = requestedSignupEmail;
+        verifyPanel.hidden = true;
+        verifyPanel.style.display = 'none';
+        if (signupSubmitButton) signupSubmitButton.hidden = false;
+        await startSignupCheckout();
+      } catch (err) {
+        verifyMessage.textContent = err.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+    verifyCodeInput?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        $('#signupVerifyConfirm')?.click();
+      }
+    });
+    $('#signupVerifyResend')?.addEventListener('click',async () => {
+      const button=$('#signupVerifyResend');
+      button.disabled = true;
+      try {
+        await requestSignupVerification();
+        verifyMessage.textContent = appText('Uusi koodi lähetetty.','En ny kod har skickats.','A new code has been sent.');
+      } catch(err) {
+        verifyMessage.textContent=err.message;
+      } finally {
+        button.disabled=false;
+      }
+    });
+    $('#signupVerifyChange')?.addEventListener('click',() => {
+      requestedSignupEmail = '';
+      verifiedSignupEmail = '';
+      verifyPanel.hidden = true;
+      verifyPanel.style.display = 'none';
+      signupForm.elements.email.readOnly = false;
+      if (signupSubmitButton) signupSubmitButton.hidden = false;
+      signupForm.elements.email.focus();
     });
   }
 
