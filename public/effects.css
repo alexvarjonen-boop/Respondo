@@ -3624,3 +3624,20 @@ html.static-workspace #app :is(.fx-depth,.fx-depth-card,.btn)::after{content:non
     font-size:clamp(40px,12.5vw,52px)!important;
   }
 }
+
+/* 2026-10-08: Keep iOS Safari from auto-zooming focused form controls.
+   iOS magnifies the entire page when a text field computes below 16px.
+   Preserve normal user pinch-zoom and fix the inputs instead. */
+@media (max-width:1024px), (hover:none) and (pointer:coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+  textarea,
+  select {
+    font-size:16px!important;
+  }
+  .preview-form {
+    grid-template-columns:minmax(0,1fr) 42px;
+  }
+  .preview-form input {
+    min-width:0;
+  }
+}
