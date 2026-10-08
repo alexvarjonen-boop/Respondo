@@ -3914,7 +3914,12 @@ async function dashboard(options = {}) {
               <div class="field"><label>Päättyen</label><input name="endDate" type="date" value="${weekValue}" required></div>
               <div class="field"><label>Päivä alkaa</label><input name="startTime" type="time" value="09:00" required></div>
               <div class="field"><label>Päivä päättyy</label><input name="endTime" type="time" value="16:00" required></div>
-              <div class="field"><label>Ajan pituus</label><select name="duration"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>60 min</option><option value="90">90 min</option><option value="120">120 min</option></select></div>
+              <div class="field"><label for="bookingDuration">${appText('Ajan pituus','Tidslängd','Duration')}</label><select id="bookingDuration" name="duration"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>60 min</option><option value="90">90 min</option><option value="120">120 min</option><option value="custom">${appText('Oma kesto','Egen längd','Custom')}</option></select></div>
+            </div>
+            <div id="bookingCustomDuration" class="booking-custom-duration" hidden>
+              <div class="field"><label for="bookingCustomHours">${appText('Tunnit','Timmar','Hours')}</label><input id="bookingCustomHours" name="customHours" type="number" min="0" max="24" step="1" inputmode="numeric" value="1" required disabled></div>
+              <div class="field"><label for="bookingCustomMinutes">${appText('Minuutit','Minuter','Minutes')}</label><input id="bookingCustomMinutes" name="customMinutes" type="number" min="0" max="59" step="1" inputmode="numeric" value="0" required disabled></div>
+              <p class="booking-custom-duration-hint">${appText('Aseta kesto tunteina ja minuutteina (vähintään 1 minuutti).','Ange längden i timmar och minuter (minst 1 minut).','Set the duration in hours and minutes (minimum 1 minute).')}</p>
             </div>
             <div class="weekday-picker">
               ${[['1',appText('Ma','Mån','Mon')],['2',appText('Ti','Tis','Tue')],['3',appText('Ke','Ons','Wed')],['4',appText('To','Tor','Thu')],['5',appText('Pe','Fre','Fri')],['6',appText('La','Lör','Sat')],['0',appText('Su','Sön','Sun')]].map(([v,l]) => `<label><input type="checkbox" name="weekday" value="${v}" ${['1','2','3','4','5'].includes(v) ? 'checked' : ''}><span>${l}</span></label>`).join('')}
@@ -6010,6 +6015,17 @@ async function route() {
       }
     });
 
+    const durationSelect = $('#bookingDuration');
+    const customDurationFields = $('#bookingCustomDuration');
+    const syncCustomDurationFields = () => {
+      if (!customDurationFields) return;
+      const enabled = durationSelect?.value === 'custom';
+      customDurationFields.hidden = !enabled;
+      customDurationFields.querySelectorAll('input').forEach((input) => { input.disabled = !enabled; });
+    };
+    durationSelect?.addEventListener('change', syncCustomDurationFields);
+    syncCustomDurationFields();
+
     $('#bookingSlotsForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = new FormData(e.currentTarget);
@@ -6017,10 +6033,24 @@ async function route() {
       const endDateRaw = String(form.get('endDate') || '');
       const startTimeRaw = String(form.get('startTime') || '09:00');
       const endTimeRaw = String(form.get('endTime') || '16:00');
-      const duration = Math.max(15, Number(form.get('duration') || 60));
+      const durationChoice = String(form.get('duration') || '60');
+      const customHours = Number(form.get('customHours'));
+      const customMinutes = Number(form.get('customMinutes'));
+      const duration = durationChoice === 'custom'
+        ? customHours * 60 + customMinutes
+        : Number(durationChoice);
       const weekdays = new Set(form.getAll('weekday').map(String));
       const button = e.currentTarget.querySelector('button[type="submit"]');
       const original = button.innerHTML;
+      const validDuration = durationChoice === 'custom'
+        ? Number.isInteger(customHours) && customHours >= 0 && customHours <= 24 &&
+          Number.isInteger(customMinutes) && customMinutes >= 0 && customMinutes <= 59 &&
+          duration >= 1 && duration <= 1440
+        : [30,45,60,90,120].includes(duration);
+      if (!validDuration) {
+        $('#bookingSlotsMsg').innerHTML = '<div class="notice error">' + appText('Anna kelvollinen kesto (1 minuutti – 24 tuntia).','Ange en giltig längd (1 minut – 24 timmar).','Enter a valid duration (1 minute – 24 hours).') + '</div>';
+        return;
+      }
 
       if (!startDateRaw || !endDateRaw || !weekdays.size) {
         $('#bookingSlotsMsg').innerHTML = '<div class="notice error">' + appText('Valitse päivät ja vähintään yksi viikonpäivä.','Välj datum och minst en veckodag.','Select the dates and at least one weekday.') + '</div>';
