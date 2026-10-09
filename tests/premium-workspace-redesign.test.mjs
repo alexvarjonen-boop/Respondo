@@ -39,3 +39,13 @@ test('premium mobile layout keeps a real clickable FI/SV/EN language selector',(
  assert.match(app,/premiumIcon\(id\)/);
  assert.match(html,/premium-app-v2/);
 });
+
+test('iPhone signed-in topbar uses separate rows for buttons and language switch',()=>{
+ assert.match(css,/#app \.dashboard-premium-shell:not\(\.demo-dashboard-shell\) \.dashboard-top-actions\s*\{\s*grid-column:2!important;grid-row:1!important/);
+ assert.match(css,/#app \.dashboard-premium-shell:not\(\.demo-dashboard-shell\) \.premium-language-picker\s*\{[\s\S]{0,110}grid-column:1\/-1!important;grid-row:2!important/);
+});
+test('Try Bot mobile header reserves separate navigation row and compact mode',()=>{
+ assert.match(css,/demo-sticky-topbar \.premium-language-picker\s*\{[\s\S]{0,140}grid-row:2!important/);
+ assert.match(css,/demo-sticky-topbar \.demo-section-strip\s*\{\s*grid-column:1\/-1!important;grid-row:3!important/);
+ assert.match(css,/demo-sticky-topbar\.is-condensed \.premium-language-picker\s*\{\s*display:none!important/);
+});

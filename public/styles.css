@@ -9533,3 +9533,52 @@ body.deletion-modal-open{overflow:hidden!important}
  #app .dashboard-premium-shell .dashboard-logout{padding:0 7px!important}
 }
 /* 3rd-party embedded bot styling is intentionally unchanged by dashboard v2. */
+
+/* Premium workspace v3: signed-in and Try Bot mobile header collision fix.
+   Override pre-existing 720px OS header rules at equal/higher specificity. */
+@media (max-width:720px) {
+ #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-topbar{
+   display:grid!important;
+   grid-template-columns:minmax(0,1fr) auto!important;
+   grid-template-rows:auto auto!important;
+   column-gap:7px!important;row-gap:8px!important;
+ }
+ #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-topbar-brand{
+   grid-column:1!important;grid-row:1!important;
+   padding-right:0!important;min-width:0!important;
+ }
+ #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-top-actions{
+   grid-column:2!important;grid-row:1!important;
+   width:auto!important;min-width:0!important;
+   justify-content:flex-end!important;gap:5px!important;
+ }
+ #app .dashboard-premium-shell:not(.demo-dashboard-shell) .premium-language-picker{
+   display:flex!important;grid-column:1/-1!important;grid-row:2!important;
+   width:100%!important;justify-content:center!important;
+ }
+}
+@media (max-width:760px) {
+ #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar{
+   grid-template-columns:minmax(0,1fr) auto!important;
+   grid-template-rows:auto auto auto!important;
+ }
+ #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar .dashboard-topbar-brand{
+   grid-column:1!important;grid-row:1!important;
+ }
+ #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar .demo-public-actions{
+   grid-column:2!important;grid-row:1!important;
+ }
+ #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar .premium-language-picker{
+   display:flex!important;grid-column:1/-1!important;grid-row:2!important;
+   justify-content:center!important;
+ }
+ #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar .demo-section-strip{
+   grid-column:1/-1!important;grid-row:3!important;
+ }
+ #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.is-condensed{
+   grid-template-rows:auto!important;
+ }
+ #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.is-condensed .premium-language-picker{
+   display:none!important;
+ }
+}
