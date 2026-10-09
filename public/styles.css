@@ -9407,3 +9407,21 @@ body.deletion-modal-open{overflow:hidden!important}
  #app .dashboard-premium-shell .dashboard-top-actions .demo-header-login{display:none!important}
  #app .dashboard-premium-shell .demo-header-trial{min-height:38px!important;padding:0 9px!important;font-size:10px!important}
 }
+
+/* Premium shell: preserve the existing fixed and measured Try Bot header on iOS.
+   On small phones section pills, not a second dropdown, are the primary demo nav. */
+@media(max-width:1024px){
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main>.demo-sticky-topbar{
+    position:fixed!important;top:max(8px,env(safe-area-inset-top))!important;
+    left:max(12px,env(safe-area-inset-left))!important;
+    right:max(12px,env(safe-area-inset-right))!important;
+    width:auto!important;z-index:2147483000!important;margin:0!important;
+  }
+}
+@media(max-width:760px){
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar .dashboard-section-picker{display:none!important}
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar .demo-section-strip{
+    display:flex!important;grid-column:1/-1!important;grid-row:2!important;
+    max-width:100%;min-width:0;
+  }
+}
