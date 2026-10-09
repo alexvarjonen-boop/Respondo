@@ -82,7 +82,17 @@
   }
   #app .dashboard-premium-shell:not(.demo-dashboard-shell) .workspace-add-button span{display:none!important}
   #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-logout{
-    display:none!important; /* Available from Settings / Account — avoid crowded mobile header */
+    /* Always keep logout available: icon-only visually, accessible label remains. */
+    display:grid!important;place-items:center!important;position:static!important;
+    flex:0 0 35px!important;width:35px!important;min-width:35px!important;
+    height:36px!important;min-height:36px!important;max-height:36px!important;
+    overflow:hidden!important;padding:0!important;margin:0!important;
+    font-size:0!important;line-height:0!important;
+    border:1px solid #e6ebf3!important;border-radius:11px!important;background:#f8faff!important;
+    color:#576780!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-logout::before{
+    content:"↪";display:block;font-size:21px!important;font-weight:500!important;line-height:1!important;
   }
   #app .dashboard-premium-shell:not(.demo-dashboard-shell) .premium-language-picker{
     display:flex!important;position:static!important;

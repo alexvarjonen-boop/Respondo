@@ -25,6 +25,7 @@ test('iPhone header and navigation remain usable without overlapping chat',()=>{
   assert.match(css,/\.demo-sticky-topbar\{\s*position:fixed!important/);
   assert.match(css,/\.ios-workspace-tabs\{\s*order:1!important/);
   assert.match(css,/\.premium-language-picker \.app-language-switch/);
+  assert.match(css,/\.dashboard-logout::before/);
   assert.match(css,/\.demo-sticky-topbar\.is-condensed \.dashboard-section-picker/);
 });
 test('mobile styling never targets customer-facing embedded bot',()=>{
