@@ -3395,7 +3395,25 @@ async function dashboard(options = {}) {
   const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
   const isWelcome = new URLSearchParams(location.search).get('welcome') === '1';
 
-  return `<div class="appshell dashboard-simple-shell ${isDemo ? 'demo-dashboard-shell' : ''}">
+  const premiumNav = [
+    ['overview',appText('Yleiskatsaus','Översikt','Overview'),'⌂'],
+    ['setup',appText('Yritys & botti','Företag & bot','Business & bot'),'◇'],
+    ['answers',appText('Vastaukset','Svar','Answers'),'▤'],
+    ['customers',appText('Asiakkaat','Kunder','Customers'),'♧'],
+    ['automation',appText('Toiminnot','Funktioner','Actions'),'▥'],
+    ['install',appText('Asennus','Installation','Installation'),'⌘'],
+    ['account',appText('Asetukset','Inställningar','Settings'),'⚙']
+  ];
+  const premiumNavHtml = premiumNav.map(([id,label,icon]) =>
+    `<button type="button" data-dashboard-nav="${id}" class="${id==='overview'?'active':''}" ${id==='overview'?'aria-current="page"':''}><span class="premium-nav-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`
+  ).join('');
+  return `<div class="appshell dashboard-simple-shell dashboard-premium-shell ${isDemo ? 'demo-dashboard-shell' : ''}">
+    <aside class="dashboard-premium-sidebar" aria-label="${esc(appText('Hallintapaneelin navigointi','Kontrollpanelens navigering','Dashboard navigation'))}">
+      <div class="premium-sidebar-brand">${logo()}</div>
+      <div class="premium-sidebar-label">${appText('TYÖTILA','ARBETSYTA','WORKSPACE')}</div>
+      <nav class="premium-sidebar-nav">${premiumNavHtml}</nav>
+      <div class="premium-sidebar-bottom"><i aria-hidden="true"></i><div><b>${esc(t.name)}</b><small>${isDemo ? appText('Kokeilutila','Demo','Demo mode') : esc(String(planAccess.tier||'Starter'))}</small></div></div>
+    </aside>
     <main class="appmain dashboard-simple-main ${isDemo ? 'demo-dashboard-main' : ''}">
       <header class="dashboard-topbar ${isDemo ? 'demo-sticky-topbar' : ''}">
         <div class="dashboard-topbar-brand">
@@ -3425,6 +3443,7 @@ async function dashboard(options = {}) {
           </div>
         </div>
         <div class="dashboard-top-actions ${isDemo ? 'demo-public-actions' : ''}">
+          ${languageSwitch()}
           ${isDemo ? `
             <a class="btn ghost demo-header-login" href="/kirjaudu?lang=${currentLang()}">${appText('Kirjaudu','Logga in','Log in')}</a>
             <a class="btn ink demo-header-trial" href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
@@ -3503,7 +3522,7 @@ async function dashboard(options = {}) {
       ` : ''}
 
       <section class="dashboard-head dashboard-view-section" data-dashboard-view="overview" id="overview">
-        <div><div class="section-kicker">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</div><h1>${esc(t.name)}</h1><p>${appText('Valitse ylhäältä mitä haluat tehdä. Näytämme vain siihen liittyvät asiat.','Välj ovan vad du vill göra. Vi visar bara det som hör till valet.','Choose what you want to do above. We only show the relevant items.')}</p></div>
+        <div><div class="section-kicker">${appText('RESPONDO AI · HALLINTAPANEELI','RESPONDO AI · KONTROLLPANEL','RESPONDO AI · DASHBOARD')}</div><h1>${appText('Tervetuloa!','Välkommen!','Welcome!')}</h1><p>${esc(t.name)} · ${appText('Seuraa keskusteluja, kokeile bottia ja hallitse asiakaspalveluasi yhdessä paikassa.','Följ konversationer, testa botten och hantera kundservice på ett ställe.','Track conversations, test your bot and manage support in one place.')}</p></div>
       </section>
 
       ${isWelcome ? `
@@ -3542,6 +3561,30 @@ async function dashboard(options = {}) {
         <article class="stat"><small>${appText('VIIMEISET 7 PV','SENASTE 7 DAGARNA','LAST 7 DAYS')}</small><b>${s.last7 || 0}</b><span>${appText('keskustelua','konversationer','conversations')}</span></article>
         <article class="stat"><small>${appText('VASTATTU SUORAAN','SVARADE DIREKT','ANSWERED DIRECTLY')}</small><b>${s.answeredRate}%</b><span>${appText('ilman että asiakas piti ohjata eteenpäin','utan att kunden behövde skickas vidare','without routing the customer onward')}</span></article>
         <article class="stat"><small>${appText('YHTEYDENOTOT','KONTAKTFÖRFRÅGNINGAR','CONTACT REQUESTS')}</small><b>${s.leads || 0}</b><span>${s.estimatedLeadValue > 0 ? 'arvioitu arvo ' + formatMoney(s.estimatedLeadValue) : 'asiakasta jätti yhteystietonsa'}</span></article>
+      </section>
+
+      <section class="dashboard-premium-experience dashboard-view-section" data-dashboard-view="overview" aria-label="${esc(appText('Kokeile bottia','Testa botten','Test the bot'))}">
+        <div class="premium-chat-host" id="overviewPreviewHost"></div>
+        <div class="premium-right-rail">
+          <article class="premium-info-card"><header><b>${appText('Botin tila','Bottstatus','Bot status')}</b><span class="premium-live-dot">${isDemo ? appText('Kokeilu','Demo','Demo') : appText('Käytössä','Aktiv','Active')}</span></header>
+            <p>${appText('Kokeile bottia esittämällä asiakkaidesi kysymyksiä.','Testa botten med dina kunders frågor.','Try the bot with your customers’ questions.')}</p>
+            <div class="premium-verified"><span>✓</span><div><b>${appText('Valmis kokeiltavaksi','Redo att testa','Ready to try')}</b><small>${appText('Kysy vapaasti chatissa','Fråga fritt i chatten','Ask anything in the chat')}</small></div></div>
+          </article>
+          <article class="premium-info-card"><header><b>${appText('Yrityksen tiedot','Företagsuppgifter','Company details')}</b><button type="button" data-dashboard-open="setup">${appText('Muokkaa','Redigera','Edit')}</button></header>
+            <strong class="premium-company-name">${esc(t.name)}</strong>
+            <dl><div><dt>${appText('Verkkosivu','Webbplats','Website')}</dt><dd>${profileValue('Verkkosivu') || esc(t.website || '—')}</dd></div>
+               <div><dt>${appText('Toimialue','Serviceområde','Service area')}</dt><dd>${profileValue('Toimialue') || '—'}</dd></div>
+               <div><dt>${appText('Aukioloajat','Öppettider','Opening hours')}</dt><dd>${profileValue('Aukioloajat') || '—'}</dd></div>
+               <div><dt>${appText('Tietopohja','Kunskapsbas','Knowledge base')}</dt><dd>${knowledge.length} ${appText('tietoa','poster','items')}</dd></div></dl>
+          </article>
+          <article class="premium-info-card"><header><b>${appText('Pikatoiminnot','Snabbåtgärder','Quick actions')}</b></header>
+            <div class="premium-quick-links">
+              <button type="button" data-dashboard-open="setup">✎　${appText('Muokkaa botin tietoja','Redigera bottuppgifter','Edit bot details')} <span>›</span></button>
+              <button type="button" data-dashboard-open="answers">＋　${appText('Lisää kysymys ja vastaus','Lägg till fråga och svar','Add question and answer')} <span>›</span></button>
+              <button type="button" data-dashboard-open="install">↗　${appText('Asenna verkkosivuille','Installera på webbplatsen','Install on website')} <span>›</span></button>
+            </div>
+          </article>
+        </div>
       </section>
 
       <section class="respondo-intelligence dashboard-view-section" data-dashboard-view="overview">
@@ -3725,7 +3768,7 @@ async function dashboard(options = {}) {
 
         <aside class="panel live-preview-panel" id="live-preview">
           <div class="panel-head">
-            <div><small>${appText('KOKEILE TÄSSÄ','PROVA HÄR','TRY IT HERE')}</small><h2>${appText('Kysy kuten asiakkaasi kysyisi','Fråga som din kund skulle fråga','Ask like your customer would')}</h2></div>
+            <div><small>${appText('ASIAKASPALVELUBOTTI','KUNDSERVICEBOT','CUSTOMER SERVICE BOT')}</small><h2>${appText('Testaa bottia','Testa botten','Test the bot')}</h2><p>${appText('Kokeile, miten botti vastaa asiakkaidesi kysymyksiin.','Testa hur botten svarar på kundernas frågor.','Test how the bot answers customer questions.')}</p></div>
             <span class="preview-live"><i></i> ${appText('Käytössä','Aktiv','Active')}</span>
           </div>
           <div class="preview-device">
@@ -4729,7 +4772,7 @@ async function route() {
     const targetViewMap = {
       'overview':'overview',
       'business-profile':'setup',
-      'live-preview':'setup',
+      'live-preview':'overview',
       'knowledge':'answers',
       'unanswered':'answers',
       'conversations':'customers',
@@ -4749,11 +4792,17 @@ async function route() {
       install:{ eyebrow:appText('KÄYTTÖÖNOTTO','KOM IGÅNG','SETUP'), title:appText('Asennus','Installation','Installation') },
       account:{ eyebrow:appText('OMA TILI','MITT KONTO','MY ACCOUNT'), title:appText('Asetukset','Inställningar','Settings') },
     };
+    const positionPremiumPreview = (view) => {
+      const preview=document.getElementById('live-preview');
+      const destination=document.getElementById(view==='overview'?'overviewPreviewHost':'business-profile');
+      if(preview && destination && preview.parentElement !== destination) destination.appendChild(preview);
+    };
     const showDemoDashboardView = (view, options = {}) => {
       const next = validDashboardViews.has(view) ? view : 'overview';
       document.querySelectorAll('.dashboard-view-section').forEach((section) => {
         section.classList.toggle('dashboard-view-hidden', section.dataset.dashboardView !== next);
       });
+      positionPremiumPreview(next);
       if (dashboardSelect) dashboardSelect.value = next;
       document.querySelectorAll('[data-dashboard-nav]').forEach((button) => {
         const active = button.dataset.dashboardNav === next;
@@ -5625,7 +5674,7 @@ async function route() {
     const targetViewMap = {
       'overview':'overview',
       'business-profile':'setup',
-      'live-preview':'setup',
+      'live-preview':'overview',
       'knowledge':'answers',
       'unanswered':'answers',
       'conversations':'customers',
@@ -5646,11 +5695,17 @@ async function route() {
       account:{ eyebrow:appText('OMA TILI','MITT KONTO','MY ACCOUNT'), title:appText('Asetukset','Inställningar','Settings') },
     };
 
+    const positionPremiumPreview = (view) => {
+      const preview=document.getElementById('live-preview');
+      const destination=document.getElementById(view==='overview'?'overviewPreviewHost':'business-profile');
+      if(preview && destination && preview.parentElement !== destination) destination.appendChild(preview);
+    };
     const showDashboardView = (view, options = {}) => {
       const next = validDashboardViews.has(view) ? view : 'overview';
       document.querySelectorAll('.dashboard-view-section').forEach((section) => {
         section.classList.toggle('dashboard-view-hidden', section.dataset.dashboardView !== next);
       });
+      positionPremiumPreview(next);
       if (dashboardSelect) dashboardSelect.value = next;
       document.querySelectorAll('[data-dashboard-nav]').forEach((button) => {
         const active = button.dataset.dashboardNav === next;
