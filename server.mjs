@@ -3,6 +3,7 @@ import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsitePr
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
+import { interpretCustomerQuestion } from './query-typos.mjs';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -5851,7 +5852,14 @@ function conciseKnowledgeAnswer(row, query) {
 async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {} }) {
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   rows = (rows || []).filter(usableWebsiteRow);
-  const cleanMessage = String(message || '').trim();
+  // Interpret frequent typos only inside the answer engine. Keep the
+  // original visitor message untouched in chat storage and analytics.
+  const originalMessage = String(message || '').trim();
+  const cleanMessage = interpretCustomerQuestion(originalMessage,responseLang).text;
+  history = (Array.isArray(history)?history:[]).map(turn => ({
+    ...turn,
+    question:interpretCustomerQuestion(String(turn?.question||''),responseLang).text
+  }));
   if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: responseLang === 'en' ? 'Empty' : responseLang === 'sv' ? 'Tom' : 'Tyhjä', sourceIds: [], selected: [] };
 
   await resolveIntentForMessage(cleanMessage,responseLang);
@@ -10390,7 +10398,8 @@ function orderStatusText(order, lang = 'fi') {
 
 function detectConversationLanguage(text, hinted='') {
   const hint=['fi','sv','en'].includes(String(hinted||'').toLowerCase()) ? String(hinted).toLowerCase() : '';
-  const raw=String(text||'').toLowerCase().replace(/[^a-zåäö\s']/g,' ');
+  const interpreted=interpretCustomerQuestion(text,hint||'fi').text;
+  const raw=String(interpreted||'').toLowerCase().replace(/[^a-zåäö\s']/g,' ');
   const words=raw.split(/\s+/).filter(Boolean);
   if (!words.length) return hint || 'fi';
   const sets={
