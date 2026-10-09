@@ -69,7 +69,7 @@ const aliases = {
     'toimtius':'toimitus','toimitius':'toimitus','tuotius':'toimitus',
     'toimituks':'toimitus','toimtus':'toimitus','toimuts':'toimitus','toimituus':'toimitus',
     'toimituskult':'toimituskulut','postikulutko':'postikulut',
-    'kuikn':'kuinka','kuinak':'kuinka','kuika':'kuinka','kuin':'kuinka',
+    'kuikn':'kuinka','kuinak':'kuinka','kuika':'kuinka',
     'kaua':'kauan','kauankoha':'kauanko','kui':'kuinka','kauaa':'kauan',
     'kestaa':'kestää','kestääköhän':'kestää','kestaaako':'kestää',
     'onsko':'onko','onks':'onko','oks':'onko','onkos':'onko',
@@ -82,14 +82,14 @@ const aliases = {
     'palautuks':'palautus','palauttaaako':'palauttaa',
     'värei':'värit','varei':'värit','väreiä':'värejä','varii':'väri',
     'tuotet':'tuotteet','tuotte':'tuotteet','tuottee':'tuotteen',
-    'varastos':'varastossa','varastoos':'varastossa','varasto':'varastossa',
+    'varastos':'varastossa','varastoos':'varastossa',
     'varastoo':'varastossa','löytyyk':'löytyykö','loytyyko':'löytyykö',
     'millo':'milloin','millon':'milloin','milloinn':'milloin',
     'mitäa':'mitä','mitäkö':'mitä','mita':'mitä','missaa':'missä',
     'saahkoposti':'sähköposti','sahkoposti':'sähköposti',
     'puhnumero':'puhelinnumero','puhelinumer':'puhelinnumero',
     'ajanvarauss':'ajanvaraus','ajanvaruks':'ajanvaraus',
-    'varat':'varata','vara':'varata','varatta':'varata',
+    'varat':'varata','varatta':'varata',
     'ente':'entä','entäa':'entä','entas':'entäs','entap':'entäpä',
     'taku':'takuu','takuuuaika':'takuuaika',
     'paljoonko':'paljonko','ilmasen':'ilmaisen','ilmane':'ilmainen'
@@ -107,7 +107,7 @@ const aliases = {
     'imorn':'imorgon','imorron':'imorgon','omorgon':'imorgon',
     'storlekarna':'storlekar','storleek':'storlek',
     'nara':'när','nar':'när','vilak':'vilka','vilkan':'vilken',
-    'hurra':'hur','hurr':'hur','lang':'länge','lange':'länge',
+    'hurra':'hur','hurr':'hur','lange':'länge',
     'undergransen':'under gränsen','overgransen':'över gränsen',
     'tjanster':'tjänster','tjanst':'tjänst','farger':'färger',
     'farg':'färg','fraga':'fråga'
@@ -124,7 +124,7 @@ const aliases = {
     'avilable':'available','avalability':'availability','availibility':'availability',
     'shippment':'shipment','appoitment':'appointment','apointment':'appointment',
     'appoinment':'appointment','bokking':'booking',
-    'prcie':'price','pirce':'price','proce':'price','prize':'price',
+    'prcie':'price','pirce':'price','proce':'price',
     'caost':'cost','cst':'cost','costs':'costs',
     'whre':'where','wher':'where','waht':'what','whta':'what',
     'wht':'what','hwo':'how','hwoe':'how','hw':'how',
@@ -172,10 +172,14 @@ function correctWord(word,lang){
   if(explicit)return explicit;
   const vocab=vocabulary[lang]||[];
   if(vocab.includes(key)||key.length<5||key.length>19)return word;
-  const limit=key.length>=9?2:1;
+  // For long domain terms, recognize one internal keyboard slip. Do not
+  // "fix" short ordinary words, inflection endings, or proper nouns.
+  // Otherwise e.g. "musta" (black) can become "mista" (from where).
+  if(key.length<9) return word;
+  const limit=1;
   let candidate='',best=limit+1,tie=false;
   for(const target of vocab){
-    if(Math.abs(target.length-key.length)>limit||target[0]!==key[0])continue;
+    if(Math.abs(target.length-key.length)>limit||target.slice(0,3)!==key.slice(0,3)||target.slice(-2)!==key.slice(-2))continue;
     const score=distance(key,target,limit);
     if(score<best){best=score;candidate=target;tie=false;}
     else if(score===best&&score<=limit&&target!==candidate)tie=true;

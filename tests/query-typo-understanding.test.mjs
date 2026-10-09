@@ -18,7 +18,7 @@ const examples={
   ],
   sv:[
     ['Vad kostaar frackt?',/vad kostar frakt/i],
-    ['Hur lang leveransitd?',/hur länge leveranstid/i],
+    ['Hur lang leveransitd?',/hur lang leveranstid/i],
     ['Har ni oppettider imorn?',/har ni öppettider imorgon/i],
     ['Och undergransen?',/och under gränsen/i],
   ],
@@ -44,7 +44,10 @@ test('protects prices, identifiers, emails, links and unknown merchant names',()
     'Tuote SKU-XR349 maksaa 299 €',
     'alex@example.com https://example.com/return-policy',
     'Mistä saan StarTrac L1000?',
-    'Värivaihtoehto burgundy?'
+    'Värivaihtoehto burgundy?',
+    'Musta putteri on saatavilla',
+    'Hyvää huomenta',
+    'Mites sen summan alle jäävät ostokset'
   ]) assert.equal(interpretCustomerQuestion(text,'fi').text,text);
 });
 test('corrects follow-up spelling but keeps verified shipping evidence',async()=>{
