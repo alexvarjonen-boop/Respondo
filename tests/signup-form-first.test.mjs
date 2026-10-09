@@ -17,7 +17,7 @@ test('signup opens directly with a working account creation form', () => {
   assert.match(signup, /name="email"/);
   assert.match(signup, /name="password"/);
   assert.match(signup, /name="plan"/);
-  assert.match(signup, /name="terms"/);
+  assert.ok(signup.includes("checkoutBusinessTerms('terms'"));
   assert.match(signup, /signup-seller-note/);
   assert.ok(signup.indexOf('id="signup"') < signup.indexOf('signup-seller-note'));
   assert.match(css, /#app \.signup-page \.signup-layout/);
