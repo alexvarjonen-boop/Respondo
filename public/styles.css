@@ -9133,3 +9133,25 @@ body.deletion-modal-open{overflow:hidden!important}
   color:#f5f5f7!important;
   -webkit-text-fill-color:#f5f5f7!important;
 }
+
+
+/* Signup: show the registration form immediately. */
+#app .formpage.signup-page{
+  padding:24px 0 76px!important;
+}
+#app .signup-page .signup-layout{
+  display:block!important;
+  width:min(620px,calc(100% - 40px))!important;
+  max-width:620px!important;
+  padding:0!important;
+  margin:0 auto!important;
+}
+#app .signup-page #signup{
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+}
+@media(max-width:760px){
+  #app .formpage.signup-page{padding:14px 0 48px!important}
+  #app .signup-page .signup-layout{width:calc(100% - 24px)!important}
+}
