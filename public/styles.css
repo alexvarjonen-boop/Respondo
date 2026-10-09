@@ -9425,3 +9425,57 @@ body.deletion-modal-open{overflow:hidden!important}
     max-width:100%;min-width:0;
   }
 }
+
+
+/* Final small-screen premium workspace layout: do not inherit the old
+   three-column header grid or lose navigation in the condensed demo header. */
+@media(max-width:720px){
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-topbar{
+    display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:auto auto!important;gap:7px!important;align-items:center!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-topbar-brand{
+    grid-column:1!important;grid-row:1!important;padding-right:0!important;
+    margin:0!important;min-height:0!important;min-width:0!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-top-actions{
+    grid-column:1!important;grid-row:2!important;position:static!important;
+    justify-content:space-between!important;gap:6px!important;
+    margin:0!important;padding:0!important;width:100%!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-top-actions .app-language-switch{
+    display:inline-flex!important;margin-right:auto!important;flex:0 0 auto!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-logout{
+    position:static!important;top:auto!important;right:auto!important;left:auto!important;
+    min-width:0!important;max-width:none!important;
+  }
+}
+@media(max-width:760px){
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar{
+    display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-rows:auto auto!important;column-gap:8px!important;row-gap:7px!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar .dashboard-topbar-brand{
+    grid-column:1!important;grid-row:1!important;margin:0!important;padding:0!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar .demo-public-actions{
+    grid-column:2!important;grid-row:1!important;justify-content:flex-end!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar .demo-section-strip{
+    grid-column:1/-1!important;grid-row:2!important;display:flex!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.is-condensed{
+    grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.is-condensed .dashboard-topbar-brand,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.is-condensed .demo-section-strip{
+    display:none!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.is-condensed .dashboard-section-picker{
+    display:block!important;grid-column:1!important;grid-row:1!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.is-condensed .demo-public-actions{
+    grid-column:2!important;grid-row:1!important;
+  }
+}
