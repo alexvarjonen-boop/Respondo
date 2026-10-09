@@ -22,8 +22,8 @@ test('the drawer exposes all existing dashboard views in three languages', () =>
 test('navigation has escape/backdrop dismissal, focus handling and an accessible trigger', () => {
   assert.match(javascript, /aria-expanded/);
   assert.match(javascript, /aria-current/);
-  assert.match(javascript, /e\\.key === 'Escape'/);
-  assert.match(javascript, /e\\.key !== 'Tab'/);
+  assert.match(javascript, /e\.key === 'Escape'/);
+  assert.match(javascript, /e\.key !== 'Tab'/);
   assert.match(javascript, /backdrop\.addEventListener\('click'/);
   assert.match(css, /\.dashboard-drawer-layer\.is-open/);
   assert.match(css, /max-width:560px/);
