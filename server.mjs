@@ -3362,7 +3362,7 @@ function freeShippingThreshold(value) {
   ];
   for(const re of patterns){
     const match=raw.match(re);
-    if(match?.[1] && /\\d/.test(match[1])) return match[1].replace(/\\s+/g,' ').trim();
+    if(match?.[1] && /\d/.test(match[1])) return match[1].replace(/\s+/g,' ').trim();
   }
   return '';
 }
@@ -3377,7 +3377,7 @@ function shippingCostSummary(rows,lang='fi') {
     const raw=cleanKnowledgeText(row.answer);
     if(!raw) continue;
     const normalized=normalizeSearchText(raw);
-    const isFree=/free shipping|free delivery|ilmainen toimitus|maksuton toimitus|fri frakt|fri leverans/.test(normalized);
+    const isFree=/(?:free shipping|free delivery|(?:shipping|delivery) is free|ilmainen toimitus|maksuton toimitus|toimitus on ilmainen|toimitus on maksuton|fri frakt|fri leverans|(?:frakt|leverans) (?:ar )?gratis)/.test(normalized);
     const rowThreshold=isFree?freeShippingThreshold(raw):'';
     if(rowThreshold && !threshold) threshold=rowThreshold;
     const thresholdKey=rowThreshold?shippingMoneyKey(rowThreshold):'';
