@@ -24,7 +24,7 @@ test('first-party pricing answers avoid unsolicited tax commentary in all langua
     assert.ok(answerEnd > answerStart, id + ' has an answer');
     const answer = firstParty.slice(answerStart, answerEnd);
     assert.match(answer, /29,90/);
-    assert.doesNotMatch(answer, /arvonlisäver|\\balv\\b|\\bmoms\\b|\\bvat\\b|small-scale business exemption|vähäisen liiketoiminnan vuoksi/i, id);
+    assert.doesNotMatch(answer, /arvonlisäver|\balv\b|\bmoms\b|\bvat\b|small-scale business exemption|vähäisen liiketoiminnan vuoksi/i, id);
   }
 });
 
@@ -34,6 +34,6 @@ test('FAQ standard monthly and yearly prices omit tax explanations; tax question
   assert.ok(firstPriceQuestion >= 0 && taxQuestion > firstPriceQuestion);
   const ordinaryPricing = faq.slice(firstPriceQuestion, taxQuestion);
   assert.match(ordinaryPricing, /49,90/);
-  assert.doesNotMatch(ordinaryPricing, /arvonlisäver|\\balv\\b|\\bmoms\\b|\\bvat\\b|small-scale business exemption|vähäisen toiminnan vuoksi/i);
+  assert.doesNotMatch(ordinaryPricing, /arvonlisäver|\balv\b|\bmoms\b|\bvat\b|small-scale business exemption|vähäisen toiminnan vuoksi/i);
   assert.match(faq.slice(taxQuestion, taxQuestion + 800), /arvonlisäveroa/i);
 });
