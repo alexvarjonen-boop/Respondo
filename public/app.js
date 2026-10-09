@@ -2754,28 +2754,8 @@ function signup() {
   const referralCode = String(params.get('ref') || '').trim().toUpperCase();
   return `<div>
     ${nav()}
-    <main class="formpage">
-      <div class="container checkout-layout">
-        <section class="checkout-copy">
-          <div class="section-kicker">${plan === 'owner_test' ? appText('OMISTAJAN TESTITILAUS','ÄGARENS TESTABONNEMANG','OWNER TEST SUBSCRIPTION') : appText('ALOITA KOKEILU','BÖRJA PROVA RESPONDO AI','GET STARTED WITH RESPONDO AI')}</div>
-          <h1>${plan === 'owner_test'
-            ? appText('Testaa oikea maksu.','Testa en riktig betalning.','Test a real payment.')
-            : appText('Kokeile rauhassa.<br><em>Päätä vasta sen jälkeen.</em>','Prova i lugn och ro.<br><em>Bestäm dig därefter.</em>','Try it at your own pace.<br><em>Decide afterwards.</em>')}</h1>
-          <p>${plan === 'owner_test'
-            ? appText('Tämä kertakäyttöinen testitilaus veloittaa heti tasan 0,50 €. Se sulkeutuu onnistuneen maksun jälkeen eikä uusiudu seuraavassa kuussa.','Detta engångstestabonnemang debiterar exakt 0,50 € direkt. Det avslutas efter en lyckad betalning och förnyas inte nästa månad.','This one-time test subscription charges exactly €0.50 immediately. It closes after a successful payment and does not renew the following month.')
-            : appText('Luo tili ja lisää maksutapa Stripessä. Sinulta ei veloiteta mitään 3 päivän kokeilun aikana.','Skapa ett konto och lägg till en betalningsmetod säkert via Stripe. Du debiteras inget under den 3 dagar långa provperioden.','Create an account and add a payment method securely via Stripe. You will not be charged during the 3-day trial.')}</p>
-          <div class="checkout-steps">
-            <div><span>01</span><b>${appText('Luo tili','Skapa konto','Create account')}</b><small>${appText('Täytä omat ja yrityksesi perustiedot.','Fyll i dina och företagets grunduppgifter.','Enter your basic details and company information.')}</small></div>
-            <div><span>02</span><b>${appText('Lisää maksutapa Stripessä','Lägg till betalningsmetod i Stripe','Add a payment method in Stripe')}</b><small>${appText('Korttitietosi menevät suoraan Stripelle.','Dina kortuppgifter skickas direkt till Stripe.','Your card details go directly to Stripe.')}</small></div>
-            <div><span>03</span><b>${appText('Lisää yrityksesi tiedot','Lägg till företagsuppgifter','Add your business information')}</b><small>${appText('Kerro Respondolle, mitä asiakkaillesi saa vastata.','Berätta för Respondo vad den får svara dina kunder.','Tell Respondo what it may tell your customers.')}</small></div>
-          </div>
-          <div class="seller-card">
-            <span>${appText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span>
-            <b>${esc(cfg.sellerName || 'RESPONDO AI')}</b>
-            ${cfg.sellerPostalAddress?'<small>'+esc(cfg.sellerPostalAddress)+'</small>':''}
-            <small>${appText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')} · ${appText('Suomi','Finland','Finland')}</small>
-          </div>
-        </section>
+    <main class="formpage signup-page">
+      <div class="container checkout-layout signup-layout">
         <form class="formcard premium-form" id="signup">
           <div class="form-head"><span>${appText('LUO TILI','SKAPA KONTO','CREATE ACCOUNT')}</span><b>${plan === 'owner_test' ? appText('0,50 € · veloitus heti','0,50 € · debiteras direkt','€0.50 · charged now') : appText('3 päivää ilmaiseksi','3 dagar gratis','3 days free')}</b></div>
           ${socialAuthButtons('signup')}
