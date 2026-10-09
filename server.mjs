@@ -1379,9 +1379,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-buy',
       answer:answer(
-        'Voit ottaa Respondon käyttöön suoraan verkkosivulta painamalla “Kokeile ilmaiseksi”. Kaikissa paketeissa on 3 päivän ilmainen kokeilu. Starter maksaa 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Vuositilauksissa kuukausihinta on sama ilman vuosialennusta. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Du kan börja använda Respondo direkt via webbplatsen genom att välja “Prova gratis”. Alla paket har 3 dagars gratis provperiod. Starter kostar 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Årsabonnemang har samma månadskostnad utan årsrabatt. Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'You can start using Respondo directly from the website by choosing “Try for free”. Every tier has a 3-day free trial. Starter is €29.90/month, Advanced €39.90/month, and Business €49.90/month. Annual billing has the same monthly rate without a discount. No VAT is charged due to the small-scale business exemption.'
+        'Voit ottaa Respondon käyttöön suoraan verkkosivulta painamalla “Kokeile ilmaiseksi”. Kaikissa paketeissa on 3 päivän ilmainen kokeilu. Starter maksaa 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Vuositilauksissa kuukausihinta on sama ilman vuosialennusta.',
+        'Du kan börja använda Respondo direkt via webbplatsen genom att välja “Prova gratis”. Alla paket har 3 dagars gratis provperiod. Starter kostar 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Årsabonnemang har samma månadskostnad utan årsrabatt.',
+        'You can start using Respondo directly from the website by choosing “Try for free”. Every tier has a 3-day free trial. Starter is €29.90/month, Advanced €39.90/month, and Business €49.90/month. Annual billing has the same monthly rate without a discount.'
       )
     };
   }
@@ -1438,9 +1438,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-annual-pricing',
       answer:answer(
-        'Vuositilaukset: Starter 358,80 €/vuosi (29,90 €/kk), Advanced 478,80 €/vuosi (39,90 €/kk) ja Business 598,80 €/vuosi (49,90 €/kk). Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Årsabonnemangen kostar: Starter 358,80 €/år (29,90 €/månad), Advanced 478,80 €/år (39,90 €/månad) och Business 598,80 €/år (49,90 €/månad). Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'Annual billing is: Starter €358.80/year (€29.90/month), Advanced €478.80/year (€39.90/month), and Business €598.80/year (€49.90/month). No VAT is charged due to the small-scale business exemption.'
+        'Vuositilaukset: Starter 358,80 €/vuosi (29,90 €/kk), Advanced 478,80 €/vuosi (39,90 €/kk) ja Business 598,80 €/vuosi (49,90 €/kk).',
+        'Årsabonnemangen kostar: Starter 358,80 €/år (29,90 €/månad), Advanced 478,80 €/år (39,90 €/månad) och Business 598,80 €/år (49,90 €/månad).',
+        'Annual billing is: Starter €358.80/year (€29.90/month), Advanced €478.80/year (€39.90/month), and Business €598.80/year (€49.90/month).'
       )
     };
   }
@@ -1451,9 +1451,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-monthly-pricing',
       answer:answer(
-        'Kuukausihinnat ovat Starter 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Månadspriserna är Starter 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'Monthly pricing is Starter €29.90/month, Advanced €39.90/month, and Business €49.90/month. No VAT is charged due to the small-scale business exemption.'
+        'Kuukausihinnat ovat Starter 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk.',
+        'Månadspriserna är Starter 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad.',
+        'Monthly pricing is Starter €29.90/month, Advanced €39.90/month, and Business €49.90/month.'
       )
     };
   }
@@ -1496,9 +1496,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-pricing',
       answer:answer(
-        'Respondo Starter maksaa 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Vuositilauksissa laskutetaan 12 kuukauden hinta kerralla, ilman vuosialennusta. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Respondo Starter kostar 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Årsabonnemang faktureras för 12 månader utan årsrabatt. Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'Respondo Starter is €29.90/month, Advanced €39.90/month, and Business €49.90/month. Annual plans are billed for 12 months without an annual discount. No VAT is charged due to the small-scale business exemption.'
+        'Respondo Starter maksaa 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Vuositilauksissa laskutetaan 12 kuukauden hinta kerralla, ilman vuosialennusta.',
+        'Respondo Starter kostar 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Årsabonnemang faktureras för 12 månader utan årsrabatt.',
+        'Respondo Starter is €29.90/month, Advanced €39.90/month, and Business €49.90/month. Annual plans are billed for 12 months without an annual discount.'
       )
     };
   }
