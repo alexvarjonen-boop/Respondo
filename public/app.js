@@ -3479,14 +3479,28 @@ async function dashboard(options = {}) {
 
       ${!isDemo ? `
       <nav class="ios-workspace-tabs" data-premium-tabbar="1" aria-label="${esc(appText('Hallintapaneelin osiot','Arbetsytans avsnitt','Workspace sections'))}">
-        <button type="button" class="active" data-dashboard-nav="overview" aria-current="page" aria-label="${esc(appText('Yleiskatsaus','Översikt','Overview'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('overview')}</span><span class="premium-mobile-nav-label">${appText('Yleiskatsaus','Översikt','Overview')}</span></button>
-        <button type="button" data-dashboard-nav="setup" aria-label="${esc(appText('Yritys & botti','Företag & bot','Business & bot'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('setup')}</span><span class="premium-mobile-nav-label">${appText('Yritys & botti','Företag & bot','Business & bot')}</span></button>
+        <button type="button" class="active" data-dashboard-nav="overview" aria-current="page" aria-label="${esc(appText('Yleiskatsaus','Översikt','Overview'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('overview')}</span><span class="premium-mobile-nav-label">${appText('Etusivu','Start','Home')}</span></button>
+        <button type="button" data-dashboard-nav="setup" aria-label="${esc(appText('Yritys & botti','Företag & bot','Business & bot'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('setup')}</span><span class="premium-mobile-nav-label">${appText('Botti','Bott','Bot')}</span></button>
         <button type="button" data-dashboard-nav="answers" aria-label="${esc(appText('Vastaukset','Svar','Answers'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('answers')}</span><span class="premium-mobile-nav-label">${appText('Vastaukset','Svar','Answers')}</span></button>
         <button type="button" data-dashboard-nav="customers" aria-label="${esc(appText('Asiakkaat','Kunder','Customers'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('customers')}</span><span class="premium-mobile-nav-label">${appText('Asiakkaat','Kunder','Customers')}</span></button>
         <button type="button" data-dashboard-nav="automation" aria-label="${esc(appText('Toiminnot','Åtgärder','Actions'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('automation')}</span><span class="premium-mobile-nav-label">${appText('Toiminnot','Åtgärder','Actions')}</span></button>
         <button type="button" data-dashboard-nav="install" aria-label="${esc(appText('Asennus','Installation','Installation'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('install')}</span><span class="premium-mobile-nav-label">${appText('Asennus','Installation','Installation')}</span></button>
         <button type="button" data-dashboard-nav="account" aria-label="${esc(appText('Asetukset','Inställningar','Settings'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('account')}</span><span class="premium-mobile-nav-label">${appText('Asetukset','Inställningar','Settings')}</span></button>
+        <button type="button" class="premium-mobile-more-button" id="premiumMobileMoreButton" aria-haspopup="dialog" aria-controls="premiumMobileMoreSheet" aria-expanded="false" aria-label="${esc(appText('Lisää osioita','Fler avsnitt','More sections'))}">
+          <span class="premium-mobile-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></span>
+          <span class="premium-mobile-nav-label">${appText('Lisää','Mer','More')}</span>
+        </button>
       </nav>
+      <div id="premiumMobileMoreSheet" class="premium-mobile-more-layer" hidden>
+        <button class="premium-mobile-more-backdrop" type="button" data-more-backdrop aria-label="${esc(appText('Sulje valikko','Stäng menyn','Close menu'))}"></button>
+        <section class="premium-mobile-more-card" role="dialog" aria-modal="true" aria-labelledby="premiumMobileMoreTitle">
+          <header><h2 id="premiumMobileMoreTitle">${appText('Muut osiot','Andra avsnitt','Other sections')}</h2><button type="button" id="premiumMobileMoreClose" aria-label="${esc(appText('Sulje','Stäng','Close'))}">×</button></header>
+          <nav aria-label="${esc(appText('Muut hallintapaneelin osiot','Andra vyer','Other workspace sections'))}">
+            ${premiumNav.filter(([id]) => ['automation','install','account'].includes(id)).map(([id,label]) =>
+              `<button type="button" data-dashboard-nav="${id}"><span aria-hidden="true">${premiumIcon(id)}</span><b>${label}</b><em aria-hidden="true">›</em></button>`).join('')}
+          </nav>
+        </section>
+      </div>
       ` : ''}
 
       ${!isDemo ? `
@@ -5473,6 +5487,29 @@ async function route() {
   }
 
   if (path === '/app') {
+    const premiumMoreButton = $('#premiumMobileMoreButton');
+    const premiumMoreSheet = $('#premiumMobileMoreSheet');
+    const closePremiumMore = (restoreFocus=false) => {
+      if (!premiumMoreSheet) return;
+      const wasVisible = !premiumMoreSheet.hidden;
+      premiumMoreSheet.hidden=true;
+      premiumMoreButton?.setAttribute('aria-expanded','false');
+      document.body.classList.remove('premium-more-open');
+      if (wasVisible && restoreFocus) premiumMoreButton?.focus();
+    };
+    premiumMoreButton?.addEventListener('click', () => {
+      const opening=Boolean(premiumMoreSheet?.hidden);
+      if (!premiumMoreSheet) return;
+      premiumMoreSheet.hidden=!opening;
+      premiumMoreButton.setAttribute('aria-expanded', String(opening));
+      document.body.classList.toggle('premium-more-open',opening);
+      if(opening) premiumMoreSheet.querySelector('[data-dashboard-nav]')?.focus();
+    });
+    $('#premiumMobileMoreClose')?.addEventListener('click',()=>closePremiumMore(true));
+    premiumMoreSheet?.querySelector('[data-more-backdrop]')?.addEventListener('click',()=>closePremiumMore(true));
+    premiumMoreSheet?.querySelectorAll('[data-dashboard-nav]').forEach(button=>button.addEventListener('click',()=>closePremiumMore()));
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!premiumMoreSheet?.hidden)closePremiumMore(true);});
+    const syncPremiumMoreActive=(view)=>premiumMoreButton?.classList.toggle('active',['automation','install','account'].includes(view));
     const dashboardSelect = $('#dashboardSectionSelect');
     const workspaceSwitcher = $('#workspaceSwitcher');
     const workspaceModal = $('#workspaceModal');
@@ -5717,6 +5754,7 @@ async function route() {
         section.classList.toggle('dashboard-view-hidden', section.dataset.dashboardView !== next);
       });
       positionPremiumPreview(next);
+      syncPremiumMoreActive(next);
       if (dashboardSelect) dashboardSelect.value = next;
       document.querySelectorAll('[data-dashboard-nav]').forEach((button) => {
         const active = button.dataset.dashboardNav === next;
