@@ -3478,7 +3478,7 @@ async function dashboard(options = {}) {
       </header>
 
       ${!isDemo ? `
-      <nav class="ios-workspace-tabs premium-mobile-tabbar" aria-label="${esc(appText('Hallintapaneelin osiot','Arbetsytans avsnitt','Workspace sections'))}">
+      <nav class="ios-workspace-tabs" data-premium-tabbar="1" aria-label="${esc(appText('Hallintapaneelin osiot','Arbetsytans avsnitt','Workspace sections'))}">
         <button type="button" class="active" data-dashboard-nav="overview" aria-current="page" aria-label="${esc(appText('Yleiskatsaus','Översikt','Overview'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('overview')}</span><span class="premium-mobile-nav-label">${appText('Yleiskatsaus','Översikt','Overview')}</span></button>
         <button type="button" data-dashboard-nav="setup" aria-label="${esc(appText('Yritys & botti','Företag & bot','Business & bot'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('setup')}</span><span class="premium-mobile-nav-label">${appText('Yritys & botti','Företag & bot','Business & bot')}</span></button>
         <button type="button" data-dashboard-nav="answers" aria-label="${esc(appText('Vastaukset','Svar','Answers'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('answers')}</span><span class="premium-mobile-nav-label">${appText('Vastaukset','Svar','Answers')}</span></button>

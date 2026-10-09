@@ -5,7 +5,7 @@ const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 const css=readFileSync(new URL('../public/premium-mobile-finish.css',import.meta.url),'utf8');
 test('all seven actual workspace destinations remain present in mobile tab bar with localized accessible names',()=>{
- const nav=app.slice(app.indexOf('<nav class="ios-workspace-tabs premium-mobile-tabbar"'),app.indexOf('</nav>',app.indexOf('<nav class="ios-workspace-tabs premium-mobile-tabbar"')));
+ const nav=app.slice(app.indexOf('<nav class="ios-workspace-tabs" data-premium-tabbar="1"'),app.indexOf('</nav>',app.indexOf('<nav class="ios-workspace-tabs" data-premium-tabbar="1"')));
  for(const id of ['overview','setup','answers','customers','automation','install','account']){
    assert.match(nav,new RegExp('data-dashboard-nav="'+id+'"'));
    assert.match(nav,new RegExp("premiumIcon\\('"+id+"'\\)"));

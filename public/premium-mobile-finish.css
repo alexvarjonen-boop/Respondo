@@ -5,7 +5,7 @@
  */
 @media screen and (max-width:760px) {
   /* Show real content above a compact native-style bottom navigation on login. */
-  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .ios-workspace-tabs.premium-mobile-tabbar{
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .ios-workspace-tabs[data-premium-tabbar]{
     display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;
     gap:1px!important;align-items:stretch!important;
     position:fixed!important;
@@ -23,7 +23,7 @@
     box-sizing:border-box!important;
     scrollbar-width:none!important;
   }
-  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .ios-workspace-tabs.premium-mobile-tabbar button{
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .ios-workspace-tabs[data-premium-tabbar] button{
     display:flex!important;flex-direction:column!important;gap:4px!important;
     justify-content:center!important;align-items:center!important;
     width:100%!important;min-width:0!important;max-width:100%!important;
@@ -34,7 +34,7 @@
     white-space:normal!important;text-align:center!important;
     font-weight:680!important;
   }
-  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .ios-workspace-tabs.premium-mobile-tabbar button.active{
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .ios-workspace-tabs[data-premium-tabbar] button.active{
     background:#edf2fc!important;border-color:#e6ecfa!important;color:#2a4c91!important;
   }
   #app .dashboard-premium-shell:not(.demo-dashboard-shell) .premium-mobile-nav-icon{
@@ -103,7 +103,7 @@
 
 /* On extremely small iPhones, retain all 7 tabs instead of clipping "Settings". */
 @media screen and (max-width:355px) {
-  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .ios-workspace-tabs.premium-mobile-tabbar{
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .ios-workspace-tabs[data-premium-tabbar]{
     padding-left:3px!important;padding-right:3px!important;gap:0!important;
   }
   #app .dashboard-premium-shell:not(.demo-dashboard-shell) .premium-mobile-nav-icon svg{
