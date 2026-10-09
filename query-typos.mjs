@@ -179,7 +179,7 @@ function correctWord(word,lang){
   const limit=1;
   let candidate='',best=limit+1,tie=false;
   for(const target of vocab){
-    if(Math.abs(target.length-key.length)>limit||target.slice(0,3)!==key.slice(0,3)||target.slice(-2)!==key.slice(-2))continue;
+    if(Math.abs(target.length-key.length)>limit||target.slice(0,3)!==key.slice(0,3)||target.slice(-3)!==key.slice(-3))continue;
     const score=distance(key,target,limit);
     if(score<best){best=score;candidate=target;tie=false;}
     else if(score===best&&score<=limit&&target!==candidate)tie=true;
