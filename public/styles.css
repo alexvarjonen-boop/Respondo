@@ -9102,3 +9102,7 @@ body.deletion-modal-open{overflow:hidden!important}
   #app .formpage.signup-page{padding:14px 0 48px!important}
   #app .signup-page .signup-layout{width:calc(100% - 24px)!important}
 }
+
+/* Keep seller identity accessible below signup while opening with the form. */
+#app .signup-page .signup-seller-note{margin:14px auto 0;text-align:center;color:#59616e;line-height:1.6;max-width:100%}
+#app .signup-page .signup-seller-note small{font-size:12px;line-height:1.6}

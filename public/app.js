@@ -2802,6 +2802,9 @@ function signup() {
           <div class="form-security"><span>◈</span> ${appText('Korttitiedot käsittelee Stripe. Respondo ei näe eikä tallenna korttinumeroasi.','Kortuppgifterna behandlas av Stripe. Respondo ser eller lagrar inte ditt kortnummer.','Card details are processed by Stripe. Respondo does not see or store your card number.')}</div>
           <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : ''}</div>
         </form>
+        <div class="signup-seller-note">
+          <small>${appText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')} · ${esc(cfg.sellerName || 'Respondo AI')} · ${appText('Suomi','Finland','Finland')}</small>
+        </div>
       </div>
     </main>
     ${footer()}
