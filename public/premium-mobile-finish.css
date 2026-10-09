@@ -1,0 +1,115 @@
+/*
+ * Respondo Mobile Workspace — navigation and glass finish.
+ * Intentionally loaded AFTER the large legacy stylesheets.
+ * Applies only to the actual workspace /app and public demo /assistant.
+ */
+@media screen and (max-width:760px) {
+  /* Show real content above a compact native-style bottom navigation on login. */
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .ios-workspace-tabs.premium-mobile-tabbar{
+    display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;
+    gap:1px!important;align-items:stretch!important;
+    position:fixed!important;
+    inset:auto max(8px,env(safe-area-inset-right)) max(7px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))!important;
+    width:auto!important;min-width:0!important;max-width:none!important;
+    height:68px!important;min-height:68px!important;
+    margin:0!important;padding:7px 6px!important;order:0!important;
+    overflow:visible!important;
+    z-index:2147482500!important;
+    border:1px solid rgba(201,211,228,.87)!important;
+    border-radius:21px!important;background:rgba(255,255,255,.96)!important;
+    -webkit-backdrop-filter:blur(23px) saturate(170%)!important;
+    backdrop-filter:blur(23px) saturate(170%)!important;
+    box-shadow:0 8px 40px rgba(27,46,82,.16),0 1px 2px rgba(18,37,76,.06)!important;
+    box-sizing:border-box!important;
+    scrollbar-width:none!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .ios-workspace-tabs.premium-mobile-tabbar button{
+    display:flex!important;flex-direction:column!important;gap:4px!important;
+    justify-content:center!important;align-items:center!important;
+    width:100%!important;min-width:0!important;max-width:100%!important;
+    min-height:53px!important;height:53px!important;flex:none!important;
+    margin:0!important;padding:5px 1px 4px!important;border-radius:14px!important;
+    background:transparent!important;border:1px solid transparent!important;
+    color:#6b7891!important;box-shadow:none!important;
+    white-space:normal!important;text-align:center!important;
+    font-weight:680!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .ios-workspace-tabs.premium-mobile-tabbar button.active{
+    background:#edf2fc!important;border-color:#e6ecfa!important;color:#2a4c91!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .premium-mobile-nav-icon{
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    width:23px!important;height:23px!important;flex:0 0 23px!important;
+    color:inherit!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .premium-mobile-nav-icon svg{
+    display:block!important;width:20px!important;height:20px!important;
+    stroke:currentColor!important;flex:none!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .premium-mobile-nav-label{
+    display:block!important;width:100%!important;overflow:hidden!important;text-overflow:clip!important;
+    line-height:1.05!important;font-size:clamp(7px,2.12vw,9.2px)!important;
+    letter-spacing:-.027em!important;
+    word-break:normal!important;overflow-wrap:normal!important;
+    white-space:nowrap!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-simple-main{
+    padding-bottom:calc(96px + env(safe-area-inset-bottom))!important;
+  }
+
+  /* The live chat is the hero and not a tiny form beneath zero-filled figures. */
+  #app .dashboard-premium-shell .dashboard-premium-experience{
+    padding:0!important;
+    isolation:isolate;
+  }
+  #app .dashboard-premium-shell .premium-chat-host .live-preview-panel{
+    border-radius:24px!important;
+    border:1px solid #e7edf6!important;
+    background:#fff!important;
+    box-shadow:0 24px 56px rgba(41,66,110,.11),0 4px 16px rgba(45,67,99,.045)!important;
+  }
+  #app .dashboard-premium-shell .preview-device{
+    background:linear-gradient(160deg,#fff 0%,#f8fafe 100%)!important;
+  }
+  #app .dashboard-premium-shell .preview-chat{
+    background:linear-gradient(145deg,#fcfdff 0%,#f2f5fb 100%)!important;
+  }
+  #app .dashboard-premium-shell .preview-bubble{
+    border-radius:19px!important;
+    padding:13px 15px!important;
+    font-size:14px!important;line-height:1.56!important;
+  }
+  #app .dashboard-premium-shell .preview-form input:focus{
+    outline:2px solid #a5bcf2!important;
+    outline-offset:1px!important;
+  }
+
+  /* The compact header can be read at a glance without crowding the chat. */
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-head{
+    padding-top:0!important;margin-bottom:14px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head h1{
+    font-size:clamp(30px,8vw,38px)!important;
+    text-wrap:balance!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head p{
+    font-size:12px!important;line-height:1.5!important;
+  }
+  #app .dashboard-premium-shell .premium-right-rail .premium-info-card{
+    border-radius:20px!important;
+    box-shadow:0 14px 34px rgba(34,53,89,.035)!important;
+  }
+}
+
+/* On extremely small iPhones, retain all 7 tabs instead of clipping "Settings". */
+@media screen and (max-width:355px) {
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .ios-workspace-tabs.premium-mobile-tabbar{
+    padding-left:3px!important;padding-right:3px!important;gap:0!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .premium-mobile-nav-icon svg{
+    width:18px!important;height:18px!important;
+  }
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .premium-mobile-nav-label{
+    font-size:7px!important;letter-spacing:-.045em!important;
+  }
+}

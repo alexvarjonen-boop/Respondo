@@ -3478,14 +3478,14 @@ async function dashboard(options = {}) {
       </header>
 
       ${!isDemo ? `
-      <nav class="ios-workspace-tabs" aria-label="${esc(appText('Hallintapaneelin osiot','Arbetsytans avsnitt','Workspace sections'))}">
-        <button type="button" class="active" data-dashboard-nav="overview" aria-current="page">${appText('Yleiskatsaus','Översikt','Overview')}</button>
-        <button type="button" data-dashboard-nav="setup">${appText('Yritys & botti','Företag & bot','Business & bot')}</button>
-        <button type="button" data-dashboard-nav="answers">${appText('Vastaukset','Svar','Answers')}</button>
-        <button type="button" data-dashboard-nav="customers">${appText('Asiakkaat','Kunder','Customers')}</button>
-        <button type="button" data-dashboard-nav="automation">${appText('Toiminnot','Åtgärder','Actions')}</button>
-        <button type="button" data-dashboard-nav="install">${appText('Asennus','Installation','Installation')}</button>
-        <button type="button" data-dashboard-nav="account">${appText('Asetukset','Inställningar','Settings')}</button>
+      <nav class="ios-workspace-tabs premium-mobile-tabbar" aria-label="${esc(appText('Hallintapaneelin osiot','Arbetsytans avsnitt','Workspace sections'))}">
+        <button type="button" class="active" data-dashboard-nav="overview" aria-current="page" aria-label="${esc(appText('Yleiskatsaus','Översikt','Overview'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('overview')}</span><span class="premium-mobile-nav-label">${appText('Yleiskatsaus','Översikt','Overview')}</span></button>
+        <button type="button" data-dashboard-nav="setup" aria-label="${esc(appText('Yritys & botti','Företag & bot','Business & bot'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('setup')}</span><span class="premium-mobile-nav-label">${appText('Yritys & botti','Företag & bot','Business & bot')}</span></button>
+        <button type="button" data-dashboard-nav="answers" aria-label="${esc(appText('Vastaukset','Svar','Answers'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('answers')}</span><span class="premium-mobile-nav-label">${appText('Vastaukset','Svar','Answers')}</span></button>
+        <button type="button" data-dashboard-nav="customers" aria-label="${esc(appText('Asiakkaat','Kunder','Customers'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('customers')}</span><span class="premium-mobile-nav-label">${appText('Asiakkaat','Kunder','Customers')}</span></button>
+        <button type="button" data-dashboard-nav="automation" aria-label="${esc(appText('Toiminnot','Åtgärder','Actions'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('automation')}</span><span class="premium-mobile-nav-label">${appText('Toiminnot','Åtgärder','Actions')}</span></button>
+        <button type="button" data-dashboard-nav="install" aria-label="${esc(appText('Asennus','Installation','Installation'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('install')}</span><span class="premium-mobile-nav-label">${appText('Asennus','Installation','Installation')}</span></button>
+        <button type="button" data-dashboard-nav="account" aria-label="${esc(appText('Asetukset','Inställningar','Settings'))}"><span class="premium-mobile-nav-icon" aria-hidden="true">${premiumIcon('account')}</span><span class="premium-mobile-nav-label">${appText('Asetukset','Inställningar','Settings')}</span></button>
       </nav>
       ` : ''}
 
