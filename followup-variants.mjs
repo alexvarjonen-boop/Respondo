@@ -122,11 +122,13 @@ const ABOVE=/(?:yli|ylitt[aä]|suuremm|above|over|exceed|greater than|[oö]ver|[
 export function detectContextualFollowup(message, history=[]){
   if(!Array.isArray(history)||!history.some(turn=>String(turn?.question||turn?.user||'').trim()))return null;
   const raw=String(message||'').trim();
-  if(!raw||raw.length>240||!FOLLOWUP_START.test(raw))return null;
+  const normalized=normalizeIntentPhrase(raw);
+  // JS word boundaries do not treat Finnish/Swedish accented characters as
+  // word characters, so match starters after Unicode normalization.
+  if(!raw||raw.length>240||!FOLLOWUP_START.test(normalized))return null;
   if(!runtimeMap){
     runtimeMap=new Map(buildFollowupVariantSeed().map(item=>[item.language+'|'+item.normalized,item.kind]));
   }
-  const normalized=normalizeIntentPhrase(raw);
   for(const language of LANGUAGES){
     const kind=runtimeMap.get(language+'|'+normalized);
     if(kind)return {kind,language,normalized,matched:'lexicon'};
