@@ -3354,13 +3354,15 @@ function shippingMoneyKey(value) {
 
 function freeShippingThreshold(value) {
   const raw=cleanKnowledgeText(value);
+  const price='([€$£]?\\s*\\d+(?:[.,]\\d+)?\\s*(?:€|EUR|USD|SEK|NOK|DKK|kr|\\$|£)?)';
+  const free='(?:free\\s+(?:shipping|delivery)|(?:shipping|delivery)\\s+(?:is\\s+)?free|ilmainen\\s+toimitus|maksuton\\s+toimitus|(?:toimitus|postitus)\\s+on\\s+(?:ilmainen|maksuton)|fri\\s+(?:frakt|leverans)|(?:frakt|leverans)\\s+(?:(?:är|ar)\\s+)?gratis)';
   const patterns=[
-    /(?:free\s+(?:shipping|delivery)|ilmainen\s+toimitus|maksuton\s+toimitus|fri\s+(?:frakt|leverans))[\s\S]{0,90}?([€$£]?\s*\d+(?:[.,]\d+)?\s*(?:€|EUR|USD|SEK|NOK|DKK|kr|\$|£)?)/i,
-    /([€$£]?\s*\d+(?:[.,]\d+)?\s*(?:€|EUR|USD|SEK|NOK|DKK|kr|\$|£)?)[\s\S]{0,55}?(?:free\s+(?:shipping|delivery)|ilmainen\s+toimitus|maksuton\s+toimitus|fri\s+(?:frakt|leverans))/i,
+    new RegExp(free+'[\\s\\S]{0,95}?'+price,'i'),
+    new RegExp(price+'[\\s\\S]{0,70}?'+free,'i'),
   ];
   for(const re of patterns){
     const match=raw.match(re);
-    if(match?.[1] && /\d/.test(match[1])) return match[1].replace(/\s+/g,' ').trim();
+    if(match?.[1] && /\\d/.test(match[1])) return match[1].replace(/\\s+/g,' ').trim();
   }
   return '';
 }
@@ -3423,6 +3425,74 @@ function shippingCostSummary(rows,lang='fi') {
 function localizedShippingCostFact(value,lang='fi') {
   const summary=shippingCostSummary([{answer:value}],lang);
   return summary?.answer || '';
+}
+
+
+// When a shopper asks "Entä alle?" after a free-shipping threshold, keep the
+// shipping-price topic and answer only with approved, merchant-specific facts.
+// Never retrieve a generic delivery-time/marketing sentence for this ellipsis.
+function directShippingBelowThresholdFollowup(rows,message,history=[],lang='fi') {
+  const q=normalizeSearchText(message).replace(/[?.!]+$/,'').trim();
+  const isBelow=
+    /^(?:(?:enta|entapa|entas|no enta|ja enta|mut enta|mutta enta|jos|ent[aä] jos|paljonko|mita maksaa|entako|mika hinta)(?:\s+\w+){0,5}\s+)?(?:sen\s+)?(?:alle|alapuolella|alle\s+\d+(?:[.,]\d+)?\s*(?:€|eur)?)(?:\s+\w+){0,4}$/.test(q) ||
+    /^(?:(?:what about|and|how about|what if|what does it cost|if|for orders)\s+)?(?:orders?\s+)?(?:under|below)\b/.test(q) ||
+    /^(?:(?:och|men|vad galler|hur mycket|om|for bestallningar)\s+)?(?:bestallningar\s+)?under\b/.test(q);
+  if (!isBelow) return null;
+  const prior=meaningfulConversationTurn(history);
+  if(!prior) return null;
+  const previousText=normalizeSearchText(prior.question+' '+prior.answer);
+  // This must be a follow-up to shipping charges/free-shipping policy, not
+  // a random earlier product price, discount or an unrelated word "below".
+  const previousDelivery=/toimit|postikulu|postitus|shipping|delivery|postage|frakt|leverans/.test(previousText);
+  const previousPricing=/ilmainen|maksuton|free|gratis|fri\s+frakt|hinta|maksaa|cost|price|pris|kostar|\b(?:over|above|yli|under|below)\s*\d/.test(previousText);
+  if (!previousDelivery || !previousPricing) return null;
+  const shippingRows=(rows||[]).filter(usableWebsiteRow)
+    .filter(row=>knowledgeTopic(String(row.category||'')+' '+String(row.title||'')+' '+String(row.keywords||''))==='delivery');
+  const relevant=shippingRows.filter(row=>freeShippingThreshold(row.answer)||shippingMoneyValues(row.answer).length);
+  const thresholdRow=relevant.find(row=>freeShippingThreshold(row.answer));
+  const threshold=thresholdRow?freeShippingThreshold(thresholdRow.answer):'';
+  if(!threshold){
+    // Never infer a free-shipping threshold from the bot's previous answer if
+    // the business's approved source information does not contain that fact.
+    const answer=lang==='en'
+      ? 'I could not find a verified shipping price for orders below the free-shipping threshold in the company information.'
+      : lang==='sv'
+        ? 'Jag hittar inget bekräftat fraktpris för beställningar under gränsen för fri frakt i företagets uppgifter.'
+        : 'Yrityksen tiedoista ei löydy vahvistettua toimitushintaa ilmaisen toimituksen rajan alittaville tilauksille.';
+    return {answer,handoff:false,confidence:0.85,intent:'Toimitus',sourceIds:[],selected:[]};
+  }
+  const limitKey=shippingMoneyKey(threshold);
+  const prices=[];
+  const selected=[thresholdRow];
+  for(const row of shippingRows){
+    let hasPaid=false;
+    for(const amount of shippingMoneyValues(row.answer)){
+      if(shippingMoneyKey(amount)===limitKey) continue;
+      const rowFree=freeShippingThreshold(row.answer);
+      if(rowFree && shippingMoneyKey(amount)===shippingMoneyKey(rowFree)) continue;
+      if(!prices.some(item=>shippingMoneyKey(item)===shippingMoneyKey(amount))) prices.push(amount);
+      hasPaid=true;
+    }
+    if(hasPaid && !selected.includes(row)) selected.push(row);
+  }
+  const language=['fi','sv','en'].includes(String(lang).toLowerCase())?String(lang).toLowerCase():'fi';
+  let answer;
+  if(prices.length){
+    const list=prices.slice(0,6).join(', ');
+    answer=language==='en'
+      ? 'The listed shipping prices for orders below '+threshold+' are '+list+'. Shipping is free for orders over '+threshold+'.'
+      :language==='sv'
+        ? 'De angivna fraktpriserna för beställningar under '+threshold+' är '+list+'. Frakten är gratis för beställningar över '+threshold+'.'
+        : 'Ilmoitetut toimitushinnat alle '+threshold+' tilauksille ovat '+list+'. Yli '+threshold+' tilauksille toimitus on ilmainen.';
+  } else {
+    answer=language==='en'
+      ? 'Shipping is free for orders over '+threshold+', but the shipping price for orders below '+threshold+' is not specified in the company information.'
+      :language==='sv'
+        ? 'Frakten är gratis för beställningar över '+threshold+', men priset för beställningar under '+threshold+' anges inte i företagets uppgifter.'
+        : 'Toimitus on ilmainen yli '+threshold+' tilauksille, mutta alle '+threshold+' tilausten toimitushintaa ei ole ilmoitettu yrityksen tiedoissa.';
+  }
+  return {answer,handoff:false,confidence:0.98,intent:'Toimitus',
+    sourceIds:selected.map(row=>row.id).filter(Boolean),selected};
 }
 
 async function directShippingCostAnswer(rows,message,lang='fi') {
@@ -5915,6 +5985,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // Fulfilment/policy questions must outrank generic price and service logic.
   // Otherwise a shipping-price question can return only one arbitrary money row
   // instead of the complete delivery-price summary.
+  const shippingBelowResult=directShippingBelowThresholdFollowup(rows,cleanMessage,history,responseLang);
+  if(shippingBelowResult) return shippingBelowResult;
+
   const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
   if(shippingCostResult) return shippingCostResult;
 
@@ -6110,7 +6183,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const sourceLanguage = detectConversationLanguage(finalAnswer, 'fi');
   const localizedAnswer = sourceLanguage === responseLang ? finalAnswer : await forceAnswerLanguage(finalAnswer, responseLang);
   if (localizedAnswer) finalAnswer = cleanKnowledgeText(localizedAnswer);
-  else if (responseLang !== 'fi') return {answer:'',handoff:true,confidence:0.2,intent,sourceIds:[],selected};
+  else if (sourceLanguage !== responseLang) return {answer:'',handoff:true,confidence:0.2,intent,sourceIds:[],selected};
   return {
     answer: finalAnswer,
     handoff: false,
