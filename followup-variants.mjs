@@ -115,7 +115,7 @@ export function buildFollowupVariantSeed(limit=FOLLOWUP_VARIANT_TARGET){
   return result;
 }
 
-const FOLLOWUP_START=/^(?:ent[aä](?:s|p[aä])?|no ent[aä]|ja ent[aä]|mutta ent[aä]|mites|miten olisi|mit[aä] sitten|haluaisin|voitko|kertoisitko|voisitko|kiinnostaisi|what about|and what about|how about|and how about|but what about|ok but what about|so what about|could you|can you|i would|i am|another question|and then what about|och|och d[aå]|men|hur [aä]r det med|vad g[aä]ller|vad s[aä]ger|kan ni|kan du|jag undrar|jag skulle|en fr[aå]ga|dessutom)\b/i;
+const FOLLOWUP_START=/^(?:ent[aä](?:s|p[aä])?|no ent[aä]|ja ent[aä]|mutta ent[aä]|mites|miten olisi|mit[aä] sitten|haluaisin|voitko|kertoisitko|voisitko|kiinnostaisi|what about|and what about|how about|and how about|but what about|ok but what about|so what about|could you|can you|i would|i am|another question|and then what about|och|och d[aå]|men|hur [aä]r det med|vad g[aä]ller|vad s[aä]ger|kan ni|kan du|jag undrar|jag skulle|en fr[aå]ga|dessutom)(?=\s|$)/i;
 const BELOW=/(?:alle|alapuole|pienemm|below|under|less than|lägre|under gr[aä]ns|mindre [aä]n)/i;
 const ABOVE=/(?:yli|ylitt[aä]|suuremm|above|over|exceed|greater than|[oö]ver|[oö]verskrid|mer [aä]n)/i;
 
