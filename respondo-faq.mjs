@@ -104,21 +104,21 @@ const FAQ = [
         "Mitä Respondo maksaa kuukaudessa?",
         "Paljonko kuukausitilaus maksaa?"
       ],
-      "a": "Kuukausihinnat ovat Starter 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi."
+      "a": "Kuukausihinnat ovat Starter 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk."
     },
     "sv": {
       "q": [
         "Vad kostar Respondo per månad?",
         "Vad kostar månadsabonnemanget?"
       ],
-      "a": "Månadspriserna är Starter 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad. Ingen moms debiteras på grund av verksamhet i liten skala."
+      "a": "Månadspriserna är Starter 29,90 €/månad, Advanced 39,90 €/månad och Business 49,90 €/månad."
     },
     "en": {
       "q": [
         "How much does Respondo cost per month?",
         "What is the monthly plan price?"
       ],
-      "a": "Monthly pricing is Starter €29.90/month, Advanced €39.90/month, and Business €49.90/month. No VAT is charged due to the small-scale business exemption."
+      "a": "Monthly pricing is Starter €29.90/month, Advanced €39.90/month, and Business €49.90/month."
     }
   },
   {
@@ -128,21 +128,21 @@ const FAQ = [
         "Mitä vuositilaus maksaa?",
         "Paljonko vuosipaketti maksaa?"
       ],
-      "a": "Vuositilaukset: Starter 29,90 €/kk (358,80 €/vuosi), Advanced 39,90 €/kk (478,80 €/vuosi) ja Business 49,90 €/kk (598,80 €/vuosi). Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi."
+      "a": "Vuositilaukset: Starter 29,90 €/kk (358,80 €/vuosi), Advanced 39,90 €/kk (478,80 €/vuosi) ja Business 49,90 €/kk (598,80 €/vuosi)."
     },
     "sv": {
       "q": [
         "Vad kostar årsabonnemanget?",
         "Hur mycket kostar årsplanen?"
       ],
-      "a": "Årsabonnemangen är Starter 29,90 €/månad (358,80 €/år), Advanced 39,90 €/månad (478,80 €/år) och Business 49,90 €/månad (598,80 €/år). Ingen moms debiteras på grund av verksamhet i liten skala."
+      "a": "Årsabonnemangen är Starter 29,90 €/månad (358,80 €/år), Advanced 39,90 €/månad (478,80 €/år) och Business 49,90 €/månad (598,80 €/år)."
     },
     "en": {
       "q": [
         "How much is the annual plan?",
         "What does the yearly subscription cost?"
       ],
-      "a": "Annual pricing is Starter €29.90/month (€358.80/year), Advanced €39.90/month (€478.80/year), and Business €49.90/month (€598.80/year). No VAT is charged due to the small-scale business exemption."
+      "a": "Annual pricing is Starter €29.90/month (€358.80/year), Advanced €39.90/month (€478.80/year), and Business €49.90/month (€598.80/year)."
     }
   },
   {
