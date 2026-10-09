@@ -2,6 +2,7 @@ import { brandedEmailHtml } from './email-branding.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
+import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -5867,6 +5868,12 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     };
   }
 
+  // The 100k multilingual follow-up forms are intent hints only. All answers
+  // must still come from the current tenant's approved knowledge rows.
+  const contextualFollowup=detectContextualFollowup(cleanMessage,history);
+  const followupCanonical=contextualFollowup
+    ? followupCanonicalQuestion(contextualFollowup.kind,responseLang) : '';
+
   // Ambiguous safety questions need clarification before generic retrieval.
   // Otherwise a weakly related product row can outrank the clarification and
   // the bot either answers from the wrong fact or falls through to handoff.
@@ -5985,22 +5992,28 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // Fulfilment/policy questions must outrank generic price and service logic.
   // Otherwise a shipping-price question can return only one arbitrary money row
   // instead of the complete delivery-price summary.
-  const shippingBelowResult=directShippingBelowThresholdFollowup(rows,cleanMessage,history,responseLang);
+  const followupKind=contextualFollowup?.kind||'';
+  const shippingFollowupQuestion=followupKind==='shipping_below' && followupCanonical
+    ? followupCanonical : cleanMessage;
+  const shippingBelowResult=directShippingBelowThresholdFollowup(rows,shippingFollowupQuestion,history,responseLang);
   if(shippingBelowResult) return shippingBelowResult;
 
-  const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
+  // Shipping charges are a separate policy from delivery duration.
+  const followupShippingCost = ['shipping_cost','shipping_above'].includes(followupKind);
+  const effectiveShippingQuestion=followupShippingCost ? followupCanonical : cleanMessage;
+  const shippingCostResult=await directShippingCostAnswer(rows,effectiveShippingQuestion,responseLang);
   if(shippingCostResult) return shippingCostResult;
 
-  const deliveryTimeResult=directDeliveryTimeAnswer(rows,cleanMessage,responseLang);
+  const deliveryTimeResult=directDeliveryTimeAnswer(rows,followupKind==='delivery_time' ? followupCanonical : cleanMessage,responseLang);
   if(deliveryTimeResult) return deliveryTimeResult;
 
-  const returnPolicyResult=directReturnPolicyAnswer(rows,cleanMessage,responseLang);
+  const returnPolicyResult=directReturnPolicyAnswer(rows,followupKind==='returns' ? followupCanonical : cleanMessage,responseLang);
   if(returnPolicyResult) return returnPolicyResult;
 
-  const warrantyResult=directWarrantyAnswer(rows,cleanMessage,responseLang);
+  const warrantyResult=directWarrantyAnswer(rows,followupKind==='warranty' ? followupCanonical : cleanMessage,responseLang);
   if(warrantyResult) return warrantyResult;
 
-  const servicePriceFollowup=await directServicePriceFollowup(rows,cleanMessage,history,responseLang);
+  const servicePriceFollowup=await directServicePriceFollowup(rows,followupKind==='pricing' ? followupCanonical : cleanMessage,history,responseLang);
   if(servicePriceFollowup) return servicePriceFollowup;
 
   const standaloneServicePrice=directMultilingualServicePrice(rows,cleanMessage,responseLang);
@@ -6061,7 +6074,11 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // Resolve natural follow-ups by carrying only the missing context. Standalone
   // questions remain standalone, while "Paljonko se maksaa?", "Entä katon pesu?"
   // and equivalent English/Swedish follow-ups inherit the right subject/intent.
-  const retrievalQuery = contextualizeConversationQuery(cleanMessage, history);
+  // Canonicalize elliptical follow-ups without allowing facts from the previous
+  // answer to become source-of-truth. Original history is used for disambiguation.
+  const retrievalInput=followupCanonical && followupKind!=='shipping_below'
+    ? followupCanonical : cleanMessage;
+  const retrievalQuery = contextualizeConversationQuery(retrievalInput, history);
 
   // Translate only the search query into Finnish so Finnish knowledge bases can
   // be searched in Swedish/English without a paid model. If the free translator
