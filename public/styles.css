@@ -9479,3 +9479,57 @@ body.deletion-modal-open{overflow:hidden!important}
     grid-column:2!important;grid-row:1!important;
   }
 }
+
+
+/* v2 – consistent icons and mobile language switching without covering chat. */
+#app .dashboard-premium-shell .premium-nav-icon svg{width:21px;height:21px;display:block;flex:none}
+#app .dashboard-premium-shell .dashboard-topbar{
+ grid-template-columns:minmax(0,1fr) auto auto!important;
+}
+#app .dashboard-premium-shell .premium-language-picker{
+ grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:flex-end;min-width:0;
+}
+#app .dashboard-premium-shell .premium-language-picker .app-language-switch{
+ display:inline-flex!important;flex:0 0 auto;background:#f6f8fc!important;border-color:#e5eaf2!important
+}
+#app .dashboard-premium-shell .dashboard-top-actions{
+ grid-column:3;grid-row:1;
+}
+@media(max-width:1030px){
+ #app .dashboard-premium-shell .dashboard-section-picker{display:none!important}
+}
+@media(max-width:760px){
+ #app .dashboard-premium-shell .dashboard-topbar{
+  grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-rows:auto auto!important;
+  gap:7px 8px!important;
+  padding:10px 11px!important;
+ }
+ #app .dashboard-premium-shell .dashboard-topbar-brand{
+  grid-column:1!important;grid-row:1!important;min-width:0!important;max-width:100%;
+ }
+ #app .dashboard-premium-shell .dashboard-workspace{min-width:0!important}
+ #app .dashboard-premium-shell .workspace-switcher{max-width:136px!important;width:100%!important}
+ #app .dashboard-premium-shell .premium-language-picker{
+  grid-column:1/-1!important;grid-row:2!important;justify-content:center!important;
+  min-height:35px;max-width:100%!important
+ }
+ #app .dashboard-premium-shell .premium-language-picker .app-language-switch{
+  display:inline-flex!important;max-width:100%;margin:0!important;padding:2px!important
+ }
+ #app .dashboard-premium-shell .dashboard-top-actions{
+  grid-column:2!important;grid-row:1!important;min-width:0!important;
+ }
+ #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar .demo-section-strip{
+  grid-column:1/-1!important;grid-row:3!important;
+ }
+ #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.is-condensed .premium-language-picker{
+  display:none!important;
+ }
+}
+@media(max-width:420px){
+ #app .dashboard-premium-shell .dashboard-topbar-brand .logo{display:none!important}
+ #app .dashboard-premium-shell.demo-dashboard-shell .dashboard-topbar-brand .logo{display:flex!important}
+ #app .dashboard-premium-shell .dashboard-logout{padding:0 7px!important}
+}
+/* 3rd-party embedded bot styling is intentionally unchanged by dashboard v2. */

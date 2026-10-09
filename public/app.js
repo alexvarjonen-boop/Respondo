@@ -3404,8 +3404,19 @@ async function dashboard(options = {}) {
     ['install',appText('Asennus','Installation','Installation'),'⌘'],
     ['account',appText('Asetukset','Inställningar','Settings'),'⚙']
   ];
+  // Consistent outline icons replace platform-dependent text glyphs.
+  const premiumNavIcons={
+    overview:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/>',
+    setup:'<rect x="4" y="7" width="16" height="13" rx="4"/><path d="M12 3v4M9 13h.01M15 13h.01M8 17h8"/>',
+    answers:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/>',
+    customers:'<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6M17 15a5 5 0 0 1 4 5"/>',
+    automation:'<path d="M4 19v-8M9 19V6M14 19v-9M19 19V3"/>',
+    install:'<path d="m8 8-4 4 4 4m8-8 4 4-4 4m-3-12-2 16"/>',
+    account:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.1l2-1.5-2-3.5-2.3 1A7 7 0 0 0 14.7 6L14.4 3h-4.8l-.3 3a7 7 0 0 0-1.9.9l-2.3-1-2 3.5 2 1.5a7 7 0 0 0 0 2.2l-2 1.5 2 3.5 2.3-1a7 7 0 0 0 1.9.9l.3 3h4.8l.3-3a7 7 0 0 0 1.9-.9l2.3 1 2-3.5-2-1.5A7 7 0 0 0 19 12Z"/>'
+  };
+  const premiumIcon=(id)=>'<svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">'+(premiumNavIcons[id]||'')+'</svg>';
   const premiumNavHtml = premiumNav.map(([id,label,icon]) =>
-    `<button type="button" data-dashboard-nav="${id}" class="${id==='overview'?'active':''}" ${id==='overview'?'aria-current="page"':''}><span class="premium-nav-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`
+    `<button type="button" data-dashboard-nav="${id}" class="${id==='overview'?'active':''}" ${id==='overview'?'aria-current="page"':''}><span class="premium-nav-icon" aria-hidden="true">${premiumIcon(id)}</span><span>${label}</span></button>`
   ).join('');
   return `<div class="appshell dashboard-simple-shell dashboard-premium-shell ${isDemo ? 'demo-dashboard-shell' : ''}">
     <aside class="dashboard-premium-sidebar" aria-label="${esc(appText('Hallintapaneelin navigointi','Kontrollpanelens navigering','Dashboard navigation'))}">
@@ -3442,8 +3453,8 @@ async function dashboard(options = {}) {
             <span aria-hidden="true">⌄</span>
           </div>
         </div>
+        <div class="premium-language-picker">${languageSwitch()}</div>
         <div class="dashboard-top-actions ${isDemo ? 'demo-public-actions' : ''}">
-          ${languageSwitch()}
           ${isDemo ? `
             <a class="btn ghost demo-header-login" href="/kirjaudu?lang=${currentLang()}">${appText('Kirjaudu','Logga in','Log in')}</a>
             <a class="btn ink demo-header-trial" href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
@@ -3566,7 +3577,7 @@ async function dashboard(options = {}) {
       <section class="dashboard-premium-experience dashboard-view-section" data-dashboard-view="overview" aria-label="${esc(appText('Kokeile bottia','Testa botten','Test the bot'))}">
         <div class="premium-chat-host" id="overviewPreviewHost"></div>
         <div class="premium-right-rail">
-          <article class="premium-info-card"><header><b>${appText('Botin tila','Bottstatus','Bot status')}</b><span class="premium-live-dot">${isDemo ? appText('Kokeilu','Demo','Demo') : appText('Käytössä','Aktiv','Active')}</span></header>
+          <article class="premium-info-card"><header><b>${appText('Botin tila','Bottstatus','Bot status')}</b><span class="premium-live-dot">${isDemo ? appText('Kokeilu','Demo','Demo') : installedDone ? appText('Asennettu','Installerad','Installed') : appText('Testattavissa','Kan testas','Ready to test')}</span></header>
             <p>${appText('Kokeile bottia esittämällä asiakkaidesi kysymyksiä.','Testa botten med dina kunders frågor.','Try the bot with your customers’ questions.')}</p>
             <div class="premium-verified"><span>✓</span><div><b>${appText('Valmis kokeiltavaksi','Redo att testa','Ready to try')}</b><small>${appText('Kysy vapaasti chatissa','Fråga fritt i chatten','Ask anything in the chat')}</small></div></div>
           </article>

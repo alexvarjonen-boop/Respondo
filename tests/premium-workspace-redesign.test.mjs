@@ -29,3 +29,13 @@ test('premium CSS scoped, responsive and cached for real release',()=>{
  assert.match(css,/dashboard-view-hidden\{display:none!important\}/);
  assert.match(html,/20261009-premium-app-v1/);
 });
+
+test('premium mobile layout keeps a real clickable FI/SV/EN language selector',()=>{
+ assert.match(app,/class="premium-language-picker">\$\{languageSwitch\(\)\}/);
+ assert.match(css,/#app \.dashboard-premium-shell \.premium-language-picker/);
+ assert.match(css,/grid-row:2!important;justify-content:center!important/);
+ assert.match(css,/demo-sticky-topbar \.demo-section-strip[\s\S]{0,90}grid-column:1\/-1!important;grid-row:3!important/);
+ assert.match(app,/premiumNavIcons/);
+ assert.match(app,/premiumIcon\(id\)/);
+ assert.match(html,/premium-app-v2/);
+});
