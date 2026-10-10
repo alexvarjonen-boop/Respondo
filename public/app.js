@@ -4780,25 +4780,10 @@ async function route() {
     }
     // Keep the navigation accessible but reduce its footprint while a visitor
     // scrolls through the Try Bot's conversation on a narrow phone.
-    const syncDemoCompactHeader = () => {
-      if (!demoStickyHeader) return;
-      // The drawer's three-line menu is already compact. Do not switch into
-      // the legacy scroll-condensed layout that displaces the menu on iPhone.
-      if (demoStickyHeader.classList.contains('dashboard-has-drawer')) {
-        demoStickyHeader.classList.remove('is-condensed');
-        return;
-      }
-      if (!window.matchMedia('(max-width:760px)').matches) {
-        demoStickyHeader.classList.remove('is-condensed');
-        return;
-      }
-      const alreadyCondensed = demoStickyHeader.classList.contains('is-condensed');
-      const condensed = window.scrollY > (alreadyCondensed ? 100 : 260);
-      demoStickyHeader.classList.toggle('is-condensed',condensed);
-    };
-    syncDemoCompactHeader();
-    window.addEventListener('scroll',syncDemoCompactHeader,{passive:true});
-    window.addEventListener('resize',syncDemoCompactHeader,{passive:true});
+    // One stable header at every scroll position. The former scroll threshold
+    // switched to a second grid layout that broke the hamburger in iOS Safari.
+    // Dashboard section navigation is provided by the independent drawer.
+    demoStickyHeader?.classList.remove('is-condensed');
     const validDashboardViews = new Set(['overview','setup','answers','customers','automation','install','account']);
     const targetViewMap = {
       'overview':'overview',
