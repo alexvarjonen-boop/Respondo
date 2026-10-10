@@ -10607,6 +10607,16 @@ async function appendChatMessage({
   return row.rows[0];
 }
 
+// A handoff is still required when one question has no verified answer.
+// Preserve the independently sourced part instead of replacing the entire
+// reply with a generic failure message at the transport layer.
+function hasVerifiedPartialAnswer(result) {
+  return Boolean(result?.handoff &&
+    ['Useita kysymyksiä','Flera frågor','Multiple questions'].includes(result.intent) &&
+    Array.isArray(result.sourceIds) && result.sourceIds.length>0 &&
+    typeof result.answer==='string' && result.answer.trim());
+}
+
 async function processExternalChannelMessage(tenant, channel, contactId, message, lang = 'fi') {
   const thread = await getOrCreateThread(tenant.id,channel,contactId,contactId);
   await appendChatMessage({
@@ -10645,7 +10655,7 @@ async function processExternalChannelMessage(tenant, channel, contactId, message
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   let answer = sanitizeUserFacingText(result.answer);
   let handoff = result.handoff;
-  if (handoff) {
+  if (handoff && !hasVerifiedPartialAnswer(result)) {
     answer = responseLang === 'en'
       ? 'I do not have a verified answer yet. A person from the company needs to handle this.'
       : responseLang === 'sv'
@@ -11611,7 +11621,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     let answer = sanitizeUserFacingText(result.answer);
     let handoff = result.handoff;
     if (handoff) {
-      answer = result.intent === 'Palvelut' && answer
+      answer = (result.intent === 'Palvelut' && answer) || hasVerifiedPartialAnswer(result)
         ? answer : noAnswer;
     }
 
@@ -13290,6 +13300,6 @@ async function start() {
   app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
 }
 
-export { app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, fetchWebsiteBundle, buildProfileKnowledge, detectConversationLanguage, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
+export { hasVerifiedPartialAnswer, app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, fetchWebsiteBundle, buildProfileKnowledge, detectConversationLanguage, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
 if (process.env.NODE_ENV !== 'test') start();
 
