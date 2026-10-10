@@ -11,7 +11,7 @@ const SUBJECTS={
   tie_rod_end:['raidetangon paa','raidetangon paat','raidetangonpaan','raidetangonpaat','raidetangon paiden','raidetangon paita','raidetangonpaiden','tie rod end','track rod end','styrled'],
   tie_rod:['raidetanko','raidetankoja','raidetangon','tie rod','track rod','styrstag'],
   tire:['rengas','renkaan','renkaita','renkaat','tire','tires','tyre','tyres','dack','dacket','dacken'],
-  brake_pad:['jarrupala','jarrupalat','jarrupalojen','brake pad','bromsbelagg'],
+  brake_pad:['jarrupala','jarrupalat','jarrupaloja','jarrupalan','jarrupalojen','brake pad','bromsbelagg'],
   brake_disc:['jarrulevy','jarrulevyt','jarrulevyjen','brake disc','brake rotor','bromsskiva'],
   brake:['jarru','jarrut','jarrujen','brake','brakes','bromsar'],
   clutch:['kytkin','kytkimen','clutch','koppling'],
@@ -90,8 +90,8 @@ function getConcepts(text) {
 }
 function stem(token){
   const t=norm(token);
-  if(t.length<5)return t;
-  return t.replace(/(?:oihin|oista|eista|uista|yista|oiden|eiden|uiden|yiden|oilla|oille|oissa|oita|eita|uita|yita|illa|ille|issa|ista|ojen|eja|uja|jen|ien|ssa|sta|lla|lle|ksi|ita|ja|t|n)$/,'');
+  if(t.length<5)return t.endsWith('s') && t.length>=4?t.slice(0,-1):t;
+  return t.replace(/(?:oihin|oista|eista|uista|yista|oiden|eiden|uiden|yiden|oilla|oille|oissa|oita|eita|uita|yita|illa|ille|issa|ista|ojen|eja|uja|jen|ien|ssa|sta|lla|lle|ksi|ita|ja|er|s|t|n)$/,'');
 }
 function subTokens(text) {
   return words(text).filter(t=>t.length>=4&&!NO_WORDS.has(t)&&!getActions(t).length);
@@ -131,7 +131,8 @@ function recognize(message) {
   const q=norm(message);
   if(!q||q.length>260||!QUESTION.test(q)||RESTRICTED.test(q))return null;
   const actions=getActions(q);
-  if(!actions.length)return null;
+  const offerOnly=/^(?:teetteko|tarjoatteko|do\s+you\s+(?:offer|provide)|har\s+ni|erbjuder\s+ni)\b/.test(q);
+  if(!actions.length && !(offerOnly && ['payroll','tax'].some(c=>getConcepts(q).has(c))))return null;
   const concepts=getConcepts(q);
   if(!concepts.size&&!subTokens(q).length)return null;
   // Existing long-standing Finnish service handlers remain authoritative for
@@ -143,7 +144,7 @@ function recognize(message) {
 function isOperationEvidence(actions,fragment) {
   const offered=new Set(getActions(fragment));
   // A generic "tire repair" does not establish puncture patching.
-  return actions.some(a=>offered.has(a) || (a==='patch'&&/\b(?:puncture\s+repair)\b/.test(fragment)));
+  return !actions.length || actions.some(a=>offered.has(a) || (a==='patch'&&/\b(?:puncture\s+repair)\b/.test(fragment)));
 }
 function reply(req,lang){
   if(lang==='en')return 'Yes, that service is listed among our services.';
