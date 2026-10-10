@@ -3815,15 +3815,20 @@ async function dashboard(options = {}) {
 
       <section class="dashboard-grid dashboard-view-section dashboard-view-hidden" data-dashboard-view="answers" id="knowledge">
         <div class="panel knowledge-panel">
-          <div class="panel-head"><div><small>TIETOPOHJA</small><h2>Vastaukset, joita botti saa käyttää</h2></div><span>${knowledge.length} ${appText('kohdetta','poster','items')}</span></div>
+          <div class="panel-head"><div><small>${appText('TIETOPOHJA','KUNSKAPSBAS','KNOWLEDGE BASE')}</small><h2>${appText('Vastaukset, joita botti saa käyttää','Svar som botten kan använda','Answers your bot can use')}</h2></div><span>${knowledge.length} ${appText('kohdetta','poster','items')}</span></div>
           <div class="knowledge-feature-summary">
             <div>
               <b>${appText('Botin etusivun kysymykset','Frågor på botens startsida','Bot home questions')}</b>
               <small>${appText('Valitse enintään 3 omaa kysymys–vastausta. Ne näkyvät asiakkaalle heti chatin avatessa.','Välj högst 3 egna frågor och svar. De visas direkt när kunden öppnar chatten.','Choose up to 3 custom Q&As. They appear as soon as the customer opens the chat.')}</small>
             </div>
-            <span id="knowledgeQuickCount">${knowledge.filter((x) => x.source_type !== 'profile' && x.quick_reply_order).length}/3 valittu</span>
+            <span id="knowledgeQuickCount">${knowledge.filter((x) => x.source_type !== 'profile' && x.quick_reply_order).length}/3 ${appText('valittu','valda','selected')}</span>
           </div>
           <div id="knowledgeFeatureMsg"></div>
+          ${knowledge.length ? `<div class="knowledge-toolbar">
+            <label for="knowledgeSearch">${appText('Hae tallennetuista vastauksista','Sök bland sparade svar','Search saved answers')}</label>
+            <input id="knowledgeSearch" type="search" autocomplete="off" placeholder="${appText('Hae kysymyksellä, vastauksella tai kategorialla…','Sök på fråga, svar eller kategori…','Search by question, answer or category…')}">
+            <small id="knowledgeVisibleCount" role="status" aria-live="polite"></small>
+          </div>` : ''}
           <div id="knowledgeList" class="knowledge-list">
             ${knowledge.length ? knowledge.map((x, i) => `
               <div class="knowledge-item ${x.quick_reply_order ? 'featured' : ''}" data-knowledge-id="${esc(x.id)}">
@@ -3839,14 +3844,15 @@ async function dashboard(options = {}) {
                 <span class="approved" title="Hyväksytty Truth Engineen">✓</span>
               </div>`).join('') : `<div class="empty-state"><b>Et ole lisännyt vielä omia vastauksia.</b><p>Lisää ensimmäinen vastaus tästä.</p></div>`}
           </div>
+          <button type="button" id="knowledgeLoadMore" class="knowledge-load-more" hidden>${appText('Näytä lisää vastauksia','Visa fler svar','Show more answers')}</button>
         </div>
 
         <form class="panel add-knowledge" id="knowledgeForm">
           <div class="panel-head"><div><small>${appText('LISÄÄ VASTAUS','LÄGG TILL SVAR','ADD ANSWER')}</small><h2>${appText('Tallenna vastaus','Spara svar','Save answer')}</h2></div><span>＋</span></div>
-          <div class="field"><label>Kategoria</label><input name="category" placeholder="Esim. Hinnoittelu"></div>
-          <div class="field"><label>Otsikko</label><input name="title" required placeholder="Mitä asiakas kysyy?"></div>
-          <div class="field"><label>Hyväksytty vastaus</label><textarea name="answer" required placeholder="Kirjoita tähän se vastaus, jonka haluat asiakkaan saavan."></textarea></div>
-          <div class="field"><label>Esimerkkisanat</label><input name="keywords" placeholder="hinta, maksaa, tarjous"></div>
+          <div class="field"><label for="knowledgeCategory">${appText('Kategoria','Kategori','Category')}</label><input id="knowledgeCategory" name="category" placeholder="${appText('Esim. Hinnoittelu','T.ex. Priser','e.g. Pricing')}"></div>
+          <div class="field"><label for="knowledgeTitle">${appText('Kysymys','Fråga','Question')}</label><input id="knowledgeTitle" name="title" required placeholder="${appText('Mitä asiakas kysyy?','Vad frågar kunden?','What does the customer ask?')}"></div>
+          <div class="field"><label for="knowledgeAnswer">${appText('Hyväksytty vastaus','Godkänt svar','Approved answer')}</label><textarea id="knowledgeAnswer" name="answer" required placeholder="${appText('Kirjoita tähän vastaus, jonka haluat asiakkaan saavan.','Skriv det svar du vill att kunden ska få.','Write the answer you want the customer to receive.')}"></textarea></div>
+          <div class="field"><label for="knowledgeKeywords">${appText('Avainsanat (valinnainen)','Nyckelord (valfritt)','Keywords (optional)')}</label><input id="knowledgeKeywords" name="keywords" placeholder="${appText('hinta, maksaa, tarjous','pris, kostar, offert','price, cost, quote')}"></div>
           <button class="btn dashboard-action" type="submit">${appText('Tallenna vastaus','Spara svar','Save answer')} <span>→</span></button>
           <div id="knowledgeMsg"></div>
         </form>
@@ -6330,6 +6336,43 @@ async function route() {
         $('#businessProfileMsg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
       }
     });
+
+    // Keep large imported knowledge bases usable on mobile without a
+    // multi-thousand-row initial scroll. Items stay mounted so existing
+    // edit, delete and quick-reply listeners continue working.
+    const knowledgeItems = Array.from(document.querySelectorAll('#knowledgeList > .knowledge-item'));
+    const knowledgeSearch = $('#knowledgeSearch');
+    const knowledgeLoadMore = $('#knowledgeLoadMore');
+    const knowledgeVisibleCount = $('#knowledgeVisibleCount');
+    const knowledgePageSize = 24;
+    let knowledgeLimit = knowledgePageSize;
+    const updateKnowledgeVisibility = () => {
+      const term = String(knowledgeSearch?.value || '').trim().toLocaleLowerCase();
+      let matches = 0;
+      let showing = 0;
+      for (const item of knowledgeItems) {
+        const text = term ? String(item.textContent || '').toLocaleLowerCase() : '';
+        const match = !term || text.includes(term);
+        if (match) matches++;
+        const visible = match && matches <= knowledgeLimit;
+        item.hidden = !visible;
+        if (visible) showing++;
+      }
+      if (knowledgeLoadMore) {
+        knowledgeLoadMore.hidden = matches <= knowledgeLimit;
+        knowledgeLoadMore.textContent = appText('Näytä lisää vastauksia','Visa fler svar','Show more answers') + ' (' + (matches - showing) + ')';
+      }
+      if (knowledgeVisibleCount) knowledgeVisibleCount.textContent = appText('Näytetään','Visar','Showing') + ' ' + showing + '/' + matches;
+    };
+    knowledgeSearch?.addEventListener('input', () => {
+      knowledgeLimit = knowledgePageSize;
+      updateKnowledgeVisibility();
+    });
+    knowledgeLoadMore?.addEventListener('click', () => {
+      knowledgeLimit += knowledgePageSize;
+      updateKnowledgeVisibility();
+    });
+    updateKnowledgeVisibility();
 
     document.querySelectorAll('.knowledge-edit-btn').forEach((button) => {
       button.addEventListener('click', () => {
