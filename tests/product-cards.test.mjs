@@ -60,3 +60,36 @@ test('browsing product names and generic catalog questions select cards',async()
   assert.equal(generic.handoff,false);
   assert.deepEqual(verifiedProductCards(generic).map(x=>x.url),[url]);
 });
+
+test('realistic older JAG product rows keep price and link for visual cards',async()=>{
+  const putters=['Black','Bronze','Steel'].map((shade,index)=>({
+    id:'jag-'+index,
+    category:'Tuotteet',
+    title:'JAG Satin '+shade+' - Putter',
+    answer:'Tuote: JAG Satin '+shade+' - Putter. Hinta: 199.00 EUR. Linkki: https://jagputters.fi/products/jag-'+shade.toLowerCase()+'-blade-putter. Kuvaus: JAG Satin '+shade+' custom blade putter.',
+    source_url:'https://jagputters.fi/products/jag-'+shade.toLowerCase()+'-blade-putter',
+    approved:true,
+  }));
+  const result=await generateGroundedAnswer({
+    companyName:'JAG Putters',
+    rows:putters,
+    message:'Mitä puttereita myytte',
+    lang:'fi',
+  });
+  assert.equal(result.handoff,false);
+  const cards=verifiedProductCards(result);
+  assert.equal(cards.length,3);
+  assert.ok(cards.every((card)=>card.price===199 && card.currency==='EUR' && card.name.startsWith('JAG Satin')));
+  assert.ok(cards.every((card)=>card.url.startsWith('https://jagputters.fi/products/')));
+  // Missing historical image metadata never produces invented image URLs.
+  assert.ok(cards.every((card)=>card.imageUrl===''));
+});
+
+test('Try Bot asset version is updated for previously opened iOS clients',async()=>{
+  const {readFile}=await import('node:fs/promises');
+  const html=await readFile(new URL('../public/index.html',import.meta.url),'utf8');
+  const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
+  assert.match(html,/ecommerce-product-cards-20261011/);
+  assert.match(app,/appendPreviewProductCards\(bubble,result\.products,currentLang\(\)\)/);
+  assert.match(app,/!hasProducts\|\|action\.type!=='product'/);
+});

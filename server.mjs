@@ -1,5 +1,5 @@
 import { brandedEmailHtml } from './email-branding.mjs';
-import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
+import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
@@ -2546,6 +2546,67 @@ function verifiedProductCards(result) {
     });
     if(cards.length===4) break;
   }
+  return cards;
+}
+// Older approved product rows predate image imports. Resolve a real image only
+// from that product's verified public page, with SSRF-safe fetch and a bounded
+// cache. Never invent images, prices or catalog matches.
+const productCardImageCache = new Map();
+async function verifiedProductCardImage(card) {
+  if (card.imageUrl) return card.imageUrl;
+  let expected;
+  try {
+    expected=new URL(card.url);
+    if (!['https:','http:'].includes(expected.protocol) || expected.username || expected.password) return '';
+  } catch { return ''; }
+  const key=expected.origin+expected.pathname;
+  let cached=productCardImageCache.get(key);
+  if (!cached || cached.expires < Date.now()) {
+    const promise=(async()=>{
+      try {
+        const {html,finalUrl}=await fetchPublicHtml(card.url);
+        const pageUrl=new URL(finalUrl);
+        if (pageUrl.hostname.replace(/^www\./,'') !== expected.hostname.replace(/^www\./,'')) return '';
+        const candidates=extractProducts(html,finalUrl);
+        const match=candidates.find((item)=>{
+          if (!item?.imageUrl || !item.url) return false;
+          try {
+            const source=new URL(item.url,finalUrl);
+            return source.hostname.replace(/^www\./,'')===pageUrl.hostname.replace(/^www\./,'') &&
+              source.pathname.replace(/\/$/,'')===pageUrl.pathname.replace(/\/$/,'');
+          } catch { return false; }
+        });
+        if (!match) return '';
+        const image=new URL(match.imageUrl);
+        return ['http:','https:'].includes(image.protocol) && !image.username && !image.password
+          ? image.href : '';
+      } catch { return ''; }
+    })();
+    cached={promise,expires:Date.now()+60*60*1000};
+    if(productCardImageCache.size>=350){
+      const oldest=productCardImageCache.keys().next().value;
+      if(oldest)productCardImageCache.delete(oldest);
+    }
+    productCardImageCache.set(key,cached);
+  }
+  return cached.promise;
+}
+async function hydratedProductCards(result) {
+  const cards=verifiedProductCards(result);
+  if (process.env.NODE_ENV==='test' || !cards.some((card)=>!card.imageUrl)) return cards;
+  // A slow merchant website must never block the chat response indefinitely.
+  const imageResults=cards.map(async(card)=>{
+    if(card.imageUrl) return card.imageUrl;
+    return await verifiedProductCardImage(card);
+  });
+  let timer;
+  try {
+    const resolved=await Promise.race([
+      Promise.all(imageResults),
+      new Promise((resolve)=>{ timer=setTimeout(()=>resolve(null),1800); })
+    ]);
+    if(resolved) resolved.forEach((url,i)=>{if(url) cards[i].imageUrl=url;});
+  } finally { if(timer) clearTimeout(timer); }
   return cards;
 }
 function expandSearchConcepts(value) {
@@ -11259,7 +11320,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       confidence: handoff ? Math.min(result.confidence, 0.35) : result.confidence,
       intent: result.intent,
       actions,
-      products:verifiedProductCards(result),
+      products:await hydratedProductCards(result),
       canLeaveContact: Boolean(handoff),
     });
   } catch (e) {
@@ -11818,7 +11879,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       sourceIds: result.sourceIds,
       verified: !handoff && Array.isArray(result.sourceIds) && result.sourceIds.length > 0,
       actions,
-      products:verifiedProductCards(result),
+      products:await hydratedProductCards(result),
       canLeaveContact: handoff,
     });
   } catch (e) {
