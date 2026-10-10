@@ -87,7 +87,7 @@ function concepts(value){
 function actions(value){const q=norm(value);return new Set(actionGroups.filter(([,rx])=>rx.test(q)).map(([name])=>name))}
 const stop=/\b(?:paljonko|hinta|maksaa|cost|price|pris|kostar|milloin|when|nar|huomenna|tanaan|today|tomorrow|ilmais|gratis|free|takuu|warranty|garanti|toimitus|shipping|delivery|leverans|palautus|returns|refund)\b/;
 const unsupportedModifier=/\b(?:agm|efb|start[\s-]*stop|hybrid\w*|hybrid\w*|sahkoaut\w*|electric\s+(?:car|vehicle)|ev\b|bmw|tesla|toyota|volvo|vw\b|volkswagen|mercedes|audi|ford|honda|prius|tubeless|run[\s-]*flat|rengaspaineantur\w*|tpms|tpms[\s-]*antur\w*|sensor\w*|abs\b|can[\s-]*vayl\w*|can[\s-]*bus|obd(?:[\s-]*ii|[\s-]*2)?|diesel\w*|bensiini\w*)\b/g;
-const denial=/\b(?:emme|eivat|ei\b|not\b|never\b|don't\b|dont\b|doesn't\b|cannot\b|can't\b|inte\b|aldrig\b|ej\b)\b/;
+const denial=/\b(?:emme|eivat|ei\b|not\b|never\b|don\s*t\b|doesn\s*t\b|cannot\b|can\s*t\b|inte\b|aldrig\b|ej\b)\b/;
 const uncertain=/\b(?:ehka|mahdollisesti|voi\s+olla|perhaps|maybe|possibly|kanske|eventuellt)\b/;
 const junk=/\b(?:arvostelu|testimonial|review|asiakaskokem|privacy|tietosuoja|kayttoeh|terms\s+of\s+service|cookie|evaste)\b/;
 const isQuestion=/\b(?:vaihdatteko|vaihatteko|vaihtaisitteko|paikkaatteko|paikkaatteks|teetteko|tarjoatteko|huollatteko|korjaatteko|asennatteko|pystytteko|voitteko|voisitteko|onnistuuko|onnistuisko|hoidatteko|testaatteko|tarkastatteko|pesetteko|saako|loytyyko|onko\s+teilla|do\s+you|can\s+you|could\s+you|do\s+you\s+offer|is\s+it\s+possible|har\s+ni|kan\s+ni|byter\s+ni|erbjuder\s+ni|lagar\s+ni|gor\s+ni|utfor\s+ni)\b/;
@@ -97,9 +97,12 @@ function isServiceQuestion(message){
   return /^(?:vaih\w*|paikka\w*|teetteko|tarjoatteko|huol\w*|korja\w*|asen\w*|pyst\w*|voitteko|voisitteko|onnistu\w*|hoidatteko|testaatteko|tarkastatteko|pesetteko|saako|loytyyko|onko\s+teilla|do\s+you|can\s+you|could\s+you|is\s+it\s+possible|har\s+ni|kan\s+ni|byter\s+ni|erbjuder\s+ni|lagar\s+ni|gor\s+ni|utfor\s+ni)\b/.test(q);
 }
 function requestedAction(message){
-  const q=norm(message).replace(/^(?:do|can|could)\s+you\s+/,'')
-    .replace(/^(?:kan|byter|lagar|gor|utfor)\s+ni\s+/,'');
+  const q=norm(message);
   const found=actions(q);
+  // Repairing a puncture is a patching operation, not evidence that the
+  // company offers every type of tire repair.
+  if(concepts(q).has('tire') && /\b(?:punctur\w*|punka\w*|puncture|flat\s+tire)\b/.test(q)
+      && found.has('repair')){found.delete('repair');found.add('patch');}
   const direct=q.match(/^(vaih\w*|paikka\w*|korja\w*|huol\w*|asen\w*|testa\w*|tarkast\w*|pes\w*)/);
   if(direct){
     if(/^vaih/.test(direct[1])) found.add('replace');
@@ -152,10 +155,27 @@ function genericSubjectSupported(phrase,clause){
       found.slice(0,Math.min(6,word.length-1))===word.slice(0,Math.min(6,word.length-1)))));
 }
 function describe(question,lang){
-  const s=String(question||'').trim().replace(/[?!.\s]+$/,'');
-  return lang==='sv'?'Ja, enligt företagets uppgifter utför vi den tjänsten.'
+  const raw=String(question||'').trim().replace(/[?!.]+$/,'');
+  const q=norm(raw);
+  if(lang==='fi'){
+    const m=q.match(/^(vaihdatteko|vaihatteko|vaihtaisitteko|paikkaatteko|korjaatteko|huollatteko|asennatteko|testaatteko|tarkastatteko|pesetteko)\s+(.+)$/);
+    const verbs={vaihdatteko:'vaihdamme',vaihatteko:'vaihdamme',vaihtaisitteko:'vaihdamme',
+      paikkaatteko:'paikkaamme',korjaatteko:'korjaamme',huollatteko:'huollamme',
+      asennatteko:'asennamme',testaatteko:'testaamme',tarkastatteko:'tarkastamme',pesetteko:'pesemme'};
+    if(m) return 'Kyllä, '+verbs[m[1]]+' '+m[2]+'.';
+  }
+  if(lang==='en'){
+    const m=raw.match(/^(?:do|can|could)\s+you\s+(replace|repair|patch|install|test|inspect|service|change|fix)\s+(.+)$/i);
+    if(m) return 'Yes, we '+m[1].toLowerCase()+' '+m[2]+'.';
+  }
+  if(lang==='sv'){
+    const m=raw.match(/^(?:byter|reparerar|lagar|installerar|testar)\s+ni\s+(.+)$/i);
+    const verb={byter:'byter',reparerar:'reparerar',lagar:'lagar',installerar:'installerar',testar:'testar'};
+    if(m) return 'Ja, vi '+verb[m[0].split(' ')[0].toLowerCase()]+' '+m[1]+'.';
+  }
+  return lang==='sv'?'Ja, enligt företagets uppgifter erbjuder vi tjänsten.'
     :lang==='en'?'Yes, according to the company information, we offer that service.'
-      :'Kyllä, yrityksen tietojen mukaan tämä palvelu kuuluu valikoimaan.';
+      :'Kyllä, palvelu kuuluu yrityksen vahvistettuun valikoimaan.';
 }
 function explicitNo(lang){
   return lang==='sv'?'Enligt företagets uppgifter erbjuder vi inte den tjänsten.'
@@ -170,6 +190,15 @@ function unanswered(lang){
       :'Yrityksen tiedoista ei löytynyt vahvistusta juuri tälle työlle. Jätä yhteystietosi, niin yritys voi varmistaa asian.';
 }
 
+const automotive=new Set([
+  'tie_rod_end','tie_rod','agm_battery','battery','tire','brake_disc','brake_pad','brake',
+  'timing_belt','timing_chain','clutch','alternator','starter_motor',
+  'suspension','air_conditioning','oil','engine','windshield','headlight','exhaust'
+]);
+export function isExplicitAutomotiveServiceQuestion(message){
+  return isServiceQuestion(message) && [...concepts(message)].some(x=>automotive.has(x))
+    && requestedAction(message).size>0;
+}
 export function industryServiceAnswer(rows,message,lang='fi'){
   if(!isServiceQuestion(message)) return null;
   const objects=concepts(message);
