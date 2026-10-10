@@ -2148,7 +2148,7 @@ function directProductAnswer(rows,message,lang='fi') {
         confidence:0.99,
         intent:'Tuotteet',
         sourceIds:list.map((product)=>product.row?.id).filter(Boolean),
-        selected:list.slice(0,3).map((product)=>product.row).filter(Boolean)
+        selected:[] // Category overview: leave product cards for explicit product searches.
       };
     }
 
