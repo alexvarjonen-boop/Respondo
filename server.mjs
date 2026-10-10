@@ -4,6 +4,7 @@ import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
 import { interpretCustomerQuestion } from './query-typos.mjs';
+import { industryServiceAnswer } from './industry-service-engine.mjs';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -6174,6 +6175,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const standaloneServicePrice=directMultilingualServicePrice(rows,cleanMessage,responseLang);
   if(standaloneServicePrice) return standaloneServicePrice;
+
+  // Specialist yes/no service questions must be grounded to the exact
+  // operation and object. An automotive workshop, dentist or electrician
+  // cannot claim a service just because it operates in that industry.
+  // Run this ahead of broader service heuristics that can otherwise interpret
+  // "repair" alone as proof of a different repair or a sale as installation.
+  const industryService = industryServiceAnswer(rows,cleanMessage,responseLang);
+  if(industryService) return industryService;
 
   const toiletInstallation = groundedToiletInstallationQuestion(cleanMessage, rows, responseLang);
   if (toiletInstallation) return toiletInstallation;
