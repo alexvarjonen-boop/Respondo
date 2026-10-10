@@ -6187,12 +6187,6 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     if(specialistService) return specialistService;
   }
 
-  // Specialist services (mechanics, plumbing, construction, accounting, etc.)
-  // require explicit company-side proof of both the procedure and the object.
-  // Generic industry names or similar services never authorize a yes-answer.
-  const verifiedIndustryService=verifiedIndustryServiceAnswer(rows,cleanMessage,responseLang);
-  if(verifiedIndustryService) return verifiedIndustryService;
-
   const toiletInstallation = groundedToiletInstallationQuestion(cleanMessage, rows, responseLang);
   if (toiletInstallation) return toiletInstallation;
 
@@ -6329,6 +6323,12 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // verified-operation matcher before any weak full-text knowledge retrieval.
   const additionalTradeService = industryServiceAnswer(rows,cleanMessage,responseLang);
   if(additionalTradeService) return additionalTradeService;
+
+  // Existing, extensively tested roof/WC/haircut/cleaning resolvers take
+  // precedence. A broader specialist dictionary may help only when those
+  // high-precision paths have not already handled the question.
+  const verifiedIndustryService=verifiedIndustryServiceAnswer(rows,cleanMessage,responseLang);
+  if(verifiedIndustryService) return verifiedIndustryService;
 
   // Broad questions such as "What do you sell?" or "Tell me about the company"
   // should use the approved knowledge base as factual memory instead of requiring
