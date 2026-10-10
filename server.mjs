@@ -4,6 +4,8 @@ import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
 import { interpretCustomerQuestion } from './query-typos.mjs';
+import { verifiedIndustryServiceAnswer } from './industry-service-intelligence.mjs';
+import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion } from './industry-service-engine.mjs';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -6175,6 +6177,16 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const standaloneServicePrice=directMultilingualServicePrice(rows,cleanMessage,responseLang);
   if(standaloneServicePrice) return standaloneServicePrice;
 
+  // Specialist yes/no service questions must be grounded to the exact
+  // operation and object. An automotive workshop, dentist or electrician
+  // cannot claim a service just because it operates in that industry.
+  // Run this ahead of broader service heuristics that can otherwise interpret
+  // "repair" alone as proof of a different repair or a sale as installation.
+  if(isExplicitAutomotiveServiceQuestion(cleanMessage)){
+    const specialistService = industryServiceAnswer(rows,cleanMessage,responseLang);
+    if(specialistService) return specialistService;
+  }
+
   const toiletInstallation = groundedToiletInstallationQuestion(cleanMessage, rows, responseLang);
   if (toiletInstallation) return toiletInstallation;
 
@@ -6305,6 +6317,18 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   if (responseLang === 'fi' && /^(?:teetteko|pesetteko|leikkaatteko|maalaatteko|raivaatteko|puhdistatteko|huollatteko|asennatteko|korjaatteko|vietteko)\b/.test(normalized)) {
     return {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
   }
+
+  // Other professions retain the established high-precision resolvers above,
+  // while specialized queries unhandled by them can still use the general
+  // verified-operation matcher before any weak full-text knowledge retrieval.
+  const additionalTradeService = industryServiceAnswer(rows,cleanMessage,responseLang);
+  if(additionalTradeService) return additionalTradeService;
+
+  // Existing, extensively tested roof/WC/haircut/cleaning resolvers take
+  // precedence. A broader specialist dictionary may help only when those
+  // high-precision paths have not already handled the question.
+  const verifiedIndustryService=verifiedIndustryServiceAnswer(rows,cleanMessage,responseLang);
+  if(verifiedIndustryService) return verifiedIndustryService;
 
   // Broad questions such as "What do you sell?" or "Tell me about the company"
   // should use the approved knowledge base as factual memory instead of requiring
