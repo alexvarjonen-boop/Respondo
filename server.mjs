@@ -5919,7 +5919,37 @@ function conciseKnowledgeAnswer(row, query) {
   return answer;
 }
 
-async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {} }) {
+
+// Handle two independent customer questions in a single message. A different
+// named intent and a genuine question opener are both required. Never split
+// product/service lists, shared subjects or dependent pronouns into guesses.
+function splitIndependentCustomerQuestions(message) {
+  const raw=String(message||'').trim();
+  if(raw.length<20 || raw.length>500) return null;
+  const questionStart=/^(?:paljonko|mita|mika|mitka|miten|milloin|monelta|mihin aikaan|miss[aa]|kuinka|kauanko|onko|voiko|voinko|saako|saanko|miksi|missapa|kerro|enta|entapa|what|when|where|how|which|who|can|could|do|does|is|are|why|will|what about|vad|hur|nar|var|vilken|vilka|kan|har|finns|ar|varfor)\b/;
+  const dependent=/\b(?:se|sen|sita|siita|sille|tama|tuo|toi|niita|it|its|that|this|them|those|they|det|den|detta|dem|samma)\b/;
+  // A separator is valid only when it yields exactly two complete questions.
+  const splits=[
+    raw.split(/\s+(?:ja|and|och)\s+/iu),
+    raw.split(/\?\s+(?=\S)/u)
+  ];
+  for(const candidate of splits){
+    if(candidate.length!==2) continue;
+    const parts=candidate.map(x=>x.replace(/^[\s?.!,;]+|[\s?.!,;]+$/g,'').trim());
+    if(parts.some(x=>x.length<7 || x.split(/\s+/).length<2)) continue;
+    const cleaned=parts.map(x=>normalizeSearchText(stripConversationalQueryNoise(x)));
+    if(!cleaned.every(x=>questionStart.test(x))) continue;
+    // "What does it cost?" following "Do you sell this?" is a dependent
+    // question; do not treat it as an independent pricing request.
+    if(dependent.test(cleaned[1])) continue;
+    const topics=parts.map(queryTopic);
+    if(topics.every(Boolean) && topics[0]!==topics[1] &&
+       topics.every(topic=>!['faq',''].includes(topic))) return parts;
+  }
+  return null;
+}
+
+async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {}, multiPart = false }) {
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   rows = (rows || []).filter(usableWebsiteRow);
   // Interpret frequent typos only inside the answer engine. Keep the
@@ -5931,6 +5961,50 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     question:interpretCustomerQuestion(String(turn?.question||''),responseLang).text
   }));
   if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: responseLang === 'en' ? 'Empty' : responseLang === 'sv' ? 'Tom' : 'Tyhjä', sourceIds: [], selected: [] };
+
+  // Each sub-answer traverses exactly the same grounded-answer engine with
+  // the same tenant-scoped rows. There is no network-wide search, no inferred
+  // company knowledge and no reuse of another question's answer as evidence.
+  if(!multiPart){
+    const parts=splitIndependentCustomerQuestions(cleanMessage);
+    if(parts){
+      const results=[];
+      for(const part of parts){
+        results.push(await generateGroundedAnswer({
+          companyName, rows, message:part, lang:responseLang, pageContext,
+          history:[], multiPart:true
+        }));
+      }
+      const valid=results.map(result=>
+        !result.handoff && !!String(result.answer||'').trim() &&
+        Array.isArray(result.sourceIds) && result.sourceIds.length>0
+      );
+      const verifiedCount=valid.filter(Boolean).length;
+      const sourceIds=[...new Set(results.flatMap((result,index)=>valid[index]?(result.sourceIds||[]):[]))];
+      const selected=[...new Map(results.flatMap((result,index)=>
+        valid[index]?(result.selected||[]).map(row=>[String(row.id||row.title),row]):[])
+      ).values()];
+      if(!verifiedCount) return {
+        answer:'',handoff:true,confidence:0.2,
+        intent:responseLang==='en'?'Multiple questions':responseLang==='sv'?'Flera frågor':'Useita kysymyksiä',
+        sourceIds:[],selected:[]
+      };
+      const noEvidence=responseLang==='en'
+        ? 'I could not verify an answer to this part from the company information.'
+        : responseLang==='sv'
+          ? 'Jag hittar inget bekräftat svar på den här delen i företagets information.'
+          : 'En löytänyt tähän osaan vahvistettua vastausta yrityksen tiedoista.';
+      return {
+        answer:results.map((result,index)=>String(index+1)+'. '+(valid[index]?result.answer:noEvidence)).join('\n'),
+        handoff:verifiedCount!==results.length,
+        confidence:verifiedCount===results.length
+          ? Math.min(...results.map(result=>Number(result.confidence)||0.5))
+          : 0.25,
+        intent:responseLang==='en'?'Multiple questions':responseLang==='sv'?'Flera frågor':'Useita kysymyksiä',
+        sourceIds,selected
+      };
+    }
+  }
 
   await resolveIntentForMessage(cleanMessage,responseLang);
   const normalized = normalizeSearchText(cleanMessage);
