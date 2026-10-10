@@ -68,6 +68,7 @@
   "Nimi, jos haluat": "Namn, om du vill",
   "Puhelinnumero tai sähköposti": "Telefonnummer eller e-post",
   "Tätä chattia ei ole vielä otettu käyttöön tällä verkkosivulla.": "Den här chatten har ännu inte aktiverats på denna webbplats.",
+  "Katso tuote →": "Visa produkt →",
   "Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.": "Det gick inte att få ett svar just nu. Försök igen om en stund."
 };
   Object.entries(EXTRA_SV_WIDGET).forEach(([fi,sv]) => SV_WIDGET.set(fi,sv));
