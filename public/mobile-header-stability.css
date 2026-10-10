@@ -393,3 +393,106 @@
     flex:0 0 44px!important;
   }
 }
+
+/* 2026-10-10: final iPhone layout guard for the demo/workspace headers.
+   Explicitly target the pre-drawer and post-drawer states, so asynchronous
+   rendering cannot let the legacy 3-row grid flash back during scrolling. */
+@media screen and (max-width:760px) {
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main > .demo-sticky-topbar,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main > .demo-sticky-topbar.is-condensed,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main > .demo-sticky-topbar.dashboard-has-drawer {
+    display:flex!important;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    grid-template-columns:none!important;
+    grid-template-rows:none!important;
+    gap:8px!important;
+    position:fixed!important;
+    top:max(8px,env(safe-area-inset-top,0px))!important;
+    left:12px!important;
+    right:12px!important;
+    width:auto!important;
+    height:66px!important;
+    min-height:66px!important;
+    max-height:66px!important;
+    margin:0!important;
+    padding:10px 12px!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+    border:1px solid #e3e3e7!important;
+    border-radius:18px!important;
+    background:#fff!important;
+    transform:none!important;
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+    box-shadow:0 8px 24px rgba(18,18,23,.08)!important;
+    z-index:2147483000!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main > .demo-sticky-topbar > .dashboard-topbar-brand {
+    display:flex!important;
+    order:0!important;
+    grid-column:auto!important;
+    grid-row:auto!important;
+    flex:0 0 36px!important;
+    width:36px!important;
+    max-width:36px!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+    align-self:center!important;
+    align-items:center!important;
+    overflow:hidden!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main > .demo-sticky-topbar > .premium-language-picker {
+    display:flex!important;
+    order:1!important;
+    grid-column:auto!important;
+    grid-row:auto!important;
+    flex:0 1 115px!important;
+    width:auto!important;
+    max-width:115px!important;
+    min-width:0!important;
+    margin:0 0 0 auto!important;
+    padding:0!important;
+    justify-content:center!important;
+    align-items:center!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main > .demo-sticky-topbar > .dashboard-menu-toggle {
+    display:inline-flex!important;
+    position:static!important;
+    order:2!important;
+    grid-column:auto!important;
+    grid-row:auto!important;
+    flex:0 0 44px!important;
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    max-height:44px!important;
+    margin:0!important;
+    padding:0!important;
+    align-items:center!important;
+    justify-content:center!important;
+    visibility:visible!important;
+    opacity:1!important;
+    color:#19191d!important;
+    background:#f5f5f7!important;
+    border:1px solid #e6e6eb!important;
+    border-radius:14px!important;
+    z-index:3!important;
+    transform:none!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main > .demo-sticky-topbar > .dashboard-section-picker,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main > .demo-sticky-topbar > .demo-section-strip,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main > .demo-sticky-topbar > .dashboard-top-actions,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main > .demo-sticky-topbar > .demo-public-actions {
+    display:none!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main {
+    padding-top:var(--demo-sticky-header-space,82px)!important;
+    overflow:visible!important;
+  }
+}
