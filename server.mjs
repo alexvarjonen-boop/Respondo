@@ -11805,6 +11805,6 @@ async function start() {
   app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
 }
 
-export { app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
+export { verifiedProductCards, app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
 if (process.env.NODE_ENV !== 'test') start();
 
