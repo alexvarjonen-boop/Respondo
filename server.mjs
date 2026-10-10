@@ -4223,6 +4223,24 @@ function referencedProductFollowUp(rows,message,history=[],lang='fi') {
   return result || {answer:'',handoff:true,confidence:0.2,intent:'Tuotteet',sourceIds:[],selected:[]};
 }
 
+// Distinguish order tracking from shopping, ordering and product browsing.
+function isOrderTrackingQuestion(message) {
+  const q = normalizeSearchText(message);
+  const hasOrder = /\b(?:tilau\w*|order\w*|bestall\w*|paket\w*|lahety\w*|shipment\w*|parcel\w*|forsandel\w*)\b/.test(q);
+  const hasTracking = /\b(?:seur\w*|track\w*|spar\w*|status|tilan|tila|sp[aå]r\w*)\b/.test(q);
+  return hasOrder && hasTracking;
+}
+
+function verifiedTrackingRow(rows) {
+  return (rows || []).find((row) => {
+    if (parseProductKnowledgeRow(row)) return false;
+    // A generic "delivery and tracking" category alone does not establish
+    // that a store has shipment tracking: require actual tracking evidence.
+    const text = normalizeSearchText(String(row.title || '') + ' ' + String(row.answer || ''));
+    return /seurantakood\w*|seurantatunnu\w*|seurantanumero\w*|seurantalink\w*|tilausseuranta\w*|tilauksen seuranta|tilausta voi seurata|seuraa tilau\w*|seurata lahet\w*|tracking number|tracking link|order tracking|track your order|track shipment|sparningsnummer|spara (?:din |min )?bestallning/.test(text);
+  }) || null;
+}
+
 function chatActions(rows, message, handoff = false, lang = 'fi', selected = []) {
   const actionLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const q = normalizeSearchText(message);
@@ -4234,7 +4252,7 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
   const email = verifiedContactValue(rows, 'Sähköposti')?.value || '';
   const contactPage=verifiedContactPage(rows);
   const requestedContact=explicitContactQuestion(message);
-  const catalogUrl=(broadProductQuestion(message)||ecommerceOrderQuestion(message))?productCatalogDestination(rows):'';
+  const catalogUrl=(!isOrderTrackingQuestion(message)&&(broadProductQuestion(message)||ecommerceOrderQuestion(message)))?productCatalogDestination(rows):'';
   const actions = [];
   const push = (action) => {
     const key = action?.url || (action?.mode ? action.mode + ':' + action.type : '');
@@ -4242,14 +4260,18 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
     actions.push(action);
   };
 
-  for (const row of Array.isArray(selected) ? selected : []) {
-    const product=parseProductKnowledgeRow(row);
-    if(!product?.url) continue;
-    push({
-      type:'product',
-      label:actionLang==='en'?'View '+product.name:actionLang==='sv'?'Visa '+product.name:'Katso '+product.name,
-      url:product.url,
-    });
+  // Retrieval candidates cannot become recommendations after a handoff or
+  // in response to an unrelated order tracking question.
+  if (!handoff && !isOrderTrackingQuestion(message)) {
+    for (const row of Array.isArray(selected) ? selected : []) {
+      const product=parseProductKnowledgeRow(row);
+      if(!product?.url) continue;
+      push({
+        type:'product',
+        label:actionLang==='en'?'View '+product.name:actionLang==='sv'?'Visa '+product.name:'Katso '+product.name,
+        url:product.url,
+      });
+    }
   }
 
   if(catalogUrl){
@@ -6214,6 +6236,30 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     return multilingualService.supported
       ? {answer:multilingualService.answer,handoff:false,confidence:0.93,intent:'Palvelut',sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence}
       : {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
+  }
+
+  // Only a verified tracking instruction can answer whether an order can be
+  // tracked; arbitrary products or general delivery pages are insufficient.
+  if (isOrderTrackingQuestion(cleanMessage)) {
+    const trackingRow=verifiedTrackingRow(rows);
+    if (trackingRow) {
+      let answer=conciseKnowledgeAnswer(trackingRow,cleanMessage);
+      if (answer) {
+        const sourceLang=detectConversationLanguage(answer,'fi');
+        if (sourceLang!==responseLang) answer=await forceAnswerLanguage(answer,responseLang) || '';
+      }
+      if (answer) return {
+        answer:cleanKnowledgeText(answer),handoff:false,confidence:0.96,
+        intent:'Tilauksen seuranta',sourceIds:[trackingRow.id].filter(Boolean),selected:[trackingRow],
+      };
+    }
+    const answer=responseLang==='en'
+      ? 'I could not find verified order-tracking instructions in the store information. Please contact the store to confirm your order status.'
+      : responseLang==='sv'
+        ? 'Jag hittar inga bekräftade instruktioner för orderspårning i butikens information. Kontakta butiken för att kontrollera din beställning.'
+        : 'En löydä verkkokaupan tiedoista vahvistettua ohjetta tilauksen seurantaan. Voit kysyä tilauksesi tilaa suoraan yritykseltä.';
+    return {answer,handoff:true,confidence:0.2,
+      intent:'Tilauksen seuranta',sourceIds:[],selected:[]};
   }
 
   const productFollowUp=referencedProductFollowUp(rows,cleanMessage,history,responseLang);
@@ -11126,7 +11172,9 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
 
     let handoff = result.handoff;
     let answer = sanitizeUserFacingText(result.answer);
-    const actions = chatActions(rows, message, handoff, detectedLang, result.selected || []);
+    // Demo preview has no real order-status action endpoint.
+    const actions = chatActions(rows, message, handoff, detectedLang, result.selected || [])
+      .filter((action) => action?.type !== 'order_status');
     // Action URLs are UI data, not conversational answers. If retrieval picked
     // the booking/quote URL itself as the answer, replace it with natural copy
     // and let the client render the URL only as a clickable action.
@@ -11667,7 +11715,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     let answer = sanitizeUserFacingText(result.answer);
     let handoff = result.handoff;
     if (handoff) {
-      answer = (result.intent === 'Palvelut' && answer) || hasVerifiedPartialAnswer(result)
+      answer = (['Palvelut','Tilauksen seuranta'].includes(result.intent) && answer) || hasVerifiedPartialAnswer(result)
         ? answer : noAnswer;
     }
 
