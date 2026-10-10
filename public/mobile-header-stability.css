@@ -1,0 +1,367 @@
+/* Mobile navigation stability – single-row headers across iOS Safari scroll states.
+   Loaded LAST to resolve historical hotfixes that stretched/clipped navigation. */
+
+@media (max-width:760px) {
+  /* Public pages: preserve language controls and the hamburger, but keep
+     desktop login/trial pills inside the already-accessible menu. */
+  body.public-nav-active #app .nav {
+    position:fixed!important;
+    top:0!important;
+    left:0!important;
+    right:0!important;
+    width:100%!important;
+    height:74px!important;
+    min-height:74px!important;
+    max-height:74px!important;
+    margin:0!important;
+    padding:5px 0!important;
+    overflow:visible!important;
+    transform:none!important;
+    background:#fff!important;
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+    box-shadow:0 1px 0 rgba(17,17,20,.07)!important;
+  }
+  body.public-nav-active #app .nav .container.navin {
+    display:flex!important;
+    flex-flow:row nowrap!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:8px!important;
+    width:calc(100% - 20px)!important;
+    max-width:none!important;
+    height:64px!important;
+    min-height:64px!important;
+    max-height:64px!important;
+    margin:0 auto!important;
+    padding:7px 10px!important;
+    border-radius:17px!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+  }
+  body.public-nav-active #app .nav .logo {
+    display:inline-flex!important;
+    align-items:center!important;
+    flex:0 0 auto!important;
+    min-width:0!important;
+    max-width:142px!important;
+    overflow:hidden!important;
+  }
+  body.public-nav-active #app .nav .navactions {
+    display:flex!important;
+    align-items:center!important;
+    flex:0 1 auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin-left:auto!important;
+    gap:5px!important;
+    overflow:hidden!important;
+  }
+  body.public-nav-active #app .nav .navactions .app-language-switch {
+    display:inline-flex!important;
+    flex:0 0 auto!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+  body.public-nav-active #app .nav .navactions .btn.ghost,
+  body.public-nav-active #app .nav .navactions .btn.ink:not(.nav-home-scroll-trial),
+  body.public-nav-active #app .nav .navactions .nav-home-scroll-trial:not(.is-visible) {
+    display:none!important;
+  }
+  body.public-nav-active #app .nav .navactions .nav-home-scroll-trial.is-visible {
+    display:inline-flex!important;
+    flex:0 1 auto!important;
+    min-width:0!important;
+    max-width:112px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    padding:0 9px!important;
+  }
+  body.public-nav-active #app .nav .apple-menu-toggle {
+    display:grid!important;
+    place-content:center!important;
+    order:5!important;
+    position:relative!important;
+    flex:0 0 44px!important;
+    width:44px!important;
+    min-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    margin:0!important;
+    padding:0!important;
+    visibility:visible!important;
+    opacity:1!important;
+    color:#17181b!important;
+    background:#f4f4f6!important;
+    border:1px solid #e7e7ec!important;
+    border-radius:13px!important;
+    box-shadow:none!important;
+    transform:none!important;
+    z-index:1!important;
+  }
+  /* The public menu icon also uses three distinct bars. */
+  body.public-nav-active #app .nav .apple-menu-toggle::after {
+    content:"";
+    display:block;
+    width:22px;
+    height:2px;
+    border-radius:99px;
+    background:currentColor;
+  }
+  body.public-nav-active #app {
+    padding-top:74px!important;
+  }
+}
+@media (max-width:600px) {
+  body.public-nav-active #app .nav .brand-word {
+    display:none!important;
+  }
+  body.public-nav-active #app .nav .logo {
+    max-width:36px!important;
+  }
+}
+@media (max-width:360px) {
+  body.public-nav-active #app .nav .container.navin {
+    width:calc(100% - 12px)!important;
+    padding-inline:6px!important;
+    gap:5px!important;
+  }
+  body.public-nav-active #app .nav .navactions .nav-home-scroll-trial.is-visible {
+    max-width:100px!important;
+    padding-inline:6px!important;
+  }
+}
+
+/* Both dashboard routes: the side drawer is the sole navigation on phones.
+   Hide legacy section rows and CTA groups so the header cannot grow to 2–3
+   rows or push the three-line button off-screen after a scroll/reflow. */
+@media (max-width:900px) {
+  #app .dashboard-simple-shell .dashboard-topbar.dashboard-has-drawer {
+    display:flex!important;
+    flex-flow:row nowrap!important;
+    grid-template-columns:none!important;
+    grid-template-rows:none!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    min-height:64px!important;
+    height:64px!important;
+    max-height:64px!important;
+    padding:8px 12px!important;
+    overflow:visible!important;
+    background:#fff!important;
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+    box-sizing:border-box!important;
+  }
+  #app .dashboard-topbar.dashboard-has-drawer > .dashboard-topbar-brand {
+    display:flex!important;
+    flex:1 1 auto!important;
+    min-width:0!important;
+    max-width:calc(100% - 56px)!important;
+    align-items:center!important;
+    padding:0!important;
+    margin:0!important;
+    order:0!important;
+  }
+  #app .dashboard-topbar.dashboard-has-drawer > .dashboard-section-picker,
+  #app .dashboard-topbar.dashboard-has-drawer > .demo-section-strip,
+  #app .dashboard-topbar.dashboard-has-drawer > .dashboard-top-actions {
+    display:none!important;
+  }
+  #app .dashboard-topbar.dashboard-has-drawer > .dashboard-menu-toggle {
+    display:inline-flex!important;
+    position:relative!important;
+    order:1!important;
+    flex:0 0 44px!important;
+    width:44px!important;
+    min-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    padding:0!important;
+    margin:0!important;
+    align-items:center!important;
+    justify-content:center!important;
+    visibility:visible!important;
+    opacity:1!important;
+    transform:none!important;
+    z-index:2!important;
+  }
+  #app .dashboard-topbar.dashboard-has-drawer .dashboard-menu-lines {
+    display:grid!important;
+    gap:4px!important;
+  }
+  #app .dashboard-topbar.dashboard-has-drawer .dashboard-menu-lines > span {
+    display:block!important;
+    width:19px!important;
+    height:2px!important;
+    background:currentColor!important;
+  }
+}
+@media (max-width:1024px) {
+  /* Demo header stays in document flow: no giant viewport-fixed overlay and
+     no async padding compensation that leaves empty space after scrolling. */
+  #app .demo-dashboard-main {
+    padding-top:max(12px,env(safe-area-inset-top,0px))!important;
+    overflow:visible!important;
+  }
+  #app .demo-dashboard-main > .demo-sticky-topbar.dashboard-has-drawer {
+    position:sticky!important;
+    top:8px!important;
+    left:auto!important;
+    right:auto!important;
+    width:100%!important;
+    margin:0 0 20px!important;
+    z-index:100!important;
+    border:1px solid #e3e3e7!important;
+    border-radius:17px!important;
+    box-shadow:0 8px 24px rgba(18,18,23,.08)!important;
+    transform:none!important;
+  }
+  #app .demo-dashboard-main .dashboard-view-section,
+  #app .demo-dashboard-main [id] {
+    scroll-margin-top:92px!important;
+  }
+}
+@media (max-width:900px) {
+  #app .demo-dashboard-main > .demo-sticky-topbar.dashboard-has-drawer {
+    height:64px!important;
+    min-height:64px!important;
+    max-height:64px!important;
+  }
+}
+
+
+/* Production premium shell: override two-row grid/condensed rules loaded by
+   premium-mobile*.css and dashboard-drawer.css. The menu stays top-right and
+   language buttons stay visible, independent of scroll distance. */
+@media screen and (max-width:760px) {
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed {
+    display:flex!important;
+    flex-flow:row nowrap!important;
+    grid-template-columns:none!important;
+    grid-template-rows:none!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:8px!important;
+    width:100%!important;
+    height:66px!important;
+    min-height:66px!important;
+    max-height:66px!important;
+    box-sizing:border-box!important;
+    padding:9px 12px!important;
+    overflow:visible!important;
+    background:#fff!important;
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+  }
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .dashboard-topbar-brand,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer > .dashboard-topbar-brand,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed > .dashboard-topbar-brand {
+    display:flex!important;
+    order:0!important;
+    grid-column:auto!important;
+    grid-row:auto!important;
+    flex:1 1 auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:0!important;
+    align-items:center!important;
+    overflow:hidden!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer > .dashboard-topbar-brand,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed > .dashboard-topbar-brand {
+    flex:0 0 36px!important;
+    width:36px!important;
+    max-width:36px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer .dashboard-topbar-brand .brand-word,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed .brand-word {
+    display:none!important;
+  }
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .premium-language-picker,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer > .premium-language-picker,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed > .premium-language-picker {
+    display:flex!important;
+    order:1!important;
+    grid-column:auto!important;
+    grid-row:auto!important;
+    flex:0 0 auto!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:auto!important;
+    max-width:115px!important;
+    min-width:0!important;
+    margin:0 0 0 auto!important;
+    padding:0!important;
+    visibility:visible!important;
+    opacity:1!important;
+  }
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .premium-language-picker .app-language-switch {
+    display:inline-flex!important;
+    width:auto!important;
+    max-width:115px!important;
+    margin:0!important;
+    padding:2px!important;
+    gap:1px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .dashboard-menu-toggle,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed > .dashboard-menu-toggle {
+    display:inline-flex!important;
+    order:2!important;
+    position:relative!important;
+    grid-column:auto!important;
+    grid-row:auto!important;
+    justify-self:auto!important;
+    flex:0 0 44px!important;
+    width:44px!important;
+    min-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    max-height:44px!important;
+    padding:0!important;
+    margin:0!important;
+    align-items:center!important;
+    justify-content:center!important;
+    visibility:visible!important;
+    opacity:1!important;
+    z-index:2!important;
+  }
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .dashboard-section-picker,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed > .dashboard-section-picker,
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .demo-section-strip,
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .dashboard-top-actions,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer .demo-public-actions,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed .demo-public-actions {
+    display:none!important;
+  }
+  /* Public demo: a consistently measured 66px fixed card, not a 200px panel. */
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main {
+    padding-top:var(--demo-sticky-header-space,82px)!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main > .demo-sticky-topbar.dashboard-has-drawer,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-dashboard-main > .demo-sticky-topbar.dashboard-has-drawer.is-condensed {
+    position:fixed!important;
+    top:max(8px,env(safe-area-inset-top,0px))!important;
+    left:12px!important;
+    right:12px!important;
+    width:auto!important;
+    margin:0!important;
+    z-index:2147483000!important;
+    border-radius:17px!important;
+    border:1px solid #e7eaf0!important;
+    box-shadow:0 8px 24px rgba(18,18,23,.08)!important;
+    transform:none!important;
+  }
+  /* Signed-in workspace: menu can still be opened after scrolling. */
+  #app .dashboard-premium-shell:not(.demo-dashboard-shell) .dashboard-topbar.dashboard-has-drawer {
+    position:sticky!important;
+    top:8px!important;
+    z-index:400!important;
+    margin-bottom:14px!important;
+  }
+}
