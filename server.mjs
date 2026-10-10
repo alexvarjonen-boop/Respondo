@@ -1965,9 +1965,9 @@ function directProductAnswer(rows,message,lang='fi') {
   const generalSellAsk=broadProductQuestion(message);
   const listAsk=generalSellAsk || /(?:mita|mitä|mitka|mitkä|what|which|vilka).*(?:tuot|product|putter|maila|sortiment|valikoim)|(?:tuotteita|products|puttereita|putters).*(?:teilla|teillä|have|har)/.test(q)
     || (tokens.length>0 && /\b(?:nayta|esittele|etsi|hae|loytyyko|nayttakaa|show|find|search|browse|visa|hitta|sok)\b/.test(q))
-    || (tokens.length>0 && candidates[0]?._match>=6 && /\b(?:mita|mitka|millaisia|onko|loytyyko|saako|finns|har ni|do you have|which|what)\b/.test(q))
-    || (tokens.length>=2 && q.split(/\s+/).length<=5 && candidates[0]?._match>=12)
-    || (tokens.length===1 && q.split(/\s+/).length<=3 && candidates[0]?._match>=12);
+    || (!priceAsk && !stockAsk && !colorAsk && !sizeAsk && !materialAsk && !specAsk && tokens.length>0 && candidates[0]?._match>=6 && /\b(?:mita|mitka|millaisia|onko|loytyyko|saako|finns|har ni|do you have|which|what)\b/.test(q))
+    || (!priceAsk && !stockAsk && !colorAsk && !sizeAsk && !materialAsk && !specAsk && tokens.length>=2 && q.split(/\s+/).length<=5 && candidates[0]?._match>=12)
+    || (!priceAsk && !stockAsk && !colorAsk && !sizeAsk && !materialAsk && !specAsk && tokens.length===1 && q.split(/\s+/).length<=3 && candidates[0]?._match>=12);
   const bestCandidate=candidates[0];
 
   if(popularAsk){
