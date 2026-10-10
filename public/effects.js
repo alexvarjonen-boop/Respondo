@@ -158,11 +158,11 @@
 
   const faq = [
     {
-      keys:['hinta','maksaa','49','vuosi','kuukausi','price','pricing','cost','month','year','pris','kostar','kostnad','månad','manad','årsabonnemang'],
+      keys:['hinta','maksaa','34','44','54','29','39','49','vuosi','kuukausi','price','pricing','cost','month','year','pris','kostar','kostnad','månad','manad','årsabonnemang'],
       answer:{
-        fi:'Respondo Starter maksaa 29,90 €/kk, Advanced 39,90 €/kk ja Business 49,90 €/kk. Vuositilauksissa kuukausihinta on sama ilman alennusta. Voit kokeilla 3 päivää ilmaiseksi.',
-        sv:'Respondo Starter kostar 29,90 €/mån, Advanced 39,90 €/mån och Business 49,90 €/mån. Samma månadspris gäller vid årsfakturering utan årsrabatt. Prova gratis i 3 dagar.',
-        en:'Respondo Starter costs €29.90/month, Advanced €39.90/month and Business €49.90/month. Annual billing has the same monthly rate without a discount. Try free for 3 days.'
+        fi:'Respondo Starter maksaa 34,90 €/kk, Advanced 44,90 €/kk ja Business 54,90 €/kk. Vuositilauksissa kuukausivastaavuus on 29,90 €, 39,90 € tai 49,90 € ja säästät 60 € vuodessa. Voit kokeilla 3 päivää ilmaiseksi.',
+        sv:'Respondo Starter kostar 34,90 €/mån, Advanced 44,90 €/mån och Business 54,90 €/mån. Årsabonnemang motsvarar 29,90 €, 39,90 € eller 49,90 €/mån och sparar 60 € per år. Prova gratis i 3 dagar.',
+        en:'Respondo Starter costs €34.90/month, Advanced €44.90/month and Business €54.90/month. Annual plans cost the equivalent of €29.90, €39.90 or €49.90/month and save €60/year. Try free for 3 days.'
       }
     },
     {
@@ -543,7 +543,7 @@
       ['Mitä muuta asiakkaan pitäisi tietää?',sv?'Vad mer bör kunden veta?':'What else should the customer know?'],['Tallenna ja kokeile',sv?'Spara och testa':'Save and test'],
       ['HALUATKO TÄMÄN OMALLE SIVULLESI?',sv?'VILL DU HA DETTA PÅ DIN EGEN WEBBPLATS?':'WANT THIS ON YOUR WEBSITE?'],['Ota Respondo käyttöön omalla verkkosivullasi.',sv?'Ta Respondo i bruk på din egen webbplats.':'Add Respondo to your own website.'],
       ['Kokeile 3 päivää ilmaiseksi. Valitse kuukausi- tai vuositilaus ja lisää maksutapa turvallisesti Stripessä.',sv?'Testa gratis i 3 dagar. Välj månads- eller årsabonnemang och lägg till betalningsmetod säkert via Stripe.':'Try free for 3 days. Choose a monthly or annual plan and add your payment method securely with Stripe.'],
-      ['KUUKAUSITILAUS',sv?'MÅNADSABONNEMANG':'MONTHLY PLAN'],['VUOSITILAUS',sv?'ÅRSABONNEMANG':'ANNUAL PLAN'],['29,90 €',sv?'29,90 €':'€29.90'],['29,90 €',sv?'29,90 €':'€29.90'],['/ kk',sv?'/ mån':'/ month'],['Laskutetaan vuosittain 358,80 €',sv?'Faktureras årligen 358,80 €':'Billed annually at €358.80'],['3 päivää ilmaiseksi',sv?'3 dagar gratis':'3 days free'],['Chat suoraan omalle verkkosivullesi',sv?'Chatt direkt på din webbplats':'Chat directly on your website'],['Vastaukset yrityksesi omista tiedoista',sv?'Svar från företagets egna uppgifter':'Answers from your company information'],['Voit perua milloin tahansa',sv?'Du kan säga upp när som helst':'Cancel anytime'],['Valitse kuukausi',sv?'Välj månad':'Choose monthly'],['Säästä 60 €',sv?'Spara 60 €':'Save €60'],['Kaikki samat ominaisuudet kuin kuukausitilauksessa',sv?'Alla samma funktioner som i månadsabonnemanget':'All the same features as the monthly plan'],['Maksu kerran vuodessa',sv?'Betalning en gång per år':'One payment per year'],['Valitse vuosi',sv?'Välj år':'Choose annual'],
+      ['KUUKAUSITILAUS',sv?'MÅNADSABONNEMANG':'MONTHLY PLAN'],['VUOSITILAUS',sv?'ÅRSABONNEMANG':'ANNUAL PLAN'],['34,90 €',sv?'34,90 €':'€34.90'],['29,90 €',sv?'29,90 €':'€29.90'],['/ kk',sv?'/ mån':'/ month'],['Laskutetaan vuosittain 358,80 €',sv?'Faktureras årligen 358,80 €':'Billed annually at €358.80'],['3 päivää ilmaiseksi',sv?'3 dagar gratis':'3 days free'],['Chat suoraan omalle verkkosivullesi',sv?'Chatt direkt på din webbplats':'Chat directly on your website'],['Vastaukset yrityksesi omista tiedoista',sv?'Svar från företagets egna uppgifter':'Answers from your company information'],['Voit perua milloin tahansa',sv?'Du kan säga upp när som helst':'Cancel anytime'],['Valitse kuukausi',sv?'Välj månad':'Choose monthly'],['Säästä 60 €',sv?'Spara 60 €':'Save €60'],['Kaikki samat ominaisuudet kuin kuukausitilauksessa',sv?'Alla samma funktioner som i månadsabonnemanget':'All the same features as the monthly plan'],['Maksu kerran vuodessa',sv?'Betalning en gång per år':'One payment per year'],['Valitse vuosi',sv?'Välj år':'Choose annual'],
       ['Maksut turvallisesti Stripessä',sv?'Säkra betalningar via Stripe':'Secure payments with Stripe'],['Ei veloitusta 3 päivän kokeilun aikana',sv?'Ingen debitering under den 3 dagar långa provperioden':'No charge during the 3-day trial'],['Pääset alkuun heti tilauksen jälkeen',sv?'Kom igång direkt efter beställningen':'Get started immediately after subscribing']
     ];
     const map=new Map(pairs), walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT), nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
@@ -661,7 +661,7 @@
               <div class="assistant-order-grid assistant-order-grid-three">
                 <article class="assistant-order-card">
                   <div class="assistant-order-label">STARTER</div>
-                  <h3>29,90 € <span>/ kk</span></h3>
+                  <h3>34,90 € <span>/ kk</span></h3>
                   <p class="assistant-annual-note">29,90 €/kk · ${pageTx('358,80 €/vuosi','358,80 €/år','€358.80/year')}</p>
                   <ul>
                     <li>${pageTx('Ajanvaraukset ja yhteydenotot','Bokningar och kontaktförfrågningar','Bookings and contact requests')}</li>
@@ -675,7 +675,7 @@
                 </article>
                 <article class="assistant-order-card featured">
                   <div class="assistant-order-top"><div class="assistant-order-label">ADVANCED</div><span class="assistant-save">${pageTx('SUOSITUIN','POPULÄRAST','MOST POPULAR')}</span></div>
-                  <h3>39,90 € <span>/ kk</span></h3>
+                  <h3>44,90 € <span>/ kk</span></h3>
                   <p class="assistant-annual-note">39,90 €/kk · ${pageTx('478,80 €/vuosi','478,80 €/år','€478.80/year')}</p>
                   <ul>
                     <li>${pageTx('Kaikki Starter-ominaisuudet','Alla Starter-funktioner','Everything in Starter')}</li>
@@ -690,7 +690,7 @@
                 </article>
                 <article class="assistant-order-card">
                   <div class="assistant-order-label">BUSINESS</div>
-                  <h3>49,90 € <span>/ kk</span></h3>
+                  <h3>54,90 € <span>/ kk</span></h3>
                   <p class="assistant-annual-note">49,90 €/kk · ${pageTx('598,80 €/vuosi','598,80 €/år','€598.80/year')}</p>
                   <ul>
                     <li>${pageTx('Kaikki Respondon nykyiset ominaisuudet','Alla nuvarande Respondo-funktioner','All current Respondo features')}</li>
