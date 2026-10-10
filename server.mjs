@@ -2504,6 +2504,43 @@ function directProductAnswer(rows,message,lang='fi',history=[]) {
   }
   return null;
 }
+// Product cards are created exclusively from knowledge rows selected by a
+// grounded answer. Never recommend unrelated catalog entries on handoff.
+function verifiedProductCards(result) {
+  if (result?.handoff || result?.intent !== 'Tuotteet') return [];
+  const cards=[];const seen=new Set();
+  for (const row of Array.isArray(result?.selected)?result.selected:[]) {
+    const product=parseProductKnowledgeRow(row);
+    if (!product?.name || !product.url) continue;
+    let url='',imageUrl='';
+    try {
+      const parsed=new URL(product.url);
+      if (!['http:','https:'].includes(parsed.protocol) || parsed.username || parsed.password) continue;
+      url=parsed.href;
+    } catch {continue;}
+    if (product.imageUrl) {
+      try {
+        const image=new URL(product.imageUrl);
+        if (['http:','https:'].includes(image.protocol) && !image.username && !image.password) imageUrl=image.href;
+      } catch {}
+    }
+    const key=url.toLowerCase();
+    if(seen.has(key)) continue;
+    seen.add(key);
+    cards.push({
+      name:product.name.slice(0,180),
+      url,
+      imageUrl,
+      description:String(product.description||'').slice(0,220),
+      price:Number.isFinite(product.price)?product.price:null,
+      maxPrice:Number.isFinite(product.maxPrice)?product.maxPrice:null,
+      currency:/^[A-Z]{3}$/.test(product.currency||'')?product.currency:'',
+      availability:product.availability.slice(0,60),
+    });
+    if(cards.length===4) break;
+  }
+  return cards;
+}
 function expandSearchConcepts(value) {
   let text=' '+normalizeSearchText(value)+' ';
   const groups=[
@@ -4736,6 +4773,7 @@ function normalizeCatalogProduct(product, fallbackUrl='') {
   return {
     name:String(product.name).replace(/\s+/g,' ').trim().slice(0,180),
     url,
+    imageUrl:normalizeWebUrl(product.imageUrl || '',false),
     price:Number.isFinite(product.price)?Number(product.price):null,
     maxPrice:Number.isFinite(product.maxPrice)?Number(product.maxPrice):(Number.isFinite(product.price)?Number(product.price):null),
     currency:String(product.currency||'').trim().toUpperCase().slice(0,8),
@@ -4775,6 +4813,7 @@ async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Dat
     const product=normalizeCatalogProduct({
       name:raw?.title,
       url:new URL('/products/'+handle,base).toString(),
+      imageUrl:raw?.image?.src || raw?.images?.[0]?.src || '',
       price:prices.length?Math.min(...prices):null,
       maxPrice:prices.length?Math.max(...prices):null,
       currency,
@@ -4868,6 +4907,7 @@ async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.no
       const product=normalizeCatalogProduct({
         name:raw?.name,
         url:raw?.permalink,
+        imageUrl:raw?.images?.[0]?.src || raw?.images?.[0]?.thumbnail || '',
         price:low===null?null:low/minor,
         maxPrice:regular===null?(low===null?null:low/minor):Math.max(low===null?0:low/minor,regular/minor),
         currency:p.currency_code,
@@ -11207,6 +11247,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       confidence: handoff ? Math.min(result.confidence, 0.35) : result.confidence,
       intent: result.intent,
       actions,
+      products:verifiedProductCards(result),
       canLeaveContact: Boolean(handoff),
     });
   } catch (e) {
@@ -11765,6 +11806,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       sourceIds: result.sourceIds,
       verified: !handoff && Array.isArray(result.sourceIds) && result.sourceIds.length > 0,
       actions,
+      products:verifiedProductCards(result),
       canLeaveContact: handoff,
     });
   } catch (e) {
@@ -13399,6 +13441,6 @@ async function start() {
   app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
 }
 
-export { hasVerifiedPartialAnswer, app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, fetchWebsiteBundle, buildProfileKnowledge, detectConversationLanguage, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
+export { verifiedProductCards, hasVerifiedPartialAnswer, app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, fetchWebsiteBundle, buildProfileKnowledge, detectConversationLanguage, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
 if (process.env.NODE_ENV !== 'test') start();
 
