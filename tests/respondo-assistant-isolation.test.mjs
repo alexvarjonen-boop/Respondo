@@ -36,7 +36,7 @@ test('first-party seed generically quarantines approved foreign website/profile 
 test('first-party production tenant prefers the official Respondo domain over Railway URLs',()=>{
   assert.match(
     server,
-    /process\.env\.NODE_ENV === 'production' \? 'https:\/\/www\.respondoai\.fi' : BASE/
+    /process\.env\.NODE_ENV === 'production' \? 'https:\/\/respondoai\.fi' : BASE/
   );
   const start=server.indexOf('function respondoOwnerSiteUrl()');
   assert.ok(start>=0);
