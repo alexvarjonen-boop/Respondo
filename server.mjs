@@ -6,6 +6,7 @@ import { detectContextualFollowup, followupCanonicalQuestion } from './followup-
 import { interpretCustomerQuestion } from './query-typos.mjs';
 import { verifiedIndustryServiceAnswer } from './industry-service-intelligence.mjs';
 import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion } from './industry-service-engine.mjs';
+import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -6170,6 +6171,23 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const warrantyResult=directWarrantyAnswer(rows,followupKind==='warranty' ? followupCanonical : cleanMessage,responseLang);
   if(warrantyResult) return warrantyResult;
+
+  // Advanced trade/diagnostic questions must be answered from an approved,
+  // matching company FAQ (not generic sector knowledge or scraped slogans).
+  // If the business has not documented the required technical detail, handoff
+  // is safer than an invented model-specific diagnosis or torque specification.
+  const expertAnswer=verifiedTechnicalFaqAnswer(rows,cleanMessage);
+  if(expertAnswer){
+    if(expertAnswer.handoff) return expertAnswer;
+    const evidenceLang=detectConversationLanguage(expertAnswer.answer,responseLang);
+    if(evidenceLang!==responseLang){
+      const translated=await forceAnswerLanguage(expertAnswer.answer,responseLang);
+      if(!translated)return {answer:'',handoff:true,confidence:0.2,intent:'Tekninen kysymys',
+        sourceIds:[],selected:[]};
+      expertAnswer.answer=cleanKnowledgeText(translated);
+    }
+    return expertAnswer;
+  }
 
   const servicePriceFollowup=await directServicePriceFollowup(rows,followupKind==='pricing' ? followupCanonical : cleanMessage,history,responseLang);
   if(servicePriceFollowup) return servicePriceFollowup;
