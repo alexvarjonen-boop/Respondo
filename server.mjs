@@ -1747,6 +1747,8 @@ function queryTopic(query) {
 function productStem(value) {
   let word=normalizeSearchText(value).replace(/[^a-z0-9]/g,'');
   word=word.replace(/(?:eista|eita|ista|issa|illa|ille|sta|ssa|lla|lle|ksi|ien|jen|ita|iat|ers|er|s)$/,'');
+  // Finnish plural forms: sohvia -> sohv, sohva -> sohva; taloja -> talo.
+  if(word.length>=6) word=word.replace(/(?:ia|ja|at)$/,'');
   if(word.length>5 && /i$/.test(word)) word=word.slice(0,-1);
   if(word.length>5 && /a$/.test(word)) word=word.slice(0,-1);
   return word;
@@ -1961,7 +1963,11 @@ function directProductAnswer(rows,message,lang='fi') {
   const materialAsk=/\b(?:materia\w*|material\w*|made of|made from)\b/.test(q);
   const specAsk=/\b(?:mitta\w*|mitat|dimension\w*|paino\w*|weight\w*|pituu\w*|length\w*|levey\w*|width\w*|korkeu\w*|height\w*)\b/.test(q);
   const generalSellAsk=broadProductQuestion(message);
-  const listAsk=generalSellAsk || /(?:mita|mitä|mitka|mitkä|what|which|vilka).*(?:tuot|product|putter|maila|sortiment|valikoim)|(?:tuotteita|products|puttereita|putters).*(?:teilla|teillä|have|har)/.test(q);
+  const listAsk=generalSellAsk || /(?:mita|mitä|mitka|mitkä|what|which|vilka).*(?:tuot|product|putter|maila|sortiment|valikoim)|(?:tuotteita|products|puttereita|putters).*(?:teilla|teillä|have|har)/.test(q)
+    || (tokens.length>0 && /\b(?:nayta|esittele|etsi|hae|loytyyko|nayttakaa|show|find|search|browse|visa|hitta|sok)\b/.test(q))
+    || (!priceAsk && !stockAsk && !colorAsk && !sizeAsk && !materialAsk && !specAsk && tokens.length>0 && candidates[0]?._match>=6 && /\b(?:mita|mitka|millaisia|onko|loytyyko|saako|finns|har ni|do you have|which|what)\b/.test(q))
+    || (!priceAsk && !stockAsk && !colorAsk && !sizeAsk && !materialAsk && !specAsk && tokens.length>=2 && q.split(/\s+/).length<=5 && candidates[0]?._match>=12)
+    || (!priceAsk && !stockAsk && !colorAsk && !sizeAsk && !materialAsk && !specAsk && tokens.length===1 && q.split(/\s+/).length<=3 && candidates[0]?._match>=12);
   const bestCandidate=candidates[0];
 
   if(popularAsk){
@@ -2142,7 +2148,7 @@ function directProductAnswer(rows,message,lang='fi') {
         confidence:0.99,
         intent:'Tuotteet',
         sourceIds:list.map((product)=>product.row?.id).filter(Boolean),
-        selected:[]
+        selected:products.length===1 ? [products[0].row].filter(Boolean) : []
       };
     }
 
@@ -2171,7 +2177,7 @@ function directProductAnswer(rows,message,lang='fi') {
       confidence:0.98,
       intent:'Tuotteet',
       sourceIds:list.map((product)=>product.row?.id).filter(Boolean),
-      selected:list.slice(0,3).map((product)=>product.row).filter(Boolean)
+      selected:list.slice(0,4).map((product)=>product.row).filter(Boolean)
     };
   }
 
@@ -2201,6 +2207,43 @@ function directProductAnswer(rows,message,lang='fi') {
     return {answer,handoff:false,confidence:0.94,intent:'Tuotteet',sourceIds:[best.row?.id].filter(Boolean),selected:[best.row].filter(Boolean)};
   }
   return null;
+}
+// Product cards are created exclusively from knowledge rows selected by a
+// grounded answer. Never recommend unrelated catalog entries on handoff.
+function verifiedProductCards(result) {
+  if (result?.handoff || result?.intent !== 'Tuotteet') return [];
+  const cards=[];const seen=new Set();
+  for (const row of Array.isArray(result?.selected)?result.selected:[]) {
+    const product=parseProductKnowledgeRow(row);
+    if (!product?.name || !product.url) continue;
+    let url='',imageUrl='';
+    try {
+      const parsed=new URL(product.url);
+      if (!['http:','https:'].includes(parsed.protocol) || parsed.username || parsed.password) continue;
+      url=parsed.href;
+    } catch {continue;}
+    if (product.imageUrl) {
+      try {
+        const image=new URL(product.imageUrl);
+        if (['http:','https:'].includes(image.protocol) && !image.username && !image.password) imageUrl=image.href;
+      } catch {}
+    }
+    const key=url.toLowerCase();
+    if(seen.has(key)) continue;
+    seen.add(key);
+    cards.push({
+      name:product.name.slice(0,180),
+      url,
+      imageUrl,
+      description:String(product.description||'').slice(0,220),
+      price:Number.isFinite(product.price)?product.price:null,
+      maxPrice:Number.isFinite(product.maxPrice)?product.maxPrice:null,
+      currency:/^[A-Z]{3}$/.test(product.currency||'')?product.currency:'',
+      availability:product.availability.slice(0,60),
+    });
+    if(cards.length===4) break;
+  }
+  return cards;
 }
 function expandSearchConcepts(value) {
   let text=' '+normalizeCustomerQuery(value)+' ';
@@ -3472,6 +3515,7 @@ function normalizeCatalogProduct(product, fallbackUrl='') {
   return {
     name:String(product.name).replace(/\s+/g,' ').trim().slice(0,180),
     url,
+    imageUrl:normalizeWebUrl(product.imageUrl || '',false),
     price:Number.isFinite(product.price)?Number(product.price):null,
     maxPrice:Number.isFinite(product.maxPrice)?Number(product.maxPrice):(Number.isFinite(product.price)?Number(product.price):null),
     currency:String(product.currency||'').trim().toUpperCase().slice(0,8),
@@ -3518,6 +3562,7 @@ async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Dat
       const product=normalizeCatalogProduct({
         name:raw?.title,
         url:new URL('/products/'+String(raw?.handle||''),base).toString(),
+        imageUrl:raw?.image?.src || raw?.images?.[0]?.src || '',
         price:prices.length?Math.min(...prices):null,
         maxPrice:prices.length?Math.max(...prices):null,
         currency,
@@ -3575,6 +3620,7 @@ async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.no
       const product=normalizeCatalogProduct({
         name:raw?.name,
         url:raw?.permalink,
+        imageUrl:raw?.images?.[0]?.src || raw?.images?.[0]?.thumbnail || '',
         price:low===null?null:low/minor,
         maxPrice:regular===null?(low===null?null:low/minor):Math.max(low===null?0:low/minor,regular/minor),
         currency:p.currency_code,
@@ -9568,6 +9614,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       confidence: handoff ? Math.min(result.confidence, 0.35) : result.confidence,
       intent: result.intent,
       actions,
+      products:verifiedProductCards(result),
       canLeaveContact: Boolean(handoff),
     });
   } catch (e) {
@@ -10126,6 +10173,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       sourceIds: result.sourceIds,
       verified: !handoff && Array.isArray(result.sourceIds) && result.sourceIds.length > 0,
       actions,
+      products:verifiedProductCards(result),
       canLeaveContact: handoff,
     });
   } catch (e) {
@@ -11761,6 +11809,6 @@ async function start() {
   app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
 }
 
-export { app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
+export { verifiedProductCards, app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
 if (process.env.NODE_ENV !== 'test') start();
 

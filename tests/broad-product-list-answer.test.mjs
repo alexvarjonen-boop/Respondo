@@ -10,13 +10,14 @@ const rows=[
   {id:'putter',category:'Tuotteet',title:'JAG Satin Black - Putter',answer:'Tuote: JAG Satin Black - Putter. Tuoteryhmä: Putter. Hinta: 199 EUR. Linkki: https://shop.example/products/satin-black.',keywords:['jag','putter','golf','product'],source_type:'website',source_url:'https://shop.example/products/satin-black'},
 ];
 
-test('broad what-do-you-sell question answers with natural product categories and one catalog link', async()=>{
+test('broad what-do-you-sell question answers with categories, grounded product cards and catalog link', async()=>{
   const result=await generateGroundedAnswer({rows,message:'What do you sell?',lang:'en'});
   assert.equal(result.handoff,false,JSON.stringify(result));
   assert.match(result.answer,/^We sell golf equipment, including:/);
   assert.match(result.answer,/• (?:Putters|Headcovers|Towels|Grips)/);
   assert.match(result.answer,/Among other products\.$/);
   assert.doesNotMatch(result.answer,/Tuote:|Tuoteryhmä:|Brändi:|Our selection includes/i);
+  // Broad requests with many unrelated products show the store categories and catalog link.
   assert.equal(result.selected.length,0);
 
   const actions=chatActions(rows,'What do you sell?',false,'en',result.selected);

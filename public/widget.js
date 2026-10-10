@@ -31,7 +31,7 @@
     'Hei! Miten voin auttaa?':'Hej! Hur kan jag hjälpa?','Chat ei ole käytössä tällä verkkosivulla.':'Chatten är inte tillgänglig på den här webbplatsen.',
     'En löytänyt tähän varmaa vastausta.':'Jag hittade inget säkert svar på detta.','Varmennettu yrityksen tiedoista':'Verifierat från företagets information',
     'Nimi':'Namn','Sähköposti tai puhelin':'E-post eller telefon','Viesti':'Meddelande','Lähetä':'Skicka','Sulje':'Stäng',
-    'Sähköposti':'E-post','Puhelin':'Telefon','Valitse aika':'Välj tid','Varaa':'Boka','Lähetä tarjouspyyntö':'Skicka offertförfrågan'
+    'Sähköposti':'E-post','Puhelin':'Telefon','Valitse aika':'Välj tid','Varaa':'Boka','Lähetä tarjouspyyntö':'Skicka offertförfrågan','Katso tuote →':'Visa produkt →'
   }));
   const EXTRA_SV_WIDGET = {
   "Respondon asiakaspalvelu": "Respondos kundservice",
@@ -164,6 +164,16 @@
       .quick:empty{display:none}
       .quick button{position:relative;z-index:2;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border:1px solid #dedee2;background:#fff;border-radius:999px;padding:8px 10px;font:inherit;font-size:12px;color:#343438;cursor:pointer}
       .quick button:hover{border-color:#a9a9af}
+      .product-results{display:grid;gap:9px;align-self:stretch;min-width:0}
+      .product-card{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:16px;background:#fff;border:1px solid #e3e3e7;color:#1b1b1f!important;text-decoration:none!important;min-width:0}
+      .product-card:hover,.product-card:focus-visible{border-color:#aaa;box-shadow:0 4px 16px #0001;outline:none}
+      .product-image{height:80px;width:80px;flex:0 0 80px;object-fit:contain;border-radius:10px;background:#f3f3f5}
+      .product-image-fallback{display:grid;place-items:center;color:#999;font-size:23px}
+      .product-details{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+      .product-name{font-size:13px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+      .product-description{font-size:12px;line-height:1.4;color:#62626b;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+      .product-price{font-size:14px;font-weight:800;margin-top:1px}
+      .product-open{font-size:11px;font-weight:750;color:#4e4e59}
       .actions{display:flex;gap:7px;flex-wrap:wrap;align-self:flex-start;max-width:92%}
       .actions a,.actions button{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6d6da;background:#fff;color:#111113;text-decoration:none;border-radius:10px;padding:9px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
       .leadbox{align-self:stretch;background:#fff;border:1px solid #dedee2;border-radius:16px;padding:13px;display:grid;gap:8px}
@@ -349,6 +359,54 @@
     });
 
     chat.appendChild(wrap);
+  }
+
+  function renderProducts(items = []) {
+    const valid=(Array.isArray(items)?items:[])
+      .filter((p)=>p?.name && /^https?:\/\//i.test(safeActionUrl(p.url))).slice(0,4);
+    if(!valid.length) return false;
+    const wrap=document.createElement('div');
+    wrap.className='product-results';
+    const locale=widgetLang==='sv'?'sv-SE':widgetLang==='en'?'en-US':'fi-FI';
+    function formatPrice(value,currency){
+      if(!Number.isFinite(value)) return '';
+      const code=currency==='€'?'EUR':currency==='$'?'USD':currency==='£'?'GBP':currency;
+      try {if(/^[A-Z]{3}$/.test(code||'')) return new Intl.NumberFormat(locale,{style:'currency',currency:code}).format(value);} catch {}
+      return new Intl.NumberFormat(locale,{maximumFractionDigits:2}).format(value);
+    }
+    for(const item of valid){
+      const card=document.createElement('a');
+      card.className='product-card'; card.href=item.url;card.target='_blank';card.rel='noopener noreferrer';
+      const image=document.createElement(item.imageUrl&&/^https?:\/\//i.test(item.imageUrl)?'img':'span');
+      image.className='product-image'+(image.tagName==='SPAN'?' product-image-fallback':'');
+      if(image.tagName==='IMG'){
+        image.src=item.imageUrl;image.alt=item.name;image.loading='lazy';
+        image.addEventListener('error',()=>{
+          const fallback=document.createElement('span');fallback.className='product-image product-image-fallback';fallback.textContent='◻';
+          image.replaceWith(fallback);
+        },{once:true});
+      }else image.textContent='◻';
+      const details=document.createElement('span');details.className='product-details';
+      const title=document.createElement('strong');title.className='product-name';title.textContent=item.name;
+      details.appendChild(title);
+      if(item.description){
+        const description=document.createElement('span');description.className='product-description';
+        description.textContent=item.description;details.appendChild(description);
+      }
+      if(Number.isFinite(item.price)){
+        const price=document.createElement('strong');price.className='product-price';
+        price.textContent=formatPrice(item.price,item.currency)+
+          (Number.isFinite(item.maxPrice)&&item.maxPrice>item.price?' – '+formatPrice(item.maxPrice,item.currency):'');
+        details.appendChild(price);
+      }
+      const cta=document.createElement('span');cta.className='product-open';
+      cta.textContent=t('Katso tuote →','View product →');details.appendChild(cta);
+      card.append(image,details);
+      card.addEventListener('click',()=>trackAction({type:'product',label:item.name,url:item.url}));
+      wrap.appendChild(card);
+    }
+    chat.appendChild(wrap);
+    return true;
   }
 
   function renderQuickReplies(items = []) {
@@ -706,7 +764,8 @@
         note.innerHTML = '<span>✓</span> ' + t('Varmennettu yrityksen tiedoista', 'Verified from company information');
         chat.appendChild(note);
       }
-      renderActions(data.actions || [], message);
+      const hasProducts=renderProducts(data.products || []);
+      renderActions((data.actions || []).filter((action)=>!hasProducts || action?.type!=='product'), message);
       if ((data.canLeaveContact || data.handoff) && !data.humanTakeover) showLeadForm(message);
       if (data.humanTakeover) {
         status.textContent = t('Asiakaspalvelija mukana', 'Human agent joined');
