@@ -9106,3 +9106,57 @@ body.deletion-modal-open{overflow:hidden!important}
 /* Keep seller identity accessible below signup while opening with the form. */
 #app .signup-page .signup-seller-note{margin:14px auto 0;text-align:center;color:#59616e;line-height:1.6;max-width:100%}
 #app .signup-page .signup-seller-note small{font-size:12px;line-height:1.6}
+
+/* 2026-10-10 signup layout hardening: never render signup as two columns. */
+#app .formpage.signup-page{
+  overflow-x:clip!important;
+}
+#app .signup-page .signup-layout{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:14px!important;
+  width:min(640px,calc(100% - 40px))!important;
+  max-width:640px!important;
+  min-width:0!important;
+  margin-inline:auto!important;
+  padding:0!important;
+}
+#app .signup-page #signup{
+  display:block!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  transform:none!important;
+  translate:none!important;
+  scale:none!important;
+  opacity:1!important;
+}
+#app .signup-page .formgrid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  width:100%!important;
+  gap:16px!important;
+}
+#app .signup-page .formgrid .field{min-width:0!important}
+#app .signup-page .formgrid .field.full{grid-column:1 / -1!important}
+#app .signup-page .field :is(input,select,textarea){
+  display:block;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+#app .signup-page .signup-seller-note{
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  text-align:center!important;
+}
+@media(max-width:640px){
+  #app .signup-page .signup-layout{width:calc(100% - 24px)!important}
+  #app .signup-page #signup{padding:20px!important}
+  #app .signup-page .formgrid{grid-template-columns:minmax(0,1fr)!important}
+}
