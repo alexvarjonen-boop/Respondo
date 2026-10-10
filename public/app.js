@@ -1,6 +1,6 @@
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261001-highlights-v1';
 import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1';
-import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261008-new-ra-logo-v1';
+import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261010-header-stability-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -1759,7 +1759,7 @@ function nav() {
           : `<a class="btn ghost nav-login-btn" href="/kirjaudu"><span>${appText('Kirjaudu','Logga in','Log in')}</span></a>
              <a class="btn ink" href="/tilaus">${appText('Kokeile ilmaiseksi','Prova gratis','Start free trial')}</a>`}
       </div>
-      <button class="apple-menu-toggle" type="button" data-apple-menu-open aria-controls="apple-nav-overlay" aria-expanded="false" aria-label="${appText('Avaa valikko','Öppna menyn','Open menu')}"><span></span><span></span></button>
+      <button class="apple-menu-toggle" type="button" data-apple-menu-open aria-controls="apple-nav-overlay" aria-expanded="false" aria-label="${appText('Avaa valikko','Öppna menyn','Open menu')}"><span></span><span></span><span></span></button>
     </div>
   </header>${publicMenuMarkup(appText,currentLang())}`;
 }
