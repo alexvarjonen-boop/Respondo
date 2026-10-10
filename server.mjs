@@ -4,7 +4,7 @@ import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
 import { interpretCustomerQuestion } from './query-typos.mjs';
-import { industryServiceAnswer } from './industry-service-engine.mjs';
+import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion } from './industry-service-engine.mjs';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -6181,8 +6181,10 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // cannot claim a service just because it operates in that industry.
   // Run this ahead of broader service heuristics that can otherwise interpret
   // "repair" alone as proof of a different repair or a sale as installation.
-  const industryService = industryServiceAnswer(rows,cleanMessage,responseLang);
-  if(industryService) return industryService;
+  if(isExplicitAutomotiveServiceQuestion(cleanMessage)){
+    const specialistService = industryServiceAnswer(rows,cleanMessage,responseLang);
+    if(specialistService) return specialistService;
+  }
 
   const toiletInstallation = groundedToiletInstallationQuestion(cleanMessage, rows, responseLang);
   if (toiletInstallation) return toiletInstallation;
@@ -6314,6 +6316,12 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   if (responseLang === 'fi' && /^(?:teetteko|pesetteko|leikkaatteko|maalaatteko|raivaatteko|puhdistatteko|huollatteko|asennatteko|korjaatteko|vietteko)\b/.test(normalized)) {
     return {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
   }
+
+  // Other professions retain the established high-precision resolvers above,
+  // while specialized queries unhandled by them can still use the general
+  // verified-operation matcher before any weak full-text knowledge retrieval.
+  const additionalTradeService = industryServiceAnswer(rows,cleanMessage,responseLang);
+  if(additionalTradeService) return additionalTradeService;
 
   // Broad questions such as "What do you sell?" or "Tell me about the company"
   // should use the approved knowledge base as factual memory instead of requiring
