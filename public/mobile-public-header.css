@@ -1,0 +1,173 @@
+/* Stable single-row public navigation on small screens.
+   Keep the hamburger reachable while Safari scrolls and its browser chrome changes height.
+   The larger call-to-action and language selector live inside the full-screen menu. */
+@media (max-width:760px) {
+  body.public-nav-active {
+    --public-mobile-header-height:64px;
+  }
+  body.public-nav-active #app {
+    padding-top:64px!important;
+  }
+  body.public-nav-active #app .nav {
+    position:fixed!important;
+    top:0!important;
+    left:0!important;
+    right:0!important;
+    width:100%!important;
+    height:64px!important;
+    min-height:64px!important;
+    max-height:64px!important;
+    margin:0!important;
+    padding:0!important;
+    z-index:2147482000!important;
+    border:0!important;
+    border-bottom:1px solid rgba(17,17,20,.08)!important;
+    border-radius:0!important;
+    background:#fff!important;
+    -webkit-backdrop-filter:none!important;
+    backdrop-filter:none!important;
+    box-shadow:0 2px 15px rgba(17,17,20,.04)!important;
+    transform:none!important;
+    overflow:visible!important;
+  }
+  body.public-nav-active #app .nav .container.navin {
+    display:flex!important;
+    flex-flow:row nowrap!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    width:calc(100% - 32px)!important;
+    max-width:none!important;
+    height:64px!important;
+    min-height:64px!important;
+    max-height:64px!important;
+    margin:0 auto!important;
+    padding:0!important;
+    gap:12px!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+    transform:none!important;
+  }
+  body.public-nav-active #app .nav .logo {
+    display:inline-flex!important;
+    flex:0 1 auto!important;
+    align-items:center!important;
+    min-width:0!important;
+    max-width:calc(100% - 62px)!important;
+    margin:0!important;
+    padding:0!important;
+    gap:8px!important;
+    overflow:hidden!important;
+  }
+  body.public-nav-active #app .nav .brand-mark {
+    flex:0 0 32px!important;
+    width:32px!important;
+    height:32px!important;
+  }
+  body.public-nav-active #app .nav .brand-word {
+    display:inline!important;
+    min-width:0!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+    text-overflow:ellipsis!important;
+    font-size:14px!important;
+    font-weight:750!important;
+    color:#1d1d1f!important;
+  }
+  /* Older rules tried to fit logo, flags and two CTAs in one phone row.
+     They pushed the menu outside the viewport; use the menu for these instead. */
+  body.public-nav-active #app .nav .navlinks,
+  body.public-nav-active #app .nav .navactions {
+    display:none!important;
+  }
+  body.public-nav-active #app .nav .apple-menu-toggle {
+    display:grid!important;
+    flex:0 0 44px!important;
+    position:static!important;
+    inset:auto!important;
+    order:2!important;
+    place-content:center!important;
+    justify-items:center!important;
+    align-self:center!important;
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    max-height:44px!important;
+    margin:0 0 0 auto!important;
+    padding:0!important;
+    gap:5px!important;
+    border:0!important;
+    border-radius:12px!important;
+    background:transparent!important;
+    color:#1d1d1f!important;
+    box-shadow:none!important;
+    visibility:visible!important;
+    opacity:1!important;
+    transform:none!important;
+    cursor:pointer;
+    touch-action:manipulation;
+  }
+  body.public-nav-active #app .nav .apple-menu-toggle span {
+    display:block!important;
+    width:21px!important;
+    height:2px!important;
+    border-radius:3px!important;
+    background:currentColor!important;
+    flex:none!important;
+    transform:none!important;
+    opacity:1!important;
+  }
+  body.public-nav-active #app .apple-home-page .nav {
+    background:#141416!important;
+    border-bottom-color:rgba(255,255,255,.12)!important;
+  }
+  body.public-nav-active #app .apple-home-page .nav .brand-word,
+  body.public-nav-active #app .apple-home-page .nav .apple-menu-toggle {
+    color:#f5f5f7!important;
+  }
+}
+.apple-menu-language {
+  margin-top:30px;
+  padding-top:22px;
+  border-top:1px solid rgba(255,255,255,.15);
+}
+.apple-menu-language p {
+  margin:0 0 12px;
+  font-size:12px;
+  letter-spacing:.05em;
+  font-weight:650;
+  color:#a1a1ac;
+}
+.apple-menu-lang-buttons {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.apple-menu-lang-buttons button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:44px;
+  padding:9px 14px;
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:13px;
+  background:rgba(255,255,255,.07);
+  color:#f5f5f7;
+  font:600 14px/1.2 inherit;
+  cursor:pointer;
+}
+.apple-menu-lang-buttons button[aria-pressed="true"] {
+  background:#f5f5f7;
+  border-color:#f5f5f7;
+  color:#171719;
+}
+.apple-menu-lang-buttons button:focus-visible {
+  outline:3px solid #2997ff;
+  outline-offset:3px;
+}
