@@ -17,6 +17,14 @@ export function publicMenuMarkup(t,lang){
   <nav class="apple-menu-body" aria-label="${t('Sivuston valikko','Webbplatsmeny','Site navigation')}">
     <p class="apple-menu-label">${t('Tutustu Respondoon','Upptäck Respondo','Explore Respondo')}</p>
     <div class="apple-menu-links">${entries.map(([label,href])=>`<a href="${href}">${label} <span aria-hidden="true">↗</span></a>`).join('')}</div>
+    <div class="apple-menu-language" role="group" aria-label="${t('Kieli','Språk','Language')}">
+      <p>${t('Valitse kieli','Välj språk','Choose language')}</p>
+      <div class="apple-menu-lang-buttons">
+        <button type="button" data-lang-button="fi" aria-pressed="${lang==='fi'?'true':'false'}">🇫🇮 Suomi</button>
+        <button type="button" data-lang-button="sv" aria-pressed="${lang==='sv'?'true':'false'}">🇸🇪 Svenska</button>
+        <button type="button" data-lang-button="en" aria-pressed="${lang==='en'?'true':'false'}">🇬🇧 English</button>
+      </div>
+    </div>
     <div class="apple-menu-footer"><a class="apple-menu-cta" href="/tilaus">${t('Aloita ilmainen kokeilu','Börja gratis provperiod','Start free trial')}</a></div>
   </nav>
  </div>`;
