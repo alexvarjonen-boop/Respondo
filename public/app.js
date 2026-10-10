@@ -1,6 +1,6 @@
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261001-highlights-v1';
 import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1';
-import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261010-header-stability-v1';
+import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261010-language-header-only-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 const $ = (s, r = document) => r.querySelector(s);
 
