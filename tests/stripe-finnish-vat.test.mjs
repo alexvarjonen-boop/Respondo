@@ -24,9 +24,9 @@ test('prices and terms do not falsely describe VAT as included',()=>{
   for(const s of [server,app,terms]){
     assert.doesNotMatch(s,/25[.,]5\s*%/);
   }
-  assert.match(app,/Starter',29\.90,29\.90,358\.80/);
-  assert.match(app,/Advanced',39\.90,39\.90,478\.80/);
-  assert.match(app,/Business',49\.90,49\.90,598\.80/);
+  assert.match(app,/Starter',34\.90,29\.90,358\.80/);
+  assert.match(app,/Advanced',44\.90,39\.90,478\.80/);
+  assert.match(app,/Business',54\.90,49\.90,598\.80/);
 });
 
 test('historical inclusive-tax Stripe prices stay associated with their plans',()=>{
