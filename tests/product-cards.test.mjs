@@ -58,5 +58,6 @@ test('browsing product names and generic catalog questions select cards',async()
     companyName:'Testikauppa',rows:[row],message:'Mitä te myytte?',lang:'fi',
   });
   assert.equal(generic.handoff,false);
-  assert.deepEqual(verifiedProductCards(generic).map(x=>x.url),[url]);
+  // A broad category question should not show arbitrary individual products.
+  assert.deepEqual(verifiedProductCards(generic),[]);
 });
