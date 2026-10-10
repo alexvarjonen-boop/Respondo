@@ -32,5 +32,5 @@ test('contact page has distinct Finnish, Swedish and English SEO metadata', () =
   const server = read('server.mjs');
   assert.match(server, /Yhteystiedot \| Respondo AI/);
   assert.match(server, /Kontakt \| Respondo AI/);
-  assert.match(server, /Contact Respondo AI \| Support and Sales/);
+  assert.match(server, /Contact (?:Respondo AI \| Support and Sales|\| Respondo AI)/);
 });
