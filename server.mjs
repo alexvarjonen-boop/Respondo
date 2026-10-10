@@ -2947,15 +2947,21 @@ function referencedProductFollowUp(rows,message,history=[],lang='fi') {
   // An explicitly named product in the current message wins over history.
   if(products.some(p=>q.includes(normalizeSearchText(p.name)) && normalizeSearchText(p.name).length>=5)) return null;
   const turn=meaningfulConversationTurn(history);
-  if(!turn) return null;
+  const say=(fi,sv,en)=>lang==='en'?en:lang==='sv'?sv:fi;
+  if(!turn) {
+    return {answer:say('Mitä tuotetta tarkoitat?','Vilken produkt menar du?','Which product do you mean?'),
+      handoff:false,confidence:0.75,intent:'Tarkennus',sourceIds:[],selected:[]};
+  }
   const previous=normalizeSearchText(turn.question+' '+turn.answer);
   const mentioned=products.filter(p=>normalizeSearchText(p.name).length>=5 && previous.includes(normalizeSearchText(p.name)));
-  const say=(fi,sv,en)=>lang==='en'?en:lang==='sv'?sv:fi;
+  if(mentioned.length===0 && conversationTopic(turn.question)!=='products') return null;
   if(mentioned.length!==1){
     return {answer:say('Mitä tuotetta tarkoitat?','Vilken produkt menar du?','Which product do you mean?'),
       handoff:false,confidence:0.75,intent:'Tarkennus',sourceIds:[],selected:[]};
   }
-  const result=directProductAnswer(rows,mentioned[0].name+' '+message,lang);
+  // Restrict the product answering path to that single verified product. A
+  // question about "it" cannot silently turn into a list of all putters.
+  const result=directProductAnswer([mentioned[0].row],mentioned[0].name+' '+message,lang);
   return result || {answer:'',handoff:true,confidence:0.2,intent:'Tuotteet',sourceIds:[],selected:[]};
 }
 
