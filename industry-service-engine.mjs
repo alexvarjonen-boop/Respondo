@@ -101,7 +101,7 @@ function requestedAction(message){
   const found=actions(q);
   // Repairing a puncture is a patching operation, not evidence that the
   // company offers every type of tire repair.
-  if(concepts(q).has('tire') && /\b(?:punctur\w*|punka\w*|puncture|flat\s+tire)\b/.test(q)
+  if(concepts(q).has('tire') && /\b(?:punctur\w*|punka\w*|punkter\w*|puncture|flat\s+tire)\b/.test(q)
       && found.has('repair')){found.delete('repair');found.add('patch');}
   const direct=q.match(/^(vaih\w*|paikka\w*|korja\w*|huol\w*|asen\w*|testa\w*|tarkast\w*|pes\w*)/);
   if(direct){
