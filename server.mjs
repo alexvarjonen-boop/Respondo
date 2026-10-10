@@ -1312,6 +1312,60 @@ function normalizeSearchText(value) {
     .trim();
 }
 
+
+/**
+ * Normalize only customer search cues, never approved company facts or product
+ * names. A typo in a common intent word must not change the named business
+ * entity the customer is actually asking about.
+ */
+const CUSTOMER_INTENT_TYPOS = Object.freeze({
+  paljoko:'paljonko', paljokko:'paljonko', paljonkko:'paljonko',
+  maaksaa:'maksaa', makaako:'maksaako', hintaako:'hintaa',
+  toimituskuut:'toimituskulut', toimituskult:'toimituskulut',
+  toimituus:'toimitus', toimtus:'toimitus', tomitus:'toimitus',
+  aukiolajat:'aukioloajat', aukiolaojat:'aukioloajat',
+  palaautus:'palautus', palutus:'palautus', palautukst:'palautukset',
+  yhteystieodot:'yhteystiedot', sahkopostii:'sahkoposti',
+  shiping:'shipping', shippng:'shipping', delivry:'delivery',
+  retuns:'returns', retun:'return', prcie:'price', adress:'address',
+  opennig:'opening', availble:'available', warrnty:'warranty',
+  oppetider:'oppettider', levernas:'leverans', returr:'retur',
+  bestallnig:'bestallning', kostarr:'kostar', prisss:'pris'
+});
+function normalizeCustomerQuery(value) {
+  return normalizeSearchText(value).split(' ')
+    .map(word=>CUSTOMER_INTENT_TYPOS[word]||word).join(' ').trim();
+}
+
+// Bounded Damerau–Levenshtein match for a misspelled subject word.
+// Accept only one edit in normal words and two in long compounds. This is
+// intentionally not used to invent values, products, prices or services.
+function nearKnowledgeToken(a,b) {
+  if(a===b) return true;
+  if(a.length<5 || b.length<5 || a.length>35 || b.length>35) return false;
+  const max=Math.min(a.length,b.length)>=9?2:1;
+  if(Math.abs(a.length-b.length)>max) return false;
+  if(a.length===b.length) {
+    let mismatch=[];
+    for(let i=0;i<a.length;i++) if(a[i]!==b[i]) mismatch.push(i);
+    if(mismatch.length===2 && mismatch[1]===mismatch[0]+1 &&
+       a[mismatch[0]]===b[mismatch[1]] && a[mismatch[1]]===b[mismatch[0]]) return true;
+  }
+  let prev=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){
+    const next=[i];
+    let rowMin=i;
+    for(let j=1;j<=b.length;j++){
+      const value=Math.min(next[j-1]+1,prev[j]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
+      next[j]=value;
+      rowMin=Math.min(rowMin,value);
+    }
+    if(rowMin>max) return false;
+    prev=next;
+  }
+  return prev[b.length]<=max;
+}
+
 function sanitizeUserFacingText(value) {
   const decoded=decodeHtml(String(value || ''))
     // Scraped CMS content can contain literal escape sequences instead of real
@@ -1643,7 +1697,7 @@ function knowledgeTopic(value) {
   return '';
 }
 function queryTopic(query) {
-  const q=normalizeSearchText(query);
+  const q=normalizeCustomerQuery(query);
   const lexicalIntent=intentForMessage(q);
   const intentTopic={
     pricing:'pricing',
@@ -2149,7 +2203,7 @@ function directProductAnswer(rows,message,lang='fi') {
   return null;
 }
 function expandSearchConcepts(value) {
-  let text=' '+normalizeSearchText(value)+' ';
+  let text=' '+normalizeCustomerQuery(value)+' ';
   const groups=[
     ['palvelu','palvelut','teette','tarjoatte','tarjoa','service','services','offer','offering','tjanst','tjanster','erbjuder'],
     ['tuote','tuotteet','myytte','myy','valikoima','product','products','sell','selection','range','produkt','produkter','saljer','sortiment'],
@@ -2264,6 +2318,12 @@ function scoreKnowledgeRow(row, query) {
     if(titleTokens.has(token)) score+=5;
     if(keywordTokens.has(token)) score+=5;
     if(answerTokens.has(token)) score+=1.2;
+    // Conservative typo tolerance: boost a near-match, but keep an exact
+    // subject and the required knowledge topic more important than fuzzy text.
+    if(token.length>=5 && !titleTokens.has(token) && !keywordTokens.has(token) && !answerTokens.has(token)) {
+      if([...titleTokens,...keywordTokens].some(word=>nearKnowledgeToken(token,word))) score+=3;
+      else if([...answerTokens].some(word=>nearKnowledgeToken(token,word))) score+=1.5;
+    }
     const stem=token.slice(0,Math.min(6,token.length));
     if(stem.length>=4){
       if([...titleTokens].some(x=>x.startsWith(stem))) score+=2;
@@ -2274,7 +2334,7 @@ function scoreKnowledgeRow(row, query) {
   // For store-policy questions, prefer the sentence that actually contains the
   // requested detail. Category-wide keywords alone must not make "delivery time"
   // outrank "tracking code" for a tracking question.
-  const normalizedQuery=normalizeSearchText(query);
+  const normalizedQuery=normalizeCustomerQuery(query);
   if (wanted==='delivery' && /seurant|tracking|track order|sparning|spårning/.test(normalizedQuery)) {
     const evidence=title+' '+answer;
     if (/seurant|tracking|sparning|spårning/.test(evidence)) score+=28;
@@ -2288,11 +2348,11 @@ function scoreKnowledgeRow(row, query) {
 }
 
 function selectRelevantKnowledge(rows, query, limit = 6) {
-  const q = normalizeSearchText(query);
+  const q = normalizeCustomerQuery(query);
   const wantedTopic = queryTopic(query);
   // A service-specific price question must not return the price of an unrelated
   // service just because both price rows share the category/keywords 'Hinnat'.
-  const priceSubjects = wantedTopic === 'pricing' ? searchTokens(query).filter(word =>
+  const priceSubjects = wantedTopic === 'pricing' ? searchTokens(q).filter(word =>
     word.length >= 4 && !/^(?:hinn|hint|maks|kustann|palvel|service|price|pricing|cost|much$|per$|hour|tunt|euro|eur$|pris|kost|vilken|mycket$|paljon|alka|from$|starting|does$|finns$|teetteko$|pesu|puhdist|siivou|oljy|asenn|maal|korj|huol|raiva|poisvien|kuljet)/.test(word)
   ) : [];
   const legalQuery = /tietosuoja|privacy|käyttöeh|kayttoeh|terms|ehto|cookie|eväste|evaste|gdpr/.test(q);
@@ -2314,7 +2374,7 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
       if(rowTopic && rowTopic!==wanted) return false;
       if(wanted==='pricing' && priceSubjects.length) {
         const evidence=searchTokens(String(x.title||'')+' '+String(x.answer||''));
-        return priceSubjects.some(subject => evidence.some(token => token.slice(0,6)===subject.slice(0,6)));
+        return priceSubjects.some(subject => evidence.some(token => token.slice(0,6)===subject.slice(0,6) || nearKnowledgeToken(token,subject)));
       }
       return true;
     })
@@ -2531,7 +2591,7 @@ function answerTone(rows) {
 }
 
 function inferIntent(message) {
-  const q = normalizeSearchText(message);
+  const q = normalizeCustomerQuery(message);
   if (/tilausnumero|tilaukseni|tilauksen tila|order status|where is my order|seuranta|tracking|orderstatus|var är min beställning|var ar min bestallning/.test(q)) return 'Tilauksen tila';
   if (/maksutapa|maksaminen|klarn|paypal|mobilepay|apple pay|google pay|payment method|betalningsmetod/.test(q)) return 'Maksaminen';
   if (/palaut|return|refund|vaihto|exchange|retur/.test(q)) return 'Palautukset';
@@ -2867,6 +2927,42 @@ function contextualizeConversationQuery(message, history = []) {
   // a short slice of the previous grounded answer. That lets "entä viikonloppuna?",
   // "saako sitä punaisena?" and "miksi?" inherit the actual subject.
   return [previous,previousAnswer.slice(0,180),q].filter(Boolean).join(' ');
+}
+
+
+// Never guess which product a short "it/that" follow-up refers to. Resolve
+// only a single product explicitly mentioned in the most recent substantive
+// answer/question; otherwise ask for the product instead of choosing the
+// cheapest or first catalog row.
+function referencedProductFollowUp(rows,message,history=[],lang='fi') {
+  const q=normalizeCustomerQuery(message);
+  const pronoun=/\b(?:se|sen|sita|siita|sille|siihen|tama|taman|tuo|tuota|niita|niiden|it|its|that|this|those|them|det|den|detta|dess|dem)\b/.test(q);
+  const detail=/\b(?:paljonko|maksaa|hinta|hintaa|saatavuus|saatavilla|varastossa|vareja|varit|vari|kokoja|koot|koko|materiaali|what.*price|how much|cost|price|stock|available|colors?|colours?|sizes?|materials?|vad kostar|hur mycket|pris|lager|farger|farg|storlekar|storlek|material)\b/.test(q);
+  if(!pronoun || !detail) return null;
+  // Shipping, refunds, payment and other store policies must not inherit a
+  // product as their retrieval topic, even when the query contains a pronoun.
+  if(['delivery','returns','payment','warranty','booking','contact','hours','stores','quote'].includes(queryTopic(q))) return null;
+  const products=productCatalog(rows);
+  if(!products.length) return null;
+  // An explicitly named product in the current message wins over history.
+  if(products.some(p=>q.includes(normalizeSearchText(p.name)) && normalizeSearchText(p.name).length>=5)) return null;
+  const turn=meaningfulConversationTurn(history);
+  const say=(fi,sv,en)=>lang==='en'?en:lang==='sv'?sv:fi;
+  if(!turn) {
+    return {answer:say('Mitä tuotetta tarkoitat?','Vilken produkt menar du?','Which product do you mean?'),
+      handoff:false,confidence:0.75,intent:'Tarkennus',sourceIds:[],selected:[]};
+  }
+  const previous=normalizeSearchText(turn.question+' '+turn.answer);
+  const mentioned=products.filter(p=>normalizeSearchText(p.name).length>=5 && previous.includes(normalizeSearchText(p.name)));
+  if(mentioned.length===0 && conversationTopic(turn.question)!=='products') return null;
+  if(mentioned.length!==1){
+    return {answer:say('Mitä tuotetta tarkoitat?','Vilken produkt menar du?','Which product do you mean?'),
+      handoff:false,confidence:0.75,intent:'Tarkennus',sourceIds:[],selected:[]};
+  }
+  // Restrict the product answering path to that single verified product. A
+  // question about "it" cannot silently turn into a list of all putters.
+  const result=directProductAnswer([mentioned[0].row],mentioned[0].name+' '+message,lang);
+  return result || {answer:'',handoff:true,confidence:0.2,intent:'Tuotteet',sourceIds:[],selected:[]};
 }
 
 function chatActions(rows, message, handoff = false, lang = 'fi', selected = []) {
@@ -4632,6 +4728,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       sourceIds:[page.row.id].filter(Boolean),selected:[page.row],
     };
   }
+
+  const productFollowUp=referencedProductFollowUp(rows,cleanMessage,history,responseLang);
+  if(productFollowUp) return productFollowUp;
 
   const shippingCostResult=await directShippingCostAnswer(rows,cleanMessage,responseLang);
   if(shippingCostResult) return shippingCostResult;
