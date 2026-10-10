@@ -146,6 +146,9 @@
   background:#f8f8fa;
   color:#2c2d34;
   text-align:left;
+  text-decoration:none;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
   cursor:pointer;
   font:inherit;
 }
