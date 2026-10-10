@@ -1,7 +1,7 @@
 // Verified expert-FAQ retrieval. This is not a general technical oracle:
 // require matching approved business-authored question AND its answer.
 const norm=value=>String(value||'').toLowerCase().normalize('NFD')
-  .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s-]/g,' ')
+  .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s-]/g,' ').replace(/-/g,' ')
   .replace(/\s+/g,' ').trim();
 const technicalTerms=/\b(?:agm|efb|tpms|obd|p\d{4}|bms|ecu|can\s+bus|jarru\w*|brake\w*|broms\w*|raidetank\w*|tie\s+rod|styrstag|jakohih\w*|timing\s+belt|kamrem|moment\w*|torque\w*|kirist\w*|kood\w*|program\w*|rekister\w*|register\w*|kalibro\w*|calibrat\w*|cod\w*|diagnos\w*|vikakood\w*|fault\s+code|felsok\w*|turvallisuus\w*|safety\b|safe\b|varmuus\w*|paine\w*|pressure\w*|venttiil\w*|valve\w*|varmepump\w*|lampopump\w*|heat\s+pump|pistorasi\w*|electrical\s+outlet|arvonlisaver\w*|tilinpaat\w*|bokslut|vat\b|moms\b)/;
 const questionStart=/^(?:mika|mitka|mita|miten|miksi|pitaako|tarvitseeko|tarviiko|vaatiiko|voiko|onko\s+pakko|milla|millais|kuinka|what|how|why|does|is\s+it|do\s+i\s+need|should|must|can\s+i|vad|hur|varfor|behover|maste|kraver|kan\s+man|ar\s+det)\b/;
