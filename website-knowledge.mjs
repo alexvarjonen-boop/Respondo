@@ -277,7 +277,10 @@ function productImageUrl(value, pageUrl) {
     return '';
   }
   if (value && typeof value==='object') return productImageUrl(value.url || value.contentUrl || value.src || value.image || '',pageUrl);
-  return typeof value==='string' ? httpUrl(value,pageUrl) : '';
+  // Do not resolve an absent image against the product URL: URL('', base)
+  // points to the HTML page, not an image, and breaks preview thumbnails.
+  if (typeof value!=='string' || !value.trim()) return '';
+  return httpUrl(value.trim(),pageUrl);
 }
 function productMeta(html, key) {
   const wanted=norm(key);
