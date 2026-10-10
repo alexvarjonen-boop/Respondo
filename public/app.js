@@ -4,6 +4,80 @@ import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261010-lang
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 const $ = (s, r = document) => r.querySelector(s);
 
+// Render grounded store products as tappable cards in Try Bot and dashboard
+// previews. The server selects the products; the browser does not search or
+// invent catalog recommendations.
+function appendPreviewProductCards(bubble,items,lang='fi') {
+  const products=(Array.isArray(items)?items:[]).filter((item)=>{
+    try{
+      const url=new URL(item?.url||'');
+      return Boolean(item?.name) && ['http:','https:'].includes(url.protocol) && !url.username && !url.password;
+    }catch{return false;}
+  }).slice(0,4);
+  if(!bubble || !products.length) return false;
+  if(!document.getElementById('respondo-preview-product-card-css')){
+    const style=document.createElement('style');
+    style.id='respondo-preview-product-card-css';
+    style.textContent=`
+      .preview-bubble.bot.has-product-cards{width:100%;max-width:96%}
+      .preview-product-cards{display:grid;gap:8px;margin-top:12px;white-space:normal}
+      .preview-product-card{display:flex;gap:10px;align-items:flex-start;min-width:0;padding:10px;background:#fafafa;border:1px solid #e8e8eb;border-radius:13px;text-decoration:none!important;color:#1c1c20!important}
+      .preview-product-card:hover{border-color:#b6b6ba}
+      .preview-product-thumb{width:70px;height:70px;flex:0 0 70px;object-fit:contain;border-radius:9px;background:#f0f0f2}
+      .preview-product-fallback{display:grid;place-items:center;color:#999;font-size:20px}
+      .preview-product-copy{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+      .preview-product-copy strong{font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+      .preview-product-desc{font-size:11px;line-height:1.35;color:#666;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+      .preview-product-price{font-size:13px;font-weight:800;color:#111}
+      .preview-product-go{font-size:10px;font-weight:750;color:#505059}
+      @media(max-width:430px){.preview-product-thumb{height:56px;width:56px;flex-basis:56px}}
+    `;
+    document.head.appendChild(style);
+  }
+  bubble.classList.add('has-product-cards');
+  const section=document.createElement('div');
+  section.className='preview-product-cards';
+  const locale=lang==='en'?'en-US':lang==='sv'?'sv-SE':'fi-FI';
+  const money=(value,currency)=>{
+    if(!Number.isFinite(value)) return '';
+    const code=currency==='€'?'EUR':currency==='$'?'USD':currency==='£'?'GBP':currency;
+    try{if(/^[A-Z]{3}$/.test(code||''))return new Intl.NumberFormat(locale,{style:'currency',currency:code}).format(value);}catch{}
+    return new Intl.NumberFormat(locale,{maximumFractionDigits:2}).format(value);
+  };
+  for(const product of products){
+    const a=document.createElement('a');
+    a.className='preview-product-card';
+    a.href=product.url;a.target='_blank';a.rel='noopener noreferrer';
+    const hasImage=typeof product.imageUrl==='string' && /^https?:\/\//i.test(product.imageUrl);
+    const thumb=document.createElement(hasImage?'img':'span');
+    thumb.className='preview-product-thumb'+(hasImage?'':' preview-product-fallback');
+    if(hasImage){
+      thumb.src=product.imageUrl;thumb.alt=product.name;thumb.loading='lazy';
+      thumb.addEventListener('error',()=>{
+        const fallback=document.createElement('span');
+        fallback.className='preview-product-thumb preview-product-fallback';
+        fallback.textContent='◻';thumb.replaceWith(fallback);
+      },{once:true});
+    }else thumb.textContent='◻';
+    const content=document.createElement('span');content.className='preview-product-copy';
+    const name=document.createElement('strong');name.textContent=product.name;content.appendChild(name);
+    if(product.description){
+      const desc=document.createElement('span');desc.className='preview-product-desc';desc.textContent=product.description;content.appendChild(desc);
+    }
+    if(Number.isFinite(product.price)){
+      const price=document.createElement('span');price.className='preview-product-price';
+      price.textContent=money(product.price,product.currency)+
+        (Number.isFinite(product.maxPrice)&&product.maxPrice>product.price?' – '+money(product.maxPrice,product.currency):'');
+      content.appendChild(price);
+    }
+    const go=document.createElement('span');go.className='preview-product-go';
+    go.textContent=lang==='en'?'View product →':lang==='sv'?'Visa produkt →':'Katso tuote →';content.appendChild(go);
+    a.append(thumb,content);section.appendChild(a);
+  }
+  bubble.appendChild(section);
+  return true;
+}
+
 const HOME_HISTORY_RESET_KEY='respondo-home-history-reset';
 if ('scrollRestoration' in history) history.scrollRestoration='manual';
 
@@ -4884,7 +4958,8 @@ async function route() {
         if(bubble){
           bubble.classList.remove('preview-thinking');
           bubble.textContent=result.answer||appText('En löydä tähän vielä varmaa vastausta.','Jag hittar inget säkert svar på detta ännu.','I cannot find a reliable answer yet.');
-          const actions=(Array.isArray(result.actions)?result.actions:[]).filter(action=>action?.url&&/^(?:https?:\/\/|tel:|mailto:)/i.test(action.url));
+          const hasProducts=appendPreviewProductCards(bubble,result.products,currentLang());
+          const actions=(Array.isArray(result.actions)?result.actions:[]).filter(action=>action?.url&&/^(?:https?:\/\/|tel:|mailto:)/i.test(action.url)&&(!hasProducts||action.type!=='product'));
           if(actions.length){
             const wrap=document.createElement('div');wrap.className='preview-actions';
             actions.forEach(action=>{const link=document.createElement('a');link.className='preview-action-link';link.href=action.url;if(/^https?:\/\//i.test(action.url)){link.target='_blank';link.rel='noopener noreferrer';}link.textContent=action.label||appText('Avaa linkki','Öppna länken','Open link');wrap.appendChild(link);});
@@ -5488,7 +5563,8 @@ async function route() {
         if (bubble) {
           bubble.classList.remove('preview-thinking');
           bubble.textContent = result.answer || appText('En löydä tähän vielä varmaa vastausta.','Jag hittar inget säkert svar på detta ännu.','I cannot find a reliable answer to this yet.');
-          const actions = Array.isArray(result.actions) ? result.actions : [];
+          const hasProducts = appendPreviewProductCards(bubble,result.products,currentLang());
+          const actions = (Array.isArray(result.actions) ? result.actions : []).filter((action)=>!hasProducts || action?.type!=='product');
           // Phone and email actions must appear in dashboard preview too,
           // not just https links. The server sends only validated contact URLs.
           const links = actions.filter((action) => action?.url && /^(?:https?:\/\/|tel:|mailto:)/i.test(action.url));
