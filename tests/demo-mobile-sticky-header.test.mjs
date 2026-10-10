@@ -17,13 +17,21 @@ test('public demo header stays fixed on phone and tablet widths and reserves its
 });
 
 
-test('mobile Try Bot navigation collapses on scroll but keeps an accessible section picker',()=>{
-  assert.match(app,/const syncDemoCompactHeader = \(\) =>/);
-  assert.match(app,/classList\.toggle\('is-condensed',condensed\)/);
-  assert.match(app,/window\.addEventListener\('scroll',syncDemoCompactHeader,\{passive:true\}\)/);
-  assert.match(css,/\.demo-sticky-topbar\.is-condensed \.dashboard-section-picker/);
-  assert.match(css,/\.demo-sticky-topbar\.is-condensed \.demo-section-strip/);
-  assert.match(css,/\.demo-sticky-topbar\.is-condensed \.demo-header-trial/);
+test('mobile Try Bot header keeps one row instead of changing layout during scroll',()=>{
+  const stable=fs.readFileSync(new URL('../public/mobile-header-stability.css',import.meta.url),'utf8');
+  const drawer=fs.readFileSync(new URL('../public/dashboard-drawer.js',import.meta.url),'utf8');
+  const html=fs.readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+  assert.ok(!app.includes('const syncDemoCompactHeader = () =>'));
+  assert.ok(!app.includes("window.addEventListener('scroll',syncDemoCompactHeader"));
+  assert.ok(app.includes("demoStickyHeader?.classList.remove('is-condensed')"));
+  assert.ok(stable.includes('height:66px!important'));
+  assert.ok(stable.includes('flex-wrap:nowrap!important'));
+  assert.ok(stable.includes('.demo-dashboard-main > .demo-sticky-topbar'));
+  assert.ok(stable.includes('> .dashboard-menu-toggle'));
+  assert.ok(stable.includes('> .demo-public-actions'));
+  assert.ok(drawer.includes("toggle.setAttribute('aria-controls','dashboard-drawer')"));
+  assert.ok(drawer.includes("select.dispatchEvent(new Event('change'"));
+  assert.ok(html.includes('/mobile-header-stability.css?v='));
 });
 
 test('public Try Bot never injects the separate Respondo marketing chat launcher',()=>{
