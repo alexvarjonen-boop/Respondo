@@ -1593,7 +1593,7 @@ function updateDocumentLanguageMeta(lang) {
     } catch {}
     return /^(?:localhost|127\.0\.0\.1)$/i.test(location.hostname)
       ? location.origin
-      : 'https://www.respondoai.fi';
+      : 'https://respondoai.fi';
   })();
 
   const metaByPath = {
