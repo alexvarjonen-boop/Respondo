@@ -18,13 +18,22 @@ test('six Starter Advanced Business plan codes and Stripe price envs are wired',
   ]) assert.match(server,new RegExp(env));
 });
 
-test('annual billing charges twelve times the monthly rate without a discount',()=>{
+test('annual billing is 5 euros cheaper per month than monthly billing',()=>{
   assert.match(server,/basic_yearly:\{tier:'basic',billing:'yearly',monthlyPrice:29\.90,annualTotal:358\.80/);
   assert.match(server,/advanced_yearly:\{tier:'advanced',billing:'yearly',monthlyPrice:39\.90,annualTotal:478\.80/);
   assert.match(server,/business_yearly:\{tier:'business',billing:'yearly',monthlyPrice:49\.90,annualTotal:598\.80/);
-  assert.match(app,/Starter',29\.90,29\.90,358\.80,2/);
-  assert.match(app,/Advanced',39\.90,39\.90,478\.80,10/);
-  assert.match(app,/Business',49\.90,49\.90,598\.80,20/);
+  assert.ok(app.includes("card('Starter',34.90,29.90,358.80,2"));
+  assert.ok(app.includes("card('Advanced',44.90,39.90,478.80,10"));
+  assert.ok(app.includes("card('Business',54.90,49.90,598.80,20"));
+});
+
+test('new monthly prices are enforced on the server and legacy price IDs remain recognized',()=>{
+  assert.ok(server.includes("basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:34.90"));
+  assert.ok(server.includes("advanced_monthly:{tier:'advanced',billing:'monthly',monthlyPrice:44.90"));
+  assert.ok(server.includes("business_monthly:{tier:'business',billing:'monthly',monthlyPrice:54.90"));
+  assert.ok(server.includes("['basic_monthly','price_1UONnqV05brJ7mTPu5MvqQaP']"));
+  assert.ok(server.includes("['advanced_monthly','price_1UONo0V05brJ7mTPesqzKl1q']"));
+  assert.ok(server.includes("['business_monthly','price_1UONrnV05brJ7mTPR01BklbN']"));
 });
 
 test('all paid tiers include website import while calendar remains Advanced or Business',()=>{
@@ -70,7 +79,7 @@ test('legacy subscribers keep the full old feature set',()=>{
   assert.match(server,/tier:'business'[\s\S]*agentSeats:20[\s\S]*allCurrentFeatures:true/);
 });
 
-test('homepage signup workspace and Try Bot expose all six undiscounted choices',()=>{
+test('homepage signup workspace and Try Bot expose all six discounted annual and monthly choices',()=>{
   for(const plan of [
     'basic_monthly','basic_yearly','advanced_monthly','advanced_yearly','business_monthly','business_yearly'
   ]){
@@ -78,15 +87,16 @@ test('homepage signup workspace and Try Bot expose all six undiscounted choices'
     assert.match(effects,new RegExp(plan));
   }
   assert.match(app,/Hae tiedot automaattisesti verkkosivulta/);
-  assert.match(app,/Starter',29\.90,29\.90,358\.80,2/);
-  assert.match(app,/Advanced',39\.90,39\.90,478\.80,10/);
-  assert.match(app,/Business',49\.90,49\.90,598\.80,20/);
+  assert.ok(app.includes("card('Starter',34.90,29.90,358.80,2"));
+  assert.ok(app.includes("card('Advanced',44.90,39.90,478.80,10"));
+  assert.ok(app.includes("card('Business',54.90,49.90,598.80,20"));
   assert.match(app,/asiakaspalvelijapaikkaa/);
-  assert.doesNotMatch(app,/Vuositilauksella säästät|Annual billing saves|€5\/month cheaper/);
+  assert.match(app,/Vuositilauksella säästät/);
+  assert.match(app,/Annual billing saves/);
 });
 
-test('structured data publishes all six undiscounted plan prices',()=>{
-  for(const price of ['29.90','358.80','39.90','478.80','49.90','598.80']){
+test('structured data publishes all six subscription plan prices',()=>{
+  for(const price of ['34.90','358.80','44.90','478.80','54.90','598.80']){
     assert.match(html,new RegExp('"price":"'+price.replace('.','\\.')+'"'));
   }
 });
