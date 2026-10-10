@@ -321,7 +321,7 @@
   background:radial-gradient(ellipse at 45% 0%,rgba(95,153,235,.1),transparent 55%),var(--ios-canvas)!important;
   padding:clamp(70px,9vw,115px) 0 110px!important;min-height:calc(100vh - 70px)!important;
 }
-#app .formpage :is(.login-layout,.checkout-layout){
+#app .formpage :is(.login-layout,.checkout-layout:not(.signup-layout)){
   display:grid!important;grid-template-columns:minmax(0,1fr) minmax(340px,.95fr)!important;
   align-items:start!important;gap:clamp(32px,5vw,85px)!important;
   max-width:1100px!important;
@@ -376,7 +376,7 @@
   #app .legalpage .legalcopy{padding:clamp(22px,5vw,38px)!important}
   #app .pricing-page .pricing-wrap{grid-template-columns:1fr!important;max-width:570px;margin:auto}
   #app .seo-landing-page .seo-landing-grid{grid-template-columns:1fr}
-  #app .formpage :is(.login-layout,.checkout-layout){grid-template-columns:1fr!important;max-width:610px!important}
+  #app .formpage :is(.login-layout,.checkout-layout:not(.signup-layout)){grid-template-columns:1fr!important;max-width:610px!important}
 }
 @media(max-width:600px){
   #app :is(.contact-page,.features-page,.seo-landing-page,.pricing-page,.formpage,.legalpage) .container{
@@ -437,3 +437,51 @@
   color:#505867!important;
 }
 #app .formpage .formcard input::placeholder{color:#676e79!important;opacity:1}
+
+/* 2026-10-10: signup is a single-column form, never a two-column checkout split. */
+#app .formpage.signup-page .signup-layout{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:14px!important;
+  grid-template-columns:none!important;
+  width:min(640px,calc(100% - 40px))!important;
+  max-width:640px!important;
+  min-width:0!important;
+  margin:0 auto!important;
+  padding:0!important;
+}
+#app .formpage.signup-page #signup{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  margin:0!important;
+  transform:none!important;
+  scale:none!important;
+  translate:none!important;
+  opacity:1!important;
+}
+#app .formpage.signup-page .formgrid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:16px!important;
+}
+#app .formpage.signup-page .formgrid .field{min-width:0!important}
+#app .formpage.signup-page .formgrid .field.full{grid-column:1/-1!important}
+#app .formpage.signup-page .field :is(input,select,textarea){
+  box-sizing:border-box!important;
+  min-width:0!important;
+  width:100%!important;
+  max-width:100%!important;
+}
+#app .formpage.signup-page .signup-seller-note{
+  width:100%!important;
+  margin:0!important;
+  text-align:center!important;
+}
+@media(max-width:640px){
+  #app .formpage.signup-page .signup-layout{width:calc(100% - 24px)!important}
+  #app .formpage.signup-page .formgrid{grid-template-columns:minmax(0,1fr)!important}
+  #app .formpage.signup-page #signup{padding:20px!important}
+}
