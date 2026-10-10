@@ -1,6 +1,6 @@
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1';
-import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261008-new-ra-logo-v1';
+import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261010-production-header-fix-v1';
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261009-official-seller-name-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 import { parseBookingDurationMinutes } from './booking-duration.mjs?v=20261009-v1';
@@ -1784,7 +1784,7 @@ function nav() {
           : `<a class="btn ghost nav-login-btn" href="/kirjaudu"><span>${appText('Kirjaudu','Logga in','Log in')}</span></a>
              <a class="btn ink" href="/tilaus">${appText('Kokeile ilmaiseksi','Prova gratis','Start free trial')}</a>`}
       </div>
-      <button type="button" class="apple-menu-toggle" data-apple-menu-open aria-controls="apple-nav-overlay" aria-expanded="false" aria-label="${appText('Avaa valikko','Öppna menyn','Open menu')}"><span></span><span></span></button>
+      <button type="button" class="apple-menu-toggle" data-apple-menu-open aria-controls="apple-nav-overlay" aria-expanded="false" aria-label="${appText('Avaa valikko','Öppna menyn','Open menu')}"><span></span><span></span><span></span></button>
     </div>
   </header>${publicMenuMarkup(appText,currentLang())}`;
 }
@@ -4782,6 +4782,12 @@ async function route() {
     // scrolls through the Try Bot's conversation on a narrow phone.
     const syncDemoCompactHeader = () => {
       if (!demoStickyHeader) return;
+      // The drawer's three-line menu is already compact. Do not switch into
+      // the legacy scroll-condensed layout that displaces the menu on iPhone.
+      if (demoStickyHeader.classList.contains('dashboard-has-drawer')) {
+        demoStickyHeader.classList.remove('is-condensed');
+        return;
+      }
       if (!window.matchMedia('(max-width:760px)').matches) {
         demoStickyHeader.classList.remove('is-condensed');
         return;
