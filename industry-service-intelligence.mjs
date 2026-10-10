@@ -8,7 +8,7 @@ const norm=value=>String(value||'').toLowerCase().normalize('NFD')
 const SUBJECTS={
   battery:['akku','akkuja','akun','akut','starttiakku','kaynnistysakku','battery','batteries','car battery','bilbatteri','startbatteri'],
   hv_battery:['ajoakku','ajoakun','korkeajanniteakku','high voltage battery','traction battery','hogvoltsbatteri'],
-  tie_rod_end:['raidetangon paa','raidetangon paat','raidetangonpaan','raidetangonpaat','tie rod end','track rod end','styrled'],
+  tie_rod_end:['raidetangon paa','raidetangon paat','raidetangonpaan','raidetangonpaat','raidetangon paiden','raidetangon paita','raidetangonpaiden','tie rod end','track rod end','styrled'],
   tie_rod:['raidetanko','raidetankoja','raidetangon','tie rod','track rod','styrstag'],
   tire:['rengas','renkaan','renkaita','renkaat','tire','tires','tyre','tyres','dack','dacket','dacken'],
   brake_pad:['jarrupala','jarrupalat','jarrupalojen','brake pad','bromsbelagg'],
@@ -71,7 +71,7 @@ const MODIFIERS={
 };
 const NEGATIVE=/\b(?:emme|ei|eivat|not|never|dont|do\s+not|doesnt|cannot|cant|inte|aldrig|ej)\b/;
 const RESTRICTED=/\b(?:ilmais\w*|free\b|gratis|tanaan|huomenna|tomorrow|today|same\s+day|heti|immediately|takuu|warranty|garanti|hinta|maksaa|paljonko|price|cost|pris|kostar|kuinka\s+kauan|how\s+long|hur\s+lang)\b/;
-const QUESTION=/^(?:vaihdatteko|vaihtaisitteko|paikkaatteko|korjaatteko|asennatteko|huollatteko|tarkastatteko|puhdistatteko|pesetteko|saadatteko|suuntaatteko|teetteko|tarjoatteko|onnistuuko|onnistuisko|hoidatteko|pystytteko|voitteko|voisitteko|saako|saanko|onko\s+teilla|loytyyko\s+teilta|voiko\s+teilla|voinko\s+teilta|do\s+you|can\s+you|could\s+you|can\s+i\s+get|does\s+your\s+shop|har\s+ni|erbjuder\s+ni|kan\s+ni|byter\s+ni|lagar\s+ni|reparerar\s+ni|monterar\s+ni|utfor\s+ni|fixar\s+ni)\b/;
+const QUESTION=/^(?:vaihdatteko|vaihtaisitteko|paikkaatteko|korjaatteko|asennatteko|huollatteko|tarkastatteko|puhdistatteko|pesetteko|saadatteko|suuntaatteko|avaatteko|teetteko|tarjoatteko|onnistuuko|onnistuisko|hoidatteko|pystytteko|voitteko|voisitteko|saako|saanko|onko\s+teilla|loytyyko\s+teilta|voiko\s+teilla|voinko\s+teilta|do\s+you|can\s+you|could\s+you|can\s+i\s+get|does\s+your\s+shop|har\s+ni|erbjuder\s+ni|kan\s+ni|byter\s+ni|lagar\s+ni|reparerar\s+ni|monterar\s+ni|utfor\s+ni|fixar\s+ni)\b/;
 const getActions=text=>Object.entries(OPERATIONS).filter(([,re])=>re.test(text)).map(([key])=>key);
 const words=text=>norm(text).split(/\s+/).filter(Boolean);
 function hasTerm(text,phrase) {
@@ -134,6 +134,9 @@ function recognize(message) {
   if(!actions.length)return null;
   const concepts=getConcepts(q);
   if(!concepts.size&&!subTokens(q).length)return null;
+  // Existing long-standing Finnish service handlers remain authoritative for
+  // familiar roof, terrace, haircut and cleaning forms. This resolver is
+  // primarily for specialist object/action pairs and otherwise exact matches.
   const modifiers=Object.keys(MODIFIERS).filter(k=>MODIFIERS[k].test(q));
   return {q,actions,concepts,modifiers,original:String(message||'')};
 }
@@ -172,6 +175,7 @@ export function verifiedIndustryServiceAnswer(rows,message,lang='fi') {
     }
   }
   // Never assert an offering if another approved row explicitly denies it.
+  if(!found.length && !req.concepts.size) return null;
   if(!found.length||found.some(x=>x.negative))return {
     answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]
   };
