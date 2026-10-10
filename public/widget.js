@@ -164,6 +164,16 @@
       .quick:empty{display:none}
       .quick button{position:relative;z-index:2;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border:1px solid #dedee2;background:#fff;border-radius:999px;padding:8px 10px;font:inherit;font-size:12px;color:#343438;cursor:pointer}
       .quick button:hover{border-color:#a9a9af}
+      .product-results{display:grid;gap:9px;align-self:stretch;min-width:0}
+      .product-card{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:16px;background:#fff;border:1px solid #e3e3e7;color:#1b1b1f!important;text-decoration:none!important;min-width:0}
+      .product-card:hover,.product-card:focus-visible{border-color:#aaa;box-shadow:0 4px 16px #0001;outline:none}
+      .product-image{height:80px;width:80px;flex:0 0 80px;object-fit:contain;border-radius:10px;background:#f3f3f5}
+      .product-image-fallback{display:grid;place-items:center;color:#999;font-size:23px}
+      .product-details{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+      .product-name{font-size:13px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+      .product-description{font-size:12px;line-height:1.4;color:#62626b;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+      .product-price{font-size:14px;font-weight:800;margin-top:1px}
+      .product-open{font-size:11px;font-weight:750;color:#4e4e59}
       .actions{display:flex;gap:7px;flex-wrap:wrap;align-self:flex-start;max-width:92%}
       .actions a,.actions button{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6d6da;background:#fff;color:#111113;text-decoration:none;border-radius:10px;padding:9px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
       .leadbox{align-self:stretch;background:#fff;border:1px solid #dedee2;border-radius:16px;padding:13px;display:grid;gap:8px}
@@ -349,6 +359,431 @@
     });
 
     chat.appendChild(wrap);
+  }
+
+  function renderProducts(items = []) {
+    const valid=(Array.isArray(items)?items:[])
+      .filter((p)=>p?.name && /^https?:\/\//i.test(safeActionUrl(p.url))).slice(0,4);
+    if(!valid.length) return false;
+    const wrap=document.createElement('div');
+    wrap.className='product-results';
+    const locale=widgetLang==='sv'?'sv-SE':widgetLang==='en'?'en-US':'fi-FI';
+    function formatPrice(value,currency){
+      if(!Number.isFinite(value)) return '';
+      const code=currency==='€'?'EUR':currency==='
+    quick.innerHTML = '';
+    (Array.isArray(items) ? items : []).slice(0, 3).forEach((label) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.dataset.quickReply = String(label || '');
+      const submitQuickReply = (event) => {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        const value = String(button.dataset.quickReply || button.textContent || '').trim();
+        if (!value || button.disabled) return;
+        button.disabled = true;
+        Promise.resolve(sendMessage(value)).finally(() => { button.disabled = false; });
+      };
+      // iOS Safari can occasionally swallow the synthetic click on controls
+      // inside a fixed Shadow DOM panel after scrolling. touchend guarantees
+      // the tap is handled; click remains the desktop/accessibility fallback.
+      button.addEventListener('touchend', submitQuickReply, { passive:false });
+      button.addEventListener('click', (event) => {
+        if (event.detail === 0 || !('ontouchstart' in window)) submitQuickReply(event);
+      });
+      quick.appendChild(button);
+    });
+  }
+
+  function showActionForm(action, question) {
+    if (chat.querySelector('.actionbox')) return;
+
+    const box = document.createElement('form');
+    box.className = 'actionbox';
+
+    if (action.mode === 'quote_form') {
+      box.innerHTML =
+        '<b>' + t('Laske tarjous tästä', 'Calculate a quote') + '</b>' +
+        '<small>' + t('Kerro määrä ja mitä tarvitset. Jos yritys on määrittänyt hintakaavan, Respondo laskee hinnan heti.', 'Tell us the quantity and what you need. If the company has configured pricing, Respondo calculates it immediately.') + '</small>' +
+        '<input name="name" maxlength="120" placeholder="' + t('Nimi', 'Name') + '">' +
+        '<input name="contact" maxlength="220" required placeholder="' + t('Puhelin tai sähköposti', 'Phone or email') + '">' +
+        '<input name="quantity" inputmode="decimal" min="0" step="0.01" placeholder="' + t('Määrä', 'Quantity') + '">' +
+        '<textarea name="details" maxlength="1800" placeholder="' + t('Mitä tarvitset?', 'What do you need?') + '">' + escapeHtml(question) + '</textarea>' +
+        '<input name="budget" maxlength="120" placeholder="' + t('Budjetti, jos tiedossa', 'Budget, if known') + '">' +
+        '<button type="submit">' + t('Laske ja lähetä tarjouspyyntö', 'Calculate and send') + '</button>' +
+        '<div class="action-ok"></div>';
+    } else if (action.mode === 'booking_form') {
+      box.innerHTML =
+        '<b>' + t('Varaa vapaa aika', 'Book an available time') + '</b>' +
+        '<small>' + t('Respondo näyttää vain oikeasti vapaat ajat. Valittu aika poistuu heti muiden varattavista.', 'Respondo only shows truly available times. Once booked, the slot is no longer available to others.') + '</small>' +
+        '<input name="name" maxlength="120" placeholder="' + t('Nimi', 'Name') + '">' +
+        '<input name="contact" maxlength="220" required placeholder="' + t('Puhelin tai sähköposti', 'Phone or email') + '">' +
+        '<select name="slotId" required><option value="">' + t('Haetaan vapaita aikoja…', 'Loading available times…') + '</option></select>' +
+        '<textarea name="note" maxlength="1000" placeholder="' + t('Lisätieto', 'Additional note') + '"></textarea>' +
+        '<button type="submit" disabled>' + t('Varaa aika', 'Book time') + '</button>' +
+        '<div class="action-ok"></div>';
+    } else {
+      box.innerHTML =
+        '<b>' + t('Tarkista tilauksen tila', 'Check order status') + '</b>' +
+        '<small>' + t('Anna tilausnumero ja tilauksessa käytetty sähköposti.', 'Enter the order number and email used for the order.') + '</small>' +
+        '<input name="orderNumber" maxlength="120" required placeholder="' + t('Tilausnumero', 'Order number') + '">' +
+        '<input name="email" type="email" maxlength="220" required placeholder="' + t('Sähköposti', 'Email') + '">' +
+        '<button type="submit">' + t('Tarkista', 'Check') + '</button>' +
+        '<div class="action-ok"></div>';
+    }
+
+    if (action.mode === 'booking_form') {
+      const slotSelect = box.elements.slotId;
+      const submitButton = box.querySelector('button[type="submit"]');
+      fetch(
+        serviceOrigin + '/api/public/' + encodeURIComponent(company) +
+        '/booking-slots?widgetToken=' + encodeURIComponent(token) + '&lang=' + encodeURIComponent(widgetLang),
+        { method:'GET', mode:'cors', credentials:'omit' }
+      )
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Slots failed');
+          const slots = Array.isArray(data.slots) ? data.slots : [];
+          if (!slots.length) {
+            slotSelect.innerHTML = '<option value="">' + t('Ei vapaita aikoja juuri nyt', 'No available times right now') + '</option>';
+            submitButton.disabled = true;
+            return;
+          }
+          slotSelect.innerHTML =
+            '<option value="">' + t('Valitse vapaa aika', 'Choose an available time') + '</option>' +
+            slots.map((slot) => {
+              const start = new Date(slot.starts_at);
+              const end = new Date(slot.ends_at);
+              const locale = widgetLang === 'en' ? 'en-GB-u-hc-h12' : widgetLang === 'sv' ? 'sv-SE' : 'fi-FI';
+              const date = start.toLocaleDateString(locale, { weekday:'short', day:'2-digit', month:'2-digit' });
+              const startTime = start.toLocaleTimeString(locale, { hour:'2-digit', minute:'2-digit' });
+              const endTime = end.toLocaleTimeString(locale, { hour:'2-digit', minute:'2-digit' });
+              return '<option value="' + escapeHtml(slot.id) + '">' +
+                escapeHtml(date + ' · ' + startTime + '–' + endTime) +
+                '</option>';
+            }).join('');
+          submitButton.disabled = false;
+        })
+        .catch(() => {
+          slotSelect.innerHTML = '<option value="">' + t('Vapaita aikoja ei saatu ladattua', 'Available times could not be loaded') + '</option>';
+          submitButton.disabled = true;
+        });
+    }
+
+    box.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const fd = new FormData(box);
+      const fields = Object.fromEntries(fd.entries());
+      const button = box.querySelector('button[type="submit"]');
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = t('Lähetetään…', 'Sending…');
+
+      try {
+        const type =
+          action.mode === 'quote_form' ? 'quote' :
+          action.mode === 'booking_form' ? 'booking' :
+          'order_status';
+
+        const res = await fetch(serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/action-request', {
+          method:'POST',
+          mode:'cors',
+          credentials:'omit',
+          headers:{ 'Content-Type':'text/plain;charset=UTF-8' },
+          body:JSON.stringify({
+            type,
+            fields,
+            question,
+            widgetToken:token,
+            visitorRef,
+            sourceChannel:'website',
+            lang:widgetLang,
+            pageContext,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Action failed');
+
+        const ok = box.querySelector('.action-ok');
+        let resultHtml = '<div class="action-confirmed">✓ ' +
+          escapeHtml(data.customerMessage || t('Pyyntö vastaanotettu', 'Request received')) +
+          '</div>';
+
+        if (data.quote) {
+          const q = data.quote;
+          const locale = widgetLang === 'en' ? 'en-IE' : widgetLang === 'sv' ? 'sv-SE' : 'fi-FI';
+          const total = new Intl.NumberFormat(locale, { style:'currency', currency:q.currency || 'EUR' }).format(Number(q.total || 0));
+          resultHtml +=
+            '<div class="quote-result">' +
+              '<small>' + escapeHtml(q.serviceName || t('Tarjous', 'Quote')) + '</small>' +
+              '<strong>' + escapeHtml(total) + '</strong>' +
+              '<span>' + escapeHtml(
+                q.vatPercent > 0
+                  ? (widgetLang === 'en'
+                      ? 'includes VAT ' + q.vatPercent + '%'
+                      : widgetLang === 'sv'
+                        ? 'inklusive moms ' + q.vatPercent + ' %'
+                        : 'sisältää ALV ' + q.vatPercent + ' %')
+                  : t('ALV 0 %', 'VAT 0%')
+              ) + '</span>' +
+            '</div>';
+          if (data.checkoutUrl) {
+            resultHtml += '<a class="action-pay" href="' + escapeHtml(data.checkoutUrl) + '" target="_blank" rel="noopener noreferrer">' +
+              t('Maksa / hyväksy tarjous →', 'Pay / accept quote →') +
+              '</a>';
+          } else {
+            resultHtml += '<small class="action-pay-note">' +
+              t('Yritys ei ole vielä yhdistänyt maksutiliä. Tarjouspyyntö on silti lähetetty.', 'The company has not connected payments yet. The quote request was still sent.') +
+              '</small>';
+          }
+        }
+
+        if (data.booking?.startsAt) {
+          const start = new Date(data.booking.startsAt);
+          const locale = widgetLang === 'en' ? 'en-GB-u-hc-h12' : widgetLang === 'sv' ? 'sv-SE' : 'fi-FI';
+          const formatted = start.toLocaleString(locale, {
+            weekday:'long', day:'2-digit', month:'2-digit', year:'numeric',
+            hour:'2-digit', minute:'2-digit'
+          });
+          resultHtml += '<div class="booking-confirmed"><strong>' +
+            t('Aika varattu', 'Time booked') +
+            '</strong><span>' + escapeHtml(formatted) + '</span></div>';
+        }
+
+        ok.innerHTML = resultHtml;
+        box.querySelectorAll('input,textarea,select,button').forEach((el) => el.disabled = true);
+        button.textContent = t('Valmis ✓', 'Done ✓');
+
+        if (type === 'order_status' && data.customerMessage) {
+          addMessage(data.customerMessage);
+        }
+      } catch (err) {
+        box.querySelector('.action-ok').textContent = widgetLang === 'fi' && err.message ? err.message : t('Lähetys epäonnistui.', 'Sending failed.');
+        button.disabled = false;
+        button.textContent = original;
+      }
+
+      chat.scrollTop = chat.scrollHeight;
+    });
+
+    chat.appendChild(box);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function showLeadForm(question) {
+    if (chat.querySelector('.leadbox')) return;
+    const box = document.createElement('form');
+    box.className = 'leadbox';
+    box.innerHTML = '<b>' + t('Haluatko, että joku yrityksestä ottaa sinuun yhteyttä?', 'Would you like the company to contact you?') + '</b><small>' + t('Jätä nimesi ja puhelinnumerosi tai sähköpostisi. Tiedot menevät vain tälle yritykselle yhteydenottoa varten.', 'Leave your name and phone number or email. The details are shared only with this company for contacting you.') + '</small><input name="name" maxlength="120" placeholder="' + t('Nimi, jos haluat', 'Name (optional)') + '"><input name="contact" maxlength="220" required placeholder="' + t('Puhelinnumero tai sähköposti', 'Phone or email') + '"><button type="submit">' + t('Pyydä yhteydenottoa', 'Send contact details') + '</button><div class="lead-ok"></div>';
+    box.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const contact = String(box.elements.contact.value || '').trim();
+      const person = String(box.elements.name.value || '').trim();
+      if (!contact) return;
+      const button = box.querySelector('button');
+      button.disabled = true;
+      button.textContent = t('Lähetetään…', 'Sending…');
+      const email = contact.includes('@') ? contact : '';
+      const phone = email ? '' : contact;
+      try {
+        const res = await fetch(serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/lead', {
+          method: 'POST',
+          mode: 'cors',
+          credentials: 'omit',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify({ name: person, email, phone, message: question, widgetToken: token, visitorRef, lang: widgetLang, pageContext }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Lähetys epäonnistui');
+        box.querySelector('.lead-ok').textContent = t('Kiitos — yhteystiedot on lähetetty ✓', 'Thank you — your contact details were sent ✓');
+        box.querySelectorAll('input,button').forEach((el) => el.disabled = true);
+        button.textContent = t('Lähetetty ✓', 'Sent ✓');
+      } catch {
+        box.querySelector('.lead-ok').textContent = t('Lähetys ei onnistunut. Yritä uudelleen.', 'Sending failed. Please try again.');
+        button.disabled = false;
+        button.textContent = t('Pyydä yhteydenottoa', 'Send contact details');
+      }
+    });
+    chat.appendChild(box);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function setAccent(value) {
+    const valid=(v)=>/^#[0-9a-f]{6}$/i.test(String(v||''));
+    const accent=valid(value)?String(value):valid(fallbackAccent)?fallbackAccent:'#111113';
+    const channels=[1,3,5].map((i)=>parseInt(accent.slice(i,i+2),16)/255);
+    const linear=channels.map((v)=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4);
+    const luminance=0.2126*linear[0]+0.7152*linear[1]+0.0722*linear[2];
+    root.style.setProperty('--bot-accent',accent);
+    root.style.setProperty('--bot-accent-ink',luminance>0.179?'#111113':'#ffffff');
+    $('.mark').style.background=accent;
+    $('.dot').style.background=accent;
+  }
+
+  async function pollLiveTakeover() {
+    if (!ready || !token || !visitorRef) return;
+    try {
+      const url = serviceOrigin + '/api/public/' + encodeURIComponent(company) +
+        '/live?widgetToken=' + encodeURIComponent(token) +
+        '&visitorRef=' + encodeURIComponent(visitorRef) +
+        (livePollAfter ? '&after=' + encodeURIComponent(livePollAfter) : '');
+      const res = await fetch(url,{ method:'GET',mode:'cors',credentials:'omit' });
+      if (!res.ok) return;
+      const data = await res.json().catch(() => ({}));
+
+      if (data.mode === 'human') {
+        const agentName = String(data.agent?.display_name || '').trim();
+        status.textContent = agentName ? agentName + ' · ' + t('paikalla', 'online') : t('Asiakaspalvelija mukana', 'Human agent joined');
+        status.classList.add('ready');
+      } else if (ready) {
+        status.textContent = t('Valmis auttamaan', 'Ready');
+      }
+
+      const messages = Array.isArray(data.messages) ? data.messages : [];
+      for (const item of messages) {
+        const created = String(item.created_at || '');
+        const agentName = String(item.agent_name || data.agent?.display_name || '').trim();
+        addMessage(
+          (agentName ? agentName + ': ' : t('Asiakaspalvelija: ', 'Support: ')) + String(item.message || ''),
+          'bot'
+        );
+        if (created) livePollAfter = created;
+      }
+    } catch {}
+  }
+
+  function startLivePolling() {
+    if (livePollTimer) return;
+    livePollTimer = setInterval(pollLiveTakeover,3000);
+    pollLiveTakeover();
+  }
+
+  async function activate() {
+    try {
+      const res = await fetch(
+        serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/widget-token?lang=' + encodeURIComponent(widgetLang),
+        { method: 'GET', mode: 'cors', credentials: 'omit' }
+      );
+      if (!res.ok) throw new Error('Widget not allowed');
+      const data = await res.json();
+      token = data.token;
+      ready = true;
+      name.textContent = data.name || 'RESPONDO AI';
+      mark.innerHTML = widgetAvatarMarkup(data.avatar || 'robot-1');
+      setAccent(data.accent || fallbackAccent);
+      status.textContent = t('Valmis auttamaan', 'Ready');
+      status.classList.add('ready');
+      renderQuickReplies(data.quickReplies || []);
+      addMessage(data.greeting || t('Hei! Miten voin auttaa?', 'Hi! How can I help?'));
+      startLivePolling();
+    } catch {
+      ready = false;
+      status.textContent = t('Chat ei ole käytössä tällä verkkosivulla.', 'The widget is not active on this website.');
+      status.classList.add('error');
+      form.style.display = 'none';
+      addMessage(t('Tätä chattia ei ole vielä otettu käyttöön tällä verkkosivulla.', 'This RESPONDO AI license is linked to another website or has not been activated yet.'));
+    }
+  }
+
+  launcher.addEventListener('click', () => {
+    const open = panel.classList.toggle('open');
+    launcherLabel.textContent = open ? t('Sulje', 'Close') : t('Kysy meiltä', 'Ask a question');
+    if (open && ready) setTimeout(() => input.focus(), 50);
+  });
+
+  async function sendMessage(rawMessage) {
+    const message = String(rawMessage || '').trim();
+    if (!message || !ready) return;
+
+    addMessage(message, 'user');
+    input.value = '';
+    input.disabled = true;
+    const pending = addMessage('');
+    pending.innerHTML = '<span class="typing-dots"><i></i><i></i><i></i></span>';
+    chat.scrollTop = chat.scrollHeight;
+
+    try {
+      const res = await fetch(
+        serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/chat',
+        {
+          method: 'POST',
+          mode: 'cors',
+          credentials: 'omit',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify({ message, widgetToken: token, visitorRef, lang: widgetLang, pageContext }),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Chat failed');
+      pending.innerHTML = linkify(data.answer || t('En löytänyt tähän varmaa vastausta.', 'I cannot find a reliable answer to this yet.'));
+      if (data.verified) {
+        const note = document.createElement('div');
+        note.className = 'truth-note';
+        note.innerHTML = '<span>✓</span> ' + t('Varmennettu yrityksen tiedoista', 'Verified from company information');
+        chat.appendChild(note);
+      }
+      const hasProducts=renderProducts(data.products || []);
+      renderActions((data.actions || []).filter((action)=>!hasProducts || action?.type!=='product'), message);
+      if ((data.canLeaveContact || data.handoff) && !data.humanTakeover) showLeadForm(message);
+      if (data.humanTakeover) {
+        status.textContent = t('Asiakaspalvelija mukana', 'Human agent joined');
+      }
+    } catch {
+      pending.textContent = t('Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.', 'The response failed. Please try again in a moment.');
+    } finally {
+      input.disabled = false;
+      input.focus();
+      chat.scrollTop = chat.scrollHeight;
+    }
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    await sendMessage(input.value);
+  });
+
+
+  activate();
+})();?'USD':currency==='£'?'GBP':currency;
+      try {if(/^[A-Z]{3}$/.test(code||'')) return new Intl.NumberFormat(locale,{style:'currency',currency:code}).format(value);} catch {}
+      return new Intl.NumberFormat(locale,{maximumFractionDigits:2}).format(value);
+    }
+    for(const item of valid){
+      const card=document.createElement('a');
+      card.className='product-card'; card.href=item.url;card.target='_blank';card.rel='noopener noreferrer';
+      const image=document.createElement(item.imageUrl&&/^https?:\/\//i.test(item.imageUrl)?'img':'span');
+      image.className='product-image'+(image.tagName==='SPAN'?' product-image-fallback':'');
+      if(image.tagName==='IMG'){
+        image.src=item.imageUrl;image.alt=item.name;image.loading='lazy';
+        image.addEventListener('error',()=>{
+          const fallback=document.createElement('span');fallback.className='product-image product-image-fallback';fallback.textContent='◻';
+          image.replaceWith(fallback);
+        },{once:true});
+      }else image.textContent='◻';
+      const details=document.createElement('span');details.className='product-details';
+      const title=document.createElement('strong');title.className='product-name';title.textContent=item.name;
+      details.appendChild(title);
+      if(item.description){
+        const description=document.createElement('span');description.className='product-description';
+        description.textContent=item.description;details.appendChild(description);
+      }
+      if(Number.isFinite(item.price)){
+        const price=document.createElement('strong');price.className='product-price';
+        price.textContent=formatPrice(item.price,item.currency)+
+          (Number.isFinite(item.maxPrice)&&item.maxPrice>item.price?' – '+formatPrice(item.maxPrice,item.currency):'');
+        details.appendChild(price);
+      }
+      const cta=document.createElement('span');cta.className='product-open';
+      cta.textContent=t('Katso tuote →','View product →');details.appendChild(cta);
+      card.append(image,details);
+      card.addEventListener('click',()=>trackAction({type:'product',label:item.name,url:item.url}));
+      wrap.appendChild(card);
+    }
+    chat.appendChild(wrap);
+    return true;
   }
 
   function renderQuickReplies(items = []) {
