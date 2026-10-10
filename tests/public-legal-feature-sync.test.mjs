@@ -56,9 +56,9 @@ test('plans and features are synchronized to the server access gates',()=>{
   assert.ok(allFeatures.some(x=>/Botin värin/.test(x[0])));
   assert.ok(allFeatures.some(x=>/WC-asennus/.test(x[0])));
   assert.doesNotMatch(FEATURE_GROUPS.find(group=>group.key==='live').intro[2],/multiple channels|across multiple channels/);
-  assert.match(app,/Starter',29\.90,29\.90,358\.80,2/);
-  assert.match(app,/Advanced',39\.90,39\.90,478\.80,10/);
-  assert.match(app,/Business',49\.90,49\.90,598\.80,20/);
+  assert.match(app,/Starter',34\.90,29\.90,358\.80,2/);
+  assert.match(app,/Advanced',44\.90,39\.90,478\.80,10/);
+  assert.match(app,/Business',54\.90,49\.90,598\.80,20/);
   for(const label of ['botin väriä','Google Calendar','20 asiakaspalvelijapaikkaa']){
     assert.ok((app+server+JSON.stringify(LEGAL_20261008)).includes(label),label);
   }
