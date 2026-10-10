@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { extractProducts, parseProductKnowledgeRow } from '../website-knowledge.mjs';
-import { generateGroundedAnswer, verifiedProductCards } from '../server.mjs';
+import { generateGroundedAnswer, verifiedProductCards, hydratedProductCards } from '../server.mjs';
 
 const url='https://shop.example.fi/products/valkoinen-sohva';
 const image='https://cdn.example.fi/assets/sohva.webp';
@@ -59,4 +59,23 @@ test('browsing product names and generic catalog questions select cards',async()
   });
   assert.equal(generic.handoff,false);
   assert.deepEqual(verifiedProductCards(generic).map(x=>x.url),[url]);
+});
+
+test('existing imported product rows without image metadata gain verified thumbnails',async()=>{
+  const legacy={...row,answer:row.answer.replace('Kuva: '+image+'. ','')};
+  const productJson={'@context':'https://schema.org','@type':'Product',
+    name:'Valkoinen kolmen istuttava sohva',
+    image:[image],
+    offers:{'@type':'Offer',price:'795.00',priceCurrency:'EUR',url}};
+  const fakeFetcher=async(actualUrl)=>{
+    assert.equal(actualUrl,url);
+    return {html:'<script type="application/ld+json">'+JSON.stringify(productJson)+'</script>',finalUrl:url};
+  };
+  assert.equal(verifiedProductCards({intent:'Tuotteet',selected:[legacy]}).at(0)?.imageUrl,'');
+  const cards=await hydratedProductCards({intent:'Tuotteet',selected:[legacy]},fakeFetcher);
+  assert.equal(cards.length,1);
+  assert.equal(cards[0].imageUrl,image);
+  assert.equal(cards[0].price,795);
+  assert.equal(cards[0].url,url);
+  assert.deepEqual(await hydratedProductCards({intent:'Ajanvaraus',selected:[legacy]},fakeFetcher),[]);
 });
