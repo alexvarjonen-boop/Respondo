@@ -17,10 +17,10 @@ test('broad what-do-you-sell question answers with natural product categories an
   assert.match(result.answer,/• (?:Putters|Headcovers|Towels|Grips)/);
   assert.match(result.answer,/Among other products\.$/);
   assert.doesNotMatch(result.answer,/Tuote:|Tuoteryhmä:|Brändi:|Our selection includes/i);
-  assert.equal(result.selected.length,0);
+  assert.equal(result.selected.length,3);
 
   const actions=chatActions(rows,'What do you sell?',false,'en',result.selected);
-  assert.equal(actions.filter((action)=>action.type==='product').length,0);
+  assert.equal(actions.filter((action)=>action.type==='product').length,3);
   const catalog=actions.find((action)=>action.type==='catalog');
   assert.ok(catalog,JSON.stringify(actions));
   assert.equal(catalog.label,'View all products');

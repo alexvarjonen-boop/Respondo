@@ -234,6 +234,7 @@ function productFromStructuredNode(node, pageUrl) {
   const availability=offers.find((offer)=>offer.availability)?.availability || productAvailability(node.availability);
   const url=httpUrl(node.url || offers.find((offer)=>offer.url)?.url || pageUrl,pageUrl) || pageUrl;
   const description=stripProductHtml(node.description || '').slice(0,700);
+  const imageUrl=productImageUrl(node.image || variants.find((variant)=>variant.image)?.image, pageUrl);
   const category=clean(node.category || node.productCategory || node.additionalType || '').slice(0,120);
   const brand=productBrand(node.brand).slice(0,120);
   const sku=clean(node.sku || node.mpn || '').slice(0,120);
@@ -245,7 +246,7 @@ function productFromStructuredNode(node, pageUrl) {
   if(sizes.length && !options.some((option)=>/koko|size|storlek/.test(norm(option.name)))) options.push({name:'Koko',values:sizes});
   if(materialsList.length && !options.some((option)=>/materia|material/.test(norm(option.name)))) options.push({name:'Materiaali',values:materialsList});
   const specs=structuredProductSpecs(node);
-  return {name,url,price,maxPrice,currency,availability,description,category,brand,sku,colors,sizes,materials:materialsList,options:options.slice(0,12),specs};
+  return {name,url,imageUrl,price,maxPrice,currency,availability,description,category,brand,sku,colors,sizes,materials:materialsList,options:options.slice(0,12),specs};
 }
 function structuredProductNodes(html) {
   const nodes=[];
@@ -268,6 +269,15 @@ function structuredProductNodes(html) {
     walk(data);
   }
   return nodes;
+}
+// Product images are sourced from product metadata, never guessed from names.
+function productImageUrl(value, pageUrl) {
+  if (Array.isArray(value)) {
+    for (const item of value) { const url=productImageUrl(item,pageUrl); if(url) return url; }
+    return '';
+  }
+  if (value && typeof value==='object') return productImageUrl(value.url || value.contentUrl || value.src || value.image || '',pageUrl);
+  return typeof value==='string' ? httpUrl(value,pageUrl) : '';
 }
 function productMeta(html, key) {
   const wanted=norm(key);
@@ -293,6 +303,7 @@ export function extractProducts(html, pageUrl) {
       products.push({
         name:title,
         url:httpUrl(productMeta(html,'og:url') || pageUrl,pageUrl) || pageUrl,
+        imageUrl:productImageUrl(productMeta(html,'og:image') || productMeta(html,'twitter:image'),pageUrl),
         price:amount,
         maxPrice:amount,
         currency,
@@ -349,6 +360,7 @@ function productKnowledgeAnswer(product) {
   }
   if (product.sku) parts.push('SKU: '+product.sku+'.');
   if (product.url) parts.push('Linkki: '+product.url+'.');
+  if (product.imageUrl) parts.push('Kuva: '+product.imageUrl+'.');
   if (product.description) parts.push('Kuvaus: '+product.description.slice(0,520));
   return clean(parts.join(' '));
 }
@@ -381,10 +393,12 @@ export function parseProductKnowledgeRow(row) {
     return {name:clean(name),value:clean(rest.join(':'))};
   }).filter((item)=>item.name&&item.value).slice(0,18) : [];
   const description=clean(answer.match(/Kuvaus:\s*([\s\S]*)$/i)?.[1] || '').slice(0,700);
+  const imageMatch=answer.match(/Kuva:\s*(https?:\/\/\S+)/i);
+  const imageUrl=productImageUrl(imageMatch?.[1]?.replace(/[.,;]+$/,'') || '',row?.source_url || row?.sourceUrl || undefined);
   const linkMatch=answer.match(/Linkki:\s*(https?:\/\/\S+)/i);
   const rawUrl=String(row?.source_url || row?.sourceUrl || linkMatch?.[1] || '').replace(/[.,;]+$/,'');
   const url=httpUrl(rawUrl);
-  return {name,price,maxPrice,currency,availability,productType,brand,colors,sizes,materials:materialsList,options,specs,description,url,row};
+  return {name,price,maxPrice,currency,availability,productType,brand,colors,sizes,materials:materialsList,options,specs,description,url,imageUrl,row};
 }
 
 
