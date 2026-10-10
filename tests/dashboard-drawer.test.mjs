@@ -33,3 +33,14 @@ test('compact dashboard header removes the redundant selector and demo strip', (
   assert.match(css, /\.dashboard-section-picker,/);
   assert.match(css, /\.demo-section-strip \{ display:none!important;/);
 });
+
+test('signed-in drawer uses native deep links instead of an unreliable hidden select proxy', () => {
+  assert.match(javascript, /document\.createElement\(demo \? 'button' : 'a'\)/);
+  assert.match(javascript, /button\.href = '\/app' \+ \(view === 'overview' \? '' : '\?section=' \+ encodeURIComponent\(view\)\)/);
+  assert.match(javascript, /if \(demo\) \{/);
+  assert.match(javascript, /select\.dispatchEvent\(new Event\('change'/);
+  assert.match(css, /\.dashboard-drawer-link\s*\{[^}]*text-decoration:none/s);
+  const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
+  assert.match(app, /new URLSearchParams\(location\.search\)\.get\('section'\)/);
+  assert.match(app, /showDashboardView\(validDashboardViews\.has\(requestedView\) \? requestedView : 'overview'/);
+});
