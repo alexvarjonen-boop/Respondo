@@ -100,14 +100,28 @@
     transform:none!important;
     z-index:1!important;
   }
-  /* The public menu icon also uses three distinct bars. */
+  /* The markup now has three real spans: do not paint a fourth line. */
   body.public-nav-active #app .nav .apple-menu-toggle::after {
-    content:"";
-    display:block;
-    width:22px;
-    height:2px;
-    border-radius:99px;
-    background:currentColor;
+    content:none!important;
+    display:none!important;
+  }
+  body.public-nav-active #app .nav .apple-menu-toggle {
+    gap:5px!important;
+    margin-left:auto!important;
+    touch-action:manipulation;
+    pointer-events:auto!important;
+  }
+  body.public-nav-active #app .nav .apple-menu-toggle > span {
+    display:block!important;
+    width:21px!important;
+    height:2px!important;
+    flex:0 0 2px!important;
+    margin:0!important;
+    padding:0!important;
+    border-radius:99px!important;
+    background:currentColor!important;
+    opacity:1!important;
+    transform:none!important;
   }
   body.public-nav-active #app {
     padding-top:74px!important;
@@ -229,5 +243,24 @@
     height:64px!important;
     min-height:64px!important;
     max-height:64px!important;
+  }
+}
+
+/* Small iPhones: prioritize the actual three-line menu over the floating
+   scroll CTA. The same trial action remains available in the expanded menu. */
+@media (max-width:430px) {
+  body.public-nav-active #app .nav .navactions .nav-home-scroll-trial.is-visible {
+    display:none!important;
+  }
+  body.public-nav-active #app .nav .navactions {
+    flex:0 0 auto!important;
+    max-width:calc(100% - 100px)!important;
+  }
+  body.public-nav-active #app .nav .container.navin {
+    flex-wrap:nowrap!important;
+    overflow:hidden!important;
+  }
+  body.public-nav-active #app .nav .apple-menu-toggle {
+    flex:0 0 44px!important;
   }
 }
