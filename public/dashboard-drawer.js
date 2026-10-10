@@ -64,8 +64,13 @@
     views.forEach((view,i) => {
       const option = [...select.options].find(o => o.value === view);
       if (!option) return;
-      const button = document.createElement('button');
-      button.type = 'button';
+      // Logged-in sections are real, deep-linkable pages. The former
+      // change-event proxy depended on the hidden select's SPA listeners,
+      // so taps could appear to do nothing after the dashboard re-rendered.
+      // Native links always navigate, including on iOS Safari and after reload.
+      const button = document.createElement(demo ? 'button' : 'a');
+      if (demo) button.type = 'button';
+      else button.href = '/app' + (view === 'overview' ? '' : '?section=' + encodeURIComponent(view));
       button.className = 'dashboard-drawer-link';
       button.dataset.drawerSection = view;
       const number = document.createElement('span');
@@ -79,12 +84,17 @@
       arrow.textContent = '›';
       arrow.setAttribute('aria-hidden','true');
       button.append(number,label,arrow);
-      button.addEventListener('click',() => {
-        select.value = view;
-        select.dispatchEvent(new Event('change',{bubbles:true}));
-        hide(false);
-        toggle.focus();
-      });
+      if (demo) {
+        button.addEventListener('click',() => {
+          hide(false);
+          select.value = view;
+          select.dispatchEvent(new Event('change',{bubbles:true}));
+          toggle.focus();
+        });
+      }
+      // On /app the anchor's built-in navigation is intentionally not
+      // prevented: the destination restores its section from ?section=.
+
       nav.append(button);
     });
     const footer = document.createElement('div');
