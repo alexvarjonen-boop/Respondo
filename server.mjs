@@ -1,5 +1,5 @@
 import { brandedEmailHtml } from './email-branding.mjs';
-import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
+import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
@@ -2548,6 +2548,66 @@ function verifiedProductCards(result) {
   }
   return cards;
 }
+
+// Historical catalog rows lack image metadata. Fetch only the merchant's
+// verified product page, using the existing SSRF-safe website fetcher.
+const productCardImageCache=new Map();
+function validProductImage(raw,base){
+  try{
+    const u=new URL(String(raw||'').trim(),base);
+    return ['http:','https:'].includes(u.protocol) && !u.username && !u.password ? u.href : '';
+  }catch{return '';}
+}
+async function verifiedProductPageImage(url,fetchPage=fetchPublicHtml){
+  const response=await fetchPage(url);
+  const source=response?.finalUrl||url;
+  const products=extractProducts(response?.html||'',source);
+  const pathname=new URL(url).pathname.replace(/\/$/,'');
+  const matched=products.find(p=>{
+    try{return new URL(p.url).pathname.replace(/\/$/,'')===pathname;}catch{return false;}
+  })||(products.length===1?products[0]:null);
+  const image=validProductImage(matched?.imageUrl,source);
+  if(image) return image;
+  // Some product pages provide only Open Graph image metadata.
+  for(const tag of String(response?.html||'').match(/<meta\b[^>]*>/gi)||[]){
+    if(!/(?:property|name)\s*=\s*["'](?:og:image(?::secure_url)?|twitter:image)["']/i.test(tag))continue;
+    const src=tag.match(/\bcontent\s*=\s*["']([^"']+)["']/i)?.[1]||'';
+    const verified=validProductImage(src.replace(/&amp;/g,'&'),source);
+    if(verified)return verified;
+  }
+  return '';
+}
+function cachedProductImage(url,fetchPage=fetchPublicHtml){
+  const now=Date.now();
+  const existing=productCardImageCache.get(url);
+  if(existing&&existing.expires>now)return existing.promise;
+  if(productCardImageCache.size>=500)productCardImageCache.clear();
+  const cache={expires:now+8*60*60*1000,promise:null};
+  cache.promise=verifiedProductPageImage(url,fetchPage).then(image=>{
+    if(!image)cache.expires=Date.now()+10*60*1000;
+    return image;
+  }).catch(()=>{cache.expires=Date.now()+10*60*1000;return '';});
+  productCardImageCache.set(url,cache);
+  return cache.promise;
+}
+async function hydratedProductCards(result,fetchPage=fetchPublicHtml){
+  const cards=verifiedProductCards(result);
+  if(!cards.some(card=>!card.imageUrl))return cards;
+  await Promise.all(cards.map(async card=>{
+    if(card.imageUrl)return;
+    let timer;
+    try{
+      // Keep normal chat replies responsive even if a merchant site is slow.
+      const resolved=await Promise.race([
+        cachedProductImage(card.url,fetchPage),
+        new Promise(resolve=>{timer=setTimeout(()=>resolve(''),4000);})
+      ]);
+      if(resolved)card.imageUrl=resolved;
+    }finally{if(timer)clearTimeout(timer);}
+  }));
+  return cards;
+}
+
 function expandSearchConcepts(value) {
   let text=' '+normalizeSearchText(value)+' ';
   const groups=[
@@ -11259,7 +11319,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       confidence: handoff ? Math.min(result.confidence, 0.35) : result.confidence,
       intent: result.intent,
       actions,
-      products:verifiedProductCards(result),
+      products:await hydratedProductCards(result),
       canLeaveContact: Boolean(handoff),
     });
   } catch (e) {
@@ -11818,7 +11878,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       sourceIds: result.sourceIds,
       verified: !handoff && Array.isArray(result.sourceIds) && result.sourceIds.length > 0,
       actions,
-      products:verifiedProductCards(result),
+      products:await hydratedProductCards(result),
       canLeaveContact: handoff,
     });
   } catch (e) {
@@ -13453,6 +13513,6 @@ async function start() {
   app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
 }
 
-export { verifiedProductCards, hasVerifiedPartialAnswer, app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, fetchWebsiteBundle, buildProfileKnowledge, detectConversationLanguage, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
+export { hydratedProductCards, verifiedProductCards, hasVerifiedPartialAnswer, app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, fetchWebsiteBundle, buildProfileKnowledge, detectConversationLanguage, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
 if (process.env.NODE_ENV !== 'test') start();
 
