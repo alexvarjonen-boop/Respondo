@@ -112,7 +112,18 @@
         footer.append(b);
       });
     }
-    panel.append(head,sub,nav,footer);
+    const langSection = document.createElement('div');
+    langSection.className = 'dashboard-drawer-language';
+    langSection.innerHTML = '<p>' + words('Kieli','Språk','Language') + '</p><div class="dashboard-drawer-language-buttons"><button type="button" data-drawer-lang="fi">Suomi</button><button type="button" data-drawer-lang="sv">Svenska</button><button type="button" data-drawer-lang="en">English</button></div>';
+    langSection.querySelectorAll('[data-drawer-lang]').forEach(button => {
+      const lang = button.dataset.drawerLang;
+      button.setAttribute('aria-pressed', String(lang === document.documentElement.lang));
+      button.addEventListener('click', () => {
+        const target = top.querySelector('.premium-language-picker [data-lang-button="' + lang + '"]');
+        if (target) { hide(false); target.click(); }
+      });
+    });
+    panel.append(head,sub,nav,langSection,footer);
     layer.append(backdrop,panel);
     document.body.append(layer);
     let priorFocus = null;
