@@ -270,3 +270,49 @@
     padding-top:var(--demo-sticky-header-space,88px)!important;
   }
 }
+
+/* Accessible language controls in the dashboard/demo drawer. */
+.dashboard-drawer-language {
+  margin-top:20px;
+  padding-top:18px;
+  border-top:1px solid #e7e8ee;
+}
+.dashboard-drawer-language p {
+  margin:0 0 11px;
+  color:#6f707a;
+  font-size:12px;
+  font-weight:750;
+}
+.dashboard-drawer-language-buttons {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.dashboard-drawer-language-buttons button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:42px;
+  padding:8px 12px;
+  border:1px solid #e3e5ec;
+  border-radius:12px;
+  background:#f7f8fa;
+  color:#23242b;
+  font-family:inherit;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+}
+.dashboard-drawer-language-buttons button[aria-pressed="true"] {
+  border-color:#1d1d1f;
+  background:#1d1d1f;
+  color:#fff;
+}
+.dashboard-drawer-language-buttons button[data-drawer-lang="fi"]::before { content:"🇫🇮"; }
+.dashboard-drawer-language-buttons button[data-drawer-lang="sv"]::before { content:"🇸🇪"; }
+.dashboard-drawer-language-buttons button[data-drawer-lang="en"]::before { content:"🇬🇧"; }
+.dashboard-drawer-language-buttons button:focus-visible {
+  outline:3px solid #6b9aff;
+  outline-offset:3px;
+}
