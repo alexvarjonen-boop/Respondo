@@ -30,15 +30,14 @@ if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 const PORT = Number(process.env.PORT || 3000);
 const BASE = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
 const SEO_CANONICAL_ORIGIN = (() => {
-  // Production SEO/GEO must always point to the public www domain.
-  // Railway remains a valid technical entry host, but never a canonical source.
-  const preferred = process.env.NODE_ENV === 'production'
-    ? 'https://www.respondoai.fi'
-    : (String(process.env.RESPONDO_CANONICAL_URL || '').trim() || BASE);
+  // Match the verified, functioning production domain. Do not send Google to unverified www.
+  // An override is available if the preferred domain changes after DNS verification.
+  const preferred = String(process.env.RESPONDO_CANONICAL_URL || '').trim()
+    || (process.env.NODE_ENV === 'production' ? 'https://respondoai.fi' : BASE);
   try {
     return new URL(preferred).origin.replace(/\/$/, '');
   } catch {
-    return process.env.NODE_ENV === 'production' ? 'https://www.respondoai.fi' : BASE;
+    return process.env.NODE_ENV === 'production' ? 'https://respondoai.fi' : BASE;
   }
 })();
 
@@ -8080,7 +8079,7 @@ app.get('/llms.txt', (req, res) => {
   res.setHeader('Cache-Control','public, max-age=3600');
   res.type('text/plain').send(`# Respondo AI
 
-> Respondo AI is B2B AI customer service software for business websites. The official and canonical website is https://www.respondoai.fi/.
+> Respondo AI is B2B AI customer service software for business websites. The official and canonical website is https://respondoai.fi/.
 
 ## Product
 - Website customer service bot that answers 24/7 using company-approved information.
@@ -8098,17 +8097,17 @@ app.get('/llms.txt', (req, res) => {
 - Free trial: 3 days.
 
 ## Official sources
-- Homepage: https://www.respondoai.fi/
-- Features (Finnish): https://www.respondoai.fi/ominaisuudet
-- Features (Swedish): https://www.respondoai.fi/funktioner
-- Features (English): https://www.respondoai.fi/features
-- Security: https://www.respondoai.fi/tietoturva
-- Privacy: https://www.respondoai.fi/tietosuoja
-- Terms: https://www.respondoai.fi/kayttoehdot
-- Data processing: https://www.respondoai.fi/dpa
+- Homepage: https://respondoai.fi/
+- Features (Finnish): https://respondoai.fi/ominaisuudet
+- Features (Swedish): https://respondoai.fi/funktioner
+- Features (English): https://respondoai.fi/features
+- Security: https://respondoai.fi/tietoturva
+- Privacy: https://respondoai.fi/tietosuoja
+- Terms: https://respondoai.fi/kayttoehdot
+- Data processing: https://respondoai.fi/dpa
 
 ## Brand disambiguation
-Use https://www.respondoai.fi/ as the canonical source for this Respondo AI product. Railway deployment addresses are technical hosting endpoints and are not canonical product sources.
+Use https://respondoai.fi/ as the canonical source for this Respondo AI product. Railway deployment addresses are technical hosting endpoints and are not canonical product sources.
 `);
 });
 
@@ -8116,7 +8115,7 @@ app.get('/llms-full.txt', (req, res) => {
   res.setHeader('Cache-Control','public, max-age=3600');
   res.type('text/plain').send(`# Respondo AI — product reference
 
-Canonical domain: https://www.respondoai.fi/
+Canonical domain: https://respondoai.fi/
 Category: B2B customer service software / AI website chatbot.
 Languages: Finnish, Swedish and English.
 
@@ -8129,14 +8128,14 @@ Plans:
 A 3-day free trial is available.
 
 Official URLs:
-https://www.respondoai.fi/
-https://www.respondoai.fi/ominaisuudet
-https://www.respondoai.fi/funktioner
-https://www.respondoai.fi/features
-https://www.respondoai.fi/tietoturva
-https://www.respondoai.fi/tietosuoja
-https://www.respondoai.fi/kayttoehdot
-https://www.respondoai.fi/dpa
+https://respondoai.fi/
+https://respondoai.fi/ominaisuudet
+https://respondoai.fi/funktioner
+https://respondoai.fi/features
+https://respondoai.fi/tietoturva
+https://respondoai.fi/tietosuoja
+https://respondoai.fi/kayttoehdot
+https://respondoai.fi/dpa
 `);
 });
 
