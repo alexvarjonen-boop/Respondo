@@ -8,13 +8,13 @@ Respondo answers from the business's approved knowledge base and imported websit
 
 Current subscription prices (October 2026; no VAT charged because the seller is not VAT registered):
 
-| Plan | Monthly | Annual billing (no discount) | Support-agent seats | Website import | Google Calendar |
+| Plan | Monthly | Annual billing (save 60 €/year) | Support-agent seats | Website import | Google Calendar |
 | --- | ---: | ---: | ---: | --- | --- |
-| Starter | 29.90 €/mo | 358.80 €/yr (29.90 €/mo) | 2 | Yes | No |
-| Advanced | 39.90 €/mo | 478.80 €/yr (39.90 €/mo) | 10 | Yes | Yes |
-| Business | 49.90 €/mo | 598.80 €/yr (49.90 €/mo) | 20 | Yes | Yes |
+| Starter | 34.90 €/mo | 358.80 €/yr (29.90 €/mo) | 2 | Yes | No |
+| Advanced | 44.90 €/mo | 478.80 €/yr (39.90 €/mo) | 10 | Yes | Yes |
+| Business | 54.90 €/mo | 598.80 €/yr (49.90 €/mo) | 20 | Yes | Yes |
 
-Annual billing has **no discount**. Existing subscriptions are not automatically repriced.
+Annual billing saves **5 €/month (60 €/year)** compared with monthly billing. Annual fees are charged upfront. Existing subscriptions are not automatically repriced.
 Business also unlocks current premium automations and integrations, including automatic quote calculation, Stripe Connect payment automation, commerce integrations, webhooks and Channels API.
 
 Trial: 3 days.
@@ -22,16 +22,16 @@ Trial: 3 days.
 ## Live Stripe products and current prices
 
 - Starter: `prod_VO2qWi6HFkLrqj`
-  - Monthly: `price_1UONnqV05brJ7mTPu5MvqQaP`
-  - Annual (no discount): `price_1UONnxV05brJ7mTPMVHkrpf5`
+  - Monthly: `price_1UP2DWV05brJ7mTP6sjumnIt`
+  - Annual (save 60 €/yr): `price_1UONnxV05brJ7mTPMVHkrpf5`
 - Advanced: `prod_VO2qKqvwOQtz2m`
-  - Monthly: `price_1UONo0V05brJ7mTPesqzKl1q`
-  - Annual (no discount): `price_1UONrlV05brJ7mTPsUqKaQIB`
+  - Monthly: `price_1UP2DfV05brJ7mTPuSuwvuxm`
+  - Annual (save 60 €/yr): `price_1UONrlV05brJ7mTPsUqKaQIB`
 - Business: `prod_VO2q7QXcuFoW9R`
-  - Monthly: `price_1UONrnV05brJ7mTPR01BklbN`
-  - Annual (no discount): `price_1UONrqV05brJ7mTPWmGhW2lP`
+  - Monthly: `price_1UP2DhV05brJ7mTP2pSDX8aV`
+  - Annual (save 60 €/yr): `price_1UONrqV05brJ7mTPWmGhW2lP`
 
-Historical Stripe price IDs remain available for recognizing existing subscriptions; they must not be offered for new checkouts. The six active new prices have tax_behavior=exclusive, and both subscription checkouts explicitly disable automatic tax and attach no tax rates. This domestic small-business tax treatment must be re-evaluated before EU cross-border sales or exceeding Finland's registration threshold.
+Historical Stripe price IDs remain available for recognizing existing subscriptions; they must not be offered for new checkouts. The three new monthly and three unchanged annual checkout prices have tax_behavior=exclusive, and both subscription checkouts explicitly disable automatic tax and attach no tax rates. This domestic small-business tax treatment must be re-evaluated before EU cross-border sales or exceeding Finland's registration threshold.
 
 ## Production services
 
