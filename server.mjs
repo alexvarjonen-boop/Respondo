@@ -6201,7 +6201,12 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const expertAnswer=verifiedTechnicalFaqAnswer(rows,cleanMessage);
   if(expertAnswer){
     if(expertAnswer.handoff) return expertAnswer;
-    const evidenceLang=detectConversationLanguage(expertAnswer.answer,responseLang);
+    // An explicitly localized approved FAQ can be trusted for its stated
+    // language; heuristic language detection on short Swedish answers is noisy
+    // and must not require an unavailable external translation service.
+    const declaredEvidenceLang=String(expertAnswer.selected?.[0]?.lang||'').toLowerCase().trim();
+    const evidenceLang=['fi','sv','en'].includes(declaredEvidenceLang)
+      ? declaredEvidenceLang : detectConversationLanguage(expertAnswer.answer,responseLang);
     if(evidenceLang!==responseLang){
       const translated=await forceAnswerLanguage(expertAnswer.answer,responseLang);
       if(!translated)return {answer:'',handoff:true,confidence:0.2,intent:'Tekninen kysymys',
