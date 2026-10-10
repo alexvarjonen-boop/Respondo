@@ -7465,7 +7465,7 @@ app.get('/sitemap.xml', (req,res) => {
     }
   }
   // Each editorial guide is a Finnish-only page; avoid claiming untranslated hreflang variants.
-  const guidePaths = ['/opas/asiakaspalvelun-automatisointi.html', '/opas/chatbot-verkkokauppaan.html'];
+  const guidePaths = ['/opas/asiakaspalvelun-automatisointi.html', '/opas/chatbot-verkkokauppaan.html', '/opas/chatbot-yritykselle-testikysymykset.html'];
   for (const guidePath of guidePaths) {
     rows.push('  <url><loc>' + escapeXml(SEO_CANONICAL_ORIGIN + guidePath) + '</loc><lastmod>2026-10-11</lastmod></url>');
   }
