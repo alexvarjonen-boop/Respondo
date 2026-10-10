@@ -4,6 +4,7 @@ import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
 import { interpretCustomerQuestion } from './query-typos.mjs';
+import { verifiedIndustryServiceAnswer } from './industry-service-intelligence.mjs';
 import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion } from './industry-service-engine.mjs';
 import express from 'express';
 import path from 'path';
@@ -6185,6 +6186,12 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     const specialistService = industryServiceAnswer(rows,cleanMessage,responseLang);
     if(specialistService) return specialistService;
   }
+
+  // Specialist services (mechanics, plumbing, construction, accounting, etc.)
+  // require explicit company-side proof of both the procedure and the object.
+  // Generic industry names or similar services never authorize a yes-answer.
+  const verifiedIndustryService=verifiedIndustryServiceAnswer(rows,cleanMessage,responseLang);
+  if(verifiedIndustryService) return verifiedIndustryService;
 
   const toiletInstallation = groundedToiletInstallationQuestion(cleanMessage, rows, responseLang);
   if (toiletInstallation) return toiletInstallation;
