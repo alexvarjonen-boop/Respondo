@@ -40,6 +40,7 @@ const SUBJECTS={
 const ALIASES=Object.fromEntries(Object.entries(SUBJECTS)
   .map(([key,list])=>[key,list.map(norm)]));
 const OPERATIONS={
+  payroll:/\b(?:palkanlask\w*|payroll\b|loneadministr\w*)\b/,
   replace:/\b(?:vaihd\w*|vaiht\w*|uusim\w*|replace\w*|replacement\w*|swap\w*|byt\w*|utbyt\w*)\b/,
   patch:/\b(?:paik\w*|patch\w*|puncture\w*|punkter\w*|plug\w*|lagning\w*)\b/,
   repair:/\b(?:korja\w*|repar\w*|repair\w*|fix\w*|laga)\b/,
