@@ -14,6 +14,10 @@ const ACTIONS = Object.freeze({
   patch: /\b(?:paik\w*|punctur\w*|punkter\w*|dacklagning|tyre\s+repair|tire\s+repair)\b/,
   clean: /\b(?:pes\w*|pese\w*|puhdist\w*|tvatt\w*|rengor\w*|clean\w*|wash\w*)\b/,
   open: /\b(?:ava\w*|aukais\w*|rens\w*|unblock\w*|unclog\w*)\b/,
+  paint: /\b(?:maala\w*|mal\w*|paint\w*)\b/,
+  maintain: /\b(?:huol\w*|underhall\w*|maintain\w*|servic\w*)\b/,
+  sell: /\b(?:myy\w*|myytte\w*|s[aä]lj\w*|sell\w*|buy\w*|stock\w*|varast\w*|ost\w*)\b/,
+  charge: /\b(?:lata\w*|ladd\w*|charg\w*)\b/,
 });
 
 const SERVICES = Object.freeze([
@@ -126,7 +130,7 @@ function localize(values, lang) {
 // result uses only evidence from the passed tenant rows; no cross-tenant cache.
 export function matchVerifiedSpecialistService({message, rows=[], history=[], lang='fi'} = {}) {
   const q=fold(message);
-  if (!q || EXCLUDE_QUESTION.test(q)) return null;
+  if (!q || EXCLUDE_QUESTION.test(q) || /\b(?:ja|seka|and|och)\b|[,;&]/.test(q)) return null;
   const subjects=SERVICES.filter(s=>s.subject.test(q));
   if(subjects.length !== 1) return null; // Compound questions require separate verification.
   const service=subjects[0];
