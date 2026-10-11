@@ -204,3 +204,52 @@ export function matchVerifiedSpecialistService({message, rows=[], history=[], la
     handoff:true, confidence:0.2, intent:'Palvelut', sourceIds:[], selected:[],
   };
 }
+
+
+/**
+ * Separately verify two independent specialist jobs mentioned in a single
+ * request. The only inherited information is the *explicit operation verb*
+ * in the first half ("replace X and Y"). No company claim is inferred from
+ * a known industry, a product listing, or a different service in a row.
+ *
+ * This is intentionally limited to specialist subjects without pre-existing
+ * subtype-specific resolvers (e.g. roof cleaning).
+ */
+export function matchVerifiedCompoundSpecialistServices({message, rows=[], lang='fi'}={}) {
+  const raw=String(message||'').trim();
+  if(raw.length<18 || raw.length>320 || EXCLUDE_QUESTION.test(fold(raw))) return null;
+  const clauses=raw.replace(/[?!.]+$/,'').split(/\s+(?:ja|sekä|seka|and|och)\s+/i);
+  if(clauses.length!==2) return null;
+  const [left,right]=clauses.map(x=>x.trim());
+  if(!left || !right || /[,;&]/.test(left+right)) return null;
+
+  const specialistIds=new Set([
+    'tie-rod-end','car-battery','brake-pads','tyre-puncture',
+    'oil-change','tap-install','drain-unblock'
+  ]);
+  const combinedSubjects=SERVICES.filter(s=>
+    specialistIds.has(s.id) && s.subject.test(fold(raw)));
+  if(combinedSubjects.length!==2) return null;
+  const prefix=left.match(/^(?:vaihdatteko|vaihatteko|asennatteko|paikkaatteko|korjaatteko|avaatteko|teetteko|tarjoatteko|pystytteko|voitteko|can you (?:replace|change|repair|patch|install|unblock)|could you (?:replace|change|repair|patch|install|unblock)|do you (?:replace|change|repair|patch|install|unblock)|byter ni|kan ni byta|lagar ni|kan ni laga|installerar ni|kan ni installera|reparerar ni|kan ni reparera)\b/i)?.[0];
+  if(!prefix) return null;
+  const hasSecondVerb=/^(?:vaihdatteko|asennatteko|paikkaatteko|korjaatteko|teetteko|can you|could you|do you|byter ni|kan ni|lagar ni|installerar ni|reparerar ni)\b/i.test(right);
+  const questions=[left,hasSecondVerb?right:prefix+' '+right];
+  const matched=questions.map(text=>SERVICES.filter(s=>
+    specialistIds.has(s.id) && s.subject.test(fold(text))));
+  if(matched.some(x=>x.length!==1) || matched[0][0].id===matched[1][0].id) return null;
+  const answers=questions.map(text=>
+    matchVerifiedSpecialistService({message:text,rows,history:[],lang}));
+  // Both subjects must be concrete, recognized operations. Otherwise defer to
+  // the existing more general multi-intent handling.
+  if(answers.some(answer=>!answer)) return null;
+  const incomplete=answers.some(answer=>answer.handoff);
+  return {
+    answer:answers.map((answer,index)=>(index+1)+'. '+answer.answer).join('\n'),
+    handoff:incomplete,
+    confidence:incomplete?0.2:Math.min(...answers.map(x=>x.confidence)),
+    intent:'Palvelut',
+    sourceIds:[...new Set(answers.flatMap(x=>x.sourceIds||[]))],
+    selected:[...new Map(answers.flatMap(x=>
+      (x.selected||[]).map(r=>[String(r.id||r.title),r]))).values()],
+  };
+}
