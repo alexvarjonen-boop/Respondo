@@ -8,10 +8,12 @@ const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.ur
 
 test('public widget APIs require an allowed origin and signed tenant token', () => {
   assert.match(server, /function validWidgetToken\(req, tenant, tokenValue\)/);
-  assert.match(server, /if \(!origin \|\| !widgetOriginAllowed\(req,tenant\)\) return false;/);
-  assert.match(server, /token\.kind === 'widget'/);
-  assert.match(server, /token\.slug === tenant\.slug/);
-  assert.match(server, /token\.host === normalizeHost\(origin\.hostname\)/);
+  assert.match(server, /widgetOriginAllowed\(req,tenant\)/);
+  assert.match(server, /googleSitesInstallAuthorized\(req,tenant\)/);
+  assert.match(server, /token\.embed==='google-sites'/);
+  assert.match(server, /token\.kind!=='widget'/);
+  assert.match(server, /token\.slug!==tenant\.slug/);
+  assert.match(server, /token\.host===normalizeHost\(origin\.hostname\)/);
   assert.doesNotMatch(server, /const external = Boolean\(origin && normalizeHost\(origin\.hostname\) !== baseHost\);/);
 });
 
