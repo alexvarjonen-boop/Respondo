@@ -2023,7 +2023,7 @@ function latestHistoryQuestionAnswer(history=[]) {
 // looked up from the active tenant's product catalog.
 function contextualProductPriceQuestion(products,message,history=[]) {
   const q=normalizeSearchText(message);
-  const continuation=q.match(/^(?:enta|entapa|entas|ja enta|no enta|mutta enta|mites|what about|how about|and what about|and how about|och da|men vad galler|vad kostar da)\\s+(.+)$/);
+  const continuation=q.match(/^(?:enta|entapa|entas|ja enta|no enta|mutta enta|mites|what about|how about|and what about|and how about|och da|men vad galler|vad kostar da)\s+(.+)$/);
   if(!continuation || !Array.isArray(history) || !history.length) return '';
   const subject=continuation[1].trim();
   const family=requestedProductFamily(subject);
@@ -2035,15 +2035,15 @@ function contextualProductPriceQuestion(products,message,history=[]) {
     const scores=products.map(p=>productMatchScore(p,tokens)).sort((a,b)=>b-a);
     if((scores[0]||0)<12 || ((scores[1]||0)>0 && scores[0]-scores[1]<6)) return '';
   }
-  const priceIntent=/\\b(?:hinta\\w*|maksaa|maksavat|paljonko|minkahintainen|price\\w*|cost\\w*|how much|pris\\w*|kostar|hur mycket)\\b/;
-  const otherIntent=/\\b(?:toimitus\\w*|shipping|delivery|palautus\\w*|return\\w*|aukiolo\\w*|opening|varastossa|saatavilla|in stock|available|vari\\w*|colors?|sizes?|koko\\w*|materiaali\\w*|material\\w*|takuu\\w*|warranty)\\b/;
+  const priceIntent=/\b(?:hinta\w*|maksaa|maksavat|paljonko|minkahintainen|price\w*|cost\w*|how much|pris\w*|kostar|hur mycket)\b/;
+  const otherIntent=/\b(?:toimitus\w*|shipping|delivery|palautus\w*|return\w*|aukiolo\w*|opening|varastossa|saatavilla|in stock|available|vari\w*|colors?|sizes?|koko\w*|materiaali\w*|material\w*|takuu\w*|warranty)\b/;
   for(let i=history.length-1;i>=Math.max(0,history.length-6);i--){
     const prev=normalizeSearchText(history[i]?.question||history[i]?.user||'');
     if(!prev || conversationPhraseType(prev)) continue;
     if(priceIntent.test(prev) && !otherIntent.test(prev)) return subject+' hinta maksaa';
     // A previous "entä [product]" carries its own inherited price intent.
     // Skip several such turns, including an earlier failed answer.
-    const priorContinuation=prev.match(/^(?:enta|entapa|entas|ja enta|no enta|mutta enta|mites|what about|how about|and what about|and how about|och da|men vad galler)\\s+(.+)$/);
+    const priorContinuation=prev.match(/^(?:enta|entapa|entas|ja enta|no enta|mutta enta|mites|what about|how about|and what about|and how about|och da|men vad galler)\s+(.+)$/);
     if(priorContinuation && (requestedProductFamily(priorContinuation[1]) ||
       products.some(p=>productMatchScore(p,productQueryTokens(priorContinuation[1]))>=12))) continue;
     break; // An explicit new subject or intent resets context.
