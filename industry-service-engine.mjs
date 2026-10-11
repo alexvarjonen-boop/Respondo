@@ -225,6 +225,20 @@ const automotive=new Set([
   'wheel_bearing','brake_fluid','spark_plug','cabin_filter','fuel_filter',
   'radiator','wiper_blade'
 ]);
+// The source-verified industry resolver must run before broad cross-language
+// service heuristics for these concrete procedures. Otherwise a generic
+// socket-installation sentence can incorrectly prove charging-station work.
+const guardedTradeSubjects=new Set([
+  'wheel_bearing','brake_fluid','spark_plug','cabin_filter','fuel_filter',
+  'radiator','wiper_blade','drain','ventilation_duct','underfloor_heating',
+  'charging_station','solar_panel','terrace','chimney','eyebrow',
+  'lash_extension','massage','root_canal','dental_filling'
+]);
+export function isExplicitVerifiedTradeQuestion(message){
+  return isServiceQuestion(message) &&
+    [...concepts(message)].some(x=>guardedTradeSubjects.has(x)) &&
+    requestedAction(message).size>0;
+}
 export function isExplicitAutomotiveServiceQuestion(message){
   return isServiceQuestion(message) && [...concepts(message)].some(x=>automotive.has(x))
     && requestedAction(message).size>0;
