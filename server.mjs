@@ -7897,7 +7897,7 @@ app.get('/robots.txt', (req,res) => {
 });
 
 app.get('/sitemap.xml', (req,res) => {
-  const lastmod = new Date().toISOString().slice(0,10);
+  // Do not claim that every URL was modified today on each sitemap request.
   const basePaths = ['/', '/ominaisuudet', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
   const escapeXml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
   const rows = [];
@@ -7908,7 +7908,6 @@ app.get('/sitemap.xml', (req,res) => {
       rows.push(
         '  <url>\n' +
         '    <loc>' + escapeXml(loc) + '</loc>\n' +
-        '    <lastmod>' + lastmod + '</lastmod>\n' +
         '    <changefreq>' + (basePath === '/' ? 'weekly' : 'monthly') + '</changefreq>\n' +
         '    <priority>' + (basePath === '/' ? '1.0' : basePath === '/ominaisuudet' ? '0.9' : ['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot'].includes(basePath) ? '0.8' : '0.5') + '</priority>\n' +
         '    <xhtml:link rel="alternate" hreflang="fi" href="' + escapeXml(urls.fi) + '" />\n' +
