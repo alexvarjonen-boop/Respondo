@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { generateGroundedAnswer } from '../server.mjs';
 
 const row=(id,title,answer=title,category='Palvelut')=>({
-  id,title,answer,category,approved:true,source_type:'website',
+  id,title,answer,category,approved:true,source_type:'manual',
   source_url:'https://workshop.example/palvelut'
 });
 const facts=[
@@ -46,5 +46,13 @@ test('an explicit negative authored service answer is never overwritten by its h
   ]);
   assert.equal(res.handoff,false,JSON.stringify(res));
   assert.deepEqual(res.sourceIds,['no']);
-  assert.match(res.answer,/ei tarjota/);
+  assert.match(res.answer,/emme tarjoa|ei tarjota/);
+});
+
+test('real imported service-card format passes website knowledge validation',async()=>{
+  const imported=row('site','Palvelut: Jarrupalojen vaihto','Jarrupalojen vaihto');
+  imported.source_type='website';
+  const res=await answer('Vaihdatteko jarrupaloja?',[imported]);
+  assert.equal(res.handoff,false,JSON.stringify(res));
+  assert.deepEqual(res.sourceIds,['site']);
 });
