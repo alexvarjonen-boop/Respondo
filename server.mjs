@@ -2087,6 +2087,44 @@ function productMatchesFamily(product,family) {
   return true;
 }
 
+// A yes/no question about a product category is not a general service FAQ.
+// Support inflected Finnish, Swedish and English queries without translating
+// the query through an external service.
+function requestedProductFamilyAvailability(message) {
+  const family=requestedProductFamily(message);
+  if(!family) return '';
+  const q=normalizeSearchText(message);
+  const availabilityQuestion=/\b(?:myytteko|myytte|myydaan|myydaanko|saako|saisiko|loytyyko|loytyy|onko\s+teilla|onko\s+teilta|onko\s+valikoimassanne|do\s+you\s+(?:sell|have|offer)|can\s+i\s+buy|are\s+there|are\s+.*available|har\s+ni|saljer\s+ni|s[aä]ljer\s+ni|finns\s+det|kan\s+man\s+kopa|erbjuder\s+ni)\b/.test(q);
+  return availabilityQuestion ? family : '';
+}
+
+function verifiedFamilyProductAnswer(rows,message,lang='fi') {
+  const family=requestedProductFamilyAvailability(message);
+  if(!family) return null;
+  const matches=productCatalog(rows)
+    .filter((product)=>productMatchesFamily(product,family))
+    .sort((a,b)=>Number(a.price??Infinity)-Number(b.price??Infinity));
+  if(!matches.length) return null;
+  const first=matches[0];
+  const price=productPriceText(first,lang);
+  let answer;
+  if(family==='giftcard'){
+    answer=lang==='en'
+      ? 'Yes, we sell gift cards.'+(price?' Gift card values start at '+price+'.':'')+' You can view the gift card below.'
+      :lang==='sv'
+        ? 'Ja, vi säljer presentkort.'+(price?' Presentkorten finns från '+price+'.':'')+' Du hittar presentkortet nedan.'
+        : 'Kyllä, myymme lahjakortteja!'+(price?' Lahjakortteja saa alkaen '+price+'.':'')+' Voit tutustua lahjakorttiin alta.';
+  }else{
+    const names=matches.slice(0,3).map((p)=>p.name).join(', ');
+    answer=lang==='en'?'Yes, our selection includes '+names+'. You can view the products below.'
+      :lang==='sv'?'Ja, vårt sortiment innehåller '+names+'. Du hittar produkterna nedan.'
+      :'Kyllä, valikoimassamme on '+names+'. Voit katsoa tuotteet alta.';
+  }
+  const evidence=matches.slice(0,3).map((product)=>product.row).filter(Boolean);
+  return {answer,handoff:false,confidence:0.99,intent:'Tuotteet',
+    sourceIds:evidence.map((row)=>row.id).filter(Boolean),selected:evidence};
+}
+
 function productPopularityEvidence(product) {
   const text=normalizeSearchText([
     product.name,product.productType,product.brand,product.description,
@@ -2210,6 +2248,8 @@ function directProductAnswer(rows,message,lang='fi',history=[]) {
   if(!products.length) return null;
   const followup=directProductVariantFollowup(products,message,history,lang);
   if(followup) return followup;
+  const familyAvailability=verifiedFamilyProductAnswer(rows,message,lang);
+  if(familyAvailability) return familyAvailability;
   const q=normalizeSearchText(message);
   const tokens=productQueryTokens(message);
   const ranked=products.map((product)=>({...product,_match:productMatchScore(product,tokens)}))
