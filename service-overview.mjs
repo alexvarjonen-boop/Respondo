@@ -22,7 +22,7 @@ export function serviceOverviewQuestion(question) {
   // Broad discovery questions only: never intercept prices, availability,
   // particular service confirmations, booking or delivery policies.
   if (/\b(?:hinta|hintaa|maksaa|maksavat|paljonko|price|cost|pris|kostar|ajanvaraus|booking|book|aika|when|milloin)\b/.test(q)) return false;
-  return /^(?:mita (?:teette|te oikein teette|palveluita|palveluja|palveluja teilla on|palveluita tarjoatte|palveluja tarjoatte|tarjoatte)|millaisia palveluja (?:teilla on|tarjoatte)|mitka ovat palvelunne|kerro palveluistanne|mitka palvelut|what (?:do you do|services do you (?:offer|provide)|do you offer)|which services do you offer|tell me about your services|vad (?:gor ni|erbjuder ni)|vilka tjanster (?:har ni|erbjuder ni)|beratta om era tjanster)(?:\b|$)/.test(q);
+  return /^(?:mita (?:teette|te oikein teette|palveluita|palveluja|palveluja teilla on|palveluita tarjoatte|palveluja tarjoatte|palveluja teette|palveluita teette|tarjoatte)|millaisia palveluja (?:teilla on|tarjoatte)|mitka ovat palvelunne|kerro palveluistanne|mitka palvelut|what (?:do you do|services do you (?:offer|provide)|do you offer)|which services do you offer|tell me about your services|vad (?:gor ni|erbjuder ni)|vilka tjanster (?:har ni|erbjuder ni)|beratta om era tjanster)(?:\b|$)/.test(q);
 }
 
 function sourcePath(row){
@@ -74,7 +74,7 @@ export function verifiedServiceOverview(rows, { lang='fi', limit=7 }={}) {
       for(const name of profileNames(row)) candidates.push({name,row,score:105});
     }
   }
-  candidates.sort((a,b)=>b.score-a.score || a.name.length-b.name.length);
+  candidates.sort((a,b)=>b.score-a.score);
   const chosen=[];
   const seen=new Set();
   for(const c of candidates){
@@ -87,13 +87,33 @@ export function verifiedServiceOverview(rows, { lang='fi', limit=7 }={}) {
     chosen.push(c);
     if(chosen.length>=Math.max(1,Math.min(12,limit))) break;
   }
-  if(!chosen.length) return null;
+  if(!chosen.length){
+    // Company-owned service descriptions can be factual without short menu labels.
+    // Return one directly stated offering, not a collage of ranked snippets.
+    const statements=[];
+    for(const row of entries){
+      if(fold(row?.category||'')!=='palvelut') continue;
+      const path=sourcePath(row);
+      if(path && nonServiceUrl.test(path)) continue;
+      const raw=String(row?.answer||'').replace(/^(?:palvelumme|palvelut|services|tjänster)\s*[:–—-]\s*/i,'').trim();
+      if(!raw || pastEvent.test(raw) || staff.test(raw) || salesNoise.test(raw.slice(0,75))) continue;
+      const first=raw.split(/(?<=[.!?])\s+/)[0].replace(/\s+/g,' ').trim();
+      if(first.length<20 || first.length>195) continue;
+      const startsWithOffering=/^(?:tarjoamme|teemme|hoidamme|suoritamme|palvelemme|pesemme|korjaamme|asennamme|we offer|we provide|we do|vi erbjuder|vi utför)\b/i.test(first);
+      if(!startsWithOffering || !/(?:palvel|huolto|pesu|puhdist|korja|asenn|muutto|kuljet|purku|kartoit|siivou|remont|service|repair|clean|install|transport|tjänst)/i.test(first)) continue;
+      statements.push({row,answer:first,score:manualType(row)?3:serviceUrl.test(path)?2:1});
+    }
+    statements.sort((a,b)=>b.score-a.score);
+    if(!statements.length)return null;
+    const best=statements[0];
+    return {answer:best.answer,selected:[best.row],names:[],confidence:best.score>=2?0.9:0.82};
+  }
   const names=chosen.map(x=>x.name);
   const format = items => items.length===1 ? items[0]
     : items.slice(0,-1).join(', ')+(lang==='sv'?' och ':lang==='en'?' and ':' ja ')+items.at(-1);
   const prefix=lang==='en'?'We offer services such as '
     :lang==='sv'?'Vi erbjuder bland annat '
-    :'Palveluihimme kuuluvat esimerkiksi ';
+    :'Palveluihimme kuuluvat: ';
   const answer=prefix+format(names)+'.';
   const selected=[...new Set(chosen.map(x=>x.row))];
   return {answer,selected,names,confidence:chosen.every(x=>x.score>=90)?0.96:0.89};
