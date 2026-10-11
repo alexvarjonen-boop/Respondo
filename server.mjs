@@ -1401,12 +1401,36 @@ function requestOrigin(req) {
   }
 }
 
+function isGoogleSitesWebsite(value) {
+  try {
+    const url=new URL(String(value||'').trim());
+    return url.protocol==='https:' && url.hostname==='sites.google.com'
+      && /^\/(?:view|site)\/[a-z0-9_-]+(?:\/|$)/i.test(url.pathname);
+  } catch {return false;}
+}
+
+function googleSitesIframeHost(value) {
+  try {
+    const url=new URL(String(value||''));
+    const host=normalizeHost(url.hostname);
+    // Google Sites HTML embeds run in Google-operated sandboxed iframes.
+    // A generic *.googleusercontent.com allowlist is NOT an authorization:
+    // each tenant must explicitly approve the one exact frame origin.
+    return url.protocol==='https:' &&
+      /^[a-z0-9-]+-atari-embeds\.googleusercontent\.com$/.test(host)
+      ? host : '';
+  } catch {return '';}
+}
+
 function widgetOriginAllowed(req, tenant) {
   const origin=requestOrigin(req);
   if (!origin) return false;
   const originHost=normalizeHost(origin.hostname);
   const allowedHost=normalizeHost(tenant.website);
   if (allowedHost && originHost === allowedHost) return true;
+  if (isGoogleSitesWebsite(tenant.website) &&
+      googleSitesIframeHost(origin.toString()) === originHost &&
+      originHost === String(tenant.google_sites_embed_host||'').toLowerCase()) return true;
 
   // Respondo's own homepage uses the real production assistant even if the
   // first-party workspace profile has no website value saved. Only the
@@ -11360,6 +11384,33 @@ async function publicTenant(slugValue) {
 }
 
 
+app.post('/api/app/google-sites/approve-embed', auth, ownerOnly, subscribed, async (req,res)=>{
+  try {
+    const result=await q(
+      'SELECT id,website,google_sites_pending_embed_host FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',
+      [req.user.sub]
+    );
+    if(!result.rowCount)return res.status(404).json({error:'Yritystä ei löytynyt.'});
+    const tenant=result.rows[0];
+    if(!isGoogleSitesWebsite(tenant.website))
+      return res.status(400).json({error:'Aseta yrityksen verkkosivuksi ensin julkaistu Google Sites -osoite.'});
+    const host=String(req.body?.host||'').trim().toLowerCase();
+    const pending=String(tenant.google_sites_pending_embed_host||'').trim().toLowerCase();
+    if(!pending || host!==pending ||
+      !googleSitesIframeHost('https://'+host))
+      return res.status(400).json({error:'Hyväksyttävä Google Sites -kehys ei vastaa uusinta aktivointipyyntöä.'});
+    const approved=await q(
+      'UPDATE tenants SET google_sites_embed_host=$1,google_sites_pending_embed_host=NULL WHERE id=$2 AND google_sites_pending_embed_host=$1 RETURNING id',
+      [host,tenant.id]
+    );
+    if(!approved.rowCount)return res.status(409).json({error:'Upotuksen tunnistus muuttui. Lataa sivu uudelleen.'});
+    return res.json({ok:true,host});
+  } catch(e){
+    console.error('Google Sites embed approval failed',e);
+    return res.status(500).json({error:'Upotuksen hyväksyntä epäonnistui.'});
+  }
+});
+
 app.get('/api/public/:slug/widget-token', publicReadLimiter, async (req, res) => {
   try {
     const tr = await publicTenant(req.params.slug);
@@ -11367,6 +11418,18 @@ app.get('/api/public/:slug/widget-token', publicReadLimiter, async (req, res) =>
     const tenant = tr.rows[0];
 
     if (!widgetOriginAllowed(req, tenant)) {
+      const candidate=googleSitesIframeHost(requestOrigin(req)?.origin||'');
+      if(candidate && isGoogleSitesWebsite(tenant.website)){
+        await q(`UPDATE tenants
+                   SET google_sites_pending_embed_host=$1
+                 WHERE id=$2 AND google_sites_embed_host IS DISTINCT FROM $1`,
+          [candidate,tenant.id]);
+        setWidgetCors(req,res);
+        return res.status(403).json({
+          code:'GOOGLE_SITES_APPROVAL_REQUIRED',
+          error:'Google Sites -upotus odottaa hyväksyntää Respondon Asennus-sivulla.'
+        });
+      }
       return res.status(403).json({ error: 'Tämä RESPONDO AI -lisenssi on sidottu toiseen verkkosivuun.' });
     }
 
@@ -13698,6 +13761,8 @@ async function ensureRuntimeSchema() {
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_leads_tenant_created ON leads(tenant_id, created_at DESC)');
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS average_lead_value NUMERIC(12,2) NOT NULL DEFAULT 0");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_sites_embed_host TEXT");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_sites_pending_embed_host TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS bot_name TEXT NOT NULL DEFAULT 'RESPONDO AI'");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS bot_avatar TEXT NOT NULL DEFAULT 'robot-1'");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS action_webhook_url TEXT");
