@@ -12,6 +12,7 @@ test('only login page hides the public header trial CTA', () => {
   assert.match(nav, /const isLoginPage = \['\/kirjaudu','\/login'\]\.includes\(location\.pathname\)/);
   assert.match(nav, /!isHomePage && !isLoginPage \? `<a class="btn ink" href="\/tilaus">/);
   assert.match(nav, /<a class="btn ghost nav-login-btn"/);
+  assert.match(nav, /: isLoginPage \? '' : `<a class="btn ghost nav-login-btn"/);
   assert.match(nav, /nav-home-scroll-trial/);
 });
 
@@ -29,4 +30,15 @@ test('login card has no repeated welcome heading and keeps all sign-in methods',
   assert.match(card, /name="email"/);
   assert.match(card, /name="password"/);
   assert.match(card, /type="submit"/);
+});
+
+test('employee login card has its own column and bounded readable headings', () => {
+  const css = readFileSync(new URL('../public/login-page-refinement.css', import.meta.url), 'utf8');
+  const html = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
+  assert.match(html, /login-page-refinement\.css\?v=20261011-login-card-layout-v1/);
+  assert.match(css, /\.login-layout > \.agent-login-card\s*\{[^}]*grid-column:\s*2/s);
+  assert.match(css, /@media\s*\(max-width:\s*900px\)/);
+  assert.match(css, /\.agent-login-card \.form-head\s*\{[^}]*flex-direction:\s*column/s);
+  assert.match(css, /\.agent-login-card \.form-head > b\s*\{[^}]*overflow-wrap:\s*break-word/s);
+  assert.match(css, /\.agent-login-card \.agent-login-fields \.checkout-button\s*\{[^}]*white-space:\s*normal/s);
 });
