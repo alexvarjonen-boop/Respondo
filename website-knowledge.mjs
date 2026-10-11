@@ -104,6 +104,12 @@ export function isConcreteServiceLabel(value) {
   const words=raw.split(/\s+/).filter(Boolean);
   if (words.length>7) return false;
 
+  // Employee titles, recruitment copy and news about completed projects
+  // are not services, even if they include a word such as "purku" or "kierrätyspalvelut".
+  // This guard also cleans already-imported rows at answer time.
+  if (/\b(?:paallikko\w*|johtaja\w*|asiantuntija\w*|tyonjohtaja\w*|tyomaainsinoori\w*|tarjouslasken\w*|henkilosto\w*|rekrytoin\w*|toihin\w*|tyopaik\w*|career\w*|recruit\w*|project manager|sales manager|director)\b/.test(n)) return false;
+  if (/\b(?:jarjesti|jarjestettiin|toteutti|toteutettiin|valmistui|avasi|aloitti|kaynnisti|osallistui|voitti|palkittiin|julkisti|tiedotti|completed|announced|organized|organised|launched)\b/.test(n)) return false;
+
   // Navigation CTAs, slogans, location links and blog/date links often contain
   // a service word (for example a company name containing "muuttopalvelu").
   // They are not service names and must not be listed as company offerings.
@@ -816,6 +822,9 @@ export function essentialWebsiteCandidates(bundle) {
       continue;
     }
 
+    // News, references and recruitment pages describe past work or employees,
+    // not the services a customer can order today.
+    if (/\/(?:ajankohtaista|uutiset?|news|blog|articles?|referenssit?|references?|case-studies|careers?|rekrytointi|tyopaikat|toihin-meille)(?:\/|$)/.test(rawDocPath)) continue;
     if (!companyInfoDoc && /blog|uutis|news/.test(docPath)) continue;
     for (const product of docProducts) addProduct(product,doc.url);
     const recoveredPriceIndexes=new Set();
@@ -929,8 +938,10 @@ export function essentialWebsiteCandidates(bundle) {
       const catalogOrProductPath=/\/(?:collections?|products?|tuotteet?|shop|store|kauppa)(?:\/|$)/i.test(parsed.pathname);
       const serviceLabel=clean(decodeHtml(link.label));
       const sameHost=parsed.hostname===new URL(doc.url).hostname;
-      const concreteServiceLink=sameHost && !individualProduct && !catalogOrProductPath && isConcreteServiceLabel(serviceLabel);
-      if(concreteServiceLink) serviceLinks.push({...link,label:serviceLabel,sourceUrl:doc.url,score:20});
+      const disallowedServiceDestination=/\/(?:ajankohtaista|uutiset?|news|blog|articles?|referenssit?|references?|case-studies|careers?|rekrytointi|tyopaikat|toihin-meille|toimipisteet|locations?|team|henkilosto|yhteystiedot|contact)(?:\/|$)/i.test(parsed.pathname);
+      const concreteServiceLink=sameHost && !individualProduct && !catalogOrProductPath
+        && !disallowedServiceDestination && isConcreteServiceLabel(serviceLabel);
+      if(concreteServiceLink) serviceLinks.push({...link,label:serviceLabel,sourceUrl:link.url,score:20});
 
       const allProducts=/collections\/all|all[-_ ]?products|shop[-_ ]?all|kaikki[-_ ]?tuotteet|alla[-_ ]?produkter/.test(n);
       const catalogPath=/^(?:\/(?:collections|products?|tuotteet?|shop|store|kauppa)\/?$)/i.test(parsed.pathname);
