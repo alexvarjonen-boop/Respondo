@@ -44,6 +44,8 @@
   "Kysy jotain…": "Skriv din fråga…",
   "Kirjoita kysymyksesi": "Skriv din fråga",
   "Kysy meiltä": "Fråga oss",
+  "Avaa chat": "Öppna chatten",
+  "Ei käytettävissä": "Inte tillgänglig",
   "Laske tarjous tästä": "Beräkna offert här",
   "Kerro määrä ja mitä tarvitset. Jos yritys on määrittänyt hintakaavan, Respondo laskee hinnan heti.": "Ange mängden och vad du behöver. Om företaget har angett en prisformel räknar Respondo ut priset direkt.",
   "Puhelin tai sähköposti": "Telefon eller e-post",
