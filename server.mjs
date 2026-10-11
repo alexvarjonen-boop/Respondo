@@ -1,6 +1,7 @@
 import { brandedEmailHtml } from './email-branding.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
+import { matchVerifiedSpecialistService } from './service-semantics.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
 import { interpretCustomerQuestion } from './query-typos.mjs';
@@ -6379,6 +6380,13 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const ecommerceOrderResult=directEcommerceOrderingAnswer(rows,cleanMessage,responseLang);
   if(ecommerceOrderResult) return ecommerceOrderResult;
+
+  // Only answer specialist-service equivalences from the current tenant's
+  // approved, exact subject + action evidence (never broad industry claims).
+  const specialistService=matchVerifiedSpecialistService({
+    message:cleanMessage,rows,history,lang:responseLang,
+  });
+  if(specialistService) return specialistService;
 
   const productResult=directProductAnswer(rows,cleanMessage,responseLang,history);
   if(productResult) return productResult;
