@@ -1,5 +1,6 @@
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
+import { matchVerifiedSpecialistService } from './service-semantics.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import express from 'express';
 import path from 'path';
@@ -4830,6 +4831,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const ecommerceOrderResult=directEcommerceOrderingAnswer(rows,cleanMessage,responseLang);
   if(ecommerceOrderResult) return ecommerceOrderResult;
+
+  // A cross-language specialist question is answered only from an approved,
+  // subject-specific service fact; never from a broad industry description.
+  // Keep product-price, delivery, tracking and policy handlers above this.
+  const specialistService=matchVerifiedSpecialistService({
+    message:cleanMessage,rows,history,lang:responseLang,
+  });
+  if(specialistService) return specialistService;
 
   const productResult=directProductAnswer(rows,cleanMessage,responseLang);
   if(productResult) return productResult;
