@@ -35,3 +35,16 @@ test('Google Calendar authorization uses the same apex host as the session', () 
   assert.ok(canonical >= 0 && cookie > canonical);
   assert.match(route, /req\.hostname/);
 });
+
+test('www Google callback returns to the original apex host before state-cookie validation', () => {
+  const start = source.indexOf("app.get('/api/auth/oauth/google/callback'");
+  const end = source.indexOf("app.post('/api/auth/oauth/apple/callback'",start);
+  const callback = source.slice(start,end);
+  assert.ok(start >= 0 && end > start);
+  assert.match(callback, /req\.hostname/);
+  assert.match(callback, /www\.respondoai\.fi/);
+  assert.match(callback, /return res\.redirect\(302, 'https:\/\/respondoai\.fi' \+ req\.originalUrl\)/);
+  assert.ok(callback.indexOf("return res.redirect(302, 'https://respondoai.fi' + req.originalUrl)") <
+      callback.indexOf('const code = String(req.query.code'));
+  assert.ok(callback.includes('return finishOauth(req, res, code, state)'));
+});
