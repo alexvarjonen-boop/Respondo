@@ -2305,7 +2305,7 @@ function briefServiceAnswer(selected) {
   const candidates = [];
   const seen = new Set();
   for (const row of selected) {
-    if (knowledgeTopic(String(row.title||'')+' '+String(row.category||'')+' '+String(row.keywords||'')) !== 'services') continue;
+    if (knowledgeRowTopic(row) !== 'services') continue;
     const raw = cleanKnowledgeText(row.answer)
       .replace(/^(?:palvelumme|palvelut|services|tjänster)\s*[:–—-]\s*/i,'');
     for (const sentence of raw.split(/(?<=[.!?])\s+/)) {
@@ -2328,11 +2328,21 @@ function briefServiceAnswer(selected) {
   return best ? best.replace(/[.!?]+$/,'')+'.' : '';
 }
 
+// Use explicit knowledge titles/categories before inferred keyword topics.
+// Warranty terms such as "material defects" must not misclassify a warranty
+// fact as a materials row, particularly when the question is in Swedish.
+function knowledgeRowTopic(row) {
+  const title=knowledgeTopic(String(row?.title||''));
+  const category=knowledgeTopic(String(row?.category||''));
+  const keywords=knowledgeTopic(Array.isArray(row?.keywords)?row.keywords.join(' '):String(row?.keywords||''));
+  return title || category || keywords;
+}
+
 function composeKnowledgeAnswer(selected, query) {
   const topic=queryTopic(query);
   const pieces=[];
   for(const row of selected){
-    const rowTopic=knowledgeTopic(String(row.title||'')+' '+String(row.category||'')+' '+String(row.keywords||''));
+    const rowTopic=knowledgeRowTopic(row);
     if(topic && rowTopic && rowTopic!==topic) continue;
     const text=conciseKnowledgeAnswer(row,query);
     if(!text) continue;
@@ -2384,7 +2394,7 @@ function scoreKnowledgeRow(row, query) {
     if (/seurant|tracking|sparning|spårning/.test(evidence)) score+=28;
     else score-=10;
   }
-  const rowTopic=knowledgeTopic(title+' '+category+' '+keywordText);
+  const rowTopic=knowledgeRowTopic(row);
   if(wanted && rowTopic===wanted) score+=30;
   else if(wanted && rowTopic && rowTopic!==wanted) score-=8;
   if(/terms of service|privacy policy|kayttoeh|käyttöeh|tietosuoja|cookie policy/.test(answer)) score-=60;
@@ -2412,7 +2422,7 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
     .filter((x) => {
       const wanted=wantedTopic;
       if(!wanted) return true;
-      const rowTopic=knowledgeTopic(String(x.title||'')+' '+String(x.category||'')+' '+String(x.keywords||''));
+      const rowTopic=knowledgeRowTopic(x);
       // For explicit intents, a row classified as another intent must never be used
       // merely because a few generic words overlap.
       if(rowTopic && rowTopic!==wanted) return false;
@@ -4964,7 +4974,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     selected = rows
       .filter((row) => normalizeSearchText(row.title) !== 'vastaustyyli')
       .filter((row) => !importedKnowledgeJunk(String(row.title||'')+' '+String(row.answer||'')))
-      .map((row) => ({...row,_score:scoreKnowledgeRow(row, localQuery),_topic:knowledgeTopic(String(row.title||'')+' '+String(row.category||'')+' '+String(row.keywords||''))}))
+      .map((row) => ({...row,_score:scoreKnowledgeRow(row, localQuery),_topic:knowledgeRowTopic(row)}))
       // "Mitä palveluja teette?" may only summarize rows that are actually
       // classified as services. Never fall back to arbitrary products/UI text.
       .filter((row) => row._topic === 'services')
