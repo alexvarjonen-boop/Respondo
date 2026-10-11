@@ -1,0 +1,65 @@
+/* Login page only: give employee sign-in a full card column and prevent text collisions. */
+#app .login-page .login-layout > .agent-login-card {
+  grid-column: 2;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 16px!important;
+  box-sizing: border-box;
+}
+#app .login-page .agent-login-card .form-head {
+  display: flex!important;
+  flex-direction: column!important;
+  justify-content: flex-start!important;
+  align-items: flex-start!important;
+  gap: 8px!important;
+  min-width: 0;
+  width: 100%;
+}
+#app .login-page .agent-login-card .form-head > span {
+  display: block;
+  max-width: 100%;
+  font-size: 10px!important;
+  letter-spacing: .08em!important;
+  line-height: 1.4!important;
+  white-space: normal!important;
+  overflow-wrap: break-word;
+}
+#app .login-page .agent-login-card .form-head > b {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  font-size: clamp(20px, 2vw, 26px)!important;
+  font-weight: 700!important;
+  letter-spacing: -.035em!important;
+  line-height: 1.2!important;
+  white-space: normal!important;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+#app .login-page .agent-login-card :is(.agent-login-intro, .agent-login-fields, .agent-login-fields small, .agent-login-fields .field) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+#app .login-page .agent-login-card .agent-login-fields :is(input, button) {
+  min-width: 0;
+  max-width: 100%;
+}
+#app .login-page .agent-login-card .agent-login-fields .checkout-button {
+  width: 100%;
+  white-space: normal!important;
+  line-height: 1.3!important;
+}
+@media (max-width: 900px) {
+  #app .login-page .login-layout > .agent-login-card {
+    grid-column: 1;
+    margin-top: 18px!important;
+  }
+}
+@media (max-width: 400px) {
+  #app .login-page .agent-login-card .form-head > b {
+    font-size: 21px!important;
+  }
+}
