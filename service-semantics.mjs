@@ -81,6 +81,17 @@ const NOT_OFFERED = /\b(?:emme|eivat|ei|en|et|not|never|dont|do not|does not|can
 const IS_PRODUCT = /tuote|product|produkt|katalog|catalog|verkkokaup|webshop|category/;
 const SERVICE_META = /palvel|service|tjanst|huolto|korjaamo|asenn|remont|lvi|putki|sahko|siivou|pesu|korjaus|repair|workshop|verkstad/;
 const REVIEW_META = /arvost|review|testimonial|asiakaskokem|referens|feedback/;
+// Narrow vehicle and equipment specs cannot be inferred from a generic
+// service listing. Require those details in the same approved business row.
+const EXACT_SERVICE_QUALIFIER = /\b(?:agm|efb|start stop|hybrid\w*|sahkoaut\w*|electric car|electric vehicle|elbil\w*|tesla|toyota|volvo|bmw|mercedes|audi|volkswagen|ford|honda|prius|tpms|run flat|tubeless|diesel\w*|19\d{2}|20\d{2}|12 v|24 v|front brakes?|rear brakes?|etujarru\w*|takajarru\w*)\b/g;
+function exactServiceQualifiers(query) {
+  return [...new Set(fold(query).match(EXACT_SERVICE_QUALIFIER) || [])];
+}
+function rowSupportsQualifiers(row, qualifiers) {
+  const evidence=fold(String(row?.title||'')+' '+String(row?.answer||''));
+  return qualifiers.every(term=>evidence.includes(term));
+}
+
 
 function questionAction(message) {
   const q = fold(message);
@@ -160,7 +171,9 @@ export function matchVerifiedSpecialistService({message, rows=[], history=[], la
   if(requestedAction && requestedAction !== service.action) return null;
 
   const positive=[], negative=[];
+  const qualifiers=exactServiceQualifiers(q);
   for(const row of rows) {
+    if(!rowSupportsQualifiers(row,qualifiers)) continue;
     // A FAQ title is the customer's question, not evidence. Its answer must
     // explicitly approve or deny the named service before a yes/no is issued.
     const faq=explicitFaqEvidence(row,service);
