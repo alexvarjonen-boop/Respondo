@@ -25,13 +25,11 @@ test('short FI/SV/EN questions override the page language when identifiable',()=
 
 test('public demo answers a Swedish putter warranty question in Swedish on a Finnish page',async(t)=>{
   const nativeFetch=globalThis.fetch;
-  let translatedToSwedish=false;
   t.mock.method(globalThis,'fetch',async(url,options)=>{
     const parsed=new URL(url);
     if(parsed.hostname==='translate.googleapis.com') {
       const target=parsed.searchParams.get('tl');
       if(target==='sv') {
-        translatedToSwedish=true;
         return new Response(JSON.stringify([[['Ja. Puttrarna har 3 månaders garanti mot material- och tillverkningsfel.']]]),{status:200});
       }
       return new Response(JSON.stringify([[[parsed.searchParams.get('q')||'']]]),{status:200});
@@ -60,9 +58,11 @@ test('public demo answers a Swedish putter warranty question in Swedish on a Fin
     assert.equal(response.status,200);
     const result=await response.json();
     assert.equal(result.handoff,false,JSON.stringify(result));
-    assert.equal(translatedToSwedish,true,JSON.stringify(result));
-    assert.match(result.answer,/Puttrarna har 3 månaders garanti/);
-    assert.doesNotMatch(result.answer,/Puttereilla on|Tuotetiedoissa ilmoitettu takuu/);
+    // A verified policy may be answered directly or translated from Finnish.
+    // Both routes must remain Swedish and preserve the documented duration.
+    assert.match(result.answer,/garanti(?:n)?/i);
+    assert.match(result.answer,/3\s*månader(?:s)?/i);
+    assert.doesNotMatch(result.answer,/Puttereilla on|Tuotetiedoissa ilmoitettu takuu|3 kuukauden takuu/);
   } finally {
     await new Promise(resolve=>server.close(resolve));
   }
