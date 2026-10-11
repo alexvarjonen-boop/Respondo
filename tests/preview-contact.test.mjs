@@ -6,7 +6,7 @@ const server=fs.readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
 const app=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const styles=fs.readFileSync(new URL('../public/styles.css',import.meta.url),'utf8');
 
-test('unanswered preview chats offer and save customer contact details',()=>{
+test('unanswered preview chats offer and save localized customer messages',()=>{
   const start=server.indexOf("app.post('/api/public/demo-chat'");
   const end=server.indexOf("app.post('/api/public/demo-lead'",start);
   const demoBlock=server.slice(start,end);
@@ -18,9 +18,11 @@ test('unanswered preview chats offer and save customer contact details',()=>{
   assert.match(server,/app\.post\('\/api\/public\/demo-lead'/);
   assert.match(server,/INSERT INTO leads\(id,tenant_id,visitor_ref,name,email,phone,message,status\)/);
 
-  assert.match(app,/function showPreviewLeadForm\(chat, question\)/);
-  const calls=app.match(/showPreviewLeadForm\(chat,\s*question\)/g)||[];
+  assert.match(app,/function showPreviewLeadForm\(chat, question, answerLang=currentLang\(\)\)/);
+  const calls=app.match(/showPreviewLeadForm\(chat/g)||[];
   assert.ok(calls.length>=3,'helper plus both preview call sites must exist');
+  assert.match(app,/result\.language\|\|currentLang\(\)/);
+  assert.match(app,/textarea name="message"/);
   assert.match(app,/\/api\/public\/demo-lead/);
   assert.match(styles,/\.preview-leadbox\{/);
 });
