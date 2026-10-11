@@ -1427,7 +1427,13 @@ function googleSitesFrameForRequest(req) {
   const originFrame=googleSitesIframeHost(origin);
   if(originFrame) return originFrame;
   if(origin && origin!=='null') return '';
-  return googleSitesIframeHost(req.headers.referer||'');
+  const refererFrame=googleSitesIframeHost(req.headers.referer||'');
+  if(refererFrame) return refererFrame;
+  // With Origin: null and Referrer-Policy: no-referrer, Google Sites cannot
+  // disclose its frame URL through HTTP headers. The page supplies the
+  // sandbox hostname; it is accepted ONLY alongside the installation key.
+  if(origin==='null') return googleSitesIframeHost('https://'+String(req.query?.googleFrame||''));
+  return '';
 }
 
 function googleSitesInstallationFingerprint(tenant) {
@@ -11392,7 +11398,9 @@ function validWidgetToken(req, tenant, tokenValue) {
     if(token.kind!=='widget' || token.slug!==tenant.slug) return false;
     if(token.embed==='google-sites'){
       const frame=googleSitesFrameForRequest(req);
-      return Boolean(frame && frame===token.host &&
+      const browserOrigin=String(req.headers.origin||'');
+      return Boolean((frame===token.host || (browserOrigin==='null' && !frame &&
+        googleSitesIframeHost('https://'+token.host)===token.host)) &&
         isGoogleSitesWebsite(tenant.website) &&
         token.installFingerprint===googleSitesInstallationFingerprint(tenant));
     }
