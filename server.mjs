@@ -70,10 +70,10 @@ const SEO_APP_PATHS = new Set([
 
 const SEO_META = {
   fi: {
-    '/': ['AI-asiakaspalvelubotti yrityksille | Respondo AI', 'Respondo AI vastaa verkkosivusi asiakkaiden kysymyksiin 24/7 yrityksesi tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta. Kokeile 3 päivää maksutta.'],
+    '/': ['Chatbot yritykselle – AI-asiakaspalvelu 24/7 | Respondo AI', 'Respondo AI vastaa verkkosivusi asiakkaiden kysymyksiin 24/7 yrityksesi tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta. Kokeile 3 päivää maksutta.'],
     '/ominaisuudet': ['AI-asiakaspalvelubotin ominaisuudet | Respondo AI', 'Tutustu Respondon ominaisuuksiin: verkkosivubotti, yrityksen oma tietopohja, yhteydenotot, ajanvaraus, keskustelut ja asiakaspalvelun hallinta yhdessä paikassa.'],
-    '/asiakaspalvelubotti': ['Asiakaspalvelubotti yritykselle | Respondo AI', 'Asiakaspalvelubotti yrityksen verkkosivuille: vastaukset 24/7 omilla yritystiedoillasi, liidit, ajanvaraus ja tarvittaessa siirto ihmiselle.'],
-    '/verkkokauppa-chatbot': ['Chatbot verkkokauppaan | Respondo AI', 'Verkkokaupan chatbot auttaa tuote-, hinta-, toimitus- ja palautuskysymyksissä sekä tukee Shopify- ja WooCommerce-asiakaspalvelua.'],
+    '/asiakaspalvelubotti': ['Asiakaspalvelubotti verkkosivuille | Respondo AI', 'Asiakaspalvelubotti yrityksen verkkosivuille: vastaukset 24/7 omilla yritystiedoillasi, liidit, ajanvaraus ja tarvittaessa siirto ihmiselle.'],
+    '/verkkokauppa-chatbot': ['Verkkokaupan chatbot – tuotteet ja asiakaspalvelu | Respondo AI', 'Verkkokaupan chatbot auttaa tuote-, hinta-, toimitus- ja palautuskysymyksissä sekä tukee Shopify- ja WooCommerce-asiakaspalvelua.'],
     '/ajanvaraus-chatbot': ['Ajanvaraus-chatbot yritykselle | Respondo AI', 'Ajanvaraus-chatbot vastaa asiakkaiden kysymyksiin, kerää ajanvarauspyyntöjä ja tukee kalenteripohjaisia asiakaspalveluprosesseja 24/7.'],
     '/hinnat': ["Hinnat | Respondo AI", "Vertaile Starter-, Advanced- ja Business-tilauspaketteja. Kolmen päivän maksuton kokeilu kaikissa paketeissa."],
     '/yhteystiedot': ['Yhteystiedot | Respondo AI', 'Ota yhteyttä Respondo AI:hin. Asiakaspalvelu, verkkosivujen chatbotin käyttöönotto ja yritysten tarjouspyynnöt.'],
