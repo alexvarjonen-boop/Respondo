@@ -4541,6 +4541,8 @@ function safeWebsiteImportError(error, fallback='Verkkosivun tietojen tuonti ep�
     'Verkkosivua ei voi hakea.',
     'Verkkosivun uudelleenohjaus epäonnistui.',
     'Verkkosivua ei saatu luettua.',
+    'Verkkosivusto estää automaattisen tietojen haun.',
+    'Verkkosivun lataus kesti liian kauan.',
     'Verkkosivun sisältöä ei voitu lukea.',
     'Verkkosivu on liian suuri automaattiseen tuontiin.',
     'Verkkosivulla on liikaa uudelleenohjauksia.',
@@ -4625,10 +4627,10 @@ async function readPinnedResponse(response, maxBytes = 64_000) {
   return Buffer.concat(chunks,total).toString('utf8');
 }
 
-async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000) {
+async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, timeoutMs = 8000) {
   let url = await assertPublicHttpUrl(value);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  const timer = setTimeout(() => controller.abort(), Math.min(20000,Math.max(1000,Number(timeoutMs)||8000)));
   try {
     for (let redirects = 0; redirects < 4; redirects++) {
       const resolved = await resolvePinnedPublicAddress(url);
@@ -4646,6 +4648,10 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000) {
         if (!location) throw new Error('Verkkosivun uudelleenohjaus epäonnistui.');
         url = await assertPublicHttpUrl(new URL(location,url).href);
         continue;
+      }
+      if (status === 401 || status === 403 || status === 429) {
+        response.resume();
+        throw new Error('Verkkosivusto estää automaattisen tietojen haun.');
       }
       if (status < 200 || status >= 300) {
         response.resume();
@@ -4669,10 +4675,15 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000) {
       return {text:Buffer.concat(chunks,total).toString('utf8'),finalUrl:url.href};
     }
     throw new Error('Verkkosivulla on liikaa uudelleenohjauksia.');
+  } catch (error) {
+    if (controller.signal.aborted || error?.name === 'AbortError') {
+      throw new Error('Verkkosivun lataus kesti liian kauan.');
+    }
+    throw error;
   } finally { clearTimeout(timer); }
 }
-async function fetchPublicHtml(value) {
-  const result=await fetchPublicResource(value,['text/html','application/xhtml+xml']);
+async function fetchPublicHtml(value, timeoutMs = 8000, maxBytes = 2_000_000) {
+  const result=await fetchPublicResource(value,['text/html','application/xhtml+xml'],maxBytes,timeoutMs);
   return {html:result.text,finalUrl:result.finalUrl};
 }
 
@@ -5057,7 +5068,9 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const sitemapLimit = Number.isFinite(Number(opts.sitemapLimit))
     ? Math.max(0,Math.min(10000,Number(opts.sitemapLimit)))
     : 10000;
-  const first = await fetchPublicHtml(value);
+  // Modern storefront homepages can be large or slow; subpages keep the tighter limits.
+  // Requests remain subject to public-IP checks, DNS pinning and absolute timeouts.
+  const first = await fetchPublicHtml(value,Math.min(18000,Math.max(14000,timeBudgetMs)),4_000_000);
   const base = new URL(first.finalUrl);
   const seedPath=base.pathname.replace(/\/+$/,'') || '/';
   const seedPathNormalized=normalizeSearchText(seedPath);
@@ -11265,11 +11278,21 @@ app.post('/api/public/demo-import-website', demoImportLimiter, async (req,res)=>
     });
   } catch(e) {
     console.error('Demo website import failed',e?.message||e);
-    return res.status(400).json({error:e?.message || t(
-      'Verkkosivun tietojen haku epäonnistui.',
-      'Det gick inte att hämta webbplatsens uppgifter.',
-      'Website import failed.'
-    )});
+    const reason=safeWebsiteImportError(e);
+    const blocked=reason==='Verkkosivusto estää automaattisen tietojen haun.';
+    const timedOut=reason==='Verkkosivun lataus kesti liian kauan.';
+    const invalid=reason==='Tarkista verkkosivun osoite ja yritä uudelleen.';
+    const message=blocked
+      ? t('Sivusto estää automaattisen tietojen haun. Voit lisätä tiedot käsin.', 'Webbplatsen blockerar automatisk hämtning. Du kan lägga in uppgifterna manuellt.', 'This website blocks automatic importing. You can add the information manually.')
+      : timedOut
+        ? t('Sivuston lataus kesti liian kauan. Kokeile uudelleen myöhemmin tai lisää tiedot käsin.', 'Det tog för lång tid att läsa webbplatsen. Försök igen senare eller lägg in uppgifterna manuellt.', 'The website took too long to respond. Try again later or add the information manually.')
+        : invalid
+          ? t('Tarkista verkkosivun osoite ja yritä uudelleen.', 'Kontrollera webbadressen och försök igen.', 'Check the website address and try again.')
+          : t('Verkkosivun tietoja ei voitu lukea. Tarkista osoite tai lisää tiedot käsin.', 'Webbplatsens uppgifter kunde inte läsas. Kontrollera adressen eller lägg in uppgifterna manuellt.', 'The website could not be read. Check the address or add the information manually.');
+    return res.status(invalid?400:blocked?422:timedOut?504:502).json({
+      error:message,
+      code:invalid?'INVALID_WEBSITE':blocked?'WEBSITE_BLOCKED':timedOut?'WEBSITE_TIMEOUT':'WEBSITE_IMPORT_FAILED',
+    });
   }
 });
 
