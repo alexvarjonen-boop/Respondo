@@ -1840,6 +1840,7 @@ function bindLanguageSwitch() {
 
 function nav() {
   const isHomePage = location.pathname === '/';
+  const isLoginPage = ['/kirjaudu','/login'].includes(location.pathname);
   return `<header class="nav">
     <div class="container navin">
       ${logo()}
@@ -1855,8 +1856,8 @@ function nav() {
         ${languageSwitch()}
         ${isHomePage
           ? `<a class="btn ink nav-home-scroll-trial" href="/tilaus?lang=${currentLang()}" aria-hidden="true" tabindex="-1"><span class="nav-trial-full">${appText('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</span><span class="nav-trial-compact" aria-hidden="true">${appText('3 pv ilmaiseksi','3 dagar gratis','3 days free')}</span></a>`
-          : `<a class="btn ghost nav-login-btn" href="/kirjaudu"><span>${appText('Kirjaudu','Logga in','Log in')}</span></a>
-             <a class="btn ink" href="/tilaus">${appText('Kokeile ilmaiseksi','Prova gratis','Start free trial')}</a>`}
+          : `<a class="btn ghost nav-login-btn" href="/kirjaudu"><span>${appText('Kirjaudu','Logga in','Log in')}</span></a>`}
+        ${!isHomePage && !isLoginPage ? `<a class="btn ink" href="/tilaus">${appText('Kokeile ilmaiseksi','Prova gratis','Start free trial')}</a>` : ''}
       </div>
       <button type="button" class="apple-menu-toggle" data-apple-menu-open aria-controls="apple-nav-overlay" aria-expanded="false" aria-label="${appText('Avaa valikko','Öppna menyn','Open menu')}"><span></span><span></span><span></span></button>
     </div>
@@ -2968,7 +2969,7 @@ function login() {
 
         </section>
         <form class="formcard premium-form login-card" id="login">
-          <div class="form-head"><span>${appText('KIRJAUDU','LOGGA IN','LOG IN')}</span><b>${appText('Tervetuloa takaisin','Välkommen tillbaka','Welcome back')}</b></div>
+          <div class="form-head"><span>${appText('KIRJAUDU','LOGGA IN','LOG IN')}</span></div>
           ${socialAuthButtons('login')}
           <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
           <div class="field"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
