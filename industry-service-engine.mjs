@@ -8,7 +8,7 @@ const norm=value=>String(value||'').toLowerCase().normalize('NFD')
   .replace(/[^a-z0-9\s-]/g,' ').replace(/\s+/g,' ').trim();
 
 const actionGroups=[
-  ['replace',/\b(?:vaih[dt]\w*|vaiht\w*|uusim\w*|replace\w*|swapp?\w*|byta|byter|byte\w*|utbyt\w*)\b/],
+  ['replace',/\b(?:vaih[dt]\w*|vaiht\w*|uusim\w*|replace\w*|swapp?\w*|byta|byter|bytt\w*|byte\w*|utbyt\w*)\b/],
   ['patch',/\b(?:paikka\w*|paikk\w*|tulppa\w*|puncture\s+repair\w*|patch\w*|plugging|plug\s+repair|lappa\w*|punkter\w*)\b/],
   ['balance',/\b(?:tasapainot\w*|balanc\w*|balanser\w*)\b/],
   ['align',/\b(?:suunta\w*|nelipyorasuunta\w*|wheel\s+align\w*|hjulinstall\w*|fyrhjulsinstall\w*)\b/],
@@ -52,7 +52,7 @@ const objectGroups=[
   ['roof',/\b(?:katto\w*|katon\w*|roof\w*|taklagg\w*|tak\b)\b/],
   ['gutter',/\b(?:ranni\w*|rann\w*|gutter\w*|hangrann\w*)\b/],
   ['toilet',/\b(?:wc[\s-]*istui\w*|wc[\s-]*pytt\w*|toilet\w*|toalett\w*|vessanpytt\w*)\b/],
-  ['faucet',/\b(?:hana\w*|hanan\w*|sekoittaja\w*|faucet\w*|tap\b|blandar\w*)\b/],
+  ['faucet',/\b(?:hana\w*|hanan\w*|vesihan\w*|keittiohan\w*|sekoittaja\w*|faucet\w*|water\s+tap\w*|vattenkran\w*|tap\b|blandar\w*)\b/],
   ['water_heater',/\b(?:lamminvesivaraaj\w*|water\s+heater\w*|varmvattenbered\w*)\b/],
   ['heat_pump',/\b(?:ilmalampopump\w*|lampopump\w*|heat\s+pump\w*|varmepump\w*)\b/],
   ['socket',/\b(?:pistorasi\w*|sahkopistok\w*|electrical\s+outlet\w*|socket\w*|vagguttag\w*|eluttag\w*)\b/],
@@ -132,6 +132,9 @@ function splitEvidence(row){
 }
 function sourceQuality(row){
   const meta=norm(String(row.category||'')+' '+String(row.title||''));
+  // Retail product listings can describe a replacement part without proving
+  // that the merchant provides the corresponding installation service.
+  if(/^(?:tuotteet|products?|produkter|tuotekatalogi|product catalog|verkkokauppa|webshop)$/.test(norm(row.category||''))) return false;
   if(junk.test(meta)||junk.test(norm(row.answer).slice(0,200))) return false;
   if(!row.answer || String(row.answer).trim().length<3) return false;
   // The caller already filters approved, company-owned rows. Verify that this
@@ -352,4 +355,56 @@ export function resolveIndustryServiceFollowup({message,history=[],lang='fi'}={}
   if(qualified(previousNorm).length || DIALOGUE_BRAND.test(previousNorm) || /\d/.test(previousNorm)) return null;
   const locale=['fi','sv','en'].includes(lang)?lang:'fi';
   return DIALOGUE_VERBS[locale][action]+' '+subject+'?';
+}
+
+
+// A conservative semantic bridge for customers who ask for a job in
+// colloquial grammar rather than using the business's FAQ phrasing.
+// This constructs a question only; never supplies an answer or business fact.
+const PARAPHRASE_OPENERS=Object.freeze({
+  fi:/^(?:saako|voiko|voinko|voisinko|pystyisiko|pystyisko|hoituuko|onnistuisiko|onko(?: teilla)? mahdollista|olisiko(?: teilla)? mahdollista)\b/,
+  sv:/^(?:kan jag(?: fa)?|skulle jag kunna(?: fa)?|skulle ni kunna|kan man(?: fa)?|ar det mojligt(?: att)?|gar det(?: att)?)\b/,
+  en:/^(?:can i(?: get| have)?|could i(?: get| have)?|would it be possible(?: to)?|is it possible(?: to)?|could your (?:team|workshop|staff)|can your (?:team|workshop|staff)|are .+ (?:available|offered)|is .+ (?:available|offered))\b/,
+});
+const PARAPHRASE_VERBS=Object.freeze({
+  fi:{replace:'Vaihdatteko',install:'Asennatteko',repair:'Korjaatteko',patch:'Paikkaatteko',
+    clean:'Pesettekö',maintain:'Huollatteko',inspect:'Tarkastatteko',diagnose:'Testaatteko'},
+  sv:{replace:'Byter ni',install:'Kan ni installera',repair:'Kan ni reparera',
+    patch:'Kan ni laga',clean:'Kan ni tvätta',maintain:'Kan ni underhålla',
+    inspect:'Kan ni kontrollera',diagnose:'Kan ni felsöka'},
+  en:{replace:'Do you replace',install:'Do you install',repair:'Do you repair',
+    patch:'Do you patch',clean:'Do you clean',maintain:'Do you service',
+    inspect:'Do you inspect',diagnose:'Do you diagnose'},
+});
+const PARAPHRASE_SPLIT=/\b(?:ja|seka|tai|and|or|och|eller)\b/;
+const PARAPHRASE_UNVERIFIED_DETAIL=/\b(?:ilmais\w*|maksut\w*|maksutta|hinta\w*|maksaa|paljonko|cost\w*|price\w*|free|gratis|discount\w*|rabatt\w*|today|tomorrow|tanaan|huomen\w*|heti|immediately|same day|imorgon|idag|varata|boka|book\w*|appointment|aikataul\w*|warrant\w*|taku\w*|garanti\w*)\b/;
+const PARAPHRASE_PRODUCT=/\b(?:myyda|myytte|myynti|myytavana|ostaa|tilata|buy|buying|purchase|sell|selling|sold|order|ordering|shop|kopa|salja)\b/;
+
+/**
+ * Transform an explicitly named operation+object into a service yes/no
+ * question. Supports common FI/SV/EN polite or indirect formulations.
+ * Ambiguous actions, purchases, multi-object questions, pricing, scheduling,
+ * technical qualifiers and unsupported intent are intentionally not rewritten.
+ */
+export function canonicalProfessionalServiceQuestion(message,lang='fi'){
+  const locale=['fi','sv','en'].includes(lang)?lang:'fi';
+  const raw=String(message||'').trim();
+  if(!raw || raw.length>220) return null;
+  const q=norm(raw);
+  if(!PARAPHRASE_OPENERS[locale].test(q) ||
+     stop.test(q) || PARAPHRASE_UNVERIFIED_DETAIL.test(q) || PARAPHRASE_PRODUCT.test(q) ||
+     PARAPHRASE_SPLIT.test(q) || /\d/.test(q) ||
+     qualified(q).length>0) return null;
+  const subjects=concepts(q);
+  if(subjects.size!==1) return null;
+  const verbs=requestedAction(q);
+  // "Hoituuko" is a grammatical capability cue, not an offer to treat.
+  if(locale==='fi' && /^hoituuko\b/.test(q)) verbs.delete('treat');
+  if(verbs.size!==1) return null;
+  const action=[...verbs][0];
+  const prompt=PARAPHRASE_VERBS[locale][action];
+  if(!prompt) return null;
+  const matched=objectGroups.find(([name])=>name===[...subjects][0])?.[1].exec(q)?.[0];
+  if(!matched) return null;
+  return prompt+' '+matched+'?';
 }
