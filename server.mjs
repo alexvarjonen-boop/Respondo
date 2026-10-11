@@ -2144,12 +2144,23 @@ function productPriceText(product,lang='fi') {
 }
 function broadProductQuestion(value) {
   const q=normalizeSearchText(value);
-  return /(?:^|\b)(?:mita|mitä)\s+(?:te\s+)?myytte\b|\b(?:mita|mitä)\s+tuotteita\s+teilta\s+loytyy\b|\bmillainen\s+tuotevalikoima\b|\bwhat\s+do\s+you\s+sell\b|\bwhat\s+(?:kind|type)s?\s+of\s+products\b|\bwhat\s+products\s+do\s+you\s+sell\b|\bwhat\s+is\s+in\s+your\s+product\s+range\b|\bvad\s+s[aä]ljer\s+ni\b|\bvilka\s+produkter\s+s[aä]ljer\s+ni\b|\bvad\s+har\s+ni\s+(?:for|för)\s+(?:produkter|sortiment)\b|\bvad\s+finns\s+i\s+ert\s+sortiment\b/.test(q);
+  if(!q) return false;
+  // Inventory overview is distinct from a named product, variant, price,
+  // availability or shipping question. Finnish modifier words between
+  // "mitä" and "myytte" must not turn the query into a random product lookup.
+  return /\bmita\s+(?:(?:kaikkea|kaikkia|kaikenlaista|erilaista|erilaisia|tuotteita|tuotteet|te|oikein|ylipaataan|ylipaataan)\s+){0,4}myytte\b/.test(q)
+    || /\bmita\s+(?:kaikkea|kaikkia|tuotteita)\s+(?:teilla\s+on|teilta\s+saa|teilta\s+loytyy|voi\s+ostaa)\b/.test(q)
+    || /\bmita\s+tuotteita\s+teilta\s+loytyy\b|\bmillainen\s+tuotevalikoima\b|\bmitka\s+tuotteet\s+teilla\s+on\b|\bkerro\s+(?:tuotteistanne|valikoimastanne)\b/.test(q)
+    || /\bwhat\s+(?:all\s+|else\s+)?do\s+you\s+sell\b|\bwhat\s+(?:kinds?\s+of\s+|types?\s+of\s+|all\s+)?products\s+do\s+you\s+sell\b|\bwhat\s+is\s+in\s+your\s+product\s+range\b|\bwhat\s+(?:products|items)\s+(?:are\s+)?(?:available|in\s+your\s+store)\b/.test(q)
+    || /\bvad\s+s[aä]ljer\s+ni\b|\bvad\s+(?:allt|mer)\s+s[aä]ljer\s+ni\b|\bvilka\s+produkter\s+s[aä]ljer\s+ni\b|\bvad\s+har\s+ni\s+(?:for|för)\s+(?:produkter|sortiment)\b|\bvad\s+finns\s+i\s+ert\s+sortiment\b/.test(q);
 }
-
 function broadProductCategory(product, lang='fi') {
   const text=normalizeSearchText([product?.productType,product?.name].filter(Boolean).join(' '));
   const labels=[
+    // Gift cards can have "Putters" in the brand/name, so match the more
+    // specific product families before general equipment.
+    [/\b(?:gift[ -]?cards?|gift[ -]?certificates?|lahjakort\w*|presentkort\w*)\b/,['Lahjakortit','Presentkort','Gift cards']],
+    [/\b(?:custom[ -]?stamping|custom[ -]?engraving|personalization|personalisation|personointi|kustomointi|kaiverrus|laser[ -]?engraving)\b/,['Personointi ja kustomointi','Personalisering','Personalization']],
     [/\bputter/,['Putterit','Putters','Putters']],
     [/\bhead\s*cover|\bheadcover/,['Mailansuojat','Headcovers','Headcovers']],
     [/\btowel|\bpyyhe|\bhandduk/,['Pyyhkeet','Handdukar','Towels']],
@@ -2454,47 +2465,44 @@ function directProductAnswer(rows,message,lang='fi',history=[]) {
     if(!list.length) return null;
 
     if(generalSellAsk){
-      const categories=[];
+      // Build a real store-wide overview from distinct product categories,
+      // rather than picking a random product from search relevance results.
+      const grouped=new Map();
       for(const product of products){
         const label=broadProductCategory(product,lang);
         if(!label) continue;
-        if(!categories.some((item)=>normalizeSearchText(item)===normalizeSearchText(label))) categories.push(label);
-        if(categories.length>=3) break;
+        const key=normalizeSearchText(label);
+        const prev=grouped.get(key);
+        if(prev){prev.count++;prev.rows.push(product.row);}
+        else grouped.set(key,{label,count:1,rows:[product.row]});
       }
-
-      const storeType=broadProductStoreType(products,lang);
+      const groups=[...grouped.values()].sort((a,b)=>{
+        const priority=(g)=>/^(?:personointi|personalisering|personalization|customization|lahjakort|presentkort|gift card)/i.test(g.label)?-1:0;
+        return (b.count-a.count) || (priority(b)-priority(a));
+      }).slice(0,8);
       let answer='';
-      if(categories.length){
-        const bullets=categories.map((category)=>'• '+category).join('\n');
+      if(groups.length){
+        const bullets=groups.map((group)=>'• '+group.label).join('\n');
         answer=lang==='en'
-          ? 'We sell '+storeType+', including:\n'+bullets+'\nAmong other products.'
+          ? 'Our selection includes, for example:\n'+bullets+'\nYou can see the full, up-to-date range in our online store.'
           : lang==='sv'
-            ? 'Vi säljer '+storeType+', bland annat:\n'+bullets+'\nOch andra produkter.'
-            : 'Myymme '+storeType+', esimerkiksi:\n'+bullets+'\nSekä muita tuotteita.';
-      } else {
-        const names=[];
-        for(const product of list){
-          const name=String(product.name||'').replace(/\s+/g,' ').trim();
-          if(!name) continue;
-          if(!names.some((item)=>normalizeSearchText(item)===normalizeSearchText(name))) names.push(name);
-          if(names.length>=3) break;
-        }
+            ? 'I vårt sortiment finns bland annat:\n'+bullets+'\nDu hittar hela det aktuella sortimentet i vår webbutik.'
+            : 'Valikoimastamme löytyy muun muassa:\n'+bullets+'\nNäet koko ajantasaisen valikoiman verkkokaupastamme.';
+      }else{
+        const names=[...new Set(products.map(product=>String(product.name||'').trim()).filter(Boolean))].slice(0,5);
         if(!names.length) return null;
-        const joined=names.join(', ');
         answer=lang==='en'
-          ? 'We sell products such as '+joined+', among other products.'
-          : lang==='sv'
-            ? 'Vi säljer bland annat '+joined+' och andra produkter.'
-            : 'Myymme esimerkiksi tuotteita kuten '+joined+' sekä muita tuotteita.';
+          ? 'Our selection includes, for example: '+names.join(', ')+'. You can see the full selection in our online store.'
+          :lang==='sv'
+            ? 'I vårt sortiment finns bland annat '+names.join(', ')+'. Du hittar hela sortimentet i vår webbutik.'
+            : 'Valikoimastamme löytyy esimerkiksi '+names.join(', ')+'. Näet koko valikoiman verkkokaupastamme.';
       }
-
+      // Source rows are proof; don't render several arbitrary product cards or
+      // four misleading product buttons for an entire-store question.
       return {
-        answer,
-        handoff:false,
-        confidence:0.99,
-        intent:'Tuotteet',
-        sourceIds:list.map((product)=>product.row?.id).filter(Boolean),
-        selected:list.slice(0,3).map((product)=>product.row).filter(Boolean)
+        answer,handoff:false,confidence:0.96,intent:'Tuotteet',
+        sourceIds:groups.flatMap(group=>group.rows.map(row=>row?.id).filter(Boolean)).slice(0,24),
+        selected:[]
       };
     }
 
@@ -4495,7 +4503,7 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
 
   // Retrieval candidates cannot become recommendations after a handoff or
   // in response to an unrelated order tracking question.
-  if (!handoff && !isOrderTrackingQuestion(message)) {
+  if (!handoff && !isOrderTrackingQuestion(message) && !broadProductQuestion(message)) {
     for (const row of Array.isArray(selected) ? selected : []) {
       const product=parseProductKnowledgeRow(row);
       if(!product?.url) continue;
