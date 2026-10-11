@@ -196,3 +196,44 @@ test('combined specialist questions verify named-vehicle work independently',()=
   assert.equal(missing.handoff,true);
   assert.deepEqual(missing.sourceIds,['brakes']);
 });
+
+test('a Tesla brand mention in a DIFFERENT sentence cannot prove Tesla battery replacement',()=>{
+  const rows=[service('Car battery replacement',
+    'Car battery replacement. We also provide Tesla diagnostics.','mixed')];
+  const answer=ask('Do you replace car batteries for Tesla?',rows,'en');
+  assert.equal(answer.handoff,true);
+  assert.deepEqual(answer.sourceIds,[]);
+});
+test('the same source row can offer two independent jobs without implying compatible make',()=>{
+  const rows=[service('Tesla servicing','Car battery replacement.','mixed')];
+  const result=ask('Do you replace car batteries for Tesla?',rows,'en');
+  assert.equal(result.handoff,true);
+});
+test('different subjects and actions in the same company text never imply one specialized job',()=>{
+  const rows=[service('Brake pad replacement',
+    'Brake pad replacement; Toyota tire repairs','mixed')];
+  assert.equal(ask('Do you replace brake pads for Toyota?',rows,'en').handoff,true);
+});
+test('specialist equipment must be described with the exact approved operation',()=>{
+  const rows=[service('Car battery replacement',
+    'Car battery replacement. Tesla diagnostics.','generic')];
+  assert.equal(ask('Do you replace car batteries for Tesla?',rows,'en').handoff,true);
+  const exact=[service('Tesla car battery replacement','Tesla car battery replacement','exact')];
+  const verified=ask('Do you replace car batteries for Tesla?',exact,'en');
+  assert.equal(verified.handoff,false);
+  assert.deepEqual(verified.sourceIds,['exact']);
+});
+test('declined Tesla battery replacement is still answered as a documented refusal',()=>{
+  const declined=[service('Do you replace car batteries for Tesla?',
+    'No, we do not.','refusal')];
+  const result=ask('Do you replace car batteries for Tesla?',declined,'en');
+  assert.equal(result.handoff,false);
+  assert.match(result.answer,/not offered/);
+  assert.deepEqual(result.sourceIds,['refusal']);
+});
+test('named service compatibility cannot be borrowed from another company tenant',()=>{
+  const generic=[service('Car battery replacement','Car battery replacement.','generic')];
+  const result=ask('Do you replace car batteries for Tesla?',generic,'en');
+  assert.equal(result.handoff,true);
+  assert.deepEqual(result.sourceIds,[]);
+});
