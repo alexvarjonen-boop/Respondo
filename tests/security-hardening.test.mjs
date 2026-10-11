@@ -120,9 +120,11 @@ test('unsafe internal 4xx error messages are not reflected to dashboard clients'
 
 test('tenant public widget routes always require a signed host-bound token', () => {
   assert.match(server,/function validWidgetToken\(req, tenant, tokenValue\)/);
-  assert.match(server,/token\.kind === 'widget'/);
-  assert.match(server,/token\.slug === tenant\.slug/);
-  assert.match(server,/token\.host === normalizeHost\(origin\.hostname\)/);
+  assert.match(server,/token\.kind!=='widget'/);
+  assert.match(server,/token\.slug!==tenant\.slug/);
+  assert.match(server,/token\.host===normalizeHost\(origin\.hostname\)/);
+  assert.match(server,/token\.installFingerprint===googleSitesInstallationFingerprint\(tenant\)/);
+  assert.match(server,/crypto\.timingSafeEqual\(Buffer\.from\(configured\),Buffer\.from\(requested\)\)/);
   const start=server.indexOf("app.post('/api/public/:slug/lead'");
   const end=server.indexOf("app.post('/api/billing/portal'",start);
   const block=server.slice(start,end);
@@ -138,5 +140,6 @@ test('first-party Respondo homepage can mint a signed widget token without a sav
   const tokenEnd=server.indexOf("app.get('/api/public/:slug'",tokenStart);
   const tokenBlock=server.slice(tokenStart,tokenEnd);
   assert.doesNotMatch(tokenBlock,/if \(!tenant\.website\)/);
-  assert.match(tokenBlock,/if \(!widgetOriginAllowed\(req, tenant\)\)/);
+  assert.match(tokenBlock,/if \(!widgetOriginAllowed\(req, tenant\) && !googleSitesKeyAuthorized\)/);
+  assert.match(tokenBlock,/googleSitesKeyAuthorized=googleSitesInstallAuthorized\(req,tenant\)/);
 });
