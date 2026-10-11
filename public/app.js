@@ -409,69 +409,84 @@ function previewContactVisitorRef() {
   }
 }
 
-function showPreviewLeadForm(chat, question) {
+function showPreviewLeadForm(chat, question, answerLang=currentLang()) {
   if(!chat) return;
-  // An unanswered message may appear after an earlier unanswered message.
-  // Keep the unsent lead form below the latest one, not stranded above it.
+  // The customer may write English on a Finnish website. Form labels must
+  // follow the language of the question, not the dashboard's interface.
+  const lang=['fi','sv','en'].includes(answerLang)?answerLang:currentLang();
+  const tr=(fi,sv,en)=>lang==='en'?en:lang==='sv'?sv:fi;
   const existing=[...chat.querySelectorAll('.preview-leadbox')]
     .find(item=>!item.querySelector('button[type="submit"]')?.disabled);
-  if(existing){
+  if(existing && existing.dataset.lang===lang){
     existing.dataset.question=String(question||'').slice(0,1200);
     chat.appendChild(existing);
     return;
   }
+  // Do not keep an old Finnish form beside the latest English question.
+  if(existing)existing.remove();
   const form=document.createElement('form');
   form.className='preview-leadbox';
   form.dataset.question=String(question||'').slice(0,1200);
+  form.dataset.lang=lang;
   form.innerHTML=
-    '<b>'+esc(appText('Haluatko, että yritys ottaa sinuun yhteyttä?','Vill du att företaget kontaktar dig?','Would you like the company to contact you?'))+'</b>'+
-    '<small>'+esc(appText('Jätä nimesi ja puhelinnumerosi tai sähköpostisi.','Lämna ditt namn och telefonnummer eller din e-postadress.','Leave your name and phone number or email.'))+'</small>'+
-    '<input name="name" maxlength="120" autocomplete="name" placeholder="'+esc(appText('Nimi, jos haluat','Namn, om du vill','Name (optional)'))+'">'+
-    '<input name="contact" maxlength="220" autocomplete="email" required placeholder="'+esc(appText('Puhelinnumero tai sähköposti','Telefonnummer eller e-post','Phone number or email'))+'">'+
-    '<button type="submit">'+esc(appText('Pyydä yhteydenottoa','Be om kontakt','Send contact details'))+'</button>'+
+    '<b>'+esc(tr('Haluatko lähettää yritykselle viestin?','Vill du skicka ett meddelande till företaget?','Would you like to send the company a message?'))+'</b>'+
+    '<small>'+esc(tr('Kirjoita viestisi ja yhteystietosi.','Skriv ditt meddelande och dina kontaktuppgifter.','Write your message and leave your contact details.'))+'</small>'+
+    '<input name="name" maxlength="120" autocomplete="name" placeholder="'+esc(tr('Nimi, jos haluat','Namn, om du vill','Name (optional)'))+'">'+
+    '<input name="contact" maxlength="220" autocomplete="email" required placeholder="'+esc(tr('Puhelinnumero tai sähköposti','Telefonnummer eller e-post','Phone number or email'))+'">'+
+    '<textarea name="message" rows="3" maxlength="1200" placeholder="'+esc(tr('Viestisi yritykselle','Ditt meddelande till företaget','Your message to the company'))+'" style="width:100%;min-height:75px;border:1px solid #dedee2;border-radius:12px;padding:12px;font:inherit;resize:vertical;background:#f6f6f8;color:#151515"></textarea>'+
+    '<button type="submit">'+esc(tr('Lähetä viesti','Skicka meddelande','Send message'))+'</button>'+
     '<div class="preview-lead-status" role="status" aria-live="polite"></div>';
 
   form.addEventListener('submit',async(event)=>{
     event.preventDefault();
     const contact=String(form.elements.contact?.value||'').trim();
     const name=String(form.elements.name?.value||'').trim();
-    if(!contact) return;
+    const note=String(form.elements.message?.value||'').trim();
+    if(!contact)return;
     const email=contact.includes('@')?contact:'';
     const phone=email?'':contact;
     const button=form.querySelector('button[type="submit"]');
     const status=form.querySelector('.preview-lead-status');
     if(button){
       button.disabled=true;
-      button.textContent=appText('Lähetetään…','Skickar…','Sending…');
+      button.textContent=tr('Lähetetään…','Skickar…','Sending…');
     }
     if(status){
       status.className='preview-lead-status';
       status.textContent='';
     }
-    try {
+    try{
       const result=await api('/api/public/demo-lead',{
         method:'POST',
         body:JSON.stringify({
           name,email,phone,
-          message:String(form.dataset.question||'').slice(0,1200),
+          message:(note||String(form.dataset.question||'')).slice(0,1200),
           visitorRef:previewContactVisitorRef(),
-          lang:currentLang(),
+          lang,
         })
       });
-      form.querySelectorAll('input,button').forEach((el)=>{el.disabled=true;});
-      if(button) button.textContent=appText('Lähetetty ✓','Skickat ✓','Sent ✓');
+      form.querySelectorAll('input,textarea,button').forEach(el=>{el.disabled=true;});
+      if(button)button.textContent=tr('Lähetetty ✓','Skickat ✓','Sent ✓');
       if(status){
         status.className='preview-lead-status success';
-        status.textContent=result.message||appText('Kiitos! Yhteystietosi lähetettiin yritykselle.','Tack! Dina kontaktuppgifter skickades till företaget.','Thank you! Your contact details were sent to the company.');
+        status.textContent=result.message||tr(
+          'Kiitos! Viestisi lähetettiin yritykselle.',
+          'Tack! Ditt meddelande skickades till företaget.',
+          'Thank you! Your message was sent to the company.'
+        );
       }
-    } catch(error) {
+    }catch(error){
       if(button){
         button.disabled=false;
-        button.textContent=appText('Pyydä yhteydenottoa','Be om kontakt','Send contact details');
+        button.textContent=tr('Lähetä viesti','Skicka meddelande','Send message');
       }
       if(status){
         status.className='preview-lead-status error';
-        status.textContent=error.message||appText('Lähetys epäonnistui. Yritä uudelleen.','Det gick inte att skicka. Försök igen.','Sending failed. Please try again.');
+        status.textContent=error.message||tr(
+          'Lähetys epäonnistui. Yritä uudelleen.',
+          'Det gick inte att skicka. Försök igen.',
+          'Sending failed. Please try again.'
+        );
       }
     }
     chat.scrollTop=chat.scrollHeight;
@@ -5245,7 +5260,7 @@ async function route() {
             bubble.appendChild(wrap);
           }
         }
-        if(result.canLeaveContact||result.handoff) showPreviewLeadForm(chat,question);
+        if(result.canLeaveContact||result.handoff) showPreviewLeadForm(chat,question,result.language||currentLang());
         demoHistory.push({question,answer:result.answer||''});
         if(demoHistory.length>8) demoHistory.splice(0,demoHistory.length-8);
       }catch(error){
@@ -6023,7 +6038,7 @@ async function route() {
             bubble.appendChild(actionWrap);
           }
         }
-        if (result.canLeaveContact || result.handoff) showPreviewLeadForm(chat, question);
+        if (result.canLeaveContact || result.handoff) showPreviewLeadForm(chat,question,result.language||currentLang());
         previewHistory.push({ question, answer: result.answer || '' });
         if (previewHistory.length > 8) previewHistory.splice(0, previewHistory.length - 8);
       } catch (err) {
