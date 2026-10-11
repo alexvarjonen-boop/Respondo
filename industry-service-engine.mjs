@@ -299,12 +299,31 @@ export function resolveIndustryServiceFollowup({message,history=[],lang='fi'}={}
   if(!raw || raw.length>160 || !Array.isArray(history) || !history.length) return null;
   const current=norm(raw);
   if(!current || DIALOGUE_POLICY.test(current)) return null;
-  const priorTurn=[...history].reverse().find(turn=>{
-    const question=norm(String(turn?.question||turn?.user||''));
-    return question && !DIALOGUE_ACK.test(question);
-  });
-  if(!priorTurn || priorTurn.handoff===true) return null;
-  const previous=String(priorTurn.question||priorTurn.user||'').trim();
+  // Carry an explicit operation through a short, *uninterrupted* chain of
+  // customer-only follow-ups: "replace brake pads" -> "what about discs?"
+  // -> "what about the clutch?". Each intermediate subject must be concrete
+  // and unambiguous; a new topic, handoff or unsupported turn breaks the chain.
+  // Rebuild context from questions only; assistant replies are NOT evidence.
+  let previous='';
+  for(const turn of history.slice(-6)){
+    const question=String(turn?.question||turn?.user||'').trim();
+    if(!question || DIALOGUE_ACK.test(norm(question))) continue;
+    if(turn?.handoff===true){
+      previous='';
+      continue;
+    }
+    if(isServiceQuestion(question) &&
+       concepts(question).size===1 && requestedAction(question).size===1){
+      previous=question;
+      continue;
+    }
+    if(!previous) continue;
+    const resolved=resolveIndustryServiceFollowup({
+      message:question,history:[{question:previous}],lang,
+    });
+    previous=resolved||'';
+  }
+  if(!previous) return null;
   const previousNorm=norm(previous);
   if(!isServiceQuestion(previousNorm) || DIALOGUE_POLICY.test(previousNorm)) return null;
   const previousObjects=concepts(previousNorm);
