@@ -2017,6 +2017,40 @@ function latestHistoryQuestionAnswer(history=[]) {
   return {question:'',answer:''};
 }
 
+// A short "entä pyyhe / what about the towel?" after a verified product
+// price question asks for the NEW product's price, not the previous product.
+// History only supplies the requested ATTRIBUTE. All facts must still be
+// looked up from the active tenant's product catalog.
+function contextualProductPriceQuestion(products,message,history=[]) {
+  const q=normalizeSearchText(message);
+  const continuation=q.match(/^(?:enta|entapa|entas|ja enta|no enta|mutta enta|mites|what about|how about|and what about|and how about|och da|men vad galler|vad kostar da)\\s+(.+)$/);
+  if(!continuation || !Array.isArray(history) || !history.length) return '';
+  const subject=continuation[1].trim();
+  const family=requestedProductFamily(subject);
+  const tokens=productQueryTokens(subject);
+  if(!family && !tokens.length) return '';
+  if(!family){
+    // Unknown catalog items require a strong, unambiguous name match.
+    // This prevents "entä toimitus" from inheriting an unrelated price.
+    const scores=products.map(p=>productMatchScore(p,tokens)).sort((a,b)=>b-a);
+    if((scores[0]||0)<12 || ((scores[1]||0)>0 && scores[0]-scores[1]<6)) return '';
+  }
+  const priceIntent=/\\b(?:hinta\\w*|maksaa|maksavat|paljonko|minkahintainen|price\\w*|cost\\w*|how much|pris\\w*|kostar|hur mycket)\\b/;
+  const otherIntent=/\\b(?:toimitus\\w*|shipping|delivery|palautus\\w*|return\\w*|aukiolo\\w*|opening|varastossa|saatavilla|in stock|available|vari\\w*|colors?|sizes?|koko\\w*|materiaali\\w*|material\\w*|takuu\\w*|warranty)\\b/;
+  for(let i=history.length-1;i>=Math.max(0,history.length-6);i--){
+    const prev=normalizeSearchText(history[i]?.question||history[i]?.user||'');
+    if(!prev || conversationPhraseType(prev)) continue;
+    if(priceIntent.test(prev) && !otherIntent.test(prev)) return subject+' hinta maksaa';
+    // A previous "entä [product]" carries its own inherited price intent.
+    // Skip several such turns, including an earlier failed answer.
+    const priorContinuation=prev.match(/^(?:enta|entapa|entas|ja enta|no enta|mutta enta|mites|what about|how about|and what about|and how about|och da|men vad galler)\\s+(.+)$/);
+    if(priorContinuation && (requestedProductFamily(priorContinuation[1]) ||
+      products.some(p=>productMatchScore(p,productQueryTokens(priorContinuation[1]))>=12))) continue;
+    break; // An explicit new subject or intent resets context.
+  }
+  return '';
+}
+
 function directProductVariantFollowup(products,message,history=[],lang='fi') {
   const q=normalizeSearchText(message);
   const aliases=productColorAliases(message);
@@ -2317,6 +2351,19 @@ function directEcommerceOrderingAnswer(rows,message,lang='fi') {
 function directProductAnswer(rows,message,lang='fi',history=[]) {
   const products=productCatalog(rows);
   if(!products.length) return null;
+  const inheritedPriceQuestion=contextualProductPriceQuestion(products,message,history);
+  if(inheritedPriceQuestion){
+    const grounded=directProductAnswer(rows,inheritedPriceQuestion,lang,[]);
+    if(grounded) return grounded;
+    // Do not turn an ordinary retail price follow-up into a contact form when
+    // the import does not contain a verified price for this new product.
+    const answer=lang==='en'
+      ? 'I could not verify a price for that product from this store’s imported product information.'
+      :lang==='sv'
+        ? 'Jag kunde inte bekräfta priset för den produkten i butikens importerade produktuppgifter.'
+        : 'En löytänyt tälle tuotteelle vahvistettua hintaa verkkokaupasta tuoduista tuotetiedoista.';
+    return {answer,handoff:false,confidence:0.35,intent:'Tuotteet',sourceIds:[],selected:[]};
+  }
   const followup=directProductVariantFollowup(products,message,history,lang);
   if(followup) return followup;
   const familyAvailability=verifiedFamilyProductAnswer(rows,message,lang);
