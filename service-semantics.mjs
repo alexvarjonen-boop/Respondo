@@ -146,7 +146,10 @@ function localize(values, lang) {
 export function matchVerifiedSpecialistService({message, rows=[], history=[], lang='fi'} = {}) {
   const q=fold(message);
   if (!q || EXCLUDE_QUESTION.test(q) || /\b(?:ja|seka|and|och)\b|[,;&]/.test(q)) return null;
-  const subjects=SERVICES.filter(s=>s.subject.test(q));
+  // Roof and window cleaning have subtype-aware, conversation-aware resolvers.
+  // Do not short-circuit those with generic specialist templates.
+  const specialistIds=new Set(['tie-rod-end','car-battery','brake-pads','tyre-puncture','oil-change','tap-install','drain-unblock']);
+  const subjects=SERVICES.filter(s=>specialistIds.has(s.id) && s.subject.test(q));
   if(subjects.length !== 1) return null; // Compound questions require separate verification.
   const service=subjects[0];
   const cue=QUESTION_CUE.test(q) || FOLLOW_UP_CUE.test(q) ||
