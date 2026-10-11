@@ -3103,6 +3103,9 @@ function explicitContactQuestion(message) {
 
 function generalContactQuestion(message) {
   const q=normalizeSearchText(message);
+  // "Send a message" is a contact-method request, not a request for generic
+  // information or an unanswered knowledge-base question.
+  if(/^(?:how (?:can|do|could) i (?:send (?:you|your (?:team|company|business)) (?:a )?message|send (?:a )?message (?:to you|to your (?:team|company|business))|message you|write to you|reach (?:your )?(?:support|team))|(?:can|could) i (?:send (?:you )?(?:a )?message|message you)|where (?:can|do) i (?:send (?:you )?(?:a )?message|write to you)|i (?:want|would like) to (?:send (?:you )?(?:a )?message|contact you)|miten (?:voin )?lahettaa (?:teille )?viestin|voinko lahettaa (?:teille )?viestin|hur (?:kan|skulle) jag (?:skicka (?:ett )?meddelande till er|skriva till er))$/.test(q)) return true;
   return /^(?:mista\s+(?:voin\s+)?ottaa\s+(?:teihin\s+)?yhteytta|miten\s+(?:saan|otan)\s+(?:teihin|teihinpain|yritykseen)\s+yhteyden|miten\s+voin\s+ottaa\s+(?:teihin\s+)?yhteytta|mitka\s+(?:ovat\s+)?(?:teidan\s+)?yhteystieto(?:t|nne)|yhteystieto(?:t|nne)|how\s+(?:can|do)\s+i\s+(?:contact|reach)\s+you|how\s+(?:can|do)\s+i\s+get\s+in\s+touch\s+with\s+you|what\s+are\s+your\s+contact\s+details|contact\s+details|hur\s+kan\s+jag\s+kontakta\s+er|hur\s+kontaktar\s+jag\s+er|hur\s+nar\s+jag\s+er|hur\s+far\s+jag\s+kontakt\s+med\s+er|hur\s+kan\s+jag\s+komma\s+i\s+kontakt\s+med\s+er|vilka\s+ar\s+era\s+kontaktuppgifter|kontaktuppgifter)$/.test(q);
 }
 
@@ -6627,6 +6630,15 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     };
     const contactAnswer=directGeneralContactAnswer(rows,responseLang);
     if(contactAnswer) return contactAnswer;
+    // Only an actual request to communicate should offer the built-in
+    // contact form when this site does not expose a verified URL/number/email.
+    // Do not claim that an unknown email address or URL exists.
+    const answer=responseLang==='en'
+      ? 'You can send the company a message using the contact form below. Include your message and a way to contact you.'
+      :responseLang==='sv'
+        ? 'Du kan skicka ett meddelande till företaget via formuläret nedan. Skriv ditt meddelande och hur företaget kan nå dig.'
+        :'Voit lähettää yritykselle viestin alla olevalla yhteydenottolomakkeella. Kirjoita viestisi ja yhteystietosi.';
+    return {answer,handoff:true,confidence:0.8,intent:'Yhteystiedot',sourceIds:[],selected:[]};
   }
 
   if (explicitBusinessLocationQuestion(cleanMessage)) {
@@ -6686,6 +6698,17 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const warrantyResult=directWarrantyAnswer(rows,followupKind==='warranty' ? followupCanonical : cleanMessage,responseLang);
   if(warrantyResult) return warrantyResult;
+  // An unverified warranty question must never imply that the merchant offers
+  // a warranty (or automatically demand contact details). Do not let weak
+  // retrieval of a random product description impersonate a warranty policy.
+  if(queryTopic(cleanMessage)==='warranty' || followupKind==='warranty'){
+    const answer=responseLang==='en'
+      ? 'I could not verify the product warranty terms from this company’s information. Please check the company’s warranty policy or contact the company for confirmation.'
+      :responseLang==='sv'
+        ? 'Jag kunde inte bekräfta produktgarantins villkor utifrån företagets uppgifter. Kontrollera företagets garantivillkor eller kontakta företaget.'
+        :'En pystynyt varmistamaan tuotteiden takuuehtoja yrityksen tiedoista. Tarkista yrityksen takuuehdot tai kysy yritykseltä lisätietoja.';
+    return {answer,handoff:false,confidence:0.3,intent:'Takuu',sourceIds:[],selected:[]};
+  }
 
   // Advanced trade/diagnostic questions must be answered from an approved,
   // matching company FAQ (not generic sector knowledge or scraped slogans).
@@ -11205,7 +11228,7 @@ function detectConversationLanguage(text, hinted='') {
   const sets={
     fi:new Set(['ja','on','ei','mitä','mikä','missä','milloin','voiko','voin','haluan','tarvitsen','apua','kiitos','moi','hei','minä','sinä','teillä','hinta','maksaa','ajan','varata','varaus','auki','aukiolo','kuinka','kauan','kauanko','toimitus','toimitusaika','kestää','onko','saako','paljonko','takuu','takuuta','takuun','löytyykö']),
     sv:new Set(['och','är','inte','vad','vilken','var','när','kan','jag','vill','behöver','hjälp','tack','hej','ni','pris','kostar','boka','bokning','öppet','öppettider','hur','länge','leverans','leveranstid','har','finns','får','gäller','ingår','det','den','dem','ett','med','hos','för','säljer','köpa','köper','garantin','garantitid','reklamation']),
-    en:new Set(['and','is','are','not','what','which','where','when','can','could','i','you','want','need','help','thanks','thank','hello','hi','price','cost','book','booking','open','hours','how','long','does','do','delivery','shipping','take','have','has','warranty','warranties'])
+    en:new Set(['and','is','are','not','what','which','where','when','can','could','i','you','want','need','help','thanks','thank','hello','hi','price','cost','book','booking','open','hours','how','long','does','do','delivery','shipping','take','have','has','warranty','warranties','send','sent','message','messages','there','the','products','your','our','us','email','contact','reach','write','to'])
   };
   const score={fi:0,sv:0,en:0};
   for(const w of words) for(const lang of ['fi','sv','en']) if(sets[lang].has(w)) score[lang]++;
