@@ -4371,10 +4371,11 @@ async function dashboard(options = {}) {
           ${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) ? (
             t.google_sites_install_key
               ? `<p>${appText(
-                'Google Sites -asennuskoodisi on luotu. Kopioi yläpuolinen päivitetty koodi Google Sitesin HTML-upotukseen aiemman script-rivin tilalle. Tallenna ja julkaise Google Sites uudelleen.',
-                'Din installationskod är klar. Ersätt den gamla skriptraden i Google Sites HTML-inbäddning, spara och publicera igen.',
-                'Your installation code is ready. Replace the old script line in the Google Sites HTML embed, save, then republish.'
-              )}</p>`
+                'Kopioi alla oleva Google Sites -koodi sivustosi HTML-upotukseen. Tämä sisältää sivustokohtaisen asennusavaimen ja uusimman botin kuva- ja nimipäivityksen.',
+                'Kopiera Google Sites-koden nedan till webbplatsens HTML-inbäddning. Den innehåller den webbplatsspecifika installationsnyckeln.',
+                'Copy the Google Sites code below into the HTML embed. It includes the site-specific installation key and updated bot name and avatar.'
+              )}</p>
+              <div class="code-row"><code id="googleSitesInstallCode">&lt;script src="${location.origin}/widget.js?v=20261011-google-sites-branded-v4" data-company="${esc(t.slug)}" data-lang="${currentLang()}" data-sites-key="${esc(t.google_sites_install_key)}"&gt;&lt;/script&gt;</code><button type="button" id="copyGoogleSitesCode">${appText('Kopioi Google Sites -koodi','Kopiera Google Sites-kod','Copy Google Sites code')}</button></div>`
               : `<p>${appText(
                 'Google Sites käyttää vaihtuvia kehysosoitteita. Luo sivustokohtainen asennuskoodi, jotta botti toimii julkaistulla sivulla.',
                 'Google Sites använder växlande ramadresser. Skapa installationskoden för din webbplats.',
@@ -7165,12 +7166,13 @@ async function route() {
           'Installationsidentifieraren saknas. Uppdatera sidan.',
           'Installation key missing. Reload the page.'
         ));
-        const code=$('#installCode');
+        const code=$('#googleSitesInstallCode') || $('#installCode');
         if(code){
           let html=code.textContent||'';
           if(!html.includes('data-sites-key=')){
             html=html.replace('></script>',' data-sites-key="'+key+'"></script>');
           }
+          html=html.replace(/widget\\.js\\?v=[^" ]+/, 'widget.js?v=20261011-google-sites-branded-v4');
           code.textContent=html;
         }
         if(message)message.innerHTML='<div class="notice success">'+appText(
@@ -7182,6 +7184,16 @@ async function route() {
       }catch(err){
         if(message)message.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
         button.disabled=false;
+      }
+    });
+
+    $('#copyGoogleSitesCode')?.addEventListener('click', async (e) => {
+      const code=$('#googleSitesInstallCode')?.textContent || '';
+      try {
+        await navigator.clipboard.writeText(code);
+        e.currentTarget.textContent=appText('Kopioitu ✓','Kopierat ✓','Copied ✓');
+      } catch {
+        e.currentTarget.textContent=appText('Valitse ja kopioi','Markera och kopiera','Select and copy');
       }
     });
 
