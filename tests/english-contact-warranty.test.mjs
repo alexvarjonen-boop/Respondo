@@ -60,6 +60,6 @@ test('absence of warranty evidence is not a fabricated affirmative',()=>{
 test('contact form shows in the question language and carries an actual message',()=>{
   assert.match(app,/function showPreviewLeadForm\(chat, question, answerLang=currentLang\(\)\)/);
   assert.match(app,/textarea name="message"/);
-  assert.match(app,/lang:detectedLang/);
+  assert.match(source,/language:detectedLang/);
   assert.match(app,/result\.language\|\|currentLang\(\)/);
 });
