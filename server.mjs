@@ -8324,6 +8324,15 @@ app.get('/api/auth/oauth/:provider/start', (req, res) => {
 });
 
 app.get('/api/auth/oauth/google/callback', async (req, res) => {
+  // Google still uses the registered www callback URL, while the sign-in
+  // attempt and its host-only state cookie originate at respondoai.fi.
+  // Finish on the original host so OAuth state and login session are valid.
+  // Keep the original code/state query intact; Google's token request must
+  // continue using the registered www redirect_uri.
+  if (process.env.NODE_ENV === 'production' &&
+      String(req.hostname || '').toLowerCase() === 'www.respondoai.fi') {
+    return res.redirect(302, 'https://respondoai.fi' + req.originalUrl);
+  }
   const code = String(req.query.code || '');
   const state = String(req.query.state || '');
   if (!code) {
