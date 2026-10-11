@@ -2332,10 +2332,17 @@ function briefServiceAnswer(selected) {
 // Warranty terms such as "material defects" must not misclassify a warranty
 // fact as a materials row, particularly when the question is in Swedish.
 function knowledgeRowTopic(row) {
-  const title=knowledgeTopic(String(row?.title||''));
-  const category=knowledgeTopic(String(row?.category||''));
-  const keywords=knowledgeTopic(Array.isArray(row?.keywords)?row.keywords.join(' '):String(row?.keywords||''));
-  return title || category || keywords;
+  const title=String(row?.title||'');
+  const category=String(row?.category||'');
+  const keywords=Array.isArray(row?.keywords)?row.keywords.join(' '):String(row?.keywords||'');
+  const combined=knowledgeTopic(title+' '+category+' '+keywords);
+  // A warranty policy's mention of material/manufacturing defects is not a
+  // materials/quality policy. Preserve the existing routing for all other rows.
+  if ((combined==='materials' || combined==='quality')
+      && (knowledgeTopic(title)==='warranty' || knowledgeTopic(category)==='warranty')) {
+    return 'warranty';
+  }
+  return combined;
 }
 
 function composeKnowledgeAnswer(selected, query) {
