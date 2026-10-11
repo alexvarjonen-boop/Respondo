@@ -216,6 +216,18 @@ export function industryServiceAnswer(rows,message,lang='fi'){
     const faqQuestion=/\?$/.test(String(row.title||'').trim());
     const faqYes=/^(?:kylla|yes|ja\b|on|onnistuu)\b/.test(norm(row.answer));
     const faqNo=/^(?:ei\b|no\b|nej\b|emme\b)\b/.test(norm(row.answer));
+    // A question-form heading cannot prove its own affirmative answer.
+    // Likewise, "Jarrupalojen vaihto" + "Emme tee tätä työtä" is a
+    // refusal, not an offered service, even if the heading is positive.
+    if(faqQuestion && !faqYes && !faqNo) continue;
+    const explicitRefusal=/^(?:ei|emme|eivat|no|nej|not|we do not|we don't|vi erbjuder inte|valitettavasti emme|unfortunately we do not|tyvarr erbjuder vi inte)\b/.test(norm(row.answer));
+    const titleObjects=concepts(title);
+    if(explicitRefusal && [...objects].every(name=>titleObjects.has(name)) &&
+       [...requested].every(action=>actions(title).has(action)) &&
+       qualifierMatch(message,title)) {
+      negatives.push(row);
+      continue;
+    }
     for(let i=0;i<clauses.length;i++){
       if(i===0 && faqQuestion && !faqYes && !faqNo) continue;
       const clause=clauses[i];

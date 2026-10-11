@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { matchVerifiedSpecialistService } from '../service-semantics.mjs';
+import { matchVerifiedSpecialistService, matchVerifiedCompoundSpecialistServices } from '../service-semantics.mjs';
 
 const service = (title, answer=title, id='verified-1', category='Palvelut') =>
   ({id, title, answer, category, approved:true});
@@ -88,4 +88,75 @@ test('selling a car battery and servicing one are different intents',()=>{
 test('do not make a partial affirmative claim for services joined with and',()=>{
   const rows=[service('Ikkunanpesu')];
   assert.equal(ask('Pesettekö ikkunat ja aurinkopaneelit?',rows),null);
+});
+
+
+const askCompound=(message,rows,lang='fi') =>
+  matchVerifiedCompoundSpecialistServices({message,rows,lang});
+
+test('service FAQ question is not itself positive evidence',()=>{
+  const uncertain=[service('Vaihdatteko jarrupaloja?','Kysy lisää puhelimitse.','uncertain','Palvelut')];
+  const result=ask('Vaihdatteko jarrupaloja?',uncertain);
+  assert.equal(result.handoff,true);
+  assert.equal(result.sourceIds.length,0);
+});
+test('a service heading never overrides an explicit negative answer',()=>{
+  const refused=[service('Jarrupalojen vaihto','Emme tee tätä työtä.','no','Palvelut')];
+  const result=ask('Vaihdatteko jarrupaloja?',refused);
+  assert.equal(result.handoff,false);
+  assert.match(result.answer,/ei tarjota/);
+  assert.deepEqual(result.sourceIds,['no']);
+});
+test('a direct negative FAQ reply takes precedence even in service category',()=>{
+  const refused=[service('Vaihdatteko raidetangon päitä?','Ei, emme tee tätä.','no','Palvelut')];
+  assert.match(ask('Vaihdatteko raidetangon päitä?',refused).answer,/ei tarjota/);
+});
+test('compound specialist services are independently grounded in all languages',()=>{
+  const rows=[
+    service('Jarrupalojen vaihto','Jarrupalojen vaihto','brakes'),
+    service('Raidetangonpään vaihto','Raidetangonpään vaihto','rods'),
+  ];
+  for(const [lang,question] of [
+    ['fi','Vaihdatteko jarrupaloja ja raidetangon päitä?'],
+    ['sv','Byter ni bromsbelägg och styrleder?'],
+    ['en','Do you replace brake pads and tie rod ends?'],
+  ]){
+    const result=askCompound(question,rows,lang);
+    assert.ok(result,question);
+    assert.equal(result.handoff,false,question);
+    assert.deepEqual(result.sourceIds,['brakes','rods'],question);
+    assert.match(result.answer,/^1\. /);
+    assert.match(result.answer,/\n2\. /);
+  }
+});
+test('a multi-service request never treats one service as proof of the other',()=>{
+  const result=askCompound(
+    'Vaihdatteko jarrupaloja ja raidetangon päitä?',
+    [service('Jarrupalojen vaihto','Jarrupalojen vaihto','brakes')]
+  );
+  assert.ok(result);
+  assert.equal(result.handoff,true);
+  assert.deepEqual(result.sourceIds,['brakes']);
+  assert.match(result.answer,/vahvistusta raidetangon/);
+  assert.match(result.answer,/Kyllä, vaihdamme jarrupaloja/);
+});
+test('compound service is precise when one part is refused',()=>{
+  const result=askCompound('Do you replace brake pads and tie rod ends?',[
+    service('Jarrupalojen vaihto','Jarrupalojen vaihto','brakes'),
+    service('Raidetangonpään vaihto','Emme tee tätä työtä.','rods')
+  ],'en');
+  assert.equal(result.handoff,false);
+  assert.deepEqual(result.sourceIds,['brakes','rods']);
+  assert.match(result.answer,/not offered/);
+});
+test('do not split technical questions with two same or unknown subjects',()=>{
+  assert.equal(askCompound('Vaihdatteko jarrupaloja ja jarrulevyjä?',[]),null);
+  assert.equal(askCompound('Vaihdatteko raidetangon päitä ja raidetangon päitä?',[]),null);
+  assert.equal(askCompound('Paljonko jarrupalojen ja raidetangon päiden vaihto maksaa?',[]),null);
+});
+test('compound question cannot consult knowledge from another company',()=>{
+  const result=askCompound('Vaihdatteko jarrupaloja ja raidetangon päitä?',[]);
+  assert.ok(result);
+  assert.equal(result.handoff,true);
+  assert.deepEqual(result.sourceIds,[]);
 });
