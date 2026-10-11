@@ -377,6 +377,7 @@ const PARAPHRASE_VERBS=Object.freeze({
     inspect:'Do you inspect',diagnose:'Do you diagnose'},
 });
 const PARAPHRASE_SPLIT=/\b(?:ja|seka|tai|and|or|och|eller)\b/;
+const PARAPHRASE_UNVERIFIED_DETAIL=/\b(?:ilmais\w*|maksut\w*|maksutta|hinta\w*|maksaa|paljonko|cost\w*|price\w*|free|gratis|discount\w*|rabatt\w*|today|tomorrow|tanaan|huomen\w*|heti|immediately|same day|imorgon|idag|varata|boka|book\w*|appointment|aikataul\w*|warrant\w*|taku\w*|garanti\w*)\b/;
 const PARAPHRASE_PRODUCT=/\b(?:myyda|myytte|myynti|myytavana|ostaa|tilata|buy|buying|purchase|sell|selling|sold|order|ordering|shop|kopa|salja)\b/;
 
 /**
@@ -391,7 +392,7 @@ export function canonicalProfessionalServiceQuestion(message,lang='fi'){
   if(!raw || raw.length>220) return null;
   const q=norm(raw);
   if(!PARAPHRASE_OPENERS[locale].test(q) ||
-     stop.test(q) || PARAPHRASE_PRODUCT.test(q) ||
+     stop.test(q) || PARAPHRASE_UNVERIFIED_DETAIL.test(q) || PARAPHRASE_PRODUCT.test(q) ||
      PARAPHRASE_SPLIT.test(q) || /\d/.test(q) ||
      qualified(q).length>0) return null;
   const subjects=concepts(q);
