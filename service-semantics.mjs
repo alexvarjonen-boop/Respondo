@@ -161,16 +161,23 @@ export function matchVerifiedSpecialistService({message, rows=[], history=[], la
 
   const positive=[], negative=[];
   for(const row of rows) {
-    if(!isServiceRow(row)) {
-      const faq=explicitFaqEvidence(row,service);
-      if(faq==='positive') positive.push(row);
-      if(faq==='negative') negative.push(row);
-      continue;
-    }
+    // A FAQ title is the customer's question, not evidence. Its answer must
+    // explicitly approve or deny the named service before a yes/no is issued.
+    const faq=explicitFaqEvidence(row,service);
+    if(faq==='positive') { positive.push(row); continue; }
+    if(faq==='negative') { negative.push(row); continue; }
+    const title=fold(row?.title);
+    const answer=fold(row?.answer);
+    const titleNamesService=service.subject.test(title) && actionEvidence(title,service);
+    if(titleNamesService && /\?$/.test(String(row?.title||'').trim())) continue;
+    if(!isServiceRow(row)) continue;
+    // A heading can identify an offered job but must not override "Emme tee"
+    // or "Unfortunately we do not offer it" in the accompanying answer.
+    const answerDeniesOffer=/^(?:ei|emme|en|et|eivat|no|nej|not|inte|aldrig)\b|^(?:valitettavasti|sorry|unfortunately|tyvarr)\s+(?:emme|ei|not|we do not|vi erbjuder inte)\b/.test(answer);
+    if(titleNamesService && answerDeniesOffer) { negative.push(row); continue; }
     const clauses=serviceClauses(row);
     const relevant=clauses.filter(clause=>service.subject.test(clause) && actionEvidence(clause,service));
     if(!relevant.length) continue;
-    // The explicit negative statement takes precedence over a positive title.
     if(relevant.some(clause=>NOT_OFFERED.test(clause))) negative.push(row);
     else positive.push(row);
   }
