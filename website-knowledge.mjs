@@ -107,7 +107,7 @@ export function isConcreteServiceLabel(value) {
   // Employee titles, recruitment copy and news about completed projects
   // are not services, even if they include a word such as "purku" or "kierrätyspalvelut".
   // This guard also cleans already-imported rows at answer time.
-  if (/\b(?:paallikko\w*|johtaja\w*|asiantuntija\w*|tyonjohtaja\w*|tyomaainsinoori\w*|tarjouslasken\w*|henkilosto\w*|rekrytoin\w*|toihin\w*|tyopaik\w*|career\w*|recruit\w*|project manager|sales manager|director)\b/.test(n)) return false;
+  if (/\b[\w-]*(?:paallikko|johtaja|asiantuntija|insinoori|tarjouslasken|henkilosto|rekrytoin|tyopaik)[\w-]*\b|\b(?:toihin|careers?|recruit\w*|project manager|sales manager|director)\b/.test(n)) return false;
   if (/\b(?:jarjesti|jarjestettiin|toteutti|toteutettiin|valmistui|avasi|aloitti|kaynnisti|osallistui|voitti|palkittiin|julkisti|tiedotti|completed|announced|organized|organised|launched)\b/.test(n)) return false;
 
   // Navigation CTAs, slogans, location links and blog/date links often contain
