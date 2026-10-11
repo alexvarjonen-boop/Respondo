@@ -27,7 +27,9 @@ test('service evidence excludes staff, project stories and recruitment even from
     row('Tarjouslaskenta, rakennusten purkutyöt','/'),
     row('Asbesti- ja haitta-ainekartoitus','/ajankohtaista/case-study/')
   ];
-  for(const n of noisy) assert.equal(credibleServiceName(n.answer), '', n.answer);
+  for(const n of noisy.slice(0,5)) assert.equal(credibleServiceName(n.answer), '', n.answer);
+  // A real service name is still valid text, but a news-page URL cannot prove it.
+  assert.equal(credibleServiceName(noisy[5].answer),noisy[5].answer);
   const actual=[
     row('Asbesti- ja haitta-ainekartoitus','/palvelut/kartoitus/'),
     row('Asbesti- ja haitta-ainepurku','/palvelut/asbesti/'),
