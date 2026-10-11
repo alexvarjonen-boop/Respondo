@@ -2670,7 +2670,7 @@ function briefServiceAnswer(selected) {
   const candidates = [];
   const seen = new Set();
   for (const row of selected) {
-    if (knowledgeTopic(String(row.title||'')+' '+String(row.category||'')+' '+String(row.keywords||'')) !== 'services') continue;
+    if (knowledgeRowTopic(row) !== 'services') continue;
     const raw = cleanKnowledgeText(row.answer)
       .replace(/^(?:palvelumme|palvelut|services|tjänster)\s*[:–—-]\s*/i,'');
     for (const sentence of raw.split(/(?<=[.!?])\s+/)) {
@@ -2693,11 +2693,23 @@ function briefServiceAnswer(selected) {
   return best ? best.replace(/[.!?]+$/,'')+'.' : '';
 }
 
+// Infer a row's topic conservatively. Explicit warranty titles/categories
+// must not become "materials" merely because defects in materials are covered.
+function knowledgeRowTopic(row) {
+  const title=String(row?.title||'');
+  const category=String(row?.category||'');
+  const keywords=Array.isArray(row?.keywords)?row.keywords.join(' '):String(row?.keywords||'');
+  const combined=knowledgeTopic(title+' '+category+' '+keywords);
+  if ((combined==='materials' || combined==='quality')
+      && (knowledgeTopic(title)==='warranty' || knowledgeTopic(category)==='warranty')) return 'warranty';
+  return combined;
+}
+
 function composeKnowledgeAnswer(selected, query) {
   const topic=queryTopic(query);
   const pieces=[];
   for(const row of selected){
-    const rowTopic=knowledgeTopic(String(row.title||'')+' '+String(row.category||'')+' '+String(row.keywords||''));
+    const rowTopic=knowledgeRowTopic(row);
     if(topic && rowTopic && rowTopic!==topic) continue;
     const text=conciseKnowledgeAnswer(row,query);
     if(!text) continue;
@@ -2749,7 +2761,7 @@ function scoreKnowledgeRow(row, query) {
     if (/seurant|tracking|sparning|spårning/.test(evidence)) score+=28;
     else score-=10;
   }
-  const rowTopic=knowledgeTopic(title+' '+category+' '+keywordText);
+  const rowTopic=knowledgeRowTopic(row);
   if(wanted && rowTopic===wanted) score+=30;
   else if(wanted && rowTopic && rowTopic!==wanted) score-=8;
   if(/terms of service|privacy policy|kayttoeh|käyttöeh|tietosuoja|cookie policy/.test(answer)) score-=60;
@@ -2777,7 +2789,7 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
     .filter((x) => {
       const wanted=wantedTopic;
       if(!wanted) return true;
-      const rowTopic=knowledgeTopic(String(x.title||'')+' '+String(x.category||'')+' '+String(x.keywords||''));
+      const rowTopic=knowledgeRowTopic(x);
       // For explicit intents, a row classified as another intent must never be used
       // merely because a few generic words overlap.
       if(rowTopic && rowTopic!==wanted) return false;
@@ -6573,7 +6585,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     selected = rows
       .filter((row) => normalizeSearchText(row.title) !== 'vastaustyyli')
       .filter((row) => !importedKnowledgeJunk(String(row.title||'')+' '+String(row.answer||'')))
-      .map((row) => ({...row,_score:scoreKnowledgeRow(row, localQuery),_topic:knowledgeTopic(String(row.title||'')+' '+String(row.category||'')+' '+String(row.keywords||''))}))
+      .map((row) => ({...row,_score:scoreKnowledgeRow(row, localQuery),_topic:knowledgeRowTopic(row)}))
       // "Mitä palveluja teette?" may only summarize rows that are actually
       // classified as services. Never fall back to arbitrary products/UI text.
       .filter((row) => row._topic === 'services')
@@ -10815,14 +10827,17 @@ function detectConversationLanguage(text, hinted='') {
   const words=raw.split(/\s+/).filter(Boolean);
   if (!words.length) return hint || 'fi';
   const sets={
-    fi:new Set(['ja','on','ei','mitä','mikä','missä','milloin','voiko','voin','haluan','tarvitsen','apua','kiitos','moi','hei','minä','sinä','teillä','hinta','maksaa','ajan','varata','varaus','auki','aukiolo','kuinka','kauan','kauanko','toimitus','toimitusaika','kestää']),
-    sv:new Set(['och','är','inte','vad','vilken','var','när','kan','jag','vill','behöver','hjälp','tack','hej','ni','pris','kostar','boka','bokning','öppet','öppettider','hur','länge','leverans','leveranstid']),
-    en:new Set(['and','is','are','not','what','which','where','when','can','could','i','you','want','need','help','thanks','thank','hello','hi','price','cost','book','booking','open','hours','how','long','does','do','delivery','shipping','take'])
+    fi:new Set(['ja','on','ei','mitä','mikä','missä','milloin','voiko','voin','haluan','tarvitsen','apua','kiitos','moi','hei','minä','sinä','teillä','hinta','maksaa','ajan','varata','varaus','auki','aukiolo','kuinka','kauan','kauanko','toimitus','toimitusaika','kestää','onko','saako','paljonko','takuu','takuuta','takuun','löytyykö']),
+    sv:new Set(['och','är','inte','vad','vilken','var','när','kan','jag','vill','behöver','hjälp','tack','hej','ni','pris','kostar','boka','bokning','öppet','öppettider','hur','länge','leverans','leveranstid','har','finns','får','gäller','ingår','det','den','dem','ett','med','hos','för','säljer','köpa','köper','garantin','garantitid','reklamation']),
+    en:new Set(['and','is','are','not','what','which','where','when','can','could','i','you','want','need','help','thanks','thank','hello','hi','price','cost','book','booking','open','hours','how','long','does','do','delivery','shipping','take','have','has','warranty','warranties'])
   };
   const score={fi:0,sv:0,en:0};
   for(const w of words) for(const lang of ['fi','sv','en']) if(sets[lang].has(w)) score[lang]++;
   if(/[å]/.test(raw)) score.sv+=2;
   if(/[äö]/.test(raw)) score.fi+=1;
+  // Definite Swedish plurals such as "putterna" provide a useful signal even
+  // when a short question was sent from a Finnish-language storefront.
+  if(words.some(w=>w.length>=6 && /(?:arna|erna|orna)$/.test(w))) score.sv+=1;
   const best=Object.entries(score).sort((a,b)=>b[1]-a[1])[0];
   return best[1]>0 ? best[0] : (hint || 'fi');
 }
