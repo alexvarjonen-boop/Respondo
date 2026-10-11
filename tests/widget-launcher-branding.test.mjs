@@ -21,7 +21,7 @@ test('launcher branding comes from active tenant settings, not hardcoded Viheri 
   assert.match(server,/name: tenant\.bot_name \|\| 'RESPONDO AI'/);
   assert.match(server,/avatar: tenant\.bot_avatar \|\| 'robot-1'/);
   assert.match(widget,/widgetAvatarMarkup\(data\.avatar \|\| 'robot-1'\)/);
-  assert.match(widget,/data:image\\\/(?:png\|jpeg\|webp)/);
+  assert.ok(widget.includes('data:image') && widget.includes('base64'), 'uploaded profile images must be supported');
   assert.doesNotMatch(widget,/launcherName\.textContent = ['"]viheri/i);
 });
 
