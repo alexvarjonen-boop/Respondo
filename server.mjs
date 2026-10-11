@@ -12230,6 +12230,15 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
       });
     }
 
+    // Answer verified first-party FAQs independently of owner account and subscription state.
+    // The public marketing assistant must not fail with 404 when an owner tenant is absent.
+    const detectedFaqLang=detectConversationLanguage(message,lang);
+    const faqHistory=Array.isArray(body.history)?body.history.slice(-6):[];
+    const directFaq=respondoProductFaqMatch(message,detectedFaqLang,faqHistory);
+    if(directFaq){
+      return res.json({answer:sanitizeUserFacingText(directFaq.answer),handoff:false,confidence:1,intent:'Respondo FAQ',verified:true});
+    }
+
     const ownerEmail=cleanEmail(process.env.OWNER_EMAIL||process.env.SUPPORT_EMAIL);
     if (!ownerEmail) return res.status(503).json({error:'Respondo-tietopohjaa ei ole määritetty.'});
 
@@ -12256,7 +12265,14 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
         LIMIT 1`,
       [ownerEmail],
     );
-    if (!tr.rowCount) return res.status(404).json({error:'Respondo-tietopohjaa ei löytynyt.'});
+    if (!tr.rowCount) {
+      const fallback=lang==='sv'
+        ? 'Jag kan hjälpa dig med Respondos priser, provperiod, installation och funktioner. Vad vill du veta?'
+        : lang==='en'
+          ? 'I can help with Respondo pricing, the free trial, installation and features. What would you like to know?'
+          : 'Voin auttaa Respondon hinnoittelussa, kokeilujaksossa, asennuksessa ja ominaisuuksissa. Mitä haluaisit tietää?';
+      return res.json({answer:fallback,handoff:false,confidence:0,intent:'Respondo assistant fallback',verified:false});
+    }
 
     const t=tr.rows[0];
     const detectedLang=detectConversationLanguage(message,lang);
