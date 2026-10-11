@@ -4364,25 +4364,31 @@ async function dashboard(options = {}) {
           <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
           <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261008-bot-color-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261011-google-sites-v2" data-company="${esc(t.slug)}" data-lang="${currentLang()}"${/sites\\.google\\.com\\/(?:view|site)\\//i.test(String(t.website||'')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
         <div class="license-lock" style="margin-top:20px">
-          <b>${appText('Google Sites -upotuksen aktivointi','Aktivering av Google Sites','Google Sites embed activation')}</b>
-          ${/sites\.google\.com\/(?:view|site)\//i.test(String(t.website||'')) ? `
-            ${t.google_sites_embed_host ? `
-              <p>${appText('Google Sites -upotus hyväksytty. Jos upotit botin uudelleen, päivitä sivu.','Google Sites-inbäddningen är godkänd. Uppdatera sidan.','Google Sites embed approved. Reload your site.')}</p>
-              <small>${esc(t.google_sites_embed_host)}</small>
-            ` : t.google_sites_pending_embed_host ? `
-              <p>${appText('Botti havaittu Google Sites -upotuskehyksessä. Hyväksy tämä tarkka upotusosoite, jos avasit juuri oman sivustosi.','Botten hittades i en Google Sites-ram. Godkänn den om du nyss öppnade din webbplats.','Bot detected inside a Google Sites frame. Approve only if you just opened your own website.')}</p>
-              <small>${esc(t.google_sites_pending_embed_host)}</small>
-              <button type="button" id="approveGoogleSitesEmbed" class="btn" data-host="${esc(t.google_sites_pending_embed_host)}" style="margin-top:12px">${appText('Hyväksy Google Sites -upotus','Godkänn Google Sites','Approve Google Sites embed')}</button>
-              <div id="googleSitesEmbedMsg"></div>
-            ` : `
-              <p>${appText('Avaa julkaistu Google Sites -sivu, jolla botti näkyy, ja päivitä tämä Asennus-näkymä. Hyväksyntäpainike ilmestyy sen jälkeen.','Öppna din publicerade Google Sites-sida och uppdatera sedan denna installationsvy.','Open your published Google Sites page, then reload this installation page to approve the frame.')}</p>
-            `}
-          ` : `
-            <p>${appText('Jos käytät Google Sitesia, tallenna ensin sen julkaistu https://sites.google.com/view/... -osoite Yritys & botti -asetuksiin.','Om du använder Google Sites, spara först den publicerade webbadressen i företagsinställningarna.','For Google Sites, first save its published https://sites.google.com/view/... URL in Business & bot settings.')}</p>
-          `}
+          <b>${appText('Google Sites -asennus','Google Sites-installation','Google Sites installation')}</b>
+          ${/sites\\.google\\.com\\/(?:view|site)\\//i.test(String(t.website||'')) ? (
+            t.google_sites_install_key
+              ? `<p>${appText(
+                'Google Sites -asennuskoodisi on luotu. Kopioi yläpuolinen päivitetty koodi Google Sitesin HTML-upotukseen aiemman script-rivin tilalle. Tallenna ja julkaise Google Sites uudelleen.',
+                'Din installationskod är klar. Ersätt den gamla skriptraden i Google Sites HTML-inbäddning, spara och publicera igen.',
+                'Your installation code is ready. Replace the old script line in the Google Sites HTML embed, save, then republish.'
+              )}</p>`
+              : `<p>${appText(
+                'Google Sites käyttää vaihtuvia kehysosoitteita. Luo sivustokohtainen asennuskoodi, jotta botti toimii julkaistulla sivulla.',
+                'Google Sites använder växlande ramadresser. Skapa installationskoden för din webbplats.',
+                'Google Sites uses changing frame origins. Generate a site-specific installation code for this site.'
+              )}</p>
+              <button type="button" id="createGoogleSitesKey" class="btn">${appText(
+                'Luo Google Sites -asennuskoodi','Skapa Google Sites-kod','Generate Google Sites code'
+              )}</button>
+              <div id="googleSitesEmbedMsg"></div>`
+          ) : `<p>${appText(
+            'Jos käytät Google Sitesia, tallenna ensin koko osoite (https://sites.google.com/view/...) Yritys & botti -asetuksiin.',
+            'Spara först den publicerade Google Sites-adressen i företagsinställningarna.',
+            'First save your full published Google Sites URL under Business & bot.'
+          )}</p>`}
         </div>
       </section>
       `}
@@ -7145,23 +7151,36 @@ async function route() {
     $('#logoutTop')?.addEventListener('click', doLogout);
     $('#logoutAgent')?.addEventListener('click', doLogout);
 
-    $('#approveGoogleSitesEmbed')?.addEventListener('click', async (e)=>{
+    $('#createGoogleSitesKey')?.addEventListener('click',async(e)=>{
       const button=e.currentTarget;
-      const host=String(button.dataset.host||'');
-      const msg=$('#googleSitesEmbedMsg');
       button.disabled=true;
+      const message=$('#googleSitesEmbedMsg');
       try{
-        await api('/api/app/google-sites/approve-embed',{
-          method:'POST',body:JSON.stringify({host}),
+        const response=await api('/api/app/google-sites/installation-key',{
+          method:'POST',body:'{}',
         });
-        if(msg)msg.innerHTML='<div class="notice success">'+appText(
-          'Hyväksytty. Päivitä nyt Google Sites -sivu.',
-          'Godkänt. Uppdatera Google Sites-sidan.',
-          'Approved. Refresh your Google Sites page.'
+        const key=String(response.siteKey||'');
+        if(!/^[a-f0-9]{48}$/.test(key))throw new Error(appText(
+          'Asennustunniste puuttuu. Päivitä sivu.',
+          'Installationsidentifieraren saknas. Uppdatera sidan.',
+          'Installation key missing. Reload the page.'
+        ));
+        const code=$('#installCode');
+        if(code){
+          let html=code.textContent||'';
+          if(!html.includes('data-sites-key=')){
+            html=html.replace('</script>',' data-sites-key="'+key+'"></script>');
+          }
+          code.textContent=html;
+        }
+        if(message)message.innerHTML='<div class="notice success">'+appText(
+          'Asennuskoodi luotu. Kopioi nyt yläpuolinen koodi ja korvaa Google Sitesin vanha script-rivi sillä. Julkaise muutokset.',
+          'Koden är klar. Kopiera den ovan och ersätt den gamla skriptraden i Google Sites. Publicera ändringarna.',
+          'Code ready. Copy the code above, replace the old script line in Google Sites, and publish changes.'
         )+'</div>';
-        button.textContent=appText('Hyväksytty ✓','Godkänt ✓','Approved ✓');
-      }catch(error){
-        if(msg)msg.innerHTML='<div class="notice error">'+esc(error.message)+'</div>';
+        button.textContent=appText('Asennuskoodi luotu ✓','Kod skapad ✓','Code generated ✓');
+      }catch(err){
+        if(message)message.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
         button.disabled=false;
       }
     });
