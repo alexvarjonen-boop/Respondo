@@ -270,3 +270,66 @@ export function industryServiceAnswer(rows,message,lang='fi'){
     handoff:false,confidence:0.96,intent:'Palvelut',
     sourceIds:chosen.id?[chosen.id]:[],selected:[chosen]};
 }
+
+
+// Reconstructs the explicit meaning of a short industry-service follow-up.
+// No company facts are read from chat history or invented here: the returned
+// standalone question MUST be verified against the current company's rows.
+const DIALOGUE_LEAD=/^(?:enta|entas|entapa|ja enta|no enta|mites|ja|what about|how about|and what about|and|och da|vad galler|hur ar det med|men hur ar det med|och)\s+(.+)$/;
+const DIALOGUE_ACK=/^(?:ok|okay|okei|joo|juu|kiitos|kiitti|thanks|thank you|tack|selva|hyva|fine|great|bra|yes|kylla|ja|no|ei|nej)$/;
+const DIALOGUE_POLICY=/\b(?:paljonko|hinta\w*|maksaa|kustann\w*|tarjous\w*|milloin|huomenna|tanaan|when|price\w*|pricing|cost\w*|shipping|delivery|returns?|refund|warrant\w*|booking|appointment|available|in stock|how long|pris\w*|kostar|leverans\w*|retur\w*|garanti\w*|bokning|imorgon|idag)\b/;
+const DIALOGUE_PRONOUN=/^(?:vaihdatteko|vaihatteko|asennatteko|korjaatteko|do you (?:replace|change|install|repair)|can you (?:replace|change|install|repair)|could you (?:replace|change|install|repair)|byter ni|kan ni (?:byta|installera|reparera)|lagar ni|installerar ni)\s+(?:ne|sen|sita|niita|tuon|saman|it|that|those|them|det|den|dem|detta)$/;
+const DIALOGUE_BRAND=/\b(?:tesla\w*|toyota\w*|volvo\w*|bmw\w*|mercedes\w*|audi\w*|volkswagen\w*|honda\w*|ford\w*|sahkoaut\w*|hybrid\w*|elbil\w*|electric\s+(?:vehicle|car)|tpms\w*|agm\w*|efb\w*|run.flat\w*)\b/;
+const DIALOGUE_VERBS={
+  fi:{replace:'Vaihdatteko',install:'Asennatteko',repair:'Korjaatteko'},
+  sv:{replace:'Byter ni',install:'Kan ni installera',repair:'Lagar ni'},
+  en:{replace:'Do you replace',install:'Do you install',repair:'Do you repair'}
+};
+const DIALOGUE_ALLOWED_ACTIONS=new Set(['replace','install','repair']);
+
+/**
+ * Recognizes an exact part/service object from the existing trade ontology
+ * (car repair, HVAC, electrical, construction, personal care, etc.).
+ * Never inherits price, warranty, source evidence, technical modifiers or
+ * an inferred capability. Refuses ambiguity and unrelated topic switches.
+ */
+export function resolveIndustryServiceFollowup({message,history=[],lang='fi'}={}) {
+  const raw=String(message||'').trim();
+  if(!raw || raw.length>160 || !Array.isArray(history) || !history.length) return null;
+  const current=norm(raw);
+  if(!current || DIALOGUE_POLICY.test(current)) return null;
+  const priorTurn=[...history].reverse().find(turn=>{
+    const question=norm(String(turn?.question||turn?.user||''));
+    return question && !DIALOGUE_ACK.test(question);
+  });
+  if(!priorTurn || priorTurn.handoff===true) return null;
+  const previous=String(priorTurn.question||priorTurn.user||'').trim();
+  const previousNorm=norm(previous);
+  if(!isServiceQuestion(previousNorm) || DIALOGUE_POLICY.test(previousNorm)) return null;
+  const previousObjects=concepts(previousNorm);
+  const priorActions=requestedAction(previousNorm);
+  if(previousObjects.size!==1 || priorActions.size!==1) return null;
+  const action=[...priorActions][0];
+  if(!DIALOGUE_ALLOWED_ACTIONS.has(action)) return null;
+
+  // A pronoun only repeats an explicitly known customer intent, including
+  // all the restrictions already in their original question.
+  if(DIALOGUE_PRONOUN.test(current)) {
+    const requested=requestedAction(current);
+    return requested.size===1 && requested.has(action) ? previous : null;
+  }
+
+  const lead=current.match(DIALOGUE_LEAD);
+  if(!lead) return null;
+  const subject=lead[1].replace(/\s+(?:da|sitten|then)$/,'').trim();
+  if(!subject || subject.length>85 || /[,;&]|\d/.test(subject) ||
+     /\b(?:ja|seka|tai|and|or|och|eller)\b/.test(subject) ||
+     DIALOGUE_POLICY.test(subject) || requestedAction(subject).size>0) return null;
+  const currentObjects=concepts(subject);
+  if(currentObjects.size!==1) return null;
+  // Switching to a new part must not silently discard an old model-specific
+  // restriction, including inflected brands such as "Teslan" in Finnish.
+  if(qualified(previousNorm).length || DIALOGUE_BRAND.test(previousNorm) || /\d/.test(previousNorm)) return null;
+  const locale=['fi','sv','en'].includes(lang)?lang:'fi';
+  return DIALOGUE_VERBS[locale][action]+' '+subject+'?';
+}
