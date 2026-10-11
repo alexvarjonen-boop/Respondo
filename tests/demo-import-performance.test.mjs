@@ -26,3 +26,13 @@ test('crawler allows About pages even when a CMS stores them under blog paths', 
   assert.match(server,/const companyInfo=\/about\|about-us\|meista\|meistä\|yritys\|company\|who-we-are\|our-story\//);
   assert.match(server,/if \(companyInfo\) return !\/privacy\|terms/);
 });
+
+
+test('slow or blocked external storefronts are handled without leaking raw errors',()=>{
+  assert.match(server,/async function fetchPublicHtml\(value, timeoutMs = 8000, maxBytes = 2_000_000\)/);
+  assert.match(server,/fetchPublicHtml\(value,Math\.min\(18000,Math\.max\(14000,timeBudgetMs\)\),4_000_000\)/);
+  assert.match(server,/controller\.signal\.aborted \|\| error\?\.name === 'AbortError'/);
+  assert.match(server,/status === 401 \|\| status === 403 \|\| status === 429/);
+  assert.match(server,/code:invalid\?'INVALID_WEBSITE':blocked\?'WEBSITE_BLOCKED':timedOut\?'WEBSITE_TIMEOUT'/);
+  assert.doesNotMatch(server,/res\.status\(400\)\.json\(\{error:e\?\.message/);
+});
