@@ -7485,6 +7485,14 @@ const checkoutLimiter = rateLimit({
   keyGenerator:req=>accountRateKey(req,'checkout'),
   message:{ error:'Liian monta tilausyritystä. Yritä hetken kuluttua uudelleen.' },
 });
+// Guides have been permanently retired from the site. Returning 410 (not an SPA shell)
+// signals to search engines that their indexed URLs should be removed.
+app.get(/^\/opas(?:\/|$)/, (req,res) => {
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(410).type('text/plain').send('Tämä sivu on poistettu.');
+});
+
 app.get('/index.html', (req,res) => res.redirect(301, SEO_CANONICAL_ORIGIN + '/'));
 
 app.get('/robots.txt', (req,res) => {
@@ -7531,11 +7539,6 @@ app.get('/sitemap.xml', (req,res) => {
         '  </url>'
       );
     }
-  }
-  // Each editorial guide is a Finnish-only page; avoid claiming untranslated hreflang variants.
-  const guidePaths = ['/opas/asiakaspalvelun-automatisointi.html', '/opas/chatbot-verkkokauppaan.html', '/opas/chatbot-yritykselle-testikysymykset.html'];
-  for (const guidePath of guidePaths) {
-    rows.push('  <url><loc>' + escapeXml(SEO_CANONICAL_ORIGIN + guidePath) + '</loc><lastmod>2026-10-11</lastmod></url>');
   }
   const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
