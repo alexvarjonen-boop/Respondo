@@ -2,6 +2,10 @@
   const script = document.currentScript;
   const company = script?.dataset?.company;
   if (!company) return;
+  // Google Sites embeds receive an installation identifier owned by this
+  // specific Respondo tenant. The iframe's random Google hostname is not
+  // treated as a stable license identity.
+  const googleSitesKey = String(script?.dataset?.sitesKey || '').trim();
 
   const serviceOrigin = new URL(script.src).origin;
   const side = script.dataset.side === 'left' ? 'left' : 'right';
@@ -704,7 +708,9 @@
   async function activate() {
     try {
       const res = await fetch(
-        serviceOrigin + '/api/public/' + encodeURIComponent(company) + '/widget-token?lang=' + encodeURIComponent(widgetLang),
+        serviceOrigin + '/api/public/' + encodeURIComponent(company) +
+          '/widget-token?lang=' + encodeURIComponent(widgetLang) +
+          (googleSitesKey ? '&sitesKey=' + encodeURIComponent(googleSitesKey) : ''),
         { method: 'GET', mode: 'cors', credentials: 'omit' }
       );
       if (!res.ok) throw new Error('Widget not allowed');
