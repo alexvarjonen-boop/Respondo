@@ -4364,18 +4364,18 @@ async function dashboard(options = {}) {
           <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
           <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261011-google-sites-branded-v3" data-company="${esc(t.slug)}" data-lang="${currentLang()}"${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261011-branded-sites-v5" data-company="${esc(t.slug)}" data-lang="${currentLang()}"${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
         <div class="license-lock" style="margin-top:20px">
           <b>${appText('Google Sites -asennus','Google Sites-installation','Google Sites installation')}</b>
           ${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) ? (
             t.google_sites_install_key
               ? `<p>${appText(
-                'Kopioi alla oleva Google Sites -koodi sivustosi HTML-upotukseen. Tämä sisältää sivustokohtaisen asennusavaimen ja uusimman botin kuva- ja nimipäivityksen.',
+                'Yllä oleva yksi asennuskoodi sisältää Google Sites -avaimen ja lataa automaattisesti yrityksen botin nimen, kuvan, värit ja toiminnot. Kopioi sama koodi Google Sitesin HTML-upotukseen.',
                 'Kopiera Google Sites-koden nedan till webbplatsens HTML-inbäddning. Den innehåller den webbplatsspecifika installationsnyckeln.',
                 'Copy the Google Sites code below into the HTML embed. It includes the site-specific installation key and updated bot name and avatar.'
               )}</p>
-              <div class="code-row"><code id="googleSitesInstallCode">&lt;script src="${location.origin}/widget.js?v=20261011-google-sites-branded-v4" data-company="${esc(t.slug)}" data-lang="${currentLang()}" data-sites-key="${esc(t.google_sites_install_key)}"&gt;&lt;/script&gt;</code><button type="button" id="copyGoogleSitesCode">${appText('Kopioi Google Sites -koodi','Kopiera Google Sites-kod','Copy Google Sites code')}</button></div>`
+`
               : `<p>${appText(
                 'Google Sites käyttää vaihtuvia kehysosoitteita. Luo sivustokohtainen asennuskoodi, jotta botti toimii julkaistulla sivulla.',
                 'Google Sites använder växlande ramadresser. Skapa installationskoden för din webbplats.',
@@ -7166,17 +7166,17 @@ async function route() {
           'Installationsidentifieraren saknas. Uppdatera sidan.',
           'Installation key missing. Reload the page.'
         ));
-        const code=$('#googleSitesInstallCode') || $('#installCode');
+        const code=$('#installCode');
         if(code){
           let html=code.textContent||'';
           if(!html.includes('data-sites-key=')){
             html=html.replace('></script>',' data-sites-key="'+key+'"></script>');
           }
-          html=html.replace(/widget\\.js\\?v=[^" ]+/, 'widget.js?v=20261011-google-sites-branded-v4');
+          html=html.replace(/widget\\.js\\?v=[^" ]+/, 'widget.js?v=20261011-branded-sites-v5');
           code.textContent=html;
         }
         if(message)message.innerHTML='<div class="notice success">'+appText(
-          'Asennuskoodi luotu. Kopioi nyt yläpuolinen koodi ja korvaa Google Sitesin vanha script-rivi sillä. Julkaise muutokset.',
+          'Asennuskoodi luotu. Kopioi yllä oleva päivitetty yksi koodi ja korvaa sillä Google Sitesin vanha HTML-upotus. Julkaise muutokset.',
           'Koden är klar. Kopiera den ovan och ersätt den gamla skriptraden i Google Sites. Publicera ändringarna.',
           'Code ready. Copy the code above, replace the old script line in Google Sites, and publish changes.'
         )+'</div>';
@@ -7184,16 +7184,6 @@ async function route() {
       }catch(err){
         if(message)message.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
         button.disabled=false;
-      }
-    });
-
-    $('#copyGoogleSitesCode')?.addEventListener('click', async (e) => {
-      const code=$('#googleSitesInstallCode')?.textContent || '';
-      try {
-        await navigator.clipboard.writeText(code);
-        e.currentTarget.textContent=appText('Kopioitu ✓','Kopierat ✓','Copied ✓');
-      } catch {
-        e.currentTarget.textContent=appText('Valitse ja kopioi','Markera och kopiera','Select and copy');
       }
     });
 
