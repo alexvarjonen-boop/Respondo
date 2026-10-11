@@ -221,7 +221,9 @@ function unanswered(lang){
 const automotive=new Set([
   'tie_rod_end','tie_rod','agm_battery','battery','tire','brake_disc','brake_pad','brake',
   'timing_belt','timing_chain','clutch','alternator','starter_motor',
-  'suspension','air_conditioning','oil','engine','windshield','headlight','exhaust'
+  'suspension','air_conditioning','oil','engine','windshield','headlight','exhaust',
+  'wheel_bearing','brake_fluid','spark_plug','cabin_filter','fuel_filter',
+  'radiator','wiper_blade'
 ]);
 export function isExplicitAutomotiveServiceQuestion(message){
   return isServiceQuestion(message) && [...concepts(message)].some(x=>automotive.has(x))
