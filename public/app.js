@@ -5108,7 +5108,8 @@ async function route() {
         button.textContent=appText('Tiedot haettu ✓','Uppgifter hämtade ✓','Details imported ✓');
         setTimeout(()=>{button.textContent=original;button.disabled=false;},1600);
       }catch(error){
-        setProgress(0,appText('Haku epäonnistui','Sökningen misslyckades','Import failed'));
+        // A failed first page is not 0% of an active scan; hide stale progress.
+        if(progress) progress.style.display='none';
         button.disabled=false;
         button.textContent=original;
         if(review) review.innerHTML='<div class="notice error">'+esc(error.message||appText('Tietojen haku epäonnistui.','Hämtningen misslyckades.','Import failed.'))+'</div>';
