@@ -4992,10 +4992,10 @@ function normalizeCatalogProduct(product, fallbackUrl='') {
     colors,sizes,materials,options,specs,
   };
 }
-async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.now()+45000) {
+async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.now()+45000, explicitLookup=false) {
   const productLinks=/href\s*=\s*["'][^"']*\/products\//i.test(String(firstHtml||''));
   const shopifyLike=/cdn\.shopify|shopify-section|shopify\.theme|myshopify/i.test(String(firstHtml||'')) || productLinks;
-  if (!shopifyLike) return [];
+  if (!shopifyLike && !explicitLookup) return [];
   const base=new URL(baseUrl);
   const currency=detectStoreCurrency(firstHtml);
   const out=[];
@@ -5077,6 +5077,76 @@ async function fetchShopifyCatalog(firstHtml, baseUrl, limit=10000, deadline=Dat
   }
   return out.slice(0,limit);
 }
+// When a Shopify importer is interrupted or a store publishes products later,
+// resolve an explicitly requested missing product family from THAT storefront.
+// This never imports facts from external search, other tenants or third parties.
+async function recoverMissingStorefrontFamily(website,message,knownRows=[]) {
+  const family=requestedProductFamilyAvailability(message);
+  if(!family) return [];
+  const url=normalizeWebUrl(website,false);
+  if(!url) return [];
+  const base=new URL(url);
+  const siteOrigin=base.origin;
+  const existing=productCatalog(knownRows);
+  if(existing.some((product)=>productMatchesFamily(product,family))) return [];
+  const currency=existing.find((product)=>/^[A-Z]{3}$/.test(product.currency||''))?.currency||'';
+  let products=[];
+  try {
+    // Public Shopify product feeds provide a verified product name, variants,
+    // amounts, and canonical product URL. A bounded single-page scan is enough
+    // for typical small stores; larger catalogs are searched separately.
+    products=await fetchShopifyCatalog('',siteOrigin,250,Date.now()+9000,true);
+  } catch(e) { console.warn('Storefront family catalog lookup failed',e?.message||e); }
+  let matched=products.filter((product)=>productMatchesFamily(product,family));
+  if(!matched.length){
+    const phrase={
+      giftcard:'gift card',putter:'putter',headcover:'headcover',grip:'grip',
+      towel:'towel',golfball:'golf ball',golfbag:'golf bag',
+    }[family];
+    if(!phrase) return [];
+    try {
+      const searchUrl=new URL('/search',base);
+      searchUrl.search=new URLSearchParams({q:phrase,type:'product'}).toString();
+      const search=await fetchPublicHtml(searchUrl.href,9000);
+      const doc=extractBusinessDocument(search.html,search.finalUrl);
+      const urls=[];
+      for(const link of doc.links||[]){
+        let destination;
+        try { destination=new URL(link.url); } catch { continue; }
+        if(normalizeHost(destination.href)!==normalizeHost(siteOrigin)) continue;
+        if(!/^\/products\/[^/?#]+/.test(destination.pathname)) continue;
+        const name=normalizeSearchText(link.label+' '+decodeURIComponent(destination.pathname));
+        const expected=family==='giftcard'
+          ? /gift.?card|lahjakort|presentkort/.test(name)
+          : productMatchesFamily({name:link.label+' '+destination.pathname},family);
+        if(expected && !urls.includes(destination.href)) urls.push(destination.href);
+        if(urls.length>=3) break;
+      }
+      for(const productUrl of urls){
+        try {
+          const page=await fetchPublicHtml(productUrl,9000);
+          if(normalizeHost(page.finalUrl)!==normalizeHost(siteOrigin)) continue;
+          const structured=extractProducts(page.html,page.finalUrl);
+          for(const raw of structured){
+            const product=normalizeCatalogProduct(raw,page.finalUrl);
+            if(product && productMatchesFamily(product,family)) matched.push(product);
+          }
+          if(matched.length) break;
+        } catch {}
+      }
+    } catch(e) { console.warn('Storefront family search unavailable',e?.message||e); }
+  }
+  const valid=matched.filter((product)=>
+    product?.url && normalizeHost(product.url)===normalizeHost(siteOrigin)
+  ).slice(0,4).map((product)=>({...product,currency:product.currency||currency}));
+  if(!valid.length) return [];
+  return websiteKnowledgeCandidates({
+    finalUrl:siteOrigin,products:valid,pageDocuments:[],
+  }).filter((item)=>item.category==='Tuotteet' &&
+    normalizeHost(item.sourceUrl)===normalizeHost(siteOrigin)
+  );
+}
+
 async function fetchWooCatalog(firstHtml, baseUrl, limit=10000, deadline=Date.now()+45000) {
   if(!/woocommerce|wc-block|wp-content\/plugins\/woocommerce/i.test(String(firstHtml||''))) return [];
   const base=new URL(baseUrl);
@@ -11483,6 +11553,42 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
           if(recoveredRows.length) rows=[...recoveredRows,...rows].slice(0,2160);
         } catch(e) {
           console.warn('Public demo self-heal scan failed',e?.message||e);
+        }
+      }
+    }
+    // A question like "myyttekö lahjakortteja?" must not fail just because
+    // a bounded initial Shopify crawl missed that particular product.
+    // Recover only from the website being tested in THIS demo session.
+    const requestedFamily=requestedProductFamilyAvailability(message);
+    if(isPublicDemo && requestedFamily &&
+       !productCatalog(rows).some((product)=>productMatchesFamily(product,requestedFamily))){
+      const activeWebsite=normalizeWebUrl(profile.website,false);
+      const importedWebsite=demoImportId
+        ? normalizeWebUrl(demoWebsiteImports.get(demoImportId)?.website,false)
+        : '';
+      const target=importedWebsite || activeWebsite;
+      if(target){
+        const recovered=await recoverMissingStorefrontFamily(target,message,rows);
+        if(recovered.length){
+          const recoveredRows=recovered.map((item,index)=>({
+            id:'demo-family-'+index,
+            category:item.category,title:item.title,answer:item.answer,
+            keywords:item.keywords||[],source_type:'website',source_url:item.sourceUrl,
+          }));
+          rows=[...recoveredRows,...rows];
+          const sessionImport=demoImportId ? demoWebsiteImports.get(demoImportId) : null;
+          if(sessionImport && normalizeHost(sessionImport.website)===normalizeHost(target)){
+            sessionImport.candidates=[
+              ...recovered,...(sessionImport.candidates||[]).filter((item)=>
+                !recovered.some((found)=>
+                  normalizeSearchText(found.sourceUrl)===normalizeSearchText(item.sourceUrl) &&
+                  normalizeSearchText(found.title)===normalizeSearchText(item.title)
+                )
+              )
+            ].slice(0,2000);
+            try { await persistDemoWebsiteImport(demoImportId,target,sessionImport.candidates); }
+            catch(e){ console.warn('Recovered demo product persistence failed',e?.message||e); }
+          }
         }
       }
     }
