@@ -2812,9 +2812,33 @@ function scoreKnowledgeRow(row, query) {
   return score;
 }
 
+// A shared service category or the keyword "palvelut" does not prove that
+// a different, specifically requested operation is available. Exact subject
+// evidence is required after the specialist resolvers had their chance.
+function concreteServiceSubjectTokens(query) {
+  if(serviceOverviewQuestion(query) || genericCompanyQuestion(query)) return [];
+  return searchTokens(query).filter((token)=>
+    token.length>=4 &&
+    !/^(?:palvel\w*|teette\w*|tarjoa\w*|tarjoat\w*|teila\w*|teill\w*|onko\w*|onnist\w*|pysty\w*|voisi\w*|voitt\w*|voiko\w*|saako\w*|minua\w*|halua\w*|tarvits\w*|tila\w*|tekis\w*|osaat\w*|tehda\w*|mita\w*|millai\w*|suorita\w*|paljon\w*|löytyy\w*|loytyy\w*|offer\w*|provid\w*|servic\w*|repair\w*|replac\w*|instal\w*|clean\w*|have|does|can|could|would|need|want|work|make|with|there|your|gora\w*|erbjud\w*|tjanst\w*)$/.test(token)
+  );
+}
+
+function subjectSupportedByServiceRow(row,subjectTokens){
+  if(!subjectTokens.length) return true;
+  const text=String(row?.title||'')+' '+String(row?.answer||'');
+  const evidence=searchTokens(text);
+  return subjectTokens.some((subject)=>evidence.some((word)=>{
+    if(subject===word || nearKnowledgeToken(subject,word)) return true;
+    if(subject.length>=5 && word.length>=5 &&
+       subject.slice(0,4)===word.slice(0,4)) return true;
+    return false;
+  }));
+}
+
 function selectRelevantKnowledge(rows, query, limit = 6) {
   const q = normalizeSearchText(query);
   const wantedTopic = queryTopic(query);
+  const serviceSubjects = wantedTopic==='services' ? concreteServiceSubjectTokens(query) : [];
   // A service-specific price question must not return the price of an unrelated
   // service just because both price rows share the category/keywords 'Hinnat'.
   const priceSubjects = wantedTopic === 'pricing' ? searchTokens(query).filter(word =>
@@ -2834,6 +2858,10 @@ function selectRelevantKnowledge(rows, query, limit = 6) {
       const wanted=wantedTopic;
       if(!wanted) return true;
       const rowTopic=knowledgeRowTopic(x);
+      // Never answer a named service from a different service merely because
+      // both rows have the same category and generic retrieval keywords.
+      if(wanted==='services' && serviceSubjects.length &&
+         !subjectSupportedByServiceRow(x,serviceSubjects)) return false;
       // For explicit intents, a row classified as another intent must never be used
       // merely because a few generic words overlap.
       if(rowTopic && rowTopic!==wanted) return false;
