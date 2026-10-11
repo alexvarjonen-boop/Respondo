@@ -6057,31 +6057,33 @@ function conciseKnowledgeAnswer(row, query) {
 }
 
 
-// Handle two independent customer questions in a single message. A different
-// named intent and a genuine question opener are both required. Never split
-// product/service lists, shared subjects or dependent pronouns into guesses.
+// Handle up to three independent customer questions in one message. All
+// questions require distinct named intents and genuine question openers.
+// Never split product/service lists, shared subjects or dependent pronouns.
 function splitIndependentCustomerQuestions(message) {
   const raw=String(message||'').trim();
   if(raw.length<20 || raw.length>500) return null;
   const questionStart=/^(?:paljonko|mita|mika|mitka|miten|milloin|monelta|mihin aikaan|miss[aa]|kuinka|kauanko|onko|voiko|voinko|saako|saanko|miksi|missapa|kerro|enta|entapa|what|when|where|how|which|who|can|could|do|does|is|are|why|will|what about|vad|hur|nar|var|vilken|vilka|kan|har|finns|ar|varfor)\b/;
   const dependent=/\b(?:se|sen|sita|siita|sille|tama|tuo|toi|niita|it|its|that|this|them|those|they|det|den|detta|dem|samma)\b/;
-  // A separator is valid only when it yields exactly two complete questions.
+  // Split only two or three COMPLETE questions. Each answer traverses the
+  // same tenant-scoped engine independently and incomplete parts cannot
+  // borrow another part's source evidence.
   const splits=[
     raw.split(/\s+(?:ja|and|och)\s+/iu),
     raw.split(/\?\s+(?=\S)/u)
   ];
   for(const candidate of splits){
-    if(candidate.length!==2) continue;
+    if(candidate.length<2 || candidate.length>3) continue;
     const parts=candidate.map(x=>x.replace(/^[\s?.!,;]+|[\s?.!,;]+$/g,'').trim());
     if(parts.some(x=>x.length<7 || x.split(/\s+/).length<2)) continue;
     const cleaned=parts.map(x=>normalizeSearchText(stripConversationalQueryNoise(x)));
     if(!cleaned.every(x=>questionStart.test(x))) continue;
-    // "What does it cost?" following "Do you sell this?" is a dependent
-    // question; do not treat it as an independent pricing request.
-    if(dependent.test(cleaned[1])) continue;
+    // "What does it cost?" after "Do you sell this?" is dependent.
+    // Apply the pronoun guard to EACH later question, not just the second.
+    if(cleaned.slice(1).some(x=>dependent.test(x))) continue;
     const topics=parts.map(queryTopic);
-    if(topics.every(Boolean) && topics[0]!==topics[1] &&
-       topics.every(topic=>!['faq',''].includes(topic))) return parts;
+    if(topics.every(topic=>topic && topic!=='faq') &&
+       new Set(topics).size===topics.length) return parts;
   }
   return null;
 }
