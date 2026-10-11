@@ -567,9 +567,10 @@ async function seedAndLoadIntentUtterances() {
     );
   }
 
-  const rows = await q("SELECT language,intent,normalized FROM intent_utterances WHERE active=TRUE AND source='generated'");
+  // Build the deterministic intent lexicon locally rather than downloading
+  // ~250k rows from Supabase on each Railway startup.
   const next = new Map();
-  for (const row of rows.rows) {
+  for (const row of buildIntentUtteranceSeed()) {
     const normalized = normalizeIntentPhrase(row.normalized);
     const language = String(row.language || '').toLowerCase();
     const intent = String(row.intent || '').trim();
