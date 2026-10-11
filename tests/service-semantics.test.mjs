@@ -70,3 +70,22 @@ test('follow-ups can inherit previous action but not previous unrelated subject'
 test('tenant isolation: other companies facts cannot be consulted',()=>{
   assert.equal(ask('Vaihdatteko jarrupaloja?',[]).handoff,true);
 });
+
+test('approved owner FAQ can verify a service but its question alone cannot',()=>{
+  const positive=[service('Vaihdatteko raidetangon päitä?','Kyllä, vaihdamme.','faq','Usein kysytyt kysymykset')];
+  assert.equal(ask('Do you replace tie rod ends?',positive,'en').handoff,false);
+  const uncertain=[service('Vaihdatteko raidetangon päitä?','Ota yhteyttä lisätietoja varten.','faq','Usein kysytyt kysymykset')];
+  assert.equal(ask('Do you replace tie rod ends?',uncertain,'en').handoff,true);
+  const negative=[service('Vaihdatteko raidetangon päitä?','Ei, emme vaihda.','faq','Usein kysytyt kysymykset')];
+  assert.match(ask('Do you replace tie rod ends?',negative,'en').answer,/not offered/);
+});
+test('selling a car battery and servicing one are different intents',()=>{
+  const rows=[service('Auton akun vaihto')];
+  assert.equal(ask('Do you sell car batteries?',rows,'en'),null);
+  assert.equal(ask('Do you charge car batteries?',rows,'en'),null);
+  assert.equal(ask('Do you replace car batteries?',rows,'en').handoff,false);
+});
+test('do not make a partial affirmative claim for services joined with and',()=>{
+  const rows=[service('Ikkunanpesu')];
+  assert.equal(ask('Pesettekö ikkunat ja aurinkopaneelit?',rows),null);
+});
