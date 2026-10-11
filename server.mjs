@@ -2502,7 +2502,9 @@ function directProductAnswer(rows,message,lang='fi',history=[]) {
       return {
         answer,handoff:false,confidence:0.96,intent:'Tuotteet',
         sourceIds:groups.flatMap(group=>group.rows.map(row=>row?.id).filter(Boolean)).slice(0,24),
-        selected:[]
+        // One-product shops can show that one real product card. Multiple
+        // products should be summarized by category, never shown arbitrarily.
+        selected:products.length===1?[products[0].row].filter(Boolean):[]
       };
     }
 
