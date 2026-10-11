@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {resolveSpecialistConversationReference, matchVerifiedSpecialistService} from '../service-semantics.mjs';
 import {generateGroundedAnswer} from '../server.mjs';
 
-const fact=(id,title,answer=title)=>({
-  id,title,answer,category:'Palvelut',source_type:'website',
+// Imported one-line snippets are accepted only if they contain a concrete
+// business fact. A mere navigation heading is intentionally rejected.
+const fact=(id,title,answer='Tarjoamme palvelun '+title+'.')=>({
+  id,title:'Palvelut: '+title,answer,category:'Palvelut',source_type:'website',
   source_url:'https://workshop.example/works',approved:true
 });
 const history=(question,options={})=>[
