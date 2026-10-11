@@ -1,7 +1,7 @@
 import { brandedEmailHtml } from './email-branding.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
-import { matchVerifiedSpecialistService } from './service-semantics.mjs';
+import { matchVerifiedSpecialistService, matchVerifiedCompoundSpecialistServices } from './service-semantics.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
 import { interpretCustomerQuestion } from './query-typos.mjs';
@@ -6329,6 +6329,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const standaloneServicePrice=directMultilingualServicePrice(rows,cleanMessage,responseLang);
   if(standaloneServicePrice) return standaloneServicePrice;
+
+  // For questions naming two separate professional jobs, check both against
+  // the same tenant's approved knowledge. Do not reply "yes" to both just
+  // because one operation is documented.
+  const compoundSpecialist=matchVerifiedCompoundSpecialistServices({
+    message:cleanMessage,rows,lang:responseLang,
+  });
+  if(compoundSpecialist) return compoundSpecialist;
 
   // Specialist yes/no service questions must be grounded to the exact
   // operation and object. An automotive workshop, dentist or electrician
