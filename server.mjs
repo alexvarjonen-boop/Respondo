@@ -2680,14 +2680,26 @@ function broadServiceListAnswer(rows) {
     found.push(text);
   };
 
-  for(const row of rows||[]){
+  const servicePriority=(row)=>{
+    const url=String(row?.source_url||row?.sourceUrl||'');
+    let path='';
+    try { path=new URL(url).pathname.toLowerCase(); } catch {}
+    if (/\/(?:ajankohtaista|uutiset?|news|blog|articles?|referenssit?|references?|case-studies|tyopaikat|rekrytointi|careers?|toihin-meille)(?:\/|$)/.test(path)) return -1;
+    if (/\/(?:palvelut?|services?|tjanster|tjänster|kierratys|kierrätys|purkutyot|purkutyöt)(?:\/|$)/.test(path)) return 3;
+    if (path==='/' || !path) return 2;
+    return 1;
+  };
+  // Service-directory evidence outranks incidental text in location pages.
+  // Also guard existing stored knowledge created by older importer versions.
+  for(const row of [...(rows||[])].sort((a,b)=>servicePriority(b)-servicePriority(a))){
+    if(servicePriority(row)<0) continue;
     if(knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))!=='services') continue;
     const answer=cleanKnowledgeText(row?.answer);
     const title=cleanKnowledgeText(row?.title);
     const explicit=title.match(/^Palvelut\s*:\s*(.+)$/i);
     // Navigation/service-directory imports are stored as "Palvelut: <label>"
     // with the exact same short label as the answer. Keep only labels that look
-    // like concrete offerings; slogans, map links and CTA copy are discarded.
+    // like concrete offerings; news headlines and employee roles are discarded.
     if(explicit && normalizeSearchText(explicit[1])===normalizeSearchText(answer)) add(answer);
   }
 
@@ -2704,6 +2716,9 @@ function briefServiceAnswer(selected) {
     for (const sentence of raw.split(/(?<=[.!?])\s+/)) {
       const text=sentence.trim();
       if (text.length<22 || text.length>260) continue;
+      // A past project, recruitment announcement or employee card is not a
+      // current service description, even if it mentions a service word.
+      if (/\b(?:järjesti|toteutti|toteutettiin|valmistui|palkittiin|avasi|projektipäällikkö|toimialapäällikkö|liiketoimintapäällikkö|tarjouslaskenta|työnjohtaja|rekrytointi)\b/i.test(text)) continue;
       if (!/(?:tarjoamme|teemme|palvelui|palveluj|palvelut|pesu|siivou|raiva|maala|huolto|asennu|korjau|kuljet|muutto|we offer|we provide|our services|vi erbjuder|våra tjänster)/i.test(text)) continue;
       if (/(?:varaa|ota yhteyt|contact us|book now|lue lisää|read more|tutustu)/i.test(text)) continue;
       const key=normalizeSearchText(text);
@@ -6655,8 +6670,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     for(const item of usable){
       if(!unique.some((x)=>normalizeSearchText(x).includes(normalizeSearchText(item.text).slice(0,80)))) unique.push(item.text);
     }
-    finalAnswer=(queryTopic(localQuery)==='services' ? (broadServiceListAnswer(rows) || briefServiceAnswer(selected)) : '')
-      || composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim();
+    finalAnswer=queryTopic(localQuery)==='services'
+      ? (broadServiceListAnswer(rows) || briefServiceAnswer(selected))
+      : (composeKnowledgeAnswer(selected,cleanMessage) || unique.join(' ').trim());
     if(finalAnswer.length>520) finalAnswer=finalAnswer.slice(0,517).replace(/\s+\S*$/,'')+'…';
   } else {
     finalAnswer = conciseKnowledgeAnswer(top, cleanMessage);
