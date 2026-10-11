@@ -27,9 +27,14 @@ test('existing ordinary website embedding remains supported',()=>{
   assert.equal(widgetOriginAllowed(req('https://store.example.fi'),shop),true);
   assert.equal(widgetOriginAllowed(req(origin),shop),false);
 });
-test('dashboard supports approval after the owner opens the Google Sites page',async()=>{
+test('Google Sites dashboard generates and embeds a tenant-specific installation key',async()=>{
   const {readFile}=await import('node:fs/promises');
   const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
-  assert.match(app,/approveGoogleSitesEmbed/);
-  assert.match(app,/google_sites_pending_embed_host/);
+  const widget=await readFile(new URL('../public/widget.js',import.meta.url),'utf8');
+  assert.match(app,/createGoogleSitesKey/);
+  assert.match(app,/google_sites_install_key/);
+  assert.match(app,/data-sites-key/);
+  assert.match(widget,/googleSitesKey/);
+  assert.match(widget,/sitesKey=/);
+  assert.match(widget,/googleFrame=/);
 });
