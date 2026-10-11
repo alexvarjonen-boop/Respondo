@@ -157,7 +157,7 @@
       .composer input{min-width:0;flex:1;border:1px solid #d9d9dc;border-radius:12px;padding:12px 13px;font:inherit;font-size:14px;outline:none}
       .composer input:focus{border-color:var(--bot-accent,#111113)}
       .composer button{width:44px;border:0;border-radius:12px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font-size:18px;font-weight:800;cursor:pointer}
-      .launcher{border:0;border-radius:999px;padding:13px 17px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font-weight:750;font-size:14px;cursor:pointer;box-shadow:0 18px 45px rgba(0,0,0,.2);display:flex;align-items:center;gap:9px}.launcher-dot{width:8px;height:8px;border-radius:50%;background:#fff;opacity:.9;box-shadow:0 0 0 4px rgba(255,255,255,.12)}
+      .launcher{border:0;border-radius:999px;padding:8px 16px 8px 8px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font-weight:750;font-size:14px;cursor:pointer;box-shadow:0 18px 45px rgba(0,0,0,.2);display:flex;align-items:center;gap:10px;max-width:min(290px,calc(100vw - 36px))}.launcher-avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;flex:0 0 38px;overflow:hidden;background:#fff}.launcher-avatar svg,.launcher-avatar img{display:block;width:100%;height:100%;object-fit:cover}.launcher-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.launcher.open .launcher-avatar{display:none}.launcher.open{padding:13px 18px}
       .status{font-size:12px;color:#77777c;text-align:center;padding:7px 12px;background:#fff}.status.ready{display:none}
       .error{color:#8b2d2d}
       .quick{display:flex;gap:7px;flex-wrap:wrap;padding:0 16px 12px;background:#f7f7f8}
@@ -227,7 +227,7 @@
         </form>
         <div class="powered">RESPONDO AI</div>
       </section>
-      <button class="launcher" id="launcher" type="button"><span class="launcher-dot"></span><span class="launcher-label">${t('Kysy meiltä', 'Ask a question')}</span></button>
+      <button class="launcher" id="launcher" type="button" aria-expanded="false" aria-label="${t('Avaa chat', 'Open chat')}"><span class="launcher-avatar" aria-hidden="true">${widgetAvatarMarkup('robot-1')}</span><span class="launcher-label">${t('Kysy meiltä', 'Ask a question')}</span></button>
     </div>`;
 
   const $ = (q) => shadow.querySelector(q);
@@ -241,6 +241,7 @@
   const mark = $('.mark');
   const quick = $('#quick');
   const launcherLabel = $('.launcher-label');
+  const launcherAvatar = $('.launcher-avatar');
 
   let token = '';
   let ready = false;
@@ -712,6 +713,9 @@
       ready = true;
       name.textContent = data.name || 'RESPONDO AI';
       mark.innerHTML = widgetAvatarMarkup(data.avatar || 'robot-1');
+      launcherLabel.textContent = name.textContent;
+      launcherAvatar.innerHTML = widgetAvatarMarkup(data.avatar || 'robot-1');
+      launcher.setAttribute('aria-label', t('Avaa chat', 'Open chat') + ': ' + name.textContent);
       setAccent(data.accent || fallbackAccent);
       status.textContent = t('Valmis auttamaan', 'Ready');
       status.classList.add('ready');
@@ -729,7 +733,10 @@
 
   launcher.addEventListener('click', () => {
     const open = panel.classList.toggle('open');
-    launcherLabel.textContent = open ? t('Sulje', 'Close') : t('Kysy meiltä', 'Ask a question');
+    launcher.classList.toggle('open', open);
+    launcher.setAttribute('aria-expanded', String(open));
+    launcher.setAttribute('aria-label', open ? t('Sulje', 'Close') : t('Avaa chat', 'Open chat') + ': ' + name.textContent);
+    launcherLabel.textContent = open ? t('Sulje', 'Close') : name.textContent;
     if (open && ready) setTimeout(() => input.focus(), 50);
   });
 
