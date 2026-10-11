@@ -710,7 +710,8 @@
       const res = await fetch(
         serviceOrigin + '/api/public/' + encodeURIComponent(company) +
           '/widget-token?lang=' + encodeURIComponent(widgetLang) +
-          (googleSitesKey ? '&sitesKey=' + encodeURIComponent(googleSitesKey) : ''),
+          (googleSitesKey ? '&sitesKey=' + encodeURIComponent(googleSitesKey) +
+            '&googleFrame=' + encodeURIComponent(location.hostname) : ''),
         { method: 'GET', mode: 'cors', credentials: 'omit' }
       );
       if (!res.ok) throw new Error('Widget not allowed');
