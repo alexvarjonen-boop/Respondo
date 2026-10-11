@@ -316,3 +316,8 @@
   outline:3px solid #6b9aff;
   outline-offset:3px;
 }
+
+/* Public fullscreen menu: header owns language controls */
+#apple-nav-overlay .apple-menu-language {
+  display: none !important;
+}
