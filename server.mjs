@@ -2065,7 +2065,7 @@ function requestedProductFamily(value) {
   if (/\b(?:towel\w*|pyyhe\w*|handduk\w*)\b/.test(q)) return 'towel';
   if (/\b(?:golfball\w*|golf ball\w*|golfpallo\w*)\b/.test(q)) return 'golfball';
   if (/\b(?:golf bag\w*|golfbag\w*|golfb[aä]g\w*)\b/.test(q)) return 'golfbag';
-  if (/\b(?:gift card\w*|lahjakort\w*)\b/.test(q)) return 'giftcard';
+  if (/\b(?:gift card\w*|giftcard\w*|lahjakort\w*|presentkort\w*)\b/.test(q)) return 'giftcard';
   return '';
 }
 
@@ -2083,7 +2083,7 @@ function productMatchesFamily(product,family) {
   if(family==='towel') return /\b(?:towel\w*|pyyhe\w*|handduk\w*)\b/.test(text);
   if(family==='golfball') return /\b(?:golfball\w*|golf ball\w*|golfpallo\w*)\b/.test(text);
   if(family==='golfbag') return /\b(?:golf bag\w*|golfbag\w*|golfb[aä]g\w*)\b/.test(text);
-  if(family==='giftcard') return /\b(?:gift card\w*|lahjakort\w*)\b/.test(text);
+  if(family==='giftcard') return /\b(?:gift card\w*|giftcard\w*|lahjakort\w*|presentkort\w*)\b/.test(text);
   return true;
 }
 
@@ -2110,10 +2110,10 @@ function verifiedFamilyProductAnswer(rows,message,lang='fi') {
   let answer;
   if(family==='giftcard'){
     answer=lang==='en'
-      ? 'Yes, we sell gift cards.'+(price?' Gift card values start at '+price+'.':'')+' You can view the gift card below.'
+      ? 'Yes, we sell gift cards.'+(price?' Gift card values: '+price+'.':'')+' You can view the gift card below.'
       :lang==='sv'
-        ? 'Ja, vi säljer presentkort.'+(price?' Presentkorten finns från '+price+'.':'')+' Du hittar presentkortet nedan.'
-        : 'Kyllä, myymme lahjakortteja!'+(price?' Lahjakortteja saa alkaen '+price+'.':'')+' Voit tutustua lahjakorttiin alta.';
+        ? 'Ja, vi säljer presentkort.'+(price?' Presentkorten finns i valörer från '+price+'.':'')+' Du hittar presentkortet nedan.'
+        : 'Kyllä, myymme lahjakortteja!'+(price?' Lahjakortteja on saatavilla eri arvoisina: '+price+'.':'')+' Voit tutustua lahjakorttiin alta.';
   }else{
     const names=matches.slice(0,3).map((p)=>p.name).join(', ');
     answer=lang==='en'?'Yes, our selection includes '+names+'. You can view the products below.'
