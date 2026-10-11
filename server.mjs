@@ -5122,6 +5122,27 @@ async function recoverMissingStorefrontFamily(website,message,knownRows=[]) {
         if(expected && !urls.includes(destination.href)) urls.push(destination.href);
         if(urls.length>=3) break;
       }
+      if(!urls.length){
+        // Shopify's product sitemap exposes published product permalinks even
+        // when /products.json or theme search cannot enumerate the inventory.
+        // Never guess a product URL: use only verified same-store sitemap links.
+        try {
+          const sitemapUrl=new URL('/sitemap_products_1.xml',base);
+          const sitemap=await fetchPublicResource(sitemapUrl.href,['xml','text/plain'],5_000_000,7500);
+          for(const entry of sitemap.text.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/gi)){
+            let destination;
+            try { destination=new URL(String(entry[1]).replace(/&amp;/g,'&')); } catch { continue; }
+            if(normalizeHost(destination.href)!==normalizeHost(siteOrigin) ||
+               !/^\/products\/[^/?#]+/.test(destination.pathname)) continue;
+            const name=normalizeSearchText(decodeURIComponent(destination.pathname));
+            const expected=family==='giftcard'
+              ? /gift.?card|lahjakort|presentkort/.test(name)
+              : productMatchesFamily({name:destination.pathname},family);
+            if(expected && !urls.includes(destination.href)) urls.push(destination.href);
+            if(urls.length>=3) break;
+          }
+        } catch {}
+      }
       for(const productUrl of urls){
         try {
           const page=await fetchPublicHtml(productUrl,9000);
