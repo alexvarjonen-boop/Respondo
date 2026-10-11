@@ -162,7 +162,20 @@
       .composer input{min-width:0;flex:1;border:1px solid #d9d9dc;border-radius:12px;padding:12px 13px;font:inherit;font-size:14px;outline:none}
       .composer input:focus{border-color:var(--bot-accent,#111113)}
       .composer button{width:44px;border:0;border-radius:12px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font-size:18px;font-weight:800;cursor:pointer}
-      .launcher{border:0;border-radius:999px;padding:13px 17px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font-weight:750;font-size:14px;cursor:pointer;box-shadow:0 18px 45px rgba(0,0,0,.2);display:flex;align-items:center;gap:9px}.launcher-dot{width:8px;height:8px;border-radius:50%;background:#fff;opacity:.9;box-shadow:0 0 0 4px rgba(255,255,255,.12)}
+      /* The collapsed widget is the customer's own bot identity, not a generic CTA. */
+      .launcher{appearance:none;max-width:min(290px,calc(100vw - 36px));min-height:66px;border:1px solid rgba(20,22,24,.10);border-radius:20px;padding:9px 13px 9px 9px;background:#fff;color:#18191c;cursor:pointer;box-shadow:0 14px 42px rgba(12,16,20,.19),0 2px 10px rgba(12,16,20,.08);display:flex;align-items:center;gap:11px;text-align:left;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+      .launcher:hover{transform:translateY(-2px);box-shadow:0 18px 46px rgba(12,16,20,.22),0 3px 12px rgba(12,16,20,.08);border-color:rgba(20,22,24,.18)}
+      .launcher:focus-visible{outline:3px solid var(--bot-accent,#111113);outline-offset:3px}
+      .launcher-avatar{width:46px;height:46px;border-radius:14px;position:relative;flex:0 0 46px;background:#f3f3f4;display:grid;place-items:center;overflow:visible}
+      .launcher-avatar svg,.launcher-avatar img{display:block;width:46px;height:46px;border-radius:14px;object-fit:cover}
+      .launcher-online{position:absolute;right:-3px;bottom:-3px;width:12px;height:12px;background:#22a366;border:2px solid #fff;border-radius:50%;display:none}
+      .launcher.ready .launcher-online{display:block}
+      .launcher-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+      .launcher-name{font-size:13px;font-weight:780;line-height:1.2;color:#17191c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .launcher-subtitle{font-size:11px;color:#6d7076;font-weight:500;line-height:1.3;white-space:nowrap}
+      .launcher-close{display:none;align-items:center;justify-content:center;flex:0 0 22px;color:#7a7c82;font-size:22px;line-height:1}
+      .launcher[aria-expanded="true"] .launcher-close{display:flex}
+      @media(prefers-reduced-motion:reduce){.launcher{transition:none}.launcher:hover{transform:none}}
       .status{font-size:12px;color:#77777c;text-align:center;padding:7px 12px;background:#fff}.status.ready{display:none}
       .error{color:#8b2d2d}
       .quick{display:flex;gap:7px;flex-wrap:wrap;padding:0 16px 12px;background:#f7f7f8}
@@ -218,7 +231,7 @@
       }
     </style>
     <div class="wrap">
-      <section class="panel" aria-label="${t('Respondon asiakaspalvelu', 'RESPONDO AI customer service')}">
+      <section class="panel" id="respondo-chat-panel" aria-label="${t('Respondon asiakaspalvelu', 'RESPONDO AI customer service')}">
         <header class="head">
           <div class="mark" aria-hidden="true">${widgetAvatarMarkup('robot-1')}</div>
           <div class="headcopy"><b id="name">RESPONDO AI</b><small><span class="dot"></span> ${t('Paikalla nyt', 'Online now')}</small></div>
@@ -232,7 +245,11 @@
         </form>
         <div class="powered">RESPONDO AI</div>
       </section>
-      <button class="launcher" id="launcher" type="button"><span class="launcher-dot"></span><span class="launcher-label">${t('Kysy meiltä', 'Ask a question')}</span></button>
+      <button class="launcher" id="launcher" type="button" aria-controls="respondo-chat-panel" aria-expanded="false" aria-label="${t('Avaa chat', 'Open chat')}">
+        <span class="launcher-avatar" aria-hidden="true">${widgetAvatarMarkup('robot-1')}<span class="launcher-online"></span></span>
+        <span class="launcher-copy"><span class="launcher-name">RESPONDO AI</span><span class="launcher-subtitle">${t('Yhdistetään…', 'Connecting…')}</span></span>
+        <span class="launcher-close" aria-hidden="true">×</span>
+      </button>
     </div>`;
 
   const $ = (q) => shadow.querySelector(q);
@@ -245,7 +262,9 @@
   const name = $('#name');
   const mark = $('.mark');
   const quick = $('#quick');
-  const launcherLabel = $('.launcher-label');
+  const launcherAvatar = $('.launcher-avatar');
+  const launcherName = $('.launcher-name');
+  const launcherSubtitle = $('.launcher-subtitle');
 
   let token = '';
   let ready = false;
@@ -718,8 +737,15 @@
       const data = await res.json();
       token = data.token;
       ready = true;
-      name.textContent = data.name || 'RESPONDO AI';
-      mark.innerHTML = widgetAvatarMarkup(data.avatar || 'robot-1');
+      const botDisplayName=String(data.name||'RESPONDO AI').trim().slice(0,100)||'RESPONDO AI';
+      const botAvatar=widgetAvatarMarkup(data.avatar || 'robot-1');
+      name.textContent = botDisplayName;
+      mark.innerHTML = botAvatar;
+      launcherName.textContent = botDisplayName;
+      launcherAvatar.innerHTML = botAvatar + '<span class="launcher-online"></span>';
+      launcherSubtitle.textContent = t('Valmis auttamaan', 'Ready to help');
+      launcher.classList.add('ready');
+      launcher.setAttribute('aria-label',botDisplayName+' – '+t('Avaa chat','Open chat'));
       setAccent(data.accent || fallbackAccent);
       status.textContent = t('Valmis auttamaan', 'Ready');
       status.classList.add('ready');
@@ -728,6 +754,8 @@
       startLivePolling();
     } catch {
       ready = false;
+      launcher.classList.remove('ready');
+      launcherSubtitle.textContent = t('Ei käytettävissä', 'Unavailable');
       status.textContent = t('Chat ei ole käytössä tällä verkkosivulla.', 'The widget is not active on this website.');
       status.classList.add('error');
       form.style.display = 'none';
@@ -737,7 +765,9 @@
 
   launcher.addEventListener('click', () => {
     const open = panel.classList.toggle('open');
-    launcherLabel.textContent = open ? t('Sulje', 'Close') : t('Kysy meiltä', 'Ask a question');
+    launcher.setAttribute('aria-expanded',String(open));
+    launcher.setAttribute('aria-label',(launcherName.textContent||'RESPONDO AI')+' – '+
+      (open?t('Sulje','Close'):t('Avaa chat','Open chat')));
     if (open && ready) setTimeout(() => input.focus(), 50);
   });
 
