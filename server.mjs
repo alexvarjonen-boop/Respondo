@@ -6,7 +6,7 @@ import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEE
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
 import { interpretCustomerQuestion } from './query-typos.mjs';
 import { verifiedIndustryServiceAnswer } from './industry-service-intelligence.mjs';
-import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion } from './industry-service-engine.mjs';
+import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion, resolveIndustryServiceFollowup } from './industry-service-engine.mjs';
 import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
 import express from 'express';
 import path from 'path';
@@ -6154,6 +6154,17 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       message:specialistReference,rows,lang:responseLang,history:[],
     });
     if(verifiedReference) return verifiedReference;
+  }
+  // For trades outside the narrowly audited specialist dictionary, inherit
+  // only an explicit previous operation and a single recognized subject.
+  // Every resulting question is answered from the active tenant's facts,
+  // never from conversational text or another company's rows.
+  const industryReference=resolveIndustryServiceFollowup({
+    message:cleanMessage,history,lang:responseLang,
+  });
+  if(industryReference){
+    const verifiedIndustryReference=industryServiceAnswer(rows,industryReference,responseLang);
+    if(verifiedIndustryReference) return verifiedIndustryReference;
   }
 
   await resolveIntentForMessage(cleanMessage,responseLang);
