@@ -14058,6 +14058,6 @@ async function start() {
   app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
 }
 
-export { isGoogleSitesWebsite, googleSitesIframeHost, widgetOriginAllowed, splitIndependentCustomerQuestions, verifiedProductCards, hasVerifiedPartialAnswer, app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, fetchWebsiteBundle, buildProfileKnowledge, detectConversationLanguage, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
+export { isGoogleSitesWebsite, googleSitesIframeHost, googleSitesFrameForRequest, googleSitesInstallAuthorized, widgetOriginAllowed, splitIndependentCustomerQuestions, verifiedProductCards, hasVerifiedPartialAnswer, app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, fetchWebsiteBundle, buildProfileKnowledge, detectConversationLanguage, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
 if (process.env.NODE_ENV !== 'test') start();
 
