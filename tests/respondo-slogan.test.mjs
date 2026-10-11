@@ -9,8 +9,12 @@ const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 test('public footer displays the permanent brand line', () => {
   const app = read('../public/app.js');
   const footer = app.slice(app.indexOf('function footer() {'), app.indexOf('function heroVisual()'));
-  assert.match(footer, /RESPONDO AI <span class="brand-slogan">- Älykkäämpää asiakaspalvelua/);
-  assert.match(read('../public/footer-refinement.css'), /\.brand-slogan/);
+  assert.match(footer, /<div class="footer-brand-identity">/);
+  assert.match(footer, /<span class="brand-slogan">Älykkäämpää asiakaspalvelua<\/span>/);
+  assert.doesNotMatch(footer, /<span class="brand-word">RESPONDO AI <span class="brand-slogan">/);
+  const css = read('../public/footer-refinement.css');
+  assert.match(css, /\.brand-slogan\s*\{[^}]*font-weight:400!important/s);
+  assert.match(css, /\.footer-brand-identity\s*\{[^}]*flex-direction:column/s);
 });
 
 test('all transactional languages include exact Respondo tagline', () => {
