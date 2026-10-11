@@ -8233,7 +8233,10 @@ app.patch('/api/owner/companies/:tenantId', auth, ownerTrafficOnly, loginLimiter
   const name=String(req.body?.name||'').trim();
   const businessId=String(req.body?.businessId||'').trim();
   const websiteRaw=String(req.body?.website||'').trim();
-  const website=websiteRaw ? normalizeWebUrl(websiteRaw,true) : '';
+  const websiteUrl=websiteRaw ? normalizeWebUrl(websiteRaw,false) : '';
+  const website=websiteUrl
+    ? (isGoogleSitesWebsite(websiteUrl) ? websiteUrl : normalizeWebUrl(websiteRaw,true))
+    : '';
   if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(id)
     || name.length<2 || name.length>120 || /[<>]/.test(name)
     || businessId.length>40 || /[<>]/.test(businessId)
@@ -8250,7 +8253,7 @@ app.patch('/api/owner/companies/:tenantId', auth, ownerTrafficOnly, loginLimiter
     );
     if(!existing.rowCount){await client.query('ROLLBACK');return res.status(404).json({error:'Yritystä ei löytynyt.'});}
     const update=await client.query(
-      "UPDATE tenants SET name=$1,business_id=$2,website=$3,updated_at=NOW() WHERE id=$4 RETURNING id,name,business_id,website",
+      "UPDATE tenants SET name=$1,business_id=$2,google_sites_embed_host=CASE WHEN website IS DISTINCT FROM $3 THEN NULL ELSE google_sites_embed_host END,google_sites_pending_embed_host=CASE WHEN website IS DISTINCT FROM $3 THEN NULL ELSE google_sites_pending_embed_host END,website=$3,updated_at=NOW() WHERE id=$4 RETURNING id,name,business_id,website",
       [name,businessId||null,website||null,id]
     );
     // Preserve the account's current selected-company display information.
@@ -10282,7 +10285,12 @@ app.post('/api/app/business-profile', auth, ownerOnly, subscribed, async (req, r
     const websiteRaw = String(req.body.website || '').trim();
     const quoteRaw = String(req.body.quoteRequestUrl || '').trim();
     const bookingRaw = String(req.body.bookingUrl || '').trim();
-    const website = websiteRaw ? normalizeWebUrl(websiteRaw, true) : '';
+    const websiteUrl = websiteRaw ? normalizeWebUrl(websiteRaw, false) : '';
+    // Google Sites projects share sites.google.com. Their /view/{site} path
+    // must survive profile saving so we can verify Google Sites mode.
+    const website = websiteUrl
+      ? (isGoogleSitesWebsite(websiteUrl) ? websiteUrl : normalizeWebUrl(websiteRaw,true))
+      : '';
     const quoteRequestUrl = quoteRaw ? normalizeWebUrl(quoteRaw, false) : '';
     const bookingUrl = bookingRaw ? normalizeWebUrl(bookingRaw, false) : '';
     if (websiteRaw && !website) {
@@ -10331,7 +10339,7 @@ app.post('/api/app/business-profile', auth, ownerOnly, subscribed, async (req, r
     }
 
     await client.query(
-      'UPDATE tenants SET contact_phone=$1, contact_email=$2, website=$3, greeting=$4, average_lead_value=$5, bot_name=$6, bot_avatar=$7, accent=COALESCE($8,accent), updated_at=NOW() WHERE id=$9',
+      'UPDATE tenants SET contact_phone=$1, contact_email=$2, google_sites_embed_host=CASE WHEN website IS DISTINCT FROM $3 THEN NULL ELSE google_sites_embed_host END, google_sites_pending_embed_host=CASE WHEN website IS DISTINCT FROM $3 THEN NULL ELSE google_sites_pending_embed_host END, website=$3, greeting=$4, average_lead_value=$5, bot_name=$6, bot_avatar=$7, accent=COALESCE($8,accent), updated_at=NOW() WHERE id=$9',
       [
         String(req.body.phone || '').trim() || null,
         currentEmail || null,
