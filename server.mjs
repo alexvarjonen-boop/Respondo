@@ -6,7 +6,7 @@ import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEE
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
 import { interpretCustomerQuestion } from './query-typos.mjs';
 import { verifiedIndustryServiceAnswer } from './industry-service-intelligence.mjs';
-import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion, resolveIndustryServiceFollowup } from './industry-service-engine.mjs';
+import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion, resolveIndustryServiceFollowup, canonicalProfessionalServiceQuestion } from './industry-service-engine.mjs';
 import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
 import express from 'express';
 import path from 'path';
@@ -6167,6 +6167,16 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   if(industryReference){
     const verifiedIndustryReference=industryServiceAnswer(rows,industryReference,responseLang);
     if(verifiedIndustryReference) return verifiedIndustryReference;
+  }
+
+  // Indirect and colloquial trade questions can express the *same* concrete
+  // subject+operation without using the business FAQ's wording. Reconstruct
+  // only the intent. This matcher has no access to other tenant facts and is
+  // deliberately skipped for price, availability and qualified car queries.
+  const paraphrasedService=canonicalProfessionalServiceQuestion(cleanMessage,responseLang);
+  if(paraphrasedService){
+    const groundedParaphrase=industryServiceAnswer(rows,paraphrasedService,responseLang);
+    if(groundedParaphrase) return groundedParaphrase;
   }
 
   await resolveIntentForMessage(cleanMessage,responseLang);
