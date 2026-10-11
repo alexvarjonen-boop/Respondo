@@ -1856,7 +1856,7 @@ function nav() {
         ${languageSwitch()}
         ${isHomePage
           ? `<a class="btn ink nav-home-scroll-trial" href="/tilaus?lang=${currentLang()}" aria-hidden="true" tabindex="-1"><span class="nav-trial-full">${appText('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</span><span class="nav-trial-compact" aria-hidden="true">${appText('3 pv ilmaiseksi','3 dagar gratis','3 days free')}</span></a>`
-          : `<a class="btn ghost nav-login-btn" href="/kirjaudu"><span>${appText('Kirjaudu','Logga in','Log in')}</span></a>`}
+          : isLoginPage ? '' : `<a class="btn ghost nav-login-btn" href="/kirjaudu"><span>${appText('Kirjaudu','Logga in','Log in')}</span></a>`}
         ${!isHomePage && !isLoginPage ? `<a class="btn ink" href="/tilaus">${appText('Kokeile ilmaiseksi','Prova gratis','Start free trial')}</a>` : ''}
       </div>
       <button type="button" class="apple-menu-toggle" data-apple-menu-open aria-controls="apple-nav-overlay" aria-expanded="false" aria-label="${appText('Avaa valikko','Öppna menyn','Open menu')}"><span></span><span></span><span></span></button>
