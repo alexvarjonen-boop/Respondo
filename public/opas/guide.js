@@ -1,3 +1,37 @@
-(()=>{const toggle=document.querySelector('.menu-toggle'),menu=document.querySelector('#guide-menu');if(toggle&&menu){const setOpen=open=>{menu.hidden=!open;toggle.setAttribute('aria-expanded',String(open));toggle.setAttribute('aria-label',open?'Sulje valikko':'Avaa valikko');document.body.classList.toggle('menu-open',open)};toggle.addEventListener('click',()=>setOpen(menu.hidden));menu.addEventListener('click',e=>{if(e.target.closest('a'))setOpen(false)});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!menu.hidden){setOpen(false);toggle.focus()}});window.addEventListener('resize',()=>{if(innerWidth>760&&!menu.hidden)setOpen(false)})}
-const toc=document.querySelector('.toc-links');if(!toc)return;const headings=[...document.querySelectorAll('.article>h2')].filter(h=>!h.classList.contains('related-title'));headings.forEach((h,i)=>{h.id='opas-osio-'+(i+1);const a=document.createElement('a');a.href='#'+h.id;a.textContent=h.textContent.trim();toc.appendChild(a)});
-if('IntersectionObserver'in window){const links=[...toc.querySelectorAll('a')];const obs=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;links.forEach(a=>a.hash==='#'+e.target.id?a.setAttribute('aria-current','location'):a.removeAttribute('aria-current'))}),{rootMargin:'-115px 0px -65% 0px'});headings.forEach(h=>obs.observe(h))}})();
+import {bindPublicMenu} from '/apple-nav.js';
+function init(){
+  bindPublicMenu();
+  // Guides are Finnish-only articles. Select another site's language on a fully translated page.
+  for(const button of document.querySelectorAll('[data-guide-lang]')){
+    button.addEventListener('click',()=>{
+      const lang=button.getAttribute('data-guide-lang');
+      try{localStorage.setItem('respondo_lang',lang)}catch{}
+      if(lang!=='fi') window.location.assign('/ominaisuudet?lang='+encodeURIComponent(lang));
+    });
+  }
+  const toc=document.querySelector('.guide-toc-nav');
+  if(!toc)return;
+  const headings=[...document.querySelectorAll('.guide-article>h2:not(.guide-related-title)')];
+  headings.forEach((heading,i)=>{
+    heading.id='kohta-'+(i+1);
+    const anchor=document.createElement('a');
+    anchor.href='#'+heading.id;
+    anchor.textContent=heading.textContent.trim();
+    toc.appendChild(anchor);
+  });
+  if('IntersectionObserver'in window){
+    const links=[...toc.querySelectorAll('a')];
+    const observer=new IntersectionObserver(entries=>{
+      for(const entry of entries){
+        if(!entry.isIntersecting)continue;
+        for(const link of links){
+          if(link.hash==='#'+entry.target.id)link.setAttribute('aria-current','location');
+          else link.removeAttribute('aria-current');
+        }
+      }
+    },{rootMargin:'-120px 0px -65% 0px'});
+    headings.forEach(heading=>observer.observe(heading));
+  }
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
+else init();
