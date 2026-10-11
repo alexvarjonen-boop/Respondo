@@ -4366,6 +4366,24 @@ async function dashboard(options = {}) {
         </div>
         <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261008-bot-color-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}"&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
+        <div class="license-lock" style="margin-top:20px">
+          <b>${appText('Google Sites -upotuksen aktivointi','Aktivering av Google Sites','Google Sites embed activation')}</b>
+          ${/sites\.google\.com\/(?:view|site)\//i.test(String(t.website||'')) ? `
+            ${t.google_sites_embed_host ? `
+              <p>${appText('Google Sites -upotus hyväksytty. Jos upotit botin uudelleen, päivitä sivu.','Google Sites-inbäddningen är godkänd. Uppdatera sidan.','Google Sites embed approved. Reload your site.')}</p>
+              <small>${esc(t.google_sites_embed_host)}</small>
+            ` : t.google_sites_pending_embed_host ? `
+              <p>${appText('Botti havaittu Google Sites -upotuskehyksessä. Hyväksy tämä tarkka upotusosoite, jos avasit juuri oman sivustosi.','Botten hittades i en Google Sites-ram. Godkänn den om du nyss öppnade din webbplats.','Bot detected inside a Google Sites frame. Approve only if you just opened your own website.')}</p>
+              <small>${esc(t.google_sites_pending_embed_host)}</small>
+              <button type="button" id="approveGoogleSitesEmbed" class="btn" data-host="${esc(t.google_sites_pending_embed_host)}" style="margin-top:12px">${appText('Hyväksy Google Sites -upotus','Godkänn Google Sites','Approve Google Sites embed')}</button>
+              <div id="googleSitesEmbedMsg"></div>
+            ` : `
+              <p>${appText('Avaa julkaistu Google Sites -sivu, jolla botti näkyy, ja päivitä tämä Asennus-näkymä. Hyväksyntäpainike ilmestyy sen jälkeen.','Öppna din publicerade Google Sites-sida och uppdatera sedan denna installationsvy.','Open your published Google Sites page, then reload this installation page to approve the frame.')}</p>
+            `}
+          ` : `
+            <p>${appText('Jos käytät Google Sitesia, tallenna ensin sen julkaistu https://sites.google.com/view/... -osoite Yritys & botti -asetuksiin.','Om du använder Google Sites, spara först den publicerade webbadressen i företagsinställningarna.','For Google Sites, first save its published https://sites.google.com/view/... URL in Business & bot settings.')}</p>
+          `}
+        </div>
       </section>
       `}
 
@@ -7126,6 +7144,27 @@ async function route() {
     $('#logout')?.addEventListener('click', doLogout);
     $('#logoutTop')?.addEventListener('click', doLogout);
     $('#logoutAgent')?.addEventListener('click', doLogout);
+
+    $('#approveGoogleSitesEmbed')?.addEventListener('click', async (e)=>{
+      const button=e.currentTarget;
+      const host=String(button.dataset.host||'');
+      const msg=$('#googleSitesEmbedMsg');
+      button.disabled=true;
+      try{
+        await api('/api/app/google-sites/approve-embed',{
+          method:'POST',body:JSON.stringify({host}),
+        });
+        if(msg)msg.innerHTML='<div class="notice success">'+appText(
+          'Hyväksytty. Päivitä nyt Google Sites -sivu.',
+          'Godkänt. Uppdatera Google Sites-sidan.',
+          'Approved. Refresh your Google Sites page.'
+        )+'</div>';
+        button.textContent=appText('Hyväksytty ✓','Godkänt ✓','Approved ✓');
+      }catch(error){
+        if(msg)msg.innerHTML='<div class="notice error">'+esc(error.message)+'</div>';
+        button.disabled=false;
+      }
+    });
 
     $('#copyCode')?.addEventListener('click', async (e) => {
       const code = $('#installCode')?.innerText || '';
