@@ -4364,11 +4364,11 @@ async function dashboard(options = {}) {
           <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
           <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261011-google-sites-v2" data-company="${esc(t.slug)}" data-lang="${currentLang()}"${/sites\\.google\\.com\\/(?:view|site)\\//i.test(String(t.website||'')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261011-google-sites-v2" data-company="${esc(t.slug)}" data-lang="${currentLang()}"${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
         <div class="license-lock" style="margin-top:20px">
           <b>${appText('Google Sites -asennus','Google Sites-installation','Google Sites installation')}</b>
-          ${/sites\\.google\\.com\\/(?:view|site)\\//i.test(String(t.website||'')) ? (
+          ${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) ? (
             t.google_sites_install_key
               ? `<p>${appText(
                 'Google Sites -asennuskoodisi on luotu. Kopioi yläpuolinen päivitetty koodi Google Sitesin HTML-upotukseen aiemman script-rivin tilalle. Tallenna ja julkaise Google Sites uudelleen.',
