@@ -23,7 +23,7 @@ test('footer brand text is readable on dark pages while legal pages remain light
   assert.match(css,/#app :is\(\.apple-home-page,\.features-page,\.contact-page,\.seo-landing-page,\.pricing-page\) \.footer \.foot-brand \.logo \.brand-word/);
   assert.match(css,/-webkit-text-fill-color:#f8fafc!important/);
   assert.match(css,/-webkit-text-fill-color:#17181c!important/);
-  assert.match(html,/footer-refinement\.css\?v=20261009-v1/);
+  assert.match(html,/footer-refinement\.css\?v=20261011-regular-slogan-v2/);
   assert.match(html,/footer-business-id-contrast-v1/);
 });
 

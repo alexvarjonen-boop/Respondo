@@ -2142,7 +2142,10 @@ function footer() {
     <div class="container">
       <div class="foot-top">
         <div class="foot-brand">
-          ${logo().replace('<span class="brand-word">RESPONDO AI</span>', '<span class="brand-word">RESPONDO AI <span class="brand-slogan">- Älykkäämpää asiakaspalvelua</span></span>')}
+          <div class="footer-brand-identity">
+            ${logo()}
+            <span class="brand-slogan">Älykkäämpää asiakaspalvelua</span>
+          </div>
           <p>${uiText('Asiakaspalvelubotti, joka vastaa asiakkaillesi yrityksesi omilla tiedoilla.','Kundservicebot som svarar dina kunder med information från ditt företag.','Customer service bot that answers your customers using your company information.')}</p>
         </div>
         <div class="foot-col">

@@ -28,8 +28,43 @@
   justify-content:flex-start;
 }
 
-/* Permanent Respondo AI brand line in the shared public footer. */
-#app .footer .foot-brand .logo { max-width:100%; align-items:center; }
-#app .footer .foot-brand .logo .brand-word { line-height:1.36; white-space:normal; }
-#app .footer .foot-brand .logo .brand-slogan { font-size:14px; font-weight:600; letter-spacing:0; white-space:normal; }
-@media (max-width:600px) { #app .footer .foot-brand .logo .brand-slogan { font-size:13px; } }
+/* Compact two-level brand lockup: bold name, plain-weight slogan. */
+#app .footer .foot-brand .footer-brand-identity {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:7px;
+  min-width:0;
+  max-width:100%;
+}
+#app .footer .foot-brand .footer-brand-identity > .logo {
+  display:inline-flex!important;
+  flex:0 0 auto!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:9px!important;
+  margin:0!important;
+  width:max-content;
+  max-width:100%;
+  white-space:nowrap;
+}
+#app .footer .foot-brand .logo .brand-word {
+  line-height:1.2;
+  white-space:nowrap!important;
+}
+#app .footer .foot-brand .brand-slogan {
+  display:block;
+  font-size:14px;
+  font-weight:400!important;
+  font-style:normal;
+  letter-spacing:0!important;
+  line-height:1.5;
+  text-transform:none;
+  color:inherit;
+  opacity:.82;
+  white-space:normal;
+}
+#app .footer .foot-brand .footer-brand-identity + p { margin-top:16px; }
+@media (max-width:600px) {
+  #app .footer .foot-brand .brand-slogan { font-size:13px; }
+}
