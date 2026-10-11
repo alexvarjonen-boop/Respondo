@@ -7169,7 +7169,7 @@ async function route() {
         if(code){
           let html=code.textContent||'';
           if(!html.includes('data-sites-key=')){
-            html=html.replace('</script>',' data-sites-key="'+key+'"></script>');
+            html=html.replace('></script>',' data-sites-key="'+key+'"></script>');
           }
           code.textContent=html;
         }
