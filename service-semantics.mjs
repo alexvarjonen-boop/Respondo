@@ -107,6 +107,21 @@ function actionEvidence(text, service) {
   return (service.actionPattern || ACTIONS[service.action]).test(text);
 }
 
+// Owner-entered Q&A is also approved evidence when the question identifies the
+// exact specialist service and the answer unambiguously starts yes or no.
+// The question alone is not proof. A negative answer must never yield a yes.
+function explicitFaqEvidence(row, service) {
+  const meta=fold(String(row.category||'')+' '+String(row.title||''));
+  if(IS_PRODUCT.test(meta) || REVIEW_META.test(meta) || row.approved===false) return '';
+  const title=fold(row.title);
+  if(!service.subject.test(title) || !actionEvidence(title,service)) return '';
+  const answer=fold(row.answer);
+  if(/^(?:ei|emme|eivat|no|nej|not|inte|aldrig)\b/.test(answer)) return 'negative';
+  if(/^(?:kylla|yes|ja|onnistuu)\b/.test(answer) &&
+     /(?:\?$|^vaihdatteko\b|^teetteko\b|^can you\b|^do you\b|^kan ni\b|^byter ni\b)/i.test(String(row.title||'').trim())) return 'positive';
+  return '';
+}
+
 function serviceClauses(row) {
   const title=String(row.title || '');
   const answer=String(row.answer || '');
@@ -153,7 +168,12 @@ export function matchVerifiedSpecialistService({message, rows=[], history=[], la
 
   const positive=[], negative=[];
   for(const row of rows) {
-    if(!isServiceRow(row)) continue;
+    if(!isServiceRow(row)) {
+      const faq=explicitFaqEvidence(row,service);
+      if(faq==='positive') positive.push(row);
+      if(faq==='negative') negative.push(row);
+      continue;
+    }
     const clauses=serviceClauses(row);
     const relevant=clauses.filter(clause=>service.subject.test(clause) && actionEvidence(clause,service));
     if(!relevant.length) continue;
