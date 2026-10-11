@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {isGoogleSitesWebsite,googleSitesIframeHost,widgetOriginAllowed} from '../server.mjs';
+import {isGoogleSitesWebsite,googleSitesIframeHost,widgetOriginAllowed,googleSitesFrameForRequest,googleSitesInstallAuthorized} from '../server.mjs';
 
 const website='https://sites.google.com/view/viheri';
 const origin='https://1457130292-atari-embeds.googleusercontent.com';
@@ -37,4 +37,17 @@ test('Google Sites dashboard generates and embeds a tenant-specific installation
   assert.match(widget,/googleSitesKey/);
   assert.match(widget,/sitesKey=/);
   assert.match(widget,/googleFrame=/);
+});
+
+test('Google Sites installation key authenticates null-origin sandbox and rejects copied code on normal sites',()=>{
+  const key='f'.repeat(48);
+  const site={...tenant,google_sites_install_key:key};
+  const frameHost=new URL(origin).hostname;
+  const opaque={headers:{origin:'null'},query:{sitesKey:key,googleFrame:frameHost}};
+  assert.equal(googleSitesFrameForRequest(opaque),frameHost);
+  assert.equal(googleSitesInstallAuthorized(opaque,site),true);
+  assert.equal(googleSitesInstallAuthorized({...opaque,query:{...opaque.query,sitesKey:'a'.repeat(48)}},site),false);
+  assert.equal(googleSitesInstallAuthorized({headers:{origin:'https://attacker.example'},query:opaque.query},site),false);
+  assert.equal(googleSitesInstallAuthorized(opaque,{...site,website:'https://normal.example.fi'}),false);
+  assert.equal(googleSitesInstallAuthorized({headers:{origin:'null'},query:{sitesKey:key,googleFrame:'attacker.example'}},site),false);
 });
