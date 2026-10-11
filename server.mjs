@@ -11636,13 +11636,38 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       } catch {}
     }
     const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
-    const result = await generateGroundedAnswer({
+    let result = await generateGroundedAnswer({
       companyName: String(profile.companyName || 'yrityksen').slice(0, 120),
       rows,
       message,
       history,
       lang:detectedLang,
     });
+
+    // Unverified product availability is not a lead-generation request.
+    // If the public demo could not read that product family, be clear about
+    // the uncertainty rather than asserting "no" or immediately opening a
+    // contact-details form for an ordinary shopping question.
+    if(isPublicDemo && result.handoff && requestedProductFamilyAvailability(message)){
+      const family=requestedProductFamilyAvailability(message);
+      const label={
+        giftcard:['lahjakorteista','presentkort','gift cards'],
+        putter:['puttereista','putters','putters'],
+        headcover:['mailansuojista','headcovers','headcovers'],
+        grip:['gripeistä','grepp','grips'],
+        towel:['pyyhkeistä','handdukar','towels'],
+        golfball:['golfpalloista','golfbollar','golf balls'],
+        golfbag:['golfbägeistä','golfbagar','golf bags'],
+      }[family]||['tuotteesta','produkten','the product'];
+      result={
+        answer:detectedLang==='en'
+          ? 'I could not verify '+label[2]+' from the imported store catalog. Please check the current selection on the store website.'
+          :detectedLang==='sv'
+            ? 'Jag kunde inte bekräfta uppgifter om '+label[1]+' i den importerade webbutikens sortiment. Kontrollera det aktuella sortimentet på webbplatsen.'
+            : 'En pystynyt varmistamaan tietoa '+label[0]+' verkkokaupasta tuoduista tuotetiedoista. Tarkista ajantasainen valikoima verkkokaupasta.',
+        handoff:false,confidence:0.35,intent:'Tuotteet',sourceIds:[],selected:[],
+      };
+    }
 
     const noAnswer = detectedLang === 'en'
       ? 'I cannot find a reliable answer to this in the company information. Leave your name and phone number or email below, and someone from the company can get back to you.'
