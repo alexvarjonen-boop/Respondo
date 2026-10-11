@@ -1,5 +1,6 @@
 import { brandedEmailHtml } from './email-branding.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
+import { serviceOverviewQuestion, verifiedServiceOverview } from './service-overview.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { matchVerifiedSpecialistService, matchVerifiedCompoundSpecialistServices, resolveSpecialistConversationReference } from './service-semantics.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
@@ -6513,9 +6514,10 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // forcing the service intent and handing off. This keeps retail demos natural
   // without making a product-only store pretend it offers services.
   const hasImportedProducts=productCatalog(rows).length>0;
-  const hasServiceKnowledge=rows.some((row)=>
-    knowledgeTopic(String(row?.category||'')+' '+String(row?.title||'')+' '+String(row?.keywords||''))==='services'
-  );
+  // Only a real verified service name counts as a service offering. A news
+  // headline marked "Palvelut" must not suppress a retailer's product answer.
+  const verifiedOverview=verifiedServiceOverview(rows,{lang:responseLang});
+  const hasServiceKnowledge=Boolean(verifiedOverview);
   if (hasImportedProducts && !hasServiceKnowledge && genericCompanyQuestion(cleanMessage)) {
     const commerceQuestion=responseLang==='en'?'What do you sell?':responseLang==='sv'?'Vad säljer ni?':'Mitä myytte?';
     const commerceOverview=directProductAnswer(rows,commerceQuestion,responseLang);
@@ -6539,6 +6541,25 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
         selected:[]
       };
     }
+  }
+
+  // Answer broad business/service questions from verified service names,
+  // not from a keyword-ranked mixture of job titles and completed projects.
+  // This runs before generic retrieval and is shared by public and paid chat.
+  if(serviceOverviewQuestion(cleanMessage)){
+    if(verifiedOverview){
+      const evidence=verifiedOverview.selected;
+      return {
+        answer:verifiedOverview.answer,
+        handoff:false,
+        confidence:verifiedOverview.confidence,
+        intent:'Palvelut',
+        sourceIds:evidence.map(row=>row.id).filter(Boolean),
+        selected:evidence,
+      };
+    }
+    // No evidence is better than confidently enumerating fabricated services.
+    return {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
   }
 
   const intent = inferIntent(cleanMessage);
