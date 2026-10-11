@@ -118,3 +118,12 @@ test('new industry followups cannot treat products as services',async()=>{
   assert.equal(result.handoff,true,JSON.stringify(result));
   assert.deepEqual(result.sourceIds,[]);
 });
+
+test('an expressly unapproved company service cannot prove a follow-up',async()=>{
+  const rows=[{...fact('unapproved','Jarrulevyjen vaihto'),approved:false}];
+  const answer=await generateGroundedAnswer({
+    rows,message:'Entä jarrulevyt?',history:previous('Vaihdatteko jarrupaloja?'),lang:'fi'
+  });
+  assert.equal(answer.handoff,true,JSON.stringify(answer));
+  assert.deepEqual(answer.sourceIds,[]);
+});
