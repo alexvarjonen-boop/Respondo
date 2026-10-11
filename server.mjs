@@ -1388,17 +1388,17 @@ function normalizeHost(value) {
 }
 
 function requestOrigin(req) {
-  const value = String(req.headers.origin || '').trim();
-  const referer = String(req.headers.referer || '').trim();
-  try {
-    if (value) return new URL(value);
-    // Same-origin GET requests do not always include an Origin header.
-    // The browser still sends Referer, which lets the first-party homepage
-    // use the exact same widget embed code as an external customer site.
-    return referer ? new URL(referer) : null;
-  } catch {
-    return null;
+  const value=String(req.headers.origin || '').trim();
+  const referer=String(req.headers.referer || '').trim();
+  // Sandboxed Google Sites frames can use Origin: null. A malformed or null
+  // origin must not discard a valid Referer fallback.
+  if(value && value!=='null'){
+    try {return new URL(value);} catch {}
   }
+  if(referer){
+    try {return new URL(referer);} catch {}
+  }
+  return null;
 }
 
 function isGoogleSitesWebsite(value) {
@@ -1420,6 +1420,27 @@ function googleSitesIframeHost(value) {
       /^[a-z0-9-]+-atari-embeds\.googleusercontent\.com$/.test(host)
       ? host : '';
   } catch {return '';}
+}
+
+function googleSitesFrameForRequest(req) {
+  const origin=String(req.headers.origin||'').trim();
+  const originFrame=googleSitesIframeHost(origin);
+  if(originFrame) return originFrame;
+  if(origin && origin!=='null') return '';
+  return googleSitesIframeHost(req.headers.referer||'');
+}
+
+function googleSitesInstallationFingerprint(tenant) {
+  const key=String(tenant?.google_sites_install_key||'');
+  return key ? crypto.createHash('sha256').update(key).digest('hex').slice(0,24) : '';
+}
+
+function googleSitesInstallAuthorized(req,tenant) {
+  if(!isGoogleSitesWebsite(tenant?.website) || !googleSitesFrameForRequest(req)) return false;
+  const configured=String(tenant?.google_sites_install_key||'');
+  const requested=String(req.query?.sitesKey||'');
+  if(configured.length<32 || requested.length!==configured.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(configured),Buffer.from(requested));
 }
 
 function widgetOriginAllowed(req, tenant) {
@@ -1459,10 +1480,19 @@ function safeTenantReturnUrl(value, tenant) {
 }
 
 function setWidgetCors(req, res) {
-  const origin = requestOrigin(req);
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin.origin);
-    res.setHeader('Vary', 'Origin');
+  const rawOrigin=String(req.headers.origin||'').trim();
+  if(rawOrigin==='null'){
+    // A sandboxed Google Sites frame needs the literal null origin. Callers
+    // must still pass widget-token verification before protected endpoints
+    // use this response.
+    res.setHeader('Access-Control-Allow-Origin','null');
+    res.setHeader('Vary','Origin');
+    return;
+  }
+  const origin=requestOrigin(req);
+  if(origin){
+    res.setHeader('Access-Control-Allow-Origin',origin.origin);
+    res.setHeader('Vary','Origin');
   }
 }
 
@@ -11357,16 +11387,19 @@ async function dispatchActionWebhook(tenant, actionRequest) {
 }
 
 function validWidgetToken(req, tenant, tokenValue) {
-  const origin=requestOrigin(req);
-  if (!origin || !widgetOriginAllowed(req,tenant)) return false;
   try {
-    const token=jwt.verify(String(tokenValue || ''),JWT);
-    return token.kind === 'widget' &&
-      token.slug === tenant.slug &&
-      token.host === normalizeHost(origin.hostname);
-  } catch {
-    return false;
-  }
+    const token=jwt.verify(String(tokenValue||''),JWT);
+    if(token.kind!=='widget' || token.slug!==tenant.slug) return false;
+    if(token.embed==='google-sites'){
+      const frame=googleSitesFrameForRequest(req);
+      return Boolean(frame && frame===token.host &&
+        isGoogleSitesWebsite(tenant.website) &&
+        token.installFingerprint===googleSitesInstallationFingerprint(tenant));
+    }
+    const origin=requestOrigin(req);
+    return Boolean(origin && widgetOriginAllowed(req,tenant) &&
+      token.host===normalizeHost(origin.hostname));
+  } catch {return false;}
 }
 
 async function validateWidgetActionRequest(req, tenant, body) {
@@ -11419,14 +11452,37 @@ app.post('/api/app/google-sites/approve-embed', auth, ownerOnly, subscribed, asy
   }
 });
 
+app.post('/api/app/google-sites/installation-key', auth, ownerOnly, subscribed, async(req,res)=>{
+  try{
+    const rr=await q(
+      'SELECT id,website,google_sites_install_key FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',
+      [req.user.sub]
+    );
+    if(!rr.rowCount)return res.status(404).json({error:'Yritystä ei löytynyt.'});
+    const tenant=rr.rows[0];
+    if(!isGoogleSitesWebsite(tenant.website))
+      return res.status(400).json({error:'Tallenna ensin koko julkaistu Google Sites -osoite yrityksen tietoihin.'});
+    const generated=crypto.randomBytes(24).toString('hex');
+    const saved=await q(
+      'UPDATE tenants SET google_sites_install_key=COALESCE(google_sites_install_key,$1) WHERE id=$2 RETURNING google_sites_install_key',
+      [generated,tenant.id]
+    );
+    return res.json({ok:true,siteKey:saved.rows[0]?.google_sites_install_key||''});
+  }catch(e){
+    console.error('Google Sites installation creation failed',e);
+    return res.status(500).json({error:'Google Sites -asennuskoodin luominen epäonnistui.'});
+  }
+});
+
 app.get('/api/public/:slug/widget-token', publicReadLimiter, async (req, res) => {
   try {
     const tr = await publicTenant(req.params.slug);
     if (!tr.rowCount) return res.status(404).json({ error: 'Yritystä ei löytynyt.' });
     const tenant = tr.rows[0];
 
-    if (!widgetOriginAllowed(req, tenant)) {
-      const candidate=googleSitesIframeHost(requestOrigin(req)?.origin||'');
+    const googleSitesKeyAuthorized=googleSitesInstallAuthorized(req,tenant);
+    if (!widgetOriginAllowed(req, tenant) && !googleSitesKeyAuthorized) {
+      const candidate=googleSitesFrameForRequest(req);
       if(candidate && isGoogleSitesWebsite(tenant.website)){
         await q(`UPDATE tenants
                    SET google_sites_pending_embed_host=$1
@@ -11447,7 +11503,11 @@ app.get('/api/public/:slug/widget-token', publicReadLimiter, async (req, res) =>
       {
         kind: 'widget',
         slug: tenant.slug,
-        host: normalizeHost(origin.hostname),
+        host: googleSitesKeyAuthorized ? googleSitesFrameForRequest(req) : normalizeHost(origin.hostname),
+        ...(googleSitesKeyAuthorized ? {
+          embed:'google-sites',
+          installFingerprint:googleSitesInstallationFingerprint(tenant),
+        } : {}),
       },
       JWT,
       { expiresIn: '12h' }
@@ -13769,6 +13829,7 @@ async function ensureRuntimeSchema() {
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_leads_tenant_created ON leads(tenant_id, created_at DESC)');
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS average_lead_value NUMERIC(12,2) NOT NULL DEFAULT 0");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_sites_install_key TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_sites_embed_host TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_sites_pending_embed_host TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS bot_name TEXT NOT NULL DEFAULT 'RESPONDO AI'");
