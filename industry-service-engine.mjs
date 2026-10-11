@@ -20,14 +20,36 @@ const actionGroups=[
   ['clean',/\b(?:pesu\w*|pese\w*|pesem\w*|puhdist\w*|siivou\w*|tvatt\w*|wash\w*|clean\w*|rengor\w*|stad\w*)\b/],
   ['paint',/\b(?:maala\w*|paint\w*|malning\w*|maler\w*)\b/],
   ['cut',/\b(?:leikka\w*|klipp\w*|cutting\b|cut\b|haircut\w*)\b/],
-  ['treat',/\b(?:hier\w*|hoit\w*|treat\w*|massage\w*|behandl\w*)\b/],
+  ['treat',/\b(?:hier\w*|hoit\w*|juurihoi\w*|root\s+canal|rotbehandl\w*|treat\w*|massage\w*|behandl\w*)\b/],
   ['transport',/\b(?:kuljet\w*|nout\w*|toimit\w*|transport\w*|deliver\w*|flytt\w*)\b/],
-  ['build',/\b(?:rakenn\w*|remont\w*|saneera\w*|construct\w*|renovat\w*|bygga|bygg\w*)\b/],
+  ['build',/\b(?:rakenn\w*|rakent\w*|remont\w*|saneera\w*|construct\w*|renovat\w*|build\w*|bygga|bygg\w*)\b/],
   ['audit',/\b(?:kirjanpid\w*|tilintarkast\w*|accounting\b|bookkeep\w*|bokfor\w*|revision\w*)\b/],
+  ['unblock',/\b(?:avaatteko|avata|avaaminen|avauks\w*|avaus|unblock\w*|unclog\w*|rens\w*)\b/],
 ];
 // More-specific concepts precede their parent concepts. Terms in a group are
 // equivalents, NOT adjacent capabilities (tire replacement != tire puncture repair).
 const objectGroups=[
+// Trade-specific synonyms label exact parts and procedures; an entity
+// label alone never establishes a business capability.
+  ['wheel_bearing',/\b(?:pyoranlaaker\w*|pyoran\s+laaker\w*|wheel\s+bearing\w*|hjullager\w*)\b/],
+  ['brake_fluid',/\b(?:jarrunest\w*|brake\s+fluid\w*|bromsvatsk\w*)\b/],
+  ['spark_plug',/\b(?:sytytystulp\w*|spark\s+plug\w*|tandstift\w*)\b/],
+  ['cabin_filter',/\b(?:raitisilmasuodatt\w*|sisailmansuodatt\w*|cabin\s+(?:air\s+)?filter\w*|pollen\s+filter\w*|kupefilter\w*)\b/],
+  ['fuel_filter',/\b(?:polttoainesuodatt\w*|fuel\s+filter\w*|branslefilter\w*)\b/],
+  ['radiator',/\b(?:jaahdyttim\w*|jaahdytin\w*|radiator\w*|kylare\w*)\b/],
+  ['wiper_blade',/\b(?:pyyhkijan\s*sul\w*|pyyhkijansul\w*|wiper\s+blade\w*|torkarblad\w*)\b/],
+  ['drain',/\b(?:viemar\w*|avlopp\w*|drain\w*|sewer\s+pipe\w*)\b/],
+  ['ventilation_duct',/\b(?:ilmanvaihtokanav\w*|ventilation\s+duct\w*|ventilationskanal\w*)\b/],
+  ['underfloor_heating',/\b(?:lattialammit\w*|underfloor\s+heat\w*|golvvarm\w*)\b/],
+  ['charging_station',/\b(?:latausasem\w*|latauspiste\w*|charg(?:ing|er)\s+station\w*|laddbox\w*|laddstolp\w*)\b/],
+  ['solar_panel',/\b(?:aurinkopaneel\w*|solar\s+panel\w*|solpanel\w*)\b/],
+  ['terrace',/\b(?:terass\w*|decking\b|wooden\s+deck\w*|altan\w*)\b/],
+  ['chimney',/\b(?:savupiip\w*|chimney\w*|skorsten\w*)\b/],
+  ['eyebrow',/\b(?:kulmakarv\w*|eyebrow\w*|ogonbryn\w*)\b/],
+  ['lash_extension',/\b(?:ripsienpidenn\w*|ripspidenn\w*|lash\s+extension\w*|fransforlang\w*)\b/],
+  ['massage',/\b(?:hieronn\w*|hieronta\w*|massage\w*|massag\w*)\b/],
+  ['root_canal',/\b(?:juurihoi\w*|root\s+canal\w*|rotbehandl\w*)\b/],
+  ['dental_filling',/\b(?:hampaan\s+paikkau\w*|hammaspaikkau\w*|dental\s+fill\w*|tooth\s+fill\w*|tandfyll\w*)\b/],
   ['tie_rod_end',/\b(?:raide(?:tangon|tankojen|tanko)\s+pa\w*|raid epa\w*|raidepaa\w*|tie\s+rod\s+end\w*|styrled\w*|styrstagsand\w*)\b/],
   ['tie_rod',/\b(?:raide(?:tanko|tangon|tankoja|tangot|tankojen)\w*|tie\s+rods?\b|styrstag\w*)\b/],
   ['agm_battery',/\b(?:agm[\s-]*akku\w*|agm[\s-]*batter\w*|agm[\s-]*battery|start[\s-]*stop[\s-]*(?:akku\w*|batter\w*|battery))\b/],
@@ -74,9 +96,12 @@ const overrides={
   tie_rod_end:new Set(['tie_rod']),
   agm_battery:new Set(['battery']),
   brake_disc:new Set(['brake']),
+  brake_fluid:new Set(['brake']),
+  spark_plug:new Set(['tooth']),
   brake_pad:new Set(['brake']),
   timing_chain:new Set(['engine']),
-  timing_belt:new Set(['engine'])
+  timing_belt:new Set(['engine']),
+  dental_filling:new Set(['tooth'])
 };
 function concepts(value){
   const q=norm(value);
@@ -90,11 +115,11 @@ const unsupportedModifier=/\b(?:agm|efb|start[\s-]*stop|hybrid\w*|hybrid\w*|sahk
 const denial=/\b(?:emme|eivat|ei\b|not\b|never\b|don\s*t\b|doesn\s*t\b|cannot\b|can\s*t\b|inte\b|aldrig\b|ej\b)\b/;
 const uncertain=/\b(?:ehka|mahdollisesti|voi\s+olla|perhaps|maybe|possibly|kanske|eventuellt)\b/;
 const junk=/\b(?:arvostelu|testimonial|review|asiakaskokem|privacy|tietosuoja|kayttoeh|terms\s+of\s+service|cookie|evaste)\b/;
-const isQuestion=/\b(?:vaihdatteko|vaihatteko|vaihtaisitteko|paikkaatteko|paikkaatteks|teetteko|tarjoatteko|huollatteko|korjaatteko|asennatteko|pystytteko|voitteko|voisitteko|onnistuuko|onnistuisko|hoidatteko|testaatteko|tarkastatteko|pesetteko|saako|loytyyko|onko\s+teilla|do\s+you|can\s+you|could\s+you|do\s+you\s+offer|is\s+it\s+possible|har\s+ni|kan\s+ni|byter\s+ni|erbjuder\s+ni|lagar\s+ni|gor\s+ni|utfor\s+ni)\b/;
+const isQuestion=/\b(?:avaatteko|vaihdatteko|vaihatteko|vaihtaisitteko|paikkaatteko|paikkaatteks|teetteko|tarjoatteko|huollatteko|korjaatteko|asennatteko|pystytteko|voitteko|voisitteko|onnistuuko|onnistuisko|hoidatteko|testaatteko|tarkastatteko|pesetteko|saako|loytyyko|onko\s+teilla|do\s+you|can\s+you|could\s+you|do\s+you\s+offer|is\s+it\s+possible|har\s+ni|kan\s+ni|byter\s+ni|erbjuder\s+ni|lagar\s+ni|gor\s+ni|utfor\s+ni)\b/;
 function isServiceQuestion(message){
   const q=norm(message);
   if(!isQuestion.test(q) || stop.test(q)) return false;
-  return /^(?:vaih\w*|paikka\w*|teetteko|tarjoatteko|huol\w*|korja\w*|asen\w*|pyst\w*|voitteko|voisitteko|onnistu\w*|hoidatteko|testaatteko|tarkastatteko|pesetteko|saako|loytyyko|onko\s+teilla|do\s+you|can\s+you|could\s+you|is\s+it\s+possible|har\s+ni|kan\s+ni|byter\s+ni|erbjuder\s+ni|lagar\s+ni|gor\s+ni|utfor\s+ni)\b/.test(q);
+  return /^(?:avaatteko|vaih\w*|paikka\w*|teetteko|tarjoatteko|huol\w*|korja\w*|asen\w*|pyst\w*|voitteko|voisitteko|onnistu\w*|hoidatteko|testaatteko|tarkastatteko|pesetteko|saako|loytyyko|onko\s+teilla|do\s+you|can\s+you|could\s+you|is\s+it\s+possible|har\s+ni|kan\s+ni|byter\s+ni|erbjuder\s+ni|lagar\s+ni|gor\s+ni|utfor\s+ni)\b/.test(q);
 }
 function requestedAction(message){
   const q=norm(message);
@@ -196,7 +221,9 @@ function unanswered(lang){
 const automotive=new Set([
   'tie_rod_end','tie_rod','agm_battery','battery','tire','brake_disc','brake_pad','brake',
   'timing_belt','timing_chain','clutch','alternator','starter_motor',
-  'suspension','air_conditioning','oil','engine','windshield','headlight','exhaust'
+  'suspension','air_conditioning','oil','engine','windshield','headlight','exhaust',
+  'wheel_bearing','brake_fluid','spark_plug','cabin_filter','fuel_filter',
+  'radiator','wiper_blade'
 ]);
 export function isExplicitAutomotiveServiceQuestion(message){
   return isServiceQuestion(message) && [...concepts(message)].some(x=>automotive.has(x))
@@ -367,12 +394,12 @@ const PARAPHRASE_OPENERS=Object.freeze({
   en:/^(?:can i(?: get| have)?|could i(?: get| have)?|would it be possible(?: to)?|is it possible(?: to)?|could your (?:team|workshop|staff)|can your (?:team|workshop|staff)|are .+ (?:available|offered)|is .+ (?:available|offered))\b/,
 });
 const PARAPHRASE_VERBS=Object.freeze({
-  fi:{replace:'Vaihdatteko',install:'Asennatteko',repair:'Korjaatteko',patch:'Paikkaatteko',
+  fi:{replace:'Vaihdatteko',install:'Asennatteko',repair:'Korjaatteko',patch:'Paikkaatteko',unblock:'Avaatteko',treat:'Teettekö',
     clean:'Pesettekö',maintain:'Huollatteko',inspect:'Tarkastatteko',diagnose:'Testaatteko'},
-  sv:{replace:'Byter ni',install:'Kan ni installera',repair:'Kan ni reparera',
+  sv:{replace:'Byter ni',install:'Kan ni installera',repair:'Kan ni reparera',unblock:'Kan ni rensa',treat:'Kan ni behandla',
     patch:'Kan ni laga',clean:'Kan ni tvätta',maintain:'Kan ni underhålla',
     inspect:'Kan ni kontrollera',diagnose:'Kan ni felsöka'},
-  en:{replace:'Do you replace',install:'Do you install',repair:'Do you repair',
+  en:{replace:'Do you replace',install:'Do you install',repair:'Do you repair',unblock:'Do you unblock',treat:'Do you treat',
     patch:'Do you patch',clean:'Do you clean',maintain:'Do you service',
     inspect:'Do you inspect',diagnose:'Do you diagnose'},
 });

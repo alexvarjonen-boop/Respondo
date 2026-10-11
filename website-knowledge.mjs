@@ -114,6 +114,14 @@ export function isConcreteServiceLabel(value) {
   if (/\b(?:oy|ab|ltd|inc|llc)\b/.test(n) && /sijaint|kart|location|map/.test(n)) return false;
   if (/\b\d{1,2}[.:]\d{2}\b|\b\d{1,2}\.\s*(?:tammi|helmi|maalis|huhti|touko|kesa|kesä|heina|heinä|elo|syys|loka|marras|joulu)/.test(n)) return false;
 
+  // Recognize documented, technically specific service labels beyond the
+  // small legacy importer dictionary. The operation MUST be explicit in the
+  // same short label; a part catalog, navigation link or general workshop
+  // heading is never accepted as evidence of a repair service.
+  const tradePart=/\b(?:pyoranlaaker\w*|jarrunest\w*|sytytystulp\w*|raitisilmasuodatt\w*|polttoainesuodatt\w*|jaahdyttim\w*|jaahdytin\w*|pyyhkijansul\w*|viemar\w*|ilmanvaihtokanav\w*|lattialammit\w*|latausasem\w*|aurinkopaneel\w*|terass\w*|savupiip\w*|juurihoi\w*|hampaan\s+paikkau\w*)\b/;
+  const tradeAction=/\b(?:vaih\w*|asenn\w*|korj\w*|rakenn\w*|rakent\w*|puhdist\w*|pesu\w*|avaus|avauks\w*|hoito\w*|huol\w*)\b/;
+  if(tradePart.test(n) && tradeAction.test(n)) return true;
+
   // Require a concrete service noun/stem instead of accepting every marketing
   // phrase from a card that happens to mention "service".
   return /(?:palvelu|service|tjanst|tjänst|pesu|siivou|puhdist|maala|raivau|leikkaus|hiusten|haircut|harklipp|hårklipp|parturi|kampaamo|parran|beard|skagg|skägg|muotoil|styling|trimma|trimming|shave|ajo\b|skinfade|fade|varja|värjä|color|colour|farg|färg|wax|vaha|kynsi|nail|ripsi|lash|kulmakarv|eyebrow|huolto|asennu|korjau|kuljet|muut(?:to|ot|toa|toja|tojen)|varastointi|vuokraus|poisvienti|purku|kartoit|kierrat|kierrät|murske|asbesti|saneeraus|remont|rakennus|hiero|fysioter|hoito|koulutus|konsult|suunnittel|valokuva|catering|siirto|pakkaus|akun\s+vaihto|akkujen\s+vaihto|renkaa?n\w*\s+vaihto|rengas\w*vaihto|renka\w*\s+paikk|raide(?:tang|tank)\w*\s+vaihto|raidepaa\w*\s+vaihto|jarrulev\w*\s+vaihto|jarrupal\w*\s+vaihto|jakohih\w*\s+vaihto|tasapainot|pyoransuunta|nelipyorasuunta|vikakood|diagnos|dackbyte|batteribyte|dackrepar|brake\s+repair|battery\s+replac|tire\s+repair|tyre\s+repair|wheel\s+align|puncture\s+repair)/.test(n);
