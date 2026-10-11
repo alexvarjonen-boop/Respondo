@@ -312,7 +312,8 @@ export function resolveIndustryServiceFollowup({message,history=[],lang='fi'}={}
       previous='';
       continue;
     }
-    if(isServiceQuestion(question)){
+    if(isServiceQuestion(question) &&
+       concepts(question).size===1 && requestedAction(question).size===1){
       previous=question;
       continue;
     }
