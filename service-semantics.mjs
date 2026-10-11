@@ -72,20 +72,6 @@ const SERVICES = Object.freeze([
     yes: ['Kyllä, avaamme tukkeutuneita viemäreitä.', 'Ja, vi rensar avlopp.', 'Yes, we unblock drains.'],
     label: ['viemärin avauksesta', 'avloppsrensning', 'drain unblocking'],
   },
-  {
-    id: 'window-clean',
-    subject: /\b(?:ikkun\w*|fonster\w*|window\w*)\b/,
-    action: 'clean',
-    yes: ['Kyllä, pesemme ikkunoita.', 'Ja, vi tvättar fönster.', 'Yes, we clean windows.'],
-    label: ['ikkunanpesusta', 'fönstertvätt', 'window cleaning'],
-  },
-  {
-    id: 'roof-clean',
-    subject: /\b(?:katon\b|katto\w*|peltikat\w*|tiilikat\w*|taket\b|tak(?:pann\w*|tvatt\w*)?\b|roof\w*)\b/,
-    action: 'clean',
-    yes: ['Kyllä, pesemme kattoja.', 'Ja, vi tvättar tak.', 'Yes, we wash roofs.'],
-    label: ['katonpesusta', 'taktvätt', 'roof cleaning'],
-  },
 ]);
 
 const QUESTION_CUE = /^(?:teetteko|vaihdatteko|paikkaatteko|korjaatteko|asennatteko|pesetteko|avaatteko|huollatteko|tarjoatteko|onnistuuko|onnistuisiko|pystytteko|voitteko|hoidatteko|saako|saanko|tarvitsen|haluaisin|can you|could you|do you|would you|is it possible|are you able|do you offer|kan ni|kan man|byter ni|lagar ni|fixar ni|reparerar ni|installerar ni|tvattar ni|rengor ni|erbjuder ni|utfor ni|gor ni)\b/;
@@ -146,6 +132,13 @@ function localize(values, lang) {
 export function matchVerifiedSpecialistService({message, rows=[], history=[], lang='fi'} = {}) {
   const q=fold(message);
   if (!q || EXCLUDE_QUESTION.test(q) || /\b(?:ja|seka|and|och)\b|[,;&]/.test(q)) return null;
+  // A short topic switch after a price answer still asks about price, not
+  // whether the newly named service is offered.
+  if(FOLLOW_UP_CUE.test(q) && Array.isArray(history)) {
+    const previous=[...history].reverse().find(turn=>String(turn?.question||turn?.user||'').trim());
+    const preceding=fold(previous?.question||previous?.user||'');
+    if(/\b(?:hinta\w*|maks\w*|paljonko|hinnoittel\w*|price\w*|cost\w*|pricing|pris\w*|kostar|hur mycket|how much)\b/.test(preceding)) return null;
+  }
   const subjects=SERVICES.filter(s=>s.subject.test(q));
   if(subjects.length !== 1) return null; // Compound questions require separate verification.
   const service=subjects[0];
