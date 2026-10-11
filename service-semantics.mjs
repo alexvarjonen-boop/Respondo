@@ -77,7 +77,7 @@ const SERVICES = Object.freeze([
   },
   {
     id: 'roof-clean',
-    subject: /\b(?:katon\b|katto\w*|peltikat\w*|tiilikat\w*|taket\b|tak\w*|roof\w*)\b/,
+    subject: /\b(?:katon\b|katto\w*|peltikat\w*|tiilikat\w*|taket\b|tak(?:pann\w*|tvatt\w*)?\b|roof\w*)\b/,
     action: 'clean',
     yes: ['Kyllä, pesemme kattoja.', 'Ja, vi tvättar tak.', 'Yes, we wash roofs.'],
     label: ['katonpesusta', 'taktvätt', 'roof cleaning'],
@@ -86,7 +86,7 @@ const SERVICES = Object.freeze([
 
 const QUESTION_CUE = /^(?:teetteko|vaihdatteko|paikkaatteko|korjaatteko|asennatteko|pesetteko|avaatteko|huollatteko|tarjoatteko|onnistuuko|onnistuisiko|pystytteko|voitteko|hoidatteko|saako|saanko|tarvitsen|haluaisin|can you|could you|do you|would you|is it possible|are you able|do you offer|kan ni|kan man|byter ni|lagar ni|fixar ni|reparerar ni|installerar ni|tvattar ni|rengor ni|erbjuder ni|utfor ni|gor ni)\b/;
 const FOLLOW_UP_CUE = /^(?:enta|entapa|mites|what about|how about|and what about|och da|men hur|vad galler)\b/;
-const EXCLUDE_QUESTION = /\b(?:paljonko|maksaa|hinta|hinnoittel\w*|tarjous|ilmain\w*|alenn\w*|tanaan|huomenna|milloin|aikaisin|how much|price|cost|discount|free|today|tomorrow|when|pris|kostar|gratis|rabatt|idag|imorgon|nar|varata|booking|varaa|boka|kiire)\b|\d/;
+const EXCLUDE_QUESTION = /\b(?:how much|hur mycket|kuinka paljon|paljonko|maksaa|hinta|hinnoittel\w*|tarjous|ilmain\w*|alenn\w*|tanaan|huomenna|milloin|aikaisin|how much|price|cost|discount|free|today|tomorrow|when|pris|kostar|gratis|rabatt|idag|imorgon|nar|varata|booking|varaa|boka|kiire)\b|\d/;
 const NOT_OFFERED = /\b(?:emme|eivat|ei|en|et|not|never|dont|do not|does not|cannot|can't|inte|ej|aldrig|erbjuder inte|utfors inte)\b/;
 const IS_PRODUCT = /tuote|product|produkt|katalog|catalog|verkkokaup|webshop|category/;
 const SERVICE_META = /palvel|service|tjanst|huolto|korjaamo|asenn|remont|lvi|putki|sahko|siivou|pesu|korjaus|repair|workshop|verkstad/;
@@ -139,6 +139,10 @@ export function matchVerifiedSpecialistService({message, rows=[], history=[], la
     const last=[...history].reverse().find(turn=>String(turn?.question||turn?.user||'').trim());
     if(last) requestedAction=questionAction(String(last.question||last.user));
   }
+  // Tyre punctures are normally described as repairs (EN) or "laga" (SV).
+  // Only that particular question may equate repair with puncture patching.
+  if(service.action==='patch' && requestedAction==='repair' &&
+      /\b(?:punctur\w*|punkter\w*|lagar\b|lagning\b)\b/.test(q)) requestedAction='patch';
   // Never treat a request to repair as proof that replacement is offered,
   // or a request to replace tyres as a request for puncture repair.
   if(requestedAction && requestedAction !== service.action) return null;
