@@ -111,3 +111,24 @@ test('end-to-end: a plumbing company offering drain cleaning is not automaticall
   assert.equal(unblocking.handoff,false,JSON.stringify(unblocking));
   assert.deepEqual(unblocking.sourceIds,['unblock']);
 });
+
+test('end-to-end: strict specialist intent cannot borrow a nearby service just because the verb matches',async()=>{
+  for(const [language,question,unrelated,verified] of [
+    ['en','Can you install charging stations?','Pistorasioiden asennus','Latausasemien asennus'],
+    ['en','Do you clean solar panels?','Aurinkopaneelien asennus','Aurinkopaneelien puhdistus'],
+    ['fi','Vaihdatteko jarrunesteet?','Jarrupalojen vaihto','Jarrunesteen vaihto'],
+    ['en','Do you replace fuel filters?','Raitisilmasuodattimen vaihto','Polttoainesuodattimen vaihto'],
+    ['en','Do you replace wheel bearings?','Renkaiden vaihto','Pyöränlaakerien vaihto']
+  ]){
+    const absent=await generateGroundedAnswer({
+      rows:[service('other',unrelated)],lang:language,message:question
+    });
+    assert.equal(absent.handoff,true,question+': '+JSON.stringify(absent));
+    assert.deepEqual(absent.sourceIds,[],question);
+    const present=await generateGroundedAnswer({
+      rows:[service('exact',verified)],lang:language,message:question
+    });
+    assert.equal(present.handoff,false,question+': '+JSON.stringify(present));
+    assert.deepEqual(present.sourceIds,['exact'],question);
+  }
+});

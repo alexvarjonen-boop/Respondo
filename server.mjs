@@ -6,7 +6,7 @@ import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEE
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
 import { interpretCustomerQuestion } from './query-typos.mjs';
 import { verifiedIndustryServiceAnswer } from './industry-service-intelligence.mjs';
-import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion, resolveIndustryServiceFollowup, canonicalProfessionalServiceQuestion } from './industry-service-engine.mjs';
+import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion, isExplicitVerifiedTradeQuestion, resolveIndustryServiceFollowup, canonicalProfessionalServiceQuestion } from './industry-service-engine.mjs';
 import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
 import express from 'express';
 import path from 'path';
@@ -6379,7 +6379,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // cannot claim a service just because it operates in that industry.
   // Run this ahead of broader service heuristics that can otherwise interpret
   // "repair" alone as proof of a different repair or a sale as installation.
-  if(isExplicitAutomotiveServiceQuestion(cleanMessage)){
+  // Precision-first: all newly recognized technical services are checked
+  // against an EXACT tenant-owned fact before general multilingual heuristics.
+  if(isExplicitAutomotiveServiceQuestion(cleanMessage) || isExplicitVerifiedTradeQuestion(cleanMessage)){
     const specialistService = industryServiceAnswer(rows,cleanMessage,responseLang);
     if(specialistService) return specialistService;
   }
