@@ -824,7 +824,7 @@ export function essentialWebsiteCandidates(bundle) {
 
     // News, references and recruitment pages describe past work or employees,
     // not the services a customer can order today.
-    if (/\/(?:ajankohtaista|uutiset?|news|blog|articles?|referenssit?|references?|case-studies|careers?|rekrytointi|tyopaikat|toihin-meille)(?:\/|$)/.test(rawDocPath)) continue;
+    if (!companyInfoDoc && /\/(?:ajankohtaista|uutiset?|news|blog|articles?|referenssit?|references?|case-studies|careers?|rekrytointi|tyopaikat|toihin-meille)(?:\/|$)/.test(rawDocPath)) continue;
     if (!companyInfoDoc && /blog|uutis|news/.test(docPath)) continue;
     for (const product of docProducts) addProduct(product,doc.url);
     const recoveredPriceIndexes=new Set();
