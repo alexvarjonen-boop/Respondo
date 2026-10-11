@@ -14,7 +14,8 @@ test('only owner sessions can edit/delete a company and mutation endpoints have 
   assert.match(deletion,/Cache-Control','private, no-store'/);
 });
 test('editing company info is limited to basic fields; billing cannot be altered',()=>{
-  assert.match(update,/UPDATE tenants SET name=\$1,business_id=\$2,website=\$3,updated_at=NOW\(\)/);
+  assert.match(update,/UPDATE tenants SET name=\$1,business_id=\$2,google_sites_embed_host=.*website=\$3,updated_at=NOW\(\)/);
+  assert.match(update,/google_sites_pending_embed_host=CASE WHEN website IS DISTINCT FROM \$3/);
   assert.match(update,/normalizeWebUrl\(websiteRaw,true\)/);
   assert.match(update,/UPDATE users SET company_name=\$1,business_id=\$2/);
   assert.doesNotMatch(update,/SET subscription_plan|SET subscription_status|stripe.subscriptions.update/);
