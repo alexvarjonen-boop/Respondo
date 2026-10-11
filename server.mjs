@@ -9078,14 +9078,17 @@ function detectConversationLanguage(text, hinted='') {
   const words=raw.split(/\s+/).filter(Boolean);
   if (!words.length) return hint || 'fi';
   const sets={
-    fi:new Set(['ja','on','ei','mitä','mikä','missä','milloin','voiko','voin','haluan','tarvitsen','apua','kiitos','moi','hei','minä','sinä','teillä','hinta','maksaa','ajan','varata','varaus','auki','aukiolo','kuinka','kauan','kauanko','toimitus','toimitusaika','kestää']),
-    sv:new Set(['och','är','inte','vad','vilken','var','när','kan','jag','vill','behöver','hjälp','tack','hej','ni','pris','kostar','boka','bokning','öppet','öppettider','hur','länge','leverans','leveranstid']),
-    en:new Set(['and','is','are','not','what','which','where','when','can','could','i','you','want','need','help','thanks','thank','hello','hi','price','cost','book','booking','open','hours','how','long','does','do','delivery','shipping','take'])
+    fi:new Set(['ja','on','ei','mitä','mikä','missä','milloin','voiko','voin','haluan','tarvitsen','apua','kiitos','moi','hei','minä','sinä','teillä','hinta','maksaa','ajan','varata','varaus','auki','aukiolo','kuinka','kauan','kauanko','toimitus','toimitusaika','kestää','onko','saako','paljonko','takuu','takuuta','takuun','löytyykö']),
+    sv:new Set(['och','är','inte','vad','vilken','var','när','kan','jag','vill','behöver','hjälp','tack','hej','ni','pris','kostar','boka','bokning','öppet','öppettider','hur','länge','leverans','leveranstid','har','finns','får','gäller','ingår','det','den','dem','ett','med','hos','för','säljer','köpa','köper','garantin','garantitid','reklamation']),
+    en:new Set(['and','is','are','not','what','which','where','when','can','could','i','you','want','need','help','thanks','thank','hello','hi','price','cost','book','booking','open','hours','how','long','does','do','delivery','shipping','take','have','has','warranty','warranties'])
   };
   const score={fi:0,sv:0,en:0};
   for(const w of words) for(const lang of ['fi','sv','en']) if(sets[lang].has(w)) score[lang]++;
   if(/[å]/.test(raw)) score.sv+=2;
   if(/[äö]/.test(raw)) score.fi+=1;
+  // Swedish definite plurals (putterna, produkterna, priserna) are useful
+  // when the question is short and the storefront's default language is Finnish.
+  if(words.some(w=>w.length>=6 && /(?:arna|erna|orna)$/.test(w))) score.sv+=1;
   const best=Object.entries(score).sort((a,b)=>b[1]-a[1])[0];
   return best[1]>0 ? best[0] : (hint || 'fi');
 }
@@ -11823,6 +11826,6 @@ async function start() {
   app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
 }
 
-export { verifiedProductCards, app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
+export { verifiedProductCards, app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage, detectConversationLanguage };
 if (process.env.NODE_ENV !== 'test') start();
 
