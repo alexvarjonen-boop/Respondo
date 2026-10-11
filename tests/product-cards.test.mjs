@@ -93,3 +93,27 @@ test('Try Bot asset version is updated for previously opened iOS clients',async(
   assert.match(app,/appendPreviewProductCards\(bubble,result\.products,currentLang\(\)\)/);
   assert.match(app,/!hasProducts\|\|action\.type!=='product'/);
 });
+
+test('product metadata fills missing JSON-LD image from the same product page only',()=>{
+  const productUrl='https://store.example.fi/products/headcover';
+  const img='https://cdn.shopify.com/s/files/1/1234/files/headcover.jpg';
+  const json={
+    '@context':'https://schema.org','@graph':[
+      {'@type':'Product',name:'Headcover',url:productUrl,offers:{'@type':'Offer',price:'15',priceCurrency:'EUR'}},
+      {'@type':'Product',name:'Unrelated grip',url:'https://store.example.fi/products/grip',offers:{'@type':'Offer',price:'29',priceCurrency:'EUR'}},
+    ],
+  };
+  const html='<meta property="og:image" content="'+img+'"><script type="application/ld+json">'+JSON.stringify(json)+'</script>';
+  const products=extractProducts(html,productUrl);
+  assert.equal(products.find(p=>p.name==='Headcover').imageUrl,img);
+  assert.equal(products.find(p=>p.name==='Unrelated grip').imageUrl,'');
+});
+
+test('public site CSP permits legitimate HTTPS product CDN images',async()=>{
+  const {readFile}=await import('node:fs/promises');
+  const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
+  assert.match(server,/imgSrc:\["'self'","data:","blob:","https:"\]/);
+  assert.match(server,/Promise\.allSettled\(requests\)/);
+  assert.match(server,/featured_image \|\| data\.image \|\| data\.images\?\.\[0\]/);
+  assert.match(server,/productCardImageCache/);
+});

@@ -304,6 +304,26 @@ export function extractProducts(html, pageUrl) {
     const product=productFromStructuredNode(node,pageUrl);
     if (product) products.push(product);
   }
+  // A valid Product JSON-LD node may omit its image even when this
+  // specific product page exposes an og:image/twitter:image thumbnail.
+  // Attach it only to the product that matches the page path, never to
+  // related products in the page's JSON-LD graph.
+  if (products.length) {
+    const socialImage=productImageUrl(productMeta(html,'og:image') || productMeta(html,'twitter:image'),pageUrl);
+    if(socialImage) {
+      let currentPage;
+      try {currentPage=new URL(pageUrl);} catch {}
+      for(const product of products) {
+        if(product.imageUrl || !currentPage)continue;
+        let url;
+        try{url=new URL(product.url,pageUrl);}catch{continue;}
+        if(url.hostname.toLowerCase()===currentPage.hostname.toLowerCase() &&
+           url.pathname.replace(/\/$/,'')===currentPage.pathname.replace(/\/$/,'')) {
+          product.imageUrl=socialImage;
+        }
+      }
+    }
+  }
   if (!products.length) {
     const type=productMeta(html,'og:type');
     const title=productMeta(html,'og:title') || productMeta(html,'twitter:title');

@@ -2553,7 +2553,20 @@ function verifiedProductCards(result) {
 // Older approved product rows predate image imports. Resolve a real image only
 // from that product's verified public page, with SSRF-safe fetch and a bounded
 // cache. Never invent images, prices or catalog matches.
+// Product images must be taken from the exact approved product page, never
+// inferred from product names or another company's catalog.
 const productCardImageCache = new Map();
+function verifiedImageHttpUrl(raw,base) {
+  if (!raw) return '';
+  const source=typeof raw==='object'
+    ? (raw.src || raw.url || raw.contentUrl || '')
+    : String(raw).trim();
+  if(typeof source!=='string' || !source.trim()) return '';
+  try {
+    const url=new URL(source.startsWith('//')?'https:'+source:source,base);
+    return url.protocol==='https:' && !url.username && !url.password ? url.href : '';
+  } catch { return ''; }
+}
 async function verifiedProductCardImage(card) {
   if (card.imageUrl) return card.imageUrl;
   let expected;
@@ -2562,53 +2575,68 @@ async function verifiedProductCardImage(card) {
     if (!['https:','http:'].includes(expected.protocol) || expected.username || expected.password) return '';
   } catch { return ''; }
   const key=expected.origin+expected.pathname;
+  const now=Date.now();
   let cached=productCardImageCache.get(key);
-  if (!cached || cached.expires < Date.now()) {
-    const promise=(async()=>{
-      try {
-        const {html,finalUrl}=await fetchPublicHtml(card.url);
-        const pageUrl=new URL(finalUrl);
-        if (pageUrl.hostname.replace(/^www\./,'') !== expected.hostname.replace(/^www\./,'')) return '';
-        const candidates=extractProducts(html,finalUrl);
-        const match=candidates.find((item)=>{
-          if (!item?.imageUrl || !item.url) return false;
-          try {
-            const source=new URL(item.url,finalUrl);
-            return source.hostname.replace(/^www\./,'')===pageUrl.hostname.replace(/^www\./,'') &&
-              source.pathname.replace(/\/$/,'')===pageUrl.pathname.replace(/\/$/,'');
-          } catch { return false; }
-        });
-        if (!match) return '';
-        const image=new URL(match.imageUrl);
-        return ['http:','https:'].includes(image.protocol) && !image.username && !image.password
-          ? image.href : '';
-      } catch { return ''; }
-    })();
-    cached={promise,expires:Date.now()+60*60*1000};
-    if(productCardImageCache.size>=350){
-      const oldest=productCardImageCache.keys().next().value;
-      if(oldest)productCardImageCache.delete(oldest);
-    }
-    productCardImageCache.set(key,cached);
+  if(cached && cached.expires>now) return cached.promise;
+
+  const sameProductPath=(raw)=>{
+    try {
+      const u=new URL(raw,expected);
+      return u.hostname.replace(/^www\./i,'').toLowerCase()===expected.hostname.replace(/^www\./i,'').toLowerCase()
+        && u.pathname.replace(/\/$/,'')===expected.pathname.replace(/\/$/,'');
+    } catch {return false;}
+  };
+
+  // Shopify storefronts publish their product images as public JSON at
+  // /products/{handle}.js. Request it alongside ordinary product-page
+  // metadata so one slow endpoint cannot delay all thumbnails.
+  const fromShopify=async()=>{
+    if(!/^\/products\/[a-z0-9_-]+\/?$/i.test(expected.pathname))return '';
+    const slug=expected.pathname.split('/').filter(Boolean).at(-1);
+    const data=await fetchPublicJson(expected.origin+expected.pathname.replace(/\/$/,'')+'.js',750_000);
+    if(!data || String(data.handle||'').toLowerCase()!==slug.toLowerCase())return '';
+    const raw=data.featured_image || data.image || data.images?.[0];
+    return verifiedImageHttpUrl(raw,expected);
+  };
+  const fromPage=async()=>{
+    const {html,finalUrl}=await fetchPublicHtml(card.url);
+    if(!sameProductPath(finalUrl))return '';
+    const candidates=extractProducts(html,finalUrl);
+    const matched=candidates.find(product=>product?.imageUrl && product?.url && sameProductPath(product.url));
+    return verifiedImageHttpUrl(matched?.imageUrl,finalUrl);
+  };
+  const candidates=[fromPage(),fromShopify()].map(async task=>{
+    const image=await task;
+    if(!image)throw new Error('No verified product image from this source');
+    return image;
+  });
+  const promise=Promise.any(candidates).catch(()=> '');
+  cached={promise,expires:now+2*60*1000};
+  productCardImageCache.set(key,cached);
+  if(productCardImageCache.size>350) {
+    const oldest=productCardImageCache.keys().next().value;
+    if(oldest)productCardImageCache.delete(oldest);
   }
-  return cached.promise;
+  promise.then(image=>{cached.expires=Date.now()+(image?60*60*1000:2*60*1000);});
+  return promise;
 }
 async function hydratedProductCards(result) {
   const cards=verifiedProductCards(result);
-  if (process.env.NODE_ENV==='test' || !cards.some((card)=>!card.imageUrl)) return cards;
-  // A slow merchant website must never block the chat response indefinitely.
-  const imageResults=cards.map(async(card)=>{
-    if(card.imageUrl) return card.imageUrl;
-    return await verifiedProductCardImage(card);
+  if (process.env.NODE_ENV==='test' || !cards.some(card=>!card.imageUrl)) return cards;
+  // A failed/slow merchant product must not hide images already resolved for
+  // other cards. Cache lookups continue safely after the bounded wait.
+  const requests=cards.map(async card=>{
+    if(card.imageUrl)return;
+    const image=await verifiedProductCardImage(card);
+    if(image)card.imageUrl=image;
   });
   let timer;
   try {
-    const resolved=await Promise.race([
-      Promise.all(imageResults),
-      new Promise((resolve)=>{ timer=setTimeout(()=>resolve(null),1800); })
+    await Promise.race([
+      Promise.allSettled(requests),
+      new Promise(resolve=>{timer=setTimeout(resolve,3500);}),
     ]);
-    if(resolved) resolved.forEach((url,i)=>{if(url) cards[i].imageUrl=url;});
-  } finally { if(timer) clearTimeout(timer); }
+  } finally {if(timer)clearTimeout(timer);}
   return cards;
 }
 function expandSearchConcepts(value) {
@@ -7406,7 +7434,7 @@ app.use(helmet({
       formAction:["'self'"],
       scriptSrc:["'self'","'unsafe-inline'"],
       styleSrc:["'self'","'unsafe-inline'"],
-      imgSrc:["'self'","data:","blob:"],
+      imgSrc:["'self'","data:","blob:","https:"],
       fontSrc:["'self'","data:"],
       connectSrc:["'self'"],
       workerSrc:["'self'","blob:"],
