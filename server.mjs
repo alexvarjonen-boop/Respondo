@@ -1,7 +1,7 @@
 import { brandedEmailHtml } from './email-branding.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
-import { matchVerifiedSpecialistService, matchVerifiedCompoundSpecialistServices } from './service-semantics.mjs';
+import { matchVerifiedSpecialistService, matchVerifiedCompoundSpecialistServices, resolveSpecialistConversationReference } from './service-semantics.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
 import { interpretCustomerQuestion } from './query-typos.mjs';
@@ -6141,6 +6141,19 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
         sourceIds,selected
       };
     }
+  }
+
+  // Understand elliptical specialist follow-ups using the latest verified
+  // customer subject, but NEVER reuse an earlier assistant answer as a fact.
+  // The rewritten question passes through the same approved-knowledge matcher.
+  const specialistReference=resolveSpecialistConversationReference({
+    message:cleanMessage, history, lang:responseLang,
+  });
+  if(specialistReference){
+    const verifiedReference=matchVerifiedSpecialistService({
+      message:specialistReference,rows,lang:responseLang,history:[],
+    });
+    if(verifiedReference) return verifiedReference;
   }
 
   await resolveIntentForMessage(cleanMessage,responseLang);

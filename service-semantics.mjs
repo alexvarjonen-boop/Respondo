@@ -266,3 +266,94 @@ export function matchVerifiedCompoundSpecialistServices({message, rows=[], lang=
       (x.selected||[]).map(r=>[String(r.id||r.title),r]))).values()],
   };
 }
+
+
+// Context memory for *known specialist subjects*, not factual memory.
+// It only reconstructs a fully specified customer question; the same
+// tenant-scoped evidence matcher must still verify the resulting claim.
+// No previous assistant answer, cross-tenant cache or external AI is used.
+const SPECIALIST_QUESTIONS=Object.freeze({
+  'tie-rod-end':[
+    'Vaihdatteko raidetangon päitä?','Byter ni styrleder?','Do you replace tie rod ends?'
+  ],
+  'car-battery':[
+    'Vaihdatteko auton akkuja?','Byter ni bilbatterier?','Do you replace car batteries?'
+  ],
+  'brake-pads':[
+    'Vaihdatteko jarrupaloja?','Byter ni bromsbelägg?','Do you replace brake pads?'
+  ],
+  'tyre-puncture':[
+    'Paikkaatteko renkaita?','Lagar ni punkteringar på däck?','Do you repair tyre punctures?'
+  ],
+  'oil-change':[
+    'Teettekö öljynvaihtoja?','Utför ni oljebyten?','Do you perform oil changes?'
+  ],
+  'tap-install':[
+    'Asennatteko vesihanoja?','Installerar ni vattenkranar?','Do you install water taps?'
+  ],
+  'drain-unblock':[
+    'Avaatteko viemäreitä?','Rensar ni avlopp?','Do you unblock drains?'
+  ]
+});
+const CONVERSATIONAL_FILLER=/^(?:kiitos|kiitti|thanks|thank you|tack|okei|ok|okay|selva|joo|juu|hyva|great|fine|bra|yes|kylla|ja)$/;
+const REFERENCE_PRONOUN=/^(?:(?:vaihdatteko|vaihatteko|korjaatteko|paikkaatteko|asennatteko|avaatteko|byter ni|kan ni byta|lagar ni|installerar ni|can you (?:replace|change|repair|patch|install|unblock)|could you (?:replace|change|repair|patch|install|unblock)|do you (?:replace|change|repair|patch|install|unblock))\s+)(?:sen|ne|sita|niita|saman|den|det|dem|detta|it|that|them|those)$/;
+const REFERENCE_CUE=/^(?:enta|entapa|entas|no enta|mites|what about|how about|and what about|och da|men hur ar det med|hur ar det med|vad galler)\s+(.+)$/;
+const REFERENCE_PRICE_OR_POLICY=/\b(?:hinta|hintaa|hinnoittel\w*|paljonko|maksaa|kustannus|toimit\w*|palaut\w*|taku\w*|varaus|book\w*|warranty|refund|return|shipping|delivery|price|pricing|cost|what does it cost|pris|kostar|leverans|retur|garanti|bokning)\b/;
+const REFERENCE_GREETING=/^(?:hei|moi|hello|hi|hej)\b/;
+
+/**
+ * Returns a customer-equivalent standalone question for safe follow-up
+ * anaphora or a named compatibility qualifier. Null means "do not infer".
+ * The returned string is NOT an answer and must be resolved independently
+ * against the current company's approved data.
+ */
+export function resolveSpecialistConversationReference({message, history=[], lang='fi'}={}) {
+  const raw=String(message||'').trim();
+  if(!raw || raw.length>160 || !Array.isArray(history) || !history.length) return null;
+  const query=fold(raw);
+  if(!query || REFERENCE_PRICE_OR_POLICY.test(query) || /[,;&]|\d/.test(query)) return null;
+
+  const pronoun=REFERENCE_PRONOUN.test(query);
+  const lead=query.match(REFERENCE_CUE);
+  if(!pronoun && !lead) return null;
+  const qualifier=lead ? lead[1].replace(/^(?:the|a|an|den|det|auton|car|bil)\s+/,'').trim() : '';
+  const explicitQualifier=lead && qualifier && exactServiceQualifiers(qualifier);
+  // Accept a short, unambiguous vehicle/equipment qualifier, never a sentence
+  // that merely contains a car manufacturer or combines unrelated requests.
+  const isQualifier=Boolean(explicitQualifier?.length===1 &&
+    qualifier===explicitQualifier[0]);
+  const directSubject=lead && SERVICES.filter(s=>s.subject.test(lead[1]));
+  const isNewSubject=Boolean(lead && !isQualifier &&
+    directSubject.length===1 && !Object.values(ACTIONS).some(rx=>rx.test(lead[1])) &&
+    !REFERENCE_GREETING.test(query));
+  if(!pronoun && !isQualifier && !isNewSubject) return null;
+
+  // The most recent substantive customer question is authoritative. Never
+  // skip a topic switch to resurrect an older product or service.
+  const last=[...history].reverse().find(item=>{
+    const text=fold(String(item?.question||item?.user||''));
+    return text && !CONVERSATIONAL_FILLER.test(text);
+  });
+  if(!last || last.handoff===true) return null;
+  const prior=fold(String(last.question||last.user||''));
+  if(REFERENCE_PRICE_OR_POLICY.test(prior) || /[,;&]|\d/.test(prior)) return null;
+  const priorSubjects=SERVICES.filter(s=>s.subject.test(prior));
+  if(priorSubjects.length!==1) return null;
+  const previousService=priorSubjects[0];
+  // "We repair brake pads" must not set a replacement context.
+  const previousAction=questionAction(prior);
+  if(previousAction && previousAction!==previousService.action &&
+      !(previousService.action==='patch'&&previousAction==='repair'&&/punctur|punkter/.test(prior))) return null;
+  if(!previousAction && !actionEvidence(prior,previousService) &&
+     !QUESTION_CUE.test(prior)) return null;
+
+  const subject=isNewSubject?directSubject[0]:previousService;
+  if(isNewSubject && subject.action!==previousService.action) return null;
+  if(pronoun && questionAction(query)!==subject.action) return null;
+  const canonical=localize(SPECIALIST_QUESTIONS[subject.id],lang);
+  if(!canonical) return null;
+  // Specific compatibility remains a condition to verify, never a synonym.
+  // Service evidence must explicitly contain the same qualifier.
+  if(isQualifier) return canonical.replace(/\?$/,' '+explicitQualifier[0]+'?');
+  return canonical;
+}
