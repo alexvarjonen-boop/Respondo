@@ -89,3 +89,9 @@ test('do not make a partial affirmative claim for services joined with and',()=>
   const rows=[service('Ikkunanpesu')];
   assert.equal(ask('Pesettekö ikkunat ja aurinkopaneelit?',rows),null);
 });
+
+test('specialist layer leaves roof subtypes and windows to established resolvers',()=>{
+  for(const q of ['Pesettekö kattoja?','Pesettekö peltikattoja?','Onnistuuko ikkunanpesu?','Entä ikkunanpesu?']){
+    assert.equal(ask(q,[service('Peltikattojen pesu'),service('Ikkunanpesu')]),null,q);
+  }
+});
