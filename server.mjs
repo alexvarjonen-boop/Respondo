@@ -774,17 +774,17 @@ async function sendHomepageContactEmail({ name, email, message }) {
   ).trim();
 
   const subject = 'Uusi yhteydenotto Respondon verkkosivulta';
-  const html =
-    '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#111">' +
-      '<h2 style="margin:0 0 20px">Uusi yhteydenotto</h2>' +
-      '<p><strong>Nimi:</strong> ' + escapeEmailHtml(name) + '</p>' +
-      '<p><strong>Sähköposti:</strong> ' + escapeEmailHtml(email) + '</p>' +
-      '<p><strong>Viesti:</strong></p>' +
-      '<div style="white-space:pre-wrap;padding:14px 16px;border:1px solid #ddd;border-radius:12px;background:#fafafa">' +
-        escapeEmailHtml(message) +
-      '</div>' +
-      '<p style="margin-top:20px;color:#666;font-size:13px">Lähetetty Respondon etusivun yhteydenottolomakkeesta.</p>' +
-    '</div>';
+  const html = brandedEmailHtml({
+    language:'fi',
+    eyebrow:'Uusi yhteydenotto',
+    title:subject,
+    content:
+      '<p style="font-size:15px;line-height:1.7;color:#d6d8de"><strong>Nimi:</strong> ' + escapeEmailHtml(name) + '</p>' +
+      '<p style="font-size:15px;line-height:1.7;color:#d6d8de"><strong>Sähköposti:</strong> ' + escapeEmailHtml(email) + '</p>' +
+      '<p style="font-size:15px;line-height:1.7;color:#d6d8de">Viesti:</p>' +
+      '<div style="white-space:pre-wrap;padding:16px;border:1px solid #494c56;border-radius:12px;background-color:#242529;color:#f6f7fa">' + escapeEmailHtml(message) + '</div>' +
+      '<p style="margin-top:20px;color:#bfc3cc;font-size:13px">Lähetetty Respondon etusivun yhteydenottolomakkeesta.</p>'
+  });
 
   const response = await fetch('https://api.resend.com/emails', {
     method:'POST',
@@ -852,14 +852,16 @@ async function sendPasswordResetEmail({ email, token, language = 'fi' }) {
       ? 'If you did not request this, you can ignore this message.'
       : 'Jos et pyytänyt palautusta, voit jättää tämän viestin huomiotta.';
 
-  const html =
-    '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:28px;color:#111">' +
-      '<h2 style="margin:0 0 18px">Respondo AI</h2>' +
-      '<p>' + escapeEmailHtml(intro) + '</p>' +
-      '<p style="margin:26px 0"><a href="' + escapeEmailHtml(resetUrl) + '" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:13px 18px;border-radius:10px;font-weight:700">' + escapeEmailHtml(action) + '</a></p>' +
-      '<p style="color:#555">' + escapeEmailHtml(expiry) + '</p>' +
-      '<p style="color:#777;font-size:13px">' + escapeEmailHtml(ignore) + '</p>' +
-    '</div>';
+  const html = brandedEmailHtml({
+    language:lang,
+    eyebrow:lang==='sv'?'Kontosäkerhet':lang==='en'?'Account security':'Tilin turvallisuus',
+    title:subject,
+    content:
+      '<p style="margin:0 0 24px;font-size:16px;line-height:1.75;color:#d6d8de">' + escapeEmailHtml(intro) + '</p>' +
+      '<p style="margin:26px 0"><a href="' + escapeEmailHtml(resetUrl) + '" style="display:inline-block;background-color:#3b64ed;color:#fff;text-decoration:none;padding:14px 19px;border-radius:10px;font-weight:700">' + escapeEmailHtml(action) + '</a></p>' +
+      '<p style="color:#cfd2da;font-size:14px">' + escapeEmailHtml(expiry) + '</p>' +
+      '<p style="color:#bfc3cc;font-size:13px">' + escapeEmailHtml(ignore) + '</p>'
+  });
 
   const response = await fetch('https://api.resend.com/emails', {
     method:'POST',

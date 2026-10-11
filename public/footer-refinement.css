@@ -27,3 +27,9 @@
 #app .footer .legalbar {
   justify-content:flex-start;
 }
+
+/* Permanent Respondo AI brand line in the shared public footer. */
+#app .footer .foot-brand .logo { max-width:100%; align-items:center; }
+#app .footer .foot-brand .logo .brand-word { line-height:1.36; white-space:normal; }
+#app .footer .foot-brand .logo .brand-slogan { font-size:14px; font-weight:600; letter-spacing:0; white-space:normal; }
+@media (max-width:600px) { #app .footer .foot-brand .logo .brand-slogan { font-size:13px; } }
