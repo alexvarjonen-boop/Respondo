@@ -160,3 +160,39 @@ test('compound question cannot consult knowledge from another company',()=>{
   assert.equal(result.handoff,true);
   assert.deepEqual(result.sourceIds,[]);
 });
+
+test('a generic mechanic service does not prove compatibility with a named vehicle',()=>{
+  const rows=[service('Car battery replacement','Car battery replacement','battery')];
+  const q='Do you replace car batteries in a Tesla?';
+  const answer=ask(q,rows,'en');
+  assert.equal(answer.handoff,true);
+  assert.deepEqual(answer.sourceIds,[]);
+  assert.doesNotMatch(answer.answer,/^Yes/);
+});
+test('specific vehicle compatibility is supported only by explicit approved evidence',()=>{
+  const rows=[service('Tesla car battery replacement','Tesla car battery replacement','battery')];
+  const result=ask('Do you replace car batteries in a Tesla?',rows,'en');
+  assert.equal(result.handoff,false);
+  assert.deepEqual(result.sourceIds,['battery']);
+});
+test('a specialist brake service does not imply every manufacturer',()=>{
+  const generic=[service('Jarrupalojen vaihto','Jarrupalojen vaihto','brakes')];
+  assert.equal(ask('Do you replace brake pads for Toyota?',generic,'en').handoff,true);
+  const exact=[service('Toyota brake pad replacement','Toyota brake pad replacement','toyota')];
+  assert.equal(ask('Do you replace brake pads for Toyota?',exact,'en').handoff,false);
+});
+test('combined specialist questions verify named-vehicle work independently',()=>{
+  const facts=[
+    service('Tesla car battery replacement','Tesla car battery replacement','tesla'),
+    service('Jarrupalojen vaihto','Jarrupalojen vaihto','brakes'),
+  ];
+  const q='Do you replace car batteries for Tesla and brake pads?';
+  const result=askCompound(q,facts,'en');
+  assert.ok(result);
+  assert.equal(result.handoff,false);
+  assert.deepEqual(result.sourceIds,['tesla','brakes']);
+  const missing=askCompound(q,[facts[1]],'en');
+  assert.ok(missing);
+  assert.equal(missing.handoff,true);
+  assert.deepEqual(missing.sourceIds,['brakes']);
+});
