@@ -248,6 +248,9 @@
   let visitorRef = '';
   let livePollAfter = '';
   let livePollTimer = null;
+  let livePollBusy = false;
+  const renderedLiveMessageIds = new Set();
+  let originalBotProfile = null;
   const pageContext = {
     url: String(window.location.href || '').slice(0, 1000),
     title: String(document.title || '').slice(0, 300),
@@ -663,8 +666,31 @@
     $('.dot').style.background=accent;
   }
 
+  function updateLiveAgentProfile(agent) {
+    if (!originalBotProfile) originalBotProfile = {
+      name: name.textContent, avatar: mark.innerHTML,
+      launcherAvatar: launcherAvatar.innerHTML
+    };
+    const displayName = String(agent?.display_name || '').trim();
+    if (!displayName) {
+      name.textContent = originalBotProfile.name;
+      mark.innerHTML = originalBotProfile.avatar;
+      launcherAvatar.innerHTML = originalBotProfile.launcherAvatar;
+      return;
+    }
+    name.textContent = displayName;
+    const avatarUrl = String(agent?.avatar || '').trim();
+    const fallback = escapeHtml(Array.from(displayName)[0]?.toUpperCase() || '?');
+    const avatarMarkup = avatarUrl && /^(https:\/\/|data:image\/(?:png|jpeg|webp);base64,)/i.test(avatarUrl)
+      ? '<img src="' + escapeHtml(avatarUrl) + '" alt="">'
+      : '<span style="display:grid;place-items:center;width:100%;height:100%;background:#ededf0;color:#242429;font-weight:750;font-size:20px">' + fallback + '</span>';
+    mark.innerHTML = avatarMarkup;
+    launcherAvatar.innerHTML = avatarMarkup;
+  }
+
   async function pollLiveTakeover() {
-    if (!ready || !token || !visitorRef) return;
+    if (!ready || !token || !visitorRef || livePollBusy) return;
+    livePollBusy = true;
     try {
       const url = serviceOrigin + '/api/public/' + encodeURIComponent(company) +
         '/live?widgetToken=' + encodeURIComponent(token) +
@@ -673,26 +699,35 @@
       const res = await fetch(url,{ method:'GET',mode:'cors',credentials:'omit' });
       if (!res.ok) return;
       const data = await res.json().catch(() => ({}));
-
       if (data.mode === 'human') {
-        const agentName = String(data.agent?.display_name || '').trim();
-        status.textContent = agentName ? agentName + ' · ' + t('paikalla', 'online') : t('Asiakaspalvelija mukana', 'Human agent joined');
+        updateLiveAgentProfile(data.agent);
+        status.textContent = t('Asiakaspalvelija mukana', 'Human agent joined');
         status.classList.add('ready');
-      } else if (ready) {
-        status.textContent = t('Valmis auttamaan', 'Ready');
+      } else {
+        updateLiveAgentProfile(null);
+        if (ready) status.textContent = t('Valmis auttamaan', 'Ready');
       }
-
       const messages = Array.isArray(data.messages) ? data.messages : [];
       for (const item of messages) {
+        const id = String(item.id || '');
         const created = String(item.created_at || '');
+        const key = id || [created,item.agent_name,item.message].join('|');
+        if (renderedLiveMessageIds.has(key)) continue;
+        renderedLiveMessageIds.add(key);
         const agentName = String(item.agent_name || data.agent?.display_name || '').trim();
-        addMessage(
-          (agentName ? agentName + ': ' : t('Asiakaspalvelija: ', 'Support: ')) + String(item.message || ''),
-          'bot'
-        );
-        if (created) livePollAfter = created;
+        addMessage(String(item.message || ''), 'bot');
+        if (agentName) {
+          const bubble = chat.lastElementChild;
+          bubble.setAttribute('aria-label', agentName);
+          bubble.title = agentName;
+        }
+        if (created && (!livePollAfter || created > livePollAfter)) livePollAfter = created;
       }
-    } catch {}
+    } catch {
+      // A temporary network failure must not duplicate previously rendered messages.
+    } finally {
+      livePollBusy = false;
+    }
   }
 
   function startLivePolling() {
