@@ -29,9 +29,15 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
     assert.ok(html.includes('/verkkokauppa-chatbot?lang='+lang));
     assert.ok(html.includes('/kirjaudu?lang='+lang));
     assert.match(html,/aria-hidden="true" inert/);
+    assert.doesNotMatch(html,/apple-menu-language|apple-menu-lang-buttons|data-lang-button=/, 'language controls belong only in the header');
     assert.ok(!html.includes('↗'), 'fullscreen navigation should display labels without arrow icons');
   });
 }
+
+test('public header retains its language switch',()=>{
+  const nav=app.slice(app.indexOf('function nav()'),app.indexOf('\nfunction bindHomeHeroActions()',app.indexOf('function nav()')));
+  assert.match(nav,/\$\{languageSwitch\(\)\}/);
+});
 
 test('homepage remains compact while dedicated routes retain pricing and contact functionality',()=>{
   const start=app.indexOf('async function home()');
