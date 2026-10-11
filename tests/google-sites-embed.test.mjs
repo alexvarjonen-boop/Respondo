@@ -34,6 +34,7 @@ test('Google Sites dashboard generates and embeds a tenant-specific installation
   assert.match(app,/createGoogleSitesKey/);
   assert.match(app,/google_sites_install_key/);
   assert.match(app,/data-sites-key/);
+  assert.ok(app.includes("html=html.replace('></script>'"),'the key must be written inside the opening script tag');
   assert.match(widget,/googleSitesKey/);
   assert.match(widget,/sitesKey=/);
   assert.match(widget,/googleFrame=/);
