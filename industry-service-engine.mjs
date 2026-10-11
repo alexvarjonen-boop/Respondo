@@ -210,7 +210,8 @@ export function industryServiceAnswer(rows,message,lang='fi'){
   if(generic && genericSubjectTokens(message).length===0) return null;
   const positives=[],negatives=[];
   for(const row of (rows||[])){
-    if(!sourceQuality(row)) continue;
+    // Draft/rejected facts must never establish customer-facing services.
+    if(row?.approved===false || !sourceQuality(row)) continue;
     const clauses=splitEvidence(row);
     const title=norm(row.title||'');
     const faqQuestion=/\?$/.test(String(row.title||'').trim());
