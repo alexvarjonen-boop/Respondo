@@ -132,6 +132,9 @@ function splitEvidence(row){
 }
 function sourceQuality(row){
   const meta=norm(String(row.category||'')+' '+String(row.title||''));
+  // Retail product listings can describe a replacement part without proving
+  // that the merchant provides the corresponding installation service.
+  if(/^(?:tuotteet|products?|produkter|tuotekatalogi|product catalog|verkkokauppa|webshop)$/.test(norm(row.category||''))) return false;
   if(junk.test(meta)||junk.test(norm(row.answer).slice(0,200))) return false;
   if(!row.answer || String(row.answer).trim().length<3) return false;
   // The caller already filters approved, company-owned rows. Verify that this
@@ -387,7 +390,7 @@ export function canonicalProfessionalServiceQuestion(message,lang='fi'){
   const raw=String(message||'').trim();
   if(!raw || raw.length>220) return null;
   const q=norm(raw);
-  if(!PARAPHRASE_OPENERS[locale].test(q) ||
+  if(isServiceQuestion(q) || !PARAPHRASE_OPENERS[locale].test(q) ||
      stop.test(q) || PARAPHRASE_PRODUCT.test(q) ||
      PARAPHRASE_SPLIT.test(q) || /\d/.test(q) ||
      qualified(q).length>0) return null;
