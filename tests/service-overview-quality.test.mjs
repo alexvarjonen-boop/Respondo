@@ -85,3 +85,15 @@ test('language framing is localized without mixing the wrong company data',()=>{
   assert.match(en.answer,/^We offer services such as /);
   assert.match(sv.answer,/^Vi erbjuder bland annat /);
 });
+
+test('named unsupported services do not match an unrelated category-only row',async()=>{
+  const rows=[
+    row('Ikkunanpesu','/palvelut/ikkunanpesu/'),
+    row('Katonpesu','/palvelut/katonpesu/'),
+  ];
+  for(const question of ['Asennatteko latausasemia?', 'Korjaatteko auton pakoputkia?']){
+    const result=await generateGroundedAnswer({rows,message:question,lang:'fi'});
+    assert.equal(result.handoff,true,question+' '+JSON.stringify(result));
+    assert.doesNotMatch(result.answer||'',/ikkuna|katonpesu/i);
+  }
+});
