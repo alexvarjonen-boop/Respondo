@@ -87,9 +87,18 @@ const EXACT_SERVICE_QUALIFIER = /\b(?:agm|efb|start stop|hybrid\w*|sahkoaut\w*|e
 function exactServiceQualifiers(query) {
   return [...new Set(fold(query).match(EXACT_SERVICE_QUALIFIER) || [])];
 }
-function rowSupportsQualifiers(row, qualifiers) {
-  const evidence=fold(String(row?.title||'')+' '+String(row?.answer||''));
-  return qualifiers.every(term=>evidence.includes(term));
+function rowSupportsQualifiers(row, qualifiers, service) {
+  if(!qualifiers.length) return true;
+  // Brand, year and equipment detail must qualify the SPECIFIC procedure.
+  // A paragraph mentioning Tesla diagnostics separately from battery swaps
+  // is not proof of Tesla battery replacement.
+  return serviceClauses(row).some(clause=>
+    service.subject.test(clause) && actionEvidence(clause,service) &&
+    qualifiers.every(term=>{
+      if(!/\d/.test(term)) return clause.includes(term);
+      return (' '+clause+' ').includes(' '+term+' ');
+    })
+  );
 }
 
 
@@ -173,7 +182,7 @@ export function matchVerifiedSpecialistService({message, rows=[], history=[], la
   const positive=[], negative=[];
   const qualifiers=exactServiceQualifiers(q);
   for(const row of rows) {
-    if(!rowSupportsQualifiers(row,qualifiers)) continue;
+    if(!rowSupportsQualifiers(row,qualifiers,service)) continue;
     // A FAQ title is the customer's question, not evidence. Its answer must
     // explicitly approve or deny the named service before a yes/no is issued.
     const faq=explicitFaqEvidence(row,service);
