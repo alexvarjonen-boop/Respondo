@@ -11933,6 +11933,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       actions,
       products:await hydratedProductCards(result),
       canLeaveContact: Boolean(handoff),
+      language:detectedLang,
     });
   } catch (e) {
     console.error('Demo chat failed', e);
