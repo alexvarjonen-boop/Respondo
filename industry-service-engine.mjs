@@ -390,7 +390,7 @@ export function canonicalProfessionalServiceQuestion(message,lang='fi'){
   const raw=String(message||'').trim();
   if(!raw || raw.length>220) return null;
   const q=norm(raw);
-  if(isServiceQuestion(q) || !PARAPHRASE_OPENERS[locale].test(q) ||
+  if(!PARAPHRASE_OPENERS[locale].test(q) ||
      stop.test(q) || PARAPHRASE_PRODUCT.test(q) ||
      PARAPHRASE_SPLIT.test(q) || /\d/.test(q) ||
      qualified(q).length>0) return null;
