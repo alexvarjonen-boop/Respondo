@@ -1637,6 +1637,16 @@ function updateDocumentLanguageMeta(lang) {
       sv:['Bokningschatbot för företag | Respondo AI','En bokningschatbot svarar på kundfrågor, samlar bokningsförfrågningar och stödjer kalenderbaserade kundserviceflöden dygnet runt.'],
       en:['Booking Chatbot for Business | Respondo AI','A booking chatbot answers customer questions, captures booking requests and supports calendar-based customer-service workflows around the clock.'],
     },
+    '/hinnat': {
+      fi:['Hinnat | Respondo AI','Vertaile Starter-, Advanced- ja Business-tilauspaketteja. Kolmen päivän maksuton kokeilu kaikissa paketeissa.'],
+      sv:['Priser | Respondo AI','Jämför abonnemangen Starter, Advanced och Business. Alla paket har tre dagars gratis provperiod.'],
+      en:['Pricing | Respondo AI','Compare Starter, Advanced and Business plans. Every plan includes a three-day free trial.'],
+    },
+    '/yhteystiedot': {
+      fi:['Yhteystiedot | Respondo AI','Ota yhteyttä Respondo AI:hin. Asiakaspalvelu, verkkosivujen chatbotin käyttöönotto ja yritysten tarjouspyynnöt.'],
+      sv:['Kontakt | Respondo AI','Kontakta Respondo AI om kundservicebot för företag, funktioner, priser och att komma igång.'],
+      en:['Contact Respondo AI | Support and Sales','Contact Respondo AI about the business customer service chatbot, product information and getting started.'],
+    },
     '/tietoturva': {
       fi:['Tietoturva ja tietosuoja | Respondo AI','Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
       sv:['Datasäkerhet och integritet | Respondo AI','Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
@@ -1689,7 +1699,7 @@ function updateDocumentLanguageMeta(lang) {
     },
   };
 
-  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
+  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
   const baseMeta = metaByPath[metaPath] || metaByPath['/'];
   const pair = baseMeta[lang] || baseMeta.fi;
   const pageTitle = pair[0];
