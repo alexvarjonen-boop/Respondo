@@ -8047,8 +8047,8 @@ app.get('/robots.txt', (req,res) => {
     'User-agent: *',
     'Allow: /',
     'Disallow: /api/',
-    // Match only the private /app route, not public /app.js or /apple-*.css/js.
-    'Disallow: /app
+    // /app itself is noindex in the rendered HTML; keep static /app.js and /apple-* assets crawlable.
+    'Disallow: /app/',
     'Disallow: /kirjaudu',
     'Disallow: /tilaus',
     'Disallow: /maksu-valmis',
