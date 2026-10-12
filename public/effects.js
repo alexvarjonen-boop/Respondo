@@ -503,18 +503,34 @@
         const answer = String(data.answer || '').trim();
         if (!answer) throw new Error('Empty answer');
         typing.classList.remove('typing');
-        const featureLink = answer.match(/https:\/\/respondoai\.fi\/(?:ominaisuudet|funktioner|features)\b\/?/i);
-        if (featureLink && !onDemo) {
-          const copy = answer.replace(/(?:Katso kaikki ominaisuudet|Se alla funktioner|Explore all features)\s*:\s*/i, '').replace(featureLink[0], '').trim();
-          typing.textContent = copy;
+        // Only link to verified public Respondo routes, based on the user's question.
+        // Never turn an unrelated word inside the answer into a misleading CTA.
+        const q = clean.toLocaleLowerCase('fi').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        const routes = [
+          {test:/(?:ominaisu|toiminto|mit[aä] (?:kaikkea )?osaa|feature|capabilit|funktion|vad kan .*g[oö]ra)/i,path:'/ominaisuudet',labels:['Tutustu kaikkiin ominaisuuksiin','Utforska alla funktioner','Explore all features']},
+          {test:/(?:hinn|maksa|hintapaket|tilauspaket|pricing|prices?|cost|kostar|priser|prisplan)/i,path:'/hinnat',labels:['Katso hinnat ja paketit','Se priser och paket','View pricing and plans']},
+          {test:/(?:yhteytt[aä]|yhteystied|s[aä]hk[oö]post|contact|reach you|kontakt|kontakta)/i,path:'/yhteystiedot',labels:['Ota yhteyttä','Kontakta oss','Contact us']},
+          {test:/(?:asenn|asenta|upot|k[aä]ytt[oö][oö]not|install|embed|setup|integration|installation|installera)/i,path:'/asiakaspalvelubotti',labels:['Tutustu käyttöönottoon','Läs om hur det fungerar','See how it works']},
+          {test:/(?:ajanvarau|varaa (?:aika|ajan)|booking|appointment|tidsbokning|boka tid)/i,path:'/ajanvaraus-chatbot',labels:['Tutustu ajanvarausbottiin','Utforska bokningsbotten','Explore booking chatbot']},
+          {test:/(?:verkkokaup|tuotetie|product catalog|ecommerce|e-commerce|webshop|n[aä]tbutik)/i,path:'/verkkokauppa-chatbot',labels:['Tutustu verkkokauppabottiin','Utforska e-handelsbotten','Explore ecommerce chatbot']},
+          {test:/(?:tietoturv|turvallisu|security|datas[aä]kerhet|s[aä]kerhet)/i,path:'/tietoturva',labels:['Lue tietoturvasta','Läs om säkerhet','Read about security']},
+          {test:/(?:tietosuoj|henkil[oö]tiet|privacy|integritet|personuppgift)/i,path:'/tietosuoja',labels:['Lue tietosuojasta','Läs integritetspolicyn','Read privacy policy']},
+          {test:/(?:k[aä]ytt[oö]eh|sopimuseh|terms|villkor)/i,path:'/kayttoehdot',labels:['Lue käyttöehdot','Läs användarvillkoren','Read terms of service']},
+          {test:/(?:ev[aä]ste|cookies?|kakor)/i,path:'/evasteet',labels:['Lue evästeistä','Läs om cookies','Read cookie policy']},
+          {test:/(?:kokeil|trial|prova gratis|provperiod)/i,path:'/tilaus',labels:['Tutustu kokeiluun','Utforska provperioden','Explore free trial']},
+        ];
+        const matched = routes.find(route => route.test.test(q));
+        const explicit = answer.match(/https:\/\/respondoai\.fi\/(?:ominaisuudet|funktioner|features|hinnat|yhteystiedot|asiakaspalvelubotti|verkkokauppa-chatbot|ajanvaraus-chatbot|tietoturva|tietosuoja|kayttoehdot|evasteet|tilaus)\/?/i);
+        const selected = matched || (explicit ? routes.find(route => explicit[0].endsWith(route.path)) : null);
+        const cleanAnswer = explicit ? answer.replace(/(?:Katso kaikki ominaisuudet|Se alla funktioner|Explore all features)\s*:\s*/i,'').replace(explicit[0],'').trim() : answer;
+        typing.textContent = cleanAnswer;
+        if (selected && !onDemo) {
           const action = document.createElement('a');
-          action.href = featureLink[0];
-          action.textContent = at('Tutustu kaikkiin ominaisuuksiin', 'Utforska alla funktioner', 'Explore all features');
+          action.href = selected.path + (uiLang === 'fi' ? '' : '?lang=' + encodeURIComponent(uiLang));
+          action.textContent = selected.labels[uiLang === 'sv' ? 1 : uiLang === 'en' ? 2 : 0] + ' →';
           action.setAttribute('aria-label', action.textContent);
           action.style.cssText = 'display:flex;align-items:center;justify-content:center;max-width:100%;width:fit-content;min-height:43px;padding:11px 17px;margin-top:14px;border-radius:999px;background:linear-gradient(115deg,#8b70ff,#e46ab6);color:#fff;font-size:14px;font-weight:650;text-decoration:none;line-height:1.3;text-align:center;box-shadow:0 5px 18px rgba(141,105,238,.20)';
           typing.appendChild(action);
-        } else {
-          typing.textContent = answer;
         }
         siteAssistantHistory.push({question:clean,answer});
         if (siteAssistantHistory.length > 12) siteAssistantHistory.splice(0,siteAssistantHistory.length-12);
