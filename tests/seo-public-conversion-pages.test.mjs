@@ -38,3 +38,22 @@ test('www public pages redirect to apex while OAuth callback APIs keep their hos
   assert.match(server, /req\.path\.startsWith\('\/api\/'\)/);
   assert.match(server, /res\.redirect\(301, SEO_CANONICAL_ORIGIN \+ req\.originalUrl\)/);
 });
+
+test('industry landing pages stay discoverable and indexable in both renderers', () => {
+  const pagePaths = ['/autokorjaamo-chatbot', '/lvi-chatbot'];
+  const clientIndexable = client.match(/const indexable = new Set\(\[([^\]]+)\]\)/)?.[1] || '';
+  const serverIndexable = server.match(/const SEO_INDEXABLE_PATHS = new Set\(\[([\s\S]+?)\]\)/)?.[1] || '';
+  for (const path of pagePaths) {
+    assert.ok(clientIndexable.includes("'"+path+"'"), 'client noindex risk for ' + path);
+    assert.ok(serverIndexable.includes("'"+path+"'"), 'server noindex risk for ' + path);
+    assert.ok(server.includes("'"+path+"'"), 'no server route '+path);
+    assert.ok(client.includes("pages['"+path+"']"), 'missing browser page '+path);
+  }
+  assert.ok(server.includes("'"+pagePaths[0]+"', '"+pagePaths[1]+"'"), 'industry pages missing from sitemap');
+  assert.match(client, /href="\/autokorjaamo-chatbot\?lang=/);
+  assert.match(client, /href="\/lvi-chatbot\?lang=/);
+  assert.match(client, /Chatbot for Auto Repair Shops/);
+  assert.match(client, /Chatbot for Plumbing and HVAC Companies/);
+  assert.match(server, /<h1>Chatbot autokorjaamolle<\/h1>/);
+  assert.match(server, /<h1>Chatbot LVI-yritykselle<\/h1>/);
+});
