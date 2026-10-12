@@ -13614,6 +13614,7 @@ async function seedOwnerRespondoKnowledge() {
        JOIN tenants t ON t.owner_user_id=u.id
       WHERE lower(u.email)=lower($1)
       ORDER BY
+        CASE WHEN t.active=true AND t.subscription_status IN ('active','trialing') THEN 0 ELSE 1 END,
         CASE
           WHEN lower(COALESCE(t.slug,'')) IN ('respondo','respondoai') THEN 0
           WHEN lower(COALESCE(t.name,'')) IN ('respondo','respondo ai') THEN 1
