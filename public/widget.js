@@ -319,7 +319,7 @@
     const valid = (Array.isArray(actions) ? actions : [])
       .filter((x) => x?.label && (
         safeActionUrl(x?.url) ||
-        ['lead','quote_form','booking_form','order_form'].includes(x?.mode)
+        ['lead','contact_form','quote_form','booking_form','order_form'].includes(x?.mode)
       ))
       .slice(0, 4);
     if (!valid.length) return;
@@ -327,7 +327,7 @@
     wrap.className = 'actions';
 
     valid.forEach((action) => {
-      if (action.mode === 'lead') {
+      if (action.mode === 'lead' || action.mode === 'contact_form') {
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = action.label + ' →';
