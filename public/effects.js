@@ -503,7 +503,19 @@
         const answer = String(data.answer || '').trim();
         if (!answer) throw new Error('Empty answer');
         typing.classList.remove('typing');
-        typing.textContent = answer;
+        const featureLink = answer.match(/https:\/\/respondoai\.fi\/(?:ominaisuudet|funktioner|features)\b\/?/i);
+        if (featureLink && !onDemo) {
+          const copy = answer.replace(/(?:Katso kaikki ominaisuudet|Se alla funktioner|Explore all features)\s*:\s*/i, '').replace(featureLink[0], '').trim();
+          typing.textContent = copy;
+          const action = document.createElement('a');
+          action.href = featureLink[0];
+          action.textContent = at('Tutustu kaikkiin ominaisuuksiin', 'Utforska alla funktioner', 'Explore all features');
+          action.setAttribute('aria-label', action.textContent);
+          action.style.cssText = 'display:flex;align-items:center;justify-content:center;max-width:100%;width:fit-content;min-height:43px;padding:11px 17px;margin-top:14px;border-radius:999px;background:linear-gradient(115deg,#8b70ff,#e46ab6);color:#fff;font-size:14px;font-weight:650;text-decoration:none;line-height:1.3;text-align:center;box-shadow:0 5px 18px rgba(141,105,238,.20)';
+          typing.appendChild(action);
+        } else {
+          typing.textContent = answer;
+        }
         siteAssistantHistory.push({question:clean,answer});
         if (siteAssistantHistory.length > 12) siteAssistantHistory.splice(0,siteAssistantHistory.length-12);
       } catch (err) {
