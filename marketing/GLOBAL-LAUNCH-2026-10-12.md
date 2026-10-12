@@ -17,6 +17,10 @@
 - Ecommerce landing: https://respondoai.fi/verkkokauppa-chatbot?lang=en
 - Working demo: https://respondoai.fi/assistant?lang=en
 
+## International brand collision — important before paid expansion
+Public web research on 12 Oct 2026 found **https://www.respondoai.com/en/about**, a distinct Poland-based AI customer communication/receptionist service operating under the **RespondoAI** name. Also identified **https://respondo.ai/en** (a separate AI support platform) and **https://www.respondo.fi/** (a separate service). This is not a legal conclusion and no trademark register search was performed.
+**Do not assume Respondo AI is globally unique, claim exclusive global name rights, or invest in major international advertising or domain acquisitions before a qualified EU/international trademark and brand-confusion review.** Keep the Finnish company's own verified identity, .fi domain, and services explicit.
+
 ## One-paragraph directory listing (EN)
 Respondo AI is a Finnish web-based customer service bot for companies that receive recurring questions through their websites. Businesses can provide approved answers and website content so visitors can ask about services, products, prices, hours, deliveries and appointments. The platform supports contact and booking requests, employee handoff and Finnish, Swedish and English conversations. Paid business subscriptions are currently available only in Finland. Learn more and test the public demo at https://respondoai.fi/.
 
