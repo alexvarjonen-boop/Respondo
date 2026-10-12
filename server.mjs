@@ -8088,6 +8088,8 @@ app.get('/sitemap.xml', (req,res) => {
       );
     }
   }
+  // One English-language static tool page. Unlike SPA routes, do not invent translated URLs.
+  rows.push('  <url>\\n    <loc>' + escapeXml(SEO_CANONICAL_ORIGIN + '/tools/ai-chatbot-evaluation.html') + '</loc>\\n  </url>');
   const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
     rows.join('\n') + '\n</urlset>\n';

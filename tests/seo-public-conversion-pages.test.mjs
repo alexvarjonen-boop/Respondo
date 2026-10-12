@@ -178,3 +178,23 @@ test('English editorial RSS feed includes guide URLs and is discoverable', () =>
   }
   assert.match(shell, /href="\/guides\/feed\.xml"/);
 });
+
+test('public independent-use chatbot checklist is a real static, SEO-indexable tool linked from all guide languages',async()=>{
+ const resource=await import('../public/global-resources.mjs');
+ const html=readFileSync(new URL('../public/tools/ai-chatbot-evaluation.html',import.meta.url),'utf8');
+ assert.match(html,/<title>Free AI Chatbot Evaluation Scorecard/);
+ assert.match(html,/<link rel="canonical" href="https:\/\/respondoai.fi\/tools\/ai-chatbot-evaluation\.html"/);
+ assert.match(html,/fetch\('\/ai-chatbot-evaluation-scorecard.csv'/);
+ assert.match(html,/data-value/);
+ assert.match(html,/localStorage\.setItem/);
+ assert.match(html,/Export my results/);
+ assert.match(html,/not an independent certification/);
+ assert.match(server,/rows\.push\('  <url>\\n    <loc>' \+ escapeXml\(SEO_CANONICAL_ORIGIN \+ '\/tools\/ai-chatbot-evaluation\.html'\)/);
+ for(const lang of ['fi','sv','en']){
+  assert.match(resource.globalResourcesMarkup('/guides',lang),/\/tools\/ai-chatbot-evaluation\.html/);
+  assert.match(resource.globalResourcesMarkup('/guides/ai-customer-service-chatbot',lang),/\/tools\/ai-chatbot-evaluation\.html/);
+ }
+ assert.match(client,/scorecard-v1-interactive-v1/);
+ const shell=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+ assert.match(shell,/scorecard-v1-interactive-v1/);
+});
