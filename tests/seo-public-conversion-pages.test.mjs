@@ -50,8 +50,8 @@ test('industry landing pages stay discoverable and indexable in both renderers',
     assert.ok(client.includes("pages['"+path+"']"), 'missing browser page '+path);
   }
   assert.ok(server.includes("'"+pagePaths[0]+"', '"+pagePaths[1]+"'"), 'industry pages missing from sitemap');
-  assert.match(client, /href="\/autokorjaamo-chatbot\?lang=/);
-  assert.match(client, /href="\/lvi-chatbot\?lang=/);
+  assert.ok(client.includes("'/autokorjaamo-chatbot','01'"), 'auto repair is reachable from audience hub');
+  assert.ok(client.includes("'/lvi-chatbot','02'"), 'HVAC is reachable from audience hub');
   assert.match(client, /Chatbot for Auto Repair Shops/);
   assert.match(client, /Chatbot for Plumbing and HVAC Companies/);
   assert.match(server, /<h1>Chatbot autokorjaamolle<\/h1>/);
