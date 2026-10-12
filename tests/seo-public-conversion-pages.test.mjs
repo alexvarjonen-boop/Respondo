@@ -34,7 +34,7 @@ test('sitemap continues to expose pricing and contact for discovery', () => {
 });
 
 test('www public pages redirect to apex while OAuth callback APIs keep their host', () => {
-  assert.match(server, /inboundHost !== 'www\\.respondoai\\.fi'/);
-  assert.match(server, /req\\.path\\.startsWith\\('\/api\/'\)/);
-  assert.match(server, /res\\.redirect\\(301, SEO_CANONICAL_ORIGIN \+ req\\.originalUrl\)/);
+  assert.match(server, /inboundHost !== 'www\.respondoai\.fi'/);
+  assert.match(server, /req\.path\.startsWith\('\/api\/'\)/);
+  assert.match(server, /res\.redirect\(301, SEO_CANONICAL_ORIGIN \+ req\.originalUrl\)/);
 });
