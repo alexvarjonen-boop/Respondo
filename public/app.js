@@ -1,3 +1,4 @@
+import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261012-approved-arrow-desktop-v2';
@@ -1627,6 +1628,21 @@ function updateDocumentLanguageMeta(lang) {
       sv:["Vem passar Respondo AI för? | Branscher och användning","Respondo AI passar bilverkstäder, VVS-företag och webbutiker och hjälper till med kundservice och bokningsförfrågningar. Upptäck lösningarna."],
       en:["Who Is Respondo AI For? | Industries and Use Cases","Respondo AI supports auto repair shops, plumbing and HVAC companies, ecommerce stores, customer support and booking enquiries."],
     },
+    '/guides': {
+      fi:['AI-asiakaspalvelun oppaat | Respondo AI','Käytännön oppaita AI-asiakaspalveluboteista ja yrityksen verkkosivun tietopohjan rakentamisesta.'],
+      sv:['Guider till AI-kundservice | Respondo AI','Praktiska guider om AI-kundservice, webbplatsbotar och pålitliga kunskapsbaser.'],
+      en:['AI Customer Support Guides | Respondo AI','Practical guides to website AI chatbots, human handoff and reliable business knowledge.'],
+    },
+    '/guides/ai-customer-service-chatbot': {
+      fi:['Mikä on AI-asiakaspalvelubotti? | Opas yrityksille','Miten AI-asiakaspalvelubotti toimii? Opi käyttökohteet, tietopohjan merkitys ja ihmisen käsittelyyn siirtäminen.'],
+      sv:['Vad är en AI-kundservicebot? | Respondo AI','En guide till hur AI-kundservicebotar fungerar, deras användning och säker hantering av osäkra svar.'],
+      en:['What Is an AI Customer Service Chatbot? | Respondo AI','Understand AI customer service chatbots for small businesses, with real use cases, company data and human handoff.'],
+    },
+    '/guides/website-chatbot-knowledge-base': {
+      fi:['Chatbotin tietopohja – käytännön opas | Respondo AI','Näin rakennat verkkosivun AI-botille luotettavan tietopohjan ja testaat vastaukset ennen käyttöönottoa.'],
+      sv:['Bygg en kunskapsbas för en chatbot | Respondo AI','Praktisk checklista för en pålitlig kunskapsbas och en webbplatsbot som inte gissar.'],
+      en:['Website Chatbot Knowledge Base Guide | Respondo AI','Learn how to build a trustworthy website chatbot knowledge base with real customer questions, careful imports and clear escalations.'],
+    },
     '/asiakaspalvelubotti': {
       fi:['Asiakaspalvelubotti yritykselle | Respondo AI','Asiakaspalvelubotti yrityksen verkkosivuille: vastaukset 24/7 omilla yritystiedoillasi, liidit, ajanvaraus ja tarvittaessa siirto ihmiselle.'],
       sv:['Kundservicebot för företag | Respondo AI','Kundservicebot för företagets webbplats: svar dygnet runt med företagets egna uppgifter, leads, bokning och överlämning till människa.'],
@@ -1714,7 +1730,7 @@ function updateDocumentLanguageMeta(lang) {
     },
   };
 
-  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/kenelle-sopii', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
+  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
   const baseMeta = metaByPath[metaPath] || metaByPath['/'];
   const pair = baseMeta[lang] || baseMeta.fi;
   const pageTitle = pair[0];
@@ -1760,6 +1776,8 @@ function updateDocumentLanguageMeta(lang) {
   if (lang !== 'fi' && !['/features','/funktioner'].includes(canonicalPath)) canonical.searchParams.set('lang',lang);
   upsertLink('canonical',canonical.toString());
   upsertMeta('property','og:url',canonical.toString());
+  upsertMeta('property','og:image',canonicalOrigin+'/respondo-approved-arrow-20261012.png');
+  upsertMeta('name','twitter:image',canonicalOrigin+'/respondo-approved-arrow-20261012.png');
 
   document.head.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
   if (indexable.has(path)) {
@@ -2193,6 +2211,7 @@ function footer() {
           <h4>${appText('Tuote','Produkt','Product')}</h4>
           <a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a>
           <a href="/kenelle-sopii?lang=${currentLang()}">${appText('Kenelle Respondo AI sopii','Vem passar Respondo AI för?','Who is Respondo AI for?')}</a>
+          <a href="/guides?lang=${currentLang()}">${appText('Oppaat','Guider','Guides')}</a>
           <a href="/#pricing">${appText('Hinta','Pris','Pricing')}</a>
           <a href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
         </div>
@@ -4849,6 +4868,7 @@ async function route() {
   else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
   else if (['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot','/autokorjaamo-chatbot','/lvi-chatbot'].includes(path)) html = seoLandingPage(path);
   else if (path === '/kenelle-sopii') html = audienceHubPage();
+  else if (GLOBAL_GUIDE_PATHS.includes(path)) html = `<div class="global-guide-page">${nav()}${globalResourcesMarkup(path,currentLang())}${footer()}</div>`;
   else if (path === '/yhteystiedot') html = contactPage();
   else if (path === '/assistant') html = await dashboard({ demo:true });
   else if (path === '/tilaus') html = signup();

@@ -80,3 +80,30 @@ test('industry hub is a single footer link and has five crawlable destinations',
   assert.match(markup, /app\.js\?v=[^\"]+-audience-hub-route-v3/, 'stale mobile JS bundle can show 404 on newly added paths');
   assert.match(styles, /@media\(max-width:760px\)/);
 });
+
+test('global discovery guides share FI SV EN copy with server crawler fallbacks and published routes', async () => {
+  const data = await import('../public/global-resources.mjs');
+  const markup = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../public/global-resources.css', import.meta.url), 'utf8');
+  const paths=['/guides','/guides/ai-customer-service-chatbot','/guides/website-chatbot-knowledge-base'];
+  for (const path of paths) {
+    assert.ok(data.GLOBAL_GUIDE_PATHS.includes(path));
+    assert.ok(server.includes("'"+path+"'"), 'not discoverable in server');
+    assert.ok(client.includes("'"+path+"'") || client.includes('GLOBAL_GUIDE_PATHS.includes(path)'), 'not reachable in client');
+    for (const lang of ['fi','sv','en']) {
+      const html=data.globalResourcesMarkup(path,lang);
+      assert.ok(html.includes('<main'), 'missing main for '+path+' '+lang);
+      assert.ok(html.includes('<h1>'), 'missing heading for '+path+' '+lang);
+      assert.ok(html.length>650, 'thin content for '+path+' '+lang);
+      assert.ok(html.includes('/assistant') || html.includes('/guides/'), 'missing next action or related guide');
+    }
+  }
+  assert.match(server, /globalResourcesMarkup\(rawPath,seo.lang\)/);
+  assert.match(server, /<meta property="og:image"/);
+  assert.match(server, /respondo-approved-arrow-20261012.png/);
+  assert.match(server, /'@type':'Article'/);
+  assert.match(client, /\/guides\?lang=/);
+  assert.match(markup, /global-resources\.css/);
+  assert.match(markup, /app\.js\?v=[^"]+-audience-hub-route-v3-world-guides-v1/);
+  assert.match(css, /max-width:760px/);
+});

@@ -17,6 +17,7 @@ import dns from 'dns/promises';
 import net from 'net';
 import http from 'http';
 import https from 'https';
+import { GLOBAL_GUIDE_PATHS, globalGuideData, globalResourcesMarkup } from './public/global-resources.mjs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -57,6 +58,9 @@ const SEO_INDEXABLE_PATHS = new Set([
   '/',
   '/ominaisuudet',
   '/kenelle-sopii',
+  '/guides',
+  '/guides/ai-customer-service-chatbot',
+  '/guides/website-chatbot-knowledge-base',
   '/features',
   '/funktioner',
   '/asiakaspalvelubotti',
@@ -86,6 +90,9 @@ const SEO_META = {
     '/': ['Chatbot yritykselle – AI-asiakaspalvelu 24/7 | Respondo AI', 'Respondo AI vastaa verkkosivusi asiakkaiden kysymyksiin 24/7 yrityksesi tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta. Kokeile 3 päivää maksutta.'],
     '/ominaisuudet': ['AI-asiakaspalvelubotin ominaisuudet | Respondo AI', 'Tutustu Respondon ominaisuuksiin: verkkosivubotti, yrityksen oma tietopohja, yhteydenotot, ajanvaraus, keskustelut ja asiakaspalvelun hallinta yhdessä paikassa.'],
     '/kenelle-sopii': ['Kenelle Respondo AI sopii? | Toimialat ja käyttökohteet','Respondo AI sopii autokorjaamoille, LVI-yrityksille, verkkokaupoille sekä asiakaspalvelun ja ajanvarauksen tueksi. Tutustu ratkaisuihin.'],
+    '/guides': ['AI-asiakaspalvelun oppaat | Respondo AI','Käytännön oppaita AI-asiakaspalveluboteista ja yrityksen verkkosivun tietopohjan rakentamisesta.'],
+    '/guides/ai-customer-service-chatbot': ['Mikä on AI-asiakaspalvelubotti? | Opas yrityksille','Miten AI-asiakaspalvelubotti toimii? Opi käyttökohteet, tietopohjan merkitys ja ihmisen käsittelyyn siirtäminen.'],
+    '/guides/website-chatbot-knowledge-base': ['Chatbotin tietopohja – käytännön opas | Respondo AI','Näin rakennat verkkosivun AI-botille luotettavan tietopohjan ja testaat vastaukset ennen käyttöönottoa.'],
     '/asiakaspalvelubotti': ['Asiakaspalvelubotti verkkosivuille | Respondo AI', 'Asiakaspalvelubotti yrityksen verkkosivuille: vastaukset 24/7 omilla yritystiedoillasi, liidit, ajanvaraus ja tarvittaessa siirto ihmiselle.'],
     '/verkkokauppa-chatbot': ['Verkkokaupan chatbot – tuotteet ja asiakaspalvelu | Respondo AI', 'Verkkokaupan chatbot auttaa tuote-, hinta-, toimitus- ja palautuskysymyksissä sekä tukee Shopify- ja WooCommerce-asiakaspalvelua.'],
     '/ajanvaraus-chatbot': ['Ajanvaraus-chatbot yritykselle | Respondo AI', 'Ajanvaraus-chatbot vastaa asiakkaiden kysymyksiin, kerää ajanvarauspyyntöjä ja tukee kalenteripohjaisia asiakaspalveluprosesseja 24/7.'],
@@ -103,6 +110,9 @@ const SEO_META = {
     '/': ['AI-kundservicebot för företag | Respondo AI', 'Respondo AI svarar på webbplatsens kundfrågor dygnet runt med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar. Prova gratis i 3 dagar.'],
     '/ominaisuudet': ['Funktioner för AI-kundservicebot | Respondo AI', 'Se Respondos funktioner för kundservice, kunskapsbas, kontaktförfrågningar, bokningar och kunddialoger.'],
     '/kenelle-sopii': ['Vem passar Respondo AI för? | Branscher och användning','Respondo AI passar bilverkstäder, VVS-företag och webbutiker och hjälper till med kundservice och bokningsförfrågningar. Upptäck lösningarna.'],
+    '/guides': ['Guider till AI-kundservice | Respondo AI','Praktiska guider om AI-kundservice, webbplatsbotar och pålitliga kunskapsbaser.'],
+    '/guides/ai-customer-service-chatbot': ['Vad är en AI-kundservicebot? | Respondo AI','En guide till hur AI-kundservicebotar fungerar, deras användning och säker hantering av osäkra svar.'],
+    '/guides/website-chatbot-knowledge-base': ['Bygg en kunskapsbas för en chatbot | Respondo AI','Praktisk checklista för en pålitlig kunskapsbas och en webbplatsbot som inte gissar.'],
     '/asiakaspalvelubotti': ['Kundservicebot för företag | Respondo AI', 'Kundservicebot för företagets webbplats: svar dygnet runt med företagets egna uppgifter, leads, bokning och överlämning till människa.'],
     '/verkkokauppa-chatbot': ['Chatbot för webbutik | Respondo AI', 'En chatbot för webbutik hjälper med produkt-, pris-, leverans- och returfrågor samt stödjer Shopify- och WooCommerce-kundservice.'],
     '/ajanvaraus-chatbot': ['Bokningschatbot för företag | Respondo AI', 'En bokningschatbot svarar på kundfrågor, samlar bokningsförfrågningar och stödjer kalenderbaserade kundserviceflöden dygnet runt.'],
@@ -120,6 +130,9 @@ const SEO_META = {
     '/': ['AI Customer Service Bot for Businesses | Respondo AI', 'Respondo AI answers website customer questions 24/7 using company-approved information, captures contact requests and supports bookings. Try it free for 3 days.'],
     '/ominaisuudet': ['AI Customer Service Bot Features | Respondo AI', 'Explore Respondo features for customer service, your knowledge base, contact requests, bookings and customer conversations.'],
     '/kenelle-sopii': ['Who Is Respondo AI For? | Industries and Use Cases','Respondo AI supports auto repair shops, plumbing and HVAC companies, ecommerce stores, customer support and booking enquiries.'],
+    '/guides': ['AI Customer Support Guides | Respondo AI','Independent practical guides to website AI chatbots, customer service automation, human handoff and reliable business knowledge.'],
+    '/guides/ai-customer-service-chatbot': ['What Is an AI Customer Service Chatbot? | Respondo AI','Understand AI customer service chatbots for small businesses, with real use cases, company data and human handoff.'],
+    '/guides/website-chatbot-knowledge-base': ['Website Chatbot Knowledge Base Guide | Respondo AI','Learn how to build a trustworthy website chatbot knowledge base with real customer questions, careful imports and clear escalations.'],
     '/asiakaspalvelubotti': ['Customer Service Bot for Business | Respondo AI', 'A customer service bot for business websites: 24/7 answers from your approved company information, lead capture, bookings and human handoff.'],
     '/verkkokauppa-chatbot': ['Ecommerce Chatbot for Online Stores | Respondo AI', 'An ecommerce chatbot helps with product, price, delivery and return questions and supports Shopify and WooCommerce customer service.'],
     '/ajanvaraus-chatbot': ['Booking Chatbot for Business | Respondo AI', 'A booking chatbot answers customer questions, captures booking requests and supports calendar-based customer-service workflows around the clock.'],
@@ -213,7 +226,7 @@ function seoStructuredData(seo) {
       alternateName:'RESPONDO AI',
       url:SEO_CANONICAL_ORIGIN + '/',
       description:'B2B customer service software for websites with automated answers, knowledge-base management, lead capture, bookings and human takeover.',
-      logo:{ '@type':'ImageObject', url:SEO_CANONICAL_ORIGIN + '/favicon.svg' },
+      logo:{ '@type':'ImageObject', url:SEO_CANONICAL_ORIGIN + '/respondo-approved-arrow-20261012.png' },
       identifier:{ '@type':'PropertyValue', propertyID:'Business ID', value:'3599437-5' },
       contactPoint:{ '@type':'ContactPoint', contactType:'customer support', email:'info@respondoai.fi', availableLanguage:['fi','sv','en'] },
       knowsAbout:['AI customer service','customer service automation','website chatbot','business chatbot','lead capture','booking workflows','ecommerce customer service'],
@@ -274,6 +287,24 @@ function seoStructuredData(seo) {
     }
   ];
   try {
+    const path=new URL(seo.canonical).pathname;
+    const article=globalGuideData(path,seo.lang);
+    if(article) {
+      graph.push({
+        '@type':'Article',
+        '@id':seo.canonical + '#article',
+        headline:article.title,
+        description:article.subtitle,
+        inLanguage:seo.lang,
+        mainEntityOfPage:{ '@id':seo.canonical+'#webpage' },
+        author:{ '@id':SEO_CANONICAL_ORIGIN+'/#organization' },
+        publisher:{ '@id':SEO_CANONICAL_ORIGIN+'/#organization' },
+        articleSection:article.sections.map(([name])=>name),
+        isAccessibleForFree:true
+      });
+    }
+  } catch {}
+  try {
     const pagePath = new URL(seo.canonical).pathname;
     if (pagePath !== '/') {
       graph.push({
@@ -305,6 +336,7 @@ function seoNoScriptMarkup(seo, rawPath) {
     ].map(([href,labels])=>'<li><a href="'+href+'">'+labels[i]+'</a></li>').join('');
     return '<noscript><main><h1>'+heading+'</h1><p>'+lead+'</p><ul>'+links+'</ul></main></noscript>';
   }
+  if (GLOBAL_GUIDE_PATHS.includes(rawPath)) return '<noscript>' + globalResourcesMarkup(rawPath,seo.lang) + '</noscript>';
   const featurePage=['/ominaisuudet','/features','/funktioner'].includes(rawPath);
   if (featurePage) {
     if (seo.lang === 'sv') return '<noscript><main><h1>AI-kundservicebot för företag</h1><p>Respondo AI automatiserar kundservice på företagets webbplats med företagets egna godkända uppgifter.</p><ul><li>Kunskapsbas</li><li>Webbplatsimport</li><li>Kontakt- och offertförfrågningar</li><li>Bokningsstöd</li><li>Mänsklig övertagning</li></ul><p><a href="/tilaus">Prova gratis i 3 dagar</a></p></main></noscript>';
@@ -369,6 +401,9 @@ async function renderIndexHtml(req) {
     '<link rel="alternate" hreflang="en" href="' + escapeHtml(seo.alternates.en) + '" data-respondo-hreflang="1">',
     '<link rel="alternate" hreflang="x-default" href="' + escapeHtml(seo.alternates.fi) + '" data-respondo-hreflang="1">',
     '<meta property="og:url" content="' + escapeHtml(seo.canonical) + '">',
+    '<meta property="og:image" content="' + escapeHtml(SEO_CANONICAL_ORIGIN + '/respondo-approved-arrow-20261012.png') + '">',
+    '<meta property="og:image:alt" content="Respondo AI – upward white arrow on black">',
+    '<meta name="twitter:image" content="' + escapeHtml(SEO_CANONICAL_ORIGIN + '/respondo-approved-arrow-20261012.png') + '">',
     '<meta property="og:locale:alternate" content="sv_SE">',
     '<meta property="og:locale:alternate" content="en_GB">',
     '<script type="application/ld+json" id="respondo-seo-schema">' + seoStructuredData(seo) + '</script>',
@@ -8021,7 +8056,7 @@ app.get('/robots.txt', (req,res) => {
 
 app.get('/sitemap.xml', (req,res) => {
   // Do not claim that every URL was modified today on each sitemap request.
-  const basePaths = ['/', '/ominaisuudet', '/kenelle-sopii', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
+  const basePaths = ['/', '/ominaisuudet', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
   const escapeXml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
   const rows = [];
   for (const basePath of basePaths) {
