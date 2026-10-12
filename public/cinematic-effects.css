@@ -1,0 +1,18 @@
+/* Cinematic layer: progressive enhancement; decorative only. */
+#app .apple-home-page .apple-hero{isolation:isolate;overflow:hidden}
+#app .apple-home-page .apple-hero-inner{z-index:2}
+#app .apple-home-page .cinematic-glow{position:absolute;inset:-15%;z-index:0;pointer-events:none;opacity:.72;background:radial-gradient(circle 260px at var(--glow-x,50%) var(--glow-y,45%),rgba(70,125,255,.24),transparent 95%);transition:opacity .5s ease}
+#app .apple-home-page .cinematic-grid{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.19;background-image:linear-gradient(rgba(180,201,255,.13) 1px,transparent 1px),linear-gradient(90deg,rgba(180,201,255,.13) 1px,transparent 1px);background-size:70px 70px;mask-image:linear-gradient(to bottom,transparent 4%,#000 50%,transparent 100%);transform:perspective(800px) rotateX(52deg) scale(1.5);transform-origin:center 70%}
+#app .apple-home-page .cinematic-orbit{position:absolute;left:50%;top:73%;width:min(85vw,850px);aspect-ratio:1;border:1px solid rgba(130,170,255,.13);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%) rotate(var(--orbit-rotation,0deg));box-shadow:inset 0 0 65px rgba(35,105,255,.06)}
+#app .apple-home-page .cinematic-orbit:after{content:"";position:absolute;left:14%;top:14%;width:7px;height:7px;background:#9bbdff;border-radius:50%;box-shadow:0 0 23px 8px rgba(63,126,255,.35)}
+#app .apple-home-page .apple-hero h1{animation:cinematic-enter .85s cubic-bezier(.2,.9,.2,1) both}
+#app .apple-home-page .apple-hero-description{animation:cinematic-enter .95s .12s cubic-bezier(.2,.9,.2,1) both}
+#app .apple-home-page .apple-hero-actions{animation:cinematic-enter .95s .22s cubic-bezier(.2,.9,.2,1) both}
+#app .apple-home-page .apple-product-stage{animation:cinematic-enter 1.15s .25s cubic-bezier(.2,.9,.2,1) both}
+@keyframes cinematic-enter{from{opacity:0;transform:translateY(26px);filter:blur(7px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+#app .apple-home-page .cinematic-reveal{opacity:0;transform:translateY(32px);transition:opacity .85s ease,transform .85s cubic-bezier(.2,.9,.2,1)}
+#app .apple-home-page .cinematic-reveal.is-visible{opacity:1;transform:translateY(0)}
+#app .apple-home-page .apple-chat-preview{transition:transform .45s cubic-bezier(.2,.9,.2,1),box-shadow .4s ease!important;will-change:transform}
+@media(hover:hover) and (pointer:fine){#app .apple-home-page .apple-chat-preview:hover{transform:perspective(1100px) rotateX(0deg) translateY(-8px)!important;box-shadow:0 55px 130px rgba(0,0,0,.6),0 0 105px rgba(0,113,227,.24)!important}}
+@media(max-width:760px){#app .apple-home-page .cinematic-glow{opacity:.48}#app .apple-home-page .cinematic-grid{opacity:.11}#app .apple-home-page .cinematic-orbit{width:110vw;opacity:.45}#app .apple-home-page .apple-chat-preview{will-change:auto}}
+@media(prefers-reduced-motion:reduce){#app .apple-home-page :is(.apple-hero h1,.apple-hero-description,.apple-hero-actions,.apple-product-stage){animation:none!important}#app .apple-home-page .cinematic-reveal{opacity:1!important;transform:none!important;transition:none!important}#app .apple-home-page .cinematic-orbit{transform:translate(-50%,-50%)!important}#app .apple-home-page .apple-chat-preview{will-change:auto!important}}
