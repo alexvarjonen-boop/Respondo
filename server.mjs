@@ -7088,12 +7088,23 @@ function agentOrOwner(req,res,next) {
   next();
 }
 
-function ownerTrafficOnly(req, res, next) {
+async function ownerTrafficOnly(req, res, next) {
   const ownerEmail = cleanEmail(process.env.OWNER_EMAIL || process.env.SUPPORT_EMAIL);
-  if (!ownerEmail || cleanEmail(req.user?.email) !== ownerEmail) {
+  if (!ownerEmail || req.user?.role === 'agent' || !req.user?.sub) {
     return res.status(403).json({ error: 'Tämä näkymä on vain Respondo AI:n omistajalle.' });
   }
-  next();
+  try {
+    // Verify the account against the database instead of trusting a potentially
+    // stale email claim in an existing Google-login session cookie.
+    const result = await q('SELECT email,status FROM users WHERE id=$1 LIMIT 1', [req.user.sub]);
+    const account = result.rows[0];
+    if (!account || account.status !== 'active' || cleanEmail(account.email) !== ownerEmail) {
+      return res.status(403).json({ error: 'Tämä näkymä on vain Respondo AI:n omistajalle.' });
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 function trafficVisitorHash(req) {
