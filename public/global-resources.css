@@ -34,3 +34,5 @@
 #app .global-guide-footer-notice a{color:#2863c4}
 @media(max-width:760px){#app .global-guide-main{padding:44px 0 80px}#app .global-guide-hero{padding:35px 0 40px}#app .global-guide-grid{grid-template-columns:1fr}#app .global-guide-card{min-height:235px}#app .global-guide-section p{font-size:16px;line-height:1.82}#app .global-guide-prose{width:100%}}
 @media(prefers-reduced-motion:reduce){#app .global-guide-card{transition:none}#app .global-guide-card:hover{transform:none}}
+
+#app .global-guide-scorecard{display:block;margin:24px 0;padding:24px;border:1px solid #bed0eb;border-radius:16px;background:#f4f7fd;color:#17315d;text-decoration:none}#app .global-guide-scorecard-title{display:block;font-size:20px;font-weight:700}#app .global-guide-scorecard-subtitle{display:block;margin-top:8px;line-height:1.5;font-size:14px;color:#536a8b}
