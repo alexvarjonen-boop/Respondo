@@ -4605,6 +4605,51 @@ function verifiedTrackingRow(rows) {
   }) || null;
 }
 
+// Page links for the Respondo-owned marketing assistant. These are explicit
+// Respondo routes and must never be suggested for another business's widget.
+function respondoSitePageActions(message, lang='fi', faqId='') {
+  const language=['fi','sv','en'].includes(String(lang||'').toLowerCase())
+    ? String(lang).toLowerCase() : 'fi';
+  const q=normalizeSearchText(message);
+  const actions=[];
+  const relevant=(ids,pattern)=>ids.includes(faqId) || (!faqId && pattern.test(q));
+  const add=(path,type,fi,sv,en)=>{
+    const actualPath=path==='/ominaisuudet'
+      ? (language==='sv'?'/funktioner':language==='en'?'/features':path)
+      : path;
+    const url=new URL(actualPath,SEO_CANONICAL_ORIGIN);
+    if(language!=='fi' && path!=='/ominaisuudet') url.searchParams.set('lang',language);
+    actions.push({type,label:language==='sv'?sv:language==='en'?en:fi,url:url.href});
+  };
+  if(relevant(['respondo-faq-company-contact'],
+    /(?:ota|ottaa|ottamaan|voin|saanko|mista|miten|missa|where|how|reach|contact|kontakta|kontakt).*(?:yhtey|sahkopost|email|contact|reach|kontakt)|(?:yhteystiedot|contact us|contact page|kontaktsida)/)) {
+    add('/yhteystiedot','site_contact','Avaa yhteystiedot','Öppna kontaktsidan','Open contact page');
+  }
+  if(relevant(['respondo-faq-pricing','respondo-faq-monthly-pricing','respondo-faq-annual-pricing'],
+    /(?:hinnat|hinnoittelu|hinta|paljonko.*maks|price|pricing|cost|priser|prislista|kostar)/)) {
+    add('/hinnat','site_pricing','Katso hinnat','Se priser','View pricing');
+  }
+  if(relevant(['respondo-faq-features-overview','respondo-faq-benefits','respondo-faq-basic','respondo-faq-advanced','respondo-faq-business','respondo-faq-knowledge-base','respondo-faq-appearance'],
+    /(?:ominaisu|toiminno|toiminnalli|features|functionality|funktioner|egenskaper)/)) {
+    add('/ominaisuudet','site_features','Tutustu kaikkiin ominaisuuksiin','Se alla funktioner','Explore all features');
+  }
+  if(relevant(['respondo-faq-security'],
+    /(?:tietoturv|security|datasakerhet|datasäkerhet|secure)/)) {
+    add('/tietoturva','site_security','Tutustu tietoturvaan','Läs om datasäkerhet','Explore security');
+  }
+  if(relevant(['respondo-faq-trial','respondo-faq-buy'],
+    /(?:aloita|tilaa|osta|kokeile|free trial|start trial|subscribe|prova gratis|borja|börja)/)) {
+    add('/tilaus','site_signup','Aloita ilmainen kokeilu','Starta gratis provperiod','Start free trial');
+  }
+  if(!faqId && /(?:tietosuojaselost|privacy policy|integritetspolicy)/.test(q)) {
+    add('/tietosuoja','site_privacy','Lue tietosuojaseloste','Läs integritetspolicyn','Read privacy policy');
+  }
+  if(!faqId && /(?:kayttoehdo|terms of service|anvandarvillkor|användarvillkor)/.test(q)) {
+    add('/kayttoehdot','site_terms','Lue käyttöehdot','Läs användarvillkoren','Read terms of service');
+  }
+  return actions.slice(0,4);
+}
+
 function chatActions(rows, message, handoff = false, lang = 'fi', selected = []) {
   const actionLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const q = normalizeSearchText(message);
@@ -4657,7 +4702,7 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
     if (phone && requestedContact!=='email') push({ type:'contact',mode:'phone',label:actionLang==='en'?'Call us':actionLang==='sv'?'Ring oss':'Soita',url:'tel:'+phone.replace(/[^\d+]/g,'') });
     if (email && requestedContact!=='phone') push({ type:'contact',mode:'email',label:actionLang==='en'?'Send email':actionLang==='sv'?'Skicka e-post':'Lähetä sähköposti',url:'mailto:'+email });
     if (!contactPage && ((requestedContact==='phone'&&!phone) || (requestedContact==='email'&&!email) || (!requestedContact&&!phone&&!email))) {
-      push({ type:'contact',mode:'contact_form',label:actionLang==='en'?'Leave your contact details':actionLang==='sv'?'Lämna dina kontaktuppgifter':'Jätä yhteystiedot' });
+      push({ type:'contact',mode:'lead',label:actionLang==='en'?'Leave your contact details':actionLang==='sv'?'Lämna dina kontaktuppgifter':'Jätä yhteystiedot' });
     }
   }
 
@@ -12293,7 +12338,7 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
     const faqHistory=Array.isArray(body.history)?body.history.slice(-6):[];
     const directFaq=respondoProductFaqMatch(message,detectedFaqLang,faqHistory);
     if(directFaq){
-      return res.json({answer:sanitizeUserFacingText(directFaq.answer),handoff:false,confidence:1,intent:'Respondo FAQ',verified:true});
+      return res.json({answer:sanitizeUserFacingText(directFaq.answer),handoff:false,confidence:1,intent:'Respondo FAQ',verified:true,actions:respondoSitePageActions(message,detectedFaqLang,directFaq.id)});
     }
 
     const ownerEmail=cleanEmail(process.env.OWNER_EMAIL||process.env.SUPPORT_EMAIL);
@@ -12386,6 +12431,7 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
       confidence:Number(result.confidence||0),
       intent:result.intent||'',
       verified:!result.handoff && Array.isArray(result.sourceIds) && result.sourceIds.length>0,
+      actions:respondoSitePageActions(message,detectedLang,firstPartyFaq?.id),
     });
   } catch(e) {
     console.error('Respondo public assistant chat failed',e);
@@ -12528,13 +12574,18 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     if (!publicPlanAccess.allCurrentFeatures) {
       actions = actions.filter((action) => action?.type !== 'order_status');
     }
-    if (firstPartyFaq?.id === 'respondo-faq-buy') {
-      const signupUrl = new URL('/tilaus', BASE).href;
-      actions.unshift({
-        type:'signup',
-        label:responseLang==='en'?'Try for free':responseLang==='sv'?'Prova gratis':'Kokeile ilmaiseksi',
-        url:signupUrl,
-      });
+    if (firstPartyRespondo) {
+      const siteActions=respondoSitePageActions(message,responseLang,firstPartyFaq?.id);
+      if(siteActions.length) {
+        actions=[
+          ...siteActions,
+          ...actions.filter((action)=>
+            !siteActions.some((page)=>page.url===action.url) &&
+            !(siteActions.some((page)=>page.type==='site_contact') &&
+              ['lead','contact_form'].includes(action.mode))
+          ),
+        ].slice(0,4);
+      }
     }
     if (thread) {
       await appendChatMessage({
