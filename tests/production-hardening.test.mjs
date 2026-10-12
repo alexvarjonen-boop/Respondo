@@ -158,7 +158,7 @@ test('UI translation failure degrades gracefully and legacy icon requests do not
   assert.match(server, /\/favicon\.ico/);
   assert.match(server, /\/apple-touch-icon\.png/);
   assert.match(server, /\/apple-touch-icon-precomposed\.png/);
-  assert.match(server, /sendFile\(path\.join\(__dirname,'public','favicon\.svg'\)\)/);
+  assert.match(server, /sendFile\(path\.join\(__dirname,'public','respondo-approved-arrow-20261012\.png'\)\)/);
 });
 
 
