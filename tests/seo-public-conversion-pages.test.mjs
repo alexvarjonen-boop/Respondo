@@ -32,3 +32,9 @@ test('pricing and contact metadata exists in all three languages', () => {
 test('sitemap continues to expose pricing and contact for discovery', () => {
   assert.match(server, /basePaths = \[[^\n]*'\/hinnat'[^\n]*'\/yhteystiedot'/);
 });
+
+test('www public pages redirect to apex while OAuth callback APIs keep their host', () => {
+  assert.match(server, /inboundHost !== 'www\\.respondoai\\.fi'/);
+  assert.match(server, /req\\.path\\.startsWith\\('\/api\/'\)/);
+  assert.match(server, /res\\.redirect\\(301, SEO_CANONICAL_ORIGIN \+ req\\.originalUrl\)/);
+});
