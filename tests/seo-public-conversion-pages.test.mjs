@@ -150,3 +150,20 @@ test('multilingual support guide is indexed with localized content and internal 
   assert.match(server,/\.\.\.GLOBAL_GUIDE_PATHS/);
   assert.match(client,/world-guides-multi-v2/);
 });
+
+test('shareable 25-case support chatbot scorecard is linked from all guide languages', async () => {
+  const article=await import('../public/global-resources.mjs');
+  const csv=readFileSync(new URL('../public/ai-chatbot-evaluation-scorecard.csv', import.meta.url),'utf8');
+  const rows=csv.trim().split(/\r?\n/);
+  assert.equal(rows.length,26,'25 tests and one header');
+  assert.ok(csv.includes('CAT01')&&csv.includes('CAT25'));
+  assert.ok(csv.includes('Verified company source'));
+  assert.ok(csv.includes('Result (pass/fail/needs review)'));
+  for (const lang of ['fi','sv','en']) {
+    assert.ok(article.globalResourcesMarkup('/guides',lang).includes('/ai-chatbot-evaluation-scorecard.csv'));
+    assert.ok(article.globalResourcesMarkup('/guides/multilingual-customer-support-chatbot',lang).includes('/ai-chatbot-evaluation-scorecard.csv'));
+  }
+  const css=readFileSync(new URL('../public/global-resources.css', import.meta.url),'utf8');
+  assert.match(css,/global-guide-scorecard/);
+  assert.match(client,/world-guides-multi-v2-scorecard-v1/);
+});
