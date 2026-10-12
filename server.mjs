@@ -7455,6 +7455,16 @@ async function finishOauth(req, res, code, state) {
       return res.redirect('/app?section=automation&calendar=connected');
     }
 
+    if (statePayload.flow === 'password_setup') {
+      const session = jwt.verify(cookies(req)[COOKIE] || '', JWT);
+      if (!statePayload.userId || session.sub !== statePayload.userId) throw new Error('Account mismatch');
+      const rr = await q("SELECT id,email,status,session_version FROM users WHERE id=$1",[session.sub]);
+      if (!rr.rowCount || rr.rows[0].status !== 'active' || Number(rr.rows[0].session_version || 0) !== Number(session.sv || 0) || cleanEmail(rr.rows[0].email) !== profile.email) throw new Error('Google account mismatch');
+      const ticket = jwt.sign({purpose:'password_setup',sub:session.sub,sv:session.sv,nonce:crypto.randomBytes(16).toString('hex')},JWT,{expiresIn:'5m'});
+      res.cookie('respondo_password_setup',ticket,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'strict',maxAge:300000,path:'/api/app/account/password/google'});
+      return res.redirect('/aseta-salasana.html?verified=1');
+    }
+
     if (statePayload.flow === 'login') {
       const found = await q('SELECT * FROM users WHERE lower(email)=lower($1)', [profile.email]);
       if (!found.rowCount) return res.redirect('/kirjaudu?oauth_error=no_account&provider=google');
@@ -8667,7 +8677,7 @@ app.post('/api/app/google-calendar/disconnect', auth, ownerOnly, subscribed, asy
 
 app.get('/api/auth/oauth/:provider/start', (req, res) => {
   const provider = String(req.params.provider || '').toLowerCase();
-  const flow = req.query.flow === 'login' ? 'login' : 'signup';
+  const flow = provider === 'google' && req.query.flow === 'password_setup' ? 'password_setup' : (req.query.flow === 'login' ? 'login' : 'signup');
   if (!['google','apple'].includes(provider)) return res.status(404).end();
 
   // OAuth must begin on the working apex host. The external www service
@@ -8688,8 +8698,17 @@ app.get('/api/auth/oauth/:provider/start', (req, res) => {
     );
   }
 
+  let passwordSetupUser = null;
+  if (flow === 'password_setup') {
+    try {
+      const session = jwt.verify(cookies(req)[COOKIE] || '', JWT);
+      const rr = await q("SELECT id,email,status,session_version FROM users WHERE id=$1",[session.sub]);
+      if (!rr.rowCount || rr.rows[0].status !== 'active' || Number(rr.rows[0].session_version || 0) !== Number(session.sv || 0)) return res.redirect('/kirjaudu');
+      passwordSetupUser = rr.rows[0];
+    } catch { return res.redirect('/kirjaudu'); }
+  }
   const nonce = crypto.randomBytes(20).toString('hex');
-  const state = jwt.sign({ provider, flow, nonce }, JWT, { expiresIn: '10m' });
+  const state = jwt.sign({ provider, flow, nonce, ...(passwordSetupUser ? { userId:passwordSetupUser.id } : {}) }, JWT, { expiresIn: '10m' });
   setOauthState(res, nonce, provider);
 
   if (provider === 'apple') {
@@ -8713,7 +8732,7 @@ app.get('/api/auth/oauth/:provider/start', (req, res) => {
     response_type: 'code',
     scope: 'openid email profile',
     state,
-    prompt: 'select_account',
+    prompt: flow === 'password_setup' ? 'login' : 'select_account',
     include_granted_scopes: 'true',
   }).toString();
   return res.redirect(url.toString());
@@ -9530,6 +9549,22 @@ app.post('/api/app/account/email', auth, ownerOnly, loginLimiter, async (req,res
     console.error('Owner email change failed',e);
     return res.status(500).json({ error:'Kirjautumissähköpostia ei voitu vaihtaa.' });
   }
+});
+
+app.post('/api/app/account/password/google', auth, ownerOnly, loginLimiter, async (req,res) => {
+  res.set('Cache-Control','no-store');
+  try {
+    const ticket = jwt.verify(cookies(req).respondo_password_setup || '',JWT);
+    if(ticket.purpose !== 'password_setup' || ticket.sub !== req.user.sub || Number(ticket.sv) !== Number(req.user.sv)) return res.status(403).json({error:'Vahvistus on vanhentunut. Vahvista Google-tilisi uudelleen.'});
+    const newPassword = String(req.body?.newPassword || '');
+    if(newPassword.length < 10 || newPassword.length > 200) return res.status(400).json({error:'Salasanan pituuden tulee olla 10–200 merkkiä.'});
+    const hash = await bcrypt.hash(newPassword,12);
+    const updated = await q("UPDATE users SET password_hash=$1,session_version=session_version+1,updated_at=NOW() WHERE id=$2 AND session_version=$3 AND status='active' RETURNING id,email,session_version",[hash,req.user.sub,req.user.sv]);
+    if(!updated.rowCount) return res.status(409).json({error:'Istunto muuttui. Kirjaudu uudelleen.'});
+    res.clearCookie('respondo_password_setup',{path:'/api/app/account/password/google'});
+    setSession(res,updated.rows[0]);
+    return res.json({ok:true});
+  } catch { return res.status(403).json({error:'Google-vahvistus puuttuu tai on vanhentunut.'}); }
 });
 
 app.post('/api/app/account/password', auth, ownerOnly, loginLimiter, async (req,res) => {
