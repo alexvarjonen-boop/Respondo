@@ -189,7 +189,7 @@ test('public independent-use chatbot checklist is a real static, SEO-indexable t
  assert.match(html,/localStorage\.setItem/);
  assert.match(html,/Export my results/);
  const {Script}=await import('node:vm');
- const scripts=[...html.matchAll(/<script(?:\\s+[^>]*)?>([\\s\\S]*?)<\\/script>/g)];
+ const scripts=[...html.matchAll(/<script(?:\s+[^>]*)?>([\s\S]*?)<\/script>/g)];
  const script=scripts.at(-1)?.[1];
  assert.ok(script && script.includes('parseCSV'), 'interactive scorecard logic missing');
  assert.doesNotThrow(()=>new Script(script),'interactive browser JS must parse');
