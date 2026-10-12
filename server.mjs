@@ -8675,7 +8675,7 @@ app.post('/api/app/google-calendar/disconnect', auth, ownerOnly, subscribed, asy
   }
 });
 
-app.get('/api/auth/oauth/:provider/start', (req, res) => {
+app.get('/api/auth/oauth/:provider/start', async (req, res) => {
   const provider = String(req.params.provider || '').toLowerCase();
   const flow = provider === 'google' && req.query.flow === 'password_setup' ? 'password_setup' : (req.query.flow === 'login' ? 'login' : 'signup');
   if (!['google','apple'].includes(provider)) return res.status(404).end();
