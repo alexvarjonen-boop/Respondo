@@ -77,6 +77,6 @@ test('industry hub is a single footer link and has five crawlable destinations',
   assert.match(client, /Who is Respondo AI for\?/);
   assert.match(client, /Vem passar Respondo AI för/);
   assert.match(markup, /industry-directory\.css/);
-  assert.match(markup, /app\.js\?v=20261012-audience-hub-route-v2/, 'stale mobile JS bundle can show 404 on newly added paths');
+  assert.match(markup, /app\.js\?v=[^\"]+-audience-hub-route-v3/, 'stale mobile JS bundle can show 404 on newly added paths');
   assert.match(styles, /@media\(max-width:760px\)/);
 });
