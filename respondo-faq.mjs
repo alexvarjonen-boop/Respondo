@@ -1834,29 +1834,35 @@ function expandQuestions(questions, lang){
   const variants=[];
   const wrappers = lang === 'sv'
     ? [
-        '',
-        'Kan du berätta: ',
-        'Jag skulle vilja veta: ',
-        'Kan du förklara: ',
-        'Jag undrar: ',
-        'En fråga: ',
+        '', 'Kan du berätta: ', 'Jag skulle vilja veta: ', 'Kan du förklara: ',
+        'Jag undrar: ', 'En fråga: ', 'Hur funkar det här: ', 'Vet du: ',
+        'Kan jag fråga: ', 'Berätta lite om: ', 'Jag behöver hjälp med: ',
+        'Snabb fråga: ', 'Undrar bara: ', 'Kan ni svara på: ',
+        'Hur är det med: ', 'Jag vill veta: ', 'Hjälp mig förstå: ',
+        'Skulle ni kunna förklara: ', 'Vad gäller för: ', 'Kort fråga: ',
+        'Jag funderar på: ', 'Kan du hjälpa mig med: ',
+        'Får jag fråga: ', 'Kan du svara på: ',
       ]
     : lang === 'en'
       ? [
-          '',
-          'Can you tell me: ',
-          "I'd like to know: ",
-          'Can you explain: ',
-          "I'm wondering: ",
-          'Quick question: ',
+          '', 'Can you tell me: ', "I'd like to know: ", 'Can you explain: ',
+          "I'm wondering: ", 'Quick question: ', 'How does this work: ',
+          'Do you know: ', 'Can I ask: ', 'Tell me about: ',
+          'I need help with: ', 'Just wondering: ', 'Could you answer: ',
+          'What about: ', 'I want to know: ', 'Help me understand: ',
+          'Would you explain: ', 'How about: ', 'One question: ',
+          'I was wondering: ', 'Can you help me with: ',
+          'May I ask: ', 'Please explain: ', 'Please tell me: ',
         ]
       : [
-          '',
-          'Voitko kertoa: ',
-          'Haluaisin tietää: ',
-          'Voitko selittää: ',
-          'Mietin tätä: ',
-          'Nopea kysymys: ',
+          '', 'Voitko kertoa: ', 'Haluaisin tietää: ', 'Voitko selittää: ',
+          'Mietin tätä: ', 'Nopea kysymys: ', 'Miten tää toimii: ',
+          'Tiiätkö: ', 'Voinko kysyä: ', 'Kerro vähän: ',
+          'Tarviin apua tähän: ', 'Mietin vaan: ', 'Osaatko vastata: ',
+          'Entäs: ', 'Haluun tietää: ', 'Selitä mulle: ',
+          'Voisitteko selittää: ', 'Mites: ', 'Yks kysymys: ',
+          'Oon miettiny: ', 'Voitko auttaa tässä: ',
+          'Saanko kysyä: ', 'Kerroppa: ', 'Pystytkö kertomaan: ',
         ];
 
   for(const question of source){
@@ -1865,10 +1871,9 @@ function expandQuestions(questions, lang){
     }
   }
 
-  // Keep a predictable 12 variants per language/topic. With the curated
-  // two base questions this yields 2,700 high-signal FI/SV/EN rows while
-  // preserving the same verified answer for every paraphrase.
-  return [...new Set(variants)].slice(0,12);
+  // Expand verified questions with natural formal and colloquial introductions.
+  // The same curated factual answer is reused; no business facts are invented.
+  return [...new Set(variants)].slice(0,48);
 }
 
 export function buildRespondoFaqRows({supportEmail='',siteUrl=''}={}){
