@@ -61,6 +61,8 @@ const SEO_INDEXABLE_PATHS = new Set([
   '/asiakaspalvelubotti',
   '/verkkokauppa-chatbot',
   '/ajanvaraus-chatbot',
+  '/autokorjaamo-chatbot',
+  '/lvi-chatbot',
   '/hinnat',
   '/yhteystiedot',
   '/tietoturva',
@@ -85,6 +87,8 @@ const SEO_META = {
     '/asiakaspalvelubotti': ['Asiakaspalvelubotti verkkosivuille | Respondo AI', 'Asiakaspalvelubotti yrityksen verkkosivuille: vastaukset 24/7 omilla yritystiedoillasi, liidit, ajanvaraus ja tarvittaessa siirto ihmiselle.'],
     '/verkkokauppa-chatbot': ['Verkkokaupan chatbot – tuotteet ja asiakaspalvelu | Respondo AI', 'Verkkokaupan chatbot auttaa tuote-, hinta-, toimitus- ja palautuskysymyksissä sekä tukee Shopify- ja WooCommerce-asiakaspalvelua.'],
     '/ajanvaraus-chatbot': ['Ajanvaraus-chatbot yritykselle | Respondo AI', 'Ajanvaraus-chatbot vastaa asiakkaiden kysymyksiin, kerää ajanvarauspyyntöjä ja tukee kalenteripohjaisia asiakaspalveluprosesseja 24/7.'],
+    '/autokorjaamo-chatbot': ['Chatbot autokorjaamolle – huolto ja ajanvaraus | Respondo AI', 'Autokorjaamon chatbot vastaa huolto-, rengas- ja palvelukysymyksiin korjaamon omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.'],
+    '/lvi-chatbot': ['Chatbot LVI-yritykselle – putkityöt ja huolto | Respondo AI', 'LVI-yrityksen chatbot auttaa putki-, lämmitys- ja huoltopalvelujen kysymyksissä yrityksen hyväksymillä tiedoilla ja kerää yhteydenottopyyntöjä.'],
     '/hinnat': ["Hinnat | Respondo AI", "Vertaile Starter-, Advanced- ja Business-tilauspaketteja. Kolmen päivän maksuton kokeilu kaikissa paketeissa."],
     '/yhteystiedot': ['Yhteystiedot | Respondo AI', 'Ota yhteyttä Respondo AI:hin. Asiakaspalvelu, verkkosivujen chatbotin käyttöönotto ja yritysten tarjouspyynnöt.'],
     '/tietoturva': ['Tietoturva ja tietosuoja | Respondo AI', 'Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
@@ -99,6 +103,8 @@ const SEO_META = {
     '/asiakaspalvelubotti': ['Kundservicebot för företag | Respondo AI', 'Kundservicebot för företagets webbplats: svar dygnet runt med företagets egna uppgifter, leads, bokning och överlämning till människa.'],
     '/verkkokauppa-chatbot': ['Chatbot för webbutik | Respondo AI', 'En chatbot för webbutik hjälper med produkt-, pris-, leverans- och returfrågor samt stödjer Shopify- och WooCommerce-kundservice.'],
     '/ajanvaraus-chatbot': ['Bokningschatbot för företag | Respondo AI', 'En bokningschatbot svarar på kundfrågor, samlar bokningsförfrågningar och stödjer kalenderbaserade kundserviceflöden dygnet runt.'],
+    '/autokorjaamo-chatbot': ['Chatbot för bilverkstad | Respondo AI', 'Chatbot för bilverkstad besvarar frågor om service, däck och bokning med verkstadens egna godkända uppgifter och samlar kontaktförfrågningar.'],
+    '/lvi-chatbot': ['Chatbot för VVS-företag | Respondo AI', 'Chatbot för VVS-företag svarar på frågor om rör, värme och service med företagets egna godkända uppgifter.'],
     '/hinnat': ["Priser | Respondo AI", "Jämför abonnemangen Starter, Advanced och Business. Alla paket har tre dagars gratis provperiod."],
     '/yhteystiedot': ['Kontakt | Respondo AI', 'Kontakta Respondo AI om kundservicebot för företag, funktioner, priser och att komma igång.'],
     '/tietoturva': ['Datasäkerhet och integritet | Respondo AI', 'Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
@@ -113,6 +119,8 @@ const SEO_META = {
     '/asiakaspalvelubotti': ['Customer Service Bot for Business | Respondo AI', 'A customer service bot for business websites: 24/7 answers from your approved company information, lead capture, bookings and human handoff.'],
     '/verkkokauppa-chatbot': ['Ecommerce Chatbot for Online Stores | Respondo AI', 'An ecommerce chatbot helps with product, price, delivery and return questions and supports Shopify and WooCommerce customer service.'],
     '/ajanvaraus-chatbot': ['Booking Chatbot for Business | Respondo AI', 'A booking chatbot answers customer questions, captures booking requests and supports calendar-based customer-service workflows around the clock.'],
+    '/autokorjaamo-chatbot': ['Chatbot for Auto Repair Shops | Respondo AI', 'An auto repair chatbot answers questions about services, tyres and bookings using garage-approved information and captures customer contact requests.'],
+    '/lvi-chatbot': ['Chatbot for Plumbing and HVAC Companies | Respondo AI', 'A plumbing and HVAC chatbot answers service, heating and maintenance questions using company-approved information and captures enquiries.'],
     '/hinnat': ["Pricing | Respondo AI", "Compare Starter, Advanced and Business plans. Every plan includes a three-day free trial."],
     '/yhteystiedot': ['Contact Respondo AI | Support and Sales', 'Contact Respondo AI about the business customer service chatbot, product information and getting started.'],
     '/tietoturva': ['Security and Privacy | Respondo AI', 'See how Respondo protects company and customer data, sign-ins, integrations and service usage.'],
@@ -294,6 +302,16 @@ function seoNoScriptMarkup(seo, rawPath) {
     if (seo.lang === 'sv') return '<noscript><main><h1>Chatbot för webbutik</h1><p>Respondo AI kan använda webbutikens godkända information för att hjälpa kunder med produkter, priser, leveranser, returer och kontaktfrågor.</p><h2>Snabbare svar före köp</h2><p>Relevant produkt- och köpinformation kan visas i samma konversation utan att kunden behöver vänta på manuell kundservice.</p><p><a href="/funktioner">Se funktionerna</a> · <a href="/tilaus">Prova gratis i 3 dagar</a></p></main></noscript>';
     if (seo.lang === 'en') return '<noscript><main><h1>Ecommerce chatbot for online stores</h1><p>Respondo AI can use approved store information to help shoppers with products, prices, shipping, returns and contact questions.</p><h2>Faster answers before purchase</h2><p>Relevant product and purchase information can be surfaced in the same conversation without waiting for manual support.</p><p><a href="/features">See features</a> · <a href="/tilaus">Try free for 3 days</a></p></main></noscript>';
     return '<noscript><main><h1>Chatbot verkkokauppaan</h1><p>Respondo AI voi käyttää verkkokaupan hyväksyttyjä tietoja ja auttaa asiakkaita tuotteisiin, hintoihin, toimituksiin, palautuksiin ja yhteydenottoon liittyvissä kysymyksissä.</p><h2>Nopeammat vastaukset ennen ostoa</h2><p>Olennainen tuote- ja ostotieto voidaan näyttää samassa keskustelussa ilman manuaalisen asiakaspalvelun odottamista.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a> · <a href="/tilaus">Kokeile 3 päivää maksutta</a></p></main></noscript>';
+  }
+  if (rawPath === '/autokorjaamo-chatbot') {
+    if (seo.lang === 'sv') return '<noscript><main><h1>Chatbot för bilverkstad</h1><p>Respondo AI svarar på frågor om däckbyte, underhåll, bromsar, priser och bokningsförfrågningar med verkstadens egna godkända uppgifter.</p><h2>Servicefrågor och kontaktförfrågningar</h2><p>Botten hittar inte på priser eller lovar arbeten som verkstaden inte erbjuder. Vid behov kan kunden lämna kontaktuppgifter för uppföljning.</p><a href="/funktioner">Funktioner</a> · <a href="/tilaus">Prova gratis</a></main></noscript>';
+    if (seo.lang === 'en') return '<noscript><main><h1>Chatbot for auto repair shops</h1><p>Respondo AI answers tyre, servicing, brake, price and booking questions using garage-approved knowledge.</p><h2>From repair question to customer enquiry</h2><p>The bot does not invent prices or promise repairs the garage does not offer. Customers can leave their details for follow-up.</p><a href="/features">Features</a> · <a href="/tilaus">Start a trial</a></main></noscript>';
+    return '<noscript><main><h1>Chatbot autokorjaamolle</h1><p>Respondo AI vastaa autokorjaamon verkkosivulla rengastöitä, huoltoja, jarruja, hintoja ja ajanvarausta koskeviin kysymyksiin korjaamon omilla hyväksytyillä tiedoilla.</p><h2>Huoltokysymyksestä yhteydenotoksi</h2><p>Botti ei keksi hintoja tai lupaa korjauksia, joita yritys ei tee. Asiakas voi jättää yhteystiedot korjaamon jatkokäsittelyyn.</p><a href="/ominaisuudet">Ominaisuudet</a> · <a href="/tilaus">Aloita kokeilu</a></main></noscript>';
+  }
+  if (rawPath === '/lvi-chatbot') {
+    if (seo.lang === 'sv') return '<noscript><main><h1>Chatbot för VVS-företag</h1><p>Respondo AI besvarar frågor om rörarbeten, värmesystem, serviceområden, öppettider och kontakt med företagets egna godkända uppgifter.</p><h2>Kontaktförfrågningar utan gissningar</h2><p>Jour uppges bara om företaget har angett den. Frågor som kräver expertbedömning hänvisas vidare.</p><a href="/funktioner">Funktioner</a> · <a href="/tilaus">Prova gratis</a></main></noscript>';
+    if (seo.lang === 'en') return '<noscript><main><h1>Chatbot for plumbing and HVAC companies</h1><p>Respondo AI answers questions about plumbing, heating, service regions, opening hours and contacts using approved company information.</p><h2>Capture enquiries without guesswork</h2><p>Emergency services are mentioned only if confirmed by the business. Questions needing a specialist can be referred for follow-up.</p><a href="/features">Features</a> · <a href="/tilaus">Start a trial</a></main></noscript>';
+    return '<noscript><main><h1>Chatbot LVI-yritykselle</h1><p>Respondo AI vastaa putki-, lämmitys- ja huoltotöitä, toimialueita, aukioloaikoja ja yhteystietoja koskeviin kysymyksiin LVI-yrityksen omilla hyväksytyillä tiedoilla.</p><h2>Yhteydenotot ilman arvailua</h2><p>Kiireellisestä päivystyksestä kerrotaan vain, jos yritys on ilmoittanut siitä. Teknistä asiantuntijaa vaativa kysymys ohjataan jatkokäsittelyyn.</p><a href="/ominaisuudet">Ominaisuudet</a> · <a href="/tilaus">Aloita kokeilu</a></main></noscript>';
   }
   if (rawPath === '/ajanvaraus-chatbot') {
     if (seo.lang === 'sv') return '<noscript><main><h1>Bokningschatbot för företag</h1><p>Respondo AI kan hjälpa webbplatsbesökaren att gå från en fråga till en bokningsförfrågan och visa tillgängliga tider när företaget har konfigurerat dem.</p><h2>Från kundfråga till bokning</h2><p>Kunden kan först få svar och sedan fortsätta till bokning eller mänsklig kundservice när det behövs.</p><p><a href="/funktioner">Se funktionerna</a> · <a href="/tilaus">Prova gratis i 3 dagar</a></p></main></noscript>';
@@ -7985,7 +8003,7 @@ app.get('/robots.txt', (req,res) => {
 
 app.get('/sitemap.xml', (req,res) => {
   // Do not claim that every URL was modified today on each sitemap request.
-  const basePaths = ['/', '/ominaisuudet', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
+  const basePaths = ['/', '/ominaisuudet', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
   const escapeXml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
   const rows = [];
   for (const basePath of basePaths) {
