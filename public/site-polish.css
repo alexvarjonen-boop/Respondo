@@ -1,0 +1,38 @@
+/* Sitewide polish: restrained depth, precise controls, accessible motion.
+   Works across public pages and the authenticated workspace without changing layouts. */
+:root{--polish-ease:cubic-bezier(.22,1,.36,1);--polish-ring:rgba(90,100,235,.42)}
+html{scroll-padding-top:clamp(76px,9vw,104px)}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+#app :is(h1,h2,h3,p,li,button,a,label){overflow-wrap:break-word}
+#app :is(button,a,input,textarea,select,[role="button"]):focus-visible{
+  outline:3px solid var(--polish-ring);outline-offset:3px;
+}
+#app :is(button,a,[role="button"]){-webkit-tap-highlight-color:transparent}
+#app :is(button,[role="button"]):not(:disabled){transition:transform .25s var(--polish-ease),box-shadow .3s var(--polish-ease),background-color .2s ease}
+@media (hover:hover) and (pointer:fine){
+  #app :is(button,[role="button"]):not(:disabled):active{transform:scale(.985)}
+  #app :is(.feature-card,.pricing-card,.plan-card,.stat-card,.benefit-card,.faq-card):not(.no-polish-hover){
+    transition:transform .55s var(--polish-ease),box-shadow .55s var(--polish-ease),border-color .3s ease;
+  }
+  #app :is(.feature-card,.pricing-card,.plan-card,.benefit-card,.faq-card):not(.no-polish-hover):hover{
+    transform:translateY(-3px);
+    box-shadow:0 18px 48px rgba(20,25,45,.075);
+  }
+}
+#app :is(.feature-card,.pricing-card,.plan-card,.stat-card,.benefit-card,.faq-card){
+  min-width:0;
+}
+#app :is(input,textarea,select){max-width:100%}
+#app img,#app video{max-width:100%}
+#app :is(section,[id]){scroll-margin-top:clamp(76px,9vw,104px)}
+@media (max-width:700px){
+  #app :is(.feature-card,.pricing-card,.plan-card,.stat-card,.benefit-card,.faq-card){max-width:100%}
+  #app :is(button,[role="button"]){touch-action:manipulation}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto!important}
+  #app :is(button,a,[role="button"],.feature-card,.pricing-card,.plan-card,.stat-card,.benefit-card,.faq-card){
+    animation-duration:.01ms!important;transition-duration:.01ms!important;
+  }
+  #app :is(.feature-card,.pricing-card,.plan-card,.benefit-card,.faq-card):hover{transform:none!important}
+}
