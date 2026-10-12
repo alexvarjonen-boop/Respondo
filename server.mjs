@@ -8063,7 +8063,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 app.get(['/favicon.ico','/apple-touch-icon.png','/apple-touch-icon-precomposed.png'], (req,res) => {
   res.setHeader('Cache-Control','public, max-age=86400');
-  return res.sendFile(path.join(__dirname,'public','favicon.svg'));
+  return res.sendFile(path.join(__dirname,'public','respondo-approved-arrow-20261012.png'));
 });
 
 const i18nCache = new Map();

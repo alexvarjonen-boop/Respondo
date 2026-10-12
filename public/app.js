@@ -338,7 +338,7 @@ async function config() {
 
 function logo() {
   return `<a class="logo" href="/" aria-label="${esc(appText('RESPONDO AI etusivu','RESPONDO AI startsida','RESPONDO AI home'))}">
-    <span class="brand-mark" aria-hidden="true"><img src="/favicon.svg?v=20261008-ra-logo-v1" alt="" width="34" height="34" style="width:100%;height:100%;display:block;object-fit:contain"></span>
+    <span class="brand-mark" aria-hidden="true"><img src="/respondo-approved-arrow-20261012.png" alt="" width="34" height="34" style="width:100%;height:100%;display:block;object-fit:contain"></span>
     <span class="brand-word">RESPONDO AI</span>
   </a>`;
 }
