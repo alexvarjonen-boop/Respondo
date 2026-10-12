@@ -17,12 +17,24 @@ test('public footer displays the permanent brand line', () => {
   assert.match(css, /\.footer-brand-identity\s*\{[^}]*flex-direction:column/s);
 });
 
-test('all transactional languages include exact Respondo tagline', () => {
+test('transactional email header has no slogan and footer is localized', () => {
   assert.equal(RESPONDO_BRAND_LINE, brandLine);
+  const translations = {
+    fi:'RESPONDO AI - Älykkäämpää asiakaspalvelua',
+    sv:'RESPONDO AI - Smartare kundservice',
+    en:'RESPONDO AI - Smarter customer service',
+  };
   for (const language of ['fi', 'sv', 'en']) {
-    const html = brandedEmailHtml({ language, title:'Test', content:'<p>Test</p>' });
-    assert.ok(html.includes(brandLine), language);
-    assert.ok(html.includes('respondo-email-arrow-20261012-2fe95894.png'), language);
+    const html=brandedEmailHtml({ language, title:'Test', content:'<p>Test</p>' });
+    const header=html.split('<tr><td class="mail-header"')[1]?.split('<tr><td class="mail-main"')[0] || '';
+    const footer=html.split('<tr><td class="mail-footer"')[1] || '';
+    assert.match(header,/RESPONDO AI/);
+    assert.ok(!/Älykkäämpää asiakaspalvelua|Smartare kundservice|Smarter customer service/.test(header),language+' header');
+    assert.ok(footer.includes(translations[language]),language+' footer');
+    for(const [locale,line] of Object.entries(translations)){
+      if(locale!==language) assert.ok(!footer.includes(line),language+' footer should not include '+locale);
+    }
+    assert.ok(html.includes('respondo-email-arrow-20261012-2fe95894.png'),language);
   }
 });
 

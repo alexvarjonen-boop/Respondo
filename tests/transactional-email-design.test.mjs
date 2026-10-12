@@ -23,9 +23,11 @@ test('transactional email shell localizes and escapes headings',()=>{
   assert.match(en,/<html lang="en"/);
   assert.match(en,/Hello &lt;World&gt; &amp; team/);
   assert.match(en,/This is an automated service message/);
+  assert.match(en,/RESPONDO AI - Smarter customer service/);
   const sv=brandedEmailHtml({language:'sv',title:'Välkommen'});
   assert.match(sv,/<html lang="sv"/);
   assert.match(sv,/Detta är ett automatiskt servicemeddelande/);
+  assert.match(sv,/RESPONDO AI - Smartare kundservice/);
 });
 test('both live signup emails use the same email shell',()=>{
   assert.match(server,/import \{ brandedEmailHtml \} from '\.\/email-branding\.mjs'/);
