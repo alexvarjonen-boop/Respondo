@@ -167,3 +167,14 @@ test('shareable 25-case support chatbot scorecard is linked from all guide langu
   assert.match(css,/global-guide-scorecard/);
   assert.match(client,/world-guides-multi-v2-scorecard-v1/);
 });
+
+test('English editorial RSS feed includes guide URLs and is discoverable', () => {
+  const feed=readFileSync(new URL('../public/guides/feed.xml', import.meta.url),'utf8');
+  const shell=readFileSync(new URL('../public/index.html', import.meta.url),'utf8');
+  assert.match(feed, /<rss version="2\\.0"/);
+  assert.match(feed, /<language>en<\\/language>/);
+  for (const path of ['/guides/ai-customer-service-chatbot','/guides/website-chatbot-knowledge-base','/guides/multilingual-customer-support-chatbot']) {
+    assert.ok(feed.includes(path), 'missing editorial RSS entry: '+path);
+  }
+  assert.match(shell, /href="\\/guides\\/feed\\.xml"/);
+});
