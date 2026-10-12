@@ -22,7 +22,7 @@ test('all transactional languages include exact Respondo tagline', () => {
   for (const language of ['fi', 'sv', 'en']) {
     const html = brandedEmailHtml({ language, title:'Test', content:'<p>Test</p>' });
     assert.ok(html.includes(brandLine), language);
-    assert.ok(html.includes('respondo-email-logo.png'), language);
+    assert.ok(html.includes('respondo-email-arrow-20261012-2fe95894.png'), language);
   }
 });
 
