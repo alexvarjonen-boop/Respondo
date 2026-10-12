@@ -90,7 +90,166 @@ const guides = {
         ['What if my business data cannot answer a question?','The chatbot should acknowledge uncertainty, request clarification, or refer the customer to a person instead of fabricating an answer.'],
         ['How often should a chatbot knowledge base be updated?','Whenever services, prices, hours, policies or contact details change, with regular checks based on real customer conversations.']
       ]}
+  },
+  '/guides/multilingual-customer-support-chatbot': {
+  "reading": "7",
+  "fi": {
+    "title": "Monikielinen asiakaspalvelubotti: 8 käytännön testiä",
+    "subtitle": "Testaa suomen-, ruotsin- ja englanninkielistä verkkosivubottia oikeilla asiakaskysymyksillä ennen käyttöönottoa.",
+    "sections": [
+      [
+        "1. Kysymyksen kieli vastaan sivuston kieli",
+        "Jätä verkkosivu suomeksi ja kirjoita asiakkaan kysymys ruotsiksi tai englanniksi. Botin pitää käsitellä asiakkaan todellinen kysymys, ei vain kopioida suomenkielistä vakiovastausta. Tarkista erikseen valikoiden kieli, viestin tunnistettu kieli ja lopullisen vastauksen kieli."
+      ],
+      [
+        "2. Sama palvelu kolmella kielellä",
+        "Kysy autokorjaamolta ”Vaihdatteko jarrupalat?”, ”Byter ni bromsbelägg?” ja ”Do you replace brake pads?”. Vastauksen sisältö pitää pysyä samana. Jos korjaamo ei ole vahvistanut palvelua, botti ei saa keksiä myöntävää vastausta millään kielellä."
+      ],
+      [
+        "3. Yksi luotettava tietopohja",
+        "Palvelut, hinnat ja aukioloajat eivät saa muuttua käännöksessä. Jos yritys ilmoittaa renkaanvaihdon hinnaksi 40 euroa, ruotsinkielisessä vastauksessa tulee olla sama hinta. Pelkkä rengaspalvelu ei myöskään tarkoita, että korjaamo tarjoaa rengashotellia."
+      ],
+      [
+        "4. Jatkokysymykset ja kielenvaihto",
+        "Kysy ”Paljonko huolto maksaa?” ja jatka ”And how long does it take?”. Botin pitäisi säilyttää palvelun asiayhteys, mutta työn kestoa ei saa arvata, ellei yritys ole antanut sitä. Testaa myös lyhyet kysymykset ”Entä huomenna?” ja ”What about Friday?”."
+      ],
+      [
+        "5. Verkkokaupan maakohtaiset ehdot",
+        "Kysy toimituskulut Suomeen ja sitten Ruotsiin. Kotimaan maksuton toimitus ei tarkoita automaattisesti maksutonta toimitusta ulkomaille. Testaa palautusajat, toimitusrajoitukset ja tilausten kyselyt niin, ettei asiakas saa toisen henkilön tilaustietoja."
+      ],
+      [
+        "6. Kirjoitusvirheet ja lyhenteet",
+        "Kokeile muotoja ”paljo maksaa”, ”byt däck?” ja ”can u book huolto?”. Botin kannattaa tunnistaa yleiset sanamuodot tai pyytää tarkennusta. Virheellinen varma hintatieto on pahempi kuin yksi selventävä kysymys."
+      ],
+      [
+        "7. Ihmiselle siirto ja yritysten eristäminen",
+        "Kun vahvistettua vastausta ei löydy, botti voi kerätä yhteydenottopyynnön ja siirtää asian ammattilaiselle. Tarkista lisäksi, ettei kahden eri yrityksen tuotteita, hintoja tai yhteystietoja sekoiteta toisiinsa edes vanhan keskustelun jatkokysymyksissä."
+      ],
+      [
+        "8. Tee vertailutaulukko",
+        "Kirjaa jokaiselle testille kieli, kysymys, yrityksen vahvistettu tieto, odotettu tulos, botin vastaus ja arvio: oikein, vaatii tarkennusta tai virheellinen. Korjaa ensin keksityt hinnat, väärät palvelut, toimimattomat linkit ja epäonnistuneet ihmiselle siirrot. Testaa uudelleen ennen julkaisua."
+      ]
+    ],
+    "faq": [
+      [
+        "Pitääkö vastaukset kirjoittaa kaikilla kielillä?",
+        "Ei aina. Yrityksen yksi hyväksytty tietopohja voi toimia usean kielen pohjana, mutta käännökset ja ammattisanasto pitää testata."
+      ],
+      [
+        "Voiko botti vastata ruotsiksi suomenkielisellä sivulla?",
+        "Se riippuu käytetyn tuotteen kielentunnistuksesta ja asetuksista. Testaa juuri tämä tilanne ennen käyttöönottoa."
+      ],
+      [
+        "Voiko Respondoa ostaa ulkomailla?",
+        "Respondo AI:n maksulliset yritystilaukset ovat tällä hetkellä saatavilla vain suomalaisille yrityksille."
+      ]
+    ]
+  },
+  "sv": {
+    "title": "Flerspråkig kundservicebot: 8 praktiska tester",
+    "subtitle": "Så testar du en webbplatsbot på finska, svenska och engelska med riktiga kundfrågor före lansering.",
+    "sections": [
+      [
+        "1. Frågans språk och webbplatsens språk",
+        "Låt webbplatsen vara på finska men ställ en fråga på svenska eller engelska. Botten ska förstå kundens fråga i stället för att återge ett finskt standardsvar. Kontrollera gränssnitt, språkidentifiering och svar separat."
+      ],
+      [
+        "2. Samma tjänst på tre språk",
+        "Fråga ”Vaihdatteko jarrupalat?”, ”Byter ni bromsbelägg?” och ”Do you replace brake pads?”. Innehållet bör vara likvärdigt. Om verkstaden inte har bekräftat tjänsten får botten inte hitta på ett positivt svar på något språk."
+      ],
+      [
+        "3. En tillförlitlig kunskapsbas",
+        "Tjänster, priser och öppettider får inte ändras genom översättningen. Om företaget anger ett pris för däckbyte ska samma pris gälla på svenska och engelska. Däckservice innebär inte automatiskt däckhotell."
+      ],
+      [
+        "4. Följdfrågor och språkbyte",
+        "Fråga först ”Vad kostar servicen?” och därefter ”And how long does it take?”. Botten bör minnas vilken tjänst som avses men får inte gissa hur lång tid arbetet tar. Testa även korta frågor om lediga tider utan en verifierad kalender."
+      ],
+      [
+        "5. Leveransvillkor för olika länder",
+        "Fråga om frakt till Finland och sedan till Sverige. Gratis inrikesleverans innebär inte nödvändigtvis gratis frakt utomlands. Kontrollera även returtider, leveransvillkor och att ingen annan kunds orderuppgifter visas."
+      ],
+      [
+        "6. Stavfel och förkortningar",
+        "Använd exempel som ”byt däck?”, ”paljo maksaa” och ”can u book huolto?”. Botten bör tolka vardagligt språk eller be om förtydligande. Ett klart besked om osäkerhet är bättre än ett påhittat pris."
+      ],
+      [
+        "7. Överlämning och företagsisolering",
+        "Om svaret saknas ska kunden kunna lämna en förfrågan eller få mänsklig hjälp. Testa också att två olika företags produkter och kontaktuppgifter aldrig blandas ihop, inte ens i följdfrågor."
+      ],
+      [
+        "8. Bedöm svaren systematiskt",
+        "Skriv upp språk, fråga, bekräftat underlag, förväntat svar, faktiskt svar och bedömning. Prioritera felaktiga tjänstelöften, prisuppgifter, länkar och misslyckad överlämning. Testa sedan på nytt."
+      ]
+    ],
+    "faq": [
+      [
+        "Måste alla svar skrivas på varje språk?",
+        "Inte alltid. En gemensam godkänd kunskapsbas kan användas, men företagets termer och priser måste kontrolleras."
+      ],
+      [
+        "Kan botten svara på svenska på en finsk webbplats?",
+        "Det beror på produktens språkidentifiering och inställningar. Testa detta uttryckligen."
+      ],
+      [
+        "Kan utländska företag köpa Respondo?",
+        "Betalda företagsabonnemang är för närvarande bara tillgängliga för finska företag."
+      ]
+    ]
+  },
+  "en": {
+    "title": "Multilingual Customer Support Chatbot: 8 Practical Tests",
+    "subtitle": "A hands-on evaluation guide to English, Finnish and Swedish website chatbots: grounded answers, context, safe handoff and data isolation.",
+    "sections": [
+      [
+        "1. Question language versus website language",
+        "Leave the website interface in Finnish, then ask a question in English or Swedish. A multilingual assistant should address the actual question rather than repeating a canned Finnish answer. Evaluate language detection, the displayed interface and the final response separately."
+      ],
+      [
+        "2. Ask the same service question three ways",
+        "Try “Vaihdatteko jarrupalat?”, “Byter ni bromsbelägg?” and “Do you replace brake pads?”. If the auto shop offers that service, the factual answer should agree across all three languages. If the service is unconfirmed, the bot should admit uncertainty instead of inventing a yes."
+      ],
+      [
+        "3. Keep one approved source of truth",
+        "Prices, opening hours and service boundaries must survive translation. If the business supplies a tyre-change price, its Swedish and English responses must preserve the amount and conditions. Offering tyre replacement does not prove that the garage also offers tyre storage."
+      ],
+      [
+        "4. Preserve context across follow-up questions",
+        "Ask “How much is a service?” followed by “Entä kauanko se kestää?”. The bot should understand the same service is being discussed, but must not invent its duration when only the price is documented. Try short availability follow-ups without connecting a real calendar."
+      ],
+      [
+        "5. Test country-specific ecommerce policies",
+        "Ask an online store for shipping to Finland and then to Sweden. Free domestic shipping does not imply free international shipping. Check delivery restrictions and returns, and ensure a visitor never sees another customer's order or tracking details."
+      ],
+      [
+        "6. Include typos, abbreviations and mixed languages",
+        "Real customers write “can u book huolto?”, “byt däck?” or “paljo maksaa”. A useful bot can understand common wording or request clarification. A confident but unsupported price or appointment is worse than asking one sensible follow-up."
+      ],
+      [
+        "7. Validate handoff and customer-data separation",
+        "Ask for an unlisted repair price and check that the bot offers a contact request or a human rather than guessing. For multi-business platforms, run similar questions for two different companies; neither a new chat nor an older follow-up may expose the other company's products or contact details."
+      ],
+      [
+        "8. Build a repeatable scorecard",
+        "Record the question, language, approved source fact, expected answer, actual response and one outcome: correct, clarification needed or incorrect. Fix invented prices, unsupported services, broken links and failed human handoffs first. Rerun the cases after each significant knowledge-base update."
+      ]
+    ],
+    "faq": [
+      [
+        "Does every answer need to be translated in advance?",
+        "Not always. An approved knowledge base can support several languages, but business terminology, conditions and prices must be tested."
+      ],
+      [
+        "Can it answer in English on a Finnish website?",
+        "That depends on the product's language detection and configuration. Make this a deliberate test case."
+      ],
+      [
+        "Can businesses outside Finland buy Respondo AI?",
+        "Respondo AI's paid business subscriptions are currently available only to Finnish companies."
+      ]
+    ]
   }
+}
 };
 export const GLOBAL_GUIDE_PATHS = ['/guides', ...Object.keys(guides)];
 export function globalGuideData(path,lang='fi') {

@@ -132,3 +132,21 @@ test('robots.txt leaves browser assets crawlable and workspace itself remains no
   }
   assert.ok(server.includes("SEO_APP_PATHS.has(rawPath)"), 'private workspace has noindex at response');
 });
+
+test('multilingual support guide is indexed with localized content and internal links', async () => {
+  const data=await import('../public/global-resources.mjs');
+  const route='/guides/multilingual-customer-support-chatbot';
+  assert.ok(data.GLOBAL_GUIDE_PATHS.includes(route));
+  const indexable=server.match(/const SEO_INDEXABLE_PATHS = new Set\(\[([\s\S]+?)\]\)/)?.[1]||'';
+  assert.ok(indexable.includes("'"+route+"'"));
+  for (const lang of ['fi','sv','en']) {
+    const article=data.globalGuideData(route,lang);
+    assert.ok(article.sections.length>=8);
+    const markup=data.globalResourcesMarkup(route,lang);
+    assert.ok(markup.length>2000,'thin localized article: '+lang);
+    assert.ok(markup.includes('<h1>')&&markup.includes('<section'));
+    assert.ok(markup.includes('/guides/'));
+  }
+  assert.match(server,/\.\.\.GLOBAL_GUIDE_PATHS/);
+  assert.match(client,/world-guides-multi-v2/);
+});

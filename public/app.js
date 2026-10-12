@@ -1,4 +1,4 @@
-import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-v1';
+import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261012-approved-arrow-desktop-v2';
@@ -1642,6 +1642,11 @@ function updateDocumentLanguageMeta(lang) {
       fi:['Chatbotin tietopohja – käytännön opas | Respondo AI','Näin rakennat verkkosivun AI-botille luotettavan tietopohjan ja testaat vastaukset ennen käyttöönottoa.'],
       sv:['Bygg en kunskapsbas för en chatbot | Respondo AI','Praktisk checklista för en pålitlig kunskapsbas och en webbplatsbot som inte gissar.'],
       en:['Website Chatbot Knowledge Base Guide | Respondo AI','Learn how to build a trustworthy website chatbot knowledge base with real customer questions, careful imports and clear escalations.'],
+    },
+    '/guides/multilingual-customer-support-chatbot': {
+      fi:["Monikielinen asiakaspalvelubotti: 8 testiä | Respondo AI","Käytännön opas monikielisen AI-chatbotin testaamiseen: suomi, ruotsi ja englanti, jatkokysymykset ja tietojen luotettavuus."],
+      sv:["Flerspråkig kundservicebot: 8 tester | Respondo AI","Praktisk guide för att testa AI-kundservicebotar på svenska, finska och engelska: följdfrågor och pålitliga svar."],
+      en:["Multilingual Customer Support Chatbot: 8 Tests | Respondo AI","Eight practical tests for multilingual AI customer support bots: grounded answers, code-switching, ecommerce terms, human handoff and data isolation."],
     },
     '/asiakaspalvelubotti': {
       fi:['Asiakaspalvelubotti yritykselle | Respondo AI','Asiakaspalvelubotti yrityksen verkkosivuille: vastaukset 24/7 omilla yritystiedoillasi, liidit, ajanvaraus ja tarvittaessa siirto ihmiselle.'],
