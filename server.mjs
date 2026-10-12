@@ -390,6 +390,7 @@ async function renderIndexHtml(req) {
     .replace(/<meta name="robots" content="[^"]*">/i, '<meta name="robots" content="' + escapeHtml(seo.robots) + '">')
     .replace(/<meta property="og:title" content="[^"]*">/i, '<meta property="og:title" content="' + escapeHtml(seo.title) + '">')
     .replace(/<meta property="og:description" content="[^"]*">/i, '<meta property="og:description" content="' + escapeHtml(seo.description) + '">')
+    .replace(/<meta property="og:locale" content="[^"]*">/i, '<meta property="og:locale" content="' + (seo.lang === 'sv' ? 'sv_SE' : seo.lang === 'en' ? 'en_GB' : 'fi_FI') + '">')
     .replace(/<meta name="twitter:title" content="[^"]*">/i, '<meta name="twitter:title" content="' + escapeHtml(seo.title) + '">')
     .replace(/<meta name="twitter:description" content="[^"]*">/i, '<meta name="twitter:description" content="' + escapeHtml(seo.description) + '">');
 
@@ -411,7 +412,13 @@ async function renderIndexHtml(req) {
   ].filter(Boolean).join('\n');
 
   html = html.replace('</head>', extraHead + '\n</head>');
-  html = html.replace('<div id="app"></div>', '<div id="app">' + seoNoScriptMarkup(seo, req.path) + '</div>');
+  // Serve full, localized guide text in the initial HTML response. Search crawlers,
+  // link previews and non-JavaScript readers must not depend on the SPA booting.
+  // The browser app replaces this same content during normal hydration.
+  const initialContent = GLOBAL_GUIDE_PATHS.includes(req.path)
+    ? globalResourcesMarkup(req.path, seo.lang)
+    : seoNoScriptMarkup(seo, req.path);
+  html = html.replace('<div id="app"></div>', '<div id="app">' + initialContent + '</div>');
 
 
   return { html, seo };
