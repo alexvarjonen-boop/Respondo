@@ -122,11 +122,13 @@ test('international guide content is server-rendered without requiring JavaScrip
   assert.match(server, /seo\.lang === 'sv' \? 'sv_SE' : seo\.lang === 'en' \? 'en_GB' : 'fi_FI'/);
 });
 
-test('robots.txt protects /app without blocking SPA JavaScript or Apple UI resources', () => {
+test('robots.txt leaves browser assets crawlable and workspace itself remains noindex', () => {
   const robotsRoute = server.slice(server.indexOf("app.get('/robots.txt'"), server.indexOf("app.get('/sitemap.xml'"));
-  assert.ok(robotsRoute.includes("'Disallow: /app$'"), 'private workspace should be blocked exactly');
-  assert.ok(!robotsRoute.includes("'Disallow: /app'"), 'broad rule accidentally blocks /app.js and /apple-*');
+  assert.ok(robotsRoute.includes("'Disallow: /app/'"), 'nested private workspace URLs may be excluded');
+  assert.ok(!robotsRoute.includes("'Disallow: /app',"), 'broad prefix blocks public app/Apple JavaScript');
+  const rules = [...robotsRoute.matchAll(/'Disallow: ([^']+)'/g)].map(match => match[1]);
   for (const asset of ['/app.js','/apple-home.js','/apple-nav.js','/apple-home.css']) {
-    assert.ok(!asset.match(/^\/app$/), asset + ' must remain crawlable');
+    assert.ok(!rules.some(rule => asset.startsWith(rule)), asset + ' must remain crawlable');
   }
+  assert.ok(server.includes("SEO_APP_PATHS.has(rawPath)"), 'private workspace has noindex at response');
 });
