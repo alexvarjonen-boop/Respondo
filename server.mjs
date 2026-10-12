@@ -8053,6 +8053,9 @@ app.use(express.static(path.join(__dirname, 'public'), {
       filePath.endsWith('widget.js') ||
       filePath.endsWith('app.js') ||
       filePath.endsWith('effects.js') ||
+      filePath.endsWith('apple-nav.js') ||
+      filePath.endsWith('favicon.svg') ||
+      filePath.endsWith('respondo-approved-arrow-20261012.png') ||
       filePath.endsWith('import-email.mjs') ||
       filePath.endsWith('index.html')
     ) {
@@ -13632,6 +13635,7 @@ app.use(async (req, res, next) => {
   if (req.method === 'GET' && !req.path.startsWith('/api/')) {
     try {
       const { html, seo } = await renderIndexHtml(req);
+      res.setHeader('Cache-Control','no-store');
       res.status(seo.isKnown ? 200 : 404);
       res.setHeader('Link','<' + seo.canonical + '>; rel="canonical"');
       res.setHeader('Content-Language',seo.lang);
