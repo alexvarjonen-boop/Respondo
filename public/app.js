@@ -1637,6 +1637,16 @@ function updateDocumentLanguageMeta(lang) {
       sv:['Bokningschatbot för företag | Respondo AI','En bokningschatbot svarar på kundfrågor, samlar bokningsförfrågningar och stödjer kalenderbaserade kundserviceflöden dygnet runt.'],
       en:['Booking Chatbot for Business | Respondo AI','A booking chatbot answers customer questions, captures booking requests and supports calendar-based customer-service workflows around the clock.'],
     },
+    '/autokorjaamo-chatbot': {
+      fi:['Chatbot autokorjaamolle – huolto ja ajanvaraus | Respondo AI','Autokorjaamon chatbot vastaa huolto-, rengas- ja palvelukysymyksiin korjaamon omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.'],
+      sv:['Chatbot för bilverkstad | Respondo AI','Chatbot för bilverkstad besvarar frågor om service, däck och bokning med verkstadens egna godkända uppgifter och samlar kontaktförfrågningar.'],
+      en:['Chatbot for Auto Repair Shops | Respondo AI','An auto repair chatbot answers questions about services, tyres and bookings using garage-approved information and captures customer contact requests.'],
+    },
+    '/lvi-chatbot': {
+      fi:['Chatbot LVI-yritykselle – putkityöt ja huolto | Respondo AI','LVI-yrityksen chatbot auttaa putki-, lämmitys- ja huoltopalvelujen kysymyksissä yrityksen hyväksymillä tiedoilla ja kerää yhteydenottopyyntöjä.'],
+      sv:['Chatbot för VVS-företag | Respondo AI','Chatbot för VVS-företag svarar på frågor om rör, värme och service med företagets egna godkända uppgifter.'],
+      en:['Chatbot for Plumbing and HVAC Companies | Respondo AI','A plumbing and HVAC chatbot answers service, heating and maintenance questions using company-approved information and captures enquiries.'],
+    },
     '/hinnat': {
       fi:['Hinnat | Respondo AI','Vertaile Starter-, Advanced- ja Business-tilauspaketteja. Kolmen päivän maksuton kokeilu kaikissa paketeissa.'],
       sv:['Priser | Respondo AI','Jämför abonnemangen Starter, Advanced och Business. Alla paket har tre dagars gratis provperiod.'],
@@ -1699,7 +1709,7 @@ function updateDocumentLanguageMeta(lang) {
     },
   };
 
-  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
+  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
   const baseMeta = metaByPath[metaPath] || metaByPath['/'];
   const pair = baseMeta[lang] || baseMeta.fi;
   const pageTitle = pair[0];
@@ -2180,6 +2190,8 @@ function footer() {
           <a href="/asiakaspalvelubotti?lang=${currentLang()}">${appText('Asiakaspalvelubotti','Kundservicebot','Customer service bot')}</a>
           <a href="/verkkokauppa-chatbot?lang=${currentLang()}">${appText('Chatbot verkkokauppaan','Chatbot för webbutik','Ecommerce chatbot')}</a>
           <a href="/ajanvaraus-chatbot?lang=${currentLang()}">${appText('Ajanvaraus-chatbot','Bokningschatbot','Booking chatbot')}</a>
+          <a href="/autokorjaamo-chatbot?lang=${currentLang()}">${appText('Chatbot autokorjaamolle','Chatbot för bilverkstad','Auto repair chatbot')}</a>
+          <a href="/lvi-chatbot?lang=${currentLang()}">${appText('Chatbot LVI-yritykselle','Chatbot för VVS-företag','Plumbing and HVAC chatbot')}</a>
           <a href="/#pricing">${appText('Hinta','Pris','Pricing')}</a>
           <a href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
         </div>
@@ -2858,6 +2870,35 @@ function seoLandingPage(path) {
       ],
       closing:appText('Ajanvaraus-chatbot sopii esimerkiksi palveluyrityksille, joissa asiakkaan kysymys ja varaus kuuluvat samaan ostopolkuun.','En bokningschatbot passar exempelvis tjänsteföretag där kundens fråga och bokning är delar av samma köpresa.','A booking chatbot is useful for service businesses where the customer question and booking are part of the same purchase journey.')
     }
+  };
+
+  pages['/autokorjaamo-chatbot'] = {
+    kicker:appText('CHATBOT AUTOKORJAAMOLLE','CHATBOT FÖR BILVERKSTAD','AUTO REPAIR CHATBOT'),
+    h1:appText('Autokorjaamon chatbot vastaa asiakkaalle <em>myös työpäivän jälkeen.</em>','Bilverkstadens chatbot svarar kunderna <em>även efter arbetsdagen.</em>','An auto repair chatbot that answers <em>after your garage closes.</em>'),
+    lead:appText('Respondo AI vastaa korjaamon verkkosivulla rengas-, huolto- ja korjauspalveluja koskeviin kysymyksiin yrityksen itse hyväksymillä tiedoilla.','Respondo AI svarar på frågor om däck, service och reparationer med verkstadens egna godkända uppgifter.','Respondo AI answers questions about tyres, servicing and repairs using information approved by your shop.'),
+    introTitle:appText('Vähemmän toistuvia kysymyksiä, enemmän yhteydenottoja','Färre upprepade frågor, fler förfrågningar','Fewer repetitive questions, more enquiries'),
+    intro:appText('Autokorjaamon asiakkaat kysyvät usein samoja asioita: ”Vaihdatteko jarrupalat?”, ”Teettekö renkaiden vaihtoja?”, ”Paljonko määräaikaishuolto maksaa?” ja ”Miten varaan huoltoajan?”. Respondo voi vastata niihin automaattisesti, kun korjaamo on tallentanut palvelut, hinnat ja käytännöt omaan tietopohjaansa. Botti ei saa arvata korjaushintoja tai luvata korjausta, jota yritys ei tarjoa.','Kunder frågar ofta om bromsar, däckbyten, servicepriser och tidsbokning. Respondo kan besvara frågorna när verkstaden själv har lagt in sina tjänster, priser och rutiner. Botten ska inte hitta på priser eller lova arbeten som verkstaden inte utför.','Customers often ask whether you replace brakes, change tyres, what servicing costs and how to book. Respondo can answer when your garage has added its own services, prices and policies. It should not invent prices or promise repairs you do not offer.'),
+    cards:[
+      [appText('Huollot ja korjaukset','Service och reparationer','Repairs and maintenance'),appText('Vastaukset perustuvat korjaamon omaan palveluvalikoimaan, kuten rengastöihin, öljynvaihtoihin ja jarruhuoltoihin.','Svar utgår från verkstadens egna tjänster, som däckbyten, oljebyten och bromsservice.','Answers reflect your actual services, such as tyres, oil changes and brakes.')],
+      [appText('Hinnat ja tarjoukset','Priser och offerter','Prices and quotes'),appText('Botti näyttää yrityksen ilmoittamat hinnat ja voi pyytää yhteystiedot tarkempaa arviota varten.','Botten visar angivna priser och kan samla kontaktuppgifter för en offert.','The bot shows prices supplied by your garage and can collect quote enquiries.')],
+      [appText('Ajanvarauspyynnöt','Bokningsförfrågningar','Booking enquiries'),appText('Asiakas voidaan ohjata ajanvaraukseen tai jättämään huoltoaikapyyntö asetusten mukaan.','Kunden kan fortsätta till bokning eller lämna en tidsförfrågan enligt inställningarna.','Customers can proceed to booking or leave an appointment request according to your setup.')],
+      [appText('Ihmisen jatkokäsittely','Mänsklig uppföljning','Human follow-up'),appText('Vaikeammat korjauskysymykset voidaan ohjata työntekijälle ilman tekaistua vastausta.','Svårare frågor kan hänvisas till en medarbetare utan påhittade svar.','Complex repair questions can be handed over instead of answered by guesswork.')]
+    ],
+    closing:appText('Kokeile Respondoa oman autokorjaamosi tiedoilla. Asiakas voi kysyä omin sanoin ja siirtyä palvelukysymyksestä yhteydenottoon.','Testa Respondo med din verkstads egna uppgifter. Kunden kan ställa frågor med egna ord och sedan skicka en förfrågan.','Try Respondo with your garage details. Visitors can ask in their own words and move from a service question to an enquiry.')
+  };
+  pages['/lvi-chatbot'] = {
+    kicker:appText('CHATBOT LVI-YRITYKSELLE','CHATBOT FÖR VVS-FÖRETAG','PLUMBING & HVAC CHATBOT'),
+    h1:appText('LVI-yrityksen chatbot vastaa palvelukysymyksiin ja <em>kerää yhteydenotot.</em>','VVS-företagets chatbot svarar på frågor och <em>samlar kontaktförfrågningar.</em>','Your plumbing and HVAC chatbot answers questions and <em>captures enquiries.</em>'),
+    lead:appText('Respondo auttaa asiakkaita putki-, lämmitys- ja huoltotöihin liittyvissä kysymyksissä yrityksen hyväksymillä tiedoilla – myös silloin, kun asentajat ovat työmaalla.','Respondo svarar på frågor om rörarbeten, värme och service utifrån godkända företagsuppgifter, även när montörerna är på arbete.','Respondo answers plumbing, heating and maintenance questions using approved business information, even while your team is on site.'),
+    introTitle:appText('Asiakas löytää oikean palvelun ja yhteystiedot','Kunden hittar rätt tjänst och kontaktväg','Help customers find the right service and contact'),
+    intro:appText('LVI-yrityksiltä kysytään esimerkiksi ”Teettekö putkiremontteja?”, ”Huollatteko lämpöpumppuja?”, ”Millä alueella toimitte?” ja ”Onko teillä päivystys?”. Respondo vastaa niiden tietojen pohjalta, jotka yritys on itse lisännyt tai hyväksynyt. Jos hintaa tai palvelun saatavuutta ei ole määritetty, botti voi kerätä yhteydenottopyynnön sen sijaan, että keksisi vastauksen.','VVS-kunder frågar om rörbyten, värmepumpsservice, serviceområden och jour. Respondo svarar bara med företagets egna godkända uppgifter. Om pris eller tillgänglighet saknas kan botten samla en förfrågan i stället för att gissa.','Customers ask about pipe renovations, heat pump service, your service area and emergency availability. Respondo answers from company-approved information. If prices or availability are unknown, it can collect a request rather than guess.'),
+    cards:[
+      [appText('Putkityöt ja lämmitys','Rör och uppvärmning','Plumbing and heating'),appText('Yritys määrittää itse, tarjoaako se esimerkiksi vesikalusteiden asennuksia, putkiremontteja tai lämmityshuoltoja.','Företaget anger själv om det erbjuder armaturinstallationer, rörbyten eller värmeservice.','Your business defines whether it offers fixtures, pipe repairs or heating maintenance.')],
+      [appText('Palvelualue ja aukiolo','Serviceområde och tider','Service region and hours'),appText('Asiakas voi tarkistaa toimialueen, aukioloajat ja mahdollisen päivystyksen yrityksen tiedoista.','Kunden kan kontrollera områden, öppettider och eventuell jour utifrån företagets uppgifter.','Customers can check service areas, opening hours and emergency cover only when configured.')],
+      [appText('Tarjouspyynnöt','Offertförfrågningar','Quote enquiries'),appText('Botti voi kerätä yhteystiedot työlle, jonka hinta täytyy arvioida tapauskohtaisesti.','Botten kan samla kontaktuppgifter för arbeten som behöver individuell prisbedömning.','The bot can capture contact details when the work needs an individual estimate.')],
+      [appText('Ohjaus ammattilaiselle','Vidare till fackperson','Escalation to a specialist'),appText('Teknistä arviota vaativat kysymykset voidaan ohjata ihmiselle. Botti ei korvaa pätevää LVI-ammattilaista.','Frågor som kräver teknisk bedömning kan hänvisas till en person. Botten ersätter inte en behörig VVS-expert.','Questions needing professional assessment can be handed to a human. The bot does not replace a qualified tradesperson.')]
+    ],
+    closing:appText('Respondo auttaa LVI-yritystä vastaamaan yleisiin kysymyksiin ilman, että palveluja, hintoja tai teknisiä neuvoja tarvitsee arvailla.','Respondo hjälper VVS-företag att svara på vanliga frågor utan att gissa tjänster, priser eller tekniska råd.','Respondo helps plumbing and HVAC businesses answer routine questions without inventing services, prices or technical advice.')
   };
   const p=pages[path] || pages['/asiakaspalvelubotti'];
   return `<div class="seo-landing-page">${nav()}<main>
@@ -4764,7 +4805,7 @@ async function route() {
   if (path === '/') html = await home();
   else if (path === '/hinnat') html = `<div class="pricing-page">${nav()}<main>${pricingSection()}</main>${footer()}</div>`;
   else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
-  else if (['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot'].includes(path)) html = seoLandingPage(path);
+  else if (['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot','/autokorjaamo-chatbot','/lvi-chatbot'].includes(path)) html = seoLandingPage(path);
   else if (path === '/yhteystiedot') html = contactPage();
   else if (path === '/assistant') html = await dashboard({ demo:true });
   else if (path === '/tilaus') html = signup();
