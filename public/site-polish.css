@@ -36,3 +36,40 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
   }
   #app :is(.feature-card,.pricing-card,.plan-card,.benefit-card,.faq-card):hover{transform:none!important}
 }
+
+/* Unified premium surfaces across homepage, pricing, guides and workspace. */
+#app :is(.apple-home-page,.premium-home,.dashboard-simple-shell,.dashboard-premium-shell){
+  --polish-radius:22px;--polish-stroke:rgba(24,30,48,.095);
+  --polish-shadow:0 12px 44px rgba(24,30,48,.055);
+}
+#app :is(.dashboard-simple-shell,.dashboard-premium-shell) :is(.card,.panel,.settings-card,.dashboard-card,.stat-card,.data-card){
+  border-color:var(--polish-stroke);
+  box-shadow:var(--polish-shadow);
+}
+#app :is(.dashboard-simple-shell,.dashboard-premium-shell) :is(input,textarea,select){
+  min-width:0;box-sizing:border-box;
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+#app :is(.dashboard-simple-shell,.dashboard-premium-shell) :is(input,textarea,select):focus{
+  outline:none;border-color:rgba(83,97,226,.65);
+  box-shadow:0 0 0 3px rgba(83,97,226,.11);
+}
+#app :is(.dashboard-simple-shell,.dashboard-premium-shell) :is(.table-wrap,.table-container,[class*="table-scroll"]){
+  max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+#app :is(.dashboard-simple-shell,.dashboard-premium-shell) :is(.grid,.cards,.settings-grid,.stats-grid)>*{min-width:0}
+#app :is(.apple-home-page,.premium-home) :is(.hero,.hero-content,.hero-copy){min-width:0}
+#app :is(.apple-home-page,.premium-home) :is(.feature-card,.pricing-card,.plan-card){
+  border-color:rgba(255,255,255,.12);
+}
+@media(max-width:760px){
+  #app :is(.dashboard-simple-shell,.dashboard-premium-shell) :is(.card,.panel,.settings-card,.dashboard-card,.stat-card,.data-card){
+    max-width:100%;overflow-wrap:anywhere;
+  }
+  #app :is(.dashboard-simple-shell,.dashboard-premium-shell) :is(.grid,.cards,.settings-grid,.stats-grid){
+    min-width:0;
+  }
+  #app :is(.apple-home-page,.premium-home) :is(h1,h2,h3){
+    text-wrap:balance;overflow-wrap:normal;
+  }
+}
