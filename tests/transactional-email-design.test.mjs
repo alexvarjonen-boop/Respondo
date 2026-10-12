@@ -7,7 +7,8 @@ const server = fs.readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
 
 test('transactional email shell is dark and uses the current Respondo logo',()=>{
   const html=brandedEmailHtml({language:'fi',eyebrow:'Tilin turvallisuus',title:'Vahvista sähköpostiosoitteesi',content:'<p>OK</p>'});
-  assert.match(html,/respondo-email-logo\.png/);
+  assert.match(html,/respondo-email-arrow-20261012-2fe95894\.png/);
+  assert.doesNotMatch(html,/src="[^"]*respondo-email-logo\.png/);
   assert.match(html,/background-color:#242426/);
   assert.match(html,/background-color:#303032/);
   assert.match(html,/Respondo AI/);
