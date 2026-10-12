@@ -57,3 +57,25 @@ test('industry landing pages stay discoverable and indexable in both renderers',
   assert.match(server, /<h1>Chatbot autokorjaamolle<\/h1>/);
   assert.match(server, /<h1>Chatbot LVI-yritykselle<\/h1>/);
 });
+
+test('industry hub is a single footer link and has five crawlable destinations', () => {
+  const markup = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../public/industry-directory.css', import.meta.url), 'utf8');
+  const footer = client.slice(client.indexOf('function footer() {'), client.indexOf('function footer() {')+2500);
+  const clientIndexable = client.match(/const indexable = new Set\(\[([^\]]+)\]\)/)?.[1] || '';
+  const serverIndexable = server.match(/const SEO_INDEXABLE_PATHS = new Set\(\[([\s\S]+?)\]\)/)?.[1] || '';
+  assert.ok(clientIndexable.includes("'/kenelle-sopii'"));
+  assert.ok(serverIndexable.includes("'/kenelle-sopii'"));
+  assert.match(server, /basePaths = \[[^\n]*'\/kenelle-sopii'/);
+  assert.ok(footer.includes('href="/kenelle-sopii?lang='));
+  assert.match(client, /path === '\/kenelle-sopii'\) html = audienceHubPage\(\)/);
+  for (const path of ['/autokorjaamo-chatbot','/lvi-chatbot','/verkkokauppa-chatbot','/asiakaspalvelubotti','/ajanvaraus-chatbot']) {
+    assert.ok(client.includes("'"+path+"'"), 'missing hub link '+path);
+    assert.ok(!footer.includes('href="'+path+'?lang='), 'footer still has destination '+path);
+  }
+  assert.match(server, /rawPath === '\/kenelle-sopii'/);
+  assert.match(client, /Who is Respondo AI for\?/);
+  assert.match(client, /Vem passar Respondo AI för/);
+  assert.match(markup, /industry-directory\.css/);
+  assert.match(styles, /@media\(max-width:760px\)/);
+});

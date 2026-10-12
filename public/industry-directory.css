@@ -1,0 +1,31 @@
+/* Respondo public use-case directory; styles are scoped away from account pages. */
+#app .audience-hub{background:#f7f9fc;color:#142033;overflow:hidden}
+#app .audience-hero{background:radial-gradient(ellipse at 85% 10%,rgba(85,137,220,.13),transparent 48%),linear-gradient(155deg,#fff 10%,#f3f6fb 100%);padding:clamp(72px,10vw,138px) 0 clamp(60px,8vw,108px);border-bottom:1px solid #e8ecf2}
+#app .audience-overline,#app .audience-section-title>span{display:block;color:#2d63bf;font-weight:750;letter-spacing:.14em;font-size:11px;margin-bottom:18px}
+#app .audience-hero h1{font-size:clamp(44px,7.7vw,98px);font-weight:740;line-height:1.05;letter-spacing:-.06em;max-width:1020px;margin:0 0 30px;color:#152039}
+#app .audience-hero h1 em{font-style:normal;color:#2865d0}
+#app .audience-hero p{font-size:clamp(16px,1.9vw,21px);line-height:1.74;max-width:700px;color:#627085;margin:0}
+#app .audience-section{padding:clamp(64px,8vw,100px) 0 0}
+#app .audience-section--end{padding-bottom:clamp(70px,9vw,120px)}
+#app .audience-section-title{margin-bottom:29px}
+#app .audience-section-title>span{margin-bottom:11px}
+#app .audience-section-title h2{font-size:clamp(28px,4vw,47px);letter-spacing:-.045em;line-height:1.15;color:#152039;font-weight:730;margin:0}
+#app .audience-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:19px}
+#app .audience-card{min-width:0;position:relative;display:flex;flex-direction:column;min-height:270px;border-radius:24px;border:1px solid #e6eaf1;padding:clamp(24px,3vw,38px);background:#fff;text-decoration:none!important;color:#142033!important;box-shadow:0 13px 30px rgba(20,45,80,.033);transition:border-color .2s,transform .2s,box-shadow .2s}
+#app .audience-card:hover{transform:translateY(-4px);border-color:#b5c8e9;box-shadow:0 22px 44px rgba(20,45,80,.075)}
+#app .audience-card:focus-visible{outline:3px solid #2865d0;outline-offset:3px}
+#app .audience-card-top{display:flex;justify-content:space-between;gap:20px;align-items:center;font-size:11px;letter-spacing:.13em;font-weight:700;color:#476da9}
+#app .audience-card-top span:last-child{color:#9ca8ba;font-size:13px}
+#app .audience-card-body{display:flex;flex-direction:column;align-items:flex-start;gap:13px;margin-top:auto;padding-top:62px;max-width:93%}
+#app .audience-card-body strong{font-size:clamp(22px,2.8vw,32px);letter-spacing:-.04em;line-height:1.17;font-weight:720}
+#app .audience-card-body>span{font-size:15px;line-height:1.7;color:#637086;max-width:450px}
+#app .audience-card-arrow{position:absolute;right:27px;bottom:27px;font-size:22px;color:#2d63bf;background:#eef4ff;display:grid;place-items:center;border-radius:50%;height:37px;width:37px;transition:background .2s}
+#app .audience-card:hover .audience-card-arrow{background:#dae8ff}
+#app .audience-cta{padding:0 0 clamp(70px,9vw,110px)}
+#app .audience-cta-inner{display:flex;align-items:center;justify-content:space-between;gap:40px;padding:clamp(30px,6vw,65px);background:#fff;border:1px solid #e8ecf2;border-radius:27px}
+#app .audience-cta h2{margin:0 0 14px;font-size:clamp(27px,3.2vw,38px);letter-spacing:-.045em;line-height:1.2;max-width:610px}
+#app .audience-cta p{max-width:580px;color:#66738a;line-height:1.7;font-size:15px;margin:0}
+#app .audience-cta-buttons{display:flex;flex-direction:column;gap:13px;flex-shrink:0}
+#app .audience-cta-buttons .btn{justify-content:center;white-space:nowrap;text-align:center}
+@media(max-width:760px){#app .audience-hero{padding:70px 0}#app .audience-hero h1{font-size:clamp(42px,10vw,67px)}#app .audience-section{padding-top:61px}#app .audience-section--end{padding-bottom:77px}#app .audience-grid{grid-template-columns:minmax(0,1fr);gap:14px}#app .audience-card{min-height:238px;padding:28px;border-radius:22px}#app .audience-card-body{padding-top:44px}#app .audience-cta-inner{flex-direction:column;align-items:stretch;gap:30px;padding:30px 26px}#app .audience-cta-buttons{width:100%}}
+@media(prefers-reduced-motion:reduce){#app .audience-card{transition:none}#app .audience-card:hover{transform:none}}

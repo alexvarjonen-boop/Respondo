@@ -1622,6 +1622,11 @@ function updateDocumentLanguageMeta(lang) {
       sv:['Funktioner för AI-kundservicebot | Respondo AI','Se Respondos funktioner för kundservice, kunskapsbas, kontaktförfrågningar, bokningar och kunddialoger.'],
       en:['AI Customer Service Bot Features | Respondo AI','Explore Respondo features for customer service, your knowledge base, contact requests, bookings and customer conversations.'],
     },
+    '/kenelle-sopii': {
+      fi:["Kenelle Respondo AI sopii? | Toimialat ja käyttökohteet","Respondo AI sopii autokorjaamoille, LVI-yrityksille, verkkokaupoille sekä asiakaspalvelun ja ajanvarauksen tueksi. Tutustu ratkaisuihin."],
+      sv:["Vem passar Respondo AI för? | Branscher och användning","Respondo AI passar bilverkstäder, VVS-företag och webbutiker och hjälper till med kundservice och bokningsförfrågningar. Upptäck lösningarna."],
+      en:["Who Is Respondo AI For? | Industries and Use Cases","Respondo AI supports auto repair shops, plumbing and HVAC companies, ecommerce stores, customer support and booking enquiries."],
+    },
     '/asiakaspalvelubotti': {
       fi:['Asiakaspalvelubotti yritykselle | Respondo AI','Asiakaspalvelubotti yrityksen verkkosivuille: vastaukset 24/7 omilla yritystiedoillasi, liidit, ajanvaraus ja tarvittaessa siirto ihmiselle.'],
       sv:['Kundservicebot för företag | Respondo AI','Kundservicebot för företagets webbplats: svar dygnet runt med företagets egna uppgifter, leads, bokning och överlämning till människa.'],
@@ -1709,7 +1714,7 @@ function updateDocumentLanguageMeta(lang) {
     },
   };
 
-  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
+  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/kenelle-sopii', '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
   const baseMeta = metaByPath[metaPath] || metaByPath['/'];
   const pair = baseMeta[lang] || baseMeta.fi;
   const pageTitle = pair[0];
@@ -2187,11 +2192,7 @@ function footer() {
         <div class="foot-col">
           <h4>${appText('Tuote','Produkt','Product')}</h4>
           <a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a>
-          <a href="/asiakaspalvelubotti?lang=${currentLang()}">${appText('Asiakaspalvelubotti','Kundservicebot','Customer service bot')}</a>
-          <a href="/verkkokauppa-chatbot?lang=${currentLang()}">${appText('Chatbot verkkokauppaan','Chatbot för webbutik','Ecommerce chatbot')}</a>
-          <a href="/ajanvaraus-chatbot?lang=${currentLang()}">${appText('Ajanvaraus-chatbot','Bokningschatbot','Booking chatbot')}</a>
-          <a href="/autokorjaamo-chatbot?lang=${currentLang()}">${appText('Chatbot autokorjaamolle','Chatbot för bilverkstad','Auto repair chatbot')}</a>
-          <a href="/lvi-chatbot?lang=${currentLang()}">${appText('Chatbot LVI-yritykselle','Chatbot för VVS-företag','Plumbing and HVAC chatbot')}</a>
+          <a href="/kenelle-sopii?lang=${currentLang()}">${appText('Kenelle Respondo AI sopii','Vem passar Respondo AI för?','Who is Respondo AI for?')}</a>
           <a href="/#pricing">${appText('Hinta','Pris','Pricing')}</a>
           <a href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
         </div>
@@ -2820,6 +2821,47 @@ function geoAnswerSection() {
       </div>
     </div>
   </section>`;
+}
+
+
+function audienceHubPage() {
+  const lang=currentLang();
+  const qs=lang==='fi'?'':'?lang='+lang;
+  const industries=[
+    ['/autokorjaamo-chatbot','01',appText('Autokorjaamot','Bilverkstäder','Auto repair shops'),appText('Huolto, rengastyöt ja korjauspalvelut – asiakkaan kysymyksestä yhteydenottoon.','Service, däck och reparationer – från kundfråga till förfrågan.','Servicing, tyres and repairs – from questions to enquiries.'),appText('AUTOALA','BILBRANSCHEN','AUTOMOTIVE')],
+    ['/lvi-chatbot','02',appText('LVI-yritykset','VVS-företag','Plumbing & HVAC'),appText('Putkityöt, lämmitys, huolto ja tarjouspyynnöt yrityksen omilla tiedoilla.','Rör, värme, service och offerter med företagets egna uppgifter.','Plumbing, heating, maintenance and quotes using approved information.'),appText('LVI & HUOLTO','VVS & SERVICE','PLUMBING & HVAC')],
+    ['/verkkokauppa-chatbot','03',appText('Verkkokaupat','Webbutiker','Ecommerce stores'),appText('Tuotteet, hinnat, toimitukset ja palautukset samaan keskusteluun.','Produkter, priser, leveranser och returer i samma konversation.','Products, prices, shipping and returns in one conversation.'),appText('VERKKOKAUPPA','E-HANDEL','ECOMMERCE')]
+  ];
+  const uses=[
+    ['/asiakaspalvelubotti','04',appText('Asiakaspalvelubotti','Kundservicebot','Customer service bot'),appText('Toistuvat kysymykset, aukioloajat, palvelut ja yhteydenotot automaattisesti.','Vanliga frågor, öppettider, tjänster och kontaktförfrågningar.','FAQs, opening hours, services and customer enquiries.'),appText('ASIAKASPALVELU','KUNDSERVICE','CUSTOMER SUPPORT')],
+    ['/ajanvaraus-chatbot','05',appText('Ajanvaraus-chatbot','Bokningschatbot','Booking chatbot'),appText('Ajanvarauksen kysymykset ja varauspyynnöt ilman turhaa odottamista.','Bokningsfrågor och tidsförfrågningar utan onödig väntan.','Appointment questions and booking requests without unnecessary delays.'),appText('AJANVARAUS','BOKNING','BOOKINGS')]
+  ];
+  const card=([href,no,title,desc,tag])=>`<a class="audience-card" href="${href}${qs}">
+    <span class="audience-card-top"><span>${tag}</span><span>${no}</span></span>
+    <span class="audience-card-body"><strong>${title}</strong><span>${desc}</span></span>
+    <span class="audience-card-arrow" aria-hidden="true">↗</span>
+  </a>`;
+  return `<div class="audience-page">${nav()}<main class="audience-hub">
+    <section class="audience-hero"><div class="container">
+      <span class="audience-overline">${appText('RATKAISUT YRITYKSILLE','LÖSNINGAR FÖR FÖRETAG','SOLUTIONS FOR BUSINESSES')}</span>
+      <h1>${appText('Kenelle <em>Respondo AI</em> sopii?','Vem passar <em>Respondo AI</em> för?','Who is <em>Respondo AI</em> for?')}</h1>
+      <p>${appText('Respondo auttaa yrityksiä vastaamaan asiakkaiden kysymyksiin omilla tiedoillaan. Tutustu toimialoihin ja löydä juuri sinun yrityksellesi sopiva ratkaisu.','Respondo hjälper företag att besvara kundfrågor med egna uppgifter. Utforska branscher och hitta lösningen som passar ditt företag.','Respondo helps businesses answer customer questions using their own information. Explore industries and find the solution for your business.')}</p>
+    </div></section>
+    <section class="audience-section"><div class="container">
+      <div class="audience-section-title"><span>${appText('01 / TOIMIALAT','01 / BRANSCHER','01 / INDUSTRIES')}</span><h2>${appText('Löydä oma toimialasi.','Hitta din bransch.','Find your industry.')}</h2></div>
+      <div class="audience-grid">${industries.map(card).join('')}</div>
+    </div></section>
+    <section class="audience-section audience-section--end"><div class="container">
+      <div class="audience-section-title"><span>${appText('02 / KÄYTTÖKOHTEET','02 / ANVÄNDNING','02 / USE CASES')}</span><h2>${appText('Yksi ratkaisu. Monta tapaa auttaa.','En lösning. Många möjligheter.','One solution. Many possibilities.')}</h2></div>
+      <div class="audience-grid">${uses.map(card).join('')}</div>
+    </div></section>
+    <section class="audience-cta"><div class="container"><div class="audience-cta-inner">
+      <div><span class="audience-overline">${appText('EIKÖ TOIMIALAASI NÄY?','SAKNAS DIN BRANSCH?','DON’T SEE YOUR INDUSTRY?')}</span>
+      <h2>${appText('Respondo mukautuu yrityksesi tarpeisiin.','Respondo anpassas till ditt företag.','Respondo adapts to your business.')}</h2>
+      <p>${appText('Voit opettaa botille omat palvelusi ja vastauksesi toimialasta riippumatta.','Du kan lägga till dina tjänster och svar oavsett bransch.','Add your own services and answers, whatever your industry.')}</p></div>
+      <div class="audience-cta-buttons"><a class="btn ink" href="/assistant${qs}">${appText('Kokeile bottia','Testa botten','Try the bot')}</a><a class="btn ghost" href="/hinnat${qs}">${appText('Tutustu hintoihin','Se priser','View pricing')}</a></div>
+    </div></div></section>
+  </main>${footer()}</div>`;
 }
 
 function seoLandingPage(path) {
@@ -4806,6 +4848,7 @@ async function route() {
   else if (path === '/hinnat') html = `<div class="pricing-page">${nav()}<main>${pricingSection()}</main>${footer()}</div>`;
   else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
   else if (['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot','/autokorjaamo-chatbot','/lvi-chatbot'].includes(path)) html = seoLandingPage(path);
+  else if (path === '/kenelle-sopii') html = audienceHubPage();
   else if (path === '/yhteystiedot') html = contactPage();
   else if (path === '/assistant') html = await dashboard({ demo:true });
   else if (path === '/tilaus') html = signup();
