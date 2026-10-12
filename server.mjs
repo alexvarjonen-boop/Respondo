@@ -43,6 +43,16 @@ const SEO_CANONICAL_ORIGIN = (() => {
   }
 })();
 
+
+// Consolidate public search traffic on the verified apex hostname. Keep /api/
+// endpoints on their original host to preserve registered OAuth callbacks.
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV !== 'production' || !['GET','HEAD'].includes(req.method)) return next();
+  const inboundHost = String(req.get('host') || '').toLowerCase().replace(/:\d+$/, '');
+  if (inboundHost !== 'www.respondoai.fi' || req.path.startsWith('/api/')) return next();
+  return res.redirect(301, SEO_CANONICAL_ORIGIN + req.originalUrl);
+});
+
 const SEO_INDEXABLE_PATHS = new Set([
   '/',
   '/ominaisuudet',
