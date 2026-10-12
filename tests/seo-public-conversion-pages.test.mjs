@@ -107,3 +107,17 @@ test('global discovery guides share FI SV EN copy with server crawler fallbacks 
   assert.match(markup, /app\.js\?v=[^"]+-audience-hub-route-v3-world-guides-v1/);
   assert.match(css, /max-width:760px/);
 });
+
+test('international guide content is server-rendered without requiring JavaScript', async () => {
+  const guides = await import('../public/global-resources.mjs');
+  for (const route of guides.GLOBAL_GUIDE_PATHS) {
+    const html = guides.globalResourcesMarkup(route, 'en');
+    assert.match(html, /<main/);
+    assert.match(html, /<h1>/);
+    assert.ok(html.length > 650, 'guide must not be thin: '+route);
+  }
+  assert.match(server, /const initialContent = GLOBAL_GUIDE_PATHS\.includes\(req\.path\)/);
+  assert.match(server, /\? globalResourcesMarkup\(req\.path, seo\.lang\)/);
+  assert.match(server, /'<div id="app">' \+ initialContent \+ '<\/div>'/);
+  assert.match(server, /seo\.lang === 'sv' \? 'sv_SE' : seo\.lang === 'en' \? 'en_GB' : 'fi_FI'/);
+});
