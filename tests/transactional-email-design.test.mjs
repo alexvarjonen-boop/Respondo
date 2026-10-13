@@ -45,3 +45,11 @@ test('verification and welcome remain triggered in normal account flow',()=>{
   assert.match(server,/await sendWelcomeEmailOnce\(userId\)/);
   assert.match(server,/await sendWelcomeEmailOnce\(id\)/);
 });
+
+test('website contact alerts use the verified account sender before Resend test sender',()=>{
+  const contact=server.slice(server.indexOf('async function sendHomepageContactEmail('),server.indexOf('async function sendPasswordResetEmail('));
+  assert.ok(contact.includes('process.env.CONTACT_NOTIFICATION_TO'),'mailbox routing must be configurable');
+  assert.match(contact,/process\.env\.CONTACT_NOTIFICATION_FROM\s*\|\|\s*process\.env\.EMAIL_VERIFICATION_FROM\s*\|\|/);
+  assert.match(contact,/reply_to:email/,'client can reply to the original contact');
+  assert.match(contact,/resend\.com\/emails/);
+});

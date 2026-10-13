@@ -895,6 +895,7 @@ async function sendHomepageContactEmail({ name, email, message }) {
 
   const from = String(
     process.env.CONTACT_NOTIFICATION_FROM ||
+    process.env.EMAIL_VERIFICATION_FROM ||
     'Respondo <onboarding@resend.dev>'
   ).trim();
 
