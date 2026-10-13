@@ -18,6 +18,8 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
     assert.ok(html.includes('/assistant?lang='+lang));
     assert.ok(html.includes('/ominaisuudet?lang='+lang));
     assert.ok(html.includes('href="/tilaus"'));
+    assert.match(html, /class="apple-orbit-core"><img src="\/respondo-approved-arrow-20261012\.png/);
+    assert.doesNotMatch(html, /class="apple-orbit-core">R<\/div>/);
     assert.doesNotMatch(html,/<iframe|<canvas/);
   });
   test('fullscreen menu keeps every secondary route accessible in '+lang,()=>{
