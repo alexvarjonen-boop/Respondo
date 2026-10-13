@@ -23,6 +23,7 @@ test('transparent pricing guide has substantial, non-promissory Finnish, Swedish
     }
     assert.ok(!/guaranteed savings|säästät varmasti|garanterad besparing/i.test(html), 'unsubstantiated savings claim');
     assert.ok(globalResourcesMarkup('/guides', lang).includes(path), 'guide directory missing ' + lang + ' link');
+    assert.ok(html.includes('href="/hinnat' + (lang === 'fi' ? '' : '?lang=' + lang) + '"'), 'localized pricing page CTA missing for ' + lang);
   }
 });
 
