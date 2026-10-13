@@ -26,5 +26,6 @@ test('Respondo contact form success confirmation states 24-hour follow-up in FI 
 test('old confirmation texts are not returned from website contact handler',()=>{
  const endpoint=server.slice(server.indexOf("app.post('/api/public/respondo-contact'"),server.indexOf("app.post('/api/public/:slug/lead'"));
  assert.doesNotMatch(endpoint,/Kiitos! Viestisi lähetettiin sähköpostiimme\./);
- assert.doesNotMatch(endpoint,/Viestisi tallennettiin Respondon yhteydenottoihin/);
+ assert.match(endpoint,/Viestisi tallennettiin Respondon yhteydenottoihin/,'save-only fallback must remain clear');
+ assert.match(endpoint,/message was saved in Respondo contact requests/,'English save-only fallback must remain clear');
 });
