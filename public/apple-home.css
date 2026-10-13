@@ -233,3 +233,9 @@ body.public-nav-active .apple-home-page .nav .navactions a.btn.ink.nav-home-scro
 .apple-bottom-cta .apple-buyer-guide-link{display:block;width:fit-content;max-width:100%;margin:22px auto 0;color:#b9c7df;font-size:14px;font-weight:600;text-underline-offset:4px;text-decoration:underline}
 .apple-bottom-cta .apple-buyer-guide-link:hover{color:#fff}
 .apple-bottom-cta .apple-buyer-guide-link:focus-visible{outline:3px solid #fff;outline-offset:5px}
+
+/* Free practical SEO resource for external readers, unobtrusive on premium homepage. */
+#app .apple-free-tool{margin:26px auto 0;text-align:center;max-width:760px}
+#app .apple-free-tool a{display:inline-block;color:#255bb0;text-underline-offset:4px;font-size:14px;line-height:1.7;font-weight:680}
+#app .apple-free-tool a:hover{color:#143c79}
+#app .apple-free-tool a:focus-visible{outline:3px solid #255bb0;outline-offset:5px}
