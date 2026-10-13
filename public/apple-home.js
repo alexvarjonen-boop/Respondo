@@ -38,5 +38,14 @@ export function appleHomeMarkup(t,lang,count){
       </article>
     </div>
   </section>
-  <section class="apple-bottom-cta"><p>${t('Valmis vastaamaan ensimmäiseen kysymykseen?','Redo att svara på den första frågan?','Ready for your first conversation?')}</p><a class="apple-pill apple-pill-primary" href="/tilaus">${t('Aloita ilmainen kokeilu','Börja gratis provperiod','Start your free trial')}</a><a class="apple-buyer-guide-link" href="/asiakaspalvelubotti?lang=${lang}">${t('Mikä on asiakaspalvelijabotti?','Så fungerar en AI-kundservicebot','How an AI customer service chatbot works')} →</a></section>`;
+  <section class="apple-bottom-cta"><p>${t('Valmis vastaamaan ensimmäiseen kysymykseen?','Redo att svara på den första frågan?','Ready for your first conversation?')}</p><a class="apple-pill apple-pill-primary" href="/tilaus">${t('Aloita ilmainen kokeilu','Börja gratis provperiod','Start your free trial')}</a><a class="apple-buyer-guide-link" href="/asiakaspalvelubotti?lang=${lang}">${t('Mikä on asiakaspalvelijabotti?','Så fungerar en AI-kundservicebot','How an AI customer service chatbot works')} →</a></section>
+  <section class="apple-learning-links" aria-labelledby="apple-learning-links-title"><div class="apple-learning-inner">
+    <p class="apple-eyebrow">${t('OPPAAT YRITYKSILLE','GUIDER FÖR FÖRETAG','BUSINESS GUIDES')}</p>
+    <h2 id="apple-learning-links-title">${t('Mistä aloittaa tekoälyn kanssa?','Hur börjar man med AI?','Where should you start with AI?')}</h2>
+    <p>${t('Tutustu käytännön asiakaspalveluratkaisuihin ja tekoälyn mahdollisuuksiin yritykselle.','Läs om praktiska kundservicelösningar och AI i företaget.','Explore practical customer service automation and AI use cases for businesses.')}</p>
+    <div class="apple-learning-grid">
+      <a href="/tekoaly-asiakaspalvelu?lang=${lang}"><strong>${t('Tekoäly asiakaspalvelussa','AI i kundservice','AI in customer service')}</strong><span>${t('Ratkaisut, käyttöönotto ja ihmisen apu','Lösningar, införande och mänsklig hjälp','Workflows, setup and human escalation')} →</span></a>
+      <a href="/tekoaly-yrityksille?lang=${lang}"><strong>${t('Tekoäly yrityksille','AI för företag','AI for businesses')}</strong><span>${t('Käyttökohteet ja aloitusopas','Användning och startguide','Use cases and a starter checklist')} →</span></a>
+    </div>
+  </div></section>`;
 }
