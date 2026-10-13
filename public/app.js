@@ -1,4 +1,4 @@
-import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1';
+import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261012-approved-arrow-desktop-v2';
@@ -1647,6 +1647,11 @@ function updateDocumentLanguageMeta(lang) {
       fi:["AI-chatbot vai livechat vai lomake? | Vertailu yritykselle","Vertaa AI-chatbotia, livechattia ja yhteydenottolomaketta: vastausnopeus, asiakaspalvelun laatu, kustannukset ja luotettavat vastaukset."],
       sv:["AI-chatbot eller livechatt? | Företagsguide","Praktisk jämförelse av AI-chatbot, livechatt och kontaktformulär: bemanning, svarstid, kostnader och tillförlitliga svar."],
       en:["AI Chatbot vs Live Chat vs Contact Form | Respondo AI","Compare AI chatbots, live chat and contact forms for small business: answer accuracy, speed, human support and realistic costs."],
+    },
+    '/guides/ai-chatbot-pricing': {
+      fi:['AI-asiakaspalvelubotin hinta yritykselle | Respondo AI','Paljonko AI-chatbot maksaa? Vertaa kuukausi- ja vuositilausta, paketteja, käyttöönottoa ja kokonaiskustannuksia.'],
+      sv:['Vad kostar en AI-kundservicebot? | Respondo AI','Jämför priser för AI-chatbot till företag, månads- och årsabonnemang, uppstart och verkliga kostnader.'],
+      en:['AI Customer Service Chatbot Pricing Guide | Respondo AI','How much does an AI chatbot cost? Compare monthly and annual subscriptions, setup work, hidden fees and realistic ROI.'],
     },
     '/guides/multilingual-customer-support-chatbot': {
       fi:["Monikielinen asiakaspalvelubotti: 8 testiä | Respondo AI","Käytännön opas monikielisen AI-chatbotin testaamiseen: suomi, ruotsi ja englanti, jatkokysymykset ja tietojen luotettavuus."],
