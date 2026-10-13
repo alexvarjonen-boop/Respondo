@@ -228,3 +228,8 @@ body.public-nav-active .apple-home-page .nav .navactions a.btn.ink.nav-home-scro
   border-color:#0077ed!important;
   box-shadow:none!important;
 }
+
+/* One contextual internal link to the complete customer service bot explanation. */
+.apple-bottom-cta .apple-buyer-guide-link{display:block;width:fit-content;max-width:100%;margin:22px auto 0;color:#b9c7df;font-size:14px;font-weight:600;text-underline-offset:4px;text-decoration:underline}
+.apple-bottom-cta .apple-buyer-guide-link:hover{color:#fff}
+.apple-bottom-cta .apple-buyer-guide-link:focus-visible{outline:3px solid #fff;outline-offset:5px}
