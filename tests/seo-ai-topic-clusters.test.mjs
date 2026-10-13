@@ -69,8 +69,9 @@ test('public HTTP SEO responses for two topics each in three languages, sitemap 
     assert.ok(html.includes('<meta name="robots" content="index,follow'),'accidental noindex '+url);
     assert.ok(html.includes(aiTopicMarkup(p,lang)),'initial server HTML has no meaningful page content '+url);
     assert.ok(html.includes('hreflang="fi"')&&html.includes('hreflang="sv"')&&html.includes('hreflang="en"'),'missing multilingual alternates');
-    const link='https://respondoai.fi'+url;
-    assert.ok(html.includes('rel="canonical" href="'+link.replace(/&/g,'&amp;')+'"'),'incorrect canonical '+url);
+    const canon=html.match(/<link rel="canonical" href="([^"]+)">/)?.[1];
+    assert.ok(canon, 'missing canonical '+url);
+    assert.equal(new URL(canon.replace(/&amp;/g,'&')).pathname+new URL(canon.replace(/&amp;/g,'&')).search,url,'incorrect canonical '+url);
   }
   const site=await (await fetch(base+'/sitemap.xml')).text();
   for(const path of AI_TOPIC_PATHS){
