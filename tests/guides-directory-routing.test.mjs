@@ -16,6 +16,8 @@ test('guides route handles trailing slash and does not collide with the public/g
     ['/guides/?lang=fi','fi','AI-asiakaspalvelun oppaat'],
     ['/guides?lang=sv','sv','Guider till AI-kundservice'],
     ['/guides/?lang=en','en','Guides to AI customer support'],
+    ['/guides/?lang=sv','sv','Guider till AI-kundservice'],
+    ['/guides?lang=en','en','Guides to AI customer support'],
     ['/guides/ai-customer-service-chatbot?lang=fi','fi','AI-asiakaspalvelubotti']
   ]){
     const response=await fetch(origin+pathname,{redirect:'manual'});
