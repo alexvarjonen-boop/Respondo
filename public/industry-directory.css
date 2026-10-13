@@ -46,3 +46,35 @@
 #app .vertical-back-link{display:inline-block;margin-top:22px;color:#1d55af;font-size:15px;font-weight:700;text-decoration:none}
 #app .vertical-back-link:hover{text-decoration:underline}
 @media(max-width:720px){#app .vertical-landing .vertical-faq-wrap{padding-top:0;padding-bottom:65px}#app .vertical-faq-item{padding:0 17px}#app .vertical-faq-item summary{padding:19px 30px 19px 0}#app .vertical-faq-item summary::after{top:17px}}
+
+/* Customer service buyer intent page: clear explanations and accessible buyer FAQs. */
+#app .customer-bot-landing{color:#152039;background:#fff}
+#app .customer-bot-landing .seo-landing-hero h1{line-height:1.02;overflow-wrap:break-word}
+#app .customer-bot-landing .seo-landing-intro{margin-bottom:33px}
+#app .customer-bot-landing .seo-landing-intro+.seo-landing-intro{margin-top:40px}
+#app .customer-bot-landing .seo-landing-intro h2{line-height:1.15}
+#app .customer-bot-steps{background:#f8fafd;padding-top:68px;padding-bottom:76px}
+#app .customer-bot-steps-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+#app .customer-bot-steps-grid article{background:#fff;border:1px solid #e2e6ef;border-radius:19px;padding:26px;min-width:0}
+#app .customer-bot-steps-grid h3{font-size:19px;line-height:1.3;letter-spacing:-.025em;margin:0 0 12px}
+#app .customer-bot-steps-grid p{font-size:15px;line-height:1.75;color:#59677b;margin:0}
+#app .customer-bot-explain{padding-top:74px;padding-bottom:60px}
+#app .customer-bot-explain-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+#app .customer-bot-explain-grid article{border:1px solid #e2e7f0;background:#fbfcff;border-radius:21px;padding:30px}
+#app .customer-bot-explain-grid h2,#app .customer-bot-faq-section h2{font-size:clamp(28px,3.7vw,43px);line-height:1.16;letter-spacing:-.04em;margin:0 0 18px}
+#app .customer-bot-explain-grid p{font-size:16px;line-height:1.8;color:#556479;margin:0 0 17px}
+#app .customer-bot-explain-grid a,#app .customer-bot-related a{font-size:15px;font-weight:700;color:#215bb2;text-decoration:none}
+#app .customer-bot-explain-grid a:hover,#app .customer-bot-related a:hover{text-decoration:underline}
+#app .customer-bot-faq-section{padding-top:18px;padding-bottom:83px}
+#app .customer-bot-faq-section>.container{max-width:980px}
+#app .customer-bot-faq-list{display:grid;gap:11px}
+#app .customer-bot-faq{border:1px solid #e1e7f0;border-radius:15px;background:#fff;padding:0 23px}
+#app .customer-bot-faq summary{position:relative;list-style:none;cursor:pointer;padding:23px 32px 23px 0;font-weight:700;line-height:1.4;font-size:17px}
+#app .customer-bot-faq summary::-webkit-details-marker{display:none}
+#app .customer-bot-faq summary::after{content:'+';position:absolute;right:0;top:20px;color:#1e5eb3;font-size:24px;font-weight:400}
+#app .customer-bot-faq[open] summary::after{content:'−'}
+#app .customer-bot-faq p{margin:0;padding:0 0 23px;font-size:15px;line-height:1.8;color:#59677b;max-width:770px}
+#app .customer-bot-faq summary:focus-visible,#app .customer-bot-related a:focus-visible{outline:3px solid #2664c5;outline-offset:4px}
+#app .customer-bot-related{display:flex;flex-wrap:wrap;gap:17px 28px;margin:18px 0 20px}
+#app .customer-bot-landing .customer-bot-note{font-size:14px;line-height:1.6;max-width:700px;margin-top:18px}
+@media(max-width:760px){#app .customer-bot-steps-grid,#app .customer-bot-explain-grid{grid-template-columns:minmax(0,1fr)}#app .customer-bot-steps{padding-top:45px;padding-bottom:50px}#app .customer-bot-steps-grid article,#app .customer-bot-explain-grid article{padding:22px}#app .customer-bot-explain{padding-top:50px;padding-bottom:30px}#app .customer-bot-faq-section{padding-bottom:60px}#app .customer-bot-faq{padding:0 17px}}

@@ -1,7 +1,8 @@
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
+import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
-import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1';
+import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1-customer-buyer-link-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261012-approved-arrow-desktop-v2';
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
@@ -1660,7 +1661,7 @@ function updateDocumentLanguageMeta(lang) {
       en:["Multilingual Customer Support Chatbot: 8 Tests | Respondo AI","Eight practical tests for multilingual AI customer support bots: grounded answers, code-switching, ecommerce terms, human handoff and data isolation."],
     },
     '/asiakaspalvelubotti': {
-      fi:['Asiakaspalvelubotti yritykselle | Respondo AI','Asiakaspalvelubotti yrityksen verkkosivuille: vastaukset 24/7 omilla yritystiedoillasi, liidit, ajanvaraus ja tarvittaessa siirto ihmiselle.'],
+      fi:['Asiakaspalvelijabotti ja AI-asiakaspalvelija yritykselle | Respondo AI','Asiakaspalvelijabotti verkkosivuille: AI-asiakaspalvelija vastaa yrityksen omilla tiedoilla 24/7. Toiminnot, hinnat, käyttöönotto ja demo.'],
       sv:['Kundservicebot för företag | Respondo AI','Kundservicebot för företagets webbplats: svar dygnet runt med företagets egna uppgifter, leads, bokning och överlämning till människa.'],
       en:['Customer Service Bot for Business | Respondo AI','A customer service bot for business websites: 24/7 answers from your approved company information, lead capture, bookings and human handoff.'],
     },
@@ -2870,7 +2871,7 @@ function audienceHubPage() {
     ['/siivousyritys-chatbot','05',appText('Siivousyritykset','Städföretag','Cleaning companies'),appText('Kotisiivous, muuttosiivous ja tarjouspyynnöt yrityksen tiedoilla.','Hemstädning, flyttstädning och offerter med företagets uppgifter.','Housekeeping, move-out cleaning and quote enquiries from company knowledge.'),appText('SIIVOUS','STÄDNING','CLEANING')]
   ];
   const uses=[
-    ['/asiakaspalvelubotti','06',appText('Asiakaspalvelubotti','Kundservicebot','Customer service bot'),appText('Toistuvat kysymykset, aukioloajat, palvelut ja yhteydenotot automaattisesti.','Vanliga frågor, öppettider, tjänster och kontaktförfrågningar.','FAQs, opening hours, services and customer enquiries.'),appText('ASIAKASPALVELU','KUNDSERVICE','CUSTOMER SUPPORT')],
+    ['/asiakaspalvelubotti','06',appText('AI-asiakaspalvelija ja asiakaspalvelijabotti','AI-kundservicebot','AI customer service chatbot'),appText('Toistuvat kysymykset, aukioloajat, palvelut ja yhteydenotot automaattisesti.','Vanliga frågor, öppettider, tjänster och kontaktförfrågningar.','FAQs, opening hours, services and customer enquiries.'),appText('ASIAKASPALVELU','KUNDSERVICE','CUSTOMER SUPPORT')],
     ['/ajanvaraus-chatbot','07',appText('Ajanvaraus-chatbot','Bokningschatbot','Booking chatbot'),appText('Ajanvarauksen kysymykset ja varauspyynnöt ilman turhaa odottamista.','Bokningsfrågor och tidsförfrågningar utan onödig väntan.','Appointment questions and booking requests without unnecessary delays.'),appText('AJANVARAUS','BOKNING','BOOKINGS')]
   ];
   const card=([href,no,title,desc,tag])=>`<a class="audience-card" href="${href}${qs}">
@@ -4884,7 +4885,8 @@ async function route() {
   if (path === '/') html = await home();
   else if (path === '/hinnat') html = `<div class="pricing-page">${nav()}<main>${pricingSection()}</main>${footer()}</div>`;
   else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
-  else if (['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot','/autokorjaamo-chatbot','/lvi-chatbot'].includes(path)) html = seoLandingPage(path);
+  else if (['/verkkokauppa-chatbot','/ajanvaraus-chatbot','/autokorjaamo-chatbot','/lvi-chatbot'].includes(path)) html = seoLandingPage(path);
+  else if (path === '/asiakaspalvelubotti') html = `<div class="seo-landing-page">${nav()}${customerServiceLandingMarkup(currentLang())}${footer()}</div>`;
   else if (VERTICAL_LANDING_PATHS.includes(path)) html = `<div class="seo-landing-page">${nav()}${verticalLandingMarkup(path,currentLang())}${footer()}</div>`;
   else if (path === '/kenelle-sopii') html = audienceHubPage();
   else if (GLOBAL_GUIDE_PATHS.includes(path)) html = `<div class="global-guide-page">${nav()}${globalResourcesMarkup(path,currentLang())}${footer()}</div>`;
