@@ -4885,7 +4885,7 @@ async function route() {
   if (path === '/') html = await home();
   else if (path === '/hinnat') html = `<div class="pricing-page">${nav()}<main>${pricingSection()}</main>${footer()}</div>`;
   else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
-  else if (['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot','/autokorjaamo-chatbot','/lvi-chatbot'].includes(path)) html = seoLandingPage(path);
+  else if (['/verkkokauppa-chatbot','/ajanvaraus-chatbot','/autokorjaamo-chatbot','/lvi-chatbot'].includes(path)) html = seoLandingPage(path);
   else if (path === '/asiakaspalvelubotti') html = `<div class="seo-landing-page">${nav()}${customerServiceLandingMarkup(currentLang())}${footer()}</div>`;
   else if (VERTICAL_LANDING_PATHS.includes(path)) html = `<div class="seo-landing-page">${nav()}${verticalLandingMarkup(path,currentLang())}${footer()}</div>`;
   else if (path === '/kenelle-sopii') html = audienceHubPage();
