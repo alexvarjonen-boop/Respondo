@@ -1,4 +1,4 @@
-import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1';
+import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261012-approved-arrow-desktop-v2';
@@ -1642,6 +1642,11 @@ function updateDocumentLanguageMeta(lang) {
       fi:['Chatbotin tietopohja – käytännön opas | Respondo AI','Näin rakennat verkkosivun AI-botille luotettavan tietopohjan ja testaat vastaukset ennen käyttöönottoa.'],
       sv:['Bygg en kunskapsbas för en chatbot | Respondo AI','Praktisk checklista för en pålitlig kunskapsbas och en webbplatsbot som inte gissar.'],
       en:['Website Chatbot Knowledge Base Guide | Respondo AI','Learn how to build a trustworthy website chatbot knowledge base with real customer questions, careful imports and clear escalations.'],
+    },
+    '/guides/ai-chatbot-vs-live-chat': {
+      fi:["AI-chatbot vai livechat vai lomake? | Vertailu yritykselle","Vertaa AI-chatbotia, livechattia ja yhteydenottolomaketta: vastausnopeus, asiakaspalvelun laatu, kustannukset ja luotettavat vastaukset."],
+      sv:["AI-chatbot eller livechatt? | Företagsguide","Praktisk jämförelse av AI-chatbot, livechatt och kontaktformulär: bemanning, svarstid, kostnader och tillförlitliga svar."],
+      en:["AI Chatbot vs Live Chat vs Contact Form | Respondo AI","Compare AI chatbots, live chat and contact forms for small business: answer accuracy, speed, human support and realistic costs."],
     },
     '/guides/multilingual-customer-support-chatbot': {
       fi:["Monikielinen asiakaspalvelubotti: 8 testiä | Respondo AI","Käytännön opas monikielisen AI-chatbotin testaamiseen: suomi, ruotsi ja englanti, jatkokysymykset ja tietojen luotettavuus."],

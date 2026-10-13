@@ -203,3 +203,28 @@ test('public independent-use chatbot checklist is a real static, SEO-indexable t
  const shell=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
  assert.match(shell,/scorecard-v1-interactive-v1/);
 });
+
+test('new AI chatbot vs live chat guide is fully localised, crawlable and linked',async()=>{
+  const m=await import('../public/global-resources.mjs');
+  const slug='/guides/ai-chatbot-vs-live-chat';
+  assert.ok(m.GLOBAL_GUIDE_PATHS.includes(slug));
+  for(const lang of ['fi','sv','en']){
+    const guide=m.globalGuideData(slug,lang);
+    assert.ok(guide?.sections.length>=6,'missing sections '+lang);
+    assert.ok(guide?.faq.length>=4,'missing FAQs '+lang);
+    const html=m.globalResourcesMarkup(slug,lang);
+    assert.ok(html.length>2800,'article too thin '+lang);
+    assert.match(html,/global-guide-next/);
+    assert.ok(m.globalResourcesMarkup('/guides',lang).includes(slug),'not in guide directory '+lang);
+  }
+  assert.ok(server.includes("'"+slug+"'"),'missing server title or indexability');
+  assert.ok(client.includes("'"+slug+"'"),'missing client title');
+  assert.match(server,/\.\.\.GLOBAL_GUIDE_PATHS/);
+  assert.match(client,/\.\.\.GLOBAL_GUIDE_PATHS/);
+  assert.match(client,/GLOBAL_GUIDE_PATHS\.includes\(path\)/);
+  const rss=readFileSync(new URL('../public/guides/feed.xml',import.meta.url),'utf8');
+  assert.ok(rss.includes(slug));
+  const shell=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+  assert.ok(shell.includes('-interactive-v1-comparison-v1'));
+  assert.ok(client.includes('global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1'));
+});

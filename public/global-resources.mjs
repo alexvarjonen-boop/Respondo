@@ -249,7 +249,154 @@ const guides = {
       ]
     ]
   }
-}
+},
+  "/guides/ai-chatbot-vs-live-chat": {
+    "reading": "7",
+    "fi": {
+      "title": "AI-chatbot, livechat vai yhteydenottolomake? Vertailu yritykselle",
+      "subtitle": "Mitä eroa on automaattisella botilla, ihmisen livechatilla ja tavallisella yhteydenottolomakkeella? Vertaa käytännön tilanteita ennen valintaa.",
+      "sections": [
+        [
+          "Kolme kanavaa, kolme erilaista tehtävää",
+          "Yhteydenottolomake välittää viestin työntekijälle myöhempää vastausta varten. Livechat tarjoaa ihmisen vastauksen silloin, kun henkilöstöä on paikalla. AI-chatbot voi hoitaa toistuvia, yrityksen hyväksyttyihin tietoihin perustuvia kysymyksiä myös työajan jälkeen. Kanavia ei tarvitse valita vain yhtä: monessa yrityksessä toimiva ratkaisu on yhdistelmä, jossa asiakas pääsee tarvittaessa aina ihmisen luo."
+        ],
+        [
+          "Yhteydenottolomake toimii yksilöllisissä tapauksissa",
+          "Lomake sopii erityisesti tarjouksiin, joita ei voi laskea ilman kohteen tietoja, sekä harvinaisiin ja tapauskohtaisiin pyyntöihin. Se on helppo ylläpitää ja voi kerätä oikeat lisätiedot, esimerkiksi työn sijainnin ja kuvauksen. Asiakas ei kuitenkaan saa heti vastausta vaikkapa aukioloajoista tai toimitustavoista. Kerro siksi selvästi, milloin vastaatte, ja pidä lomake löydettävissä, vaikka ottaisitte käyttöön botin."
+        ],
+        [
+          "Livechat sopii monimutkaiseen palveluun",
+          "Ihmisen livechat on hyvä reklamaatioissa, asiakaskohtaisissa poikkeuksissa ja tilanteissa, joissa asiakkaan asian ratkaiseminen vaatii harkintaa. Haittana on henkilöstön tarve: jos chat lupaa vastausta heti mutta kukaan ei ole tavoitettavissa, pettymys voi olla suurempi kuin hyvin toteutetussa yhteydenottolomakkeessa. Ilmoita oikeat palveluajat ja tarjoa viestin jättämistä myös silloin, kun livechat on suljettu."
+        ],
+        [
+          "AI-chatbotin tehtävä on vastata oikeilla tiedoilla",
+          "Botti toimii parhaiten tuotteiden, palvelujen, hinnastojen, toimitusehtojen, palautusten ja usein kysyttyjen kysymysten yhteydessä. Autokorjaamo voi esimerkiksi kertoa, kuuluuko renkaiden vaihto palveluihin, ja verkkokauppa voi näyttää palautusehdot. Jos korjauksen hinta tai vapaa aika ei ole tiedossa, botin ei pidä keksiä vastausta. Sen tulee kertoa epävarmuudesta ja ohjata yhteydenottoon. Tietopohjaa täytyy päivittää, kun yrityksen tiedot muuttuvat."
+        ],
+        [
+          "Vertaa kustannuksia mitattujen lukujen avulla",
+          "Laske kuukauden aikana tulleet toistuvat kysymykset sekä keskimääräinen vastaamiseen kulunut aika. Esimerkki: 120 kysymystä kertaa 3 minuuttia on yhteensä 6 tuntia. Jos botti vastaa oikein puoleen ilman työntekijää, säästö on teoriassa enintään 3 tuntia ennen ylläpitoa, tarkistuksia ja palvelun hintaa. Kyse on havainnollistuksesta, ei taatusta tuloksesta. Seuraa erikseen onnistuneita vastauksia ja niitä tapauksia, joihin työntekijä joutui palaamaan."
+        ],
+        [
+          "Tee päätös näin",
+          "Kirjaa 20 todellista asiakaskysymystä, niiden vahvistetut vastaukset ja se, tarvitseeko ihminen osallistua. Testaa ne kaikissa käyttöön otettavissa kielissä. Vertaa lomakkeen, livechatin ja botin kykyä vastata tai ohjata kysymys turvallisesti. Arvioi myös ylläpito, yhteydenottojen laatu ja palvelun saatavuus. Respondo AI:n maksulliset tilaukset ovat tällä hetkellä saatavilla vain suomalaisille yrityksille."
+        ]
+      ],
+      "faq": [
+        [
+          "Korvaako AI-chatbot työntekijän?",
+          "Ei kaikissa tilanteissa. Epäselvät, henkilökohtaiset ja vaativat asiakasasiat kannattaa ohjata ihmiselle."
+        ],
+        [
+          "Onko AI aina edullisempi kuin livechat?",
+          "Ei. Vertaa henkilöstö-, ohjelmisto-, ylläpito- ja laadunvarmistuskustannuksia todellisilla kysymysmäärillä."
+        ],
+        [
+          "Voiko AI ilmoittaa hinnan?",
+          "Voi, jos yritys on vahvistanut hinnan tai hinnoittelusäännön tietopohjaan. Muussa tapauksessa kannattaa ohjata tarjouspyyntöön."
+        ],
+        [
+          "Mikä on hyvä ensimmäinen testi?",
+          "Kysy sama asia eri sanamuodoilla ja selvitä, kertooko botti rehellisesti, kun vahvistettua tietoa ei löydy."
+        ]
+      ]
+    },
+    "sv": {
+      "title": "AI-chatbot, livechatt eller kontaktformulär? En företagsguide",
+      "subtitle": "Jämför svarstid, bemanning, kvalitet och kostnader innan du väljer kundservice på webbplatsen.",
+      "sections": [
+        [
+          "Tre kanaler löser olika uppgifter",
+          "Ett kontaktformulär samlar frågor som besvaras senare. Livechatt ger svar från en person när personal finns på plats. En AI-chatbot kan besvara återkommande frågor med företagets egna godkända uppgifter, även utanför öppettiderna. Ofta fungerar en kombination bäst: enkla frågor besvaras direkt och svåra ärenden går vidare till en människa."
+        ],
+        [
+          "När räcker ett kontaktformulär?",
+          "Ett formulär passar individuella offerter och ovanliga frågor som kräver mer information. Det är lätt att sköta och kan samla relevanta detaljer. Däremot får kunden normalt vänta även på enkla svar om till exempel öppettider eller leveransvillkor. Ange en realistisk svarstid och håll formuläret synligt också när webbplatsen använder AI."
+        ],
+        [
+          "När behövs livechatt med personal?",
+          "Livechatt är särskilt användbar vid klagomål, kundspecifika undantag och situationer som kräver omdöme. Kostnaden beror på bemanning och öppettider. Lova inte svar i realtid om ingen faktiskt kan svara. Erbjud en möjlighet att lämna ett meddelande när personalen inte är tillgänglig."
+        ],
+        [
+          "När tillför AI-chatboten värde?",
+          "AI kan besvara frågor om produkter, tjänster, priser, returer och bokningsrutiner utifrån verifierade företagsuppgifter. Den ska inte hitta på reparationspriser, lediga tider eller tekniska råd som inte har bekräftats. När information saknas ska kunden få en tydlig förklaring och möjlighet att kontakta en anställd. Kunskapsbasen måste hållas aktuell."
+        ],
+        [
+          "Beräkna nyttan utan orealistiska löften",
+          "Mät antalet återkommande frågor och tiden för att svara. Ett räkneexempel: 120 frågor som tar 3 minuter var innebär 6 timmars arbete. Om hälften kan lösas korrekt av en bot är den möjliga besparingen högst 3 timmar före underhåll, kontroll och abonnemangskostnader. Det är ingen prognos. Följ upp hur många frågor som verkligen löstes utan mänsklig efterbehandling."
+        ],
+        [
+          "Gör ett jämförbart test",
+          "Samla 20 riktiga kundfrågor, skriv ner korrekta svar och markera när en människa behövs. Kör samma frågor genom den valda lösningen och prova alla språk som kunderna använder. Jämför riktiga svar, eskalering och underhållsarbete. Respondo AI:s betalda abonnemang är för närvarande tillgängliga bara för företag i Finland."
+        ]
+      ],
+      "faq": [
+        [
+          "Ersätter AI helt en kundservicemedarbetare?",
+          "Nej. Komplicerade, känsliga eller personliga ärenden bör fortfarande kunna nå en människa."
+        ],
+        [
+          "Är AI alltid billigare?",
+          "Nej. Räkna på personal, licens, underhåll och hur många ärenden som faktiskt löses."
+        ],
+        [
+          "Kan en chatbot svara på priser?",
+          "Ja, om företaget har godkänt prisuppgiften eller prisregeln. Annars bör kunden kunna be om offert."
+        ],
+        [
+          "Vad bör testas först?",
+          "Ställ samma fråga på flera sätt och kontrollera att botten inte hittar på uppgifter när svaret saknas."
+        ]
+      ]
+    },
+    "en": {
+      "title": "AI Chatbot vs Live Chat vs Contact Form: A Small Business Guide",
+      "subtitle": "Compare immediate answers, real human coverage, customer experience and costs before choosing how visitors contact your business.",
+      "sections": [
+        [
+          "Three channels serve different customer needs",
+          "A contact form collects a question for later follow-up. Live chat provides a conversation with a person if staff are available. An AI chatbot may answer repetitive questions using company-approved information, including outside office hours. None is inherently superior in every situation. A good website can combine all three: instant answers for known facts, direct human support for difficult cases and a simple way to leave a request."
+        ],
+        [
+          "When is a contact form the right option?",
+          "A form works well for custom quotations, work requiring a site visit and rare questions that need an individual assessment. It is relatively simple to maintain and can collect the facts an employee will need. The drawback is waiting for an answer, even if the visitor only wants to know opening hours or return conditions. Publish a realistic response window and keep the form accessible instead of hiding it behind a chatbot."
+        ],
+        [
+          "When does live chat outperform automation?",
+          "Live chat is well suited to complaints, account-specific exceptions, emotionally difficult conversations and problems requiring judgement. A human can understand nuance and check information not available to a bot. But live chat requires real staffing. Advertising instant help while leaving visitors unanswered can be worse than offering an honest contact form. Make agent availability and offline fallback clear."
+        ],
+        [
+          "Where does an AI chatbot actually help?",
+          "AI chatbots are most useful when customers repeatedly ask about products, services, opening hours, prices, returns and booking procedures. A repair shop can answer whether it provides brake servicing; a store can explain its shipping policy. Automation should never invent an unconfirmed repair quote, available slot or safety instruction. When the approved source has no answer, acknowledge that and offer a human follow-up. Keep the knowledge base updated as policies change."
+        ],
+        [
+          "Calculate potential savings without an inflated ROI claim",
+          "Start with your monthly volume of repeat questions and average manual handling time. For illustration, 120 questions at three minutes each equal six hours of answering. If a well-tested bot correctly resolves half with no human follow-up, the theoretical saving is at most three hours before maintenance time, quality checks and subscription charges. This is an example, not a performance guarantee. Measure genuinely resolved requests rather than counting every chatbot conversation as a success."
+        ],
+        [
+          "Make a decision with reproducible tests",
+          "Collect 20 real customer questions and their verified answers. Mark where a person must take over. Test those cases in your actual languages, including a follow-up question and a case with missing pricing data. Compare answer accuracy, escalation, the quality of captured enquiries and monthly maintenance effort. For structured testing, use the free 25-question chatbot evaluation scorecard linked below. Respondo AI paid business plans are currently available only in Finland."
+        ]
+      ],
+      "faq": [
+        [
+          "Can an AI chatbot replace live chat entirely?",
+          "Not in every case. Complicated, personal and sensitive questions should still have access to a human."
+        ],
+        [
+          "Is an AI chatbot automatically cheaper?",
+          "No. Compare software fees, staffing, quality assurance, knowledge-base maintenance and real resolution rates."
+        ],
+        [
+          "Can an AI chatbot give a price?",
+          "Only when the price or rule is verified by the business. Otherwise, a request for a quote is safer."
+        ],
+        [
+          "What should I test first?",
+          "Ask the same question in several ways, then verify that the bot does not invent facts when the approved answer is missing."
+        ]
+      ]
+    }
+  }
 };
 export const GLOBAL_GUIDE_PATHS = ['/guides', ...Object.keys(guides)];
 export function globalGuideData(path,lang='fi') {
