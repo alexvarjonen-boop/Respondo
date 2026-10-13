@@ -30,6 +30,7 @@
 #app .global-guide-cta h2{font-size:clamp(25px,3.2vw,34px);letter-spacing:-.025em;margin:0 0 16px}
 #app .global-guide-cta p{color:#c3cbd7;line-height:1.75;font-size:16px;margin:0 0 25px}
 #app .global-guide-cta a{display:inline-block;color:#fff;background:#2767d5;padding:12px 20px;border-radius:11px;text-decoration:none}
+#app .global-guide-cta .global-guide-pricing-action{background:transparent;border:1px solid rgba(255,255,255,.65);margin:8px 0 0 10px}@media(max-width:500px){#app .global-guide-cta .global-guide-pricing-action{margin:10px 0 0}}
 #app .global-guide-footer-notice{font-size:13px;color:#6b7789;line-height:1.65;margin-top:30px}
 #app .global-guide-footer-notice a{color:#2863c4}
 @media(max-width:760px){#app .global-guide-main{padding:44px 0 80px}#app .global-guide-hero{padding:35px 0 40px}#app .global-guide-grid{grid-template-columns:1fr}#app .global-guide-card{min-height:235px}#app .global-guide-section p{font-size:16px;line-height:1.82}#app .global-guide-prose{width:100%}}
