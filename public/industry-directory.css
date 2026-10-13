@@ -29,3 +29,20 @@
 #app .audience-cta-buttons .btn{justify-content:center;white-space:nowrap;text-align:center}
 @media(max-width:760px){#app .audience-hero{padding:70px 0}#app .audience-hero h1{font-size:clamp(42px,10vw,67px)}#app .audience-section{padding-top:61px}#app .audience-section--end{padding-bottom:77px}#app .audience-grid{grid-template-columns:minmax(0,1fr);gap:14px}#app .audience-card{min-height:238px;padding:28px;border-radius:22px}#app .audience-card-body{padding-top:44px}#app .audience-cta-inner{flex-direction:column;align-items:stretch;gap:30px;padding:30px 26px}#app .audience-cta-buttons{width:100%}}
 @media(prefers-reduced-motion:reduce){#app .audience-card{transition:none}#app .audience-card:hover{transform:none}}
+
+/* Expanded industry pages: editorial FAQs and clear, accessible conversion links. */
+#app .vertical-landing{background:#fff;color:#152039}
+#app .vertical-landing .vertical-faq-wrap{max-width:980px;padding-top:10px;padding-bottom:85px}
+#app .vertical-faq-wrap h2{font-size:clamp(30px,4vw,48px);line-height:1.13;letter-spacing:-.045em;margin:0 0 27px}
+#app .vertical-faq-list{display:grid;gap:12px}
+#app .vertical-faq-item{border:1px solid #e2e7f0;border-radius:17px;background:#fbfcfe;padding:0 24px}
+#app .vertical-faq-item summary{position:relative;cursor:pointer;padding:22px 31px 22px 0;font-size:clamp(16px,2vw,19px);line-height:1.4;font-weight:680;list-style:none}
+#app .vertical-faq-item summary::-webkit-details-marker{display:none}
+#app .vertical-faq-item summary::after{content:'+';position:absolute;right:0;top:20px;color:#2d63bf;font-size:23px;font-weight:400}
+#app .vertical-faq-item[open] summary::after{content:'−'}
+#app .vertical-faq-item p{margin:0;padding:0 0 23px;max-width:770px;font-size:15px;line-height:1.8;color:#58687e}
+#app .vertical-faq-item summary:focus-visible,#app .vertical-back-link:focus-visible{outline:3px solid #2865d0;outline-offset:4px}
+#app .vertical-landing-note{font-size:14px!important;margin-top:16px!important;max-width:780px}
+#app .vertical-back-link{display:inline-block;margin-top:22px;color:#1d55af;font-size:15px;font-weight:700;text-decoration:none}
+#app .vertical-back-link:hover{text-decoration:underline}
+@media(max-width:720px){#app .vertical-landing .vertical-faq-wrap{padding-top:0;padding-bottom:65px}#app .vertical-faq-item{padding:0 17px}#app .vertical-faq-item summary{padding:19px 30px 19px 0}#app .vertical-faq-item summary::after{top:17px}}
