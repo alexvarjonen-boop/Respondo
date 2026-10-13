@@ -65,7 +65,8 @@ test('six localized industry pages are indexable, prerendered and included in si
       assert.equal(response.status,200,url);
       const html=await response.text();
       assert.ok(html.includes('<html lang="'+lang+'">'),'wrong document language '+url);
-      assert.ok(html.includes('<title>'+verticalMetaForPath(path)[lang][0]+'</title>'),'wrong page title '+url);
+      const title=verticalMetaForPath(path)[lang][0].replace(/&/g,'&amp;');
+      assert.ok(html.includes('<title>'+title+'</title>'),'wrong page title '+url);
       assert.ok(html.includes('<meta name="robots" content="index,follow'),'unexpected noindex '+url);
       const initial=html.split('<div id="app">')[1]?.split('</main>')[0] || '';
       assert.ok(initial.includes(verticalLandingMarkup(path,lang).slice(0,100)),'localized page not in initial HTML '+url);
