@@ -45,7 +45,7 @@ test('new industries are linked from the audience hub and both SEO routers',()=>
   assert.ok(browser.includes('VERTICAL_LANDING_PATHS.includes(path)'),'browser route must render industries');
   assert.ok(browser.includes('verticalMetaForPath(metaPath)'),'browser SEO metadata fallback absent');
   assert.ok(server.includes('verticalMetaForPath(metaPath)'),'server SEO metadata fallback absent');
-  assert.ok(server.includes('verticalLandingMarkup(req.path, seo.lang)'),'server initial content absent');
+  assert.ok(server.includes('verticalLandingMarkup(routePath, seo.lang)'),'server initial content absent');
   assert.match(css,/vertical-faq-item/);
   assert.match(shell,/industry-directory\.css\?v=[^"]+-vertical-20261013-v1/);
   assert.match(shell,/app\.js\?v=[^"]+-vertical-20261013-v1/);
