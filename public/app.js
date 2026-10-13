@@ -1,4 +1,5 @@
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1';
+import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261012-approved-arrow-desktop-v2';
@@ -1745,8 +1746,8 @@ function updateDocumentLanguageMeta(lang) {
     },
   };
 
-  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
-  const baseMeta = metaByPath[metaPath] || metaByPath['/'];
+  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
+  const baseMeta = metaByPath[metaPath] || verticalMetaForPath(metaPath) || metaByPath['/'];
   const pair = baseMeta[lang] || baseMeta.fi;
   const pageTitle = pair[0];
   const metaDescription = pair[1];
@@ -2864,11 +2865,13 @@ function audienceHubPage() {
   const industries=[
     ['/autokorjaamo-chatbot','01',appText('Autokorjaamot','Bilverkstäder','Auto repair shops'),appText('Huolto, rengastyöt ja korjauspalvelut – asiakkaan kysymyksestä yhteydenottoon.','Service, däck och reparationer – från kundfråga till förfrågan.','Servicing, tyres and repairs – from questions to enquiries.'),appText('AUTOALA','BILBRANSCHEN','AUTOMOTIVE')],
     ['/lvi-chatbot','02',appText('LVI-yritykset','VVS-företag','Plumbing & HVAC'),appText('Putkityöt, lämmitys, huolto ja tarjouspyynnöt yrityksen omilla tiedoilla.','Rör, värme, service och offerter med företagets egna uppgifter.','Plumbing, heating, maintenance and quotes using approved information.'),appText('LVI & HUOLTO','VVS & SERVICE','PLUMBING & HVAC')],
-    ['/verkkokauppa-chatbot','03',appText('Verkkokaupat','Webbutiker','Ecommerce stores'),appText('Tuotteet, hinnat, toimitukset ja palautukset samaan keskusteluun.','Produkter, priser, leveranser och returer i samma konversation.','Products, prices, shipping and returns in one conversation.'),appText('VERKKOKAUPPA','E-HANDEL','ECOMMERCE')]
+    ['/verkkokauppa-chatbot','03',appText('Verkkokaupat','Webbutiker','Ecommerce stores'),appText('Tuotteet, hinnat, toimitukset ja palautukset samaan keskusteluun.','Produkter, priser, leveranser och returer i samma konversation.','Products, prices, shipping and returns in one conversation.'),appText('VERKKOKAUPPA','E-HANDEL','ECOMMERCE')],
+    ['/kampaamo-chatbot','04',appText('Kampaamot ja parturit','Frisörer och barberare','Hair salons and barbers'),appText('Palveluhinnat, ajanvaraus ja peruutusehdot yhdestä paikasta.','Prislistor, bokning och avbokningsvillkor på ett ställe.','Service prices, booking and cancellation policies in one place.'),appText('KAUNEUSPALVELUT','FRISÖRER','SALONS')],
+    ['/siivousyritys-chatbot','05',appText('Siivousyritykset','Städföretag','Cleaning companies'),appText('Kotisiivous, muuttosiivous ja tarjouspyynnöt yrityksen tiedoilla.','Hemstädning, flyttstädning och offerter med företagets uppgifter.','Housekeeping, move-out cleaning and quote enquiries from company knowledge.'),appText('SIIVOUS','STÄDNING','CLEANING')]
   ];
   const uses=[
-    ['/asiakaspalvelubotti','04',appText('Asiakaspalvelubotti','Kundservicebot','Customer service bot'),appText('Toistuvat kysymykset, aukioloajat, palvelut ja yhteydenotot automaattisesti.','Vanliga frågor, öppettider, tjänster och kontaktförfrågningar.','FAQs, opening hours, services and customer enquiries.'),appText('ASIAKASPALVELU','KUNDSERVICE','CUSTOMER SUPPORT')],
-    ['/ajanvaraus-chatbot','05',appText('Ajanvaraus-chatbot','Bokningschatbot','Booking chatbot'),appText('Ajanvarauksen kysymykset ja varauspyynnöt ilman turhaa odottamista.','Bokningsfrågor och tidsförfrågningar utan onödig väntan.','Appointment questions and booking requests without unnecessary delays.'),appText('AJANVARAUS','BOKNING','BOOKINGS')]
+    ['/asiakaspalvelubotti','06',appText('Asiakaspalvelubotti','Kundservicebot','Customer service bot'),appText('Toistuvat kysymykset, aukioloajat, palvelut ja yhteydenotot automaattisesti.','Vanliga frågor, öppettider, tjänster och kontaktförfrågningar.','FAQs, opening hours, services and customer enquiries.'),appText('ASIAKASPALVELU','KUNDSERVICE','CUSTOMER SUPPORT')],
+    ['/ajanvaraus-chatbot','07',appText('Ajanvaraus-chatbot','Bokningschatbot','Booking chatbot'),appText('Ajanvarauksen kysymykset ja varauspyynnöt ilman turhaa odottamista.','Bokningsfrågor och tidsförfrågningar utan onödig väntan.','Appointment questions and booking requests without unnecessary delays.'),appText('AJANVARAUS','BOKNING','BOOKINGS')]
   ];
   const card=([href,no,title,desc,tag])=>`<a class="audience-card" href="${href}${qs}">
     <span class="audience-card-top"><span>${tag}</span><span>${no}</span></span>
@@ -4882,6 +4885,7 @@ async function route() {
   else if (path === '/hinnat') html = `<div class="pricing-page">${nav()}<main>${pricingSection()}</main>${footer()}</div>`;
   else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
   else if (['/asiakaspalvelubotti','/verkkokauppa-chatbot','/ajanvaraus-chatbot','/autokorjaamo-chatbot','/lvi-chatbot'].includes(path)) html = seoLandingPage(path);
+  else if (VERTICAL_LANDING_PATHS.includes(path)) html = `<div class="seo-landing-page">${nav()}${verticalLandingMarkup(path,currentLang())}${footer()}</div>`;
   else if (path === '/kenelle-sopii') html = audienceHubPage();
   else if (GLOBAL_GUIDE_PATHS.includes(path)) html = `<div class="global-guide-page">${nav()}${globalResourcesMarkup(path,currentLang())}${footer()}</div>`;
   else if (path === '/yhteystiedot') html = contactPage();
