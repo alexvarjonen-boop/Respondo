@@ -18,7 +18,9 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
     assert.ok(html.includes('/assistant?lang='+lang));
     assert.ok(html.includes('/ominaisuudet?lang='+lang));
     assert.ok(html.includes('href="/tilaus"'));
-    assert.match(html, /class="apple-orbit-core"><img src="\/respondo-approved-arrow-20261012\.png/);
+    assert.match(html, /class="apple-orbit-core"><svg[^>]*viewBox="0 0 256 256"/);
+    assert.doesNotMatch(html, /class="apple-orbit-core"><img/);
+    assert.doesNotMatch(html, /class="apple-orbit-core"><svg[^>]*<rect/);
     assert.doesNotMatch(html, /class="apple-orbit-core">R<\/div>/);
     assert.doesNotMatch(html,/<iframe|<canvas/);
   });
