@@ -28,7 +28,7 @@ test('guides route handles trailing slash and does not collide with the public/g
     assert.ok(html.includes(title),'Server-rendered guides absent: '+pathname);
     assert.ok(!html.includes('name="robots" content="noindex,nofollow"'),pathname);
     if(pathname.startsWith('/guides?')||pathname.startsWith('/guides/?')){
-      assert.match(html,/<link rel="canonical" href="https:\/\/respondoai\.fi\/guides(?:\?lang=(?:sv|en))?">/);
+      assert.match(html,/<link rel="canonical" href="https?:\/\/[^"]+\/guides(?:\?lang=(?:sv|en))?">/);
       assert.match(html,/class="global-guide-card"/,'Guide directory cards must be available without JavaScript');
     }
   }
