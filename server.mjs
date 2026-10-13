@@ -20,6 +20,7 @@ import https from 'https';
 import { GLOBAL_GUIDE_PATHS, globalGuideData, globalResourcesMarkup } from './public/global-resources.mjs';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './public/vertical-landing.mjs';
 import { CUSTOMER_SERVICE_SEO_PATH, customerServiceLandingMarkup, customerServiceQuestions } from './public/customer-service-landing.mjs';
+import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './public/ai-topic-pages.mjs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -69,6 +70,7 @@ const SEO_INDEXABLE_PATHS = new Set([
   '/features',
   '/funktioner',
   '/asiakaspalvelubotti',
+  ...AI_TOPIC_PATHS,
   '/verkkokauppa-chatbot',
   '/ajanvaraus-chatbot',
   '/autokorjaamo-chatbot',
@@ -210,7 +212,7 @@ function seoMetaForRequest(req) {
   const metaPath = seoMetaPath(rawPath);
   const languageMeta = SEO_META[lang] || SEO_META.fi;
   const fallback = languageMeta['/'];
-  const pair = languageMeta[metaPath] || verticalMetaForPath(metaPath)?.[lang] || fallback;
+  const pair = languageMeta[metaPath] || verticalMetaForPath(metaPath)?.[lang] || aiTopicMeta(metaPath,lang) || fallback;
   const isIndexable = SEO_INDEXABLE_PATHS.has(rawPath);
   const isKnown = isIndexable || SEO_APP_PATHS.has(rawPath);
   const origin = SEO_CANONICAL_ORIGIN;
@@ -362,6 +364,8 @@ function seoNoScriptMarkup(seo, rawPath) {
       ['/lvi-chatbot',['Chatbot LVI-yritykselle','Chatbot för VVS-företag','Plumbing and HVAC chatbot']],
       ['/verkkokauppa-chatbot',['Chatbot verkkokauppaan','Chatbot för webbutik','Ecommerce chatbot']],
       ['/asiakaspalvelubotti',['AI-asiakaspalvelija – asiakaspalvelijabotti','Kundservicebot','Customer service chatbot']],
+      ['/tekoaly-asiakaspalvelu',['Tekoäly asiakaspalvelussa – asiakaspalveluratkaisut','AI i kundservice','AI in customer service']],
+      ['/tekoaly-yrityksille',['Tekoäly yrityksille','AI för företag','AI for businesses']],
       ['/ajanvaraus-chatbot',['Ajanvaraus-chatbot','Bokningschatbot','Booking chatbot']]
     ].map(([href,labels])=>'<li><a href="'+href+langSuffix+'">'+labels[i]+'</a></li>').join('');
     return '<noscript><main><h1>'+heading+'</h1><p>'+lead+'</p><ul>'+links+'</ul></main></noscript>';
@@ -401,7 +405,7 @@ function seoNoScriptMarkup(seo, rawPath) {
   if (rawPath === '/') {
     if (seo.lang === 'sv') return '<noscript><main><h1>AI-kundservicebot för företag 24/7</h1><p>Respondo AI svarar på kundfrågor med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar.</p><p>Starter 34,90 €/mån · Advanced 44,90 €/mån · Business 54,90 €/mån.</p><p><a href="/funktioner">Se funktionerna</a></p></main></noscript>';
     if (seo.lang === 'en') return '<noscript><main><h1>AI customer service bot for businesses 24/7</h1><p>Respondo AI answers customer questions with company-approved information, captures contact requests and supports bookings.</p><p>Starter €34.90/month · Advanced €44.90/month · Business €54.90/month.</p><p><a href="/features">See features</a></p></main></noscript>';
-    return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille 24/7</h1><p>Respondo AI vastaa asiakkaiden kysymyksiin yrityksen omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.</p><p>Starter 34,90 €/kk · Advanced 44,90 €/kk · Business 54,90 €/kk.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a> · <a href="/asiakaspalvelubotti">Mikä on asiakaspalvelijabotti?</a></p></main></noscript>';
+    return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille 24/7</h1><p>Respondo AI vastaa asiakkaiden kysymyksiin yrityksen omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.</p><p>Starter 34,90 €/kk · Advanced 44,90 €/kk · Business 54,90 €/kk.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a> · <a href="/asiakaspalvelubotti">Mikä on asiakaspalvelijabotti?</a> · <a href="/tekoaly-asiakaspalvelu">Tekoäly asiakaspalvelussa</a> · <a href="/tekoaly-yrityksille">Tekoäly yrityksille</a></p></main></noscript>';
   }
   return '<noscript><main><h1>' + escapeHtml(seo.title.replace(/\\s*\\|\\s*Respondo AI$/i,'')) + '</h1><p>' + escapeHtml(seo.description) + '</p><p><a href="' + SEO_CANONICAL_ORIGIN + '/">Respondo AI</a></p></main></noscript>';
 }
@@ -452,7 +456,9 @@ async function renderIndexHtml(req) {
       ? verticalLandingMarkup(routePath, seo.lang)
       : routePath === CUSTOMER_SERVICE_SEO_PATH
         ? customerServiceLandingMarkup(seo.lang)
-        : seoNoScriptMarkup(seo, routePath).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
+        : AI_TOPIC_PATHS.includes(routePath)
+          ? aiTopicMarkup(routePath,seo.lang)
+          : seoNoScriptMarkup(seo, routePath).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
   html = html.replace('<div id="app"></div>', '<div id="app">' + initialContent + '</div>');
 
 
@@ -8108,7 +8114,7 @@ app.get('/robots.txt', (req,res) => {
 
 app.get('/sitemap.xml', (req,res) => {
   // Do not claim that every URL was modified today on each sitemap request.
-  const basePaths = ['/', '/ominaisuudet', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
+  const basePaths = ['/', '/ominaisuudet', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', ...AI_TOPIC_PATHS, '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
   const escapeXml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
   const rows = [];
   for (const basePath of basePaths) {
