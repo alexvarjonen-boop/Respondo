@@ -5013,7 +5013,7 @@ async function route() {
         contactForm.reset();
         if (contactStatus) {
           contactStatus.className='home-contact-status success';
-          contactStatus.textContent=data.message||appText('Kiitos! Viestisi lähetettiin.','Tack! Ditt meddelande skickades.','Thank you! Your message was sent.');
+          contactStatus.textContent=data.message||appText('Kiitos yhteydenotosta. Tiimimme käsittelee viestinne ja palaamme asiaan 24 tunnin kuluessa.','Tack för att ni kontaktade oss. Vårt team behandlar ert meddelande och återkommer inom 24 timmar.','Thank you for contacting us. Our team will review your message and get back to you within 24 hours.');
         }
       } catch(err) {
         if (contactStatus) {

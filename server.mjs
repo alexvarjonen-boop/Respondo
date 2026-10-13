@@ -12354,15 +12354,9 @@ app.post('/api/public/respondo-contact', publicContactLimiter, async (req,res)=>
       ok:true,
       emailSent:Boolean(emailDelivery.sent),
       message:errorText(
-        emailDelivery.sent
-          ? 'Kiitos! Viestisi lähetettiin sähköpostiimme.'
-          : 'Kiitos! Viestisi tallennettiin Respondon yhteydenottoihin.',
-        emailDelivery.sent
-          ? 'Tack! Ditt meddelande skickades till vår e-post.'
-          : 'Tack! Ditt meddelande sparades bland Respondos kontaktförfrågningar.',
-        emailDelivery.sent
-          ? 'Thank you! Your message was sent to our email.'
-          : 'Thank you! Your message was saved in Respondo contact requests.'
+        'Kiitos yhteydenotosta. Tiimimme käsittelee viestinne ja palaamme asiaan 24 tunnin kuluessa.',
+        'Tack för att ni kontaktade oss. Vårt team behandlar ert meddelande och återkommer inom 24 timmar.',
+        'Thank you for contacting us. Our team will review your message and get back to you within 24 hours.'
       )
     });
   } catch(e) {
