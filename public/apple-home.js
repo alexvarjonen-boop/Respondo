@@ -47,5 +47,8 @@ export function appleHomeMarkup(t,lang,count){
       <a href="/tekoaly-asiakaspalvelu?lang=${lang}"><strong>${t('Tekoäly asiakaspalvelussa','AI i kundservice','AI in customer service')}</strong><span>${t('Ratkaisut, käyttöönotto ja ihmisen apu','Lösningar, införande och mänsklig hjälp','Workflows, setup and human escalation')} →</span></a>
       <a href="/tekoaly-yrityksille?lang=${lang}"><strong>${t('Tekoäly yrityksille','AI för företag','AI for businesses')}</strong><span>${t('Käyttökohteet ja aloitusopas','Användning och startguide','Use cases and a starter checklist')} →</span></a>
     </div>
+    <p class="apple-free-tool">
+      <a href="${lang==='en'?'/tools/ai-chatbot-evaluation.html':'/tools/asiakaspalvelubotti-testi.html'}">${t('Maksuton työkalu: testaa mikä tahansa asiakaspalvelubotti 25 kysymyksellä','Gratis verktyg: testa en kundservicebot med 25 frågor (på finska)','Free tool: evaluate any customer service chatbot with 25 real tests')} →</a>
+    </p>
   </div></section>`;
 }
