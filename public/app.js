@@ -1,9 +1,9 @@
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
-import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1';
-import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v1';
+import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1';
+import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
-import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1-customer-buyer-link-v1';
+import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1-customer-buyer-link-v1-ai-topics-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261012-approved-arrow-desktop-v2';
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
@@ -2893,6 +2893,13 @@ function audienceHubPage() {
     <section class="audience-section audience-section--end"><div class="container">
       <div class="audience-section-title"><span>${appText('02 / KÄYTTÖKOHTEET','02 / ANVÄNDNING','02 / USE CASES')}</span><h2>${appText('Yksi ratkaisu. Monta tapaa auttaa.','En lösning. Många möjligheter.','One solution. Many possibilities.')}</h2></div>
       <div class="audience-grid">${uses.map(card).join('')}</div>
+    </div></section>
+    <section class="audience-section audience-related-topics"><div class="container">
+      <div class="audience-section-title"><span>${appText('OPPAAT','GUIDER','GUIDES')}</span><h2>${appText('Tekoäly yrityksen arjessa.','AI i företagets vardag.','AI in day-to-day business.')}</h2></div>
+      <div class="audience-grid">
+        <a class="audience-card" href="/tekoaly-asiakaspalvelu${qs}"><span class="audience-card-top">${appText('ASIAKASPALVELURATKAISUT','KUNDSERVICELÖSNINGAR','CUSTOMER SUPPORT SOLUTIONS')}</span><span class="audience-card-body"><strong>${appText('Tekoäly asiakaspalvelussa','AI i kundservice','AI in customer service')}</strong><span>${appText('Automaattinen asiakaspalvelija, chatbot ja muut vaihtoehdot.','AI-bot, livechatt och andra alternativ.','AI chatbots, live chat and practical options.')}</span></span><span class="audience-card-arrow" aria-hidden="true">↗</span></a>
+        <a class="audience-card" href="/tekoaly-yrityksille${qs}"><span class="audience-card-top">${appText('YRITYKSEN TEKOÄLY','AI FÖR FÖRETAG','BUSINESS AI')}</span><span class="audience-card-body"><strong>${appText('Tekoäly yrityksille','AI för företag','AI for businesses')}</strong><span>${appText('Käyttökohteet, kokeilu ja kustannusten arviointi.','Användningsområden, pilot och kostnader.','Use cases, pilot plans and costs.')}</span></span><span class="audience-card-arrow" aria-hidden="true">↗</span></a>
+      </div>
     </div></section>
     <section class="audience-cta"><div class="container"><div class="audience-cta-inner">
       <div><span class="audience-overline">${appText('EIKÖ TOIMIALAASI NÄY?','SAKNAS DIN BRANSCH?','DON’T SEE YOUR INDUSTRY?')}</span>
