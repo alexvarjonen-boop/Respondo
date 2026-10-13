@@ -4894,6 +4894,8 @@ async function route() {
   else html = `<div>${nav()}<main class="notfound"><div class="container"><div class="section-kicker">404</div><h1>${appText('Tätä sivua ei löytynyt.','Sidan hittades inte.','Page not found.')}</h1><a class="btn ink" href="/">${appText('Palaa etusivulle','Till startsidan','Back to home')}</a></div></main>${footer()}</div>`;
 
   $('#app').innerHTML = html;
+  // The real interface has replaced the SEO pre-render. Reveal it in the same frame.
+  document.documentElement.classList.remove('respondo-awaiting-client');
   document.body.classList.toggle('public-nav-active', Boolean(document.querySelector('#app .nav')));
   applyLanguage();
   bindLanguageSwitch();
@@ -7346,6 +7348,8 @@ async function route() {
 
 route().catch((error) => {
   console.error('Respondo route failed', error);
+  // Never leave the error fallback invisible on a failed boot.
+  document.documentElement.classList.remove('respondo-awaiting-client');
   const root = document.getElementById('app');
   if (root) {
     root.innerHTML = '<main class="app-crash-fallback"><div class="container"><div class="notice error"><b>Respondo ei saanut näkymää avattua.</b><p>Päivitä sivu. Jos ongelma jatkuu, kirjaudu ulos ja takaisin sisään.</p><button type="button" id="crashReload" class="btn">Päivitä sivu</button></div></div></main>';

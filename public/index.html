@@ -20,6 +20,16 @@
 <title>RESPONDO AI | Asiakaspalvelubotti yrityksille 24/7</title>
 <link rel="icon" type="image/png" href="/respondo-approved-arrow-20261012.png?v=20261012-approved-arrow-desktop-v2">
 <link rel="apple-touch-icon" sizes="180x180" href="/respondo-approved-arrow-20261012.png?v=20261012-approved-arrow-desktop-v2">
+<style id="respondo-first-paint-guard">
+/* Keep the server-rendered SEO copy accessible without JavaScript, but avoid a flash
+   of the temporary SEO text while the interactive page is hydrating. */
+html.respondo-awaiting-client #app > main{visibility:hidden!important}
+</style>
+<script id="respondo-first-paint-script">
+document.documentElement.classList.add('respondo-awaiting-client');
+/* Fail open if a script or network request prevents the client from mounting. */
+setTimeout(()=>document.documentElement.classList.remove('respondo-awaiting-client'),8000);
+</script>
 <link rel="stylesheet" href="/styles.css?v=20261006-mobile-account-delete-v1-dark-card-header-blue-v1-signup-first-20261009-seller-note-20261009-20261009-premium-app-v1-premium-app-v2">
 <link rel="stylesheet" href="/effects.css?v=20261007-mobile-auth-v2">
 <link rel="stylesheet" href="/apple-home.css?v=20261008-apple-production-header-contrast-v2-ra-logo-v1-scroll-trial-v1-compact-v1-hero-cta-v1-header-blue-v1">
