@@ -116,8 +116,8 @@ test('international guide content is server-rendered without requiring JavaScrip
     assert.match(html, /<h1>/);
     assert.ok(html.length > 650, 'guide must not be thin: '+route);
   }
-  assert.match(server, /const initialContent = GLOBAL_GUIDE_PATHS\.includes\(req\.path\)/);
-  assert.match(server, /\? globalResourcesMarkup\(req\.path, seo\.lang\)/);
+  assert.match(server, /const initialContent = GLOBAL_GUIDE_PATHS\.includes\(routePath\)/);
+  assert.match(server, /\? globalResourcesMarkup\(routePath, seo\.lang\)/);
   assert.match(server, /'<div id="app">' \+ initialContent \+ '<\/div>'/);
   assert.match(server, /seo\.lang === 'sv' \? 'sv_SE' : seo\.lang === 'en' \? 'en_GB' : 'fi_FI'/);
 });
