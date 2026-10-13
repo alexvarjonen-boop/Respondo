@@ -202,7 +202,7 @@ function escapeHtml(value) {
 
 function seoMetaForRequest(req) {
   const lang = seoLanguageForRequest(req);
-  const rawPath = req.path || '/';
+  const rawPath = (req.path || '/').replace(/\/+$/, '') || '/';
   const canonicalPath = seoCanonicalPath(rawPath, lang);
   const metaPath = seoMetaPath(rawPath);
   const languageMeta = SEO_META[lang] || SEO_META.fi;
@@ -428,9 +428,10 @@ async function renderIndexHtml(req) {
   // Serve full, localized guide text in the initial HTML response. Search crawlers,
   // link previews and non-JavaScript readers must not depend on the SPA booting.
   // The browser app replaces this same content during normal hydration.
-  const initialContent = GLOBAL_GUIDE_PATHS.includes(req.path)
-    ? globalResourcesMarkup(req.path, seo.lang)
-    : seoNoScriptMarkup(seo, req.path).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
+  const routePath = (req.path || '/').replace(/\/+$/, '') || '/';
+  const initialContent = GLOBAL_GUIDE_PATHS.includes(routePath)
+    ? globalResourcesMarkup(routePath, seo.lang)
+    : seoNoScriptMarkup(seo, routePath).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
   html = html.replace('<div id="app"></div>', '<div id="app">' + initialContent + '</div>');
 
 
@@ -8155,6 +8156,9 @@ app.get('/llms.txt', (req,res) => {
 
 app.use(express.static(path.join(__dirname, 'public'), {
   index:false,
+  // A public/guides directory exists for feed.xml, but /guides is an SPA route.
+  // Never redirect this route to /guides/ as a side effect of static serving.
+  redirect:false,
   setHeaders(res, filePath) {
     if (
       filePath.endsWith('widget.js') ||

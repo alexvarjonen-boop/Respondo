@@ -1597,7 +1597,7 @@ function restorePersistentUiToFinnish() {
 }
 
 function updateDocumentLanguageMeta(lang) {
-  const path = location.pathname;
+  const path = location.pathname.replace(/\/+$/, '') || '/';
   const canonicalPath = ['/ominaisuudet','/features','/funktioner'].includes(path)
     ? (lang === 'en' ? '/features' : lang === 'sv' ? '/funktioner' : '/ominaisuudet')
     : path;
@@ -4871,7 +4871,7 @@ function initImmersiveHomeMotion() {
 }
 
 async function route() {
-  const path = location.pathname;
+  const path = location.pathname.replace(/\/+$/, '') || '/';
   const workspacePage = ['/assistant', '/app', '/demo'].includes(path);
   document.body.classList.toggle('dashboard-page', workspacePage);
   document.documentElement.classList.toggle('static-workspace', workspacePage);
