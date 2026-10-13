@@ -335,13 +335,14 @@ function seoNoScriptMarkup(seo, rawPath) {
     const i=seo.lang === 'sv' ? 1 : seo.lang === 'en' ? 2 : 0;
     const heading=['Kenelle Respondo AI sopii?','Vem passar Respondo AI för?','Who is Respondo AI for?'][i];
     const lead=['Respondo AI vastaa yrityksen asiakkaiden kysymyksiin omilla hyväksytyillä tiedoilla. Tutustu toimialoihin ja käyttötapoihin.','Respondo AI besvarar kundfrågor med företagets godkända information. Upptäck branscher och användningsområden.','Respondo AI answers customer questions with company-approved information. Explore industries and use cases.'][i];
+    const langSuffix=seo.lang === 'fi' ? '' : '?lang=' + seo.lang;
     const links=[
       ['/autokorjaamo-chatbot',['Chatbot autokorjaamolle','Chatbot för bilverkstad','Auto repair chatbot']],
       ['/lvi-chatbot',['Chatbot LVI-yritykselle','Chatbot för VVS-företag','Plumbing and HVAC chatbot']],
       ['/verkkokauppa-chatbot',['Chatbot verkkokauppaan','Chatbot för webbutik','Ecommerce chatbot']],
       ['/asiakaspalvelubotti',['Asiakaspalvelubotti','Kundservicebot','Customer service chatbot']],
       ['/ajanvaraus-chatbot',['Ajanvaraus-chatbot','Bokningschatbot','Booking chatbot']]
-    ].map(([href,labels])=>'<li><a href="'+href+'">'+labels[i]+'</a></li>').join('');
+    ].map(([href,labels])=>'<li><a href="'+href+langSuffix+'">'+labels[i]+'</a></li>').join('');
     return '<noscript><main><h1>'+heading+'</h1><p>'+lead+'</p><ul>'+links+'</ul></main></noscript>';
   }
   if (GLOBAL_GUIDE_PATHS.includes(rawPath)) return '<noscript>' + globalResourcesMarkup(rawPath,seo.lang) + '</noscript>';
@@ -425,7 +426,7 @@ async function renderIndexHtml(req) {
   // The browser app replaces this same content during normal hydration.
   const initialContent = GLOBAL_GUIDE_PATHS.includes(req.path)
     ? globalResourcesMarkup(req.path, seo.lang)
-    : seoNoScriptMarkup(seo, req.path);
+    : seoNoScriptMarkup(seo, req.path).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
   html = html.replace('<div id="app"></div>', '<div id="app">' + initialContent + '</div>');
 
 
