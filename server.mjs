@@ -18,6 +18,7 @@ import net from 'net';
 import http from 'http';
 import https from 'https';
 import { GLOBAL_GUIDE_PATHS, globalGuideData, globalResourcesMarkup } from './public/global-resources.mjs';
+import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './public/vertical-landing.mjs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -71,6 +72,7 @@ const SEO_INDEXABLE_PATHS = new Set([
   '/ajanvaraus-chatbot',
   '/autokorjaamo-chatbot',
   '/lvi-chatbot',
+  ...VERTICAL_LANDING_PATHS,
   '/hinnat',
   '/yhteystiedot',
   '/tietoturva',
@@ -207,7 +209,7 @@ function seoMetaForRequest(req) {
   const metaPath = seoMetaPath(rawPath);
   const languageMeta = SEO_META[lang] || SEO_META.fi;
   const fallback = languageMeta['/'];
-  const pair = languageMeta[metaPath] || fallback;
+  const pair = languageMeta[metaPath] || verticalMetaForPath(metaPath)?.[lang] || fallback;
   const isIndexable = SEO_INDEXABLE_PATHS.has(rawPath);
   const isKnown = isIndexable || SEO_APP_PATHS.has(rawPath);
   const origin = SEO_CANONICAL_ORIGIN;
@@ -430,7 +432,9 @@ async function renderIndexHtml(req) {
   // The browser app replaces this same content during normal hydration.
   const initialContent = GLOBAL_GUIDE_PATHS.includes(req.path)
     ? globalResourcesMarkup(req.path, seo.lang)
-    : seoNoScriptMarkup(seo, req.path).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
+    : VERTICAL_LANDING_PATHS.includes(req.path)
+      ? verticalLandingMarkup(req.path, seo.lang)
+      : seoNoScriptMarkup(seo, req.path).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
   html = html.replace('<div id="app"></div>', '<div id="app">' + initialContent + '</div>');
 
 
@@ -8077,7 +8081,7 @@ app.get('/robots.txt', (req,res) => {
 
 app.get('/sitemap.xml', (req,res) => {
   // Do not claim that every URL was modified today on each sitemap request.
-  const basePaths = ['/', '/ominaisuudet', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
+  const basePaths = ['/', '/ominaisuudet', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
   const escapeXml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
   const rows = [];
   for (const basePath of basePaths) {
