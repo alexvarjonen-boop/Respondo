@@ -1,6 +1,7 @@
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1';
+import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1-customer-buyer-link-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261012-approved-arrow-desktop-v2';
@@ -1747,8 +1748,8 @@ function updateDocumentLanguageMeta(lang) {
     },
   };
 
-  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
-  const baseMeta = metaByPath[metaPath] || verticalMetaForPath(metaPath) || metaByPath['/'];
+  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', ...AI_TOPIC_PATHS, '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
+  const baseMeta = metaByPath[metaPath] || verticalMetaForPath(metaPath) || (AI_TOPIC_PATHS.includes(metaPath) ? Object.fromEntries(['fi','sv','en'].map(l => [l,aiTopicMeta(metaPath,l)])) : null) || metaByPath['/'];
   const pair = baseMeta[lang] || baseMeta.fi;
   const pageTitle = pair[0];
   const metaDescription = pair[1];
@@ -4887,6 +4888,7 @@ async function route() {
   else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
   else if (['/verkkokauppa-chatbot','/ajanvaraus-chatbot','/autokorjaamo-chatbot','/lvi-chatbot'].includes(path)) html = seoLandingPage(path);
   else if (path === '/asiakaspalvelubotti') html = `<div class="seo-landing-page">${nav()}${customerServiceLandingMarkup(currentLang())}${footer()}</div>`;
+  else if (AI_TOPIC_PATHS.includes(path)) html = `<div class="seo-landing-page">${nav()}${aiTopicMarkup(path,currentLang())}${footer()}</div>`;
   else if (VERTICAL_LANDING_PATHS.includes(path)) html = `<div class="seo-landing-page">${nav()}${verticalLandingMarkup(path,currentLang())}${footer()}</div>`;
   else if (path === '/kenelle-sopii') html = audienceHubPage();
   else if (GLOBAL_GUIDE_PATHS.includes(path)) html = `<div class="global-guide-page">${nav()}${globalResourcesMarkup(path,currentLang())}${footer()}</div>`;
