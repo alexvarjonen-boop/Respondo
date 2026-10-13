@@ -396,6 +396,165 @@ const guides = {
         ]
       ]
     }
+  },
+  '/guides/ai-chatbot-pricing': {
+    "reading": "7",
+    "fi": {
+      "title": "Paljonko AI-asiakaspalvelubotti maksaa yritykselle?",
+      "subtitle": "Vertaa verkkosivun chatbotin kuukausihintaa, vuosilaskutusta, käyttöönottoa ja todellisia kustannuksia – sekä arvioi, milloin botti kannattaa.",
+      "sections": [
+        [
+          "Mitä yrityksen AI-chatbot maksaa?",
+          "AI-asiakaspalvelubotin hinta riippuu yleensä siitä, mitä se osaa tehdä, miten suuri sen tietopohja on, kuinka monta työntekijää palvelua käyttää ja millaisia integraatioita tarvitaan. Pelkkä halpa kuukausihinta ei kerro kokonaiskustannusta. Vertaile myös tietojen tuontia, käyttöönottoa, mahdollisia käyttörajoja, tukea ja työntekijöiden tekemää ylläpitoa. Pyydä selvitys siitä, veloitetaanko viesteistä, käyttäjistä tai erillisistä palveluista lisää."
+        ],
+        [
+          "Respondo AI:n julkiset hinnat",
+          "Respondo AI:n hinnat ovat Starter 34,90 €/kk, Advanced 44,90 €/kk ja Business 54,90 €/kk kuukausitilauksella. Vuosisopimuksessa kuukausikohtaiset vertailuhinnat ovat 29,90 €, 39,90 € ja 49,90 €; koko vuosi laskutetaan vuosittain. Nykyisiin tilauksiin sisältyy kolmen päivän maksuton kokeilu. Tarkista lopullinen laskutettava summa ja saatavilla olevat ominaisuudet aina tilausnäkymästä ennen maksua. Maksulliset tilaukset ovat toistaiseksi vain suomalaisille yrityksille."
+        ],
+        [
+          "Mitä pakettien välillä kannattaa vertailla?",
+          "Aloita siitä, tarvitsetko vain omien kysymysten ja vastausten hallintaa vai myös verkkosivun tietojen tuontia, useampia työntekijätunnuksia ja laajempaa keskustelujen hallintaa. Tarkista myös, miten botti käyttää yrityksen vahvistamia tuote-, hinta-, aukioloaika- ja palvelutietoja sekä mitä tapahtuu, kun vastausta ei tiedetä. Varmista, että palvelu tukee niitä kieliä, joita asiakkaasi käyttävät. Tarkka pakettien ominaisuusvertailu löytyy Respondon hinnastosivulta."
+        ],
+        [
+          "Mahdolliset lisäkustannukset",
+          "Huomioi verkkosivulle asentamiseen käytetty aika, tietopohjan ensimmäinen tarkistus, poikkeusaukioloaikojen ja hintojen päivitys sekä henkilökunnan perehdytys. Joissakin palveluissa erilliset WhatsApp-, tekstiviesti-, puhelin-, CRM- tai muut ulkoiset integraatiot voivat maksaa lisää, eivätkä ne välttämättä sisälly verkkosivubotin tilaukseen. Älä oleta, että kolmannen osapuolen palvelu tai rajaton viestimäärä kuuluu hintaan ilman kirjallista vahvistusta."
+        ],
+        [
+          "Laskuesimerkki: kuinka paljon aikaa voi säästyä?",
+          "Kuvitellaan yritys, joka saa kuukaudessa 120 toistuvaa asiakaskysymystä. Niihin vastaaminen vie keskimäärin kolme minuuttia, eli työtä kertyy kuusi tuntia kuukaudessa. Jos botti ratkaisee puolet kysymyksistä oikein ilman ihmisen jatkokäsittelyä, teoreettinen säästö on kolme tuntia. Tämä ei ole tulosennuste. Vähennä hyötylaskelmasta ylläpitoon, tarkistukseen ja vaikeiden kysymysten käsittelyyn kuluva aika sekä ohjelmiston kustannus. Mittaa ratkaistuja asioita, älä pelkkiä lähetettyjä botin viestejä."
+        ],
+        [
+          "Milloin chatbot ei välttämättä kannata?",
+          "Jos yrityksen verkkosivulle tulee hyvin vähän kysymyksiä, hinnoittelu ja palvelut muuttuvat päivittäin tai lähes jokainen asia vaatii asiantuntijan tapauskohtaisen arvion, yksinkertainen yhteydenottolomake saattaa olla järkevämpi. Samoin botti on huono hankinta, jos kukaan ei pidä sen tietoja ajan tasalla. Aloita mittaamalla yleisimmät kysymykset ja kokeilemalla bottia omalla palvelu- ja hintatiedolla."
+        ],
+        [
+          "Ostajan seitsemän tarkistuskysymystä",
+          "Kysy toimittajalta: 1) Onko hinta kuukausittainen vai vuosittain laskutettu? 2) Sisältyykö verkkosivun tietojen tuonti? 3) Onko viesteille tai käyttäjille rajoituksia? 4) Mistä botin vastaukset tulevat? 5) Mitä se tekee, kun hintaa tai palvelua ei ole vahvistettu? 6) Voiko ihminen ottaa keskustelun haltuun? 7) Mitä tapahtuu tietojen ja laskutuksen kanssa, jos tilaus päättyy? Kokeile vastaukset todellisilla asiakaskysymyksillä ennen sitoutumista."
+        ]
+      ],
+      "faq": [
+        [
+          "Paljonko Respondo AI maksaa kuukaudessa?",
+          "Kuukausitilausten hinnat ovat Starter 34,90 €, Advanced 44,90 € ja Business 54,90 €. Vuositilauksessa kuukausikohtaiset vertailuhinnat ovat edullisemmat, mutta maksu veloitetaan vuosittain."
+        ],
+        [
+          "Voiko asiakaspalvelubottia kokeilla maksutta?",
+          "Respondo AI:n nykyisiin paketteihin sisältyy kolmen päivän maksuton kokeilu. Tarkista kokeilun ja tilauksen ehdot tilausnäkymästä."
+        ],
+        [
+          "Onko halvin chatbot aina paras?",
+          "Ei. Oleellisinta on vastausten luotettavuus, sopiva tietopohja, oikeat jatkotoiminnot ja todellinen kokonaiskustannus."
+        ],
+        [
+          "Saavatko ulkomaiset yritykset tilata Respondon?",
+          "Maksulliset Respondo AI -yritystilaukset ovat tällä hetkellä saatavilla vain suomalaisille yrityksille."
+        ]
+      ]
+    },
+    "sv": {
+      "title": "Vad kostar en AI-kundservicebot för företag?",
+      "subtitle": "Jämför månadspris, årsfakturering, installation och verkliga kostnader för en chatbot på webbplatsen – och bedöm om nyttan motiverar priset.",
+      "sections": [
+        [
+          "Vad avgör priset för en AI-chatbot?",
+          "Priset på en AI-kundservicebot beror på funktioner, hur företagets information hanteras, antal användare och eventuella integrationer. Ett lågt månadspris är inte samma sak som en låg totalkostnad. Jämför även import av webbplatsinnehåll, införande, användningsgränser, support och underhåll av kunskapsbasen. Kontrollera om meddelanden, anställdas konton eller externa tjänster faktureras separat."
+        ],
+        [
+          "Respondo AI:s publicerade priser",
+          "Med månadsabonnemang kostar Respondo AI Starter 34,90 €/månad, Advanced 44,90 €/månad och Business 54,90 €/månad. Vid årsabonnemang motsvarar priserna 29,90 €, 39,90 € respektive 49,90 € per månad, men hela året faktureras årsvis. En gratis provperiod på tre dagar ingår i de aktuella paketen. Kontrollera alltid slutligt belopp och funktioner i beställningen. Betalda företagsabonnemang är för närvarande endast tillgängliga för företag i Finland."
+        ],
+        [
+          "Vilka abonnemangsfunktioner är viktiga?",
+          "Börja med att kontrollera om du bara behöver lägga in egna frågor och svar eller även vill importera information från webbplatsen och låta flera medarbetare hantera dialoger. En viktig kvalitetsfråga är om botten använder företagets bekräftade priser, tjänster och öppettider och kan avstå från att gissa när underlaget saknas. Testa språk som dina verkliga kunder använder. Den aktuella funktionsjämförelsen finns på Respondos prissida."
+        ],
+        [
+          "Kostnader som lätt glöms bort",
+          "Tid för installation, granskning av importerade uppgifter, uppdatering av prislistor och utbildning av personalen påverkar den totala investeringen. Vissa leverantörer tar separat betalt för WhatsApp, SMS, telefoni, CRM och andra externa integrationer. Sådana tjänster ingår inte automatiskt i en webbplatschatbot. Be om tydliga uppgifter om användningsgränser och kostnader innan du köper."
+        ],
+        [
+          "Räkneexempel: möjlig tidsbesparing",
+          "Anta att en verksamhet får 120 återkommande frågor varje månad och att ett manuellt svar tar tre minuter. Det motsvarar sex timmars arbete. Om botten kan lösa hälften korrekt utan mänsklig uppföljning blir den teoretiska besparingen tre timmar. Detta är ett exempel, inte en garanti. Dra av underhåll, kvalitetskontroller, licenskostnaden och tid för ärenden som fortfarande behöver en person. Räkna bara verkligt lösta frågor som sparad tid."
+        ],
+        [
+          "När kanske en chatbot inte lönar sig?",
+          "Om webbplatsen får få frågor, nästan alla ärenden kräver personlig bedömning eller uppgifterna ändras så ofta att ingen hinner kontrollera dem, kan ett kontaktformulär vara bättre. En bot med gamla priser kan skapa fler problem än den löser. Samla därför riktiga kundfrågor och pröva lösningen innan du köper en större plan."
+        ],
+        [
+          "Sju frågor att ställa före köp",
+          "Fråga: 1) Är priset månadsvis eller årsfakturerat? 2) Ingår webbplatsimport? 3) Finns begränsningar för meddelanden och personal? 4) Vilka källor styr svaren? 5) Vad händer vid okända priser eller tjänster? 6) Kan en anställd ta över? 7) Hur hanteras företagsuppgifter och fakturering när abonnemanget avslutas? Testa leverantören mot dina egna kundfrågor."
+        ]
+      ],
+      "faq": [
+        [
+          "Vad kostar Respondo AI per månad?",
+          "Starter kostar 34,90 €, Advanced 44,90 € och Business 54,90 € vid månadsbetalning. Årsabonnemangen har lägre månadsjämförelsepriser men faktureras årsvis."
+        ],
+        [
+          "Finns det en gratis provperiod?",
+          "Respondo AI erbjuder för närvarande tre dagars gratis provperiod i sina paket. Kontrollera aktuella villkor vid beställningen."
+        ],
+        [
+          "Är den billigaste chatboten alltid bäst?",
+          "Nej. Tillförlitliga svar, rätt information, möjlighet till mänsklig hjälp och total ägandekostnad är viktigare än priset ensamt."
+        ],
+        [
+          "Kan ett företag utanför Finland teckna abonnemang?",
+          "Betalda abonnemang på Respondo AI erbjuds just nu bara företag i Finland."
+        ]
+      ]
+    },
+    "en": {
+      "title": "How Much Does an AI Customer Service Chatbot Cost?",
+      "subtitle": "A small-business buyer’s guide to website chatbot pricing, annual plans, setup work, hidden costs and realistic return on investment.",
+      "sections": [
+        [
+          "What determines the cost of a website AI chatbot?",
+          "Website chatbot pricing depends on the features included, how business knowledge is managed, the number of employee accounts and the integrations required. A low monthly headline price is not necessarily a low total cost. Compare knowledge-base setup, website importing, message or usage limits, support, maintenance and human handoff. Ask each provider whether messages, employee seats or external services create additional charges. A chatbot that gives unreliable answers can also generate a real operational cost."
+        ],
+        [
+          "Respondo AI pricing: monthly versus annual billing",
+          "Respondo AI currently lists Starter at €34.90/month, Advanced at €44.90/month and Business at €54.90/month on monthly plans. The annual plans have monthly-equivalent prices of €29.90, €39.90 and €49.90 respectively, with the full year billed annually. The current plans include a three-day free trial. Always review the actual checkout total, current plan features and terms before paying. Paid Respondo AI business subscriptions are presently available only to businesses in Finland."
+        ],
+        [
+          "Compare plan capabilities rather than price alone",
+          "Decide whether you need only manually maintained questions and answers or also controlled website-information importing, multiple employee accounts and more extensive customer-conversation workflows. Test whether the bot uses your approved service descriptions, prices, opening hours and policies instead of improvising. Language handling and the ability to route an uncertain conversation to a person are also worth testing. Respondo's current feature-by-feature package comparison is available on its pricing page."
+        ],
+        [
+          "Allow for setup and ongoing maintenance",
+          "Your total cost may include time spent installing the website widget, reviewing imported information, keeping prices and opening hours current and training staff. Across the industry, integrations such as WhatsApp, texting, telephony or a CRM can carry separate third-party fees; they should not be assumed to be included in a basic website chatbot subscription. Check the vendor's usage limits, cancellation conditions, data-export options and support before committing."
+        ],
+        [
+          "A realistic savings calculation, not a guarantee",
+          "Suppose a business receives 120 repetitive customer questions per month and an employee spends an average of three minutes answering each. That is six hours of work. If a chatbot correctly resolves half of those requests with no human follow-up, the theoretical time saving is three hours per month. This is an illustrative scenario, not a promised outcome. Subtract time spent maintaining the knowledge base, checking answers and handling escalations, as well as the subscription fee. Measure accurately resolved customer requests, not raw chatbot message volume."
+        ],
+        [
+          "When might a chatbot not be worth it?",
+          "If a website receives almost no customer questions, most enquiries require a complex specialist judgement, or service details change daily without anyone available to maintain the information, a clear contact form may be more appropriate. Incorrect automated pricing or appointment promises can create extra support work. Start with a small set of authentic FAQs and compare the experience with human support before selecting a paid plan."
+        ],
+        [
+          "Seven questions to ask every chatbot vendor",
+          "Ask: 1) Is the displayed price monthly, or a monthly equivalent billed annually? 2) Can the product import and verify website information? 3) Are messages or seats limited? 4) What approved sources underpin each answer? 5) What happens when prices or services cannot be verified? 6) Can a human take over? 7) What happens to your company data and billing when you cancel? Run the same real customer questions against every shortlisted option, including unknown-price and follow-up scenarios."
+        ]
+      ],
+      "faq": [
+        [
+          "How much does Respondo AI cost per month?",
+          "Monthly plans are Starter €34.90, Advanced €44.90 and Business €54.90. Annual plans have lower monthly-equivalent prices but are billed annually."
+        ],
+        [
+          "Is there a free chatbot trial?",
+          "Respondo AI currently includes a three-day free trial. Check the latest trial and subscription terms at checkout."
+        ],
+        [
+          "Is the cheapest AI chatbot necessarily the best choice?",
+          "No. Accurate, company-grounded answers, appropriate features, human escalation and total ownership cost matter more than the subscription price alone."
+        ],
+        [
+          "Can businesses outside Finland subscribe?",
+          "Paid Respondo AI subscriptions are currently available only to Finnish businesses."
+        ]
+      ]
+    }
   }
 };
 export const GLOBAL_GUIDE_PATHS = ['/guides', ...Object.keys(guides)];
@@ -419,6 +578,9 @@ export function globalResourcesMarkup(path,lang='fi') {
   const articleSections=source.sections.map(([h,p])=>'<section class="global-guide-section"><h2>'+quote(h)+'</h2><p>'+quote(p)+'</p></section>').join('');
   const faqs=source.faq.map(([q,a])=>'<details class="global-guide-faq"><summary>'+quote(q)+'</summary><p>'+quote(a)+'</p></details>').join('');
   const other=Object.entries(guides).filter(([url])=>url!==path).map(([url,info])=>'<a href="'+pathWithLang(url,L)+'">'+quote(info[L].title)+' →</a>').join('');
-  return '<main class="global-guide-main"><div class="container global-guide-article"><nav class="global-guide-crumb"><a href="'+pathWithLang('/guides',L)+'">'+['Kaikki oppaat','Alla guider','All guides'][i]+'</a><span> / </span><span>'+['Opas','Guide','Guide'][i]+'</span></nav><header class="global-guide-hero"><span class="global-guide-kicker">RESPONDO AI · '+infoLabel(L)+'</span><h1>'+quote(source.title)+'</h1><p>'+quote(source.subtitle)+'</p></header><div class="global-guide-prose">'+articleSections+'<section class="global-guide-section"><h2>'+['Usein kysytyt kysymykset','Vanliga frågor','Frequently asked questions'][i]+'</h2>'+faqs+'</section><div class="global-guide-next"><h2>'+['Jatka lukemista','Läs vidare','Continue reading'][i]+'</h2>'+other+'</div>'+interactiveScorecard+scorecard+'<div class="global-guide-cta"><h2>'+['Kokeile, miten botti vastaa','Prova hur botten svarar','See how a chatbot answers'][i]+'</h2><p>'+['Respondo AI perustaa vastauksensa yrityksen hyväksymiin tietoihin ja voi ohjata epävarmat asiat ihmiselle.','Respondo AI använder företagets godkända uppgifter och kan lämna osäkra frågor vidare till en medarbetare.','Respondo AI uses company-approved information and can hand uncertain questions to a person.'][i]+'</p><a href="'+pathWithLang('/assistant',L)+'">'+['Testaa bottia','Testa botten','Try the demo'][i]+' →</a></div><p class="global-guide-footer-notice">'+['Maksulliset tilaukset saatavilla toistaiseksi vain suomalaisille yrityksille.','Betalda abonnemang är tills vidare endast tillgängliga för finska företag.','Paid subscriptions are currently available only to Finnish businesses.'][i]+'</p></div></div></main>';
+  const pricingCta = path === '/guides/ai-chatbot-pricing'
+    ? '<a class="global-guide-pricing-action" href="'+pathWithLang('/hinnat',L)+'">'+['Vertaile Respondon paketteja','Jämför Respondos abonnemang','Compare Respondo plans'][i]+' →</a>'
+    : '';
+  return '<main class="global-guide-main"><div class="container global-guide-article"><nav class="global-guide-crumb"><a href="'+pathWithLang('/guides',L)+'">'+['Kaikki oppaat','Alla guider','All guides'][i]+'</a><span> / </span><span>'+['Opas','Guide','Guide'][i]+'</span></nav><header class="global-guide-hero"><span class="global-guide-kicker">RESPONDO AI · '+infoLabel(L)+'</span><h1>'+quote(source.title)+'</h1><p>'+quote(source.subtitle)+'</p></header><div class="global-guide-prose">'+articleSections+'<section class="global-guide-section"><h2>'+['Usein kysytyt kysymykset','Vanliga frågor','Frequently asked questions'][i]+'</h2>'+faqs+'</section><div class="global-guide-next"><h2>'+['Jatka lukemista','Läs vidare','Continue reading'][i]+'</h2>'+other+'</div>'+interactiveScorecard+scorecard+'<div class="global-guide-cta"><h2>'+['Kokeile, miten botti vastaa','Prova hur botten svarar','See how a chatbot answers'][i]+'</h2><p>'+['Respondo AI perustaa vastauksensa yrityksen hyväksymiin tietoihin ja voi ohjata epävarmat asiat ihmiselle.','Respondo AI använder företagets godkända uppgifter och kan lämna osäkra frågor vidare till en medarbetare.','Respondo AI uses company-approved information and can hand uncertain questions to a person.'][i]+'</p><a href="'+pathWithLang('/assistant',L)+'">'+['Testaa bottia','Testa botten','Try the demo'][i]+' →</a>'+pricingCta+'</div><p class="global-guide-footer-notice">'+['Maksulliset tilaukset saatavilla toistaiseksi vain suomalaisille yrityksille.','Betalda abonnemang är tills vidare endast tillgängliga för finska företag.','Paid subscriptions are currently available only to Finnish businesses.'][i]+'</p></div></div></main>';
 }
 function infoLabel(lang){return lang==='en'?'GUIDE':lang==='sv'?'GUIDE':'OPAS';}
