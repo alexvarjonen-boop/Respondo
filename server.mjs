@@ -19,6 +19,7 @@ import http from 'http';
 import https from 'https';
 import { GLOBAL_GUIDE_PATHS, globalGuideData, globalResourcesMarkup } from './public/global-resources.mjs';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './public/vertical-landing.mjs';
+import { CUSTOMER_SERVICE_SEO_PATH, customerServiceLandingMarkup, customerServiceQuestions } from './public/customer-service-landing.mjs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -101,7 +102,7 @@ const SEO_META = {
     '/guides/ai-customer-service-chatbot': ['Mikä on AI-asiakaspalvelubotti? | Opas yrityksille','Miten AI-asiakaspalvelubotti toimii? Opi käyttökohteet, tietopohjan merkitys ja ihmisen käsittelyyn siirtäminen.'],
     '/guides/website-chatbot-knowledge-base': ['Chatbotin tietopohja – käytännön opas | Respondo AI','Näin rakennat verkkosivun AI-botille luotettavan tietopohjan ja testaat vastaukset ennen käyttöönottoa.'],
     '/guides/multilingual-customer-support-chatbot': ["Monikielinen asiakaspalvelubotti: 8 testiä | Respondo AI","Käytännön opas monikielisen AI-chatbotin testaamiseen: suomi, ruotsi ja englanti, jatkokysymykset ja tietojen luotettavuus."],
-    '/asiakaspalvelubotti': ['Asiakaspalvelubotti verkkosivuille | Respondo AI', 'Asiakaspalvelubotti yrityksen verkkosivuille: vastaukset 24/7 omilla yritystiedoillasi, liidit, ajanvaraus ja tarvittaessa siirto ihmiselle.'],
+    '/asiakaspalvelubotti': ['Asiakaspalvelijabotti ja AI-asiakaspalvelija yritykselle | Respondo AI', 'Asiakaspalvelijabotti verkkosivuille: AI-asiakaspalvelija vastaa yrityksen omilla tiedoilla 24/7. Toiminnot, hinnat, käyttöönotto ja demo.'],
     '/verkkokauppa-chatbot': ['Verkkokaupan chatbot – tuotteet ja asiakaspalvelu | Respondo AI', 'Verkkokaupan chatbot auttaa tuote-, hinta-, toimitus- ja palautuskysymyksissä sekä tukee Shopify- ja WooCommerce-asiakaspalvelua.'],
     '/ajanvaraus-chatbot': ['Ajanvaraus-chatbot yritykselle | Respondo AI', 'Ajanvaraus-chatbot vastaa asiakkaiden kysymyksiin, kerää ajanvarauspyyntöjä ja tukee kalenteripohjaisia asiakaspalveluprosesseja 24/7.'],
     '/autokorjaamo-chatbot': ['Chatbot autokorjaamolle – huolto ja ajanvaraus | Respondo AI', 'Autokorjaamon chatbot vastaa huolto-, rengas- ja palvelukysymyksiin korjaamon omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.'],
@@ -293,7 +294,7 @@ function seoStructuredData(seo) {
       about:{ '@id':SEO_CANONICAL_ORIGIN + '/#software' },
       mainEntity:{ '@id':SEO_CANONICAL_ORIGIN + '/#software' },
       keywords: seo.lang === 'fi'
-        ? 'asiakaspalvelubotti, AI asiakaspalvelu, chatbot yritykselle, verkkosivubotti, asiakaspalveluautomaatio'
+        ? 'asiakaspalvelijabotti, AI-asiakaspalvelija, asiakaspalvelubotti, chatbot yritykselle, verkkosivubotti, asiakaspalveluautomaatio'
         : seo.lang === 'sv'
           ? 'kundservicebot, AI kundservice, chatbot för företag, webbplatsbot, kundserviceautomatisering'
           : 'customer service bot, AI customer service, business chatbot, website chatbot, customer service automation',
@@ -318,6 +319,20 @@ function seoStructuredData(seo) {
       });
     }
   } catch {}
+  // Visible, locale-matched FAQ answers about the main customer service bot.
+  // Keep one canonical buyer page rather than creating near-duplicate keyword pages.
+  if (new URL(seo.canonical).pathname === CUSTOMER_SERVICE_SEO_PATH) {
+    graph.push({
+      '@type':'FAQPage',
+      '@id':seo.canonical+'#faq',
+      inLanguage:seo.lang,
+      mainEntity:customerServiceQuestions(seo.lang).map(([question,answer])=>({
+        '@type':'Question',
+        name:question,
+        acceptedAnswer:{ '@type':'Answer', text:answer }
+      }))
+    });
+  }
   try {
     const pagePath = new URL(seo.canonical).pathname;
     if (pagePath !== '/') {
@@ -435,7 +450,9 @@ async function renderIndexHtml(req) {
     ? globalResourcesMarkup(routePath, seo.lang)
     : VERTICAL_LANDING_PATHS.includes(routePath)
       ? verticalLandingMarkup(routePath, seo.lang)
-      : seoNoScriptMarkup(seo, routePath).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
+      : routePath === CUSTOMER_SERVICE_SEO_PATH
+        ? customerServiceLandingMarkup(seo.lang)
+        : seoNoScriptMarkup(seo, routePath).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
   html = html.replace('<div id="app"></div>', '<div id="app">' + initialContent + '</div>');
 
 
@@ -8056,6 +8073,14 @@ app.get(/^\/opas(?:\/|$)/, (req,res) => {
 });
 
 app.get('/index.html', (req,res) => res.redirect(301, SEO_CANONICAL_ORIGIN + '/'));
+
+// Alternate search wording gets a permanent redirect to the single canonical article.
+// Keep validated language context but never create a second indexable duplicate.
+app.get('/asiakaspalvelijabotti', (req,res) => {
+  const lang=String(req.query.lang||'').toLowerCase();
+  const suffix=['sv','en'].includes(lang)?'?lang='+lang:'';
+  return res.redirect(301, SEO_CANONICAL_ORIGIN + CUSTOMER_SERVICE_SEO_PATH + suffix);
+});
 
 app.get('/robots.txt', (req,res) => {
   const robots = [
