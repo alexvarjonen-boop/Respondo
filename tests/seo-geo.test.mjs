@@ -24,7 +24,7 @@ test('server SEO shell contains canonical hreflang schema and non-JS indexable c
   assert.match(server,/hreflang="x-default"/);
   assert.match(server,/SoftwareApplication/);
   assert.match(server,/BreadcrumbList/);
-  assert.match(server,/seoNoScriptMarkup\(seo, req\.path\)/);
+  assert.match(server,/seoNoScriptMarkup\(seo, routePath\)/);
 });
 
 test('intent landing pages are indexable and routed in both server and browser',()=>{
