@@ -100,7 +100,6 @@ test('Stripe Checkout uses exactly the approved monthly amounts and tier product
     });
     assert.equal('price' in result,false,'checkout must not reuse old mismatching Price ID');
   }
-  assert.match(server,/line_items: \[checkoutLineItem\]/);
-  assert.match(server,/line_items:\[checkoutLineItem\]/);
+  assert.equal((server.match(/line_items:\s*\[checkoutLineItem\]/g)||[]).length,2);
   assert.match(server,/subscription\.metadata\?\.plan/);
 });
