@@ -2236,6 +2236,7 @@ function footer() {
         <div class="foot-col">
           <h4>${appText("Yritys","Företag","Company")}</h4>
           <a href="/yhteystiedot">${appText("Yhteystiedot","Kontakt","Contact")}</a>
+          <a href="/media/">${appText("Mediamateriaali","Pressmaterial","Media kit")}</a>
           <a href="/tietoturva">Tietoturva</a>
           <a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a>
           <span>${esc(cfg.sellerName||'Respondo AI')}</span>
