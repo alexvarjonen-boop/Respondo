@@ -14,8 +14,8 @@ test('new Stripe subscriptions do not charge Finnish VAT when seller is not VAT 
   assert.match(server,/Ingen moms debiteras/);
   assert.match(server,/No VAT is charged/);
   assert.doesNotMatch(server,/ensureFinnishVatTaxRate|FINNISH_VAT_PERCENT|finnishVatTaxRateId|finnishVatMessage/);
-  assert.match(server,/line_items:\s*\[\{ price, quantity: 1 \}\]/);
-  assert.match(server,/line_items:\[\{price,quantity:1\}\]/);
+  assert.match(server,/line_items:\s*\[checkoutLineItem\]/);
+  assert.match(server,/line_items:\[checkoutLineItem\]/);
   assert.equal((server.match(/automatic_tax:\s*\{\s*enabled:\s*false\s*\}/g)||[]).length,2);
   assert.equal((server.match(/custom_text:\s*\{\s*submit:\s*\{\s*message:\s*taxExemptionMessage/g)||[]).length,2);
 });
