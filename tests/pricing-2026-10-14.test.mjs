@@ -28,12 +28,12 @@ test('new checkouts refuse grandfathered annual plans and verify Stripe prices',
   assert.match(server, /if \(plan\.endsWith\('_yearly'\)\)/);
   assert.match(server, /await assertCurrentCheckoutPrice\(normalizedPlan, price\)/);
   assert.match(server, /await assertCurrentCheckoutPrice\(plan,price\)/);
-  assert.match(server, /const NEW_MONTHLY_PRODUCT_NAMES = Object\\.freeze/);
+  assert.match(server, /const NEW_MONTHLY_PRODUCT_NAMES = Object\.freeze/);
   assert.match(server, /basic_monthly:'Respondo Advanced'/);
   assert.match(server, /advanced_monthly:'Respondo Premium'/);
   assert.match(server, /business_monthly:'Respondo Enterprise'/);
-  assert.match(server, /stripe\\.products\\.retrieve\\(productId\\)/);
-  assert.match(server, /product\\.name !== NEW_MONTHLY_PRODUCT_NAMES\\[plan\\]/);
+  assert.match(server, /stripe\.products\.retrieve\(productId\)/);
+  assert.match(server, /product\.name !== NEW_MONTHLY_PRODUCT_NAMES\[plan\]/);
   assert.match(server, /basic_yearly:\{tier:'basic'/);
   assert.match(server, /advanced_yearly:\{tier:'advanced'/);
   assert.match(server, /business_yearly:\{tier:'business'/);
