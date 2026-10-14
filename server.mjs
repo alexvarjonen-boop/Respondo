@@ -8246,6 +8246,9 @@ app.get('/llms.txt', (req,res) => {
     '- Booking chatbot: ' + SEO_CANONICAL_ORIGIN + '/ajanvaraus-chatbot',
     '- AI customer support guides: ' + SEO_CANONICAL_ORIGIN + '/guides?lang=en',
     '- Chatbot versus live chat guide: ' + SEO_CANONICAL_ORIGIN + '/guides/ai-chatbot-vs-live-chat?lang=en',
+    '- Chatbot website installation guide: ' + SEO_CANONICAL_ORIGIN + '/guides/chatbot-verkkosivuille-kayttoonotto?lang=en',
+    '- Customer service automation measurement guide: ' + SEO_CANONICAL_ORIGIN + '/guides/asiakaspalvelun-automaatio-mittarit?lang=en',
+    '- Customer support chatbot testing checklist: ' + SEO_CANONICAL_ORIGIN + '/guides/asiakaspalvelubotin-testaus?lang=en',
     '- Independent-use chatbot scorecard: ' + SEO_CANONICAL_ORIGIN + '/tools/ai-chatbot-evaluation.html',
     '- Security: ' + SEO_CANONICAL_ORIGIN + '/tietoturva',
     '- Privacy: ' + SEO_CANONICAL_ORIGIN + '/tietosuoja',
@@ -8894,6 +8897,10 @@ A 3-day free trial is available.
 Official URLs:
 https://respondoai.fi/
 https://respondoai.fi/ominaisuudet
+https://respondoai.fi/guides
+https://respondoai.fi/guides/chatbot-verkkosivuille-kayttoonotto
+https://respondoai.fi/guides/asiakaspalvelun-automaatio-mittarit
+https://respondoai.fi/guides/asiakaspalvelubotin-testaus
 https://respondoai.fi/funktioner
 https://respondoai.fi/features
 https://respondoai.fi/tietoturva
