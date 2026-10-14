@@ -1232,14 +1232,20 @@ function stripePriceForPlan(value) {
 }
 
 const NEW_MONTHLY_PRICE_CENTS = Object.freeze({ basic_monthly:4900, advanced_monthly:12900, business_monthly:14900 });
+const NEW_MONTHLY_PRODUCT_NAMES = Object.freeze({ basic_monthly:'Respondo Advanced', advanced_monthly:'Respondo Premium', business_monthly:'Respondo Enterprise' });
 async function assertCurrentCheckoutPrice(plan, priceId) {
   if (!Object.hasOwn(NEW_MONTHLY_PRICE_CENTS, plan)) return;
-  if (!stripe || !priceId) throw new Error('Stripe monthly plan is not configured.');
+  if (!stripe || !priceId) throw Object.assign(new Error('Stripe monthly plan is not configured.'),{publicStatus:503});
   const price = await stripe.prices.retrieve(priceId);
-  if (!price.active || price.currency !== 'eur' || price.type !== 'recurring' || price.recurring?.interval !== 'month' || price.recurring?.interval_count !== 1 || price.unit_amount !== NEW_MONTHLY_PRICE_CENTS[plan]) {
-    const err = new Error('Stripe monthly plan price does not match advertised pricing.');
-    err.publicStatus = 503;
-    throw err;
+  const productId = typeof price.product === 'string' ? price.product : price.product?.id;
+  if (!price.active || price.currency !== 'eur' || price.type !== 'recurring' || price.recurring?.interval !== 'month' || price.recurring?.interval_count !== 1 || price.unit_amount !== NEW_MONTHLY_PRICE_CENTS[plan] || !productId) {
+    throw Object.assign(new Error('Stripe monthly plan price does not match advertised pricing.'),{publicStatus:503});
+  }
+  // The Product name appears on the customer's Checkout receipt and invoice.
+  // Reject a correctly-priced but incorrectly named legacy Product.
+  const product = await stripe.products.retrieve(productId);
+  if (!product.active || product.name !== NEW_MONTHLY_PRODUCT_NAMES[plan]) {
+    throw Object.assign(new Error('Stripe monthly plan product does not match advertised tier.'),{publicStatus:503});
   }
 }
 
