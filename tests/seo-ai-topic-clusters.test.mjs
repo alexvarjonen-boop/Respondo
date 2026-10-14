@@ -44,8 +44,7 @@ test('new pages have internal discovery, browser SEO metadata, sitemap and respo
   assert.ok(serverSrc.includes('aiTopicMeta(metaPath,lang)'),'no server meta titles');
   assert.ok(clientSrc.includes('AI_TOPIC_PATHS.includes(path)'),'browser routing is missing');
   assert.ok(clientSrc.includes('aiTopicMeta(metaPath,l)'),'localized browser meta titles missing');
-  assert.ok(appleHome.includes('/tekoaly-asiakaspalvelu?lang='));
-  assert.ok(appleHome.includes('/tekoaly-yrityksille?lang='));
+  assert.ok(!appleHome.includes('apple-learning-links'),'homepage guide promotion should remain removed');
   assert.ok(clientSrc.includes('audience-related-topics'),'audience hub missing discoverable links');
   assert.ok(shell.includes('ai-topic-pages.css?v='));
   assert.ok(shell.includes('ai-topic-clusters-v1'),'browser bundle can be stale');

@@ -40,10 +40,10 @@ test('language version, canonical and sitemap references are reciprocal and uniq
   assert.ok(!server.includes("'  '/tools/asiakaspalvelubotti-testi.html',"),'standalone tool should not be SPA prerendered');
 });
 
-test('contextual links connect buyer, guides and homepage to the assessment',()=>{
+test('contextual links connect buyer and AI topic pages to the assessment',()=>{
   assert.ok(topics.includes("'/tools/asiakaspalvelubotti-testi.html'"));
   assert.ok(landing.includes("'/tools/asiakaspalvelubotti-testi.html'"));
-  assert.ok(home.includes("'/tools/asiakaspalvelubotti-testi.html'"));
+  assert.ok(!home.includes('apple-learning-links'),'homepage guide promotion should remain removed');
   assert.ok(shell.includes('-fi-scorecard-v1'),'public module cache must be invalidated');
 });
 

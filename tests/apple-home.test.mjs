@@ -23,6 +23,7 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
     assert.doesNotMatch(html, /class="apple-orbit-core"><svg[^>]*<rect/);
     assert.doesNotMatch(html, /class="apple-orbit-core">R<\/div>/);
     assert.doesNotMatch(html,/<iframe|<canvas/);
+    assert.doesNotMatch(html,/apple-learning-links|Mistä aloittaa tekoälyn kanssa/,'guide promo should not appear on the homepage');
   });
   test('fullscreen menu keeps every secondary route accessible in '+lang,()=>{
     const html=publicMenuMarkup(t,lang);

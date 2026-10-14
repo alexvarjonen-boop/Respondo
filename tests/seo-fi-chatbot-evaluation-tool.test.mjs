@@ -52,8 +52,7 @@ test('Finnish and English resources use reciprocal hreflang and are linked from 
     assert.ok(html.includes('hreflang="en" href="'+en+'"'));
   }
   assert.match(english,/lang="fi">Suomeksi/);
-  assert.ok(homepage.includes('/tools/asiakaspalvelubotti-testi.html'));
-  assert.ok(homepage.includes('/tools/ai-chatbot-evaluation.html'));
+  assert.ok(!homepage.includes('apple-learning-links'),'assessment promo removed from homepage');
   assert.ok(topics.includes('/tools/asiakaspalvelubotti-testi.html'));
   assert.ok(topics.includes('/tools/ai-chatbot-evaluation.html'));
   assert.ok(mainGuide.includes('/tools/asiakaspalvelubotti-testi.html'));
