@@ -4,35 +4,29 @@ Production-oriented B2B customer-service SaaS for Finnish, Swedish and English w
 
 ## Current product model
 
-Respondo answers from the business's approved knowledge base and imported website facts. It does not use the OpenAI API in production. FI/SV/EN answer-language support may use Google's translation endpoint when a stored answer needs translation.
+Respondo answers from each business's approved knowledge base and imported website facts. It does not use the OpenAI API in production.
 
-Proposed pricing for **new subscriptions** (October 14, 2026; monthly billing):
+## Subscription prices for new customers — October 14, 2026
 
-| Public plan | Internal entitlement tier | Monthly | Support-agent seats | Website import | Google Calendar |
-| --- | --- | ---: | ---: | --- | --- |
-| Advanced | `basic` | 49 €/month | 2 | Yes | No |
-| Premium | `advanced` | 129 €/month | 10 | Yes | Yes |
-| Enterprise | `business` | 149 €/month | 20 | Yes | Yes |
+| Public plan | Internal entitlement tier | Monthly subscription | Annual monthly equivalent | Charged once per year | Support-agent seats |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Advanced | `basic` | 49 €/month | 39 €/month | 468 €/year | 2 |
+| Premium | `advanced` | 129 €/month | 119 €/month | 1,428 €/year | 10 |
+| Enterprise | `business` | 149 €/month | 139 €/month | 1,668 €/year | 20 |
 
-All new plans have a 3-day free trial. Enterprise also has advanced automations and integrations (configured per workspace). **Annual billing is not offered to new customers; existing annual subscriptions keep their existing Stripe prices and terms.** Existing monthly subscribers are not automatically repriced.
+Annual billing saves **10 €/month (120 €/year)** on all plans. The complete annual fee is charged at once after the 3-day free trial. The same features and agent-seat limits apply for monthly and annual billing.
 
-## Stripe activation checklist (production launch prerequisite)
+## Live Stripe catalog
 
-The new public amounts are **not yet active in Stripe**. Before merging or deploying this branch, create *three distinct Stripe Products and recurring Prices*:
+| Plan | Product | Monthly Stripe Price | Annual Stripe Price |
+| --- | --- | --- | --- |
+| Advanced | `prod_VRMDqWr2kAow8M` | `price_1UQTV0V05brJ7mTPFjnH0Q09` | `price_1UQTVtV05brJ7mTP4R2G5N1R` |
+| Premium | `prod_VRMEf8AWTzx8eu` | `price_1UQTVcV05brJ7mTP328BFuzx` | `price_1UQTVwV05brJ7mTPktIr0kJT` |
+| Enterprise | `prod_VRMEB6TmV771gr` | `price_1UQTVfV05brJ7mTP4cZof42w` | `price_1UQTVzV05brJ7mTPtgBczsCv` |
 
-- Respondo Advanced — **49.00 EUR every month**, internal tier `basic`.
-- Respondo Premium — **129.00 EUR every month**, internal tier `advanced`.
-- Respondo Enterprise — **149.00 EUR every month**, internal tier `business`.
+The Railway environment variables `STRIPE_{BASIC,ADVANCED,BUSINESS}_{MONTHLY,YEARLY}_PRICE_ID` point to the six Prices. Checkout validates the active Price, EUR amount, monthly or yearly interval, and Product name. Historical Price IDs remain accepted for existing subscribers' entitlements, and no existing subscription is automatically repriced or migrated.
 
-Each Price must be active, denominated in EUR, and have an interval of one month. Update the existing Railway environment variables to the **new Price IDs** in this order:
-
-- `STRIPE_BASIC_MONTHLY_PRICE_ID` → new Respondo Advanced / 49 EUR price
-- `STRIPE_ADVANCED_MONTHLY_PRICE_ID` → new Respondo Premium / 129 EUR price
-- `STRIPE_BUSINESS_MONTHLY_PRICE_ID` → new Respondo Enterprise / 149 EUR price
-
-**Do not change** the yearly Price ID variables. Old monthly/annual price IDs are retained in `planFromStripePriceId` so legacy subscriptions continue to map to the right entitlements. The server verifies each new Price's amount, currency and monthly recurrence **and** the matching active Product name before proceeding with Checkout. It returns an error instead of charging a legacy amount.
-
-This change does not modify, cancel, or automatically migrate existing subscriptions. Review tax obligations and Stripe Tax registrations as appropriate: the current domestic non-VAT-registered treatment cannot be assumed to apply to all cross-border sales.
+**Tax:** Review tax registrations and Stripe Tax obligations before selling outside Finland or when the seller's VAT liability changes. This change does not activate taxes or alter existing billing contracts.
 
 ## Production services
 
