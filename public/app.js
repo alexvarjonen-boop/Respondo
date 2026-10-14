@@ -4571,9 +4571,9 @@ async function dashboard(options = {}) {
                 <small>${(() => {
                   const planCode=String(workspace.subscription_plan || '');
                   const tier=planCode.startsWith('basic_')
-                    ? 'Premium'
+                    ? 'Advanced'
                     : planCode.startsWith('advanced_')
-                      ? 'Advanced'
+                      ? 'Premium'
                       : planCode.startsWith('business_') || ['monthly','yearly','owner_test'].includes(planCode)
                         ? 'Enterprise'
                         : 'Respondo';
