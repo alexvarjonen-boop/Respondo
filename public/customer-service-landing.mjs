@@ -45,7 +45,7 @@ const content = {
     "comparisonTitle": "AI-asiakaspalvelija vai ihminen?",
     "comparison": "Asiakaspalvelijabotti ei korvaa ammattilaista kaikissa tilanteissa. Sen vahvuus on toistuvien, tietopohjasta löytyvien kysymysten nopea käsittely. Ihminen tekee tapauskohtaiset arviot, varmistaa monimutkaiset hinnat ja hoitaa herkät asiakastilanteet. Paras työnjako on usein se, että botti antaa asiakkaalle vahvistetun perustiedon heti ja siirtää tarvittaessa asian työntekijälle.",
     "pricingTitle": "Mitä asiakaspalvelijabotti maksaa?",
-    "pricing": "Respondo AI:n Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Uusia vuositilauksia ei tällä hetkellä tarjota. Paketeissa on kolmen päivän maksuton kokeilu. Maksulliset yritystilaukset ovat toistaiseksi saatavilla vain Suomessa. Tarkista lopulliset hinnat, sisällöt ja ehdot hinnastosivulta.",
+    "pricing": "Respondo AI:n Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vuositilaus maksaa Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi) ja Enterprise 139 €/kk (1 668 €/vuosi). Vuosihinta maksetaan kerralla ja säästö on 120 € vuodessa. Paketeissa on kolmen päivän maksuton kokeilu. Maksulliset yritystilaukset ovat toistaiseksi saatavilla vain Suomessa. Tarkista lopulliset hinnat, sisällöt ja ehdot hinnastosivulta.",
     "faqTitle": "Usein kysytyt kysymykset asiakaspalvelijabotista",
     "faq": [
       [
@@ -127,7 +127,7 @@ const content = {
     "comparisonTitle": "AI-bot eller mänsklig kundservice?",
     "comparison": "Botten hanterar enklare, återkommande frågor snabbt när svaren finns i företagets kunskapsbas. En människa behövs fortfarande för komplicerade fall, känsliga situationer och individuella offerter. Ett fungerande upplägg kombinerar snabba faktasvar med tydlig överlämning till personalen.",
     "pricingTitle": "Vad kostar en kundservicebot?",
-    "pricing": "Respondo AI Advanced kostar 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Nya årsabonnemang erbjuds inte för närvarande. De aktuella paketen har tre dagars kostnadsfri provperiod. Betalda abonnemang kan för närvarande endast tecknas av finska företag. Kontrollera slutliga villkor på prissidan.",
+    "pricing": "Respondo AI Advanced kostar 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Årspriserna är Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år) och Enterprise 139 €/mån (1 668 €/år). Årsbetalning sparar 120 €. De aktuella paketen har tre dagars kostnadsfri provperiod. Betalda abonnemang kan för närvarande endast tecknas av finska företag. Kontrollera slutliga villkor på prissidan.",
     "faqTitle": "Vanliga frågor om AI-kundservicebotar",
     "faq": [
       [
@@ -209,7 +209,7 @@ const content = {
     "comparisonTitle": "AI chatbot or human customer support?",
     "comparison": "Automated agents work best for repetitive, well-documented requests. Humans remain important for complex decisions, sensitive conversations and bespoke quotes. The practical aim is to resolve straightforward questions promptly while preserving a reliable way to contact staff when necessary.",
     "pricingTitle": "How much does a customer support chatbot cost?",
-    "pricing": "Respondo AI Advanced costs €49/month, Premium €129/month and Enterprise €149/month. New annual subscriptions are not offered at present. The current plans include a three-day free trial. Paid subscriptions are currently available only to Finnish businesses. Confirm the current features and terms on the pricing page.",
+    "pricing": "Respondo AI Advanced costs €49/month, Premium €129/month and Enterprise €149/month. Annual billing saves €120/year: Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year). The year is billed upfront. The current plans include a three-day free trial. Paid subscriptions are currently available only to Finnish businesses. Confirm the current features and terms on the pricing page.",
     "faqTitle": "Frequently asked questions about customer service bots",
     "faq": [
       [
