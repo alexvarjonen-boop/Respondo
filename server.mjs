@@ -61,12 +61,7 @@ const SEO_INDEXABLE_PATHS = new Set([
   '/',
   '/ominaisuudet',
   '/kenelle-sopii',
-  '/guides',
-  '/guides/ai-customer-service-chatbot',
-  '/guides/website-chatbot-knowledge-base',
-  '/guides/multilingual-customer-support-chatbot',
-  '/guides/ai-chatbot-vs-live-chat',
-  '/guides/ai-chatbot-pricing',
+  ...GLOBAL_GUIDE_PATHS,
   '/features',
   '/funktioner',
   '/asiakaspalvelubotti',
@@ -212,7 +207,10 @@ function seoMetaForRequest(req) {
   const metaPath = seoMetaPath(rawPath);
   const languageMeta = SEO_META[lang] || SEO_META.fi;
   const fallback = languageMeta['/'];
-  const pair = languageMeta[metaPath] || verticalMetaForPath(metaPath)?.[lang] || aiTopicMeta(metaPath,lang) || fallback;
+  const guide = globalGuideData(metaPath,lang);
+  // Dedicated, localized guide metadata should be derived from the same approved
+  // visible article copy, rather than falling back to the homepage title.
+  const pair = languageMeta[metaPath] || (guide ? [guide.title + ' | Respondo AI',guide.subtitle] : null) || verticalMetaForPath(metaPath)?.[lang] || aiTopicMeta(metaPath,lang) || fallback;
   const isIndexable = SEO_INDEXABLE_PATHS.has(rawPath);
   const isKnown = isIndexable || SEO_APP_PATHS.has(rawPath);
   const origin = SEO_CANONICAL_ORIGIN;
@@ -319,6 +317,19 @@ function seoStructuredData(seo) {
         articleSection:article.sections.map(([name])=>name),
         isAccessibleForFree:true
       });
+      // FAQ answers below appear verbatim inside the article's visible details.
+      // These are content semantics, not a promise of enhanced Google displays.
+      if(Array.isArray(article.faq) && article.faq.length) {
+        graph.push({
+          '@type':'FAQPage',
+          '@id':seo.canonical+'#questions',
+          inLanguage:seo.lang,
+          mainEntity:article.faq.map(([question,answer])=>({
+            '@type':'Question',name:question,
+            acceptedAnswer:{'@type':'Answer',text:answer}
+          }))
+        });
+      }
     }
   } catch {}
   // Visible, locale-matched FAQ answers about the main customer service bot.
