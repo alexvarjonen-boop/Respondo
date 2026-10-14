@@ -1,4 +1,4 @@
-import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1';
+import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=pricing-20261014-ape-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1';
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2-fi-test-v1';
@@ -716,7 +716,6 @@ const EN_TEXT = new Map(Object.entries({
   "Kuukausi":"Month",
   "VUOSITILAUS":"ANNUAL PLAN",
   "vuosilaskutus":"annual billing",
-  "Laskutetaan vuosittain 358,80 €":"Billed annually at €358.80",
   "Kaikki samat ominaisuudet kuin kuukausitilauksessa":"All the same features as the monthly plan",
   "Maksu kerran vuodessa":"Pay once per year",
   "Voit käyttää palvelua maksetun kauden loppuun":"Use the service until the end of the paid period",
@@ -857,7 +856,7 @@ const EN_TEXT = new Map(Object.entries({
   'AJAN TASALLA':'UP TO DATE',
   'Hyväksytty tietopohja':'Approved knowledge base',
   'Hinnoittelu':'Pricing',
-  'Peruspaketti alkaa 49 €/kk':'Base plan starts at €49/month',
+  'Advanced alkaa 49 €/kk':'Base plan starts at €49/month',
   'Aukioloajat':'Opening hours',
   'Toimialue':'Service area',
   'Suomi':'Finland',
@@ -1178,7 +1177,6 @@ const SV_TEXT = new Map(Object.entries({
   "Kuukausi":"Månad",
   "VUOSITILAUS":"ÅRSABONNEMANG",
   "vuosilaskutus":"spara 60 €",
-  "Laskutetaan vuosittain 358,80 €":"Faktureras årligen 358,80 €",
   "Kaikki samat ominaisuudet kuin kuukausitilauksessa":"Alla samma funktioner som i månadsabonnemanget",
   "Maksu kerran vuodessa":"Betalning en gång per år",
   "Voit käyttää palvelua maksetun kauden loppuun":"Du kan använda tjänsten till slutet av den betalda perioden",
@@ -1349,7 +1347,7 @@ const EXTRA_UI_TEXT = new Map(Object.entries({
   "Sinä päätät, mitä yrityksestäsi kerrotaan. Muutokset päivittyvät botille yhdestä paikasta.": ["Du bestämmer vad som får sägas om ditt företag. Ändringar uppdateras till botten från ett och samma ställe.", "You decide what can be said about your company. Changes are updated to the bot from one place."],
   "4 HYVÄKSYTTYÄ TIETOA": ["4 GODKÄNDA UPPGIFTER", "4 APPROVED ITEMS"],
   "AJAN TASALLA": ["UPPDATERAT", "UP TO DATE"],
-  "Peruspaketti alkaa 49 €/kk": ["Grundpaketet börjar på 49 €/mån", "The basic plan starts at €49/month"],
+  "Advanced alkaa 49 €/kk": ["Advanced börjar på 49 €/mån", "Advanced starts at €49/month"],
   "PERUSTUU": ["BASERAS PÅ", "BASED ON"],
   "Alla olevat luvut perustuvat julkaistuihin tutkimuksiin ja raportteihin. Lähde, vuosi ja tutkimuskonteksti näkyvät jokaisen luvun yhteydessä.": ["Siffrorna nedan bygger på publicerade studier och rapporter. Källa, år och forskningskontext visas vid varje siffra.", "The figures below are based on published studies and reports. The source, year and research context are shown with each figure."],
   "Harvard Business Review’n auditissa 2 241 yhdysvaltalaisesta yrityksestä lähes joka neljäs ei vastannut testiliidiin 30 päivän aikana.": ["I en Harvard Business Review-granskning av 2 241 amerikanska företag svarade nästan vart fjärde företag inte på testleadet inom 30 dagar.", "In a Harvard Business Review audit of 2,241 U.S. companies, nearly one in four did not respond to the test lead within 30 days."],
@@ -1364,7 +1362,6 @@ const EXTRA_UI_TEXT = new Map(Object.entries({
   "Kerro Respondolle, mitä asiakkaillesi saa vastata.": ["Berätta för Respondo vad som får besvaras till dina kunder.", "Tell Respondo what it may answer to your customers."],
   "Y-tunnus · Suomi": ["FO-nummer · Finland", "Business ID · Finland"],
   "49 €/kk · kuukausi": ["49 €/mån · månadsvis", "€49/month · monthly"],
-  "29,90 €/kk · laskutetaan 358,80 €/vuosi": ["29,90 €/mån · faktureras 358,80 €/år", "€29.90/month · billed €358.80/year"],
   "Suosittelukoodi": ["Rekommendationskod", "Referral code"],
   "valinnainen": ["valfritt", "optional"],
   "Hyväksyn": ["Jag godkänner", "I accept"],
@@ -2363,7 +2360,7 @@ function controlSection() {
       <div class="truth-card">
         <div class="truth-top"><span>4 HYVÄKSYTTYÄ TIETOA</span><span class="truth-status">AJAN TASALLA</span></div>
         <div class="truth-title">Hyväksytty tietopohja</div>
-        <div class="knowledge-row"><span class="k-index">01</span><div><b>Hinnoittelu</b><small>Peruspaketti alkaa 49 €/kk</small></div><i>✓</i></div>
+        <div class="knowledge-row"><span class="k-index">01</span><div><b>Hinnoittelu</b><small>Advanced alkaa 49 €/kk</small></div><i>✓</i></div>
         <div class="knowledge-row"><span class="k-index">02</span><div><b>Aukioloajat</b><small>Ma–Pe 08:00–17:00</small></div><i>✓</i></div>
         <div class="knowledge-row"><span class="k-index">03</span><div><b>Toimialue</b><small>Suomi</small></div><i>✓</i></div>
         <div class="knowledge-row"><span class="k-index">04</span><div><b>Poikkeustilanteet</b><small>Ohjaa yhteydenottoon</small></div><i>✓</i></div>
@@ -3039,7 +3036,7 @@ function signup() {
   const requestedPlan = params.get('plan') || 'basic_monthly';
   const allowedPlans = new Set(['basic_monthly','advanced_monthly','business_monthly','owner_test']);
   const normalizedRequestedPlan = requestedPlan.replace(/^starter_/, 'basic_').replace(/^premium_/, 'advanced_').replace(/^enterprise_/, 'business_');
-  const safeRequestedPlan = allowedPlans.has(normalizedRequestedPlan) ? normalizedRequestedPlan : (requestedPlan === 'monthly' ? 'basic_monthly' : 'basic_monthly');
+  const safeRequestedPlan = allowedPlans.has(normalizedRequestedPlan) ? normalizedRequestedPlan : 'basic_monthly';
   const plan = safeRequestedPlan === 'owner_test' && !ownerTestAccess ? 'basic_monthly' : safeRequestedPlan;
   const referralCode = String(params.get('ref') || '').trim().toUpperCase();
   return `<div>
