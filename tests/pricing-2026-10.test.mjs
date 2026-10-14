@@ -37,9 +37,9 @@ test('homepage structured data advertises all monthly and annual offers', () => 
   assert.match(html, /"name":"Respondo Advanced Monthly","price":"49\.00"/);
   assert.match(html, /"name":"Respondo Premium Monthly","price":"129\.00"/);
   assert.match(html, /"name":"Respondo Enterprise Monthly","price":"149\.00"/);
-  assert.match(html, /"name":"Respondo Advanced Annual","price":"468\\.00"/);
-  assert.match(html, /"name":"Respondo Premium Annual","price":"1428\\.00"/);
-  assert.match(html, /"name":"Respondo Enterprise Annual","price":"1668\\.00"/);
+  assert.match(html, /"name":"Respondo Advanced Annual","price":"468\.00"/);
+  assert.match(html, /"name":"Respondo Premium Annual","price":"1428\.00"/);
+  assert.match(html, /"name":"Respondo Enterprise Annual","price":"1668\.00"/);
 });
 
 test('historical monthly subscriber prices retain explicit mapping', () => {
