@@ -14060,7 +14060,7 @@ async function seedOwnerRespondoKnowledge() {
         batch.forEach((row,index) => {
           const offset = index * 8;
           values.push(
-            `(${offset+1},${offset+2},${offset+3},${offset+4},${offset+5},${offset+6},${offset+7},${offset+8},true,NOW())`
+            '(' + Array.from({ length: 8 }, (_, columnIndex) => String.fromCharCode(36) + (offset + columnIndex + 1)).join(',') + ',true,NOW())'
           );
           params.push(
             uid(),
