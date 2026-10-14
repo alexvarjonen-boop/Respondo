@@ -1,0 +1,65 @@
+name: Encrypted Supabase database backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '27 2 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: respondo-database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    # Keep disabled until the two required secrets and offline recovery key
+    # are configured. Never produce unencrypted artifacts in a public repo.
+    if: ${{ vars.RESPONDO_BACKUPS_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Validate backup credentials
+        env:
+          SUPABASE_BACKUP_DB_URL: ${{ secrets.SUPABASE_BACKUP_DB_URL }}
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_BACKUP_DB_URL" || { echo "::error::Set SUPABASE_BACKUP_DB_URL first"; exit 1; }
+          test -n "$BACKUP_ENCRYPTION_PASSPHRASE" || { echo "::error::Set BACKUP_ENCRYPTION_PASSPHRASE first"; exit 1; }
+          test "${#BACKUP_ENCRYPTION_PASSPHRASE}" -ge 24 || { echo "::error::Encryption passphrase must be at least 24 characters"; exit 1; }
+
+      - name: Dump the public application schema with PostgreSQL 17
+        env:
+          SUPABASE_BACKUP_DB_URL: ${{ secrets.SUPABASE_BACKUP_DB_URL }}
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            --env SUPABASE_BACKUP_DB_URL \
+            --env PGSSLMODE=require \
+            --volume "$RUNNER_TEMP:/backup" \
+            postgres:17 \
+            sh -ec 'pg_dump --dbname="$SUPABASE_BACKUP_DB_URL" --schema=public --format=custom --no-owner --no-acl --file=/backup/respondo-public.dump'
+          test -s "$RUNNER_TEMP/respondo-public.dump"
+
+      - name: Encrypt backup before uploading
+        env:
+          BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          openssl enc -aes-256-cbc -pbkdf2 -iter 250000 -salt \
+            -in "$RUNNER_TEMP/respondo-public.dump" \
+            -out "$RUNNER_TEMP/respondo-public.dump.enc" \
+            -pass env:BACKUP_ENCRYPTION_PASSPHRASE
+          rm -f "$RUNNER_TEMP/respondo-public.dump"
+          test -s "$RUNNER_TEMP/respondo-public.dump.enc"
+
+      - name: Upload only encrypted backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: respondo-db-encrypted-${{ github.run_id }}
+          path: ${{ runner.temp }}/respondo-public.dump.enc
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
