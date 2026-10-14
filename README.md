@@ -6,7 +6,7 @@ Production-oriented B2B customer-service SaaS for Finnish, Swedish and English w
 
 Respondo answers from the business's approved knowledge base and imported website facts. It does not use the OpenAI API in production. FI/SV/EN answer-language support may use Google's translation endpoint when a stored answer needs translation.
 
-Proposed pricing for **new subscriptions** (October 14, 2026; monthly billing):
+Pricing for **new subscriptions** (October 14, 2026; monthly billing):
 
 | Public plan | Internal entitlement tier | Monthly | Support-agent seats | Website import | Google Calendar |
 | --- | --- | ---: | ---: | --- | --- |
@@ -14,11 +14,11 @@ Proposed pricing for **new subscriptions** (October 14, 2026; monthly billing):
 | Premium | `advanced` | 129 €/month | 10 | Yes | Yes |
 | Enterprise | `business` | 149 €/month | 20 | Yes | Yes |
 
-All new plans have a 3-day free trial. Enterprise also has advanced automations and integrations (configured per workspace). **Annual billing is not offered to new customers; existing annual subscriptions keep their existing Stripe prices and terms.** Existing monthly subscribers are not automatically repriced.
+All new plans have a 3-day free trial. Enterprise also has advanced automations and integrations (configured per workspace). **Annual billing saves 10 EUR/month per plan (120 EUR/year) and the full year is charged upfront**: Advanced 39 EUR/month equivalent (468 EUR/year), Premium 119 EUR/month equivalent (1428 EUR/year), Enterprise 139 EUR/month equivalent (1668 EUR/year). Existing subscriptions retain their original billing prices unless explicitly changed.
 
-## Stripe activation checklist (production launch prerequisite)
+## Stripe live pricing (2026-10-14)
 
-The new public amounts are **not yet active in Stripe**. Before merging or deploying this branch, create *three distinct Stripe Products and recurring Prices*:
+New Stripe Products with correct monthly and annual recurring Prices were created in live mode:
 
 - Respondo Advanced — **49.00 EUR every month**, internal tier `basic`.
 - Respondo Premium — **129.00 EUR every month**, internal tier `advanced`.
@@ -30,7 +30,7 @@ Each Price must be active, denominated in EUR, and have an interval of one month
 - `STRIPE_ADVANCED_MONTHLY_PRICE_ID` → new Respondo Premium / 129 EUR price
 - `STRIPE_BUSINESS_MONTHLY_PRICE_ID` → new Respondo Enterprise / 149 EUR price
 
-**Do not change** the yearly Price ID variables. Old monthly/annual price IDs are retained in `planFromStripePriceId` so legacy subscriptions continue to map to the right entitlements. The server verifies each new Price's amount, currency and monthly recurrence **and** the matching active Product name before proceeding with Checkout. It returns an error instead of charging a legacy amount.
+Configure all six Railway monthly/yearly Price ID variables for the new products. Old monthly/annual Stripe IDs are retained in `planFromStripePriceId` so legacy subscriptions continue to map to the right entitlements. The server verifies each new Price's amount, currency and monthly recurrence **and** the matching active Product name before proceeding with Checkout. It returns an error instead of charging a legacy amount.
 
 This change does not modify, cancel, or automatically migrate existing subscriptions. Review tax obligations and Stripe Tax registrations as appropriate: the current domestic non-VAT-registered treatment cannot be assumed to apply to all cross-border sales.
 
