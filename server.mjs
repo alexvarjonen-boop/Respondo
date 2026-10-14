@@ -1294,6 +1294,10 @@ function planFromStripePriceId(priceId) {
     ['basic_monthly','price_1UP2DWV05brJ7mTP6sjumnIt'],
     ['advanced_monthly','price_1UP2DfV05brJ7mTPuSuwvuxm'],
     ['business_monthly','price_1UP2DhV05brJ7mTP2pSDX8aV'],
+    // Explicit old annual Price IDs remain valid for existing subscribers after yearly Price variables switch.
+    ['basic_yearly','price_1UONnxV05brJ7mTPMVHkrpf5'],
+    ['advanced_yearly','price_1UONrlV05brJ7mTPsUqKaQIB'],
+    ['business_yearly','price_1UONrqV05brJ7mTPWmGhW2lP'],
     // Map the former VAT-exempt monthly prices for customers on existing subscriptions.
     ['basic_monthly','price_1UONnqV05brJ7mTPu5MvqQaP'],
     ['advanced_monthly','price_1UONo0V05brJ7mTPesqzKl1q'],
