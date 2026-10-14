@@ -23,20 +23,26 @@ test('three new monthly prices agree across checkout backend and public UI', () 
   assert.match(server, /stripe\.prices\.retrieve\(priceId\)/);
 });
 
-test('new annual checkouts are unavailable while existing annual price mappings remain', () => {
-  assert.match(server, /plan\.endsWith\('_yearly'\)/);
-  assert.match(server, /normalizedPlan\.endsWith\('_yearly'\)/);
-  assert.doesNotMatch(app, /value="(?:basic|advanced|business)_yearly"/);
-  assert.doesNotMatch(effects, /href="\/tilaus\?plan=(?:basic|advanced|business)_yearly"/);
-  assert.match(server, /\['basic_yearly',process\.env\.STRIPE_BASIC_YEARLY_PRICE_ID\]/);
+test('new annual subscriptions are available for each tier and save 120 euros per year', () => {
+  for (const [plan,amount,total] of [
+    ['basic',39,468],['advanced',119,1428],['business',139,1668]
+  ]) {
+    assert.ok(app.includes('value="'+plan+'_yearly"'));
+    assert.ok(server.includes(plan+'_yearly:'));
+    assert.ok(server.includes('monthlyPrice:'+amount+',annualTotal:'+total));
+    assert.ok(app.includes('value="'+plan+'_monthly"'));
+  }
+  assert.match(server, /NEW_YEARLY_PRICE_CENTS/);
+  assert.match(server, /CURRENT_PRICE_CENTS/);
+  assert.doesNotMatch(server, /Uusille tilauksille on saatavilla vain kuukausilaskutus/);
 });
 
-test('homepage structured data only advertises three monthly prices', () => {
-  assert.equal((html.match(/"@type":"Offer"/g) ?? []).length, 3);
-  assert.match(html, /"name":"Respondo Advanced Monthly","price":"49\.00"/);
-  assert.match(html, /"name":"Respondo Premium Monthly","price":"129\.00"/);
-  assert.match(html, /"name":"Respondo Enterprise Monthly","price":"149\.00"/);
-  assert.doesNotMatch(html, /"category":"annual subscription"/);
+test('homepage structured data advertises approved monthly and annual prices', () => {
+  assert.equal((html.match(/"@type":"Offer"/g) ?? []).length, 6);
+  for (const price of ['49.00','129.00','149.00','468.00','1428.00','1668.00']) {
+    assert.ok(html.includes('"price":"'+price+'"'), 'missing '+price);
+  }
+  assert.match(html, /"category":"annual subscription"/);
 });
 
 test('historical monthly subscriber prices retain explicit mapping', () => {
