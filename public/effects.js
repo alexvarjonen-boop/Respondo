@@ -158,11 +158,11 @@
 
   const faq = [
     {
-      keys:['hinta','maksaa','34','44','54','29','39','49','vuosi','kuukausi','price','pricing','cost','month','year','pris','kostar','kostnad','månad','manad','årsabonnemang'],
+      keys:['hinta','maksaa','49','129','149','kuukausi','price','pricing','cost','month','pris','kostar','kostnad','månad','manad'],
       answer:{
-        fi:'Respondo Starter maksaa 34,90 €/kk, Advanced 44,90 €/kk ja Business 54,90 €/kk. Vuositilauksissa kuukausivastaavuus on 29,90 €, 39,90 € tai 49,90 € ja säästät 60 € vuodessa. Voit kokeilla 3 päivää ilmaiseksi.',
-        sv:'Respondo Starter kostar 34,90 €/mån, Advanced 44,90 €/mån och Business 54,90 €/mån. Årsabonnemang motsvarar 29,90 €, 39,90 € eller 49,90 €/mån och sparar 60 € per år. Prova gratis i 3 dagar.',
-        en:'Respondo Starter costs €34.90/month, Advanced €44.90/month and Business €54.90/month. Annual plans cost the equivalent of €29.90, €39.90 or €49.90/month and save €60/year. Try free for 3 days.'
+        fi:'Respondo Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Uusia vuositilauksia ei tällä hetkellä tarjota. Voit kokeilla 3 päivää ilmaiseksi.',
+        sv:'Respondo Advanced kostar 49 €/mån, Premium 129 €/mån och Enterprise 149 €/mån. Nya årsabonnemang erbjuds inte för närvarande. Prova gratis i 3 dagar.',
+        en:'Respondo Advanced costs €49/month, Premium €129/month and Enterprise €149/month. New annual subscriptions are not offered at present. Try free for 3 days.'
       }
     },
     {
@@ -570,8 +570,8 @@
       ['Omat kysymykset ja vastaukset',sv?'Egna frågor och svar':'Custom questions and answers'],['Lisää tähän asioita, joita asiakkaasi kysyvät usein.',sv?'Lägg till sådant som dina kunder ofta frågar om.':'Add things your customers often ask about.'],['+ Lisää kysymys',sv?'+ Lägg till fråga':'+ Add question'],['Asiakkaan kysymys tai aihe',sv?'Kundens fråga eller ämne':'Customer question or topic'],['Vastaus',sv?'Svar':'Answer'],['+ Lisää oma kysymys',sv?'+ Lägg till egen fråga':'+ Add custom question'],
       ['Mitä muuta asiakkaan pitäisi tietää?',sv?'Vad mer bör kunden veta?':'What else should the customer know?'],['Tallenna ja kokeile',sv?'Spara och testa':'Save and test'],
       ['HALUATKO TÄMÄN OMALLE SIVULLESI?',sv?'VILL DU HA DETTA PÅ DIN EGEN WEBBPLATS?':'WANT THIS ON YOUR WEBSITE?'],['Ota Respondo käyttöön omalla verkkosivullasi.',sv?'Ta Respondo i bruk på din egen webbplats.':'Add Respondo to your own website.'],
-      ['Kokeile 3 päivää ilmaiseksi. Valitse kuukausi- tai vuositilaus ja lisää maksutapa turvallisesti Stripessä.',sv?'Testa gratis i 3 dagar. Välj månads- eller årsabonnemang och lägg till betalningsmetod säkert via Stripe.':'Try free for 3 days. Choose a monthly or annual plan and add your payment method securely with Stripe.'],
-      ['KUUKAUSITILAUS',sv?'MÅNADSABONNEMANG':'MONTHLY PLAN'],['VUOSITILAUS',sv?'ÅRSABONNEMANG':'ANNUAL PLAN'],['34,90 €',sv?'34,90 €':'€34.90'],['29,90 €',sv?'29,90 €':'€29.90'],['/ kk',sv?'/ mån':'/ month'],['Laskutetaan vuosittain 358,80 €',sv?'Faktureras årligen 358,80 €':'Billed annually at €358.80'],['3 päivää ilmaiseksi',sv?'3 dagar gratis':'3 days free'],['Chat suoraan omalle verkkosivullesi',sv?'Chatt direkt på din webbplats':'Chat directly on your website'],['Vastaukset yrityksesi omista tiedoista',sv?'Svar från företagets egna uppgifter':'Answers from your company information'],['Voit perua milloin tahansa',sv?'Du kan säga upp när som helst':'Cancel anytime'],['Valitse kuukausi',sv?'Välj månad':'Choose monthly'],['Säästä 60 €',sv?'Spara 60 €':'Save €60'],['Kaikki samat ominaisuudet kuin kuukausitilauksessa',sv?'Alla samma funktioner som i månadsabonnemanget':'All the same features as the monthly plan'],['Maksu kerran vuodessa',sv?'Betalning en gång per år':'One payment per year'],['Valitse vuosi',sv?'Välj år':'Choose annual'],
+      ['Kokeile 3 päivää ilmaiseksi. Valitse kuukausitilaus ja lisää maksutapa turvallisesti Stripessä.',sv?'Prova gratis i 3 dagar. Välj månadsabonnemang och lägg till betalningsmetod säkert via Stripe.':'Try free for 3 days. Choose a monthly plan and add your payment method securely with Stripe.'],
+      ['KUUKAUSITILAUS',sv?'MÅNADSABONNEMANG':'MONTHLY PLAN'],['49 €',sv?'49 €':'€49'],['/ kk',sv?'/ mån':'/ month'],['3 päivää ilmaiseksi',sv?'3 dagar gratis':'3 days free'],['Chat suoraan omalle verkkosivullesi',sv?'Chatt direkt på din webbplats':'Chat directly on your website'],['Vastaukset yrityksesi omista tiedoista',sv?'Svar från företagets egna uppgifter':'Answers from your company information'],['Voit perua milloin tahansa',sv?'Du kan säga upp när som helst':'Cancel anytime'],['Valitse kuukausi',sv?'Välj månad':'Choose monthly'],['Kaikki samat ominaisuudet kuin kuukausitilauksessa',sv?'Alla samma funktioner som i månadsabonnemanget':'All the same features as the monthly plan'],
       ['Maksut turvallisesti Stripessä',sv?'Säkra betalningar via Stripe':'Secure payments with Stripe'],['Ei veloitusta 3 päivän kokeilun aikana',sv?'Ingen debitering under den 3 dagar långa provperioden':'No charge during the 3-day trial'],['Pääset alkuun heti tilauksen jälkeen',sv?'Kom igång direkt efter beställningen':'Get started immediately after subscribing']
     ];
     const map=new Map(pairs), walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT), nodes=[]; while(walker.nextNode()) nodes.push(walker.currentNode);
@@ -684,13 +684,12 @@
               <div class="assistant-order-head">
                 <small>${pageTx('HALUATKO TÄMÄN OMALLE SIVULLESI?','VILL DU HA DETTA PÅ DIN EGEN WEBBPLATS?','WANT THIS ON YOUR WEBSITE?')}</small>
                 <h2>${pageTx('Valitse yrityksellesi sopiva Respondo.','Välj rätt Respondo för ditt företag.','Choose the right Respondo plan for your business.')}</h2>
-                <p>${pageTx('Kaikissa tilauksissa on 3 päivän ilmainen kokeilu. Vuositilauksessa ei ole alennusta.','Alla abonnemang har 3 dagars gratis provperiod. Årsabonnemang har ingen rabatt.','Every plan includes a 3-day free trial. Annual billing has no discount.')}</p>
+                <p>${pageTx('Kaikissa kuukausitilauksissa on 3 päivän ilmainen kokeilu.','Alla månadsabonnemang har 3 dagars gratis provperiod.','Every monthly plan includes a 3-day free trial.')}</p>
               </div>
               <div class="assistant-order-grid assistant-order-grid-three">
                 <article class="assistant-order-card">
-                  <div class="assistant-order-label">STARTER</div>
-                  <h3>34,90 € <span>/ kk</span></h3>
-                  <p class="assistant-annual-note">29,90 €/kk · ${pageTx('358,80 €/vuosi','358,80 €/år','€358.80/year')}</p>
+                  <div class="assistant-order-label">ADVANCED</div>
+                  <h3>49 € <span>/ kk</span></h3>
                   <ul>
                     <li>${pageTx('Ajanvaraukset ja yhteydenotot','Bokningar och kontaktförfrågningar','Bookings and contact requests')}</li>
                     <li>${pageTx('Omat kysymys–vastausparit','Egna frågor och svar','Your own Q&A knowledge')}</li>
@@ -698,28 +697,24 @@
                   </ul>
                   <div class="assistant-order-actions">
                     <a class="assistant-order-btn" href="/tilaus?plan=basic_monthly">${pageTx('Kuukausi','Månad','Monthly')} <span>→</span></a>
-                    <a class="assistant-order-btn" href="/tilaus?plan=basic_yearly">${pageTx('Vuosi','År','Annual')} <span>→</span></a>
                   </div>
                 </article>
                 <article class="assistant-order-card featured">
-                  <div class="assistant-order-top"><div class="assistant-order-label">ADVANCED</div><span class="assistant-save">${pageTx('SUOSITUIN','POPULÄRAST','MOST POPULAR')}</span></div>
-                  <h3>44,90 € <span>/ kk</span></h3>
-                  <p class="assistant-annual-note">39,90 €/kk · ${pageTx('478,80 €/vuosi','478,80 €/år','€478.80/year')}</p>
+                  <div class="assistant-order-top"><div class="assistant-order-label">PREMIUM</div><span class="assistant-save">${pageTx('SUOSITUIN','POPULÄRAST','MOST POPULAR')}</span></div>
+                  <h3>129 € <span>/ kk</span></h3>
                   <ul>
-                    <li>${pageTx('Kaikki Starter-ominaisuudet','Alla Starter-funktioner','Everything in Starter')}</li>
+                    <li>${pageTx('Kaikki Advanced-ominaisuudet','Alla Advanced-funktioner','Everything in Advanced')}</li>
                     <li>${pageTx('Hae tiedot sivustolta','Hämta information från webbplatsen','Website knowledge import')}</li>
                     <li>${pageTx('10 asiakaspalvelijapaikkaa','10 kundserviceplatser','10 customer-service seats')}</li>
                     <li>Google Calendar</li>
                   </ul>
                   <div class="assistant-order-actions">
                     <a class="assistant-order-btn primary" href="/tilaus?plan=advanced_monthly">${pageTx('Kuukausi','Månad','Monthly')} <span>→</span></a>
-                    <a class="assistant-order-btn primary" href="/tilaus?plan=advanced_yearly">${pageTx('Vuosi','År','Annual')} <span>→</span></a>
                   </div>
                 </article>
                 <article class="assistant-order-card">
-                  <div class="assistant-order-label">BUSINESS</div>
-                  <h3>54,90 € <span>/ kk</span></h3>
-                  <p class="assistant-annual-note">49,90 €/kk · ${pageTx('598,80 €/vuosi','598,80 €/år','€598.80/year')}</p>
+                  <div class="assistant-order-label">ENTERPRISE</div>
+                  <h3>149 € <span>/ kk</span></h3>
                   <ul>
                     <li>${pageTx('Kaikki Respondon nykyiset ominaisuudet','Alla nuvarande Respondo-funktioner','All current Respondo features')}</li>
                     <li>${pageTx('20 asiakaspalvelijapaikkaa','20 kundserviceplatser','20 customer-service seats')}</li>
@@ -727,7 +722,6 @@
                   </ul>
                   <div class="assistant-order-actions">
                     <a class="assistant-order-btn" href="/tilaus?plan=business_monthly">${pageTx('Kuukausi','Månad','Monthly')} <span>→</span></a>
-                    <a class="assistant-order-btn" href="/tilaus?plan=business_yearly">${pageTx('Vuosi','År','Annual')} <span>→</span></a>
                   </div>
                 </article>
               </div>

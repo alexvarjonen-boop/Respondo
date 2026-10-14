@@ -100,7 +100,7 @@ const SEO_META = {
     '/kenelle-sopii': ['Kenelle Respondo AI sopii? | Toimialat ja käyttökohteet','Respondo AI sopii autokorjaamoille, LVI-yrityksille, verkkokaupoille sekä asiakaspalvelun ja ajanvarauksen tueksi. Tutustu ratkaisuihin.'],
     '/guides': ['AI-asiakaspalvelun oppaat | Respondo AI','Käytännön oppaita AI-asiakaspalveluboteista ja yrityksen verkkosivun tietopohjan rakentamisesta.'],
     '/guides/ai-chatbot-vs-live-chat': ["AI-chatbot vai livechat vai lomake? | Vertailu yritykselle","Vertaa AI-chatbotia, livechattia ja yhteydenottolomaketta: vastausnopeus, asiakaspalvelun laatu, kustannukset ja luotettavat vastaukset."],
-    '/guides/ai-chatbot-pricing': ['AI-asiakaspalvelubotin hinta yritykselle | Respondo AI','Paljonko AI-chatbot maksaa? Vertaile Starter-, Advanced- ja Business-hintoja, kuukausi- ja vuositilausta sekä botin kokonaiskustannuksia.'],
+    '/guides/ai-chatbot-pricing': ['AI-asiakaspalvelubotin hinta yritykselle | Respondo AI','Paljonko AI-chatbot maksaa? Vertaile Advanced-, Premium- ja Enterprise-hintoja sekä kuukausitilausta sekä botin kokonaiskustannuksia.'],
     '/guides/ai-customer-service-chatbot': ['Mikä on AI-asiakaspalvelubotti? | Opas yrityksille','Miten AI-asiakaspalvelubotti toimii? Opi käyttökohteet, tietopohjan merkitys ja ihmisen käsittelyyn siirtäminen.'],
     '/guides/website-chatbot-knowledge-base': ['Chatbotin tietopohja – käytännön opas | Respondo AI','Näin rakennat verkkosivun AI-botille luotettavan tietopohjan ja testaat vastaukset ennen käyttöönottoa.'],
     '/guides/multilingual-customer-support-chatbot': ["Monikielinen asiakaspalvelubotti: 8 testiä | Respondo AI","Käytännön opas monikielisen AI-chatbotin testaamiseen: suomi, ruotsi ja englanti, jatkokysymykset ja tietojen luotettavuus."],
@@ -109,7 +109,7 @@ const SEO_META = {
     '/ajanvaraus-chatbot': ['Ajanvaraus-chatbot yritykselle | Respondo AI', 'Ajanvaraus-chatbot vastaa asiakkaiden kysymyksiin, kerää ajanvarauspyyntöjä ja tukee kalenteripohjaisia asiakaspalveluprosesseja 24/7.'],
     '/autokorjaamo-chatbot': ['Chatbot autokorjaamolle – huolto ja ajanvaraus | Respondo AI', 'Autokorjaamon chatbot vastaa huolto-, rengas- ja palvelukysymyksiin korjaamon omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.'],
     '/lvi-chatbot': ['Chatbot LVI-yritykselle – putkityöt ja huolto | Respondo AI', 'LVI-yrityksen chatbot auttaa putki-, lämmitys- ja huoltopalvelujen kysymyksissä yrityksen hyväksymillä tiedoilla ja kerää yhteydenottopyyntöjä.'],
-    '/hinnat': ["Hinnat | Respondo AI", "Vertaile Starter-, Advanced- ja Business-tilauspaketteja. Kolmen päivän maksuton kokeilu kaikissa paketeissa."],
+    '/hinnat': ["Hinnat | Respondo AI", "Vertaile Advanced-, Premium- ja Enterprise-tilauspaketteja. Kolmen päivän maksuton kokeilu kaikissa paketeissa."],
     '/yhteystiedot': ['Yhteystiedot | Respondo AI', 'Ota yhteyttä Respondo AI:hin. Asiakaspalvelu, verkkosivujen chatbotin käyttöönotto ja yritysten tarjouspyynnöt.'],
     '/tietoturva': ['Tietoturva ja tietosuoja | Respondo AI', 'Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
     '/kayttoehdot': ['Käyttöehdot | Respondo AI', 'Respondo AI -palvelun käyttöehdot yritysasiakkaille.'],
@@ -132,7 +132,7 @@ const SEO_META = {
     '/ajanvaraus-chatbot': ['Bokningschatbot för företag | Respondo AI', 'En bokningschatbot svarar på kundfrågor, samlar bokningsförfrågningar och stödjer kalenderbaserade kundserviceflöden dygnet runt.'],
     '/autokorjaamo-chatbot': ['Chatbot för bilverkstad | Respondo AI', 'Chatbot för bilverkstad besvarar frågor om service, däck och bokning med verkstadens egna godkända uppgifter och samlar kontaktförfrågningar.'],
     '/lvi-chatbot': ['Chatbot för VVS-företag | Respondo AI', 'Chatbot för VVS-företag svarar på frågor om rör, värme och service med företagets egna godkända uppgifter.'],
-    '/hinnat': ["Priser | Respondo AI", "Jämför abonnemangen Starter, Advanced och Business. Alla paket har tre dagars gratis provperiod."],
+    '/hinnat': ["Priser | Respondo AI", "Jämför abonnemangen Advanced, Premium och Enterprise. Alla paket har tre dagars gratis provperiod."],
     '/yhteystiedot': ['Kontakt | Respondo AI', 'Kontakta Respondo AI om kundservicebot för företag, funktioner, priser och att komma igång.'],
     '/tietoturva': ['Datasäkerhet och integritet | Respondo AI', 'Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
     '/kayttoehdot': ['Användarvillkor | Respondo AI', 'Användarvillkor för Respondo AI:s företagstjänst.'],
@@ -155,7 +155,7 @@ const SEO_META = {
     '/ajanvaraus-chatbot': ['Booking Chatbot for Business | Respondo AI', 'A booking chatbot answers customer questions, captures booking requests and supports calendar-based customer-service workflows around the clock.'],
     '/autokorjaamo-chatbot': ['Chatbot for Auto Repair Shops | Respondo AI', 'An auto repair chatbot answers questions about services, tyres and bookings using garage-approved information and captures customer contact requests.'],
     '/lvi-chatbot': ['Chatbot for Plumbing and HVAC Companies | Respondo AI', 'A plumbing and HVAC chatbot answers service, heating and maintenance questions using company-approved information and captures enquiries.'],
-    '/hinnat': ["Pricing | Respondo AI", "Compare Starter, Advanced and Business plans. Every plan includes a three-day free trial."],
+    '/hinnat': ["Pricing | Respondo AI", "Compare Advanced, Premium and Enterprise plans. Every plan includes a three-day free trial."],
     '/yhteystiedot': ['Contact Respondo AI | Support and Sales', 'Contact Respondo AI about the business customer service chatbot, product information and getting started.'],
     '/tietoturva': ['Security and Privacy | Respondo AI', 'See how Respondo protects company and customer data, sign-ins, integrations and service usage.'],
     '/kayttoehdot': ['Terms of Service | Respondo AI', 'Terms of service for Respondo AI business customers.'],
@@ -279,9 +279,9 @@ function seoStructuredData(seo) {
         'Shopify and WooCommerce commerce workflows'
       ],
       offers:[
-        { '@type':'Offer', name:'Respondo Starter', price:'34.90', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/tilaus' },
-        { '@type':'Offer', name:'Respondo Advanced', price:'44.90', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/tilaus' },
-        { '@type':'Offer', name:'Respondo Business', price:'54.90', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/tilaus' }
+        { '@type':'Offer', name:'Respondo Advanced', price:'49.00', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/tilaus' },
+        { '@type':'Offer', name:'Respondo Premium', price:'129.00', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/tilaus' },
+        { '@type':'Offer', name:'Respondo Enterprise', price:'149.00', priceCurrency:'EUR', url:SEO_CANONICAL_ORIGIN + '/tilaus' }
       ],
       publisher:{ '@id':SEO_CANONICAL_ORIGIN + '/#organization' },
     },
@@ -403,9 +403,9 @@ function seoNoScriptMarkup(seo, rawPath) {
     return '<noscript><main><h1>Ajanvaraus-chatbot yritykselle</h1><p>Respondo AI voi auttaa verkkosivuasiakasta siirtymään kysymyksestä ajanvarauspyyntöön ja näyttää vapaita aikoja, kun yritys on määrittänyt ne palveluun.</p><h2>Asiakaskysymyksestä ajanvaraukseen</h2><p>Asiakas voi saada ensin vastauksen ja jatkaa sen jälkeen ajanvaraukseen tai ihmisen asiakaspalveluun tarvittaessa.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a> · <a href="/tilaus">Kokeile 3 päivää maksutta</a></p></main></noscript>';
   }
   if (rawPath === '/') {
-    if (seo.lang === 'sv') return '<noscript><main><h1>AI-kundservicebot för företag 24/7</h1><p>Respondo AI svarar på kundfrågor med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar.</p><p>Starter 34,90 €/mån · Advanced 44,90 €/mån · Business 54,90 €/mån.</p><p><a href="/funktioner">Se funktionerna</a></p></main></noscript>';
-    if (seo.lang === 'en') return '<noscript><main><h1>AI customer service bot for businesses 24/7</h1><p>Respondo AI answers customer questions with company-approved information, captures contact requests and supports bookings.</p><p>Starter €34.90/month · Advanced €44.90/month · Business €54.90/month.</p><p><a href="/features">See features</a></p></main></noscript>';
-    return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille 24/7</h1><p>Respondo AI vastaa asiakkaiden kysymyksiin yrityksen omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.</p><p>Starter 34,90 €/kk · Advanced 44,90 €/kk · Business 54,90 €/kk.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a> · <a href="/asiakaspalvelubotti">Mikä on asiakaspalvelijabotti?</a> · <a href="/tekoaly-asiakaspalvelu">Tekoäly asiakaspalvelussa</a> · <a href="/tekoaly-yrityksille">Tekoäly yrityksille</a> · <a href="/tools/asiakaspalvelubotti-testi.html">Ilmainen asiakaspalvelubotin testi (25 kysymystä)</a> · <a href="/media/">Respondo AI tuotetiedot medialle</a></p></main></noscript>';
+    if (seo.lang === 'sv') return '<noscript><main><h1>AI-kundservicebot för företag 24/7</h1><p>Respondo AI svarar på kundfrågor med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar.</p><p>Advanced 49 €/mån · Premium 129 €/mån · Enterprise 149 €/mån.</p><p><a href="/funktioner">Se funktionerna</a></p></main></noscript>';
+    if (seo.lang === 'en') return '<noscript><main><h1>AI customer service bot for businesses 24/7</h1><p>Respondo AI answers customer questions with company-approved information, captures contact requests and supports bookings.</p><p>Advanced €49/month · Premium €129/month · Enterprise €149/month.</p><p><a href="/features">See features</a></p></main></noscript>';
+    return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille 24/7</h1><p>Respondo AI vastaa asiakkaiden kysymyksiin yrityksen omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.</p><p>Advanced 49 €/kk · Premium 129 €/kk · Enterprise 149 €/kk.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a> · <a href="/asiakaspalvelubotti">Mikä on asiakaspalvelijabotti?</a> · <a href="/tekoaly-asiakaspalvelu">Tekoäly asiakaspalvelussa</a> · <a href="/tekoaly-yrityksille">Tekoäly yrityksille</a> · <a href="/tools/asiakaspalvelubotti-testi.html">Ilmainen asiakaspalvelubotin testi (25 kysymystä)</a> · <a href="/media/">Respondo AI tuotetiedot medialle</a></p></main></noscript>';
   }
   return '<noscript><main><h1>' + escapeHtml(seo.title.replace(/\\s*\\|\\s*Respondo AI$/i,'')) + '</h1><p>' + escapeHtml(seo.description) + '</p><p><a href="' + SEO_CANONICAL_ORIGIN + '/">Respondo AI</a></p></main></noscript>';
 }
@@ -1158,11 +1158,11 @@ async function consumeOwnerFreeCode(_client, value) {
 }
 
 const PLAN_DEFINITIONS = Object.freeze({
-  basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:34.90,annualTotal:null,agentSeats:2,websiteImport:true,googleCalendar:false},
+  basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:49,annualTotal:null,agentSeats:2,websiteImport:true,googleCalendar:false},
   basic_yearly:{tier:'basic',billing:'yearly',monthlyPrice:29.90,annualTotal:358.80,agentSeats:2,websiteImport:true,googleCalendar:false},
-  advanced_monthly:{tier:'advanced',billing:'monthly',monthlyPrice:44.90,annualTotal:null,agentSeats:10,websiteImport:true,googleCalendar:true},
+  advanced_monthly:{tier:'advanced',billing:'monthly',monthlyPrice:129,annualTotal:null,agentSeats:10,websiteImport:true,googleCalendar:true},
   advanced_yearly:{tier:'advanced',billing:'yearly',monthlyPrice:39.90,annualTotal:478.80,agentSeats:10,websiteImport:true,googleCalendar:true},
-  business_monthly:{tier:'business',billing:'monthly',monthlyPrice:54.90,annualTotal:null,agentSeats:20,websiteImport:true,googleCalendar:true},
+  business_monthly:{tier:'business',billing:'monthly',monthlyPrice:149,annualTotal:null,agentSeats:20,websiteImport:true,googleCalendar:true},
   business_yearly:{tier:'business',billing:'yearly',monthlyPrice:49.90,annualTotal:598.80,agentSeats:20,websiteImport:true,googleCalendar:true},
 });
 
@@ -1174,6 +1174,8 @@ function normalizeCheckoutPlan(value) {
   if (raw==='starter_monthly') return 'basic_monthly';
   if (raw==='starter_yearly') return 'basic_yearly';
   if(raw==='yearly') return 'basic_yearly';
+  if(raw==='premium_monthly') return 'advanced_monthly';
+  if(raw==='enterprise_monthly') return 'business_monthly';
   return 'basic_monthly';
 }
 
@@ -1229,6 +1231,55 @@ function stripePriceForPlan(value) {
   return map[plan] || '';
 }
 
+const NEW_MONTHLY_PRICE_CENTS = Object.freeze({ basic_monthly:4900, advanced_monthly:12900, business_monthly:14900 });
+const NEW_MONTHLY_PRODUCT_NAMES = Object.freeze({ basic_monthly:'Respondo Advanced', advanced_monthly:'Respondo Premium', business_monthly:'Respondo Enterprise' });
+async function assertCurrentCheckoutPrice(plan, priceId) {
+  if (!Object.hasOwn(NEW_MONTHLY_PRICE_CENTS, plan)) return;
+  if (!stripe || !priceId) throw Object.assign(new Error('Stripe monthly plan is not configured.'),{publicStatus:503});
+  const price = await stripe.prices.retrieve(priceId);
+  const productId = typeof price.product === 'string' ? price.product : price.product?.id;
+  if (!price.active || price.currency !== 'eur' || price.type !== 'recurring' || price.recurring?.interval !== 'month' || price.recurring?.interval_count !== 1 || price.unit_amount !== NEW_MONTHLY_PRICE_CENTS[plan] || !productId) {
+    throw Object.assign(new Error('Stripe monthly plan price does not match advertised pricing.'),{publicStatus:503});
+  }
+  // The Product name appears on the customer's Checkout receipt and invoice.
+  // Reject a correctly-priced but incorrectly named legacy Product.
+  const product = await stripe.products.retrieve(productId);
+  if (!product.active || product.name !== NEW_MONTHLY_PRODUCT_NAMES[plan]) {
+    throw Object.assign(new Error('Stripe monthly plan product does not match advertised tier.'),{publicStatus:503});
+  }
+}
+
+// Checkout's inline recurring Price is the safe source of truth until matching
+// live catalog prices are available. Never send an old environment Price ID.
+// Stripe creates a recurring Price for the chosen plan when the customer opens
+// Checkout, with the correct product name shown on their invoice.
+async function stripeCheckoutLineItem(plan) {
+  const priceId=stripePriceForPlan(plan);
+  if (!Object.hasOwn(NEW_MONTHLY_PRICE_CENTS, plan)) {
+    if (!priceId) throw Object.assign(new Error('Stripe plan is not configured.'),{publicStatus:503});
+    return {price:priceId,quantity:1};
+  }
+  if (priceId) {
+    try {
+      await assertCurrentCheckoutPrice(plan,priceId);
+      return {price:priceId,quantity:1};
+    } catch (error) {
+      // Existing Railway IDs point to discontinued prices. Do not silently bill
+      // those amounts; use Stripe Checkout's supported price_data mechanism.
+      console.warn('Using current inline monthly Checkout price for '+plan+': '+String(error?.message||error));
+    }
+  }
+  return {
+    price_data:{
+      currency:'eur',
+      unit_amount:NEW_MONTHLY_PRICE_CENTS[plan],
+      recurring:{interval:'month',interval_count:1},
+      product_data:{name:NEW_MONTHLY_PRODUCT_NAMES[plan]},
+    },
+    quantity:1,
+  };
+}
+
 function planFromStripePriceId(priceId) {
   const id=String(priceId||'');
   const pairs=[
@@ -1238,6 +1289,10 @@ function planFromStripePriceId(priceId) {
     ['advanced_yearly',process.env.STRIPE_ADVANCED_YEARLY_PRICE_ID],
     ['business_monthly',process.env.STRIPE_BUSINESS_MONTHLY_PRICE_ID],
     ['business_yearly',process.env.STRIPE_BUSINESS_YEARLY_PRICE_ID],
+    // October 2026 monthly prices remain recognized for existing subscribers after repricing.
+    ['basic_monthly','price_1UP2DWV05brJ7mTP6sjumnIt'],
+    ['advanced_monthly','price_1UP2DfV05brJ7mTPuSuwvuxm'],
+    ['business_monthly','price_1UP2DhV05brJ7mTP2pSDX8aV'],
     // Map the former VAT-exempt monthly prices for customers on existing subscriptions.
     ['basic_monthly','price_1UONnqV05brJ7mTPu5MvqQaP'],
     ['advanced_monthly','price_1UONo0V05brJ7mTPesqzKl1q'],
@@ -1280,7 +1335,7 @@ async function requirePlanCapability(req,res,capability) {
   }
   const access=planEntitlements(tenant.subscription_plan);
   if(!access[capability]) {
-    const need=capability==='allCurrentFeatures' ? 'Business-tilaus' : 'Advanced- tai Business-tilaus';
+    const need=capability==='allCurrentFeatures' ? 'Enterprise-tilaus' : 'Premium- tai Enterprise-tilaus';
     res.status(403).json({error:'Tämä ominaisuus vaatii '+need+'.',upgradeRequired:true,currentPlan:access.code});
     return null;
   }
@@ -1302,7 +1357,7 @@ async function ensureReferralCode(userId) {
     try {
       const subscription = await stripe.subscriptions.retrieve(user.stripe_subscription_id);
       const priceId = subscription.items?.data?.[0]?.price?.id || '';
-      plan = planFromStripePriceId(priceId) || plan;
+      plan = planFromStripePriceId(priceId) || (Object.hasOwn(PLAN_DEFINITIONS,String(subscription.metadata?.plan||''))?String(subscription.metadata.plan):'') || plan;
       if (plan) {
         await q('UPDATE users SET subscription_plan=$1,updated_at=NOW() WHERE id=$2', [plan, userId]);
       }
@@ -1742,7 +1797,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
 
   // First-party feature overview: highlight actual value and always provide the full feature catalogue.
   if (/(?:ominaisu|toiminto|mita osaa|mita kaikkea|mitä osaa|mitä kaikkea|feature|capabilit|what can (?:respondo|it) do|funktion|vad kan (?:respondo|den) gora|vad kan (?:respondo|den) göra)/.test(q)
-      && !/(?:starter|basic|advanced|business|hinta|maksaa|price|pricing|cost|pris|kostar)/.test(q)) {
+      && !/(?:starter|basic|advanced|premium|business|enterprise|hinta|maksaa|price|pricing|cost|pris|kostar)/.test(q)) {
     return {id:'respondo-faq-features-overview',answer:answer(
       'Respondo AI palvelee asiakkaitasi ympäri vuorokauden ja ymmärtää kysymyksiä sekä jatkokysymyksiä suomeksi, ruotsiksi ja englanniksi. Se voi hakea yrityksesi verkkosivuilta palvelu- ja tuotetietoja, vastata tuotteiden hinnoista, kerätä liidejä ja yhteydenottoja, hoitaa ajanvarauksia sekä siirtää keskustelun oikealle asiakaspalvelijalle. Saat myös muokattavan chatin, keskusteluhistorian ja analytiikkaa. Osa toiminnoista riippuu paketista ja käyttöönotetuista integraatioista. Katso kaikki ominaisuudet: https://respondoai.fi/ominaisuudet',
       'Respondo AI svarar kunder dygnet runt på finska, svenska och engelska och hanterar följdfrågor. Den kan hämta tjänste- och produktinformation från företagets webbplats, svara på prisfrågor, samla in leads, hantera bokningar och överföra chatten till en medarbetare. Anpassningsbar chatt, konversationshistorik och analys ingår också. Vissa funktioner beror på abonnemang och integrationer. Se alla funktioner: https://respondoai.fi/funktioner',
@@ -1759,9 +1814,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-buy',
       answer:answer(
-        'Voit ottaa Respondon käyttöön suoraan verkkosivulta painamalla “Kokeile ilmaiseksi”. Kaikissa paketeissa on 3 päivän ilmainen kokeilu. Starter maksaa 34,90 €/kk, Advanced 44,90 €/kk ja Business 54,90 €/kk. Vuositilauksessa säästät 5 € kuukaudessa eli 60 € vuodessa verrattuna kuukausitilaukseen. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Du kan börja använda Respondo direkt via webbplatsen genom att välja “Prova gratis”. Alla paket har 3 dagars gratis provperiod. Starter kostar 34,90 €/månad, Advanced 44,90 €/månad och Business 54,90 €/månad. Med årsabonnemang sparar du 5 € i månaden, totalt 60 € om året, jämfört med månadsabonnemang. Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'You can start using Respondo directly from the website by choosing “Try for free”. Every tier has a 3-day free trial. Starter is €34.90/month, Advanced €44.90/month, and Business €54.90/month. Annual billing saves €5/month (€60/year) compared with paying monthly. No VAT is charged due to the small-scale business exemption.'
+        'Voit ottaa Respondon käyttöön verkkosivun “Kokeile ilmaiseksi” -painikkeesta. Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Kaikissa uusissa kuukausitilauksissa on 3 päivän ilmainen kokeilu. Uusia vuositilauksia ei tarjota tällä hetkellä. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
+        'Du kan börja använda Respondo via knappen “Prova gratis”. Advanced kostar 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Alla nya månadsabonnemang har 3 dagars gratis provperiod. Nya årsabonnemang erbjuds för närvarande inte. Ingen moms debiteras på grund av verksamhet i liten skala.',
+        'You can get started by selecting “Try for free”. Advanced costs €49/month, Premium €129/month and Enterprise €149/month. Every new monthly plan includes a 3-day free trial. New annual subscriptions are not offered at present. No VAT is charged due to the small-scale business exemption.'
       )
     };
   }
@@ -1818,9 +1873,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-annual-pricing',
       answer:answer(
-        'Vuositilaukset (säästö 60 €/vuosi): Starter 358,80 €/vuosi (29,90 €/kk), Advanced 478,80 €/vuosi (39,90 €/kk) ja Business 598,80 €/vuosi (49,90 €/kk). Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Årsabonnemangen (spara 60 €/år) kostar: Starter 358,80 €/år (29,90 €/månad), Advanced 478,80 €/år (39,90 €/månad) och Business 598,80 €/år (49,90 €/månad). Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'Annual billing (save €60/year) is: Starter €358.80/year (€29.90/month), Advanced €478.80/year (€39.90/month), and Business €598.80/year (€49.90/month). No VAT is charged due to the small-scale business exemption.'
+        'Uusia vuositilauksia ei tällä hetkellä tarjota. Voit valita kuukausitilauksen: Advanced 49 €/kk, Premium 129 €/kk tai Enterprise 149 €/kk. Nykyiset vuositilaukset jatkuvat sovittujen ehtojen mukaisesti.',
+        'Nya årsabonnemang erbjuds inte för närvarande. Välj ett månadsabonnemang: Advanced 49 €/månad, Premium 129 €/månad eller Enterprise 149 €/månad. Befintliga årsabonnemang fortsätter enligt avtal.',
+        'New annual subscriptions are not currently available. Choose a monthly plan: Advanced €49/month, Premium €129/month or Enterprise €149/month. Existing annual subscriptions continue under their agreed terms.'
       )
     };
   }
@@ -1831,9 +1886,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-monthly-pricing',
       answer:answer(
-        'Kuukausihinnat ovat Starter 34,90 €/kk, Advanced 44,90 €/kk ja Business 54,90 €/kk. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Månadspriserna är Starter 34,90 €/månad, Advanced 44,90 €/månad och Business 54,90 €/månad. Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'Monthly pricing is Starter €34.90/month, Advanced €44.90/month, and Business €54.90/month. No VAT is charged due to the small-scale business exemption.'
+        'Kuukausihinnat ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
+        'Månadspriserna är Advanced 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Ingen moms debiteras på grund av verksamhet i liten skala.',
+        'Monthly pricing is Advanced €49/month, Premium €129/month and Enterprise €149/month. No VAT is charged due to the small-scale business exemption.'
       )
     };
   }
@@ -1876,32 +1931,32 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-pricing',
       answer:answer(
-        'Respondo Starter maksaa 34,90 €/kk, Advanced 44,90 €/kk ja Business 54,90 €/kk. Vuositilauksessa kuukausihinta on 5 € edullisempi, ja 12 kuukauden maksu veloitetaan kerralla. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Respondo Starter kostar 34,90 €/månad, Advanced 44,90 €/månad och Business 54,90 €/månad. Årsabonnemang kostar 5 € mindre per månad och betalas 12 månader i taget. Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'Respondo Starter is €34.90/month, Advanced €44.90/month, and Business €54.90/month. Annual subscriptions save €5/month and are billed once per year for 12 months. No VAT is charged due to the small-scale business exemption.'
+        'Respondo Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Uusia vuositilauksia ei tällä hetkellä tarjota. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
+        'Respondo Advanced kostar 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Nya årsabonnemang erbjuds inte för närvarande. Ingen moms debiteras på grund av verksamhet i liten skala.',
+        'Respondo Advanced is €49/month, Premium €129/month and Enterprise €149/month. New annual subscriptions are not offered at present. No VAT is charged due to the small-scale business exemption.'
       )
     };
   }
 
-  if (/\b(?:starter|basic)\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
+  if (/\b(?:advanced|starter|basic)\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
     return {id:'respondo-faq-basic',answer:answer(
-      'Starter sisältää verkkosivun AI-chatin, yrityksen verkkosivun tietojen tuonnin, botin värin, nimen ja kuvan muokkauksen, oman tietopohjan, Respondon ajanvarauksen, liidit, keskusteluhistorian ja 2 asiakaspalvelijapaikkaa.',
-      'Starter omfattar webbchatt, import av företagets webbplatsuppgifter, anpassning av färg, namn och bild, egen kunskapsbas, Respondos bokningar, leads, konversationshistorik och 2 kundserviceplatser.',
-      'Starter includes website AI chat, website knowledge import, editable bot color, name and image, a business knowledge base, Respondo-native bookings, leads, conversation history and 2 support-agent seats.'
+      'Advanced sisältää verkkosivun AI-chatin, yrityksen verkkosivun tietojen tuonnin, botin ulkoasun muokkauksen, oman tietopohjan, Respondon ajanvarauksen, liidit, keskusteluhistorian ja 2 asiakaspalvelijapaikkaa.',
+      'Advanced omfattar webbchatt, import av företagets webbplatsuppgifter, anpassning av bottens utseende, egen kunskapsbas, bokningar, leads, konversationshistorik och 2 kundserviceplatser.',
+      'Advanced includes website AI chat, website knowledge import, customizable appearance, a business knowledge base, bookings, leads, conversation history and 2 support-agent seats.'
     )};
   }
-  if (/\badvanced\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
+  if (/\bpremium\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
     return {id:'respondo-faq-advanced',answer:answer(
-      'Advanced sisältää kaikki Starter-ominaisuudet, 10 asiakaspalvelijapaikkaa ja Google Calendar -synkronoinnin ajanvarauksiin.',
-      'Advanced innehåller allt i Starter, 10 kundserviceplatser och Google Kalender-synkronisering för bokningar.',
-      'Advanced includes everything in Starter, 10 support-agent seats and Google Calendar synchronization for bookings.'
+      'Premium sisältää Advanced-ominaisuudet, 10 asiakaspalvelijapaikkaa ja Google Calendar -synkronoinnin ajanvarauksiin.',
+      'Premium innehåller allt i Advanced, 10 kundserviceplatser och Google Kalender-synkronisering för bokningar.',
+      'Premium includes everything in Advanced, 10 support-agent seats and Google Calendar synchronization for bookings.'
     )};
   }
-  if (/\bbusiness\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
+  if (/\b(?:enterprise|business)\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
     return {id:'respondo-faq-business',answer:answer(
-      'Business sisältää Starter- ja Advanced-toiminnot sekä 20 asiakaspalvelijapaikkaa, automaattisen tarjouslaskennan, Stripe-maksulinkit, verkkokaupan tilaushaut ja saatavilla olevat webhook- ja API-työnkulut. Toiminnot edellyttävät tarvittavia määrityksiä.',
-      'Business innehåller Starter och Advanced samt 20 kundserviceplatser, automatisk offertberäkning, Stripe-betalningslänkar, orderuppslag och tillgängliga webhook- och API-flöden. Funktionerna kräver rätt inställningar.',
-      'Business includes Starter and Advanced features plus 20 support-agent seats, automated quote calculations, Stripe payment links, ecommerce order lookup and supported webhook/API workflows. These capabilities require proper configuration.'
+      'Enterprise sisältää Advanced- ja Premium-toiminnot sekä 20 asiakaspalvelijapaikkaa, automaattisen tarjouslaskennan, Stripe-maksulinkit, verkkokaupan tilaushaut ja saatavilla olevat webhook- ja API-työnkulut. Toiminnot edellyttävät tarvittavia määrityksiä.',
+      'Enterprise omfattar Advanced och Premium samt 20 kundserviceplatser, automatisk offertberäkning, Stripe-betalningslänkar, orderuppslag och tillgängliga webhook- och API-flöden. Funktionerna kräver rätt inställningar.',
+      'Enterprise includes Advanced and Premium features plus 20 support-agent seats, automated quote calculations, Stripe payment links, ecommerce order lookup and supported webhook/API workflows. These capabilities require proper configuration.'
     )};
   }
 
@@ -7721,7 +7776,8 @@ async function syncStripeSubscriptionState(subscription) {
   const cancelAtPeriodEnd = Boolean(subscription.cancel_at_period_end);
   const status = String(subscription.status || '');
   const priceId = String(subscription.items?.data?.[0]?.price?.id || '');
-  const plan = planFromStripePriceId(priceId);
+  const metadataPlan=String(subscription.metadata?.plan||'').trim();
+  const plan = planFromStripePriceId(priceId) || (Object.hasOwn(PLAN_DEFINITIONS,metadataPlan)?metadataPlan:'');
 
   await q(
     `UPDATE tenants
@@ -8181,9 +8237,9 @@ app.get('/llms.txt', (req,res) => {
     '- Data processing: ' + SEO_CANONICAL_ORIGIN + '/dpa',
     '',
     '## Pricing',
-    '- Starter: EUR 34.90/month',
-    '- Advanced: EUR 44.90/month',
-    '- Business: EUR 54.90/month',
+    '- Advanced: EUR 49/month',
+    '- Premium: EUR 129/month',
+    '- Enterprise: EUR 149/month',
     '- A 3-day free trial is offered on the public website.',
     '',
     'For current product claims, pricing and policies, use the canonical public pages above as the source of truth.',
@@ -8783,9 +8839,9 @@ app.get('/llms.txt', (req, res) => {
 - Ecommerce workflows for supported Shopify and WooCommerce setups.
 
 ## Pricing
-- Starter: 34.90 EUR/month.
-- Advanced: 44.90 EUR/month.
-- Business: 54.90 EUR/month.
+- Advanced: 49 EUR/month.
+- Premium: 129 EUR/month.
+- Enterprise: 149 EUR/month.
 - Free trial: 3 days.
 
 ## Official sources
@@ -8814,9 +8870,9 @@ Languages: Finnish, Swedish and English.
 Respondo AI is installed on a company's website and answers customer questions using information approved by that company. Businesses can maintain their own knowledge base, collect contact and quote requests, support booking flows and transfer conversations to human customer-service staff.
 
 Plans:
-- Starter 34.90 EUR/month: core website bot, customer-managed Q&A knowledge, booking support and 2 customer-service seats.
-- Advanced 44.90 EUR/month: Starter features plus website information import and 10 customer-service seats.
-- Business 54.90 EUR/month: all current product features and 20 customer-service seats.
+- Advanced 49 EUR/month: core website bot, customer-managed Q&A knowledge, booking support and 2 customer-service seats.
+- Premium 129 EUR/month: Advanced features plus Google Calendar, website information import and 10 customer-service seats.
+- Enterprise 149 EUR/month: all current product features and 20 customer-service seats.
 A 3-day free trial is available.
 
 Official URLs:
@@ -9068,12 +9124,12 @@ app.get('/api/public/config', publicReadLimiter, async (req, res) => {
     sellerPostalAddress: String(process.env.RESPONDO_SELLER_POSTAL_ADDRESS || '').trim().slice(0,200),
     supportEmail: process.env.SUPPORT_EMAIL || 'info@respondoai.fi',
     trialDays: 3,
-    monthlyNet: 34.90,
-    yearlyNet: 358.80,
+    monthlyNet: 49,
+    yearlyNet: null,
     plans:{
-      basic:{monthly:34.90,yearlyMonthly:29.90,yearlyTotal:358.80,agentSeats:2},
-      advanced:{monthly:44.90,yearlyMonthly:39.90,yearlyTotal:478.80,agentSeats:10},
-      business:{monthly:54.90,yearlyMonthly:49.90,yearlyTotal:598.80,agentSeats:20},
+      basic:{name:'Advanced',monthly:49,yearlyMonthly:null,yearlyTotal:null,agentSeats:2},
+      advanced:{name:'Premium',monthly:129,yearlyMonthly:null,yearlyTotal:null,agentSeats:10},
+      business:{name:'Enterprise',monthly:149,yearlyMonthly:null,yearlyTotal:null,agentSeats:20},
     },
     ownerTestEnabled,
     ownerTestPrice: 0.50,
@@ -9162,6 +9218,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   const { fullName, companyName, businessId, password, plan, acceptedTerms } = req.body;
   const email = cleanEmail(req.body.email);
   const normalizedPlan = normalizeCheckoutPlan(plan);
+  if (normalizedPlan.endsWith('_yearly')) return res.status(400).json({error:'Uusille tilauksille on saatavilla vain kuukausilaskutus.'});
   const referralCode = normalizeReferralCode(req.body.referralCode);
   const freeReferral = isFreeReferralCode(referralCode);
   const checkoutCountry = checkoutCountryPolicy(req.body?.billingCountry);
@@ -9201,11 +9258,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       }
     }
 
-    const price = freeReferral ? null : stripePriceForPlan(normalizedPlan);
-
-    if (!freeReferral && !price) {
-      return res.status(503).json({ error: 'Stripe-hintaa ei ole määritetty.' });
-    }
+    const checkoutLineItem = freeReferral ? null : await stripeCheckoutLineItem(normalizedPlan);
 
     const existing = await q(
       'SELECT id,status,stripe_customer_id,stripe_subscription_id FROM users WHERE lower(email)=lower($1)',
@@ -9331,7 +9384,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
         mode: 'subscription',
         automatic_tax: { enabled: false },
         customer_email: email,
-        line_items: [{ price, quantity: 1 }],
+        line_items:[checkoutLineItem],
         custom_text: {
           submit: { message: taxExemptionMessage },
         },
@@ -10036,6 +10089,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const companyName=String(req.body?.companyName||'').replace(/[<>]/g,'').trim().slice(0,120);
   const businessId=String(req.body?.businessId||'').replace(/[<>]/g,'').trim().slice(0,40);
   const plan=normalizeCheckoutPlan(req.body?.plan);
+  if (plan.endsWith('_yearly')) return res.status(400).json({error:'Uusille tilauksille on saatavilla vain kuukausilaskutus.'});
   const referralCode=normalizeReferralCode(req.body?.referralCode);
   const freeReferral=isFreeReferralCode(referralCode);
   const checkoutCountry=checkoutCountryPolicy(req.body?.billingCountry);
@@ -10047,8 +10101,11 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   if(referralCode && !freeReferral && !planAllowsReferral(plan)) return res.status(400).json({ error:'Suosittelukoodi toimii vain kuukausitilauksessa.' });
   if(!freeReferral && !stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
 
-  const price=freeReferral ? null : stripePriceForPlan(plan);
-  if(!freeReferral && !price) return res.status(503).json({ error:'Stripe-hintaa ei ole määritetty.' });
+  let checkoutLineItem=null;
+  if (!freeReferral) {
+    try { checkoutLineItem=await stripeCheckoutLineItem(plan); }
+    catch(e) { console.error('Stripe checkout price validation failed:',e?.message); return res.status(503).json({error:'Tilauksen hintaa ei voitu vahvistaa. Yritä myöhemmin uudelleen.'}); }
+  }
 
   const userResult=await q('SELECT id,email,stripe_customer_id,preferred_language FROM users WHERE id=$1',[req.user.sub]);
   if(!userResult.rowCount) return res.status(404).json({ error:'Tiliä ei löytynyt.' });
@@ -10155,7 +10212,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         customer:user.stripe_customer_id,
         customer_update:{ name:'auto' },
       } : { customer_email:user.email }),
-      line_items:[{price,quantity:1}],
+      line_items:[checkoutLineItem],
       custom_text:{
         submit:{message: taxExemptionMessage},
       },
@@ -12913,7 +12970,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       return res.status(400).json({ error:'Tuntematon toiminto.' });
     }
     if (type === 'order_status' && !actionAccess.allCurrentFeatures) {
-      return res.status(403).json({ error:'Tilaustietojen automaattinen tarkistus vaatii Business-tilauksen.', upgradeRequired:true });
+      return res.status(403).json({ error:'Tilaustietojen automaattinen tarkistus vaatii Enterprise-tilauksen.', upgradeRequired:true });
     }
 
     const fields = cleanActionFields(type, body.fields);
@@ -13652,7 +13709,7 @@ app.post('/api/channel/:slug/message', channelApiLimiter, async (req,res) => {
     if (!tr.rowCount) return res.status(404).json({ error:'Yritystä ei löytynyt.' });
     const tenant = await ensureTenantActionKeys(tr.rows[0]);
     if (!planEntitlements(tenant.subscription_plan).allCurrentFeatures) {
-      return res.status(403).json({ error:'Channels API vaatii Business-tilauksen.', upgradeRequired:true });
+      return res.status(403).json({ error:'Channels API vaatii Enterprise-tilauksen.', upgradeRequired:true });
     }
     const authHeader = String(req.headers.authorization || '');
     if (authHeader !== 'Bearer ' + tenant.channels_api_key) {

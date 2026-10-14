@@ -18,9 +18,9 @@ test('transparent pricing guide has substantial, non-promissory Finnish, Swedish
     assert.match(html, /<main/);
     assert.match(html, /<h1>/);
     assert.ok(html.length > 4000, 'thin pricing content for ' + lang);
-    for (const price of ['34,90','44,90','54,90','29,90','39,90','49,90']) {
-      const localizedPrice = lang === 'en' ? price.replace(',', '.') : price;
-      assert.ok(html.includes(localizedPrice), lang + ' missing displayed monthly or annual-equivalent price ' + localizedPrice);
+    for (const [plan,amount] of [['Advanced','49'],['Premium','129'],['Enterprise','149']]) {
+      const localizedPrice = lang === 'en' ? '€'+amount : amount+' €';
+      assert.ok(html.includes(localizedPrice), lang + ' missing monthly price ' + plan + ' '+localizedPrice);
     }
     assert.ok(!/guaranteed savings|säästät varmasti|garanterad besparing/i.test(html), 'unsubstantiated savings claim');
     assert.ok(globalResourcesMarkup('/guides', lang).includes(path), 'guide directory missing ' + lang + ' link');

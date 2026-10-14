@@ -14,8 +14,8 @@ test('new Stripe subscriptions do not charge Finnish VAT when seller is not VAT 
   assert.match(server,/Ingen moms debiteras/);
   assert.match(server,/No VAT is charged/);
   assert.doesNotMatch(server,/ensureFinnishVatTaxRate|FINNISH_VAT_PERCENT|finnishVatTaxRateId|finnishVatMessage/);
-  assert.match(server,/line_items:\s*\[\{ price, quantity: 1 \}\]/);
-  assert.match(server,/line_items:\[\{price,quantity:1\}\]/);
+  assert.match(server,/line_items:\s*\[checkoutLineItem\]/);
+  assert.match(server,/line_items:\[checkoutLineItem\]/);
   assert.equal((server.match(/automatic_tax:\s*\{\s*enabled:\s*false\s*\}/g)||[]).length,2);
   assert.equal((server.match(/custom_text:\s*\{\s*submit:\s*\{\s*message:\s*taxExemptionMessage/g)||[]).length,2);
 });
@@ -24,9 +24,9 @@ test('prices and terms do not falsely describe VAT as included',()=>{
   for(const s of [server,app,terms]){
     assert.doesNotMatch(s,/25[.,]5\s*%/);
   }
-  assert.match(app,/Starter',34\.90,29\.90,358\.80/);
-  assert.match(app,/Advanced',44\.90,39\.90,478\.80/);
-  assert.match(app,/Business',54\.90,49\.90,598\.80/);
+  assert.match(app,/card\('Advanced',49,2/);
+  assert.match(app,/card\('Premium',129,10/);
+  assert.match(app,/card\('Enterprise',149,20/);
 });
 
 test('historical inclusive-tax Stripe prices stay associated with their plans',()=>{
