@@ -4623,7 +4623,7 @@ async function dashboard(options = {}) {
       </div>` : ''}
 
       <section class="panel billing-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="billing">
-        <div><small>${appText('LASKUTUS','FAKTURERING','BILLING')}</small><h2>${appText('Hallitse tilaustasi','Hantera ditt abonnemang','Manage your subscription')}</h2><p>${appText('Voit vaihtaa Starter-, Advanced- ja Business-pakettien välillä, vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.','Du kan byta mellan Starter-, Advanced- och Business-abonnemang, ändra betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal.','You can switch between Starter, Advanced and Business plans, change your payment method, view invoices, or cancel your subscription in the Stripe customer portal.')}</p></div>
+        <div><small>${appText('LASKUTUS','FAKTURERING','BILLING')}</small><h2>${appText('Hallitse tilaustasi','Hantera ditt abonnemang','Manage your subscription')}</h2><p>${appText('Voit hallita maksutapaa, tarkastella laskuja tai perua tilauksen Stripen asiakasportaalissa. Jos haluat vaihtaa pakettia, ota yhteyttä tukeen.','Du kan ändra betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal. Kontakta support om du vill byta paket.','You can change your payment method, view invoices, or cancel in the Stripe customer portal. Contact support to change plans.')}</p></div>
         <button class="btn dashboard-action" id="billingPortal" type="button">${appText('Hallitse tilausta ja pakettia','Hantera abonnemang och paket','Manage subscription and plan')} <span>↗</span></button>
       </section>
 
