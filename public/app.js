@@ -1,4 +1,4 @@
-import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1';
+import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=pricing-20261014-ape-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1';
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2-fi-test-v1';
@@ -297,8 +297,8 @@ let cfg = {
   sellerName: 'Respondo AI',
   sellerPostalAddress: '',
   trialDays: 3,
-  monthlyNet: 34.90,
-  yearlyNet: 358.80,
+  monthlyNet: 49,
+  yearlyNet: null,
   passwordResetAvailable: false,
 };
 
@@ -716,7 +716,6 @@ const EN_TEXT = new Map(Object.entries({
   "Kuukausi":"Month",
   "VUOSITILAUS":"ANNUAL PLAN",
   "vuosilaskutus":"annual billing",
-  "Laskutetaan vuosittain 358,80 €":"Billed annually at €358.80",
   "Kaikki samat ominaisuudet kuin kuukausitilauksessa":"All the same features as the monthly plan",
   "Maksu kerran vuodessa":"Pay once per year",
   "Voit käyttää palvelua maksetun kauden loppuun":"Use the service until the end of the paid period",
@@ -822,7 +821,7 @@ const EN_TEXT = new Map(Object.entries({
   'Tutustu tuotteeseen':'Explore the product',
   '3 päivää ilmaiseksi':'3 days free',
   'Peruuta milloin tahansa':'Cancel anytime',
-  '34,90 €/kk':'€34.90/month',
+  '49 €/kk':'€49/month',
   'TIETOPOHJA':'KNOWLEDGE BASE',
   'VASTAUKSET':'ANSWERS',
   'EPÄVARMUUS':'UNCERTAINTY',
@@ -857,7 +856,7 @@ const EN_TEXT = new Map(Object.entries({
   'AJAN TASALLA':'UP TO DATE',
   'Hyväksytty tietopohja':'Approved knowledge base',
   'Hinnoittelu':'Pricing',
-  'Peruspaketti alkaa 34,90 €/kk':'Base plan starts at €34.90/month',
+  'Advanced alkaa 49 €/kk':'Base plan starts at €49/month',
   'Aukioloajat':'Opening hours',
   'Toimialue':'Service area',
   'Suomi':'Finland',
@@ -871,7 +870,7 @@ const EN_TEXT = new Map(Object.entries({
   'sinun hallinnassa':'you are in control',
   'aina':'always',
   'ALKAEN':'FROM',
-  '34,90 € / kk':'€34.90 / month',
+  '49 € / kk':'€49 / month',
   
   'KOKEILU':'TRIAL',
   '3 päivää':'3 days',
@@ -1178,7 +1177,6 @@ const SV_TEXT = new Map(Object.entries({
   "Kuukausi":"Månad",
   "VUOSITILAUS":"ÅRSABONNEMANG",
   "vuosilaskutus":"spara 60 €",
-  "Laskutetaan vuosittain 358,80 €":"Faktureras årligen 358,80 €",
   "Kaikki samat ominaisuudet kuin kuukausitilauksessa":"Alla samma funktioner som i månadsabonnemanget",
   "Maksu kerran vuodessa":"Betalning en gång per år",
   "Voit käyttää palvelua maksetun kauden loppuun":"Du kan använda tjänsten till slutet av den betalda perioden",
@@ -1278,7 +1276,7 @@ const SV_TEXT = new Map(Object.entries({
   'Helppo asentaa':'Enkelt att installera','Yksi asennusrivi verkkosivulle.':'En installationsrad på webbplatsen.','Hyväksytty tietopohja':'Godkänd kunskapsbas',
   'Hinnoittelu':'Prissättning','Aukioloajat':'Öppettider','Toimialue':'Serviceområde','Suomi':'Finland','Poikkeustilanteet':'Undantag','Ohjaa yhteydenottoon':'Hänvisa till kontakt',
   'Viimeksi päivitetty':'Senast uppdaterad','juuri nyt':'just nu','VASTAA':'SVARAR','asiakkaillesi':'dina kunder','sinun hallinnassa':'under din kontroll','aina':'alltid',
-  'ALKAEN':'FRÅN','34,90 € / kk':'34,90 € / mån','KOKEILU':'PROVPERIOD','3 päivää':'3 dagar','maksutta':'gratis',
+  'ALKAEN':'FRÅN','49 € / kk':'49 € / mån','KOKEILU':'PROVPERIOD','3 päivää':'3 dagar','maksutta':'gratis',
   'Asiakas ei halua odottaa.':'Kunden vill inte vänta.','Nopea vastaus näkyy kokemuksessa.':'Snabba svar förbättrar kundupplevelsen.','HUOM':'OBS',
   'Mitä yksi menetetty yhteydenotto voi maksaa?':'Vad kan en missad kontakt kosta?','Päivässä':'Per dag','Vuodessa':'Per år','Selkeä hinta.':'Tydligt pris.','Ei yllätyksiä.':'Inga överraskningar.',
   'Kuukausi':'Månad','Vuosi':'År','Chat suoraan omalle verkkosivullesi':'Chatt direkt på din webbplats','Vastaukset yrityksesi omista tiedoista':'Svar från företagets egen information',
@@ -1349,7 +1347,7 @@ const EXTRA_UI_TEXT = new Map(Object.entries({
   "Sinä päätät, mitä yrityksestäsi kerrotaan. Muutokset päivittyvät botille yhdestä paikasta.": ["Du bestämmer vad som får sägas om ditt företag. Ändringar uppdateras till botten från ett och samma ställe.", "You decide what can be said about your company. Changes are updated to the bot from one place."],
   "4 HYVÄKSYTTYÄ TIETOA": ["4 GODKÄNDA UPPGIFTER", "4 APPROVED ITEMS"],
   "AJAN TASALLA": ["UPPDATERAT", "UP TO DATE"],
-  "Peruspaketti alkaa 34,90 €/kk": ["Grundpaketet börjar på 34,90 €/mån", "The basic plan starts at €34.90/month"],
+  "Advanced alkaa 49 €/kk": ["Advanced börjar på 49 €/mån", "Advanced starts at €49/month"],
   "PERUSTUU": ["BASERAS PÅ", "BASED ON"],
   "Alla olevat luvut perustuvat julkaistuihin tutkimuksiin ja raportteihin. Lähde, vuosi ja tutkimuskonteksti näkyvät jokaisen luvun yhteydessä.": ["Siffrorna nedan bygger på publicerade studier och rapporter. Källa, år och forskningskontext visas vid varje siffra.", "The figures below are based on published studies and reports. The source, year and research context are shown with each figure."],
   "Harvard Business Review’n auditissa 2 241 yhdysvaltalaisesta yrityksestä lähes joka neljäs ei vastannut testiliidiin 30 päivän aikana.": ["I en Harvard Business Review-granskning av 2 241 amerikanska företag svarade nästan vart fjärde företag inte på testleadet inom 30 dagar.", "In a Harvard Business Review audit of 2,241 U.S. companies, nearly one in four did not respond to the test lead within 30 days."],
@@ -1363,8 +1361,7 @@ const EXTRA_UI_TEXT = new Map(Object.entries({
   "Täytä omat ja yrityksesi perustiedot.": ["Fyll i dina egna och företagets grunduppgifter.", "Enter your basic details and your company's details."],
   "Kerro Respondolle, mitä asiakkaillesi saa vastata.": ["Berätta för Respondo vad som får besvaras till dina kunder.", "Tell Respondo what it may answer to your customers."],
   "Y-tunnus · Suomi": ["FO-nummer · Finland", "Business ID · Finland"],
-  "34,90 €/kk · kuukausi": ["34,90 €/mån · månadsvis", "€34.90/month · monthly"],
-  "29,90 €/kk · laskutetaan 358,80 €/vuosi": ["29,90 €/mån · faktureras 358,80 €/år", "€29.90/month · billed €358.80/year"],
+  "49 €/kk · kuukausi": ["49 €/mån · månadsvis", "€49/month · monthly"],
   "Suosittelukoodi": ["Rekommendationskod", "Referral code"],
   "valinnainen": ["valfritt", "optional"],
   "Hyväksyn": ["Jag godkänner", "I accept"],
@@ -1687,9 +1684,9 @@ function updateDocumentLanguageMeta(lang) {
       en:['Chatbot for Plumbing and HVAC Companies | Respondo AI','A plumbing and HVAC chatbot answers service, heating and maintenance questions using company-approved information and captures enquiries.'],
     },
     '/hinnat': {
-      fi:['Hinnat | Respondo AI','Vertaile Starter-, Advanced- ja Business-tilauspaketteja. Kolmen päivän maksuton kokeilu kaikissa paketeissa.'],
-      sv:['Priser | Respondo AI','Jämför abonnemangen Starter, Advanced och Business. Alla paket har tre dagars gratis provperiod.'],
-      en:['Pricing | Respondo AI','Compare Starter, Advanced and Business plans. Every plan includes a three-day free trial.'],
+      fi:['Hinnat | Respondo AI','Vertaile Advanced-, Premium- ja Enterprise-tilauspaketteja. Kolmen päivän maksuton kokeilu kaikissa paketeissa.'],
+      sv:['Priser | Respondo AI','Jämför abonnemangen Advanced, Premium och Enterprise. Alla paket har tre dagars gratis provperiod.'],
+      en:['Pricing | Respondo AI','Compare Advanced, Premium and Enterprise plans. Every plan includes a three-day free trial.'],
     },
     '/yhteystiedot': {
       fi:['Yhteystiedot | Respondo AI','Ota yhteyttä Respondo AI:hin. Asiakaspalvelu, verkkosivujen chatbotin käyttöönotto ja yritysten tarjouspyynnöt.'],
@@ -2364,7 +2361,7 @@ function controlSection() {
       <div class="truth-card">
         <div class="truth-top"><span>4 HYVÄKSYTTYÄ TIETOA</span><span class="truth-status">AJAN TASALLA</span></div>
         <div class="truth-title">Hyväksytty tietopohja</div>
-        <div class="knowledge-row"><span class="k-index">01</span><div><b>Hinnoittelu</b><small>Peruspaketti alkaa 34,90 €/kk</small></div><i>✓</i></div>
+        <div class="knowledge-row"><span class="k-index">01</span><div><b>Hinnoittelu</b><small>Advanced alkaa 49 €/kk</small></div><i>✓</i></div>
         <div class="knowledge-row"><span class="k-index">02</span><div><b>Aukioloajat</b><small>Ma–Pe 08:00–17:00</small></div><i>✓</i></div>
         <div class="knowledge-row"><span class="k-index">03</span><div><b>Toimialue</b><small>Suomi</small></div><i>✓</i></div>
         <div class="knowledge-row"><span class="k-index">04</span><div><b>Poikkeustilanteet</b><small>Ohjaa yhteydenottoon</small></div><i>✓</i></div>
@@ -2379,7 +2376,7 @@ function proofStrip() {
     <div class="container proof-grid">
       <div><span>VASTAA</span><b>24/7</b><small>asiakkaillesi</small></div>
       <div><span>PERUSTUU</span><b>sinun hallinnassa</b><small>aina</small></div>
-      <div><span>ALKAEN</span><b>34,90 € / kk</b></div>
+      <div><span>ALKAEN</span><b>49 € / kk</b></div>
       <div><span>KOKEILU</span><b>3 päivää</b><small>maksutta</small></div>
     </div>
   </section>`;
@@ -2485,7 +2482,7 @@ function calculatorSection() {
           <div class="calc-result-grid">
             <div><span>Päivässä</span><b id="dailyValue">1 500 €</b></div>
             <div><span>Vuodessa</span><b id="yearlyValue">547 500 €</b></div>
-            <div><span>RESPONDO AI</span><b>${cfg.monthlyNet || 34.90} € / kk</b></div>
+            <div><span>RESPONDO AI</span><b>${cfg.monthlyNet || 49} € / kk</b></div>
           </div>
           <p>Laskelma on suuntaa-antava. Se näyttää yhteydenottojen arvon tilanteessa, jossa jokainen niistä vastaisi yhtä keskimääräistä kauppaa. Todellinen tulos riippuu siitä, kuinka moni yhteydenotto muuttuu asiakkaaksi.</p>
         </div>
@@ -2495,32 +2492,29 @@ function calculatorSection() {
 }
 
 function pricingSection() {
-  const card=(tier,monthly,yearlyMonthly,yearlyTotal,seats,features,featured=false)=>`
+  const card=(tier,monthly,seats,features,featured=false)=>`
     <article class="price-card ${featured?'featured':''}">
       <div class="price-top"><span>${tier.toUpperCase()}</span><span class="${featured?'save':''}">${featured?appText('SUOSITUIN','POPULÄRAST','MOST POPULAR'):appText('3 PÄIVÄÄ ILMAISEKSI','3 DAGAR GRATIS','3 DAYS FREE')}</span></div>
       <h3>${tier}</h3>
-      <div class="pricevalue">${monthly.toLocaleString(appLocale(),{minimumFractionDigits:2,maximumFractionDigits:2})} €<small>${appText('/kk','/mån','/month')}</small></div>
-      <div class="plan-yearly-price">${appText('Vuositilauksella','Med årsabonnemang','With annual billing')} <b>${yearlyMonthly.toLocaleString(appLocale(),{minimumFractionDigits:2,maximumFractionDigits:2})} €${appText('/kk','/mån','/month')}</b> · ${yearlyTotal.toFixed(2).replace('.',',')} € / ${appText('vuosi','år','year')}</div>
+      <div class="pricevalue">${monthly.toLocaleString(appLocale(),{minimumFractionDigits:0,maximumFractionDigits:2})} €<small>${appText('/kk','/mån','/month')}</small></div>
       <div class="price-rule"></div>
       <ul>
         ${features.map((x)=>`<li>${x}</li>`).join('')}
         <li><b>${seats} ${appText('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</b></li>
       </ul>
       <div class="price-actions">
-        <a class="btn price-btn" href="/tilaus?plan=${tier === 'Starter' ? 'basic' : tier.toLowerCase()}_monthly">${appText('Kuukausi','Månad','Monthly')} · ${monthly.toLocaleString(appLocale(),{minimumFractionDigits:2,maximumFractionDigits:2})} €</a>
-        <a class="btn price-btn ${featured?'blue':''}" href="/tilaus?plan=${tier === 'Starter' ? 'basic' : tier.toLowerCase()}_yearly">${appText('Vuosi','År','Annual')} · ${yearlyMonthly.toLocaleString(appLocale(),{minimumFractionDigits:2,maximumFractionDigits:2})} €${appText('/kk','/mån','/month')} <span>→</span></a>
+        <a class="btn price-btn" href="/tilaus?plan=${tier === 'Advanced' ? 'basic' : tier === 'Premium' ? 'advanced' : 'business'}_monthly">${appText('Kuukausi','Månad','Monthly')} · ${monthly.toLocaleString(appLocale(),{minimumFractionDigits:0,maximumFractionDigits:2})} €</a>
       </div>
-      <div class="annual-save-note">${appText('Vuositilauksella säästät 60 € vuodessa verrattuna kuukausilaskutukseen. Vuosimaksu laskutetaan kerralla. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi.','Årsabonnemang sparar 60 € per år jämfört med månadsbetalning. Hela årsavgiften faktureras på en gång. Ingen moms debiteras på grund av verksamhet i liten skala.','Annual billing saves €60 per year compared with monthly billing and is charged upfront. No VAT is charged due to the small-scale business exemption.')}</div>
     </article>`;
   return `<section class="section pricing-section" id="pricing">
     <div class="container">
       <div class="section-kicker">${appText('Hinta','Pris','Pricing')}</div>
       <div class="split-head">
         <h2>${appText('Valitse yrityksellesi sopiva taso.','Välj rätt nivå för ditt företag.','Choose the right plan for your business.')}</h2>
-        <p>${appText('Kaikissa tilauksissa on 3 päivän ilmainen kokeilu. Vuositilauksella säästät 5 €/kk eli 60 €/vuosi.','Alla abonnemang har 3 dagars gratis provperiod. Med årsabonnemang sparar du 5 €/månad eller 60 €/år.','Every plan includes a 3-day free trial. Annual billing saves €5/month or €60/year.')}</p>
+        <p>${appText('Kaikissa kuukausitilauksissa on 3 päivän maksuton kokeilu.','Alla månadsabonnemang har 3 dagars gratis provperiod.','Every monthly plan includes a 3-day free trial.')}</p>
       </div>
       <div class="pricing-wrap">
-        ${card('Starter',34.90,29.90,358.80,2,[
+        ${card('Advanced',49,2,[
           appText('AI-chat omalle verkkosivulle','AI-chatt på din webbplats','AI chat on your website'),
           appText('Muokkaa botin väriä, nimeä ja kuvaa','Anpassa bottens färg, namn och bild','Customize bot color, name and image'),
           appText('Oma kysymys–vastaus-tietopohja','Egen fråge- och svarskunskapsbas','Q&A knowledge base'),
@@ -2529,13 +2523,13 @@ function pricingSection() {
           appText('Yhteydenottojen ja liidien keräys','Insamling av kontakter och leads','Contact and lead capture'),
           appText('Keskusteluhistoria ja puuttuvat vastaukset','Konversationshistorik och saknade svar','Conversation history and missing answers')
         ])}
-        ${card('Advanced',44.90,39.90,478.80,10,[
-          appText('Kaikki Starter-ominaisuudet','Alla Starter-funktioner','Everything in Starter'),
+        ${card('Premium',129,10,[
+          appText('Kaikki Advanced-ominaisuudet','Alla Advanced-funktioner','Everything in Advanced'),
           appText('Google Calendar -synkronointi','Google Calendar-synkronisering','Google Calendar sync'),
           appText('Varausten yhdistäminen kalenteritapahtumiin','Koppla bokningar till kalenderhändelser','Connect bookings to calendar events'),
           appText('Useamman asiakaspalvelijan tiimikäyttö','Teamstöd för flera kundservicemedarbetare','Multi-agent team use'),
         ],true)}
-        ${card('Business',54.90,49.90,598.80,20,[
+        ${card('Enterprise',149,20,[
           appText('Kaikki Respondon nykyiset ominaisuudet','Alla nuvarande Respondo-funktioner','All current Respondo features'),
           appText('Automaattinen hintalaskuri ja Stripe-maksulinkit','Automatisk prisberäkning och Stripe-betalningslänkar','Automatic quote calculator and Stripe payment links'),
           appText('Shopify- ja WooCommerce-tilaushaku','Orderuppslag för Shopify och WooCommerce','Shopify and WooCommerce order lookup'),
@@ -2813,7 +2807,7 @@ function featuresPage() {
             <span>10 ${appText('tärkeintä','viktigaste','essentials')}</span>
           </div>
           <div class="features-top10-grid">${topTen}</div>
-          <p class="feature-plan-note">${appText('Ominaisuuksien saatavuus riippuu tilauspaketista ja yrityksen tekemistä asetuksista. Starter: 2 asiakaspalvelijapaikkaa, tuonti ja oma ajanvaraus. Advanced: 10 paikkaa ja Google Calendar. Business: 20 paikkaa ja Business-automaatiot.','Tillgängligheten beror på abonnemang och företagets inställningar. Starter: 2 platser, import och egna bokningar. Advanced: 10 platser och Google Kalender. Business: 20 platser och Business-automationer.','Availability depends on the subscription and configuration. Starter: 2 seats, website import and native bookings. Advanced: 10 seats and Google Calendar. Business: 20 seats and Business-tier automations.')}</p>
+          <p class="feature-plan-note">${appText('Ominaisuuksien saatavuus riippuu tilauspaketista ja yrityksen tekemistä asetuksista. Advanced: 2 asiakaspalvelijapaikkaa, tuonti ja oma ajanvaraus. Premium: 10 paikkaa ja Google Calendar. Enterprise: 20 paikkaa ja Business-automaatiot.','Tillgängligheten beror på abonnemang och företagets inställningar. Advanced: 2 platser, import och egna bokningar. Premium: 10 platser och Google Kalender. Enterprise: 20 platser och Business-automationer.','Availability depends on the subscription and configuration. Advanced: 2 seats, website import and native bookings. Premium: 10 seats and Google Calendar. Enterprise: 20 seats and Business-tier automations.')}</p>
         </div>
       </section>
       <section class="features-directory">
@@ -2854,7 +2848,7 @@ function geoAnswerSection() {
         <article><h3>${appText('Mitä se voi hoitaa?','Vad kan den hantera?','What can it handle?')}</h3><p>${appText('Asiakaskysymysten lisäksi Respondo voi kerätä yhteydenottopyyntöjä, tukea ajanvarausta, välittää keskustelun ihmiselle ja auttaa verkkokaupan asiakaspalvelussa.','Utöver kundfrågor kan Respondo samla kontaktförfrågningar, stödja bokning, lämna över konversationer till en människa och hjälpa e-handelskundservice.','In addition to customer questions, Respondo can capture contact requests, support bookings, hand conversations to a person and assist ecommerce customer service.')}</p></article>
         <article><h3>${appText('Kenelle se sopii?','Vem passar det för?','Who is it for?')}</h3><p>${appText('Palvelu on tarkoitettu yrityksille, joilla on verkkosivusto ja toistuvia asiakaskysymyksiä — esimerkiksi palveluyrityksille ja verkkokaupoille.','Tjänsten är avsedd för företag med en webbplats och återkommande kundfrågor, till exempel tjänsteföretag och webbutiker.','The service is intended for businesses with a website and recurring customer questions, including service businesses and online stores.')}</p></article>
         <article><h3>${appText('Millä kielillä?','På vilka språk?','Which languages?')}</h3><p>${appText('Respondo tukee suomea, ruotsia ja englantia sekä sivuston käyttöliittymässä että asiakaskeskusteluissa.','Respondo stöder finska, svenska och engelska i både gränssnittet och kundkonversationer.','Respondo supports Finnish, Swedish and English in both the interface and customer conversations.')}</p></article>
-        <article><h3>${appText('Paljonko se maksaa?','Vad kostar det?','How much does it cost?')}</h3><p>${appText('Kuukausihinnat ovat Starter 34,90 €, Advanced 44,90 € ja Business 54,90 €. Julkisella sivustolla tarjotaan 3 päivän maksuton kokeilu.','Månadspriserna är Starter 34,90 €, Advanced 44,90 € och Business 54,90 €. På den offentliga webbplatsen erbjuds en kostnadsfri 3-dagars provperiod.','Monthly pricing is Starter €34.90, Advanced €44.90 and Business €54.90. The public website offers a 3-day free trial.')}</p></article>
+        <article><h3>${appText('Paljonko se maksaa?','Vad kostar det?','How much does it cost?')}</h3><p>${appText('Kuukausihinnat ovat Advanced 49 €, Premium 129 € ja Enterprise 149 €. Julkisella sivustolla tarjotaan 3 päivän maksuton kokeilu.','Månadspriserna är Advanced 49 €, Premium 129 € och Enterprise 149 €. På den offentliga webbplatsen erbjuds en kostnadsfri 3-dagars provperiod.','Monthly pricing is Advanced €49, Premium €129 and Enterprise €149. The public website offers a 3-day free trial.')}</p></article>
         <article><h3>${appText('Mistä lisätiedot löytyvät?','Var finns mer information?','Where can I learn more?')}</h3><p>${appText('Katso kaikki ominaisuudet, tietoturva ja tietosuojaseloste Respondon omilta sivuilta.','Se alla funktioner, säkerhetsinformationen och integritetspolicyn på Respondos egna sidor.','See all features, security information and the privacy policy on Respondo’s own pages.')}</p><div class="geo-answer-links"><a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a><a href="/tietoturva?lang=${currentLang()}">${appText('Tietoturva','Säkerhet','Security')}</a><a href="/tietosuoja?lang=${currentLang()}">${appText('Tietosuoja','Integritet','Privacy')}</a></div></article>
       </div>
     </div>
@@ -3041,9 +3035,9 @@ function signup() {
   const ownerTestAccessToken = String(params.get('owner-test-token') || '').trim();
   const ownerTestAccess = params.get('owner-test') === '1' && cfg.ownerTestEnabled === true && Boolean(ownerTestAccessToken);
   const requestedPlan = params.get('plan') || 'basic_monthly';
-  const allowedPlans = new Set(['basic_monthly','basic_yearly','advanced_monthly','advanced_yearly','business_monthly','business_yearly','owner_test']);
-  const normalizedRequestedPlan = requestedPlan.replace(/^starter_/, 'basic_');
-  const safeRequestedPlan = allowedPlans.has(normalizedRequestedPlan) ? normalizedRequestedPlan : (requestedPlan === 'monthly' ? 'basic_monthly' : requestedPlan === 'yearly' ? 'basic_yearly' : 'basic_monthly');
+  const allowedPlans = new Set(['basic_monthly','advanced_monthly','business_monthly','owner_test']);
+  const normalizedRequestedPlan = requestedPlan.replace(/^starter_/, 'basic_').replace(/^premium_/, 'advanced_').replace(/^enterprise_/, 'business_');
+  const safeRequestedPlan = allowedPlans.has(normalizedRequestedPlan) ? normalizedRequestedPlan : 'basic_monthly';
   const plan = safeRequestedPlan === 'owner_test' && !ownerTestAccess ? 'basic_monthly' : safeRequestedPlan;
   const referralCode = String(params.get('ref') || '').trim().toUpperCase();
   return `<div>
@@ -3062,17 +3056,14 @@ function signup() {
             <div class="field full" id="signupPasswordField"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
             <div class="field full"><label>${appText('Tilaus','Abonnemang','Subscription')}</label>
               <select name="plan">
-                <optgroup label="Starter">
-                  <option value="basic_monthly" ${plan === 'basic_monthly' ? 'selected' : ''}>${appText('Starter · 34,90 €/kk','Starter · 34,90 €/mån','Starter · €34.90/month')}</option>
-                  <option value="basic_yearly" ${plan === 'basic_yearly' ? 'selected' : ''}>${appText('Starter · 29,90 €/kk','Starter · 29,90 €/mån','Starter · €29.90/month')} · ${appText('358,80 €/vuosi','358,80 €/år','€358.80/year')}</option>
-                </optgroup>
                 <optgroup label="Advanced">
-                  <option value="advanced_monthly" ${plan === 'advanced_monthly' ? 'selected' : ''}>${appText('Advanced · 44,90 €/kk','Advanced · 44,90 €/mån','Advanced · €44.90/month')}</option>
-                  <option value="advanced_yearly" ${plan === 'advanced_yearly' ? 'selected' : ''}>${appText('Advanced · 39,90 €/kk','Advanced · 39,90 €/mån','Advanced · €39.90/month')} · ${appText('478,80 €/vuosi','478,80 €/år','€478.80/year')}</option>
+                  <option value="basic_monthly" ${plan === 'basic_monthly' ? 'selected' : ''}>${appText('Advanced · 49 €/kk','Advanced · 49 €/mån','Advanced · €49/month')}</option>
                 </optgroup>
-                <optgroup label="Business">
-                  <option value="business_monthly" ${plan === 'business_monthly' ? 'selected' : ''}>${appText('Business · 54,90 €/kk','Business · 54,90 €/mån','Business · €54.90/month')}</option>
-                  <option value="business_yearly" ${plan === 'business_yearly' ? 'selected' : ''}>${appText('Business · 49,90 €/kk','Business · 49,90 €/mån','Business · €49.90/month')} · ${appText('598,80 €/vuosi','598,80 €/år','€598.80/year')}</option>
+                <optgroup label="Premium">
+                  <option value="advanced_monthly" ${plan === 'advanced_monthly' ? 'selected' : ''}>${appText('Premium · 129 €/kk','Premium · 129 €/mån','Premium · €129/month')}</option>
+                </optgroup>
+                <optgroup label="Enterprise">
+                  <option value="business_monthly" ${plan === 'business_monthly' ? 'selected' : ''}>${appText('Enterprise · 149 €/kk','Enterprise · 149 €/mån','Enterprise · €149/month')}</option>
                 </optgroup>
                 ${ownerTestAccess ? `<option value="owner_test" ${plan === 'owner_test' ? 'selected' : ''}>${appText('OMISTAJAN TESTI · 0,50 € sis. alv · veloitus heti','ÄGARENS TEST · 0,50 € inkl. moms · debiteras direkt','OWNER TEST · €0.50 incl. VAT · charged immediately')}</option>` : ''}
               </select>
@@ -3189,7 +3180,7 @@ const LEGAL = {
       ['3. Automaattiset vastaukset', 'Respondo AI tuottaa asiakasvastauksia yrityksen palveluun lisäämien tietojen ja käytössä olevien toimintojen perusteella. Automaattinen vastaus voi olla virheellinen tai puutteellinen, joten asiakasyritys vastaa omien tietojensa oikeellisuudesta ja siitä, missä tilanteissa automaattisia vastauksia käytetään. Palvelua ei tule käyttää lainvastaisiin tarkoituksiin tai sellaisiin korkean riskin päätöksiin, joissa automaattinen vastaus yksin voi aiheuttaa olennaista vahinkoa.'],
       ['4. Google Calendar ja muut integraatiot', 'Asiakas voi vapaaehtoisesti yhdistää Google Calendarin tai muun tuetun palvelun. Respondo käyttää asiakkaan myöntämiä oikeuksia vain kyseisen käyttäjälle näkyvän toiminnon toteuttamiseen, kuten varausten saatavuuden tarkistamiseen ja kalenteritapahtumien luomiseen. Asiakas voi poistaa integraation käytöstä palvelun asetuksista tai kyseisen ulkopuolisen palvelun tiliasetuksista.'],
       ['5. Kokeilu ja tilaus', `Palvelua voi kokeilla ${cfg.trialDays || 3} päivää ilmaiseksi. Maksutapa voidaan lisätä kokeilun alussa. Ellei tilausta peruta ennen kokeilun päättymistä, tilaus jatkuu valitun laskutusjakson mukaisena maksullisena tilauksena.`],
-      ['6. Hinnat ja verot', 'Respondo tarjoaa Starter-, Advanced- ja Business-paketit kuukausi- ja vuositilauksina. Kuukausihinnat ovat 34,90 €/kk, 44,90 €/kk ja 54,90 €/kk. Vuosilaskutuksessa veloitetaan 12 kuukauden hinta kerralla: 358,80 €, 478,80 € tai 598,80 €. Vuositilauksen alennus on 5 €/kk eli 60 €/vuosi. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi. Ennen maksamista asiakkaalle näytetään valittu paketti, kokonaishinta ja laskutusjakso.'],
+      ['6. Hinnat ja verot', 'Respondo tarjoaa Advanced-, Premium- ja Enterprise-paketit kuukausitilauksina. Kuukausihinnat ovat 49 €/kk, 129 €/kk ja 149 €/kk. Uusia vuositilauksia ei tällä hetkellä tarjota. Aiemmat vuositilaukset jatkuvat sopimusehtojensa mukaisesti. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi. Ennen maksamista asiakkaalle näytetään valittu paketti, kokonaishinta ja laskutusjakso.'],
       ['7. Maksaminen ja uusiminen', 'Maksut käsitellään Stripen kautta. Jatkuva tilaus uusiutuu valitun laskutusjakson mukaisesti, kunnes se perutaan. Maksun epäonnistuminen voi johtaa palvelun rajoittamiseen tai keskeyttämiseen.'],
       ['8. Peruminen', 'Tilauksen voi perua milloin tahansa. Peruminen estää seuraavan laskutusjakson uusiutumisen. Jo maksettu laskutuskausi jatkuu normaalisti kauden loppuun, ellei pakottava lainsäädäntö tai erikseen sovittu ehto edellytä muuta.'],
       ['9. Asiakkaan vastuu', 'Asiakas vastaa käyttäjätilinsä suojaamisesta, palveluun lisäämiensä tietojen oikeellisuudesta, tarvittavista oikeuksista ja suostumuksista sekä siitä, että palvelun käyttö, asiakasviestintä ja henkilötietojen käsittely ovat sovellettavan lain mukaisia.'],
@@ -3361,7 +3352,7 @@ function legal(type) {
     if (/^RESPONDO AI, Y-tunnus .* Suomi\. Yhteydenotot:/.test(value)) return lang==='sv'?`Respondo AI, FO-nummer ${bid}, Finland. Kontakt: ${mail}.`:`Respondo AI, Business ID ${bid}, Finland. Contact: ${mail}.`;
     if (/^RESPONDO AI, Y-tunnus .* Tietosuoja-/.test(value)) return lang==='sv'?`Respondo AI, FO-nummer ${bid}. Integritets- och övriga kontakter: ${mail}.`:`Respondo AI, Business ID ${bid}. Privacy and other enquiries: ${mail}.`;
     if (/^Palvelua voi kokeilla /.test(value)) return lang==='sv'?`Tjänsten kan provas gratis i ${cfg.trialDays||3} dagar. En betalningsmetod kan läggas till i början av provperioden. Om abonnemanget inte sägs upp innan provperioden slutar fortsätter det som ett betalt abonnemang enligt vald faktureringsperiod.`:`The service can be tried free for ${cfg.trialDays||3} days. A payment method may be added at the start of the trial. Unless cancelled before the trial ends, the subscription continues as a paid subscription according to the selected billing period.`;
-    if (/^Respondo tarjoaa Starter-/.test(value)) return lang==='sv'?'Respondo erbjuder Starter, Advanced och Business med månads- eller årsfakturering. Månadspriserna är 34,90 €, 44,90 € och 54,90 € per månad. Årsfakturering kostar 358,80 €, 478,80 € respektive 598,80 € per år, en besparing på 60 € jämfört med månadsbetalning. Ingen moms debiteras på grund av verksamhet i liten skala.':'Respondo offers Starter, Advanced and Business at €34.90, €44.90 and €54.90 per month. Annual billing charges €358.80, €478.80 or €598.80 per year, saving €60 compared with monthly billing. No VAT is charged due to the small-scale business exemption.';
+    if (/^Respondo tarjoaa Advanced-/.test(value)) return lang==='sv'?'Respondo erbjuder Advanced, Premium och Enterprise med månadsfakturering för 49 €, 129 € respektive 149 € per månad. Nya årsabonnemang erbjuds inte för närvarande. Befintliga årsabonnemang fortsätter enligt sina avtal. Ingen moms debiteras på grund av verksamhet i liten skala.':'Respondo offers Advanced, Premium and Enterprise for €49, €129 and €149 per month. New annual subscriptions are not offered at present. Existing annual subscriptions retain their contractual terms. No VAT is charged due to the small-scale business exemption.';
     if (/^Tietoturvaan liittyvät ilmoitukset:/.test(value)) return lang==='sv'?`Säkerhetsrelaterade meddelanden: ${mail}.`:`Security-related notices: ${mail}.`;
     return value;
   };
@@ -3427,12 +3418,9 @@ function dashboardWithoutCompany(me, workspaces = []) {
           <label><span>${appText('Y-tunnus (valinnainen)','FO-nummer (valfritt)','Business ID (optional)')}</span><input name="businessId" maxlength="40"></label>
           <input type="hidden" name="billingCountry" value="FI">
           <label><span>${appText('Tilaus','Abonnemang','Subscription')}</span><select name="plan">
-            <option value="basic_monthly">Starter 34,90 € / kk</option>
-            <option value="basic_yearly">Starter 358,80 € / ${appText('vuosi','år','year')}</option>
-            <option value="advanced_monthly">Advanced 44,90 € / kk</option>
-            <option value="advanced_yearly">Advanced 478,80 € / ${appText('vuosi','år','year')}</option>
-            <option value="business_monthly">Business 54,90 € / kk</option>
-            <option value="business_yearly">Business 598,80 € / ${appText('vuosi','år','year')}</option>
+            <option value="basic_monthly">Advanced 49 € / kk</option>
+            <option value="advanced_monthly">Premium 129 € / kk</option>
+            <option value="business_monthly">Enterprise 149 € / kk</option>
           </select></label>
           ${checkoutBusinessTerms('acceptedTerms', 'workspace-terms')}
           <button type="submit" class="btn ink workspace-checkout-button">${appText('Lisää yritys','Lägg till företag','Add company')} →</button>
@@ -3656,7 +3644,7 @@ async function dashboard(options = {}) {
       <div class="premium-sidebar-brand">${logo()}</div>
       <div class="premium-sidebar-label">${appText('TYÖTILA','ARBETSYTA','WORKSPACE')}</div>
       <nav class="premium-sidebar-nav">${premiumNavHtml}</nav>
-      <div class="premium-sidebar-bottom"><i aria-hidden="true"></i><div><b>${esc(t.name)}</b><small>${isDemo ? appText('Kokeilutila','Demo','Demo mode') : esc(String(planAccess.tier||'Starter'))}</small></div></div>
+      <div class="premium-sidebar-bottom"><i aria-hidden="true"></i><div><b>${esc(t.name)}</b><small>${isDemo ? appText('Kokeilutila','Demo','Demo mode') : ({basic:'Advanced',advanced:'Premium',business:'Enterprise'}[String(planAccess.tier)] || 'Advanced')}</small></div></div>
     </aside>
     <main class="appmain dashboard-simple-main ${isDemo ? 'demo-dashboard-main' : ''}">
       <header class="dashboard-topbar ${isDemo ? 'demo-sticky-topbar' : ''}">
@@ -3753,12 +3741,9 @@ async function dashboard(options = {}) {
             <label><span>${appText('Y-tunnus (valinnainen)','FO-nummer (valfritt)','Business ID (optional)')}</span><input name="businessId" maxlength="40" placeholder="1234567-8"></label>
           <input type="hidden" name="billingCountry" value="FI">
             <div class="workspace-plan-grid">
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_monthly" checked><span><b>${appText('Starter · 34,90 €/kk','Starter · 34,90 €/mån','Starter · €34.90/month')}</b><small>2 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_yearly"><span><b>${appText('Starter · 29,90 €/kk','Starter · 29,90 €/mån','Starter · €29.90/month')}</b><small>358,80 € / ${appText('vuosi','år','year')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_monthly"><span><b>${appText('Advanced · 44,90 €/kk','Advanced · 44,90 €/mån','Advanced · €44.90/month')}</b><small>10 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_yearly"><span><b>${appText('Advanced · 39,90 €/kk','Advanced · 39,90 €/mån','Advanced · €39.90/month')}</b><small>478,80 € / ${appText('vuosi','år','year')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="business_monthly"><span><b>${appText('Business · 54,90 €/kk','Business · 54,90 €/mån','Business · €54.90/month')}</b><small>20 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
-              <label class="workspace-plan-option"><input type="radio" name="plan" value="business_yearly"><span><b>${appText('Business · 49,90 €/kk','Business · 49,90 €/mån','Business · €49.90/month')}</b><small>598,80 € / ${appText('vuosi','år','year')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_monthly" checked><span><b>${appText('Advanced · 49 €/kk','Advanced · 49 €/mån','Advanced · €49/month')}</b><small>2 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_monthly"><span><b>${appText('Premium · 129 €/kk','Premium · 129 €/mån','Premium · €129/month')}</b><small>10 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
+              <label class="workspace-plan-option"><input type="radio" name="plan" value="business_monthly"><span><b>${appText('Enterprise · 149 €/kk','Enterprise · 149 €/mån','Enterprise · €149/month')}</b><small>20 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
             </div>
             <label>
               <span>${appText('Suosittelukoodi (valinnainen)','Rekommendationskod (valfritt)','Referral code (optional)')}</span>
@@ -4586,11 +4571,11 @@ async function dashboard(options = {}) {
                 <small>${(() => {
                   const planCode=String(workspace.subscription_plan || '');
                   const tier=planCode.startsWith('basic_')
-                    ? 'Starter'
+                    ? 'Premium'
                     : planCode.startsWith('advanced_')
                       ? 'Advanced'
                       : planCode.startsWith('business_') || ['monthly','yearly','owner_test'].includes(planCode)
-                        ? 'Business'
+                        ? 'Enterprise'
                         : 'Respondo';
                   const billing=planCode==='yearly' || planCode.endsWith('_yearly')
                     ? appText('Vuositilaus','Årsabonnemang','Annual plan')
@@ -4636,7 +4621,7 @@ async function dashboard(options = {}) {
       </div>` : ''}
 
       <section class="panel billing-panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="account" id="billing">
-        <div><small>${appText('LASKUTUS','FAKTURERING','BILLING')}</small><h2>${appText('Hallitse tilaustasi','Hantera ditt abonnemang','Manage your subscription')}</h2><p>${appText('Voit vaihtaa Starter-, Advanced- ja Business-pakettien välillä, vaihtaa maksutapaa, katsoa laskuja tai perua tilauksen Stripen asiakasportaalissa.','Du kan byta mellan Starter-, Advanced- och Business-abonnemang, ändra betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal.','You can switch between Starter, Advanced and Business plans, change your payment method, view invoices, or cancel your subscription in the Stripe customer portal.')}</p></div>
+        <div><small>${appText('LASKUTUS','FAKTURERING','BILLING')}</small><h2>${appText('Hallitse tilaustasi','Hantera ditt abonnemang','Manage your subscription')}</h2><p>${appText('Voit hallita maksutapaa, tarkastella laskuja tai perua tilauksen Stripen asiakasportaalissa. Jos haluat vaihtaa pakettia, ota yhteyttä tukeen.','Du kan ändra betalningsmetod, se fakturor eller säga upp abonnemanget i Stripes kundportal. Kontakta support om du vill byta paket.','You can change your payment method, view invoices, or cancel in the Stripe customer portal. Contact support to change plans.')}</p></div>
         <button class="btn dashboard-action" id="billingPortal" type="button">${appText('Hallitse tilausta ja pakettia','Hantera abonnemang och paket','Manage subscription and plan')} <span>↗</span></button>
       </section>
 
