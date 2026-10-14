@@ -1249,6 +1249,37 @@ async function assertCurrentCheckoutPrice(plan, priceId) {
   }
 }
 
+// Checkout's inline recurring Price is the safe source of truth until matching
+// live catalog prices are available. Never send an old environment Price ID.
+// Stripe creates a recurring Price for the chosen plan when the customer opens
+// Checkout, with the correct product name shown on their invoice.
+async function stripeCheckoutLineItem(plan) {
+  const priceId=stripePriceForPlan(plan);
+  if (!Object.hasOwn(NEW_MONTHLY_PRICE_CENTS, plan)) {
+    if (!priceId) throw Object.assign(new Error('Stripe plan is not configured.'),{publicStatus:503});
+    return {price:priceId,quantity:1};
+  }
+  if (priceId) {
+    try {
+      await assertCurrentCheckoutPrice(plan,priceId);
+      return {price:priceId,quantity:1};
+    } catch (error) {
+      // Existing Railway IDs point to discontinued prices. Do not silently bill
+      // those amounts; use Stripe Checkout's supported price_data mechanism.
+      console.warn('Using current inline monthly Checkout price for '+plan+': '+String(error?.message||error));
+    }
+  }
+  return {
+    price_data:{
+      currency:'eur',
+      unit_amount:NEW_MONTHLY_PRICE_CENTS[plan],
+      recurring:{interval:'month',interval_count:1},
+      product_data:{name:NEW_MONTHLY_PRODUCT_NAMES[plan]},
+    },
+    quantity:1,
+  };
+}
+
 function planFromStripePriceId(priceId) {
   const id=String(priceId||'');
   const pairs=[
@@ -1326,7 +1357,7 @@ async function ensureReferralCode(userId) {
     try {
       const subscription = await stripe.subscriptions.retrieve(user.stripe_subscription_id);
       const priceId = subscription.items?.data?.[0]?.price?.id || '';
-      plan = planFromStripePriceId(priceId) || plan;
+      plan = planFromStripePriceId(priceId) || (Object.hasOwn(PLAN_DEFINITIONS,String(subscription.metadata?.plan||''))?String(subscription.metadata.plan):'') || plan;
       if (plan) {
         await q('UPDATE users SET subscription_plan=$1,updated_at=NOW() WHERE id=$2', [plan, userId]);
       }
@@ -7745,7 +7776,8 @@ async function syncStripeSubscriptionState(subscription) {
   const cancelAtPeriodEnd = Boolean(subscription.cancel_at_period_end);
   const status = String(subscription.status || '');
   const priceId = String(subscription.items?.data?.[0]?.price?.id || '');
-  const plan = planFromStripePriceId(priceId);
+  const metadataPlan=String(subscription.metadata?.plan||'').trim();
+  const plan = planFromStripePriceId(priceId) || (Object.hasOwn(PLAN_DEFINITIONS,metadataPlan)?metadataPlan:'');
 
   await q(
     `UPDATE tenants
@@ -9226,12 +9258,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       }
     }
 
-    const price = freeReferral ? null : stripePriceForPlan(normalizedPlan);
-
-    if (!freeReferral && !price) {
-      return res.status(503).json({ error: 'Stripe-hintaa ei ole määritetty.' });
-    }
-    if (!freeReferral) await assertCurrentCheckoutPrice(normalizedPlan, price);
+    const checkoutLineItem = freeReferral ? null : await stripeCheckoutLineItem(normalizedPlan);
 
     const existing = await q(
       'SELECT id,status,stripe_customer_id,stripe_subscription_id FROM users WHERE lower(email)=lower($1)',
@@ -9357,7 +9384,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
         mode: 'subscription',
         automatic_tax: { enabled: false },
         customer_email: email,
-        line_items: [{ price, quantity: 1 }],
+        line_items:[checkoutLineItem],
         custom_text: {
           submit: { message: taxExemptionMessage },
         },
@@ -10074,10 +10101,9 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   if(referralCode && !freeReferral && !planAllowsReferral(plan)) return res.status(400).json({ error:'Suosittelukoodi toimii vain kuukausitilauksessa.' });
   if(!freeReferral && !stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
 
-  const price=freeReferral ? null : stripePriceForPlan(plan);
-  if(!freeReferral && !price) return res.status(503).json({ error:'Stripe-hintaa ei ole määritetty.' });
-  if(!freeReferral) {
-    try { await assertCurrentCheckoutPrice(plan,price); }
+  let checkoutLineItem=null;
+  if (!freeReferral) {
+    try { checkoutLineItem=await stripeCheckoutLineItem(plan); }
     catch(e) { console.error('Stripe checkout price validation failed:',e?.message); return res.status(503).json({error:'Tilauksen hintaa ei voitu vahvistaa. Yritä myöhemmin uudelleen.'}); }
   }
 
@@ -10186,7 +10212,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         customer:user.stripe_customer_id,
         customer_update:{ name:'auto' },
       } : { customer_email:user.email }),
-      line_items:[{price,quantity:1}],
+      line_items:[checkoutLineItem],
       custom_text:{
         submit:{message: taxExemptionMessage},
       },
