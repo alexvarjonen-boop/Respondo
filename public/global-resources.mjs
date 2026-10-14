@@ -409,7 +409,7 @@ const guides = {
         ],
         [
           "Respondo AI:n julkiset hinnat",
-          "Respondo AI:n kuukausihinnat ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Uusia vuositilauksia ei tällä hetkellä tarjota. Nykyisiin tilauksiin sisältyy kolmen päivän maksuton kokeilu. Tarkista lopullinen laskutettava summa ja saatavilla olevat ominaisuudet aina tilausnäkymästä ennen maksua. Maksulliset tilaukset ovat toistaiseksi vain suomalaisille yrityksille."
+          "Respondo AI:n kuukausihinnat ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vuositilauksella hinnat ovat Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1428 €/vuosi), Enterprise 139 €/kk (1668 €/vuosi): säästö 10 €/kk ja koko vuosi laskutetaan kerralla. Nykyisiin tilauksiin sisältyy kolmen päivän maksuton kokeilu. Tarkista lopullinen laskutettava summa ja saatavilla olevat ominaisuudet aina tilausnäkymästä ennen maksua. Maksulliset tilaukset ovat toistaiseksi vain suomalaisille yrityksille."
         ],
         [
           "Mitä pakettien välillä kannattaa vertailla?",
@@ -435,7 +435,7 @@ const guides = {
       "faq": [
         [
           "Paljonko Respondo AI maksaa kuukaudessa?",
-          "Kuukausitilausten hinnat ovat Advanced 49 €, Premium 129 € ja Enterprise 149 €. Uusia vuositilauksia ei tällä hetkellä tarjota."
+          "Kuukausitilausten hinnat ovat Advanced 49 €, Premium 129 € ja Enterprise 149 €. Vuositilauksella hinnat ovat Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1428 €/vuosi), Enterprise 139 €/kk (1668 €/vuosi): säästö 10 €/kk ja koko vuosi laskutetaan kerralla."
         ],
         [
           "Voiko asiakaspalvelubottia kokeilla maksutta?",
@@ -461,7 +461,7 @@ const guides = {
         ],
         [
           "Respondo AI:s publicerade priser",
-          "Respondo AI erbjuder Advanced för 49 €/månad, Premium för 129 €/månad och Enterprise för 149 €/månad. Nya årsabonnemang erbjuds inte för närvarande. En gratis provperiod på tre dagar ingår i de aktuella paketen. Kontrollera alltid slutligt belopp och funktioner i beställningen. Betalda företagsabonnemang är för närvarande endast tillgängliga för företag i Finland."
+          "Respondo AI erbjuder Advanced för 49 €/månad, Premium för 129 €/månad och Enterprise för 149 €/månad. Med årsabonnemang kostar Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1428 €/år), Enterprise 139 €/mån (1668 €/år): spara 10 €/månad, debiteras årsvis. En gratis provperiod på tre dagar ingår i de aktuella paketen. Kontrollera alltid slutligt belopp och funktioner i beställningen. Betalda företagsabonnemang är för närvarande endast tillgängliga för företag i Finland."
         ],
         [
           "Vilka abonnemangsfunktioner är viktiga?",
@@ -487,7 +487,7 @@ const guides = {
       "faq": [
         [
           "Vad kostar Respondo AI per månad?",
-          "Advanced kostar 49 €, Premium 129 € och Enterprise 149 € per månad. Nya årsabonnemang erbjuds inte för närvarande."
+          "Advanced kostar 49 €, Premium 129 € och Enterprise 149 € per månad. Med årsabonnemang kostar Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1428 €/år), Enterprise 139 €/mån (1668 €/år): spara 10 €/månad, debiteras årsvis."
         ],
         [
           "Finns det en gratis provperiod?",
@@ -513,7 +513,7 @@ const guides = {
         ],
         [
           "Respondo AI monthly pricing",
-          "Respondo AI currently offers Advanced at €49/month, Premium at €129/month and Enterprise at €149/month. New annual subscriptions are not offered at present. The current plans include a three-day free trial. Always review the actual checkout total, current plan features and terms before paying. Paid Respondo AI business subscriptions are presently available only to businesses in Finland."
+          "Respondo AI currently offers Advanced at €49/month, Premium at €129/month and Enterprise at €149/month. Annual billing costs Advanced €39/month (€468/year), Premium €119/month (€1428/year), Enterprise €139/month (€1668/year): save €10/month and pay annually. The current plans include a three-day free trial. Always review the actual checkout total, current plan features and terms before paying. Paid Respondo AI business subscriptions are presently available only to businesses in Finland."
         ],
         [
           "Compare plan capabilities rather than price alone",
@@ -539,7 +539,7 @@ const guides = {
       "faq": [
         [
           "How much does Respondo AI cost per month?",
-          "Monthly plans are Advanced €49, Premium €129 and Enterprise €149. New annual subscriptions are not currently offered."
+          "Monthly plans are Advanced €49, Premium €129 and Enterprise €149. Annual billing: Advanced €468/year, Premium €1428/year, Enterprise €1668/year (save €10/month)."
         ],
         [
           "Is there a free chatbot trial?",
