@@ -710,7 +710,6 @@
                   </ul>
                   <div class="assistant-order-actions">
                     <a class="assistant-order-btn primary" href="/tilaus?plan=advanced_monthly">${pageTx('Kuukausi','Månad','Monthly')} <span>→</span></a>
-                    <a class="assistant-order-btn primary" href="/tilaus?plan=advanced_yearly">${pageTx('Vuosi','År','Annual')} <span>→</span></a>
                   </div>
                 </article>
                 <article class="assistant-order-card">
