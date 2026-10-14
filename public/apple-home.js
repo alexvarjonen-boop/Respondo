@@ -38,5 +38,39 @@ export function appleHomeMarkup(t,lang,count){
       </article>
     </div>
   </section>
+
+  <section class="apple-lead-calculator" id="calculator" aria-labelledby="apple-lead-title">
+    <div class="apple-lead-inner">
+      <header class="apple-lead-intro">
+        <p class="apple-eyebrow">${t("LASKE POTENTIAALI","RÄKNA PÅ POTENTIALEN","CALCULATE THE POTENTIAL")}</p>
+        <h2 id="apple-lead-title">${t("Paljonko vastaamatta jääneet yhteydenotot voivat maksaa?","Vad kan obesvarade kundförfrågningar vara värda?","What could unanswered enquiries be worth?")}</h2>
+        <p>${t("Muuta kahta lukua ja näe suuntaa-antava laskelma heti.","Ändra två värden och se beräkningen direkt.","Adjust two values to see an instant estimate.")}</p>
+      </header>
+      <div class="apple-lead-layout">
+        <div class="apple-lead-form">
+          <div class="apple-lead-field">
+            <label for="jobValueSlider">${t("Leadin arvo","Värde per lead","Lead value")}</label>
+            <div class="apple-lead-input"><input id="jobValueSlider" type="number" inputmode="decimal" min="0" max="100000" step="10" value="150" autocomplete="off" aria-describedby="leadValueHint"><span aria-hidden="true">€</span></div>
+            <small id="leadValueHint">${t("Yhden toteutuneen kaupan keskimääräinen arvo","Genomsnittligt värde av en genomförd affär","Average value of a completed sale")}</small>
+          </div>
+          <div class="apple-lead-field">
+            <label for="missedSlider">${t("Vastaamatta jääneet asiakkaat päivässä","Obesvarade kundförfrågningar per dag","Unanswered customer enquiries per day")}</label>
+            <div class="apple-lead-input"><input id="missedSlider" type="number" inputmode="numeric" min="0" max="1000" step="1" value="3" autocomplete="off" aria-describedby="missedLeadsHint"><span aria-hidden="true">${t("/ päivä","/ dag","/ day")}</span></div>
+            <small id="missedLeadsHint">${t("Yhteydenotot, joihin ei ehditä vastata","Förfrågningar som inte besvaras","Enquiries that go unanswered")}</small>
+          </div>
+          <p class="apple-lead-auto"><span aria-hidden="true"></span>${t("Laskuri päivittyy automaattisesti.","Beräkningen uppdateras automatiskt.","The calculation updates automatically.")}</p>
+        </div>
+        <div class="apple-lead-result">
+          <div class="apple-lead-result-head"><span>${t("MAHDOLLINEN ARVO","POTENTIELLT VÄRDE","POTENTIAL VALUE")}</span><span>30 ${t("PÄIVÄÄ","DAGAR","DAYS")}</span></div>
+          <output id="monthlyValue" class="apple-lead-total" for="jobValueSlider missedSlider" aria-live="polite" aria-atomic="true">13 500 €</output>
+          <div class="apple-lead-breakdown">
+            <div><span>${t("Päivässä","Per dag","Per day")}</span><output id="dailyValue" for="jobValueSlider missedSlider">450 €</output></div>
+            <div><span>${t("Vuodessa (365 päivää)","Per år (365 dagar)","Per year (365 days)")}</span><output id="yearlyValue" for="jobValueSlider missedSlider">164 250 €</output></div>
+          </div>
+          <p class="apple-lead-disclaimer">${t("Havainnollistava laskelma: jokaisen vastaamatta jääneen yhteydenoton oletetaan johtavan yhteen kauppaan. Tämä ei ole myyntiennuste tai lupaus Respondon tuottamista lisätuloista.","Illustrativ beräkning: varje obesvarad förfrågan antas motsvara en genomförd affär. Detta är ingen försäljningsprognos eller garanti för merförsäljning.","Illustration only: every unanswered enquiry is assumed to result in one sale. This is not a sales forecast or a guarantee of additional revenue.")}</p>
+        </div>
+      </div>
+    </div>
+  </section>
   <section class="apple-bottom-cta"><p>${t('Valmis vastaamaan ensimmäiseen kysymykseen?','Redo att svara på den första frågan?','Ready for your first conversation?')}</p><a class="apple-pill apple-pill-primary" href="/tilaus">${t('Aloita ilmainen kokeilu','Börja gratis provperiod','Start your free trial')}</a><a class="apple-buyer-guide-link" href="/asiakaspalvelubotti?lang=${lang}">${t('Mikä on asiakaspalvelijabotti?','Så fungerar en AI-kundservicebot','How an AI customer service chatbot works')} →</a></section>`;
 }
