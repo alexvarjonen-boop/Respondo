@@ -24,32 +24,35 @@ test('2026-10-14 monthly tiers have the approved prices and unchanged seat limit
   assert.match(server, /NEW_MONTHLY_PRICE_CENTS = Object\.freeze\(\{ basic_monthly:4900, advanced_monthly:12900, business_monthly:14900 \}\)/);
 });
 
-test('new checkouts refuse grandfathered annual plans and choose validated catalog or inline prices', () => {
-  assert.match(server, /if \(normalizedPlan\.endsWith\('_yearly'\)\)/);
-  assert.match(server, /if \(plan\.endsWith\('_yearly'\)\)/);
-  assert.match(server, /await stripeCheckoutLineItem\(normalizedPlan\)/);
-  assert.match(server, /await assertCurrentCheckoutPrice\(plan,priceId\)/);
-  assert.ok(server.includes('const NEW_MONTHLY_PRODUCT_NAMES = Object.freeze'));
-  assert.match(server, /basic_monthly:'Respondo Advanced'/);
-  assert.match(server, /advanced_monthly:'Respondo Premium'/);
-  assert.match(server, /business_monthly:'Respondo Enterprise'/);
-  assert.match(server, /stripe\.products\.retrieve\(productId\)/);
-  assert.match(server, /product\.name !== NEW_MONTHLY_PRODUCT_NAMES\[plan\]/);
-  assert.match(server, /basic_yearly:\{tier:'basic'/);
-  assert.match(server, /advanced_yearly:\{tier:'advanced'/);
-  assert.match(server, /business_yearly:\{tier:'business'/);
+test('annual plans retain internal tier permissions and Stripe validation', () => {
+  for (const [code,monthlyPrice,total,seats] of [
+    ['basic_yearly',39,468,2],['advanced_yearly',119,1428,10],['business_yearly',139,1668,20]
+  ]) {
+    const line=server.split('\n').find((line)=>line.trimStart().startsWith(code+':'));
+    assert.ok(line);
+    assert.ok(line.includes('monthlyPrice:'+monthlyPrice));
+    assert.ok(line.includes('annualTotal:'+total));
+    assert.ok(line.includes('agentSeats:'+seats));
+  }
+  assert.match(server,/NEW_YEARLY_PRICE_CENTS = Object\.freeze\(\{ basic_yearly:46800, advanced_yearly:142800, business_yearly:166800 \}\)/);
+  assert.match(server,/await stripeCheckoutLineItem\(normalizedPlan\)/);
+  assert.match(server,/await assertCurrentCheckoutPrice\(plan,priceId\)/);
+  assert.match(server,/stripe\.products\.retrieve\(productId\)/);
+  assert.match(server,/product\.name !== productName/);
+  for (const tier of ['basic','advanced','business']) assert.match(server,new RegExp("\\['"+tier+"_yearly',process\\.env\\.STRIPE_"+tier.toUpperCase()+"_YEARLY_PRICE_ID\\]"));
 });
 
-test('website and demo display the approved monthly tiers without annual purchase links', () => {
+test('website and signup display both billing intervals', () => {
   const pricing = app.split('function pricingSection() {')[1]?.split('function cinematicConversationScene()')[0] || '';
   assert.ok(pricing);
   assert.match(pricing, /card\('Advanced',49,/);
   assert.match(pricing, /card\('Premium',129,/);
   assert.match(pricing, /card\('Enterprise',149,/);
-  assert.doesNotMatch(pricing, /_yearly|annual-save-note|yearlyMonthly/);
+  assert.match(pricing, /_yearly/);
+  for (const tier of ['basic','advanced','business']) assert.ok(app.includes(`value="${tier}_yearly"`));
 
   for (const source of [app, effects]) {
-    assert.doesNotMatch(source, /href="\/tilaus\?plan=(?:basic|advanced|business)_yearly"/);
+    assert.match(source, /Respondo Advanced|Advanced/);
     assert.doesNotMatch(source, /(?:Starter 34,90|Advanced 44,90|Business 54,90)/);
   }
 });
@@ -88,6 +91,7 @@ test('Stripe Checkout uses exactly the approved monthly amounts and tier product
     stripePriceForPlan:()=> 'price_old_mismatch',
     assertCurrentCheckoutPrice:async()=> { throw Error('Old price rejected'); },
     NEW_MONTHLY_PRICE_CENTS:prices,
+    NEW_YEARLY_PRICE_CENTS:{basic_yearly:46800,advanced_yearly:142800,business_yearly:166800},
     NEW_MONTHLY_PRODUCT_NAMES:names,
     console:{warn(){}},
   };
@@ -99,6 +103,13 @@ test('Stripe Checkout uses exactly the approved monthly amounts and tier product
       quantity:1,
     });
     assert.equal('price' in result,false,'checkout must not reuse old mismatching Price ID');
+  }
+  for (const [plan,amount] of Object.entries(ctx.NEW_YEARLY_PRICE_CENTS)) {
+    const result=JSON.parse(JSON.stringify(await get(plan)));
+    assert.deepEqual(result,{
+      price_data:{currency:'eur',unit_amount:amount,recurring:{interval:'year',interval_count:1},product_data:{name:names[plan.replace('_yearly','_monthly')]}},
+      quantity:1,
+    });
   }
   assert.equal((server.match(/line_items:\s*\[checkoutLineItem\]/g)||[]).length,2);
   assert.match(server,/subscription\.metadata\?\.plan/);
