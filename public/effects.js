@@ -160,9 +160,9 @@
     {
       keys:['hinta','maksaa','49','129','149','kuukausi','price','pricing','cost','month','pris','kostar','kostnad','månad','manad'],
       answer:{
-        fi:'Respondo Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Uusia vuositilauksia ei tällä hetkellä tarjota. Voit kokeilla 3 päivää ilmaiseksi.',
-        sv:'Respondo Advanced kostar 49 €/mån, Premium 129 €/mån och Enterprise 149 €/mån. Nya årsabonnemang erbjuds inte för närvarande. Prova gratis i 3 dagar.',
-        en:'Respondo Advanced costs €49/month, Premium €129/month and Enterprise €149/month. New annual subscriptions are not offered at present. Try free for 3 days.'
+        fi:'Respondo Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vuositilauksella säästät 10 €/kk: Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1428 €/vuosi), Enterprise 139 €/kk (1668 €/vuosi). Voit kokeilla 3 päivää ilmaiseksi.',
+        sv:'Respondo Advanced kostar 49 €/mån, Premium 129 €/mån och Enterprise 149 €/mån. Med årsbetalning sparar du 10 €/mån: Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1428 €/år), Enterprise 139 €/mån (1668 €/år). Prova gratis i 3 dagar.',
+        en:'Respondo Advanced costs €49/month, Premium €129/month and Enterprise €149/month. Annual billing saves €10/month: Advanced €39/month (€468/year), Premium €119/month (€1428/year), Enterprise €139/month (€1668/year). Try free for 3 days.'
       }
     },
     {
