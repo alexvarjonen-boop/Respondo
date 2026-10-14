@@ -8193,6 +8193,14 @@ app.get('/llms.txt', (req,res) => {
   res.type('text/plain').send(text);
 });
 
+// Standalone factual media kit. Static middleware deliberately disables index files,
+// so route the canonical directory URL to its real HTML file explicitly.
+app.get('/media', (req,res) => res.redirect(301, SEO_CANONICAL_ORIGIN + '/media/'));
+app.get('/media/', (req,res) => {
+  res.setHeader('Cache-Control','no-cache, must-revalidate');
+  return res.sendFile(path.join(__dirname,'public','media','index.html'));
+});
+
 app.use(express.static(path.join(__dirname, 'public'), {
   index:false,
   // A public/guides directory exists for feed.xml, but /guides is an SPA route.
