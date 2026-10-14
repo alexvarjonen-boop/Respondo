@@ -18,22 +18,22 @@ test('six Starter Advanced Business plan codes and Stripe price envs are wired',
   ]) assert.match(server,new RegExp(env));
 });
 
-test('annual billing is 5 euros cheaper per month than monthly billing',()=>{
-  assert.match(server,/basic_yearly:\{tier:'basic',billing:'yearly',monthlyPrice:29\.90,annualTotal:358\.80/);
-  assert.match(server,/advanced_yearly:\{tier:'advanced',billing:'yearly',monthlyPrice:39\.90,annualTotal:478\.80/);
-  assert.match(server,/business_yearly:\{tier:'business',billing:'yearly',monthlyPrice:49\.90,annualTotal:598\.80/);
-  assert.ok(app.includes("card('Starter',34.90,29.90,358.80,2"));
-  assert.ok(app.includes("card('Advanced',44.90,39.90,478.80,10"));
-  assert.ok(app.includes("card('Business',54.90,49.90,598.80,20"));
+test('new monthly plans do not open new annual checkouts and grandfather old annual subscribers',()=>{
+  for(const code of ['basic_yearly','advanced_yearly','business_yearly']) assert.ok(server.includes(code+':{tier:'),'old annual entitlement must remain: '+code);
+  assert.match(server,/normalizedPlan\.endsWith\('_yearly'\)/);
+  assert.match(server,/plan\.endsWith\('_yearly'\)/);
+  assert.doesNotMatch(app,/value="(?:basic|advanced|business)_yearly"/);
+  assert.doesNotMatch(effects,/href="\/tilaus\?plan=(?:basic|advanced|business)_yearly"/);
 });
 
-test('new monthly prices are enforced on the server and legacy price IDs remain recognized',()=>{
-  assert.ok(server.includes("basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:34.90"));
-  assert.ok(server.includes("advanced_monthly:{tier:'advanced',billing:'monthly',monthlyPrice:44.90"));
-  assert.ok(server.includes("business_monthly:{tier:'business',billing:'monthly',monthlyPrice:54.90"));
-  assert.ok(server.includes("['basic_monthly','price_1UONnqV05brJ7mTPu5MvqQaP']"));
-  assert.ok(server.includes("['advanced_monthly','price_1UONo0V05brJ7mTPesqzKl1q']"));
-  assert.ok(server.includes("['business_monthly','price_1UONrnV05brJ7mTPR01BklbN']"));
+test('approved new monthly prices are server-enforced and historical Stripe subscriptions recognized',()=>{
+  for(const [code,amount] of [['basic',49],['advanced',129],['business',149]]) {
+    assert.match(server,new RegExp(code+'_monthly:\\{[^}]*monthlyPrice:'+amount+'(?![0-9])'));
+  }
+  assert.match(server,/basic_monthly:4900, advanced_monthly:12900, business_monthly:14900/);
+  assert.match(server,/stripe\.prices\.retrieve\(priceId\)/);
+  assert.match(server,/price\.currency !== 'eur'/);
+  for(const price of ['price_1UP2DWV05brJ7mTP6sjumnIt','price_1UP2DfV05brJ7mTPuSuwvuxm','price_1UP2DhV05brJ7mTP2pSDX8aV']) assert.ok(server.includes(price),'lost grandfathered price '+price);
 });
 
 test('all paid tiers include website import while calendar remains Advanced or Business',()=>{
@@ -46,12 +46,11 @@ test('all paid tiers include website import while calendar remains Advanced or B
   assert.match(server,/requirePlanCapability\(req,res,'googleCalendar'\)/);
 });
 
-test('Business-only automations are enforced server-side and hidden on lower tiers',()=>{
-  assert.match(server,/capability==='allCurrentFeatures' \? 'Business-tilaus'/);
+test('Enterprise-only automations remain server-side gated and hidden from lower tiers',()=>{
+  assert.match(server,/capability==='allCurrentFeatures' \? 'Enterprise-tilaus'/);
   assert.ok((server.match(/requirePlanCapability\(req,res,'allCurrentFeatures'\)/g)||[]).length>=6);
   assert.match(server,/actionAccess\.allCurrentFeatures/);
   assert.match(server,/actionAccess\.googleCalendar/);
-  assert.match(server,/Channels API vaatii Business-tilauksen/);
   assert.match(server,/stripeConnect:\s*planAccess\.allCurrentFeatures/);
   assert.match(app,/const planAccess = data\.planAccess/);
   assert.match(app,/id="importWebsite"/);
@@ -67,11 +66,11 @@ test('bot branding stays available without a premium capability gate',()=>{
   assert.match(app,/name="botAvatar"/);
 });
 
-test('Starter keeps native booking while premium automation controls are gated',()=>{
+test('Advanced keeps native booking while Enterprise automation controls are gated',()=>{
   assert.match(server,/app\.post\('\/api\/app\/booking-slots\/generate', auth, ownerOnly, subscribed/);
   assert.doesNotMatch(server,/app\.post\('\/api\/app\/booking-slots\/generate'[\s\S]{0,180}requirePlanCapability\(req,res,'allCurrentFeatures'\)/);
-  assert.match(app,/Respondo booking works on this plan\. Google Calendar sync is included in Advanced and Business\./);
-  assert.match(app,/Quote requests work on every plan\. Automatic quote calculation is included in Business\./);
+  assert.match(app,/Respondo booking works on this plan\. Google Calendar sync is included in Premium and Enterprise\./);
+  assert.match(app,/Quote requests work on every plan\. Automatic quote calculation is included in Enterprise\./);
 });
 
 test('legacy subscribers keep the full old feature set',()=>{
@@ -79,35 +78,31 @@ test('legacy subscribers keep the full old feature set',()=>{
   assert.match(server,/tier:'business'[\s\S]*agentSeats:20[\s\S]*allCurrentFeatures:true/);
 });
 
-test('homepage signup workspace and Try Bot expose all six discounted annual and monthly choices',()=>{
-  for(const plan of [
-    'basic_monthly','basic_yearly','advanced_monthly','advanced_yearly','business_monthly','business_yearly'
-  ]){
-    assert.match(app,new RegExp(plan));
-    assert.match(effects,new RegExp(plan));
+test('homepage signup workspaces and Try Bot offer three approved monthly tiers',()=>{
+  for(const plan of ['basic_monthly','advanced_monthly','business_monthly']) {
+    assert.ok(app.includes('value="'+plan+'"'),plan+' missing from signup/workspace');
+    assert.match(effects,new RegExp('plan='+plan));
   }
   assert.match(app,/Hae tiedot automaattisesti verkkosivulta/);
-  assert.ok(app.includes("card('Starter',34.90,29.90,358.80,2"));
-  assert.ok(app.includes("card('Advanced',44.90,39.90,478.80,10"));
-  assert.ok(app.includes("card('Business',54.90,49.90,598.80,20"));
+  assert.ok(app.includes("card('Advanced',49,2"));
+  assert.ok(app.includes("card('Premium',129,10"));
+  assert.ok(app.includes("card('Enterprise',149,20"));
   assert.match(app,/asiakaspalvelijapaikkaa/);
-  assert.match(app,/Vuositilauksella säästät/);
-  assert.match(app,/Annual billing saves/);
+  assert.doesNotMatch(app,/href="\/tilaus\?plan=(?:basic|advanced|business)_yearly/);
 });
 
-test('structured data publishes all six subscription plan prices',()=>{
-  for(const price of ['34.90','358.80','44.90','478.80','54.90','598.80']){
-    assert.match(html,new RegExp('"price":"'+price.replace('.','\\.')+'"'));
-  }
+test('homepage structured data publishes only three approved new subscription prices',()=>{
+  for(const price of ['49.00','129.00','149.00']) assert.ok(html.includes('"price":"'+price+'"'));
+  for(const price of ['34.90','44.90','54.90']) assert.ok(!html.includes('"price":"'+price+'"'));
+  assert.equal((html.match(/"@type":"Offer"/g)||[]).length,3);
 });
 
-test('workspace list labels tier and yearly billing correctly',()=>{
-  assert.match(app,/planCode\.startsWith\('basic_'\)[\s\S]*'Starter'/);
-  assert.match(app,/planCode\.startsWith\('advanced_'\)[\s\S]*'Advanced'/);
-  assert.match(app,/planCode\.startsWith\('business_'\)[\s\S]*'Business'/);
+test('workspace list correctly labels new commercial tiers while preserving old annual billing',()=>{
+  assert.match(app,/planCode\.startsWith\('basic_'\)[\s\S]{0,50}\? 'Advanced'/);
+  assert.match(app,/planCode\.startsWith\('advanced_'\)[\s\S]{0,50}\? 'Premium'/);
+  assert.match(app,/planCode\.startsWith\('business_'\)[\s\S]{0,150}\? 'Enterprise'/);
   assert.match(app,/planCode==='yearly' \|\| planCode\.endsWith\('_yearly'\)/);
 });
-
 
 test('Business integration controls are available in the dashboard',()=>{
   assert.match(app,/id="business-integrations"/);
@@ -126,24 +121,26 @@ test('pricing copy does not promise undefined analytics tiers',()=>{
   assert.match(app,/Shopify- ja WooCommerce-tilaushaku/);
 });
 
-test('Starter Advanced and Business all include automatic website import',()=>{
-  const basicStart=app.indexOf("card('Starter'");
-  const advancedStart=app.indexOf("card('Advanced'");
-  const businessStart=app.indexOf("card('Business'");
-  const basicBlock=app.slice(basicStart,advancedStart);
-  const advancedBlock=app.slice(advancedStart,businessStart);
-  assert.match(basicBlock,/Hae tiedot automaattisesti verkkosivulta/);
-  assert.match(advancedBlock,/Kaikki Starter-ominaisuudet/);
-  assert.doesNotMatch(advancedBlock,/Hae tiedot automaattisesti verkkosivulta/);
+test('Advanced Premium Enterprise all include automatic website import',()=>{
+  const lowerStart=app.indexOf("card('Advanced'");
+  const middleStart=app.indexOf("card('Premium'");
+  const upperStart=app.indexOf("card('Enterprise'");
+  assert.ok(lowerStart>0&&middleStart>lowerStart&&upperStart>middleStart);
+  const lowerBlock=app.slice(lowerStart,middleStart);
+  const middleBlock=app.slice(middleStart,upperStart);
+  assert.match(lowerBlock,/Hae tiedot automaattisesti verkkosivulta/);
+  assert.match(middleBlock,/Kaikki Advanced-ominaisuudet/);
+  assert.doesNotMatch(middleBlock,/Hae tiedot automaattisesti verkkosivulta/);
   assert.match(app,/planAccess\.websiteImport/);
   assert.match(server,/basic_monthly:\{[^}]*websiteImport:true/);
   assert.match(server,/basic_yearly:\{[^}]*websiteImport:true/);
 });
 
 test('pricing does not duplicate seat counts or advertise an unenforced analytics tier',()=>{
-  const advancedStart=app.indexOf("card('Advanced'");
-  const businessStart=app.indexOf("card('Business'");
-  const advancedBlock=app.slice(advancedStart,businessStart);
-  assert.doesNotMatch(advancedBlock,/10 asiakaspalvelijapaikkaa/);
+  const middleStart=app.indexOf("card('Premium'");
+  const upperStart=app.indexOf("card('Enterprise'");
+  const middleBlock=app.slice(middleStart,upperStart);
+  assert.doesNotMatch(middleBlock,/10 asiakaspalvelijapaikkaa/);
   assert.doesNotMatch(app,/Laajempi keskustelu- ja asiakasanalytiikka|Expanded conversation and customer analytics|Utökad konversations- och kundanalys/);
 });
+
