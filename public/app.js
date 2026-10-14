@@ -1,4 +1,4 @@
-import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1';
+import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
@@ -1746,7 +1746,8 @@ function updateDocumentLanguageMeta(lang) {
   };
 
   const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', ...AI_TOPIC_PATHS, '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
-  const baseMeta = metaByPath[metaPath] || verticalMetaForPath(metaPath) || (AI_TOPIC_PATHS.includes(metaPath) ? Object.fromEntries(['fi','sv','en'].map(l => [l,aiTopicMeta(metaPath,l)])) : null) || metaByPath['/'];
+  const guideMeta = GLOBAL_GUIDE_PATHS.includes(metaPath) ? Object.fromEntries(['fi','sv','en'].map(l => { const article=globalGuideData(metaPath,l); return [l,article?[article.title+' | Respondo AI',article.subtitle]:null]; })) : null;
+  const baseMeta = metaByPath[metaPath] || (guideMeta?.fi ? guideMeta : null) || verticalMetaForPath(metaPath) || (AI_TOPIC_PATHS.includes(metaPath) ? Object.fromEntries(['fi','sv','en'].map(l => [l,aiTopicMeta(metaPath,l)])) : null) || metaByPath['/'];
   const pair = baseMeta[lang] || baseMeta.fi;
   const pageTitle = pair[0];
   const metaDescription = pair[1];
