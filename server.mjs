@@ -1760,7 +1760,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
 
   // First-party feature overview: highlight actual value and always provide the full feature catalogue.
   if (/(?:ominaisu|toiminto|mita osaa|mita kaikkea|mitä osaa|mitä kaikkea|feature|capabilit|what can (?:respondo|it) do|funktion|vad kan (?:respondo|den) gora|vad kan (?:respondo|den) göra)/.test(q)
-      && !/(?:starter|basic|advanced|business|hinta|maksaa|price|pricing|cost|pris|kostar)/.test(q)) {
+      && !/(?:starter|basic|advanced|premium|business|enterprise|hinta|maksaa|price|pricing|cost|pris|kostar)/.test(q)) {
     return {id:'respondo-faq-features-overview',answer:answer(
       'Respondo AI palvelee asiakkaitasi ympäri vuorokauden ja ymmärtää kysymyksiä sekä jatkokysymyksiä suomeksi, ruotsiksi ja englanniksi. Se voi hakea yrityksesi verkkosivuilta palvelu- ja tuotetietoja, vastata tuotteiden hinnoista, kerätä liidejä ja yhteydenottoja, hoitaa ajanvarauksia sekä siirtää keskustelun oikealle asiakaspalvelijalle. Saat myös muokattavan chatin, keskusteluhistorian ja analytiikkaa. Osa toiminnoista riippuu paketista ja käyttöönotetuista integraatioista. Katso kaikki ominaisuudet: https://respondoai.fi/ominaisuudet',
       'Respondo AI svarar kunder dygnet runt på finska, svenska och engelska och hanterar följdfrågor. Den kan hämta tjänste- och produktinformation från företagets webbplats, svara på prisfrågor, samla in leads, hantera bokningar och överföra chatten till en medarbetare. Anpassningsbar chatt, konversationshistorik och analys ingår också. Vissa funktioner beror på abonnemang och integrationer. Se alla funktioner: https://respondoai.fi/funktioner',
@@ -1777,9 +1777,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-buy',
       answer:answer(
-        'Voit ottaa Respondon käyttöön suoraan verkkosivulta painamalla “Kokeile ilmaiseksi”. Kaikissa paketeissa on 3 päivän ilmainen kokeilu. Starter maksaa 34,90 €/kk, Advanced 44,90 €/kk ja Business 54,90 €/kk. Vuositilauksessa säästät 5 € kuukaudessa eli 60 € vuodessa verrattuna kuukausitilaukseen. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Du kan börja använda Respondo direkt via webbplatsen genom att välja “Prova gratis”. Alla paket har 3 dagars gratis provperiod. Starter kostar 34,90 €/månad, Advanced 44,90 €/månad och Business 54,90 €/månad. Med årsabonnemang sparar du 5 € i månaden, totalt 60 € om året, jämfört med månadsabonnemang. Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'You can start using Respondo directly from the website by choosing “Try for free”. Every tier has a 3-day free trial. Starter is €34.90/month, Advanced €44.90/month, and Business €54.90/month. Annual billing saves €5/month (€60/year) compared with paying monthly. No VAT is charged due to the small-scale business exemption.'
+        'Voit ottaa Respondon käyttöön verkkosivun “Kokeile ilmaiseksi” -painikkeesta. Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Kaikissa uusissa kuukausitilauksissa on 3 päivän ilmainen kokeilu. Uusia vuositilauksia ei tarjota tällä hetkellä. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
+        'Du kan börja använda Respondo via knappen “Prova gratis”. Advanced kostar 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Alla nya månadsabonnemang har 3 dagars gratis provperiod. Nya årsabonnemang erbjuds för närvarande inte. Ingen moms debiteras på grund av verksamhet i liten skala.',
+        'You can get started by selecting “Try for free”. Advanced costs €49/month, Premium €129/month and Enterprise €149/month. Every new monthly plan includes a 3-day free trial. New annual subscriptions are not offered at present. No VAT is charged due to the small-scale business exemption.'
       )
     };
   }
@@ -1836,9 +1836,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-annual-pricing',
       answer:answer(
-        'Vuositilaukset (säästö 60 €/vuosi): Starter 358,80 €/vuosi (29,90 €/kk), Advanced 478,80 €/vuosi (39,90 €/kk) ja Business 598,80 €/vuosi (49,90 €/kk). Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Årsabonnemangen (spara 60 €/år) kostar: Starter 358,80 €/år (29,90 €/månad), Advanced 478,80 €/år (39,90 €/månad) och Business 598,80 €/år (49,90 €/månad). Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'Annual billing (save €60/year) is: Starter €358.80/year (€29.90/month), Advanced €478.80/year (€39.90/month), and Business €598.80/year (€49.90/month). No VAT is charged due to the small-scale business exemption.'
+        'Uusia vuositilauksia ei tällä hetkellä tarjota. Voit valita kuukausitilauksen: Advanced 49 €/kk, Premium 129 €/kk tai Enterprise 149 €/kk. Nykyiset vuositilaukset jatkuvat sovittujen ehtojen mukaisesti.',
+        'Nya årsabonnemang erbjuds inte för närvarande. Välj ett månadsabonnemang: Advanced 49 €/månad, Premium 129 €/månad eller Enterprise 149 €/månad. Befintliga årsabonnemang fortsätter enligt avtal.',
+        'New annual subscriptions are not currently available. Choose a monthly plan: Advanced €49/month, Premium €129/month or Enterprise €149/month. Existing annual subscriptions continue under their agreed terms.'
       )
     };
   }
@@ -1849,9 +1849,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-monthly-pricing',
       answer:answer(
-        'Kuukausihinnat ovat Starter 34,90 €/kk, Advanced 44,90 €/kk ja Business 54,90 €/kk. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Månadspriserna är Starter 34,90 €/månad, Advanced 44,90 €/månad och Business 54,90 €/månad. Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'Monthly pricing is Starter €34.90/month, Advanced €44.90/month, and Business €54.90/month. No VAT is charged due to the small-scale business exemption.'
+        'Kuukausihinnat ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
+        'Månadspriserna är Advanced 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Ingen moms debiteras på grund av verksamhet i liten skala.',
+        'Monthly pricing is Advanced €49/month, Premium €129/month and Enterprise €149/month. No VAT is charged due to the small-scale business exemption.'
       )
     };
   }
@@ -1894,32 +1894,32 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-pricing',
       answer:answer(
-        'Respondo Starter maksaa 34,90 €/kk, Advanced 44,90 €/kk ja Business 54,90 €/kk. Vuositilauksessa kuukausihinta on 5 € edullisempi, ja 12 kuukauden maksu veloitetaan kerralla. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Respondo Starter kostar 34,90 €/månad, Advanced 44,90 €/månad och Business 54,90 €/månad. Årsabonnemang kostar 5 € mindre per månad och betalas 12 månader i taget. Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'Respondo Starter is €34.90/month, Advanced €44.90/month, and Business €54.90/month. Annual subscriptions save €5/month and are billed once per year for 12 months. No VAT is charged due to the small-scale business exemption.'
+        'Respondo Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Uusia vuositilauksia ei tällä hetkellä tarjota. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
+        'Respondo Advanced kostar 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Nya årsabonnemang erbjuds inte för närvarande. Ingen moms debiteras på grund av verksamhet i liten skala.',
+        'Respondo Advanced is €49/month, Premium €129/month and Enterprise €149/month. New annual subscriptions are not offered at present. No VAT is charged due to the small-scale business exemption.'
       )
     };
   }
 
-  if (/\b(?:starter|basic)\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
+  if (/\b(?:advanced|starter|basic)\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
     return {id:'respondo-faq-basic',answer:answer(
-      'Starter sisältää verkkosivun AI-chatin, yrityksen verkkosivun tietojen tuonnin, botin värin, nimen ja kuvan muokkauksen, oman tietopohjan, Respondon ajanvarauksen, liidit, keskusteluhistorian ja 2 asiakaspalvelijapaikkaa.',
-      'Starter omfattar webbchatt, import av företagets webbplatsuppgifter, anpassning av färg, namn och bild, egen kunskapsbas, Respondos bokningar, leads, konversationshistorik och 2 kundserviceplatser.',
-      'Starter includes website AI chat, website knowledge import, editable bot color, name and image, a business knowledge base, Respondo-native bookings, leads, conversation history and 2 support-agent seats.'
+      'Advanced sisältää verkkosivun AI-chatin, yrityksen verkkosivun tietojen tuonnin, botin ulkoasun muokkauksen, oman tietopohjan, Respondon ajanvarauksen, liidit, keskusteluhistorian ja 2 asiakaspalvelijapaikkaa.',
+      'Advanced omfattar webbchatt, import av företagets webbplatsuppgifter, anpassning av bottens utseende, egen kunskapsbas, bokningar, leads, konversationshistorik och 2 kundserviceplatser.',
+      'Advanced includes website AI chat, website knowledge import, customizable appearance, a business knowledge base, bookings, leads, conversation history and 2 support-agent seats.'
     )};
   }
-  if (/\badvanced\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
+  if (/\bpremium\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
     return {id:'respondo-faq-advanced',answer:answer(
-      'Advanced sisältää kaikki Starter-ominaisuudet, 10 asiakaspalvelijapaikkaa ja Google Calendar -synkronoinnin ajanvarauksiin.',
-      'Advanced innehåller allt i Starter, 10 kundserviceplatser och Google Kalender-synkronisering för bokningar.',
-      'Advanced includes everything in Starter, 10 support-agent seats and Google Calendar synchronization for bookings.'
+      'Premium sisältää Advanced-ominaisuudet, 10 asiakaspalvelijapaikkaa ja Google Calendar -synkronoinnin ajanvarauksiin.',
+      'Premium innehåller allt i Advanced, 10 kundserviceplatser och Google Kalender-synkronisering för bokningar.',
+      'Premium includes everything in Advanced, 10 support-agent seats and Google Calendar synchronization for bookings.'
     )};
   }
-  if (/\bbusiness\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
+  if (/\b(?:enterprise|business)\b/.test(q) && /(?:sisalta|sisältä|ominaisuus|feature|include|innehall|innehåll|vad far|vad får)/.test(q)) {
     return {id:'respondo-faq-business',answer:answer(
-      'Business sisältää Starter- ja Advanced-toiminnot sekä 20 asiakaspalvelijapaikkaa, automaattisen tarjouslaskennan, Stripe-maksulinkit, verkkokaupan tilaushaut ja saatavilla olevat webhook- ja API-työnkulut. Toiminnot edellyttävät tarvittavia määrityksiä.',
-      'Business innehåller Starter och Advanced samt 20 kundserviceplatser, automatisk offertberäkning, Stripe-betalningslänkar, orderuppslag och tillgängliga webhook- och API-flöden. Funktionerna kräver rätt inställningar.',
-      'Business includes Starter and Advanced features plus 20 support-agent seats, automated quote calculations, Stripe payment links, ecommerce order lookup and supported webhook/API workflows. These capabilities require proper configuration.'
+      'Enterprise sisältää Advanced- ja Premium-toiminnot sekä 20 asiakaspalvelijapaikkaa, automaattisen tarjouslaskennan, Stripe-maksulinkit, verkkokaupan tilaushaut ja saatavilla olevat webhook- ja API-työnkulut. Toiminnot edellyttävät tarvittavia määrityksiä.',
+      'Enterprise omfattar Advanced och Premium samt 20 kundserviceplatser, automatisk offertberäkning, Stripe-betalningslänkar, orderuppslag och tillgängliga webhook- och API-flöden. Funktionerna kräver rätt inställningar.',
+      'Enterprise includes Advanced and Premium features plus 20 support-agent seats, automated quote calculations, Stripe payment links, ecommerce order lookup and supported webhook/API workflows. These capabilities require proper configuration.'
     )};
   }
 
@@ -8197,9 +8197,9 @@ app.get('/llms.txt', (req,res) => {
     '- Data processing: ' + SEO_CANONICAL_ORIGIN + '/dpa',
     '',
     '## Pricing',
-    '- Starter: EUR 34.90/month',
-    '- Advanced: EUR 44.90/month',
-    '- Business: EUR 54.90/month',
+    '- Advanced: EUR 49/month',
+    '- Premium: EUR 129/month',
+    '- Enterprise: EUR 149/month',
     '- A 3-day free trial is offered on the public website.',
     '',
     'For current product claims, pricing and policies, use the canonical public pages above as the source of truth.',
@@ -8789,9 +8789,9 @@ app.get('/llms.txt', (req, res) => {
 - Ecommerce workflows for supported Shopify and WooCommerce setups.
 
 ## Pricing
-- Starter: 34.90 EUR/month.
-- Advanced: 44.90 EUR/month.
-- Business: 54.90 EUR/month.
+- Advanced: 49 EUR/month.
+- Premium: 129 EUR/month.
+- Enterprise: 149 EUR/month.
 - Free trial: 3 days.
 
 ## Official sources
@@ -8820,9 +8820,9 @@ Languages: Finnish, Swedish and English.
 Respondo AI is installed on a company's website and answers customer questions using information approved by that company. Businesses can maintain their own knowledge base, collect contact and quote requests, support booking flows and transfer conversations to human customer-service staff.
 
 Plans:
-- Starter 34.90 EUR/month: core website bot, customer-managed Q&A knowledge, booking support and 2 customer-service seats.
-- Advanced 44.90 EUR/month: Starter features plus website information import and 10 customer-service seats.
-- Business 54.90 EUR/month: all current product features and 20 customer-service seats.
+- Advanced 49 EUR/month: core website bot, customer-managed Q&A knowledge, booking support and 2 customer-service seats.
+- Premium 129 EUR/month: Advanced features plus Google Calendar, website information import and 10 customer-service seats.
+- Enterprise 149 EUR/month: all current product features and 20 customer-service seats.
 A 3-day free trial is available.
 
 Official URLs:
