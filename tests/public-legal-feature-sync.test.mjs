@@ -56,13 +56,13 @@ test('plans and features are synchronized to the server access gates',()=>{
   assert.ok(allFeatures.some(x=>/Botin värin/.test(x[0])));
   assert.ok(allFeatures.some(x=>/WC-asennus/.test(x[0])));
   assert.doesNotMatch(FEATURE_GROUPS.find(group=>group.key==='live').intro[2],/multiple channels|across multiple channels/);
-  assert.match(app,/Starter',34\.90,29\.90,358\.80,2/);
-  assert.match(app,/Advanced',44\.90,39\.90,478\.80,10/);
-  assert.match(app,/Business',54\.90,49\.90,598\.80,20/);
+  assert.match(app,/card\('Advanced',49,2/);
+  assert.match(app,/card\('Premium',129,10/);
+  assert.match(app,/card\('Enterprise',149,20/);
   for(const label of ['botin väriä','Google Calendar','20 asiakaspalvelijapaikkaa']){
     assert.ok((app+server+JSON.stringify(LEGAL_20261008)).includes(label),label);
   }
-  const advanced=app.slice(app.indexOf("card('Advanced'"),app.indexOf("card('Business'"));
+  const advanced=app.slice(app.indexOf("card('Premium'"),app.indexOf("card('Enterprise'"));
   assert.doesNotMatch(advanced,/Hae tiedot automaattisesti verkkosivulta/);
   assert.match(advanced,/Google Calendar -synkronointi/);
   assert.match(server,/basic_monthly:\{[^}]*agentSeats:2,websiteImport:true,googleCalendar:false/);
@@ -72,7 +72,7 @@ test('plans and features are synchronized to the server access gates',()=>{
 
 test('terms specify billing and avoid unsupported guarantees',()=>{
   const terms=LEGAL_20261008.kayttoehdot.sections.map(x=>x.body[0]).join(' ');
-  for(const token of ['29,90','39,90','49,90','358,80','478,80','598,80','arvonlisäveroa ei peritä','3 päivän','Stripe','Google Calendar']){
+  for(const token of ['Advanced 49','Premium 129','Enterprise 149','arvonlisäveroa ei peritä','3 päivän','Stripe','Google Calendar']){
     assert.ok(terms.includes(token),'missing '+token);
   }
   assert.match(terms,/kaikkien tuotteiden|kaikkien.*tietojen/);
