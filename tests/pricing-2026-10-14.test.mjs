@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
 
 const read = (file) => readFileSync(new URL('../' + file, import.meta.url), 'utf8');
 const server = read('server.mjs');
@@ -23,11 +24,11 @@ test('2026-10-14 monthly tiers have the approved prices and unchanged seat limit
   assert.match(server, /NEW_MONTHLY_PRICE_CENTS = Object\.freeze\(\{ basic_monthly:4900, advanced_monthly:12900, business_monthly:14900 \}\)/);
 });
 
-test('new checkouts refuse grandfathered annual plans and verify Stripe prices', () => {
+test('new checkouts refuse grandfathered annual plans and choose validated catalog or inline prices', () => {
   assert.match(server, /if \(normalizedPlan\.endsWith\('_yearly'\)\)/);
   assert.match(server, /if \(plan\.endsWith\('_yearly'\)\)/);
-  assert.match(server, /await assertCurrentCheckoutPrice\(normalizedPlan, price\)/);
-  assert.match(server, /await assertCurrentCheckoutPrice\(plan,price\)/);
+  assert.match(server, /await stripeCheckoutLineItem\(normalizedPlan\)/);
+  assert.match(server, /await assertCurrentCheckoutPrice\(plan,priceId\)/);
   assert.ok(server.includes('const NEW_MONTHLY_PRODUCT_NAMES = Object.freeze'));
   assert.match(server, /basic_monthly:'Respondo Advanced'/);
   assert.match(server, /advanced_monthly:'Respondo Premium'/);
@@ -74,4 +75,32 @@ test('no stale public prices remain across localized FAQ, legal pages or convers
     const source = read(path);
     assert.doesNotMatch(source, /(?:29|34|39|44|49|54)[,.]90|(?:€29|€34|€39|€44|€49|€54)\.90/, 'outdated amount found in ' + path);
   }
+});
+
+test('Stripe Checkout uses exactly the approved monthly amounts and tier product names even with stale Railway Price IDs', async () => {
+  const start=server.indexOf('async function stripeCheckoutLineItem(plan)');
+  const end=server.indexOf('function planFromStripePriceId',start);
+  assert.ok(start>0 && end>start);
+  const source=server.slice(start,end);
+  const prices={basic_monthly:4900,advanced_monthly:12900,business_monthly:14900};
+  const names={basic_monthly:'Respondo Advanced',advanced_monthly:'Respondo Premium',business_monthly:'Respondo Enterprise'};
+  const ctx={
+    stripePriceForPlan:()=> 'price_old_mismatch',
+    assertCurrentCheckoutPrice:async()=> { throw Error('Old price rejected'); },
+    NEW_MONTHLY_PRICE_CENTS:prices,
+    NEW_MONTHLY_PRODUCT_NAMES:names,
+    console:{warn(){}},
+  };
+  const get=vm.runInNewContext(source+'\\nstripeCheckoutLineItem',ctx);
+  for (const [plan,amount] of Object.entries(prices)) {
+    const result=JSON.parse(JSON.stringify(await get(plan)));
+    assert.deepEqual(result,{
+      price_data:{currency:'eur',unit_amount:amount,recurring:{interval:'month',interval_count:1},product_data:{name:names[plan]}},
+      quantity:1,
+    });
+    assert.equal('price' in result,false,'checkout must not reuse old mismatching Price ID');
+  }
+  assert.match(server,/line_items: \[checkoutLineItem\]/);
+  assert.match(server,/line_items:\[checkoutLineItem\]/);
+  assert.match(server,/subscription\.metadata\?\.plan/);
 });
