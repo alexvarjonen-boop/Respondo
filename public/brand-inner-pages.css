@@ -1,0 +1,213 @@
+/* RESPONDO / inner pages: one consistent editorial brand system.
+   Scoped to public pages; no dashboard, checkout, payment or bot logic changed. */
+:root{--r-ink:#111115;--r-sub:#646771;--r-surface:#f5f5f7;--r-border:rgba(17,17,21,.085);--r-blue:#0071e3}
+#app :is(.r-brand-hero,.r-brand-flow,.r-brand-next-cta,.r-brand-pricing-banner,.r-brand-contact-banner),.r-brand-hero *,.r-brand-flow *,.r-brand-next-cta *,.r-brand-pricing-banner *,.r-brand-contact-banner *{box-sizing:border-box}
+#app .r-brand-eyebrow{display:inline-flex;align-items:center;gap:11px;max-width:100%;color:#cdd4df;font-weight:630;font-size:11px;letter-spacing:.08em;line-height:1.6;text-transform:uppercase}
+#app .r-brand-live-dot{width:7px;height:7px;flex:none;border-radius:50%;background:#77e1ad;box-shadow:0 0 17px rgba(74,230,142,.45)}
+#app .r-brand-eyebrow-line{width:26px;height:1px;flex:none;background:rgba(255,255,255,.32)}
+#app .r-brand-mini-title{display:block;font-size:11px;letter-spacing:.15em;font-weight:720;color:var(--r-blue);margin-bottom:17px}
+#app .r-brand-hero{background:#0a0b10;color:#fff;position:relative;overflow:hidden;isolation:isolate}
+#app .r-brand-hero:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 75% 95% at 85% 55%,rgba(41,87,176,.27),transparent 70%),radial-gradient(ellipse 45% 50% at 7% 0,rgba(99,125,173,.08),transparent 90%);z-index:-1;pointer-events:none}
+#app .r-brand-hero:after{content:"";position:absolute;inset:0;opacity:.15;pointer-events:none;z-index:-1;background-image:linear-gradient(rgba(255,255,255,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.09) 1px,transparent 1px);background-size:72px 72px;mask-image:linear-gradient(90deg,transparent,black);-webkit-mask-image:linear-gradient(90deg,transparent,black)}
+#app .r-brand-hero-grid{display:grid;grid-template-columns:minmax(0,1.13fr) minmax(240px,.87fr);gap:clamp(12px,4vw,60px);align-items:center;max-width:1220px;min-height:clamp(440px,49vw,625px);padding-top:clamp(72px,8vw,122px);padding-bottom:clamp(73px,8vw,108px)}
+#app .r-brand-hero-copy{position:relative;z-index:2;min-width:0}
+#app .r-brand-hero-label{color:#8b9ab0;text-transform:uppercase;letter-spacing:.15em;font-size:11px;margin:37px 0 13px;font-weight:680}
+#app .r-brand-hero h1{font-size:clamp(51px,7vw,96px)!important;line-height:.98!important;letter-spacing:-.072em!important;font-weight:690;margin:0 0 24px!important;max-width:800px;color:#f7f8fa!important;overflow-wrap:break-word}
+#app .r-brand-hero p{font-size:clamp(16px,1.7vw,20px);line-height:1.65;color:#b8bfca;max-width:610px;margin:0}
+#app .r-brand-hero-link{display:inline-flex;align-items:center;gap:13px;text-decoration:none;color:#fff;margin-top:32px;font-size:14px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:9px}
+#app .r-brand-hero-link:hover{border-bottom-color:#fff;color:#9fc9ff}
+#app .r-brand-orbit{aspect-ratio:1;position:relative;max-width:450px;width:100%;margin-inline:auto;display:grid;place-items:center}
+#app .r-brand-orbit:before{content:"";position:absolute;width:73%;height:73%;border-radius:50%;background:radial-gradient(circle,rgba(44,98,199,.33),transparent 70%);filter:blur(24px)}
+#app .r-brand-orbit-ring{position:absolute;width:91%;height:91%;border:1px solid rgba(183,207,255,.19);border-radius:50%;transform:rotate(-30deg) scaleY(.55)}
+#app .r-brand-orbit-ring--two{width:70%;height:70%;transform:rotate(40deg) scaleY(.78);border-color:rgba(255,255,255,.20)}
+#app .r-brand-orbit-core{position:relative;display:grid;place-items:center;width:clamp(124px,15vw,195px);aspect-ratio:1;z-index:1;background:#000;border:1px solid rgba(255,255,255,.13);border-radius:31%;box-shadow:0 30px 70px rgba(0,0,0,.5),inset 0 0 45px rgba(255,255,255,.025);transform:rotate(-8deg)}
+#app .r-brand-orbit-core img{width:72%;height:72%;object-fit:contain;transform:rotate(8deg)}
+#app .r-brand-orbit-point{position:absolute;z-index:1;width:10px;height:10px;background:#93c5fd;border:3px solid #071221;border-radius:50%;box-shadow:0 0 0 1px rgba(147,197,253,.4),0 0 25px rgba(147,197,253,.6)}
+#app .r-brand-orbit-point--one{top:27%;left:16%}
+#app .r-brand-orbit-point--two{right:11%;bottom:26%;width:8px;height:8px;background:#fff}
+#app .r-brand-orbit-caption{position:absolute;bottom:5%;right:5%;font-size:10px;color:#707f94;letter-spacing:.2em}
+
+/* Legal & security: preserve verbatim localized policy text, add an editorial
+   cover, meaningful contents navigation and highly readable section cards. */
+#app .r-brand-legal.legalpage{padding:0 0 clamp(75px,9vw,125px)!important;background:#f5f5f7!important}
+#app .r-brand-legal .legal-layout{max-width:1220px;grid-template-columns:minmax(220px,.6fr) minmax(0,1.4fr);align-items:start;gap:clamp(26px,5vw,75px);padding-top:clamp(58px,7vw,100px)}
+#app .r-brand-legal .legal-aside{position:sticky;top:115px;min-width:0}
+#app .r-brand-legal .legal-aside>.section-kicker,#app .r-brand-legal .legal-aside>h1,#app .r-brand-legal .legal-aside>p{display:none}
+#app .r-brand-legal-toc{border-radius:24px;padding:27px 22px 21px;background:#fff;border:1px solid var(--r-border);box-shadow:0 14px 40px rgba(12,26,40,.04)}
+#app .r-brand-legal-toc .r-brand-mini-title{margin:0 0 13px 8px}
+#app .r-brand-toc-links{display:grid;max-height:420px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+#app .r-brand-toc-links a{min-width:0;display:grid;grid-template-columns:27px minmax(0,1fr);align-items:start;gap:12px;padding:11px 9px;border-radius:9px;color:#414956!important;text-decoration:none!important;font-size:13px;font-weight:560;line-height:1.45}
+#app .r-brand-toc-links a span{font-size:11px;color:#9aa3b0;font-variant-numeric:tabular-nums;font-weight:690}
+#app .r-brand-toc-links a:hover,#app .r-brand-toc-links a:focus-visible{color:#005dc1!important;background:#f1f5fb}
+#app .r-brand-legal .legal-seller{padding:22px 23px;margin-top:17px;border-radius:19px;box-shadow:none!important;background:#e9edf3!important;border:1px solid transparent!important}
+#app .r-brand-legal .legal-seller span{font-size:10px;font-weight:730;color:#6a7889}
+#app .r-brand-legal .legal-seller b{font-size:15px;color:#182134}
+#app .r-brand-legal .legal-seller small{font-size:12px;line-height:1.5}
+#app .r-brand-legal-copy{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;display:grid;gap:14px;min-width:0}
+#app .r-brand-legal-copy>.r-brand-legal-section{scroll-margin-top:112px;position:relative;border:1px solid rgba(20,29,44,.07)!important;background:white;border-radius:23px;padding:clamp(25px,3vw,37px)!important;box-shadow:0 8px 27px rgba(7,20,43,.035);margin:0}
+#app .r-brand-legal-copy>.r-brand-legal-section:before{content:var(--section-index);display:inline-block;padding:8px 12px;margin-bottom:18px;border-radius:10px;background:#eef4ff;color:#1367c5;font-size:11px;font-weight:780;letter-spacing:.06em}
+#app .r-brand-legal-copy h2{font-size:clamp(20px,2.2vw,27px)!important;line-height:1.22;letter-spacing:-.035em;color:#111722;margin:0 0 14px!important;font-weight:720}
+#app .r-brand-legal-copy p,#app .r-brand-legal-copy ul{font-size:clamp(14px,1.2vw,16px)!important;color:#515b68!important;line-height:1.83!important;overflow-wrap:anywhere}
+#app .r-brand-legal-copy a{color:#0066c6!important;text-decoration:underline;text-underline-offset:3px}
+#app .r-brand-legal-copy .legal-note{font-size:12px!important;line-height:1.65;color:#747d89;padding:17px 2px}
+#app .r-brand-next-cta{width:min(100% - 48px,1220px);margin:clamp(55px,7vw,90px) auto 0;display:flex;align-items:center;justify-content:space-between;gap:25px;padding:clamp(30px,5vw,57px);border-radius:28px;background:#0c0e14;color:#fff}
+#app .r-brand-next-cta .r-brand-mini-title{color:#90bcfa}
+#app .r-brand-next-cta h2{font-size:clamp(28px,4vw,46px);line-height:1.15;letter-spacing:-.05em;margin:0 0 13px;color:#fff}
+#app .r-brand-next-cta p{font-size:15px;color:#a7b0bd;line-height:1.7;margin:0;max-width:640px}
+#app .r-brand-pill{display:inline-flex;align-items:center;justify-content:center;gap:18px;white-space:nowrap;background:#fff;color:#141820!important;padding:15px 20px;text-decoration:none;border-radius:999px;font-weight:740;font-size:14px}
+#app .r-brand-pill:hover{background:#dbeafe}
+
+/* Contact: more visual depth without changing form inputs or submission. */
+#app .r-brand-contact-main{background:#f5f5f7!important;padding:clamp(42px,6vw,85px) 0 clamp(70px,9vw,130px)!important}
+#app .r-brand-contact-main>.container{max-width:1170px!important}
+#app .r-brand-contact-banner{display:flex;justify-content:space-between;align-items:center;gap:25px;margin:0 0 clamp(47px,6vw,80px);padding:clamp(30px,6vw,66px);border-radius:32px;min-height:clamp(225px,26vw,330px);background:radial-gradient(ellipse 55% 90% at 90% 50%,rgba(39,82,155,.33),transparent),#0b0b0e;color:white;overflow:hidden}
+#app .r-brand-contact-banner-word{font-size:clamp(36px,5.5vw,71px);line-height:1.05;letter-spacing:-.065em;font-weight:685;margin:24px 0 0}
+#app .r-brand-contact-banner-mark{display:flex;flex:none;flex-direction:column;align-items:center;gap:24px;transform:rotate(-9deg)}
+#app .r-brand-contact-banner-mark img{display:block;width:clamp(75px,12vw,145px);height:auto;filter:drop-shadow(0 15px 30px rgba(0,0,0,.4));border-radius:28px}
+#app .r-brand-contact-banner-mark span{color:#a3b6cf;letter-spacing:.2em;font-size:10px}
+#app .r-brand-contact-main .r-brand-contact-label{font-size:11px;letter-spacing:.15em;color:#005fc0}
+#app .r-brand-contact-main .r-brand-contact-title{color:#101116;font-size:clamp(44px,6vw,79px)!important;line-height:1.05!important;margin:17px 0 18px!important}
+#app .r-brand-contact-main .r-brand-contact-lead{font-size:clamp(16px,1.7vw,20px)!important;line-height:1.7!important;color:#666d77!important;max-width:720px!important}
+#app .r-brand-contact-form-card,#app .r-brand-contact-info-card{border-radius:28px!important;border:1px solid var(--r-border)!important;padding:clamp(25px,4vw,43px)!important;box-shadow:0 12px 35px rgba(5,18,34,.045)!important}
+#app .r-brand-contact-form-card{background:#fff!important}
+#app .r-brand-contact-info-card{background:linear-gradient(160deg,#ebf2fc 0%,#f8fbff 65%,#fff 100%)!important}
+#app .r-brand-contact-form-card>h2,#app .r-brand-contact-info-card>h2{font-size:clamp(23px,2.5vw,30px)!important;letter-spacing:-.035em!important;color:#121724}
+#app .r-brand-contact-main :is(input,textarea){font-size:16px!important;border-radius:13px;max-width:100%;box-sizing:border-box}
+#app .r-brand-contact-main .home-contact-submit{min-height:49px;border-radius:999px}
+#app .r-brand-contact-info-card a[href^="mailto:"]{color:#005fc4!important;font-size:clamp(15px,1.6vw,20px)!important}
+
+/* Feature / audience content: branded black-and-white product story module. */
+#app .r-brand-flow{background:#0d0e12;color:#f8f8fa;padding:clamp(65px,8vw,108px) 0;overflow:hidden;position:relative}
+#app .r-brand-flow:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 40% 80% at 92% 0%,rgba(0,113,227,.18),transparent)}
+#app .r-brand-flow>.container{position:relative}
+#app .r-brand-flow .r-brand-mini-title{color:#98bdfa}
+#app .r-brand-flow-intro{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:30px;align-items:end;max-width:1120px;margin-bottom:45px}
+#app .r-brand-flow-intro .r-brand-mini-title{grid-column:1/-1;margin-bottom:-17px}
+#app .r-brand-flow h2{font-size:clamp(41px,5.6vw,73px);line-height:1.02;letter-spacing:-.065em;color:#fff;font-weight:650;margin:0}
+#app .r-brand-flow p{font-size:clamp(15px,1.5vw,19px);line-height:1.7;color:#aab3c0;max-width:410px;margin:0}
+#app .r-brand-flow-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#app .r-brand-flow-steps>div{display:flex;flex-direction:column;gap:15px;min-height:235px;padding:clamp(23px,3vw,35px);border-radius:24px;border:1px solid rgba(255,255,255,.11);background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.016))}
+#app .r-brand-flow-steps>div>span{font-size:12px;letter-spacing:.12em;color:#8ba9cc}
+#app .r-brand-flow-steps strong{font-size:clamp(23px,2.6vw,33px);letter-spacing:-.045em;line-height:1.13;color:#fff;margin-top:auto}
+#app .r-brand-flow-steps small{font-size:14px;line-height:1.6;color:#b0b8c4}
+
+/* Pricing banner, with existing price cards and Stripe paths untouched. */
+#app .r-brand-pricing-banner{background:#0b0c10;position:relative;overflow:hidden;color:#fff;padding:clamp(64px,8vw,105px) 0}
+#app .r-brand-pricing-banner>.container{position:relative;max-width:1150px}
+#app .r-brand-pricing-banner .r-brand-mini-title{color:#95c8ff}
+#app .r-brand-pricing-banner strong{display:block;font-size:clamp(39px,6.7vw,88px);line-height:1.05;font-weight:680;letter-spacing:-.07em;position:relative;z-index:2}
+#app .r-brand-pricing-deco{position:absolute;right:0;top:-40px;font-size:clamp(170px,26vw,360px);line-height:1;color:rgba(79,136,222,.13);font-weight:200;pointer-events:none}
+#app .pricing-page .pricing-section{background:#f5f5f7!important}
+#app .pricing-page .pricing-wrap{gap:clamp(14px,2vw,24px)}
+
+/* Keep trial registration prominent and compact, even on a phone. */
+#app .r-brand-signup-intro{width:min(100% - 32px,650px);text-align:center;margin:0 auto 25px;color:#17181d}
+#app .r-brand-signup-intro .r-brand-eyebrow{justify-content:center;color:#697283;font-size:10px}
+#app .r-brand-signup-intro .r-brand-eyebrow-line{background:rgba(17,17,21,.2)}
+#app .r-brand-signup-intro h1{font-size:clamp(26px,4vw,39px);letter-spacing:-.05em;line-height:1.13;margin:13px 0 7px}
+#app .r-brand-signup-intro p{font-size:14px;color:#6b737f;line-height:1.6;margin:0}
+
+/* Guide index and guides: narrative covers, card rhythm, not bare paragraphs. */
+#app .global-guide-page .global-guide-main{background:#f5f5f7;padding-top:clamp(24px,4vw,55px)}
+#app .global-guide-page .global-guide-hero{position:relative;isolation:isolate;overflow:hidden;border-radius:32px;padding:clamp(42px,5vw,67px);background:#0b0d12;color:#fff;margin:0 0 45px}
+#app .global-guide-page .global-guide-hero:before{content:"";position:absolute;z-index:-1;inset:0;background:radial-gradient(circle at 92% 43%,rgba(40,86,164,.4),transparent 41%)}
+#app .global-guide-page .global-guide-hero h1{color:#fff;position:relative;z-index:1;max-width:790px}
+#app .global-guide-page .global-guide-hero p{color:#c0c8d3;position:relative;z-index:1;max-width:700px}
+#app .global-guide-page .global-guide-kicker{color:#9bc6ff}
+#app .r-brand-guides-deco{position:absolute;z-index:0;right:3%;bottom:8%;display:flex;align-items:center;gap:12px;opacity:.28;transform:rotate(-8deg);pointer-events:none}
+#app .r-brand-guides-deco img{border-radius:20px}
+#app .r-brand-guides-deco span{font-size:11px;letter-spacing:.15em;color:#fff}
+#app .global-guide-card{border-radius:26px!important;min-height:300px;box-shadow:0 15px 39px rgba(10,30,60,.045)}
+#app .global-guide-card:hover{transform:translateY(-5px)}
+#app .global-guide-prose .global-guide-section{background:#fff;border:1px solid var(--r-border);border-radius:22px;padding:clamp(24px,3.6vw,40px);margin-bottom:13px}
+#app .global-guide-prose .global-guide-section h2{font-size:clamp(22px,3vw,32px)}
+#app .global-guide-prose .global-guide-section p{line-height:1.86}
+#app .global-guide-faq{background:#fff;border-radius:13px;padding:18px;margin-bottom:9px}
+
+/* Footer contrast and accessible tappable links, consistent across every route. */
+#app .footer{background:#0c0d12!important;border-top:0!important;color:#f4f6f8!important}
+#app .footer .foot-top{border-bottom:1px solid rgba(255,255,255,.14)!important}
+#app .footer .foot-col h4{color:#9da6b7!important}
+#app .footer .foot-col a,#app .footer .foot-col span,#app .footer .cookie-settings-link{color:#d0d4dd!important;line-height:1.5;overflow-wrap:anywhere;font-size:clamp(12px,1vw,14px)!important;text-decoration:none}
+#app .footer .foot-col a:hover,#app .footer .foot-col a:focus-visible,#app .footer .cookie-settings-link:hover{color:#fff!important;text-decoration:underline}
+#app .footer .foot-brand p{color:#b6bdc9!important;font-size:14px!important}
+#app .footer .foot-brand .logo .brand-word{color:#fff!important;-webkit-text-fill-color:#fff!important}
+#app .footer .foot-brand .brand-slogan{color:#c6ccd6!important}
+#app .footer .legalbar{color:#989faf!important;font-size:12px!important}
+#app .footer .foot-col a{min-height:29px;display:inline-flex;align-items:center}
+#app .footer .cookie-settings-link{min-height:29px;text-align:left}
+#app .footer a:focus-visible,#app .r-brand-hero-link:focus-visible,#app .r-brand-pill:focus-visible{outline:3px solid #88c2ff;outline-offset:4px}
+
+/* Media kit is a separate static page; same tokens and surfaces. */
+body:has(.head .brand) .head{background:#f5f5f7;border-bottom-color:rgba(0,0,0,.07)}
+body:has(.head .brand) .head-inner{min-height:88px}
+body:has(.head .brand) .brand{font-size:15px;color:#101115}
+body:has(.head .brand) .head nav a{color:#3e424b;text-decoration:none}
+body:has(.head .brand) .hero{background:#0b0d12!important;color:#fff;border:0;padding:clamp(74px,10vw,145px) 0 clamp(85px,9vw,130px)}
+body:has(.head .brand) .hero .eyebrow{color:#9fceff}
+body:has(.head .brand) .hero h1{font-size:clamp(45px,7.8vw,102px);line-height:1.04;max-width:1050px;font-weight:670;color:#fff}
+body:has(.head .brand) .hero p{color:#bdc6d3;font-size:clamp(17px,2vw,22px)}
+body:has(.head .brand) .hero .chips a{background:rgba(255,255,255,.1);color:#f1f6ff;border:1px solid rgba(255,255,255,.14);border-radius:999px}
+body:has(.head .brand) .hero .chips a:hover{background:rgba(255,255,255,.19)}
+body:has(.head .brand) .section{background:#f5f5f7}
+body:has(.head .brand) .section h2{font-size:clamp(31px,4.4vw,57px);letter-spacing:-.05em}
+body:has(.head .brand) .section .card{border-radius:25px;border-color:rgba(0,0,0,.07);box-shadow:0 13px 34px rgba(0,0,0,.035)}
+body:has(.head .brand) .button{background:#111218;border-radius:999px}
+body:has(.head .brand) .button:hover{background:#303746}
+body:has(.head .brand) .logo-stage{min-height:270px;border-radius:24px}
+body:has(.head .brand) .foot{background:#101115!important;color:#c8ccd4}
+body:has(.head .brand) .foot a{color:#d9e0eb}
+body:has(.head .brand) .footinner{border-color:rgba(255,255,255,.2)}
+
+/* Mobile safety: no cropped headings, horizontal overflow or unusable TOC. */
+@media(max-width:950px){
+  #app .r-brand-hero-grid{grid-template-columns:minmax(0,1fr) minmax(180px,.6fr);gap:10px}
+  #app .r-brand-legal .legal-layout{grid-template-columns:minmax(0,1fr);gap:29px}
+  #app .r-brand-legal .legal-aside{position:static;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.58fr);gap:14px}
+  #app .r-brand-legal .legal-seller{margin:0}
+  #app .r-brand-toc-links{max-height:285px}
+}
+@media(max-width:700px){
+  #app .r-brand-hero-grid{grid-template-columns:minmax(0,1fr);padding:68px 0 42px;min-height:0}
+  #app .r-brand-hero h1{font-size:clamp(45px,11vw,65px)!important;letter-spacing:-.062em!important}
+  #app .r-brand-hero-label{margin-top:24px}
+  #app .r-brand-orbit{max-width:235px;margin:-5px auto -30px;opacity:.88}
+  #app .r-brand-orbit-core{width:113px}
+  #app .r-brand-orbit-caption{display:none}
+  #app .r-brand-legal .legal-layout{padding-top:32px}
+  #app .r-brand-legal .legal-aside{display:flex;flex-direction:column;gap:14px}
+  #app .r-brand-toc-links{max-height:235px}
+  #app .r-brand-legal-toc{padding:19px}
+  #app .r-brand-legal .legal-seller{margin:0}
+  #app .r-brand-legal-copy>.r-brand-legal-section{border-radius:19px;padding:24px 20px!important}
+  #app .r-brand-next-cta{width:calc(100% - 24px);border-radius:23px;flex-direction:column;align-items:flex-start}
+  #app .r-brand-contact-banner{border-radius:22px;padding:27px 24px;min-height:220px;margin-bottom:44px}
+  #app .r-brand-contact-banner-word{font-size:clamp(31px,8vw,46px)}
+  #app .r-brand-contact-banner-mark img{width:75px;height:75px}
+  #app .r-brand-contact-banner-mark span{display:none}
+  #app .r-brand-contact-main>.container{width:calc(100% - 24px)}
+  #app .r-brand-flow-intro{display:block}
+  #app .r-brand-flow-intro .r-brand-mini-title{margin-bottom:18px}
+  #app .r-brand-flow p{margin-top:23px}
+  #app .r-brand-flow-steps{grid-template-columns:minmax(0,1fr)}
+  #app .r-brand-flow-steps>div{min-height:170px}
+  #app .r-brand-flow-steps strong{margin-top:13px}
+  #app .global-guide-page .global-guide-hero{border-radius:23px;padding:30px 23px}
+  #app .r-brand-guides-deco{display:none}
+  #app .pricing-page .r-brand-pricing-banner{padding:50px 0}
+  #app .r-brand-pricing-deco{font-size:170px;top:-8px;right:-10px}
+  #app .footer .foot-top{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:35px 20px!important}
+  #app .footer .foot-brand{grid-column:1/-1}
+  #app .footer .foot-col:last-child{grid-column:auto!important}
+  #app .footer .container{width:calc(100% - 44px)}
+  #app .footer .foot-col a{min-height:33px}
+  body:has(.head .brand) .head nav{gap:10px}
+  body:has(.head .brand) .hero{padding:55px 0 70px}
+}
+@media(prefers-reduced-motion:no-preference){
+  #app .r-brand-orbit-ring--one{animation:r-brand-rotate 34s linear infinite}
+  #app .r-brand-orbit-ring--two{animation:r-brand-rotate-back 40s linear infinite}
+  @keyframes r-brand-rotate{0%{transform:rotate(-30deg) scaleY(.55)}100%{transform:rotate(330deg) scaleY(.55)}}
+  @keyframes r-brand-rotate-back{0%{transform:rotate(40deg) scaleY(.78)}100%{transform:rotate(-320deg) scaleY(.78)}}
+}
+@media(prefers-reduced-motion:reduce){#app *{scroll-behavior:auto!important}}
