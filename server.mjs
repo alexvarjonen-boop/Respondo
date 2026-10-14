@@ -8195,8 +8195,10 @@ app.get('/llms.txt', (req,res) => {
 
 // Standalone factual media kit. Static middleware deliberately disables index files,
 // so route the canonical directory URL to its real HTML file explicitly.
-app.get('/media', (req,res) => res.redirect(301, SEO_CANONICAL_ORIGIN + '/media/'));
-app.get('/media/', (req,res) => {
+app.get(['/media','/media/'], (req,res) => {
+  // Express routes are not strict about a trailing slash by default.
+  // Inspect the original request path to avoid redirecting /media/ to itself.
+  if (req.path !== '/media/') return res.redirect(301, SEO_CANONICAL_ORIGIN + '/media/');
   res.setHeader('Cache-Control','no-cache, must-revalidate');
   return res.sendFile(path.join(__dirname,'public','media','index.html'));
 });
