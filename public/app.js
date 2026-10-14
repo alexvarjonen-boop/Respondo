@@ -1687,9 +1687,9 @@ function updateDocumentLanguageMeta(lang) {
       en:['Chatbot for Plumbing and HVAC Companies | Respondo AI','A plumbing and HVAC chatbot answers service, heating and maintenance questions using company-approved information and captures enquiries.'],
     },
     '/hinnat': {
-      fi:['Hinnat | Respondo AI','Vertaile Starter-, Advanced- ja Business-tilauspaketteja. Kolmen päivän maksuton kokeilu kaikissa paketeissa.'],
-      sv:['Priser | Respondo AI','Jämför abonnemangen Starter, Advanced och Business. Alla paket har tre dagars gratis provperiod.'],
-      en:['Pricing | Respondo AI','Compare Starter, Advanced and Business plans. Every plan includes a three-day free trial.'],
+      fi:['Hinnat | Respondo AI','Vertaile Advanced-, Premium- ja Enterprise-tilauspaketteja. Kolmen päivän maksuton kokeilu kaikissa paketeissa.'],
+      sv:['Priser | Respondo AI','Jämför abonnemangen Advanced, Premium och Enterprise. Alla paket har tre dagars gratis provperiod.'],
+      en:['Pricing | Respondo AI','Compare Advanced, Premium and Enterprise plans. Every plan includes a three-day free trial.'],
     },
     '/yhteystiedot': {
       fi:['Yhteystiedot | Respondo AI','Ota yhteyttä Respondo AI:hin. Asiakaspalvelu, verkkosivujen chatbotin käyttöönotto ja yritysten tarjouspyynnöt.'],
@@ -2494,18 +2494,18 @@ function calculatorSection() {
 }
 
 function pricingSection() {
-  const card=(tier,monthly,yearlyMonthly,yearlyTotal,seats,features,featured=false)=>`
+  const card=(tier,monthly,seats,features,featured=false)=>`
     <article class="price-card ${featured?'featured':''}">
       <div class="price-top"><span>${tier.toUpperCase()}</span><span class="${featured?'save':''}">${featured?appText('SUOSITUIN','POPULÄRAST','MOST POPULAR'):appText('3 PÄIVÄÄ ILMAISEKSI','3 DAGAR GRATIS','3 DAYS FREE')}</span></div>
       <h3>${tier}</h3>
-      <div class="pricevalue">${monthly.toLocaleString(appLocale(),{minimumFractionDigits:2,maximumFractionDigits:2})} €<small>${appText('/kk','/mån','/month')}</small></div>
+      <div class="pricevalue">${monthly.toLocaleString(appLocale(),{minimumFractionDigits:0,maximumFractionDigits:2})} €<small>${appText('/kk','/mån','/month')}</small></div>
       <div class="price-rule"></div>
       <ul>
         ${features.map((x)=>`<li>${x}</li>`).join('')}
         <li><b>${seats} ${appText('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</b></li>
       </ul>
       <div class="price-actions">
-        <a class="btn price-btn" href="/tilaus?plan=${tier === 'Advanced' ? 'basic' : tier === 'Premium' ? 'advanced' : 'business'}_monthly">${appText('Kuukausi','Månad','Monthly')} · ${monthly.toLocaleString(appLocale(),{minimumFractionDigits:2,maximumFractionDigits:2})} €</a>
+        <a class="btn price-btn" href="/tilaus?plan=${tier === 'Advanced' ? 'basic' : tier === 'Premium' ? 'advanced' : 'business'}_monthly">${appText('Kuukausi','Månad','Monthly')} · ${monthly.toLocaleString(appLocale(),{minimumFractionDigits:0,maximumFractionDigits:2})} €</a>
       </div>
     </article>`;
   return `<section class="section pricing-section" id="pricing">
@@ -2516,7 +2516,7 @@ function pricingSection() {
         <p>${appText('Kaikissa kuukausitilauksissa on 3 päivän maksuton kokeilu.','Alla månadsabonnemang har 3 dagars gratis provperiod.','Every monthly plan includes a 3-day free trial.')}</p>
       </div>
       <div class="pricing-wrap">
-        ${card('Advanced',49,0,0,2,[
+        ${card('Advanced',49,2,[
           appText('AI-chat omalle verkkosivulle','AI-chatt på din webbplats','AI chat on your website'),
           appText('Muokkaa botin väriä, nimeä ja kuvaa','Anpassa bottens färg, namn och bild','Customize bot color, name and image'),
           appText('Oma kysymys–vastaus-tietopohja','Egen fråge- och svarskunskapsbas','Q&A knowledge base'),
@@ -2525,13 +2525,13 @@ function pricingSection() {
           appText('Yhteydenottojen ja liidien keräys','Insamling av kontakter och leads','Contact and lead capture'),
           appText('Keskusteluhistoria ja puuttuvat vastaukset','Konversationshistorik och saknade svar','Conversation history and missing answers')
         ])}
-        ${card('Premium',129,0,0,10,[
+        ${card('Premium',129,10,[
           appText('Kaikki Advanced-ominaisuudet','Alla Advanced-funktioner','Everything in Advanced'),
           appText('Google Calendar -synkronointi','Google Calendar-synkronisering','Google Calendar sync'),
           appText('Varausten yhdistäminen kalenteritapahtumiin','Koppla bokningar till kalenderhändelser','Connect bookings to calendar events'),
           appText('Useamman asiakaspalvelijan tiimikäyttö','Teamstöd för flera kundservicemedarbetare','Multi-agent team use'),
         ],true)}
-        ${card('Enterprise',149,0,0,20,[
+        ${card('Enterprise',149,20,[
           appText('Kaikki Respondon nykyiset ominaisuudet','Alla nuvarande Respondo-funktioner','All current Respondo features'),
           appText('Automaattinen hintalaskuri ja Stripe-maksulinkit','Automatisk prisberäkning och Stripe-betalningslänkar','Automatic quote calculator and Stripe payment links'),
           appText('Shopify- ja WooCommerce-tilaushaku','Orderuppslag för Shopify och WooCommerce','Shopify and WooCommerce order lookup'),
@@ -3039,7 +3039,7 @@ function signup() {
   const requestedPlan = params.get('plan') || 'basic_monthly';
   const allowedPlans = new Set(['basic_monthly','advanced_monthly','business_monthly','owner_test']);
   const normalizedRequestedPlan = requestedPlan.replace(/^starter_/, 'basic_').replace(/^premium_/, 'advanced_').replace(/^enterprise_/, 'business_');
-  const safeRequestedPlan = allowedPlans.has(normalizedRequestedPlan) ? normalizedRequestedPlan : (requestedPlan === 'monthly' ? 'basic_monthly' : requestedPlan === 'yearly' ? 'basic_yearly' : 'basic_monthly');
+  const safeRequestedPlan = allowedPlans.has(normalizedRequestedPlan) ? normalizedRequestedPlan : (requestedPlan === 'monthly' ? 'basic_monthly' : 'basic_monthly');
   const plan = safeRequestedPlan === 'owner_test' && !ownerTestAccess ? 'basic_monthly' : safeRequestedPlan;
   const referralCode = String(params.get('ref') || '').trim().toUpperCase();
   return `<div>
@@ -3646,7 +3646,7 @@ async function dashboard(options = {}) {
       <div class="premium-sidebar-brand">${logo()}</div>
       <div class="premium-sidebar-label">${appText('TYÖTILA','ARBETSYTA','WORKSPACE')}</div>
       <nav class="premium-sidebar-nav">${premiumNavHtml}</nav>
-      <div class="premium-sidebar-bottom"><i aria-hidden="true"></i><div><b>${esc(t.name)}</b><small>${isDemo ? appText('Kokeilutila','Demo','Demo mode') : esc(String(planAccess.tier||'Starter'))}</small></div></div>
+      <div class="premium-sidebar-bottom"><i aria-hidden="true"></i><div><b>${esc(t.name)}</b><small>${isDemo ? appText('Kokeilutila','Demo','Demo mode') : ({basic:'Advanced',advanced:'Premium',business:'Enterprise'}[String(planAccess.tier)] || 'Advanced')}</small></div></div>
     </aside>
     <main class="appmain dashboard-simple-main ${isDemo ? 'demo-dashboard-main' : ''}">
       <header class="dashboard-topbar ${isDemo ? 'demo-sticky-topbar' : ''}">
@@ -4573,11 +4573,11 @@ async function dashboard(options = {}) {
                 <small>${(() => {
                   const planCode=String(workspace.subscription_plan || '');
                   const tier=planCode.startsWith('basic_')
-                    ? 'Starter'
+                    ? 'Premium'
                     : planCode.startsWith('advanced_')
                       ? 'Advanced'
                       : planCode.startsWith('business_') || ['monthly','yearly','owner_test'].includes(planCode)
-                        ? 'Business'
+                        ? 'Enterprise'
                         : 'Respondo';
                   const billing=planCode==='yearly' || planCode.endsWith('_yearly')
                     ? appText('Vuositilaus','Årsabonnemang','Annual plan')
