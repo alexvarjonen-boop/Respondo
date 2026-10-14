@@ -2807,7 +2807,7 @@ function featuresPage() {
             <span>10 ${appText('tärkeintä','viktigaste','essentials')}</span>
           </div>
           <div class="features-top10-grid">${topTen}</div>
-          <p class="feature-plan-note">${appText('Ominaisuuksien saatavuus riippuu tilauspaketista ja yrityksen tekemistä asetuksista. Advanced: 2 asiakaspalvelijapaikkaa, tuonti ja oma ajanvaraus. Premium: 10 paikkaa ja Google Calendar. Enterprise: 20 paikkaa ja Business-automaatiot.','Tillgängligheten beror på abonnemang och företagets inställningar. Advanced: 2 platser, import och egna bokningar. Premium: 10 platser och Google Kalender. Enterprise: 20 platser och Business-automationer.','Availability depends on the subscription and configuration. Advanced: 2 seats, website import and native bookings. Premium: 10 seats and Google Calendar. Enterprise: 20 seats and Business-tier automations.')}</p>
+          <p class="feature-plan-note">${appText('Ominaisuuksien saatavuus riippuu tilauspaketista ja yrityksen tekemistä asetuksista. Advanced: 2 asiakaspalvelijapaikkaa, tuonti ja oma ajanvaraus. Premium: 10 paikkaa ja Google Calendar. Enterprise: 20 paikkaa ja laajemmat automaatiot.','Tillgängligheten beror på abonnemang och företagets inställningar. Advanced: 2 platser, import och egna bokningar. Premium: 10 platser och Google Kalender. Enterprise: 20 platser och avancerad automatisering.','Availability depends on the subscription and configuration. Advanced: 2 seats, website import and native bookings. Premium: 10 seats and Google Calendar. Enterprise: 20 seats and advanced automations.')}</p>
         </div>
       </section>
       <section class="features-directory">
@@ -2934,7 +2934,7 @@ function seoLandingPage(path) {
       cards:[
         [appText('Tuote- ja hintakysymykset','Produkt- och prisfrågor','Product and price questions'),appText('Asiakas voi kysyä tuotteista luonnollisella kielellä ja saada olennaiset vaihtoehdot sekä hinnat.','Kunden kan fråga om produkter med naturligt språk och få relevanta alternativ och priser.','Customers can ask about products in natural language and get relevant options and prices.')],
         [appText('Toimitukset ja palautukset','Leverans och retur','Delivery and returns'),appText('Tietopohjaan tuodut toimitus- ja palautusehdot voidaan käyttää suoraan asiakasvastauksissa.','Leverans- och returvillkor i kunskapsbasen kan användas direkt i kundsvaren.','Delivery and return policies in the knowledge base can be used directly in customer replies.')],
-        [appText('Shopify ja WooCommerce','Shopify och WooCommerce','Shopify and WooCommerce'),appText('Business-tason työnkulut tukevat verkkokauppayhteyksiä ja tilaustiedon käsittelyä palvelun asetusten mukaan.','Business-flöden stödjer e-handelsanslutningar och hantering av orderinformation enligt tjänstens inställningar.','Business workflows support ecommerce connections and order-information handling according to the service configuration.')],
+        [appText('Shopify ja WooCommerce','Shopify och WooCommerce','Shopify and WooCommerce'),appText('Enterprise-tason työnkulut tukevat verkkokauppayhteyksiä ja tilaustiedon käsittelyä palvelun asetusten mukaan.','Enterprise-flöden stödjer e-handelsanslutningar och hantering av orderinformation enligt tjänstens inställningar.','Enterprise workflows support ecommerce connections and order-information handling according to the service configuration.')],
         [appText('Ostopolun tuki','Stöd i köpresan','Purchase-path support'),appText('Botti voi ohjata asiakkaan oikealle tuote- tai yhteydenottosivulle ilman pitkää hakemista.','Botten kan guida kunden till rätt produkt- eller kontaktsida utan lång sökning.','The bot can guide customers to the right product or contact page without a long search.')]
       ],
       closing:appText('Verkkokaupassa tavoite ei ole vain vähentää tukikysymyksiä, vaan auttaa asiakasta löytämään oikea tieto ennen kuin ostopäätös katkeaa.','I en webbutik är målet inte bara att minska supportfrågor utan att hjälpa kunden hitta rätt information innan köpresan avbryts.','For ecommerce, the goal is not only to reduce support questions but to help customers find the right information before the purchase journey breaks.')
@@ -4294,7 +4294,7 @@ async function dashboard(options = {}) {
           </div>
         </article>
 
-        ${!planAccess.allCurrentFeatures ? `<article class="panel quote-engine-panel plan-locked-panel"><div class="panel-head"><div><small>BUSINESS</small><h2>${appText('Automaattinen hintalaskuri','Automatisk prisberäkning','Automatic quote calculator')}</h2><p>${appText('Tarjouspyynnöt toimivat kaikissa paketeissa. Automaattinen hinnan laskenta kuuluu Business-tilaukseen.','Offertförfrågningar fungerar i alla abonnemang. Automatisk prisberäkning ingår i Business.','Quote requests work on every plan. Automatic quote calculation is included in Business.')}</p></div><span class="install-badge">Business</span></div></article>` : ''}
+        ${!planAccess.allCurrentFeatures ? `<article class="panel quote-engine-panel plan-locked-panel"><div class="panel-head"><div><small>ENTERPRISE</small><h2>${appText('Automaattinen hintalaskuri','Automatisk prisberäkning','Automatic quote calculator')}</h2><p>${appText('Tarjouspyynnöt toimivat kaikissa paketeissa. Automaattinen hinnan laskenta kuuluu Enterprise-tilaukseen.','Offertförfrågningar fungerar i alla abonnemang. Automatisk prisberäkning ingår i Business.','Quote requests work on every plan. Automatic quote calculation is included in Enterprise.')}</p></div><span class="install-badge">Enterprise</span></div></article>` : ''}
         <article class="panel quote-engine-panel" id="quote-engine" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
           <div class="panel-head">
             <div>
@@ -4331,7 +4331,7 @@ async function dashboard(options = {}) {
             <span class="install-badge">${bookingSlots.filter((x) => x.status === 'open').length} vapaana</span>
           </div>
 
-          ${!planAccess.googleCalendar ? `<div class="calendar-sync-card"><div><small>GOOGLE CALENDAR</small><b>Advanced / Business</b><p>${appText('Respondon oma ajanvaraus toimii tässä paketissa. Google Calendar -synkronointi sisältyy Advanced- ja Business-tilauksiin.','Respondos egen bokning fungerar i detta abonnemang. Google Calendar-synkronisering ingår i Advanced och Business.','Respondo booking works on this plan. Google Calendar sync is included in Advanced and Business.')}</p></div></div>` : ''}
+          ${!planAccess.googleCalendar ? `<div class="calendar-sync-card"><div><small>GOOGLE CALENDAR</small><b>Premium / Enterprise</b><p>${appText('Respondon oma ajanvaraus toimii tässä paketissa. Google Calendar -synkronointi sisältyy Premium- ja Enterprise-tilauksiin.','Respondos egen bokning fungerar i detta abonnemang. Google Calendar-synkronisering ingår i Premium och Enterprise.','Respondo booking works on this plan. Google Calendar sync is included in Premium and Enterprise.')}</p></div></div>` : ''}
           <div class="calendar-sync-card ${googleCalendar.connected ? 'connected' : ''}" ${planAccess.googleCalendar ? '' : 'hidden'}>
             <div>
               <small>GOOGLE CALENDAR</small>
@@ -4385,9 +4385,9 @@ async function dashboard(options = {}) {
             <div>
               <small>${appText('BUSINESS-INTEGRAATIOT','BUSINESS-INTEGRATIONER','BUSINESS INTEGRATIONS')}</small>
               <h2>${appText('Yhdistä muut järjestelmät','Anslut andra system','Connect other systems')}</h2>
-              <p>${appText('Webhookit, API-avaimet ja verkkokauppayhteydet ovat Business-tilauksen integraatioita.','Webhooks, API-nycklar och e-handelsanslutningar är Business-integrationer.','Webhooks, API keys and commerce connections are Business integrations.')}</p>
+              <p>${appText('Webhookit, API-avaimet ja verkkokauppayhteydet ovat Enterprise-tilauksen integraatioita.','Webhooks, API-nycklar och e-handelsanslutningar är Enterprise-integrationer.','Webhooks, API keys and commerce connections are Enterprise integrations.')}</p>
             </div>
-            <span class="install-badge">Business</span>
+            <span class="install-badge">Enterprise</span>
           </div>
           <form id="integrationsForm" class="formgrid">
             <div class="field full">
