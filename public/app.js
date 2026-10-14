@@ -3,7 +3,7 @@ import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } fr
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
-import { appleHomeMarkup } from './apple-home.js?v=20261009-smarter-customer-service-hero-v1-customer-buyer-link-v1-ai-topics-v1-fi-test-v1-home-guides-removed-20261014-v1';
+import { appleHomeMarkup } from './apple-home.js?v=20261014-lead-value-calculator-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261012-approved-arrow-desktop-v2';
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2-pricing-20261014-ape-v1-annual-120-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
@@ -4941,8 +4941,14 @@ async function route() {
     const euro = (n) => new Intl.NumberFormat(appLocale(), { maximumFractionDigits: 0 }).format(n) + ' €';
 
     const updateCalculator = () => {
-      const job = Number(jobSlider?.value || 0);
-      const missed = Number(missedSlider?.value || 0);
+      const bounded = (input) => {
+        const value = Number(input?.value || 0);
+        const min = Number(input?.min || 0);
+        const max = Number(input?.max || 100000);
+        return Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : 0;
+      };
+      const job = bounded(jobSlider);
+      const missed = Math.floor(bounded(missedSlider));
       const daily = job * missed;
       const monthly = daily * 30;
       const yearly = daily * 365;
@@ -4967,6 +4973,15 @@ async function route() {
 
     jobSlider?.addEventListener('input', updateCalculator);
     missedSlider?.addEventListener('input', updateCalculator);
+    for (const input of [jobSlider, missedSlider]) {
+      input?.addEventListener('change', () => {
+        const n = Number(input.value || 0);
+        const min = Number(input.min || 0);
+        const max = Number(input.max || 100000);
+        input.value = String(Number.isFinite(n) ? Math.min(max, Math.max(min, Math.floor(n))) : 0);
+        updateCalculator();
+      });
+    }
     updateCalculator();
 
     initImmersiveHomeMotion();
