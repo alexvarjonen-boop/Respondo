@@ -30,7 +30,7 @@ Each Price must be active, denominated in EUR, and have an interval of one month
 - `STRIPE_ADVANCED_MONTHLY_PRICE_ID` → new Respondo Premium / 129 EUR price
 - `STRIPE_BUSINESS_MONTHLY_PRICE_ID` → new Respondo Enterprise / 149 EUR price
 
-**Do not change** the yearly Price ID variables. Old monthly/annual price IDs are retained in `planFromStripePriceId` so legacy subscriptions continue to map to the right entitlements. The server now verifies the new Price's amount, currency and recurrence against the published plan before proceeding with checkout. It returns an error instead of charging a legacy amount.
+**Do not change** the yearly Price ID variables. Old monthly/annual price IDs are retained in `planFromStripePriceId` so legacy subscriptions continue to map to the right entitlements. The server verifies each new Price's amount, currency and monthly recurrence **and** the matching active Product name before proceeding with Checkout. It returns an error instead of charging a legacy amount.
 
 This change does not modify, cancel, or automatically migrate existing subscriptions. Review tax obligations and Stripe Tax registrations as appropriate: the current domestic non-VAT-registered treatment cannot be assumed to apply to all cross-border sales.
 
