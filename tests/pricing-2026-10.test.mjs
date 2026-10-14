@@ -23,20 +23,23 @@ test('three new monthly prices agree across checkout backend and public UI', () 
   assert.match(server, /stripe\.prices\.retrieve\(priceId\)/);
 });
 
-test('new annual checkouts are unavailable while existing annual price mappings remain', () => {
-  assert.match(server, /plan\.endsWith\('_yearly'\)/);
-  assert.match(server, /normalizedPlan\.endsWith\('_yearly'\)/);
-  assert.doesNotMatch(app, /value="(?:basic|advanced|business)_yearly"/);
-  assert.doesNotMatch(effects, /href="\/tilaus\?plan=(?:basic|advanced|business)_yearly"/);
-  assert.match(server, /\['basic_yearly',process\.env\.STRIPE_BASIC_YEARLY_PRICE_ID\]/);
+test('new annual checkout plans are available and keep existing Stripe mappings', () => {
+  assert.match(server,/NEW_YEARLY_PRICE_CENTS/);
+  for (const code of ['basic','advanced','business']) {
+    assert.ok(app.includes('value="'+code+'_yearly"'));
+    assert.ok(server.includes("['"+code+"_yearly',process.env.STRIPE_"+code.toUpperCase()+"_YEARLY_PRICE_ID]"));
+  }
+  assert.doesNotMatch(server,/if \(plan\.endsWith\('_yearly'\)\) return res\.status\(400\)/);
 });
 
-test('homepage structured data only advertises three monthly prices', () => {
-  assert.equal((html.match(/"@type":"Offer"/g) ?? []).length, 3);
+test('homepage structured data advertises all monthly and annual offers', () => {
+  assert.equal((html.match(/"@type":"Offer"/g) ?? []).length, 6);
   assert.match(html, /"name":"Respondo Advanced Monthly","price":"49\.00"/);
   assert.match(html, /"name":"Respondo Premium Monthly","price":"129\.00"/);
   assert.match(html, /"name":"Respondo Enterprise Monthly","price":"149\.00"/);
-  assert.doesNotMatch(html, /"category":"annual subscription"/);
+  assert.match(html, /"name":"Respondo Advanced Annual","price":"468\\.00"/);
+  assert.match(html, /"name":"Respondo Premium Annual","price":"1428\\.00"/);
+  assert.match(html, /"name":"Respondo Enterprise Annual","price":"1668\\.00"/);
 });
 
 test('historical monthly subscriber prices retain explicit mapping', () => {
