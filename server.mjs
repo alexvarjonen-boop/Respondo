@@ -14049,31 +14049,38 @@ async function seedOwnerRespondoKnowledge() {
     );
 
     if (rows.length) {
-      const params = [];
-      const values = [];
-      rows.forEach((row,index) => {
-        const offset = index * 8;
-        values.push(
-          `($${offset+1},$${offset+2},$${offset+3},$${offset+4},$${offset+5},$${offset+6},$${offset+7},$${offset+8},true,NOW())`
-        );
-        params.push(
-          uid(),
-          tenantId,
-          String(row.category || 'Respondo FAQ').slice(0,80),
-          String(row.title || '').slice(0,180),
-          String(row.answer || '').slice(0,1600),
-          Array.isArray(row.keywords) ? row.keywords.slice(0,40) : [],
-          'respondo_seed',
-          row.source_url || siteUrl || null,
-        );
-      });
+      // PostgreSQL's extended query protocol has a 65,535-parameter limit.
+      // Batch FAQ rows within the existing transaction so a large multilingual
+      // seed cannot overflow bind parameters or leave a partially updated KB.
+      const seedBatchSize = 250;
+      for (let start = 0; start < rows.length; start += seedBatchSize) {
+        const batch = rows.slice(start, start + seedBatchSize);
+        const params = [];
+        const values = [];
+        batch.forEach((row,index) => {
+          const offset = index * 8;
+          values.push(
+            `(${offset+1},${offset+2},${offset+3},${offset+4},${offset+5},${offset+6},${offset+7},${offset+8},true,NOW())`
+          );
+          params.push(
+            uid(),
+            tenantId,
+            String(row.category || 'Respondo FAQ').slice(0,80),
+            String(row.title || '').slice(0,180),
+            String(row.answer || '').slice(0,1600),
+            Array.isArray(row.keywords) ? row.keywords.slice(0,40) : [],
+            'respondo_seed',
+            row.source_url || siteUrl || null,
+          );
+        });
 
-      await client.query(
-        `INSERT INTO knowledge(
-           id,tenant_id,category,title,answer,keywords,source_type,source_url,approved,verified_at
-         ) VALUES ${values.join(',')}`,
-        params,
-      );
+        await client.query(
+          `INSERT INTO knowledge(
+             id,tenant_id,category,title,answer,keywords,source_type,source_url,approved,verified_at
+           ) VALUES ${values.join(',')}`,
+          params,
+        );
+      }
     }
 
     await client.query(
