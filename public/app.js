@@ -1,4 +1,4 @@
-import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=pricing-20261014-ape-v1';
+import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1';
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2-fi-test-v1';
