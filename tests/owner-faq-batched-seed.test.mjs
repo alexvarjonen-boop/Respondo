@@ -13,7 +13,7 @@ test('multilingual owner FAQ seed uses bounded PostgreSQL insert batches', () =>
   assert.match(seed, /for \(let start = 0; start < rows\.length; start \+= seedBatchSize\)/);
   assert.match(seed, /const batch = rows\.slice\(start, start \+ seedBatchSize\)/);
   assert.match(seed, /batch\.forEach\(\(row,index\) =>/);
-  assert.match(seed, /`\(\$\$\{offset\+1\},\$\$\{offset\+2\}/);
+  assert.match(seed, /String\\.fromCharCode\\(36\\)/);
   assert.doesNotMatch(seed, /rows\.forEach\(\(row,index\) =>/);
   assert.match(seed, /await client\.query\('BEGIN'\)/);
   assert.match(seed, /await client\.query\('COMMIT'\)/);
