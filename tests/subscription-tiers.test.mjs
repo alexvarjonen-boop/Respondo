@@ -18,12 +18,19 @@ test('six Starter Advanced Business plan codes and Stripe price envs are wired',
   ]) assert.match(server,new RegExp(env));
 });
 
-test('new monthly plans do not open new annual checkouts and grandfather old annual subscribers',()=>{
-  for(const code of ['basic_yearly','advanced_yearly','business_yearly']) assert.ok(server.includes(code+':{tier:'),'old annual entitlement must remain: '+code);
-  assert.match(server,/normalizedPlan\.endsWith\('_yearly'\)/);
-  assert.match(server,/plan\.endsWith\('_yearly'\)/);
-  assert.doesNotMatch(app,/value="(?:basic|advanced|business)_yearly"/);
-  assert.doesNotMatch(effects,/href="\/tilaus\?plan=(?:basic|advanced|business)_yearly"/);
+test('annual billing is exactly 10 euros per month cheaper and retains the tier entitlements',()=>{
+  for(const [code,monthly,annual,yearly,seats] of [
+    ['basic',49,39,468,2],['advanced',129,119,1428,10],['business',149,139,1668,20]
+  ]){
+    assert.equal(monthly-annual,10);
+    assert.equal(annual*12,yearly);
+    assert.ok(server.includes(code+'_yearly:{tier:'),'missing annual plan');
+    assert.ok(server.includes('monthlyPrice:'+annual+',annualTotal:'+yearly));
+    assert.ok(app.includes('value="'+code+'_yearly"'));
+    assert.ok(app.includes('value="'+code+'_monthly"'));
+  }
+  assert.match(server,/NEW_YEARLY_PRICE_CENTS/);
+  assert.doesNotMatch(server,/Uusille tilauksille on saatavilla vain kuukausilaskutus/);
 });
 
 test('approved new monthly prices are server-enforced and historical Stripe subscriptions recognized',()=>{
@@ -78,7 +85,7 @@ test('legacy subscribers keep the full old feature set',()=>{
   assert.match(server,/tier:'business'[\s\S]*agentSeats:20[\s\S]*allCurrentFeatures:true/);
 });
 
-test('homepage signup workspaces and Try Bot offer three approved monthly tiers',()=>{
+test('homepage signup workspaces and Try Bot offer monthly and annual tiers',()=>{
   for(const plan of ['basic_monthly','advanced_monthly','business_monthly']) {
     assert.ok(app.includes('value="'+plan+'"'),plan+' missing from signup/workspace');
     assert.match(effects,new RegExp('plan='+plan));
@@ -88,13 +95,13 @@ test('homepage signup workspaces and Try Bot offer three approved monthly tiers'
   assert.ok(app.includes("card('Premium',129,10"));
   assert.ok(app.includes("card('Enterprise',149,20"));
   assert.match(app,/asiakaspalvelijapaikkaa/);
-  assert.doesNotMatch(app,/href="\/tilaus\?plan=(?:basic|advanced|business)_yearly/);
+  assert.match(app,/\$\{code\}_yearly/);
 });
 
-test('homepage structured data publishes only three approved new subscription prices',()=>{
-  for(const price of ['49.00','129.00','149.00']) assert.ok(html.includes('"price":"'+price+'"'));
+test('homepage structured data publishes six approved monthly and annual subscription prices',()=>{
+  for(const price of ['49.00','129.00','149.00','468.00','1428.00','1668.00']) assert.ok(html.includes('"price":"'+price+'"'));
   for(const price of ['34.90','44.90','54.90']) assert.ok(!html.includes('"price":"'+price+'"'));
-  assert.equal((html.match(/"@type":"Offer"/g)||[]).length,3);
+  assert.equal((html.match(/"@type":"Offer"/g)||[]).length,6);
 });
 
 test('workspace list correctly labels new commercial tiers while preserving old annual billing',()=>{

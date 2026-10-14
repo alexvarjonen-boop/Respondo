@@ -9582,3 +9582,14 @@ body.deletion-modal-open{overflow:hidden!important}
    display:none!important;
  }
 }
+
+/* Annual subscription comparison — October 2026 */
+.pricing-section .plan-yearly-price{display:flex;flex-direction:column;gap:5px;margin:12px 0 8px;font-size:13px;line-height:1.45;color:#555e6d!important}
+.pricing-section .plan-yearly-price span{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+.pricing-section .plan-yearly-price b{color:#171717!important;font-size:20px;font-weight:750}
+.pricing-section .plan-yearly-price small{font-size:12px;color:#626a76!important}
+.pricing-section .price-actions{display:grid;grid-template-columns:1fr;gap:9px}
+.pricing-section .price-actions .price-btn{justify-content:center;text-align:center;min-height:46px;white-space:normal}
+.pricing-section .price-actions .price-btn-yearly{border:1px solid #b4c6e5!important;background:#eef4ff!important;color:#112d5c!important;font-weight:650!important}
+.pricing-section .price-card.featured .plan-yearly-price,.pricing-section .price-card.featured .plan-yearly-price b{color:#171717!important}
+@media(max-width:760px){.pricing-section .plan-yearly-price b{font-size:18px}.pricing-section .price-actions .price-btn{min-height:48px}}

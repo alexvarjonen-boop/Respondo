@@ -1159,11 +1159,11 @@ async function consumeOwnerFreeCode(_client, value) {
 
 const PLAN_DEFINITIONS = Object.freeze({
   basic_monthly:{tier:'basic',billing:'monthly',monthlyPrice:49,annualTotal:null,agentSeats:2,websiteImport:true,googleCalendar:false},
-  basic_yearly:{tier:'basic',billing:'yearly',monthlyPrice:29.90,annualTotal:358.80,agentSeats:2,websiteImport:true,googleCalendar:false},
+  basic_yearly:{tier:'basic',billing:'yearly',monthlyPrice:39,annualTotal:468,agentSeats:2,websiteImport:true,googleCalendar:false},
   advanced_monthly:{tier:'advanced',billing:'monthly',monthlyPrice:129,annualTotal:null,agentSeats:10,websiteImport:true,googleCalendar:true},
-  advanced_yearly:{tier:'advanced',billing:'yearly',monthlyPrice:39.90,annualTotal:478.80,agentSeats:10,websiteImport:true,googleCalendar:true},
+  advanced_yearly:{tier:'advanced',billing:'yearly',monthlyPrice:119,annualTotal:1428,agentSeats:10,websiteImport:true,googleCalendar:true},
   business_monthly:{tier:'business',billing:'monthly',monthlyPrice:149,annualTotal:null,agentSeats:20,websiteImport:true,googleCalendar:true},
-  business_yearly:{tier:'business',billing:'yearly',monthlyPrice:49.90,annualTotal:598.80,agentSeats:20,websiteImport:true,googleCalendar:true},
+  business_yearly:{tier:'business',billing:'yearly',monthlyPrice:139,annualTotal:1668,agentSeats:20,websiteImport:true,googleCalendar:true},
 });
 
 function normalizeCheckoutPlan(value) {
@@ -1175,7 +1175,9 @@ function normalizeCheckoutPlan(value) {
   if (raw==='starter_yearly') return 'basic_yearly';
   if(raw==='yearly') return 'basic_yearly';
   if(raw==='premium_monthly') return 'advanced_monthly';
+  if(raw==='premium_yearly') return 'advanced_yearly';
   if(raw==='enterprise_monthly') return 'business_monthly';
+  if(raw==='enterprise_yearly') return 'business_yearly';
   return 'basic_monthly';
 }
 
@@ -1232,30 +1234,31 @@ function stripePriceForPlan(value) {
 }
 
 const NEW_MONTHLY_PRICE_CENTS = Object.freeze({ basic_monthly:4900, advanced_monthly:12900, business_monthly:14900 });
+const NEW_YEARLY_PRICE_CENTS = Object.freeze({ basic_yearly:46800, advanced_yearly:142800, business_yearly:166800 });
 const NEW_MONTHLY_PRODUCT_NAMES = Object.freeze({ basic_monthly:'Respondo Advanced', advanced_monthly:'Respondo Premium', business_monthly:'Respondo Enterprise' });
+const NEW_YEARLY_PRODUCT_NAMES = Object.freeze({ basic_yearly:'Respondo Advanced', advanced_yearly:'Respondo Premium', business_yearly:'Respondo Enterprise' });
+const CURRENT_PRICE_CENTS = Object.freeze({ ...NEW_MONTHLY_PRICE_CENTS, ...NEW_YEARLY_PRICE_CENTS });
+const CURRENT_PRODUCT_NAMES = Object.freeze({ ...NEW_MONTHLY_PRODUCT_NAMES, ...NEW_YEARLY_PRODUCT_NAMES });
 async function assertCurrentCheckoutPrice(plan, priceId) {
-  if (!Object.hasOwn(NEW_MONTHLY_PRICE_CENTS, plan)) return;
-  if (!stripe || !priceId) throw Object.assign(new Error('Stripe monthly plan is not configured.'),{publicStatus:503});
+  if (!Object.hasOwn(CURRENT_PRICE_CENTS, plan)) return;
+  if (!stripe || !priceId) throw Object.assign(new Error('Stripe plan is not configured.'),{publicStatus:503});
   const price = await stripe.prices.retrieve(priceId);
   const productId = typeof price.product === 'string' ? price.product : price.product?.id;
-  if (!price.active || price.currency !== 'eur' || price.type !== 'recurring' || price.recurring?.interval !== 'month' || price.recurring?.interval_count !== 1 || price.unit_amount !== NEW_MONTHLY_PRICE_CENTS[plan] || !productId) {
-    throw Object.assign(new Error('Stripe monthly plan price does not match advertised pricing.'),{publicStatus:503});
+  const interval = plan.endsWith('_yearly') ? 'year' : 'month';
+  if (!price.active || price.currency !== 'eur' || price.type !== 'recurring' || price.recurring?.interval !== interval || price.recurring?.interval_count !== 1 || price.unit_amount !== CURRENT_PRICE_CENTS[plan] || !productId) {
+    throw Object.assign(new Error('Stripe plan price does not match advertised pricing.'),{publicStatus:503});
   }
-  // The Product name appears on the customer's Checkout receipt and invoice.
-  // Reject a correctly-priced but incorrectly named legacy Product.
   const product = await stripe.products.retrieve(productId);
-  if (!product.active || product.name !== NEW_MONTHLY_PRODUCT_NAMES[plan]) {
-    throw Object.assign(new Error('Stripe monthly plan product does not match advertised tier.'),{publicStatus:503});
+  if (!product.active || product.name !== CURRENT_PRODUCT_NAMES[plan]) {
+    throw Object.assign(new Error('Stripe plan product does not match advertised tier.'),{publicStatus:503});
   }
 }
 
-// Checkout's inline recurring Price is the safe source of truth until matching
-// live catalog prices are available. Never send an old environment Price ID.
-// Stripe creates a recurring Price for the chosen plan when the customer opens
-// Checkout, with the correct product name shown on their invoice.
+// New checkouts validate the current monthly and annual amount and public Product name.
+// Old Price IDs stay mapped for pre-existing subscribers but are never billed to new customers.
 async function stripeCheckoutLineItem(plan) {
   const priceId=stripePriceForPlan(plan);
-  if (!Object.hasOwn(NEW_MONTHLY_PRICE_CENTS, plan)) {
+  if (!Object.hasOwn(CURRENT_PRICE_CENTS, plan)) {
     if (!priceId) throw Object.assign(new Error('Stripe plan is not configured.'),{publicStatus:503});
     return {price:priceId,quantity:1};
   }
@@ -1264,17 +1267,15 @@ async function stripeCheckoutLineItem(plan) {
       await assertCurrentCheckoutPrice(plan,priceId);
       return {price:priceId,quantity:1};
     } catch (error) {
-      // Existing Railway IDs point to discontinued prices. Do not silently bill
-      // those amounts; use Stripe Checkout's supported price_data mechanism.
-      console.warn('Using current inline monthly Checkout price for '+plan+': '+String(error?.message||error));
+      console.warn('Using current inline Checkout price for '+plan+': '+String(error?.message||error));
     }
   }
   return {
     price_data:{
       currency:'eur',
-      unit_amount:NEW_MONTHLY_PRICE_CENTS[plan],
-      recurring:{interval:'month',interval_count:1},
-      product_data:{name:NEW_MONTHLY_PRODUCT_NAMES[plan]},
+      unit_amount:CURRENT_PRICE_CENTS[plan],
+      recurring:{interval:plan.endsWith('_yearly') ? 'year' : 'month',interval_count:1},
+      product_data:{name:CURRENT_PRODUCT_NAMES[plan]},
     },
     quantity:1,
   };
@@ -1814,9 +1815,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-buy',
       answer:answer(
-        'Voit ottaa Respondon käyttöön verkkosivun “Kokeile ilmaiseksi” -painikkeesta. Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Kaikissa uusissa kuukausitilauksissa on 3 päivän ilmainen kokeilu. Uusia vuositilauksia ei tarjota tällä hetkellä. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Du kan börja använda Respondo via knappen “Prova gratis”. Advanced kostar 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Alla nya månadsabonnemang har 3 dagars gratis provperiod. Nya årsabonnemang erbjuds för närvarande inte. Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'You can get started by selecting “Try for free”. Advanced costs €49/month, Premium €129/month and Enterprise €149/month. Every new monthly plan includes a 3-day free trial. New annual subscriptions are not offered at present. No VAT is charged due to the small-scale business exemption.'
+        'Voit ottaa Respondon käyttöön verkkosivun “Kokeile ilmaiseksi” -painikkeesta. Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Kaikissa uusissa tilauksissa on 3 päivän ilmainen kokeilu. Vuositilaukset: Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi), Enterprise 139 €/kk (1 668 €/vuosi). Säästät 120 € vuodessa. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
+        'Du kan börja använda Respondo via knappen “Prova gratis”. Advanced kostar 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Alla nya abonnemang har 3 dagars gratis provperiod. Med årsabonnemang sparar du 10 €/mån: Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år), Enterprise 139 €/mån (1 668 €/år). Hela årsbeloppet betalas årsvis. Ingen moms debiteras på grund av verksamhet i liten skala.',
+        'You can get started by selecting “Try for free”. Advanced costs €49/month, Premium €129/month and Enterprise €149/month. Every new plan includes a 3-day free trial. Annual billing saves €10/month: Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year), billed upfront annually. No VAT is charged due to the small-scale business exemption.'
       )
     };
   }
@@ -1873,9 +1874,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-annual-pricing',
       answer:answer(
-        'Uusia vuositilauksia ei tällä hetkellä tarjota. Voit valita kuukausitilauksen: Advanced 49 €/kk, Premium 129 €/kk tai Enterprise 149 €/kk. Nykyiset vuositilaukset jatkuvat sovittujen ehtojen mukaisesti.',
-        'Nya årsabonnemang erbjuds inte för närvarande. Välj ett månadsabonnemang: Advanced 49 €/månad, Premium 129 €/månad eller Enterprise 149 €/månad. Befintliga årsabonnemang fortsätter enligt avtal.',
-        'New annual subscriptions are not currently available. Choose a monthly plan: Advanced €49/month, Premium €129/month or Enterprise €149/month. Existing annual subscriptions continue under their agreed terms.'
+        'Vuositilaus on aina 10 €/kk halvempi: Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi) ja Enterprise 139 €/kk (1 668 €/vuosi). Koko vuosisumma maksetaan kerralla. Kuukausitilaukset maksavat 49 €, 129 € tai 149 €/kk.',
+        'Årsabonnemang är 10 €/månad billigare: Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år) och Enterprise 139 €/mån (1 668 €/år). Hela årsbeloppet debiteras en gång om året. Månadsabonnemangen kostar 49 €, 129 € respektive 149 €/mån.',
+        'Annual billing saves €10/month: Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year). The full year is billed upfront. Monthly subscriptions are €49, €129 and €149/month.'
       )
     };
   }
@@ -1931,9 +1932,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-pricing',
       answer:answer(
-        'Respondo Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Uusia vuositilauksia ei tällä hetkellä tarjota. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Respondo Advanced kostar 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Nya årsabonnemang erbjuds inte för närvarande. Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'Respondo Advanced is €49/month, Premium €129/month and Enterprise €149/month. New annual subscriptions are not offered at present. No VAT is charged due to the small-scale business exemption.'
+        'Respondo Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vuositilauksella säästät 10 €/kk: Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi), Enterprise 139 €/kk (1 668 €/vuosi). Koko vuosisumma veloitetaan kerran vuodessa. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
+        'Respondo Advanced kostar 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Årsabonnemang: Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år) och Enterprise 139 €/mån (1 668 €/år). Spara 120 €/år genom årsbetalning. Ingen moms debiteras på grund av verksamhet i liten skala.',
+        'Respondo Advanced is €49/month, Premium €129/month and Enterprise €149/month. Annual billing saves €10/month: Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year), billed upfront annually. No VAT is charged due to the small-scale business exemption.'
       )
     };
   }
@@ -9125,11 +9126,11 @@ app.get('/api/public/config', publicReadLimiter, async (req, res) => {
     supportEmail: process.env.SUPPORT_EMAIL || 'info@respondoai.fi',
     trialDays: 3,
     monthlyNet: 49,
-    yearlyNet: null,
+    yearlyNet: 39,
     plans:{
-      basic:{name:'Advanced',monthly:49,yearlyMonthly:null,yearlyTotal:null,agentSeats:2},
-      advanced:{name:'Premium',monthly:129,yearlyMonthly:null,yearlyTotal:null,agentSeats:10},
-      business:{name:'Enterprise',monthly:149,yearlyMonthly:null,yearlyTotal:null,agentSeats:20},
+      basic:{name:'Advanced',monthly:49,yearlyMonthly:39,yearlyTotal:468,agentSeats:2},
+      advanced:{name:'Premium',monthly:129,yearlyMonthly:119,yearlyTotal:1428,agentSeats:10},
+      business:{name:'Enterprise',monthly:149,yearlyMonthly:139,yearlyTotal:1668,agentSeats:20},
     },
     ownerTestEnabled,
     ownerTestPrice: 0.50,
@@ -9218,7 +9219,6 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   const { fullName, companyName, businessId, password, plan, acceptedTerms } = req.body;
   const email = cleanEmail(req.body.email);
   const normalizedPlan = normalizeCheckoutPlan(plan);
-  if (normalizedPlan.endsWith('_yearly')) return res.status(400).json({error:'Uusille tilauksille on saatavilla vain kuukausilaskutus.'});
   const referralCode = normalizeReferralCode(req.body.referralCode);
   const freeReferral = isFreeReferralCode(referralCode);
   const checkoutCountry = checkoutCountryPolicy(req.body?.billingCountry);
@@ -10089,7 +10089,6 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const companyName=String(req.body?.companyName||'').replace(/[<>]/g,'').trim().slice(0,120);
   const businessId=String(req.body?.businessId||'').replace(/[<>]/g,'').trim().slice(0,40);
   const plan=normalizeCheckoutPlan(req.body?.plan);
-  if (plan.endsWith('_yearly')) return res.status(400).json({error:'Uusille tilauksille on saatavilla vain kuukausilaskutus.'});
   const referralCode=normalizeReferralCode(req.body?.referralCode);
   const freeReferral=isFreeReferralCode(referralCode);
   const checkoutCountry=checkoutCountryPolicy(req.body?.billingCountry);
