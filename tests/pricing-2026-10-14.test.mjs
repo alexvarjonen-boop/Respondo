@@ -53,3 +53,19 @@ test('searchable marketing and guides do not advertise obsolete plan pricing', (
     assert.match(source, /(?:Respondo Advanced|Advanced 49|Advanced €49|Advanced 49 €)/);
   }
 });
+
+test('no stale public prices remain across localized FAQ, legal pages or conversion content', () => {
+  for (const path of [
+    'public/app.js',
+    'public/effects.js',
+    'public/index.html',
+    'public/global-resources.mjs',
+    'public/legal-content.js',
+    'public/customer-service-landing.mjs',
+    'public/ai-topic-pages.mjs',
+    'respondo-faq.mjs',
+  ]) {
+    const source = read(path);
+    assert.doesNotMatch(source, /(?:29|34|39|44|49|54)[,.]90|(?:€29|€34|€39|€44|€49|€54)\.90/, 'outdated amount found in ' + path);
+  }
+});
