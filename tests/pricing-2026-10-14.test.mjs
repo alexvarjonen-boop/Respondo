@@ -91,7 +91,7 @@ test('Stripe Checkout uses exactly the approved monthly amounts and tier product
     NEW_MONTHLY_PRODUCT_NAMES:names,
     console:{warn(){}},
   };
-  const get=vm.runInNewContext(source+'\\nstripeCheckoutLineItem',ctx);
+  const get=vm.runInNewContext(source+'\nstripeCheckoutLineItem',ctx);
   for (const [plan,amount] of Object.entries(prices)) {
     const result=JSON.parse(JSON.stringify(await get(plan)));
     assert.deepEqual(result,{
