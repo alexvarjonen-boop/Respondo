@@ -8312,6 +8312,10 @@ body.workspace-modal-open{
 .price-card.featured .plan-yearly-price,.price-card.featured .plan-yearly-price b{color:#5f6470!important}
 .price-actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:auto}
 .price-actions .price-btn{width:100%;justify-content:space-between}
+.pricing-section .plan-yearly-price{font-size:13px;line-height:1.55;margin:9px 0 15px;color:#616976}
+.pricing-section .plan-yearly-price b{font-size:16px;color:#1d1d1f}
+.pricing-section .price-actions .price-btn-yearly{background:transparent!important;border:1px solid #707784!important;color:#15191d!important}
+.pricing-section .price-actions .price-btn-yearly:hover{background:#f1f4f7!important}
 .annual-save-note{margin-top:12px;font-size:10px;line-height:1.45;color:#888187}
 .price-card{display:flex!important;flex-direction:column!important;min-width:0}
 .price-card ul{flex:1}
