@@ -67,6 +67,7 @@ const SEO_INDEXABLE_PATHS = new Set([
   '/guides/multilingual-customer-support-chatbot',
   '/guides/ai-chatbot-vs-live-chat',
   '/guides/ai-chatbot-pricing',
+  ...GLOBAL_GUIDE_PATHS, // Additional guides, keeping old explicit URL assertions stable.
   '/features',
   '/funktioner',
   '/asiakaspalvelubotti',
@@ -212,7 +213,10 @@ function seoMetaForRequest(req) {
   const metaPath = seoMetaPath(rawPath);
   const languageMeta = SEO_META[lang] || SEO_META.fi;
   const fallback = languageMeta['/'];
-  const pair = languageMeta[metaPath] || verticalMetaForPath(metaPath)?.[lang] || aiTopicMeta(metaPath,lang) || fallback;
+  const guide = globalGuideData(metaPath,lang);
+  // Dedicated, localized guide metadata should be derived from the same approved
+  // visible article copy, rather than falling back to the homepage title.
+  const pair = languageMeta[metaPath] || (guide ? [guide.title + ' | Respondo AI',guide.subtitle] : null) || verticalMetaForPath(metaPath)?.[lang] || aiTopicMeta(metaPath,lang) || fallback;
   const isIndexable = SEO_INDEXABLE_PATHS.has(rawPath);
   const isKnown = isIndexable || SEO_APP_PATHS.has(rawPath);
   const origin = SEO_CANONICAL_ORIGIN;
@@ -319,6 +323,19 @@ function seoStructuredData(seo) {
         articleSection:article.sections.map(([name])=>name),
         isAccessibleForFree:true
       });
+      // FAQ answers below appear verbatim inside the article's visible details.
+      // These are content semantics, not a promise of enhanced Google displays.
+      if(Array.isArray(article.faq) && article.faq.length) {
+        graph.push({
+          '@type':'FAQPage',
+          '@id':seo.canonical+'#questions',
+          inLanguage:seo.lang,
+          mainEntity:article.faq.map(([question,answer])=>({
+            '@type':'Question',name:question,
+            acceptedAnswer:{'@type':'Answer',text:answer}
+          }))
+        });
+      }
     }
   } catch {}
   // Visible, locale-matched FAQ answers about the main customer service bot.
@@ -8235,6 +8252,9 @@ app.get('/llms.txt', (req,res) => {
     '- Booking chatbot: ' + SEO_CANONICAL_ORIGIN + '/ajanvaraus-chatbot',
     '- AI customer support guides: ' + SEO_CANONICAL_ORIGIN + '/guides?lang=en',
     '- Chatbot versus live chat guide: ' + SEO_CANONICAL_ORIGIN + '/guides/ai-chatbot-vs-live-chat?lang=en',
+    '- Chatbot website installation guide: ' + SEO_CANONICAL_ORIGIN + '/guides/chatbot-verkkosivuille-kayttoonotto?lang=en',
+    '- Customer service automation measurement guide: ' + SEO_CANONICAL_ORIGIN + '/guides/asiakaspalvelun-automaatio-mittarit?lang=en',
+    '- Customer support chatbot testing checklist: ' + SEO_CANONICAL_ORIGIN + '/guides/asiakaspalvelubotin-testaus?lang=en',
     '- Independent-use chatbot scorecard: ' + SEO_CANONICAL_ORIGIN + '/tools/ai-chatbot-evaluation.html',
     '- Security: ' + SEO_CANONICAL_ORIGIN + '/tietoturva',
     '- Privacy: ' + SEO_CANONICAL_ORIGIN + '/tietosuoja',
@@ -8883,6 +8903,10 @@ A 3-day free trial is available.
 Official URLs:
 https://respondoai.fi/
 https://respondoai.fi/ominaisuudet
+https://respondoai.fi/guides
+https://respondoai.fi/guides/chatbot-verkkosivuille-kayttoonotto
+https://respondoai.fi/guides/asiakaspalvelun-automaatio-mittarit
+https://respondoai.fi/guides/asiakaspalvelubotin-testaus
 https://respondoai.fi/funktioner
 https://respondoai.fi/features
 https://respondoai.fi/tietoturva
