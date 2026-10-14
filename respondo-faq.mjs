@@ -104,21 +104,21 @@ const FAQ = [
         "Mitä Respondo maksaa kuukaudessa?",
         "Paljonko kuukausitilaus maksaa?"
       ],
-      "a": "Kuukausihinnat ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Uusia vuositilauksia ei tällä hetkellä tarjota. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi."
+      "a": "Kuukausihinnat ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vuositilauksen hinnat ovat Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1428 €/vuosi), Enterprise 139 €/kk (1668 €/vuosi): säästö 10 €/kk, maksu kerran vuodessa. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi."
     },
     "sv": {
       "q": [
         "Vad kostar Respondo per månad?",
         "Vad kostar månadsabonnemanget?"
       ],
-      "a": "Månadspriserna är Advanced 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Nya årsabonnemang erbjuds för närvarande inte. Ingen moms debiteras på grund av verksamhet i liten skala."
+      "a": "Månadspriserna är Advanced 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Årsabonnemang kostar Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1428 €/år), Enterprise 139 €/mån (1668 €/år): spara 10 €/månad, betala årsvis. Ingen moms debiteras på grund av verksamhet i liten skala."
     },
     "en": {
       "q": [
         "How much does Respondo cost per month?",
         "What is the monthly plan price?"
       ],
-      "a": "Monthly pricing is Advanced €49/month, Premium €129/month, and Enterprise €149/month. New annual subscriptions are not offered at present. No VAT is charged due to the small-scale business exemption."
+      "a": "Monthly pricing is Advanced €49/month, Premium €129/month, and Enterprise €149/month. Annual plans cost Advanced €39/month (€468/year), Premium €119/month (€1428/year), Enterprise €139/month (€1668/year): save €10/month, billed annually. No VAT is charged due to the small-scale business exemption."
     }
   },
   {
@@ -128,21 +128,21 @@ const FAQ = [
         "Mitä vuositilaus maksaa?",
         "Paljonko vuosipaketti maksaa?"
       ],
-      "a": "Uusia vuositilauksia ei tällä hetkellä tarjota. Kuukausitilaukset ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Aiemmat vuositilaukset jatkuvat vanhoilla sopimusehdoillaan. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi."
+      "a": "Vuositilauksen hinnat ovat Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1428 €/vuosi), Enterprise 139 €/kk (1668 €/vuosi): säästö 10 €/kk, maksu kerran vuodessa. Kuukausitilaukset ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Aiemmat vuositilaukset jatkuvat vanhoilla sopimusehdoillaan. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi."
     },
     "sv": {
       "q": [
         "Vad kostar årsabonnemanget?",
         "Hur mycket kostar årsplanen?"
       ],
-      "a": "Nya årsabonnemang erbjuds inte längre. Månadspaketen är Advanced 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Befintliga årsabonnemang fortsätter enligt avtal. Ingen moms debiteras på grund av verksamhet i liten skala."
+      "a": "Årsabonnemang sparar 10 €/månad: Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1428 €/år), Enterprise 139 €/mån (1668 €/år). Faktureras årsvis. Månadsabonnemang kostar 49, 129 och 149 €/mån. Äldre avtal fortsätter oförändrade. Ingen moms debiteras på grund av verksamhet i liten skala."
     },
     "en": {
       "q": [
         "How much is the annual plan?",
         "What does the yearly subscription cost?"
       ],
-      "a": "New annual subscriptions are not currently offered. Monthly options are Advanced €49/month, Premium €129/month, and Enterprise €149/month. Existing annual subscriptions continue under their agreed terms. No VAT is charged due to the small-scale business exemption."
+      "a": "Annual billing saves €10/month: Advanced €39/month (€468/year), Premium €119/month (€1428/year), Enterprise €139/month (€1668/year), billed upfront annually. Monthly plans cost €49, €129 and €149/month. Existing subscriptions retain their terms. No VAT is charged due to the small-scale business exemption."
     }
   },
   {
@@ -1376,21 +1376,21 @@ const FAQ = [
         "Onko kuukausi- ja vuositilauksessa samat ominaisuudet?",
         "Saanko vuositilauksella enemmän ominaisuuksia?"
       ],
-      "a": "Advanced-, Premium- ja Enterprise-kuukausitilaukset eroavat ominaisuuksien ja asiakaspalvelijapaikkojen määrän perusteella. Vanhat vuositilaukset jatkuvat aiemmilla ehdoillaan."
+      "a": "Kuukausi- ja vuositilaus sisältävät saman paketin ominaisuudet ja asiakaspalvelijapaikat. Vuositilauksella säästät 10 €/kk (120 €/vuosi), mutta vuosihinta veloitetaan kerralla. Vanhat sopimukset säilyvät ennallaan."
     },
     "sv": {
       "q": [
         "Har månads- och årsabonnemanget samma funktioner?",
         "Får jag fler funktioner med årsplanen?"
       ],
-      "a": "Månadsabonnemangen Advanced, Premium och Enterprise skiljer sig åt i funktioner och antal kundserviceplatser. Befintliga årsabonnemang fortsätter enligt tidigare avtal."
+      "a": "Månads- och årsabonnemang har samma funktioner och antal kundserviceplatser inom respektive paket. Årsbetalning sparar 10 €/månad (120 €/år) och debiteras årsvis. Befintliga abonnemang behåller sina villkor."
     },
     "en": {
       "q": [
         "Do the monthly and annual plans have the same features?",
         "Do I get more features on the annual plan?"
       ],
-      "a": "Advanced, Premium, and Enterprise monthly plans differ in features and support-agent seats. Existing annual subscriptions continue under previous terms."
+      "a": "Monthly and annual billing include the same features and seats within each plan. Annual billing saves €10/month (€120/year) and is billed upfront. Existing subscriptions retain their agreed terms."
     }
   },
   {
