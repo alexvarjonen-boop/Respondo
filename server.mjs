@@ -12944,7 +12944,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       return res.status(400).json({ error:'Tuntematon toiminto.' });
     }
     if (type === 'order_status' && !actionAccess.allCurrentFeatures) {
-      return res.status(403).json({ error:'Tilaustietojen automaattinen tarkistus vaatii Business-tilauksen.', upgradeRequired:true });
+      return res.status(403).json({ error:'Tilaustietojen automaattinen tarkistus vaatii Enterprise-tilauksen.', upgradeRequired:true });
     }
 
     const fields = cleanActionFields(type, body.fields);
@@ -13683,7 +13683,7 @@ app.post('/api/channel/:slug/message', channelApiLimiter, async (req,res) => {
     if (!tr.rowCount) return res.status(404).json({ error:'Yritystä ei löytynyt.' });
     const tenant = await ensureTenantActionKeys(tr.rows[0]);
     if (!planEntitlements(tenant.subscription_plan).allCurrentFeatures) {
-      return res.status(403).json({ error:'Channels API vaatii Business-tilauksen.', upgradeRequired:true });
+      return res.status(403).json({ error:'Channels API vaatii Enterprise-tilauksen.', upgradeRequired:true });
     }
     const authHeader = String(req.headers.authorization || '');
     if (authHeader !== 'Bearer ' + tenant.channels_api_key) {
