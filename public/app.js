@@ -3820,7 +3820,7 @@ async function dashboard(options = {}) {
         <article class="stat"><small>${appText('KESKUSTELUT','KONVERSATIONER','CONVERSATIONS')}</small><b>${s.conversations}</b><span>${appText('yhteensä','totalt','total')}</span></article>
         <article class="stat"><small>${appText('VIIMEISET 7 PV','SENASTE 7 DAGARNA','LAST 7 DAYS')}</small><b>${s.last7 || 0}</b><span>${appText('keskustelua','konversationer','conversations')}</span></article>
         <article class="stat"><small>${appText('VASTATTU SUORAAN','SVARADE DIREKT','ANSWERED DIRECTLY')}</small><b>${s.answeredRate}%</b><span>${appText('ilman että asiakas piti ohjata eteenpäin','utan att kunden behövde skickas vidare','without routing the customer onward')}</span></article>
-        <article class="stat"><small>${appText('YHTEYDENOTOT','KONTAKTFÖRFRÅGNINGAR','CONTACT REQUESTS')}</small><b>${s.leads || 0}</b><span>${s.estimatedLeadValue > 0 ? 'arvioitu arvo ' + formatMoney(s.estimatedLeadValue) : 'asiakasta jätti yhteystietonsa'}</span></article>
+        <button type="button" class="stat stat-contact-shortcut" id="dashboardContactShortcut" aria-label="${esc(appText('Näytä yhteydenotot','Visa kontaktförfrågningar','View contact requests'))}"><small>${appText('YHTEYDENOTOT','KONTAKTFÖRFRÅGNINGAR','CONTACT REQUESTS')}</small><b>${s.leads || 0}</b><span>${s.estimatedLeadValue > 0 ? 'arvioitu arvo ' + formatMoney(s.estimatedLeadValue) : 'asiakasta jätti yhteystietonsa'}</span></button>
       </section>
 
       <section class="dashboard-premium-experience dashboard-view-section" data-dashboard-view="overview" aria-label="${esc(appText('Kokeile bottia','Testa botten','Test the bot'))}">
@@ -5141,6 +5141,10 @@ async function route() {
       button.addEventListener('click',()=>showDemoDashboardView(button.dataset.dashboardOpen));
     });
     $('#dashboardSettingsButton')?.addEventListener('click',()=>showDemoDashboardView('account'));
+    $('#dashboardContactShortcut')?.addEventListener('click', () => {
+      showDemoDashboardView('customers', {scrollTop:false});
+      requestAnimationFrame(() => document.getElementById('leads')?.scrollIntoView({behavior:'smooth',block:'start'}));
+    });
 
     document.querySelectorAll('.onboarding-step').forEach((button)=>{
       button.addEventListener('click',()=>{
@@ -6087,6 +6091,8 @@ async function route() {
         document.getElementById(targetId)?.scrollIntoView({ behavior:'smooth', block:'start' });
       });
     };
+    $('#dashboardContactShortcut')?.addEventListener('click', () => openDashboardTarget('leads'));
+
 
     $('#welcomeStart')?.addEventListener('click', () => {
       openDashboardTarget('business-profile');

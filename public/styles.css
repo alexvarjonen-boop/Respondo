@@ -9593,3 +9593,27 @@ body.deletion-modal-open{overflow:hidden!important}
 .pricing-section .price-actions .price-btn-yearly{border:1px solid #b4c6e5!important;background:#eef4ff!important;color:#112d5c!important;font-weight:650!important}
 .pricing-section .price-card.featured .plan-yearly-price,.pricing-section .price-card.featured .plan-yearly-price b{color:#171717!important}
 @media(max-width:760px){.pricing-section .plan-yearly-price b{font-size:18px}.pricing-section .price-actions .price-btn{min-height:48px}}
+
+/* Accessible shortcut from the overview contact count to the lead list. */
+#app .dashboard-premium-shell .stat-contact-shortcut{
+  appearance:none;
+  -webkit-appearance:none;
+  width:100%;
+  font:inherit;
+  color:inherit;
+  text-align:left!important;
+  cursor:pointer;
+  transition:transform .18s ease,border-color .18s ease;
+}
+#app .dashboard-premium-shell .stat-contact-shortcut:hover{
+  transform:translateY(-2px);
+  border-color:#a6b5cb!important;
+}
+#app .dashboard-premium-shell .stat-contact-shortcut:focus-visible{
+  outline:3px solid #2766ce;
+  outline-offset:3px;
+}
+@media(prefers-reduced-motion:reduce){
+  #app .dashboard-premium-shell .stat-contact-shortcut{transition:none}
+  #app .dashboard-premium-shell .stat-contact-shortcut:hover{transform:none}
+}
