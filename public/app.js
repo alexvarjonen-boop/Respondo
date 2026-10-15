@@ -1922,7 +1922,7 @@ function nav() {
         <a href="/#how">Tuote</a>
         <a href="/#control">Tietopohja</a>
         <a href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
-        <a href="/#pricing">Hinta</a>
+        <a href="/hinnat?lang=${currentLang()}">Hinta</a>
         <a href="/tietoturva">Tietoturva</a>
         <a href="/yhteystiedot">${appText("Yhteystiedot","Kontakt","Contact")}</a>
       </nav>
@@ -2228,7 +2228,7 @@ function footer() {
           <a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a>
           <a href="/kenelle-sopii?lang=${currentLang()}">${appText('Kenelle Respondo AI sopii','Vem passar Respondo AI för?','Who is Respondo AI for?')}</a>
           <a href="/guides?lang=${currentLang()}">${appText('Oppaat','Guider','Guides')}</a>
-          <a href="/#pricing">${appText('Hinta','Pris','Pricing')}</a>
+          <a href="/hinnat?lang=${currentLang()}">${appText('Hinta','Pris','Pricing')}</a>
           <a href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
         </div>
         <div class="foot-col">
