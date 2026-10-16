@@ -61,6 +61,15 @@ async function clearLegacyPaidChannelState() {
     if (legacySmsTable.rows[0]?.relation_name) {
       await pool.query('DELETE FROM missed_call_sms_events');
     }
+    // This table tracks which accounts have already received their welcome
+    // email. Unlike the rest of our runtime tables it is created lazily by
+    // server.mjs, so explicitly harden it for Supabase Data API users too.
+    await pool.query(`CREATE TABLE IF NOT EXISTS public.signup_welcome_emails (
+      user_id TEXT PRIMARY KEY,
+      sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`);
+    await pool.query('ALTER TABLE public.signup_welcome_emails ENABLE ROW LEVEL SECURITY');
+    await pool.query('REVOKE ALL PRIVILEGES ON TABLE public.signup_welcome_emails FROM anon, authenticated, service_role');
   } finally {
     await pool.end();
   }
