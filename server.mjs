@@ -22,6 +22,7 @@ import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } fr
 import { CUSTOMER_SERVICE_SEO_PATH, customerServiceLandingMarkup, customerServiceQuestions } from './public/customer-service-landing.mjs';
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './public/ai-topic-pages.mjs';
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './public/seo-intent-pages.mjs';
+import { ecommerceCustomerServiceMeta, ecommerceCustomerServiceMarkup } from './public/ecommerce-customer-service.mjs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -218,7 +219,7 @@ function seoMetaForRequest(req) {
   const guide = globalGuideData(metaPath,lang);
   // Dedicated, localized guide metadata should be derived from the same approved
   // visible article copy, rather than falling back to the homepage title.
-  const pair = languageMeta[metaPath] || (guide ? [guide.title + ' | Respondo AI',guide.subtitle] : null) || verticalMetaForPath(metaPath)?.[lang] || aiTopicMeta(metaPath,lang) || seoIntentMeta(metaPath,lang) || fallback;
+  const pair = (metaPath === '/verkkokauppa-chatbot' ? ecommerceCustomerServiceMeta(lang) : null) || languageMeta[metaPath] || (guide ? [guide.title + ' | Respondo AI',guide.subtitle] : null) || verticalMetaForPath(metaPath)?.[lang] || aiTopicMeta(metaPath,lang) || seoIntentMeta(metaPath,lang) || fallback;
   const isIndexable = SEO_INDEXABLE_PATHS.has(rawPath);
   const isKnown = isIndexable || SEO_APP_PATHS.has(rawPath);
   const origin = SEO_CANONICAL_ORIGIN;
@@ -473,7 +474,9 @@ async function renderIndexHtml(req) {
   // link previews and non-JavaScript readers must not depend on the SPA booting.
   // The browser app replaces this same content during normal hydration.
   const routePath = (req.path || '/').replace(/\/+$/, '') || '/';
-  const initialContent = GLOBAL_GUIDE_PATHS.includes(routePath)
+  const initialContent = routePath === '/verkkokauppa-chatbot'
+    ? ecommerceCustomerServiceMarkup(seo.lang)
+    : GLOBAL_GUIDE_PATHS.includes(routePath)
     ? globalResourcesMarkup(routePath, seo.lang)
     : VERTICAL_LANDING_PATHS.includes(routePath)
       ? verticalLandingMarkup(routePath, seo.lang)
