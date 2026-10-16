@@ -8313,7 +8313,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
   },
 }));
 
-app.get(['/favicon.ico','/apple-touch-icon.png','/apple-touch-icon-precomposed.png'], (req,res) => {
+app.get(['/favicon.ico','/favicon.png','/apple-touch-icon.png','/apple-touch-icon-precomposed.png'], (req,res) => {
   res.setHeader('Cache-Control','public, max-age=86400');
   return res.sendFile(path.join(__dirname,'public','respondo-approved-arrow-20261012.png'));
 });
@@ -13884,7 +13884,10 @@ app.post('/api/billing/cancel', auth, ownerOnly, async (req, res) => {
 });
 
 app.use(async (req, res, next) => {
-  if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+  // Match GET and HEAD for public pages: URL inspectors and link-checkers send
+  // HEAD requests, which must receive the same status and SEO headers as GET.
+  // Express automatically omits the HTML body for a HEAD response.
+  if (['GET','HEAD'].includes(req.method) && !req.path.startsWith('/api/')) {
     try {
       const { html, seo } = await renderIndexHtml(req);
       res.setHeader('Cache-Control','no-store');
