@@ -110,6 +110,12 @@ CREATE TABLE IF NOT EXISTS app_settings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS signup_welcome_emails (
+  user_id TEXT PRIMARY KEY,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE public.signup_welcome_emails ENABLE ROW LEVEL SECURITY;
+
 INSERT INTO app_settings(key,value)
 VALUES('owner_test_plan_enabled','true')
 ON CONFLICT(key) DO NOTHING;
