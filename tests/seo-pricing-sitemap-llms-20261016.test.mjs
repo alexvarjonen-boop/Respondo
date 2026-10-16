@@ -57,8 +57,15 @@ test('public pricing is rendered on server without JS; sitemap URLs are unique a
   const locs=[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
   assert.ok(locs.length>30,'sitemap is substantive');
   assert.equal(locs.length,new Set(locs).size,'sitemap must not repeat canonical localized URLs');
-  for(const url of ['https://respondoai.fi/hinnat','https://respondoai.fi/hinnat?lang=sv','https://respondoai.fi/hinnat?lang=en']){
-    assert.ok(locs.includes(url),url+' sitemap');
+  // The integration suite runs with NODE_ENV=test and a localhost canonical
+  // origin, while production emits https://respondoai.fi. Verify URLs by path
+  // and query rather than assuming the production hostname inside unit tests.
+  for(const lang of ['fi','sv','en']){
+    const match=locs.some((loc)=>{
+      const u=new URL(loc.replace(/&amp;/g,'&'));
+      return u.pathname==='/hinnat' && u.searchParams.get('lang')===(lang==='fi'?null:lang);
+    });
+    assert.ok(match,lang+' pricing URL in sitemap');
   }
   const llms=await fetch(origin+'/llms.txt');
   assert.equal(llms.status,200);
