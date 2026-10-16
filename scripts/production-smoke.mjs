@@ -25,6 +25,15 @@ export async function checkSite(origin = defaultOrigin) {
 
   await request(origin, '/api/public/config');
 
+  // Both the apex and www domains are advertised publicly. Their health
+  // must be tested independently so DNS/certificate/redirect regressions
+  // cannot leave half of Respondo's visitors on a broken host.
+  if (new URL(origin).hostname === 'www.respondoai.fi') {
+    const { response, body } = await request('https://respondoai.fi', '/');
+    assert.match(response.headers.get('content-type') || '', /text\\/html/i, 'Apex domain must serve HTML');
+    assert.match(body, /<title>[^<]+<\\/title>/i, 'Apex domain must render a page title');
+  }
+
   // Every route below is important either for signups or Google discoverability.
   const publicPages = [
     '/', '/ominaisuudet', '/hinnat', '/yhteystiedot',
