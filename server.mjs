@@ -6893,6 +6893,13 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   }
 
   if (generalContactQuestion(cleanMessage)) {
+    const contactAnswer=directGeneralContactAnswer(rows,responseLang);
+    // When someone asks for contact details, verified phone/email should not
+    // be hidden by an otherwise valid contact-page link. A request to send a
+    // message can still prefer the real website contact form.
+    const sendMessageRequested=/\b(?:lahettaa|viestin|message|send|write|skriva|skicka|meddelande)\b/
+      .test(normalizeSearchText(cleanMessage));
+    if(contactAnswer && !sendMessageRequested) return contactAnswer;
     const page=verifiedContactPage(rows);
     if(page) return {
       answer:responseLang==='en'
@@ -6902,7 +6909,6 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
           :(page.form?'Voit ottaa yhteyttä yritykseen sen verkkosivujen yhteydenottolomakkeella. Avaa lomake alta.':'Voit ottaa yhteyttä yritykseen sen verkkosivujen yhteydenottosivun kautta. Avaa sivu alta.'),
       handoff:false,confidence:0.98,intent:'Yhteystiedot',sourceIds:[page.row.id].filter(Boolean),selected:[page.row],
     };
-    const contactAnswer=directGeneralContactAnswer(rows,responseLang);
     if(contactAnswer) return contactAnswer;
     // Only an actual request to communicate should offer the built-in
     // contact form when this site does not expose a verified URL/number/email.
