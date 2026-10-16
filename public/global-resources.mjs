@@ -585,6 +585,7 @@ export function globalResourcesMarkup(path,lang='fi') {
     ['/tekoaly-yrityksille',['Tekoäly yrityksille','AI för företag','AI for businesses'][i]],
     ['/asiakaspalvelubotti',['AI-asiakaspalvelija yritykselle','AI-kundservicebot för företag','Business AI customer support bot'][i]],
     ['/asiakaspalvelun-automatisointi',['Asiakaspalvelun automatisointi','Automatiserad kundservice','Customer service automation'][i]],
+    ['/verkkokauppa-chatbot',['Chat-palvelu verkkokauppaan','Chattjänst för webbutik','Ecommerce customer service chatbot'][i]],
     ['/shopify-chatbot',['Shopify-chatbot','Shopify-chatbot för webbutik','Shopify chatbot'][i]],
     ['/liidien-keruu-chatbotilla',['Liidien kerääminen chatbotilla','Samla förfrågningar med chatbot','Chatbot lead capture'][i]],
     ['/monikielinen-chatbot',['Monikielinen chatbot','Flerspråkig chatbot','Multilingual chatbot'][i]]

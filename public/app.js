@@ -3,6 +3,7 @@ import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } fr
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-pages.mjs?v=20261016-intents-v1';
+import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs?v=20261016-gsc-en-fi-ecommerce-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261014-lead-value-calculator-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261012-approved-arrow-desktop-v2';
@@ -4898,7 +4899,8 @@ async function route() {
   if (path === '/') html = await home();
   else if (path === '/hinnat') html = `<div class="pricing-page">${nav()}<main>${pricingSection()}</main>${footer()}</div>`;
   else if (['/ominaisuudet','/features','/funktioner'].includes(path)) html = featuresPage();
-  else if (['/verkkokauppa-chatbot','/ajanvaraus-chatbot','/autokorjaamo-chatbot','/lvi-chatbot'].includes(path)) html = seoLandingPage(path);
+  else if (path === '/verkkokauppa-chatbot') html = `<div class="seo-landing-page">${nav()}${ecommerceCustomerServiceMarkup(currentLang())}${footer()}</div>`;
+  else if (['/ajanvaraus-chatbot','/autokorjaamo-chatbot','/lvi-chatbot'].includes(path)) html = seoLandingPage(path);
   else if (path === '/asiakaspalvelubotti') html = `<div class="seo-landing-page">${nav()}${customerServiceLandingMarkup(currentLang())}${footer()}</div>`;
   else if (AI_TOPIC_PATHS.includes(path)) html = `<div class="seo-landing-page">${nav()}${aiTopicMarkup(path,currentLang())}${footer()}</div>`;
   else if (SEO_INTENT_PATHS.includes(path)) html = `<div class="seo-landing-page">${nav()}${seoIntentMarkup(path,currentLang())}${footer()}</div>`;
