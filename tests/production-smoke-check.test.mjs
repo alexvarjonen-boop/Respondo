@@ -9,7 +9,7 @@ const html = (lang = 'fi') =>
   '<link rel="alternate" hreflang="sv" href="/?lang=sv" />' +
   '<link rel="alternate" hreflang="en" href="/?lang=en" /></head><body><h1>Respondo</h1></body></html>';
 
-function fakeResponse(url, init, { unhealthy = false, brokenSwedish = false } = {}) {
+function fakeResponse(url, init, { unhealthy = false, brokenSwedish = false, apexUnavailable = false } = {}) {
   const u = new URL(url);
   let body = html(u.searchParams.get('lang') || 'fi');
   let status = 200;
@@ -32,6 +32,7 @@ function fakeResponse(url, init, { unhealthy = false, brokenSwedish = false } = 
   } else if (brokenSwedish && u.searchParams.get('lang') === 'sv') {
     body = html('fi');
   }
+  if (apexUnavailable && u.hostname === 'respondoai.fi') status = 503;
   return Promise.resolve(new Response(init?.method === 'HEAD' ? null : body, {
     status,
     headers: { 'content-type': contentType },
@@ -57,4 +58,10 @@ test('production smoke catches wrong-language server HTML', async t => {
   t.after(() => { globalThis.fetch = originalFetch; });
   globalThis.fetch = (url, init) => fakeResponse(url, init, { brokenSwedish: true });
   await assert.rejects(checkSite('https://www.respondoai.fi'), /must return localized SSR HTML/);
+});
+
+test('production smoke detects an unavailable apex domain even when www works', async t => {
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = (url, init) => fakeResponse(url, init, { apexUnavailable: true });
+  await assert.rejects(checkSite('https://www.respondoai.fi'), /expected HTTP 200, got 503/);
 });
