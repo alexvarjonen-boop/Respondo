@@ -2,6 +2,7 @@ import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './gl
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
+import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-pages.mjs?v=20261016-intents-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261014-lead-value-calculator-v1';
 import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261012-approved-arrow-desktop-v2';
@@ -1745,9 +1746,9 @@ function updateDocumentLanguageMeta(lang) {
     },
   };
 
-  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', ...AI_TOPIC_PATHS, '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
+  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', ...AI_TOPIC_PATHS, ...SEO_INTENT_PATHS, '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
   const guideMeta = GLOBAL_GUIDE_PATHS.includes(metaPath) ? Object.fromEntries(['fi','sv','en'].map(l => { const article=globalGuideData(metaPath,l); return [l,article?[article.title+' | Respondo AI',article.subtitle]:null]; })) : null;
-  const baseMeta = metaByPath[metaPath] || (guideMeta?.fi ? guideMeta : null) || verticalMetaForPath(metaPath) || (AI_TOPIC_PATHS.includes(metaPath) ? Object.fromEntries(['fi','sv','en'].map(l => [l,aiTopicMeta(metaPath,l)])) : null) || metaByPath['/'];
+  const baseMeta = metaByPath[metaPath] || (guideMeta?.fi ? guideMeta : null) || verticalMetaForPath(metaPath) || (AI_TOPIC_PATHS.includes(metaPath) ? Object.fromEntries(['fi','sv','en'].map(l => [l,aiTopicMeta(metaPath,l)])) : null) || (SEO_INTENT_PATHS.includes(metaPath) ? Object.fromEntries(['fi','sv','en'].map(l => [l,seoIntentMeta(metaPath,l)])) : null) || metaByPath['/'];
   const pair = baseMeta[lang] || baseMeta.fi;
   const pageTitle = pair[0];
   const metaDescription = pair[1];
@@ -2227,6 +2228,7 @@ function footer() {
           <h4>${appText('Tuote','Produkt','Product')}</h4>
           <a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a>
           <a href="/kenelle-sopii?lang=${currentLang()}">${appText('Kenelle Respondo AI sopii','Vem passar Respondo AI för?','Who is Respondo AI for?')}</a>
+          <a href="/asiakaspalvelun-automatisointi?lang=${currentLang()}">${appText('Asiakaspalvelun automatisointi','Automatisera kundservice','Customer service automation')}</a>
           <a href="/guides?lang=${currentLang()}">${appText('Oppaat','Guider','Guides')}</a>
           <a href="/hinnat?lang=${currentLang()}">${appText('Hinta','Pris','Pricing')}</a>
           <a href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
@@ -4899,6 +4901,7 @@ async function route() {
   else if (['/verkkokauppa-chatbot','/ajanvaraus-chatbot','/autokorjaamo-chatbot','/lvi-chatbot'].includes(path)) html = seoLandingPage(path);
   else if (path === '/asiakaspalvelubotti') html = `<div class="seo-landing-page">${nav()}${customerServiceLandingMarkup(currentLang())}${footer()}</div>`;
   else if (AI_TOPIC_PATHS.includes(path)) html = `<div class="seo-landing-page">${nav()}${aiTopicMarkup(path,currentLang())}${footer()}</div>`;
+  else if (SEO_INTENT_PATHS.includes(path)) html = `<div class="seo-landing-page">${nav()}${seoIntentMarkup(path,currentLang())}${footer()}</div>`;
   else if (VERTICAL_LANDING_PATHS.includes(path)) html = `<div class="seo-landing-page">${nav()}${verticalLandingMarkup(path,currentLang())}${footer()}</div>`;
   else if (path === '/kenelle-sopii') html = audienceHubPage();
   else if (GLOBAL_GUIDE_PATHS.includes(path)) html = `<div class="global-guide-page">${nav()}${globalResourcesMarkup(path,currentLang())}${footer()}</div>`;
