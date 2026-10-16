@@ -30,8 +30,8 @@ export async function checkSite(origin = defaultOrigin) {
   // cannot leave half of Respondo's visitors on a broken host.
   if (new URL(origin).hostname === 'www.respondoai.fi') {
     const { response, body } = await request('https://respondoai.fi', '/');
-    assert.match(response.headers.get('content-type') || '', /text\\/html/i, 'Apex domain must serve HTML');
-    assert.match(body, /<title>[^<]+<\\/title>/i, 'Apex domain must render a page title');
+    assert.match(response.headers.get('content-type') || '', /text\/html/i, 'Apex domain must serve HTML');
+    assert.match(body, /<title>[^<]+<\/title>/i, 'Apex domain must render a page title');
   }
 
   // Every route below is important either for signups or Google discoverability.
