@@ -23,6 +23,7 @@ import { CUSTOMER_SERVICE_SEO_PATH, customerServiceLandingMarkup, customerServic
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './public/ai-topic-pages.mjs';
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './public/seo-intent-pages.mjs';
 import { ecommerceCustomerServiceMeta, ecommerceCustomerServiceMarkup } from './public/ecommerce-customer-service.mjs';
+import { seoPricingMarkup } from './public/seo-pricing-ssr.mjs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -113,7 +114,7 @@ const SEO_META = {
     '/ajanvaraus-chatbot': ['Ajanvaraus-chatbot yritykselle | Respondo AI', 'Ajanvaraus-chatbot vastaa asiakkaiden kysymyksiin, kerää ajanvarauspyyntöjä ja tukee kalenteripohjaisia asiakaspalveluprosesseja 24/7.'],
     '/autokorjaamo-chatbot': ['Chatbot autokorjaamolle – huolto ja ajanvaraus | Respondo AI', 'Autokorjaamon chatbot vastaa huolto-, rengas- ja palvelukysymyksiin korjaamon omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.'],
     '/lvi-chatbot': ['Chatbot LVI-yritykselle – putkityöt ja huolto | Respondo AI', 'LVI-yrityksen chatbot auttaa putki-, lämmitys- ja huoltopalvelujen kysymyksissä yrityksen hyväksymillä tiedoilla ja kerää yhteydenottopyyntöjä.'],
-    '/hinnat': ["Hinnat | Respondo AI", "Vertaile Advanced-, Premium- ja Enterprise-tilauspaketteja. Kolmen päivän maksuton kokeilu kaikissa paketeissa."],
+    '/hinnat': ["AI-asiakaspalvelubotin hinnat yrityksille | Respondo AI", "Paljonko AI-asiakaspalvelubotti maksaa? Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vertaa myös vuositilauksia ja kokeile 3 päivää maksutta."],
     '/yhteystiedot': ['Yhteystiedot | Respondo AI', 'Ota yhteyttä Respondo AI:hin. Asiakaspalvelu, verkkosivujen chatbotin käyttöönotto ja yritysten tarjouspyynnöt.'],
     '/tietoturva': ['Tietoturva ja tietosuoja | Respondo AI', 'Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
     '/kayttoehdot': ['Käyttöehdot | Respondo AI', 'Respondo AI -palvelun käyttöehdot yritysasiakkaille.'],
@@ -136,7 +137,7 @@ const SEO_META = {
     '/ajanvaraus-chatbot': ['Bokningschatbot för företag | Respondo AI', 'En bokningschatbot svarar på kundfrågor, samlar bokningsförfrågningar och stödjer kalenderbaserade kundserviceflöden dygnet runt.'],
     '/autokorjaamo-chatbot': ['Chatbot för bilverkstad | Respondo AI', 'Chatbot för bilverkstad besvarar frågor om service, däck och bokning med verkstadens egna godkända uppgifter och samlar kontaktförfrågningar.'],
     '/lvi-chatbot': ['Chatbot för VVS-företag | Respondo AI', 'Chatbot för VVS-företag svarar på frågor om rör, värme och service med företagets egna godkända uppgifter.'],
-    '/hinnat': ["Priser | Respondo AI", "Jämför abonnemangen Advanced, Premium och Enterprise. Alla paket har tre dagars gratis provperiod."],
+    '/hinnat': ["Priser för AI-kundservicebot till företag | Respondo AI", "Jämför Respondo AI Advanced 49 €/mån, Premium 129 €/mån och Enterprise 149 €/mån. Se årspriser och testa gratis i tre dagar."],
     '/yhteystiedot': ['Kontakt | Respondo AI', 'Kontakta Respondo AI om kundservicebot för företag, funktioner, priser och att komma igång.'],
     '/tietoturva': ['Datasäkerhet och integritet | Respondo AI', 'Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
     '/kayttoehdot': ['Användarvillkor | Respondo AI', 'Användarvillkor för Respondo AI:s företagstjänst.'],
@@ -159,7 +160,7 @@ const SEO_META = {
     '/ajanvaraus-chatbot': ['Booking Chatbot for Business | Respondo AI', 'A booking chatbot answers customer questions, captures booking requests and supports calendar-based customer-service workflows around the clock.'],
     '/autokorjaamo-chatbot': ['Chatbot for Auto Repair Shops | Respondo AI', 'An auto repair chatbot answers questions about services, tyres and bookings using garage-approved information and captures customer contact requests.'],
     '/lvi-chatbot': ['Chatbot for Plumbing and HVAC Companies | Respondo AI', 'A plumbing and HVAC chatbot answers service, heating and maintenance questions using company-approved information and captures enquiries.'],
-    '/hinnat': ["Pricing | Respondo AI", "Compare Advanced, Premium and Enterprise plans. Every plan includes a three-day free trial."],
+    '/hinnat': ["AI Customer Service Chatbot Pricing | Respondo AI", "Compare Respondo AI Advanced €49/month, Premium €129/month and Enterprise €149/month. View annual plans and the three-day free trial."],
     '/yhteystiedot': ['Contact Respondo AI | Support and Sales', 'Contact Respondo AI about the business customer service chatbot, product information and getting started.'],
     '/tietoturva': ['Security and Privacy | Respondo AI', 'See how Respondo protects company and customer data, sign-ins, integrations and service usage.'],
     '/kayttoehdot': ['Terms of Service | Respondo AI', 'Terms of service for Respondo AI business customers.'],
@@ -478,7 +479,9 @@ async function renderIndexHtml(req) {
     ? globalResourcesMarkup(routePath, seo.lang)
     : routePath === '/verkkokauppa-chatbot'
       ? ecommerceCustomerServiceMarkup(seo.lang)
-      : VERTICAL_LANDING_PATHS.includes(routePath)
+      : routePath === '/hinnat'
+        ? seoPricingMarkup(seo.lang)
+        : VERTICAL_LANDING_PATHS.includes(routePath)
       ? verticalLandingMarkup(routePath, seo.lang)
       : routePath === CUSTOMER_SERVICE_SEO_PATH
         ? customerServiceLandingMarkup(seo.lang)
@@ -8221,7 +8224,9 @@ app.get('/robots.txt', (req,res) => {
 
 app.get('/sitemap.xml', (req,res) => {
   // Do not claim that every URL was modified today on each sitemap request.
-  const basePaths = ['/', '/ominaisuudet', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', ...AI_TOPIC_PATHS, ...SEO_INTENT_PATHS, '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
+  // The guides route is listed explicitly and also in GLOBAL_GUIDE_PATHS;
+  // de-duplicate before emitting <loc> entries for each language.
+  const basePaths = [...new Set(['/', '/ominaisuudet', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', ...AI_TOPIC_PATHS, ...SEO_INTENT_PATHS, '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'])];
   const escapeXml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
   const rows = [];
   for (const basePath of basePaths) {
@@ -8302,7 +8307,7 @@ app.get('/llms.txt', (req,res) => {
     '',
     'For current product claims, pricing and policies, use the canonical public pages above as the source of truth.',
     ''
-  ].join('\\n');
+  ].join('\n');
   res.setHeader('Cache-Control','public, max-age=3600');
   res.type('text/plain').send(text);
 });
