@@ -4784,6 +4784,18 @@ function referencedProductFollowUp(rows,message,history=[],lang='fi') {
   if(['delivery','returns','payment','warranty','booking','contact','hours','stores','quote'].includes(queryTopic(q))) return null;
   const products=productCatalog(rows);
   if(!products.length) return null;
+  // "Vad kostar den svarta puttern?" names a verified variant through its
+  // color and product family. The Swedish pronoun "den" alone must not turn
+  // this explicit query into "Vilken produkt menar du?" before catalog lookup.
+  const requestedColor=productColorAliases(message);
+  const requestedFamily=requestedProductFamily(message);
+  if(requestedColor.length && requestedFamily){
+    const matchingVariants=products.filter(product=>
+      productHasColorAlias(product,requestedColor) &&
+      productMatchesFamily(product,requestedFamily)
+    );
+    if(matchingVariants.length===1) return null;
+  }
   // An explicitly named product in the current message wins over history.
   if(products.some(p=>q.includes(normalizeSearchText(p.name)) && normalizeSearchText(p.name).length>=5)) return null;
   const turn=meaningfulConversationTurn(history);
