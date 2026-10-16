@@ -2,16 +2,20 @@ name: Respondo CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, production-respondo-fi]
   pull_request:
 
 permissions:
   contents: read
 
+concurrency:
+  group: respondo-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,6 +26,6 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Syntax checks
-        run: npm run check
+        run: npm run check && node --check scripts/production-smoke.mjs
       - name: Test suite
         run: npm test
