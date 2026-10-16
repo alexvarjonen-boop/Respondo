@@ -474,11 +474,11 @@ async function renderIndexHtml(req) {
   // link previews and non-JavaScript readers must not depend on the SPA booting.
   // The browser app replaces this same content during normal hydration.
   const routePath = (req.path || '/').replace(/\/+$/, '') || '/';
-  const initialContent = routePath === '/verkkokauppa-chatbot'
-    ? ecommerceCustomerServiceMarkup(seo.lang)
-    : GLOBAL_GUIDE_PATHS.includes(routePath)
+  const initialContent = GLOBAL_GUIDE_PATHS.includes(routePath)
     ? globalResourcesMarkup(routePath, seo.lang)
-    : VERTICAL_LANDING_PATHS.includes(routePath)
+    : routePath === '/verkkokauppa-chatbot'
+      ? ecommerceCustomerServiceMarkup(seo.lang)
+      : VERTICAL_LANDING_PATHS.includes(routePath)
       ? verticalLandingMarkup(routePath, seo.lang)
       : routePath === CUSTOMER_SERVICE_SEO_PATH
         ? customerServiceLandingMarkup(seo.lang)
