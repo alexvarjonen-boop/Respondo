@@ -21,6 +21,7 @@ import { GLOBAL_GUIDE_PATHS, globalGuideData, globalResourcesMarkup } from './pu
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './public/vertical-landing.mjs';
 import { CUSTOMER_SERVICE_SEO_PATH, customerServiceLandingMarkup, customerServiceQuestions } from './public/customer-service-landing.mjs';
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './public/ai-topic-pages.mjs';
+import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './public/seo-intent-pages.mjs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -72,6 +73,7 @@ const SEO_INDEXABLE_PATHS = new Set([
   '/funktioner',
   '/asiakaspalvelubotti',
   ...AI_TOPIC_PATHS,
+  ...SEO_INTENT_PATHS,
   '/verkkokauppa-chatbot',
   '/ajanvaraus-chatbot',
   '/autokorjaamo-chatbot',
@@ -216,7 +218,7 @@ function seoMetaForRequest(req) {
   const guide = globalGuideData(metaPath,lang);
   // Dedicated, localized guide metadata should be derived from the same approved
   // visible article copy, rather than falling back to the homepage title.
-  const pair = languageMeta[metaPath] || (guide ? [guide.title + ' | Respondo AI',guide.subtitle] : null) || verticalMetaForPath(metaPath)?.[lang] || aiTopicMeta(metaPath,lang) || fallback;
+  const pair = languageMeta[metaPath] || (guide ? [guide.title + ' | Respondo AI',guide.subtitle] : null) || verticalMetaForPath(metaPath)?.[lang] || aiTopicMeta(metaPath,lang) || seoIntentMeta(metaPath,lang) || fallback;
   const isIndexable = SEO_INDEXABLE_PATHS.has(rawPath);
   const isKnown = isIndexable || SEO_APP_PATHS.has(rawPath);
   const origin = SEO_CANONICAL_ORIGIN;
@@ -475,7 +477,9 @@ async function renderIndexHtml(req) {
         ? customerServiceLandingMarkup(seo.lang)
         : AI_TOPIC_PATHS.includes(routePath)
           ? aiTopicMarkup(routePath,seo.lang)
-          : seoNoScriptMarkup(seo, routePath).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
+          : SEO_INTENT_PATHS.includes(routePath)
+            ? seoIntentMarkup(routePath,seo.lang)
+            : seoNoScriptMarkup(seo, routePath).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
   html = html.replace('<div id="app"></div>', '<div id="app">' + initialContent + '</div>');
 
 
@@ -8192,7 +8196,7 @@ app.get('/robots.txt', (req,res) => {
 
 app.get('/sitemap.xml', (req,res) => {
   // Do not claim that every URL was modified today on each sitemap request.
-  const basePaths = ['/', '/ominaisuudet', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', ...AI_TOPIC_PATHS, '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
+  const basePaths = ['/', '/ominaisuudet', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', ...AI_TOPIC_PATHS, ...SEO_INTENT_PATHS, '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa'];
   const escapeXml = (value) => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
   const rows = [];
   for (const basePath of basePaths) {
@@ -8248,6 +8252,10 @@ app.get('/llms.txt', (req,res) => {
     '- Features (Swedish): ' + SEO_CANONICAL_ORIGIN + '/funktioner',
     '- Features (English): ' + SEO_CANONICAL_ORIGIN + '/features',
     '- Customer service bot: ' + SEO_CANONICAL_ORIGIN + '/asiakaspalvelubotti',
+    '- Service automation: ' + SEO_CANONICAL_ORIGIN + '/asiakaspalvelun-automatisointi',
+    '- Shopify chatbot: ' + SEO_CANONICAL_ORIGIN + '/shopify-chatbot',
+    '- Lead capture with chatbot: ' + SEO_CANONICAL_ORIGIN + '/liidien-keruu-chatbotilla',
+    '- Multilingual chatbot: ' + SEO_CANONICAL_ORIGIN + '/monikielinen-chatbot',
     '- Ecommerce chatbot: ' + SEO_CANONICAL_ORIGIN + '/verkkokauppa-chatbot',
     '- Booking chatbot: ' + SEO_CANONICAL_ORIGIN + '/ajanvaraus-chatbot',
     '- AI customer support guides: ' + SEO_CANONICAL_ORIGIN + '/guides?lang=en',
