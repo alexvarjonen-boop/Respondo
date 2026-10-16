@@ -583,7 +583,11 @@ export function globalResourcesMarkup(path,lang='fi') {
   const topicNav='<nav class="global-guide-topic-nav" aria-label="'+['Aiheeseen liittyvät kokonaisuudet','Relaterade ämnen','Related topics'][i]+'">'+[
     ['/tekoaly-asiakaspalvelu',['Tekoäly asiakaspalvelussa','AI i kundservice','AI in customer service'][i]],
     ['/tekoaly-yrityksille',['Tekoäly yrityksille','AI för företag','AI for businesses'][i]],
-    ['/asiakaspalvelubotti',['AI-asiakaspalvelija yritykselle','AI-kundservicebot för företag','Business AI customer support bot'][i]]
+    ['/asiakaspalvelubotti',['AI-asiakaspalvelija yritykselle','AI-kundservicebot för företag','Business AI customer support bot'][i]],
+    ['/asiakaspalvelun-automatisointi',['Asiakaspalvelun automatisointi','Automatiserad kundservice','Customer service automation'][i]],
+    ['/shopify-chatbot',['Shopify-chatbot','Shopify-chatbot för webbutik','Shopify chatbot'][i]],
+    ['/liidien-keruu-chatbotilla',['Liidien kerääminen chatbotilla','Samla förfrågningar med chatbot','Chatbot lead capture'][i]],
+    ['/monikielinen-chatbot',['Monikielinen chatbot','Flerspråkig chatbot','Multilingual chatbot'][i]]
   ].map(([url,label])=>'<a href="'+pathWithLang(url,L)+'">'+quote(label)+' →</a>').join('')+'</nav>';
   // Keep the existing English assessment discoverable for past links and
   // integration tests, while prioritising the Finnish tool for FI/SV readers.

@@ -2994,6 +2994,16 @@ function seoLandingPage(path) {
     closing:appText('Respondo auttaa LVI-yritystä vastaamaan yleisiin kysymyksiin ilman, että palveluja, hintoja tai teknisiä neuvoja tarvitsee arvailla.','Respondo hjälper VVS-företag att svara på vanliga frågor utan att gissa tjänster, priser eller tekniska råd.','Respondo helps plumbing and HVAC businesses answer routine questions without inventing services, prices or technical advice.')
   };
   const p=pages[path] || pages['/asiakaspalvelubotti'];
+  const relevantPages=path==='/verkkokauppa-chatbot'
+    ? [
+      ['/shopify-chatbot',appText('Shopify-chatbot: asennus ja tuotetiedot','Shopify-chatbot: installation och produkter','Shopify chatbot: setup and product questions')],
+      ['/monikielinen-chatbot',appText('Monikielinen verkkokaupan asiakaspalvelu','Flerspråkig kundservice för webbutik','Multilingual ecommerce customer support')]
+    ]
+    : [
+      ['/asiakaspalvelun-automatisointi',appText('Asiakaspalvelun automatisointi käytännössä','Praktisk kundserviceautomatisering','Customer service automation guide')],
+      ['/liidien-keruu-chatbotilla',appText('Yhteydenotot ja liidien kerääminen','Kontaktförfrågningar och leads','Customer enquiries and lead capture')]
+    ];
+  const topicLinks='<nav class="ai-topic-links" aria-label="'+appText('Aiheeseen liittyvät oppaat','Relaterade guider','Related guides')+'">'+relevantPages.map(([url,label])=>'<a href="'+url+'?lang='+currentLang()+'">'+label+' →</a>').join('')+'</nav>';
   return `<div class="seo-landing-page">${nav()}<main>
     <section class="seo-landing-hero"><div class="container seo-landing-hero-inner">
       <div class="section-kicker">${p.kicker}</div><h1>${p.h1}</h1><p>${p.lead}</p>
@@ -3002,7 +3012,7 @@ function seoLandingPage(path) {
     <section class="section seo-landing-copy"><div class="container"><div class="seo-landing-intro"><h2>${p.introTitle}</h2><p>${p.intro}</p></div>
       <div class="seo-landing-grid">${p.cards.map(([title,text])=>`<article><h3>${title}</h3><p>${text}</p></article>`).join('')}</div>
     </div></section>
-    <section class="section seo-landing-closing"><div class="container"><div class="seo-landing-closing-card"><h2>${appText('Sopiva vastaus oikeaan aikaan.','Rätt svar vid rätt tidpunkt.','The right answer at the right time.')}</h2><p>${p.closing}</p></div></div></section>
+    <section class="section seo-landing-closing"><div class="container"><div class="seo-landing-closing-card"><h2>${appText('Sopiva vastaus oikeaan aikaan.','Rätt svar vid rätt tidpunkt.','The right answer at the right time.')}</h2><p>${p.closing}</p>${topicLinks}</div></div></section>
   </main>${footer()}</div>`;
 }
 
