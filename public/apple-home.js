@@ -5,15 +5,17 @@ export function appleHomeMarkup(t,lang,count){
   const chatTitle=t('Yrityksesi','Ditt företag','Your company');
   return `<section class="apple-hero" aria-labelledby="apple-home-title">
     <div class="apple-hero-inner">
-      <p class="apple-eyebrow">RESPONDO AI</p>
+      <p class="apple-eyebrow"><span class="cinematic-live-indicator" aria-hidden="true"></span>RESPONDO AI <span class="cinematic-edition">/ 2026</span></p>
       <h1 id="apple-home-title">${t('Älykkäämpää','Smartare','Smarter')}<br><span>${t('asiakaspalvelua','kundservice','customer service')}</span></h1>
       <p class="apple-hero-description">${t('AI-asiakaspalvelubotti yrityksesi verkkosivuille. Vastaa kysymyksiin vuorokauden ympäri yrityksesi omilla tiedoilla.','AI-kundservice på ditt företags webbplats. Svarar dygnet runt med information från ditt företag.','AI customer service for your business website. Available around the clock, with answers based on your company information.')}</p>
       <div class="apple-hero-actions"><a class="apple-pill apple-pill-primary" data-respondo-hero-cta="signup" href="/tilaus?lang=${lang}">${t('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</a><a class="apple-pill apple-pill-secondary" data-respondo-hero-cta="demo" href="${demo}">${t('Kokeile bottia','Testa botten','Try the bot')}</a></div>
       <div class="apple-product-stage" aria-label="${t('Havainnollistava esimerkki chatbotista','Illustrativt exempel på en chattbot','Illustrative chatbot example')}">
         <div class="apple-stage-halo" aria-hidden="true"></div>
         <div class="apple-stage-typography" aria-hidden="true">AI</div>
+        <div class="cinematic-stage-signal cinematic-stage-signal-left" aria-hidden="true"><span class="cinematic-signal-orb"></span><span>24 / 7<br><small>ALWAYS AVAILABLE</small></span></div>
+        <div class="cinematic-stage-signal cinematic-stage-signal-right" aria-hidden="true"><span class="cinematic-signal-icon">↗</span><span>FI <b>·</b> SV <b>·</b> EN<br><small>ONE ASSISTANT</small></span></div>
         <div class="apple-chat-preview">
-          <div class="apple-preview-top"><span class="apple-preview-avatar" aria-hidden="true">✦</span><span><strong>${chatTitle}</strong><small><i aria-hidden="true"></i>${t('Paikalla nyt','Online nu','Online now')}</small></span><span class="apple-preview-dots" aria-hidden="true">···</span></div>
+          <div class="apple-preview-top"><span class="apple-preview-avatar" aria-hidden="true"><img src="/respondo-approved-arrow-20261012.png" alt="" loading="lazy"></span><span><strong>${chatTitle}</strong><small><i aria-hidden="true"></i>${t('Paikalla nyt','Online nu','Online now')}</small></span><span class="apple-preview-dots" aria-hidden="true">···</span></div>
           <div class="apple-preview-body">
             <p class="apple-preview-question">${t('Miten toimitus toimii?','Hur fungerar leveransen?','How does delivery work?')}</p>
             <p class="apple-preview-answer">${t('Voin kertoa toimitustavoista ja -ajoista yrityksen sivuilta löytyvien tietojen perusteella.','Jag kan berätta om leveranssätt och leveranstider utifrån företagets webbplats.','I can explain delivery options and times based on the company’s website information.')}</p>
@@ -25,8 +27,8 @@ export function appleHomeMarkup(t,lang,count){
     </div>
   </section>
   <section class="apple-highlights" aria-labelledby="apple-highlights-title" id="features">
-    <div class="apple-highlights-intro"><p class="apple-eyebrow">${t('MIKSI RESPONDO','VARFÖR RESPONDO','WHY RESPONDO')}</p><h2 id="apple-highlights-title">${t('Kolme asiaa, jotka muuttavat asiakaspalvelun.','Tre saker som förändrar kundservicen.','Three ways to transform customer service.')}</h2></div>
-    <div class="apple-highlights-grid">
+    <div class="apple-highlights-intro"><p class="apple-eyebrow">${t('MIKSI RESPONDO','VARFÖR RESPONDO','WHY RESPONDO')}</p><h2 id="apple-highlights-title">${t('Kolme asiaa, jotka muuttavat asiakaspalvelun.','Tre saker som förändrar kundservicen.','Three ways to transform customer service.')}</h2><div class="cinematic-rail-controls"><span>01 — 03</span><div><button type="button" class="cinematic-rail-prev" aria-label="${t('Edellinen ominaisuus','Föregående funktion','Previous feature')}">←</button><button type="button" class="cinematic-rail-next" aria-label="${t('Seuraava ominaisuus','Nästa funktion','Next feature')}">→</button></div></div></div>
+    <div class="apple-highlights-grid" tabindex="0" aria-label="${t('Ominaisuudet, selaa vaakasuunnassa','Funktioner, svep horisontellt','Features, swipe horizontally')}">
       <article class="apple-feature-card apple-card-support" id="available">
         <div class="apple-card-content"><p class="apple-card-eyebrow">01 / 03</p><h3>${t('Asiakaspalvelu','Kundservice','Customer support')}<br><span>${t('ei nuku.','sover aldrig.','never sleeps.')}</span></h3><p>${t('Automaattiset vastaukset yleisiin kysymyksiin 24/7. Myös silloin, kun sinä et ole paikalla.','Automatiska svar på vanliga frågor dygnet runt – även när du inte är på plats.','Automatic answers to common questions, 24/7. Even when your team is offline.')}</p><a href="${demo}" class="apple-card-link">${t('Kokeile käytännössä','Prova själv','Try it yourself')} <span aria-hidden="true">↗</span></a></div><div class="apple-card-art apple-art-clock" aria-hidden="true"><div class="apple-clock-face"><span>24</span><small> / 7</small></div></div>
       </article>
@@ -37,6 +39,83 @@ export function appleHomeMarkup(t,lang,count){
         <div class="apple-card-content"><p class="apple-card-eyebrow">03 / 03</p><h3>${t('Yksi botti.','En chattbot.','One chatbot.')}<br><span>${t('Kolme kieltä.','Tre språk.','Three languages.')}</span></h3><p>${t('Palvele asiakkaitasi suomeksi, ruotsiksi ja englanniksi. Myös jatkokysymykset pysyvät mukana keskustelussa.','Betjäna kunder på finska, svenska och engelska. Även följdfrågor följer med i samtalet.','Support customers in Finnish, Swedish and English, with follow-up questions in context.')}</p><a href="${all}" class="apple-card-link">${t(`Katso kaikki ${count} ominaisuutta`,`Se alla ${count} funktioner`,`See all ${count} features`)} <span aria-hidden="true">↗</span></a></div><div class="apple-card-art apple-art-language" aria-hidden="true"><span>Hei.</span><span>Hej.</span><span>Hello.</span></div>
       </article>
     </div>
+  </section>
+
+
+  <section class="cinematic-scrolly" id="how" aria-labelledby="cinematic-how-title">
+    <div class="cinematic-scrolly-heading">
+      <p class="cinematic-kicker"><span>01 / ${t('NÄIN SE TOIMII','SÅ FUNGERAR DET','HOW IT WORKS')}</span></p>
+      <h2 id="cinematic-how-title">${t('Asiakaspalvelu,','Kundservice,','Customer service,')}<br><em>${t('joka liikkuu kanssasi.','som följer med.','built to move.')}</em></h2>
+      <p>${t('Kolme vaihetta. Yksi saumaton asiakaskokemus.','Tre steg. En sömlös kundupplevelse.','Three steps. One seamless customer experience.')}</p>
+    </div>
+    <div class="cinematic-scrolly-layout">
+      <div class="cinematic-sticky-stage" aria-label="${t('Havainnollistavia näkymiä palvelun toiminnasta','Illustrationer av hur tjänsten fungerar','Illustrative service walkthrough')}">
+        <div class="cinematic-stage-topbar"><span class="cinematic-stage-status"><i></i> RESPONDO / LIVE PREVIEW</span><span class="cinematic-stage-number">01 — 03</span></div>
+        <div class="cinematic-scene cinematic-scene--import is-current" data-cinematic-scene="0" aria-hidden="true">
+          <div class="cinematic-import-window">
+            <div class="cinematic-window-top"><span>● ● ●</span><span>${t('Yrityksesi verkkosivu','Ditt företags webbplats','Your business website')}</span></div>
+            <div class="cinematic-import-url"><span>↗</span><span>www.${t('yrityksesi','dittforetag','yourcompany')}.fi</span><span class="cinematic-import-check">✓</span></div>
+            <div class="cinematic-import-row"><i></i><span>${t('Palvelut','Tjänster','Services')}</span><b>✓</b></div>
+            <div class="cinematic-import-row"><i></i><span>${t('Tuotteet ja hinnat','Produkter och priser','Products and prices')}</span><b>✓</b></div>
+            <div class="cinematic-import-row"><i></i><span>${t('Yhteystiedot','Kontaktuppgifter','Contact details')}</span><b>✓</b></div>
+            <div class="cinematic-import-meter"><span></span></div>
+          </div>
+          <div class="cinematic-floating-chip">↗ <span>KNOWLEDGE CONNECTED</span></div>
+        </div>
+        <div class="cinematic-scene cinematic-scene--chat" data-cinematic-scene="1" aria-hidden="true">
+          <div class="cinematic-story-chat">
+            <div class="cinematic-story-chat-top"><img src="/respondo-approved-arrow-20261012.png" alt=""><div><b>RESPONDO AI</b><small>● ${t('Paikalla','Online','Online')}</small></div><span>···</span></div>
+            <div class="cinematic-story-chat-user">${t('Onko teillä auki lauantaina?','Har ni öppet på lördag?','Are you open on Saturday?')}</div>
+            <div class="cinematic-story-chat-reply">${t('Voin tarkistaa aukioloajat yrityksen tiedoista ja auttaa eteenpäin.','Jag kan kontrollera öppettiderna från företagets uppgifter och hjälpa dig vidare.','I can check the opening hours in the business information and help you further.')}</div>
+            <div class="cinematic-story-chat-input">${t('Kirjoita viesti…','Skriv ett meddelande…','Write a message…')} <b>↑</b></div>
+          </div>
+          <div class="cinematic-floating-chip">● <span>24 / 7 ACTIVE</span></div>
+        </div>
+        <div class="cinematic-scene cinematic-scene--language" data-cinematic-scene="2" aria-hidden="true">
+          <div class="cinematic-language-orbit"><span>FI</span><span>SV</span><span>EN</span><strong>↗</strong></div>
+          <div class="cinematic-language-caption">${t('Yksi keskustelu.','En konversation.','One conversation.')}<br><b>${t('Kolme kieltä.','Tre språk.','Three languages.')}</b></div>
+        </div>
+        <div class="cinematic-stage-footer"><span>AI / CUSTOMER EXPERIENCE</span><span class="cinematic-stage-track"><i></i></span></div>
+      </div>
+      <div class="cinematic-story-steps">
+        <article class="cinematic-story-step is-current" data-cinematic-step="0">
+          <span class="cinematic-step-counter">01 <i></i> ${t('YHDISTÄ','ANSLUT','CONNECT')}</span>
+          <h3>${t('Omat tietosi.','Dina uppgifter.','Your knowledge.')}<br><em>${t('Yhdessä paikassa.','På ett ställe.','In one place.')}</em></h3>
+          <p>${t('Lisää tietopohjaan yrityksesi palvelut, tuotteet ja vastaukset. Verkkosivujen tuonti on käytettävissä valitun paketin mukaan.','Lägg till tjänster, produkter och svar i kunskapsbasen. Webbplatsimport ingår beroende på plan.','Add your services, products and answers to the knowledge base. Website import is available according to your plan.')}</p>
+          <a href="${all}">${t('Tutustu ominaisuuksiin','Utforska funktioner','Explore features')} ↗</a>
+        </article>
+        <article class="cinematic-story-step" data-cinematic-step="1">
+          <span class="cinematic-step-counter">02 <i></i> ${t('VASTAA','SVARA','RESPOND')}</span>
+          <h3>${t('Asiakas kysyy.','Kunden frågar.','They ask.')}<br><em>${t('Respondo vastaa.','Respondo svarar.','Respondo answers.')}</em></h3>
+          <p>${t('Botti vastaa kysymyksiin automaattisesti yrityksesi omien tietojen perusteella – myös aukioloaikojen ulkopuolella.','Chatbotten svarar automatiskt utifrån företagets egna uppgifter, även utanför öppettiderna.','The assistant answers automatically using your business information, even after hours.')}</p>
+          <a href="${demo}">${t('Kokeile bottia','Testa botten','Try the bot')} ↗</a>
+        </article>
+        <article class="cinematic-story-step" data-cinematic-step="2">
+          <span class="cinematic-step-counter">03 <i></i> ${t('KASVA','VÄX','GROW')}</span>
+          <h3>${t('Yksi botti.','En chattbot.','One assistant.')}<br><em>${t('Kolme kieltä.','Tre språk.','Three languages.')}</em></h3>
+          <p>${t('Suomi, ruotsi ja englanti. Asiakas saa palvelua omalla kielellään, ja keskustelu pysyy mukana myös jatkokysymyksissä.','Finska, svenska och engelska. Kunden får hjälp på sitt språk, även vid följdfrågor.','Finnish, Swedish and English. Customers can get answers in their language, including follow-up questions.')}</p>
+          <a href="${all}">${t('Näe kaikki ominaisuudet','Se alla funktioner','See all features')} ↗</a>
+        </article>
+      </div>
+    </div>
+  </section>
+  <section class="cinematic-finale" id="control" aria-labelledby="cinematic-finale-title">
+    <div class="cinematic-finale-glow" aria-hidden="true"></div>
+    <div class="cinematic-finale-content">
+      <span class="cinematic-kicker">02 / THE EXPERIENCE</span>
+      <h2 id="cinematic-finale-title">${t('Kun kysymys tulee,','När frågan kommer,','When a question comes in,')}<br><em>${t('vastaus on jo valmiina.','finns svaret nära.','the answer is close.')}</em></h2>
+      <p>${t('Anna verkkosivusi palvella asiakkaita silloinkin, kun et itse ehdi.','Låt webbplatsen hjälpa kunder även när du inte hinner.','Let your website help customers even when your team is busy.')}</p>
+      <a href="${demo}" class="cinematic-finale-cta">${t('Koe Respondo','Upplev Respondo','Experience Respondo')} <span aria-hidden="true">↗</span></a>
+    </div>
+    <div class="cinematic-finale-device" aria-hidden="true">
+      <div class="cinematic-finale-device-bar"><span>● ● ●</span><span>RESPONDO / AI</span></div>
+      <div class="cinematic-finale-device-screen">
+        <img src="/respondo-approved-arrow-20261012.png" alt="" loading="lazy">
+        <span class="cinematic-finale-device-label">RESPONDO AI</span>
+        <div class="cinematic-finale-messages"><span>${t('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?')}</span><span>${t('Mitä palveluita tarjoatte?','Vilka tjänster erbjuder ni?','What services do you offer?')}</span><span>${t('Voin kertoa yrityksen palveluista.','Jag kan berätta om företagets tjänster.','I can tell you about the company’s services.')}</span></div>
+      </div>
+    </div>
+    <p class="cinematic-finale-note">${t('Havainnollistava tuotenäkymä','Illustrativ produktvy','Illustrative product view')}</p>
   </section>
 
   <section class="apple-lead-calculator" id="calculator" aria-labelledby="apple-lead-title">
