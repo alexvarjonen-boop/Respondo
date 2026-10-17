@@ -17,7 +17,7 @@
 #app .apple-home-page .cinema-flow-stage:has(.cinema-preview-browser) .cinema-flow-label{z-index:3;bottom:11px;right:18px;font-size:8px}
 #app .apple-home-page .cinema-preview-browser{
   position:absolute;z-index:2;inset:auto auto auto 50%;top:50%;transform:translate(-50%,-50%) rotate(-2deg);
-  width:min(83%,460px);height:min(73%,408px);min-height:280px;display:flex;flex-direction:column;
+  width:min(83%,460px);height:min(84%,460px);min-height:295px;display:flex;flex-direction:column;
   background:linear-gradient(155deg,#23252a,#12151a 80%);
   border:1px solid rgba(255,255,255,.20);border-radius:13px;overflow:hidden;
   box-shadow:0 38px 90px #000b,0 3px 0 #ffffff10 inset,0 0 76px rgba(255,100,38,.11);
@@ -48,7 +48,7 @@
 #app .apple-home-page .cinema-preview-chip{
   margin-left:auto;color:#ffae8a;font-weight:800;font-size:9px;letter-spacing:.13em
 }
-#app .apple-home-page .cinema-preview-body{position:relative;flex:1;min-height:0;isolation:isolate}
+#app .apple-home-page .cinema-preview-body{position:relative;flex:1;min-height:0;isolation:isolate;overflow:hidden}
 #app .apple-home-page .cinema-scene{
   position:absolute;inset:0;display:flex;flex-direction:column;gap:15px;
   padding:24px 24px 19px;
@@ -212,4 +212,9 @@
     animation:none!important;transition:none!important
   }
   #app .apple-home-page .cinema-hero-light-sweep{animation:none!important;opacity:.14}
+}
+
+/* Subtle depth tied to scroll, without affecting mobile scrolling or reduced-motion. */
+@media(min-width:961px) and (prefers-reduced-motion:no-preference){
+  #app .apple-home-page .apple-product-stage{translate:0 var(--cinema-scroll-translate,0px)}
 }
