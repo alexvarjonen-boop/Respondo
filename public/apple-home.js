@@ -12,8 +12,6 @@ export function appleHomeMarkup(t,lang,count){
       <div class="apple-product-stage" aria-label="${t('Havainnollistava esimerkki chatbotista','Illustrativt exempel på en chattbot','Illustrative chatbot example')}">
         <div class="apple-stage-halo" aria-hidden="true"></div>
         <div class="apple-stage-typography" aria-hidden="true">AI</div>
-        <div class="cinematic-stage-signal cinematic-stage-signal-left" aria-hidden="true"><span class="cinematic-signal-orb"></span><span>24 / 7<br><small>ALWAYS AVAILABLE</small></span></div>
-        <div class="cinematic-stage-signal cinematic-stage-signal-right" aria-hidden="true"><span class="cinematic-signal-icon">↗</span><span>FI <b>·</b> SV <b>·</b> EN<br><small>ONE ASSISTANT</small></span></div>
         <div class="apple-chat-preview">
           <div class="apple-preview-top"><span class="apple-preview-avatar" aria-hidden="true"><img src="/respondo-approved-arrow-20261012.png" alt="" loading="lazy"></span><span><strong>${chatTitle}</strong><small><i aria-hidden="true"></i>${t('Paikalla nyt','Online nu','Online now')}</small></span><span class="apple-preview-dots" aria-hidden="true">···</span></div>
           <div class="apple-preview-body">
@@ -42,63 +40,6 @@ export function appleHomeMarkup(t,lang,count){
   </section>
 
 
-  <section class="cinematic-scrolly" id="how" aria-labelledby="cinematic-how-title">
-    <div class="cinematic-scrolly-heading">
-      <p class="cinematic-kicker"><span>01 / ${t('NÄIN SE TOIMII','SÅ FUNGERAR DET','HOW IT WORKS')}</span></p>
-      <h2 id="cinematic-how-title">${t('Asiakaspalvelu,','Kundservice,','Customer service,')}<br><em>${t('joka liikkuu kanssasi.','som följer med.','built to move.')}</em></h2>
-      <p>${t('Kolme vaihetta. Yksi saumaton asiakaskokemus.','Tre steg. En sömlös kundupplevelse.','Three steps. One seamless customer experience.')}</p>
-    </div>
-    <div class="cinematic-scrolly-layout">
-      <div class="cinematic-sticky-stage" aria-label="${t('Havainnollistavia näkymiä palvelun toiminnasta','Illustrationer av hur tjänsten fungerar','Illustrative service walkthrough')}">
-        <div class="cinematic-stage-topbar"><span class="cinematic-stage-status"><i></i> RESPONDO / LIVE PREVIEW</span><span class="cinematic-stage-number">01 — 03</span></div>
-        <div class="cinematic-scene cinematic-scene--import is-current" data-cinematic-scene="0" aria-hidden="true">
-          <div class="cinematic-import-window">
-            <div class="cinematic-window-top"><span>● ● ●</span><span>${t('Yrityksesi verkkosivu','Ditt företags webbplats','Your business website')}</span></div>
-            <div class="cinematic-import-url"><span>↗</span><span>www.${t('yrityksesi','dittforetag','yourcompany')}.fi</span><span class="cinematic-import-check">✓</span></div>
-            <div class="cinematic-import-row"><i></i><span>${t('Palvelut','Tjänster','Services')}</span><b>✓</b></div>
-            <div class="cinematic-import-row"><i></i><span>${t('Tuotteet ja hinnat','Produkter och priser','Products and prices')}</span><b>✓</b></div>
-            <div class="cinematic-import-row"><i></i><span>${t('Yhteystiedot','Kontaktuppgifter','Contact details')}</span><b>✓</b></div>
-            <div class="cinematic-import-meter"><span></span></div>
-          </div>
-          <div class="cinematic-floating-chip">↗ <span>KNOWLEDGE CONNECTED</span></div>
-        </div>
-        <div class="cinematic-scene cinematic-scene--chat" data-cinematic-scene="1" aria-hidden="true">
-          <div class="cinematic-story-chat">
-            <div class="cinematic-story-chat-top"><img src="/respondo-approved-arrow-20261012.png" alt=""><div><b>RESPONDO AI</b><small>● ${t('Paikalla','Online','Online')}</small></div><span>···</span></div>
-            <div class="cinematic-story-chat-user">${t('Onko teillä auki lauantaina?','Har ni öppet på lördag?','Are you open on Saturday?')}</div>
-            <div class="cinematic-story-chat-reply">${t('Voin tarkistaa aukioloajat yrityksen tiedoista ja auttaa eteenpäin.','Jag kan kontrollera öppettiderna från företagets uppgifter och hjälpa dig vidare.','I can check the opening hours in the business information and help you further.')}</div>
-            <div class="cinematic-story-chat-input">${t('Kirjoita viesti…','Skriv ett meddelande…','Write a message…')} <b>↑</b></div>
-          </div>
-          <div class="cinematic-floating-chip">● <span>24 / 7 ACTIVE</span></div>
-        </div>
-        <div class="cinematic-scene cinematic-scene--language" data-cinematic-scene="2" aria-hidden="true">
-          <div class="cinematic-language-orbit"><span>FI</span><span>SV</span><span>EN</span><strong>↗</strong></div>
-          <div class="cinematic-language-caption">${t('Yksi keskustelu.','En konversation.','One conversation.')}<br><b>${t('Kolme kieltä.','Tre språk.','Three languages.')}</b></div>
-        </div>
-        <div class="cinematic-stage-footer"><span>AI / CUSTOMER EXPERIENCE</span><span class="cinematic-stage-track"><i></i></span></div>
-      </div>
-      <div class="cinematic-story-steps">
-        <article class="cinematic-story-step is-current" data-cinematic-step="0">
-          <span class="cinematic-step-counter">01 <i></i> ${t('YHDISTÄ','ANSLUT','CONNECT')}</span>
-          <h3>${t('Omat tietosi.','Dina uppgifter.','Your knowledge.')}<br><em>${t('Yhdessä paikassa.','På ett ställe.','In one place.')}</em></h3>
-          <p>${t('Lisää tietopohjaan yrityksesi palvelut, tuotteet ja vastaukset. Verkkosivujen tuonti on käytettävissä valitun paketin mukaan.','Lägg till tjänster, produkter och svar i kunskapsbasen. Webbplatsimport ingår beroende på plan.','Add your services, products and answers to the knowledge base. Website import is available according to your plan.')}</p>
-          <a href="${all}">${t('Tutustu ominaisuuksiin','Utforska funktioner','Explore features')} ↗</a>
-        </article>
-        <article class="cinematic-story-step" data-cinematic-step="1">
-          <span class="cinematic-step-counter">02 <i></i> ${t('VASTAA','SVARA','RESPOND')}</span>
-          <h3>${t('Asiakas kysyy.','Kunden frågar.','They ask.')}<br><em>${t('Respondo vastaa.','Respondo svarar.','Respondo answers.')}</em></h3>
-          <p>${t('Botti vastaa kysymyksiin automaattisesti yrityksesi omien tietojen perusteella – myös aukioloaikojen ulkopuolella.','Chatbotten svarar automatiskt utifrån företagets egna uppgifter, även utanför öppettiderna.','The assistant answers automatically using your business information, even after hours.')}</p>
-          <a href="${demo}">${t('Kokeile bottia','Testa botten','Try the bot')} ↗</a>
-        </article>
-        <article class="cinematic-story-step" data-cinematic-step="2">
-          <span class="cinematic-step-counter">03 <i></i> ${t('KASVA','VÄX','GROW')}</span>
-          <h3>${t('Yksi botti.','En chattbot.','One assistant.')}<br><em>${t('Kolme kieltä.','Tre språk.','Three languages.')}</em></h3>
-          <p>${t('Suomi, ruotsi ja englanti. Asiakas saa palvelua omalla kielellään, ja keskustelu pysyy mukana myös jatkokysymyksissä.','Finska, svenska och engelska. Kunden får hjälp på sitt språk, även vid följdfrågor.','Finnish, Swedish and English. Customers can get answers in their language, including follow-up questions.')}</p>
-          <a href="${all}">${t('Näe kaikki ominaisuudet','Se alla funktioner','See all features')} ↗</a>
-        </article>
-      </div>
-    </div>
-  </section>
   <section class="cinematic-finale" id="control" aria-labelledby="cinematic-finale-title">
     <div class="cinematic-finale-glow" aria-hidden="true"></div>
     <div class="cinematic-finale-content">
