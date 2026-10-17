@@ -7,9 +7,9 @@ const publicFile = (file) => readFileSync(new URL('../public/' + file, import.me
 
 test('cinematic Respondo story is localized and original conversion links still work', () => {
   const languageFields = [
-    ['fi', 0, 'Omat tietosi.', 'Älykkäämpää'],
-    ['sv', 1, 'Dina uppgifter.', 'Smartare'],
-    ['en', 2, 'Your knowledge.', 'Smarter']
+    ['fi', 0, 'Yrityksesi tiedot.', 'Älykkäämpää'],
+    ['sv', 1, 'Företagets information.', 'Smartare'],
+    ['en', 2, 'Your business knowledge.', 'Smarter']
   ];
   for (const [lang, index, chapter, headline] of languageFields) {
     const text = (fi, sv, en) => [fi, sv, en][index];
