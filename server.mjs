@@ -430,7 +430,7 @@ function seoNoScriptMarkup(seo, rawPath) {
   if (rawPath === '/') {
     if (seo.lang === 'sv') return '<noscript><main><h1>AI-kundservicebot för företag 24/7</h1><p>Respondo AI svarar på kundfrågor med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar.</p><p>Advanced 49 €/mån · Premium 129 €/mån · Enterprise 149 €/mån.</p><p><a href="/funktioner">Se funktionerna</a></p></main></noscript>';
     if (seo.lang === 'en') return '<noscript><main><h1>AI customer service bot for businesses 24/7</h1><p>Respondo AI answers customer questions with company-approved information, captures contact requests and supports bookings.</p><p>Advanced €49/month · Premium €129/month · Enterprise €149/month.</p><p><a href="/features">See features</a></p></main></noscript>';
-    return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille 24/7</h1><p>Respondo AI vastaa asiakkaiden kysymyksiin yrityksen omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.</p><p>Advanced 49 €/kk · Premium 129 €/kk · Enterprise 149 €/kk.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a> · <a href="/asiakaspalvelubotti">Mikä on asiakaspalvelijabotti?</a> · <a href="/tekoaly-asiakaspalvelu">Tekoäly asiakaspalvelussa</a> · <a href="/tekoaly-yrityksille">Tekoäly yrityksille</a> · <a href="/tools/asiakaspalvelubotti-testi.html">Ilmainen asiakaspalvelubotin testi (25 kysymystä)</a> · <a href="/media/">Respondo AI tuotetiedot medialle</a></p></main></noscript>';
+    return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille 24/7</h1><p>Respondo AI vastaa asiakkaiden kysymyksiin yrityksen omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.</p><p>Advanced 49 €/kk · Premium 129 €/kk · Enterprise 149 €/kk.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a> · <a href="/asiakaspalvelubotti">Mikä on asiakaspalvelijabotti?</a> · <a href="/tekoaly-asiakaspalvelu">Tekoäly asiakaspalvelussa</a> · <a href="/tekoaly-yrityksille">Tekoäly yrityksille</a> · <a href="/tools/asiakaspalvelubotti-testi.html">Ilmainen asiakaspalvelubotin testi (25 kysymystä)</a></p></main></noscript>';
   }
   return '<noscript><main><h1>' + escapeHtml(seo.title.replace(/\\s*\\|\\s*Respondo AI$/i,'')) + '</h1><p>' + escapeHtml(seo.description) + '</p><p><a href="' + SEO_CANONICAL_ORIGIN + '/">Respondo AI</a></p></main></noscript>';
 }
@@ -8249,8 +8249,6 @@ app.get('/sitemap.xml', (req,res) => {
   // One English-language static tool page. Unlike SPA routes, do not invent translated URLs.
   rows.push('  <url>\n    <loc>' + escapeXml(SEO_CANONICAL_ORIGIN + '/tools/ai-chatbot-evaluation.html') + '</loc>\n  </url>');
   rows.push('  <url>\n    <loc>' + escapeXml(SEO_CANONICAL_ORIGIN + '/tools/asiakaspalvelubotti-testi.html') + '</loc>\n  </url>');
-  // Crawlable, standalone factual media kit; no invented language variants.
-  rows.push('  <url>\n    <loc>' + escapeXml(SEO_CANONICAL_ORIGIN + '/media/') + '</loc>\n  </url>');
   const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
     rows.join('\n') + '\n</urlset>\n';
@@ -8312,14 +8310,10 @@ app.get('/llms.txt', (req,res) => {
   res.type('text/plain').send(text);
 });
 
-// Standalone factual media kit. Static middleware deliberately disables index files,
-// so route the canonical directory URL to its real HTML file explicitly.
-app.get(['/media','/media/'], (req,res) => {
-  // Express routes are not strict about a trailing slash by default.
-  // Inspect the original request path to avoid redirecting /media/ to itself.
-  if (req.path !== '/media/') return res.redirect(301, SEO_CANONICAL_ORIGIN + '/media/');
-  res.setHeader('Cache-Control','no-cache, must-revalidate');
-  return res.sendFile(path.join(__dirname,'public','media','index.html'));
+// Explicitly retire the former media-kit URLs. HTTP 410 asks search engines to remove them.
+app.get(['/media', '/media/', '/media/index.html'], (req,res) => {
+  res.setHeader('Cache-Control','no-store');
+  return res.status(410).type('text/plain').send('Gone');
 });
 
 app.use(express.static(path.join(__dirname, 'public'), {
