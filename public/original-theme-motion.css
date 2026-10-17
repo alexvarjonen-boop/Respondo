@@ -1,0 +1,77 @@
+/* Respondo AI motion-only overlay — no changes to palette, fonts, layout, copy or branding.
+   Purely decorative transforms on the original Apple-style homepage. */
+@media (prefers-reduced-motion: no-preference) {
+  #app .apple-home-page.motion-only-enabled .apple-hero .apple-stage-halo {
+    transform: translate3d(0, var(--mo-halo-y, 0px), 0) scale(var(--mo-halo-scale, 1));
+    transition: transform .22s ease-out;
+    will-change: transform;
+  }
+  #app .apple-home-page.motion-only-enabled .apple-stage-typography {
+    transform: translate3d(-50%, calc(-50% + var(--mo-type-y, 0px)), 0);
+    transition: transform .2s ease-out;
+    will-change: transform;
+  }
+  #app .apple-home-page.motion-only-enabled .apple-card-art {
+    transform: translate3d(0, var(--mo-art-offset, 0px), 0);
+    transition: transform .18s ease-out;
+    will-change: transform;
+  }
+  #app .apple-home-page.motion-only-enabled .apple-orbit-ring {
+    transform: rotateX(64deg) rotateZ(var(--mo-orbit-angle, -30deg));
+    transition: transform .18s ease-out;
+  }
+  #app .apple-home-page.motion-only-enabled .apple-art-language span {
+    transform: translate3d(var(--mo-language-shift, 0px), 0, 0);
+    transition: transform .25s ease-out;
+  }
+  #app .apple-home-page.motion-only-enabled .mo-reveal.mo-reveal-pending {
+    opacity: 0;
+    transform: translate3d(var(--mo-entrance-x, 0px), 44px, 0) scale(.972);
+  }
+  #app .apple-home-page.motion-only-enabled .mo-reveal {
+    transition: opacity .78s cubic-bezier(.18,.72,.26,1), transform .92s cubic-bezier(.18,.72,.26,1);
+  }
+  #app .apple-home-page.motion-only-enabled .mo-reveal.mo-reveal-visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  #app .apple-home-page.motion-only-enabled .apple-feature-card.mo-reveal:nth-child(2){
+    transition-delay: .12s;
+  }
+  #app .apple-home-page.motion-only-enabled .apple-feature-card.mo-reveal:nth-child(3){
+    transition-delay: .18s;
+  }
+  @media (min-width: 850px) and (hover: hover) and (pointer: fine) {
+    #app .apple-home-page.motion-only-enabled .apple-chat-preview {
+      animation: none;
+      transform: perspective(1100px)
+        translate3d(0, var(--mo-chat-y, 0px), var(--mo-chat-z, 0px))
+        rotateX(calc(4deg + var(--mo-pitch, 0deg)))
+        rotateY(calc(-9deg + var(--mo-yaw, 0deg)));
+      transition: transform .2s ease-out;
+      will-change: transform;
+    }
+    #app .apple-home-page.motion-only-enabled .apple-card-art {
+      transform: translate3d(0, var(--mo-art-offset, 0px), 0)
+        rotateX(var(--mo-art-pitch, 0deg))
+        rotateY(var(--mo-art-yaw, 0deg));
+    }
+  }
+  @media (max-width: 580px) {
+    #app .apple-home-page.motion-only-enabled .apple-stage-typography {
+      transform: translate(-50%, -50%);
+    }
+    #app .apple-home-page.motion-only-enabled .apple-card-art {
+      transform: translate3d(0, var(--mo-art-offset, 0px), 0);
+    }
+  }
+}
+/* Mobile motion and accessibility fallbacks are entirely opt-out safe. */
+@media (prefers-reduced-motion: reduce) {
+  #app .apple-home-page .mo-reveal,
+  #app .apple-home-page .mo-reveal.mo-reveal-pending {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
