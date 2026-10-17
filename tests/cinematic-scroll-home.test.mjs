@@ -37,6 +37,9 @@ test('cinematic assets load and honor motion preferences without changing produc
   assert.match(entry, /\/cinematic-home\.css\?v=/);
   assert.match(entry, /\/cinematic-home\.js\?v=/);
   assert.ok(entry.indexOf('/cinematic-home.css') > entry.indexOf('/apple-home.css'));
+  assert.ok(entry.indexOf('/cinematic-home.css') > entry.indexOf('/cinematic-marketing.css'));
+  assert.doesNotMatch(entry, /<script[^>]+src="\/cinematic-marketing\.js/);
+  assert.equal((entry.match(/<script[^>]+src="\/cinematic-home\.js/g) || []).length, 1);
   assert.match(style, /prefers-reduced-motion:reduce/);
   assert.match(style, /@media\(max-width:520px\)/);
   assert.match(style, /scroll-snap-type:x mandatory/);
