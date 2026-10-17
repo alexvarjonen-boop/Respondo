@@ -1,0 +1,107 @@
+/* Respondo public interior brand cohesion.
+   Complements cinematic-home.css but never overrides the homepage scroll experience,
+   dashboard, signup forms, payment or bot UI. */
+#app .r-brand-hero{
+  background:radial-gradient(ellipse 60% 80% at 85% 55%,rgba(236,90,43,.19),transparent 72%),
+    linear-gradient(140deg,#0b0b0e 0%,#18100f 100%)!important;
+  color:#faf7f6;
+}
+#app .r-brand-hero:before{
+  background:radial-gradient(ellipse 66% 85% at 83% 55%,rgba(242,91,39,.17),transparent 70%),
+    radial-gradient(circle at 6% 0,rgba(111,46,25,.11),transparent 45%)!important;
+}
+#app .r-brand-hero:after{
+  opacity:.12;
+  background-size:95px 95px;
+}
+#app .r-brand-hero .r-brand-hero-grid{
+  min-height:clamp(490px,51vw,675px);
+}
+#app .r-brand-hero .r-brand-hero-label{
+  color:#ffb191!important;
+  letter-spacing:.19em;
+}
+#app .r-brand-hero .r-brand-eyebrow{color:#d6c6c2!important}
+#app .r-brand-hero .r-brand-live-dot{
+  background:#ff7b50!important;
+  box-shadow:0 0 18px rgba(255,118,70,.52)!important;
+}
+#app .r-brand-hero h1{font-size:clamp(49px,7.3vw,101px)!important;line-height:.98!important;letter-spacing:-.071em!important}
+#app .r-brand-hero p{color:#c4b9b5!important}
+#app .r-brand-hero .r-brand-hero-link{
+  border-bottom-color:rgba(255,174,135,.48)!important;
+  transition:color .25s ease,border-color .25s ease;
+}
+#app .r-brand-hero .r-brand-hero-link:hover,
+#app .r-brand-hero .r-brand-hero-link:focus-visible{
+  color:#ffb18c!important;border-bottom-color:#ffb18c!important;
+}
+#app .r-brand-hero .r-brand-orbit-core{
+  border-color:rgba(255,131,79,.39)!important;
+  box-shadow:0 32px 90px rgba(0,0,0,.68),0 0 110px rgba(255,105,58,.14)!important;
+}
+#app .r-brand-hero .r-brand-orbit-ring{border-color:rgba(255,157,102,.28)!important}
+#app .r-brand-hero .r-brand-orbit-point{
+  background:#ff9469!important;border-color:#2c1411!important;
+  box-shadow:0 0 24px rgba(255,129,81,.49)!important;
+}
+#app .r-brand-hero .r-brand-orbit-caption{color:#ba9b92!important}
+#app .r-brand-contact-banner{
+  background:radial-gradient(ellipse 52% 87% at 84% 42%,rgba(250,111,55,.27),transparent 81%),
+    linear-gradient(115deg,#090a0d,#241512)!important;
+  border-radius:16px!important;
+}
+#app .r-brand-contact-banner-mark img{
+  box-shadow:0 18px 70px rgba(255,110,62,.13);
+}
+#app .r-brand-contact-banner .r-brand-eyebrow{color:#ffe0d3!important}
+#app .r-brand-contact-main .home-contact-submit{
+  background:#ef7549!important;
+  color:#140d0b!important;border-color:#ef7549!important;
+}
+#app .r-brand-flow{
+  background:radial-gradient(circle at 86% 5%,rgba(250,105,51,.13),transparent 42%),#101013!important;
+}
+#app .r-brand-flow:before{
+  background:radial-gradient(ellipse 50% 90% at 95% 0,rgba(250,105,51,.13),transparent 75%)!important;
+}
+#app .r-brand-flow .r-brand-mini-title,
+#app .r-brand-next-cta .r-brand-mini-title{
+  color:#ffae88!important;
+}
+#app .r-brand-flow-steps>div{
+  border-radius:12px!important;
+  border-color:rgba(255,174,127,.14)!important;
+  background:linear-gradient(142deg,rgba(255,155,106,.07),rgba(255,255,255,.012))!important;
+}
+#app .r-brand-flow-steps>div>span{color:#ffbc9e!important}
+#app .r-brand-pricing-banner{
+  background:radial-gradient(circle at 80% 36%,rgba(252,106,49,.23),transparent 44%),
+    linear-gradient(125deg,#090b0e,#1a1312)!important;
+}
+#app .r-brand-pricing-banner .r-brand-mini-title{color:#ffc3a6!important}
+#app .r-brand-pricing-deco{color:rgba(255,132,75,.16)!important}
+#app .r-brand-next-cta{
+  background:radial-gradient(circle at 90% 0,rgba(255,117,58,.16),transparent 52%),#101014!important;
+  border:1px solid rgba(255,176,130,.17);
+  border-radius:17px!important;
+}
+#app .r-brand-pill{border-radius:6px!important}
+#app .r-brand-pill:hover{background:#ffe0d0!important}
+#app .global-guide-page .global-guide-hero{
+  background:radial-gradient(circle at 88% 30%,rgba(255,115,57,.20),transparent 45%),#101014!important;
+  border-radius:16px!important;
+}
+#app .global-guide-page .global-guide-kicker{color:#ffbc9d!important}
+#app :is(.r-brand-hero-link,.r-brand-pill,.r-brand-contact-main .home-contact-submit):focus-visible{
+  outline:3px solid #ffa478!important;outline-offset:5px;
+}
+@media(max-width:700px){
+  #app .r-brand-hero .r-brand-hero-grid{min-height:0}
+  #app .r-brand-hero h1{font-size:clamp(43px,10.6vw,67px)!important}
+  #app .r-brand-contact-banner{border-radius:13px!important}
+  #app .r-brand-next-cta{border-radius:12px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  #app .r-brand-hero-link{transition:none!important}
+}
