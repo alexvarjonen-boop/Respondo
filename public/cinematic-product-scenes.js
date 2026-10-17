@@ -88,6 +88,7 @@
     var stage=story.querySelector('.cinema-flow-stage');
     if(!stage)return;
     stage.insertAdjacentHTML('beforeend',markup);
+    stage.classList.add('cinema-enhanced');
     var hero=page.querySelector('.apple-product-stage');
     if(hero&&!hero.querySelector('.cinema-hero-light-sweep')){
       hero.insertAdjacentHTML('beforeend','<div class="cinema-hero-light-sweep" aria-hidden="true"></div>'+
