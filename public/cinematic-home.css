@@ -194,7 +194,7 @@
 #app .apple-home-page .cinematic-stage-number{color:#efc1ab}
 #app .apple-home-page .cinematic-stage-footer{bottom:24px}
 #app .apple-home-page .cinematic-stage-track{width:66px;height:2px;background:#4b4c4d;overflow:hidden}
-#app .apple-home-page .cinematic-stage-track i{display:block;width:33.333%;height:100%;background:var(--cinematic-accent);transform:translateX(calc(var(--cinematic-step,0) * 100%));transition:transform .5s}
+#app .apple-home-page .cinematic-stage-track i{display:block;position:relative;left:calc(var(--cinematic-step,0) * 33.333%);width:33.333%;height:100%;background:var(--cinematic-accent);transition:left .5s}
 #app .apple-home-page .cinematic-scene{
   position:absolute;inset:73px 24px 62px;display:grid;place-items:center;
   opacity:0;visibility:hidden;transform:translate3d(0,25px,0) scale(.97);
@@ -264,9 +264,10 @@
 #app .apple-home-page .cinematic-story-steps{min-width:0}
 #app .apple-home-page .cinematic-story-step{
   display:flex;flex-direction:column;justify-content:center;align-items:flex-start;
-  min-height:72vh;max-width:510px;padding:30px 0;opacity:.4;transition:opacity .4s ease;scroll-margin-top:110px
+  min-height:72vh;max-width:510px;padding:30px 0;opacity:1;transition:opacity .4s ease;scroll-margin-top:110px
 }
 #app .apple-home-page .cinematic-story-step.is-current{opacity:1}
+html.cinematic-motion #app .apple-home-page .cinematic-story-step:not(.is-current){opacity:.42}
 #app .apple-home-page .cinematic-step-counter{display:flex;align-items:center;gap:12px;color:var(--cinematic-accent);font-size:10px;letter-spacing:.19em}
 #app .apple-home-page .cinematic-step-counter i{width:25px;height:1px;background:#9b5844}
 #app .apple-home-page .cinematic-story-step h3{
