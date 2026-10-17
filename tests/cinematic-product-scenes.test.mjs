@@ -2,52 +2,46 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Script } from 'node:vm';
+import { appleHomeMarkup } from '../public/apple-home.js';
 
-const read = (filename) => readFileSync(new URL('../' + filename, import.meta.url), 'utf8');
-const html = read('public/index.html');
-const productJS = read('public/cinematic-product-scenes.js');
-const productCSS = read('public/cinematic-product-scenes.css');
-const storyJS = read('public/cinematic-marketing.js');
+const publicFile = (file) => readFileSync(new URL('../public/' + file, import.meta.url), 'utf8');
+const html = publicFile('index.html');
+const homeCSS = publicFile('cinematic-home.css');
+const homeJS = publicFile('cinematic-home.js');
+const innerCSS = publicFile('cinematic-inner-pages.css');
 
-test('cinematic assets are loaded in the public page after the original story', () => {
-  const oldStyle = html.indexOf('/cinematic-marketing.css?');
-  const newStyle = html.indexOf('/cinematic-product-scenes.css?');
-  const oldScript = html.indexOf('/cinematic-marketing.js?');
-  const newScript = html.indexOf('/cinematic-product-scenes.js?');
-  assert.ok(oldStyle >= 0 && newStyle > oldStyle, 'new CSS should override the original cinematic visuals');
-  assert.ok(oldScript >= 0 && newScript > oldScript, 'new JS should initialize after the original story');
-  assert.equal(html.match(/\/cinematic-product-scenes\.css\?/g)?.length, 1);
-  assert.equal(html.match(/\/cinematic-product-scenes\.js\?/g)?.length, 1);
+test('one cinematic homepage renderer is installed with no competing scroll engines', () => {
+  assert.equal((html.match(/\/cinematic-home\.css\?/g) || []).length, 1);
+  assert.equal((html.match(/\/cinematic-home\.js\?/g) || []).length, 1);
+  assert.equal((html.match(/\/cinematic-inner-pages\.css\?/g) || []).length, 1);
+  assert.doesNotMatch(html, /\/cinematic-marketing\.(?:css|js)/);
+  assert.doesNotMatch(html, /\/cinematic-product-scenes\.(?:css|js)/);
+  assert.ok(html.indexOf('/cinematic-inner-pages.css') > html.indexOf('/cinematic-home.css'));
 });
 
-test('animated scenes are syntactically valid and use existing scroll stages', () => {
-  assert.doesNotThrow(() => new Script(productJS, { filename: 'cinematic-product-scenes.js' }));
-  assert.match(storyJS, /cinema-story/);
-  assert.match(storyJS, /data-cinema-step/);
-  assert.match(productJS, /\.cinema-story/);
-  assert.match(productJS, /\.cinema-flow-stage/);
-  for (const number of [1, 2, 3]) {
-    assert.match(productCSS, new RegExp('data-active-step="' + number + '"'));
-    assert.match(productJS, new RegExp('data-scene="' + number + '"'));
+test('single homepage has three accessible scroll chapters, a hero and working routes', () => {
+  for (const [index, lang] of ['fi','sv','en'].entries()) {
+    const text = (fi,sv,en) => [fi,sv,en][index];
+    const markup = appleHomeMarkup(text,lang,142);
+    assert.equal((markup.match(/data-cinematic-step=/g)||[]).length,3);
+    assert.equal((markup.match(/data-cinematic-scene=/g)||[]).length,3);
+    assert.ok(markup.includes('/tilaus?lang='+lang));
+    assert.ok(markup.includes('/assistant?lang='+lang));
+    assert.ok(markup.includes('/respondo-approved-arrow-20261012.png'));
+    for (const id of ['how','control','features','calculator']) {
+      assert.equal((markup.match(new RegExp('id="'+id+'"','g'))||[]).length,1);
+    }
   }
-  assert.match(productJS, /new MutationObserver/);
 });
 
-test('three languages and approved brand asset are present', () => {
-  for (const language of ['fi', 'sv', 'en']) {
-    assert.match(productJS, new RegExp('\\n    ' + language + ':\\{'));
-  }
-  assert.match(productJS, /respondo-approved-arrow-20261012\.png/);
-  assert.match(productJS, /aria-hidden="true"/);
-  assert.match(productCSS, /prefers-reduced-motion:reduce/);
-  assert.match(productJS, /prefers-reduced-motion: reduce/);
-});
-
-test('illustrative scenes do not call APIs or replace functional chatbot and calculator', () => {
-  assert.doesNotMatch(productJS, /\bfetch\s*\(/);
-  assert.doesNotMatch(productJS, /\bXMLHttpRequest\b/);
-  assert.doesNotMatch(productJS, /innerHTML\s*=\s*['"]?/);
-  assert.match(productJS, /\.apple-product-stage/);
-  assert.doesNotMatch(productJS, /jobValueSlider|missedSlider|monthlyValue/);
-  assert.doesNotMatch(productJS, /\.apple-hero-actions/);
+test('motion is optional, translations remain and there are no extra network calls', () => {
+  assert.doesNotThrow(() => new Script(homeJS));
+  assert.match(homeJS,/IntersectionObserver/);
+  assert.match(homeJS,/prefers-reduced-motion/);
+  assert.match(homeCSS,/scroll-snap-type:x mandatory/);
+  assert.match(homeCSS,/prefers-reduced-motion:reduce/);
+  assert.match(innerCSS,/prefers-reduced-motion:reduce/);
+  assert.match(innerCSS,/#app \.r-brand-hero/);
+  assert.doesNotMatch(innerCSS,/\.apple-hero|\.apple-highlights|\.cinematic-scrolly/);
+  assert.doesNotMatch(homeJS,/\bfetch\s*\(|\bXMLHttpRequest\b/);
 });
