@@ -55,7 +55,7 @@
     var steps=t.steps.map(function(s,i){
       return '<article class="cinema-step" data-cinema-step="'+(i+1)+'"><span>'+s[0]+'</span><h3>'+s[1]+'</h3><p>'+s[2]+'</p><a href="'+s[4]+'?lang='+code+'">'+s[3]+' <span aria-hidden="true">↗</span></a></article>';
     }).join('');
-    var story='<section class="cinema-story" id="cinema-story" data-active-step="1" aria-labelledby="cinema-story-title">'+
+    var story='<span id="how" class="cinema-how-anchor" aria-hidden="true"></span><section class="cinema-story" id="cinema-story" data-active-step="1" aria-labelledby="cinema-story-title">'+
       '<div class="cinema-story-wrap"><span class="cinema-index">'+t.index+'</span>'+
       '<header class="cinema-story-intro"><h2 id="cinema-story-title">'+t.title+'</h2><p>'+t.intro+'</p></header>'+
       '<div class="cinema-story-grid"><div class="cinema-visual-rail"><div class="cinema-flow-stage" aria-hidden="true">'+
