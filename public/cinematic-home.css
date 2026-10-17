@@ -18,7 +18,7 @@
   border:1px solid rgba(255,255,255,.075);border-radius:50%;pointer-events:none;
   box-shadow:0 0 0 110px rgba(255,255,255,.009),0 0 0 220px rgba(255,255,255,.006)
 }
-#app .apple-home-page .apple-hero-inner{width:min(100%,1330px)}
+#app .apple-home-page .apple-hero-inner{display:block!important;min-height:0!important;width:min(100%,1330px)}
 #app .apple-home-page .apple-hero .apple-eyebrow{
   display:flex;justify-content:center;align-items:center;gap:9px;
   color:#d1d1d4;font-size:11px;font-weight:640;letter-spacing:.22em
@@ -35,7 +35,7 @@
   max-width:700px;font-size:clamp(16px,1.65vw,21px);font-weight:430;
   color:#b9bbc1;line-height:1.63
 }
-#app .apple-home-page .apple-hero-actions{margin-top:30px;gap:12px}
+#app .apple-home-page .apple-hero-actions{justify-content:center!important;margin-top:30px;gap:12px}
 #app .apple-home-page .apple-hero .apple-pill{
   border-radius:7px;min-height:51px;font-size:14px;font-weight:675;
   padding:12px 23px;transition:background .22s ease,box-shadow .22s ease,transform .22s ease
@@ -94,7 +94,7 @@
 #app .apple-home-page .cinematic-stage-signal-right{right:5%;bottom:22%;transform:rotate(7deg);font-size:18px}
 #app .apple-home-page .cinematic-signal-orb{width:21px;height:21px;flex:none;border:6px solid rgba(255,121,71,.3);background:var(--cinematic-accent);border-radius:50%;box-shadow:0 0 25px rgba(255,121,71,.4)}
 #app .apple-home-page .cinematic-signal-icon{display:grid;place-items:center;width:37px;height:37px;color:var(--cinematic-accent);border-radius:6px;border:1px solid rgba(255,121,71,.33);font-size:25px}
-#app .apple-home-page .apple-sample-note{color:#74777e;letter-spacing:.04em;margin:0}
+#app .apple-home-page .apple-sample-note{text-align:center;color:#74777e;letter-spacing:.04em;margin:0}
 @keyframes cinematic-chat-float{
   0%,100%{transform:perspective(1100px) rotateY(-12deg) rotateX(4deg) translateY(0)}
   50%{transform:perspective(1100px) rotateY(-8deg) rotateX(3deg) translateY(-14px)}
@@ -380,7 +380,7 @@ html.cinematic-motion #app .apple-home-page .cinematic-story-step:not(.is-curren
   #app .apple-home-page .apple-hero-description{font-size:15px;max-width:350px}
   #app .apple-home-page .apple-hero .apple-pill{font-size:12px;min-height:44px;padding:10px 13px}
   #app .apple-home-page .apple-product-stage{height:350px;margin-top:24px}
-  #app .apple-home-page .apple-chat-preview{width:min(250px,76vw);min-height:295px;transform:none;animation:none}
+  #app .apple-home-page .apple-chat-preview{width:min(250px,76vw);min-height:295px;transform:none!important;animation:none!important}
   #app .apple-home-page .apple-preview-top{padding:9px 12px}
   #app .apple-home-page .apple-preview-avatar{width:31px;height:31px}
   #app .apple-home-page .apple-preview-top strong{font-size:11px}
