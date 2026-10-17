@@ -16,15 +16,16 @@ test('cinematic Respondo story is localized and original conversion links still 
     const markup = appleHomeMarkup(text, lang, 142);
     assert.ok(markup.includes(headline));
     assert.ok(markup.includes(chapter));
-    assert.equal((markup.match(/data-cinematic-step=/g) || []).length, 3);
-    assert.equal((markup.match(/data-cinematic-scene=/g) || []).length, 3);
+    assert.ok(markup.includes('class="cinematic-finale"'));
+    assert.ok(markup.includes('class="cinematic-rail-controls"'));
+    assert.ok(!markup.includes('class="cinematic-scrolly"'), 'Single product story only');
     assert.ok(markup.includes('data-respondo-hero-cta="signup"'));
     assert.ok(markup.includes('/tilaus?lang=' + lang));
     assert.ok(markup.includes('/assistant?lang=' + lang));
     assert.ok(markup.includes('/ominaisuudet?lang=' + lang));
     assert.ok(markup.includes('/respondo-approved-arrow-20261012.png'));
     assert.ok(!markup.includes('$' + '{t('), 'Localized expressions must render');
-    for (const id of ['how', 'control', 'features', 'calculator']) {
+    for (const id of ['control', 'features', 'calculator']) {
       assert.equal((markup.match(new RegExp('id="' + id + '"', 'g')) || []).length, 1);
     }
   }
@@ -34,11 +35,14 @@ test('cinematic assets load and honor motion preferences without changing produc
   const entry = publicFile('index.html');
   const style = publicFile('cinematic-home.css');
   const behavior = publicFile('cinematic-home.js');
+  const legacyStory = publicFile('cinematic-marketing.js');
+  assert.ok(legacyStory.includes('class="cinema-story"'));
   assert.match(entry, /\/cinematic-home\.css\?v=/);
   assert.match(entry, /\/cinematic-home\.js\?v=/);
   assert.ok(entry.indexOf('/cinematic-home.css') > entry.indexOf('/apple-home.css'));
   assert.ok(entry.indexOf('/cinematic-home.css') > entry.indexOf('/cinematic-marketing.css'));
-  assert.doesNotMatch(entry, /<script[^>]+src="\/cinematic-marketing\.js/);
+  assert.match(entry, /<script[^>]+src="\/cinematic-marketing\.js/);
+  assert.match(entry, /<script[^>]+src="\/cinematic-product-scenes\.js/);
   assert.equal((entry.match(/<script[^>]+src="\/cinematic-home\.js/g) || []).length, 1);
   assert.match(style, /prefers-reduced-motion:reduce/);
   assert.match(style, /@media\(max-width:520px\)/);
