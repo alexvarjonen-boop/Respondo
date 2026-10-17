@@ -1,0 +1,44 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
+const read=(name)=>readFileSync(fileURLToPath(new URL('../'+name,import.meta.url)),'utf8');
+const js=read('public/original-theme-motion.js');
+const css=read('public/original-theme-motion.css');
+const html=read('public/index.html');
+const home=read('public/apple-home.js');
+test('scroll film engine is valid JS, reversible and tied to native scroll',()=>{
+  assert.doesNotThrow(()=>new vm.Script(js,{filename:'original-theme-motion.js'}));
+  assert.match(js,/virtualY\s*\+=\s*difference\s*\*\s*\.29/);
+  assert.match(js,/scrollY/);
+  assert.match(js,/requestAnimationFrame\(update\)/);
+  assert.match(js,/function\s+smoothstep/);
+  assert.match(js,/rotateY|mo-card-ry|mo-film-yaw/);
+  assert.match(js,/--mo-chat-scale/);
+  assert.match(js,/--mo-card-x/);
+  assert.match(js,/--mo-calc-scale/);
+  assert.match(js,/--mo-cta-scale/);
+  assert.match(js,/window\.addEventListener\('scroll'|addEventListener\('scroll'/);
+  assert.match(js,/prefers-reduced-motion: reduce/);
+  assert.match(js,/function\s+topOf/);
+});
+test('original homepage remains structurally and visually unchanged',()=>{
+  assert.match(html,/href="\/apple-home\.css\?/);
+  assert.match(html,/src="\/original-theme-motion\.js\?v=20261017-scroll-film-v2"/);
+  assert.match(html,/href="\/original-theme-motion\.css\?v=20261017-scroll-film-v2"/);
+  assert.match(home,/apple-hero/);
+  assert.match(home,/apple-highlights-grid/);
+  assert.match(home,/apple-lead-calculator/);
+  assert.doesNotMatch(home,/cinematic-|scroll-film|scroll-scrub/);
+  assert.doesNotMatch(html,/\/cinematic-(home|marketing|inner-pages|product-scenes)\./);
+});
+test('only transforms and visual effect properties; never colors, layout or customer data',()=>{
+  assert.match(css,/\.apple-home-page\.motion-only-enabled/);
+  assert.match(css,/prefers-reduced-motion: reduce/);
+  assert.match(css,/rotateY\(/);
+  assert.match(css,/clip-path/);
+  assert.doesNotMatch(css,/(?:^|[;{])\s*(?:color|background(?:-color)?|font(?:-size|-family|-weight)?|border-radius|padding|margin|display|grid-template-columns)\s*:/m);
+  assert.doesNotMatch(js,/(?:insertAdjacentHTML|innerHTML\s*=|fetch\s*\(|api\s*\()/);
+  assert.match(js,/location\.pathname\s*!==\s*'\/'/);
+});
