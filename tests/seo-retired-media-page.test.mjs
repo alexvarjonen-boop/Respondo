@@ -12,10 +12,10 @@ test('the retired media page and its public links are removed', () => {
     '../public/tools/asiakaspalvelubotti-testi.html',
     '../public/tools/ai-chatbot-evaluation.html'
   ]) {
-    assert.doesNotMatch(read(file), /\\/media\\//, file + ' must not link to the retired media page');
+    assert.equal(read(file).includes('/media/'), false, file + ' must not link to the retired media page');
   }
   const server = read('../server.mjs');
-  assert.doesNotMatch(server, /SEO_CANONICAL_ORIGIN \\+ '\\/media\\/'/, 'No sitemap entry for the retired media page');
+  assert.equal(server.includes("SEO_CANONICAL_ORIGIN + '/media/'"), false, 'No sitemap entry for the retired media page');
   assert.doesNotMatch(server, /Respondo AI tuotetiedot medialle/, 'No SEO fallback link');
 });
 
@@ -32,8 +32,8 @@ test('all former media-kit URLs return HTTP 410 and stay out of the sitemap', as
   }
   const sitemap = await fetch(base + '/sitemap.xml');
   assert.equal(sitemap.status,200);
-  assert.doesNotMatch(await sitemap.text(), /\\/media\\//);
+  assert.equal((await sitemap.text()).includes('/media/'), false);
   const home = await fetch(base + '/');
   assert.equal(home.status,200);
-  assert.doesNotMatch(await home.text(), /href="\\/media\\/"/);
+  assert.equal((await home.text()).includes('href="/media/"'), false);
 });
