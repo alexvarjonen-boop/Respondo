@@ -305,6 +305,7 @@ html.cinematic-motion #app .apple-home-page .cinematic-story-step:not(.is-curren
 #app .apple-home-page .cinematic-finale-messages span{display:block;width:80%;background:#30333a;padding:12px 14px;font-size:12px;line-height:1.5;border-radius:12px;color:#e7e8ee}
 #app .apple-home-page .cinematic-finale-messages span:nth-child(2){justify-self:end;background:#54575c}
 #app .apple-home-page .cinematic-finale-note{position:absolute;right:20px;bottom:10px;color:#95989f;font-size:10px}
+#app .apple-home-page .cinema-how-anchor{display:block;height:0;scroll-margin-top:82px}
 #app .apple-home-page .apple-bottom-cta{background:#090a0c;padding:110px 22px}
 #app .apple-home-page .apple-bottom-cta p{font-size:clamp(36px,5vw,71px);max-width:950px}
 #app .apple-home-page .apple-bottom-cta .apple-pill-primary{border-radius:7px;background:var(--cinematic-accent);border-color:var(--cinematic-accent);color:#111!important;font-weight:700}
