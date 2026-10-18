@@ -13,7 +13,7 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
   test('homepage has only seven spiral cards, then pricing, in '+lang,()=>{
     const html=appleHomeMarkup(t,lang,145,'<section class="pricing-section" id="pricing">Plans</section>');
     assert.equal((html.match(/class="apple-feature-card /g)||[]).length,0);
-    assert.equal((html.match(/data-rs-card\\b/g)||[]).length,7);
+    assert.equal((html.match(/data-rs-card\b/g)||[]).length,7);
     assert.ok(html.includes('class="apple-hero rs-spiral-section"'));
     assert.ok(html.includes('id="features"'));
     assert.ok(html.includes('class="rs-axis"'));
@@ -22,7 +22,7 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
     assert.ok(html.includes('href="/tilaus"'));
     assert.ok(html.includes('class="pricing-section" id="pricing"'));
     assert.ok(html.indexOf('rs-spiral-section') < html.indexOf('class="pricing-section"'));
-    assert.match(html, /class="rs-axis"[^>]*>[\\s\\S]*?<svg viewBox="0 0 256 256"/);
+    assert.match(html, /class="rs-axis"[^>]*>[\s\S]*?<svg viewBox="0 0 256 256"/);
     assert.doesNotMatch(html, /apple-highlights|apple-lead-calculator|rg-growth-section/);
     assert.doesNotMatch(html, /<iframe|<canvas/);
     assert.doesNotMatch(html,/apple-learning-links|Mistä aloittaa tekoälyn kanssa/);
