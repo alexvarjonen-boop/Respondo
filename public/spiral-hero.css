@@ -116,7 +116,7 @@
 #app .rs-spiral-card h2{font-size:clamp(19px,1.55vw,22px);letter-spacing:-.045em!important;font-weight:650;color:#f5f8fd!important;margin:0 0 7px;line-height:1.12}
 #app .rs-spiral-card p{color:#a5b6cd!important;font-size:12px;line-height:1.55;margin:0}
 #app .rs-enhanced .rs-spiral-cards{
-  display:block;position:absolute;inset:0;max-width:none;margin:0;
+  display:block;position:absolute;inset:0;max-width:none;margin:0;z-index:auto;
 }
 #app .rs-enhanced .rs-spiral-card{
   position:absolute;top:51%;left:50%;margin:0;
