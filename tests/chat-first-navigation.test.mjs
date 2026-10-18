@@ -61,7 +61,8 @@ test('natural direct navigation works even without the owner workspace',()=>{
 test('chat-first UI replaces site-pages footer but keeps essential legal access',()=>{
   const footer=app.slice(app.indexOf('function footer()'),app.indexOf('function heroVisual()'));
   assert.doesNotMatch(footer,/publicFooterNavigationMarkup|footer-site-nav|footer-site-links/);
-  assert.match(footer,/data-open-site-assistant/);
+  assert.doesNotMatch(footer,/data-open-site-assistant|footer-ask-respondo/);
+  assert.match(app,/class="public-header-login"/);
   for(const path of ['/kayttoehdot','/tietosuoja','/evasteet','/dpa']){
     assert.ok(footer.includes('href="'+path+'"'),path);
   }
@@ -71,7 +72,7 @@ test('chat-first UI replaces site-pages footer but keeps essential legal access'
   assert.match(effects,/data-open-site-assistant/);
   assert.match(effects,/createElement\('a'\)/);
   assert.doesNotMatch(effects,/const routes = \[/);
-  assert.match(css,/\.footer-ask-respondo/);
+  assert.match(css,/\.public-header-login/);
   assert.match(css,/\.fx-site-action/);
   assert.match(server,/import \{ respondoSiteNavigationActions, respondoSiteNavigationAnswer \}/);
   assert.match(server,/intent:'Respondo site navigation'/);
