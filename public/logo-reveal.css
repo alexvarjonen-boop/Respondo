@@ -16,9 +16,6 @@
 .rl-intro-burst{position:absolute;inset:-44%;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.23),rgba(114,171,255,.11) 24%,transparent 60%);opacity:0;transform:scale(.2);animation:rl-burst .9s 1.20s ease-out both;pointer-events:none}
 .rl-intro-name{position:relative;margin:13px 0 0;padding-left:.21em;font-size:clamp(25px,5.3vw,46px);font-weight:720;letter-spacing:.21em;line-height:1.18;color:#f5f8ff;opacity:0;transform:translate3d(0,27px,0);animation:rl-copy-in .8s 1.62s cubic-bezier(.16,.8,.24,1) forwards}
 .rl-intro-caption{margin:12px 0 0;color:#a7b1c6;font-size:clamp(10px,1.8vw,13px);font-weight:550;letter-spacing:.07em;line-height:1.65;opacity:0;transform:translateY(12px);animation:rl-copy-in .7s 1.92s ease-out forwards}
-.rl-intro-skip{position:absolute;right:max(19px,env(safe-area-inset-right));top:max(22px,env(safe-area-inset-top));z-index:3;padding:10px 15px;color:#cbd3e1;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(255,255,255,.055);font-size:12px;font-weight:600;letter-spacing:.02em;cursor:pointer;transition:background .2s}
-.rl-intro-skip:hover{background:rgba(255,255,255,.17)}
-.rl-intro-skip:focus-visible,.rl-replay:focus-visible{outline:3px solid #8ac1ff;outline-offset:4px}
 .rl-intro-lines{position:absolute;inset:-20%;pointer-events:none;opacity:0;background:repeating-conic-gradient(from 23deg at 50% 50%,rgba(159,195,255,.11) 0deg,transparent 1.5deg,transparent 23deg);mask-image:radial-gradient(circle,transparent 14%,#000 33%,transparent 66%);animation:rl-flare 1.0s 1.12s ease-out both}
 
 /* Scroll-controlled second reveal. No layout or palette changes to existing blocks. */
