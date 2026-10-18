@@ -49,8 +49,8 @@ test('homepage remains compact while dedicated routes retain pricing and contact
   const end=app.indexOf('\n\nfunction signup()',start);
   const home=app.slice(start,end);
   assert.ok(start>=0 && end>start);
-  assert.match(home,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT\)/);
-  assert.doesNotMatch(home,/pricingSection\(\)|contactSection\(\)|calculatorSection\(\)/);
+  assert.match(home,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT,pricingSection\(\)\)/);
+  assert.doesNotMatch(home,/contactSection\(\)|calculatorSection\(\)/);
   assert.match(app,/path === '\/hinnat'/);
   assert.match(app,/path === '\/yhteystiedot'/);
   assert.ok(server.includes("'/hinnat'"));
