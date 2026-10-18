@@ -10,11 +10,13 @@ const styles=readFileSync(new URL('../public/apple-home.css',import.meta.url),'u
 
 for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag'],[2,'en','Your company']]) {
   const t=(...translations)=>translations[index];
-  test('homepage renders exactly three primary cards in '+lang,()=>{
+  test('homepage renders three primary feature cards and seven helix cards in '+lang,()=>{
     const html=appleHomeMarkup(t,lang,145);
     assert.equal((html.match(/class="apple-feature-card /g)||[]).length,3);
-    assert.equal((html.match(/class="apple-chat-preview"/g)||[]).length,1);
-    assert.ok(html.includes('<strong>'+company+'</strong>'));
+    assert.equal((html.match(/data-rs-card\\b/g)||[]).length,7);
+    assert.ok(html.includes('class="apple-hero rs-spiral-section"'));
+    assert.ok(html.includes('class="rs-axis"'));
+    assert.ok(html.includes('data-respondo-hero-cta="signup"'));
     assert.ok(html.includes('/assistant?lang='+lang));
     assert.ok(html.includes('/ominaisuudet?lang='+lang));
     assert.ok(html.includes('href="/tilaus"'));
