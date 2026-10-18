@@ -2189,6 +2189,7 @@ function footer() {
         </div>
         <div class="foot-col">
           <h4>${appText('Tuote','Produkt','Product')}</h4>
+          <a href="/asiakaspalvelubotti?lang=${currentLang()}">${appText('Asiakaspalvelijabotti','AI-kundservicebot','AI customer service chatbot')}</a>
           <a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a>
           <a href="/kenelle-sopii?lang=${currentLang()}">${appText('Kenelle Respondo AI sopii','Vem passar Respondo AI för?','Who is Respondo AI for?')}</a>
           <a href="/asiakaspalvelun-automatisointi?lang=${currentLang()}">${appText('Asiakaspalvelun automatisointi','Automatisera kundservice','Customer service automation')}</a>
