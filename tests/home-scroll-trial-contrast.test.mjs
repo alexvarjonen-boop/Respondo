@@ -6,22 +6,20 @@ const homeCss=readFileSync(new URL('../public/apple-home.css',import.meta.url),'
 const iosCss=readFileSync(new URL('../public/ios-public.css',import.meta.url),'utf8');
 const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 
-test('home header has no login and only a conditionally visible trial CTA',()=>{
-  assert.match(app,/const isHomePage = location\.pathname === '\/'/);
-  assert.match(app,/isHomePage\s*\? `<a class="btn ink nav-home-scroll-trial"/);
-  assert.match(app,/aria-hidden="true" tabindex="-1"/);
-  assert.match(app,/if \(path === '\/'\) \{[\s\S]*?bindHomeHeroActions\(\);[\s\S]*?bindHomeScrollTrial\(\);[\s\S]*?\}/);
-  assert.match(homeCss,/\.nav-home-scroll-trial\{display:none!important\}/);
-  assert.match(homeCss,/\.nav-home-scroll-trial\.is-visible\{/);
-  assert.match(homeCss,/@media\(max-width:800px\)[\s\S]*?\.nav-home-scroll-trial\.is-visible/);
+test('homepage header has only brand and language switch, without hidden trial controls',()=>{
+  const nav=app.slice(app.indexOf('function nav()'),app.indexOf('function bindHomeHeroActions()'));
+  assert.match(nav,/\$\{logo\(\)\}/);
+  assert.match(nav,/\$\{languageSwitch\(\)\}/);
+  assert.doesNotMatch(nav,/nav-home-scroll-trial|apple-menu-toggle|apple-nav-overlay/);
+  assert.doesNotMatch(app,/bindHomeScrollTrial\(\)/);
+  assert.doesNotMatch(app,/bindPublicMenu\(\)/);
   assert.match(html,/app\.js\?v=[^"]*scroll-trial-v1/);
 });
-test('hero crossing header threshold toggles sticky CTA and keyboard access',()=>{
-  assert.match(app,/heroTrial\.getBoundingClientRect\(\)\.bottom/);
-  assert.match(app,/heroBottom <= headerBottom/);
-  assert.match(app,/stickyTrial\.classList\.toggle\('is-visible', show\)/);
-  assert.match(app,/stickyTrial\.tabIndex = show \? 0 : -1/);
-  assert.match(app,/addEventListener\('scroll', scheduleUpdate, \{ passive:true \}\)/);
+test('only the demo is accessible from the spiral hero',()=>{
+  const spiral=readFileSync(new URL('../public/spiral-hero.js',import.meta.url),'utf8');
+  assert.doesNotMatch(spiral,/data-respondo-hero-cta="signup"/);
+  assert.match(spiral,/data-respondo-hero-cta="demo"/);
+  assert.match(app,/bindHomeHeroActions\(\)/);
 });
 test('light signup and login color styles override old dark-theme variants',()=>{
   assert.match(iosCss,/#app \.formpage :is\(\.checkout-copy,\.login-copy\) h1\{/);
