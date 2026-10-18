@@ -30,8 +30,9 @@ for (const [lang,idx] of [['fi',0],['sv',1],['en',2]]) {
     }
     const hero=spiralHeroMarkup(tr,lang);
     assert.ok(!hero.includes('data-respondo-hero-cta="signup"'));
-    assert.ok(hero.includes('data-respondo-hero-cta="demo"'));
-    assert.ok(hero.includes('/assistant?lang='+lang));
+    assert.ok(hero.includes('data-respondo-ask-form'));
+    assert.ok(hero.includes('data-respondo-ask-question='));
+    assert.ok(!hero.includes('data-respondo-hero-cta="demo"'));
   });
 }
 test('public header is minimal and fullscreen menu is unmounted',()=>{
