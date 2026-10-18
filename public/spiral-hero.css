@@ -198,3 +198,70 @@
   #app .rs-spiral-section .rs-spiral-cards{position:relative!important;display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,265px),1fr))!important}
   #app .rs-spiral-section .rs-axis{position:relative!important;top:auto!important;left:auto!important;transform:none!important}
 }
+/* Mobile readability fix: keep the scene pinned while the user scrolls through
+   the seven cards. overflow-x:hidden on html/body creates a scroll container
+   in Safari and prevents position:sticky from working. clip does not. */
+@media (max-width:800px) {
+  html:has(#app .rs-spiral-section),
+  body:has(#app .rs-spiral-section) {
+    overflow-x:clip!important;
+  }
+  #app .apple-home-page:has(.rs-spiral-section),
+  #app .apple-home:has(.rs-spiral-section) {
+    overflow:visible!important;
+  }
+  #app .rs-spiral-section.rs-enhanced {
+    height:1050vh;
+    height:1050svh;
+  }
+  #app .rs-enhanced .rs-spiral-stage {
+    position:sticky!important;
+    top:0!important;
+    height:100vh!important;
+    height:100svh!important;
+  }
+  /* Only activated by JS if Safari still fails to honor sticky. */
+  #app .rs-enhanced.rs-fixed-fallback .rs-spiral-stage {
+    position:fixed!important;
+    top:0!important;
+    left:0!important;
+    right:0!important;
+    width:100%!important;
+  }
+  #app .rs-enhanced.rs-fixed-fallback.rs-fixed-end .rs-spiral-stage {
+    position:absolute!important;
+    top:auto!important;
+    bottom:0!important;
+  }
+  #app .rs-enhanced .rs-spiral-card {
+    width:min(80vw,288px);
+    max-width:calc(100vw - 36px);
+  }
+}
+@media (max-width:600px) {
+  #app .rs-enhanced .rs-spiral-card {
+    width:min(80vw,288px);
+    max-width:calc(100vw - 36px);
+    padding:19px 20px;
+  }
+  #app .rs-enhanced .rs-spiral-card p {
+    font-size:12px;
+    line-height:1.55;
+  }
+  #app .rs-enhanced .rs-spiral-card h2 {
+    font-size:20px;
+    line-height:1.18;
+  }
+  #app .rs-enhanced .rs-step-count {
+    display:flex;
+    position:absolute;
+    left:50%;
+    bottom:calc(100% + 12px);
+    transform:translateX(-50%);
+    gap:8px;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  #app .rs-spiral-section.rs-enhanced {height:auto!important}
+  #app .rs-spiral-section .rs-spiral-stage {position:relative!important;height:auto!important}
+}
