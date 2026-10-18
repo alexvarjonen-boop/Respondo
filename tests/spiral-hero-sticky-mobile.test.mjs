@@ -44,6 +44,7 @@ function harness({stickyWorks=true}={}) {
     cancelAnimationFrame(){},
     MutationObserver:class{observe(){}}
   };
+  context.window = context;
   vm.runInNewContext(js,context);
   function flush(){while(pending.length)pending.shift()()}
   flush();
