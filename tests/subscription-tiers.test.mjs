@@ -95,7 +95,7 @@ test('homepage signup workspaces and Try Bot offer monthly and annual tiers',()=
   assert.ok(app.includes("card('Premium',129,10"));
   assert.ok(app.includes("card('Enterprise',149,20"));
   assert.match(app,/asiakaspalvelijapaikkaa/);
-  assert.match(app,/\$\{code\}_yearly/);
+  assert.match(app,/plan:card\.dataset\.planCode \+ \(yearly \? '_yearly' : '_monthly'\)/);
 });
 
 test('homepage structured data publishes six approved monthly and annual subscription prices',()=>{
