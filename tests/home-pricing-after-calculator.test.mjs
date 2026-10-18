@@ -3,15 +3,19 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { appleHomeMarkup } from '../public/apple-home.js';
 
-test('the existing pricing cards slot follows the homepage calculator', () => {
+test('the same pricing cards follow the spiral directly without duplicate panels', () => {
   const pricing = '<section class="pricing-section" id="pricing"><p>Advanced · Premium · Enterprise</p></section>';
   const markup = appleHomeMarkup((fi) => fi, 'fi', 0, pricing);
-  const calculatorStart = markup.indexOf('<section class="apple-lead-calculator"');
+  const spiralStart = markup.indexOf('<section class="apple-hero rs-spiral-section"');
+  const spiralEnd = markup.indexOf('</section>', spiralStart) + '</section>'.length;
   const pricingStart = markup.indexOf(pricing);
   const finalCtaStart = markup.indexOf('<section class="apple-bottom-cta"');
-  assert.ok(calculatorStart >= 0, 'the homepage calculator is present');
-  assert.ok(pricingStart > calculatorStart, 'pricing follows the calculator');
+  assert.ok(spiralStart >= 0 && spiralEnd > spiralStart, 'spiral is present');
+  assert.equal((markup.match(/data-rs-card\b/g)||[]).length, 7, 'seven features stay inside the spiral');
+  assert.ok(pricingStart > spiralEnd, 'pricing follows the spiral');
+  assert.equal(markup.slice(spiralEnd, pricingStart).trim(), '', 'no extra sections before pricing');
   assert.ok(finalCtaStart > pricingStart, 'pricing comes before the final CTA');
+  assert.doesNotMatch(markup, /apple-highlights|apple-lead-calculator|rg-growth-section/);
   assert.equal(markup.split(pricing).length - 1, 1, 'pricing is inserted once');
 });
 
