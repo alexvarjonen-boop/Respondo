@@ -544,7 +544,27 @@
           typing.appendChild(action);
           if (used.size>=4) break;
         }
-        siteAssistantHistory.push({question:clean,answer});
+        // Display an offered first-party destination as a button only. Older
+        // knowledge replies may still contain that same raw URL in plain text.
+        let displayedAnswer = answer;
+        if (used.size) {
+          displayedAnswer = answer.replace(/https?:\/\/(?:www\.)?respondoai\.fi(?:\/[^\s<>"']*)?/gi, (match) => {
+            const cleaned = match.replace(/[.,!?;:)\]]+$/g, '');
+            try {
+              const destination = new URL(cleaned);
+              return used.has(destination.pathname) ? '' : match;
+            } catch { return match; }
+          });
+          if (displayedAnswer !== answer) {
+            displayedAnswer = displayedAnswer
+              .replace(/(?:Katso kaikki ominaisuudet|Se alla funktioner|Explore all features)\s*:\s*$/i, '')
+              .trim();
+            if (typing.firstChild && typing.firstChild.nodeType === 3) {
+              typing.firstChild.nodeValue = displayedAnswer;
+            }
+          }
+        }
+        siteAssistantHistory.push({question:clean,answer:displayedAnswer});
         if (siteAssistantHistory.length > 12) siteAssistantHistory.splice(0,siteAssistantHistory.length-12);
       } catch (err) {
         typing.classList.remove('typing');
