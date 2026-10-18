@@ -1,5 +1,5 @@
 // Three focused homepage feature cards; other sections are accessible from the fullscreen menu.
-export function appleHomeMarkup(t,lang,count){
+export function appleHomeMarkup(t,lang,count,pricingMarkup=''){
   const demo=`/assistant?lang=${lang}`;
   const all=`/ominaisuudet?lang=${lang}`;
   const chatTitle=t('Yrityksesi','Ditt företag','Your company');
@@ -76,5 +76,6 @@ export function appleHomeMarkup(t,lang,count){
       <p class="apple-lead-disclaimer">${t("Havainnollistava arvio: jokainen vastaamatta jäänyt yhteydenotto vastaa yhtä toteutunutta kauppaa. Ei myyntiennuste tai lupaus lisätuloista.","Illustrativt exempel: varje obesvarad förfrågan antas motsvara en genomförd affär. Ingen försäljningsprognos eller intäktsgaranti.","Illustrative estimate: each unanswered enquiry is assumed to equal one completed sale. Not a sales forecast or revenue guarantee.")}</p>
     </div>
   </section>
+  ${pricingMarkup}
   <section class="apple-bottom-cta"><p>${t('Valmis vastaamaan ensimmäiseen kysymykseen?','Redo att svara på den första frågan?','Ready for your first conversation?')}</p><a class="apple-pill apple-pill-primary" href="/tilaus">${t('Aloita ilmainen kokeilu','Börja gratis provperiod','Start your free trial')}</a><a class="apple-buyer-guide-link" href="/asiakaspalvelubotti?lang=${lang}">${t('Mikä on asiakaspalvelijabotti?','Så fungerar en AI-kundservicebot','How an AI customer service chatbot works')} →</a></section>`;
 }

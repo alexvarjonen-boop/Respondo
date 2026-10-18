@@ -35,12 +35,12 @@ test('intent landing pages are indexable and routed in both server and browser',
   assert.match(app,/function seoLandingPage\(path\)/);
 });
 
-test('redesigned homepage keeps supporting content on separate indexed pages',()=>{
+test('homepage shares pricing plans while detailed routes remain indexed',()=>{
   const start=app.indexOf('async function home()');
   const end=app.indexOf('\n\nfunction signup()',start);
   assert.ok(start>=0 && end>start);
   const home=app.slice(start,end);
-  assert.match(home,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT\)/);
+  assert.match(home,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT,pricingSection\(\)\)/);
   assert.doesNotMatch(home,/cinematicConversationScene\(\)|horizontalProductStory\(\)/);
   assert.match(server,/\'\/hinnat\'/);
   assert.match(server,/\'\/yhteystiedot\'/);

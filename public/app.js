@@ -3010,7 +3010,7 @@ async function home(){
   // Public homepage only; dashboard, subscription, contact and bot implementation are untouched.
   return `<div class="home-page apple-home-page">
     ${nav()}
-    <main class="immersive-home apple-home">${appleHomeMarkup(appText,currentLang(),FEATURE_COUNT)}</main>
+    <main class="immersive-home apple-home">${appleHomeMarkup(appText,currentLang(),FEATURE_COUNT,pricingSection())}</main>
     ${footer()}
   </div>`;
 }
