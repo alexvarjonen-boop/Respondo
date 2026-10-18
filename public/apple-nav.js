@@ -1,7 +1,7 @@
 // Public fullscreen navigation shared by all marketing pages.
 // Menu items use plain text labels, without decorative external-link arrows.
-export function publicMenuMarkup(t,lang){
- const entries=[
+export function publicNavigationEntries(t,lang){
+ return [
   [t('Etusivu','Startsida','Home'),'/'],
   [t('Tuote','Produkt','Product'),`/asiakaspalvelubotti?lang=${lang}`],
   [t('Ominaisuudet','Funktioner','Features'),`/ominaisuudet?lang=${lang}`],
@@ -13,6 +13,18 @@ export function publicMenuMarkup(t,lang){
   [t('Yhteystiedot','Kontakt','Contact'),`/yhteystiedot?lang=${lang}`],
   [t('Kirjaudu','Logga in','Log in'),`/kirjaudu?lang=${lang}`]
  ];
+}
+export function publicFooterNavigationMarkup(t,lang){
+ const entries=publicNavigationEntries(t,lang);
+ return `<nav class="footer-site-nav" aria-label="${t('Sivuston sivut','Webbplatsens sidor','Site pages')}">
+   <h4>${t('Sivuston sivut','Webbplatsens sidor','Site pages')}</h4>
+   <div class="footer-site-links">${entries.map(([label,href])=>`<a href="${href}">${label}</a>`).join('')}</div>
+ </nav>`;
+}
+// Deprecated menu template kept for older static module consumers only.
+// It is not rendered or bound by the site's public header.
+export function publicMenuMarkup(t,lang){
+ const entries=publicNavigationEntries(t,lang);
  return `<div class="apple-menu-overlay" id="apple-nav-overlay" aria-hidden="true" inert>
   <div class="apple-menu-head"><a href="/" class="apple-menu-logo"><img src="/respondo-approved-arrow-20261012.png" width="28" height="28" alt="" aria-hidden="true">RESPONDO AI</a><button class="apple-menu-close" data-apple-menu-close type="button" aria-label="${t('Sulje valikko','Stäng menyn','Close menu')}">×</button></div>
   <nav class="apple-menu-body" aria-label="${t('Sivuston valikko','Webbplatsmeny','Site navigation')}">

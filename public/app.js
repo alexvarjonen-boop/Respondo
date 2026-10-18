@@ -6,7 +6,7 @@ import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-p
 import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs?v=20261016-gsc-en-fi-ecommerce-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261018-spiral-only-v3';
-import { publicMenuMarkup, bindPublicMenu } from './apple-nav.js?v=20261012-approved-arrow-desktop-v2';
+import { publicFooterNavigationMarkup } from './apple-nav.js?v=20261018-footer-nav-v1';
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2-pricing-20261014-ape-v1-annual-120-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 import { parseBookingDurationMinutes } from './booking-duration.mjs?v=20261009-v1';
@@ -1915,30 +1915,13 @@ function bindLanguageSwitch() {
 
 
 function nav() {
-  const isHomePage = location.pathname === '/';
-  const isLoginPage = ['/kirjaudu','/login'].includes(location.pathname);
-  const isSignupPage = location.pathname === '/tilaus';
+  // Compact public header: brand + FI/SV/EN. All site links live in the footer.
   return `<header class="nav">
     <div class="container navin">
       ${logo()}
-      <nav class="navlinks" aria-label="Päänavigaatio">
-        <a href="/#how">Tuote</a>
-        <a href="/#control">Tietopohja</a>
-        <a href="/assistant?lang=${currentLang()}">Kokeile bottia</a>
-        <a href="/hinnat?lang=${currentLang()}">Hinta</a>
-        <a href="/tietoturva">Tietoturva</a>
-        <a href="/yhteystiedot">${appText("Yhteystiedot","Kontakt","Contact")}</a>
-      </nav>
-      <div class="navactions">
-        ${languageSwitch()}
-        ${isHomePage
-          ? `<a class="btn ink nav-home-scroll-trial" href="/tilaus?lang=${currentLang()}" aria-hidden="true" tabindex="-1"><span class="nav-trial-full">${appText('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</span><span class="nav-trial-compact" aria-hidden="true">${appText('3 pv ilmaiseksi','3 dagar gratis','3 days free')}</span></a>`
-          : isLoginPage ? '' : `<a class="btn ghost nav-login-btn" href="/kirjaudu"><span>${appText('Kirjaudu','Logga in','Log in')}</span></a>`}
-        ${!isHomePage && !isLoginPage && !isSignupPage ? `<a class="btn ink" href="/tilaus">${appText('Kokeile ilmaiseksi','Prova gratis','Start free trial')}</a>` : ''}
-      </div>
-      <button type="button" class="apple-menu-toggle" data-apple-menu-open aria-controls="apple-nav-overlay" aria-expanded="false" aria-label="${appText('Avaa valikko','Öppna menyn','Open menu')}"><span></span><span></span><span></span></button>
+      <div class="navactions">${languageSwitch()}</div>
     </div>
-  </header>${publicMenuMarkup(appText,currentLang())}`;
+  </header>`;
 }
 
 
@@ -1960,33 +1943,6 @@ function bindHomeHeroActions() {
       window.location.assign(destination.href);
     });
   });
-}
-
-function bindHomeScrollTrial() {
-  const header = document.querySelector('.apple-home-page .nav');
-  const heroTrial = document.querySelector('.apple-home-page .apple-hero-actions .apple-pill-primary');
-  const stickyTrial = header?.querySelector('.nav-home-scroll-trial');
-  if (!header || !heroTrial || !stickyTrial) return;
-
-  let scheduled = false;
-  const update = () => {
-    scheduled = false;
-    if (!header.isConnected || !heroTrial.isConnected) return;
-    const heroBottom = heroTrial.getBoundingClientRect().bottom;
-    const headerBottom = header.getBoundingClientRect().bottom;
-    const show = heroBottom <= headerBottom;
-    stickyTrial.classList.toggle('is-visible', show);
-    stickyTrial.setAttribute('aria-hidden', String(!show));
-    stickyTrial.tabIndex = show ? 0 : -1;
-  };
-  const scheduleUpdate = () => {
-    if (scheduled) return;
-    scheduled = true;
-    window.requestAnimationFrame(update);
-  };
-  update();
-  window.addEventListener('scroll', scheduleUpdate, { passive:true });
-  window.addEventListener('resize', scheduleUpdate, { passive:true });
 }
 
 function socialAuthButtons(flow = 'signup', plan = '') {
@@ -2257,6 +2213,7 @@ function footer() {
           <a href="/dpa">Tietojenkäsittely</a>
         </div>
       </div>
+      ${publicFooterNavigationMarkup(appText,currentLang())}
       <div class="legalbar">
         <span>© ${new Date().getFullYear()} RESPONDO AI</span>
       </div>
@@ -4973,11 +4930,11 @@ async function route() {
   document.body.classList.toggle('public-nav-active', Boolean(document.querySelector('#app .nav')));
   applyLanguage();
   bindLanguageSwitch();
-  bindPublicMenu();
+  // Fullscreen public menu removed; footer provides complete navigation.
   if (path === '/' || path === '/hinnat') bindPricingPeriodSwitch();
   if (path === '/') {
     bindHomeHeroActions();
-    bindHomeScrollTrial();
+    // No sticky free-trial CTA; hero only links to the working demo.
   }
 
   if (path === '/') {
