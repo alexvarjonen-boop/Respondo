@@ -74,7 +74,7 @@
       const stage = section.querySelector('.rs-spiral-stage');
       if (!stickyFailed && rect.top < -32 && rect.bottom > viewport + 32 &&
           stage && stage.getBoundingClientRect().top < -32) stickyFailed = true;
-      const fallbackActive = stickyFailed && rect.top <= 0;
+      const fallbackActive = stickyFailed && rect.top < -1;
       section.classList.toggle('rs-fixed-fallback', fallbackActive);
       section.classList.toggle('rs-fixed-end', fallbackActive && rect.bottom <= viewport);
     }
