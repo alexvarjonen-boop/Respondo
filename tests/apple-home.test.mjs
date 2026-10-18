@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { appleHomeMarkup } from '../public/apple-home.js';
-import { publicMenuMarkup } from '../public/apple-nav.js';
+import { publicFooterNavigationMarkup } from '../public/apple-nav.js';
 
 const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
@@ -17,7 +17,8 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
     assert.ok(html.includes('class="apple-hero rs-spiral-section"'));
     assert.ok(html.includes('id="features"'));
     assert.ok(html.includes('class="rs-axis"'));
-    assert.ok(html.includes('data-respondo-hero-cta="signup"'));
+    assert.ok(!html.includes('data-respondo-hero-cta="signup"'));
+    assert.ok(html.includes('data-respondo-hero-cta="demo"'));
     assert.ok(html.includes('/assistant?lang='+lang));
     assert.ok(html.includes('href="/tilaus"'));
     assert.ok(html.includes('class="pricing-section" id="pricing"'));
@@ -27,17 +28,16 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
     assert.doesNotMatch(html, /<iframe|<canvas/);
     assert.doesNotMatch(html,/apple-learning-links|Mistä aloittaa tekoälyn kanssa/);
   });
-  test('fullscreen menu keeps every secondary route accessible in '+lang,()=>{
-    const html=publicMenuMarkup(t,lang);
-    assert.equal((html.match(/class="apple-menu-links"/g)||[]).length,1);
+  test('footer directory keeps every secondary route accessible in '+lang,()=>{
+    const html=publicFooterNavigationMarkup(t,lang);
+    assert.equal((html.match(/<a href=/g)||[]).length,10);
     assert.ok(html.includes('/hinnat?lang='+lang));
     assert.ok(html.includes('/yhteystiedot?lang='+lang));
     assert.ok(html.includes('/tietoturva?lang='+lang));
     assert.ok(html.includes('/verkkokauppa-chatbot?lang='+lang));
     assert.ok(html.includes('/kirjaudu?lang='+lang));
-    assert.match(html,/aria-hidden="true" inert/);
-    assert.doesNotMatch(html,/apple-menu-language|apple-menu-lang-buttons|data-lang-button=/, 'language controls belong only in the header');
-    assert.ok(!html.includes('↗'), 'fullscreen navigation should display labels without arrow icons');
+    assert.match(html,/class="footer-site-nav"/);
+    assert.ok(!html.includes('apple-menu-overlay'));
   });
 }
 
