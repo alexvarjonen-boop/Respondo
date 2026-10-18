@@ -11,7 +11,8 @@ const home = read('public/apple-home.js');
 test('the original homepage markup, Apple-style sheet and branding remain in use', () => {
   assert.match(html, /href="\/apple-home\.css\?/);
   assert.match(html, /src="\/app\.js\?/);
-  assert.match(home, /<section class="apple-hero"/);
+  assert.match(home, /spiralHeroMarkup\(t, lang\)/);
+  assert.match(read('public/spiral-hero.js'), /<section class="apple-hero rs-spiral-section"/);
   assert.match(home, /<section class="apple-highlights"/);
   assert.match(home, /apple-lead-calculator/);
   assert.doesNotMatch(html, /\/cinematic-(home|inner-pages|marketing|product-scenes)\./);
@@ -19,7 +20,8 @@ test('the original homepage markup, Apple-style sheet and branding remain in use
 
 test('the enhancement only loads its own isolated motion layer', () => {
   assert.match(html, /href="\/original-theme-motion\.css\?/);
-  assert.match(html, /src="\/original-theme-motion\.js\?/);
+  assert.match(html, /src="\/unified-motion\.js\?/);
+  assert.match(html, /src="\/spiral-hero-motion\.js\?/);
   assert.match(js, /location\.pathname\s*!==\s*'\/'/);
   assert.match(js, /prefers-reduced-motion: reduce/);
   assert.match(css, /prefers-reduced-motion: reduce/);
