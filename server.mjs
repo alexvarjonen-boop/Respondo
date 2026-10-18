@@ -2,6 +2,7 @@ import { brandedEmailHtml } from './email-branding.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { serviceOverviewQuestion, verifiedServiceOverview } from './service-overview.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
+import { respondoSiteNavigationActions, respondoSiteNavigationAnswer } from './respondo-site-navigation.mjs';
 import { matchVerifiedSpecialistService, matchVerifiedCompoundSpecialistServices, resolveSpecialistConversationReference } from './service-semantics.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
@@ -4841,46 +4842,7 @@ function verifiedTrackingRow(rows) {
 // Page links for the Respondo-owned marketing assistant. These are explicit
 // Respondo routes and must never be suggested for another business's widget.
 function respondoSitePageActions(message, lang='fi', faqId='') {
-  const language=['fi','sv','en'].includes(String(lang||'').toLowerCase())
-    ? String(lang).toLowerCase() : 'fi';
-  const q=normalizeSearchText(message);
-  const actions=[];
-  const relevant=(ids,pattern)=>ids.includes(faqId) || (!faqId && pattern.test(q));
-  const add=(path,type,fi,sv,en)=>{
-    const actualPath=path==='/ominaisuudet'
-      ? (language==='sv'?'/funktioner':language==='en'?'/features':path)
-      : path;
-    const url=new URL(actualPath,SEO_CANONICAL_ORIGIN);
-    if(language!=='fi' && path!=='/ominaisuudet') url.searchParams.set('lang',language);
-    actions.push({type,label:language==='sv'?sv:language==='en'?en:fi,url:url.href});
-  };
-  if(relevant(['respondo-faq-company-contact'],
-    /(?:ota|ottaa|ottamaan|voin|saanko|mista|miten|missa|where|how|reach|contact|kontakta|kontakt).*(?:yhtey|sahkopost|email|contact|reach|kontakt)|(?:yhteystiedot|contact us|contact page|kontaktsida)/)) {
-    add('/yhteystiedot','site_contact','Avaa yhteystiedot','Öppna kontaktsidan','Open contact page');
-  }
-  if(relevant(['respondo-faq-pricing','respondo-faq-monthly-pricing','respondo-faq-annual-pricing'],
-    /(?:hinnat|hinnoittelu|hinta|paljonko.*maks|price|pricing|cost|priser|prislista|kostar)/)) {
-    add('/hinnat','site_pricing','Katso hinnat','Se priser','View pricing');
-  }
-  if(relevant(['respondo-faq-features-overview','respondo-faq-benefits','respondo-faq-basic','respondo-faq-advanced','respondo-faq-business','respondo-faq-knowledge-base','respondo-faq-appearance'],
-    /(?:ominaisu|toiminno|toiminnalli|features|functionality|funktioner|egenskaper)/)) {
-    add('/ominaisuudet','site_features','Tutustu kaikkiin ominaisuuksiin','Se alla funktioner','Explore all features');
-  }
-  if(relevant(['respondo-faq-security'],
-    /(?:tietoturv|security|datasakerhet|datasäkerhet|secure)/)) {
-    add('/tietoturva','site_security','Tutustu tietoturvaan','Läs om datasäkerhet','Explore security');
-  }
-  if(relevant(['respondo-faq-trial','respondo-faq-buy'],
-    /(?:aloita|tilaa|osta|kokeile|free trial|start trial|subscribe|prova gratis|borja|börja)/)) {
-    add('/tilaus','site_signup','Aloita ilmainen kokeilu','Starta gratis provperiod','Start free trial');
-  }
-  if(!faqId && /(?:tietosuojaselost|privacy policy|integritetspolicy)/.test(q)) {
-    add('/tietosuoja','site_privacy','Lue tietosuojaseloste','Läs integritetspolicyn','Read privacy policy');
-  }
-  if(!faqId && /(?:kayttoehdo|terms of service|anvandarvillkor|användarvillkor)/.test(q)) {
-    add('/kayttoehdot','site_terms','Lue käyttöehdot','Läs användarvillkoren','Read terms of service');
-  }
-  return actions.slice(0,4);
+  return respondoSiteNavigationActions(message,lang,faqId,SEO_CANONICAL_ORIGIN);
 }
 
 function chatActions(rows, message, handoff = false, lang = 'fi', selected = []) {
@@ -12632,6 +12594,13 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
     // Answer verified first-party FAQs independently of owner account and subscription state.
     // The public marketing assistant must not fail with 404 when an owner tenant is absent.
     const detectedFaqLang=detectConversationLanguage(message,lang);
+    // Explicit "where is login / create an account / try the demo" requests
+    // should always work without a tenant DB, including if the FAQ is absent.
+    const navigation=respondoSiteNavigationAnswer(message,detectedFaqLang,SEO_CANONICAL_ORIGIN);
+    if(navigation) {
+      return res.json({answer:navigation.answer,handoff:false,confidence:1,
+        intent:'Respondo site navigation',verified:true,actions:navigation.actions});
+    }
     const faqHistory=Array.isArray(body.history)?body.history.slice(-6):[];
     const directFaq=respondoProductFaqMatch(message,detectedFaqLang,faqHistory);
     if(directFaq){
@@ -12670,7 +12639,8 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
         : lang==='en'
           ? 'I can help with Respondo pricing, the free trial, installation and features. What would you like to know?'
           : 'Voin auttaa Respondon hinnoittelussa, kokeilujaksossa, asennuksessa ja ominaisuuksissa. Mitä haluaisit tietää?';
-      return res.json({answer:fallback,handoff:false,confidence:0,intent:'Respondo assistant fallback',verified:false});
+      return res.json({answer:fallback,handoff:false,confidence:0,intent:'Respondo assistant fallback',
+        verified:false,actions:respondoSitePageActions(message,detectedFaqLang)});
     }
 
     const t=tr.rows[0];
