@@ -7,10 +7,10 @@ const normalize=(value)=>String(value||'').toLowerCase().normalize('NFD')
 const tr=(lang,fi,sv,en)=>lang==='sv'?sv:lang==='en'?en:fi;
 const pages=[
   {type:'site_login',path:'/kirjaudu',
-   match:/\b(kirjaud\w*|sisaan kirjaut\w*|logga in|logga in|inloggn\w*|login|log in|sign in|my account|mitt konto)\b/,
+   match:/\b(kirjau[dt]\w*|sisaan kirjaut\w*|logga in|logga in|inloggn\w*|login|log in|sign in|my account|mitt konto)\b/,
    labels:['Avaa kirjautuminen','Öppna inloggning','Open sign in']},
   {type:'site_signup',path:'/tilaus',ids:['respondo-faq-buy','respondo-faq-trial'],
-   match:/\b(luo tili|luoda tili|uusi tili|rekisteroid\w*|tilaa\b|ostaa\b|osta\b|aloita kokeilu|aloittaa kokeilu|kokeile ilmaiseksi|free trial|start trial|start free|sign up|create account|register|registrera|prova gratis|borja prova|starta prov)\b/,
+   match:/\b(luo tili|luoda tili|luoda tilin|luo tilin|uusi tili|rekistero\w*|tilaa\b|ostaa\b|osta\b|aloita kokeilu|aloittaa kokeilu|kokeile ilmaiseksi|free trial|start trial|start free|sign up|create account|register|registrera|prova gratis|borja prova|starta prov)\b/,
    labels:['Luo tili ja aloita','Skapa konto och börja','Create account and start']},
   {type:'site_demo',path:'/assistant',
    match:/\b(kokeile bottia|kokeilla bottia|testaa bottia|testa bottia|testibotti|kokeile demo|kokeilla demoa|kokeile demoa|testa botten|prova botten|try the bot|test the bot|try a demo|demo|demobotti)\b/,
@@ -58,7 +58,7 @@ const pages=[
    match:/\b(etusivu\w*|takaisin alkuun|startsida\w*|homepage|home page)\b/,
    labels:['Etusivu','Startsida','Home']},
 ];
-const genericPages=/\b(sivut\b|sivusto\w*|valikko\w*|navigointi\w*|page list|site pages|menu\b|navigation\b|webbplatsens sidor|webbsidor\w*)\b/;
+const genericPages=/\b(sivut\b|sivusto\w*|linkit\b|linkkilista\w*|valikko\w*|navigointi\w*|page list|site pages|menu\b|navigation\b|webbplatsens sidor|webbsidor\w*)\b/;
 function localPath(page,lang){
   if(page.path==='/ominaisuudet')return lang==='sv'?'/funktioner':lang==='en'?'/features':'/ominaisuudet';
   return page.path;
@@ -82,9 +82,9 @@ export function respondoSiteNavigationAnswer(message,lang='fi',origin='https://w
   const language=['fi','sv','en'].includes(lang)?lang:'fi';
   const q=normalize(message);
   let answer='';
-  if(/\b(kirjaud\w*|logga in|inloggn\w*|login|log in|sign in|my account|mitt konto)\b/.test(q)){
+  if(/\b(kirjau[dt]\w*|logga in|inloggn\w*|login|log in|sign in|my account|mitt konto)\b/.test(q)){
     answer=tr(language,'Voit kirjautua sisään alla olevasta painikkeesta. Jos sinulla ei vielä ole tiliä, voit luoda sen valitsemalla tilauspaketin.','Du kan logga in med knappen nedan. Om du saknar konto kan du skapa ett genom att välja ett abonnemang.','Use the button below to sign in. If you do not have an account yet, choose a plan to create one.');
-  }else if(/\b(luo tili|luoda tili|rekisteroid\w*|uusi tili|create account|sign up|register|registrera|skapa konto)\b/.test(q)){
+  }else if(/\b(luo tili|luoda tili|luoda tilin|luo tilin|rekistero\w*|uusi tili|create account|sign up|register|registrera|skapa konto)\b/.test(q)){
     answer=tr(language,'Luo uusi tili valitsemalla ensin sopiva paketti. Maksutapa lisätään turvallisesti Stripessä, ja saat kolmen päivän maksuttoman kokeilun.','Skapa ett konto genom att först välja ett abonnemang. Betalmetoden läggs till säkert via Stripe och du får tre dagars gratis provperiod.','To create an account, first choose a plan. Add your payment method securely through Stripe and get a three-day free trial.');
   }else if(/\b(kokeile bottia|testaa bottia|kokeilla bottia|testa botten|try the bot|test the bot|try a demo|demobotti)\b/.test(q)){
     answer=tr(language,'Voit kokeilla Respondo-bottia demossa. Lisää esimerkkiyrityksen tiedot ja kysy botilta kuten oikea asiakas.','Du kan testa Respondo i demon. Lägg till ett exempelföretags uppgifter och ställ frågor som en riktig kund.','You can try Respondo in the demo. Enter example company details and ask questions as a customer would.');
@@ -93,7 +93,7 @@ export function respondoSiteNavigationAnswer(message,lang='fi',origin='https://w
   }
   if(!answer)return null;
   const actions=respondoSiteNavigationActions(message,language,'',origin);
-  if(/\b(kirjaud\w*|logga in|inloggn\w*|login|log in|sign in)\b/.test(q)&&!actions.some(a=>a.type==='site_signup')){
+  if(/\b(kirjau[dt]\w*|logga in|inloggn\w*|login|log in|sign in)\b/.test(q)&&!actions.some(a=>a.type==='site_signup')){
     const signup=pages.find(p=>p.type==='site_signup');const url=new URL(signup.path,origin);
     if(language!=='fi')url.searchParams.set('lang',language);
     actions.push({type:signup.type,label:tr(language,...signup.labels),url:url.href});
