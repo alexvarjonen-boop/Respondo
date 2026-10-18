@@ -7,8 +7,8 @@ const file = (name) => readFile(new URL('../public/'+name, import.meta.url), 'ut
 
 test('cinematic engine is loaded without replacing Respondo public branding or routes', async () => {
   const [index,js,css] = await Promise.all([file('index.html'),file('cinematic-navigation.js'),file('cinematic-navigation.css')]);
-  assert.match(index, /\/cinematic-navigation\.css\?v=20261018-immersive-navigation-v1/);
-  assert.match(index, /\/cinematic-navigation\.js\?v=20261018-immersive-navigation-v1/);
+  assert.match(index, /\/cinematic-navigation\.css\?v=20261018-bird-flight-cinema-v2/);
+  assert.match(index, /\/cinematic-navigation\.js\?v=20261018-bird-flight-cinema-v2/);
   assert.match(index, /\/original-theme-motion\.js/);
   assert.match(index, /\/logo-reveal\.js/);
   assert.match(js, /respondo-symbol\.svg/);
@@ -20,6 +20,12 @@ test('cinematic engine is loaded without replacing Respondo public branding or r
   assert.match(css, /prefers-reduced-motion:reduce/);
   assert.match(css, /cx-story-progress/);
   assert.match(css, /cx-hero-fx/);
+  assert.match(css, /@keyframes cx-bird-launch/);
+  assert.match(css, /cx-edge-impact/);
+  assert.match(css, /cx-camera-floor/);
+  assert.match(js, /cx-bird-flight/);
+  assert.match(js, /cx-wing-upper/);
+  assert.match(js, /cx-dial-progress/);
   assert.match(css, /cx-scene-light/);
   assert.match(js, /--cx-scene-shift/);
 });
@@ -110,8 +116,11 @@ test('same-origin navigation animates once and keeps normal navigation semantics
   assert.equal(internal.click.defaultPrevented,true);
   assert.equal(internal.click.stopped,true);
   assert.ok(env.classes.has('cx-leaving'));
-  assert.equal(env.timeouts.find(t=>t.delay===485)?.delay,485);
-  env.timeouts.find(t=>t.delay===485).fn();
+  assert.equal(env.timeouts.find(t=>t.delay===1380)?.delay,1380);
+  assert.match(env.veil.innerHTML,/cx-bird-flight/);
+  assert.match(env.veil.innerHTML,/cx-bird-svg/);
+  assert.match(env.veil.innerHTML,/respondo-symbol.svg/);
+  env.timeouts.find(t=>t.delay===1380).fn();
   assert.equal(env.assigned,'https://respondoai.fi/ominaisuudet?lang=fi');
 });
 
@@ -123,4 +132,15 @@ test('reduced-motion visitors navigate immediately without transition intercepti
   assert.equal(internal.click.defaultPrevented,false);
   assert.equal(env.assigned,null);
   assert.equal(env.classes.has('cx-leaving'),false);
+});
+
+test('bird originates at the official arrow tip and reaches the far screen edge', async () => {
+  const [js,css] = await Promise.all([file('cinematic-navigation.js'),file('cinematic-navigation.css')]);
+  assert.match(js, /cx-arrow-stage/);
+  assert.match(js, /cx-bird-flight/);
+  assert.match(css, /left:calc\(50% \+ 75px\);top:calc\(50% - 65px\)/);
+  assert.match(css, /translate3d\(calc\(60vw \+ 130px\),-27vh,0\)/);
+  assert.match(css, /cx-flight-trail/);
+  assert.match(css, /body\.cx-leaving \.cx-edge-flash/);
+  assert.match(css, /@media\(max-width:760px\)/);
 });
