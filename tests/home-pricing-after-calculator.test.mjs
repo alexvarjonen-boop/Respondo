@@ -9,12 +9,12 @@ test('the same pricing cards follow the spiral directly without duplicate panels
   const spiralStart = markup.indexOf('<section class="apple-hero rs-spiral-section"');
   const spiralEnd = markup.indexOf('</section>', spiralStart) + '</section>'.length;
   const pricingStart = markup.indexOf(pricing);
-  const finalCtaStart = markup.indexOf('<section class="apple-bottom-cta"');
+
   assert.ok(spiralStart >= 0 && spiralEnd > spiralStart, 'spiral is present');
   assert.equal((markup.match(/data-rs-card\b/g)||[]).length, 7, 'seven features stay inside the spiral');
   assert.ok(pricingStart > spiralEnd, 'pricing follows the spiral');
   assert.equal(markup.slice(spiralEnd, pricingStart).trim(), '', 'no extra sections before pricing');
-  assert.ok(finalCtaStart > pricingStart, 'pricing comes before the final CTA');
+  assert.doesNotMatch(markup,/apple-bottom-cta|Valmis vastaamaan|Aloita ilmainen kokeilu/);
   assert.doesNotMatch(markup, /apple-highlights|apple-lead-calculator|rg-growth-section/);
   assert.equal(markup.split(pricing).length - 1, 1, 'pricing is inserted once');
 });
