@@ -1,0 +1,173 @@
+/* Signup only: dark premium theme. No changes to login, pricing or workspace pages. */
+#app .signup-dark-shell{background:#090a0e;color:#f6f7fa;min-height:100vh}
+#app .signup-dark-shell .formpage.signup-page{
+  background:radial-gradient(ellipse 90% 46% at 50% 0%,rgba(65,79,110,.15),transparent 76%),linear-gradient(180deg,#0b0d12,#111319 62%,#0d0f14)!important;
+  color:#f6f7fa!important;
+  min-height:calc(100dvh - 70px)!important;
+  padding-top:clamp(28px,5vw,56px)!important;
+  padding-bottom:clamp(58px,7vw,105px)!important;
+}
+/* Override the default light public header for the signup route only. */
+body.public-nav-active #app .signup-dark-shell .nav,
+#app .signup-dark-shell .nav{
+  background:rgba(10,11,15,.96)!important;
+  border-bottom:1px solid rgba(255,255,255,.095)!important;
+  box-shadow:none!important;
+  -webkit-backdrop-filter:blur(20px) saturate(135%)!important;
+  backdrop-filter:blur(20px) saturate(135%)!important;
+}
+#app .signup-dark-shell .nav .navin{background:transparent!important;box-shadow:none!important}
+#app .signup-dark-shell .nav :is(.brand-word,.navlinks a,.nav-login-btn){
+  color:#f2f4f8!important;-webkit-text-fill-color:#f2f4f8!important;
+}
+#app .signup-dark-shell .nav .nav-login-btn{
+  background:#1e222b!important;border:1px solid #333944!important;
+}
+#app .signup-dark-shell .nav .nav-login-btn:hover{background:#2b303a!important}
+#app .signup-dark-shell .nav .apple-menu-toggle{
+  color:#f5f6f8!important;-webkit-text-fill-color:#f5f6f8!important;
+  background:rgba(255,255,255,.075)!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+}
+#app .signup-dark-shell .nav .apple-menu-toggle span{background:#f5f6f8!important}
+#app .signup-dark-shell .nav .lang-switch{
+  background:#191c23!important;border:1px solid #353b46!important;
+}
+#app .signup-dark-shell .nav .lang-choice{color:#f3f4f6!important}
+#app .signup-dark-shell .nav .lang-choice.active{background:#343b46!important}
+/* The signup form stays in the original compact, single-column layout. */
+#app .signup-dark-shell .signup-page #signup{
+  background:linear-gradient(180deg,#1a1d25,#16191f)!important;
+  border:1px solid #323743!important;
+  border-radius:28px!important;
+  color:#f5f6fa!important;
+  box-shadow:0 28px 80px rgba(0,0,0,.3)!important;
+  padding:clamp(22px,4vw,38px)!important;
+}
+#app .signup-dark-shell .signup-page #signup .form-head{
+  border-bottom:1px solid #343944!important;
+}
+#app .signup-dark-shell .signup-page #signup .form-head :is(span,b),
+#app .signup-dark-shell .signup-page #signup .field>label,
+#app .signup-dark-shell .signup-page #signup .field label{
+  color:#f5f6f9!important;-webkit-text-fill-color:#f5f6f9!important;
+}
+#app .signup-dark-shell .signup-page #signup .form-head>span{
+  color:#aeb6c7!important;-webkit-text-fill-color:#aeb6c7!important;
+}
+#app .signup-dark-shell .signup-page #signup :is(input:not([type="hidden"]):not([type="checkbox"]),textarea){
+  background:#252a34!important;
+  border:1px solid #424955!important;
+  color:#f5f6f9!important;
+  -webkit-text-fill-color:#f5f6f9!important;
+  border-radius:13px!important;
+  box-shadow:none!important;
+  color-scheme:dark!important;
+}
+#app .signup-dark-shell .signup-page #signup :is(input:not([type="hidden"]):not([type="checkbox"]),textarea)::placeholder{
+  color:#aab3c2!important;-webkit-text-fill-color:#aab3c2!important;
+  opacity:1!important;
+}
+#app .signup-dark-shell .signup-page #signup :is(input:not([type="hidden"]):not([type="checkbox"]),textarea):focus{
+  border-color:#74aaff!important;
+  box-shadow:0 0 0 3px rgba(58,127,235,.18)!important;
+  outline:none!important;
+}
+#app .signup-dark-shell .signup-page #signup .social-auth-btn{
+  background:#252a34!important;border:1px solid #434a58!important;
+  color:#f5f6f9!important;-webkit-text-fill-color:#f5f6f9!important;
+  border-radius:14px!important;box-shadow:none!important;
+}
+#app .signup-dark-shell .signup-page #signup .social-auth-btn:hover{
+  background:#313744!important;border-color:#586474!important;
+}
+#app .signup-dark-shell .signup-page #signup .auth-divider,
+#app .signup-dark-shell .signup-page #signup .auth-divider span{
+  color:#aeb6c5!important;-webkit-text-fill-color:#aeb6c5!important;
+}
+#app .signup-dark-shell .signup-page #signup .auth-divider::before,
+#app .signup-dark-shell .signup-page #signup .auth-divider::after{
+  background:#3a404b!important;
+}
+/* Selected plan is read-only: changing plans returns to the dedicated pricing cards. */
+#app .signup-dark-shell .signup-page #signup .signup-plan-summary{
+  display:block!important;min-width:0!important;
+  padding:18px 20px!important;
+  border:1px solid #3b4350!important;border-radius:18px!important;
+  background:#242934!important;
+}
+#app .signup-dark-shell .signup-page #signup .signup-plan-summary-top{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  font-size:10px;font-weight:750;letter-spacing:.075em;
+  color:#aeb7c6!important;
+}
+#app .signup-dark-shell .signup-page #signup .signup-change-plan{
+  text-decoration:none;color:#9ec5ff!important;
+  -webkit-text-fill-color:#9ec5ff!important;font-size:12px;
+  letter-spacing:0;text-transform:none;font-weight:700;
+}
+#app .signup-dark-shell .signup-page #signup .signup-change-plan:hover{text-decoration:underline}
+#app .signup-dark-shell .signup-page #signup .signup-change-plan:focus-visible{
+  outline:3px solid #80b6ff;outline-offset:3px;
+}
+#app .signup-dark-shell .signup-page #signup .signup-plan-summary-main{
+  display:flex;align-items:baseline;justify-content:space-between;
+  flex-wrap:wrap;gap:7px 18px;margin-top:13px;
+}
+#app .signup-dark-shell .signup-page #signup .signup-plan-summary-main strong{
+  font-size:clamp(22px,4vw,28px);letter-spacing:-.04em;color:#fff;
+}
+#app .signup-dark-shell .signup-page #signup .signup-plan-summary-main b{
+  font-size:clamp(17px,3vw,22px);color:#fff;letter-spacing:-.025em;
+}
+#app .signup-dark-shell .signup-page #signup .signup-plan-summary p{
+  margin:8px 0 0!important;font-size:12px;color:#b4bfce!important;line-height:1.55;
+}
+#app .signup-dark-shell .signup-page #signup :is(.referral-signup-field small,.referral-signup-field label span,.form-security){
+  color:#b4becd!important;-webkit-text-fill-color:#b4becd!important;
+}
+#app .signup-dark-shell .signup-page #signup .form-security{line-height:1.6!important}
+#app .signup-dark-shell .signup-page #signup .checkout-button{
+  background:#1680f4!important;border:1px solid #1680f4!important;
+  color:#fff!important;-webkit-text-fill-color:#fff!important;
+  border-radius:14px!important;box-shadow:none!important;
+}
+#app .signup-dark-shell .signup-page #signup .checkout-button:hover{background:#006bde!important}
+#app .signup-dark-shell .signup-page #signup .business-terms-consent{
+  border:1px solid #3c4655!important;
+  background:#222832!important;color:#e1e6ee!important;
+  border-radius:14px!important;
+}
+#app .signup-dark-shell .signup-page #signup .business-terms-consent>span{
+  color:#e1e6ee!important;-webkit-text-fill-color:#e1e6ee!important;
+}
+#app .signup-dark-shell .signup-page #signup .business-terms-consent a{
+  color:#91bfff!important;-webkit-text-fill-color:#91bfff!important;
+}
+#app .signup-dark-shell .signup-page #signup .business-terms-consent input[type="checkbox"]{
+  accent-color:#1680f4!important;
+}
+#app .signup-dark-shell .signup-page #signup .oauth-connected{
+  color:#c6f4d7!important;background:#183328!important;border:1px solid #35684e!important;
+}
+#app .signup-dark-shell .signup-page #signup .notice{
+  background:#252b35!important;border:1px solid #485160!important;
+  color:#e9edf5!important;
+}
+#app .signup-dark-shell .signup-page #signup .notice.error{
+  border-color:#96545a!important;color:#ffd3d4!important;background:#3c2228!important;
+}
+#app .signup-dark-shell .signup-page .signup-seller-note,
+#app .signup-dark-shell .signup-page .signup-seller-note small{
+  color:#adb7c6!important;
+}
+@media(max-width:640px){
+  #app .signup-dark-shell .signup-page #signup{border-radius:22px!important;padding:22px 18px!important}
+  #app .signup-dark-shell .signup-page #signup .signup-plan-summary{padding:15px!important}
+  #app .signup-dark-shell .signup-page #signup .signup-plan-summary-top{
+    align-items:flex-start;gap:8px;flex-wrap:wrap;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #app .signup-dark-shell .signup-page #signup .social-auth-btn{transition:none!important}
+}
