@@ -6,7 +6,7 @@ import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-p
 import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs?v=20261016-gsc-en-fi-ecommerce-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261018-demo-only-v4';
-import { publicFooterNavigationMarkup } from './apple-nav.js?v=20261018-footer-nav-v1';
+// Public site navigation is handled by the Respondo assistant; keep legal footer links.
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2-pricing-20261014-ape-v1-annual-120-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 import { parseBookingDurationMinutes } from './booking-duration.mjs?v=20261009-v1';
@@ -2213,7 +2213,13 @@ function footer() {
           <a href="/dpa">Tietojenkäsittely</a>
         </div>
       </div>
-      ${publicFooterNavigationMarkup(appText,currentLang())}
+      <div class="footer-ask-respondo">
+        <div>
+          <strong>${appText('Kysy Respondo-botilta','Fråga Respondo-botten','Ask Respondo')}</strong>
+          <p>${appText('Hinnat, ominaisuudet, kokeilu, kirjautuminen tai yhteystiedot – kysy suoraan chatbotilta.','Priser, funktioner, demo, inloggning eller kontakt – fråga direkt i chatten.','Pricing, features, the demo, sign-in or contact – just ask the chatbot.')}</p>
+        </div>
+        <button type="button" class="footer-chat-open" data-open-site-assistant>${appText('Avaa chat','Öppna chatten','Open chat')} <span aria-hidden="true">→</span></button>
+      </div>
       <div class="legalbar">
         <span>© ${new Date().getFullYear()} RESPONDO AI</span>
       </div>
