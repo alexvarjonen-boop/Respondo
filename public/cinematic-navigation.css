@@ -64,6 +64,12 @@ body.cx-arrived .cx-nav-veil{visibility:hidden;transition:visibility 0s .75s}
 #app .cx-public-immersive .r-brand-contact-info-card{box-shadow:0 25px 60px rgba(13,37,79,.08)!important}
 #app .cx-public-immersive .global-guide-main{background:radial-gradient(ellipse at 8% 2%,rgba(70,139,244,.12),transparent 58%),#f5f5f7}
 
+/* Localized moving light gives every story section subtle spatial continuity. */
+#app .cx-public-immersive main [data-cx-section]{isolation:isolate}
+#app .cx-public-immersive main [data-cx-section]>.cx-scene-light{position:absolute;z-index:0;top:0;left:4%;width:min(60vw,500px);height:min(45vw,350px);pointer-events:none;opacity:var(--cx-scene-opacity,.15);background:radial-gradient(ellipse at 50% 45%,rgba(99,153,255,.18),transparent 70%);translate:var(--cx-scene-shift,0px) 0;will-change:translate,opacity}
+#app .cx-public-immersive main [data-cx-section]> :not(.cx-scene-light){position:relative;z-index:1}
+@media(max-width:760px){#app .cx-public-immersive main [data-cx-section]>.cx-scene-light{width:78vw;height:260px;left:1%;opacity:.22;translate:none}}
+@media(prefers-reduced-motion:reduce){#app .cx-public-immersive main .cx-scene-light{display:none}}
 /* A deliberately subtle storytelling progress line, only on curated pages. */
 .cx-story-progress{position:fixed;left:0;top:0;right:0;height:3px;z-index:2000;pointer-events:none;background:transparent}
 .cx-story-progress i{display:block;width:var(--cx-scroll-progress,0%);height:100%;background:linear-gradient(90deg,#5a91e2,#c3e5ff);box-shadow:0 0 16px rgba(108,172,255,.55)}
