@@ -38,12 +38,12 @@
   }
   function introSeen() {
     if (introPlayed) return true;
-    try { return sessionStorage.getItem('respondo-logo-reveal-20261018') === '1'; }
+    try { return sessionStorage.getItem('respondo-logo-reveal-20261018-sound-v1') === '1'; }
     catch (err) { return false; }
   }
   function markSeen() {
     introPlayed = true;
-    try { sessionStorage.setItem('respondo-logo-reveal-20261018', '1'); }
+    try { sessionStorage.setItem('respondo-logo-reveal-20261018-sound-v1', '1'); }
     catch (err) { /* private mode */ }
   }
   // Sounds only after an explicit tap: iOS Safari blocks audible autoplay.
