@@ -8,7 +8,7 @@ const normalize = text => String(text||'').toLowerCase().normalize('NFD')
 export function isRespondoCapabilityQuestion(value){
   const q=normalize(value);
   if(!q)return false;
-  const subject='(?:respondo(?: ai)?|botti|chatbotti|tekoaly(?:botti)?|se|tama|palvelu|tekoalyasiakaspalvelija)';
+  const subject='(?:respondo(?: ai)?|tama\\s+botti|botti|chatbotti|tekoaly(?:botti)?|se|tama|palvelu|tekoalyasiakaspalvelija)';
   const fi=new RegExp('\\bmita\\s+(?:kaikkea\\s+)?(?:'+subject+'\\s+)?(?:osaa|tekee|voi\\s+tehda|pystyy\\s+tekemaan)\\b');
   const fiWhatFor=new RegExp('\\bmihin\\s+(?:'+subject+')\\s+(?:pystyy|kykenee|soveltuu)\\b');
   const fiHelp=new RegExp('\\bmiten\\s+(?:'+subject+')\\s+(?:voi\\s+auttaa|auttaa\\s+yritysta)\\b');
