@@ -1,0 +1,204 @@
+
+/* Respondo home cinema — progressive, scroll-driven presentation only.
+   Preserves existing navigation, interactive pricing, calculator, forms and content.
+   No scroll locking, body transforms, section pinning or scroll-snap. */
+#app .apple-home-page.rf-cinematic-active{background:#070a0f!important}
+#app .rf-cinematic-active .rf-scene{position:relative;isolation:isolate}
+#app .rf-cinematic-active .rf-scene>.rf-atmosphere{
+  position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;
+  opacity:var(--rf-fx-opacity,.45);transition:opacity .13s linear;
+}
+#app .rf-cinematic-active :is(.apple-hero-inner,.apple-highlights-intro,.apple-highlights-grid,.apple-lead-inner,.rg-growth-inner,.pricing-section>.container){
+  position:relative;z-index:1;
+}
+#app .rf-cinematic-active .apple-bottom-cta>:not(.rf-atmosphere){position:relative;z-index:1}
+#app .rf-cinematic-active .rf-atmosphere .rf-horizon{
+  position:absolute;left:-27%;right:-27%;top:var(--rf-horizon-top,28%);
+  height:62%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%,rgba(43,120,195,.11),transparent 59%);
+  transform:translate3d(var(--rf-sweep,-10%),var(--rf-horizon-y,30px),0) scale(var(--rf-horizon-scale,1));
+  transition:transform .075s linear;
+}
+#app .rf-cinematic-active .rf-atmosphere .rf-orbit{
+  position:absolute;top:8%;left:50%;
+  width:min(72vw,930px);aspect-ratio:1;border-radius:50%;
+  border:1px solid rgba(114,194,249,.19);
+  box-shadow:0 0 0 64px rgba(92,145,216,.018),0 0 0 150px rgba(49,105,207,.012);
+  opacity:.64;
+  transform:translateX(-50%) perspective(1200px) rotateX(69deg) rotateZ(var(--rf-orbit-spin,-35deg)) scale(var(--rf-orbit-scale,.85));
+  transition:transform .08s linear;
+}
+#app .rf-cinematic-active .rf-atmosphere .rf-rays{
+  position:absolute;inset:-45%;
+  background:repeating-conic-gradient(from 0deg at 50% 50%,transparent 0 12deg,rgba(95,159,246,.055) 12.2deg 12.45deg,transparent 12.7deg 30deg);
+  mask-image:radial-gradient(ellipse at 50% 49%,#000 0%,transparent 56%);
+  opacity:.8;
+  transform:perspective(1300px) rotateX(67deg) rotateZ(var(--rf-rays-spin,0deg)) scale(1.35);
+}
+#app .rf-cinematic-active .rf-atmosphere .rf-beam{
+  position:absolute;top:0;left:30%;width:40%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(75,156,238,.10),transparent);
+  filter:blur(33px);
+  transform:translate3d(var(--rf-beam-x,-90%),0,0) skewX(-16deg);
+}
+#app .rf-cinematic-active .rf-scene:after{
+  content:"";position:absolute;bottom:0;left:5%;width:90%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(116,173,226,.24),transparent);
+  pointer-events:none;z-index:2;
+}
+#app .rf-cinematic-active .apple-hero{background:radial-gradient(ellipse at 55% 84%,rgba(47,84,145,.28),transparent 56%),#05080e!important}
+#app .rf-cinematic-active .apple-hero .rf-orbit{top:21%;border-color:rgba(128,179,236,.20)}
+#app .rf-cinematic-active .apple-hero .rf-rays{opacity:.48}
+#app .rf-cinematic-active .apple-hero .apple-hero-inner{perspective:1600px}
+#app .rf-cinematic-active .apple-hero .apple-stage-typography{filter:drop-shadow(0 0 18px rgba(138,173,226,.18))}
+#app .rf-cinematic-active .apple-product-stage{filter:drop-shadow(0 28px 50px rgba(10,27,60,.30))}
+
+/* Chapters two and three: uninterrupted dark theater, not white flashes. */
+#app .apple-home-page.rf-cinematic-active .apple-highlights{
+  background:radial-gradient(ellipse at 49% 15%,rgba(29,55,92,.26),transparent 58%),#070c14!important;
+  color:#eff5fc!important;
+}
+#app .rf-cinematic-active .apple-highlights .apple-eyebrow{color:#97afcc!important}
+#app .rf-cinematic-active .apple-highlights-intro h2{color:#f6f8fd!important}
+#app .rf-cinematic-active .apple-feature-card{
+  border:1px solid rgba(147,185,230,.16)!important;
+  box-shadow:0 22px 90px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.07);
+}
+#app .rf-cinematic-active .apple-card-support{
+  background:radial-gradient(circle at 85% 85%,rgba(62,88,145,.26),transparent 50%),linear-gradient(145deg,#171f2b,#101721)!important;
+  color:#edf3fd;
+}
+#app .rf-cinematic-active .apple-card-global{
+  background:radial-gradient(circle at 87% 40%,rgba(73,106,169,.25),transparent 60%),linear-gradient(125deg,#101925,#172130)!important;
+  color:#edf3fd;
+}
+#app .rf-cinematic-active .apple-card-knowledge{
+  background:linear-gradient(135deg,#151a27,#080e17)!important;
+}
+#app .rf-cinematic-active .apple-feature-card :is(h3,.apple-card-eyebrow){color:#f1f6fc!important}
+#app .rf-cinematic-active .apple-feature-card h3 span{color:#aebbd1!important}
+#app .rf-cinematic-active .apple-feature-card p:not(.apple-card-eyebrow){color:#b4c3d7!important}
+#app .rf-cinematic-active .apple-art-language span{
+  background:linear-gradient(120deg,#d2dff7,#77a4de 60%,#d4deec);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+#app .apple-home-page.rf-cinematic-active .apple-lead-calculator{
+  background:radial-gradient(ellipse at 50% 3%,rgba(21,78,104,.2),transparent 59%),#080e15!important;
+  color:#f4f7fb!important;
+  padding-top:clamp(75px,9vw,120px)!important;padding-bottom:clamp(80px,10vw,140px)!important;
+}
+#app .rf-cinematic-active .apple-lead-intro .apple-eyebrow{color:#a0b7cb!important}
+#app .rf-cinematic-active .apple-lead-intro h2{color:#f6f9fd!important}
+#app .rf-cinematic-active .apple-lead-layout{background:#121c28!important;border:1px solid #293b4b!important;box-shadow:0 35px 85px rgba(0,0,0,.32)}
+#app .rf-cinematic-active .apple-lead-form{background:linear-gradient(130deg,#14202c,#0f1823)!important}
+#app .rf-cinematic-active .apple-lead-result{background:linear-gradient(150deg,#101d27,#0a121c)!important;color:#f3f7fc!important;border-color:#2c3b48!important}
+#app .rf-cinematic-active .apple-lead-field-head label{color:#b4c4d4!important}
+#app .rf-cinematic-active .apple-lead-field-head output,
+#app .rf-cinematic-active .apple-lead-total{color:#f7fafd!important}
+#app .rf-cinematic-active .apple-lead-result-head,
+#app .rf-cinematic-active .apple-lead-limits,
+#app .rf-cinematic-active .apple-lead-breakdown span{color:#a4b2c1!important}
+#app .rf-cinematic-active .apple-lead-breakdown{border-top-color:#2b3b4b!important}
+#app .rf-cinematic-active .apple-lead-breakdown output{color:#e4edf7!important}
+#app .rf-cinematic-active .apple-lead-disclaimer{color:#90a3b6!important}
+#app .rf-cinematic-active .apple-lead-slider::-webkit-slider-runnable-track{
+  background:linear-gradient(90deg,#5cb0ff 0 var(--range-progress),#3c4b5c var(--range-progress) 100%)!important;
+}
+#app .rf-cinematic-active .apple-lead-slider::-moz-range-track{
+  background:linear-gradient(90deg,#5cb0ff 0 var(--range-progress),#3c4b5c var(--range-progress) 100%)!important;
+}
+#app .rf-cinematic-active .apple-lead-slider::-webkit-slider-thumb{
+  background:#5cb0ff!important;border-color:#d9edff!important;box-shadow:0 0 0 1px #5879a0,0 0 20px rgba(62,146,231,.3)!important;
+}
+#app .rf-cinematic-active .apple-lead-slider::-moz-range-thumb{
+  background:#5cb0ff!important;border-color:#d9edff!important;box-shadow:0 0 0 1px #5879a0,0 0 20px rgba(62,146,231,.3)!important;
+}
+/* Chapter four: sales line is drawn by scrolling instead of auto-playing. */
+#app .rf-cinematic-active .rg-growth-section{
+  background:radial-gradient(ellipse at 40% 10%,rgba(28,96,108,.22),transparent 58%),#050c12!important;
+}
+#app .rf-cinematic-active .rg-terminal{
+  transform:perspective(1400px) translate3d(0,var(--rf-growth-lift,0px),0) rotateX(var(--rf-growth-tilt,0deg)) scale(var(--rf-growth-scale,1));
+  transform-origin:50% 12%;
+  opacity:var(--rf-growth-opacity,1);
+  backface-visibility:hidden;
+}
+#app .rf-cinematic-active .rg-primary-chart{
+  transform:translate3d(var(--rf-chart-x,0px),0,0);
+}
+#app .rf-cinematic-active .rg-kpi{transform:translate3d(0,var(--rf-kpi-y,0px),0)}
+#app .rf-cinematic-active .rg-line{animation:none!important;stroke-dasharray:1100;stroke-dashoffset:var(--rf-line-reveal,0)}
+#app .rf-cinematic-active .rg-spark-line{animation:none!important;stroke-dasharray:500;stroke-dashoffset:var(--rf-spark-reveal,0)}
+#app .rf-cinematic-active .rg-area{opacity:var(--rf-area-opacity,1)}
+#app .rf-cinematic-active .rg-growth-intro h2,
+#app .rf-cinematic-active .pricing-section .split-head h2{
+  transform:translate3d(0,var(--rf-heading-y,0px),0);
+  opacity:var(--rf-heading-opacity,1);
+}
+/* Chapter five: the existing price cards fan into focus without altering links. */
+#app .rf-cinematic-active .pricing-section{
+  background:radial-gradient(ellipse at 50% 0%,rgba(37,75,120,.29),transparent 57%),#080c13!important;
+}
+#app .rf-cinematic-active .pricing-section .pricing-wrap{perspective:1500px}
+#app .rf-cinematic-active .pricing-section .price-card{
+  transform:perspective(1550px) translate3d(0,var(--rf-card-y,0px),0)
+    rotateY(var(--rf-card-yaw,0deg)) rotateX(var(--rf-card-pitch,0deg)) scale(var(--rf-card-scale,1))!important;
+  opacity:var(--rf-card-opacity,1);backface-visibility:hidden;
+  transform-origin:50% 40%;
+  transition:filter .18s ease,box-shadow .2s ease!important;
+}
+#app .rf-cinematic-active .pricing-section .price-card:hover,
+#app .rf-cinematic-active .pricing-section .price-card:focus-within{
+  filter:brightness(1.08);opacity:1!important;
+}
+#app .rf-cinematic-active .pricing-section .pricing-period-option{transition:color .18s ease,background .18s ease}
+#app .rf-cinematic-active .apple-bottom-cta{
+  padding-block:clamp(110px,13vw,190px)!important;
+  background:radial-gradient(ellipse at 50% 58%,rgba(39,88,151,.27),transparent 58%),#05080d!important;
+}
+#app .rf-cinematic-active .apple-bottom-cta .rf-orbit{top:-10%;border-color:rgba(106,180,251,.26)}
+
+/* Tiny, purely ornamental film timeline. Does not capture scrolling/taps. */
+.rf-film-progress{
+  position:fixed;top:70px;left:0;right:0;height:2px;pointer-events:none;z-index:1910;
+  background:rgba(117,167,230,.10);
+  opacity:var(--rf-hud-opacity,0);
+}
+.rf-film-progress>i{display:block;width:var(--rf-total,0%);height:100%;background:linear-gradient(90deg,#5185d8,#a5e2ff);box-shadow:0 0 16px rgba(109,193,255,.45)}
+.rf-film-hud{
+  position:fixed;right:clamp(17px,3vw,52px);top:50%;z-index:700;transform:translateY(-50%);
+  pointer-events:none;display:flex;gap:13px;align-items:center;
+  padding:15px 12px 15px 17px;border-radius:16px;
+  border:1px solid rgba(141,180,227,.19);
+  background:rgba(8,14,25,.72);
+  -webkit-backdrop-filter:blur(13px);backdrop-filter:blur(13px);
+  color:#d9eaf8;opacity:var(--rf-hud-opacity,0);
+  transition:opacity .25s ease;
+}
+.rf-film-hud .rf-film-info{display:grid;gap:6px;text-align:right}
+.rf-film-hud small{font-size:9px;letter-spacing:.17em;color:#8ea8c3;font-weight:750}
+.rf-film-hud b{font-size:11px;max-width:170px;font-weight:670;line-height:1.5}
+.rf-film-hud .rf-chapter-number{font-size:10px;color:#90a5bb;font-variant-numeric:tabular-nums}
+.rf-film-hud .rf-film-rail{height:108px;width:2px;background:#243748;border-radius:4px;overflow:hidden}
+.rf-film-hud .rf-film-rail i{display:block;width:100%;height:var(--rf-total,0%);background:#7cc7ff;box-shadow:0 0 10px #479ce2}
+@media(min-width:1000px){#app .rf-cinematic-active .rg-terminal.rf-film-active,#app .rf-cinematic-active .price-card.rf-film-active{will-change:transform}}
+@media(max-width:1100px){.rf-film-hud{display:none!important}}
+@media(max-width:760px){
+ .rf-film-progress{top:63px;height:2px}
+ #app .rf-cinematic-active .rf-atmosphere .rf-orbit{width:115vw;top:18%}
+ #app .rf-cinematic-active .rf-atmosphere .rf-rays{opacity:.35}
+ #app .rf-cinematic-active .rf-atmosphere .rf-beam{filter:blur(25px)}
+ #app .rf-cinematic-active .rg-terminal{transform:translate3d(0,var(--rf-growth-lift,0px),0) scale(var(--rf-growth-scale,1))}
+ #app .rf-cinematic-active .pricing-section .price-card{
+   transform:translate3d(0,var(--rf-card-y,0px),0) scale(var(--rf-card-scale,1))!important;
+ }
+ #app .rf-cinematic-active .apple-lead-calculator{padding-top:69px!important;padding-bottom:79px!important}
+ #app .rf-cinematic-active .apple-highlights{padding-top:78px}
+}
+@media(prefers-reduced-motion:reduce){
+ #app .rf-cinematic-active :is(.rg-terminal,.rg-primary-chart,.rg-kpi,.price-card,.rg-growth-intro h2,.pricing-section .split-head h2){
+   transform:none!important;opacity:1!important;transition:none!important;
+ }
+ #app .rf-cinematic-active .rg-line,#app .rf-cinematic-active .rg-spark-line{stroke-dashoffset:0!important}
+ #app .rf-cinematic-active .rf-atmosphere,.rf-film-hud,.rf-film-progress{display:none!important}
+}
