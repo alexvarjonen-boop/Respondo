@@ -25,9 +25,10 @@ test('scroll film engine is valid JS, reversible and tied to native scroll',()=>
 });
 test('original homepage remains structurally and visually unchanged',()=>{
   assert.match(html,/href="\/apple-home\.css\?/);
-  assert.match(html,/src="\/original-theme-motion\.js\?v=20261017-scroll-film-v2"/);
+  assert.match(html,/src="\/unified-motion\.js/);
+  assert.match(html,/src="\/spiral-hero-motion\.js/);
   assert.match(html,/href="\/original-theme-motion\.css\?v=20261017-scroll-film-v2"/);
-  assert.match(home,/apple-hero/);
+  assert.match(home,/spiralHeroMarkup\(t, lang\)/);
   assert.match(home,/apple-highlights-grid/);
   assert.match(home,/apple-lead-calculator/);
   assert.doesNotMatch(home,/cinematic-|scroll-film|scroll-scrub/);
