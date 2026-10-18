@@ -35,14 +35,13 @@ test('all six homepage chapters remain in logical order',async()=>{
   }
 });
 
-test('cinema assets load after existing homepage motion styles and scripts',()=>{
+test('cinematic overlay is disabled until mobile crash is resolved',()=>{
   const index=read('index.html');
-  assert.ok(index.indexOf('/home-cinema.css')>index.indexOf('/dark-growth-20261018.css'));
-  assert.ok(index.indexOf('/home-cinema.css')>index.indexOf('/original-theme-motion.css'));
-  assert.ok(index.indexOf('/home-cinema.js')>index.indexOf('/original-theme-motion.js'));
-  assert.ok(index.indexOf('/home-cinema.js')>index.indexOf('/cinematic-navigation.js'));
-  assert.equal((index.match(/home-cinema\.css/g)||[]).length,1);
-  assert.equal((index.match(/home-cinema\.js/g)||[]).length,1);
+  assert.ok(index.includes('/dark-growth-20261018.css'));
+  assert.ok(index.includes('/original-theme-motion.css'));
+  assert.ok(index.includes('/original-theme-motion.js'));
+  assert.ok(!index.includes('/home-cinema.css'));
+  assert.ok(!index.includes('/home-cinema.js'));
 });
 
 test('cinematic styles preserve functional controls and motion preferences',()=>{
