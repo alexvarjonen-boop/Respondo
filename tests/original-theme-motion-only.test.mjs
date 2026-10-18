@@ -13,8 +13,8 @@ test('the original homepage markup, Apple-style sheet and branding remain in use
   assert.match(html, /src="\/app\.js\?/);
   assert.match(home, /spiralHeroMarkup\(t, lang\)/);
   assert.match(read('public/spiral-hero.js'), /<section class="apple-hero rs-spiral-section"/);
-  assert.match(home, /<section class="apple-highlights"/);
-  assert.match(home, /apple-lead-calculator/);
+  assert.doesNotMatch(home, /apple-highlights|apple-lead-calculator|rg-growth-section/);
+  assert.match(home, /\$\{pricingMarkup\}/);
   assert.doesNotMatch(html, /\/cinematic-(home|inner-pages|marketing|product-scenes)\./);
 });
 

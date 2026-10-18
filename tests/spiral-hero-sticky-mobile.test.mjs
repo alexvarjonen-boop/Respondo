@@ -29,7 +29,7 @@ function harness({stickyWorks=true}={}) {
   const stage={getBoundingClientRect(){return {top:stickyWorks?0:-scroll}}};
   const section={
     isConnected:true,classList:classList(),style:style(),
-    getBoundingClientRect(){return {top:-scroll,bottom:8400-scroll,height:8400}},
+    getBoundingClientRect(){return {top:-scroll,bottom:3200-scroll,height:3200}},
     querySelector(sel){return sel==='.rs-spiral-stage'?stage:sel==='[data-rs-step]'?counter:sel==='[data-rs-announcement]'?announced:null},
     querySelectorAll(sel){return sel==='[data-rs-card]'?cards:[]}
   };
@@ -55,14 +55,14 @@ test('mobile hero stays on each card through most of each scroll segment',()=>{
   const h=harness();
   assert.equal(h.counter.textContent,'01');
   assert.ok(h.cards[0].classList.contains('rs-in-scene'));
-  h.move(440); // one large drag still inside the first reading interval
+  h.move(140); // the reading hold takes about the first 170px of one segment
   assert.equal(h.counter.textContent,'01');
   assert.equal(h.cards[0].style.getPropertyValue('--rs-x'),'0.0px');
   assert.equal(h.cards[1].classList.contains('rs-in-scene'),false);
-  h.move(1430);
+  h.move(390); // about one mobile swipe brings the next card
   assert.equal(h.counter.textContent,'02');
   assert.ok(h.cards[1].classList.contains('rs-in-scene'));
-  h.move(1790);
+  h.move(490); // the second card remains readable
   assert.equal(h.counter.textContent,'02');
   h.move(0);
   assert.equal(h.counter.textContent,'01');
@@ -72,16 +72,16 @@ test('mobile Safari sticky failure is pinned and hands off at the end',()=>{
   h.move(330);
   assert.ok(h.section.classList.contains('rs-fixed-fallback'));
   assert.equal(h.section.classList.contains('rs-fixed-end'),false);
-  h.move(7730);
+  h.move(2405);
   assert.ok(h.section.classList.contains('rs-fixed-end'));
   h.move(0);
   assert.equal(h.section.classList.contains('rs-fixed-fallback'),false);
 });
 test('mobile sticky fixes remain scoped to the spiral without scroll interception',()=>{
   assert.match(css,/overflow-x:clip!important/);
-  assert.match(css,/height:1050svh/);
+  assert.match(css,/height:calc\(100svh \+ 2400px\)/);
   assert.match(css,/position:sticky!important/);
   assert.match(css,/\.rs-fixed-fallback/);
-  assert.match(js,/fraction - \.66/);
+  assert.match(js,/fraction - \.42/);
   assert.doesNotMatch(js,/preventDefault\(|scrollTo\(|scrollIntoView\(|setInterval\(/);
 });

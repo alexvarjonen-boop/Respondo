@@ -29,8 +29,8 @@ test('original homepage remains structurally and visually unchanged',()=>{
   assert.match(html,/src="\/spiral-hero-motion\.js/);
   assert.match(html,/href="\/original-theme-motion\.css\?v=20261017-scroll-film-v2"/);
   assert.match(home,/spiralHeroMarkup\(t, lang\)/);
-  assert.match(home,/apple-highlights-grid/);
-  assert.match(home,/apple-lead-calculator/);
+  assert.doesNotMatch(home,/apple-highlights-grid|apple-lead-calculator|rg-growth-section/);
+  assert.match(home,/\$\{pricingMarkup\}/);
   assert.doesNotMatch(home,/cinematic-|scroll-film|scroll-scrub/);
   assert.doesNotMatch(html,/\/cinematic-(home|marketing|inner-pages|product-scenes)\./);
 });

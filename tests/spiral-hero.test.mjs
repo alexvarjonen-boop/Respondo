@@ -22,9 +22,9 @@ test('spiral page renders 7 real feature cards after logo reveal in all language
     assert.ok(hero.includes('/assistant?lang=' + lang));
     assert.ok(hero.includes('viewBox="0 0 256 256"'));
     assert.ok(markup.includes('rs-spiral-section'));
-    assert.ok(markup.indexOf('rs-spiral-section') < markup.indexOf('apple-highlights'));
-    assert.ok(markup.indexOf('apple-lead-calculator') < markup.indexOf('rg-growth-section'));
-    assert.ok(markup.indexOf('rg-growth-section') < markup.indexOf('PLANS'));
+    assert.doesNotMatch(markup, /apple-highlights|apple-lead-calculator|rg-growth-section/);
+    assert.ok(markup.indexOf('rs-spiral-section') < markup.indexOf('PLANS'));
+    assert.equal((markup.match(/data-rs-card\b/g)||[]).length, 7);
     assert.ok(markup.includes('apple-bottom-cta'));
     assert.ok(hero.includes(t('ei mitattu asiakastulos','inget uppmätt kundresultat','not a measured customer result')));
   }
