@@ -48,8 +48,8 @@
   }
   function clearOpening(instant) {
     clearTimeout(closeTimer);
-    clearTimeout(removeTimer);
     if (!opening) { document.body.classList.remove('rl-logo-lock'); return; }
+    clearTimeout(removeTimer);
     var el = opening;
     opening = null;
     if (instant || reduced) {
@@ -84,6 +84,7 @@
       '<button class="rl-intro-skip" type="button">',t.skip,' ↗</button>'
     ].join('');
     layer.querySelector('.rl-intro-skip').addEventListener('click',function () { clearOpening(false); });
+    layer.addEventListener('keydown',function (event) { if (event.key === 'Escape') clearOpening(false); });
     document.body.appendChild(layer);
     document.body.classList.add('rl-logo-lock');
     opening = layer;
