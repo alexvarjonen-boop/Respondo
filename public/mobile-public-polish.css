@@ -296,3 +296,94 @@
 @media(prefers-reduced-motion:reduce){
   #app .footer .footer-chat-open,.fx-assistant .fx-site-action{transition:none!important;transform:none!important}
 }
+
+/* Compact public header: logo • languages • sign in. No hamburger or footer CTA. */
+#app .nav .container.navin.public-simple-navin {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;
+  align-items:center!important;
+  column-gap:clamp(6px,2vw,20px)!important;
+}
+#app .nav .public-simple-navin > .logo {
+  grid-column:1;
+  justify-self:start;
+  min-width:0!important;
+  margin:0!important;
+}
+#app .nav .public-simple-navin > .navactions {
+  grid-column:2;
+  justify-self:center;
+  position:static!important;
+  left:auto!important;
+  top:auto!important;
+  right:auto!important;
+  transform:none!important;
+  width:auto!important;
+  max-width:none!important;
+  min-width:0!important;
+  flex:0 0 auto!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+}
+#app .nav .public-simple-navin > .public-header-login {
+  grid-column:3;
+  justify-self:end;
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+  flex:none!important;
+  min-height:42px;
+  padding:10px clamp(13px,1.5vw,21px);
+  border:1px solid rgba(255,255,255,.28);
+  border-radius:13px;
+  background:#f7f8fa;
+  color:#11151d!important;
+  -webkit-text-fill-color:#11151d!important;
+  font-size:clamp(12px,1vw,14px);
+  font-weight:720;
+  line-height:1.2;
+  letter-spacing:-.01em;
+  white-space:nowrap;
+  text-decoration:none!important;
+  box-shadow:0 2px 9px rgba(0,0,0,.1);
+  transition:background-color .24s ease,transform .24s ease;
+}
+#app .nav .public-simple-navin > .public-header-login:hover {
+  background:#e3eaf5;
+  transform:translateY(-1px);
+}
+#app .nav .public-simple-navin > .public-header-login:focus-visible {
+  outline:3px solid #70b1ff!important;
+  outline-offset:3px;
+}
+@media(max-width:680px) {
+  #app .nav .container.navin.public-simple-navin {
+    grid-template-columns:minmax(34px,1fr) auto minmax(74px,1fr)!important;
+    column-gap:5px!important;
+  }
+  #app .nav .public-simple-navin > .logo .brand-word {display:none!important}
+  #app .nav .public-simple-navin > .public-header-login {
+    min-height:40px;
+    padding:9px 12px;
+    border-radius:11px;
+    font-size:12px;
+  }
+}
+@media(max-width:360px) {
+  #app .nav .public-simple-navin > .public-header-login {
+    min-height:38px;
+    padding:9px 9px;
+    font-size:11px;
+  }
+  #app .nav .public-simple-navin .app-language-option {
+    width:25px!important;
+    min-width:25px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  #app .nav .public-simple-navin > .public-header-login {
+    transition:none!important;
+    transform:none!important;
+  }
+}
