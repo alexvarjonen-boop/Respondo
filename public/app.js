@@ -1989,10 +1989,13 @@ function bindHomeScrollTrial() {
 }
 
 function socialAuthButtons(flow = 'signup', plan = '') {
-  const label = flow === 'login' ? 'Kirjaudu' : 'Jatka';
+  const googleLabel = flow === 'login'
+    ? appText('Kirjaudu Googlella','Logga in med Google','Sign in with Google')
+    : appText('Jatka Googlella','Fortsätt med Google','Continue with Google');
+  const emailDivider = appText('tai sähköpostilla','eller med e-post','or with email');
   const signupParams = flow === 'signup' && plan ? '&plan=' + encodeURIComponent(plan) + '&lang=' + encodeURIComponent(currentLang()) : '';
   return `<div class="social-auth">
-    <a class="social-auth-btn" href="/api/auth/oauth/google/start?flow=${flow}${signupParams}" aria-label="${label} Googlella">
+    <a class="social-auth-btn" href="/api/auth/oauth/google/start?flow=${flow}${signupParams}" aria-label="${googleLabel}">
       <span class="social-auth-icon google-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="22" height="22" role="img" aria-label="Google">
           <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.91h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.75 2.98-4.33 2.98-7.4Z"/>
@@ -2001,9 +2004,9 @@ function socialAuthButtons(flow = 'signup', plan = '') {
           <path fill="#EA4335" d="M12 6.01c1.47 0 2.78.5 3.82 1.49l2.88-2.88A9.65 9.65 0 0 0 12 2a10 10 0 0 0-8.96 5.52l3.35 2.62C7.18 7.77 9.39 6.01 12 6.01Z"/>
         </svg>
       </span>
-      <span>${label} Googlella</span>
+      <span>${googleLabel}</span>
     </a>
-    <div class="auth-divider"><span>tai sähköpostilla</span></div>
+    <div class="auth-divider"><span>${emailDivider}</span></div>
   </div>`;
 }
 
