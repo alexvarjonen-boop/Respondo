@@ -10,10 +10,10 @@ test('public homepage renders a compact 3-card feature story instead of legacy i
   const end=app.indexOf('\n\nfunction signup()',start);
   assert.ok(start>=0 && end>start);
   const home=app.slice(start,end);
-  assert.match(home,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT\)/);
+  assert.match(home,/appleHomeMarkup\(appText,currentLang\(\),FEATURE_COUNT,pricingSection\(\)\)/);
   assert.match(home,/apple-home-page/);
   assert.doesNotMatch(home,/cinematicConversationScene\(\)|horizontalProductStory\(\)|productWorldScene\(\)|motionDepthScene\(\)|trustPortalScene\(\)|dataImpactScene\(\)/);
-  assert.doesNotMatch(home,/calculatorSection\(\)|pricingSection\(\)|contactSection\(\)/);
+  assert.doesNotMatch(home,/calculatorSection\(\)|contactSection\(\)/);
 });
 
 test('Apple-inspired homepage and fullscreen menu styles are loaded',()=>{
