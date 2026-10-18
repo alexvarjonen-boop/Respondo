@@ -1,4 +1,4 @@
-import { spiralHeroMarkup } from './spiral-hero.js?v=20261018-spiral-v1';
+import { spiralHeroMarkup } from './spiral-hero.js?v=20261018-spiral-only-v3';
 // The spiral is the single feature story. Pricing follows without duplicated
 // feature cards, homepage calculator or illustrative growth section.
 export function appleHomeMarkup(t,lang,count,pricingMarkup=''){
