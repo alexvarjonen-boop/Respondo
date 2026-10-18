@@ -7619,6 +7619,26 @@ async function verifyAppleIdentityToken(idToken, expectedNonce) {
   return payload;
 }
 
+
+function verifiedSignupPlan(value) {
+  const candidate=String(value || '').trim().toLowerCase();
+  return /^(?:basic|advanced|business)_(?:monthly|yearly)$/.test(candidate) ? candidate : '';
+}
+
+function signupOauthReturnUrl(provider, claims={}, error='') {
+  const params=new URLSearchParams();
+  if (error) {
+    params.set('oauth_error',error);
+    params.set('provider',provider);
+  } else {
+    params.set('oauth',provider);
+  }
+  const plan=verifiedSignupPlan(claims.signupPlan);
+  if (plan) params.set('plan',plan);
+  if (['fi','sv','en'].includes(claims.signupLanguage)) params.set('lang',claims.signupLanguage);
+  return '/tilaus?' + params.toString();
+}
+
 function setOauthState(res, nonce, provider = 'google') {
   const apple = provider === 'apple';
   res.cookie(OAUTH_STATE_COOKIE, nonce, {
@@ -7768,16 +7788,15 @@ async function finishOauth(req, res, code, state) {
     }
 
     setOauthProfile(res, profile);
-    return res.redirect('/tilaus?oauth=google');
+    return res.redirect(signupOauthReturnUrl('google',statePayload));
   } catch (e) {
     console.error('Google OAuth failed', e);
     if (statePayload.flow === 'calendar') {
       return res.redirect('/app?section=automation&calendar=failed');
     }
-    return res.redirect(
-      '/' + (statePayload.flow === 'signup' ? 'tilaus' : 'kirjaudu') +
-      '?oauth_error=failed&provider=google'
-    );
+    return res.redirect(statePayload.flow === 'signup'
+      ? signupOauthReturnUrl('google',statePayload,'failed')
+      : '/kirjaudu?oauth_error=failed&provider=google');
   }
 }
 
@@ -9014,6 +9033,8 @@ app.get('/api/auth/oauth/:provider/start', async (req, res) => {
   const provider = String(req.params.provider || '').toLowerCase();
   const flow = provider === 'google' && req.query.flow === 'password_setup' ? 'password_setup' : (req.query.flow === 'login' ? 'login' : 'signup');
   if (!['google','apple'].includes(provider)) return res.status(404).end();
+  const signupPlan = flow === 'signup' ? verifiedSignupPlan(req.query.plan) : '';
+  const signupLanguage = flow === 'signup' && ['fi','sv','en'].includes(req.query.lang) ? req.query.lang : '';
 
   // OAuth must begin on the working apex host. The external www service
   // currently forwards to apex; sending apex traffic back to www caused a
@@ -9027,10 +9048,9 @@ app.get('/api/auth/oauth/:provider/start', async (req, res) => {
 
   const cfg = oauthConfig(provider);
   if (!cfg.configured) {
-    return res.redirect(
-      '/' + (flow === 'signup' ? 'tilaus' : 'kirjaudu') +
-      '?oauth_error=not_configured&provider=' + encodeURIComponent(provider)
-    );
+    return res.redirect(flow === 'signup'
+      ? signupOauthReturnUrl(provider,{ signupPlan,signupLanguage },'not_configured')
+      : '/kirjaudu?oauth_error=not_configured&provider=' + encodeURIComponent(provider));
   }
 
   let passwordSetupUser = null;
@@ -9043,7 +9063,7 @@ app.get('/api/auth/oauth/:provider/start', async (req, res) => {
     } catch { return res.redirect('/kirjaudu'); }
   }
   const nonce = crypto.randomBytes(20).toString('hex');
-  const state = jwt.sign({ provider, flow, nonce, ...(passwordSetupUser ? { userId:passwordSetupUser.id } : {}) }, JWT, { expiresIn: '10m' });
+  const state = jwt.sign({ provider, flow, nonce, ...(passwordSetupUser ? { userId:passwordSetupUser.id } : {}), ...(signupPlan ? { signupPlan } : {}), ...(signupLanguage ? { signupLanguage } : {}) }, JWT, { expiresIn: '10m' });
   setOauthState(res, nonce, provider);
 
   if (provider === 'apple') {
@@ -9119,7 +9139,7 @@ app.post('/api/auth/oauth/apple/callback', async (req, res) => {
   res.clearCookie(OAUTH_STATE_COOKIE);
 
   if (req.body?.error || !code) {
-    return res.redirect(target + '?oauth_error=failed&provider=apple');
+    return res.redirect(statePayload.flow === 'signup' ? signupOauthReturnUrl('apple',statePayload,'failed') : target + '?oauth_error=failed&provider=apple');
   }
 
   try {
@@ -9154,10 +9174,10 @@ app.post('/api/auth/oauth/apple/callback', async (req, res) => {
     }
 
     setOauthProfile(res, profile);
-    return res.redirect('/tilaus?oauth=apple');
+    return res.redirect(signupOauthReturnUrl('apple',statePayload));
   } catch (e) {
     console.error('Apple OAuth failed', e);
-    return res.redirect(target + '?oauth_error=failed&provider=apple');
+    return res.redirect(statePayload.flow === 'signup' ? signupOauthReturnUrl('apple',statePayload,'failed') : target + '?oauth_error=failed&provider=apple');
   }
 });
 
