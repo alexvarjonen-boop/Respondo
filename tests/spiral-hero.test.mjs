@@ -17,8 +17,9 @@ test('spiral page renders 7 real feature cards after logo reveal in all language
     const hero = spiralHeroMarkup(t, lang);
     assert.match(hero, /class="apple-hero rs-spiral-section"/);
     assert.equal((hero.match(/data-rs-card\b/g) || []).length, 7);
-    assert.ok(hero.includes('data-respondo-hero-cta="signup"'));
-    assert.ok(hero.includes('/tilaus?lang=' + lang));
+    assert.ok(!hero.includes('data-respondo-hero-cta="signup"'));
+    assert.ok(hero.includes('data-respondo-hero-cta="demo"'));
+    assert.ok(!hero.includes('/tilaus?lang=' + lang));
     assert.ok(hero.includes('/assistant?lang=' + lang));
     assert.ok(hero.includes('viewBox="0 0 256 256"'));
     assert.ok(markup.includes('rs-spiral-section'));
