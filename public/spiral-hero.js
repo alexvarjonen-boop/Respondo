@@ -43,7 +43,6 @@ export function spiralHeroMarkup(t, lang) {
       <div class="rs-spiral-bottom">
         <div class="rs-scroll-invite" aria-hidden="true"><span class="rs-scroll-rule"></span>${t('SELAA ALAS','SKROLLA NED','SCROLL TO EXPLORE')}</div>
         <div class="apple-hero-actions rs-hero-actions">
-          <a class="apple-pill apple-pill-primary" data-respondo-hero-cta="signup" href="/tilaus?lang=${lang}">${t('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</a>
           <a class="apple-pill apple-pill-secondary" data-respondo-hero-cta="demo" href="/assistant?lang=${lang}">${t('Kokeile bottia','Testa botten','Try the bot')}</a>
         </div>
         <div class="rs-step-count" aria-hidden="true"><span data-rs-step>01</span><span class="rs-step-line"></span><span>07</span></div>
