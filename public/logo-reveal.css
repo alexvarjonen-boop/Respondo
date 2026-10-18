@@ -1,0 +1,77 @@
+/* Respondo AI cinematic logo reveal (2026-10-18).
+   Isolated presentation layer: existing theme, copy, navigation and app logic stay intact. */
+.rl-logo-lock{overflow:hidden!important}
+.rl-intro{position:fixed;inset:0;z-index:2147483100;display:grid;place-items:center;overflow:hidden;background:#020306;color:#fff;isolation:isolate;clip-path:inset(0 0 0 0);will-change:clip-path}
+.rl-intro::before{content:"";position:absolute;inset:-20%;background:radial-gradient(circle at 50% 50%,rgba(44,91,159,.22),transparent 29%),radial-gradient(circle at 50% 50%,rgba(255,255,255,.045),transparent 48%);animation:rl-light 3.2s ease both;pointer-events:none}
+.rl-intro::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 49.93%,rgba(255,255,255,.11) 50%,transparent 50.07%),linear-gradient(0deg,transparent 49.93%,rgba(255,255,255,.11) 50%,transparent 50.07%);opacity:0;animation:rl-gridflash 1.7s .15s ease-out both;pointer-events:none}
+.rl-intro.rl-is-leaving{transition:clip-path .78s cubic-bezier(.72,0,.19,1);clip-path:inset(0 0 100% 0)}
+.rl-intro-inner{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;transform:translate3d(0,-2vh,0)}
+.rl-intro-rings{position:absolute;width:min(68vw,460px);aspect-ratio:1;border:1px solid rgba(188,216,255,.13);border-radius:50%;box-shadow:0 0 0 51px rgba(142,188,255,.017),0 0 0 106px rgba(142,188,255,.014);animation:rl-rings 2.7s cubic-bezier(.16,.78,.15,1) both}
+.rl-intro-rings::before,.rl-intro-rings::after{content:"";position:absolute;border-radius:50%;inset:12%;border:1px solid rgba(229,239,255,.20);border-right-color:transparent;border-bottom-color:transparent;animation:rl-turn 3s linear infinite}
+.rl-intro-rings::after{inset:-22%;opacity:.5;animation-direction:reverse;animation-duration:5s}
+.rl-intro-graphic{position:relative;width:clamp(162px,29vw,240px);aspect-ratio:1;display:grid;place-items:center;filter:drop-shadow(0 0 34px rgba(178,214,255,.17))}
+.rl-intro-graphic svg{width:100%;height:100%;display:block;overflow:visible}
+.rl-intro-trace{fill:none;stroke:#d3eaff;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:100;stroke-dashoffset:100;animation:rl-draw 1.03s .28s cubic-bezier(.28,.07,.17,1) forwards}
+.rl-intro-solid{fill:#fff;opacity:0;filter:blur(6px);transform-box:fill-box;transform-origin:center;animation:rl-solid-in .7s 1.16s cubic-bezier(.1,.74,.14,1) forwards}
+.rl-intro-burst{position:absolute;inset:-44%;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.23),rgba(114,171,255,.11) 24%,transparent 60%);opacity:0;transform:scale(.2);animation:rl-burst .9s 1.20s ease-out both;pointer-events:none}
+.rl-intro-name{position:relative;margin:13px 0 0;padding-left:.21em;font-size:clamp(25px,5.3vw,46px);font-weight:720;letter-spacing:.21em;line-height:1.18;color:#f5f8ff;opacity:0;transform:translate3d(0,27px,0);animation:rl-copy-in .8s 1.62s cubic-bezier(.16,.8,.24,1) forwards}
+.rl-intro-caption{margin:12px 0 0;color:#a7b1c6;font-size:clamp(10px,1.8vw,13px);font-weight:550;letter-spacing:.07em;line-height:1.65;opacity:0;transform:translateY(12px);animation:rl-copy-in .7s 1.92s ease-out forwards}
+.rl-intro-skip{position:absolute;right:max(19px,env(safe-area-inset-right));top:max(22px,env(safe-area-inset-top));z-index:3;padding:10px 15px;color:#cbd3e1;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(255,255,255,.055);font-size:12px;font-weight:600;letter-spacing:.02em;cursor:pointer;transition:background .2s}
+.rl-intro-skip:hover{background:rgba(255,255,255,.17)}
+.rl-intro-skip:focus-visible,.rl-replay:focus-visible{outline:3px solid #8ac1ff;outline-offset:4px}
+.rl-intro-lines{position:absolute;inset:-20%;pointer-events:none;opacity:0;background:repeating-conic-gradient(from 23deg at 50% 50%,rgba(159,195,255,.11) 0deg,transparent 1.5deg,transparent 23deg);mask-image:radial-gradient(circle,transparent 14%,#000 33%,transparent 66%);animation:rl-flare 1.0s 1.12s ease-out both}
+
+/* Scroll-controlled second reveal. No layout or palette changes to existing blocks. */
+#app .apple-home.rl-logo-film-active{overflow:clip!important}
+#app .rl-chapter{height:188svh;min-height:900px;position:relative;background:#030407;color:#fff;isolation:isolate}
+#app .rl-chapter *{box-sizing:border-box}
+#app .rl-sticky{position:sticky;top:0;height:100svh;min-height:480px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 60%,rgba(24,38,68,.32),transparent 53%),#030407;text-align:center}
+#app .rl-sticky::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(175,203,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(175,203,255,.035) 1px,transparent 1px);background-size:clamp(58px,9vw,120px) clamp(58px,9vw,120px);mask-image:radial-gradient(ellipse at 50% 50%,#000,transparent 69%);opacity:.72}
+#app .rl-sticky::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 52%,rgba(116,168,255,.14),transparent 43%);opacity:var(--rl-aura,0)}
+#app .rl-chapter-core{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;flex-direction:column;width:min(94vw,1100px);padding:50px 20px 48px}
+#app .rl-chapter-orbit{position:absolute;left:50%;top:46%;width:clamp(250px,38vw,500px);aspect-ratio:1;border-radius:50%;border:1px solid rgba(183,210,249,.16);transform:translate(-50%,-50%) rotate(var(--rl-spin,0deg)) scale(var(--rl-orbit-scale,.73));opacity:var(--rl-ring,.15);pointer-events:none;box-shadow:0 0 0 39px rgba(189,213,255,.018),0 0 0 89px rgba(165,203,255,.014)}
+#app .rl-chapter-orbit::before,#app .rl-chapter-orbit::after{content:"";position:absolute;inset:9%;border-radius:50%;border:1px solid rgba(188,212,252,.18);border-right-color:transparent;border-bottom-color:transparent}
+#app .rl-chapter-orbit::after{inset:-15%;opacity:.42;border-left-color:transparent;border-top-color:transparent}
+#app .rl-chapter-logo{position:relative;width:clamp(195px,31vw,310px);aspect-ratio:1;transform:translate3d(0,var(--rl-rise,22px),0) scale(var(--rl-scale,.75));filter:drop-shadow(0 0 var(--rl-glow,0px) rgba(162,210,255,.40))}
+#app .rl-chapter-logo svg{width:100%;height:100%;display:block;overflow:visible}
+#app .rl-chapter-trace{fill:none;stroke:#b8d9ff;stroke-width:6;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;filter:drop-shadow(0 0 13px rgba(152,201,255,.58))}
+#app .rl-chapter-solid{fill:#fff;opacity:var(--rl-fill,0)}
+#app .rl-chapter-wordmark{margin:4px 0 0;padding-left:.18em;font-size:clamp(29px,5.3vw,58px);font-weight:740;letter-spacing:.18em;line-height:1.2;color:#f8faff;opacity:var(--rl-words,0);transform:translate3d(0,var(--rl-word-rise,28px),0);text-shadow:0 5px 33px rgba(0,0,0,.4)}
+#app .rl-chapter-tagline{margin:16px 0 0;font-size:clamp(13px,2vw,18px);font-weight:430;line-height:1.5;letter-spacing:.01em;color:#a6b1c3;opacity:var(--rl-words,0);transform:translateY(var(--rl-tag-rise,15px))}
+#app .rl-scroll-prompt{position:absolute;bottom:max(30px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-size:10px;font-weight:650;letter-spacing:.2em;white-space:nowrap;text-transform:uppercase;color:#a9b8cc;opacity:var(--rl-prompt,1)}
+#app .rl-scroll-prompt::after{content:"↓";display:block;font-size:23px;font-weight:300;letter-spacing:0;margin-top:8px}
+#app .rl-chapter-meta{position:absolute;left:clamp(22px,5vw,72px);top:clamp(24px,6vw,55px);font-size:10px;letter-spacing:.18em;font-weight:700;color:#828fa5}
+#app .rl-replay{position:absolute;z-index:2;right:clamp(14px,5vw,70px);bottom:max(25px,env(safe-area-inset-bottom));padding:10px 17px;border:1px solid rgba(196,216,248,.26);border-radius:999px;background:rgba(255,255,255,.055);color:#d9e5f5;font-size:12px;cursor:pointer;backdrop-filter:blur(12px);transition:background .2s}
+#app .rl-replay:hover{background:rgba(255,255,255,.13)}
+#app .rl-chapter-progress{position:absolute;right:0;top:0;width:3px;height:100%;background:rgba(225,237,255,.10)}
+#app .rl-chapter-progress::after{content:"";display:block;width:100%;height:var(--rl-bar,0%);background:linear-gradient(#fff,#6fb6ff);box-shadow:0 0 12px #7cb7ff}
+@media(max-width:620px){
+ #app .rl-chapter{height:162svh;min-height:660px}
+ #app .rl-chapter-core{padding:50px 18px 65px}
+ #app .rl-chapter-logo{width:clamp(180px,53vw,265px)}
+ #app .rl-chapter-orbit{width:min(87vw,380px)}
+ #app .rl-chapter-wordmark{font-size:clamp(26px,7.2vw,42px);letter-spacing:.12em;padding-left:.12em}
+ #app .rl-chapter-tagline{max-width:290px;margin-top:12px}
+ #app .rl-replay{font-size:11px;bottom:max(18px,env(safe-area-inset-bottom))}
+ #app .rl-scroll-prompt{bottom:83px}
+ .rl-intro-rings{width:min(85vw,390px)}
+}
+@media(prefers-reduced-motion:reduce){
+ .rl-intro{display:none!important}
+ #app .rl-chapter{height:auto;min-height:0}
+ #app .rl-sticky{position:relative;height:70svh;min-height:420px}
+ #app .rl-chapter-logo{transform:none;filter:none}
+ #app .rl-chapter-trace{display:none}
+ #app .rl-chapter-solid,#app .rl-chapter-wordmark,#app .rl-chapter-tagline{opacity:1!important;transform:none!important}
+ #app .rl-chapter-orbit{transform:translate(-50%,-50%);opacity:.24}
+ #app .rl-scroll-prompt,#app .rl-replay,#app .rl-chapter-progress{display:none}
+}
+@keyframes rl-light{0%{opacity:0;transform:scale(1.4)}30%{opacity:1}100%{opacity:1;transform:scale(1)}}
+@keyframes rl-gridflash{0%,30%{opacity:0}55%{opacity:.4}100%{opacity:0}}
+@keyframes rl-rings{0%{opacity:0;transform:scale(1.55) rotate(-28deg)}36%{opacity:1}80%{opacity:.7}100%{opacity:.15;transform:scale(.87) rotate(28deg)}}
+@keyframes rl-turn{to{transform:rotate(360deg)}}
+@keyframes rl-draw{to{stroke-dashoffset:0}}
+@keyframes rl-solid-in{0%{opacity:0;filter:blur(7px);transform:scale(.93)}40%{opacity:1}100%{opacity:1;filter:blur(0);transform:scale(1)}}
+@keyframes rl-burst{0%{opacity:0;transform:scale(.15)}25%{opacity:.8}100%{opacity:0;transform:scale(1.25)}}
+@keyframes rl-copy-in{to{opacity:1;transform:translate3d(0,0,0)}}
+@keyframes rl-flare{0%{opacity:0;transform:scale(.55) rotate(-25deg)}28%{opacity:.62}100%{opacity:0;transform:scale(1.15) rotate(8deg)}}
