@@ -1,0 +1,283 @@
+
+/* Respondo — dark public experience and illustrative growth board.
+   Scoped to public routes. Authenticated workspace layout stays unchanged. */
+body{background:#06080c}
+#app :is(.apple-home-page,.signup-dark-shell,.pricing-page,.contact-page){background:#06080c;color:#f3f6fb}
+#app .nav,
+body.public-nav-active #app .nav,
+body.public-nav-active #app .apple-home-page .nav,
+#app .apple-home-page .nav{
+  background:rgba(8,11,17,.95)!important;
+  border-bottom:1px solid rgba(255,255,255,.12)!important;
+  color:#f4f6fa!important;
+  -webkit-backdrop-filter:blur(22px) saturate(145%)!important;
+  backdrop-filter:blur(22px) saturate(145%)!important;
+}
+#app .nav .navin{background:transparent!important;box-shadow:none!important;border-color:transparent!important}
+#app .nav .logo,#app .nav .brand-word,#app .apple-home-page .nav .brand-word,#app .apple-home-page .nav .logo{
+  color:#f7f9fc!important;-webkit-text-fill-color:#f7f9fc!important;opacity:1!important;
+}
+#app .nav .apple-menu-toggle,
+#app .apple-home-page .nav .apple-menu-toggle{color:#e8edf5!important;background:transparent!important}
+#app .nav .apple-menu-toggle span,
+#app .apple-home-page .nav .apple-menu-toggle span{background:#edf3fb!important}
+#app .nav .navactions .btn.ghost,
+#app .apple-home-page .nav .navactions .btn.ghost{
+  background:#161b24!important;border:1px solid #343b49!important;color:#f3f6fb!important;
+}
+#app .nav .app-language-switch{background:#131820!important;border-color:#343b48!important;box-shadow:none!important}
+#app .nav .app-language-option{background:transparent!important;border-color:transparent!important}
+#app .nav .app-language-option.active,
+#app .nav .app-language-option[aria-pressed="true"]{background:#273140!important;border-radius:999px!important}
+#app .apple-home-page .pricing-section,#app .pricing-page .pricing-section{
+  background:radial-gradient(ellipse at 52% 0%,rgba(31,68,101,.14),transparent 55%),#090b10!important;
+  color:#f5f7fb!important;
+  border-top:1px solid #202631!important;
+}
+#app .pricing-section :is(.section-kicker,.split-head h2,.price-card h3,.pricevalue,.pricevalue small,.price-top,.price-top span){
+  color:#f4f7fc!important;-webkit-text-fill-color:#f4f7fc!important;
+}
+#app .pricing-section .split-head p{color:#aab7c9!important}
+#app .pricing-section .pricing-billing-switch{
+  background:#151b24!important;border:1px solid #313b4c!important;
+  box-shadow:0 12px 36px rgba(0,0,0,.15)!important;
+}
+#app .pricing-section .pricing-period-option{background:transparent!important;color:#a9b7ca!important}
+#app .pricing-section .pricing-period-option.is-active{
+  color:#fff!important;background:#2c3545!important;box-shadow:0 2px 10px rgba(0,0,0,.18)!important;
+}
+#app .pricing-section .pricing-period-save{color:#70e5b5!important}
+#app .pricing-section .price-card,
+#app .pricing-page .price-card,
+#app .apple-home-page .price-card{
+  background:#121721!important;color:#e7edf6!important;border:1px solid #293446!important;
+  box-shadow:0 18px 52px rgba(0,0,0,.21)!important;
+}
+#app .pricing-section .price-card.featured{
+  border-color:rgba(83,151,248,.65)!important;
+  background:linear-gradient(162deg,#192436,#111822)!important;
+}
+#app .pricing-section .price-card :is(li,p,small,.pricing-billing-note,.plan-yearly-price){
+  color:#b6c2d1!important;-webkit-text-fill-color:#b6c2d1!important;
+}
+#app .pricing-section .price-card li b,
+#app .pricing-section .price-card .price-top .save{color:#ecf7ff!important;-webkit-text-fill-color:#ecf7ff!important}
+#app .pricing-section .price-rule{background:#2c3545!important;border-color:#2c3545!important}
+#app .pricing-section .price-btn.pricing-select-btn{
+  color:#fff!important;background:#2576df!important;border:1px solid #2576df!important;
+}
+#app .pricing-section .price-btn.pricing-select-btn:hover{background:#378bf2!important}
+#app .pricing-section .price-card.featured .plan-yearly-price,
+#app .pricing-section .price-card.featured .plan-yearly-price b{
+  color:#c0cadd!important;-webkit-text-fill-color:#c0cadd!important;
+}
+
+/* Signup: the selected plan is carried as a hidden form value from pricing.
+   No native plan dropdown on account creation. */
+#app .signup-dark-shell{min-height:100vh;background:#070a10!important;color:#f6f7fa!important}
+#app .signup-dark-shell .formpage.signup-page{
+  color:#f5f7fb!important;
+  background:radial-gradient(ellipse at 50% -13%,rgba(35,81,157,.19),transparent 55%),#070a10!important;
+}
+#app .signup-dark-shell .formpage .premium-form{
+  background:#121821!important;color:#f3f6fa!important;
+  border:1px solid #303948!important;
+  box-shadow:0 26px 70px rgba(0,0,0,.43)!important;
+}
+#app .signup-dark-shell .formpage .premium-form .form-head{
+  background:transparent!important;border-bottom-color:#303b48!important;color:#f1f5fb!important;
+}
+#app .signup-dark-shell .premium-form .form-head span,
+#app .signup-dark-shell .premium-form .form-head b,
+#app .signup-dark-shell .formpage .premium-form label{
+  color:#f4f6fb!important;-webkit-text-fill-color:#f4f6fb!important;
+}
+#app .signup-dark-shell .premium-form :is(input:not([type="hidden"]):not([type="checkbox"]),textarea,select){
+  background:#1c2430!important;color:#f8fafd!important;
+  -webkit-text-fill-color:#f8fafd!important;
+  border:1px solid #3b4658!important;box-shadow:none!important;
+}
+#app .signup-dark-shell .premium-form input::placeholder{
+  color:#8895a6!important;-webkit-text-fill-color:#8895a6!important;opacity:1!important;
+}
+#app .signup-dark-shell .premium-form input:focus-visible{
+  outline:2px solid #4b9dff!important;outline-offset:2px!important;border-color:#5ba6ff!important;
+}
+#app .signup-dark-shell .premium-form input[type="checkbox"]{
+  accent-color:#2997ff!important;background:#1c2430!important;border-color:#667286!important;
+}
+#app .signup-dark-shell .signup-plan-summary{
+  display:block!important;background:#0c1119!important;
+  border:1px solid #2a3648!important;color:#f2f7fc!important;
+  border-radius:17px;padding:18px 19px!important;min-width:0!important;
+}
+#app .signup-dark-shell .signup-plan-summary-top{
+  display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:13px;
+}
+#app .signup-dark-shell .signup-plan-summary-top span{
+  color:#9eabbc!important;font-size:11px;letter-spacing:.09em;font-weight:730;
+}
+#app .signup-dark-shell .signup-change-plan{color:#79bcff!important;font-size:12px;font-weight:680;text-decoration:none!important}
+#app .signup-dark-shell .signup-plan-summary-main{
+  display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;
+}
+#app .signup-dark-shell .signup-plan-summary-main strong{color:#f8fbff!important;font-size:22px}
+#app .signup-dark-shell .signup-plan-summary-main b{color:#7febbd!important;font-size:22px}
+#app .signup-dark-shell .signup-plan-summary p{color:#a1aec0!important;font-size:12px;line-height:1.6;margin:10px 0 0}
+#app .signup-dark-shell .premium-form :is(.field small,.form-security,.referral-signup-field small,.checkrow span){
+  color:#b7c1ce!important;
+}
+#app .signup-dark-shell .premium-form .checkout-button{
+  background:#257be5!important;border:1px solid #257be5!important;color:white!important;
+  box-shadow:none!important;
+}
+#app .signup-dark-shell .premium-form :is(.social-auth-btn,.notice,.checkrow){
+  background:#17202c!important;border-color:#303c4c!important;color:#e9eef6!important;
+}
+#app .signup-dark-shell .premium-form .social-auth-btn,
+#app .signup-dark-shell .premium-form .social-auth-btn span{color:#f7f9fd!important}
+#app .signup-dark-shell .signup-seller-note,
+#app .signup-dark-shell .signup-seller-note small{color:#a8b5c7!important}
+#app .signup-dark-shell .signup-seller-note a,
+#app .signup-dark-shell .premium-form a{color:#88c3ff!important}
+#app .signup-dark-shell .signup-page #signupVerifyPanel{
+  background:#121821!important;border-color:#2b3543!important;color:#f1f6fc!important;
+}
+#app .signup-dark-shell .signup-page #signupVerifyPanel h3{color:#f4f7fc!important}
+#app .signup-dark-shell .signup-page #signupVerifyPanel p{color:#bac6d7!important}
+
+/* Public login, contact and pricing use the same dark surface language. */
+#app .formpage.login-page{background:#080c12!important;color:#f3f7fc!important}
+#app .login-page .login-copy :is(h1,p,.section-kicker){color:#ecf2f9!important}
+#app .login-page .formcard{background:#121821!important;border:1px solid #303948!important;color:#f3f6fa!important}
+#app .login-page .formcard :is(label,.form-head,.form-head span){color:#f4f8fc!important}
+#app .login-page .formcard :is(input,textarea){
+  background:#1c2430!important;color:#f4f7fa!important;border-color:#3b4658!important;
+}
+#app .login-page .formcard input::placeholder{color:#96a2b2!important}
+#app .login-page .formcard .btn.ink{color:#fff!important;background:#2679e7!important}
+#app .contact-page main[style]{background:#090d13!important;color:#f3f6fb!important}
+#app .contact-page main :is(h1,.section-kicker){color:#f2f5fa!important}
+#app .contact-page main p{color:#b9c4d4!important}
+#app .contact-page main :is(input,textarea){
+  color:#f2f6fc!important;background:#1a222e!important;border:1px solid #364354!important;
+}
+#app .footer{background:#0c1017!important;color:#dde6f1!important;border-top:1px solid #2a3341!important}
+#app .footer :is(a,h4,.brand-word){color:#dde6f1!important;-webkit-text-fill-color:#dde6f1!important}
+#app .footer p{color:#a2b0c0!important}
+#app :is(.formpage,.pricing-page,.contact-page) a:focus-visible{outline:2px solid #69b5ff!important;outline-offset:4px!important}
+
+/* High-contrast exchange-inspired growth scenario.
+   All percentage values are labeled illustrative, not measured ROI. */
+#app .rg-growth-section{
+  position:relative;isolation:isolate;overflow:hidden;
+  padding:clamp(78px,10vw,138px) 22px 96px;
+  background:radial-gradient(ellipse at 50% 5%,rgba(15,68,76,.27),transparent 48%),#06090d;
+  color:#f0f6f7;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+#app .rg-growth-inner{position:relative;width:min(1190px,100%);margin:0 auto}
+#app .rg-growth-intro{max-width:780px;margin:0 auto 40px;text-align:center}
+#app .rg-growth-intro h2{
+  margin:16px auto 17px;color:#f7fbff;
+  font-size:clamp(35px,5.3vw,66px);line-height:1.06;letter-spacing:-.058em;font-weight:720;
+}
+#app .rg-growth-intro>p:last-child{color:#a2b2bf;font-size:clamp(15px,1.7vw,18px);line-height:1.65;margin:0}
+#app .rg-terminal{
+  background:linear-gradient(150deg,#111a20,#090f15 62%,#0d121a);
+  border:1px solid #2a3a43;border-radius:26px;
+  box-shadow:0 35px 125px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);
+  overflow:hidden;
+}
+#app .rg-terminal-top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:23px 30px;border-bottom:1px solid #25303b}
+#app .rg-terminal-brand{display:flex;align-items:center;gap:11px;font-size:12px;font-weight:830;letter-spacing:.15em}
+#app .rg-terminal-brand em{color:#879ba6;font-style:normal}
+#app .rg-terminal-mark{width:32px;height:32px;border-radius:9px;background:#111e24;border:1px solid #375449;color:#63e6b4;display:grid;place-items:center;font-size:26px;line-height:1}
+#app .rg-demo-badge{display:inline-flex;align-items:center;gap:8px;color:#b5c5ce;font-size:10px;letter-spacing:.08em;font-weight:750;white-space:nowrap}
+#app .rg-demo-badge>span{width:7px;height:7px;border-radius:50%;background:#61e4a9;box-shadow:0 0 0 4px rgba(58,225,153,.11)}
+#app .rg-kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid #283540}
+#app .rg-kpi{min-width:0;padding:26px 29px 25px;display:flex;flex-direction:column;gap:7px;border-right:1px solid #283540}
+#app .rg-kpi:last-child{border-right:0}
+#app .rg-kpi>span{font-size:11px;color:#8fa6b5;letter-spacing:.025em}
+#app .rg-kpi strong{font-size:clamp(30px,4vw,53px);font-weight:650;letter-spacing:-.05em;line-height:1.1;color:#edf7f5}
+#app .rg-kpi:first-child strong{color:#67eab6}
+#app .rg-kpi strong span{font-size:.68em}
+#app .rg-kpi small{color:#8999a6;font-size:11px}
+#app .rg-visual-grid{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(250px,.9fr);gap:22px;padding:24px;border-bottom:1px solid #26313d}
+#app .rg-primary-chart{padding:25px;border:1px solid #293744;background:linear-gradient(165deg,#111c22,#0d151d);border-radius:18px;min-width:0}
+#app .rg-chart-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
+#app .rg-chart-heading>div>span,#app .rg-side-kicker{font-size:10px;font-weight:780;letter-spacing:.12em;color:#8ba8ac}
+#app .rg-chart-heading h3{color:#f4fbfa;font-size:25px;font-weight:630;letter-spacing:-.035em;margin:6px 0 0}
+#app .rg-chart-heading>b{color:#77ebbd;background:rgba(54,197,142,.10);border:1px solid rgba(54,197,142,.23);padding:8px 12px;border-radius:999px;font-size:15px;white-space:nowrap}
+#app .rg-graph-frame{position:relative;min-height:280px;margin:33px 0 0;padding-left:35px}
+#app .rg-axis-labels{position:absolute;top:0;bottom:0;left:0;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;color:#687c86;font-size:10px;padding:0 0 5px}
+#app .rg-graph{display:block;width:100%;height:280px;overflow:visible}
+#app .rg-gridlines path{stroke:#263943;stroke-width:1;fill:none;vector-effect:non-scaling-stroke}
+#app .rg-area{opacity:.95}
+#app .rg-line-halo{fill:none;stroke:#3affad;stroke-width:9;stroke-linecap:round;opacity:.12;vector-effect:non-scaling-stroke}
+#app .rg-line{fill:none;stroke:#63eab8;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1100;stroke-dashoffset:1100;animation:rg-draw 2.4s cubic-bezier(.24,.56,.22,1) .2s forwards;vector-effect:non-scaling-stroke}
+#app .rg-graph-months{display:flex;justify-content:space-between;gap:6px;color:#788e98;font-size:10px;font-weight:650;margin:13px 0 0 35px}
+#app .rg-side{display:grid;grid-template-rows:1fr auto;gap:15px;min-width:0}
+#app .rg-side-card{padding:25px 24px;border-radius:18px;background:#101b23;border:1px solid #2a3945;overflow:hidden}
+#app .rg-side-card h3{color:#f6fafc;font-size:clamp(22px,2.25vw,29px);line-height:1.22;letter-spacing:-.044em;margin:13px 0 16px;font-weight:630}
+#app .rg-side-card svg{display:block;width:100%;height:110px;margin:4px 0 14px}
+#app .rg-spark-bg{fill:none;stroke:#2a3a45;stroke-width:1}
+#app .rg-spark-fill{fill:#237fc3;opacity:.08}
+#app .rg-spark-line{fill:none;stroke:#54b9ff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:500;stroke-dashoffset:500;animation:rg-draw 2s ease .35s forwards}
+#app .rg-side-card p{margin:0;color:#a9bac6;font-size:12px;line-height:1.65}
+#app .rg-side-note{display:flex;align-items:flex-start;gap:11px;padding:19px 18px;border:1px solid #263540;border-radius:16px;background:#0e151c}
+#app .rg-side-note-icon{color:#74dabc;font-size:23px;line-height:1}
+#app .rg-side-note>div{display:grid;gap:5px;min-width:0}
+#app .rg-side-note b{color:#d9e7ed;font-size:12px}
+#app .rg-side-note div span{color:#94a7b2;font-size:11px;line-height:1.55}
+#app .rg-table-area{padding:21px 29px 28px}
+#app .rg-table-title{color:#9cabb7;font-weight:770;font-size:10px;letter-spacing:.12em;margin-bottom:16px}
+#app .rg-table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+#app .rg-table-area table{min-width:560px;width:100%;border-collapse:collapse;color:#bdccd5;text-align:right;font-variant-numeric:tabular-nums}
+#app .rg-table-area th,#app .rg-table-area td{padding:11px 14px;border-bottom:1px solid #253540;font-size:12px}
+#app .rg-table-area tr:last-child td,#app .rg-table-area tr:last-child th{border-bottom:0}
+#app .rg-table-area th:first-child{text-align:left;color:#d9e5eb;font-weight:650;padding-left:0}
+#app .rg-table-area thead th{font-size:10px;font-weight:690;color:#8da7b5}
+#app .rg-table-area .rg-positive{color:#70ebad;font-weight:830}
+#app .rg-growth-disclaimer{max-width:950px;margin:20px auto 0;color:#8395a3;text-align:center;font-size:12px;line-height:1.65}
+@keyframes rg-draw{to{stroke-dashoffset:0}}
+@media(max-width:900px){
+ #app .rg-visual-grid{grid-template-columns:1fr}
+ #app .rg-side{grid-template-columns:1fr 1fr;grid-template-rows:auto}
+ #app .rg-side-card{min-width:0}
+ #app .rg-side-note{align-self:stretch}
+}
+@media(max-width:620px){
+ #app .rg-growth-section{padding:70px 13px 78px}
+ #app .rg-growth-intro{margin-bottom:28px}
+ #app .rg-terminal{border-radius:19px}
+ #app .rg-terminal-top{padding:17px 15px;gap:8px}
+ #app .rg-terminal-brand{font-size:10px;letter-spacing:.06em}
+ #app .rg-terminal-brand em{display:none}
+ #app .rg-demo-badge{font-size:9px}
+ #app .rg-kpi-grid{grid-template-columns:1fr 1fr}
+ #app .rg-kpi{padding:17px 15px;gap:6px}
+ #app .rg-kpi:first-child{grid-column:1/-1;border-right:0;border-bottom:1px solid #283540}
+ #app .rg-kpi:nth-child(2){border-right:1px solid #283540}
+ #app .rg-kpi:nth-child(3){border-right:0}
+ #app .rg-kpi strong{font-size:36px}
+ #app .rg-kpi small{font-size:10px}
+ #app .rg-visual-grid{padding:13px;gap:12px}
+ #app .rg-primary-chart{padding:17px 14px;border-radius:13px}
+ #app .rg-chart-heading h3{font-size:20px}
+ #app .rg-chart-heading>b{font-size:12px;padding:7px}
+ #app .rg-graph-frame{margin-top:27px;min-height:200px;padding-left:29px}
+ #app .rg-graph{height:200px}
+ #app .rg-graph-months{margin-left:29px;font-size:9px}
+ #app .rg-side{grid-template-columns:1fr}
+ #app .rg-side-card{padding:19px}
+ #app .rg-side-card h3{font-size:24px}
+ #app .rg-table-area{padding:17px 16px 21px}
+ #app .rg-growth-disclaimer{font-size:11px;padding:0 4px}
+ #app .signup-dark-shell .signup-plan-summary{padding:14px 15px!important}
+ #app .signup-dark-shell .signup-plan-summary-main strong,
+ #app .signup-dark-shell .signup-plan-summary-main b{font-size:18px}
+}
+@media(prefers-reduced-motion:reduce){
+ #app .rg-line,#app .rg-spark-line{animation:none;stroke-dashoffset:0}
+}
