@@ -20,7 +20,7 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
     assert.ok(!html.includes('data-respondo-hero-cta="signup"'));
     assert.ok(html.includes('data-respondo-hero-cta="demo"'));
     assert.ok(html.includes('/assistant?lang='+lang));
-    assert.ok(html.includes('href="/tilaus"'));
+    assert.doesNotMatch(html,/apple-bottom-cta|Valmis vastaamaan|Aloita ilmainen kokeilu/);
     assert.ok(html.includes('class="pricing-section" id="pricing"'));
     assert.ok(html.indexOf('rs-spiral-section') < html.indexOf('class="pricing-section"'));
     assert.match(html, /class="rs-axis"[^>]*>[\s\S]*?<svg viewBox="0 0 256 256"/);
@@ -31,7 +31,8 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
   test('site directory is replaced by public assistant routes in '+lang,()=>{
     const footer=app.slice(app.indexOf('function footer()'),app.indexOf('function heroVisual()'));
     assert.doesNotMatch(footer,/publicFooterNavigationMarkup|footer-site-nav/);
-    assert.ok(footer.includes('data-open-site-assistant'));
+    assert.doesNotMatch(footer,/data-open-site-assistant|footer-ask-respondo/);
+    assert.ok(app.includes('class="public-header-login"'));
     const questions=[
       ['hinnat','/hinnat'],['yhteystiedot','/yhteystiedot'],
       ['tietoturva','/tietoturva'],['verkkokaupoille','/verkkokauppa-chatbot'],

@@ -10,7 +10,8 @@ test('the chatbot finds pricing while existing plan and legal routes stay access
   assert.ok(nav&&footer);
   assert.doesNotMatch(nav,/href="\/#pricing"|apple-menu-toggle|publicMenuMarkup/);
   assert.doesNotMatch(footer,/publicFooterNavigationMarkup|footer-site-nav/);
-  assert.match(footer,/data-open-site-assistant/);
+  assert.doesNotMatch(footer,/data-open-site-assistant|footer-ask-respondo/);
+  assert.match(nav,/class="public-header-login"/);
   assert.ok(footer.includes('href="/hinnat?lang=${currentLang()}"'));
   assert.ok(footer.includes('href="/kayttoehdot"'));
   for(const lang of ['fi','sv','en']){

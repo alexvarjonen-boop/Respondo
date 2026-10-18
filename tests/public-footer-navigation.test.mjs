@@ -12,7 +12,8 @@ for (const [lang,idx] of [['fi',0],['sv',1],['en',2]]) {
   const tr=(...v)=>v[idx];
   test('site pages move into Respondo assistant for '+lang,()=>{
     assert.doesNotMatch(footer,/publicFooterNavigationMarkup|footer-site-nav|footer-site-links/);
-    assert.match(footer,/data-open-site-assistant/);
+    assert.doesNotMatch(footer,/data-open-site-assistant|footer-ask-respondo/);
+    assert.match(nav,/class="public-header-login"/);
     assert.match(footer,/cookie-settings-link/);
     const paths=['/','/asiakaspalvelubotti','/ominaisuudet','/assistant',
       '/verkkokauppa-chatbot','/ajanvaraus-chatbot','/hinnat',
@@ -47,6 +48,6 @@ test('pricing and signup fixes load last and preserve readable contrast',()=>{
   assert.match(styles,/-webkit-text-fill-color:#f7f9fe!important/);
   assert.match(styles,/\.price-top > span:last-child/);
   assert.match(styles,/\.section-kicker/);
-  assert.match(styles,/\.footer-ask-respondo/);
+  assert.match(styles,/\.public-header-login/);
   assert.doesNotMatch(nav,/data-apple-menu-open/);
 });
