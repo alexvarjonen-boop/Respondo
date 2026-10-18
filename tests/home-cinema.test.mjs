@@ -25,7 +25,7 @@ test('all six homepage chapters remain in logical order',async()=>{
   for(const lang of ['fi','sv','en']){
     const translate=(fi,sv,en)=>({fi,sv,en})[lang];
     const html=appleHomeMarkup(translate,lang,100,pricing);
-    const markers=['class="apple-hero"','class="apple-highlights"','class="apple-lead-calculator"','class="rg-growth-section"','class="pricing-section"','class="apple-bottom-cta"'];
+    const markers=['class="apple-hero rs-spiral-section"','class="apple-highlights"','class="apple-lead-calculator"','class="rg-growth-section"','class="pricing-section"','class="apple-bottom-cta"'];
     const indices=markers.map(marker=>html.indexOf(marker));
     assert.ok(indices.every(v=>v>=0),lang+': one or more scenes missing');
     assert.deepEqual(indices,[...indices].sort((a,b)=>a-b),lang+': scenes out of sequence');
@@ -39,7 +39,9 @@ test('cinematic overlay is disabled until mobile crash is resolved',()=>{
   const index=read('index.html');
   assert.ok(index.includes('/dark-growth-20261018.css'));
   assert.ok(index.includes('/original-theme-motion.css'));
-  assert.ok(index.includes('/original-theme-motion.js'));
+  assert.ok(index.includes('/unified-motion.js'));
+  assert.ok(index.includes('/spiral-hero-motion.js'));
+  assert.ok(index.includes('/spiral-hero.css'));
   assert.ok(!index.includes('/home-cinema.css'));
   assert.ok(!index.includes('/home-cinema.js'));
 });
