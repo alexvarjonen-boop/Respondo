@@ -1,0 +1,109 @@
+/* Conversational first impression: users ask the existing Respondo assistant
+   for information and navigation instead of hunting through site directories.
+   Pure CSS, scoped to the homepage hero; mobile-first and reduced-motion safe. */
+#app .rs-spiral-section .rs-chat-first-bottom{
+  justify-content:center!important;align-items:center;isolation:isolate;
+}
+#app .rs-chat-entry{
+  flex:0 1 560px;position:relative;min-width:0;width:100%;max-width:560px;
+  padding:15px 16px 14px;border:1px solid rgba(145,191,244,.33);
+  border-radius:22px;
+  background:linear-gradient(140deg,rgba(24,36,55,.97),rgba(11,19,32,.97));
+  box-shadow:0 16px 65px rgba(0,0,0,.39),inset 0 1px 0 rgba(255,255,255,.075);
+  color:#eef4ff;text-align:left;z-index:30;pointer-events:auto;
+}
+#app .rs-chat-entry-header{
+  display:flex;align-items:center;gap:9px;margin-bottom:10px;
+}
+#app .rs-chat-entry-header strong{
+  font-size:14px;font-weight:710;letter-spacing:-.018em;color:#f5faff;
+}
+#app .rs-chat-entry-header>span:last-child{
+  margin-left:auto;color:#a4b8d2;font-size:11px;white-space:nowrap;
+}
+#app .rs-chat-live{
+  display:block;flex:0 0 8px;width:8px;height:8px;border-radius:50%;
+  background:#65dfac;box-shadow:0 0 0 3px rgba(101,223,172,.10);
+}
+#app .rs-ask-form{
+  display:flex;align-items:stretch;gap:7px;width:100%;min-height:51px;
+  padding:5px;border:1px solid rgba(158,190,230,.31);border-radius:15px;
+  background:#070e19;
+}
+#app .rs-ask-form:focus-within{border-color:#8abafa;box-shadow:0 0 0 1px rgba(138,186,250,.19)}
+#app .rs-ask-form input{
+  flex:1 1 auto;min-width:0;min-height:40px;width:100%;border:0!important;
+  border-radius:9px;padding:9px 11px!important;outline:0!important;
+  background:transparent!important;color:#fff!important;-webkit-text-fill-color:#fff!important;
+  font:inherit!important;font-size:16px!important;line-height:1.3!important;
+  box-shadow:none!important;appearance:none;-webkit-appearance:none;
+}
+#app .rs-ask-form input::placeholder{color:#859ab4!important;-webkit-text-fill-color:#859ab4!important;opacity:1}
+#app .rs-ask-form button{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-width:80px;min-height:40px;padding:9px 14px;
+  border:0;border-radius:11px;background:#eaf5ff;color:#111b28!important;
+  font-family:inherit;font-size:14px;font-weight:740;line-height:1.2;
+  cursor:pointer;touch-action:manipulation;
+}
+#app .rs-ask-form button:hover{background:#c9e8ff}
+#app .rs-ask-form button:focus-visible,
+#app .rs-chat-suggestions button:focus-visible{outline:3px solid #8dc9ff!important;outline-offset:3px}
+#app .rs-chat-suggestions{
+  display:flex;justify-content:center;align-items:center;flex-wrap:wrap;
+  gap:8px;margin:10px auto 0;
+}
+#app .rs-chat-suggestions button{
+  display:inline-flex;align-items:center;justify-content:center;min-height:30px;
+  padding:6px 12px;border:1px solid rgba(145,175,217,.23);
+  border-radius:99px;background:rgba(134,166,207,.10);
+  color:#c3d3e8!important;font-size:11px;font-weight:560;
+  font-family:inherit;line-height:1.3;cursor:pointer;touch-action:manipulation;
+  transition:background-color .15s ease,border-color .15s ease;
+}
+#app .rs-chat-suggestions button:hover{background:rgba(134,166,207,.23);border-color:rgba(145,175,217,.4)}
+#app .rs-chat-entry-status{margin:8px 0 0;font-size:12px;color:#a7d5ff;line-height:1.45}
+#app .rs-chat-entry-status:empty{display:none}
+#app .rs-enhanced .rs-chat-first-bottom{bottom:clamp(16px,3.5vh,41px)}
+#app .rs-enhanced .rs-chat-first-bottom>.rs-scroll-invite{
+  position:absolute;left:0;bottom:15px;
+}
+#app .rs-enhanced .rs-chat-first-bottom>.rs-step-count{
+  position:absolute;right:0;bottom:15px;
+}
+@media(max-width:1100px){
+  #app .rs-enhanced .rs-chat-first-bottom>.rs-scroll-invite{display:none}
+  #app .rs-enhanced .rs-chat-first-bottom>.rs-step-count{display:none}
+}
+@media(max-width:600px){
+  #app .rs-enhanced .rs-chat-first-bottom{bottom:clamp(13px,3vh,28px)!important;width:min(94%,510px)!important}
+  #app .rs-chat-entry{max-width:100%;border-radius:17px;padding:11px 11px 12px}
+  #app .rs-chat-entry-header{gap:7px;margin-bottom:8px}
+  #app .rs-chat-entry-header strong{font-size:13px}
+  #app .rs-chat-entry-header>span:last-child{font-size:10px}
+  #app .rs-ask-form{min-height:47px;border-radius:12px;padding:4px}
+  #app .rs-ask-form input{min-height:37px;padding:8px 9px!important}
+  #app .rs-ask-form button{min-height:37px;min-width:70px;padding:8px 11px;font-size:13px}
+  #app .rs-chat-suggestions{gap:5px;margin-top:8px}
+  #app .rs-chat-suggestions button{min-height:29px;padding:5px 10px;font-size:10px}
+  #app .rs-enhanced .rs-chat-first-bottom>.rs-step-count{display:none!important}
+}
+@media(max-height:740px){
+  #app .rs-chat-entry{padding-top:10px;padding-bottom:10px}
+  #app .rs-chat-entry-header{margin-bottom:7px}
+  #app .rs-chat-suggestions{margin-top:7px}
+}
+@media(max-height:630px){
+  #app .rs-chat-suggestions{display:none}
+  #app .rs-chat-entry-header>span:last-child{display:none}
+  #app .rs-chat-entry{padding:9px 10px}
+}
+@media(max-width:380px){
+  #app .rs-chat-entry-header>span:last-child{display:none}
+  #app .rs-chat-suggestions button{padding:5px 8px}
+}
+@media(prefers-reduced-motion:reduce){
+  #app .rs-chat-suggestions button{transition:none}
+}
+/* The public assistant remains reachable over all marketing content, but the
+   chat-first hero form itself must stay under its fullscreen chat panel. */
