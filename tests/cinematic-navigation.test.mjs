@@ -24,7 +24,7 @@ test('cinematic engine is loaded without replacing Respondo public branding or r
   assert.match(css, /cx-edge-impact/);
   assert.match(css, /cx-camera-floor/);
   assert.match(js, /cx-bird-flight/);
-  assert.match(js, /cx-wing-upper/);
+  assert.match(js, /cx-bird-wing-upper/);
   assert.match(js, /cx-dial-progress/);
   assert.match(css, /cx-scene-light/);
   assert.match(js, /--cx-scene-shift/);
