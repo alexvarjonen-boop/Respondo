@@ -218,3 +218,81 @@
 /* Defensive rule for an old iOS Safari cached spiral template. Signup remains available in pricing/footer. */
 #app .rs-spiral-section .rs-hero-actions a[data-respondo-hero-cta="signup"]{display:none!important}
 #app .rs-spiral-section .rs-hero-actions{justify-content:center!important}
+
+/* Chat-first navigation: site directory removed, legal footer retained. */
+#app .footer .footer-ask-respondo{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:22px;
+  margin-top:clamp(25px,4vw,42px);
+  padding:clamp(21px,3vw,30px);
+  border:1px solid rgba(170,184,205,.26);
+  border-radius:21px;
+  background:rgba(140,160,190,.065);
+}
+#app .footer .footer-ask-respondo strong{
+  display:block;
+  font-weight:730;
+  font-size:clamp(18px,2.2vw,24px);
+  line-height:1.2;
+  color:inherit;
+}
+#app .footer .footer-ask-respondo p{
+  margin:8px 0 0;
+  max-width:670px;
+  font-size:clamp(13px,1.3vw,15px);
+  line-height:1.55;
+  color:inherit;
+  opacity:.78;
+}
+#app .footer .footer-chat-open{
+  flex:0 0 auto;
+  min-width:134px;
+  min-height:45px;
+  padding:11px 17px;
+  border:1px solid rgba(145,166,196,.55);
+  border-radius:999px;
+  background:#f4f6fa;
+  color:#10151c;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:background-color .25s ease,transform .25s ease;
+}
+#app .footer .footer-chat-open:hover{background:#dce9f9;transform:translateY(-1px)}
+#app .footer .footer-chat-open:focus-visible{outline:3px solid #80b6ff;outline-offset:3px}
+.fx-assistant .fx-site-action{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:fit-content;
+  max-width:100%;
+  min-height:44px;
+  margin-top:12px;
+  padding:11px 15px;
+  border:1px solid #b6cce5;
+  border-radius:999px;
+  background:#eef5ff;
+  color:#154b8e!important;
+  -webkit-text-fill-color:#154b8e!important;
+  text-decoration:none!important;
+  line-height:1.4;
+  font-size:13px;
+  font-weight:700;
+  text-align:center;
+  overflow-wrap:anywhere;
+  transition:background-color .22s ease,border-color .22s ease;
+}
+.fx-assistant .fx-site-action:hover{background:#e0eeff;border-color:#8bb4e5}
+.fx-assistant .fx-site-action:focus-visible{outline:3px solid #458fee;outline-offset:3px}
+.fx-assistant .fx-quick{display:flex;flex-wrap:wrap;gap:7px}
+.fx-assistant .fx-quick button{min-height:36px;line-height:1.3}
+@media(max-width:640px){
+  #app .footer .footer-ask-respondo{align-items:stretch;flex-direction:column;padding:21px 18px}
+  #app .footer .footer-chat-open{width:100%}
+  .fx-assistant .fx-site-action{min-height:44px;font-size:13px}
+}
+@media(prefers-reduced-motion:reduce){
+  #app .footer .footer-chat-open,.fx-assistant .fx-site-action{transition:none!important;transform:none!important}
+}

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { appleHomeMarkup } from '../public/apple-home.js';
-import { publicFooterNavigationMarkup } from '../public/apple-nav.js';
+import { respondoSiteNavigationActions } from '../respondo-site-navigation.mjs';
 
 const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
@@ -28,16 +28,19 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
     assert.doesNotMatch(html, /<iframe|<canvas/);
     assert.doesNotMatch(html,/apple-learning-links|Mistä aloittaa tekoälyn kanssa/);
   });
-  test('footer directory keeps every secondary route accessible in '+lang,()=>{
-    const html=publicFooterNavigationMarkup(t,lang);
-    assert.equal((html.match(/<a href=/g)||[]).length,10);
-    assert.ok(html.includes('/hinnat?lang='+lang));
-    assert.ok(html.includes('/yhteystiedot?lang='+lang));
-    assert.ok(html.includes('/tietoturva?lang='+lang));
-    assert.ok(html.includes('/verkkokauppa-chatbot?lang='+lang));
-    assert.ok(html.includes('/kirjaudu?lang='+lang));
-    assert.match(html,/class="footer-site-nav"/);
-    assert.ok(!html.includes('apple-menu-overlay'));
+  test('site directory is replaced by public assistant routes in '+lang,()=>{
+    const footer=app.slice(app.indexOf('function footer()'),app.indexOf('function heroVisual()'));
+    assert.doesNotMatch(footer,/publicFooterNavigationMarkup|footer-site-nav/);
+    assert.ok(footer.includes('data-open-site-assistant'));
+    const questions=[
+      ['hinnat','/hinnat'],['yhteystiedot','/yhteystiedot'],
+      ['tietoturva','/tietoturva'],['verkkokaupoille','/verkkokauppa-chatbot'],
+      ['kirjaudu','/kirjaudu']
+    ];
+    for (const [question,path] of questions){
+      const actions=respondoSiteNavigationActions(question,lang);
+      assert.ok(actions.some(a=>new URL(a.url).pathname===path),question);
+    }
   });
 }
 

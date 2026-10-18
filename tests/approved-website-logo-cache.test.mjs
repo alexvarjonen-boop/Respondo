@@ -39,8 +39,8 @@ test('HTML and imported navigation have fresh cache keys for desktop branding',(
   const sources=Array.from(html.matchAll(/src="([^"]+)"/g),m=>m[1]);
   assert.ok(sources.some(src=>src.startsWith('/app.js?v=')&&src.includes(version)));
   assert.ok(sources.some(src=>src.startsWith('/effects.js?v=')&&src.includes(version)));
-  assert.ok(app.includes('./apple-nav.js?v=20261018-footer-nav-v1'));
-  assert.ok(app.includes('publicFooterNavigationMarkup(appText,currentLang())'));
+  assert.ok(!app.includes('publicFooterNavigationMarkup(appText,currentLang())'));
+  assert.ok(app.includes('data-open-site-assistant'));
   assert.ok(server.includes("res.setHeader('Cache-Control','no-store')"));
   assert.ok(server.includes("filePath.endsWith('apple-nav.js')"));
 });
