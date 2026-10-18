@@ -1,0 +1,11 @@
+/* Minimal cinematic polish: non-destructive, performance-first */
+:root{--cinema-ease:cubic-bezier(.22,1,.36,1)}
+html{scroll-behavior:smooth}
+body{-webkit-font-smoothing:antialiased}
+#app :is(h1,h2,h3){text-wrap:balance;letter-spacing:-.045em}
+#app :is(p,li){text-wrap:pretty}
+#app :is(button,a,[role="button"]){transition:color .3s var(--cinema-ease),background-color .3s var(--cinema-ease),border-color .3s var(--cinema-ease),box-shadow .3s var(--cinema-ease),transform .3s var(--cinema-ease)}
+#app :is(button,a,[role="button"]):focus-visible{outline:2px solid currentColor;outline-offset:4px}
+@media(hover:hover) and (pointer:fine){#app :is(.pricing-card,.feature-card,.plan-card):hover{transform:translateY(-3px)}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media(max-width:767px){#app :is(.pricing-card,.feature-card,.plan-card):hover{transform:none}}
