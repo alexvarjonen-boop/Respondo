@@ -18,8 +18,9 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
     assert.ok(html.includes('id="features"'));
     assert.ok(html.includes('class="rs-axis"'));
     assert.ok(!html.includes('data-respondo-hero-cta="signup"'));
-    assert.ok(html.includes('data-respondo-hero-cta="demo"'));
-    assert.ok(html.includes('/assistant?lang='+lang));
+    assert.ok(html.includes('data-respondo-ask-form'));
+    assert.equal((html.match(/data-respondo-ask-question=/g)||[]).length,3);
+    assert.ok(html.includes('data-respondo-ask-status'));
     assert.doesNotMatch(html,/apple-bottom-cta|Valmis vastaamaan|Aloita ilmainen kokeilu/);
     assert.ok(html.includes('class="pricing-section" id="pricing"'));
     assert.ok(html.indexOf('rs-spiral-section') < html.indexOf('class="pricing-section"'));
