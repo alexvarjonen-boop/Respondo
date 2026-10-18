@@ -20,3 +20,10 @@ body{-webkit-font-smoothing:antialiased}
 #app :is(.apple-feature-card,.price-card,.pricing-choice-card){transition:transform .5s var(--cinema-ease),box-shadow .5s var(--cinema-ease),border-color .4s ease}
 @media(hover:hover) and (pointer:fine){#app :is(.apple-feature-card,.price-card,.pricing-choice-card):hover{transform:translate3d(0,-4px,0)}}
 @media(max-width:767px){#app :is(.apple-feature-card,.price-card,.pricing-choice-card):hover{transform:none}}
+
+/* Unified cinematic timing — logo reveal inspired, without scroll hijacking. */
+#app .um-scene{--um-rise:24px;opacity:0;transform:translate3d(0,var(--um-rise),0);transition:opacity 850ms cubic-bezier(.22,1,.36,1),transform 1100ms cubic-bezier(.22,1,.36,1);will-change:auto}
+#app .um-scene.um-visible{opacity:1;transform:translate3d(0,0,0)}
+#app .um-scene :is(h1,h2,h3){transition:opacity 950ms cubic-bezier(.22,1,.36,1)}
+@media(max-width:767px){#app .um-scene{--um-rise:12px;transition-duration:650ms,800ms}}
+@media(prefers-reduced-motion:reduce){#app .um-scene{opacity:1!important;transform:none!important;transition:none!important}}
