@@ -15,6 +15,8 @@
   function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
   function get(selector,root){return Array.from((root||document).querySelectorAll(selector))}
   function set(node,key,value){if(node)node.style.setProperty(key,value)}
+  // Use non-transformed layout coordinates to avoid feedback jitter while scrolling.
+  function layoutTop(el){var y=0;while(el&&el.nodeType===1){y+=el.offsetTop||0;el=el.offsetParent}return y-scrollY}
   function veil(){
     if(document.querySelector('.cx-nav-veil'))return;
     var el=document.createElement('div');el.className='cx-nav-veil';
@@ -198,8 +200,10 @@
       set(dial,'--cx-dial-progress',(((active+1)/scenes.length)*100).toFixed(2)+'%');
     }
     cards.forEach(function(node,index){
-      var r=node.getBoundingClientRect();if(r.bottom< -80||r.top>vh+95)return;
-      var v=clamp((r.top+r.height/2-vh/2)/vh,-1,1);
+      var top=layoutTop(node),height=node.offsetHeight||1;
+      if(top+height< -80||top>vh+95)return;
+      var r={top:top,height:height};
+      var v=clamp((top+height/2-vh/2)/vh,-1,1);
       set(node,'--cx-depth-y',(-v*(mobile?5:20)).toFixed(1)+'px');
       set(node,'--cx-depth-scale',mobile?'1':(1-Math.abs(v)*.035).toFixed(3));
       set(node,'--cx-depth-yaw',mobile?'0deg':(v*11).toFixed(2)+'deg');
@@ -215,8 +219,9 @@
     });
     titles.forEach(function(node){
       if(!node.isConnected||!node.classList.contains('cx-reveal-visible'))return;
-      var r=node.getBoundingClientRect();if(r.bottom<0||r.top>vh)return;
-      var v=clamp((vh-r.top)/(vh+r.height),0,1);
+      var top=layoutTop(node),height=node.offsetHeight||1;
+      if(top+height<0||top>vh)return;
+      var v=clamp((vh-top)/(vh+height),0,1);
       set(node,'--cx-head-y',((.5-v)*(mobile?6:15)).toFixed(1)+'px');
       set(node,'--cx-head-scale',mobile?'1':(1+(v-.5)*.015).toFixed(3));
     });
