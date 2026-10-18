@@ -1917,6 +1917,7 @@ function bindLanguageSwitch() {
 function nav() {
   const isHomePage = location.pathname === '/';
   const isLoginPage = ['/kirjaudu','/login'].includes(location.pathname);
+  const isSignupPage = location.pathname === '/tilaus';
   return `<header class="nav">
     <div class="container navin">
       ${logo()}
@@ -1933,7 +1934,7 @@ function nav() {
         ${isHomePage
           ? `<a class="btn ink nav-home-scroll-trial" href="/tilaus?lang=${currentLang()}" aria-hidden="true" tabindex="-1"><span class="nav-trial-full">${appText('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</span><span class="nav-trial-compact" aria-hidden="true">${appText('3 pv ilmaiseksi','3 dagar gratis','3 days free')}</span></a>`
           : isLoginPage ? '' : `<a class="btn ghost nav-login-btn" href="/kirjaudu"><span>${appText('Kirjaudu','Logga in','Log in')}</span></a>`}
-        ${!isHomePage && !isLoginPage ? `<a class="btn ink" href="/tilaus">${appText('Kokeile ilmaiseksi','Prova gratis','Start free trial')}</a>` : ''}
+        ${!isHomePage && !isLoginPage && !isSignupPage ? `<a class="btn ink" href="/tilaus">${appText('Kokeile ilmaiseksi','Prova gratis','Start free trial')}</a>` : ''}
       </div>
       <button type="button" class="apple-menu-toggle" data-apple-menu-open aria-controls="apple-nav-overlay" aria-expanded="false" aria-label="${appText('Avaa valikko','Öppna menyn','Open menu')}"><span></span><span></span><span></span></button>
     </div>
@@ -3093,7 +3094,20 @@ function signup() {
   const safeRequestedPlan = allowedPlans.has(normalizedRequestedPlan) ? normalizedRequestedPlan : 'basic_monthly';
   const plan = safeRequestedPlan === 'owner_test' && !ownerTestAccess ? 'basic_monthly' : safeRequestedPlan;
   const referralCode = String(params.get('ref') || '').trim().toUpperCase();
-  return `<div>
+  const planDetails = {
+    basic: { name:'Advanced', monthly:49, yearly:39, yearlyTotal:468 },
+    advanced: { name:'Premium', monthly:129, yearly:119, yearlyTotal:1428 },
+    business: { name:'Enterprise', monthly:149, yearly:139, yearlyTotal:1668 },
+  }[plan.split('_')[0]] || { name:'Advanced', monthly:49, yearly:39, yearlyTotal:468 };
+  const annualBilling = plan.endsWith('_yearly');
+  const testBilling = plan === 'owner_test';
+  const selectedPrice = testBilling ? '0,50 €' : (annualBilling ? planDetails.yearly : planDetails.monthly) + ' €' + appText('/kk','/mån','/month');
+  const billingExplanation = testBilling
+    ? appText('Kertaveloitus heti.','Engångsdebitering direkt.','One-time payment charged now.')
+    : annualBilling
+      ? appText(planDetails.yearlyTotal + ' € veloitetaan vuosittain 3 päivän kokeilun jälkeen.',planDetails.yearlyTotal + ' € debiteras årligen efter 3 dagars provperiod.','€' + planDetails.yearlyTotal + ' is billed annually after the 3-day trial.')
+      : appText('Laskutus kuukausittain 3 päivän kokeilun jälkeen.','Debiteras månadsvis efter 3 dagars provperiod.','Billed monthly after the 3-day trial.');
+  return `<div class="signup-dark-shell">
     ${nav()}
     <main class="formpage signup-page">
       <div class="container checkout-layout signup-layout">
@@ -3107,22 +3121,17 @@ function signup() {
             <div class="field"><label>${appText('Y-tunnus','FO-nummer','Business ID')}</label><input name="businessId" placeholder="1234567-8"></div>
             <input type="hidden" name="billingCountry" value="FI">
             <div class="field full" id="signupPasswordField"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
-            <div class="field full"><label>${appText('Tilaus','Abonnemang','Subscription')}</label>
-              <select name="plan">
-                <optgroup label="Advanced">
-                  <option value="basic_monthly" ${plan === 'basic_monthly' ? 'selected' : ''}>${appText('Advanced · 49 €/kk','Advanced · 49 €/mån','Advanced · €49/month')}</option>
-                  <option value="basic_yearly" ${plan === 'basic_yearly' ? 'selected' : ''}>${appText('Advanced vuosi · 39 €/kk (468 €/vuosi)','Advanced år · 39 €/mån (468 €/år)','Advanced annual · €39/month (€468/year)')}</option>
-                </optgroup>
-                <optgroup label="Premium">
-                  <option value="advanced_monthly" ${plan === 'advanced_monthly' ? 'selected' : ''}>${appText('Premium · 129 €/kk','Premium · 129 €/mån','Premium · €129/month')}</option>
-                  <option value="advanced_yearly" ${plan === 'advanced_yearly' ? 'selected' : ''}>${appText('Premium vuosi · 119 €/kk (1 428 €/vuosi)','Premium år · 119 €/mån (1 428 €/år)','Premium annual · €119/month (€1,428/year)')}</option>
-                </optgroup>
-                <optgroup label="Enterprise">
-                  <option value="business_monthly" ${plan === 'business_monthly' ? 'selected' : ''}>${appText('Enterprise · 149 €/kk','Enterprise · 149 €/mån','Enterprise · €149/month')}</option>
-                  <option value="business_yearly" ${plan === 'business_yearly' ? 'selected' : ''}>${appText('Enterprise vuosi · 139 €/kk (1 668 €/vuosi)','Enterprise år · 139 €/mån (1 668 €/år)','Enterprise annual · €139/month (€1,668/year)')}</option>
-                </optgroup>
-                ${ownerTestAccess ? `<option value="owner_test" ${plan === 'owner_test' ? 'selected' : ''}>${appText('OMISTAJAN TESTI · 0,50 € sis. alv · veloitus heti','ÄGARENS TEST · 0,50 € inkl. moms · debiteras direkt','OWNER TEST · €0.50 incl. VAT · charged immediately')}</option>` : ''}
-              </select>
+            <input type="hidden" name="plan" value="${plan}">
+            <div class="signup-plan-summary field full" role="note" aria-label="${appText('Valittu paketti','Valt abonnemang','Selected plan')}">
+              <div class="signup-plan-summary-top">
+                <span>${appText('VALITSEMASI PAKETTI','DITT VALDA ABONNEMANG','YOUR SELECTED PLAN')}</span>
+                <a href="/hinnat?lang=${currentLang()}" class="signup-change-plan">${appText('Vaihda pakettia','Byt abonnemang','Change plan')} <span aria-hidden="true">↗</span></a>
+              </div>
+              <div class="signup-plan-summary-main">
+                <strong>${testBilling ? appText('Omistajan testi','Ägarens test','Owner test') : planDetails.name}</strong>
+                <b>${selectedPrice}</b>
+              </div>
+              <p>${billingExplanation}</p>
             </div>
             <div class="field full referral-signup-field">
               <label>${appText('Suosittelukoodi','Rekommendationskod','Referral code')} <span>${appText('valinnainen','valfri','optional')}</span></label>
