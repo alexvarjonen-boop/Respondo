@@ -7652,6 +7652,17 @@ function getOauthProfile(req) {
   }
 }
 
+function oauthSignupReturnUrl(provider, statePayload) {
+  const params = new URLSearchParams({oauth:provider});
+  if (Object.hasOwn(PLAN_DEFINITIONS,String(statePayload?.plan || ''))) {
+    params.set('plan',String(statePayload.plan));
+  }
+  if (['fi','sv','en'].includes(String(statePayload?.lang || ''))) {
+    params.set('lang',String(statePayload.lang));
+  }
+  return '/tilaus?' + params.toString();
+}
+
 async function finishOauth(req, res, code, state) {
   const provider = 'google';
   const cfg = oauthConfig(provider);
@@ -7768,7 +7779,7 @@ async function finishOauth(req, res, code, state) {
     }
 
     setOauthProfile(res, profile);
-    return res.redirect('/tilaus?oauth=google');
+    return res.redirect(oauthSignupReturnUrl('google',statePayload));
   } catch (e) {
     console.error('Google OAuth failed', e);
     if (statePayload.flow === 'calendar') {
@@ -9042,8 +9053,13 @@ app.get('/api/auth/oauth/:provider/start', async (req, res) => {
       passwordSetupUser = rr.rows[0];
     } catch { return res.redirect('/kirjaudu'); }
   }
+  // OAuth state is signed: the exact plan and locale survive the external Google callback.
+  const oauthPlan = flow === 'signup' && Object.hasOwn(PLAN_DEFINITIONS,String(req.query.plan || ''))
+    ? String(req.query.plan) : '';
+  const oauthLang = flow === 'signup' && ['fi','sv','en'].includes(String(req.query.lang || ''))
+    ? String(req.query.lang) : '';
   const nonce = crypto.randomBytes(20).toString('hex');
-  const state = jwt.sign({ provider, flow, nonce, ...(passwordSetupUser ? { userId:passwordSetupUser.id } : {}) }, JWT, { expiresIn: '10m' });
+  const state = jwt.sign({ provider, flow, nonce, ...(oauthPlan ? {plan:oauthPlan} : {}), ...(oauthLang ? {lang:oauthLang} : {}), ...(passwordSetupUser ? { userId:passwordSetupUser.id } : {}) }, JWT, { expiresIn: '10m' });
   setOauthState(res, nonce, provider);
 
   if (provider === 'apple') {
@@ -9154,7 +9170,7 @@ app.post('/api/auth/oauth/apple/callback', async (req, res) => {
     }
 
     setOauthProfile(res, profile);
-    return res.redirect('/tilaus?oauth=apple');
+    return res.redirect(oauthSignupReturnUrl('apple',statePayload));
   } catch (e) {
     console.error('Apple OAuth failed', e);
     return res.redirect(target + '?oauth_error=failed&provider=apple');
