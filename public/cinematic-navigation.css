@@ -211,7 +211,7 @@ body.cx-arrived .cx-nav-veil{visibility:hidden;transition:visibility 0s .74s}
  .cx-arrow-stage{width:120px;height:120px}
  .cx-nav-veil-mark{border-radius:20px}
  .cx-nav-veil-word{font-size:19px;letter-spacing:.15em;margin-top:19px}
- .cx-bird-flight{left:calc(50% + 53px);top:calc(50% - 35px);width:61px}
+ .cx-bird-flight{left:calc(50% + 53px);top:calc(50% - 55px);width:61px}
  .cx-trail{width:95px}.cx-trail-two{width:74px}.cx-trail-three{width:118px}
  #app .cx-public-immersive .features-hero,#app .cx-public-immersive .audience-hero{min-height:520px}
  #app .cx-public-immersive .r-brand-contact-banner{min-height:335px}
