@@ -12,7 +12,8 @@ test('login and signup have only branding and language flags in public header', 
   assert.match(nav,/\$\{logo\(\)\}/);
   assert.match(nav,/\$\{languageSwitch\(\)\}/);
   assert.doesNotMatch(nav,/nav-home-scroll-trial|nav-login-btn|apple-menu-toggle|apple-nav-overlay/);
-  assert.match(app,/publicFooterNavigationMarkup\(appText,currentLang\(\)\)/);
+  assert.doesNotMatch(app,/publicFooterNavigationMarkup/);
+  assert.match(app,/data-open-site-assistant/);
 });
 
 test('login card has no repeated welcome heading and keeps all sign-in methods', () => {
