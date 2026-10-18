@@ -62,7 +62,7 @@ test('unsupported plan URL fails closed to existing Advanced monthly signup',()=
 });
 
 test('signup-only dark stylesheet loads after old marketing theme and retains readable contrast',()=>{
-  assert.match(shell,/cinematic-navigation\.css[^"]*">\s*<link rel="stylesheet" href="\/signup-dark\.css/);
+  assert.match(shell,/logo-reveal\.css[^"]*">\s*<link rel="stylesheet" href="\/signup-dark\.css/);
   assert.match(stylesheet,/#app \.signup-dark-shell \.formpage\.signup-page/);
   assert.match(stylesheet,/#app \.signup-dark-shell \.signup-page #signup/);
   assert.match(stylesheet,/\.signup-dark-shell \.nav/);
