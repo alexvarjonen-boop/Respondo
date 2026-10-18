@@ -9,3 +9,14 @@ body{-webkit-font-smoothing:antialiased}
 @media(hover:hover) and (pointer:fine){#app :is(.pricing-card,.feature-card,.plan-card):hover{transform:translateY(-3px)}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 @media(max-width:767px){#app :is(.pricing-card,.feature-card,.plan-card):hover{transform:none}}
+
+/* Alternating editorial panels: existing markup and functionality preserved */
+#app .apple-hero,#app .rg-growth-section,#app .apple-bottom-cta{background:#090a0c;color:#f8f8f7}
+#app .apple-highlights,#app .apple-lead-calculator,#app .pricing-section{background:#fafafa;color:#101114}
+#app .apple-hero,#app .apple-highlights,#app .apple-lead-calculator,#app .rg-growth-section,#app .pricing-section,#app .apple-bottom-cta{position:relative;isolation:isolate;transition:background-color .6s var(--cinema-ease),color .6s var(--cinema-ease)}
+#app .apple-hero :is(h1,h2),#app .rg-growth-section :is(h1,h2,h3),#app .apple-bottom-cta :is(h1,h2,h3){color:#fafafa}
+#app .apple-highlights :is(h1,h2),#app .apple-lead-calculator :is(h1,h2),#app .pricing-section :is(h1,h2){color:#101114}
+#app :is(.apple-highlights,.apple-lead-calculator,.rg-growth-section,.pricing-section) :is(h2,h3){letter-spacing:-.045em}
+#app :is(.apple-feature-card,.price-card,.pricing-choice-card){transition:transform .5s var(--cinema-ease),box-shadow .5s var(--cinema-ease),border-color .4s ease}
+@media(hover:hover) and (pointer:fine){#app :is(.apple-feature-card,.price-card,.pricing-choice-card):hover{transform:translate3d(0,-4px,0)}}
+@media(max-width:767px){#app :is(.apple-feature-card,.price-card,.pricing-choice-card):hover{transform:none}}
