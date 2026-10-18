@@ -21,9 +21,9 @@ test('animation is isolated to homepage and supports accessible interruption', a
   assert.match(code, /prefers-reduced-motion: reduce/);
   assert.match(code, /sessionStorage\.setItem/);
   assert.match(code, /aria-modal/);
-  assert.match(code, /event\.key === 'Escape'/);
   assert.match(code, /insertAdjacentElement\('afterend'/);
-  assert.match(css, /\.rl-intro-skip:focus-visible/);
+  assert.doesNotMatch(code, /rl-intro-skip|Ohita animaatio|Skip animation|Hoppa över/);
+  assert.doesNotMatch(css, /\.rl-intro-skip/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css, /\.apple-home\.rl-logo-film-active/);
 });

@@ -10,9 +10,9 @@
   var trace = 'M 23 185 L 94 134 L 132 164 L 213 94 L 232 70';
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var labels = {
-    fi: {tag:'Älykkäämpää asiakaspalvelua', skip:'Ohita animaatio', replay:'Katso uudelleen', scroll:'Jatka selaamista', aria:'Respondo AI:n animoitu logo'},
-    sv: {tag:'Smartare kundservice', skip:'Hoppa över', replay:'Visa igen', scroll:'Fortsätt skrolla', aria:'Respondo AI:s animerade logotyp'},
-    en: {tag:'Smarter customer service', skip:'Skip animation', replay:'Replay animation', scroll:'Keep scrolling', aria:'Respondo AI animated logo'}
+    fi: {tag:'Älykkäämpää asiakaspalvelua', replay:'Katso uudelleen', scroll:'Jatka selaamista', aria:'Respondo AI:n animoitu logo'},
+    sv: {tag:'Smartare kundservice', replay:'Visa igen', scroll:'Fortsätt skrolla', aria:'Respondo AI:s animerade logotyp'},
+    en: {tag:'Smarter customer service', replay:'Replay animation', scroll:'Keep scrolling', aria:'Respondo AI animated logo'}
   };
   var root = null, chapter = null, opening = null, closeTimer = 0, removeTimer = 0, frame = 0, watchFrame = 0;
   var introPlayed = false;
@@ -58,7 +58,7 @@
       return;
     }
     el.classList.add('rl-is-leaving');
-    // Unlock immediately so the animation never blocks the site after skip.
+    // Unlock immediately so the reveal never delays normal interaction.
     document.body.classList.remove('rl-logo-lock');
     removeTimer = window.setTimeout(function () { el.remove(); }, 860);
   }
@@ -81,10 +81,7 @@
       '<div class="rl-intro-name">RESPONDO AI</div>',
       '<p class="rl-intro-caption">',t.tag,'</p>',
       '</div>',
-      '<button class="rl-intro-skip" type="button">',t.skip,' ↗</button>'
     ].join('');
-    layer.querySelector('.rl-intro-skip').addEventListener('click',function () { clearOpening(false); });
-    layer.addEventListener('keydown',function (event) { if (event.key === 'Escape') clearOpening(false); });
     document.body.appendChild(layer);
     document.body.classList.add('rl-logo-lock');
     opening = layer;
