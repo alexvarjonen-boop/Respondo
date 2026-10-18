@@ -1988,10 +1988,11 @@ function bindHomeScrollTrial() {
   window.addEventListener('resize', scheduleUpdate, { passive:true });
 }
 
-function socialAuthButtons(flow = 'signup') {
-  const label = flow === 'login' ? 'Kirjaudu' : 'Jatka';
+function socialAuthButtons(flow = 'signup', plan = '') {
+  const label = flow === 'login' ? appText('Kirjaudu', 'Logga in', 'Log in') : appText('Jatka', 'Fortsätt', 'Continue');
+  const planQuery = flow === 'signup' ? `&plan=${encodeURIComponent(plan)}&lang=${currentLang()}` : '';
   return `<div class="social-auth">
-    <a class="social-auth-btn" href="/api/auth/oauth/google/start?flow=${flow}" aria-label="${label} Googlella">
+    <a class="social-auth-btn" href="/api/auth/oauth/google/start?flow=${flow}${planQuery}" aria-label="${label} Googlella">
       <span class="social-auth-icon google-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="22" height="22" role="img" aria-label="Google">
           <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.91h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.75 2.98-4.33 2.98-7.4Z"/>
@@ -3094,7 +3095,7 @@ function signup() {
       <div class="container checkout-layout signup-layout">
         <form class="formcard premium-form" id="signup">
           <div class="form-head"><span>${appText('LUO TILI','SKAPA KONTO','CREATE ACCOUNT')}</span><b>${plan === 'owner_test' ? appText('0,50 € · veloitus heti','0,50 € · debiteras direkt','€0.50 · charged now') : appText('3 päivää ilmaiseksi','3 dagar gratis','3 days free')}</b></div>
-          ${socialAuthButtons('signup')}
+          ${socialAuthButtons('signup', plan)}
           <div class="formgrid">
             <div class="field"><label>${appText('Nimi','Namn','Name')}</label><input name="fullName" autocomplete="name" required placeholder="${appText('Etunimi Sukunimi','Förnamn Efternamn','First name Last name')}"></div>
             <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
@@ -5636,8 +5637,17 @@ async function route() {
           : appText('Suosittelualennus toimii vain normaalissa kuukausitilauksessa.','Rekommendationsrabatten gäller endast det vanliga månadsabonnemanget.','The referral discount only applies to the standard monthly subscription.');
       }
     };
-    signupPlan?.addEventListener('change', syncReferralField);
+    const socialSignupLink = signupForm?.querySelector('.social-auth-btn');
+    const syncGoogleSignupPlan = () => {
+      if (!socialSignupLink || !signupPlan) return;
+      const href = new URL(socialSignupLink.getAttribute('href'), location.origin);
+      href.searchParams.set('plan', signupPlan.value);
+      href.searchParams.set('lang', currentLang());
+      socialSignupLink.setAttribute('href', href.pathname + href.search);
+    };
+    signupPlan?.addEventListener('change', () => { syncReferralField(); syncGoogleSignupPlan(); });
     syncReferralField();
+    syncGoogleSignupPlan();
 
     const signupSubmitButton = signupForm?.querySelector('button[type="submit"]');
     const signupSubmitOriginal = signupSubmitButton?.innerHTML || '';
