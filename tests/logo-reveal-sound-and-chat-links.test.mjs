@@ -10,91 +10,58 @@ const html=read('public/index.html');
 const effects=read('public/effects.js');
 const server=read('server.mjs');
 
-test('cinematic audio is opt-in, synchronized and localized',()=>{
+test('the original official logo reveal is silent with no sound button or audio dependencies',()=>{
   assert.doesNotThrow(()=>new vm.Script(intro));
-  assert.match(intro,/sound:'Toista äänellä'/);
-  assert.match(intro,/sound:'Spela med ljud'/);
-  assert.match(intro,/sound:'Play with sound'/);
-  assert.match(intro,/soundButton\.addEventListener\('click'/);
-  assert.match(intro,/playIntro\(true, true\)/);
-  assert.match(intro,/if \(withSound\)/);
-  assert.match(intro,/playSound\(\)/);
-  assert.match(intro,/var startSweep = start \+ 0\.28/);
-  assert.match(intro,/tone\('sine', 1\.15/);
-  assert.match(intro,/tone\('sine', 1\.62/);
-  assert.match(intro,/window\.AudioContext \|\| window\.webkitAudioContext/);
-  assert.match(intro,/if \(reduced\) return/);
-  assert.doesNotMatch(intro,/(?:new AudioContext\(|new webkitAudioContext\(|playSound\(\);\s*playIntro\(false\))/);
-  assert.match(css,/\.rl-intro-sound\s*\{/);
-  assert.match(css,/min-height:44px/);
-  assert.match(css,/prefers-reduced-motion:reduce/);
-  assert.match(html,/logo-reveal\.js\?v=20261018-cinematic-sound-v4/);
-  assert.match(html,/logo-reveal\.css\?v=20261018-cinematic-sound-v4/);
+  assert.match(intro,/rl-intro-graphic/);
+  assert.match(intro,/playIntro\(false\)/);
+  assert.match(intro,/sessionStorage\.setItem/);
+  assert.match(intro,/prefers-reduced-motion: reduce/);
+  assert.doesNotMatch(intro,/AudioContext|webkitAudioContext|createOscillator|createBufferSource|playSound|stopSound|rl-intro-sound|withSound|Toista äänellä|Spela med ljud|Play with sound/);
+  assert.doesNotMatch(css,/\.rl-intro-sound/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(html,/logo-reveal\.js\?v=20261018-cinematic-silent-v5/);
+  assert.match(html,/logo-reveal\.css\?v=20261018-cinematic-silent-v5/);
 });
 
-test('iPhone-compatible audio does not start before a real tap',()=>{
-  const buttonEvents=[];
-  const openingNodes=[];
-  const app={querySelector(sel){return sel==='.apple-home-page'?home:null}};
+test('home intro works normally and never tries audio, even if Web Audio exists',()=>{
+  let activeAudio=0;
+  const nodes=[],pending=[];
   const home={isConnected:true,querySelector(sel){return sel==='.apple-hero'?{}:null}};
-  const events=new Map();
-  const scheduled=[];
-  let audioContexts=0,played=0;
-  const param=()=>({setValueAtTime(){},exponentialRampToValueAtTime(){}});
-  class MockAudioContext{
-    constructor(){audioContexts++;this.currentTime=.05;this.sampleRate=8000;this.destination={};this.state='running';}
-    createGain(){return {gain:param(),connect(){}}}
-    createOscillator(){return {type:'',frequency:param(),connect(){},start(){played++},stop(){}}}
-    createBuffer(ch,length){return {getChannelData(){return new Float32Array(length)}}}
-    createBufferSource(){return {connect(){},start(){played++},stop(){}}}
-    createBiquadFilter(){return {type:'',Q:{value:0},frequency:param(),connect(){}}}
-    close(){return Promise.resolve()}
-  }
+  const app={querySelector(sel){return sel==='.apple-home-page'?home:null}};
   const classes=()=>({add(){},remove(){}});
   const document={
-    readyState:'complete',documentElement:{lang:'fi'},
-    getElementById(key){return key==='app'?app:null},
-    body:{classList:classes(),appendChild(node){openingNodes.push(node)}},
-    createElement(){return {
-      classList:{add(){}},innerHTML:'',
-      setAttribute(){},remove(){this.removed=true},
-      querySelector(sel){if(sel!=='.rl-intro-sound')return null;
-        const button={addEventListener(event,callback){buttonEvents.push(callback)},remove(){this.removed=true}};
-        return button;
-      }
-    }}
+    readyState:'complete',
+    documentElement:{lang:'fi'},
+    getElementById(id){return id==='app'?app:null},
+    body:{classList:classes(),appendChild(n){nodes.push(n)}},
+    createElement(){return {className:'',innerHTML:'',setAttribute(){},classList:classes(),remove(){}}}
   };
   const context={
     document,location:{pathname:'/',search:''},URLSearchParams,
     sessionStorage:{getItem(){return null},setItem(){}},
-    window:null,
-    MutationObserver:class{observe(){}},
-    requestAnimationFrame(callback){scheduled.push(callback);return scheduled.length},
-    clearTimeout(){},
-    setTimeout(){return 4},
-    matchMedia(){return {matches:false}},
+    localStorage:{getItem(){return null}},
+    window:null,MutationObserver:class{observe(){}},
+    requestAnimationFrame(callback){pending.push(callback);return pending.length},
+    setTimeout(){return 1},clearTimeout(){},
+    AudioContext:class{constructor(){activeAudio++}},
+    addEventListener(){},matchMedia(){return {matches:false}},
   };
   context.window=context;
-  context.AudioContext=MockAudioContext;
-  context.addEventListener=(name,cb)=>{events.set(name,cb)};
   vm.runInNewContext(intro,context);
-  for(let i=0;i<5&&scheduled.length;i++)scheduled.shift()();
-  assert.equal(openingNodes.length,1,'intro opens normally');
-  assert.equal(audioContexts,0,'sound must not autoplay');
-  assert.equal(buttonEvents.length,1,'button is available during intro');
-  buttonEvents[0]({preventDefault(){}});
-  assert.equal(openingNodes.length,2,'tap restarts visuals at time zero');
-  assert.equal(audioContexts,1,'sound starts only from user activation');
-  assert.ok(played>=4,'three tones and sweep are scheduled');
+  while(pending.length) pending.shift()();
+  assert.equal(nodes.length,1,'silent original intro renders');
+  assert.equal(activeAudio,0,'no sound can play');
+  assert.doesNotMatch(nodes[0].innerHTML,/rl-intro-sound|Toista äänellä|Play with sound/);
+  assert.match(nodes[0].innerHTML,/RESPONDO AI/);
 });
 
-test('feature overview links use the verified button, not a second raw URL',()=>{
+test('feature overview keeps its verified page button without repeating the raw URL',()=>{
   const begin=server.indexOf('function respondoProductFaqMatch(');
   const end=server.indexOf('\nfunction ',begin+10);
   assert.ok(begin>=0&&end>begin);
-  const matchBlock=server.slice(begin,end);
-  assert.match(matchBlock,/id:'respondo-faq-features-overview'/);
-  assert.doesNotMatch(matchBlock,/https:\/\/respondoai\.fi\/(?:ominaisuudet|funktioner|features)/);
+  const faq=server.slice(begin,end);
+  assert.match(faq,/id:'respondo-faq-features-overview'/);
+  assert.doesNotMatch(faq,/https:\/\/respondoai\.fi\/(?:ominaisuudet|funktioner|features)/);
   assert.match(effects,/Array\.isArray\(data\.actions\)/);
   assert.match(effects,/let displayedAnswer = answer/);
   assert.match(effects,/used\.has\(destination\.pathname\)/);
