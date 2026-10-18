@@ -10,22 +10,22 @@ const styles=readFileSync(new URL('../public/apple-home.css',import.meta.url),'u
 
 for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag'],[2,'en','Your company']]) {
   const t=(...translations)=>translations[index];
-  test('homepage renders three primary feature cards and seven helix cards in '+lang,()=>{
-    const html=appleHomeMarkup(t,lang,145);
-    assert.equal((html.match(/class="apple-feature-card /g)||[]).length,3);
-    assert.equal((html.match(/data-rs-card\b/g)||[]).length,7);
+  test('homepage has only seven spiral cards, then pricing, in '+lang,()=>{
+    const html=appleHomeMarkup(t,lang,145,'<section class="pricing-section" id="pricing">Plans</section>');
+    assert.equal((html.match(/class="apple-feature-card /g)||[]).length,0);
+    assert.equal((html.match(/data-rs-card\\b/g)||[]).length,7);
     assert.ok(html.includes('class="apple-hero rs-spiral-section"'));
+    assert.ok(html.includes('id="features"'));
     assert.ok(html.includes('class="rs-axis"'));
     assert.ok(html.includes('data-respondo-hero-cta="signup"'));
     assert.ok(html.includes('/assistant?lang='+lang));
-    assert.ok(html.includes('/ominaisuudet?lang='+lang));
     assert.ok(html.includes('href="/tilaus"'));
-    assert.match(html, /class="apple-orbit-core"><svg[^>]*viewBox="0 0 256 256"/);
-    assert.doesNotMatch(html, /class="apple-orbit-core"><img/);
-    assert.doesNotMatch(html, /class="apple-orbit-core"><svg[^>]*<rect/);
-    assert.doesNotMatch(html, /class="apple-orbit-core">R<\/div>/);
-    assert.doesNotMatch(html,/<iframe|<canvas/);
-    assert.doesNotMatch(html,/apple-learning-links|Mistä aloittaa tekoälyn kanssa/,'guide promo should not appear on the homepage');
+    assert.ok(html.includes('class="pricing-section" id="pricing"'));
+    assert.ok(html.indexOf('rs-spiral-section') < html.indexOf('class="pricing-section"'));
+    assert.match(html, /class="rs-axis"[^>]*>[\\s\\S]*?<svg viewBox="0 0 256 256"/);
+    assert.doesNotMatch(html, /apple-highlights|apple-lead-calculator|rg-growth-section/);
+    assert.doesNotMatch(html, /<iframe|<canvas/);
+    assert.doesNotMatch(html,/apple-learning-links|Mistä aloittaa tekoälyn kanssa/);
   });
   test('fullscreen menu keeps every secondary route accessible in '+lang,()=>{
     const html=publicMenuMarkup(t,lang);
