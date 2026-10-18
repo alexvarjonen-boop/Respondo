@@ -5,29 +5,19 @@ import { readFile } from 'node:fs/promises';
 
 const file = (name) => readFile(new URL('../public/'+name, import.meta.url), 'utf8');
 
-test('cinematic engine is loaded without replacing Respondo public branding or routes', async () => {
-  const [index,js,css] = await Promise.all([file('index.html'),file('cinematic-navigation.js'),file('cinematic-navigation.css')]);
-  assert.match(index, /\/cinematic-navigation\.css\?v=20261018-bird-flight-cinema-v2/);
-  assert.match(index, /\/cinematic-navigation\.js\?v=20261018-bird-flight-cinema-v2/);
-  assert.match(index, /\/original-theme-motion\.js/);
+test('previous crash-prone cinematic engine stays unloaded while the official spiral and logo reveal are active', async () => {
+  const [index, js, css] = await Promise.all([file('index.html'), file('spiral-hero-motion.js'), file('spiral-hero.css')]);
+  assert.ok(!index.includes('src="/cinematic-navigation.js'));
+  assert.ok(!index.includes('href="/cinematic-navigation.css'));
+  assert.match(index, /\/unified-motion\.js/);
   assert.match(index, /\/logo-reveal\.js/);
-  assert.match(js, /respondo-symbol\.svg/);
-  assert.doesNotThrow(()=>new Function(js));
-  assert.match(js, /addEventListener\('click'/);
-  assert.match(js, /pageshow/);
-  assert.match(js, /MutationObserver/);
+  assert.match(index, /\/spiral-hero-motion\.js/);
+  assert.match(index, /\/spiral-hero\.css/);
+  assert.doesNotThrow(() => new Function(js));
   assert.match(js, /prefers-reduced-motion: reduce/);
+  assert.match(js, /saveData/);
+  assert.match(js, /requestAnimationFrame\(draw\)/);
   assert.match(css, /prefers-reduced-motion:reduce/);
-  assert.match(css, /cx-story-progress/);
-  assert.match(css, /cx-hero-fx/);
-  assert.match(css, /@keyframes cx-bird-launch/);
-  assert.match(css, /cx-edge-impact/);
-  assert.match(css, /cx-camera-floor/);
-  assert.match(js, /cx-bird-flight/);
-  assert.match(js, /cx-bird-wing-upper/);
-  assert.match(js, /cx-dial-progress/);
-  assert.match(css, /cx-scene-light/);
-  assert.match(js, /--cx-scene-shift/);
 });
 
 test('marketing effects intentionally exclude legal text, footer, checkout and dashboard', async () => {
