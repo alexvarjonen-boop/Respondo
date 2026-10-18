@@ -20,6 +20,8 @@ test('cinematic engine is loaded without replacing Respondo public branding or r
   assert.match(css, /prefers-reduced-motion:reduce/);
   assert.match(css, /cx-story-progress/);
   assert.match(css, /cx-hero-fx/);
+  assert.match(css, /cx-scene-light/);
+  assert.match(js, /--cx-scene-shift/);
 });
 
 test('marketing effects intentionally exclude legal text, footer, checkout and dashboard', async () => {
