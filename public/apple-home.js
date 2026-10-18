@@ -1,29 +1,10 @@
+import { spiralHeroMarkup } from './spiral-hero.js?v=20261018-spiral-v1';
 // Three focused homepage feature cards; other sections are accessible from the fullscreen menu.
 export function appleHomeMarkup(t,lang,count,pricingMarkup=''){
   const demo=`/assistant?lang=${lang}`;
   const all=`/ominaisuudet?lang=${lang}`;
   const chatTitle=t('Yrityksesi','Ditt företag','Your company');
-  return `<section class="apple-hero" aria-labelledby="apple-home-title">
-    <div class="apple-hero-inner">
-      <p class="apple-eyebrow">RESPONDO AI</p>
-      <h1 id="apple-home-title">${t('Älykkäämpää','Smartare','Smarter')}<br><span>${t('asiakaspalvelua','kundservice','customer service')}</span></h1>
-      <p class="apple-hero-description">${t('AI-asiakaspalvelubotti yrityksesi verkkosivuille. Vastaa kysymyksiin vuorokauden ympäri yrityksesi omilla tiedoilla.','AI-kundservice på ditt företags webbplats. Svarar dygnet runt med information från ditt företag.','AI customer service for your business website. Available around the clock, with answers based on your company information.')}</p>
-      <div class="apple-hero-actions"><a class="apple-pill apple-pill-primary" data-respondo-hero-cta="signup" href="/tilaus?lang=${lang}">${t('Kokeile 3 päivää ilmaiseksi','Prova gratis i 3 dagar','Try free for 3 days')}</a><a class="apple-pill apple-pill-secondary" data-respondo-hero-cta="demo" href="${demo}">${t('Kokeile bottia','Testa botten','Try the bot')}</a></div>
-      <div class="apple-product-stage" aria-label="${t('Havainnollistava esimerkki chatbotista','Illustrativt exempel på en chattbot','Illustrative chatbot example')}">
-        <div class="apple-stage-halo" aria-hidden="true"></div>
-        <div class="apple-stage-typography" aria-hidden="true">AI</div>
-        <div class="apple-chat-preview">
-          <div class="apple-preview-top"><span class="apple-preview-avatar" aria-hidden="true">✦</span><span><strong>${chatTitle}</strong><small><i aria-hidden="true"></i>${t('Paikalla nyt','Online nu','Online now')}</small></span><span class="apple-preview-dots" aria-hidden="true">···</span></div>
-          <div class="apple-preview-body">
-            <p class="apple-preview-question">${t('Miten toimitus toimii?','Hur fungerar leveransen?','How does delivery work?')}</p>
-            <p class="apple-preview-answer">${t('Voin kertoa toimitustavoista ja -ajoista yrityksen sivuilta löytyvien tietojen perusteella.','Jag kan berätta om leveranssätt och leveranstider utifrån företagets webbplats.','I can explain delivery options and times based on the company’s website information.')}</p>
-          </div>
-          <div class="apple-preview-input">${t('Kirjoita viesti…','Skriv ett meddelande…','Type a message…')} <span aria-hidden="true">↑</span></div>
-        </div>
-      </div>
-      <p class="apple-sample-note">${t('Havainnollistava esimerkki — asiakkaasi näkee yrityksesi brändin.','Illustrativt exempel – din kund ser ditt företags varumärke.','Illustrative example — your customers see your brand.')}</p>
-    </div>
-  </section>
+  return `${spiralHeroMarkup(t, lang)}
   <section class="apple-highlights" aria-labelledby="apple-highlights-title" id="features">
     <div class="apple-highlights-intro"><p class="apple-eyebrow">${t('MIKSI RESPONDO','VARFÖR RESPONDO','WHY RESPONDO')}</p><h2 id="apple-highlights-title">${t('Kolme asiaa, jotka muuttavat asiakaspalvelun.','Tre saker som förändrar kundservicen.','Three ways to transform customer service.')}</h2></div>
     <div class="apple-highlights-grid">
