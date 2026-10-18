@@ -1988,10 +1988,11 @@ function bindHomeScrollTrial() {
   window.addEventListener('resize', scheduleUpdate, { passive:true });
 }
 
-function socialAuthButtons(flow = 'signup') {
+function socialAuthButtons(flow = 'signup', plan = '') {
   const label = flow === 'login' ? 'Kirjaudu' : 'Jatka';
+  const signupParams = flow === 'signup' && plan ? '&plan=' + encodeURIComponent(plan) + '&lang=' + encodeURIComponent(currentLang()) : '';
   return `<div class="social-auth">
-    <a class="social-auth-btn" href="/api/auth/oauth/google/start?flow=${flow}" aria-label="${label} Googlella">
+    <a class="social-auth-btn" href="/api/auth/oauth/google/start?flow=${flow}${signupParams}" aria-label="${label} Googlella">
       <span class="social-auth-icon google-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="22" height="22" role="img" aria-label="Google">
           <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.91h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.75 2.98-4.33 2.98-7.4Z"/>
@@ -2499,20 +2500,25 @@ function pricingSection() {
     const yearlyMonthly=monthly-10;
     const yearlyTotal=yearlyMonthly*12;
     const code=tier==='Advanced'?'basic':tier==='Premium'?'advanced':'business';
+    const monthlyNote=appText('3 päivän maksuton kokeilu · Laskutus kuukausittain','3 dagars gratis provperiod · Faktureras månadsvis','3-day free trial · Billed monthly');
+    const annualNote=appText(
+      `3 päivän maksuton kokeilu · ${yearlyTotal} € laskutetaan vuosittain · Säästät 120 €/vuosi`,
+      `3 dagars gratis provperiod · ${yearlyTotal} € faktureras årligen · Spara 120 €/år`,
+      `3-day free trial · €${yearlyTotal} billed annually · Save €120/year`
+    );
     return `
-    <article class="price-card ${featured?'featured':''}">
+    <article class="price-card pricing-choice-card ${featured?'featured':''}" data-plan-code="${code}" data-monthly-price="${monthly}" data-yearly-monthly-price="${yearlyMonthly}" data-monthly-note="${esc(monthlyNote)}" data-yearly-note="${esc(annualNote)}">
       <div class="price-top"><span>${tier.toUpperCase()}</span><span class="${featured?'save':''}">${featured?appText('SUOSITUIN','POPULÄRAST','MOST POPULAR'):appText('3 PÄIVÄÄ ILMAISEKSI','3 DAGAR GRATIS','3 DAYS FREE')}</span></div>
       <h3>${tier}</h3>
-      <div class="pricevalue">${monthly.toLocaleString(appLocale(),{minimumFractionDigits:0,maximumFractionDigits:2})} €<small>${appText('/kk','/mån','/month')}</small></div>
-      <div class="plan-yearly-price"><span>${appText('Vuositilauksella','Med årsabonnemang','With annual billing')} <b>${yearlyMonthly} €${appText('/kk','/mån','/month')}</b></span><small>${appText(`Säästät 120 €/vuosi · Veloitus ${yearlyTotal} € kerran vuodessa`,`Spara 120 €/år · ${yearlyTotal} € debiteras årsvis`,`Save €120/year · billed €${yearlyTotal} once per year`)}</small></div>
+      <div class="pricevalue"><span data-plan-price>${monthly}</span> €<small>${appText('/kk','/mån','/month')}</small></div>
+      <p class="plan-yearly-price pricing-billing-note" data-plan-note>${monthlyNote}</p>
       <div class="price-rule"></div>
       <ul>
         ${features.map((x)=>`<li>${x}</li>`).join('')}
         <li><b>${seats} ${appText('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</b></li>
       </ul>
       <div class="price-actions">
-        <a class="btn price-btn" href="/tilaus?plan=${code}_monthly">${appText('Kuukausitilaus','Månadsabonnemang','Monthly plan')} · ${monthly} €</a>
-        <a class="btn price-btn price-btn-yearly" href="/tilaus?plan=${code}_yearly">${appText('Vuositilaus','Årsabonnemang','Annual plan')} · ${yearlyMonthly} €${appText('/kk','/mån','/month')}</a>
+        <a class="btn price-btn pricing-select-btn" href="/tilaus?plan=${code}_monthly&amp;lang=${currentLang()}">${appText('Valitse','Välj','Choose')} ${tier} <span aria-hidden="true">→</span></a>
       </div>
     </article>`;
   };
@@ -2522,6 +2528,10 @@ function pricingSection() {
       <div class="split-head">
         <h2>${appText('Valitse yrityksellesi sopiva taso.','Välj rätt nivå för ditt företag.','Choose the right plan for your business.')}</h2>
         <p>${appText('Kaikissa tilauksissa on 3 päivän maksuton kokeilu. Vuositilauksella säästät 10 €/kk eli 120 € vuodessa.','Alla abonnemang har 3 dagars gratis provperiod. Årsabonnemang sparar 10 €/mån, totalt 120 €/år.','All plans include a 3-day free trial. Save €10/month (€120/year) with annual billing.')}</p>
+      </div>
+      <div class="pricing-billing-switch" role="group" aria-label="${appText('Laskutuskausi','Faktureringsperiod','Billing period')}">
+        <button type="button" class="pricing-period-option is-active" data-billing-period="monthly" aria-pressed="true">${appText('Kuukausittain','Månadsvis','Monthly')}</button>
+        <button type="button" class="pricing-period-option" data-billing-period="yearly" aria-pressed="false">${appText('Vuosittain','Årsvis','Annually')} <span class="pricing-period-save">${appText('Säästä 120 €/vuosi','Spara 120 €/år','Save €120/year')}</span></button>
       </div>
       <div class="pricing-wrap">
         ${card('Advanced',49,2,[
@@ -2549,6 +2559,36 @@ function pricingSection() {
       </div>
     </div>
   </section>`;
+}
+
+
+function bindPricingPeriodSwitch() {
+  document.querySelectorAll('#app .pricing-section').forEach((section) => {
+    const controls = Array.from(section.querySelectorAll('.pricing-period-option'));
+    if (!controls.length) return;
+    const update = (period) => {
+      const yearly = period === 'yearly';
+      for (const control of controls) {
+        const active = control.dataset.billingPeriod === period;
+        control.classList.toggle('is-active',active);
+        control.setAttribute('aria-pressed',String(active));
+      }
+      section.querySelectorAll('.pricing-choice-card').forEach((card) => {
+        const price = yearly ? card.dataset.yearlyMonthlyPrice : card.dataset.monthlyPrice;
+        const display = card.querySelector('[data-plan-price]');
+        const note = card.querySelector('[data-plan-note]');
+        const link = card.querySelector('.pricing-select-btn');
+        if (display) display.textContent = price;
+        if (note) note.textContent = yearly ? card.dataset.yearlyNote : card.dataset.monthlyNote;
+        if (link) {
+          const params = new URLSearchParams({plan:card.dataset.planCode + (yearly ? '_yearly' : '_monthly'),lang:currentLang()});
+          link.href = '/tilaus?' + params.toString();
+        }
+      });
+    };
+    controls.forEach((control) => control.addEventListener('click',() => update(control.dataset.billingPeriod)));
+    update('monthly');
+  });
 }
 
 
@@ -3056,7 +3096,7 @@ function signup() {
       <div class="container checkout-layout signup-layout">
         <form class="formcard premium-form" id="signup">
           <div class="form-head"><span>${appText('LUO TILI','SKAPA KONTO','CREATE ACCOUNT')}</span><b>${plan === 'owner_test' ? appText('0,50 € · veloitus heti','0,50 € · debiteras direkt','€0.50 · charged now') : appText('3 päivää ilmaiseksi','3 dagar gratis','3 days free')}</b></div>
-          ${socialAuthButtons('signup')}
+          ${socialAuthButtons('signup',plan)}
           <div class="formgrid">
             <div class="field"><label>${appText('Nimi','Namn','Name')}</label><input name="fullName" autocomplete="name" required placeholder="${appText('Etunimi Sukunimi','Förnamn Efternamn','First name Last name')}"></div>
             <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
@@ -4922,6 +4962,7 @@ async function route() {
   applyLanguage();
   bindLanguageSwitch();
   bindPublicMenu();
+  if (path === '/' || path === '/hinnat') bindPricingPeriodSwitch();
   if (path === '/') {
     bindHomeHeroActions();
     bindHomeScrollTrial();
@@ -5599,6 +5640,17 @@ async function route() {
     };
     signupPlan?.addEventListener('change', syncReferralField);
     syncReferralField();
+    // Preserve the selected plan (including annual billing) across the Google OAuth redirect.
+    const syncGoogleSignupPlan = () => {
+      const googleLink = signupForm?.querySelector('.social-auth-btn[href*="/api/auth/oauth/google/start"]');
+      if (!googleLink || !signupPlan) return;
+      const url = new URL(googleLink.getAttribute('href'), location.origin);
+      url.searchParams.set('plan',signupPlan.value);
+      url.searchParams.set('lang',currentLang());
+      googleLink.setAttribute('href',url.pathname + url.search);
+    };
+    signupPlan?.addEventListener('change',syncGoogleSignupPlan);
+    syncGoogleSignupPlan();
 
     const signupSubmitButton = signupForm?.querySelector('button[type="submit"]');
     const signupSubmitOriginal = signupSubmitButton?.innerHTML || '';
