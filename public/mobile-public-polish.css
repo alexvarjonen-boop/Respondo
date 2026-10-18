@@ -214,3 +214,7 @@
 @media(prefers-reduced-motion:reduce){
   #app .footer .footer-site-links a{transition:none!important}
 }
+
+/* Defensive rule for an old iOS Safari cached spiral template. Signup remains available in pricing/footer. */
+#app .rs-spiral-section .rs-hero-actions a[data-respondo-hero-cta="signup"]{display:none!important}
+#app .rs-spiral-section .rs-hero-actions{justify-content:center!important}
