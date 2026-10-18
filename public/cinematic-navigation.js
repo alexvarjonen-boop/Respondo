@@ -44,7 +44,15 @@
     var href=url.href;
     setTimeout(function(){location.assign(href)},NAV_DURATION);
   },true);
-  addEventListener('pageshow',function(e){if(e.persisted)release()});
+  addEventListener('pageshow',function(e){
+    if(!e.persisted)return;
+    release();
+    if(reduce.matches)return;
+    veil();document.body.classList.add('cx-arriving');
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      document.body.classList.add('cx-arrived');setTimeout(release,850);
+    })});
+  });
   function arrive(){
     if(reduce.matches)return;
     var pending=false;
@@ -125,7 +133,7 @@
       refreshFrame=0;
       var root=app.firstElementChild;
       var unseenFlow=root&&root.querySelector('.r-brand-flow:not([data-cx-section])');
-      var unseenHero=root&&root.querySelector('.r-brand-contact-banner:not(.cx-cinematic-hero)');
+      var unseenHero=root&&get(heroSel,root).some(function(el){return !el.classList.contains('cx-cinematic-hero')});
       if(root!==page||unseenFlow||unseenHero||(page&&hero&&!hero.isConnected))decorate();
     });
   }
