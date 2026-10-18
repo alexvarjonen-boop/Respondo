@@ -24,7 +24,7 @@ export function spiralHeroMarkup(t, lang) {
       <div class="rs-spiral-heading">
         <p class="apple-eyebrow">RESPONDO AI <span class="rs-subbrand">/ ${t('ÄLYKÄS ASIAKASPALVELU','SMART KUNDSERVICE','SMART CUSTOMER SERVICE')}</span></p>
         <h1 id="apple-home-title">${t('Älykkäämpää','Smartare','Smarter')} <span>${t('asiakaspalvelua.','kundservice.','customer service.')}</span></h1>
-        <p class="rs-hero-description">${t('Yksi älykäs asiakaspalvelija. Rajattomasti parempia kohtaamisia.','En smart kundservicemedarbetare. Fler möjligheter att hjälpa kunder.','One intelligent support assistant. More ways to help your customers.')}</p>
+        <p class="rs-hero-description">${t('Tämä sivu toimii chatin kautta. Kysy Respondolta hinnat, ominaisuudet, kokeilu tai yhteystiedot – se vastaa ja ohjaa eteenpäin.','Den här webbplatsen fungerar via chatten. Fråga Respondo om priser, funktioner, testperioden eller kontakt – och få hjälp vidare.','This website is guided by chat. Ask Respondo about pricing, features, the free trial or contact details – and get the next step.')}</p>
       </div>
       <div class="rs-spiral-orbit" aria-label="${t('Respondo AI:n ominaisuudet','Respondo AI:s funktioner','Respondo AI features')}">
         <div class="rs-spiral-cards" role="list">
@@ -40,10 +40,25 @@ export function spiralHeroMarkup(t, lang) {
           <span class="rs-axis-caption">RESPONDO AI</span>
         </div>
       </div>
-      <div class="rs-spiral-bottom">
+      <div class="rs-spiral-bottom rs-chat-first-bottom">
         <div class="rs-scroll-invite" aria-hidden="true"><span class="rs-scroll-rule"></span>${t('SELAA ALAS','SKROLLA NED','SCROLL TO EXPLORE')}</div>
-        <div class="apple-hero-actions rs-hero-actions">
-          <a class="apple-pill apple-pill-secondary" data-respondo-hero-cta="demo" href="/assistant?lang=${lang}">${t('Kokeile bottia','Testa botten','Try the bot')}</a>
+        <div class="rs-chat-entry">
+          <div class="rs-chat-entry-header">
+            <span class="rs-chat-live" aria-hidden="true"></span>
+            <strong>${t('Kysy Respondolta.','Fråga Respondo.','Ask Respondo.')}</strong>
+            <span>${t('Koko sivun opas','Guiden till hela webbplatsen','Your website guide')}</span>
+          </div>
+          <form class="rs-ask-form" data-respondo-ask-form novalidate>
+            <label class="rs-visually-hidden" for="respondo-home-question">${t('Kysy Respondolta esimerkiksi hinnoista, ominaisuuksista tai kokeilusta','Fråga Respondo om priser, funktioner eller testperioden','Ask Respondo about prices, features or the free trial')}</label>
+            <input id="respondo-home-question" name="question" type="search" autocomplete="off" enterkeyhint="send" required maxlength="500" placeholder="${t('Mitä haluaisit tietää?','Vad vill du veta?','What would you like to know?')}">
+            <button type="submit" aria-label="${t('Lähetä kysymys botille','Skicka frågan till botten','Send your question to the bot')}">${t('Kysy','Fråga','Ask')} <span aria-hidden="true">↗</span></button>
+          </form>
+          <div class="rs-chat-suggestions" aria-label="${t('Kysymysehdotuksia','Frågeförslag','Suggested questions')}">
+            <button type="button" data-respondo-ask-question="${t('Mitä Respondo maksaa?','Vad kostar Respondo?','How much does Respondo cost?')}">${t('Hinnat','Priser','Pricing')}</button>
+            <button type="button" data-respondo-ask-question="${t('Mitä Respondo osaa?','Vad kan Respondo göra?','What can Respondo do?')}">${t('Ominaisuudet','Funktioner','Features')}</button>
+            <button type="button" data-respondo-ask-question="${t('Miten voin aloittaa kolmen päivän kokeilun?','Hur börjar jag en tre dagars provperiod?','How do I start the three-day free trial?')}">${t('Aloittaminen','Kom igång','Get started')}</button>
+          </div>
+          <p class="rs-chat-entry-status" role="status" aria-live="polite" data-respondo-ask-status></p>
         </div>
         <div class="rs-step-count" aria-hidden="true"><span data-rs-step>01</span><span class="rs-step-line"></span><span>07</span></div>
       </div>
