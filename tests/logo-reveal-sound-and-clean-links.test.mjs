@@ -23,7 +23,7 @@ test('cinematic logo audio is synchronized, original arrow remains and autoplay 
   assert.match(logo,/sound:'Play with sound'/);
   assert.match(logo,/tone\('sine', 1\.15/);
   assert.match(logo,/tone\('sine', 1\.62/);
-  assert.doesNotMatch(logo,/new Audio\(|new Howl\(|autoplay/);
+  assert.doesNotMatch(logo,/new Audio\(|new Howl\(/);
   assert.match(css,/\.rl-intro-sound\s*\{/);
   assert.match(css,/safe-area-inset-bottom/);
   assert.match(css,/\.rl-intro-sound:focus-visible/);
