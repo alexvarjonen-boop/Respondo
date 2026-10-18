@@ -115,7 +115,13 @@
     var heroes=get(heroSel,main);
     heroes.forEach(addHeroFX);hero=heroes[0]||null;
     scenes=get(sectionSel,main).slice(0,24);
-    scenes.forEach(function(el){el.setAttribute('data-cx-section','')});
+    scenes.forEach(function(el){
+      el.setAttribute('data-cx-section','');
+      if(!el.querySelector(':scope > .cx-scene-light')){
+        var light=document.createElement('div');light.className='cx-scene-light';
+        light.setAttribute('aria-hidden','true');el.insertBefore(light,el.firstChild);
+      }
+    });
     cards=get(cardSel,main).slice(0,32);
     cards.forEach(function(el){el.classList.add('cx-depth-card')});
     titles=get(titleSel,main).slice(0,42);
@@ -157,7 +163,10 @@
     }
     scenes.forEach(function(node){
       var r=node.getBoundingClientRect();if(r.bottom< -vh*.15||r.top>vh*1.15)return;
-      set(node,'--cx-section-p',clamp((vh*.88-r.top)/Math.max(vh*.72,r.height),0,1).toFixed(3));
+      var p=clamp((vh*.88-r.top)/Math.max(vh*.72,r.height),0,1);
+      set(node,'--cx-section-p',p.toFixed(3));
+      set(node,'--cx-scene-shift',((p-.5)*(mobile?45:120)).toFixed(1)+'px');
+      set(node,'--cx-scene-opacity',(.15+.35*Math.sin(p*Math.PI)).toFixed(3));
     });
     cards.forEach(function(node){
       var r=node.getBoundingClientRect();if(r.bottom< -80||r.top>vh+95)return;
