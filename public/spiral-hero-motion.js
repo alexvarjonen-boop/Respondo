@@ -81,12 +81,12 @@
     const travel = Math.max(1, rect.height - viewport);
     const normalized = clamp(-rect.top / travel, 0, 1);
     const rawPosition = normalized * (cards.length - 1);
-    // Mobile holds each card readable for ~2/3 of its segment. Only the
-    // final third performs a smooth transition to the next card. Native scroll
-    // is never blocked, and the full sequence works in both directions.
+    // A short mobile reading hold followed by a broad smooth transition.
+    // With a ~400px segment, one swipe reveals the next feature without
+    // trapping native scroll. The sequence is reversible in both directions.
     const segment = Math.min(cards.length - 2, Math.floor(rawPosition));
     const fraction = rawPosition >= cards.length - 1 ? 1 : rawPosition - segment;
-    const position = mobile ? segment + ease((fraction - .66) / .34) : rawPosition;
+    const position = mobile ? segment + ease((fraction - .42) / .58) : rawPosition;
     const closestIndex = clamp(Math.round(position), 0, cards.length - 1);
     updateStep(closestIndex);
     const radius = mobile ? Math.min(innerWidth * .13, 58) : Math.min(innerWidth * .24, 325);
