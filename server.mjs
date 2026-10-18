@@ -2,6 +2,7 @@ import { brandedEmailHtml } from './email-branding.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { serviceOverviewQuestion, verifiedServiceOverview } from './service-overview.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
+import { isRespondoCapabilityQuestion } from './respondo-capability-intent.mjs';
 import { respondoSiteNavigationActions, respondoSiteNavigationAnswer } from './respondo-site-navigation.mjs';
 import { matchVerifiedSpecialistService, matchVerifiedCompoundSpecialistServices, resolveSpecialistConversationReference } from './service-semantics.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
@@ -1833,7 +1834,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   const previousWasPricing = /(?:hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar|kuukaudessa|monthly|per month|manad|månad)/.test(previousQuestion);
 
   // First-party feature overview: highlight actual value and always provide the full feature catalogue.
-  if (/(?:ominaisu|toiminto|mita osaa|mita kaikkea|mitä osaa|mitä kaikkea|feature|capabilit|what can (?:respondo|it) do|funktion|vad kan (?:respondo|den) gora|vad kan (?:respondo|den) göra)/.test(q)
+  if ((/(?:ominaisu|toiminto|mita osaa|mita kaikkea|mitä osaa|mitä kaikkea|feature|capabilit|what can (?:respondo|it) do|funktion|vad kan (?:respondo|den) gora|vad kan (?:respondo|den) göra)/.test(q) || isRespondoCapabilityQuestion(q))
       && !/(?:starter|basic|advanced|premium|business|enterprise|hinta|maksaa|price|pricing|cost|pris|kostar)/.test(q)) {
     return {id:'respondo-faq-features-overview',answer:answer(
       'Respondo AI palvelee asiakkaitasi ympäri vuorokauden ja ymmärtää kysymyksiä sekä jatkokysymyksiä suomeksi, ruotsiksi ja englanniksi. Se voi hakea yrityksesi verkkosivuilta palvelu- ja tuotetietoja, vastata tuotteiden hinnoista, kerätä liidejä ja yhteydenottoja, hoitaa ajanvarauksia sekä siirtää keskustelun oikealle asiakaspalvelijalle. Saat myös muokattavan chatin, keskusteluhistorian ja analytiikkaa. Osa toiminnoista riippuu paketista ja käyttöönotetuista integraatioista. Katso kaikki ominaisuudet: https://respondoai.fi/ominaisuudet',

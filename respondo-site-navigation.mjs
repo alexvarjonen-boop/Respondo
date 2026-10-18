@@ -1,3 +1,4 @@
+import { isRespondoCapabilityQuestion } from './respondo-capability-intent.mjs';
 // Public Respondo website navigation: explicit, same-site destinations only.
 // The marketing assistant uses this directory to guide visitors without a
 // separate "Site pages" list in the footer. Customer widgets never use it.
@@ -66,7 +67,7 @@ function localPath(page,lang){
 export function respondoSiteNavigationActions(message,lang='fi',faqId='',origin='https://www.respondoai.fi'){
   const language=['fi','sv','en'].includes(lang)?lang:'fi';
   const q=normalize(message);
-  const matched=pages.filter(p=>(p.ids||[]).includes(faqId)||p.match.test(q));
+  const matched=pages.filter(p=>(p.ids||[]).includes(faqId)||p.match.test(q)||(p.type==='site_features' && isRespondoCapabilityQuestion(q)));
   if(matched.length===0&&genericPages.test(q)){
     matched.push(...['site_features','site_pricing','site_demo','site_contact'].map(key=>pages.find(p=>p.type===key)));
   }
