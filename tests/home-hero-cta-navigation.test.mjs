@@ -11,7 +11,7 @@ for (const [lang,index] of [['fi',0],['sv',1],['en',2]]) {
   test('homepage hero CTA destinations and language are correct for '+lang,()=>{
     const t=(...v)=>v[index];
     const home=appleHomeMarkup(t,lang,145);
-    assert.match(home,new RegExp('data-respondo-hero-cta="signup" href="/tilaus\\?lang='+lang+'"'));
+    assert.doesNotMatch(home,/data-respondo-hero-cta="signup"/);
     assert.match(home,new RegExp('data-respondo-hero-cta="demo" href="/assistant\\?lang='+lang+'"'));
   });
 }
@@ -21,7 +21,7 @@ test('CTA links sit above noninteractive decorations and retain pointer input',(
   assert.match(css,/\.apple-stage-typography\)\{pointer-events:none!important/);
 });
 test('hero CTA navigation keeps regular clicks working and modified clicks native',()=>{
-  const source=app.slice(app.indexOf('function bindHomeHeroActions()'),app.indexOf('function bindHomeScrollTrial()'));
+  const source=app.slice(app.indexOf('function bindHomeHeroActions()'),app.indexOf('function socialAuthButtons('));
   assert.ok(source.includes("window.location.assign(destination.href)"));
   assert.ok(source.includes("event.metaKey || event.ctrlKey"));
   assert.ok(app.includes("bindHomeHeroActions();"));

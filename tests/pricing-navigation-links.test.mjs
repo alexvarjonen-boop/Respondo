@@ -1,19 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { publicFooterNavigationMarkup } from '../public/apple-nav.js';
 
-const app = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
+const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 
-// The homepage no longer renders #pricing: both visible navigation links
-// must use the dedicated pricing page rather than the old homepage anchor.
-test('footer and desktop header pricing links open the actual pricing page for each language', () => {
-  const nav = app.split('function nav() {')[1]?.split('// The homepage CTA')[0];
-  const footer = app.split('function footer() {')[1]?.split('function ')[0];
-  assert.ok(nav, 'main navigation exists');
-  assert.ok(footer, 'footer exists');
-  const expected = 'href="/hinnat?lang=\u0024{currentLang()}"';
-  assert.ok(nav.includes(expected), 'desktop pricing link must go to /hinnat');
-  assert.ok(footer.includes(expected), 'footer pricing link must go to /hinnat');
-  assert.doesNotMatch(nav + footer, /href="\/#pricing"/);
-  assert.match(app, /path === '\/hinnat'\) html =/);
+test('pricing stays directly accessible in footer in FI SV EN, without a menu',()=>{
+  const nav=app.split('function nav() {')[1]?.split('function bindHomeHeroActions()')[0];
+  const footer=app.split('function footer() {')[1]?.split('function heroVisual()')[0];
+  assert.ok(nav && footer);
+  assert.doesNotMatch(nav,/href="\/#pricing"|apple-menu-toggle|publicMenuMarkup/);
+  assert.match(footer,/publicFooterNavigationMarkup\(appText,currentLang\(\)\)/);
+  for (const [lang,index] of [['fi',0],['sv',1],['en',2]]) {
+    const tr=(...v)=>v[index];
+    const links=publicFooterNavigationMarkup(tr,lang);
+    assert.ok(links.includes('href="/hinnat?lang='+lang+'"'),lang);
+    assert.ok(links.includes('href="/kirjaudu?lang='+lang+'"'),lang);
+  }
+  assert.match(app,/path === '\/hinnat'\) html =/);
 });

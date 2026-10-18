@@ -4,17 +4,15 @@ import {readFileSync} from 'node:fs';
 
 const app = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
 
-test('login and signup pages hide redundant header trial CTAs', () => {
-  const start = app.indexOf('function nav() {');
-  const end = app.indexOf('function bindHomeHeroActions()', start);
-  const nav = app.slice(start, end);
-  assert.ok(start >= 0 && end > start);
-  assert.match(nav, /const isLoginPage = \['\/kirjaudu','\/login'\]\.includes\(location\.pathname\)/);
-  assert.match(nav, /const isSignupPage = location\.pathname === '\/tilaus'/);
-  assert.match(nav, /!isHomePage && !isLoginPage && !isSignupPage \? `<a class="btn ink" href="\/tilaus">/);
-  assert.match(nav, /<a class="btn ghost nav-login-btn"/);
-  assert.match(nav, /: isLoginPage \? '' : `<a class="btn ghost nav-login-btn"/);
-  assert.match(nav, /nav-home-scroll-trial/);
+test('login and signup have only branding and language flags in public header', () => {
+  const start=app.indexOf('function nav() {');
+  const end=app.indexOf('function bindHomeHeroActions()',start);
+  const nav=app.slice(start,end);
+  assert.ok(start>=0 && end>start);
+  assert.match(nav,/\$\{logo\(\)\}/);
+  assert.match(nav,/\$\{languageSwitch\(\)\}/);
+  assert.doesNotMatch(nav,/nav-home-scroll-trial|nav-login-btn|apple-menu-toggle|apple-nav-overlay/);
+  assert.match(app,/publicFooterNavigationMarkup\(appText,currentLang\(\)\)/);
 });
 
 test('login card has no repeated welcome heading and keeps all sign-in methods', () => {
