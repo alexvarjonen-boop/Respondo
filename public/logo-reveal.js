@@ -1,4 +1,4 @@
-/* Respondo AI official-arrow cinematic intro + scroll-controlled logo chapter.
+/* Respondo AI official-arrow cinematic intro.
    Only runs on the public homepage and never changes the existing site theme. */
 (function () {
   'use strict';
@@ -10,11 +10,11 @@
   var trace = 'M 23 185 L 94 134 L 132 164 L 213 94 L 232 70';
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var labels = {
-    fi: {tag:'Älykkäämpää asiakaspalvelua', replay:'Katso uudelleen', scroll:'Jatka selaamista', aria:'Respondo AI:n animoitu logo'},
-    sv: {tag:'Smartare kundservice', replay:'Visa igen', scroll:'Fortsätt skrolla', aria:'Respondo AI:s animerade logotyp'},
-    en: {tag:'Smarter customer service', replay:'Replay animation', scroll:'Keep scrolling', aria:'Respondo AI animated logo'}
+    fi: {tag:'Älykkäämpää asiakaspalvelua', aria:'Respondo AI:n animoitu logo'},
+    sv: {tag:'Smartare kundservice', aria:'Respondo AI:s animerade logotyp'},
+    en: {tag:'Smarter customer service', aria:'Respondo AI animated logo'}
   };
-  var root = null, chapter = null, opening = null, closeTimer = 0, removeTimer = 0, frame = 0, watchFrame = 0;
+  var root = null, opening = null, closeTimer = 0, removeTimer = 0, watchFrame = 0;
   var introPlayed = false;
 
   function locale() {
@@ -28,9 +28,8 @@
     return labels[raw] ? raw : 'fi';
   }
   function l() { return labels[locale()]; }
-  function clamp(n) { return Math.max(0, Math.min(1, n)); }
-  function svg(which) {
-    var cn = which === 'intro' ? 'rl-intro' : 'rl-chapter';
+  function svg() {
+    var cn = 'rl-intro';
     return '<svg viewBox="0 0 256 256" aria-hidden="true" focusable="false">' +
       '<path class="' + cn + '-trace" pathLength="100" d="' + trace + '"/>' +
       '<path class="' + cn + '-solid" d="' + arrow + '"/>' +
@@ -77,7 +76,7 @@
       '<div class="rl-intro-lines" aria-hidden="true"></div>',
       '<div class="rl-intro-inner">',
       '<div class="rl-intro-rings" aria-hidden="true"></div>',
-      '<div class="rl-intro-graphic"><div class="rl-intro-burst" aria-hidden="true"></div>', svg('intro'), '</div>',
+      '<div class="rl-intro-graphic"><div class="rl-intro-burst" aria-hidden="true"></div>', svg(), '</div>',
       '<div class="rl-intro-name">RESPONDO AI</div>',
       '<p class="rl-intro-caption">',t.tag,'</p>',
       '</div>',
@@ -87,76 +86,15 @@
     opening = layer;
     closeTimer = window.setTimeout(function () { clearOpening(false); }, 3050);
   }
-  function createChapter() {
-    var t = l(), section = document.createElement('section');
-    section.className = 'rl-chapter';
-    section.setAttribute('aria-label',t.aria);
-    section.innerHTML = [
-      '<div class="rl-sticky">',
-      '<span class="rl-chapter-meta" aria-hidden="true">RESPONDO / 01</span>',
-      '<div class="rl-chapter-orbit" aria-hidden="true"></div>',
-      '<div class="rl-chapter-core">',
-      '<div class="rl-chapter-logo" aria-hidden="true">',svg('chapter'),'</div>',
-      '<h2 class="rl-chapter-wordmark">RESPONDO AI</h2>',
-      '<p class="rl-chapter-tagline">',t.tag,'</p>',
-      '</div>',
-      '<div class="rl-scroll-prompt" aria-hidden="true">',t.scroll,'</div>',
-      '<button class="rl-replay" type="button" aria-label="',t.replay,'">↻ &nbsp;',t.replay,'</button>',
-      '<div class="rl-chapter-progress" aria-hidden="true"></div>',
-      '</div>'
-    ].join('');
-    section.querySelector('.rl-replay').addEventListener('click', function () { playIntro(true); });
-    return section;
-  }
-  function updateScroll() {
-    frame = 0;
-    if (!chapter || !chapter.isConnected) return;
-    var sc = chapter.getBoundingClientRect();
-    var distance = Math.max(1, sc.height - window.innerHeight);
-    var progress = clamp(-sc.top / distance);
-    var draw = clamp((progress - .07) / .51);
-    var fill = clamp((progress - .57) / .17);
-    var words = clamp((progress - .68) / .24);
-    var ring = .12 + .86 * clamp((progress - .10) / .42);
-    var aura = clamp((progress - .38) / .38);
-    if (reduced) { progress=1; draw=1; fill=1; words=1; ring=.28; aura=0; }
-    var e = chapter.style;
-    e.setProperty('--rl-progress', progress.toFixed(4));
-    e.setProperty('--rl-fill', fill.toFixed(4));
-    e.setProperty('--rl-words', words.toFixed(4));
-    e.setProperty('--rl-ring', ring.toFixed(4));
-    e.setProperty('--rl-aura', aura.toFixed(4));
-    e.setProperty('--rl-spin', (progress * 150).toFixed(1)+'deg');
-    e.setProperty('--rl-orbit-scale', (.73 + progress*.44).toFixed(3));
-    e.setProperty('--rl-rise', ((1-progress)*22).toFixed(1)+'px');
-    e.setProperty('--rl-scale', (.75 + progress*.4).toFixed(3));
-    e.setProperty('--rl-glow', (aura*38).toFixed(1)+'px');
-    e.setProperty('--rl-word-rise', ((1-words)*28).toFixed(1)+'px');
-    e.setProperty('--rl-tag-rise', ((1-words)*15).toFixed(1)+'px');
-    e.setProperty('--rl-prompt', clamp(1-progress*1.5).toFixed(3));
-    e.setProperty('--rl-bar', (progress*100).toFixed(2)+'%');
-    var line = chapter.querySelector('.rl-chapter-trace');
-    if (line) line.style.strokeDashoffset = String((1-draw)*100);
-  }
-  function scheduleScroll() {
-    if (!frame) frame = requestAnimationFrame(updateScroll);
-  }
   function refresh() {
     var home = app.querySelector('.apple-home-page');
     if (!home) {
-      root = null; chapter = null;
+      root = null;
       clearOpening(true);
       return;
     }
-    if (root === home && chapter && chapter.isConnected) return;
+    if (root === home || !home.querySelector('.apple-hero')) return;
     root = home;
-    var hero = home.querySelector('.apple-hero');
-    if (!hero) return;
-    chapter = createChapter();
-    hero.insertAdjacentElement('afterend', chapter);
-    var main = home.querySelector('.apple-home');
-    if (main) main.classList.add('rl-logo-film-active');
-    scheduleScroll();
     playIntro(false);
   }
   function scheduleRefresh() {
@@ -164,15 +102,11 @@
     watchFrame = requestAnimationFrame(function () {
       watchFrame = 0;
       refresh();
-      scheduleScroll();
     });
   }
   var observer = new MutationObserver(scheduleRefresh);
   observer.observe(app,{childList:true});
-  window.addEventListener('scroll', scheduleScroll, {passive:true});
-  window.addEventListener('resize', scheduleScroll, {passive:true});
   window.addEventListener('respondo:languagechange', scheduleRefresh, {passive:true});
-  window.addEventListener('pageshow',scheduleScroll,{passive:true});
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scheduleRefresh, {once:true});
   else scheduleRefresh();
 })();
