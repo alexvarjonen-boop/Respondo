@@ -76,6 +76,65 @@ export function appleHomeMarkup(t,lang,count,pricingMarkup=''){
       <p class="apple-lead-disclaimer">${t("Havainnollistava arvio: jokainen vastaamatta jäänyt yhteydenotto vastaa yhtä toteutunutta kauppaa. Ei myyntiennuste tai lupaus lisätuloista.","Illustrativt exempel: varje obesvarad förfrågan antas motsvara en genomförd affär. Ingen försäljningsprognos eller intäktsgaranti.","Illustrative estimate: each unanswered enquiry is assumed to equal one completed sale. Not a sales forecast or revenue guarantee.")}</p>
     </div>
   </section>
+
+  <section class="rg-growth-section" id="growth-scenario" aria-labelledby="rg-growth-title">
+    <div class="rg-growth-inner">
+      <header class="rg-growth-intro">
+        <p class="apple-eyebrow">${t("KASVUSKENAARIO","TILLVÄXTSCENARIO","GROWTH SCENARIO")}</p>
+        <h2 id="rg-growth-title">${t("Enemmän tavoitettuja asiakkaita. Enemmän mahdollisuuksia.","Fler nådda kunder. Fler möjligheter.","Reach more customers. Create more opportunities.")}</h2>
+        <p>${t("Katso, miltä myynnin mahdollinen kehitys voi näyttää havainnollistavassa esimerkissä.","Se hur en möjlig försäljningsutveckling kan se ut i ett illustrativt exempel.","Explore what potential sales growth could look like in an illustrative scenario.")}</p>
+      </header>
+      <div class="rg-terminal" aria-label="${t("Havainnollistava kasvunäkymä","Illustrativ tillväxtvy","Illustrative growth dashboard")}">
+        <div class="rg-terminal-top">
+          <div class="rg-terminal-brand"><span class="rg-terminal-mark" aria-hidden="true">↗</span><span>RESPONDO <em>INSIGHTS</em></span></div>
+          <span class="rg-demo-badge"><span aria-hidden="true"></span>${t("ESIMERKKIDATA","EXEMPELDATA","SAMPLE DATA")}</span>
+        </div>
+        <div class="rg-kpi-grid">
+          <div class="rg-kpi"><span>${t("Myynti-indeksin muutos","Förändring i försäljningsindex","Sales index change")}</span><strong>+52<span>%</span></strong><small>${t("6 kuukauden esimerkki","Exempel över 6 månader","6-month example")}</small></div>
+          <div class="rg-kpi"><span>${t("Myynti-indeksi alussa","Försäljningsindex vid start","Starting sales index")}</span><strong>100</strong><small>${t("Lähtötaso","Startnivå","Baseline")}</small></div>
+          <div class="rg-kpi"><span>${t("Myynti-indeksi lopussa","Försäljningsindex vid slutet","Ending sales index")}</span><strong>152</strong><small>${t("Havainnollistava tavoitetaso","Illustrativ målnivå","Illustrative end value")}</small></div>
+        </div>
+        <div class="rg-visual-grid">
+          <div class="rg-primary-chart">
+            <div class="rg-chart-heading"><div><span>${t("MYYNNIN KEHITYS","FÖRSÄLJNINGSUTVECKLING","SALES TREND")}</span><h3>${t("Kasvukäyrä","Tillväxtkurva","Growth curve")}</h3></div><b>↗ +52 %</b></div>
+            <div class="rg-graph-frame">
+              <div class="rg-axis-labels" aria-hidden="true"><span>150</span><span>125</span><span>100</span></div>
+              <svg class="rg-graph" viewBox="0 0 740 280" preserveAspectRatio="none" role="img" aria-label="${t("Esimerkin myynti-indeksi nousee kuudessa kuukaudessa 100:sta 152:een.","I exemplet ökar försäljningsindex från 100 till 152 på sex månader.","In this illustration, the sales index increases from 100 to 152 over six months.")}">
+                <defs>
+                  <linearGradient id="rg-growth-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#4cf6ac" stop-opacity=".30"/><stop offset="100%" stop-color="#4cf6ac" stop-opacity="0"/></linearGradient>
+                  <filter id="rg-line-glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                </defs>
+                <g class="rg-gridlines"><path d="M0 35 H740 M0 96 H740 M0 157 H740 M0 218 H740 M0 276 H740"/><path d="M0 0 V280 M148 0 V280 M296 0 V280 M444 0 V280 M592 0 V280 M739 0 V280"/></g>
+                <path class="rg-area" d="M 0 252 C 55 251 84 235 148 220 S 250 212 296 187 S 401 173 444 141 S 552 118 592 79 S 694 57 740 27 L 740 280 L 0 280 Z" fill="url(#rg-growth-fill)"/>
+                <path class="rg-line-halo" d="M 0 252 C 55 251 84 235 148 220 S 250 212 296 187 S 401 173 444 141 S 552 118 592 79 S 694 57 740 27"/>
+                <path class="rg-line" d="M 0 252 C 55 251 84 235 148 220 S 250 212 296 187 S 401 173 444 141 S 552 118 592 79 S 694 57 740 27"/>
+                <circle cx="740" cy="27" r="8" fill="#58eeb0"/><circle cx="740" cy="27" r="17" fill="#58eeb0" opacity=".12"/>
+              </svg>
+            </div>
+            <div class="rg-graph-months" aria-hidden="true"><span>${t("KK 1","MÅN 1","MO 1")}</span><span>${t("KK 2","MÅN 2","MO 2")}</span><span>${t("KK 3","MÅN 3","MO 3")}</span><span>${t("KK 4","MÅN 4","MO 4")}</span><span>${t("KK 5","MÅN 5","MO 5")}</span><span>${t("KK 6","MÅN 6","MO 6")}</span></div>
+          </div>
+          <aside class="rg-side">
+            <div class="rg-side-card">
+              <span class="rg-side-kicker">${t("MAHDOLLISUUDET","MÖJLIGHETER","OPPORTUNITIES")}</span>
+              <h3>${t("Jokaisella yhteydenotolla on merkitystä.","Varje kundkontakt räknas.","Every customer conversation matters.")}</h3>
+              <svg viewBox="0 0 320 110" preserveAspectRatio="none" role="img" aria-label="${t("Nouseva havainnollistava käyrä","Illustrativ stigande kurva","Illustrative upward trend")}"><path class="rg-spark-bg" d="M0 90 H320 M0 50 H320 M0 10 H320"/><path class="rg-spark-fill" d="M 0 99 L 38 89 L 72 95 L 104 75 L 141 70 L 174 57 L 201 60 L 240 42 L 273 27 L 320 12 L 320 110 L 0 110 Z"/><path class="rg-spark-line" d="M 0 99 L 38 89 L 72 95 L 104 75 L 141 70 L 174 57 L 201 60 L 240 42 L 273 27 L 320 12"/></svg>
+              <p>${t("Nopeampi vastaus voi auttaa vähentämään menetettyjä yhteydenottoja.","Snabbare svar kan hjälpa till att minska missade förfrågningar.","Faster replies may help reduce missed enquiries.")}</p>
+            </div>
+            <div class="rg-side-note"><span class="rg-side-note-icon" aria-hidden="true">◎</span><div><b>${t("Ei toteutunutta asiakasdataa","Inte faktiska kundresultat","Not actual customer results")}</b><span>${t("Kaaviot näyttävät kuvitteellisen kehityspolun, eivät Respondon todistettua vaikutusta.","Diagrammen visar ett fiktivt scenario, inte en bevisad effekt av Respondo.","Charts show hypothetical growth, not measured Respondo results.")}</span></div></div>
+          </aside>
+        </div>
+        <div class="rg-table-area">
+          <div class="rg-table-title">${t("KEHITYS KUUKAUSITTAIN","UTVECKLING PER MÅNAD","MONTH-BY-MONTH SCENARIO")}</div>
+          <div class="rg-table-scroll"><table><thead><tr><th>${t("Mittari","Mått","Metric")}</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead>
+            <tbody><tr><th>${t("Myynti-indeksi","Försäljningsindex","Sales index")}</th><td>100</td><td>108</td><td>119</td><td>128</td><td>140</td><td>152</td></tr>
+            <tr><th>${t("Muutos lähtötasosta","Förändring från start","Change from baseline")}</th><td>0 %</td><td>+8 %</td><td>+19 %</td><td>+28 %</td><td>+40 %</td><td class="rg-positive">+52 % ↗</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+      <p class="rg-growth-disclaimer">${t("Havainnollistava, itse laadittu skenaario. Prosentit eivät perustu asiakkaiden mitattuihin tuloksiin eikä niitä pidä tulkita myyntiennusteeksi tai tuotteen lupaamaksi kasvuksi.","Ett illustrativt, konstruerat scenario. Procentsiffrorna baseras inte på uppmätta kundresultat och är ingen försäljningsprognos eller garanterad tillväxt.","Illustrative, constructed scenario. Percentages are not based on measured customer outcomes and are not a sales forecast or a growth guarantee.")}</p>
+    </div>
+  </section>
+
   ${pricingMarkup}
   <section class="apple-bottom-cta"><p>${t('Valmis vastaamaan ensimmäiseen kysymykseen?','Redo att svara på den första frågan?','Ready for your first conversation?')}</p><a class="apple-pill apple-pill-primary" href="/tilaus">${t('Aloita ilmainen kokeilu','Börja gratis provperiod','Start your free trial')}</a><a class="apple-buyer-guide-link" href="/asiakaspalvelubotti?lang=${lang}">${t('Mikä on asiakaspalvelijabotti?','Så fungerar en AI-kundservicebot','How an AI customer service chatbot works')} →</a></section>`;
 }
