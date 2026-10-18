@@ -41,7 +41,7 @@
   function setup() {
     pendingMount = false;
     const next = app.querySelector('.apple-home-page .rs-spiral-section');
-    if (next === section && !(section && !section.isConnected)) return;
+    if (next === section && section && section.isConnected && section.classList.contains('rs-enhanced') === !safeStaticMode()) return;
     teardown();
     if (!next) return;
     section = next;
