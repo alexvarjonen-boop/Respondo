@@ -2500,19 +2500,18 @@ function pricingSection() {
     const yearlyTotal=yearlyMonthly*12;
     const code=tier==='Advanced'?'basic':tier==='Premium'?'advanced':'business';
     return `
-    <article class="price-card ${featured?'featured':''}">
+    <article class="price-card ${featured?'featured':''}" data-plan-code="${code}" data-plan-name="${tier}" data-monthly-price="${monthly}" data-yearly-price="${yearlyMonthly}">
       <div class="price-top"><span>${tier.toUpperCase()}</span><span class="${featured?'save':''}">${featured?appText('SUOSITUIN','POPULÄRAST','MOST POPULAR'):appText('3 PÄIVÄÄ ILMAISEKSI','3 DAGAR GRATIS','3 DAYS FREE')}</span></div>
-      <h3>${tier}</h3>
-      <div class="pricevalue">${monthly.toLocaleString(appLocale(),{minimumFractionDigits:0,maximumFractionDigits:2})} €<small>${appText('/kk','/mån','/month')}</small></div>
-      <div class="plan-yearly-price"><span>${appText('Vuositilauksella','Med årsabonnemang','With annual billing')} <b>${yearlyMonthly} €${appText('/kk','/mån','/month')}</b></span><small>${appText(`Säästät 120 €/vuosi · Veloitus ${yearlyTotal} € kerran vuodessa`,`Spara 120 €/år · ${yearlyTotal} € debiteras årsvis`,`Save €120/year · billed €${yearlyTotal} once per year`)}</small></div>
+      <h3><a data-plan-signup href="/tilaus?plan=${code}_monthly&lang=${currentLang()}">${tier}</a></h3>
+      <div class="pricevalue" aria-live="polite"><span class="price-amount">${monthly.toLocaleString(appLocale(),{minimumFractionDigits:0,maximumFractionDigits:2})}</span> €<small>${appText('/kk','/mån','/month')}</small></div>
+      <div class="price-billing-detail"><span class="price-monthly-copy">${appText('Laskutus kuukausittain. Ei vuosisitoutumista.','Debiteras månadsvis. Ingen årsbindning.','Billed monthly. No annual commitment.')}</span><span class="price-yearly-copy" hidden>${appText(`Veloitus ${yearlyTotal} € kerran vuodessa. Säästät 120 €/vuosi.`,`Debiteras ${yearlyTotal} € en gång per år. Spara 120 €/år.`,`Billed €${yearlyTotal} once a year. Save €120/year.`)}</span></div>
       <div class="price-rule"></div>
       <ul>
         ${features.map((x)=>`<li>${x}</li>`).join('')}
         <li><b>${seats} ${appText('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</b></li>
       </ul>
       <div class="price-actions">
-        <a class="btn price-btn" href="/tilaus?plan=${code}_monthly">${appText('Kuukausitilaus','Månadsabonnemang','Monthly plan')} · ${monthly} €</a>
-        <a class="btn price-btn price-btn-yearly" href="/tilaus?plan=${code}_yearly">${appText('Vuositilaus','Årsabonnemang','Annual plan')} · ${yearlyMonthly} €${appText('/kk','/mån','/month')}</a>
+        <a class="btn price-btn" data-plan-signup href="/tilaus?plan=${code}_monthly&lang=${currentLang()}">${appText('Valitse','Välj','Choose')} ${tier} <span aria-hidden="true">→</span></a>
       </div>
     </article>`;
   };
@@ -2522,6 +2521,10 @@ function pricingSection() {
       <div class="split-head">
         <h2>${appText('Valitse yrityksellesi sopiva taso.','Välj rätt nivå för ditt företag.','Choose the right plan for your business.')}</h2>
         <p>${appText('Kaikissa tilauksissa on 3 päivän maksuton kokeilu. Vuositilauksella säästät 10 €/kk eli 120 € vuodessa.','Alla abonnemang har 3 dagars gratis provperiod. Årsabonnemang sparar 10 €/mån, totalt 120 €/år.','All plans include a 3-day free trial. Save €10/month (€120/year) with annual billing.')}</p>
+      </div>
+      <div class="pricing-billing-switch" role="group" aria-label="${appText('Laskutuskausi','Faktureringsperiod','Billing period')}">
+        <button type="button" data-billing-option="monthly" aria-pressed="true">${appText('Kuukausittain','Månadsvis','Monthly')}</button>
+        <button type="button" data-billing-option="yearly" aria-pressed="false">${appText('Vuosittain','Årsvis','Annually')} <span class="billing-saving">${appText('Säästä 120 €/vuosi','Spara 120 €/år','Save €120/year')}</span></button>
       </div>
       <div class="pricing-wrap">
         ${card('Advanced',49,2,[
@@ -2549,6 +2552,41 @@ function pricingSection() {
       </div>
     </div>
   </section>`;
+}
+
+
+
+function bindPricingBillingToggle() {
+  const section = document.querySelector('#app .pricing-section');
+  if (!section) return;
+  const options = [...section.querySelectorAll('[data-billing-option]')];
+  const setBilling = (period) => {
+    const yearly = period === 'yearly';
+    for (const option of options) {
+      option.setAttribute('aria-pressed', String(option.dataset.billingOption === period));
+    }
+    for (const card of section.querySelectorAll('.price-card[data-plan-code]')) {
+      const price = card.querySelector('.price-amount');
+      if (price) price.textContent = yearly ? card.dataset.yearlyPrice : card.dataset.monthlyPrice;
+      const monthlyText = card.querySelector('.price-monthly-copy');
+      const yearlyText = card.querySelector('.price-yearly-copy');
+      if (monthlyText) monthlyText.hidden = yearly;
+      if (yearlyText) yearlyText.hidden = !yearly;
+      for (const link of card.querySelectorAll('[data-plan-signup]')) {
+        const href = new URL(link.getAttribute('href'), location.origin);
+        href.searchParams.set('plan', card.dataset.planCode + '_' + period);
+        href.searchParams.set('lang', currentLang());
+        link.setAttribute('href', href.pathname + href.search);
+        link.setAttribute('aria-label', appText('Valitse', 'Välj', 'Choose') + ' ' + card.dataset.planName + ' — ' + (yearly
+          ? appText('vuositilaus', 'årsabonnemang', 'annual plan')
+          : appText('kuukausitilaus', 'månadsabonnemang', 'monthly plan')));
+      }
+    }
+  };
+  for (const option of options) {
+    option.addEventListener('click', () => setBilling(option.dataset.billingOption));
+  }
+  setBilling('monthly');
 }
 
 
@@ -4922,6 +4960,7 @@ async function route() {
   applyLanguage();
   bindLanguageSwitch();
   bindPublicMenu();
+  bindPricingBillingToggle();
   if (path === '/') {
     bindHomeHeroActions();
     bindHomeScrollTrial();
