@@ -94,3 +94,135 @@ body.cx-arrived .cx-nav-veil{visibility:hidden;transition:visibility 0s .75s}
  #app .cx-hero-fx .cx-glow,#app .cx-hero-fx .cx-ring,#app .cx-hero-fx .cx-grid{transform:none!important;translate:none!important;scale:1!important}
  #app .cx-public-immersive main [data-cx-reveal]{opacity:1!important;filter:none!important;translate:none!important;transition:none!important}
 }
+
+
+/* V2 / Bird flight: official Respondo arrow -> bird launched from its tip -> edge
+   impact -> navigation. A single animation, no skip link and no new page section. */
+.cx-nav-veil{background:transparent}
+.cx-nav-veil::before{inset:0;transform:translate3d(105%,0,0);background:linear-gradient(115deg,#020306 10%,#10192c 58%,#020306);box-shadow:-50px 0 100px rgba(35,101,219,.2)}
+.cx-nav-veil::after{inset:0;background:radial-gradient(ellipse at 51% 44%,rgba(37,75,125,.3),transparent 60%),#030408;transform:translate3d(108%,0,0)}
+.cx-nav-veil-inner{z-index:3;flex-direction:column;gap:0;transform:translate3d(0,24px,0) scale(.72)}
+.cx-arrow-stage{position:relative;display:grid;place-items:center;width:clamp(124px,15.5vw,174px);height:clamp(124px,15.5vw,174px);isolation:isolate}
+.cx-arrow-stage .cx-arrow-halo{position:absolute;inset:-44%;border-radius:50%;background:radial-gradient(circle,rgba(98,157,250,.28),rgba(90,155,245,.07) 30%,transparent 65%);filter:blur(19px);pointer-events:none}
+.cx-arrow-stage .cx-arrow-orbit{position:absolute;inset:-30%;border:1px solid rgba(190,226,255,.23);border-radius:50%;box-shadow:0 0 0 28px rgba(160,210,255,.023),0 0 0 77px rgba(160,210,255,.02);transform:rotateX(55deg) rotate(-22deg);pointer-events:none}
+.cx-nav-veil-mark{width:100%;height:100%;border-radius:27px;background:#000;box-shadow:0 26px 75px rgba(0,0,0,.5),0 0 30px rgba(153,206,255,.10);position:relative;z-index:2}
+.cx-nav-veil-word{margin-top:24px;padding-left:.18em;font-size:clamp(19px,2.6vw,30px);font-weight:720;letter-spacing:.19em;white-space:nowrap;line-height:1.2}
+.cx-transition-stars{position:absolute;inset:0;z-index:2;opacity:0;pointer-events:none;background:
+  radial-gradient(circle at 12% 16%,rgba(169,210,255,.4) 0 1px,transparent 2px),
+  radial-gradient(circle at 70% 31%,rgba(169,210,255,.3) 0 1px,transparent 2px),
+  radial-gradient(circle at 20% 78%,rgba(169,210,255,.33) 0 1px,transparent 2px),
+  radial-gradient(circle at 85% 65%,rgba(169,210,255,.25) 0 1px,transparent 2px);
+  background-size:145px 155px,207px 198px,250px 230px,178px 170px;
+  transform:scale(1.12)}
+.cx-bird-flight{position:absolute;z-index:7;left:calc(50% + 75px);top:calc(50% - 65px);width:clamp(63px,6vw,95px);aspect-ratio:1.4;opacity:0;pointer-events:none;will-change:transform,opacity;transform-origin:12% 50%;filter:drop-shadow(0 0 19px rgba(195,224,255,.55))}
+.cx-bird-svg{position:relative;z-index:3;width:100%;height:100%;display:block;overflow:visible}
+.cx-bird-wing-upper,.cx-bird-wing-lower{transform-box:fill-box;transform-origin:65% 85%;will-change:transform}
+.cx-bird-wing-lower{transform-origin:70% 10%}
+.cx-bird-tail{opacity:.85}
+.cx-trail{position:absolute;z-index:1;top:46%;right:47%;height:2px;width:160px;border-radius:20px;background:linear-gradient(90deg,transparent,rgba(93,157,245,.36),#fff);filter:drop-shadow(0 0 12px rgba(173,221,255,.8));transform-origin:100% 50%;opacity:0}
+.cx-trail-two{width:130px;top:60%;transform:rotate(13deg)}
+.cx-trail-three{width:190px;top:26%;transform:rotate(-11deg)}
+.cx-edge-flash{position:absolute;z-index:8;right:-24vw;top:-20vh;width:68vw;height:140vh;background:radial-gradient(ellipse at 100% 39%,rgba(255,255,255,.88),rgba(135,199,255,.25) 17%,transparent 59%);pointer-events:none;opacity:0;filter:blur(11px);will-change:opacity,transform}
+body.cx-leaving .cx-nav-veil::before,body.cx-leaving .cx-nav-veil::after{transform:translate3d(0,0,0);transition:transform .29s cubic-bezier(.74,.01,.22,1)}
+body.cx-leaving .cx-nav-veil::after{transition-delay:.055s;transition-duration:.27s}
+body.cx-leaving .cx-nav-veil-inner{transform:translate3d(0,0,0) scale(1);opacity:1;transition:transform .40s .15s cubic-bezier(.16,.82,.23,1),opacity .24s .14s}
+body.cx-leaving .cx-arrow-stage .cx-arrow-orbit{animation:cx-orbit-ignite 1.14s .21s cubic-bezier(.13,.7,.2,1) both}
+body.cx-leaving .cx-arrow-stage .cx-arrow-halo{animation:cx-halo-pulse 1.06s .20s ease-out both}
+body.cx-leaving .cx-transition-stars{animation:cx-star-field .95s .20s ease-out both}
+body.cx-leaving .cx-bird-flight{animation:cx-bird-launch .98s .36s cubic-bezier(.34,.05,.5,1) both}
+body.cx-leaving .cx-bird-wing-upper{animation:cx-wing-up .17s .37s ease-in-out infinite alternate}
+body.cx-leaving .cx-bird-wing-lower{animation:cx-wing-down .17s .37s ease-in-out infinite alternate}
+body.cx-leaving .cx-trail{animation:cx-flight-trail .48s .49s ease-out both}
+body.cx-leaving .cx-trail-two{animation-delay:.56s}
+body.cx-leaving .cx-trail-three{animation-delay:.67s}
+body.cx-leaving .cx-edge-flash{animation:cx-edge-impact .33s 1.12s ease-out both}
+body.cx-arriving .cx-nav-veil-inner{opacity:0;transform:scale(.92)}
+body.cx-arriving .cx-bird-flight{opacity:0;animation:none}
+body.cx-arriving .cx-edge-flash{opacity:0;animation:none}
+body.cx-arriving .cx-transition-stars{opacity:.1}
+body.cx-arrived .cx-nav-veil-inner{opacity:0;transform:translate3d(-30px,0,0) scale(.92);transition:opacity .18s ease,transform .3s ease}
+body.cx-arrived .cx-nav-veil::before,body.cx-arrived .cx-nav-veil::after{transform:translate3d(-110%,0,0);transition:transform .64s cubic-bezier(.74,.02,.18,1)}
+body.cx-arrived .cx-nav-veil::after{transition-delay:.04s}
+body.cx-arrived .cx-nav-veil{visibility:hidden;transition:visibility 0s .74s}
+@keyframes cx-bird-launch{
+  0%{opacity:0;transform:translate3d(-62px,52px,0) scale(.1) rotate(-36deg)}
+  14%{opacity:1;transform:translate3d(-17px,12px,0) scale(.67) rotate(-16deg)}
+  35%{opacity:1;transform:translate3d(12vw,-4vh,0) scale(1.03) rotate(-12deg)}
+  75%{opacity:1;transform:translate3d(42vw,-19vh,0) scale(.84) rotate(-11deg)}
+  100%{opacity:0;transform:translate3d(calc(60vw + 130px),-27vh,0) scale(.62) rotate(-6deg)}
+}
+@keyframes cx-wing-up{from{transform:rotate(-23deg) scaleY(.55)}to{transform:rotate(18deg) scaleY(1.35)}}
+@keyframes cx-wing-down{from{transform:rotate(21deg) scaleY(1.18)}to{transform:rotate(-22deg) scaleY(.40)}}
+@keyframes cx-flight-trail{0%{opacity:0;transform:scaleX(.08)}30%{opacity:.76;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1.65)}}
+@keyframes cx-edge-impact{0%{opacity:0;transform:scale(.4)}30%{opacity:1}100%{opacity:0;transform:scale(1.45)}}
+@keyframes cx-orbit-ignite{0%{opacity:0;transform:rotateX(55deg) rotate(-70deg) scale(1.45)}48%{opacity:.9}100%{opacity:.25;transform:rotateX(55deg) rotate(120deg) scale(.83)}}
+@keyframes cx-halo-pulse{0%{opacity:0;transform:scale(.7)}40%{opacity:.9}100%{opacity:.25;transform:scale(1.6)}}
+@keyframes cx-star-field{0%{opacity:0;transform:scale(1.15)}40%{opacity:.5}100%{opacity:.07;transform:scale(1)}}
+
+/* V2 / Stage-scale scenes: multi-planar spotlights, rotating space-rings and
+   stronger scroll-choreographed cards instead of flat text-on-white sections. */
+#app .cx-public-immersive main [data-cx-section]{--cx-scene-rotate:-28deg;--cx-scene-grid-scale:.8;--cx-scene-lift:80px}
+#app .cx-public-immersive main [data-cx-section]>.cx-scene-light{width:100%;height:min(67vw,620px);left:0;right:0;overflow:hidden;opacity:var(--cx-scene-opacity,.25);transform:translate3d(0,var(--cx-scene-lift,0px),0)}
+#app .cx-public-immersive main .cx-scene-grid{position:absolute;display:block;inset:-35%;background-image:linear-gradient(rgba(72,124,219,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(72,124,219,.15) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(ellipse at 50% 50%,#000,transparent 66%);transform:perspective(900px) rotateX(61deg) rotateZ(var(--cx-scene-rotate,-28deg)) scale(var(--cx-scene-grid-scale,1));opacity:.43;transform-origin:50% 50%}
+#app .cx-public-immersive main .cx-scene-arc{position:absolute;display:block;left:50%;top:15%;width:min(56vw,540px);aspect-ratio:1;border-radius:50%;border:1px solid rgba(73,146,250,.45);box-shadow:0 0 0 42px rgba(92,155,248,.045),0 0 0 92px rgba(92,155,248,.03);transform:translateX(-50%) perspective(950px) rotateX(60deg) rotateZ(var(--cx-scene-rotate,0deg))}
+#app .cx-hero-fx .cx-light-shaft{position:absolute;top:-30%;left:40%;width:clamp(140px,20vw,340px);height:160%;background:linear-gradient(90deg,transparent,rgba(91,160,255,.14),transparent);filter:blur(20px);transform:translateX(var(--cx-camera-shift,0px)) rotate(-25deg) scaleX(var(--cx-camera-scale,1))}
+#app .cx-hero-fx .cx-camera-floor{position:absolute;left:-20%;right:-20%;bottom:-58%;height:105%;border-radius:50%;background:
+ radial-gradient(ellipse at 50% 35%,rgba(107,161,255,.20),transparent 57%),
+ repeating-conic-gradient(from 0deg at 50% 50%,rgba(132,178,245,.18) 0 1deg,transparent 1deg 16deg);
+ mask-image:radial-gradient(ellipse at 50% 45%,#000,transparent 66%);
+ transform:perspective(850px) rotateX(68deg) rotateZ(var(--cx-camera-rotate,-12deg)) scale(var(--cx-camera-scale,1.0))}
+#app .cx-hero-fx .cx-pulse-disc{position:absolute;right:5%;top:9%;width:min(36vw,400px);aspect-ratio:1;border-radius:50%;border:1px solid rgba(151,208,255,.38);opacity:var(--cx-pulse-opacity,.24);box-shadow:inset 0 0 55px rgba(89,148,241,.12),0 0 0 23px rgba(132,178,245,.035),0 0 0 67px rgba(103,155,245,.025);transform:perspective(900px) rotateY(34deg) rotateZ(var(--cx-ring-spin,0deg)) scale(var(--cx-pulse-size,.5))}
+#app .cx-public-immersive main .cx-depth-card{transform:translate3d(var(--cx-enter-x,0px),var(--cx-enter-y,0px),0) rotate(var(--cx-enter-roll,0deg));opacity:var(--cx-card-opacity,1);transition:box-shadow .3s ease,transform .15s ease-out,opacity .13s ease-out,scale .14s ease-out;transform-origin:50% 50%;will-change:transform,opacity}
+#app .cx-public-immersive main .cx-depth-card:is(:hover,:focus-within){transform:translate3d(0,0,0) rotate(0deg);opacity:1;scale:1!important;rotate:none!important}
+#app .cx-public-immersive :is(.features-top10,.features-directory,.audience-section,.pricing-section,.seo-landing-section,.r-brand-flow){background-blend-mode:normal}
+#app .cx-public-immersive .features-hero{min-height:clamp(480px,75vh,850px);display:flex;align-items:center;background:radial-gradient(ellipse at 73% 32%,rgba(66,107,182,.27),transparent 58%),linear-gradient(130deg,#080910,#16213b)!important;color:#fff}
+#app .cx-public-immersive .features-hero h1,#app .cx-public-immersive .features-hero p{color:#fff}
+#app .cx-public-immersive .features-hero .features-hero-inner{position:relative;z-index:1}
+#app .cx-public-immersive .features-top10-grid{transform-style:preserve-3d}
+#app .cx-public-immersive .feature-item{background:linear-gradient(145deg,#fff,#eff5ff);box-shadow:0 25px 64px rgba(18,44,88,.10)}
+#app .cx-public-immersive .r-brand-flow{padding-top:clamp(115px,14vw,200px);padding-bottom:clamp(115px,14vw,200px)}
+#app .cx-public-immersive .r-brand-flow-steps>div{border-color:rgba(146,193,255,.3)!important;background:linear-gradient(145deg,rgba(112,160,245,.18),rgba(255,255,255,.025))!important;box-shadow:inset 0 1px rgba(255,255,255,.18),0 30px 65px rgba(0,0,0,.18)}
+#app .cx-public-immersive .audience-hero{min-height:clamp(450px,74vh,830px);display:flex;align-items:center;background:radial-gradient(ellipse at 75% 45%,rgba(96,147,241,.26),transparent 56%),linear-gradient(125deg,#07101f,#111a2d)!important;color:#fff}
+#app .cx-public-immersive .audience-hero :is(h1,h1 em){color:#fff}
+#app .cx-public-immersive .audience-hero p{color:#bac8df}
+#app .cx-public-immersive .audience-hero .audience-overline{color:#9dc8ff}
+#app .cx-public-immersive .audience-grid{perspective:1600px}
+#app .cx-public-immersive .audience-card{border-color:#d9e5f8;background:linear-gradient(140deg,#fff 18%,#edf4ff 100%);min-height:clamp(290px,27vw,390px)}
+#app .cx-public-immersive .r-brand-pricing-banner{min-height:clamp(350px,62vh,660px);display:flex;align-items:center}
+#app .cx-public-immersive .pricing-wrap{perspective:1650px}
+#app .cx-public-immersive .pricing-wrap .price-card{border-radius:33px;box-shadow:0 30px 74px rgba(13,38,79,.13);backface-visibility:hidden}
+#app .cx-public-immersive .pricing-wrap .price-card.featured{box-shadow:0 39px 95px rgba(5,22,63,.33)}
+#app .cx-public-immersive .r-brand-contact-banner{min-height:clamp(330px,65vh,650px);align-items:center;background:radial-gradient(ellipse at 79% 43%,rgba(71,139,255,.33),transparent 60%),#050810}
+#app .cx-public-immersive .r-brand-contact-banner-mark img{filter:drop-shadow(0 15px 45px rgba(139,202,255,.24))}
+#app .cx-public-immersive .seo-landing-hero{min-height:clamp(420px,65vh,760px);display:flex;align-items:center;background:radial-gradient(ellipse at 77% 20%,rgba(90,140,235,.2),transparent 60%),linear-gradient(135deg,#090b13,#18243c)!important;color:#f5f8ff}
+#app .cx-public-immersive .seo-landing-hero h1,#app .cx-public-immersive .seo-landing-hero p{color:#f5f8ff}
+#app .cx-public-immersive .seo-landing-hero :is(.seo-landing-overline,.seo-landing-kicker){color:#9bbfff}
+#app .cx-public-immersive .seo-landing-card{border-radius:29px}
+#app .cx-public-immersive .global-guide-hero{min-height:clamp(350px,57vh,640px);display:flex;flex-direction:column;justify-content:center}
+#app .cx-public-immersive .global-guide-card{border-radius:30px;box-shadow:0 22px 70px rgba(15,48,99,.10)}
+.cx-chapter-dial{position:fixed;z-index:850;top:50%;right:clamp(17px,2.6vw,48px);transform:translateY(-50%);display:flex;flex-direction:column;gap:15px;align-items:flex-end;pointer-events:none;color:#536b90;font-size:11px;letter-spacing:.16em;text-shadow:0 1px 8px rgba(255,255,255,.8)}
+.cx-dial-name{font-size:9px;letter-spacing:.24em;font-weight:750}
+.cx-dial-count{font-size:12px;font-weight:730;font-variant-numeric:tabular-nums}
+.cx-dial-track{display:block;position:relative;width:2px;height:clamp(70px,12vh,120px);background:rgba(85,134,210,.2);border-radius:6px}
+.cx-dial-track>i{display:block;width:100%;height:var(--cx-dial-progress,0%);border-radius:8px;background:#5a98ec;box-shadow:0 0 17px rgba(64,131,239,.65);transition:height .25s ease}
+@media(max-width:990px){.cx-chapter-dial{display:none}}
+@media(max-width:760px){
+ .cx-nav-veil-inner{transform:translateY(15px) scale(.8)}
+ .cx-arrow-stage{width:120px;height:120px}
+ .cx-nav-veil-mark{border-radius:20px}
+ .cx-nav-veil-word{font-size:19px;letter-spacing:.15em;margin-top:19px}
+ .cx-bird-flight{left:calc(50% + 53px);top:calc(50% - 35px);width:61px}
+ .cx-trail{width:95px}.cx-trail-two{width:74px}.cx-trail-three{width:118px}
+ #app .cx-public-immersive .features-hero,#app .cx-public-immersive .audience-hero{min-height:520px}
+ #app .cx-public-immersive .r-brand-contact-banner{min-height:335px}
+ #app .cx-public-immersive .seo-landing-hero{min-height:420px}
+ #app .cx-public-immersive main .cx-depth-card{transform:translate3d(var(--cx-enter-x,0px),var(--cx-enter-y,0px),0) rotate(0deg);will-change:auto}
+ #app .cx-public-immersive main [data-cx-section]>.cx-scene-light{height:290px;opacity:.25;transform:none}
+ #app .cx-hero-fx .cx-camera-floor{opacity:.45}
+}
+@media(prefers-reduced-motion:reduce){
+ .cx-bird-flight,.cx-edge-flash,.cx-transition-stars,.cx-chapter-dial{display:none!important}
+ #app .cx-public-immersive main .cx-depth-card{transform:none!important;opacity:1!important}
+ #app .cx-public-immersive main [data-cx-section]>.cx-scene-light{display:none!important}
+ #app .cx-public-immersive .features-hero,#app .cx-public-immersive .audience-hero,#app .cx-public-immersive .seo-landing-hero{min-height:0}
+}
