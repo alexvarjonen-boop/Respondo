@@ -40,7 +40,8 @@ test('HTML and imported navigation have fresh cache keys for desktop branding',(
   assert.ok(sources.some(src=>src.startsWith('/app.js?v=')&&src.includes(version)));
   assert.ok(sources.some(src=>src.startsWith('/effects.js?v=')&&src.includes(version)));
   assert.ok(!app.includes('publicFooterNavigationMarkup(appText,currentLang())'));
-  assert.ok(app.includes('data-open-site-assistant'));
+  assert.ok(app.includes('class="public-header-login"'));
+  assert.ok(!app.includes('footer-ask-respondo'));
   assert.ok(server.includes("res.setHeader('Cache-Control','no-store')"));
   assert.ok(server.includes("filePath.endsWith('apple-nav.js')"));
 });
