@@ -18,7 +18,7 @@
 .rl-intro-caption{margin:12px 0 0;color:#a7b1c6;font-size:clamp(10px,1.8vw,13px);font-weight:550;letter-spacing:.07em;line-height:1.65;opacity:0;transform:translateY(12px);animation:rl-copy-in .7s 1.92s ease-out forwards}
 .rl-intro-lines{position:absolute;inset:-20%;pointer-events:none;opacity:0;background:repeating-conic-gradient(from 23deg at 50% 50%,rgba(159,195,255,.11) 0deg,transparent 1.5deg,transparent 23deg);mask-image:radial-gradient(circle,transparent 14%,#000 33%,transparent 66%);animation:rl-flare 1.0s 1.12s ease-out both}
 
-@media (prefers-reduced-motion: reduce) { .rl-intro { display:none!important } }
+@media(prefers-reduced-motion:reduce) { .rl-intro { display:none!important } }
 @keyframes rl-light{0%{opacity:0;transform:scale(1.4)}30%{opacity:1}100%{opacity:1;transform:scale(1)}}
 @keyframes rl-gridflash{0%,30%{opacity:0}55%{opacity:.4}100%{opacity:0}}
 @keyframes rl-rings{0%{opacity:0;transform:scale(1.55) rotate(-28deg)}36%{opacity:1}80%{opacity:.7}100%{opacity:.15;transform:scale(.87) rotate(28deg)}}
