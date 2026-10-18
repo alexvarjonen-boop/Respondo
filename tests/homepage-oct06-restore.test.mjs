@@ -20,7 +20,8 @@ test('Apple-inspired homepage uses the chatbot instead of a page directory',()=>
   assert.match(index,/apple-home\.css\?v=20261008-apple-production-header-contrast-v2/);
   assert.match(index,/app\.js\?v=20261008-apple-production-v1/);
   assert.doesNotMatch(app,/publicFooterNavigationMarkup/);
-  assert.match(app,/data-open-site-assistant/);
+  assert.doesNotMatch(app,/data-open-site-assistant/);
+  assert.match(app,/class="public-header-login"/);
   assert.doesNotMatch(app,/publicMenuMarkup\(appText,currentLang\(\)\)/);
   assert.doesNotMatch(app,/bindPublicMenu\(\)/);
 });
@@ -31,6 +32,6 @@ test('mobile header keeps branding and flags; chat opens from footer',()=>{
   assert.match(css,/body\.public-nav-active \.apple-home-page \.nav\s*\{[^}]*background:#f5f5f7!important/s);
   assert.match(css,/\.apple-home-page \.nav \.brand-word\s*\{[^}]*color:#1d1d1f!important/s);
   assert.match(modern,/\.nav \.navactions/);
-  assert.match(modern,/footer-ask-respondo/);
+  assert.match(modern,/\.public-header-login/);
   assert.doesNotMatch(app.slice(app.indexOf('function nav()'),app.indexOf('function bindHomeHeroActions()')),/apple-menu-toggle/);
 });
