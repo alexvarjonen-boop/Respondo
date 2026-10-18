@@ -9617,3 +9617,44 @@ body.deletion-modal-open{overflow:hidden!important}
   #app .dashboard-premium-shell .stat-contact-shortcut{transition:none}
   #app .dashboard-premium-shell .stat-contact-shortcut:hover{transform:none}
 }
+
+/* Shared homepage + /hinnat plan selection — October 2026. No change to existing theme. */
+#app .pricing-section .pricing-billing-switch{
+  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  width:fit-content;max-width:100%;margin:6px auto 32px;padding:5px;gap:4px;
+  border:1px solid #e1e3e8;border-radius:999px;background:#f4f5f7;
+}
+#app .pricing-section .pricing-period-option{
+  appearance:none;-webkit-appearance:none;border:0;border-radius:999px;
+  padding:13px 18px;min-height:46px;background:transparent;color:#555d69;
+  font:inherit;font-size:13px;font-weight:730;cursor:pointer;
+  transition:background .18s ease,color .18s ease,box-shadow .18s ease;
+}
+#app .pricing-section .pricing-period-option.is-active{
+  background:#17181c;color:#fff;box-shadow:0 2px 12px rgba(17,17,23,.13);
+}
+#app .pricing-section .pricing-period-option:focus-visible{outline:3px solid #0071e3;outline-offset:3px}
+#app .pricing-section .pricing-period-save{
+  display:inline-block;margin-left:7px;font-size:11px;font-weight:750;color:#218457;
+}
+#app .pricing-section .pricing-period-option.is-active .pricing-period-save{color:#b4ebd0}
+#app .pricing-section .pricing-choice-card .pricing-billing-note{
+  display:block!important;min-height:42px;margin:14px 0 4px;
+  color:#596575!important;font-size:12px;line-height:1.55;
+}
+#app .pricing-section .pricing-choice-card .pricing-select-btn{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  border-radius:999px!important;background:#17181c!important;
+  color:#fff!important;font-weight:750;
+}
+#app .pricing-section .pricing-choice-card .pricing-select-btn:hover{background:#30343e!important}
+#app .pricing-section .pricing-choice-card .pricevalue{white-space:nowrap}
+@media(max-width:760px){
+  #app .pricing-section .pricing-billing-switch{width:min(100%,420px);margin-bottom:23px}
+  #app .pricing-section .pricing-period-option{flex:1 1 auto;padding:11px 12px;font-size:12px}
+  #app .pricing-section .pricing-period-save{display:block;margin:3px 0 0;font-size:10px}
+  #app .pricing-section .pricing-choice-card .pricing-billing-note{min-height:0}
+}
+@media(prefers-reduced-motion:reduce){
+  #app .pricing-section .pricing-period-option{transition:none}
+}

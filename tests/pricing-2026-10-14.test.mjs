@@ -46,7 +46,7 @@ test('both new signups and added workspaces accept annual billing, preserving or
   assert.match(app, /business_yearly/);
   assert.match(app, /const yearlyMonthly=monthly-10/);
   assert.match(app, /const yearlyTotal=yearlyMonthly\*12/);
-  assert.match(app, /\/tilaus\?plan=\$\{code\}_yearly/);
+  assert.match(app, /plan:card\.dataset\.planCode \+ \(yearly \? '_yearly' : '_monthly'\)/);
 });
 
 test('Stripe checkout validates the year-long billing interval, exact price and Product names', () => {
@@ -63,7 +63,7 @@ test('pricing pages and search structured data show three monthly and three annu
   for (const [, name, monthly] of plans) {
     assert.ok(pricing.includes("card('"+name+"',"+monthly+","), 'missing '+name);
   }
-  assert.match(pricing, /Vuositilaus/);
+  assert.match(pricing, /Vuosittain/);
   assert.match(pricing, /Säästät 120 €\/vuosi/);
   assert.equal((html.match(/"@type":"Offer"/g) || []).length, 6);
   for (const total of ['49.00','129.00','149.00','468.00','1428.00','1668.00']) {
