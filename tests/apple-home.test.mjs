@@ -13,7 +13,7 @@ for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag
   test('homepage renders three primary feature cards and seven helix cards in '+lang,()=>{
     const html=appleHomeMarkup(t,lang,145);
     assert.equal((html.match(/class="apple-feature-card /g)||[]).length,3);
-    assert.equal((html.match(/data-rs-card\\b/g)||[]).length,7);
+    assert.equal((html.match(/data-rs-card\b/g)||[]).length,7);
     assert.ok(html.includes('class="apple-hero rs-spiral-section"'));
     assert.ok(html.includes('class="rs-axis"'));
     assert.ok(html.includes('data-respondo-hero-cta="signup"'));
