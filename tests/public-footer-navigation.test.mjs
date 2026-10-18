@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { publicFooterNavigationMarkup } from '../public/apple-nav.js';
+import { respondoSiteNavigationActions } from '../respondo-site-navigation.mjs';
 import { spiralHeroMarkup } from '../public/spiral-hero.js';
 
 const read = path => readFileSync(new URL('../public/'+path, import.meta.url), 'utf8');
@@ -10,15 +10,23 @@ const nav=app.slice(app.indexOf('function nav()'),app.indexOf('// The homepage C
 const footer=app.slice(app.indexOf('function footer()'),app.indexOf('function heroVisual()',app.indexOf('function footer()')));
 for (const [lang,idx] of [['fi',0],['sv',1],['en',2]]) {
   const tr=(...v)=>v[idx];
-  test('public nav links move into the footer for '+lang,()=>{
-    const html=publicFooterNavigationMarkup(tr,lang);
-    const expected=['/','/asiakaspalvelubotti','/ominaisuudet','/assistant',
+  test('site pages move into Respondo assistant for '+lang,()=>{
+    assert.doesNotMatch(footer,/publicFooterNavigationMarkup|footer-site-nav|footer-site-links/);
+    assert.match(footer,/data-open-site-assistant/);
+    assert.match(footer,/cookie-settings-link/);
+    const paths=['/','/asiakaspalvelubotti','/ominaisuudet','/assistant',
       '/verkkokauppa-chatbot','/ajanvaraus-chatbot','/hinnat',
       '/tietoturva','/yhteystiedot','/kirjaudu'];
-    assert.equal((html.match(/<a href=/g)||[]).length,10);
-    for(const route of expected)assert.ok(html.includes('href="'+route+(route==='/'?'':'?lang='+lang)+'"'),route);
-    assert.match(html,/<nav class="footer-site-nav"/);
-    assert.ok(footer.includes('publicFooterNavigationMarkup(appText,currentLang())'));
+    const questions=['etusivu','tuote','ominaisuudet','kokeile bottia',
+      'verkkokauppa','ajanvaraus','hinnat','tietoturva','yhteystiedot','kirjaudu'];
+    for (let n=0;n<paths.length;n++){
+      const actions=respondoSiteNavigationActions(questions[n],lang);
+      assert.ok(actions.length>0,questions[n]);
+      const urls=actions.map(a=>new URL(a.url));
+      assert.ok(urls.some(u=>u.pathname===(
+        paths[n]==='/ominaisuudet'?(lang==='sv'?'/funktioner':lang==='en'?'/features':'/ominaisuudet'):paths[n]
+      )),questions[n]);
+    }
     const hero=spiralHeroMarkup(tr,lang);
     assert.ok(!hero.includes('data-respondo-hero-cta="signup"'));
     assert.ok(hero.includes('data-respondo-hero-cta="demo"'));
@@ -39,6 +47,6 @@ test('pricing and signup fixes load last and preserve readable contrast',()=>{
   assert.match(styles,/-webkit-text-fill-color:#f7f9fe!important/);
   assert.match(styles,/\.price-top > span:last-child/);
   assert.match(styles,/\.section-kicker/);
-  assert.match(styles,/\.footer-site-links/);
+  assert.match(styles,/\.footer-ask-respondo/);
   assert.doesNotMatch(nav,/data-apple-menu-open/);
 });
