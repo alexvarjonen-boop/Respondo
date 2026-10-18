@@ -13,7 +13,7 @@ test('logo reveal uses the actual approved white Respondo arrow', async () => {
   assert.doesNotThrow(() => new Function(code));
 });
 
-test('animation is isolated to homepage and supports accessible interruption', async () => {
+test('opening animation stays on homepage without a scroll logo chapter', async () => {
   const [index, code, css] = await Promise.all([source('index.html'),source('logo-reveal.js'),source('logo-reveal.css')]);
   assert.match(index, /href="\/logo-reveal\.css\?v=/);
   assert.match(index, /src="\/logo-reveal\.js\?v=/);
@@ -21,9 +21,10 @@ test('animation is isolated to homepage and supports accessible interruption', a
   assert.match(code, /prefers-reduced-motion: reduce/);
   assert.match(code, /sessionStorage\.setItem/);
   assert.match(code, /aria-modal/);
-  assert.match(code, /insertAdjacentElement\('afterend'/);
+  assert.match(code, /playIntro\(false\)/);
+  assert.doesNotMatch(code, /createChapter|rl-chapter|rl-replay|Jatka selaamista|Keep scrolling|Fortsätt skrolla/);
   assert.doesNotMatch(code, /rl-intro-skip|Ohita animaatio|Skip animation|Hoppa över/);
   assert.doesNotMatch(css, /\.rl-intro-skip/);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(css, /\.apple-home\.rl-logo-film-active/);
+  assert.doesNotMatch(css, /rl-chapter|rl-replay|rl-scroll-prompt|rl-logo-film-active/);
 });
