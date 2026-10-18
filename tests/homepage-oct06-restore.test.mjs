@@ -16,20 +16,21 @@ test('public homepage renders a compact 3-card feature story instead of legacy i
   assert.doesNotMatch(home,/calculatorSection\(\)|contactSection\(\)/);
 });
 
-test('Apple-inspired homepage loads, with navigation in the footer only',()=>{
+test('Apple-inspired homepage uses the chatbot instead of a page directory',()=>{
   assert.match(index,/apple-home\.css\?v=20261008-apple-production-header-contrast-v2/);
   assert.match(index,/app\.js\?v=20261008-apple-production-v1/);
-  assert.match(app,/publicFooterNavigationMarkup\(appText,currentLang\(\)\)/);
+  assert.doesNotMatch(app,/publicFooterNavigationMarkup/);
+  assert.match(app,/data-open-site-assistant/);
   assert.doesNotMatch(app,/publicMenuMarkup\(appText,currentLang\(\)\)/);
   assert.doesNotMatch(app,/bindPublicMenu\(\)/);
 });
 
-test('mobile header keeps branding and flags; menu moved to footer',()=>{
+test('mobile header keeps branding and flags; chat opens from footer',()=>{
   const css=fs.readFileSync(new URL('../public/apple-home.css',import.meta.url),'utf8');
   const modern=fs.readFileSync(new URL('../public/mobile-public-polish.css',import.meta.url),'utf8');
   assert.match(css,/body\.public-nav-active \.apple-home-page \.nav\s*\{[^}]*background:#f5f5f7!important/s);
   assert.match(css,/\.apple-home-page \.nav \.brand-word\s*\{[^}]*color:#1d1d1f!important/s);
   assert.match(modern,/\.nav \.navactions/);
-  assert.match(modern,/footer-site-links/);
+  assert.match(modern,/footer-ask-respondo/);
   assert.doesNotMatch(app.slice(app.indexOf('function nav()'),app.indexOf('function bindHomeHeroActions()')),/apple-menu-toggle/);
 });
