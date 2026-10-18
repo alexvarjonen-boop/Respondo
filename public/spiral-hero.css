@@ -210,9 +210,11 @@
   #app .apple-home:has(.rs-spiral-section) {
     overflow:visible!important;
   }
+  /* Six card transitions at ~400px each: about one natural mobile swipe
+     per next card, rather than the prior ~1.3 viewport heights per card. */
   #app .rs-spiral-section.rs-enhanced {
-    height:1050vh;
-    height:1050svh;
+    height:calc(100vh + 2400px);
+    height:calc(100svh + 2400px);
   }
   #app .rs-enhanced .rs-spiral-stage {
     position:sticky!important;
