@@ -14,8 +14,8 @@ test('cinematic script parses and leaves scroll, links and forms untouched',()=>
   assert.match(source,/prefers-reduced-motion: reduce/);
   assert.match(source,/saveData/);
   assert.match(source,/requestAnimationFrame/);
-  assert.match(source,/\\.rg-growth-section/);
-  assert.match(source,/\\.pricing-section/);
+  assert.match(source,/\.rg-growth-section/);
+  assert.match(source,/\.pricing-section/);
   assert.doesNotMatch(source,/\bscrollTo\s*\(|scrollIntoView\s*\(|scroll-snap|preventDefault\s*\(|document\.body\.style\.overflow/);
 });
 
@@ -49,9 +49,9 @@ test('cinematic styles preserve functional controls and motion preferences',()=>
   const css=read('home-cinema.css');
   assert.match(css,/prefers-reduced-motion:reduce/);
   assert.match(css,/pointer-events:none/);
-  assert.match(css,/\\.apple-lead-slider::-webkit-slider-runnable-track/);
-  assert.match(css,/\\.pricing-section \.price-card/);
-  assert.match(css,/\\.rg-line/);
+  assert.match(css,/\.apple-lead-slider::-webkit-slider-runnable-track/);
+  assert.match(css,/\.pricing-section \.price-card/);
+  assert.match(css,/\.rg-line/);
   assert.ok(css.includes('.rf-film-hud'));
   assert.doesNotMatch(css,/scroll-snap-type|overflow:hidden!important\s*;\s*height:100vh|position:sticky!important/);
 });
