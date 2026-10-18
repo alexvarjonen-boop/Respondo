@@ -38,7 +38,10 @@ test('both renderers use a single canonical content source and matching SEO titl
   assert.ok(serverCode.includes('Asiakaspalvelijabotti ja AI-asiakaspalvelija yritykselle | Respondo AI'));
   assert.ok(client.includes('Asiakaspalvelijabotti ja AI-asiakaspalvelija yritykselle | Respondo AI'));
   assert.ok(serverCode.includes("app.get('/asiakaspalvelijabotti'"), 'no keyword synonym redirect');
-  assert.ok(client.includes('/asiakaspalvelubotti?lang='), 'site footer does not link to the primary topic');
+  // The minimal homepage no longer shows a lower CTA; the canonical topic is
+  // reached through the footer's audience hub and its internal topic links.
+  assert.ok(client.includes('href="/kenelle-sopii?lang='), 'footer does not link to the audience hub');
+  assert.ok(client.includes("'/asiakaspalvelubotti'"), 'audience hub does not link to the primary topic');
   assert.ok(!home.includes('apple-bottom-cta'), 'removed trial CTA unexpectedly returned');
   assert.ok(client.includes('AI-asiakaspalvelija ja asiakaspalvelijabotti'), 'audience hub missing topic link');
   assert.ok(shell.includes('customer-buyer-20261013-v1'),'stale public styles or JS');
