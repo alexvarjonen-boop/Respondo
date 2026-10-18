@@ -10,13 +10,12 @@
   var trace = 'M 23 185 L 94 134 L 132 164 L 213 94 L 232 70';
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var labels = {
-    fi: {tag:'Älykkäämpää asiakaspalvelua', aria:'Respondo AI:n animoitu logo',sound:'Toista äänellä'},
-    sv: {tag:'Smartare kundservice', aria:'Respondo AI:s animerade logotyp',sound:'Spela med ljud'},
-    en: {tag:'Smarter customer service', aria:'Respondo AI animated logo',sound:'Play with sound'}
+    fi: {tag:'Älykkäämpää asiakaspalvelua', aria:'Respondo AI:n animoitu logo'},
+    sv: {tag:'Smartare kundservice', aria:'Respondo AI:s animerade logotyp'},
+    en: {tag:'Smarter customer service', aria:'Respondo AI animated logo'}
   };
   var root = null, opening = null, closeTimer = 0, removeTimer = 0, watchFrame = 0;
   var introPlayed = false;
-  var soundContext = null, soundStopTimer = 0;
 
   function locale() {
     var qs = new URLSearchParams(location.search).get('lang');
@@ -38,83 +37,13 @@
   }
   function introSeen() {
     if (introPlayed) return true;
-    try { return sessionStorage.getItem('respondo-logo-reveal-20261018-sound-v1') === '1'; }
+    try { return sessionStorage.getItem('respondo-logo-reveal-20261018') === '1'; }
     catch (err) { return false; }
   }
   function markSeen() {
     introPlayed = true;
-    try { sessionStorage.setItem('respondo-logo-reveal-20261018-sound-v1', '1'); }
+    try { sessionStorage.setItem('respondo-logo-reveal-20261018', '1'); }
     catch (err) { /* private mode */ }
-  }
-  // Sounds only after an explicit tap: iOS Safari blocks audible autoplay.
-  // All cues are synthesized locally (no downloads, remote audio, or assets).
-  function stopSound() {
-    clearTimeout(soundStopTimer);
-    soundStopTimer = 0;
-    if (!soundContext) return;
-    var old = soundContext;
-    soundContext = null;
-    try { if (typeof old.close === 'function') old.close().catch(function () {}); } catch (err) { /* no audio */ }
-  }
-  function playSound() {
-    if (reduced) return;
-    var Ctor = window.AudioContext || window.webkitAudioContext;
-    if (typeof Ctor !== 'function') return;
-    stopSound();
-    try {
-      var context = new Ctor();
-      soundContext = context;
-      if (context.state === 'suspended' && context.resume) {
-        context.resume().catch(function () {});
-      }
-      var start = context.currentTime + 0.03;
-      var master = context.createGain();
-      master.gain.value = 0.28; // intentionally softer than notification tones
-      master.connect(context.destination);
-      function tone(type, delay, duration, low, high, volume) {
-        var oscillator = context.createOscillator();
-        var gain = context.createGain();
-        var at = start + delay;
-        oscillator.type = type;
-        oscillator.frequency.setValueAtTime(Math.max(1, low), at);
-        oscillator.frequency.exponentialRampToValueAtTime(Math.max(1, high), at + duration);
-        gain.gain.setValueAtTime(0.0001, at);
-        gain.gain.exponentialRampToValueAtTime(volume, at + Math.min(0.16, duration * 0.3));
-        gain.gain.exponentialRampToValueAtTime(0.0001, at + duration);
-        oscillator.connect(gain);
-        gain.connect(master);
-        oscillator.start(at);
-        oscillator.stop(at + duration + 0.01);
-      }
-      // Arrow trace: filtered airy sweep, starting with CSS trace at ~0.28s.
-      var duration = 1.42;
-      var noiseBuffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
-      var channel = noiseBuffer.getChannelData(0);
-      for (var i=0; i<channel.length; i++) channel[i] = Math.random() * 2 - 1;
-      var sweep = context.createBufferSource();
-      var filter = context.createBiquadFilter();
-      var sweepGain = context.createGain();
-      var startSweep = start + 0.28;
-      sweep.buffer = noiseBuffer;
-      filter.type = 'bandpass';
-      filter.Q.value = 0.85;
-      filter.frequency.setValueAtTime(450, startSweep);
-      filter.frequency.exponentialRampToValueAtTime(2900, startSweep + 1.05);
-      sweepGain.gain.setValueAtTime(0.0001, startSweep);
-      sweepGain.gain.exponentialRampToValueAtTime(0.10, startSweep + 0.37);
-      sweepGain.gain.exponentialRampToValueAtTime(0.0001, startSweep + duration);
-      sweep.connect(filter); filter.connect(sweepGain); sweepGain.connect(master);
-      sweep.start(startSweep);
-      sweep.stop(startSweep + duration);
-      // Arrow reveal: understated low impact aligned with the solid path.
-      tone('sine', 1.15, 0.67, 102, 55, 0.20);
-      // Brand name: a short, calm harmonic shimmer (not a loud chime).
-      tone('sine', 1.62, 1.05, 392, 349, 0.16);
-      tone('sine', 1.71, 1.00, 587, 523, 0.082);
-      soundStopTimer = window.setTimeout(stopSound, 3350);
-    } catch (err) {
-      stopSound(); // unsupported devices keep the normal silent logo reveal
-    }
   }
   function clearOpening(instant) {
     clearTimeout(closeTimer);
@@ -123,7 +52,6 @@
     var el = opening;
     opening = null;
     if (instant || reduced) {
-      stopSound();
       el.remove();
       document.body.classList.remove('rl-logo-lock');
       return;
@@ -133,7 +61,7 @@
     document.body.classList.remove('rl-logo-lock');
     removeTimer = window.setTimeout(function () { el.remove(); }, 860);
   }
-  function playIntro(force, withSound) {
+  function playIntro(force) {
     if (reduced || !root || !root.isConnected) return;
     if (!force && introSeen()) return;
     clearOpening(true);
@@ -152,21 +80,10 @@
       '<div class="rl-intro-name">RESPONDO AI</div>',
       '<p class="rl-intro-caption">',t.tag,'</p>',
       '</div>',
-      '<button class="rl-intro-sound" type="button" aria-label="',t.sound,'"><span aria-hidden="true">♪</span> ',t.sound,'</button>',
     ].join('');
     document.body.appendChild(layer);
     document.body.classList.add('rl-logo-lock');
     opening = layer;
-    var soundButton = layer.querySelector('.rl-intro-sound');
-    if (soundButton) soundButton.addEventListener('click', function (event) {
-      event.preventDefault();
-      // Recreate the visual intro so sound and motion start in sync.
-      playIntro(true, true);
-    });
-    if (withSound) {
-      if (soundButton) soundButton.remove();
-      playSound();
-    }
     closeTimer = window.setTimeout(function () { clearOpening(false); }, 3050);
   }
   function refresh() {
