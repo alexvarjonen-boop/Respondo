@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 
 const app = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
 
-test('login and signup have only branding and language flags in public header', () => {
+test('public header has branding, language flags and direct sign-in link', () => {
   const start=app.indexOf('function nav() {');
   const end=app.indexOf('function bindHomeHeroActions()',start);
   const nav=app.slice(start,end);
@@ -13,7 +13,9 @@ test('login and signup have only branding and language flags in public header', 
   assert.match(nav,/\$\{languageSwitch\(\)\}/);
   assert.doesNotMatch(nav,/nav-home-scroll-trial|nav-login-btn|apple-menu-toggle|apple-nav-overlay/);
   assert.doesNotMatch(app,/publicFooterNavigationMarkup/);
-  assert.match(app,/data-open-site-assistant/);
+  assert.doesNotMatch(app,/data-open-site-assistant/);
+  assert.match(nav,/class="public-header-login"/);
+  assert.match(nav,/href="\/kirjaudu\?lang=\$\{currentLang\(\)\}"/);
 });
 
 test('login card has no repeated welcome heading and keeps all sign-in methods', () => {
