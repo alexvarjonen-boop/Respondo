@@ -88,20 +88,17 @@ test('a busy assistant does not drop an entered customer question',()=>{
   assert.match(h.status.textContent,/Please wait/);
 });
 
-test('homepage copy explains asking the bot while preserving legal and checkout routes', async()=>{
+test('homepage removes the duplicate question form and retains the seven-card story', async()=>{
   const {spiralHeroMarkup}=await import(new URL('../public/spiral-hero.js',import.meta.url));
   for(const lang of ['fi','sv','en']){
     const t=(fi,sv,en)=>({fi,sv,en})[lang];
     const html=spiralHeroMarkup(t,lang);
-    assert.match(html,/data-respondo-ask-form/);
-    assert.match(html,/type="search"/);
-    assert.match(html,/data-respondo-ask-status/);
-    assert.equal((html.match(/data-respondo-ask-question=/g)||[]).length,3);
-    assert.match(html,/Kysy Respondolta|Fråga Respondo|Ask Respondo/);
+    assert.doesNotMatch(html,/data-respondo-ask-form|rs-chat-entry|respondo-home-question|data-respondo-ask-question/);
+    assert.match(html,/Kysy Respondolta hinnat|Fråga Respondo om priser|Ask Respondo about pricing/);
     assert.match(html,/24\/7/);
   }
   const index=read('index.html');
   assert.match(index,/\/chat-first-home\.css\?/);
-  assert.match(index,/\/chat-first-home\.js\?/);
+  assert.doesNotMatch(index,/\/chat-first-home\.js\?/);
   assert.ok(index.indexOf('/chat-first-home.css') > index.indexOf('/spiral-hero.css'));
 });

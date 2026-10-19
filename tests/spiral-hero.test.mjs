@@ -18,9 +18,7 @@ test('spiral page renders 7 real feature cards after logo reveal in all language
     assert.match(hero, /class="apple-hero rs-spiral-section"/);
     assert.equal((hero.match(/data-rs-card\b/g) || []).length, 7);
     assert.ok(!hero.includes('data-respondo-hero-cta="signup"'));
-    assert.ok(hero.includes('data-respondo-ask-form'));
-    assert.ok(hero.includes('id="respondo-home-question"'));
-    assert.equal((hero.match(/data-respondo-ask-question=/g)||[]).length, 3);
+    assert.doesNotMatch(hero,/data-respondo-ask-form|respondo-home-question|data-respondo-ask-question|rs-chat-entry/);
     assert.ok(!hero.includes('data-respondo-hero-cta="demo"'));
     assert.ok(!hero.includes('/tilaus?lang=' + lang));
     assert.ok(hero.includes('viewBox="0 0 256 256"'));

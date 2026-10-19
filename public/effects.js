@@ -459,16 +459,18 @@
     // launcher overlaps profile controls on iPhone and must never appear in
     // any authenticated dashboard or the public Try Bot workspace.
     if (isWorkspacePage()) {
+      $('.fx-chat-nav-hint')?.remove();
       $('.fx-assistant-launch')?.remove();
       $('.fx-assistant')?.remove();
       return;
     }
     if ($('.fx-assistant-launch')) return;
     const qLang = new URLSearchParams(location.search).get('lang');
-    const uiLang = ['fi','sv','en'].includes(qLang) ? qLang : (localStorage.getItem('respondo_lang') || 'fi');
+    const uiLang = ['fi','sv','en'].includes(qLang) ? qLang : (localStorage.getItem('respondo_lang') || 'en');
     const at = (fi,sv,en) => uiLang === 'sv' ? sv : uiLang === 'en' ? en : fi;
     const onDemo = false;
     document.body.insertAdjacentHTML('beforeend', `
+      <button class="fx-chat-nav-hint" type="button" aria-controls="respondo-site-chat" aria-label="${at('Kysy botilta ja siirry sivuille','Fråga botten för att navigera','Ask the bot to navigate')}"><span>${at('Kysy botilta ja siirry sivuille','Fråga botten för att navigera','Ask the bot to navigate')}</span><svg viewBox="0 0 32 42" width="28" height="37" aria-hidden="true" focusable="false"><path d="M6 3 C8 18 22 15 22 31 M15 24 L22 32 L29 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <button class="fx-assistant-launch" type="button" aria-controls="respondo-site-chat" aria-expanded="false" aria-label="${at('Avaa Respondo','Öppna Respondo','Open Respondo')}"><i class="fx-brand-mark"><img src="/respondo-approved-arrow-20261012.png" alt="" aria-hidden="true" width="32" height="32" style="display:block;width:100%;height:100%;object-fit:contain"></i><span>Respondo</span><b class="fx-live"></b></button>
       <aside class="fx-assistant" id="respondo-site-chat" aria-label="Respondo">
         <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar fx-brand-mark"><img src="/respondo-approved-arrow-20261012.png" alt="" aria-hidden="true" width="32" height="32" style="display:block;width:100%;height:100%;object-fit:contain"></span><div><b>Respondo</b><small>${onDemo ? at('sama vastausmoottori kuin oikeassa botissa','samma svarsmotor som i den riktiga botten','the same response engine as the real bot') : at('valmis vastaamaan','redo att svara','ready to answer')}</small></div></div><button class="fx-assistant-close" type="button" aria-label="${at('Sulje','Stäng','Close')}">×</button></div>
@@ -481,10 +483,11 @@
 </div>`}</div>
         <form class="fx-assistant-form"><input name="message" autocomplete="off" placeholder="${at('Kirjoita kysymys…','Skriv en fråga…','Type a question…')}" aria-label="${at('Kysymys','Fråga','Question')}"><button type="submit" aria-label="${at('Lähetä','Skicka','Send')}">→</button></form>
       </aside>`);
-    const launch = $('.fx-assistant-launch'), box = $('.fx-assistant'), close = $('.fx-assistant-close'), messages = $('.fx-assistant-messages'), form = $('.fx-assistant-form');
+    const navHint = $('.fx-chat-nav-hint'), launch = $('.fx-assistant-launch'), box = $('.fx-assistant'), close = $('.fx-assistant-close'), messages = $('.fx-assistant-messages'), form = $('.fx-assistant-form');
     const siteAssistantHistory = [];
-    const open = () => { box.classList.add('open'); launch.setAttribute('aria-expanded','true'); setTimeout(() => form.message.focus(), 180); };
+    const open = () => { navHint?.setAttribute('hidden',''); box.classList.add('open'); launch.setAttribute('aria-expanded','true'); setTimeout(() => form.message.focus(), 180); };
     const shut = () => { box.classList.remove('open'); launch.setAttribute('aria-expanded','false'); };
+    navHint?.addEventListener('click', open);
     launch.addEventListener('click', () => box.classList.contains('open') ? shut() : open());
     close.addEventListener('click', shut);
     // Footer can be replaced during navigation; delegation keeps its open button working.
@@ -1363,6 +1366,7 @@
       prepareStaticWorkspace();
       assistant();
       window.addEventListener('respondo:languagechange', () => {
+        document.querySelector('.fx-chat-nav-hint')?.remove();
         document.querySelector('.fx-assistant-launch')?.remove();
         document.querySelector('.fx-assistant')?.remove();
         assistant();
@@ -1372,6 +1376,7 @@
     if (location.pathname === '/' && document.querySelector('.apple-home')) {
       assistant();
       window.addEventListener('respondo:languagechange', () => {
+        document.querySelector('.fx-chat-nav-hint')?.remove();
         document.querySelector('.fx-assistant-launch')?.remove();
         document.querySelector('.fx-assistant')?.remove();
         assistant();
@@ -1381,6 +1386,7 @@
     if (location.pathname === '/' && document.querySelector('.premium-home')) {
       leftSectionRail(); assistant();
       window.addEventListener('respondo:languagechange', () => {
+        document.querySelector('.fx-chat-nav-hint')?.remove();
         document.querySelector('.fx-assistant-launch')?.remove();
         document.querySelector('.fx-assistant')?.remove();
         assistant();

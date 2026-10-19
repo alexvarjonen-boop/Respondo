@@ -30,8 +30,7 @@ for (const [lang,idx] of [['fi',0],['sv',1],['en',2]]) {
     }
     const hero=spiralHeroMarkup(tr,lang);
     assert.ok(!hero.includes('data-respondo-hero-cta="signup"'));
-    assert.ok(hero.includes('data-respondo-ask-form'));
-    assert.ok(hero.includes('data-respondo-ask-question='));
+    assert.doesNotMatch(hero,/data-respondo-ask-form|data-respondo-ask-question|rs-chat-entry/);
     assert.ok(!hero.includes('data-respondo-hero-cta="demo"'));
   });
 }

@@ -11,7 +11,7 @@ const pages=[
    match:/\b(kirjau[dt]\w*|sisaan kirjaut\w*|logga in|logga in|inloggn\w*|login|log in|sign in|my account|mitt konto)\b/,
    labels:['Avaa kirjautuminen','Öppna inloggning','Open sign in']},
   {type:'site_signup',path:'/tilaus',ids:['respondo-faq-buy','respondo-faq-trial'],
-   match:/\b(luo tili|luoda tili|luoda tilin|luo tilin|uusi tili|rekistero\w*|tilaa\b|ostaa\b|osta\b|aloita kokeilu|aloittaa kokeilu|kokeile ilmaiseksi|free trial|start trial|start free|sign up|create (?:an? )?account|register|registrera|prova gratis|borja prova|starta prov)\b/,
+   match:/\b(luo tili|luoda tili|luoda tilin|luo tilin|uusi tili|rekistero\w*|tilaa\b|ostaa\b|osta\b|aloita kokeilu|aloittaa kokeilu|kokeile ilmaiseksi|free trial|start trial|start free|sign up|create (?:an? )?account|register|registrera|prova gratis|borja prova|starta prov|get started|getting started|start using|how (?:do|can) i start|kom igang|hur kommer jag igang|miten aloitan|aloittaminen)\b/,
    labels:['Luo tili ja aloita','Skapa konto och börja','Create account and start']},
   {type:'site_demo',path:'/assistant',
    match:/\b(kokeile bottia|kokeilla bottia|testaa bottia|testa bottia|testibotti|kokeile demo|kokeilla demoa|kokeile demoa|testa botten|prova botten|try the bot|test the bot|try a demo|demo|demobotti)\b/,
@@ -87,6 +87,11 @@ export function respondoSiteNavigationAnswer(message,lang='fi',origin='https://w
     answer=tr(language,'Voit kirjautua sisään alla olevasta painikkeesta. Jos sinulla ei vielä ole tiliä, voit luoda sen valitsemalla tilauspaketin.','Du kan logga in med knappen nedan. Om du saknar konto kan du skapa ett genom att välja ett abonnemang.','Use the button below to sign in. If you do not have an account yet, choose a plan to create one.');
   }else if(/\b(luo tili|luoda tili|luoda tilin|luo tilin|rekistero\w*|uusi tili|create (?:an? )?account|sign up|register|registrera|skapa konto)\b/.test(q)){
     answer=tr(language,'Luo uusi tili valitsemalla ensin sopiva paketti. Maksutapa lisätään turvallisesti Stripessä, ja saat kolmen päivän maksuttoman kokeilun.','Skapa ett konto genom att först välja ett abonnemang. Betalmetoden läggs till säkert via Stripe och du får tre dagars gratis provperiod.','To create an account, first choose a plan. Add your payment method securely through Stripe and get a three-day free trial.');
+  }else if(/\b(get started|getting started|start using|how (?:do|can) i start|kom igang|hur kommer jag igang|miten aloitan|aloittaminen)\b/.test(q)){
+    answer=tr(language,
+      'Aloita valitsemalla sopiva paketti. Voit luoda tilin ja kokeilla Respondoa kolme päivää maksutta.',
+      'Börja med att välja ett abonnemang. Skapa ett konto och prova Respondo gratis i tre dagar.',
+      'Get started by choosing a plan, creating your account and starting the three-day free trial.');
   }else if(/\b(kokeile bottia|testaa bottia|kokeilla bottia|testa botten|try the bot|test the bot|try a demo|demobotti)\b/.test(q)){
     answer=tr(language,'Voit kokeilla Respondo-bottia demossa. Lisää esimerkkiyrityksen tiedot ja kysy botilta kuten oikea asiakas.','Du kan testa Respondo i demon. Lägg till ett exempelföretags uppgifter och ställ frågor som en riktig kund.','You can try Respondo in the demo. Enter example company details and ask questions as a customer would.');
   }else if(genericPages.test(q)&&/\b(mita|mitka|miss[a]?|nayta|lista\w*|haluan|kaikki|where|show|list|which|what|vilka|visa|alla|var)\b/.test(q)){

@@ -42,24 +42,6 @@ export function spiralHeroMarkup(t, lang) {
       </div>
       <div class="rs-spiral-bottom rs-chat-first-bottom">
         <div class="rs-scroll-invite" aria-hidden="true"><span class="rs-scroll-rule"></span>${t('SELAA ALAS','SKROLLA NED','SCROLL TO EXPLORE')}</div>
-        <div class="rs-chat-entry">
-          <div class="rs-chat-entry-header">
-            <span class="rs-chat-live" aria-hidden="true"></span>
-            <strong>${t('Kysy Respondolta.','Fråga Respondo.','Ask Respondo.')}</strong>
-            <span>${t('Koko sivun opas','Guiden till hela webbplatsen','Your website guide')}</span>
-          </div>
-          <form class="rs-ask-form" data-respondo-ask-form novalidate>
-            <label class="rs-visually-hidden" for="respondo-home-question">${t('Kysy Respondolta esimerkiksi hinnoista, ominaisuuksista tai kokeilusta','Fråga Respondo om priser, funktioner eller testperioden','Ask Respondo about prices, features or the free trial')}</label>
-            <input id="respondo-home-question" name="question" type="search" autocomplete="off" enterkeyhint="send" required maxlength="500" placeholder="${t('Mitä haluaisit tietää?','Vad vill du veta?','What would you like to know?')}">
-            <button type="submit" aria-label="${t('Lähetä kysymys botille','Skicka frågan till botten','Send your question to the bot')}">${t('Kysy','Fråga','Ask')} <span aria-hidden="true">↗</span></button>
-          </form>
-          <div class="rs-chat-suggestions" aria-label="${t('Kysymysehdotuksia','Frågeförslag','Suggested questions')}">
-            <button type="button" data-respondo-ask-question="${t('Mitä Respondo maksaa?','Vad kostar Respondo?','How much does Respondo cost?')}">${t('Hinnat','Priser','Pricing')}</button>
-            <button type="button" data-respondo-ask-question="${t('Mitä Respondo osaa?','Vad kan Respondo göra?','What can Respondo do?')}">${t('Ominaisuudet','Funktioner','Features')}</button>
-            <button type="button" data-respondo-ask-question="${t('Miten voin aloittaa kolmen päivän kokeilun?','Hur börjar jag en tre dagars provperiod?','How do I start the three-day free trial?')}">${t('Aloittaminen','Kom igång','Get started')}</button>
-          </div>
-          <p class="rs-chat-entry-status" role="status" aria-live="polite" data-respondo-ask-status></p>
-        </div>
         <div class="rs-step-count" aria-hidden="true"><span data-rs-step>01</span><span class="rs-step-line"></span><span>07</span></div>
       </div>
       <span class="rs-visually-hidden" aria-live="polite" aria-atomic="true" data-rs-announcement></span>

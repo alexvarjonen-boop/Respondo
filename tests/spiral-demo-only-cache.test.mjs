@@ -9,17 +9,15 @@ const css=file('mobile-public-polish.css');
 const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
 
 for (const [lang,index] of [['fi',0],['sv',1],['en',2]]) {
-  test('spiral invites the visitor to ask the existing site chatbot in '+lang,()=>{
+  test('spiral keeps chat guidance without a duplicate ask box in '+lang,()=>{
     const markup=spiralHeroMarkup((...translations)=>translations[index],lang);
-    assert.match(markup,/data-respondo-ask-form/);
-    assert.match(markup,/id="respondo-home-question"/);
-    assert.equal((markup.match(/data-respondo-ask-question=/g)||[]).length,3);
+    assert.doesNotMatch(markup,/data-respondo-ask-form|respondo-home-question|data-respondo-ask-question|rs-chat-entry/);
     assert.doesNotMatch(markup,/data-respondo-hero-cta="signup"|data-respondo-hero-cta="demo"/);
   });
 }
 test('all three cached module levels change when the spiral CTA changes',()=>{
-  assert.match(home,/spiral-hero\.js\?v=20261019-chat-first-v1/);
-  assert.match(app,/apple-home\.js\?v=20261019-chat-first-v1/);
+  assert.match(home,/spiral-hero\.js\?v=20261019-bot-navigation-hint-v1/);
+  assert.match(app,/apple-home\.js\?v=20261019-bot-navigation-hint-v1/);
   assert.match(html,/app\.js\?v=[^"]+-chat-first-home-20261019-v1/);
   assert.match(html,/mobile-public-polish\.css\?v=20261018-demo-only-v4/);
   assert.match(css,/rs-hero-actions a\[data-respondo-hero-cta="signup"\]\{display:none!important\}/);

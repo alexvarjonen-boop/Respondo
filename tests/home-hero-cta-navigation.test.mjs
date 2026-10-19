@@ -12,8 +12,7 @@ for (const [lang,index] of [['fi',0],['sv',1],['en',2]]) {
     const t=(...v)=>v[index];
     const home=appleHomeMarkup(t,lang,145);
     assert.doesNotMatch(home,/data-respondo-hero-cta="signup"/);
-    assert.match(home,/data-respondo-ask-form/);
-    assert.match(home,/data-respondo-ask-question/);
+    assert.doesNotMatch(home,/data-respondo-ask-form|data-respondo-ask-question|rs-chat-entry/);
     assert.doesNotMatch(home,/data-respondo-hero-cta="demo"/);
   });
 }
