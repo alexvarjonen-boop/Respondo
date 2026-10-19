@@ -18,8 +18,7 @@ test('homepage header has only brand and language switch, without hidden trial c
 test('the spiral hero opens site questions without exposing signup controls',()=>{
   const spiral=readFileSync(new URL('../public/spiral-hero.js',import.meta.url),'utf8');
   assert.doesNotMatch(spiral,/data-respondo-hero-cta="signup"/);
-  assert.match(spiral,/data-respondo-ask-form/);
-  assert.match(spiral,/data-respondo-ask-question/);
+  assert.doesNotMatch(spiral,/data-respondo-ask-form|data-respondo-ask-question|rs-chat-entry/);
   assert.doesNotMatch(spiral,/data-respondo-hero-cta="demo"/);
   assert.match(app,/bindHomeHeroActions\(\)/);
 });
