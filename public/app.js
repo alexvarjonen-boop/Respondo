@@ -369,7 +369,7 @@ function currentLang() {
   const fromShared = window.RespondoI18n?.language;
   if (['fi','sv','en'].includes(fromShared)) return fromShared;
   const saved = localStorage.getItem('respondo_lang');
-  return ['fi','sv','en'].includes(saved) ? saved : 'fi';
+  return ['fi','sv','en'].includes(saved) ? saved : 'en';
 }
 
 function languageFlagSvg(lang) {
@@ -382,12 +382,12 @@ function languageFlagSvg(lang) {
 }
 
 function languageSwitch() {
-  const lang = window.RespondoI18n?.language || localStorage.getItem('respondo_lang') || 'fi';
+  const lang = window.RespondoI18n?.language || localStorage.getItem('respondo_lang') || 'en';
   const label = appText('Kieli','Språk','Language');
   const options = [
+    ['en', 'English'],
     ['fi', 'Suomi'],
-    ['sv', 'Svenska'],
-    ['en', 'English']
+    ['sv', 'Svenska']
   ];
   return `<div class="app-language-switch" role="group" aria-label="${esc(label)}">
     ${options.map(([code, name]) => `<button type="button" class="app-language-option${lang === code ? ' active' : ''}" data-lang-button="${code}" aria-label="${esc(name)}" aria-pressed="${lang === code ? 'true' : 'false'}">${languageFlagSvg(code)}</button>`).join('')}
@@ -395,7 +395,7 @@ function languageSwitch() {
 }
 
 const APP_LOCALES = { fi:'fi-FI', sv:'sv-SE', en:'en-GB-u-hc-h12' };
-function appLocale() { return APP_LOCALES[currentLang()] || 'fi-FI'; }
+function appLocale() { return APP_LOCALES[currentLang()] || 'en-GB-u-hc-h12'; }
 function appText(fi, sv, en) {
   const lang = currentLang();
   return lang === 'sv' ? (sv ?? fi) : lang === 'en' ? (en ?? fi) : fi;
@@ -1791,7 +1791,7 @@ function updateDocumentLanguageMeta(lang) {
   upsertMeta('name','twitter:description',metaDescription);
 
   const canonical = new URL(canonicalOrigin + canonicalPath);
-  if (lang !== 'fi' && !['/features','/funktioner'].includes(canonicalPath)) canonical.searchParams.set('lang',lang);
+  if (lang !== 'en' && !['/features','/funktioner'].includes(canonicalPath)) canonical.searchParams.set('lang',lang);
   upsertLink('canonical',canonical.toString());
   upsertMeta('property','og:url',canonical.toString());
   upsertMeta('property','og:image',canonicalOrigin+'/respondo-approved-arrow-20261012.png');
@@ -1802,15 +1802,15 @@ function updateDocumentLanguageMeta(lang) {
     const alternatePaths = metaPath === '/ominaisuudet'
       ? { fi:'/ominaisuudet', sv:'/funktioner', en:'/features' }
       : {
-          fi:metaPath,
+          fi:metaPath + (metaPath.includes('?') ? '&' : '?') + 'lang=fi',
           sv:metaPath + (metaPath.includes('?') ? '&' : '?') + 'lang=sv',
-          en:metaPath + (metaPath.includes('?') ? '&' : '?') + 'lang=en',
+          en:metaPath,
         };
     const alternates = [
       ['fi', alternatePaths.fi],
       ['sv', alternatePaths.sv],
       ['en', alternatePaths.en],
-      ['x-default', alternatePaths.fi],
+      ['x-default', alternatePaths.en],
     ];
     alternates.forEach(([hreflang, href]) => {
       const el = document.createElement('link');
@@ -1864,7 +1864,7 @@ window.addEventListener('respondo:languagechange', () => {
 });
 
 function languageChangeUrl(language, href = location.href) {
-  const lang = ['fi','sv','en'].includes(language) ? language : 'fi';
+  const lang = ['fi','sv','en'].includes(language) ? language : 'en';
   const next = new URL(href, location.origin);
   // Feature page aliases represent a particular language and would otherwise
   // override the visitor's freshly selected locale.
@@ -1880,7 +1880,7 @@ function bindLanguageSwitch() {
   try { localStorage.removeItem('respondo-lang'); } catch {}
 
   const setLanguage = (value) => {
-    const lang = ['fi','sv','en'].includes(value) ? value : 'fi';
+    const lang = ['fi','sv','en'].includes(value) ? value : 'en';
     // Rewrite the current URL first: a stale ?lang=fi used to cancel
     // language-switch clicks on the contact, pricing and legal pages.
     const nextUrl = languageChangeUrl(lang);

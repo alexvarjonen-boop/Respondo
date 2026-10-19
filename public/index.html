@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -7,17 +7,17 @@
 <meta name="theme-color" content="#070a10">
 <meta name="application-name" content="RESPONDO AI">
 <link rel="alternate" type="application/rss+xml" title="Respondo AI – AI Customer Support Guides" href="/guides/feed.xml">
-<meta name="description" content="RESPONDO AI on yrityksen verkkosivulle asennettava asiakaspalvelubotti. Se vastaa asiakkaiden kysymyksiin yrityksesi omilla tiedoilla ympäri vuorokauden.">
+<meta name="description" content="Respondo AI is a 24/7 AI customer service bot for businesses. Answer customer questions with approved company information in English, Finnish and Swedish.">
 <meta name="robots" content="index,follow">
-<meta property="og:title" content="RESPONDO AI | Asiakaspalvelubotti yrityksille">
-<meta property="og:description" content="Asiakas kysyy. RESPONDO vastaa yrityksesi omilla tiedoilla — myös silloin, kun et itse ehdi.">
+<meta property="og:title" content="RESPONDO AI | AI Customer Service Bot for Businesses">
+<meta property="og:description" content="Customers ask. RESPONDO answers using your company information, 24/7.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="RESPONDO AI">
-<meta property="og:locale" content="fi_FI">
+<meta property="og:locale" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="RESPONDO AI | Asiakaspalvelubotti yrityksille">
-<meta name="twitter:description" content="Asiakas kysyy. RESPONDO vastaa yrityksesi omilla tiedoilla.">
-<title>RESPONDO AI | Asiakaspalvelubotti yrityksille 24/7</title>
+<meta name="twitter:title" content="RESPONDO AI | AI Customer Service Bot for Businesses">
+<meta name="twitter:description" content="Customers ask. RESPONDO answers using your business information.">
+<title>RESPONDO AI | AI Customer Service Bot for Businesses 24/7</title>
 <!-- Stable, crawlable favicon URLs for Google Search and browsers. Both show the official arrow mark. -->
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <link rel="icon" type="image/png" sizes="128x128" href="/respondo-approved-arrow-20261012.png">
@@ -56,7 +56,7 @@ setTimeout(()=>document.documentElement.classList.remove('respondo-awaiting-clie
 <link rel="stylesheet" href="/login-page-refinement.css?v=20261011-login-card-layout-v1">
 <link rel="stylesheet" href="/original-theme-motion.css?v=20261017-scroll-film-v2">
 <link rel="stylesheet" href="/dark-growth-20261018.css?v=20261018-dark-growth-release-v1">
-<script src="/i18n.js?v=20260924-language-v10"></script>
+<script src="/i18n.js?v=20261019-english-default-v1"></script>
 <script type="application/ld+json">
 {
   "@context":"https://schema.org",
@@ -170,7 +170,7 @@ setTimeout(()=>document.documentElement.classList.remove('respondo-awaiting-clie
   function currentSiteLanguage(){
     let stored='';
     try{stored=localStorage.getItem('respondo_lang')||'';}catch{}
-    const raw=String(window.RespondoI18n?.language||stored||document.documentElement.lang||navigator.language||'fi').toLowerCase().split('-')[0];
+    const raw=String(window.RespondoI18n?.language||stored||document.documentElement.lang||navigator.language||'en').toLowerCase().split('-')[0];
     return ['fi','sv','en'].includes(raw)?raw:'fi';
   }
   function sendVisit(){
@@ -205,6 +205,53 @@ setTimeout(()=>document.documentElement.classList.remove('respondo-awaiting-clie
     }).catch(()=>{});
   }
   window.addEventListener('respondo:languagechange',syncVisitLanguage);
+  window.addEventListener('respondo:languagechange',()=>localizeCookieUi(document.getElementById('rc-consent-layer')));
+
+  // Consent choices follow the public site's language without changing their meaning.
+  const COOKIE_UI = {
+    en:[
+      'Privacy','Cookies and visitor analytics',
+      'Essential cookies keep the service working. Optional analytics measure site usage and traffic sources. You can accept or reject optional analytics.',
+      'Details','Reject','Accept all','Cookie settings','Choose what to allow',
+      'Essential cookies support sign-in and security. Optional analytics runs only with your consent.',
+      'Essential','Session, sign-in, security and essential site functions.',
+      'Always on','Visitor analytics',
+      'Pseudonymous visitor ID, page path, traffic source and possible UTM campaign data. Raw IP addresses are not stored in the analytics table.',
+      'Learn more about cookies and data usage','Reject optional','Save choices'
+    ],
+    sv:[
+      'Integritet','Cookies och besöksstatistik',
+      'Nödvändiga cookies håller tjänsten igång. Valfri analys mäter hur webbplatsen används och varifrån besökarna kommer. Du kan godkänna eller avvisa analysen.',
+      'Mer information','Avvisa','Godkänn alla','Cookieinställningar','Välj vad du tillåter',
+      'Nödvändiga cookies används för inloggning och säkerhet. Valfri analys startar bara med ditt samtycke.',
+      'Nödvändiga','Session, inloggning, säkerhet och grundläggande funktioner.',
+      'Alltid aktiva','Besöksstatistik',
+      'Pseudonym besökaridentifierare, sidväg, trafikkälla och eventuella UTM-kampanjuppgifter. Råa IP-adresser lagras inte i statistikdatabasen.',
+      'Läs mer om cookies och dataanvändning','Avvisa valfria','Spara val'
+    ]
+  };
+  const COOKIE_UI_FI=[
+    'Yksityisyys','Evästeet ja kävijätilastot',
+    'Käytämme välttämättömiä evästeitä palvelun toimintaan. Valinnaisella analytiikalla mittaamme sivuston käyttöä ja liikenteen lähteitä. Voit hyväksyä tai hylätä valinnaisen analytiikan.',
+    'Lisätiedot','Hylkää','Hyväksy kaikki','Evästeasetukset','Valitse, mitä sallitaan',
+    'Välttämättömät evästeet tarvitaan esimerkiksi kirjautumiseen ja palvelun turvalliseen toimintaan. Valinnainen analytiikka käynnistyy vain, jos hyväksyt sen.',
+    'Välttämättömät','Istunto, kirjautuminen, tietoturva ja palvelun perustoiminnot.',
+    'Aina käytössä','Kävijätilastot',
+    'Pseudonyymi kävijätunniste, sivupolku, liikenteen lähde ja mahdolliset UTM-kampanjatiedot. Raakaa IP-osoitetta ei tallenneta tilastotauluun.',
+    'Lue lisää evästeistä ja tietojen käytöstä','Hylkää valinnaiset','Tallenna valinta'
+  ];
+  function localizeCookieUi(layer) {
+    if(!layer) return;
+    const lang=currentSiteLanguage();
+    const dictionary=COOKIE_UI[lang]||COOKIE_UI_FI;
+    layer.querySelectorAll('.rc-consent-kicker,.rc-consent-title,.rc-consent-text,[data-rc],#rc-consent-heading,.rc-consent-modal>p,.rc-choice h3,.rc-choice p,.rc-always,.rc-more').forEach(el=>{
+      const fi=el.dataset.cookieOriginalFi||(el.dataset.cookieOriginalFi=el.textContent.trim());
+      const index=COOKIE_UI_FI.indexOf(fi);
+      el.textContent=index>=0?dictionary[index]:fi;
+    });
+    layer.querySelector('#rc-consent-banner')?.setAttribute('aria-label',lang==='en'?'Cookie preferences':lang==='sv'?'Cookieinställningar':'Evästevalinnat');
+    layer.querySelector('.rc-switch')?.setAttribute('aria-label',lang==='en'?'Allow visitor analytics':lang==='sv'?'Tillåt besöksstatistik':'Salli kävijätilastot');
+  }
   function ensureUi(){
     if(document.getElementById('rc-consent-layer')) return;
     const layer=document.createElement('div');
@@ -244,6 +291,7 @@ setTimeout(()=>document.documentElement.classList.remove('respondo-awaiting-clie
         </section>
       </div>`;
     document.body.appendChild(layer);
+    localizeCookieUi(layer);
     layer.addEventListener('click',(event)=>{
       const action=event.target?.closest?.('[data-rc]')?.getAttribute('data-rc');
       if(!action) return;
@@ -287,7 +335,7 @@ setTimeout(()=>document.documentElement.classList.remove('respondo-awaiting-clie
 })();
 </script>
 <script defer src="/brand-inner-pages.js?v=20261014-unified-public-brand-v1"></script>
-<script type="module" src="/app.js?v=20261008-apple-production-v1-no-menu-arrows-v1-lang-switch-v1-ios-design-v2-legal-feature-sync-v1-pricing-20261008-ra-logo-v1-scroll-trial-v1-hero-cta-v1-tax-country-guard-v1-seller-b2b-v1-seller-address-v1-hero-20261009-smarter-v1-checkout-business-consent-v1-seller-brand-v1-billing-hidden-v1-ui-language-custom-duration-v1-footer-business-id-contrast-v1-official-seller-name-v1-signup-first-20261009-seller-note-20261009-20261009-premium-app-v1-premium-app-v2-stable-header-v1-header-20261010-v2-remove-scroll-condense-v2-pricing-20261010-v3-legal-and-prices-20261010-answers-page-search-v1-ecommerce-product-cards-20261011-remove-menu-languages-v2-slogan-v2-plain-footer-login-clean-v1-no-duplicate-login-v1-google-sites-install-key-20261011-v2-20261012-approved-arrow-desktop-v2-audience-hub-route-v3-world-guides-v1-multilingual-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-vertical-20261013-v1-customer-buyer-20261013-v1-ai-topic-clusters-v1-fi-scorecard-v1-pricing-20261014-ape-v1-home-guides-removed-20261014-v1-annual-120-v1-lead-value-20261014-v1-contact-shortcut-20261015-v1-pricing-footer-nav-20261015-v1-lead-slider-20261016-v1-home-plans-20261018-v1-billing-toggle-oauth-v1-google-signup-i18n-v1-dark-signup-v1-growth-board-dark-20261018-v1-spiral-tree-hero-v1-spiral-only-v3-public-footer-v1-demo-only-v4-chat-first-v1-header-login-v5-chat-first-home-20261019-v1"></script>
+<script type="module" src="/app.js?v=20261008-apple-production-v1-no-menu-arrows-v1-lang-switch-v1-ios-design-v2-legal-feature-sync-v1-pricing-20261008-ra-logo-v1-scroll-trial-v1-hero-cta-v1-tax-country-guard-v1-seller-b2b-v1-seller-address-v1-hero-20261009-smarter-v1-checkout-business-consent-v1-seller-brand-v1-billing-hidden-v1-ui-language-custom-duration-v1-footer-business-id-contrast-v1-official-seller-name-v1-signup-first-20261009-seller-note-20261009-20261009-premium-app-v1-premium-app-v2-stable-header-v1-header-20261010-v2-remove-scroll-condense-v2-pricing-20261010-v3-legal-and-prices-20261010-answers-page-search-v1-ecommerce-product-cards-20261011-remove-menu-languages-v2-slogan-v2-plain-footer-login-clean-v1-no-duplicate-login-v1-google-sites-install-key-20261011-v2-20261012-approved-arrow-desktop-v2-audience-hub-route-v3-world-guides-v1-multilingual-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-vertical-20261013-v1-customer-buyer-20261013-v1-ai-topic-clusters-v1-fi-scorecard-v1-pricing-20261014-ape-v1-home-guides-removed-20261014-v1-annual-120-v1-lead-value-20261014-v1-contact-shortcut-20261015-v1-pricing-footer-nav-20261015-v1-lead-slider-20261016-v1-home-plans-20261018-v1-billing-toggle-oauth-v1-google-signup-i18n-v1-dark-signup-v1-growth-board-dark-20261018-v1-spiral-tree-hero-v1-spiral-only-v3-public-footer-v1-demo-only-v4-chat-first-v1-header-login-v5-chat-first-home-20261019-v1-20261019-english-default-v1"></script>
 <script defer src="/dashboard-drawer.js?v=20261010-premium-hamburger-scroll-v2-drawer-language-v1-signed-in-links-fix-v1"></script>
 <script defer src="/effects.js?v=20261008-apple-production-v1-pricing-20261008-no-annual-saving-v2-ra-logo-v1-prices-20261010-20261012-approved-arrow-desktop-v2-pricing-20261014-ape-v1-annual-120-v1-chat-first-v1-logo-sound-cleanlinks-v2"></script>
 <script defer src="/unified-motion.js?v=20261018-v1"></script>

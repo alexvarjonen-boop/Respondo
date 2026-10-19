@@ -176,10 +176,10 @@ function seoLanguageForRequest(req) {
   if (req.path === '/features') return 'en';
   if (req.path === '/funktioner') return 'sv';
   const value = String(req.query?.lang || '').toLowerCase();
-  return ['fi','sv','en'].includes(value) ? value : 'fi';
+  return ['fi','sv','en'].includes(value) ? value : 'en';
 }
 
-function seoCanonicalPath(pathname, lang='fi') {
+function seoCanonicalPath(pathname, lang='en') {
   if (['/ominaisuudet','/features','/funktioner'].includes(pathname)) {
     return lang === 'en' ? '/features' : lang === 'sv' ? '/funktioner' : '/ominaisuudet';
   }
@@ -197,7 +197,7 @@ function seoLanguageUrls(pathname) {
       ? (lang === 'en' ? '/features' : lang === 'sv' ? '/funktioner' : '/ominaisuudet')
       : metaPath;
     const url = new URL(SEO_CANONICAL_ORIGIN + path);
-    if (lang !== 'fi' && metaPath !== '/ominaisuudet') url.searchParams.set('lang', lang);
+    if (lang !== 'en' && metaPath !== '/ominaisuudet') url.searchParams.set('lang', lang);
     return url.toString();
   };
   return { fi:build('fi'), sv:build('sv'), en:build('en') };
@@ -227,7 +227,7 @@ function seoMetaForRequest(req) {
   const isKnown = isIndexable || SEO_APP_PATHS.has(rawPath);
   const origin = SEO_CANONICAL_ORIGIN;
   const canonicalUrl = new URL(origin + canonicalPath);
-  if (lang !== 'fi' && !['/features','/funktioner'].includes(canonicalPath)) {
+  if (lang !== 'en' && !['/features','/funktioner'].includes(canonicalPath)) {
     canonicalUrl.searchParams.set('lang', lang);
   }
   return {
@@ -461,7 +461,7 @@ async function renderIndexHtml(req) {
     '<link rel="alternate" hreflang="fi" href="' + escapeHtml(seo.alternates.fi) + '" data-respondo-hreflang="1">',
     '<link rel="alternate" hreflang="sv" href="' + escapeHtml(seo.alternates.sv) + '" data-respondo-hreflang="1">',
     '<link rel="alternate" hreflang="en" href="' + escapeHtml(seo.alternates.en) + '" data-respondo-hreflang="1">',
-    '<link rel="alternate" hreflang="x-default" href="' + escapeHtml(seo.alternates.fi) + '" data-respondo-hreflang="1">',
+    '<link rel="alternate" hreflang="x-default" href="' + escapeHtml(seo.alternates.en) + '" data-respondo-hreflang="1">',
     '<meta property="og:url" content="' + escapeHtml(seo.canonical) + '">',
     '<meta property="og:image" content="' + escapeHtml(SEO_CANONICAL_ORIGIN + '/respondo-approved-arrow-20261012.png') + '">',
     '<meta property="og:image:alt" content="Respondo AI – upward white arrow on black">',
@@ -817,7 +817,7 @@ function escapeEmailHtml(value) {
     .replaceAll("'",'&#39;');
 }
 
-async function sendSignupVerificationEmail({ email, code, language = 'fi' }) {
+async function sendSignupVerificationEmail({ email, code, language = 'en' }) {
   if (!signupEmailVerificationReady()) {
     return { sent:false, reason:'email_verification_not_configured' };
   }
@@ -889,7 +889,7 @@ async function sendWelcomeEmailOnce(userId) {
     const found = await q('SELECT email,full_name,preferred_language,referral_code,subscription_plan FROM users WHERE id=$1',[userId]);
     const user=found.rows[0];
     if (!user?.email) throw new Error('Welcome recipient missing');
-    const lang=['fi','sv','en'].includes(user.preferred_language) ? user.preferred_language : 'fi';
+    const lang=['fi','sv','en'].includes(user.preferred_language) ? user.preferred_language : 'en';
     const firstName=String(user.full_name||'').trim().split(/\\s+/)[0];
     const greeting=lang==='sv'?'Välkommen till Respondo AI!':lang==='en'?'Welcome to Respondo AI!':'Tervetuloa Respondo AI:hin!';
     const intro=lang==='sv'?'Ditt konto är klart. Du kan nu logga in och börja konfigurera din kundtjänstbot.':lang==='en'?'Your account is ready. You can now sign in and set up your customer service bot.':'Tilisi on nyt valmis. Voit kirjautua sisään ja aloittaa asiakaspalvelubottisi käyttöönoton.';
@@ -975,7 +975,7 @@ async function sendHomepageContactEmail({ name, email, message }) {
   return { sent:true, id:data?.id || null };
 }
 
-async function sendPasswordResetEmail({ email, token, language = 'fi' }) {
+async function sendPasswordResetEmail({ email, token, language = 'en' }) {
   const apiKey = String(process.env.RESEND_API_KEY || '').trim();
   if (!apiKey) return { sent:false, reason:'resend_not_configured' };
 
@@ -8215,7 +8215,7 @@ app.get('/sitemap.xml', (req,res) => {
         '    <xhtml:link rel="alternate" hreflang="fi" href="' + escapeXml(urls.fi) + '" />\n' +
         '    <xhtml:link rel="alternate" hreflang="sv" href="' + escapeXml(urls.sv) + '" />\n' +
         '    <xhtml:link rel="alternate" hreflang="en" href="' + escapeXml(urls.en) + '" />\n' +
-        '    <xhtml:link rel="alternate" hreflang="x-default" href="' + escapeXml(urls.fi) + '" />\n' +
+        '    <xhtml:link rel="alternate" hreflang="x-default" href="' + escapeXml(urls.en) + '" />\n' +
         '  </url>'
       );
     }
@@ -9202,7 +9202,7 @@ app.post('/api/auth/email-verification/request', signupVerificationRequestLimite
     );
     await sendSignupVerificationEmail({
       email, code,
-      language:['fi','sv','en'].includes(req.body?.language) ? req.body.language : 'fi',
+      language:['fi','sv','en'].includes(req.body?.language) ? req.body.language : 'en',
     });
     res.clearCookie(SIGNUP_VERIFY_PROOF_COOKIE,{path:'/'});
     res.cookie(SIGNUP_VERIFY_PENDING_COOKIE,challenge,signupVerifyCookieOptions(SIGNUP_VERIFY_TTL_MS));
@@ -9354,7 +9354,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
 
       const preferredLanguage = ['fi','sv','en'].includes(String(req.body.language || '').toLowerCase())
         ? String(req.body.language).toLowerCase()
-        : 'fi';
+        : 'en';
       const initialStatus = freeReferral ? 'active' : 'pending';
       const initialSubscriptionStatus = freeReferral ? 'active' : null;
 

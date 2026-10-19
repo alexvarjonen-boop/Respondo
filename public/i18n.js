@@ -4,9 +4,9 @@
   const SUPPORTED = ['fi', 'sv', 'en'];
   const normalize = (value) => {
     const lang = String(value || '').toLowerCase().split('-')[0];
-    return SUPPORTED.includes(lang) ? lang : 'fi';
+    return SUPPORTED.includes(lang) ? lang : 'en';
   };
-  const initial = normalize(localStorage.getItem('respondo_lang') || document.documentElement.lang || navigator.language);
+  const initial = normalize(localStorage.getItem('respondo_lang') || document.documentElement.lang || navigator.language || 'en');
   let current = initial;
 
   const dictionaries = {
@@ -52,7 +52,7 @@
   };
 
   function translate(key, fallback = '') {
-    return dictionaries[current]?.[key] ?? dictionaries.fi[key] ?? fallback ?? key;
+    return dictionaries[current]?.[key] ?? dictionaries.en[key] ?? fallback ?? key;
   }
   function apply(root = document) {
     document.documentElement.lang = current;
@@ -75,7 +75,7 @@
   function languageSelector(className = 'language-select') {
     return '<label class="' + className + '"><span class="sr-only">' + translate('language') + '</span>' +
       '<select data-lang-select aria-label="' + translate('language') + '">' +
-      '<option value="fi">FI</option><option value="sv">SV</option><option value="en">EN</option>' +
+      '<option value="en">EN</option><option value="fi">FI</option><option value="sv">SV</option>' +
       '</select></label>';
   }
   document.addEventListener('change', (event) => {
