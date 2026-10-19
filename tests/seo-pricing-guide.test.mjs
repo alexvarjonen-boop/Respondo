@@ -60,6 +60,7 @@ test('Google-readable localized pricing pages are present in the first HTML resp
   }
   const map = await (await fetch(root + '/sitemap.xml')).text();
   assert.ok(map.includes('/guides/ai-chatbot-pricing'));
-  assert.ok(map.includes('/guides/ai-chatbot-pricing?lang=en'));
+  assert.ok(map.includes('/guides/ai-chatbot-pricing?lang=fi'));
   assert.ok(map.includes('/guides/ai-chatbot-pricing?lang=sv'));
+  assert.ok(map.includes('/guides/ai-chatbot-pricing</loc>'));
 });
