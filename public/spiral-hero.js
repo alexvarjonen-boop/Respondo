@@ -22,7 +22,6 @@ export function spiralHeroMarkup(t, lang) {
     <div class="rs-spiral-stage">
       <div class="rs-space" aria-hidden="true"><div class="rs-space-glow"></div><div class="rs-space-ellipse rs-space-ellipse-a"></div><div class="rs-space-ellipse rs-space-ellipse-b"></div><div class="rs-space-horizon"></div></div>
       <div class="rs-spiral-heading">
-        <p class="apple-eyebrow">RESPONDO AI <span class="rs-subbrand">/ ${t('ÄLYKÄS ASIAKASPALVELU','SMART KUNDSERVICE','SMART CUSTOMER SERVICE')}</span></p>
         <h1 id="apple-home-title">${t('Älykkäämpää','Smartare','Smarter')} <span>${t('asiakaspalvelua.','kundservice.','customer service.')}</span></h1>
         <p class="rs-hero-description">${t('Tämä sivu toimii chatin kautta. Kysy Respondolta hinnat, ominaisuudet, kokeilu tai yhteystiedot – se vastaa ja ohjaa eteenpäin.','Den här webbplatsen fungerar via chatten. Fråga Respondo om priser, funktioner, testperioden eller kontakt – och få hjälp vidare.','This website is guided by chat. Ask Respondo about pricing, features, the free trial or contact details – and get the next step.')}</p>
       </div>
