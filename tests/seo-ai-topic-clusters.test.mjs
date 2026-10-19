@@ -59,7 +59,7 @@ test('public HTTP SEO responses for two topics each in three languages, sitemap 
   t.after(()=>new Promise((resolve,reject)=>listener.close(error=>error?reject(error):resolve())));
   const base='http://127.0.0.1:'+listener.address().port;
   for(const p of AI_TOPIC_PATHS)for(const lang of ['fi','sv','en']){
-    const url=p+(lang==='fi'?'':'?lang='+lang);
+    const url=p+(lang==='en'?'':'?lang='+lang);
     const res=await fetch(base+url);
     assert.equal(res.status,200,url);
     const html=await res.text();
@@ -75,7 +75,7 @@ test('public HTTP SEO responses for two topics each in three languages, sitemap 
   const site=await (await fetch(base+'/sitemap.xml')).text();
   for(const path of AI_TOPIC_PATHS){
     for(const lang of ['fi','sv','en']){
-      const url=path+(lang==='fi'?'':'?lang='+lang);
+      const url=path+(lang==='en'?'':'?lang='+lang);
       const escapedUrl=url.replace('&','&amp;');
       assert.ok(site.includes(escapedUrl+'</loc>'),'missing sitemap url '+url);
     }

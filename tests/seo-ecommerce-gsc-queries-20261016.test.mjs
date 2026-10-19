@@ -34,7 +34,7 @@ test('SSR e-commerce route supplies crawlable content, localized title and link 
   t.after(()=>new Promise((resolve,reject)=>server.close(e=>e?reject(e):resolve())));
   const base='http://127.0.0.1:'+server.address().port;
   for(const lang of ['fi','sv','en']){
-    const path='/verkkokauppa-chatbot'+(lang==='fi'?'':'?lang='+lang);
+    const path='/verkkokauppa-chatbot'+(lang==='en'?'':'?lang='+lang);
     const res=await fetch(base+path);
     assert.equal(res.status,200,path);
     assert.match(res.headers.get('content-type')||'',/text\/html/);

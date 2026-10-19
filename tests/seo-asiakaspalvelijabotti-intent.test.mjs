@@ -55,7 +55,7 @@ test('server prerenders authoritative localized copy with indexable canonicals a
   t.after(()=>new Promise((resolve,reject)=>handle.close(err=>err?reject(err):resolve())));
   const base='http://127.0.0.1:'+handle.address().port;
   for(const lang of ['fi','sv','en']){
-    const url='/asiakaspalvelubotti'+(lang==='fi'?'':'?lang='+lang);
+    const url='/asiakaspalvelubotti'+(lang==='en'?'':'?lang='+lang);
     const res=await fetch(base+url);
     assert.equal(res.status,200,url);
     const html=await res.text();

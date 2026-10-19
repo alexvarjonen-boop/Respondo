@@ -6,7 +6,7 @@ const root=new URL('../',import.meta.url);
 const [i18n,app,server,index]=await Promise.all(['public/i18n.js','public/app.js','server.mjs','public/index.html'].map(path=>readFile(new URL(path,root),'utf8')));
 function newVisitor(storage=new Map()){
   const document={documentElement:{lang:'en'},addEventListener(){},querySelectorAll(){return []}};
-  const window={dispatchEvent(){}};
+  const window={dispatchEvent(){},addEventListener(){}};
   vm.runInNewContext(i18n,{document,window,navigator:{language:'fi-FI'},localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)},CustomEvent:class {constructor(type,opts){this.type=type;this.detail=opts?.detail;}}});
   return {i18n:window.RespondoI18n,storage};
 }

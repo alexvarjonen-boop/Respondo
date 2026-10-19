@@ -10,7 +10,8 @@ test('public landing content is present in the initial HTML without JavaScript',
   const origin = 'http://127.0.0.1:' + server.address().port;
 
   for (const [url, expectedH1, lang] of [
-    ['/', 'AI-asiakaspalvelubotti yrityksille 24/7', 'fi'],
+    ['/', 'AI customer service bot for businesses 24/7', 'en'],
+    ['/?lang=fi', 'AI-asiakaspalvelubotti yrityksille 24/7', 'fi'],
     ['/?lang=en', 'AI customer service bot for businesses 24/7', 'en'],
     ['/kenelle-sopii?lang=sv', 'Vem passar Respondo AI för?', 'sv'],
     ['/kenelle-sopii?lang=en', 'Who is Respondo AI for?', 'en'],

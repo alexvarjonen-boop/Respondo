@@ -48,7 +48,7 @@ test('Google-readable localized pricing pages are present in the first HTML resp
   t.after(() => new Promise((resolve, reject) => server.close(err => err ? reject(err) : resolve())));
   const root = 'http://127.0.0.1:' + server.address().port;
   for (const lang of ['fi','sv','en']) {
-    const target = path + (lang === 'fi' ? '' : '?lang=' + lang);
+    const target = path + (lang === 'en' ? '' : '?lang=' + lang);
     const response = await fetch(root + target);
     assert.equal(response.status, 200, target);
     const html = await response.text();

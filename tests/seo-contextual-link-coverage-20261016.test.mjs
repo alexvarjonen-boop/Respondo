@@ -33,13 +33,13 @@ test('Google-readable HTML, sitemap and canonical metadata expose important inte
   const origin='http://127.0.0.1:'+server.address().port;
   for(const lang of ['fi','sv','en']){
     const suffix=lang==='fi'?'':'?lang='+lang;
-    const res=await fetch(origin+'/kenelle-sopii'+suffix);
+    const res=await fetch(origin+'/kenelle-sopii?lang='+lang);
     assert.equal(res.status,200);
     const html=await res.text();
     for(const path of groups){
       assert.ok(html.includes('href="'+path+suffix+'"'),lang+' industry hub missing '+path);
     }
-    const commerce=await fetch(origin+'/verkkokauppa-chatbot'+suffix);
+    const commerce=await fetch(origin+'/verkkokauppa-chatbot?lang='+lang);
     assert.equal(commerce.status,200);
     const shopifyLink='/shopify-chatbot'+(lang==='fi'?'':suffix);
     assert.ok((await commerce.text()).includes('href="'+shopifyLink+'"'),lang+' commerce landing misses Shopify guide');

@@ -78,6 +78,6 @@ test('Finnish scorecard and English counterpart are HTTP-accessible with proper 
   const xml=await (await fetch(base+'/sitemap.xml')).text();
   assert.match(xml,/<loc>[^<]*\/tools\/asiakaspalvelubotti-testi.html<\/loc>/);
   assert.match(xml,/<loc>[^<]*\/tools\/ai-chatbot-evaluation.html<\/loc>/);
-  const home=await (await fetch(base+'/')).text();
+  const home=await (await fetch(base+'/?lang=fi')).text();
   assert.match(home,/\/tools\/asiakaspalvelubotti-testi.html/,'homepage SSR must link to tool');
 });

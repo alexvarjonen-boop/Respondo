@@ -60,7 +60,7 @@ test('six localized industry pages are indexable, prerendered and included in si
   const root='http://127.0.0.1:'+listener.address().port;
   for(const path of VERTICAL_LANDING_PATHS){
     for(const lang of ['fi','sv','en']){
-      const url=path+(lang==='fi'?'':'?lang='+lang);
+      const url=path+(lang==='en'?'':'?lang='+lang);
       const response=await fetch(root+url);
       assert.equal(response.status,200,url);
       const html=await response.text();
@@ -78,8 +78,8 @@ test('six localized industry pages are indexable, prerendered and included in si
   }
   const xml=await (await fetch(root+'/sitemap.xml')).text();
   for(const path of VERTICAL_LANDING_PATHS){
-    assert.ok(xml.includes(path+'</loc>'),'missing Finnish sitemap url '+path);
-    assert.ok(xml.includes(path+'?lang=en</loc>'),'missing English sitemap url '+path);
+    assert.ok(xml.includes(path+'?lang=fi</loc>'),'missing Finnish sitemap url '+path);
+    assert.ok(xml.includes(path+'</loc>'),'missing English sitemap url '+path);
     assert.ok(xml.includes(path+'?lang=sv</loc>'),'missing Swedish sitemap url '+path);
   }
 });

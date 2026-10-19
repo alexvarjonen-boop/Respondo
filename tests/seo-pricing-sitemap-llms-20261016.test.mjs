@@ -36,7 +36,7 @@ test('public pricing is rendered on server without JS; sitemap URLs are unique a
   t.after(()=>new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve())));
   const origin='http://127.0.0.1:'+server.address().port;
   for(const lang of ['fi','sv','en']){
-    const url='/hinnat'+(lang==='fi'?'':'?lang='+lang);
+    const url='/hinnat'+(lang==='en'?'':'?lang='+lang);
     const res=await fetch(origin+url);
     assert.equal(res.status,200,url);
     const html=await res.text();
@@ -63,7 +63,7 @@ test('public pricing is rendered on server without JS; sitemap URLs are unique a
   for(const lang of ['fi','sv','en']){
     const match=locs.some((loc)=>{
       const u=new URL(loc.replace(/&amp;/g,'&'));
-      return u.pathname==='/hinnat' && u.searchParams.get('lang')===(lang==='fi'?null:lang);
+      return u.pathname==='/hinnat' && u.searchParams.get('lang')===(lang==='en'?null:lang);
     });
     assert.ok(match,lang+' pricing URL in sitemap');
   }

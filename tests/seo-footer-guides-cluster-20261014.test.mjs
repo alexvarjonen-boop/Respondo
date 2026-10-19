@@ -72,7 +72,7 @@ test('HTTP pages are full SSR content with correct title canonical hreflang, FAQ
   const base='http://127.0.0.1:'+listener.address().port;
   for(const path of NEW_PATHS){
     for(const lang of ['fi','sv','en']){
-      const suffix=lang==='fi'?'':'?lang='+lang;
+      const suffix=lang==='en'?'':'?lang='+lang;
       const response=await fetch(base+path+suffix);
       assert.equal(response.status,200,'Unexpected HTTP status for '+path+suffix);
       const html=await response.text();
@@ -92,8 +92,8 @@ test('HTTP pages are full SSR content with correct title canonical hreflang, FAQ
   }
   const sitemap=await(await fetch(base+'/sitemap.xml')).text();
   for(const path of NEW_PATHS)for(const lang of ['fi','sv','en']){
-    const suffix=lang==='fi'?'':'?lang='+lang;
-    assert.ok(sitemap.includes(path+(lang==='fi'?'':'?lang='+lang.replace('en','en'))),'not in XML sitemap '+path+suffix);
+    const suffix=lang==='en'?'':'?lang='+lang;
+    assert.ok(sitemap.includes(path+(lang==='en'?'':'?lang='+lang.replace('en','en'))),'not in XML sitemap '+path+suffix);
   }
   const llms=await(await fetch(base+'/llms.txt')).text();
   for(const path of NEW_PATHS)assert.ok(llms.includes(path+'?lang=en'),'not in public AI source list');
