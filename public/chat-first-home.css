@@ -107,3 +107,32 @@
 }
 /* The public assistant remains reachable over all marketing content, but the
    chat-first hero form itself must stay under its fullscreen chat panel. */
+
+
+/* Desktop pricing: show all three packages side by side. */
+/* The legacy desktop mobile-parity rules force a 760px container and one pricing column.
+   Scope the fix to pricing only; keep the compact layout on phones and tablets. */
+@media (min-width: 1024px) {
+  #app .apple-home-page .pricing-section > .container,
+  #app .pricing-page .pricing-section > .container {
+    width: min(1240px, calc(100% - 64px)) !important;
+    max-width: 1240px !important;
+  }
+  #app .apple-home-page .pricing-section .pricing-wrap,
+  #app .pricing-page .pricing-section .pricing-wrap {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+    gap: 20px !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  #app .apple-home-page .pricing-section .pricing-wrap > .price-card,
+  #app .pricing-page .pricing-section .pricing-wrap > .price-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    grid-column: auto !important;
+  }
+}
