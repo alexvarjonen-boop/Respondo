@@ -25,7 +25,20 @@ export function qualifyLead({ message = '', name = '', email = '', phone = '', c
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(safeEmail);
   const validPhone = /^\+?[\d\s().-]{6,30}$/.test(safePhone);
   const hasContact = validEmail || validPhone;
-  const qualified = Boolean(consent && safeName && hasContact && intent !== 'unknown' && intent !== 'support');
-  const score = !consent ? 0 : Math.min(100, (intent === 'purchase' ? 45 : intent === 'quote' ? 40 : intent === 'booking' ? 35 : intent === 'contact' ? 20 : 0) + (safeName ? 15 : 0) + (hasContact ? 25 : 0) + (validEmail && validPhone ? 10 : 0));
-  return { intent, confidence, qualified, score, contact: consent ? { name: safeName, email: validEmail ? safeEmail : '', phone: validPhone ? safePhone : '' } : null };
+  const allowed = consent === true;
+  const salesIntent = intent !== 'unknown' && intent !== 'support';
+  const qualified = Boolean(allowed && safeName && hasContact && salesIntent);
+  const score = !allowed || !salesIntent ? 0 : Math.min(100, (intent === 'purchase' ? 45 : intent === 'quote' ? 40 : intent === 'booking' ? 35 : intent === 'contact' ? 20 : 0) + (safeName ? 15 : 0) + (hasContact ? 25 : 0) + (validEmail && validPhone ? 10 : 0));
+  return { intent, confidence, qualified, score, contact: allowed ? { name: safeName, email: validEmail ? safeEmail : '', phone: validPhone ? safePhone : '' } : null };
+}
+
+// Suggested next question, never a substitute for explicit contact consent.
+const prompts = Object.freeze({
+  fi: { quote: 'Millaista palvelua tarvitset ja millä aikataululla?', booking: 'Minkä palvelun haluaisit varata ja milloin?', purchase: 'Mistä tuotteesta tai palvelusta olet kiinnostunut?', contact: 'Miten voimme auttaa sinua?' },
+  sv: { quote: 'Vilken tjänst behöver du och när?', booking: 'Vilken tjänst vill du boka och när?', purchase: 'Vilken produkt eller tjänst är du intresserad av?', contact: 'Hur kan vi hjälpa dig?' },
+  en: { quote: 'What service do you need, and by when?', booking: 'What service would you like to book, and when?', purchase: 'Which product or service are you interested in?', contact: 'How can we help you?' }
+});
+export function nextLeadQuestion(intent, language = 'fi') {
+  const lang = Object.hasOwn(prompts, language) ? language : 'en';
+  return prompts[lang][intent] || null;
 }
