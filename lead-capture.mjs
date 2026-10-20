@@ -15,6 +15,10 @@ export function completeLeadCapture({ session, tenantId, leadId, name, email, ph
       !['quote', 'booking', 'purchase', 'contact'].includes(session.intent)) {
     return { accepted: false, reason: 'invalid_session', event: null };
   }
+  const verified = prepareLeadConversation({ message: session.originalMessage, language: session.language });
+  if (!verified.requiresConsent || verified.intent !== session.intent) {
+    return { accepted: false, reason: 'invalid_session', event: null };
+  }
   if (consent !== true) return { accepted: false, reason: 'consent_required', event: null };
   const result = prepareQualifiedLead({
     tenantId, leadId, message: session.originalMessage,
