@@ -42,5 +42,5 @@ test('footer ends after standard product company legal information',()=>{
   assert.match(footer,/class="legalbar"/);
   assert.match(index,/app\.js\?v=[^"]*header-login-v5/);
   assert.match(index,/mobile-public-polish\.css\?v=[^"]*header-login-v5/);
-  assert.match(app,/apple-home\.js\?v=20261019-bot-navigation-hint-v1/);
+  assert.match(app,/apple-home\.js\?v=20261020-language-flags-v1/);
 });
