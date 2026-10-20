@@ -1837,7 +1837,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   // A visitor should get a first-party company overview for "mitä teette"
   // before generic services retrieval. This is Respondo's own approved FAQ,
   // never used for an unrelated tenant or external demo import.
-  if (/(?:^|\\b)(?:mita (?:te )?teette|mita (?:te )?tarjoatte|kerro (?:respondo(?:sta)?|teista|yrityksestanne)|what do you do|what do you offer|tell me about respondo|vad gor ni|vad erbjuder ni|beratta om respondo)(?:\\b|$)/.test(q)) {
+  if (/(?:^|\b)(?:mita (?:te )?teette|mita (?:te )?tarjoatte|kerro (?:respondo(?:sta)?|teista|yrityksestanne)|what do you do|what do you offer|tell me about respondo|vad gor ni|vad erbjuder ni|beratta om respondo)(?:\b|$)/.test(q)) {
     return {id:'respondo-faq-company-overview',answer:answer(
       'Respondo AI tarjoaa yrityksille verkkosivuille asennettavan AI-asiakaspalvelubotin. Se vastaa asiakkaiden kysymyksiin ympäri vuorokauden yrityksen hyväksyttyjen tietojen perusteella suomeksi, ruotsiksi ja englanniksi. Botti voi myös kerätä yhteydenottoja, auttaa ajanvarauksissa ja siirtää keskustelun asiakaspalvelijalle. Osa toiminnoista riippuu paketista ja käyttöönotetuista integraatioista.',
       'Respondo AI erbjuder företag en AI-kundtjänstbot för deras webbplatser. Den svarar på kundfrågor dygnet runt utifrån företagets godkända information på finska, svenska och engelska. Den kan även samla in kontaktförfrågningar, hjälpa till med bokningar och lämna över chatten till en medarbetare. Vissa funktioner kräver rätt abonnemang eller integrationer.',
@@ -7109,7 +7109,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
           !importedKnowledgeJunk(String(row?.title||'')+' '+String(row?.answer||''));
       })
       .map((row)=>({row,answer:conciseKnowledgeAnswer(row,cleanMessage)}))
-      .find((item)=>item.answer.length>=25 && !/^https?:\\/\\//i.test(item.answer));
+      .find((item)=>item.answer.length>=25 && !/^https?:\/\//i.test(item.answer));
     if (verifiedAbout) {
       const sourceLanguage=detectConversationLanguage(verifiedAbout.answer,'fi');
       const localized=sourceLanguage===responseLang
