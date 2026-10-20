@@ -8492,6 +8492,10 @@ async function requireLeadSchema(req, res, next) {
     return res.status(503).json({error:'Liidienhallinta ei ole tilapäisesti käytettävissä.'});
   }
 }
+app.get('/app/leads', auth, ownerOnly, (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  return res.sendFile(path.join(process.cwd(),'public','leads.html'));
+});
 app.get('/api/leads', auth, ownerOnly, requireLeadSchema, async (req, res) => {
   res.set('Cache-Control','private, no-store');
   try { return res.json({leads:await leadOperations.list(req,Number(req.query.limit)||50)}); }
