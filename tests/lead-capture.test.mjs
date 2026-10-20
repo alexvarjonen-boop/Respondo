@@ -23,3 +23,15 @@ test('forged support session cannot export contact', () => {
   const session = {stage:'details',originalMessage:'Haluan ostaa',intent:'support'};
   assert.equal(completeLeadCapture({session,tenantId:'t',leadId:'l',consent:true}).accepted,false);
 });
+
+test('rejects a forged intent in the submitted lead session', () => {
+  const session = beginLeadCapture({message:'Haluan ostaa',language:'fi'});
+  assert.ok(session);
+  const forged={...session,intent:'quote'};
+  const result=completeLeadCapture({
+    session:forged,tenantId:'tenant-1',leadId:'lead-1',
+    name:'Buyer',email:'buyer@example.com',consent:true
+  });
+  assert.equal(result.accepted,false);
+  assert.equal(result.reason,'invalid_session');
+});
