@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { deliverQualifiedLead } from './lead-crm.mjs';
+import { getCrmProvider, enqueueCrmLead } from './lead-crm-queue.mjs';
 import { beginLeadCapture, completeLeadCapture } from './lead-capture.mjs';
 import { ensureLeadTable, saveQualifiedLead, listQualifiedLeads, leadAnalyticsForTenant, deleteQualifiedLead } from './lead-repository.mjs';
 
@@ -28,13 +29,18 @@ export function createLeadOperations({ pool, resolveTenantId, crm = {}, deliver 
       const saved = await saveQualifiedLead(pool, tenantId, result.event);
       if (!saved.saved) return { accepted: false, reason: 'duplicate', leadId: null };
       let crmStatus = 'disabled';
-      if (crm.url && crm.secret) {
-        try {
-          crmStatus = (await deliver(result.event, crm)).status;
-        } catch (error) {
-          console.error('CRM delivery failed', { leadId, error: String(error) });
-          crmStatus = 'failed';
+      try {
+        const setting = await getCrmProvider(pool, tenantId);
+        if (setting.enabled) {
+          const queued = await enqueueCrmLead(pool,result.event);
+          crmStatus = queued.queued ? 'queued' : 'already_queued';
+        } else if (crm.url && crm.secret) {
+          // Legacy global webhook remains supported until tenants migrate.
+          crmStatus = (await deliver(result.event,crm)).status;
         }
+      } catch(error) {
+        console.error('CRM enqueue failed', {leadId,error:String(error)});
+        crmStatus='failed';
       }
       return { accepted: true, reason: null, leadId, crmStatus };
     },
