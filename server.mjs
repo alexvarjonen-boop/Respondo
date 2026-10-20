@@ -1,4 +1,5 @@
 import { brandedEmailHtml } from './email-branding.mjs';
+import { createLeadOperations } from './lead-operations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { serviceOverviewQuestion, verifiedServiceOverview } from './service-overview.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
@@ -8462,6 +8463,49 @@ const demoImportLimiter = rateLimit({
     return crypto.createHash('sha256').update(publicRateKey(req,'demo-import')+'|'+website).digest('hex');
   },
   message: { error: 'Demon verkkosivuhakuja on tehty liian monta. Yritä hetken kuluttua uudelleen.' },
+});
+
+// Authenticated owner-only lead management. This feature is isolated from
+// public chat endpoints until explicit consent UI and tenant-safe capture ship.
+const leadOperations = pool ? createLeadOperations({
+  pool,
+  resolveTenantId: async (req) => {
+    if (!req.user?.sub || req.user.role === 'agent') return null;
+    const rr = await q(
+      'SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1) LIMIT 1',
+      [req.user.sub]
+    );
+    return rr.rows[0]?.id ? String(rr.rows[0].id) : null;
+  }
+}) : null;
+let leadSchemaReady = false;
+async function requireLeadSchema(req, res, next) {
+  if (!leadOperations) return res.status(503).json({error:'Tietokanta ei ole käytettävissä.'});
+  try {
+    if (!leadSchemaReady) {
+      await leadOperations.ensureSchema();
+      leadSchemaReady = true;
+    }
+    next();
+  } catch (error) {
+    console.error('Lead schema initialization failed', error);
+    return res.status(503).json({error:'Liidienhallinta ei ole tilapäisesti käytettävissä.'});
+  }
+}
+app.get('/api/leads', auth, ownerOnly, requireLeadSchema, async (req, res) => {
+  res.set('Cache-Control','private, no-store');
+  try { return res.json({leads:await leadOperations.list(req,Number(req.query.limit)||50)}); }
+  catch (error) { console.error('Lead list failed',error); return res.status(403).json({error:'Liidien hakeminen epäonnistui.'}); }
+});
+app.get('/api/leads/analytics', auth, ownerOnly, requireLeadSchema, async (req, res) => {
+  res.set('Cache-Control','private, no-store');
+  try { return res.json(await leadOperations.analytics(req)); }
+  catch (error) { console.error('Lead analytics failed',error); return res.status(403).json({error:'Liidianalytiikka ei ole käytettävissä.'}); }
+});
+app.delete('/api/leads/:leadId', auth, ownerOnly, requireLeadSchema, async (req, res) => {
+  res.set('Cache-Control','private, no-store');
+  try { return res.json(await leadOperations.delete(req,req.params.leadId)); }
+  catch (error) { console.error('Lead deletion failed',error); return res.status(403).json({error:'Liidin poistaminen epäonnistui.'}); }
 });
 
 app.get('/api/health', async (req, res) => {
