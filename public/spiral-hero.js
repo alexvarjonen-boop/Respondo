@@ -2,9 +2,9 @@
    Marketing copy only: never present sample percentages as measured customer results. */
 export function spiralHeroMarkup(t, lang) {
   const languageFlags = `<span class="rs-language-flags" role="img" aria-label="${t('Englanti, suomi ja ruotsi','Engelska, finska och svenska','English, Finnish and Swedish')}">
-    <span class="${lang==='en'?'is-active':''}" aria-hidden="true">🇬🇧</span>
-    <span class="${lang==='fi'?'is-active':''}" aria-hidden="true">🇫🇮</span>
-    <span class="${lang==='sv'?'is-active':''}" aria-hidden="true">🇸🇪</span>
+    <span class="${lang==='en'?'is-active':''}" aria-hidden="true"><svg viewBox="0 0 22 16" focusable="false"><rect width="22" height="16" rx="2" fill="#012169"/><path d="M0 0 22 16M22 0 0 16" stroke="#fff" stroke-width="4"/><path d="M0 0 22 16M22 0 0 16" stroke="#C8102E" stroke-width="2"/><path d="M11 0v16M0 8h22" stroke="#fff" stroke-width="5"/><path d="M11 0v16M0 8h22" stroke="#C8102E" stroke-width="3"/></svg></span>
+    <span class="${lang==='fi'?'is-active':''}" aria-hidden="true"><svg viewBox="0 0 22 16" focusable="false"><rect width="22" height="16" rx="2" fill="#fff"/><rect x="6" width="3" height="16" fill="#003580"/><rect y="6.5" width="22" height="3" fill="#003580"/></svg></span>
+    <span class="${lang==='sv'?'is-active':''}" aria-hidden="true"><svg viewBox="0 0 22 16" focusable="false"><rect width="22" height="16" rx="2" fill="#006AA7"/><rect x="6" width="3" height="16" fill="#FECC00"/><rect y="6.5" width="22" height="3" fill="#FECC00"/></svg></span>
   </span>`;
   const cards = [
     ['24/7', t('Asiakaspalvelu ei nuku.','Kundservicen sover aldrig.','Support never sleeps.'),
