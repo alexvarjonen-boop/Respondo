@@ -10,7 +10,6 @@ export async function ensureLeadTable(pool) {
     intent TEXT NOT NULL CHECK (intent IN ('quote','booking','purchase','contact')),
     score INTEGER NOT NULL CHECK (score BETWEEN 0 AND 100),
     contact JSONB NOT NULL,
-    consented_at TIMESTAMPTZ NOT NULL,
     occurred_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (tenant_id, lead_id)
@@ -40,8 +39,8 @@ export async function saveQualifiedLead(pool, authenticatedTenantId, event) {
   }
   const result = await pool.query(
     `INSERT INTO respondo_qualified_leads
-      (tenant_id,lead_id,intent,score,contact,consented_at,occurred_at)
-      VALUES ($1,$2,$3,$4,$5::jsonb,$6,$6)
+      (tenant_id,lead_id,intent,score,contact,occurred_at)
+      VALUES ($1,$2,$3,$4,$5::jsonb,$6)
       ON CONFLICT (tenant_id,lead_id) DO NOTHING
       RETURNING lead_id`,
     [id,event.leadId,event.intent,event.score,JSON.stringify(event.contact),event.occurredAt]
@@ -57,6 +56,12 @@ export async function listQualifiedLeads(pool, authenticatedTenantId, limit = 50
        FROM respondo_qualified_leads WHERE tenant_id=$1
        ORDER BY occurred_at DESC LIMIT $2`, [id,take]);
   return result.rows;
+}
+export async function deleteQualifiedLead(pool, authenticatedTenantId, leadId) {
+  const id = tenant(authenticatedTenantId);
+  if (!pool?.query || typeof leadId !== 'string' || !leadId.trim()) throw new TypeError('Valid lead ID required');
+  const result = await pool.query('DELETE FROM respondo_qualified_leads WHERE tenant_id=$1 AND lead_id=$2 RETURNING lead_id', [id,leadId.trim()]);
+  return { deleted: result.rowCount === 1 };
 }
 export async function leadAnalyticsForTenant(pool, authenticatedTenantId) {
   const id = tenant(authenticatedTenantId);
