@@ -41,9 +41,9 @@ export async function enqueueCrmLead(pool,event) {
   return {queued:r.rowCount===1};
 }
 export async function processCrmOutbox(pool,deliver,{limit=20,maxAttempts=8}={}) {
-  const jobs=await pool.query(`UPDATE respondo_crm_outbox SET status='processing'
+  const jobs=await pool.query(`UPDATE respondo_crm_outbox SET status='processing',next_attempt_at=NOW()+INTERVAL '2 minutes'
     WHERE id IN (SELECT id FROM respondo_crm_outbox
-      WHERE status IN ('pending','retry') AND next_attempt_at<=NOW()
+      WHERE (status IN ('pending','retry') AND next_attempt_at<=NOW()) OR (status='processing' AND next_attempt_at<=NOW())
       ORDER BY next_attempt_at LIMIT $1 FOR UPDATE SKIP LOCKED)
     RETURNING id,tenant_id,payload,attempts`,[Math.min(Math.max(1,limit),100)]);
   const summary={processed:0,delivered:0,retried:0,failed:0};
