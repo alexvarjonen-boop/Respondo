@@ -8478,17 +8478,16 @@ const leadOperations = pool ? createLeadOperations({
     return rr.rows[0]?.id ? String(rr.rows[0].id) : null;
   }
 }) : null;
-let leadSchemaReady = false;
+// The qualified-lead schema must be installed during deployment, not
+// created or permission-mutated inside an incoming HTTP request.
 async function requireLeadSchema(req, res, next) {
   if (!leadOperations) return res.status(503).json({error:'Tietokanta ei ole käytettävissä.'});
   try {
-    if (!leadSchemaReady) {
-      await leadOperations.ensureSchema();
-      leadSchemaReady = true;
-    }
+    const check = await pool.query("SELECT to_regclass('public.respondo_qualified_leads') AS table_name");
+    if (!check.rows[0]?.table_name) return res.status(503).json({error:'Liiditietokannan päivitys puuttuu.'});
     next();
   } catch (error) {
-    console.error('Lead schema initialization failed', error);
+    console.error('Lead schema availability check failed', error);
     return res.status(503).json({error:'Liidienhallinta ei ole tilapäisesti käytettävissä.'});
   }
 }
