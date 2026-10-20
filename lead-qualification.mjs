@@ -5,7 +5,7 @@ const fold = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u03
 const patterns = Object.freeze({
   quote: /tarjouspyyn|tarjouksen|tarjousta|hinta-arvio|paljonko maks|request (?:a )?quote|quotation|cost estimate|offert|prisforslag/,
   booking: /ajanvarau|varata ajan|varaisin ajan|book(?:ing)? (?:an )?appointment|schedule (?:a )?meeting|boka tid|tidsbokning/,
-  purchase: /haluan ostaa|ostaisin|tilaisin|tilata tuot|buy (?:this|one)|place an order|purchase|köpa|beställa/,
+  purchase: /haluan ostaa|ostaisin|tilaisin|tilata tuot|(?:want to )?buy(?: this| one)?|place an order|purchase|kopa|bestalla/,
   contact: /ottakaa yhteytt|soittakaa|minuun yhteytt|contact me|call me|reach out|kontakta mig|ring mig/,
   support: /ei toimi|ongelma|reklamaatio|palautus|refund|broken|not working|complaint|problem|reklamation|fungerar inte/
 });
