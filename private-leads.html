@@ -14,10 +14,48 @@ button:disabled{opacity:.5}button:hover{background:#353b4b}
 </style></head><body>
 <header><strong>RESPONDO AI</strong><a href="/app">Takaisin hallintapaneeliin</a></header>
 <h1>Liidit</h1><p class="muted">Yrityksesi kerätyt myyntiyhteydenotot</p>
+<section class="entry" aria-label="CRM-asetukset" style="display:block;margin-bottom:24px">
+<h2>CRM-integraatio</h2>
+<p class="muted">Valitse yrityksesi CRM-palvelu. Tunnukset määritetään palvelimen salaisuuksiin ennen käyttöönottoa.</p>
+<form id="crm-form" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+<label>Palvelu <select id="crm-provider" style="padding:9px;background:#242832;color:white;border:1px solid #454955;border-radius:9px">
+<option value="webhook">Webhook</option><option value="hubspot">HubSpot</option><option value="pipedrive">Pipedrive</option>
+</select></label>
+<label><input id="crm-enabled" type="checkbox"> Käytössä</label>
+<button type="submit">Tallenna CRM-asetukset</button>
+</form><p id="crm-status" role="status" aria-live="polite"></p>
+</section>
 <section class="stats" id="stats" aria-label="Liidien yhteenveto"></section>
 <p id="status" role="status" aria-live="polite">Ladataan liidejä…</p>
 <section id="entries" aria-label="Liidilista"></section>
 <script type="module">
+const crmForm=document.getElementById('crm-form');
+const crmProvider=document.getElementById('crm-provider');
+const crmEnabled=document.getElementById('crm-enabled');
+const crmStatus=document.getElementById('crm-status');
+async function loadCrmSettings(){
+  try {
+    const response=await fetch('/api/leads/crm',{credentials:'same-origin'});
+    if(!response.ok)throw Error('CRM-asetuksia ei voitu ladata.');
+    const settings=await response.json();
+    if(settings.provider)crmProvider.value=settings.provider;
+    crmEnabled.checked=settings.enabled===true;
+  } catch(error){crmStatus.textContent=error.message;}
+}
+crmForm.addEventListener('submit',async(event)=>{
+  event.preventDefault();
+  crmStatus.textContent='Tallennetaan…';
+  try {
+    const response=await fetch('/api/leads/crm',{
+      method:'PUT',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({provider:crmProvider.value,enabled:crmEnabled.checked})
+    });
+    if(!response.ok)throw Error('CRM-asetusten tallennus epäonnistui.');
+    crmStatus.textContent='CRM-asetukset tallennettu.';
+  } catch(error){crmStatus.textContent=error.message;}
+});
+loadCrmSettings();
 const entries=document.getElementById('entries'),stats=document.getElementById('stats'),status=document.getElementById('status');
 const labels={quote:'Tarjouspyyntö',booking:'Ajanvaraus',purchase:'Ostoaie',contact:'Yhteydenotto'};
 function el(tag,text,cls){const node=document.createElement(tag);if(text!==undefined)node.textContent=String(text);if(cls)node.className=cls;return node}
