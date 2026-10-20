@@ -18,4 +18,3 @@ jobs:
         run: npm run crm:process
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          RESPONDO_CRM_TENANT_CONFIG: ${{ secrets.RESPONDO_CRM_TENANT_CONFIG }}
