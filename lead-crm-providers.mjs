@@ -27,9 +27,19 @@ export async function deliverCrmProvider(tenantId,event,{pool,credentials,fetchI
     // fields only until the customer's schema is provisioned.
     delete payload.properties.respondo_lead_id;
   } else if(provider==='pipedrive'){
+    const personPayload={name:contact.name||'Respondo contact'};
+    if(contact.email)personPayload.email=contact.email;
+    if(contact.phone)personPayload.phone=contact.phone;
+    const personResponse=await fetchImpl('https://api.pipedrive.com/v1/persons',{
+      method:'POST',redirect:'error',headers:{'content-type':'application/json',authorization:'Bearer '+token},
+      body:JSON.stringify(personPayload),signal:AbortSignal.timeout(8000)
+    });
+    if(!personResponse.ok)throw Error('Pipedrive person API HTTP '+personResponse.status);
+    const person=await personResponse.json();
+    const personId=person?.data?.id;
+    if(!personId)throw Error('Pipedrive did not return a person ID');
     url='https://api.pipedrive.com/v1/leads';
-    payload={title:'Respondo lead '+event.leadId,person_id:config.personId};
-    if(!payload.person_id)throw Error('Pipedrive person_id required before lead creation');
+    payload={title:'Respondo lead '+event.leadId,person_id:personId};
   } else throw Error('Unsupported CRM provider');
   const response=await fetchImpl(url,{
     method:'POST',redirect:'error',headers:{'content-type':'application/json',authorization:'Bearer '+token},
