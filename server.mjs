@@ -1420,6 +1420,19 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   const language = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const answer = (fi, sv, en) => language === 'sv' ? sv : language === 'en' ? en : fi;
 
+  // First-party tax questions must be answered only when explicitly asked.
+  // Keep billing and invoice tax disclosures outside the marketing FAQ.
+  if (/(?:\\b(?:alv|arvonlisavero|arvonlisävero|vat|moms|mervardesskatt|mervärdesskatt)\\b)/.test(q)) {
+    return {
+      id:'respondo-faq-tax-on-request',
+      answer:answer(
+        'Laskutuksen verotiedot näet kassalla ja laskulta. Tarvittaessa voit kysyä lisätietoja osoitteesta info@respondoai.fi.',
+        'Skatteuppgifterna visas i kassan och på fakturan. Kontakta info@respondoai.fi om du behöver mer information.',
+        'Tax information is shown at checkout and on the invoice. Contact info@respondoai.fi for more information.'
+      )
+    };
+  }
+
   const previousQuestion = normalizeSearchText(
     Array.isArray(history) && history.length ? history[history.length - 1]?.question : ''
   );
