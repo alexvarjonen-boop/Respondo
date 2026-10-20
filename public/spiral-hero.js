@@ -1,10 +1,15 @@
 /* Respondo's official arrow stays in the center after the existing logo reveal.
    Marketing copy only: never present sample percentages as measured customer results. */
 export function spiralHeroMarkup(t, lang) {
+  const languageFlags = `<span class="rs-language-flags" role="img" aria-label="${t('Englanti, suomi ja ruotsi','Engelska, finska och svenska','English, Finnish and Swedish')}">
+    <span class="${lang==='en'?'is-active':''}" aria-hidden="true">🇬🇧</span>
+    <span class="${lang==='fi'?'is-active':''}" aria-hidden="true">🇫🇮</span>
+    <span class="${lang==='sv'?'is-active':''}" aria-hidden="true">🇸🇪</span>
+  </span>`;
   const cards = [
     ['24/7', t('Asiakaspalvelu ei nuku.','Kundservicen sover aldrig.','Support never sleeps.'),
       t('Automaattiset vastaukset myös työajan ulkopuolella.','Automatiska svar även utanför öppettiderna.','Automatic answers even outside business hours.'), '01'],
-    ['🇫🇮 · 🇸🇪 · 🇬🇧', t('Kolme kieltä.','Tre språk.','Three languages.'),
+    [languageFlags, t('Kolme kieltä.','Tre språk.','Three languages.'),
       t('Suomi, svenska ja English samassa palvelussa.','Finska, svenska och engelska i samma tjänst.','Finnish, Swedish and English in one service.'), '02'],
     ['01', t('Yksi Respondo.','En Respondo.','One Respondo.'),
       t('Tietopohja, keskustelut ja yhteydenotot yhdessä.','Kunskapsbas, konversationer och kontakter på ett ställe.','Knowledge, conversations and enquiries in one place.'), '03'],
