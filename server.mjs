@@ -8469,6 +8469,10 @@ const demoImportLimiter = rateLimit({
 // public chat endpoints until explicit consent UI and tenant-safe capture ship.
 const leadOperations = pool ? createLeadOperations({
   pool,
+  crm: {
+    url: process.env.RESPONDO_CRM_WEBHOOK_URL || '',
+    secret: process.env.RESPONDO_CRM_WEBHOOK_SECRET || ''
+  },
   resolveTenantId: async (req) => {
     if (!req.user?.sub || req.user.role === 'agent') return null;
     const rr = await q(
