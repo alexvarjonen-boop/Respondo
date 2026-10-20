@@ -12328,13 +12328,29 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // Public Try Bot imports must stay isolated from the logged-in owner's own
     // Respondo knowledge. A deploy/restart must never make a JAG demo answer
     // with Respondo's terms, URLs, or account data.
+    // Authenticated dashboard previews must resolve the session with the
+    // same cookie parser used by /api/app/dashboard. Express does not install
+    // req.cookies here. A missing/expired cookie must never silently turn
+    // this into an anonymous demo and hide the tenant's approved knowledge.
     let previewIsFirstPartyRespondo = false;
+    if (body.dashboardPreview === true && (isPublicDemo || demoImportId)) {
+      return res.status(400).json({error:'Virheellinen esikatselupyyntö.'});
+    }
     if (!isPublicDemo && !demoImportId) {
+      const token = cookies(req)[COOKIE];
+      if (body.dashboardPreview === true && !token) {
+        return res.status(401).json({error:'Istunto on vanhentunut. Kirjaudu uudelleen.'});
+      }
       try {
-        const token = req.cookies?.respondo_session;
         if (token) {
-          const session = jwt.verify(token, JWT);
-          const tr = await q('SELECT id,name,slug FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[session.sub]);
+          const session = jwt.verify(token, JWT, {algorithms:['HS256']});
+          const tr = await q(
+            'SELECT id,name,slug FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',
+            [session.sub],
+          );
+          if (!tr.rowCount && body.dashboardPreview === true) {
+            return res.status(404).json({error:'Aktiivista yritystä ei löytynyt. Valitse työtila uudelleen.'});
+          }
           if (tr.rowCount) {
             previewIsFirstPartyRespondo=isFirstPartyRespondoTenant(tr.rows[0]);
             const kr = await q(
@@ -12344,7 +12360,15 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
             rows = [...kr.rows, ...rows].slice(0, 1100);
           }
         }
-      } catch {}
+      } catch (error) {
+        if (body.dashboardPreview === true) {
+          if (error?.name === 'JsonWebTokenError' || error?.name === 'TokenExpiredError' || error?.name === 'NotBeforeError') {
+            return res.status(401).json({error:'Istunto on vanhentunut. Kirjaudu uudelleen.'});
+          }
+          console.error('Dashboard preview knowledge load failed',error?.message||error);
+          return res.status(503).json({error:'Esikatselun yritystietoja ei voitu ladata. Yritä uudelleen.'});
+        }
+      }
     }
     const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
     const previewFaq=previewIsFirstPartyRespondo
