@@ -35,16 +35,8 @@
       '<path class="' + cn + '-solid" d="' + arrow + '"/>' +
       '</svg>';
   }
-  function introSeen() {
-    if (introPlayed) return true;
-    try { return sessionStorage.getItem('respondo-logo-reveal-20261018') === '1'; }
-    catch (err) { return false; }
-  }
-  function markSeen() {
-    introPlayed = true;
-    try { sessionStorage.setItem('respondo-logo-reveal-20261018', '1'); }
-    catch (err) { /* private mode */ }
-  }
+  // Replay on every new homepage navigation, including arrivals from Google.
+  // Guard only within the current document so language redraws don't restart it.
   function clearOpening(instant) {
     clearTimeout(closeTimer);
     if (!opening) { document.body.classList.remove('rl-logo-lock'); return; }
@@ -63,9 +55,9 @@
   }
   function playIntro(force) {
     if (reduced || !root || !root.isConnected) return;
-    if (!force && introSeen()) return;
+    if (!force && introPlayed) return;
     clearOpening(true);
-    markSeen();
+    introPlayed = true;
     var t = l();
     var layer = document.createElement('div');
     layer.className = 'rl-intro';
@@ -107,6 +99,10 @@
   var observer = new MutationObserver(scheduleRefresh);
   observer.observe(app,{childList:true});
   window.addEventListener('respondo:languagechange', scheduleRefresh, {passive:true});
+  // Back/forward cache restores the old document rather than loading a new one.
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted && root && root.isConnected) playIntro(true);
+  });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scheduleRefresh, {once:true});
   else scheduleRefresh();
 })();
