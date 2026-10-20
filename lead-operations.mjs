@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
+import { deliverQualifiedLead } from './lead-crm.mjs';
 import { beginLeadCapture, completeLeadCapture } from './lead-capture.mjs';
 import { ensureLeadTable, saveQualifiedLead, listQualifiedLeads, leadAnalyticsForTenant, deleteQualifiedLead } from './lead-repository.mjs';
 
 // Framework-independent authenticated owner operations.
 // resolveTenantId MUST validate the server session and ownership; never trust
 // a tenant ID supplied in the request body or query string.
-export function createLeadOperations({ pool, resolveTenantId }) {
+export function createLeadOperations({ pool, resolveTenantId, crm = {}, deliver = deliverQualifiedLead }) {
   if (!pool?.query || typeof resolveTenantId !== 'function') throw new TypeError('Database and tenant authorization required');
   async function authorizedTenant(context) {
     const id = await resolveTenantId(context);
@@ -25,7 +26,17 @@ export function createLeadOperations({ pool, resolveTenantId }) {
       });
       if (!result.accepted) return { accepted: false, reason: result.reason };
       const saved = await saveQualifiedLead(pool, tenantId, result.event);
-      return { accepted: saved.saved, reason: saved.saved ? null : 'duplicate', leadId: saved.saved ? leadId : null };
+      if (!saved.saved) return { accepted: false, reason: 'duplicate', leadId: null };
+      let crmStatus = 'disabled';
+      if (crm.url && crm.secret) {
+        try {
+          crmStatus = (await deliver(result.event, crm)).status;
+        } catch (error) {
+          console.error('CRM delivery failed', { leadId, error: String(error) });
+          crmStatus = 'failed';
+        }
+      }
+      return { accepted: true, reason: null, leadId, crmStatus };
     },
     async list(context, limit) {
       const tenantId = await authorizedTenant(context);
