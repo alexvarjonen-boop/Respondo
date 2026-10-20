@@ -1,4 +1,5 @@
 import { brandedEmailHtml } from './email-branding.mjs';
+import { createLeadOperations } from './lead-operations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { serviceOverviewQuestion, verifiedServiceOverview } from './service-overview.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
@@ -8464,6 +8465,95 @@ const demoImportLimiter = rateLimit({
   message: { error: 'Demon verkkosivuhakuja on tehty liian monta. Yritä hetken kuluttua uudelleen.' },
 });
 
+// Authenticated owner-only lead management. This feature is isolated from
+// public chat endpoints until explicit consent UI and tenant-safe capture ship.
+const leadOperations = pool ? createLeadOperations({
+  pool,
+  crm: {
+    url: process.env.RESPONDO_CRM_WEBHOOK_URL || '',
+    secret: process.env.RESPONDO_CRM_WEBHOOK_SECRET || ''
+  },
+  resolveTenantId: async (req) => {
+    if (!req.user?.sub || req.user.role === 'agent') return null;
+    const rr = await q(
+      'SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1) LIMIT 1',
+      [req.user.sub]
+    );
+    return rr.rows[0]?.id ? String(rr.rows[0].id) : null;
+  }
+}) : null;
+// The qualified-lead schema must be installed during deployment, not
+// created or permission-mutated inside an incoming HTTP request.
+async function requireLeadSchema(req, res, next) {
+  if (!leadOperations) return res.status(503).json({error:'Tietokanta ei ole käytettävissä.'});
+  try {
+    const check = await pool.query("SELECT to_regclass('public.respondo_qualified_leads') AS table_name");
+    if (!check.rows[0]?.table_name) return res.status(503).json({error:'Liiditietokannan päivitys puuttuu.'});
+    next();
+  } catch (error) {
+    console.error('Lead schema availability check failed', error);
+    return res.status(503).json({error:'Liidienhallinta ei ole tilapäisesti käytettävissä.'});
+  }
+}
+app.get('/app/leads', auth, ownerOnly, (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  return res.sendFile(path.join(__dirname,'private-leads.html'));
+});
+// Owner-entered lead submission. The original chat intent and explicit consent
+// must be provided; public widget collection is deliberately not enabled here.
+app.post('/api/leads', auth, ownerOnly, requireLeadSchema, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  const body=req.body;
+  if (!body || typeof body !== 'object' || Array.isArray(body) ||
+      typeof body.message !== 'string' || body.message.length > 4000 ||
+      typeof body.name !== 'string' || body.name.length > 120 ||
+      (body.email !== undefined && (typeof body.email !== 'string' || body.email.length > 254)) ||
+      (body.phone !== undefined && (typeof body.phone !== 'string' || body.phone.length > 40)) ||
+      body.consent !== true) {
+    return res.status(400).json({error:'Virheelliset tiedot tai suostumus puuttuu.'});
+  }
+  try {
+    const session=leadOperations.beginCapture({message:body.message,language:body.language});
+    if (!session) return res.status(422).json({error:'Myyntiaikomusta ei tunnistettu.'});
+    const result=await leadOperations.submitCapture(req,{
+      session,name:body.name,email:body.email,phone:body.phone,consent:body.consent
+    });
+    if (!result.accepted) return res.status(422).json({error:'Liidin tallennus epäonnistui.',reason:result.reason});
+    return res.status(201).json({accepted:true,leadId:result.leadId});
+  } catch(error) {
+    console.error('Lead submission failed',error);
+    return res.status(500).json({error:'Liidin tallennus epäonnistui.'});
+  }
+});
+app.get('/api/leads/crm', auth, ownerOnly, requireLeadSchema, async (req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try { return res.json(await leadOperations.crmSettings(req)); }
+  catch(error) { console.error('CRM settings read failed',error); return res.status(503).json({error:'CRM-asetuksia ei saatu.'}); }
+});
+app.put('/api/leads/crm', auth, ownerOnly, requireLeadSchema, async (req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  const {provider,enabled}=req.body||{};
+  if(!['webhook','hubspot','pipedrive'].includes(provider)||typeof enabled!=='boolean')
+    return res.status(400).json({error:'Virheelliset CRM-asetukset.'});
+  try { return res.json(await leadOperations.updateCrmSettings(req,{provider,enabled})); }
+  catch(error) { console.error('CRM settings update failed',error); return res.status(503).json({error:'CRM-asetusten tallennus epäonnistui.'}); }
+});
+app.get('/api/leads', auth, ownerOnly, requireLeadSchema, async (req, res) => {
+  res.set('Cache-Control','private, no-store');
+  try { return res.json({leads:await leadOperations.list(req,Number(req.query.limit)||50)}); }
+  catch (error) { console.error('Lead list failed',error); return res.status(403).json({error:'Liidien hakeminen epäonnistui.'}); }
+});
+app.get('/api/leads/analytics', auth, ownerOnly, requireLeadSchema, async (req, res) => {
+  res.set('Cache-Control','private, no-store');
+  try { return res.json(await leadOperations.analytics(req)); }
+  catch (error) { console.error('Lead analytics failed',error); return res.status(403).json({error:'Liidianalytiikka ei ole käytettävissä.'}); }
+});
+app.delete('/api/leads/:leadId', auth, ownerOnly, requireLeadSchema, async (req, res) => {
+  res.set('Cache-Control','private, no-store');
+  try { return res.json(await leadOperations.delete(req,req.params.leadId)); }
+  catch (error) { console.error('Lead deletion failed',error); return res.status(403).json({error:'Liidin poistaminen epäonnistui.'}); }
+});
+
 app.get('/api/health', async (req, res) => {
   const stripeConfigured =
     Boolean(stripe && process.env.STRIPE_WEBHOOK_SECRET) &&
@@ -12509,6 +12599,7 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
     const email = cleanEmail(body.email).slice(0, 220);
     const phone = String(body.phone || '').trim().slice(0, 80);
     const message = String(body.message || '').trim().slice(0, 1200);
+    if (body.consent !== true) return res.status(400).json({ error: 'Yhteystietojen lähettäminen edellyttää suostumusta.' });
     if (!email && !phone) return res.status(400).json({ error: 'Anna sähköposti tai puhelinnumero.' });
 
     await q(

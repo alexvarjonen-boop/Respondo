@@ -38,6 +38,7 @@
     'Sähköposti':'E-post','Puhelin':'Telefon','Valitse aika':'Välj tid','Varaa':'Boka','Lähetä tarjouspyyntö':'Skicka offertförfrågan'
   }));
   const EXTRA_SV_WIDGET = {
+    'Hyväksyn yhteystietojeni lähettämisen yritykselle yhteydenottoa varten.': 'Jag godkänner att mina kontaktuppgifter skickas till företaget för denna kontaktförfrågan.',
   "Respondon asiakaspalvelu": "Respondos kundservice",
   "Paikalla nyt": "Online nu",
   "Yhdistetään…": "Ansluter…",
@@ -642,12 +643,12 @@
     if (chat.querySelector('.leadbox')) return;
     const box = document.createElement('form');
     box.className = 'leadbox';
-    box.innerHTML = '<b>' + t('Haluatko, että joku yrityksestä ottaa sinuun yhteyttä?', 'Would you like the company to contact you?') + '</b><small>' + t('Jätä nimesi ja puhelinnumerosi tai sähköpostisi. Tiedot menevät vain tälle yritykselle yhteydenottoa varten.', 'Leave your name and phone number or email. The details are shared only with this company for contacting you.') + '</small><input name="name" maxlength="120" placeholder="' + t('Nimi, jos haluat', 'Name (optional)') + '"><input name="contact" maxlength="220" required placeholder="' + t('Puhelinnumero tai sähköposti', 'Phone or email') + '"><button type="submit">' + t('Pyydä yhteydenottoa', 'Send contact details') + '</button><div class="lead-ok"></div>';
+    box.innerHTML = '<b>' + t('Haluatko, että joku yrityksestä ottaa sinuun yhteyttä?', 'Would you like the company to contact you?') + '</b><small>' + t('Jätä nimesi ja puhelinnumerosi tai sähköpostisi. Tiedot menevät vain tälle yritykselle yhteydenottoa varten.', 'Leave your name and phone number or email. The details are shared only with this company for contacting you.') + '</small><label style="display:flex;align-items:flex-start;gap:8px;margin:10px 0;font-size:12px"><input type="checkbox" name="consent" required style="width:auto;margin-top:2px">' + t('Hyväksyn yhteystietojeni lähettämisen yritykselle yhteydenottoa varten.', 'I agree to share my contact details with the company for this request.') + '</label><input name="name" maxlength="120" placeholder="' + t('Nimi, jos haluat', 'Name (optional)') + '"><input name="contact" maxlength="220" required placeholder="' + t('Puhelinnumero tai sähköposti', 'Phone or email') + '"><button type="submit">' + t('Pyydä yhteydenottoa', 'Send contact details') + '</button><div class="lead-ok"></div>';
     box.addEventListener('submit', async (event) => {
       event.preventDefault();
       const contact = String(box.elements.contact.value || '').trim();
       const person = String(box.elements.name.value || '').trim();
-      if (!contact) return;
+      if (!contact || !box.elements.consent.checked) return;
       const button = box.querySelector('button');
       button.disabled = true;
       button.textContent = t('Lähetetään…', 'Sending…');
@@ -659,7 +660,7 @@
           mode: 'cors',
           credentials: 'omit',
           headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-          body: JSON.stringify({ name: person, email, phone, message: question, widgetToken: token, visitorRef, lang: widgetLang, pageContext }),
+          body: JSON.stringify({ name: person, email, phone, message: question, consent: box.elements.consent.checked, widgetToken: token, visitorRef, lang: widgetLang, pageContext }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Lähetys epäonnistui');
