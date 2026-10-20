@@ -40,13 +40,13 @@ test('language card shows three real flag graphics, never letter substitutes', a
     assert.ok(start >= 0, 'Language-card graphics must be present');
     const flags = markup.slice(start, markup.indexOf('</span></div>', start) + '</span></div>'.length);
     assert.equal((flags.match(/<svg width="28" height="20" viewBox="0 0 22 16"/g) || []).length, 3);
-    assert.doesNotMatch(flags, /🇬🇧|🇫🇮|🇸🇪|>\\s*(?:EN|FI|SV)\\s*</);
+    assert.doesNotMatch(flags, /🇬🇧|🇫🇮|🇸🇪|>\s*(?:EN|FI|SV)\s*</);
     assert.match(flags, /fill="#003580"/);
     assert.match(flags, /fill="#006AA7"/);
     assert.match(flags, /fill="#012169"/);
   }
   const css = read('spiral-hero.css');
-  assert.match(css, /#app \\.rs-language-flags>span svg\\{display:block;width:28px;height:20px/);
+  assert.match(css, /#app \.rs-language-flags>span svg\{display:block;width:28px;height:20px/);
 });
 
 test('central white arrow is exactly the official symbol', async () => {
