@@ -1834,6 +1834,17 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
   );
   const previousWasPricing = /(?:hinta|maksaa|hinnoittelu|price|pricing|cost|pris|kostar|kuukaudessa|monthly|per month|manad|månad)/.test(previousQuestion);
 
+  // A visitor should get a first-party company overview for "mitä teette"
+  // before generic services retrieval. This is Respondo's own approved FAQ,
+  // never used for an unrelated tenant or external demo import.
+  if (/(?:^|\b)(?:mita (?:te )?teette|mita (?:te )?tarjoatte|kerro (?:respondo(?:sta)?|teista|yrityksestanne)|what do you do|what do you offer|tell me about respondo|vad gor ni|vad erbjuder ni|beratta om respondo)(?:\b|$)/.test(q)) {
+    return {id:'respondo-faq-company-overview',answer:answer(
+      'Respondo AI tarjoaa yrityksille verkkosivuille asennettavan AI-asiakaspalvelubotin. Se vastaa asiakkaiden kysymyksiin ympäri vuorokauden yrityksen hyväksyttyjen tietojen perusteella suomeksi, ruotsiksi ja englanniksi. Botti voi myös kerätä yhteydenottoja, auttaa ajanvarauksissa ja siirtää keskustelun asiakaspalvelijalle. Osa toiminnoista riippuu paketista ja käyttöönotetuista integraatioista.',
+      'Respondo AI erbjuder företag en AI-kundtjänstbot för deras webbplatser. Den svarar på kundfrågor dygnet runt utifrån företagets godkända information på finska, svenska och engelska. Den kan även samla in kontaktförfrågningar, hjälpa till med bokningar och lämna över chatten till en medarbetare. Vissa funktioner kräver rätt abonnemang eller integrationer.',
+      'Respondo AI provides businesses with an AI customer-service chatbot for their websites. It answers customer questions around the clock using company-approved information in Finnish, Swedish and English. It can also collect enquiries, assist with bookings and hand conversations over to staff. Some features depend on the plan and enabled integrations.'
+    )};
+  }
+
   // First-party feature overview: highlight actual value and always provide the full feature catalogue.
   if ((/(?:ominaisu|toiminto|mita osaa|mita kaikkea|mitä osaa|mitä kaikkea|feature|capabilit|what can (?:respondo|it) do|funktion|vad kan (?:respondo|den) gora|vad kan (?:respondo|den) göra)/.test(q) || isRespondoCapabilityQuestion(q))
       && !/(?:starter|basic|advanced|premium|business|enterprise|hinta|maksaa|price|pricing|cost|pris|kostar)/.test(q)) {
@@ -7084,6 +7095,34 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     if(commerceOverview) return commerceOverview;
   }
 
+  // General "what do you do" questions may be answered by an approved About
+  // Us/company-description row, even when no services are tagged. Do not
+  // substitute a random pricing/contact row or reuse another tenant's facts.
+  const companyOverviewQuery=normalizeSearchText(cleanMessage);
+  const isGeneralCompanyOverview=genericCompanyQuestion(cleanMessage) &&
+    !/(?:mita (?:te )?myytte|mita (?:te )?palvel|what do you sell|what services|vad saljer ni|vilka tjanster)/.test(companyOverviewQuery);
+  if (isGeneralCompanyOverview && !hasServiceKnowledge && !hasImportedProducts) {
+    const verifiedAbout=rows
+      .filter((row)=>{
+        const label=normalizeSearchText(String(row?.category||'')+' '+String(row?.title||''));
+        return /(?:tietoa yrityks|yrityksen kuvaus|yritysesittely|yrityksen toiminta|meista|mita teemme|about us|about the company|company overview|company description|our company|om oss|foretagsbeskrivning)/.test(label) &&
+          !importedKnowledgeJunk(String(row?.title||'')+' '+String(row?.answer||''));
+      })
+      .map((row)=>({row,answer:conciseKnowledgeAnswer(row,cleanMessage)}))
+      .find((item)=>item.answer.length>=25 && !/^https?:\/\//i.test(item.answer));
+    if (verifiedAbout) {
+      const sourceLanguage=detectConversationLanguage(verifiedAbout.answer,'fi');
+      const localized=sourceLanguage===responseLang
+        ? verifiedAbout.answer
+        : await forceAnswerLanguage(verifiedAbout.answer,responseLang);
+      if (localized) return {
+        answer:cleanKnowledgeText(localized),handoff:false,confidence:0.9,
+        intent:'Yritysesittely',sourceIds:[verifiedAbout.row.id].filter(Boolean),
+        selected:[verifiedAbout.row],
+      };
+    }
+  }
+
   // If an ecommerce import has a verified catalog link but product rows are
   // temporarily incomplete, still answer naturally instead of echoing raw URLs
   // or the Respondo demo website address.
@@ -12289,13 +12328,15 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // Public Try Bot imports must stay isolated from the logged-in owner's own
     // Respondo knowledge. A deploy/restart must never make a JAG demo answer
     // with Respondo's terms, URLs, or account data.
+    let previewIsFirstPartyRespondo = false;
     if (!isPublicDemo && !demoImportId) {
       try {
         const token = req.cookies?.respondo_session;
         if (token) {
           const session = jwt.verify(token, JWT);
-          const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[session.sub]);
+          const tr = await q('SELECT id,name,slug FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[session.sub]);
           if (tr.rowCount) {
+            previewIsFirstPartyRespondo=isFirstPartyRespondoTenant(tr.rows[0]);
             const kr = await q(
               'SELECT id,category,title,answer,keywords,source_type,source_url FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC LIMIT 1000',
               [tr.rows[0].id],
@@ -12306,13 +12347,18 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       } catch {}
     }
     const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
-    let result = await generateGroundedAnswer({
-      companyName: String(profile.companyName || 'yrityksen').slice(0, 120),
-      rows,
-      message,
-      history,
-      lang:detectedLang,
-    });
+    const previewFaq=previewIsFirstPartyRespondo
+      ? respondoProductFaqMatch(message,detectedLang,history) : null;
+    let result = previewFaq
+      ? {answer:previewFaq.answer,handoff:false,confidence:1,intent:'Respondo FAQ',
+         sourceIds:[previewFaq.id],selected:[]}
+      : await generateGroundedAnswer({
+          companyName: String(profile.companyName || 'yrityksen').slice(0, 120),
+          rows,
+          message,
+          history,
+          lang:detectedLang,
+        });
 
     // Unverified product availability is not a lead-generation request.
     // If the public demo could not read that product family, be clear about
