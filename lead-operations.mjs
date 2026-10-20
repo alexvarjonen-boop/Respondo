@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { beginLeadCapture, completeLeadCapture } from './lead-capture.mjs';
-import { ensureLeadTable, saveQualifiedLead, listQualifiedLeads, leadAnalyticsForTenant } from './lead-repository.mjs';
+import { ensureLeadTable, saveQualifiedLead, listQualifiedLeads, leadAnalyticsForTenant, deleteQualifiedLead } from './lead-repository.mjs';
 
 // Framework-independent authenticated owner operations.
 // resolveTenantId MUST validate the server session and ownership; never trust
@@ -30,6 +30,10 @@ export function createLeadOperations({ pool, resolveTenantId }) {
     async list(context, limit) {
       const tenantId = await authorizedTenant(context);
       return listQualifiedLeads(pool, tenantId, limit);
+    },
+    async delete(context, leadId) {
+      const tenantId = await authorizedTenant(context);
+      return deleteQualifiedLead(pool, tenantId, leadId);
     },
     async analytics(context) {
       const tenantId = await authorizedTenant(context);
