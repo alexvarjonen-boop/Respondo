@@ -8525,6 +8525,19 @@ app.post('/api/leads', auth, ownerOnly, requireLeadSchema, async (req,res) => {
     return res.status(500).json({error:'Liidin tallennus epäonnistui.'});
   }
 });
+app.get('/api/leads/crm', auth, ownerOnly, requireLeadSchema, async (req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try { return res.json(await leadOperations.crmSettings(req)); }
+  catch(error) { console.error('CRM settings read failed',error); return res.status(503).json({error:'CRM-asetuksia ei saatu.'}); }
+});
+app.put('/api/leads/crm', auth, ownerOnly, requireLeadSchema, async (req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  const {provider,enabled}=req.body||{};
+  if(!['webhook','hubspot','pipedrive'].includes(provider)||typeof enabled!=='boolean')
+    return res.status(400).json({error:'Virheelliset CRM-asetukset.'});
+  try { return res.json(await leadOperations.updateCrmSettings(req,{provider,enabled})); }
+  catch(error) { console.error('CRM settings update failed',error); return res.status(503).json({error:'CRM-asetusten tallennus epäonnistui.'}); }
+});
 app.get('/api/leads', auth, ownerOnly, requireLeadSchema, async (req, res) => {
   res.set('Cache-Control','private, no-store');
   try { return res.json({leads:await leadOperations.list(req,Number(req.query.limit)||50)}); }
