@@ -14,12 +14,13 @@ test('the original official logo reveal is silent with no sound button or audio 
   assert.doesNotThrow(()=>new vm.Script(intro));
   assert.match(intro,/rl-intro-graphic/);
   assert.match(intro,/playIntro\(false\)/);
-  assert.match(intro,/sessionStorage\.setItem/);
+  assert.doesNotMatch(intro,/sessionStorage\.setItem/);
+  assert.match(intro,/introPlayed = true/);
   assert.match(intro,/prefers-reduced-motion: reduce/);
   assert.doesNotMatch(intro,/AudioContext|webkitAudioContext|createOscillator|createBufferSource|playSound|stopSound|rl-intro-sound|withSound|Toista äänellä|Spela med ljud|Play with sound/);
   assert.doesNotMatch(css,/\.rl-intro-sound/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(html,/logo-reveal\.js\?v=20261018-cinematic-silent-v5/);
+  assert.match(html,/logo-reveal\.js\?v=20261021-replay-home-navigation-v1/);
   assert.match(html,/logo-reveal\.css\?v=20261018-cinematic-silent-v5/);
 });
 

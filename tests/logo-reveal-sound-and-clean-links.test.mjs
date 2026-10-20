@@ -17,12 +17,13 @@ test('original cinematic arrow logo plays silently, with no sound control',()=>{
   assert.match(logo,/prefers-reduced-motion: reduce/);
   assert.doesNotMatch(logo,/AudioContext|webkitAudioContext|playSound|stopSound|soundButton|rl-intro-sound|withSound/);
   assert.doesNotMatch(css,/\.rl-intro-sound/);
-  assert.match(html,/logo-reveal\.js\?v=20261018-cinematic-silent-v5/);
+  assert.match(html,/logo-reveal\.js\?v=20261021-replay-home-navigation-v1/);
   assert.match(html,/logo-reveal\.css\?v=20261018-cinematic-silent-v5/);
 });
 
 test('logo intro is not conditioned on any audio playback or user gesture',()=>{
-  assert.match(logo,/sessionStorage\.setItem/);
+  assert.doesNotMatch(logo,/sessionStorage\.setItem/);
+  assert.match(logo,/introPlayed = true/);
   assert.match(logo,/aria-modal/);
   assert.match(logo,/clearOpening\(false\)/);
   assert.match(logo,/document\.body\.appendChild\(layer\)/);
