@@ -1,0 +1,430 @@
+/* Respondo AI | unified brand for public-facing pages
+   2026-10-21. Deliberately leaves owner dashboards, embedded widgets,
+   demo, account management and checkout form controls untouched. */
+:root{
+  --respondo-night:#070b12;
+  --respondo-surface:#111824;
+  --respondo-surface-soft:#0c121d;
+  --respondo-line:rgba(168,195,230,.16);
+  --respondo-white:#f7f9ff;
+  --respondo-muted:#aab8ca;
+  --respondo-blue:#9bc7ff;
+  --respondo-glow:rgba(76,129,224,.20);
+}
+/* Existing animated homepage stays intact. Shared pages now speak the
+   same dark/blue/white visual language as the official arrow reveal. */
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub){
+  --ios-ink:var(--respondo-white);
+  --ios-secondary:var(--respondo-muted);
+  --ios-line:var(--respondo-line);
+  --ios-canvas:var(--respondo-night);
+  --r-ink:var(--respondo-white);
+  --r-sub:var(--respondo-muted);
+  --r-blue:var(--respondo-blue);
+  background:var(--respondo-night)!important;
+  color:var(--respondo-white)!important;
+}
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub)
+  :is(h1,h2,h3,h4){
+  color:var(--respondo-white)!important;
+  -webkit-text-fill-color:currentColor!important;
+}
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub)
+  :is(p,li){
+  color:var(--respondo-muted)!important;
+}
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub)
+  :is(.section-kicker,.audience-overline,.global-guide-kicker,.global-guide-card-category,.audience-section-title>span){
+  color:var(--respondo-blue)!important;
+  -webkit-text-fill-color:currentColor!important;
+  border-color:var(--respondo-line)!important;
+  background:rgba(15,25,40,.78)!important;
+}
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub)
+  a:not(.btn):not(.price-btn):not(.logo):not(.public-header-login){
+  color:#bbd9ff;
+}
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub)
+  a:focus-visible,
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub)
+  button:focus-visible,
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub)
+  summary:focus-visible{
+  outline:2px solid #99c9ff!important;
+  outline-offset:4px!important;
+}
+/* Header stays understated black with the real, approved arrow logo.
+   Language controls and Log in remain in their current positions. */
+body.public-nav-active #app .nav,
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.apple-home-page) .nav{
+  background:rgba(7,10,16,.97)!important;
+  color:var(--respondo-white)!important;
+  border-bottom:1px solid rgba(190,209,239,.13)!important;
+  box-shadow:0 1px 0 rgba(255,255,255,.02)!important;
+  -webkit-backdrop-filter:blur(16px)!important;
+  backdrop-filter:blur(16px)!important;
+}
+body.public-nav-active #app .nav .brand-word,
+body.public-nav-active #app .nav .logo,
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page) .nav .brand-word{
+  color:#f8fbff!important;
+  -webkit-text-fill-color:#f8fbff!important;
+}
+body.public-nav-active #app .nav .app-language-switch{
+  background:#101724!important;
+  border:1px solid rgba(161,191,233,.23)!important;
+}
+body.public-nav-active #app .nav .app-language-option.active,
+body.public-nav-active #app .nav .app-language-option[aria-pressed="true"]{
+  background:#27344a!important;
+}
+body.public-nav-active #app .nav a.public-header-login,
+body.public-nav-active #app .nav .navactions .btn.ink{
+  background:#f6f9ff!important;
+  border-color:#f6f9ff!important;
+  color:#0a0e16!important;
+  -webkit-text-fill-color:#0a0e16!important;
+}
+/* Hero system: generous editorial type, low-contrast blueprint lines,
+   and the same upward Respondo arrow from the logo animation. */
+#app .seo-landing-page .seo-landing-hero,
+#app .features-page .features-hero,
+#app .audience-hub .audience-hero{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  background:
+    radial-gradient(ellipse 72% 90% at 85% 23%,rgba(67,123,212,.24),transparent 78%),
+    radial-gradient(ellipse 58% 80% at 0% 95%,rgba(42,78,148,.11),transparent 84%),
+    linear-gradient(145deg,#0d1421 0%,#070b12 62%,#090e18 100%)!important;
+  border-bottom:1px solid var(--respondo-line)!important;
+}
+#app .seo-landing-page .seo-landing-hero::before,
+#app .features-page .features-hero::before,
+#app .audience-hub .audience-hero::before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(188,208,240,.055) 1px,transparent 1px),
+   linear-gradient(90deg,rgba(188,208,240,.055) 1px,transparent 1px);
+  background-size:66px 66px;
+  -webkit-mask-image:linear-gradient(90deg,transparent 5%,#000 85%);
+  mask-image:linear-gradient(90deg,transparent 5%,#000 85%);
+}
+#app .seo-landing-page .seo-landing-hero::after,
+#app .features-page .features-hero::after,
+#app .audience-hub .audience-hero::after{
+  content:"";position:absolute;z-index:0;pointer-events:none;
+  right:clamp(-115px,-4vw,-15px);top:50%;transform:translateY(-50%) rotate(-9deg);
+  width:clamp(235px,33vw,460px);aspect-ratio:1;
+  background:url('/respondo-hero-arrow.svg') center/contain no-repeat;
+  opacity:.075;
+}
+#app .seo-landing-page .seo-landing-hero>.container,
+#app .features-page .features-hero>.container,
+#app .audience-hub .audience-hero>.container{
+  position:relative;z-index:1;
+}
+#app .seo-landing-page .seo-landing-hero{
+  padding:clamp(66px,8vw,113px) 0 clamp(76px,9vw,126px)!important;
+}
+#app .seo-landing-page .seo-landing-hero h1,
+#app .features-page .features-hero h1,
+#app .audience-hub .audience-hero h1{
+  max-width:970px!important;
+  font-weight:760!important;
+  letter-spacing:-.056em!important;
+  line-height:1.06!important;
+  color:#f8fbff!important;
+  text-shadow:0 8px 45px rgba(0,0,0,.18);
+}
+#app .seo-landing-page .seo-landing-hero h1 em,
+#app .features-page .features-hero h1 em,
+#app .audience-hub .audience-hero h1 em{
+  color:var(--respondo-blue)!important;
+  -webkit-text-fill-color:var(--respondo-blue)!important;
+}
+#app .seo-landing-page .seo-landing-hero p,
+#app .features-page .features-hero p,
+#app .audience-hub .audience-hero p{
+  color:#bac6d8!important;
+  font-size:clamp(16px,1.8vw,20px)!important;
+  line-height:1.7!important;
+  max-width:710px!important;
+}
+#app .seo-landing-page .seo-landing-actions{
+  gap:12px!important;
+  margin-top:31px!important;
+}
+#app .seo-landing-page .seo-landing-actions .btn{
+  min-height:51px!important;
+  padding:13px 25px!important;
+}
+/* Brand CTA buttons: blue to luminous-blue, not stock iOS flat fills. */
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub)
+  :is(.seo-landing-actions .btn.ink,.btn.blue,.btn.ink,.price-btn.blue,.global-guide-cta .btn,.audience-cta .btn.ink){
+  background:linear-gradient(110deg,#4c91ef 0%,#78b3ff 100%)!important;
+  color:#06101e!important;
+  -webkit-text-fill-color:#06101e!important;
+  border:1px solid #8bbdff!important;
+  box-shadow:0 8px 26px rgba(36,101,195,.20)!important;
+  text-decoration:none!important;
+}
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub) .btn.ghost{
+  color:#dceaff!important;
+  -webkit-text-fill-color:#dceaff!important;
+  border:1px solid rgba(169,204,248,.33)!important;
+  background:rgba(17,27,43,.72)!important;
+  box-shadow:none!important;
+}
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub)
+  :is(.btn.ink,.btn.blue,.btn.ghost,.price-btn):hover{
+  filter:brightness(1.09);
+}
+/* All SEO articles, use cases, category pages and FAQs share a
+   common navy canvas and elevated graphite cards. */
+#app .seo-landing-page :is(
+ .customer-bot-landing,.ai-topic-page,.vertical-landing,.seo-landing-copy,.seo-landing-closing,
+ .customer-bot-steps,.customer-bot-explain,.customer-bot-faq-section,
+ .ai-topic-body,.ai-topic-faq-area,.seo-landing-faq-area,.vertical-faq-wrap,
+ .seo-landing-section,.seo-landing-prose,.section
+){
+  background:var(--respondo-night)!important;
+  color:var(--respondo-white)!important;
+}
+#app .seo-landing-page :is(.customer-bot-steps,.ai-topic-faq-area,.seo-landing-faq-area){
+  background:#0b111b!important;
+}
+#app .seo-landing-page :is(
+ .seo-landing-grid>article,.customer-bot-steps-grid>article,
+ .customer-bot-explain-grid>article,.customer-bot-faq,
+ .ai-topic-faq,.vertical-faq-item,.seo-landing-closing-card,
+ .ai-topic-section,.seo-intent-section,.vertical-landing-card
+){
+  color:var(--respondo-white)!important;
+  background:linear-gradient(155deg,#141f30,#101721 72%)!important;
+  border:1px solid var(--respondo-line)!important;
+  border-radius:21px!important;
+  box-shadow:0 14px 46px rgba(0,0,0,.10)!important;
+}
+#app .seo-landing-page .seo-landing-grid>article::before,
+#app .seo-landing-page .customer-bot-steps-grid>article::before,
+#app .seo-landing-page .customer-bot-explain-grid>article::before{
+  content:"";display:block;width:36px;height:3px;border-radius:99px;
+  background:linear-gradient(90deg,#7baeff,#ddeeff);margin-bottom:22px;
+}
+#app .seo-landing-page :is(.seo-landing-intro,.ai-topic-prose,.ai-topic-section,.customer-bot-explain-grid)
+  :is(h2,h3){color:var(--respondo-white)!important}
+#app .seo-landing-page :is(
+ .seo-landing-intro p,.seo-landing-grid p,.customer-bot-steps-grid p,
+ .customer-bot-explain-grid p,.customer-bot-faq p,
+ .ai-topic-prose p,.ai-topic-section p,.ai-topic-faq p,
+ .vertical-faq-item p,.customer-bot-note
+){color:var(--respondo-muted)!important}
+#app .seo-landing-page :is(.customer-bot-faq,.ai-topic-faq,.vertical-faq-item) summary{
+  color:var(--respondo-white)!important;
+  -webkit-text-fill-color:currentColor!important;
+}
+#app .seo-landing-page :is(.customer-bot-faq,.ai-topic-faq) summary::after{
+  color:var(--respondo-blue)!important;
+}
+#app .seo-landing-page :is(.customer-bot-related a,.ai-topic-links a,.customer-bot-explain-grid a){
+  color:var(--respondo-blue)!important;
+  -webkit-text-fill-color:currentColor!important;
+}
+#app .seo-landing-page :is(.ai-topic-section,.seo-landing-intro){
+  border-color:var(--respondo-line)!important;
+}
+#app .seo-landing-page .seo-landing-closing-card{
+  background:
+    radial-gradient(ellipse at 100% 0%,rgba(80,132,221,.22),transparent 65%),
+    #111b2a!important;
+}
+/* Feature directory — consistent contrast even inside expanded accordions. */
+#app .features-page :is(.features-groups,.features-list,.features-categories,.features-directory,.features-directory-head){
+  background:transparent!important;
+}
+#app .features-page :is(.feature-category,.feature-category-body,.feature-item,.features-hero-badge,.features-hero-stats>div){
+  background:#121b29!important;
+  color:var(--respondo-white)!important;
+  border-color:var(--respondo-line)!important;
+}
+#app .features-page :is(.feature-category summary,.feature-item b,.feature-category-copy h2){
+  color:var(--respondo-white)!important;
+}
+#app .features-page :is(.feature-category-copy p,.feature-item-number,.features-hero-stats span){
+  color:var(--respondo-muted)!important;
+}
+/* Pricing — all three plans retain existing columns, billing toggle and links. */
+#app :is(.pricing-page,.apple-home-page) .pricing-section{
+  background:
+    radial-gradient(ellipse at 48% -15%,rgba(57,111,202,.17),transparent 70%),#080d15!important;
+  color:var(--respondo-white)!important;
+}
+#app :is(.pricing-page,.apple-home-page) .pricing-section :is(.split-head h2,.price-card h3){
+  color:#f9fbff!important;
+  -webkit-text-fill-color:#f9fbff!important;
+}
+#app :is(.pricing-page,.apple-home-page) .pricing-section .split-head p{
+  color:var(--respondo-muted)!important;
+}
+#app :is(.pricing-page,.apple-home-page) .price-card{
+  background:linear-gradient(150deg,#131d2b,#101722)!important;
+  color:var(--respondo-white)!important;
+  border:1px solid var(--respondo-line)!important;
+  box-shadow:0 14px 40px rgba(0,0,0,.19)!important;
+}
+#app :is(.pricing-page,.apple-home-page) .price-card.featured{
+  border-color:rgba(128,184,255,.63)!important;
+  box-shadow:0 15px 46px rgba(49,109,195,.19),inset 0 1px 0 rgba(145,194,252,.14)!important;
+}
+#app :is(.pricing-page,.apple-home-page) .price-card :is(.pricevalue,.pricevalue>span,.pricevalue>b,h3,b){
+  color:#f8fbff!important;
+  -webkit-text-fill-color:currentColor!important;
+}
+#app :is(.pricing-page,.apple-home-page) .price-card :is(li,p,small,.annual-save-note,.plan-yearly-price,.pricevalue small,.price-rule){
+  color:#b3c2d3!important;
+  -webkit-text-fill-color:currentColor!important;
+  border-color:var(--respondo-line)!important;
+}
+#app :is(.pricing-page,.apple-home-page) .price-card :is(.price-btn,.pricing-select-btn){
+  background:#1b283a!important;
+  color:#e4efff!important;
+  border:1px solid rgba(160,199,250,.29)!important;
+  box-shadow:none!important;
+}
+#app :is(.pricing-page,.apple-home-page) .price-card :is(.price-btn.blue,.pricing-select-btn.blue){
+  background:linear-gradient(110deg,#4d93f2,#83bcff)!important;
+  color:#06111e!important;
+  border-color:#8cbeff!important;
+}
+#app :is(.pricing-page,.apple-home-page) :is(.pricing-billing-switch,.pricing-period-option){
+  border-color:var(--respondo-line)!important;
+}
+#app :is(.pricing-page,.apple-home-page) .pricing-period-option:not(.is-active){
+  color:#bac8d9!important;
+  background:#131d2b!important;
+}
+#app :is(.pricing-page,.apple-home-page) .pricing-period-option.is-active{
+  background:#c5e0ff!important;
+  color:#0b1727!important;
+}
+/* Contact page: preserve form semantics and a clearly readable input contrast. */
+#app .contact-page main{
+  background:
+    radial-gradient(ellipse at 75% 0%,rgba(68,112,206,.17),transparent 62%),
+    var(--respondo-night)!important;
+}
+#app .contact-page main h1{color:#f8fbff!important}
+#app .contact-page main>.container>p{color:var(--respondo-muted)!important}
+#app .contact-page main :is(section,aside){
+  background:#111a27!important;color:var(--respondo-white)!important;
+  border-color:var(--respondo-line)!important;
+  box-shadow:0 22px 54px rgba(0,0,0,.15)!important;
+}
+#app .contact-page main :is(section,aside) :is(h2,h3){color:var(--respondo-white)!important}
+#app .contact-page .home-contact-form :is(input,textarea,select){
+  background:#080e18!important;color:#f6f9ff!important;
+  border:1px solid rgba(168,198,236,.32)!important;
+}
+#app .contact-page .home-contact-form :is(input,textarea)::placeholder{color:#91a2b7!important}
+#app .contact-page .home-contact-form label{color:#d8e4f4!important}
+#app .contact-page main aside a[href^="mailto:"]{color:var(--respondo-blue)!important}
+/* Guides and industry directory: same card language, no artificial new content. */
+#app .global-guide-page .global-guide-main,
+#app .global-guide-page .global-guide-hero,
+#app .audience-hub :is(.audience-section,.audience-section--end){
+  background:var(--respondo-night)!important;color:var(--respondo-white)!important;
+}
+#app .global-guide-page :is(.global-guide-card,.global-guide-next,.global-guide-faq,.global-guide-section,.global-guide-cta),
+#app .audience-hub :is(.audience-card,.audience-cta,.audience-cta-inner){
+  background:linear-gradient(150deg,#142031,#0f1826)!important;
+  border-color:var(--respondo-line)!important;
+  color:var(--respondo-white)!important;
+}
+#app .global-guide-page :is(.global-guide-card p,.global-guide-hero p,.global-guide-prose p,.global-guide-section p,.global-guide-faq p),
+#app .audience-hub :is(.audience-card p,.audience-section-title p,.audience-cta p){
+  color:var(--respondo-muted)!important;
+}
+#app .global-guide-page :is(.global-guide-card h3,.global-guide-prose h2,.global-guide-section h2),
+#app .audience-hub :is(.audience-card h3,.audience-section-title h2){
+  color:var(--respondo-white)!important;
+}
+#app .global-guide-page :is(.global-guide-faq summary,.global-guide-crumb a,.global-guide-more){
+  color:#bfdcff!important;
+}
+#app .audience-hub :is(.audience-card-arrow,.audience-card-top){
+  color:var(--respondo-blue)!important;
+}
+/* Legal and account entry follow the dark brand on their outer canvas.
+   Existing high-contrast light form surfaces remain untouched for usability. */
+#app .legalpage{background:#080e16!important;color:#eef4ff!important}
+#app .legalpage .legal-aside h1{color:#f6f9ff!important}
+#app .legalpage .legal-aside>p{color:#bac7d8!important}
+#app .legalpage .legalcopy,
+#app .legalpage .legal-seller{background:#101a28!important;color:#eef4ff!important;border-color:var(--respondo-line)!important}
+#app .legalpage .legalcopy :is(h2,h3){color:#f8fbff!important}
+#app .legalpage .legalcopy p{color:#c3cfde!important}
+#app :is(.formpage.login-page,.formpage.signup-page){
+  background:radial-gradient(ellipse 72% 70% at 52% 0%,rgba(63,116,202,.21),transparent 70%),#080e16!important;
+}
+#app :is(.formpage.login-page,.formpage.signup-page) :is(.login-copy,.checkout-copy) h1{
+  color:#f7faff!important;
+  -webkit-text-fill-color:#f7faff!important;
+}
+#app :is(.formpage.login-page,.formpage.signup-page) :is(.login-copy,.checkout-copy)>p{
+  color:#b8c5d6!important;
+}
+/* Consistent dark footer including all guide/SEO/brand pages. */
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub,.apple-home-page) .footer{
+  background:#060a10!important;
+  border-top:1px solid var(--respondo-line)!important;
+  color:#edf4ff!important;
+}
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub,.apple-home-page) .footer a{
+  color:#c7d7eb!important;
+}
+#app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub,.apple-home-page) .footer a:hover{
+  color:#fff!important;
+}
+/* Mobile: no giant watermark behind copy; responsive cards and full-width CTAs. */
+@media(max-width:760px){
+  #app .seo-landing-page .seo-landing-hero{
+    padding:57px 0 74px!important;
+  }
+  #app .seo-landing-page .seo-landing-hero::after,
+  #app .features-page .features-hero::after,
+  #app .audience-hub .audience-hero::after{
+    right:-95px;top:68%;width:285px;opacity:.045;
+  }
+  #app .seo-landing-page .seo-landing-hero h1{
+    font-size:clamp(37px,9.1vw,55px)!important;
+    line-height:1.09!important;
+  }
+  #app .seo-landing-page .seo-landing-hero p{
+    font-size:16px!important;
+    line-height:1.68!important;
+  }
+  #app .seo-landing-page .seo-landing-actions{
+    display:grid!important;
+    grid-template-columns:1fr;
+    gap:11px!important;
+  }
+  #app .seo-landing-page .seo-landing-actions .btn{
+    width:100%;min-height:52px!important;justify-content:center!important;
+  }
+  #app .seo-landing-page :is(.seo-landing-copy,.seo-landing-closing,.customer-bot-steps,.customer-bot-explain,.customer-bot-faq-section){
+    padding-top:clamp(43px,8vw,70px)!important;
+    padding-bottom:clamp(49px,9vw,79px)!important;
+  }
+  #app .seo-landing-page :is(.seo-landing-grid,.customer-bot-steps-grid,.customer-bot-explain-grid){
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  #app .seo-landing-page :is(.customer-bot-faq,.ai-topic-faq){padding:0 18px!important}
+  #app .global-guide-page .global-guide-grid,
+  #app .audience-hub .audience-grid{grid-template-columns:minmax(0,1fr)!important}
+  #app .pricing-page .pricing-wrap{grid-template-columns:minmax(0,1fr)!important}
+}
+@media(prefers-reduced-motion:reduce){
+  #app :is(.seo-landing-page,.features-page,.pricing-page,.contact-page,.global-guide-page,.audience-hub) :is(a,button){
+    transition:none!important;
+  }
+}
