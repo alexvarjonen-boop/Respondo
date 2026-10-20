@@ -43,5 +43,5 @@ test('changed UI modules are cache-busted at each nested import level',()=>{
   assert.match(index,/\/effects\.js\?v=[^"]+-20261019-bot-navigation-hint-v1/);
   assert.match(index,/\/app\.js\?v=[^"]+-20261019-bot-navigation-hint-v1/);
   assert.match(read('app.js'),/apple-home\.js\?v=20261020-language-flags-v2/);
-  assert.match(read('apple-home.js'),/spiral-hero\.js\?v=20261020-language-flags-v1/);
+  assert.match(read('apple-home.js'),/spiral-hero\.js\?v=20261020-language-flags-v2/);
 });
