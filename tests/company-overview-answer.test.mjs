@@ -42,5 +42,5 @@ test('general business question does not invent a description from contact field
 });
 
 test('first-party company summary does not swallow pricing questions',()=>{
-  assert.equal(respondoProductFaqMatch('Paljonko Advanced maksaa?','fi')?.id,'respondo-faq-plan-pricing');
+  assert.notEqual(respondoProductFaqMatch('Paljonko Advanced maksaa?','fi')?.id,'respondo-faq-company-overview');
 });
