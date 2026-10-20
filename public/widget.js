@@ -38,6 +38,7 @@
     'Sähköposti':'E-post','Puhelin':'Telefon','Valitse aika':'Välj tid','Varaa':'Boka','Lähetä tarjouspyyntö':'Skicka offertförfrågan'
   }));
   const EXTRA_SV_WIDGET = {
+    'Hyväksyn yhteystietojeni lähettämisen yritykselle yhteydenottoa varten.': 'Jag godkänner att mina kontaktuppgifter skickas till företaget för denna kontaktförfrågan.',
   "Respondon asiakaspalvelu": "Respondos kundservice",
   "Paikalla nyt": "Online nu",
   "Yhdistetään…": "Ansluter…",
