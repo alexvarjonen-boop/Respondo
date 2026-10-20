@@ -11,12 +11,14 @@ test('premium phone stylesheet loads last, overriding earlier iOS skin and OS ho
     assert.ok(html.indexOf(sheet)>=0 && html.indexOf(sheet)<premium,sheet);
   }
 });
-test('mobile overview displays real chat ahead of statistics and onboarding',()=>{
+test('mobile overview keeps statistics, while bot preview remains in Business & bot',()=>{
   assert.match(css,/\.dashboard-premium-experience\{\s*order:3!important/);
   assert.match(css,/\.stats\{\s*order:4!important/);
   assert.match(css,/\.onboarding-card\{order:6!important/);
   assert.match(css,/\.demo-dashboard-shell \.stats,/);
-  assert.match(app,/id="overviewPreviewHost"/);
+  assert.doesNotMatch(app,/id="overviewPreviewHost"/);
+  assert.match(app,/id="live-preview"/);
+  assert.match(app,/\x27live-preview\x27:\x27setup\x27/);
   assert.equal((app.match(/id="previewForm"/g)||[]).length,1);
   assert.equal((app.match(/id="previewChat"/g)||[]).length,1);
 });

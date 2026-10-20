@@ -10,8 +10,9 @@ test('signed-in and public demo share same premium dashboard with seven working 
  assert.match(app,/premium-sidebar-nav/);
  assert.match(app,/data-dashboard-nav/);
  assert.match(app,/languageSwitch\(\)/);
- assert.match(app,/overviewPreviewHost/);
- assert.match(app,/positionPremiumPreview\(next\)/);
+ assert.doesNotMatch(app,/id="overviewPreviewHost"/);
+ assert.match(app,/'live-preview':'setup'/);
+ assert.doesNotMatch(app,/positionPremiumPreview\(next\)/);
  assert.equal((app.match(/id="previewForm"/g)||[]).length,1);
  assert.equal((app.match(/id="previewChat"/g)||[]).length,1);
  assert.equal((app.match(/id="live-preview"/g)||[]).length,1);
