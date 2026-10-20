@@ -12583,6 +12583,7 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
     const email = cleanEmail(body.email).slice(0, 220);
     const phone = String(body.phone || '').trim().slice(0, 80);
     const message = String(body.message || '').trim().slice(0, 1200);
+    if (body.consent !== true) return res.status(400).json({ error: 'Yhteystietojen lähettäminen edellyttää suostumusta.' });
     if (!email && !phone) return res.status(400).json({ error: 'Anna sähköposti tai puhelinnumero.' });
 
     await q(
