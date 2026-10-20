@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { deliverQualifiedLead } from './lead-crm.mjs';
-import { getCrmProvider, enqueueCrmLead } from './lead-crm-queue.mjs';
+import { getCrmProvider, enqueueCrmLead, setCrmProvider } from './lead-crm-queue.mjs';
 import { beginLeadCapture, completeLeadCapture } from './lead-capture.mjs';
 import { ensureLeadTable, saveQualifiedLead, listQualifiedLeads, leadAnalyticsForTenant, deleteQualifiedLead } from './lead-repository.mjs';
 
@@ -16,6 +16,14 @@ export function createLeadOperations({ pool, resolveTenantId, crm = {}, deliver 
   }
   return {
     ensureSchema: () => ensureLeadTable(pool),
+    async crmSettings(context) {
+      return getCrmProvider(pool, await authorizedTenant(context));
+    },
+    async updateCrmSettings(context, {provider, enabled} = {}) {
+      const tenantId=await authorizedTenant(context);
+      await setCrmProvider(pool,tenantId,provider,enabled);
+      return {provider,enabled};
+    },
     beginCapture: ({ message, language }) => beginLeadCapture({ message, language }),
     async submitCapture(context, details) {
       const tenantId = await authorizedTenant(context);
