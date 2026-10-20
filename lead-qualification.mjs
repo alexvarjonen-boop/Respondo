@@ -12,7 +12,7 @@ const patterns = Object.freeze({
 export function classifyLeadIntent(message) {
   const text = fold(message).slice(0, 4000);
   if (!text.trim()) return { intent: 'unknown', confidence: 0 };
-  for (const intent of ['quote', 'booking', 'purchase', 'contact', 'support']) {
+  for (const intent of ['support', 'quote', 'booking', 'purchase', 'contact']) {
     if (patterns[intent].test(text)) return { intent, confidence: 0.85 };
   }
   return { intent: 'unknown', confidence: 0 };
