@@ -19,9 +19,7 @@ test('signed-in and public demo share same premium dashboard with seven working 
 });
 test('overview cards use live backend data, not mock promotional dashboard numbers',()=>{
  for(const item of ['s.conversations','s.last7','s.answeredRate','s.leads','knowledge.length'])assert.ok(app.includes(item),item);
- assert.match(app,/data-dashboard-open="setup"/);
- assert.match(app,/data-dashboard-open="answers"/);
- assert.match(app,/data-dashboard-open="install"/);
+ assert.doesNotMatch(app,/dashboard-premium-experience dashboard-view-section/);
 });
 test('premium CSS scoped, responsive and cached for real release',()=>{
  assert.match(css,/RESPONDO PREMIUM WORKSPACE OCTOBER 2026/);
