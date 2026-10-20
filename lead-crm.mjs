@@ -35,6 +35,8 @@ export async function validateCrmEndpoint(value, resolve=lookup) {
 }
 export async function deliverQualifiedLead(event, {url,secret,fetchImpl=fetch,resolve=lookup}={}) {
   if(!url || !secret) return {status:'disabled'};
+  // Arbitrary destinations remain disabled until DNS-pinned outbound connections are implemented.
+  if(process.env.RESPONDO_ALLOW_UNPINNED_CRM_WEBHOOK !== 'true') throw new Error('CRM webhook delivery disabled: outbound destination protection required');
   const endpoint=await validateCrmEndpoint(url,resolve);
   const delivery=prepareCrmDelivery(event,secret);
   const response=await fetchImpl(endpoint,{
