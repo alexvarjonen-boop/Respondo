@@ -6149,7 +6149,7 @@ async function route() {
     const previewCompanyName = $('.dashboard-workspace b')?.textContent || 'Yritys';
     // Dashboard preview reads approved tenant knowledge on the server from
     // the authenticated session. Do not copy incomplete/unapproved knowledge
-    // from the dashboard API into anonymous demo customFacts.
+    // from the dashboard API into a separate anonymous profile.
     $('#previewForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const input = e.currentTarget.elements.question;
