@@ -20,12 +20,14 @@ export async function deliverCrmProvider(tenantId,event,{pool,credentials,fetchI
   const contact=event.contact||{};
   let url,payload;
   if(provider==='hubspot'){
-    url='https://api.hubapi.com/crm/v3/objects/contacts';
+    if(!contact.email)throw Error('HubSpot requires a valid email for idempotent upsert');
+    url='https://api.hubapi.com/crm/v3/objects/contacts/batch/upsert';
     payload={properties:{email:contact.email||'',firstname:contact.name||'',phone:contact.phone||'',
       respondo_lead_id:event.leadId}};
     // HubSpot custom properties must be created separately; use standard
     // fields only until the customer's schema is provisioned.
     delete payload.properties.respondo_lead_id;
+    payload={inputs:[{id:contact.email,idProperty:'email',properties:payload.properties}]};
   } else if(provider==='pipedrive'){
     const personPayload={name:contact.name||'Respondo contact'};
     if(contact.email)personPayload.email=contact.email;
