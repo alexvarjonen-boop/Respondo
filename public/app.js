@@ -6147,11 +6147,9 @@ async function route() {
 
     const previewHistory = [];
     const previewCompanyName = $('.dashboard-workspace b')?.textContent || 'Yritys';
-    const loadPreviewFacts = () => api('/api/app/dashboard')
-      .then((d) => (d.knowledge || [])
-        .filter((x) => x.category !== 'Yrityksen perustiedot')
-        .map((x) => ({ key: x.title, answer: x.answer })))
-      .catch(() => []);
+    // Dashboard preview reads approved tenant knowledge on the server from
+    // the authenticated session. Do not copy incomplete/unapproved knowledge
+    // from the dashboard API into anonymous demo customFacts.
     $('#previewForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const input = e.currentTarget.elements.question;
@@ -6167,12 +6165,12 @@ async function route() {
       try {
         const profileForm = $('#businessProfileForm');
         const values = Object.fromEntries(new FormData(profileForm).entries());
-        const customFacts = await loadPreviewFacts();
         const result = await api('/api/public/demo-chat', {
           method: 'POST',
           body: JSON.stringify({
             message: question,
             lang: currentLang(),
+            dashboardPreview: true,
             profile: {
               companyName: previewCompanyName,
               greeting: values.greeting,
@@ -6188,7 +6186,6 @@ async function route() {
               quoteRequestUrl: values.quoteRequestUrl,
               bookingUrl: values.bookingUrl,
               notes: values.notes,
-              customFacts,
             },
             history: previewHistory.slice(-6),
           }),
