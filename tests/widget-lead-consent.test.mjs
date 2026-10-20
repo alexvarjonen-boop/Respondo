@@ -6,7 +6,7 @@ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
 const widget=readFileSync(new URL('../public/widget.js',import.meta.url),'utf8');
 
 test('public widget requires explicit unchecked contact consent',()=>{
-  assert.match(widget,/type=\\"checkbox\\" name=\\"consent\\" required/);
+  assert.match(widget,/type="checkbox" name="consent" required/);
   assert.match(widget,/box\.elements\.consent\.checked/);
   assert.match(widget,/consent: box\.elements\.consent\.checked/);
 });
