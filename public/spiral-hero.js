@@ -4,7 +4,7 @@ export function spiralHeroMarkup(t, lang) {
   const cards = [
     ['24/7', t('Asiakaspalvelu ei nuku.','Kundservicen sover aldrig.','Support never sleeps.'),
       t('Automaattiset vastaukset myös työajan ulkopuolella.','Automatiska svar även utanför öppettiderna.','Automatic answers even outside business hours.'), '01'],
-    ['FI · SV · EN', t('Kolme kieltä.','Tre språk.','Three languages.'),
+    ['🇫🇮 · 🇸🇪 · 🇬🇧', t('Kolme kieltä.','Tre språk.','Three languages.'),
       t('Suomi, svenska ja English samassa palvelussa.','Finska, svenska och engelska i samma tjänst.','Finnish, Swedish and English in one service.'), '02'],
     ['01', t('Yksi Respondo.','En Respondo.','One Respondo.'),
       t('Tietopohja, keskustelut ja yhteydenotot yhdessä.','Kunskapsbas, konversationer och kontakter på ett ställe.','Knowledge, conversations and enquiries in one place.'), '03'],
