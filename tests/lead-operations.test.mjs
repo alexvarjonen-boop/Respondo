@@ -29,3 +29,12 @@ test('consent rejection does not persist any lead', async () => {
   assert.equal(result.accepted,false);
   assert.equal(writes,0);
 });
+
+test('lead deletion is scoped to authenticated tenant', async () => {
+  const calls = [];
+  const pool = {query:async (sql,params)=>{calls.push({sql,params});return {rowCount:1}}};
+  const ops = createLeadOperations({pool,resolveTenantId:async()=> 'owner-tenant'});
+  assert.deepEqual(await ops.delete({tenantId:'forged'},'lead-1'),{deleted:true});
+  assert.deepEqual(calls[0].params,['owner-tenant','lead-1']);
+  assert.match(calls[0].sql,/DELETE FROM respondo_qualified_leads/);
+});
