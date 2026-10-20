@@ -8496,6 +8496,32 @@ app.get('/app/leads', auth, ownerOnly, (req,res) => {
   res.set('Cache-Control','private, no-store');
   return res.sendFile(path.join(process.cwd(),'public','leads.html'));
 });
+// Owner-entered lead submission. The original chat intent and explicit consent
+// must be provided; public widget collection is deliberately not enabled here.
+app.post('/api/leads', auth, ownerOnly, requireLeadSchema, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  const body=req.body;
+  if (!body || typeof body !== 'object' || Array.isArray(body) ||
+      typeof body.message !== 'string' || body.message.length > 4000 ||
+      typeof body.name !== 'string' || body.name.length > 120 ||
+      (body.email !== undefined && (typeof body.email !== 'string' || body.email.length > 254)) ||
+      (body.phone !== undefined && (typeof body.phone !== 'string' || body.phone.length > 40)) ||
+      body.consent !== true) {
+    return res.status(400).json({error:'Virheelliset tiedot tai suostumus puuttuu.'});
+  }
+  try {
+    const session=leadOperations.beginCapture({message:body.message,language:body.language});
+    if (!session) return res.status(422).json({error:'Myyntiaikomusta ei tunnistettu.'});
+    const result=await leadOperations.submitCapture(req,{
+      session,name:body.name,email:body.email,phone:body.phone,consent:body.consent
+    });
+    if (!result.accepted) return res.status(422).json({error:'Liidin tallennus epäonnistui.',reason:result.reason});
+    return res.status(201).json({accepted:true,leadId:result.leadId});
+  } catch(error) {
+    console.error('Lead submission failed',error);
+    return res.status(500).json({error:'Liidin tallennus epäonnistui.'});
+  }
+});
 app.get('/api/leads', auth, ownerOnly, requireLeadSchema, async (req, res) => {
   res.set('Cache-Control','private, no-store');
   try { return res.json({leads:await leadOperations.list(req,Number(req.query.limit)||50)}); }
