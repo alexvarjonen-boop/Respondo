@@ -20,10 +20,10 @@ test('opening animation stays on homepage without a scroll logo chapter', async 
   assert.match(code, /location\.pathname !== '\/'/);
   assert.match(code, /prefers-reduced-motion: reduce/);
   // The opening must replay on each homepage navigation, not just the first session visit.
-  assert.doesNotMatch(code, /sessionStorage\\.(?:setItem|getItem)/);
-  assert.match(code, /if \\(!force && introPlayed\\) return/);
+  assert.doesNotMatch(code, /sessionStorage\.(?:setItem|getItem)/);
+  assert.match(code, /if \(!force && introPlayed\) return/);
   assert.match(code, /introPlayed = true/);
-  assert.match(code, /event\\.persisted/);
+  assert.match(code, /event\.persisted/);
   assert.match(code, /aria-modal/);
   assert.match(code, /playIntro\(false\)/);
   assert.doesNotMatch(code, /createChapter|rl-chapter|rl-replay|Jatka selaamista|Keep scrolling|Fortsätt skrolla/);
