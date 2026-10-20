@@ -43,7 +43,6 @@ export function createLeadOperations({ pool, resolveTenantId, crm = {}, deliver 
           const queued = await enqueueCrmLead(pool,result.event);
           crmStatus = queued.queued ? 'queued' : 'already_queued';
         } else if (crm.url && crm.secret) {
-          // Legacy global webhook remains supported until tenants migrate.
           crmStatus = (await deliver(result.event,crm)).status;
         }
       } catch(error) {
