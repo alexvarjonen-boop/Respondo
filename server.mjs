@@ -8494,7 +8494,7 @@ async function requireLeadSchema(req, res, next) {
 }
 app.get('/app/leads', auth, ownerOnly, (req,res) => {
   res.set('Cache-Control','private, no-store');
-  return res.sendFile(path.join(process.cwd(),'public','leads.html'));
+  return res.sendFile(path.join(__dirname,'private-leads.html'));
 });
 // Owner-entered lead submission. The original chat intent and explicit consent
 // must be provided; public widget collection is deliberately not enabled here.
