@@ -64,7 +64,7 @@ test('chat-first UI replaces site-pages footer but keeps essential legal access'
   assert.doesNotMatch(footer,/data-open-site-assistant|footer-ask-respondo/);
   assert.match(app,/class="public-header-login"/);
   for(const path of ['/kayttoehdot','/tietosuoja','/evasteet','/dpa']){
-    assert.ok(footer.includes('href="'+path+'"'),path);
+    assert.ok(footer.includes('href="'+path+'?lang=${currentLang()}"'),path);
   }
   assert.match(effects,/respondo-assistant\/chat/);
   assert.match(effects,/Array\.isArray\(data\.actions\)/);
