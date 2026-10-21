@@ -284,7 +284,7 @@ const pages = {
 };
 const h = value => String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const language = lang => ['fi','sv','en'].includes(lang) ? lang : 'fi';
-const url = (path,lang) => path + (lang === 'fi' ? '' : '?lang=' + lang);
+const url = (path,lang) => path + (lang === 'en' ? '' : '?lang=' + lang);
 
 export function verticalMetaForPath(path) {
   const item = pages[path];
