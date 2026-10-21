@@ -528,9 +528,13 @@ async function seedAndLoadIntentUtterances() {
     );
   }
 
-  const rows = await q("SELECT language,intent,normalized FROM intent_utterances WHERE active=TRUE AND source='generated'");
+  // The generated intent lexicon is deterministic and already available in
+  // application code. Downloading ~250k rows from Supabase on every Railway
+  // startup wastes shared-pooler egress without improving answer quality.
+  // Keep the database seed above for compatibility, but build the runtime
+  // lookup locally instead of transferring the entire table over the network.
   const next = new Map();
-  for (const row of rows.rows) {
+  for (const row of buildIntentUtteranceSeed()) {
     const normalized = normalizeIntentPhrase(row.normalized);
     const language = String(row.language || '').toLowerCase();
     const intent = String(row.intent || '').trim();
