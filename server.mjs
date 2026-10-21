@@ -497,7 +497,7 @@ async function renderIndexHtml(req) {
   // Keep homepage topic links in the initial HTML, exactly as the browser displays
   // them after hydration. This makes localized pages discoverable without JS.
   const contentWithHomepageLinks = routePath === '/'
-    ? initialContent.replace(/<\\/main>\\s*$/i, homeSearchMarkup(seo.lang) + '</main>')
+    ? initialContent.replace(/<\/main>\s*$/i, homeSearchMarkup(seo.lang) + '</main>')
     : initialContent;
   html = html.replace('<div id="app"></div>', '<div id="app">' + contentWithHomepageLinks + '</div>');
 
