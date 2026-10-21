@@ -5,7 +5,8 @@ const topics = [
   ['/tekoaly-asiakaspalvelu', ['Tekoäly asiakaspalvelussa', 'AI i kundservice', 'AI in customer service']],
   ['/asiakaspalvelun-automatisointi', ['Asiakaspalvelun automatisointi', 'Automatisera kundservice', 'Customer service automation']],
   ['/tekoaly-yrityksille', ['Tekoäly yrityksille', 'AI för företag', 'AI for businesses']],
-  ['/verkkokauppa-chatbot', ['Chatbot verkkokauppaan', 'Chatbot för webbutik', 'Ecommerce chatbot']]
+  ['/verkkokauppa-chatbot', ['Chatbot verkkokauppaan', 'Chatbot för webbutik', 'Ecommerce chatbot']],
+  ['/guides/ai-chatbot-vs-live-chat', ['Chatbot vai lomake? Vertailu', 'Chatbot eller formulär? Jämförelse', 'Chatbot vs live chat vs contact form']]
 ];
 const copy = {
   fi: {
