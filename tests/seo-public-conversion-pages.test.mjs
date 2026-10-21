@@ -71,7 +71,11 @@ test('industry hub is a single footer link and has five crawlable destinations',
   assert.match(client, /path === '\/kenelle-sopii'\) html = audienceHubPage\(\)/);
   for (const path of ['/autokorjaamo-chatbot','/lvi-chatbot','/verkkokauppa-chatbot','/asiakaspalvelubotti','/ajanvaraus-chatbot']) {
     assert.ok(client.includes("'"+path+"'"), 'missing hub link '+path);
-    assert.ok(!footer.includes('href="'+path+'?lang='), 'footer still has destination '+path);
+    if (['/verkkokauppa-chatbot','/asiakaspalvelubotti'].includes(path)) {
+      assert.ok(footer.includes('href="'+path+'?lang='), 'footer missing useful searchable destination '+path);
+    } else {
+      assert.ok(!footer.includes('href="'+path+'?lang='), 'unplanned footer destination '+path);
+    }
   }
   assert.match(server, /rawPath === '\/kenelle-sopii'/);
   assert.match(client, /Who is Respondo AI for\?/);
@@ -118,7 +122,7 @@ test('international guide content is server-rendered without requiring JavaScrip
   }
   assert.match(server, /const initialContent = GLOBAL_GUIDE_PATHS\.includes\(routePath\)/);
   assert.match(server, /\? globalResourcesMarkup\(routePath, seo\.lang\)/);
-  assert.match(server, /'<div id="app">' \+ initialContent \+ '<\/div>'/);
+  assert.match(server, /'<div id="app">' \+ contentWithHomepageLinks \+ '<\/div>'/);
   assert.match(server, /seo\.lang === 'sv' \? 'sv_SE' : seo\.lang === 'en' \? 'en_GB' : 'fi_FI'/);
 });
 
