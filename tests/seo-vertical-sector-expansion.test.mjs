@@ -27,7 +27,7 @@ test('salon and cleaning industry pages have distinct FI/SV/EN substance and con
       assert.ok(content.includes('/assistant'),'missing demo CTA');
       assert.ok(content.includes('/hinnat'),'missing pricing CTA');
       assert.ok(content.includes('/kenelle-sopii'),'missing directory crosslink');
-      assert.ok(content.includes('?lang='+lang) || lang==='fi','language lost from CTA');
+      assert.ok(content.includes('?lang='+lang) || lang==='en','language lost from CTA');
       assert.ok(titles[lang][0].includes('Respondo AI'));
       assert.ok(titles[lang][1].length>=90);
       assert.ok(!/guaranteed roi|guaranteed leads|varmasti enemmän/i.test(content),'misleading promise');
