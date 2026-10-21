@@ -13,7 +13,7 @@ const groups = [
 
 test('key topical hubs link to the new pages in all three languages', () => {
   for (const lang of ['fi','sv','en']) {
-    const suffix=lang==='fi'?'':'?lang='+lang;
+    const suffix=lang==='en'?'':'?lang='+lang;
     const guides=globalResourcesMarkup('/guides',lang);
     for (const path of groups) {
       assert.ok(guides.includes('href="'+path+suffix+'"'),lang+' guides missing '+path);
@@ -32,7 +32,7 @@ test('Google-readable HTML, sitemap and canonical metadata expose important inte
   t.after(()=>new Promise((resolve,reject)=>server.close(err=>err?reject(err):resolve())));
   const origin='http://127.0.0.1:'+server.address().port;
   for(const lang of ['fi','sv','en']){
-    const suffix=lang==='fi'?'':'?lang='+lang;
+    const suffix=lang==='en'?'':'?lang='+lang;
     const res=await fetch(origin+'/kenelle-sopii?lang='+lang);
     assert.equal(res.status,200);
     const html=await res.text();
@@ -41,7 +41,7 @@ test('Google-readable HTML, sitemap and canonical metadata expose important inte
     }
     const commerce=await fetch(origin+'/verkkokauppa-chatbot?lang='+lang);
     assert.equal(commerce.status,200);
-    const shopifyLink='/shopify-chatbot'+(lang==='fi'?'':suffix);
+    const shopifyLink='/shopify-chatbot'+suffix;
     assert.ok((await commerce.text()).includes('href="'+shopifyLink+'"'),lang+' commerce landing misses Shopify guide');
   }
   const response=await fetch(origin+'/sitemap.xml');
