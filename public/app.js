@@ -2874,7 +2874,7 @@ function geoAnswerSection() {
 
 function audienceHubPage() {
   const lang=currentLang();
-  const qs=lang==='fi'?'':'?lang='+lang;
+  const qs=lang==='en'?'':'?lang='+lang;
   const industries=[
     ['/autokorjaamo-chatbot','01',appText('Autokorjaamot','Bilverkstäder','Auto repair shops'),appText('Huolto, rengastyöt ja korjauspalvelut – asiakkaan kysymyksestä yhteydenottoon.','Service, däck och reparationer – från kundfråga till förfrågan.','Servicing, tyres and repairs – from questions to enquiries.'),appText('AUTOALA','BILBRANSCHEN','AUTOMOTIVE')],
     ['/lvi-chatbot','02',appText('LVI-yritykset','VVS-företag','Plumbing & HVAC'),appText('Putkityöt, lämmitys, huolto ja tarjouspyynnöt yrityksen omilla tiedoilla.','Rör, värme, service och offerter med företagets egna uppgifter.','Plumbing, heating, maintenance and quotes using approved information.'),appText('LVI & HUOLTO','VVS & SERVICE','PLUMBING & HVAC')],
