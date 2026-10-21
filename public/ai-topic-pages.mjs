@@ -350,7 +350,7 @@ const pages = {
 export const AI_TOPIC_PATHS=Object.keys(pages);
 export function aiTopicMeta(path,lang='fi') {const p=pages[path]?.[lang] || pages[path]?.fi;return p?[p.title,p.description]:null;}
 const h=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-const link=(p,lang)=>p+(lang==='fi'?'':'?lang='+lang);
+const link=(p,lang)=>p+(lang==='en'?'':'?lang='+lang);
 export function aiTopicMarkup(path,lang='fi') {
   const L=['fi','sv','en'].includes(lang)?lang:'fi';
   const p=pages[path]?.[L];

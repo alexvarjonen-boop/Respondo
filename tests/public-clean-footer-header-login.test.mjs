@@ -16,7 +16,9 @@ for(const [lang,indexLang] of [['fi',0],['sv',1],['en',2]]){
     assert.ok(markup.includes('rs-spiral-section'));
     assert.ok(markup.includes(marker));
     assert.equal((markup.match(/data-rs-card\b/g)||[]).length,7);
-    assert.equal(markup.slice(markup.indexOf(marker)+marker.length).trim(),'');
+    const afterPricing=markup.slice(markup.indexOf(marker)+marker.length).trim();
+    assert.match(afterPricing,/^<section class="respondo-search-overview"/);
+    assert.match(afterPricing,/<nav class="respondo-search-links"/);
     assert.doesNotMatch(markup,/apple-bottom-cta|Valmis vastaamaan|Aloita ilmainen kokeilu|Ready for your first conversation/);
   });
 }
@@ -36,11 +38,11 @@ test('public header offers sign-in directly and keeps the language selector',()=
 test('footer ends after standard product company legal information',()=>{
   const footer=app.slice(app.indexOf('function footer()'),app.indexOf('function heroVisual()'));
   assert.doesNotMatch(footer,/footer-ask-respondo|footer-chat-open|data-open-site-assistant/);
-  assert.match(footer,/href="\/tietosuoja"/);
-  assert.match(footer,/href="\/kayttoehdot"/);
+  assert.match(footer,/href="\/tietosuoja\?lang=/);
+  assert.match(footer,/href="\/kayttoehdot\?lang=/);
   assert.match(footer,/cookie-settings-link/);
   assert.match(footer,/class="legalbar"/);
   assert.match(index,/app\.js\?v=[^"]*header-login-v5/);
   assert.match(index,/mobile-public-polish\.css\?v=[^"]*header-login-v5/);
-  assert.match(app,/apple-home\.js\?v=20261020-language-flags-v2/);
+  assert.match(app,/apple-home\.js\?v=20261021-organic-discovery-v1/);
 });

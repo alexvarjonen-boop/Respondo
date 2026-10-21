@@ -457,7 +457,7 @@ export function seoIntentMeta(path,lang='fi') {
   return p ? [p.title,p.description] : null;
 }
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-const href=(path,lang)=>path+(lang==='fi'?'':'?lang='+lang);
+const href=(path,lang)=>path+(lang==='en'?'':'?lang='+lang);
 export function seoIntentMarkup(path,lang='fi') {
   const L=['fi','sv','en'].includes(lang)?lang:'fi';
   const p=pages[path]?.[L];

@@ -13,7 +13,7 @@ test('the chatbot finds pricing while existing plan and legal routes stay access
   assert.doesNotMatch(footer,/data-open-site-assistant|footer-ask-respondo/);
   assert.match(nav,/class="public-header-login"/);
   assert.ok(footer.includes('href="/hinnat?lang=${currentLang()}"'));
-  assert.ok(footer.includes('href="/kayttoehdot"'));
+  assert.ok(footer.includes('href="/kayttoehdot?lang=${currentLang()}"'));
   for(const lang of ['fi','sv','en']){
     const actions=respondoSiteNavigationActions('Mitä hinnat ovat?',lang);
     assert.ok(actions.some(a=>new URL(a.url).pathname==='/hinnat'),lang);

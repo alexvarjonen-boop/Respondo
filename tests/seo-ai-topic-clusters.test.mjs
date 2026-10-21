@@ -29,7 +29,7 @@ test('the two editorial AI topics have distinct, useful localized content, not d
     assert.ok(markup.includes('href="/'+(p==='/tekoaly-yrityksille'?'tekoaly-asiakaspalvelu':'tekoaly-yrityksille')),p+' needs topical companion');
     assert.ok(metadata?.[0]?.includes('Respondo AI'));
     assert.ok(metadata?.[1]?.length>100);
-    if(lang!=='fi')assert.ok(markup.includes('?lang='+lang),'locale dropped from internal links');
+    if(lang!=='en')assert.ok(markup.includes('?lang='+lang),'locale dropped from internal links');
   }
   assert.equal(aiTopicMarkup('/fake'),'');
   assert.equal(aiTopicMeta('/fake'),null);

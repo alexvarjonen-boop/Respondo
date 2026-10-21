@@ -22,7 +22,7 @@ test('one substantial AI customer support landing page targets buyer intent acro
     assert.ok(html.includes('/assistant'), 'missing demo');
     assert.ok(html.includes('/kenelle-sopii'), 'missing internal links');
     assert.ok(html.includes('/guides/ai-customer-service-chatbot'),'missing helpful guide');
-    if(lang!=='fi') assert.ok(html.includes('?lang='+lang),'CTA dropped lang');
+    if(lang!=='en') assert.ok(html.includes('?lang='+lang),'CTA dropped lang');
     assert.ok(!/guaranteed leads|guaranteed first page|takuuvarma ykkössija/i.test(html));
   }
   const finnish=customerServiceLandingMarkup('fi').toLowerCase();

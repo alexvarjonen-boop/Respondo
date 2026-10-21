@@ -108,7 +108,7 @@ const SEO_META = {
     '/ominaisuudet': ['AI-asiakaspalvelubotin ominaisuudet | Respondo AI', 'Tutustu Respondon ominaisuuksiin: verkkosivubotti, yrityksen oma tietopohja, yhteydenotot, ajanvaraus, keskustelut ja asiakaspalvelun hallinta yhdessä paikassa.'],
     '/kenelle-sopii': ['Kenelle Respondo AI sopii? | Toimialat ja käyttökohteet','Respondo AI sopii autokorjaamoille, LVI-yrityksille, verkkokaupoille sekä asiakaspalvelun ja ajanvarauksen tueksi. Tutustu ratkaisuihin.'],
     '/guides': ['AI-asiakaspalvelun oppaat | Respondo AI','Käytännön oppaita AI-asiakaspalveluboteista ja yrityksen verkkosivun tietopohjan rakentamisesta.'],
-    '/guides/ai-chatbot-vs-live-chat': ["AI-chatbot vai livechat vai lomake? | Vertailu yritykselle","Vertaa AI-chatbotia, livechattia ja yhteydenottolomaketta: vastausnopeus, asiakaspalvelun laatu, kustannukset ja luotettavat vastaukset."],
+    '/guides/ai-chatbot-vs-live-chat': ["Chatbot vai lomake? Käytännön vertailu | Respondo AI","Chatbot vai yhteydenottolomake? Vertaa AI-botin, livechatin ja lomakkeen vastausnopeutta, kustannuksia ja käyttötapoja. Katso valintaopas."],
     '/guides/ai-chatbot-pricing': ['AI-asiakaspalvelubotin hinta yritykselle | Respondo AI','Paljonko AI-chatbot maksaa? Vertaile Advanced-, Premium- ja Enterprise-hintoja sekä kuukausitilausta sekä botin kokonaiskustannuksia.'],
     '/guides/ai-customer-service-chatbot': ['Mikä on AI-asiakaspalvelubotti? | Opas yrityksille','Miten AI-asiakaspalvelubotti toimii? Opi käyttökohteet, tietopohjan merkitys ja ihmisen käsittelyyn siirtäminen.'],
     '/guides/website-chatbot-knowledge-base': ['Chatbotin tietopohja – käytännön opas | Respondo AI','Näin rakennat verkkosivun AI-botille luotettavan tietopohjan ja testaat vastaukset ennen käyttöönottoa.'],
@@ -383,7 +383,7 @@ function seoNoScriptMarkup(seo, rawPath) {
     const i=seo.lang === 'sv' ? 1 : seo.lang === 'en' ? 2 : 0;
     const heading=['Kenelle Respondo AI sopii?','Vem passar Respondo AI för?','Who is Respondo AI for?'][i];
     const lead=['Respondo AI vastaa yrityksen asiakkaiden kysymyksiin omilla hyväksytyillä tiedoilla. Tutustu toimialoihin ja käyttötapoihin.','Respondo AI besvarar kundfrågor med företagets godkända information. Upptäck branscher och användningsområden.','Respondo AI answers customer questions with company-approved information. Explore industries and use cases.'][i];
-    const langSuffix=seo.lang === 'fi' ? '' : '?lang=' + seo.lang;
+    const langSuffix=seo.lang === 'en' ? '' : '?lang=' + seo.lang;
     const links=[
       ['/autokorjaamo-chatbot',['Chatbot autokorjaamolle','Chatbot för bilverkstad','Auto repair chatbot']],
       ['/lvi-chatbot',['Chatbot LVI-yritykselle','Chatbot för VVS-företag','Plumbing and HVAC chatbot']],
@@ -434,7 +434,7 @@ function seoNoScriptMarkup(seo, rawPath) {
   if (rawPath === '/') {
     if (seo.lang === 'sv') return '<noscript><main><h1>AI-kundservicebot för företag 24/7</h1><p>Respondo AI svarar på kundfrågor med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar.</p><p>Advanced 49 €/mån · Premium 129 €/mån · Enterprise 149 €/mån.</p><p><a href="/funktioner">Se funktionerna</a></p></main></noscript>';
     if (seo.lang === 'en') return '<noscript><main><h1>AI customer service bot for businesses 24/7</h1><p>Respondo AI answers customer questions with company-approved information, captures contact requests and supports bookings.</p><p>Advanced €49/month · Premium €129/month · Enterprise €149/month.</p><p><a href="/features">See features</a></p></main></noscript>';
-    return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille 24/7</h1><p>Respondo AI vastaa asiakkaiden kysymyksiin yrityksen omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.</p><p>Advanced 49 €/kk · Premium 129 €/kk · Enterprise 149 €/kk.</p><p><a href="/ominaisuudet">Katso ominaisuudet</a> · <a href="/asiakaspalvelubotti">Mikä on asiakaspalvelijabotti?</a> · <a href="/tekoaly-asiakaspalvelu">Tekoäly asiakaspalvelussa</a> · <a href="/tekoaly-yrityksille">Tekoäly yrityksille</a> · <a href="/tools/asiakaspalvelubotti-testi.html">Ilmainen asiakaspalvelubotin testi (25 kysymystä)</a></p></main></noscript>';
+    return '<noscript><main><h1>AI-asiakaspalvelubotti yrityksille 24/7</h1><p>Respondo AI vastaa asiakkaiden kysymyksiin yrityksen omilla tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta.</p><p>Advanced 49 €/kk · Premium 129 €/kk · Enterprise 149 €/kk.</p><p><a href="/ominaisuudet?lang=fi">Katso ominaisuudet</a> · <a href="/asiakaspalvelubotti?lang=fi">Mikä on asiakaspalvelijabotti?</a> · <a href="/tekoaly-asiakaspalvelu?lang=fi">Tekoäly asiakaspalvelussa</a> · <a href="/tekoaly-yrityksille?lang=fi">Tekoäly yrityksille</a> · <a href="/tools/asiakaspalvelubotti-testi.html">Ilmainen asiakaspalvelubotin testi (25 kysymystä)</a></p></main></noscript>';
   }
   return '<noscript><main><h1>' + escapeHtml(seo.title.replace(/\\s*\\|\\s*Respondo AI$/i,'')) + '</h1><p>' + escapeHtml(seo.description) + '</p><p><a href="' + SEO_CANONICAL_ORIGIN + '/">Respondo AI</a></p></main></noscript>';
 }

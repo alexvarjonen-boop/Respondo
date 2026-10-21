@@ -249,7 +249,7 @@ const content = {
   }
 };
 const html=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-const link=(path,lang)=>path+(lang==='fi'?'':'?lang='+lang);
+const link=(path,lang)=>path+(lang==='en'?'':'?lang='+lang);
 const data=lang=>content[['fi','sv','en'].includes(lang)?lang:'fi'];
 export const CUSTOMER_SERVICE_SEO_PATH='/asiakaspalvelubotti';
 export function customerServiceQuestions(lang='fi'){return data(lang).faq.map(([q,a])=>[q,a]);}

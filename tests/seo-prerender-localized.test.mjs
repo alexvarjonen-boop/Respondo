@@ -35,7 +35,7 @@ test('public landing content is present in the initial HTML without JavaScript',
     const html = await (await fetch(origin + '/kenelle-sopii?lang=' + lang)).text();
     const initial = html.split('<div id="app">')[1]?.split('</div>')[0] || '';
     for (const path of ['/autokorjaamo-chatbot', '/lvi-chatbot', '/verkkokauppa-chatbot', '/asiakaspalvelubotti', '/ajanvaraus-chatbot']) {
-      assert.ok(initial.includes('href="' + path + '?lang=' + lang + '"'), 'missing localized internal link ' + path + ' for ' + lang);
+      assert.ok(initial.includes('href="' + path + (lang === 'en' ? '' : '?lang=' + lang) + '"'), 'missing localized internal link ' + path + ' for ' + lang);
     }
   }
 });

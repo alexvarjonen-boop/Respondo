@@ -66,7 +66,7 @@ const copy={
   }
 };
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-const url=(path,l)=>path+(l==='fi'?'':'?lang='+l);
+const url=(path,l)=>path+(l==='en'?'':'?lang='+l);
 export function ecommerceCustomerServiceMeta(lang='fi'){
   const d=copy[['fi','sv','en'].includes(lang)?lang:'fi'];
   return [d.title,d.description];

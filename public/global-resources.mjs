@@ -254,12 +254,12 @@ const guides = {
   "/guides/ai-chatbot-vs-live-chat": {
     "reading": "7",
     "fi": {
-      "title": "AI-chatbot, livechat vai yhteydenottolomake? Vertailu yritykselle",
-      "subtitle": "Mitä eroa on automaattisella botilla, ihmisen livechatilla ja tavallisella yhteydenottolomakkeella? Vertaa käytännön tilanteita ennen valintaa.",
+      "title": "Chatbot vai lomake? AI-botti, livechat ja lomake vertailussa",
+      "subtitle": "Chatbot vai yhteydenottolomake yrityksen sivuille? Vertaile vastausnopeutta, työtä ja kustannuksia: milloin botti, livechat tai lomake toimii parhaiten.",
       "sections": [
         [
-          "Kolme kanavaa, kolme erilaista tehtävää",
-          "Yhteydenottolomake välittää viestin työntekijälle myöhempää vastausta varten. Livechat tarjoaa ihmisen vastauksen silloin, kun henkilöstöä on paikalla. AI-chatbot voi hoitaa toistuvia, yrityksen hyväksyttyihin tietoihin perustuvia kysymyksiä myös työajan jälkeen. Kanavia ei tarvitse valita vain yhtä: monessa yrityksessä toimiva ratkaisu on yhdistelmä, jossa asiakas pääsee tarvittaessa aina ihmisen luo."
+          "Chatbot vai lomake – mikä toimii parhaiten?",
+          "Jos asiakas haluaa heti vastauksen aukioloaikaan, palveluun tai toimitukseen ja yritys on vahvistanut tiedot, AI-chatbot voi olla toimivin. Jos tarvitaan tapauskohtainen tarjous tai henkilötietoja, yhteydenottolomake on usein parempi. Livechat palvelee silloin, kun työntekijä on paikalla ja asia vaatii harkintaa. Käyttökelpoinen ratkaisu voi yhdistää kaikki kolme: botti vastaa rutiinikysymyksiin, lomake kerää tarvittavat tiedot ja livechat käsittelee poikkeustilanteet. Päätös riippuu todellisesta kysymysmäärästä ja ylläpitokyvystä."
         ],
         [
           "Yhteydenottolomake toimii yksilöllisissä tapauksissa",
@@ -567,7 +567,7 @@ export function globalGuideData(path,lang='fi') {
   return guides[path]?.[normalized] || null;
 }
 const quote=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const pathWithLang=(p,lang)=>p+(lang==='fi'?'':'?lang='+lang);
+const pathWithLang=(p,lang)=>p+(lang==='en'?'':'?lang='+lang);
 export function globalResourcesMarkup(path,lang='fi') {
   const L=['fi','sv','en'].includes(lang)?lang:'fi';
   const i=L==='sv'?1:L==='en'?2:0;

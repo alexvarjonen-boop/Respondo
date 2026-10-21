@@ -23,7 +23,7 @@ test('pricing SSR accurately represents the actual package prices and annual bil
       assert.ok(html.includes(price),lang+' missing valid price '+price);
     assert.ok(html.includes('120 €'),lang+' annual saving');
     for(const p of ['/asiakaspalvelubotti','/asiakaspalvelun-automatisointi','/yhteystiedot']){
-      const suffix=lang==='fi'?'':'?lang='+lang;
+      const suffix=lang==='en'?'':'?lang='+lang;
       assert.ok(html.includes('href="'+p+suffix+'"'),lang+' link '+p);
     }
   }
