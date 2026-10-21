@@ -18,7 +18,7 @@ test('ecommerce buyer-intent content is substantial, factual and localized',()=>
     assert.equal((html.match(/<h1>/g)||[]).length,1,lang+' one h1');
     assert.ok((html.match(/<h2>/g)||[]).length>=6,lang+' must answer real shopping questions');
     assert.ok(html.length>2900,lang+' must be substantial');
-    const suffix=lang==='fi'?'':'?lang='+lang;
+    const suffix=lang==='en'?'':'?lang='+lang;
     for(const path of ['/shopify-chatbot','/monikielinen-chatbot','/hinnat','/assistant']){
       assert.ok(html.includes('href="'+path+suffix+'"'),lang+' related URL '+path);
     }
@@ -44,7 +44,7 @@ test('SSR e-commerce route supplies crawlable content, localized title and link 
     assert.ok(html.includes('content="'+description+'"'),path+' description');
     assert.ok(html.includes('<html lang="'+lang+'">'),path+' language');
     assert.ok(html.includes('<h1>'),path+' h1');
-    assert.ok(html.includes('href="/shopify-chatbot'+(lang==='fi'?'':'?lang='+lang)+'"'),path+' related link');
+    assert.ok(html.includes('href="/shopify-chatbot'+(lang==='en'?'':'?lang='+lang)+'"'),path+' related link');
     assert.match(html,/rel="canonical"/);
     assert.match(html,/hreflang="fi"/);
     assert.match(html,/hreflang="sv"/);
