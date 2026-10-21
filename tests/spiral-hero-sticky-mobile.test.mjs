@@ -57,7 +57,7 @@ test('mobile hero stays on each card through most of each scroll segment',()=>{
   assert.ok(h.cards[0].classList.contains('rs-in-scene'));
   h.move(140); // the reading hold takes about the first 170px of one segment
   assert.equal(h.counter.textContent,'01');
-  assert.equal(h.cards[0].style.getPropertyValue('--rs-x'),'0.0px');
+  assert.ok(['','0.0px'].includes(h.cards[0].style.getPropertyValue('--rs-x')), 'first card should remain at its centered CSS position');
   assert.equal(h.cards[1].classList.contains('rs-in-scene'),false);
   h.move(390); // about one mobile swipe brings the next card
   assert.equal(h.counter.textContent,'02');
