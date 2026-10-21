@@ -2191,6 +2191,11 @@ function footer() {
           <h4>${appText('Tuote','Produkt','Product')}</h4>
           <a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a>
           <a href="/kenelle-sopii?lang=${currentLang()}">${appText('Kenelle Respondo AI sopii','Vem passar Respondo AI för?','Who is Respondo AI for?')}</a>
+          <a href="/asiakaspalvelubotti?lang=${currentLang()}">${appText('AI-asiakaspalvelija ja asiakaspalvelubotti','AI-kundservicebot','AI customer service chatbot')}</a>
+          <a href="/tekoaly-asiakaspalvelu?lang=${currentLang()}">${appText('Tekoäly asiakaspalvelussa','AI inom kundservice','AI in customer support')}</a>
+          <a href="/tekoaly-yrityksille?lang=${currentLang()}">${appText('Tekoäly yrityksille','AI för företag','AI for business')}</a>
+          <a href="/verkkokauppa-chatbot?lang=${currentLang()}">${appText('Chatbot verkkokauppaan','Chatbot för webbutik','Ecommerce chatbot')}</a>
+          <a href="/monikielinen-chatbot?lang=${currentLang()}">${appText('Monikielinen chatbot','Flerspråkig chatbot','Multilingual chatbot')}</a>
           <a href="/asiakaspalvelun-automatisointi?lang=${currentLang()}">${appText('Asiakaspalvelun automatisointi','Automatisera kundservice','Customer service automation')}</a>
           <a href="/guides?lang=${currentLang()}">${appText('Oppaat','Guider','Guides')}</a>
           <a href="/hinnat?lang=${currentLang()}">${appText('Hinta','Pris','Pricing')}</a>
