@@ -27,6 +27,7 @@ import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './public/ai-topic-pa
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './public/seo-intent-pages.mjs';
 import { ecommerceCustomerServiceMeta, ecommerceCustomerServiceMarkup } from './public/ecommerce-customer-service.mjs';
 import { seoPricingMarkup } from './public/seo-pricing-ssr.mjs';
+import { homeSearchMarkup } from './public/home-search-content.mjs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -493,7 +494,12 @@ async function renderIndexHtml(req) {
           : SEO_INTENT_PATHS.includes(routePath)
             ? seoIntentMarkup(routePath,seo.lang)
             : seoNoScriptMarkup(seo, routePath).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
-  html = html.replace('<div id="app"></div>', '<div id="app">' + initialContent + '</div>');
+  // Keep homepage topic links in the initial HTML, exactly as the browser displays
+  // them after hydration. This makes localized pages discoverable without JS.
+  const contentWithHomepageLinks = routePath === '/'
+    ? initialContent.replace(/<\\/main>\\s*$/i, homeSearchMarkup(seo.lang) + '</main>')
+    : initialContent;
+  html = html.replace('<div id="app"></div>', '<div id="app">' + contentWithHomepageLinks + '</div>');
 
 
   return { html, seo };
