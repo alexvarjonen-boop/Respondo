@@ -31,7 +31,7 @@
       for (const card of cards) {
         card.classList.remove('rs-in-scene');
         card.removeAttribute('aria-hidden');
-        for (const name of ['--rs-x','--rs-y','--rs-scale','--rs-opacity']) card.style.removeProperty(name);
+        for (const name of ['--rs-panel-y','--rs-panel-scale','--rs-opacity']) card.style.removeProperty(name);
         card.style.removeProperty('z-index');
       }
     }
@@ -89,28 +89,27 @@
     const position = mobile ? segment + ease((fraction - .42) / .58) : rawPosition;
     const closestIndex = clamp(Math.round(position), 0, cards.length - 1);
     updateStep(closestIndex);
-    const radius = mobile ? Math.min(innerWidth * .13, 58) : Math.min(innerWidth * .24, 325);
-    const frontY = viewport < 660 ? 86 : mobile ? Math.min(105,viewport * .14) : Math.min(115,viewport * .135);
-    // Increasing angle sends the current card counterclockwise toward the
-    // left and behind the fixed center logo; the next appears from the right.
-    cards.forEach((card, index) => {
-      const delta = position - index;
-      const near = Math.abs(delta) < (mobile ? .999 : 1.20);
-      card.classList.toggle('rs-in-scene', near);
-      if (!near) return;
-      const angle = delta * 2.15;
-      const depth = (Math.cos(angle) + 1) / 2;
-      const x = -Math.sin(angle) * radius;
-      const y = frontY - (1 - depth) * (mobile ? 48 : 136) - Math.sin(angle * .65) * (mobile ? 6 : 23);
-      const scale = (mobile ? .90 : .69) + depth * (mobile ? .10 : .31);
-      const opacity = mobile ? 1 - ease(Math.abs(delta)) : clamp(.12 + .88 * depth, 0, 1);
-      card.style.setProperty('--rs-x', x.toFixed(1) + 'px');
-      card.style.setProperty('--rs-y', y.toFixed(1) + 'px');
-      card.style.setProperty('--rs-scale', scale.toFixed(3));
-      card.style.setProperty('--rs-opacity', opacity.toFixed(3));
-      card.style.zIndex = depth > .62 ? '6' : '2';
+    // Full-viewport feature chapters: one story at a time, with a short
+    // reversible crossfade between adjacent chapters. No floating cards.
+    cards.forEach((panel, index) => {
+      const offset = index - position;
+      const distance = Math.abs(offset);
+      const visible = distance < 1.001;
+      panel.classList.toggle('rs-in-scene', visible);
+      if (!visible) return;
+      const focus = 1 - ease(distance);
+      const movement = Math.min(viewport * .12, mobile ? 66 : 115);
+      panel.style.setProperty('--rs-panel-y', (offset * movement).toFixed(1) + 'px');
+      panel.style.setProperty('--rs-panel-scale', (.965 + focus * .035).toFixed(3));
+      panel.style.setProperty('--rs-opacity', focus.toFixed(3));
+      panel.style.zIndex = index === closestIndex ? '6' : '5';
     });
-    section.style.setProperty('--rs-logo-scale', (1 + ease(normalized) * .04).toFixed(3));
+    // The large hero statement belongs to chapter one; after that, leave
+    // the entire viewport to the next feature instead of repeating a header.
+    section.style.setProperty('--rs-intro-opacity',
+      (1 - ease(position * 1.17)).toFixed(3));
+    section.style.setProperty('--rs-logo-scale',
+      (1 + ease(normalized) * .035).toFixed(3));
   }
   function schedule() {
     if (!raf && section && section.isConnected && section.classList.contains('rs-enhanced')) raf = requestAnimationFrame(draw);
