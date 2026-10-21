@@ -12,10 +12,11 @@ test('homepage search overview is readable, visible and localized', () => {
     assert.match(html, new RegExp(title));
     assert.match(html, /<section class="respondo-search-overview"/);
     assert.match(html, /<nav class="respondo-search-links"/);
-    assert.equal((html.match(/<a href=/g) || []).length, 5);
+    assert.equal((html.match(/<a href=/g) || []).length, 6);
     assert.match(html, /\/asiakaspalvelubotti/);
     assert.match(html, /\/tekoaly-asiakaspalvelu/);
     assert.match(html, /\/asiakaspalvelun-automatisointi/);
+    assert.match(html, /\/guides\/ai-chatbot-vs-live-chat/);
     assert.doesNotMatch(html, /style="[^"]*display:\s*none/i);
     assert.equal(html.includes('?lang=fi'), lang === 'fi');
     assert.equal(html.includes('?lang=sv'), lang === 'sv');
