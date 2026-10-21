@@ -1646,7 +1646,7 @@ function updateDocumentLanguageMeta(lang) {
       en:['Website Chatbot Knowledge Base Guide | Respondo AI','Learn how to build a trustworthy website chatbot knowledge base with real customer questions, careful imports and clear escalations.'],
     },
     '/guides/ai-chatbot-vs-live-chat': {
-      fi:["AI-chatbot vai livechat vai lomake? | Vertailu yritykselle","Vertaa AI-chatbotia, livechattia ja yhteydenottolomaketta: vastausnopeus, asiakaspalvelun laatu, kustannukset ja luotettavat vastaukset."],
+      fi:["Chatbot vai lomake? Käytännön vertailu | Respondo AI","Chatbot vai yhteydenottolomake? Vertaa AI-botin, livechatin ja lomakkeen vastausnopeutta, kustannuksia ja käyttötapoja. Katso valintaopas."],
       sv:["AI-chatbot eller livechatt? | Företagsguide","Praktisk jämförelse av AI-chatbot, livechatt och kontaktformulär: bemanning, svarstid, kostnader och tillförlitliga svar."],
       en:["AI Chatbot vs Live Chat vs Contact Form | Respondo AI","Compare AI chatbots, live chat and contact forms for small business: answer accuracy, speed, human support and realistic costs."],
     },
@@ -2197,6 +2197,7 @@ function footer() {
           <a href="/verkkokauppa-chatbot?lang=${currentLang()}">${appText('Chatbot verkkokauppaan','Chatbot för webbutik','Ecommerce chatbot')}</a>
           <a href="/monikielinen-chatbot?lang=${currentLang()}">${appText('Monikielinen chatbot','Flerspråkig chatbot','Multilingual chatbot')}</a>
           <a href="/asiakaspalvelun-automatisointi?lang=${currentLang()}">${appText('Asiakaspalvelun automatisointi','Automatisera kundservice','Customer service automation')}</a>
+          <a href="/guides/ai-chatbot-vs-live-chat?lang=${currentLang()}">${appText('Chatbot vai lomake? Vertailu','Chatbot eller kontaktformulär?','Chatbot vs live chat vs form')}</a>
           <a href="/guides?lang=${currentLang()}">${appText('Oppaat','Guider','Guides')}</a>
           <a href="/hinnat?lang=${currentLang()}">${appText('Hinta','Pris','Pricing')}</a>
           <a href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
@@ -2204,7 +2205,7 @@ function footer() {
         <div class="foot-col">
           <h4>${appText("Yritys","Företag","Company")}</h4>
           <a href="/yhteystiedot">${appText("Yhteystiedot","Kontakt","Contact")}</a>
-          <a href="/tietoturva">Tietoturva</a>
+          <a href="/tietoturva?lang=${currentLang()}">Tietoturva</a>
           <a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a>
           <span>${esc(cfg.sellerName||'Respondo AI')}</span>
           ${cfg.sellerPostalAddress?'<span>'+esc(cfg.sellerPostalAddress)+'</span>':''}
@@ -2212,11 +2213,11 @@ function footer() {
         </div>
         <div class="foot-col">
           <h4>Lakiasiat</h4>
-          <a href="/kayttoehdot">Käyttöehdot</a>
-          <a href="/tietosuoja">Tietosuojaseloste</a>
-          <a href="/evasteet">Evästeet</a>
+          <a href="/kayttoehdot?lang=${currentLang()}">Käyttöehdot</a>
+          <a href="/tietosuoja?lang=${currentLang()}">Tietosuojaseloste</a>
+          <a href="/evasteet?lang=${currentLang()}">Evästeet</a>
           <button type="button" class="cookie-settings-link" onclick="window.openRespondoCookieSettings?.()">Evästeasetukset</button>
-          <a href="/dpa">Tietojenkäsittely</a>
+          <a href="/dpa?lang=${currentLang()}">Tietojenkäsittely</a>
         </div>
       </div>
       <div class="legalbar">
