@@ -26,8 +26,8 @@ for (const path of expected) {
       assert.match(html,/<h1>/);
       assert.match(html,/<h2>/);
       assert.match(html,/class="ai-topic-faq"/);
-      assert.match(html,/href="\/hinnat(?:\?lang=(?:sv|en))?"/);
-      assert.match(html,/href="\/asiakaspalvelubotti(?:\?lang=(?:sv|en))?"/);
+      assert.match(html,/href="\/hinnat(?:\?lang=(?:fi|sv))?"/);
+      assert.match(html,/href="\/asiakaspalvelubotti(?:\?lang=(?:fi|sv))?"/);
       assert.ok(html.length>1500,'avoid thin, boilerplate-only content');
       assert.doesNotMatch(html,/<script/i,'keep rendered content inert');
     });
