@@ -567,7 +567,7 @@ export function globalGuideData(path,lang='fi') {
   return guides[path]?.[normalized] || null;
 }
 const quote=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const pathWithLang=(p,lang)=>p+(lang==='fi'?'':'?lang='+lang);
+const pathWithLang=(p,lang)=>p+(lang==='en'?'':'?lang='+lang);
 export function globalResourcesMarkup(path,lang='fi') {
   const L=['fi','sv','en'].includes(lang)?lang:'fi';
   const i=L==='sv'?1:L==='en'?2:0;
