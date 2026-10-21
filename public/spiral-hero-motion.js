@@ -94,7 +94,7 @@
     cards.forEach((panel, index) => {
       const offset = index - position;
       const distance = Math.abs(offset);
-      const visible = distance < 1.001;
+      const visible = distance < 1;
       panel.classList.toggle('rs-in-scene', visible);
       if (!visible) return;
       const focus = 1 - ease(distance);
