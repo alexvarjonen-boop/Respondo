@@ -33,7 +33,7 @@ test('three unique intent-led guides belong to the footer-linked library, with o
       assert.ok(html.includes(d.subtitle),'intro mismatch');
       assert.equal((html.match(/class="global-guide-section"/g)||[]).length,d.sections.length+1);
       assert.equal((html.match(/class="global-guide-faq"/g)||[]).length,4);
-      assert.ok(html.includes('href="/guides'+(lang==='fi'?'':'?lang='+lang)+'"'),'breadcrumb should link library');
+      assert.ok(html.includes('href="/guides'+(lang==='en'?'':'?lang='+lang)+'"'),'breadcrumb should link library');
       assert.ok(html.includes('href="/tools/'+(lang==='en'?'ai-chatbot-evaluation.html':'asiakaspalvelubotti-testi.html')+'"'),'test tool locale');
       assert.ok(!html.includes('href="/tilaus?plan=starter'),'no stale public billing plan');
     }
