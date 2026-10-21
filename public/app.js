@@ -5,7 +5,7 @@ import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-pages.mjs?v=20261016-intents-v1';
 import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs?v=20261016-gsc-en-fi-ecommerce-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
-import { appleHomeMarkup } from './apple-home.js?v=20261021-fullscreen-chapters-v1';
+import { appleHomeMarkup } from './apple-home.js?v=20261021-organic-discovery-v1';
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2-pricing-20261014-ape-v1-annual-120-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
@@ -2191,6 +2191,11 @@ function footer() {
           <h4>${appText('Tuote','Produkt','Product')}</h4>
           <a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a>
           <a href="/kenelle-sopii?lang=${currentLang()}">${appText('Kenelle Respondo AI sopii','Vem passar Respondo AI för?','Who is Respondo AI for?')}</a>
+          <a href="/asiakaspalvelubotti?lang=${currentLang()}">${appText('AI-asiakaspalvelija ja asiakaspalvelubotti','AI-kundservicebot','AI customer service chatbot')}</a>
+          <a href="/tekoaly-asiakaspalvelu?lang=${currentLang()}">${appText('Tekoäly asiakaspalvelussa','AI inom kundservice','AI in customer support')}</a>
+          <a href="/tekoaly-yrityksille?lang=${currentLang()}">${appText('Tekoäly yrityksille','AI för företag','AI for business')}</a>
+          <a href="/verkkokauppa-chatbot?lang=${currentLang()}">${appText('Chatbot verkkokauppaan','Chatbot för webbutik','Ecommerce chatbot')}</a>
+          <a href="/monikielinen-chatbot?lang=${currentLang()}">${appText('Monikielinen chatbot','Flerspråkig chatbot','Multilingual chatbot')}</a>
           <a href="/asiakaspalvelun-automatisointi?lang=${currentLang()}">${appText('Asiakaspalvelun automatisointi','Automatisera kundservice','Customer service automation')}</a>
           <a href="/guides?lang=${currentLang()}">${appText('Oppaat','Guider','Guides')}</a>
           <a href="/hinnat?lang=${currentLang()}">${appText('Hinta','Pris','Pricing')}</a>
