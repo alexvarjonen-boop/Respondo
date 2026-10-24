@@ -3,15 +3,19 @@
 // rate limits, and authentication before persisting or exporting any lead.
 const fold = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 const patterns = Object.freeze({
-  quote: /tarjouspyyn|tarjouksen|tarjousta|hinta-arvio|paljonko maks|request (?:a )?quote|send me a quote|quotation|cost estimate|offert|prisforslag/,
-  booking: /ajanvarau|varata ajan|varaisin ajan|book(?:ing)? (?:an )?appointment|schedule (?:a )?meeting|boka tid|tidsbokning/,
-  purchase: /haluan ostaa|ostaisin|tilaisin|tilata tuot|(?:want to )?buy(?: this| one)?|place an order|purchase|kopa|bestalla/,
+  quote: /tarjouspyyn|tarjouksen|tarjousta|hinta-arvio|paljonko maks|request (?:a )?quote|send me a quote|quotation|cost estimate|offert|prisforslag|tarjous|quote for|quotation for|f[aå] offert/,
+  booking: /ajanvarau|varata ajan|varaisin ajan|book(?:ing)? (?:an )?appointment|schedule (?:a )?meeting|boka tid|tidsbokning|book a demo|varaa demo|boka demo/,
+  purchase: /haluan ostaa|ostaisin|tilaisin|tilata tuot|(?:want to )?buy(?: this| one)?|place an order|purchase|kopa|bestalla|i'd like to buy|i would like to buy|haluaisin ostaa|vill kopa/,
   contact: /ottakaa yhteytt|soittakaa|minuun yhteytt|contact me|call me|reach out|kontakta mig|ring mig/,
   support: /ei toimi|ongelma|reklamaatio|palautus|refund|broken|not working|complaint|problem|reklamation|fungerar inte/
 });
 export function classifyLeadIntent(message) {
   const text = fold(message).slice(0, 4000);
   if (!text.trim()) return { intent: 'unknown', confidence: 0 };
+  // Negation and hypothetical questions are not actionable sales intent.
+  if (/\b(en halua|emme halua|ei tarvitse|en tarvitse|ei kiinnosta|not interested|do not want|don't want|dont want|no need|inte intresserad|vill inte|behover inte|behöver inte)\b/.test(text)) return { intent: 'unknown', confidence: 0 };
+  // Explicit human-support requests must not be misclassified as sales.
+  if (/\b(puhu ihmiselle|asiakaspalvelijalle|human agent|speak to (?:a )?person|talk to (?:a )?human|prata med en manniska)\b/.test(text)) return { intent: 'support', confidence: 0.9 };
   for (const intent of ['support', 'quote', 'booking', 'purchase', 'contact']) {
     if (patterns[intent].test(text)) return { intent, confidence: 0.85 };
   }
