@@ -396,3 +396,19 @@
     display:none;
   }
 }
+
+/* The former fullscreen first-chapter rule has greater specificity and would
+   otherwise leave a 200px blank top inside the redesigned caption. */
+#app .rs-spiral-section[data-ra-design="architectural"][data-rs-mode="fullscreen"].rs-enhanced .rs-spiral-card:first-child{
+  padding:16px 20px!important;
+}
+@media(max-width:800px){
+  #app .rs-spiral-section[data-ra-design="architectural"][data-rs-mode="fullscreen"].rs-enhanced .rs-spiral-card:first-child{
+    padding:12px 15px!important;
+  }
+}
+@media(max-width:520px){
+  #app .rs-spiral-section[data-ra-design="architectural"][data-rs-mode="fullscreen"].rs-enhanced .rs-spiral-card:first-child{
+    padding:10px 15px!important;
+  }
+}
