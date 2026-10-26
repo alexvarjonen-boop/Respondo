@@ -18,7 +18,7 @@ for (const [lang,index] of [['fi',0],['sv',1],['en',2]]) {
     assert.match(hero,/class="ra-panel-languages"/);
     assert.match(hero,/class="ra-panel-growth"/);
     assert.equal((hero.match(/data-ra-tab=/g)||[]).length,4);
-    assert.equal((hero.match(/data-rs-card/g)||[]).length,1); // seven rendered by cards.map()
+    assert.equal((hero.match(/data-rs-card/g)||[]).length,7);
     assert.match(hero,/data-rs-announcement/);
     assert.match(hero,/aria-hidden="true"/);
     assert.doesNotMatch(hero,/<canvas|<iframe|data-respondo-ask-form/);
