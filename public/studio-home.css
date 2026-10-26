@@ -253,3 +253,99 @@
   #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-axis{position:absolute!important;top:35%!important;left:50%!important;transform:translate(-50%,-50%)!important;opacity:.7!important;width:min(32vw,170px)!important}
   #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card:first-child{padding-top:40px!important}
 }
+
+/* Feature-synchronized orbit / ten scroll scenes (homepage only).
+   Glyph positions are generated from the same chapter array as the copy.
+   Active icon comes to the top/front with each scene as the user scrolls. */
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced{
+  height:1000vh!important;
+  height:var(--rs-scroll-height,1000svh)!important;
+}
+#app .apple-home-page .rs-studio-orbit-icon[data-rs-icon]{
+  top:calc(50% + var(--rs-icon-y,0%))!important;
+  left:calc(50% + var(--rs-icon-x,0%))!important;
+  transform:translate3d(-50%,-50%,0) scale(var(--rs-icon-scale,1))!important;
+  opacity:.53;
+  --rs-icon-scale:1;
+  transition:opacity .26s ease,border-color .26s ease,box-shadow .26s ease;
+  backface-visibility:hidden;
+}
+#app .apple-home-page .rs-studio-orbit-icon[data-rs-icon] svg{
+  transform:rotate(var(--rs-icon-upright,0deg));
+}
+#app .apple-home-page .rs-studio-orbit-icon[data-rs-icon].is-active{
+  --rs-icon-scale:1.26;
+  opacity:1;
+  z-index:3;
+  border-color:rgba(215,231,255,.96)!important;
+  background:radial-gradient(circle at 38% 21%,rgba(118,165,230,.75),rgba(15,34,66,.98) 72%)!important;
+  box-shadow:0 0 0 4px rgba(145,188,255,.095),
+    0 0 30px rgba(122,176,255,.50),
+    inset 0 0 22px rgba(150,207,255,.14)!important;
+  color:#fff;
+}
+#app .apple-home-page .rs-studio-orbit-icon[data-rs-icon]:not(.is-active){
+  box-shadow:0 0 18px rgba(77,128,210,.09)!important;
+}
+#app .apple-home-page .rs-enhanced .rs-spiral-card{
+  justify-content:flex-end!important;
+  padding-bottom:clamp(72px,12svh,140px)!important;
+}
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-metric{
+  font-size:clamp(65px,9.5vw,118px)!important;
+}
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card h2{
+  font-size:clamp(35px,4.8vw,57px)!important;
+  max-width:880px;
+}
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card p{
+  font-size:clamp(13px,1.28vw,18px)!important;
+  max-width:660px;
+}
+/* Keep the orbit perceptible on every chapter, and the story legible underneath. */
+#app .apple-home-page .rs-studio-orbit-art{z-index:4}
+#app .apple-home-page .rs-enhanced .rs-spiral-cards{z-index:5}
+#app .apple-home-page .rs-studio-orbit-label{font-size:9px;letter-spacing:.16em}
+@media(max-width:800px){
+  #app .apple-home-page .rs-studio-orbit-icon[data-rs-icon]{width:clamp(30px,8.2vw,39px)}
+  #app .apple-home-page .rs-studio-orbit-art{width:min(79vw,450px)}
+  #app .apple-home-page .rs-enhanced .rs-spiral-card{
+    padding-bottom:clamp(69px,10svh,94px)!important;
+  }
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-metric{
+    font-size:clamp(46px,12vw,78px)!important;
+  }
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card h2{
+    font-size:clamp(27px,7.2vw,43px)!important;
+    max-width:355px;
+  }
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card p{
+    font-size:clamp(12px,3vw,15px)!important;
+    max-width:340px;
+  }
+}
+@media(max-width:600px){
+  #app .apple-home-page .rs-studio-orbit-art{width:min(82vw,340px);top:36.5%}
+  #app .apple-home-page .rs-enhanced .rs-axis{top:36.5%!important;width:clamp(140px,40vw,205px)!important}
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card h2{
+    font-size:clamp(27px,7.4vw,37px)!important;
+  }
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced .rs-spiral-card:first-child{
+    padding-bottom:clamp(70px,10svh,91px)!important;
+  }
+}
+@media(max-height:690px){
+  #app .apple-home-page .rs-studio-orbit-art{width:min(61vw,330px);top:35%}
+  #app .apple-home-page .rs-enhanced .rs-axis{top:35%!important;width:min(38vw,205px)!important}
+  #app .apple-home-page .rs-enhanced .rs-spiral-card{padding-bottom:56px!important}
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-metric{font-size:42px!important}
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card h2{font-size:26px!important}
+}
+/* The icons are navigational storytelling cues, not interactive controls.
+   Respect reduced motion and Save-Data static fallback without hidden copy. */
+@media(prefers-reduced-motion:reduce){
+  #app .apple-home-page .rs-studio-orbit-icon[data-rs-icon]{
+    transition:none!important;transform:translate3d(-50%,-50%,0)!important;
+  }
+  #app .apple-home-page .rs-studio-orbit-icon[data-rs-icon] svg{transform:none!important}
+}
