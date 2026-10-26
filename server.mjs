@@ -27,7 +27,7 @@ import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './public/ai-topic-pa
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './public/seo-intent-pages.mjs';
 import { ecommerceCustomerServiceMeta, ecommerceCustomerServiceMarkup } from './public/ecommerce-customer-service.mjs';
 import { seoPricingMarkup } from './public/seo-pricing-ssr.mjs';
-import { homeSearchMarkup } from './public/home-search-content.mjs';
+import { spiralHeroMarkup } from './public/spiral-hero.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
@@ -499,12 +499,16 @@ async function renderIndexHtml(req) {
           : SEO_INTENT_PATHS.includes(routePath)
             ? seoIntentMarkup(routePath,seo.lang)
             : seoNoScriptMarkup(seo, routePath).replace(/^<noscript>/,'').replace(/<\/noscript>$/,'');
-  // Keep homepage topic links in the initial HTML, exactly as the browser displays
-  // them after hydration. This makes localized pages discoverable without JS.
-  const contentWithHomepageLinks = routePath === '/'
-    ? initialContent.replace(/<\/main>\s*$/i, homeSearchMarkup(seo.lang) + '</main>')
-    : initialContent;
-  html = html.replace('<div id="app"></div>', '<div id="app">' + contentWithHomepageLinks + '</div>');
+  // First paint must match the actual homepage, even on a slow mobile connection.
+  // In particular, never reintroduce the removed SEO explainer link wall via SSR.
+  // The app replaces this pre-rendered scene after its JavaScript has loaded.
+  const homepageFirstPaint = routePath === '/'
+    ? '<div class="home-page apple-home-page"><main class="immersive-home apple-home">' +
+      spiralHeroMarkup((fi, sv, en) => seo.lang === 'sv' ? sv : seo.lang === 'en' ? en : fi, seo.lang) +
+      '</main></div>'
+    : null;
+  html = html.replace('<div id="app"></div>', '<div id="app">' +
+    (homepageFirstPaint || initialContent) + '</div>');
 
 
   return { html, seo };
@@ -8352,6 +8356,9 @@ app.use(express.static(path.join(__dirname, 'public'), {
       filePath.endsWith('app.js') ||
       filePath.endsWith('apple-home.js') ||
       filePath.endsWith('spiral-hero.js') ||
+      filePath.endsWith('studio-home.css') ||
+      filePath.endsWith('spiral-hero-motion.js') ||
+      filePath.endsWith('spiral-hero.css') ||
       filePath.endsWith('effects.js') ||
       filePath.endsWith('apple-nav.js') ||
       filePath.endsWith('favicon.svg') ||
@@ -14075,7 +14082,12 @@ app.use(async (req, res, next) => {
   if (['GET','HEAD'].includes(req.method) && !req.path.startsWith('/api/')) {
     try {
       const { html, seo } = await renderIndexHtml(req);
-      res.setHeader('Cache-Control','no-store');
+      res.setHeader('Cache-Control','no-store, max-age=0, must-revalidate');
+      if (req.path === '/') {
+        res.setHeader('CDN-Cache-Control', 'no-store');
+        res.setHeader('Surrogate-Control', 'no-store');
+        res.setHeader('X-Respondo-Homepage', 'cinematic-blue-mobile-firstpaint-v2');
+      }
       res.status(seo.isKnown ? 200 : 404);
       res.setHeader('Link','<' + seo.canonical + '>; rel="canonical"');
       res.setHeader('Content-Language',seo.lang);

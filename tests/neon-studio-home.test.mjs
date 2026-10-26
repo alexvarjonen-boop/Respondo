@@ -41,9 +41,9 @@ test('original navy Respondo palette and orbit motion are home-only',()=>{
   assert.match(css,/\.pricing-section/);
   assert.doesNotMatch(css,/#030b09|#72f5bd|#a4ffdb|#8aefc2|#8deec1/i);
   assert.doesNotMatch(css,/#app \.dashboard-page|\.workspace-page/);
-  assert.match(index,/studio-home\.css\?v=20261026-cinematic-blue-v1/);
-  assert.match(index,/spiral-hero-motion\.js\?v=20261026-orbit-camera-v1/);
-  assert.match(index,/app\.js\?v=[^"]+-cinematic-blue-v1/);
+  assert.match(index,/studio-home\.css\?v=20261026-cinematic-blue-mobile-v2/);
+  assert.match(index,/spiral-hero-motion\.js\?v=20261026-orbit-camera-mobile-v2/);
+  assert.match(index,/app\.js\?v=[^"]+-cinematic-blue-mobile-v2/);
   assert.match(app,/apple-home\.js\?v=20261026-cinematic-blue-no-seo-v1/);
   assert.match(apple,/spiral-hero\.js\?v=20261021-fullscreen-chapters-v1-studio-green-20261026/);
   assert.match(js,/--rs-orbit-spin/);
@@ -61,4 +61,13 @@ test('real pricing checkout and first-party assistant remain unchanged',()=>{
  assert.match(app,/href="\/tilaus\?plan=\$\{code\}_monthly/);
  assert.match(js,/prefers-reduced-motion: reduce/);
  assert.doesNotMatch(js,/scrollTo\(|preventDefault\(|setInterval\(/);
+});
+
+test('SSR homepage first paint is the cinematic Respondo scene, not SEO link wall',()=>{
+  const server = readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
+  assert.ok(server.includes('spiralHeroMarkup((fi, sv, en)'));
+  assert.match(server,/homepageFirstPaint/);
+  assert.doesNotMatch(server,/homeSearchMarkup/);
+  assert.match(server,/X-Respondo-Homepage/);
+  assert.match(server,/CDN-Cache-Control/);
 });

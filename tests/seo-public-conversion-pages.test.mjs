@@ -122,7 +122,8 @@ test('international guide content is server-rendered without requiring JavaScrip
   }
   assert.match(server, /const initialContent = GLOBAL_GUIDE_PATHS\.includes\(routePath\)/);
   assert.match(server, /\? globalResourcesMarkup\(routePath, seo\.lang\)/);
-  assert.match(server, /'<div id="app">' \+ contentWithHomepageLinks \+ '<\/div>'/);
+  assert.match(server, /homepageFirstPaint \|\| initialContent/);
+  assert.match(server, /initialContent = GLOBAL_GUIDE_PATHS\.includes\(routePath\)/);
   assert.match(server, /seo\.lang === 'sv' \? 'sv_SE' : seo\.lang === 'en' \? 'en_GB' : 'fi_FI'/);
 });
 
