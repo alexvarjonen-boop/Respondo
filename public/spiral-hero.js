@@ -23,61 +23,13 @@ export function spiralHeroMarkup(t, lang) {
       t('Kerää yhteydenottoja myös silloin, kun tiimi on poissa.','Samla förfrågningar även när teamet är borta.','Capture enquiries even when your team is away.'), '07']
   ];
   const arrow = 'M 238.0 66.1 L 235.2 64.9 L 183.6 84.5 L 182.6 86.0 L 183.3 87.8 L 201.2 92.1 L 201.7 94.4 L 138.0 153.1 L 133.2 154.3 L 128.6 152.6 L 109.0 130.9 L 103.7 126.6 L 97.4 124.6 L 90.8 125.1 L 82.8 129.4 L 20.5 180.0 L 18.0 183.6 L 18.8 188.6 L 22.3 191.1 L 27.6 190.1 L 87.6 143.2 L 90.6 142.0 L 96.6 143.5 L 123.1 171.5 L 128.6 173.5 L 133.7 173.5 L 140.5 171.0 L 213.1 103.9 L 215.8 104.9 L 223.4 119.6 L 224.9 120.8 L 226.9 120.3 Z';
-  return `<section class="apple-hero rs-spiral-section" id="features" aria-labelledby="apple-home-title" data-rs-spiral data-rs-mode="fullscreen" data-ra-design="architectural" data-ra-scene="support" data-ra-current="0">
+  return `<section class="apple-hero rs-spiral-section" id="features" aria-labelledby="apple-home-title" data-rs-spiral data-rs-mode="fullscreen">
     <div class="rs-spiral-stage">
       <div class="rs-space" aria-hidden="true"><div class="rs-studio-grid"></div><div class="rs-studio-haze"></div><div class="rs-studio-sweep"></div><div class="rs-space-glow"></div><div class="rs-space-ellipse rs-space-ellipse-a"></div><div class="rs-space-ellipse rs-space-ellipse-b"></div><div class="rs-space-horizon"></div></div>
-
-      <div class="ra-room" aria-hidden="true">
-        <div class="ra-architecture">
-          <div class="ra-wall"></div><div class="ra-floor"></div><div class="ra-column"></div><div class="ra-plinth"></div>
-          <div class="ra-side-panel"><small>RESPONDO / 24—7</small><strong>AI.</strong><i></i></div>
-          <div class="ra-brand-block">
-            <svg viewBox="0 0 256 256" focusable="false"><path d="${arrow}" fill="white"/></svg>
-          </div>
-          <div class="ra-console">
-            <div class="ra-console-top">
-              <span class="ra-console-icon"><svg viewBox="0 0 256 256" focusable="false"><path d="${arrow}" fill="white"/></svg></span>
-              <span>Respondo AI</span><small class="ra-live">● ${t('PAIKALLA','ONLINE','ONLINE')}</small>
-            </div>
-            <div class="ra-console-pane ra-panel-support">
-              <div class="ra-msg customer">${t('Milloin olette auki?','När har ni öppet?','What are your opening hours?')}</div>
-              <div class="ra-msg bot">${t('Löydän aukioloajat yrityksesi omista tiedoista.','Jag hittar öppettiderna från företagets egna uppgifter.','I can answer using your business information.')}</div>
-              <div class="ra-input">${t('Kirjoita viesti…','Skriv ett meddelande…','Type a message…')} ↗</div>
-            </div>
-            <div class="ra-console-pane ra-panel-knowledge">
-              <strong class="ra-panel-title">${t('Yrityksesi tietopohja','Ditt företags kunskapsbas','Your knowledge base')}</strong>
-              <div class="ra-knowledge-row"><span>${t('Palvelut','Tjänster','Services')}</span><span>✓</span></div>
-              <div class="ra-knowledge-row"><span>${t('Tuotteet','Produkter','Products')}</span><span>✓</span></div>
-              <div class="ra-knowledge-row"><span>${t('Yhteystiedot','Kontaktuppgifter','Contact details')}</span><span>✓</span></div>
-              <div class="ra-knowledge-row"><span>${t('Usein kysytyt','Vanliga frågor','Frequently asked')}</span><span>✓</span></div>
-            </div>
-            <div class="ra-console-pane ra-panel-growth">
-              <strong class="ra-panel-title">${t('Älykkäämpi asiakaspalvelu','Smartare kundservice','Smarter customer service')}</strong>
-              <span>${t('Havainnollistava näkymä','Illustrativ vy','Illustrative overview')}</span>
-              <div class="ra-barchart"><i style="height:29%"></i><i style="height:43%"></i><i style="height:39%"></i><i style="height:72%"></i><i style="height:92%"></i></div>
-              <span>${t('Keskustelut ja yhteydenotot','Konversationer och förfrågningar','Conversations and enquiries')}</span>
-            </div>
-            <div class="ra-console-pane ra-panel-languages">
-              <strong class="ra-panel-title">${t('Yksi botti, kolme kieltä','En bot, tre språk','One bot. Three languages.')}</strong>
-              <div class="ra-language"><b>Hello!</b><em>English</em></div>
-              <div class="ra-language"><b>Hei!</b><em>Suomi</em></div>
-              <div class="ra-language"><b>Hej!</b><em>Svenska</em></div>
-            </div>
-          </div>
-          <div class="ra-room-caption">01 / RESPONDO AI — DIGITAL SHOWROOM</div>
-        </div>
-      </div>
       <div class="rs-spiral-heading">
-        <p class="ra-overline">RESPONDO AI / THE NEXT CHAPTER</p><h1 id="apple-home-title">${t('Asiakaspalvelu.','Kundservice.','Customer service.')} <span>${t('Uudelleen ajateltuna.','Nytänkande.','Reimagined.')}</span></h1>
+        <h1 id="apple-home-title">${t('Älykkäämpää','Smartare','Smarter')} <span>${t('asiakaspalvelua.','kundservice.','customer service.')}</span></h1>
         <p class="rs-hero-description">${t('Tämä sivu toimii chatin kautta. Kysy Respondolta hinnat, ominaisuudet, kokeilu tai yhteystiedot – se vastaa ja ohjaa eteenpäin.','Den här webbplatsen fungerar via chatten. Fråga Respondo om priser, funktioner, testperioden eller kontakt – och få hjälp vidare.','This website is guided by chat. Ask Respondo about pricing, features, the free trial or contact details – and get the next step.')}</p>
       </div>
-
-      <nav class="ra-tabs" aria-label="${t('Tutustu toimintoihin','Utforska funktioner','Explore experiences')}">
-        <button type="button" class="ra-tab" data-ra-tab="0" aria-current="true">${t('Keskustelut','Konversationer','Conversations')}</button>
-        <button type="button" class="ra-tab" data-ra-tab="2" aria-current="false">${t('Tietopohja','Kunskapsbas','Knowledge')}</button>
-        <button type="button" class="ra-tab" data-ra-tab="1" aria-current="false">${t('Kielet','Språk','Languages')}</button>
-        <button type="button" class="ra-tab" data-ra-tab="3" aria-current="false">${t('Kasvu','Tillväxt','Growth')}</button>
-      </nav>
       <div class="rs-spiral-orbit" aria-label="${t('Respondo AI:n ominaisuudet','Respondo AI:s funktioner','Respondo AI features')}">
         <div class="rs-studio-orbit-art" aria-hidden="true"><span class="rs-studio-orbit-ring rs-studio-ring-a"></span><span class="rs-studio-orbit-ring rs-studio-ring-b"></span><span class="rs-studio-orbit-ring rs-studio-ring-c"></span><span class="rs-studio-orbit-icon rs-icon-1"><svg viewBox="0 0 24 24" focusable="false"><rect x="4" y="6" width="16" height="13" rx="3"/><path d="M8 10h8M8 14h5"/></svg></span><span class="rs-studio-orbit-icon rs-icon-2"><svg viewBox="0 0 24 24" focusable="false"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 2v6M17 2v6M3 11h18"/></svg></span><span class="rs-studio-orbit-icon rs-icon-3"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a17 17 0 0 1 0 18M12 3a17 17 0 0 0 0 18"/></svg></span><span class="rs-studio-orbit-icon rs-icon-4"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 9 5 4h14l2 5M4 9v11h16V9M9 20v-7h6v7"/></svg></span><span class="rs-studio-orbit-icon rs-icon-5"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 3 4 7v6c0 5 3 8 8 9 5-1 8-4 8-9V7Z"/><path d="m9 13 2 2 4-5"/></svg></span><span class="rs-studio-orbit-icon rs-icon-6"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 20h18M5 16l5-6 4 3 5-8"/><path d="M15 5h4v4"/></svg></span><span class="rs-studio-orbit-icon rs-icon-7"><svg viewBox="0 0 24 24" focusable="false"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="8" r="2"/><circle cx="12" cy="19" r="2"/><path d="m7 7 10 1m1 2-5 7M6 8l5 9"/></svg></span><span class="rs-studio-orbit-icon rs-icon-8"><svg viewBox="0 0 24 24" focusable="false"><path d="m13 2-9 12h7l-1 8 10-13h-7z"/></svg></span><div class="rs-studio-orbit-label">ALWAYS ON · ONE INTELLIGENT WORKSPACE</div></div>
         <div class="rs-spiral-cards" role="list">
