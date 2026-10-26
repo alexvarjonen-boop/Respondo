@@ -31,7 +31,7 @@
       for (const card of cards) {
         card.classList.remove('rs-in-scene');
         card.removeAttribute('aria-hidden');
-        for (const name of ['--rs-panel-y','--rs-panel-scale','--rs-opacity']) card.style.removeProperty(name);
+        for (const name of ['--rs-panel-x','--rs-panel-y','--rs-panel-turn','--rs-panel-scale','--rs-opacity']) card.style.removeProperty(name);
         card.style.removeProperty('z-index');
       }
     }
@@ -61,6 +61,9 @@
     if (announced) announced.textContent = cards[index].querySelector('h2')?.textContent || '';
     cards.forEach((card, i) => card.setAttribute('aria-hidden', String(i !== index)));
   }
+  // Reference-film camera: scrolling moves the camera through the orbit,
+  // rings and feature scenes rather than swapping flat, stationary slides.
+  // There is no continuous loop: transforms update once per native scroll frame.
   function draw() {
     raf = 0;
     if (!section || !section.isConnected || !section.classList.contains('rs-enhanced')) return;
@@ -68,8 +71,7 @@
     const viewport = Math.max(innerHeight, 1);
     if (rect.bottom < -70 || rect.top > viewport + 70) return;
     const mobile = coarse.matches || innerWidth < 760;
-    // iOS Safari can treat overflow-x:hidden as a scrolling ancestor, preventing
-    // position:sticky from pinning the scene. Only fix-position if it actually fails.
+    // On iOS Safari, preserve the existing sticky-position fallback.
     if (mobile) {
       const stage = section.querySelector('.rs-spiral-stage');
       if (!stickyFailed && rect.top < -32 && rect.bottom > viewport + 32 &&
@@ -80,36 +82,50 @@
     }
     const travel = Math.max(1, rect.height - viewport);
     const normalized = clamp(-rect.top / travel, 0, 1);
-    const rawPosition = normalized * (cards.length - 1);
-    // A short mobile reading hold followed by a broad smooth transition.
-    // With a ~400px segment, one swipe reveals the next feature without
-    // trapping native scroll. The sequence is reversible in both directions.
-    const segment = Math.min(cards.length - 2, Math.floor(rawPosition));
-    const fraction = rawPosition >= cards.length - 1 ? 1 : rawPosition - segment;
-    const position = mobile ? segment + ease((fraction - .42) / .58) : rawPosition;
+    const position = normalized * (cards.length - 1);
     const closestIndex = clamp(Math.round(position), 0, cards.length - 1);
     updateStep(closestIndex);
-    // Full-viewport feature chapters: one story at a time, with a short
-    // reversible crossfade between adjacent chapters. No floating cards.
+
+    // Near-camera scenes grow towards the viewer and drift out sideways.
+    // Next scenes emerge small and slightly rotated from the opposite depth.
     cards.forEach((panel, index) => {
       const offset = index - position;
       const distance = Math.abs(offset);
-      const visible = distance < 1;
+      const visible = distance < 1.001;
       panel.classList.toggle('rs-in-scene', visible);
       if (!visible) return;
       const focus = 1 - ease(distance);
-      const movement = Math.min(viewport * .12, mobile ? 66 : 115);
-      panel.style.setProperty('--rs-panel-y', (offset * movement).toFixed(1) + 'px');
-      panel.style.setProperty('--rs-panel-scale', (.965 + focus * .035).toFixed(3));
+      const entering = offset >= 0;
+      const zoom = entering ? .76 + .24 * focus : 1 + .30 * ease(distance);
+      const shift = (mobile ? 42 : 105) * (1 - focus);
+      panel.style.setProperty('--rs-panel-y', (entering ? shift : -shift).toFixed(1) + 'px');
+      panel.style.setProperty('--rs-panel-x', ((entering ? 1 : -1) * (mobile ? 18 : 65) * (1 - focus)).toFixed(1) + 'px');
+      panel.style.setProperty('--rs-panel-turn', ((entering ? -1 : 1) * (mobile ? 4 : 12) * (1 - focus)).toFixed(2) + 'deg');
+      panel.style.setProperty('--rs-panel-scale', zoom.toFixed(3));
       panel.style.setProperty('--rs-opacity', focus.toFixed(3));
       panel.style.zIndex = index === closestIndex ? '6' : '5';
     });
-    // The large hero statement belongs to chapter one; after that, leave
-    // the entire viewport to the next feature instead of repeating a header.
-    section.style.setProperty('--rs-intro-opacity',
-      (1 - ease(position * 1.17)).toFixed(3));
-    section.style.setProperty('--rs-logo-scale',
-      (1 + ease(normalized) * .035).toFixed(3));
+    // The official arrow and its constellation travel away from the camera
+    // over the first transition; the perspective grid continues across scenes.
+    const opening = 1 - ease(clamp(position / 1.05, 0, 1));
+    const orbitFlight = ease(clamp(position / 1.75, 0, 1));
+    section.style.setProperty('--rs-intro-opacity', opening.toFixed(3));
+    section.style.setProperty('--rs-logo-opacity', (.065 + .91 * opening).toFixed(3));
+    section.style.setProperty('--rs-logo-scale', (1 + .56 * orbitFlight).toFixed(3));
+    section.style.setProperty('--rs-arrow-turn', (-9 * orbitFlight).toFixed(2) + 'deg');
+    section.style.setProperty('--rs-orbit-opacity', opening.toFixed(3));
+    section.style.setProperty('--rs-orbit-scale', (1 + .95 * orbitFlight).toFixed(3));
+    section.style.setProperty('--rs-orbit-spin', (-58 * orbitFlight).toFixed(2) + 'deg');
+    section.style.setProperty('--rs-orbit-tilt', (22 * orbitFlight).toFixed(2) + 'deg');
+    section.style.setProperty('--rs-grid-angle', (-14 * position).toFixed(2) + 'deg');
+    section.style.setProperty('--rs-grid-scale', (1 + .17 * position).toFixed(3));
+    section.style.setProperty('--rs-grid-shift', (-10 * position).toFixed(1) + 'px');
+    section.style.setProperty('--rs-haze-scale', (1 + .1 * position).toFixed(3));
+    section.style.setProperty('--rs-haze-opacity', (.9 - .06 * position).toFixed(3));
+    section.style.setProperty('--rs-sweep-x', (-85 + position * 22).toFixed(1) + '%');
+    section.style.setProperty('--rs-art-rotation', (-16 * position).toFixed(2) + 'deg');
+    section.style.setProperty('--rs-art-scale', (1 + .075 * position).toFixed(3));
+    section.style.setProperty('--rs-art-opacity', mobile ? '.30' : '.44');
   }
   function schedule() {
     if (!raf && section && section.isConnected && section.classList.contains('rs-enhanced')) raf = requestAnimationFrame(draw);
