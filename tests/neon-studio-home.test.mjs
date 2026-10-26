@@ -15,7 +15,7 @@ for (const lang of ['fi','sv','en']) {
     assert.equal((hero.match(/data-rs-card\b/g)||[]).length,10);
     assert.equal((hero.match(/class="rs-studio-orbit-icon\b/g)||[]).length,10);
     assert.equal((hero.match(/class="rs-studio-card-art\b/g)||[]).length,10);
-    assert.equal((hero.match(/data-rs-icon\\b/g)||[]).length,10);
+    assert.equal((hero.match(/data-rs-icon(?=\\s)/g)||[]).length,10);
     assert.equal((hero.match(/data-rs-icon-label=/g)||[]).length,10);
     assert.match(hero,/--rs-scroll-height:1000svh/);
     assert.ok(hero.includes('>'+FEATURE_COUNT+'</div>'));
