@@ -15,7 +15,7 @@ for(const [lang,n] of [['fi',0],['sv',1],['en',2]]){
     const hero=spiralHeroMarkup(t,lang);
     assert.equal((hero.match(/data-rs-card\b/g)||[]).length,7);
     assert.equal((hero.match(/class="rs-studio-orbit-icon/g)||[]).length,8);
-    assert.equal((hero.match(/class="rs-studio-card-art/g)||[]).length,1,'one reusable decorative art per mapped card');
+    assert.equal((hero.match(/class="rs-studio-card-art/g)||[]).length,7,'one decorative art per feature chapter');
     assert.match(hero,/rs-studio-grid/);
     assert.match(hero,/rs-studio-haze/);
     assert.match(hero,/rs-studio-orbit-label/);
