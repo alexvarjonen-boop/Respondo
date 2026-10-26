@@ -51,14 +51,16 @@ function harness({stickyWorks=true}={}) {
   function move(y){scroll=y;events.get('scroll')();flush()}
   return {cards,section,counter,announced,move};
 }
-test('mobile hero stays on each card through most of each scroll segment',()=>{
+test('mobile hero scrolls continuously through orbital depth scenes',()=>{
   const h=harness();
   assert.equal(h.counter.textContent,'01');
   assert.ok(h.cards[0].classList.contains('rs-in-scene'));
-  h.move(140); // the reading hold takes about the first 170px of one segment
+  h.move(140); // incoming scene is already visible, but card one stays primary
   assert.equal(h.counter.textContent,'01');
   assert.ok(['','0.0px'].includes(h.cards[0].style.getPropertyValue('--rs-x')), 'first card should remain at its centered CSS position');
-  assert.equal(h.cards[1].classList.contains('rs-in-scene'),false);
+  assert.ok(h.cards[1].classList.contains('rs-in-scene'));
+  const incoming=Number(h.cards[1].style.getPropertyValue('--rs-opacity'));
+  assert.ok(incoming>0 && incoming<1, 'next scene enters gradually');
   h.move(390); // about one mobile swipe brings the next card
   assert.equal(h.counter.textContent,'02');
   assert.ok(h.cards[1].classList.contains('rs-in-scene'));
@@ -82,6 +84,7 @@ test('mobile sticky fixes remain scoped to the spiral without scroll interceptio
   assert.match(css,/height:calc\(100svh \+ 2400px\)/);
   assert.match(css,/position:sticky!important/);
   assert.match(css,/\.rs-fixed-fallback/);
-  assert.match(js,/fraction - \.42/);
+  assert.match(js,/--rs-orbit-spin/);
+  assert.match(js,/--rs-panel-turn/);
   assert.doesNotMatch(js,/preventDefault\(|scrollTo\(|scrollIntoView\(|setInterval\(/);
 });
