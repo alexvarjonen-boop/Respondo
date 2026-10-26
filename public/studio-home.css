@@ -308,3 +308,46 @@
   #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-axis{position:absolute!important;top:35%!important;left:50%!important;transform:translate(-50%,-50%)!important;opacity:.7!important;width:min(32vw,170px)!important}
   #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card:first-child{padding-top:40px!important}
 }
+
+/* Ensure the reveal remains readable on short phones and the 24/7 scene
+   never obscures the iconic logo. These rules only affect the public homepage. */
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card:first-child{z-index:5}
+@media (min-width:801px){
+ #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced .rs-spiral-card:first-child{padding-top:clamp(380px,56svh,620px)!important;padding-bottom:clamp(64px,9svh,116px)!important}
+}
+@media(max-width:800px){
+ #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card:first-child .rs-spiral-metric{line-height:.95!important}
+ #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced .rs-spiral-card:first-child{padding-top:52svh!important;padding-bottom:clamp(70px,9svh,94px)!important}
+}
+@media(max-width:390px){
+ #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-studio-orbit-icon{width:34px}
+ #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card:first-child h2{font-size:23px!important}
+}
+
+/* Match the resource explainer and footer to the cinematic palette, while keeping
+   every crawled link visible and the footer fully usable. */
+#app .apple-home-page .respondo-search-overview{
+ background:#07120e!important;color:#e9fff3!important;
+ border-top-color:rgba(120,248,179,.14)!important;
+}
+#app .apple-home-page .respondo-search-overview h2{color:#f2fff8!important}
+#app .apple-home-page .respondo-search-overview p{color:#afcdbd!important}
+#app .apple-home-page .respondo-search-links a{
+ color:#acffd3!important;text-decoration-color:rgba(156,251,203,.4)!important;
+}
+#app .apple-home-page .respondo-search-links a:hover{color:#f6fff9!important}
+#app .apple-home-page .nav{
+ background:rgba(4,15,11,.95)!important;
+ border-bottom-color:rgba(143,241,185,.14)!important;
+}
+#app .apple-home-page .nav .app-language-switch{
+ background:rgba(10,39,27,.95)!important;
+ border-color:rgba(139,245,183,.25)!important;
+}
+#app .apple-home-page .nav .app-language-option.active{
+ background:rgba(33,105,70,.86)!important;
+}
+#app .apple-home-page .nav a.public-header-login{
+ background:#a7fdd0!important;border-color:#a7fdd0!important;
+ color:#072117!important;-webkit-text-fill-color:#072117!important;
+}
