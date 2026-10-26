@@ -17,8 +17,8 @@ for(const [lang,indexLang] of [['fi',0],['sv',1],['en',2]]){
     assert.ok(markup.includes(marker));
     assert.equal((markup.match(/data-rs-card\b/g)||[]).length,7);
     const afterPricing=markup.slice(markup.indexOf(marker)+marker.length).trim();
-    assert.match(afterPricing,/^<section class="respondo-search-overview"/);
-    assert.match(afterPricing,/<nav class="respondo-search-links"/);
+    assert.equal(afterPricing,'', 'the homepage should end with pricing');
+    assert.doesNotMatch(markup,/respondo-search-overview|respondo-search-links/);
     assert.doesNotMatch(markup,/apple-bottom-cta|Valmis vastaamaan|Aloita ilmainen kokeilu|Ready for your first conversation/);
   });
 }
@@ -44,5 +44,5 @@ test('footer ends after standard product company legal information',()=>{
   assert.match(footer,/class="legalbar"/);
   assert.match(index,/app\.js\?v=[^"]*header-login-v5/);
   assert.match(index,/mobile-public-polish\.css\?v=[^"]*header-login-v5/);
-  assert.match(app,/apple-home\.js\?v=20261021-organic-discovery-v1/);
+  assert.match(app,/apple-home\.js\?v=20261026-cinematic-blue-no-seo-v1/);
 });
