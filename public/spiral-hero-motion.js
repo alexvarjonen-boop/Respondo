@@ -9,6 +9,7 @@
   const coarse = window.matchMedia('(pointer: coarse)');
   let section = null;
   let cards = [];
+  let icons = [];
   let raf = 0;
   let pendingMount = false;
   let currentStep = -1;
@@ -28,6 +29,7 @@
     raf = 0;
     if (section) {
       section.classList.remove('rs-enhanced', 'rs-fixed-fallback', 'rs-fixed-end');
+      for (const icon of icons) icon.classList.remove('is-active');
       for (const card of cards) {
         card.classList.remove('rs-in-scene');
         card.removeAttribute('aria-hidden');
@@ -37,6 +39,7 @@
     }
     section = null;
     cards = [];
+    icons = [];
     currentStep = -1;
     stickyFailed = false;
   }
@@ -48,6 +51,7 @@
     if (!next) return;
     section = next;
     cards = Array.from(next.querySelectorAll('[data-rs-card]'));
+    icons = Array.from(next.querySelectorAll('[data-rs-icon]'));
     if (cards.length < 2 || safeStaticMode()) return;
     section.classList.add('rs-enhanced');
     draw();
@@ -60,6 +64,9 @@
     const announced = section.querySelector('[data-rs-announcement]');
     if (announced) announced.textContent = cards[index].querySelector('h2')?.textContent || '';
     cards.forEach((card, i) => card.setAttribute('aria-hidden', String(i !== index)));
+    // The orbit and story share the same index. Highlight only the icon
+    // corresponding to the panel currently nearest the scroll position.
+    icons.forEach((icon, i) => icon.classList.toggle('is-active', i === index));
   }
   // Reference-film camera: scrolling moves the camera through the orbit,
   // rings and feature scenes rather than swapping flat, stationary slides.
@@ -113,9 +120,15 @@
     section.style.setProperty('--rs-logo-opacity', (.065 + .91 * opening).toFixed(3));
     section.style.setProperty('--rs-logo-scale', (1 + .56 * orbitFlight).toFixed(3));
     section.style.setProperty('--rs-arrow-turn', (-9 * orbitFlight).toFixed(2) + 'deg');
-    section.style.setProperty('--rs-orbit-opacity', opening.toFixed(3));
+    // Keep the icon sphere in view throughout all chapters; formerly it
+    // faded out after chapter one, so later icons could not track the story.
+    section.style.setProperty('--rs-orbit-opacity', (.96 - .13 * orbitFlight).toFixed(3));
     section.style.setProperty('--rs-orbit-scale', (1 + .95 * orbitFlight).toFixed(3));
-    section.style.setProperty('--rs-orbit-spin', (-58 * orbitFlight).toFixed(2) + 'deg');
+    // Each successive icon occupies one equally spaced sector of the sphere.
+    // Counter-rotation keeps SVG glyphs upright as the active one reaches top.
+    const iconAngle = 360 / cards.length;
+    section.style.setProperty('--rs-orbit-spin', (-iconAngle * position).toFixed(2) + 'deg');
+    section.style.setProperty('--rs-icon-upright', (iconAngle * position).toFixed(2) + 'deg');
     section.style.setProperty('--rs-orbit-tilt', (22 * orbitFlight).toFixed(2) + 'deg');
     section.style.setProperty('--rs-grid-angle', (-14 * position).toFixed(2) + 'deg');
     section.style.setProperty('--rs-grid-scale', (1 + .17 * position).toFixed(3));

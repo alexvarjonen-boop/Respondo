@@ -15,7 +15,7 @@ for(const [lang,indexLang] of [['fi',0],['sv',1],['en',2]]){
     const markup=appleHomeMarkup(tx,lang,7,marker);
     assert.ok(markup.includes('rs-spiral-section'));
     assert.ok(markup.includes(marker));
-    assert.equal((markup.match(/data-rs-card\b/g)||[]).length,7);
+    assert.equal((markup.match(/data-rs-card\b/g)||[]).length,10);
     const afterPricing=markup.slice(markup.indexOf(marker)+marker.length).trim();
     assert.equal(afterPricing,'', 'the homepage should end with pricing');
     assert.doesNotMatch(markup,/respondo-search-overview|respondo-search-links/);
@@ -44,5 +44,5 @@ test('footer ends after standard product company legal information',()=>{
   assert.match(footer,/class="legalbar"/);
   assert.match(index,/app\.js\?v=[^"]*header-login-v5/);
   assert.match(index,/mobile-public-polish\.css\?v=[^"]*header-login-v5/);
-  assert.match(app,/apple-home\.js\?v=20261026-cinematic-blue-no-seo-v1/);
+  assert.match(app,/apple-home\.js\?v=20261026-orbit10-v1/);
 });

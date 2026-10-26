@@ -10,10 +10,10 @@ const styles=readFileSync(new URL('../public/apple-home.css',import.meta.url),'u
 
 for (const [index,lang,company] of [[0,'fi','Yrityksesi'],[1,'sv','Ditt företag'],[2,'en','Your company']]) {
   const t=(...translations)=>translations[index];
-  test('homepage has only seven spiral cards, then pricing, in '+lang,()=>{
+  test('homepage has ten synchronized spiral scenes, then pricing, in '+lang,()=>{
     const html=appleHomeMarkup(t,lang,145,'<section class="pricing-section" id="pricing">Plans</section>');
     assert.equal((html.match(/class="apple-feature-card /g)||[]).length,0);
-    assert.equal((html.match(/data-rs-card\b/g)||[]).length,7);
+    assert.equal((html.match(/data-rs-card\b/g)||[]).length,10);
     assert.ok(html.includes('class="apple-hero rs-spiral-section"'));
     assert.ok(html.includes('id="features"'));
     assert.ok(html.includes('class="rs-axis"'));

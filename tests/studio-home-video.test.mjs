@@ -13,9 +13,9 @@ for(const [lang,n] of [['fi',0],['sv',1],['en',2]]){
     const t=(...languages)=>languages[n];
     const home=appleHomeMarkup(t,lang,145,'<section class="pricing-section">LIVE PRICING</section>');
     const hero=spiralHeroMarkup(t,lang);
-    assert.equal((hero.match(/data-rs-card\b/g)||[]).length,7);
-    assert.equal((hero.match(/class="rs-studio-orbit-icon/g)||[]).length,8);
-    assert.equal((hero.match(/class="rs-studio-card-art/g)||[]).length,7,'one decorative art per feature chapter');
+    assert.equal((hero.match(/data-rs-card\b/g)||[]).length,10);
+    assert.equal((hero.match(/class="rs-studio-orbit-icon/g)||[]).length,10);
+    assert.equal((hero.match(/class="rs-studio-card-art/g)||[]).length,10,'one decorative art per feature chapter');
     assert.match(hero,/rs-studio-grid/);
     assert.match(hero,/rs-studio-haze/);
     assert.match(hero,/rs-studio-orbit-label/);
