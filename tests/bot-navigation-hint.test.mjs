@@ -42,6 +42,6 @@ test('changed UI modules are cache-busted at each nested import level',()=>{
   assert.match(index,/\/chat-first-home\.css\?v=[^"]+-20261019-bot-navigation-hint-v1/);
   assert.match(index,/\/effects\.js\?v=[^"]+-20261019-bot-navigation-hint-v1/);
   assert.match(index,/\/app\.js\?v=[^"]+-20261019-bot-navigation-hint-v1/);
-  assert.match(read('app.js'),/apple-home\.js\?v=20261021-organic-discovery-v1/);
+  assert.match(read('app.js'),/apple-home\.js\?v=20261026-cinematic-blue-no-seo-v1/);
   assert.match(read('apple-home.js'),/spiral-hero\.js\?v=20261021-fullscreen-chapters-v1/);
 });
