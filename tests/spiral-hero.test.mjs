@@ -8,7 +8,7 @@ import { pathToFileURL } from 'node:url';
 const publicDir = path.resolve(import.meta.dirname, '..', 'public');
 const read = file => fs.readFileSync(path.join(publicDir, file), 'utf8');
 
-test('spiral page renders 7 real feature cards after logo reveal in all languages', async () => {
+test('spiral page renders 10 real feature cards after logo reveal in all languages', async () => {
   const { appleHomeMarkup } = await import(pathToFileURL(path.join(publicDir, 'apple-home.js')).href);
   const { spiralHeroMarkup } = await import(pathToFileURL(path.join(publicDir, 'spiral-hero.js')).href);
   for (const lang of ['fi', 'sv', 'en']) {
@@ -16,7 +16,7 @@ test('spiral page renders 7 real feature cards after logo reveal in all language
     const markup = appleHomeMarkup(t, lang, 145, '<section class="pricing-section">PLANS</section>');
     const hero = spiralHeroMarkup(t, lang);
     assert.match(hero, /class="apple-hero rs-spiral-section"/);
-    assert.equal((hero.match(/data-rs-card\b/g) || []).length, 7);
+    assert.equal((hero.match(/data-rs-card\b/g) || []).length, 10);
     assert.ok(!hero.includes('data-respondo-hero-cta="signup"'));
     assert.doesNotMatch(hero,/data-respondo-ask-form|respondo-home-question|data-respondo-ask-question|rs-chat-entry/);
     assert.ok(!hero.includes('data-respondo-hero-cta="demo"'));
@@ -25,7 +25,7 @@ test('spiral page renders 7 real feature cards after logo reveal in all language
     assert.ok(markup.includes('rs-spiral-section'));
     assert.doesNotMatch(markup, /apple-highlights|apple-lead-calculator|rg-growth-section/);
     assert.ok(markup.indexOf('rs-spiral-section') < markup.indexOf('PLANS'));
-    assert.equal((markup.match(/data-rs-card\b/g)||[]).length, 7);
+    assert.equal((markup.match(/data-rs-card\b/g)||[]).length, 10);
     assert.ok(!markup.includes('apple-bottom-cta'));
     assert.ok(hero.includes(t('ei mitattu asiakastulos','inget uppmätt kundresultat','not a measured customer result')));
   }
