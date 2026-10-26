@@ -25,5 +25,5 @@ test('homepage features fill the viewport without visual cards in every language
   assert.match(js, /requestAnimationFrame\(draw\)/);
   assert.doesNotMatch(js, /scrollTo\(|preventDefault\(|setInterval\(/);
   assert.match(html, /spiral-hero\.css\?v=20261021-fullscreen-chapters-v1/);
-  assert.match(html, /spiral-hero-motion\.js\?v=20261021-fullscreen-chapters-v1/);
+  assert.match(html, /spiral-hero-motion\.js\?v=20261026-orbit-camera-v1/);
 });

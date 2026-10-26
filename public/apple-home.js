@@ -1,10 +1,8 @@
-import { homeSearchMarkup } from './home-search-content.mjs?v=20261021-organic-discovery-v1';
 import { spiralHeroMarkup } from './spiral-hero.js?v=20261021-fullscreen-chapters-v1-studio-green-20261026';
-// The spiral is the single feature story. Pricing follows without duplicated
-// feature cards, homepage calculator or illustrative growth section.
+// Seven cinematic scenes and existing paid-plan checkout remain on the homepage.
+// Long-form SEO articles belong on their dedicated landing pages, not below pricing.
 export function appleHomeMarkup(t,lang,count,pricingMarkup=''){
   return `${spiralHeroMarkup(t, lang)}
   ${pricingMarkup}
-  ${homeSearchMarkup(lang)}
 `;
 }
