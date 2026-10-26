@@ -24,7 +24,7 @@ export function spiralHeroMarkup(t, lang) {
     ['↗', t('Vähemmän ohitettuja kysymyksiä.','Färre missade frågor.','Fewer missed questions.'),
       t('Kerää yhteydenottoja myös silloin, kun tiimi on poissa.','Samla förfrågningar även när teamet är borta.','Capture enquiries even when your team is away.'), '07'],
     [String(FEATURE_COUNT), t('Ominaisuudet samassa palvelussa.','Funktioner i samma tjänst.','Features in one platform.'),
-      t('Tutustu ${FEATURE_COUNT} dokumentoituun ominaisuuteen. Saatavuus riippuu paketista ja käyttöönotosta.','Utforska ${FEATURE_COUNT} dokumenterade funktioner. Tillgänglighet beror på abonnemang och konfiguration.','Explore ${FEATURE_COUNT} documented features. Availability depends on your plan and setup.'), '08'],
+      t(`Tutustu ${FEATURE_COUNT} dokumentoituun ominaisuuteen. Saatavuus riippuu paketista ja käyttöönotosta.`,`Utforska ${FEATURE_COUNT} dokumenterade funktioner. Tillgänglighet beror på abonnemang och konfiguration.`,`Explore ${FEATURE_COUNT} documented features. Availability depends on your plan and setup.`), '08'],
     ['↙', t('Tiedot suoraan sivustolta.','Information direkt från webbplatsen.','Knowledge from your website.'),
       t('Anna verkkosivusi osoite. Respondo kerää olennaista tietoa yrityksesi palveluista ja tuotteista.','Ange webbplatsens adress. Respondo samlar relevant information om företagets tjänster och produkter.','Enter your website address. Respondo imports relevant service and product information.'), '09'],
     ['◷', t('Ajanvaraus chatissa.','Bokning i chatten.','Bookings in chat.'),
@@ -55,7 +55,7 @@ export function spiralHeroMarkup(t, lang) {
       <div class="rs-spiral-orbit" aria-label="${t('Respondo AI:n ominaisuudet','Respondo AI:s funktioner','Respondo AI features')}">
         <div class="rs-studio-orbit-art" aria-hidden="true">
           <span class="rs-studio-orbit-ring rs-studio-ring-a"></span><span class="rs-studio-orbit-ring rs-studio-ring-b"></span><span class="rs-studio-orbit-ring rs-studio-ring-c"></span>
-          ${cards.map(([,title],i)=>`<span class="rs-studio-orbit-icon${i===0?' is-active':''}" data-rs-icon data-index="${i}" data-rs-icon-label="${title}" style="--rs-icon-angle:${(i*360/cards.length).toFixed(1)}deg" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">${iconPaths[i]}</svg></span>`).join('')}
+          ${cards.map(([,title],i)=>`<span class="rs-studio-orbit-icon${i===0?' is-active':''}" data-rs-icon data-index="${i}" data-rs-icon-label="${title}" style="--rs-icon-x:${(Math.sin(i*2*Math.PI/cards.length)*45).toFixed(2)}%;--rs-icon-y:${(-Math.cos(i*2*Math.PI/cards.length)*45).toFixed(2)}%" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">${iconPaths[i]}</svg></span>`).join('')}
           <div class="rs-studio-orbit-label">${t('YKSI PALVELU · MONTA MAHDOLLISUUTTA','EN TJÄNST · MÅNGA MÖJLIGHETER','ONE PLATFORM · MANY POSSIBILITIES')}</div>
         </div>
         <div class="rs-spiral-cards" role="list">
