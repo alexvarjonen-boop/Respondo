@@ -17,7 +17,7 @@ for (const [lang,index] of [['fi',0],['sv',1],['en',2]]) {
 }
 test('all three cached module levels change when the spiral CTA changes',()=>{
   assert.match(home,/spiral-hero\.js\?v=20261021-fullscreen-chapters-v1/);
-  assert.match(app,/apple-home\.js\?v=20261021-organic-discovery-v1/);
+  assert.match(app,/apple-home\.js\?v=20261026-cinematic-blue-no-seo-v1/);
   assert.match(html,/app\.js\?v=[^"]+-chat-first-home-20261019-v1/);
   assert.match(html,/mobile-public-polish\.css\?v=20261018-demo-only-v4/);
   assert.match(css,/rs-hero-actions a\[data-respondo-hero-cta="signup"\]\{display:none!important\}/);
