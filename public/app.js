@@ -2190,7 +2190,7 @@ function footer() {
           </div>
           <p>${uiText('Asiakaspalvelubotti, joka vastaa asiakkaillesi yrityksesi omilla tiedoilla.','Kundservicebot som svarar dina kunder med information från ditt företag.','Customer service bot that answers your customers using your company information.')}</p>
         </div>
-        <div class="foot-col">
+        ${location.pathname === '/' ? '' : `        <div class="foot-col">
           <h4>${appText('Tuote','Produkt','Product')}</h4>
           <a href="/ominaisuudet?lang=${currentLang()}">${appText('Ominaisuudet','Funktioner','Features')}</a>
           <a href="/kenelle-sopii?lang=${currentLang()}">${appText('Kenelle Respondo AI sopii','Vem passar Respondo AI för?','Who is Respondo AI for?')}</a>
@@ -2204,7 +2204,7 @@ function footer() {
           <a href="/guides?lang=${currentLang()}">${appText('Oppaat','Guider','Guides')}</a>
           <a href="/hinnat?lang=${currentLang()}">${appText('Hinta','Pris','Pricing')}</a>
           <a href="/tilaus?lang=${currentLang()}">${appText('Kokeile ilmaiseksi','Prova gratis','Try for free')}</a>
-        </div>
+        </div>`}
         <div class="foot-col">
           <h4>${appText("Yritys","Företag","Company")}</h4>
           <a href="/yhteystiedot">${appText("Yhteystiedot","Kontakt","Contact")}</a>
