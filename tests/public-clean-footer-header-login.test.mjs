@@ -46,3 +46,32 @@ test('footer ends after standard product company legal information',()=>{
   assert.match(index,/mobile-public-polish\.css\?v=[^"]*header-login-v5/);
   assert.match(app,/apple-home\.js\?v=20261026-orbit10-v1/);
 });
+
+
+test('homepage hides the SEO product-link footer column while preserving legal links on other routes',()=>{
+  const footer=app.slice(app.indexOf('function footer()'),app.indexOf('function heroVisual()'));
+  assert.match(footer,/location\.pathname === '\/' \? ''/);
+  assert.match(footer,/href="\/tekoaly-yrityksille\?lang=/);
+  assert.match(footer,/href="\/verkkokauppa-chatbot\?lang=/);
+  assert.match(footer,/href="\/tietosuoja\?lang=/);
+  assert.match(index,/app\.js\?v=[^"]+-orbit10-v1-mobile-footer-pricing-v1/);
+});
+
+test('the Finnish mobile pricing suggestion returns real monthly and annual euro amounts',async()=>{
+  const {respondoProductFaqMatch}=await import('../server.mjs');
+  for (const [question,lang] of [
+    ['Mitä paketit maksavat?','fi'],
+    ['Mitä Respondo paketit maksavat?','fi'],
+    ['Paljonko paketit maksavat?','fi'],
+    ['Vad kostar abonnemangen?','sv'],
+    ['What do the plans cost?','en']
+  ]) {
+    const result=respondoProductFaqMatch(question,lang,[]);
+    assert.ok(result,'missing direct pricing FAQ for '+question);
+    assert.equal(result.id,'respondo-faq-pricing','wrong intent for '+question);
+    assert.match(result.answer,/49\s*€/u.test(result.answer) ? /49\s*€/ : /€49/);
+    assert.match(result.answer,/129/);
+    assert.match(result.answer,/149/);
+    assert.match(result.answer,/39/);
+  }
+});
