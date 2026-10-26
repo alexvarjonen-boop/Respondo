@@ -7,12 +7,12 @@ const css = readFileSync(new URL('../public/spiral-hero.css', import.meta.url), 
 const js = readFileSync(new URL('../public/spiral-hero-motion.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
 
-test('homepage features fill the viewport without visual cards in every language', () => {
+test('homepage orbit icons track ten feature chapters in every language', () => {
   for (const lang of ['fi', 'sv', 'en']) {
     const t = (fi, sv, en) => ({fi, sv, en})[lang];
     const hero = spiralHeroMarkup(t, lang);
     assert.match(hero, /data-rs-mode="fullscreen"/);
-    assert.equal((hero.match(/data-rs-card\b/g) || []).length, 7);
+    assert.equal((hero.match(/data-rs-card\b/g) || []).length, 10);
     assert.match(hero, /data-rs-announcement/);
   }
   assert.match(css, /RESPONDO FULLSCREEN CHAPTERS/);
@@ -25,5 +25,5 @@ test('homepage features fill the viewport without visual cards in every language
   assert.match(js, /requestAnimationFrame\(draw\)/);
   assert.doesNotMatch(js, /scrollTo\(|preventDefault\(|setInterval\(/);
   assert.match(html, /spiral-hero\.css\?v=20261021-fullscreen-chapters-v1/);
-  assert.match(html, /spiral-hero-motion\.js\?v=20261026-orbit-camera-mobile-v2/);
+  assert.match(html, /spiral-hero-motion\.js\?v=20261026-orbit10-v1/);
 });
