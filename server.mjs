@@ -1862,7 +1862,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
 
   // First-party feature overview: highlight actual value and always provide the full feature catalogue.
   if ((/(?:ominaisu|toiminto|mita osaa|mita kaikkea|mitä osaa|mitä kaikkea|feature|capabilit|what can (?:respondo|it) do|funktion|vad kan (?:respondo|den) gora|vad kan (?:respondo|den) göra)/.test(q) || isRespondoCapabilityQuestion(q))
-      && !/(?:starter|basic|advanced|premium|business|enterprise|hinta|maksaa|price|pricing|cost|pris|kostar)/.test(q)) {
+      && !/(?:starter|basic|advanced|premium|business|enterprise|hinta|maksaa|maksavat|price|pricing|cost|pris|kostar)/.test(q)) {
     return {id:'respondo-faq-features-overview',answer:answer(
       'Respondo AI palvelee asiakkaitasi ympäri vuorokauden ja ymmärtää kysymyksiä sekä jatkokysymyksiä suomeksi, ruotsiksi ja englanniksi. Se voi hakea yrityksesi verkkosivuilta palvelu- ja tuotetietoja, vastata tuotteiden hinnoista, kerätä liidejä ja yhteydenottoja, hoitaa ajanvarauksia sekä siirtää keskustelun oikealle asiakaspalvelijalle. Saat myös muokattavan chatin, keskusteluhistorian ja analytiikkaa. Osa toiminnoista riippuu paketista ja käyttöönotetuista integraatioista.',
       'Respondo AI svarar kunder dygnet runt på finska, svenska och engelska och hanterar följdfrågor. Den kan hämta tjänste- och produktinformation från företagets webbplats, svara på prisfrågor, samla in leads, hantera bokningar och överföra chatten till en medarbetare. Anpassningsbar chatt, konversationshistorik och analys ingår också. Vissa funktioner beror på abonnemang och integrationer.',
@@ -1992,7 +1992,7 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     };
   }
 
-  if (/(?:mita|mitä|paljonko|paljo|what|how much|vad).*(?:maksaa|hinta|cost|price|kostar|pris)|(?:hinta|hinnoittelu|pricing|price|prices|cost|pris|priser).*(?:respondo|tilaus|subscription|abonnemang)?/.test(q)) {
+  if (/(?:mita|mitä|paljonko|paljo|what|how much|vad).*(?:maksaa|maksavat|hinta|cost|price|kostar|pris)|(?:hinta|hinnoittelu|pricing|price|prices|cost|pris|priser).*(?:respondo|tilaus|subscription|abonnemang)?/.test(q)) {
     return {
       id:'respondo-faq-pricing',
       answer:answer(
