@@ -25,7 +25,10 @@ test('Language switches to Finnish and Swedish remain persistent and reversible'
 });
 test('SSR and cookie consent use the same default language as the client',()=>{
   assert.match(index,/<html lang="en">/);
-  assert.ok(server.includes("return ['fi','sv','en'].includes(value) ? value : 'en';"));
+  const seoLanguageFn = server.match(/function seoLanguageForRequest\(req\) \{[\s\S]*?\n\}/)?.[0] || '';
+  assert.ok(seoLanguageFn.includes("if (['fi','sv','en'].includes(value)) return value;"));
+  assert.ok(seoLanguageFn.includes("if (req.path === '/ominaisuudet') return 'fi';"));
+  assert.ok(seoLanguageFn.trimEnd().endsWith("return 'en';\n}"));
   assert.ok(app.includes("return ['fi','sv','en'].includes(saved) ? saved : 'en';"));
   assert.ok(index.includes('localizeCookieUi(layer);'));
   assert.ok(server.includes('escapeHtml(seo.alternates.en)'));
