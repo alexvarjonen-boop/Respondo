@@ -13,10 +13,10 @@ for (const [lang,index] of [['fi',0],['sv',1],['en',2]]) {
     assert.match(hero,/data-ra-scene="support"/);
     assert.match(hero,/class="ra-room"/);
     assert.match(hero,/class="ra-console"/);
-    assert.match(hero,/class="ra-panel-support"/);
-    assert.match(hero,/class="ra-panel-knowledge"/);
-    assert.match(hero,/class="ra-panel-languages"/);
-    assert.match(hero,/class="ra-panel-growth"/);
+    assert.match(hero,/class="ra-console-pane ra-panel-support"/);
+    assert.match(hero,/class="ra-console-pane ra-panel-knowledge"/);
+    assert.match(hero,/class="ra-console-pane ra-panel-languages"/);
+    assert.match(hero,/class="ra-console-pane ra-panel-growth"/);
     assert.equal((hero.match(/data-ra-tab=/g)||[]).length,4);
     assert.equal((hero.match(/data-rs-card/g)||[]).length,7);
     assert.match(hero,/data-rs-announcement/);
