@@ -54,7 +54,7 @@ test('original navy Respondo palette and orbit motion are home-only',()=>{
   assert.match(index,/spiral-hero-motion\.js\?v=20261026-orbit10-v1/);
   assert.match(index,/app\.js\?v=[^"]+-orbit10-v1/);
   assert.match(app,/apple-home\.js\?v=20261026-orbit10-v1/);
-  assert.match(apple,/spiral-hero\.js\?v=20261021-fullscreen-chapters-v1-studio-green-20261026/);
+  assert.match(apple,/spiral-hero\.js\?v=20261026-orbit10-v1/);
   assert.match(js,/--rs-orbit-spin/);
   assert.match(js,/--rs-grid-scale/);
   assert.match(js,/--rs-panel-turn/);
