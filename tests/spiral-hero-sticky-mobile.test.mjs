@@ -21,17 +21,18 @@ function harness({stickyWorks=true}={}) {
     const vars=new Map();
     return {setProperty(k,v){vars.set(k,v)},removeProperty(k){vars.delete(k)},getPropertyValue(k){return vars.get(k)||''}};
   };
-  const cards=Array.from({length:7},(_,i)=>({
+  const cards=Array.from({length:10},(_,i)=>({
     classList:classList(),style:style(),attributes:{},setAttribute(k,v){this.attributes[k]=v},
     removeAttribute(k){delete this.attributes[k]},querySelector(sel){return sel==='h2'?{textContent:'Card '+(i+1)}:null}
   }));
+  const icons=Array.from({length:10},()=>({classList:classList()}));
   const counter={textContent:''},announced={textContent:''};
   const stage={getBoundingClientRect(){return {top:stickyWorks?0:-scroll}}};
   const section={
     isConnected:true,classList:classList(),style:style(),
-    getBoundingClientRect(){return {top:-scroll,bottom:3200-scroll,height:3200}},
+    getBoundingClientRect(){return {top:-scroll,bottom:4400-scroll,height:4400}},
     querySelector(sel){return sel==='.rs-spiral-stage'?stage:sel==='[data-rs-step]'?counter:sel==='[data-rs-announcement]'?announced:null},
-    querySelectorAll(sel){return sel==='[data-rs-card]'?cards:[]}
+    querySelectorAll(sel){return sel==='[data-rs-card]'?cards:sel==='[data-rs-icon]'?icons:[]}
   };
   const app={querySelector(sel){return sel==='.apple-home-page .rs-spiral-section'?section:null}};
   const context={
@@ -49,11 +50,12 @@ function harness({stickyWorks=true}={}) {
   function flush(){while(pending.length)pending.shift()()}
   flush();
   function move(y){scroll=y;events.get('scroll')();flush()}
-  return {cards,section,counter,announced,move};
+  return {cards,icons,section,counter,announced,move};
 }
 test('mobile hero scrolls continuously through orbital depth scenes',()=>{
   const h=harness();
   assert.equal(h.counter.textContent,'01');
+  assert.ok(h.icons[0].classList.contains('is-active'));
   assert.ok(h.cards[0].classList.contains('rs-in-scene'));
   h.move(140); // incoming scene is already visible, but card one stays primary
   assert.equal(h.counter.textContent,'01');
@@ -63,6 +65,8 @@ test('mobile hero scrolls continuously through orbital depth scenes',()=>{
   assert.ok(incoming>0 && incoming<1, 'next scene enters gradually');
   h.move(390); // about one mobile swipe brings the next card
   assert.equal(h.counter.textContent,'02');
+  assert.ok(h.icons[1].classList.contains('is-active'));
+  assert.ok(!h.icons[0].classList.contains('is-active'));
   assert.ok(h.cards[1].classList.contains('rs-in-scene'));
   h.move(490); // the second card remains readable
   assert.equal(h.counter.textContent,'02');
@@ -74,7 +78,7 @@ test('mobile Safari sticky failure is pinned and hands off at the end',()=>{
   h.move(330);
   assert.ok(h.section.classList.contains('rs-fixed-fallback'));
   assert.equal(h.section.classList.contains('rs-fixed-end'),false);
-  h.move(2405);
+  h.move(3605);
   assert.ok(h.section.classList.contains('rs-fixed-end'));
   h.move(0);
   assert.equal(h.section.classList.contains('rs-fixed-fallback'),false);
@@ -86,5 +90,19 @@ test('mobile sticky fixes remain scoped to the spiral without scroll interceptio
   assert.match(css,/\.rs-fixed-fallback/);
   assert.match(js,/--rs-orbit-spin/);
   assert.match(js,/--rs-panel-turn/);
+  assert.match(js,/--rs-icon-upright/);
   assert.doesNotMatch(js,/preventDefault\(|scrollTo\(|scrollIntoView\(|setInterval\(/);
+});
+
+test('ten orbital glyphs always match the currently visible scene',()=>{
+  const h=harness();
+  for(const i of [0,1,4,7,8,9]){
+    h.move(i*400);
+    assert.equal(h.counter.textContent,String(i+1).padStart(2,'0'));
+    assert.equal(h.icons.filter(icon=>icon.classList.contains('is-active')).length,1);
+    assert.ok(h.icons[i].classList.contains('is-active'),'wrong icon highlighted at chapter '+i);
+  }
+  assert.ok(Number(h.section.style.getPropertyValue('--rs-orbit-opacity'))>=.8,
+    'orbit cannot disappear after the first feature');
+  assert.equal(h.section.style.getPropertyValue('--rs-orbit-spin'),'-324.00deg');
 });
