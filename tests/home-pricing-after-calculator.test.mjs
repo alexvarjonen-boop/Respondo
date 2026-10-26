@@ -11,7 +11,7 @@ test('the same pricing cards follow the spiral directly without duplicate panels
   const pricingStart = markup.indexOf(pricing);
 
   assert.ok(spiralStart >= 0 && spiralEnd > spiralStart, 'spiral is present');
-  assert.equal((markup.match(/data-rs-card\b/g)||[]).length, 7, 'seven features stay inside the spiral');
+  assert.equal((markup.match(/data-rs-card\b/g)||[]).length, 10, 'ten feature chapters stay inside the spiral');
   assert.ok(pricingStart > spiralEnd, 'pricing follows the spiral');
   assert.equal(markup.slice(spiralEnd, pricingStart).trim(), '', 'no extra sections before pricing');
   assert.doesNotMatch(markup,/apple-bottom-cta|Valmis vastaamaan|Aloita ilmainen kokeilu/);
