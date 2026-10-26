@@ -178,7 +178,12 @@ function seoLanguageForRequest(req) {
   if (req.path === '/features') return 'en';
   if (req.path === '/funktioner') return 'sv';
   const value = String(req.query?.lang || '').toLowerCase();
-  return ['fi','sv','en'].includes(value) ? value : 'en';
+  if (['fi','sv','en'].includes(value)) return value;
+  // Unlike the rest of the site, the feature page has dedicated localized
+  // paths. A bare /ominaisuudet URL is therefore Finnish, even though English
+  // is the site's default language.
+  if (req.path === '/ominaisuudet') return 'fi';
+  return 'en';
 }
 
 function seoCanonicalPath(pathname, lang='en') {
@@ -229,7 +234,7 @@ function seoMetaForRequest(req) {
   const isKnown = isIndexable || SEO_APP_PATHS.has(rawPath);
   const origin = SEO_CANONICAL_ORIGIN;
   const canonicalUrl = new URL(origin + canonicalPath);
-  if (lang !== 'en' && !['/features','/funktioner'].includes(canonicalPath)) {
+  if (lang !== 'en' && !['/ominaisuudet','/features','/funktioner'].includes(canonicalPath)) {
     canonicalUrl.searchParams.set('lang', lang);
   }
   return {

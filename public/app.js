@@ -366,6 +366,9 @@ function currentLang() {
     if (window.RespondoI18n?.language !== queryLang) window.RespondoI18n?.setLanguage?.(queryLang);
     return queryLang;
   }
+  // /ominaisuudet is the dedicated Finnish feature-page URL. Do not let a
+  // previously saved English preference rewrite its self-canonical metadata.
+  if (location.pathname === '/ominaisuudet') return 'fi';
   const fromShared = window.RespondoI18n?.language;
   if (['fi','sv','en'].includes(fromShared)) return fromShared;
   const saved = localStorage.getItem('respondo_lang');
@@ -1791,7 +1794,7 @@ function updateDocumentLanguageMeta(lang) {
   upsertMeta('name','twitter:description',metaDescription);
 
   const canonical = new URL(canonicalOrigin + canonicalPath);
-  if (lang !== 'en' && !['/features','/funktioner'].includes(canonicalPath)) canonical.searchParams.set('lang',lang);
+  if (lang !== 'en' && !['/ominaisuudet','/features','/funktioner'].includes(canonicalPath)) canonical.searchParams.set('lang',lang);
   upsertLink('canonical',canonical.toString());
   upsertMeta('property','og:url',canonical.toString());
   upsertMeta('property','og:image',canonicalOrigin+'/respondo-approved-arrow-20261012.png');
