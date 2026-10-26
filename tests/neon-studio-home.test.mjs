@@ -65,7 +65,7 @@ test('real pricing checkout and first-party assistant remain unchanged',()=>{
 
 test('SSR homepage first paint is the cinematic Respondo scene, not SEO link wall',()=>{
   const server = readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
-  assert.match(server,/spiralHeroMarkup\\(\\(fi, sv, en\\)/);
+  assert.ok(server.includes('spiralHeroMarkup((fi, sv, en)'));
   assert.match(server,/homepageFirstPaint/);
   assert.doesNotMatch(server,/homeSearchMarkup/);
   assert.match(server,/X-Respondo-Homepage/);
