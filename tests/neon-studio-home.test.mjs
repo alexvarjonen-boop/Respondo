@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {spiralHeroMarkup} from '../public/spiral-hero.js';
 import {appleHomeMarkup} from '../public/apple-home.js';
+import {FEATURE_COUNT} from '../public/features-data.js';
 
 const read = name => readFileSync(new URL('../public/' + name,import.meta.url),'utf8');
 
@@ -14,6 +15,14 @@ for (const lang of ['fi','sv','en']) {
     assert.equal((hero.match(/data-rs-card\b/g)||[]).length,10);
     assert.equal((hero.match(/class="rs-studio-orbit-icon\b/g)||[]).length,10);
     assert.equal((hero.match(/class="rs-studio-card-art\b/g)||[]).length,10);
+    assert.equal((hero.match(/data-rs-icon\\b/g)||[]).length,10);
+    assert.equal((hero.match(/data-rs-icon-label=/g)||[]).length,10);
+    assert.match(hero,/--rs-scroll-height:1000svh/);
+    assert.ok(hero.includes('>'+FEATURE_COUNT+'</div>'));
+    assert.ok(FEATURE_COUNT>=140,'feature number must match the real documented count');
+    assert.ok(hero.includes(t('Ominaisuudet samassa palvelussa.','Funktioner i samma tjänst.','Features in one platform.')));
+    assert.ok(hero.includes(t('Tiedot suoraan sivustolta.','Information direkt från webbplatsen.','Knowledge from your website.')));
+    assert.ok(hero.includes(t('Ajanvaraus chatissa.','Bokning i chatten.','Bookings in chat.')));
     assert.equal((hero.match(/<svg width="28" height="20"/g)||[]).length,3);
     assert.match(hero,/class="rs-studio-grid"/);
     assert.match(hero,/class="rs-studio-orbit-art"/);
