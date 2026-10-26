@@ -412,3 +412,9 @@
     padding:10px 15px!important;
   }
 }
+
+/* The previous orbit's decorative SVGs are intentionally not part of the room. */
+#app .rs-spiral-section[data-ra-design="architectural"] .rs-studio-orbit-art,
+#app .rs-spiral-section[data-ra-design="architectural"] .rs-studio-card-art{
+  display:none!important;
+}
