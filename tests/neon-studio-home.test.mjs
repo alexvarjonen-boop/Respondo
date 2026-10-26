@@ -11,9 +11,9 @@ for (const lang of ['fi','sv','en']) {
     const t=(fi,sv,en)=>({fi,sv,en})[lang];
     const hero=spiralHeroMarkup(t,lang);
     const page=appleHomeMarkup(t,lang,100,'<section class="pricing-section" id="pricing">Real plans</section>');
-    assert.equal((hero.match(/data-rs-card\b/g)||[]).length,7);
-    assert.equal((hero.match(/class="rs-studio-orbit-icon\b/g)||[]).length,8);
-    assert.equal((hero.match(/class="rs-studio-card-art\b/g)||[]).length,7);
+    assert.equal((hero.match(/data-rs-card\b/g)||[]).length,10);
+    assert.equal((hero.match(/class="rs-studio-orbit-icon\b/g)||[]).length,10);
+    assert.equal((hero.match(/class="rs-studio-card-art\b/g)||[]).length,10);
     assert.equal((hero.match(/<svg width="28" height="20"/g)||[]).length,3);
     assert.match(hero,/class="rs-studio-grid"/);
     assert.match(hero,/class="rs-studio-orbit-art"/);
@@ -41,10 +41,10 @@ test('original navy Respondo palette and orbit motion are home-only',()=>{
   assert.match(css,/\.pricing-section/);
   assert.doesNotMatch(css,/#030b09|#72f5bd|#a4ffdb|#8aefc2|#8deec1/i);
   assert.doesNotMatch(css,/#app \.dashboard-page|\.workspace-page/);
-  assert.match(index,/studio-home\.css\?v=20261026-cinematic-blue-mobile-v2/);
-  assert.match(index,/spiral-hero-motion\.js\?v=20261026-orbit-camera-mobile-v2/);
-  assert.match(index,/app\.js\?v=[^"]+-cinematic-blue-mobile-v2/);
-  assert.match(app,/apple-home\.js\?v=20261026-cinematic-blue-no-seo-v1/);
+  assert.match(index,/studio-home\.css\?v=20261026-orbit10-v1/);
+  assert.match(index,/spiral-hero-motion\.js\?v=20261026-orbit10-v1/);
+  assert.match(index,/app\.js\?v=[^"]+-orbit10-v1/);
+  assert.match(app,/apple-home\.js\?v=20261026-orbit10-v1/);
   assert.match(apple,/spiral-hero\.js\?v=20261021-fullscreen-chapters-v1-studio-green-20261026/);
   assert.match(js,/--rs-orbit-spin/);
   assert.match(js,/--rs-grid-scale/);
