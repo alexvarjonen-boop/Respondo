@@ -1,0 +1,340 @@
+/* RESPONDO AI | Clean public pages v2
+   One dark navy / white / pale-blue design system.
+   Visual changes only: retain all legal copy, signup fields, plan links and FAQ text.
+   Deliberately no decorative cards, redundant CTAs or extra page sections. */
+#app{
+  --ro-night:#070b13;--ro-surface:#111a29;--ro-border:rgba(174,203,244,.18);
+  --ro-blue:#b7d6ff;--ro-white:#f7faff;--ro-muted:#b6c5d8;
+}
+#app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+  .global-guide-page,.audience-hub,.legalpage,.notfound){
+  background:var(--ro-night)!important;color:var(--ro-white)!important;
+}
+#app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+  .global-guide-page,.audience-hub,.legalpage,.notfound)
+  :is(h1,h2,h3,h4){color:var(--ro-white)!important;-webkit-text-fill-color:currentColor!important}
+#app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+  .global-guide-page,.audience-hub,.legalpage,.notfound)
+  :is(a,button,input,textarea,summary):focus-visible{
+  outline:2px solid var(--ro-blue)!important;outline-offset:3px!important;
+}
+body.public-nav-active #app .nav{
+  background:rgba(7,11,19,.97)!important;border-bottom:1px solid var(--ro-border)!important;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+}
+body.public-nav-active #app .nav .public-header-login{
+  background:#f2f7ff!important;color:#07101d!important;
+  -webkit-text-fill-color:#07101d!important;border-color:#f2f7ff!important;
+}
+body.public-nav-active #app .nav .app-language-switch{
+  background:#121c2c!important;border-color:var(--ro-border)!important;
+}
+/* No extra marketing banners, animated side orbits or three-step filler.
+   Existing semantic page headings now lead directly into actual content. */
+#app :is(.r-brand-hero,.r-brand-flow,.r-brand-next-cta,
+  .r-brand-contact-banner,.r-brand-pricing-banner,.r-brand-guides-deco,
+  .r-brand-signup-intro){display:none!important}
+/* Shared understated UI */
+#app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+  .global-guide-page,.audience-hub)
+  :is(.btn.ink,.btn.blue,.pricing-select-btn){
+  background:#c4dfff!important;color:#091729!important;
+  -webkit-text-fill-color:#091729!important;
+  border:1px solid #c4dfff!important;
+  border-radius:999px!important;
+  box-shadow:none!important;
+}
+#app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+  .global-guide-page,.audience-hub) .btn.ghost{
+  background:transparent!important;border:1px solid rgba(179,206,245,.36)!important;
+  color:#e8f2ff!important;-webkit-text-fill-color:#e8f2ff!important;
+  border-radius:999px!important;
+}
+#app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+  .global-guide-page,.audience-hub)
+  :is(.section-kicker,.features-hero-badge,.global-guide-kicker){
+  color:var(--ro-blue)!important;
+}
+#app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+  .global-guide-page,.audience-hub) :is(p,li,small){text-wrap:pretty}
+/* Pricing: the actual 3 tiers, one billing toggle and a short explanation. */
+#app .pricing-page .pricing-section{
+  background:var(--ro-night)!important;
+  color:var(--ro-white)!important;
+  padding:clamp(72px,8vw,120px) 0 clamp(90px,10vw,145px)!important;
+  min-height:70svh;
+}
+#app .pricing-page .split-head h2{
+  font-size:clamp(32px,4.4vw,59px)!important;line-height:1.12!important;
+  letter-spacing:-.051em!important;color:#f7faff!important;
+}
+#app .pricing-page .split-head p{color:var(--ro-muted)!important;max-width:670px}
+#app .pricing-page .pricing-billing-switch{
+  background:#111b2b!important;border:1px solid var(--ro-border)!important;
+  box-shadow:none!important;
+}
+#app .pricing-page .pricing-period-option:not(.is-active){
+  background:transparent!important;color:#becfe5!important;
+}
+#app .pricing-page .pricing-period-option.is-active{
+  background:#c5e0ff!important;color:#071524!important;
+  -webkit-text-fill-color:#071524!important;
+}
+#app .pricing-page .pricing-period-save{color:#a5cdff!important}
+#app .pricing-page .pricing-wrap{gap:18px!important}
+#app .pricing-page .price-card{
+  background:#111c2c!important;border:1px solid rgba(170,201,245,.23)!important;
+  border-radius:22px!important;box-shadow:none!important;
+  color:#f8fbff!important;
+}
+#app .pricing-page .price-card.featured{
+  background:#17253a!important;border-color:rgba(189,218,255,.67)!important;
+  box-shadow:0 0 0 1px rgba(175,205,250,.07)!important;
+}
+#app .pricing-page .price-card :is(h3,.pricevalue,.pricevalue>span,b){
+  color:#f7fbff!important;-webkit-text-fill-color:currentColor!important;
+}
+#app .pricing-page .price-card :is(p,small,li,.plan-yearly-price,.pricevalue small){
+  color:#c1d0e4!important;
+}
+#app .pricing-page .price-card .price-rule{background:var(--ro-border)!important}
+#app .pricing-page .pricing-select-btn{
+  background:#c4dfff!important;color:#081626!important;
+  -webkit-text-fill-color:#081626!important;
+  border:1px solid #c4dfff!important;min-height:47px!important;
+}
+/* Features: existing searchable grouping and counts, no decorative flow. */
+#app .features-page :is(.features-hero,.features-top10,
+  .features-directory,.features-final){
+  background:#070b13!important;color:#f7faff!important;
+}
+#app .features-page .features-hero{
+  background:linear-gradient(160deg,#101a2a,#070b13)!important;
+  border-bottom:1px solid var(--ro-border)!important;
+}
+#app .features-page .features-hero :is(h1,h1 em){
+  color:#f5faff!important;-webkit-text-fill-color:currentColor!important;
+}
+#app .features-page .features-hero p{color:var(--ro-muted)!important}
+#app .features-page :is(.features-directory-head h2,.features-final-card h2){
+  color:#f7faff!important;
+}
+#app .features-page :is(.feature-item,.feature-category,.features-hero-stats>div){
+  background:#121c2b!important;border:1px solid var(--ro-border)!important;
+  color:#f8fbff!important;box-shadow:none!important;
+  border-radius:17px!important;
+}
+#app .features-page .feature-category[open]{border-color:rgba(191,217,251,.48)!important}
+#app .features-page :is(.feature-category summary,.feature-item b,.feature-category-copy h2){
+  color:#f6faff!important;
+}
+#app .features-page :is(.feature-category-copy p,.feature-item-number,.feature-plan-note){
+  color:var(--ro-muted)!important;
+}
+#app .features-page .features-final-card{
+  background:#132136!important;border:1px solid var(--ro-border)!important;
+  box-shadow:none!important;border-radius:23px!important;
+}
+/* Contact: only heading, explanation, three required form inputs and email. */
+#app .contact-page main,
+#app .contact-page .r-brand-contact-main{
+  background:#070b13!important;color:#f6f9ff!important;
+  padding:clamp(65px,7vw,115px) 0 clamp(86px,10vw,125px)!important;
+}
+#app .contact-page main .r-brand-contact-title{color:#f7faff!important}
+#app .contact-page main .r-brand-contact-label{color:var(--ro-blue)!important}
+#app .contact-page main .r-brand-contact-lead{color:var(--ro-muted)!important}
+#app .contact-page main :is(section:has(#homeContactForm),aside:has(a[href^="mailto:"])){
+  background:#111b2a!important;color:#f5faff!important;
+  border:1px solid var(--ro-border)!important;border-radius:21px!important;
+  box-shadow:none!important;
+}
+#app .contact-page main :is(section,aside) :is(h2,h3){color:#f7faff!important}
+#app .contact-page main aside p{color:#bdcbde!important}
+#app .contact-page .home-contact-form label{color:#e0eafa!important}
+#app .contact-page .home-contact-form :is(input,textarea){
+  background:#080f1c!important;border:1px solid rgba(162,194,237,.30)!important;
+  color:#f5faff!important;-webkit-text-fill-color:#f5faff!important;
+  width:100%;min-width:0;max-width:100%;font-size:16px!important;
+}
+#app .contact-page main aside a[href^="mailto:"]{color:#b4d3ff!important}
+/* Legal: do not hide the actual privacy/terms heading in favour of a
+   second large branded hero. Preserve all clauses and contact details. */
+#app .legalpage,
+#app .r-brand-legal.legalpage{
+  background:#080d17!important;color:#f5faff!important;
+  min-height:65svh;padding:0 0 clamp(70px,8vw,120px)!important;
+}
+#app .r-brand-legal .legal-layout{
+  max-width:1170px!important;
+  grid-template-columns:minmax(225px,.63fr) minmax(0,1.37fr)!important;
+  gap:clamp(22px,4vw,60px)!important;
+  padding-top:clamp(54px,6vw,95px)!important;
+}
+#app .r-brand-legal .legal-aside{
+  position:sticky;top:105px;display:block!important;min-width:0;
+}
+#app .r-brand-legal .legal-aside>.section-kicker,
+#app .r-brand-legal .legal-aside>h1,
+#app .r-brand-legal .legal-aside>p{
+  display:block!important;
+}
+#app .r-brand-legal .legal-aside>.section-kicker{
+  color:var(--ro-blue)!important;margin:0 0 14px!important;
+}
+#app .r-brand-legal .legal-aside>h1{
+  color:#f8fbff!important;font-size:clamp(30px,3.2vw,48px)!important;
+  line-height:1.12!important;letter-spacing:-.051em!important;
+  overflow-wrap:anywhere;margin:0 0 16px!important;
+}
+#app .r-brand-legal .legal-aside>p{
+  color:#bbcadf!important;font-size:15px;line-height:1.7;margin:0 0 23px!important;
+}
+#app .legalpage .r-brand-legal-toc{
+  background:#101b2b!important;border:1px solid var(--ro-border)!important;
+  border-radius:17px!important;padding:21px!important;box-shadow:none!important;
+  max-height:min(40svh,330px);overflow:auto;
+}
+#app .legalpage .r-brand-legal-toc .r-brand-mini-title{
+  color:#b2d4ff!important;margin-bottom:13px!important;
+}
+#app .legalpage .r-brand-toc-links a{
+  color:#d5e4f7!important;border-radius:8px!important;
+}
+#app .legalpage .r-brand-toc-links a span{color:#a6bbd6!important}
+#app .legalpage .r-brand-toc-links a:hover{
+  background:#1c304b!important;color:white!important;
+}
+#app .legalpage .legal-seller{
+  background:#111d2f!important;border:1px solid var(--ro-border)!important;
+  color:#e9f2ff!important;border-radius:16px!important;
+  box-shadow:none!important;
+}
+#app .legalpage .legal-seller :is(b,small,span){color:#d9e8fb!important}
+#app .legalpage .r-brand-legal-copy{
+  display:grid;gap:12px;
+  background:transparent!important;border:0!important;box-shadow:none!important;
+}
+#app .legalpage .r-brand-legal-copy>.r-brand-legal-section,
+#app .legalpage .legalcopy:not(.r-brand-legal-copy)>section{
+  background:#101a29!important;border:1px solid var(--ro-border)!important;
+  border-radius:18px!important;padding:clamp(23px,3vw,34px)!important;
+  box-shadow:none!important;margin:0!important;
+}
+#app .legalpage .r-brand-legal-copy>.r-brand-legal-section::before{
+  display:none!important;
+}
+#app .legalpage .legalcopy :is(h2,h3){
+  color:#f6faff!important;font-size:clamp(20px,2.1vw,27px)!important;
+}
+#app .legalpage .legalcopy :is(p,ul,ol,li){
+  color:#c9d7e9!important;line-height:1.8!important;
+  font-size:clamp(14px,1.18vw,16px)!important;overflow-wrap:anywhere;
+}
+#app .legalpage .legalcopy a{
+  color:#b9d8ff!important;text-decoration:underline!important;
+  text-underline-offset:3px;
+}
+#app .legalpage .legal-note{color:#b4c2d4!important}
+/* FAQ, local industries, SEO topics: retain useful existing content. */
+#app .seo-landing-page :is(.seo-landing-hero,.seo-landing-copy,
+  .ai-topic-body,.ai-topic-faq-area,.vertical-landing,.customer-bot-landing,
+  .seo-landing-closing){background:#080d17!important;color:#f5faff!important}
+#app .seo-landing-page :is(.seo-landing-hero,.customer-bot-hero,
+  .vertical-landing-hero,.ai-topic-hero){
+  background:linear-gradient(160deg,#111d30,#080d17)!important;
+}
+#app .seo-landing-page :is(.seo-landing-card,.seo-landing-intro,
+  .ai-topic-faq,.customer-bot-faq,.vertical-faq-item,.seo-landing-closing-card){
+  background:#121c2b!important;border:1px solid var(--ro-border)!important;
+  border-radius:17px!important;box-shadow:none!important;
+}
+#app .seo-landing-page :is(.ai-topic-prose p,.ai-topic-section p,
+  .customer-bot-faq p,.seo-landing-intro p,.vertical-faq-item p){
+  color:var(--ro-muted)!important;
+}
+#app .seo-landing-page :is(.ai-topic-section h2,.ai-topic-faq summary,
+  .customer-bot-faq summary,.vertical-faq-item summary){
+  color:#f5faff!important;
+}
+#app .global-guide-page .global-guide-main,
+#app .audience-hub :is(.audience-section,.audience-section--end){
+  background:#080d17!important;color:#f5faff!important;
+}
+#app .global-guide-page :is(.global-guide-card,.global-guide-section,.global-guide-faq),
+#app .audience-hub :is(.audience-card,.audience-cta-inner){
+  background:#121e2f!important;border:1px solid var(--ro-border)!important;
+  border-radius:19px!important;box-shadow:none!important;color:#f5faff!important;
+}
+#app .global-guide-page :is(.global-guide-card h3,.global-guide-section h2),
+#app .audience-hub :is(.audience-card h3,.audience-section-title h2){
+  color:#f5faff!important;
+}
+#app .global-guide-page :is(.global-guide-card p,.global-guide-section p),
+#app .audience-hub :is(.audience-card p,.audience-cta p){color:#bbcbdf!important}
+#app .audience-hub .audience-card-arrow{color:#bad8ff!important}
+#app .global-guide-page :is(.global-guide-crumb a,.global-guide-more){
+  color:#b9d7ff!important;
+}
+/* Auth: original card, essential fields and OAuth login stay as implemented. */
+#app :is(.formpage.login-page,.formpage.signup-page){
+  background:#080d17!important;min-height:65svh;
+}
+#app :is(.formpage.login-page,.formpage.signup-page) .formcard{
+  border:1px solid var(--ro-border)!important;border-radius:21px!important;
+  box-shadow:0 10px 40px rgba(0,0,0,.12)!important;
+}
+#app :is(.formpage.login-page,.formpage.signup-page) .login-copy h1{
+  color:#f6faff!important;
+}
+#app :is(.formpage.login-page,.formpage.signup-page) .login-copy p{
+  color:#bccadd!important;
+}
+#app :is(.formpage.login-page,.formpage.signup-page) .formcard :is(input,select,textarea){
+  min-width:0;max-width:100%;font-size:16px!important;
+}
+/* Footer is present but not an entire second navigation homepage. */
+#app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+  .global-guide-page,.audience-hub,.signup-dark-shell) .footer,
+#app:has(.legalpage) .footer,
+#app:has(.formpage.login-page) .footer{
+  background:#060a10!important;border-top:1px solid var(--ro-border)!important;
+  color:#eaf3ff!important;
+}
+#app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+  .global-guide-page,.audience-hub,.signup-dark-shell) .footer a,
+#app:has(.legalpage) .footer a,
+#app:has(.formpage.login-page) .footer a{color:#c9d9ed!important}
+/* Invalid routes receive the same visual shell without changing 404 behavior. */
+#app .notfound{
+  min-height:65svh;background:#080d17!important;
+  padding:clamp(76px,9vw,130px) 0;
+}
+@media(max-width:800px){
+  #app .pricing-page .pricing-wrap{grid-template-columns:minmax(0,1fr)!important}
+  #app .r-brand-legal .legal-layout{
+    grid-template-columns:minmax(0,1fr)!important;gap:20px!important;
+    padding-top:38px!important;
+  }
+  #app .r-brand-legal .legal-aside{position:relative;top:auto}
+  #app .legalpage .r-brand-legal-toc{max-height:180px}
+  #app .global-guide-page .global-guide-grid,
+  #app .audience-hub .audience-grid{grid-template-columns:minmax(0,1fr)!important}
+}
+@media(max-width:600px){
+  #app .pricing-page .pricing-section{padding:56px 0 90px!important}
+  #app .pricing-page .price-card{border-radius:19px!important}
+  #app .contact-page main>.container{width:calc(100% - 28px)!important}
+  #app .legalpage .r-brand-legal-copy>.r-brand-legal-section,
+  #app .legalpage .legalcopy:not(.r-brand-legal-copy)>section{
+    padding:22px 19px!important;
+  }
+  #app .legalpage .legal-aside>h1{font-size:clamp(28px,8vw,39px)!important}
+  #app .features-page .feature-category{border-radius:16px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  #app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+    .global-guide-page,.audience-hub,.legalpage) :is(a,button,summary){
+    transition:none!important;
+  }
+}
