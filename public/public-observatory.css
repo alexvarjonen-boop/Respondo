@@ -492,3 +492,19 @@ body.public-nav-active #app .nav .app-language-option[aria-pressed="true"]{
     transition:none!important;
   }
 }
+
+/* Unknown public routes inherit the same finished shell rather than reverting
+   to an unrelated light 404. */
+#app .notfound{
+  min-height:65svh;
+  padding:clamp(90px,12vw,160px) 0;
+  background:radial-gradient(ellipse 68% 70% at 65% 20%,rgba(66,111,198,.18),transparent 75%),#080d17!important;
+  color:#f5f9ff!important;
+}
+#app .notfound h1{color:#f5f9ff!important;line-height:1.12!important}
+#app .notfound .section-kicker{color:#a9d0ff!important}
+#app .notfound .btn.ink{
+  background:#c3ddff!important;border-color:#c3ddff!important;
+  color:#071726!important;-webkit-text-fill-color:#071726!important;
+  border-radius:999px!important;
+}
