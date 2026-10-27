@@ -3622,10 +3622,9 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
       let score=20;
       // A generic price format and matching page URL are not proof that
       // the price belongs to the service mentioned in conversation.
-      const evidenceTokens=evidence.split(/\s+/).filter(Boolean);
       let aliasHits=0;
       for(const token of aliases){
-        if(token.length>=3 && evidenceTokens.some(word=>word.startsWith(token))) aliasHits++;
+        if(token.length>=3 && evidence.includes(token)) aliasHits++;
       }
       if(!aliasHits) return null;
       score+=Math.min(70,aliasHits*18);
