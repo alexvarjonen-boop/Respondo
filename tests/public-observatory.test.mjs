@@ -9,7 +9,7 @@ const app=read('app.js');
 const homeTheme=read('home-observatory.css');
 
 test('Observatory skin is included after the existing public and home CSS',()=>{
-  assert.match(html,/public-observatory\.css\?v=20261027-all-public-v1/);
+  assert.match(html,/public-observatory\.css\?v=20261027-minimal-public-v2/);
   assert.ok(html.indexOf('/public-observatory.css?')>html.indexOf('/home-observatory.css?'));
   assert.ok(html.indexOf('/public-observatory.css?')>html.indexOf('/respondo-unified-brand.css?'));
   assert.match(homeTheme,/Observatory v2/);
@@ -21,7 +21,7 @@ test('Every first-party public route family is styled, including localized priva
     '.global-guide-page','.audience-hub','.legalpage',
     '.r-brand-legal-toc','.r-brand-legal-copy','.formpage.login-page',
     '.formpage.signup-page','.notfound','.customer-bot-landing',
-    '.ai-topic-page','.vertical-landing'
+    '.ai-topic-body','.vertical-landing'
   ]) {
     assert.ok(css.includes(selector),'Missing family '+selector);
   }
@@ -36,8 +36,8 @@ test('Legal wording and UI functionality are untouched: visual-only CSS, readabl
   assert.match(css,/#app \.legalpage \.legalcopy :is\(p,ul,ol,li\)/);
   assert.match(css,/#app \.legalpage \.legalcopy :is\(h2,h3\)/);
   assert.match(css,/#app \.legalpage \.r-brand-toc-links a/);
-  assert.match(css,/color:#c9d6e9!important/);
-  assert.match(css,/--ro-text:#f6f9ff/);
+  assert.match(css,/color:var\(--ro-muted\)!important/);
+  assert.match(css,/--ro-white:#f7faff/);
   assert.doesNotMatch(css,/\.appshell|\.dashboard-page|\.workspace-page|\.apple-home-page/);
   assert.doesNotMatch(css,/@keyframes|scrollTo\(|preventDefault\(/);
   assert.ok((css.match(/{/g)||[]).length===(css.match(/}/g)||[]).length);
