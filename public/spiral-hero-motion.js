@@ -29,7 +29,7 @@
     raf = 0;
     if (section) {
       section.classList.remove('rs-enhanced', 'rs-fixed-fallback', 'rs-fixed-end', 'rs-intro-past');
-      section.style.removeProperty('--rs-progress');
+      for (const key of ['--rs-progress','--rs-light-shift','--rs-light-scale','--rs-light-strength']) section.style.removeProperty(key);
       for (const icon of icons) icon.classList.remove('is-active');
       for (const card of cards) {
         card.classList.remove('rs-in-scene');
@@ -155,6 +155,11 @@
     section.style.setProperty('--rs-grid-shift', (-10 * position).toFixed(1) + 'px');
     section.style.setProperty('--rs-haze-scale', (1 + .1 * position).toFixed(3));
     section.style.setProperty('--rs-haze-opacity', (.9 - .06 * position).toFixed(3));
+    // One static radial-light layer changes only compositor-friendly transforms,
+    // making each chapter feel photographed from a new camera angle.
+    section.style.setProperty('--rs-light-shift', (Math.sin(position * .82) * (mobile ? 20 : 72)).toFixed(1) + 'px');
+    section.style.setProperty('--rs-light-scale', (1 + Math.sin(position * .54) * .065).toFixed(3));
+    section.style.setProperty('--rs-light-strength', (.68 + .13 * Math.cos(position * .72)).toFixed(3));
     section.style.setProperty('--rs-sweep-x', (-85 + position * 22).toFixed(1) + '%');
     section.style.setProperty('--rs-art-rotation', (-16 * position).toFixed(2) + 'deg');
     section.style.setProperty('--rs-art-scale', (1 + .075 * position).toFixed(3));

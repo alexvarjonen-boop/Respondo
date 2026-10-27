@@ -57,10 +57,24 @@ export function spiralHeroMarkup(t, lang) {
     '<path d="M4 10V5h6M20 14v5h-6M4 5l6 6M20 19l-6-6M12 4h7a2 2 0 0 1 2 2v4M12 20H5a2 2 0 0 1-2-2v-4"/>', // website import
     '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18m-12 5 2 2 4-4"/>' // booking
   ];
+  // Distinct monochrome technical illustrations complement the same chapter icon.
+  // SVG stays inline, decorative and never loads external media.
+  const sceneSignatures = [
+    '<circle cx="400" cy="300" r="268" stroke-dasharray="1 26"/><path d="M400 42V74 M400 526V558 M142 300h32 M626 300h32"/>',
+    '<ellipse cx="400" cy="300" rx="242" ry="74"/><ellipse cx="400" cy="300" rx="94" ry="242"/><path d="M158 300h484 M400 58v484"/>',
+    '<path d="M165 166L332 226L481 133L630 274L523 433L283 468L165 166 M332 226l-49 242 M481 133l42 300"/><circle cx="165" cy="166" r="7"/><circle cx="523" cy="433" r="7"/>',
+    '<path d="M144 471H655 M144 471V151 M171 414l111-77 96 42 111-153 126-64"/><path d="M579 162h36v36"/><circle cx="282" cy="337" r="8"/><circle cx="489" cy="226" r="8"/>',
+    '<path d="M400 60L340 250H475L372 541 M270 110L221 205 M571 177L615 98 M215 433L145 485 M604 410L653 462"/>',
+    '<path d="M214 226L400 122L586 226L400 330Z M214 313L400 417L586 313 M214 398L400 502L586 398"/><path d="M400 330v87" stroke-dasharray="5 11"/>',
+    '<path d="M155 146H645L505 301V445L402 510V301Z"/><circle cx="272" cy="221" r="9"/><circle cx="523" cy="220" r="9"/><path d="M230 386h88 M230 410h63"/>',
+    '<rect x="195" y="98" width="410" height="404" rx="25"/><path d="M236 180h325 M236 240h325 M236 300h325 M236 360h325 M236 420h325 M298 135v325 M400 135v325 M503 135v325"/>',
+    '<rect x="168" y="130" width="464" height="340" rx="20"/><path d="M168 198h464 M242 250h162 M242 296h220 M242 342h119"/><circle cx="568" cy="294" r="42"/>',
+    '<rect x="206" y="140" width="388" height="326" rx="18"/><path d="M206 226h388 M287 111v62 M514 111v62 M261 292h58 M363 292h58 M465 292h58 M261 361h58 M363 361h58"/><path d="m472 385 25 26 49-54"/>',
+  ];
   const arrow = 'M 238.0 66.1 L 235.2 64.9 L 183.6 84.5 L 182.6 86.0 L 183.3 87.8 L 201.2 92.1 L 201.7 94.4 L 138.0 153.1 L 133.2 154.3 L 128.6 152.6 L 109.0 130.9 L 103.7 126.6 L 97.4 124.6 L 90.8 125.1 L 82.8 129.4 L 20.5 180.0 L 18.0 183.6 L 18.8 188.6 L 22.3 191.1 L 27.6 190.1 L 87.6 143.2 L 90.6 142.0 L 96.6 143.5 L 123.1 171.5 L 128.6 173.5 L 133.7 173.5 L 140.5 171.0 L 213.1 103.9 L 215.8 104.9 L 223.4 119.6 L 224.9 120.8 L 226.9 120.3 Z';
   return `<section class="apple-hero rs-spiral-section" id="features" aria-labelledby="apple-home-title" data-rs-spiral data-rs-mode="fullscreen" style="--rs-chapter-count:${cards.length};--rs-scroll-height:${cards.length*100}svh">
     <div class="rs-spiral-stage">
-      <div class="rs-space" aria-hidden="true"><div class="rs-studio-grid"></div><div class="rs-studio-haze"></div><div class="rs-studio-sweep"></div><div class="rs-space-glow"></div><div class="rs-space-ellipse rs-space-ellipse-a"></div><div class="rs-space-ellipse rs-space-ellipse-b"></div><div class="rs-space-horizon"></div></div>
+      <div class="rs-space" aria-hidden="true"><div class="rs-studio-grid"></div><div class="rs-studio-haze"></div><div class="rs-studio-sweep"></div><div class="rs-space-glow"></div><div class="rs-space-ellipse rs-space-ellipse-a"></div><div class="rs-space-ellipse rs-space-ellipse-b"></div><div class="rs-space-horizon"></div><div class="rs-kinetic-light"></div></div>
       <div class="rs-spiral-heading">
         <div class="rs-hero-eyebrow">RESPONDO AI <span aria-hidden="true">/</span> ${t('AINA VALMIINA','ALLTID REDO','ALWAYS READY')}</div>
         <h1 id="apple-home-title">${t('Älykkäämpää','Smartare','Smarter')} <span>${t('asiakaspalvelua.','kundservice.','customer service.')}</span></h1>
@@ -75,7 +89,7 @@ export function spiralHeroMarkup(t, lang) {
         <div class="rs-orbit-beacon" aria-hidden="true"></div>
         <div class="rs-spiral-cards" role="list">
           ${cards.map(([metric,title,copy,number],i)=>`<article class="rs-spiral-card${i===0?' rs-front':''}" role="listitem" data-rs-card data-index="${i}" data-rs-next-label="${nextCues[i]}">
-            <div class="rs-studio-card-art rs-studio-scene-${i+1}" aria-hidden="true"><svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" focusable="false"><circle cx="400" cy="300" r="224" stroke-dasharray="5 12"/><circle cx="400" cy="300" r="156"/><ellipse cx="400" cy="300" rx="300" ry="140" transform="rotate(-21 400 300)"/><path d="M92 300H708M400 28V572"/><circle cx="178" cy="300" r="10"/><circle cx="624" cy="300" r="10"/><circle cx="400" cy="77" r="10"/><circle cx="400" cy="524" r="10"/><g class="rs-scene-glyph" transform="translate(296 196) scale(8.67)" stroke-linecap="round" stroke-linejoin="round">${iconPaths[i]}</g></svg><span class="rs-studio-core"></span></div>
+            <div class="rs-studio-card-art rs-studio-scene-${i+1}" aria-hidden="true"><svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" focusable="false"><circle cx="400" cy="300" r="224" stroke-dasharray="5 12"/><circle cx="400" cy="300" r="156"/><ellipse cx="400" cy="300" rx="300" ry="140" transform="rotate(-21 400 300)"/><path d="M92 300H708M400 28V572"/><circle cx="178" cy="300" r="10"/><circle cx="624" cy="300" r="10"/><circle cx="400" cy="77" r="10"/><circle cx="400" cy="524" r="10"/><g class="rs-scene-signature">${sceneSignatures[i]}</g><g class="rs-scene-glyph" transform="translate(296 196) scale(8.67)" stroke-linecap="round" stroke-linejoin="round">${iconPaths[i]}</g></svg><span class="rs-studio-core"></span></div>
             <div class="rs-spiral-card-kicker"><span>RESPONDO / ${number}</span><i aria-hidden="true"></i></div>
             <div class="rs-spiral-metric">${metric}</div>
             <h2>${title}</h2><p>${copy}</p>

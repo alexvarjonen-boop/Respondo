@@ -47,7 +47,8 @@ export async function checkSite(origin = defaultOrigin) {
   }
 
   for (const lang of ['fi', 'sv', 'en']) {
-    const path = '/verkkokauppa-chatbot' + (lang === 'fi' ? '' : '?lang=' + lang);
+    // English is the public default; Finnish and Swedish use explicit ?lang.
+    const path = '/verkkokauppa-chatbot' + (lang === 'en' ? '' : '?lang=' + lang);
     const { body } = await request(origin, path);
     assert.match(body, new RegExp('<html\\s+lang=["\']' + lang + '["\']', 'i'), path + ' must return localized SSR HTML');
     assert.match(body, /<h1\b/i, path + ' must include crawlable H1');
