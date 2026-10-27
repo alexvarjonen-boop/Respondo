@@ -9,7 +9,7 @@ for(const [lang,i,label] of [['fi',0,'Paketit alk. 49 €/kk'],['sv',1,'Paket fr
     const markup=spiralHeroMarkup((...v)=>v[i],lang);
     assert.ok(markup.includes(label));
     assert.match(markup,/class="rs-first-order-link" href="#pricing"/);
-    assert.equal((markup.match(/data-rs-card\\b/g)||[]).length,10);
+    assert.equal((markup.match(/data-rs-card\b/g)||[]).length,10);
     assert.doesNotMatch(markup,/rs-hero-talk|data-open-site-assistant|Ask Respondo|data-respondo-hero-cta/);
   });
   test('crawlable pricing in '+lang+' lets every plan be ordered without client JavaScript',()=>{
@@ -24,12 +24,12 @@ for(const [lang,i,label] of [['fi',0,'Paketit alk. 49 €/kk'],['sv',1,'Paket fr
 }
 test('SPA checkout pricing paths, annual disclosure, and gentle alternate next actions are preserved',()=>{
   const app=read('app.js'),index=read('index.html'),css=read('home-observatory.css'),buyers=read('first-order.css');
-  assert.match(app,/card\\('Advanced',49/);
-  assert.match(app,/card\\('Premium',129/);
-  assert.match(app,/card\\('Enterprise',149/);
+  assert.match(app,/card\('Advanced',49/);
+  assert.match(app,/card\('Premium',129/);
+  assert.match(app,/card\('Enterprise',149/);
   assert.match(app,/pricing-assist-links/);
-  assert.match(index,/first-order\\.css\\?v=20261027-first-customer-v1/);
-  assert.match(index,/app\\.js\\?v=[^"]+-first-order-v1/);
+  assert.match(index,/first-order\.css\?v=20261027-first-customer-v1/);
+  assert.match(index,/app\.js\?v=[^"]+-first-order-v1/);
   assert.match(css,/rs-first-order-link/);
   assert.match(buyers,/seo-pricing-buy/);
   assert.doesNotMatch(buyers,/@keyframes|scroll-snap-type/);
