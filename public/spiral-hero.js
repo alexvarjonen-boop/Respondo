@@ -76,7 +76,7 @@ export function spiralHeroMarkup(t, lang) {
     <div class="rs-spiral-stage">
       <div class="rs-space" aria-hidden="true"><div class="rs-studio-grid"></div><div class="rs-studio-haze"></div><div class="rs-studio-sweep"></div><div class="rs-space-glow"></div><div class="rs-space-ellipse rs-space-ellipse-a"></div><div class="rs-space-ellipse rs-space-ellipse-b"></div><div class="rs-space-horizon"></div><div class="rs-kinetic-light"></div></div>
       <div class="rs-spiral-heading">
-        <div class="rs-hero-eyebrow">RESPONDO AI <span aria-hidden="true">/</span> ${t('AINA VALMIINA','ALLTID REDO','ALWAYS READY')}</div>
+        <div class="rs-hero-eyebrow">RESPONDO AI <span aria-hidden="true">/</span> 24/7</div>
         <h1 id="apple-home-title">${t('Älykkäämpää','Smartare','Smarter')} <span>${t('asiakaspalvelua.','kundservice.','customer service.')}</span></h1>
         <p class="rs-hero-description">${t('AI-asiakaspalvelija, joka vastaa yrityksesi asiakkaiden kysymyksiin vuorokauden ympäri.','AI-kundservice som svarar dina kunder dygnet runt.','AI customer service that answers your customers, around the clock.')}</p>
         <a class="rs-first-order-link" href="#pricing" aria-label="${t('Katso Respondo AI:n paketit alkaen 49 euroa kuukaudessa','Se Respondo AI:s paket från 49 euro per månad','See Respondo AI plans from 49 euros per month')}">
