@@ -425,3 +425,36 @@
   #app .apple-home-page .rs-spiral-bottom::before,
   #app .apple-home-page .rs-spiral-bottom::after{display:none!important}
 }
+
+/* The earlier 280px-wide floating chat launcher covered feature headlines on
+   real iPhones. Keep the product accessible, but collapse only this home
+   launcher to its approved mark. The full chat opens from the same button. */
+@media(max-width:600px){
+  body:has(#app .apple-home-page) .fx-assistant-launch{
+    width:60px!important;height:60px!important;
+    right:12px!important;bottom:16px!important;
+    padding:7px!important;border-radius:50%!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;gap:0!important;
+    border:1px solid rgba(192,216,255,.36)!important;
+    background:#f8fbff!important;
+    box-shadow:0 12px 32px rgba(0,0,0,.37),0 0 0 5px rgba(157,194,254,.065)!important;
+  }
+  body:has(#app .apple-home-page) .fx-assistant-launch > span,
+  body:has(#app .apple-home-page) .fx-assistant-launch > b{display:none!important}
+  body:has(#app .apple-home-page) .fx-assistant-launch i{
+    width:44px!important;height:44px!important;border-radius:50%!important;
+    background:#06080d!important;flex:0 0 44px;
+  }
+  body:has(#app .apple-home-page):has(.fx-assistant.open) .fx-assistant-launch{
+    opacity:0!important;pointer-events:none!important;
+  }
+  body:has(#app .apple-home-page) .fx-assistant{
+    right:10px!important;bottom:11px!important;
+    width:calc(100vw - 20px)!important;
+    height:min(660px,calc(100dvh - 110px))!important;
+    max-height:calc(100dvh - 110px)!important;
+  }
+  body:has(#app .apple-home-page) .fx-chat-nav-hint:not([hidden]){
+    bottom:91px!important;right:7px!important;
+  }
+}
