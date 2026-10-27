@@ -3580,8 +3580,10 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
   };
   const ignored=new Set([
     'teetteko','leikkaatteko','onko','teilla','teillä','mita','mitä','palvelua','palvelu',
-    'do','you','offer','have','a','an','the','service','services',
-    'har','ni','vanlig','tjanst','tjänst'
+    'paljonko','maksaa','hinta','kuinka','miten','voiko','voinko','saako','saanko','entapa',
+    'do','you','offer','have','a','an','the','service','services','can','could','would',
+    'how','much','what','does','is','it','that','this','are','your','we','they','with','and',
+    'har','ni','vanlig','tjanst','tjänst','kan','vad','hur','kostar','det','den','och','pris'
   ]);
   for(const word of previous.split(/\s+/)){
     if(ignored.has(word)) continue;
@@ -3590,6 +3592,12 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
     if(/hair|cut|barber/.test(word)) ['leikka','hius','hair','cut','klipp','mcut'].forEach(addAlias);
     if(/klipp|hår|har$/.test(word)) ['leikka','hius','hair','cut','klipp','mcut'].forEach(addAlias);
     if(/parta|beard|skagg|skägg/.test(word)) ['parta','beard','skagg','mbeard'].forEach(addAlias);
+    // Translate the service subject only, never infer monetary values.
+    if(/ikkun|window|fonster|fönster/.test(word)) ['ikkun','window','fonster'].forEach(addAlias);
+    if(/katto|katon|roof|tak$/.test(word)) ['katto','katon','roof'].forEach(addAlias);
+    if(/puhdist|pesu|pese|clean|wash|rengor|rengör|tvatt|tvätt/.test(word)) ['pesu','puhdist','clean','wash','rengor','tvatt'].forEach(addAlias);
+    if(/muutto|moving|flytt/.test(word)) ['muutto','moving','flytt'].forEach(addAlias);
+    if(/kuljet|transport/.test(word)) ['kuljet','transport'].forEach(addAlias);
   }
 
   const serviceSources=new Set(
@@ -3612,10 +3620,14 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
       const evidence=normalizeSearchText(String(row?.title||'')+' '+answer);
       if(!/[€$£]|\b\d+(?:[.,]\d+)?\s*(?:eur|usd|sek|nok|dkk|kr)\b/i.test(answer)) return null;
       let score=20;
+      // A generic price format and matching page URL are not proof that
+      // the price belongs to the service mentioned in conversation.
+      const evidenceTokens=evidence.split(/\s+/).filter(Boolean);
       let aliasHits=0;
       for(const token of aliases){
-        if(token.length>=3 && evidence.includes(token)) aliasHits++;
+        if(token.length>=3 && evidenceTokens.some(word=>word.startsWith(token))) aliasHits++;
       }
+      if(!aliasHits) return null;
       score+=Math.min(70,aliasHits*18);
       if(serviceSources.has(String(row?.source_url||row?.sourceUrl||''))) score+=12;
       if(answer.length<=80) score+=22;
@@ -4729,13 +4741,12 @@ function contextualizeConversationQuery(message, history = []) {
 
   const previousTurn=meaningfulConversationTurn(history);
   const previous=previousTurn?.question||'';
-  const previousAnswer=previousTurn?.answer||'';
 
   const correction=q.match(/^(?:ei vaan|eikun|ei kun|tarkoitin|siis tarkoitin|siis ei|actually|no i mean|i mean|i meant|sorry i meant|nej jag menar|jag menade|alltsa jag menar)\s+(.+)$/);
   if (correction) {
     const rest=correction[1].trim();
     const referencesPrevious=/\b(?:se|sen|sita|siita|sama|toi|tuo|it|that|this|same|det|den|detta|samma)\b/.test(rest);
-    if (referencesPrevious && previous) return [previous,previousAnswer.slice(0,180),rest].filter(Boolean).join(' ');
+    if (referencesPrevious && previous) return [previous,rest].filter(Boolean).join(' ');
     return rest;
   }
 
@@ -4783,10 +4794,11 @@ function contextualizeConversationQuery(message, history = []) {
     return rest+' '+hints[previousTopic];
   }
 
-  // For pronouns and terse ellipsis, include the previous customer question and
-  // a short slice of the previous grounded answer. That lets "entä viikonloppuna?",
-  // "saako sitä punaisena?" and "miksi?" inherit the actual subject.
-  return [previous,previousAnswer.slice(0,180),q].filter(Boolean).join(' ');
+  // Previous assistant output is not evidence. Carry only the last customer
+  // question and the new reference; facts must always be selected afresh from
+  // this tenant's approved rows. This prevents stale or incorrect previous
+  // responses from contaminating product, price or service retrieval.
+  return [previous,q].filter(Boolean).join(' ');
 }
 
 function bookingLinkLooksLikeContactForm(raw) {
