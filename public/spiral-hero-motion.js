@@ -28,7 +28,7 @@
     if (raf) cancelAnimationFrame(raf);
     raf = 0;
     if (section) {
-      section.classList.remove('rs-enhanced', 'rs-fixed-fallback', 'rs-fixed-end');
+      section.classList.remove('rs-enhanced', 'rs-fixed-fallback', 'rs-fixed-end', 'rs-intro-past');
       section.style.removeProperty('--rs-progress');
       for (const icon of icons) icon.classList.remove('is-active');
       for (const card of cards) {
@@ -60,6 +60,7 @@
   function updateStep(index) {
     if (index === currentStep) return;
     currentStep = index;
+    section.classList.toggle('rs-intro-past', index > 0);
     const counter = section.querySelector('[data-rs-step]');
     if (counter) counter.textContent = String(index + 1).padStart(2, '0');
     const announced = section.querySelector('[data-rs-announcement]');
