@@ -17,7 +17,7 @@ for (const [lang,index,expected] of [
     assert.match(markup, /class="rs-orbit-beacon" aria-hidden="true"/);
     assert.match(markup, /data-rs-next/);
     assert.ok(markup.includes(expected));
-    assert.ok(markup.includes(t('AINA VALMIINA','ALLTID REDO','ALWAYS READY')));
+    assert.ok(markup.includes('RESPONDO AI <span aria-hidden="true">/</span> 24/7'));
     assert.ok(markup.includes(t('HINNAT','PRISER','PRICING')));
     assert.doesNotMatch(markup,/rs-hero-talk|Ask Respondo|data-open-site-assistant/);
   });
