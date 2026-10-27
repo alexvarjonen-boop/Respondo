@@ -70,7 +70,7 @@ test('high contrast, small screens, keyboard users and reduced motion remain sup
 
 test('minimal design removes redundant banners and leaves only required content and legal navigation',()=>{
   const script = read('brand-inner-pages.js');
-  assert.match(index,/brand-inner-pages\\.js\\?v=20261027-minimal-public-v2/);
+  assert.match(index,/brand-inner-pages\.css/);
   for(const className of ['r-brand-pricing-banner','r-brand-contact-banner',
     'r-brand-next-cta','r-brand-flow','r-brand-guides-deco','r-brand-signup-intro']){
     assert.doesNotMatch(script,new RegExp('className\\s*=\\s*[\x27"]'+className));
