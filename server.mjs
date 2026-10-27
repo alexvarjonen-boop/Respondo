@@ -3872,6 +3872,22 @@ function openingHoursRequestedDay(message) {
   return null;
 }
 
+// Resolve a single named day or an explicitly requested day pair. Weekend
+// queries must cover both Saturday and Sunday; never silently answer only
+// Saturday when the visitor asks about the full weekend.
+function openingHoursRequestedDays(message) {
+  const q=normalizeSearchText(message);
+  if(/\b(?:viikonlopp\w*|weekends?|helgen|helger|veckoslut\w*)\b/.test(q)){
+    return OPENING_HOUR_DAYS.slice(5);
+  }
+  const tokens=new Set(q.split(/\s+/).filter(Boolean));
+  const named=OPENING_HOUR_DAYS.filter(day=>
+    day.aliases.some(alias=>tokens.has(normalizeSearchText(alias))));
+  // A weekday range ("Ma-Pe") is a summary request, not two questions.
+  if(named.length>1 && /\b(?:ja|seka|and|och)\b/.test(q)) return named;
+  return named.slice(0,1);
+}
+
 function openingHourDayForAlias(value) {
   const key=normalizeSearchText(value);
   return OPENING_HOUR_DAYS.find((day)=>day.aliases.some((alias)=>normalizeSearchText(alias)===key)) || null;
@@ -3953,7 +3969,7 @@ function directOpeningHoursAnswer(rows,message,lang='fi') {
   if(!hourRows.length) return null;
 
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
-  const asked=openingHoursRequestedDay(message);
+  const requestedDays=openingHoursRequestedDays(message);
   const label=(day)=>day?.[target] || '';
   const localizedClosed=target==='en'?'Closed':target==='sv'?'Stängt':'Suljettu';
 
@@ -3964,19 +3980,41 @@ function directOpeningHoursAnswer(rows,message,lang='fi') {
     }
   }
 
-  if(asked){
-    const match=parsed.find((item)=>item.day?.key===asked.key && item.value);
-    if(match){
-      const value=match.value==='closed'?localizedClosed:match.value;
-      return {
-        answer:label(asked)+': '+value+'.',
-        handoff:false,
-        confidence:1,
-        intent:'Aukioloajat',
-        sourceIds:[match.row.id].filter(Boolean),
-        selected:[match.row],
-      };
+  if(requestedDays.length){
+    const confirmed=[];
+    const unresolved=[];
+    for(const day of requestedDays){
+      const candidates=parsed.filter(item=>item.day?.key===day.key && item.value);
+      const values=[...new Set(candidates.map(item=>item.value))];
+      // Absence is not evidence that the store is closed. Conflicting published
+      // times also require confirmation rather than silently choosing a row.
+      if(values.length!==1) {
+        unresolved.push(day);
+        continue;
+      }
+      confirmed.push({
+        day,value:values[0],
+        rows:candidates.filter(item=>item.value===values[0]).map(item=>item.row),
+      });
     }
+    const stated=confirmed.map(item=>
+      label(item.day)+': '+(item.value==='closed'?localizedClosed:item.value)+'.');
+    const uncertain=unresolved.map(day=>
+      target==='en'
+        ? label(day)+': opening hours could not be verified from the company information.'
+        : target==='sv'
+          ? label(day)+': öppettiderna kunde inte bekräftas utifrån företagets uppgifter.'
+          : label(day)+': aukioloaikoja ei voitu varmistaa yrityksen tiedoista.');
+    const evidence=[...new Map(confirmed.flatMap(item=>item.rows)
+      .map(row=>[String(row.id||row.source_url||row.answer),row])).values()];
+    return {
+      answer:[...stated,...uncertain].join(' '),
+      handoff:unresolved.length>0,
+      confidence:unresolved.length ? confirmed.length?0.35:0.2 : 1,
+      intent:'Aukioloajat',
+      sourceIds:[...new Set(evidence.map(row=>row.id).filter(Boolean))],
+      selected:evidence,
+    };
   }
 
   const unique=[];
@@ -11815,7 +11853,7 @@ async function appendChatMessage({
 // reply with a generic failure message at the transport layer.
 function hasVerifiedPartialAnswer(result) {
   return Boolean(result?.handoff &&
-    ['Useita kysymyksiä','Flera frågor','Multiple questions'].includes(result.intent) &&
+    ['Useita kysymyksiä','Flera frågor','Multiple questions','Aukioloajat'].includes(result.intent) &&
     Array.isArray(result.sourceIds) && result.sourceIds.length>0 &&
     typeof result.answer==='string' && result.answer.trim());
 }
