@@ -17,7 +17,7 @@ test('v14 corrects the legacy hero CTA text sizing in all three languages', () =
     assert.equal((hero.match(/class="rs-first-order-link"/g) || []).length, 1);
     assert.match(hero, /href="#pricing"/);
     assert.ok(hero.includes(label));
-    assert.match(hero, /class="rs-first-order-link"[^>]*><span>[^<]+<\/span>\s*<\/a>/);
+    assert.match(hero, /class="rs-first-order-link"[^>]*>\s*<span>[^<]+<\/span>\s*<\/a>/);
   }
 });
 
