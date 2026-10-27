@@ -413,7 +413,7 @@ const ecommerceSites=[
     storefrontLimit:500,
     minFacts:12,
     mustContain:[
-      ['product',/JAG Satin (?:Black|Bronze|Steel)/i],
+      ['product',/JAG (?:Satin (?:Black|Bronze|Steel)|J1 Blade Putter\s*[-–]\s*(?:Black|Bronze|Steel))/i],
       ['shipping threshold',/free shipping.{0,80}280\s*€/i],
       ['delivery time',/3\s*[-–]\s*5\s+business days|3\s*[-–]\s*6\s+days/i],
       ['returns',/return within\s+45\s+days|45\s+days/i],
@@ -423,9 +423,9 @@ const ecommerceSites=[
       {label:'products-fi',lang:'fi',message:'Mitä puttereita teillä on myynnissä?',expect:/JAG|putter/i},
       {label:'products-en',lang:'en',message:'Which putters do you sell?',expect:/JAG|putter/i},
       {label:'products-sv',lang:'sv',message:'Vilka putters säljer ni?',expect:/JAG|putter/i},
-      {label:'black-price-fi',lang:'fi',message:'Paljonko JAG Satin Black maksaa?',productPriceTitle:'JAG Satin Black'},
-      {label:'black-price-en',lang:'en',message:'How much is the JAG Satin Black putter?',productPriceTitle:'JAG Satin Black'},
-      {label:'black-price-sv',lang:'sv',message:'Vad kostar JAG Satin Black-puttern?',productPriceTitle:'JAG Satin Black'},
+      {label:'black-price-fi',lang:'fi',message:'Paljonko JAG J1 Blade Putter – Black maksaa?',productPriceTitle:'JAG J1 Blade Putter – Black'},
+      {label:'black-price-en',lang:'en',message:'How much is the JAG J1 Blade Putter – Black putter?',productPriceTitle:'JAG J1 Blade Putter – Black'},
+      {label:'black-price-sv',lang:'sv',message:'Vad kostar JAG J1 Blade Putter – Black-puttern?',productPriceTitle:'JAG J1 Blade Putter – Black'},
       {label:'shipping-cost-fi',lang:'fi',message:'Paljonko toimitus maksaa?',expect:/280|ilmain|free/i},
       {label:'shipping-cost-en',lang:'en',message:'How much does shipping cost?',expect:/280|free/i},
       {label:'shipping-cost-sv',lang:'sv',message:'Vad kostar frakten?',expect:/280|gratis|free/i},
@@ -438,14 +438,14 @@ const ecommerceSites=[
       {label:'location-fi',lang:'fi',message:'Missä yritys sijaitsee?',expect:/Turku|Finland|Suom/i},
       {label:'location-en',lang:'en',message:'Where are you based?',expect:/Turku|Finland/i},
       {label:'location-sv',lang:'sv',message:'Var finns företaget?',expect:/Turku|Finland|Finland/i},
-      {label:'followup-fi',lang:'fi',message:'Paljonko musta putteri maksaa?',productPriceTitle:'JAG Satin Black',followups:[
-        {label:'followup-bronze-fi',lang:'fi',message:'Entä pronssinen?',productPriceTitle:'JAG Satin Bronze'},
+      {label:'followup-fi',lang:'fi',message:'Paljonko musta putteri maksaa?',productPriceTitle:'JAG J1 Blade Putter – Black',followups:[
+        {label:'followup-bronze-fi',lang:'fi',message:'Entä pronssinen?',productPriceTitle:'JAG J1 Blade Putter – Bronze'},
       ]},
-      {label:'followup-en',lang:'en',message:'How much is the black putter?',productPriceTitle:'JAG Satin Black',followups:[
-        {label:'followup-bronze-en',lang:'en',message:'What about the bronze one?',productPriceTitle:'JAG Satin Bronze'},
+      {label:'followup-en',lang:'en',message:'How much is the black putter?',productPriceTitle:'JAG J1 Blade Putter – Black',followups:[
+        {label:'followup-bronze-en',lang:'en',message:'What about the bronze one?',productPriceTitle:'JAG J1 Blade Putter – Bronze'},
       ]},
-      {label:'followup-sv',lang:'sv',message:'Vad kostar den svarta puttern?',productPriceTitle:'JAG Satin Black',followups:[
-        {label:'followup-bronze-sv',lang:'sv',message:'Och den bronsfärgade?',productPriceTitle:'JAG Satin Bronze'},
+      {label:'followup-sv',lang:'sv',message:'Vad kostar den svarta puttern?',productPriceTitle:'JAG J1 Blade Putter – Black',followups:[
+        {label:'followup-bronze-sv',lang:'sv',message:'Och den bronsfärgade?',productPriceTitle:'JAG J1 Blade Putter – Bronze'},
       ]},
     ],
   },
