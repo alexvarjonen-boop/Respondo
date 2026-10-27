@@ -1,0 +1,184 @@
+/* RESPONDO AI / Observatory OS · workspace refinement v10.
+   Applies only to public demo + authenticated company dashboard.
+   Preserve the light editor/chat inputs for legibility. No JS/layout traps. */
+body:has(#app .dashboard-premium-shell){
+  background:#070e1c!important;
+}
+#app .dashboard-premium-shell.dashboard-simple-shell{
+  --rs-os-ink:#f4f8ff;
+  --rs-os-muted:#b4c8e7;
+  --rs-os-border:rgba(175,212,255,.22);
+  background:
+    radial-gradient(ellipse 82% 520px at 54% 0%,rgba(50,111,197,.19),transparent 73%),
+    linear-gradient(180deg,#0b1527 0%,#081120 56%,#07101d 100%)!important;
+  color:var(--rs-os-ink)!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main{
+  max-width:1180px!important;
+  min-width:0!important;
+}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer{
+  border-radius:16px!important;
+  border:1px solid rgba(175,212,255,.20)!important;
+  background:linear-gradient(115deg,#152941,#0b1b31)!important;
+  box-shadow:0 12px 36px rgba(0,7,22,.24),inset 0 1px rgba(230,243,255,.06)!important;
+}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .dashboard-menu-toggle{
+  min-height:44px!important;
+  background:rgba(160,204,255,.12)!important;
+  border:1px solid rgba(190,224,255,.29)!important;
+  color:#f2f8ff!important;
+}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer .dashboard-menu-label{
+  color:#edf5ff!important;font-weight:760!important;letter-spacing:.01em;
+}
+/* The first screen is a product workspace, not an empty splash screen. */
+#app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]{
+  background:
+    radial-gradient(ellipse 74% 90% at 95% 4%,rgba(76,144,233,.20),transparent 73%),
+    linear-gradient(145deg,#162d4c 0%,#0d203a 75%,#0c1b30 100%)!important;
+  border:1px solid rgba(184,217,255,.21)!important;
+  border-radius:22px!important;
+  box-shadow:0 16px 44px rgba(0,7,25,.20)!important;
+}
+#app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]::before{
+  width:66px!important;background:linear-gradient(90deg,#b4d9ff,transparent)!important;
+}
+#app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"] h1{
+  color:#f8fbff!important;text-shadow:0 12px 34px rgba(8,28,65,.20);
+}
+#app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"] p{
+  color:#bdd0e9!important;
+}
+#app .dashboard-premium-shell .dashboard-head-mobile-links .dashboard-head-mobile-test{
+  background:linear-gradient(125deg,#dfedff,#acd0ff)!important;
+  color:#0c1c34!important;
+  border:1px solid #c9e1ff!important;
+  box-shadow:0 9px 25px rgba(0,8,28,.18)!important;
+  font-weight:800!important;
+}
+#app .dashboard-premium-shell .dashboard-head-mobile-links
+:is(.dashboard-head-mobile-setup,.dashboard-head-mobile-answers,.dashboard-head-mobile-menu){
+  background:rgba(133,188,254,.095)!important;
+  border:1px solid rgba(174,213,255,.29)!important;
+  color:#eaf4ff!important;
+}
+/* One unified dark-surface grammar for the *overview*. Individual editing
+   surfaces keep their original pale input backgrounds and dark text. */
+#app .dashboard-premium-shell .dashboard-simple-main
+> :is(.onboarding-card,.welcome-card)[data-dashboard-view="overview"]{
+  background:linear-gradient(150deg,#142942,#0c1c31)!important;
+  color:#eef5ff!important;
+  border:1px solid rgba(170,211,254,.22)!important;
+  box-shadow:0 12px 35px rgba(0,7,24,.20)!important;
+  border-radius:19px!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main
+> :is(.onboarding-card,.welcome-card)[data-dashboard-view="overview"]
+:is(h2,h3,b,strong,.onboarding-score){
+  color:#f4f9ff!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main
+> :is(.onboarding-card,.welcome-card)[data-dashboard-view="overview"]
+:is(p,small,.welcome-copy p){
+  color:#b6cce8!important;
+}
+#app .dashboard-premium-shell .onboarding-card .onboarding-progress{
+  background:rgba(154,198,255,.17)!important;
+}
+#app .dashboard-premium-shell .onboarding-card .onboarding-progress i{
+  background:linear-gradient(90deg,#7cafed,#d9ecff)!important;
+}
+#app .dashboard-premium-shell .onboarding-card .onboarding-step{
+  background:rgba(147,193,255,.08)!important;
+  border:1px solid rgba(168,208,255,.19)!important;
+  color:#e4f0ff!important;
+  border-radius:13px!important;
+}
+#app .dashboard-premium-shell .onboarding-card .onboarding-step:hover{
+  background:rgba(155,201,255,.16)!important;
+}
+#app .dashboard-premium-shell .onboarding-card .onboarding-step.done{
+  background:rgba(88,173,152,.16)!important;
+  border-color:rgba(140,215,193,.38)!important;
+}
+#app .dashboard-premium-shell .onboarding-card .onboarding-step :is(b,em,span){
+  color:inherit!important;
+}
+#app .dashboard-premium-shell .welcome-card .welcome-start{
+  color:#0c2443!important;background:#d7e9ff!important;
+  border-color:#d7e9ff!important;
+}
+#app .dashboard-premium-shell .dashboard-page-heading h1{
+  color:#f4f9ff!important;
+}
+#app .dashboard-premium-shell .dashboard-page-heading small{
+  color:#a3c2ea!important;
+}
+/* The actual chat / form editors intentionally remain light, but carry
+   the same soft corners and blue border as the dark shell. */
+#app .dashboard-premium-shell .dashboard-premium-experience
+:is(.live-preview-panel,.preview-device){
+  border-radius:18px!important;
+  border-color:#a8c4e7!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main > .stats[data-dashboard-view="overview"] .stat{
+  border:1px solid rgba(172,210,255,.21)!important;
+  background:linear-gradient(145deg,#132840,#0c1d31)!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main > .stats[data-dashboard-view="overview"] .stat b{
+  color:#f6fbff!important;
+}
+.dashboard-drawer-layer .dashboard-drawer-panel{
+  background:linear-gradient(165deg,#162c49,#09192d)!important;
+  border-left-color:rgba(184,214,255,.24)!important;
+}
+.dashboard-drawer-layer .dashboard-drawer-link.active{
+  background:linear-gradient(125deg,#365e8e,#27476f)!important;
+  border-color:#8eb7e9!important;
+}
+/* iPhone: one compact explanation, immediately followed by the actions. */
+@media(max-width:760px){
+  #app .dashboard-premium-shell .dashboard-simple-main{
+    padding:10px 12px calc(62px + env(safe-area-inset-bottom,0px))!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]{
+    padding:21px 17px 19px!important;
+    margin:0 0 13px!important;min-height:0!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"] h1{
+    font-size:clamp(29px,7.8vw,38px)!important;
+    margin:9px 0 8px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"] p{
+    font-size:13px!important;line-height:1.48!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links{
+    margin:16px 0 0!important;gap:9px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+  .dashboard-head-mobile-test{
+    min-height:51px!important;grid-column:1/-1!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+  :is(.dashboard-head-mobile-setup,.dashboard-head-mobile-answers){
+    min-height:46px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+  .dashboard-head-mobile-menu{
+    min-height:44px!important;grid-column:1/-1!important;
+  }
+  #app .dashboard-premium-shell .dashboard-simple-main
+  > :is(.onboarding-card,.welcome-card)[data-dashboard-view="overview"]{
+    padding:19px 16px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer{
+    margin-bottom:12px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #app .dashboard-premium-shell .dashboard-head-mobile-links button,
+  #app .dashboard-premium-shell .onboarding-card .onboarding-step{
+    transition:none!important;
+  }
+}
