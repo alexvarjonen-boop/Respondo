@@ -53,28 +53,70 @@
     justify-content:center;margin:17px auto 0;
   }
 }
+/* v8 mobile correction after checking the actual iPhone screenshot:
+   ONE button, one quiet link, and a clear sphere. Do not span two actions
+   across the orbit, animate their placement, or hide the genuine chat launcher. */
+@media(max-width:900px){
+  body:has(#app .rs-spiral-section) .fx-chat-nav-hint:not([hidden]){
+    display:none!important;
+  }
+}
 @media(max-width:600px){
-  /* Maintain the sphere's space on iPhone: actions share one short row. */
   #app .apple-home-page .rs-spiral-heading .rs-hero-actions{
-    gap:clamp(8px,2.2vw,15px);flex-wrap:nowrap;margin-top:12px;
-    justify-content:center;
+    display:flex;flex-direction:column;align-items:center;
+    justify-content:center;flex-wrap:nowrap;
+    width:min(100%,290px);max-width:100%;
+    gap:3px;margin:12px auto 0;
   }
   #app .apple-home-page .rs-hero-actions .rs-first-order-link{
-    min-height:38px;padding:9px 11px;font-size:11px;gap:6px;
+    min-height:44px;padding:10px 17px;font-size:12px;gap:10px;
+    max-width:100%;justify-content:center;white-space:nowrap;
   }
-  #app .apple-home-page .rs-hero-actions .rs-first-order-link span:last-child{font-size:14px}
+  #app .apple-home-page .rs-hero-actions .rs-first-order-link span:last-child{
+    font-size:14px;
+  }
   #app .apple-home-page .rs-hero-actions .rs-hero-demo-link{
-    min-height:38px;padding:6px 0;font-size:11px;gap:5px;
+    min-height:29px;padding:3px 0;
+    font-size:11px;line-height:1.5;font-weight:580;
+    text-decoration:underline;text-decoration-color:rgba(179,208,248,.5);
+    text-underline-offset:4px;white-space:normal;
   }
-  #app .apple-home-page .rs-hero-actions .rs-hero-demo-icon{
-    width:18px;height:18px;flex-basis:18px;font-size:10px;
+  #app .apple-home-page .rs-hero-actions .rs-hero-demo-icon,
+  #app .apple-home-page .rs-hero-actions .rs-hero-demo-arrow{
+    display:none!important;
   }
-  #app .apple-home-page .rs-hero-actions .rs-hero-demo-arrow{font-size:12px}
+  /* Shrink the orbit slightly and lower it just enough to create a
+     visible gap below the link without pushing the chapter caption off-screen. */
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced .rs-studio-orbit-art{
+    left:50%;top:calc(47% + 16px);width:min(59vw,245px);
+  }
+  #app .apple-home-page .rs-enhanced .rs-axis{
+    left:50%!important;top:calc(47% + 16px)!important;
+    width:clamp(117px,35vw,164px)!important;
+  }
+  #app .apple-home-page .rs-enhanced .rs-orbit-beacon{
+    left:50%;top:calc(47% + 16px);width:min(59vw,245px);
+  }
 }
 @media(max-width:340px){
-  #app .apple-home-page .rs-spiral-heading .rs-hero-actions{gap:7px}
-  #app .apple-home-page .rs-hero-actions .rs-first-order-link{padding:8px;font-size:10px}
-  #app .apple-home-page .rs-hero-actions .rs-hero-demo-link{font-size:10px;gap:3px}
+  #app .apple-home-page .rs-spiral-heading .rs-hero-actions{
+    width:min(100%,260px);gap:2px;
+  }
+  #app .apple-home-page .rs-hero-actions .rs-first-order-link{
+    padding:8px 13px;font-size:11px;
+  }
+  #app .apple-home-page .rs-hero-actions .rs-hero-demo-link{
+    font-size:10px;
+  }
+}
+@media(max-width:600px) and (max-height:700px){
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced .rs-studio-orbit-art,
+  #app .apple-home-page .rs-enhanced .rs-orbit-beacon{
+    top:calc(46% + 13px);
+  }
+  #app .apple-home-page .rs-enhanced .rs-axis{
+    top:calc(46% + 13px)!important;
+  }
 }
 @media(prefers-reduced-motion:reduce){
   #app .apple-home-page .rs-hero-actions a{transition:none!important;transform:none!important}
