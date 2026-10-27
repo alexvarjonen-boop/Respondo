@@ -15,18 +15,17 @@ test('homepage has no duplicate chat form or navigation pill box',()=>{
   }
   assert.doesNotMatch(index,/\/chat-first-home\.js\?v=/);
 });
-test('animated, accessible bot navigation arrow points at the actual chat launcher',()=>{
-  assert.match(effects,/<button class="fx-chat-nav-hint" type="button" aria-controls="respondo-site-chat"/);
-  assert.match(effects,/Ask the bot to navigate/);
-  assert.match(effects,/Kysy botilta ja siirry sivuille/);
-  assert.match(effects,/Fråga botten för att navigera/);
-  assert.match(effects,/navHint\?\.addEventListener\('click', open\)/);
-  assert.match(effects,/navHint\?\.setAttribute\('hidden',''\)/);
-  assert.match(effects,/fx-assistant-launch/);
-  assert.match(styles,/body:has\(#app \.rs-spiral-section\) \.fx-chat-nav-hint:not\(\[hidden\]\)/);
-  assert.match(styles,/@keyframes fx-chat-nav-point/);
-  assert.match(styles,/@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(styles,/\.pricing-wrap/);
+test('real assistant launches without the floating arrow and extra navigation text',()=>{
+  assert.ok(!effects.includes('fx-chat-nav-hint'));
+  assert.ok(!effects.includes('Ask the bot to navigate'));
+  assert.ok(!effects.includes('Kysy botilta ja siirry sivuille'));
+  assert.ok(!effects.includes('Fråga botten för att navigera'));
+  assert.ok(effects.includes('fx-assistant-launch'));
+  assert.ok(effects.includes("launch.addEventListener('click'"));
+  assert.ok(effects.includes("launch.setAttribute('aria-expanded','true')"));
+  assert.ok(effects.includes('[data-open-site-assistant]'));
+  assert.ok(!styles.includes('fx-chat-nav-hint'));
+  assert.ok(styles.includes('.pricing-wrap'));
 });
 test('assistant exposes valid navigation destinations in English, Finnish and Swedish',()=>{
   for(const lang of ['en','fi','sv']){

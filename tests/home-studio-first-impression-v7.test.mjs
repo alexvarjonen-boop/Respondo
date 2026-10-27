@@ -4,36 +4,32 @@ import {readFileSync} from 'node:fs';
 import {spiralHeroMarkup} from '../public/spiral-hero.js';
 import {appleHomeMarkup} from '../public/apple-home.js';
 const read=p=>readFileSync(new URL('../public/'+p,import.meta.url),'utf8');
-for(const [lang,idx,demo,pricing] of [
- ['fi',0,'Kokeile bottia','Paketit alk. 49 €/kk'],
- ['sv',1,'Testa chatbotten','Paket från 49 €/mån'],
- ['en',2,'Try the chatbot','Plans from €49/month'],
+for(const [lang,index,price] of [
+ ['fi',0,'Paketit alk. 49 €/kk'],['sv',1,'Paket från 49 €/mån'],['en',2,'Plans from €49/month']
 ]){
- test('homepage v7 balances real demo and pricing actions in '+lang,()=>{
-   const t=(...s)=>s[idx],m=spiralHeroMarkup(t,lang);
-   assert.match(m,/class="rs-hero-actions"/);
-   assert.ok(m.includes('href="/assistant?lang='+lang+'"'));
-   assert.ok(m.includes('href="#pricing"'));
-   assert.ok(m.includes(demo));assert.ok(m.includes(pricing));
-   assert.equal((m.match(/data-rs-icon(?=\s)/g)||[]).length,10);
-   assert.equal((m.match(/data-rs-card\b/g)||[]).length,10);
-   assert.match(m,/RESPONDO AI <span aria-hidden="true">\/<\/span> 24\/7/);
-   assert.doesNotMatch(m,/rs-hero-talk|data-open-site-assistant|Ask Respondo|data-respondo-ask-form/);
-   const page=appleHomeMarkup(t,lang,100,'<section id="pricing">Plans</section>');
-   assert.equal(page.split('<section id="pricing">Plans</section>').length-1,1);
-   assert.equal(page.slice(page.indexOf('</section>')+10,page.indexOf('<section id="pricing">')).trim(),'');
+ test('hero restored to one restrained CTA in '+lang,()=>{
+  const t=(...s)=>s[index],h=spiralHeroMarkup(t,lang);
+  assert.ok(h.includes(price));
+  assert.ok(h.includes('href="#pricing"'));
+  assert.equal(h.split('class="rs-first-order-link"').length-1,1);
+  assert.ok(!h.includes('rs-hero-demo-link'));
+  assert.ok(!h.includes('rs-hero-actions'));
+  assert.ok(h.includes('RESPONDO AI <span aria-hidden="true">/</span> 24/7'));
+  assert.equal(h.split('data-rs-card data-index').length-1,10);
+  assert.equal(h.split('data-rs-icon data-index').length-1,10);
+  const plans='<section id="pricing">Plans</section>';
+  const page=appleHomeMarkup(t,lang,100,plans);
+  assert.equal(page.split(plans).length-1,1);
+  assert.ok(page.indexOf(plans)>page.indexOf('</section>'));
  });
 }
-test('homepage v7 styles scope to Respondo and respect mobile and reduced motion',()=>{
+test('focused visual repair preserves responsive site and plan buttons',()=>{
  const css=read('home-studio-v7.css'),html=read('index.html');
- assert.match(css,/#app \.apple-home-page \.rs-spiral-heading \.rs-hero-actions/);
- assert.match(css,/@media\(max-width:600px\)/);
- assert.match(css,/@media\(max-width:340px\)/);
- assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
- assert.doesNotMatch(css,/@keyframes|scroll-snap-type|backdrop-filter/);
- assert.equal((css.match(/\{/g)||[]).length,(css.match(/\}/g)||[]).length);
- assert.match(html,/home-studio-v7\.css\?v=20261027-premium-first-impression-v7/);
- assert.match(html,/app\.js\?v=[^"]*-studio-v7/);
- assert.match(read('apple-home.js'),/spiral-hero\.js\?v=[^']*-studio-v7/);
- assert.match(read('app.js'),/apple-home\.js\?v=[^']*-studio-v7/);
+ for(const word of ['Observatory v9','.rs-first-order-link','max-width:600px','max-height:700px','prefers-reduced-motion:reduce'])
+  assert.ok(css.includes(word),word);
+ for(const word of ['@keyframes','scroll-snap-type','backdrop-filter'])
+  assert.ok(!css.includes(word),word);
+ assert.ok(html.includes('home-studio-v7.css?v='));
+ assert.ok(html.includes('-mobile-simplify-v9'));
+ assert.equal(css.split('{').length,css.split('}').length);
 });

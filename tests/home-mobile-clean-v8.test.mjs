@@ -2,45 +2,46 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {spiralHeroMarkup} from '../public/spiral-hero.js';
-const read=path=>readFileSync(new URL('../public/'+path,import.meta.url),'utf8');
-test('iPhone homepage has one main action and a secondary, calm text link',()=>{
- const styles=read('home-studio-v7.css');
- const mobile=styles.split('/* v8 mobile correction')[1]||'';
- assert.ok(mobile,'mobile correction must override former v7 same-row design');
- assert.match(mobile,/flex-direction:column/);
- assert.match(mobile,/min-height:44px/);
- assert.match(mobile,/\.rs-hero-demo-icon,[\s\S]*?\.rs-hero-demo-arrow\{\s*display:none!important;/);
- assert.doesNotMatch(mobile,/actions share one short row|flex-wrap:nowrap;margin-top:12px/);
- assert.match(mobile,/top:calc\(47% \+ 16px\)/);
- assert.match(mobile,/width:min\(59vw,245px\)/);
- assert.match(mobile,/@media\(max-width:600px\) and \(max-height:700px\)/);
- assert.match(styles,/@media\(prefers-reduced-motion:reduce\)/);
+const read=p=>readFileSync(new URL('../public/'+p,import.meta.url),'utf8');
+test('iPhone uses one clean pricing link and a smaller centered orbit',()=>{
+ const css=read('home-studio-v7.css');
+ for(const part of ['Observatory v9','background:none!important','border-radius:0!important',
+   '@media(max-width:600px)','top:50%;width:min(61vw,245px)',
+   '@media(max-width:600px) and (max-height:700px)',
+   '@media(prefers-reduced-motion:reduce)']) assert.ok(css.includes(part),part);
+ for(const forbidden of ['rs-hero-actions','rs-hero-demo-link','@keyframes','scroll-snap-type'])
+   assert.ok(!css.includes(forbidden),forbidden);
 });
-test('remove the extra assistant hint on small screens, preserve the actual chat launcher',()=>{
- const styles=read('home-studio-v7.css');
- assert.match(styles,/@media\(max-width:900px\)\{\s*body:has\(#app \.rs-spiral-section\) \.fx-chat-nav-hint:not\(\[hidden\]\)/);
- assert.doesNotMatch(styles,/\.fx-assistant-launch\s*\{\s*display:none/);
+test('real chat launcher stays, while injected navigation guide disappears',()=>{
+ const effects=read('effects.js'),styles=read('chat-first-home.css');
+ assert.ok(effects.includes('class="fx-assistant-launch"'));
+ assert.ok(effects.includes("launch.addEventListener('click'"));
+ assert.ok(!effects.includes('fx-chat-nav-hint'));
+ assert.ok(!effects.includes('Ask the bot to navigate'));
+ assert.ok(!styles.includes('fx-chat-nav-hint'));
 });
-for(const [lang,index,pricing,demo] of [
- ['fi',0,'Paketit alk. 49 €/kk','Kokeile bottia'],
- ['sv',1,'Paket från 49 €/mån','Testa chatbotten'],
- ['en',2,'Plans from €49/month','Try the chatbot'],
+for(const [lang,index,pricing] of [
+ ['fi',0,'Paketit alk. 49 €/kk'],['sv',1,'Paket från 49 €/mån'],['en',2,'Plans from €49/month']
 ]){
- test('all languages keep one real pricing button and one demo route '+lang,()=>{
-  const markup=spiralHeroMarkup((...translations)=>translations[index],lang);
-  assert.equal((markup.match(/class="rs-first-order-link"/g)||[]).length,1);
-  assert.equal((markup.match(/class="rs-hero-demo-link"/g)||[]).length,1);
-  assert.ok(markup.includes(pricing));
-  assert.ok(markup.includes(demo));
-  assert.ok(markup.includes('href="/assistant?lang='+lang+'"'));
-  assert.match(markup,/href="#pricing"/);
-  assert.equal((markup.match(/data-rs-card\b/g)||[]).length,10);
-  assert.equal((markup.match(/data-rs-icon(?=\s)/g)||[]).length,10);
+ test('localized hero keeps exactly one main link '+lang,()=>{
+  const hero=spiralHeroMarkup((...t)=>t[index],lang);
+  assert.equal(hero.split('class="rs-first-order-link"').length-1,1);
+  assert.ok(hero.includes('href="#pricing"'));
+  assert.ok(hero.includes(pricing));
+  for(const unexpected of ['rs-hero-actions','rs-hero-demo-link','rs-hero-demo-icon','<span aria-hidden="true">↗'])
+    assert.ok(!hero.includes(unexpected),unexpected);
+  assert.equal(hero.split('data-rs-card data-index').length-1,10);
+  assert.equal(hero.split('data-rs-icon data-index').length-1,10);
  });
 }
-test('production HTML busts stale iOS CSS cache without replacing the site design',()=>{
+test('index busts Safari assets, including both nested ES module imports',()=>{
  const html=read('index.html'),css=read('home-studio-v7.css');
- assert.match(html,/home-studio-v7\.css\?v=20261027-premium-first-impression-v7-mobile-clean-v8/);
- assert.doesNotMatch(css,/scroll-snap-type|setInterval|@keyframes/);
- assert.equal((css.match(/\{/g)||[]).length,(css.match(/\}/g)||[]).length);
+ for(const asset of ['home-studio-v7.css','chat-first-home.css','effects.js','app.js']){
+   const start=html.indexOf('/'+asset+'?v=');
+   assert.ok(start>=0,asset);
+   assert.ok(html.slice(start,html.indexOf('"',start)).endsWith('-mobile-simplify-v9'),asset);
+ }
+ assert.ok(read('app.js').includes('-mobile-simplify-v9'));
+ assert.ok(read('apple-home.js').includes('-mobile-simplify-v9'));
+ assert.equal(css.split('{').length,css.split('}').length);
 });
