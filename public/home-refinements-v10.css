@@ -1,0 +1,113 @@
+/* Observatory v10: matching story glyphs and a restrained three-step
+   explanation between the immersive ten scenes and checkout. No emoji,
+   simulated testimonials, scroll trapping or extra floating controls. */
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card
+.rs-spiral-metric.rs-has-svg-metric{
+  display:flex!important;justify-content:center;align-items:center;
+  width:clamp(65px,6.5vw,88px)!important;
+  height:clamp(65px,6.5vw,88px)!important;
+  min-width:0;min-height:0;
+  margin:0 0 18px!important;
+  padding:0!important;
+  border:1px solid rgba(177,211,254,.47)!important;
+  border-radius:24px!important;
+  background:linear-gradient(150deg,rgba(124,170,239,.15),rgba(36,73,143,.09))!important;
+  box-shadow:0 0 38px rgba(102,150,239,.10),inset 0 1px rgba(230,243,255,.14);
+  text-shadow:none!important;
+}
+#app .apple-home-page .rs-spiral-metric-glyph{
+  display:grid;place-items:center;width:100%;height:100%;
+  color:#d7e8ff;line-height:1;
+}
+#app .apple-home-page .rs-spiral-metric-glyph svg{
+  width:50%;height:50%;
+  fill:none;stroke:currentColor;stroke-width:1.65;
+  stroke-linecap:round;stroke-linejoin:round;overflow:visible;
+}
+@media(max-width:1099px){
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"]
+  .rs-spiral-card .rs-spiral-metric.rs-has-svg-metric{
+    width:66px!important;height:66px!important;
+    margin:0 auto 12px!important;border-radius:20px!important;
+  }
+}
+@media(max-width:600px){
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"]
+  .rs-spiral-card .rs-spiral-metric.rs-has-svg-metric{
+    width:56px!important;height:56px!important;
+    margin:0 auto 13px!important;border-radius:17px!important;
+  }
+  #app .apple-home-page .rs-spiral-metric-glyph svg{width:52%;height:52%}
+}
+
+/* A readable answer to "what happens next" without adding another card deck.
+   Shared pricing HTML stays unchanged for checkout; this rail appears on the
+   homepage only. */
+#app .pricing-section .respondo-how-it-works{display:none}
+#app .apple-home-page .pricing-section .respondo-how-it-works{
+  display:block;max-width:1080px;margin:0 auto clamp(76px,10vw,120px);
+  padding:0 0 clamp(50px,8vw,88px);
+  border-bottom:1px solid rgba(171,207,252,.19);
+  color:#edf4ff;text-align:center;
+}
+#app .apple-home-page .respondo-how-topline{
+  color:#92b4e1;font-size:10px;letter-spacing:.24em;
+  font-weight:780;margin:0 0 18px;
+}
+#app .apple-home-page .respondo-how-it-works h2{
+  margin:0 auto 13px;max-width:850px;color:#f3f8ff;
+  font-size:clamp(28px,4.5vw,49px);letter-spacing:-.052em;
+  font-weight:690;line-height:1.11;text-wrap:balance;
+}
+#app .apple-home-page .respondo-how-intro{
+  color:#a7bfdc;margin:0 auto;font-size:clamp(13px,1.5vw,16px);
+  line-height:1.6;max-width:600px;
+}
+#app .apple-home-page .respondo-how-steps{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  list-style:none;margin:clamp(38px,5.4vw,64px) 0 23px;
+  padding:0;gap:clamp(20px,3vw,54px);
+  text-align:left;
+}
+#app .apple-home-page .respondo-how-steps li{
+  position:relative;display:flex;align-items:flex-start;gap:14px;
+  min-width:0;padding:15px 0 0;border-top:1px solid rgba(170,207,251,.24);
+}
+#app .apple-home-page .respondo-how-step-index{
+  color:#b9d5ff;flex:0 0 auto;font-weight:760;font-size:12px;
+  font-variant-numeric:tabular-nums;line-height:1.4;letter-spacing:.11em;
+}
+#app .apple-home-page .respondo-how-steps h3{
+  color:#f5f9ff;margin:0 0 8px;
+  font-size:clamp(14px,1.4vw,18px);line-height:1.32;
+  font-weight:680;letter-spacing:-.02em;
+}
+#app .apple-home-page .respondo-how-steps p{
+  color:#a6b8d2;line-height:1.58;
+  font-size:clamp(12px,1.03vw,14px);margin:0;
+}
+#app .apple-home-page .respondo-how-try{
+  display:inline-flex;align-items:center;gap:9px;
+  margin:17px auto 0;padding:7px 0;border-bottom:1px solid rgba(189,219,255,.65);
+  color:#d8e9ff;text-decoration:none;font-size:13px;
+  font-weight:680;line-height:1.55;
+}
+#app .apple-home-page .respondo-how-try:hover{color:#fff;border-bottom-color:#fff}
+#app .apple-home-page .respondo-how-try:focus-visible{
+  outline:2px solid #b7d4ff;outline-offset:5px;
+}
+@media(max-width:730px){
+  #app .apple-home-page .respondo-how-steps{
+    grid-template-columns:1fr;gap:17px;
+    max-width:430px;margin:33px auto 16px;
+  }
+  #app .apple-home-page .respondo-how-steps li{
+    padding-top:14px;gap:15px;
+  }
+  #app .apple-home-page .respondo-how-it-works{
+    margin-bottom:64px;padding-bottom:59px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #app .apple-home-page .respondo-how-try{transition:none}
+}
