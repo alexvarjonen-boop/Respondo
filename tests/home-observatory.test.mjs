@@ -32,8 +32,8 @@ test('Observatory styles load last and are homepage-scoped',()=>{
   assert.match(html,/home-observatory\.css\?v=20261027-observatory-v1/);
   assert.match(html,/spiral-hero-motion\.js\?v=20261026-orbit10-v1-observatory-v1/);
   assert.match(html,/app\.js\?v=[^"]+-observatory-v1/);
-  assert.match(app,/apple-home\.js\?v=20261027-no-hero-ask-v1/);
-  assert.match(apple,/spiral-hero\.js\?v=20261027-no-hero-ask-v1/);
+  assert.match(app,/apple-home\.js\?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1/);
+  assert.match(apple,/spiral-hero\.js\?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1/);
   assert.match(theme,/#app \.apple-home-page/);
   assert.match(theme,/max-width:600px/);
   assert.match(theme,/prefers-reduced-motion:reduce/);
