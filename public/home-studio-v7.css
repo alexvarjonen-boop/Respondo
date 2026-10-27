@@ -1,0 +1,81 @@
+/* Observatory v7 · Premium first impression.
+   A real try-bot route alongside the existing pricing journey. No new bot
+   widget, no extra page section, and no permanent animations. */
+#app .apple-home-page .rs-spiral-heading .rs-hero-actions{
+  display:flex;align-items:center;justify-content:flex-start;
+  flex-wrap:wrap;gap:clamp(10px,1.5vw,22px);
+  width:max-content;max-width:100%;margin-top:23px;
+  position:relative;z-index:41;
+}
+#app .apple-home-page .rs-hero-actions .rs-first-order-link{
+  min-height:45px;margin:0;padding:12px 18px;
+  border:1px solid rgba(165,201,251,.43);
+  border-radius:999px;
+  background:linear-gradient(135deg,rgba(177,213,255,.19),rgba(106,147,210,.065));
+  box-shadow:inset 0 1px 0 rgba(246,251,255,.14),0 9px 31px rgba(3,15,40,.24);
+  color:#f1f7ff!important;letter-spacing:.012em;font-weight:710;
+  text-decoration:none;white-space:nowrap;
+  transition:border-color .18s ease,background-color .18s ease,transform .18s ease;
+}
+#app .apple-home-page .rs-hero-actions .rs-first-order-link span:last-child{
+  color:#e6f2ff;font-size:16px;
+}
+#app .apple-home-page .rs-hero-actions .rs-first-order-link:hover{
+  border-color:#d6ebff;background-color:rgba(171,205,255,.17);
+  transform:translateY(-2px);
+}
+#app .apple-home-page .rs-hero-actions .rs-hero-demo-link{
+  display:inline-flex;align-items:center;gap:8px;
+  min-height:45px;padding:9px 2px;
+  color:#c8defd!important;font-weight:680;font-size:13px;line-height:1.45;
+  text-decoration:none;white-space:nowrap;
+  transition:color .18s ease,transform .18s ease;
+}
+#app .apple-home-page .rs-hero-actions .rs-hero-demo-icon{
+  display:inline-grid;place-items:center;
+  width:23px;height:23px;flex:0 0 23px;
+  font-size:13px;font-weight:400;
+  border:1px solid rgba(183,217,255,.32);
+  border-radius:50%;background:rgba(143,184,248,.10);
+  color:#e1efff;
+}
+#app .apple-home-page .rs-hero-actions .rs-hero-demo-arrow{
+  color:#b7d4fd;font-size:14px;
+}
+#app .apple-home-page .rs-hero-actions .rs-hero-demo-link:hover{
+  color:#fff!important;transform:translateY(-2px);
+}
+#app .apple-home-page .rs-hero-actions a:focus-visible{
+  outline:2px solid #c0ddff!important;outline-offset:5px;
+}
+@media(max-width:1099px){
+  #app .apple-home-page .rs-spiral-heading .rs-hero-actions{
+    justify-content:center;margin:17px auto 0;
+  }
+}
+@media(max-width:600px){
+  /* Maintain the sphere's space on iPhone: actions share one short row. */
+  #app .apple-home-page .rs-spiral-heading .rs-hero-actions{
+    gap:clamp(8px,2.2vw,15px);flex-wrap:nowrap;margin-top:12px;
+    justify-content:center;
+  }
+  #app .apple-home-page .rs-hero-actions .rs-first-order-link{
+    min-height:38px;padding:9px 11px;font-size:11px;gap:6px;
+  }
+  #app .apple-home-page .rs-hero-actions .rs-first-order-link span:last-child{font-size:14px}
+  #app .apple-home-page .rs-hero-actions .rs-hero-demo-link{
+    min-height:38px;padding:6px 0;font-size:11px;gap:5px;
+  }
+  #app .apple-home-page .rs-hero-actions .rs-hero-demo-icon{
+    width:18px;height:18px;flex-basis:18px;font-size:10px;
+  }
+  #app .apple-home-page .rs-hero-actions .rs-hero-demo-arrow{font-size:12px}
+}
+@media(max-width:340px){
+  #app .apple-home-page .rs-spiral-heading .rs-hero-actions{gap:7px}
+  #app .apple-home-page .rs-hero-actions .rs-first-order-link{padding:8px;font-size:10px}
+  #app .apple-home-page .rs-hero-actions .rs-hero-demo-link{font-size:10px;gap:3px}
+}
+@media(prefers-reduced-motion:reduce){
+  #app .apple-home-page .rs-hero-actions a{transition:none!important;transform:none!important}
+}
