@@ -508,3 +508,170 @@ body.public-nav-active #app .nav .app-language-option[aria-pressed="true"]{
   color:#071726!important;-webkit-text-fill-color:#071726!important;
   border-radius:999px!important;
 }
+
+/* Clean mode: remove redundant campaign visuals and let essential text do its job.
+   Applied after the shared skin so older decoration never returns on mobile. */
+#app .r-brand-flow,
+#app .r-brand-pricing-banner,
+#app .r-brand-contact-banner,
+#app .r-brand-next-cta,
+#app .r-brand-guides-deco,
+#app .r-brand-orbit,
+#app .r-brand-pricing-deco{display:none!important}
+#app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+  .global-guide-page,.audience-hub,.legalpage){
+  --ro-line:rgba(187,207,239,.14);
+}
+#app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+  .global-guide-page,.audience-hub,.legalpage) :is(.pricing-section,.features-hero,
+    .seo-landing-hero,.audience-hero,.global-guide-hero,.r-brand-hero){
+  background:#0a101c!important;
+  box-shadow:none!important;
+}
+#app :is(.pricing-page,.features-page,.contact-page,.seo-landing-page,
+  .global-guide-page,.audience-hub) :is(.price-card,.feature-category,
+    .features-final-card,.audience-card,.audience-cta-inner,
+    .global-guide-card,.global-guide-section,.ai-topic-faq,.vertical-faq-item,
+    .customer-bot-faq,.r-brand-contact-form-card,.r-brand-contact-info-card){
+  background:#111a2a!important;
+  border:1px solid rgba(180,205,243,.16)!important;
+  box-shadow:none!important;
+}
+/* Pricing page is the plan picker; don't prepend a second marketing heading. */
+#app .pricing-page .pricing-section{
+  padding:clamp(53px,7vw,96px) 0 clamp(75px,9vw,110px)!important;
+}
+#app .pricing-page .pricing-section .split-head{margin-bottom:29px!important}
+#app .pricing-page .pricing-section .split-head h2{
+  font-size:clamp(30px,4vw,48px)!important;
+  max-width:730px;letter-spacing:-.05em!important;
+}
+#app .pricing-page .pricing-section .split-head p{
+  max-width:650px;line-height:1.65!important;
+}
+#app .pricing-page .price-card{
+  border-radius:20px!important;
+  padding:clamp(23px,3vw,33px)!important;
+}
+#app .pricing-page .price-card.featured{
+  background:#152338!important;
+  border:1px solid rgba(187,213,249,.42)!important;
+  box-shadow:none!important;
+}
+/* Keep real 145-feature directory and essential disclosures, no extra flow cards. */
+#app .features-page .features-hero{
+  padding:clamp(55px,8vw,98px) 0 clamp(53px,8vw,92px)!important;
+}
+#app .features-page .features-hero::after,
+#app .seo-landing-page .seo-landing-hero::after,
+#app .audience-hub .audience-hero::after{
+  display:none!important;
+}
+#app .features-page :is(.features-top10,.features-directory){background:#090e19!important}
+#app .features-page .features-hero-stats>div{
+  box-shadow:none!important;
+  background:#131f30!important;
+}
+#app .features-page .feature-category summary{padding-block:clamp(21px,3vw,31px)!important}
+/* Contact form: name, email and message are needed; decorative copy is not. */
+#app .contact-page .r-brand-contact-main{
+  padding:clamp(55px,8vw,95px) 0 clamp(75px,10vw,120px)!important;
+  background:#090e19!important;
+}
+#app .contact-page .r-brand-contact-title{
+  font-size:clamp(32px,5.7vw,60px)!important;
+  line-height:1.09!important;
+}
+#app .contact-page .r-brand-contact-lead{margin-bottom:33px!important}
+#app .contact-page main :is(.r-brand-contact-form-card,.r-brand-contact-info-card,
+  section:has(#homeContactForm),aside:has(a[href^="mailto:"])){
+  background:#121c2d!important;
+  border:1px solid rgba(181,207,248,.17)!important;
+  box-shadow:none!important;border-radius:20px!important;
+}
+/* Privacy, terms and security are readable *documents*, not sales funnels. */
+#app .r-brand-legal.legalpage{
+  background:#090e19!important;
+  padding-bottom:clamp(65px,8vw,110px)!important;
+}
+#app .r-brand-legal .legal-layout{
+  padding-top:clamp(40px,6vw,75px)!important;
+  max-width:1110px!important;
+  gap:clamp(24px,5vw,56px)!important;
+}
+#app .r-brand-legal .legal-aside>.section-kicker{
+  display:block!important;font-size:11px!important;
+  color:#a9d0ff!important;letter-spacing:.15em;
+  margin:0 0 14px!important;
+}
+#app .r-brand-legal .legal-aside>h1{
+  display:block!important;color:#f6f9ff!important;
+  font-size:clamp(30px,4vw,51px)!important;line-height:1.1!important;
+  letter-spacing:-.05em!important;margin:0 0 13px!important;
+  overflow-wrap:anywhere;
+}
+#app .r-brand-legal .legal-aside>p{
+  display:block!important;color:#bac9de!important;
+  line-height:1.65!important;font-size:14px!important;margin:0 0 20px!important;
+}
+#app .legalpage .r-brand-legal-toc{
+  background:#131f31!important;border:1px solid rgba(174,206,249,.18)!important;
+  box-shadow:none!important;border-radius:16px!important;
+  padding:18px!important;
+}
+#app .legalpage .r-brand-toc-links a{
+  padding:9px 7px!important;
+  border:0!important;border-radius:8px!important;
+}
+#app .legalpage .legal-seller{
+  background:#101a2a!important;border:1px solid rgba(174,206,249,.16)!important;
+  border-radius:13px!important;padding:18px!important;box-shadow:none!important;
+}
+#app .legalpage .r-brand-legal-copy>.r-brand-legal-section,
+#app .legalpage .legalcopy:not(.r-brand-legal-copy)>section{
+  background:#121b2b!important;box-shadow:none!important;
+  border:1px solid rgba(174,204,245,.16)!important;border-radius:16px!important;
+}
+#app .legalpage .r-brand-legal-copy>.r-brand-legal-section::before{
+  background:transparent!important;border:0!important;
+  color:#a9c8f3!important;padding:0!important;margin-bottom:10px!important;
+}
+#app .legalpage .legalcopy :is(p,ul,li,ol){color:#cad7e8!important}
+#app .legalpage .legalcopy :is(h2,h3){color:#f8fbff!important}
+/* Calm article layout across sector pages; skip decorative marketing texture. */
+#app .seo-landing-page :is(.seo-landing-copy,.seo-landing-closing,
+  .ai-topic-body,.ai-topic-faq-area,.customer-bot-steps,.customer-bot-explain){
+  background:#090e19!important;
+}
+#app .global-guide-page .global-guide-hero{
+  background:#101a2b!important;
+  border-radius:18px!important;
+}
+#app .global-guide-page :is(.global-guide-card,.global-guide-section,.global-guide-faq){
+  background:#111c2b!important;box-shadow:none!important;
+  border-radius:16px!important;
+}
+/* Signup and login keep actual input fields and secure checkout functionality. */
+#app :is(.formpage.login-page,.formpage.signup-page){
+  background:#090e19!important;
+}
+#app :is(.formpage.login-page,.formpage.signup-page) .formcard{
+  box-shadow:none!important;border-radius:19px!important;
+}
+#app .r-brand-signup-intro{
+  margin:0 auto 20px!important;
+}
+#app .r-brand-signup-intro h1{
+  font-size:clamp(27px,4vw,36px)!important;color:#f8fbff!important;
+  -webkit-text-fill-color:#f8fbff!important;
+}
+@media(max-width:800px){
+  #app .r-brand-legal .legal-layout{grid-template-columns:minmax(0,1fr)!important}
+  #app .r-brand-legal .legal-aside{position:static!important}
+}
+@media(max-width:600px){
+  #app .r-brand-legal .legal-layout{padding-top:28px!important}
+  #app .pricing-page .price-card{padding:23px!important}
+  #app .contact-page .r-brand-contact-main{padding-top:42px!important}
+  #app .r-brand-legal .legal-aside>h1{font-size:clamp(28px,8vw,38px)!important}
+}
