@@ -36,8 +36,9 @@ test('home polish is cached afresh, homepage-scoped and motion-safe',()=>{
   assert.match(css,/#app \.apple-home-page \.rs-enhanced \.rs-orbit-beacon/);
   assert.match(css,/max-width:600px/);
   assert.match(css,/prefers-reduced-motion:reduce/);
+  assert.doesNotMatch(css,/\.rs-spiral-section\[data-rs-mode="fullscreen"\]\.rs-enhanced \.rs-studio-orbit-art\{\s*filter:/);
   assert.doesNotMatch(css,/@keyframes|animation:\s*[^n]/);
-  assert.match(html,/home-observatory\.css\?v=20261027-observatory-polish-v2-guided-orbit-v3/);
+  assert.match(html,/home-observatory\.css\?v=20261027-observatory-polish-v2-guided-orbit-v3-perf/);
   assert.match(html,/spiral-hero-motion\.js\?v=20261026-orbit10-v1-observatory-v1-guided-orbit-v3/);
   assert.match(html,/app\.js\?v=[^"]+-guided-orbit-v3/);
   assert.equal((css.match(/\{/g)||[]).length,(css.match(/\}/g)||[]).length);

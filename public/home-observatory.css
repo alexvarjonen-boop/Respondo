@@ -592,9 +592,6 @@
   background:linear-gradient(180deg,rgba(173,210,255,.25),rgba(125,174,247,.055) 48%,transparent);
   transform:translateX(-50%);
 }
-#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced .rs-studio-orbit-art{
-  filter:drop-shadow(0 8px 24px rgba(45,90,164,.12));
-}
 #app .apple-home-page .rs-studio-orbit-icon[data-rs-icon]{
   outline:1px solid rgba(207,229,255,.045);
   outline-offset:3px;
