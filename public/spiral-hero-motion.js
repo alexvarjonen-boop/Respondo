@@ -63,6 +63,8 @@
     section.classList.toggle('rs-intro-past', index > 0);
     const counter = section.querySelector('[data-rs-step]');
     if (counter) counter.textContent = String(index + 1).padStart(2, '0');
+    const nextCue = section.querySelector('[data-rs-next]');
+    if (nextCue) nextCue.textContent = cards[index].getAttribute('data-rs-next-label') || '';
     const announced = section.querySelector('[data-rs-announcement]');
     if (announced) announced.textContent = cards[index].querySelector('h2')?.textContent || '';
     cards.forEach((card, i) => card.setAttribute('aria-hidden', String(i !== index)));

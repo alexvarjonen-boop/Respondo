@@ -12,7 +12,7 @@ export function spiralHeroMarkup(t, lang) {
     ['24/7', t('Asiakaspalvelu ei nuku.','Kundservicen sover aldrig.','Support never sleeps.'),
       t('Automaattiset vastaukset myös työajan ulkopuolella.','Automatiska svar även utanför öppettiderna.','Automatic answers even outside business hours.'), '01'],
     [languageFlags, t('Kolme kieltä.','Tre språk.','Three languages.'),
-      t('Suomi, svenska ja English samassa palvelussa.','Finska, svenska och engelska i samma tjänst.','Finnish, Swedish and English in one service.'), '02'],
+      t('Suomi, ruotsi ja englanti samassa palvelussa.','Finska, svenska och engelska i samma tjänst.','Finnish, Swedish and English in one service.'), '02'],
     ['01', t('Yksi Respondo.','En Respondo.','One Respondo.'),
       t('Tietopohja, keskustelut ja yhteydenotot yhdessä.','Kunskapsbas, konversationer och kontakter på ett ställe.','Knowledge, conversations and enquiries in one place.'), '03'],
     ['+52 %', t('Näe kasvun mahdollisuus.','Se tillväxtmöjligheten.','Explore growth potential.'),
@@ -29,6 +29,19 @@ export function spiralHeroMarkup(t, lang) {
       t('Anna verkkosivusi osoite. Respondo kerää olennaista tietoa yrityksesi palveluista ja tuotteista.','Ange webbplatsens adress. Respondo samlar relevant information om företagets tjänster och produkter.','Enter your website address. Respondo imports relevant service and product information.'), '09'],
     ['◷', t('Ajanvaraus chatissa.','Bokning i chatten.','Bookings in chat.'),
       t('Ohjaa asiakkaat vapaisiin aikoihin ja tarvittaessa ihmiselle. Integraatiot edellyttävät määrityksiä.','Hjälp kunderna hitta lediga tider eller nå personalen. Integrationer kräver konfigurering.','Help customers find available slots or reach a person. Integrations require setup.'), '10']
+  ];
+  // Compact, localized next-chapter cues reinforce the scroll-driven story without another CTA.
+  const nextCues = [
+    t("3 KIELTÄ", "3 SPRÅK", "3 LANGUAGES"),
+    t("YKSI PALVELU", "EN TJÄNST", "ONE PLATFORM"),
+    t("KASVUN MAHDOLLISUUS", "TILLVÄXT", "GROWTH POTENTIAL"),
+    t("NOPEAT VASTAUKSET", "SNABBA SVAR", "FAST ANSWERS"),
+    t("OMA BRÄNDI", "DITT VARUMÄRKE", "YOUR BRAND"),
+    t("YHTEYDENOTOT", "FÖRFRÅGNINGAR", "ENQUIRIES"),
+    t("OMINAISUUDET", "FUNKTIONER", "FEATURES"),
+    t("SIVUSTON TIEDOT", "WEBBPLATSDATA", "WEBSITE KNOWLEDGE"),
+    t("AJANVARAUS", "BOKNING", "BOOKINGS"),
+    t("HINNAT", "PRISER", "PRICING"),
   ];
   // The orbit is not a set of unrelated generic icons: one glyph for every chapter,
   // in the same order as the feature panels.
@@ -49,6 +62,7 @@ export function spiralHeroMarkup(t, lang) {
     <div class="rs-spiral-stage">
       <div class="rs-space" aria-hidden="true"><div class="rs-studio-grid"></div><div class="rs-studio-haze"></div><div class="rs-studio-sweep"></div><div class="rs-space-glow"></div><div class="rs-space-ellipse rs-space-ellipse-a"></div><div class="rs-space-ellipse rs-space-ellipse-b"></div><div class="rs-space-horizon"></div></div>
       <div class="rs-spiral-heading">
+        <div class="rs-hero-eyebrow">RESPONDO AI <span aria-hidden="true">/</span> ${t('AINA VALMIINA','ALLTID REDO','ALWAYS READY')}</div>
         <h1 id="apple-home-title">${t('Älykkäämpää','Smartare','Smarter')} <span>${t('asiakaspalvelua.','kundservice.','customer service.')}</span></h1>
         <p class="rs-hero-description">${t('AI-asiakaspalvelija, joka vastaa yrityksesi asiakkaiden kysymyksiin vuorokauden ympäri.','AI-kundservice som svarar dina kunder dygnet runt.','AI customer service that answers your customers, around the clock.')}</p>
       </div>
@@ -58,8 +72,9 @@ export function spiralHeroMarkup(t, lang) {
           ${cards.map(([,title],i)=>`<span class="rs-studio-orbit-icon${i===0?' is-active':''}" data-rs-icon data-index="${i}" data-rs-icon-label="${title}" style="--rs-icon-x:${(Math.sin(i*2*Math.PI/cards.length)*45).toFixed(2)}%;--rs-icon-y:${(-Math.cos(i*2*Math.PI/cards.length)*45).toFixed(2)}%" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">${iconPaths[i]}</svg></span>`).join('')}
           <div class="rs-studio-orbit-label">${t('YKSI PALVELU · MONTA MAHDOLLISUUTTA','EN TJÄNST · MÅNGA MÖJLIGHETER','ONE PLATFORM · MANY POSSIBILITIES')}</div>
         </div>
+        <div class="rs-orbit-beacon" aria-hidden="true"></div>
         <div class="rs-spiral-cards" role="list">
-          ${cards.map(([metric,title,copy,number],i)=>`<article class="rs-spiral-card${i===0?' rs-front':''}" role="listitem" data-rs-card data-index="${i}">
+          ${cards.map(([metric,title,copy,number],i)=>`<article class="rs-spiral-card${i===0?' rs-front':''}" role="listitem" data-rs-card data-index="${i}" data-rs-next-label="${nextCues[i]}">
             <div class="rs-studio-card-art rs-studio-scene-${i+1}" aria-hidden="true"><svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" focusable="false"><circle cx="400" cy="300" r="224" stroke-dasharray="5 12"/><circle cx="400" cy="300" r="156"/><ellipse cx="400" cy="300" rx="300" ry="140" transform="rotate(-21 400 300)"/><path d="M92 300H708M400 28V572"/><circle cx="178" cy="300" r="10"/><circle cx="624" cy="300" r="10"/><circle cx="400" cy="77" r="10"/><circle cx="400" cy="524" r="10"/></svg><span class="rs-studio-core"></span></div>
             <div class="rs-spiral-card-kicker"><span>RESPONDO / ${number}</span><i aria-hidden="true"></i></div>
             <div class="rs-spiral-metric">${metric}</div>
@@ -73,7 +88,7 @@ export function spiralHeroMarkup(t, lang) {
         </div>
       </div>
       <div class="rs-spiral-bottom rs-chat-first-bottom">
-        <div class="rs-scroll-invite" aria-hidden="true"><span class="rs-scroll-rule"></span>${t('SELAA ALAS','SKROLLA NED','SCROLL TO EXPLORE')}</div>
+        <div class="rs-scroll-invite" aria-hidden="true"><span class="rs-scroll-rule"></span><span class="rs-scroll-static">${t('SELAA ALAS','SKROLLA NED','SCROLL TO EXPLORE')}</span><span class="rs-next-caption">${t('SEURAAVAKSI','NÄSTA','UP NEXT')} <span class="rs-next-label" data-rs-next>${nextCues[0]}</span></span></div>
         <div class="rs-step-count" aria-hidden="true"><span data-rs-step>01</span><span class="rs-step-line"></span><span>${String(cards.length).padStart(2,'0')}</span></div>
       </div>
       <span class="rs-visually-hidden" aria-live="polite" aria-atomic="true" data-rs-announcement></span>
