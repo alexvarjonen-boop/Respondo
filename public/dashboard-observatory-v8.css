@@ -1,0 +1,184 @@
+/* RESPONDO AI · Observatory workspace v8
+   Follow the product's actual midnight/ice-blue brand across demo and
+   authenticated workspace. Only dashboard selectors: public pages unchanged.
+   Accessible surfaces, restrained layers, no extra animation or JS. */
+
+body:has(#app .dashboard-premium-shell){background:#080f1d!important}
+#app .dashboard-premium-shell.dashboard-simple-shell{
+  --rs-dashboard-ink:#f1f7ff;
+  --rs-dashboard-muted:#afc4e2;
+  --rs-dashboard-line:rgba(171,207,252,.20);
+  background:
+    radial-gradient(ellipse 85% 410px at 52% -110px,rgba(57,121,222,.23),transparent 77%),
+    #080f1d!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main{
+  box-sizing:border-box;width:min(100%,1310px)!important;
+  margin-inline:auto!important;min-width:0!important;
+}
+/* Real account previously showed Overview and another full-sized overview
+   header. Keep its section-specific page title when navigating other views. */
+#app .dashboard-premium-shell:has(.dashboard-head[data-dashboard-view="overview"]:not(.dashboard-view-hidden))
+ .dashboard-page-heading{display:none!important}
+
+/* Primary command deck: a crisp, layered header rather than a white toolbar. */
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer,
+#app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer,
+#app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed{
+  background:linear-gradient(120deg,rgba(20,38,65,.98),rgba(13,26,45,.98))!important;
+  border:1px solid rgba(188,218,255,.17)!important;
+  border-radius:18px!important;
+  box-shadow:0 14px 40px rgba(0,0,0,.20),inset 0 1px 0 rgba(223,239,255,.07)!important;
+}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .dashboard-menu-toggle{
+  min-height:44px!important;
+  background:rgba(180,211,255,.10)!important;
+  border-color:rgba(180,213,255,.29)!important;
+  border-radius:13px!important;color:#eff7ff!important;
+}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .dashboard-menu-toggle:hover{
+  background:rgba(190,219,255,.18)!important;
+}
+
+/* Hero: one visual hierarchy, no oversized blank introduction. */
+#app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]{
+  background:
+    radial-gradient(ellipse 65% 90% at 94% 4%,rgba(75,134,229,.22),transparent 80%),
+    linear-gradient(140deg,#172c49 0%,#102039 63%,#0d1b30 100%)!important;
+  border:1px solid rgba(174,207,251,.20)!important;
+  border-radius:22px!important;
+  box-shadow:0 16px 50px rgba(0,0,0,.17)!important;
+}
+#app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]::after{
+  right:-95px;top:-126px;opacity:.65;
+}
+#app .dashboard-premium-shell .dashboard-head .section-kicker{
+  color:#a8c7f2!important;letter-spacing:.17em!important;
+}
+#app .dashboard-premium-shell .dashboard-head h1{
+  max-width:680px;color:#f5f9ff!important;
+  font-weight:720!important;letter-spacing:-.055em!important;
+}
+#app .dashboard-premium-shell .dashboard-head p{
+  color:#b9cce7!important;max-width:630px;
+}
+
+/* Preview is an interactive product surface, not a screenshot.
+   Keep forms and editor controls pale for contrast; tint the frame
+   so the bright white areas no longer feel disconnected from Respondo. */
+#app .dashboard-premium-shell :is(.panel,.onboarding-card,.welcome-card){
+  background:linear-gradient(155deg,#f4f8ff,#eaf2fc)!important;
+  border:1px solid #bfcfe4!important;
+  box-shadow:0 11px 33px rgba(1,12,31,.16)!important;
+}
+#app .dashboard-premium-shell :is(.panel,.onboarding-card,.welcome-card)
+ :is(h2,h3,label){color:#182b47!important}
+#app .dashboard-premium-shell .premium-info-card,
+#app .dashboard-premium-shell .stat{
+  background:linear-gradient(145deg,#152b49,#101e35)!important;
+  border:1px solid rgba(177,211,255,.19)!important;
+  box-shadow:0 12px 30px rgba(0,0,0,.15)!important;
+}
+#app .dashboard-premium-shell .stat b,
+#app .dashboard-premium-shell .premium-info-card :is(b,dd){color:#f4f8ff!important}
+
+/* The workspace navigation and demo use the same dark-blue system.
+   Numbers and high-contrast focus states remain visible. */
+.dashboard-drawer-layer .dashboard-drawer-panel{
+  background:linear-gradient(145deg,#162b49,#0a192e)!important;
+  border-left:1px solid rgba(167,204,255,.24)!important;
+}
+.dashboard-drawer-layer .dashboard-drawer-link{
+  background:rgba(161,201,255,.075)!important;
+  border-color:rgba(171,210,255,.20)!important;
+  border-radius:13px!important;min-height:52px;
+}
+.dashboard-drawer-layer .dashboard-drawer-link:hover{
+  background:rgba(172,212,255,.15)!important;
+}
+.dashboard-drawer-layer .dashboard-drawer-link.active{
+  background:linear-gradient(110deg,#315b8b,#23436c)!important;
+  border-color:#79a5d8!important;
+}
+.dashboard-drawer-layer .dashboard-drawer-cta{
+  border-radius:12px!important;
+}
+
+/* Keep phone opening screen compact, with real, visible actions, not an
+   empty Welcome splash that expects knowledge of a hamburger menu. */
+@media(max-width:760px){
+  #app .dashboard-premium-shell .dashboard-simple-main{
+    padding:11px 13px calc(64px + env(safe-area-inset-bottom,0px))!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]{
+    padding:24px 19px 23px!important;margin:0 0 16px!important;
+    border-radius:20px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head h1{
+    font-size:clamp(28px,7.6vw,36px)!important;
+    line-height:1.12!important;margin:10px 0 9px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head p{
+    font-size:13px!important;line-height:1.54!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links{
+    margin-top:17px!important;gap:10px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+   .dashboard-head-mobile-test{
+    border-radius:13px!important;min-height:51px!important;
+    box-shadow:0 7px 20px rgba(0,0,0,.13)!important;
+    font-weight:770!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+   :is(.dashboard-head-mobile-setup,.dashboard-head-mobile-answers,.dashboard-head-mobile-menu){
+    border-radius:12px!important;min-height:46px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+   .dashboard-head-mobile-menu{
+    border:1px solid rgba(174,212,255,.28)!important;
+    color:#e2efff!important;
+    background:rgba(157,201,255,.065)!important;
+  }
+}
+
+/* The public "Try Bot" dashboard must fit logo, language choices and a
+   LABELLED Menu in one row on a normal iPhone. Real multi-company
+   workspaces keep their company selector's existing two-row behavior. */
+@media(min-width:351px) and (max-width:760px){
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed{
+    display:grid!important;
+    grid-template-columns:minmax(42px,1fr) auto minmax(88px,1fr)!important;
+    grid-template-rows:minmax(44px,auto)!important;
+    align-items:center!important;gap:6px!important;
+    padding:9px 11px!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer > .dashboard-topbar-brand,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed > .dashboard-topbar-brand{
+    grid-row:1!important;grid-column:1!important;justify-self:start!important;
+    min-width:0!important;margin:0!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer > .premium-language-picker,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed > .premium-language-picker{
+    display:flex!important;grid-row:1!important;grid-column:2!important;
+    justify-content:center!important;justify-self:center!important;
+    width:auto!important;max-width:min(42vw,170px)!important;
+    min-width:0!important;padding:0!important;margin:0!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer > .dashboard-menu-toggle{
+    grid-row:1!important;grid-column:3!important;
+    justify-self:end!important;margin:0!important;
+    min-width:88px!important;width:auto!important;
+  }
+}
+@media(max-width:350px){
+  /* Do not squash controls on unusually narrow phones. */
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer{
+    padding:8px 10px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #app .dashboard-premium-shell .dashboard-head-mobile-links button,
+  .dashboard-drawer-layer .dashboard-drawer-link{transition:none!important}
+}
