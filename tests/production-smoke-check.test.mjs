@@ -11,7 +11,7 @@ const html = (lang = 'fi') =>
 
 function fakeResponse(url, init, { unhealthy = false, brokenSwedish = false, apexUnavailable = false } = {}) {
   const u = new URL(url);
-  let body = html(u.searchParams.get('lang') || 'fi');
+  let body = html(u.searchParams.get('lang') || (u.pathname === '/ominaisuudet' ? 'fi' : 'en'));
   let status = 200;
   let contentType = 'text/html';
   if (u.pathname === '/api/health') {
