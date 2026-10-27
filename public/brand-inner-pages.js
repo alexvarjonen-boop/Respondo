@@ -21,7 +21,7 @@
     const label = aside.querySelector('.section-kicker')?.textContent.trim() || 'RESPONDO AI';
     const security = path() === '/tietoturva';
     main.classList.add('r-brand-legal');
-    main.prepend(hero({title,intro,tag:label,visualLabel:security ? 'PRIVACY / SECURITY' : 'TRUST / TRANSPARENCY'}));
+    // The existing localized title and summary are the legal heading. No giant marketing hero.
     aside.classList.add('r-brand-legal-sidebar');
     copy.classList.add('r-brand-legal-copy');
     const sections = Array.from(copy.children).filter(child => child.tagName === 'SECTION');
@@ -37,8 +37,7 @@
     const toc = make('nav','r-brand-legal-toc','<span class="r-brand-mini-title">' + loc('TÄLLÄ SIVULLA','PÅ DEN HÄR SIDAN','ON THIS PAGE') + '</span><div class="r-brand-toc-links">' + links + '</div>');
     toc.setAttribute('aria-label',loc('Sivun sisältö','Sidans innehåll','Page contents'));
     aside.insertBefore(toc,aside.querySelector('.legal-seller') || null);
-    const end = make('div','r-brand-next-cta','<div><span class="r-brand-mini-title">' + loc('KYSY LISÄÄ','FRÅGA OSS','HAVE A QUESTION') + '</span><h2>' + loc('Kaikki kysymykset ovat tervetulleita.','Vi hjälper dig gärna vidare.','We are here to help.') + '</h2><p>' + loc('Jos kaipaat tarkennusta palveluun tai ehtoihin, ota yhteyttä.','Kontakta oss om du behöver mer information om tjänsten eller villkoren.','Contact us for more information about the service or its terms.') + '</p></div><a href="/yhteystiedot" class="r-brand-pill">' + loc('Ota yhteyttä','Kontakta oss','Contact us') + ' <span aria-hidden="true">↗</span></a>');
-    main.querySelector('.legal-layout')?.after(end);
+
   }
   function contactPage(page) {
     const main = page.querySelector('.contact-page main');
@@ -51,7 +50,7 @@
     if(title) title.classList.add('r-brand-contact-title');
     const intro = title?.nextElementSibling;
     if(intro) intro.classList.add('r-brand-contact-lead');
-    container.prepend(make('div','r-brand-contact-banner','<div>' + badge() + '<p class="r-brand-contact-banner-word">' + loc('Yksi viesti.<br>Oikea keskustelu.','Ett meddelande.<br>En riktig dialog.','One message.<br>A real conversation.') + '</p></div><div class="r-brand-contact-banner-mark" aria-hidden="true"><img src="' + logo + '" alt="" width="114" height="114"><span>LET\'S TALK ↗</span></div>'));
+    // Keep only the original contact heading, message form, and contact details.
     const grids = Array.from(main.querySelectorAll('section,aside')).filter(el => el.querySelector('#homeContactForm') || el.querySelector('a[href^="mailto:"]'));
     grids.forEach((el,index) => el.classList.add(index===0?'r-brand-contact-form-card':'r-brand-contact-info-card'));
   }
@@ -66,7 +65,7 @@
     if(!main || main.querySelector('.r-brand-signup-intro')) return;
     const card = page.querySelector('#signup');
     if(!card) return;
-    main.prepend(make('div','r-brand-signup-intro',badge() + '<h1>' + loc('Älykkäämpää asiakaspalvelua.','Smartare kundservice.','Smarter customer service.') + '</h1><p>' + loc('Luo yrityksellesi tili ja aloita kolmen päivän kokeilu.','Skapa ett företagskonto och starta din provperiod på tre dagar.','Create your business account and start your three-day trial.') + '</p>'));
+    main.prepend(make('div','r-brand-signup-intro','<h1>' + loc('Luo tili','Skapa konto','Create account') + '</h1>'));
   }
   function pricingPage(page) {
     const main = page.querySelector('.pricing-page main');
@@ -83,11 +82,11 @@
     const p = path();
     if(['/kayttoehdot','/tietosuoja','/evasteet','/dpa','/tietoturva'].includes(p)) legalPage(page);
     else if(p==='/yhteystiedot') contactPage(page);
-    else if(p==='/ominaisuudet'||p==='/features'||p==='/funktioner') flowInsert(page,'.features-hero',true);
-    else if(p==='/kenelle-sopii') flowInsert(page,'.audience-hero',true);
-    else if(p==='/hinnat') pricingPage(page);
+
+
+
     else if(p==='/tilaus') signupPage(page);
-    else if(p==='/guides'||p.startsWith('/guides/')) guidesPage(page);
+
   }
   const start = () => {
     const host = root();
