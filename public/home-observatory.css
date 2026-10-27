@@ -827,3 +827,34 @@
   #app .apple-home-page .rs-orbit-progress,
   #app .apple-home-page .rs-orbit-current{display:none!important}
 }
+
+
+/* First-customer journey: one quiet route to real plan checkout, not another
+   Ask Respondo launcher. Home art, orbit and chapter layout stay untouched. */
+#app .apple-home-page .rs-first-order-link{
+  display:inline-flex;align-items:center;gap:12px;
+  margin-top:24px;padding:10px 0 11px;
+  border:0;border-bottom:1px solid rgba(175,208,255,.48);
+  border-radius:0;color:#d4e5ff!important;
+  font-size:13px;font-weight:670;letter-spacing:.025em;
+  line-height:1.3;text-decoration:none;
+  pointer-events:auto;position:relative;z-index:40;
+  transition:color .18s ease,border-color .18s ease;
+}
+#app .apple-home-page .rs-first-order-link span:last-child{
+  font-size:17px;line-height:1;color:#aac8ff;
+}
+#app .apple-home-page .rs-first-order-link:hover{
+  color:#fff!important;border-bottom-color:#e1efff;
+}
+#app .apple-home-page .rs-first-order-link:focus-visible{
+  outline:2px solid #aecfff;outline-offset:6px;border-radius:2px;
+}
+@media(max-width:600px){
+  #app .apple-home-page .rs-first-order-link{
+    margin-top:17px;font-size:12px;gap:9px;padding-bottom:8px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #app .apple-home-page .rs-first-order-link{transition:none}
+}

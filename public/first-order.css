@@ -1,0 +1,47 @@
+/* First-customer conversion support: clear next steps without modals or dark patterns. */
+#app .pricing-assist{
+  margin:clamp(18px,3vw,32px) auto 0;
+  padding:20px 24px;
+  max-width:820px;
+  border:1px solid rgba(160,189,231,.25);
+  background:linear-gradient(120deg,rgba(103,147,210,.08),rgba(103,147,210,.025));
+  border-radius:17px;
+  text-align:center;
+}
+#app .pricing-assist p{
+  font-size:14px;line-height:1.6;margin:0 auto 9px;max-width:650px;
+  color:inherit;opacity:.89
+}
+#app .pricing-assist-links{display:flex;justify-content:center;gap:13px 26px;flex-wrap:wrap}
+#app .pricing-assist-links a{
+  color:inherit;text-underline-offset:4px;text-decoration:underline;
+  font-size:13px;font-weight:700;line-height:1.8;
+}
+#app .pricing-assist-links a:focus-visible,
+#app .seo-pricing-actions a:focus-visible{outline:2px solid #8caeff;outline-offset:3px}
+#app .seo-pricing-actions{
+  display:flex;flex-wrap:wrap;align-items:center;gap:12px;
+  margin-top:16px
+}
+#app .seo-pricing-actions a{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:40px;border-radius:9px;padding:9px 13px;
+  text-decoration:none;font-size:13px;font-weight:700;
+}
+#app .seo-pricing-actions .seo-pricing-buy{background:#cde1ff;color:#091b33}
+#app .seo-pricing-actions .seo-pricing-annual{
+  color:inherit;border:1px solid currentColor;
+}
+#app .seo-pricing-help{
+  margin:28px 0 4px;padding:18px 22px;
+  border:1px solid rgba(150,180,221,.32);border-radius:14px
+}
+#app .seo-pricing-help p{margin:0 0 8px;font-size:14px}
+#app .seo-pricing-help a{
+  text-decoration:underline;text-underline-offset:3px;color:inherit;font-weight:650
+}
+@media(max-width:600px){
+  #app .pricing-assist{padding:17px 14px}
+  #app .seo-pricing-actions{align-items:stretch;flex-direction:column}
+  #app .seo-pricing-actions a{width:100%}
+}

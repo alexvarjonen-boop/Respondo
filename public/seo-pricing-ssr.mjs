@@ -1,15 +1,16 @@
 // Crawlable, localized pricing summary for the initial HTML response.
 // Keep these figures aligned with pricingSection() and checkout plan options in public/app.js.
 const tiers=[
-  {name:'Advanced',monthly:49,annualEquivalent:39,annualTotal:468},
-  {name:'Premium',monthly:129,annualEquivalent:119,annualTotal:1428},
-  {name:'Enterprise',monthly:149,annualEquivalent:139,annualTotal:1668}
+  {name:'Advanced',code:'basic',monthly:49,annualEquivalent:39,annualTotal:468},
+  {name:'Premium',code:'advanced',monthly:129,annualEquivalent:119,annualTotal:1428},
+  {name:'Enterprise',code:'business',monthly:149,annualEquivalent:139,annualTotal:1668}
 ];
 const labels={
   fi:{
     heading:'AI-asiakaspalvelubotin hinnat yrityksille',
     lead:'Vertaa Respondo AI:n kuukausi- ja vuositilauksia. Kaikkiin paketteihin kuuluu kolmen päivän maksuton kokeilu. Valitse yrityksesi tarpeisiin sopiva asiakaspalvelubotti.',
     monthly:'Kuukausitilaus',yearly:'Vuositilaus',perMonth:'€/kk',annualText:'vuodessa, laskutus vuosittain',saving:'Säästö vuodessa',
+    choose:'Valitse paketti',annualChoose:'Valitse vuositilaus',help:'Epävarma valinnasta? Kokeile bottia tai kysy meiltä käyttöönotosta.',demo:'Kokeile bottia',
     section:'Mistä AI-chatbotin hinta muodostuu?',
     details:'Valintaa tehdessä huomioi asiakaspalvelun kysymysten määrä, omien tietojen ylläpito, mahdollinen tuote- tai ajanvaraustarve ja työntekijöiden osallistuminen keskusteluihin. Kuukausihinnan lisäksi arvioi käyttöönoton ja tietopohjan päivittämisen vaatima työ. Vertaa aina pakettien ajantasaiset ominaisuudet ja ehdot ennen tilausta.',
     faq:'Usein kysytyt kysymykset hinnoittelusta',
@@ -26,6 +27,7 @@ const labels={
     heading:'Priser för AI-kundservicebot till företag',
     lead:'Jämför månads- och årsabonnemang för Respondo AI. Alla paket har tre dagars gratis provperiod. Välj en kundservicebot som passar företagets behov.',
     monthly:'Månadsabonnemang',yearly:'Årsabonnemang',perMonth:'€/mån',annualText:'per år, faktureras årsvis',saving:'Besparing per år',
+    choose:'Välj paket',annualChoose:'Välj årsabonnemang',help:'Osäker? Testa chatbotten eller fråga oss om installationen.',demo:'Testa chatbotten',
     section:'Vad påverkar kostnaden för en AI-chatbot?',
     details:'Bedöm hur många återkommande kundfrågor som ska hanteras, hur kunskapsbasen underhålls och om ni behöver hjälp med produkter, bokning eller överlämning till personal. Utöver abonnemanget kan installation och uppdateringar innebära arbetstid. Kontrollera alltid aktuella funktioner och villkor före beställning.',
     faq:'Vanliga frågor om priser',
@@ -42,6 +44,7 @@ const labels={
     heading:'AI customer service chatbot pricing for businesses',
     lead:'Compare Respondo AI monthly and annual plans. Every plan includes a three-day free trial. Review the pricing and choose a customer support chatbot for your business website.',
     monthly:'Monthly billing',yearly:'Annual billing',perMonth:'€/month',annualText:'per year, billed annually',saving:'Annual saving',
+    choose:'Choose plan',annualChoose:'Choose annual plan',help:'Not sure which plan fits? Try the bot or ask us about getting started.',demo:'Try the chatbot',
     section:'What determines the cost of an AI customer service chatbot?',
     details:'Consider the volume of recurring support questions, the quality and upkeep of the business knowledge base, ecommerce or booking needs and human support workflows. Beyond the subscription, allow time for installation, testing and maintaining accurate company answers. Check current plan features and terms before purchasing.',
     faq:'Frequently asked questions about chatbot pricing',
@@ -60,9 +63,11 @@ const href=(path,lang)=>path+(lang==='en'?'':'?lang='+lang);
 export const SEO_PRICING_TIERS=Object.freeze(tiers);
 export function seoPricingMarkup(lang='fi'){
   const L=['fi','sv','en'].includes(lang)?lang:'fi', d=labels[L];
-  const cards=tiers.map(t=>'<article class="ai-topic-section"><h3>'+t.name+'</h3><p><strong>'+esc(d.monthly)+': '+t.monthly+' '+esc(d.perMonth)+'</strong></p>'+
+  const cards=tiers.map(t=>'<article class="ai-topic-section seo-pricing-choice"><h3>'+t.name+'</h3><p><strong>'+esc(d.monthly)+': '+t.monthly+' '+esc(d.perMonth)+'</strong></p>'+
     '<p>'+esc(d.yearly)+': '+t.annualEquivalent+' '+esc(d.perMonth)+' ('+t.annualTotal+' € '+esc(d.annualText)+')</p>'+
-    '<p>'+esc(d.saving)+': 120 €</p></article>').join('');
+    '<p>'+esc(d.saving)+': 120 €</p>'+
+    '<div class="seo-pricing-actions"><a class="seo-pricing-buy" href="/tilaus?plan='+t.code+'_monthly&amp;lang='+L+'">'+esc(d.choose)+' '+esc(t.name)+' →</a>'+
+    '<a class="seo-pricing-annual" href="/tilaus?plan='+t.code+'_yearly&amp;lang='+L+'">'+esc(d.annualChoose)+' →</a></div></article>').join('');
   const faq=d.questions.map(([q,a])=>'<details class="ai-topic-faq"><summary>'+esc(q)+'</summary><p>'+esc(a)+'</p></details>').join('');
   const paths=[
     ['/ominaisuudet',d.features],['/asiakaspalvelubotti',d.bot],['/asiakaspalvelun-automatisointi',d.automation],['/yhteystiedot',d.contact]
@@ -71,6 +76,7 @@ export function seoPricingMarkup(lang='fi'){
   return '<main class="ai-topic-page seo-pricing-page">'+
     '<section class="seo-landing-hero"><div class="container seo-landing-hero-inner"><h1>'+esc(d.heading)+'</h1><p>'+esc(d.lead)+'</p></div></section>'+
     '<section class="section ai-topic-body"><div class="container ai-topic-prose"><div class="seo-pricing-tier-grid">'+cards+'</div>'+
+    '<div class="seo-pricing-help"><p>'+esc(d.help)+'</p><a href="'+esc(href('/assistant',L))+'">'+esc(d.demo)+' →</a> · <a href="'+esc(href('/yhteystiedot',L))+'">'+esc(d.contact)+' →</a></div>'+
     '<section class="ai-topic-section"><h2>'+esc(d.section)+'</h2><p>'+esc(d.details)+'</p></section></div></section>'+
     '<section class="section ai-topic-faq-area"><div class="container ai-topic-prose"><h2>'+esc(d.faq)+'</h2>'+faq+'</div></section>'+
     '<section class="section seo-landing-closing"><div class="container"><div class="seo-landing-closing-card"><h2>'+esc(d.linksHeading)+'</h2><nav class="ai-topic-links" aria-label="'+esc(d.linksHeading)+'">'+links+'</nav><p class="ai-topic-notice">'+esc(d.notice)+'</p></div></div></section></main>';
