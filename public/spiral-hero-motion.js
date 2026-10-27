@@ -29,7 +29,7 @@
     raf = 0;
     if (section) {
       section.classList.remove('rs-enhanced', 'rs-fixed-fallback', 'rs-fixed-end', 'rs-intro-past');
-      for (const key of ['--rs-progress','--rs-light-shift','--rs-light-scale','--rs-light-strength']) section.style.removeProperty(key);
+      for (const key of ['--rs-progress','--rs-orbit-fill','--rs-light-shift','--rs-light-scale','--rs-light-strength']) section.style.removeProperty(key);
       for (const icon of icons) icon.classList.remove('is-active');
       for (const card of cards) {
         card.classList.remove('rs-in-scene');
@@ -63,6 +63,12 @@
     section.classList.toggle('rs-intro-past', index > 0);
     const counter = section.querySelector('[data-rs-step]');
     if (counter) counter.textContent = String(index + 1).padStart(2, '0');
+    // One active-chapter caption shares its index and language with the visible
+    // feature. This text is decorative; the card heading is still accessible.
+    const orbitIndex = section.querySelector('[data-rs-orbit-index]');
+    if (orbitIndex) orbitIndex.textContent = String(index + 1).padStart(2, '0') + ' / ' + String(cards.length).padStart(2, '0');
+    const orbitTitle = section.querySelector('[data-rs-orbit-title]');
+    if (orbitTitle) orbitTitle.textContent = cards[index].querySelector('h2')?.textContent || '';
     const nextCue = section.querySelector('[data-rs-next]');
     if (nextCue) nextCue.textContent = cards[index].getAttribute('data-rs-next-label') || '';
     const announced = section.querySelector('[data-rs-announcement]');
@@ -165,6 +171,9 @@
     section.style.setProperty('--rs-art-scale', (1 + .075 * position).toFixed(3));
     section.style.setProperty('--rs-art-opacity', mobile ? '.19' : '.26');
     section.style.setProperty('--rs-progress', normalized.toFixed(4));
+    // A single stroke around the orbit shows progress without an animated loop,
+    // scroll interception, or an extra painted full-screen overlay.
+    section.style.setProperty('--rs-orbit-fill', (normalized * 100).toFixed(2));
   }
   function schedule() {
     if (!raf && section && section.isConnected && section.classList.contains('rs-enhanced')) raf = requestAnimationFrame(draw);

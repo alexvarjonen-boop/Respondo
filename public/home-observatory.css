@@ -778,3 +778,52 @@
 @media(prefers-reduced-motion:reduce){
   #app .apple-home-page .rs-kinetic-light{display:none!important}
 }
+
+
+/* Observatory v6: an instrument-like, scroll-calibrated orbit and a localized
+   chapter readout. Native scrolling remains the only animation driver. */
+#app .apple-home-page .rs-orbit-progress{display:none}
+#app .apple-home-page .rs-enhanced .rs-orbit-progress{
+  display:block;position:absolute;inset:0;width:100%;height:100%;
+  overflow:visible;pointer-events:none;transform:rotate(-90deg);
+}
+#app .apple-home-page .rs-orbit-progress circle{
+  fill:none;stroke:#bedbff;stroke-width:.34;
+  stroke-linecap:round;
+  stroke-dasharray:var(--rs-orbit-fill,0) 100;
+  opacity:.85;
+}
+#app .apple-home-page .rs-orbit-current{display:none}
+@media(min-width:1100px) and (min-height:781px){
+  #app .apple-home-page .rs-enhanced .rs-orbit-current{
+    display:flex;align-items:center;justify-content:center;gap:13px;
+    position:absolute;z-index:5;pointer-events:none;
+    left:69%;top:calc(49% + min(21.5vw,325px) + 23px);
+    width:min(43vw,650px);max-width:calc(100% - 20px);
+    transform:translateX(-50%);
+    color:#cee2ff;font-size:10px;font-weight:710;letter-spacing:.09em;
+    text-align:center;white-space:nowrap;
+  }
+  #app .apple-home-page .rs-orbit-current-index{
+    color:#819fc8;font-variant-numeric:tabular-nums;letter-spacing:.14em;
+    flex-shrink:0;
+  }
+  #app .apple-home-page .rs-orbit-current-divider{
+    display:block;width:26px;height:1px;flex-shrink:0;
+    background:linear-gradient(90deg,rgba(119,162,220,.12),rgba(167,202,253,.73));
+  }
+  #app .apple-home-page .rs-orbit-current-title{
+    min-width:0;overflow:hidden;text-overflow:ellipsis;
+    color:#dbeaff;letter-spacing:.015em;font-weight:630;
+  }
+}
+@media(max-width:1099px){
+  #app .apple-home-page .rs-orbit-progress circle{opacity:.72;stroke-width:.31}
+}
+@media(max-width:600px){
+  #app .apple-home-page .rs-orbit-progress circle{opacity:.64;stroke-width:.28}
+}
+@media(prefers-reduced-motion:reduce){
+  #app .apple-home-page .rs-orbit-progress,
+  #app .apple-home-page .rs-orbit-current{display:none!important}
+}
