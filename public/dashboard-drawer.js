@@ -193,6 +193,14 @@
     const app = document.getElementById('app');
     if (!app) return;
     mount();
+    // A visible, accessible secondary route into the same drawer lives below
+    // the dashboard shortcuts. Delegate from #app so SPA rerenders remain safe.
+    app.addEventListener('click',(event) => {
+      const opener=event.target.closest?.('[data-dashboard-open-menu]');
+      if (!opener || !app.contains(opener)) return;
+      const menu=app.querySelector('.dashboard-menu-toggle');
+      if (menu) menu.click();
+    });
     new MutationObserver(mount).observe(app,{childList:true,subtree:true});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',start,{once:true});

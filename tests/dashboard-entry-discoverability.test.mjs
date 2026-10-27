@@ -47,9 +47,9 @@ test('mobile cards and menu affordance are visible without opening the drawer',(
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  assert.doesNotMatch(css,/@keyframes|scroll-snap-type/);
  assert.equal(css.split('{').length,css.split('}').length);
- assert.match(index,/dashboard-entry\.css\?v=20261027-visible-dashboard-navigation-v1-quick-actions-first-v2/);
- assert.match(index,/app\.js\?v=[^"]+-dashboard-entry-v1/);
- assert.match(index,/dashboard-drawer\.js\?v=[^"]+-visible-menu-v1/);
+ assert.match(index,/dashboard-entry\.css\?v=20261027-visible-dashboard-navigation-v1-quick-actions-first-v2-all-sections-v3/);
+ assert.match(index,/app\.js\?v=[^"]+-dashboard-entry-v1-all-sections-v3/);
+ assert.match(index,/dashboard-drawer\.js\?v=[^"]+-visible-menu-v1-all-sections-v3/);
 });
 
 test('overview shows its useful quick actions before passive metrics and reveals scrolled-to sections',()=>{
@@ -62,4 +62,24 @@ test('overview shows its useful quick actions before passive metrics and reveals
  assert.match(css,/scroll-margin-top:var\(--demo-sticky-header-space,180px\)/);
  assert.match(css,/\.dashboard-head\[data-dashboard-view="overview"\]\{/);
  assert.match(read('index.html'),/quick-actions-first-v2/);
+});
+
+test('all sections are one tap away from the visible dashboard footer in every language',()=>{
+ const app=read('app.js'),drawer=read('dashboard-drawer.js');
+ for(const text of ['Näytä kaikki osiot','Visa alla avsnitt','View all sections']) assert.ok(app.includes(text),text);
+ for(const text of ['Kaikki muut toiminnot löytyvät valikosta.','Alla andra funktioner finns i menyn.','Find every other feature in the menu.']) assert.ok(app.includes(text),text);
+ assert.match(app,/data-dashboard-open-menu aria-haspopup="dialog" aria-controls="dashboard-drawer"/);
+ assert.match(app,/chat:'<path d=/);
+ assert.match(app,/dashboard-entry-icon" aria-hidden="true">\$\{premiumIcon\('chat'\)\}/);
+ assert.match(drawer,/app\.addEventListener\('click'/);
+ assert.match(drawer,/event\.target\.closest\?\.\('\[data-dashboard-open-menu\]'\)/);
+ assert.match(drawer,/app\.querySelector\('\.dashboard-menu-toggle'\)/);
+ assert.match(drawer,/menu\.click\(\)/);
+ assert.doesNotThrow(()=>new Script(drawer));
+ const css=read('dashboard-entry.css');
+ assert.match(css,/\.dashboard-entry-footer/);
+ assert.match(css,/\.dashboard-entry-more/);
+ assert.match(css,/min-height:44px/);
+ assert.match(css,/@media\(max-width:760px\)/);
+ assert.equal(css.split('{').length,css.split('}').length);
 });

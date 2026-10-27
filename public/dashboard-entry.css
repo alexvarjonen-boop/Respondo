@@ -189,3 +189,39 @@
     margin-bottom:10px!important;
   }
 }
+
+/* v3: First-visit shortcut to the complete list. Users need not infer that
+   three unlabeled strokes hide most of the dashboard functionality. */
+#app .dashboard-premium-shell .dashboard-entry-footer{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:12px;margin-top:16px;padding:14px 2px 0;
+  border-top:1px solid #e6ebf3;min-width:0;
+}
+#app .dashboard-premium-shell .dashboard-entry-footer > span{
+  color:#647891;font-size:12px;line-height:1.5;
+}
+#app .dashboard-premium-shell .dashboard-entry-more{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:42px;max-width:100%;padding:9px 13px;
+  background:#edf3fc;border:1px solid #c7d9f1;
+  border-radius:12px;color:#1a416f;
+  font:750 12px/1.25 system-ui,-apple-system,sans-serif;
+  text-decoration:none;white-space:nowrap;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+#app .dashboard-premium-shell .dashboard-entry-more:hover{
+  background:#dfeafd;border-color:#aac8ee;
+}
+#app .dashboard-premium-shell .dashboard-entry-more:focus-visible{
+  outline:3px solid #749ff4;outline-offset:3px;
+}
+@media(max-width:760px){
+  #app .dashboard-premium-shell .dashboard-entry-footer{
+    flex-direction:column;align-items:stretch;gap:8px;
+    margin-top:12px;padding-top:12px;
+  }
+  #app .dashboard-premium-shell .dashboard-entry-footer > span{font-size:11px}
+  #app .dashboard-premium-shell .dashboard-entry-more{
+    justify-content:center;width:100%;min-height:44px;
+  }
+}

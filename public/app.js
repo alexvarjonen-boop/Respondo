@@ -3693,6 +3693,7 @@ async function dashboard(options = {}) {
   const premiumNavIcons={
     overview:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/>',
     setup:'<rect x="4" y="7" width="16" height="13" rx="4"/><path d="M12 3v4M9 13h.01M15 13h.01M8 17h8"/>',
+    chat:'<path d="M4 5h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-5 3v-3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/><path d="M8 10h8M8 13h5"/>',
     answers:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/>',
     customers:'<circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6M17 15a5 5 0 0 1 4 5"/>',
     automation:'<path d="M4 19v-8M9 19V6M14 19v-9M19 19V3"/>',
@@ -3849,7 +3850,7 @@ async function dashboard(options = {}) {
         </div>
         <div class="dashboard-entry-actions">
           <button type="button" class="dashboard-entry-action dashboard-entry-primary" data-dashboard-jump="live-preview">
-            <span class="dashboard-entry-icon" aria-hidden="true">${premiumIcon('setup')}</span>
+            <span class="dashboard-entry-icon" aria-hidden="true">${premiumIcon('chat')}</span>
             <span class="dashboard-entry-action-copy"><strong>${appText('Testaa bottia','Testa botten','Test the chatbot')}</strong><small>${appText('Kysy kysymys ja katso, miten botti vastaa.','Ställ en fråga och se hur botten svarar.','Ask a question and see how the bot responds.')}</small></span>
             <span class="dashboard-entry-arrow" aria-hidden="true">→</span>
           </button>
@@ -3868,6 +3869,10 @@ async function dashboard(options = {}) {
             <span class="dashboard-entry-action-copy"><strong>${isDemo?appText('Asennus','Installation','Installation'):appText('Keskustelut ja liidit','Konversationer och leads','Conversations & leads')}</strong><small>${isDemo?appText('Näe, miten botti lisätään sivuille','Se hur du lägger till botten på din webbplats','See how to add the bot to a website'):appText('Näe asiakkaiden kysymykset ja yhteydenotot','Se kundfrågor och kontaktförfrågningar','See customer questions and enquiries')}</small></span>
             <span class="dashboard-entry-arrow" aria-hidden="true">→</span>
           </button>
+        </div>
+        <div class="dashboard-entry-footer">
+          <span>${appText('Kaikki muut toiminnot löytyvät valikosta.','Alla andra funktioner finns i menyn.','Find every other feature in the menu.')}</span>
+          <button type="button" class="dashboard-entry-more" data-dashboard-open-menu aria-haspopup="dialog" aria-controls="dashboard-drawer">${appText('Näytä kaikki osiot','Visa alla avsnitt','View all sections')} <span aria-hidden="true">→</span></button>
         </div>
       </section>
 
