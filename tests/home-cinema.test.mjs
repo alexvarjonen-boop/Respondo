@@ -31,7 +31,7 @@ test('homepage renders the spiral then pricing with no redundant lower CTA',asyn
     assert.doesNotMatch(html,/apple-bottom-cta|Valmis vastaamaan|Aloita ilmainen kokeilu/);
     assert.deepEqual(indices,[...indices].sort((a,b)=>a-b),lang+': sections out of sequence');
     assert.doesNotMatch(html,/apple-highlights|apple-lead-calculator|rg-growth-section/);
-    assert.match(html,/Havainnollistava|Illustrativ|Illustrative/);
+    assert.match(html,/Seuraa keskusteluja|Följ konversationerna|Review conversations/);
     assert.match(html,/href="\/tilaus\?plan=basic_monthly"/);
     assert.match(html,/name="|aria-label=/);
   }

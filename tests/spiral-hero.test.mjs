@@ -27,7 +27,7 @@ test('spiral page renders 10 real feature cards after logo reveal in all languag
     assert.ok(markup.indexOf('rs-spiral-section') < markup.indexOf('PLANS'));
     assert.equal((markup.match(/data-rs-card\b/g)||[]).length, 10);
     assert.ok(!markup.includes('apple-bottom-cta'));
-    assert.ok(hero.includes(t('ei mitattu asiakastulos','inget uppmätt kundresultat','not a measured customer result')));
+    assert.ok(hero.includes(t('Seuraa keskusteluja ja tunnista','Följ konversationerna och se','Review conversations to see')));
   }
 });
 
