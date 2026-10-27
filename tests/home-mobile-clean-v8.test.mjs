@@ -42,7 +42,7 @@ test('index busts Safari assets, including both nested ES module imports',()=>{
    const assetUrl=html.slice(start,html.indexOf('"',start));
    if(asset==='app.js'){
      assert.ok(assetUrl.includes('-dashboard-entry-v1-all-sections-v3-first-viewport-v4'),asset);
-     assert.ok(assetUrl.endsWith('-first-screen-actions-v5'),asset);
+     assert.ok(assetUrl.includes('-first-screen-actions-v5') && assetUrl.endsWith('-dashboard-brand-v7'),asset);
    } else assert.ok(assetUrl.endsWith('-mobile-simplify-v9'),asset);
  }
  assert.ok(read('app.js').includes('-mobile-simplify-v9'));
