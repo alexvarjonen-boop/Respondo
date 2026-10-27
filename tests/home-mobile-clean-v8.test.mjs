@@ -39,7 +39,7 @@ test('index busts Safari assets, including both nested ES module imports',()=>{
  for(const asset of ['home-studio-v7.css','chat-first-home.css','effects.js','app.js']){
    const start=html.indexOf('/'+asset+'?v=');
    assert.ok(start>=0,asset);
-   const expectedSuffix=asset==='app.js'?'-dashboard-entry-v1':'-mobile-simplify-v9';
+   const expectedSuffix=asset==='app.js'?'-dashboard-entry-v1-all-sections-v3':'-mobile-simplify-v9';
    assert.ok(html.slice(start,html.indexOf('"',start)).endsWith(expectedSuffix),asset);
  }
  assert.ok(read('app.js').includes('-mobile-simplify-v9'));
