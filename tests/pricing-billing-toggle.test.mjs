@@ -16,7 +16,7 @@ function sourceFunction(source, start, end, injected) {
 function renderPricing(lang) {
   const text=(fi,sv,en)=>({fi,sv,en})[lang];
   const build = sourceFunction(app,'function pricingSection() {','\n\nfunction bindPricingPeriodSwitch()',{
-    appText:text,appLocale:()=>lang==='en'?'en-US':'fi-FI',currentLang:()=>lang,esc:(str)=>String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+    appText:text,appLocale:()=>lang==='en'?'en-US':'fi-FI',currentLang:()=>lang,esc:(str)=>String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;'),marketingAttributionQuery:()=>'',location:{search:''}
   });
   return build();
 }
