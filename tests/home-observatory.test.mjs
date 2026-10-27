@@ -29,7 +29,7 @@ for (const [lang,idx] of [['fi',0],['sv',1],['en',2]]) {
 
 test('Observatory styles load last and are homepage-scoped',()=>{
   assert.ok(html.indexOf('/home-observatory.css') > html.indexOf('/studio-home.css'));
-  assert.match(html,/home-observatory\.css\?v=20261027-observatory-v1/);
+  assert.match(html,/home-observatory\.css\?v=20261027-observatory-polish-v2/);
   assert.match(html,/spiral-hero-motion\.js\?v=20261026-orbit10-v1-observatory-v1/);
   assert.match(html,/app\.js\?v=[^"]+-observatory-v1/);
   assert.match(app,/apple-home\.js\?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1/);
@@ -62,4 +62,19 @@ test('existing production pricing and assistant infrastructure stay unchanged',(
   assert.match(app,/card\('Enterprise',149/);
   assert.match(html,/logo-reveal\.js/);
   assert.match(html,/effects\.js/);
+});
+
+test('final Observatory polish adds only restrained visual details, no new buttons or animations',()=>{
+  const hero=spiralHeroMarkup((fi,sv,en)=>en,'en');
+  assert.doesNotMatch(hero,/rs-hero-talk|data-open-site-assistant|Ask Respondo/);
+  assert.doesNotMatch(theme,/rs-hero-talk/);
+  assert.match(theme,/Observatory v2/);
+  assert.match(theme,/repeating-conic-gradient/);
+  assert.match(theme,/\.rs-studio-orbit-art::before/);
+  assert.match(theme,/\.rs-studio-orbit-art::after/);
+  assert.match(theme,/\.rs-spiral-card-kicker/);
+  assert.match(theme,/max-width:600px/);
+  assert.match(theme,/prefers-reduced-motion:reduce/);
+  assert.doesNotMatch(theme,/@keyframes|animation:\s*[^n]/);
+  assert.ok((theme.match(/{/g)||[]).length === (theme.match(/}/g)||[]).length);
 });
