@@ -76,7 +76,7 @@ export function seoPricingMarkup(lang='fi'){
   return '<main class="ai-topic-page seo-pricing-page">'+
     '<section class="seo-landing-hero"><div class="container seo-landing-hero-inner"><h1>'+esc(d.heading)+'</h1><p>'+esc(d.lead)+'</p></div></section>'+
     '<section class="section ai-topic-body"><div class="container ai-topic-prose"><div class="seo-pricing-tier-grid">'+cards+'</div>'+
-    '<div class="seo-pricing-help"><p>'+esc(d.help)+'</p><a href="'+esc(href('/assistant',L))+'">'+esc(d.demo)+' →</a> · <a href="'+esc(href('/yhteystiedot',L))+'">'+esc(d.contact)+' →</a></div>'+
+    '<div class="seo-pricing-help"><p>'+esc(d.help)+'</p><a href="'+esc(href('/assistant',L))+'">'+esc(d.demo)+' →</a> · <a href="'+esc('/yhteystiedot?lang='+L+'&intent=demo')+'">'+esc(d.contact)+' →</a></div>'+
     '<section class="ai-topic-section"><h2>'+esc(d.section)+'</h2><p>'+esc(d.details)+'</p></section></div></section>'+
     '<section class="section ai-topic-faq-area"><div class="container ai-topic-prose"><h2>'+esc(d.faq)+'</h2>'+faq+'</div></section>'+
     '<section class="section seo-landing-closing"><div class="container"><div class="seo-landing-closing-card"><h2>'+esc(d.linksHeading)+'</h2><nav class="ai-topic-links" aria-label="'+esc(d.linksHeading)+'">'+links+'</nav><p class="ai-topic-notice">'+esc(d.notice)+'</p></div></div></section></main>';

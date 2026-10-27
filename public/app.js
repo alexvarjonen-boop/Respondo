@@ -2155,16 +2155,24 @@ function contactSection() {
 }
 
 function contactPage() {
+  const demoRequest = new URLSearchParams(location.search).get('intent') === 'demo';
+  const demoMessage = appText(
+    'Hei! Haluaisin nähdä, miten Respondo AI toimisi yrityksemme verkkosivuilla.\nVerkkosivun osoite: \nToiveet ja yleisimmät asiakaskysymykset: ',
+    'Hej! Jag vill se hur Respondo AI skulle fungera på vårt företags webbplats.\nWebbadress: \nVåra vanligaste kundfrågor: ',
+    'Hello! I would like to see how Respondo AI would work on our company website.\nWebsite address: \nOur most common customer questions: '
+  );
   return `<div class="contact-page">${nav()}<main style="padding:clamp(70px,9vw,130px) 0 110px;min-height:65vh;background:#f8fafc"><div class="container" style="max-width:1050px">
     <div class="section-kicker">${appText('YHTEYSTIEDOT','KONTAKT','CONTACT')}</div>
-    <h1 style="font-size:clamp(38px,6vw,68px);letter-spacing:-.05em;line-height:1.1;margin:14px 0 20px">${appText('Miten voimme auttaa?','Hur kan vi hjälpa dig?','How can we help?')}</h1>
+    <h1 style="font-size:clamp(38px,6vw,68px);letter-spacing:-.05em;line-height:1.1;margin:14px 0 20px">${demoRequest
+      ? appText('Pyydä esittely omalle verkkosivullesi','Be om en demo för er webbplats','Request a demo for your website')
+      : appText('Miten voimme auttaa?','Hur kan vi hjälpa dig?','How can we help?')}</h1>
     <p style="font-size:clamp(16px,2vw,20px);color:#64748b;line-height:1.7;max-width:670px;margin-bottom:44px">${appText('Kysyttävää Respondo AI:sta, tilauksista tai käyttöönotosta? Lähetä meille viesti.','Frågor om Respondo AI, abonnemang eller installation? Skicka ett meddelande.','Questions about Respondo AI, subscriptions or setup? Send us a message.')}</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:24px;align-items:start">
       <section style="background:white;border:1px solid #e2e8f0;border-radius:24px;padding:clamp(24px,4vw,40px);box-shadow:0 14px 35px rgba(15,23,42,.04)"><h2 style="font-size:23px;margin:0 0 16px">${appText('Lähetä viesti','Skicka meddelande','Send a message')}</h2>
         <form class="home-contact-form" id="homeContactForm" style="display:grid;gap:17px">
           <label><span>${appText('Nimi','Namn','Name')}</span><input name="name" type="text" autocomplete="name" maxlength="120" required></label>
           <label><span>${appText('Sähköposti','E-post','Email')}</span><input name="email" type="email" autocomplete="email" maxlength="220" required></label>
-          <label><span>${appText('Viesti','Meddelande','Message')}</span><textarea name="message" rows="6" maxlength="2000" required></textarea></label>
+          <label><span>${appText('Viesti','Meddelande','Message')}</span><textarea name="message" rows="6" maxlength="2000" required>${demoRequest ? esc(demoMessage) : ''}</textarea></label>
           <button class="btn ink home-contact-submit" type="submit">${appText('Lähetä viesti','Skicka meddelande','Send message')} →</button>
           <div class="home-contact-status" id="homeContactStatus" role="status" aria-live="polite"></div>
         </form>
@@ -2531,7 +2539,7 @@ function pricingSection() {
         <p>${appText('Etkö ole varma, mikä paketti sopii? Kokeile bottia tai kysy käyttöönotosta ennen tilausta.','Osäker på vilket paket som passar? Testa botten eller fråga oss om installationen.','Not sure which plan is right? Try the chatbot or ask about setup before ordering.')}</p>
         <div class="pricing-assist-links">
           <a href="/assistant?lang=${currentLang()}">${appText('Kokeile bottia','Testa chatbotten','Try the chatbot')} →</a>
-          <a href="/yhteystiedot?lang=${currentLang()}">${appText('Kysy käyttöönotosta','Fråga om installationen','Ask about setup')} →</a>
+          <a href="/yhteystiedot?lang=${currentLang()}&amp;intent=demo">${appText('Pyydä esittely omalle sivulle','Be om demo för er webbplats','Request a website-specific demo')} →</a>
         </div>
       </div>
     </div>
@@ -5019,7 +5027,7 @@ async function route() {
         email:String(formData.get('email')||'').trim(),
         message:String(formData.get('message')||'').trim(),
         lang:currentLang(),
-        visitorRef:'homepage-contact'
+        visitorRef:new URLSearchParams(location.search).get('intent') === 'demo' ? 'public-demo-request' : 'homepage-contact'
       };
       if (contactStatus) {
         contactStatus.className='home-contact-status';
