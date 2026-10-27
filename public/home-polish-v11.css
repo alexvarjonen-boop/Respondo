@@ -213,3 +213,58 @@
     transition:none!important;
   }
 }
+
+
+/* Observatory v14 — final typographic precision and CTA text correctness.
+   Keep one existing purchase path, native scrolling and the original blue orbit.
+   In particular, the legacy "span:last-child" arrow rule must not enlarge
+   the actual price-link text when the link contains only one span. */
+#app .apple-home-page .rs-spiral-heading .rs-first-order-link > span:only-child{
+  color:inherit!important;font-size:inherit!important;line-height:inherit!important;
+  font-weight:inherit!important;letter-spacing:inherit;
+}
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card-kicker{
+  font-size:11px!important;letter-spacing:.13em!important;
+  color:#c0d7f4!important;
+}
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-scroll-invite{
+  color:#b8cce6;line-height:1.55;
+}
+#app .apple-home-page .pricing-section .respondo-how-topline{
+  color:#b5d2f7;font-size:11px;letter-spacing:.17em;
+}
+#app .apple-home-page .pricing-section .respondo-how-steps p{
+  color:#bacbe2;line-height:1.62;
+}
+#app .apple-home-page .pricing-section .pricing-select-btn{
+  min-height:48px!important;
+  transition:background-color .18s ease,box-shadow .18s ease;
+}
+#app .apple-home-page .pricing-section .pricing-select-btn:hover{
+  background:#e1efff!important;
+  box-shadow:0 5px 24px rgba(118,173,243,.15)!important;
+}
+@media(max-width:600px){
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card-kicker{
+    font-size:10px!important;letter-spacing:.12em!important;
+  }
+  #app .apple-home-page .rs-spiral-heading .rs-first-order-link{
+    gap:10px;justify-content:center;
+  }
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-next-caption{
+    font-size:9px;letter-spacing:.055em;
+  }
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-next-label{
+    max-width:min(128px,33vw);
+  }
+}
+@media(max-width:360px){
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-next-label{
+    max-width:90px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #app .apple-home-page .pricing-section .pricing-select-btn{
+    transition:none!important;
+  }
+}
