@@ -23,6 +23,6 @@ test('mobile visitors still have access to all sections without the redundant ca
  assert.match(read('dashboard-drawer.js'),/menu\.click\(\)/);
  assert.match(css,/@media\(max-width:350px\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
- assert.match(html,/dashboard-entry\.css\?v=[^"]+-primary-navigation-v6/);
+ assert.match(html,/dashboard-entry\.css\?v=[^"]+-primary-navigation-v6-return-overview-v6/);
  assert.equal(css.split('{').length,css.split('}').length);
 });

@@ -367,3 +367,27 @@
   #app .dashboard-premium-shell .dashboard-head-mobile-links
   .dashboard-head-mobile-test{transition:none!important}
 }
+
+/* v6: a visible way back after opening a demo or workspace section. */
+#app .dashboard-premium-shell .dashboard-return-home{display:none!important}
+@media(max-width:900px){
+ #app .dashboard-premium-shell .dashboard-simple-main>.dashboard-return-home:not([hidden]){
+  display:inline-flex!important;order:1!important;align-self:flex-start!important;
+  align-items:center!important;justify-content:flex-start!important;gap:9px!important;
+  min-height:44px!important;max-width:calc(100% - 20px);
+  margin:4px 0 12px!important;padding:10px 13px!important;
+  border:1px solid #d2def0!important;border-radius:12px!important;
+  background:#f7faff!important;color:#274367!important;
+  font:730 12px/1.35 system-ui,-apple-system,sans-serif!important;
+  text-align:left;cursor:pointer;touch-action:manipulation;
+ }
+ #app .dashboard-premium-shell .dashboard-return-home span:first-child{
+  color:#3a679d;font-size:19px;line-height:1;flex:0 0 auto;
+ }
+ #app .dashboard-premium-shell .dashboard-return-home:focus-visible{
+  outline:3px solid #729bec!important;outline-offset:3px!important;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #app .dashboard-premium-shell .dashboard-return-home{transition:none!important}
+}

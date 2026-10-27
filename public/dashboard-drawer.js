@@ -24,6 +24,20 @@
       '<span class="dashboard-menu-label">' + words('Valikko','Meny','Menu') + '</span>';
     top.classList.add('dashboard-has-drawer');
     top.append(toggle);
+    // A visible return path after visitors choose a section without the menu.
+    const main=top.closest('.dashboard-simple-main');
+    const returnHome=document.createElement('button');
+    returnHome.type='button';
+    returnHome.className='dashboard-return-home';
+    returnHome.hidden=true;
+    returnHome.innerHTML='<span aria-hidden="true">←</span><span>'+
+      words('Takaisin yleiskatsaukseen','Tillbaka till översikten','Back to overview')+'</span>';
+    main?.insertBefore(returnHome,main.querySelector('.dashboard-head')||main.querySelector('.dashboard-view-section'));
+    returnHome.addEventListener('click',()=>{
+      select.value='overview';
+      select.dispatchEvent(new Event('change',{bubbles:true}));
+      top.scrollIntoView({behavior:'auto',block:'start'});
+    });
 
     const layer = document.createElement('div');
     layer.id = 'dashboard-drawer';
@@ -139,6 +153,7 @@
     document.body.append(layer);
     let priorFocus = null;
     function sync() {
+      returnHome.hidden=select.value==='overview';
       layer.querySelectorAll('[data-drawer-section]').forEach(button => {
         const yes = button.dataset.drawerSection === select.value;
         button.classList.toggle('active',yes);
@@ -179,11 +194,15 @@
     backdrop.addEventListener('click',() => hide());
     select.addEventListener('change',sync);
     document.addEventListener('keydown',keyboard);
+    const viewObserver=new MutationObserver(sync);
+    viewObserver.observe(document.body,{attributes:true,attributeFilter:['data-dashboard-view']});
     sync();
     cleanup = () => {
       hide(false);
       select.removeEventListener('change',sync);
       document.removeEventListener('keydown',keyboard);
+      viewObserver.disconnect();
+      returnHome.remove();
       toggle.remove();
       layer.remove();
       top.classList.remove('dashboard-has-drawer');

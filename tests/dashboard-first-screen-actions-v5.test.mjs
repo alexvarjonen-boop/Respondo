@@ -37,6 +37,6 @@ test('iPhone viewport shows a compact two-column nav immediately after welcome w
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  assert.doesNotMatch(css,/@keyframes|scroll-snap-type/);
  assert.equal(css.split('{').length,css.split('}').length);
- assert.match(html,/dashboard-entry\.css\?v=[^"]+-first-screen-actions-v5/);
+ assert.match(html,/dashboard-entry\.css\?v=[^"]+-first-screen-actions-v5-primary-navigation-v6-return-overview-v6/);
  assert.match(html,/app\.js\?v=[^"]+-first-screen-actions-v5/);
 });
