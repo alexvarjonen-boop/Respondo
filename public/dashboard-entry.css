@@ -145,3 +145,47 @@
 @media(prefers-reduced-motion:reduce){
   #app .dashboard-entry-action{transition:none!important}
 }
+
+/* v2: actual reading order in the flex dashboard. Before this rule,
+   the statistics were order:2 while the shortcut section was order:3,
+   hiding the important navigation below the metrics on iPhones.
+   Give visitors a useful action immediately after the welcome heading. */
+#app .dashboard-premium-shell .dashboard-simple-main > .dashboard-entry[data-dashboard-view="overview"]{
+  order:2!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main > .stats[data-dashboard-view="overview"]{
+  order:3!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main > .welcome-card[data-dashboard-view="overview"]{
+  order:4!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main > .onboarding-card[data-dashboard-view="overview"]{
+  order:5!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main > .respondo-intelligence[data-dashboard-view="overview"]{
+  order:6!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main > .dashboard-insights[data-dashboard-view="overview"]{
+  order:7!important;
+}
+/* Scrolling from a quick action must not place the answer, profile, or
+   live demo beneath the fixed two-row mobile navigation. */
+#app .dashboard-premium-shell :is(#live-preview,#business-profile,#knowledge,#install,#leads,#conversations){
+  scroll-margin-top:110px;
+}
+@media(max-width:1024px){
+  #app .dashboard-premium-shell.demo-dashboard-shell :is(#live-preview,#business-profile,#knowledge,#install,#leads,#conversations){
+    scroll-margin-top:var(--demo-sticky-header-space,180px);
+  }
+}
+@media(max-width:760px){
+  #app .dashboard-premium-shell .dashboard-simple-main > .dashboard-entry[data-dashboard-view="overview"]{
+    order:2!important;
+  }
+  #app .dashboard-premium-shell .dashboard-simple-main > .stats[data-dashboard-view="overview"]{
+    order:3!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]{
+    margin-bottom:10px!important;
+  }
+}

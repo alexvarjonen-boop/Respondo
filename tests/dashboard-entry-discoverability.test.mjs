@@ -47,7 +47,19 @@ test('mobile cards and menu affordance are visible without opening the drawer',(
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  assert.doesNotMatch(css,/@keyframes|scroll-snap-type/);
  assert.equal(css.split('{').length,css.split('}').length);
- assert.match(index,/dashboard-entry\.css\?v=20261027-visible-dashboard-navigation-v1/);
+ assert.match(index,/dashboard-entry\.css\?v=20261027-visible-dashboard-navigation-v1-quick-actions-first-v2/);
  assert.match(index,/app\.js\?v=[^"]+-dashboard-entry-v1/);
  assert.match(index,/dashboard-drawer\.js\?v=[^"]+-visible-menu-v1/);
+});
+
+test('overview shows its useful quick actions before passive metrics and reveals scrolled-to sections',()=>{
+ const css=read('dashboard-entry.css');
+ const entry=css.match(/\.dashboard-simple-main > \.dashboard-entry\[data-dashboard-view="overview"\]\{\s*order:(\d+)!important;/);
+ const metrics=css.match(/\.dashboard-simple-main > \.stats\[data-dashboard-view="overview"\]\{\s*order:(\d+)!important;/);
+ assert.ok(entry && metrics, 'explicit flex order required');
+ assert.ok(Number(entry[1])<Number(metrics[1]),'first action comes before statistics');
+ assert.match(css,/#live-preview,#business-profile,#knowledge,#install,#leads,#conversations/);
+ assert.match(css,/scroll-margin-top:var\(--demo-sticky-header-space,180px\)/);
+ assert.match(css,/\.dashboard-head\[data-dashboard-view="overview"\]\{/);
+ assert.match(read('index.html'),/quick-actions-first-v2/);
 });
