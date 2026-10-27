@@ -14,7 +14,7 @@ test('new public Observatory theme loads last and leaves homepage-specific style
   const modern = index.indexOf('/public-observatory.css?v=20261027-minimal-public-v2');
   assert.ok(old>=0 && modern>old, 'new CSS must follow legacy public and home styles');
   assert.match(index,/respondo-unified-brand\.css/);
-  assert.match(index,/brand-inner-pages\.css/);
+  assert.ok(index.includes('/brand-inner-pages.js?v=20261027-minimal-public-v2'));
   assert.match(index,/logo-reveal\.js/);
   assert.match(index,/spiral-hero-motion\.js/);
   assert.match(home,/Observatory v2/);
