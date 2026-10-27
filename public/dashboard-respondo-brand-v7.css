@@ -1,0 +1,176 @@
+/* Respondo workspace / Observatory navy design, October 2026.
+   App and demo only. Forms and bot conversation remain readable. */
+body:has(#app .dashboard-premium-shell){background:#08111f!important}
+#app .dashboard-premium-shell.dashboard-simple-shell{
+  background:radial-gradient(ellipse 120% 550px at 52% 3%,rgba(53,110,190,.22),transparent 70%),#08111f!important;
+  color:#eaf4ff!important;min-height:100dvh!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main{background:transparent!important}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer,
+#app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer,
+#app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed{
+  background:linear-gradient(145deg,#172c49,#0e1d33)!important;
+  border:1px solid rgba(175,210,255,.23)!important;
+  color:#ebf5ff!important;border-radius:18px!important;
+  box-shadow:0 14px 38px rgba(0,0,0,.19)!important;
+}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer .dashboard-workspace :is(b,small){
+  color:#d5e6fd!important
+}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer
+.dashboard-workspace small{color:#a1bce3!important}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer .workspace-switcher{
+  color:#f4f9ff!important;background:#183151!important;border-color:#4c719d!important
+}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .dashboard-menu-toggle{
+  background:rgba(173,209,255,.12)!important;border-color:rgba(183,215,255,.38)!important;
+  color:#f2f8ff!important;
+}
+#app .dashboard-premium-shell .dashboard-menu-label{color:#eef6ff!important}
+#app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]{
+  display:block!important;position:relative;isolation:isolate;overflow:hidden;
+  height:auto!important;min-height:0!important;max-height:none!important;
+  padding:clamp(25px,4vw,44px)!important;margin:0 0 21px!important;
+  background:radial-gradient(circle at 95% 0%,rgba(92,156,248,.25),transparent 55%),
+    linear-gradient(155deg,#182f51,#0e1d33 78%)!important;
+  border:1px solid rgba(169,210,255,.25)!important;
+  border-radius:24px!important;
+  box-shadow:0 18px 46px rgba(0,0,0,.20),inset 0 1px rgba(214,234,255,.08)!important;
+}
+#app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]::after{
+  content:"";position:absolute;right:-78px;top:-90px;width:280px;height:280px;
+  border:1px solid rgba(173,211,255,.09);border-radius:50%;
+  box-shadow:0 0 0 52px rgba(140,196,255,.025);
+  z-index:-1;pointer-events:none;
+}
+#app .dashboard-premium-shell .dashboard-head .section-kicker{
+  color:#a9c8f2!important;letter-spacing:.15em!important;font-size:10px!important
+}
+#app .dashboard-premium-shell .dashboard-head h1{
+  font-size:clamp(31px,4.5vw,49px)!important;line-height:1.12!important;
+  letter-spacing:-.055em!important;color:#f7faff!important;
+  max-width:760px;margin:12px 0 12px!important;
+}
+#app .dashboard-premium-shell .dashboard-head p{
+  color:#b9cbe6!important;font-size:clamp(13px,1.5vw,16px)!important;
+  line-height:1.59!important;max-width:650px;
+}
+#app .dashboard-premium-shell .dashboard-head-mobile-hint{color:#c0d8f6!important}
+#app .dashboard-premium-shell .dashboard-head-mobile-links .dashboard-head-mobile-test{
+  background:linear-gradient(120deg,#dcecff,#a7cdff)!important;
+  border-color:#bfdfff!important;color:#0b203b!important;
+  font-weight:800!important;box-shadow:0 9px 22px rgba(0,0,0,.18)!important
+}
+#app .dashboard-premium-shell .dashboard-head-mobile-links
+:is(.dashboard-head-mobile-setup,.dashboard-head-mobile-answers,.dashboard-head-mobile-menu){
+  background:rgba(155,200,255,.09)!important;
+  color:#e1efff!important;border-color:rgba(172,211,255,.35)!important
+}
+#app .dashboard-premium-shell .dashboard-entry{
+  background:linear-gradient(145deg,#152a47,#0e1e34)!important;
+  color:#eaf4ff!important;
+  border:1px solid rgba(169,210,255,.22)!important
+}
+#app .dashboard-premium-shell .dashboard-entry-head h2{color:#f2f7ff!important}
+#app .dashboard-premium-shell .dashboard-entry-head :is(p,small),
+#app .dashboard-premium-shell .dashboard-entry-footer>span{color:#afc5e2!important}
+#app .dashboard-premium-shell .dashboard-entry-action:not(.dashboard-entry-primary){
+  background:#1c3554!important;color:#eaf4ff!important;
+  border-color:rgba(157,204,255,.27)!important
+}
+#app .dashboard-premium-shell .dashboard-entry-action:not(.dashboard-entry-primary) .dashboard-entry-icon{
+  background:#274567!important;color:#d2e5ff!important;
+  border-color:rgba(172,213,255,.24)!important
+}
+#app .dashboard-premium-shell .dashboard-entry-action-copy small{color:#b3cae6!important}
+#app .dashboard-premium-shell .dashboard-entry-primary{
+  background:linear-gradient(125deg,#325b8c,#1a385d)!important;
+  border-color:#648fc1!important
+}
+#app .dashboard-premium-shell .dashboard-entry-more{
+  background:#26466a!important;color:#f0f8ff!important;
+  border-color:#5983b5!important
+}
+#app .dashboard-premium-shell .dashboard-entry-footer{
+  border-top-color:rgba(157,199,252,.24)!important
+}
+#app .dashboard-premium-shell .stat{
+  background:linear-gradient(145deg,#172d49,#102037)!important;
+  border-color:rgba(159,200,254,.22)!important;
+  box-shadow:0 13px 31px rgba(0,0,0,.15)!important
+}
+#app .dashboard-premium-shell .stat small,
+#app .dashboard-premium-shell .stat span{color:#adc5e4!important}
+#app .dashboard-premium-shell .stat b{color:#f4f9ff!important}
+#app .dashboard-premium-shell .premium-info-card{
+  background:#152841!important;color:#eff7ff!important;
+  border-color:rgba(164,207,252,.24)!important;
+}
+#app .dashboard-premium-shell .premium-info-card :is(b,dd){color:#ecf5ff!important}
+#app .dashboard-premium-shell .premium-info-card :is(p,dt,small){color:#b4c8e5!important}
+#app .dashboard-premium-shell .premium-info-card :is(button,.premium-quick-links button){
+  background:#24415f!important;color:#e5f2ff!important;
+  border-color:rgba(162,204,255,.27)!important
+}
+#app .dashboard-premium-shell .dashboard-premium-sidebar{
+  background:#101f35!important;border-right-color:#304561!important
+}
+#app .dashboard-premium-shell .premium-sidebar-nav button{color:#c0d5ee!important}
+#app .dashboard-premium-shell .premium-sidebar-nav button.active{
+  background:#284c78!important;color:#f4faff!important;border-color:#567bac!important
+}
+#app .dashboard-premium-shell .premium-sidebar-bottom b{color:#f6faff!important}
+#app .dashboard-premium-shell .premium-sidebar-bottom small,
+#app .dashboard-premium-shell .premium-sidebar-label{color:#adc0dc!important}
+/* Functional panels keep a high-contrast paper surface so the editor,
+   knowledge base and preview chat remain readable. */
+#app .dashboard-premium-shell :is(.panel,.onboarding-card,.welcome-card){
+  background:#f8fbff!important;color:#162a45!important;
+  border-color:#d5e1f0!important;box-shadow:0 14px 39px rgba(0,0,0,.19)!important
+}
+#app .dashboard-premium-shell :is(.panel,.onboarding-card,.welcome-card)
+:is(h2,h3,label){color:#182d49!important}
+.dashboard-drawer-layer .dashboard-drawer-panel{
+  background:linear-gradient(155deg,#152b4a,#0d1a2c)!important;
+  color:#f1f7ff!important;border-left-color:#3c5c85!important
+}
+.dashboard-drawer-layer .dashboard-drawer-heading strong{color:#f6faff!important}
+.dashboard-drawer-layer .dashboard-drawer-heading small,
+.dashboard-drawer-layer .dashboard-drawer-subheading{color:#aec5e5!important}
+.dashboard-drawer-layer .dashboard-drawer-link{
+  color:#e6f2ff!important;
+  background:rgba(141,190,254,.08)!important;
+  border-color:rgba(172,214,255,.25)!important
+}
+.dashboard-drawer-layer .dashboard-drawer-link.active{
+  color:#fff!important;background:#2a4d79!important;border-color:#648bc1!important
+}
+.dashboard-drawer-layer .dashboard-drawer-number,
+.dashboard-drawer-layer .dashboard-drawer-arrow{color:#b2c8e6!important}
+.dashboard-drawer-layer .dashboard-drawer-close{background:#294765!important;color:#fff!important}
+.dashboard-drawer-layer .dashboard-drawer-secondary{background:#28496c!important;color:#f0f7ff!important;border-color:#527ca8!important}
+.dashboard-drawer-layer .dashboard-drawer-cta{background:#d2e6ff!important;color:#0e2340!important;border-color:#d2e6ff!important}
+.dashboard-drawer-layer .dashboard-drawer-logout{background:transparent!important;color:#b9cbe2!important;border-color:#425b7c!important}
+.dashboard-drawer-layer .dashboard-drawer-language{color:#d0e1f6!important}
+#app .dashboard-premium-shell :is(a,button,input,select,textarea):focus-visible{
+  outline:2px solid #a7d5ff!important;outline-offset:3px!important
+}
+@media(max-width:760px){
+  #app .dashboard-premium-shell .dashboard-simple-main{
+    padding:11px 12px calc(65px + env(safe-area-inset-bottom,0px))!important
+  }
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer{
+    margin-bottom:14px!important
+  }
+  #app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]{
+    padding:23px 18px 25px!important;margin:0 0 16px!important;border-radius:21px!important
+  }
+  #app .dashboard-premium-shell .dashboard-head h1{font-size:clamp(28px,7.8vw,38px)!important}
+  #app .dashboard-premium-shell .dashboard-head p{font-size:13px!important}
+  #app .dashboard-premium-shell .dashboard-head-mobile-links{margin-top:23px!important}
+  #app .dashboard-premium-shell .dashboard-head-mobile-links .dashboard-head-mobile-test{min-height:53px!important}
+  #app .dashboard-premium-shell .stat{min-height:105px!important;padding:14px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  #app .dashboard-premium-shell .dashboard-head-mobile-links button{transition:none!important}
+}

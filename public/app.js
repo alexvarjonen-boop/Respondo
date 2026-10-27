@@ -3835,7 +3835,7 @@ async function dashboard(options = {}) {
       <section class="dashboard-head dashboard-view-section" data-dashboard-view="overview" id="overview">
         <div>
           <div class="section-kicker">${isDemo ? appText('RESPONDO AI · KOKEILU','RESPONDO AI · DEMO','RESPONDO AI · DEMO') : appText('RESPONDO AI · HALLINTAPANEELI','RESPONDO AI · KONTROLLPANEL','RESPONDO AI · DASHBOARD')}</div>
-          <h1>${isDemo ? appText('Kokeile Respondoa.','Prova Respondo.','Explore Respondo.') : appText('Tervetuloa!','Välkommen!','Welcome!')}</h1>
+          <h1>${isDemo ? appText('Kokeile Respondoa.','Prova Respondo.','Explore Respondo.') : appText('Asiakaspalvelu hallinnassa.','Kundservice under kontroll.','Customer service, in control.')}</h1>
           <p>${isDemo ? appText('Valitse alta, mitä haluat kokeilla. Voit aloittaa suoraan botin testaamisesta.','Välj vad du vill prova nedan. Du kan börja med att testa botten direkt.','Choose what you want to explore below. Start by testing the bot.') : esc(t.name) + ' · ' + appText('Seuraa keskusteluja ja hallitse asiakaspalveluasi yhdessä paikassa.','Följ konversationer och hantera kundservice på ett ställe.','Track conversations and manage support in one place.')}</p>
           <div class="dashboard-head-mobile-links" role="group" aria-label="${appText('Aloita tästä','Börja här','Start here')}">
             <span class="dashboard-head-mobile-hint">${appText('ALOITA TÄSTÄ – VALITSE TOIMINTO','BÖRJA HÄR – VÄLJ EN FUNKTION','START HERE – CHOOSE AN ACTION')}</span>
