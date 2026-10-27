@@ -225,3 +225,36 @@
     justify-content:center;width:100%;min-height:44px;
   }
 }
+
+/* v4: users can act within the first screen before scrolling or finding Menu. */
+#app .dashboard-premium-shell .dashboard-head-mobile-links{display:none}
+@media(max-width:760px){
+ #app .dashboard-premium-shell .dashboard-head-mobile-links{
+  display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:18px 0 0;max-width:100%;
+ }
+ #app .dashboard-premium-shell .dashboard-head-mobile-links button{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:44px;padding:10px 14px;border-radius:12px;
+  font:740 12px/1.3 system-ui,-apple-system,sans-serif;
+  cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+ }
+ #app .dashboard-premium-shell .dashboard-head-mobile-test{
+  color:#fff;background:#1a3458;border:1px solid #1a3458;
+ }
+ #app .dashboard-premium-shell .dashboard-head-mobile-menu{
+  color:#24476f;background:#eef4fd;border:1px solid #cbdcf2;
+ }
+ #app .dashboard-premium-shell .dashboard-head-mobile-links button:focus-visible{
+  outline:3px solid #749ff4;outline-offset:3px;
+ }
+ #app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]{
+  margin-bottom:14px!important;
+ }
+}
+@media(max-width:365px){
+ #app .dashboard-premium-shell .dashboard-head-mobile-links{gap:7px}
+ #app .dashboard-premium-shell .dashboard-head-mobile-links button{padding:9px 10px;font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+ #app .dashboard-premium-shell .dashboard-head-mobile-links button{transition:none!important}
+}
