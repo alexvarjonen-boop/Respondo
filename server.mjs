@@ -3588,7 +3588,7 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
   for(const word of previous.split(/\s+/)){
     if(ignored.has(word)) continue;
     addAlias(word);
-    if(/leikka|hius/.test(word)) ['leikka','hius','hair','cut','klipp','mcut'].forEach(addAlias);
+    if(/leikka|hiu[sk]/.test(word)) ['leikka','hius','hair','cut','klipp','mcut'].forEach(addAlias);
     if(/hair|cut|barber/.test(word)) ['leikka','hius','hair','cut','klipp','mcut'].forEach(addAlias);
     if(/klipp|hår|har$/.test(word)) ['leikka','hius','hair','cut','klipp','mcut'].forEach(addAlias);
     if(/parta|beard|skagg|skägg/.test(word)) ['parta','beard','skagg','mbeard'].forEach(addAlias);
