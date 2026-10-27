@@ -3838,7 +3838,10 @@ async function dashboard(options = {}) {
           <h1>${isDemo ? appText('Kokeile Respondoa.','Prova Respondo.','Explore Respondo.') : appText('Tervetuloa!','Välkommen!','Welcome!')}</h1>
           <p>${isDemo ? appText('Valitse alta, mitä haluat kokeilla. Voit aloittaa suoraan botin testaamisesta.','Välj vad du vill prova nedan. Du kan börja med att testa botten direkt.','Choose what you want to explore below. Start by testing the bot.') : esc(t.name) + ' · ' + appText('Seuraa keskusteluja ja hallitse asiakaspalveluasi yhdessä paikassa.','Följ konversationer och hantera kundservice på ett ställe.','Track conversations and manage support in one place.')}</p>
           <div class="dashboard-head-mobile-links" role="group" aria-label="${appText('Aloita tästä','Börja här','Start here')}">
+            <span class="dashboard-head-mobile-hint">${appText('ALOITA TÄSTÄ – VALITSE TOIMINTO','BÖRJA HÄR – VÄLJ EN FUNKTION','START HERE – CHOOSE AN ACTION')}</span>
             <button type="button" class="dashboard-head-mobile-test" data-dashboard-jump="live-preview">${appText('Testaa bottia','Testa chatbotten','Test chatbot')} <span aria-hidden="true">→</span></button>
+            <button type="button" class="dashboard-head-mobile-setup" data-dashboard-open="setup">${appText('Yritys ja botti','Företag och bot','Business & bot')} <span aria-hidden="true">→</span></button>
+            <button type="button" class="dashboard-head-mobile-answers" data-dashboard-open="answers">${appText('Vastaukset','Svar','Answers')} <span aria-hidden="true">→</span></button>
             <button type="button" class="dashboard-head-mobile-menu" data-dashboard-open-menu aria-haspopup="dialog" aria-controls="dashboard-drawer">${appText('Kaikki osiot','Alla avsnitt','All sections')} <span aria-hidden="true">≡</span></button>
           </div>
         </div>

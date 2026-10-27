@@ -258,3 +258,62 @@
 @media(prefers-reduced-motion:reduce){
  #app .dashboard-premium-shell .dashboard-head-mobile-links button{transition:none!important}
 }
+
+
+/* v5: Real first-screen navigation. A visitor does not need to discover
+   the hamburger to test a bot, inspect answers or configure the company.
+   Compact grid prevents the initial Welcome-only dead-end on iPhone. */
+@media(max-width:760px){
+  #app .dashboard-premium-shell .dashboard-simple-main > .dashboard-head[data-dashboard-view="overview"]{
+    height:auto!important;min-height:0!important;max-height:none!important;
+    flex:0 0 auto!important;align-self:stretch!important;
+    padding-bottom:0!important;margin-bottom:12px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    align-items:stretch!important;gap:9px!important;
+    margin:18px 0 2px!important;max-width:100%!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-hint{
+    display:block;grid-column:1/-1;
+    color:#617693;font-size:10px;font-weight:760;
+    letter-spacing:.13em;line-height:1.4;margin:0 0 1px;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links button{
+    display:flex!important;justify-content:space-between!important;
+    gap:8px!important;align-items:center!important;
+    width:100%!important;min-width:0!important;
+    min-height:49px!important;padding:11px 12px!important;
+    margin:0!important;border-radius:13px!important;
+    font:720 12px/1.28 system-ui,-apple-system,sans-serif!important;
+    text-align:left;overflow-wrap:anywhere;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links .dashboard-head-mobile-test{
+    background:#193658!important;color:#fff!important;
+    border:1px solid #193658!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+  :is(.dashboard-head-mobile-setup,.dashboard-head-mobile-answers,.dashboard-head-mobile-menu){
+    background:#f6f9ff!important;color:#244368!important;
+    border:1px solid #cedbf0!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links button > span[aria-hidden]{
+    flex:0 0 auto;font-size:15px;line-height:1;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links button:focus-visible{
+    outline:3px solid #729bec!important;outline-offset:3px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-simple-main > .dashboard-entry[data-dashboard-view="overview"]{
+    min-height:0!important;margin-top:0!important;
+  }
+}
+@media(max-width:365px){
+  #app .dashboard-premium-shell .dashboard-head-mobile-links button{
+    font-size:11px!important;padding:10px 9px!important;min-height:48px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #app .dashboard-premium-shell .dashboard-head-mobile-links button{
+    transition:none!important;
+  }
+}
