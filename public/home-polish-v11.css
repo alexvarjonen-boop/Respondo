@@ -215,24 +215,13 @@
 }
 
 
-/* Observatory v13 — final typographic precision and CTA affordance.
+/* Observatory v14 — final typographic precision and CTA text correctness.
    Keep one existing purchase path, native scrolling and the original blue orbit.
    In particular, the legacy "span:last-child" arrow rule must not enlarge
    the actual price-link text when the link contains only one span. */
 #app .apple-home-page .rs-spiral-heading .rs-first-order-link > span:only-child{
   color:inherit!important;font-size:inherit!important;line-height:inherit!important;
   font-weight:inherit!important;letter-spacing:inherit;
-}
-#app .apple-home-page .rs-spiral-heading .rs-first-order-link::after{
-  content:"";display:block;flex:0 0 9px;
-  width:9px;height:9px;margin-left:2px;
-  border-top:1.5px solid currentColor;border-right:1.5px solid currentColor;
-  transform:rotate(45deg);transition:transform .18s ease;
-}
-@media(hover:hover) and (pointer:fine){
-  #app .apple-home-page .rs-spiral-heading .rs-first-order-link:hover::after{
-    transform:translateX(3px) rotate(45deg);
-  }
 }
 #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card-kicker{
   font-size:11px!important;letter-spacing:.13em!important;
@@ -275,7 +264,6 @@
   }
 }
 @media(prefers-reduced-motion:reduce){
-  #app .apple-home-page .rs-spiral-heading .rs-first-order-link::after,
   #app .apple-home-page .pricing-section .pricing-select-btn{
     transition:none!important;
   }
