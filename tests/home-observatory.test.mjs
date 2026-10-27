@@ -16,6 +16,8 @@ for (const [lang,idx] of [['fi',0],['sv',1],['en',2]]) {
   test('Observatory hero stays clean without extra Ask Respondo button in '+lang,()=>{
     const t=(...args)=>args[idx];
     const hero=spiralHeroMarkup(t,lang);
+    assert.match(hero,/RESPONDO AI <span aria-hidden="true">\/<\/span> 24\/7/);
+    assert.doesNotMatch(hero,/AINA VALMIINA|ALLTID REDO|ALWAYS READY/);
     const page=appleHomeMarkup(t,lang,145,'<section id="pricing">REAL PRICES</section>');
     assert.equal((hero.match(/data-rs-card\b/g)||[]).length,10);
     assert.equal((hero.match(/data-rs-icon(?=\s)/g)||[]).length,10);
