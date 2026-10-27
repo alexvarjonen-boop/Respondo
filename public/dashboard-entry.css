@@ -1,0 +1,147 @@
+/* Respondo workspace discovery: first-visit actions are visible without
+   opening the hamburger. Applies to real workspaces AND /assistant demo. */
+#app .dashboard-premium-shell .dashboard-entry{
+  display:block;
+  width:100%;max-width:100%;min-width:0;
+  padding:18px 20px 19px;margin:0 0 22px;
+  border:1px solid #e3e9f3;border-radius:23px;
+  background:linear-gradient(145deg,#ffffff 0%,#f8faff 100%);
+  box-shadow:0 13px 37px rgba(36,61,102,.045);
+  color:#17233a;box-sizing:border-box;
+}
+#app .dashboard-premium-shell .dashboard-entry.dashboard-view-hidden{display:none!important}
+#app .dashboard-entry-head{
+  display:flex;justify-content:space-between;align-items:end;gap:16px;
+  margin:0 0 17px;
+}
+#app .dashboard-entry-head small{
+  display:block;font-weight:780;letter-spacing:.16em;
+  font-size:10px;color:#56749e;margin-bottom:6px;
+}
+#app .dashboard-entry-head h2{
+  font-size:clamp(21px,2.3vw,29px);letter-spacing:-.045em;
+  line-height:1.2;font-weight:730;color:#17233a!important;margin:0!important;
+}
+#app .dashboard-entry-head p{
+  max-width:300px;margin:0;font-size:12px;line-height:1.5;
+  color:#667b97;
+}
+#app .dashboard-entry-actions{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;max-width:100%;
+}
+#app .dashboard-entry-action{
+  display:flex;align-items:center;text-align:left;gap:11px;
+  width:100%;min-width:0;min-height:92px;
+  padding:13px 14px;border:1px solid #e2e9f4;
+  border-radius:16px;background:#fff;color:#182942;
+  box-shadow:none;cursor:pointer;font:inherit;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+#app .dashboard-entry-action:hover{background:#f0f5fc;border-color:#bacfeb}
+#app .dashboard-entry-action:focus-visible{
+  outline:3px solid #749ff4;outline-offset:3px;
+}
+#app .dashboard-entry-action.dashboard-entry-primary{
+  grid-column:1/-1;min-height:82px;
+  color:#fff;background:linear-gradient(130deg,#101d36,#203d64);
+  border-color:#28466e;
+}
+#app .dashboard-entry-action.dashboard-entry-primary:hover{
+  background:linear-gradient(130deg,#142642,#28507b);
+}
+#app .dashboard-entry-icon{
+  flex:0 0 38px;width:38px;height:38px;
+  display:grid;place-items:center;
+  border:1px solid #e0e8f4;border-radius:12px;
+  background:#f1f6fd;color:#426996;
+}
+#app .dashboard-entry-primary .dashboard-entry-icon{
+  border-color:rgba(219,235,255,.19);
+  color:#dceaff;background:rgba(222,237,255,.10);
+}
+#app .dashboard-entry-icon svg{width:21px;height:21px}
+#app .dashboard-entry-action-copy{
+  display:grid;gap:5px;min-width:0;flex:1 1 auto;
+}
+#app .dashboard-entry-action-copy strong{
+  display:block;font-size:13px;line-height:1.25;font-weight:750;
+  overflow-wrap:break-word;color:inherit!important;
+}
+#app .dashboard-entry-action-copy small{
+  display:block;font-size:11px;line-height:1.45;
+  color:#687c98;overflow-wrap:break-word;
+}
+#app .dashboard-entry-primary .dashboard-entry-action-copy small{color:#c6daf7}
+#app .dashboard-entry-arrow{
+  flex:0 0 auto;margin-left:auto;color:#8094b1;
+  font-size:20px;line-height:1;
+}
+#app .dashboard-entry-primary .dashboard-entry-arrow{color:#deebff}
+/* Make the control discoverable: an icon + a literal Menu label. */
+#app .dashboard-topbar.dashboard-has-drawer > .dashboard-menu-toggle{
+  width:auto!important;min-width:97px!important;
+  height:46px!important;min-height:46px!important;
+  padding:0 13px!important;gap:10px!important;
+  flex:0 0 auto!important;
+  align-items:center!important;justify-content:center!important;
+}
+#app .dashboard-menu-label{
+  display:block;white-space:nowrap;
+  font:730 12px/1.1 system-ui,-apple-system,sans-serif;
+  letter-spacing:-.01em;
+}
+#app .dashboard-menu-toggle .dashboard-menu-lines{
+  width:17px;gap:3px;flex:0 0 17px;
+}
+#app .dashboard-menu-toggle .dashboard-menu-lines > span{width:17px}
+@media(max-width:760px){
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer,
+  #app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer{
+    grid-template-columns:minmax(0,1fr) max-content!important;
+  }
+  #app .dashboard-premium-shell .dashboard-simple-main > .dashboard-entry{
+    order:3!important;min-width:0!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .dashboard-simple-main > .dashboard-premium-experience{
+    order:4!important;
+  }
+  #app .dashboard-premium-shell .dashboard-entry{
+    margin:5px 0 20px;padding:17px 14px;
+    border-radius:20px;
+  }
+  #app .dashboard-entry-head{display:block;margin-bottom:14px}
+  #app .dashboard-entry-head h2{font-size:23px}
+  #app .dashboard-entry-head p{
+    max-width:none;margin-top:8px;
+    font-size:12px;line-height:1.5;
+  }
+  #app .dashboard-entry-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  #app .dashboard-entry-action{
+    display:flex;align-items:flex-start;flex-direction:column;
+    min-height:114px;padding:12px;gap:10px;border-radius:15px;
+  }
+  #app .dashboard-entry-action.dashboard-entry-primary{
+    flex-direction:row;align-items:center;min-height:81px;
+    padding:13px;gap:11px;
+  }
+  #app .dashboard-entry-action:last-child{
+    grid-column:1/-1;min-height:72px;flex-direction:row;align-items:center;
+  }
+  #app .dashboard-entry-icon{width:32px;height:32px;flex-basis:32px;border-radius:10px}
+  #app .dashboard-entry-icon svg{width:19px;height:19px}
+  #app .dashboard-entry-action-copy strong{font-size:12px}
+  #app .dashboard-entry-action-copy small{font-size:10px}
+  #app .dashboard-entry-arrow{display:none}
+  #app .dashboard-entry-primary .dashboard-entry-arrow{display:block}
+}
+@media(max-width:350px){
+  #app .dashboard-topbar.dashboard-has-drawer > .dashboard-menu-toggle{
+    min-width:87px!important;padding:0 10px!important;gap:7px!important;
+  }
+  #app .dashboard-entry-action{padding:10px}
+  #app .dashboard-entry-action-copy small{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  #app .dashboard-entry-action{transition:none!important}
+}

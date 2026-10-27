@@ -20,7 +20,8 @@
     toggle.setAttribute('aria-controls','dashboard-drawer');
     toggle.setAttribute('aria-expanded','false');
     toggle.setAttribute('aria-label', words('Avaa valikko','Öppna menyn','Open menu'));
-    toggle.innerHTML = '<span class="dashboard-menu-lines" aria-hidden="true"><span></span><span></span><span></span></span>';
+    toggle.innerHTML = '<span class="dashboard-menu-lines" aria-hidden="true"><span></span><span></span><span></span></span>' +
+      '<span class="dashboard-menu-label">' + words('Valikko','Meny','Menu') + '</span>';
     top.classList.add('dashboard-has-drawer');
     top.append(toggle);
 

@@ -3832,7 +3832,43 @@ async function dashboard(options = {}) {
       ` : ''}
 
       <section class="dashboard-head dashboard-view-section" data-dashboard-view="overview" id="overview">
-        <div><div class="section-kicker">${appText('RESPONDO AI · HALLINTAPANEELI','RESPONDO AI · KONTROLLPANEL','RESPONDO AI · DASHBOARD')}</div><h1>${appText('Tervetuloa!','Välkommen!','Welcome!')}</h1><p>${esc(t.name)} · ${appText('Seuraa keskusteluja ja hallitse asiakaspalveluasi yhdessä paikassa.','Följ konversationer och hantera kundservice på ett ställe.','Track conversations and manage support in one place.')}</p></div>
+        <div>
+          <div class="section-kicker">${isDemo ? appText('RESPONDO AI · KOKEILU','RESPONDO AI · DEMO','RESPONDO AI · DEMO') : appText('RESPONDO AI · HALLINTAPANEELI','RESPONDO AI · KONTROLLPANEL','RESPONDO AI · DASHBOARD')}</div>
+          <h1>${isDemo ? appText('Kokeile Respondoa.','Prova Respondo.','Explore Respondo.') : appText('Tervetuloa!','Välkommen!','Welcome!')}</h1>
+          <p>${isDemo ? appText('Valitse alta, mitä haluat kokeilla. Voit aloittaa suoraan botin testaamisesta.','Välj vad du vill prova nedan. Du kan börja med att testa botten direkt.','Choose what you want to explore below. Start by testing the bot.') : esc(t.name) + ' · ' + appText('Seuraa keskusteluja ja hallitse asiakaspalveluasi yhdessä paikassa.','Följ konversationer och hantera kundservice på ett ställe.','Track conversations and manage support in one place.')}</p>
+        </div>
+      </section>
+
+      <section class="dashboard-entry dashboard-view-section" data-dashboard-view="overview" aria-labelledby="dashboard-entry-title">
+        <div class="dashboard-entry-head">
+          <div>
+            <small>${appText('PIKAVALINNAT','SNABBVAL','QUICK ACCESS')}</small>
+            <h2 id="dashboard-entry-title">${isDemo ? appText('Mitä haluat kokeilla?','Vad vill du prova?','What would you like to try?') : appText('Mitä haluat tehdä?','Vad vill du göra?','What would you like to do?')}</h2>
+          </div>
+          <p>${appText('Valitse toiminto tästä tai avaa yläkulman Valikko nähdäksesi kaikki osiot.','Välj här eller öppna Meny i det övre hörnet för alla avsnitt.','Choose an action here, or open Menu in the top corner for all sections.')}</p>
+        </div>
+        <div class="dashboard-entry-actions">
+          <button type="button" class="dashboard-entry-action dashboard-entry-primary" data-dashboard-jump="live-preview">
+            <span class="dashboard-entry-icon" aria-hidden="true">${premiumIcon('setup')}</span>
+            <span class="dashboard-entry-action-copy"><strong>${appText('Testaa bottia','Testa botten','Test the chatbot')}</strong><small>${appText('Kysy kysymys ja katso, miten botti vastaa.','Ställ en fråga och se hur botten svarar.','Ask a question and see how the bot responds.')}</small></span>
+            <span class="dashboard-entry-arrow" aria-hidden="true">→</span>
+          </button>
+          <button type="button" class="dashboard-entry-action" data-dashboard-open="setup">
+            <span class="dashboard-entry-icon" aria-hidden="true">${premiumIcon('setup')}</span>
+            <span class="dashboard-entry-action-copy"><strong>${appText('Yritys ja botti','Företag och bot','Business & bot')}</strong><small>${appText('Verkkosivun tiedot ja botin ulkoasu','Webbplatsuppgifter och bottens utseende','Website information and bot appearance')}</small></span>
+            <span class="dashboard-entry-arrow" aria-hidden="true">→</span>
+          </button>
+          <button type="button" class="dashboard-entry-action" data-dashboard-open="answers">
+            <span class="dashboard-entry-icon" aria-hidden="true">${premiumIcon('answers')}</span>
+            <span class="dashboard-entry-action-copy"><strong>${appText('Vastaukset','Svar','Answers')}</strong><small>${appText('Tarkista ja muokkaa tietopohjaa','Granska och redigera kunskapsbasen','Review and edit the knowledge base')}</small></span>
+            <span class="dashboard-entry-arrow" aria-hidden="true">→</span>
+          </button>
+          <button type="button" class="dashboard-entry-action" data-dashboard-open="${isDemo?'install':'customers'}">
+            <span class="dashboard-entry-icon" aria-hidden="true">${premiumIcon(isDemo?'install':'customers')}</span>
+            <span class="dashboard-entry-action-copy"><strong>${isDemo?appText('Asennus','Installation','Installation'):appText('Keskustelut ja liidit','Konversationer och leads','Conversations & leads')}</strong><small>${isDemo?appText('Näe, miten botti lisätään sivuille','Se hur du lägger till botten på din webbplats','See how to add the bot to a website'):appText('Näe asiakkaiden kysymykset ja yhteydenotot','Se kundfrågor och kontaktförfrågningar','See customer questions and enquiries')}</small></span>
+            <span class="dashboard-entry-arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
       </section>
 
       ${isWelcome ? `
@@ -5175,6 +5211,17 @@ async function route() {
     document.querySelectorAll('[data-dashboard-open]').forEach((button)=>{
       button.addEventListener('click',()=>showDemoDashboardView(button.dataset.dashboardOpen));
     });
+    document.querySelectorAll('[data-dashboard-jump]').forEach((button)=>{
+      button.addEventListener('click',()=>{
+        const target=button.dataset.dashboardJump;
+        const view=targetViewMap[target]||'setup';
+        showDemoDashboardView(view,{scrollTop:false});
+        requestAnimationFrame(()=>document.getElementById(target)?.scrollIntoView({
+          behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',
+          block:'start'
+        }));
+      });
+    });
     $('#dashboardSettingsButton')?.addEventListener('click',()=>showDemoDashboardView('account'));
     $('#dashboardContactShortcut')?.addEventListener('click', () => {
       showDemoDashboardView('customers', {scrollTop:false});
@@ -6128,9 +6175,15 @@ async function route() {
       const view = targetViewMap[targetId] || 'overview';
       showDashboardView(view, { scrollTop:false });
       requestAnimationFrame(() => {
-        document.getElementById(targetId)?.scrollIntoView({ behavior:'smooth', block:'start' });
+        document.getElementById(targetId)?.scrollIntoView({
+          behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',
+          block:'start'
+        });
       });
     };
+    document.querySelectorAll('[data-dashboard-jump]').forEach((button)=>{
+      button.addEventListener('click',()=>openDashboardTarget(button.dataset.dashboardJump));
+    });
     $('#dashboardContactShortcut')?.addEventListener('click', () => openDashboardTarget('leads'));
 
 
