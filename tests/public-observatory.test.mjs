@@ -9,7 +9,7 @@ const app=read('app.js');
 const homeTheme=read('home-observatory.css');
 
 test('Observatory skin is included after the existing public and home CSS',()=>{
-  assert.match(html,/public-observatory\.css\?v=20261027-inner-pages-v1/);
+  assert.match(html,/public-observatory\.css\?v=20261027-all-public-v1/);
   assert.ok(html.indexOf('/public-observatory.css?')>html.indexOf('/home-observatory.css?'));
   assert.ok(html.indexOf('/public-observatory.css?')>html.indexOf('/respondo-unified-brand.css?'));
   assert.match(homeTheme,/Observatory v2/);
