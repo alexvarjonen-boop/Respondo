@@ -2186,7 +2186,7 @@ function footer() {
         <div class="foot-brand">
           <div class="footer-brand-identity">
             ${logo()}
-            <span class="brand-slogan">Älykkäämpää asiakaspalvelua</span>
+            <span class="brand-slogan">${appText('Älykkäämpää asiakaspalvelua','Smartare kundservice','Smarter customer service')}</span>
           </div>
           <p>${uiText('Asiakaspalvelubotti, joka vastaa asiakkaillesi yrityksesi omilla tiedoilla.','Kundservicebot som svarar dina kunder med information från ditt företag.','Customer service bot that answers your customers using your company information.')}</p>
         </div>
