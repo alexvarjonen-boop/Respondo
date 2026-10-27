@@ -25,7 +25,7 @@ for(const [lang,question,followup] of [
      history:[{question,answer:'A previous answer incorrectly claimed the price is 999 €.'}]
    });
    assert.equal(result.handoff,false,JSON.stringify(result));
-   assert.match(result.answer,/49\s*€/);
+   assert.match(result.answer,/(?:€\s*49|49\s*€)/);
    assert.doesNotMatch(result.answer,/199|36\s*€|999/);
    assert.deepEqual(result.sourceIds,['window-price']);
  });

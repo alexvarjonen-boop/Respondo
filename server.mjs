@@ -3644,7 +3644,12 @@ async function directServicePriceFollowup(rows,message,history=[],lang='fi') {
     .sort((a,b)=>b.score-a.score || a.index-b.index);
 
   const best=candidates[0];
-  if(!best || best.score<35) return null;
+  if(!best || best.score<35) {
+    // This is an unambiguous follow-up asking the price of the preceding
+    // service, but no approved price row names that service. Do not fall back
+    // to an unrelated product or generic price list.
+    return {answer:'',handoff:true,confidence:0.2,intent:'Hinta',sourceIds:[],selected:[]};
+  }
 
   let answer=best.answer;
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
