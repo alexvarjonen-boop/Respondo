@@ -15,8 +15,8 @@ export function spiralHeroMarkup(t, lang) {
       t('Suomi, ruotsi ja englanti samassa palvelussa.','Finska, svenska och engelska i samma tjänst.','Finnish, Swedish and English in one service.'), '02'],
     ['01', t('Yksi Respondo.','En Respondo.','One Respondo.'),
       t('Tietopohja, keskustelut ja yhteydenotot yhdessä.','Kunskapsbas, konversationer och kontakter på ett ställe.','Knowledge, conversations and enquiries in one place.'), '03'],
-    ['+52 %', t('Näe kasvun mahdollisuus.','Se tillväxtmöjligheten.','Explore growth potential.'),
-      t('Havainnollistava 6 kk:n skenaario — ei mitattu asiakastulos.','Illustrativt 6-månadersscenario – inget uppmätt kundresultat.','Illustrative 6-month scenario — not a measured customer result.'), '04'],
+    ['growth', t('Näe kasvun mahdollisuus.','Se tillväxtmöjligheten.','Explore growth potential.'),
+      t('Seuraa keskusteluja ja tunnista, missä asiakkaasi tarvitsevat apua.','Följ konversationerna och se var kunderna behöver hjälp.','Review conversations to see where your customers need help.'), '04'],
     ['↗', t('Vastaa nopeammin.','Svara snabbare.','Reply faster.'),
       t('Auta asiakasta löytämään vastaukset heti.','Hjälp kunden att hitta svar direkt.','Help customers find answers right away.'), '05'],
     ['✦', t('Sinun brändisi.','Ditt varumärke.','Your brand.'),
@@ -74,7 +74,7 @@ export function spiralHeroMarkup(t, lang) {
   // Match large feature symbols to their corresponding orbit icons exactly.
   // Typography stays text for factual metrics, but symbol-only metrics use SVG
   // rather than platform-dependent emoji rendering on iPhone and Android.
-  const symbolicMetrics = new Set([4,5,6,8,9]);
+  const symbolicMetrics = new Set([3,4,5,6,8,9]);
   const metricMarkup = (metric,i) => symbolicMetrics.has(i)
     ? `<span class="rs-spiral-metric-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" xmlns="http://www.w3.org/2000/svg">${iconPaths[i]}</svg></span>`
     : metric;

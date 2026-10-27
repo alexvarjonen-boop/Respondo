@@ -5,7 +5,7 @@ import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-pages.mjs?v=20261016-intents-v1';
 import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs?v=20261016-gsc-en-fi-ecommerce-v1';
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
-import { appleHomeMarkup } from './apple-home.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10';
+import { appleHomeMarkup } from './apple-home.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10-polish-v11';
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2-pricing-20261014-ape-v1-annual-120-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
