@@ -1,0 +1,233 @@
+/* Respondo AI · Observatory OS v9 — 2026
+   Workspace and public /assistant demo use the SAME navy/ice-blue language
+   as the Respondo homepage. No generic grey Apple clones or huge empty
+   mobile welcome screens. Navigation/menus remain actual working controls.
+*/
+body:has(#app .dashboard-premium-shell){background:#080f1d!important}
+#app .dashboard-premium-shell.dashboard-simple-shell{
+  --rs-os-text:#f4f9ff;--rs-os-soft:#b6cae6;
+  --rs-os-stroke:rgba(170,209,255,.20);
+  --rs-os-glow:rgba(115,173,255,.20);
+  background:
+    radial-gradient(ellipse min(90vw,750px) 570px at 50% 0%,rgba(57,114,211,.22),transparent 78%),
+    linear-gradient(180deg,#0a1527 0%,#080f1d 68%)!important;
+  color:var(--rs-os-text)!important;
+}
+#app .dashboard-premium-shell .dashboard-simple-main{
+  width:min(100%,1180px)!important;
+  min-width:0!important;box-sizing:border-box;
+  margin-inline:auto!important;
+}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer,
+#app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer,
+#app .dashboard-premium-shell.demo-dashboard-shell .demo-sticky-topbar.dashboard-has-drawer.is-condensed{
+  border-radius:19px!important;
+  border:1px solid rgba(183,218,255,.22)!important;
+  background:linear-gradient(112deg,rgba(29,52,82,.93),rgba(12,26,45,.96))!important;
+  box-shadow:0 17px 48px rgba(1,8,20,.28),inset 0 1px rgba(222,239,255,.08)!important;
+}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .dashboard-menu-toggle{
+  background:rgba(172,210,255,.13)!important;
+  border:1px solid rgba(182,215,255,.28)!important;
+  color:#eaf5ff!important;
+  box-shadow:inset 0 1px rgba(234,247,255,.08)!important;
+  border-radius:13px!important;
+}
+#app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer > .dashboard-menu-toggle:hover{
+  background:rgba(172,210,255,.20)!important;
+}
+#app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]{
+  position:relative!important;isolation:isolate!important;
+  min-height:0!important;height:auto!important;max-height:none!important;
+  overflow:hidden!important;
+  padding:clamp(26px,4.1vw,50px)!important;
+  margin:0 0 clamp(19px,3vw,31px)!important;
+  border:1px solid rgba(171,207,251,.24)!important;
+  border-radius:25px!important;
+  background:
+    radial-gradient(ellipse 75% 92% at 94% 8%,rgba(99,159,249,.19),transparent 78%),
+    radial-gradient(ellipse 78% 88% at 0% 110%,rgba(31,81,166,.16),transparent 75%),
+    linear-gradient(145deg,#162d4b,#0b1b32 85%)!important;
+  box-shadow:0 19px 53px rgba(0,0,0,.16),inset 0 1px rgba(221,236,255,.06)!important;
+}
+#app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]::before{
+  content:"";position:absolute;left:clamp(23px,4vw,50px);top:0;
+  width:100px;height:2px;pointer-events:none;
+  background:linear-gradient(90deg,#a5d1ff,rgba(165,209,255,0));
+  box-shadow:0 0 20px rgba(156,204,255,.4);
+}
+#app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]::after{
+  right:-110px!important;top:-120px!important;
+  width:270px!important;height:270px!important;
+  opacity:.54!important;
+}
+#app .dashboard-premium-shell .dashboard-head .section-kicker{
+  color:#acd0ff!important;letter-spacing:.19em!important;
+  font-size:10px!important;font-weight:760!important;
+}
+#app .dashboard-premium-shell .dashboard-head h1{
+  margin:14px 0 13px!important;
+  color:#f7faff!important;
+  font-size:clamp(34px,4.7vw,56px)!important;
+  line-height:1.085!important;letter-spacing:-.06em!important;
+  font-weight:720!important;text-wrap:balance;
+}
+#app .dashboard-premium-shell .dashboard-head p{
+  margin:0!important;max-width:570px!important;
+  font-size:clamp(13px,1.25vw,16px)!important;
+  line-height:1.62!important;color:#b7cce9!important;
+}
+/* First action dominates without hiding the other three entry points. */
+#app .dashboard-premium-shell .dashboard-head-mobile-hint{
+  color:#b7d4f5!important;font-size:10px!important;letter-spacing:.16em!important;
+}
+#app .dashboard-premium-shell .dashboard-head-mobile-links .dashboard-head-mobile-test{
+  background:linear-gradient(115deg,#e5f1ff,#b6d5ff)!important;
+  color:#102340!important;border-color:rgba(236,247,255,.85)!important;
+  box-shadow:0 12px 26px rgba(2,13,35,.20)!important;
+}
+#app .dashboard-premium-shell .dashboard-head-mobile-links
+:is(.dashboard-head-mobile-setup,.dashboard-head-mobile-answers,.dashboard-head-mobile-menu){
+  background:rgba(148,194,253,.095)!important;
+  color:#deeeff!important;
+  border-color:rgba(177,214,255,.28)!important;
+}
+#app .dashboard-premium-shell .dashboard-head-mobile-links button:hover{
+  filter:brightness(1.07);
+}
+/* The desktop quick-action deck gets the same precise brand language. */
+#app .dashboard-premium-shell .dashboard-entry{
+  background:linear-gradient(135deg,#142a46,#101e33)!important;
+  border:1px solid var(--rs-os-stroke)!important;
+  box-shadow:0 14px 39px rgba(0,0,0,.12)!important;
+  border-radius:21px!important;
+}
+#app .dashboard-premium-shell .dashboard-entry-head h2{color:#f3f8ff!important}
+#app .dashboard-premium-shell .dashboard-entry-action{
+  border-radius:14px!important;
+}
+#app .dashboard-premium-shell .dashboard-entry-action:not(.dashboard-entry-primary){
+  background:rgba(154,200,255,.07)!important;
+  border:1px solid rgba(181,213,255,.20)!important;
+  color:#edf6ff!important;
+}
+#app .dashboard-premium-shell .dashboard-entry-action:not(.dashboard-entry-primary):hover{
+  background:rgba(154,200,255,.14)!important;
+}
+#app .dashboard-premium-shell .dashboard-entry-primary{
+  background:linear-gradient(110deg,#294e7b,#18375e)!important;
+  border-color:#597ca9!important;
+}
+#app .dashboard-premium-shell .dashboard-entry-icon{
+  border-radius:12px!important;
+}
+#app .dashboard-premium-shell :is(.stat,.premium-info-card){
+  background:linear-gradient(145deg,#152943,#0f1f36)!important;
+  border:1px solid var(--rs-os-stroke)!important;
+  border-radius:18px!important;
+}
+#app .dashboard-premium-shell :is(.stat,.premium-info-card) :is(b,strong,dd){
+  color:#f4f9ff!important;
+}
+#app .dashboard-premium-shell .stat :is(small,span),
+#app .dashboard-premium-shell .premium-info-card :is(p,dt,small){
+  color:#aec5e4!important;
+}
+/* Real inputs and chat previews remain pale for accessible text contrast.
+   Their surrounding frames echo the dark OS rather than stark white cards. */
+#app .dashboard-premium-shell :is(.panel,.onboarding-card,.welcome-card){
+  background:linear-gradient(155deg,#f6f9ff,#eaf2fe)!important;
+  color:#1b2f4e!important;border:1px solid #bbcee6!important;
+  border-radius:19px!important;
+  box-shadow:0 13px 32px rgba(0,7,22,.15)!important;
+}
+#app .dashboard-premium-shell .welcome-mark{
+  display:grid;place-items:center;overflow:hidden;
+  border-radius:15px!important;background:#070d16!important;
+  color:transparent!important;
+}
+#app .dashboard-premium-shell .welcome-mark img{
+  display:block;width:70%!important;height:70%!important;
+  object-fit:contain;
+}
+/* Menu is part of the same OS, not a detached bright-white product. */
+.dashboard-drawer-layer .dashboard-drawer-panel{
+  background:linear-gradient(165deg,#142b49,#0b192e)!important;
+  border-left:1px solid rgba(170,208,255,.25)!important;
+  box-shadow:-22px 0 70px rgba(0,6,20,.32)!important;
+}
+.dashboard-drawer-layer .dashboard-drawer-link{
+  background:rgba(157,201,255,.065)!important;
+  border-color:rgba(173,210,255,.23)!important;
+  color:#e8f4ff!important;border-radius:13px!important;
+}
+.dashboard-drawer-layer .dashboard-drawer-link.active{
+  background:linear-gradient(120deg,#355f91,#22436d)!important;
+  border-color:#81a8d7!important;color:#fff!important;
+}
+.dashboard-drawer-layer .dashboard-drawer-link:hover{
+  background:rgba(170,210,255,.16)!important;
+}
+.dashboard-drawer-layer .dashboard-drawer-cta{
+  background:#dcecff!important;color:#10213a!important;
+  border-color:#dcecff!important;
+}
+/* Avoid the empty welcome-page effect on narrow phones. One compact
+   branded introduction, followed immediately by usable navigation. */
+@media(max-width:760px){
+  #app .dashboard-premium-shell .dashboard-simple-main{
+    padding:10px 12px calc(60px + env(safe-area-inset-bottom,0px))!important;
+  }
+  #app .dashboard-premium-shell .dashboard-topbar.dashboard-has-drawer{
+    margin:0 0 13px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head[data-dashboard-view="overview"]{
+    padding:21px 17px 20px!important;
+    margin:0 0 14px!important;border-radius:20px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head h1{
+    font-size:clamp(30px,8vw,39px)!important;
+    line-height:1.08!important;margin:11px 0 9px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head p{
+    font-size:13px!important;line-height:1.47!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links{
+    margin:17px 0 0!important;gap:9px!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links .dashboard-head-mobile-test{
+    grid-column:1/-1!important;
+    min-height:52px!important;border-radius:13px!important;
+    justify-content:center!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+  :is(.dashboard-head-mobile-setup,.dashboard-head-mobile-answers){
+    min-height:47px!important;border-radius:12px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links .dashboard-head-mobile-menu{
+    grid-column:1/-1!important;min-height:44px!important;
+    justify-content:center!important;
+    border-radius:12px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-simple-main > .dashboard-head[data-dashboard-view="overview"]{
+    order:1!important;align-self:stretch!important;
+  }
+  #app .dashboard-premium-shell .dashboard-simple-main > .dashboard-entry[data-dashboard-view="overview"]{
+    display:none!important;
+  }
+  #app .dashboard-premium-shell .onboarding-card{
+    margin-top:13px!important;
+  }
+}
+@media(max-width:370px){
+  #app .dashboard-premium-shell .dashboard-head h1{font-size:29px!important}
+  #app .dashboard-premium-shell .dashboard-head-mobile-links button{
+    font-size:11px!important;line-height:1.3!important;
+    padding-inline:10px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #app .dashboard-premium-shell .dashboard-head-mobile-links button,
+  .dashboard-drawer-layer .dashboard-drawer-link{transition:none!important}
+}

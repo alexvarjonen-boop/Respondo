@@ -3885,7 +3885,7 @@ async function dashboard(options = {}) {
 
       ${isWelcome ? `
       <section class="welcome-card dashboard-view-section" data-dashboard-view="overview" id="welcomeCard">
-        <div class="welcome-mark">R</div>
+        <div class="welcome-mark" aria-hidden="true"><img src="/respondo-symbol.svg" alt="" width="44" height="44" loading="lazy"></div>
         <div class="welcome-copy">
           <small>${appText('TILAUS AKTIIVINEN','ABONNEMANGET ÄR AKTIVT','SUBSCRIPTION ACTIVE')}</small>
           <h2>${appText('Tervetuloa Respondoon.','Välkommen till Respondo.','Welcome to Respondo.')}</h2>
