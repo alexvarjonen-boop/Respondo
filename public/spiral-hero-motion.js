@@ -28,7 +28,8 @@
     if (raf) cancelAnimationFrame(raf);
     raf = 0;
     if (section) {
-      section.classList.remove('rs-enhanced', 'rs-fixed-fallback', 'rs-fixed-end');
+      section.classList.remove('rs-enhanced', 'rs-fixed-fallback', 'rs-fixed-end', 'rs-intro-past');
+      section.style.removeProperty('--rs-progress');
       for (const icon of icons) icon.classList.remove('is-active');
       for (const card of cards) {
         card.classList.remove('rs-in-scene');
@@ -59,6 +60,7 @@
   function updateStep(index) {
     if (index === currentStep) return;
     currentStep = index;
+    section.classList.toggle('rs-intro-past', index > 0);
     const counter = section.querySelector('[data-rs-step]');
     if (counter) counter.textContent = String(index + 1).padStart(2, '0');
     const announced = section.querySelector('[data-rs-announcement]');
@@ -103,11 +105,11 @@
       if (!visible) return;
       const focus = 1 - ease(distance);
       const entering = offset >= 0;
-      const zoom = entering ? .76 + .24 * focus : 1 + .30 * ease(distance);
-      const shift = (mobile ? 42 : 105) * (1 - focus);
+      const zoom = entering ? .89 + .11 * focus : 1 + .12 * ease(distance);
+      const shift = (mobile ? 35 : 84) * (1 - focus);
       panel.style.setProperty('--rs-panel-y', (entering ? shift : -shift).toFixed(1) + 'px');
-      panel.style.setProperty('--rs-panel-x', ((entering ? 1 : -1) * (mobile ? 18 : 65) * (1 - focus)).toFixed(1) + 'px');
-      panel.style.setProperty('--rs-panel-turn', ((entering ? -1 : 1) * (mobile ? 4 : 12) * (1 - focus)).toFixed(2) + 'deg');
+      panel.style.setProperty('--rs-panel-x', ((entering ? 1 : -1) * (mobile ? 14 : 53) * (1 - focus)).toFixed(1) + 'px');
+      panel.style.setProperty('--rs-panel-turn', ((entering ? -1 : 1) * (mobile ? 7 : 15) * (1 - focus)).toFixed(2) + 'deg');
       panel.style.setProperty('--rs-panel-scale', zoom.toFixed(3));
       panel.style.setProperty('--rs-opacity', focus.toFixed(3));
       panel.style.zIndex = index === closestIndex ? '6' : '5';
@@ -117,19 +119,22 @@
     const opening = 1 - ease(clamp(position / 1.05, 0, 1));
     const orbitFlight = ease(clamp(position / 1.75, 0, 1));
     section.style.setProperty('--rs-intro-opacity', opening.toFixed(3));
-    section.style.setProperty('--rs-logo-opacity', (.065 + .91 * opening).toFixed(3));
-    section.style.setProperty('--rs-logo-scale', (1 + .56 * orbitFlight).toFixed(3));
+    section.style.setProperty('--rs-logo-opacity', (.24 + .72 * opening).toFixed(3));
+    section.style.setProperty('--rs-logo-scale', (1 + .09 * orbitFlight).toFixed(3));
     section.style.setProperty('--rs-arrow-turn', (-9 * orbitFlight).toFixed(2) + 'deg');
     // Keep the icon sphere in view throughout all chapters; formerly it
     // faded out after chapter one, so later icons could not track the story.
-    section.style.setProperty('--rs-orbit-opacity', (.96 - .13 * orbitFlight).toFixed(3));
-    section.style.setProperty('--rs-orbit-scale', (1 + .95 * orbitFlight).toFixed(3));
+    section.style.setProperty('--rs-orbit-opacity', (.96 - .035 * orbitFlight).toFixed(3));
+    // Avoid the old 1.95x zoom that pushed half the constellation off
+    // iPhone screens. Small camera breathing makes all ten icons visible.
+    const breathing = Math.sin(position * .65) * (mobile ? .035 : .055);
+    section.style.setProperty('--rs-orbit-scale', (1 + .09 * orbitFlight + breathing).toFixed(3));
     // Each successive icon occupies one equally spaced sector of the sphere.
     // Counter-rotation keeps SVG glyphs upright as the active one reaches top.
     const iconAngle = 360 / cards.length;
     section.style.setProperty('--rs-orbit-spin', (-iconAngle * position).toFixed(2) + 'deg');
     section.style.setProperty('--rs-icon-upright', (iconAngle * position).toFixed(2) + 'deg');
-    section.style.setProperty('--rs-orbit-tilt', (22 * orbitFlight).toFixed(2) + 'deg');
+    section.style.setProperty('--rs-orbit-tilt', ((mobile ? 8 : 14) * orbitFlight).toFixed(2) + 'deg');
     section.style.setProperty('--rs-grid-angle', (-14 * position).toFixed(2) + 'deg');
     section.style.setProperty('--rs-grid-scale', (1 + .17 * position).toFixed(3));
     section.style.setProperty('--rs-grid-shift', (-10 * position).toFixed(1) + 'px');
@@ -138,7 +143,8 @@
     section.style.setProperty('--rs-sweep-x', (-85 + position * 22).toFixed(1) + '%');
     section.style.setProperty('--rs-art-rotation', (-16 * position).toFixed(2) + 'deg');
     section.style.setProperty('--rs-art-scale', (1 + .075 * position).toFixed(3));
-    section.style.setProperty('--rs-art-opacity', mobile ? '.30' : '.44');
+    section.style.setProperty('--rs-art-opacity', mobile ? '.19' : '.26');
+    section.style.setProperty('--rs-progress', normalized.toFixed(4));
   }
   function schedule() {
     if (!raf && section && section.isConnected && section.classList.contains('rs-enhanced')) raf = requestAnimationFrame(draw);

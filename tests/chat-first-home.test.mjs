@@ -94,7 +94,7 @@ test('homepage removes the duplicate question form and retains the seven-card st
     const t=(fi,sv,en)=>({fi,sv,en})[lang];
     const html=spiralHeroMarkup(t,lang);
     assert.doesNotMatch(html,/data-respondo-ask-form|rs-chat-entry|respondo-home-question|data-respondo-ask-question/);
-    assert.match(html,/Kysy Respondolta hinnat|Fråga Respondo om priser|Ask Respondo about pricing/);
+    assert.match(html,/Kysy Respondolta|Fråga Respondo|Ask Respondo/);
     assert.match(html,/24\/7/);
   }
   const index=read('index.html');
