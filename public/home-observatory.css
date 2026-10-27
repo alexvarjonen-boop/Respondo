@@ -458,3 +458,8 @@
     bottom:91px!important;right:7px!important;
   }
 }
+
+/* Once the opening copy has faded, it cannot trap taps above later scenes. */
+#app .apple-home-page .rs-spiral-section.rs-intro-past .rs-spiral-heading{
+  pointer-events:none!important;
+}
