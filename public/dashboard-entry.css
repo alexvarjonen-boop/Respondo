@@ -317,3 +317,53 @@
     transition:none!important;
   }
 }
+
+/* v6: Primary-first demo navigation. After the real mobile header
+   the visitor sees one unambiguous starting action and three compact
+   destinations. The earlier detailed overview quick-action deck is redundant
+   on phones (it repeated the same navigation just below the first screen). */
+@media(max-width:760px){
+  #app .dashboard-premium-shell .dashboard-head-mobile-links{
+    gap:9px!important;margin:16px 0 5px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+  .dashboard-head-mobile-test{
+    grid-column:1/-1!important;
+    justify-content:center!important;
+    min-height:56px!important;padding:14px 17px!important;
+    border-radius:15px!important;
+    background:linear-gradient(120deg,#142c4f,#234d7d)!important;
+    border-color:#244871!important;
+    box-shadow:0 9px 19px rgba(16,44,83,.13)!important;
+    font-size:14px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+  :is(.dashboard-head-mobile-setup,.dashboard-head-mobile-answers){
+    min-height:51px!important;
+  }
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+  .dashboard-head-mobile-menu{
+    grid-column:1/-1!important;
+    min-height:44px!important;justify-content:center!important;
+    background:transparent!important;border:1px solid #d8e2ef!important;
+    color:#3f638f!important;font-weight:690!important;
+  }
+  #app .dashboard-premium-shell .dashboard-simple-main
+  > .dashboard-entry[data-dashboard-view="overview"]{
+    display:none!important;
+  }
+  #app .dashboard-premium-shell .dashboard-simple-main
+  > .onboarding-card[data-dashboard-view="overview"]{
+    margin-top:14px!important;
+  }
+}
+@media(max-width:350px){
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+  .dashboard-head-mobile-test{font-size:13px!important;min-height:52px!important}
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+  .dashboard-head-mobile-menu{min-height:44px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  #app .dashboard-premium-shell .dashboard-head-mobile-links
+  .dashboard-head-mobile-test{transition:none!important}
+}
