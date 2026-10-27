@@ -6,11 +6,11 @@ import { brandedEmailHtml, RESPONDO_BRAND_LINE } from '../email-branding.mjs';
 const brandLine = 'RESPONDO AI - Älykkäämpää asiakaspalvelua';
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 
-test('public footer displays the permanent brand line', () => {
+test('public footer displays the localized permanent brand line', () => {
   const app = read('../public/app.js');
   const footer = app.slice(app.indexOf('function footer() {'), app.indexOf('function heroVisual()'));
   assert.match(footer, /<div class="footer-brand-identity">/);
-  assert.match(footer, /<span class="brand-slogan">Älykkäämpää asiakaspalvelua<\/span>/);
+  assert.match(footer, /<span class=\"brand-slogan\">\$\{appText\('Älykkäämpää asiakaspalvelua','Smartare kundservice','Smarter customer service'\)\}<\/span>/);
   assert.doesNotMatch(footer, /<span class="brand-word">RESPONDO AI <span class="brand-slogan">/);
   const css = read('../public/footer-refinement.css');
   assert.match(css, /\.brand-slogan\s*\{[^}]*font-weight:400!important/s);
