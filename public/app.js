@@ -9,6 +9,7 @@ import { appleHomeMarkup } from './apple-home.js?v=20261026-orbit10-v1-observato
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2-pricing-20261014-ape-v1-annual-120-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
+import { marketingAttributionQuery, marketingLeadVisitorRef, normalizeDemoWebsite, buildDemoRequestMessage } from './marketing-lead.mjs?v=20261027-qualified-demo-v1';
 import { parseBookingDurationMinutes } from './booking-duration.mjs?v=20261009-v1';
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -2156,24 +2157,27 @@ function contactSection() {
 
 function contactPage() {
   const demoRequest = new URLSearchParams(location.search).get('intent') === 'demo';
-  const demoMessage = appText(
-    'Hei! Haluaisin nähdä, miten Respondo AI toimisi yrityksemme verkkosivuilla.\nVerkkosivun osoite: \nToiveet ja yleisimmät asiakaskysymykset: ',
-    'Hej! Jag vill se hur Respondo AI skulle fungera på vårt företags webbplats.\nWebbadress: \nVåra vanligaste kundfrågor: ',
-    'Hello! I would like to see how Respondo AI would work on our company website.\nWebsite address: \nOur most common customer questions: '
+  const demoIntro = appText(
+    'Kerro yrityksesi verkkosivun osoite. Voimme valmistella esittelyn sivustollasi näkyvien tietojen perusteella. Pyynnön lähettäminen ei sido tilaukseen.',
+    'Ange adressen till företagets webbplats. Vi kan förbereda en demonstration med hjälp av uppgifter som finns på er webbplats. Förfrågan är inte bindande.',
+    'Enter your company website. We can prepare a demonstration using information publicly available on your site. Your request does not obligate you to subscribe.'
   );
   return `<div class="contact-page">${nav()}<main style="padding:clamp(70px,9vw,130px) 0 110px;min-height:65vh;background:#f8fafc"><div class="container" style="max-width:1050px">
     <div class="section-kicker">${appText('YHTEYSTIEDOT','KONTAKT','CONTACT')}</div>
     <h1 style="font-size:clamp(38px,6vw,68px);letter-spacing:-.05em;line-height:1.1;margin:14px 0 20px">${demoRequest
       ? appText('Pyydä esittely omalle verkkosivullesi','Be om en demo för er webbplats','Request a demo for your website')
       : appText('Miten voimme auttaa?','Hur kan vi hjälpa dig?','How can we help?')}</h1>
-    <p style="font-size:clamp(16px,2vw,20px);color:#64748b;line-height:1.7;max-width:670px;margin-bottom:44px">${appText('Kysyttävää Respondo AI:sta, tilauksista tai käyttöönotosta? Lähetä meille viesti.','Frågor om Respondo AI, abonnemang eller installation? Skicka ett meddelande.','Questions about Respondo AI, subscriptions or setup? Send us a message.')}</p>
+    <p style="font-size:clamp(16px,2vw,20px);color:#64748b;line-height:1.7;max-width:670px;margin-bottom:44px">${demoRequest?demoIntro:appText('Kysyttävää Respondo AI:sta, tilauksista tai käyttöönotosta? Lähetä meille viesti.','Frågor om Respondo AI, abonnemang eller installation? Skicka ett meddelande.','Questions about Respondo AI, subscriptions or setup? Send us a message.')}</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:24px;align-items:start">
-      <section style="background:white;border:1px solid #e2e8f0;border-radius:24px;padding:clamp(24px,4vw,40px);box-shadow:0 14px 35px rgba(15,23,42,.04)"><h2 style="font-size:23px;margin:0 0 16px">${appText('Lähetä viesti','Skicka meddelande','Send a message')}</h2>
+      <section style="background:white;border:1px solid #e2e8f0;border-radius:24px;padding:clamp(24px,4vw,40px);box-shadow:0 14px 35px rgba(15,23,42,.04)"><h2 style="font-size:23px;margin:0 0 16px">${demoRequest?appText('Pyydä yrityskohtainen demo','Begär en företagsanpassad demo','Request a tailored demo'):appText('Lähetä viesti','Skicka meddelande','Send a message')}</h2>
         <form class="home-contact-form" id="homeContactForm" style="display:grid;gap:17px">
           <label><span>${appText('Nimi','Namn','Name')}</span><input name="name" type="text" autocomplete="name" maxlength="120" required></label>
           <label><span>${appText('Sähköposti','E-post','Email')}</span><input name="email" type="email" autocomplete="email" maxlength="220" required></label>
-          <label><span>${appText('Viesti','Meddelande','Message')}</span><textarea name="message" rows="6" maxlength="2000" required>${demoRequest ? esc(demoMessage) : ''}</textarea></label>
-          <button class="btn ink home-contact-submit" type="submit">${appText('Lähetä viesti','Skicka meddelande','Send message')} →</button>
+          ${demoRequest ? `<label><span>${appText('Yrityksen verkkosivu','Företagets webbplats','Company website')}</span><input name="website" type="text" inputmode="url" autocomplete="url" maxlength="255" placeholder="https://yritys.fi" required aria-describedby="demoWebsiteHint"></label>
+          <p id="demoWebsiteHint" class="demo-website-hint">${appText('Voit kirjoittaa myös pelkän osoitteen, esimerkiksi yritys.fi.','Du kan också ange bara adressen, till exempel foretag.fi.','You can also enter just the domain, for example company.fi.')}</p>
+          <label><span>${appText('Mitä haluat botin osaavan?','Vad ska botten kunna svara på?','What should the bot be able to answer?')} <small>${appText('(valinnainen)','(valfritt)','(optional)')}</small></span><textarea name="message" rows="4" maxlength="1000" placeholder="${appText('Esim. hinnat, palvelut ja ajanvaraus','T.ex. priser, tjänster och bokningar','e.g. pricing, services and bookings')}"></textarea></label>
+          <p class="demo-request-privacy">${appText('Käytämme lähettämiäsi tietoja vain yhteydenottoosi vastaamiseen ja demon valmisteluun.','Vi använder dina uppgifter endast för att besvara förfrågan och förbereda demon.','We use the information you provide only to respond to your request and prepare the demo.')}</p>` : `<label><span>${appText('Viesti','Meddelande','Message')}</span><textarea name="message" rows="6" maxlength="2000" required></textarea></label>`}
+          <button class="btn ink home-contact-submit" type="submit">${demoRequest?appText('Lähetä demopyyntö','Skicka demoförfrågan','Send demo request'):appText('Lähetä viesti','Skicka meddelande','Send message')} →</button>
           <div class="home-contact-status" id="homeContactStatus" role="status" aria-live="polite"></div>
         </form>
       </section>
@@ -2539,7 +2543,7 @@ function pricingSection() {
         <p>${appText('Etkö ole varma, mikä paketti sopii? Kokeile bottia tai kysy käyttöönotosta ennen tilausta.','Osäker på vilket paket som passar? Testa botten eller fråga oss om installationen.','Not sure which plan is right? Try the chatbot or ask about setup before ordering.')}</p>
         <div class="pricing-assist-links">
           <a href="/assistant?lang=${currentLang()}">${appText('Kokeile bottia','Testa chatbotten','Try the chatbot')} →</a>
-          <a href="/yhteystiedot?lang=${currentLang()}&amp;intent=demo">${appText('Pyydä esittely omalle sivulle','Be om demo för er webbplats','Request a website-specific demo')} →</a>
+          <a href="/yhteystiedot?lang=${currentLang()}&amp;intent=demo${marketingAttributionQuery(location.search)?'&amp;'+marketingAttributionQuery(location.search):''}">${appText('Pyydä esittely omalle sivulle','Be om demo för er webbplats','Request a website-specific demo')} →</a>
         </div>
       </div>
     </div>
@@ -5022,12 +5026,24 @@ async function route() {
       event.preventDefault();
       const submit = contactForm.querySelector('button[type="submit"]');
       const formData = new FormData(contactForm);
+      const demo = new URLSearchParams(location.search).get('intent') === 'demo';
+      const site = demo ? normalizeDemoWebsite(formData.get('website')) : '';
+      if (demo && !site) {
+        if (contactStatus) {
+          contactStatus.className='home-contact-status error';
+          contactStatus.textContent=appText('Tarkista verkkosivun osoite, esimerkiksi yritys.fi.','Kontrollera webbadressen, till exempel foretag.fi.','Check the website address, for example company.fi.');
+        }
+        contactForm.elements.namedItem('website')?.focus();
+        return;
+      }
       const payload = {
         name:String(formData.get('name')||'').trim(),
         email:String(formData.get('email')||'').trim(),
-        message:String(formData.get('message')||'').trim(),
+        message:demo
+          ? buildDemoRequestMessage(currentLang(),site,formData.get('message'))
+          : String(formData.get('message')||'').trim(),
         lang:currentLang(),
-        visitorRef:new URLSearchParams(location.search).get('intent') === 'demo' ? 'public-demo-request' : 'homepage-contact'
+        visitorRef:marketingLeadVisitorRef(location.search,demo)
       };
       if (contactStatus) {
         contactStatus.className='home-contact-status';

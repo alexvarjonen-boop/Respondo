@@ -45,3 +45,13 @@
   #app .seo-pricing-actions{align-items:stretch;flex-direction:column}
   #app .seo-pricing-actions a{width:100%}
 }
+
+/* Qualification is voluntary and scoped only to the explicit demo request. */
+#app .contact-page .demo-website-hint{
+  margin:-12px 0 0;color:#607185;font-size:12px;line-height:1.5;
+}
+#app .contact-page .demo-request-privacy{
+  margin:-5px 0 0;color:#64748b;font-size:12px;line-height:1.5;
+}
+#app .contact-page .home-contact-form input[inputmode="url"]{width:100%;min-width:0}
+#app .contact-page .home-contact-form textarea{width:100%;resize:vertical}
