@@ -57,7 +57,7 @@ test('homepage hides the SEO product-link footer column while preserving legal l
   assert.match(index,/app\.js\?v=[^"]+-orbit10-v1-mobile-footer-pricing-v1/);
 });
 
-test('the Finnish mobile pricing suggestion returns real monthly and annual euro amounts',async()=>{
+test('general pricing replies are exactly three localized monthly price lines',async()=>{
   const {respondoProductFaqMatch}=await import('../server.mjs');
   for (const [question,lang] of [
     ['Mitä paketit maksavat?','fi'],
@@ -69,9 +69,25 @@ test('the Finnish mobile pricing suggestion returns real monthly and annual euro
     const result=respondoProductFaqMatch(question,lang,[]);
     assert.ok(result,'missing direct pricing FAQ for '+question);
     assert.equal(result.id,'respondo-faq-pricing','wrong intent for '+question);
-    assert.match(result.answer,/49\s*€/u.test(result.answer) ? /49\s*€/ : /€49/);
-    assert.match(result.answer,/129/);
-    assert.match(result.answer,/149/);
-    assert.match(result.answer,/39/);
+    const expected={
+      fi:'Advanced - 49€/kk\nPremium - 129€/kk\nEnterprise - 149€/kk',
+      sv:'Advanced - 49 €/mån\nPremium - 129 €/mån\nEnterprise - 149 €/mån',
+      en:'Advanced - €49/month\nPremium - €129/month\nEnterprise - €149/month'
+    };
+    assert.equal(result.answer,expected[lang]);
   }
+});
+
+test('explicit annual pricing keeps annual billing details; general monthly pricing does not',async()=>{
+  const {respondoProductFaqMatch}=await import('../server.mjs');
+  const monthly=respondoProductFaqMatch('Kuukausihinnat?', 'fi');
+  assert.equal(monthly?.id,'respondo-faq-monthly-pricing');
+  assert.equal(monthly?.answer,'Advanced - 49€/kk\nPremium - 129€/kk\nEnterprise - 149€/kk');
+  const annual=respondoProductFaqMatch('Paljonko vuositilaus maksaa?', 'fi');
+  assert.equal(annual?.id,'respondo-faq-annual-pricing');
+  assert.match(annual?.answer||'',/39\s*€\/kk/);
+  assert.match(annual?.answer||'',/vuosi/);
+  const css=read('effects.css');
+  assert.match(css,/#respondo-site-chat \.fx-chat-bubble\.bot \{ white-space: pre-line!important; \}/);
+  assert.match(index,/effects\.css\?v=20261027-price-lines-v1/);
 });

@@ -3645,3 +3645,7 @@ html.static-workspace #app :is(.fx-depth,.fx-depth-card,.btn)::after{content:non
   }
   #app .preview-note{max-width:100%;overflow-wrap:anywhere;}
 }
+
+/* Respondo price-list line breaks: preserve the bot's deliberately concise
+   three-line monthly pricing answer on both iPhone and desktop. */
+#respondo-site-chat .fx-chat-bubble.bot { white-space: pre-line!important; }
