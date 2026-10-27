@@ -34,7 +34,7 @@
       for (const card of cards) {
         card.classList.remove('rs-in-scene');
         card.removeAttribute('aria-hidden');
-        for (const name of ['--rs-panel-x','--rs-panel-y','--rs-panel-turn','--rs-panel-scale','--rs-opacity']) card.style.removeProperty(name);
+        for (const name of ['--rs-panel-x','--rs-panel-y','--rs-panel-turn','--rs-panel-roll','--rs-panel-depth','--rs-panel-scale','--rs-opacity']) card.style.removeProperty(name);
         card.style.removeProperty('z-index');
       }
     }
@@ -107,13 +107,26 @@
       if (!visible) return;
       const focus = 1 - ease(distance);
       const entering = offset >= 0;
-      const zoom = entering ? .89 + .11 * focus : 1 + .12 * ease(distance);
-      const shift = (mobile ? 35 : 84) * (1 - focus);
-      panel.style.setProperty('--rs-panel-y', (entering ? shift : -shift).toFixed(1) + 'px');
-      panel.style.setProperty('--rs-panel-x', ((entering ? 1 : -1) * (mobile ? 14 : 53) * (1 - focus)).toFixed(1) + 'px');
-      panel.style.setProperty('--rs-panel-turn', ((entering ? -1 : 1) * (mobile ? 7 : 15) * (1 - focus)).toFixed(2) + 'deg');
+      const curve = ease(distance);
+      // A feature passes inward towards the Respondo arrow as it leaves.
+      // The next chapter rises from the outer edge of the orbit. The smaller
+      // mobile arc avoids moving text under Safari's floating chat launcher.
+      const zoom = entering ? .83 + .17 * focus : 1 - .25 * curve;
+      const shiftX = entering
+        ? -(mobile ? 12 : 62) * curve
+        : (mobile ? 34 : Math.min(320, innerWidth * .22)) * curve;
+      const shiftY = entering ? (mobile ? 62 : 95) * curve : -(mobile ? 100 : 74) * curve;
+      const turn = entering ? -(mobile ? 6 : 17) * curve : (mobile ? 7 : 26) * curve;
+      const roll = entering ? 3 * curve : -7 * curve;
+      const depth = -(entering ? 105 : 240) * curve;
+      const alpha = entering ? Math.pow(focus, 1.2) : Math.pow(focus, .9);
+      panel.style.setProperty('--rs-panel-y', shiftY.toFixed(1) + 'px');
+      panel.style.setProperty('--rs-panel-x', shiftX.toFixed(1) + 'px');
+      panel.style.setProperty('--rs-panel-turn', turn.toFixed(2) + 'deg');
+      panel.style.setProperty('--rs-panel-roll', roll.toFixed(2) + 'deg');
+      panel.style.setProperty('--rs-panel-depth', depth.toFixed(1) + 'px');
       panel.style.setProperty('--rs-panel-scale', zoom.toFixed(3));
-      panel.style.setProperty('--rs-opacity', focus.toFixed(3));
+      panel.style.setProperty('--rs-opacity', alpha.toFixed(3));
       panel.style.zIndex = index === closestIndex ? '6' : '5';
     });
     // The official arrow and its constellation travel away from the camera

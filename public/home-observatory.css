@@ -670,3 +670,58 @@
   #app .apple-home-page .rs-orbit-beacon{display:none!important}
   #app .apple-home-page .rs-studio-orbit-icon[data-rs-icon]{transition:none!important}
 }
+
+
+/* Observatory v4 — feature-specific blueprint engraving and real helix depth.
+   Built from the same ten icons as the orbit: no images, loops, or added CTA. */
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"]
+.rs-spiral-card:not(:first-child) .rs-studio-card-art{
+  opacity:.29!important;
+}
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"]
+.rs-studio-card-art svg .rs-scene-glyph{
+  fill:none;stroke:#e0edff;stroke-width:1.12;opacity:.94;
+}
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"]
+.rs-studio-card-art svg .rs-scene-glyph circle{
+  fill:none;
+}
+/* Previous copy contracts gently towards the central arrow instead of
+   merely vanishing left. Incoming copy opens from the opposite camera plane. */
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced .rs-spiral-card{
+  transform:
+    translate3d(var(--rs-panel-x,0px),var(--rs-panel-y,0px),var(--rs-panel-depth,0px))
+    perspective(1100px)
+    rotateY(var(--rs-panel-turn,0deg))
+    rotateZ(var(--rs-panel-roll,0deg))
+    scale(var(--rs-panel-scale,1))!important;
+  transform-origin:50% 50%!important;
+  backface-visibility:hidden;
+}
+/* Thin engraved chapter number is intentionally only visible on focus. */
+#app .apple-home-page .rs-spiral-card.rs-in-scene .rs-studio-card-art .rs-studio-core{
+  box-shadow:0 0 55px rgba(102,151,234,.14),inset 0 0 55px rgba(73,115,181,.08);
+}
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .pricing-section{
+  border-top-color:rgba(184,214,255,.33)!important;
+}
+@media(max-width:1099px){
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"]
+  .rs-spiral-card:not(:first-child) .rs-studio-card-art{opacity:.20!important}
+}
+@media(max-width:600px){
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"]
+  .rs-spiral-card:not(:first-child) .rs-studio-card-art{opacity:.13!important}
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced .rs-spiral-card{
+    transform:
+      translate3d(var(--rs-panel-x,0px),var(--rs-panel-y,0px),0)
+      rotateZ(var(--rs-panel-roll,0deg))
+      scale(var(--rs-panel-scale,1))!important;
+  }
+}
+/* Static fallback retains every text panel, no scenes left hidden off-camera. */
+@media(prefers-reduced-motion:reduce){
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card{
+    transform:none!important;
+  }
+}
