@@ -6,7 +6,7 @@ const app = await readFile(new URL('../public/app.js', import.meta.url), 'utf8')
 const css = await readFile(new URL('../public/guided-setup-v22.css', import.meta.url), 'utf8');
 
 test('public demo starts with the real website-first guided card, not legacy action menu', () => {
-  assert.match(app, /const showGuidedSetup = !hasWebsite && \(!isDemo \|\| !new URLSearchParams\(location\.search\)\.has\('section'\)\)/);
+  assert.match(app, /const showGuidedSetup = !hasWebsite;/);
   assert.match(app, /showGuidedSetup \? `<section class="guided-setup"/);
   assert.match(app, /data-guided-step="1"/);
   assert.match(app, /name="website" type="url"/);
