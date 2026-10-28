@@ -70,6 +70,22 @@ async function clearLegacyPaidChannelState() {
     )`);
     await pool.query('ALTER TABLE public.signup_welcome_emails ENABLE ROW LEVEL SECURITY');
     await pool.query('REVOKE ALL PRIVILEGES ON TABLE public.signup_welcome_emails FROM anon, authenticated, service_role');
+    // Requests for paid hands-on bot setup contain customer/company details.
+    // Keep them server-only, even when the Supabase Data API is enabled.
+    await pool.query(`CREATE TABLE IF NOT EXISTS public.setup_service_requests (
+      session_id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      tenant_id TEXT NOT NULL,
+      website_url TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'received',
+      customer_emailed_at TIMESTAMPTZ,
+      owner_emailed_at TIMESTAMPTZ,
+      ready_emailed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )`);
+    await pool.query('ALTER TABLE public.setup_service_requests ENABLE ROW LEVEL SECURITY');
+    await pool.query('REVOKE ALL PRIVILEGES ON TABLE public.setup_service_requests FROM anon, authenticated, service_role');
   } finally {
     await pool.end();
   }
