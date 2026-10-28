@@ -1,7 +1,7 @@
 import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
-import { firecrawlEnabled, firecrawlMaxPages, fetchFirecrawlRenderedHtml } from './firecrawl-fallback.mjs';
+import { firecrawlEnabled, firecrawlMaxPages, maySpendOneFirecrawlCredit, fetchFirecrawlRenderedHtml } from './firecrawl-fallback.mjs';
 import { serviceOverviewQuestion, verifiedServiceOverview } from './service-overview.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { isRespondoCapabilityQuestion } from './respondo-capability-intent.mjs';
@@ -6094,6 +6094,8 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       if (String(page.document?.text || '').length > 650) continue;
       // An unusually slow native crawl must not trigger unbounded extra work.
       if (Date.now() - crawlStartedAt > timeBudgetMs + 12000) break;
+      // Fail closed to native importing when Firecrawl quota is low/unknown.
+      if (!(await maySpendOneFirecrawlCredit())) break;
       rendererCalls++;
       const rendered = await fetchFirecrawlRenderedHtml(page.url, {
         verifiedHostname: base.hostname.toLowerCase(),
