@@ -29,7 +29,7 @@ test('owner-only paid assisted setup importer uses existing safe crawler, bounde
 
 test('manual setup credentials are owner-only, hashed, and never emailed by endpoint',()=>{
   const start=server.indexOf("app.post('/api/app/internal/setup-service-requests/:id/credentials'");
-  const end=server.indexOf("// Owner confirms personal handover",start);
+  const end=server.indexOf("app.post('/api/app/internal/setup-service-requests/:id/handover'",start);
   const flow=server.slice(start,end);
   assert.ok(start>0&&end>start);
   assert.match(flow,/auth, ownerTrafficOnly, loginLimiter/);
