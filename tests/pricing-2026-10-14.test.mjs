@@ -40,7 +40,8 @@ test('both new signups and added workspaces accept annual billing, preserving or
   assert.doesNotMatch(server, /Uusille tilauksille on saatavilla vain kuukausilaskutus/);
   assert.match(server, /await stripeCheckoutLineItem\(normalizedPlan\)/);
   assert.match(server, /await stripeCheckoutLineItem\(plan\)/);
-  assert.match(server, /trial_period_days:\s*3/);
+  assert.match(server, /assistedSetupCheckoutTrial\(setupService\)/);
+  assert.match(read('assisted-setup-billing.mjs'), /ASSISTED_SETUP_CUSTOMER_TRIAL_DAYS = 3/);
   assert.match(app, /basic_yearly/);
   assert.match(app, /advanced_yearly/);
   assert.match(app, /business_yearly/);
