@@ -200,3 +200,5 @@
     font-size:clamp(30px,8vw,40px);
   }
 }
+
+#app .demo-dashboard-shell .guided-demo-brandname .logo .brand-word {color:#f5f5f7!important;}
