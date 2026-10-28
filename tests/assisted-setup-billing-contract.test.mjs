@@ -21,7 +21,8 @@ test('Stripe webhooks hold payment collection for paid assisted setup before ack
   const flow=server.slice(start,end);
   assert.match(flow,/await holdAssistedSetupBilling\(stripe, incomingSubscriptionId\)/);
   assert.match(flow,/notifySetupServiceAfterCheckout\(session\)/);
-  assert.match(server,/event\.type === 'customer.subscription.created'[\s\S]*holdAssistedSetupBilling/);
+  assert.match(flow,/session\.payment_status === 'paid' && incomingSubscriptionId/);
+  assert.doesNotMatch(server,/event\.type === 'customer.subscription.created' &&[\s\S]{0,170}holdAssistedSetupBilling/);
 });
 
 test('owner-only personal handover persists a stable approval timestamp and only marks ready after Stripe release',()=>{
