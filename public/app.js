@@ -3691,7 +3691,7 @@ async function dashboard(options = {}) {
   const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
   const isWelcome = new URLSearchParams(location.search).get('welcome') === '1';
   const hasWebsite = Boolean(String(businessProfile.Verkkosivu || t.website || '').trim());
-  const showGuidedSetup = !hasWebsite && (!isDemo || !new URLSearchParams(location.search).has('section'));
+  const showGuidedSetup = !hasWebsite;
   // The profile endpoint replaces all existing profile facts. Preserve any
   // fields the minimal first-run wizard does not ask the owner to edit.
   const guidedExistingField = (key) => {
