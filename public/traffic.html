@@ -377,38 +377,38 @@ const SL={
  fi:{
  title:'Käyttöönottopalvelun tilaukset',eyebrow:'OMISTAJAN TYÖJONO',
  intro:'Täällä otat ostetun 199 € käyttöönottopalvelun käyttöön itse. Viimeistele ensin asiakkaan botti, aseta kirjautumissähköposti ja väliaikainen salasana, ja lähetä tiedot henkilökohtaisesti omasta sähköpostistasi.',
- warning:'Respondo ei lähetä valmista salasanaa automaattisesti. Lähetä tiedot vasta, kun botti on oikeasti valmis. Älä merkitse työtä luovutetuksi ennen kuin olet itse lähettänyt kirjautumistiedot. Tämä sivu on näkyvissä vain omistajatilillesi.',
+ warning:'199 €:n käyttöönottopalvelu on maksettu tilatessa. Uusissa käyttöönottotilauksissa paketin kuukausi- tai vuosilaskutus alkaa vasta, kun vahvistat tunnusten toimittamisen. Tämä vahvistus käynnistää laskutuksen. Respondo ei lähetä salasanaa automaattisesti.',
  loading:'Haetaan käyttöönottotilauksia…',empty:'Ei käyttöönottotilauksia.',refresh:'Päivitä tilaukset',
  received:'Odottaa käyttöönottoa',credentials_created:'Tunnukset luotu – lähetä henkilökohtaisesti',ready:'Luovutettu',
  config:'Muokkaa botin nimeä ja tervehdystä',configTitle:'Botin perustiedot',configName:'Botin nimi',configGreeting:'Aloitustervehdys',configAvatar:'Botin kuvake',configSave:'Tallenna botin asetukset',configSaved:'Botin asetukset tallennettu.',create:'Luo tunnukset',rotate:'Muuta tunnukset',handover:'Merkitse luovutetuksi',import:'Tuo sivuston tiedot bottiin',importing:'Haetaan ja tallennetaan yritystietoja…',imported:'Tiedot tuotu bottiin',due:'Valmis viimeistään',customerLogin:'Avaa asiakkaan kirjautuminen',privateNote:'Tee botin viimeistely erillisessä yksityisessä selausikkunassa, jotta oma omistajaistuntosi säilyy.',extra:'Lisätyötila: asiakkaalla on jo Respondo-tunnukset.',
  dialog:'Yrityksen kirjautumistiedot',login:'Kirjautumissähköposti',password:'Väliaikainen salasana',hint:'Tallenna tunnukset vasta, kun botti on viimeistelty. Kopioi viesti ja lähetä se itse osoitteesta info@respondoai.fi. Salasana tallennetaan vain salattuna.',
  generate:'Luo vahva salasana',copy:'Kopioi asiakasviesti',save:'Tallenna tunnukset',close:'Sulje',saved:'Tunnukset on tallennettu. Kopioi nyt viesti ja lähetä se henkilökohtaisesti.',copied:'Viesti kopioitu. Lähetä se asiakkaalle henkilökohtaisesti.',copyFail:'Kopiointi epäonnistui. Kopioi tiedot käsin.',
- confirm:'Oletko varmasti viimeistellyt botin ja lähettänyt kirjautumistiedot asiakkaalle itse? Respondo ei lähetä tästä automaattista sähköpostia.',
- confirmed:'Luovutus merkitty valmiiksi.',failed:'Toiminto epäonnistui. Yritä uudelleen.',
+ confirm:'Oletko viimeistellyt botin ja lähettänyt kirjautumistiedot asiakkaalle? Vahvistaminen käynnistää paketin toistuvan Stripe-laskutuksen heti. Respondo ei lähetä tunnuksia automaattisesti.',
+ confirmed:'Luovutus vahvistettu. Paketin toistuva laskutus käynnistettiin, jos kyseessä on tämän jälkeen ostettu käyttöönottopalvelu.',failed:'Toiminto epäonnistui. Yritä uudelleen.',
  mail:(email,password)=>'Hei!\n\nYrityksesi Respondo AI -botti on otettu käyttöön ja valmis tarkistettavaksi.\n\nKirjaudu: https://respondoai.fi/kirjaudu\nSähköposti: '+email+'\nVäliaikainen salasana: '+password+'\n\nVoit vaihtaa salasanan asetuksissa kirjautumisen jälkeen.\n\nYstävällisin terveisin,\nRespondo AI'
  },
  sv:{
  title:'Beställningar för installation',eyebrow:'ÄGARENS ARBETSKÖ',
  intro:'Här färdigställer du den köpta installationstjänsten manuellt, anger kundens e-postadress och ett tillfälligt lösenord och skickar uppgifterna själv.',
- warning:'Respondo skickar inte lösenord automatiskt. Skicka uppgifterna först när botten är klar och bekräfta sedan överlämningen.',
+ warning:'Engångsavgiften på 199 € betalas vid beställningen. För nya installationsbeställningar startar abonnemangsdebiteringen först när du bekräftar överlämningen. Respondo skickar inga lösenord automatiskt.',
  loading:'Hämtar installationsbeställningar…',empty:'Inga installationsbeställningar.',refresh:'Uppdatera beställningar',
  received:'Väntar på installation',credentials_created:'Uppgifter skapade – skicka personligen',ready:'Överlämnat',
  config:'Ändra bottens namn och hälsning',configTitle:'Bottens grunduppgifter',configName:'Bottens namn',configGreeting:'Välkomsttext',configAvatar:'Bot-ikon',configSave:'Spara botinställningar',configSaved:'Botinställningar sparade.',create:'Skapa inloggning',rotate:'Ändra inloggning',handover:'Bekräfta överlämning',import:'Importera webbplatsdata',importing:'Importerar företagsuppgifter…',imported:'Uppgifter importerade',due:'Leverans senast',customerLogin:'Öppna kundens inloggning',privateNote:'Använd ett separat privat webbläsarfönster för kundkontot så att ägarsessionen behålls.',extra:'Extra arbetsyta: kunden har redan ett Respondo-konto.',
  dialog:'Kundens inloggning',login:'E-post för inloggning',password:'Tillfälligt lösenord',hint:'Spara först när botten är klar. Kopiera meddelandet och skicka själv från info@respondoai.fi. Lösenord lagras endast som en hash.',
  generate:'Skapa starkt lösenord',copy:'Kopiera kundmeddelande',save:'Spara inloggning',close:'Stäng',saved:'Uppgifterna är sparade. Kopiera nu meddelandet och skicka det personligen.',copied:'Meddelandet kopierat. Skicka det personligen till kunden.',copyFail:'Kunde inte kopiera. Kopiera uppgifterna manuellt.',
- confirm:'Har du färdigställt botten och personligen mejlat inloggningsuppgifterna? Respondo skickar inget automatiskt mejl.',confirmed:'Överlämningen bekräftad.',failed:'Åtgärden misslyckades. Försök igen.',
+ confirm:'Har du färdigställt botten och skickat inloggningsuppgifterna personligen? Bekräftelsen startar abonnemangets Stripe-debitering direkt. Respondo skickar inget automatiskt mejl.',confirmed:'Överlämningen bekräftad. Abonnemangsdebiteringen har startats för nya installationsbeställningar.',failed:'Åtgärden misslyckades. Försök igen.',
  mail:(email,password)=>'Hej!\n\nDin Respondo AI-bot är nu klar.\n\nLogga in: https://respondoai.fi/kirjaudu\nE-post: '+email+'\nTillfälligt lösenord: '+password+'\n\nDu kan ändra lösenordet i inställningarna.\n\nMed vänliga hälsningar,\nRespondo AI'
  },
  en:{
  title:'Assisted setup orders',eyebrow:'OWNER WORK QUEUE',
  intro:'Complete purchased setup orders yourself: prepare the customer bot, set its login email and a temporary password, and personally send the credentials.',
- warning:'Respondo does not email passwords automatically. Send credentials only once the bot is ready, then confirm you have personally handed them over.',
+ warning:'The €199 setup fee is paid at checkout. For new assisted setup orders, the monthly or annual subscription begins charging only after you confirm delivery here. Credentials are never sent automatically.',
  loading:'Loading setup orders…',empty:'No setup orders.',refresh:'Refresh orders',
  received:'Awaiting setup',credentials_created:'Credentials created – send personally',ready:'Handed over',
  config:'Edit bot name and greeting',configTitle:'Bot configuration',configName:'Bot name',configGreeting:'Welcome greeting',configAvatar:'Bot avatar',configSave:'Save bot settings',configSaved:'Bot settings saved.',create:'Create credentials',rotate:'Change credentials',handover:'Confirm handover',import:'Import website data into the bot',importing:'Importing website facts…',imported:'Website facts imported',due:'Delivery by',customerLogin:'Open customer sign-in',privateNote:'Use a separate private browser window for customer setup so your owner session stays active.',extra:'Additional workspace: the customer already has a Respondo login.',
  dialog:'Customer login credentials',login:'Login email',password:'Temporary password',hint:'Save only after preparing the bot. Copy the message and email it yourself from info@respondoai.fi. The password is stored as a hash only.',
  generate:'Generate strong password',copy:'Copy customer message',save:'Save credentials',close:'Close',saved:'Credentials saved. Copy the message now and personally send it to your customer.',copied:'Message copied. Personally email it to the customer.',copyFail:'Copy failed. Copy the credentials manually.',
- confirm:'Have you finished the bot and personally emailed the credentials? Respondo will not send an automatic email.',confirmed:'Handover confirmed.',failed:'Could not complete the action. Please try again.',
+ confirm:'Have you finished the bot and personally sent the credentials? Confirming starts Stripe recurring plan billing immediately. Respondo will not automatically email credentials.',confirmed:'Handover confirmed. Recurring billing has been started for new assisted setup orders.',failed:'Could not complete the action. Please try again.',
  mail:(email,password)=>'Hello,\n\nYour Respondo AI bot is ready for review.\n\nSign in: https://respondoai.fi/kirjaudu\nEmail: '+email+'\nTemporary password: '+password+'\n\nYou can change your password in Settings.\n\nBest regards,\nRespondo AI'
  }
 };
