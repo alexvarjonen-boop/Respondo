@@ -5711,6 +5711,23 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const sitemapLimit = Number.isFinite(Number(opts.sitemapLimit))
     ? Math.max(0,Math.min(10000,Number(opts.sitemapLimit)))
     : 10000;
+  // On an unanswered question, use its actual subject to prioritize linked
+  // pages and sitemap paths. This does NOT search other domains, run scripts,
+  // bypass SSRF guards or treat the question itself as an answer.
+  const questionTerms=searchTokens(String(opts.question||''))
+    .filter(word=>word.length>=4 &&
+      !/^(?:mita|mika|miten|voin|voiko|onko|teilla|teidan|kuinka|missä|missa|mistä|mista|milloin|what|which|when|where|does|have|their|your|from|that|about|could|would|with|joka|mitka|ovat|this|please|want|need|company|yritys|palvelu|service|kysy|tell|much|many)$/.test(word))
+    .slice(0,7);
+  const questionScore=url=>{
+    if(!questionTerms.length) return 0;
+    let path='';
+    try { path=normalizeSearchText(decodeURIComponent(new URL(url).pathname)); }
+    catch { return 0; }
+    const words=new Set(searchTokens(path));
+    return Math.min(450,questionTerms.filter(term=>[...words].some(word=>
+      word===term || (word.length>=5 && term.length>=5 && word.slice(0,5)===term.slice(0,5))
+    )).length*225);
+  };
   // Modern storefront homepages can be large or slow; subpages keep the tighter limits.
   // Requests remain subject to public-IP checks, DNS pinning and absolute timeouts.
   const first = await fetchPublicHtml(value,Math.min(18000,Math.max(14000,timeBudgetMs)),4_000_000);
@@ -5774,7 +5791,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       if (queued.has(key) || pages.some((x) => x.key === key)) continue;
       queued.add(key);
       const p = normalizeSearchText(u.pathname + ' ' + u.search);
-      let score = priority(u.href);
+      let score = priority(u.href) + questionScore(u.href);
       if (/faq|ukk|kysym|help|ohje|support|asiakas(?:palvelu)?|customer[-_ ]?service|kundservice/.test(p)) score += 22;
       if (/toimit|delivery|shipping|nouto|pickup|seurant|tracking/.test(p)) score += 20;
       if (/palaut|return|refund|vaihto|exchange/.test(p)) score += 20;
@@ -5834,7 +5851,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     if (queued.has(key) || pages.some((x) => x.key === key)) continue;
     queued.add(key);
     const p = normalizeSearchText(u.pathname + ' ' + u.search);
-    let score = 4 + priority(u.href);
+    let score = 4 + priority(u.href) + questionScore(u.href);
     if (/faq|ukk|kysym|help|ohje|support|asiakas(?:palvelu)?|customer[-_ ]?service|kundservice/.test(p)) score += 22;
     if (/toimit|delivery|shipping|nouto|pickup|seurant|tracking|palaut|return|refund|vaihto|exchange/.test(p)) score += 20;
     if (/takuu|warranty|maksu|payment|kokotauluk|size-guide|sizing|koko|mitat|dimension|materia|material|laatu|quality|care|hoito/.test(p)) score += 18;
@@ -12285,10 +12302,10 @@ app.post('/api/public/demo-import-website', demoImportLimiter, async (req,res)=>
     // this browser session and is never persisted to tenant knowledge.
     const bundle=await fetchWebsiteBundle(
       website,
-      40,
-      12000,
+      90,
+      24000,
       null,
-      { storefrontLimit:300, storefrontBudgetMs:4500, sitemapLimit:800 },
+      { storefrontLimit:300, storefrontBudgetMs:6000, sitemapLimit:1600 },
     );
     const allCandidates=websiteKnowledgeCandidates(bundle);
     const candidates=allCandidates.slice(0,2000);
