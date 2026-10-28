@@ -47,7 +47,7 @@ test('Service schema can answer a narrow approved question with actual published
   ]});
   const rows=rowsFrom(factsFrom(doc));
   const answer=await generateGroundedAnswer({rows,companyName:'Teollisuus Oy',
-    message:'Millaisia haalauspalveluja teillä on?',lang:'fi'});
+    message:'Miten Teollisuuden haalauspalvelu toteutetaan?',lang:'fi'});
   assert.equal(answer.handoff,false,JSON.stringify(answer));
   assert.match(answer.answer,/hydraulisilla siirtolaitteilla/i);
   assert.ok(answer.sourceIds.length>0);
