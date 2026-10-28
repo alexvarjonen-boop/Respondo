@@ -10632,6 +10632,21 @@ async function allStripeSubscriptionIdsForCustomer(customerId) {
   return ids;
 }
 
+// Some paid-setup and welcome-email tables use text identifiers without
+// foreign keys, so PostgreSQL cascades alone cannot remove their records.
+async function purgeDeletedAccountArtifacts(client,{tenantId=null,userId=null}={}) {
+  const exists=await client.query(
+    "SELECT to_regclass('public.setup_service_requests') IS NOT NULL AS has_setup, "+
+    "to_regclass('public.signup_welcome_emails') IS NOT NULL AS has_welcome",
+  );
+  if(exists.rows[0]?.has_setup) {
+    if(tenantId) await client.query('DELETE FROM setup_service_requests WHERE tenant_id=$1',[tenantId]);
+    if(userId) await client.query('DELETE FROM setup_service_requests WHERE user_id=$1',[userId]);
+  }
+  if(userId && exists.rows[0]?.has_welcome)
+    await client.query('DELETE FROM signup_welcome_emails WHERE user_id=$1',[userId]);
+}
+
 app.delete('/api/app/workspaces/:tenantId', auth, ownerOnly, loginLimiter, async (req,res) => {
   const tenantId=String(req.params.tenantId||'');
   const password=String(req.body?.password||'');
@@ -10651,8 +10666,11 @@ app.delete('/api/app/workspaces/:tenantId', auth, ownerOnly, loginLimiter, async
       await client.query('ROLLBACK');
       return res.status(404).json({error:'Yritystä ei löytynyt.'});
     }
-    const tenant=tr.rows[0];
-    const subscriptionId=tenant.stripe_subscription_id;
+    // Deleting one company must never delete its owner's other companies.
+    // Deleting the final company must also remove the login and free its email.
+    const others=await client.query('SELECT 1 FROM tenants WHERE owner_user_id=$1 AND id<>$2 LIMIT 1',[req.user.sub,tenantId]);
+    const lastWorkspace=others.rowCount===0;
+    const subscriptionId=tr.rows[0].stripe_subscription_id;
     if(subscriptionId){
       const shared=await client.query('SELECT 1 FROM tenants WHERE stripe_subscription_id=$1 AND id<>$2 LIMIT 1',[subscriptionId,tenantId]);
       if(shared.rowCount){
@@ -10660,8 +10678,31 @@ app.delete('/api/app/workspaces/:tenantId', auth, ownerOnly, loginLimiter, async
         return res.status(409).json({error:'Tilauksella on toinenkin yritys. Ota yhteys tukeen ennen poistamista.'});
       }
     }
-    const canceled=await cancelOwnedSubscriptionsForDeletion([subscriptionId],user.stripe_customer_id);
-    await client.query('DELETE FROM tenants WHERE id=$1 AND owner_user_id=$2',[tenantId,req.user.sub]);
+    let canceled=0;
+    if(lastWorkspace){
+      // Match full-account deletion: cancel unsynchronized Stripe subscriptions
+      // too, rather than leave an orphan charge after the login is deleted.
+      const subscriptions=[...new Set([
+        user.stripe_subscription_id,
+        subscriptionId,
+        ...(await allStripeSubscriptionIdsForCustomer(user.stripe_customer_id)),
+      ].filter(Boolean))];
+      canceled=await cancelOwnedSubscriptionsForDeletion(subscriptions,user.stripe_customer_id);
+    }else{
+      canceled=await cancelOwnedSubscriptionsForDeletion([subscriptionId],user.stripe_customer_id);
+    }
+    await purgeDeletedAccountArtifacts(client,{tenantId,userId:lastWorkspace?req.user.sub:null});
+    const removed=await client.query('DELETE FROM tenants WHERE id=$1 AND owner_user_id=$2 RETURNING id',[tenantId,req.user.sub]);
+    if(removed.rowCount!==1) throw new Error('Company deletion was not confirmed');
+    if(lastWorkspace){
+      // All tenant data and dependent records cascade from the company or user.
+      // No login remains with the deleted company's email address.
+      const deleted=await client.query('DELETE FROM users WHERE id=$1 RETURNING id',[req.user.sub]);
+      if(deleted.rowCount!==1) throw new Error('Final account deletion was not confirmed');
+      await client.query('COMMIT');
+      res.clearCookie(COOKIE,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax'});
+      return res.json({ok:true,deletedTenantId:tenantId,canceledSubscriptions:canceled,accountDeleted:true,remainingActiveWorkspaces:false});
+    }
     const next=await client.query("SELECT id,name,business_id FROM tenants WHERE owner_user_id=$1 AND active=TRUE AND subscription_status IN ('active','trialing') ORDER BY created_at ASC LIMIT 1",[req.user.sub]);
     await client.query(
       "UPDATE users SET active_tenant_id=$1,company_name=$4,business_id=$5,"+
@@ -10673,11 +10714,11 @@ app.delete('/api/app/workspaces/:tenantId', auth, ownerOnly, loginLimiter, async
       [next.rows[0]?.id||null,req.user.sub,subscriptionId,next.rows[0]?.name||'Yritys',next.rows[0]?.business_id||null],
     );
     await client.query('COMMIT');
-    return res.json({ok:true,deletedTenantId:tenantId,canceledSubscriptions:canceled,remainingActiveWorkspaces:Boolean(next.rowCount)});
+    return res.json({ok:true,deletedTenantId:tenantId,canceledSubscriptions:canceled,accountDeleted:false,remainingActiveWorkspaces:Boolean(next.rowCount)});
   }catch(e){
     try{await client.query('ROLLBACK');}catch{}
     console.error('Workspace deletion failed',e?.message||e);
-    return res.status(503).json({error:'Yrityksen poistaminen ei onnistunut. Tilausta tai tietoja ei poisteta, jos tilauksen peruutusta ei voida varmistaa. Yritä uudelleen tai ota yhteys tukeen.'});
+    return res.status(503).json({error:'Yrityksen ja mahdollisen viimeisen käyttäjätilin poistaminen epäonnistui. Tarkista tila ja ota tarvittaessa yhteys tukeen.'});
   }finally{client.release();}
 });
 
@@ -10706,6 +10747,7 @@ app.delete('/api/app/account', auth, ownerOnly, loginLimiter, async (req,res) =>
       }
     }
     const canceled=await cancelOwnedSubscriptionsForDeletion(subscriptions,user.stripe_customer_id);
+    await purgeDeletedAccountArtifacts(client,{userId:req.user.sub});
     await client.query('DELETE FROM users WHERE id=$1',[req.user.sub]);
     await client.query('COMMIT');
     res.clearCookie(COOKIE,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax'});
