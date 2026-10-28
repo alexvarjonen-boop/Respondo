@@ -5380,6 +5380,7 @@ async function route() {
     let demoImportId='';
     try { demoImportId=String(sessionStorage.getItem('respondo-public-demo-import-id')||'').trim(); } catch {}
     let uploadedAvatarData='';
+    let openChatAfterGuidedImport = false;
 
     // The public demo follows the same five-card flow as the real workspace,
     // but stays isolated: no authenticated profile or knowledge writes.
@@ -5498,7 +5499,7 @@ async function route() {
         for(const i of [1,2,3]){
           const title=String(values.get('question'+i)||'').trim();
           const answer=String(values.get('answer'+i)||'').trim();
-          if(title&&answer)demoFacts.push({title,answer,category:'Usein kysytyt',keywords:[],sourceType:'demo_manual'});
+          if(title&&answer)demoFacts.push({title,answer,category:appText('Usein kysytyt','Vanliga frågor','Frequently asked'),keywords:[],sourceType:'demo_manual'});
         }
         renderDemoKnowledge();
         refreshDemoIdentity();
@@ -5506,6 +5507,7 @@ async function route() {
         $('.demo-dashboard-shell')?.classList.remove('guided-setup-active');
         showDemoDashboardView('setup',{scrollTop:false});
         const importButton=$('#importWebsite');
+        openChatAfterGuidedImport = true;
         requestAnimationFrame(()=>{
           if(importButton&&!importButton.disabled){
             importButton.scrollIntoView({behavior:'smooth',block:'center'});
@@ -5653,6 +5655,18 @@ async function route() {
                 'Ingen tillförlitlig information kunde hämtas från webbplatsen.',
                 'No reliable information could be extracted from the website.'
               ))+'</div>';
+        }
+        if (openChatAfterGuidedImport) {
+          openChatAfterGuidedImport = false;
+          // The visitor came to try the chatbot, not to find a second navigation button.
+          // Keep the website review available above the chat if they need to inspect sources.
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            document.getElementById('live-preview')?.scrollIntoView({
+              behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',
+              block:'start'
+            });
+            document.querySelector('#previewForm input[name="question"]')?.focus({preventScroll:true});
+          }));
         }
         button.textContent=appText('Tiedot haettu ✓','Uppgifter hämtade ✓','Details imported ✓');
         setTimeout(()=>{button.textContent=original;button.disabled=false;},1600);
