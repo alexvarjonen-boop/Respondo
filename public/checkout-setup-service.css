@@ -201,3 +201,6 @@
   #app .setup-confirmation-card{border-radius:20px;padding:28px 23px}
   #app .setup-confirmation-steps>div{gap:10px}
 }
+
+/* Assisted setup accounts create their password only when the bot is ready. */
+#app .signup-dark-shell #signup #signupPasswordField[hidden] { display:none!important; }
