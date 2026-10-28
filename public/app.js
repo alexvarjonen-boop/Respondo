@@ -2254,6 +2254,7 @@ function contactSection() {
 
 function contactPage() {
   const demoRequest = new URLSearchParams(location.search).get('intent') === 'demo';
+  const demoBookingUrl = 'https://calendly.com/alexvarjonen/respondo-ai-15-min-esittely';
   const demoIntro = appText(
     'Kerro yrityksesi verkkosivun osoite. Voimme valmistella esittelyn sivustollasi näkyvien tietojen perusteella. Pyynnön lähettäminen ei sido tilaukseen.',
     'Ange adressen till företagets webbplats. Vi kan förbereda en demonstration med hjälp av uppgifter som finns på er webbplats. Förfrågan är inte bindande.',
@@ -2277,6 +2278,11 @@ function contactPage() {
           <button class="btn ink home-contact-submit" type="submit">${demoRequest?appText('Lähetä demopyyntö','Skicka demoförfrågan','Send demo request'):appText('Lähetä viesti','Skicka meddelande','Send message')} →</button>
           <div class="home-contact-status" id="homeContactStatus" role="status" aria-live="polite"></div>
         </form>
+        ${demoRequest ? `<div class="demo-booking-option" style="border-top:1px solid #e2e8f0;margin-top:24px;padding-top:22px;display:grid;gap:10px">
+          <p style="margin:0;color:#64748b;font-size:14px;line-height:1.6">${appText('Tai varaa suoraan 15 minuutin esittely.','Eller boka en 15 minuters demonstration direkt.','Or book a 15-minute demonstration directly.')}</p>
+          <a class="btn ghost" style="justify-self:start" href="${demoBookingUrl}" target="_blank" rel="noopener noreferrer">${appText('Varaa 15 min esittely','Boka en 15 min demo','Book a 15-minute demo')} ↗</a>
+          <small style="color:#64748b;line-height:1.5">${appText('Ajanvaraus avautuu englanninkielisessä Calendlyssä.','Bokningen öppnas i Calendly på engelska.','Opens the booking page in Calendly.')}</small>
+        </div>` : ''}
       </section>
       <aside style="background:white;border:1px solid #e2e8f0;border-radius:24px;padding:clamp(24px,4vw,40px)"><h2 style="font-size:23px;margin:0 0 22px">${appText('Ota yhteyttä','Kontakta oss','Get in touch')}</h2>
         <p style="color:#64748b;font-size:13px;margin:0 0 8px">${appText('Sähköposti','E-post','Email')}</p><a style="font-size:18px;overflow-wrap:anywhere;color:#2563eb" href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a>
