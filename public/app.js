@@ -3875,7 +3875,7 @@ async function dashboard(options = {}) {
       ` : ''}
 
       ${showGuidedSetup ? `<section class="guided-setup" id="guidedSetup" aria-labelledby="guidedSetupTitle">
-        ${isDemo ? `<div class="guided-demo-brand"><div class="guided-demo-brandname">${logo()}<b>RESPONDO AI</b></div><div class="guided-demo-languages">${languageSwitch()}</div></div>` : ''}
+        ${isDemo ? `<div class="guided-demo-brand"><div class="guided-demo-brandname">${logo()}</div><div class="guided-demo-languages">${languageSwitch()}</div></div>` : ''}
         <div class="guided-setup-progress" aria-label="${esc(appText('Käyttöönoton edistyminen','Kom igång-förlopp','Setup progress'))}">
           ${[1,2,3,4,5].map((step) => `<span class="${step===1?'active':''}" data-guided-progress="${step}">${step}</span>`).join('<i></i>')}
         </div>
