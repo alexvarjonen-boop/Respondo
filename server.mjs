@@ -937,6 +937,130 @@ async function sendWelcomeEmailOnce(userId) {
   }
 }
 
+// A paid setup request is work for Respondo's team, not proof that a bot is ready.
+// Keep an auditable queue and deduplicate customer/team email across Stripe webhook
+// and the successful Checkout redirect.
+async function notifySetupServiceAfterCheckout(session) {
+  if (session?.metadata?.setup_service !== '1') return {selected:false};
+  if (session?.status !== 'complete' || session?.payment_status !== 'paid') {
+    return {selected:true,customerSent:false,paymentPending:true};
+  }
+  if (!pool) return {selected:true,customerSent:false};
+  const sessionId=String(session.id||'');
+  const userId=String(session.metadata?.user_id||'');
+  const tenantId=String(session.metadata?.tenant_id||'');
+  const subscriptionId=typeof session.subscription==='string' ? session.subscription : session.subscription?.id || '';
+  const website=String(session.metadata?.setup_website||'').slice(0,300);
+  if(!sessionId.startsWith('cs_') || !userId || !tenantId || !website || !subscriptionId) {
+    return {selected:true,customerSent:false};
+  }
+
+  await q(`CREATE TABLE IF NOT EXISTS setup_service_requests (
+    session_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    tenant_id TEXT NOT NULL,
+    website_url TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'received',
+    customer_emailed_at TIMESTAMPTZ,
+    owner_emailed_at TIMESTAMPTZ,
+    ready_emailed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`);
+  const owner=await q(
+    `SELECT u.email,u.full_name,u.preferred_language,t.name AS company_name
+       FROM tenants t JOIN users u ON u.id=t.owner_user_id
+      WHERE t.id=$1 AND u.id=$2 AND t.stripe_subscription_id=$3
+        AND t.active=TRUE LIMIT 1`,
+    [tenantId,userId,subscriptionId],
+  );
+  if(!owner.rowCount) return {selected:true,customerSent:false};
+  const account=owner.rows[0];
+  await q(
+    `INSERT INTO setup_service_requests(session_id,user_id,tenant_id,website_url)
+     VALUES($1,$2,$3,$4) ON CONFLICT(session_id) DO NOTHING`,
+    [sessionId,userId,tenantId,website],
+  );
+
+  const client=await pool.connect();
+  let locked=false;
+  const lockKey='respondo-setup-email:'+sessionId;
+  try {
+    const lock=await client.query('SELECT pg_try_advisory_lock(hashtextextended($1,0)) AS locked',[lockKey]);
+    locked=lock.rows[0]?.locked===true;
+    const existing=await client.query(
+      'SELECT customer_emailed_at,owner_emailed_at FROM setup_service_requests WHERE session_id=$1',
+      [sessionId],
+    );
+    let customerSent=Boolean(existing.rows[0]?.customer_emailed_at);
+    if(!locked) return {selected:true,customerSent};
+    const apiKey=String(process.env.RESEND_API_KEY||'').trim();
+    const from=String(process.env.EMAIL_VERIFICATION_FROM||'').trim();
+    if(!apiKey || !from) return {selected:true,customerSent};
+
+    const lang=['fi','sv','en'].includes(account.preferred_language) ? account.preferred_language : 'en';
+    const pick=(fi,sv,en)=>lang==='fi'?fi:lang==='sv'?sv:en;
+    const title=pick('Käyttöönottopalvelusi on vastaanotettu','Vi har tagit emot din installation','We received your setup service order');
+    const introduction=pick(
+      'Kiitos tilauksestasi! Seuraavaksi perehdymme yrityksesi verkkosivustoon, kokoamme botin tietopohjan ja viimeistelemme sen toimintaa yrityksesi tarpeisiin. Lähetämme sinulle uuden sähköpostin, kun botti on valmis tarkistettavaksi.',
+      'Tack för din beställning! Nästa steg är att granska din webbplats, sammanställa bottens kunskapsbas och anpassa den till ditt företag. Vi skickar ett nytt mejl när botten är klar att granskas.',
+      'Thank you for your order. Next, we will review your website, prepare the bot’s knowledge base and tailor its setup to your business. We will email you again when the bot is ready for your review.',
+    );
+    const loginInstructions=pick(
+      'Käyttäjätunnuksesi on tilauksessa käyttämäsi sähköpostiosoite. Kirjaudu rekisteröityessäsi valitsemallasi salasanalla tai Google-kirjautumisella. Voit vaihtaa salasanan myöhemmin asetuksista. Unohtuneen salasanan voi palauttaa kirjautumissivulta – emme koskaan lähetä salasanoja sähköpostitse.',
+      'Ditt användarnamn är e-postadressen du använde vid beställningen. Logga in med lösenordet du valde vid registreringen eller med Google. Du kan byta lösenord senare i inställningarna eller återställa det via inloggningssidan. Vi skickar aldrig lösenord via e-post.',
+      'Your username is the email address used for this order. Sign in using the password you chose at registration or Google sign-in. You can change your password later in Settings or reset it from the login page. We never send passwords by email.',
+    );
+    const html=brandedEmailHtml({
+      language:lang,
+      eyebrow:pick('Käyttöönotto tilattu','Installation beställd','Setup ordered'),
+      title,
+      content:
+        '<p style="color:#dae3f1;font-size:15px;line-height:1.8;margin:0 0 22px">'+escapeEmailHtml(introduction)+'</p>'+
+        '<div style="padding:18px 20px;border:1px solid #435675;background:#222d41;border-radius:14px;margin:0 0 24px">'+
+        '<div style="color:#aaccff;font-size:12px;font-weight:800;letter-spacing:1px;margin:0 0 7px">'+escapeEmailHtml(pick('ANALYSOITAVA VERKKOSIVU','WEBBPLATS ATT GRANSKA','WEBSITE TO REVIEW'))+'</div>'+
+        '<p style="color:#fff;font-size:15px;line-height:1.5;overflow-wrap:anywhere;margin:0">'+escapeEmailHtml(website)+'</p></div>'+
+        '<p style="color:#d0d8e5;font-size:14px;line-height:1.75;margin:0 0 24px">'+escapeEmailHtml(loginInstructions)+'</p>'+
+        '<p style="margin:0 0 24px"><a href="'+escapeEmailHtml(BASE+'/kirjaudu')+'" style="display:inline-block;border-radius:12px;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 22px;font-size:14px;font-weight:750">'+escapeEmailHtml(pick('Avaa kirjautuminen','Öppna inloggning','Open sign in'))+' →</a></p>'+
+        '<p style="color:#aebbd0;font-size:13px;line-height:1.7;margin:0">'+escapeEmailHtml(pick('Jos sinulla on kysyttävää, vastaa tähän viestiin.','Svara på detta mejl om du har frågor.','Reply to this email if you have any questions.'))+'</p>',
+    });
+    const send=async({to,subject,content,replyTo})=>{
+      const payload={from,to:[to],subject,html:content};
+      if(replyTo) payload.reply_to=replyTo;
+      const response=await fetch('https://api.resend.com/emails',{
+        method:'POST',
+        headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'},
+        body:JSON.stringify(payload),
+      });
+      if(!response.ok) throw new Error('Setup email provider failed (HTTP '+response.status+')');
+    };
+    if(!customerSent) {
+      try{
+        await send({to:account.email,subject:title,content:html,replyTo:'info@respondoai.fi'});
+        await client.query('UPDATE setup_service_requests SET customer_emailed_at=NOW(),updated_at=NOW() WHERE session_id=$1',[sessionId]);
+        customerSent=true;
+      }catch(e){console.error('Setup acknowledgement delivery failed:',e?.message);}
+    }
+    const to=cleanEmail(process.env.CONTACT_NOTIFICATION_TO||process.env.SUPPORT_EMAIL||process.env.OWNER_EMAIL||'info@respondoai.fi');
+    if(to && !existing.rows[0]?.owner_emailed_at) {
+      const ownerHtml=brandedEmailHtml({
+        language:'fi',eyebrow:'Uusi maksettu käyttöönottopalvelu',title:'Uusi käyttöönottotyö · '+account.company_name,
+        content:
+          '<p style="color:#d6d8de;font-size:15px;line-height:1.8">Asiakas on ostanut 199 €:n käyttöönottopalvelun. Aloita verkkosivuston analysointi ja botin viimeistely. Ilmoita asiakkaalle erikseen, kun botti on tarkistettavissa.</p>'+
+          '<p style="color:#fff;font-size:14px;line-height:1.8">Yritys: '+escapeEmailHtml(account.company_name)+'<br>Verkkosivu: '+escapeEmailHtml(website)+'<br>Asiakas: '+escapeEmailHtml(account.email)+'<br>Tilaus: '+escapeEmailHtml(sessionId)+'</p>',
+      });
+      try{
+        await send({to,subject:'Uusi käyttöönottopalvelu · '+account.company_name,content:ownerHtml,replyTo:account.email});
+        await client.query('UPDATE setup_service_requests SET owner_emailed_at=NOW(),updated_at=NOW() WHERE session_id=$1',[sessionId]);
+      }catch(e){console.error('Setup team notification failed:',e?.message);}
+    }
+    return {selected:true,customerSent};
+  }finally{
+    if(locked) await client.query('SELECT pg_advisory_unlock(hashtextextended($1,0))',[lockKey]).catch(()=>{});
+    client.release();
+  }
+}
+
 async function sendHomepageContactEmail({ name, email, message }) {
   const apiKey = String(process.env.RESEND_API_KEY || '').trim();
   if (!apiKey) return { sent:false, reason:'resend_not_configured' };
