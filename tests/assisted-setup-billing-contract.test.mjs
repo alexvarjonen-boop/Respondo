@@ -42,6 +42,6 @@ test('billing-hold is described consistently in purchase and owner handover UI',
   assert.match(app,/Tilauspaketin laskutus alkaa vasta/);
   assert.match(app,/3 päivän maksuton kokeilu/);
   assert.match(app,/Subscription billing is held until we deliver/);
-  assert.match(traffic,/Tilauspaketin 3 päivän kokeilu alkaa tämän vahvistuksen jälkeen/);
+  assert.match(traffic,/3 päivän kokeilu ja sitä seuraava laskutus alkavat vasta tämän vahvistuksen jälkeen/);
   assert.match(traffic,/result\.billingDeferredUntilHandover/);
 });
