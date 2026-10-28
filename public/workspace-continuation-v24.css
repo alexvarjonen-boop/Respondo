@@ -52,6 +52,8 @@
 #app .respondo-workspace-scan{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:16px 2px 0;color:#d0d2d9;font-size:12px;line-height:1.5}
 #app .respondo-workspace-scan i{flex:0 0 8px;height:8px;margin-top:5px;background:#47c78b;border-radius:50%;box-shadow:0 0 12px #47c78b55}
 #app .respondo-workspace-scan span{color:#b4b8c2}
+#app .respondo-workspace-review-link{display:inline-flex;align-items:center;gap:8px;margin:16px 0;padding:10px 14px;border:1px solid #454852;border-radius:12px;background:#21242a;color:#f0f1f4;font-size:12px;font-weight:650;cursor:pointer}
+#app .respondo-workspace-review-link:hover{background:#2c3039}
 #app .respondo-workspace-overview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:24px}
 #app .respondo-workspace-overview-card{padding:26px}
 #app .respondo-workspace-overview-card b{display:block;color:#fff;font-size:18px}
