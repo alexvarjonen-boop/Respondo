@@ -5223,6 +5223,35 @@ async function route() {
   else html = `<div>${nav()}<main class="notfound"><div class="container"><div class="section-kicker">404</div><h1>${appText('Tätä sivua ei löytynyt.','Sidan hittades inte.','Page not found.')}</h1><a class="btn ink" href="/">${appText('Palaa etusivulle','Till startsidan','Back to home')}</a></div></main>${footer()}</div>`;
 
   $('#app').innerHTML = html;
+  if (path === '/app') {
+    const receipt=new URLSearchParams(location.search).get('setup_service');
+    if(receipt==='email_sent'||receipt==='received') {
+      const sent=receipt==='email_sent';
+      const notice=document.createElement('section');
+      notice.className='setup-service-confirmation';
+      notice.setAttribute('role','status');
+      notice.setAttribute('aria-live','polite');
+      notice.innerHTML=
+        '<button type="button" class="setup-service-notice-close" aria-label="'+esc(appText('Sulje','Stäng','Close'))+'">×</button>'+
+        '<small>'+esc(appText('KÄYTTÖÖNOTTOPALVELU','INSTALLATIONSTJÄNST','SETUP SERVICE'))+'</small>'+
+        '<h2>'+esc(sent
+          ? appText('Lähetimme sinulle vahvistuksen sähköpostitse.','Vi har mejlat en bekräftelse till dig.','We have emailed you a confirmation.')
+          : appText('Käyttöönottopalvelun tilaus vastaanotettu.','Vi har tagit emot din beställning.','Your setup service order has been received.'))+'</h2>'+
+        '<p>'+esc(appText(
+          'Seuraavaksi perehdymme verkkosivuusi ja viimeistelemme bottisi yrityksesi tarpeisiin. Ilmoitamme sähköpostitse, kun botti on valmis tarkistettavaksi.',
+          'Nästa steg är att granska din webbplats och anpassa botten för ditt företag. Vi mejlar när den är klar att granskas.',
+          'Next, we review your website and tailor the bot to your business. We will email you when it is ready for review.'
+        ))+'</p>'+
+        (sent?'':'<p>'+esc(appText('Sähköpostivahvistus on käsittelyssä. Jos sitä ei tule, ota yhteyttä info@respondoai.fi.','E-postbekräftelsen behandlas. Kontakta info@respondoai.fi om den inte kommer fram.','Your email confirmation is being processed. Contact info@respondoai.fi if it does not arrive.'))+'</p>')+
+        '<p class="setup-service-login-note">'+esc(appText(
+          'Voit jo kirjautua omalla sähköpostillasi ja rekisteröityessäsi valitsemallasi salasanalla. Salasanan voi vaihtaa myöhemmin asetuksista.',
+          'Du kan redan logga in med din e-postadress och lösenordet du valde vid registreringen. Du kan ändra lösenordet senare i inställningarna.',
+          'You can already sign in with your email and the password you created at registration. You can change it later in Settings.'
+        ))+'</p>';
+      document.body.appendChild(notice);
+      notice.querySelector('.setup-service-notice-close')?.addEventListener('click',()=>notice.remove());
+    }
+  }
   // The real interface has replaced the SEO pre-render. Reveal it in the same frame.
   document.documentElement.classList.remove('respondo-awaiting-client');
   document.body.classList.toggle('public-nav-active', Boolean(document.querySelector('#app .nav')));
