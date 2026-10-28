@@ -4927,6 +4927,13 @@ function respondoSitePageActions(message, lang='fi', faqId='') {
   return respondoSiteNavigationActions(message,lang,faqId,SEO_CANONICAL_ORIGIN);
 }
 
+// Identify real booking enquiries without confusing them with delivery or opening times.
+function bookingEnquiryQuestion(message) {
+  const q=normalizeSearchText(message);
+  if(/(?:toimitusaika|toimitusajat|aukioloaika|aukioloajat|delivery time|shipping time|opening hours|leveranstid|oppettider)/.test(q)) return false;
+  return /(?:^|\b)(?:miten (?:voin |saan |teille )?(?:varata|varaan|varais)\w*|voinko (?:varata|varaa)\w*|mista (?:varaan|voin varata)|kuinka (?:voin )?varata|ajanvaraus|how (?:can|do) i book|can i book|how to book|book an appointment|hur (?:kan|gor) jag boka|kan jag boka|tidsbokning)(?:\b|$)/i.test(q);
+}
+
 function chatActions(rows, message, handoff = false, lang = 'fi', selected = []) {
   const actionLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const q = normalizeSearchText(message);
@@ -7247,9 +7254,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // lead form when the imported site actually provides a contact page but
   // does not publish a verified online calendar. A contact page is NOT a
   // confirmed bookable appointment.
-  const bookingQuestion=normalizeSearchText(cleanMessage);
-  const asksHowToBook=/(?:^|\b)(?:miten (?:voin |saan |teille )?(?:varata|varaan|varais)\w*|voinko (?:varata|varaa)\w*|mista (?:varaan|voin varata)|kuinka (?:voin )?varata|ajanvaraus|how (?:can|do) i book|can i book|how to book|book an appointment|hur (?:kan|gor) jag boka|kan jag boka|tidsbokning)(?:\b|$)/i.test(bookingQuestion)
-    && !/(?:toimitus|aukiolo|delivery time|opening hours|leverans|oppettid)/i.test(bookingQuestion);
+  const asksHowToBook=bookingEnquiryQuestion(cleanMessage);
   if(asksHowToBook){
     const contactPage=verifiedContactPage(rows);
     const calendar=knowledgeValue(rows,'Ajanvarauslinkki');
@@ -12381,7 +12386,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // For a broad product question, re-scan that same website instead of ever
     // falling back to the logged-in Respondo owner's knowledge.
     const needsProductRecovery=broadProductQuestion(message);
-    const needsContactRecovery=generalContactQuestion(message) &&
+    const needsContactRecovery=(generalContactQuestion(message)||bookingEnquiryQuestion(message)) &&
       !rows.some(row=>['Yhteydenottolomake','Yhteydenottosivu'].includes(String(row?.title||'')));
     if (isPublicDemo && (needsProductRecovery || needsContactRecovery)) {
       const hasProductFacts=rows.some((row)=>{
