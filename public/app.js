@@ -3185,7 +3185,7 @@ function setupServiceOption() {
     </label>
     <label class="setup-service-website" hidden>
       <span>${appText('Analysoitavan yrityssivuston osoite','Webbplats som ska analyseras','Website to analyze')}</span>
-      <input type="url" name="setupWebsite" inputmode="url" autocomplete="url" maxlength="300" placeholder="https://company.fi" disabled>
+      <input type="text" name="setupWebsite" inputmode="url" autocomplete="url" maxlength="300" placeholder="https://company.fi" disabled>
       <small>${appText('Anna verkkosivusi osoite, jotta voimme aloittaa käyttöönottotyön.','Ange din webbplatsadress så att vi kan påbörja installationen.','Enter your website address so we can start the setup.')}</small>
     </label>
   </div>`;
