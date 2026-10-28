@@ -23,15 +23,18 @@ test('hero preserves numeric, price-neutral facts and real language flags',()=>{
  assert.doesNotMatch(h,/\+52 %|Illustrative 6-month scenario|not a measured customer result/);
  assert.match(h,/class="rs-language-flags"/);
 });
-test('compact three-step onboarding is on homepage inside existing pricing, not as another fullscreen scene',()=>{
+test('pricing keeps an accessible website-demo path without an extra fullscreen scene',()=>{
  const app=read('app.js'),css=read('home-refinements-v10.css'),html=read('index.html');
- assert.match(app,/class="respondo-how-it-works"/);
- assert.match(app,/respondo-how-steps/);
- assert.match(app,/Add the bot to your site/);
- assert.match(app,/Granska svaren/);
- assert.match(app,/Verkkosivustasi asiakaspalvelijaksi/);
- assert.match(css,/#app \.pricing-section \.respondo-how-it-works\{display:none\}/);
- assert.match(css,/#app \.apple-home-page \.pricing-section \.respondo-how-it-works/);
+ assert.match(app,/class="section pricing-section"/);
+ assert.match(app,/class="pricing-assist-links"/);
+ assert.match(app,/href="\/assistant\?lang=\$\{currentLang\(\)\}"/);
+ assert.match(app,/\/yhteystiedot\?lang=\$\{currentLang\(\)\}&amp;intent=demo/);
+ // Older deployed builds had a three-step explainer; current simplified
+ // pricing removes it. Both variants must preserve an actionable demo link.
+ if(app.includes('class="respondo-how-it-works"')){
+  assert.match(app,/respondo-how-steps/);
+  assert.match(app,/Granska svaren/);
+ }
  assert.match(css,/\.rs-has-svg-metric/);
  assert.match(css,/@media\(max-width:600px\)/);
  assert.match(css,/@media\(max-width:730px\)/);
