@@ -15,7 +15,7 @@ test('paid setup holds recurring plan until handover; other checkouts retain 3-d
   assert.equal(SETUP_BILLING_HOLD_DAYS,365);
   assert.equal(setupPlanTrialDays(true),365);
   assert.equal(setupPlanTrialDays(false),3);
-  assert.equal((server.match(/trial_period_days:\s*setupPlanTrialDays\(setupService\)/g)||[]).length,1);
+  assert.equal((server.match(/trial_period_days:\s*setupPlanTrialDays\(setupService\)/g)||[]).length,2);
   assert.match(server,/trial_period_days:\s*setupPlanTrialDays\(setupService\)/);
   assert.match(server,/setup_billing_deferred:'1'/);
   assert.match(server,/line_items:setupService\s*\?\s*\[checkoutLineItem,setupServiceCheckoutLineItem\(\)\]/);
