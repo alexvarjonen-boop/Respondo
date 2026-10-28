@@ -122,3 +122,44 @@
   #app .demo-dashboard-shell.guided-setup-active .dashboard-topbar .demo-public-actions,
   #app .demo-dashboard-shell.guided-setup-active .dashboard-topbar .dashboard-section-picker{display:none!important}
 }
+
+/* Clean public Try Bot first screen: only the website card and a small brand/language bar. */
+#app .demo-dashboard-shell.guided-setup-active .dashboard-topbar,
+#app .demo-dashboard-shell.guided-setup-active .dashboard-premium-sidebar {
+  display:none!important;
+}
+#app .demo-dashboard-shell.guided-setup-active .dashboard-simple-main {
+  width:100%!important;max-width:none!important;min-width:0!important;
+  margin:0!important;padding:0 14px!important;
+}
+#app .demo-dashboard-shell.guided-setup-active .guided-setup {
+  min-height:100dvh;
+  padding:32px 0 50px;
+  align-content:center;
+}
+#app .demo-dashboard-shell .guided-demo-toolbar {
+  width:min(760px,100%);display:flex;align-items:center;justify-content:space-between;
+  gap:18px;margin:0 auto 28px;padding:0 4px;
+}
+#app .guided-demo-brand {
+  display:flex;align-items:center;gap:12px;min-width:0;
+  color:#f5f5f7;font-size:13px;font-weight:750;letter-spacing:.14em;
+}
+#app .guided-demo-brand a {display:inline-flex;align-items:center;flex:0 0 auto;}
+#app .guided-demo-brand img,
+#app .guided-demo-brand svg {width:42px;height:42px;max-width:42px;max-height:42px;object-fit:contain;}
+#app .guided-demo-lang {flex:0 0 auto;}
+@media(max-width:760px) {
+  #app .demo-dashboard-shell.guided-setup-active .dashboard-simple-main {
+    padding:0 12px!important;
+  }
+  #app .demo-dashboard-shell.guided-setup-active .guided-setup {
+    min-height:calc(100dvh - 20px);
+    padding:23px 0 44px;
+    align-content:start;
+  }
+  #app .demo-dashboard-shell .guided-demo-toolbar {margin-bottom:23px;gap:10px;}
+  #app .guided-demo-brand {gap:9px;font-size:11px;letter-spacing:.12em;}
+  #app .guided-demo-brand img,
+  #app .guided-demo-brand svg {width:36px;height:36px;max-width:36px;max-height:36px;}
+}
