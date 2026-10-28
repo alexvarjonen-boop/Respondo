@@ -16,6 +16,8 @@ test('separate steps for identity, optional answers and final create',()=>{
   assert.match(app,/guided-skip/);
   assert.match(app,/await api\('\/api\/app\/business-profile'/);
   assert.match(app,/await api\('\/api\/app\/knowledge'/);
+  assert.match(app,/guidedImport=1/);
+  assert.match(app,/document\.getElementById\('importWebsite'\)/);
 });
 test('profile sidebar offers companies subscription and settings without merging old main branch',()=>{
   for(const target of ['workspaces','billing','account-security'])assert.ok(app.includes('data-account-target="'+target+'"'));
