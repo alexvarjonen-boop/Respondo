@@ -6,7 +6,7 @@ const css=await readFile(new URL('../public/guided-setup-v22.css',import.meta.ur
 const index=await readFile(new URL('../public/index.html',import.meta.url),'utf8');
 
 test('production dashboard asks only for website on the first setup card',()=>{
-  assert.match(app,/const showGuidedSetup = !isDemo && !hasWebsite/);
+  assert.match(app,/const showGuidedSetup = !hasWebsite &&/);
   assert.match(app,/data-guided-step="1"[\s\S]*name="website"[\s\S]*data-guided-next/);
   assert.match(css,/\.guided-setup-active \.dashboard-view-section/);
 });
