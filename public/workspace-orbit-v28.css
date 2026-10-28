@@ -442,3 +442,71 @@
 #app .rs-workspace-scroll-helix .rs-helix-open {
   gap:0;
 }
+
+/* V36 — the post-setup preview is an actual chat, never a white document card.
+   A single verified response must remain legible on iPhone without stretching
+   the whole page or changing the user's selected bot avatar. */
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-chat-card #previewChat {
+  background:#101115!important;
+  scrollbar-width:thin;
+  scrollbar-color:#566078 transparent;
+  -webkit-overflow-scrolling:touch;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-chat-card #previewChat .preview-bubble.bot {
+  box-sizing:border-box;
+  max-width:min(92%,560px)!important;
+  padding:13px 16px!important;
+  border:1px solid #3d4552!important;
+  border-radius:16px!important;
+  background:#252a34!important;
+  color:#f0f3f9!important;
+  -webkit-text-fill-color:#f0f3f9!important;
+  box-shadow:none!important;
+  font-size:14px!important;
+  line-height:1.55!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-chat-card #previewChat .preview-bubble.user {
+  box-sizing:border-box;
+  max-width:min(92%,560px)!important;
+  border-radius:16px!important;
+  color:#161b22!important;
+  -webkit-text-fill-color:#161b22!important;
+  background:#edf1f7!important;
+  box-shadow:none!important;
+  overflow-wrap:anywhere;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-review-link {
+  display:inline-flex!important;
+  align-items:center;
+  max-width:100%;
+  min-height:42px;
+  padding:8px 2px!important;
+  margin:10px 0 4px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:4px!important;
+  box-shadow:none!important;
+  color:#c6d8f4!important;
+  -webkit-text-fill-color:#c6d8f4!important;
+  text-decoration:underline;
+  text-decoration-color:rgba(198,216,244,.55);
+  text-underline-offset:4px;
+  font-size:13px!important;
+  line-height:1.45!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-review-link:focus-visible {
+  outline:2px solid #d1e2ff!important;
+  outline-offset:3px;
+}
+@media(max-width:650px){
+  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-chat-card #previewChat {
+    padding:14px!important;
+  }
+  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-chat-card #previewChat .preview-bubble.bot {
+    font-size:14px!important;
+    padding:12px 13px!important;
+    line-height:1.5!important;
+  }
+}
