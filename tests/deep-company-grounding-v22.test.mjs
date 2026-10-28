@@ -60,3 +60,26 @@ test('query-time recovery is safe, bounded, isolated and follows the same approv
   assert.match(server,/await generateGroundedAnswer\(\{[\s\S]*?companyName:String\(profile\.companyName/);
   assert.match(server,/website,\s*90,\s*24000/);
 });
+
+
+test('FAQ pages using native HTML details and summary import each answer under its own question',async()=>{
+  const html=`
+    <section><h2>Usein kysytyt</h2>
+      <details><summary>Millaista perehdytystä tarvitsee nostotyöhön?</summary>
+        <p>Nostotyöhön tarvitaan yrityksen oma perehdytys ja voimassa olevat turvallisuusohjeet ennen työn käynnistymistä.</p>
+      </details>
+      <details><summary>Millaisilla alueilla toimitte?</summary>
+        <p>Yritys palvelee Varsinais-Suomessa ja voi sopimuksesta toteuttaa projekteja myös muualla Suomessa.</p>
+      </details>
+    </section>
+  `;
+  const facts=candidatesFrom(html,'/ukk/');
+  const titles=facts.map(x=>x.title);
+  assert.ok(titles.some(x=>/perehdytystä tarvitsee nostotyöhön/.test(x)),JSON.stringify(facts));
+  assert.ok(titles.some(x=>/Millaisilla alueilla/.test(x)),JSON.stringify(facts));
+  const a=await generateGroundedAnswer({rows:toRows(facts),
+    message:'Millaista perehdytystä tarvitsee nostotyöhön?',lang:'fi'});
+  assert.equal(a.handoff,false,JSON.stringify(a));
+  assert.match(a.answer,/turvallisuusohjeet|perehdytys/);
+  assert.doesNotMatch(a.answer,/Varsinais-Suomessa/);
+});
