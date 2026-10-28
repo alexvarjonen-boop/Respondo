@@ -3186,7 +3186,7 @@ function setupServiceOption() {
       <input type="checkbox" name="setupService" value="1">
       <span class="setup-service-copy">
         <span class="setup-service-title"><strong>${appText('Käyttöönottopalvelu','Installationstjänst','Setup service')}</strong><b>199 €</b></span>
-        <small>${appText('Valinnainen kertamaksu. Analysoimme verkkosivusi, otamme botin käyttöön puolestasi ja lähetämme kirjautumistiedot henkilökohtaisesti sähköpostitse viimeistään viikon kuluessa. 3 päivän kokeilujakso alkaa normaalisti tilauksen yhteydessä.','Valfri engångsavgift. Vi analyserar din webbplats, installerar botten och skickar inloggningsuppgifterna personligen via e-post inom en vecka. Provperioden på 3 dagar börjar som vanligt vid beställningen.','Optional one-time fee. We review your website, set up the bot for you and personally email the login details within one week. The 3-day trial still begins when you order.')}</small>
+        <small>${appText('199 € veloitetaan nyt. Analysoimme verkkosivusi ja toimitamme tunnukset henkilökohtaisesti viimeistään viikon kuluessa. Valitun paketin kuukausi- tai vuosilaskutus alkaa vasta, kun vahvistamme tunnusten luovutuksen. Käyttöönottopalvelussa ei ole erillistä 3 päivän kokeilujaksoa.','199 € debiteras nu. Vi granskar din webbplats och skickar inloggningsuppgifterna personligen inom en vecka. Betalningarna för månads- eller årsabonnemanget börjar först när vi bekräftar överlämningen. Ingen separat tre dagars provperiod gäller för installationstjänsten.','€199 is charged now. We set up your bot and personally email login details within one week. Monthly or annual plan billing begins only after we confirm delivery of the credentials. The assisted setup option does not include a separate three-day trial.')}</small>
       </span>
     </label>
     <label class="setup-service-website" hidden>
@@ -3322,9 +3322,9 @@ function setupOrderConfirmation() {
           ? appText('Olemme lähettäneet sinulle sähköpostia.','Vi har skickat ett mejl till dig.','We have sent you an email.')
           : appText('Tilauksesi on vastaanotettu.','Vi har tagit emot din beställning.','Your order has been received.')}</h1>
         <p class="setup-confirmation-lead">${appText(
-          'Kiitos tilauksestasi. Käyttöönottopalvelusi on käsittelyssä. Analysoimme verkkosivusi ja otamme Respondo-botin käyttöön puolestasi. Saat kirjautumistiedot henkilökohtaisella sähköpostilla viimeistään viikon kuluessa tilauksesta.',
-          'Tack för din beställning. Vi behandlar din beställning, granskar webbplatsen och installerar botten åt dig. Du får inloggningsuppgifterna personligen via e-post inom en vecka.',
-          'Thank you for your order. Your setup service is being processed. We will review your website and set up your Respondo bot. Your login credentials will arrive in a personal email within one week.'
+          'Kiitos tilauksestasi. Käyttöönottopalvelusi on käsittelyssä. Analysoimme verkkosivusi ja otamme botin käyttöön puolestasi. Saat kirjautumistiedot viimeistään viikon kuluessa. Valitun paketin laskutus alkaa vasta, kun olemme vahvistaneet kirjautumistietojen toimittamisen.',
+          'Tack för din beställning. Vi behandlar din installation och skickar inloggningsuppgifterna personligen via e-post inom en vecka. Abonnemangsbetalningarna börjar först när överlämningen har bekräftats.',
+          'Thank you for your order. We are preparing your Respondo bot and will personally email your login details within one week. Your plan's recurring billing begins only when delivery of those details has been confirmed.'
         )}</p>
         <div class="setup-confirmation-steps">
           <div><span>01</span><div><strong>${appText('Tilaus vastaanotettu','Beställning mottagen','Order received')}</strong><small>${appText('Käyttöönottopalvelusi on tilattu.','Din installationstjänst är beställd.','Your setup service has been ordered.')}</small></div></div>
