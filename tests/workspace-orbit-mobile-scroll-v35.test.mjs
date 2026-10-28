@@ -31,7 +31,7 @@ test('each touch/wheel gesture selects one chapter, and last/first swipe exits n
 test('all iPhone assets get fresh URLs and the existing functional preview stays intact',()=>{
  assert.match(html,/workspace-orbit-v28\.css\?v=20261028-mobile-pinned-v37/);
  assert.match(html,/app\.js\?v=[^"]+mobile-pinned-v37/);
- assert.match(app,/workspace-continuation-v24\.js\?v=20261028-mobile-pinned-v37/);
+ assert.match(app,/workspace-continuation-v24\.js\?v=20261028-owner-subscribe-v38/);
  assert.match(ws,/workspace-orbit-v28\.js\?v=20261028-mobile-pinned-v37/);
  assert.match(ws,/original\.requestSubmit\(\)/);
 });
