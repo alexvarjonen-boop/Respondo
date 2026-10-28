@@ -63,8 +63,9 @@ export async function fetchFirecrawlRenderedHtml(value, {
     if (payload?.success !== true || typeof payload.data?.html !== 'string') return null;
     // Reject third-party redirects: don't mix a redirected site's data into
     // the selected company's knowledge, even when the requested URL was safe.
-    const source = payload.data?.metadata?.sourceURL || payload.data?.metadata?.url;
-    if (source && !permittedFirecrawlTarget(source, verifiedHostname)) return null;
+    for (const source of [payload.data?.metadata?.sourceURL, payload.data?.metadata?.url]) {
+      if (source && !permittedFirecrawlTarget(source, verifiedHostname)) return null;
+    }
     return payload.data.html.length <= 1_000_000 ? payload.data.html : null;
   } catch {
     // Failed render must never fail an otherwise successful website import.
