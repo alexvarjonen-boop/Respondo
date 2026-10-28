@@ -4,8 +4,8 @@ import {readFileSync} from 'node:fs';
 
 const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
 const start=server.indexOf('function ownerFreeSetupCheckoutLineItem(plan)');
-const end=server.indexOf('async function stripeCheckoutLineItem(plan)',start);
-assert.ok(start>0 && end>start,'zero-price item exists before normal checkout price lookup');
+const end=server.indexOf('function planFromStripePriceId(priceId)',start);
+assert.ok(start>0 && end>start,'zero-price item exists after regular checkout lookup');
 const method=server.slice(start,end);
 const factory=new Function('CURRENT_PRICE_CENTS','CURRENT_PRODUCT_NAMES',
   method+'; return ownerFreeSetupCheckoutLineItem;');
