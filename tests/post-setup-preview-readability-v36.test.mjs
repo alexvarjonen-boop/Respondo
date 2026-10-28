@@ -16,7 +16,7 @@ test('post-onboarding preview uses a legible dark bot bubble, preserving the cho
   assert.match(css,/white-space:pre-wrap!important/);
   assert.match(css,/respondo-workspace-review-link/);
   assert.match(css,/text-decoration:underline/);
-  assert.match(html,/workspace-orbit-v28\.css\?v=20261028-preview-readable-v36/);
+  assert.match(html,/workspace-orbit-v28\.css\?v=20261028-mobile-pinned-v37/);
 });
 test('buying Respondo gets the current short answer rather than outdated promo or tax claims',()=>{
   const start=server.indexOf('function respondoProductFaqMatch(');
