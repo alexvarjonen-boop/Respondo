@@ -3173,6 +3173,17 @@ function checkoutBusinessTerms(name='terms', classes='') {
   </label>`;
 }
 
+// Optional one-time setup service. Stripe computes the payable price server-side.
+function setupServiceOption() {
+  return `<label class="setup-service-option field full">
+    <input type="checkbox" name="setupService" value="1">
+    <span class="setup-service-copy">
+      <span class="setup-service-title"><strong>${appText('Käyttöönottopalvelu','Installationstjänst','Setup service')}</strong><b>199 €</b></span>
+      <small>${appText('Valinnainen kertamaksu, veloitetaan heti. Autamme botin asennuksessa ja käyttöönotossa. Tilauksen 3 päivän maksuton kokeilu säilyy.','Valfri engångsavgift som debiteras direkt. Vi hjälper dig att installera och konfigurera botten. Abonnemangets 3 dagars provperiod gäller fortfarande.','Optional one-time charge, paid immediately. We help you install and set up your bot. Your subscription still includes the 3-day free trial.')}</small>
+    </span>
+  </label>`;
+}
+
 function signup() {
   const params = new URLSearchParams(location.search);
   const ownerTestAccessToken = String(params.get('owner-test-token') || '').trim();
@@ -3222,6 +3233,7 @@ function signup() {
               </div>
               <p>${billingExplanation}</p>
             </div>
+            ${testBilling ? '' : setupServiceOption()}
             <div class="field full referral-signup-field">
               <label>${appText('Suosittelukoodi','Rekommendationskod','Referral code')} <span>${appText('valinnainen','valfri','optional')}</span></label>
               <input name="referralCode" maxlength="32" autocomplete="off" value="${esc(referralCode)}" placeholder="RESPONDO-XXXXXXXX">
@@ -3579,6 +3591,7 @@ function dashboardWithoutCompany(me, workspaces = []) {
             <option value="advanced_yearly">Premium 119 € / kk · 1 428 € / vuosi</option>
             <option value="business_yearly">Enterprise 139 € / kk · 1 668 € / vuosi</option>
           </select></label>
+          ${setupServiceOption()}
           ${checkoutBusinessTerms('acceptedTerms', 'workspace-terms')}
           <button type="submit" class="btn ink workspace-checkout-button">${appText('Lisää yritys','Lägg till företag','Add company')} →</button>
           <div id="emptyWorkspaceMsg" role="alert"></div>
@@ -3938,6 +3951,7 @@ async function dashboard(options = {}) {
               <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_yearly"><span><b>${appText('Premium · 119 €/kk vuosittain','Premium · 119 €/mån årsvis','Premium · €119/month annual')}</b><small>${appText('1 428 € kerran vuodessa · säästät 120 €','1 428 € per år · spara 120 €','€1,428/year · save €120')}</small></span></label>
               <label class="workspace-plan-option"><input type="radio" name="plan" value="business_yearly"><span><b>${appText('Enterprise · 139 €/kk vuosittain','Enterprise · 139 €/mån årsvis','Enterprise · €139/month annual')}</b><small>${appText('1 668 € kerran vuodessa · säästät 120 €','1 668 € per år · spara 120 €','€1,668/year · save €120')}</small></span></label>
             </div>
+            ${setupServiceOption()}
             <label>
               <span>${appText('Suosittelukoodi (valinnainen)','Rekommendationskod (valfritt)','Referral code (optional)')}</span>
               <input name="referralCode" id="workspaceReferralCode" maxlength="40" autocomplete="off" placeholder="${appText('Syötä suosittelukoodi','Ange rekommendationskod','Enter referral code')}">
@@ -6065,6 +6079,7 @@ async function route() {
             billingCountry:form.get('billingCountry'),
             password:form.get('password'),
             plan:form.get('plan'),
+            setupService:form.get('setupService')==='1',
             referralCode:form.get('referralCode'),
             acceptedTerms:!!form.get('terms'),
             businessPurchase:!!form.get('terms'),
@@ -6384,6 +6399,7 @@ async function route() {
             businessId:String(fd.get('businessId')||'').trim(),
             billingCountry:String(fd.get('billingCountry')||'').trim(),
             plan:String(fd.get('plan')||'basic_monthly'),
+            setupService:fd.get('setupService')==='1',
             acceptedTerms:fd.get('acceptedTerms')==='on',
             businessPurchase:fd.get('acceptedTerms')==='on',
           }),
@@ -6414,6 +6430,7 @@ async function route() {
             businessId:String(fd.get('businessId')||'').trim(),
             billingCountry:String(fd.get('billingCountry')||'').trim(),
             plan:String(fd.get('plan')||'basic_monthly'),
+            setupService:fd.get('setupService')==='1',
             referralCode:String(fd.get('referralCode')||'').trim(),
             acceptedTerms:fd.get('acceptedTerms')==='on',
             businessPurchase:fd.get('acceptedTerms')==='on'
