@@ -22,7 +22,7 @@ for (const [lang,idx] of [['fi',0],['sv',1],['en',2]]) {
     assert.equal((hero.match(/data-rs-card\b/g)||[]).length,10);
     assert.equal((hero.match(/data-rs-icon(?=\s)/g)||[]).length,10);
     assert.doesNotMatch(hero,/rs-hero-talk|data-open-site-assistant|Ask Respondo|Kysy Respondolta|Fråga Respondo/);
-    assert.ok(hero.includes(t('AI-asiakaspalvelija, joka vastaa yrityksesi asiakkaiden kysymyksiin vuorokauden ympäri.','AI-kundservice som svarar dina kunder dygnet runt.','AI customer service that answers your customers, around the clock.')));
+    assert.ok(hero.includes(t('Respondo vastaa asiakkaidesi kysymyksiin yrityksesi tiedoilla 24/7 ja ottaa yhteydenotot talteen.','Respondo svarar på kundfrågor med företagets information dygnet runt och tar emot förfrågningar.','Respondo answers questions using your business information, 24/7, and captures customer enquiries.')));
     assert.match(page,/<section id="pricing">REAL PRICES<\/section>/);
     assert.doesNotMatch(page,/respondo-search-overview|respondo-search-links/);
     assert.doesNotMatch(page,/apple-highlights|apple-lead-calculator|apple-bottom-cta/);
