@@ -51,8 +51,8 @@ test('iPhone visual sizing and reduced motion still preserve accessibility',()=>
   assert.match(orbit,/aria-label/);
   assert.match(orbit,/aria-live="polite"/);
   assert.match(orbit,/reduced\.matches/);
-  assert.match(index,/workspace-orbit-v28\.css\?v=20261028-home-helix-v31/);
-  assert.match(index,/home-helix-v31-hero-try-bot-v32-chat-navigation-note-v34"><\/script>/);
-  assert.match(app,/workspace-continuation-v24\.js\?v=20261028-home-helix-v31/);
-  assert.match(workspace,/workspace-orbit-v28\.js\?v=20261028-home-helix-v31/);
+  assert.match(index,/workspace-orbit-v28\.css\?v=20261028-mobile-scroll-guard-v35/);
+  assert.match(index,/home-helix-v31-hero-try-bot-v32-chat-navigation-note-v34-mobile-scroll-guard-v35"><\/script>/);
+  assert.match(app,/workspace-continuation-v24\.js\?v=20261028-mobile-scroll-guard-v35/);
+  assert.match(workspace,/workspace-orbit-v28\.js\?v=20261028-mobile-scroll-guard-v35/);
 });

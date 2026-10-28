@@ -420,3 +420,25 @@
   #app .rs-workspace-scroll-helix .rs-studio-orbit-art{transform:translate(-50%,-50%)}
   #app .rs-workspace-scroll-helix .rs-studio-orbit-icon{transform:translate(-50%,-50%)}
 }
+
+/* V35 — iOS full-screen orbit must hold each section instead of allowing a
+   single inertial flick to jump past the whole sphere to the page footer. */
+@media(max-width:850px) {
+  html:has(#app .dashboard-premium-shell.respondo-workspace-active .rs-workspace-scroll-helix):not(.rs-workspace-orbit-routing) {
+    scroll-snap-type:y proximity;
+  }
+  #app .dashboard-premium-shell.respondo-workspace-active .rs-workspace-scroll-helix .rs-workspace-helix-stage {
+    touch-action:pan-x pinch-zoom;
+  }
+  #app .dashboard-premium-shell.respondo-workspace-active .rs-workspace-scroll-helix .rs-orbit-snap-points {
+    position:absolute;inset:0;z-index:0;pointer-events:none;
+  }
+  #app .dashboard-premium-shell.respondo-workspace-active .rs-workspace-scroll-helix .rs-orbit-snap-point {
+    position:absolute;left:0;width:1px;height:1px;
+    pointer-events:none;scroll-snap-align:start;scroll-snap-stop:always;
+  }
+}
+/* The section name is already a complete tap target; don't add an iOS emoji arrow. */
+#app .rs-workspace-scroll-helix .rs-helix-open {
+  gap:0;
+}
