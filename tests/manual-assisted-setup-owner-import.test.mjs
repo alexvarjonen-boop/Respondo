@@ -67,3 +67,20 @@ test('customer gets seven-day processed notice from the business mailbox only af
   assert.match(flow,/Respondo AI <info@respondoai\.fi>/);
   assert.match(flow,/ON CONFLICT\(session_id\) DO NOTHING/);
 });
+
+test('private owner can configure the purchased bot without switching or impersonating customer accounts',()=>{
+ const a=server.indexOf("app.post('/api/app/internal/setup-service-requests/:id/configure'");
+ const b=server.indexOf("app.get('/api/app/internal/setup-service-requests'",a);
+ assert.ok(a>0&&b>a);
+ const flow=server.slice(a,b);
+ assert.match(flow,/auth, ownerTrafficOnly/);
+ assert.match(flow,/bot_name=\$2,greeting=\$3,bot_avatar=\$4/);
+ assert.match(flow,/sr.status IN \('received','credentials_created'\)/);
+ assert.match(flow,/t.subscription_status IN \('active','trialing'\)/);
+ assert.match(flow,/!\^robot-|robot-/);
+ assert.doesNotMatch(flow,/sendMail\(|api\.resend\.com/);
+ assert.match(traffic,/data-setup-config/);
+ assert.match(traffic,/setupBotDialog/);
+ assert.match(traffic,/setupBotForm/);
+ assert.match(traffic,/\/configure'/);
+});
