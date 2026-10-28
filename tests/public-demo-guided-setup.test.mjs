@@ -32,6 +32,6 @@ test('demo wizard does not call authenticated tenant APIs; uses existing isolate
 test('public website-first setup has usable finishing state and profile continuity', () => {
   assert.match(css, /\.demo-dashboard-shell \.guided-setup\[hidden\]\{display:none!important\}/);
   assert.match(app, /uploadedAvatarData=avatar\.startsWith\('data:image\/'\)\?avatar:''/);
-  assert.match(app, /showDemoDashboardView\('setup',\{scrollTop:false\}\)/);
+  assert.match(app, /activateRespondoWorkspace\(\{demo:true,view:'bot'\}\)/);
   assert.match(app, /Scan website & try bot/);
 });
