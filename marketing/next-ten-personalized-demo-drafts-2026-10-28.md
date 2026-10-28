@@ -6,7 +6,7 @@
 
 **Aihe:** Verkkosivujen asiakaskysymykset – Respondo AI
 
-Moi Kotipalvelu Jennyn tiimi,
+Moi!
 
 Huomasin, että tarjoatte yritys-, muutto- ja allergiasiivousta. Näistä palveluista asiakkaat voivat kysyä esimerkiksi toimialuetta ja tarjouksen pyytämistä.
 
@@ -29,7 +29,7 @@ Jos tämä ei ole ajankohtaista, riittää vastaukseksi ”ei kiitos”, niin en
 
 **Aihe:** Verkkosivujen asiakaskysymykset – Respondo AI
 
-Moi PipalClean Oyn tiimi,
+Moi!
 
 Sivustollanne on eritelty yrityssiivouksen sopimus- ja kertasiivouksen hinnat. Respondo voisi auttaa kävijöitä löytämään oikean hinnastokohdan.
 
@@ -52,7 +52,7 @@ Jos tämä ei ole ajankohtaista, riittää vastaukseksi ”ei kiitos”, niin en
 
 **Aihe:** Verkkosivujen asiakaskysymykset – Respondo AI
 
-Moi Sisko Mäkilä Oyn tiimi,
+Moi!
 
 Sivustonne esittelee kotisiivouksen, ikkunanpesun, muuttosiivouksen ja yrityssiivouksen sekä tarjouspyynnön.
 
@@ -75,7 +75,7 @@ Jos tämä ei ole ajankohtaista, riittää vastaukseksi ”ei kiitos”, niin en
 
 **Aihe:** Verkkosivujen asiakaskysymykset – Respondo AI
 
-Moi Siskon Siivousn tiimi,
+Moi!
 
 Huomasin, että tarjoatte Turussa yrityssiivousta ja teillä on tarjouspyyntö sivustolla.
 
@@ -98,7 +98,7 @@ Jos tämä ei ole ajankohtaista, riittää vastaukseksi ”ei kiitos”, niin en
 
 **Aihe:** Verkkosivujen asiakaskysymykset – Respondo AI
 
-Moi Turun Muuttopalvelun tiimi,
+Moi!
 
 Sivustonne esittelee Turun seudun kerta- ja jatkuvia siivouspalveluita sekä tarjouspyyntöä.
 
@@ -121,7 +121,7 @@ Jos tämä ei ole ajankohtaista, riittää vastaukseksi ”ei kiitos”, niin en
 
 **Aihe:** Verkkosivujen asiakaskysymykset – Respondo AI
 
-Moi Plus Autohuolton tiimi,
+Moi!
 
 Sivustonne kertoo huolloista, rengastöistä ja auton katsastuspalveluista sekä tarjoaa ajanvarauksen.
 
@@ -144,7 +144,7 @@ Jos tämä ei ole ajankohtaista, riittää vastaukseksi ”ei kiitos”, niin en
 
 **Aihe:** Verkkosivujen asiakaskysymykset – Respondo AI
 
-Moi Öljypisten tiimi,
+Moi!
 
 Yritysasiakkaiden sivullanne kerrotaan yritysautojen huollosta laskutuksella.
 
@@ -167,7 +167,7 @@ Jos tämä ei ole ajankohtaista, riittää vastaukseksi ”ei kiitos”, niin en
 
 **Aihe:** Verkkosivujen asiakaskysymykset – Respondo AI
 
-Moi Pilateskauppan tiimi,
+Moi!
 
 Palautussivullanne kerrotaan palautusohjeista ja sähköisestä palautusilmoituksesta.
 
@@ -190,7 +190,7 @@ Jos tämä ei ole ajankohtaista, riittää vastaukseksi ”ei kiitos”, niin en
 
 **Aihe:** Verkkosivujen asiakaskysymykset – Respondo AI
 
-Moi Helakauppan tiimi,
+Moi!
 
 Verkkokaupassanne on toimitusehdoille oma sivu.
 
@@ -213,7 +213,7 @@ Jos tämä ei ole ajankohtaista, riittää vastaukseksi ”ei kiitos”, niin en
 
 **Aihe:** Verkkosivujen asiakaskysymykset – Respondo AI
 
-Moi Loisto Siivouspalvelun tiimi,
+Moi!
 
 Sivustollanne on palvelu- ja hintatietoja kotisiivouksen kertakäynneistä ja säännöllisistä käynneistä.
 
