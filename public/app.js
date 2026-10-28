@@ -2236,7 +2236,7 @@ function footer() {
         </div>
       </div>
       <div class="legalbar">
-        <span>© ${new Date().getFullYear()} RESPONDO AI</span>
+        <span>© ${new Date().getFullYear()} RESPONDO AI · ${appText("Kaikki oikeudet pidätetään.","Alla rättigheter förbehållna.","All rights reserved.")}</span>
       </div>
     </div>
   </footer>`;
