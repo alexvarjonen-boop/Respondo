@@ -5384,6 +5384,8 @@ async function route() {
     // but stays isolated: no authenticated profile or knowledge writes.
     const demoGuidedForm = $('#guidedSetupForm');
     if (demoGuidedForm) {
+      // Native URL validation would swallow Enter before our protocol-normalizer runs.
+      demoGuidedForm.noValidate = true;
       let step = 1;
       const cards = [...demoGuidedForm.querySelectorAll('[data-guided-step]')];
       const progress = [...document.querySelectorAll('[data-guided-progress]')];
