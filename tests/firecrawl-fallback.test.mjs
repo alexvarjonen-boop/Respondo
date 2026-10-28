@@ -80,6 +80,20 @@ test('offsite metadata and API failures cannot pollute imported facts', async ()
     verifiedHostname: 'example.fi', apiKey: 'fc-test', fetchImpl,
   }), null);
   assert.equal(requests, 1);
+  const finalUrlOffsite = await fetchFirecrawlRenderedHtml('https://example.fi/', {
+    verifiedHostname: 'example.fi', apiKey: 'fc-test',
+    fetchImpl: async () => ({
+      ok: true,
+      headers: { get: () => null },
+      text: async () => JSON.stringify({
+        success: true,
+        data: { html: '<p>Wrong company</p>', metadata: {
+          sourceURL: 'https://example.fi/', url: 'https://attacker.example/',
+        } },
+      }),
+    }),
+  });
+  assert.equal(finalUrlOffsite, null);
   const rejected = await fetchFirecrawlRenderedHtml('https://127.0.0.1/admin', {
     verifiedHostname: '127.0.0.1', apiKey: 'fc-test', fetchImpl,
   });
