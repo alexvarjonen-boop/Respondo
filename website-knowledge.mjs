@@ -785,8 +785,15 @@ function physicalAddressFragments(value) {
 function supplementalCompanyDetail(block,docUrl){
   const heading=clean(block?.heading);
   const answer=clean(block?.text);
+  // Short, explicitly quantified specifications are useful in equipment and
+  // B2B industries. For example "Enintään 80 tonnia" under "Nostokapasiteetti"
+  // must survive import, without admitting vague 2-word marketing slogans.
+  const shortSpecification=answer.length>=12 &&
+    /\b\d+(?:[.,]\d+)?\s*(?:tonnia|tonni|ton|tonnes?|kg|kilogram(?:ma|s)?|g|mm|cm|metri(?:a|ä)?|metres?|meters?|kW|kWh|MW|bar|m\s*²|m2|m3|litra(?:a|ä)?|litres?|liters?|vuotta|years?|hours?|tuntia|päivää|days?)\b/i.test(answer);
   if(!heading || heading.length<4 || heading.length>95 ||
-     answer.length<42 || answer.length>900 || answer.split(/\s+/).length<7) return null;
+     answer.length>900 ||
+     !(answer.length>=42 && answer.split(/\s+/).length>=7) &&
+     !(shortSpecification && answer.split(/\s+/).length>=3)) return null;
   if(junk.test(heading) || junk.test(answer) || review.test(heading+' '+answer) ||
      billingAddressNoise.test(heading+' '+answer) ||
      manufacturerContactContext(heading) || manufacturerContactContext(answer)) return null;
