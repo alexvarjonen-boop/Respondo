@@ -33,11 +33,6 @@
   text-decoration:none;
   transition:background .2s ease,border-color .2s ease,box-shadow .2s ease!important;
 }
-#app .apple-home-page .rs-spiral-heading .rs-first-order-link::after{
-  content:"↗";display:inline-block;flex:none;
-  font-size:16px;font-weight:500;line-height:1;
-  color:#c7dfff;
-}
 #app .apple-home-page .rs-spiral-heading .rs-first-order-link:hover{
   background:linear-gradient(135deg,rgba(83,132,207,.26),rgba(26,55,96,.27))!important;
   border-color:rgba(216,235,255,.79)!important;
@@ -115,9 +110,6 @@
     min-height:44px;max-width:calc(100% - 22px);
     margin:12px auto 0!important;padding:10px 16px!important;
     font-size:12px!important;gap:12px;
-  }
-  #app .apple-home-page .rs-spiral-heading .rs-first-order-link::after{
-    font-size:14px;
   }
   #app .apple-home-page .rs-spiral-card-kicker i{
     width:18px!important;flex-basis:18px;
