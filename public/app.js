@@ -6443,6 +6443,7 @@ async function route() {
       deletionTarget=target;
       deletionForm.reset();
       const account=target.kind==='account';
+      const lastCompany=!account && document.querySelectorAll('.workspace-delete-trigger').length===1;
       const emailField=$('#deleteEmailField');
       emailField?.toggleAttribute('hidden',!account);
       const emailInput=deletionForm.elements.email;
@@ -6452,7 +6453,9 @@ async function route() {
         : appText('Poista yritys: ','Radera företag: ','Delete company: ')+target.name;
       $('#deleteModalDescription').textContent=account
         ? appText('Tämä peruuttaa heti KAIKKI yritystesi tilaukset ja poistaa kaikki yritysten tiedot, botit, keskustelut sekä koko käyttäjätilin pysyvästi. Vahvista kirjoittamalla kirjautumissähköpostisi ja nykyinen salasanasi.','Detta avslutar ALLA abonnemang omedelbart och tar bort alla företagsuppgifter, bottar, konversationer och kontot permanent. Bekräfta med din inloggningsadress och ditt lösenord.','This immediately cancels ALL subscriptions and permanently deletes all company data, bots, conversations and the entire user account. Enter your login email and current password.')
-        : appText('Tämä peruuttaa tämän yrityksen tilauksen heti ja poistaa sen botin, tiedot, keskustelut ja asiakaspalvelijat pysyvästi. Muut yrityksesi säilyvät. Vahvista nykyisellä salasanallasi.','Företagets abonnemang avslutas omedelbart och dess bot, uppgifter, konversationer och medarbetare raderas permanent. Dina andra företag påverkas inte. Bekräfta med ditt lösenord.','This immediately cancels this company subscription and permanently deletes its bot, data, conversations and agents. Your other companies remain. Confirm with your current password.');
+        : lastCompany
+          ? appText('Tämä on viimeinen yrityksesi. Poisto peruuttaa kaikki jäljellä olevat tilaukset, poistaa botin, yrityksen tiedot ja keskustelut sekä koko Respondo-käyttäjätilisi. Kirjautumissähköposti vapautuu uudelle rekisteröitymiselle. Toimintoa ei voi perua. Vahvista nykyisellä salasanallasi.','Detta är ditt sista företag. Raderingen avslutar alla återstående abonnemang och tar bort botten, företagets data, konversationer och hela ditt Respondo-konto. E-postadressen kan sedan användas för en ny registrering. Åtgärden kan inte ångras. Bekräfta med ditt lösenord.','This is your last company. Deletion cancels all remaining subscriptions and permanently removes the bot, company data, conversations and your entire Respondo login. Your email address will be available for a new registration. This cannot be undone. Confirm with your current password.')
+          : appText('Tämä peruuttaa tämän yrityksen tilauksen heti ja poistaa sen botin, tiedot, keskustelut ja asiakaspalvelijat pysyvästi. Muut yrityksesi ja käyttäjätilisi säilyvät. Vahvista nykyisellä salasanallasi.','Företagets abonnemang avslutas omedelbart och dess bot, uppgifter, konversationer och medarbetare raderas permanent. Dina andra företag och ditt konto påverkas inte. Bekräfta med ditt lösenord.','This immediately cancels this company subscription and permanently deletes its bot, data, conversations and agents. Your other companies and login remain. Confirm with your current password.');
       const msg=$('#deleteConfirmMsg');
       if(msg) msg.textContent='';
       deletionModal.removeAttribute('hidden');
@@ -6483,7 +6486,7 @@ async function route() {
       button.textContent=appText('Poistetaan…','Raderar…','Deleting…');
       if(msg) msg.textContent='';
       try{
-        await api(target.kind==='account'
+        const result=await api(target.kind==='account'
           ? '/api/app/account'
           : '/api/app/workspaces/'+encodeURIComponent(target.tenantId),{
           method:'DELETE',
@@ -6494,9 +6497,11 @@ async function route() {
         });
         if(target.kind==='workspace'){
           try{localStorage.removeItem('respondo-installed-'+target.tenantId);}catch{}
-          location.href='/app?section=account&company_deleted=1';
-        }else{
+        }
+        if(target.kind==='account' || result.accountDeleted===true){
           location.replace('/?account_deleted=1');
+        }else{
+          location.replace('/app?section=account&company_deleted=1');
         }
       }catch(err){
         if(msg) msg.textContent=err.message||appText('Poisto epäonnistui.','Raderingen misslyckades.','Deletion failed.');
