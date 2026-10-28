@@ -236,9 +236,23 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     const container=$('#respondoWorkspaceCardBody');
     if(!container)return;
     container.replaceChildren();
+    workspace.classList.toggle('rs-knowledge-collapsed',id==='knowledge');
     if(!showPanel(id)){
       callout(translate('Ei vielä tietoja','Inga uppgifter ännu','Nothing here yet'),
               translate('Tämä osio on tyhjä.','Det här avsnittet är tomt.','This section is empty.'),false);
+    }else if(id==='knowledge'){
+      const list=$('#knowledgeList');
+      if((list?.querySelectorAll('.knowledge-item').length||0)>6){
+        const more=document.createElement('button');
+        more.className='rs-secondary-button rs-knowledge-more';
+        more.type='button';
+        more.textContent=translate('Näytä kaikki vastaukset','Visa alla svar','Show all answers');
+        more.addEventListener('click',()=>{
+          const hidden=workspace.classList.toggle('rs-knowledge-collapsed');
+          more.textContent=hidden?translate('Näytä kaikki vastaukset','Visa alla svar','Show all answers'):translate('Näytä vähemmän','Visa färre','Show fewer');
+        });
+        card.appendChild(more);
+      }
     }
     workspace.querySelectorAll('[data-workspace-tab]').forEach(button=>{
       button.classList.toggle('active',button.dataset.workspaceTab===id);
