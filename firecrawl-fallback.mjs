@@ -13,6 +13,77 @@ export function firecrawlMaxPages(env = process.env) {
   return Number.isFinite(requested) ? Math.max(0, Math.min(3, Math.floor(requested))) : 2;
 }
 
+// Firecrawl v2 credits are team-wide. Conservatively reserve 50 credits so
+// paid overage or an exhausted free allowance cannot silently become required.
+// This guard never calls the paid scrape endpoint to check the balance.
+export function firecrawlReserveCredits(env = process.env) {
+  const value = Number(env.FIRECRAWL_RESERVE_CREDITS ?? 50);
+  return Number.isFinite(value) ? Math.max(0, Math.min(10000, Math.floor(value))) : 50;
+}
+
+// No timers or database required: the next eligible website import checks again
+// after the cooldown. This also resumes rendering after a quota renewal/top-up.
+// Cache and local reservations limit excess calls on busy single-process servers.
+// Several replicas or other Firecrawl clients still share the same team quota.
+export function createFirecrawlCreditGuard({
+  fetchImpl = globalThis.fetch,
+  now = Date.now,
+  healthyCacheMs = 30_000,
+  pausedRetryMs = 300_000,
+  errorRetryMs = 60_000,
+  timeoutMs = 4000,
+} = {}) {
+  let checkedKey = null;
+  let remaining = null;
+  let nextCheckAt = 0;
+  let pending = null;
+
+  async function refresh(key, reserve) {
+    try {
+      const response = await fetchImpl('https://api.firecrawl.dev/v2/team/credit-usage', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer ' + key, Accept: 'application/json' },
+        signal: AbortSignal.timeout(Math.max(1000, Math.min(8000, timeoutMs))),
+      });
+      if (!response.ok) throw new Error('Firecrawl quota check unavailable');
+      const payload = await response.json();
+      const value = payload?.data?.remainingCredits;
+      if (payload?.success !== true || typeof value !== 'number' ||
+          !Number.isFinite(value) || value < 0) {
+        throw new Error('Invalid Firecrawl quota response');
+      }
+      remaining = Math.floor(value);
+      nextCheckAt = now() + (remaining > reserve ? healthyCacheMs : pausedRetryMs);
+    } catch {
+      // Fail closed for this *optional* renderer. Native website imports work.
+      remaining = null;
+      nextCheckAt = now() + errorRetryMs;
+    }
+  }
+
+  return async function maySpendOneFirecrawlCredit(env = process.env) {
+    if (!firecrawlEnabled(env)) return false;
+    const key = String(env.FIRECRAWL_API_KEY || '').trim();
+    if (checkedKey !== key) {
+      checkedKey = key;
+      remaining = null;
+      nextCheckAt = 0;
+    }
+    const reserve = firecrawlReserveCredits(env);
+    if (!pending && now() >= nextCheckAt) {
+      pending = refresh(key, reserve).finally(() => { pending = null; });
+    }
+    if (pending) await pending;
+    if (remaining === null || remaining <= reserve) return false;
+    // Reserve a credit locally before a scrape can start. Failed scrapes may
+    // leave a conservative discrepancy until the next real balance refresh.
+    remaining--;
+    return true;
+  };
+}
+
+export const maySpendOneFirecrawlCredit = createFirecrawlCreditGuard();
+
 export function permittedFirecrawlTarget(value, verifiedHostname) {
   try {
     const url = new URL(String(value || ''));
