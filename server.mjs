@@ -955,13 +955,13 @@ async function sendWelcomeEmailOnce(userId) {
 // and the successful Checkout redirect.
 async function notifySetupServiceAfterCheckout(session) {
   if (session?.metadata?.setup_service !== '1') return {selected:false};
-  // Payment is already completed; guarantee no recurring charge is scheduled
-  // while this new assisted-setup job awaits the owner's handover.
-  if(session?.metadata?.setup_billing_mode === 'after_handover' && session?.subscription) {
-    await holdAssistedSetupBilling(stripe,typeof session.subscription==='string'?session.subscription:session.subscription.id);
-  }
   if (session?.status !== 'complete' || session?.payment_status !== 'paid') {
     return {selected:true,customerSent:false,paymentPending:true};
+  }
+  // Hold recurring collection only after Stripe has completed payment of
+  // the 199 EUR one-time setup invoice.
+  if(session?.metadata?.setup_billing_mode === 'after_handover' && session?.subscription) {
+    await holdAssistedSetupBilling(stripe,typeof session.subscription==='string'?session.subscription:session.subscription.id);
   }
   if (!pool) return {selected:true,customerSent:false};
   const sessionId=String(session.id||'');
@@ -8481,7 +8481,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           console.error('Referral activation from webhook failed', e);
         }
 
-        if (session.metadata?.setup_billing_mode === 'after_handover' && incomingSubscriptionId) {
+        if (session.metadata?.setup_billing_mode === 'after_handover' && session.payment_status === 'paid' && incomingSubscriptionId) {
           await holdAssistedSetupBilling(stripe, incomingSubscriptionId);
         }
 
@@ -8537,10 +8537,8 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       }
     }
 
-    if (event.type === 'customer.subscription.created' &&
-        event.data.object?.metadata?.setup_billing_mode === 'after_handover') {
-      await holdAssistedSetupBilling(stripe,event.data.object.id);
-    }
+    // Never hold an unpaid subscription.created event: that could void the
+    // initial 199 EUR setup invoice before Stripe collects it.
 
     if (
       event.type === 'customer.subscription.created' ||
