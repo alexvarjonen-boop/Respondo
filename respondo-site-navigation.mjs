@@ -70,7 +70,7 @@ export function respondoCheckoutAction(message,lang='fi',faqId='',origin='https:
   const language=['fi','sv','en'].includes(lang)?lang:'fi';
   const q=normalize(message);
   const buying=/(?:\b(?:tilaa|tilata|tilaus|tilaukse\w*|ostaa|osta|ostaminen|hankkia|hanki|kayttoon|kayttoonotto|kokeilujakso|aloita kokeilu|aloittaa|aloitan|rekisteroidy|register|signup|sign up|subscribe|subscription|order|purchase|buy|trial|start using|get started|borja|bestall\w*|kop\w*|abonnera|prenumerera|skaffa)\b|how (?:can|do) i (?:start|order|buy|get)|hur (?:kan|gor) jag (?:bestall|kop|borja)|miten (?:saan|voin|paasen|otan) (?:sen |taman |respondo\w* )?kayttoon)/.test(q);
-  const pricing=/(?:\b(?:hinta\w*|hinnoittel\w*|maksaa|maksavat|paket\w*|price\w*|pricing|cost\w*|priser|prisplan\w*|kostar|abonnemang\w*)\b|paljonko maks\w*)/.test(q);
+  const pricing=/(?:\b(?:hinta\w*|hinnat|hinna\w*|hinnoittel\w*|maksaa|maksavat|paket\w*|price\w*|pricing|cost\w*|priser|prisplan\w*|kostar|abonnemang\w*)\b|paljonko maks\w*)/.test(q);
   const faqBuying=new Set([
     'respondo-faq-buy','respondo-faq-trial','respondo-faq-pricing',
     'respondo-faq-monthly-pricing','respondo-faq-annual-pricing',

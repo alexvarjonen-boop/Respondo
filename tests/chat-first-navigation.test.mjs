@@ -74,7 +74,7 @@ test('chat-first UI replaces site-pages footer but keeps essential legal access'
   assert.doesNotMatch(effects,/const routes = \[/);
   assert.match(css,/\.public-header-login/);
   assert.match(css,/\.fx-site-action/);
-  assert.match(server,/import \{ respondoSiteNavigationActions, respondoSiteNavigationAnswer \}/);
+  assert.match(server,/import \{ respondoSiteNavigationActions, respondoSiteNavigationAnswer, respondoCheckoutAction \}/);
   assert.match(server,/intent:'Respondo site navigation'/);
   const handler=server.indexOf("app.post('/api/public/respondo-assistant/chat'");
   const direct=server.indexOf('const navigation=respondoSiteNavigationAnswer(',handler);
