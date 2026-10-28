@@ -1,4 +1,4 @@
-import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-mobile-pinned-v37';
+import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38';
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
@@ -13,6 +13,26 @@ import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 import { marketingAttributionQuery, marketingLeadVisitorRef, normalizeDemoWebsite, buildDemoRequestMessage } from './marketing-lead.mjs?v=20261027-qualified-demo-v1';
 import { parseBookingDurationMinutes } from './booking-duration.mjs?v=20261009-v1';
 const $ = (s, r = document) => r.querySelector(s);
+// Optional first-party platform CTA for explicit Respondo ordering questions
+// inside OWNER preview sessions. Never adds Respondo checkout to merchant
+// product-purchase questions that do not mention the Respondo platform.
+function previewRespondoSubscribeAction(message, lang='en') {
+  const q=String(message||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const mentionsRespondo=/\brespondo[a-z]*\b/.test(q);
+  const buying=/(?:\b(?:tilaa\w*|tilat\w*|tilau\w*|osta\w*|ostaa|hinta\w*|hinnoittel\w*|maksaa|kayttoon\w*|price\w*|pricing|cost\w*|subscribe\w*|subscription\w*|order\w*|buy|purchase\w*|bestall\w*|kostar|abonnemang\w*|kop\w*|trial)\b)/.test(q);
+  if(!mentionsRespondo || !buying)return null;
+  const language=['fi','sv','en'].includes(lang)?lang:'en';
+  const url=new URL('/tilaus',location.origin);
+  url.searchParams.set('lang',language);
+  return {type:'site_signup',label:language==='fi'?'Tilaa Respondo':language==='sv'?'Beställ Respondo':'Subscribe to Respondo',url:url.href};
+}
+function previewWithOwnerSubscribe(actions,question,lang) {
+  const existing=Array.isArray(actions)?actions:[];
+  const action=previewRespondoSubscribeAction(question,lang);
+  if(!action || existing.some(item=>item?.type==='site_signup' || item?.url===action.url))return existing;
+  return [action,...existing];
+}
+
 // Optional onboarding FAQ: show one question/answer initially and add rows on demand.
 // Shared by public demo and authenticated workspace, without changing either save endpoint.
 function guidedQaPairs(form) {
@@ -5825,7 +5845,7 @@ async function route() {
           bubble.classList.remove('preview-thinking');
           bubble.textContent=result.answer||appText('En löydä tähän vielä varmaa vastausta.','Jag hittar inget säkert svar på detta ännu.','I cannot find a reliable answer yet.');
           const hasProducts=appendPreviewProductCards(bubble,result.products,currentLang());
-          const actions=(Array.isArray(result.actions)?result.actions:[]).filter(action=>action?.url&&/^(?:https?:\/\/|tel:|mailto:)/i.test(action.url)&&(!hasProducts||action.type!=='product'));
+          const actions=previewWithOwnerSubscribe(result.actions,question,currentLang()).filter(action=>action?.url&&/^(?:https?:\/\/|tel:|mailto:)/i.test(action.url)&&(!hasProducts||action.type!=='product'));
           if(actions.length){
             const wrap=document.createElement('div');wrap.className='preview-actions';
             actions.forEach(action=>{const link=document.createElement('a');link.className='preview-action-link';link.href=action.url;if(/^https?:\/\//i.test(action.url)){link.target='_blank';link.rel='noopener noreferrer';}link.textContent=action.label||appText('Avaa linkki','Öppna länken','Open link');wrap.appendChild(link);});
@@ -6780,7 +6800,7 @@ async function route() {
           bubble.classList.remove('preview-thinking');
           bubble.textContent = result.answer || appText('En löydä tähän vielä varmaa vastausta.','Jag hittar inget säkert svar på detta ännu.','I cannot find a reliable answer to this yet.');
           const hasProducts = appendPreviewProductCards(bubble,result.products,currentLang());
-          const actions = (Array.isArray(result.actions) ? result.actions : []).filter((action)=>!hasProducts || action?.type!=='product');
+          const actions = previewWithOwnerSubscribe(result.actions,question,currentLang()).filter((action)=>!hasProducts || action?.type!=='product');
           // Phone and email actions must appear in dashboard preview too,
           // not just https links. The server sends only validated contact URLs.
           const links = actions.filter((action) => action?.url && /^(?:https?:\/\/|tel:|mailto:)/i.test(action.url));
