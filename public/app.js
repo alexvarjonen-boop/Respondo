@@ -3175,13 +3175,37 @@ function checkoutBusinessTerms(name='terms', classes='') {
 
 // Optional one-time setup service. Stripe computes the payable price server-side.
 function setupServiceOption() {
-  return `<label class="setup-service-option field full">
-    <input type="checkbox" name="setupService" value="1">
-    <span class="setup-service-copy">
-      <span class="setup-service-title"><strong>${appText('Käyttöönottopalvelu','Installationstjänst','Setup service')}</strong><b>199 €</b></span>
-      <small>${appText('Valinnainen kertamaksu, veloitetaan heti. Autamme botin asennuksessa ja käyttöönotossa. Tilauksen 3 päivän maksuton kokeilu säilyy.','Valfri engångsavgift som debiteras direkt. Vi hjälper dig att installera och konfigurera botten. Abonnemangets 3 dagars provperiod gäller fortfarande.','Optional one-time charge, paid immediately. We help you install and set up your bot. Your subscription still includes the 3-day free trial.')}</small>
-    </span>
-  </label>`;
+  return `<div class="setup-service-wrap field full">
+    <label class="setup-service-option">
+      <input type="checkbox" name="setupService" value="1">
+      <span class="setup-service-copy">
+        <span class="setup-service-title"><strong>${appText('Käyttöönottopalvelu','Installationstjänst','Setup service')}</strong><b>199 €</b></span>
+        <small>${appText('Valinnainen kertamaksu, veloitetaan heti. Analysoimme verkkosivusi, viimeistelemme botin ja ilmoitamme sähköpostitse, kun se on valmis. 3 päivän maksuton kokeilu säilyy.','Valfri engångsavgift, debiteras direkt. Vi granskar din webbplats, hjälper dig att färdigställa botten och mejlar dig när den är klar. Din 3-dagars provperiod gäller fortfarande.','Optional one-time fee, charged now. We review your website, prepare your bot and email you when it is ready. Your 3-day trial still applies.')}</small>
+      </span>
+    </label>
+    <label class="setup-service-website" hidden>
+      <span>${appText('Analysoitavan yrityssivuston osoite','Webbplats som ska analyseras','Website to analyze')}</span>
+      <input type="url" name="setupWebsite" inputmode="url" autocomplete="url" maxlength="300" placeholder="https://company.fi" disabled>
+      <small>${appText('Anna verkkosivusi osoite, jotta voimme aloittaa käyttöönottotyön.','Ange din webbplatsadress så att vi kan påbörja installationen.','Enter your website address so we can start the setup.')}</small>
+    </label>
+  </div>`;
+}
+
+function bindSetupServiceOptions() {
+  document.querySelectorAll('#app .setup-service-wrap').forEach((wrap) => {
+    const checkbox=wrap.querySelector('input[name="setupService"]');
+    const label=wrap.querySelector('.setup-service-website');
+    const url=label?.querySelector('input[name="setupWebsite"]');
+    if (!checkbox || !label || !url) return;
+    const sync=()=>{
+      label.hidden=!checkbox.checked;
+      url.disabled=!checkbox.checked;
+      url.required=checkbox.checked;
+      if(!checkbox.checked) url.value='';
+    };
+    checkbox.addEventListener('change',sync);
+    sync();
+  });
 }
 
 function signup() {
@@ -5204,6 +5228,7 @@ async function route() {
   document.body.classList.toggle('public-nav-active', Boolean(document.querySelector('#app .nav')));
   applyLanguage();
   bindLanguageSwitch();
+  bindSetupServiceOptions();
   // Fullscreen public menu removed; footer provides complete navigation.
   if (path === '/' || path === '/hinnat') bindPricingPeriodSwitch();
   if (path === '/') {
@@ -6080,6 +6105,7 @@ async function route() {
             password:form.get('password'),
             plan:form.get('plan'),
             setupService:form.get('setupService')==='1',
+            setupWebsite:String(form.get('setupWebsite') || '').trim(),
             referralCode:form.get('referralCode'),
             acceptedTerms:!!form.get('terms'),
             businessPurchase:!!form.get('terms'),
@@ -6400,6 +6426,7 @@ async function route() {
             billingCountry:String(fd.get('billingCountry')||'').trim(),
             plan:String(fd.get('plan')||'basic_monthly'),
             setupService:fd.get('setupService')==='1',
+            setupWebsite:String(fd.get('setupWebsite') || '').trim(),
             acceptedTerms:fd.get('acceptedTerms')==='on',
             businessPurchase:fd.get('acceptedTerms')==='on',
           }),
@@ -6431,6 +6458,7 @@ async function route() {
             billingCountry:String(fd.get('billingCountry')||'').trim(),
             plan:String(fd.get('plan')||'basic_monthly'),
             setupService:fd.get('setupService')==='1',
+            setupWebsite:String(fd.get('setupWebsite') || '').trim(),
             referralCode:String(fd.get('referralCode')||'').trim(),
             acceptedTerms:fd.get('acceptedTerms')==='on',
             businessPurchase:fd.get('acceptedTerms')==='on'
