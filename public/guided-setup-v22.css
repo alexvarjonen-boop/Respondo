@@ -107,3 +107,18 @@
 .guided-setup-active .guided-resume-link:not([hidden]):focus-visible{
   outline:2px solid #f5f5f7;outline-offset:3px;
 }
+
+
+/* Public Try Bot enters at the same single-card website step as the paid app.
+   Hide legacy demo navigation until the visitor has finished the temporary
+   wizard; restore it once the in-memory demo profile has been populated. */
+#app .demo-dashboard-shell .guided-setup[hidden]{display:none!important}
+#app .demo-dashboard-shell.guided-setup-active{grid-template-columns:minmax(0,1fr)!important}
+#app .demo-dashboard-shell.guided-setup-active .dashboard-premium-sidebar{display:none!important}
+#app .demo-dashboard-shell.guided-setup-active .dashboard-simple-main{margin-left:0!important;width:100%!important;min-width:0}
+#app .demo-dashboard-shell.guided-setup-active .demo-section-strip{display:none!important}
+#app .demo-dashboard-shell.guided-setup-active .dashboard-view-section{display:none!important}
+@media(max-width:920px){
+  #app .demo-dashboard-shell.guided-setup-active .dashboard-topbar .demo-public-actions,
+  #app .demo-dashboard-shell.guided-setup-active .dashboard-topbar .dashboard-section-picker{display:none!important}
+}
