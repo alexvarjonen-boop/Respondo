@@ -13,6 +13,79 @@ import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 import { marketingAttributionQuery, marketingLeadVisitorRef, normalizeDemoWebsite, buildDemoRequestMessage } from './marketing-lead.mjs?v=20261027-qualified-demo-v1';
 import { parseBookingDurationMinutes } from './booking-duration.mjs?v=20261009-v1';
 const $ = (s, r = document) => r.querySelector(s);
+// Optional onboarding FAQ: show one question/answer initially and add rows on demand.
+// Shared by public demo and authenticated workspace, without changing either save endpoint.
+function guidedQaPairs(form) {
+  return [...form.querySelectorAll('[data-guided-qa-row]')].map((row,index)=>({
+    index:index+1,
+    title:String(row.querySelector('input')?.value||'').trim(),
+    answer:String(row.querySelector('textarea')?.value||'').trim()
+  })).filter(({title,answer})=>title&&answer);
+}
+function initGuidedQaRows(form) {
+  const list=form.querySelector('[data-guided-step="3"] .guided-qa-list');
+  const add=form.querySelector('[data-guided-add-qa]');
+  const first=list?.querySelector('[data-guided-qa-row]');
+  if(!list || !add || !first)return {reset:()=>{}};
+  if(list._guidedQaController)return list._guidedQaController;
+  const maxRows=20;
+  const captions=[...first.querySelectorAll('label > span')].map(node=>node.textContent.replace(/\s+\d+$/,''));
+  const rows=()=>[...list.querySelectorAll('[data-guided-qa-row]')];
+  const renumber=()=>{
+    const all=rows();
+    all.forEach((row,index)=>{
+      const number=index+1;
+      row.dataset.guidedQaRow=String(number);
+      const question=row.querySelector('input');
+      const answer=row.querySelector('textarea');
+      if(question)question.name='question'+number;
+      if(answer)answer.name='answer'+number;
+      const labels=row.querySelectorAll('label > span');
+      labels.forEach((node,i)=>{node.textContent=(captions[i]||'')+' '+number;});
+      const remove=row.querySelector('[data-guided-remove-qa]');
+      if(remove)remove.setAttribute('aria-label',appText('Poista kysymys ja vastaus','Ta bort fråga och svar','Remove question and answer')+' '+number);
+    });
+    add.hidden=all.length>=maxRows;
+  };
+  add.addEventListener('click',()=>{
+    if(rows().length>=maxRows)return;
+    const newRow=first.cloneNode(true);
+    newRow.querySelector('input').value='';
+    newRow.querySelector('textarea').value='';
+    const remove=document.createElement('button');
+    remove.type='button';
+    remove.className='guided-qa-remove';
+    remove.dataset.guidedRemoveQa='';
+    remove.textContent='×';
+    newRow.appendChild(remove);
+    list.appendChild(newRow);
+    renumber();
+    newRow.querySelector('input')?.focus({preventScroll:true});
+  });
+  list.addEventListener('click',(event)=>{
+    const remove=event.target.closest?.('[data-guided-remove-qa]');
+    if(!remove || !list.contains(remove))return;
+    const row=remove.closest('[data-guided-qa-row]');
+    if(row && row!==first){
+      row.remove();
+      renumber();
+      add.focus({preventScroll:true});
+    }
+  });
+  const reset=()=>{
+    rows().slice(1).forEach(row=>row.remove());
+    const question=first.querySelector('input');
+    const answer=first.querySelector('textarea');
+    if(question)question.value='';
+    if(answer)answer.value='';
+    renumber();
+  };
+  const controller={reset};
+  list._guidedQaController=controller;
+  renumber();
+  return controller;
+}
+
 
 // Render grounded store products as tappable cards in Try Bot and dashboard
 // previews. The server selects the products; the browser does not search or
@@ -3914,8 +3987,9 @@ async function dashboard(options = {}) {
             <h1>${appText('Lisää valmiita kysymyksiä ja vastauksia.','Lägg till färdiga frågor och svar.','Add ready-made questions and answers.')}</h1>
             <p>${appText('Voit ohittaa tämän kokonaan. Vastauksia voi lisätä ja muokata myöhemmin hallintapaneelissa.','Du kan hoppa över detta helt. Svar kan läggas till och redigeras senare.','You can skip this entirely. Answers can be added and edited later.')}</p>
             <div class="guided-qa-list">
-              ${[1,2,3].map((i) => `<div class="guided-qa-row"><label><span>${appText('Kysymys','Fråga','Question')} ${i}</span><input name="question${i}" placeholder="${esc(appText('Esim. Mitkä ovat aukioloaikanne?','T.ex. Vilka är era öppettider?','E.g. What are your opening hours?'))}"></label><label><span>${appText('Vastaus','Svar','Answer')} ${i}</span><textarea name="answer${i}" placeholder="${esc(appText('Kirjoita hyväksytty vastaus tähän','Skriv det godkända svaret här','Write the approved answer here'))}"></textarea></label></div>`).join('')}
+              ${[1].map((i) => `<div class="guided-qa-row" data-guided-qa-row="${i}"><label><span>${appText('Kysymys','Fråga','Question')} ${i}</span><input name="question${i}" placeholder="${esc(appText('Esim. Mitkä ovat aukioloaikanne?','T.ex. Vilka är era öppettider?','E.g. What are your opening hours?'))}"></label><label><span>${appText('Vastaus','Svar','Answer')} ${i}</span><textarea name="answer${i}" placeholder="${esc(appText('Kirjoita hyväksytty vastaus tähän','Skriv det godkända svaret här','Write the approved answer here'))}"></textarea></label></div>`).join('')}
             </div>
+            <button class="guided-add-qa" type="button" data-guided-add-qa><span aria-hidden="true">＋</span><span>${appText('Lisää kysymys ja vastaus','Lägg till en fråga och ett svar','Add a question and answer')}</span></button>
             <div class="guided-card-actions"><button class="guided-back" type="button" data-guided-back>${appText('Takaisin','Tillbaka','Back')}</button><button class="guided-skip" type="button" data-guided-next>${appText('Ohita nyt','Hoppa över','Skip for now')}</button><button class="guided-continue" type="button" data-guided-next>${appText('Jatka','Fortsätt','Continue')} <span>→</span></button></div>
           </article>
 
@@ -5388,6 +5462,7 @@ async function route() {
     if (demoGuidedForm) {
       // Native URL validation would swallow Enter before our protocol-normalizer runs.
       demoGuidedForm.noValidate = true;
+      const demoQaController=initGuidedQaRows(demoGuidedForm);
       let step = 1;
       const cards = [...demoGuidedForm.querySelectorAll('[data-guided-step]')];
       const progress = [...document.querySelectorAll('[data-guided-progress]')];
@@ -5405,8 +5480,7 @@ async function route() {
         });
         if (step === 5) {
           const values = new FormData(demoGuidedForm);
-          const answers = [1,2,3].filter((i) =>
-            String(values.get('question'+i)||'').trim() && String(values.get('answer'+i)||'').trim()).length;
+          const answers = guidedQaPairs(demoGuidedForm).length;
           for (const [key, value] of [
             ['website',String(values.get('website')||'').trim()],
             ['botName',String(values.get('botName')||'').trim()],
@@ -5446,12 +5520,7 @@ async function route() {
         return true;
       };
       demoGuidedForm.querySelectorAll('[data-guided-next]').forEach((button) => button.addEventListener('click', () => {
-        if (step === 3 && button.classList.contains('guided-skip')) {
-          for (const i of [1,2,3]) {
-            demoGuidedForm.elements['question'+i].value = '';
-            demoGuidedForm.elements['answer'+i].value = '';
-          }
-        }
+        if (step === 3 && button.classList.contains('guided-skip')) demoQaController.reset();
         if (validate()) showStep(step+1);
       }));
       demoGuidedForm.querySelectorAll('[data-guided-back]').forEach((button) =>
@@ -5496,10 +5565,8 @@ async function route() {
         uploadedAvatarData=avatar.startsWith('data:image/')?avatar:'';
         demoProfile?.querySelectorAll('.bot-avatar-option').forEach((button)=>
           button.classList.toggle('selected',button.dataset.avatar===avatar));
-        for(const i of [1,2,3]){
-          const title=String(values.get('question'+i)||'').trim();
-          const answer=String(values.get('answer'+i)||'').trim();
-          if(title&&answer)demoFacts.push({title,answer,category:'Usein kysytyt',keywords:[],sourceType:'demo_manual'});
+        for(const {title,answer} of guidedQaPairs(demoGuidedForm)){
+          demoFacts.push({title,answer,category:'Usein kysytyt',keywords:[],sourceType:'demo_manual'});
         }
         renderDemoKnowledge();
         refreshDemoIdentity();
@@ -6444,6 +6511,7 @@ async function route() {
 
     const guidedForm = $('#guidedSetupForm');
     if (guidedForm) {
+      const guidedQaController=initGuidedQaRows(guidedForm);
       let guidedStep = 1;
       let existingProfile = {};
       try { existingProfile = JSON.parse(guidedForm.dataset.existingProfile || '{}'); } catch {}
@@ -6461,7 +6529,7 @@ async function route() {
         });
         if (guidedStep === 5) {
           const values = new FormData(guidedForm);
-          const answerCount = [1,2,3].filter((i) => String(values.get('question'+i)||'').trim() && String(values.get('answer'+i)||'').trim()).length;
+          const answerCount = guidedQaPairs(guidedForm).length;
           const websiteSummary = guidedForm.querySelector('[data-guided-summary="website"]');
           const botNameSummary = guidedForm.querySelector('[data-guided-summary="botName"]');
           const answersSummary = guidedForm.querySelector('[data-guided-summary="answers"]');
@@ -6504,9 +6572,7 @@ async function route() {
         return true;
       };
       guidedForm.querySelectorAll('[data-guided-next]').forEach((button) => button.addEventListener('click', () => {
-        if (guidedStep === 3 && button.classList.contains('guided-skip')) {
-          for (const i of [1,2,3]) { guidedForm.elements['question'+i].value = ''; guidedForm.elements['answer'+i].value = ''; }
-        }
+        if (guidedStep === 3 && button.classList.contains('guided-skip')) guidedQaController.reset();
         if (validateGuidedStep()) showGuidedStep(guidedStep + 1);
       }));
       guidedForm.querySelectorAll('[data-guided-back]').forEach((button) => button.addEventListener('click', () => showGuidedStep(guidedStep - 1)));
@@ -6570,10 +6636,7 @@ async function route() {
             await api('/api/app/business-profile', { method:'POST', body:profilePayload });
             savedProfilePayload = profilePayload;
           }
-          for (const i of [1,2,3]) {
-            const title = String(values.get('question'+i)||'').trim();
-            const answer = String(values.get('answer'+i)||'').trim();
-            if (!title || !answer) continue;
+          for (const {index:i,title,answer} of guidedQaPairs(guidedForm)) {
             const answerFingerprint = JSON.stringify([title,answer]);
             if (savedGuidedAnswers.get(i) === answerFingerprint) continue;
             await api('/api/app/knowledge', { method:'POST', body:JSON.stringify({ category:'Usein kysytyt', title, answer }) });

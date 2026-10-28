@@ -242,3 +242,39 @@
 @media(prefers-reduced-motion:reduce){
   #app .dashboard-premium-shell.guided-setup-active .guided-card {animation:none!important}
 }
+
+/* Add FAQ rows only on demand; keep the optional wizard compact on iPhone. */
+#app .dashboard-premium-shell.guided-setup-active .guided-card[data-guided-step="3"] .guided-qa-row{
+  position:relative;min-width:0;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-add-qa{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;min-height:50px;margin-top:12px;padding:12px 16px!important;
+  border:1px dashed #616c7d!important;border-radius:14px!important;
+  background:#20242b!important;color:#e9edf5!important;
+  -webkit-text-fill-color:#e9edf5!important;
+  font-size:13px!important;font-weight:700;cursor:pointer;
+  transition:border-color .2s,background .2s;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-add-qa:hover{
+  border-color:#d3dbea!important;background:#282e38!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-add-qa:focus-visible,
+#app .dashboard-premium-shell.guided-setup-active .guided-qa-remove:focus-visible{
+  outline:2px solid #e7edf7!important;outline-offset:3px;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-add-qa[hidden]{display:none!important}
+#app .dashboard-premium-shell.guided-setup-active .guided-add-qa span:first-child{
+  font-size:20px;line-height:1;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-qa-remove{
+  grid-column:1/-1;justify-self:end;
+  width:34px;height:30px;min-height:30px;min-width:34px;padding:0!important;
+  margin-top:-5px;border:1px solid #505966!important;border-radius:10px!important;
+  background:#292e37!important;color:#e9edf5!important;
+  -webkit-text-fill-color:#e9edf5!important;font-size:20px!important;
+  line-height:1!important;cursor:pointer;
+}
+@media(max-width:760px){
+  #app .dashboard-premium-shell.guided-setup-active .guided-add-qa{min-height:52px}
+}
