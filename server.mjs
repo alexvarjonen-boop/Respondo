@@ -10875,7 +10875,7 @@ async function sendReadySetupServiceEmailOnce(sessionId) {
     locked=true;
     const found=await client.query(
       `SELECT sr.session_id,sr.website_url,sr.status,sr.ready_emailed_at,
-              u.email,u.preferred_language,t.name AS company_name
+              u.email,u.preferred_language,u.id AS account_id, (u.stripe_subscription_id IS NOT DISTINCT FROM t.stripe_subscription_id) AS first_workspace, t.name AS company_name
          FROM setup_service_requests sr
          JOIN tenants t ON t.id::text=sr.tenant_id
          JOIN users u ON u.id=t.owner_user_id
@@ -10894,6 +10894,32 @@ async function sendReadySetupServiceEmailOnce(sessionId) {
     const lang=['fi','sv','en'].includes(job.preferred_language)?job.preferred_language:'en';
     const pick=(fi,sv,en)=>lang==='fi'?fi:lang==='sv'?sv:en;
     const subject=pick('Respondo-bottisi on valmis tarkistettavaksi','Din Respondo-bot är redo att granskas','Your Respondo bot is ready for review');
+    // Never email a plaintext password. New assisted-setup customers get a secure
+    // 7-day, single-use password-creation link only after staff marks the bot ready.
+    let initialPasswordToken='';
+    if(job.first_workspace) {
+      initialPasswordToken=crypto.randomBytes(32).toString('base64url');
+      const tokenHash=crypto.createHash('sha256').update(initialPasswordToken).digest('hex');
+      await client.query(
+        "INSERT INTO password_reset_tokens(id,user_id,token_hash,expires_at) VALUES($1,$2,$3,NOW()+INTERVAL '7 days')",
+        [uid(),job.account_id,tokenHash],
+      );
+    }
+    const readyUrl=initialPasswordToken ? BASE+'/kirjaudu?reset='+encodeURIComponent(initialPasswordToken) : BASE+'/app';
+    const accessText=initialPasswordToken
+      ? pick(
+        'Kirjautumistunnuksesi on '+job.email+'. Luo oma salasana alla olevasta turvallisesta linkistä. Linkki on kertakäyttöinen ja voimassa 7 päivää. Voit myöhemmin vaihtaa salasanasi asetuksissa.',
+        'Din inloggningsadress är '+job.email+'. Skapa ditt lösenord med den säkra länken nedan. Länken gäller i 7 dagar och kan bara användas en gång. Du kan ändra lösenordet senare i inställningarna.',
+        'Your login email is '+job.email+'. Create your password using the secure link below. It can be used once and expires in 7 days. You can change your password later in Settings.'
+      )
+      : pick(
+        'Kirjautumistunnuksesi on '+job.email+'. Voit käyttää nykyistä Respondo-salasanaasi tai Google-kirjautumista. Salasanan voi vaihtaa myöhemmin asetuksissa.',
+        'Din inloggningsadress är '+job.email+'. Du kan fortsätta använda ditt befintliga lösenord eller Google-inloggning och ändra lösenordet senare i inställningarna.',
+        'Your login email is '+job.email+'. Use your existing Respondo password or Google sign-in. You can change the password later in Settings.'
+      );
+    const actionLabel=initialPasswordToken
+      ? pick('Luo salasana','Skapa lösenord','Create password')
+      : pick('Avaa hallintapaneeli','Öppna kontrollpanelen','Open dashboard');
     const html=brandedEmailHtml({
       language:lang,
       eyebrow:pick('Käyttöönotto valmis','Installationen är klar','Setup completed'),
@@ -10904,13 +10930,9 @@ async function sendReadySetupServiceEmailOnce(sessionId) {
           'Vi har färdigställt installationen av din Respondo-bot. Logga in i kontrollpanelen för att granska svaren och aktivera botten på webbplatsen.',
           'We have completed the setup of your Respondo bot. Sign in to your dashboard to review its answers and install it on your website.'
         ))+'</p>'+
-        '<p style="color:#bccce2;font-size:14px;line-height:1.7;margin:0 0 20px">'+escapeEmailHtml(pick(
-          'Kirjautumistunnuksesi on sähköpostiosoitteesi. Käytä rekisteröityessäsi valitsemaasi salasanaa tai Google-kirjautumista. Voit vaihtaa salasanan asetuksista tai palauttaa sen kirjautumissivulta.',
-          'Din inloggningsadress är din e-postadress. Använd lösenordet du valde vid registreringen eller logga in med Google. Du kan ändra lösenordet i inställningarna eller återställa det via inloggningssidan.',
-          'Your login is your email address. Use the password you chose when signing up or sign in with Google. You can change your password in Settings or reset it from the login page.'
-        ))+'</p>'+
-        '<p style="margin:0 0 20px"><a href="'+escapeEmailHtml(BASE+'/app')+'" style="display:inline-block;border-radius:12px;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 22px;font-size:14px;font-weight:750">'+escapeEmailHtml(pick('Avaa hallintapaneeli','Öppna kontrollpanelen','Open dashboard'))+' →</a></p>'+
-        '<p style="font-size:13px;line-height:1.7;color:#b7c8e2;margin:0">'+escapeEmailHtml(pick('Jos haluat apua, vastaa tähän viestiin.','Svara på detta mejl om du behöver hjälp.','Reply to this email if you need help.'))+'</p>',
+        '<p style="color:#bccce2;font-size:14px;line-height:1.7;margin:0 0 20px">'+escapeEmailHtml(accessText)+'</p>'+
+        '<p style="margin:0 0 20px"><a href="'+escapeEmailHtml(readyUrl)+'" style="display:inline-block;border-radius:12px;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 22px;font-size:14px;font-weight:750">'+escapeEmailHtml(actionLabel)+' →</a></p>'+
+                '<p style="font-size:13px;line-height:1.7;color:#b7c8e2;margin:0">'+escapeEmailHtml(pick('Jos haluat apua, vastaa tähän viestiin.','Svara på detta mejl om du behöver hjälp.','Reply to this email if you need help.'))+'</p>',
     });
     const response=await fetch('https://api.resend.com/emails',{
       method:'POST',
