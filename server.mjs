@@ -11006,6 +11006,43 @@ app.post('/api/app/internal/setup-service-requests/:id/import', auth, ownerTraff
   }finally{setupAdminImportLocks.delete(sessionId);}
 });
 
+// Owner can prepare the bot's basic identity before personally delivering
+// credentials. This never grants access to other customers or sends email.
+app.post('/api/app/internal/setup-service-requests/:id/configure', auth, ownerTrafficOnly, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  const sessionId=String(req.params.id||'');
+  const botName=String(req.body?.botName||'').trim();
+  const greeting=String(req.body?.greeting||'').trim();
+  const botAvatar=String(req.body?.botAvatar||'robot-1').trim();
+  if(!/^cs_[A-Za-z0-9_]{10,120}$/.test(sessionId)) return res.status(400).json({error:'Virheellinen tilaus.'});
+  if(!botName||botName.length>40||/[<>]/.test(botName)||
+     !greeting||greeting.length>220||/[<>]/.test(greeting)||
+     !/^robot-(?:[1-9]|10)$/.test(botAvatar))
+    return res.status(422).json({error:'Tarkista botin nimi, tervehdys ja kuvake.'});
+  try{
+    const updated=await q(
+      `UPDATE tenants t
+          SET bot_name=$2,greeting=$3,bot_avatar=$4,
+              updated_at=NOW()
+         FROM setup_service_requests sr
+         JOIN users u ON u.id::text=sr.user_id
+        WHERE sr.session_id=$1
+          AND t.id::text=sr.tenant_id AND t.owner_user_id=u.id
+          AND sr.status IN ('received','credentials_created')
+          AND t.active=true AND u.status='active'
+          AND t.stripe_subscription_id IS NOT NULL
+          AND t.subscription_status IN ('active','trialing')
+        RETURNING t.id`,
+      [sessionId,botName,greeting,botAvatar],
+    );
+    if(!updated.rowCount) return res.status(409).json({error:'Avoin käyttöönottotilaus puuttuu tai tila ei enää salli muutoksia.'});
+    return res.json({ok:true});
+  }catch(e){
+    console.error('Manual setup bot configuration failed:',e?.message);
+    return res.status(503).json({error:'Botin asetusten tallentaminen epäonnistui.'});
+  }
+});
+
 app.get('/api/app/internal/setup-service-requests', auth, ownerTrafficOnly, async (req,res) => {
   res.set('Cache-Control','private, no-store');
   try{
@@ -11014,7 +11051,7 @@ app.get('/api/app/internal/setup-service-requests', auth, ownerTrafficOnly, asyn
     const found=await q(
       `SELECT sr.session_id,sr.website_url,sr.status,sr.created_at,sr.customer_emailed_at,
               sr.owner_emailed_at,sr.ready_emailed_at,t.name AS company_name,u.email,
-              t.bot_name,t.greeting,
+              t.bot_name,t.greeting,t.bot_avatar,
               (u.stripe_subscription_id IS NOT DISTINCT FROM t.stripe_subscription_id) AS first_workspace
          FROM setup_service_requests sr
          JOIN tenants t ON t.id::text=sr.tenant_id
