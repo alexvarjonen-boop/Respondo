@@ -7478,9 +7478,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // Broad questions such as "What do you sell?" or "Tell me about the company"
   // should use the approved knowledge base as factual memory instead of requiring
   // an exact pre-written Q&A pair.
+  // A named service is a specific subject even when its words include
+  // "palvelu"/"service". Never answer "Millaisia haalauspalveluja?" by
+  // dumping the entire unrelated service directory.
   const broadCompanyQuestion =
-    queryTopic(localQuery) === 'services' ||
-    genericCompanyQuestion(cleanMessage);
+    genericCompanyQuestion(cleanMessage) ||
+    serviceOverviewQuestion(cleanMessage) ||
+    (queryTopic(localQuery)==='services' &&
+      concreteServiceSubjectTokens(cleanMessage).length===0);
 
   if (!selected.length && broadCompanyQuestion) {
     selected = rows
