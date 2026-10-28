@@ -1,0 +1,118 @@
+/* RESPONDO OS — homepage orbit film parity, scoped to the account navigator.
+   These layers share the original homepage CSS variables and color palette. */
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-content .rs-workspace-orbit.rs-workspace-scroll-helix{
+ width:100vw!important;max-width:none!important;margin-left:calc(50% - 50vw)!important;margin-right:0!important
+}
+#app .rs-workspace-scroll-helix .rs-workspace-helix-stage{
+ background:radial-gradient(ellipse 57% 73% at 70% 46%,rgba(54,102,193,.17),transparent 79%),
+ radial-gradient(ellipse 44% 53% at 15% 91%,rgba(32,66,124,.10),transparent 85%),
+ linear-gradient(147deg,#0d1525 0%,#070b16 42%,#04060c 100%)!important;perspective:1400px
+}
+#app .rs-workspace-scroll-helix .rs-workspace-helix-stage::before{
+ background:radial-gradient(circle at 18% 22%,rgba(204,227,255,.28) 0 1px,transparent 1.6px),
+ radial-gradient(circle at 74% 15%,rgba(204,227,255,.22) 0 1px,transparent 1.8px),
+ radial-gradient(circle at 82% 76%,rgba(204,227,255,.18) 0 1px,transparent 1.8px),
+ radial-gradient(circle at 12% 74%,rgba(204,227,255,.22) 0 1px,transparent 1.8px);opacity:.6
+}
+#app .rs-workspace-scroll-helix .rs-workspace-helix-stage::after{
+ content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+ box-shadow:inset 0 0 clamp(80px,15vw,215px) rgba(1,3,10,.28),inset 0 -110px 130px -100px rgba(3,8,20,.24)
+}
+#app .rs-workspace-scroll-helix .rs-space{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;perspective:850px}
+#app .rs-workspace-scroll-helix .rs-studio-grid{
+ position:absolute;inset:-62% -58% -46%;pointer-events:none;
+ background-image:linear-gradient(rgba(149,184,240,.068) 1px,transparent 1px),linear-gradient(90deg,rgba(149,184,240,.068) 1px,transparent 1px);
+ background-size:clamp(52px,7vw,86px) clamp(52px,7vw,86px);transform-origin:50% 54%;
+ transform:perspective(900px) rotateX(64deg) rotateZ(var(--rs-grid-angle,0deg)) translate3d(0,var(--rs-grid-shift,0px),0) scale(var(--rs-grid-scale,1));
+ -webkit-mask-image:radial-gradient(ellipse 53% 43% at 58% 60%,#000 4%,transparent 92%);
+ mask-image:radial-gradient(ellipse 53% 43% at 58% 60%,#000 4%,transparent 92%);opacity:.7;will-change:transform
+}
+#app .rs-workspace-scroll-helix .rs-studio-haze{
+ position:absolute;left:60%;top:-8%;width:min(103vw,1120px);height:96%;border-radius:50%;
+ transform:translateX(-50%) scale(var(--rs-haze-scale,1));pointer-events:none;
+ background:radial-gradient(ellipse,rgba(98,149,236,.14),rgba(38,72,139,.045) 49%,transparent 73%);
+ opacity:var(--rs-haze-opacity,1)
+}
+#app .rs-workspace-scroll-helix .rs-studio-sweep{
+ position:absolute;inset:0;pointer-events:none;opacity:.25;
+ background:linear-gradient(108deg,transparent 32%,rgba(186,214,255,.065) 50%,transparent 68%);
+ transform:translateX(var(--rs-sweep-x,-85%))
+}
+#app .rs-workspace-scroll-helix .rs-space-glow{
+ position:absolute;left:59%;top:5%;width:min(93vw,1120px);height:90%;transform:translateX(-50%);
+ background:radial-gradient(ellipse at 50% 49%,rgba(91,151,251,.21),rgba(37,81,166,.06) 45%,transparent 73%)!important
+}
+#app .rs-workspace-scroll-helix .rs-space-ellipse{opacity:.3!important;border-color:rgba(158,199,255,.14)!important}
+#app .rs-workspace-scroll-helix .rs-space-ellipse-b{border-color:rgba(120,163,240,.085)!important}
+#app .rs-workspace-scroll-helix .rs-space-horizon{
+ bottom:12%;left:7%;right:7%;background:linear-gradient(90deg,transparent,rgba(141,187,255,.16),transparent)!important
+}
+#app .rs-workspace-scroll-helix .rs-kinetic-light{
+ position:absolute;z-index:0;left:50%;top:45%;width:min(73vw,520px);height:min(73vw,520px);
+ aspect-ratio:1;border-radius:50%;pointer-events:none;
+ transform:translate3d(calc(-50% + var(--rs-light-shift,0px)),-50%,0) scale(var(--rs-light-scale,1));
+ background:radial-gradient(circle at 50% 50%,rgba(102,161,247,.12) 0%,rgba(63,119,224,.085) 21%,rgba(43,82,154,.032) 44%,transparent 70%);
+ opacity:var(--rs-light-strength,.75)
+}
+#app .rs-workspace-scroll-helix .rs-studio-orbit-art{opacity:var(--rs-orbit-opacity,1)}
+#app .rs-workspace-scroll-helix .rs-studio-orbit-icon[data-rs-workspace-icon]{outline:1px solid rgba(207,229,255,.045);outline-offset:3px}
+#app .rs-workspace-scroll-helix .rs-studio-orbit-icon[data-rs-workspace-icon].is-active{outline-color:rgba(182,217,255,.30)}
+#app .rs-workspace-scroll-helix .rs-axis{
+ opacity:var(--rs-logo-opacity,.95);
+ transform:translate3d(-50%,-50%,0) rotateZ(var(--rs-arrow-turn,0deg)) scale(var(--rs-logo-scale,1))
+}
+#app .rs-workspace-scroll-helix .rs-helix-beacon{
+ position:absolute;z-index:2;top:45%;left:50%;width:min(57vw,460px);aspect-ratio:1;
+ transform:translate3d(-50%,-50%,0);pointer-events:none
+}
+#app .rs-workspace-scroll-helix .rs-helix-beacon::before{
+ content:"";position:absolute;left:50%;top:4%;width:24%;aspect-ratio:1;
+ transform:translate(-50%,-50%);border-radius:50%;
+ background:radial-gradient(circle,rgba(187,221,255,.22),rgba(103,168,255,.10) 27%,transparent 72%)
+}
+#app .rs-workspace-scroll-helix .rs-helix-beacon::after{
+ content:"";position:absolute;left:50%;top:7%;width:1px;height:34%;
+ background:linear-gradient(180deg,rgba(173,210,255,.25),rgba(125,174,247,.055) 48%,transparent);
+ transform:translateX(-50%)
+}
+#app .rs-workspace-scroll-helix .rs-helix-progress circle{stroke:#bedbff;stroke-width:.34;opacity:.85}
+@media(max-width:850px){
+ #app .rs-workspace-scroll-helix .rs-studio-grid{opacity:.47}
+ #app .rs-workspace-scroll-helix .rs-studio-haze,#app .rs-workspace-scroll-helix .rs-space-glow{left:50%}
+ #app .rs-workspace-scroll-helix .rs-studio-orbit-art,
+ #app .rs-workspace-scroll-helix .rs-helix-progress,
+ #app .rs-workspace-scroll-helix .rs-helix-beacon{top:47%;width:min(67vw,285px)}
+ #app .rs-workspace-scroll-helix .rs-axis{top:47%}
+ #app .rs-workspace-scroll-helix .rs-kinetic-light{
+  top:47%;width:min(90vw,380px);height:min(90vw,380px);
+  background:radial-gradient(circle at center,rgba(92,148,231,.095),transparent 70%)
+ }
+ #app .rs-workspace-scroll-helix .rs-helix-beacon::before{width:28%}
+ #app .rs-workspace-scroll-helix .rs-helix-beacon::after{height:29%}
+ #app .rs-workspace-scroll-helix .rs-helix-progress circle{stroke-width:.28;opacity:.64}
+}
+@media(max-height:700px){
+ #app .rs-workspace-scroll-helix .rs-studio-orbit-art,
+ #app .rs-workspace-scroll-helix .rs-helix-progress,
+ #app .rs-workspace-scroll-helix .rs-helix-beacon,
+ #app .rs-workspace-scroll-helix .rs-axis,
+ #app .rs-workspace-scroll-helix .rs-kinetic-light{top:46%}
+}
+@media(max-width:850px) and (pointer:coarse){
+ #app .rs-workspace-scroll-helix.rs-orbit-mobile-pinned .rs-studio-grid,
+ #app .rs-workspace-scroll-helix.rs-orbit-mobile-pinned .rs-studio-haze,
+ #app .rs-workspace-scroll-helix.rs-orbit-mobile-pinned .rs-studio-sweep,
+ #app .rs-workspace-scroll-helix.rs-orbit-mobile-pinned .rs-kinetic-light,
+ #app .rs-workspace-scroll-helix.rs-orbit-mobile-pinned .rs-axis{
+  transition:transform .43s cubic-bezier(.2,.75,.2,1),opacity .43s ease
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #app .rs-workspace-scroll-helix .rs-kinetic-light{display:none!important}
+ #app .rs-workspace-scroll-helix .rs-helix-beacon::before,
+ #app .rs-workspace-scroll-helix .rs-helix-beacon::after{display:none}
+ #app .rs-workspace-scroll-helix .rs-studio-grid,
+ #app .rs-workspace-scroll-helix .rs-studio-haze,
+ #app .rs-workspace-scroll-helix .rs-studio-sweep,
+ #app .rs-workspace-scroll-helix .rs-axis{transition:none!important;will-change:auto}
+}
