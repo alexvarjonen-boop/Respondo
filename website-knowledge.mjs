@@ -495,7 +495,7 @@ export function extractBusinessDocument(html, url) {
   for (const token of source.match(/<[^>]*>|[^<]+/g) || []) {
     if (token[0] !== '<') {
       if (stack.some(x => x.skip)) continue;
-      const h = stack.findLast(x => /^h[1-6]$/.test(x.tag));
+      const h = stack.findLast(x => /^(?:h[1-6]|summary)$/.test(x.tag));
       const a = stack.findLast(x => x.tag === 'a');
       if (a) a.text += token;
       if (h) h.text += token;
@@ -509,13 +509,13 @@ export function extractBusinessDocument(html, url) {
     const match = token.match(/^<\s*(\/?)\s*([a-z0-9]+)/i);
     if (!match) continue;
     const closing = !!match[1], tag = match[2].toLowerCase();
-    const boundary = /^(?:p|div|section|article|li|tr|address|h[1-6]|nav|header|footer|aside|blockquote)$/.test(tag);
+    const boundary = /^(?:p|div|section|article|li|tr|address|h[1-6]|details|summary|nav|header|footer|aside|blockquote)$/.test(tag);
     if (boundary) flush();
     if (closing) {
       const i = stack.findLastIndex(x => x.tag === tag);
       if (i < 0) continue;
       const node = stack[i];
-      if (/^h[1-6]$/.test(tag) && !node.skip) {
+      if (/^(?:h[1-6]|summary)$/.test(tag) && !node.skip) {
         heading = clean(decodeHtml(node.text));
         suppressedHeading = review.test(norm(heading)) || junk.test(norm(heading));
       }
@@ -534,7 +534,7 @@ export function extractBusinessDocument(html, url) {
       // its own fact instead of becoming e.g. "info@example.fiHallituskatu".
       if (tag === 'a' && !node.skip && (email.test(clean(decodeHtml(node.text))) || phone.test(clean(decodeHtml(node.text))))) flush();
       stack.splice(i);
-      if (tag === 'section' || tag === 'article') { heading = ''; suppressedHeading = false; }
+      if (tag === 'section' || tag === 'article' || tag === 'details') { heading = ''; suppressedHeading = false; }
       continue;
     }
     const a = attrs(token), marker = norm([a.class,a.id,a.role,a.itemprop,a['aria-label']].filter(Boolean).join(' '));
