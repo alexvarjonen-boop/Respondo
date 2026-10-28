@@ -12,10 +12,10 @@ test('v14 corrects the legacy hero CTA text sizing in all three languages', () =
   assert.ok(finish.startsWith('/* Observatory v14'));
   assert.match(finish, /\.rs-first-order-link > span:only-child\s*\{[^}]*font-size:inherit!important/s);
   assert.doesNotMatch(finish, /\.rs-first-order-link::after/);
-  for (const [lang, i, label] of [['fi', 0, 'Paketit alk. 49 €/kk'], ['sv', 1, 'Paket från 49 €/mån'], ['en', 2, 'Plans from €49/month']]) {
+  for (const [lang, i, label] of [['fi', 0, 'Kokeile bottia'], ['sv', 1, 'Testa botten'], ['en', 2, 'Try the bot']]) {
     const hero = spiralHeroMarkup((...texts) => texts[i], lang);
     assert.equal((hero.match(/class="rs-first-order-link"/g) || []).length, 1);
-    assert.match(hero, /href="#pricing"/);
+    assert.ok(hero.includes('href="/assistant?lang='+lang+'"'));
     assert.ok(hero.includes(label));
     assert.match(hero, /class="rs-first-order-link"[^>]*>\s*<span>[^<]+<\/span>\s*<\/a>/);
   }

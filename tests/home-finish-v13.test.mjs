@@ -4,10 +4,10 @@ import {readFileSync} from 'node:fs';
 import {spiralHeroMarkup} from '../public/spiral-hero.js';
 
 const read=name=>readFileSync(new URL('../public/'+name,import.meta.url),'utf8');
-test('homepage v13 uses the existing pricing anchor and preserves the ten-feature story',()=>{
+test('homepage v13 uses the localized bot demo link and preserves the ten-feature story',()=>{
  const html=spiralHeroMarkup((fi,sv,en)=>en,'en');
  assert.equal((html.match(/class="rs-first-order-link"/g)||[]).length,1);
- assert.match(html,/class="rs-first-order-link" href="#pricing"/);
+ assert.match(html,/class="rs-first-order-link" href="\/assistant\?lang=en"/);
  assert.equal((html.match(/data-rs-card\b/g)||[]).length,10);
  assert.equal((html.match(/data-rs-icon(?=\s)/g)||[]).length,10);
  assert.doesNotMatch(html,/Ask Respondo|rs-hero-demo-link/);

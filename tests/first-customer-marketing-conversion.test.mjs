@@ -4,11 +4,11 @@ import {readFileSync} from 'node:fs';
 import {spiralHeroMarkup} from '../public/spiral-hero.js';
 import {seoPricingMarkup} from '../public/seo-pricing-ssr.mjs';
 const read=p=>readFileSync(new URL('../public/'+p,import.meta.url),'utf8');
-for(const [lang,i,label] of [['fi',0,'Paketit alk. 49 €/kk'],['sv',1,'Paket från 49 €/mån'],['en',2,'Plans from €49/month']]){
-  test('first-customer homepage clearly links to pricing while preserving the orbit and removed Ask CTA '+lang,()=>{
+for(const [lang,i,label] of [['fi',0,'Kokeile bottia'],['sv',1,'Testa botten'],['en',2,'Try the bot']]){
+  test('first-customer homepage links to the public bot demo while preserving the orbit and removed Ask CTA '+lang,()=>{
     const markup=spiralHeroMarkup((...v)=>v[i],lang);
     assert.ok(markup.includes(label));
-    assert.match(markup,/class="rs-first-order-link" href="#pricing"/);
+    assert.match(markup,new RegExp('class="rs-first-order-link" href="/assistant\\?lang='+lang+'"'));
     assert.equal((markup.match(/data-rs-card\b/g)||[]).length,10);
     assert.doesNotMatch(markup,/rs-hero-talk|data-open-site-assistant|Ask Respondo|data-respondo-hero-cta/);
   });

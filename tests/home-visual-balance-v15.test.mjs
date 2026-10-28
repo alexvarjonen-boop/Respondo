@@ -29,9 +29,10 @@ test('v15 keeps a separate reading lane on tall iPhones and small devices', () =
   assert.equal(css.split('{').length,css.split('}').length);
 });
 test('v15 keeps the same localized hero, ten chapters and verified pricing contracts', () => {
-  for (const [lang,i,price] of [['fi',0,'Paketit alk. 49 €/kk'],['sv',1,'Paket från 49 €/mån'],['en',2,'Plans from €49/month']]) {
+  for (const [lang,i,cta] of [['fi',0,'Kokeile bottia'],['sv',1,'Testa botten'],['en',2,'Try the bot']]) {
     const markup = spiralHeroMarkup((...items)=>items[i],lang);
-    assert.ok(markup.includes(price));
+    assert.ok(markup.includes(cta));
+    assert.ok(markup.includes('href="/assistant?lang='+lang+'"'));
     assert.equal((markup.match(/data-rs-card\b/g)||[]).length,10);
     assert.equal((markup.match(/data-rs-icon(?=\s)/g)||[]).length,10);
     assert.doesNotMatch(markup,/Ask Respondo|Kysy Respondolta|Fråga Respondo|\+52 %/);

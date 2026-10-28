@@ -4,13 +4,13 @@ import {readFileSync} from 'node:fs';
 import {spiralHeroMarkup} from '../public/spiral-hero.js';
 import {appleHomeMarkup} from '../public/apple-home.js';
 const read=p=>readFileSync(new URL('../public/'+p,import.meta.url),'utf8');
-for(const [lang,index,price] of [
- ['fi',0,'Paketit alk. 49 €/kk'],['sv',1,'Paket från 49 €/mån'],['en',2,'Plans from €49/month']
+for(const [lang,index,cta] of [
+ ['fi',0,'Kokeile bottia'],['sv',1,'Testa botten'],['en',2,'Try the bot']
 ]){
  test('hero restored to one restrained CTA in '+lang,()=>{
   const t=(...s)=>s[index],h=spiralHeroMarkup(t,lang);
-  assert.ok(h.includes(price));
-  assert.ok(h.includes('href="#pricing"'));
+  assert.ok(h.includes(cta));
+  assert.ok(h.includes('href="/assistant?lang='+lang+'"'));
   assert.equal(h.split('class="rs-first-order-link"').length-1,1);
   assert.ok(!h.includes('rs-hero-demo-link'));
   assert.ok(!h.includes('rs-hero-actions'));
