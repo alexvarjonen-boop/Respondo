@@ -73,28 +73,16 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
   const botPage=content.querySelector('[data-workspace-page="bot"]');
   if(!botPage)return {sync:()=>{}};
   botPage.after(orb);
-  // Native iOS scroll snap checkpoints prevent a quick flick jumping straight
-  // past the 10-item sphere. They do not block scrolling elsewhere on the page.
-  const snapPoints=document.createElement('div');
-  snapPoints.className='rs-orbit-snap-points';
-  snapPoints.setAttribute('aria-hidden','true');
-  snapPoints.innerHTML=sections.map((_,i)=>
-    '<span class="rs-orbit-snap-point" data-rs-snap-index="'+i+'"></span>'
-  ).join('');
-  orb.appendChild(snapPoints);
-  const markers=[...snapPoints.querySelectorAll('.rs-orbit-snap-point')];
-  const updateSnapPoints=()=>{
-    const travel=Math.max(0,orb.getBoundingClientRect().height-window.innerHeight);
-    markers.forEach((marker,i)=>{
-      marker.style.top=(travel*i/(sections.length-1)).toFixed(1)+'px';
-    });
-  };
-  updateSnapPoints();
   const icons=[...orb.querySelectorAll('[data-rs-workspace-icon]')];
   const button=orb.querySelector('#rsOrbitOpen');
   let currentIndex=0;
   let navigateTo=navigate;
   let frame=0;
+  let pinned=false;
+  let lockY=0;
+  let previousY=window.scrollY;
+  let inhibitUntil=0;
+  let oldStyles=null;
   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
   const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
   function selectIndex(index){
@@ -113,11 +101,11 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     if(!orb.isConnected || !workspace.isConnected || workspace.hidden)return;
     const rect=orb.getBoundingClientRect();
     const viewport=Math.max(1,window.innerHeight);
-    if(rect.top>viewport || rect.bottom<0)return;
+    if(!pinned && (rect.top>viewport || rect.bottom<0))return;
     const range=Math.max(1,rect.height-viewport);
-    const progress=clamp(-rect.top/range,0,1);
+    const progress=pinned?currentIndex/(sections.length-1):clamp(-rect.top/range,0,1);
     const position=progress*(sections.length-1);
-    selectIndex(Math.round(position));
+    if(!pinned)selectIndex(Math.round(position));
     const angle=360/sections.length;
     const scale=1+.09*Math.min(1,progress*4)+Math.sin(position*.65)*.025;
     if(!reduced.matches){
@@ -131,76 +119,98 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
   function schedule(){
     if(!frame && orb.isConnected)frame=requestAnimationFrame(draw);
   }
-  // No scroll interception, time-based animation, or forced section jumps.
-  window.addEventListener('scroll',schedule,{passive:true});
-  window.addEventListener('resize',()=>{
-    updateSnapPoints();
-    schedule();
-  },{passive:true});
-  reduced.addEventListener?.('change',schedule);
 
-  // Touch input is intentionally one menu step per gesture. The Safari
-  // momentum that previously jumped from the orbit straight to the page end
-  // is suppressed only while swiping on this one full-screen sphere stage.
+  // Mobile Safari may carry a fast native flick through all ten sticky
+  // chapters. Capture entry before momentum skips the sphere; freeze only
+  // this one screen and move exactly one chapter for every finger swipe.
   const stage=orb.querySelector('.rs-workspace-helix-stage');
-  const isPhone=()=>window.matchMedia('(max-width:850px) and (pointer:coarse)').matches;
-  const scrollToChapter=(index)=>{
+  const phone=()=>window.matchMedia('(max-width:850px) and (pointer:coarse)').matches;
+  const restore=(prop,val)=>val?document.body.style.setProperty(prop,val):document.body.style.removeProperty(prop);
+  function releasePin(){
+    if(!pinned)return;
+    pinned=false;
+    orb.classList.remove('rs-orbit-mobile-pinned');
+    if(oldStyles){
+      for(const prop of ['position','top','left','right','width'])restore(prop,oldStyles[prop]);
+      if(oldStyles.htmlOverflow)document.documentElement.style.overflow=oldStyles.htmlOverflow;
+      else document.documentElement.style.removeProperty('overflow');
+      oldStyles=null;
+    }
+    window.scrollTo({top:lockY,behavior:'instant'});
+    previousY=lockY;
+    inhibitUntil=performance.now()+1000;
+  }
+  function pinSphere(){
+    if(pinned || !phone() || workspace.hidden)return;
+    lockY=Math.max(0,window.scrollY+orb.getBoundingClientRect().top);
+    pinned=true;
+    window.scrollTo({top:lockY,behavior:'instant'});
+    oldStyles={position:document.body.style.position,top:document.body.style.top,left:document.body.style.left,
+      right:document.body.style.right,width:document.body.style.width,
+      htmlOverflow:document.documentElement.style.overflow};
+    Object.assign(document.body.style,{position:'fixed',top:-lockY+'px',left:'0',right:'0',width:'100%'});
+    document.documentElement.style.overflow='hidden';
+    orb.classList.add('rs-orbit-mobile-pinned');
+    selectIndex(0);
+    schedule();
+  }
+  function exitSphere(direction){
+    releasePin();
     const top=orb.getBoundingClientRect().top+window.scrollY;
-    const distance=Math.max(0,orb.offsetHeight-window.innerHeight);
-    selectIndex(index);
-    window.scrollTo({
-      top:top+distance*index/(sections.length-1),
-      behavior:reduced.matches?'auto':'smooth'
-    });
-  };
-  const temporarilyDisableSnap=()=>{
-    document.documentElement.classList.add('rs-workspace-orbit-routing');
-    let finished=false;
-    const release=()=>{
-      if(finished)return;
-      finished=true;
-      document.documentElement.classList.remove('rs-workspace-orbit-routing');
-      window.removeEventListener('scrollend',release);
-    };
-    window.addEventListener('scrollend',release,{once:true});
-    window.setTimeout(release,1300);
-  };
-  let touchStart=null;
+    const dest=direction<0?Math.max(0,top-Math.max(170,innerHeight*.8)):top+orb.offsetHeight+12;
+    window.scrollTo({top:dest,behavior:'instant'});
+    previousY=dest;
+  }
+  function moveSection(direction){
+    const next=currentIndex+direction;
+    if(next<0 || next>=sections.length)return exitSphere(direction);
+    selectIndex(next);
+    schedule();
+  }
+  function onPageScroll(){
+    schedule();
+    const y=window.scrollY;
+    if(pinned || !phone() || !orb.isConnected || workspace.hidden){previousY=y;return;}
+    const top=orb.getBoundingClientRect().top+y;
+    const end=top+orb.offsetHeight;
+    const entersFromTop=y>previousY+1 && previousY<top && y>=top-innerHeight*.55;
+    const entersFromBottom=y<previousY-1 && previousY>=end && y<=end+innerHeight*.3;
+    previousY=y;
+    if(performance.now()>inhibitUntil && (entersFromTop || entersFromBottom))pinSphere();
+  }
+  window.addEventListener('scroll',onPageScroll,{passive:true});
+  window.addEventListener('resize',schedule,{passive:true});
+  reduced.addEventListener?.('change',schedule);
+  window.addEventListener('pagehide',releasePin,{once:true});
+  let startTouch=null;
   stage.addEventListener('touchstart',(event)=>{
-    if(!isPhone() || event.touches.length!==1){touchStart=null;return;}
-    touchStart={x:event.touches[0].clientX,y:event.touches[0].clientY};
+    if(!pinned || event.touches.length!==1){startTouch=null;return;}
+    startTouch={x:event.touches[0].clientX,y:event.touches[0].clientY};
   },{passive:true});
   stage.addEventListener('touchmove',(event)=>{
-    if(!touchStart || event.touches.length!==1)return;
-    const dx=event.touches[0].clientX-touchStart.x;
-    const dy=event.touches[0].clientY-touchStart.y;
-    if(Math.abs(dy)>8 && Math.abs(dy)>Math.abs(dx) && event.cancelable)event.preventDefault();
+    if(pinned && startTouch && event.cancelable)event.preventDefault();
   },{passive:false});
   stage.addEventListener('touchend',(event)=>{
-    if(!touchStart || !isPhone())return;
-    const point=event.changedTouches[0];
-    const dx=point.clientX-touchStart.x,dy=point.clientY-touchStart.y;
-    touchStart=null;
-    if(Math.abs(dy)<38 || Math.abs(dy)<Math.abs(dx)*1.2)return;
+    if(!pinned || !startTouch)return;
+    const finger=event.changedTouches[0];
+    const dx=finger.clientX-startTouch.x,dy=finger.clientY-startTouch.y;
+    startTouch=null;
+    if(Math.abs(dy)<30 || Math.abs(dy)<Math.abs(dx)*1.2)return;
     if(event.cancelable)event.preventDefault();
-    const next=currentIndex+(dy<0?1:-1);
-    if(next>=0 && next<sections.length){
-      scrollToChapter(next);
-    }else{
-      // Swiping beyond the first/last section exits normally into the chat
-      // or the content below the sphere; users are never locked in the menu.
-      temporarilyDisableSnap();
-      const orbitTop=orb.getBoundingClientRect().top+window.scrollY;
-      const target=next<0
-        ?Math.max(0,orbitTop-Math.max(180,window.innerHeight*.7))
-        :orbitTop+orb.offsetHeight+12;
-      window.scrollTo({top:target,behavior:reduced.matches?'auto':'smooth'});
-    }
+    moveSection(dy<0?1:-1);
   },{passive:false});
-  stage.addEventListener('touchcancel',()=>{touchStart=null;},{passive:true});
-
+  stage.addEventListener('touchcancel',()=>{startTouch=null;},{passive:true});
+  let lastWheel=0;
+  stage.addEventListener('wheel',(event)=>{
+    if(!pinned || Math.abs(event.deltaY)<8)return;
+    if(event.cancelable)event.preventDefault();
+    const now=performance.now();
+    if(now-lastWheel<450)return;
+    lastWheel=now;
+    moveSection(event.deltaY>0?1:-1);
+  },{passive:false});
   button.addEventListener('click',()=>{
-    temporarilyDisableSnap();
+    releasePin();
     const section=sections[currentIndex];
     navigateTo(section.id);
     requestAnimationFrame(()=>{

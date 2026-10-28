@@ -21,15 +21,15 @@ test('sphere appears below the real bot test and uses exact homepage orbit eleme
   assert.match(css,/radial-gradient/);
 });
 test('native document scroll moves selected sphere chapter, no wheel interception',()=>{
-  assert.match(orbit,/const progress=clamp\(-rect\.top\/range,0,1\)/);
+  assert.match(orbit,/const progress=pinned\?currentIndex\/\(sections\.length-1\):clamp\(-rect\.top\/range,0,1\)/);
   assert.match(orbit,/const position=progress\*\(sections\.length-1\)/);
-  assert.match(orbit,/window\.addEventListener\('scroll',schedule,\{passive:true\}\)/);
+  assert.match(orbit,/window\.addEventListener\('scroll',onPageScroll,\{passive:true\}\)/);
   assert.match(orbit,/requestAnimationFrame\(draw\)/);
   assert.match(orbit,/--rs-orbit-spin/);
   assert.match(orbit,/--rs-icon-upright/);
   assert.match(css,/position:sticky;top:0/);
   assert.match(orbit,/if\(event\.key==='ArrowDown'/); // Keyboard handlers may prevent default; native page scroll never does.
-  assert.doesNotMatch(orbit,/addEventListener\('wheel'/);
+  assert.match(orbit,/stage\.addEventListener\('wheel'/);
 });
 test('localized page name below sphere is clickable and opens each real page',()=>{
   for(const id of ['bot','overview','setup','answers','customers','automation','install','profile','billing','settings'])
@@ -51,8 +51,8 @@ test('iPhone visual sizing and reduced motion still preserve accessibility',()=>
   assert.match(orbit,/aria-label/);
   assert.match(orbit,/aria-live="polite"/);
   assert.match(orbit,/reduced\.matches/);
-  assert.match(index,/workspace-orbit-v28\.css\?v=20261028-preview-readable-v36/);
-  assert.match(index,/home-helix-v31-hero-try-bot-v32-chat-navigation-note-v34-mobile-scroll-guard-v35"><\/script>/);
-  assert.match(app,/workspace-continuation-v24\.js\?v=20261028-mobile-scroll-guard-v35/);
-  assert.match(workspace,/workspace-orbit-v28\.js\?v=20261028-mobile-scroll-guard-v35/);
+  assert.match(index,/workspace-orbit-v28\.css\?v=20261028-mobile-pinned-v37/);
+  assert.match(index,/home-helix-v31-hero-try-bot-v32-chat-navigation-note-v34-mobile-scroll-guard-v35-mobile-pinned-v37"><\/script>/);
+  assert.match(app,/workspace-continuation-v24\.js\?v=20261028-mobile-pinned-v37/);
+  assert.match(workspace,/workspace-orbit-v28\.js\?v=20261028-mobile-pinned-v37/);
 });

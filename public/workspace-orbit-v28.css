@@ -421,28 +421,26 @@
   #app .rs-workspace-scroll-helix .rs-studio-orbit-icon{transform:translate(-50%,-50%)}
 }
 
-/* V35 — iOS full-screen orbit must hold each section instead of allowing a
-   single inertial flick to jump past the whole sphere to the page footer. */
-@media(max-width:850px) {
-  html:has(#app .dashboard-premium-shell.respondo-workspace-active .rs-workspace-scroll-helix):not(.rs-workspace-orbit-routing) {
-    scroll-snap-type:y proximity;
-  }
-  #app .dashboard-premium-shell.respondo-workspace-active .rs-workspace-scroll-helix .rs-workspace-helix-stage {
-    touch-action:pan-x pinch-zoom;
-  }
-  #app .dashboard-premium-shell.respondo-workspace-active .rs-workspace-scroll-helix .rs-orbit-snap-points {
-    position:absolute;inset:0;z-index:0;pointer-events:none;
-  }
-  #app .dashboard-premium-shell.respondo-workspace-active .rs-workspace-scroll-helix .rs-orbit-snap-point {
-    position:absolute;left:0;width:1px;height:1px;
-    pointer-events:none;scroll-snap-align:start;scroll-snap-stop:always;
-  }
-}
-/* The section name is already a complete tap target; don't add an iOS emoji arrow. */
-#app .rs-workspace-scroll-helix .rs-helix-open {
-  gap:0;
-}
 
+/* V37: genuine pinned mobile sections. No oversized inertial scroll track. */
+@media(max-width:850px){
+ html:has(#app .respondo-workspace-active .rs-workspace-scroll-helix){scroll-snap-type:none!important}
+ #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-content .rs-workspace-orbit.rs-workspace-scroll-helix{
+   height:100svh!important;min-height:460px!important;margin-top:20px!important;
+ }
+ #app .dashboard-premium-shell.respondo-workspace-active .rs-workspace-scroll-helix.rs-orbit-mobile-pinned .rs-workspace-helix-stage{
+   position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;
+   min-height:0!important;z-index:99998!important;touch-action:none!important;
+   overscroll-behavior:contain!important;
+ }
+ #app .rs-workspace-scroll-helix.rs-orbit-mobile-pinned .rs-studio-orbit-art{
+   transition:transform .43s cubic-bezier(.2,.75,.2,1);
+ }
+ #app .rs-workspace-scroll-helix.rs-orbit-mobile-pinned .rs-studio-orbit-icon[data-rs-workspace-icon]{
+   transition:transform .43s cubic-bezier(.2,.75,.2,1),opacity .22s ease;
+ }
+}
+#app .rs-workspace-scroll-helix .rs-helix-open{gap:0}
 /* V36 — the post-setup preview is an actual chat, never a white document card.
    A single verified response must remain legible on iPhone without stretching
    the whole page or changing the user's selected bot avatar. */
