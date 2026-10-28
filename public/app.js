@@ -3343,6 +3343,7 @@ function setupOrderConfirmation() {
 
 function login() {
   const loginParams = new URLSearchParams(location.search);
+  const initialSetupPassword = loginParams.get('setup') === '1' && Boolean(loginParams.get('reset'));
   const checkoutError = loginParams.get('checkout_error') === '1';
   const passwordResetDone = loginParams.get('password_reset') === '1';
   return `<div>
@@ -3373,9 +3374,9 @@ function login() {
             : `<a class="password-reset-link" href="mailto:${esc(cfg.supportEmail)}?subject=${encodeURIComponent('Salasanan palautus / Respondo AI')}">${appText('Unohtuiko salasana? Ota yhteyttä tukeen.','Glömt lösenordet? Kontakta supporten.','Forgot password? Contact support.')}</a>`}
           <div id="passwordResetConfirmPanel" hidden>
             <div class="agent-login-fields">
-              <div class="field"><label for="resetNewPassword">${appText('Uusi salasana','Nytt lösenord','New password')}</label><input id="resetNewPassword" type="password" autocomplete="new-password" minlength="10" maxlength="200"></div>
+              <div class="field"><label for="resetNewPassword">${initialSetupPassword ? appText('Luo salasana Respondo-tilillesi','Skapa lösenord till ditt Respondo-konto','Create your Respondo password') : appText('Uusi salasana','Nytt lösenord','New password')}</label><input id="resetNewPassword" type="password" autocomplete="new-password" minlength="10" maxlength="200"></div>
               <div class="field"><label for="resetConfirmPassword">${appText('Uusi salasana uudelleen','Upprepa nytt lösenord','Repeat new password')}</label><input id="resetConfirmPassword" type="password" autocomplete="new-password" minlength="10" maxlength="200"></div>
-              <button class="btn checkout-button" type="button" id="confirmPasswordReset">${appText('Tallenna uusi salasana','Spara nytt lösenord','Save new password')} →</button>
+              <button class="btn checkout-button" type="button" id="confirmPasswordReset">${initialSetupPassword ? appText('Ota tili käyttöön','Aktivera konto','Activate account') : appText('Tallenna uusi salasana','Spara nytt lösenord','Save new password')} →</button>
               <div id="passwordResetConfirmMsg" role="status" aria-live="polite"></div>
             </div>
           </div>
