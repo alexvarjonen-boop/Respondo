@@ -514,3 +514,38 @@
     transition:none!important;
   }
 }
+
+/* V34: one clear site-navigation hint near the homepage's only CTA. */
+#app .apple-home-page .rs-spiral-heading .rs-chat-navigation-note{
+  display:block;
+  width:min(100%,440px);
+  margin:13px 0 0;
+  color:#aebfd8!important;
+  -webkit-text-fill-color:#aebfd8!important;
+  font-size:12px!important;
+  font-weight:500;
+  line-height:1.5!important;
+  letter-spacing:0;
+  text-wrap:pretty;
+}
+@media(max-width:1099px){
+  #app .apple-home-page .rs-spiral-heading .rs-chat-navigation-note{
+    margin:12px auto 0;
+    text-align:center;
+  }
+}
+@media(max-width:600px){
+  #app .apple-home-page .rs-spiral-heading .rs-chat-navigation-note{
+    width:min(100%,330px);
+    margin:9px auto 0;
+    padding:0 4px;
+    font-size:11px!important;
+    line-height:1.45!important;
+  }
+}
+@media(max-width:600px) and (max-height:700px){
+  #app .apple-home-page .rs-spiral-heading .rs-chat-navigation-note{
+    font-size:10px!important;
+    margin-top:6px;
+  }
+}

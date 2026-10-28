@@ -44,7 +44,7 @@ test('index busts Safari assets, including both nested ES module imports',()=>{
    const assetUrl=html.slice(start,html.indexOf('"',start));
    if(asset==='app.js'){
      assert.ok(assetUrl.includes('-dashboard-entry-v1-all-sections-v3-first-viewport-v4'),asset);
-     assert.ok(assetUrl.includes('-first-screen-actions-v5') && assetUrl.includes('-dashboard-brand-v7') && assetUrl.includes('-dashboard-ui-v9') && assetUrl.includes('-polish-v11') && assetUrl.includes('-hero-clarity-v17') && assetUrl.includes('-footer-rights-v18') && assetUrl.includes('-demo-v21-guided-prod-v22-public-demo-wizard-v23') && assetUrl.endsWith('-dark-workspace-v24-minimal-v26-orbit-after-chat-v29-qa-on-demand-v30-home-helix-v31-hero-try-bot-v32'),asset);
+     assert.ok(assetUrl.includes('-first-screen-actions-v5') && assetUrl.includes('-dashboard-brand-v7') && assetUrl.includes('-dashboard-ui-v9') && assetUrl.includes('-polish-v11') && assetUrl.includes('-hero-clarity-v17') && assetUrl.includes('-footer-rights-v18') && assetUrl.includes('-demo-v21-guided-prod-v22-public-demo-wizard-v23') && assetUrl.endsWith('-dark-workspace-v24-minimal-v26-orbit-after-chat-v29-qa-on-demand-v30-home-helix-v31-hero-try-bot-v32-chat-navigation-note-v34'),asset);
    } else assert.ok(assetUrl.endsWith('-mobile-simplify-v9'),asset);
  }
  assert.ok(read('app.js').includes('-mobile-simplify-v9'));
