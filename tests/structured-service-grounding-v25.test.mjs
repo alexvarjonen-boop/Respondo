@@ -51,6 +51,12 @@ test('Service schema can answer a narrow approved question with actual published
   assert.equal(answer.handoff,false,JSON.stringify(answer));
   assert.match(answer.answer,/hydraulisilla siirtolaitteilla/i);
   assert.ok(answer.sourceIds.length>0);
+
+  const specific=await generateGroundedAnswer({rows,companyName:'Teollisuus Oy',
+    message:'Millaisia haalauspalveluja teillä on?',lang:'fi'});
+  assert.equal(specific.handoff,false,JSON.stringify(specific));
+  assert.match(specific.answer,/hydraulisilla siirtolaitteilla/i);
+  assert.doesNotMatch(specific.answer,/Palveluihimme kuuluvat:/);
 });
 
 test('product, unrelated provider, review and legal page schemas never create business services',()=>{
