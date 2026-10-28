@@ -54,3 +54,12 @@ test('direct mobile icon taps reveal their real panel and wheel exits at the dia
   assert.match(orbit,/revealMobileSection\(\);return/);
   assert.match(orbit,/index===sections\.length-1&&delta>0/);
 });
+
+test('rotating orbital icons remain upright and phone vertical swipes scroll normally',()=>{
+  assert.match(css,/touch-action:pan-y/);
+  assert.match(css,/rotate\(calc\(var\(--orbit-angle\) \+ var\(--orbit-turn/);
+  assert.match(css,/rotate\(calc\(var\(--orbit-counter\) - var\(--orbit-turn/);
+  assert.match(css,/transition:transform \.52s/);
+  assert.match(orbit,/Math\.abs\(dx\)>32 && Math\.abs\(dx\)>Math\.abs\(dy\)\*1\.35/);
+  assert.doesNotMatch(orbit,/move\(\(Math\.abs\(dy\)>Math\.abs\(dx\)/);
+});

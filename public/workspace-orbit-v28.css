@@ -28,7 +28,7 @@
 #app .rs-workspace-orbit .rs-orbit-dial {
   --rs-orbit-radius:117px;
   position:relative;flex:0 0 auto;width:292px;height:292px;max-width:100%;
-  border-radius:50%;isolation:isolate;outline:none;touch-action:none;
+  border-radius:50%;isolation:isolate;outline:none;touch-action:pan-y;
   user-select:none;-webkit-user-select:none;cursor:grab;
 }
 #app .rs-workspace-orbit .rs-orbit-dial:active {cursor:grabbing}
@@ -84,8 +84,8 @@
   border-radius:50%!important;border:1px solid rgba(143,171,211,.3)!important;
   background:#171d28!important;color:#b7c7dc!important;
   -webkit-text-fill-color:#b7c7dc!important;box-shadow:0 8px 18px rgba(0,0,0,.22);
-  transform:translate(-50%,-50%) rotate(var(--orbit-angle)) translateY(calc(-1 * var(--rs-orbit-radius))) rotate(var(--orbit-counter));
-  transition:color .22s ease,background .22s ease,border-color .22s ease,box-shadow .22s ease,scale .22s ease;
+  transform:translate(-50%,-50%) rotate(calc(var(--orbit-angle) + var(--orbit-turn, 0deg))) translateY(calc(-1 * var(--rs-orbit-radius))) rotate(calc(var(--orbit-counter) - var(--orbit-turn, 0deg)));
+  transition:transform .52s cubic-bezier(.2,.76,.2,1),color .22s ease,background .22s ease,border-color .22s ease,box-shadow .22s ease,scale .22s ease;
   cursor:pointer;
 }
 #app .rs-workspace-orbit .rs-orbit-point svg {

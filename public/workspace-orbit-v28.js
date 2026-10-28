@@ -119,8 +119,9 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     const touch=event.changedTouches[0];
     if(!touch)return;
     const dx=touch.clientX-touchStart.x,dy=touch.clientY-touchStart.y;
-    if(Math.max(Math.abs(dx),Math.abs(dy))>28&&performance.now()-touchStart.time<1250){
-      move((Math.abs(dy)>Math.abs(dx)?dy:dx)<0?1:-1);
+    // Horizontal swipes choose sections; vertical swipes must keep native page scrolling.
+    if(Math.abs(dx)>32 && Math.abs(dx)>Math.abs(dy)*1.35 && performance.now()-touchStart.time<1250){
+      move(dx<0?1:-1);
     }
     touchStart=null;
   },{passive:true});
