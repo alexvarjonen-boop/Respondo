@@ -11059,6 +11059,10 @@ app.post('/api/app/internal/setup-service-requests/:id/credentials', auth, owner
     );
     if(!found.rowCount) { await client.query('ROLLBACK'); return res.status(404).json({error:'Maksettua käyttöönottotilausta ei löytynyt.'}); }
     const job=found.rows[0];
+    if(String(job.user_id)===String(req.user.sub)) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({error:'Omistajatilin omia kirjautumistietoja ei voi muuttaa tästä.'});
+    }
     if(!['received','credentials_created'].includes(job.status) ||
        job.user_status!=='active' || job.tenant_active!==true ||
        !['active','trialing'].includes(job.subscription_status) ||
@@ -11086,7 +11090,7 @@ app.post('/api/app/internal/setup-service-requests/:id/credentials', auth, owner
       'UPDATE users SET email=$1,password_hash=$2,session_version=session_version+1,updated_at=NOW() WHERE id=$3',
       [email,passwordHash,job.user_id],
     );
-    await client.query('UPDATE tenants SET contact_email=$1,updated_at=NOW() WHERE id=$2',[email,job.tenant_id]);
+    // The login address is not the public customer-service contact address.
     await client.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL',[job.user_id]);
     await client.query("UPDATE setup_service_requests SET status='credentials_created',updated_at=NOW() WHERE session_id=$1",[sessionId]);
     await client.query('COMMIT');
