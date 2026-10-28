@@ -4974,6 +4974,16 @@ async function dashboard(options = {}) {
           <div id="accountPasswordMsg"></div>
         </form>
       </section>
+      ${!isDemo && me.respondo_setup_admin ? `
+      <section class="panel dashboard-view-section dashboard-view-hidden setup-service-admin-panel" data-dashboard-view="account" id="setup-service-admin">
+        <div class="panel-head">
+          <div><small>${appText('RESPONDON KÄYTTÖÖNOTTOTYÖT','RESPONDOS INSTALLATIONER','RESPONDO SETUP REQUESTS')}</small>
+          <h2>${appText('Tilatut käyttöönottopalvelut','Beställda installationer','Purchased setup services')}</h2>
+          <p>${appText('Tarkista verkkosivu ja viimeistele botti ennen kuin merkitset työn valmiiksi. Valmiiksi merkitseminen lähettää asiakkaalle sähköpostin kirjautumisohjeineen.','Granska webbplatsen och färdigställ botten innan du markerar jobbet som klart. Ett bekräftelsemejl skickas då till kunden.','Review the website and finish the bot before marking the job ready. The customer then receives an email with login instructions.')}</p></div>
+          <button class="btn ghost" type="button" id="refreshSetupServiceJobs">${appText('Päivitä','Uppdatera','Refresh')}</button>
+        </div>
+        <div id="setupServiceAdminList" aria-live="polite"></div>
+      </section>` : ''}
     </main>
   </div>`;
 }
@@ -6266,6 +6276,47 @@ async function route() {
   }
 
   if (path === '/app') {
+    const setupJobs=$('#setupServiceAdminList');
+    const refreshSetupJobs=async()=>{
+      if(!setupJobs)return;
+      setupJobs.textContent=appText('Haetaan käyttöönottotöitä…','Hämtar installationer…','Loading setup jobs…');
+      try{
+        const result=await api('/api/app/internal/setup-service-requests');
+        const requests=Array.isArray(result.requests)?result.requests:[];
+        setupJobs.innerHTML=requests.length?requests.map((job)=>{
+          const done=job.status==='ready' && job.ready_emailed_at;
+          return '<article class="setup-service-admin-job">'+
+            '<div><strong>'+esc(job.company_name||'')+'</strong>'+
+            '<a href="'+esc(job.website_url||'')+'" rel="noopener noreferrer" target="_blank">'+esc(job.website_url||'')+'</a>'+
+            '<small>'+esc(job.email||'')+'</small>'+
+            '<small>'+esc(done?appText('Valmis · vahvistus lähetetty','Klar · bekräftelse skickad','Ready · email sent'):appText('Odottaa käyttöönottoa','Väntar på installation','Awaiting setup'))+'</small></div>'+
+            (done?'':'<button type="button" class="btn dashboard-action" data-setup-ready="'+esc(job.session_id||'')+'">'+appText('Merkitse valmiiksi','Markera som klar','Mark as ready')+'</button>')+
+          '</article>';
+        }).join(''):'<p>'+appText('Ei käyttöönottotilauksia.','Inga installationsbeställningar.','No setup requests yet.')+'</p>';
+      }catch(error){
+        setupJobs.textContent=error.message||appText('Töiden lataus epäonnistui.','Det gick inte att läsa in jobben.','Could not load setup jobs.');
+      }
+    };
+    $('#refreshSetupServiceJobs')?.addEventListener('click',refreshSetupJobs);
+    setupJobs?.addEventListener('click',async(e)=>{
+      const button=e.target.closest('button[data-setup-ready]');
+      if(!button)return;
+      const proceed=window.confirm(appText(
+        'Onko tämän yrityksen botti oikeasti valmis tarkistettavaksi? Asiakkaalle lähetetään sähköposti.',
+        'Är botten färdig att granskas? Ett mejl skickas till kunden.',
+        'Is this bot really ready for review? The customer will receive an email.'
+      ));
+      if(!proceed)return;
+      button.disabled=true;
+      try{
+        await api('/api/app/internal/setup-service-requests/'+encodeURIComponent(button.dataset.setupReady)+'/ready',{method:'POST',body:'{}'});
+        await refreshSetupJobs();
+      }catch(error){
+        button.disabled=false;
+        window.alert(error.message||appText('Viestiä ei voitu lähettää.','Det gick inte att skicka mejlet.','Could not send the email.'));
+      }
+    });
+    if(setupJobs) refreshSetupJobs();
     const premiumMoreButton = $('#premiumMobileMoreButton');
     const premiumMoreSheet = $('#premiumMobileMoreSheet');
     const closePremiumMore = (restoreFocus=false) => {
