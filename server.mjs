@@ -1029,7 +1029,7 @@ async function notifySetupServiceAfterCheckout(session) {
         '<p style="color:#fff;font-size:15px;line-height:1.5;overflow-wrap:anywhere;margin:0">'+escapeEmailHtml(website)+'</p></div>'+
         '<p style="color:#d0d8e5;font-size:14px;line-height:1.75;margin:0 0 24px">'+escapeEmailHtml(loginInstructions)+'</p>'+
         (session.metadata?.additional_workspace==='1'?'<p style="margin:0 0 24px"><a href="'+escapeEmailHtml(BASE+'/kirjaudu')+'" style="display:inline-block;border-radius:12px;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 22px;font-size:14px;font-weight:750">'+escapeEmailHtml(pick('Avaa kirjautuminen','Öppna inloggning','Open sign in'))+' →</a></p>':'')+
-        '<p style="color:#aebbd0;font-size:13px;line-height:1.7;margin:0">'+escapeEmailHtml(pick('Jos sinulla on kysyttävää, vastaa tähän viestiin.','Svara på detta mejl om du har frågor.','Reply to this email if you have any questions.'))+'</p>',
+        '<p style="color:#aebbd0;font-size:13px;line-height:1.7;margin:0">'+escapeEmailHtml(pick('Tämä on automaattinen vahvistusviesti. Kysymykset: info@respondoai.fi','Detta är en automatisk bekräftelse. Frågor: info@respondoai.fi','This is an automated confirmation. Questions: info@respondoai.fi'))+'</p>',
     });
     const send=async({to,subject,content,replyTo})=>{
       const payload={from:'Respondo AI <info@respondoai.fi>',to:[to],subject,html:content};
@@ -1043,7 +1043,7 @@ async function notifySetupServiceAfterCheckout(session) {
     };
     if(!customerSent) {
       try{
-        await send({to:account.email,subject:title,content:html,replyTo:'info@respondoai.fi'});
+        await send({to:account.email,subject:title,content:html});
         await client.query('UPDATE setup_service_requests SET customer_emailed_at=NOW(),updated_at=NOW() WHERE session_id=$1',[sessionId]);
         customerSent=true;
       }catch(e){console.error('Setup acknowledgement delivery failed:',e?.message);}
