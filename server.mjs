@@ -7779,7 +7779,7 @@ function agentOrOwner(req,res,next) {
   next();
 }
 
-async function ownerTrafficOnly(req, res, next) {
+async async function ownerTrafficOnly(req, res, next) {
   const ownerEmail = cleanEmail(process.env.OWNER_EMAIL || process.env.SUPPORT_EMAIL);
   if (!ownerEmail || req.user?.role === 'agent' || !req.user?.sub) {
     return res.status(403).json({ error: 'Tämä näkymä on vain Respondo AI:n omistajalle.' });
