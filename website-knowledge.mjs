@@ -54,7 +54,7 @@ const labels = {
   services:'Palvelut', pricing:'Hinnat', hours:'Aukioloajat', contact:'Yhteystiedot', quote:'Tarjouspyyntö',
   delivery:'Toimitus ja seuranta', returns:'Palautukset ja vaihdot', warranty:'Takuu', payment:'Maksaminen',
   materials:'Materiaalit', quality:'Laatu ja valmistus', care:'Hoito-ohjeet', sizing:'Koot ja mitat',
-  location:'Sijainti ja myymälät', faq:'Usein kysytyt', catalog:'Verkkokauppa'
+  location:'Sijainti ja myymälät', faq:'Usein kysytyt', catalog:'Verkkokauppa', details:'Yrityksen tiedot'
 };
 const keywords = {
   services:['palvelut','teette','services','tjänster'],
@@ -495,7 +495,7 @@ export function extractBusinessDocument(html, url) {
   for (const token of source.match(/<[^>]*>|[^<]+/g) || []) {
     if (token[0] !== '<') {
       if (stack.some(x => x.skip)) continue;
-      const h = stack.findLast(x => /^h[1-6]$/.test(x.tag));
+      const h = stack.findLast(x => /^(?:h[1-6]|summary)$/.test(x.tag));
       const a = stack.findLast(x => x.tag === 'a');
       if (a) a.text += token;
       if (h) h.text += token;
@@ -509,13 +509,13 @@ export function extractBusinessDocument(html, url) {
     const match = token.match(/^<\s*(\/?)\s*([a-z0-9]+)/i);
     if (!match) continue;
     const closing = !!match[1], tag = match[2].toLowerCase();
-    const boundary = /^(?:p|div|section|article|li|tr|address|h[1-6]|nav|header|footer|aside|blockquote)$/.test(tag);
+    const boundary = /^(?:p|div|section|article|li|tr|address|h[1-6]|details|summary|nav|header|footer|aside|blockquote)$/.test(tag);
     if (boundary) flush();
     if (closing) {
       const i = stack.findLastIndex(x => x.tag === tag);
       if (i < 0) continue;
       const node = stack[i];
-      if (/^h[1-6]$/.test(tag) && !node.skip) {
+      if (/^(?:h[1-6]|summary)$/.test(tag) && !node.skip) {
         heading = clean(decodeHtml(node.text));
         suppressedHeading = review.test(norm(heading)) || junk.test(norm(heading));
       }
@@ -534,7 +534,7 @@ export function extractBusinessDocument(html, url) {
       // its own fact instead of becoming e.g. "info@example.fiHallituskatu".
       if (tag === 'a' && !node.skip && (email.test(clean(decodeHtml(node.text))) || phone.test(clean(decodeHtml(node.text))))) flush();
       stack.splice(i);
-      if (tag === 'section' || tag === 'article') { heading = ''; suppressedHeading = false; }
+      if (tag === 'section' || tag === 'article' || tag === 'details') { heading = ''; suppressedHeading = false; }
       continue;
     }
     const a = attrs(token), marker = norm([a.class,a.id,a.role,a.itemprop,a['aria-label']].filter(Boolean).join(' '));
@@ -749,6 +749,30 @@ function physicalAddressFragments(value) {
   return out;
 }
 
+// Broader website coverage without importing a site's navigation, blog,
+// employee cards, policy promises or legal text as customer-facing truth.
+// Only literal, complete paragraphs beneath a meaningful heading qualify.
+function supplementalCompanyDetail(block,docUrl){
+  const heading=clean(block?.heading);
+  const answer=clean(block?.text);
+  if(!heading || heading.length<4 || heading.length>95 ||
+     answer.length<42 || answer.length>900 || answer.split(/\s+/).length<7) return null;
+  if(junk.test(heading) || junk.test(answer) || review.test(heading+' '+answer) ||
+     billingAddressNoise.test(heading+' '+answer) ||
+     manufacturerContactContext(heading) || manufacturerContactContext(answer)) return null;
+  // Never mistake a site-wide navigation label or SEO slogan for factual copy.
+  if(/^(?:home|etusivu|meistä|meista|about|about us|welcome|tervetuloa|our company|yritys|company|read more|lue lisää|contact us|ota yhteyttä|learn more|our story)$/i.test(heading)) return null;
+  if(/(?:asiakaskokemus|asiakasarvostel|testimonial|jätä arvostelu|lue lisää|read more|click here|klikkaa tästä|tilaa uutiskirje|subscribe|evästeet|cookies)/i.test(answer)) return null;
+  if(/^(?:https?:\/\/|\d+[.,]?\d*\s*(?:€|eur|kr|\$|£))/i.test(answer)) return null;
+  // Company-specific pages describing past projects or recruiting are not
+  // evidence of current offerings; those are excluded separately by URL.
+  try {
+    const path=new URL(docUrl).pathname;
+    if(/\/(?:blogs?|articles?|news|uutiset?|ajankohtaista|referenssit?|references?|projects?|projektit|case-studies|careers?|rekrytointi|tyopaikat|team|henkilosto|author|category|tag)(?:\/|$)/i.test(path)) return null;
+  } catch { return null; }
+  return {heading,answer};
+}
+
 export function essentialWebsiteCandidates(bundle) {
   const out = [], seen = new Set();
   const rawCatalogProducts=Array.isArray(bundle?.products)?bundle.products:[];
@@ -865,7 +889,15 @@ export function essentialWebsiteCandidates(bundle) {
       }
 
       const kind = businessFactKind(block.text,block.heading);
-      if (!kind) continue;
+      if (!kind) {
+        // The old extractor dropped all non-dictionary facts. This lost
+        // customer answers about equipment, certifications, processes,
+        // delivery areas and custom B2B requirements for whole industries.
+        const detail=supplementalCompanyDetail(block,doc.url);
+        if(detail && !productDetailDoc && !registryDoc)
+          add('details',detail.heading,detail.answer,doc.url);
+        continue;
+      }
       if(manufacturerContext && (kind==='contact' || kind==='location')) continue;
       if(kind==='pricing' && recoveredPriceIndexes.has(blockIndex)) continue;
       // Product pages are imported as complete product records. Do not create a
@@ -1263,6 +1295,10 @@ export function usableWebsiteRow(row) {
   const sourceType=String(row.source_type || row.sourceType || '');
   if (!['website','demo_import'].includes(sourceType)) return true;
   if (['Tarjouspyyntölomake','Tuotekatalogi','Yhteydenottolomake','Yhteydenottosivu'].includes(row.title)) return !!httpUrl(row.answer);
+  if (row.category==='Yrityksen tiedot') return Boolean(
+    httpUrl(row.source_url||row.sourceUrl) &&
+    supplementalCompanyDetail({heading:row.title,text:row.answer},row.source_url||row.sourceUrl)
+  );
   const serviceTitle=String(row.title||'').match(/^Palvelut\s*:\s*(.+)$/i);
   if (
     serviceTitle &&
