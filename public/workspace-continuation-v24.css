@@ -145,3 +145,231 @@
     padding-top:18px!important;
   }
 }
+
+
+/* V26: force a single header. The old drawer's 4-class selectors otherwise
+   override the v24 header hide and cause the extra white bar on iPhone. */
+#app .dashboard-premium-shell.respondo-workspace-active > .dashboard-simple-main > .dashboard-topbar,
+#app .dashboard-premium-shell.respondo-workspace-active > .dashboard-simple-main > .dashboard-topbar.dashboard-has-drawer,
+#app .dashboard-premium-shell.respondo-workspace-active > .dashboard-simple-main > .dashboard-topbar.demo-sticky-topbar.dashboard-has-drawer,
+#app .dashboard-premium-shell.respondo-workspace-active .dashboard-return-home,
+#app .dashboard-premium-shell.respondo-workspace-active .ios-workspace-tabs,
+#app .dashboard-premium-shell.respondo-workspace-active .dashboard-page-heading {
+  display:none!important;
+  visibility:hidden!important;
+}
+/* Legacy data stays in the DOM for original event handlers and APIs, but it
+   must never leak into another workspace view. */
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceModules,
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceModules .dashboard-view-section {
+  display:none!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace [hidden] {
+  display:none!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody > .dashboard-view-section {
+  display:block!important;
+  position:static!important;
+  visibility:visible!important;
+  margin:0!important;
+  max-width:100%!important;
+  width:100%!important;
+  overflow:visible!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-brand-logo {
+  display:grid;
+  place-items:center;
+  width:36px;
+  height:36px;
+  flex:0 0 36px;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-brand-logo img,
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-brand-logo svg {
+  display:block;
+  width:35px!important;
+  height:35px!important;
+  max-width:35px!important;
+  max-height:35px!important;
+  object-fit:contain;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-brand-copy b {
+  font-size:12px!important;
+  max-width:142px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-brand-copy small {
+  font-size:9px!important;
+  letter-spacing:.08em;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-header {
+  min-height:68px;
+  max-width:920px;
+  border-color:#272930;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-content {
+  margin-top:36px;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-content h1 {
+  font-size:clamp(28px,5vw,39px)!important;
+  -webkit-text-fill-color:#fff!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-module-card {
+  background:#17191e!important;
+  box-shadow:none!important;
+  padding:clamp(16px,3vw,28px)!important;
+  border-color:#343741!important;
+  border-radius:20px!important;
+  margin-top:18px!important;
+}
+#app .respondo-workspace .rs-module-tabs {
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:20px 0 -4px;
+}
+#app .respondo-workspace .rs-module-tabs button {
+  padding:10px 13px;
+  min-height:40px;
+  border-radius:10px;
+  border:1px solid #363a42;
+  background:#1e2027;
+  color:#c0c3ce!important;
+  font-size:12px;
+  cursor:pointer;
+}
+#app .respondo-workspace .rs-module-tabs button.active {
+  background:#edeef1!important;
+  border-color:#edeef1!important;
+  color:#121419!important;
+}
+#app .respondo-workspace .rs-minimal-card {
+  margin:0!important;
+  padding:clamp(4px,2vw,12px);
+  background:transparent!important;
+  border:0!important;
+  color:#f3f4f7!important;
+}
+#app .respondo-workspace .rs-minimal-card h2 {
+  font-size:clamp(20px,3vw,27px)!important;
+  letter-spacing:-.035em;
+  line-height:1.2;
+  margin:0 0 10px;
+  color:#fff!important;
+}
+#app .respondo-workspace .rs-minimal-card p {
+  color:#c2c5d0!important;
+  font-size:14px;
+  line-height:1.55;
+  margin:10px 0 20px;
+}
+#app .respondo-workspace .rs-minimal-button,
+#app .respondo-workspace .rs-secondary-button {
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  min-height:46px;
+  padding:10px 17px;
+  border:1px solid #e8e9ed;
+  border-radius:12px;
+  background:#ebedf1;
+  color:#14151a!important;
+  font-weight:750;
+  font-size:13px;
+  text-decoration:none;
+  cursor:pointer;
+}
+#app .respondo-workspace .rs-secondary-button {
+  background:#282b32;
+  color:#f6f6f9!important;
+  border-color:#484b55;
+}
+#app .respondo-workspace .rs-settings-card {
+  display:grid;
+  gap:16px;
+}
+#app .respondo-workspace .rs-simple-field {
+  display:grid;
+  gap:7px;
+  color:#e6e7ee!important;
+}
+#app .respondo-workspace .rs-simple-field span {
+  color:#d4d6de!important;
+  font-size:12px;
+  font-weight:700;
+}
+#app .respondo-workspace .rs-simple-field input {
+  width:100%;
+  min-height:52px;
+  padding:12px 14px!important;
+  border:1px solid #454852!important;
+  border-radius:12px!important;
+  outline:none;
+  background:#23262e!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  font-size:16px;
+}
+#app .respondo-workspace .rs-simple-field input::placeholder {
+  color:#a5a8b3!important;
+  -webkit-text-fill-color:#a5a8b3!important;
+}
+#app .respondo-workspace .rs-simple-field input:focus {
+  border-color:#b4bdce!important;
+}
+#app .respondo-workspace .rs-simple-actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:8px;
+}
+#app .respondo-workspace #rsSimpleSettingsMessage {
+  min-height:1em;
+  margin:0;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody .panel,
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody .knowledge-panel,
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody .conversation-panel,
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody .billing-panel {
+  background:#1a1d23!important;
+  color:#f4f5f7!important;
+  border-color:#3a3e46!important;
+  box-shadow:none!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody :is(.panel-head,.panel-head h2,.panel-head h3,.panel-head b,.panel-head small,.knowledge-item b,.knowledge-item p) {
+  color:#f2f3f7!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody .knowledge-item {
+  background:#252830!important;
+  color:#efeff2!important;
+  border-color:#393d46!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody .knowledge-panel .panel-head {
+  min-height:0!important;
+  padding:0 0 18px!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody .knowledge-panel .panel-head::before,
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody .knowledge-panel .panel-head::after {
+  display:none!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody .knowledge-panel .panel-head h2 {
+  font-size:22px!important;
+}
+@media(max-width:650px) {
+  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-header {gap:8px;}
+  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-brand {gap:7px;min-width:0}
+  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-brand-copy b {max-width:106px}
+  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-language .app-language-option {min-width:31px!important;}
+  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-content {margin-top:25px}
+  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-module-card{padding:14px!important;margin-top:16px!important;}
+  #app .respondo-workspace .rs-module-tabs{gap:5px}
+}
+
+/* Show a short knowledge preview by default; expand only on request. */
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace.rs-knowledge-collapsed #knowledgeList > .knowledge-item:nth-child(n+7) {
+ display:none!important;
+}
+#app .respondo-workspace .rs-knowledge-more{margin:18px 4px 3px}
+#app .respondo-workspace .rs-minimal-card .rs-simple-actions button{flex:0 0 auto}

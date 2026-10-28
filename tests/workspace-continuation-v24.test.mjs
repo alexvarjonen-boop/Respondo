@@ -52,3 +52,30 @@ test('iPhone onboarding card headings stay visible and the redundant light dashb
   assert.match(styles, /display:none!important;\s*visibility:hidden!important/);
   assert.match(index, /onboarding-contrast-v25/);
 });
+
+
+test('each menu section has a real isolated destination instead of recycling the answers panel', () => {
+  assert.match(workspace,/function selectView\(next\)/);
+  assert.match(workspace,/const primary=\{/);
+  assert.match(workspace,/showModuleTab\(primary\[selected\]\)/);
+  assert.match(workspace,/park\(\);\s*card\.replaceChildren\(\)/);
+  assert.match(workspace,/storage\.appendChild\(activePanel\)/);
+  assert.match(workspace,/card\.appendChild\(target\)/);
+  assert.match(workspace,/const details=\{/);
+  assert.match(workspace,/callout\(pages\[selected\],details\[selected\]\)/);
+  assert.match(styles,/#respondoWorkspaceModules \.dashboard-view-section \{/);
+  assert.match(styles,/#respondoWorkspaceCardBody > \.dashboard-view-section/);
+});
+
+test('clean workspace uses one header and a compact functional settings form', () => {
+  assert.match(workspace,/original\.requestSubmit\(\)/);
+  assert.match(workspace,/if\(demo\)\{/);
+  assert.match(workspace,/const fields=\[/);
+  assert.match(workspace,/rsSimpleSettingsForm/);
+  assert.match(workspace,/workspace\.addEventListener\('click'/);
+  assert.match(styles,/#app \.dashboard-premium-shell\.respondo-workspace-active > \.dashboard-simple-main > \.dashboard-topbar\.dashboard-has-drawer/);
+  assert.match(styles,/\.respondo-workspace-brand-logo img/);
+  assert.match(styles,/\.rs-simple-field input/);
+  assert.match(styles,/rs-knowledge-collapsed/);
+  assert.match(index,/onboarding-contrast-v25-minimal-v26/);
+});

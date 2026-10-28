@@ -19,6 +19,6 @@ test('Safari reloads the public demo app and wizard styles after the update', ()
 });
 
 test('authenticated dashboard remains independent of demo-only header changes', () => {
-  assert.match(app, /const showGuidedSetup = !hasWebsite && \(!isDemo \|\| !new URLSearchParams/);
+  assert.match(app, /const showGuidedSetup = !hasWebsite;/);
   assert.match(css, /#app \.dashboard-premium-shell\.demo-dashboard-shell\.guided-setup-active/);
 });
