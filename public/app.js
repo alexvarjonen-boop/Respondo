@@ -3304,6 +3304,37 @@ function signup() {
   </div>`;
 }
 
+function setupOrderConfirmation() {
+  const emailed=new URLSearchParams(location.search).get('email')==='sent';
+  return `<div class="setup-confirmation-page">
+    ${nav()}
+    <main class="setup-confirmation-main">
+      <section class="setup-confirmation-card" aria-labelledby="setupConfirmationTitle">
+        <div class="setup-confirmation-mark" aria-hidden="true">✓</div>
+        <small class="setup-confirmation-eyebrow">${appText('KÄYTTÖÖNOTTOPALVELU','INSTALLATIONSTJÄNST','SETUP SERVICE')} · RESPONDO AI</small>
+        <h1 id="setupConfirmationTitle">${emailed
+          ? appText('Olemme lähettäneet sinulle sähköpostia.','Vi har skickat ett mejl till dig.','We have sent you an email.')
+          : appText('Tilauksesi on vastaanotettu.','Vi har tagit emot din beställning.','Your order has been received.')}</h1>
+        <p class="setup-confirmation-lead">${appText(
+          'Kiitos tilauksestasi. Seuraavaksi perehdymme yrityksesi verkkosivuihin, kokoamme botin tietopohjan ja viimeistelemme sen toimintaa, jotta se vastaa asiakkaillesi mahdollisimman hyvin.',
+          'Tack för din beställning. Nu går vi igenom din webbplats, bygger upp bottens kunskapsbas och finjusterar den så att den kan svara dina kunder så bra som möjligt.',
+          'Thank you for your order. We will now review your website, prepare the knowledge base and fine-tune your bot to answer your customers as accurately as possible.'
+        )}</p>
+        <div class="setup-confirmation-steps">
+          <div><span>01</span><div><strong>${appText('Tilaus vastaanotettu','Beställning mottagen','Order received')}</strong><small>${appText('Käyttöönottopalvelusi on tilattu.','Din installationstjänst är beställd.','Your setup service has been ordered.')}</small></div></div>
+          <div><span>02</span><div><strong>${appText('Verkkosivun analysointi ja viimeistely','Analys och konfiguration','Website review and setup')}</strong><small>${appText('Valmistelemme botin yrityksesi tietojen perusteella.','Vi förbereder botten med företagets information.','We prepare your bot using your business information.')}</small></div></div>
+          <div><span>03</span><div><strong>${appText('Saat valmiin botin sähköpostiisi','Vi mejlar när botten är klar','We email you when your bot is ready')}</strong><small>${appText('Lähetämme kirjautumisosoitteesi ja turvallisen linkin salasanan luomiseen. Voit vaihtaa salasanan myöhemmin asetuksissa.','Du får din inloggningsadress och en säker länk för att skapa lösenord. Du kan ändra det senare i inställningarna.','You will receive your login email and a secure link to create a password, which you can change later in Settings.')}</small></div></div>
+        </div>
+        <p class="setup-confirmation-footnote">${emailed
+          ? appText('Tarkista myös roskapostikansiosi.','Kontrollera även din skräppost.','Remember to check your spam folder.')
+          : appText('Vahvistussähköposti on käsittelyssä. Tarvittaessa voit ottaa yhteyttä osoitteeseen info@respondoai.fi.','Bekräftelsemejlet behandlas. Vid behov kan du kontakta info@respondoai.fi.','Your confirmation email is being processed. Contact info@respondoai.fi if you need assistance.')}</p>
+        <a href="/" class="setup-confirmation-back">${appText('Takaisin etusivulle','Tillbaka till startsidan','Back to homepage')} <span aria-hidden="true">→</span></a>
+      </section>
+    </main>
+    ${footer()}
+  </div>`;
+}
+
 function login() {
   const loginParams = new URLSearchParams(location.search);
   const checkoutError = loginParams.get('checkout_error') === '1';
@@ -5241,6 +5272,7 @@ async function route() {
   else if (path === '/assistant') html = await dashboard({ demo:true });
   else if (path === '/tilaus') html = signup();
   else if (path === '/kirjaudu') html = login();
+  else if (path === '/kayttoonotto-vahvistettu') html = setupOrderConfirmation();
   else if (path === '/maksu-valmis') html = await paymentSuccess();
   else if (path === '/app') html = await dashboard();
   else if (['/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa', '/tietoturva'].includes(path)) html = legal(path.slice(1));
