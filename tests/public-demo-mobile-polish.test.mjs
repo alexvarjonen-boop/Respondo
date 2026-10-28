@@ -14,8 +14,8 @@ test('public first card keeps Respondo brand and three language flags without th
 });
 
 test('Safari reloads the public demo app and wizard styles after the update', () => {
-  assert.match(index, /guided-setup-v22\.css\?v=20261028-public-demo-wizard-v23/);
-  assert.match(index, /demo-v21-guided-prod-v22-public-demo-wizard-v23/);
+  assert.match(index, /guided-setup-v22\.css\?v=20261028-public-demo-auto-chat-v25/);
+  assert.match(index, /demo-v21-guided-prod-v22-public-demo-auto-chat-v25/);
 });
 
 test('authenticated dashboard remains independent of demo-only header changes', () => {
