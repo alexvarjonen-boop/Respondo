@@ -102,7 +102,7 @@ test('configured current Checkout prices are used, but stale IDs cannot charge o
       quantity:1,
     });
   }
-  assert.equal((server.match(/line_items:\\s*setupService \\? \\[checkoutLineItem,setupServiceCheckoutLineItem\\(\\)\\] : \\[checkoutLineItem\\]/g)||[]).length,2);
+  assert.equal((server.match(/line_items:\s*setupService \? \[checkoutLineItem,setupServiceCheckoutLineItem\(\)\] : \[checkoutLineItem\]/g)||[]).length,2);
 });
 
 test('historical subscriptions stay recognized and promotional content does not display obsolete prices', () => {
