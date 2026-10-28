@@ -3691,6 +3691,27 @@ async function dashboard(options = {}) {
   const isWelcome = new URLSearchParams(location.search).get('welcome') === '1';
   const hasWebsite = Boolean(String(businessProfile.Verkkosivu || t.website || '').trim());
   const showGuidedSetup = !isDemo && !hasWebsite;
+  // The profile endpoint replaces all existing profile facts. Preserve any
+  // fields the minimal first-run wizard does not ask the owner to edit.
+  const guidedExistingField = (key) => {
+    const value = String(businessProfile[key] || '').trim();
+    return obviouslyCorruptProfileValue(value) ? '' : value;
+  };
+  const guidedExistingProfile = {
+    pricing:guidedExistingField('Hinnat'),
+    hours:guidedExistingField('Aukioloajat'),
+    phone:guidedExistingField('Puhelinnumero') || String(t.contact_phone || ''),
+    email:guidedExistingField('Sähköposti') || String(t.contact_email || ''),
+    services:guidedExistingField('Palvelut'),
+    serviceArea:guidedExistingField('Toimialue'),
+    address:guidedExistingField('Osoite'),
+    quoteRequestUrl:guidedExistingField('Tarjouspyyntölomake'),
+    bookingUrl:guidedExistingField('Ajanvarauslinkki'),
+    notes:guidedExistingField('Lisätiedot'),
+    tone:guidedExistingField('Vastaustyyli') || 'Luonteva ja ystävällinen',
+    averageLeadValue:t.average_lead_value || 0,
+    botColor:t.accent || '#111113',
+  };
 
   const premiumNav = [
     ['overview',appText('Hallintapaneeli','Kontrollpanel','Dashboard'),'⌂'],
@@ -3857,7 +3878,7 @@ async function dashboard(options = {}) {
         <div class="guided-setup-progress" aria-label="${esc(appText('Käyttöönoton edistyminen','Kom igång-förlopp','Setup progress'))}">
           ${[1,2,3,4,5].map((step) => `<span class="${step===1?'active':''}" data-guided-progress="${step}">${step}</span>`).join('<i></i>')}
         </div>
-        <form id="guidedSetupForm" class="guided-setup-form">
+        <form id="guidedSetupForm" class="guided-setup-form" data-existing-profile="${esc(JSON.stringify(guidedExistingProfile))}">
           <article class="guided-card" data-guided-step="1">
             <small>${appText('VAIHE 1 / 5','STEG 1 / 5','STEP 1 OF 5')}</small>
             <h1 id="guidedSetupTitle">${appText('Mikä on yrityksesi verkkosivu?','Vilken är företagets webbplats?','What is your company website?')}</h1>
@@ -3902,9 +3923,9 @@ async function dashboard(options = {}) {
             <p>${appText('Nämä tiedot auttavat bottia palvelemaan asiakkaita heti, mutta voit täydentää ne myöhemmin.','Dessa uppgifter hjälper botten direkt, men du kan komplettera dem senare.','These details help the bot right away, but you can complete them later.')}</p>
             <div class="guided-fields-grid">
               <label class="guided-main-field guided-wide"><span>${appText('Ensimmäinen viesti asiakkaalle','Första meddelandet till kunden','First message to the customer')}</span><input name="greeting" maxlength="220" value="${esc(t.greeting || appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?'))}"></label>
-              <label class="guided-main-field"><span>${appText('Puhelinnumero (valinnainen)','Telefonnummer (valfritt)','Phone number (optional)')}</span><input name="phone" inputmode="tel" placeholder="040 123 4567"></label>
-              <label class="guided-main-field"><span>${appText('Sähköposti (valinnainen)','E-post (valfritt)','Email (optional)')}</span><input name="email" type="email" placeholder="info@yritys.fi"></label>
-              <label class="guided-main-field guided-wide"><span>${appText('Aukioloajat (valinnainen)','Öppettider (valfritt)','Opening hours (optional)')}</span><input name="hours" placeholder="Ma–Pe 8–17"></label>
+              <label class="guided-main-field"><span>${appText('Puhelinnumero (valinnainen)','Telefonnummer (valfritt)','Phone number (optional)')}</span><input name="phone" inputmode="tel" value="${esc(guidedExistingProfile.phone)}" placeholder="040 123 4567"></label>
+              <label class="guided-main-field"><span>${appText('Sähköposti (valinnainen)','E-post (valfritt)','Email (optional)')}</span><input name="email" type="email" value="${esc(guidedExistingProfile.email)}" placeholder="info@yritys.fi"></label>
+              <label class="guided-main-field guided-wide"><span>${appText('Aukioloajat (valinnainen)','Öppettider (valfritt)','Opening hours (optional)')}</span><input name="hours" value="${esc(guidedExistingProfile.hours)}" placeholder="Ma–Pe 8–17"></label>
             </div>
             <div class="guided-card-actions"><button class="guided-back" type="button" data-guided-back>${appText('Takaisin','Tillbaka','Back')}</button><button class="guided-continue" type="button" data-guided-next>${appText('Jatka','Fortsätt','Continue')} <span>→</span></button></div>
             <div class="guided-step-message" aria-live="polite"></div>
@@ -3918,6 +3939,7 @@ async function dashboard(options = {}) {
             <div class="guided-summary"><div><span>${appText('Verkkosivu','Webbplats','Website')}</span><b data-guided-summary="website">—</b></div><div><span>${appText('Botin nimi','Bottens namn','Bot name')}</span><b data-guided-summary="botName">—</b></div><div><span>${appText('Omat vastaukset','Egna svar','Custom answers')}</span><b data-guided-summary="answers">0</b></div></div>
             <div class="guided-card-actions"><button class="guided-back" type="button" data-guided-back>${appText('Takaisin','Tillbaka','Back')}</button><button class="guided-continue guided-submit" type="submit">${appText('Luo botti ja hae tiedot','Skapa botten och hämta data','Create bot & scan website')} <span>→</span></button></div>
             <div class="guided-step-message" aria-live="polite"></div>
+            <a class="guided-resume-link" id="guidedFinishDashboard" href="/app?section=setup&guidedImport=1" hidden>${appText('Avaa hallintapaneeli ja jatka tietojen hakua','Öppna kontrollpanelen och fortsätt skanningen','Open dashboard and continue website scan')}</a>
           </article>
         </form>
       </section>` : ''}
@@ -6292,6 +6314,10 @@ async function route() {
     const guidedForm = $('#guidedSetupForm');
     if (guidedForm) {
       let guidedStep = 1;
+      let existingProfile = {};
+      try { existingProfile = JSON.parse(guidedForm.dataset.existingProfile || '{}'); } catch {}
+      let savedProfilePayload = '';
+      const savedGuidedAnswers = new Map();
       const guidedCards = [...guidedForm.querySelectorAll('[data-guided-step]')];
       const guidedProgress = [...document.querySelectorAll('[data-guided-progress]')];
       const showGuidedStep = (next) => {
@@ -6382,6 +6408,12 @@ async function route() {
       });
       guidedForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+        // Enter on the website field must advance the wizard, never save a
+        // partially completed bot before step five.
+        if (guidedStep !== 5) {
+          if (validateGuidedStep()) showGuidedStep(guidedStep + 1);
+          return;
+        }
         if (!validateGuidedStep()) return;
         const values = new FormData(guidedForm);
         const submit = guidedForm.querySelector('.guided-submit');
@@ -6391,32 +6423,41 @@ async function route() {
         submit.innerHTML = appText('Luodaan bottia…','Skapar botten…','Creating bot…');
         if (message) message.textContent = '';
         try {
-          await api('/api/app/business-profile', {
-            method:'POST',
-            body:JSON.stringify({
-              website:values.get('website'),
-              botName:values.get('botName'),
-              botAvatar:values.get('botAvatar'),
-              botColor:'#111113',
-              greeting:values.get('greeting'),
-              tone:'Luonteva ja ystävällinen',
-              phone:values.get('phone'),
-              email:values.get('email'),
-              hours:values.get('hours'),
-            }),
+          // Preserve the approved company facts the short wizard does not
+          // collect, since business-profile POST replaces the complete profile.
+          const profilePayload = JSON.stringify({
+            ...existingProfile,
+            website:values.get('website'),
+            botName:values.get('botName'),
+            botAvatar:values.get('botAvatar'),
+            greeting:values.get('greeting'),
+            phone:values.get('phone') || existingProfile.phone || '',
+            email:values.get('email') || existingProfile.email || '',
+            hours:values.get('hours') || existingProfile.hours || '',
           });
+          if (savedProfilePayload !== profilePayload) {
+            await api('/api/app/business-profile', { method:'POST', body:profilePayload });
+            savedProfilePayload = profilePayload;
+          }
           for (const i of [1,2,3]) {
             const title = String(values.get('question'+i)||'').trim();
             const answer = String(values.get('answer'+i)||'').trim();
             if (!title || !answer) continue;
+            const answerFingerprint = JSON.stringify([title,answer]);
+            if (savedGuidedAnswers.get(i) === answerFingerprint) continue;
             await api('/api/app/knowledge', { method:'POST', body:JSON.stringify({ category:'Usein kysytyt', title, answer }) });
+            savedGuidedAnswers.set(i,answerFingerprint);
           }
           if (message) message.textContent = appText('Valmis! Avataan hallintapaneeli…','Klart! Kontrollpanelen öppnas…','Done! Opening your dashboard…');
           setTimeout(() => { location.href = '/app?section=setup&guidedImport=1'; }, 500);
         } catch (error) {
           submit.disabled = false;
           submit.innerHTML = original;
-          if (message) message.textContent = error.message || appText('Botin luonti epäonnistui. Yritä uudelleen.','Det gick inte att skapa botten. Försök igen.','Could not create the bot. Try again.');
+          const recover = guidedForm.querySelector('#guidedFinishDashboard');
+          if (recover && savedProfilePayload) recover.hidden = false;
+          if (message) message.textContent = savedProfilePayload
+            ? appText('Yrityksen tiedot tallentuivat, mutta jokin lisävastaus epäonnistui. Voit yrittää uudelleen tai avata hallintapaneelin.','Företagsuppgifterna sparades, men ett extra svar misslyckades. Försök igen eller öppna kontrollpanelen.','Company details were saved, but an optional answer failed. Retry or open your dashboard.')
+            : (error.message || appText('Botin luonti epäonnistui. Yritä uudelleen.','Det gick inte att skapa botten. Försök igen.','Could not create the bot. Try again.'));
         }
       });
     }
