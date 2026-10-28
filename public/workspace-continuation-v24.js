@@ -3,9 +3,90 @@
 // authenticated API calls and tenant isolation are not replaced by demo stubs.
 const $ = (selector) => document.querySelector(selector);
 
+
+function ensureWorkspace(demo) {
+  const existing=$('#respondoWorkspace');
+  if(existing)return existing;
+  const main=$('.dashboard-simple-main');
+  if(!main)return null;
+  const param=new URLSearchParams(location.search).get('lang');
+  let saved='';
+  try{saved=localStorage.getItem('respondo_lang')||'';}catch{}
+  const lang=['fi','sv','en'].includes(param)?param:['fi','sv','en'].includes(saved)?saved:'en';
+  const choose=(fi,sv,en)=>lang==='fi'?fi:lang==='sv'?sv:en;
+  const logo=$('.premium-sidebar-brand');
+  const languages=$('.dashboard-topbar .premium-language-picker')||$('.dashboard-topbar .app-language-switch');
+  const company=$('#workspaceSwitcher')?.selectedOptions?.[0]?.textContent?.trim()
+    ||$('.dashboard-workspace b')?.textContent?.trim()||'Respondo AI';
+  const escape=(value)=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const workspace=document.createElement('section');
+  workspace.id='respondoWorkspace';
+  workspace.className='respondo-workspace';
+  workspace.hidden=true;
+  workspace.dataset.lang=lang;
+  workspace.setAttribute('aria-label',choose('Respondo-työtila','Respondo-arbetsyta','Respondo workspace'));
+  const nav=(id,fi,sv,en)=>'<button type="button" data-workspace-nav="'+id+'">'+choose(fi,sv,en)+'</button>';
+  workspace.innerHTML=`
+    <header class="respondo-workspace-header">
+      <div class="respondo-workspace-brand"><span class="respondo-workspace-brand-logo"></span>
+        <span class="respondo-workspace-brand-copy"><b>${escape(company)}</b><small>RESPONDO OS</small></span>
+      </div>
+      <div class="respondo-workspace-actions">
+        <div class="respondo-workspace-language"></div>
+        <div class="respondo-workspace-menu-wrap">
+          <button type="button" id="respondoWorkspaceMenuToggle" class="respondo-workspace-menu-toggle" aria-expanded="false" aria-controls="respondoWorkspaceMenu" aria-label="${choose('Avaa valikko','Öppna menyn','Open menu')}"><span aria-hidden="true">☰</span><span>${choose('Valikko','Meny','Menu')}</span></button>
+          <nav id="respondoWorkspaceMenu" class="respondo-workspace-menu" hidden>
+            ${nav('bot','Kokeile bottia','Testa botten','Try the bot')}
+            ${nav('overview','Yleisnäkymä','Översikt','Overview')}
+            ${nav('setup','Yritys & botti','Företag & bot','Company & bot')}
+            ${nav('answers','Vastaukset','Svar','Answers')}
+            ${nav('customers','Asiakkaat','Kunder','Customers')}
+            ${nav('automation','Toiminnot','Funktioner','Actions')}
+            ${nav('install','Asennus','Installation','Installation')}
+            <hr>
+            ${nav('profile','Profiili','Profil','Profile')}
+            ${nav('billing','Laskutus','Fakturering','Billing')}
+            ${nav('settings','Asetukset','Inställningar','Settings')}
+          </nav>
+        </div>
+      </div>
+    </header>
+    <div class="respondo-workspace-content">
+      <div data-workspace-page="bot">
+        <small class="respondo-workspace-kicker">${choose('BOTTISI ON TÄSSÄ','DIN BOTT ÄR HÄR','YOUR BOT IS HERE')}</small>
+        <h1>${choose('Kokeile bottiasi.','Testa din bot.','Try your bot.')}</h1>
+        <p class="respondo-workspace-subtitle">${choose('Kirjoita kysymys alla olevaan keskusteluun. Voit testata bottia samalla, kun verkkosivun tietoja haetaan.','Skriv en fråga i chatten nedan. Du kan testa botten medan webbplatsen skannas.','Ask a question below. You can test your bot while your website is being scanned.')}</p>
+        <div class="respondo-workspace-chat-card"><div id="respondoWorkspaceChatHost"></div></div>
+        <div class="respondo-workspace-scan" role="status" aria-live="polite"><i aria-hidden="true"></i><div><b id="respondoWorkspaceScanStatus">${choose('Botti valmis kokeiltavaksi','Botten är redo att testas','Bot ready to try')}</b><br><span id="respondoWorkspaceScanDetail"></span></div></div>
+        ${demo?'':'<button type="button" class="respondo-workspace-review-link" data-workspace-nav="settings">'+choose('Tarkista haetut tiedot','Granska hämtade uppgifter','Review imported information')+' →</button>'}
+      </div>
+      <div data-workspace-page="overview" hidden>
+        <small class="respondo-workspace-kicker">RESPONDO OS</small>
+        <h1>${choose('Yleisnäkymä','Översikt','Overview')}</h1>
+        <p class="respondo-workspace-subtitle">${choose('Kaikki tärkeä yhdessä selkeässä työtilassa.','Allt viktigt i en tydlig arbetsyta.','Everything important in one clear workspace.')}</p>
+        <div class="respondo-workspace-overview-grid">
+          <div class="respondo-workspace-overview-card"><b>${choose('Kokeile bottiasi','Testa din bot','Test your bot')}</b><p>${choose('Katso, miten se vastaa kysymyksiin.','Se hur den svarar på frågor.','See how it answers questions.')}</p>${nav('bot','Avaa keskustelu →','Öppna chatten →','Open chat →')}</div>
+          <div class="respondo-workspace-overview-card"><b>${choose('Yrityksen tiedot','Företagsuppgifter','Company details')}</b><p>${choose('Täydennä ja tarkista sivustolta löydetyt tiedot.','Komplettera och granska webbplatsens uppgifter.','Complete and review imported website information.')}</p>${nav('settings','Muokkaa tietoja →','Redigera uppgifter →','Edit details →')}</div>
+        </div>
+      </div>
+      <div data-workspace-page="modules" hidden>
+        <small class="respondo-workspace-kicker">RESPONDO OS</small>
+        <h1 id="respondoWorkspaceModuleTitle"></h1>
+        <div class="respondo-workspace-module-card">
+          <div id="respondoWorkspaceModules"></div>
+          <div class="respondo-workspace-empty" id="respondoWorkspaceEmpty" hidden>${demo?choose('Luo yritystili käyttääksesi tätä toimintoa.','Skapa ett företagskonto för att använda funktionen.','Create a company account to use this feature.')+' <a href="/tilaus?lang='+lang+'">'+choose('Aloita tästä','Börja här','Get started')+' →</a>':choose('Tämän osion tiedot eivät ole vielä saatavilla.','Uppgifter för detta avsnitt finns inte ännu.','This section is not available yet.')}</div>
+        </div>
+      </div>
+    </div>`;
+  main.insertBefore(workspace,main.querySelector('.dashboard-view-section'));
+  if(logo)workspace.querySelector('.respondo-workspace-brand-logo')?.appendChild(logo.cloneNode(true));
+  if(languages)workspace.querySelector('.respondo-workspace-language')?.appendChild(languages);
+  return workspace;
+}
+
 export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   const shell=$('.dashboard-premium-shell');
-  const workspace=$('#respondoWorkspace');
+  const workspace=ensureWorkspace(demo);
   if(!shell || !workspace) return false;
   const chatHost=$('#respondoWorkspaceChatHost');
   const modules=$('#respondoWorkspaceModules');
