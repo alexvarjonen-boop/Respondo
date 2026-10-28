@@ -54,7 +54,8 @@ test('confirmation page explains seven-day personal credential handover, without
   assert.match(app,/get\('email'\)==='sent'/);
   assert.match(app,/Olemme lähettäneet sinulle sähköpostia/);
   assert.match(app,/Vahvistussähköposti on käsittelyssä/);
-  assert.match(app,/henkilökohtaisella sähköpostilla viimeistään viikon kuluessa/);
+  assert.match(app,/Saat kirjautumistiedot viimeistään viikon kuluessa/);
+  assert.match(app,/Valitun paketin laskutus alkaa vasta/);
   assert.doesNotMatch(app.slice(app.indexOf('function setupOrderConfirmation()'),app.indexOf('function login()',app.indexOf('function setupOrderConfirmation()'))),/salasanan luomiseen/);
 });
 
