@@ -1887,9 +1887,9 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     return {
       id:'respondo-faq-buy',
       answer:answer(
-        'Voit ottaa Respondon käyttöön verkkosivun “Kokeile ilmaiseksi” -painikkeesta. Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Kaikissa uusissa tilauksissa on 3 päivän ilmainen kokeilu. Vuositilaukset: Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi), Enterprise 139 €/kk (1 668 €/vuosi). Säästät 120 € vuodessa. Arvonlisäveroa ei peritä vähäisen liiketoiminnan vuoksi.',
-        'Du kan börja använda Respondo via knappen “Prova gratis”. Advanced kostar 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Alla nya abonnemang har 3 dagars gratis provperiod. Med årsabonnemang sparar du 10 €/mån: Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år), Enterprise 139 €/mån (1 668 €/år). Hela årsbeloppet betalas årsvis. Ingen moms debiteras på grund av verksamhet i liten skala.',
-        'You can get started by selecting “Try for free”. Advanced costs €49/month, Premium €129/month and Enterprise €149/month. Every new plan includes a 3-day free trial. Annual billing saves €10/month: Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year), billed upfront annually. No VAT is charged due to the small-scale business exemption.'
+        'Aloita valitsemalla paketti osoitteessa respondoai.fi/tilaus. Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vuositilaus on 10 €/kk edullisempi.',
+        'Kom igång genom att välja ett abonnemang på respondoai.fi/tilaus. Advanced kostar 49 €/mån, Premium 129 €/mån och Enterprise 149 €/mån. Med årsbetalning sparar du 10 €/mån.',
+        'Choose a plan at respondoai.fi/tilaus to get started. Advanced costs €49/month, Premium €129/month and Enterprise €149/month. Annual billing saves €10/month.'
       )
     };
   }

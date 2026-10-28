@@ -224,21 +224,21 @@ const FAQ = [
         "Miten aloitan tilauksen?",
         "Mistä voin tilata Respondon?"
       ],
-      "a": "Aloita Respondon sivun Kokeile ilmaiseksi -painikkeesta tai avaa {{SITE_URL}}/tilaus. Valitse Advanced, Premium tai Enterprise -kuukausitilaus, luo tili tai jatka Googlella ja lisää maksutapa turvallisesti Stripessä."
+      "a": "Aloita osoitteesta {{SITE_URL}}/tilaus. Valitse Advanced, Premium tai Enterprise, luo tili tai jatka Googlella ja lisää maksutapa Stripen kassalla."
     },
     "sv": {
       "q": [
         "Hur startar jag ett abonnemang?",
         "Var kan jag beställa Respondo?"
       ],
-      "a": "Börja med knappen Prova gratis på Respondos webbplats eller öppna {{SITE_URL}}/tilaus. Välj månadsabonnemanget Advanced, Premium eller Enterprise, skapa ett konto eller fortsätt med Google och lägg till betalningsmetoden säkert i Stripe."
+      "a": "Börja på {{SITE_URL}}/tilaus. Välj Advanced, Premium eller Enterprise, skapa ett konto eller fortsätt med Google och lägg till betalningsmetoden i Stripe."
     },
     "en": {
       "q": [
         "How do I start a subscription?",
         "Where can I subscribe to Respondo?"
       ],
-      "a": "Start from the Try for free button on the Respondo website or open {{SITE_URL}}/tilaus. Choose a monthly Advanced, Premium, or Enterprise subscription, create an account or continue with Google, and add your payment method securely in Stripe."
+      "a": "Start at {{SITE_URL}}/tilaus. Choose Advanced, Premium or Enterprise, create an account or continue with Google, and add your payment method in Stripe checkout."
     }
   },
   {
