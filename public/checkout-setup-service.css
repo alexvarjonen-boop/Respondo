@@ -108,3 +108,58 @@
 }
 #app .setup-service-website input::placeholder {color:#96a8bf!important;-webkit-text-fill-color:#96a8bf!important;}
 #app .setup-service-website small {color:#c4d3e5!important;-webkit-text-fill-color:#c4d3e5!important;font-size:12px!important;line-height:1.5!important;}
+
+/* Shown after a paid setup order, independently of the dashboard's layout. */
+.setup-service-confirmation {
+  position:fixed!important;
+  z-index:100500!important;
+  top:calc(env(safe-area-inset-top, 0px) + 76px);
+  left:50%;
+  transform:translateX(-50%);
+  box-sizing:border-box;
+  width:min(540px,calc(100vw - 30px));
+  max-height:calc(100dvh - 105px);
+  overflow:auto;
+  padding:24px 25px;
+  border:1px solid #6681a3;
+  border-radius:20px;
+  background:#111d2e;
+  color:#fff;
+  box-shadow:0 22px 80px rgba(0,0,0,.45);
+  font-family:inherit;
+}
+.setup-service-confirmation small {
+  display:block;
+  color:#a5c9ff;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.12em;
+  margin-bottom:15px;
+}
+.setup-service-confirmation h2 {
+  margin:0 32px 14px 0;
+  color:#fff!important;
+  font-size:clamp(20px,4.5vw,27px)!important;
+  font-weight:750;
+  letter-spacing:-.03em;
+  line-height:1.2;
+}
+.setup-service-confirmation p {
+  color:#cbd8e9!important;
+  margin:0 0 14px!important;
+  font-size:14px;
+  line-height:1.65;
+}
+.setup-service-confirmation .setup-service-login-note {
+  border-top:1px solid #40536c;
+  padding-top:14px;
+  margin-bottom:0!important;
+}
+.setup-service-notice-close {
+  position:absolute;right:16px;top:12px;
+  width:35px;height:35px;border:0;border-radius:50%;
+  background:#2a3a51;color:#fff;font-size:24px;line-height:1;cursor:pointer;
+}
+@media(max-width:640px){
+  .setup-service-confirmation {padding:20px 18px;top:calc(env(safe-area-inset-top, 0px) + 65px);}
+}
