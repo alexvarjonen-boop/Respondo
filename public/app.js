@@ -3324,7 +3324,7 @@ function setupOrderConfirmation() {
         <p class="setup-confirmation-lead">${appText(
           'Kiitos tilauksestasi. Käyttöönottopalvelusi on käsittelyssä. Analysoimme verkkosivusi ja otamme botin käyttöön puolestasi. Saat kirjautumistiedot viimeistään viikon kuluessa. Valitun paketin laskutus alkaa vasta, kun olemme vahvistaneet kirjautumistietojen toimittamisen.',
           'Tack för din beställning. Vi behandlar din installation och skickar inloggningsuppgifterna personligen via e-post inom en vecka. Abonnemangsbetalningarna börjar först när överlämningen har bekräftats.',
-          'Thank you for your order. We are preparing your Respondo bot and will personally email your login details within one week. Your plan's recurring billing begins only when delivery of those details has been confirmed.'
+          'Thank you for your order. We are preparing your Respondo bot and will personally email your login details within one week. Recurring billing for your plan begins only when we have confirmed delivery of those details.'
         )}</p>
         <div class="setup-confirmation-steps">
           <div><span>01</span><div><strong>${appText('Tilaus vastaanotettu','Beställning mottagen','Order received')}</strong><small>${appText('Käyttöönottopalvelusi on tilattu.','Din installationstjänst är beställd.','Your setup service has been ordered.')}</small></div></div>
