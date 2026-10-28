@@ -14,7 +14,7 @@ test('new Stripe subscriptions do not charge Finnish VAT when seller is not VAT 
   assert.match(server,/Ingen moms debiteras/);
   assert.match(server,/No VAT is charged/);
   assert.doesNotMatch(server,/ensureFinnishVatTaxRate|FINNISH_VAT_PERCENT|finnishVatTaxRateId|finnishVatMessage/);
-  assert.equal((server.match(/line_items:\\s*setupService \\? \\[checkoutLineItem,setupServiceCheckoutLineItem\\(\\)\\] : \\[checkoutLineItem\\]/g)||[]).length,2);
+  assert.equal((server.match(/line_items:\s*setupService \? \[checkoutLineItem,setupServiceCheckoutLineItem\(\)\] : \[checkoutLineItem\]/g)||[]).length,2);
   const setupStart=server.indexOf('function setupServiceCheckoutLineItem()');
   const setupEnd=server.indexOf('async function stripeCheckoutLineItem(',setupStart);
   assert.ok(setupStart>0 && setupEnd>setupStart,'one-time fee helper exists');
