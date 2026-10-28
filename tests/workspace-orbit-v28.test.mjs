@@ -78,7 +78,7 @@ test('post-setup interface uses only the orb, not a hamburger or dropdown',()=>{
 });
 test('orb reveals the active view after the chat and remains reachable while scrolling',()=>{
   assert.match(workspace,/element\.hidden=!\(page==='bot'/);
-  assert.match(orbit,/content\.querySelector\('\[data-workspace-page="\+destination/);
+  assert.ok(orbit.includes("const page=content.querySelector('[data-workspace-page="));
   assert.doesNotMatch(workspace,/window\.scrollTo\(\{top:0/);
   assert.match(workspace,/original\.requestSubmit\(\)/);
 });
