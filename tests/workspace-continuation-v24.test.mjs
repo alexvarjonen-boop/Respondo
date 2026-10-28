@@ -43,3 +43,12 @@ test('dark theme provides readable controls, stable hidden states and mobile lay
   assert.match(index, /workspace-continuation-v24\.css/);
   assert.match(app, /workspace-continuation-v24\.js/);
 });
+
+test('iPhone onboarding card headings stay visible and the redundant light dashboard header is hidden', () => {
+  assert.match(styles, /guided-setup-form > \.guided-card h1,/);
+  assert.match(styles, /-webkit-text-fill-color:#f7f8fb!important/);
+  assert.match(styles, /guided-setup-form > \.guided-card > p/);
+  assert.match(styles, /guided-setup-active > \.dashboard-simple-main > \.dashboard-topbar\.dashboard-has-drawer/);
+  assert.match(styles, /display:none!important;\s*visibility:hidden!important/);
+  assert.match(index, /onboarding-contrast-v25/);
+});
