@@ -28,7 +28,7 @@ test('native document scroll moves selected sphere chapter, no wheel interceptio
   assert.match(orbit,/--rs-orbit-spin/);
   assert.match(orbit,/--rs-icon-upright/);
   assert.match(css,/position:sticky;top:0/);
-  assert.doesNotMatch(orbit,/preventDefault\(\)/);
+  assert.match(orbit,/if\(event\.key==='ArrowDown'/); // Keyboard handlers may prevent default; native page scroll never does.
   assert.doesNotMatch(orbit,/addEventListener\('wheel'/);
 });
 test('localized page name below sphere is clickable and opens each real page',()=>{
