@@ -2,6 +2,8 @@
 
 **28.10.2026 | Vain tarkistettaviksi luonnoksiksi, ei lähetetty.**
 
+**Varaa 15 minuutin esittely:** https://calendly.com/alexvarjonen/respondo-ai-15-min-esittely (Calendly; aktiivinen Google Meet -ajanvaraus).
+
 Lähteet: `verified-demo-prospects-2026-10-28.csv`; jokaisen yrityksen julkinen verkkosivu tarkistettu Firecrawlilla. Lähettäjä: `info@respondoai.fi` vasta, kun Zoner-lähetys ja vastaanottajalista on manuaalisesti tarkistettu. Vastaanottajan sähköpostiosoitetta ei ole arvattu.
 
 ## 1. WashUp!
@@ -14,6 +16,7 @@ Huomasin, että tarjoatte siivouspalveluita Turun alueella ja sivustollanne voi 
 Voisin näyttää lyhyen esimerkin siitä, miltä tämä näyttäisi teidän sivustonne tiedoilla. Kiinnostaisiko 10 minuutin esittely?
 
 Respondoa voi kokeilla myös täällä: https://respondoai.fi/assistant
+15 minuutin esittelyajan voi varata: https://calendly.com/alexvarjonen/respondo-ai-15-min-esittely
 
 Terveisin,
 Respondo AI / info@respondoai.fi
@@ -29,7 +32,8 @@ Huomasin sivustollanne eritellyn hinnaston kotisiivoukselle, ikkunoiden pesulle 
 
 Haluatteko nähdä esimerkin, miten tämä toimisi nykyisen sivustonne tiedoilla?
 
-Demo: https://respondoai.fi/assistant
+Kokeile bottia: https://respondoai.fi/assistant
+Varaa 15 minuutin esittely: https://calendly.com/alexvarjonen/respondo-ai-15-min-esittely
 
 Terveisin,
 Respondo AI / info@respondoai.fi
@@ -45,7 +49,8 @@ Sivustonne esittelee LVI-palveluita omakotitaloille ja taloyhtiöille Varsinais-
 
 Voin näyttää lyhyen, teidän omiin verkkosivutietoihinne perustuvan esimerkin. Olisiko kiinnostusta?
 
-Demo: https://respondoai.fi/assistant
+Kokeile bottia: https://respondoai.fi/assistant
+Varaa 15 minuutin esittely: https://calendly.com/alexvarjonen/respondo-ai-15-min-esittely
 
 Terveisin,
 Respondo AI / info@respondoai.fi
@@ -61,7 +66,8 @@ Huomasin, että sivustollanne kerrotaan muun muassa viemärikuvauksista ja ilman
 
 Kiinnostaisiko lyhyt esittely teidän sivustollanne?
 
-Demo: https://respondoai.fi/assistant
+Kokeile bottia: https://respondoai.fi/assistant
+Varaa 15 minuutin esittely: https://calendly.com/alexvarjonen/respondo-ai-15-min-esittely
 
 Terveisin,
 Respondo AI / info@respondoai.fi
@@ -77,7 +83,8 @@ Sivustonne kertoo LVI- ja sähkötöistä sekä sähköautojen latausasemien ase
 
 Voin näyttää teidän omilla verkkosivutiedoillanne nopean esimerkin. Kiinnostaisiko 10 minuutin esittely?
 
-Demo: https://respondoai.fi/assistant
+Kokeile bottia: https://respondoai.fi/assistant
+Varaa 15 minuutin esittely: https://calendly.com/alexvarjonen/respondo-ai-15-min-esittely
 
 Terveisin,
 Respondo AI / info@respondoai.fi
