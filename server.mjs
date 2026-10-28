@@ -1054,7 +1054,8 @@ async function notifySetupServiceAfterCheckout(session) {
         language:'fi',eyebrow:'Uusi maksettu käyttöönottopalvelu',title:'Uusi käyttöönottotyö · '+account.company_name,
         content:
           '<p style="color:#d6d8de;font-size:15px;line-height:1.8">Asiakas on ostanut 199 €:n käyttöönottopalvelun. Aloita verkkosivuston analysointi ja botin viimeistely. Ilmoita asiakkaalle erikseen, kun botti on tarkistettavissa.</p>'+
-          '<p style="color:#fff;font-size:14px;line-height:1.8">Yritys: '+escapeEmailHtml(account.company_name)+'<br>Verkkosivu: '+escapeEmailHtml(website)+'<br>Asiakas: '+escapeEmailHtml(account.email)+'<br>Tilaus: '+escapeEmailHtml(sessionId)+'</p>',
+          '<p style="color:#fff;font-size:14px;line-height:1.8">Yritys: '+escapeEmailHtml(account.company_name)+'<br>Verkkosivu: '+escapeEmailHtml(website)+'<br>Asiakas: '+escapeEmailHtml(account.email)+'<br>Tilaus: '+escapeEmailHtml(sessionId)+'</p>'+
+          '<p style="margin:22px 0"><a href="'+escapeEmailHtml(BASE+'/app?section=account')+'" style="display:inline-block;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 20px;border-radius:11px;font-weight:700">Avaa käyttöönottotyöt →</a></p>',
       });
       try{
         await send({to,subject:'Uusi käyttöönottopalvelu · '+account.company_name,content:ownerHtml,replyTo:account.email});
