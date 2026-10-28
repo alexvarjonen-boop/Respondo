@@ -3875,6 +3875,7 @@ async function dashboard(options = {}) {
       ` : ''}
 
       ${showGuidedSetup ? `<section class="guided-setup" id="guidedSetup" aria-labelledby="guidedSetupTitle">
+        ${isDemo ? `<div class="guided-demo-brand">${logo()}<span>RESPONDO AI</span></div>` : ''}
         <div class="guided-setup-progress" aria-label="${esc(appText('Käyttöönoton edistyminen','Kom igång-förlopp','Setup progress'))}">
           ${[1,2,3,4,5].map((step) => `<span class="${step===1?'active':''}" data-guided-progress="${step}">${step}</span>`).join('<i></i>')}
         </div>
@@ -5678,7 +5679,7 @@ async function route() {
           for(let n=demoFacts.length-1;n>=0;n--)if(demoFacts[n]?.sourceType==='demo_guided')demoFacts.splice(n,1);
           for(const i of [1,2,3]){
             const title=String(values.get('question'+i)||'').trim(),answer=String(values.get('answer'+i)||'').trim();
-            if(title&&answer)demoFacts.push({title,answer,category:'Usein kysytyt',sourceType:'demo_guided'});
+            if(title&&answer)demoFacts.push({title,answer,category:appText('Usein kysytyt','Vanliga frågor','Frequently asked'),sourceType:'demo_guided'});
           }
           refreshDemoIdentity();renderDemoKnowledge();
           if(await importDemoWebsite($('#importWebsite'))){openPreview();return;}
