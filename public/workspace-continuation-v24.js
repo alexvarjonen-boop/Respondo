@@ -1,4 +1,6 @@
 import { createWorkspaceOrbit } from './workspace-orbit-v28.js';
+import { mountWorkspaceOrbit } from './workspace-orbit-v28.js?v=20261028-orbital-navigation-v28';
+
 // A single dark workspace after the five-card setup.
 // Keep existing chat, scan and billing DOM nodes intact so their event handlers,
 // authenticated API calls and tenant isolation are not replaced by demo stubs.
@@ -155,7 +157,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     card.innerHTML='<div class="rs-minimal-card"><h2>'+safe(heading)+'</h2><p>'+safe(body)+'</p>'+
       (cta?'<a class="rs-minimal-button" href="/tilaus?lang='+encodeURIComponent(workspace.dataset.lang)+'">'+safe(translate('Luo yritystili','Skapa företagskonto','Create a company account'))+' →</a>':'')+'</div>';
   };
-  const showSettings=()=>{
+  const showSettings=(scope='settings')=>{
     park();
     const original=$('#businessProfileForm');
     if(!original){callout(translate('Yrityksen tiedot','Företagsuppgifter','Company details'),translate('Tietoja ei saatavilla.','Inga uppgifter tillgängliga.','Details unavailable.'),false);return;}
@@ -167,11 +169,12 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
       ['phone',translate('Puhelinnumero','Telefonnummer','Phone number'),'tel'],
       ['hours',translate('Aukioloajat','Öppettider','Opening hours'),'text']
     ];
+    const visibleFields=scope==='setup' ? fields.filter(([name])=>['botName','greeting','website'].includes(name)) : fields.filter(([name])=>['website','email','phone','hours'].includes(name));
     const examples={website:translate('https://yritys.fi','https://foretag.se','https://company.fi'),
       email:translate('info@yritys.fi','info@foretag.se','info@company.fi')};
     card.innerHTML='<form id="rsSimpleSettingsForm" class="rs-minimal-card rs-settings-card">'+
       '<p class="rs-minimal-intro">'+safe(translate('Muuta vain tarvitsemasi tiedot. Muut botin asetukset säilyvät ennallaan.','Ändra bara de uppgifter du behöver. Övriga inställningar sparas.','Change only what you need. All other bot settings stay saved.'))+'</p>'+
-      fields.map(([key,label,type])=>'<label class="rs-simple-field"><span>'+safe(label)+'</span><input type="'+type+'" name="'+key+'" maxlength="255" placeholder="'+safe(examples[key]||'')+'" value="'+safe(original.elements[key]?.value||'')+'"></label>').join('')+
+      visibleFields.map(([key,label,type])=>'<label class="rs-simple-field"><span>'+safe(label)+'</span><input type="'+type+'" name="'+key+'" maxlength="255" placeholder="'+safe(examples[key]||'')+'" value="'+safe(original.elements[key]?.value||'')+'"></label>').join('')+
       '<div class="rs-simple-actions"><button type="submit" class="rs-minimal-button">'+safe(translate('Tallenna muutokset','Spara ändringar','Save changes'))+'</button>'+
       '<button type="button" class="rs-secondary-button" data-workspace-nav="bot">'+safe(translate('Kokeile bottia','Testa botten','Try the bot'))+' →</button></div>'+
       '<p id="rsSimpleSettingsMessage" role="status" aria-live="polite"></p></form>';
@@ -180,7 +183,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
       event.preventDefault();
       const message=$('#rsSimpleSettingsMessage');
       if(!form.reportValidity())return;
-      for(const [key] of fields){
+      for(const [key] of visibleFields){
         const source=original.elements[key], user=form.elements[key];
         if(source&&user){
           source.value=user.value;
@@ -232,6 +235,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     answers:'knowledge',customers:'conversations',automation:'actions2',install:'install',
     profile:'workspaces',billing:'billing'
   };
+  const orbit=mountWorkspaceOrbit(workspace,{onNavigate:(id)=>selectView(id)});
   let currentTab=null;
   function showModuleTab(id){
     currentTab=id;
@@ -263,6 +267,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   }
   function selectView(next){
     selected=Object.hasOwn(pages,next)?next:'bot';
+    orbit?.setActive(selected);
     workspace.dataset.currentView=selected;
     orbit?.sync(selected);
     park();
@@ -292,7 +297,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
       };
       callout(pages[selected],details[selected]);
     }else if(['settings','setup'].includes(selected)){
-      showSettings();
+      showSettings(selected);
     }else if(primary[selected]){
       const available=tabs[selected]?.filter(([id])=>storage.querySelector('#'+id));
       if(available?.length){
