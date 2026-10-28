@@ -940,6 +940,24 @@ async function sendWelcomeEmailOnce(userId) {
   }
 }
 
+
+// This only runs after Checkout confirms the 199 € one-time invoice was paid.
+// The finite Stripe trial alone is not a billing guarantee; indefinite
+// pause_collection with void prevents automatic recurring collection, while
+// regular non-setup subscriptions remain unchanged.
+async function ensureManualSetupBillingOnHold(subscriptionId) {
+  if(!stripe || !String(subscriptionId||'').startsWith('sub_')) throw new Error('Setup subscription unavailable');
+  const sub=await stripe.subscriptions.retrieve(subscriptionId);
+  if(sub.metadata?.setup_billing_deferred!=='1') return false;
+  if(sub.metadata?.setup_billing_started==='1') return false;
+  if(sub.status!=='trialing') throw new Error('Setup trial not active');
+  if(sub.pause_collection?.behavior==='void' && !sub.pause_collection?.resumes_at) return true;
+  await stripe.subscriptions.update(subscriptionId,{
+    pause_collection:{behavior:'void'},
+  },{idempotencyKey:'respondo-hold-'+subscriptionId});
+  return true;
+}
+
 // A paid setup request is work for Respondo's team, not proof that a bot is ready.
 // Keep an auditable queue and deduplicate customer/team email across Stripe webhook
 // and the successful Checkout redirect.
@@ -967,9 +985,13 @@ async function notifySetupServiceAfterCheckout(session) {
     customer_emailed_at TIMESTAMPTZ,
     owner_emailed_at TIMESTAMPTZ,
     ready_emailed_at TIMESTAMPTZ,
+    billing_started_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
+  await q("ALTER TABLE setup_service_requests ADD COLUMN IF NOT EXISTS billing_started_at TIMESTAMPTZ");
+  // Only release the billing hold when the owner later confirms handover.
+  await ensureManualSetupBillingOnHold(subscriptionId);
   const owner=await q(
     `SELECT u.email,u.full_name,u.preferred_language,t.name AS company_name
        FROM tenants t JOIN users u ON u.id=t.owner_user_id
@@ -1458,6 +1480,9 @@ function setupServiceWebsiteUrl(raw, selected) {
 }
 
 const SETUP_SERVICE_PRICE_CENTS = 19900;
+// Paid manual setup gets a long trial and (after paid Checkout) an indefinite
+// Stripe payment-collection hold until the owner confirms delivery.
+const SETUP_BILLING_HOLD_DAYS = 365;
 function setupServiceCheckoutLineItem() {
   return {
     price_data:{
@@ -10002,7 +10027,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           submit: { message: taxExemptionMessage },
         },
         subscription_data: {
-          ...(normalizedPlan === 'owner_test' ? {} : { trial_period_days: 3 }),
+          ...(normalizedPlan === 'owner_test' ? {} : { trial_period_days: setupService ? SETUP_BILLING_HOLD_DAYS : 3 }),
           metadata: {
             user_id: id,
             tenant_id: tenantId,
@@ -10011,6 +10036,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             billing_country: checkoutCountry.country,
             business_purchase: '1',
             setup_service:setupService ? '1' : '0',
+            ...(setupService ? { setup_billing_deferred:'1' } : {}),
             ...(setupService ? { setup_website:setupWebsite } : {}),
             ...(referralCode ? { referral_code: referralCode } : {}),
           },
@@ -10031,6 +10057,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           billing_country: checkoutCountry.country,
           business_purchase: '1',
           setup_service:setupService ? '1' : '0',
+          ...(setupService ? { setup_billing_deferred:'1' } : {}),
           ...(setupService ? { setup_website:setupWebsite } : {}),
           ...(referralCode ? { referral_code: referralCode } : {}),
         },
@@ -10851,7 +10878,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         submit:{message: taxExemptionMessage},
       },
       subscription_data:{
-        trial_period_days:3,
+        trial_period_days:setupService ? SETUP_BILLING_HOLD_DAYS : 3,
         metadata:{
           user_id:req.user.sub,
           tenant_id:tenantId,
@@ -10861,6 +10888,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
           billing_country:checkoutCountry.country,
           business_purchase:'1',
           setup_service:setupService ? '1' : '0',
+          ...(setupService ? { setup_billing_deferred:'1' } : {}),
           ...(setupService ? { setup_website:setupWebsite } : {}),
           ...(referralCode ? { referral_code:referralCode } : {}),
         },
@@ -10879,6 +10907,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         billing_country:checkoutCountry.country,
         business_purchase:'1',
         setup_service:setupService ? '1' : '0',
+        ...(setupService ? { setup_billing_deferred:'1' } : {}),
         ...(setupService ? { setup_website:setupWebsite } : {}),
         ...(referralCode ? { referral_code:referralCode } : {}),
       },
