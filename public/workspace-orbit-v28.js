@@ -81,9 +81,19 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     const nextIndex=(index+direction+sections.length)%sections.length;
     navigateTo(sections[nextIndex].id);
   };
+  // Direct taps must reveal the selected form on phones; paging the dial with
+  // its arrows/wheel keeps the navigation visible so visitors can keep browsing.
+  const revealMobileSection=()=>{
+    if(!window.matchMedia('(max-width:850px)').matches)return;
+    requestAnimationFrame(()=>{
+      const page=content.querySelector('[data-workspace-page]:not([hidden])');
+      if(!page)return;
+      page.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+    });
+  };
   orb.addEventListener('click',event=>{
     const target=event.target.closest?.('[data-orbit-page]');
-    if(target&&orb.contains(target)){navigateTo(target.dataset.orbitPage);return;}
+    if(target&&orb.contains(target)){navigateTo(target.dataset.orbitPage);revealMobileSection();return;}
     const arrow=event.target.closest?.('[data-orbit-direction]');
     if(arrow&&orb.contains(arrow))move(Number(arrow.dataset.orbitDirection));
   });
@@ -91,7 +101,10 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     if(event.ctrlKey||event.metaKey)return; // Preserve pinch zoom.
     const delta=Math.abs(event.deltaY)>Math.abs(event.deltaX)?event.deltaY:event.deltaX;
     if(Math.abs(delta)<2)return;
-    event.preventDefault(); // Only the dial controls section switching.
+    // At both ends return to native page scrolling, never trap visitors in the dial.
+    const index=sections.findIndex(section=>section.id===current);
+    if((index===0&&delta<0)||(index===sections.length-1&&delta>0))return;
+    event.preventDefault(); // Inside the dial, scrolling browses real sections.
     const now=performance.now();
     if(now-lastWheel<420)return;
     lastWheel=now;

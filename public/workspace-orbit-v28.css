@@ -218,3 +218,6 @@
   #app .rs-workspace-orbit .rs-orbit-ring {transition:none!important}
   #app .rs-workspace-orbit .rs-orbit-point {transition:none!important}
 }
+
+/* Mobile direct icon selection reveals the functional panel below the dial. */
+#app .respondo-workspace-content > [data-workspace-page]{scroll-margin-top:18px}

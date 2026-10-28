@@ -47,3 +47,10 @@ test('bot details and company settings remain separate, minimal and persistent',
   assert.match(workspace,/for\(const \[key\] of visibleFields\)/);
   assert.match(workspace,/original\.requestSubmit\(\)/);
 });
+
+test('direct mobile icon taps reveal their real panel and wheel exits at the dial edges',()=>{
+  assert.match(orbit,/const revealMobileSection=\(\)=>/);
+  assert.match(orbit,/page\.scrollIntoView/);
+  assert.match(orbit,/revealMobileSection\(\);return/);
+  assert.match(orbit,/index===sections\.length-1&&delta>0/);
+});
