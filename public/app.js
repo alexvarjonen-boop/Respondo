@@ -3368,10 +3368,40 @@ async function dashboard(options = {}) {
   const onboardingDone = onboarding.filter((x) => x.done).length;
   const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
   const isWelcome = new URLSearchParams(location.search).get('welcome') === '1';
+  const hasWebsite = Boolean(String(businessProfile.Verkkosivu || t.website || '').trim());
+  const showGuidedSetup = !isDemo && !hasWebsite;
+  const accountInitial = String(me.full_name || me.name || me.email || 'R').trim().charAt(0).toUpperCase() || 'R';
 
-  return `<div class="appshell dashboard-simple-shell ${isDemo ? 'demo-dashboard-shell' : ''}">
+  return `<div class="appshell dashboard-simple-shell dashboard-os-shell ${showGuidedSetup ? 'guided-setup-active' : ''} ${isDemo ? 'demo-dashboard-shell' : ''}">
+    ${!isDemo ? `<aside class="dashboard-os-sidebar" aria-label="${esc(appText('Hallintapaneelin valikko','Kontrollpanelens meny','Dashboard navigation'))}">
+      <div class="dashboard-os-brand">
+        ${logo()}
+        <div><small>RESPONDO</small><b>${esc(t.name)}</b></div>
+      </div>
+      <nav class="dashboard-os-nav">
+        <button type="button" class="active" data-dashboard-nav="overview"><span>⌂</span><b>${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</b></button>
+        <button type="button" data-dashboard-nav="setup"><span>◇</span><b>${appText('Botti','Bot','Bot')}</b></button>
+        <button type="button" data-dashboard-nav="answers"><span>?</span><b>${appText('Vastaukset','Svar','Answers')}</b></button>
+        <button type="button" data-dashboard-nav="customers"><span>◎</span><b>${appText('Asiakkaat','Kunder','Customers')}</b></button>
+        <button type="button" data-dashboard-nav="automation"><span>↗</span><b>${appText('Toiminnot','Funktioner','Actions')}</b></button>
+        <button type="button" data-dashboard-nav="install"><span>&lt;/&gt;</span><b>${appText('Asennus','Installation','Installation')}</b></button>
+        <div class="dashboard-profile-group">
+          <button type="button" class="dashboard-profile-toggle" data-dashboard-nav="account" aria-expanded="true"><span>${esc(accountInitial)}</span><b>${appText('Profiili','Profil','Profile')}</b><i>⌄</i></button>
+          <div class="dashboard-profile-subnav">
+            <button type="button" data-dashboard-nav="account" data-account-target="workspaces">${appText('Yritykset','Företag','Companies')}</button>
+            <button type="button" data-dashboard-nav="account" data-account-target="billing">${appText('Tilaus','Abonnemang','Subscription')}</button>
+            <button type="button" data-dashboard-nav="account" data-account-target="account-security">${appText('Asetukset','Inställningar','Settings')}</button>
+          </div>
+        </div>
+      </nav>
+      <div class="dashboard-os-sidebar-bottom">
+        <div class="dashboard-os-account"><span>${esc(accountInitial)}</span><div><b>${esc(me.full_name || me.name || appText('Oma profiili','Min profil','My profile'))}</b><small>${esc(me.email || '')}</small></div></div>
+        <button class="dashboard-os-logout" id="logoutSide" type="button">${appText('Kirjaudu ulos','Logga ut','Log out')}</button>
+      </div>
+    </aside>` : ''}
     <main class="appmain dashboard-simple-main ${isDemo ? 'demo-dashboard-main' : ''}">
       <header class="dashboard-topbar ${isDemo ? 'demo-sticky-topbar' : ''}">
+        ${!isDemo ? `<div class="dashboard-page-context"><small id="dashboardPageEyebrow">RESPONDO OS</small><strong id="dashboardPageTitle">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</strong></div>` : ''}
         <div class="dashboard-topbar-brand">
           ${logo()}
           <div class="dashboard-workspace ${isDemo ? '' : 'workspace-switcher-block'}">
@@ -3457,6 +3487,75 @@ async function dashboard(options = {}) {
           </form>
         </section>
       </div>` : ''}
+
+      ${showGuidedSetup ? `<section class="guided-setup" id="guidedSetup" aria-labelledby="guidedSetupTitle">
+        <div class="guided-setup-progress" aria-label="${esc(appText('Käyttöönoton edistyminen','Kom igång-förlopp','Setup progress'))}">
+          ${[1,2,3,4,5].map((step) => `<span class="${step===1?'active':''}" data-guided-progress="${step}">${step}</span>`).join('<i></i>')}
+        </div>
+        <form id="guidedSetupForm" class="guided-setup-form">
+          <article class="guided-card" data-guided-step="1">
+            <small>${appText('VAIHE 1 / 5','STEG 1 / 5','STEP 1 OF 5')}</small>
+            <h1 id="guidedSetupTitle">${appText('Mikä on yrityksesi verkkosivu?','Vilken är företagets webbplats?','What is your company website?')}</h1>
+            <p>${appText('Respondo käyttää osoitetta yrityksesi tietojen löytämiseen ja toimii vain tällä verkkosivulla.','Respondo använder adressen för att hitta företagsinformation och fungerar endast på den här webbplatsen.','Respondo uses the address to find your company information and only works on this website.')}</p>
+            <label class="guided-main-field"><span>${appText('Verkkosivun osoite','Webbadress','Website address')}</span><input name="website" type="url" inputmode="url" autocomplete="url" required placeholder="https://yritys.fi"></label>
+            <div class="guided-card-actions"><button class="guided-continue" type="button" data-guided-next>${appText('Jatka','Fortsätt','Continue')} <span>→</span></button></div>
+            <div class="guided-step-message" aria-live="polite"></div>
+          </article>
+
+          <article class="guided-card" data-guided-step="2" hidden>
+            <small>${appText('VAIHE 2 / 5','STEG 2 / 5','STEP 2 OF 5')}</small>
+            <h1>${appText('Tee botista yrityksesi näköinen.','Gör botten till företagets egen.','Make the bot feel like your company.')}</h1>
+            <p>${appText('Valitse kuvake ja anna botille nimi. Näet valinnat heti esikatselussa.','Välj en ikon och ge botten ett namn. Du ser valen direkt i förhandsvisningen.','Choose an icon and give the bot a name. Your choices appear in the preview immediately.')}</p>
+            <div class="guided-bot-layout">
+              <div>
+                <label class="guided-main-field"><span>${appText('Botin nimi','Bottens namn','Bot name')}</span><input name="botName" maxlength="40" required value="${esc(t.bot_name || 'RESPONDO AI')}" placeholder="Esim. Aino"></label>
+                <input type="hidden" name="botAvatar" value="${esc(t.bot_avatar || 'robot-1')}">
+                <div class="guided-avatar-grid" role="list" aria-label="${esc(appText('Valitse botin kuvake','Välj botikon','Choose bot icon'))}">
+                  ${BOT_AVATAR_PRESETS.map((avatar) => `<button type="button" class="guided-avatar-option ${(t.bot_avatar || 'robot-1') === avatar.id ? 'selected' : ''}" data-guided-avatar="${avatar.id}" title="${esc(avatar.label)}">${botAvatarMarkup(avatar.id)}<small>${esc(avatar.label)}</small></button>`).join('')}
+                </div>
+                <label class="guided-upload"><span>＋</span><b>${appText('Tai lataa oma kuva','Eller ladda upp egen bild','Or upload your own image')}</b><input id="guidedAvatarUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden></label>
+              </div>
+              <div class="guided-bot-preview"><div id="guidedAvatarPreview">${botAvatarMarkup(t.bot_avatar || 'robot-1')}</div><b id="guidedBotNamePreview">${esc(t.bot_name || 'RESPONDO AI')}</b><small>${appText('paikalla nyt','online nu','online now')}</small></div>
+            </div>
+            <div class="guided-card-actions"><button class="guided-back" type="button" data-guided-back>${appText('Takaisin','Tillbaka','Back')}</button><button class="guided-continue" type="button" data-guided-next>${appText('Jatka','Fortsätt','Continue')} <span>→</span></button></div>
+            <div class="guided-step-message" aria-live="polite"></div>
+          </article>
+
+          <article class="guided-card" data-guided-step="3" hidden>
+            <small>${appText('VAIHE 3 / 5 · VAPAAEHTOINEN','STEG 3 / 5 · VALFRITT','STEP 3 OF 5 · OPTIONAL')}</small>
+            <h1>${appText('Lisää valmiita kysymyksiä ja vastauksia.','Lägg till färdiga frågor och svar.','Add ready-made questions and answers.')}</h1>
+            <p>${appText('Voit ohittaa tämän kokonaan. Vastauksia voi lisätä ja muokata myöhemmin hallintapaneelissa.','Du kan hoppa över detta helt. Svar kan läggas till och redigeras senare.','You can skip this entirely. Answers can be added and edited later.')}</p>
+            <div class="guided-qa-list">
+              ${[1,2,3].map((i) => `<div class="guided-qa-row"><label><span>${appText('Kysymys','Fråga','Question')} ${i}</span><input name="question${i}" placeholder="${esc(appText('Esim. Mitkä ovat aukioloaikanne?','T.ex. Vilka är era öppettider?','E.g. What are your opening hours?'))}"></label><label><span>${appText('Vastaus','Svar','Answer')} ${i}</span><textarea name="answer${i}" placeholder="${esc(appText('Kirjoita hyväksytty vastaus tähän','Skriv det godkända svaret här','Write the approved answer here'))}"></textarea></label></div>`).join('')}
+            </div>
+            <div class="guided-card-actions"><button class="guided-back" type="button" data-guided-back>${appText('Takaisin','Tillbaka','Back')}</button><button class="guided-skip" type="button" data-guided-next>${appText('Ohita nyt','Hoppa över','Skip for now')}</button><button class="guided-continue" type="button" data-guided-next>${appText('Jatka','Fortsätt','Continue')} <span>→</span></button></div>
+          </article>
+
+          <article class="guided-card" data-guided-step="4" hidden>
+            <small>${appText('VAIHE 4 / 5 · VAPAAEHTOINEN','STEG 4 / 5 · VALFRITT','STEP 4 OF 5 · OPTIONAL')}</small>
+            <h1>${appText('Viimeistele botin ensimmäinen viesti.','Slutför bottens första meddelande.','Finish the bot’s first message.')}</h1>
+            <p>${appText('Nämä tiedot auttavat bottia palvelemaan asiakkaita heti, mutta voit täydentää ne myöhemmin.','Dessa uppgifter hjälper botten direkt, men du kan komplettera dem senare.','These details help the bot right away, but you can complete them later.')}</p>
+            <div class="guided-fields-grid">
+              <label class="guided-main-field guided-wide"><span>${appText('Ensimmäinen viesti asiakkaalle','Första meddelandet till kunden','First message to the customer')}</span><input name="greeting" maxlength="220" value="${esc(t.greeting || appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?'))}"></label>
+              <label class="guided-main-field"><span>${appText('Puhelinnumero (valinnainen)','Telefonnummer (valfritt)','Phone number (optional)')}</span><input name="phone" inputmode="tel" placeholder="040 123 4567"></label>
+              <label class="guided-main-field"><span>${appText('Sähköposti (valinnainen)','E-post (valfritt)','Email (optional)')}</span><input name="email" type="email" placeholder="info@yritys.fi"></label>
+              <label class="guided-main-field guided-wide"><span>${appText('Aukioloajat (valinnainen)','Öppettider (valfritt)','Opening hours (optional)')}</span><input name="hours" placeholder="Ma–Pe 8–17"></label>
+            </div>
+            <div class="guided-card-actions"><button class="guided-back" type="button" data-guided-back>${appText('Takaisin','Tillbaka','Back')}</button><button class="guided-continue" type="button" data-guided-next>${appText('Jatka','Fortsätt','Continue')} <span>→</span></button></div>
+            <div class="guided-step-message" aria-live="polite"></div>
+          </article>
+
+          <article class="guided-card guided-finish-card" data-guided-step="5" hidden>
+            <small>${appText('VAIHE 5 / 5','STEG 5 / 5','STEP 5 OF 5')}</small>
+            <div class="guided-ready-mark">✓</div>
+            <h1>${appText('Bottisi on valmis luotavaksi.','Din bot är redo att skapas.','Your bot is ready to be created.')}</h1>
+            <p>${appText('Tarkista yhteenveto. Voit muuttaa kaikkia tietoja myöhemmin Botin ja Asetusten sivuilta.','Kontrollera sammanfattningen. Allt kan ändras senare på sidorna Bot och Inställningar.','Review the summary. You can change everything later from the Bot and Settings pages.')}</p>
+            <div class="guided-summary"><div><span>${appText('Verkkosivu','Webbplats','Website')}</span><b data-guided-summary="website">—</b></div><div><span>${appText('Botin nimi','Bottens namn','Bot name')}</span><b data-guided-summary="botName">—</b></div><div><span>${appText('Omat vastaukset','Egna svar','Custom answers')}</span><b data-guided-summary="answers">0</b></div></div>
+            <div class="guided-card-actions"><button class="guided-back" type="button" data-guided-back>${appText('Takaisin','Tillbaka','Back')}</button><button class="guided-continue guided-submit" type="submit">${appText('Luo botti','Skapa botten','Create bot')} <span>→</span></button></div>
+            <div class="guided-step-message" aria-live="polite"></div>
+          </article>
+        </form>
+      </section>` : ''}
 
       <section class="dashboard-head dashboard-view-section" data-dashboard-view="overview" id="overview">
         <div><div class="section-kicker">${appText('Hallintapaneeli','Kontrollpanel','Dashboard')}</div><h1>${esc(t.name)}</h1><p>${appText('Valitse ylhäältä mitä haluat tehdä. Näytämme vain siihen liittyvät asiat.','Välj ovan vad du vill göra. Vi visar bara det som hör till valet.','Choose what you want to do above. We only show the relevant items.')}</p></div>
@@ -5479,6 +5578,151 @@ async function route() {
       showDashboardView('account');
     });
 
+    document.querySelectorAll('[data-account-target]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const target = button.dataset.accountTarget;
+        showDashboardView('account', { scrollTop:false });
+        requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ behavior:'smooth', block:'start' }));
+      });
+    });
+
+    const profileToggle = $('.dashboard-profile-toggle');
+    profileToggle?.addEventListener('click', () => {
+      const group = profileToggle.closest('.dashboard-profile-group');
+      const open = !group?.classList.contains('collapsed');
+      group?.classList.toggle('collapsed', open);
+      profileToggle.setAttribute('aria-expanded', String(!open));
+    });
+
+    const guidedForm = $('#guidedSetupForm');
+    if (guidedForm) {
+      let guidedStep = 1;
+      const guidedCards = [...guidedForm.querySelectorAll('[data-guided-step]')];
+      const guidedProgress = [...document.querySelectorAll('[data-guided-progress]')];
+      const showGuidedStep = (next) => {
+        guidedStep = Math.max(1, Math.min(5, next));
+        guidedCards.forEach((card) => { card.hidden = Number(card.dataset.guidedStep) !== guidedStep; });
+        guidedProgress.forEach((item) => {
+          const itemStep = Number(item.dataset.guidedProgress);
+          item.classList.toggle('active', itemStep === guidedStep);
+          item.classList.toggle('done', itemStep < guidedStep);
+        });
+        if (guidedStep === 5) {
+          const values = new FormData(guidedForm);
+          const answerCount = [1,2,3].filter((i) => String(values.get('question'+i)||'').trim() && String(values.get('answer'+i)||'').trim()).length;
+          const websiteSummary = guidedForm.querySelector('[data-guided-summary="website"]');
+          const botNameSummary = guidedForm.querySelector('[data-guided-summary="botName"]');
+          const answersSummary = guidedForm.querySelector('[data-guided-summary="answers"]');
+          if (websiteSummary) websiteSummary.textContent = String(values.get('website')||'').trim();
+          if (botNameSummary) botNameSummary.textContent = String(values.get('botName')||'').trim();
+          if (answersSummary) answersSummary.textContent = String(answerCount);
+        }
+        guidedCards.find((card) => !card.hidden)?.querySelector('input,textarea,button')?.focus({ preventScroll:true });
+        document.querySelector('.dashboard-topbar')?.scrollIntoView({ behavior:'smooth', block:'start' });
+      };
+      const validateGuidedStep = () => {
+        const card = guidedCards.find((item) => Number(item.dataset.guidedStep) === guidedStep);
+        const message = card?.querySelector('.guided-step-message');
+        if (message) message.textContent = '';
+        if (guidedStep === 1) {
+          const input = guidedForm.elements.website;
+          const raw = String(input?.value || '').trim();
+          if (raw && !/^https?:\/\//i.test(raw)) input.value = 'https://' + raw;
+          if (!input?.checkValidity()) {
+            input?.reportValidity();
+            if (message) message.textContent = appText('Anna toimiva verkkosivun osoite.','Ange en giltig webbadress.','Enter a valid website address.');
+            return false;
+          }
+        }
+        if (guidedStep === 2) {
+          const input = guidedForm.elements.botName;
+          if (!String(input?.value || '').trim()) {
+            input?.focus();
+            if (message) message.textContent = appText('Anna botille nimi.','Ge botten ett namn.','Give your bot a name.');
+            return false;
+          }
+        }
+        if (guidedStep === 4) {
+          const email = guidedForm.elements.email;
+          if (email?.value && !email.checkValidity()) {
+            email.reportValidity();
+            return false;
+          }
+        }
+        return true;
+      };
+      guidedForm.querySelectorAll('[data-guided-next]').forEach((button) => button.addEventListener('click', () => {
+        if (validateGuidedStep()) showGuidedStep(guidedStep + 1);
+      }));
+      guidedForm.querySelectorAll('[data-guided-back]').forEach((button) => button.addEventListener('click', () => showGuidedStep(guidedStep - 1)));
+      guidedForm.querySelectorAll('[data-guided-avatar]').forEach((button) => button.addEventListener('click', () => {
+        const value = button.dataset.guidedAvatar || 'robot-1';
+        guidedForm.elements.botAvatar.value = value;
+        guidedForm.querySelectorAll('[data-guided-avatar]').forEach((item) => item.classList.toggle('selected', item === button));
+        const preview = $('#guidedAvatarPreview');
+        if (preview) preview.innerHTML = botAvatarMarkup(value);
+      }));
+      guidedForm.elements.botName?.addEventListener('input', (event) => {
+        const preview = $('#guidedBotNamePreview');
+        if (preview) preview.textContent = String(event.currentTarget.value || '').trim() || 'RESPONDO AI';
+      });
+      $('#guidedAvatarUpload')?.addEventListener('change', async (event) => {
+        const file = event.currentTarget.files?.[0];
+        if (!file) return;
+        try {
+          const data = await imageFileToAvatarData(file);
+          guidedForm.elements.botAvatar.value = data;
+          guidedForm.querySelectorAll('[data-guided-avatar]').forEach((item) => item.classList.remove('selected'));
+          const preview = $('#guidedAvatarPreview');
+          if (preview) preview.innerHTML = botAvatarMarkup(data);
+        } catch (error) {
+          const message = guidedCards[1]?.querySelector('.guided-step-message');
+          if (message) message.textContent = error.message;
+        } finally {
+          event.currentTarget.value = '';
+        }
+      });
+      guidedForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!validateGuidedStep()) return;
+        const values = new FormData(guidedForm);
+        const submit = guidedForm.querySelector('.guided-submit');
+        const message = guidedCards[4]?.querySelector('.guided-step-message');
+        const original = submit.innerHTML;
+        submit.disabled = true;
+        submit.innerHTML = appText('Luodaan bottia…','Skapar botten…','Creating bot…');
+        if (message) message.textContent = '';
+        try {
+          await api('/api/app/business-profile', {
+            method:'POST',
+            body:JSON.stringify({
+              website:values.get('website'),
+              botName:values.get('botName'),
+              botAvatar:values.get('botAvatar'),
+              botColor:'#111113',
+              greeting:values.get('greeting'),
+              tone:'Luonteva ja ystävällinen',
+              phone:values.get('phone'),
+              email:values.get('email'),
+              hours:values.get('hours'),
+            }),
+          });
+          for (const i of [1,2,3]) {
+            const title = String(values.get('question'+i)||'').trim();
+            const answer = String(values.get('answer'+i)||'').trim();
+            if (!title || !answer) continue;
+            await api('/api/app/knowledge', { method:'POST', body:JSON.stringify({ category:'Usein kysytyt', title, answer }) });
+          }
+          if (message) message.textContent = appText('Valmis! Avataan hallintapaneeli…','Klart! Kontrollpanelen öppnas…','Done! Opening your dashboard…');
+          setTimeout(() => { location.href = '/app'; }, 500);
+        } catch (error) {
+          submit.disabled = false;
+          submit.innerHTML = original;
+          if (message) message.textContent = error.message || appText('Botin luonti epäonnistui. Yritä uudelleen.','Det gick inte att skapa botten. Försök igen.','Could not create the bot. Try again.');
+        }
+      });
+    }
+
     const openDashboardTarget = (targetId) => {
       const view = targetViewMap[targetId] || 'overview';
       showDashboardView(view, { scrollTop:false });
@@ -6619,6 +6863,7 @@ async function route() {
     };
     $('#logout')?.addEventListener('click', doLogout);
     $('#logoutTop')?.addEventListener('click', doLogout);
+    $('#logoutSide')?.addEventListener('click', doLogout);
     $('#logoutAgent')?.addEventListener('click', doLogout);
 
     $('#copyCode')?.addEventListener('click', async (e) => {
