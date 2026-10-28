@@ -230,6 +230,8 @@ function bindBotColorPicker(form) {
 
 function botAvatarMarkup(value, extraClass = '') {
   const raw = String(value || 'robot-1');
+  // Public Try Bot starts with the official brand, while customers can still customize bot avatars.
+  if(raw === 'respondo-official') return '<img class="' + esc(extraClass) + '" src="/respondo-approved-arrow-20261012.png" alt="">';
   if (/^data:image\/(?:png|jpeg|webp);base64,/i.test(raw)) {
     return '<img class="' + esc(extraClass) + '" src="' + esc(raw) + '" alt="">';
   }
@@ -3537,7 +3539,7 @@ async function dashboard(options = {}) {
         name:appText('Kokeiluyritys','Demoföretag','Demo company'),
         slug:'public-demo',
         bot_name:'RESPONDO AI',
-        bot_avatar:'robot-1',
+        bot_avatar:'respondo-official',
         accent:'#111113',
         greeting:appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?'),
         average_lead_value:'',
@@ -4115,7 +4117,7 @@ async function dashboard(options = {}) {
           <div class="preview-device">
             <div class="preview-device-top">
               <span class="preview-avatar" id="previewAvatarVisual">${botAvatarMarkup(t.bot_avatar || 'robot-1')}</span>
-              <div><b id="previewBotName">${esc(t.bot_name || 'RESPONDO AI')}</b><small>paikalla nyt</small></div>
+              <div><b id="previewBotName">${esc(t.bot_name || 'RESPONDO AI')}</b><small>${appText('paikalla nyt','online nu','online now')}</small></div>
             </div>
             <div class="preview-chat" id="previewChat">
               <div class="preview-bubble bot">${esc(t.greeting || 'Hei! Miten voin auttaa?')}</div>
