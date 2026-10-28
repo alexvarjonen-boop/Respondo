@@ -385,7 +385,7 @@ const SL={
  generate:'Luo vahva salasana',copy:'Kopioi asiakasviesti',save:'Tallenna tunnukset',close:'Sulje',saved:'Tunnukset on tallennettu. Kopioi nyt viesti ja lähetä se henkilökohtaisesti.',copied:'Viesti kopioitu. Lähetä se asiakkaalle henkilökohtaisesti.',copyFail:'Kopiointi epäonnistui. Kopioi tiedot käsin.',
  confirm:'Oletko varmasti viimeistellyt botin ja lähettänyt kirjautumistiedot asiakkaalle itse? Respondo ei lähetä tästä automaattista sähköpostia.',
  confirmed:'Luovutus merkitty valmiiksi.',failed:'Toiminto epäonnistui. Yritä uudelleen.',
- mail:(email,password)=>'Hei!\\n\\nYrityksesi Respondo AI -botti on otettu käyttöön ja valmis tarkistettavaksi.\\n\\nKirjaudu: https://respondoai.fi/kirjaudu\\nSähköposti: '+email+'\\nVäliaikainen salasana: '+password+'\\n\\nVoit vaihtaa salasanan asetuksissa kirjautumisen jälkeen.\\n\\nYstävällisin terveisin,\\nRespondo AI'
+ mail:(email,password)=>'Hei!\n\nYrityksesi Respondo AI -botti on otettu käyttöön ja valmis tarkistettavaksi.\n\nKirjaudu: https://respondoai.fi/kirjaudu\nSähköposti: '+email+'\nVäliaikainen salasana: '+password+'\n\nVoit vaihtaa salasanan asetuksissa kirjautumisen jälkeen.\n\nYstävällisin terveisin,\nRespondo AI'
  },
  sv:{
  title:'Beställningar för installation',eyebrow:'ÄGARENS ARBETSKÖ',
@@ -397,7 +397,7 @@ const SL={
  dialog:'Kundens inloggning',login:'E-post för inloggning',password:'Tillfälligt lösenord',hint:'Spara först när botten är klar. Kopiera meddelandet och skicka själv från info@respondoai.fi. Lösenord lagras endast som en hash.',
  generate:'Skapa starkt lösenord',copy:'Kopiera kundmeddelande',save:'Spara inloggning',close:'Stäng',saved:'Uppgifterna är sparade. Kopiera nu meddelandet och skicka det personligen.',copied:'Meddelandet kopierat. Skicka det personligen till kunden.',copyFail:'Kunde inte kopiera. Kopiera uppgifterna manuellt.',
  confirm:'Har du färdigställt botten och personligen mejlat inloggningsuppgifterna? Respondo skickar inget automatiskt mejl.',confirmed:'Överlämningen bekräftad.',failed:'Åtgärden misslyckades. Försök igen.',
- mail:(email,password)=>'Hej!\\n\\nDin Respondo AI-bot är nu klar.\\n\\nLogga in: https://respondoai.fi/kirjaudu\\nE-post: '+email+'\\nTillfälligt lösenord: '+password+'\\n\\nDu kan ändra lösenordet i inställningarna.\\n\\nMed vänliga hälsningar,\\nRespondo AI'
+ mail:(email,password)=>'Hej!\n\nDin Respondo AI-bot är nu klar.\n\nLogga in: https://respondoai.fi/kirjaudu\nE-post: '+email+'\nTillfälligt lösenord: '+password+'\n\nDu kan ändra lösenordet i inställningarna.\n\nMed vänliga hälsningar,\nRespondo AI'
  },
  en:{
  title:'Assisted setup orders',eyebrow:'OWNER WORK QUEUE',
@@ -409,7 +409,7 @@ const SL={
  dialog:'Customer login credentials',login:'Login email',password:'Temporary password',hint:'Save only after preparing the bot. Copy the message and email it yourself from info@respondoai.fi. The password is stored as a hash only.',
  generate:'Generate strong password',copy:'Copy customer message',save:'Save credentials',close:'Close',saved:'Credentials saved. Copy the message now and personally send it to your customer.',copied:'Message copied. Personally email it to the customer.',copyFail:'Copy failed. Copy the credentials manually.',
  confirm:'Have you finished the bot and personally emailed the credentials? Respondo will not send an automatic email.',confirmed:'Handover confirmed.',failed:'Could not complete the action. Please try again.',
- mail:(email,password)=>'Hello,\\n\\nYour Respondo AI bot is ready for review.\\n\\nSign in: https://respondoai.fi/kirjaudu\\nEmail: '+email+'\\nTemporary password: '+password+'\\n\\nYou can change your password in Settings.\\n\\nBest regards,\\nRespondo AI'
+ mail:(email,password)=>'Hello,\n\nYour Respondo AI bot is ready for review.\n\nSign in: https://respondoai.fi/kirjaudu\nEmail: '+email+'\nTemporary password: '+password+'\n\nYou can change your password in Settings.\n\nBest regards,\nRespondo AI'
  }
 };
 const sl=(key)=>SL[lang]?.[key]||SL.fi[key]||key;
