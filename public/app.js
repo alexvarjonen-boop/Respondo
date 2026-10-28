@@ -1,3 +1,4 @@
+import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-v24';
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
@@ -3884,7 +3885,7 @@ async function dashboard(options = {}) {
             <small>${appText('VAIHE 1 / 5','STEG 1 / 5','STEP 1 OF 5')}</small>
             <h1 id="guidedSetupTitle">${appText('Mikä on yrityksesi verkkosivu?','Vilken är företagets webbplats?','What is your company website?')}</h1>
             <p>${isDemo ? appText('Syötä yrityksen verkkosivu. Haemme sen julkisia tietoja väliaikaiseen bottikokeiluun.','Ange företagets webbplats. Vi hämtar offentlig information till en tillfällig botdemo.','Enter a company website. We will scan its public information for a temporary bot demo.') : appText('Respondo käyttää osoitetta yrityksesi tietojen löytämiseen ja toimii vain tällä verkkosivulla.','Respondo använder adressen för att hitta företagsinformation och fungerar endast på den här webbplatsen.','Respondo uses the address to find your company information and only works on this website.')}</p>
-            <label class="guided-main-field"><span>${appText('Verkkosivun osoite','Webbadress','Website address')}</span><input name="website" type="url" inputmode="url" autocomplete="url" required placeholder="https://yritys.fi"></label>
+            <label class="guided-main-field"><span>${appText('Verkkosivun osoite','Webbadress','Website address')}</span><input name="website" type="url" inputmode="url" autocomplete="url" required placeholder="${appText('https://yritys.fi','https://foretag.se','https://company.fi')}"></label>
             <div class="guided-card-actions"><button class="guided-continue" type="button" data-guided-next>${appText('Jatka','Fortsätt','Continue')} <span>→</span></button></div>
             <div class="guided-step-message" aria-live="polite"></div>
           </article>
@@ -3895,7 +3896,7 @@ async function dashboard(options = {}) {
             <p>${appText('Valitse kuvake ja anna botille nimi. Näet valinnat heti esikatselussa.','Välj en ikon och ge botten ett namn. Du ser valen direkt i förhandsvisningen.','Choose an icon and give the bot a name. Your choices appear in the preview immediately.')}</p>
             <div class="guided-bot-layout">
               <div>
-                <label class="guided-main-field"><span>${appText('Botin nimi','Bottens namn','Bot name')}</span><input name="botName" maxlength="40" required value="${esc(t.bot_name || 'RESPONDO AI')}" placeholder="Esim. Aino"></label>
+                <label class="guided-main-field"><span>${appText('Botin nimi','Bottens namn','Bot name')}</span><input name="botName" maxlength="40" required value="${esc(t.bot_name || 'RESPONDO AI')}" placeholder="${appText('Esim. Aino','T.ex. Anna','E.g. Alex')}"></label>
                 <input type="hidden" name="botAvatar" value="${esc(t.bot_avatar || 'robot-1')}">
                 <div class="guided-avatar-grid" role="list" aria-label="${esc(appText('Valitse botin kuvake','Välj botikon','Choose bot icon'))}">
                   ${BOT_AVATAR_PRESETS.map((avatar) => `<button type="button" class="guided-avatar-option ${(t.bot_avatar || 'robot-1') === avatar.id ? 'selected' : ''}" data-guided-avatar="${avatar.id}" title="${esc(avatar.label)}">${botAvatarMarkup(avatar.id)}<small>${esc(avatar.label)}</small></button>`).join('')}
@@ -3925,8 +3926,8 @@ async function dashboard(options = {}) {
             <div class="guided-fields-grid">
               <label class="guided-main-field guided-wide"><span>${appText('Ensimmäinen viesti asiakkaalle','Första meddelandet till kunden','First message to the customer')}</span><input name="greeting" maxlength="220" value="${esc(t.greeting || appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?'))}"></label>
               <label class="guided-main-field"><span>${appText('Puhelinnumero (valinnainen)','Telefonnummer (valfritt)','Phone number (optional)')}</span><input name="phone" inputmode="tel" value="${esc(guidedExistingProfile.phone)}" placeholder="040 123 4567"></label>
-              <label class="guided-main-field"><span>${appText('Sähköposti (valinnainen)','E-post (valfritt)','Email (optional)')}</span><input name="email" type="email" value="${esc(guidedExistingProfile.email)}" placeholder="info@yritys.fi"></label>
-              <label class="guided-main-field guided-wide"><span>${appText('Aukioloajat (valinnainen)','Öppettider (valfritt)','Opening hours (optional)')}</span><input name="hours" value="${esc(guidedExistingProfile.hours)}" placeholder="Ma–Pe 8–17"></label>
+              <label class="guided-main-field"><span>${appText('Sähköposti (valinnainen)','E-post (valfritt)','Email (optional)')}</span><input name="email" type="email" value="${esc(guidedExistingProfile.email)}" placeholder="${appText('info@yritys.fi','info@foretag.se','info@company.fi')}"></label>
+              <label class="guided-main-field guided-wide"><span>${appText('Aukioloajat (valinnainen)','Öppettider (valfritt)','Opening hours (optional)')}</span><input name="hours" value="${esc(guidedExistingProfile.hours)}" placeholder="${appText('Ma–Pe 8–17','Mån–Fre 8–17','Mon–Fri 8–17')}"></label>
             </div>
             <div class="guided-card-actions"><button class="guided-back" type="button" data-guided-back>${appText('Takaisin','Tillbaka','Back')}</button><button class="guided-continue" type="button" data-guided-next>${appText('Jatka','Fortsätt','Continue')} <span>→</span></button></div>
             <div class="guided-step-message" aria-live="polite"></div>
@@ -4221,13 +4222,13 @@ async function dashboard(options = {}) {
           <div class="preview-device">
             <div class="preview-device-top">
               <span class="preview-avatar" id="previewAvatarVisual">${botAvatarMarkup(t.bot_avatar || 'robot-1')}</span>
-              <div><b id="previewBotName">${esc(t.bot_name || 'RESPONDO AI')}</b><small>paikalla nyt</small></div>
+              <div><b id="previewBotName">${esc(t.bot_name || 'RESPONDO AI')}</b><small>${appText('paikalla nyt','online nu','online now')}</small></div>
             </div>
             <div class="preview-chat" id="previewChat">
               <div class="preview-bubble bot">${esc(t.greeting || 'Hei! Miten voin auttaa?')}</div>
             </div>
             <form class="preview-form" id="previewForm" data-slug="${esc(t.slug)}">
-              <input name="question" autocomplete="off" placeholder="Kysy esim. “Paljonko maksaa?”">
+              <input name="question" autocomplete="off" placeholder="${appText('Kysy esim. “Paljonko maksaa?”','Fråga t.ex. ”Vad kostar det?”','Ask e.g. “How much does it cost?”')}">
               <button type="submit">→</button>
             </form>
           </div>
@@ -5502,15 +5503,10 @@ async function route() {
         }
         renderDemoKnowledge();
         refreshDemoIdentity();
-        $('#guidedSetup')?.setAttribute('hidden','');
-        $('.demo-dashboard-shell')?.classList.remove('guided-setup-active');
-        showDemoDashboardView('setup',{scrollTop:false});
+        activateRespondoWorkspace({demo:true,view:'bot'});
         const importButton=$('#importWebsite');
         requestAnimationFrame(()=>{
-          if(importButton&&!importButton.disabled){
-            importButton.scrollIntoView({behavior:'smooth',block:'center'});
-            importButton.click();
-          }
+          if(importButton&&!importButton.disabled) importButton.click();
         });
       });
     }
@@ -6583,8 +6579,26 @@ async function route() {
             await api('/api/app/knowledge', { method:'POST', body:JSON.stringify({ category:'Usein kysytyt', title, answer }) });
             savedGuidedAnswers.set(i,answerFingerprint);
           }
-          if (message) message.textContent = appText('Valmis! Avataan hallintapaneeli…','Klart! Kontrollpanelen öppnas…','Done! Opening your dashboard…');
-          setTimeout(() => { location.href = '/app?section=setup&guidedImport=1'; }, 500);
+          // The finished wizard opens the existing working chat in place,
+          // without routing through the old white dashboard.
+          const profileForm=$('#businessProfileForm');
+          if(profileForm){
+            for(const key of ['website','botName','botAvatar','greeting','phone','email','hours']){
+              if(profileForm.elements[key] && values.has(key)) profileForm.elements[key].value=String(values.get(key)||'');
+            }
+          }
+          const displayName=$('#previewBotName');
+          if(displayName)displayName.textContent=String(values.get('botName')||'RESPONDO AI');
+          const displayAvatar=$('#previewAvatarVisual');
+          if(displayAvatar)displayAvatar.innerHTML=botAvatarMarkup(String(values.get('botAvatar')||'robot-1'));
+          const greetingBubble=$('#previewChat .preview-bubble.bot');
+          if(greetingBubble && $('#previewChat')?.children.length===1)greetingBubble.textContent=String(values.get('greeting')||'');
+          activateRespondoWorkspace({view:'bot'});
+          if(message) message.textContent = appText('Botti valmis. Haetaan verkkosivun tiedot…','Botten är klar. Hämtar webbplatsuppgifter…','Bot ready. Scanning your website…');
+          requestAnimationFrame(()=>{
+            const importButton=$('#importWebsite');
+            if(importButton && !importButton.disabled) importButton.click();
+          });
         } catch (error) {
           submit.disabled = false;
           submit.innerHTML = original;
@@ -6607,7 +6621,6 @@ async function route() {
         const button = document.getElementById('importWebsite');
         if (button && !button.disabled) {
           showDashboardView('setup', { scrollTop:false });
-          button.scrollIntoView({ behavior:'smooth', block:'center' });
           button.click();
         }
       }, 450);
@@ -7914,6 +7927,12 @@ async function route() {
         e.currentTarget.textContent = appText('Valitse ja kopioi','Markera och kopiera','Select and copy');
       }
     });
+    // Existing customers always return to the clear, dark bot-first workspace.
+    if (!$('#guidedSetup')) {
+      const section=new URLSearchParams(location.search).get('section');
+      const view=section==='account'?'profile':(section==='setup'?'bot':section);
+      activateRespondoWorkspace({view:view||'bot'});
+    }
   }
 }
 
