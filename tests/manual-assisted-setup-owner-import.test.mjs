@@ -34,7 +34,7 @@ test('manual setup credentials are owner-only, hashed, and never emailed by endp
   assert.ok(start>0&&end>start);
   assert.match(flow,/auth, ownerTrafficOnly, loginLimiter/);
   assert.match(flow,/bcrypt\.hash\(password,12\)/);
-  assert.match(flow,/UPDATE tenants SET contact_email=\$1/);
+  assert.doesNotMatch(flow,/UPDATE tenants SET contact_email=/);
   assert.match(flow,/session_version=session_version\+1/);
   assert.doesNotMatch(flow,/api\.resend\.com|smtp|sendMail\(/i);
   assert.match(flow,/manualDeliveryRequired:true/);
