@@ -1307,6 +1307,24 @@ async function assertCurrentCheckoutPrice(plan, priceId) {
 // Old Price IDs stay mapped for pre-existing subscribers but are never billed to new customers.
 // Optional fixed-price, one-time service. It is shown separately in Stripe Checkout
 // and appears only on the initial invoice, never on recurring renewals.
+// The business website is required for purchased, hands-on setup work.
+// Never crawl this URL here; the importer must enforce SSRF protections.
+function setupServiceWebsiteUrl(raw, selected) {
+  if(!selected) return '';
+  const input=String(raw||'').trim();
+  if(!input || input.length>300) throw Object.assign(new Error('Anna yrityksesi verkkosivun osoite käyttöönottopalvelua varten.'),{publicStatus:422});
+  try{
+    const url=new URL(/^https?:\/\//i.test(input) ? input : 'https://'+input);
+    if(!['https:','http:'].includes(url.protocol) || url.username || url.password || url.port ||
+       !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i.test(url.hostname)) {
+      throw new Error('invalid');
+    }
+    return url.origin;
+  }catch{
+    throw Object.assign(new Error('Anna julkisen verkkosivuston osoite, esimerkiksi https://yritys.fi.'),{publicStatus:422});
+  }
+}
+
 const SETUP_SERVICE_PRICE_CENTS = 19900;
 function setupServiceCheckoutLineItem() {
   return {
@@ -9638,6 +9656,9 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
 
   const { fullName, companyName, businessId, password, plan, acceptedTerms } = req.body;
   const setupService = req.body?.setupService === true;
+  let setupWebsite='';
+  try { setupWebsite=setupServiceWebsiteUrl(req.body?.setupWebsite,setupService); }
+  catch(e){ return res.status(e.publicStatus||422).json({error:e.message}); }
   const email = cleanEmail(req.body.email);
   const normalizedPlan = normalizeCheckoutPlan(plan);
   const referralCode = normalizeReferralCode(req.body.referralCode);
@@ -9820,6 +9841,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             billing_country: checkoutCountry.country,
             business_purchase: '1',
             setup_service:setupService ? '1' : '0',
+            ...(setupService ? { setup_website:setupWebsite } : {}),
             ...(referralCode ? { referral_code: referralCode } : {}),
           },
         },
@@ -9839,6 +9861,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           billing_country: checkoutCountry.country,
           business_purchase: '1',
           setup_service:setupService ? '1' : '0',
+          ...(setupService ? { setup_website:setupWebsite } : {}),
           ...(referralCode ? { referral_code: referralCode } : {}),
         },
       });
@@ -10511,6 +10534,9 @@ app.post('/api/app/workspaces/switch', auth, ownerOnly, async (req,res) => {
 
 app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const setupService=req.body?.setupService===true;
+  let setupWebsite='';
+  try { setupWebsite=setupServiceWebsiteUrl(req.body?.setupWebsite,setupService); }
+  catch(e){ return res.status(e.publicStatus||422).json({error:e.message}); }
   const companyName=String(req.body?.companyName||'').replace(/[<>]/g,'').trim().slice(0,120);
   const businessId=String(req.body?.businessId||'').replace(/[<>]/g,'').trim().slice(0,40);
   const plan=normalizeCheckoutPlan(req.body?.plan);
@@ -10652,6 +10678,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
           billing_country:checkoutCountry.country,
           business_purchase:'1',
           setup_service:setupService ? '1' : '0',
+          ...(setupService ? { setup_website:setupWebsite } : {}),
           ...(referralCode ? { referral_code:referralCode } : {}),
         },
       },
@@ -10669,6 +10696,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         billing_country:checkoutCountry.country,
         business_purchase:'1',
         setup_service:setupService ? '1' : '0',
+        ...(setupService ? { setup_website:setupWebsite } : {}),
         ...(referralCode ? { referral_code:referralCode } : {}),
       },
     });
