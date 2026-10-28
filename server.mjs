@@ -10954,6 +10954,102 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   }
 });
 
+// These internal operations are restricted to the account configured as OWNER_EMAIL.
+// A staff member must explicitly finish the installation before the final email is sent.
+async function sendReadySetupServiceEmailOnce(sessionId) {
+  const client=await pool.connect();
+  const lockKey='respondo-setup-ready:'+sessionId;
+  let locked=false;
+  try{
+    const rr=await client.query('SELECT pg_try_advisory_lock(hashtextextended($1,0)) AS locked',[lockKey]);
+    if(rr.rows[0]?.locked!==true) return {ready:false,busy:true};
+    locked=true;
+    const found=await client.query(
+      `SELECT sr.session_id,sr.website_url,sr.status,sr.ready_emailed_at,
+              u.email,u.preferred_language,t.name AS company_name
+         FROM setup_service_requests sr
+         JOIN tenants t ON t.id::text=sr.tenant_id
+         JOIN users u ON u.id=t.owner_user_id
+        WHERE sr.session_id=$1 AND sr.user_id=u.id::text
+          AND t.stripe_subscription_id IS NOT NULL
+          AND t.subscription_status IN ('active','trialing')
+        LIMIT 1`,
+      [sessionId],
+    );
+    if(!found.rowCount) return {ready:false,notFound:true};
+    const job=found.rows[0];
+    if(job.ready_emailed_at) return {ready:true,alreadySent:true};
+    const apiKey=String(process.env.RESEND_API_KEY||'').trim();
+    const from=String(process.env.EMAIL_VERIFICATION_FROM||'').trim();
+    if(!apiKey || !from) return {ready:false,emailUnavailable:true};
+    const lang=['fi','sv','en'].includes(job.preferred_language)?job.preferred_language:'en';
+    const pick=(fi,sv,en)=>lang==='fi'?fi:lang==='sv'?sv:en;
+    const subject=pick('Respondo-bottisi on valmis tarkistettavaksi','Din Respondo-bot är redo att granskas','Your Respondo bot is ready for review');
+    const html=brandedEmailHtml({
+      language:lang,
+      eyebrow:pick('Käyttöönotto valmis','Installationen är klar','Setup completed'),
+      title:subject,
+      content:
+        '<p style="font-size:15px;line-height:1.75;color:#dce4ef;margin:0 0 20px">'+escapeEmailHtml(pick(
+          'Olemme viimeistelleet yrityksesi Respondo-botin käyttöönottopalvelun. Voit nyt kirjautua hallintapaneeliin, tarkistaa botin vastaukset ja ottaa sen käyttöön verkkosivuillasi.',
+          'Vi har färdigställt installationen av din Respondo-bot. Logga in i kontrollpanelen för att granska svaren och aktivera botten på webbplatsen.',
+          'We have completed the setup of your Respondo bot. Sign in to your dashboard to review its answers and install it on your website.'
+        ))+'</p>'+
+        '<p style="color:#bccce2;font-size:14px;line-height:1.7;margin:0 0 20px">'+escapeEmailHtml(pick(
+          'Kirjautumistunnuksesi on sähköpostiosoitteesi. Käytä rekisteröityessäsi valitsemaasi salasanaa tai Google-kirjautumista. Voit vaihtaa salasanan asetuksista tai palauttaa sen kirjautumissivulta.',
+          'Din inloggningsadress är din e-postadress. Använd lösenordet du valde vid registreringen eller logga in med Google. Du kan ändra lösenordet i inställningarna eller återställa det via inloggningssidan.',
+          'Your login is your email address. Use the password you chose when signing up or sign in with Google. You can change your password in Settings or reset it from the login page.'
+        ))+'</p>'+
+        '<p style="margin:0 0 20px"><a href="'+escapeEmailHtml(BASE+'/app')+'" style="display:inline-block;border-radius:12px;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 22px;font-size:14px;font-weight:750">'+escapeEmailHtml(pick('Avaa hallintapaneeli','Öppna kontrollpanelen','Open dashboard'))+' →</a></p>'+
+        '<p style="font-size:13px;line-height:1.7;color:#b7c8e2;margin:0">'+escapeEmailHtml(pick('Jos haluat apua, vastaa tähän viestiin.','Svara på detta mejl om du behöver hjälp.','Reply to this email if you need help.'))+'</p>',
+    });
+    const response=await fetch('https://api.resend.com/emails',{
+      method:'POST',
+      headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'},
+      body:JSON.stringify({from,to:[job.email],reply_to:'info@respondoai.fi',subject,html}),
+    });
+    if(!response.ok) throw new Error('Setup ready email provider failed (HTTP '+response.status+')');
+    await client.query(
+      "UPDATE setup_service_requests SET status='ready',ready_emailed_at=NOW(),updated_at=NOW() WHERE session_id=$1",
+      [sessionId],
+    );
+    return {ready:true};
+  }finally{
+    if(locked) await client.query('SELECT pg_advisory_unlock(hashtextextended($1,0))',[lockKey]).catch(()=>{});
+    client.release();
+  }
+}
+
+app.get('/api/app/internal/setup-service-requests', auth, ownerTrafficOnly, async (req,res) => {
+  try{
+    const rr=await q(
+      `SELECT sr.session_id,sr.website_url,sr.status,sr.created_at,sr.customer_emailed_at,
+              sr.owner_emailed_at,sr.ready_emailed_at,t.name AS company_name,u.email
+         FROM setup_service_requests sr
+         JOIN tenants t ON t.id::text=sr.tenant_id
+         JOIN users u ON u.id=t.owner_user_id
+        ORDER BY sr.created_at DESC LIMIT 100`,
+    );
+    return res.json({requests:rr.rows});
+  }catch(e){
+    console.error('Setup admin listing failed:',e?.message);
+    return res.status(503).json({error:'Käyttöönottojonon avaaminen epäonnistui.'});
+  }
+});
+app.post('/api/app/internal/setup-service-requests/:id/ready', auth, ownerTrafficOnly, async (req,res) => {
+  const sessionId=String(req.params.id||'');
+  if(!/^cs_[A-Za-z0-9_]{10,120}$/.test(sessionId)) return res.status(400).json({error:'Virheellinen tilaus.'});
+  try{
+    const result=await sendReadySetupServiceEmailOnce(sessionId);
+    if(result.notFound) return res.status(404).json({error:'Käyttöönottotilausta ei löydy.'});
+    if(!result.ready) return res.status(503).json({error:'Valmistumisviestiä ei voitu lähettää. Yritä myöhemmin uudelleen.'});
+    return res.json({ok:true,alreadySent:result.alreadySent===true});
+  }catch(e){
+    console.error('Setup completion email failed:',e?.message);
+    return res.status(503).json({error:'Valmistumisviestin lähetys epäonnistui. Yritä myöhemmin uudelleen.'});
+  }
+});
+
 app.get('/api/app/workspaces/checkout-success', auth, ownerOnly, async (req,res) => {
   if(!stripe) return res.redirect('/app?section=account&workspace_checkout=error');
   try {
