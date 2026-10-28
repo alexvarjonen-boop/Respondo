@@ -230,6 +230,9 @@ function bindBotColorPicker(form) {
 
 function botAvatarMarkup(value, extraClass = '') {
   const raw = String(value || 'robot-1');
+  // The public Respondo Try Bot starts with the official brand symbol;
+  // business tenants still choose their own avatar or a preset robot.
+  if(raw === 'respondo-official') return '<img class="' + esc(extraClass) + '" src="/respondo-approved-arrow-20261012.png" alt="">';
   if (/^data:image\/(?:png|jpeg|webp);base64,/i.test(raw)) {
     return '<img class="' + esc(extraClass) + '" src="' + esc(raw) + '" alt="">';
   }
@@ -3537,7 +3540,7 @@ async function dashboard(options = {}) {
         name:appText('Kokeiluyritys','Demoföretag','Demo company'),
         slug:'public-demo',
         bot_name:'RESPONDO AI',
-        bot_avatar:'robot-1',
+        bot_avatar:'respondo-official',
         accent:'#111113',
         greeting:appText('Hei! Miten voin auttaa?','Hej! Hur kan jag hjälpa?','Hi! How can I help?'),
         average_lead_value:'',
