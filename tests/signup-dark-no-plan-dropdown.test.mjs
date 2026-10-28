@@ -8,9 +8,12 @@ const shell=readFileSync(new URL('../public/index.html',import.meta.url),'utf8')
 const start=app.indexOf('function signup() {');
 const end=app.indexOf('\nfunction login() {',start);
 assert.ok(start>0 && end>start);
+const setupStart=app.indexOf('function setupServiceOption() {');
+const setupEnd=app.indexOf('\nfunction bindSetupServiceOptions()',setupStart);
+assert.ok(setupStart>0 && setupEnd>setupStart,'real optional setup-service markup must exist');
 
 function renderSignup(plan,locale='fi',extra='') {
-  const source=app.slice(start,end);
+  const source=app.slice(setupStart,setupEnd)+'\n'+app.slice(start,end);
   const t=(fi,sv,en)=>({fi,sv,en}[locale]||fi);
   const signup=new Function('location','cfg','nav','appText','currentLang','socialAuthButtons','checkoutBusinessTerms','footer','esc','oauthErrorMessage',source+'\nreturn signup;')(
     { pathname:'/tilaus', search:'?plan='+encodeURIComponent(plan)+'&lang='+locale+extra },
@@ -43,6 +46,8 @@ for(const [plan,name,price,charged] of [
     assert.ok(html.includes(price));
     assert.ok(html.includes(charged));
     assert.ok(html.includes('href="/hinnat?lang=fi"'));
+    assert.match(html,/name="setupService" value="1"/);
+    assert.match(html,/199 €/);
     assert.ok(html.includes('/api/auth/oauth/google/start?flow=signup&plan='+plan));
   });
 }
