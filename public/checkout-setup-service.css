@@ -1,0 +1,93 @@
+/* Paid checkout: optional one-time setup service shown under the selected plan. */
+#app label.setup-service-option,
+#app .workspace-add-form > label.setup-service-option {
+  box-sizing:border-box!important;
+  display:grid!important;
+  grid-template-columns:22px minmax(0,1fr)!important;
+  align-items:start!important;
+  gap:12px!important;
+  width:100%!important;
+  min-width:0!important;
+  padding:16px 17px!important;
+  margin:0!important;
+  border:1px solid #425976!important;
+  border-radius:16px!important;
+  background:#1b2839!important;
+  color:#f8fbff!important;
+  cursor:pointer;
+  font-family:inherit;
+  text-transform:none!important;
+}
+#app label.setup-service-option input[type="checkbox"] {
+  display:block!important;
+  position:static!important;
+  appearance:checkbox!important;
+  -webkit-appearance:checkbox!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  width:20px!important;
+  height:20px!important;
+  min-height:20px!important;
+  min-width:20px!important;
+  max-width:20px!important;
+  max-height:20px!important;
+  margin:2px 0 0!important;
+  padding:0!important;
+  box-shadow:none!important;
+  transform:none!important;
+  accent-color:#7ab7ff!important;
+  cursor:pointer;
+}
+#app label.setup-service-option .setup-service-copy {
+  display:block!important;
+  min-width:0!important;
+  max-width:100%!important;
+  color:#f8fbff!important;
+  -webkit-text-fill-color:#f8fbff!important;
+  letter-spacing:normal!important;
+  text-transform:none!important;
+}
+#app label.setup-service-option .setup-service-title {
+  display:flex!important;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:8px 14px;
+}
+#app label.setup-service-option .setup-service-title strong,
+#app label.setup-service-option .setup-service-title b {
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  font-size:15px!important;
+  font-weight:750!important;
+  line-height:1.4!important;
+  letter-spacing:normal!important;
+  text-transform:none!important;
+}
+#app label.setup-service-option .setup-service-copy small {
+  display:block!important;
+  margin-top:5px!important;
+  font-size:12px!important;
+  font-weight:400!important;
+  line-height:1.6!important;
+  color:#bed0e6!important;
+  -webkit-text-fill-color:#bed0e6!important;
+  letter-spacing:normal!important;
+  text-transform:none!important;
+  overflow-wrap:break-word;
+}
+#app label.setup-service-option:has(input:checked) {
+  border-color:#78b8ff!important;
+  background:#1a304e!important;
+}
+#app label.setup-service-option:focus-within {
+  outline:2px solid #80baff!important;
+  outline-offset:2px;
+}
+@media(max-width:640px) {
+  #app label.setup-service-option,
+  #app .workspace-add-form > label.setup-service-option {
+    padding:14px!important;
+    gap:10px!important;
+  }
+}
