@@ -304,6 +304,35 @@ function productMeta(html, key) {
   }
   return '';
 }
+// Schema.org FAQPage data is often the only server-rendered customer FAQ on
+// sites whose accordion content is hydrated in JavaScript. Parse just questions
+// supplied by the page owner; never interpret QAPage/user comments as policies.
+function structuredFaqPairs(html) {
+  const out=[];
+  const seen=new Set();
+  for(const page of structuredProductNodes(html)){
+    if(!productTypeIs(page,'FAQPage')) continue;
+    const entries=Array.isArray(page.mainEntity)?page.mainEntity:[page.mainEntity];
+    for(const question of entries){
+      if(!productTypeIs(question,'Question')) continue;
+      const title=stripProductHtml(question.name||question.text||'').slice(0,180);
+      const accepted=question.acceptedAnswer;
+      const acceptedAnswers=Array.isArray(accepted)?accepted:[accepted];
+      const answer=acceptedAnswers.map(node=>
+        typeof node==='string' ? node : typeof node==='object' ? node?.text||'' : ''
+      ).map(stripProductHtml).filter(Boolean).join(' ').slice(0,900);
+      const key=norm(title+'|'+answer);
+      if(title.length<9 || title.length>180 || answer.length<10 ||
+         junk.test(title+' '+answer) || review.test(title+' '+answer) ||
+         billingAddressNoise.test(title+' '+answer) || seen.has(key)) continue;
+      seen.add(key);
+      out.push({title,answer});
+      if(out.length>=60) return out;
+    }
+  }
+  return out;
+}
+
 export function extractProducts(html, pageUrl) {
   const products=[];
   for (const node of structuredProductNodes(html)) {
@@ -465,6 +494,7 @@ function isContactPageLink(link) {
 
 export function extractBusinessDocument(html, url) {
   const products = extractProducts(html, url);
+  const faqPairs = structuredFaqPairs(html);
   const blocks = [], links = [];
   const stack = [];
   let buffer = '', heading = '', suppressedHeading = false;
@@ -559,7 +589,7 @@ export function extractBusinessDocument(html, url) {
     if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
   }
   flush();
-  return {url, blocks, links, products, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
+  return {url, blocks, links, products, faqPairs, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
 }
 
 export function businessFactKind(text, context = '') {
@@ -824,6 +854,12 @@ export function essentialWebsiteCandidates(bundle) {
     if(doc.contactForm && httpUrl(doc.url)) contactLinks.push({url:doc.url,sourceUrl:doc.url,score:30,hasForm:true});
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
+    // Owner-authored FAQ JSON-LD includes useful answers even when a CMS only
+    // renders its accordion after hydration. Preserve source URL and question.
+    for(const item of (Array.isArray(doc.faqPairs)?doc.faqPairs:[]).slice(0,60)){
+      const kind=businessFactKind(item.answer,item.title);
+      add(kind||'faq',item.title,item.answer,doc.url);
+    }
 
     // Legal/privacy pages are otherwise excluded from knowledge, but the
     // controller's literal contact details are often the most authoritative
