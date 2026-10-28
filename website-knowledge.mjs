@@ -492,9 +492,49 @@ function isContactPageLink(link) {
   }catch{return false;}
 }
 
+// Industrial and engineering sites often publish measured specifications as
+// definition lists (<dt>/<dd>) rather than full paragraphs. Extract only
+// literal measurable values and retain their labels as retrieval evidence.
+function verifiedDefinitionSpecification(label,value,sourceUrl) {
+  const name=clean(stripProductHtml(label));
+  const answer=clean(stripProductHtml(value));
+  if(name.length<4 || name.length>95 || answer.length<3 || answer.length>180 ||
+     /^https?:\/\//i.test(answer) || email.test(answer) ||
+     junk.test(name+' '+answer) || review.test(name+' '+answer) ||
+     billingAddressNoise.test(name+' '+answer) ||
+     manufacturerContactContext(name+' '+answer)) return null;
+  // Prices, contact details, refunds and policy promises use dedicated
+  // extractors. Generic marketing statistics are not technical specifications.
+  if(/(?:hinta|price|pricing|pris|discount|alennus|ilmainen|free|postage|shipping|toimitus|return|palaut|warranty|takuu|cookie|eväste|email|sähköposti|puhelin|phone|osoite|address|rating|arvostel|satisfaction|tyytyväis)/i.test(name)) return null;
+  if(/^(?:lisätiedot|lisatiedot|details?|specifications?|ominaisuudet|features?|tekniset tiedot|information|value|arvo|data)$/i.test(name)) return null;
+  const measured=/\b\d+(?:[.,]\d+)?\s*(?:t|tonnia|tonni|tonnes?|kg|kilogram(?:ma|s)?|mm|cm|m|metri(?:a|ä)?|metres?|meters?|kW|kWh|MW|bar|V|A|m²|m³|m2|m3|litra(?:a|ä)?|litres?|liters?)\b/i.test(answer);
+  const standard=/\b(?:ISO|EN|DIN)\s*\d{3,6}(?:[-:]\d{2,4})?\b/i.test(answer) &&
+    /sertif|certif|standard|hyväksyn|hyvaksyn|pätevy|patevy|qualif|certifikat/i.test(name);
+  if(!measured && !standard) return null;
+  if(!httpUrl(sourceUrl)) return null;
+  return {title:name,answer:name+': '+answer,sourceUrl};
+}
+function semanticDefinitionSpecifications(html,url) {
+  const specs=[],seen=new Set();
+  const safe=String(html||'').replace(/<!--[^]*?-->/g,'')
+    .replace(/<(script|style|noscript|template)\b[^>]*>[^]*?<\/\1\s*>/gi,'');
+  for(const dl of safe.matchAll(/<dl\b([^>]*)>([\s\S]*?)<\/dl\s*>/gi)) {
+    if(/hidden|cookie|reviews?|testimonials?|privacy|sidebar|menu|navigation/i.test(dl[1]||'')) continue;
+    for(const row of dl[2].matchAll(/<dt\b[^>]*>([\s\S]*?)<\/dt\s*>\s*<dd\b[^>]*>([\s\S]*?)<\/dd\s*>/gi)) {
+      const item=verifiedDefinitionSpecification(row[1],row[2],url);
+      const key=item&&norm(item.title+'|'+item.answer);
+      if(!key || seen.has(key))continue;
+      seen.add(key);specs.push(item);
+      if(specs.length>=100)return specs;
+    }
+  }
+  return specs;
+}
+
 export function extractBusinessDocument(html, url) {
   const products = extractProducts(html, url);
   const faqPairs = structuredFaqPairs(html);
+  const specPairs = semanticDefinitionSpecifications(html,url);
   const blocks = [], links = [];
   const stack = [];
   let buffer = '', heading = '', suppressedHeading = false;
@@ -589,7 +629,7 @@ export function extractBusinessDocument(html, url) {
     if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
   }
   flush();
-  return {url, blocks, links, products, faqPairs, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
+  return {url, blocks, links, products, faqPairs, specPairs, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
 }
 
 export function businessFactKind(text, context = '') {
@@ -868,6 +908,15 @@ export function essentialWebsiteCandidates(bundle) {
       // The services/pricing adapter adds answer excerpts to the title.
       // Keep the literal question unchanged for verified Q&A matching.
       add(['services','pricing'].includes(kind)?'faq':(kind||'faq'),item.title,item.answer,doc.url);
+    }
+
+    if(!productDetailDoc && !registryDoc){
+      // Source-grounded, compact dimensions for arbitrary businesses.
+      for(const item of (Array.isArray(doc.specPairs)?doc.specPairs:[]).slice(0,100)){
+        const value=String(item.answer||'').slice(String(item.title||'').length+2);
+        const fact=verifiedDefinitionSpecification(item.title,value,doc.url);
+        if(fact) add('details',fact.title,fact.answer,doc.url);
+      }
     }
 
     // Legal/privacy pages are otherwise excluded from knowledge, but the
@@ -1340,10 +1389,15 @@ export function usableWebsiteRow(row) {
   const sourceType=String(row.source_type || row.sourceType || '');
   if (!['website','demo_import'].includes(sourceType)) return true;
   if (['Tarjouspyyntölomake','Tuotekatalogi','Yhteydenottolomake','Yhteydenottosivu'].includes(row.title)) return !!httpUrl(row.answer);
-  if (row.category==='Yrityksen tiedot') return Boolean(
-    httpUrl(row.source_url||row.sourceUrl) &&
-    supplementalCompanyDetail({heading:row.title,text:row.answer},row.source_url||row.sourceUrl)
-  );
+  if (row.category==='Yrityksen tiedot') {
+    const source=row.source_url||row.sourceUrl;
+    const value=String(row.answer||'');
+    const labeled=value.startsWith(String(row.title||'')+': ')
+      ? value.slice(String(row.title||'').length+2) : '';
+    return Boolean(httpUrl(source) &&
+      (supplementalCompanyDetail({heading:row.title,text:row.answer},source) ||
+       (labeled && verifiedDefinitionSpecification(row.title,labeled,source))));
+  }
   const serviceTitle=String(row.title||'').match(/^Palvelut\s*:\s*(.+)$/i);
   if (
     serviceTitle &&
