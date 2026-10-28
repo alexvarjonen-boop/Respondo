@@ -366,3 +366,10 @@
   #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-module-card{padding:14px!important;margin-top:16px!important;}
   #app .respondo-workspace .rs-module-tabs{gap:5px}
 }
+
+/* Show a short knowledge preview by default; expand only on request. */
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace.rs-knowledge-collapsed #knowledgeList > .knowledge-item:nth-child(n+7) {
+ display:none!important;
+}
+#app .respondo-workspace .rs-knowledge-more{margin:18px 4px 3px}
+#app .respondo-workspace .rs-minimal-card .rs-simple-actions button{flex:0 0 auto}
