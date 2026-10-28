@@ -10955,7 +10955,7 @@ app.post('/api/app/internal/setup-service-requests/:id/import', auth, ownerTraff
       const sourceUrl=normalizeWebUrl(row?.sourceUrl,false);
       if(!title||!answer||!sourceUrl||normalizeHost(sourceUrl)!==normalizeHost(website))continue;
       const safetyText=normalizeSearchText(title+' '+category+' '+answer.slice(0,900)+' '+sourceUrl);
-      if(/terms of service|privacy policy|tietosuoja|kayttoeh|käyttöeh|cookie policy|evaste|eväste|legal notice|all rights reserved|localstorage|sessionstorage|const |let |var |function |\.includes\(|\.getitem\(|\.setitem\(|document\.|window\.|queryselector|addeventlistener|json\.stringify|json\.parse/.test(safetyText))continue;
+      if(/(?:terms of service|privacy policy|tietosuoja|kayttoeh|käyttöeh|cookie policy|evaste|eväste|legal notice|all rights reserved|localstorage|sessionstorage|queryselector|addeventlistener|json)/i.test(safetyText))continue;
       if(!usableWebsiteRow({title,answer,category,source_type:'website'})||title.length<3)continue;
       const dedupe=sourceUrl.toLowerCase()+'|'+title.toLowerCase();
       if(seen.has(dedupe))continue;
