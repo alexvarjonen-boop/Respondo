@@ -12381,7 +12381,11 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // For a broad product question, re-scan that same website instead of ever
     // falling back to the logged-in Respondo owner's knowledge.
     const needsProductRecovery=broadProductQuestion(message);
-    const needsContactRecovery=generalContactQuestion(message) &&
+    // A booking enquiry should recover the tested website's own contact
+    // page too; an ordinary missing-answer lead form is not a booking method.
+    const bookingContactEnquiry=/(?:ajanvaraus|miten (?:voin )?varata|varata (?:ajan|aika)|how (?:can|do) i book|book an appointment|hur (?:kan|gor) jag boka|kan jag boka)/i
+      .test(normalizeSearchText(message));
+    const needsContactRecovery=(generalContactQuestion(message)||bookingContactEnquiry) &&
       !rows.some(row=>['Yhteydenottolomake','Yhteydenottosivu'].includes(String(row?.title||'')));
     if (isPublicDemo && (needsProductRecovery || needsContactRecovery)) {
       const hasProductFacts=rows.some((row)=>{
