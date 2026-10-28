@@ -3690,7 +3690,7 @@ async function dashboard(options = {}) {
   const onboardingPct = Math.round((onboardingDone / onboarding.length) * 100);
   const isWelcome = new URLSearchParams(location.search).get('welcome') === '1';
   const hasWebsite = Boolean(String(businessProfile.Verkkosivu || t.website || '').trim());
-  const showGuidedSetup = !isDemo && !hasWebsite;
+  const showGuidedSetup = isDemo || !hasWebsite; // Website-first setup is also the public Try Bot landing view.
   // The profile endpoint replaces all existing profile facts. Preserve any
   // fields the minimal first-run wizard does not ask the owner to edit.
   const guidedExistingField = (key) => {
@@ -3883,7 +3883,7 @@ async function dashboard(options = {}) {
             <small>${appText('VAIHE 1 / 5','STEG 1 / 5','STEP 1 OF 5')}</small>
             <h1 id="guidedSetupTitle">${appText('Mikä on yrityksesi verkkosivu?','Vilken är företagets webbplats?','What is your company website?')}</h1>
             <p>${appText('Respondo käyttää osoitetta yrityksesi tietojen löytämiseen ja toimii vain tällä verkkosivulla.','Respondo använder adressen för att hitta företagsinformation och fungerar endast på den här webbplatsen.','Respondo uses the address to find your company information and only works on this website.')}</p>
-            <label class="guided-main-field"><span>${appText('Verkkosivun osoite','Webbadress','Website address')}</span><input name="website" type="url" inputmode="url" autocomplete="url" required placeholder="https://yritys.fi"></label>
+            <label class="guided-main-field"><span>${appText('Verkkosivun osoite','Webbadress','Website address')}</span><input name="website" type="url" inputmode="url" autocomplete="url" required value="${esc(isDemo ? (new URLSearchParams(location.search).get('website') || '') : (businessProfile.Verkkosivu || t.website || ''))}" placeholder="https://yritys.fi"></label>
             <div class="guided-card-actions"><button class="guided-continue" type="button" data-guided-next>${appText('Jatka','Fortsätt','Continue')} <span>→</span></button></div>
             <div class="guided-step-message" aria-live="polite"></div>
           </article>
@@ -3934,10 +3934,10 @@ async function dashboard(options = {}) {
           <article class="guided-card guided-finish-card" data-guided-step="5" hidden>
             <small>${appText('VAIHE 5 / 5','STEG 5 / 5','STEP 5 OF 5')}</small>
             <div class="guided-ready-mark">✓</div>
-            <h1>${appText('Bottisi on valmis luotavaksi.','Din bot är redo att skapas.','Your bot is ready to be created.')}</h1>
-            <p>${appText('Tarkista tiedot. Luomisen jälkeen Respondo hakee verkkosivultasi tiedot tarkistettavaksesi.','Kontrollera uppgifterna. När botten har skapats hämtar Respondo information från din webbplats för granskning.','Review the details. After creating the bot, Respondo will scan your website for you to review.')}</p>
+            <h1>${(isDemo ? appText('Kokeilubottisi on valmis.','Din demobott är redo.','Your demo bot is ready.') : appText('Bottisi on valmis luotavaksi.','Din bot är redo att skapas.','Your bot is ready to be created.'))}</h1>
+            <p>${(isDemo ? appText('Verkkosivusi julkiset tiedot haetaan tätä väliaikaista kokeilua varten. Mitään ei tallenneta yritystilille.','Offentliga webbplatsuppgifter hämtas för denna tillfälliga demo. Inga uppgifter sparas på ett företagskonto.','Public website information will be scanned for this temporary demo. Nothing is saved to a company account.') : appText('Tarkista tiedot. Luomisen jälkeen Respondo hakee verkkosivultasi tiedot tarkistettavaksesi.','Kontrollera uppgifterna. När botten har skapats hämtar Respondo information från din webbplats för granskning.','Review the details. After creating the bot, Respondo will scan your website for you to review.'))}</p>
             <div class="guided-summary"><div><span>${appText('Verkkosivu','Webbplats','Website')}</span><b data-guided-summary="website">—</b></div><div><span>${appText('Botin nimi','Bottens namn','Bot name')}</span><b data-guided-summary="botName">—</b></div><div><span>${appText('Omat vastaukset','Egna svar','Custom answers')}</span><b data-guided-summary="answers">0</b></div></div>
-            <div class="guided-card-actions"><button class="guided-back" type="button" data-guided-back>${appText('Takaisin','Tillbaka','Back')}</button><button class="guided-continue guided-submit" type="submit">${appText('Luo botti ja hae tiedot','Skapa botten och hämta data','Create bot & scan website')} <span>→</span></button></div>
+            <div class="guided-card-actions"><button class="guided-back" type="button" data-guided-back>${appText('Takaisin','Tillbaka','Back')}</button><button class="guided-continue guided-submit" type="submit">${(isDemo ? appText('Kokeile bottia ja hae tiedot','Testa botten och hämta data','Test bot & scan website') : appText('Luo botti ja hae tiedot','Skapa botten och hämta data','Create bot & scan website'))} <span>→</span></button></div>
             <div class="guided-step-message" aria-live="polite"></div>
             <a class="guided-resume-link" id="guidedFinishDashboard" href="/app?section=setup&guidedImport=1" hidden>${appText('Avaa hallintapaneeli ja jatka tietojen hakua','Öppna kontrollpanelen och fortsätt skanningen','Open dashboard and continue website scan')}</a>
           </article>
@@ -5431,14 +5431,13 @@ async function route() {
       const msg=$('#profileEmailMsg');
       if(msg){msg.dataset.status='saved';msg.textContent=appText('Sähköposti käytössä tässä kokeilussa.','E-postadressen används i den här demon.','Email is active in this demo.');}
     });
-    $('#importWebsite')?.addEventListener('click',async(event)=>{
-      const button=event.currentTarget;
+    const importDemoWebsite = async (button) => {
       const review=$('#websiteImportReview');
       const website=String(demoProfile?.elements?.website?.value||'').trim();
       if(!website){
         if(review) review.innerHTML='<div class="notice error">'+appText('Anna ensin verkkosivun osoite.','Ange först webbplatsens adress.','Enter the website address first.')+'</div>';
         demoProfile?.elements?.website?.focus();
-        return;
+        return false;
       }
       const original=button.textContent;
       const progress=$('#websiteImportProgress');
@@ -5521,14 +5520,17 @@ async function route() {
         }
         button.textContent=appText('Tiedot haettu ✓','Uppgifter hämtade ✓','Details imported ✓');
         setTimeout(()=>{button.textContent=original;button.disabled=false;},1600);
+        return true;
       }catch(error){
         // A failed first page is not 0% of an active scan; hide stale progress.
         if(progress) progress.style.display='none';
         button.disabled=false;
         button.textContent=original;
         if(review) review.innerHTML='<div class="notice error">'+esc(error.message||appText('Tietojen haku epäonnistui.','Hämtningen misslyckades.','Import failed.'))+'</div>';
+        return false;
       }
-    });
+    };
+    $('#importWebsite')?.addEventListener('click',(event) => { void importDemoWebsite(event.currentTarget); });
 
     const renderDemoKnowledge=()=>{
       const list=$('#knowledgeList');
@@ -5579,6 +5581,119 @@ async function route() {
         sourceType:fact.sourceType
       }));
     };
+
+
+    // Public Try Bot onboarding shares the five-step card layout with /app,
+    // but never posts to authenticated business-profile or knowledge APIs.
+    const demoGuidedForm = $('#guidedSetupForm');
+    if (demoGuidedForm) {
+      let step=1;
+      const cards=[...demoGuidedForm.querySelectorAll('[data-guided-step]')];
+      const progress=[...document.querySelectorAll('[data-guided-progress]')];
+      const go=(n)=>{
+        step=Math.max(1,Math.min(5,n));
+        cards.forEach(el=>{el.hidden=Number(el.dataset.guidedStep)!==step;});
+        progress.forEach(el=>{const k=Number(el.dataset.guidedProgress);el.classList.toggle('active',k===step);el.classList.toggle('done',k<step);});
+        if(step===5){
+          const fd=new FormData(demoGuidedForm);
+          const count=[1,2,3].filter(i=>String(fd.get('question'+i)||'').trim()&&String(fd.get('answer'+i)||'').trim()).length;
+          for(const [name,value] of [['website',fd.get('website')],['botName',fd.get('botName')],['answers',count]]){
+            const target=demoGuidedForm.querySelector('[data-guided-summary="'+name+'"]');
+            if(target)target.textContent=String(value||'');
+          }
+        }
+        cards.find(el=>!el.hidden)?.querySelector('input,textarea,button')?.focus({preventScroll:true});
+        document.getElementById('guidedSetup')?.scrollIntoView({behavior:'smooth',block:'start'});
+      };
+      const valid=()=>{
+        const message=cards[step-1]?.querySelector('.guided-step-message');
+        if(message)message.textContent='';
+        if(step===1){
+          const input=demoGuidedForm.elements.website;
+          const raw=String(input?.value||'').trim();
+          if(raw&&!/^https?:\/\//i.test(raw))input.value='https://'+raw;
+          if(!input.checkValidity()){
+            input.reportValidity();
+            if(message)message.textContent=appText('Anna verkkosivun osoite.','Ange webbadressen.','Enter a website address.');
+            return false;
+          }
+        }
+        if(step===2&&!String(demoGuidedForm.elements.botName.value||'').trim()){
+          demoGuidedForm.elements.botName.focus();return false;
+        }
+        if(step===4&&!demoGuidedForm.elements.email.checkValidity()){
+          demoGuidedForm.elements.email.reportValidity();return false;
+        }
+        return true;
+      };
+      demoGuidedForm.querySelectorAll('[data-guided-next]').forEach(button=>button.addEventListener('click',()=>{
+        if(step===3&&button.classList.contains('guided-skip'))for(const i of [1,2,3]){
+          demoGuidedForm.elements['question'+i].value='';demoGuidedForm.elements['answer'+i].value='';
+        }
+        if(valid())go(step+1);
+      }));
+      demoGuidedForm.querySelectorAll('[data-guided-back]').forEach(button=>button.addEventListener('click',()=>go(step-1)));
+      demoGuidedForm.querySelectorAll('[data-guided-avatar]').forEach(button=>button.addEventListener('click',()=>{
+        const id=button.dataset.guidedAvatar||'robot-1';
+        demoGuidedForm.elements.botAvatar.value=id;
+        demoGuidedForm.querySelectorAll('[data-guided-avatar]').forEach(el=>el.classList.toggle('selected',el===button));
+        const preview=$('#guidedAvatarPreview');if(preview)preview.innerHTML=botAvatarMarkup(id);
+      }));
+      demoGuidedForm.elements.botName?.addEventListener('input',event=>{
+        const preview=$('#guidedBotNamePreview');if(preview)preview.textContent=String(event.currentTarget.value||'').trim()||'RESPONDO AI';
+      });
+      $('#guidedAvatarUpload')?.addEventListener('change',async event=>{
+        const file=event.currentTarget.files?.[0];if(!file)return;
+        try{
+          const data=await imageFileToAvatarData(file);
+          demoGuidedForm.elements.botAvatar.value=data;
+          demoGuidedForm.querySelectorAll('[data-guided-avatar]').forEach(el=>el.classList.remove('selected'));
+          const preview=$('#guidedAvatarPreview');if(preview)preview.innerHTML=botAvatarMarkup(data);
+        }catch(err){
+          const message=cards[1]?.querySelector('.guided-step-message');if(message)message.textContent=err.message;
+        }finally{event.currentTarget.value='';}
+      });
+      const openPreview=()=>{
+        document.querySelector('.demo-dashboard-shell')?.classList.remove('guided-setup-active');
+        document.getElementById('guidedSetup')?.remove();
+        showDemoDashboardView('setup',{scrollTop:false});
+        requestAnimationFrame(()=>requestAnimationFrame(()=>document.getElementById('live-preview')?.scrollIntoView({behavior:'smooth',block:'start'})));
+      };
+      demoGuidedForm.addEventListener('submit',async event=>{
+        event.preventDefault();
+        if(step!==5){if(valid())go(step+1);return;}
+        const values=new FormData(demoGuidedForm);
+        const submit=demoGuidedForm.querySelector('.guided-submit');
+        const message=cards[4]?.querySelector('.guided-step-message');
+        if(submit.disabled)return;
+        submit.disabled=true;
+        if(message)message.textContent=appText('Haetaan verkkosivua…','Hämtar webbplatsen…','Scanning website…');
+        try{
+          for(const key of ['website','botName','greeting','phone','email','hours']){
+            if(demoProfile?.elements?.[key])demoProfile.elements[key].value=String(values.get(key)||'');
+          }
+          const avatar=String(values.get('botAvatar')||'robot-1');
+          demoProfile.elements.botAvatar.value=avatar;
+          uploadedAvatarData=/^data:image\/(?:png|jpeg|webp);base64,/i.test(avatar)?avatar:'';
+          for(let n=demoFacts.length-1;n>=0;n--)if(demoFacts[n]?.sourceType==='demo_guided')demoFacts.splice(n,1);
+          for(const i of [1,2,3]){
+            const title=String(values.get('question'+i)||'').trim(),answer=String(values.get('answer'+i)||'').trim();
+            if(title&&answer)demoFacts.push({title,answer,category:'Usein kysytyt',sourceType:'demo_guided'});
+          }
+          refreshDemoIdentity();renderDemoKnowledge();
+          if(await importDemoWebsite($('#importWebsite'))){openPreview();return;}
+          if(message)message.textContent=appText('Tietojen haku epäonnistui. Yritä uudelleen tai jatka ilman sivuston tietoja.','Importen misslyckades. Försök igen eller fortsätt utan webbplatsdata.','Website import failed. Retry or continue without website data.');
+          const recover=demoGuidedForm.querySelector('#guidedFinishDashboard');
+          if(recover){
+            recover.href='#';recover.hidden=false;
+            recover.textContent=appText('Jatka ilman tietojen hakua','Fortsätt utan import','Continue without import');
+            recover.onclick=e=>{e.preventDefault();openPreview();};
+          }
+        }catch(error){
+          if(message)message.textContent=error?.message||appText('Kokeilun aloitus epäonnistui.','Det gick inte att starta demon.','Could not start the demo.');
+        }finally{submit.disabled=false;}
+      });
+    }
 
     $('#previewForm')?.addEventListener('submit',async(event)=>{
       event.preventDefault();
