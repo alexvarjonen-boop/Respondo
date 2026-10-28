@@ -6803,6 +6803,47 @@ function splitIndependentCustomerQuestions(message) {
   return null;
 }
 
+// High-precision Q&A retrieval is needed for arbitrary merchant FAQ topics
+// (event requirements, equipment, class schedules, exchanges, accessibility).
+// Require question-to-question evidence; a weak category or shared keyword is
+// never enough to claim a business policy or available appointment.
+async function directlyVerifiedFaqAnswer(rows, question, lang='fi') {
+  const stop=/^(?:mita|mika|miten|kuinka|voin|voiko|onko|teilla|teidan|meidan|se|tama|milloin|missa|mista|haluan|saanko|what|when|where|which|how|can|does|have|your|their|there|this|that|with|about|could|would|should|please|some|much|many|is|are|the|for|you|vad|vilken|hur|kan|har|jag|far|ert|era|och)$/;
+  const keywords=(value)=>[...new Set(searchTokens(value)
+    .filter(word=>word.length>=4 && !stop.test(word)))];
+  const requested=keywords(question);
+  if(requested.length<2 || requested.length>24) return null;
+  let best=null;
+  for(const row of rows||[]) {
+    const title=String(row?.title||'').trim();
+    const source=String(row?.source_url||row?.sourceUrl||'');
+    if(!/\?$/.test(title) || !/^https?:\/\//i.test(source) ||
+       !['website','demo_import'].includes(String(row?.source_type||row?.sourceType||'')) ||
+       !usableWebsiteRow(row)) continue;
+    const titleTerms=keywords(title);
+    if(titleTerms.length<2) continue;
+    const overlap=requested.filter(term=>titleTerms.some(word=>
+      word===term || (word.length>=5 && term.length>=5 &&
+        word.slice(0,5)===term.slice(0,5)) || nearKnowledgeToken(word,term)
+    )).length;
+    const coverage=overlap/requested.length;
+    if(overlap<2 || coverage<0.67 || overlap/titleTerms.length<0.5) continue;
+    const answer=cleanKnowledgeText(row.answer);
+    if(!answer || answer.length>900 || importedKnowledgeJunk(answer)) continue;
+    const score=coverage+(overlap/titleTerms.length)*0.4;
+    if(!best || score>best.score) best={row,answer,score};
+  }
+  if(!best) return null;
+  const answerLanguage=detectConversationLanguage(best.answer,lang);
+  const localized=answerLanguage===lang ? best.answer : await forceAnswerLanguage(best.answer,lang);
+  if(!localized) return null;
+  return {
+    answer:cleanKnowledgeText(localized).slice(0,700),
+    handoff:false,confidence:0.96,intent:'Usein kysytyt',
+    sourceIds:[best.row.id].filter(Boolean),selected:[best.row],
+  };
+}
+
 async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {}, multiPart = false }) {
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   rows = (rows || []).filter(usableWebsiteRow);
@@ -7391,6 +7432,12 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // high-precision paths have not already handled the question.
   const verifiedIndustryService=verifiedIndustryServiceAnswer(rows,cleanMessage,responseLang);
   if(verifiedIndustryService) return verifiedIndustryService;
+
+  // Many real merchant questions are answered in FAQPage JSON-LD or a
+  // question-heading accordion, even when the answer uses an unfamiliar
+  // business-specific term that our old intent dictionary cannot classify.
+  const verifiedFaq=await directlyVerifiedFaqAnswer(rows,cleanMessage,responseLang);
+  if(verifiedFaq) return verifiedFaq;
 
   // Broad questions such as "What do you sell?" or "Tell me about the company"
   // should use the approved knowledge base as factual memory instead of requiring
