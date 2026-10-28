@@ -52,3 +52,42 @@ test('company trash buttons and account deletion both require explicit confirmat
   assert.match(css, /\.workspace-delete-trigger\{[\s\S]{0,350}background:#fff0df/);
   assert.match(css, /\.deletion-modal\[hidden\]/);
 });
+
+test('deleting the final company also deletes the user, revokes session, and releases the signup email', () => {
+  const route = server.split("app.delete('/api/app/workspaces/:tenantId'")[1].split("app.delete('/api/app/account'")[0];
+  assert.match(route, /SELECT 1 FROM tenants WHERE owner_user_id=\$1 AND id<>\$2 LIMIT 1/);
+  assert.match(route, /const lastWorkspace=others\.rowCount===0/);
+  assert.match(route, /if\(lastWorkspace\)\{/);
+  assert.match(route, /allStripeSubscriptionIdsForCustomer\(user\.stripe_customer_id\)/);
+  assert.match(route, /cancelOwnedSubscriptionsForDeletion\(subscriptions,user\.stripe_customer_id\)/);
+  assert.match(route, /purgeDeletedAccountArtifacts\(client,\{tenantId,userId:lastWorkspace\?req\.user\.sub:null\}\)/);
+  assert.match(route, /DELETE FROM tenants WHERE id=\$1 AND owner_user_id=\$2 RETURNING id/);
+  assert.match(route, /DELETE FROM users WHERE id=\$1 RETURNING id/);
+  assert.match(route, /res\.clearCookie\(COOKIE/);
+  assert.match(route, /accountDeleted:true,remainingActiveWorkspaces:false/);
+  assert.match(route, /accountDeleted:false,remainingActiveWorkspaces:Boolean\(next\.rowCount\)/);
+  assert.ok(route.indexOf('cancelOwnedSubscriptionsForDeletion(subscriptions') < route.indexOf('DELETE FROM users'));
+  assert.ok(route.indexOf('DELETE FROM tenants WHERE id=$1 AND owner_user_id=$2 RETURNING id') < route.indexOf('DELETE FROM users WHERE id=$1 RETURNING id'));
+});
+
+test('deletion purges orphan paid setup and welcome rows, preserving the remaining owners when appropriate', () => {
+  const helper=server.split('async function purgeDeletedAccountArtifacts')[1].split("app.delete('/api/app/workspaces/:tenantId'")[0];
+  assert.match(helper, /to_regclass\('public\.setup_service_requests'\)/);
+  assert.match(helper, /to_regclass\('public\.signup_welcome_emails'\)/);
+  assert.match(helper, /DELETE FROM setup_service_requests WHERE tenant_id=\$1/);
+  assert.match(helper, /DELETE FROM setup_service_requests WHERE user_id=\$1/);
+  assert.match(helper, /DELETE FROM signup_welcome_emails WHERE user_id=\$1/);
+  const fullAccount=server.split("app.delete('/api/app/account'")[1].split("app.post('/api/app/workspaces/switch'")[0];
+  assert.match(fullAccount, /purgeDeletedAccountArtifacts\(client,\{userId:req\.user\.sub\}\)/);
+});
+
+test('company deletion UI warns when last company removes login and follows server confirmed accountDeleted state', () => {
+  assert.match(app, /const lastCompany=!account && document\.querySelectorAll\('\.workspace-delete-trigger'\)\.length===1/);
+  assert.match(app, /lastCompany\s*\? appText/);
+  assert.match(app, /Kirjautumissähköposti vapautuu uudelle rekisteröitymiselle/);
+  assert.match(app, /Your other companies and login remain/);
+  assert.match(app, /const result=await api\(target\.kind==='account'/);
+  assert.match(app, /target\.kind==='account' \|\| result\.accountDeleted===true/);
+  assert.match(app, /location\.replace\('\/\?account_deleted=1'\)/);
+  assert.match(app, /location\.replace\('\/app\?section=account&company_deleted=1'\)/);
+});
