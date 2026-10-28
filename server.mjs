@@ -11079,7 +11079,7 @@ app.get('/api/app/internal/setup-service-requests', auth, ownerTrafficOnly, asyn
     if(!exists.rows[0]?.relation) return res.json({requests:[]});
     const found=await q(
       `SELECT sr.session_id,sr.website_url,sr.status,sr.created_at,sr.customer_emailed_at,
-              sr.owner_emailed_at,sr.ready_emailed_at,t.name AS company_name,u.email,
+              sr.owner_emailed_at,sr.ready_emailed_at,sr.billing_started_at,t.name AS company_name,u.email,
               t.bot_name,t.greeting,t.bot_avatar,
               (u.stripe_subscription_id IS NOT DISTINCT FROM t.stripe_subscription_id) AS first_workspace
          FROM setup_service_requests sr
@@ -11174,27 +11174,75 @@ app.post('/api/app/internal/setup-service-requests/:id/handover', auth, ownerTra
   res.set('Cache-Control','private, no-store');
   const sessionId=String(req.params.id||'');
   if(!/^cs_[A-Za-z0-9_]{10,120}$/.test(sessionId)) return res.status(400).json({error:'Virheellinen tilaus.'});
+  if(!pool||!stripe)return res.status(503).json({error:'Laskutuspalvelu ei ole käytettävissä.'});
+  const client=await pool.connect();
+  const lockKey='respondo-manual-setup-billing:'+sessionId;
+  let locked=false;
   try{
-    const result=await q(
-      `UPDATE setup_service_requests sr SET status='ready',updated_at=NOW()
-        FROM tenants t JOIN users u ON u.id=t.owner_user_id
-       WHERE sr.session_id=$1 AND t.id::text=sr.tenant_id
-         AND sr.user_id=u.id::text
-         AND t.active=true AND u.status='active'
-         AND t.subscription_status IN ('active','trialing')
-         AND t.stripe_subscription_id IS NOT NULL
-         AND (sr.status='credentials_created'
-              OR (sr.status='received' AND u.stripe_subscription_id IS DISTINCT FROM t.stripe_subscription_id))
-       RETURNING sr.session_id`,
-      [sessionId],
+    const lock=await client.query('SELECT pg_try_advisory_lock(hashtextextended($1,0)) AS locked',[lockKey]);
+    if(lock.rows[0]?.locked!==true)return res.status(409).json({error:'Toinen luovutuksen vahvistus on käynnissä.'});
+    locked=true;
+    const found=await client.query(
+      `SELECT sr.session_id,sr.status,sr.billing_started_at,
+              t.stripe_subscription_id,t.subscription_status,t.active AS tenant_active,
+              u.status AS user_status,
+              (u.stripe_subscription_id IS DISTINCT FROM t.stripe_subscription_id) AS additional_workspace
+         FROM setup_service_requests sr
+         JOIN tenants t ON t.id::text=sr.tenant_id
+         JOIN users u ON u.id=t.owner_user_id
+        WHERE sr.session_id=$1 AND sr.user_id=u.id::text
+        LIMIT 1`,[sessionId],
     );
-    if(result.rowCount) return res.json({ok:true,manualHandoverConfirmed:true});
-    const existing=await q('SELECT status FROM setup_service_requests WHERE session_id=$1',[sessionId]);
-    if(existing.rows[0]?.status==='ready') return res.json({ok:true,alreadyConfirmed:true});
-    return res.status(409).json({error:'Aseta ensin kirjautumistunnukset tai varmista, että kyseessä on lisätyötila.'});
+    if(!found.rowCount) return res.status(404).json({error:'Käyttöönottotilausta ei löytynyt.'});
+    const job=found.rows[0];
+    if(job.status==='ready')return res.json({ok:true,alreadyConfirmed:true});
+    if(!job.tenant_active || job.user_status!=='active' ||
+       !['active','trialing'].includes(job.subscription_status) ||
+       !job.stripe_subscription_id ||
+       !(job.status==='credentials_created' || (job.status==='received' && job.additional_workspace))) {
+      return res.status(409).json({error:'Vahvista vain maksettu käyttöönottotyö, kun kirjautumistiedot on toimitettu.'});
+    }
+
+    // Stripe update must succeed before marking the job delivered in Postgres.
+    // For previously sold setup orders, never unexpectedly alter their
+    // existing three-day trial; only new flagged subscriptions are deferred.
+    const subscription=await stripe.subscriptions.retrieve(job.stripe_subscription_id);
+    let billingStartedNow=false;
+    if(subscription.metadata?.setup_billing_deferred==='1'){
+      if(subscription.metadata?.setup_billing_started!=='1'){
+        if(subscription.status!=='trialing')
+          return res.status(409).json({error:'Tilaus ei ole enää odotustilassa. Tarkista Stripe-laskutus ennen vahvistusta.'});
+        const active=await stripe.subscriptions.update(subscription.id,{
+          trial_end:'now',
+          pause_collection:'',
+          proration_behavior:'none',
+          metadata:{
+            setup_billing_started:'1',
+            setup_billing_handover_session:sessionId,
+          },
+        },{idempotencyKey:'respondo-handover-billing-'+sessionId});
+        if(active.pause_collection || active.status==='trialing')
+          throw new Error('Stripe did not release the manual setup billing hold');
+        billingStartedNow=true;
+      }
+    }
+
+    const updated=await client.query(
+      `UPDATE setup_service_requests
+          SET status='ready',billing_started_at=CASE WHEN $2 THEN COALESCE(billing_started_at,NOW()) ELSE billing_started_at END,
+              updated_at=NOW()
+        WHERE session_id=$1 AND status IN ('received','credentials_created')
+        RETURNING session_id`,[sessionId,subscription.metadata?.setup_billing_deferred==='1'],
+    );
+    if(!updated.rowCount)return res.status(409).json({error:'Käyttöönottotyön tila muuttui. Päivitä sivu.'});
+    return res.json({ok:true,manualHandoverConfirmed:true,billingStarted:billingStartedNow ||
+      subscription.metadata?.setup_billing_started==='1'});
   }catch(error){
-    console.error('Manual setup handover failed:',error?.message);
-    return res.status(503).json({error:'Luovutuksen vahvistaminen epäonnistui.'});
+    console.error('Manual setup billing activation failed:',error?.type||error?.code||error?.message);
+    return res.status(503).json({error:'Luovutuksen vahvistus tai tilauksen laskutuksen käynnistys epäonnistui. Tarkista Stripe ja yritä uudelleen.'});
+  }finally{
+    if(locked)await client.query('SELECT pg_advisory_unlock(hashtextextended($1,0))',[lockKey]).catch(()=>{});
+    client.release();
   }
 });
 
