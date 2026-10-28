@@ -2,6 +2,7 @@ import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { firecrawlEnabled, firecrawlMaxPages, maySpendOneFirecrawlCredit, fetchFirecrawlRenderedHtml } from './firecrawl-fallback.mjs';
+import { setupPlanTrialDays, ensureManualSetupBillingOnHold, startManualSetupBilling } from './setup-billing.mjs';
 import { serviceOverviewQuestion, verifiedServiceOverview } from './service-overview.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { isRespondoCapabilityQuestion } from './respondo-capability-intent.mjs';
@@ -941,23 +942,6 @@ async function sendWelcomeEmailOnce(userId) {
 }
 
 
-// This only runs after Checkout confirms the 199 € one-time invoice was paid.
-// The finite Stripe trial alone is not a billing guarantee; indefinite
-// pause_collection with void prevents automatic recurring collection, while
-// regular non-setup subscriptions remain unchanged.
-async function ensureManualSetupBillingOnHold(subscriptionId) {
-  if(!stripe || !String(subscriptionId||'').startsWith('sub_')) throw new Error('Setup subscription unavailable');
-  const sub=await stripe.subscriptions.retrieve(subscriptionId);
-  if(sub.metadata?.setup_billing_deferred!=='1') return false;
-  if(sub.metadata?.setup_billing_started==='1') return false;
-  if(sub.status!=='trialing') throw new Error('Setup trial not active');
-  if(sub.pause_collection?.behavior==='void' && !sub.pause_collection?.resumes_at) return true;
-  await stripe.subscriptions.update(subscriptionId,{
-    pause_collection:{behavior:'void'},
-  },{idempotencyKey:'respondo-hold-'+subscriptionId});
-  return true;
-}
-
 // A paid setup request is work for Respondo's team, not proof that a bot is ready.
 // Keep an auditable queue and deduplicate customer/team email across Stripe webhook
 // and the successful Checkout redirect.
@@ -991,7 +975,7 @@ async function notifySetupServiceAfterCheckout(session) {
   )`);
   await q("ALTER TABLE setup_service_requests ADD COLUMN IF NOT EXISTS billing_started_at TIMESTAMPTZ");
   // Only release the billing hold when the owner later confirms handover.
-  await ensureManualSetupBillingOnHold(subscriptionId);
+  await ensureManualSetupBillingOnHold(stripe,subscriptionId);
   const owner=await q(
     `SELECT u.email,u.full_name,u.preferred_language,t.name AS company_name
        FROM tenants t JOIN users u ON u.id=t.owner_user_id
@@ -1480,9 +1464,6 @@ function setupServiceWebsiteUrl(raw, selected) {
 }
 
 const SETUP_SERVICE_PRICE_CENTS = 19900;
-// Paid manual setup gets a long trial and (after paid Checkout) an indefinite
-// Stripe payment-collection hold until the owner confirms delivery.
-const SETUP_BILLING_HOLD_DAYS = 365;
 function setupServiceCheckoutLineItem() {
   return {
     price_data:{
@@ -10027,7 +10008,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           submit: { message: taxExemptionMessage },
         },
         subscription_data: {
-          ...(normalizedPlan === 'owner_test' ? {} : { trial_period_days: setupService ? SETUP_BILLING_HOLD_DAYS : 3 }),
+          ...(normalizedPlan === 'owner_test' ? {} : { trial_period_days: setupPlanTrialDays(setupService) }),
           metadata: {
             user_id: id,
             tenant_id: tenantId,
@@ -10878,7 +10859,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         submit:{message: taxExemptionMessage},
       },
       subscription_data:{
-        trial_period_days:setupService ? SETUP_BILLING_HOLD_DAYS : 3,
+        trial_period_days:setupPlanTrialDays(setupService),
         metadata:{
           user_id:req.user.sub,
           tenant_id:tenantId,
@@ -11207,36 +11188,17 @@ app.post('/api/app/internal/setup-service-requests/:id/handover', auth, ownerTra
     // For previously sold setup orders, never unexpectedly alter their
     // existing three-day trial; only new flagged subscriptions are deferred.
     const subscription=await stripe.subscriptions.retrieve(job.stripe_subscription_id);
-    let billingStartedNow=false;
-    if(subscription.metadata?.setup_billing_deferred==='1'){
-      if(subscription.metadata?.setup_billing_started!=='1'){
-        if(subscription.status!=='trialing')
-          return res.status(409).json({error:'Tilaus ei ole enää odotustilassa. Tarkista Stripe-laskutus ennen vahvistusta.'});
-        const active=await stripe.subscriptions.update(subscription.id,{
-          trial_end:'now',
-          pause_collection:'',
-          proration_behavior:'none',
-          metadata:{
-            setup_billing_started:'1',
-            setup_billing_handover_session:sessionId,
-          },
-        },{idempotencyKey:'respondo-handover-billing-'+sessionId});
-        if(active.pause_collection || active.status==='trialing')
-          throw new Error('Stripe did not release the manual setup billing hold');
-        billingStartedNow=true;
-      }
-    }
+    const billing=await startManualSetupBilling(stripe,subscription,sessionId);
 
     const updated=await client.query(
       `UPDATE setup_service_requests
           SET status='ready',billing_started_at=CASE WHEN $2 THEN COALESCE(billing_started_at,NOW()) ELSE billing_started_at END,
               updated_at=NOW()
         WHERE session_id=$1 AND status IN ('received','credentials_created')
-        RETURNING session_id`,[sessionId,subscription.metadata?.setup_billing_deferred==='1'],
+        RETURNING session_id`,[sessionId,billing.deferred],
     );
     if(!updated.rowCount)return res.status(409).json({error:'Käyttöönottotyön tila muuttui. Päivitä sivu.'});
-    return res.json({ok:true,manualHandoverConfirmed:true,billingStarted:billingStartedNow ||
-      subscription.metadata?.setup_billing_started==='1'});
+    return res.json({ok:true,manualHandoverConfirmed:true,billingStarted:billing.startedNow || billing.alreadyStarted===true});
   }catch(error){
     console.error('Manual setup billing activation failed:',error?.type||error?.code||error?.message);
     return res.status(503).json({error:'Luovutuksen vahvistus tai tilauksen laskutuksen käynnistys epäonnistui. Tarkista Stripe ja yritä uudelleen.'});
