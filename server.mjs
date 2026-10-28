@@ -2,6 +2,7 @@ import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { firecrawlEnabled, firecrawlMaxPages, maySpendOneFirecrawlCredit, fetchFirecrawlRenderedHtml } from './firecrawl-fallback.mjs';
+import { assistedSetupCheckoutTrial, holdAssistedSetupBilling, releaseAssistedSetupBilling, assistedSetupBillingMode } from './assisted-setup-billing.mjs';
 import { serviceOverviewQuestion, verifiedServiceOverview } from './service-overview.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { isRespondoCapabilityQuestion } from './respondo-capability-intent.mjs';
@@ -945,6 +946,11 @@ async function sendWelcomeEmailOnce(userId) {
 // and the successful Checkout redirect.
 async function notifySetupServiceAfterCheckout(session) {
   if (session?.metadata?.setup_service !== '1') return {selected:false};
+  // Payment is already completed; guarantee no recurring charge is scheduled
+  // while this new assisted-setup job awaits the owner's handover.
+  if(session?.metadata?.setup_billing_mode === 'after_handover' && session?.subscription) {
+    await holdAssistedSetupBilling(stripe,typeof session.subscription==='string'?session.subscription:session.subscription.id);
+  }
   if (session?.status !== 'complete' || session?.payment_status !== 'paid') {
     return {selected:true,customerSent:false,paymentPending:true};
   }
@@ -967,6 +973,7 @@ async function notifySetupServiceAfterCheckout(session) {
     customer_emailed_at TIMESTAMPTZ,
     owner_emailed_at TIMESTAMPTZ,
     ready_emailed_at TIMESTAMPTZ,
+    billing_release_requested_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
@@ -8465,6 +8472,10 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           console.error('Referral activation from webhook failed', e);
         }
 
+        if (session.metadata?.setup_billing_mode === 'after_handover' && incomingSubscriptionId) {
+          await holdAssistedSetupBilling(stripe, incomingSubscriptionId);
+        }
+
         if (session.metadata?.setup_service === '1' && ['active','trialing'].includes(subscriptionStatus)) {
           try { await notifySetupServiceAfterCheckout(session); }
           catch(e) { console.error('Setup service webhook notification failed:',e?.message); }
@@ -8515,6 +8526,11 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         await syncStripeSubscriptionState(subscription);
       }
+    }
+
+    if (event.type === 'customer.subscription.created' &&
+        event.data.object?.metadata?.setup_billing_mode === 'after_handover') {
+      await holdAssistedSetupBilling(stripe,event.data.object.id);
     }
 
     if (
@@ -10002,7 +10018,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           submit: { message: taxExemptionMessage },
         },
         subscription_data: {
-          ...(normalizedPlan === 'owner_test' ? {} : { trial_period_days: 3 }),
+          ...(normalizedPlan === 'owner_test' ? {} : assistedSetupCheckoutTrial(setupService)),
           metadata: {
             user_id: id,
             tenant_id: tenantId,
@@ -10011,6 +10027,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             billing_country: checkoutCountry.country,
             business_purchase: '1',
             setup_service:setupService ? '1' : '0',
+            ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
             ...(setupService ? { setup_website:setupWebsite } : {}),
             ...(referralCode ? { referral_code: referralCode } : {}),
           },
@@ -10031,6 +10048,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           billing_country: checkoutCountry.country,
           business_purchase: '1',
           setup_service:setupService ? '1' : '0',
+            ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
           ...(setupService ? { setup_website:setupWebsite } : {}),
           ...(referralCode ? { referral_code: referralCode } : {}),
         },
@@ -10851,7 +10869,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         submit:{message: taxExemptionMessage},
       },
       subscription_data:{
-        trial_period_days:3,
+        ...assistedSetupCheckoutTrial(setupService),
         metadata:{
           user_id:req.user.sub,
           tenant_id:tenantId,
@@ -10861,6 +10879,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
           billing_country:checkoutCountry.country,
           business_purchase:'1',
           setup_service:setupService ? '1' : '0',
+            ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
           ...(setupService ? { setup_website:setupWebsite } : {}),
           ...(referralCode ? { referral_code:referralCode } : {}),
         },
@@ -10879,6 +10898,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         billing_country:checkoutCountry.country,
         business_purchase:'1',
         setup_service:setupService ? '1' : '0',
+            ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
         ...(setupService ? { setup_website:setupWebsite } : {}),
         ...(referralCode ? { referral_code:referralCode } : {}),
       },
@@ -11139,33 +11159,72 @@ app.post('/api/app/internal/setup-service-requests/:id/credentials', auth, owner
   }finally{client.release();}
 });
 
-// Owner confirms personal handover after sending the credentials themselves.
-// We deliberately do not send emails or disclose passwords from this endpoint.
+// Owner confirms the customer has personally received their login details.
+// For new paid setup purchases, the recurring Stripe charge is held while work
+// is pending; this confirmation starts a fresh three-day trial. Old purchases
+// retain their pre-existing billing schedule (no retroactive change).
 app.post('/api/app/internal/setup-service-requests/:id/handover', auth, ownerTrafficOnly, loginLimiter, async (req,res) => {
   res.set('Cache-Control','private, no-store');
   const sessionId=String(req.params.id||'');
   if(!/^cs_[A-Za-z0-9_]{10,120}$/.test(sessionId)) return res.status(400).json({error:'Virheellinen tilaus.'});
+  if(!pool || !stripe) return res.status(503).json({error:'Tilausta ei voida vahvistaa tällä hetkellä.'});
+  const client=await pool.connect();
+  let job=null;
+  let locked=false;
   try{
-    const result=await q(
-      `UPDATE setup_service_requests sr SET status='ready',updated_at=NOW()
-        FROM tenants t JOIN users u ON u.id=t.owner_user_id
-       WHERE sr.session_id=$1 AND t.id::text=sr.tenant_id
-         AND sr.user_id=u.id::text
-         AND t.active=true AND u.status='active'
-         AND t.subscription_status IN ('active','trialing')
-         AND t.stripe_subscription_id IS NOT NULL
-         AND (sr.status='credentials_created'
-              OR (sr.status='received' AND u.stripe_subscription_id IS DISTINCT FROM t.stripe_subscription_id))
-       RETURNING sr.session_id`,
+    const lock=await client.query('SELECT pg_try_advisory_lock(hashtextextended($1,0)) AS locked',['respondo-setup-handover:'+sessionId]);
+    locked=lock.rows[0]?.locked===true;
+    if(!locked) return res.status(409).json({error:'Tätä luovutusta käsitellään jo. Päivitä sivu.'});
+    // Safe migration for setup jobs originally created before this feature.
+    await client.query('ALTER TABLE setup_service_requests ADD COLUMN IF NOT EXISTS billing_release_requested_at TIMESTAMPTZ');
+    const found=await client.query(
+      `SELECT sr.status,sr.billing_release_requested_at,t.stripe_subscription_id,
+              t.active AS tenant_active,t.subscription_status,u.status AS user_status,
+              (u.stripe_subscription_id IS DISTINCT FROM t.stripe_subscription_id) AS additional_workspace
+         FROM setup_service_requests sr
+         JOIN tenants t ON t.id::text=sr.tenant_id
+         JOIN users u ON u.id=t.owner_user_id
+        WHERE sr.session_id=$1 AND sr.user_id=u.id::text LIMIT 1`,
       [sessionId],
     );
-    if(result.rowCount) return res.json({ok:true,manualHandoverConfirmed:true});
-    const existing=await q('SELECT status FROM setup_service_requests WHERE session_id=$1',[sessionId]);
-    if(existing.rows[0]?.status==='ready') return res.json({ok:true,alreadyConfirmed:true});
-    return res.status(409).json({error:'Aseta ensin kirjautumistunnukset tai varmista, että kyseessä on lisätyötila.'});
+    job=found.rows[0];
+    if(!job) return res.status(404).json({error:'Käyttöönottotilausta ei löytynyt.'});
+    if(job.status==='ready') return res.json({ok:true,alreadyConfirmed:true});
+    if(!(job.status==='credentials_created' || job.status==='received' && job.additional_workspace) ||
+       job.tenant_active!==true || job.user_status!=='active' ||
+       !['active','trialing'].includes(job.subscription_status) ||
+       !job.stripe_subscription_id)
+      return res.status(409).json({error:'Vahvista ensin, että maksettu tilaus ja luovutetut kirjautumistiedot ovat kunnossa.'});
+
+    const subscription=await stripe.subscriptions.retrieve(job.stripe_subscription_id);
+    const deferred=assistedSetupBillingMode(subscription);
+    let trialEndsAt=null;
+    if(deferred) {
+      // Timestamp is persisted before the Stripe call for retry-safe idempotency.
+      const reserved=await client.query(
+        `UPDATE setup_service_requests
+            SET billing_release_requested_at=COALESCE(billing_release_requested_at,NOW()),updated_at=NOW()
+          WHERE session_id=$1 RETURNING billing_release_requested_at`,[sessionId],
+      );
+      if(!reserved.rowCount) throw new Error('Could not reserve handover timestamp');
+      const result=await releaseAssistedSetupBilling(
+        stripe,job.stripe_subscription_id,sessionId,reserved.rows[0].billing_release_requested_at,
+      );
+      trialEndsAt=result.trialEnd ? new Date(result.trialEnd*1000).toISOString() : null;
+    }
+    const updated=await client.query(
+      `UPDATE setup_service_requests SET status='ready',updated_at=NOW()
+        WHERE session_id=$1 AND status IN ('credentials_created','received')
+        RETURNING session_id`,[sessionId],
+    );
+    if(!updated.rowCount) return res.status(409).json({error:'Luovutuksen tilaa ei voitu päivittää.'});
+    return res.json({ok:true,manualHandoverConfirmed:true,billingDeferredUntilHandover:deferred,trialEndsAt});
   }catch(error){
-    console.error('Manual setup handover failed:',error?.message);
-    return res.status(503).json({error:'Luovutuksen vahvistaminen epäonnistui.'});
+    console.error('Manual setup handover or Stripe billing release failed:',error?.message);
+    return res.status(503).json({error:'Luovutuksen vahvistaminen tai laskutuksen käynnistäminen ei onnistunut. Yritä uudelleen.'});
+  }finally{
+    if(locked) await client.query('SELECT pg_advisory_unlock(hashtextextended($1,0))',['respondo-setup-handover:'+sessionId]).catch(()=>{});
+    client.release();
   }
 });
 
