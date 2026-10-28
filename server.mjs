@@ -582,6 +582,15 @@ async function ensureNewDomesticSubscriptionSellerFooter(subscriptionId, session
   });
   return true;
 }
+function assistedSetupCheckoutNotice(lang='fi') {
+  const vat=checkoutTaxExemptionMessage(lang);
+  const note=lang==='sv'
+    ? 'Installationstjänsten på 199 € betalas nu. Abonnemanget debiteras först efter att vi personligen levererat inloggningsuppgifterna och bekräftat överlämningen. Därefter börjar en gratis provperiod på 3 dagar.'
+    : lang==='en'
+      ? 'The €199 setup fee is payable now. Subscription charges are held until we personally deliver your login details and confirm handover, followed by a 3-day free trial.'
+      : '199 €:n käyttöönottopalvelu veloitetaan nyt. Tilauspaketin laskutus on keskeytetty, kunnes toimitamme kirjautumistiedot henkilökohtaisesti ja vahvistamme luovutuksen. Tämän jälkeen alkaa 3 päivän maksuton kokeilu.';
+  return vat+' '+note;
+}
 function checkoutTaxExemptionMessage(lang='fi') {
   const safeLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase())
     ? String(lang).toLowerCase() : 'fi';
@@ -10008,7 +10017,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           free: true,
         });
       }
-      const taxExemptionMessage = checkoutTaxExemptionMessage(preferredLanguage);
+      const taxExemptionMessage = setupService ? assistedSetupCheckoutNotice(preferredLanguage) : checkoutTaxExemptionMessage(preferredLanguage);
       session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         automatic_tax: { enabled: false },
@@ -10856,7 +10865,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   );
 
   try {
-    const taxExemptionMessage=checkoutTaxExemptionMessage(user.preferred_language||'fi');
+    const taxExemptionMessage=setupService ? assistedSetupCheckoutNotice(user.preferred_language||'fi') : checkoutTaxExemptionMessage(user.preferred_language||'fi');
     const session=await stripe.checkout.sessions.create({
       mode:'subscription',
       automatic_tax:{enabled:false},
