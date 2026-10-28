@@ -1,6 +1,4 @@
 import { createWorkspaceOrbit } from './workspace-orbit-v28.js';
-import { mountWorkspaceOrbit } from './workspace-orbit-v28.js?v=20261028-orbital-navigation-v28';
-
 // A single dark workspace after the five-card setup.
 // Keep existing chat, scan and billing DOM nodes intact so their event handlers,
 // authenticated API calls and tenant isolation are not replaced by demo stubs.
@@ -235,7 +233,6 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     answers:'knowledge',customers:'conversations',automation:'actions2',install:'install',
     profile:'workspaces',billing:'billing'
   };
-  const orbit=mountWorkspaceOrbit(workspace,{onNavigate:(id)=>selectView(id)});
   let currentTab=null;
   function showModuleTab(id){
     currentTab=id;
@@ -267,7 +264,6 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   }
   function selectView(next){
     selected=Object.hasOwn(pages,next)?next:'bot';
-    orbit?.setActive(selected);
     workspace.dataset.currentView=selected;
     orbit?.sync(selected);
     park();
