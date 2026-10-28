@@ -1011,9 +1011,9 @@ async function notifySetupServiceAfterCheckout(session) {
     const pick=(fi,sv,en)=>lang==='fi'?fi:lang==='sv'?sv:en;
     const title=pick('Käyttöönottopalvelusi on käsittelyssä','Vi behandlar din installationsbeställning','Your setup service is being processed');
     const introduction=pick(
-      'Kiitos tilauksestasi! Käyttöönottopalvelusi on käsittelyssä. Perehdymme yrityksesi verkkosivuihin ja viimeistelemme botin. Saat valmiin käyttöönottopalvelun sekä kirjautumistiedot henkilökohtaisella sähköpostilla viimeistään viikon kuluessa tilauksestasi.',
-      'Tack för din beställning! Vi behandlar din beställning, granskar din webbplats och färdigställer din bot. Vi skickar dina inloggningsuppgifter personligen via e-post inom en vecka från beställningen.',
-      'Thank you for your order. Your setup service is being processed. We will review your website and prepare your bot. We will personally email your login details and completed setup within one week of your order.',
+      'Kiitos tilauksestasi! Käyttöönottopalvelusi on käsittelyssä. Perehdymme yrityksesi verkkosivuihin ja viimeistelemme botin. Saat valmiin käyttöönottopalvelun sekä kirjautumistiedot henkilökohtaisella sähköpostilla viimeistään viikon kuluessa tilauksestasi. Valitsemasi paketin toistuva laskutus alkaa vasta, kun vahvistamme kirjautumistietojen luovutuksen.',
+      'Tack för din beställning! Vi behandlar din beställning, granskar din webbplats och färdigställer din bot. Vi skickar dina inloggningsuppgifter personligen via e-post inom en vecka från beställningen. Abonnemangsdebiteringen börjar först när vi bekräftar att uppgifterna har överlämnats.',
+      'Thank you for your order. Your setup service is being processed. We will review your website and prepare your bot. We will personally email your login details and completed setup within one week of your order. Recurring plan billing starts only after we confirm that your login details have been delivered.',
     );
     const loginInstructions=session.metadata?.additional_workspace==='1' ? pick(
       'Saat sähköpostin, kun botti on valmis. Voit jatkaa kirjautumista nykyisellä Respondo-tunnuksellasi.',
