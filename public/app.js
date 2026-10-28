@@ -2610,17 +2610,6 @@ function pricingSection() {
   };
   return `<section class="section pricing-section" id="pricing">
     <div class="container">
-      <div class="respondo-how-it-works" aria-labelledby="respondo-how-title">
-        <div class="respondo-how-topline">${appText('NÄIN HELPPOA SE ON','SÅ ENKELT FUNGERAR DET','HOW IT WORKS')}</div>
-        <h2 id="respondo-how-title">${appText('Verkkosivustasi asiakaspalvelijaksi.','Från webbplats till kundservice.','From your website to customer service.')}</h2>
-        <p class="respondo-how-intro">${appText('Kolme vaihetta ensimmäiseen keskusteluun.','Tre steg till ert första samtal.','Three steps to your first customer conversation.')}</p>
-        <ol class="respondo-how-steps">
-          <li><span aria-hidden="true" class="respondo-how-step-index">01</span><div><h3>${appText('Lisää verkkosivun osoite','Ange webbplatsens adress','Enter your website')}</h3><p>${appText('Respondo kerää olennaiset yritystiedot.','Respondo samlar in relevant företagsinformation.','Respondo imports relevant company information.')}</p></div></li>
-          <li><span aria-hidden="true" class="respondo-how-step-index">02</span><div><h3>${appText('Tarkista vastaukset','Granska svaren','Review the answers')}</h3><p>${appText('Vahvista tietopohja ja muokkaa botin ulkoasu.','Bekräfta kunskapsbasen och anpassa botten.','Confirm the knowledge base and customize your bot.')}</p></div></li>
-          <li><span aria-hidden="true" class="respondo-how-step-index">03</span><div><h3>${appText('Lisää botti sivustolle','Lägg till botten på webbplatsen','Add the bot to your site')}</h3><p>${appText('Ota asiakaspalvelubotti käyttöön upotuskoodilla.','Aktivera kundservicebotten med en inbäddningskod.','Go live with a simple embed code.')}</p></div></li>
-        </ol>
-        <a class="respondo-how-try" href="/assistant?lang=${currentLang()}">${appText('Katso, miten botti toimii','Se hur botten fungerar','See the bot in action')} <span aria-hidden="true">→</span></a>
-      </div>
       <div class="section-kicker">${appText('Hinta','Pris','Pricing')}</div>
       <div class="split-head">
         <h2>${appText('Valitse yrityksellesi sopiva taso.','Välj rätt nivå för ditt företag.','Choose the right plan for your business.')}</h2>
