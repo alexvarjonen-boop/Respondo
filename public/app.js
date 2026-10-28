@@ -3914,9 +3914,9 @@ async function dashboard(options = {}) {
             <small>${appText('VAIHE 5 / 5','STEG 5 / 5','STEP 5 OF 5')}</small>
             <div class="guided-ready-mark">✓</div>
             <h1>${appText('Bottisi on valmis luotavaksi.','Din bot är redo att skapas.','Your bot is ready to be created.')}</h1>
-            <p>${appText('Tarkista yhteenveto. Voit muuttaa kaikkia tietoja myöhemmin Botin ja Asetusten sivuilta.','Kontrollera sammanfattningen. Allt kan ändras senare på sidorna Bot och Inställningar.','Review the summary. You can change everything later from the Bot and Settings pages.')}</p>
+            <p>${appText('Tarkista tiedot. Luomisen jälkeen Respondo hakee verkkosivultasi tiedot tarkistettavaksesi.','Kontrollera uppgifterna. När botten har skapats hämtar Respondo information från din webbplats för granskning.','Review the details. After creating the bot, Respondo will scan your website for you to review.')}</p>
             <div class="guided-summary"><div><span>${appText('Verkkosivu','Webbplats','Website')}</span><b data-guided-summary="website">—</b></div><div><span>${appText('Botin nimi','Bottens namn','Bot name')}</span><b data-guided-summary="botName">—</b></div><div><span>${appText('Omat vastaukset','Egna svar','Custom answers')}</span><b data-guided-summary="answers">0</b></div></div>
-            <div class="guided-card-actions"><button class="guided-back" type="button" data-guided-back>${appText('Takaisin','Tillbaka','Back')}</button><button class="guided-continue guided-submit" type="submit">${appText('Luo botti','Skapa botten','Create bot')} <span>→</span></button></div>
+            <div class="guided-card-actions"><button class="guided-back" type="button" data-guided-back>${appText('Takaisin','Tillbaka','Back')}</button><button class="guided-continue guided-submit" type="submit">${appText('Luo botti ja hae tiedot','Skapa botten och hämta data','Create bot & scan website')} <span>→</span></button></div>
             <div class="guided-step-message" aria-live="polite"></div>
           </article>
         </form>
