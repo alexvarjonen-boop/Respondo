@@ -98,6 +98,7 @@ const SEO_APP_PATHS = new Set([
   '/assistant',
   '/tilaus',
   '/kirjaudu',
+  '/kayttoonotto-vahvistettu',
   '/maksu-valmis',
   '/app',
 ]);
@@ -8627,6 +8628,7 @@ app.get('/robots.txt', (req,res) => {
     'Disallow: /app/',
     'Disallow: /kirjaudu',
     'Disallow: /tilaus',
+    'Disallow: /kayttoonotto-vahvistettu',
     'Disallow: /maksu-valmis',
     'Disallow: /assistant',
     '',
