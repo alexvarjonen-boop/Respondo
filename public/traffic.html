@@ -86,6 +86,33 @@
   .company-action{padding:8px}
   .company-dialog{padding:19px}
 }
+
+/* Owner-only manual setup workbench. No customer credentials are emailed here. */
+.setup-jobs{display:grid;gap:12px}
+.setup-job{border:1px solid #e4e6ed;background:#fafbfc;border-radius:15px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center}
+.setup-job h3{margin:0 0 7px;font-size:16px;font-weight:780;overflow-wrap:anywhere}
+.setup-job p{margin:0;color:#646b77;line-height:1.6;font-size:12px;overflow-wrap:anywhere}
+.setup-job .setup-state{display:inline-block;font-size:11px;font-weight:800;color:#1a4d82;margin-top:8px}
+.setup-job .setup-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.setup-job button,.setup-section button{appearance:none;border:1px solid #d7dfe8;background:#fff;color:#172337;font:inherit;font-weight:750;font-size:12px;padding:10px 13px;border-radius:11px;cursor:pointer}
+.setup-job button.primary,.setup-section button.primary{background:#1b2435;color:#fff;border-color:#1b2435}
+.setup-job button:disabled{opacity:.5;cursor:wait}
+.setup-warning{margin:0 0 18px;color:#6a5363;background:#f9f2ef;border:1px solid #eddcd0;border-radius:12px;padding:14px;font-size:12px;line-height:1.65}
+.setup-dialog{width:min(100% - 30px,510px);border:1px solid #d7dfea;border-radius:21px;padding:24px;color:#1e293b;box-shadow:0 20px 80px rgba(0,0,0,.28)}
+.setup-dialog::backdrop{background:rgba(9,13,25,.55)}
+.setup-dialog h3{margin:0 0 8px;font-size:23px}
+.setup-dialog p{font-size:13px;line-height:1.55;color:#697484}
+.setup-dialog label{display:block;font-size:12px;font-weight:800;margin-top:15px}
+.setup-dialog input{display:block;width:100%;border:1px solid #b9c7db;border-radius:10px;padding:12px;font:inherit;font-size:15px;margin-top:7px}
+.setup-dialog .setup-controls{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;flex-wrap:wrap}
+.setup-dialog .setup-controls button{border:1px solid #cdd5e0;border-radius:10px;background:#fff;color:#172337;padding:11px 15px;font:inherit;font-weight:700;cursor:pointer}
+.setup-dialog .setup-controls button.primary{background:#1b2435;color:#fff}
+.setup-dialog .setup-controls button:disabled{opacity:.5}
+.setup-dialog .setup-error{color:#9e2323;font-weight:650;min-height:16px}
+.setup-dialog .setup-ok{color:#12633c;font-weight:740}
+@media(max-width:730px){.setup-job{grid-template-columns:1fr}.setup-job .setup-actions{justify-content:flex-start}.setup-section{padding:17px}}
+
+.setup-dialog select{display:block;box-sizing:border-box;width:100%;margin-top:7px;padding:11px;border:1px solid #dfe1e8;border-radius:11px;background:#fff;color:#17191e;font:inherit;font-size:14px}
 </style>
 </head>
 <body>
@@ -345,6 +372,250 @@ function bindCompanyControls(){
   document.getElementById('companyManageForm').addEventListener('submit',submitCompanyManagement);
 }
 
+
+const SL={
+ fi:{
+ title:'Käyttöönottopalvelun tilaukset',eyebrow:'OMISTAJAN TYÖJONO',
+ intro:'Täällä otat ostetun 199 € käyttöönottopalvelun käyttöön itse. Viimeistele ensin asiakkaan botti, aseta kirjautumissähköposti ja väliaikainen salasana, ja lähetä tiedot henkilökohtaisesti omasta sähköpostistasi.',
+ warning:'Respondo ei lähetä valmista salasanaa automaattisesti. Lähetä tiedot vasta, kun botti on oikeasti valmis. Älä merkitse työtä luovutetuksi ennen kuin olet itse lähettänyt kirjautumistiedot. Tämä sivu on näkyvissä vain omistajatilillesi.',
+ loading:'Haetaan käyttöönottotilauksia…',empty:'Ei käyttöönottotilauksia.',refresh:'Päivitä tilaukset',
+ received:'Odottaa käyttöönottoa',credentials_created:'Tunnukset luotu – lähetä henkilökohtaisesti',ready:'Luovutettu',
+ config:'Muokkaa botin nimeä ja tervehdystä',configTitle:'Botin perustiedot',configName:'Botin nimi',configGreeting:'Aloitustervehdys',configAvatar:'Botin kuvake',configSave:'Tallenna botin asetukset',configSaved:'Botin asetukset tallennettu.',create:'Luo tunnukset',rotate:'Muuta tunnukset',handover:'Merkitse luovutetuksi',import:'Tuo sivuston tiedot bottiin',importing:'Haetaan ja tallennetaan yritystietoja…',imported:'Tiedot tuotu bottiin',due:'Valmis viimeistään',customerLogin:'Avaa asiakkaan kirjautuminen',privateNote:'Tee botin viimeistely erillisessä yksityisessä selausikkunassa, jotta oma omistajaistuntosi säilyy.',extra:'Lisätyötila: asiakkaalla on jo Respondo-tunnukset.',
+ dialog:'Yrityksen kirjautumistiedot',login:'Kirjautumissähköposti',password:'Väliaikainen salasana',hint:'Tallenna tunnukset vasta, kun botti on viimeistelty. Kopioi viesti ja lähetä se itse osoitteesta info@respondoai.fi. Salasana tallennetaan vain salattuna.',
+ generate:'Luo vahva salasana',copy:'Kopioi asiakasviesti',save:'Tallenna tunnukset',close:'Sulje',saved:'Tunnukset on tallennettu. Kopioi nyt viesti ja lähetä se henkilökohtaisesti.',copied:'Viesti kopioitu. Lähetä se asiakkaalle henkilökohtaisesti.',copyFail:'Kopiointi epäonnistui. Kopioi tiedot käsin.',
+ confirm:'Oletko varmasti viimeistellyt botin ja lähettänyt kirjautumistiedot asiakkaalle itse? Respondo ei lähetä tästä automaattista sähköpostia.',
+ confirmed:'Luovutus merkitty valmiiksi.',failed:'Toiminto epäonnistui. Yritä uudelleen.',
+ mail:(email,password)=>'Hei!\\n\\nYrityksesi Respondo AI -botti on otettu käyttöön ja valmis tarkistettavaksi.\\n\\nKirjaudu: https://respondoai.fi/kirjaudu\\nSähköposti: '+email+'\\nVäliaikainen salasana: '+password+'\\n\\nVoit vaihtaa salasanan asetuksissa kirjautumisen jälkeen.\\n\\nYstävällisin terveisin,\\nRespondo AI'
+ },
+ sv:{
+ title:'Beställningar för installation',eyebrow:'ÄGARENS ARBETSKÖ',
+ intro:'Här färdigställer du den köpta installationstjänsten manuellt, anger kundens e-postadress och ett tillfälligt lösenord och skickar uppgifterna själv.',
+ warning:'Respondo skickar inte lösenord automatiskt. Skicka uppgifterna först när botten är klar och bekräfta sedan överlämningen.',
+ loading:'Hämtar installationsbeställningar…',empty:'Inga installationsbeställningar.',refresh:'Uppdatera beställningar',
+ received:'Väntar på installation',credentials_created:'Uppgifter skapade – skicka personligen',ready:'Överlämnat',
+ config:'Ändra bottens namn och hälsning',configTitle:'Bottens grunduppgifter',configName:'Bottens namn',configGreeting:'Välkomsttext',configAvatar:'Bot-ikon',configSave:'Spara botinställningar',configSaved:'Botinställningar sparade.',create:'Skapa inloggning',rotate:'Ändra inloggning',handover:'Bekräfta överlämning',import:'Importera webbplatsdata',importing:'Importerar företagsuppgifter…',imported:'Uppgifter importerade',due:'Leverans senast',customerLogin:'Öppna kundens inloggning',privateNote:'Använd ett separat privat webbläsarfönster för kundkontot så att ägarsessionen behålls.',extra:'Extra arbetsyta: kunden har redan ett Respondo-konto.',
+ dialog:'Kundens inloggning',login:'E-post för inloggning',password:'Tillfälligt lösenord',hint:'Spara först när botten är klar. Kopiera meddelandet och skicka själv från info@respondoai.fi. Lösenord lagras endast som en hash.',
+ generate:'Skapa starkt lösenord',copy:'Kopiera kundmeddelande',save:'Spara inloggning',close:'Stäng',saved:'Uppgifterna är sparade. Kopiera nu meddelandet och skicka det personligen.',copied:'Meddelandet kopierat. Skicka det personligen till kunden.',copyFail:'Kunde inte kopiera. Kopiera uppgifterna manuellt.',
+ confirm:'Har du färdigställt botten och personligen mejlat inloggningsuppgifterna? Respondo skickar inget automatiskt mejl.',confirmed:'Överlämningen bekräftad.',failed:'Åtgärden misslyckades. Försök igen.',
+ mail:(email,password)=>'Hej!\\n\\nDin Respondo AI-bot är nu klar.\\n\\nLogga in: https://respondoai.fi/kirjaudu\\nE-post: '+email+'\\nTillfälligt lösenord: '+password+'\\n\\nDu kan ändra lösenordet i inställningarna.\\n\\nMed vänliga hälsningar,\\nRespondo AI'
+ },
+ en:{
+ title:'Assisted setup orders',eyebrow:'OWNER WORK QUEUE',
+ intro:'Complete purchased setup orders yourself: prepare the customer bot, set its login email and a temporary password, and personally send the credentials.',
+ warning:'Respondo does not email passwords automatically. Send credentials only once the bot is ready, then confirm you have personally handed them over.',
+ loading:'Loading setup orders…',empty:'No setup orders.',refresh:'Refresh orders',
+ received:'Awaiting setup',credentials_created:'Credentials created – send personally',ready:'Handed over',
+ config:'Edit bot name and greeting',configTitle:'Bot configuration',configName:'Bot name',configGreeting:'Welcome greeting',configAvatar:'Bot avatar',configSave:'Save bot settings',configSaved:'Bot settings saved.',create:'Create credentials',rotate:'Change credentials',handover:'Confirm handover',import:'Import website data into the bot',importing:'Importing website facts…',imported:'Website facts imported',due:'Delivery by',customerLogin:'Open customer sign-in',privateNote:'Use a separate private browser window for customer setup so your owner session stays active.',extra:'Additional workspace: the customer already has a Respondo login.',
+ dialog:'Customer login credentials',login:'Login email',password:'Temporary password',hint:'Save only after preparing the bot. Copy the message and email it yourself from info@respondoai.fi. The password is stored as a hash only.',
+ generate:'Generate strong password',copy:'Copy customer message',save:'Save credentials',close:'Close',saved:'Credentials saved. Copy the message now and personally send it to your customer.',copied:'Message copied. Personally email it to the customer.',copyFail:'Copy failed. Copy the credentials manually.',
+ confirm:'Have you finished the bot and personally emailed the credentials? Respondo will not send an automatic email.',confirmed:'Handover confirmed.',failed:'Could not complete the action. Please try again.',
+ mail:(email,password)=>'Hello,\\n\\nYour Respondo AI bot is ready for review.\\n\\nSign in: https://respondoai.fi/kirjaudu\\nEmail: '+email+'\\nTemporary password: '+password+'\\n\\nYou can change your password in Settings.\\n\\nBest regards,\\nRespondo AI'
+ }
+};
+const sl=(key)=>SL[lang]?.[key]||SL.fi[key]||key;
+let setupOrders=[],setupSaved=false;
+const setupShell=()=>'<section id="setup-orders" class="company-section setup-section">'+
+  '<div class="company-heading"><div><span class="company-label">'+e(sl('eyebrow'))+'</span><h2>'+e(sl('title'))+'</h2><p>'+e(sl('intro'))+'</p></div>'+
+  '<button id="refreshSetupOrders" type="button">'+e(sl('refresh'))+'</button></div>'+
+  '<p class="setup-warning">'+e(sl('warning'))+' '+e(sl('privateNote'))+'</p><p id="setupNotice" class="company-notice" role="status" aria-live="polite"></p>'+
+  '<div id="setupJobs" class="setup-jobs" aria-live="polite">'+e(sl('loading'))+'</div>'+
+  '<dialog id="setupCredentialDialog" class="setup-dialog" aria-label="'+e(sl('dialog'))+'">'+
+  '<form id="setupCredentialForm"><h3>'+e(sl('dialog'))+'</h3><p id="setupDialogCompany"></p>'+
+  '<label>'+e(sl('login'))+'<input name="email" type="email" autocomplete="off" maxlength="254" required></label>'+
+  '<label>'+e(sl('password'))+'<input name="password" type="password" minlength="14" maxlength="72" autocomplete="new-password" required></label>'+
+  '<button id="setupGeneratePassword" type="button">'+e(sl('generate'))+'</button>'+
+  '<p>'+e(sl('hint'))+'</p><p id="setupDialogError" class="setup-error" role="alert"></p>'+
+  '<p id="setupDialogSuccess" class="setup-ok" role="status"></p>'+
+  '<div class="setup-controls"><button id="setupCopyMessage" type="button" hidden>'+e(sl('copy'))+'</button>'+
+  '<button id="setupCloseDialog" type="button">'+e(sl('close'))+'</button>'+
+  '<button id="setupSaveCredentials" class="primary" type="submit">'+e(sl('save'))+'</button></div></form></dialog>'+
+  '<dialog id="setupBotDialog" class="setup-dialog" aria-label="'+e(sl('configTitle'))+'">'+
+  '<form id="setupBotForm"><h3>'+e(sl('configTitle'))+'</h3><p id="setupBotCompany"></p>'+
+  '<label>'+e(sl('configName'))+'<input name="botName" type="text" maxlength="40" required></label>'+
+  '<label>'+e(sl('configGreeting'))+'<input name="greeting" type="text" maxlength="220" required></label>'+
+  '<label>'+e(sl('configAvatar'))+'<select name="botAvatar">'+Array.from({length:10},(_,i)=>'<option value="robot-'+(i+1)+'">Robot '+(i+1)+'</option>').join('')+'</select></label>'+
+  '<p id="setupBotError" class="setup-error" role="alert"></p>'+
+  '<div class="setup-controls"><button type="button" id="setupBotClose">'+e(sl('close'))+'</button><button type="submit" class="primary" id="setupBotSave">'+e(sl('configSave'))+'</button></div></form></dialog></section>';
+function setupState(s){return sl(['received','credentials_created','ready'].includes(s)?s:'received');}
+function paintSetupOrders(){
+  const target=document.getElementById('setupJobs');
+  if(!target)return;
+  target.innerHTML=setupOrders.length?setupOrders.map(job=>{
+    const done=job.status==='ready';
+    const email=e(job.email||'');
+    const link=e(job.website_url||'');
+    const action=done?'':job.first_workspace
+      ?'<button type="button" class="primary" data-setup-create="'+e(job.session_id)+'">'+e(sl(job.status==='credentials_created'?'rotate':'create'))+'</button>'
+      :'';
+    const deliver=done||job.first_workspace&&job.status!=='credentials_created'?'':'<button type="button" data-setup-handover="'+e(job.session_id)+'">'+e(sl('handover'))+'</button>';
+    const importButton=done?'':'<button type="button" data-setup-import="'+e(job.session_id)+'">'+e(sl('import'))+'</button>';
+    const customerLogin=job.status==='credentials_created'?'<a href="/kirjaudu" target="_blank" rel="noopener noreferrer" title="'+e(sl('privateNote'))+'">'+e(sl('customerLogin'))+'</a>':'';
+    const dueDate=new Date(new Date(job.created_at).getTime()+7*86400000);
+    const dueNote=Number.isNaN(dueDate.getTime())?'':'<p class="setup-due">'+e(sl('due'))+': '+e(companyDate(dueDate))+'</p>';
+    return '<article class="setup-job"><div><h3>'+e(job.company_name||'')+'</h3><p><a href="'+link+'" rel="noopener noreferrer" target="_blank">'+link+'</a></p>'+
+      '<p>'+email+'</p>'+dueNote+'<span class="setup-state">'+e(setupState(job.status))+'</span>'+
+      (!job.first_workspace&&!done?'<p>'+e(sl('extra'))+'</p>':'')+'</div>'+
+      '<div class="setup-actions">'+(done?'':'<button type="button" data-setup-config="'+e(job.session_id)+'">'+e(sl('config'))+'</button>')+importButton+action+customerLogin+deliver+'</div></article>';
+  }).join(''):'<p class="company-loading">'+e(sl('empty'))+'</p>';
+}
+async function loadSetupOrders(){
+  const target=document.getElementById('setupJobs');
+  if(!target)return;
+  target.textContent=sl('loading');
+  try{
+    const response=await fetch('/api/app/internal/setup-service-requests',{credentials:'same-origin',headers:{Accept:'application/json'}});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||sl('failed'));
+    setupOrders=Array.isArray(result.requests)?result.requests:[];
+    paintSetupOrders();
+  }catch(err){target.textContent=err.message||sl('failed');}
+}
+function openSetupCredentials(id){
+  const job=setupOrders.find(j=>j.session_id===id);
+  const dialog=document.getElementById('setupCredentialDialog');
+  const form=document.getElementById('setupCredentialForm');
+  if(!job||!job.first_workspace||!dialog||!form)return;
+  form.reset();
+  form.dataset.sessionId=id;
+  form.elements.email.value=job.email||'';
+  document.getElementById('setupDialogCompany').textContent=job.company_name||'';
+  document.getElementById('setupDialogError').textContent='';
+  document.getElementById('setupDialogSuccess').textContent='';
+  document.getElementById('setupCopyMessage').hidden=true;
+  dialog.showModal();
+}
+function generateSetupPassword(){
+  // Cryptographically generated; never store the plaintext in the database.
+  const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  const random=new Uint8Array(24);
+  crypto.getRandomValues(random);
+  document.querySelector('#setupCredentialForm [name="password"]').value=
+    Array.from(random,byte=>alphabet[byte % alphabet.length]).join('');
+}
+async function saveSetupCredentials(event){
+  event.preventDefault();
+  const form=event.currentTarget;
+  const email=form.elements.email.value.trim();
+  const password=form.elements.password.value;
+  const submit=document.getElementById('setupSaveCredentials');
+  const error=document.getElementById('setupDialogError');
+  error.textContent='';
+  if(!form.reportValidity())return;
+  submit.disabled=true;
+  try{
+    const response=await fetch('/api/app/internal/setup-service-requests/'+encodeURIComponent(form.dataset.sessionId)+'/credentials',{
+      method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({email,password})
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||sl('failed'));
+    setupSaved=true;
+    document.getElementById('setupDialogSuccess').textContent=sl('saved');
+    document.getElementById('setupCopyMessage').hidden=false;
+    await loadSetupOrders();
+  }catch(err){error.textContent=err.message||sl('failed');}
+  finally{submit.disabled=false;}
+}
+async function copySetupMessage(){
+  const form=document.getElementById('setupCredentialForm');
+  if(!setupSaved||!form)return;
+  const message=SL[lang].mail(form.elements.email.value.trim(),form.elements.password.value);
+  try{
+    await navigator.clipboard.writeText(message);
+    document.getElementById('setupDialogSuccess').textContent=sl('copied');
+  }catch{document.getElementById('setupDialogError').textContent=sl('copyFail');}
+}
+async function confirmSetupHandover(id,button){
+  if(!window.confirm(sl('confirm')))return;
+  button.disabled=true;
+  try{
+    const response=await fetch('/api/app/internal/setup-service-requests/'+encodeURIComponent(id)+'/handover',{
+      method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json'},body:'{}'
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||sl('failed'));
+    const notice=document.getElementById('setupNotice');
+    if(notice)notice.textContent=sl('confirmed');
+    await loadSetupOrders();
+  }catch(err){window.alert(err.message||sl('failed'));}
+  finally{button.disabled=false;}
+}
+async function importSetupWebsite(id,button){
+  if(!window.confirm(sl('import')+'?'))return;
+  button.disabled=true;
+  const label=button.textContent;button.textContent=sl('importing');
+  const notice=document.getElementById('setupNotice');
+  if(notice)notice.textContent='';
+  try{
+    const response=await fetch('/api/app/internal/setup-service-requests/'+encodeURIComponent(id)+'/import',{
+      method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json'},body:'{}'
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||sl('failed'));
+    if(notice)notice.textContent=sl('imported')+': '+Number(result.saved||0)+' · '+Number(result.pagesScanned||0)+' pages';
+    await loadSetupOrders();
+  }catch(err){if(notice)notice.textContent=err.message||sl('failed');}
+  finally{button.disabled=false;button.textContent=label;}
+}
+function openSetupBot(id){
+  const job=setupOrders.find(j=>j.session_id===id);
+  const form=document.getElementById('setupBotForm');
+  const dialog=document.getElementById('setupBotDialog');
+  if(!job||!form||!dialog)return;
+  form.dataset.sessionId=id;
+  form.elements.botName.value=String(job.bot_name||job.company_name||'Respondo AI').slice(0,40);
+  form.elements.greeting.value=String(job.greeting||'Hei! Miten voin auttaa?').slice(0,220);
+  form.elements.botAvatar.value=/^robot-(?:[1-9]|10)$/.test(job.bot_avatar||'')?job.bot_avatar:'robot-1';
+  document.getElementById('setupBotCompany').textContent=job.company_name||'';
+  document.getElementById('setupBotError').textContent='';
+  dialog.showModal();
+}
+async function saveSetupBot(event){
+ event.preventDefault();
+ const form=event.currentTarget;
+ if(!form.reportValidity())return;
+ const btn=document.getElementById('setupBotSave');
+ const err=document.getElementById('setupBotError');
+ btn.disabled=true;err.textContent='';
+ try{
+  const res=await fetch('/api/app/internal/setup-service-requests/'+encodeURIComponent(form.dataset.sessionId)+'/configure',{
+   method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json'},
+   body:JSON.stringify({botName:form.elements.botName.value.trim(),greeting:form.elements.greeting.value.trim(),botAvatar:form.elements.botAvatar.value})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data.error||sl('failed'));
+  document.getElementById('setupBotDialog').close();
+  const notice=document.getElementById('setupNotice');
+  if(notice)notice.textContent=sl('configSaved');
+  await loadSetupOrders();
+ }catch(e){err.textContent=e.message||sl('failed');}
+ finally{btn.disabled=false;}
+}
+function bindSetupAdmin(){
+  document.getElementById('refreshSetupOrders')?.addEventListener('click',loadSetupOrders);
+  document.getElementById('setupJobs')?.addEventListener('click',event=>{
+    const configuring=event.target.closest('[data-setup-config]');
+    if(configuring){openSetupBot(configuring.dataset.setupConfig);return;}
+    const importing=event.target.closest('[data-setup-import]');
+    if(importing){importSetupWebsite(importing.dataset.setupImport,importing);return;}
+    const create=event.target.closest('[data-setup-create]');
+    const handover=event.target.closest('[data-setup-handover]');
+    if(create){setupSaved=false;openSetupCredentials(create.dataset.setupCreate);}
+    if(handover)confirmSetupHandover(handover.dataset.setupHandover,handover);
+  });
+  document.getElementById('setupBotForm')?.addEventListener('submit',saveSetupBot);
+  document.getElementById('setupBotClose')?.addEventListener('click',()=>document.getElementById('setupBotDialog').close());
+  document.getElementById('setupGeneratePassword')?.addEventListener('click',generateSetupPassword);
+  document.getElementById('setupCredentialForm')?.addEventListener('submit',saveSetupCredentials);
+  document.getElementById('setupCopyMessage')?.addEventListener('click',copySetupMessage);
+  document.getElementById('setupCloseDialog')?.addEventListener('click',()=>document.getElementById('setupCredentialDialog').close());
+  document.getElementById('setupCredentialDialog')?.addEventListener('close',()=>{
+    const form=document.getElementById('setupCredentialForm');
+    form?.reset();setupSaved=false;
+  });
+}
+
 async function load(){
   root.innerHTML='<div class="state">'+t('loading')+'</div>';
   try{
@@ -352,8 +623,10 @@ async function load(){
     const d=await r.json().catch(()=>({}));
     if(r.status===401){root.innerHTML='<div class="state">'+t('login')+' <a href="/kirjaudu">'+t('loginHere')+'</a>.</div>';return;}
     if(!r.ok) throw new Error(d.error||('HTTP '+r.status));
-    root.innerHTML=cards(d.summary||{})+'<div class="grid">'+chart(d.daily||[])+languageList(d.languages||[])+list(t('pages'),d.pages||[],'path')+list(t('sources'),d.sources||[],'source')+'</div>'+companiesShell()+'<div class="note">'+e(d.note||'')+'</div>';
+    root.innerHTML=cards(d.summary||{})+'<div class="grid">'+chart(d.daily||[])+languageList(d.languages||[])+list(t('pages'),d.pages||[],'path')+list(t('sources'),d.sources||[],'source')+'</div>'+setupShell()+companiesShell()+'<div class="note">'+e(d.note||'')+'</div>';
     bindCompanyControls();
+    bindSetupAdmin();
+    loadSetupOrders();
     loadCompanies();
   }catch(err){root.innerHTML='<div class="state error">'+e((lang==='fi'&&err.message)||t('error'))+'</div>';}
 }

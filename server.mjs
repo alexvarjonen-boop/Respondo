@@ -1003,20 +1003,20 @@ async function notifySetupServiceAfterCheckout(session) {
 
     const lang=['fi','sv','en'].includes(account.preferred_language) ? account.preferred_language : 'en';
     const pick=(fi,sv,en)=>lang==='fi'?fi:lang==='sv'?sv:en;
-    const title=pick('Käyttöönottopalvelusi on vastaanotettu','Vi har tagit emot din installation','We received your setup service order');
+    const title=pick('Käyttöönottopalvelusi on käsittelyssä','Vi behandlar din installationsbeställning','Your setup service is being processed');
     const introduction=pick(
-      'Kiitos tilauksestasi! Seuraavaksi perehdymme yrityksesi verkkosivustoon, kokoamme botin tietopohjan ja viimeistelemme sen toimintaa yrityksesi tarpeisiin. Lähetämme sinulle uuden sähköpostin, kun botti on valmis tarkistettavaksi.',
-      'Tack för din beställning! Nästa steg är att granska din webbplats, sammanställa bottens kunskapsbas och anpassa den till ditt företag. Vi skickar ett nytt mejl när botten är klar att granskas.',
-      'Thank you for your order. Next, we will review your website, prepare the bot’s knowledge base and tailor its setup to your business. We will email you again when the bot is ready for your review.',
+      'Kiitos tilauksestasi! Käyttöönottopalvelusi on käsittelyssä. Perehdymme yrityksesi verkkosivuihin ja viimeistelemme botin. Saat valmiin käyttöönottopalvelun sekä kirjautumistiedot henkilökohtaisella sähköpostilla viimeistään viikon kuluessa tilauksestasi.',
+      'Tack för din beställning! Vi behandlar din beställning, granskar din webbplats och färdigställer din bot. Vi skickar dina inloggningsuppgifter personligen via e-post inom en vecka från beställningen.',
+      'Thank you for your order. Your setup service is being processed. We will review your website and prepare your bot. We will personally email your login details and completed setup within one week of your order.',
     );
     const loginInstructions=session.metadata?.additional_workspace==='1' ? pick(
       'Saat sähköpostin, kun botti on valmis. Voit jatkaa kirjautumista nykyisellä Respondo-tunnuksellasi.',
       'Vi mejlar dig när botten är klar. Du kan fortsätta att använda ditt befintliga Respondo-konto.',
       'We will email you when your bot is ready. You can continue using your existing Respondo account.'
     ) : pick(
-      'Kun botti on valmis, lähetämme sinulle kirjautumissähköpostisi ja turvallisen kertakäyttöisen linkin, jolla luot salasanan. Voit myöhemmin vaihtaa salasanan asetuksissa. Emme koskaan lähetä salasanoja sähköpostitse.',
-      'När botten är klar skickar vi din inloggningsadress och en säker engångslänk för att skapa lösenord. Du kan ändra det senare i inställningarna. Vi skickar aldrig lösenord via e-post.',
-      'When the bot is ready, we will email your login address and a secure, one-time link to create your password. You can change it later in Settings. We never send passwords by email.'
+      'Kun botti on valmis, saat kirjautumissähköpostisi ja väliaikaisen salasanasi henkilökohtaisessa sähköpostissa. Voit vaihtaa salasanan myöhemmin asetuksissa.',
+      'När botten är klar skickar vi inloggningsadressen och ett tillfälligt lösenord personligen via e-post. Du kan ändra lösenordet senare i inställningarna.',
+      'When the bot is ready, we will personally email your login address and temporary password. You can change the password later in Settings.'
     );
     const html=brandedEmailHtml({
       language:lang,
@@ -1029,10 +1029,10 @@ async function notifySetupServiceAfterCheckout(session) {
         '<p style="color:#fff;font-size:15px;line-height:1.5;overflow-wrap:anywhere;margin:0">'+escapeEmailHtml(website)+'</p></div>'+
         '<p style="color:#d0d8e5;font-size:14px;line-height:1.75;margin:0 0 24px">'+escapeEmailHtml(loginInstructions)+'</p>'+
         (session.metadata?.additional_workspace==='1'?'<p style="margin:0 0 24px"><a href="'+escapeEmailHtml(BASE+'/kirjaudu')+'" style="display:inline-block;border-radius:12px;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 22px;font-size:14px;font-weight:750">'+escapeEmailHtml(pick('Avaa kirjautuminen','Öppna inloggning','Open sign in'))+' →</a></p>':'')+
-        '<p style="color:#aebbd0;font-size:13px;line-height:1.7;margin:0">'+escapeEmailHtml(pick('Jos sinulla on kysyttävää, vastaa tähän viestiin.','Svara på detta mejl om du har frågor.','Reply to this email if you have any questions.'))+'</p>',
+        '<p style="color:#aebbd0;font-size:13px;line-height:1.7;margin:0">'+escapeEmailHtml(pick('Tämä on automaattinen vahvistusviesti. Kysymykset: info@respondoai.fi','Detta är en automatisk bekräftelse. Frågor: info@respondoai.fi','This is an automated confirmation. Questions: info@respondoai.fi'))+'</p>',
     });
     const send=async({to,subject,content,replyTo})=>{
-      const payload={from,to:[to],subject,html:content};
+      const payload={from:'Respondo AI <info@respondoai.fi>',to:[to],subject,html:content};
       if(replyTo) payload.reply_to=replyTo;
       const response=await fetch('https://api.resend.com/emails',{
         method:'POST',
@@ -1043,7 +1043,7 @@ async function notifySetupServiceAfterCheckout(session) {
     };
     if(!customerSent) {
       try{
-        await send({to:account.email,subject:title,content:html,replyTo:'info@respondoai.fi'});
+        await send({to:account.email,subject:title,content:html});
         await client.query('UPDATE setup_service_requests SET customer_emailed_at=NOW(),updated_at=NOW() WHERE session_id=$1',[sessionId]);
         customerSent=true;
       }catch(e){console.error('Setup acknowledgement delivery failed:',e?.message);}
@@ -1055,7 +1055,7 @@ async function notifySetupServiceAfterCheckout(session) {
         content:
           '<p style="color:#d6d8de;font-size:15px;line-height:1.8">Asiakas on ostanut 199 €:n käyttöönottopalvelun. Aloita verkkosivuston analysointi ja botin viimeistely. Ilmoita asiakkaalle erikseen, kun botti on tarkistettavissa.</p>'+
           '<p style="color:#fff;font-size:14px;line-height:1.8">Yritys: '+escapeEmailHtml(account.company_name)+'<br>Verkkosivu: '+escapeEmailHtml(website)+'<br>Asiakas: '+escapeEmailHtml(account.email)+'<br>Tilaus: '+escapeEmailHtml(sessionId)+'</p>'+
-          '<p style="margin:22px 0"><a href="'+escapeEmailHtml(BASE+'/app?section=account')+'" style="display:inline-block;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 20px;border-radius:11px;font-weight:700">Avaa käyttöönottotyöt →</a></p>',
+          '<p style="margin:22px 0"><a href="'+escapeEmailHtml(BASE+'/trafic#setup-orders')+'" style="display:inline-block;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 20px;border-radius:11px;font-weight:700">Avaa käyttöönottotyöt →</a></p>',
       });
       try{
         await send({to,subject:'Uusi käyttöönottopalvelu · '+account.company_name,content:ownerHtml,replyTo:account.email});
@@ -8763,6 +8763,8 @@ app.get(['/media', '/media/', '/media/index.html'], (req,res) => {
   return res.status(410).type('text/plain').send('Gone');
 });
 
+app.get('/trafic', (req,res) => { res.set('X-Robots-Tag','noindex, nofollow'); return res.redirect(302,'/traffic.html'); });
+
 app.use(express.static(path.join(__dirname, 'public'), {
   index:false,
   // A public/guides directory exists for feed.xml, but /guides is an SPA route.
@@ -10900,122 +10902,277 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
 
 // These internal operations are restricted to the account configured as OWNER_EMAIL.
 // A staff member must explicitly finish the installation before the final email is sent.
-async function sendReadySetupServiceEmailOnce(sessionId) {
-  const client=await pool.connect();
-  const lockKey='respondo-setup-ready:'+sessionId;
-  let locked=false;
-  try{
-    const rr=await client.query('SELECT pg_try_advisory_lock(hashtextextended($1,0)) AS locked',[lockKey]);
-    if(rr.rows[0]?.locked!==true) return {ready:false,busy:true};
-    locked=true;
-    const found=await client.query(
-      `SELECT sr.session_id,sr.website_url,sr.status,sr.ready_emailed_at,
-              u.email,u.preferred_language,u.id AS account_id, (u.stripe_subscription_id IS NOT DISTINCT FROM t.stripe_subscription_id) AS first_workspace, t.name AS company_name
+// Paid setup is completed by the owner. Customer credentials are set and
+// handed over personally; no password or password-creation link is ever sent
+// automatically by the Respondo service for this paid assisted setup.
+
+// Owner-assisted knowledge import: only for the customer's actual paid setup
+// request, using the same public-URL/SSRF and knowledge filters as normal imports.
+// The customer account is never impersonated; the owner can review the bot
+// through the normal sign-in flow after manually assigning credentials.
+const setupAdminImportLocks = new Set();
+app.post('/api/app/internal/setup-service-requests/:id/import', auth, ownerTrafficOnly, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  const sessionId=String(req.params.id||'');
+  if(!/^cs_[A-Za-z0-9_]{10,120}$/.test(sessionId)) return res.status(400).json({error:'Virheellinen tilaus.'});
+  if(setupAdminImportLocks.has(sessionId)) return res.status(409).json({error:'Tämän sivuston tuonti on jo käynnissä.'});
+  setupAdminImportLocks.add(sessionId);
+  try {
+    const found=await q(
+      `SELECT sr.website_url,sr.status,t.id AS tenant_id,t.website AS tenant_website,t.slug,t.name,
+              t.active,t.subscription_status
          FROM setup_service_requests sr
          JOIN tenants t ON t.id::text=sr.tenant_id
          JOIN users u ON u.id=t.owner_user_id
         WHERE sr.session_id=$1 AND sr.user_id=u.id::text
+          AND u.status='active' AND t.active=true
           AND t.stripe_subscription_id IS NOT NULL
           AND t.subscription_status IN ('active','trialing')
         LIMIT 1`,
       [sessionId],
     );
-    if(!found.rowCount) return {ready:false,notFound:true};
     const job=found.rows[0];
-    if(job.ready_emailed_at) return {ready:true,alreadySent:true};
-    const apiKey=String(process.env.RESEND_API_KEY||'').trim();
-    const from=String(process.env.EMAIL_VERIFICATION_FROM||'').trim();
-    if(!apiKey || !from) return {ready:false,emailUnavailable:true};
-    const lang=['fi','sv','en'].includes(job.preferred_language)?job.preferred_language:'en';
-    const pick=(fi,sv,en)=>lang==='fi'?fi:lang==='sv'?sv:en;
-    const subject=pick('Respondo-bottisi on valmis tarkistettavaksi','Din Respondo-bot är redo att granskas','Your Respondo bot is ready for review');
-    // Never email a plaintext password. New assisted-setup customers get a secure
-    // 7-day, single-use password-creation link only after staff marks the bot ready.
-    let initialPasswordToken='';
-    if(job.first_workspace) {
-      initialPasswordToken=crypto.randomBytes(32).toString('base64url');
-      const tokenHash=crypto.createHash('sha256').update(initialPasswordToken).digest('hex');
-      await client.query(
-        "INSERT INTO password_reset_tokens(id,user_id,token_hash,expires_at) VALUES($1,$2,$3,NOW()+INTERVAL '7 days')",
-        [uid(),job.account_id,tokenHash],
-      );
+    if(!job || !['received','credentials_created'].includes(job.status))
+      return res.status(409).json({error:'Vain avoimen maksetun käyttöönottotilauksen tietoja voi tuoda.'});
+    const website=normalizeWebUrl(job.website_url,false);
+    if(!website || !tenantWebsiteImportAllowed({
+      name:job.name,slug:job.slug,website:job.tenant_website,
+    },website)) {
+      return res.status(422).json({error:'Yrityksen verkkosivun osoite ei kelpaa.'});
     }
-    const readyUrl=initialPasswordToken ? BASE+'/kirjaudu?reset='+encodeURIComponent(initialPasswordToken)+'&setup=1' : BASE+'/app';
-    const accessText=initialPasswordToken
-      ? pick(
-        'Kirjautumistunnuksesi on '+job.email+'. Luo oma salasana alla olevasta turvallisesta linkistä. Linkki on kertakäyttöinen ja voimassa 7 päivää. Voit myöhemmin vaihtaa salasanasi asetuksissa.',
-        'Din inloggningsadress är '+job.email+'. Skapa ditt lösenord med den säkra länken nedan. Länken gäller i 7 dagar och kan bara användas en gång. Du kan ändra lösenordet senare i inställningarna.',
-        'Your login email is '+job.email+'. Create your password using the secure link below. It can be used once and expires in 7 days. You can change your password later in Settings.'
-      )
-      : pick(
-        'Kirjautumistunnuksesi on '+job.email+'. Voit käyttää nykyistä Respondo-salasanaasi tai Google-kirjautumista. Salasanan voi vaihtaa myöhemmin asetuksissa.',
-        'Din inloggningsadress är '+job.email+'. Du kan fortsätta använda ditt befintliga lösenord eller Google-inloggning och ändra lösenordet senare i inställningarna.',
-        'Your login email is '+job.email+'. Use your existing Respondo password or Google sign-in. You can change the password later in Settings.'
+    // Conservative limits, and reuse the existing credit-protected Firecrawl
+    // fallback only for native-fetched sparse pages.
+    const bundle=await fetchWebsiteBundle(website,45,32000,null,{
+      storefrontLimit:150,storefrontBudgetMs:4000,sitemapLimit:500,
+    });
+    const candidates=websiteKnowledgeCandidates(bundle).slice(0,250);
+    const approved=[];
+    const seen=new Set();
+    for(const row of candidates){
+      const title=String(row?.title||'').trim().slice(0,180);
+      const answer=String(row?.answer||'').trim().slice(0,1600);
+      const category=String(row?.category||'Verkkosivulta tuotu').trim().slice(0,80);
+      const sourceUrl=normalizeWebUrl(row?.sourceUrl,false);
+      if(!title||!answer||!sourceUrl||normalizeHost(sourceUrl)!==normalizeHost(website))continue;
+      const safetyText=normalizeSearchText(title+' '+category+' '+answer.slice(0,900)+' '+sourceUrl);
+      if(/(?:terms of service|privacy policy|tietosuoja|kayttoeh|käyttöeh|cookie policy|evaste|eväste|legal notice|all rights reserved|localstorage|sessionstorage|queryselector|addeventlistener|json)/i.test(safetyText))continue;
+      if(!usableWebsiteRow({title,answer,category,source_type:'website'})||title.length<3)continue;
+      const dedupe=sourceUrl.toLowerCase()+'|'+title.toLowerCase();
+      if(seen.has(dedupe))continue;
+      seen.add(dedupe);
+      approved.push({title,answer,category,sourceUrl,keywords:Array.isArray(row?.keywords)?
+        row.keywords.map(x=>String(x||'').trim()).filter(Boolean).slice(0,14):
+        searchTokens(title+' '+answer).slice(0,14)});
+    }
+    if(!approved.length) return res.status(422).json({error:'Sivulta ei löytynyt sopivia yritystietoja. Lisää ne käsin asiakkaan hallintapaneelista.'});
+    const client=await pool.connect();
+    try{
+      await client.query('BEGIN');
+      // Set the website only on first import; never overwrite an existing
+      // customer's manually configured website.
+      await client.query(
+        "UPDATE tenants SET website=$1,updated_at=NOW() WHERE id=$2 AND (website IS NULL OR website='')",
+        [website,job.tenant_id],
       );
-    const actionLabel=initialPasswordToken
-      ? pick('Luo salasana','Skapa lösenord','Create password')
-      : pick('Avaa hallintapaneeli','Öppna kontrollpanelen','Open dashboard');
-    const html=brandedEmailHtml({
-      language:lang,
-      eyebrow:pick('Käyttöönotto valmis','Installationen är klar','Setup completed'),
-      title:subject,
-      content:
-        '<p style="font-size:15px;line-height:1.75;color:#dce4ef;margin:0 0 20px">'+escapeEmailHtml(pick(
-          'Olemme viimeistelleet yrityksesi Respondo-botin käyttöönottopalvelun. Voit nyt kirjautua hallintapaneeliin, tarkistaa botin vastaukset ja ottaa sen käyttöön verkkosivuillasi.',
-          'Vi har färdigställt installationen av din Respondo-bot. Logga in i kontrollpanelen för att granska svaren och aktivera botten på webbplatsen.',
-          'We have completed the setup of your Respondo bot. Sign in to your dashboard to review its answers and install it on your website.'
-        ))+'</p>'+
-        '<p style="color:#bccce2;font-size:14px;line-height:1.7;margin:0 0 20px">'+escapeEmailHtml(accessText)+'</p>'+
-        '<p style="margin:0 0 20px"><a href="'+escapeEmailHtml(readyUrl)+'" style="display:inline-block;border-radius:12px;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 22px;font-size:14px;font-weight:750">'+escapeEmailHtml(actionLabel)+' →</a></p>'+
-                '<p style="font-size:13px;line-height:1.7;color:#b7c8e2;margin:0">'+escapeEmailHtml(pick('Jos haluat apua, vastaa tähän viestiin.','Svara på detta mejl om du behöver hjälp.','Reply to this email if you need help.'))+'</p>',
-    });
-    const response=await fetch('https://api.resend.com/emails',{
-      method:'POST',
-      headers:{Authorization:'Bearer '+apiKey,'Content-Type':'application/json'},
-      body:JSON.stringify({from,to:[job.email],reply_to:'info@respondoai.fi',subject,html}),
-    });
-    if(!response.ok) throw new Error('Setup ready email provider failed (HTTP '+response.status+')');
-    await client.query(
-      "UPDATE setup_service_requests SET status='ready',ready_emailed_at=NOW(),updated_at=NOW() WHERE session_id=$1",
-      [sessionId],
+      let saved=0;
+      for(const row of approved){
+        const duplicate=await client.query(
+          "SELECT id FROM knowledge WHERE tenant_id=$1 AND source_type='website' AND source_url=$2 AND lower(title)=lower($3) LIMIT 1",
+          [job.tenant_id,row.sourceUrl,row.title],
+        );
+        if(duplicate.rowCount){
+          await client.query(
+            "UPDATE knowledge SET category=$1,answer=$2,keywords=$3,approved=true,verified_at=NOW(),updated_at=NOW() WHERE id=$4 AND tenant_id=$5",
+            [row.category,row.answer,row.keywords,duplicate.rows[0].id,job.tenant_id],
+          );
+        }else{
+          await client.query(
+            `INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords,source_type,source_url,approved,verified_at)
+              VALUES($1,$2,$3,$4,$5,$6,'website',$7,true,NOW())`,
+            [uid(),job.tenant_id,row.category,row.title,row.answer,row.keywords,row.sourceUrl],
+          );
+        }
+        saved++;
+      }
+      await client.query('COMMIT');
+      return res.json({ok:true,saved,pagesScanned:bundle.pages.length});
+    }catch(error){
+      await client.query('ROLLBACK').catch(()=>{});
+      throw error;
+    }finally{client.release();}
+  }catch(error){
+    console.error('Owner assisted setup knowledge import failed:',error?.message);
+    return res.status(503).json({error:'Yrityksen tietojen tuonti epäonnistui.'});
+  }finally{setupAdminImportLocks.delete(sessionId);}
+});
+
+// Owner can prepare the bot's basic identity before personally delivering
+// credentials. This never grants access to other customers or sends email.
+app.post('/api/app/internal/setup-service-requests/:id/configure', auth, ownerTrafficOnly, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  const sessionId=String(req.params.id||'');
+  const botName=String(req.body?.botName||'').trim();
+  const greeting=String(req.body?.greeting||'').trim();
+  const botAvatar=String(req.body?.botAvatar||'robot-1').trim();
+  if(!/^cs_[A-Za-z0-9_]{10,120}$/.test(sessionId)) return res.status(400).json({error:'Virheellinen tilaus.'});
+  if(!botName||botName.length>40||/[<>]/.test(botName)||
+     !greeting||greeting.length>220||/[<>]/.test(greeting)||
+     !/^robot-(?:[1-9]|10)$/.test(botAvatar))
+    return res.status(422).json({error:'Tarkista botin nimi, tervehdys ja kuvake.'});
+  try{
+    const updated=await q(
+      `UPDATE tenants t
+          SET bot_name=$2,greeting=$3,bot_avatar=$4,
+              updated_at=NOW()
+         FROM setup_service_requests sr
+         JOIN users u ON u.id::text=sr.user_id
+        WHERE sr.session_id=$1
+          AND t.id::text=sr.tenant_id AND t.owner_user_id=u.id
+          AND sr.status IN ('received','credentials_created')
+          AND t.active=true AND u.status='active'
+          AND t.stripe_subscription_id IS NOT NULL
+          AND t.subscription_status IN ('active','trialing')
+        RETURNING t.id`,
+      [sessionId,botName,greeting,botAvatar],
     );
-    return {ready:true};
-  }finally{
-    if(locked) await client.query('SELECT pg_advisory_unlock(hashtextextended($1,0))',[lockKey]).catch(()=>{});
-    client.release();
+    if(!updated.rowCount) return res.status(409).json({error:'Avoin käyttöönottotilaus puuttuu tai tila ei enää salli muutoksia.'});
+    return res.json({ok:true});
+  }catch(e){
+    console.error('Manual setup bot configuration failed:',e?.message);
+    return res.status(503).json({error:'Botin asetusten tallentaminen epäonnistui.'});
   }
-}
+});
 
 app.get('/api/app/internal/setup-service-requests', auth, ownerTrafficOnly, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
   try{
-    const tableCheck=await q("SELECT to_regclass('public.setup_service_requests') AS relation");
-    if(!tableCheck.rows[0]?.relation) return res.json({requests:[]});
-    const rr=await q(
+    const exists=await q("SELECT to_regclass('public.setup_service_requests') AS relation");
+    if(!exists.rows[0]?.relation) return res.json({requests:[]});
+    const found=await q(
       `SELECT sr.session_id,sr.website_url,sr.status,sr.created_at,sr.customer_emailed_at,
-              sr.owner_emailed_at,sr.ready_emailed_at,t.name AS company_name,u.email
+              sr.owner_emailed_at,sr.ready_emailed_at,t.name AS company_name,u.email,
+              t.bot_name,t.greeting,t.bot_avatar,
+              (u.stripe_subscription_id IS NOT DISTINCT FROM t.stripe_subscription_id) AS first_workspace
          FROM setup_service_requests sr
          JOIN tenants t ON t.id::text=sr.tenant_id
          JOIN users u ON u.id=t.owner_user_id
         ORDER BY sr.created_at DESC LIMIT 100`,
     );
-    return res.json({requests:rr.rows});
+    return res.json({requests:found.rows});
   }catch(e){
     console.error('Setup admin listing failed:',e?.message);
     return res.status(503).json({error:'Käyttöönottojonon avaaminen epäonnistui.'});
   }
 });
-app.post('/api/app/internal/setup-service-requests/:id/ready', auth, ownerTrafficOnly, async (req,res) => {
+
+// Owner may set the initial login email and password only on a paid, active
+// first-workspace setup job. Multiple-workspace users keep their existing login.
+// No plaintext password is persisted or returned in the API response.
+app.post('/api/app/internal/setup-service-requests/:id/credentials', auth, ownerTrafficOnly, loginLimiter, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  const sessionId=String(req.params.id||'');
+  const email=cleanEmail(req.body?.email);
+  const password=String(req.body?.password||'');
+  if(!/^cs_[A-Za-z0-9_]{10,120}$/.test(sessionId)) return res.status(400).json({error:'Virheellinen tilaus.'});
+  if(!email || email.length>254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return res.status(422).json({error:'Anna kelvollinen kirjautumissähköposti.'});
+  if(password.length<14 || password.length>72 || Buffer.byteLength(password,'utf8')>72)
+    return res.status(422).json({error:'Salasanan tulee olla 14–72 tavua.'});
+  if(!pool)return res.status(503).json({error:'Tietokanta ei ole käytettävissä.'});
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const found=await client.query(
+      `SELECT sr.status,u.id AS user_id,u.status AS user_status,
+              t.id AS tenant_id,t.active AS tenant_active,t.subscription_status,
+              t.stripe_subscription_id AS tenant_subscription,
+              u.stripe_subscription_id AS primary_subscription
+         FROM setup_service_requests sr
+         JOIN tenants t ON t.id::text=sr.tenant_id
+         JOIN users u ON u.id=t.owner_user_id
+        WHERE sr.session_id=$1 AND sr.user_id=u.id::text
+        FOR UPDATE OF sr,u`,
+      [sessionId],
+    );
+    if(!found.rowCount) { await client.query('ROLLBACK'); return res.status(404).json({error:'Maksettua käyttöönottotilausta ei löytynyt.'}); }
+    const job=found.rows[0];
+    if(String(job.user_id)===String(req.user.sub)) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({error:'Omistajatilin omia kirjautumistietoja ei voi muuttaa tästä.'});
+    }
+    if(!['received','credentials_created'].includes(job.status) ||
+       job.user_status!=='active' || job.tenant_active!==true ||
+       !['active','trialing'].includes(job.subscription_status) ||
+       !job.primary_subscription || job.primary_subscription!==job.tenant_subscription) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({error:'Tunnuksia voi asettaa vain maksullisen ensikäyttöönoton avoimeen tilaukseen.'});
+    }
+    // Avoid unexpectedly replacing the shared credentials of an existing
+    // customer who already owns other active workspaces.
+    const other=await client.query(
+      "SELECT 1 FROM tenants WHERE owner_user_id=$1 AND id<>$2 AND active=true AND stripe_subscription_id IS NOT NULL LIMIT 1",
+      [job.user_id,job.tenant_id],
+    );
+    if(other.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({error:'Tällä käyttäjällä on myös toinen työtila. Käytä nykyisiä kirjautumistunnuksia.'});
+    }
+    const duplicate=await client.query('SELECT id FROM users WHERE lower(email)=lower($1) AND id<>$2 LIMIT 1',[email,job.user_id]);
+    if(duplicate.rowCount) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({error:'Sähköpostiosoite on jo käytössä toisella tilillä.'});
+    }
+    const passwordHash=await bcrypt.hash(password,12);
+    await client.query(
+      'UPDATE users SET email=$1,password_hash=$2,session_version=session_version+1,updated_at=NOW() WHERE id=$3',
+      [email,passwordHash,job.user_id],
+    );
+    // The login address is not the public customer-service contact address.
+    await client.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL',[job.user_id]);
+    await client.query("UPDATE setup_service_requests SET status='credentials_created',updated_at=NOW() WHERE session_id=$1",[sessionId]);
+    await client.query('COMMIT');
+    return res.json({ok:true,email,manualDeliveryRequired:true});
+  }catch(error){
+    await client.query('ROLLBACK').catch(()=>{});
+    console.error('Manual setup credential assignment failed:',error?.code||error?.message);
+    return res.status(error?.code==='23505'?409:503).json({error:error?.code==='23505'?'Sähköpostiosoite on jo käytössä.':'Tunnusten tallennus epäonnistui.'});
+  }finally{client.release();}
+});
+
+// Owner confirms personal handover after sending the credentials themselves.
+// We deliberately do not send emails or disclose passwords from this endpoint.
+app.post('/api/app/internal/setup-service-requests/:id/handover', auth, ownerTrafficOnly, loginLimiter, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
   const sessionId=String(req.params.id||'');
   if(!/^cs_[A-Za-z0-9_]{10,120}$/.test(sessionId)) return res.status(400).json({error:'Virheellinen tilaus.'});
   try{
-    const result=await sendReadySetupServiceEmailOnce(sessionId);
-    if(result.notFound) return res.status(404).json({error:'Käyttöönottotilausta ei löydy.'});
-    if(!result.ready) return res.status(503).json({error:'Valmistumisviestiä ei voitu lähettää. Yritä myöhemmin uudelleen.'});
-    return res.json({ok:true,alreadySent:result.alreadySent===true});
-  }catch(e){
-    console.error('Setup completion email failed:',e?.message);
-    return res.status(503).json({error:'Valmistumisviestin lähetys epäonnistui. Yritä myöhemmin uudelleen.'});
+    const result=await q(
+      `UPDATE setup_service_requests sr SET status='ready',updated_at=NOW()
+        FROM tenants t JOIN users u ON u.id=t.owner_user_id
+       WHERE sr.session_id=$1 AND t.id::text=sr.tenant_id
+         AND sr.user_id=u.id::text
+         AND t.active=true AND u.status='active'
+         AND t.subscription_status IN ('active','trialing')
+         AND t.stripe_subscription_id IS NOT NULL
+         AND (sr.status='credentials_created'
+              OR (sr.status='received' AND u.stripe_subscription_id IS DISTINCT FROM t.stripe_subscription_id))
+       RETURNING sr.session_id`,
+      [sessionId],
+    );
+    if(result.rowCount) return res.json({ok:true,manualHandoverConfirmed:true});
+    const existing=await q('SELECT status FROM setup_service_requests WHERE session_id=$1',[sessionId]);
+    if(existing.rows[0]?.status==='ready') return res.json({ok:true,alreadyConfirmed:true});
+    return res.status(409).json({error:'Aseta ensin kirjautumistunnukset tai varmista, että kyseessä on lisätyötila.'});
+  }catch(error){
+    console.error('Manual setup handover failed:',error?.message);
+    return res.status(503).json({error:'Luovutuksen vahvistaminen epäonnistui.'});
   }
+});
+
+// Disable the former auto-delivery endpoint so no owner action can
+// accidentally email an automatically generated password-creation link.
+app.post('/api/app/internal/setup-service-requests/:id/ready', auth, ownerTrafficOnly, (req,res) => {
+  res.status(410).json({error:'Lähetä kirjautumistiedot asiakkaalle henkilökohtaisesti ja vahvista luovutus /trafic-sivulla.'});
 });
 
 app.get('/api/app/workspaces/checkout-success', auth, ownerOnly, async (req,res) => {
