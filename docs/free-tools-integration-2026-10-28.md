@@ -31,9 +31,9 @@ The project's existing `.github/workflows/ci.yml` runs `npm run check` and `npm 
 Respondo **already has** a multilingual public demo enquiry form at
 `/yhteystiedot?intent=demo&lang=fi`, with site URL, privacy disclosure, and the existing contact form backend. It also already has tenant lead capture, qualified lead webhook signing, a CRM queue and retry support. Avoid adding duplicate third-party forms or collecting prospects' conversations through automation platforms.
 
-**Calendly:** optional after an account is actually connected and a real booking link exists. Keep the existing demo enquiry route as default. Do not invent calendar availability or booking URLs.
+**Calendly: CONNECTED and set up.** Active real 15-minute Google Meet booking event `Respondo AI – 15 min esittely`: https://calendly.com/alexvarjonen/respondo-ai-15-min-esittely. Native Calendly booking page uses English UI because the API does not offer Finnish locale, but title and description are Finnish. Booking link is included in the five draft emails. The public site still uses its existing demo enquiry form (not replaced); no bookings have been made.
 
-**Apollo:** optional prospect research/source, not a prerequisite; account linking and credits may be required. Review prospects manually and respect opt-outs and relevant electronic marketing law. Public business websites and role-based addresses are preferable. No automated mass-mailing.
+**Apollo: CONNECTED.** Profile indicated 180 lead credits available. Free company discovery matched 4/5 public prospects by their domains: WashUp, Siivouspalvelu Kota, LVI Elo, Talotekniikka Forsblom. LVIS Turkutiimi was not returned. This is **not** contact enrichment; no credits were spent enriching people, no personal contacts were exported, and no messages were sent. Review prospects manually and respect opt-outs and relevant electronic marketing law.
 
 **n8n / Make:** optional internal back-office automation after a workspace and signed destination webhook are ready. If configured, use the existing CRM event `lead.qualified`, verify HMAC at the trusted receiver, deduplicate by tenantId+leadId, and send only the minimum approved fields. Never expose secret keys in client-side JS or use an unauthenticated webhook endpoint. Do not add a permanent Railway n8n service just to reproduce Respondo's existing CRM queue.
 
