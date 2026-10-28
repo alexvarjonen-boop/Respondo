@@ -107,3 +107,61 @@
 .guided-setup-active .guided-resume-link:not([hidden]):focus-visible{
   outline:2px solid #f5f5f7;outline-offset:3px;
 }
+
+/* Public demo starts with one calm website question; the full SaaS menu
+   becomes available only after the visitor finishes the guided preview. */
+.dashboard-premium-shell.demo-dashboard-shell.guided-setup-active .dashboard-topbar,
+.dashboard-premium-shell.demo-dashboard-shell.guided-setup-active .dashboard-premium-sidebar {
+  display:none!important;
+}
+.dashboard-premium-shell.demo-dashboard-shell.guided-setup-active .dashboard-simple-main {
+  flex:1 1 100%!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0 auto!important;
+}
+.dashboard-premium-shell.demo-dashboard-shell.guided-setup-active .guided-setup {
+  min-height:calc(100dvh - 40px);
+  padding:38px 18px 56px;
+}
+.guided-demo-brand {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:11px;
+  margin-bottom:30px;
+  color:#f7f8fb;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.19em;
+}
+.guided-demo-brand .logo,
+.guided-demo-brand .brand-logo {
+  display:inline-flex;
+  align-items:center;
+}
+.guided-demo-brand img,.guided-demo-brand svg {
+  width:42px;
+  height:42px;
+  object-fit:contain;
+}
+@media(max-width:760px) {
+  .dashboard-premium-shell.demo-dashboard-shell.guided-setup-active .dashboard-topbar {
+    display:none!important;
+  }
+  .dashboard-premium-shell.demo-dashboard-shell.guided-setup-active .guided-setup {
+    align-content:start;
+    padding:34px 14px 58px;
+  }
+  .dashboard-premium-shell.demo-dashboard-shell.guided-setup-active .guided-demo-brand {
+    margin-bottom:28px;
+  }
+  .dashboard-premium-shell.demo-dashboard-shell.guided-setup-active .guided-card {
+    min-height:0;
+    padding:30px 23px;
+    border-radius:24px;
+  }
+  .dashboard-premium-shell.demo-dashboard-shell.guided-setup-active .guided-card h1 {
+    font-size:clamp(29px,8vw,40px);
+  }
+}
