@@ -373,3 +373,27 @@
 }
 #app .respondo-workspace .rs-knowledge-more{margin:18px 4px 3px}
 #app .respondo-workspace .rs-minimal-card .rs-simple-actions button{flex:0 0 auto}
+
+/* V37: make the first-party subscription link immediately recognizable
+   inside mobile Try Bot and dashboard previews, without affecting merchants. */
+#app .dashboard-premium-shell.respondo-workspace-active
+.respondo-workspace-chat-card .preview-actions{
+  display:flex!important;flex-direction:column;align-items:flex-start;
+  gap:8px;margin-top:12px;max-width:100%;
+}
+#app .dashboard-premium-shell.respondo-workspace-active
+.respondo-workspace-chat-card .preview-action-link{
+  display:inline-flex!important;align-items:center;justify-content:center;
+  min-height:44px;max-width:100%;box-sizing:border-box;
+  padding:11px 17px!important;
+  border:1px solid #c9dbff!important;border-radius:12px!important;
+  background:#e9f2ff!important;color:#101b2e!important;
+  -webkit-text-fill-color:#101b2e!important;
+  text-decoration:none!important;font-weight:750!important;
+  font-size:13px!important;line-height:1.3!important;
+  white-space:normal;overflow-wrap:anywhere;
+}
+#app .dashboard-premium-shell.respondo-workspace-active
+.respondo-workspace-chat-card .preview-action-link:focus-visible{
+  outline:2px solid #c9dbff!important;outline-offset:3px;
+}

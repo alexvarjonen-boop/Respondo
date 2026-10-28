@@ -12475,6 +12475,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     requestLang=detectedLang;
     let rows = buildProfileKnowledge(profile).slice(0, 160);
     const demoImportId=String(body.demoImportId||'').trim().slice(0,80);
+    let trustedImportedDemoWebsite='';
     if(demoImportId){
       cleanDemoWebsiteImports();
       let imported=demoWebsiteImports.get(demoImportId);
@@ -12487,6 +12488,9 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       const currentDemoWebsite=normalizeWebUrl(profile.website,false);
       if(imported?.website && currentDemoWebsite &&
          normalizeHost(imported.website)!==normalizeHost(currentDemoWebsite)) imported=null;
+      // An imported domain is proof of the website being tested even if an
+      // older public demo tab no longer submits the visible website field.
+      trustedImportedDemoWebsite=imported?.website||'';
       if(imported?.candidates?.length){
         const importedRows=imported.candidates.slice(0,2000).map((item,index)=>({
           id:'demo-import-'+index,
@@ -12630,7 +12634,12 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
     // Only Respondo's own domain may offer a Respondo subscription.
     // A public demo of another company must never leak Respondo sales links.
-    const isRespondoDemoWebsite=isPublicDemo && normalizeHost(profile.website)==='respondoai.fi';
+    const enteredDemoHost=normalizeHost(profile.website);
+    const importedDemoHost=normalizeHost(trustedImportedDemoWebsite);
+    const isRespondoDemoWebsite=isPublicDemo && (
+      enteredDemoHost==='respondoai.fi' ||
+      (!enteredDemoHost && importedDemoHost==='respondoai.fi')
+    );
     const firstPartyRespondoPreview=isRespondoDemoWebsite||previewIsFirstPartyRespondo;
     const previewFaq=firstPartyRespondoPreview
       ? respondoProductFaqMatch(message,detectedLang,history) : null;
@@ -12751,11 +12760,23 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       if(handoff){
         handoff=false;
         result.confidence=1;
-        answer=detectedLang==='en'
-          ? 'Choose your Respondo plan using the button below.'
-          :detectedLang==='sv'
-            ? 'Välj ett Respondo-abonnemang via knappen nedan.'
-            : 'Valitse Respondo-tilauspaketti alla olevasta painikkeesta.';
+      }
+      // A wall of scraped marketing copy pushed the order link below the
+      // small iPhone chat viewport. Keep it concise and put the actual
+      // first-party ordering action directly below this explanation.
+      if(handoff || answer.length>310){
+        const annual=/(?:vuos|annual|yearly|arsp|helars|per year)/.test(normalizeSearchText(message));
+        answer=annual
+          ? (detectedLang==='en'
+              ? 'With annual billing: Advanced €39/month, Premium €119/month and Enterprise €139/month. Choose your plan below.'
+              : detectedLang==='sv'
+                ? 'Vid årsbetalning: Advanced 39 €/mån, Premium 119 €/mån och Enterprise 139 €/mån. Välj paket nedan.'
+                : 'Vuosilaskutuksella Advanced on 39 €/kk, Premium 119 €/kk ja Enterprise 139 €/kk. Valitse paketti alta.')
+          : (detectedLang==='en'
+              ? 'Advanced €49/month, Premium €129/month and Enterprise €149/month. Choose your plan using the button below.'
+              : detectedLang==='sv'
+                ? 'Advanced kostar 49 €/mån, Premium 129 €/mån och Enterprise 149 €/mån. Välj paket via knappen nedan.'
+                : 'Advanced maksaa 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Valitse tilauspaketti alla olevasta painikkeesta.');
       }
     }
     // Action URLs are UI data, not conversational answers. If retrieval picked

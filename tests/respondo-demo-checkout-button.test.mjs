@@ -38,7 +38,10 @@ test('pricing answer includes both pricing and checkout buttons on the marketing
 test('public demo checkout CTA only applies when testing actual respondoai.fi',()=>{
   const server=read('server.mjs');
   const demo=server.slice(server.indexOf("app.post('/api/public/demo-chat'"),server.indexOf("\napp.",server.indexOf("app.post('/api/public/demo-chat'")+100));
-  assert.match(demo,/const isRespondoDemoWebsite=isPublicDemo && normalizeHost\(profile.website\)==='respondoai.fi'/);
+  assert.match(demo,/const enteredDemoHost=normalizeHost\(profile.website\)/);
+  assert.match(demo,/const importedDemoHost=normalizeHost\(trustedImportedDemoWebsite\)/);
+  assert.match(demo,/enteredDemoHost==='respondoai.fi'/);
+  assert.match(demo,/!enteredDemoHost && importedDemoHost==='respondoai.fi'/);
   assert.match(demo,/const firstPartyRespondoPreview=isRespondoDemoWebsite\|\|previewIsFirstPartyRespondo/);
   assert.match(demo,/firstPartyRespondoPreview\s*\? respondoCheckoutAction\(message,detectedLang,previewFaq\?\.id\|\|'',SEO_CANONICAL_ORIGIN\)/);
   assert.match(demo,/actions\.unshift\(orderAction\)/);
@@ -48,4 +51,17 @@ test('public demo checkout CTA only applies when testing actual respondoai.fi',(
   assert.match(app,/wrap\.className='preview-actions'/);
   assert.match(app,/link\.className='preview-action-link'/);
   assert.match(app,/link\.href=action\.url/);
+});
+
+test('first-party ordering CTA stays visible below a short answer, never for a merchant',()=>{
+  const server=read('server.mjs');
+  const demo=server.slice(server.indexOf("app.post('/api/public/demo-chat'"),server.indexOf("\napp.",server.indexOf("app.post('/api/public/demo-chat'")+100));
+  assert.match(demo,/trustedImportedDemoWebsite=imported\?\.website\|\|''/);
+  assert.match(demo,/if\(handoff \|\| answer\.length>310\)/);
+  assert.match(demo,/actions\.unshift\(orderAction\)/);
+  assert.match(demo,/firstPartyRespondoPreview\s*\? respondoCheckoutAction/);
+  const css=read('public/workspace-continuation-v24.css');
+  assert.match(css,/\.preview-action-link\{/);
+  assert.match(css,/-webkit-text-fill-color:#101b2e!important/);
+  assert.match(read('public/index.html'),/workspace-continuation-v24\.css\?v=[^"]*subscribe-cta-v37/);
 });
