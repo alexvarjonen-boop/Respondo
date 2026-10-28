@@ -32,6 +32,7 @@ test('optional Calendly demo booking is localized, secure and does not replace t
  assert.match(contact,/const demoBookingUrl = 'https:\/\/calendly\.com\/alexvarjonen\/respondo-ai-15-min-esittely'/);
  assert.match(contact,/demoRequest \? `<div class="demo-booking-option"/);
  assert.match(contact,/href="\$\{demoBookingUrl\}" target="_blank" rel="noopener noreferrer"/);
+ assert.match(contact,/Book a 15-minute demo \(opens in a new tab\)/);
  assert.match(contact,/Varaa 15 min esittely/);
  assert.match(contact,/Boka en 15 min demo/);
  assert.match(contact,/Book a 15-minute demo/);
