@@ -1,6 +1,7 @@
 import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
+import { firecrawlEnabled, firecrawlMaxPages, fetchFirecrawlRenderedHtml } from './firecrawl-fallback.mjs';
 import { serviceOverviewQuestion, verifiedServiceOverview } from './service-overview.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { isRespondoCapabilityQuestion } from './respondo-capability-intent.mjs';
@@ -5914,6 +5915,31 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       enqueue(page.html, page.finalUrl);
       if (onProgress) onProgress({scanned:pages.length,total:Math.max(totalTarget,Math.min(maxPages,pages.length+queue.length))});
     } catch {}
+  }
+
+  // Optional last-resort rendering for sparse, JavaScript-heavy pages.
+  // The native fetchPublicHtml pipeline has already validated every URL and
+  // enforced same-host crawling; never send arbitrary user URLs directly to
+  // this third-party service. Off by default to preserve free-plan credits.
+  if (firecrawlEnabled() && firecrawlMaxPages() > 0) {
+    let rendererCalls = 0;
+    for (const page of pages) {
+      if (rendererCalls >= firecrawlMaxPages()) break;
+      if (String(page.document?.text || '').length > 650) continue;
+      // An unusually slow native crawl must not trigger unbounded extra work.
+      if (Date.now() - crawlStartedAt > timeBudgetMs + 12000) break;
+      rendererCalls++;
+      const rendered = await fetchFirecrawlRenderedHtml(page.url, {
+        verifiedHostname: base.hostname.toLowerCase(),
+        timeoutMs: Math.min(9000, Math.max(1500,
+          timeBudgetMs + 12000 - (Date.now() - crawlStartedAt))),
+      });
+      if (!rendered) continue;
+      const candidate = extractBusinessDocument(rendered, page.url);
+      if (String(candidate.text || '').length > String(page.document?.text || '').length + 80) {
+        page.document = candidate;
+      }
+    }
   }
 
   const pageDocuments = pages.map((page) => ({
