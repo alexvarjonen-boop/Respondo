@@ -111,6 +111,8 @@
 .setup-dialog .setup-error{color:#9e2323;font-weight:650;min-height:16px}
 .setup-dialog .setup-ok{color:#12633c;font-weight:740}
 @media(max-width:730px){.setup-job{grid-template-columns:1fr}.setup-job .setup-actions{justify-content:flex-start}.setup-section{padding:17px}}
+
+.setup-dialog select{display:block;box-sizing:border-box;width:100%;margin-top:7px;padding:11px;border:1px solid #dfe1e8;border-radius:11px;background:#fff;color:#17191e;font:inherit;font-size:14px}
 </style>
 </head>
 <body>
@@ -378,7 +380,7 @@ const SL={
  warning:'Respondo ei lähetä valmista salasanaa automaattisesti. Lähetä tiedot vasta, kun botti on oikeasti valmis. Älä merkitse työtä luovutetuksi ennen kuin olet itse lähettänyt kirjautumistiedot. Tämä sivu on näkyvissä vain omistajatilillesi.',
  loading:'Haetaan käyttöönottotilauksia…',empty:'Ei käyttöönottotilauksia.',refresh:'Päivitä tilaukset',
  received:'Odottaa käyttöönottoa',credentials_created:'Tunnukset luotu – lähetä henkilökohtaisesti',ready:'Luovutettu',
- create:'Luo tunnukset',rotate:'Muuta tunnukset',handover:'Merkitse luovutetuksi',import:'Tuo sivuston tiedot bottiin',importing:'Haetaan ja tallennetaan yritystietoja…',imported:'Tiedot tuotu bottiin',due:'Valmis viimeistään',customerLogin:'Avaa asiakkaan kirjautuminen',privateNote:'Tee botin viimeistely erillisessä yksityisessä selausikkunassa, jotta oma omistajaistuntosi säilyy.',extra:'Lisätyötila: asiakkaalla on jo Respondo-tunnukset.',
+ config:'Muokkaa botin nimeä ja tervehdystä',configTitle:'Botin perustiedot',configName:'Botin nimi',configGreeting:'Aloitustervehdys',configAvatar:'Botin kuvake',configSave:'Tallenna botin asetukset',configSaved:'Botin asetukset tallennettu.',create:'Luo tunnukset',rotate:'Muuta tunnukset',handover:'Merkitse luovutetuksi',import:'Tuo sivuston tiedot bottiin',importing:'Haetaan ja tallennetaan yritystietoja…',imported:'Tiedot tuotu bottiin',due:'Valmis viimeistään',customerLogin:'Avaa asiakkaan kirjautuminen',privateNote:'Tee botin viimeistely erillisessä yksityisessä selausikkunassa, jotta oma omistajaistuntosi säilyy.',extra:'Lisätyötila: asiakkaalla on jo Respondo-tunnukset.',
  dialog:'Yrityksen kirjautumistiedot',login:'Kirjautumissähköposti',password:'Väliaikainen salasana',hint:'Tallenna tunnukset vasta, kun botti on viimeistelty. Kopioi viesti ja lähetä se itse osoitteesta info@respondoai.fi. Salasana tallennetaan vain salattuna.',
  generate:'Luo vahva salasana',copy:'Kopioi asiakasviesti',save:'Tallenna tunnukset',close:'Sulje',saved:'Tunnukset on tallennettu. Kopioi nyt viesti ja lähetä se henkilökohtaisesti.',copied:'Viesti kopioitu. Lähetä se asiakkaalle henkilökohtaisesti.',copyFail:'Kopiointi epäonnistui. Kopioi tiedot käsin.',
  confirm:'Oletko varmasti viimeistellyt botin ja lähettänyt kirjautumistiedot asiakkaalle itse? Respondo ei lähetä tästä automaattista sähköpostia.',
@@ -391,7 +393,7 @@ const SL={
  warning:'Respondo skickar inte lösenord automatiskt. Skicka uppgifterna först när botten är klar och bekräfta sedan överlämningen.',
  loading:'Hämtar installationsbeställningar…',empty:'Inga installationsbeställningar.',refresh:'Uppdatera beställningar',
  received:'Väntar på installation',credentials_created:'Uppgifter skapade – skicka personligen',ready:'Överlämnat',
- create:'Skapa inloggning',rotate:'Ändra inloggning',handover:'Bekräfta överlämning',import:'Importera webbplatsdata',importing:'Importerar företagsuppgifter…',imported:'Uppgifter importerade',due:'Leverans senast',customerLogin:'Öppna kundens inloggning',privateNote:'Använd ett separat privat webbläsarfönster för kundkontot så att ägarsessionen behålls.',extra:'Extra arbetsyta: kunden har redan ett Respondo-konto.',
+ config:'Ändra bottens namn och hälsning',configTitle:'Bottens grunduppgifter',configName:'Bottens namn',configGreeting:'Välkomsttext',configAvatar:'Bot-ikon',configSave:'Spara botinställningar',configSaved:'Botinställningar sparade.',create:'Skapa inloggning',rotate:'Ändra inloggning',handover:'Bekräfta överlämning',import:'Importera webbplatsdata',importing:'Importerar företagsuppgifter…',imported:'Uppgifter importerade',due:'Leverans senast',customerLogin:'Öppna kundens inloggning',privateNote:'Använd ett separat privat webbläsarfönster för kundkontot så att ägarsessionen behålls.',extra:'Extra arbetsyta: kunden har redan ett Respondo-konto.',
  dialog:'Kundens inloggning',login:'E-post för inloggning',password:'Tillfälligt lösenord',hint:'Spara först när botten är klar. Kopiera meddelandet och skicka själv från info@respondoai.fi. Lösenord lagras endast som en hash.',
  generate:'Skapa starkt lösenord',copy:'Kopiera kundmeddelande',save:'Spara inloggning',close:'Stäng',saved:'Uppgifterna är sparade. Kopiera nu meddelandet och skicka det personligen.',copied:'Meddelandet kopierat. Skicka det personligen till kunden.',copyFail:'Kunde inte kopiera. Kopiera uppgifterna manuellt.',
  confirm:'Har du färdigställt botten och personligen mejlat inloggningsuppgifterna? Respondo skickar inget automatiskt mejl.',confirmed:'Överlämningen bekräftad.',failed:'Åtgärden misslyckades. Försök igen.',
@@ -403,7 +405,7 @@ const SL={
  warning:'Respondo does not email passwords automatically. Send credentials only once the bot is ready, then confirm you have personally handed them over.',
  loading:'Loading setup orders…',empty:'No setup orders.',refresh:'Refresh orders',
  received:'Awaiting setup',credentials_created:'Credentials created – send personally',ready:'Handed over',
- create:'Create credentials',rotate:'Change credentials',handover:'Confirm handover',import:'Import website data into the bot',importing:'Importing website facts…',imported:'Website facts imported',due:'Delivery by',customerLogin:'Open customer sign-in',privateNote:'Use a separate private browser window for customer setup so your owner session stays active.',extra:'Additional workspace: the customer already has a Respondo login.',
+ config:'Edit bot name and greeting',configTitle:'Bot configuration',configName:'Bot name',configGreeting:'Welcome greeting',configAvatar:'Bot avatar',configSave:'Save bot settings',configSaved:'Bot settings saved.',create:'Create credentials',rotate:'Change credentials',handover:'Confirm handover',import:'Import website data into the bot',importing:'Importing website facts…',imported:'Website facts imported',due:'Delivery by',customerLogin:'Open customer sign-in',privateNote:'Use a separate private browser window for customer setup so your owner session stays active.',extra:'Additional workspace: the customer already has a Respondo login.',
  dialog:'Customer login credentials',login:'Login email',password:'Temporary password',hint:'Save only after preparing the bot. Copy the message and email it yourself from info@respondoai.fi. The password is stored as a hash only.',
  generate:'Generate strong password',copy:'Copy customer message',save:'Save credentials',close:'Close',saved:'Credentials saved. Copy the message now and personally send it to your customer.',copied:'Message copied. Personally email it to the customer.',copyFail:'Copy failed. Copy the credentials manually.',
  confirm:'Have you finished the bot and personally emailed the credentials? Respondo will not send an automatic email.',confirmed:'Handover confirmed.',failed:'Could not complete the action. Please try again.',
@@ -426,7 +428,14 @@ const setupShell=()=>'<section id="setup-orders" class="company-section setup-se
   '<p id="setupDialogSuccess" class="setup-ok" role="status"></p>'+
   '<div class="setup-controls"><button id="setupCopyMessage" type="button" hidden>'+e(sl('copy'))+'</button>'+
   '<button id="setupCloseDialog" type="button">'+e(sl('close'))+'</button>'+
-  '<button id="setupSaveCredentials" class="primary" type="submit">'+e(sl('save'))+'</button></div></form></dialog></section>';
+  '<button id="setupSaveCredentials" class="primary" type="submit">'+e(sl('save'))+'</button></div></form></dialog>'+
+  '<dialog id="setupBotDialog" class="setup-dialog" aria-label="'+e(sl('configTitle'))+'">'+
+  '<form id="setupBotForm"><h3>'+e(sl('configTitle'))+'</h3><p id="setupBotCompany"></p>'+
+  '<label>'+e(sl('configName'))+'<input name="botName" type="text" maxlength="40" required></label>'+
+  '<label>'+e(sl('configGreeting'))+'<input name="greeting" type="text" maxlength="220" required></label>'+
+  '<label>'+e(sl('configAvatar'))+'<select name="botAvatar">'+Array.from({length:10},(_,i)=>'<option value="robot-'+(i+1)+'">Robot '+(i+1)+'</option>').join('')+'</select></label>'+
+  '<p id="setupBotError" class="setup-error" role="alert"></p>'+
+  '<div class="setup-controls"><button type="button" id="setupBotClose">'+e(sl('close'))+'</button><button type="submit" class="primary" id="setupBotSave">'+e(sl('configSave'))+'</button></div></form></dialog></section>';
 function setupState(s){return sl(['received','credentials_created','ready'].includes(s)?s:'received');}
 function paintSetupOrders(){
   const target=document.getElementById('setupJobs');
@@ -446,7 +455,7 @@ function paintSetupOrders(){
     return '<article class="setup-job"><div><h3>'+e(job.company_name||'')+'</h3><p><a href="'+link+'" rel="noopener noreferrer" target="_blank">'+link+'</a></p>'+
       '<p>'+email+'</p>'+dueNote+'<span class="setup-state">'+e(setupState(job.status))+'</span>'+
       (!job.first_workspace&&!done?'<p>'+e(sl('extra'))+'</p>':'')+'</div>'+
-      '<div class="setup-actions">'+importButton+action+customerLogin+deliver+'</div></article>';
+      '<div class="setup-actions">'+(done?'':'<button type="button" data-setup-config="'+e(job.session_id)+'">'+e(sl('config'))+'</button>')+importButton+action+customerLogin+deliver+'</div></article>';
   }).join(''):'<p class="company-loading">'+e(sl('empty'))+'</p>';
 }
 async function loadSetupOrders(){
@@ -549,9 +558,45 @@ async function importSetupWebsite(id,button){
   }catch(err){if(notice)notice.textContent=err.message||sl('failed');}
   finally{button.disabled=false;button.textContent=label;}
 }
+function openSetupBot(id){
+  const job=setupOrders.find(j=>j.session_id===id);
+  const form=document.getElementById('setupBotForm');
+  const dialog=document.getElementById('setupBotDialog');
+  if(!job||!form||!dialog)return;
+  form.dataset.sessionId=id;
+  form.elements.botName.value=String(job.bot_name||job.company_name||'Respondo AI').slice(0,40);
+  form.elements.greeting.value=String(job.greeting||'Hei! Miten voin auttaa?').slice(0,220);
+  form.elements.botAvatar.value=/^robot-(?:[1-9]|10)$/.test(job.bot_avatar||'')?job.bot_avatar:'robot-1';
+  document.getElementById('setupBotCompany').textContent=job.company_name||'';
+  document.getElementById('setupBotError').textContent='';
+  dialog.showModal();
+}
+async function saveSetupBot(event){
+ event.preventDefault();
+ const form=event.currentTarget;
+ if(!form.reportValidity())return;
+ const btn=document.getElementById('setupBotSave');
+ const err=document.getElementById('setupBotError');
+ btn.disabled=true;err.textContent='';
+ try{
+  const res=await fetch('/api/app/internal/setup-service-requests/'+encodeURIComponent(form.dataset.sessionId)+'/configure',{
+   method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','Accept':'application/json'},
+   body:JSON.stringify({botName:form.elements.botName.value.trim(),greeting:form.elements.greeting.value.trim(),botAvatar:form.elements.botAvatar.value})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data.error||sl('failed'));
+  document.getElementById('setupBotDialog').close();
+  const notice=document.getElementById('setupNotice');
+  if(notice)notice.textContent=sl('configSaved');
+  await loadSetupOrders();
+ }catch(e){err.textContent=e.message||sl('failed');}
+ finally{btn.disabled=false;}
+}
 function bindSetupAdmin(){
   document.getElementById('refreshSetupOrders')?.addEventListener('click',loadSetupOrders);
   document.getElementById('setupJobs')?.addEventListener('click',event=>{
+    const configuring=event.target.closest('[data-setup-config]');
+    if(configuring){openSetupBot(configuring.dataset.setupConfig);return;}
     const importing=event.target.closest('[data-setup-import]');
     if(importing){importSetupWebsite(importing.dataset.setupImport,importing);return;}
     const create=event.target.closest('[data-setup-create]');
@@ -559,6 +604,8 @@ function bindSetupAdmin(){
     if(create){setupSaved=false;openSetupCredentials(create.dataset.setupCreate);}
     if(handover)confirmSetupHandover(handover.dataset.setupHandover,handover);
   });
+  document.getElementById('setupBotForm')?.addEventListener('submit',saveSetupBot);
+  document.getElementById('setupBotClose')?.addEventListener('click',()=>document.getElementById('setupBotDialog').close());
   document.getElementById('setupGeneratePassword')?.addEventListener('click',generateSetupPassword);
   document.getElementById('setupCredentialForm')?.addEventListener('submit',saveSetupCredentials);
   document.getElementById('setupCopyMessage')?.addEventListener('click',copySetupMessage);
