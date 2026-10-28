@@ -333,6 +333,50 @@ function structuredFaqPairs(html) {
   return out;
 }
 
+// Service businesses can publish their only machine-readable offering list
+// in Schema.org Service / OfferCatalog records. Reuse the site's own words
+// without inventing capabilities, terms, prices or availability.
+function structuredServicePairs(html,pageUrl) {
+  const out=[],seen=new Set(),visited=new WeakSet();
+  let visits=0;
+  const visit=(node,depth=0)=>{
+    if(!node || depth>9 || visits>=240)return;
+    if(Array.isArray(node)){
+      for(const item of node.slice(0,90))visit(item,depth+1);
+      return;
+    }
+    if(typeof node!=='object' || visited.has(node))return;
+    visited.add(node);visits++;
+    if(productTypeIs(node,'Service')){
+      const name=stripProductHtml(node.name||node.serviceType||'').slice(0,110);
+      const description=stripProductHtml(node.description||'').slice(0,850);
+      const key=norm(name+'|'+description);
+      const providerUrl=node.provider&&typeof node.provider==='object'
+        ? String(node.provider.url||'') : '';
+      let providerExternal=false;
+      if(providerUrl){
+        try{providerExternal=new URL(providerUrl,pageUrl).hostname.toLowerCase()!==new URL(pageUrl).hostname.toLowerCase();}
+        catch{providerExternal=true;}
+      }
+      if(name.length>=4 && description.length>=40 &&
+         description.split(/\s+/).length>=6 && !providerExternal &&
+         !junk.test(name+' '+description) && !review.test(name+' '+description) &&
+         !billingAddressNoise.test(name+' '+description) &&
+         !/^(?:home|etusivu|about us|meistä|welcome|our company|contact us|ota yhteyttä|read more|lue lisää)$/i.test(name) &&
+         !seen.has(key)){
+        seen.add(key);out.push({name,description});
+      }
+    }
+    // Restrict graph traversal to actual service/catalog relationships;
+    // never harvest arbitrary review text or product recommendations.
+    for(const key of ['hasOfferCatalog','itemListElement','itemOffered','item','makesOffer','offers','mainEntity','@graph']){
+      if(node[key])visit(node[key],depth+1);
+    }
+  };
+  for(const node of structuredProductNodes(html))visit(node);
+  return out.slice(0,80);
+}
+
 export function extractProducts(html, pageUrl) {
   const products=[];
   for (const node of structuredProductNodes(html)) {
@@ -534,6 +578,7 @@ function semanticDefinitionSpecifications(html,url) {
 export function extractBusinessDocument(html, url) {
   const products = extractProducts(html, url);
   const faqPairs = structuredFaqPairs(html);
+  const servicePairs = structuredServicePairs(html,url);
   const specPairs = semanticDefinitionSpecifications(html,url);
   const blocks = [], links = [];
   const stack = [];
@@ -629,7 +674,7 @@ export function extractBusinessDocument(html, url) {
     if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
   }
   flush();
-  return {url, blocks, links, products, faqPairs, specPairs, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
+  return {url, blocks, links, products, faqPairs, servicePairs, specPairs, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
 }
 
 export function businessFactKind(text, context = '') {
@@ -901,6 +946,14 @@ export function essentialWebsiteCandidates(bundle) {
     if(doc.contactForm && httpUrl(doc.url)) contactLinks.push({url:doc.url,sourceUrl:doc.url,score:30,hasForm:true});
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
+    // Only explicit, owner-authored Service records become service facts.
+    // Preserve descriptions and URL; skip product/legal/review pages.
+    if(!productDetailDoc && !registryDoc){
+      for(const item of (Array.isArray(doc.servicePairs)?doc.servicePairs:[]).slice(0,80)){
+        add('services','Palvelut',item.name+': '+item.description,doc.url);
+        if(isConcreteServiceLabel(item.name)) add('services','Palvelut',item.name,doc.url);
+      }
+    }
     // Owner-authored FAQ JSON-LD includes useful answers even when a CMS only
     // renders its accordion after hydration. Preserve source URL and question.
     for(const item of (Array.isArray(doc.faqPairs)?doc.faqPairs:[]).slice(0,60)){
