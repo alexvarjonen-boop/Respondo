@@ -2173,6 +2173,12 @@ function queryTopic(query) {
     material:'materials',
   }[lexicalIntent] || '';
   if(intentTopic) return intentTopic;
+  // Specialized service families must still be recognized as services.
+  // "Millaisia haalauspalveluja..." should retrieve the company-owned service
+  // description, not fall through to an unhelpful empty-topic handoff.
+  // Keep explicit price, booking and shipping intents higher priority.
+  if(!/(?:hinta|hintaa|maksaa|paljonko|price|cost|pris|kostar|booking|ajanvaraus|shipping|delivery|toimitusaika)/.test(q) &&
+     /(?:millaisia|minkalaisia|mitka|mita|vilka|what|which)\s+[a-z0-9åäö-]*(?:palvelu\w*|services?\w*|tjanst\w*|tjänst\w*)/.test(q)) return 'services';
   if (/tarjou[sk]|quote|estimate|offert/.test(q)) return 'quote';
   if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post|postadress/.test(q)) return 'contact';
   if (/osoite|address|(?:^|\s)adress(?:\s|$)|sijainti|miss[aä]\s+sijait|where\s+(?:are|is).*located|where\s+is\s+(?:your\s+)?store|myymala|myymälä|store location|butik/.test(q)) return 'stores';
