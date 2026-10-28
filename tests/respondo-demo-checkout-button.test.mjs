@@ -99,7 +99,7 @@ test('first-party website widget shows subscription rather than unrelated ecomme
 test('authenticated workspace preview of Respondo website exposes ordering button',()=>{
   const server=read('server.mjs');
   const demo=server.slice(server.indexOf("app.post('/api/public/demo-chat'"),server.indexOf("\napp.",server.indexOf("app.post('/api/public/demo-chat'")+100));
-  assert.match(demo,/body\.dashboardPreview===true && \(isPublicDemo \|\| demoImportId\)/);
+  assert.match(demo,/body\.dashboardPreview\s*===\s*true\s*&&\s*\(isPublicDemo\s*\|\|\s*demoImportId\)/);
   assert.match(demo,/if \(!isPublicDemo && !demoImportId\)/);
   assert.match(demo,/const isRespondoDemoWebsite=\(isPublicDemo \|\| body\.dashboardPreview===true\) && \(/);
   assert.match(demo,/enteredDemoHost==='respondoai\.fi'/);
