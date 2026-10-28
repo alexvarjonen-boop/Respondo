@@ -95,3 +95,15 @@
 .guided-setup-active .guided-back,.guided-setup-active .guided-skip {background:#33343c!important;color:#eee!important}
 .guided-setup-active .guided-step-message {color:#ffb3ae}
 @media(max-width:920px){.dashboard-premium-shell.guided-setup-active .dashboard-topbar{display:flex!important}.dashboard-premium-shell.guided-setup-active .dashboard-section-picker,.dashboard-premium-shell.guided-setup-active .dashboard-top-actions{display:none!important}}
+
+
+/* Guided setup can complete safely even if an optional FAQ API call fails. */
+.guided-setup-active .guided-resume-link:not([hidden]){
+  display:inline-flex;align-items:center;justify-content:center;min-height:46px;
+  margin-top:12px;padding:10px 15px;border:1px solid rgba(255,255,255,.28);
+  border-radius:12px;color:#f5f5f7;font-size:12px;font-weight:700;
+  line-height:1.4;text-decoration:none;
+}
+.guided-setup-active .guided-resume-link:not([hidden]):focus-visible{
+  outline:2px solid #f5f5f7;outline-offset:3px;
+}
