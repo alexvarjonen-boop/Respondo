@@ -6412,13 +6412,29 @@ async function route() {
             await api('/api/app/knowledge', { method:'POST', body:JSON.stringify({ category:'Usein kysytyt', title, answer }) });
           }
           if (message) message.textContent = appText('Valmis! Avataan hallintapaneeli…','Klart! Kontrollpanelen öppnas…','Done! Opening your dashboard…');
-          setTimeout(() => { location.href = '/app'; }, 500);
+          setTimeout(() => { location.href = '/app?section=setup&guidedImport=1'; }, 500);
         } catch (error) {
           submit.disabled = false;
           submit.innerHTML = original;
           if (message) message.textContent = error.message || appText('Botin luonti epäonnistui. Yritä uudelleen.','Det gick inte att skapa botten. Försök igen.','Could not create the bot. Try again.');
         }
       });
+    }
+
+    // First-run setup: begin the existing authenticated website scan and
+    // display its source-linked candidate review instead of silently leaving an empty bot.
+    if (new URLSearchParams(location.search).get('guidedImport') === '1') {
+      setTimeout(() => {
+        const params = new URLSearchParams(location.search);
+        params.delete('guidedImport');
+        history.replaceState({}, '', '/app' + (params.toString() ? '?' + params.toString() : ''));
+        const button = document.getElementById('importWebsite');
+        if (button && !button.disabled) {
+          showDashboardView('setup', { scrollTop:false });
+          button.scrollIntoView({ behavior:'smooth', block:'center' });
+          button.click();
+        }
+      }, 450);
     }
 
     const openDashboardTarget = (targetId) => {
