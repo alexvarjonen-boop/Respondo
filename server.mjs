@@ -2173,6 +2173,12 @@ function queryTopic(query) {
     material:'materials',
   }[lexicalIntent] || '';
   if(intentTopic) return intentTopic;
+  // Specialized service families must still be recognized as services.
+  // "Millaisia haalauspalveluja..." should retrieve the company-owned service
+  // description, not fall through to an unhelpful empty-topic handoff.
+  // Keep explicit price, booking and shipping intents higher priority.
+  if(!/(?:hinta|hintaa|maksaa|paljonko|price|cost|pris|kostar|booking|ajanvaraus|shipping|delivery|toimitusaika)/.test(q) &&
+     /(?:millaisia|minkalaisia|mitka|mita|vilka|what|which)\s+[a-z0-9åäö-]*(?:palvelu\w*|services?\w*|tjanst\w*|tjänst\w*)/.test(q)) return 'services';
   if (/tarjou[sk]|quote|estimate|offert/.test(q)) return 'quote';
   if(/yhteys|contact|puhelin|phone|email|sahkoposti|sähköposti|kontakt|telefon|e-post|postadress/.test(q)) return 'contact';
   if (/osoite|address|(?:^|\s)adress(?:\s|$)|sijainti|miss[aä]\s+sijait|where\s+(?:are|is).*located|where\s+is\s+(?:your\s+)?store|myymala|myymälä|store location|butik/.test(q)) return 'stores';
@@ -6807,6 +6813,34 @@ function splitIndependentCustomerQuestions(message) {
 // (event requirements, equipment, class schedules, exchanges, accessibility).
 // Require question-to-question evidence; a weak category or shared keyword is
 // never enough to claim a business policy or available appointment.
+// A published Service description is enough to explain HOW that named
+// offering works, even when the profession has no custom intent dictionary.
+// Only exact service names from an approved website row qualify. Never answer
+// availability, price or a different service from category-wide similarity.
+async function directlyVerifiedServiceExplanation(rows,question,lang='fi'){
+  const q=normalizeSearchText(question);
+  if(!/^(?:miten|milla|millaisilla|kuinka|how|hur)\b/.test(q) ||
+     /(?:hinta|hintaa|maksaa|paljonko|price|cost|pris|kostar|ajanvaraus|book|booking|saatav|availability|available|varastossa|toimitusaika|shipping|delivery|takuu|warranty|return|palautus|payment|maksutapa)/.test(q)) return null;
+  for(const row of rows||[]){
+    if(normalizeSearchText(row?.category)!=='palvelut' ||
+       !['website','demo_import'].includes(String(row?.source_type||row?.sourceType||'').toLowerCase()) ||
+       !usableWebsiteRow(row)) continue;
+    const match=String(row?.title||'').match(/^Palvelut:\s*([^:]{4,85}):\s+.+/);
+    if(!match || !q.includes(normalizeSearchText(match[1]))) continue;
+    const answer=cleanKnowledgeText(row?.answer);
+    if(answer.length<45 || answer.length>850 || importedKnowledgeJunk(answer))continue;
+    const sourceLanguage=detectConversationLanguage(answer,lang);
+    const localized=sourceLanguage===lang?answer:await forceAnswerLanguage(answer,lang);
+    if(!localized)continue;
+    return {
+      answer:cleanKnowledgeText(localized).slice(0,700),
+      handoff:false,confidence:0.94,intent:'Palvelut',
+      sourceIds:[row.id].filter(Boolean),selected:[row],
+    };
+  }
+  return null;
+}
+
 async function directlyVerifiedFaqAnswer(rows, question, lang='fi') {
   const stop=/^(?:mita|mika|miten|kuinka|voin|voiko|onko|teilla|teidan|meidan|se|tama|milloin|missa|mista|haluan|saanko|what|when|where|which|how|can|does|have|your|their|there|this|that|with|about|could|would|should|please|some|much|many|is|are|the|for|you|vad|vilken|hur|kan|har|jag|far|ert|era|och)$/;
   const keywords=(value)=>[...new Set(searchTokens(value)
@@ -7228,6 +7262,8 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // Only a real verified service name counts as a service offering. A news
   // headline marked "Palvelut" must not suppress a retailer's product answer.
   const verifiedOverview=verifiedServiceOverview(rows,{lang:responseLang,companyName});
+  const verifiedServiceExplanation=await directlyVerifiedServiceExplanation(rows,cleanMessage,responseLang);
+  if(verifiedServiceExplanation) return verifiedServiceExplanation;
   const hasServiceKnowledge=Boolean(verifiedOverview);
   if (hasImportedProducts && !hasServiceKnowledge && genericCompanyQuestion(cleanMessage)) {
     const commerceQuestion=responseLang==='en'?'What do you sell?':responseLang==='sv'?'Vad säljer ni?':'Mitä myytte?';
@@ -7442,9 +7478,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // Broad questions such as "What do you sell?" or "Tell me about the company"
   // should use the approved knowledge base as factual memory instead of requiring
   // an exact pre-written Q&A pair.
+  // A named service is a specific subject even when its words include
+  // "palvelu"/"service". Never answer "Millaisia haalauspalveluja?" by
+  // dumping the entire unrelated service directory.
   const broadCompanyQuestion =
-    queryTopic(localQuery) === 'services' ||
-    genericCompanyQuestion(cleanMessage);
+    genericCompanyQuestion(cleanMessage) ||
+    serviceOverviewQuestion(cleanMessage) ||
+    (queryTopic(localQuery)==='services' &&
+      concreteServiceSubjectTokens(cleanMessage).length===0);
 
   if (!selected.length && broadCompanyQuestion) {
     selected = rows
