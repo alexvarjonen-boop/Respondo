@@ -13,11 +13,13 @@ const glyphs={
 };
 const icon=(key)=>'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">'+glyphs[key]+'</svg>';
 
+/* V31: same source glyphs, geometry, official arrow and scroll-coupled motion as the homepage orbit.
+   Native document scroll selects a destination. The label below the sphere is the *only* navigation action. */
 export function createWorkspaceOrbit({workspace,navigate,translate}) {
   const content=workspace.querySelector('.respondo-workspace-content');
   if(!content)return {sync:()=>{}};
   const older=workspace.querySelector('#rsWorkspaceOrbit');
-  if(older && older.__orbitApi){
+  if(older?.__orbitApi){
     older.__orbitApi.setNavigate(navigate);
     return older.__orbitApi;
   }
@@ -33,115 +35,113 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     {id:'billing',label:translate('Laskutus','Fakturering','Billing')},
     {id:'settings',label:translate('Asetukset','Inställningar','Settings')}
   ];
-  const hint=translate('Vieritä, pyyhkäise sivuttain tai valitse kuvake.','Rulla, svep i sidled eller välj en ikon.','Scroll, swipe sideways or tap an icon.');
-  const label=translate('Valitse osio','Välj avsnitt','Choose a section');
-  const dialLabel=translate('Navigoi työtilan osioissa','Navigera mellan avsnitt','Navigate workspace sections');
-  const prev=translate('Edellinen osio','Föregående avsnitt','Previous section');
-  const next=translate('Seuraava osio','Nästa avsnitt','Next section');
   const orb=document.createElement('nav');
   orb.id='rsWorkspaceOrbit';
-  orb.className='rs-workspace-orbit';
-  orb.setAttribute('aria-label',dialLabel);
-  orb.innerHTML='<p class="rs-orbit-eyebrow">RESPONDO <span>OS</span></p>'+
-    '<div class="rs-orbit-dial" id="rsOrbitDial" role="group" aria-label="'+dialLabel+'" tabindex="0">'+
-      '<div class="rs-orbit-halo" aria-hidden="true"></div>'+
-      '<div class="rs-orbit-ring rs-orbit-ring-one" aria-hidden="true"></div>'+
-      '<div class="rs-orbit-ring rs-orbit-ring-two" aria-hidden="true"></div>'+
-      '<div class="rs-orbit-core" aria-hidden="true"><img src="/respondo-symbol.svg" alt="" width="64" height="64" loading="eager"></div>'+
+  orb.className='rs-workspace-orbit rs-workspace-scroll-helix';
+  orb.setAttribute('aria-label',translate('Työtilan osiot','Arbetsytans avsnitt','Workspace sections'));
+  orb.innerHTML='<div class="rs-workspace-helix-stage">'+
+    '<small class="rs-helix-eyebrow">RESPONDO <span>OS</span></small>'+
+    '<div class="rs-studio-orbit-art" aria-hidden="true">'+
+      '<span class="rs-studio-orbit-ring rs-studio-ring-a"></span>'+
+      '<span class="rs-studio-orbit-ring rs-studio-ring-b"></span>'+
+      '<span class="rs-studio-orbit-ring rs-studio-ring-c"></span>'+
       sections.map((section,i)=>{
-        const angle=(i*360/sections.length).toFixed(1);
-        return '<button type="button" class="rs-orbit-point" data-orbit-page="'+section.id+'" title="'+section.label+'" aria-label="'+section.label+'" aria-pressed="false" style="--orbit-angle:'+angle+'deg;--orbit-counter:'+(-Number(angle))+'deg">'+icon(section.id)+'</button>';
+        const a=i*2*Math.PI/sections.length;
+        const x=(Math.sin(a)*45).toFixed(2);
+        const y=(-Math.cos(a)*45).toFixed(2);
+        return '<span class="rs-studio-orbit-icon'+(i===0?' is-active':'')+
+          '" data-rs-workspace-icon data-index="'+i+'" style="--rs-icon-x:'+x+'%;--rs-icon-y:'+y+
+          '%">'+icon(section.id)+'</span>';
       }).join('')+
+      '<div class="rs-studio-orbit-label">RESPONDO AI</div>'+
     '</div>'+
-    '<div class="rs-orbit-current" aria-live="polite">'+
-      '<span id="rsOrbitCount">01 / 10</span><h2 id="rsOrbitName"></h2>'+
-      '<span class="rs-orbit-hint">'+hint+'</span>'+
+    '<div class="rs-axis" aria-hidden="true"><span class="rs-axis-halo"></span>'+
+      '<svg viewBox="0 0 256 256" focusable="false"><path d="M 238.0 66.1 L 235.2 64.9 L 183.6 84.5 L 182.6 86.0 L 183.3 87.8 L 201.2 92.1 L 201.7 94.4 L 138.0 153.1 L 133.2 154.3 L 128.6 152.6 L 109.0 130.9 L 103.7 126.6 L 97.4 124.6 L 90.8 125.1 L 82.8 129.4 L 20.5 180.0 L 18.0 183.6 L 18.8 188.6 L 22.3 191.1 L 27.6 190.1 L 87.6 143.2 L 90.6 142.0 L 96.6 143.5 L 123.1 171.5 L 128.6 173.5 L 133.7 173.5 L 140.5 171.0 L 213.1 103.9 L 215.8 104.9 L 223.4 119.6 L 224.9 120.8 L 226.9 120.3 Z" fill="white"/></svg>'+
+      '<span class="rs-axis-caption">RESPONDO AI</span>'+
     '</div>'+
-    '<div class="rs-orbit-controls" role="group" aria-label="'+label+'">'+
-      '<button type="button" data-orbit-direction="-1" aria-label="'+prev+'">←</button>'+
-      '<span class="rs-orbit-controls-label">'+label+'</span>'+
-      '<button type="button" data-orbit-direction="1" aria-label="'+next+'">→</button>'+
-    '</div>';
+    '<svg class="rs-helix-progress" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><circle cx="50" cy="50" r="48" pathLength="100"/></svg>'+
+    '<div class="rs-helix-selection" aria-live="polite">'+
+      '<span class="rs-helix-counter" id="rsOrbitCount">01 / 10</span>'+
+      '<button id="rsOrbitOpen" class="rs-helix-open" type="button" aria-label="'+sections[0].label+'">'+
+        '<span id="rsOrbitName">'+sections[0].label+'</span><span aria-hidden="true">↗</span></button>'+
+      '<small class="rs-helix-instruction">'+
+        translate('Vieritä valitaksesi osion. Avaa se napauttamalla nimeä.',
+                  'Skrolla för att välja avsnitt. Tryck på namnet för att öppna.',
+                  'Scroll to select a section. Tap its name to open.')+
+      '</small>'+
+    '</div></div>';
   const botPage=content.querySelector('[data-workspace-page="bot"]');
   if(!botPage)return {sync:()=>{}};
   botPage.after(orb);
-  const dial=orb.querySelector('#rsOrbitDial');
-  const buttons=[...orb.querySelectorAll('[data-orbit-page]')];
-  let current='bot', navigateTo=navigate, lastWheel=0, touchStart=null;
-  const sync=(id)=>{
-    const index=sections.findIndex(section=>section.id===id);
-    if(index<0)return;
-    current=id;
-    for(const button of buttons){
-      const active=button.dataset.orbitPage===id;
-      button.classList.toggle('is-active',active);
-      button.setAttribute('aria-pressed',String(active));
-    }
-    orb.querySelector('#rsOrbitName').textContent=sections[index].label;
+  const icons=[...orb.querySelectorAll('[data-rs-workspace-icon]')];
+  const button=orb.querySelector('#rsOrbitOpen');
+  let currentIndex=0;
+  let navigateTo=navigate;
+  let frame=0;
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+  const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
+  function selectIndex(index){
+    index=clamp(index,0,sections.length-1);
+    if(index===currentIndex && button.getAttribute('aria-label')===sections[index].label)return;
+    currentIndex=index;
+    const section=sections[index];
     orb.querySelector('#rsOrbitCount').textContent=String(index+1).padStart(2,'0')+' / '+String(sections.length).padStart(2,'0');
-    dial.style.setProperty('--orbit-turn',(-index*360/sections.length)+'deg');
-  };
-  const move=(direction)=>{
-    const index=Math.max(0,sections.findIndex(section=>section.id===current));
-    const nextIndex=(index+direction+sections.length)%sections.length;
-    navigateTo(sections[nextIndex].id);
-  };
-  // Direct icon taps reveal the chosen existing view below the sphere,
-  // while wheel/arrow navigation keeps the sphere in view.
-  const revealMobileSection=()=>{
+    orb.querySelector('#rsOrbitName').textContent=section.label;
+    button.setAttribute('aria-label',section.label);
+    icons.forEach((item,i)=>item.classList.toggle('is-active',i===index));
+    orb.dataset.selectedSection=section.id;
+  }
+  function draw(){
+    frame=0;
+    if(!orb.isConnected || !workspace.isConnected || workspace.hidden)return;
+    const rect=orb.getBoundingClientRect();
+    const viewport=Math.max(1,window.innerHeight);
+    if(rect.top>viewport || rect.bottom<0)return;
+    const range=Math.max(1,rect.height-viewport);
+    const progress=clamp(-rect.top/range,0,1);
+    const position=progress*(sections.length-1);
+    selectIndex(Math.round(position));
+    const angle=360/sections.length;
+    const scale=1+.09*Math.min(1,progress*4)+Math.sin(position*.65)*.025;
+    if(!reduced.matches){
+      orb.style.setProperty('--rs-orbit-spin',(-position*angle).toFixed(2)+'deg');
+      orb.style.setProperty('--rs-icon-upright',(position*angle).toFixed(2)+'deg');
+      orb.style.setProperty('--rs-orbit-tilt',(8*Math.min(1,progress*3)).toFixed(2)+'deg');
+      orb.style.setProperty('--rs-orbit-scale',scale.toFixed(3));
+    }
+    orb.style.setProperty('--rs-orbit-fill',(progress*100).toFixed(2));
+  }
+  function schedule(){
+    if(!frame && orb.isConnected)frame=requestAnimationFrame(draw);
+  }
+  // No scroll interception, time-based animation, or forced section jumps.
+  window.addEventListener('scroll',schedule,{passive:true});
+  window.addEventListener('resize',schedule,{passive:true});
+  reduced.addEventListener?.('change',schedule);
+  button.addEventListener('click',()=>{
+    const section=sections[currentIndex];
+    navigateTo(section.id);
     requestAnimationFrame(()=>{
       const view=workspace.dataset.currentView;
       const destination=view==='bot'?'bot':view==='overview'?'overview':'modules';
-      const page=content.querySelector('[data-workspace-page="'+destination+'"]');
-      if(page && !page.hidden)page.scrollIntoView({
-        behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',
-        block:'start'
-      });
+      const panel=content.querySelector('[data-workspace-page="'+destination+'"]');
+      if(panel && !panel.hidden)panel.scrollIntoView({behavior:reduced.matches?'auto':'smooth',block:'start'});
     });
-  };
-  orb.addEventListener('click',event=>{
-    const target=event.target.closest?.('[data-orbit-page]');
-    if(target&&orb.contains(target)){navigateTo(target.dataset.orbitPage);revealMobileSection();return;}
-    const arrow=event.target.closest?.('[data-orbit-direction]');
-    if(arrow&&orb.contains(arrow))move(Number(arrow.dataset.orbitDirection));
   });
-  dial.addEventListener('wheel',event=>{
-    if(event.ctrlKey||event.metaKey)return; // Preserve pinch zoom.
-    const delta=Math.abs(event.deltaY)>Math.abs(event.deltaX)?event.deltaY:event.deltaX;
-    if(Math.abs(delta)<2)return;
-    // At both ends return to native page scrolling, never trap visitors in the dial.
-    const index=sections.findIndex(section=>section.id===current);
-    if((index===0&&delta<0)||(index===sections.length-1&&delta>0))return;
-    event.preventDefault(); // Inside the dial, scrolling browses real sections.
-    const now=performance.now();
-    if(now-lastWheel<420)return;
-    lastWheel=now;
-    move(delta>0?1:-1);
-  },{passive:false});
-  dial.addEventListener('touchstart',event=>{
-    const touch=event.changedTouches[0];
-    if(touch)touchStart={x:touch.clientX,y:touch.clientY,time:performance.now()};
-  },{passive:true});
-  dial.addEventListener('touchend',event=>{
-    if(!touchStart)return;
-    const touch=event.changedTouches[0];
-    if(!touch)return;
-    const dx=touch.clientX-touchStart.x,dy=touch.clientY-touchStart.y;
-    // Horizontal swipes choose sections; vertical swipes must keep native page scrolling.
-    if(Math.abs(dx)>32 && Math.abs(dx)>Math.abs(dy)*1.35 && performance.now()-touchStart.time<1250){
-      move(dx<0?1:-1);
+  // Retain access to every section for keyboard and switch-control users.
+  orb.addEventListener('keydown',event=>{
+    if(event.key==='ArrowDown'||event.key==='ArrowRight'){
+      event.preventDefault();selectIndex((currentIndex+1)%sections.length);button.focus();
+    }else if(event.key==='ArrowUp'||event.key==='ArrowLeft'){
+      event.preventDefault();selectIndex((currentIndex+sections.length-1)%sections.length);button.focus();
     }
-    touchStart=null;
-  },{passive:true});
-  dial.addEventListener('keydown',event=>{
-    if(event.target!==dial)return;
-    if(event.key==='ArrowDown'||event.key==='ArrowRight'){event.preventDefault();move(1);}
-    if(event.key==='ArrowUp'||event.key==='ArrowLeft'){event.preventDefault();move(-1);}
-    if(event.key==='Home'){event.preventDefault();navigateTo(sections[0].id);}
-    if(event.key==='End'){event.preventDefault();navigateTo(sections[sections.length-1].id);}
   });
-  const api={sync,setNavigate(callback){navigateTo=callback;}};
+  const api={
+    sync(id){const index=sections.findIndex(section=>section.id===id);if(index>=0)selectIndex(index);},
+    setNavigate(callback){navigateTo=callback;}
+  };
   orb.__orbitApi=api;
-  sync('bot');
+  selectIndex(0);
+  schedule();
   return api;
 }
