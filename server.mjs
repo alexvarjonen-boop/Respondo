@@ -10587,7 +10587,8 @@ app.get('/api/auth/me', auth, async (req, res) => {
       [req.user.sub],
     );
     if (!r.rowCount) return res.status(404).json({ error: 'Tiliä ei löytynyt.' });
-    return res.json(r.rows[0]);
+    const merchantEmail=cleanEmail(process.env.OWNER_EMAIL || process.env.SUPPORT_EMAIL);
+    return res.json({ ...r.rows[0], respondo_setup_admin: Boolean(merchantEmail && cleanEmail(r.rows[0].email)===merchantEmail) });
   } catch (e) {
     console.error('Authenticated profile read failed', e);
     return res.status(500).json({ error: 'Tilin tietoja ei voitu ladata.' });
