@@ -176,3 +176,28 @@
 #app .setup-service-admin-job a {color:#9ec7ff!important;overflow-wrap:anywhere;font-size:13px;}
 #app .setup-service-admin-job small {color:#c0cee0;font-size:12px;}
 #app .setup-service-admin-job button {min-height:42px;white-space:normal;}
+
+
+/* Dedicated confirmation shown after a new assisted-setup purchase. */
+#app .setup-confirmation-page{min-height:100dvh;background:radial-gradient(ellipse at 50% 15%,#172840 0%,#0b111d 56%,#070a10 100%);color:#f5f8ff}
+#app .setup-confirmation-main{box-sizing:border-box;min-height:76dvh;display:grid;place-items:center;padding:76px 18px 95px}
+#app .setup-confirmation-card{width:min(100%,680px);padding:clamp(28px,5vw,62px);border:1px solid #33445e;border-radius:28px;background:linear-gradient(155deg,rgba(30,45,67,.95),rgba(12,18,28,.97));box-shadow:0 32px 92px rgba(0,0,0,.31)}
+#app .setup-confirmation-mark{display:grid;place-items:center;width:54px;height:54px;border-radius:18px;border:1px solid #7aa9e4;background:#1c3555;color:#eff6ff;font-size:27px;font-weight:800;margin-bottom:26px}
+#app .setup-confirmation-eyebrow{display:block;color:#afcaef;font-weight:800;font-size:11px;letter-spacing:.18em;margin-bottom:12px}
+#app .setup-confirmation-card h1{font-size:clamp(29px,5vw,46px);line-height:1.14;letter-spacing:-.048em;font-weight:750;color:#fff!important;-webkit-text-fill-color:#fff!important;margin:0 0 22px}
+#app .setup-confirmation-lead{font-size:clamp(15px,2vw,17px);line-height:1.75;color:#ced8e7!important;-webkit-text-fill-color:#ced8e7!important;margin:0 0 30px}
+#app .setup-confirmation-steps{border-top:1px solid #40506b;border-bottom:1px solid #40506b;margin-bottom:24px}
+#app .setup-confirmation-steps>div{display:grid;grid-template-columns:32px 1fr;gap:15px;padding:20px 0}
+#app .setup-confirmation-steps>div+div{border-top:1px solid #35465e}
+#app .setup-confirmation-steps>div>span{font-size:14px;color:#aacbf8;font-weight:750}
+#app .setup-confirmation-steps strong{display:block;color:#fff!important;-webkit-text-fill-color:#fff!important;font-size:16px;font-weight:700;margin-bottom:4px}
+#app .setup-confirmation-steps small{display:block;color:#bbcce1!important;-webkit-text-fill-color:#bbcce1!important;font-size:13px;line-height:1.6}
+#app .setup-confirmation-footnote{font-size:13px;line-height:1.6;color:#acbbce!important;-webkit-text-fill-color:#acbbce!important;margin:0 0 28px}
+#app a.setup-confirmation-back{display:inline-flex;align-items:center;gap:14px;border:1px solid #6e94c6;border-radius:40px;padding:14px 22px;color:#eef6ff!important;-webkit-text-fill-color:#eef6ff!important;text-decoration:none;font-size:14px;font-weight:700}
+#app a.setup-confirmation-back:hover{background:#274162}
+#app a.setup-confirmation-back:focus-visible{outline:3px solid #86b8ff;outline-offset:3px}
+@media(max-width:640px){
+  #app .setup-confirmation-main{padding:36px 15px 60px;min-height:72dvh}
+  #app .setup-confirmation-card{border-radius:20px;padding:28px 23px}
+  #app .setup-confirmation-steps>div{gap:10px}
+}
