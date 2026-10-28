@@ -1,0 +1,49 @@
+/* Try Bot v20 — mobile preview is a real, readable tool, not a header overlay.
+   Scoped to the public demo. Does not change subscribed tenant dashboards. */
+@media (max-width:760px) {
+  #app .dashboard-premium-shell.demo-dashboard-shell #live-preview {
+    /* scrollIntoView({block:'start'}) must clear both the 66px pinned menu
+       and iPhone browser/safe-area chrome instead of hiding the heading. */
+    scroll-margin-top:max(138px,calc(110px + env(safe-area-inset-top,0px)))!important;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell #live-preview > .panel-head {
+    position:relative!important;
+    z-index:1;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell #live-preview > .panel-head h2 {
+    line-height:1.12!important;
+    text-wrap:balance;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .preview-device {
+    min-width:0;
+    max-width:100%;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .preview-device .preview-device-top {
+    min-width:0;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .preview-device .preview-form input {
+    min-width:0;
+    text-overflow:ellipsis;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .preview-actions {
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  #app .dashboard-premium-shell.demo-dashboard-shell .preview-action-link {
+    max-width:100%;
+    overflow-wrap:anywhere;
+  }
+}
+#app .dashboard-premium-shell.demo-dashboard-shell .preview-device-top .preview-avatar img[src="/respondo-approved-arrow-20261012.png"] {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:inherit;
+}
+@media(prefers-reduced-motion:reduce) {
+  #app .dashboard-premium-shell.demo-dashboard-shell #live-preview {
+    scroll-behavior:auto!important;
+  }
+}
