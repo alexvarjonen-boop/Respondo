@@ -34,7 +34,7 @@ test('v17 makes first-frame native-scroll direction visible, then returns to nex
   assert.match(motion,/section\.classList\.toggle\('rs-intro-past', index > 0\)/);
   assert.doesNotMatch(v17,/scrollTo\(|preventDefault\(|scroll-snap-type|@keyframes|position:fixed/);
 });
-test('v17 product preview keeps its existing working link and accessible focus states',()=>{
+test('v17 product demo remains reachable in both legacy and simplified pricing layouts',()=>{
   assert.match(v17,/\.pricing-section \.respondo-how-try/);
   assert.match(v17,/min-height:48px/);
   assert.match(v17,/\.respondo-how-try:focus-visible/);
@@ -42,7 +42,9 @@ test('v17 product preview keeps its existing working link and accessible focus s
   assert.match(v17,/@media\(max-width:600px\) and \(max-height:710px\)/);
   assert.match(v17,/@media\(prefers-reduced-motion:reduce\)/);
   assert.equal(css.split('{').length,css.split('}').length);
-  assert.match(app,/class="respondo-how-try" href="\/assistant\?lang=\$\{currentLang\(\)\}"/);
+  assert.match(app,/href="\/assistant\?lang=\$\{currentLang\(\)\}"/);
+  assert.match(app,/class="pricing-assist-links"/);
+  assert.match(app,/\/yhteystiedot\?lang=\$\{currentLang\(\)\}&amp;intent=demo/);
   for(const price of ["card('Advanced',49","card('Premium',129","card('Enterprise',149"])assert.ok(app.includes(price));
 });
 test('v17 asset cache keys reach Safari through both ES-module imports and stylesheet',()=>{
