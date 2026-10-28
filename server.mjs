@@ -4,7 +4,7 @@ import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsitePr
 import { serviceOverviewQuestion, verifiedServiceOverview } from './service-overview.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { isRespondoCapabilityQuestion } from './respondo-capability-intent.mjs';
-import { respondoSiteNavigationActions, respondoSiteNavigationAnswer } from './respondo-site-navigation.mjs';
+import { respondoSiteNavigationActions, respondoSiteNavigationAnswer, respondoCheckoutAction } from './respondo-site-navigation.mjs';
 import { matchVerifiedSpecialistService, matchVerifiedCompoundSpecialistServices, resolveSpecialistConversationReference } from './service-semantics.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
@@ -12628,7 +12628,11 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       }
     }
     const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
-    const previewFaq=previewIsFirstPartyRespondo
+    // Only Respondo's own domain may offer a Respondo subscription.
+    // A public demo of another company must never leak Respondo sales links.
+    const isRespondoDemoWebsite=isPublicDemo && normalizeHost(profile.website)==='respondoai.fi';
+    const firstPartyRespondoPreview=isRespondoDemoWebsite||previewIsFirstPartyRespondo;
+    const previewFaq=firstPartyRespondoPreview
       ? respondoProductFaqMatch(message,detectedLang,history) : null;
     let result = previewFaq
       ? {answer:previewFaq.answer,handoff:false,confidence:1,intent:'Respondo FAQ',
@@ -12734,6 +12738,26 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // Demo preview has no real order-status action endpoint.
     const actions = chatActions(rows, message, handoff, detectedLang, result.selected || [])
       .filter((action) => action?.type !== 'order_status');
+    // A real checkout CTA is first-party UI data, never an untrusted scraped URL.
+    // This fixes the Respondo demo replying about prices/ordering with only text.
+    const orderAction=firstPartyRespondoPreview
+      ? respondoCheckoutAction(message,detectedLang,previewFaq?.id||'',SEO_CANONICAL_ORIGIN)
+      : null;
+    if(orderAction){
+      for(let i=actions.length-1;i>=0;i--){
+        if(actions[i]?.type==='site_signup'||actions[i]?.url===orderAction.url)actions.splice(i,1);
+      }
+      actions.unshift(orderAction);
+      if(handoff){
+        handoff=false;
+        result.confidence=1;
+        answer=detectedLang==='en'
+          ? 'Choose your Respondo plan using the button below.'
+          :detectedLang==='sv'
+            ? 'Välj ett Respondo-abonnemang via knappen nedan.'
+            : 'Valitse Respondo-tilauspaketti alla olevasta painikkeesta.';
+      }
+    }
     // Action URLs are UI data, not conversational answers. If retrieval picked
     // the booking/quote URL itself as the answer, replace it with natural copy
     // and let the client render the URL only as a clickable action.

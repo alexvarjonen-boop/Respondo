@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {respondoCheckoutAction,respondoSiteNavigationActions,respondoSiteNavigationAnswer} from '../respondo-site-navigation.mjs';
+const read=(path)=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+
+test('real subscription action appears for pricing, purchase and onboarding requests in each language',()=>{
+  for(const [lang,question,label] of [
+    ['fi','Paljonko maksaa Respondo?','Tilaa Respondo'],
+    ['fi','Miten voin ottaa Respondon käyttöön?','Tilaa Respondo'],
+    ['fi','Miten tämän voi tilata?','Tilaa Respondo'],
+    ['sv','Vad kostar Respondo?','Beställ Respondo'],
+    ['sv','Hur kan jag beställa?','Beställ Respondo'],
+    ['en','How much does Respondo cost?','Subscribe to Respondo'],
+    ['en','How can I subscribe?','Subscribe to Respondo'],
+  ]){
+    const action=respondoCheckoutAction(question,lang);
+    assert.ok(action,lang+': '+question);
+    assert.equal(action.type,'site_signup');
+    assert.equal(action.label,label);
+    assert.equal(new URL(action.url).pathname,'/tilaus');
+    if(lang!=='fi')assert.equal(new URL(action.url).searchParams.get('lang'),lang);
+    const actions=respondoSiteNavigationActions(question,lang);
+    assert.ok(actions.some(a=>new URL(a.url).pathname==='/tilaus'),question);
+    assert.ok(actions.length<=4);
+  }
+});
+test('pricing answer includes both pricing and checkout buttons on the marketing site',()=>{
+  const actions=respondoSiteNavigationActions('Hinnat','fi');
+  assert.ok(actions.some(a=>new URL(a.url).pathname==='/hinnat'));
+  assert.ok(actions.some(a=>new URL(a.url).pathname==='/tilaus'));
+  assert.equal(respondoCheckoutAction('Mikä on tietosuojaseloste?','fi'),null);
+  assert.equal(respondoCheckoutAction('How do I view your contact details?','en'),null);
+  const answer=respondoSiteNavigationAnswer('Miten otan sen käyttöön?','fi');
+  assert.match(answer?.answer||'',/painikkeesta/);
+  assert.ok(answer?.actions.some(a=>new URL(a.url).pathname==='/tilaus'));
+});
+test('public demo checkout CTA only applies when testing actual respondoai.fi',()=>{
+  const server=read('server.mjs');
+  const demo=server.slice(server.indexOf("app.post('/api/public/demo-chat'"),server.indexOf("\napp.",server.indexOf("app.post('/api/public/demo-chat'")+100));
+  assert.match(demo,/const isRespondoDemoWebsite=isPublicDemo && normalizeHost\(profile.website\)==='respondoai.fi'/);
+  assert.match(demo,/const firstPartyRespondoPreview=isRespondoDemoWebsite\|\|previewIsFirstPartyRespondo/);
+  assert.match(demo,/firstPartyRespondoPreview\s*\? respondoCheckoutAction\(message,detectedLang,previewFaq\?\.id\|\|'',SEO_CANONICAL_ORIGIN\)/);
+  assert.match(demo,/actions\.unshift\(orderAction\)/);
+  assert.match(demo,/const previewFaq=firstPartyRespondoPreview/);
+  assert.match(demo,/canLeaveContact: Boolean\(handoff\)/);
+  const app=read('public/app.js');
+  assert.match(app,/wrap\.className='preview-actions'/);
+  assert.match(app,/link\.className='preview-action-link'/);
+  assert.match(app,/link\.href=action\.url/);
+});

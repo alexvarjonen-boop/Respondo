@@ -64,6 +64,24 @@ function localPath(page,lang){
   if(page.path==='/ominaisuudet')return lang==='sv'?'/funktioner':lang==='en'?'/features':'/ominaisuudet';
   return page.path;
 }
+
+/** First-party-only checkout link. Never call this for customer or merchant widgets. */
+export function respondoCheckoutAction(message,lang='fi',faqId='',origin='https://respondoai.fi'){
+  const language=['fi','sv','en'].includes(lang)?lang:'fi';
+  const q=normalize(message);
+  const buying=/(?:\b(?:tilaa|tilata|tilaus|tilaukse\w*|ostaa|osta|ostaminen|hankkia|hanki|kayttoon|kayttoonotto|kokeilujakso|aloita kokeilu|aloittaa|aloitan|rekisteroidy|register|signup|sign up|subscribe|subscription|order|purchase|buy|trial|start using|get started|borja|bestall\w*|kop\w*|abonnera|prenumerera|skaffa)\b|how (?:can|do) i (?:start|order|buy|get)|hur (?:kan|gor) jag (?:bestall|kop|borja)|miten (?:saan|voin|paasen|otan) (?:sen |taman |respondo\w* )?kayttoon)/.test(q);
+  const pricing=/(?:\b(?:hinta\w*|hinnoittel\w*|maksaa|maksavat|paket\w*|price\w*|pricing|cost\w*|priser|prisplan\w*|kostar|abonnemang\w*)\b|paljonko maks\w*)/.test(q);
+  const faqBuying=new Set([
+    'respondo-faq-buy','respondo-faq-trial','respondo-faq-pricing',
+    'respondo-faq-monthly-pricing','respondo-faq-annual-pricing',
+    'respondo-faq-basic','respondo-faq-advanced','respondo-faq-business'
+  ]).has(faqId);
+  if(!buying && !pricing && !faqBuying)return null;
+  const url=new URL('/tilaus',origin);
+  if(language!=='fi')url.searchParams.set('lang',language);
+  return {type:'site_signup',label:tr(language,'Tilaa Respondo','Beställ Respondo','Subscribe to Respondo'),url:url.href};
+}
+
 export function respondoSiteNavigationActions(message,lang='fi',faqId='',origin='https://www.respondoai.fi'){
   const language=['fi','sv','en'].includes(lang)?lang:'fi';
   const q=normalize(message);
@@ -72,12 +90,23 @@ export function respondoSiteNavigationActions(message,lang='fi',faqId='',origin=
     matched.push(...['site_features','site_pricing','site_demo','site_contact'].map(key=>pages.find(p=>p.type===key)));
   }
   const used=new Set();
-  return matched.filter(p=>{if(!p||used.has(p.path))return false;used.add(p.path);return true;})
+  const actions=matched.filter(p=>{if(!p||used.has(p.path))return false;used.add(p.path);return true;})
     .slice(0,4).map(p=>{
       const url=new URL(localPath(p,language),origin);
       if(language!=='fi')url.searchParams.set('lang',language);
       return {type:p.type,label:tr(language,...p.labels),url:url.href};
     });
+  // Pricing is a buying path: show a real order button as well as plan details.
+  const order=respondoCheckoutAction(message,language,faqId,origin);
+  if(order){
+    const existing=actions.findIndex(a=>a.type==='site_signup');
+    if(existing>=0)actions[existing]=order;
+    else{
+      if(actions.length>=4)actions.pop();
+      actions.push(order);
+    }
+  }
+  return actions;
 }
 export function respondoSiteNavigationAnswer(message,lang='fi',origin='https://www.respondoai.fi'){
   const language=['fi','sv','en'].includes(lang)?lang:'fi';
@@ -96,6 +125,12 @@ export function respondoSiteNavigationAnswer(message,lang='fi',origin='https://w
     answer=tr(language,'Voit kokeilla Respondo-bottia demossa. Lisää esimerkkiyrityksen tiedot ja kysy botilta kuten oikea asiakas.','Du kan testa Respondo i demon. Lägg till ett exempelföretags uppgifter och ställ frågor som en riktig kund.','You can try Respondo in the demo. Enter example company details and ask questions as a customer would.');
   }else if(genericPages.test(q)&&/\b(mita|mitka|miss[a]?|nayta|lista\w*|haluan|kaikki|where|show|list|which|what|vilka|visa|alla|var)\b/.test(q)){
     answer=tr(language,'Tällä sivulla voit kysyä suoraan chatbotilta hinnoista, ominaisuuksista, kirjautumisesta, kokeilusta ja yhteystiedoista. Vastaan kysymykseen ja näytän tarvittaessa painikkeen oikealle sivulle.','Här kan du fråga chatten om priser, funktioner, inloggning, demo och kontaktuppgifter. Jag svarar och visar en knapp till rätt sida när det behövs.','Ask this chatbot about pricing, features, sign-in, the demo or contact details. I will answer and show a button to the right page when useful.');
+  }
+  if(!answer && respondoCheckoutAction(message,language,'',origin)){
+    answer=tr(language,
+      'Voit tilata Respondon valitsemalla sopivan paketin alla olevasta painikkeesta.',
+      'Du kan beställa Respondo genom att välja ett abonnemang via knappen nedan.',
+      'You can subscribe to Respondo by choosing a plan using the button below.');
   }
   if(!answer)return null;
   const actions=respondoSiteNavigationActions(message,language,'',origin);
