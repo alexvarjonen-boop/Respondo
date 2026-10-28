@@ -37,6 +37,12 @@ Respondo **already has** a multilingual public demo enquiry form at
 
 **n8n / Make:** optional internal back-office automation after a workspace and signed destination webhook are ready. If configured, use the existing CRM event `lead.qualified`, verify HMAC at the trusted receiver, deduplicate by tenantId+leadId, and send only the minimum approved fields. Never expose secret keys in client-side JS or use an unauthenticated webhook endpoint. Do not add a permanent Railway n8n service just to reproduce Respondo's existing CRM queue.
 
+## Verified sales-prep integrations (2026-10-28)
+
+- **Apollo.io** connection confirmed. Five public-company prospects were added to the deduplicated accounts list **Respondo AI – prospektit, esittelyt 2026**, viewable at https://app.apollo.io/#/lists/6ae2463a0ace45000c9dff43. No outbound sequences or messages were activated.
+- **Calendly** connection confirmed. Active 15-minute event: https://calendly.com/alexvarjonen/respondo-ai-15-min-esittely. Verified that the event has real booking availability. Public-site button change is proposed separately in PR #329.
+- **Core test regressions** from the existing homepage/199 € checkout changes were addressed in merged PR #330 (tests only). Re-run this feature branch's CI against the updated production base before merging.
+
 ## No-surprise deployment gates
 
 1. CI syntax and test suite pass on PR.
