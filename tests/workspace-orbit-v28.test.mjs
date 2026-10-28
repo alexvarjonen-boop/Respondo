@@ -8,7 +8,7 @@ const css=await readFile(new URL('../public/workspace-orbit-v28.css',import.meta
 const index=await readFile(new URL('../public/index.html',import.meta.url),'utf8');
 
 test('post-setup screen renders the orbit below the real chat and scan status',()=>{
-  assert.match(workspace,/import \{ createWorkspaceOrbit \} from '\.\/workspace-orbit-v28\.js';/);
+  assert.match(workspace,/import \{ createWorkspaceOrbit \} from '\.\/workspace-orbit-v28\.js\?v=20261028-after-chat-v29';/);
   assert.match(workspace,/orbit=createWorkspaceOrbit\(\{workspace,navigate:selectView,translate\}\);/);
   assert.match(workspace,/orbit\?\.sync\(selected\);/);
   assert.match(workspace,/chatHost\.appendChild\(preview\)/);
@@ -81,4 +81,12 @@ test('orb reveals the active view after the chat and remains reachable while scr
   assert.ok(orbit.includes("const page=content.querySelector('[data-workspace-page="));
   assert.doesNotMatch(workspace,/window\.scrollTo\(\{top:0/);
   assert.match(workspace,/original\.requestSubmit\(\)/);
+});
+
+test('all browser-facing URLs get a new mobile cache key',()=>{
+  const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
+  assert.match(index,/workspace-orbit-v28\.css\?v=20261028-after-chat-v29/);
+  assert.match(index,/orbit-after-chat-v29"><\/script>/);
+  assert.match(app,/workspace-continuation-v24\.js\?v=20261028-orbit-after-chat-v29/);
+  assert.match(workspace,/workspace-orbit-v28\.js\?v=20261028-after-chat-v29/);
 });
