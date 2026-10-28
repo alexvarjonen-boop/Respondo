@@ -383,8 +383,8 @@ const SL={
  config:'Muokkaa botin nimeä ja tervehdystä',configTitle:'Botin perustiedot',configName:'Botin nimi',configGreeting:'Aloitustervehdys',configAvatar:'Botin kuvake',configSave:'Tallenna botin asetukset',configSaved:'Botin asetukset tallennettu.',create:'Luo tunnukset',rotate:'Muuta tunnukset',handover:'Merkitse luovutetuksi',import:'Tuo sivuston tiedot bottiin',importing:'Haetaan ja tallennetaan yritystietoja…',imported:'Tiedot tuotu bottiin',due:'Valmis viimeistään',customerLogin:'Avaa asiakkaan kirjautuminen',privateNote:'Tee botin viimeistely erillisessä yksityisessä selausikkunassa, jotta oma omistajaistuntosi säilyy.',extra:'Lisätyötila: asiakkaalla on jo Respondo-tunnukset.',
  dialog:'Yrityksen kirjautumistiedot',login:'Kirjautumissähköposti',password:'Väliaikainen salasana',hint:'Tallenna tunnukset vasta, kun botti on viimeistelty. Kopioi viesti ja lähetä se itse osoitteesta info@respondoai.fi. Salasana tallennetaan vain salattuna.',
  generate:'Luo vahva salasana',copy:'Kopioi asiakasviesti',save:'Tallenna tunnukset',close:'Sulje',saved:'Tunnukset on tallennettu. Kopioi nyt viesti ja lähetä se henkilökohtaisesti.',copied:'Viesti kopioitu. Lähetä se asiakkaalle henkilökohtaisesti.',copyFail:'Kopiointi epäonnistui. Kopioi tiedot käsin.',
- confirm:'Oletko varmasti viimeistellyt botin ja lähettänyt kirjautumistiedot asiakkaalle itse? Respondo ei lähetä tästä automaattista sähköpostia.',
- confirmed:'Luovutus merkitty valmiiksi.',failed:'Toiminto epäonnistui. Yritä uudelleen.',
+ confirm:'Oletko varmasti viimeistellyt botin ja lähettänyt kirjautumistiedot asiakkaalle itse? Respondo ei lähetä tästä automaattista sähköpostia. Tilauspaketin 3 päivän kokeilu alkaa tämän vahvistuksen jälkeen, ja sen päätyttyä Stripe aloittaa laskutuksen.',
+ confirmed:'Luovutus vahvistettu. Asiakkaan 3 päivän kokeilu alkaa nyt; sen jälkeen Stripe aloittaa tilauspaketin laskutuksen.',failed:'Toiminto epäonnistui. Yritä uudelleen.',
  mail:(email,password)=>'Hei!\n\nYrityksesi Respondo AI -botti on otettu käyttöön ja valmis tarkistettavaksi.\n\nKirjaudu: https://respondoai.fi/kirjaudu\nSähköposti: '+email+'\nVäliaikainen salasana: '+password+'\n\nVoit vaihtaa salasanan asetuksissa kirjautumisen jälkeen.\n\nYstävällisin terveisin,\nRespondo AI'
  },
  sv:{
@@ -396,7 +396,7 @@ const SL={
  config:'Ändra bottens namn och hälsning',configTitle:'Bottens grunduppgifter',configName:'Bottens namn',configGreeting:'Välkomsttext',configAvatar:'Bot-ikon',configSave:'Spara botinställningar',configSaved:'Botinställningar sparade.',create:'Skapa inloggning',rotate:'Ändra inloggning',handover:'Bekräfta överlämning',import:'Importera webbplatsdata',importing:'Importerar företagsuppgifter…',imported:'Uppgifter importerade',due:'Leverans senast',customerLogin:'Öppna kundens inloggning',privateNote:'Använd ett separat privat webbläsarfönster för kundkontot så att ägarsessionen behålls.',extra:'Extra arbetsyta: kunden har redan ett Respondo-konto.',
  dialog:'Kundens inloggning',login:'E-post för inloggning',password:'Tillfälligt lösenord',hint:'Spara först när botten är klar. Kopiera meddelandet och skicka själv från info@respondoai.fi. Lösenord lagras endast som en hash.',
  generate:'Skapa starkt lösenord',copy:'Kopiera kundmeddelande',save:'Spara inloggning',close:'Stäng',saved:'Uppgifterna är sparade. Kopiera nu meddelandet och skicka det personligen.',copied:'Meddelandet kopierat. Skicka det personligen till kunden.',copyFail:'Kunde inte kopiera. Kopiera uppgifterna manuellt.',
- confirm:'Har du färdigställt botten och personligen mejlat inloggningsuppgifterna? Respondo skickar inget automatiskt mejl.',confirmed:'Överlämningen bekräftad.',failed:'Åtgärden misslyckades. Försök igen.',
+ confirm:'Har du färdigställt botten och personligen mejlat inloggningsuppgifterna? Respondo skickar inget automatiskt mejl. Den tre dagar långa provperioden börjar efter bekräftelsen, och abonnemanget debiteras när den slutar.',confirmed:'Överlämningen bekräftad. Kundens gratis provperiod på tre dagar börjar nu, därefter startar abonnemanget.',failed:'Åtgärden misslyckades. Försök igen.',
  mail:(email,password)=>'Hej!\n\nDin Respondo AI-bot är nu klar.\n\nLogga in: https://respondoai.fi/kirjaudu\nE-post: '+email+'\nTillfälligt lösenord: '+password+'\n\nDu kan ändra lösenordet i inställningarna.\n\nMed vänliga hälsningar,\nRespondo AI'
  },
  en:{
@@ -408,7 +408,7 @@ const SL={
  config:'Edit bot name and greeting',configTitle:'Bot configuration',configName:'Bot name',configGreeting:'Welcome greeting',configAvatar:'Bot avatar',configSave:'Save bot settings',configSaved:'Bot settings saved.',create:'Create credentials',rotate:'Change credentials',handover:'Confirm handover',import:'Import website data into the bot',importing:'Importing website facts…',imported:'Website facts imported',due:'Delivery by',customerLogin:'Open customer sign-in',privateNote:'Use a separate private browser window for customer setup so your owner session stays active.',extra:'Additional workspace: the customer already has a Respondo login.',
  dialog:'Customer login credentials',login:'Login email',password:'Temporary password',hint:'Save only after preparing the bot. Copy the message and email it yourself from info@respondoai.fi. The password is stored as a hash only.',
  generate:'Generate strong password',copy:'Copy customer message',save:'Save credentials',close:'Close',saved:'Credentials saved. Copy the message now and personally send it to your customer.',copied:'Message copied. Personally email it to the customer.',copyFail:'Copy failed. Copy the credentials manually.',
- confirm:'Have you finished the bot and personally emailed the credentials? Respondo will not send an automatic email.',confirmed:'Handover confirmed.',failed:'Could not complete the action. Please try again.',
+ confirm:'Have you finished the bot and personally emailed the credentials? Respondo will not send an automatic email. The 3-day trial starts on confirmation; subscription billing follows after the trial.',confirmed:'Handover confirmed. The 3-day free trial starts now, followed by recurring subscription billing.',failed:'Could not complete the action. Please try again.',
  mail:(email,password)=>'Hello,\n\nYour Respondo AI bot is ready for review.\n\nSign in: https://respondoai.fi/kirjaudu\nEmail: '+email+'\nTemporary password: '+password+'\n\nYou can change your password in Settings.\n\nBest regards,\nRespondo AI'
  }
 };
@@ -536,7 +536,7 @@ async function confirmSetupHandover(id,button){
     const result=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(result.error||sl('failed'));
     const notice=document.getElementById('setupNotice');
-    if(notice)notice.textContent=sl('confirmed');
+    if(notice)notice.textContent=result.billingDeferredUntilHandover ? sl('confirmed')+' '+(result.trialEndsAt?new Intl.DateTimeFormat(locale(),{day:'numeric',month:'short',year:'numeric'}).format(new Date(result.trialEndsAt)):'') : sl('confirmed');
     await loadSetupOrders();
   }catch(err){window.alert(err.message||sl('failed'));}
   finally{button.disabled=false;}
