@@ -6,22 +6,23 @@
   max-width:1180px;min-height:72px;border-color:rgba(182,198,227,.13);
 }
 #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-content {
-  display:grid!important;grid-template-columns:minmax(245px,310px) minmax(0,1fr);
-  align-items:start;column-gap:clamp(28px,5vw,80px);
-  width:min(100%,1180px)!important;margin:clamp(30px,4vw,48px) auto 0!important;
+  display:flex!important;flex-direction:column;align-items:stretch;gap:0;
+  width:min(100%,840px)!important;margin:clamp(25px,3vw,42px) auto 0!important;
 }
 #app .respondo-workspace-content > [data-workspace-page] {
-  grid-column:2;grid-row:1;width:100%;min-width:0;
+  width:100%;min-width:0;scroll-margin-top:28px;
 }
 #app .respondo-workspace-content > [data-workspace-page][hidden] {display:none!important}
 #app .respondo-workspace-content .rs-workspace-orbit {
-  grid-column:1;grid-row:1;position:sticky;top:18px;display:flex;
-  flex-direction:column;align-items:center;min-width:0;width:100%;
-  max-width:310px;margin:0 auto;padding:14px 0 22px;
+  position:relative;display:flex;flex-direction:column;align-items:center;
+  min-width:0;width:100%;max-width:none;
+  margin:clamp(30px,5vw,54px) auto 0;
+  padding:clamp(26px,4vw,46px) 0 clamp(30px,5vw,52px);
+  border-top:1px solid rgba(182,198,227,.14);
   color:#f5f7fb;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 #app .rs-workspace-orbit .rs-orbit-eyebrow {
-  align-self:flex-start;margin:0 0 20px;color:#d9e5f6!important;
+  align-self:center;margin:0 0 20px;color:#d9e5f6!important;
   letter-spacing:.17em;font-size:10px!important;font-weight:750;
 }
 #app .rs-workspace-orbit .rs-orbit-eyebrow span {color:#8298b7!important}
@@ -153,16 +154,6 @@
   box-shadow:none!important;border-radius:20px!important;
 }
 #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-module-card {margin-top:18px!important}
-#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-menu-toggle {
-  min-width:86px;background:#20242d!important;color:#f3f6fb!important;
-  -webkit-text-fill-color:#f3f6fb!important;
-}
-#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-menu-toggle:focus-visible {
-  outline:2px solid #bad6ff!important;outline-offset:2px;
-}
-#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-menu button {
-  color:#f1f3f7!important;-webkit-text-fill-color:#f1f3f7!important;
-}
 /* All live form modules, including iOS Safari and autofill. */
 #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
 #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace textarea,
@@ -179,13 +170,10 @@
 }
 @media(max-width:850px) {
   #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-content {
-    grid-template-columns:minmax(0,1fr);gap:13px;
     width:min(100%,640px)!important;margin-top:14px!important;
   }
-  #app .respondo-workspace-content > [data-workspace-page] {grid-column:1;grid-row:2}
   #app .respondo-workspace-content .rs-workspace-orbit {
-    position:relative;grid-column:1;grid-row:1;top:auto;
-    max-width:100%;padding:0 0 6px;
+    margin-top:28px;padding:25px 0 32px;
   }
   #app .rs-workspace-orbit .rs-orbit-eyebrow {
     align-self:center;margin-bottom:8px;font-size:9px!important;
@@ -203,12 +191,6 @@
   #app .rs-workspace-orbit #rsOrbitName {font-size:19px!important;margin:6px 0!important}
   #app .rs-workspace-orbit .rs-orbit-hint {font-size:10px!important;max-width:320px}
   #app .rs-workspace-orbit .rs-orbit-controls {margin-top:3px}
-  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-menu-toggle span:last-child {
-    display:inline!important;
-  }
-  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-menu-toggle {
-    min-width:84px;padding:0 10px;
-  }
   #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-content h1 {
     font-size:clamp(26px,7vw,34px)!important;
   }
@@ -221,3 +203,42 @@
 
 /* Mobile direct icon selection reveals the functional panel below the dial. */
 #app .respondo-workspace-content > [data-workspace-page]{scroll-margin-top:18px}
+
+/* V29: no legacy hamburger; full-width chat first, orbit immediately after scan status. */
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-menu-wrap,
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-menu-toggle,
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-menu {
+  display:none!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-chat-card #live-preview {
+  display:block!important;width:100%!important;max-width:none!important;margin:0!important;
+  border:0!important;background:transparent!important;box-shadow:none!important;
+  padding:0!important;color:#f6f8fb!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-chat-card #live-preview .preview-note {
+  background:transparent!important;color:#aeb8c9!important;
+  -webkit-text-fill-color:#aeb8c9!important;border:0!important;
+  padding:12px 5px 0!important;margin:0!important;font-size:12px!important;line-height:1.55;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-chat-card #live-preview .preview-device {
+  background:#101318!important;border:1px solid #3b4350!important;
+  border-radius:17px!important;box-shadow:none!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-chat-card #live-preview .preview-chat {
+  min-height:210px!important;max-height:340px!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-content > [data-workspace-page="modules"],
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-content > [data-workspace-page="overview"] {
+  margin:0 auto 30px!important;
+}
+@media(max-width:850px){
+  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-chat-card #live-preview .preview-chat {
+    min-height:220px!important;max-height:44dvh!important;
+  }
+  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-content h1 {
+    font-size:clamp(27px,7vw,35px)!important;
+  }
+  #app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace-chat-card {
+    padding:11px!important;
+  }
+}

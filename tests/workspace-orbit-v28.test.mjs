@@ -7,19 +7,20 @@ const orbit=await readFile(new URL('../public/workspace-orbit-v28.js',import.met
 const css=await readFile(new URL('../public/workspace-orbit-v28.css',import.meta.url),'utf8');
 const index=await readFile(new URL('../public/index.html',import.meta.url),'utf8');
 
-test('post-setup screen renders new orb beside unchanged real chat, billing and forms',()=>{
+test('post-setup screen renders the orbit below the real chat and scan status',()=>{
   assert.match(workspace,/import \{ createWorkspaceOrbit \} from '\.\/workspace-orbit-v28\.js';/);
   assert.match(workspace,/orbit=createWorkspaceOrbit\(\{workspace,navigate:selectView,translate\}\);/);
   assert.match(workspace,/orbit\?\.sync\(selected\);/);
   assert.match(workspace,/chatHost\.appendChild\(preview\)/);
   assert.match(workspace,/modules\.appendChild\(section\)/);
   assert.match(workspace,/original\.requestSubmit\(\)/);
-  assert.match(orbit,/content\.insertBefore\(orb,content\.firstChild\)/);
-  assert.match(css,/grid-template-columns:minmax\(245px,310px\) minmax\(0,1fr\)/);
+  assert.match(orbit,/botPage\.after\(orb\)/);
+  assert.match(css,/display:flex!important;flex-direction:column/);
+  assert.match(workspace,/page==='bot'/);
   assert.match(index,/workspace-orbit-v28\.css/);
 });
 test('scrolling, swiping, clicking and keyboard arrows navigate real sections',()=>{
-  for(const id of ['bot','setup','answers','customers','install','billing','profile','settings']){
+  for(const id of ['bot','overview','setup','answers','customers','automation','install','billing','profile','settings']){
     assert.ok(orbit.includes("id:'"+id+"'"),id);
   }
   assert.match(orbit,/navigateTo\(sections\[nextIndex\]\.id\)/);
@@ -62,4 +63,22 @@ test('rotating orbital icons remain upright and phone vertical swipes scroll nor
   assert.match(css,/transition:transform \.52s/);
   assert.match(orbit,/Math\.abs\(dx\)>32 && Math\.abs\(dx\)>Math\.abs\(dy\)\*1\.35/);
   assert.doesNotMatch(orbit,/move\(\(Math\.abs\(dy\)>Math\.abs\(dx\)/);
+});
+
+test('post-setup interface uses only the orb, not a hamburger or dropdown',()=>{
+  assert.doesNotMatch(workspace,/id="respondoWorkspaceMenuToggle"/);
+  assert.doesNotMatch(workspace,/class="respondo-workspace-menu-wrap"/);
+  assert.doesNotMatch(workspace,/const closeMenu/);
+  assert.match(orbit,/id:'overview'/);
+  assert.match(orbit,/id:'automation'/);
+  assert.match(orbit,/01 \/ 10/);
+  assert.match(css,/respondo-workspace-chat-card #live-preview/);
+  assert.match(css,/respondo-workspace-menu-toggle[^,]*,/);
+  assert.doesNotMatch(css,/grid-template-columns:minmax\(245px,310px\) minmax\(0,1fr\)/);
+});
+test('orb reveals the active view after the chat and remains reachable while scrolling',()=>{
+  assert.match(workspace,/element\.hidden=!\(page==='bot'/);
+  assert.match(orbit,/content\.querySelector\('\[data-workspace-page="\+destination/);
+  assert.doesNotMatch(workspace,/window\.scrollTo\(\{top:0/);
+  assert.match(workspace,/original\.requestSubmit\(\)/);
 });

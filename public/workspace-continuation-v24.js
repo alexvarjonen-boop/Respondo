@@ -34,22 +34,6 @@ function ensureWorkspace(demo) {
       </div>
       <div class="respondo-workspace-actions">
         <div class="respondo-workspace-language"></div>
-        <div class="respondo-workspace-menu-wrap">
-          <button type="button" id="respondoWorkspaceMenuToggle" class="respondo-workspace-menu-toggle" aria-expanded="false" aria-controls="respondoWorkspaceMenu" aria-label="${choose('Avaa valikko','Öppna menyn','Open menu')}"><span aria-hidden="true">☰</span><span>${choose('Valikko','Meny','Menu')}</span></button>
-          <nav id="respondoWorkspaceMenu" class="respondo-workspace-menu" hidden>
-            ${nav('bot','Kokeile bottia','Testa botten','Try the bot')}
-            ${nav('overview','Yleisnäkymä','Översikt','Overview')}
-            ${nav('setup','Yritys & botti','Företag & bot','Company & bot')}
-            ${nav('answers','Vastaukset','Svar','Answers')}
-            ${nav('customers','Asiakkaat','Kunder','Customers')}
-            ${nav('automation','Toiminnot','Funktioner','Actions')}
-            ${nav('install','Asennus','Installation','Installation')}
-            <hr>
-            ${nav('profile','Profiili','Profil','Profile')}
-            ${nav('billing','Laskutus','Fakturering','Billing')}
-            ${nav('settings','Asetukset','Inställningar','Settings')}
-          </nav>
-        </div>
       </div>
     </header>
     <div class="respondo-workspace-content">
@@ -110,8 +94,6 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   shell.classList.remove('guided-setup-active');
   shell.classList.add('respondo-workspace-active');
   workspace.hidden=false;
-  const menu=$('#respondoWorkspaceMenu');
-  const toggle=$('#respondoWorkspaceMenuToggle');
   const status=$('#respondoWorkspaceScanStatus');
   const detail=$('#respondoWorkspaceScanDetail');
   const review=$('#websiteImportReview');
@@ -268,9 +250,13 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     orbit?.sync(selected);
     park();
     card.replaceChildren();
+    // The real bot preview always stays first. The sphere is immediately below
+    // it, and the selected account section appears *below* the sphere.
     workspace.querySelectorAll('[data-workspace-page]').forEach(element=>{
-      const active=selected==='bot'?'bot':selected==='overview'?'overview':'modules';
-      element.hidden=element.dataset.workspacePage!==active;
+      const page=element.dataset.workspacePage;
+      element.hidden=!(page==='bot' ||
+        (selected==='overview' && page==='overview') ||
+        (selected!=='bot' && selected!=='overview' && page==='modules'));
     });
     workspace.querySelectorAll('[data-workspace-nav]').forEach(button=>{
       const on=button.dataset.workspaceNav===selected;
@@ -311,29 +297,23 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
       workspace.querySelectorAll('.rs-module-tabs').forEach(old=>old.remove());
     }
     if(!primary[selected])workspace.querySelectorAll('.rs-module-tabs').forEach(old=>old.remove());
-    window.scrollTo({top:0,behavior:'auto'});
   }
 
   if(!workspace.dataset.initialized){
     workspace.dataset.initialized='1';
-    const closeMenu=()=>{if(menu)menu.hidden=true;toggle?.setAttribute('aria-expanded','false');};
-    toggle?.addEventListener('click',(event)=>{
-      event.stopPropagation();
-      const opening=Boolean(menu?.hidden);
-      if(menu)menu.hidden=!opening;
-      toggle.setAttribute('aria-expanded',String(opening));
-    });
     workspace.addEventListener('click',(event)=>{
       const tab=event.target.closest?.('[data-workspace-tab]');
       if(tab && workspace.contains(tab)){showModuleTab(tab.dataset.workspaceTab);return;}
       const button=event.target.closest?.('[data-workspace-nav]');
       if(button && workspace.contains(button)){
         selectView(button.dataset.workspaceNav);
-        closeMenu();
+        requestAnimationFrame(()=>{
+          const view=workspace.dataset.currentView;
+          const destination=workspace.querySelector('[data-workspace-page="'+(view==='bot'?'bot':view==='overview'?'overview':'modules')+'"]');
+          if(destination && !destination.hidden)destination.scrollIntoView({behavior:'smooth',block:'start'});
+        });
       }
     });
-    document.addEventListener('click',(event)=>{if(!workspace.contains(event.target))closeMenu();});
-    document.addEventListener('keydown',(event)=>{if(event.key==='Escape')closeMenu();});
     const updateScan=()=>{
       if(!status)return;
       const fail=error?.style.display!=='none' ? (error?.textContent?.trim()||''):'';

@@ -1,6 +1,8 @@
 /* Respondo OS sphere navigation: existing account views and APIs stay intact. */
 const glyphs={
   bot:'<path d="M5 7a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4h-3l-4 3v-3a4 4 0 0 1-3-4z"/><path d="M9 11h.01M15 11h.01M9 15h6"/>',
+  overview:'<path d="M3 11.5 12 4l9 7.5M5.5 10.5V20h13v-9.5M9 20v-6h6v6"/>',
+  automation:'<path d="M12 3v4m0 10v4M3 12h4m10 0h4M5.7 5.7l2.8 2.8m7 7 2.8 2.8m0-12.6-2.8 2.8m-7 7-2.8 2.8"/><circle cx="12" cy="12" r="3"/>',
   setup:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h4"/>',
   answers:'<path d="M7 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z"/><path d="M9 9h7M9 13h7M9 17h4"/>',
   customers:'<circle cx="9" cy="8" r="3"/><path d="M3.5 19v-2a5.5 5.5 0 0 1 11 0v2M17 6a3 3 0 0 1 0 6m1.5 2a4 4 0 0 1 2 4v1"/>',
@@ -21,15 +23,17 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
   }
   const sections=[
     {id:'bot',label:translate('Kokeile bottia','Testa botten','Try the bot')},
-    {id:'setup',label:translate('Botin tiedot','Botuppgifter','Bot details')},
+    {id:'overview',label:translate('Yleisnäkymä','Översikt','Overview')},
+    {id:'setup',label:translate('Botin tiedot','Bottuppgifter','Bot details')},
     {id:'answers',label:translate('Vastaukset','Svar','Answers')},
     {id:'customers',label:translate('Asiakkaat','Kunder','Customers')},
+    {id:'automation',label:translate('Toiminnot','Funktioner','Actions')},
     {id:'install',label:translate('Asennus','Installation','Installation')},
-    {id:'billing',label:translate('Laskutus','Fakturering','Billing')},
     {id:'profile',label:translate('Profiili','Profil','Profile')},
+    {id:'billing',label:translate('Laskutus','Fakturering','Billing')},
     {id:'settings',label:translate('Asetukset','Inställningar','Settings')}
   ];
-  const hint=translate('Vieritä palloa, pyyhkäise tai paina kuvaketta.','Rulla över sfären, svep eller tryck på en ikon.','Scroll over the sphere, swipe or tap an icon.');
+  const hint=translate('Vieritä, pyyhkäise sivuttain tai valitse kuvake.','Rulla, svep i sidled eller välj en ikon.','Scroll, swipe sideways or tap an icon.');
   const label=translate('Valitse osio','Välj avsnitt','Choose a section');
   const dialLabel=translate('Navigoi työtilan osioissa','Navigera mellan avsnitt','Navigate workspace sections');
   const prev=translate('Edellinen osio','Föregående avsnitt','Previous section');
@@ -50,7 +54,7 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
       }).join('')+
     '</div>'+
     '<div class="rs-orbit-current" aria-live="polite">'+
-      '<span id="rsOrbitCount">01 / 08</span><h2 id="rsOrbitName"></h2>'+
+      '<span id="rsOrbitCount">01 / 10</span><h2 id="rsOrbitName"></h2>'+
       '<span class="rs-orbit-hint">'+hint+'</span>'+
     '</div>'+
     '<div class="rs-orbit-controls" role="group" aria-label="'+label+'">'+
@@ -58,13 +62,14 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
       '<span class="rs-orbit-controls-label">'+label+'</span>'+
       '<button type="button" data-orbit-direction="1" aria-label="'+next+'">→</button>'+
     '</div>';
-  content.insertBefore(orb,content.firstChild);
+  const botPage=content.querySelector('[data-workspace-page="bot"]');
+  if(!botPage)return {sync:()=>{}};
+  botPage.after(orb);
   const dial=orb.querySelector('#rsOrbitDial');
   const buttons=[...orb.querySelectorAll('[data-orbit-page]')];
   let current='bot', navigateTo=navigate, lastWheel=0, touchStart=null;
   const sync=(id)=>{
     const index=sections.findIndex(section=>section.id===id);
-    // Dashboard sections not included on the sphere remain accessible via menu.
     if(index<0)return;
     current=id;
     for(const button of buttons){
@@ -74,21 +79,24 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     }
     orb.querySelector('#rsOrbitName').textContent=sections[index].label;
     orb.querySelector('#rsOrbitCount').textContent=String(index+1).padStart(2,'0')+' / '+String(sections.length).padStart(2,'0');
-    dial.style.setProperty('--orbit-turn',(-index*45)+'deg');
+    dial.style.setProperty('--orbit-turn',(-index*360/sections.length)+'deg');
   };
   const move=(direction)=>{
     const index=Math.max(0,sections.findIndex(section=>section.id===current));
     const nextIndex=(index+direction+sections.length)%sections.length;
     navigateTo(sections[nextIndex].id);
   };
-  // Direct taps must reveal the selected form on phones; paging the dial with
-  // its arrows/wheel keeps the navigation visible so visitors can keep browsing.
+  // Direct icon taps reveal the chosen existing view below the sphere,
+  // while wheel/arrow navigation keeps the sphere in view.
   const revealMobileSection=()=>{
-    if(!window.matchMedia('(max-width:850px)').matches)return;
     requestAnimationFrame(()=>{
-      const page=content.querySelector('[data-workspace-page]:not([hidden])');
-      if(!page)return;
-      page.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+      const view=workspace.dataset.currentView;
+      const destination=view==='bot'?'bot':view==='overview'?'overview':'modules';
+      const page=content.querySelector('[data-workspace-page="'+destination+'"]');
+      if(page && !page.hidden)page.scrollIntoView({
+        behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',
+        block:'start'
+      });
     });
   };
   orb.addEventListener('click',event=>{
