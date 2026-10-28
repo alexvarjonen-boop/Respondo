@@ -12636,7 +12636,12 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // A public demo of another company must never leak Respondo sales links.
     const enteredDemoHost=normalizeHost(profile.website);
     const importedDemoHost=normalizeHost(trustedImportedDemoWebsite);
-    const isRespondoDemoWebsite=isPublicDemo && (
+    // A signed-in workspace preview also tests the website entered in its
+    // business profile. Previously only anonymous demos matched that host,
+    // so the same respondoai.fi question showed an answer but no order button
+    // after finishing the five-step setup. Dashboard previews already require
+    // a verified session above; never use the visitor's message to infer host.
+    const isRespondoDemoWebsite=(isPublicDemo || body.dashboardPreview===true) && (
       enteredDemoHost==='respondoai.fi' ||
       (!enteredDemoHost && importedDemoHost==='respondoai.fi')
     );

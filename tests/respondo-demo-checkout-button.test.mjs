@@ -95,3 +95,18 @@ test('first-party website widget shows subscription rather than unrelated ecomme
   assert.match(chat,/let actions = widgetSubscribe/);
   assert.match(chat,/products:widgetSubscribe \? \[\] : await hydratedProductCards\(result\)/);
 });
+
+test('authenticated workspace preview of Respondo website exposes ordering button',()=>{
+  const server=read('server.mjs');
+  const demo=server.slice(server.indexOf("app.post('/api/public/demo-chat'"),server.indexOf("\napp.",server.indexOf("app.post('/api/public/demo-chat'")+100));
+  assert.match(demo,/body\.dashboardPreview===true && \(isPublicDemo \|\| demoImportId\)/);
+  assert.match(demo,/if \(!isPublicDemo && !demoImportId\)/);
+  assert.match(demo,/const isRespondoDemoWebsite=\(isPublicDemo \|\| body\.dashboardPreview===true\) && \(/);
+  assert.match(demo,/enteredDemoHost==='respondoai\.fi'/);
+  assert.match(demo,/!enteredDemoHost && importedDemoHost==='respondoai\.fi'/);
+  assert.match(demo,/const directSubscribe=firstPartyRespondoPreview/);
+  assert.match(demo,/actions:\[directSubscribe\],products:\[\]/);
+  // A merchant preview must not inherit this action unless its own verified
+  // domain is exactly Respondo's or it really is the first-party tenant.
+  assert.doesNotMatch(demo,/isRespondoDemoWebsite=.*message/);
+});
