@@ -1,3 +1,4 @@
+import { createWorkspaceOrbit } from './workspace-orbit-v28.js';
 // A single dark workspace after the five-card setup.
 // Keep existing chat, scan and billing DOM nodes intact so their event handlers,
 // authenticated API calls and tenant isolation are not replaced by demo stubs.
@@ -126,6 +127,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   const translate=(fi,sv,en)=>workspace.dataset.lang==='fi'?fi:workspace.dataset.lang==='sv'?sv:en;
   const safe=(value)=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let selected='bot';
+  let orbit=null;
   let activePanel=null;
   const knownSections=[...storage.querySelectorAll('.dashboard-view-section')];
   // Only the selected module may leave storage. Explicit inline display wins
@@ -262,6 +264,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   function selectView(next){
     selected=Object.hasOwn(pages,next)?next:'bot';
     workspace.dataset.currentView=selected;
+    orbit?.sync(selected);
     park();
     card.replaceChildren();
     workspace.querySelectorAll('[data-workspace-page]').forEach(element=>{
@@ -353,6 +356,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
 
   // Opening /app again should return to the same clear, dark workspace rather
   // than the legacy dashboard. Demo data is intentionally ephemeral.
+  orbit=createWorkspaceOrbit({workspace,navigate:selectView,translate});
   selectView(view);
   if(status && importButton?.disabled)status.textContent=workspace.dataset.lang==='sv'?'Hämtar webbplatsuppgifter…':workspace.dataset.lang==='en'?'Scanning website…':'Haetaan verkkosivun tietoja…';
   return true;
