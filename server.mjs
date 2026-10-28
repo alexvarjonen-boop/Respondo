@@ -11014,6 +11014,7 @@ app.get('/api/app/internal/setup-service-requests', auth, ownerTrafficOnly, asyn
     const found=await q(
       `SELECT sr.session_id,sr.website_url,sr.status,sr.created_at,sr.customer_emailed_at,
               sr.owner_emailed_at,sr.ready_emailed_at,t.name AS company_name,u.email,
+              t.bot_name,t.greeting,
               (u.stripe_subscription_id IS NOT DISTINCT FROM t.stripe_subscription_id) AS first_workspace
          FROM setup_service_requests sr
          JOIN tenants t ON t.id::text=sr.tenant_id
