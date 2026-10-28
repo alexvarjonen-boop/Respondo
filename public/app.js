@@ -3202,6 +3202,20 @@ function bindSetupServiceOptions() {
       url.disabled=!checkbox.checked;
       url.required=checkbox.checked;
       if(!checkbox.checked) url.value='';
+      // A new assisted setup account receives a secure password-creation link
+      // after the installation is completed, not a password by email.
+      const form=wrap.closest('form#signup');
+      if(form) {
+        const passwordField=form.querySelector('#signupPasswordField');
+        const passwordInput=passwordField?.querySelector('input[name="password"]');
+        const socialSignup=form.dataset.oauthVerified==='true';
+        if(passwordField) passwordField.hidden=checkbox.checked||socialSignup;
+        if(passwordInput) {
+          passwordInput.required=!checkbox.checked&&!socialSignup;
+          passwordInput.disabled=checkbox.checked||socialSignup;
+          if(checkbox.checked) passwordInput.value='';
+        }
+      }
     };
     checkbox.addEventListener('change',sync);
     sync();
@@ -5254,9 +5268,9 @@ async function route() {
         ))+'</p>'+
         (sent?'':'<p>'+esc(appText('Sähköpostivahvistus on käsittelyssä. Jos sitä ei tule, ota yhteyttä info@respondoai.fi.','E-postbekräftelsen behandlas. Kontakta info@respondoai.fi om den inte kommer fram.','Your email confirmation is being processed. Contact info@respondoai.fi if it does not arrive.'))+'</p>')+
         '<p class="setup-service-login-note">'+esc(appText(
-          'Voit jo kirjautua omalla sähköpostillasi ja rekisteröityessäsi valitsemallasi salasanalla. Salasanan voi vaihtaa myöhemmin asetuksista.',
-          'Du kan redan logga in med din e-postadress och lösenordet du valde vid registreringen. Du kan ändra lösenordet senare i inställningarna.',
-          'You can already sign in with your email and the password you created at registration. You can change it later in Settings.'
+          'Saat uuden sähköpostin, kun botti on valmis. Se sisältää kirjautumissähköpostisi ja turvallisen linkin oman salasanan luomiseen. Salasanan voi vaihtaa myöhemmin asetuksista. Jos sinulla on jo Respondo-tunnus, voit käyttää sitä tavalliseen tapaan.',
+          'Du får ett nytt mejl när botten är klar. Där finns din inloggningsadress och en säker länk för att skapa lösenord. Du kan ändra lösenordet senare i inställningarna. Har du redan ett Respondo-konto kan du fortsätta använda det.',
+          'We will email you when your bot is ready, with your login email and a secure link to create a password. You can change it later in Settings. If you already have a Respondo account, you can continue using it.'
         ))+'</p>';
       document.body.appendChild(notice);
       notice.querySelector('.setup-service-notice-close')?.addEventListener('click',()=>notice.remove());
