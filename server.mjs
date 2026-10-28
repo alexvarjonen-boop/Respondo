@@ -10953,6 +10953,8 @@ async function sendReadySetupServiceEmailOnce(sessionId) {
 
 app.get('/api/app/internal/setup-service-requests', auth, ownerTrafficOnly, async (req,res) => {
   try{
+    const tableCheck=await q("SELECT to_regclass('public.setup_service_requests') AS relation");
+    if(!tableCheck.rows[0]?.relation) return res.json({requests:[]});
     const rr=await q(
       `SELECT sr.session_id,sr.website_url,sr.status,sr.created_at,sr.customer_emailed_at,
               sr.owner_emailed_at,sr.ready_emailed_at,t.name AS company_name,u.email
