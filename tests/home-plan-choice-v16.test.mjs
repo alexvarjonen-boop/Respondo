@@ -6,7 +6,7 @@ const read = name => readFileSync(new URL('../public/'+name, import.meta.url), '
 const app = read('app.js');
 const css = read('home-finish-v13.css');
 const index = read('index.html');
-const pricing = app.slice(app.indexOf('function pricingSection()'),app.indexOf('function pricingSection()')+6100);
+const pricing = app.slice(app.indexOf('function pricingSection()'),app.indexOf('function pricingSection()')+16000);
 const v16 = css.slice(css.indexOf('/* Observatory v16:'));
 
 test('v16 presents grounded, localized audience guidance instead of an invented popularity claim', () => {
