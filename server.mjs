@@ -8430,7 +8430,10 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           console.error('Referral activation from webhook failed', e);
         }
 
-        if (session.metadata?.additional_workspace !== '1' && ['active','trialing'].includes(subscriptionStatus)) {
+        if (session.metadata?.setup_service === '1' && ['active','trialing'].includes(subscriptionStatus)) {
+          try { await notifySetupServiceAfterCheckout(session); }
+          catch(e) { console.error('Setup service webhook notification failed:',e?.message); }
+        } else if (session.metadata?.additional_workspace !== '1' && ['active','trialing'].includes(subscriptionStatus)) {
           try { await sendWelcomeEmailOnce(userId); } catch(e) { console.error('Welcome email after checkout webhook failed:',e?.message); }
         }
 
@@ -8446,6 +8449,11 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           }
         }
       }
+    }
+
+    if (event.type === 'checkout.session.async_payment_succeeded' && event.data.object?.metadata?.setup_service === '1') {
+      try { await notifySetupServiceAfterCheckout(event.data.object); }
+      catch(e) { console.error('Setup service async payment notification failed:',e?.message); }
     }
 
     if (event.type === 'invoice.paid') {
@@ -10132,7 +10140,13 @@ app.get('/api/auth/checkout-success', async (req, res) => {
       console.error('Referral activation after checkout failed', e);
     }
 
-    try { await sendWelcomeEmailOnce(userId); } catch(e) { console.error('Welcome email after checkout redirect failed:',e?.message); }
+    let setupAcknowledged=false;
+    if (session.metadata?.setup_service === '1') {
+      try { setupAcknowledged=(await notifySetupServiceAfterCheckout(session)).customerSent===true; }
+      catch(e){ console.error('Setup service redirect notification failed:',e?.message); }
+    } else {
+      try { await sendWelcomeEmailOnce(userId); } catch(e) { console.error('Welcome email after checkout redirect failed:',e?.message); }
+    }
 
     if (session.metadata?.plan === 'owner_test') {
       try {
@@ -10151,7 +10165,9 @@ app.get('/api/auth/checkout-success', async (req, res) => {
 
     res.clearCookie(SIGNUP_CHECKOUT_COOKIE);
     setSession(res, updated.rows[0]);
-    return res.redirect('/app?welcome=1');
+    return res.redirect(session.metadata?.setup_service==='1'
+      ? '/app?setup_service='+(setupAcknowledged?'email_sent':'received')
+      : '/app?welcome=1');
   } catch (e) {
     console.error('Checkout success auto-login failed', e);
     return res.redirect('/kirjaudu?checkout_error=1');
@@ -10904,7 +10920,14 @@ app.get('/api/app/workspaces/checkout-success', auth, ownerOnly, async (req,res)
       }
     }
 
-    return res.redirect('/app?workspace_added=1');
+    let setupAcknowledged=false;
+    if(session.metadata?.setup_service==='1') {
+      try{setupAcknowledged=(await notifySetupServiceAfterCheckout(session)).customerSent===true;}
+      catch(e){console.error('Additional workspace setup service email failed:',e?.message);}
+    }
+    return res.redirect(session.metadata?.setup_service==='1'
+      ? '/app?workspace_added=1&setup_service='+(setupAcknowledged?'email_sent':'received')
+      : '/app?workspace_added=1');
   } catch(e) {
     console.error('Additional workspace checkout success failed',e);
     return res.redirect('/app?section=account&workspace_checkout=error');
