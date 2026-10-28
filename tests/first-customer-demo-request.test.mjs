@@ -26,3 +26,17 @@ test('client pricing also routes demo enquiries through the current contact page
  assert.match(app,/\/yhteystiedot\?lang=\$\{currentLang\(\)\}&amp;intent=demo/);
  assert.match(app,/Pyydä esittely omalle sivulle/);
 });
+
+test('optional Calendly demo booking is localized, secure and does not replace the first-party form',()=>{
+ const contact=segment('function contactPage()','function footer()');
+ assert.match(contact,/const demoBookingUrl = 'https:\/\/calendly\.com\/alexvarjonen\/respondo-ai-15-min-esittely'/);
+ assert.match(contact,/demoRequest \? `<div class="demo-booking-option"/);
+ assert.match(contact,/href="\$\{demoBookingUrl\}" target="_blank" rel="noopener noreferrer"/);
+ assert.match(contact,/Varaa 15 min esittely/);
+ assert.match(contact,/Boka en 15 min demo/);
+ assert.match(contact,/Book a 15-minute demo/);
+ assert.match(contact,/Ajanvaraus avautuu englanninkielisessä Calendlyssä/);
+ assert.match(contact,/id="homeContactForm"/);
+ assert.match(contact,/id="homeContactStatus"/);
+ assert.doesNotMatch(contact,/iframe|calendly\.init|calendly\.com\/embed/);
+});
