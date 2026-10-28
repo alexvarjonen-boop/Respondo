@@ -1055,7 +1055,7 @@ async function notifySetupServiceAfterCheckout(session) {
         content:
           '<p style="color:#d6d8de;font-size:15px;line-height:1.8">Asiakas on ostanut 199 €:n käyttöönottopalvelun. Aloita verkkosivuston analysointi ja botin viimeistely. Ilmoita asiakkaalle erikseen, kun botti on tarkistettavissa.</p>'+
           '<p style="color:#fff;font-size:14px;line-height:1.8">Yritys: '+escapeEmailHtml(account.company_name)+'<br>Verkkosivu: '+escapeEmailHtml(website)+'<br>Asiakas: '+escapeEmailHtml(account.email)+'<br>Tilaus: '+escapeEmailHtml(sessionId)+'</p>'+
-          '<p style="margin:22px 0"><a href="'+escapeEmailHtml(BASE+'/app?section=account')+'" style="display:inline-block;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 20px;border-radius:11px;font-weight:700">Avaa käyttöönottotyöt →</a></p>',
+          '<p style="margin:22px 0"><a href="'+escapeEmailHtml(BASE+'/trafic#setup-orders')+'" style="display:inline-block;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 20px;border-radius:11px;font-weight:700">Avaa käyttöönottotyöt →</a></p>',
       });
       try{
         await send({to,subject:'Uusi käyttöönottopalvelu · '+account.company_name,content:ownerHtml,replyTo:account.email});
@@ -10905,6 +10905,107 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
 // Paid setup is completed by the owner. Customer credentials are set and
 // handed over personally; no password or password-creation link is ever sent
 // automatically by the Respondo service for this paid assisted setup.
+
+// Owner-assisted knowledge import: only for the customer's actual paid setup
+// request, using the same public-URL/SSRF and knowledge filters as normal imports.
+// The customer account is never impersonated; the owner can review the bot
+// through the normal sign-in flow after manually assigning credentials.
+const setupAdminImportLocks = new Set();
+app.post('/api/app/internal/setup-service-requests/:id/import', auth, ownerTrafficOnly, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  const sessionId=String(req.params.id||'');
+  if(!/^cs_[A-Za-z0-9_]{10,120}$/.test(sessionId)) return res.status(400).json({error:'Virheellinen tilaus.'});
+  if(setupAdminImportLocks.has(sessionId)) return res.status(409).json({error:'Tämän sivuston tuonti on jo käynnissä.'});
+  setupAdminImportLocks.add(sessionId);
+  try {
+    const found=await q(
+      `SELECT sr.website_url,sr.status,t.id AS tenant_id,t.website AS tenant_website,t.slug,t.name,
+              t.active,t.subscription_status
+         FROM setup_service_requests sr
+         JOIN tenants t ON t.id::text=sr.tenant_id
+         JOIN users u ON u.id=t.owner_user_id
+        WHERE sr.session_id=$1 AND sr.user_id=u.id::text
+          AND u.status='active' AND t.active=true
+          AND t.stripe_subscription_id IS NOT NULL
+          AND t.subscription_status IN ('active','trialing')
+        LIMIT 1`,
+      [sessionId],
+    );
+    const job=found.rows[0];
+    if(!job || !['received','credentials_created'].includes(job.status))
+      return res.status(409).json({error:'Vain avoimen maksetun käyttöönottotilauksen tietoja voi tuoda.'});
+    const website=normalizeWebUrl(job.website_url,false);
+    if(!website || !tenantWebsiteImportAllowed({
+      name:job.name,slug:job.slug,website:job.tenant_website,
+    },website)) {
+      return res.status(422).json({error:'Yrityksen verkkosivun osoite ei kelpaa.'});
+    }
+    // Conservative limits, and reuse the existing credit-protected Firecrawl
+    // fallback only for native-fetched sparse pages.
+    const bundle=await fetchWebsiteBundle(website,45,32000,null,{
+      storefrontLimit:150,storefrontBudgetMs:4000,sitemapLimit:500,
+    });
+    const candidates=websiteKnowledgeCandidates(bundle).slice(0,250);
+    const approved=[];
+    const seen=new Set();
+    for(const row of candidates){
+      const title=String(row?.title||'').trim().slice(0,180);
+      const answer=String(row?.answer||'').trim().slice(0,1600);
+      const category=String(row?.category||'Verkkosivulta tuotu').trim().slice(0,80);
+      const sourceUrl=normalizeWebUrl(row?.sourceUrl,false);
+      if(!title||!answer||!sourceUrl||normalizeHost(sourceUrl)!==normalizeHost(website))continue;
+      const safetyText=normalizeSearchText(title+' '+category+' '+answer.slice(0,900)+' '+sourceUrl);
+      if(/terms of service|privacy policy|tietosuoja|kayttoeh|käyttöeh|cookie policy|evaste|eväste|legal notice|all rights reserved|localstorage|sessionstorage|const |let |var |function |\.includes\(|\.getitem\(|\.setitem\(|document\.|window\.|queryselector|addeventlistener|json\.stringify|json\.parse/.test(safetyText))continue;
+      if(!usableWebsiteRow({title,answer,category,source_type:'website'})||title.length<3)continue;
+      const dedupe=sourceUrl.toLowerCase()+'|'+title.toLowerCase();
+      if(seen.has(dedupe))continue;
+      seen.add(dedupe);
+      approved.push({title,answer,category,sourceUrl,keywords:Array.isArray(row?.keywords)?
+        row.keywords.map(x=>String(x||'').trim()).filter(Boolean).slice(0,14):
+        searchTokens(title+' '+answer).slice(0,14)});
+    }
+    if(!approved.length) return res.status(422).json({error:'Sivulta ei löytynyt sopivia yritystietoja. Lisää ne käsin asiakkaan hallintapaneelista.'});
+    const client=await pool.connect();
+    try{
+      await client.query('BEGIN');
+      // Set the website only on first import; never overwrite an existing
+      // customer's manually configured website.
+      await client.query(
+        "UPDATE tenants SET website=$1,updated_at=NOW() WHERE id=$2 AND (website IS NULL OR website='')",
+        [website,job.tenant_id],
+      );
+      let saved=0;
+      for(const row of approved){
+        const duplicate=await client.query(
+          "SELECT id FROM knowledge WHERE tenant_id=$1 AND source_type='website' AND source_url=$2 AND lower(title)=lower($3) LIMIT 1",
+          [job.tenant_id,row.sourceUrl,row.title],
+        );
+        if(duplicate.rowCount){
+          await client.query(
+            "UPDATE knowledge SET category=$1,answer=$2,keywords=$3,approved=true,verified_at=NOW(),updated_at=NOW() WHERE id=$4 AND tenant_id=$5",
+            [row.category,row.answer,row.keywords,duplicate.rows[0].id,job.tenant_id],
+          );
+        }else{
+          await client.query(
+            `INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords,source_type,source_url,approved,verified_at)
+              VALUES($1,$2,$3,$4,$5,$6,'website',$7,true,NOW())`,
+            [uid(),job.tenant_id,row.category,row.title,row.answer,row.keywords,row.sourceUrl],
+          );
+        }
+        saved++;
+      }
+      await client.query('COMMIT');
+      return res.json({ok:true,saved,pagesScanned:bundle.pages.length});
+    }catch(error){
+      await client.query('ROLLBACK').catch(()=>{});
+      throw error;
+    }finally{client.release();}
+  }catch(error){
+    console.error('Owner assisted setup knowledge import failed:',error?.message);
+    return res.status(503).json({error:'Yrityksen tietojen tuonti epäonnistui.'});
+  }finally{setupAdminImportLocks.delete(sessionId);}
+});
+
 app.get('/api/app/internal/setup-service-requests', auth, ownerTrafficOnly, async (req,res) => {
   res.set('Cache-Control','private, no-store');
   try{
@@ -11077,6 +11178,7 @@ app.post('/api/app/internal/setup-service-requests/:id/credentials', auth, owner
       'UPDATE users SET email=$1,password_hash=$2,session_version=session_version+1,updated_at=NOW() WHERE id=$3',
       [email,passwordHash,job.user_id],
     );
+    await client.query('UPDATE tenants SET contact_email=$1,updated_at=NOW() WHERE id=$2',[email,job.tenant_id]);
     await client.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL',[job.user_id]);
     await client.query("UPDATE setup_service_requests SET status='credentials_created',updated_at=NOW() WHERE session_id=$1",[sessionId]);
     await client.query('COMMIT');
