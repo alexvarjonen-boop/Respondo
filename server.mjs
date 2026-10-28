@@ -1488,23 +1488,6 @@ function setupServiceCheckoutLineItem() {
   };
 }
 
-// Stripe must bill only the EUR 199 one-time setup and never bill the plan
-// for the server-configured OWNER_FREE_CODE. A global discount coupon would
-// also discount setup, so use a genuine zero-price recurring Checkout item.
-function ownerFreeSetupCheckoutLineItem(plan) {
-  if (!Object.hasOwn(CURRENT_PRICE_CENTS,plan)) {
-    throw Object.assign(new Error('Maksuttoman tilauksen koodi ei ole voimassa tällä paketilla.'),{publicStatus:400});
-  }
-  return {
-    price_data:{
-      currency:'eur',unit_amount:0,
-      recurring:{interval:plan.endsWith('_yearly')?'year':'month',interval_count:1},
-      product_data:{name:CURRENT_PRODUCT_NAMES[plan]+' (henkilökohtainen kampanjakoodi, 0 €)'},
-    },
-    quantity:1,
-  };
-}
-
 async function stripeCheckoutLineItem(plan) {
   const priceId=stripePriceForPlan(plan);
   if (!Object.hasOwn(CURRENT_PRICE_CENTS, plan)) {
@@ -1525,6 +1508,23 @@ async function stripeCheckoutLineItem(plan) {
       unit_amount:CURRENT_PRICE_CENTS[plan],
       recurring:{interval:plan.endsWith('_yearly') ? 'year' : 'month',interval_count:1},
       product_data:{name:CURRENT_PRODUCT_NAMES[plan]},
+    },
+    quantity:1,
+  };
+}
+
+// Stripe must bill only the EUR 199 one-time setup and never bill the plan
+// for the server-configured OWNER_FREE_CODE. A global discount coupon would
+// also discount setup, so use a genuine zero-price recurring Checkout item.
+function ownerFreeSetupCheckoutLineItem(plan) {
+  if (!Object.hasOwn(CURRENT_PRICE_CENTS,plan)) {
+    throw Object.assign(new Error('Maksuttoman tilauksen koodi ei ole voimassa tällä paketilla.'),{publicStatus:400});
+  }
+  return {
+    price_data:{
+      currency:'eur',unit_amount:0,
+      recurring:{interval:plan.endsWith('_yearly')?'year':'month',interval_count:1},
+      product_data:{name:CURRENT_PRODUCT_NAMES[plan]+' (henkilökohtainen kampanjakoodi, 0 €)'},
     },
     quantity:1,
   };
