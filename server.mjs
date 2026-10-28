@@ -4927,6 +4927,15 @@ function respondoSitePageActions(message, lang='fi', faqId='') {
   return respondoSiteNavigationActions(message,lang,faqId,SEO_CANONICAL_ORIGIN);
 }
 
+// Booking intent is separate from delivery times and opening hours.
+// Used both to recover the tested company's contact page and to formulate
+// an honest next step where a verified online calendar is unavailable.
+function bookingEnquiryQuestion(message) {
+  const q=normalizeSearchText(message);
+  if(/(?:toimitusaika|toimitusajat|aukioloaika|aukioloajat|delivery time|shipping time|opening hours|leveranstid|oppettider)/.test(q)) return false;
+  return /(?:^|\b)(?:miten (?:voin |saan |teille )?(?:varata|varaan|varais)\w*|voinko (?:varata|varaa)\w*|mista (?:varaan|voin varata)|kuinka (?:voin )?varata|ajanvaraus|how (?:can|do) i book|can i book|how to book|book an appointment|hur (?:kan|gor) jag boka|kan jag boka|tidsbokning)(?:\b|$)/i.test(q);
+}
+
 function chatActions(rows, message, handoff = false, lang = 'fi', selected = []) {
   const actionLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   const q = normalizeSearchText(message);
@@ -7243,9 +7252,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // lead form when the imported site actually provides a contact page but
   // does not publish a verified online calendar. A contact page is NOT a
   // confirmed bookable appointment.
-  const bookingQuestion=normalizeSearchText(cleanMessage);
-  const asksHowToBook=/(?:^|\b)(?:miten (?:voin |saan |teille )?(?:varata|varaan|varais)\w*|voinko (?:varata|varaa)\w*|mista (?:varaan|voin varata)|kuinka (?:voin )?varata|ajanvaraus|how (?:can|do) i book|can i book|how to book|book an appointment|hur (?:kan|gor) jag boka|kan jag boka|tidsbokning)(?:\b|$)/i.test(bookingQuestion)
-    && !/(?:toimitus|aukiolo|delivery time|opening hours|leverans|oppettid)/i.test(bookingQuestion);
+  const asksHowToBook=bookingEnquiryQuestion(cleanMessage);
   if(asksHowToBook){
     const contactPage=verifiedContactPage(rows);
     const calendar=knowledgeValue(rows,'Ajanvarauslinkki');
@@ -7255,7 +7262,10 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       String(row?.title||'').trim()!=='Ajanvarauslinkki' &&
       String(row?.answer||'').trim().length>15
     );
-    if(contactPage && !confirmedCalendar && !hasBookingInstructions){
+    const directPhone=verifiedContactValue(rows,'Puhelinnumero');
+    const directEmail=verifiedContactValue(rows,'Sähköposti');
+    if((contactPage || directPhone || directEmail) && !confirmedCalendar && !hasBookingInstructions){
+      const evidence=contactPage?.row||directPhone?.row||directEmail?.row;
       const answer=responseLang==='en'
         ? 'I could not verify an online booking calendar. You can ask about arranging a time through the company’s contact page.'
         : responseLang==='sv'
@@ -7263,7 +7273,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
           : 'En löytänyt vahvistettua ajanvarauskalenteria. Voit tiedustella sopivaa ajankohtaa yrityksen yhteydenottosivun kautta.';
       return {
         answer,handoff:false,confidence:0.88,intent:'Ajanvaraus',
-        sourceIds:[contactPage.row.id].filter(Boolean),selected:[contactPage.row],
+        sourceIds:[evidence?.id].filter(Boolean),selected:evidence?[evidence]:[],
       };
     }
   }
@@ -12363,7 +12373,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // For a broad product question, re-scan that same website instead of ever
     // falling back to the logged-in Respondo owner's knowledge.
     const needsProductRecovery=broadProductQuestion(message);
-    const needsContactRecovery=generalContactQuestion(message) &&
+    const needsContactRecovery=(generalContactQuestion(message)||bookingEnquiryQuestion(message)) &&
       !rows.some(row=>['Yhteydenottolomake','Yhteydenottosivu'].includes(String(row?.title||'')));
     if (isPublicDemo && (needsProductRecovery || needsContactRecovery)) {
       const hasProductFacts=rows.some((row)=>{
