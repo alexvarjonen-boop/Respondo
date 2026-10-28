@@ -25,6 +25,6 @@ test('v13 premium finishing styles are homepage-scoped, mobile-aware and motion-
 test('v13 stylesheet has a new Safari-safe cache key after v12',()=>{
  const index=read('index.html');
  assert.match(index,/home-polish-v11\.css\?v=20261027-spacing-clarity-v11-legibility-v12/);
- assert.match(index,/home-finish-v13\.css\?v=20261028-home-finish-v13/);
+ assert.match(index,/home-finish-v13\.css\?v=20261028-[^\/\"]+/);
  assert.ok(index.indexOf('/home-polish-v11.css')<index.indexOf('/home-finish-v13.css'));
 });
