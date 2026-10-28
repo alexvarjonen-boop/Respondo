@@ -100,3 +100,48 @@
  #app .respondo-workspace-overview-grid{grid-template-columns:1fr}
  #app .respondo-workspace-module-card{padding:12px}
 }
+
+
+/* V25: the base dashboard heading rules can override the wizard's dark card
+   heading, leaving dark text on #18191d. Explicitly scope the contrast to
+   wizard cards and preserve light-on-dark across all five steps. */
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-form > .guided-card h1,
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-form > .guided-card h2,
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-form > .guided-card h3 {
+  color:#f7f8fb!important;
+  -webkit-text-fill-color:#f7f8fb!important;
+  opacity:1!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-form > .guided-card > p {
+  color:#c7c9d2!important;
+  -webkit-text-fill-color:#c7c9d2!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-form > .guided-card > small {
+  color:#d5d7e1!important;
+  -webkit-text-fill-color:#d5d7e1!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-form > .guided-card .guided-main-field > span,
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-form > .guided-card .guided-qa-row label > span {
+  color:#d1d4dd!important;
+  -webkit-text-fill-color:#d1d4dd!important;
+}
+
+/* Keep the single branded header within the wizard. The old dashboard drawer
+   mounts a second white, sticky header on iPhone after the initial render.
+   Hide that legacy header only during the wizard; standard workspace pages
+   continue to use their normal navigation outside this state. */
+#app .dashboard-premium-shell.guided-setup-active > .dashboard-simple-main > .dashboard-topbar,
+#app .dashboard-premium-shell.guided-setup-active > .dashboard-simple-main > .dashboard-topbar.dashboard-has-drawer,
+#app .dashboard-premium-shell.demo-dashboard-shell.guided-setup-active > .dashboard-simple-main > .dashboard-topbar.demo-sticky-topbar {
+  display:none!important;
+  visibility:hidden!important;
+}
+#app .dashboard-premium-shell.demo-dashboard-shell.guided-setup-active .guided-demo-brand {
+  position:relative;
+  z-index:5;
+}
+@media(max-width:760px) {
+  #app .dashboard-premium-shell.demo-dashboard-shell.guided-setup-active .guided-setup {
+    padding-top:18px!important;
+  }
+}
