@@ -1305,6 +1305,23 @@ async function assertCurrentCheckoutPrice(plan, priceId) {
 
 // New checkouts validate the current monthly and annual amount and public Product name.
 // Old Price IDs stay mapped for pre-existing subscribers but are never billed to new customers.
+// Optional fixed-price, one-time service. It is shown separately in Stripe Checkout
+// and appears only on the initial invoice, never on recurring renewals.
+const SETUP_SERVICE_PRICE_CENTS = 19900;
+function setupServiceCheckoutLineItem() {
+  return {
+    price_data:{
+      currency:'eur',
+      unit_amount:SETUP_SERVICE_PRICE_CENTS,
+      product_data:{
+        name:'Käyttöönottopalvelu',
+        description:'Kertaluonteinen käyttöönottopalvelu / One-time setup service',
+      },
+    },
+    quantity:1,
+  };
+}
+
 async function stripeCheckoutLineItem(plan) {
   const priceId=stripePriceForPlan(plan);
   if (!Object.hasOwn(CURRENT_PRICE_CENTS, plan)) {
@@ -9620,10 +9637,12 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Tietokantaa ei ole yhdistetty.' });
 
   const { fullName, companyName, businessId, password, plan, acceptedTerms } = req.body;
+  const setupService = req.body?.setupService === true;
   const email = cleanEmail(req.body.email);
   const normalizedPlan = normalizeCheckoutPlan(plan);
   const referralCode = normalizeReferralCode(req.body.referralCode);
   const freeReferral = isFreeReferralCode(referralCode);
+  if (setupService && (freeReferral || normalizedPlan === 'owner_test')) return res.status(400).json({error:'Käyttöönottopalvelu on saatavilla vain normaalin maksullisen tilauksen yhteydessä.'});
   const checkoutCountry = checkoutCountryPolicy(req.body?.billingCountry);
   if (!checkoutCountry.ok) return res.status(422).json({ error:checkoutCountry.error });
   if (req.body?.businessPurchase !== true) return res.status(422).json({ error:'Vahvista, että tilaat palvelun yrityskäyttöön.' });
@@ -9787,7 +9806,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
         mode: 'subscription',
         automatic_tax: { enabled: false },
         customer_email: email,
-        line_items:[checkoutLineItem],
+        line_items:setupService ? [checkoutLineItem,setupServiceCheckoutLineItem()] : [checkoutLineItem],
         custom_text: {
           submit: { message: taxExemptionMessage },
         },
@@ -9800,6 +9819,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             tax_country_policy: TAX_COUNTRY_POLICY_VERSION,
             billing_country: checkoutCountry.country,
             business_purchase: '1',
+            setup_service:setupService ? '1' : '0',
             ...(referralCode ? { referral_code: referralCode } : {}),
           },
         },
@@ -9818,6 +9838,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           tax_country_policy: TAX_COUNTRY_POLICY_VERSION,
           billing_country: checkoutCountry.country,
           business_purchase: '1',
+          setup_service:setupService ? '1' : '0',
           ...(referralCode ? { referral_code: referralCode } : {}),
         },
       });
@@ -10489,11 +10510,13 @@ app.post('/api/app/workspaces/switch', auth, ownerOnly, async (req,res) => {
 });
 
 app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
+  const setupService=req.body?.setupService===true;
   const companyName=String(req.body?.companyName||'').replace(/[<>]/g,'').trim().slice(0,120);
   const businessId=String(req.body?.businessId||'').replace(/[<>]/g,'').trim().slice(0,40);
   const plan=normalizeCheckoutPlan(req.body?.plan);
   const referralCode=normalizeReferralCode(req.body?.referralCode);
   const freeReferral=isFreeReferralCode(referralCode);
+  if(setupService && (freeReferral || plan==='owner_test')) return res.status(400).json({error:'Käyttöönottopalvelu on saatavilla vain normaalin maksullisen tilauksen yhteydessä.'});
   const checkoutCountry=checkoutCountryPolicy(req.body?.billingCountry);
   if(!checkoutCountry.ok) return res.status(422).json({error:checkoutCountry.error});
   if(req.body?.businessPurchase!==true) return res.status(422).json({error:'Vahvista, että tilaat palvelun yrityskäyttöön.'});
@@ -10614,7 +10637,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         customer:user.stripe_customer_id,
         customer_update:{ name:'auto' },
       } : { customer_email:user.email }),
-      line_items:[checkoutLineItem],
+      line_items:setupService ? [checkoutLineItem,setupServiceCheckoutLineItem()] : [checkoutLineItem],
       custom_text:{
         submit:{message: taxExemptionMessage},
       },
@@ -10628,6 +10651,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
           tax_country_policy:TAX_COUNTRY_POLICY_VERSION,
           billing_country:checkoutCountry.country,
           business_purchase:'1',
+          setup_service:setupService ? '1' : '0',
           ...(referralCode ? { referral_code:referralCode } : {}),
         },
       },
@@ -10644,6 +10668,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         tax_country_policy:TAX_COUNTRY_POLICY_VERSION,
         billing_country:checkoutCountry.country,
         business_purchase:'1',
+        setup_service:setupService ? '1' : '0',
         ...(referralCode ? { referral_code:referralCode } : {}),
       },
     });
