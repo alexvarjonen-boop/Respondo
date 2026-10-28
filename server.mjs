@@ -4993,6 +4993,15 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
   if (wantsBooking) {
     push({ type: 'booking', mode: 'booking_form', label: actionLang === 'en' ? 'Book a time' : actionLang === 'sv' ? 'Boka tid' : 'Varaa aika' });
     if (booking) push({ type: 'booking', label: actionLang === 'en' ? 'Open calendar' : actionLang === 'sv' ? 'Öppna bokningen' : 'Avaa ajanvaraus', url: booking });
+    // When only contact details have been verified, link to the actual
+    // company's contact page instead of implying that it is a live calendar.
+    else if(contactPage) push({
+      type:'contact',mode:'website_contact',
+      label:actionLang==='en'?(contactPage.form?'Open contact form':'Contact to arrange a time')
+        :actionLang==='sv'?(contactPage.form?'Öppna kontaktformulär':'Kontakta oss för att boka tid')
+        :(contactPage.form?'Avaa yhteydenottolomake':'Tiedustele ajankohtaa'),
+      url:contactPage.value,
+    });
   }
 
   if (/tarjou[sk]|hinta-arvio|arvio|kustannusarvio|quote|estimate|offert|prisförslag|prisforslag/.test(q)) {
@@ -7156,7 +7165,7 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   const hasImportedProducts=productCatalog(rows).length>0;
   // Only a real verified service name counts as a service offering. A news
   // headline marked "Palvelut" must not suppress a retailer's product answer.
-  const verifiedOverview=verifiedServiceOverview(rows,{lang:responseLang});
+  const verifiedOverview=verifiedServiceOverview(rows,{lang:responseLang,companyName});
   const hasServiceKnowledge=Boolean(verifiedOverview);
   if (hasImportedProducts && !hasServiceKnowledge && genericCompanyQuestion(cleanMessage)) {
     const commerceQuestion=responseLang==='en'?'What do you sell?':responseLang==='sv'?'Vad säljer ni?':'Mitä myytte?';
@@ -7228,6 +7237,35 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     }
     // No evidence is better than confidently enumerating fabricated services.
     return {answer:'',handoff:true,confidence:0.2,intent:'Palvelut',sourceIds:[],selected:[]};
+  }
+
+  // An enquiry about booking must not become an unrelated missing-answer
+  // lead form when the imported site actually provides a contact page but
+  // does not publish a verified online calendar. A contact page is NOT a
+  // confirmed bookable appointment.
+  const bookingQuestion=normalizeSearchText(cleanMessage);
+  const asksHowToBook=/(?:^|\\b)(?:miten (?:voin |saan |teille )?(?:varata|varaan|varais)\\w*|voinko (?:varata|varaa)\\w*|mista (?:varaan|voin varata)|kuinka (?:voin )?varata|ajanvaraus|how (?:can|do) i book|can i book|how to book|book an appointment|hur (?:kan|gor) jag boka|kan jag boka|tidsbokning)(?:\\b|$)/i.test(bookingQuestion)
+    && !/(?:toimitus|aukiolo|delivery time|opening hours|leverans|oppettid)/i.test(bookingQuestion);
+  if(asksHowToBook){
+    const contactPage=verifiedContactPage(rows);
+    const calendar=knowledgeValue(rows,'Ajanvarauslinkki');
+    const confirmedCalendar=calendar && !bookingLinkLooksLikeContactForm(calendar);
+    const hasBookingInstructions=rows.some(row=>
+      /^(?:ajanvaraus|booking|bokning|tidsbokning)(?:\\b|\\s|:)/i.test(String(row?.title||'').trim()) &&
+      String(row?.title||'').trim()!=='Ajanvarauslinkki' &&
+      String(row?.answer||'').trim().length>15
+    );
+    if(contactPage && !confirmedCalendar && !hasBookingInstructions){
+      const answer=responseLang==='en'
+        ? 'I could not verify an online booking calendar. You can ask about arranging a time through the company’s contact page.'
+        : responseLang==='sv'
+          ? 'Jag kunde inte bekräfta någon bokningskalender. Du kan fråga om en tid via företagets kontaktsida.'
+          : 'En löytänyt vahvistettua ajanvarauskalenteria. Voit tiedustella sopivaa ajankohtaa yrityksen yhteydenottosivun kautta.';
+      return {
+        answer,handoff:false,confidence:0.88,intent:'Ajanvaraus',
+        sourceIds:[contactPage.row.id].filter(Boolean),selected:[contactPage.row],
+      };
+    }
   }
 
   const intent = inferIntent(cleanMessage);
