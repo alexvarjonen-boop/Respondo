@@ -2280,7 +2280,7 @@ function contactPage() {
         </form>
         ${demoRequest ? `<div class="demo-booking-option" style="border-top:1px solid #e2e8f0;margin-top:24px;padding-top:22px;display:grid;gap:10px">
           <p style="margin:0;color:#64748b;font-size:14px;line-height:1.6">${appText('Tai varaa suoraan 15 minuutin esittely.','Eller boka en 15 minuters demonstration direkt.','Or book a 15-minute demonstration directly.')}</p>
-          <a class="btn ghost" style="justify-self:start" href="${demoBookingUrl}" target="_blank" rel="noopener noreferrer">${appText('Varaa 15 min esittely','Boka en 15 min demo','Book a 15-minute demo')} ↗</a>
+          <a class="btn ghost" style="justify-self:start" href="${demoBookingUrl}" target="_blank" rel="noopener noreferrer" aria-label="${appText('Varaa 15 minuutin esittely (avautuu uuteen välilehteen)','Boka en 15 minuters demo (öppnas i ny flik)','Book a 15-minute demo (opens in a new tab)')}">${appText('Varaa 15 min esittely','Boka en 15 min demo','Book a 15-minute demo')} ↗</a>
           <small style="color:#64748b;line-height:1.5">${appText('Ajanvaraus avautuu englanninkielisessä Calendlyssä.','Bokningen öppnas i Calendly på engelska.','Opens the booking page in Calendly.')}</small>
         </div>` : ''}
       </section>
