@@ -7266,11 +7266,12 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     const directEmail=verifiedContactValue(rows,'Sähköposti');
     if((contactPage || directPhone || directEmail) && !confirmedCalendar && !hasBookingInstructions){
       const evidence=contactPage?.row||directPhone?.row||directEmail?.row;
+      const viaContactPage=Boolean(contactPage);
       const answer=responseLang==='en'
-        ? 'I could not verify an online booking calendar. You can ask about arranging a time through the company’s contact page.'
+        ? (viaContactPage ? 'I could not verify an online booking calendar. You can ask about arranging a time through the company’s contact page.' : 'I could not verify an online booking calendar. Please contact the company using its verified phone number or email to ask about arranging a time.')
         : responseLang==='sv'
-          ? 'Jag kunde inte bekräfta någon bokningskalender. Du kan fråga om en tid via företagets kontaktsida.'
-          : 'En löytänyt vahvistettua ajanvarauskalenteria. Voit tiedustella sopivaa ajankohtaa yrityksen yhteydenottosivun kautta.';
+          ? (viaContactPage ? 'Jag kunde inte bekräfta någon bokningskalender. Du kan fråga om en tid via företagets kontaktsida.' : 'Jag kunde inte bekräfta någon bokningskalender. Kontakta företaget via det verifierade telefonnumret eller e-postadressen för att fråga om en tid.')
+          : (viaContactPage ? 'En löytänyt vahvistettua ajanvarauskalenteria. Voit tiedustella sopivaa ajankohtaa yrityksen yhteydenottosivun kautta.' : 'En löytänyt vahvistettua ajanvarauskalenteria. Voit tiedustella sopivaa ajankohtaa yrityksen vahvistetusta puhelinnumerosta tai sähköpostiosoitteesta.');
       return {
         answer,handoff:false,confidence:0.88,intent:'Ajanvaraus',
         sourceIds:[evidence?.id].filter(Boolean),selected:evidence?[evidence]:[],
