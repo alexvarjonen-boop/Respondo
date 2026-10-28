@@ -3186,7 +3186,7 @@ function setupServiceOption() {
       <input type="checkbox" name="setupService" value="1">
       <span class="setup-service-copy">
         <span class="setup-service-title"><strong>${appText('Käyttöönottopalvelu','Installationstjänst','Setup service')}</strong><b>199 €</b></span>
-        <small>${appText('Valinnainen kertamaksu, veloitetaan heti. Analysoimme verkkosivusi, viimeistelemme botin ja ilmoitamme sähköpostitse, kun se on valmis. 3 päivän maksuton kokeilu säilyy.','Valfri engångsavgift, debiteras direkt. Vi granskar din webbplats, hjälper dig att färdigställa botten och mejlar dig när den är klar. Din 3-dagars provperiod gäller fortfarande.','Optional one-time fee, charged now. We review your website, prepare your bot and email you when it is ready. Your 3-day trial still applies.')}</small>
+        <small>${appText('Valinnainen kertamaksu. Analysoimme verkkosivusi, otamme botin käyttöön puolestasi ja lähetämme kirjautumistiedot henkilökohtaisesti sähköpostitse viimeistään viikon kuluessa. 3 päivän kokeilujakso alkaa normaalisti tilauksen yhteydessä.','Valfri engångsavgift. Vi analyserar din webbplats, installerar botten och skickar inloggningsuppgifterna personligen via e-post inom en vecka. Provperioden på 3 dagar börjar som vanligt vid beställningen.','Optional one-time fee. We review your website, set up the bot for you and personally email the login details within one week. The 3-day trial still begins when you order.')}</small>
       </span>
     </label>
     <label class="setup-service-website" hidden>
@@ -3208,8 +3208,8 @@ function bindSetupServiceOptions() {
       url.disabled=!checkbox.checked;
       url.required=checkbox.checked;
       if(!checkbox.checked) url.value='';
-      // A new assisted setup account receives a secure password-creation link
-      // after the installation is completed, not a password by email.
+      // For assisted setup, the owner assigns the login email and temporary
+      // password manually after the bot has been prepared.
       const form=wrap.closest('form#signup');
       if(form) {
         const passwordField=form.querySelector('#signupPasswordField');
@@ -3322,14 +3322,14 @@ function setupOrderConfirmation() {
           ? appText('Olemme lähettäneet sinulle sähköpostia.','Vi har skickat ett mejl till dig.','We have sent you an email.')
           : appText('Tilauksesi on vastaanotettu.','Vi har tagit emot din beställning.','Your order has been received.')}</h1>
         <p class="setup-confirmation-lead">${appText(
-          'Kiitos tilauksestasi. Seuraavaksi perehdymme yrityksesi verkkosivuihin, kokoamme botin tietopohjan ja viimeistelemme sen toimintaa, jotta se vastaa asiakkaillesi mahdollisimman hyvin.',
-          'Tack för din beställning. Nu går vi igenom din webbplats, bygger upp bottens kunskapsbas och finjusterar den så att den kan svara dina kunder så bra som möjligt.',
-          'Thank you for your order. We will now review your website, prepare the knowledge base and fine-tune your bot to answer your customers as accurately as possible.'
+          'Kiitos tilauksestasi. Käyttöönottopalvelusi on käsittelyssä. Analysoimme verkkosivusi ja otamme Respondo-botin käyttöön puolestasi. Saat kirjautumistiedot henkilökohtaisella sähköpostilla viimeistään viikon kuluessa tilauksesta.',
+          'Tack för din beställning. Vi behandlar din beställning, granskar webbplatsen och installerar botten åt dig. Du får inloggningsuppgifterna personligen via e-post inom en vecka.',
+          'Thank you for your order. Your setup service is being processed. We will review your website and set up your Respondo bot. Your login credentials will arrive in a personal email within one week.'
         )}</p>
         <div class="setup-confirmation-steps">
           <div><span>01</span><div><strong>${appText('Tilaus vastaanotettu','Beställning mottagen','Order received')}</strong><small>${appText('Käyttöönottopalvelusi on tilattu.','Din installationstjänst är beställd.','Your setup service has been ordered.')}</small></div></div>
           <div><span>02</span><div><strong>${appText('Verkkosivun analysointi ja viimeistely','Analys och konfiguration','Website review and setup')}</strong><small>${appText('Valmistelemme botin yrityksesi tietojen perusteella.','Vi förbereder botten med företagets information.','We prepare your bot using your business information.')}</small></div></div>
-          <div><span>03</span><div><strong>${appText('Saat valmiin botin sähköpostiisi','Vi mejlar när botten är klar','We email you when your bot is ready')}</strong><small>${appText('Lähetämme kirjautumisosoitteesi ja turvallisen linkin salasanan luomiseen. Voit vaihtaa salasanan myöhemmin asetuksissa.','Du får din inloggningsadress och en säker länk för att skapa lösenord. Du kan ändra det senare i inställningarna.','You will receive your login email and a secure link to create a password, which you can change later in Settings.')}</small></div></div>
+          <div><span>03</span><div><strong>${appText('Saat botin ja kirjautumistiedot viikon sisällä','Botten och inloggningen inom en vecka','Bot and login details within one week')}</strong><small>${appText('Lähetämme sinulle kirjautumissähköpostin ja väliaikaisen salasanan henkilökohtaisesti viikon sisällä. Voit vaihtaa salasanan asetuksissa.','Du får din inloggningsadress och ett tillfälligt lösenord personligen via e-post inom en vecka. Du kan ändra lösenordet senare.','You will receive your login email and temporary password personally within one week. You can change your password later in Settings.')}</small></div></div>
         </div>
         <p class="setup-confirmation-footnote">${emailed
           ? appText('Tarkista myös roskapostikansiosi.','Kontrollera även din skräppost.','Remember to check your spam folder.')
@@ -6337,13 +6337,17 @@ async function route() {
         const result=await api('/api/app/internal/setup-service-requests');
         const requests=Array.isArray(result.requests)?result.requests:[];
         setupJobs.innerHTML=requests.length?requests.map((job)=>{
-          const done=job.status==='ready' && job.ready_emailed_at;
+          const done=job.status==='ready';
+          const state=done
+            ? appText('Luovutus vahvistettu','Överlämning bekräftad','Handover confirmed')
+            : job.status==='credentials_created'
+              ? appText('Tunnukset tallennettu · lähetä henkilökohtaisesti','Uppgifter sparade · skicka personligen','Credentials saved · send personally')
+              : appText('Odottaa käyttöönottotyötä','Väntar på installation','Awaiting setup');
           return '<article class="setup-service-admin-job">'+
             '<div><strong>'+esc(job.company_name||'')+'</strong>'+
             '<a href="'+esc(job.website_url||'')+'" rel="noopener noreferrer" target="_blank">'+esc(job.website_url||'')+'</a>'+
-            '<small>'+esc(job.email||'')+'</small>'+
-            '<small>'+esc(done?appText('Valmis · vahvistus lähetetty','Klar · bekräftelse skickad','Ready · email sent'):appText('Odottaa käyttöönottoa','Väntar på installation','Awaiting setup'))+'</small></div>'+
-            (done?'':'<button type="button" class="btn dashboard-action" data-setup-ready="'+esc(job.session_id||'')+'">'+appText('Merkitse valmiiksi','Markera som klar','Mark as ready')+'</button>')+
+            '<small>'+esc(job.email||'')+'</small><small>'+esc(state)+'</small></div>'+
+            (done?'':'<a class="btn dashboard-action" href="/trafic#setup-orders">'+appText('Avaa käyttöönottotyö','Öppna installationsarbete','Open setup job')+'</a>')+
           '</article>';
         }).join(''):'<p>'+appText('Ei käyttöönottotilauksia.','Inga installationsbeställningar.','No setup requests yet.')+'</p>';
       }catch(error){
@@ -6351,24 +6355,6 @@ async function route() {
       }
     };
     $('#refreshSetupServiceJobs')?.addEventListener('click',refreshSetupJobs);
-    setupJobs?.addEventListener('click',async(e)=>{
-      const button=e.target.closest('button[data-setup-ready]');
-      if(!button)return;
-      const proceed=window.confirm(appText(
-        'Onko tämän yrityksen botti oikeasti valmis tarkistettavaksi? Asiakkaalle lähetetään sähköposti.',
-        'Är botten färdig att granskas? Ett mejl skickas till kunden.',
-        'Is this bot really ready for review? The customer will receive an email.'
-      ));
-      if(!proceed)return;
-      button.disabled=true;
-      try{
-        await api('/api/app/internal/setup-service-requests/'+encodeURIComponent(button.dataset.setupReady)+'/ready',{method:'POST',body:'{}'});
-        await refreshSetupJobs();
-      }catch(error){
-        button.disabled=false;
-        window.alert(error.message||appText('Viestiä ei voitu lähettää.','Det gick inte att skicka mejlet.','Could not send the email.'));
-      }
-    });
     if(setupJobs) refreshSetupJobs();
     const premiumMoreButton = $('#premiumMobileMoreButton');
     const premiumMoreSheet = $('#premiumMobileMoreSheet');
