@@ -1488,6 +1488,23 @@ function setupServiceCheckoutLineItem() {
   };
 }
 
+// Stripe must bill only the EUR 199 one-time setup and never bill the plan
+// for the server-configured OWNER_FREE_CODE. A global discount coupon would
+// also discount setup, so use a genuine zero-price recurring Checkout item.
+function ownerFreeSetupCheckoutLineItem(plan) {
+  if (!Object.hasOwn(CURRENT_PRICE_CENTS,plan)) {
+    throw Object.assign(new Error('Maksuttoman tilauksen koodi ei ole voimassa tällä paketilla.'),{publicStatus:400});
+  }
+  return {
+    price_data:{
+      currency:'eur',unit_amount:0,
+      recurring:{interval:plan.endsWith('_yearly')?'year':'month',interval_count:1},
+      product_data:{name:CURRENT_PRODUCT_NAMES[plan]+' (henkilökohtainen kampanjakoodi, 0 €)'},
+    },
+    quantity:1,
+  };
+}
+
 async function stripeCheckoutLineItem(plan) {
   const priceId=stripePriceForPlan(plan);
   if (!Object.hasOwn(CURRENT_PRICE_CENTS, plan)) {
@@ -9856,7 +9873,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   const normalizedPlan = normalizeCheckoutPlan(plan);
   const referralCode = normalizeReferralCode(req.body.referralCode);
   const freeReferral = isFreeReferralCode(referralCode);
-  if (setupService && (freeReferral || normalizedPlan === 'owner_test')) return res.status(400).json({error:'Käyttöönottopalvelu on saatavilla vain normaalin maksullisen tilauksen yhteydessä.'});
+  if (setupService && normalizedPlan === 'owner_test') return res.status(400).json({error:'Käyttöönottopalvelu on saatavilla vain normaalin maksullisen tilauksen yhteydessä.'});
   const checkoutCountry = checkoutCountryPolicy(req.body?.billingCountry);
   if (!checkoutCountry.ok) return res.status(422).json({ error:checkoutCountry.error });
   if (req.body?.businessPurchase !== true) return res.status(422).json({ error:'Vahvista, että tilaat palvelun yrityskäyttöön.' });
@@ -9883,7 +9900,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
     return res.status(400).json({ error: 'Suosittelukoodi toimii vain kuukausitilauksessa.' });
   }
 
-  if (!freeReferral && !stripe) {
+  if ((!freeReferral || setupService) && !stripe) {
     return res.status(503).json({ error: 'Stripe-maksuja ei ole yhdistetty.' });
   }
 
@@ -9894,7 +9911,9 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       }
     }
 
-    const checkoutLineItem = freeReferral ? null : await stripeCheckoutLineItem(normalizedPlan);
+    const checkoutLineItem = freeReferral
+      ? (setupService ? ownerFreeSetupCheckoutLineItem(normalizedPlan) : null)
+      : await stripeCheckoutLineItem(normalizedPlan);
 
     const existing = await q(
       'SELECT id,status,stripe_customer_id,stripe_subscription_id FROM users WHERE lower(email)=lower($1)',
@@ -9950,8 +9969,8 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       const preferredLanguage = ['fi','sv','en'].includes(String(req.body.language || '').toLowerCase())
         ? String(req.body.language).toLowerCase()
         : 'en';
-      const initialStatus = freeReferral ? 'active' : 'pending';
-      const initialSubscriptionStatus = freeReferral ? 'active' : null;
+      const initialStatus = freeReferral && !setupService ? 'active' : 'pending';
+      const initialSubscriptionStatus = freeReferral && !setupService ? 'active' : null;
 
       await client.query(
         `INSERT INTO users(
@@ -9989,8 +10008,8 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           companyName,
           businessId || null,
           email,
-          freeReferral,
-          freeReferral ? 'active' : 'pending',
+          freeReferral && !setupService,
+          freeReferral && !setupService ? 'active' : 'pending',
           normalizedPlan,
         ],
       );
@@ -10004,7 +10023,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
         );
       }
 
-      if (freeReferral) {
+      if (freeReferral && !setupService) {
         await client.query('COMMIT');
         try { await ensureReferralCode(id); await sendWelcomeEmailOnce(id); } catch(e) { console.error('Welcome email for free signup failed:',e?.message); }
         setSession(res, { id, email });
@@ -10037,6 +10056,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
             ...(setupService ? { setup_website:setupWebsite } : {}),
             ...(referralCode ? { referral_code: referralCode } : {}),
+            ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1'} : {}),
           },
         },
         tax_id_collection: { enabled: true },
@@ -10058,6 +10078,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
           ...(setupService ? { setup_website:setupWebsite } : {}),
           ...(referralCode ? { referral_code: referralCode } : {}),
+            ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1'} : {}),
         },
       });
 
@@ -10792,7 +10813,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const plan=normalizeCheckoutPlan(req.body?.plan);
   const referralCode=normalizeReferralCode(req.body?.referralCode);
   const freeReferral=isFreeReferralCode(referralCode);
-  if(setupService && (freeReferral || plan==='owner_test')) return res.status(400).json({error:'Käyttöönottopalvelu on saatavilla vain normaalin maksullisen tilauksen yhteydessä.'});
+  if(setupService && plan==='owner_test') return res.status(400).json({error:'Käyttöönottopalvelu on saatavilla vain normaalin maksullisen tilauksen yhteydessä.'});
   const checkoutCountry=checkoutCountryPolicy(req.body?.billingCountry);
   if(!checkoutCountry.ok) return res.status(422).json({error:checkoutCountry.error});
   if(req.body?.businessPurchase!==true) return res.status(422).json({error:'Vahvista, että tilaat palvelun yrityskäyttöön.'});
@@ -10800,11 +10821,11 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   if(!companyName) return res.status(400).json({ error:'Anna yrityksen nimi.' });
   if(req.body?.acceptedTerms!==true) return res.status(400).json({ error:'Hyväksy käyttöehdot ja tietosuojaseloste.' });
   if(referralCode && !freeReferral && !planAllowsReferral(plan)) return res.status(400).json({ error:'Suosittelukoodi toimii vain kuukausitilauksessa.' });
-  if(!freeReferral && !stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
+  if((!freeReferral || setupService) && !stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
 
   let checkoutLineItem=null;
-  if (!freeReferral) {
-    try { checkoutLineItem=await stripeCheckoutLineItem(plan); }
+  if (!freeReferral || setupService) {
+    try { checkoutLineItem=freeReferral ? ownerFreeSetupCheckoutLineItem(plan) : await stripeCheckoutLineItem(plan); }
     catch(e) { console.error('Stripe checkout price validation failed:',e?.message); return res.status(503).json({error:'Tilauksen hintaa ei voitu vahvistaa. Yritä myöhemmin uudelleen.'}); }
   }
 
@@ -10817,7 +10838,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const exists=await q('SELECT 1 FROM tenants WHERE slug=$1',[tenantSlug]);
   if(exists.rowCount) tenantSlug=tenantSlug+'-'+crypto.randomBytes(3).toString('hex');
 
-  if(freeReferral){
+  if(freeReferral && !setupService){
     const client=await pool.connect();
     try{
       await client.query('BEGIN');
@@ -10931,6 +10952,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
           ...(setupService ? { setup_website:setupWebsite } : {}),
           ...(referralCode ? { referral_code:referralCode } : {}),
+          ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1'} : {}),
         },
       },
       tax_id_collection:{enabled:true},
@@ -10950,6 +10972,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
         ...(setupService ? { setup_website:setupWebsite } : {}),
         ...(referralCode ? { referral_code:referralCode } : {}),
+          ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1'} : {}),
       },
     });
 
