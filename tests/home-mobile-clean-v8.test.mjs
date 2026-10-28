@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {spiralHeroMarkup} from '../public/spiral-hero.js';
 const read=p=>readFileSync(new URL('../public/'+p,import.meta.url),'utf8');
-test('iPhone uses one clean pricing link and a smaller centered orbit',()=>{
+test('iPhone uses one clear demo link and a smaller centered orbit',()=>{
  const css=read('home-studio-v7.css');
  for(const part of ['Observatory v9','background:none!important','border-radius:0!important',
    '@media(max-width:600px)','top:50%;width:min(61vw,245px)',
@@ -20,14 +20,16 @@ test('real chat launcher stays, while injected navigation guide disappears',()=>
  assert.ok(!effects.includes('Ask the bot to navigate'));
  assert.ok(!styles.includes('fx-chat-nav-hint'));
 });
-for(const [lang,index,pricing] of [
- ['fi',0,'Paketit alk. 49 €/kk'],['sv',1,'Paket från 49 €/mån'],['en',2,'Plans from €49/month']
+for(const [lang,index,cta] of [
+ ['fi',0,'Kokeile bottia'],['sv',1,'Testa botten'],['en',2,'Try the bot']
 ]){
  test('localized hero keeps exactly one main link '+lang,()=>{
   const hero=spiralHeroMarkup((...t)=>t[index],lang);
   assert.equal(hero.split('class="rs-first-order-link"').length-1,1);
-  assert.ok(hero.includes('href="#pricing"'));
-  assert.ok(hero.includes(pricing));
+  assert.ok(hero.includes('href="/assistant?lang='+lang+'"'));
+  assert.ok(hero.includes(cta));
+  assert.ok(hero.includes('aria-label="'+cta+'"'));
+  assert.ok(!hero.includes('Plans from €49/month'));
   for(const unexpected of ['rs-hero-actions','rs-hero-demo-link','rs-hero-demo-icon','<span aria-hidden="true">↗'])
     assert.ok(!hero.includes(unexpected),unexpected);
   assert.equal(hero.split('data-rs-card data-index').length-1,10);
@@ -42,10 +44,22 @@ test('index busts Safari assets, including both nested ES module imports',()=>{
    const assetUrl=html.slice(start,html.indexOf('"',start));
    if(asset==='app.js'){
      assert.ok(assetUrl.includes('-dashboard-entry-v1-all-sections-v3-first-viewport-v4'),asset);
-     assert.ok(assetUrl.includes('-first-screen-actions-v5') && assetUrl.includes('-dashboard-brand-v7') && assetUrl.includes('-dashboard-ui-v9') && assetUrl.includes('-polish-v11') && assetUrl.includes('-hero-clarity-v17') && assetUrl.includes('-footer-rights-v18') && assetUrl.includes('-demo-v21-guided-prod-v22-public-demo-wizard-v23') && assetUrl.endsWith('-dark-workspace-v24-minimal-v26-orbit-after-chat-v29-qa-on-demand-v30-home-helix-v31'),asset);
+     assert.ok(assetUrl.includes('-first-screen-actions-v5') && assetUrl.includes('-dashboard-brand-v7') && assetUrl.includes('-dashboard-ui-v9') && assetUrl.includes('-polish-v11') && assetUrl.includes('-hero-clarity-v17') && assetUrl.includes('-footer-rights-v18') && assetUrl.includes('-demo-v21-guided-prod-v22-public-demo-wizard-v23') && assetUrl.endsWith('-dark-workspace-v24-minimal-v26-orbit-after-chat-v29-qa-on-demand-v30-home-helix-v31-hero-try-bot-v32'),asset);
    } else assert.ok(assetUrl.endsWith('-mobile-simplify-v9'),asset);
  }
  assert.ok(read('app.js').includes('-mobile-simplify-v9'));
  assert.ok(read('apple-home.js').includes('-mobile-simplify-v9'));
  assert.equal(css.split('{').length,css.split('}').length);
+});
+
+test('hero try-the-bot CTA reaches the public demo in each language',()=>{
+  const html=read('index.html');
+  const child=read('apple-home.js');
+  const parent=read('app.js');
+  for(const [lang,idx] of [['fi',0],['sv',1],['en',2]]){
+    const hero=spiralHeroMarkup((...t)=>t[idx],lang);
+    assert.ok(hero.includes('href="/assistant?lang='+lang+'"'));
+    assert.ok(!hero.includes('href="#pricing"'));
+  }
+  for(const v of [html,child,parent])assert.ok(v.includes('hero-try-bot-v32'));
 });
