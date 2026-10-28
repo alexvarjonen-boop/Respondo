@@ -83,7 +83,7 @@ test('orb reveals the active view after the chat and remains reachable while scr
   assert.match(workspace,/original\.requestSubmit\(\)/);
 });
 
-test('all browser-facing URLs get a new mobile cache key',()=>{
+test('all browser-facing URLs get a new mobile cache key',async()=>{
   const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
   assert.match(index,/workspace-orbit-v28\.css\?v=20261028-after-chat-v29/);
   assert.match(index,/orbit-after-chat-v29"><\/script>/);
