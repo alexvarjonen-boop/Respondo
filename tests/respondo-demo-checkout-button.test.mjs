@@ -65,3 +65,33 @@ test('first-party ordering CTA stays visible below a short answer, never for a m
   assert.match(css,/-webkit-text-fill-color:#101b2e!important/);
   assert.match(read('public/index.html'),/workspace-continuation-v24\.css\?v=[^"]*subscribe-cta-v37/);
 });
+
+test('previously missed Finnish purchase inflections open the real signup page',()=>{
+  for(const message of [
+    'Miten saan Respondon tilattua?',
+    'Miten tilaan tämän?',
+    'Mistä sen saa tilattua?',
+    'Miten pääsen tilaamaan Respondon?',
+    'Olen tilaamassa Respondoa'
+  ]) {
+    const result=respondoCheckoutAction(message,'fi');
+    assert.equal(new URL(result?.url).pathname,'/tilaus',message);
+    assert.ok(respondoSiteNavigationActions(message,'fi').some(action=>action.type==='site_signup'),message);
+  }
+});
+test('public demo purchase answer bypasses ecommerce product generation for Respondo only',()=>{
+  const server=read('server.mjs');
+  const demo=server.slice(server.indexOf("app.post('/api/public/demo-chat'"),server.indexOf("\napp.",server.indexOf("app.post('/api/public/demo-chat'")+100));
+  assert.match(demo,/const directSubscribe=firstPartyRespondoPreview/);
+  assert.match(demo,/if\(directSubscribe\)\{/);
+  assert.match(demo,/actions:\[directSubscribe\],products:\[\]/);
+  assert.ok(demo.indexOf('if(directSubscribe)')<demo.indexOf('await generateGroundedAnswer({'));
+  assert.match(demo,/enteredDemoHost==='respondoai.fi'/);
+});
+test('first-party website widget shows subscription rather than unrelated ecommerce cards',()=>{
+  const server=read('server.mjs');
+  const chat=server.slice(server.indexOf("app.post('/api/public/:slug/chat'"),server.indexOf("\napp.",server.indexOf("app.post('/api/public/:slug/chat'")+100));
+  assert.match(chat,/const widgetSubscribe=firstPartyRespondo/);
+  assert.match(chat,/let actions = widgetSubscribe/);
+  assert.match(chat,/products:widgetSubscribe \? \[\] : await hydratedProductCards\(result\)/);
+});

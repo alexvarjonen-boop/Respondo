@@ -12643,6 +12643,24 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const firstPartyRespondoPreview=isRespondoDemoWebsite||previewIsFirstPartyRespondo;
     const previewFaq=firstPartyRespondoPreview
       ? respondoProductFaqMatch(message,detectedLang,history) : null;
+    // Respondo subscriptions must never be treated as Shopify-like products.
+    // Handle verified first-party signup intent before retrieval can surface
+    // unrelated product cards or an outdated long-form answer.
+    const directSubscribe=firstPartyRespondoPreview
+      ? respondoCheckoutAction(message,detectedLang,previewFaq?.id||'',SEO_CANONICAL_ORIGIN)
+      : null;
+    if(directSubscribe){
+      const priceFaq=previewFaq && /^respondo-faq-(?:pricing|monthly-pricing|annual-pricing|basic|advanced|business)$/.test(previewFaq.id);
+      const concise=priceFaq && String(previewFaq.answer||'').length<=360
+        ? sanitizeUserFacingText(previewFaq.answer)
+        : detectedLang==='en'
+          ? 'Choose a Respondo subscription plan using the button below.'
+          : detectedLang==='sv'
+            ? 'Välj ett Respondo-abonnemang via knappen nedan.'
+            : 'Tilaa Respondo valitsemalla paketti alla olevasta painikkeesta.';
+      return res.json({answer:concise,handoff:false,confidence:1,intent:'Respondo subscription',
+        actions:[directSubscribe],products:[],canLeaveContact:false,language:detectedLang});
+    }
     let result = previewFaq
       ? {answer:previewFaq.answer,handoff:false,confidence:1,intent:'Respondo FAQ',
          sourceIds:[previewFaq.id],selected:[]}
@@ -13314,7 +13332,17 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const firstPartyFaq = firstPartyRespondo
       ? respondoProductFaqMatch(message, detectedLang, history)
       : null;
-    const result = firstPartyFaq
+    const widgetSubscribe=firstPartyRespondo
+      ? respondoCheckoutAction(message,detectedLang,firstPartyFaq?.id||'',SEO_CANONICAL_ORIGIN)
+      : null;
+    const result = widgetSubscribe ? {
+      answer:detectedLang==='en'
+        ? 'Choose a Respondo subscription plan using the button below.'
+        :detectedLang==='sv'
+          ? 'Välj ett Respondo-abonnemang via knappen nedan.'
+          : 'Tilaa Respondo valitsemalla paketti alla olevasta painikkeesta.',
+      handoff:false,confidence:1,intent:'Respondo subscription',sourceIds:[],selected:[],
+    } : firstPartyFaq
       ? {
           answer:firstPartyFaq.answer,
           handoff:false,
@@ -13352,7 +13380,8 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     }
 
     const actionRows = firstPartyRespondo ? safeKnowledgeRows : kr.rows;
-    let actions = chatActions(actionRows, message, handoff, responseLang, result.selected);
+    let actions = widgetSubscribe
+      ? [widgetSubscribe] : chatActions(actionRows, message, handoff, responseLang, result.selected);
     const publicPlanAccess = planEntitlements(t.subscription_plan);
     if (!publicPlanAccess.allCurrentFeatures) {
       actions = actions.filter((action) => action?.type !== 'order_status');
@@ -13397,7 +13426,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       sourceIds: result.sourceIds,
       verified: !handoff && Array.isArray(result.sourceIds) && result.sourceIds.length > 0,
       actions,
-      products:await hydratedProductCards(result),
+      products:widgetSubscribe ? [] : await hydratedProductCards(result),
       canLeaveContact: handoff,
     });
   } catch (e) {
