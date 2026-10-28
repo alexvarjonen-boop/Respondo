@@ -758,6 +758,7 @@ function supplementalCompanyDetail(block,docUrl){
   if(!heading || heading.length<4 || heading.length>95 ||
      answer.length<42 || answer.length>900 || answer.split(/\s+/).length<7) return null;
   if(junk.test(heading) || junk.test(answer) || review.test(heading+' '+answer) ||
+     billingAddressNoise.test(heading+' '+answer) ||
      manufacturerContactContext(heading) || manufacturerContactContext(answer)) return null;
   // Never mistake a site-wide navigation label or SEO slogan for factual copy.
   if(/^(?:home|etusivu|meistä|meista|about|about us|welcome|tervetuloa|our company|yritys|company|read more|lue lisää|contact us|ota yhteyttä|learn more|our story)$/i.test(heading)) return null;
