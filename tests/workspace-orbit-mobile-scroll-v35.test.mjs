@@ -33,7 +33,7 @@ test('last swipe can exit to content and tapping the name still navigates',()=>{
   assert.doesNotMatch(orbit,/<span aria-hidden="true">↗<\/span>/);
 });
 test('all updated versions reach iOS caches and keep the original preview',()=>{
-  assert.match(index,/workspace-orbit-v28\.css\?v=20261028-mobile-scroll-guard-v35/);
+  assert.match(index,/workspace-orbit-v28\.css\?v=20261028-preview-readable-v36/);
   assert.match(index,/app\.js\?v=[^"]+mobile-scroll-guard-v35/);
   assert.match(app,/workspace-continuation-v24\.js\?v=20261028-mobile-scroll-guard-v35/);
   assert.match(ws,/workspace-orbit-v28\.js\?v=20261028-mobile-scroll-guard-v35/);
