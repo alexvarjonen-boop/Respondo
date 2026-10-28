@@ -73,13 +73,16 @@ function ensureWorkspace(demo) {
         <small class="respondo-workspace-kicker">RESPONDO OS</small>
         <h1 id="respondoWorkspaceModuleTitle"></h1>
         <div class="respondo-workspace-module-card">
-          <div id="respondoWorkspaceModules"></div>
+          <div id="respondoWorkspaceCardBody"></div><div id="respondoWorkspaceModules" hidden aria-hidden="true"></div>
           <div class="respondo-workspace-empty" id="respondoWorkspaceEmpty" hidden>${demo?choose('Luo yritystili käyttääksesi tätä toimintoa.','Skapa ett företagskonto för att använda funktionen.','Create a company account to use this feature.')+' <a href="/tilaus?lang='+lang+'">'+choose('Aloita tästä','Börja här','Get started')+' →</a>':choose('Tämän osion tiedot eivät ole vielä saatavilla.','Uppgifter för detta avsnitt finns inte ännu.','This section is not available yet.')}</div>
         </div>
       </div>
     </div>`;
   main.insertBefore(workspace,main.querySelector('.dashboard-view-section'));
-  if(logo)workspace.querySelector('.respondo-workspace-brand-logo')?.appendChild(logo.cloneNode(true));
+  if(logo){
+    const originalMark=logo.querySelector('.brand-mark,.logo img,.logo svg,.brand img,.brand svg') || logo.querySelector('img,svg');
+    if(originalMark) workspace.querySelector('.respondo-workspace-brand-logo')?.appendChild(originalMark.cloneNode(true));
+  }
   if(languages)workspace.querySelector('.respondo-workspace-language')?.appendChild(languages);
   return workspace;
 }
@@ -117,90 +120,221 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   const progressPercent=$('#websiteImportProgressPercent');
   const importButton=$('#importWebsite');
 
+
+  const storage=$('#respondoWorkspaceModules');
+  const card=$('#respondoWorkspaceCardBody');
+  const translate=(fi,sv,en)=>workspace.dataset.lang==='fi'?fi:workspace.dataset.lang==='sv'?sv:en;
+  const safe=(value)=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let selected='bot';
+  let activePanel=null;
+  const knownSections=[...storage.querySelectorAll('.dashboard-view-section')];
+  // Only the selected module may leave storage. Explicit inline display wins
+  // against the old high-specificity dashboard CSS on iOS Safari.
+  const park=()=>{
+    if(activePanel){
+      activePanel.style.setProperty('display','none','important');
+      activePanel.hidden=true;
+      storage.appendChild(activePanel);
+      activePanel=null;
+    }
+  };
+  const showPanel=(id)=>{
+    park();
+    const target=storage.querySelector('#'+id);
+    if(!target)return false;
+    target.hidden=false;
+    target.classList.remove('dashboard-view-hidden');
+    target.style.setProperty('display','block','important');
+    card.appendChild(target);
+    activePanel=target;
+    return true;
+  };
+  const callout=(heading,body,cta=true)=>{
+    card.innerHTML='<div class="rs-minimal-card"><h2>'+safe(heading)+'</h2><p>'+safe(body)+'</p>'+
+      (cta?'<a class="rs-minimal-button" href="/tilaus?lang='+encodeURIComponent(workspace.dataset.lang)+'">'+safe(translate('Luo yritystili','Skapa företagskonto','Create a company account'))+' →</a>':'')+'</div>';
+  };
+  const showSettings=()=>{
+    park();
+    const original=$('#businessProfileForm');
+    if(!original){callout(translate('Yrityksen tiedot','Företagsuppgifter','Company details'),translate('Tietoja ei saatavilla.','Inga uppgifter tillgängliga.','Details unavailable.'),false);return;}
+    const fields=[
+      ['website',translate('Verkkosivu','Webbplats','Website'), 'url'],
+      ['botName',translate('Botin nimi','Bottens namn','Bot name'),'text'],
+      ['greeting',translate('Aloitusviesti','Välkomstmeddelande','Welcome message'),'text'],
+      ['email',translate('Sähköposti','E-post','Email'),'email'],
+      ['phone',translate('Puhelinnumero','Telefonnummer','Phone number'),'tel'],
+      ['hours',translate('Aukioloajat','Öppettider','Opening hours'),'text']
+    ];
+    const examples={website:translate('https://yritys.fi','https://foretag.se','https://company.fi'),
+      email:translate('info@yritys.fi','info@foretag.se','info@company.fi')};
+    card.innerHTML='<form id="rsSimpleSettingsForm" class="rs-minimal-card rs-settings-card">'+
+      '<p class="rs-minimal-intro">'+safe(translate('Muuta vain tarvitsemasi tiedot. Muut botin asetukset säilyvät ennallaan.','Ändra bara de uppgifter du behöver. Övriga inställningar sparas.','Change only what you need. All other bot settings stay saved.'))+'</p>'+
+      fields.map(([key,label,type])=>'<label class="rs-simple-field"><span>'+safe(label)+'</span><input type="'+type+'" name="'+key+'" maxlength="255" placeholder="'+safe(examples[key]||'')+'" value="'+safe(original.elements[key]?.value||'')+'"></label>').join('')+
+      '<div class="rs-simple-actions"><button type="submit" class="rs-minimal-button">'+safe(translate('Tallenna muutokset','Spara ändringar','Save changes'))+'</button>'+
+      '<button type="button" class="rs-secondary-button" data-workspace-nav="bot">'+safe(translate('Kokeile bottia','Testa botten','Try the bot'))+' →</button></div>'+
+      '<p id="rsSimpleSettingsMessage" role="status" aria-live="polite"></p></form>';
+    const form=$('#rsSimpleSettingsForm');
+    form?.addEventListener('submit',(event)=>{
+      event.preventDefault();
+      const message=$('#rsSimpleSettingsMessage');
+      if(!form.reportValidity())return;
+      for(const [key] of fields){
+        const source=original.elements[key], user=form.elements[key];
+        if(source&&user){
+          source.value=user.value;
+          source.dispatchEvent(new Event('input',{bubbles:true}));
+        }
+      }
+      const botName=$('#previewBotName');
+      if(botName)botName.textContent=String(original.elements.botName?.value||'RESPONDO AI');
+      const bubble=$('#previewChat .preview-bubble.bot');
+      if(bubble && $('#previewChat')?.children.length===1)bubble.textContent=original.elements.greeting?.value||'';
+      if(demo){
+        if(message)message.textContent=translate('Muutokset käytössä tässä kokeilussa.','Ändringarna gäller i demon.','Changes applied to this demo.');
+      }else{
+        // Existing authenticated handler posts the full tenant profile;
+        // this compact UI only synchronizes its six fields.
+        original.requestSubmit();
+        if(message)message.textContent=translate('Tallennetaan tietoja…','Sparar uppgifter…','Saving changes…');
+        const target=$('#businessProfileMsg');
+        if(target){
+          const observer=new MutationObserver(()=>{
+            if(!target.textContent.trim())return;
+            if(message)message.textContent=target.textContent.trim();
+            observer.disconnect();
+          });
+          observer.observe(target,{childList:true,subtree:true,characterData:true});
+          setTimeout(()=>observer.disconnect(),15000);
+        }
+      }
+    });
+  };
+  const pages={
+    bot:translate('Kokeile bottia','Testa botten','Try the bot'),
+    overview:translate('Yleisnäkymä','Översikt','Overview'),
+    setup:translate('Yritys ja botti','Företag och bot','Company and bot'),
+    answers:translate('Vastaukset','Svar','Answers'),
+    customers:translate('Asiakkaat','Kunder','Customers'),
+    automation:translate('Toiminnot','Funktioner','Actions'),
+    install:translate('Asennus','Installation','Installation'),
+    profile:translate('Profiili','Profil','Profile'),
+    billing:translate('Laskutus','Fakturering','Billing'),
+    settings:translate('Asetukset','Inställningar','Settings')
+  };
+  const tabs={
+    answers:[['knowledge',translate('Tietopohja','Kunskapsbas','Knowledge base')],['unanswered',translate('Puuttuvat vastaukset','Saknade svar','Unanswered')]],
+    customers:[['conversations',translate('Keskustelut','Konversationer','Conversations')],['leads',translate('Yhteydenotot','Kontaktförfrågningar','Leads')],['live-inbox',translate('Live-chat','Livechatt','Live chat')]],
+    profile:[['workspaces',translate('Yritykset','Företag','Companies')],['account-security',translate('Tilin asetukset','Kontoinställningar','Account security')]]
+  };
+  const primary={
+    answers:'knowledge',customers:'conversations',automation:'actions2',install:'install',
+    profile:'workspaces',billing:'billing'
+  };
+  let currentTab=null;
+  function showModuleTab(id){
+    currentTab=id;
+    const container=$('#respondoWorkspaceCardBody');
+    if(!container)return;
+    container.replaceChildren();
+    if(!showPanel(id)){
+      callout(translate('Ei vielä tietoja','Inga uppgifter ännu','Nothing here yet'),
+              translate('Tämä osio on tyhjä.','Det här avsnittet är tomt.','This section is empty.'),false);
+    }
+    workspace.querySelectorAll('[data-workspace-tab]').forEach(button=>{
+      button.classList.toggle('active',button.dataset.workspaceTab===id);
+      button.setAttribute('aria-pressed',String(button.dataset.workspaceTab===id));
+    });
+  }
+  function selectView(next){
+    selected=Object.hasOwn(pages,next)?next:'bot';
+    workspace.dataset.currentView=selected;
+    park();
+    card.replaceChildren();
+    workspace.querySelectorAll('[data-workspace-page]').forEach(element=>{
+      const active=selected==='bot'?'bot':selected==='overview'?'overview':'modules';
+      element.hidden=element.dataset.workspacePage!==active;
+    });
+    workspace.querySelectorAll('[data-workspace-nav]').forEach(button=>{
+      const on=button.dataset.workspaceNav===selected;
+      button.classList.toggle('active',on);
+      if(on)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+    });
+    const heading=$('#respondoWorkspaceModuleTitle');
+    if(heading)heading.textContent=pages[selected]||pages.bot;
+    const empty=$('#respondoWorkspaceEmpty');
+    if(empty)empty.hidden=true;
+    // Demo has no real customer accounts, Stripe billing, installation or
+    // automation records. Show a short truthful CTA, never unrelated data.
+    if(demo && ['customers','automation','install','billing','profile'].includes(selected)){
+      const details={
+        customers:translate('Asiakaskeskustelut ja liidit näkyvät omalla yritystilillä.','Kundkonversationer och leads finns på ett företagskonto.','Customer conversations and leads appear in your company account.'),
+        automation:translate('Automaatiot ovat käytettävissä yritystilillä.','Automatiseringar finns med företagskonto.','Automations are available with a company account.'),
+        install:translate('Asennuskoodi luodaan yritystilillä.','Installationskoden skapas i företagskontot.','Your website installation code is created in a company account.'),
+        billing:translate('Demosta ei veloiteta. Valitse yrityksellesi tilaus.','Demon är gratis. Välj abonnemang för företaget.','This demo is free. Choose a plan for your company.'),
+        profile:translate('Profiili luodaan rekisteröitymisen yhteydessä.','Profilen skapas vid registrering.','Your profile is created when you sign up.')
+      };
+      callout(pages[selected],details[selected]);
+    }else if(['settings','setup'].includes(selected)){
+      showSettings();
+    }else if(primary[selected]){
+      const available=tabs[selected]?.filter(([id])=>storage.querySelector('#'+id));
+      if(available?.length){
+        const header=document.createElement('nav');
+        header.className='rs-module-tabs';
+        header.setAttribute('aria-label',pages[selected]);
+        header.innerHTML=available.map(([id,label])=>'<button type="button" data-workspace-tab="'+safe(id)+'">'+safe(label)+'</button>').join('');
+        card.before(header);
+        workspace.querySelectorAll('.rs-module-tabs').forEach((old)=>{if(old!==header)old.remove()});
+      }else workspace.querySelectorAll('.rs-module-tabs').forEach(old=>old.remove());
+      showModuleTab(primary[selected]);
+    }else{
+      // Nothing else from the legacy dashboard should leak into the current
+      // menu item even if original data modules are still present in the DOM.
+      workspace.querySelectorAll('.rs-module-tabs').forEach(old=>old.remove());
+    }
+    if(!primary[selected])workspace.querySelectorAll('.rs-module-tabs').forEach(old=>old.remove());
+    window.scrollTo({top:0,behavior:'auto'});
+  }
+
   if(!workspace.dataset.initialized){
     workspace.dataset.initialized='1';
     const closeMenu=()=>{if(menu)menu.hidden=true;toggle?.setAttribute('aria-expanded','false');};
     toggle?.addEventListener('click',(event)=>{
       event.stopPropagation();
-      const opening=menu?.hidden;
-      if(menu) menu.hidden=!opening;
-      toggle.setAttribute('aria-expanded',String(Boolean(opening)));
+      const opening=Boolean(menu?.hidden);
+      if(menu)menu.hidden=!opening;
+      toggle.setAttribute('aria-expanded',String(opening));
+    });
+    workspace.addEventListener('click',(event)=>{
+      const tab=event.target.closest?.('[data-workspace-tab]');
+      if(tab && workspace.contains(tab)){showModuleTab(tab.dataset.workspaceTab);return;}
+      const button=event.target.closest?.('[data-workspace-nav]');
+      if(button && workspace.contains(button)){
+        selectView(button.dataset.workspaceNav);
+        closeMenu();
+      }
     });
     document.addEventListener('click',(event)=>{if(!workspace.contains(event.target))closeMenu();});
     document.addEventListener('keydown',(event)=>{if(event.key==='Escape')closeMenu();});
-    workspace.querySelectorAll('[data-workspace-nav]').forEach(button=>button.addEventListener('click',()=>{
-      selectView(button.dataset.workspaceNav);
-      closeMenu();
-    }));
     const updateScan=()=>{
       if(!status)return;
-      const failure=error?.style.display!=='none' ? error?.textContent?.trim(): '';
-      const reviewText=review?.textContent?.trim()||'';
+      const fail=error?.style.display!=='none' ? (error?.textContent?.trim()||''):'';
+      const info=review?.textContent?.trim()||'';
       const running=Boolean(importButton?.disabled);
-      const translated=(fi,sv,en)=>workspace.dataset.lang==='sv'?sv:workspace.dataset.lang==='en'?en:fi;
-      if(failure){
-        status.textContent=translated('Tietojen haku epäonnistui','Hämtningen misslyckades','Website scan failed');
-        if(detail)detail.textContent=failure;
-      }else if(reviewText){
-        status.textContent=translated('Verkkosivun haku valmis','Webbplatssökningen är klar','Website scan complete');
-        if(detail)detail.textContent=demo
-          ? translated('Voit nyt testata bottia.','Du kan nu testa botten.','You can now test the bot.')
-          : translated('Tarkista löydetyt tiedot asetuksissa ennen hyväksymistä.','Granska uppgifterna i inställningarna innan du godkänner dem.','Review imported facts in Settings before approving them.');
+      if(fail){
+        status.textContent=translate('Tietojen haku epäonnistui','Hämtningen misslyckades','Website scan failed');
+        if(detail)detail.textContent=fail;
       }else if(running){
-        status.textContent=progressLabel?.textContent?.trim()||translated('Haetaan verkkosivun tietoja…','Hämtar webbplatsuppgifter…','Scanning website…');
+        status.textContent=progressLabel?.textContent?.trim()||translate('Haetaan tietoja…','Hämtar uppgifter…','Scanning website…');
         if(detail)detail.textContent=progressPercent?.textContent?.trim()||'';
-      }else if(!importButton){
-        status.textContent=translated('Botti valmis kokeiltavaksi','Botten är redo att testas','Bot ready to try');
-        if(detail)detail.textContent='';
+      }else if(info){
+        status.textContent=translate('Verkkosivun haku valmis','Webbplatssökningen är klar','Website scan complete');
+        if(detail)detail.textContent=demo?translate('Kysy botilta mitä vain.','Fråga botten vad du vill.','Ask your bot a question.'):translate('Tarkista löydetyt tiedot asetuksissa.','Granska uppgifterna i inställningarna.','Review imported information in settings.');
       }
     };
-    importButton?.addEventListener('click',()=>{
-      if(status) status.textContent=workspace.dataset.lang==='sv'?'Hämtar webbplatsuppgifter…':workspace.dataset.lang==='en'?'Scanning website…':'Haetaan verkkosivun tietoja…';
-      if(detail)detail.textContent='';
-      setTimeout(updateScan,50);
-    },{capture:true});
-    for(const node of [review,error,progress]){
-      if(node)new MutationObserver(updateScan).observe(node,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['style']});
-    }
+    importButton?.addEventListener('click',()=>{if(status)status.textContent=translate('Haetaan tietoja…','Hämtar uppgifter…','Scanning website…');setTimeout(updateScan,50);},{capture:true});
+    for(const node of [review,error,progress])if(node)new MutationObserver(updateScan).observe(node,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['style']});
     updateScan();
-  }
-
-  function selectView(next){
-    const allowed=new Set(['bot','overview','setup','answers','customers','automation','install','profile','billing','settings']);
-    const section=allowed.has(next)?next:'bot';
-    workspace.dataset.currentView=section;
-    workspace.querySelectorAll('[data-workspace-page]').forEach(el=>el.hidden=el.dataset.workspacePage!==(section==='bot'?'bot':section==='overview'?'overview':'modules'));
-    const map={
-      setup:['business-profile'],settings:['business-profile'],
-      answers:['knowledge','unanswered'],customers:['support-team','live-inbox','conversations','leads'],
-      automation:['actions2','integrations'],install:['install'],profile:['workspaces','account-security'],
-      billing:['billing']
-    };
-    const ids=map[section]||[];
-    [...modules.querySelectorAll('.dashboard-view-section')].forEach(el=>{
-      el.hidden=!ids.includes(el.id);
-    });
-    workspace.querySelectorAll('[data-workspace-nav]').forEach(button=>{
-      const selected=button.dataset.workspaceNav===section;
-      button.classList.toggle('active',selected);
-      if(selected)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
-    });
-    const titles={
-      setup:workspace.dataset.lang==='sv'?'Företag och bot':workspace.dataset.lang==='en'?'Company and bot':'Yritys ja botti',
-      answers:workspace.dataset.lang==='sv'?'Svar':workspace.dataset.lang==='en'?'Answers':'Vastaukset',
-      customers:workspace.dataset.lang==='sv'?'Kunder':workspace.dataset.lang==='en'?'Customers':'Asiakkaat',
-      automation:workspace.dataset.lang==='sv'?'Funktioner':workspace.dataset.lang==='en'?'Actions':'Toiminnot',
-      install:workspace.dataset.lang==='sv'?'Installation':workspace.dataset.lang==='en'?'Installation':'Asennus',
-      profile:workspace.dataset.lang==='sv'?'Profil':workspace.dataset.lang==='en'?'Profile':'Profiili',
-      billing:workspace.dataset.lang==='sv'?'Fakturering':workspace.dataset.lang==='en'?'Billing':'Laskutus',
-      settings:workspace.dataset.lang==='sv'?'Inställningar':workspace.dataset.lang==='en'?'Settings':'Asetukset'
-    };
-    const heading=$('#respondoWorkspaceModuleTitle');
-    if(heading)heading.textContent=titles[section]||'';
-    const empty=$('#respondoWorkspaceEmpty');
-    if(empty)empty.hidden=ids.some(id=>modules.querySelector('#'+id));
-    window.scrollTo({top:0,behavior:'instant'});
-    if(section==='bot')$('#previewForm input[name="question"]')?.focus({preventScroll:true});
   }
 
   // Opening /app again should return to the same clear, dark workspace rather
