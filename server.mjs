@@ -7244,14 +7244,14 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   // does not publish a verified online calendar. A contact page is NOT a
   // confirmed bookable appointment.
   const bookingQuestion=normalizeSearchText(cleanMessage);
-  const asksHowToBook=/(?:^|\\b)(?:miten (?:voin |saan |teille )?(?:varata|varaan|varais)\\w*|voinko (?:varata|varaa)\\w*|mista (?:varaan|voin varata)|kuinka (?:voin )?varata|ajanvaraus|how (?:can|do) i book|can i book|how to book|book an appointment|hur (?:kan|gor) jag boka|kan jag boka|tidsbokning)(?:\\b|$)/i.test(bookingQuestion)
+  const asksHowToBook=/(?:^|\b)(?:miten (?:voin |saan |teille )?(?:varata|varaan|varais)\w*|voinko (?:varata|varaa)\w*|mista (?:varaan|voin varata)|kuinka (?:voin )?varata|ajanvaraus|how (?:can|do) i book|can i book|how to book|book an appointment|hur (?:kan|gor) jag boka|kan jag boka|tidsbokning)(?:\b|$)/i.test(bookingQuestion)
     && !/(?:toimitus|aukiolo|delivery time|opening hours|leverans|oppettid)/i.test(bookingQuestion);
   if(asksHowToBook){
     const contactPage=verifiedContactPage(rows);
     const calendar=knowledgeValue(rows,'Ajanvarauslinkki');
     const confirmedCalendar=calendar && !bookingLinkLooksLikeContactForm(calendar);
     const hasBookingInstructions=rows.some(row=>
-      /^(?:ajanvaraus|booking|bokning|tidsbokning)(?:\\b|\\s|:)/i.test(String(row?.title||'').trim()) &&
+      /^(?:ajanvaraus|booking|bokning|tidsbokning)(?:\b|\s|:)/i.test(String(row?.title||'').trim()) &&
       String(row?.title||'').trim()!=='Ajanvarauslinkki' &&
       String(row?.answer||'').trim().length>15
     );
