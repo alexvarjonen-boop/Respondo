@@ -5002,6 +5002,10 @@ function chatActions(rows, message, handoff = false, lang = 'fi', selected = [])
         :(contactPage.form?'Avaa yhteydenottolomake':'Tiedustele ajankohtaa'),
       url:contactPage.value,
     });
+    else {
+      if(phone) push({type:'phone',label:actionLang==='en'?'Call':actionLang==='sv'?'Ring':'Soita',url:'tel:'+phone.replace(/[^\d+]/g,'')});
+      if(email) push({type:'email',label:actionLang==='en'?'Send email':actionLang==='sv'?'Skicka e-post':'Lähetä sähköposti',url:'mailto:'+email});
+    }
   }
 
   if (/tarjou[sk]|hinta-arvio|arvio|kustannusarvio|quote|estimate|offert|prisförslag|prisforslag/.test(q)) {
@@ -7255,16 +7259,30 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       String(row?.title||'').trim()!=='Ajanvarauslinkki' &&
       String(row?.answer||'').trim().length>15
     );
-    if(contactPage && !confirmedCalendar && !hasBookingInstructions){
-      const answer=responseLang==='en'
-        ? 'I could not verify an online booking calendar. You can ask about arranging a time through the company’s contact page.'
-        : responseLang==='sv'
-          ? 'Jag kunde inte bekräfta någon bokningskalender. Du kan fråga om en tid via företagets kontaktsida.'
-          : 'En löytänyt vahvistettua ajanvarauskalenteria. Voit tiedustella sopivaa ajankohtaa yrityksen yhteydenottosivun kautta.';
-      return {
-        answer,handoff:false,confidence:0.88,intent:'Ajanvaraus',
-        sourceIds:[contactPage.row.id].filter(Boolean),selected:[contactPage.row],
-      };
+    if(!confirmedCalendar && !hasBookingInstructions){
+      // A verified phone or email is just as useful when the bounded crawl
+      // missed the company's contact page. Do not ask for a new lead when
+      // the actual merchant's approved contact details are already known.
+      const phone=verifiedContactValue(rows,'Puhelinnumero');
+      const email=verifiedContactValue(rows,'Sähköposti');
+      if(contactPage || phone || email){
+        const answer=contactPage
+          ? responseLang==='en'
+            ? 'I could not verify an online booking calendar. You can ask about arranging a time through the company’s contact page.'
+            : responseLang==='sv'
+              ? 'Jag kunde inte bekräfta någon bokningskalender. Du kan fråga om en tid via företagets kontaktsida.'
+              : 'En löytänyt vahvistettua ajanvarauskalenteria. Voit tiedustella sopivaa ajankohtaa yrityksen yhteydenottosivun kautta.'
+          : responseLang==='en'
+            ? 'I could not verify online booking. To enquire about a suitable time, '+(phone && email?'call '+phone.value+' or email '+email.value:phone?'call '+phone.value:'email '+email.value)+'.'
+            : responseLang==='sv'
+              ? 'Jag kunde inte bekräfta någon bokningskalender. Fråga om en tid '+(phone && email?'på telefon '+phone.value+' eller via e-post '+email.value:phone?'på telefon '+phone.value:'via e-post '+email.value)+'.'
+              : 'En löytänyt vahvistettua ajanvarauskalenteria. Tiedustele sopivaa ajankohtaa '+(phone && email?'soittamalla numeroon '+phone.value+' tai sähköpostitse '+email.value:phone?'soittamalla numeroon '+phone.value:'sähköpostitse '+email.value)+'.';
+        const evidence=contactPage?[contactPage.row]:[phone?.row,email?.row].filter(Boolean);
+        return {
+          answer,handoff:false,confidence:0.88,intent:'Ajanvaraus',
+          sourceIds:evidence.map(row=>row.id).filter(Boolean),selected:evidence,
+        };
+      }
     }
   }
 
