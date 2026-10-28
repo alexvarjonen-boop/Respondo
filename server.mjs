@@ -10937,7 +10937,7 @@ async function sendReadySetupServiceEmailOnce(sessionId) {
         [uid(),job.account_id,tokenHash],
       );
     }
-    const readyUrl=initialPasswordToken ? BASE+'/kirjaudu?reset='+encodeURIComponent(initialPasswordToken) : BASE+'/app';
+    const readyUrl=initialPasswordToken ? BASE+'/kirjaudu?reset='+encodeURIComponent(initialPasswordToken)+'&setup=1' : BASE+'/app';
     const accessText=initialPasswordToken
       ? pick(
         'Kirjautumistunnuksesi on '+job.email+'. Luo oma salasana alla olevasta turvallisesta linkistä. Linkki on kertakäyttöinen ja voimassa 7 päivää. Voit myöhemmin vaihtaa salasanasi asetuksissa.',
