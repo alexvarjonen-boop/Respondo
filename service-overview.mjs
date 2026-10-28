@@ -42,6 +42,41 @@ export function credibleServiceName(value) {
   return raw;
 }
 
+// Canonicalize only established translations of the *same imported offering*.
+// This is evidence normalization, not a list of services any company is assumed
+// to provide. Unknown service names remain as the business published them.
+const multilingualServiceNames=[
+  {id:'lifting-equipment',pattern:/^(?:nostopalvelut\s+ja\s+[-–]?kalusto|lifting services? and equipment|lyfttjänster och lyftutrustning)$/i,
+    labels:['Nostopalvelut ja -kalusto','Lyfttjänster och lyftutrustning','Lifting services and equipment']},
+  {id:'transport',pattern:/^(?:kuljetuspalvelut|transport services?|transporttjänster)$/i,
+    labels:['Kuljetuspalvelut','Transporttjänster','Transport services']},
+  {id:'projects',pattern:/^(?:projektipalvelut|project services?|projekttjänster)$/i,
+    labels:['Projektipalvelut','Projekttjänster','Project services']},
+  {id:'construction-installation',pattern:/^(?:rakentamisen asennukset|construction installations?|bygginstallationer)$/i,
+    labels:['Rakentamisen asennukset','Bygginstallationer','Construction installations']},
+  {id:'hauling-jacking',pattern:/^(?:haalaus ja tunkkaus|hauling and jacking|intransport och domkraftslyft)$/i,
+    labels:['Haalaus ja tunkkaus','Intransport och domkraftslyft','Hauling and jacking']},
+  {id:'personnel-lifts',pattern:/^(?:henkilönostimet|personnel lifts?|personlyftar)$/i,
+    labels:['Henkilönostimet','Personlyftar','Personnel lifts']},
+];
+function serviceIdentity(name,lang){
+  const match=multilingualServiceNames.find(item=>item.pattern.test(String(name).trim()));
+  if(!match) return {key:fold(name),label:name};
+  return {key:'service:'+match.id,label:match.labels[lang==='sv'?1:lang==='en'?2:0]};
+}
+function isBrandOnlyServiceLabel(name,row,companyName=''){
+  const cleaned=fold(name).replace(/\s+/g,'');
+  const business=fold(companyName).replace(/\b(?:oy|ab|ltd|inc)\b/g,'').replace(/\s+/g,'');
+  if(business && cleaned===business) return true;
+  // A website title that is just its own domain's business name is not a
+  // service: e.g. "Nostokonepalvelu" on nostokonepalvelu.fi.
+  try {
+    const host=new URL(String(row?.source_url||row?.sourceUrl||'')).hostname
+      .replace(/^www\./,'').split('.')[0].replace(/[-_]/g,'').toLowerCase();
+    return !!host && cleaned===host;
+  } catch { return false; }
+}
+
 function profileNames(row) {
   const answer=String(row?.answer||'').trim();
   if(!answer || answer.length>1100) return [];
@@ -52,7 +87,7 @@ function profileNames(row) {
     .slice(0,24).map(part=>credibleServiceName(part)).filter(Boolean);
 }
 
-export function verifiedServiceOverview(rows, { lang='fi', limit=7 }={}) {
+export function verifiedServiceOverview(rows, { lang='fi', limit=7, companyName='' }={}) {
   const candidates=[];
   const entries=Array.isArray(rows)?rows:[];
   for(const row of entries){
@@ -65,26 +100,27 @@ export function verifiedServiceOverview(rows, { lang='fi', limit=7 }={}) {
     const fromManual=manualType(row);
     if(explicit && fold(explicit[1])===fold(answer)){
       const name=credibleServiceName(answer);
-      if(name) candidates.push({name,row,score:(fromManual?110:35)+(serviceUrl.test(path)?55:0)+(path==='/'?12:0)});
+      if(name && !isBrandOnlyServiceLabel(name,row,companyName)) candidates.push({name,row,score:(fromManual?110:35)+(serviceUrl.test(path)?55:0)+(path==='/'?12:0)});
       continue;
     }
     // Manually entered, approved service lists have priority over scraped links.
     if(fromManual && /^(?:palvelut|services|tjänster)$/i.test(title) &&
        (category==='yrityksen perustiedot'||category==='palvelut')){
-      for(const name of profileNames(row)) candidates.push({name,row,score:105});
+      for(const name of profileNames(row)) if(!isBrandOnlyServiceLabel(name,row,companyName)) candidates.push({name,row,score:105});
     }
   }
   candidates.sort((a,b)=>b.score-a.score);
   const chosen=[];
   const seen=new Set();
   for(const c of candidates){
-    const key=fold(c.name);
+    const identity=serviceIdentity(c.name,lang);
+    const key=identity.key;
     if(!key || seen.has(key)) continue;
     // Generic headings add nothing when a specific variant is available.
     const tooGeneric=chosen.some(x=>fold(x.name).startsWith(key+' '));
     if(tooGeneric) continue;
     seen.add(key);
-    chosen.push(c);
+    chosen.push({...c,displayName:identity.label});
     if(chosen.length>=Math.max(1,Math.min(12,limit))) break;
   }
   if(!chosen.length){
@@ -108,7 +144,7 @@ export function verifiedServiceOverview(rows, { lang='fi', limit=7 }={}) {
     const best=statements[0];
     return {answer:best.answer,selected:[best.row],names:[],confidence:best.score>=2?0.9:0.82};
   }
-  const names=chosen.map(x=>x.name);
+  const names=chosen.map(x=>x.displayName);
   const format = items => items.length===1 ? items[0]
     : items.slice(0,-1).join(', ')+(lang==='sv'?' och ':lang==='en'?' and ':' ja ')+items.at(-1);
   const prefix=lang==='en'?'We offer services such as '
