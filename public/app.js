@@ -3699,7 +3699,7 @@ async function dashboard(options = {}) {
     ['customers',appText('Asiakkaat','Kunder','Customers'),'♧'],
     ['automation',appText('Toiminnot','Funktioner','Actions'),'▥'],
     ['install',appText('Asennus','Installation','Installation'),'⌘'],
-    // Profile links live in the dedicated expandable sidebar section.
+    ...(isDemo ? [['account',appText('Asetukset','Inställningar','Settings'),'⚙']] : []),
   ];
   // Consistent outline icons replace platform-dependent text glyphs.
   const premiumNavIcons={
