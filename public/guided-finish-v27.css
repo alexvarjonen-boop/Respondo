@@ -1,0 +1,244 @@
+/* V27 — Five-step onboarding only. No global color or layout overrides. */
+#app .dashboard-premium-shell.guided-setup-active .guided-setup {
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  padding-inline:clamp(14px,3vw,24px);
+  row-gap:0;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-form {
+  width:min(100%,700px);
+  min-width:0;
+  margin-inline:auto;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-card {
+  min-height:0;
+  padding:clamp(24px,4.2vw,40px);
+  border:1px solid #343741!important;
+  border-radius:24px;
+  background:#17191e!important;
+  color:#f7f8fa!important;
+  box-shadow:0 16px 48px rgba(0,0,0,.18)!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-card > h1 {
+  max-width:610px;
+  margin:0;
+  font-size:clamp(28px,4vw,42px)!important;
+  font-weight:700;
+  letter-spacing:-.045em;
+  line-height:1.13!important;
+  color:#f7f8fa!important;
+  -webkit-text-fill-color:#f7f8fa!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-card > small {
+  margin-bottom:14px;
+  color:#b8bfce!important;
+  -webkit-text-fill-color:#b8bfce!important;
+  font-size:11px!important;
+  letter-spacing:.12em;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-card > p {
+  max-width:590px;
+  margin:14px 0 26px;
+  font-size:14px!important;
+  line-height:1.6!important;
+  color:#c0c4cf!important;
+  -webkit-text-fill-color:#c0c4cf!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-main-field,
+#app .dashboard-premium-shell.guided-setup-active .guided-qa-row label {
+  min-width:0;
+  gap:9px;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-main-field > span,
+#app .dashboard-premium-shell.guided-setup-active .guided-qa-row label > span {
+  color:#e3e5ec!important;
+  -webkit-text-fill-color:#e3e5ec!important;
+  font-size:12px!important;
+  font-weight:700;
+}
+/* The browser-specific text fill is essential on iPhone Safari: 'color' alone
+   still allows older dashboard styles to paint user-entered text dark. */
+#app .dashboard-premium-shell.guided-setup-active #guidedSetupForm .guided-card input:not([type="hidden"]):not([type="file"]),
+#app .dashboard-premium-shell.guided-setup-active #guidedSetupForm .guided-card textarea {
+  display:block;
+  box-sizing:border-box;
+  min-width:0;
+  width:100%;
+  min-height:52px;
+  padding:13px 15px!important;
+  border:1px solid #484b56!important;
+  border-radius:13px!important;
+  outline:none;
+  background:#22252c!important;
+  color:#f8f9fc!important;
+  -webkit-text-fill-color:#f8f9fc!important;
+  caret-color:#f8f9fc!important;
+  color-scheme:dark;
+  opacity:1!important;
+  font-size:16px!important;
+  line-height:1.4!important;
+  box-shadow:none!important;
+}
+#app .dashboard-premium-shell.guided-setup-active #guidedSetupForm .guided-card textarea {
+  min-height:90px;
+  resize:vertical;
+}
+#app .dashboard-premium-shell.guided-setup-active #guidedSetupForm .guided-card input:not([type="hidden"]):not([type="file"]):focus,
+#app .dashboard-premium-shell.guided-setup-active #guidedSetupForm .guided-card textarea:focus {
+  border-color:#a7b5cd!important;
+  background:#262a32!important;
+  box-shadow:0 0 0 3px rgba(167,181,205,.17)!important;
+}
+#app .dashboard-premium-shell.guided-setup-active #guidedSetupForm .guided-card input::placeholder,
+#app .dashboard-premium-shell.guided-setup-active #guidedSetupForm .guided-card textarea::placeholder {
+  color:#969eac!important;
+  -webkit-text-fill-color:#969eac!important;
+  opacity:1!important;
+}
+#app .dashboard-premium-shell.guided-setup-active #guidedSetupForm .guided-card input:-webkit-autofill,
+#app .dashboard-premium-shell.guided-setup-active #guidedSetupForm .guided-card input:-webkit-autofill:hover,
+#app .dashboard-premium-shell.guided-setup-active #guidedSetupForm .guided-card input:-webkit-autofill:focus {
+  -webkit-text-fill-color:#f8f9fc!important;
+  caret-color:#f8f9fc!important;
+  -webkit-box-shadow:0 0 0 1000px #22252c inset!important;
+  transition:background-color 9999s ease-out;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-qa-list{gap:10px}
+#app .dashboard-premium-shell.guided-setup-active .guided-qa-row {
+  min-width:0;
+  gap:14px;
+  padding:15px;
+  background:#1e2127!important;
+  border:1px solid #383b44!important;
+  border-radius:15px;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-fields-grid{gap:14px}
+#app .dashboard-premium-shell.guided-setup-active .guided-avatar-option {
+  min-width:0;
+  border-color:#3e424b!important;
+  background:#22252c!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-avatar-option.selected {
+  border-color:#e3e7ef!important;
+  box-shadow:0 0 0 1px #e3e7ef!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-bot-preview {
+  background:#20232a!important;
+  border:1px solid #383c47!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-summary > div {
+  background:#20232a!important;
+  border:1px solid #393d47!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-summary b {
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-step-message:empty{display:none}
+#app .dashboard-premium-shell.guided-setup-active .guided-card-actions {
+  gap:10px;
+  padding-top:20px;
+  margin-top:27px;
+  border-top:1px solid #353943!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-card-actions button {
+  min-height:46px;
+  padding:10px 18px;
+  border-radius:12px;
+  font-size:13px!important;
+  font-weight:700;
+  line-height:1.3;
+  cursor:pointer;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-card-actions .guided-continue {
+  background:#f0f2f6!important;
+  border:1px solid #f0f2f6!important;
+  color:#15171b!important;
+  -webkit-text-fill-color:#15171b!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-card-actions .guided-back,
+#app .dashboard-premium-shell.guided-setup-active .guided-card-actions .guided-skip {
+  background:#292c33!important;
+  color:#e7e9ef!important;
+  -webkit-text-fill-color:#e7e9ef!important;
+  border:1px solid #434751!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-card-actions button:focus-visible,
+#app .dashboard-premium-shell.guided-setup-active .guided-avatar-option:focus-visible {
+  outline:2px solid #e8edf8!important;
+  outline-offset:3px;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-progress {
+  width:min(100%,610px);
+  margin-bottom:22px;
+  padding-inline:8px;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-progress span {
+  width:32px;
+  height:32px;
+  background:#242832;
+  border:1px solid #484d59;
+  color:#d6dae3!important;
+  font-size:12px;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-progress span.active {
+  border-color:#f2f3f5;
+  background:#f2f3f5;
+  color:#15171b!important;
+  box-shadow:none!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-progress span.done {
+  border-color:#767f90;
+  background:#444b57;
+  color:#fff!important;
+}
+#app .dashboard-premium-shell.guided-setup-active .guided-setup-progress i{background:#464a55}
+#app .demo-dashboard-shell.guided-setup-active .guided-demo-brandname,
+#app .demo-dashboard-shell.guided-setup-active .guided-demo-brandname :is(.brand-word,.brand-name,strong,b,span) {
+  color:#f8f9fc!important;
+  -webkit-text-fill-color:#f8f9fc!important;
+}
+#app .demo-dashboard-shell.guided-setup-active .guided-demo-brandname .brand {
+  color:#f8f9fc!important;
+}
+@media(max-width:760px) {
+  #app .dashboard-premium-shell.guided-setup-active .guided-setup {
+    padding:18px 14px 44px!important;
+    align-content:start;
+  }
+  #app .demo-dashboard-shell.guided-setup-active .guided-demo-brand {
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    margin-bottom:20px;
+  }
+  #app .demo-dashboard-shell.guided-setup-active .guided-demo-brandname {font-size:12px!important;letter-spacing:.04em}
+  #app .dashboard-premium-shell.guided-setup-active .guided-card {
+    padding:24px 20px!important;
+    border-radius:22px!important;
+  }
+  #app .dashboard-premium-shell.guided-setup-active .guided-card > h1 {
+    font-size:clamp(27px,7.2vw,34px)!important;
+    letter-spacing:-.045em;
+    overflow-wrap:normal;
+  }
+  #app .dashboard-premium-shell.guided-setup-active .guided-card > p {
+    font-size:13px!important;
+    margin:12px 0 24px;
+  }
+  #app .dashboard-premium-shell.guided-setup-active .guided-setup-progress{margin-bottom:18px}
+  #app .dashboard-premium-shell.guided-setup-active .guided-qa-row{grid-template-columns:minmax(0,1fr)}
+  #app .dashboard-premium-shell.guided-setup-active .guided-summary{grid-template-columns:minmax(0,1fr)}
+  #app .dashboard-premium-shell.guided-setup-active .guided-card-actions {
+    flex-wrap:wrap;
+    margin-top:23px;
+    padding-top:18px;
+  }
+  #app .dashboard-premium-shell.guided-setup-active .guided-card-actions .guided-continue{margin-left:auto}
+  #app .dashboard-premium-shell.guided-setup-active .guided-card-actions button{min-height:46px}
+}
+@media(prefers-reduced-motion:reduce){
+  #app .dashboard-premium-shell.guided-setup-active .guided-card {animation:none!important}
+}
