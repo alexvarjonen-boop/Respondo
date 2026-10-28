@@ -50,6 +50,23 @@ test('question-specific FAQ evidence must not turn into an answer to unrelated q
   assert.doesNotMatch(answer.answer||'',/kulkulupa/i);
 });
 
+
+test('brief quantified equipment capacity survives a structured business heading',async()=>{
+  const doc=extractBusinessDocument(
+    '<html><main><section><h2>Nostokapasiteetti</h2><p>Enintään 80 tonnia.</p></section><section><h2>Meidän arvomme</h2><p>Paras palvelu.</p></section></main></html>',
+    site+'kalusto/');
+  const facts=essentialWebsiteCandidates({finalUrl:site,pageDocuments:[doc]});
+  const capacity=facts.find(f=>f.title==='Nostokapasiteetti');
+  assert.ok(capacity,JSON.stringify(facts));
+  assert.match(capacity.answer,/80 tonnia/);
+  assert.equal(facts.some(f=>f.title==='Meidän arvomme'),false);
+  const rows=facts.map((fact,id)=>({...fact,id:'capacity-'+id,source_type:'website',source_url:fact.sourceUrl}));
+  const answer=await generateGroundedAnswer({rows,companyName:'Nostoesimerkki',
+    message:'Mikä on nostokapasiteetti?',lang:'fi'});
+  assert.equal(answer.handoff,false,JSON.stringify(answer));
+  assert.match(answer.answer,/80 tonnia/);
+});
+
 test('QAPage, reviews, legal text and unaccepted questions do not become company FAQ answers',()=>{
   const qa=rowsFrom(structuredFaqPage([
     ['Voiko kulkuluvan ohittaa?', 'Kyllä, asiakkaan kommentin perusteella kaikille on vapaa pääsy.']
