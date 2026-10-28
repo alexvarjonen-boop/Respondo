@@ -789,7 +789,7 @@ function supplementalCompanyDetail(block,docUrl){
   // B2B industries. For example "Enintään 80 tonnia" under "Nostokapasiteetti"
   // must survive import, without admitting vague 2-word marketing slogans.
   const shortSpecification=answer.length>=12 &&
-    /\b\d+(?:[.,]\d+)?\s*(?:tonnia|tonni|ton|tonnes?|kg|kilogram(?:ma|s)?|g|mm|cm|metri(?:a|ä)?|metres?|meters?|kW|kWh|MW|bar|m\s*²|m2|m3|litra(?:a|ä)?|litres?|liters?|vuotta|years?|hours?|tuntia|päivää|days?)\b/i.test(answer);
+    /\b\d+(?:[.,]\d+)?\s*(?:t|tonnia|tonni|ton|tonnes?|kg|kilogram(?:ma|s)?|g|mm|cm|metri(?:a|ä)?|metres?|meters?|kW|kWh|MW|bar|m\s*²|m2|m3|litra(?:a|ä)?|litres?|liters?|vuotta|years?|hours?|tuntia|päivää|days?)\b/i.test(answer);
   if(!heading || heading.length<4 || heading.length>95 ||
      answer.length>900 ||
      !(answer.length>=42 && answer.split(/\s+/).length>=7) &&
@@ -865,7 +865,9 @@ export function essentialWebsiteCandidates(bundle) {
     // renders its accordion after hydration. Preserve source URL and question.
     for(const item of (Array.isArray(doc.faqPairs)?doc.faqPairs:[]).slice(0,60)){
       const kind=businessFactKind(item.answer,item.title);
-      add(kind||'faq',item.title,item.answer,doc.url);
+      // The services/pricing adapter adds answer excerpts to the title.
+      // Keep the literal question unchanged for verified Q&A matching.
+      add(['services','pricing'].includes(kind)?'faq':(kind||'faq'),item.title,item.answer,doc.url);
     }
 
     // Legal/privacy pages are otherwise excluded from knowledge, but the
