@@ -91,3 +91,20 @@
     gap:10px!important;
   }
 }
+
+/* Website intake appears only when the optional service is selected. */
+#app .setup-service-wrap { display:grid!important; gap:11px!important; min-width:0!important; width:100%!important; }
+#app .setup-service-wrap > .setup-service-website:not([hidden]) {
+  display:grid!important;gap:8px!important;min-width:0!important;
+  padding:0 3px 8px!important;color:#f5f9ff!important;
+}
+#app .setup-service-wrap > .setup-service-website[hidden] { display:none!important; }
+#app .setup-service-website > span { color:inherit!important;-webkit-text-fill-color:inherit!important;font-size:13px!important;font-weight:700!important;letter-spacing:0!important;text-transform:none!important; }
+#app .setup-service-website input {
+  box-sizing:border-box!important;width:100%!important;min-height:47px!important;
+  border:1px solid #647996!important;border-radius:12px!important;background:#142234!important;
+  color:#fff!important;-webkit-text-fill-color:#fff!important;
+  font-size:16px!important;padding:11px 13px!important;
+}
+#app .setup-service-website input::placeholder {color:#96a8bf!important;-webkit-text-fill-color:#96a8bf!important;}
+#app .setup-service-website small {color:#c4d3e5!important;-webkit-text-fill-color:#c4d3e5!important;font-size:12px!important;line-height:1.5!important;}
