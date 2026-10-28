@@ -333,6 +333,53 @@ function structuredFaqPairs(html) {
   return out;
 }
 
+// Many business websites render their FAQs as Bootstrap/WordPress accordions
+// without FAQPage JSON-LD. The visible question button explicitly identifies
+// its own answer panel via aria-controls/data-bs-target. Extract only that
+// source-owned pair, never arbitrary hidden copy or unrelated navigation.
+function accordionFaqPairs(html){
+  const source=String(html||'').slice(0,700000)
+    .replace(/<!--[\s\S]*?-->/g,'')
+    .replace(/<(script|style|noscript|template|svg)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,' ');
+  const panels=new Map();
+  for(const match of source.matchAll(/<(div|section|article|p)\b[^>]*>/gi)){
+    const id=String(attrs(match[0]).id||'').trim();
+    if(id && !panels.has(id)) panels.set(id,{tag:match[1].toLowerCase(),start:match.index+match[0].length});
+    if(panels.size>=1500)break;
+  }
+  const readPanel=panel=>{
+    const slice=source.slice(panel.start,panel.start+10000);
+    const tags=/<(\/?)\s*([a-z][a-z0-9]*)\b[^>]*>/gi;
+    let depth=1;
+    for(const item of slice.matchAll(tags)){
+      if(item[2].toLowerCase()!==panel.tag)continue;
+      depth+=item[1]?-1:1;
+      if(depth===0) return slice.slice(0,item.index);
+    }
+    return '';
+  };
+  const answers=[],seen=new Set();
+  let buttonsChecked=0;
+  for(const button of source.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button\s*>/gi)){
+    if(++buttonsChecked>250 || answers.length>=60)break;
+    const attributes=attrs(button[0].slice(0,button[0].indexOf('>')+1));
+    const target=String(attributes['aria-controls']||attributes['data-bs-target']||attributes['data-target']||'')
+      .replace(/^#/,'').trim();
+    if(!/^[a-z][a-z0-9_.:-]{1,95}$/i.test(target))continue;
+    const panel=panels.get(target);
+    if(!panel)continue;
+    const title=stripProductHtml(button[2]).slice(0,180);
+    const question=/[?？]$|^(?:miten|miksi|voiko|saako|milloin|kuinka|mika|mikä|mitä|kenen|what|how|when|where|why|can|does|do|is|are|which|hur|kan|vad|när|nar|varför|varfor|vilken)\b/i.test(title);
+    if(!question || title.length<9 || title.length>180 || junk.test(title) || review.test(title))continue;
+    const answer=stripProductHtml(readPanel(panel)).slice(0,900);
+    const key=norm(title+'|'+answer);
+    if(answer.length<20 || answer.split(/\s+/).length<4 || junk.test(title+' '+answer) ||
+       review.test(title+' '+answer) || billingAddressNoise.test(title+' '+answer) || seen.has(key))continue;
+    seen.add(key);answers.push({title,answer});
+  }
+  return answers;
+}
+
 // Service businesses can publish their only machine-readable offering list
 // in Schema.org Service / OfferCatalog records. Reuse the site's own words
 // without inventing capabilities, terms, prices or availability.
@@ -577,7 +624,7 @@ function semanticDefinitionSpecifications(html,url) {
 
 export function extractBusinessDocument(html, url) {
   const products = extractProducts(html, url);
-  const faqPairs = structuredFaqPairs(html);
+  const faqPairs = [...structuredFaqPairs(html),...accordionFaqPairs(html)];
   const servicePairs = structuredServicePairs(html,url);
   const specPairs = semanticDefinitionSpecifications(html,url);
   const blocks = [], links = [];
