@@ -19,7 +19,7 @@ test('SEO first paint guard hides only temporary server-rendered main while JS b
 test('client hydration and failure restore visibility',()=>{
   const mounted=app.indexOf("$('#app').innerHTML = html;");
   const revealed=app.indexOf("document.documentElement.classList.remove('respondo-awaiting-client');",mounted);
-  assert.ok(mounted>=0&&revealed>mounted&&revealed-mounted<4500 && !/await\\b/.test(app.slice(mounted,revealed)),'reveal client content synchronously after mounting and setup-service notice');
+  assert.ok(mounted>=0&&revealed>mounted&&revealed-mounted<4500 && !/\bawait\b/.test(app.slice(mounted,revealed)),'reveal client content synchronously after mounting and setup-service notice');
   const catchBlock=app.slice(app.indexOf('route().catch((error) => {'));
   assert.match(catchBlock,/classList\.remove\('respondo-awaiting-client'\)/);
 });
