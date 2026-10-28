@@ -890,6 +890,103 @@ async function sendSignupVerificationEmail({ email, code, language = 'en' }) {
   return { sent:true, id:data?.id || null };
 }
 
+
+/* Human-assisted setup orders: each paid workspace can request one setup service.
+   Emails are sent only for a completed Stripe Checkout with the setup add-on. */
+async function ensureManualSetupOrder(session,userId,tenantId) {
+  if (session?.metadata?.setup_service !== '1' || !userId || !tenantId ||
+      session.status !== 'complete' || session.payment_status !== 'paid') return false;
+  const website=setupServiceWebsiteUrl(session.metadata.setup_website,true);
+  await q("CREATE TABLE IF NOT EXISTS manual_setup_orders (tenant_id TEXT PRIMARY KEY,user_id TEXT NOT NULL,session_id TEXT NOT NULL UNIQUE,website TEXT NOT NULL,additional_workspace BOOLEAN NOT NULL DEFAULT FALSE,status TEXT NOT NULL DEFAULT 'pending',customer_claimed_at TIMESTAMPTZ,customer_email_sent_at TIMESTAMPTZ,owner_claimed_at TIMESTAMPTZ,owner_email_sent_at TIMESTAMPTZ,ready_claimed_at TIMESTAMPTZ,ready_email_sent_at TIMESTAMPTZ,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())");
+  const row=await q('SELECT id FROM tenants WHERE id=$1 AND owner_user_id=$2 AND active=TRUE LIMIT 1',[tenantId,userId]);
+  if(!row.rowCount) return false;
+  await q("INSERT INTO manual_setup_orders(tenant_id,user_id,session_id,website,additional_workspace) VALUES($1,$2,$3,$4,$5) ON CONFLICT(tenant_id) DO NOTHING",
+    [tenantId,userId,session.id,website,session.metadata.additional_workspace==='1']);
+  await q("UPDATE tenants SET website=COALESCE(NULLIF(website,''),$1),updated_at=NOW() WHERE id=$2 AND owner_user_id=$3",[website,tenantId,userId]);
+  return true;
+}
+
+async function sendManualSetupMail(to,subject,html) {
+  const key=String(process.env.RESEND_API_KEY||'').trim();
+  const from=String(process.env.EMAIL_VERIFICATION_FROM||'').trim();
+  if(!key || !from || !to) return false;
+  const response=await fetch('https://api.resend.com/emails',{
+    method:'POST',headers:{Authorization:'Bearer '+key,'Content-Type':'application/json'},
+    body:JSON.stringify({from,to:[to],subject,html}),
+  });
+  if(!response.ok) throw new Error('Manual setup email provider failed ('+response.status+')');
+  return true;
+}
+
+function manualSetupLanguage(value) {
+  return ['fi','sv','en'].includes(String(value||'').toLowerCase()) ? String(value).toLowerCase() : 'en';
+}
+
+async function sendManualSetupReceiptOnce(tenantId) {
+  const claim=await q("UPDATE manual_setup_orders SET customer_claimed_at=NOW() WHERE tenant_id=$1 AND customer_email_sent_at IS NULL AND (customer_claimed_at IS NULL OR customer_claimed_at<NOW()-INTERVAL '10 minutes') RETURNING *",[tenantId]);
+  if(!claim.rowCount) return false;
+  const order=claim.rows[0];
+  try {
+    const found=await q('SELECT u.email,u.full_name,u.preferred_language,t.name FROM users u JOIN tenants t ON t.owner_user_id=u.id WHERE t.id=$1 AND u.id=$2 LIMIT 1',[tenantId,order.user_id]);
+    const user=found.rows[0];
+    if(!user?.email) throw new Error('Setup order customer missing');
+    const lang=manualSetupLanguage(user.preferred_language);
+    const tr=(fi,sv,en)=>lang==='fi'?fi:lang==='sv'?sv:en;
+    const subject=tr('Käyttöönottopalvelusi on tilattu – Respondo AI','Din installationstjänst är beställd – Respondo AI','Your setup service order is confirmed – Respondo AI');
+    const welcome=tr('Kiitos tilauksestasi!','Tack för din beställning!','Thank you for your order!');
+    const intro=tr('Olemme vastaanottaneet käyttöönottopalvelusi tilauksen yritykselle '+user.name+'.','Vi har tagit emot beställningen av installationstjänsten för '+user.name+'.','We have received the setup service order for '+user.name+'.');
+    const processing=tr('Seuraavaksi tutustumme verkkosivustoosi, kokoamme olennaiset yritystiedot, viimeistelemme asiakaspalvelubotin ja tarkistamme sen vastaukset. Olemme yhteydessä, jos tarvitsemme lisätietoja.','Nu går vi igenom din webbplats, samlar in relevanta företagsuppgifter, färdigställer kundtjänstbotten och kontrollerar svaren. Vi kontaktar dig om vi behöver mer information.','Next we review your website, gather relevant company information, finish configuring the customer service bot and check its answers. We will contact you if we need more details.');
+    const access=order.additional_workspace
+      ? tr('Kun botti on valmis, ilmoitamme sähköpostitse. Voit käyttää nykyisiä Respondo-kirjautumistunnuksiasi.','När botten är klar meddelar vi dig via e-post. Du kan logga in med ditt befintliga Respondo-konto.','We will email you when the bot is ready. You can continue using your existing Respondo login.')
+      : tr('Saat sähköpostin, kun botti on valmis. Viesti sisältää kirjautumissähköpostisi ja turvallisen linkin, jonka kautta voit luoda salasanan. Voit myöhemmin vaihtaa sen asetuksissa.','Du får ett mejl när botten är klar med din inloggningsadress och en säker länk för att skapa ett lösenord. Du kan ändra lösenordet senare i inställningarna.','When your bot is ready, we will email your login address and a secure link to create a password. You can change it later in settings.');
+    const content=
+      '<p style="margin:0 0 16px;font-size:17px;line-height:1.6;color:#f2f5ff">'+escapeEmailHtml(welcome)+'</p>'+
+      '<p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:#d2d9e6">'+escapeEmailHtml(intro)+'</p>'+
+      '<div style="padding:20px;border:1px solid #40536f;border-radius:14px;background-color:#202d41;margin-bottom:20px">'+
+      '<p style="margin:0 0 6px;color:#acc9ef;font-size:12px;font-weight:700">'+escapeEmailHtml(tr('Analysoitava verkkosivu','Webbplats som granskas','Website being reviewed'))+'</p>'+
+      '<p style="margin:0;color:#ffffff;word-break:break-word;font-size:15px">'+escapeEmailHtml(order.website)+'</p></div>'+
+      '<p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:#d2d9e6">'+escapeEmailHtml(processing)+'</p>'+
+      '<p style="margin:0;font-size:15px;line-height:1.75;color:#d2d9e6">'+escapeEmailHtml(access)+'</p>';
+    const html=brandedEmailHtml({language:lang,eyebrow:tr('Käyttöönottopalvelu','Installationstjänst','Setup service'),title:subject,content});
+    const sent=await sendManualSetupMail(user.email,subject,html);
+    if(!sent) { await q('UPDATE manual_setup_orders SET customer_claimed_at=NULL WHERE tenant_id=$1',[tenantId]);return false; }
+    await q('UPDATE manual_setup_orders SET customer_email_sent_at=NOW(),customer_claimed_at=NULL WHERE tenant_id=$1',[tenantId]);
+    return true;
+  } catch(e) {
+    await q('UPDATE manual_setup_orders SET customer_claimed_at=NULL WHERE tenant_id=$1',[tenantId]).catch(()=>{});
+    throw e;
+  }
+}
+
+async function sendManualSetupOwnerNoticeOnce(tenantId) {
+  const recipient=cleanEmail(process.env.CONTACT_NOTIFICATION_TO||process.env.OWNER_EMAIL);
+  if(!recipient || !String(process.env.RESEND_API_KEY||'').trim() || !String(process.env.EMAIL_VERIFICATION_FROM||'').trim()) return false;
+  const claim=await q("UPDATE manual_setup_orders SET owner_claimed_at=NOW() WHERE tenant_id=$1 AND owner_email_sent_at IS NULL AND (owner_claimed_at IS NULL OR owner_claimed_at<NOW()-INTERVAL '10 minutes') RETURNING *",[tenantId]);
+  if(!claim.rowCount) return false;
+  const order=claim.rows[0];
+  try {
+    const found=await q('SELECT name FROM tenants WHERE id=$1',[tenantId]);
+    const company=found.rows[0]?.name||'Yritys';
+    const subject='Uusi käyttöönottopalvelu – '+company;
+    const content='<p style="color:#e2e8f1">Uusi maksettu 199 € käyttöönottopalvelu odottaa käsittelyä.</p>'+
+      '<p style="color:#e2e8f1">Yritys: <strong>'+escapeEmailHtml(company)+'</strong><br>Verkkosivu: '+escapeEmailHtml(order.website)+'</p>'+
+      '<p style="color:#e2e8f1">Analysoi sivu, rakenna ja testaa botti. Merkitse työ valmiiksi vasta tarkistuksen jälkeen.</p>'+
+      '<p><a href="'+escapeEmailHtml(BASE+'/kayttoonotot')+'" style="color:#94c3ff">Avaa käyttöönottotilaukset</a></p>';
+    const html=brandedEmailHtml({language:'fi',eyebrow:'Uusi asiakastilaus',title:subject,content});
+    const sent=await sendManualSetupMail(recipient,subject,html);
+    if(!sent) { await q('UPDATE manual_setup_orders SET owner_claimed_at=NULL WHERE tenant_id=$1',[tenantId]);return false; }
+    await q('UPDATE manual_setup_orders SET owner_email_sent_at=NOW(),owner_claimed_at=NULL WHERE tenant_id=$1',[tenantId]);
+    return true;
+  }catch(e){ await q('UPDATE manual_setup_orders SET owner_claimed_at=NULL WHERE tenant_id=$1',[tenantId]).catch(()=>{});throw e; }
+}
+
+async function activateManualSetupOrder(session,userId,tenantId) {
+  if(!(await ensureManualSetupOrder(session,userId,tenantId))) return false;
+  try { await sendManualSetupReceiptOnce(tenantId); } catch(e) { console.error('Manual setup customer confirmation failed:',e?.message); }
+  try { await sendManualSetupOwnerNoticeOnce(tenantId); } catch(e) { console.error('Manual setup owner notification failed:',e?.message); }
+  return true;
+}
+
 // Send the onboarding message once per activated account, regardless of whether
 // Stripe's webhook or the checkout success redirect completes first.
 async function sendWelcomeEmailOnce(userId) {
