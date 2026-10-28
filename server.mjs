@@ -10169,10 +10169,14 @@ app.get('/api/auth/checkout-success', async (req, res) => {
     });
 
     res.clearCookie(SIGNUP_CHECKOUT_COOKIE);
+    if(session.metadata?.setup_service==='1') {
+      // Assisted setup is delivered by email after human review. Do not
+      // auto-login an account whose initial password is intentionally random.
+      res.clearCookie(COOKIE);
+      return res.redirect('/kayttoonotto-vahvistettu?email='+(setupAcknowledged?'sent':'pending'));
+    }
     setSession(res, updated.rows[0]);
-    return res.redirect(session.metadata?.setup_service==='1'
-      ? '/app?setup_service='+(setupAcknowledged?'email_sent':'received')
-      : '/app?welcome=1');
+    return res.redirect('/app?welcome=1');
   } catch (e) {
     console.error('Checkout success auto-login failed', e);
     return res.redirect('/kirjaudu?checkout_error=1');
