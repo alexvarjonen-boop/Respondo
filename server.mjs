@@ -11149,6 +11149,21 @@ function extractFreeWebsiteProfile(bundle) {
 
 const websiteImportJobs = new Map();
 const demoWebsiteImports = new Map();
+// At most one topic-focused on-demand scan per website and question for ten
+// minutes. Bounded memory, shared only as a cooldown (never share the returned
+// knowledge between company sessions).
+const demoRecoveryCooldown = new Map();
+function allowDemoRecovery(website,message){
+  const question=searchTokens(message).filter(word=>word.length>=4).slice(0,7).join(':');
+  const key=String(website||'')+'|'+question;
+  const now=Date.now();
+  for(const [k,time] of demoRecoveryCooldown) if(now-time>10*60*1000) demoRecoveryCooldown.delete(k);
+  if(demoRecoveryCooldown.has(key)) return false;
+  if(demoRecoveryCooldown.size>=150) demoRecoveryCooldown.delete(demoRecoveryCooldown.keys().next().value);
+  demoRecoveryCooldown.set(key,now);
+  return true;
+}
+
 function cleanDemoWebsiteImports() {
   const now=Date.now();
   for(const [id,item] of demoWebsiteImports) {
@@ -12379,6 +12394,11 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
         imported=await loadDemoWebsiteImport(demoImportId);
         if(imported) demoWebsiteImports.set(demoImportId,imported);
       }
+      // A stale import id from another company's Try Bot tab must never leak
+      // its facts into the website currently entered by the visitor.
+      const currentDemoWebsite=normalizeWebUrl(profile.website,false);
+      if(imported?.website && currentDemoWebsite &&
+         normalizeHost(imported.website)!==normalizeHost(currentDemoWebsite)) imported=null;
       if(imported?.candidates?.length){
         const importedRows=imported.candidates.slice(0,2000).map((item,index)=>({
           id:'demo-import-'+index,
@@ -12532,6 +12552,58 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
           history,
           lang:detectedLang,
         });
+
+    // The first import is deliberately bounded. On a genuine knowledge miss
+    // consult the same business website again, using the question to rank
+    // otherwise-overlooked linked/sitemap pages (equipment, certifications,
+    // installation requirements, etc.). Never synthesize facts and never
+    // read another tenant's account knowledge. Paid dashboards retain their
+    // approval workflow rather than silently approving new web content.
+    if (isPublicDemo && result.handoff && !requestedProductFamilyAvailability(message)){
+      const enteredWebsite=normalizeWebUrl(profile.website,false);
+      const storedImport=demoImportId ? demoWebsiteImports.get(demoImportId) : null;
+      const storedWebsite=normalizeWebUrl(storedImport?.website,false);
+      const target=enteredWebsite || storedWebsite;
+      if(target && (!storedWebsite || normalizeHost(target)===normalizeHost(storedWebsite)) &&
+         allowDemoRecovery(target,message)){
+        try {
+          const recoveredBundle=await fetchWebsiteBundle(target,24,11000,null,{
+            storefrontLimit:0,sitemapLimit:450,question:message
+          });
+          const recovered=websiteKnowledgeCandidates(recoveredBundle).slice(0,500);
+          const newRows=recovered.map((item,index)=>({
+            id:'demo-question-'+index,category:String(item?.category||'Yrityksen tiedot').slice(0,80),
+            title:String(item?.title||'').slice(0,180),
+            answer:String(item?.answer||'').slice(0,1600),
+            keywords:Array.isArray(item?.keywords)?item.keywords.slice(0,32):[],
+            source_type:'website',source_url:normalizeWebUrl(item?.sourceUrl,false)||null,
+          })).filter(row=>row.title&&row.answer&&usableWebsiteRow(row));
+          if(newRows.length){
+            const existing=new Set(rows.map(row=>normalizeSearchText(String(row?.source_url||'')+'|'+row.title+'|'+row.answer)));
+            const extra=newRows.filter(row=>!existing.has(normalizeSearchText(String(row.source_url||'')+'|'+row.title+'|'+row.answer)));
+            if(extra.length){
+              rows=[...extra,...rows].slice(0,2160);
+              const attempted=await generateGroundedAnswer({
+                companyName:String(profile.companyName||'yrityksen').slice(0,120),
+                rows,message,history,lang:detectedLang
+              });
+              if(!attempted.handoff && attempted.answer) result=attempted;
+              if(storedImport && normalizeHost(storedWebsite)===normalizeHost(target)){
+                const distinct=new Map();
+                for(const fact of [...recovered,...storedImport.candidates]){
+                  const key=normalizeSearchText(String(fact?.sourceUrl||'')+'|'+String(fact?.title||'')+'|'+String(fact?.answer||''));
+                  if(key&&!distinct.has(key)) distinct.set(key,fact);
+                  if(distinct.size>=2000) break;
+                }
+                storedImport.candidates=[...distinct.values()];
+                try { await persistDemoWebsiteImport(demoImportId,target,storedImport.candidates); }
+                catch(e){ console.warn('Demo topic recovery persistence skipped',e?.message||e); }
+              }
+            }
+          }
+        } catch(e){ console.warn('Demo topic-focused recovery skipped',e?.message||e); }
+      }
+    }
 
     // Unverified product availability is not a lead-generation request.
     // If the public demo could not read that product family, be clear about
