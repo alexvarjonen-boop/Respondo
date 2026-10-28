@@ -2479,6 +2479,12 @@ function calculatorSection() {
 
 function pricingSection() {
   const card=(tier,monthly,seats,features,featured=false)=>{
+    // Plan-fit guidance describes the existing plans, without unsupported popularity claims.
+    const planFit=tier==='Advanced'
+      ? appText('AI-asiakaspalvelun aloittamiseen.','För företag som börjar med AI-kundservice.','Start with AI customer service.')
+      : tier==='Premium'
+        ? appText('Asiakaspalvelutiimin yhteiseen käyttöön.','För kundserviceteam som arbetar tillsammans.','For customer service teams.')
+        : appText('Verkkokauppaan ja laajempiin integraatioihin.','För e-handel och fler integrationer.','For commerce and broader integrations.');
     const yearlyMonthly=monthly-10;
     const yearlyTotal=yearlyMonthly*12;
     const code=tier==='Advanced'?'basic':tier==='Premium'?'advanced':'business';
@@ -2490,8 +2496,9 @@ function pricingSection() {
     );
     return `
     <article class="price-card pricing-choice-card ${featured?'featured':''}" data-plan-code="${code}" data-monthly-price="${monthly}" data-yearly-monthly-price="${yearlyMonthly}" data-monthly-note="${esc(monthlyNote)}" data-yearly-note="${esc(annualNote)}">
-      <div class="price-top"><span>${tier.toUpperCase()}</span><span class="${featured?'save':''}">${featured?appText('SUOSITUIN','POPULÄRAST','MOST POPULAR'):appText('3 PÄIVÄÄ ILMAISEKSI','3 DAGAR GRATIS','3 DAYS FREE')}</span></div>
+      <div class="price-top"><span>${tier.toUpperCase()}</span><span class="${featured?'save':''}">${featured?appText('TIIMEILLE','FÖR TEAM','FOR TEAMS'):appText('3 PÄIVÄÄ ILMAISEKSI','3 DAGAR GRATIS','3 DAYS FREE')}</span></div>
       <h3>${tier}</h3>
+      <p class="pricing-plan-fit">${planFit}</p>
       <div class="pricevalue"><span data-plan-price>${monthly}</span> €<small>${appText('/kk','/mån','/month')}</small></div>
       <p class="plan-yearly-price pricing-billing-note" data-plan-note>${monthlyNote}</p>
       <div class="price-rule"></div>

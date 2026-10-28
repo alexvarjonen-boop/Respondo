@@ -41,6 +41,6 @@ test('v15 keeps the same localized hero, ten chapters and verified pricing contr
   assert.match(balance, /@media\(max-width:900px\)/);
   const app = read('app.js');
   for (const p of ["card('Advanced',49","card('Premium',129","card('Enterprise',149"]) assert.ok(app.includes(p));
-  assert.match(html,/home-finish-v13\.css\?v=20261028-observatory-balance-v15/);
+  assert.match(html,/home-finish-v13\.css\?v=20261028-observatory-balance-v15[^\/\"]*/);
   assert.ok(html.indexOf('/home-finish-v13.css')>html.indexOf('/home-polish-v11.css'));
 });

@@ -326,3 +326,74 @@
     transition:none!important;
   }
 }
+
+
+/* Observatory v16: an immediate, honest answer to "which plan is for me?"
+   No invented social proof, extra hero buttons or new sections. */
+#app .apple-home-page .pricing-section .price-card .pricing-plan-fit{
+  margin:2px 0 19px!important;
+  min-height:2.7em;
+  max-width:290px;
+  font-size:clamp(12px,1.02vw,14px)!important;
+  line-height:1.4!important;
+  font-weight:510!important;
+  letter-spacing:0!important;
+  color:#b9cde6!important;
+  text-wrap:pretty;
+}
+#app .apple-home-page .pricing-section .price-card.featured .pricing-plan-fit{
+  color:#d3e5fc!important;
+}
+#app .apple-home-page .pricing-section .price-card h3{
+  margin-bottom:5px!important;
+  letter-spacing:-.035em!important;
+}
+#app .apple-home-page .pricing-section .price-card .price-top{
+  gap:9px;align-items:center;
+}
+#app .apple-home-page .pricing-section .price-card .price-top .save{
+  border:1px solid rgba(183,223,255,.35)!important;
+  background:rgba(132,182,246,.12)!important;
+  color:#d9eaff!important;
+  font-size:10px!important;
+  font-weight:700!important;
+  letter-spacing:.085em!important;
+}
+#app .apple-home-page .pricing-section .price-card ul{
+  margin-bottom:clamp(24px,3vw,38px)!important;
+  line-height:1.56!important;
+}
+#app .apple-home-page .pricing-section .pricing-select-btn{
+  justify-content:center;
+  font-size:13px!important;
+  font-weight:750!important;
+  letter-spacing:.01em!important;
+}
+#app .apple-home-page .pricing-section .pricing-assist{
+  max-width:940px;margin-left:auto;margin-right:auto;
+}
+#app .apple-home-page .pricing-section .pricing-assist-links a{
+  min-height:44px;display:inline-flex;
+  align-items:center;justify-content:center;
+  text-underline-offset:4px;
+}
+@media(max-width:900px){
+  #app .apple-home-page .pricing-section .price-card .pricing-plan-fit{
+    min-height:0!important;max-width:none;
+    margin-bottom:18px!important;
+    font-size:13px!important;
+  }
+}
+@media(max-width:600px){
+  #app .apple-home-page .pricing-section .price-card .price-top .save{
+    font-size:9px!important;
+  }
+  #app .apple-home-page .pricing-section .pricing-assist-links a{
+    min-height:46px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #app .apple-home-page .pricing-section .pricing-assist-links a{
+    transition:none!important;
+  }
+}
