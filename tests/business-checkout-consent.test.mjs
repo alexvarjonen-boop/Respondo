@@ -28,5 +28,5 @@ test('all localized terms expressly limit purchases to business usage',()=>{
   assert.match(legal,/Respondo AI on tarkoitettu yksinomaan yrityksille/);
   assert.match(legal,/Respondo AI erbjuds endast företag/);
   assert.match(legal,/Respondo AI is offered only to businesses/);
-  assert.match(legal,/LEGAL_UPDATE_DATE = '2026-10-09'/);
+  assert.match(legal,/LEGAL_UPDATE_DATE = '2026-10-29'/);
 });

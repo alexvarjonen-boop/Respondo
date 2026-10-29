@@ -9,7 +9,7 @@ import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10-polish-v11-hero-clarity-v17-hero-try-bot-v32-chat-navigation-note-v34';
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
-import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2-pricing-20261014-ape-v1-annual-120-v1';
+import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2-pricing-20261014-ape-v1-annual-120-v1-legal-setup-20261029-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 import { marketingAttributionQuery, marketingLeadVisitorRef, normalizeDemoWebsite, buildDemoRequestMessage } from './marketing-lead.mjs?v=20261027-qualified-demo-v1';
 import { parseBookingDurationMinutes } from './booking-duration.mjs?v=20261009-v1';
