@@ -980,6 +980,13 @@ async function notifySetupServiceAfterCheckout(session) {
   }
   if (!pool) return {selected:true,customerSent:false};
   const sessionId=String(session.id||'');
+  const setupToken=String(session.metadata?.setup_image_token||'');
+  const requestedGreeting=setupGreetingInput(session.metadata?.setup_greeting||'',true);
+  if(setupToken){
+    await ensureSetupIntakeImages();
+    const attached=await q('SELECT token FROM setup_intake_images WHERE token=$1 AND session_id=$2',[setupToken,sessionId]);
+    if(!attached.rowCount)return {selected:true,customerSent:false,imageMissing:true};
+  }
   const userId=String(session.metadata?.user_id||'');
   const tenantId=String(session.metadata?.tenant_id||'');
   const subscriptionId=typeof session.subscription==='string' ? session.subscription : session.subscription?.id || '';
@@ -1001,6 +1008,7 @@ async function notifySetupServiceAfterCheckout(session) {
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
+  await q('ALTER TABLE setup_service_requests ADD COLUMN IF NOT EXISTS requested_greeting TEXT NOT NULL DEFAULT \'\'');
   const owner=await q(
     `SELECT u.email,u.full_name,u.preferred_language,t.name AS company_name
        FROM tenants t JOIN users u ON u.id=t.owner_user_id
@@ -1011,9 +1019,9 @@ async function notifySetupServiceAfterCheckout(session) {
   if(!owner.rowCount) return {selected:true,customerSent:false};
   const account=owner.rows[0];
   await q(
-    `INSERT INTO setup_service_requests(session_id,user_id,tenant_id,website_url)
-     VALUES($1,$2,$3,$4) ON CONFLICT(session_id) DO NOTHING`,
-    [sessionId,userId,tenantId,website],
+    `INSERT INTO setup_service_requests(session_id,user_id,tenant_id,website_url,requested_greeting)
+     VALUES($1,$2,$3,$4,$5) ON CONFLICT(session_id) DO NOTHING`,
+    [sessionId,userId,tenantId,website,requestedGreeting],
   );
 
   const client=await pool.connect();
@@ -1063,6 +1071,8 @@ async function notifySetupServiceAfterCheckout(session) {
         '<div style="padding:18px 20px;border:1px solid #435675;background:#222d41;border-radius:14px;margin:0 0 24px">'+
         '<div style="color:#aaccff;font-size:12px;font-weight:800;letter-spacing:1px;margin:0 0 7px">'+escapeEmailHtml(pick('ANALYSOITAVA VERKKOSIVU','WEBBPLATS ATT GRANSKA','WEBSITE TO REVIEW'))+'</div>'+
         '<p style="color:#fff;font-size:15px;line-height:1.5;overflow-wrap:anywhere;margin:0">'+escapeEmailHtml(website)+'</p></div>'+
+        (setupToken?'<p style="color:#c5d8eb;font-size:14px;line-height:1.7;margin:0 0 16px">'+escapeEmailHtml(pick('Botin kuva on vastaanotettu.','Bilden för botten har tagits emot.','Your bot image has been received.'))+'</p>':'')+
+        (requestedGreeting?'<p style="color:#c5d8eb;font-size:14px;line-height:1.7;margin:0 0 16px">'+escapeEmailHtml(pick('Toivottu tervehdys: ','Önskad hälsning: ','Requested greeting: ')+requestedGreeting)+'</p>':'')+
         (ownerFreeSetup?'<p style="color:#b9eacb;font-size:14px;line-height:1.75;margin:0 0 18px">'+escapeEmailHtml(promotionNotice)+'</p>':'')+
         '<p style="color:#d0d8e5;font-size:14px;line-height:1.75;margin:0 0 24px">'+escapeEmailHtml(loginInstructions)+'</p>'+
         (session.metadata?.additional_workspace==='1'?'<p style="margin:0 0 24px"><a href="'+escapeEmailHtml(BASE+'/kirjaudu')+'" style="display:inline-block;border-radius:12px;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 22px;font-size:14px;font-weight:750">'+escapeEmailHtml(pick('Avaa kirjautuminen','Öppna inloggning','Open sign in'))+' →</a></p>':'')+
@@ -1094,6 +1104,8 @@ async function notifySetupServiceAfterCheckout(session) {
             ? 'Omistajan henkilökohtaisella koodilla käyttöönottopalvelu ja tilaus ovat 0 €. Asiakkaalta ei veloiteta maksua. Aloita verkkosivuston analysointi ja botin viimeistely.'
             : 'Asiakas on ostanut 199 €:n käyttöönottopalvelun. Aloita verkkosivuston analysointi ja botin viimeistely. Ilmoita asiakkaalle erikseen, kun botti on tarkistettavissa.')+'</p>'+
           '<p style="color:#fff;font-size:14px;line-height:1.8">Yritys: '+escapeEmailHtml(account.company_name)+'<br>Verkkosivu: '+escapeEmailHtml(website)+'<br>Asiakas: '+escapeEmailHtml(account.email)+'<br>Tilaus: '+escapeEmailHtml(sessionId)+'</p>'+
+          (requestedGreeting?'<p style="color:#d6d8de;font-size:14px;line-height:1.7">Toivottu tervehdys: '+escapeEmailHtml(requestedGreeting)+'</p>':'<p style="color:#aebbd0;font-size:14px">Asiakas ei antanut tervehdystoivetta.</p>')+
+          (setupToken?'<p style="margin:0 0 20px"><a style="color:#aaccff" href="'+escapeEmailHtml(BASE+'/api/app/internal/setup-service-requests/'+encodeURIComponent(sessionId)+'/image')+'">Avaa asiakkaan toimittama kuva (kirjautuminen vaaditaan) →</a></p>':'')+
           '<p style="margin:22px 0"><a href="'+escapeEmailHtml(BASE+'/trafic#setup-orders')+'" style="display:inline-block;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 20px;border-radius:11px;font-weight:700">Avaa käyttöönottotyöt →</a></p>',
       });
       try{
@@ -1496,6 +1508,52 @@ function setupServiceWebsiteUrl(raw, selected) {
   }
 }
 
+// Durable images for optional assisted setup: never use ephemeral Railway disk.
+const SETUP_IMAGE_MAX_BYTES=8*1024*1024;
+function setupIntakeImageMime(bytes){
+  if(!Buffer.isBuffer(bytes)||bytes.length<16||bytes.length>SETUP_IMAGE_MAX_BYTES) return '';
+  if(bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) return 'image/png';
+  if(bytes[0]===255&&bytes[1]===216&&bytes[2]===255&&
+     bytes[bytes.length-2]===255&&bytes[bytes.length-1]===217) return 'image/jpeg';
+  if(bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP')
+    return 'image/webp';
+  return '';
+}
+async function ensureSetupIntakeImages(query=q){
+  await query(`CREATE TABLE IF NOT EXISTS setup_intake_images(
+    token TEXT PRIMARY KEY,session_id TEXT UNIQUE,mime_type TEXT NOT NULL,
+    image_bytes BYTEA NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW()+INTERVAL '36 hours')
+  )`);
+}
+function setupGreetingInput(raw,selected){
+  if(!selected)return '';
+  if(typeof raw!=='string'&&raw!=null)
+    throw Object.assign(new Error('Virheellinen tervehdysviesti.'),{publicStatus:422});
+  const message=String(raw||'').trim();
+  if(message.length>220||/[<>\u0000-\u001f]/.test(message))
+    throw Object.assign(new Error('Tervehdysviesti saa sisältää enintään 220 merkkiä.'),{publicStatus:422});
+  return message;
+}
+async function validateSetupImageToken(token,selected){
+  if(!selected)return '';
+  const key=String(token||'').trim();
+  if(!/^[a-f0-9]{48}$/.test(key))
+    throw Object.assign(new Error('Lataa botin kuva ennen tilauksen jatkamista.'),{publicStatus:422});
+  await ensureSetupIntakeImages();
+  const found=await q('SELECT token FROM setup_intake_images WHERE token=$1 AND session_id IS NULL AND expires_at>NOW()',[key]);
+  if(!found.rowCount)
+    throw Object.assign(new Error('Botin kuva ei ole enää käytettävissä. Lataa kuva uudelleen.'),{publicStatus:422});
+  return key;
+}
+async function bindSetupImageToSession(client,token,sessionId){
+  if(!token)return;
+  const found=await client.query(
+    'UPDATE setup_intake_images SET session_id=$2 WHERE token=$1 AND session_id IS NULL AND expires_at>NOW() RETURNING token',
+    [token,sessionId]);
+  if(!found.rowCount)
+    throw Object.assign(new Error('Kuvan liittäminen tilaukseen epäonnistui. Lataa kuva uudelleen.'),{publicStatus:422});
+}
 const SETUP_SERVICE_PRICE_CENTS = 19900;
 function setupServiceCheckoutLineItem(ownerFree=false) {
   return {
@@ -8647,6 +8705,9 @@ function rejectCrossSiteAuthenticatedMutation(req,res,next) {
 
 app.use(rejectCrossSiteAuthenticatedMutation);
 
+app.use('/api/public/setup-image-upload', express.raw({
+  type:['image/png','image/jpeg','image/webp'],limit:'8mb',
+}));
 app.use(express.json({
   limit:'1mb',
   verify(req,res,buf) {
@@ -9883,6 +9944,36 @@ app.post('/api/auth/email-verification/confirm', signupVerificationConfirmLimite
   return res.json({ ok:true, email });
 });
 
+// Binary upload is rate-limited and requires an exact same-origin browser request.
+const setupImageUploadLimiter=rateLimit({
+  windowMs:15*60*1000,limit:6,standardHeaders:true,legacyHeaders:false,
+  keyGenerator:req=>publicRateKey(req,'setup-image-upload'),
+});
+app.post('/api/public/setup-image-upload',setupImageUploadLimiter,async(req,res)=>{
+  res.set('Cache-Control','no-store');
+  const origin=String(req.get('origin')||'');
+  const host=String(req.get('host')||'').toLowerCase();
+  try {
+    if(!origin||new URL(origin).host.toLowerCase()!==host||
+       req.get('sec-fetch-site')==='cross-site')
+      return res.status(403).json({error:'Kuvan lataaminen estettiin.'});
+  }catch{return res.status(403).json({error:'Kuvan lataaminen estettiin.'});}
+  if(!pool)return res.status(503).json({error:'Tietokantaa ei ole yhdistetty.'});
+  const mime=setupIntakeImageMime(req.body);
+  if(!mime||String(req.get('content-type')||'').split(';')[0].toLowerCase()!==mime)
+    return res.status(422).json({error:'Lataa PNG-, JPG- tai WebP-kuva (enintään 8 Mt).'});
+  const token=crypto.randomBytes(24).toString('hex');
+  try{
+    await ensureSetupIntakeImages();
+    await q('DELETE FROM setup_intake_images WHERE session_id IS NULL AND expires_at<NOW()');
+    await q('INSERT INTO setup_intake_images(token,mime_type,image_bytes) VALUES($1,$2,$3)',[token,mime,req.body]);
+    return res.json({imageToken:token});
+  }catch(error){
+    console.error('Assisted setup image upload failed:',error?.message);
+    return res.status(503).json({error:'Kuvan lataaminen epäonnistui. Yritä uudelleen.'});
+  }
+});
+
 // Pricing preview: secret founder code is validated server-side, not in public assets.
 app.post('/api/public/owner-promo-preview', checkoutLimiter, (req,res) => {
   res.set('Cache-Control','no-store');
@@ -9895,9 +9986,14 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
 
   const { fullName, companyName, businessId, password, plan, acceptedTerms } = req.body;
   const setupService = req.body?.setupService === true;
-  let setupWebsite='';
-  try { setupWebsite=setupServiceWebsiteUrl(req.body?.setupWebsite,setupService); }
-  catch(e){ return res.status(e.publicStatus||422).json({error:e.message}); }
+  let setupWebsite='',setupGreeting='',setupImageToken='';
+  try {
+    setupWebsite=setupServiceWebsiteUrl(req.body?.setupWebsite,setupService);
+    setupGreeting=setupGreetingInput(req.body?.setupGreeting,setupService);
+    setupImageToken=await validateSetupImageToken(req.body?.setupImageToken,setupService);
+  }catch(e){
+    return res.status(e.publicStatus||503).json({error:e.publicStatus?e.message:'Käyttöönottotiedot eivät ole saatavilla.'});
+  }
   const email = cleanEmail(req.body.email);
   const normalizedPlan = normalizeCheckoutPlan(plan);
   const referralCode = normalizeReferralCode(req.body.referralCode);
@@ -10085,7 +10181,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             business_purchase: '1',
             setup_service:setupService ? '1' : '0',
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
-            ...(setupService ? { setup_website:setupWebsite } : {}),
+            ...(setupService ? { setup_website:setupWebsite,setup_image_token:setupImageToken,setup_greeting:setupGreeting } : {}),
             ...(referralCode ? { referral_code: referralCode } : {}),
             ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'} : {}),
           },
@@ -10107,12 +10203,13 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           business_purchase: '1',
           setup_service:setupService ? '1' : '0',
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
-          ...(setupService ? { setup_website:setupWebsite } : {}),
+          ...(setupService ? { setup_website:setupWebsite,setup_image_token:setupImageToken,setup_greeting:setupGreeting } : {}),
           ...(referralCode ? { referral_code: referralCode } : {}),
             ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'} : {}),
         },
       });
 
+      if(setupService)await bindSetupImageToSession(client,setupImageToken,session.id);
       await client.query('COMMIT');
     } catch (e) {
       try { await client.query('ROLLBACK'); } catch {}
@@ -10689,9 +10786,14 @@ async function allStripeSubscriptionIdsForCustomer(customerId) {
 async function purgeDeletedAccountArtifacts(client,{tenantId=null,userId=null}={}) {
   const exists=await client.query(
     "SELECT to_regclass('public.setup_service_requests') IS NOT NULL AS has_setup, "+
-    "to_regclass('public.signup_welcome_emails') IS NOT NULL AS has_welcome",
+    "to_regclass('public.signup_welcome_emails') IS NOT NULL AS has_welcome, "+
+    "to_regclass('public.setup_intake_images') IS NOT NULL AS has_images",
   );
   if(exists.rows[0]?.has_setup) {
+    if(exists.rows[0]?.has_images){
+      if(tenantId) await client.query('DELETE FROM setup_intake_images WHERE session_id IN (SELECT session_id FROM setup_service_requests WHERE tenant_id=$1)',[tenantId]);
+      if(userId) await client.query('DELETE FROM setup_intake_images WHERE session_id IN (SELECT session_id FROM setup_service_requests WHERE user_id=$1)',[userId]);
+    }
     if(tenantId) await client.query('DELETE FROM setup_service_requests WHERE tenant_id=$1',[tenantId]);
     if(userId) await client.query('DELETE FROM setup_service_requests WHERE user_id=$1',[userId]);
   }
@@ -10836,9 +10938,14 @@ app.post('/api/app/workspaces/switch', auth, ownerOnly, async (req,res) => {
 
 app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const setupService=req.body?.setupService===true;
-  let setupWebsite='';
-  try { setupWebsite=setupServiceWebsiteUrl(req.body?.setupWebsite,setupService); }
-  catch(e){ return res.status(e.publicStatus||422).json({error:e.message}); }
+  let setupWebsite='',setupGreeting='',setupImageToken='';
+  try {
+    setupWebsite=setupServiceWebsiteUrl(req.body?.setupWebsite,setupService);
+    setupGreeting=setupGreetingInput(req.body?.setupGreeting,setupService);
+    setupImageToken=await validateSetupImageToken(req.body?.setupImageToken,setupService);
+  }catch(e){
+    return res.status(e.publicStatus||503).json({error:e.publicStatus?e.message:'Käyttöönottotiedot eivät ole saatavilla.'});
+  }
   const companyName=String(req.body?.companyName||'').replace(/[<>]/g,'').trim().slice(0,120);
   const businessId=String(req.body?.businessId||'').replace(/[<>]/g,'').trim().slice(0,40);
   const plan=normalizeCheckoutPlan(req.body?.plan);
@@ -10982,7 +11089,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
           business_purchase:'1',
           setup_service:setupService ? '1' : '0',
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
-          ...(setupService ? { setup_website:setupWebsite } : {}),
+          ...(setupService ? { setup_website:setupWebsite,setup_image_token:setupImageToken,setup_greeting:setupGreeting } : {}),
           ...(referralCode ? { referral_code:referralCode } : {}),
           ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'} : {}),
         },
@@ -11002,11 +11109,13 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         business_purchase:'1',
         setup_service:setupService ? '1' : '0',
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
-        ...(setupService ? { setup_website:setupWebsite } : {}),
+        ...(setupService ? { setup_website:setupWebsite,setup_image_token:setupImageToken,setup_greeting:setupGreeting } : {}),
         ...(referralCode ? { referral_code:referralCode } : {}),
           ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'} : {}),
       },
     });
+
+    if(setupService)await bindSetupImageToSession(pool,setupImageToken,session.id);
 
     if(referrer && !existingReferralReservation){
       await q(
@@ -11172,14 +11281,18 @@ app.get('/api/app/internal/setup-service-requests', auth, ownerTrafficOnly, asyn
   try{
     const exists=await q("SELECT to_regclass('public.setup_service_requests') AS relation");
     if(!exists.rows[0]?.relation) return res.json({requests:[]});
+    await ensureSetupIntakeImages();
+    await q('ALTER TABLE setup_service_requests ADD COLUMN IF NOT EXISTS requested_greeting TEXT NOT NULL DEFAULT \'\'');
     const found=await q(
-      `SELECT sr.session_id,sr.website_url,sr.status,sr.created_at,sr.customer_emailed_at,
+      `SELECT sr.session_id,sr.website_url,sr.requested_greeting,sr.status,sr.created_at,sr.customer_emailed_at,
               sr.owner_emailed_at,sr.ready_emailed_at,t.name AS company_name,u.email,
               t.bot_name,t.greeting,t.bot_avatar,
+              (si.token IS NOT NULL) AS has_image,
               (u.stripe_subscription_id IS NOT DISTINCT FROM t.stripe_subscription_id) AS first_workspace
          FROM setup_service_requests sr
          JOIN tenants t ON t.id::text=sr.tenant_id
          JOIN users u ON u.id=t.owner_user_id
+         LEFT JOIN setup_intake_images si ON si.session_id=sr.session_id
         ORDER BY sr.created_at DESC LIMIT 100`,
     );
     return res.json({requests:found.rows});
@@ -11187,6 +11300,25 @@ app.get('/api/app/internal/setup-service-requests', auth, ownerTrafficOnly, asyn
     console.error('Setup admin listing failed:',e?.message);
     return res.status(503).json({error:'Käyttöönottojonon avaaminen epäonnistui.'});
   }
+});
+
+// Private image preview. Never expose raw customer-uploaded files through /public.
+app.get('/api/app/internal/setup-service-requests/:id/image',auth,ownerTrafficOnly,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  res.set('X-Content-Type-Options','nosniff');
+  if(!/^cs_[A-Za-z0-9_]{10,120}$/.test(String(req.params.id||'')))
+    return res.status(400).end();
+  try{
+    await ensureSetupIntakeImages();
+    const found=await q(
+      `SELECT si.mime_type,si.image_bytes FROM setup_intake_images si
+       JOIN setup_service_requests sr ON sr.session_id=si.session_id
+       JOIN tenants t ON t.id::text=sr.tenant_id AND t.owner_user_id::text=sr.user_id
+       WHERE sr.session_id=$1 LIMIT 1`,[req.params.id]);
+    if(!found.rowCount)return res.status(404).end();
+    res.type(found.rows[0].mime_type);
+    return res.send(found.rows[0].image_bytes);
+  }catch(err){console.error('Private setup image retrieval failed:',err?.message);return res.status(503).end();}
 });
 
 // Owner may set the initial login email and password only on a paid, active

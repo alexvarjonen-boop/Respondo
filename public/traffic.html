@@ -113,6 +113,7 @@
 @media(max-width:730px){.setup-job{grid-template-columns:1fr}.setup-job .setup-actions{justify-content:flex-start}.setup-section{padding:17px}}
 
 .setup-dialog select{display:block;box-sizing:border-box;width:100%;margin-top:7px;padding:11px;border:1px solid #dfe1e8;border-radius:11px;background:#fff;color:#17191e;font:inherit;font-size:14px}
+.setup-customer-image{display:grid;gap:8px;margin:12px 0}.setup-customer-image>b,.setup-requested-greeting>b{color:#2c4d73;font-size:13px}.setup-customer-image img{max-width:180px;max-height:120px;object-fit:contain;background:#fff;padding:8px;border:1px solid #d0d8e2;border-radius:12px}.setup-requested-greeting{max-width:50ch;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
 </style>
 </head>
 <body>
@@ -377,6 +378,7 @@ const SL={
  fi:{
  title:'Käyttöönottopalvelun tilaukset',eyebrow:'OMISTAJAN TYÖJONO',
  intro:'Täällä viimeistelet tilatut käyttöönottopalvelut (myös henkilökohtaisella kampanjakoodilla 0 €). Viimeistele botti, aseta kirjautumistiedot ja lähetä ne henkilökohtaisesti omasta sähköpostistasi.',
+ image:'Asiakkaan kuva / logo',greetingWish:'Asiakkaan tervehdystoive',
  warning:'Respondo ei lähetä valmista salasanaa automaattisesti. Lähetä tiedot vasta, kun botti on oikeasti valmis. Älä merkitse työtä luovutetuksi ennen kuin olet itse lähettänyt kirjautumistiedot. Tämä sivu on näkyvissä vain omistajatilillesi.',
  loading:'Haetaan käyttöönottotilauksia…',empty:'Ei käyttöönottotilauksia.',refresh:'Päivitä tilaukset',
  received:'Odottaa käyttöönottoa',credentials_created:'Tunnukset luotu – lähetä henkilökohtaisesti',ready:'Luovutettu',
@@ -390,6 +392,7 @@ const SL={
  sv:{
  title:'Beställningar för installation',eyebrow:'ÄGARENS ARBETSKÖ',
  intro:'Här färdigställer du den köpta installationstjänsten manuellt, anger kundens e-postadress och ett tillfälligt lösenord och skickar uppgifterna själv.',
+ image:'Kundens bild / logotyp',greetingWish:'Kundens önskade hälsning',
  warning:'Respondo skickar inte lösenord automatiskt. Skicka uppgifterna först när botten är klar och bekräfta sedan överlämningen.',
  loading:'Hämtar installationsbeställningar…',empty:'Inga installationsbeställningar.',refresh:'Uppdatera beställningar',
  received:'Väntar på installation',credentials_created:'Uppgifter skapade – skicka personligen',ready:'Överlämnat',
@@ -402,6 +405,7 @@ const SL={
  en:{
  title:'Assisted setup orders',eyebrow:'OWNER WORK QUEUE',
  intro:'Complete purchased setup orders yourself: prepare the customer bot, set its login email and a temporary password, and personally send the credentials.',
+ image:'Customer image / logo',greetingWish:'Requested greeting',
  warning:'Respondo does not email passwords automatically. Send credentials only once the bot is ready, then confirm you have personally handed them over.',
  loading:'Loading setup orders…',empty:'No setup orders.',refresh:'Refresh orders',
  received:'Awaiting setup',credentials_created:'Credentials created – send personally',ready:'Handed over',
@@ -452,8 +456,14 @@ function paintSetupOrders(){
     const customerLogin=job.status==='credentials_created'?'<a href="/kirjaudu" target="_blank" rel="noopener noreferrer" title="'+e(sl('privateNote'))+'">'+e(sl('customerLogin'))+'</a>':'';
     const dueDate=new Date(new Date(job.created_at).getTime()+7*86400000);
     const dueNote=Number.isNaN(dueDate.getTime())?'':'<p class="setup-due">'+e(sl('due'))+': '+e(companyDate(dueDate))+'</p>';
+    const privateImageUrl='/api/app/internal/setup-service-requests/'+encodeURIComponent(job.session_id)+'/image';
+    const attachedImage=job.has_image
+      ?'<div class="setup-customer-image"><b>'+e(sl('image'))+'</b><a href="'+privateImageUrl+'" target="_blank" rel="noopener noreferrer"><img src="'+privateImageUrl+'" loading="lazy" alt="'+e(sl('image'))+'"></a></div>'
+      :'';
+    const requestedGreeting=job.requested_greeting
+      ?'<p class="setup-requested-greeting"><b>'+e(sl('greetingWish'))+':</b> '+e(job.requested_greeting)+'</p>':'';
     return '<article class="setup-job"><div><h3>'+e(job.company_name||'')+'</h3><p><a href="'+link+'" rel="noopener noreferrer" target="_blank">'+link+'</a></p>'+
-      '<p>'+email+'</p>'+dueNote+'<span class="setup-state">'+e(setupState(job.status))+'</span>'+
+      '<p>'+email+'</p>'+dueNote+attachedImage+requestedGreeting+'<span class="setup-state">'+e(setupState(job.status))+'</span>'+
       (!job.first_workspace&&!done?'<p>'+e(sl('extra'))+'</p>':'')+'</div>'+
       '<div class="setup-actions">'+(done?'':'<button type="button" data-setup-config="'+e(job.session_id)+'">'+e(sl('config'))+'</button>')+importButton+action+customerLogin+deliver+'</div></article>';
   }).join(''):'<p class="company-loading">'+e(sl('empty'))+'</p>';
@@ -565,7 +575,7 @@ function openSetupBot(id){
   if(!job||!form||!dialog)return;
   form.dataset.sessionId=id;
   form.elements.botName.value=String(job.bot_name||job.company_name||'Respondo AI').slice(0,40);
-  form.elements.greeting.value=String(job.greeting||'Hei! Miten voin auttaa?').slice(0,220);
+  form.elements.greeting.value=String(job.requested_greeting||job.greeting||'Hei! Miten voin auttaa?').slice(0,220);
   form.elements.botAvatar.value=/^robot-(?:[1-9]|10)$/.test(job.bot_avatar||'')?job.bot_avatar:'robot-1';
   document.getElementById('setupBotCompany').textContent=job.company_name||'';
   document.getElementById('setupBotError').textContent='';
