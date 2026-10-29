@@ -1,3 +1,4 @@
+import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
@@ -10012,11 +10013,12 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
     ['google','apple'].includes(oauthProfile.provider)
   );
 
-  if (!acceptedTerms || !email || !companyName || (!socialSignup && !setupService && (!password || password.length < 10))) {
-    return res.status(400).json({
-      error: socialSignup
-        ? 'Täytä kaikki pakolliset tiedot.'
-        : 'Täytä kaikki pakolliset tiedot. Salasanan on oltava vähintään 10 merkkiä.',
+  if (!acceptedTerms || !email || !companyName) {
+    return res.status(400).json({error:'Täytä kaikki pakolliset tiedot.'});
+  }
+  if (!socialSignup && !setupService && !customerPasswordValid(password)) {
+    return res.status(422).json({
+      error:'Salasanassa pitää olla vähintään 8 merkkiä, iso ja pieni kirjain, numero sekä erikoismerkki.',
     });
   }
 
@@ -10516,11 +10518,8 @@ app.post('/api/auth/password-reset/confirm', loginLimiter, async (req,res) => {
   if (rawToken.length < 32 || rawToken.length > 200) {
     return res.status(400).json({ error:'Palautuslinkki ei ole voimassa.' });
   }
-  if (newPassword.length < 10) {
-    return res.status(400).json({ error:'Uuden salasanan pitää olla vähintään 10 merkkiä.' });
-  }
-  if (newPassword.length > 200) {
-    return res.status(400).json({ error:'Uusi salasana on liian pitkä.' });
+  if (!customerPasswordValid(newPassword)) {
+    return res.status(400).json({error:'Salasanassa pitää olla vähintään 8 merkkiä, iso ja pieni kirjain, numero sekä erikoismerkki (enintään 200 merkkiä).'});
   }
 
   const tokenHash=crypto.createHash('sha256').update(rawToken).digest('hex');
@@ -10637,7 +10636,7 @@ app.post('/api/app/account/password/google', auth, ownerOnly, loginLimiter, asyn
     const ticket = jwt.verify(cookies(req).respondo_password_setup || '',JWT);
     if(ticket.purpose !== 'password_setup' || ticket.sub !== req.user.sub || Number(ticket.sv) !== Number(req.user.sv)) return res.status(403).json({error:'Vahvistus on vanhentunut. Vahvista Google-tilisi uudelleen.'});
     const newPassword = String(req.body?.newPassword || '');
-    if(newPassword.length < 10 || newPassword.length > 200) return res.status(400).json({error:'Salasanan pituuden tulee olla 10–200 merkkiä.'});
+    if(!customerPasswordValid(newPassword))return res.status(400).json({error:'Salasanassa pitää olla vähintään 8 merkkiä, iso ja pieni kirjain, numero sekä erikoismerkki (enintään 200 merkkiä).'});
     const hash = await bcrypt.hash(newPassword,12);
     const updated = await q("UPDATE users SET password_hash=$1,session_version=session_version+1,updated_at=NOW() WHERE id=$2 AND session_version=$3 AND status='active' RETURNING id,email,session_version",[hash,req.user.sub,req.user.sv]);
     if(!updated.rowCount) return res.status(409).json({error:'Istunto muuttui. Kirjaudu uudelleen.'});
@@ -10654,11 +10653,8 @@ app.post('/api/app/account/password', auth, ownerOnly, loginLimiter, async (req,
     if (!currentPassword || currentPassword.length > 200) {
       return res.status(400).json({error:'Anna nykyinen salasana.'});
     }
-    if (newPassword.length < 10) {
-      return res.status(400).json({error:'Uuden salasanan pitää olla vähintään 10 merkkiä.'});
-    }
-    if (newPassword.length > 200) {
-      return res.status(400).json({error:'Uusi salasana on liian pitkä.'});
+    if (!customerPasswordValid(newPassword)) {
+      return res.status(400).json({error:'Salasanassa pitää olla vähintään 8 merkkiä, iso ja pieni kirjain, numero sekä erikoismerkki (enintään 200 merkkiä).'});
     }
 
     const rr=await q('SELECT id,email,password_hash,session_version FROM users WHERE id=$1',[req.user.sub]);
