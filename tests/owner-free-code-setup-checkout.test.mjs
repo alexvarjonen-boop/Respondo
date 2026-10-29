@@ -15,7 +15,7 @@ const priceForPlan=factory(
   {basic_monthly:'Advanced',advanced_monthly:'Premium',business_monthly:'Enterprise',
     basic_yearly:'Advanced (annual)',advanced_yearly:'Premium (annual)',business_yearly:'Enterprise (annual)'});
 
-test('owner free code creates an immutable €0 recurring line item, not a coupon that erases setup charges',()=>{
+test('owner free code creates an immutable €0 recurring line item, and an independently zero-priced setup line for founders',()=>{
   for(const plan of ['basic_monthly','advanced_monthly','business_monthly',
    'basic_yearly','advanced_yearly','business_yearly']){
     const line=priceForPlan(plan);
@@ -29,11 +29,11 @@ test('owner free code creates an immutable €0 recurring line item, not a coupo
   assert.throws(()=>priceForPlan('unknown'),/ei ole voimassa/);
   assert.doesNotMatch(method,/stripe\.coupons|discounts:/);
   const normalSetup=server.slice(server.indexOf('function setupServiceCheckoutLineItem()'),start);
-  assert.match(normalSetup,/unit_amount:SETUP_SERVICE_PRICE_CENTS/);
+  assert.match(normalSetup,/unit_amount:ownerFree \? 0 : SETUP_SERVICE_PRICE_CENTS/);
   assert.match(server,/const SETUP_SERVICE_PRICE_CENTS = 19900/);
 });
 
-test('new customer: free promo with setup goes to paid checkout and remains pending until Stripe confirms it',()=>{
+test('new customer: free promo setup waits for Checkout and costs zero',()=>{
   const code=server.slice(server.indexOf("app.post('/api/auth/start-checkout'"),server.indexOf("app.get('/api/auth/checkout-success'"));
   assert.match(code,/const freeReferral = isFreeReferralCode\(referralCode\)/);
   assert.doesNotMatch(code,/setupService && \(freeReferral \|\| normalizedPlan === 'owner_test'\)/);
@@ -43,13 +43,14 @@ test('new customer: free promo with setup goes to paid checkout and remains pend
   assert.match(code,/const initialStatus = freeReferral && !setupService \? 'active' : 'pending'/);
   assert.match(code,/const initialSubscriptionStatus = freeReferral && !setupService \? 'active' : null/);
   assert.match(code,/if \(freeReferral && !setupService\) \{/);
-  assert.match(code,/line_items:setupService \? \[checkoutLineItem,setupServiceCheckoutLineItem\(\)\] : \[checkoutLineItem\]/);
+  assert.match(code,/line_items:setupService \? \[checkoutLineItem,setupServiceCheckoutLineItem\(freeReferral\)\] : \[checkoutLineItem\]/);
   assert.match(code,/trial_period_days|assistedSetupCheckoutTrial\(setupService\)/);
-  assert.equal((code.match(/owner_promo_zero_recurring:'1'/g)||[]).length,2);
+  assert.equal((code.match(/owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'/g)||[]).length,2);
+  assert.match(code,/payment_method_collection:freeReferral && setupService \? 'if_required' : 'always'/);
   assert.match(code,/allow_promotion_codes: false/);
 });
 
-test('existing customer: owner promo with setup charges 199 once without auto-activating an unpaid company',()=>{
+test('existing customer: founder setup costs zero, without premature activation',()=>{
   const code=server.slice(server.indexOf("app.post('/api/app/workspaces/checkout'"),
    server.indexOf('// These internal operations are restricted to the account configured as OWNER_EMAIL'));
   assert.match(code,/if\(setupService && plan==='owner_test'\)/);
@@ -58,9 +59,11 @@ test('existing customer: owner promo with setup charges 199 once without auto-ac
   assert.match(code,/if \(!freeReferral \|\| setupService\) \{/);
   assert.match(code,/checkoutLineItem=freeReferral \? ownerFreeSetupCheckoutLineItem\(plan\)/);
   assert.match(code,/if\(freeReferral && !setupService\)\{/);
-  assert.match(code,/line_items:setupService \? \[checkoutLineItem,setupServiceCheckoutLineItem\(\)\] : \[checkoutLineItem\]/);
+  assert.match(code,/line_items:setupService \? \[checkoutLineItem,setupServiceCheckoutLineItem\(freeReferral\)\] : \[checkoutLineItem\]/);
   assert.match(code,/assistedSetupCheckoutTrial\(setupService\)/);
-  assert.equal((code.match(/owner_promo_zero_recurring:'1'/g)||[]).length,2);
+  assert.equal((code.match(/owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'/g)||[]).length,2);
+  assert.match(code,/payment_method_collection:freeReferral && setupService \? 'if_required' : 'always'/);
+  assert.match(code,/if\(referralCode && !freeReferral\)\{/);
   assert.match(code,/allow_promotion_codes:false/);
 });
 
