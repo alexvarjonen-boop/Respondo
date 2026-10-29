@@ -6292,6 +6292,7 @@ async function route() {
         signupSubmitButton.innerHTML = appText('Avataan maksusivua…','Öppnar betalningssidan…','Opening payment page…');
       }
       try {
+        const setupImageToken=await uploadSetupImage(form);
         const result = await api('/api/auth/start-checkout', {
           method:'POST',
           body:JSON.stringify({
@@ -6304,6 +6305,8 @@ async function route() {
             plan:form.get('plan'),
             setupService:form.get('setupService')==='1',
             setupWebsite:String(form.get('setupWebsite') || '').trim(),
+            setupImageToken,
+            setupGreeting:String(form.get('setupGreeting')||'').trim(),
             referralCode:form.get('referralCode'),
             acceptedTerms:!!form.get('terms'),
             businessPurchase:!!form.get('terms'),
@@ -6648,6 +6651,7 @@ async function route() {
       button.textContent=appText('Avataan maksua…','Öppnar betalning…','Opening checkout…');
       if(msg) msg.textContent='';
       try{
+        const setupImageToken=await uploadSetupImage(fd);
         const result=await api('/api/app/workspaces/checkout',{
           method:'POST',
           body:JSON.stringify({
@@ -6657,6 +6661,8 @@ async function route() {
             plan:String(fd.get('plan')||'basic_monthly'),
             setupService:fd.get('setupService')==='1',
             setupWebsite:String(fd.get('setupWebsite') || '').trim(),
+            setupImageToken,
+            setupGreeting:String(fd.get('setupGreeting')||'').trim(),
             referralCode:String(fd.get('referralCode')||'').trim(),
             acceptedTerms:fd.get('acceptedTerms')==='on',
             businessPurchase:fd.get('acceptedTerms')==='on',
@@ -6681,6 +6687,7 @@ async function route() {
       button.innerHTML=appText('Avataan maksua…','Öppnar betalning…','Opening checkout…');
       if(msg) msg.innerHTML='';
       try {
+        const setupImageToken=await uploadSetupImage(fd);
         const result=await api('/api/app/workspaces/checkout',{
           method:'POST',
           body:JSON.stringify({
@@ -6690,6 +6697,8 @@ async function route() {
             plan:String(fd.get('plan')||'basic_monthly'),
             setupService:fd.get('setupService')==='1',
             setupWebsite:String(fd.get('setupWebsite') || '').trim(),
+            setupImageToken,
+            setupGreeting:String(fd.get('setupGreeting')||'').trim(),
             referralCode:String(fd.get('referralCode')||'').trim(),
             acceptedTerms:fd.get('acceptedTerms')==='on',
             businessPurchase:fd.get('acceptedTerms')==='on'
