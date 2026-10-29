@@ -10,8 +10,8 @@ test('new setup checkout prices paid setup at 199 and free founder setup at zero
   assert.match(server,/SETUP_SERVICE_PRICE_CENTS\s*=\s*19900/);
   assert.match(server,/assistedSetupCheckoutTrial\(setupService\)/);
   assert.match(server,/setup_billing_mode:'after_handover'/);
-  assert.match(server,/assist.*SetupCheckoutNotice\(preferredLanguage\)/);
-  assert.match(server,/assist.*SetupCheckoutNotice\(user\.preferred_language\|\|'fi'\)/);
+  assert.match(server,/assist.*SetupCheckoutNotice\(preferredLanguage,freeReferral\)/);
+  assert.match(server,/assist.*SetupCheckoutNotice\(user\.preferred_language\|\|'fi',freeReferral\)/);
 });
 
 test('Stripe webhooks hold payment collection for paid assisted setup before acknowledging completion',()=>{
