@@ -11336,7 +11336,12 @@ app.post('/api/app/internal/setup-service-requests/:id/credentials', auth, owner
   res.set('Cache-Control','private, no-store');
   const sessionId=String(req.params.id||'');
   const password=String(req.body?.password||'');
+  // The owner sees the cryptographically generated ID before saving it. Keep
+  // precisely that value on first save, but never permit changing a saved ID.
+  const requestedCode=String(req.body?.loginCode||'').trim().toUpperCase();
   if(!/^cs_[A-Za-z0-9_]{10,120}$/.test(sessionId)) return res.status(400).json({error:'Virheellinen tilaus.'});
+  if(requestedCode && !/^RSP-[A-F0-9]{12}$/.test(requestedCode))
+    return res.status(422).json({error:'Virheellinen kirjautumistunnus. Luo tunnus uudelleen.'});
   if(password.length<14 || password.length>72 || Buffer.byteLength(password,'utf8')>72)
     return res.status(422).json({error:'Salasanan tulee olla 14–72 tavua.'});
   if(!pool)return res.status(503).json({error:'Tietokanta ei ole käytettävissä.'});
@@ -11381,7 +11386,7 @@ app.post('/api/app/internal/setup-service-requests/:id/credentials', auth, owner
     }
     // Reissuing a password retains the same personal login ID. PostgreSQL's
     // unique index prevents duplicate IDs even if two owners save concurrently.
-    const loginCode=job.setup_login_code||newAssistedSetupLoginCode();
+    const loginCode=job.setup_login_code||requestedCode||newAssistedSetupLoginCode();
     const passwordHash=await bcrypt.hash(password,12);
     await client.query(
       'UPDATE users SET setup_login_code=$1,password_hash=$2,session_version=session_version+1,updated_at=NOW() WHERE id=$3',
