@@ -34,7 +34,7 @@ test('manual setup assignment never overwrites customer billing contact email',(
   const code=slice("app.post('/api/app/internal/setup-service-requests/:id/credentials'","// Owner confirms the customer has personally received their login details");
   assert.match(code,/auth, ownerTrafficOnly, loginLimiter/);
   assert.match(code,/FOR UPDATE OF sr,u/);
-  assert.match(code,/job\.setup_login_code\|\|newAssistedSetupLoginCode\(\)/);
+  assert.match(code,/job\.setup_login_code\|\|requestedCode\|\|newAssistedSetupLoginCode\(\)/);
   assert.match(code,/UPDATE users SET setup_login_code=\$1,password_hash=\$2,session_version=session_version\+1/);
   assert.doesNotMatch(code,/UPDATE users SET email=/);
   assert.doesNotMatch(code,/req\.body\?\.email/);
@@ -46,10 +46,10 @@ test('manual setup assignment never overwrites customer billing contact email',(
 
 test('owner sees the login code and a newly generated password without email administration',()=>{
   assert.match(traffic,/name="loginCode" type="text"/);
-  assert.match(traffic,/readonly placeholder/);
+  assert.match(traffic,/readonly aria-label/);
   assert.match(traffic,/generateSetupPassword\(\);/);
   assert.match(traffic,/form\.elements\.loginCode\.value=result\.loginCode/);
-  assert.match(traffic,/JSON\.stringify\(\{password\}\)/);
+  assert.match(traffic,/JSON\.stringify\(\{password,loginCode\}\)/);
   assert.match(traffic,/\.mail\(form\.elements\.loginCode\.value\.trim\(\),form\.elements\.password\.value\)/);
   assert.match(traffic,/Kirjautumistunnus:/);
   assert.match(traffic,/Inloggnings-ID:/);
