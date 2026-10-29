@@ -1,3 +1,4 @@
+import { customerPasswordValid, customerPasswordChecks, customerPasswordStrength } from './customer-password-policy.mjs?v=20261029-strength-v1';
 import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39';
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
@@ -13,6 +14,66 @@ import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 import { marketingAttributionQuery, marketingLeadVisitorRef, normalizeDemoWebsite, buildDemoRequestMessage } from './marketing-lead.mjs?v=20261027-qualified-demo-v1';
 import { parseBookingDurationMinutes } from './booking-duration.mjs?v=20261009-v1';
 const $ = (s, r = document) => r.querySelector(s);
+// Live, accessible password-strength feedback shared by signup, password
+// recovery and account settings. Password bytes never leave the input here.
+const PASSWORD_RULE_LABELS={
+  length:['Vähintään 8 merkkiä','Minst 8 tecken','At least 8 characters'],
+  upper:['Iso kirjain (A–Z)','Stor bokstav (A–Z)','Uppercase letter (A–Z)'],
+  lower:['Pieni kirjain (a–z)','Liten bokstav (a–z)','Lowercase letter (a–z)'],
+  digit:['Numero (0–9)','Siffra (0–9)','Number (0–9)'],
+  special:['Erikoismerkki (esim. !@#)','Specialtecken (t.ex. !@#)','Special character (e.g. !@#)'],
+};
+function customerPasswordPolicyMessage(){
+  return appText('Salasanassa pitää olla vähintään 8 merkkiä, iso ja pieni kirjain, numero sekä erikoismerkki.',
+    'Lösenordet måste ha minst 8 tecken, en stor och en liten bokstav, en siffra och ett specialtecken.',
+    'Use at least 8 characters, an uppercase and lowercase letter, a number, and a special character.');
+}
+function passwordStrengthMarkup(){
+  const labels=['','Heikko','Kohtalainen','Hyvä','Vahva'];
+  return `<div class="password-strength-panel" data-password-strength-panel>
+    <div class="password-strength-header">
+      <span>${appText('Salasanan vahvuus','Lösenordsstyrka','Password strength')}</span>
+      <strong data-strength-label aria-live="polite">${appText('Ei vielä salasanaa','Inget lösenord ännu','No password yet')}</strong>
+    </div>
+    <div class="password-strength-bar" role="meter" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0" aria-label="${appText('Salasanan vahvuus','Lösenordsstyrka','Password strength')}">
+      <i></i><i></i><i></i><i></i>
+    </div>
+    <ul class="password-strength-rules" aria-label="${appText('Salasanan vaatimukset','Lösenordskrav','Password requirements')}">
+      ${Object.entries(PASSWORD_RULE_LABELS).map(([rule,label])=>`<li data-pw-rule="${rule}"><span aria-hidden="true">○</span>${appText(...label)}</li>`).join('')}
+    </ul>
+  </div>`;
+}
+function bindCustomerPasswordStrength(){
+  for(const input of document.querySelectorAll('#app input[data-customer-password]')){
+    const panel=input.closest('.field')?.querySelector('[data-password-strength-panel]');
+    if(!panel)continue;
+    const bar=panel.querySelector('[role="meter"]');
+    const labels={
+      0:appText('Ei vielä salasanaa','Inget lösenord ännu','No password yet'),
+      1:appText('Heikko','Svagt','Weak'),
+      2:appText('Kohtalainen','Medel','Fair'),
+      3:appText('Hyvä','Bra','Good'),
+      4:appText('Vahva','Starkt','Strong'),
+    };
+    const update=()=>{
+      const value=input.value||'';
+      const checks=customerPasswordChecks(value);
+      const score=customerPasswordStrength(value);
+      panel.dataset.strength=String(score);
+      bar.setAttribute('aria-valuenow',String(score));
+      panel.querySelector('[data-strength-label]').textContent=labels[score];
+      for(const [rule,valid] of Object.entries(checks)){
+        const row=panel.querySelector('[data-pw-rule="'+rule+'"]');
+        if(row){row.dataset.met=String(valid);row.querySelector('span').textContent=valid?'✓':'○';}
+      }
+      input.setCustomValidity(value && !customerPasswordValid(value) ? customerPasswordPolicyMessage() : '');
+    };
+    input.addEventListener('input',update);
+    input.addEventListener('change',update);
+    update();
+  }
+}
+
 // Optional first-party platform CTA for explicit Respondo ordering questions
 // inside OWNER preview sessions. Never adds Respondo checkout to merchant
 // product-purchase questions that do not mention the Respondo platform.
@@ -3368,7 +3429,7 @@ function signup() {
             <div class="field"><label>${appText('Yritys','Företag','Company')}</label><input name="companyName" required placeholder="${appText('Yrityksen nimi','Företagets namn','Company name')}"></div>
             <div class="field"><label>${appText('Y-tunnus','FO-nummer','Business ID')}</label><input name="businessId" placeholder="1234567-8"></div>
             <input type="hidden" name="billingCountry" value="FI">
-            <div class="field full" id="signupPasswordField"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" minlength="10" autocomplete="new-password" required placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
+            <div class="field full" id="signupPasswordField"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" data-customer-password minlength="8" maxlength="200" autocomplete="new-password" required placeholder="${appText('Vähintään 8 merkkiä','Minst 8 tecken','At least 8 characters')}">${passwordStrengthMarkup()}</div>
             <input type="hidden" name="plan" value="${plan}">
             <div class="signup-plan-summary field full" role="note" aria-label="${appText('Valittu paketti','Valt abonnemang','Selected plan')}">
               <div class="signup-plan-summary-top">
@@ -3478,7 +3539,7 @@ function login() {
             : `<a class="password-reset-link" href="mailto:${esc(cfg.supportEmail)}?subject=${encodeURIComponent('Salasanan palautus / Respondo AI')}">${appText('Unohtuiko salasana? Ota yhteyttä tukeen.','Glömt lösenordet? Kontakta supporten.','Forgot password? Contact support.')}</a>`}
           <div id="passwordResetConfirmPanel" hidden>
             <div class="agent-login-fields">
-              <div class="field"><label for="resetNewPassword">${initialSetupPassword ? appText('Luo salasana Respondo-tilillesi','Skapa lösenord till ditt Respondo-konto','Create your Respondo password') : appText('Uusi salasana','Nytt lösenord','New password')}</label><input id="resetNewPassword" type="password" autocomplete="new-password" minlength="10" maxlength="200"></div>
+              <div class="field"><label for="resetNewPassword">${initialSetupPassword ? appText('Luo salasana Respondo-tilillesi','Skapa lösenord till ditt Respondo-konto','Create your Respondo password') : appText('Uusi salasana','Nytt lösenord','New password')}</label><input id="resetNewPassword" type="password" autocomplete="new-password" data-customer-password minlength="8" maxlength="200">${passwordStrengthMarkup()}</div>
               <div class="field"><label for="resetConfirmPassword">${appText('Uusi salasana uudelleen','Upprepa nytt lösenord','Repeat new password')}</label><input id="resetConfirmPassword" type="password" autocomplete="new-password" minlength="10" maxlength="200"></div>
               <button class="btn checkout-button" type="button" id="confirmPasswordReset">${initialSetupPassword ? appText('Ota tili käyttöön','Aktivera konto','Activate account') : appText('Tallenna uusi salasana','Spara nytt lösenord','Save new password')} →</button>
               <div id="passwordResetConfirmMsg" role="status" aria-live="polite"></div>
@@ -5125,8 +5186,8 @@ async function dashboard(options = {}) {
         </form>
         <form id="accountPasswordForm" class="formgrid">
           <div class="field"><label>${appText('Nykyinen salasana','Nuvarande lösenord','Current password')}</label><input name="currentPassword" type="password" autocomplete="current-password" required maxlength="200"></div>
-          <div class="field"><label>${appText('Uusi salasana','Nytt lösenord','New password')}</label><input name="newPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="200" placeholder="${appText('Vähintään 10 merkkiä','Minst 10 tecken','At least 10 characters')}"></div>
-          <div class="field"><label>${appText('Uusi salasana uudelleen','Upprepa nytt lösenord','Repeat new password')}</label><input name="confirmPassword" type="password" autocomplete="new-password" required minlength="10" maxlength="200"></div>
+          <div class="field"><label>${appText('Uusi salasana','Nytt lösenord','New password')}</label><input name="newPassword" type="password" autocomplete="new-password" data-customer-password required minlength="8" maxlength="200" placeholder="${appText('Vähintään 8 merkkiä','Minst 8 tecken','At least 8 characters')}">${passwordStrengthMarkup()}</div>
+          <div class="field"><label>${appText('Uusi salasana uudelleen','Upprepa nytt lösenord','Repeat new password')}</label><input name="confirmPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="200"></div>
           <button class="btn dashboard-action" type="submit">${appText('Vaihda salasana','Byt lösenord','Change password')} →</button>
           <div id="accountPasswordMsg"></div>
         </form>
@@ -5426,6 +5487,7 @@ async function route() {
   applyLanguage();
   bindLanguageSwitch();
   bindSetupServiceOptions();
+  bindCustomerPasswordStrength();
   // Fullscreen public menu removed; footer provides complete navigation.
   if (path === '/' || path === '/hinnat') bindPricingPeriodSwitch();
   if (path === '/') {
@@ -6161,8 +6223,8 @@ async function route() {
       const msg=$('#passwordResetConfirmMsg');
       const newPassword=String($('#resetNewPassword')?.value || '');
       const confirmPassword=String($('#resetConfirmPassword')?.value || '');
-      if(newPassword.length < 10){
-        if(msg) msg.innerHTML='<div class="notice error">'+appText('Salasanan pitää olla vähintään 10 merkkiä.','Lösenordet måste vara minst 10 tecken.','Password must be at least 10 characters.')+'</div>';
+      if(!customerPasswordValid(newPassword)){
+        if(msg) msg.innerHTML='<div class="notice error">'+customerPasswordPolicyMessage()+'</div>';
         return;
       }
       if(newPassword !== confirmPassword){
@@ -8192,8 +8254,8 @@ async function route() {
       const newPassword=String(form.elements.newPassword?.value || '');
       const confirmPassword=String(form.elements.confirmPassword?.value || '');
       const msg=$('#accountPasswordMsg');
-      if(newPassword.length < 10){
-        if(msg) msg.innerHTML='<div class="notice error">'+appText('Uuden salasanan pitää olla vähintään 10 merkkiä.','Det nya lösenordet måste vara minst 10 tecken.','The new password must be at least 10 characters.')+'</div>';
+      if(!customerPasswordValid(newPassword)){
+        if(msg) msg.innerHTML='<div class="notice error">'+customerPasswordPolicyMessage()+'</div>';
         return;
       }
       if(newPassword !== confirmPassword){

@@ -15,7 +15,7 @@ assert.ok(setupStart>0 && setupEnd>setupStart,'real optional setup-service marku
 function renderSignup(plan,locale='fi',extra='') {
   const source=app.slice(setupStart,setupEnd)+'\n'+app.slice(start,end);
   const t=(fi,sv,en)=>({fi,sv,en}[locale]||fi);
-  const signup=new Function('location','cfg','nav','appText','currentLang','socialAuthButtons','checkoutBusinessTerms','footer','esc','oauthErrorMessage',source+'\nreturn signup;')(
+  const signup=new Function('location','cfg','nav','appText','currentLang','socialAuthButtons','checkoutBusinessTerms','footer','esc','oauthErrorMessage','passwordStrengthMarkup',source+'\nreturn signup;')(
     { pathname:'/tilaus', search:'?plan='+encodeURIComponent(plan)+'&lang='+locale+extra },
     {ownerTestEnabled:false,businessId:'3599437-5',sellerName:'Respondo AI'},
     () => '<header class="nav"></header>',t,()=>locale,
@@ -23,7 +23,8 @@ function renderSignup(plan,locale='fi',extra='') {
     () => '<label class="business-terms-consent">Consent</label>',
     () => '<footer class="footer"></footer>',
     v => String(v).replace(/[&<>"]/g, ''),
-    () => ''
+    () => '',
+    () => '<div class="password-strength-panel"></div>'
   );
   return signup();
 }

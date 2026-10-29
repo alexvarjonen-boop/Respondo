@@ -26,7 +26,7 @@ test('paid assisted setup collects a website and does not require buyer to pick 
   assert.match(app,/passwordInput\.required=!checkbox\.checked&&!socialSignup/);
   assert.match(server,/setupServiceWebsiteUrl\(req\.body\?\.setupWebsite,setupService\)/);
   assert.match(server,/bcrypt\.hash\(\(socialSignup \|\| setupService\) \? crypto\.randomBytes\(32\)/);
-  assert.match(server,/!socialSignup && !setupService && \(!password/);
+  assert.match(server,/!socialSignup && !setupService && !customerPasswordValid\(password\)/);
 });
 
 test('confirmation email follows paid or verified founder-free Checkout and promises completion in one week',()=>{

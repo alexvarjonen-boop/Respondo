@@ -9658,3 +9658,70 @@ body.deletion-modal-open{overflow:hidden!important}
 @media(prefers-reduced-motion:reduce){
   #app .pricing-section .pricing-period-option{transition:none}
 }
+
+
+/* Apple-style password strength feedback; shown only where a customer sets a new password. */
+#app .password-strength-panel{
+  width:100%;min-width:0;box-sizing:border-box;margin:13px 0 4px;padding:15px 16px;
+  border:1px solid #e0e5ec;border-radius:15px;background:#f8fafc;
+  color:#1a2533;font-size:12px;text-align:left;
+}
+#app .password-strength-header{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 11px;
+  font-size:12px;line-height:1.4;font-weight:650;
+}
+#app .password-strength-header strong{
+  font-size:12px;font-weight:750;white-space:nowrap;color:inherit;
+}
+#app .password-strength-bar{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;height:6px;
+  margin:0 0 13px;
+}
+#app .password-strength-bar i{
+  display:block;background:#dfe4eb;border-radius:999px;
+  transition:background .18s ease;
+}
+#app .password-strength-panel[data-strength="1"] .password-strength-bar i:nth-child(-n+1){background:#d94b45}
+#app .password-strength-panel[data-strength="2"] .password-strength-bar i:nth-child(-n+2){background:#df9b2b}
+#app .password-strength-panel[data-strength="3"] .password-strength-bar i:nth-child(-n+3){background:#3c84cb}
+#app .password-strength-panel[data-strength="4"] .password-strength-bar i{background:#228659}
+#app .password-strength-panel[data-strength="1"] [data-strength-label]{color:#be332f}
+#app .password-strength-panel[data-strength="2"] [data-strength-label]{color:#956010}
+#app .password-strength-panel[data-strength="3"] [data-strength-label]{color:#25659f}
+#app .password-strength-panel[data-strength="4"] [data-strength-label]{color:#167747}
+#app .password-strength-rules{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px;
+  margin:0;padding:0;list-style:none;
+}
+#app .password-strength-rules li{
+  display:flex;gap:7px;align-items:center;min-width:0;line-height:1.5;
+  font-size:11.5px;font-weight:580;color:#647285;
+}
+#app .password-strength-rules li span{
+  flex:0 0 16px;width:16px;height:16px;border:1px solid #bbc6d2;
+  border-radius:50%;display:grid;place-items:center;font-size:10px;line-height:1;
+  color:#7d8b9a;
+}
+#app .password-strength-rules li[data-met="true"]{color:#18764c}
+#app .password-strength-rules li[data-met="true"] span{
+  color:#fff;background:#218659;border-color:#218659;
+}
+#app .signup-dark-shell .password-strength-panel{
+  background:#17263b;border-color:#3c526c;color:#eff5ff;
+}
+#app .signup-dark-shell .password-strength-bar i{background:#42536a}
+#app .signup-dark-shell .password-strength-rules li{color:#d6e1ef}
+#app .signup-dark-shell .password-strength-rules li span{border-color:#95a6b9;color:#c0cede}
+#app .signup-dark-shell .password-strength-rules li[data-met="true"]{color:#b1e8cb}
+#app .signup-dark-shell .password-strength-rules li[data-met="true"] span{background:#218659;color:#fff;border-color:#218659}
+#app .signup-dark-shell .password-strength-panel[data-strength="1"] [data-strength-label]{color:#ff9993}
+#app .signup-dark-shell .password-strength-panel[data-strength="2"] [data-strength-label]{color:#ffd18b}
+#app .signup-dark-shell .password-strength-panel[data-strength="3"] [data-strength-label]{color:#9fd3ff}
+#app .signup-dark-shell .password-strength-panel[data-strength="4"] [data-strength-label]{color:#a9e8c9}
+@media(max-width:570px){
+  #app .password-strength-panel{padding:12px 13px;margin-top:11px}
+  #app .password-strength-rules{grid-template-columns:1fr;gap:6px}
+}
+@media(prefers-reduced-motion:reduce){
+  #app .password-strength-bar i{transition:none}
+}
