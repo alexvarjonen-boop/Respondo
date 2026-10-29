@@ -840,6 +840,9 @@ async function seedIntentPhraseTemplates() {
 
 const uid = () => crypto.randomUUID();
 const cleanEmail = (value) => String(value || '').trim().toLowerCase();
+// A one-time assisted-setup login ID is an alternative to the billing email.
+// 12 random hexadecimal digits provide 48 bits of entropy, with a unique DB index.
+const newAssistedSetupLoginCode=()=> 'RSP-'+crypto.randomBytes(6).toString('hex').toUpperCase();
 
 function escapeEmailHtml(value) {
   return String(value || '')
@@ -10422,10 +10425,13 @@ app.post('/api/auth/agent-login', loginLimiter, async (req,res) => {
 
 app.post('/api/auth/login', loginLimiter, async (req, res) => {
   try {
-    const email = cleanEmail(req.body.email);
-    const r = await q('SELECT * FROM users WHERE lower(email)=lower($1)', [email]);
+    const identifier=String(req.body?.email||'').trim().slice(0,254);
+    const r = await q(
+      'SELECT * FROM users WHERE lower(email)=lower($1) OR upper(setup_login_code)=upper($1) LIMIT 1',
+      [identifier],
+    );
     if (!r.rowCount || !(await bcrypt.compare(req.body.password || '', r.rows[0].password_hash))) {
-      return res.status(401).json({ error: 'Väärä sähköposti tai salasana.' });
+      return res.status(401).json({ error: 'Väärä tunnus tai salasana.' });
     }
     if (r.rows[0].status === 'pending') {
       return res.status(403).json({ error: 'Viimeistele tilaus ensin.' });
@@ -11285,7 +11291,7 @@ app.get('/api/app/internal/setup-service-requests', auth, ownerTrafficOnly, asyn
     await q('ALTER TABLE setup_service_requests ADD COLUMN IF NOT EXISTS requested_greeting TEXT NOT NULL DEFAULT \'\'');
     const found=await q(
       `SELECT sr.session_id,sr.website_url,sr.requested_greeting,sr.status,sr.created_at,sr.customer_emailed_at,
-              sr.owner_emailed_at,sr.ready_emailed_at,t.name AS company_name,u.email,
+              sr.owner_emailed_at,sr.ready_emailed_at,t.name AS company_name,u.email,u.setup_login_code,
               t.bot_name,t.greeting,t.bot_avatar,
               (si.token IS NOT NULL) AS has_image,
               (u.stripe_subscription_id IS NOT DISTINCT FROM t.stripe_subscription_id) AS first_workspace
@@ -11321,17 +11327,16 @@ app.get('/api/app/internal/setup-service-requests/:id/image',auth,ownerTrafficOn
   }catch(err){console.error('Private setup image retrieval failed:',err?.message);return res.status(503).end();}
 });
 
-// Owner may set the initial login email and password only on a paid, active
-// first-workspace setup job. Multiple-workspace users keep their existing login.
+// Owner can issue a random, unique login ID and a temporary password without
+// creating a new email address. Preserve the original verified billing/contact
+// email for Stripe, receipts, password reset and future account email changes.
+// Multiple-workspace users keep their existing login.
 // No plaintext password is persisted or returned in the API response.
 app.post('/api/app/internal/setup-service-requests/:id/credentials', auth, ownerTrafficOnly, loginLimiter, async (req,res) => {
   res.set('Cache-Control','private, no-store');
   const sessionId=String(req.params.id||'');
-  const email=cleanEmail(req.body?.email);
   const password=String(req.body?.password||'');
   if(!/^cs_[A-Za-z0-9_]{10,120}$/.test(sessionId)) return res.status(400).json({error:'Virheellinen tilaus.'});
-  if(!email || email.length>254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    return res.status(422).json({error:'Anna kelvollinen kirjautumissähköposti.'});
   if(password.length<14 || password.length>72 || Buffer.byteLength(password,'utf8')>72)
     return res.status(422).json({error:'Salasanan tulee olla 14–72 tavua.'});
   if(!pool)return res.status(503).json({error:'Tietokanta ei ole käytettävissä.'});
@@ -11340,6 +11345,7 @@ app.post('/api/app/internal/setup-service-requests/:id/credentials', auth, owner
     await client.query('BEGIN');
     const found=await client.query(
       `SELECT sr.status,u.id AS user_id,u.status AS user_status,
+              u.setup_login_code,
               t.id AS tenant_id,t.active AS tenant_active,t.subscription_status,
               t.stripe_subscription_id AS tenant_subscription,
               u.stripe_subscription_id AS primary_subscription
@@ -11373,25 +11379,23 @@ app.post('/api/app/internal/setup-service-requests/:id/credentials', auth, owner
       await client.query('ROLLBACK');
       return res.status(409).json({error:'Tällä käyttäjällä on myös toinen työtila. Käytä nykyisiä kirjautumistunnuksia.'});
     }
-    const duplicate=await client.query('SELECT id FROM users WHERE lower(email)=lower($1) AND id<>$2 LIMIT 1',[email,job.user_id]);
-    if(duplicate.rowCount) {
-      await client.query('ROLLBACK');
-      return res.status(409).json({error:'Sähköpostiosoite on jo käytössä toisella tilillä.'});
-    }
+    // Reissuing a password retains the same personal login ID. PostgreSQL's
+    // unique index prevents duplicate IDs even if two owners save concurrently.
+    const loginCode=job.setup_login_code||newAssistedSetupLoginCode();
     const passwordHash=await bcrypt.hash(password,12);
     await client.query(
-      'UPDATE users SET email=$1,password_hash=$2,session_version=session_version+1,updated_at=NOW() WHERE id=$3',
-      [email,passwordHash,job.user_id],
+      'UPDATE users SET setup_login_code=$1,password_hash=$2,session_version=session_version+1,updated_at=NOW() WHERE id=$3',
+      [loginCode,passwordHash,job.user_id],
     );
-    // The login address is not the public customer-service contact address.
+    // Revoke reset tokens after changing the temporary password.
     await client.query('UPDATE password_reset_tokens SET used_at=NOW() WHERE user_id=$1 AND used_at IS NULL',[job.user_id]);
     await client.query("UPDATE setup_service_requests SET status='credentials_created',updated_at=NOW() WHERE session_id=$1",[sessionId]);
     await client.query('COMMIT');
-    return res.json({ok:true,email,manualDeliveryRequired:true});
+    return res.json({ok:true,loginCode,manualDeliveryRequired:true});
   }catch(error){
     await client.query('ROLLBACK').catch(()=>{});
     console.error('Manual setup credential assignment failed:',error?.code||error?.message);
-    return res.status(error?.code==='23505'?409:503).json({error:error?.code==='23505'?'Sähköpostiosoite on jo käytössä.':'Tunnusten tallennus epäonnistui.'});
+    return res.status(error?.code==='23505'?409:503).json({error:error?.code==='23505'?'Tunnuksen luominen epäonnistui. Yritä uudelleen.':'Tunnusten tallennus epäonnistui.'});
   }finally{client.release();}
 });
 
@@ -15821,6 +15825,8 @@ async function ensureRuntimeSchema() {
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS session_version INTEGER NOT NULL DEFAULT 0');
+  await q('ALTER TABLE users ADD COLUMN IF NOT EXISTS setup_login_code TEXT');
+  await q('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_setup_login_code ON users(upper(setup_login_code)) WHERE setup_login_code IS NOT NULL');
   await q('ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS username TEXT');
   await q('ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS password_hash TEXT');
   await q('ALTER TABLE support_agents ADD COLUMN IF NOT EXISTS session_version INTEGER NOT NULL DEFAULT 0');
