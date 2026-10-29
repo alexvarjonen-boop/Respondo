@@ -120,7 +120,7 @@ test('mock email provider receives exactly one localized buyer and owner notice 
   };
   const make=new Function(
     'setupCheckoutPaymentConfirmed','holdAssistedSetupBilling','stripe','pool','q','cleanEmail',
-    'process','brandedEmailHtml','escapeEmailHtml','BASE','fetch',
+    'process','brandedEmailHtml','escapeEmailHtml','BASE','fetch','setupGreetingInput',
     source+';return notifySetupServiceAfterCheckout;'
   );
   const notify=make(checkoutConfirmed,async()=>{holds++;return {held:true};},
@@ -131,7 +131,8 @@ test('mock email provider receives exactly one localized buyer and owner notice 
     ({title,content})=>'<h1>'+title+'</h1>'+content,
     text=>String(text).replaceAll('&','&amp;').replaceAll('<','&lt;'),
     'https://respondoai.fi',
-    async(_url,request)=>{sent.push(JSON.parse(request.body));return {ok:true};}
+    async(_url,request)=>{sent.push(JSON.parse(request.body));return {ok:true};},
+    value=>String(value||'').trim().slice(0,220)
   );
   const session={mode:'subscription',status:'complete',payment_status:'no_payment_required',amount_total:0,
     id:'cs_test_founder_free_setup_012345',subscription:'sub_test_founder',
