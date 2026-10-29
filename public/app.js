@@ -3194,7 +3194,34 @@ function setupServiceOption() {
       <input type="text" name="setupWebsite" inputmode="url" autocomplete="url" maxlength="300" placeholder="https://company.fi" disabled>
       <small>${appText('Anna verkkosivusi osoite, jotta voimme aloittaa käyttöönottotyön.','Ange din webbplatsadress så att vi kan påbörja installationen.','Enter your website address so we can start the setup.')}</small>
     </label>
+    <label class="setup-reference-image" hidden>
+      <span>${appText('Lataa kuva botille (esim. yrityksen logo) *','Ladda upp en bild för botten (t.ex. företagets logotyp) *','Upload an image for the bot (e.g. company logo) *')}</span>
+      <input type="file" name="setupReferenceImage" accept="image/png,image/jpeg,image/webp" disabled>
+      <small>${appText('Pakollinen käyttöönottopalvelussa. PNG, JPG tai WebP, enintään 8 Mt.','Obligatoriskt vid installation. PNG, JPG eller WebP, högst 8 MB.','Required for setup. PNG, JPG or WebP, up to 8 MB.')}</small>
+      <img class="setup-image-preview" alt="${appText('Kuvan esikatselu','Förhandsgranskning av bild','Image preview')}" hidden>
+    </label>
+    <label class="setup-greeting-field" hidden>
+      <span>${appText('Botin toivottu tervehdysviesti (valinnainen)','Önskad hälsningsfras för botten (valfritt)','Preferred bot greeting message (optional)')}</span>
+      <textarea name="setupGreeting" rows="3" maxlength="220" disabled placeholder="${appText('Hei! Miten voimme auttaa?','Hej! Hur kan vi hjälpa dig?','Hello! How can we help?')}"></textarea>
+      <small>${appText('Voit jättää tämän tyhjäksi. Enintään 220 merkkiä.','Du kan lämna detta tomt. Högst 220 tecken.','You can leave this blank. Maximum 220 characters.')}</small>
+    </label>
   </div>`;
+}
+
+async function uploadSetupImage(formData) {
+  if(formData.get('setupService')!=='1')return '';
+  const file=formData.get('setupReferenceImage');
+  if(!(file instanceof File)||!file.size)
+    throw new Error(appText('Valitse kuva botille.','Välj en bild för botten.','Please choose a bot image.'));
+  if(file.size>8*1024*1024||!['image/png','image/jpeg','image/webp'].includes(file.type))
+    throw new Error(appText('Kuvan on oltava PNG, JPG tai WebP (enintään 8 Mt).','Bilden måste vara PNG, JPG eller WebP (högst 8 MB).','Use a PNG, JPG or WebP image (max 8 MB).'));
+  const response=await fetch('/api/public/setup-image-upload',{
+    method:'POST',credentials:'same-origin',headers:{'Content-Type':file.type,'Accept':'application/json'},body:file,
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.imageToken)
+    throw new Error(result.error||appText('Kuvan lataaminen epäonnistui.','Det gick inte att ladda upp bilden.','Image upload failed.'));
+  return result.imageToken;
 }
 
 function bindSetupServiceOptions() {
@@ -3202,12 +3229,40 @@ function bindSetupServiceOptions() {
     const checkbox=wrap.querySelector('input[name="setupService"]');
     const label=wrap.querySelector('.setup-service-website');
     const url=label?.querySelector('input[name="setupWebsite"]');
-    if (!checkbox || !label || !url) return;
+    const imageLabel=wrap.querySelector('.setup-reference-image');
+    const fileInput=imageLabel?.querySelector('input[name="setupReferenceImage"]');
+    const preview=imageLabel?.querySelector('.setup-image-preview');
+    const greetingLabel=wrap.querySelector('.setup-greeting-field');
+    const greeting=greetingLabel?.querySelector('textarea[name="setupGreeting"]');
+    if (!checkbox || !label || !url || !fileInput || !greeting) return;
+    let previewUrl='';
+    fileInput.addEventListener('change',()=>{
+      if(previewUrl)URL.revokeObjectURL(previewUrl);
+      previewUrl='';
+      const file=fileInput.files?.[0];
+      if(preview){
+        preview.hidden=!file;
+        if(file){previewUrl=URL.createObjectURL(file);preview.src=previewUrl;}
+        else preview.removeAttribute('src');
+      }
+    });
     const sync=()=>{
       label.hidden=!checkbox.checked;
       url.disabled=!checkbox.checked;
       url.required=checkbox.checked;
       if(!checkbox.checked) url.value='';
+      imageLabel.hidden=!checkbox.checked;
+      greetingLabel.hidden=!checkbox.checked;
+      fileInput.required=checkbox.checked;
+      fileInput.disabled=!checkbox.checked;
+      greeting.disabled=!checkbox.checked;
+      if(!checkbox.checked){
+        fileInput.value='';
+        greeting.value='';
+        if(previewUrl)URL.revokeObjectURL(previewUrl);
+        previewUrl='';
+        if(preview){preview.hidden=true;preview.removeAttribute('src');}
+      }
       // For assisted setup, the owner assigns the login email and temporary
       // password manually after the bot has been prepared.
       const form=wrap.closest('form#signup');
