@@ -29,7 +29,9 @@ test('three separate menu sections have Finnish, Swedish and English labels',()=
 });
 
 test('visitor, active companies and setup jobs do not render together',()=>{
-  const portion=html.slice(html.indexOf('async function load(){'),html.indexOf("document.getElementById('refresh')"));
+  const start=html.indexOf('async function load(){');
+  assert.ok(start>=0);
+  const portion=html.slice(start,html.indexOf("document.getElementById('refresh').addEventListener",start));
   assert.match(portion,/id="trafficStatsView"/);
   assert.match(portion,/id="companyView" hidden/);
   assert.match(portion,/id="setupView" hidden/);
