@@ -93,3 +93,68 @@ test('manual credential delivery is never represented as an automatic email',()=
   assert.match(app,/name="setupService" value="1"/);
   assert.match(app,/data-setup-price/);
 });
+
+
+test('mock email provider receives exactly one localized buyer and owner notice for a free setup', async()=>{
+  const start=server.indexOf('async function notifySetupServiceAfterCheckout(session)');
+  const end=server.indexOf('async function sendHomepageContactEmail(',start);
+  const source=server.slice(start,end);
+  const sent=[];
+  const timestamps={customer_emailed_at:null,owner_emailed_at:null};
+  let holds=0;
+  const mockClient={
+    async query(sql){
+      if(sql.includes('pg_try_advisory_lock'))return {rows:[{locked:true}]};
+      if(sql.includes('SELECT customer_emailed_at,owner_emailed_at'))return {rows:[{...timestamps}]};
+      if(sql.includes('SET customer_emailed_at=NOW()'))timestamps.customer_emailed_at=new Date();
+      if(sql.includes('SET owner_emailed_at=NOW()'))timestamps.owner_emailed_at=new Date();
+      return {rows:[],rowCount:1};
+    },
+    release(){},
+  };
+  const query=async(sql)=>{
+    if(sql.includes('SELECT u.email,u.full_name,u.preferred_language'))return {rowCount:1,rows:[{
+      email:'customer@example.test',full_name:'Test Buyer',preferred_language:'fi',company_name:'Test Company',
+    }]};
+    return {rows:[],rowCount:1};
+  };
+  const make=new Function(
+    'setupCheckoutPaymentConfirmed','holdAssistedSetupBilling','stripe','pool','q','cleanEmail',
+    'process','brandedEmailHtml','escapeEmailHtml','BASE','fetch',
+    source+';return notifySetupServiceAfterCheckout;'
+  );
+  const notify=make(checkoutConfirmed,async()=>{holds++;return {held:true};},
+    {},{connect:async()=>mockClient},query,
+    v=>String(v||'').trim().toLowerCase(),
+    {env:{RESEND_API_KEY:'fake',EMAIL_VERIFICATION_FROM:'info@respondoai.fi',
+      CONTACT_NOTIFICATION_TO:'owner@example.test'}},
+    ({title,content})=>'<h1>'+title+'</h1>'+content,
+    text=>String(text).replaceAll('&','&amp;').replaceAll('<','&lt;'),
+    'https://respondoai.fi',
+    async(_url,request)=>{sent.push(JSON.parse(request.body));return {ok:true};}
+  );
+  const session={mode:'subscription',status:'complete',payment_status:'no_payment_required',amount_total:0,
+    id:'cs_test_founder_free_setup_012345',subscription:'sub_test_founder',
+    metadata:{user_id:'user-test',tenant_id:'tenant-test',setup_website:'https://company.fi',
+      setup_service:'1',setup_billing_mode:'after_handover',
+      owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'}
+  };
+  const first=await notify(session);
+  assert.equal(first.customerSent,true);
+  assert.equal(sent.length,2);
+  assert.equal(sent[0].from,'Respondo AI <info@respondoai.fi>');
+  assert.deepEqual(sent[0].to,['customer@example.test']);
+  assert.deepEqual(sent[1].to,['owner@example.test']);
+  assert.match(sent[0].html,/maksuttomia \(0 €\)/);
+  assert.match(sent[0].html,/viimeistään viikon kuluessa/);
+  assert.match(sent[1].html,/tilaus ovat 0 €/);
+  assert.doesNotMatch(sent[1].html,/Asiakas on ostanut 199 €/);
+  assert.ok(timestamps.customer_emailed_at && timestamps.owner_emailed_at);
+  const second=await notify(session);
+  assert.equal(second.customerSent,true);
+  assert.equal(sent.length,2,'webhook + success redirect should not send duplicates');
+  assert.equal(holds,2);
+  const bad=await notify({...session,payment_status:'unpaid'});
+  assert.equal(bad.paymentPending,true);
+  assert.equal(sent.length,2);
+});
