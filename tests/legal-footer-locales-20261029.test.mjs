@@ -28,5 +28,5 @@ test('legal footer navigation keeps original routes, cookie settings callback an
     assert.ok(footer.includes('href="'+path+'?lang=${currentLang()}"'),path);
   }
   assert.match(footer,/openRespondoCookieSettings\?\.\(\)/);
-  assert.match(html,/app\.js\?v=[^"]+-legal-setup-20261029-v1-legal-footer-i18n-v1/);
+  assert.match(html,/app\.js\?v=[^"]+-pw-strength-20261029-v1-legal-footer-i18n-v1/);
 });
