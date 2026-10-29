@@ -699,6 +699,7 @@ function setTrafficMenuOpen(open){
 function setActiveTrafficView(view,{updateHash=false,scroll=false}={}){
   if(!Object.hasOwn(trafficViewHashes,view))view='traffic';
   activeTrafficView=view;
+  document.title='RESPONDO AI — '+t(view==='traffic'?'navVisitors':view==='companies'?'navCompanies':'navSetup');
   for(const name of ['traffic','companies','setup']){
     const panel=document.getElementById(name==='traffic'?'trafficStatsView':name==='companies'?'companyView':'setupView');
     const heading=document.getElementById(name==='traffic'?'trafficViewHeading':name==='companies'?'companiesViewHeading':'setupViewHeading');
