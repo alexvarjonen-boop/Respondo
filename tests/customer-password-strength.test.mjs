@@ -55,7 +55,7 @@ test('live Apple-style meter has four segments, localized rule list, five checks
   assert.match(app,/<i><\/i><i><\/i><i><\/i><i><\/i>/);
   assert.match(app,/data-pw-rule/);
   assert.match(app,/Object\.entries\(PASSWORD_RULE_LABELS\)/);
-  assert.match(app,/data\.met=String\(valid\)/);
+  assert.match(app,/row\.dataset\.met=String\(valid\)/);
   assert.match(app,/panel\.dataset\.strength=String\(score\)/);
   assert.match(app,/strong data-strength-label aria-live="polite"/);
   for(const text of ['Vähintään 8 merkkiä','Minst 8 tecken','At least 8 characters','Erikoismerkki','Specialtecken','Special character'])
