@@ -1496,6 +1496,52 @@ function setupServiceWebsiteUrl(raw, selected) {
   }
 }
 
+// Durable images for optional assisted setup: never use ephemeral Railway disk.
+const SETUP_IMAGE_MAX_BYTES=8*1024*1024;
+function setupIntakeImageMime(bytes){
+  if(!Buffer.isBuffer(bytes)||bytes.length<16||bytes.length>SETUP_IMAGE_MAX_BYTES) return '';
+  if(bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) return 'image/png';
+  if(bytes[0]===255&&bytes[1]===216&&bytes[2]===255&&
+     bytes[bytes.length-2]===255&&bytes[bytes.length-1]===217) return 'image/jpeg';
+  if(bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP')
+    return 'image/webp';
+  return '';
+}
+async function ensureSetupIntakeImages(query=q){
+  await query(`CREATE TABLE IF NOT EXISTS setup_intake_images(
+    token TEXT PRIMARY KEY,session_id TEXT UNIQUE,mime_type TEXT NOT NULL,
+    image_bytes BYTEA NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW()+INTERVAL '36 hours')
+  )`);
+}
+function setupGreetingInput(raw,selected){
+  if(!selected)return '';
+  if(typeof raw!=='string'&&raw!=null)
+    throw Object.assign(new Error('Virheellinen tervehdysviesti.'),{publicStatus:422});
+  const message=String(raw||'').trim();
+  if(message.length>220||/[<>\u0000-\u001f]/.test(message))
+    throw Object.assign(new Error('Tervehdysviesti saa sisältää enintään 220 merkkiä.'),{publicStatus:422});
+  return message;
+}
+async function validateSetupImageToken(token,selected){
+  if(!selected)return '';
+  const key=String(token||'').trim();
+  if(!/^[a-f0-9]{48}$/.test(key))
+    throw Object.assign(new Error('Lataa botin kuva ennen tilauksen jatkamista.'),{publicStatus:422});
+  await ensureSetupIntakeImages();
+  const found=await q('SELECT token FROM setup_intake_images WHERE token=$1 AND session_id IS NULL AND expires_at>NOW()',[key]);
+  if(!found.rowCount)
+    throw Object.assign(new Error('Botin kuva ei ole enää käytettävissä. Lataa kuva uudelleen.'),{publicStatus:422});
+  return key;
+}
+async function bindSetupImageToSession(client,token,sessionId){
+  if(!token)return;
+  const found=await client.query(
+    'UPDATE setup_intake_images SET session_id=$2 WHERE token=$1 AND session_id IS NULL AND expires_at>NOW() RETURNING token',
+    [token,sessionId]);
+  if(!found.rowCount)
+    throw Object.assign(new Error('Kuvan liittäminen tilaukseen epäonnistui. Lataa kuva uudelleen.'),{publicStatus:422});
+}
 const SETUP_SERVICE_PRICE_CENTS = 19900;
 function setupServiceCheckoutLineItem(ownerFree=false) {
   return {
@@ -8647,6 +8693,9 @@ function rejectCrossSiteAuthenticatedMutation(req,res,next) {
 
 app.use(rejectCrossSiteAuthenticatedMutation);
 
+app.use('/api/public/setup-image-upload', express.raw({
+  type:['image/png','image/jpeg','image/webp'],limit:'8mb',
+}));
 app.use(express.json({
   limit:'1mb',
   verify(req,res,buf) {
@@ -9883,6 +9932,36 @@ app.post('/api/auth/email-verification/confirm', signupVerificationConfirmLimite
   return res.json({ ok:true, email });
 });
 
+// Binary upload is rate-limited and requires an exact same-origin browser request.
+const setupImageUploadLimiter=rateLimit({
+  windowMs:15*60*1000,limit:6,standardHeaders:true,legacyHeaders:false,
+  keyGenerator:req=>publicRateKey(req,'setup-image-upload'),
+});
+app.post('/api/public/setup-image-upload',setupImageUploadLimiter,async(req,res)=>{
+  res.set('Cache-Control','no-store');
+  const origin=String(req.get('origin')||'');
+  const host=String(req.get('host')||'').toLowerCase();
+  try {
+    if(!origin||new URL(origin).host.toLowerCase()!==host||
+       req.get('sec-fetch-site')==='cross-site')
+      return res.status(403).json({error:'Kuvan lataaminen estettiin.'});
+  }catch{return res.status(403).json({error:'Kuvan lataaminen estettiin.'});}
+  if(!pool)return res.status(503).json({error:'Tietokantaa ei ole yhdistetty.'});
+  const mime=setupIntakeImageMime(req.body);
+  if(!mime||String(req.get('content-type')||'').split(';')[0].toLowerCase()!==mime)
+    return res.status(422).json({error:'Lataa PNG-, JPG- tai WebP-kuva (enintään 8 Mt).'});
+  const token=crypto.randomBytes(24).toString('hex');
+  try{
+    await ensureSetupIntakeImages();
+    await q('DELETE FROM setup_intake_images WHERE session_id IS NULL AND expires_at<NOW()');
+    await q('INSERT INTO setup_intake_images(token,mime_type,image_bytes) VALUES($1,$2,$3)',[token,mime,req.body]);
+    return res.json({imageToken:token});
+  }catch(error){
+    console.error('Assisted setup image upload failed:',error?.message);
+    return res.status(503).json({error:'Kuvan lataaminen epäonnistui. Yritä uudelleen.'});
+  }
+});
+
 // Pricing preview: secret founder code is validated server-side, not in public assets.
 app.post('/api/public/owner-promo-preview', checkoutLimiter, (req,res) => {
   res.set('Cache-Control','no-store');
@@ -9895,9 +9974,14 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
 
   const { fullName, companyName, businessId, password, plan, acceptedTerms } = req.body;
   const setupService = req.body?.setupService === true;
-  let setupWebsite='';
-  try { setupWebsite=setupServiceWebsiteUrl(req.body?.setupWebsite,setupService); }
-  catch(e){ return res.status(e.publicStatus||422).json({error:e.message}); }
+  let setupWebsite='',setupGreeting='',setupImageToken='';
+  try {
+    setupWebsite=setupServiceWebsiteUrl(req.body?.setupWebsite,setupService);
+    setupGreeting=setupGreetingInput(req.body?.setupGreeting,setupService);
+    setupImageToken=await validateSetupImageToken(req.body?.setupImageToken,setupService);
+  }catch(e){
+    return res.status(e.publicStatus||503).json({error:e.publicStatus?e.message:'Käyttöönottotiedot eivät ole saatavilla.'});
+  }
   const email = cleanEmail(req.body.email);
   const normalizedPlan = normalizeCheckoutPlan(plan);
   const referralCode = normalizeReferralCode(req.body.referralCode);
@@ -10836,9 +10920,14 @@ app.post('/api/app/workspaces/switch', auth, ownerOnly, async (req,res) => {
 
 app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const setupService=req.body?.setupService===true;
-  let setupWebsite='';
-  try { setupWebsite=setupServiceWebsiteUrl(req.body?.setupWebsite,setupService); }
-  catch(e){ return res.status(e.publicStatus||422).json({error:e.message}); }
+  let setupWebsite='',setupGreeting='',setupImageToken='';
+  try {
+    setupWebsite=setupServiceWebsiteUrl(req.body?.setupWebsite,setupService);
+    setupGreeting=setupGreetingInput(req.body?.setupGreeting,setupService);
+    setupImageToken=await validateSetupImageToken(req.body?.setupImageToken,setupService);
+  }catch(e){
+    return res.status(e.publicStatus||503).json({error:e.publicStatus?e.message:'Käyttöönottotiedot eivät ole saatavilla.'});
+  }
   const companyName=String(req.body?.companyName||'').replace(/[<>]/g,'').trim().slice(0,120);
   const businessId=String(req.body?.businessId||'').replace(/[<>]/g,'').trim().slice(0,40);
   const plan=normalizeCheckoutPlan(req.body?.plan);
