@@ -26,7 +26,6 @@ test('three separate menu sections have Finnish, Swedish and English labels',()=
   }
   for(const target of ['traffic','companies','setup'])
     assert.match(html,new RegExp('data-traffic-view="'+target+'"'));
-  assert.match(html,/data-traffic-view="'+target+'"/);
 });
 
 test('visitor, active companies and setup jobs do not render together',()=>{
