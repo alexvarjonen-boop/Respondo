@@ -101,7 +101,7 @@ test('2026-10-29 legal update covers paid setup and deferred recurring billing i
     assert.match(terms,/365/,'technical Stripe hold language '+index);
     assert.match(terms,/info@respondoai\.fi/,'refund contact language '+index);
     assert.match(terms,/kolmen päivän|tredagars|tre dagar|three-day/,'trial after handover language '+index);
-    assert.match(privacy,/kirjautumistunnus|inloggnings-ID|login ID/,'manual credential processing language '+index);
+    assert.match(privacy,/kirjautumistunnuk|inloggnings-ID|login ID/,'manual credential processing language '+index);
     assert.match(privacy,/tiiviste|envägshash|one-way password hash/,'password handling language '+index);
     assert.match(cookies,/Käyttöönottopalvelun|installationstjänst|assisted setup/,'cookie settings language '+index);
     assert.match(dpa,/käyttöönottopalvelun|installation|assisted setup/,'processor roles language '+index);
