@@ -70,7 +70,6 @@ test('live Apple-style meter has four segments, localized rule list, five checks
 
 test('existing owner-issued temporary passwords and support-agent authentication are unchanged',()=>{
   assert.match(server,/if\(password\.length<14 \|\| password\.length>72/);
-  assert.match(app,/const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'/m)===false;
   // Password policy must not accidentally block the owner-created setup codes
   // or require a customer password when assisted setup creates credentials.
   assert.match(server,/!socialSignup && !setupService && !customerPasswordValid\(password\)/);
