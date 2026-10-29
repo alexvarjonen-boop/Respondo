@@ -436,7 +436,7 @@ const SL={
  loading:'Haetaan käyttöönottotilauksia…',empty:'Ei käyttöönottotilauksia.',refresh:'Päivitä tilaukset',
  received:'Odottaa käyttöönottoa',credentials_created:'Tunnukset luotu – lähetä henkilökohtaisesti',ready:'Luovutettu',
  config:'Muokkaa botin nimeä ja tervehdystä',configTitle:'Botin perustiedot',configName:'Botin nimi',configGreeting:'Aloitustervehdys',configAvatar:'Botin kuvake',configSave:'Tallenna botin asetukset',configSaved:'Botin asetukset tallennettu.',create:'Luo tunnukset',rotate:'Muuta tunnukset',handover:'Merkitse luovutetuksi',import:'Tuo sivuston tiedot bottiin',importing:'Haetaan ja tallennetaan yritystietoja…',imported:'Tiedot tuotu bottiin',due:'Valmis viimeistään',customerLogin:'Avaa asiakkaan kirjautuminen',privateNote:'Tee botin viimeistely erillisessä yksityisessä selausikkunassa, jotta oma omistajaistuntosi säilyy.',extra:'Lisätyötila: asiakkaalla on jo Respondo-tunnukset.',
- dialog:'Yrityksen kirjautumistiedot',login:'Yksilöllinen kirjautumistunnus',password:'Väliaikainen salasana',hint:'Tunnus luodaan automaattisesti tallennettaessa. Salasana on valmiiksi luotu. Voit kopioida molemmat ja lähettää ne asiakkaalle henkilökohtaisesti esimerkiksi osoitteesta info@respondoai.fi. Asiakas voi vaihtaa salasanan asetuksissa.',
+ dialog:'Yrityksen kirjautumistiedot',login:'Yksilöllinen kirjautumistunnus',password:'Väliaikainen salasana',hint:'Tunnus ja vahva salasana näkyvät yllä valmiina. Paina Tallenna tunnukset ennen kuin kopioit ne asiakkaalle. Lähetä tiedot henkilökohtaisesti esimerkiksi osoitteesta info@respondoai.fi. Asiakas voi vaihtaa salasanan asetuksissa.',
  generate:'Luo vahva salasana',copy:'Kopioi asiakasviesti',save:'Tallenna tunnukset',close:'Sulje',saved:'Tunnukset on tallennettu. Kopioi nyt viesti ja lähetä se henkilökohtaisesti.',copied:'Viesti kopioitu. Lähetä se asiakkaalle henkilökohtaisesti.',copyFail:'Kopiointi epäonnistui. Kopioi tiedot käsin.',
  confirm:'Oletko varmasti viimeistellyt botin ja lähettänyt kirjautumistiedot asiakkaalle itse? Respondo ei lähetä tästä automaattista sähköpostia. Uusissa käyttöönottotilauksissa 3 päivän kokeilu ja sitä seuraava laskutus alkavat vasta tämän vahvistuksen jälkeen.',billingNow:'3 päivän kokeilu käynnistyi. Ensimmäinen tilauspaketin veloitus tehdään kokeilun päätyttyä.',billingFree:'Luovutus vahvistettu. Käyttöönotto ja tilauspaketti ovat henkilökohtaisella koodilla 0 €, eikä maksua veloiteta myöhemminkään.',
  confirmed:'Luovutus vahvistettu.',failed:'Toiminto epäonnistui. Yritä uudelleen.',
@@ -450,7 +450,7 @@ const SL={
  loading:'Hämtar installationsbeställningar…',empty:'Inga installationsbeställningar.',refresh:'Uppdatera beställningar',
  received:'Väntar på installation',credentials_created:'Uppgifter skapade – skicka personligen',ready:'Överlämnat',
  config:'Ändra bottens namn och hälsning',configTitle:'Bottens grunduppgifter',configName:'Bottens namn',configGreeting:'Välkomsttext',configAvatar:'Bot-ikon',configSave:'Spara botinställningar',configSaved:'Botinställningar sparade.',create:'Skapa inloggning',rotate:'Ändra inloggning',handover:'Bekräfta överlämning',import:'Importera webbplatsdata',importing:'Importerar företagsuppgifter…',imported:'Uppgifter importerade',due:'Leverans senast',customerLogin:'Öppna kundens inloggning',privateNote:'Använd ett separat privat webbläsarfönster för kundkontot så att ägarsessionen behålls.',extra:'Extra arbetsyta: kunden har redan ett Respondo-konto.',
- dialog:'Kundens inloggning',login:'Unikt inloggnings-ID',password:'Tillfälligt lösenord',hint:'Inloggnings-ID skapas automatiskt vid sparande. Ett starkt lösenord är redan genererat. Kopiera uppgifterna och mejla dem själv till kunden, till exempel från info@respondoai.fi. Kunden kan ändra lösenordet i inställningarna.',
+ dialog:'Kundens inloggning',login:'Unikt inloggnings-ID',password:'Tillfälligt lösenord',hint:'Ett unikt inloggnings-ID och ett starkt lösenord visas ovan. Spara uppgifterna innan du kopierar och skickar dem till kunden, till exempel från info@respondoai.fi. Kunden kan ändra lösenordet i inställningarna.',
  generate:'Skapa starkt lösenord',copy:'Kopiera kundmeddelande',save:'Spara inloggning',close:'Stäng',saved:'Uppgifterna är sparade. Kopiera nu meddelandet och skicka det personligen.',copied:'Meddelandet kopierat. Skicka det personligen till kunden.',copyFail:'Kunde inte kopiera. Kopiera uppgifterna manuellt.',
  confirm:'Har du färdigställt botten och personligen mejlat inloggningsuppgifterna? Respondo skickar inget automatiskt mejl. För nya installationsbeställningar startar den tre dagar långa provperioden efter bekräftelsen.',billingNow:'Den tre dagar långa provperioden har börjat. Första abonnemangsdebiteringen sker efter provperioden.',billingFree:'Överlämningen är bekräftad. Både installationen och abonnemanget kostar 0 € med den personliga koden. Ingen avgift debiteras senare.',confirmed:'Överlämningen bekräftad.',failed:'Åtgärden misslyckades. Försök igen.',
  mail:(email,password)=>'Hej!\n\nDin Respondo AI-bot är nu klar.\n\nLogga in: https://respondoai.fi/kirjaudu\nInloggnings-ID: '+email+'\nTillfälligt lösenord: '+password+'\n\nDu kan ändra lösenordet i inställningarna.\n\nMed vänliga hälsningar,\nRespondo AI'
@@ -463,7 +463,7 @@ const SL={
  loading:'Loading setup orders…',empty:'No setup orders.',refresh:'Refresh orders',
  received:'Awaiting setup',credentials_created:'Credentials created – send personally',ready:'Handed over',
  config:'Edit bot name and greeting',configTitle:'Bot configuration',configName:'Bot name',configGreeting:'Welcome greeting',configAvatar:'Bot avatar',configSave:'Save bot settings',configSaved:'Bot settings saved.',create:'Create credentials',rotate:'Change credentials',handover:'Confirm handover',import:'Import website data into the bot',importing:'Importing website facts…',imported:'Website facts imported',due:'Delivery by',customerLogin:'Open customer sign-in',privateNote:'Use a separate private browser window for customer setup so your owner session stays active.',extra:'Additional workspace: the customer already has a Respondo login.',
- dialog:'Customer login credentials',login:'Unique login ID',password:'Temporary password',hint:'A unique login ID is created automatically when saved. A secure password is already generated. Copy both and personally email them to the customer, for example from info@respondoai.fi. The customer can change the password in Settings.',
+ dialog:'Customer login credentials',login:'Unique login ID',password:'Temporary password',hint:'A unique login ID and strong password are shown above. Save the credentials before copying and personally emailing them to the customer, for example from info@respondoai.fi. The customer can change the password in Settings.',
  generate:'Generate strong password',copy:'Copy customer message',save:'Save credentials',close:'Close',saved:'Credentials saved. Copy the message now and personally send it to your customer.',copied:'Message copied. Personally email it to the customer.',copyFail:'Copy failed. Copy the credentials manually.',
  confirm:'Have you finished the bot and personally emailed the credentials? Respondo will not send an automatic email. For new assisted-setup orders, the three-day free trial starts after confirmation.',billingNow:'The three-day trial has started. The first subscription payment is due after the trial.',billingFree:'Handover confirmed. Your personal code makes setup and the subscription €0, with no later charges.',confirmed:'Handover confirmed.',failed:'Could not complete the action. Please try again.',
  mail:(email,password)=>'Hello,\n\nYour Respondo AI bot is ready for review.\n\nSign in: https://respondoai.fi/kirjaudu\nLogin ID: '+email+'\nTemporary password: '+password+'\n\nYou can change your password in Settings.\n\nBest regards,\nRespondo AI'
@@ -478,8 +478,8 @@ const setupShell=()=>'<section id="setup-orders" class="company-section setup-se
   '<div id="setupJobs" class="setup-jobs" aria-live="polite">'+e(sl('loading'))+'</div>'+
   '<dialog id="setupCredentialDialog" class="setup-dialog" aria-label="'+e(sl('dialog'))+'">'+
   '<form id="setupCredentialForm"><h3>'+e(sl('dialog'))+'</h3><p id="setupDialogCompany"></p>'+
-  '<label>'+e(sl('login'))+'<input name="loginCode" type="text" autocomplete="off" readonly placeholder="'+e(sl('generate'))+'"></label>'+
-  '<label>'+e(sl('password'))+'<input name="password" type="password" minlength="14" maxlength="72" autocomplete="new-password" required></label>'+
+  '<label>'+e(sl('login'))+'<input name="loginCode" type="text" autocomplete="off" spellcheck="false" autocapitalize="off" readonly aria-label="'+e(sl('login'))+'"></label>'+
+  '<label>'+e(sl('password'))+'<input name="password" type="text" minlength="14" maxlength="72" autocomplete="off" spellcheck="false" autocapitalize="off" required aria-label="'+e(sl('password'))+'"></label>'+
   '<button id="setupGeneratePassword" type="button">'+e(sl('generate'))+'</button>'+
   '<p>'+e(sl('hint'))+'</p><p id="setupDialogError" class="setup-error" role="alert"></p>'+
   '<p id="setupDialogSuccess" class="setup-ok" role="status"></p>'+
@@ -533,6 +533,20 @@ async function loadSetupOrders(){
     paintSetupOrders();
   }catch(err){target.textContent=err.message||sl('failed');}
 }
+// Create an independent cryptographically random 48-bit code on opening the
+// owner's dialog. The backend checks uniqueness when these details are saved.
+function generateSetupLoginCode(){
+  const bytes=new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  return 'RSP-'+Array.from(bytes,byte=>byte.toString(16).padStart(2,'0')).join('').toUpperCase();
+}
+function invalidateUnsavedSetupCredentials(){
+  setupSaved=false;
+  const copy=document.getElementById('setupCopyMessage');
+  if(copy)copy.hidden=true;
+  const success=document.getElementById('setupDialogSuccess');
+  if(success)success.textContent='';
+}
 function openSetupCredentials(id){
   const job=setupOrders.find(j=>j.session_id===id);
   const dialog=document.getElementById('setupCredentialDialog');
@@ -540,7 +554,8 @@ function openSetupCredentials(id){
   if(!job||!job.first_workspace||!dialog||!form)return;
   form.reset();
   form.dataset.sessionId=id;
-  form.elements.loginCode.value=job.setup_login_code||'';
+  form.elements.loginCode.value=job.setup_login_code||generateSetupLoginCode();
+  form.elements.password.readOnly=false;
   generateSetupPassword();
   document.getElementById('setupDialogCompany').textContent=job.company_name||'';
   document.getElementById('setupDialogError').textContent='';
@@ -549,32 +564,43 @@ function openSetupCredentials(id){
   dialog.showModal();
 }
 function generateSetupPassword(){
-  // Cryptographically generated; never store the plaintext in the database.
+  // Show temporary credentials only inside the owner-only dialog. Save a hash
+  // to the database, never the plaintext password.
   const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
   const random=new Uint8Array(24);
   crypto.getRandomValues(random);
-  document.querySelector('#setupCredentialForm [name="password"]').value=
-    Array.from(random,byte=>alphabet[byte % alphabet.length]).join('');
+  const password=document.querySelector('#setupCredentialForm [name="password"]');
+  if(!password)return;
+  invalidateUnsavedSetupCredentials();
+  password.readOnly=false;
+  password.type='text';
+  password.value=Array.from(random,byte=>alphabet[byte % alphabet.length]).join('');
 }
 async function saveSetupCredentials(event){
   event.preventDefault();
   const form=event.currentTarget;
   const password=form.elements.password.value;
+  const loginCode=form.elements.loginCode.value.trim();
   const submit=document.getElementById('setupSaveCredentials');
   const error=document.getElementById('setupDialogError');
   error.textContent='';
+  if(!/^RSP-[A-F0-9]{12}$/.test(loginCode)){
+    error.textContent=sl('failed');
+    return;
+  }
   if(!form.reportValidity())return;
   submit.disabled=true;
   try{
     const response=await fetch('/api/app/internal/setup-service-requests/'+encodeURIComponent(form.dataset.sessionId)+'/credentials',{
       method:'POST',credentials:'same-origin',
       headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body:JSON.stringify({password})
+      body:JSON.stringify({password,loginCode})
     });
     const result=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(result.error||sl('failed'));
-    if(!result.loginCode)throw new Error(sl('failed'));
+    if(!result.loginCode||result.loginCode!==loginCode)throw new Error(sl('failed'));
     form.elements.loginCode.value=result.loginCode;
+    form.elements.password.readOnly=true;
     setupSaved=true;
     document.getElementById('setupDialogSuccess').textContent=sl('saved');
     document.getElementById('setupCopyMessage').hidden=false;
@@ -672,12 +698,19 @@ function bindSetupAdmin(){
   document.getElementById('setupBotForm')?.addEventListener('submit',saveSetupBot);
   document.getElementById('setupBotClose')?.addEventListener('click',()=>document.getElementById('setupBotDialog').close());
   document.getElementById('setupGeneratePassword')?.addEventListener('click',generateSetupPassword);
+  document.querySelector('#setupCredentialForm [name="password"]')?.addEventListener('input',invalidateUnsavedSetupCredentials);
   document.getElementById('setupCredentialForm')?.addEventListener('submit',saveSetupCredentials);
   document.getElementById('setupCopyMessage')?.addEventListener('click',copySetupMessage);
   document.getElementById('setupCloseDialog')?.addEventListener('click',()=>document.getElementById('setupCredentialDialog').close());
   document.getElementById('setupCredentialDialog')?.addEventListener('close',()=>{
     const form=document.getElementById('setupCredentialForm');
-    form?.reset();setupSaved=false;
+    if(form){
+      form.reset();
+      form.elements.loginCode.value='';
+      form.elements.password.value='';
+      form.elements.password.readOnly=false;
+    }
+    setupSaved=false;
   });
 }
 
