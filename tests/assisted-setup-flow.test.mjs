@@ -8,7 +8,7 @@ const app = read('public/app.js');
 const traffic = read('public/traffic.html');
 
 test('199-euro assisted setup is opt-in, one-time and separately listed in both checkouts', () => {
-  const start=server.indexOf('function setupServiceCheckoutLineItem()');
+  const start=server.indexOf('function setupServiceCheckoutLineItem(ownerFree=false)');
   const end=server.indexOf('async function stripeCheckoutLineItem(',start);
   assert.ok(start>=0 && end>start);
   const item=server.slice(start,end);
