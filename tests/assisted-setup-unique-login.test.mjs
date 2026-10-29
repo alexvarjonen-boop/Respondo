@@ -59,7 +59,6 @@ test('owner sees the login code and a newly generated password without email adm
 });
 
 test('the existing sign-in form accepts login ID while retaining account settings password change',()=>{
-  const login=slice('function login() {','function ',app.slice(app.indexOf('function login() {')+1));
   assert.match(app,/Sähköposti tai kirjautumistunnus/);
   assert.match(app,/Email or login ID/);
   assert.match(app,/name="email" type="text" autocomplete="username"/);
