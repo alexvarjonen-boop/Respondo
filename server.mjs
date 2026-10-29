@@ -582,9 +582,14 @@ async function ensureNewDomesticSubscriptionSellerFooter(subscriptionId, session
   });
   return true;
 }
-function assistedSetupCheckoutNotice(lang='fi') {
+function assistedSetupCheckoutNotice(lang='fi', ownerFree=false) {
   const vat=checkoutTaxExemptionMessage(lang);
-  const note=lang==='sv'
+  const freeNote=lang==='sv'
+    ? 'Din personliga kampanjkod ger både installationen och abonnemanget för 0 €. Ingen avgift tas ut nu eller efter överlämningen.'
+    : lang==='en'
+      ? 'Your personal promotion code makes both setup and the subscription €0. No charge is due now or after handover.'
+      : 'Henkilökohtaisella kampanjakoodillasi käyttöönottopalvelu ja tilauspaketti maksavat molemmat 0 €. Veloitusta ei tehdä nyt eikä luovutuksen jälkeen.';
+  const note=ownerFree ? freeNote : lang==='sv'
     ? 'Installationstjänsten på 199 € betalas nu. Abonnemanget debiteras först efter att vi personligen levererat inloggningsuppgifterna och bekräftat överlämningen. Därefter börjar en gratis provperiod på 3 dagar.'
     : lang==='en'
       ? 'The €199 setup fee is payable now. Subscription charges are held until we personally deliver your login details and confirm handover, followed by a 3-day free trial.'
@@ -950,16 +955,26 @@ async function sendWelcomeEmailOnce(userId) {
   }
 }
 
-// A paid setup request is work for Respondo's team, not proof that a bot is ready.
+// A completed setup order (paid or explicitly founder-sponsored) is work for
+// Respondo's team, not proof that a bot is ready.
 // Keep an auditable queue and deduplicate customer/team email across Stripe webhook
 // and the successful Checkout redirect.
+function setupCheckoutPaymentConfirmed(session) {
+  if(session?.status!=='complete' || session?.mode!=='subscription') return false;
+  if(session?.payment_status==='paid') return true;
+  return session?.payment_status==='no_payment_required' &&
+    session?.metadata?.owner_promo_zero_setup==='1' &&
+    session?.metadata?.owner_promo_zero_recurring==='1' &&
+    session?.amount_total===0;
+}
 async function notifySetupServiceAfterCheckout(session) {
   if (session?.metadata?.setup_service !== '1') return {selected:false};
-  if (session?.status !== 'complete' || session?.payment_status !== 'paid') {
+  if (!setupCheckoutPaymentConfirmed(session)) {
     return {selected:true,customerSent:false,paymentPending:true};
   }
-  // Hold recurring collection only after Stripe has completed payment of
-  // the 199 EUR one-time setup invoice.
+  const ownerFreeSetup=session.metadata.owner_promo_zero_setup==='1';
+  // Hold recurring collection only after Stripe confirms a completed
+  // paid order or an explicitly zero-total founder-sponsored Checkout.
   if(session?.metadata?.setup_billing_mode === 'after_handover' && session?.subscription) {
     await holdAssistedSetupBilling(stripe,typeof session.subscription==='string'?session.subscription:session.subscription.id);
   }
@@ -1019,6 +1034,11 @@ async function notifySetupServiceAfterCheckout(session) {
 
     const lang=['fi','sv','en'].includes(account.preferred_language) ? account.preferred_language : 'en';
     const pick=(fi,sv,en)=>lang==='fi'?fi:lang==='sv'?sv:en;
+    const promotionNotice=pick(
+      'Henkilökohtaisella kampanjakoodilla sekä käyttöönottopalvelu että tilauspaketti ovat maksuttomia (0 €). Sinulta ei veloiteta maksua myöhemminkään.',
+      'Med din personliga kampanjkod är både installationen och abonnemanget kostnadsfria (0 €). Du debiteras inte senare heller.',
+      'Your personal promotion code makes both the setup service and subscription free (€0). No charges will be collected later either.'
+    );
     const title=pick('Käyttöönottopalvelusi on käsittelyssä','Vi behandlar din installationsbeställning','Your setup service is being processed');
     const introduction=pick(
       'Kiitos tilauksestasi! Käyttöönottopalvelusi on käsittelyssä. Perehdymme yrityksesi verkkosivuihin ja viimeistelemme botin. Saat valmiin käyttöönottopalvelun sekä kirjautumistiedot henkilökohtaisella sähköpostilla viimeistään viikon kuluessa tilauksestasi.',
@@ -1043,6 +1063,7 @@ async function notifySetupServiceAfterCheckout(session) {
         '<div style="padding:18px 20px;border:1px solid #435675;background:#222d41;border-radius:14px;margin:0 0 24px">'+
         '<div style="color:#aaccff;font-size:12px;font-weight:800;letter-spacing:1px;margin:0 0 7px">'+escapeEmailHtml(pick('ANALYSOITAVA VERKKOSIVU','WEBBPLATS ATT GRANSKA','WEBSITE TO REVIEW'))+'</div>'+
         '<p style="color:#fff;font-size:15px;line-height:1.5;overflow-wrap:anywhere;margin:0">'+escapeEmailHtml(website)+'</p></div>'+
+        (ownerFreeSetup?'<p style="color:#b9eacb;font-size:14px;line-height:1.75;margin:0 0 18px">'+escapeEmailHtml(promotionNotice)+'</p>':'')+
         '<p style="color:#d0d8e5;font-size:14px;line-height:1.75;margin:0 0 24px">'+escapeEmailHtml(loginInstructions)+'</p>'+
         (session.metadata?.additional_workspace==='1'?'<p style="margin:0 0 24px"><a href="'+escapeEmailHtml(BASE+'/kirjaudu')+'" style="display:inline-block;border-radius:12px;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 22px;font-size:14px;font-weight:750">'+escapeEmailHtml(pick('Avaa kirjautuminen','Öppna inloggning','Open sign in'))+' →</a></p>':'')+
         '<p style="color:#aebbd0;font-size:13px;line-height:1.7;margin:0">'+escapeEmailHtml(pick('Tämä on automaattinen vahvistusviesti. Kysymykset: info@respondoai.fi','Detta är en automatisk bekräftelse. Frågor: info@respondoai.fi','This is an automated confirmation. Questions: info@respondoai.fi'))+'</p>',
@@ -1067,9 +1088,11 @@ async function notifySetupServiceAfterCheckout(session) {
     const to=cleanEmail(process.env.CONTACT_NOTIFICATION_TO||process.env.SUPPORT_EMAIL||process.env.OWNER_EMAIL||'info@respondoai.fi');
     if(to && !existing.rows[0]?.owner_emailed_at) {
       const ownerHtml=brandedEmailHtml({
-        language:'fi',eyebrow:'Uusi maksettu käyttöönottopalvelu',title:'Uusi käyttöönottotyö · '+account.company_name,
+        language:'fi',eyebrow:ownerFreeSetup?'Uusi maksuton kampanjakäyttöönotto':'Uusi maksettu käyttöönottopalvelu',title:'Uusi käyttöönottotyö · '+account.company_name,
         content:
-          '<p style="color:#d6d8de;font-size:15px;line-height:1.8">Asiakas on ostanut 199 €:n käyttöönottopalvelun. Aloita verkkosivuston analysointi ja botin viimeistely. Ilmoita asiakkaalle erikseen, kun botti on tarkistettavissa.</p>'+
+          '<p style="color:#d6d8de;font-size:15px;line-height:1.8">'+(ownerFreeSetup
+            ? 'Omistajan henkilökohtaisella koodilla käyttöönottopalvelu ja tilaus ovat 0 €. Asiakkaalta ei veloiteta maksua. Aloita verkkosivuston analysointi ja botin viimeistely.'
+            : 'Asiakas on ostanut 199 €:n käyttöönottopalvelun. Aloita verkkosivuston analysointi ja botin viimeistely. Ilmoita asiakkaalle erikseen, kun botti on tarkistettavissa.')+'</p>'+
           '<p style="color:#fff;font-size:14px;line-height:1.8">Yritys: '+escapeEmailHtml(account.company_name)+'<br>Verkkosivu: '+escapeEmailHtml(website)+'<br>Asiakas: '+escapeEmailHtml(account.email)+'<br>Tilaus: '+escapeEmailHtml(sessionId)+'</p>'+
           '<p style="margin:22px 0"><a href="'+escapeEmailHtml(BASE+'/trafic#setup-orders')+'" style="display:inline-block;background:#3b64ed;color:#fff;text-decoration:none;padding:14px 20px;border-radius:11px;font-weight:700">Avaa käyttöönottotyöt →</a></p>',
       });
@@ -1474,13 +1497,13 @@ function setupServiceWebsiteUrl(raw, selected) {
 }
 
 const SETUP_SERVICE_PRICE_CENTS = 19900;
-function setupServiceCheckoutLineItem() {
+function setupServiceCheckoutLineItem(ownerFree=false) {
   return {
     price_data:{
       currency:'eur',
-      unit_amount:SETUP_SERVICE_PRICE_CENTS,
+      unit_amount:ownerFree ? 0 : SETUP_SERVICE_PRICE_CENTS,
       product_data:{
-        name:'Käyttöönottopalvelu',
+        name:ownerFree ? 'Käyttöönottopalvelu (henkilökohtainen kampanjakoodi, 0 €)' : 'Käyttöönottopalvelu',
         description:'Kertaluonteinen käyttöönottopalvelu / One-time setup service',
       },
     },
@@ -1513,9 +1536,8 @@ async function stripeCheckoutLineItem(plan) {
   };
 }
 
-// Stripe must bill only the EUR 199 one-time setup and never bill the plan
-// for the server-configured OWNER_FREE_CODE. A global discount coupon would
-// also discount setup, so use a genuine zero-price recurring Checkout item.
+// The server-configured OWNER_FREE_CODE makes the recurring plan and optional
+// one-time setup free. Keep both visible as distinct zero-priced Checkout items.
 function ownerFreeSetupCheckoutLineItem(plan) {
   if (!Object.hasOwn(CURRENT_PRICE_CENTS,plan)) {
     throw Object.assign(new Error('Maksuttoman tilauksen koodi ei ole voimassa tällä paketilla.'),{publicStatus:400});
@@ -8498,7 +8520,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
           console.error('Referral activation from webhook failed', e);
         }
 
-        if (session.metadata?.setup_billing_mode === 'after_handover' && session.payment_status === 'paid' && incomingSubscriptionId) {
+        if (session.metadata?.setup_billing_mode === 'after_handover' && setupCheckoutPaymentConfirmed(session) && incomingSubscriptionId) {
           await holdAssistedSetupBilling(stripe, incomingSubscriptionId);
         }
 
@@ -9861,6 +9883,13 @@ app.post('/api/auth/email-verification/confirm', signupVerificationConfirmLimite
   return res.json({ ok:true, email });
 });
 
+// Pricing preview: secret founder code is validated server-side, not in public assets.
+app.post('/api/public/owner-promo-preview', checkoutLimiter, (req,res) => {
+  res.set('Cache-Control','no-store');
+  const freeSetup=isFreeReferralCode(normalizeReferralCode(req.body?.code));
+  return res.json({freeSetup,setupPriceCents:freeSetup?0:SETUP_SERVICE_PRICE_CENTS});
+});
+
 app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Tietokantaa ei ole yhdistetty.' });
 
@@ -10035,12 +10064,13 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           free: true,
         });
       }
-      const taxExemptionMessage = setupService ? assistedSetupCheckoutNotice(preferredLanguage) : checkoutTaxExemptionMessage(preferredLanguage);
+      const taxExemptionMessage = setupService ? assistedSetupCheckoutNotice(preferredLanguage,freeReferral) : checkoutTaxExemptionMessage(preferredLanguage);
       session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         automatic_tax: { enabled: false },
+        payment_method_collection:freeReferral && setupService ? 'if_required' : 'always',
         customer_email: email,
-        line_items:setupService ? [checkoutLineItem,setupServiceCheckoutLineItem()] : [checkoutLineItem],
+        line_items:setupService ? [checkoutLineItem,setupServiceCheckoutLineItem(freeReferral)] : [checkoutLineItem],
         custom_text: {
           submit: { message: taxExemptionMessage },
         },
@@ -10057,7 +10087,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
             ...(setupService ? { setup_website:setupWebsite } : {}),
             ...(referralCode ? { referral_code: referralCode } : {}),
-            ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1'} : {}),
+            ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'} : {}),
           },
         },
         tax_id_collection: { enabled: true },
@@ -10079,7 +10109,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
           ...(setupService ? { setup_website:setupWebsite } : {}),
           ...(referralCode ? { referral_code: referralCode } : {}),
-            ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1'} : {}),
+            ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'} : {}),
         },
       });
 
@@ -10876,7 +10906,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
 
   let referrer=null;
   let existingReferralReservation=false;
-  if(referralCode){
+  if(referralCode && !freeReferral){
     const ref=await q(
       `SELECT id,email,status,subscription_status,subscription_plan
          FROM users
@@ -10927,15 +10957,16 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   );
 
   try {
-    const taxExemptionMessage=setupService ? assistedSetupCheckoutNotice(user.preferred_language||'fi') : checkoutTaxExemptionMessage(user.preferred_language||'fi');
+    const taxExemptionMessage=setupService ? assistedSetupCheckoutNotice(user.preferred_language||'fi',freeReferral) : checkoutTaxExemptionMessage(user.preferred_language||'fi');
     const session=await stripe.checkout.sessions.create({
       mode:'subscription',
       automatic_tax:{enabled:false},
+      payment_method_collection:freeReferral && setupService ? 'if_required' : 'always',
       ...(user.stripe_customer_id ? {
         customer:user.stripe_customer_id,
         customer_update:{ name:'auto' },
       } : { customer_email:user.email }),
-      line_items:setupService ? [checkoutLineItem,setupServiceCheckoutLineItem()] : [checkoutLineItem],
+      line_items:setupService ? [checkoutLineItem,setupServiceCheckoutLineItem(freeReferral)] : [checkoutLineItem],
       custom_text:{
         submit:{message: taxExemptionMessage},
       },
@@ -10953,7 +10984,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
           ...(setupService ? { setup_website:setupWebsite } : {}),
           ...(referralCode ? { referral_code:referralCode } : {}),
-          ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1'} : {}),
+          ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'} : {}),
         },
       },
       tax_id_collection:{enabled:true},
@@ -10973,7 +11004,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
         ...(setupService ? { setup_website:setupWebsite } : {}),
         ...(referralCode ? { referral_code:referralCode } : {}),
-          ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1'} : {}),
+          ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'} : {}),
       },
     });
 
@@ -11267,10 +11298,12 @@ app.post('/api/app/internal/setup-service-requests/:id/handover', auth, ownerTra
        job.tenant_active!==true || job.user_status!=='active' ||
        !['active','trialing'].includes(job.subscription_status) ||
        !job.stripe_subscription_id)
-      return res.status(409).json({error:'Vahvista ensin, että maksettu tilaus ja luovutetut kirjautumistiedot ovat kunnossa.'});
+      return res.status(409).json({error:'Vahvista ensin, että tilaus ja luovutetut kirjautumistiedot ovat kunnossa.'});
 
     const subscription=await stripe.subscriptions.retrieve(job.stripe_subscription_id);
     const deferred=assistedSetupBillingMode(subscription);
+    const freeOwnerPromotion=subscription.metadata?.owner_promo_zero_setup==='1' &&
+      subscription.metadata?.owner_promo_zero_recurring==='1';
     let trialEndsAt=null;
     if(deferred) {
       // Timestamp is persisted before the Stripe call for retry-safe idempotency.
@@ -11291,7 +11324,7 @@ app.post('/api/app/internal/setup-service-requests/:id/handover', auth, ownerTra
         RETURNING session_id`,[sessionId],
     );
     if(!updated.rowCount) return res.status(409).json({error:'Luovutuksen tilaa ei voitu päivittää.'});
-    return res.json({ok:true,manualHandoverConfirmed:true,billingDeferredUntilHandover:deferred,trialEndsAt});
+    return res.json({ok:true,manualHandoverConfirmed:true,billingDeferredUntilHandover:deferred,freeOwnerPromotion,trialEndsAt});
   }catch(error){
     console.error('Manual setup handover or Stripe billing release failed:',error?.message);
     return res.status(503).json({error:'Luovutuksen vahvistaminen tai laskutuksen käynnistäminen ei onnistunut. Yritä uudelleen.'});
