@@ -40,9 +40,6 @@ test('signup customer password uses requirements and meter with consistent valid
 });
 
 test('password creation/changes use the same policy in password reset, Google setup and Settings',()=>{
-  const backend=[
-    ["app.post('/api/auth/password-reset/confirm'",'app.post(\'/api/auth/logout\''],
-  ];
   assert.match(server,/if \(!customerPasswordValid\(newPassword\)\)/);
   assert.match(server,/if\(!customerPasswordValid\(newPassword\)\)/);
   assert.equal((server.match(/!customerPasswordValid\(newPassword\)/g)||[]).length,3);
