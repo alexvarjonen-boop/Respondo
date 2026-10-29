@@ -28,7 +28,7 @@ test('owner free code creates an immutable €0 recurring line item, and an inde
   assert.throws(()=>priceForPlan('owner_test'),/ei ole voimassa/);
   assert.throws(()=>priceForPlan('unknown'),/ei ole voimassa/);
   assert.doesNotMatch(method,/stripe\.coupons|discounts:/);
-  const normalSetup=server.slice(server.indexOf('function setupServiceCheckoutLineItem()'),start);
+  const normalSetup=server.slice(server.indexOf('function setupServiceCheckoutLineItem(ownerFree=false)'),start);
   assert.match(normalSetup,/unit_amount:ownerFree \? 0 : SETUP_SERVICE_PRICE_CENTS/);
   assert.match(server,/const SETUP_SERVICE_PRICE_CENTS = 19900/);
 });
