@@ -9932,6 +9932,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
     const hash = await bcrypt.hash((socialSignup || setupService) ? crypto.randomBytes(32).toString('hex') : password, 12);
     const client = await pool.connect();
     let session;
+    let tenantId;
 
     try {
       await client.query('BEGIN');
@@ -9991,7 +9992,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
         ],
       );
 
-      const tenantId = uid();
+      tenantId = uid();
       let tenantSlug = slug(companyName);
       const slugExists = await client.query('SELECT 1 FROM tenants WHERE slug=$1', [tenantSlug]);
       if (slugExists.rowCount) tenantSlug = `${tenantSlug}-${crypto.randomBytes(3).toString('hex')}`;
