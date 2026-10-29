@@ -2384,19 +2384,19 @@ function footer() {
         <div class="foot-col">
           <h4>${appText("Yritys","Företag","Company")}</h4>
           <a href="/yhteystiedot">${appText("Yhteystiedot","Kontakt","Contact")}</a>
-          <a href="/tietoturva?lang=${currentLang()}">Tietoturva</a>
+          <a href="/tietoturva?lang=${currentLang()}">${appText("Tietoturva","Informationssäkerhet","Security")}</a>
           <a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a>
           <span>${esc(cfg.sellerName||'Respondo AI')}</span>
           ${cfg.sellerPostalAddress?'<span>'+esc(cfg.sellerPostalAddress)+'</span>':''}
-          <span>Suomi</span>
+          <span>${appText("Suomi","Finland","Finland")}</span>
         </div>
         <div class="foot-col">
-          <h4>Lakiasiat</h4>
-          <a href="/kayttoehdot?lang=${currentLang()}">Käyttöehdot</a>
-          <a href="/tietosuoja?lang=${currentLang()}">Tietosuojaseloste</a>
-          <a href="/evasteet?lang=${currentLang()}">Evästeet</a>
-          <button type="button" class="cookie-settings-link" onclick="window.openRespondoCookieSettings?.()">Evästeasetukset</button>
-          <a href="/dpa?lang=${currentLang()}">Tietojenkäsittely</a>
+          <h4>${appText("Lakiasiat","Juridik","Legal")}</h4>
+          <a href="/kayttoehdot?lang=${currentLang()}">${appText("Käyttöehdot","Användarvillkor","Terms of Service")}</a>
+          <a href="/tietosuoja?lang=${currentLang()}">${appText("Tietosuojaseloste","Integritetspolicy","Privacy Policy")}</a>
+          <a href="/evasteet?lang=${currentLang()}">${appText("Evästeet","Cookies","Cookies")}</a>
+          <button type="button" class="cookie-settings-link" onclick="window.openRespondoCookieSettings?.()">${appText("Evästeasetukset","Cookieinställningar","Cookie Settings")}</button>
+          <a href="/dpa?lang=${currentLang()}">${appText("Tietojenkäsittely","Personuppgiftsbehandling","Data Processing")}</a>
         </div>
       </div>
       <div class="legalbar">
