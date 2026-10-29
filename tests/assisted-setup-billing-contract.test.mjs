@@ -5,13 +5,13 @@ import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const server=read('server.mjs'),app=read('public/app.js'),traffic=read('public/traffic.html');
 
-test('new assisted setup checkout charges the 199 euro one-time item but holds recurring billing',()=>{
-  assert.equal((server.match(/line_items:setupService\s*\?\s*\[checkoutLineItem,setupServiceCheckoutLineItem\(\)\]\s*:\s*\[checkoutLineItem\]/g)||[]).length,2);
+test('new setup checkout prices paid setup at 199 and free founder setup at zero',()=>{
+  assert.equal((server.match(/line_items:setupService\s*\?\s*\[checkoutLineItem,setupServiceCheckoutLineItem\(freeReferral\)\]\s*:\s*\[checkoutLineItem\]/g)||[]).length,2);
   assert.match(server,/SETUP_SERVICE_PRICE_CENTS\s*=\s*19900/);
   assert.match(server,/assistedSetupCheckoutTrial\(setupService\)/);
   assert.match(server,/setup_billing_mode:'after_handover'/);
-  assert.match(server,/assist.*SetupCheckoutNotice\(preferredLanguage\)/);
-  assert.match(server,/assist.*SetupCheckoutNotice\(user\.preferred_language\|\|'fi'\)/);
+  assert.match(server,/assist.*SetupCheckoutNotice\(preferredLanguage,freeReferral\)/);
+  assert.match(server,/assist.*SetupCheckoutNotice\(user\.preferred_language\|\|'fi',freeReferral\)/);
 });
 
 test('Stripe webhooks hold payment collection for paid assisted setup before acknowledging completion',()=>{
@@ -21,7 +21,7 @@ test('Stripe webhooks hold payment collection for paid assisted setup before ack
   const flow=server.slice(start,end);
   assert.match(flow,/await holdAssistedSetupBilling\(stripe, incomingSubscriptionId\)/);
   assert.match(flow,/notifySetupServiceAfterCheckout\(session\)/);
-  assert.match(flow,/session\.payment_status === 'paid' && incomingSubscriptionId/);
+  assert.match(flow,/setupCheckoutPaymentConfirmed\(session\) && incomingSubscriptionId/);
   assert.doesNotMatch(server,/event\.type === 'customer.subscription.created' &&[\s\S]{0,170}holdAssistedSetupBilling/);
 });
 

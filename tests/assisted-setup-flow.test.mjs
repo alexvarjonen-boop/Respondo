@@ -8,14 +8,14 @@ const app = read('public/app.js');
 const traffic = read('public/traffic.html');
 
 test('199-euro assisted setup is opt-in, one-time and separately listed in both checkouts', () => {
-  const start=server.indexOf('function setupServiceCheckoutLineItem()');
+  const start=server.indexOf('function setupServiceCheckoutLineItem(ownerFree=false)');
   const end=server.indexOf('async function stripeCheckoutLineItem(',start);
   assert.ok(start>=0 && end>start);
   const item=server.slice(start,end);
   assert.match(server,/SETUP_SERVICE_PRICE_CENTS\s*=\s*19900/);
-  assert.match(item,/unit_amount:SETUP_SERVICE_PRICE_CENTS/);
+  assert.match(item,/unit_amount:ownerFree \? 0 : SETUP_SERVICE_PRICE_CENTS/);
   assert.doesNotMatch(item,/recurring\s*:/);
-  assert.equal((server.match(/line_items:setupService\s*\?\s*\[checkoutLineItem,setupServiceCheckoutLineItem\(\)\]\s*:\s*\[checkoutLineItem\]/g)||[]).length,2);
+  assert.equal((server.match(/line_items:setupService\s*\?\s*\[checkoutLineItem,setupServiceCheckoutLineItem\(freeReferral\)\]\s*:\s*\[checkoutLineItem\]/g)||[]).length,2);
   assert.match(app,/type="checkbox" name="setupService" value="1"/);
   assert.doesNotMatch(app.slice(app.indexOf('function setupServiceOption()'),app.indexOf('function bindSetupServiceOptions()')),/type="checkbox"[^>]*checked/);
 });
@@ -29,13 +29,15 @@ test('paid assisted setup collects a website and does not require buyer to pick 
   assert.match(server,/!socialSignup && !setupService && \(!password/);
 });
 
-test('confirmation email is sent only for fully paid Stripe checkout and promises completion within one week in all locales',()=>{
+test('confirmation email follows paid or verified founder-free Checkout and promises completion in one week',()=>{
   const start=server.indexOf('async function notifySetupServiceAfterCheckout(session)');
   const end=server.indexOf('async function sendHomepageContactEmail(',start);
   const flow=server.slice(start,end);
   assert.ok(start>=0 && end>start);
-  assert.match(flow,/session\?\.status !== 'complete'/);
-  assert.match(flow,/session\?\.payment_status !== 'paid'/);
+  assert.match(flow,/setupCheckoutPaymentConfirmed\(session\)/);
+  assert.match(flow,/owner_promo_zero_setup/);
+  assert.match(flow,/promotionNotice/);
+  assert.match(flow,/ownerFreeSetup\?'Uusi maksuton kampanjakäyttöönotto'/);
   assert.match(flow,/ON CONFLICT\(session_id\) DO NOTHING/);
   assert.match(flow,/customer_emailed_at=NOW\(\)/);
   assert.match(flow,/owner_emailed_at=NOW\(\)/);
