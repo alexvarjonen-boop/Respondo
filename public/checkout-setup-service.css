@@ -204,3 +204,51 @@
 
 /* Assisted setup accounts create their password only when the bot is ready. */
 #app .signup-dark-shell #signup #signupPasswordField[hidden] { display:none!important; }
+
+/* Optional assisted setup: image is required only while setup is selected. */
+#app .setup-reference-image[hidden],
+#app .setup-greeting-field[hidden],
+#app .setup-image-preview[hidden]{display:none!important}
+#app .setup-reference-image,
+#app .setup-greeting-field{
+  box-sizing:border-box!important;
+  display:grid!important;
+  gap:9px!important;
+  margin:0!important;
+  padding:0 3px 8px!important;
+  width:100%!important;
+  min-width:0!important;
+  color:#f5f9ff!important;
+}
+#app .setup-reference-image>span,
+#app .setup-greeting-field>span{
+  font-size:13px!important;font-weight:700!important;
+  text-transform:none!important;letter-spacing:normal!important;
+  color:#f5f9ff!important;-webkit-text-fill-color:#f5f9ff!important;
+}
+#app .setup-reference-image input[type=file],
+#app .setup-greeting-field textarea{
+  width:100%!important;min-width:0!important;
+  box-sizing:border-box!important;
+  padding:12px 13px!important;
+  border:1px solid #647996!important;border-radius:12px!important;
+  background:#142234!important;
+  color:#fff!important;-webkit-text-fill-color:#fff!important;
+  font:inherit!important;font-size:16px!important;
+}
+#app .setup-reference-image input[type=file]::file-selector-button{
+  border:0;border-radius:8px;padding:9px 12px;
+  background:#287ce8;color:#fff;margin-right:14px;cursor:pointer;
+}
+#app .setup-greeting-field textarea{min-height:96px!important;resize:vertical!important}
+#app .setup-reference-image>small,
+#app .setup-greeting-field>small{
+  font-size:12px!important;line-height:1.5!important;
+  color:#c4d3e5!important;-webkit-text-fill-color:#c4d3e5!important;
+  text-transform:none!important;
+}
+#app .setup-image-preview{
+  display:block!important;max-width:175px;max-height:120px;
+  width:auto;height:auto;object-fit:contain;padding:8px;
+  background:#fff;border:1px solid #647996;border-radius:12px;
+}
