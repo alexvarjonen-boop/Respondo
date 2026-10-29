@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
+  setup_login_code TEXT UNIQUE,
   password_hash TEXT NOT NULL,
   full_name TEXT,
   company_name TEXT NOT NULL,
@@ -17,6 +18,8 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_setup_login_code ON users(upper(setup_login_code)) WHERE setup_login_code IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS tenants (
   id UUID PRIMARY KEY,

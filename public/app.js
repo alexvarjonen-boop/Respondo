@@ -3463,7 +3463,7 @@ function login() {
         <form class="formcard premium-form login-card" id="login">
           <div class="form-head"><span>${appText('KIRJAUDU','LOGGA IN','LOG IN')}</span></div>
           ${socialAuthButtons('login')}
-          <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
+          <div class="field"><label>${appText('Sähköposti tai kirjautumistunnus','E-postadress eller inloggnings-ID','Email or login ID')}</label><input name="email" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="254" required placeholder="${appText('sinä@yritys.fi tai RSP-XXXXXXXXXXXX','du@foretag.se eller RSP-XXXXXXXXXXXX','you@company.com or RSP-XXXXXXXXXXXX')}"></div>
           <div class="field"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></div>
           <button class="btn checkout-button" type="submit">${appText('Kirjaudu sisään','Logga in','Log in')} <span>→</span></button>
           ${cfg.passwordResetAvailable
@@ -6131,7 +6131,7 @@ async function route() {
       resetToggle.setAttribute('aria-expanded',String(opening));
       if(opening){
         const loginEmail=$('#login')?.elements?.email?.value || '';
-        if(resetEmail && !resetEmail.value) resetEmail.value=loginEmail;
+        if(resetEmail && !resetEmail.value && loginEmail.includes('@')) resetEmail.value=loginEmail;
         resetEmail?.focus();
       }
     });
