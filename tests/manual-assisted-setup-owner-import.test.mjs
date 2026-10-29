@@ -57,12 +57,12 @@ test('owner /trafic UI presents importer, seven-day deadline and manual credenti
   assert.match(traffic,/private browser window/);
 });
 
-test('customer gets seven-day processed notice from the business mailbox only after paid Stripe checkout',()=>{
+test('customer gets seven-day processed notice after verified paid or founder-sponsored free checkout',()=>{
   const a=server.indexOf('async function notifySetupServiceAfterCheckout(session)');
   const b=server.indexOf('async function sendHomepageContactEmail(',a);
   const flow=server.slice(a,b);
-  assert.match(flow,/session\?\.status !== 'complete'/);
-  assert.match(flow,/session\?\.payment_status !== 'paid'/);
+  assert.match(flow,/setupCheckoutPaymentConfirmed\(session\)/);
+  assert.match(flow,/owner_promo_zero_setup/);
   assert.match(flow,/viimeistään viikon kuluessa tilauksestasi/);
   assert.match(flow,/Respondo AI <info@respondoai\.fi>/);
   assert.match(flow,/ON CONFLICT\(session_id\) DO NOTHING/);
