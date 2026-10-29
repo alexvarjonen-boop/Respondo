@@ -3185,8 +3185,8 @@ function setupServiceOption() {
     <label class="setup-service-option">
       <input type="checkbox" name="setupService" value="1">
       <span class="setup-service-copy">
-        <span class="setup-service-title"><strong>${appText('Käyttöönottopalvelu','Installationstjänst','Setup service')}</strong><b>199 €</b></span>
-        <small>${appText('Valinnainen kertamaksu. Analysoimme verkkosivusi, otamme botin käyttöön puolestasi ja lähetämme kirjautumistiedot henkilökohtaisesti sähköpostitse viimeistään viikon kuluessa. Tilauspaketin laskutus alkaa vasta, kun olemme toimittaneet kirjautumistiedot ja vahvistaneet luovutuksen. Tämän jälkeen alkaa 3 päivän maksuton kokeilu.','Valfri engångsavgift. Vi analyserar din webbplats, installerar botten och skickar inloggningsuppgifterna personligen via e-post inom en vecka. Abonnemanget debiteras först efter att vi har levererat inloggningsuppgifterna och bekräftat överlämningen. Därefter börjar en gratis provperiod på 3 dagar.','Optional one-time fee. We review your website, set up the bot for you and personally email the login details within one week. Subscription billing is held until we deliver your login credentials and confirm handover. Your 3-day free trial begins after confirmation.')}</small>
+        <span class="setup-service-title"><strong>${appText('Käyttöönottopalvelu','Installationstjänst','Setup service')}</strong><b data-setup-price>199 €</b></span>
+        <small data-setup-copy>${appText('Valinnainen kertamaksu. Analysoimme verkkosivusi, otamme botin käyttöön puolestasi ja lähetämme kirjautumistiedot henkilökohtaisesti sähköpostitse viimeistään viikon kuluessa. Tilauspaketin laskutus alkaa vasta, kun olemme toimittaneet kirjautumistiedot ja vahvistaneet luovutuksen. Tämän jälkeen alkaa 3 päivän maksuton kokeilu.','Valfri engångsavgift. Vi analyserar din webbplats, installerar botten och skickar inloggningsuppgifterna personligen via e-post inom en vecka. Abonnemanget debiteras först efter att vi har levererat inloggningsuppgifterna och bekräftat överlämningen. Därefter börjar en gratis provperiod på 3 dagar.','Optional one-time fee. We review your website, set up the bot for you and personally email the login details within one week. Subscription billing is held until we deliver your login credentials and confirm handover. Your 3-day free trial begins after confirmation.')}</small>
       </span>
     </label>
     <label class="setup-service-website" hidden>
@@ -3225,6 +3225,55 @@ function bindSetupServiceOptions() {
     };
     checkbox.addEventListener('change',sync);
     sync();
+    // Never embed the private founder code in client assets. Price is verified
+    // on the server whenever the buyer supplies or changes a code.
+    const parentForm=wrap.closest('form');
+    const promoInput=parentForm?.querySelector('input[name="referralCode"]');
+    const price=wrap.querySelector('[data-setup-price]');
+    const note=wrap.querySelector('[data-setup-copy]');
+    const baseNote=note?.textContent||'';
+    const planPrice=parentForm?.querySelector('.signup-plan-summary-main b');
+    const basePlanPrice=planPrice?.textContent||'';
+    const hint=parentForm?.querySelector('#referralHint, #workspaceReferralHint');
+    const baseHint=hint?.textContent||'';
+    const promoDescription=appText(
+      'Henkilökohtaisella kampanjakoodilla käyttöönotto ja tilauspaketti ovat 0 €. Valitsemme yrityksellesi sopivat bottiasetukset ja toimitamme kirjautumistiedot henkilökohtaisesti viikon sisällä. Maksuja ei veloiteta myöhemminkään.',
+      'Med din personliga kampanjkod kostar både installationen och abonnemanget 0 €. Vi konfigurerar botten och mejlar inloggningsuppgifterna personligen inom en vecka. Inga avgifter debiteras senare.',
+      'With your personal promotion code, both setup and the subscription cost €0. We configure your bot and personally email login details within one week. No fees will be collected later.'
+    );
+    let lastCode=null,seq=0;
+    const showPromo=(free)=>{
+      if(price) price.textContent=free?'0 €':'199 €';
+      if(note) note.textContent=free?promoDescription:baseNote;
+      if(planPrice) planPrice.textContent=free?'0 €':basePlanPrice;
+      if(hint) hint.textContent=free
+        ? appText('Henkilökohtainen kampanjakoodi hyväksytty: paketti ja käyttöönotto 0 €.','Personlig kampanjkod godkänd: abonnemang och installation 0 €.','Personal promo accepted: subscription and setup €0.')
+        : baseHint;
+      const submit=parentForm?.querySelector('button[type="submit"]');
+      if(submit && parentForm.id==='signup') {
+        submit.innerHTML=free
+          ? appText('Jatka maksuttomaan tilaukseen →','Fortsätt med gratis beställning →','Continue with free order →')
+          : appText('Jatka maksutavan lisäämiseen →','Fortsätt till betalningsmetod →','Continue to payment method →');
+      }
+    };
+    const refreshPromo=async()=>{
+      if(!promoInput) return;
+      const code=String(promoInput.value||'').trim();
+      if(code===lastCode) return;
+      lastCode=code;
+      const request=++seq;
+      showPromo(false);
+      if(!code) return;
+      try{
+        const quote=await api('/api/public/owner-promo-preview',{
+          method:'POST',body:JSON.stringify({code}),
+        });
+        if(request===seq)showPromo(quote?.freeSetup===true && quote?.setupPriceCents===0);
+      }catch{if(request===seq)lastCode=null;}
+    };
+    promoInput?.addEventListener('change',refreshPromo);
+    promoInput?.addEventListener('blur',refreshPromo);
+    if(promoInput?.value)refreshPromo();
   });
 }
 
@@ -3668,6 +3717,7 @@ function dashboardWithoutCompany(me, workspaces = []) {
             <option value="business_yearly">Enterprise 139 € / kk · 1 668 € / vuosi</option>
           </select></label>
           ${setupServiceOption()}
+          <label><span>${appText('Suosittelukoodi (valinnainen)','Rekommendationskod (valfritt)','Referral code (optional)')}</span><input name="referralCode" maxlength="40" autocomplete="off" placeholder="${appText('Syötä suosittelukoodi','Ange rekommendationskod','Enter referral code')}"></label>
           ${checkoutBusinessTerms('acceptedTerms', 'workspace-terms')}
           <button type="submit" class="btn ink workspace-checkout-button">${appText('Lisää yritys','Lägg till företag','Add company')} →</button>
           <div id="emptyWorkspaceMsg" role="alert"></div>
@@ -6130,7 +6180,8 @@ async function route() {
     const syncReferralField = () => {
       if (!signupReferral || !signupPlan) return;
       const monthly = String(signupPlan.value || '').endsWith('_monthly');
-      signupReferral.disabled = !monthly;
+      // Keep annual plans available for the private founder code.
+      signupReferral.disabled = false;
       if (referralHint) {
         referralHint.textContent = monthly
           ? appText('Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','Med en giltig kod får du 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid code gives you 20% off the first paid month. Monthly subscription only.')
@@ -6520,8 +6571,8 @@ async function route() {
       if(!workspaceAddForm || !workspaceReferralCode) return;
       const plan=String(new FormData(workspaceAddForm).get('plan')||'basic_monthly');
       const monthly=plan.endsWith('_monthly');
-      workspaceReferralCode.disabled=!monthly;
-      if(!monthly) workspaceReferralCode.value='';
+      // Standard referrals remain monthly-only; owner promo supports annual too.
+      workspaceReferralCode.disabled=false;
       if(workspaceReferralHint){
         workspaceReferralHint.textContent=monthly
           ? appText('Voimassa oleva koodi antaa 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','En giltig kod ger 20 % rabatt på den första betalda månaden. Endast för månadsabonnemang.','A valid code gives 20% off the first paid month. Monthly plan only.')
@@ -6551,6 +6602,7 @@ async function route() {
             plan:String(fd.get('plan')||'basic_monthly'),
             setupService:fd.get('setupService')==='1',
             setupWebsite:String(fd.get('setupWebsite') || '').trim(),
+            referralCode:String(fd.get('referralCode')||'').trim(),
             acceptedTerms:fd.get('acceptedTerms')==='on',
             businessPurchase:fd.get('acceptedTerms')==='on',
           }),
