@@ -1,4 +1,5 @@
 import {extractBranchWeeklyHours} from './branch-hours-import.mjs';
+import {structuredBusinessFacts} from './structured-business-facts.mjs';
 // Conservative, dependency-free business fact extraction. Page headings supply
 // context only; they are never stored as answers. No remote code is executed.
 const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -628,6 +629,7 @@ export function extractBusinessDocument(html, url) {
   const faqPairs = [...structuredFaqPairs(html),...accordionFaqPairs(html)];
   const servicePairs = structuredServicePairs(html,url);
   const specPairs = semanticDefinitionSpecifications(html,url);
+  const structuredFacts = structuredBusinessFacts(html,url);
   const blocks = [], links = [];
   const stack = [];
   let buffer = '', heading = '', suppressedHeading = false;
@@ -722,7 +724,7 @@ export function extractBusinessDocument(html, url) {
     if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
   }
   flush();
-  return {url, blocks, links, products, faqPairs, servicePairs, specPairs, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
+  return {url, blocks, links, products, faqPairs, servicePairs, specPairs, structuredFacts, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
 }
 
 export function businessFactKind(text, context = '') {
@@ -994,6 +996,40 @@ export function essentialWebsiteCandidates(bundle) {
     if(doc.contactForm && httpUrl(doc.url)) contactLinks.push({url:doc.url,sourceUrl:doc.url,score:30,hasForm:true});
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
+    // Schema.org JSON-LD can publish hours, service regions and booking
+    // destinations even when the site's visible content is hydrated later.
+    // Unlike simple text deduplication, distinct store URLs must survive with
+    // identical schedules; never flatten a nationwide chain into one store.
+    for(const fact of (Array.isArray(doc.structuredFacts)?doc.structuredFacts:[]).slice(0,400)){
+      const sourceUrl=httpUrl(fact.sourceUrl,doc.url);
+      if(!sourceUrl || new URL(sourceUrl).hostname!==parsedDocUrl.hostname)continue;
+      const title=clean(fact.title).slice(0,180);
+      const answer=clean(fact.answer).slice(0,1000);
+      const category=clean(fact.category).slice(0,80);
+      if(!title||!answer||!category)continue;
+      const key='structured|'+norm(category)+'|'+norm(title)+'|'+norm(sourceUrl)+'|'+norm(answer);
+      if(seen.has(key))continue;
+      seen.add(key);
+      const candidate={category,title,answer,keywords:Array.isArray(fact.keywords)?fact.keywords.slice(0,16):[],sourceUrl};
+      if(category==='Aukioloajat') out.unshift(candidate);
+      else out.push(candidate);
+    }
+    // Some sites expose explicit third-party booking links in HTML rather
+    // than JSON-LD. Require an actual "book an appointment" CTA, not a generic
+    // contact form, reservation policy or unrelated /calendar navigation.
+    for(const link of (Array.isArray(doc.links)?doc.links:[]).slice(0,200)){
+      const label=norm(clean(link.label));
+      if(!/^(?:varaa(?:\s+(?:aika|ajan|vastaanottoaika|huoltoaika))?|ajanvaraus|tee\s+ajanvaraus|book(?:\s+(?:an?\s+)?(?:appointment|time|slot|consultation|now))?|schedule\s+(?:an?\s+)?(?:appointment|visit|consultation)|boka\s+(?:en\s+)?tid|tidsbokning|bokning)$/.test(label))continue;
+      const dest=httpUrl(link.url,doc.url);
+      if(!dest||/[{}<>"'\s]/.test(dest))continue;
+      const pathname=new URL(dest).pathname;
+      if(/\/(?:contact|yhteystiedot|kontakt|ota-yhteytta|quote|tarjouspyynto)(?:\/|$)/i.test(pathname))continue;
+      const key='booking-link|'+dest;
+      if(seen.has(key))continue;
+      seen.add(key);
+      out.push({category:'Ajanvaraus',title:'Ajanvarauslinkki',answer:dest,
+        keywords:['ajanvaraus','varaa aika','booking','appointment'],sourceUrl:doc.url});
+    }
     // Preserve one verified weekly schedule per branch detail URL, even when
     // other branches share the exact same hours. Never deduplicate by text
     // across locations, as that would silently remove branches from the bot.
@@ -1500,8 +1536,8 @@ export function essentialWebsiteProfile(bundle) {
     address:bestAddressAnswer(facts),
     quoteRequestUrl:byTitle('Tarjouspyyntölomake'),
     contactUrl:byTitle('Yhteydenottolomake') || byTitle('Yhteydenottosivu'),
-    bookingUrl:'',
-    serviceArea:'',
+    bookingUrl:byTitle('Ajanvarauslinkki'),
+    serviceArea:byTitle('Toimialue'),
     notes:''
   };
 }
@@ -1510,7 +1546,7 @@ export function usableWebsiteRow(row) {
   if (review.test(norm([row.category,row.title,row.answer].join(' ')))) return false;
   const sourceType=String(row.source_type || row.sourceType || '');
   if (!['website','demo_import'].includes(sourceType)) return true;
-  if (['Tarjouspyyntölomake','Tuotekatalogi','Yhteydenottolomake','Yhteydenottosivu'].includes(row.title)) return !!httpUrl(row.answer);
+  if (['Tarjouspyyntölomake','Tuotekatalogi','Yhteydenottolomake','Yhteydenottosivu','Ajanvarauslinkki'].includes(row.title)) return !!httpUrl(row.answer);
   if (row.category==='Yrityksen tiedot') {
     const source=row.source_url||row.sourceUrl;
     const value=String(row.answer||'');
