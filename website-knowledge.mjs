@@ -1,5 +1,6 @@
 import {extractBranchWeeklyHours} from './branch-hours-import.mjs';
 import {structuredBusinessFacts} from './structured-business-facts.mjs';
+import {branchExceptionFacts} from './branch-exceptions.mjs';
 // Conservative, dependency-free business fact extraction. Page headings supply
 // context only; they are never stored as answers. No remote code is executed.
 const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -1033,6 +1034,13 @@ export function essentialWebsiteCandidates(bundle) {
     // Preserve one verified weekly schedule per branch detail URL, even when
     // other branches share the exact same hours. Never deduplicate by text
     // across locations, as that would silently remove branches from the bot.
+    // Dated exceptions override the ordinary weekly timetable only for that date.
+    for(const exception of branchExceptionFacts(doc)){
+      const key='branch-exception|'+norm(exception.sourceUrl)+'|'+norm(exception.answer);
+      if(seen.has(key))continue;
+      seen.add(key);
+      out.unshift(exception);
+    }
     const storeHours=extractBranchWeeklyHours(doc);
     if(storeHours){
       const key='branch-hours:'+norm(storeHours.name)+'|'+String(doc.url);
