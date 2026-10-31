@@ -215,3 +215,32 @@ export const FEATURE_GROUPS = [
 ];
 
 export const FEATURE_COUNT = FEATURE_GROUPS.reduce((sum, group) => sum + group.items.length, 0);
+
+
+/**
+ * Public pricing feature eligibility. Internal billing tiers are:
+ * basic = Advanced, advanced = Premium, business = Enterprise.
+ * Only explicitly gated capabilities are elevated: the quote calculator and
+ * Stripe payment links require Enterprise; Google Calendar requires Premium.
+ * All other catalog items are shared, subject to configuration and seat limits.
+ */
+export const PUBLIC_PLAN_FEATURE_LEVELS = Object.freeze({
+  advanced: 0, premium: 1, enterprise: 2
+});
+const PREMIUM_FEATURES = Object.freeze({
+  booking: new Set([8,9,10,11,15])
+});
+const ENTERPRISE_FEATURES = Object.freeze({
+  quotes: new Set([1,4,5,6,7,8,9,10,11,12,15])
+});
+export function featureAvailableForPublicPlan(plan,groupKey,index){
+  const level=PUBLIC_PLAN_FEATURE_LEVELS[plan];
+  if(level===undefined) return false;
+  if(ENTERPRISE_FEATURES[groupKey]?.has(index)) return level>=2;
+  if(PREMIUM_FEATURES[groupKey]?.has(index)) return level>=1;
+  return true;
+}
+export function publicPlanFeatureCount(plan){
+  return FEATURE_GROUPS.reduce((sum,group)=>
+    sum+group.items.filter((_,index)=>featureAvailableForPublicPlan(plan,group.key,index)).length,0);
+}
