@@ -26,7 +26,7 @@ for (const [lang,index,expected] of [
 test('feature cues remain synchronized to existing scroll chapter index',()=>{
   const motion=read('spiral-hero-motion.js');
   assert.match(motion,/nextCue\.textContent = cards\[index\]\.getAttribute\('data-rs-next-label'\)/);
-  assert.match(motion,/icons\.forEach\(\(icon, i\) => icon\.classList\.toggle\('is-active', i === index\)/);
+  assert.match(motion,/icon\.classList\.toggle\('is-active', i === index\)/);
   assert.doesNotMatch(motion,/setInterval\(/);
 });
 

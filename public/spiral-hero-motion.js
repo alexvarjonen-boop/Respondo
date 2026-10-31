@@ -84,7 +84,10 @@
     cards.forEach((card, i) => card.setAttribute('aria-hidden', String(i !== index)));
     // The orbit and story share the same index. Highlight only the icon
     // corresponding to the panel currently nearest the scroll position.
-    icons.forEach((icon, i) => icon.classList.toggle('is-active', i === index));
+    icons.forEach((icon, i) => {
+      icon.classList.toggle('is-active', i === index);
+      icon.setAttribute('aria-pressed', String(i === index));
+    });
   }
   // Reference-film camera: scrolling moves the camera through the orbit,
   // rings and feature scenes rather than swapping flat, stationary slides.
@@ -223,6 +226,43 @@
     scrollTo({ top: Math.round(target), behavior: 'instant' });
     schedule();
   }
+  // Clicking a glyph jumps to the exact same chapter position as wheel/touch
+  // scrolling, so the heading, description, arrow and active icon never diverge.
+  function navigateToChapter(index) {
+    if (!section || !section.isConnected || !cards.length ||
+        !Number.isInteger(index) || index < 0 || index >= cards.length) return;
+    if (!section.classList.contains('rs-enhanced')) {
+      // Reduced-motion, Save-Data and older-device fallback: all cards remain
+      // in normal document flow, so navigate to the real card instead.
+      const top = scrollY + cards[index].getBoundingClientRect().top;
+      scrollTo({ top: Math.round(top), behavior: 'instant' });
+      icons.forEach((icon, i) => {
+        icon.classList.toggle('is-active', i === index);
+        icon.setAttribute('aria-pressed', String(i === index));
+      });
+      return;
+    }
+    const rect = section.getBoundingClientRect();
+    const travel = Math.max(1, rect.height - innerHeight);
+    const target = scrollY + rect.top + travel * index / Math.max(1, cards.length - 1);
+    // Clear the previous desktop wheel lock. The next physical scroll gesture
+    // is independent from the user's click.
+    wheelGestureUsed = false;
+    wheelDirection = 0;
+    wheelLastAt = 0;
+    clearTimeout(wheelGestureReset);
+    scrollTo({ top: Math.round(target), behavior: 'instant' });
+    updateStep(index);
+    schedule();
+  }
+  function onOrbitClick(event) {
+    const icon = event.target.closest?.('[data-rs-icon]');
+    if (!icon || !section || !section.contains(icon) || !icons.includes(icon)) return;
+    const index = Number(icon.getAttribute('data-index'));
+    if (!Number.isInteger(index)) return;
+    event.preventDefault();
+    navigateToChapter(index);
+  }
   function queueMount() {
     if (pendingMount) return;
     pendingMount = true;
@@ -230,6 +270,7 @@
   }
   // Only watch root replacement (navigation/language), not animated child styles.
   new MutationObserver(queueMount).observe(app, { childList:true });
+  app.addEventListener('click', onOrbitClick);
   addEventListener('scroll', schedule, { passive:true });
   addEventListener('wheel', onWheel, { passive:false });
   addEventListener('resize', () => { queueMount(); schedule(); }, { passive:true });

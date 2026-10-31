@@ -91,11 +91,11 @@ export function spiralHeroMarkup(t, lang) {
         </a>
         <p class="rs-chat-navigation-note">${t('Navigoi sivustolla oikean alakulman chatin kautta.','Navigera på webbplatsen via chatten nere till höger.','Navigate this website using the chat in the bottom-right corner.')}</p>
       </div>
-      <div class="rs-spiral-orbit" aria-label="${t('Respondo AI:n ominaisuudet','Respondo AI:s funktioner','Respondo AI features')}">
-        <div class="rs-studio-orbit-art" aria-hidden="true">
-          <span class="rs-studio-orbit-ring rs-studio-ring-a"></span><span class="rs-studio-orbit-ring rs-studio-ring-b"></span><span class="rs-studio-orbit-ring rs-studio-ring-c"></span>
-          ${cards.map(([,title],i)=>`<span class="rs-studio-orbit-icon${i===0?' is-active':''}" data-rs-icon data-index="${i}" data-rs-icon-label="${title}" style="--rs-icon-x:${(Math.sin(i*2*Math.PI/cards.length)*45).toFixed(2)}%;--rs-icon-y:${(-Math.cos(i*2*Math.PI/cards.length)*45).toFixed(2)}%" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false">${iconPaths[i]}</svg></span>`).join('')}
-          <div class="rs-studio-orbit-label">${t('YKSI PALVELU · MONTA MAHDOLLISUUTTA','EN TJÄNST · MÅNGA MÖJLIGHETER','ONE PLATFORM · MANY POSSIBILITIES')}</div>
+      <div class="rs-spiral-orbit" role="group" aria-label="${t('Respondo AI:n ominaisuudet','Respondo AI:s funktioner','Respondo AI features')}">
+        <div class="rs-studio-orbit-art">
+          <span class="rs-studio-orbit-ring rs-studio-ring-a" aria-hidden="true"></span><span class="rs-studio-orbit-ring rs-studio-ring-b" aria-hidden="true"></span><span class="rs-studio-orbit-ring rs-studio-ring-c" aria-hidden="true"></span>
+          ${cards.map(([,title],i)=>`<button type="button" class="rs-studio-orbit-icon${i===0?' is-active':''}" data-rs-icon data-index="${i}" data-rs-icon-label="${title}" aria-label="${title}" title="${title}" aria-pressed="${i===0?'true':'false'}" style="--rs-icon-x:${(Math.sin(i*2*Math.PI/cards.length)*45).toFixed(2)}%;--rs-icon-y:${(-Math.cos(i*2*Math.PI/cards.length)*45).toFixed(2)}%"><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">${iconPaths[i]}</svg></button>`).join('')}
+          <div class="rs-studio-orbit-label" aria-hidden="true">${t('YKSI PALVELU · MONTA MAHDOLLISUUTTA','EN TJÄNST · MÅNGA MÖJLIGHETER','ONE PLATFORM · MANY POSSIBILITIES')}</div>
         </div>
         <div class="rs-orbit-beacon" aria-hidden="true"><svg class="rs-orbit-progress" viewBox="0 0 100 100" focusable="false"><circle cx="50" cy="50" r="48" pathLength="100"/></svg></div>
         <div class="rs-orbit-current" aria-hidden="true"><span class="rs-orbit-current-index" data-rs-orbit-index>01 / 10</span><span class="rs-orbit-current-divider"></span><span class="rs-orbit-current-title" data-rs-orbit-title>${cards[0][1]}</span></div>
