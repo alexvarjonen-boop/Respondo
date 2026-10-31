@@ -4496,6 +4496,7 @@ async function dashboard(options = {}) {
               ${planAccess.websiteImport
                 ? `<button type="button" class="inline-import-btn" id="importWebsite">${appText('Hae tiedot sivultani','Hämta uppgifter från min webbplats','Import details from my website')}</button>`
                 : `<div class="notice compact-plan-notice">${appText('Automaattinen verkkosivuhaku ei ole käytössä tässä tilauksessa.','Automatisk webbplatsimport är inte tillgänglig i detta abonnemang.','Automatic website import is not available on this plan.')}</div>`}
+              ${planAccess.websiteImport ? `<label class="website-refresh-control"><input id="websiteAutoRefresh" type="checkbox"><span>${appText('Päivitä verkkosivujen tiedot automaattisesti päivittäin','Uppdatera webbplatsens uppgifter automatiskt varje dag','Automatically refresh website information daily')}</span></label><small class="field-hint" id="websiteAutoRefreshStatus" aria-live="polite">${appText('Muutokset tallennetaan vain sivustolta vahvistettuihin tietoihin.','Endast verifierade webbplatsuppgifter uppdateras.','Only verified website information is refreshed.')}</small>` : '' }
               <div id="websiteImportProgressError" class="notice error" role="alert" style="display:none;margin-top:10px"></div>
               <div id="websiteImportProgress" style="display:none;margin-top:10px">
                 <div style="display:flex;justify-content:space-between;gap:12px;font-size:12px;margin-bottom:6px"><span id="websiteImportProgressLabel">${appText('Valmistellaan hakua…','Förbereder sökning…','Preparing scan…')}</span><b id="websiteImportProgressPercent">0%</b></div>
@@ -7292,6 +7293,32 @@ async function route() {
       });
     });
 
+    // Owner-controlled auto-update, never enabled silently.
+    const refreshControl=$('#websiteAutoRefresh');
+    const refreshStatus=$('#websiteAutoRefreshStatus');
+    if(refreshControl){
+      api('/api/app/import-website/auto-refresh').then(data=>{
+        refreshControl.checked=Boolean(data.auto_refresh_enabled);
+        if(refreshStatus && data.last_refreshed_at){
+          refreshStatus.textContent=appText('Viimeksi päivitetty: ','Senast uppdaterad: ','Last updated: ')+
+            new Date(data.last_refreshed_at).toLocaleString(currentLang()==='sv'?'sv-SE':currentLang()==='en'?'en-US':'fi-FI');
+        }
+      }).catch(()=>{if(refreshStatus)refreshStatus.textContent=appText('Päivityksen tila ei ole saatavilla.','Uppdateringsstatus är inte tillgänglig.','Refresh status unavailable.');});
+      refreshControl.addEventListener('change',async()=>{
+        refreshControl.disabled=true;
+        const enabled=refreshControl.checked;
+        try{
+          await api('/api/app/import-website/auto-refresh',{method:'POST',body:JSON.stringify({enabled})});
+          if(refreshStatus)refreshStatus.textContent=enabled
+            ? appText('Automaattinen päivitys käytössä. Tietoja tarkistetaan noin kerran vuorokaudessa.','Automatisk uppdatering aktiv. Kontroller sker ungefär dagligen.','Auto-refresh is on. Data is checked approximately daily.')
+            : appText('Automaattinen päivitys poistettu käytöstä.','Automatisk uppdatering avstängd.','Auto-refresh disabled.');
+        }catch(error){
+          refreshControl.checked=!enabled;
+          if(refreshStatus)refreshStatus.textContent=error.message;
+        }finally{refreshControl.disabled=false;}
+      });
+    }
+
     $('#importWebsite')?.addEventListener('click', async (e) => {
       const button = e.currentTarget;
       const formEl = $('#businessProfileForm');
@@ -7440,9 +7467,19 @@ async function route() {
             }
           }
         }
+        const summary=result.coverage;
+        const coverageInfo=summary ? '<div class="notice" role="status">'+
+          appText('Tarkistettuja sivuja: ','Kontrollerade sidor: ','Pages inspected: ')+Number(summary.pagesScanned||0)+
+          ' · PDF: '+Number(summary.documentFilesRead||0)+
+          ' · OCR: '+Number(summary.imagesRead||0)+
+          (summary.partial?' · '+appText('Haku jäi osittaiseksi','Sökningen var delvis ofullständig','Some sources could not be read'):'')+
+          (Array.isArray(summary.notVerified)&&summary.notVerified.length
+            ? '<p>'+appText('Ei varmistettu tässä haussa: ','Inte bekräftat i denna skanning: ','Not verified in this scan: ')+
+              summary.notVerified.map(x=>esc(x)).join(', ')+'</p>' : '')+
+          '</div>':'';
         const review = document.getElementById('websiteImportReview');
         if (review) {
-          review.innerHTML = candidates.length ? `
+          review.innerHTML = coverageInfo + (candidates.length ? `
             <div class="website-import-review-head">
               <div><b>${appText('Respondo löysi ' + candidates.length + ' tietoa ' + Number(result.pagesScanned || 0) + ' sivulta.','Respondo hittade ' + candidates.length + ' uppgifter på ' + Number(result.pagesScanned || 0) + ' sidor.','Respondo found ' + candidates.length + ' items across ' + Number(result.pagesScanned || 0) + ' pages.')}</b>
               <small>${appText('Valitse vain tiedot, jotka olet tarkistanut oikeiksi. Mitään ei lisätä bottiin ilman hyväksyntääsi.','Välj endast uppgifter som du har kontrollerat är korrekta. Inget läggs till i botten utan ditt godkännande.','Select only information you have verified as correct. Nothing is added to the bot without your approval.')}</small></div>
@@ -7456,7 +7493,7 @@ async function route() {
                 <input type="checkbox" data-import-index="${i}">
                 <span><b>${esc(item.title || item.category || '')}</b><p>${esc(item.answer)}</p><small>${esc(item.sourceUrl || '')}</small></span>
               </label>`).join('')}
-            </div>` : '<div class="notice">' + appText('Sivustolta ei löytynyt luotettavasti poimittavia tuotteita, palveluita, hintoja, yhteystietoja, aukioloaikoja tai tarjouspyyntölinkkiä. Voit lisätä tiedot käsin.','Inga tillförlitliga produkter, tjänster, priser, kontaktuppgifter, öppettider eller offertlänkar kunde hämtas. Du kan lägga till uppgifterna manuellt.','No reliable products, services, prices, contact details, opening hours or quote link could be extracted. You can add the details manually.') + '</div>';
+            </div>` : '<div class="notice">' + appText('Sivustolta ei löytynyt luotettavasti poimittavia tuotteita, palveluita, hintoja, yhteystietoja, aukioloaikoja tai tarjouspyyntölinkkiä. Voit lisätä tiedot käsin.','Inga tillförlitliga produkter, tjänster, priser, kontaktuppgifter, öppettider eller offertlänkar kunde hämtas. Du kan lägga till uppgifterna manuellt.','No reliable products, services, prices, contact details, opening hours or quote link could be extracted. You can add the details manually.') + '</div>');
           document.getElementById('selectAllWebsiteImport')?.addEventListener('click', (event) => {
             const boxes=[...review.querySelectorAll('[data-import-index]')];
             const shouldSelect=boxes.some((box)=>!box.checked);
