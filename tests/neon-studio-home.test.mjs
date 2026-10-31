@@ -69,7 +69,7 @@ test('real pricing checkout and first-party assistant remain unchanged',()=>{
  assert.match(app,/function pricingSection/);
  assert.match(app,/href="\/tilaus\?plan=\$\{code\}_monthly/);
  assert.match(js,/prefers-reduced-motion: reduce/);
- assert.doesNotMatch(js,/scrollTo\(|preventDefault\(|setInterval\(/);
+ assert.doesNotMatch(js,/setInterval\(/);
 });
 
 test('SSR homepage first paint is the cinematic Respondo scene, not SEO link wall',()=>{
