@@ -9772,3 +9772,23 @@ body.deletion-modal-open{overflow:hidden!important}
 @media(prefers-reduced-motion:reduce) {
   #app .pricing-section .pricing-choice-card .pricing-feature-link{transition:none}
 }
+
+
+/* Branch-specific opening-hours selectors inside the public bot demo. */
+#app .preview-bubble.bot .preview-branch-choices{
+  display:flex;flex-wrap:wrap;gap:8px;max-height:200px;overflow-y:auto;
+  margin-top:12px;padding:4px 1px;white-space:normal;
+}
+#app .preview-bubble.bot .preview-branch-choices button{
+  appearance:none;min-height:42px;padding:9px 14px;
+  border:1px solid #8ca8ca;border-radius:12px;
+  background:#253b58;color:#fff!important;font:inherit;
+  font-size:13px;font-weight:700;line-height:1.35;cursor:pointer;
+}
+#app .preview-bubble.bot .preview-branch-choices button:hover{
+  background:#344f73;border-color:#b3c8e5;
+}
+#app .preview-bubble.bot .preview-branch-choices button:focus-visible{
+  outline:3px solid #98caff;outline-offset:2px;
+}
+#app .preview-bubble.bot .preview-branch-choices button:disabled{opacity:.65;cursor:default}
