@@ -7,8 +7,9 @@ const injectionPatterns=[
   /\b(?:ignorera|åsidosätt|asidosatt)\b.{0,45}\b(?:tidigare|alla)\b.{0,30}\b(?:instruktioner|regler)\b/i,
   /(?:<\|im_start\|>|<\|im_end\|>|<\|system\|>|<\|assistant\|>|<\|developer\|>|\[INST\]|\[\/INST\]|<<SYS>>|<\/?system>)/i,
   /(?:^|[\r\n])\s*(?:#{1,4}\s*)?(?:system|developer|assistant|user)\s*(?:prompt|message|instructions?)?\s*:/im,
+  /#{1,4}\s*(?:system|developer|assistant|user)\s*(?:prompt|message|instructions?)?\s*:/i,
   /\b(?:you are now|act as|pretend to be)\s+(?:the\s+)?(?:system|developer|chatgpt|ai assistant|administrator|admin)\b/i,
-  /\b(?:print|reveal|expose|send|leak|disclose)\b.{0,80}\b(?:system prompt|hidden instructions|api keys?|secret keys?|access tokens?|passwords?)\b/i,
+  /\b(?:print|reveal|expose|send|leak)\b.{0,80}\b(?:system prompt|hidden instructions|api keys?|secret keys?|access tokens?|passwords?)\b/i,
   /\b(?:disable|turn off|remove|ignore)\b.{0,50}\b(?:safety filters?|content filters?|security checks?|guardrails?)\b/i,
 ];
 export function containsKnowledgeInstructionAttack(value){
