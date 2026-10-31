@@ -73,8 +73,11 @@ function mentionsPhrase(words,phrase){
 function mentionsStore(message,name){
   const place=norm(name);
   const variants=new Set([place]);
-  if(place==='turku'){variants.add('turun');variants.add('abo');}
-  else if(place.endsWith('a')||place.endsWith('o')||place.endsWith('e')||place.endsWith('i'))variants.add(place+'n');
+  if(place==='turku'){
+    for(const variant of ['turun','turussa','turusta','turkuun','abo'])variants.add(variant);
+  }else if(place.endsWith('a')||place.endsWith('o')||place.endsWith('e')||place.endsWith('i')){
+    for(const suffix of ['n','ssa','sta','an','on','en','in'])variants.add(place+suffix);
+  }
   return [...variants].some(value=>(' '+norm(message)+' ').includes(' '+value+' '));
 }
 const stateOf=row=>{
