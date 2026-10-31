@@ -25,7 +25,7 @@ function harness({stickyWorks=true}={}) {
     classList:classList(),style:style(),attributes:{},setAttribute(k,v){this.attributes[k]=v},
     removeAttribute(k){delete this.attributes[k]},querySelector(sel){return sel==='h2'?{textContent:'Card '+(i+1)}:null}
   }));
-  const icons=Array.from({length:10},()=>({classList:classList()}));
+  const icons=Array.from({length:10},()=>({classList:classList(),setAttribute(){}}));
   const counter={textContent:''},announced={textContent:''};
   const stage={getBoundingClientRect(){return {top:stickyWorks?0:-scroll}}};
   const section={
@@ -34,7 +34,7 @@ function harness({stickyWorks=true}={}) {
     querySelector(sel){return sel==='.rs-spiral-stage'?stage:sel==='[data-rs-step]'?counter:sel==='[data-rs-announcement]'?announced:null},
     querySelectorAll(sel){return sel==='[data-rs-card]'?cards:sel==='[data-rs-icon]'?icons:[]}
   };
-  const app={querySelector(sel){return sel==='.apple-home-page .rs-spiral-section'?section:null}};
+  const app={querySelector(sel){return sel==='.apple-home-page .rs-spiral-section'?section:null},addEventListener(){}};
   const context={
     location:{pathname:'/'},document:{readyState:'complete',getElementById(id){return id==='app'?app:null}},
     navigator:{connection:{saveData:false},deviceMemory:4},
