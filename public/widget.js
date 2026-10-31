@@ -35,7 +35,7 @@
     'Hei! Miten voin auttaa?':'Hej! Hur kan jag hjälpa?','Chat ei ole käytössä tällä verkkosivulla.':'Chatten är inte tillgänglig på den här webbplatsen.',
     'En löytänyt tähän varmaa vastausta.':'Jag hittade inget säkert svar på detta.','Varmennettu yrityksen tiedoista':'Verifierat från företagets information',
     'Nimi':'Namn','Sähköposti tai puhelin':'E-post eller telefon','Viesti':'Meddelande','Lähetä':'Skicka','Sulje':'Stäng',
-    'Sähköposti':'E-post','Puhelin':'Telefon','Valitse aika':'Välj tid','Valitse toimipiste':'Välj butik','Varaa':'Boka','Lähetä tarjouspyyntö':'Skicka offertförfrågan'
+    'Sähköposti':'E-post','Puhelin':'Telefon','Valitse aika':'Välj tid','Valitse toimipiste':'Välj butik','Hae toimipistettä':'Sök butik','Toimipistettä ei löydy':'Ingen matchande butik','Varaa':'Boka','Lähetä tarjouspyyntö':'Skicka offertförfrågan'
   }));
   const EXTRA_SV_WIDGET = {
     'Hyväksyn yhteystietojeni lähettämisen yritykselle yhteydenottoa varten.': 'Jag godkänner att mina kontaktuppgifter skickas till företaget för denna kontaktförfrågan.',
@@ -195,7 +195,11 @@
       .product-description{font-size:12px;line-height:1.4;color:#62626b;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
       .product-price{font-size:14px;font-weight:800;margin-top:1px}
       .product-open{font-size:11px;font-weight:750;color:#4e4e59}
-      .branch-choices{display:flex;gap:8px;flex-wrap:wrap;align-self:stretch;max-height:180px;overflow-y:auto;min-width:0;padding:4px 0}
+      .branch-choices{display:grid;gap:8px;align-self:stretch;min-width:0;padding:4px 0}
+      .branch-choices input{width:100%;border:1px solid #c5d2e1;border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;color:#1b2b43;background:#fff}
+      .branch-choice-list{display:flex;gap:8px;flex-wrap:wrap;max-height:165px;overflow-y:auto}
+      .branch-choice-list small{color:#677387;font-size:12px}
+
       .branch-choices button{appearance:none;border:1px solid #c5d2e1;background:#fff;color:#162b48;border-radius:12px;padding:10px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;min-height:42px}
       .branch-choices button:hover{background:#eef5ff;border-color:#7198c9}
       .branch-choices button:focus-visible{outline:3px solid #3484df;outline-offset:2px}
@@ -395,23 +399,43 @@
   function renderBranchChoices(items = []) {
     const names=(Array.isArray(items)?items:[]).filter(name=>
       typeof name==='string' && name.length>=2 && name.length<=65
-    ).slice(0,40);
+    ).slice(0,1000);
     if(!names.length)return;
     const wrap=document.createElement('div');
     wrap.className='branch-choices';
     wrap.setAttribute('role','group');
     wrap.setAttribute('aria-label',t('Valitse toimipiste','Select a location'));
-    for(const name of names){
-      const button=document.createElement('button');
-      button.type='button';
-      button.textContent=name;
-      button.addEventListener('click',()=>{
-        if(button.disabled)return;
-        wrap.querySelectorAll('button').forEach(b=>{b.disabled=true;});
-        sendMessage(name);
-      });
-      wrap.appendChild(button);
+    const list=document.createElement('div');
+    list.className='branch-choice-list';
+    const draw=(query='')=>{
+      list.replaceChildren();
+      const needle=String(query).toLocaleLowerCase();
+      const filtered=names.filter(name=>name.toLocaleLowerCase().includes(needle));
+      for(const name of filtered.slice(0,18)){
+        const button=document.createElement('button');
+        button.type='button';button.textContent=name;
+        button.addEventListener('click',()=>{
+          wrap.querySelectorAll('button').forEach(b=>{b.disabled=true;});
+          sendMessage(name);
+        });
+        list.appendChild(button);
+      }
+      if(!filtered.length){
+        const empty=document.createElement('small');
+        empty.textContent=t('Toimipistettä ei löydy','No matching location');
+        list.appendChild(empty);
+      }
+    };
+    if(names.length>12){
+      const search=document.createElement('input');
+      search.type='search';search.autocomplete='off';
+      search.placeholder=t('Hae toimipistettä','Search locations');
+      search.setAttribute('aria-label',search.placeholder);
+      search.addEventListener('input',()=>draw(search.value));
+      wrap.appendChild(search);
     }
+    wrap.appendChild(list);
+    draw();
     chat.appendChild(wrap);
   }
 
