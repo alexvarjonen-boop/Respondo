@@ -16,6 +16,7 @@ import { verifiedIndustryServiceAnswer } from './industry-service-intelligence.m
 import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion, isExplicitVerifiedTradeQuestion, resolveIndustryServiceFollowup, canonicalProfessionalServiceQuestion } from './industry-service-engine.mjs';
 import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
 import { resolveBranchOpeningHours } from './branch-hours.mjs';
+import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentAsPage, importCoverage } from './web-document-import.mjs';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -5476,7 +5477,7 @@ async function readPinnedResponse(response, maxBytes = 64_000) {
   return Buffer.concat(chunks,total).toString('utf8');
 }
 
-async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, timeoutMs = 8000) {
+async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, timeoutMs = 8000, binary = false) {
   let url = await assertPublicHttpUrl(value);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), Math.min(20000,Math.max(1000,Number(timeoutMs)||8000)));
@@ -5521,7 +5522,8 @@ async function fetchPublicResource(value, acceptedTypes, maxBytes = 2_000_000, t
         }
         chunks.push(Buffer.from(chunk));
       }
-      return {text:Buffer.concat(chunks,total).toString('utf8'),finalUrl:url.href};
+      const bytes=Buffer.concat(chunks,total);
+      return binary ? {bytes,finalUrl:url.href,contentType:type} : {text:bytes.toString('utf8'),finalUrl:url.href};
     }
     throw new Error('Verkkosivulla on liikaa uudelleenohjauksia.');
   } catch (error) {
@@ -6035,6 +6037,14 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const locationFamilySegment=locationFamilyMatch ? String(locationFamilyMatch[1]||'').toLowerCase() : '';
   const locationDetailSeed=Boolean(locationFamilySegment && seedPath.split('/').filter(Boolean).length>=2);
   const pages = [];
+  const mediaQueue=new Map(),mediaResults=[];
+  const mediaFailures={failed:0,skipped:0};
+  const collectMedia=(html,pageUrl)=>{
+    for(const file of mediaCandidates(html,pageUrl,{pdfLimit:8,imageLimit:2})){
+      if(mediaQueue.size>=14)break;
+      if(!mediaQueue.has(file.url))mediaQueue.set(file.url,file);
+    }
+  };
   const queued = new Set();
   const queue = [];
   const usefulPath = url => {
@@ -6114,6 +6124,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
 
   queued.add(first.finalUrl);
   pages.push({ url:first.finalUrl, key:first.finalUrl.replace(/\/$/, ''), document:extractBusinessDocument(first.html,first.finalUrl) });
+  collectMedia(first.html,first.finalUrl);
   enqueue(first.html, first.finalUrl);
 
   // Fetch only a contact page confirmed by an actual link, before a slow
@@ -6187,6 +6198,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       const key=parsed.origin+parsed.pathname.replace(/\/$/,'')+parsed.search;
       if(parsed.hostname.toLowerCase()===base.hostname.toLowerCase() && !pages.some(page=>page.key===key)){
         pages.push({url:contactPage.finalUrl,key,document:extractBusinessDocument(contactPage.html,contactPage.finalUrl)});
+        collectMedia(contactPage.html,contactPage.finalUrl);
         enqueue(contactPage.html,contactPage.finalUrl);
       }
     } catch {}
@@ -6206,6 +6218,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       const key = resolved.origin + resolved.pathname.replace(/\/$/, '') + resolved.search;
       if (pages.some((x) => x.key === key)) continue;
       pages.push({ url:page.finalUrl, key, document:extractBusinessDocument(page.html,page.finalUrl) });
+      collectMedia(page.html,page.finalUrl);
       enqueue(page.html, page.finalUrl);
       if (onProgress) onProgress({scanned:pages.length,total:Math.max(totalTarget,Math.min(maxPages,pages.length+queue.length))});
     } catch {}
@@ -6238,6 +6251,34 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     }
   }
 
+  // PDF text extraction and optional OCR share the same pinned-HTTP/SSRF
+  // safeguards as the HTML importer. No arbitrary remote service runs here.
+  const imageOcrEnabled=process.env.RESPONDO_IMAGE_OCR_ENABLED==='true';
+  let pdfCount=0,imageCount=0;
+  for(const item of mediaQueue.values()){
+    if(Date.now()-crawlStartedAt>timeBudgetMs+12000){
+      mediaFailures.skipped++;continue;
+    }
+    if(item.type==='pdf' && ++pdfCount>6){mediaFailures.skipped++;continue;}
+    if(item.type==='image' && (!imageOcrEnabled || ++imageCount>2)){
+      mediaFailures.skipped++;continue;
+    }
+    const limits=documentCandidateLimits(item.type);
+    try{
+      const r=await fetchPublicResource(item.url,
+        item.type==='pdf'?['application/pdf']:['image/png','image/jpeg','image/webp'],
+        limits.maxBytes,limits.timeoutMs,true);
+      if(new URL(r.finalUrl).hostname.toLowerCase()!==base.hostname.toLowerCase()){
+        mediaFailures.failed++;continue;
+      }
+      const content=await mediaTextFromBytes(r.bytes,item.type,{ocrEnabled:imageOcrEnabled});
+      const page=documentAsPage(content,r.finalUrl,item.type);
+      if(!page){mediaFailures.failed++;continue;}
+      pages.push({url:r.finalUrl,key:r.finalUrl,document:extractBusinessDocument(page.html,r.finalUrl)});
+      mediaResults.push({type:item.type,url:r.finalUrl,ok:true});
+    }catch(e){mediaFailures.failed++;}
+  }
+
   const pageDocuments = pages.map((page) => ({
     url:page.url,
     ...page.document,
@@ -6261,6 +6302,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     pageDocuments,
     pages:pageDocuments.map((x) => x.url),
     links:[...new Set(pageDocuments.flatMap(doc => doc.links.map(link => link.url)))].slice(0, 10000),
+    mediaImport:{results:mediaResults,attempted:mediaQueue.size,failed:mediaFailures.failed,skipped:mediaFailures.skipped},
   };
 }
 
