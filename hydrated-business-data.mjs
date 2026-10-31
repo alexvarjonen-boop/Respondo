@@ -17,7 +17,29 @@ export function hydratedBusinessData(html){
     let scanned=0;
     const walk=(node,path=[],depth=0)=>{
       if(++scanned>2500||depth>11||!node||typeof node!=='object')return;
-      if(Array.isArray(node)){node.slice(0,150).forEach(n=>walk(n,path,depth+1));return;}
+      if(Array.isArray(node)){
+        const key=path.at(-1)||'';
+        if(/^(?:faq|faqs|faqItems|questions|frequentlyAskedQuestions)$/i.test(key)){
+          for(const q of node.slice(0,80)){
+            const question=clean(q?.question||q?.title||q?.name);
+            const answer=clean(q?.answer||q?.acceptedAnswer?.text||q?.body||q?.response);
+            if(question.length<9||question.length>180||answer.length<15||answer.length>1200)continue;
+            const hash=(question+'|'+answer).toLowerCase();
+            if(!used.has(hash)){used.add(hash);result.faqPairs.push({title:question,answer});}
+          }
+        }
+        if(/^(?:services|serviceList|serviceItems)$/i.test(key)){
+          for(const item of node.slice(0,80)){
+            const name=clean(item?.name||item?.title);
+            const description=clean(item?.description||item?.summary||item?.text);
+            if(name.length<4||name.length>100||description.length<18||description.length>700)continue;
+            const hash=(name+'|'+description).toLowerCase();
+            if(!used.has(hash)){used.add(hash);result.servicePairs.push({name,description});}
+          }
+        }
+        node.slice(0,150).forEach(n=>walk(n,path,depth+1));
+        return;
+      }
       const key=path.at(-1)||'';
       if(/^(?:faq|faqs|faqItems|questions|frequentlyAskedQuestions)$/i.test(key)){
         const candidates=Array.isArray(node)?node:(node.items||node.entries||node.questions||[]);
