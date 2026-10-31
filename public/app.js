@@ -7468,14 +7468,32 @@ async function route() {
           }
         }
         const summary=result.coverage;
+        // A missing topic means that the scan did not verify it, not that the
+        // company has no such service. Keep these labels localized in FI/SV/EN.
+        const coverageLabels={
+          services:appText('palvelut','tjänster','services'),
+          prices:appText('hinnat','priser','prices'),
+          contacts:appText('yhteystiedot','kontaktuppgifter','contact details'),
+          hours:appText('aukioloajat','öppettider','opening hours'),
+          locations:appText('toimipisteet','verksamhetsställen','locations'),
+          products:appText('tuotteet','produkter','products'),
+          bookings:appText('ajanvaraus','tidsbokning','bookings'),
+          serviceAreas:appText('toimialueet','serviceområden','service areas')
+        };
+        const coverageTopics=summary?.found && typeof summary.found==='object'
+          ? Object.entries(summary.found).filter(([key,value])=>value && coverageLabels[key])
+            .map(([key])=>coverageLabels[key]):[];
+        const missingTopics=Array.isArray(summary?.notVerified)
+          ? summary.notVerified.filter(key=>coverageLabels[key]).map(key=>coverageLabels[key]):[];
         const coverageInfo=summary ? '<div class="notice" role="status">'+
           appText('Tarkistettuja sivuja: ','Kontrollerade sidor: ','Pages inspected: ')+Number(summary.pagesScanned||0)+
           ' · PDF: '+Number(summary.documentFilesRead||0)+
           ' · OCR: '+Number(summary.imagesRead||0)+
           (summary.partial?' · '+appText('Haku jäi osittaiseksi','Sökningen var delvis ofullständig','Some sources could not be read'):'')+
-          (Array.isArray(summary.notVerified)&&summary.notVerified.length
-            ? '<p>'+appText('Ei varmistettu tässä haussa: ','Inte bekräftat i denna skanning: ','Not verified in this scan: ')+
-              summary.notVerified.map(x=>esc(x)).join(', ')+'</p>' : '')+
+          (coverageTopics.length?'<p>'+appText('Löydetty: ','Hittat: ','Found: ')+
+            coverageTopics.map(x=>esc(x)).join(', ')+'</p>':'')+
+          (missingTopics.length?'<p>'+appText('Ei varmistettu tässä haussa: ','Inte bekräftat i denna skanning: ','Not verified in this scan: ')+
+            missingTopics.map(x=>esc(x)).join(', ')+'</p>':'')+
           '</div>':'';
         const review = document.getElementById('websiteImportReview');
         if (review) {

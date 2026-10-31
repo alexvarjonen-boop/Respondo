@@ -3,6 +3,7 @@ import {structuredBusinessFacts} from './structured-business-facts.mjs';
 import {branchExceptionFacts} from './branch-exceptions.mjs';
 import {extractStoreAvailability} from './store-availability.mjs';
 import {hydratedBusinessData} from './hydrated-business-data.mjs';
+import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
 // Conservative, dependency-free business fact extraction. Page headings supply
 // context only; they are never stored as answers. No remote code is executed.
 const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -959,13 +960,14 @@ export function essentialWebsiteCandidates(bundle) {
   const hasCatalogProducts=usableCatalogProducts.length>0;
   const add = (kind,title,answer,sourceUrl) => {
     const text = clean(answer), key = kind+':'+norm(text);
-    if (!text || seen.has(key)) return;
+    if (!text || seen.has(key) || containsKnowledgeInstructionAttack(text)) return;
     seen.add(key);
     const uniqueTitle = ['services','pricing'].includes(kind) ? title + ': ' + text.slice(0,110) : title;
     out.push({category:labels[kind], title:uniqueTitle, answer:text, keywords:keywords[kind], sourceUrl});
   };
   const addProduct = (product, fallbackUrl = '') => {
-    if (!product?.name || templateDemoProduct(product)) return;
+    if (!product?.name || templateDemoProduct(product) ||
+        containsKnowledgeInstructionAttack(product.name+' '+String(product.description||''))) return;
     const sourceUrl=httpUrl(product.url || fallbackUrl,fallbackUrl || undefined);
     if (!sourceUrl) return;
     const key='product:'+norm(sourceUrl+'|'+product.name);
@@ -1563,6 +1565,7 @@ export function essentialWebsiteProfile(bundle) {
 }
 
 export function usableWebsiteRow(row) {
+  if (containsKnowledgeInstructionAttack([row.category,row.title,row.answer].join(' '))) return false;
   if (review.test(norm([row.category,row.title,row.answer].join(' ')))) return false;
   const sourceType=String(row.source_type || row.sourceType || '');
   if (!['website','demo_import'].includes(sourceType)) return true;

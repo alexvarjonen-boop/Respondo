@@ -17,6 +17,8 @@ import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion, isExplicitV
 import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
 import { resolveBranchOpeningHours } from './branch-hours.mjs';
 import {answerBranchException,exceptionQueryDate} from './branch-exceptions.mjs';
+import {faqParaphraseEvidence} from './faq-paraphrase-evidence.mjs';
+import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
 import {storeAvailabilityAnswer} from './store-availability.mjs';
 import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentAsPage, importCoverage } from './web-document-import.mjs';
 import {autoRefreshEligible,acceptedRefreshCandidate} from './website-refresh-policy.mjs';
@@ -6316,7 +6318,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
 function importedKnowledgeJunk(value) {
   const raw = cleanKnowledgeText(value);
   const text = normalizeSearchText(raw);
-  if (!text) return true;
+  if (!text || containsKnowledgeInstructionAttack(raw)) return true;
   // Never let navigation, widgets, product-card chrome or source-code fragments
   // become customer knowledge. These strings are common on retailer/CMS pages.
   if (/(cookie|evasteaset|privacy policy|tietosuojaseloste|terms of service|kayttoehdot|copyright|kaikki oikeudet pidatetaan|hyvaksy evaste|all rights reserved|localstorage|sessionstorage|queryselector|addeventlistener|json stringify|json parse|supported includes)/.test(text)) return true;
@@ -7224,8 +7226,9 @@ async function directlyVerifiedFaqAnswer(rows, question, lang='fi') {
   const keywords=(value)=>[...new Set(searchTokens(value)
     .filter(word=>word.length>=4 && !stop.test(word)))];
   const requested=keywords(question);
-  if(requested.length<2 || requested.length>24) return null;
+  if(requested.length>24) return null;
   let best=null;
+  const eligible=[];
   for(const row of rows||[]) {
     const title=String(row?.title||'').trim();
     const source=String(row?.source_url||row?.sourceUrl||'');
@@ -7238,12 +7241,19 @@ async function directlyVerifiedFaqAnswer(rows, question, lang='fi') {
       word===term || (word.length>=5 && term.length>=5 &&
         word.slice(0,5)===term.slice(0,5)) || nearKnowledgeToken(word,term)
     )).length;
-    const coverage=overlap/requested.length;
-    if(overlap<2 || coverage<0.67 || overlap/titleTerms.length<0.5) continue;
+    const coverage=requested.length ? overlap/requested.length : 0;
+    const lexicalMatch=requested.length>=2 && overlap>=2 &&
+      coverage>=0.67 && overlap/titleTerms.length>=0.5;
+    // Cross-language FAQ matches for a limited set of high-precision
+    // intents. No claims without an approved, same-tenant source.
+    const paraphrase=faqParaphraseEvidence(question,title);
+    if(!lexicalMatch && !paraphrase)continue;
     const answer=cleanKnowledgeText(row.answer);
-    if(!answer || answer.length>900 || importedKnowledgeJunk(answer)) continue;
-    const score=coverage+(overlap/titleTerms.length)*0.4;
-    if(!best || score>best.score) best={row,answer,score};
+    if(!answer || answer.length>900 || importedKnowledgeJunk(answer))continue;
+    const score=lexicalMatch?coverage+(overlap/titleTerms.length)*0.4:paraphrase.score;
+    const match={row,answer,score,concept:paraphrase?.concept||''};
+    eligible.push(match);
+    if(!best || score>best.score)best=match;
   }
   if(!best) return null;
   // Conflicting verified FAQ entries are not a licence to pick whichever row
@@ -7263,7 +7273,17 @@ async function directlyVerifiedFaqAnswer(rows, question, lang='fi') {
     return normalized && normalized!==bestAnswer &&
       !(normalized.includes(bestAnswer) || bestAnswer.includes(normalized));
   });
-  if(conflictingFaq) return {
+  // The same policy may be published using different question headings.
+  // Opposing answers to an equivalent FAQ question must escalate rather than
+  // silently selecting the higher-scored phrase. Compare only approved rows.
+  const concept=faqParaphraseEvidence(question,best.row.title)?.concept;
+  const semanticConflict=Boolean(concept && eligible.some(item=>
+    item.row!==best.row && item.concept===concept &&
+    normalizeSearchText(item.answer)!==bestAnswer &&
+    !normalizeSearchText(item.answer).includes(bestAnswer) &&
+    !bestAnswer.includes(normalizeSearchText(item.answer))
+  ));
+  if(conflictingFaq || semanticConflict) return {
     answer:'',handoff:true,confidence:0.2,intent:'Usein kysytyt',
     sourceIds:[],selected:[]
   };
