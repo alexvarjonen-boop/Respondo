@@ -9725,3 +9725,22 @@ body.deletion-modal-open{overflow:hidden!important}
 @media(prefers-reduced-motion:reduce){
   #app .password-strength-bar i{transition:none}
 }
+
+/* 2026-10-31: Assistant demo composer contrast — override dark-theme inherited text fill. */
+#app #live-preview .preview-form input[name="question"],
+#app .dashboard-premium-shell #live-preview .preview-form input[name="question"] {
+  color:#172033!important;
+  -webkit-text-fill-color:#172033!important;
+  caret-color:#172033!important;
+  background-color:#ffffff!important;
+}
+#app #live-preview .preview-form input[name="question"]::placeholder,
+#app .dashboard-premium-shell #live-preview .preview-form input[name="question"]::placeholder {
+  color:#64748b!important;
+  -webkit-text-fill-color:#64748b!important;
+  opacity:1!important;
+}
+#app #live-preview .preview-form input[name="question"]:-webkit-autofill {
+  -webkit-text-fill-color:#172033!important;
+  box-shadow:0 0 0 1000px #fff inset!important;
+}
