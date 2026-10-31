@@ -9744,3 +9744,31 @@ body.deletion-modal-open{overflow:hidden!important}
   -webkit-text-fill-color:#172033!important;
   box-shadow:0 0 0 1000px #fff inset!important;
 }
+
+
+/* Plan-specific feature directory entry points, shared by /hinnat and homepage. */
+#app .pricing-section .pricing-choice-card .pricing-feature-link {
+  box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:12px;
+  width:100%;min-height:46px;padding:11px 18px;
+  border:1px solid #557095;border-radius:999px;
+  background:#23344c;color:#f6f9ff!important;
+  text-decoration:none!important;text-align:center;
+  font:inherit;font-size:13px;font-weight:750;line-height:1.35;
+  transition:background .16s ease,border-color .16s ease;
+}
+#app .pricing-section .pricing-choice-card .pricing-feature-link:hover {
+  background:#334c6b;border-color:#84a9d6;color:#fff!important;
+}
+#app .pricing-section .pricing-choice-card .pricing-feature-link:focus-visible {
+  outline:3px solid #8fc6ff;outline-offset:3px;
+}
+#app .features-page .features-back-to-pricing {
+  display:inline-flex;align-items:center;justify-content:center;min-height:44px;
+  padding:10px 15px;border:1px solid #8f9db5;border-radius:999px;
+  color:#e5efff!important;text-decoration:none;font-size:13px;font-weight:700;
+}
+#app .features-page .features-back-to-pricing:hover{border-color:#d3e4fc;color:#fff!important}
+#app .features-page .features-back-to-pricing:focus-visible{outline:3px solid #8fc6ff;outline-offset:3px}
+@media(prefers-reduced-motion:reduce) {
+  #app .pricing-section .pricing-choice-card .pricing-feature-link{transition:none}
+}
