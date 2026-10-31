@@ -212,7 +212,9 @@
     wheelTarget = to;
     wheelBusyUntil = now + 680;
     const sectionTop = scrollY + rect.top;
-    scrollTo({top: sectionTop + travel * to / (cards.length - 1), behavior:'smooth'});
+    // Avoid hundreds of scroll frames repainting ten 3D panels.
+    // CSS handles the short visual transition after this single snap.
+    scrollTo({top: sectionTop + travel * to / (cards.length - 1), behavior:'instant'});
   }
   function schedule() {
     if (!raf && section && section.isConnected && section.classList.contains('rs-enhanced')) raf = requestAnimationFrame(draw);
