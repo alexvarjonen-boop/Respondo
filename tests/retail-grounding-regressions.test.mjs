@@ -174,8 +174,11 @@ test('does not misattribute different branch stock levels',()=>{
   assert.match(response.answer,/Raisio.*ei varastossa/);
   assert.doesNotMatch(response.answer,/Turku/);
 });
-test('refuses ambiguous similar products at one branch',()=>{
+test('clarifies ambiguous similar products instead of claiming a stock level',()=>{
   const other=entry('JAG Headcover Pro','Turku',outOfStock,'other');
-  assert.equal(storeAvailabilityAnswer([turkuHeadcover,other],
-    'Onko JAG Headcover Turussa varastossa?'),null);
+  const response=storeAvailabilityAnswer([turkuHeadcover,other],
+    'Onko JAG Headcover Turussa varastossa?');
+  assert.match(response.answer,/Mitä tuotetta tarkoitat/);
+  assert.equal(response.handoff,false);
+  assert.deepEqual(response.sourceIds,[]);
 });
