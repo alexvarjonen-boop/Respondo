@@ -17,6 +17,7 @@ import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion, isExplicitV
 import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
 import { resolveBranchOpeningHours } from './branch-hours.mjs';
 import {answerBranchException,exceptionQueryDate} from './branch-exceptions.mjs';
+import {storeAvailabilityAnswer} from './store-availability.mjs';
 import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentAsPage, importCoverage } from './web-document-import.mjs';
 import {autoRefreshEligible,acceptedRefreshCandidate} from './website-refresh-policy.mjs';
 import express from 'express';
@@ -7377,6 +7378,9 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       selected:[],
     };
   }
+
+  const verifiedBranchStock=storeAvailabilityAnswer(rows,cleanMessage,history,responseLang);
+  if(verifiedBranchStock)return verifiedBranchStock;
 
   // The 100k multilingual follow-up forms are intent hints only. All answers
   // must still come from the current tenant's approved knowledge rows.
