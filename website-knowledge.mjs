@@ -2,6 +2,7 @@ import {extractBranchWeeklyHours} from './branch-hours-import.mjs';
 import {structuredBusinessFacts} from './structured-business-facts.mjs';
 import {branchExceptionFacts} from './branch-exceptions.mjs';
 import {extractStoreAvailability} from './store-availability.mjs';
+import {hydratedBusinessData} from './hydrated-business-data.mjs';
 // Conservative, dependency-free business fact extraction. Page headings supply
 // context only; they are never stored as answers. No remote code is executed.
 const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -628,8 +629,9 @@ function semanticDefinitionSpecifications(html,url) {
 
 export function extractBusinessDocument(html, url) {
   const products = extractProducts(html, url);
-  const faqPairs = [...structuredFaqPairs(html),...accordionFaqPairs(html)];
-  const servicePairs = structuredServicePairs(html,url);
+  const hydration=hydratedBusinessData(html);
+  const faqPairs = [...structuredFaqPairs(html),...accordionFaqPairs(html),...hydration.faqPairs];
+  const servicePairs = [...structuredServicePairs(html,url),...hydration.servicePairs];
   const specPairs = semanticDefinitionSpecifications(html,url);
   const structuredFacts = structuredBusinessFacts(html,url);
   const storeAvailabilityFacts = extractStoreAvailability(html,url);
