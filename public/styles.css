@@ -9792,3 +9792,13 @@ body.deletion-modal-open{overflow:hidden!important}
   outline:3px solid #98caff;outline-offset:2px;
 }
 #app .preview-bubble.bot .preview-branch-choices button:disabled{opacity:.65;cursor:default}
+
+/* Scalable location picker; keep large chains searchable in demo. */
+#app .preview-bubble.bot .preview-branch-choices{display:grid;gap:8px}
+#app .preview-bubble.bot .preview-branch-choices input{
+  width:100%;min-height:42px;padding:10px 12px;
+  border:1px solid #8ca8ca;border-radius:10px;
+  font:inherit;font-size:13px;background:#fff;color:#182b45!important;
+}
+#app .preview-bubble.bot .preview-branch-list{display:flex;gap:8px;flex-wrap:wrap;max-height:165px;overflow-y:auto}
+#app .preview-bubble.bot .preview-branch-list small{color:#d6e1f2;font-size:12px}
