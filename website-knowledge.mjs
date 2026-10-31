@@ -1,3 +1,4 @@
+import {extractBranchWeeklyHours} from './branch-hours-import.mjs';
 // Conservative, dependency-free business fact extraction. Page headings supply
 // context only; they are never stored as answers. No remote code is executed.
 const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -993,6 +994,21 @@ export function essentialWebsiteCandidates(bundle) {
     if(doc.contactForm && httpUrl(doc.url)) contactLinks.push({url:doc.url,sourceUrl:doc.url,score:30,hasForm:true});
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
+    // Preserve one verified weekly schedule per branch detail URL, even when
+    // other branches share the exact same hours. Never deduplicate by text
+    // across locations, as that would silently remove branches from the bot.
+    const storeHours=extractBranchWeeklyHours(doc);
+    if(storeHours){
+      const key='branch-hours:'+norm(storeHours.name)+'|'+String(doc.url);
+      if(!seen.has(key)){
+        seen.add(key);
+        out.push({
+          category:'Aukioloajat',title:'Aukioloajat',answer:storeHours.hours,
+          keywords:['aukioloajat','opening hours','öppettider',storeHours.name],
+          sourceUrl:doc.url
+        });
+      }
+    }
     // Only explicit, owner-authored Service records become service facts.
     // Preserve descriptions and URL; skip product/legal/review pages.
     if(!productDetailDoc && !registryDoc){
@@ -1093,6 +1109,10 @@ export function essentialWebsiteCandidates(bundle) {
         continue;
       }
       if(manufacturerContext && (kind==='contact' || kind==='location')) continue;
+      // The branch's normal schedule above is verified separately. A stray
+      // footer/customer-service hours snippet on the same page must not be
+      // mistaken for another contradictory timetable at this branch.
+      if(storeHours && kind==='hours') continue;
       if(kind==='pricing' && recoveredPriceIndexes.has(blockIndex)) continue;
       // Product pages are imported as complete product records. Do not create a
       // second detached "price" fact that has lost the product name/link.
