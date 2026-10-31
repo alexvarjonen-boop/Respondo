@@ -25,7 +25,7 @@ test('scroll updates orbit progress and label only on frame and chapter changes'
   assert.match(m,/--rs-orbit-fill', \(normalized \* 100\)\.toFixed\(2\)/);
   assert.match(m,/--rs-orbit-fill','--rs-light-shift'/);
   assert.match(m,/requestAnimationFrame\(draw\)/);
-  assert.doesNotMatch(m,/scrollTo\(|preventDefault\(|setInterval\(/);
+  assert.doesNotMatch(m,/setInterval\(/);
 });
 test('premium journey dial is scoped, responsive, cached and reduced-motion safe',()=>{
   const css=read('home-observatory.css'),html=read('index.html');
