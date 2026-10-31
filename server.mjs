@@ -7445,12 +7445,19 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
 
   const branchHours=resolveBranchOpeningHours({
     rows,message:cleanMessage,history,lang:responseLang,
-    isHoursQuestion:queryTopic(cleanMessage)==='hours',
+    isHoursQuestion:queryTopic(cleanMessage)==='hours' ||
+      /(?:auki|avoinna|sulke|sulj|opening|hours|close|closing|oppettid|öppettid|stanger|stänger)/i.test(cleanMessage),
     parseHours:openingHoursSegments,usableRow:usableWebsiteRow,
   });
   if(branchHours){
     if(!branchHours.branch) return branchHours; // Ask the visitor to choose.
-    const scoped=directOpeningHoursAnswer(branchHours.rows,branchHours.query,responseLang);
+    // Do not let the word "store" override the opening-hours intent in
+    // a branch-specific query; retain only its requested weekdays.
+    const requestedDays=openingHoursRequestedDays(branchHours.query);
+    const scopedQuestion='aukioloajat'+(requestedDays.length
+      ? ' '+requestedDays.map(day=>day.aliases[0]).join(' ja ')
+      : '');
+    const scoped=directOpeningHoursAnswer(branchHours.rows,scopedQuestion,responseLang);
     if(scoped) return {...scoped,answer:branchHours.branch+': '+scoped.answer};
     const unavailable=responseLang==='en'
       ? 'Opening hours for this location could not be verified from the published information.'
