@@ -186,6 +186,17 @@ function appendPreviewProductCards(bubble,items,lang='fi') {
       .preview-bubble.bot.has-product-cards{width:100%;max-width:96%}
       .preview-product-cards{display:grid;gap:8px;margin-top:12px;white-space:normal}
       .preview-product-card{display:flex;gap:10px;align-items:flex-start;min-width:0;padding:10px;background:#fafafa;border:1px solid #e8e8eb;border-radius:13px;text-decoration:none!important;color:#1c1c20!important}
+      /* Isolate light product cards from dark chat themes and entrance animations. */
+      .preview-bubble.bot .preview-product-card{background:#fafafa!important;color:#171923!important;opacity:1!important;filter:none!important;text-shadow:none!important}
+      .preview-bubble.bot .preview-product-card .preview-product-copy,
+      .preview-bubble.bot .preview-product-card .preview-product-copy strong,
+      .preview-bubble.bot .preview-product-card .preview-product-desc,
+      .preview-bubble.bot .preview-product-card .preview-product-price,
+      .preview-bubble.bot .preview-product-card .preview-product-go{opacity:1!important;filter:none!important;text-shadow:none!important}
+      .preview-bubble.bot .preview-product-card .preview-product-copy strong{color:#171923!important}
+      .preview-bubble.bot .preview-product-card .preview-product-desc{color:#414653!important}
+      .preview-bubble.bot .preview-product-card .preview-product-price{color:#111827!important}
+      .preview-bubble.bot .preview-product-card .preview-product-go{color:#244d91!important}
       .preview-product-card:hover{border-color:#b6b6ba}
       .preview-product-thumb{width:70px;height:70px;flex:0 0 70px;object-fit:contain;border-radius:9px;background:#f0f0f2}
       .preview-product-fallback{display:grid;place-items:center;color:#999;font-size:20px}
