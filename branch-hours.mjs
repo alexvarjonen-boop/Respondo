@@ -118,7 +118,7 @@ export function resolveBranchOpeningHours({rows,message,history=[],lang='fi',isH
       :'Minkä toimipisteen aukioloajat haluat tietää?';
     return {
       answer:prompt,handoff:false,confidence:1,intent:'Toimipisteen valinta',sourceIds:[],selected:[],
-      branchChoices:branches.slice(0,40).map(b=>b.name)
+      branchChoices:branches.slice(0,1000).map(b=>b.name)
     };
   }
   // Results must use ONLY selected branch rows, even if other stores have a
