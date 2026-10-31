@@ -6,11 +6,11 @@ import {generateGroundedAnswer} from '../server.mjs';
 const groups=[
   {
     name:'pet-permission inside',
-    titles:['Can visitors bring pets inside the museum?','Are animals permitted indoors?','Får man ta med hund inomhus?','Saako lemmikkejä tuoda sisälle?'],
+    titles:['Can visitors bring pets inside the museum?','Are animals permitted indoors?','Får man ta med husdjur inomhus?','Saako lemmikkejä tuoda sisälle?'],
     questions:['Are dogs allowed inside?','Can we take a cat indoors?','Saako koiran tuoda sisälle?','Får jag ta med en hund inomhus?']
   },{
     name:'pet-permission terrace',
-    titles:['Can visitors bring pets to the terrace?','Are dogs allowed outdoors?','Saako lemmikkejä tuoda terassille?','Får man ta med hund utomhus?'],
+    titles:['Can visitors bring pets to the terrace?','Are animals allowed outdoors?','Saako lemmikkejä tuoda terassille?','Får man ta med husdjur utomhus?'],
     questions:['Are cats allowed outside?','Can we bring a dog to the terrace?','Saako koiran tuoda terassille?','Får jag ta med en hund på terrassen?']
   },{
     name:'wheelchair accessibility',
@@ -36,6 +36,8 @@ for(const group of groups){
   }
 }
 const counterexamples=[
+  ['Can I bring my dog inside?','Can I bring my cat inside?'],
+  ['Are pets allowed indoors?','Can I bring my dog indoors?'],
   ['Can I take my dog outside?','Can I bring my pet indoors?'],
   ['Saako kissan tuoda sisään?','Saako koiran tuoda terassille?'],
   ['Is parking free?','Is parking available?'],
