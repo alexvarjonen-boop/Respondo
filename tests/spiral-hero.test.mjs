@@ -67,7 +67,13 @@ test('lightweight spiral uses a bounded, scroll-driven frame and fails safely', 
   assert.match(js, /new MutationObserver\(queueMount\)/);
   assert.match(js, /childList:true/);
   assert.match(js, /passive:true/);
-  assert.doesNotMatch(js, /WebGL|three\.js|scrollIntoView|scrollTo\(|preventDefault\(|setInterval\(|requestAnimationFrame\(update\)/);
+  assert.doesNotMatch(js, /WebGL|three\.js|scrollIntoView|setInterval\(|requestAnimationFrame\(update\)/);
+  // Desktop gesture navigation is deliberate; keep it passive on touch/mobile.
+  assert.match(js, /addEventListener\('wheel', onWheel, \{ passive:false \}\)/);
+  assert.match(js, /coarse\.matches \|\| innerWidth < 760/);
+  assert.match(js, /wheelGestureUsed/);
+  assert.match(js, /event\.preventDefault\(\)/);
+  assert.match(js, /scrollTo\(\{ top: Math\.round\(target\), behavior: 'instant' \}\)/);
 });
 
 test('spiral styles keep a static accessible fallback and preserve navigation', () => {
