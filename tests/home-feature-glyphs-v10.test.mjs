@@ -6,7 +6,7 @@ const read=(p)=>readFileSync(new URL('../public/'+p,import.meta.url),'utf8');
 for(const [lang,i] of [['fi',0],['sv',1],['en',2]]){
  test('all symbolic chapter metrics reuse the exact same SVG glyph as their orbit icon '+lang,()=>{
   const hero=spiralHeroMarkup((...translations)=>translations[i],lang);
-  const icon=(k)=>hero.match(new RegExp('<span class="rs-studio-orbit-icon[^"]*" data-rs-icon data-index="'+k+'"[^>]*><svg viewBox="0 0 24 24" focusable="false">([\\s\\S]*?)<\\/svg>'))?.[1];
+  const icon=(k)=>hero.match(new RegExp('<button type="button" class="rs-studio-orbit-icon[^"]*" data-rs-icon data-index="'+k+'"[^>]*><svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">([\\s\\S]*?)<\\/svg>'))?.[1];
   const card=(k)=>hero.match(new RegExp('<article class="rs-spiral-card[^"]*" role="listitem" data-rs-card data-index="'+k+'"[\\s\\S]*?<div class="rs-spiral-metric rs-has-svg-metric"><span class="rs-spiral-metric-glyph" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" xmlns="http://www.w3.org/2000/svg">([\\s\\S]*?)<\\/svg>'))?.[1];
   for(const k of [3,4,5,6,8,9]){
     assert.ok(icon(k),lang+' icon '+k);
