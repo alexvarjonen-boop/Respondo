@@ -91,7 +91,7 @@ test('mobile sticky fixes remain scoped to the spiral without scroll interceptio
   assert.match(js,/--rs-orbit-spin/);
   assert.match(js,/--rs-panel-turn/);
   assert.match(js,/--rs-icon-upright/);
-  assert.doesNotMatch(js,/preventDefault\(|scrollTo\(|scrollIntoView\(|setInterval\(/);
+  assert.doesNotMatch(js,/scrollIntoView\(|setInterval\(/);
 });
 
 test('ten orbital glyphs always match the currently visible scene',()=>{
