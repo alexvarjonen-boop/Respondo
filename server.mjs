@@ -7185,6 +7185,27 @@ async function directlyVerifiedFaqAnswer(rows, question, lang='fi') {
     if(!best || score>best.score) best={row,answer,score};
   }
   if(!best) return null;
+  // Conflicting verified FAQ entries are not a licence to pick whichever row
+  // happens to sort first. Keep the answer grounded to one unambiguous policy.
+  // Only compare the SAME published question from the current tenant's rows:
+  // different questions or sources for other businesses must not be conflated.
+  const bestQuestion=normalizeSearchText(best.row.title);
+  const bestAnswer=normalizeSearchText(best.answer);
+  const conflictingFaq=(rows||[]).some((row)=>{
+    if(row===best.row || normalizeSearchText(row?.title)!==bestQuestion) return false;
+    if(!/^https?:\/\//i.test(String(row?.source_url||row?.sourceUrl||'')) ||
+       !['website','demo_import'].includes(String(row?.source_type||row?.sourceType||'')) ||
+       !usableWebsiteRow(row)) return false;
+    const alternative=cleanKnowledgeText(row.answer);
+    if(!alternative || importedKnowledgeJunk(alternative)) return false;
+    const normalized=normalizeSearchText(alternative);
+    return normalized && normalized!==bestAnswer &&
+      !(normalized.includes(bestAnswer) || bestAnswer.includes(normalized));
+  });
+  if(conflictingFaq) return {
+    answer:'',handoff:true,confidence:0.2,intent:'Usein kysytyt',
+    sourceIds:[],selected:[]
+  };
   const answerLanguage=detectConversationLanguage(best.answer,lang);
   const localized=answerLanguage===lang ? best.answer : await forceAnswerLanguage(best.answer,lang);
   if(!localized) return null;
