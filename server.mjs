@@ -6303,6 +6303,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     pages:pageDocuments.map((x) => x.url),
     links:[...new Set(pageDocuments.flatMap(doc => doc.links.map(link => link.url)))].slice(0, 10000),
     mediaImport:{results:mediaResults,attempted:mediaQueue.size,failed:mediaFailures.failed,skipped:mediaFailures.skipped},
+    crawlIncomplete:queue.length>0,
   };
 }
 
@@ -6341,6 +6342,13 @@ function importedKnowledgeQuality(item) {
 
 function websiteKnowledgeCandidates(bundle) {
   return essentialWebsiteCandidates(bundle);
+}
+function websiteImportCoverage(bundle,candidates){
+  const media=bundle?.mediaImport||{};
+  return {...importCoverage({pages:bundle?.pages||[],media:media.results||[],candidates,
+    attempted:media.attempted||0,failed:media.failed||0,skipped:media.skipped||0}),
+    partial:Boolean(bundle?.crawlIncomplete||media.failed||media.skipped),
+    crawlIncomplete:Boolean(bundle?.crawlIncomplete)};
 }
 
 function buildProfileKnowledge(profile = {}) {
@@ -12259,7 +12267,7 @@ app.post('/api/app/import-website/start', auth, ownerOnly, subscribed, async (re
       });
       const candidates=websiteKnowledgeCandidates(bundle);
       const detectedProfile=extractFreeWebsiteProfile(bundle);
-      job.result={ok:true,jobId,profile:detectedProfile,pagesScanned:bundle.pages.length,factsFound:candidates.length,candidates,extraction:'local'};
+      job.result={ok:true,jobId,profile:detectedProfile,pagesScanned:bundle.pages.length,factsFound:candidates.length,candidates,coverage:websiteImportCoverage(bundle,candidates),extraction:'local'};
       job.scanned=bundle.pages.length; job.total=Math.max(job.total,job.scanned); job.percent=100; job.status='done'; job.updatedAt=Date.now();
     }catch(e){job.status='error';job.error=e?.message||'Verkkosivun tietojen tuonti epäonnistui.';job.updatedAt=Date.now();}
   })();
@@ -12294,6 +12302,7 @@ app.post('/api/app/import-website', auth, ownerOnly, subscribed, async (req, res
       pagesScanned:bundle.pages.length,
       factsFound:candidates.length,
       candidates,
+      coverage:websiteImportCoverage(bundle,candidates),
       extraction:'local',
     });
   } catch (e) {
@@ -13356,6 +13365,7 @@ app.post('/api/public/demo-import-website', demoImportLimiter, async (req,res)=>
       pagesScanned:bundle.pages.length,
       factsFound:allCandidates.length,
       candidates,
+      coverage:websiteImportCoverage(bundle,allCandidates),
       truncated:allCandidates.length>candidates.length,
       extraction:'local-demo',
     });
