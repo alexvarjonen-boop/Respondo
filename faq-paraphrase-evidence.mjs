@@ -37,7 +37,7 @@ const families=[
     qualifier:[]
   },{
     key:'photography',
-    subject:/\b(?:photo\w*|picture\w*|camera\w*|photograph\w*|valokuv\w*|kuva\w*|fotograf\w*|bild\w*)\b/,
+    subject:/\b(?:photo\w*|picture\w*|camera\w*|photograph\w*|valokuv\w*|kuva\w*|kuvi\w*|fotograf\w*|bild\w*)\b/,
     action:/\b(?:take|shoot|allow\w*|permit\w*|can|is|saako|voiko|salli\w*|ottaa|fotografer\w*|far|faar|kan|tillate\w*)\b/,
     qualifier:[]
   }
