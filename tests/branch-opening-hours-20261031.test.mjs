@@ -97,3 +97,12 @@ test('both real chat clients render branch choices as sendable buttons',()=>{
   assert.match(app,/result\.branchChoices/);
   assert.match(app,/form\.requestSubmit\(\)/);
 });
+
+test('choosing a Finnish branch preserves Finnish despite English UI fallback',async()=>{
+  const history=[{question:'Mitkä ovat aukioloajat?',answer:'Minkä toimipisteen aukioloajat haluat tietää?'}];
+  const r=await generateGroundedAnswer({rows,message:'Turku',lang:'en',history});
+  assert.equal(r.handoff,false,JSON.stringify(r));
+  assert.deepEqual(r.sourceIds,['turku']);
+  assert.match(r.answer,/Turku: Maanantai:/);
+  assert.doesNotMatch(r.answer,/Monday/);
+});
