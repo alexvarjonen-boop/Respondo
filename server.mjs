@@ -12784,7 +12784,7 @@ function detectConversationLanguage(text, hinted='') {
   const words=raw.split(/\s+/).filter(Boolean);
   if (!words.length) return hint || 'fi';
   const sets={
-    fi:new Set(['ja','on','ei','mitä','mikä','missä','milloin','voiko','voin','haluan','tarvitsen','apua','kiitos','moi','hei','minä','sinä','teillä','hinta','maksaa','ajan','varata','varaus','auki','aukiolo','kuinka','kauan','kauanko','toimitus','toimitusaika','kestää','onko','saako','paljonko','takuu','takuuta','takuun','löytyykö']),
+    fi:new Set(['ja','on','ei','mitä','mikä','missä','milloin','voiko','voin','haluan','tarvitsen','apua','kiitos','moi','hei','minä','sinä','teillä','hinta','maksaa','ajan','varata','varaus','auki','aukiolo','kuinka','kauan','kauanko','toimitus','toimitusaika','kestää','onko','saako','paljonko','takuu','takuuta','takuun','löytyykö','myytte','myyttekö','myymme','myydä','valikoima','tuotteita','tuotteet','tuote','putterit']),
     sv:new Set(['och','är','inte','vad','vilken','var','när','kan','jag','vill','behöver','hjälp','tack','hej','ni','pris','kostar','boka','bokning','öppet','öppettider','hur','länge','leverans','leveranstid','har','finns','får','gäller','ingår','det','den','dem','ett','med','hos','för','säljer','köpa','köper','garantin','garantitid','reklamation']),
     en:new Set(['and','is','are','not','what','which','where','when','can','could','i','you','want','need','help','thanks','thank','hello','hi','price','cost','book','booking','open','hours','how','long','does','do','delivery','shipping','take','have','has','warranty','warranties','send','sent','message','messages','there','the','products','your','our','us','email','contact','reach','write','to'])
   };
