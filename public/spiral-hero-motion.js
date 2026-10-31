@@ -117,12 +117,13 @@
       // A feature passes inward towards the Respondo arrow as it leaves.
       // The next chapter rises from the outer edge of the orbit. The smaller
       // mobile arc avoids moving text under Safari's floating chat launcher.
-      const zoom = entering ? .83 + .17 * focus : 1 - .25 * curve;
-      const shiftX = entering
+      const cleanDesktop = !mobile && innerWidth >= 1100;
+      const zoom = cleanDesktop ? 1 : (entering ? .83 + .17 * focus : 1 - .25 * curve);
+      const shiftX = cleanDesktop ? 0 : entering
         ? -(mobile ? 12 : 62) * curve
         : (mobile ? 34 : Math.min(320, innerWidth * .22)) * curve;
-      const shiftY = entering ? (mobile ? 62 : 95) * curve : -(mobile ? 100 : 74) * curve;
-      const turn = entering ? -(mobile ? 6 : 17) * curve : (mobile ? 7 : 26) * curve;
+      const shiftY = cleanDesktop ? (entering ? 24 : -24) * curve : entering ? (mobile ? 62 : 95) * curve : -(mobile ? 100 : 74) * curve;
+      const turn = cleanDesktop ? 0 : entering ? -(mobile ? 6 : 17) * curve : (mobile ? 7 : 26) * curve;
       const roll = entering ? 3 * curve : -7 * curve;
       const depth = -(entering ? 105 : 240) * curve;
       const alpha = entering ? Math.pow(focus, 1.2) : Math.pow(focus, .9);
