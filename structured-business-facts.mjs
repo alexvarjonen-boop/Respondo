@@ -1,3 +1,4 @@
+import {dateISO} from './branch-exceptions.mjs';
 // Only consume facts explicitly published in schema.org JSON-LD.
 // Source is recorded for every fact; never infer opening hours or availability.
 const clean = value => String(value ?? '').replace(/<[^>]*>/g, ' ')
@@ -195,6 +196,19 @@ export function structuredBusinessFacts(html,pageUrl){
           || scheduleFromString(node.openingHours);
         if(schedule)push('Aukioloajat',branch?'Aukioloajat: '+branch:'Aukioloajat',
           schedule,source,['aukioloajat','opening hours','öppettider',...(branch?[branch]:[])]);
+        // schema.org SpecialOpeningHoursSpecification is date-specific,
+        // never proof of a weekly schedule for another day/store.
+        if(branch)for(const special of (Array.isArray(node.specialOpeningHoursSpecification)
+          ?node.specialOpeningHoursSpecification:[node.specialOpeningHoursSpecification]).slice(0,50)){
+          if(!special||typeof special!=='object')continue;
+          const start=dateISO(special.validFrom),end=dateISO(special.validThrough||special.validFrom);
+          if(!start||start!==end)continue;
+          const opens=time(special.opens),closes=time(special.closes);
+          const hours=opens==='00:00'&&closes==='00:00'?'suljettu':
+            opens&&closes&&opens!==closes?opens+' - '+closes:'';
+          if(hours)push('Poikkeusaukioloajat','Poikkeusaukioloajat: '+branch,
+            start+': '+hours,source,['poikkeusaukioloajat',branch,start]);
+        }
         // areaServed describes a service area, not the business's street address.
         const areas=serviceLocations(node.areaServed||node.serviceArea);
         const serviceAreas=[];
