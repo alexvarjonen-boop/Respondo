@@ -6031,7 +6031,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const base = new URL(first.finalUrl);
   const seedPath=base.pathname.replace(/\/+$/,'') || '/';
   const seedPathNormalized=normalizeSearchText(seedPath);
-  const locationFamilyMatch=seedPath.match(/\/(parturit|barbers?|salons?|stores?|locations?|myymalat|myymälät|toimipisteet)\//i);
+  const locationFamilyMatch=seedPath.match(/\/(parturit|barbers?|salons?|stores?|locations?|myymalat|myymälät|tavaratalot|toimipisteet)\//i);
   const locationFamilySegment=locationFamilyMatch ? String(locationFamilyMatch[1]||'').toLowerCase() : '';
   const locationDetailSeed=Boolean(locationFamilySegment && seedPath.split('/').filter(Boolean).length>=3);
   const pages = [];
@@ -6071,6 +6071,10 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     if (/rekisteriseloste|privacy-policy|tietosuojaseloste|gdpr/.test(p)) return 305;
     // Essentials outrank product detail pages. Product APIs already provide
     // structured catalog data for real ecommerce sites.
+    // Chain store detail pages must be crawled ahead of product catalogs
+    // and general customer-support hours, otherwise a 24s import may only
+    // learn one nationwide customer-service timetable.
+    if (/\/(?:tavaratalot|myymalat|myymälät|toimipisteet|locations|branches|butiker|stores)\//i.test(new URL(url).pathname)) return 355;
     if (/yhtey|contact|kontakt|asiakas(?:palvelu)?|customer[-_ ]?service|kundservice|osoite|address|adress|location|sijainti|myymala|myymälä|auki|hours|oppet/.test(p)) return 300;
     if (/shipping|delivery|toimit|return|refund|palaut|vaihto|warranty|takuu|payment|maksu|faq|ukk|help|support/.test(p)) return 280;
     if (/tarjous|quote|offert|hinta|price|pricing|pris|palvel|service|tjanst|about|meista|yritys|company/.test(p)) return 250;
@@ -6096,7 +6100,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
       if (/maksu|payment|checkout-info|klarna|paypal/.test(p)) score += 17;
       if (/kokotauluk|size-guide|sizing|koko|mitat|dimension/.test(p)) score += 17;
       if (/materia|material|laatu|quality|valmist|manufactur|care|hoito|huolto-oh|pesuoh/.test(p)) score += 17;
-      if (/myymala|myymälä|store|shop|location|sijainti|showroom|noutopiste/.test(p)) score += 16;
+      if (/myymala|myymälä|tavaratalo|store|shop|location|branch|butiker|sijainti|showroom|noutopiste/.test(p)) score += 30;
       if (/ajanvaraus|booking|appointment/.test(p)) score += 14;
       if (/tarjous|quote|request/.test(p)) score += 13;
       if (/hinta|price|pricing/.test(p)) score += 12;
@@ -6152,7 +6156,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     if (/faq|ukk|kysym|help|ohje|support|asiakas(?:palvelu)?|customer[-_ ]?service|kundservice/.test(p)) score += 22;
     if (/toimit|delivery|shipping|nouto|pickup|seurant|tracking|palaut|return|refund|vaihto|exchange/.test(p)) score += 20;
     if (/takuu|warranty|maksu|payment|kokotauluk|size-guide|sizing|koko|mitat|dimension|materia|material|laatu|quality|care|hoito/.test(p)) score += 18;
-    if (/myymala|myymälä|store|shop|location|sijainti|showroom|noutopiste/.test(p)) score += 16;
+    if (/myymala|myymälä|tavaratalo|store|shop|location|branch|butiker|sijainti|showroom|noutopiste/.test(p)) score += 30;
     if (/hinta|price|pricing|palvelu|service|yhteys|contact/.test(p)) score += 12;
     queue.push({url:u.toString(),score});
   }
