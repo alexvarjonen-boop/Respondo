@@ -2867,6 +2867,9 @@ function productCatalogDestination(rows) {
 
 
 function ecommerceOrderQuestion(value, lang='') {
+  // Catalog discovery asks WHAT is sold; checkout intent asks HOW to order.
+  // Keep broad shopping questions out of the checkout shortcut.
+  if(broadProductQuestion(value)) return false;
   const q=normalizeSearchText(value);
   if(!q) return false;
   if(intentForMessage(q,lang)==='order') return true;
