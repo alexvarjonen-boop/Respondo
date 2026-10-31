@@ -14,6 +14,10 @@
   let pendingMount = false;
   let currentStep = -1;
   let stickyFailed = false;
+  let wheelGestureUsed = false;
+  let wheelLastAt = 0;
+  let wheelGestureReset = 0;
+  let wheelDirection = 0;
 
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const ease = v => { v = clamp(v, 0, 1); return v * v * (3 - 2 * v); };
@@ -43,6 +47,10 @@
     icons = [];
     currentStep = -1;
     stickyFailed = false;
+    wheelGestureUsed = false;
+    wheelLastAt = 0;
+    wheelDirection = 0;
+    clearTimeout(wheelGestureReset);
   }
   function setup() {
     pendingMount = false;
@@ -179,6 +187,42 @@
   function schedule() {
     if (!raf && section && section.isConnected && section.classList.contains('rs-enhanced')) raf = requestAnimationFrame(draw);
   }
+  // Desktop wheel and trackpad: one chapter per physical gesture, regardless
+  // of how many wheel events the browser sends. Leave mobile native scrolling.
+  function onWheel(event) {
+    if (!section || !section.isConnected || !section.classList.contains('rs-enhanced') ||
+        coarse.matches || innerWidth < 760 || event.ctrlKey || event.defaultPrevented ||
+        event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    const rect = section.getBoundingClientRect();
+    const viewport = innerHeight;
+    // Do not hijack the normal page before entering or after leaving this story.
+    if (rect.top > 100 || rect.bottom < viewport - 100) return;
+    const travel = Math.max(1, rect.height - viewport);
+    const position = clamp(-rect.top / travel, 0, 1) * (cards.length - 1);
+    const direction = Math.sign(event.deltaY);
+    if (!direction) return;
+    const index = clamp(Math.round(position), 0, cards.length - 1);
+    if ((direction < 0 && index === 0 && position < .08) ||
+        (direction > 0 && index === cards.length - 1 && position > cards.length - 1 - .08)) return;
+    // Prevent trackpad inertia from skipping chapters or fighting scrollTo.
+    event.preventDefault();
+    const now = performance.now();
+    if (now - wheelLastAt > 260 || (wheelDirection && direction !== wheelDirection)) {
+      wheelGestureUsed = false;
+    }
+    wheelLastAt = now;
+    wheelDirection = direction;
+    clearTimeout(wheelGestureReset);
+    wheelGestureReset = setTimeout(() => { wheelGestureUsed = false; wheelDirection = 0; }, 260);
+    if (wheelGestureUsed) return;
+    wheelGestureUsed = true;
+    const next = clamp(index + direction, 0, cards.length - 1);
+    const sectionTop = scrollY + rect.top;
+    const target = sectionTop + travel * next / Math.max(1, cards.length - 1);
+    // Instant positioning avoids native smooth-scroll queue buildup on trackpads.
+    scrollTo({ top: Math.round(target), behavior: 'instant' });
+    schedule();
+  }
   function queueMount() {
     if (pendingMount) return;
     pendingMount = true;
@@ -187,6 +231,7 @@
   // Only watch root replacement (navigation/language), not animated child styles.
   new MutationObserver(queueMount).observe(app, { childList:true });
   addEventListener('scroll', schedule, { passive:true });
+  addEventListener('wheel', onWheel, { passive:false });
   addEventListener('resize', () => { queueMount(); schedule(); }, { passive:true });
   addEventListener('pageshow', schedule, { passive:true });
   addEventListener('respondo:languagechange', queueMount, { passive:true });
