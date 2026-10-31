@@ -6241,7 +6241,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const pageDocuments = pages.map((page) => ({
     url:page.url,
     ...page.document,
-  })).filter((page) => page.text.length > 0 || page.links.length > 0);
+  })).filter((page) => page.text.length > 0 || page.links.length > 0 || page.structuredFacts?.length > 0 || page.products?.length > 0);
 
   // SPA/client-rendered sites often keep their visible copy in same-origin JS bundles.
   // Read strings from those bundles without executing them so prices, trial terms and
