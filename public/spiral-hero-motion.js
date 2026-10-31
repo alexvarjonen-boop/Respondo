@@ -14,10 +14,6 @@
   let pendingMount = false;
   let currentStep = -1;
   let stickyFailed = false;
-  let wheelGestureAt = 0;
-  let wheelGestureDirection = 0;
-  let wheelTarget = -1;
-  let wheelBusyUntil = 0;
 
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const ease = v => { v = clamp(v, 0, 1); return v * v * (3 - 2 * v); };
@@ -47,9 +43,6 @@
     icons = [];
     currentStep = -1;
     stickyFailed = false;
-    wheelGestureAt = 0;
-    wheelTarget = -1;
-    wheelBusyUntil = 0;
   }
   function setup() {
     pendingMount = false;
@@ -182,40 +175,6 @@
     // scroll interception, or an extra painted full-screen overlay.
     section.style.setProperty('--rs-orbit-fill', (normalized * 100).toFixed(2));
   }
-  // On desktop, one wheel gesture advances exactly one chapter. Momentum events
-  // belong to the same gesture until the wheel has been quiet for 240ms.
-  // Native scrolling remains unchanged outside this pinned section and on touch.
-  function onWheel(event) {
-    if (!section || !section.isConnected || !section.classList.contains('rs-enhanced') ||
-        innerWidth < 1100 || coarse.matches || motion.matches || event.ctrlKey ||
-        event.defaultPrevented || !event.cancelable) return;
-    const rect = section.getBoundingClientRect();
-    const viewport = Math.max(1, innerHeight);
-    const direction = Math.sign(event.deltaY);
-    if (!direction) return;
-    const travel = Math.max(1, rect.height - viewport);
-    const within = rect.top <= 4 && rect.bottom >= viewport - 4;
-    if (!within) return;
-    const position = clamp(-rect.top / travel, 0, 1) * (cards.length - 1);
-    const now = performance.now();
-    const newGesture = now - wheelGestureAt > 240;
-    wheelGestureAt = now;
-    // Let the user leave the section naturally when already at its ends.
-    if (newGesture && ((direction < 0 && position < 0.02) ||
-                       (direction > 0 && position > cards.length - 1 - 0.02))) return;
-    event.preventDefault();
-    if (!newGesture || now < wheelBusyUntil) return;
-    wheelGestureDirection = direction;
-    const from = clamp(Math.round(position), 0, cards.length - 1);
-    const to = clamp(from + direction, 0, cards.length - 1);
-    if (to === from) return;
-    wheelTarget = to;
-    wheelBusyUntil = now + 680;
-    const sectionTop = scrollY + rect.top;
-    // Avoid hundreds of scroll frames repainting ten 3D panels.
-    // CSS handles the short visual transition after this single snap.
-    scrollTo({top: sectionTop + travel * to / (cards.length - 1), behavior:'instant'});
-  }
   function schedule() {
     if (!raf && section && section.isConnected && section.classList.contains('rs-enhanced')) raf = requestAnimationFrame(draw);
   }
@@ -226,7 +185,6 @@
   }
   // Only watch root replacement (navigation/language), not animated child styles.
   new MutationObserver(queueMount).observe(app, { childList:true });
-  addEventListener('wheel', onWheel, { passive:false });
   addEventListener('scroll', schedule, { passive:true });
   addEventListener('resize', () => { queueMount(); schedule(); }, { passive:true });
   addEventListener('pageshow', schedule, { passive:true });
