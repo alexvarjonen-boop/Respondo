@@ -56,7 +56,7 @@ function fakePage({mobile=false,reduced=false}={}){
     MutationObserver:class {observe(){}},
     document:{readyState:'complete',getElementById(id){return id==='app'?app:null;}},
     addEventListener(type,fn){listeners[type]=fn;},
-    window:{matchMedia(query){return {matches:query.includes('reduced-motion')?reduced:mobile,addEventListener(){}};}
+    window:{matchMedia(query){return {matches:query.includes('reduced-motion')?reduced:mobile,addEventListener(){}};}}
   };
   vm.runInNewContext(motion,ctx);
   const flush=()=>{while(frames.length)frames.shift()();};
