@@ -23,3 +23,29 @@ test('conversational catalog requests answer from the merchant catalog, not cont
     assert.doesNotMatch(result.answer,/leave your name|jätä alle nimesi|lämna ditt namn/i);
   }
 });
+
+test('catalog discovery does not invent stock, discounts or merchant-specific policy', async () => {
+  for (const [lang,message] of [
+    ['fi','Mitä myytte?'],
+    ['en','What do you sell?'],
+    ['sv','Vad säljer ni?'],
+  ]) {
+    const result=await generateGroundedAnswer({rows,lang,message,companyName:'JAG Putters'});
+    assert.equal(result.handoff,false,message);
+    assert.match(result.answer,/putter|headcover|mailansuoja|golf/i);
+    assert.doesNotMatch(result.answer,/free shipping|ilmainen toimitus|fri frakt|discount|alennus|rabatt|in stock|varastossa|i lager/i);
+    assert.ok(Array.isArray(result.sourceIds),'response must provide source references');
+  }
+});
+
+test('ordering instructions remain distinct from catalog discovery', async () => {
+  for (const [lang,message] of [
+    ['fi','Miten voin tilata?'],
+    ['en','How can I order?'],
+    ['sv','Hur kan jag beställa?'],
+  ]) {
+    const result=await generateGroundedAnswer({rows,lang,message,companyName:'JAG Putters'});
+    assert.equal(result.handoff,false,message+' '+JSON.stringify(result));
+    assert.match(result.answer,/tilata|order|beställa|verkkokaupasta|online store|webbutiken/i,message);
+  }
+});
