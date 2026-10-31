@@ -1,4 +1,4 @@
-import { spiralHeroMarkup } from './spiral-hero.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10-polish-v11-hero-clarity-v17-hero-try-bot-v32-chat-navigation-note-v34';
+import { spiralHeroMarkup } from './spiral-hero.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10-polish-v11-hero-clarity-v17-hero-try-bot-v32-chat-navigation-note-v34-orbit-click-v1';
 // Ten cinematic scenes and existing paid-plan checkout remain on the homepage.
 // Long-form SEO articles belong on their dedicated landing pages, not below pricing.
 export function appleHomeMarkup(t,lang,count,pricingMarkup=''){
