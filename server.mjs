@@ -18,6 +18,7 @@ import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
 import { resolveBranchOpeningHours } from './branch-hours.mjs';
 import {answerBranchException,exceptionQueryDate} from './branch-exceptions.mjs';
 import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentAsPage, importCoverage } from './web-document-import.mjs';
+import {autoRefreshEligible,acceptedRefreshCandidate} from './website-refresh-policy.mjs';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -12245,6 +12246,67 @@ async function loadDemoWebsiteImport(id) {
 }
 
 
+app.get('/api/app/import-website/auto-refresh',auth,ownerOnly,subscribed,async(req,res)=>{
+  try{
+    const r=await q('SELECT auto_refresh_enabled,last_refresh_attempt_at,last_refreshed_at,last_refresh_status,last_refresh_coverage,last_refresh_error FROM tenants WHERE id=active_tenant_for_user($1) AND owner_user_id=$1',[req.user.sub]);
+    if(!r.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+    return res.json({ok:true,...r.rows[0]});
+  }catch(e){console.error('Refresh settings read failed',e);return res.status(500).json({error:'Päivitysasetuksia ei voitu lukea.'});}
+});
+app.post('/api/app/import-website/auto-refresh',auth,ownerOnly,subscribed,async(req,res)=>{
+  if(typeof req.body?.enabled!=='boolean')return res.status(400).json({error:'Valitse automaattisen päivityksen tila.'});
+  try{
+    const r=await q('UPDATE tenants SET auto_refresh_enabled=$1,last_refresh_attempt_at=CASE WHEN $1 THEN NULL ELSE last_refresh_attempt_at END,updated_at=NOW() WHERE id=active_tenant_for_user($2) AND owner_user_id=$2 RETURNING auto_refresh_enabled',[req.body.enabled,req.user.sub]);
+    if(!r.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+    return res.json({ok:true,enabled:r.rows[0].auto_refresh_enabled});
+  }catch(e){console.error('Refresh settings write failed',e);return res.status(500).json({error:'Päivitysasetuksia ei voitu tallentaa.'});}
+});
+let scheduledRefreshRunning=false;
+async function runScheduledWebsiteRefresh(){
+  if(scheduledRefreshRunning)return;
+  scheduledRefreshRunning=true;
+  let tenant=null;
+  try{
+    // Atomic claim across Railway replicas. Owner must explicitly opt in.
+    const claimSql="UPDATE tenants SET last_refresh_attempt_at=NOW(),last_refresh_status='running' WHERE id=(SELECT id FROM tenants WHERE auto_refresh_enabled=true AND active=true AND subscription_status IN ('active','trialing') AND website IS NOT NULL AND website<>'' AND (last_refresh_attempt_at IS NULL OR last_refresh_attempt_at<NOW()-INTERVAL '23 hours') ORDER BY last_refresh_attempt_at ASC NULLS FIRST FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING id,website,name,slug,subscription_status,auto_refresh_enabled";
+    const next=await q(claimSql);
+    tenant=next.rows[0];
+    if(!tenant)return;
+    if(!autoRefreshEligible(Date.now(),null,tenant.auto_refresh_enabled,tenant.subscription_status,tenant.website)){
+      await q("UPDATE tenants SET last_refresh_status='skipped' WHERE id=$1",[tenant.id]);return;
+    }
+    const website=normalizeWebUrl(tenant.website,false);
+    if(!website||!tenantWebsiteImportAllowed(tenant,website))throw Error('invalid tenant website');
+    const bundle=await fetchWebsiteBundle(website,90,60_000,null,
+      {storefrontLimit:150,storefrontBudgetMs:5000,sitemapLimit:2500});
+    const all=websiteKnowledgeCandidates(bundle);
+    const items=all.map(x=>acceptedRefreshCandidate(x,website,usableWebsiteRow)).filter(Boolean).slice(0,500);
+    if(!items.length)throw Error('no verified website facts');
+    const client=await pool.connect();
+    try{
+      await client.query('BEGIN');
+      for(const item of items){
+        const found=await client.query("SELECT id FROM knowledge WHERE tenant_id=$1 AND source_type='website' AND source_url=$2 AND lower(title)=lower($3) LIMIT 1",[tenant.id,item.sourceUrl,item.title]);
+        if(found.rowCount){
+          await client.query("UPDATE knowledge SET category=$1,answer=$2,keywords=$3,updated_at=NOW(),verified_at=NOW() WHERE id=$4 AND tenant_id=$5 AND source_type='website'",
+            [item.category,item.answer,item.keywords,found.rows[0].id,tenant.id]);
+        }else{
+          await client.query("INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords,source_type,source_url,approved,verified_at) VALUES($1,$2,$3,$4,$5,$6,'website',$7,true,NOW())",
+            [uid(),tenant.id,item.category,item.title,item.answer,item.keywords,item.sourceUrl]);
+        }
+      }
+      await client.query('COMMIT');
+    }catch(e){await client.query('ROLLBACK').catch(()=>{});throw e;}
+    finally{client.release();}
+    await q("UPDATE tenants SET last_refresh_status='success',last_refreshed_at=NOW(),last_refresh_coverage=$2::jsonb,last_refresh_error=NULL WHERE id=$1",
+      [tenant.id,JSON.stringify(websiteImportCoverage(bundle,all))]);
+  }catch(e){
+    if(tenant)await q("UPDATE tenants SET last_refresh_status='failed',last_refresh_error=$2 WHERE id=$1",
+      [tenant.id,String(e?.message||'refresh failed').slice(0,250)]).catch(()=>{});
+    console.warn('Scheduled website refresh failed:',e?.message||e);
+  }finally{scheduledRefreshRunning=false;}
+}
+
 app.post('/api/app/import-website/start', auth, ownerOnly, subscribed, async (req,res)=>{
   if(!await requirePlanCapability(req,res,'websiteImport')) return;
   const website=normalizeWebUrl(req.body.website,false);
@@ -15818,6 +15880,12 @@ async function ensureRuntimeSchema() {
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_leads_tenant_created ON leads(tenant_id, created_at DESC)');
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS average_lead_value NUMERIC(12,2) NOT NULL DEFAULT 0");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS auto_refresh_enabled BOOLEAN NOT NULL DEFAULT FALSE");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_refresh_attempt_at TIMESTAMPTZ");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_refreshed_at TIMESTAMPTZ");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_refresh_status TEXT NOT NULL DEFAULT 'never'");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_refresh_coverage JSONB");
+  await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_refresh_error TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_sites_install_key TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_sites_embed_host TEXT");
   await q("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS google_sites_pending_embed_host TEXT");
@@ -16039,6 +16107,10 @@ async function start() {
     }
   }
   app.listen(PORT, () => console.log(`RESPONDO AI listening on ${PORT}`));
+  if(process.env.NODE_ENV==='production'){
+    const timer=setInterval(()=>{void runScheduledWebsiteRefresh();},30*60*1000);
+    timer.unref();
+  }
 }
 
 export { isGoogleSitesWebsite, googleSitesIframeHost, googleSitesFrameForRequest, googleSitesInstallAuthorized, widgetOriginAllowed, splitIndependentCustomerQuestions, verifiedProductCards, hasVerifiedPartialAnswer, app, websiteKnowledgeCandidates, extractFreeWebsiteProfile, selectRelevantKnowledge, conciseKnowledgeAnswer, specificServiceConfirmation, generateGroundedAnswer, chatActions, queryTopic, fetchPublicHtml, fetchWebsiteBundle, buildProfileKnowledge, detectConversationLanguage, respondoProductFaqMatch, intentForMessage, resolveIntentForMessage };
