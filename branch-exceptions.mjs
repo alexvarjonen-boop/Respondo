@@ -42,40 +42,82 @@ export function branchExceptionFacts(doc){
     sourceUrl:doc.url
   }));
 }
+// Resolve Helsinki's *calendar* day before adding one day. Adding 24 hours to
+// an instant gives the wrong date around the autumn DST transition.
 export function exceptionQueryDate(message,now=new Date()){
   const text=norm(message);
   const direct=text.match(/\b\d{4}-\d\d-\d\d\b|\b\d{1,2}\.\d{1,2}\.\d{4}\b/)?.[0];
   if(direct)return dateISO(direct);
-  const year=new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Helsinki',year:'numeric'}).format(now);
+  const parts=new Intl.DateTimeFormat('en-GB',{
+    timeZone:'Europe/Helsinki',year:'numeric',month:'2-digit',day:'2-digit'
+  }).formatToParts(now);
+  const p=Object.fromEntries(parts.map(x=>[x.type,x.value]));
+  const year=p.year;
   const short=text.match(/\b(\d{1,2})\.(\d{1,2})\.?\b/);
   if(short)return dateISO(short[1]+'.'+short[2]+'.'+year);
   if(/\b(?:tänään|tanaan|today|idag|huomenna|tomorrow|imorgon)\b/i.test(text)){
-    const plus=/(?:huomenna|tomorrow|imorgon)/i.test(text)?86400000:0;
-    const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Helsinki',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(now.getTime()+plus));
-    const p=Object.fromEntries(parts.map(x=>[x.type,x.value]));
-    return dateISO(p.year+'-'+p.month+'-'+p.day);
+    const today=dateISO(year+'-'+p.month+'-'+p.day);
+    if(!today)return '';
+    if(!/(?:huomenna|tomorrow|imorgon)/i.test(text))return today;
+    const following=new Date(Date.UTC(Number(year),Number(p.month)-1,Number(p.day)+1));
+    return following.toISOString().slice(0,10);
   }
   return '';
 }
+
+const normalizePlace=value=>String(value||'').toLowerCase().normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+const hoursContext=/auki|avoin|sulje|opening|open\b|clos(?:ed|ing|e)\b|hours|oppettid|öppettid|stang|stäng|aukiolo/i;
+
+function mentionsBranch(question,branch){
+  const name=normalizePlace(branch);
+  const forms=new Set([name]);
+  if(name==='turku'){forms.add('turun');forms.add('abo');}
+  else if(name.endsWith('i')||name.endsWith('a')||name.endsWith('o')||name.endsWith('e'))forms.add(name+'n');
+  const text=' '+normalizePlace(question)+' ';
+  return [...forms].some(form=>text.includes(' '+form+' '));
+}
+
 export function answerBranchException({rows=[],message='',lang='fi',history=[],now=new Date()}={}){
   const date=exceptionQueryDate(message,now);
   if(!date)return null;
-  const question=(message+' '+(history.at(-1)?.question||'')).toLowerCase();
-  const candidates=rows.filter(row=>row.category==='Poikkeusaukioloajat' &&
-    String(row.title).startsWith('Poikkeusaukioloajat: ')&&String(row.answer).startsWith(date+': '));
-  const matched=candidates.filter(row=>{
-    const branch=row.title.slice('Poikkeusaukioloajat: '.length).toLowerCase();
-    return question.includes(branch) || (branch==='turku'&&question.includes('turun')) ||
-      (branch==='raisio'&&question.includes('raision')) ||
-      (branch==='kaarina'&&question.includes('kaarinan'));
-  });
-  if(matched.length!==1)return null;
-  const row=matched[0],hours=norm(row.answer.slice(date.length+2));
+  const recent=Array.isArray(history)?history.slice(-5):[];
+  const dayOnly=/^(?:(?:entä|enta|and|och)\s+)?(?:tänään|tanaan|huomenna|today|tomorrow|idag|imorgon)[?.! ]*$/i.test(norm(message));
+  // A question about a delivery or product "tomorrow" must never be
+  // misclassified as a store-hours question just because a date is present.
+  const previous=recent.at(-1);
+  if(!hoursContext.test(message) && !(dayOnly && hoursContext.test(
+    String(previous?.question||'')+' '+String(previous?.answer||''))))return null;
+
+  const candidates=(rows||[]).filter(row=>row.category==='Poikkeusaukioloajat' &&
+    String(row.title||'').startsWith('Poikkeusaukioloajat: ') &&
+    String(row.answer||'').startsWith(date+': '));
+  const names=[...new Set(candidates.map(row=>String(row.title).slice('Poikkeusaukioloajat: '.length)))];
+  const direct=names.filter(name=>mentionsBranch(message,name));
+  if(direct.length>1)return null;
+  let selectedName=direct[0]||'';
+  if(!selectedName){
+    for(const turn of [...recent].reverse()){
+      const question=String(turn?.question||'');
+      const answer=String(turn?.answer||'');
+      if(!hoursContext.test(question+' '+answer))continue;
+      const named=names.filter(name=>mentionsBranch(question,name) ||
+        normalizePlace(answer).startsWith(normalizePlace(name)+' '));
+      if(named.length===1){selectedName=named[0];break;}
+      if(named.length>1)return null;
+    }
+  }
+  if(!selectedName)return null;
+  const matching=candidates.filter(row=>String(row.title)==='Poikkeusaukioloajat: '+selectedName);
+  const values=new Set(matching.map(row=>norm(String(row.answer).slice(date.length+2))));
+  // Multiple published, conflicting exception times must never select a
+  // random record. Leave the normal human-escalation path available.
+  if(values.size!==1)return null;
+  const hours=[...values][0];
   if(hours!=='suljettu'&&!/^\d\d:\d\d - \d\d:\d\d$/.test(hours))return null;
-  const name=row.title.slice('Poikkeusaukioloajat: '.length);
-  const answer=lang==='en'?name+': On '+date+', '+(hours==='suljettu'?'closed.':'open '+hours+'.'):
-    lang==='sv'?name+': '+date+' är butiken '+(hours==='suljettu'?'stängd.':'öppen '+hours+'.'):
-      name+': '+date+' '+(hours==='suljettu'?'myymälä on suljettu.':'auki '+hours+'.');
+  const answer=lang==='en'?selectedName+': On '+date+', '+(hours==='suljettu'?'closed.':'open '+hours+'.'):
+    lang==='sv'?selectedName+': '+date+' är butiken '+(hours==='suljettu'?'stängd.':'öppen '+hours+'.'):
+      selectedName+': '+date+' '+(hours==='suljettu'?'myymälä on suljettu.':'auki '+hours+'.');
   return {answer,handoff:false,confidence:0.98,intent:'Aukioloajat',
-    sourceIds:[row.id].filter(Boolean),selected:[row]};
+    sourceIds:[...new Set(matching.map(row=>row.id).filter(Boolean))],selected:matching};
 }
