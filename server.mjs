@@ -18,6 +18,7 @@ import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
 import { resolveBranchOpeningHours } from './branch-hours.mjs';
 import {answerBranchException,exceptionQueryDate} from './branch-exceptions.mjs';
 import {faqParaphraseEvidence} from './faq-paraphrase-evidence.mjs';
+import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
 import {storeAvailabilityAnswer} from './store-availability.mjs';
 import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentAsPage, importCoverage } from './web-document-import.mjs';
 import {autoRefreshEligible,acceptedRefreshCandidate} from './website-refresh-policy.mjs';
@@ -6317,7 +6318,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
 function importedKnowledgeJunk(value) {
   const raw = cleanKnowledgeText(value);
   const text = normalizeSearchText(raw);
-  if (!text) return true;
+  if (!text || containsKnowledgeInstructionAttack(raw)) return true;
   // Never let navigation, widgets, product-card chrome or source-code fragments
   // become customer knowledge. These strings are common on retailer/CMS pages.
   if (/(cookie|evasteaset|privacy policy|tietosuojaseloste|terms of service|kayttoehdot|copyright|kaikki oikeudet pidatetaan|hyvaksy evaste|all rights reserved|localstorage|sessionstorage|queryselector|addeventlistener|json stringify|json parse|supported includes)/.test(text)) return true;
