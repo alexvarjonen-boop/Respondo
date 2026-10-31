@@ -16,6 +16,7 @@ import { verifiedIndustryServiceAnswer } from './industry-service-intelligence.m
 import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion, isExplicitVerifiedTradeQuestion, resolveIndustryServiceFollowup, canonicalProfessionalServiceQuestion } from './industry-service-engine.mjs';
 import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
 import { resolveBranchOpeningHours } from './branch-hours.mjs';
+import {answerBranchException,exceptionQueryDate} from './branch-exceptions.mjs';
 import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentAsPage, importCoverage } from './web-document-import.mjs';
 import express from 'express';
 import path from 'path';
@@ -7497,6 +7498,8 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     }
   }
 
+  const dateException=answerBranchException({rows,message:cleanMessage,history,lang:responseLang});
+  if(dateException)return dateException;
   const branchHours=resolveBranchOpeningHours({
     rows,message:cleanMessage,history,lang:responseLang,
     isHoursQuestion:queryTopic(cleanMessage)==='hours' ||
@@ -7523,6 +7526,16 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
       ? detectConversationLanguage(previous.question,responseLang)
       : responseLang;
     const scoped=directOpeningHoursAnswer(branchHours.rows,scopedQuestion,scopedLang);
+    // A normal Monday timetable is not verified proof of opening hours on a
+    // national holiday. If no dated exception is published, disclose that.
+    if(exceptionQueryDate(cleanMessage)){
+      const note=scopedLang==='en'
+        ? 'Special opening hours for the requested date could not be verified. Please check directly with this store.'
+        :scopedLang==='sv'
+          ? 'Avvikande öppettider för det angivna datumet kunde inte bekräftas. Kontrollera med butiken.'
+          : 'Päivän poikkeusaukioloaikaa ei voitu varmistaa. Tarkista asia suoraan myymälästä.';
+      return {answer:branchHours.branch+': '+note,handoff:false,confidence:0.2,intent:'Aukioloajat',sourceIds:[],selected:[]};
+    }
     if(scoped) return {...scoped,answer:branchHours.branch+': '+scoped.answer};
     const unavailable=responseLang==='en'
       ? 'Opening hours for this location could not be verified from the published information.'
