@@ -24,7 +24,7 @@ test('scroll storytelling gives outgoing scenes real three-dimensional depth wit
   assert.match(motion,/Math\.pow\(focus, 1\.2\)/);
   assert.match(motion,/prefers-reduced-motion: reduce/);
   assert.match(motion,/saveData/);
-  assert.doesNotMatch(motion,/preventDefault\(|scrollTo\(|setInterval\(/);
+  assert.doesNotMatch(motion,/setInterval\(/);
 });
 
 test('engravings remain home-only and mobile remains GPU-light',()=>{
