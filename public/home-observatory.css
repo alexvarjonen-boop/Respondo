@@ -17,7 +17,7 @@
 #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced{
   /* 10 purposeful chapters at a comfortable, one-swipe-per-chapter cadence.
      Not the former 10 full viewport heights that made the tour feel endless. */
-  height:calc(100svh + 4680px)!important;
+  height:calc(100svh + 7200px)!important;
 }
 #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-stage{
   isolation:isolate;
