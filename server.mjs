@@ -6033,7 +6033,7 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   const seedPathNormalized=normalizeSearchText(seedPath);
   const locationFamilyMatch=seedPath.match(/\/(parturit|barbers?|salons?|stores?|locations?|myymalat|myymälät|tavaratalot|toimipisteet)\//i);
   const locationFamilySegment=locationFamilyMatch ? String(locationFamilyMatch[1]||'').toLowerCase() : '';
-  const locationDetailSeed=Boolean(locationFamilySegment && seedPath.split('/').filter(Boolean).length>=3);
+  const locationDetailSeed=Boolean(locationFamilySegment && seedPath.split('/').filter(Boolean).length>=2);
   const pages = [];
   const queued = new Set();
   const queue = [];
