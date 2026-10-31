@@ -195,6 +195,10 @@
       .product-description{font-size:12px;line-height:1.4;color:#62626b;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
       .product-price{font-size:14px;font-weight:800;margin-top:1px}
       .product-open{font-size:11px;font-weight:750;color:#4e4e59}
+      .branch-choices{display:flex;gap:8px;flex-wrap:wrap;align-self:stretch;max-height:180px;overflow-y:auto;min-width:0;padding:4px 0}
+      .branch-choices button{appearance:none;border:1px solid #c5d2e1;background:#fff;color:#162b48;border-radius:12px;padding:10px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;min-height:42px}
+      .branch-choices button:hover{background:#eef5ff;border-color:#7198c9}
+      .branch-choices button:focus-visible{outline:3px solid #3484df;outline-offset:2px}
       .actions{display:flex;gap:7px;flex-wrap:wrap;align-self:flex-start;max-width:92%}
       .actions a,.actions button{display:inline-flex;align-items:center;gap:6px;border:1px solid #d6d6da;background:#fff;color:#111113;text-decoration:none;border-radius:10px;padding:9px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
       .leadbox{align-self:stretch;background:#fff;border:1px solid #dedee2;border-radius:16px;padding:13px;display:grid;gap:8px}
@@ -385,6 +389,29 @@
       wrap.appendChild(a);
     });
 
+    chat.appendChild(wrap);
+  }
+
+  function renderBranchChoices(items = []) {
+    const names=(Array.isArray(items)?items:[]).filter(name=>
+      typeof name==='string' && name.length>=2 && name.length<=65
+    ).slice(0,40);
+    if(!names.length)return;
+    const wrap=document.createElement('div');
+    wrap.className='branch-choices';
+    wrap.setAttribute('role','group');
+    wrap.setAttribute('aria-label',t('Valitse toimipiste','Select a location'));
+    for(const name of names){
+      const button=document.createElement('button');
+      button.type='button';
+      button.textContent=name;
+      button.addEventListener('click',()=>{
+        if(button.disabled)return;
+        wrap.querySelectorAll('button').forEach(b=>{b.disabled=true;});
+        sendMessage(name);
+      });
+      wrap.appendChild(button);
+    }
     chat.appendChild(wrap);
   }
 
@@ -807,6 +834,7 @@
       }
       const hasProducts=renderProducts(data.products || []);
       renderActions((data.actions || []).filter((action)=>!hasProducts || action?.type!=='product'), message);
+      renderBranchChoices(data.branchChoices || []);
       if ((data.canLeaveContact || data.handoff) && !data.humanTakeover) showLeadForm(message);
       if (data.humanTakeover) {
         status.textContent = t('Asiakaspalvelija mukana', 'Human agent joined');
