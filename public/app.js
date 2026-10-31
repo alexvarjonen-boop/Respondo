@@ -6,7 +6,7 @@ import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=2
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-pages.mjs?v=20261016-intents-v1';
 import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs?v=20261016-gsc-en-fi-ecommerce-v1';
-import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS } from './features-data.js?v=20261008-features-v2';
+import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS, featureAvailableForPublicPlan, publicPlanFeatureCount } from './features-data.js?v=20261031-plan-scoped-v1';
 import { appleHomeMarkup } from './apple-home.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10-polish-v11-hero-clarity-v17-hero-try-bot-v32-chat-navigation-note-v34';
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2-pricing-20261014-ape-v1-annual-120-v1-legal-setup-20261029-v1';
@@ -2682,6 +2682,7 @@ function pricingSection() {
         <li><b>${seats} ${appText('asiakaspalvelijapaikkaa','kundserviceplatser','support-agent seats')}</b></li>
       </ul>
       <div class="price-actions">
+        <a class="pricing-feature-link" href="/ominaisuudet?plan=${tier.toLowerCase()}&amp;lang=${currentLang()}" aria-label="${esc(appText('Katso '+tier+'-paketin ominaisuudet','Se funktionerna i '+tier,'See '+tier+' features'))}">${appText('Katso ominaisuudet','Se funktioner','See features')} <span aria-hidden="true">↗</span></a>
         <a class="btn price-btn pricing-select-btn" href="/tilaus?plan=${code}_monthly&amp;lang=${currentLang()}">${appText('Valitse','Välj','Choose')} ${tier} <span aria-hidden="true">→</span></a>
       </div>
     </article>`;
@@ -2971,15 +2972,30 @@ function trustPortalScene() {
 
 function featuresPage() {
   const lang = currentLang();
+  // Pricing CTAs carry a PUBLIC plan name, never the internal Stripe tier.
+  const requestedPlan = new URLSearchParams(location.search).get('plan');
+  const plan = ['advanced','premium','enterprise'].includes(requestedPlan) ? requestedPlan : '';
+  const planTitle = plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : '';
+  const displayCount = plan ? publicPlanFeatureCount(plan) : FEATURE_COUNT;
+  const signupTier = {advanced:'basic',premium:'advanced',enterprise:'business'}[plan] || '';
+  const signupHref = plan ? '/tilaus?plan='+signupTier+'_monthly&amp;lang='+lang : '/tilaus?lang='+lang;
+  const planIntro = plan === 'advanced'
+    ? appText('Advanced sisältää 2 asiakaspalvelijapaikkaa, verkkosivujen tietojen tuonnin ja Respondon oman ajanvarauksen. Google Calendar -synkronointi ja tarjouslaskuri eivät kuulu tähän pakettiin.','Advanced innehåller 2 kundserviceplatser, webbplatsimport och Respondos egen bokning. Google Kalender-synkronisering och offertkalkylatorn ingår inte.','Advanced includes 2 support-agent seats, website import and native bookings. Google Calendar sync and the quote calculator are not included.')
+    : plan === 'premium'
+      ? appText('Premium sisältää Advanced-ominaisuudet, 10 asiakaspalvelijapaikkaa ja Google Calendar -synkronoinnin. Yritystason tarjouslaskuri ja Stripe-maksulinkit eivät kuulu tähän pakettiin.','Premium innehåller Advanced-funktionerna, 10 kundserviceplatser och Google Kalender. Offertkalkylatorn och Stripe-betalningslänkar ingår inte.','Premium includes Advanced features, 10 support-agent seats and Google Calendar sync. The Enterprise quote calculator and Stripe payment links are not included.')
+      : plan === 'enterprise'
+        ? appText('Enterprise sisältää kaikkien alempien pakettien ominaisuudet, 20 asiakaspalvelijapaikkaa, tarjouslaskurin ja laajemmat integraatiot.','Enterprise innehåller funktionerna i de lägre nivåerna, 20 kundserviceplatser, offertkalkylator och fler integrationer.','Enterprise includes all lower-tier features, 20 support-agent seats, the quote calculator and broader integrations.')
+        : appText('Ominaisuuksien saatavuus riippuu tilauspaketista ja yrityksen tekemistä asetuksista. Advanced: 2 asiakaspalvelijapaikkaa, tuonti ja oma ajanvaraus. Premium: 10 paikkaa ja Google Calendar. Enterprise: 20 paikkaa ja laajemmat automaatiot.','Tillgängligheten beror på abonnemang och företagets inställningar. Advanced: 2 platser, import och egna bokningar. Premium: 10 platser och Google Kalender. Enterprise: 20 platser och avancerad automatisering.','Availability depends on the subscription and configuration. Advanced: 2 seats, website import and native bookings. Premium: 10 seats and Google Calendar. Enterprise: 20 seats and advanced automations.');
   const pick = (triple) => triple[lang === 'sv' ? 1 : lang === 'en' ? 2 : 0];
   let featureNo = 0;
   const restGroups = FEATURE_GROUPS.map((group) => ({
     group,
-    items: group.items.map((item) => {
+    items: group.items.flatMap((item,index) => {
+      if(plan && !featureAvailableForPublicPlan(plan,group.key,index)) return [];
       featureNo += 1;
-      return { no: featureNo, item, group };
+      return [{ no: featureNo, item, group }];
     })
-  }));
+  })).filter(({items})=>items.length > 0);
   const featureCard = ({no,item}) => `<article class="feature-item">
     <span class="feature-item-number">${String(no).padStart(3,'0')}</span>
     <div><b>${esc(pick(item))}</b></div>
@@ -3006,15 +3022,16 @@ function featuresPage() {
     <main>
       <section class="features-hero">
         <div class="container features-hero-inner">
-          <div class="features-hero-badge">${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</div>
-          <h1>${appText(`${FEATURE_COUNT} ominaisuutta.<br><em>Yksi Respondo.</em>`,`${FEATURE_COUNT} funktioner.<br><em>En Respondo.</em>`,`${FEATURE_COUNT} features.<br><em>One Respondo.</em>`)}</h1>
-          <p>${appText('Asiakaspalvelu, tietopohja, verkkosivujen tietojen tuonti, liidit, ajanvaraus ja live-asiakaspalvelu samassa palvelussa.','Kundservice, kunskapsbas, webbplatsimport, leads, bokning och mänsklig kundservice i samma tjänst.','Customer service, knowledge base, website import, leads, bookings and human takeover in one service.')}</p>
+          <div class="features-hero-badge">${displayCount} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</div>
+          <h1>${plan ? esc(planTitle)+' — '+appText(displayCount+' ominaisuutta',displayCount+' funktioner',displayCount+' features') : appText(`${displayCount} ominaisuutta.<br><em>Yksi Respondo.</em>`,`${displayCount} funktioner.<br><em>En Respondo.</em>`,`${displayCount} features.<br><em>One Respondo.</em>`)}</h1>
+          <p>${plan ? esc(planIntro) : appText('Asiakaspalvelu, tietopohja, verkkosivujen tietojen tuonti, liidit, ajanvaraus ja live-asiakaspalvelu samassa palvelussa.','Kundservice, kunskapsbas, webbplatsimport, leads, bokning och mänsklig kundservice i samma tjänst.','Customer service, knowledge base, website import, leads, bookings and human takeover in one service.')}</p>
           <div class="features-hero-actions">
-            <a class="btn ink" href="/tilaus?lang=${lang}">${appText('Kokeile ilmaiseksi','Prova gratis','Start trial')}</a>
+            <a class="btn ink" href="${signupHref}">${appText('Kokeile ilmaiseksi','Prova gratis','Start trial')}</a>
             <a class="btn ghost" href="/assistant?lang=${lang}">${appText('Kokeile bottia','Testa botten','Try the bot')}</a>
+            ${plan ? `<a class="features-back-to-pricing" href="/hinnat?lang=${lang}">${appText('Takaisin paketteihin','Tillbaka till abonnemang','Back to plans')}</a>` : ''}
           </div>
           <div class="features-hero-stats">
-            <div><b>${FEATURE_COUNT}</b><span>${appText('toimintoa','funktioner','features')}</span></div>
+            <div><b>${displayCount}</b><span>${appText('toimintoa','funktioner','features')}</span></div>
             <div class="languages-stat"><b>3</b><span>${appText('kieltä','språk','languages')}</span></div>
             <div><b>24/7</b><span>${appText('asiakaspalvelu','kundservice','customer service')}</span></div>
           </div>
@@ -3028,7 +3045,7 @@ function featuresPage() {
             <span>10 ${appText('tärkeintä','viktigaste','essentials')}</span>
           </div>
           <div class="features-top10-grid">${topTen}</div>
-          <p class="feature-plan-note">${appText('Ominaisuuksien saatavuus riippuu tilauspaketista ja yrityksen tekemistä asetuksista. Advanced: 2 asiakaspalvelijapaikkaa, tuonti ja oma ajanvaraus. Premium: 10 paikkaa ja Google Calendar. Enterprise: 20 paikkaa ja laajemmat automaatiot.','Tillgängligheten beror på abonnemang och företagets inställningar. Advanced: 2 platser, import och egna bokningar. Premium: 10 platser och Google Kalender. Enterprise: 20 platser och avancerad automatisering.','Availability depends on the subscription and configuration. Advanced: 2 seats, website import and native bookings. Premium: 10 seats and Google Calendar. Enterprise: 20 seats and advanced automations.')}</p>
+          <p class="feature-plan-note">${esc(planIntro)}</p>
         </div>
       </section>
       <section class="features-directory">
@@ -3038,16 +3055,16 @@ function featuresPage() {
               <small>${appText('LOPUT OMINAISUUDET','RESTEN AV FUNKTIONERNA','ALL OTHER FEATURES')}</small>
               <h2>${appText('Avaa kategoria, kun haluat nähdä lisää.','Öppna en kategori när du vill se mer.','Open a category when you want to see more.')}</h2>
             </div>
-            <span>${FEATURE_COUNT} ${appText('yksityiskohtaista ominaisuutta','detaljerade funktioner','detailed features')}</span>
+            <span>${displayCount} ${appText('yksityiskohtaista ominaisuutta','detaljerade funktioner','detailed features')}</span>
           </div>
           <div class="features-directory-grid">${groups}</div>
         </div>
       </section>
       <section class="features-final"><div class="container"><div class="features-final-card">
-        <div><small>${FEATURE_COUNT} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</small>
+        <div><small>${displayCount} ${appText('OMINAISUUTTA','FUNKTIONER','FEATURES')}</small>
         <h2>${appText('Kaikki yhdessä palvelussa.','Allt i en tjänst.','Everything in one service.')}</h2>
         <p>${appText('Kokeile Respondoa 3 päivää ja näe, miten se toimii omilla yritystiedoillasi.','Prova Respondo i 3 dagar och se hur det fungerar med ditt företags egna uppgifter.','Try Respondo for 3 days and see how it works with your own business information.')}</p></div>
-        <a class="btn ink" href="/tilaus?lang=${lang}">${appText('Aloita 3 päivän kokeilu','Starta 3 dagars provperiod','Start 3-day trial')} <span>→</span></a>
+        <a class="btn ink" href="${signupHref}">${appText('Aloita 3 päivän kokeilu','Starta 3 dagars provperiod','Start 3-day trial')} <span>→</span></a>
       </div></div></section>
     </main>${footer()}
   </div>`;
