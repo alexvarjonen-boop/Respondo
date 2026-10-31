@@ -6160,25 +6160,47 @@ async function route() {
           bubble.classList.remove('preview-thinking');
           bubble.textContent=result.answer||appText('En löydä tähän vielä varmaa vastausta.','Jag hittar inget säkert svar på detta ännu.','I cannot find a reliable answer yet.');
           if(Array.isArray(result.branchChoices) && result.branchChoices.length){
+            const names=result.branchChoices.filter(name=>typeof name==='string' && name.length>=2 && name.length<=65).slice(0,1000);
             const wrap=document.createElement('div');
             wrap.className='preview-branch-choices';
             wrap.setAttribute('role','group');
             wrap.setAttribute('aria-label',appText('Valitse toimipiste','Välj butik','Choose a location'));
-            for(const name of result.branchChoices.slice(0,40)){
-              if(typeof name!=='string' || name.length<2 || name.length>65)continue;
-              const button=document.createElement('button');
-              button.type='button';button.textContent=name;
-              button.addEventListener('click',()=>{
-                wrap.querySelectorAll('button').forEach(b=>{b.disabled=true;});
-                const form=document.querySelector('#previewForm');
-                const questionInput=form?.elements?.question;
-                if(questionInput && form){
-                  questionInput.value=name;
-                  form.requestSubmit();
-                }
-              });
-              wrap.appendChild(button);
+            const list=document.createElement('div');
+            list.className='preview-branch-list';
+            const draw=(value='')=>{
+              list.replaceChildren();
+              const needle=String(value).toLocaleLowerCase();
+              const filtered=names.filter(name=>name.toLocaleLowerCase().includes(needle));
+              for(const name of filtered.slice(0,18)){
+                const button=document.createElement('button');
+                button.type='button';button.textContent=name;
+                button.addEventListener('click',()=>{
+                  wrap.querySelectorAll('button').forEach(b=>{b.disabled=true;});
+                  const form=document.querySelector('#previewForm');
+                  const questionInput=form?.elements?.question;
+                  if(questionInput && form){
+                    questionInput.value=name;
+                    form.requestSubmit();
+                  }
+                });
+                list.appendChild(button);
+              }
+              if(!filtered.length){
+                const empty=document.createElement('small');
+                empty.textContent=appText('Toimipistettä ei löytynyt','Ingen butik hittades','No matching location');
+                list.appendChild(empty);
+              }
+            };
+            if(names.length>12){
+              const search=document.createElement('input');
+              search.type='search';search.autocomplete='off';
+              search.placeholder=appText('Hae toimipistettä','Sök butik','Search locations');
+              search.setAttribute('aria-label',search.placeholder);
+              search.addEventListener('input',()=>draw(search.value));
+              wrap.appendChild(search);
             }
+            wrap.appendChild(list);
+            draw();
             bubble.appendChild(wrap);
           }
           const hasProducts=appendPreviewProductCards(bubble,result.products,currentLang());
