@@ -185,10 +185,11 @@ export function structuredBusinessFacts(html,pageUrl){
       const ts=types(node);
       const business=ts.some(t=>BUSINESS_TYPES.has(t)||t==='organization'||t==='corporation');
       if(business){
-        // Node URL is the official location link, not an arbitrary third-party
-        // reference. External links cannot become evidence from this tenant.
+        // Ignore third-party business nodes entirely. A retailer may embed
+        // structured data describing a supplier, marketplace or partner.
         const official=validURL(node.url,pageUrl);
-        const source=official && new URL(official).hostname.toLowerCase()===pageHost?official:pageUrl;
+        if(official && new URL(official).hostname.toLowerCase()!==pageHost)return;
+        const source=official||pageUrl;
         const branch=branchName(node,pageUrl);
         const schedule=scheduleFromSpecification(node.openingHoursSpecification)
           || scheduleFromString(node.openingHours);
@@ -196,7 +197,12 @@ export function structuredBusinessFacts(html,pageUrl){
           schedule,source,['aukioloajat','opening hours','öppettider',...(branch?[branch]:[])]);
         // areaServed describes a service area, not the business's street address.
         const areas=serviceLocations(node.areaServed||node.serviceArea);
-        if(areas.length)push('Toimialue','Toimialue',areas.join(', '),source,
+        const serviceAreas=[];
+        for(const area of areas){
+          if(([...serviceAreas,area].join(', ')).length>290)break;
+          serviceAreas.push(area);
+        }
+        if(serviceAreas.length)push('Toimialue','Toimialue',serviceAreas.join(', '),source,
           ['toimialue','palvelualue','service area','serviceområde']);
         const booking=bookingURL(node,pageUrl);
         if(booking)push('Ajanvaraus','Ajanvarauslinkki',booking,source,
