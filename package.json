@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server-entry.mjs",
     "dev": "NODE_ENV=development node --watch server.mjs",
-    "check": "node --check server.mjs && node --check public/app.js && node --check public/widget.js && node --check website-knowledge.mjs && node --check firecrawl-fallback.mjs && node --check service-semantics.mjs && node --check public/import-email.mjs && node --check lead-qualification.mjs && node --check lead-webhook.mjs && node --check lead-analytics.mjs && node --check lead-service.mjs && node --check lead-capture.mjs && node --check lead-repository.mjs && node --check lead-operations.mjs && node --check lead-crm.mjs && node --check scripts/migrate-qualified-leads.mjs && node --check lead-crm-queue.mjs && node --check lead-crm-providers.mjs && node --check scripts/process-crm-outbox.mjs && node --check scripts/benchmark-answer-quality.mjs",
+    "check": "node --check server.mjs && node --check public/app.js && node --check public/widget.js && node --check website-knowledge.mjs && node --check firecrawl-fallback.mjs && node --check service-semantics.mjs && node --check public/import-email.mjs && node --check lead-qualification.mjs && node --check lead-webhook.mjs && node --check lead-analytics.mjs && node --check lead-service.mjs && node --check lead-capture.mjs && node --check lead-repository.mjs && node --check lead-operations.mjs && node --check lead-crm.mjs && node --check scripts/migrate-qualified-leads.mjs && node --check lead-crm-queue.mjs && node --check lead-crm-providers.mjs && node --check scripts/process-crm-outbox.mjs && node --check scripts/benchmark-answer-quality.mjs && node --check web-document-import.mjs",
     "test": "NODE_ENV=test node --test tests/*.test.mjs && npm run benchmark:answers",
     "audit:live": "NODE_ENV=test node scripts/importer-live-audit.mjs",
     "migrate:leads": "node scripts/migrate-qualified-leads.mjs",
@@ -23,6 +23,8 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3",
-    "stripe": "^22.6.2"
+    "stripe": "^22.6.2",
+    "pdf-parse": "2.4.5",
+    "tesseract.js": "7.0.0"
   }
 }
