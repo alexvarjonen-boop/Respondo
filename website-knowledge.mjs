@@ -1,6 +1,7 @@
 import {extractBranchWeeklyHours} from './branch-hours-import.mjs';
 import {structuredBusinessFacts} from './structured-business-facts.mjs';
 import {branchExceptionFacts} from './branch-exceptions.mjs';
+import {extractStoreAvailability} from './store-availability.mjs';
 // Conservative, dependency-free business fact extraction. Page headings supply
 // context only; they are never stored as answers. No remote code is executed.
 const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -631,6 +632,7 @@ export function extractBusinessDocument(html, url) {
   const servicePairs = structuredServicePairs(html,url);
   const specPairs = semanticDefinitionSpecifications(html,url);
   const structuredFacts = structuredBusinessFacts(html,url);
+  const storeAvailabilityFacts = extractStoreAvailability(html,url);
   const blocks = [], links = [];
   const stack = [];
   let buffer = '', heading = '', suppressedHeading = false;
@@ -725,7 +727,7 @@ export function extractBusinessDocument(html, url) {
     if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
   }
   flush();
-  return {url, blocks, links, products, faqPairs, servicePairs, specPairs, structuredFacts, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
+  return {url, blocks, links, products, faqPairs, servicePairs, specPairs, structuredFacts, storeAvailabilityFacts, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
 }
 
 export function businessFactKind(text, context = '') {
@@ -997,6 +999,14 @@ export function essentialWebsiteCandidates(bundle) {
     if(doc.contactForm && httpUrl(doc.url)) contactLinks.push({url:doc.url,sourceUrl:doc.url,score:30,hasForm:true});
     const docProducts=Array.isArray(doc.products)?doc.products:[];
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
+    for(const availability of (Array.isArray(doc.storeAvailabilityFacts)?doc.storeAvailabilityFacts:[])){
+      const url=httpUrl(availability.sourceUrl,doc.url);
+      if(!url||new URL(url).hostname!==parsedDocUrl.hostname)continue;
+      const key='store-stock|'+norm(availability.title)+'|'+url;
+      if(seen.has(key))continue;
+      seen.add(key);
+      out.unshift({...availability,sourceUrl:url});
+    }
     // Schema.org JSON-LD can publish hours, service regions and booking
     // destinations even when the site's visible content is hydrated later.
     // Unlike simple text deduplication, distinct store URLs must survive with
