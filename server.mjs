@@ -15,6 +15,7 @@ import { interpretCustomerQuestion } from './query-typos.mjs';
 import { verifiedIndustryServiceAnswer } from './industry-service-intelligence.mjs';
 import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion, isExplicitVerifiedTradeQuestion, resolveIndustryServiceFollowup, canonicalProfessionalServiceQuestion } from './industry-service-engine.mjs';
 import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
+import { resolveBranchOpeningHours } from './branch-hours.mjs';
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -7442,6 +7443,22 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     }
   }
 
+  const branchHours=resolveBranchOpeningHours({
+    rows,message:cleanMessage,history,lang:responseLang,
+    isHoursQuestion:queryTopic(cleanMessage)==='hours',
+    parseHours:openingHoursSegments,usableRow:usableWebsiteRow,
+  });
+  if(branchHours){
+    if(!branchHours.branch) return branchHours; // Ask the visitor to choose.
+    const scoped=directOpeningHoursAnswer(branchHours.rows,branchHours.query,responseLang);
+    if(scoped) return {...scoped,answer:branchHours.branch+': '+scoped.answer};
+    const unavailable=responseLang==='en'
+      ? 'Opening hours for this location could not be verified from the published information.'
+      :responseLang==='sv'
+        ? 'Öppettiderna för den här butiken kunde inte bekräftas utifrån publicerade uppgifter.'
+        : 'Tämän toimipisteen aukioloaikoja ei voitu varmistaa julkaistuista tiedoista.';
+    return {answer:branchHours.branch+': '+unavailable,handoff:false,confidence:0.2,intent:'Aukioloajat',sourceIds:[],selected:[]};
+  }
   const openingHoursResult=directOpeningHoursAnswer(rows,cleanMessage,responseLang);
   if(openingHoursResult) return openingHoursResult;
 
@@ -13677,6 +13694,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       intent: result.intent,
       actions,
       products:await hydratedProductCards(result),
+      branchChoices:result.branchChoices||[],
       canLeaveContact: Boolean(handoff),
       language:detectedLang,
     });
@@ -14279,6 +14297,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       verified: !handoff && Array.isArray(result.sourceIds) && result.sourceIds.length > 0,
       actions,
       products:widgetSubscribe ? [] : await hydratedProductCards(result),
+      branchChoices:result.branchChoices||[],
       canLeaveContact: handoff,
     });
   } catch (e) {
