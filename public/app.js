@@ -6159,6 +6159,28 @@ async function route() {
         if(bubble){
           bubble.classList.remove('preview-thinking');
           bubble.textContent=result.answer||appText('En löydä tähän vielä varmaa vastausta.','Jag hittar inget säkert svar på detta ännu.','I cannot find a reliable answer yet.');
+          if(Array.isArray(result.branchChoices) && result.branchChoices.length){
+            const wrap=document.createElement('div');
+            wrap.className='preview-branch-choices';
+            wrap.setAttribute('role','group');
+            wrap.setAttribute('aria-label',appText('Valitse toimipiste','Välj butik','Choose a location'));
+            for(const name of result.branchChoices.slice(0,40)){
+              if(typeof name!=='string' || name.length<2 || name.length>65)continue;
+              const button=document.createElement('button');
+              button.type='button';button.textContent=name;
+              button.addEventListener('click',()=>{
+                wrap.querySelectorAll('button').forEach(b=>{b.disabled=true;});
+                const form=document.querySelector('#previewForm');
+                const questionInput=form?.elements?.question;
+                if(questionInput && form){
+                  questionInput.value=name;
+                  form.requestSubmit();
+                }
+              });
+              wrap.appendChild(button);
+            }
+            bubble.appendChild(wrap);
+          }
           const hasProducts=appendPreviewProductCards(bubble,result.products,currentLang());
           const actions=previewWithOwnerSubscribe(result.actions,question,currentLang()).filter(action=>action?.url&&/^(?:https?:\/\/|tel:|mailto:)/i.test(action.url)&&(!hasProducts||action.type!=='product'));
           if(actions.length){
