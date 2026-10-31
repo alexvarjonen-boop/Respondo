@@ -82,9 +82,9 @@ function previousBranch(history, names) {
   for(let i=recent.length-1;i>=0;i--){
     const q=String(recent[i]?.question||'');
     const answer=String(recent[i]?.answer||'');
-    if(!/(?:auki|opening|hours|oppettid|suljettu|closed|stangt)/i.test(norm(answer+q))) continue;
+    const hoursContext=/(?:auki|opening|hours|oppettid|suljettu|closed|stangt|maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mandag|tisdag|onsdag|torsdag|fredag|lordag|sondag)/i.test(norm(answer+q));
     const found=names.filter(name=>namedInQuestion(q,name));
-    if(found.length===1)return found[0];
+    if(found.length===1 && (hoursContext || norm(answer).startsWith(norm(found[0])+' ')))return found[0];
   }
   return '';
 }
@@ -136,6 +136,14 @@ export function resolveBranchOpeningHours({rows,message,history=[],lang='fi',isH
     const msg=language==='en'?'The published opening hours conflict for this location. Please check with the store.'
       :language==='sv'?'De publicerade öppettiderna för den här butiken är motstridiga. Kontrollera med butiken.'
       :'Tämän toimipisteen julkaistuissa aukioloajoissa on ristiriita. Tarkista ajat suoraan myymälästä.';
+    return {answer:selected.name+': '+msg,handoff:false,confidence:0.2,intent:'Aukioloajat',sourceIds:[],selected:[]};
+  }
+  if(!parsed.length){
+    const msg=language==='en'
+      ? 'Opening hours could not be verified from the published information for this location.'
+      :language==='sv'
+        ? 'Öppettider kunde inte bekräftas från publicerad information om den här butiken.'
+        :'Tämän toimipisteen aukioloaikoja ei voitu varmistaa julkaistuista tiedoista.';
     return {answer:selected.name+': '+msg,handoff:false,confidence:0.2,intent:'Aukioloajat',sourceIds:[],selected:[]};
   }
   // The host application's existing day/weekend parser remains authoritative
