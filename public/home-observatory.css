@@ -17,7 +17,7 @@
 #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced{
   /* 10 purposeful chapters at a comfortable, one-swipe-per-chapter cadence.
      Not the former 10 full viewport heights that made the tour feel endless. */
-  height:calc(100svh + 7200px)!important;
+  height:calc(100svh + 3780px)!important;
 }
 #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-stage{
   isolation:isolate;
@@ -857,24 +857,4 @@
 }
 @media(prefers-reduced-motion:reduce){
   #app .apple-home-page .rs-first-order-link{transition:none}
-}
-
-/* Desktop one-wheel-one-chapter: compositor transition instead of animating
-   the entire 7200px sticky section via native smooth-scroll frames. */
-@media (min-width:1100px) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
-  #app .apple-home-page .rs-enhanced .rs-studio-orbit-art {
-    transition:transform .32s cubic-bezier(.22,.75,.25,1)!important;
-  }
-  #app .apple-home-page .rs-enhanced .rs-spiral-card {
-    transition:transform .32s cubic-bezier(.22,.75,.25,1), opacity .23s ease!important;
-  }
-  #app .apple-home-page .rs-enhanced .rs-studio-grid,
-  #app .apple-home-page .rs-enhanced .rs-studio-haze,
-  #app .apple-home-page .rs-enhanced .rs-studio-sweep,
-  #app .apple-home-page .rs-enhanced .rs-studio-card-art {
-    display:none!important;
-  }
-  #app .apple-home-page .rs-enhanced .rs-axis svg {
-    filter:none!important;
-  }
 }
