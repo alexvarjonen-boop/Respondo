@@ -858,3 +858,50 @@
 @media(prefers-reduced-motion:reduce){
   #app .apple-home-page .rs-first-order-link{transition:none}
 }
+
+/* Desktop editorial orbit v5 — simplify the stage like the mobile composition.
+   Keep the pinned native-scroll journey, but give the artwork and typography
+   separate visual zones and remove decorative clutter. */
+@media (min-width:1100px) and (prefers-reduced-motion:no-preference) {
+  #app .apple-home-page .rs-spiral-section.rs-enhanced .rs-spiral-stage{
+    background:radial-gradient(circle at 50% 39%,rgba(47,87,151,.18),transparent 57%),#050914!important;
+  }
+  #app .apple-home-page .rs-spiral-stage::before,
+  #app .apple-home-page .rs-studio-grid,
+  #app .apple-home-page .rs-studio-haze,
+  #app .apple-home-page .rs-studio-sweep,
+  #app .apple-home-page .rs-space-ellipse,
+  #app .apple-home-page .rs-space-horizon,
+  #app .apple-home-page .rs-studio-card-art,
+  #app .apple-home-page .rs-studio-orbit-art::before,
+  #app .apple-home-page .rs-studio-orbit-art::after,
+  #app .apple-home-page .rs-orbit-beacon{display:none!important}
+  #app .apple-home-page .rs-spiral-section.rs-enhanced .rs-studio-orbit-art{
+    top:42%!important;left:50%!important;width:min(44vw,450px)!important;
+  }
+  #app .apple-home-page .rs-spiral-section.rs-enhanced .rs-axis{
+    top:42%!important;left:50%!important;width:clamp(175px,20vw,270px)!important;
+  }
+  #app .apple-home-page .rs-axis svg{filter:none!important}
+  #app .apple-home-page .rs-spiral-section.rs-enhanced .rs-spiral-heading{
+    top:clamp(64px,9vh,105px)!important;left:50%!important;
+    transform:translateX(-50%)!important;width:min(86%,800px)!important;
+    text-align:center!important;
+  }
+  #app .apple-home-page .rs-spiral-heading h1{
+    font-size:clamp(38px,4vw,62px)!important;max-width:760px!important;margin-left:auto!important;margin-right:auto!important;
+  }
+  #app .apple-home-page .rs-hero-description{max-width:600px!important;margin:auto!important}
+  #app .apple-home-page .rs-hero-eyebrow{margin-left:auto!important;margin-right:auto!important}
+  #app .apple-home-page .rs-spiral-section.rs-enhanced .rs-spiral-card,
+  #app .apple-home-page .rs-spiral-section.rs-enhanced .rs-spiral-card:first-child{
+    align-items:center!important;text-align:center!important;
+    justify-content:flex-end!important;
+    padding:90px 12% clamp(67px,8vh,96px)!important;
+  }
+  #app .apple-home-page .rs-spiral-card-kicker{justify-content:center!important}
+  #app .apple-home-page .rs-spiral-card h2{font-size:clamp(30px,3vw,45px)!important;max-width:800px!important}
+  #app .apple-home-page .rs-spiral-card p{font-size:15px!important;max-width:620px!important}
+  #app .apple-home-page .rs-spiral-section .rs-spiral-metric{font-size:clamp(48px,5vw,76px)!important}
+  #app .apple-home-page .rs-spiral-bottom{width:84%!important}
+}
