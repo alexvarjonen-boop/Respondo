@@ -7457,7 +7457,18 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     const scopedQuestion='aukioloajat'+(requestedDays.length
       ? ' '+requestedDays.map(day=>day.aliases[0]).join(' ja ')
       : '');
-    const scoped=directOpeningHoursAnswer(branchHours.rows,scopedQuestion,responseLang);
+    // A button such as "Turku" carries no language signal by itself. Preserve
+    // the language of the question which triggered the branch selector, not
+    // the UI default (which may be English on a Finnish merchant website).
+    const previous=Array.isArray(history)?history.at(-1):null;
+    const previousPrompt=normalizeSearchText(previous?.answer||'');
+    const choosingBranch=/\b(?:minka|vilken|which)\b/.test(previousPrompt)
+      && /(?:toimipiste|butik|location|branch|store)/.test(previousPrompt)
+      && /(?:aukiolo|oppettid|opening|hours)/.test(previousPrompt);
+    const scopedLang=choosingBranch && branchHours.branch
+      ? detectConversationLanguage(previous.question,responseLang)
+      : responseLang;
+    const scoped=directOpeningHoursAnswer(branchHours.rows,scopedQuestion,scopedLang);
     if(scoped) return {...scoped,answer:branchHours.branch+': '+scoped.answer};
     const unavailable=responseLang==='en'
       ? 'Opening hours for this location could not be verified from the published information.'
