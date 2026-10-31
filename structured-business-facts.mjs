@@ -18,12 +18,12 @@ const BUSINESS_TYPES=new Set([
   'childcare','educationalorganization','school','fitnesscenter',
 ]);
 const DAY_KEYS=[
-  ['Mo',['monday','mo','maanantai','måndag','mandag','ma']],
-  ['Tu',['tuesday','tu','tiistai','tisdag','ti']],
-  ['We',['wednesday','we','keskiviikko','onsdag','ke']],
-  ['Th',['thursday','th','torstai','torsdag','to']],
-  ['Fr',['friday','fr','perjantai','fredag','pe']],
-  ['Sa',['saturday','sa','lauantai','lördag','lordag','la']],
+  ['Ma',['monday','mo','maanantai','måndag','mandag','ma']],
+  ['Ti',['tuesday','tu','tiistai','tisdag','ti']],
+  ['Ke',['wednesday','we','keskiviikko','onsdag','ke']],
+  ['To',['thursday','th','torstai','torsdag','to']],
+  ['Pe',['friday','fr','perjantai','fredag','pe']],
+  ['La',['saturday','sa','lauantai','lördag','lordag','la']],
   ['Su',['sunday','su','sunnuntai','söndag']],
 ];
 const DAY_NAME=new Map(DAY_KEYS.flatMap(([day,aliases])=>aliases.map(alias=>[alias,day])));
