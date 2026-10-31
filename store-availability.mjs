@@ -118,7 +118,22 @@ export function storeAvailabilityAnswer(rows,message,history=[],lang='fi'){
   }
   const uniqueProducts=new Set(chosen.map(x=>norm(x.product)));
   const uniqueStores=new Set(chosen.map(x=>norm(x.store)));
-  if(uniqueProducts.size!==1||uniqueStores.size!==1)return null;
+  if(uniqueProducts.size!==1){
+    const productNames=[...new Set(chosen.map(x=>x.product))].slice(0,8);
+    return {
+      answer:(language==='en'?'Which product do you mean? ':
+        language==='sv'?'Vilken produkt menar du? ':'Mitä tuotetta tarkoitat? ')+productNames.join(', '),
+      handoff:false,confidence:1,intent:'Tuotteen valinta',sourceIds:[],selected:[]
+    };
+  }
+  if(uniqueStores.size!==1){
+    const names=[...new Set(chosen.map(x=>x.store))].slice(0,1000);
+    return {
+      answer:language==='en'?'Which store should I check?':
+        language==='sv'?'Vilken butik vill du kontrollera?':'Minkä myymälän saatavuuden haluat tarkistaa?',
+      handoff:false,confidence:1,intent:'Myymäläsaatavuus',sourceIds:[],selected:[],branchChoices:names
+    };
+  }
   const states=new Set(chosen.map(x=>stateOf(x.row)));
   if(states.size!==1||states.has(null)){
     return {
