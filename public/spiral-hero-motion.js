@@ -50,7 +50,7 @@
     wheelGestureUsed = false;
     wheelLastAt = 0;
     wheelDirection = 0;
-    clearTimeout(wheelGestureReset);
+    if (wheelGestureReset) clearTimeout(wheelGestureReset);
   }
   function setup() {
     pendingMount = false;
