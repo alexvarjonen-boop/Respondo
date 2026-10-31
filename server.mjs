@@ -6211,7 +6211,10 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
   if (onProgress) onProgress({scanned:pages.length,total:totalTarget});
 
   while (queue.length && pages.length < maxPages) {
-    if (Date.now() - crawlStartedAt > timeBudgetMs) break;
+    const elapsed=Date.now()-crawlStartedAt;
+    // Reserve a small slice of the scan budget for important price-list PDFs.
+    const reserved=mediaQueue.size ? Math.min(14000,Math.round(timeBudgetMs*0.18)) : 0;
+    if(elapsed>timeBudgetMs-reserved)break;
     const next = queue.shift();
     if (!next || pages.some((x) => x.url === next.url)) continue;
     try {
