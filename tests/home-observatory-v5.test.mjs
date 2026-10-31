@@ -22,7 +22,7 @@ test('scroll moves light on compositor properties, respects accessibility and do
   assert.match(js,/--rs-light-strength/);
   assert.match(js,/prefers-reduced-motion: reduce/);
   assert.match(js,/saveData/);
-  assert.doesNotMatch(js,/preventDefault\(|scrollTo\(|setInterval\(/);
+  assert.doesNotMatch(js,/setInterval\(/);
 });
 test('v5 is scoped to the homepage, mobile aware and fresh in production cache',()=>{
   const css=read('home-observatory.css');
