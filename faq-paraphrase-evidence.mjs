@@ -19,7 +19,7 @@ const families=[
     ]
   },{
     key:'parking',
-    subject:/\b(?:park(?:ing)?|parkingplace|carpark|pysakoi\w*|parkk\w*|bilparkering\w*|parkering\w*)\b/,
+    subject:/\b(?:parking|parkingplace|carpark|pysakoi\w*|parkk\w*|bilparkering\w*|parkering\w*)\b/,
     action:/\b(?:availab\w*|where|is|there|have|can|do|free|cost|located|miss\w*|onko|loyty\w*|saako|voiko|maks\w*|sijaits\w*|finns|har|kan|gratis|var|kost\w*)\b/,
     qualifier:[
       ['free',/\b(?:free|gratis|ilmain\w*|maksuto\w*|avgiftsfri\w*)\b/],
@@ -51,6 +51,14 @@ export function faqParaphraseEvidence(query, publishedQuestion) {
   for(const family of families){
     if(!has(q,family.subject)||!has(title,family.subject)||
        !has(q,family.action)||!has(title,family.action))continue;
+    if(family.key==='pets'){
+      const species=value=>has(value,/\b(?:dogs?|koir\w*|hund\w*)\b/)?'dog':
+        has(value,/\b(?:cats?|kiss\w*|katt\w*)\b/)?'cat':'';
+      const requested=species(q),documented=species(title);
+      // Specific dog/cat rules are not interchangeable; a documented
+      // dog-only rule cannot answer a broad "all pets" question either.
+      if(documented && documented!==requested)continue;
+    }
     // "Can I take my dog on the terrace?" and "Can I take my dog
     // inside?" are different policies. Do not transfer them.
     const inQuery=family.qualifier.filter(([,rx])=>has(q,rx)).map(([label])=>label);
