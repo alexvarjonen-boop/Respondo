@@ -2797,7 +2797,10 @@ function broadProductQuestion(value) {
     || /\bmita\s+(?:kaikkea|kaikkia|tuotteita)\s+(?:teilla\s+on|teilta\s+saa|teilta\s+loytyy|voi\s+ostaa)\b/.test(q)
     || /\bmita\s+tuotteita\s+teilta\s+loytyy\b|\bmillainen\s+tuotevalikoima\b|\bmitka\s+tuotteet\s+teilla\s+on\b|\bkerro\s+(?:tuotteistanne|valikoimastanne)\b/.test(q)
     || /\bwhat\s+(?:all\s+|else\s+)?do\s+you\s+sell\b|\bwhat\s+(?:kinds?\s+of\s+|types?\s+of\s+|all\s+)?products\s+do\s+you\s+sell\b|\bwhat\s+is\s+in\s+your\s+product\s+range\b|\bwhat\s+(?:products|items)\s+(?:are\s+)?(?:available|in\s+your\s+store)\b/.test(q)
-    || /\bvad\s+s[aä]ljer\s+ni\b|\bvad\s+(?:allt|mer)\s+s[aä]ljer\s+ni\b|\bvilka\s+produkter\s+s[aä]ljer\s+ni\b|\bvad\s+har\s+ni\s+(?:for|för)\s+(?:produkter|sortiment)\b|\bvad\s+finns\s+i\s+ert\s+sortiment\b/.test(q);
+    || /\bvad\s+s[aä]ljer\s+ni\b|\bvad\s+(?:allt|mer)\s+s[aä]ljer\s+ni\b|\bvilka\s+produkter\s+s[aä]ljer\s+ni\b|\bvad\s+har\s+ni\s+(?:for|för)\s+(?:produkter|sortiment)\b|\bvad\s+finns\s+i\s+ert\s+sortiment\b/.test(q)
+    || /\b(?:mita|mitas)\s+(?:teilla\s+on\s+myynnissa|teilta\s+voi\s+ostaa|voin\s+ostaa\s+teilta|te\s+myytte)\b|\bmita\s+(?:tuotteita\s+myytte|myytavaa\s+teilla\s+on)\b/.test(q)
+    || /\bwhat\s+(?:can\s+i\s+buy\s+from\s+you|do\s+you\s+(?:carry|stock)|items\s+do\s+you\s+have)\b/.test(q)
+    || /\bvad\s+(?:kan\s+jag\s+kopa\s+hos\s+er|har\s+ni\s+att\s+salja)\b/.test(q);
 }
 function broadProductCategory(product, lang='fi') {
   const text=normalizeSearchText([product?.productType,product?.name].filter(Boolean).join(' '));
