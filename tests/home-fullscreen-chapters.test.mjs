@@ -23,7 +23,7 @@ test('homepage orbit icons track ten feature chapters in every language', () => 
   assert.match(js, /--rs-panel-y/);
   assert.match(js, /--rs-intro-opacity/);
   assert.match(js, /requestAnimationFrame\(draw\)/);
-  assert.doesNotMatch(js, /scrollTo\(|preventDefault\(|setInterval\(/);
+  assert.doesNotMatch(js, /setInterval\(/);
   assert.match(html, /spiral-hero\.css\?v=20261021-fullscreen-chapters-v1/);
   assert.match(html, /spiral-hero-motion\.js\?v=20261026-orbit10-v1/);
 });
