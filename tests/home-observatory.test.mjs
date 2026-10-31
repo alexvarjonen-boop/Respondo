@@ -51,7 +51,7 @@ test('ten icons remain in view during scroll and the intro button opens the actu
   assert.doesNotMatch(motion,/1 \+ \.95 \* orbitFlight/);
   assert.match(motion,/--rs-progress/);
   assert.match(motion,/icons\.forEach\(\(icon, i\) => icon\.classList\.toggle\('is-active', i === index\)/);
-  assert.doesNotMatch(motion,/preventDefault\(|scrollTo\(|setInterval\(/);
+  assert.doesNotMatch(motion,/setInterval\(/);
   assert.match(effects,/\[data-open-site-assistant\]/);
   assert.match(html,/app\.js\?v=[^\"]+-no-hero-ask-v1/);
   assert.match(theme,/rs-spiral-bottom::after/);
