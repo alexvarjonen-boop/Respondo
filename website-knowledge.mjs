@@ -1002,7 +1002,9 @@ export function essentialWebsiteCandidates(bundle) {
       const key='branch-hours:'+norm(storeHours.name)+'|'+String(doc.url);
       if(!seen.has(key)){
         seen.add(key);
-        out.push({
+        // Keep branch operating times ahead of thousands of product records:
+        // demo and paid imports may cap persisted fact counts.
+        out.unshift({
           category:'Aukioloajat',title:'Aukioloajat',answer:storeHours.hours,
           keywords:['aukioloajat','opening hours','öppettider',storeHours.name],
           sourceUrl:doc.url
