@@ -9802,3 +9802,17 @@ body.deletion-modal-open{overflow:hidden!important}
 }
 #app .preview-bubble.bot .preview-branch-list{display:flex;gap:8px;flex-wrap:wrap;max-height:165px;overflow-y:auto}
 #app .preview-bubble.bot .preview-branch-list small{color:#d6e1f2;font-size:12px}
+
+/* Company-controlled daily refresh beside the verified website importer. */
+#app .website-import-field .website-refresh-control{
+  display:flex;align-items:flex-start;gap:10px;margin-top:12px;
+  padding:11px 13px;border:1px solid rgba(123,166,221,.35);
+  border-radius:13px;background:rgba(46,82,125,.2);
+  color:#f4f7fc!important;font-size:13px;font-weight:600;line-height:1.5;
+}
+#app .website-import-field .website-refresh-control input{
+  appearance:auto;width:19px;height:19px;min-width:19px;
+  margin:1px 0 0;accent-color:#8cbcff;
+}
+#app #websiteAutoRefreshStatus{display:block;margin-top:6px;color:#bacce5!important;font-size:12px}
+#app .website-import-review .notice{line-height:1.5;overflow-wrap:anywhere}
