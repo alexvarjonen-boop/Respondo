@@ -38,13 +38,13 @@ const families = [
    topic:/\b(?:takuu\w*|takuun\w*|warrant\w*|guarantee\w*|garanti\w*)\b/,
    facets:[
      ['duration',/\b(?:kuinka\s+kauan|kauanko|kesto|pitka\w*|how\s+long|duration|years?|months?|vuott\w*|vuod\w*|kuukau\w*|ar|år|lange|länge|manad\w*|månad\w*|lenge|länge)\b/],
-     ['coverage',/\b(?:katta\w*|sisalta\w*|cover\w*|include\w*|galler\w*|gäller\w*|omfatta\w*|excluded?|poissul\w*)\b/]
+     ['coverage',/\b(?:katta\w*|sisalta\w*|cover\w*|include\w*|omfatta\w*|excluded?|poissul\w*)\b/]
    ]},
   {name:'shipping',
    topic:/\b(?:toimitu\w*|lahety\w*|shipping|delivery|deliver\w*|frakt\w*|leverans\w*|postitus\w*)\b/,
    facets:[
      ['duration',/\b(?:kuinka\s+kauan|toimitusaika|leveranstid|milloin|kauanko|when|arrive\w*|time|long|days|paiva\w*|kest\w*|speed|fast|hur\s+lange|hur\s+länge|dagar|nar|när)\b/],
-     ['cost',/\b(?:maks\w*|kulut|toimituskulu\w*|hinta\w*|ilmain\w*|fraktavgift|free|cost\w*|price|fee\w*|avgift\w*|pris\w*|gratis)\b/],
+     ['cost',/\b(?:maks\w*|kulut|toimituskulu\w*|hinta\w*|ilmain\w*|fraktavgift|free|cost\w*|kost\w*|price|fee\w*|avgift\w*|pris\w*|gratis)\b/],
      ['international',/\b(?:ulkomaa\w*|kansainval\w*|international\w*|abroad|outside|overseas|utomlands|internationell\w*)\b/],
      ['pickup',/\b(?:nouto\w*|noud\w*|pickup|pick\s*up|collect\w*|hamta\w*|hämta\w*|avhamt\w*)\b/]
    ]},
