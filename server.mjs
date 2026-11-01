@@ -18,6 +18,7 @@ import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
 import { resolveBranchOpeningHours } from './branch-hours.mjs';
 import {answerBranchException,exceptionQueryDate} from './branch-exceptions.mjs';
 import {faqParaphraseEvidence} from './faq-paraphrase-evidence.mjs';
+import {faqTopicEvidence,faqAnswersMateriallyConflict} from './faq-topic-evidence.mjs';
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
 import {storeAvailabilityAnswer} from './store-availability.mjs';
 import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentAsPage, importCoverage } from './web-document-import.mjs';
@@ -7232,21 +7233,28 @@ async function directlyVerifiedFaqAnswer(rows, question, lang='fi') {
   for(const row of rows||[]) {
     const title=String(row?.title||'').trim();
     const source=String(row?.source_url||row?.sourceUrl||'');
-    if(!/\?$/.test(title) || !/^https?:\/\//i.test(source) ||
+    const category=normalizeSearchText(String(row?.category||''));
+    const faqCategory=/(?:^|\b)(?:faq|usein kysytyt|frequently asked|vanliga fragor)(?:\b|$)/.test(category);
+    // Merchant-authored accordion/FAQPage headings frequently omit "?".
+    // Never open this path to generic service descriptions or navigation.
+    const looksLikeFaq=/\?$/.test(title) ||
+      (faqCategory && title.length>=7 &&
+       !/^(?:faq|usein kysytyt|frequently asked questions|vanliga fragor)$/i.test(normalizeSearchText(title)));
+    if(!looksLikeFaq || !/^https?:\/\//i.test(source) ||
        !['website','demo_import'].includes(String(row?.source_type||row?.sourceType||'')) ||
        !usableWebsiteRow(row)) continue;
     const titleTerms=keywords(title);
-    if(titleTerms.length<2) continue;
+    // Cross-language matching never creates policy facts: the actual answer
+    // still comes only from this merchant's approved FAQ row.
+    const paraphrase=faqParaphraseEvidence(question,title) || faqTopicEvidence(question,title);
+    if(titleTerms.length<2 && !paraphrase)continue;
     const overlap=requested.filter(term=>titleTerms.some(word=>
       word===term || (word.length>=5 && term.length>=5 &&
         word.slice(0,5)===term.slice(0,5)) || nearKnowledgeToken(word,term)
     )).length;
     const coverage=requested.length ? overlap/requested.length : 0;
-    const lexicalMatch=requested.length>=2 && overlap>=2 &&
+    const lexicalMatch=requested.length>=2 && titleTerms.length>=2 && overlap>=2 &&
       coverage>=0.67 && overlap/titleTerms.length>=0.5;
-    // Cross-language FAQ matches for a limited set of high-precision
-    // intents. No claims without an approved, same-tenant source.
-    const paraphrase=faqParaphraseEvidence(question,title);
     if(!lexicalMatch && !paraphrase)continue;
     const answer=cleanKnowledgeText(row.answer);
     if(!answer || answer.length>900 || importedKnowledgeJunk(answer))continue;
@@ -7276,12 +7284,11 @@ async function directlyVerifiedFaqAnswer(rows, question, lang='fi') {
   // The same policy may be published using different question headings.
   // Opposing answers to an equivalent FAQ question must escalate rather than
   // silently selecting the higher-scored phrase. Compare only approved rows.
-  const concept=faqParaphraseEvidence(question,best.row.title)?.concept;
+  const concept=(faqParaphraseEvidence(question,best.row.title) ||
+    faqTopicEvidence(question,best.row.title))?.concept;
   const semanticConflict=Boolean(concept && eligible.some(item=>
     item.row!==best.row && item.concept===concept &&
-    normalizeSearchText(item.answer)!==bestAnswer &&
-    !normalizeSearchText(item.answer).includes(bestAnswer) &&
-    !bestAnswer.includes(normalizeSearchText(item.answer))
+    faqAnswersMateriallyConflict(best.answer,item.answer)
   ));
   if(conflictingFaq || semanticConflict) return {
     answer:'',handoff:true,confidence:0.2,intent:'Usein kysytyt',
