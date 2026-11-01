@@ -4036,7 +4036,26 @@ async function dashboard(options = {}) {
     messenger:'Messenger',
     sms:'SMS',
   })[channel] || channel || appText('Kanava','Kanal','Channel');
-  const actionFieldEntries = (payload) => Object.entries(payload?.fields || {}).filter(([key,v]) => key !== 'slotId' && String(v || '').trim());
+  const mainioFieldLabels={
+    name:appText('Nimi','Namn','Name'),contact:appText('Yhteystieto','Kontakt','Contact'),
+    serviceType:appText('Muuton tyyppi','Flyttyp','Move type'),desiredDate:appText('Muuttopäivä','Flyttdatum','Moving date'),
+    originAddress:appText('Lähtöosoite','Från adress','Origin address'),originCity:appText('Lähtöpaikkakunta','Från ort','Origin city'),
+    originHousing:appText('Lähtökohteen tyyppi','Typ av ursprung','Origin property'),originFloor:appText('Lähtökerros','Våning från','Origin floor'),
+    originElevator:appText('Lähtökohteen hissi','Hiss från','Origin elevator'),originParking:appText('Auto oven eteen lähtöpaikassa','Bil vid dörr (från)','Van at origin entrance'),
+    destinationAddress:appText('Kohdeosoite','Till adress','Destination address'),destinationCity:appText('Kohdepaikkakunta','Till ort','Destination city'),
+    destinationHousing:appText('Kohteen tyyppi','Typ av destination','Destination property'),destinationFloor:appText('Kohdekerros','Våning till','Destination floor'),
+    destinationElevator:appText('Kohteen hissi','Hiss till','Destination elevator'),destinationParking:appText('Auto oven eteen kohteessa','Bil vid dörr (till)','Van at destination entrance'),
+    areaSqm:appText('Pinta-ala (m²)','Yta (m²)','Area (m²)'),peopleCount:appText('Asukkaiden määrä','Antal boende','Residents'),
+    ownBoxes:appText('Omat laatikot','Egna lådor','Own boxes'),boxCount:appText('Vuokralaatikot','Hyrlådor','Rental boxes'),
+    carryingHelp:appText('Kantoapu','Bärhjälp','Carrying help'),packingHelp:appText('Pakkausapu','Packhjälp','Packing help'),
+    storageNeeded:appText('Varastointi','Magasinering','Storage'),specialItems:appText('Erityiset tavarat','Särskilda föremål','Special items'),
+    notes:appText('Lisätiedot','Övrig information','Notes')
+  };
+  const actionFieldEntries = (payload) => payload?.mainioMove
+    ? Object.entries(payload.mainioMove).filter(([key,v])=>v!==undefined && v!==null && String(v).trim()!=='')
+      .map(([key,value])=>[mainioFieldLabels[key]||key,
+        typeof value==='string' ? ({yes:appText('Kyllä','Ja','Yes'),no:appText('Ei','Nej','No'),unknown:appText('Ei tiedossa','Okänt','Unknown'),na:appText('Ei koske','Inte aktuellt','Not applicable')}[value]||value) : String(value)])
+    : Object.entries(payload?.fields || {}).filter(([key,v]) => key !== 'slotId' && String(v || '').trim());
   const localDateInput = (date) => {
     const d = new Date(date);
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
