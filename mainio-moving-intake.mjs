@@ -99,6 +99,7 @@ export function mainioIsSmallTalk(message) {
 
 const allowed={
   serviceType:['home','business','other'],
+  wholeApartment:['yes','no','unknown'],
   originHousing:['apartment','detached','row','business','other','unknown'],
   destinationHousing:['apartment','detached','row','business','other','unknown'],
   originElevator:['yes','no','unknown','na'],
@@ -111,7 +112,7 @@ const allowed={
   storageNeeded:['yes','no','unknown'],
 };
 const textFields={
-  name:120,contact:220,desiredDate:10,originAddress:220,originCity:100,
+  name:120,contact:220,desiredDate:10,yearsAtCurrentHome:80,originAddress:220,originCity:100,
   originFloor:24,destinationAddress:220,destinationCity:100,
   destinationFloor:24,areaSqm:10,boxCount:6,peopleCount:4,
   specialItems:650,notes:850,
@@ -119,6 +120,7 @@ const textFields={
 const values={
   name:'Asiakkaan nimi',contact:'Yhteystieto',
   serviceType:'Palvelu',desiredDate:'Toivottu muuttopäivä',
+  wholeApartment:'Muutetaanko koko asunto',yearsAtCurrentHome:'Asumisaika nykyisessä asunnossa',
   originAddress:'Lähtöosoite',originCity:'Lähtöpaikkakunta',
   originHousing:'Lähtökohteen tyyppi',originFloor:'Lähtökerros',
   originElevator:'Lähtökohteen hissi',originParking:'Muuttoauto oven eteen lähtöpaikassa',
