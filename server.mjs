@@ -1,3 +1,5 @@
+import { handleMovingIntake } from './moving-intake-store.mjs';
+import { MOVING_QUOTE_URL } from './moving-intake.mjs';
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
@@ -14493,7 +14495,13 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const widgetSubscribe=firstPartyRespondo
       ? respondoCheckoutAction(message,detectedLang,firstPartyFaq?.id||'',SEO_CANONICAL_ORIGIN)
       : null;
-    const result = widgetSubscribe ? {
+    const movingIntake = await handleMovingIntake({
+      pool,tenant:t,threadId:thread?.id,message,lang:detectedLang,
+    });
+    const result = movingIntake ? {
+      answer:movingIntake.answer,handoff:false,confidence:1,
+      intent:'Moving intake',sourceIds:[],selected:[],
+    } : widgetSubscribe ? {
       answer:detectedLang==='en'
         ? 'Choose a Respondo subscription plan using the button below.'
         :detectedLang==='sv'
@@ -14538,7 +14546,10 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     }
 
     const actionRows = firstPartyRespondo ? safeKnowledgeRows : kr.rows;
-    let actions = widgetSubscribe
+    let actions = movingIntake ? [{
+      type:'quote',url:MOVING_QUOTE_URL,
+      label:detectedLang==='en'?'Mainio quote form':detectedLang==='sv'?'Mainios offertformulär':'Mainion tarjouslomake',
+    }] : widgetSubscribe
       ? [widgetSubscribe] : chatActions(actionRows, message, handoff, responseLang, result.selected);
     const publicPlanAccess = planEntitlements(t.subscription_plan);
     if (!publicPlanAccess.allCurrentFeatures) {
@@ -16142,6 +16153,7 @@ async function ensureRuntimeSchema() {
     UNIQUE(tenant_id,source_channel,external_contact_id)
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_chat_threads_tenant_activity ON chat_threads(tenant_id,last_activity_at DESC)');
+  await q('ALTER TABLE chat_threads ADD COLUMN IF NOT EXISTS moving_intake JSONB');
   await q(`CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
