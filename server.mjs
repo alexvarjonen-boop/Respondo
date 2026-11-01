@@ -1,4 +1,5 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
+import { MAINIO_QUOTE_URL, isMainioMovingTenant, mainioMoveActions, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
@@ -14493,7 +14494,20 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const widgetSubscribe=firstPartyRespondo
       ? respondoCheckoutAction(message,detectedLang,firstPartyFaq?.id||'',SEO_CANONICAL_ORIGIN)
       : null;
-    const result = widgetSubscribe ? {
+    const mainioQuoteIntent=isMainioMovingTenant(t) &&
+      /(?:tilaa|tilaamaan|varaa|varaisin|varata|haluan tilata|haluaisin tilata|book|request|boka|beställa|bestalla|offert|tarjouspyyntö|tarjouspyynnon)/i.test(message) &&
+      /(?:muut|muutto|muutt|moving|move|flytt|tarjous|quote|offert)/i.test(message);
+    const mainioQuoteAnswer=mainioQuoteIntent
+      ? (detectedLang==='en'
+          ? 'You can send the details of your move for Mainio Muuttopalvelu to review using the button below. Mainio confirms the price, date and booking separately.'
+          :detectedLang==='sv'
+          ? 'Du kan lämna uppgifter om flytten via knappen nedan. Mainio Muuttopalvelu bekräftar pris, datum och bokning separat.'
+          : 'Voit kertoa muuttosi tiedot alla olevan painikkeen kautta. Mainio Muuttopalvelu tarkistaa tarjouspyynnön ja vahvistaa hinnan, ajankohdan sekä tilauksen erikseen.')
+      : null;
+    const result = mainioQuoteAnswer ? {
+      answer:mainioQuoteAnswer,handoff:false,confidence:1,
+      intent:'Muuttotarjouspyyntö',sourceIds:[],selected:[],
+    } : widgetSubscribe ? {
       answer:detectedLang==='en'
         ? 'Choose a Respondo subscription plan using the button below.'
         :detectedLang==='sv'
@@ -14543,6 +14557,13 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const publicPlanAccess = planEntitlements(t.subscription_plan);
     if (!publicPlanAccess.allCurrentFeatures) {
       actions = actions.filter((action) => action?.type !== 'order_status');
+    }
+    if(isMainioMovingTenant(t)){
+      // One genuine human-reviewed quote flow and the company's original
+      // enquiry form. Never offer a fake calendar booking or calculated price.
+      const contactActions=chatActions(actionRows,message,handoff,responseLang,result.selected)
+        .filter(action=>['contact','phone','email'].includes(action.type));
+      actions=[...mainioMoveActions(responseLang),...contactActions].slice(0,4);
     }
     if (firstPartyRespondo) {
       const siteActions=respondoSitePageActions(message,responseLang,firstPartyFaq?.id);
@@ -14717,6 +14738,16 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     setWidgetCors(req,res);
 
     const type = String(body.type || '').trim();
+    const wantsMainioMove=body.mode==='mainio_move';
+    const mainioMoveRequest=type==='quote' && wantsMainioMove && isMainioMovingTenant(tenant);
+    if(wantsMainioMove&&!mainioMoveRequest)
+      return res.status(403).json({error:'Tämä muuttokartoitus kuuluu vain Mainio Muuttopalvelulle.'});
+    const validatedMainio=mainioMoveRequest
+      ? validateMainioMove(body.fields,{
+          today:new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Helsinki',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+        })
+      : null;
+    if(validatedMainio?.error)return res.status(422).json({error:validatedMainio.error});
     if (!['quote','booking','order_status','callback'].includes(type)) {
       return res.status(400).json({ error:'Tuntematon toiminto.' });
     }
@@ -14725,6 +14756,11 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     }
 
     const fields = cleanActionFields(type, body.fields);
+    if(mainioMoveRequest){
+      fields.name=validatedMainio.data.name;
+      fields.contact=validatedMainio.data.contact;
+      fields.details=mainioMoveDetails(validatedMainio.data).slice(0,1800);
+    }
     if (type === 'booking') {
       fields.slotId = String(body.fields?.slotId || '').trim().slice(0,80);
     }
@@ -14745,6 +14781,12 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       question: String(body.question || '').trim().slice(0,1200),
       pageUrl,
       pageTitle: String(body.pageContext?.title || '').slice(0,300) || null,
+      ...(mainioMoveRequest ? {
+        mainioMove:validatedMainio.data,
+        humanApprovalRequired:true,
+        sourceUrl:MAINIO_QUOTE_URL,
+        fulfilment:'quote-request-only',
+      } : {}),
     };
     let computedQuote = null;
     let bookedSlot = null;
@@ -14762,7 +14804,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       }
     }
 
-    if (type === 'quote' && actionAccess.allCurrentFeatures) {
+    if (type === 'quote' && actionAccess.allCurrentFeatures && !mainioMoveRequest) {
       const base = Number(tenant.quote_base_price || 0);
       const perUnit = Number(tenant.quote_unit_price || 0);
       const minimum = Number(tenant.quote_min_price || 0);
@@ -15041,7 +15083,13 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       calendarSync,
       paymentAvailable,
       checkoutUrl,
-      customerMessage: customerMessage || (
+      customerMessage: mainioMoveRequest
+        ? (actionLang==='en'
+            ? 'Your moving enquiry has been submitted for Mainio Muuttopalvelu to review. The price, date and booking are not confirmed yet.'
+            :actionLang==='sv'
+            ? 'Din flyttförfrågan har skickats till Mainio Muuttopalvelu för granskning. Pris, datum och bokning är ännu inte bekräftade.'
+            : 'Muuttotarjouspyyntösi on lähetetty Mainio Muuttopalvelun käsiteltäväksi. Hinta, muuttopäivä ja tilaus vahvistetaan erikseen.')
+        : customerMessage || (
         actionLang === 'en'
           ? (type === 'booking' ? 'Your booking request has been received.' :
              type === 'quote' ? 'Your quote request has been received.' :
