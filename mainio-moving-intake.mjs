@@ -173,10 +173,22 @@ export function validateMainioMove(input,{today}={}) {
   if(data.peopleCount&&!/^\d{1,3}$/.test(data.peopleCount))return {error:'Tarkista asukkaiden määrä.'};
   return {data};
 }
+const mainioHumanLabels={
+  yes:'Kyllä',no:'Ei',unknown:'Ei tiedossa',na:'Ei koske',some:'Osittain',
+};
+const mainioMoveTypeLabels={home:'Kotimuutto',business:'Yritysmuutto',other:'Muu kuljetus'};
+const mainioHousingLabels={apartment:'Kerrostalo',detached:'Omakotitalo',row:'Rivitalo',business:'Yritystila',other:'Muu'};
+function mainioHumanReadableValue(key,value){
+  const raw=String(value??'').trim();
+  if(!raw)return 'ei ilmoitettu';
+  if(key==='serviceType')return mainioMoveTypeLabels[raw]||raw;
+  if(key==='originHousing'||key==='destinationHousing')return mainioHousingLabels[raw]||mainioHumanLabels[raw]||raw;
+  return mainioHumanLabels[raw]||raw;
+}
 export function mainioMoveDetails(data) {
   return [
     'MAINIO MUUTTOPALVELU – TARJOUSPYYNTÖ / IHMISEN HYVÄKSYNTÄÄN',
-    ...Object.entries(values).map(([key,label])=>label+': '+(data[key]||'ei ilmoitettu')),
+    ...Object.entries(values).map(([key,label])=>label+': '+mainioHumanReadableValue(key,data[key])),
     'Hinta, muuttopäivän saatavuus ja lopullinen tilaus vahvistetaan vain Mainion toimesta.',
     'Virallinen tilauslomake: '+MAINIO_QUOTE_URL,
   ].join('\n');
