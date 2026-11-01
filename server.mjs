@@ -3743,7 +3743,12 @@ function cleanServiceAreaValue(value) {
     /^(?:toimimme|palvelemme|palvelualueemme|toimialueemme|we operate|we serve|our service area|vi arbetar|vi betjänar|vårt serviceområde)\b/i.test(part)
   ) || sentences[0];
 
-  return factual.replace(/[.!?]+$/,'').trim();
+  // Keep an explicit second geographical coverage condition when the
+  // verified source states it (e.g. moves outside the local region).
+  // Do not copy unrelated contact or marketing sentences.
+  const extra=sentences.find(part=>part!==factual &&
+    /^(?:muutot voivat suuntautua|muuttoja tehdään myös|we also serve|flyttar kan även)/i.test(part));
+  return [factual,extra].filter(Boolean).map(part=>part.replace(/[.!?]+$/,'').trim()).join('. ');
 }
 
 function verifiedServiceAreaValue(rows) {
