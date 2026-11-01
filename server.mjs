@@ -22,7 +22,7 @@ import {answerBranchException,exceptionQueryDate} from './branch-exceptions.mjs'
 import {faqParaphraseEvidence} from './faq-paraphrase-evidence.mjs';
 import {faqTopicEvidence,faqAnswersMateriallyConflict} from './faq-topic-evidence.mjs';
 import {tryGroundedAIResponse} from './grounded-ai-fallback.mjs';
-import {classifyMainioSemanticIntent,mainioSemanticActions} from './mainio-semantic-intent.mjs';
+import {classifyMainioSemanticIntent,mainioSemanticActions,interpretMainioLocalIntent} from './mainio-semantic-intent.mjs';
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
 import {storeAvailabilityAnswer} from './store-availability.mjs';
 import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentAsPage, importCoverage } from './web-document-import.mjs';
@@ -13922,9 +13922,10 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // than a generic demo answer. The full five-step intake remains available
     // in the installed widget, while this preview links to Mainio's verified form.
     const mainioInterpretation=previewMainioTenant && !mainioIsSmallTalk(message)
-      ? await classifyMainioSemanticIntent({
-          message,lang:detectedLang,previousCustomerQuestion:history.at(-1)?.question||''
-        }) : null;
+      ? (interpretMainioLocalIntent(message,history.at(-1)?.question||'') ||
+         await classifyMainioSemanticIntent({
+           message,lang:detectedLang,previousCustomerQuestion:history.at(-1)?.question||''
+         })) : null;
     const mainioSemanticPreview=previewMainioTenant
       ? mainioSemanticGroundedReply(rows,mainioInterpretation,detectedLang) : null;
     const mainioOrderPreview=previewMainioTenant && mainioMovingOrderIntent(message);
@@ -14625,9 +14626,10 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       : null;
     const mainioTenant=isMainioMovingTenant(t);
     const mainioInterpretation=mainioTenant && !mainioIsSmallTalk(message)
-      ? await classifyMainioSemanticIntent({
-          message,lang:detectedLang,previousCustomerQuestion:history.at(-1)?.question||''
-        }) : null;
+      ? (interpretMainioLocalIntent(message,history.at(-1)?.question||'') ||
+         await classifyMainioSemanticIntent({
+           message,lang:detectedLang,previousCustomerQuestion:history.at(-1)?.question||''
+         })) : null;
     const mainioSemanticReply=mainioTenant
       ? mainioSemanticGroundedReply(safeKnowledgeRows,mainioInterpretation,detectedLang) : null;
     const mainioQuoteIntent=mainioTenant && mainioMovingOrderIntent(message);
