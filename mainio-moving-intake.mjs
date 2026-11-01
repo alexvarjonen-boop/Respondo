@@ -51,8 +51,11 @@ export function mainioInquiryKind(message){
   const q=normalized(message);
   // Explicit moving-service intent has priority over accessories mentioned
   // in the same sentence, e.g. "tilaa muuttopalvelu ja muuttolaatikot".
-  const actualMove=mentionsMovingService(q);
-  if(actualMove)return 'moving';
+  // Ordering the moving service itself takes priority when boxes or a van
+  // are also mentioned, but "rent a van for a move" stays a van request.
+  const explicitMovingService=/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|moving\s+service|flyttfirma|flytthjalp)/.test(q) ||
+    /(?:tilaa|tilata|tilaisin|varaa|varata|varaisin|book|bestall)\s+(?:[a-zåäö-]+\s+){0,2}(?:muuton|muuttoa|muutto)\b/.test(q);
+  if(explicitMovingService)return 'moving';
   if(/(?:muuttolaatik|laatikkovuokra|laatikoiden\s+vuokra|laatikoita|moving\s+box|box\s+rental|flyttkartong|flyttlador)/.test(q))return 'boxes';
   if(/(?:pakettiaut|vuokrapaku|vuokra-auto|rent\s+(?:a\s+)?van|van\s+rental|sk[aå]pbil)/.test(q))return 'van';
   return 'moving';
