@@ -14783,6 +14783,8 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       pageTitle: String(body.pageContext?.title || '').slice(0,300) || null,
       ...(mainioMoveRequest ? {
         mainioMove:validatedMainio.data,
+        consentAcceptedAt:new Date().toISOString(),
+        consentScope:'share_with_mainio_for_moving_quote_review',
         humanApprovalRequired:true,
         sourceUrl:MAINIO_QUOTE_URL,
         fulfilment:'quote-request-only',
@@ -15312,6 +15314,13 @@ app.post('/api/app/action-requests/:id/status', auth, ownerOnly, subscribed, asy
     const status = ['new','in_progress','done'].includes(String(req.body.status)) ? String(req.body.status) : 'done';
     const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    if(String(tr.rows[0].id)===MAINIO_TENANT_ID && status==='done'){
+      const move=await q(
+        "SELECT 1 FROM action_requests WHERE id=$1 AND tenant_id=$2 AND payload ? 'mainioMove' LIMIT 1",
+        [req.params.id,tr.rows[0].id],
+      );
+      if(move.rowCount)return res.status(409).json({error:'Muuttotarjouspyyntö käsitellään hyväksy- tai hylkää-toiminnolla.'});
+    }
     const updated = await q(
       'UPDATE action_requests SET status=$1,updated_at=NOW() WHERE id=$2 AND tenant_id=$3 RETURNING id,status',
       [status,req.params.id,tr.rows[0].id],
