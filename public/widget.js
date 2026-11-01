@@ -549,7 +549,7 @@
         elevator:'Onko hissi?',parking:'Saako muuttoauton oven eteen?',ownBoxes:'Onko omia muuttolaatikoita?',
         requestedBoxes:'Kuinka monta vuokralaatikkoa toivot? (valinnainen)',carrying:'Tarvitsetko kantoapua?',
         packing:'Tarvitsetko pakkausapua?',storage:'Tarvitsetko varastointia?',special:'Suuret, painavat tai erityiset tavarat (esim. piano)',
-        notes:'Muut lisätiedot / kantomatkat',name:'Nimi',contact:'Puhelinnumero tai sähköposti',
+        notes:'Muut lisätiedot / kantomatkat',name:'Koko nimi (etunimi ja sukunimi)',contact:'Puhelinnumero tai sähköposti',extraContact:'Toinen yhteystieto (valinnainen)',
         consent:'Hyväksyn, että antamani tiedot lähetetään Mainio Muuttopalvelulle tarjouspyynnön käsittelyä varten.',
         none:'Valitse',yes:'Kyllä',no:'Ei',unknown:'En tiedä',some:'Osittain',na:'Ei koske',
         home:'Kotimuutto',business:'Yritysmuutto',other:'Muu kuljetus',apartment:'Kerrostalo',
@@ -568,7 +568,7 @@
         elevator:'Finns hiss?',parking:'Kan flyttbilen stå vid dörren?',ownBoxes:'Har du egna flyttlådor?',
         requestedBoxes:'Hur många hyrlådor önskar du? (valfritt)',carrying:'Behöver du bärhjälp?',
         packing:'Behöver du packhjälp?',storage:'Behöver du magasinering?',special:'Stora eller tunga föremål (t.ex. piano)',
-        notes:'Övriga uppgifter / bäravstånd',name:'Namn',contact:'Telefonnummer eller e-post',
+        notes:'Övriga uppgifter / bäravstånd',name:'För- och efternamn',contact:'Telefonnummer eller e-post',extraContact:'Ytterligare kontaktuppgift (valfritt)',
         consent:'Jag godkänner att uppgifterna skickas till Mainio Muuttopalvelu för behandling av offertförfrågan.',
         none:'Välj',yes:'Ja',no:'Nej',unknown:'Vet inte',some:'Delvis',na:'Ej aktuellt',
         home:'Bostadsflytt',business:'Företagsflytt',other:'Annan transport',apartment:'Flervåningshus',
@@ -587,7 +587,7 @@
         elevator:'Is there an elevator?',parking:'Can the moving van park at the entrance?',ownBoxes:'Do you have your own moving boxes?',
         requestedBoxes:'How many rental boxes would you like? (optional)',carrying:'Do you need carrying help?',
         packing:'Do you need packing help?',storage:'Do you need storage?',special:'Large or heavy items (e.g. piano)',
-        notes:'Other details / carrying distances',name:'Name',contact:'Phone number or email',
+        notes:'Other details / carrying distances',name:'Full name (first and last)',contact:'Phone number or email',extraContact:'Another contact method (optional)',
         consent:'I agree to send the information to Mainio Muuttopalvelu so they can review this quote request.',
         none:'Select',yes:'Yes',no:'No',unknown:'Not sure',some:'Some',na:'Not applicable',
         home:'Home move',business:'Business move',other:'Other transport',apartment:'Apartment building',
@@ -636,6 +636,7 @@
         '<label>'+escapeHtml(L.notes)+'<textarea name="notes" maxlength="850"></textarea></label>')+
       block(4,field('name',L.name,'text',true,'maxlength="120"')+
         field('contact',L.contact,'text',true,'maxlength="220"')+
+        field('extraContact',L.extraContact,'text',false,'maxlength="220"')+
         '<label class="mainio-consent"><input name="consent" type="checkbox" required> '+escapeHtml(L.consent)+'</label>'+
         '<small class="mainio-info">'+escapeHtml(L.intro)+'</small>');
     form.innerHTML='<b>'+escapeHtml(L.heading)+'</b><small>'+escapeHtml(L.intro)+'</small>'+body+
