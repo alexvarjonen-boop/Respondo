@@ -209,13 +209,13 @@
     if (transitionRaf) cancelAnimationFrame(transitionRaf);
     const start = scrollY;
     const distance = target - start;
-    if (Math.abs(distance) < 2) { scrollTo(0, target); schedule(); return; }
+    if (Math.abs(distance) < 2) { scrollTo({top:Math.round(target),behavior:'instant'}); schedule(); return; }
     const begin = performance.now();
     const duration = 540;
     function frame(now) {
       const t = clamp((now - begin) / duration, 0, 1);
       const eased = t * t * (3 - 2 * t);
-      scrollTo(0, Math.round(start + distance * eased));
+      scrollTo({top:Math.round(start + distance * eased),behavior:'instant'});
       schedule();
       if (t < 1) transitionRaf = requestAnimationFrame(frame);
       else transitionRaf = 0;
@@ -307,7 +307,11 @@
     wheelLastEventAt = 0;
     wheelLastMagnitude = 0;
     wheelLockedUntil = 0;
-    glideTo(Math.round(target));
+    // Orbit-icon navigation should land directly on the selected chapter.
+    // Wheel gestures keep their own camera-eased transition.
+    if (transitionRaf) cancelAnimationFrame(transitionRaf);
+    transitionRaf = 0;
+    scrollTo({ top: Math.round(target), behavior: 'instant' });
     updateStep(index);
     schedule();
   }
