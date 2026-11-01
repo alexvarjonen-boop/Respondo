@@ -7,6 +7,7 @@
  * error, timeout, low confidence or disabled feature the old safe matcher wins.
  */
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
+import {mainioMoveActions,mainioInquiryActions} from './mainio-moving-intake.mjs';
 
 const API_URL='https://api.openai.com/v1/responses';
 const INTENTS=['moving_quote','moving_route','moving_information','box_rental','van_rental','service_area','contact','clarify','other'];
@@ -134,4 +135,13 @@ export async function classifyMainioSemanticIntent({
 }
 export function resetMainioSemanticBudgetForTests(){
   usage={day:'',calls:0,inFlight:0,failed:0,disabledUntil:0};
+}
+
+/** The classifier only picks an allowlisted, already implemented UI action. */
+export function mainioSemanticActions(classification,lang='fi'){
+  const kind=classification?.intent;
+  if(kind==='moving_quote'||kind==='moving_route')return mainioMoveActions(lang);
+  if(kind==='box_rental')return mainioInquiryActions('Haluan vuokrata muuttolaatikoita',lang);
+  if(kind==='van_rental')return mainioInquiryActions('Haluan vuokrata pakettiauton',lang);
+  return [];
 }
