@@ -16,7 +16,8 @@ const details={
   destinationFloor:'2',destinationElevator:'yes',destinationParking:'yes',
   ownBoxes:'no',boxCount:'68',
   carryingHelp:'yes',packingHelp:'yes',storageNeeded:'no',
-  specialItems:'Piano',notes:'Kantoreitti 30 metriä'
+  specialItems:'Piano',notes:'Kantoreitti 30 metriä',
+  wholeApartment:'yes',yearsAtCurrentHome:'3 vuotta'
 };
 
 test('Mainio moving quote is validated with consent, and full contact details are in handoff summary',()=>{
@@ -24,7 +25,7 @@ test('Mainio moving quote is validated with consent, and full contact details ar
   assert.ok(result.data,result.error);
   const summary=mainioMoveDetails(result.data);
   for(const value of ['Esimerkki Testaaja','test@example.com','Rovaniemi','Turku',
-      'Esimerkkikatu 5','Koekatu 2','Piano','Kantoreitti 30 metriä']){
+      'Esimerkkikatu 5','Koekatu 2','Piano','Kantoreitti 30 metriä','3 vuotta','Muutetaanko koko asunto']){
     assert.ok(summary.includes(value),value);
   }
   assert.ok(summary.includes('Hinta, muuttopäivän saatavuus'));
