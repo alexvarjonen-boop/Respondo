@@ -31,14 +31,31 @@ export const MAINIO_VAN_RENTAL_URL='https://www.mainiomuuttopalvelu.fi/pakettiau
 const normalized=(message)=>String(message||'').normalize('NFD')
   .replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
-const mentionsMovingService=(q)=>/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuton\b|muuttoa\b|muutosta\b|muutolle\b|muutto\b|muuttaa\b|muuttamaan\b|moving\s+service|book\s+(?:my|a)\s+move|flytthjalp|flyttfirma)/.test(q);
+const mentionsMovingService=(q)=>/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuton\b|muuttoon\b|muuttoa\b|muutosta\b|muutolle\b|muutot\b|muuttoja\b|muutto\b|muuttaa\b|muuttamaan\b|moving\s+service|book\s+(?:my|a)\s+move|flytt\w*|flytthjalp|flyttfirma)/.test(q);
+
+// Identify a *move between places*, including ordinary spoken Finnish:
+// "Onnistuuko muutto Rovaniemeltä Turkuun?" and "Ois muutto Oulusta Helsinkiin".
+// This is intent detection only; it never determines actual service availability.
+export function mainioMovingRouteIntent(message) {
+  const q=normalized(message);
+  const move=mentionsMovingService(q) ||
+    (/(?:kuljet|siirt|vied|vieda|nout)/.test(q) &&
+     /(?:tavarat|tavaroit|huonekalu|kaluste|kamat)/.test(q));
+  if(!move || mainioInquiryKind(q)!=='moving')return false;
+  const fiRoute=/\b[a-zåäö-]{3,45}(?:sta|sta|lta)\b[\s,–-]+(?:ihan\s+)?[a-zåäö-]{3,45}(?:lle|iin|uun|oon|aan|een|ään|aan)\b/.test(q);
+  const enSvRoute=/\b(?:from|fran)\s+[a-zåäö-]{3,55}\s+(?:to|till)\s+[a-zåäö-]{3,55}\b/.test(q);
+  return fiRoute || enSvRoute;
+}
 
 export function mainioInquiryKind(message){
   const q=normalized(message);
   // Explicit moving-service intent has priority over accessories mentioned
   // in the same sentence, e.g. "tilaa muuttopalvelu ja muuttolaatikot".
-  const actualMove=mentionsMovingService(q);
-  if(actualMove)return 'moving';
+  // Ordering the moving service itself takes priority when boxes or a van
+  // are also mentioned, but "rent a van for a move" stays a van request.
+  const explicitMovingService=/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|moving\s+service|flyttfirma|flytthjalp)/.test(q) ||
+    /(?:tilaa|tilata|tilaisin|varaa|varata|varaisin|book|bestall)\s+(?:[a-zåäö-]+\s+){0,2}(?:muuton|muuttoa|muutto)\b/.test(q);
+  if(explicitMovingService)return 'moving';
   if(/(?:muuttolaatik|laatikkovuokra|laatikoiden\s+vuokra|laatikoita|moving\s+box|box\s+rental|flyttkartong|flyttlador)/.test(q))return 'boxes';
   if(/(?:pakettiaut|vuokrapaku|vuokra-auto|rent\s+(?:a\s+)?van|van\s+rental|sk[aå]pbil)/.test(q))return 'van';
   return 'moving';
@@ -62,7 +79,8 @@ export function mainioInquiryActions(message,lang='fi'){
   // booking/quote intent or asks about the price of a moving service.
   const q=normalized(message);
   const priceOrQuote=/(?:paljonko|hinta|maksa|kusta|tarjou|arvio|price|cost|quote|estimate|pris|kostar|offert)/.test(q);
-  if(!mentionsMovingService(q) || !(mainioMovingOrderIntent(message) || priceOrQuote))return [];
+  if(!mentionsMovingService(q) && !mainioMovingRouteIntent(message))return [];
+  if(!(mainioMovingOrderIntent(message) || priceOrQuote || mainioMovingRouteIntent(message)))return [];
   return mainioMoveActions(locale);
 }
 

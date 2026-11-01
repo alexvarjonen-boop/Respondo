@@ -1,5 +1,5 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
-import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioInquiryActions, mainioMovingOrderIntent, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
+import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingRouteIntent, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
@@ -3786,6 +3786,23 @@ function serviceAreaAnswer(value, lang='fi') {
   if(lang==='en') return 'Our service area is '+clean+'.';
   if(lang==='sv') return 'Vårt serviceområde är '+clean+'.';
   return 'Toimialueemme on '+clean+'.';
+}
+
+// A route enquiry (e.g. "onnistuuko muutto Rovaniemeltä Turkuun?") must
+// use Mainio's approved nationwide-coverage source rather than a guessed
+// guarantee, specific date, or price. Caller must verify tenant identity.
+export function mainioVerifiedMovingRouteReply(rows,message,lang='fi') {
+  if(!mainioMovingRouteIntent(message))return null;
+  const source=verifiedServiceAreaValue(rows||[]);
+  if(!source?.row?.id || !source?.row?.source_url ||
+     !/muualle suomeen/.test(normalizeSearchText(source.value)))return null;
+  const answer=lang==='en'
+    ? 'You can enquire about this move. Mainio’s verified information says moves to other parts of Finland can be arranged separately. Mainio must confirm whether this particular route and date are possible, as well as the price. Send the move details using the button below.'
+    :lang==='sv'
+      ? 'Du kan fråga om denna flytt. Enligt Mainios bekräftade information kan flyttar till andra delar av Finland ordnas enligt separat överenskommelse. Mainio bekräftar om rutten och datumet är möjliga samt priset. Lämna flyttuppgifterna via knappen nedan.'
+      : 'Voit kysyä tarjousta tällaisesta muutosta. Mainion vahvistettujen tietojen mukaan muuttoja voidaan sopia myös muualle Suomeen. Mainio tarkistaa erikseen, onnistuuko juuri tämä reitti toivottuna päivänä ja mitä muutto maksaa. Voit täyttää muuttokartoituksen alla olevasta painikkeesta.';
+  return {answer,handoff:false,confidence:1,intent:'Muuton toimialue',
+    sourceIds:[source.row.id],selected:[source.row]};
 }
 
 function explicitBusinessLocationQuestion(message) {
@@ -13838,7 +13855,8 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // than a generic demo answer. The full five-step intake remains available
     // in the installed widget, while this preview links to Mainio's verified form.
     const mainioOrderPreview=previewMainioTenant && mainioMovingOrderIntent(message);
-    let result = mainioOrderPreview ? {
+    const mainioRoutePreview=previewMainioTenant ? mainioVerifiedMovingRouteReply(rows,message,detectedLang) : null;
+    let result = mainioRoutePreview ? mainioRoutePreview : mainioOrderPreview ? {
       answer:detectedLang==='en'
         ? 'You can submit the details of your move using Mainio’s official quote form below. Mainio confirms the price, date and booking separately.'
         :detectedLang==='sv'
@@ -14530,6 +14548,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       ? respondoCheckoutAction(message,detectedLang,firstPartyFaq?.id||'',SEO_CANONICAL_ORIGIN)
       : null;
     const mainioQuoteIntent=isMainioMovingTenant(t) && mainioMovingOrderIntent(message);
+    const mainioRouteReply=isMainioMovingTenant(t) ? mainioVerifiedMovingRouteReply(safeKnowledgeRows,message,detectedLang) : null;
     const mainioQuoteAnswer=mainioQuoteIntent
       ? (detectedLang==='en'
           ? 'You can send the details of your move for Mainio Muuttopalvelu to review using the button below. Mainio confirms the price, date and booking separately.'
@@ -14537,7 +14556,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
           ? 'Du kan lämna uppgifter om flytten via knappen nedan. Mainio Muuttopalvelu bekräftar pris, datum och bokning separat.'
           : 'Voit kertoa muuttosi tiedot alla olevan painikkeen kautta. Mainio Muuttopalvelu tarkistaa tarjouspyynnön ja vahvistaa hinnan, ajankohdan sekä tilauksen erikseen.')
       : null;
-    let result = mainioQuoteAnswer ? {
+    let result = mainioRouteReply ? mainioRouteReply : mainioQuoteAnswer ? {
       answer:mainioQuoteAnswer,handoff:false,confidence:1,
       intent:'Muuttotarjouspyyntö',sourceIds:[],selected:[],
     } : widgetSubscribe ? {
