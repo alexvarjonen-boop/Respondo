@@ -1,5 +1,5 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
-import { MAINIO_QUOTE_URL, isMainioMovingTenant, mainioMoveActions, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
+import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioMoveActions, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
@@ -15277,6 +15277,33 @@ app.post('/api/app/integrations/test', auth, ownerOnly, subscribed, async (req,r
     return res.json({ ok:true,httpStatus:delivery.httpStatus || 200 });
   } catch (e) {
     console.error('Webhook test failed',e); return res.status(400).json({ error:'Webhook-testi epäonnistui.' });
+  }
+});
+
+// Human review of Mainio moving enquiries. A review result is recorded
+// internally; approval does NOT claim a booked date or send an order
+// confirmation. Staff contact the customer separately to confirm an order.
+app.post('/api/app/action-requests/:id/mainio-review',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  const id=String(req.params.id||'');
+  const decision=String(req.body?.decision||'');
+  const note=String(req.body?.note||'').trim().slice(0,500);
+  if(!/^[a-f\d-]{36}$/i.test(id)||!['approved','rejected'].includes(decision))
+    return res.status(422).json({error:'Virheellinen hyväksyntäpäätös.'});
+  try{
+    const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1) AND active=true',[req.user.sub]);
+    if(!tr.rowCount||String(tr.rows[0].id)!==MAINIO_TENANT_ID)
+      return res.status(403).json({error:'Tämä hyväksyntätoiminto on vain Mainion pääkäyttäjälle.'});
+    const review={decision,note,reviewerId:req.user.sub,reviewedAt:new Date().toISOString(),customerNotified:false,bookingConfirmed:false};
+    const updated=await q(
+      "UPDATE action_requests SET status='done',result=COALESCE(result,'{}'::jsonb)||$1::jsonb,updated_at=NOW() WHERE id=$2 AND tenant_id=$3 AND request_type='quote' AND payload ? 'mainioMove' AND status IN ('new','in_progress') RETURNING id,status,result",
+      [JSON.stringify({humanReview:review}),id,MAINIO_TENANT_ID],
+    );
+    if(!updated.rowCount)return res.status(409).json({error:'Avoin Mainion muuttotarjouspyyntö puuttuu tai se on jo käsitelty.'});
+    return res.json({ok:true,id,status:'done',humanReview:review});
+  }catch(error){
+    console.error('Mainio review failed',error?.message);
+    return res.status(503).json({error:'Hyväksyntäpäätöstä ei saatu tallennettua.'});
   }
 });
 
