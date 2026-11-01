@@ -211,6 +211,13 @@
       .leadbox input:focus{border-color:#111113}
       .leadbox button{border:0;border-radius:10px;padding:10px 12px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font:inherit;font-size:13px;font-weight:800;cursor:pointer}
       .leadbox .lead-ok{font-size:12px;color:#246b45}
+      .mainio-form{gap:10px}.mainio-step{border:0;margin:0;padding:0;display:grid;gap:9px;min-width:0}
+      .mainio-step[hidden]{display:none}.mainio-step legend{font-size:13px;font-weight:800;margin-bottom:9px}
+      .mainio-form label{font-size:12px;line-height:1.45;color:#282832;display:block;font-weight:650}
+      .mainio-form input,.mainio-form select,.mainio-form textarea{display:block;width:100%;border:1px solid #d9d9dc;border-radius:10px;padding:10px 11px;margin-top:5px;font:inherit;font-size:13px;color:#111113;background:#fff}
+      .mainio-form .mainio-consent{display:flex;align-items:flex-start;gap:8px}.mainio-form .mainio-consent input{width:auto;margin-top:3px}
+      .mainio-nav{display:flex;gap:8px;justify-content:flex-end}.mainio-nav button{flex:1}.mainio-form .mainio-info{font-size:11px;line-height:1.5;color:#565b69}
+      .mainio-form .mainio-error{color:#a42323;font-size:12px}.mainio-form .mainio-success{font-size:12px;color:#136a3d}
       .actionbox{align-self:stretch;background:#fff;border:1px solid #dedee2;border-radius:16px;padding:13px;display:grid;gap:8px}
       .actionbox b{font-size:13px}.actionbox small{font-size:11px;color:#73737a;line-height:1.4}
       .actionbox input,.actionbox textarea{width:100%;border:1px solid #d9d9dc;border-radius:10px;padding:10px 11px;font:inherit;font-size:13px;outline:none;background:#fff;color:#111113}
@@ -350,7 +357,7 @@
     const valid = (Array.isArray(actions) ? actions : [])
       .filter((x) => x?.label && (
         safeActionUrl(x?.url) ||
-        ['lead','contact_form','quote_form','booking_form','order_form'].includes(x?.mode)
+        ['lead','contact_form','quote_form','booking_form','order_form','mainio_move_form'].includes(x?.mode)
       ))
       .slice(0, 4);
     if (!valid.length) return;
@@ -358,6 +365,17 @@
     wrap.className = 'actions';
 
     valid.forEach((action) => {
+      if (action.mode === 'mainio_move_form') {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = action.label + ' →';
+        button.addEventListener('click', () => {
+          trackAction(action);
+          showMainioMovingForm(question);
+        });
+        wrap.appendChild(button);
+        return;
+      }
       if (action.mode === 'lead' || action.mode === 'contact_form') {
         const button = document.createElement('button');
         button.type = 'button';
@@ -513,6 +531,182 @@
       });
       quick.appendChild(button);
     });
+  }
+
+
+  // Mainio's publicly documented moving enquiry: the customer enters facts
+  // and explicitly consents, then Mainio's staff approves or rejects the
+  // request. Never calculate a move price or reserve a date in this form.
+  function showMainioMovingForm(question='') {
+    if(chat.querySelector('.actionbox'))return;
+    const M={
+      fi:{
+        heading:'Muuttokartoitus · tarjouspyyntö',intro:'Kerro muutostasi. Mainio tarkistaa tiedot ja vahvistaa hinnan sekä ajankohdan erikseen.',
+        steps:['Muuton perustiedot','Lähtöpaikka','Kohdepaikka','Laatikot ja lisätiedot','Yhteystiedot ja hyväksyntä'],
+        type:'Muuton tyyppi',date:'Toivottu muuttopäivä',size:'Asunnon tai toimitilan koko (m²)',people:'Asukkaiden määrä (valinnainen)',
+        street:'Katuosoite ja talonumero',city:'Postitoimipaikka',housing:'Kiinteistön tyyppi',floor:'Kerros, jos kerrostalo',
+        elevator:'Onko hissi?',parking:'Saako muuttoauton oven eteen?',ownBoxes:'Onko omia muuttolaatikoita?',
+        requestedBoxes:'Kuinka monta vuokralaatikkoa toivot? (valinnainen)',carrying:'Tarvitsetko kantoapua?',
+        packing:'Tarvitsetko pakkausapua?',storage:'Tarvitsetko varastointia?',special:'Suuret, painavat tai erityiset tavarat (esim. piano)',
+        notes:'Muut lisätiedot / kantomatkat',name:'Nimi',contact:'Puhelinnumero tai sähköposti',
+        consent:'Hyväksyn, että antamani tiedot lähetetään Mainio Muuttopalvelulle tarjouspyynnön käsittelyä varten.',
+        none:'Valitse',yes:'Kyllä',no:'Ei',unknown:'En tiedä',some:'Osittain',na:'Ei koske',
+        home:'Kotimuutto',business:'Yritysmuutto',other:'Muu kuljetus',apartment:'Kerrostalo',
+        detached:'Omakotitalo',row:'Rivitalo',businessPlace:'Yritystila',otherPlace:'Muu',prev:'Edellinen',next:'Seuraava',
+        send:'Lähetä Mainion tarkistettavaksi',sending:'Lähetetään…',
+        sent:'Tarjouspyyntösi tallennettiin Mainion käsiteltäväksi. Hinta, ajankohta ja tilaus vahvistetaan erikseen.',
+        error:'Lähetys epäonnistui. Tarkista tiedot ja yritä uudelleen.',
+        boxHint:'Mainion sivuilla on kaksi suuntaa antavaa laatikko-ohjetta: 0,8–1 laatikkoa / m². Valitse itse arvioitu määrä, ja Mainio tarkistaa tarpeen.'
+      },
+      sv:{
+        heading:'Flyttkartläggning · offertförfrågan',intro:'Beskriv flytten. Mainio kontrollerar detaljerna och bekräftar pris och datum separat.',
+        steps:['Grunduppgifter','Från','Till','Flyttlådor och tillägg','Kontaktuppgifter och samtycke'],
+        type:'Typ av flytt',date:'Önskat flyttdatum',size:'Bostadens eller lokalens storlek (m²)',people:'Antal boende (valfritt)',
+        street:'Gatuadress och nummer',city:'Ort',housing:'Typ av byggnad',floor:'Våning, om höghus',
+        elevator:'Finns hiss?',parking:'Kan flyttbilen stå vid dörren?',ownBoxes:'Har du egna flyttlådor?',
+        requestedBoxes:'Hur många hyrlådor önskar du? (valfritt)',carrying:'Behöver du bärhjälp?',
+        packing:'Behöver du packhjälp?',storage:'Behöver du magasinering?',special:'Stora eller tunga föremål (t.ex. piano)',
+        notes:'Övriga uppgifter / bäravstånd',name:'Namn',contact:'Telefonnummer eller e-post',
+        consent:'Jag godkänner att uppgifterna skickas till Mainio Muuttopalvelu för behandling av offertförfrågan.',
+        none:'Välj',yes:'Ja',no:'Nej',unknown:'Vet inte',some:'Delvis',na:'Ej aktuellt',
+        home:'Bostadsflytt',business:'Företagsflytt',other:'Annan transport',apartment:'Flervåningshus',
+        detached:'Villa',row:'Radhus',businessPlace:'Företagslokal',otherPlace:'Annat',prev:'Tillbaka',next:'Nästa',
+        send:'Skicka för granskning',sending:'Skickar…',
+        sent:'Din förfrågan har sparats för Mainios granskning. Pris, datum och bokning bekräftas separat.',
+        error:'Det gick inte att skicka. Kontrollera uppgifterna och försök igen.',
+        boxHint:'Mainios sidor anger två riktvärden: 0,8–1 låda per m². Välj ett ungefärligt antal. Mainio granskar behovet.'
+      },
+      en:{
+        heading:'Moving enquiry · quote request',intro:'Tell us about your move. Mainio will review the details and separately confirm the price and date.',
+        steps:['Move details','Moving from','Moving to','Boxes and extras','Contact and consent'],
+        type:'Type of move',date:'Preferred moving date',size:'Property size (m²)',people:'Number of residents (optional)',
+        street:'Street address and building number',city:'City',housing:'Property type',floor:'Floor if apartment building',
+        elevator:'Is there an elevator?',parking:'Can the moving van park at the entrance?',ownBoxes:'Do you have your own moving boxes?',
+        requestedBoxes:'How many rental boxes would you like? (optional)',carrying:'Do you need carrying help?',
+        packing:'Do you need packing help?',storage:'Do you need storage?',special:'Large or heavy items (e.g. piano)',
+        notes:'Other details / carrying distances',name:'Name',contact:'Phone number or email',
+        consent:'I agree to send the information to Mainio Muuttopalvelu so they can review this quote request.',
+        none:'Select',yes:'Yes',no:'No',unknown:'Not sure',some:'Some',na:'Not applicable',
+        home:'Home move',business:'Business move',other:'Other transport',apartment:'Apartment building',
+        detached:'Detached house',row:'Terraced house',businessPlace:'Business premises',otherPlace:'Other',
+        prev:'Back',next:'Next',send:'Submit for Mainio’s review',sending:'Sending…',
+        sent:'Your request was saved for Mainio to review. The price, date and booking will be confirmed separately.',
+        error:'Could not send. Check the details and try again.',
+        boxHint:'Mainio’s website gives two approximate guidelines: 0.8–1 box per m². Choose an estimate; Mainio will check the quantity.'
+      }
+    };
+    const L=M[widgetLang]||M.fi;
+    const form=document.createElement('form');
+    form.className='actionbox mainio-form';
+    form.setAttribute('novalidate','');
+    const options=(values)=>'<option value="">'+escapeHtml(L.none)+'</option>'+
+      values.map(([value,label])=>'<option value="'+escapeHtml(value)+'">'+escapeHtml(label)+'</option>').join('');
+    const yesNo=[['yes',L.yes],['no',L.no],['unknown',L.unknown]];
+    const house=[['apartment',L.apartment],['detached',L.detached],['row',L.row],['business',L.businessPlace],['other',L.otherPlace],['unknown',L.unknown]];
+    const field=(name,label,type='text',required=false,extra='')=>
+      '<label>'+escapeHtml(label)+'<input name="'+name+'" type="'+type+'"'+
+      (required?' required':'')+' '+extra+'></label>';
+    const select=(name,label,list,required=false)=>
+      '<label>'+escapeHtml(label)+'<select name="'+name+'"'+(required?' required':'')+'>'+options(list)+'</select></label>';
+    const block=(index,content)=>'<fieldset class="mainio-step" data-step="'+index+'"'+(index?' hidden':'')+
+      '><legend>'+String(index+1)+'/5 · '+escapeHtml(L.steps[index])+'</legend>'+content+'</fieldset>';
+    const origin=(prefix)=>field(prefix+'Address',L.street,'text',true,'maxlength="220"')+
+      field(prefix+'City',L.city,'text',true,'maxlength="100"')+
+      select(prefix+'Housing',L.housing,house,true)+
+      field(prefix+'Floor',L.floor,'text',false,'maxlength="24"')+
+      select(prefix+'Elevator',L.elevator,[...yesNo,['na',L.na]],true)+
+      select(prefix+'Parking',L.parking,yesNo,true);
+    const body=
+      block(0,select('serviceType',L.type,[['home',L.home],['business',L.business],['other',L.other]],true)+
+        field('desiredDate',L.date,'date',true)+field('areaSqm',L.size,'number',true,'min="1" max="1500" step="0.5"')+
+        field('peopleCount',L.people,'number',false,'min="1" max="999"'))+
+      block(1,origin('origin'))+block(2,origin('destination'))+
+      block(3,select('ownBoxes',L.ownBoxes,[['yes',L.yes],['no',L.no],['some',L.some],['unknown',L.unknown]],true)+
+        '<small class="mainio-info">'+escapeHtml(L.boxHint)+'</small>'+
+        '<small class="mainio-info" data-mainio-box-estimate></small>'+
+        field('boxCount',L.requestedBoxes,'number',false,'min="0" max="9999"')+
+        select('carryingHelp',L.carrying,yesNo,true)+select('packingHelp',L.packing,yesNo,true)+
+        select('storageNeeded',L.storage,yesNo,true)+
+        '<label>'+escapeHtml(L.special)+'<textarea name="specialItems" maxlength="650"></textarea></label>'+
+        '<label>'+escapeHtml(L.notes)+'<textarea name="notes" maxlength="850"></textarea></label>')+
+      block(4,field('name',L.name,'text',true,'maxlength="120"')+
+        field('contact',L.contact,'text',true,'maxlength="220"')+
+        '<label class="mainio-consent"><input name="consent" type="checkbox" required> '+escapeHtml(L.consent)+'</label>'+
+        '<small class="mainio-info">'+escapeHtml(L.intro)+'</small>');
+    form.innerHTML='<b>'+escapeHtml(L.heading)+'</b><small>'+escapeHtml(L.intro)+'</small>'+body+
+      '<div class="mainio-nav"><button type="button" data-mainio-back hidden>'+escapeHtml(L.prev)+'</button>'+
+      '<button type="button" data-mainio-next>'+escapeHtml(L.next)+'</button>'+
+      '<button type="submit" data-mainio-submit hidden>'+escapeHtml(L.send)+'</button></div>'+
+      '<div class="mainio-error" role="alert"></div><div class="mainio-success" role="status"></div>';
+    chat.appendChild(form);
+    let step=0;
+    const steps=[...form.querySelectorAll('[data-step]')];
+    const back=form.querySelector('[data-mainio-back]'),next=form.querySelector('[data-mainio-next]');
+    const send=form.querySelector('[data-mainio-submit]'),error=form.querySelector('.mainio-error');
+    const show=(index)=>{
+      step=index;steps.forEach((x,i)=>x.hidden=i!==step);
+      back.hidden=step===0;next.hidden=step===steps.length-1;send.hidden=step!==steps.length-1;
+      error.textContent='';chat.scrollTop=chat.scrollHeight;
+    };
+    const estimateEl=form.querySelector('[data-mainio-box-estimate]');
+    const updateBoxEstimate=()=>{
+      const sqm=Number(form.elements.areaSqm.value);
+      if(!Number.isFinite(sqm)||sqm<=0||sqm>1500){estimateEl.textContent='';return;}
+      const lo=Math.ceil(sqm*0.8),hi=Math.ceil(sqm);
+      estimateEl.textContent=widgetLang==='en'
+        ? 'Based on '+sqm+' m², Mainio’s two guidance figures suggest about '+lo+'–'+hi+' boxes. This is an estimate, not a confirmed number.'
+        : widgetLang==='sv'
+          ? 'För '+sqm+' m² ger Mainios två riktvärden ungefär '+lo+'–'+hi+' lådor. Det är en uppskattning.'
+          : sqm+' m²:n asunnolle Mainion kaksi ohjetta antavat suuntaa-antavaksi arvioksi noin '+lo+'–'+hi+' laatikkoa. Määrä vahvistetaan erikseen.';
+    };
+    form.elements.areaSqm.addEventListener('input',updateBoxEstimate);
+    updateBoxEstimate();
+    form.elements.desiredDate.min=new Date().toLocaleDateString('sv-SE');
+    function validateStep(){
+      const current=steps[step];
+      const prefix=step===1?'origin':step===2?'destination':'';
+      if(prefix){
+        form.elements[prefix+'Floor'].required=form.elements[prefix+'Housing'].value==='apartment';
+      }
+      const elements=[...current.querySelectorAll('input,textarea,select')];
+      for(const el of elements){
+        if(!el.checkValidity()){el.reportValidity();el.focus();return false;}
+      }
+      return true;
+    }
+    back.addEventListener('click',()=>show(Math.max(0,step-1)));
+    next.addEventListener('click',()=>{if(validateStep())show(Math.min(steps.length-1,step+1));});
+    form.addEventListener('submit',async(ev)=>{
+      ev.preventDefault();
+      if(!validateStep())return;
+      const fields=Object.fromEntries(new FormData(form).entries());
+      fields.consent=form.elements.consent.checked;
+      // Enforce the previous steps too; changing values must not bypass them.
+      for(const required of ['serviceType','desiredDate','areaSqm','originAddress','originCity','originHousing',
+         'originElevator','originParking','destinationAddress','destinationCity','destinationHousing',
+         'destinationElevator','destinationParking','ownBoxes','carryingHelp','packingHelp','storageNeeded','name','contact']){
+        if(!String(fields[required]||'').trim()){error.textContent=L.error;return;}
+      }
+      if(fields.originHousing==='apartment'&&!fields.originFloor){show(1);error.textContent=L.error;return;}
+      if(fields.destinationHousing==='apartment'&&!fields.destinationFloor){show(2);error.textContent=L.error;return;}
+      send.disabled=true;const old=send.textContent;send.textContent=L.sending;error.textContent='';
+      try{
+        const response=await fetch(serviceOrigin+'/api/public/'+encodeURIComponent(company)+'/action-request',{
+          method:'POST',mode:'cors',credentials:'omit',
+          headers:{'Content-Type':'text/plain;charset=UTF-8'},
+          body:JSON.stringify({
+            type:'quote',mode:'mainio_move',fields,question,
+            widgetToken:token,visitorRef,sourceChannel:'website',lang:widgetLang,pageContext
+          }),
+        });
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok||!data.ok)throw new Error(data.error||L.error);
+        form.querySelector('.mainio-success').textContent=data.customerMessage||L.sent;
+        form.querySelectorAll('input,select,textarea,button').forEach(el=>{el.disabled=true;});
+        send.hidden=true;back.hidden=true;
+      }catch(err){error.textContent=err.message||L.error;send.disabled=false;send.textContent=old;}
+    });
+    show(0);
   }
 
   function showActionForm(action, question) {

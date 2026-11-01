@@ -4036,7 +4036,44 @@ async function dashboard(options = {}) {
     messenger:'Messenger',
     sms:'SMS',
   })[channel] || channel || appText('Kanava','Kanal','Channel');
-  const actionFieldEntries = (payload) => Object.entries(payload?.fields || {}).filter(([key,v]) => key !== 'slotId' && String(v || '').trim());
+  const mainioFieldLabels={
+    name:appText('Nimi','Namn','Name'),contact:appText('Yhteystieto','Kontakt','Contact'),
+    serviceType:appText('Muuton tyyppi','Flyttyp','Move type'),desiredDate:appText('Muuttopäivä','Flyttdatum','Moving date'),
+    originAddress:appText('Lähtöosoite','Från adress','Origin address'),originCity:appText('Lähtöpaikkakunta','Från ort','Origin city'),
+    originHousing:appText('Lähtökohteen tyyppi','Typ av ursprung','Origin property'),originFloor:appText('Lähtökerros','Våning från','Origin floor'),
+    originElevator:appText('Lähtökohteen hissi','Hiss från','Origin elevator'),originParking:appText('Auto oven eteen lähtöpaikassa','Bil vid dörr (från)','Van at origin entrance'),
+    destinationAddress:appText('Kohdeosoite','Till adress','Destination address'),destinationCity:appText('Kohdepaikkakunta','Till ort','Destination city'),
+    destinationHousing:appText('Kohteen tyyppi','Typ av destination','Destination property'),destinationFloor:appText('Kohdekerros','Våning till','Destination floor'),
+    destinationElevator:appText('Kohteen hissi','Hiss till','Destination elevator'),destinationParking:appText('Auto oven eteen kohteessa','Bil vid dörr (till)','Van at destination entrance'),
+    areaSqm:appText('Pinta-ala (m²)','Yta (m²)','Area (m²)'),peopleCount:appText('Asukkaiden määrä','Antal boende','Residents'),
+    ownBoxes:appText('Omat laatikot','Egna lådor','Own boxes'),boxCount:appText('Vuokralaatikot','Hyrlådor','Rental boxes'),
+    carryingHelp:appText('Kantoapu','Bärhjälp','Carrying help'),packingHelp:appText('Pakkausapu','Packhjälp','Packing help'),
+    storageNeeded:appText('Varastointi','Magasinering','Storage'),specialItems:appText('Erityiset tavarat','Särskilda föremål','Special items'),
+    notes:appText('Lisätiedot','Övrig information','Notes')
+  };
+  const actionFieldEntries = (payload) => payload?.mainioMove
+    ? Object.entries(payload.mainioMove).filter(([key,v])=>v!==undefined && v!==null && String(v).trim()!=='')
+      .map(([key,value])=>[mainioFieldLabels[key]||key,
+        typeof value==='string' ? ({yes:appText('Kyllä','Ja','Yes'),no:appText('Ei','Nej','No'),unknown:appText('Ei tiedossa','Okänt','Unknown'),na:appText('Ei koske','Inte aktuellt','Not applicable')}[value]||value) : String(value)])
+    : Object.entries(payload?.fields || {}).filter(([key,v]) => key !== 'slotId' && String(v || '').trim());
+  // The review is an internal workflow decision, not a confirmation of the
+  // customer's price, moving date, or binding booking.
+  const actionReviewControls=(x)=>{
+    if(x.payload?.mainioMove && x.status!=='done')return '<button type="button" class="mainio-human-review" data-decision="approved">'+appText('Hyväksy jatkokäsittelyyn','Godkänn för uppföljning','Approve for follow-up')+'</button>'+
+      '<button type="button" class="mainio-human-review" data-decision="rejected">'+appText('Hylkää','Avvisa','Reject')+'</button>';
+    if(x.status!=='done')return '<button type="button" class="mark-action-done">'+appText('Merkitse hoidetuksi','Markera som klar','Mark as done')+'</button>';
+    return '<span class="action-done-label">✓ '+appText('Käsitelty','Behandlad','Reviewed')+'</span>';
+  };
+  const actionReviewSummary=(x)=>{
+    if(!x.payload?.mainioMove)return '';
+    const decision=x.result?.humanReview?.decision;
+    const status=decision==='approved'
+      ? appText('Hyväksytty jatkokäsittelyyn. Ota yhteyttä asiakkaaseen, ennen kuin vahvistat hintaa tai päivää.','Godkänd för uppföljning. Kontakta kunden innan pris och datum bekräftas.','Approved for follow-up. Contact the customer before confirming a price or date.')
+      : decision==='rejected'
+      ? appText('Hylätty – ilmoita asiakkaalle erikseen.','Avvisad – meddela kunden separat.','Rejected – notify the customer separately.')
+      : appText('Odottaa Mainion tarkistusta. Hinta ja muuttopäivä eivät ole vahvistettuja.','Väntar på Mainios granskning. Pris och datum är inte bekräftade.','Awaiting Mainio review. Price and date are not confirmed.');
+    return '<div class="action-booking-summary"><span>'+appText('MUUTTOTARJOUSPYYNTÖ · IHMISEN HYVÄKSYNTÄ','FLYTTOFFERT · MANUELL GRANSKNING','MOVING ENQUIRY · HUMAN REVIEW')+'</span><small>'+esc(status)+'</small></div>';
+  };
   const localDateInput = (date) => {
     const d = new Date(date);
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -4853,9 +4890,10 @@ async function dashboard(options = {}) {
                     <small>${x.result?.calendarSync?.status === 'synced' ? 'Google Calendar ✓' : x.result?.calendarSync?.status === 'failed' ? appText('Google-sync epäonnistui','Google-synkronisering misslyckades','Google sync failed') : 'RESPONDO Calendar'}</small>
                   </div>
                 ` : ''}
+                ${actionReviewSummary(x)}
                 <div class="action-request-bottom">
                   <small>${appText('Integraatio','Integration','Integration')}: ${esc(x.delivery_status === 'delivered' ? appText('lähetetty ✓','skickad ✓','sent ✓') : x.delivery_status === 'failed' ? appText('lähetys epäonnistui','sändningen misslyckades','sending failed') : appText('vain RESPONDOssa','endast i RESPONDO','RESPONDO only'))}</small>
-                  ${x.status !== 'done' ? `<button type="button" class="mark-action-done">${appText('Merkitse hoidetuksi','Markera som klar','Mark as done')}</button>` : `<span class="action-done-label">✓ ${appText('Hoidettu','Klar','Done')}</span>`}
+                  ${actionReviewControls(x)}
                 </div>
               </article>
             `).join('') : `
@@ -8320,6 +8358,39 @@ async function route() {
       });
     });
 
+    document.querySelectorAll('.mainio-human-review').forEach(button=>{
+      button.addEventListener('click',async()=>{
+        const item=button.closest('.action-request-item');
+        const id=item?.dataset.actionId;
+        const decision=button.dataset.decision;
+        if(!id||!['approved','rejected'].includes(decision))return;
+        const approve=decision==='approved';
+        const text=approve
+          ? appText('Hyväksy tarjouspyyntö jatkokäsittelyyn? Tämä EI vahvista muuttopäivää tai hintaa. Ota asiakkaaseen erikseen yhteyttä.',
+            'Godkänna för uppföljning? Detta bekräftar INTE datum eller pris. Kontakta kunden separat.',
+            'Approve for follow-up? This does NOT confirm the date or price. Contact the customer separately.')
+          : appText('Hylätäänkö pyyntö? Asiakkaalle ei lähde automaattista viestiä.',
+            'Avvisa förfrågan? Kunden meddelas inte automatiskt.',
+            'Reject the request? The customer will not be notified automatically.');
+        if(!window.confirm(text))return;
+        item.querySelectorAll('.mainio-human-review').forEach(b=>b.disabled=true);
+        try{
+          await api('/api/app/action-requests/'+encodeURIComponent(id)+'/mainio-review',{
+            method:'POST',body:JSON.stringify({decision})
+          });
+          item.classList.add('done');
+          item.querySelector('.action-state').textContent=appText('Käsitelty','Behandlad','Reviewed');
+          const review=item.querySelector('.action-booking-summary small');
+          if(review)review.textContent=approve
+            ? appText('Hyväksytty jatkokäsittelyyn – ota yhteyttä asiakkaaseen','Godkänd – kontakta kunden','Approved – contact the customer')
+            : appText('Hylätty – ilmoita asiakkaalle','Avvisad – meddela kunden','Rejected – notify customer');
+          item.querySelectorAll('.mainio-human-review').forEach(b=>b.remove());
+        }catch(err){
+          item.querySelectorAll('.mainio-human-review').forEach(b=>b.disabled=false);
+          alert(err.message);
+        }
+      });
+    });
     document.querySelectorAll('.mark-action-done').forEach((button) => {
       button.addEventListener('click', async () => {
         const item = button.closest('.action-request-item');

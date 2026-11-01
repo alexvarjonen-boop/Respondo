@@ -1,4 +1,5 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
+import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioMoveActions, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
@@ -14493,7 +14494,20 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const widgetSubscribe=firstPartyRespondo
       ? respondoCheckoutAction(message,detectedLang,firstPartyFaq?.id||'',SEO_CANONICAL_ORIGIN)
       : null;
-    const result = widgetSubscribe ? {
+    const mainioQuoteIntent=isMainioMovingTenant(t) &&
+      /(?:tilaa|tilaamaan|varaa|varaisin|varata|haluan tilata|haluaisin tilata|book|request|boka|beställa|bestalla|offert|tarjouspyyntö|tarjouspyynnon)/i.test(message) &&
+      /(?:muut|muutto|muutt|moving|move|flytt|tarjous|quote|offert)/i.test(message);
+    const mainioQuoteAnswer=mainioQuoteIntent
+      ? (detectedLang==='en'
+          ? 'You can send the details of your move for Mainio Muuttopalvelu to review using the button below. Mainio confirms the price, date and booking separately.'
+          :detectedLang==='sv'
+          ? 'Du kan lämna uppgifter om flytten via knappen nedan. Mainio Muuttopalvelu bekräftar pris, datum och bokning separat.'
+          : 'Voit kertoa muuttosi tiedot alla olevan painikkeen kautta. Mainio Muuttopalvelu tarkistaa tarjouspyynnön ja vahvistaa hinnan, ajankohdan sekä tilauksen erikseen.')
+      : null;
+    const result = mainioQuoteAnswer ? {
+      answer:mainioQuoteAnswer,handoff:false,confidence:1,
+      intent:'Muuttotarjouspyyntö',sourceIds:[],selected:[],
+    } : widgetSubscribe ? {
       answer:detectedLang==='en'
         ? 'Choose a Respondo subscription plan using the button below.'
         :detectedLang==='sv'
@@ -14543,6 +14557,13 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const publicPlanAccess = planEntitlements(t.subscription_plan);
     if (!publicPlanAccess.allCurrentFeatures) {
       actions = actions.filter((action) => action?.type !== 'order_status');
+    }
+    if(isMainioMovingTenant(t)){
+      // One genuine human-reviewed quote flow and the company's original
+      // enquiry form. Never offer a fake calendar booking or calculated price.
+      const contactActions=chatActions(actionRows,message,handoff,responseLang,result.selected)
+        .filter(action=>['contact','phone','email'].includes(action.type));
+      actions=[...mainioMoveActions(responseLang),...contactActions].slice(0,4);
     }
     if (firstPartyRespondo) {
       const siteActions=respondoSitePageActions(message,responseLang,firstPartyFaq?.id);
@@ -14717,6 +14738,16 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     setWidgetCors(req,res);
 
     const type = String(body.type || '').trim();
+    const wantsMainioMove=body.mode==='mainio_move';
+    const mainioMoveRequest=type==='quote' && wantsMainioMove && isMainioMovingTenant(tenant);
+    if(wantsMainioMove&&!mainioMoveRequest)
+      return res.status(403).json({error:'Tämä muuttokartoitus kuuluu vain Mainio Muuttopalvelulle.'});
+    const validatedMainio=mainioMoveRequest
+      ? validateMainioMove(body.fields,{
+          today:new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Helsinki',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+        })
+      : null;
+    if(validatedMainio?.error)return res.status(422).json({error:validatedMainio.error});
     if (!['quote','booking','order_status','callback'].includes(type)) {
       return res.status(400).json({ error:'Tuntematon toiminto.' });
     }
@@ -14725,6 +14756,11 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     }
 
     const fields = cleanActionFields(type, body.fields);
+    if(mainioMoveRequest){
+      fields.name=validatedMainio.data.name;
+      fields.contact=validatedMainio.data.contact;
+      fields.details=mainioMoveDetails(validatedMainio.data).slice(0,1800);
+    }
     if (type === 'booking') {
       fields.slotId = String(body.fields?.slotId || '').trim().slice(0,80);
     }
@@ -14745,6 +14781,14 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       question: String(body.question || '').trim().slice(0,1200),
       pageUrl,
       pageTitle: String(body.pageContext?.title || '').slice(0,300) || null,
+      ...(mainioMoveRequest ? {
+        mainioMove:validatedMainio.data,
+        consentAcceptedAt:new Date().toISOString(),
+        consentScope:'share_with_mainio_for_moving_quote_review',
+        humanApprovalRequired:true,
+        sourceUrl:MAINIO_QUOTE_URL,
+        fulfilment:'quote-request-only',
+      } : {}),
     };
     let computedQuote = null;
     let bookedSlot = null;
@@ -14762,7 +14806,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       }
     }
 
-    if (type === 'quote' && actionAccess.allCurrentFeatures) {
+    if (type === 'quote' && actionAccess.allCurrentFeatures && !mainioMoveRequest) {
       const base = Number(tenant.quote_base_price || 0);
       const perUnit = Number(tenant.quote_unit_price || 0);
       const minimum = Number(tenant.quote_min_price || 0);
@@ -15041,7 +15085,13 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       calendarSync,
       paymentAvailable,
       checkoutUrl,
-      customerMessage: customerMessage || (
+      customerMessage: mainioMoveRequest
+        ? (actionLang==='en'
+            ? 'Your moving enquiry has been submitted for Mainio Muuttopalvelu to review. The price, date and booking are not confirmed yet.'
+            :actionLang==='sv'
+            ? 'Din flyttförfrågan har skickats till Mainio Muuttopalvelu för granskning. Pris, datum och bokning är ännu inte bekräftade.'
+            : 'Muuttotarjouspyyntösi on lähetetty Mainio Muuttopalvelun käsiteltäväksi. Hinta, muuttopäivä ja tilaus vahvistetaan erikseen.')
+        : customerMessage || (
         actionLang === 'en'
           ? (type === 'booking' ? 'Your booking request has been received.' :
              type === 'quote' ? 'Your quote request has been received.' :
@@ -15232,11 +15282,45 @@ app.post('/api/app/integrations/test', auth, ownerOnly, subscribed, async (req,r
   }
 });
 
+// Human review of Mainio moving enquiries. A review result is recorded
+// internally; approval does NOT claim a booked date or send an order
+// confirmation. Staff contact the customer separately to confirm an order.
+app.post('/api/app/action-requests/:id/mainio-review',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  const id=String(req.params.id||'');
+  const decision=String(req.body?.decision||'');
+  const note=String(req.body?.note||'').trim().slice(0,500);
+  if(!/^[a-f\d-]{36}$/i.test(id)||!['approved','rejected'].includes(decision))
+    return res.status(422).json({error:'Virheellinen hyväksyntäpäätös.'});
+  try{
+    const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1) AND active=true',[req.user.sub]);
+    if(!tr.rowCount||String(tr.rows[0].id)!==MAINIO_TENANT_ID)
+      return res.status(403).json({error:'Tämä hyväksyntätoiminto on vain Mainion pääkäyttäjälle.'});
+    const review={decision,note,reviewerId:req.user.sub,reviewedAt:new Date().toISOString(),customerNotified:false,bookingConfirmed:false};
+    const updated=await q(
+      "UPDATE action_requests SET status='done',result=COALESCE(result,'{}'::jsonb)||$1::jsonb,updated_at=NOW() WHERE id=$2 AND tenant_id=$3 AND request_type='quote' AND payload ? 'mainioMove' AND status IN ('new','in_progress') RETURNING id,status,result",
+      [JSON.stringify({humanReview:review}),id,MAINIO_TENANT_ID],
+    );
+    if(!updated.rowCount)return res.status(409).json({error:'Avoin Mainion muuttotarjouspyyntö puuttuu tai se on jo käsitelty.'});
+    return res.json({ok:true,id,status:'done',humanReview:review});
+  }catch(error){
+    console.error('Mainio review failed',error?.message);
+    return res.status(503).json({error:'Hyväksyntäpäätöstä ei saatu tallennettua.'});
+  }
+});
+
 app.post('/api/app/action-requests/:id/status', auth, ownerOnly, subscribed, async (req,res) => {
   try {
     const status = ['new','in_progress','done'].includes(String(req.body.status)) ? String(req.body.status) : 'done';
     const tr = await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
     if (!tr.rowCount) return res.status(404).json({ error:'Työtilaa ei löytynyt.' });
+    if(String(tr.rows[0].id)===MAINIO_TENANT_ID && status==='done'){
+      const move=await q(
+        "SELECT 1 FROM action_requests WHERE id=$1 AND tenant_id=$2 AND payload ? 'mainioMove' LIMIT 1",
+        [req.params.id,tr.rows[0].id],
+      );
+      if(move.rowCount)return res.status(409).json({error:'Muuttotarjouspyyntö käsitellään hyväksy- tai hylkää-toiminnolla.'});
+    }
     const updated = await q(
       'UPDATE action_requests SET status=$1,updated_at=NOW() WHERE id=$2 AND tenant_id=$3 RETURNING id,status',
       [status,req.params.id,tr.rows[0].id],
