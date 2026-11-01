@@ -567,3 +567,30 @@
     width:min(20vw,240px,calc((100svh - 240px)*.40))!important;
   }
 }
+
+
+/* Align every desktop scroll chapter to the same left-hand content baseline.
+   Keep the intro isolated: once chapters start, no ghost hero remains. */
+@media (min-width:1100px) and (prefers-reduced-motion:no-preference) {
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced .rs-spiral-card,
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced .rs-spiral-card:first-child {
+    justify-content:flex-end!important;
+    align-items:flex-start!important;
+    text-align:left!important;
+    padding:85px 51% clamp(54px,7svh,76px) 8%!important;
+  }
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card-kicker {
+    justify-content:flex-start!important;
+  }
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced.rs-intro-past .rs-spiral-heading {
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card h2,
+  #app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"] .rs-spiral-card p {
+    margin-left:0!important;
+    margin-right:0!important;
+    text-align:left!important;
+  }
+}
