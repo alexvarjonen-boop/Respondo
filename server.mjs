@@ -13747,6 +13747,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // req.cookies here. A missing/expired cookie must never silently turn
     // this into an anonymous demo and hide the tenant's approved knowledge.
     let previewIsFirstPartyRespondo = false;
+    let previewMainioTenant = false;
     if (body.dashboardPreview === true && (isPublicDemo || demoImportId)) {
       return res.status(400).json({error:'Virheellinen esikatselupyyntö.'});
     }
@@ -13759,7 +13760,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
         if (token) {
           const session = jwt.verify(token, JWT, {algorithms:['HS256']});
           const tr = await q(
-            'SELECT id,name,slug FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',
+            'SELECT id,name,slug,website FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',
             [session.sub],
           );
           if (!tr.rowCount && body.dashboardPreview === true) {
@@ -13767,6 +13768,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
           }
           if (tr.rowCount) {
             previewIsFirstPartyRespondo=isFirstPartyRespondoTenant(tr.rows[0]);
+            previewMainioTenant=isMainioMovingTenant(tr.rows[0]);
             const kr = await q(
               'SELECT id,category,title,answer,keywords,source_type,source_url FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC LIMIT 1000',
               [tr.rows[0].id],
@@ -13819,7 +13821,18 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       return res.json({answer:concise,handoff:false,confidence:1,intent:'Respondo subscription',
         actions:[directSubscribe],products:[],canLeaveContact:false,language:detectedLang});
     }
-    let result = previewFaq
+    // The signed-in Mainio dashboard must show a real quote action rather
+    // than a generic demo answer. The full five-step intake remains available
+    // in the installed widget, while this preview links to Mainio's verified form.
+    const mainioOrderPreview=previewMainioTenant && mainioMovingOrderIntent(message);
+    let result = mainioOrderPreview ? {
+      answer:detectedLang==='en'
+        ? 'You can submit the details of your move using Mainio’s official quote form below. Mainio confirms the price, date and booking separately.'
+        :detectedLang==='sv'
+          ? 'Du kan lämna uppgifter om flytten via Mainios officiella offertformulär nedan. Mainio bekräftar pris, datum och bokning separat.'
+          : 'Voit pyytää muuttotarjouksen Mainion virallisella lomakkeella alla olevasta painikkeesta. Mainio vahvistaa hinnan, ajankohdan ja tilauksen erikseen.',
+      handoff:false,confidence:1,intent:'Muuttotarjouspyyntö',sourceIds:[],selected:[],
+    } : previewFaq
       ? {answer:previewFaq.answer,handoff:false,confidence:1,intent:'Respondo FAQ',
          sourceIds:[previewFaq.id],selected:[]}
       : await generateGroundedAnswer({
@@ -13918,11 +13931,20 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
         ? 'Jag hittade relevant företagsinformation men kunde inte översätta svaret tillförlitligt just nu. Försök igen om en stund.'
         : noAnswer;
 
+    // For Mainio, an unsupported factual answer must never appear verified
+    // just because a generic demo model inferred it. Source rows are mandatory.
+    if(previewMainioTenant && !mainioOrderPreview && !mainioIsSmallTalk(message) &&
+       (!Array.isArray(result.sourceIds) || result.sourceIds.length===0)){
+      result={answer:'',handoff:true,confidence:0,intent:'Varmennettu lähde puuttuu',sourceIds:[],selected:[]};
+    }
     let handoff = result.handoff;
     let answer = sanitizeUserFacingText(result.answer);
-    // Demo preview has no real order-status action endpoint.
-    const actions = chatActions(rows, message, handoff, detectedLang, result.selected || [])
-      .filter((action) => action?.type !== 'order_status');
+    // The dashboard can open the verified external link. The Mainio-specific
+    // five-step form is intentionally rendered only by the real customer widget.
+    const actions = previewMainioTenant
+      ? mainioInquiryActions(message,detectedLang).filter((action)=>action?.url)
+      : chatActions(rows, message, handoff, detectedLang, result.selected || [])
+          .filter((action) => action?.type !== 'order_status');
     // A real checkout CTA is first-party UI data, never an untrusted scraped URL.
     // This fixes the Respondo demo replying about prices/ordering with only text.
     const orderAction=firstPartyRespondoPreview
