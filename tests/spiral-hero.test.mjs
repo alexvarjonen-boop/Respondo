@@ -69,9 +69,11 @@ test('lightweight spiral uses a bounded, scroll-driven frame and fails safely', 
   assert.match(js, /passive:true/);
   assert.doesNotMatch(js, /WebGL|three\.js|scrollIntoView|setInterval\(|requestAnimationFrame\(update\)/);
   // Desktop gesture navigation is deliberate; keep it passive on touch/mobile.
-  assert.match(js, /addEventListener\('wheel', onWheel, \{ passive:false \}\)/);
+  assert.match(js, /addEventListener\('wheel', onWheel, \{ passive:false, capture:true \}\)/);
   assert.match(js, /coarse\.matches \|\| innerWidth < 760/);
-  assert.match(js, /wheelGestureUsed/);
+  assert.match(js, /wheelArmed/);
+  assert.match(js, /wheelLockedUntil/);
+  assert.doesNotMatch(js, /wheelGestureUsed|wheelGestureReset/);
   assert.match(js, /event\.preventDefault\(\)/);
   assert.match(js, /scrollTo\(\{ top: Math\.round\(target\), behavior: 'instant' \}\)/);
 });
