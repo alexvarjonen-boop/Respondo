@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   classifyMainioSemanticIntent,validatedMainioSemanticIntent,
   mainioSemanticEnabled,safeMainioSemanticQuestion,mainioSemanticActions,
-  resetMainioSemanticBudgetForTests
+  resetMainioSemanticBudgetForTests,interpretMainioLocalIntent
 } from '../mainio-semantic-intent.mjs';
 import {mainioSemanticGroundedReply} from '../server.mjs';
 
@@ -156,4 +156,46 @@ test('Swedish and English safe moving quote guidance works without inventing pri
     assert.match(reply.answer,pattern);
     assert.equal(mainioSemanticActions({intent:'moving_quote'},lang).length,2);
   }
+});
+
+test('free local understanding covers colloquial moving requests without API calls',()=>{
+  const examples=[
+    ['Pääsisittekö hakemaan mun tavarat Lapista?', 'moving_route'],
+    ['Oisko teillä mahdollisuutta hoitaa yks muutto pohjosesta?', 'moving_route'],
+    ['Ois muutto Oulusta Helsinkiin, mitenhän sen sais hoidettua?', 'moving_route'],
+    ['Teettekö muuttoja Joensuusta Turkuun?', 'moving_route'],
+    ['Tarvittais joku kuljettamaan vanha sohva uuteen kotiin', 'moving_quote'],
+    ['Haluaisin tilata muuttopalvelun muuttolaatikkoineen', 'moving_quote'],
+    ['Saako muuttolaatikoita vuokralle?', 'box_rental'],
+    ['Voiko pakettiauton vuokrata muuttoon?', 'van_rental'],
+    ['missä päin toimitte', 'service_area'],
+    ['Missä kaikkialla toimitte?', 'service_area'],
+    ['Mummo pitäis saada muutettua etelään', 'clarify'],
+  ];
+  for(const [question,expected] of examples) {
+    const classification=interpretMainioLocalIntent(question);
+    assert.equal(classification?.intent,expected,question);
+    assert.ok(classification.confidence>=82,question);
+    if(expected==='moving_route')assert.equal(classification.route_scope,'unknown');
+  }
+});
+
+test('free intent layer abstains on uncertain pricing, safety and unrelated topics',()=>{
+  for(const q of [
+    'Paljonko muutto maksaa?',
+    'Onnistuuko muutto hissittömästä talosta?',
+    'Onko huomenna vapaita muuttoaikoja?',
+    'Hei',
+    'Tarvitsen auton katsastuksen',
+    'Minkä värinen sohva on paras?'
+  ]) assert.equal(interpretMainioLocalIntent(q),null,q);
+});
+
+test('free local layer does not guess that Finnish-looking routes stay inside Finland',()=>{
+  const local=interpretMainioLocalIntent('Teettekö muuttoja Helsingistä Tukholmaan?');
+  assert.equal(local?.intent,'moving_route');
+  assert.equal(local.route_scope,'unknown');
+  const reply=mainioSemanticGroundedReply([fact],local,'fi');
+  assert.match(reply.answer,/en voi vahvistaa/);
+  assert.deepEqual(reply.sourceIds,[]);
 });
