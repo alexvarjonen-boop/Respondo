@@ -22,6 +22,7 @@ import {answerBranchException,exceptionQueryDate} from './branch-exceptions.mjs'
 import {faqParaphraseEvidence} from './faq-paraphrase-evidence.mjs';
 import {faqTopicEvidence,faqAnswersMateriallyConflict} from './faq-topic-evidence.mjs';
 import {tryGroundedAIResponse} from './grounded-ai-fallback.mjs';
+import {classifyMainioSemanticIntent,mainioSemanticActions} from './mainio-semantic-intent.mjs';
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
 import {storeAvailabilityAnswer} from './store-availability.mjs';
 import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentAsPage, importCoverage } from './web-document-import.mjs';
@@ -3791,8 +3792,8 @@ function serviceAreaAnswer(value, lang='fi') {
 // A route enquiry (e.g. "onnistuuko muutto Rovaniemeltä Turkuun?") must
 // use Mainio's approved nationwide-coverage source rather than a guessed
 // guarantee, specific date, or price. Caller must verify tenant identity.
-export function mainioVerifiedMovingRouteReply(rows,message,lang='fi') {
-  if(!mainioMovingRouteIntent(message))return null;
+export function mainioVerifiedMovingRouteReply(rows,message,lang='fi',semanticRoute=false) {
+  if(!semanticRoute && !mainioMovingRouteIntent(message))return null;
   const source=verifiedServiceAreaValue(rows||[]);
   if(!source?.row?.id || !source?.row?.source_url ||
      !/muualle suomeen/.test(normalizeSearchText(source.value)))return null;
@@ -3803,6 +3804,72 @@ export function mainioVerifiedMovingRouteReply(rows,message,lang='fi') {
       : 'Voit kysyä tarjousta tällaisesta muutosta. Mainion vahvistettujen tietojen mukaan muuttoja voidaan sopia myös muualle Suomeen. Mainio tarkistaa erikseen, onnistuuko juuri tämä reitti toivottuna päivänä ja mitä muutto maksaa. Voit täyttää muuttokartoituksen alla olevasta painikkeesta.';
   return {answer,handoff:false,confidence:1,intent:'Muuton toimialue',
     sourceIds:[source.row.id],selected:[source.row]};
+}
+
+// An AI classification is only a label. Answer content comes exclusively
+// from verified business rows and predetermined, approval-safe workflow text.
+export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
+  const type=classification?.intent;
+  if(!type || !['fi','sv','en'].includes(lang))return null;
+  const response=(answer,intent,selected=[],handoff=false)=>({
+    answer,handoff,confidence:handoff?0.35:0.92,intent,
+    sourceIds:selected.map(row=>row.id).filter(Boolean),selected,
+  });
+  if(type==='clarify')return response(
+    lang==='en'
+      ? 'Do you mean moving household belongings, renting moving boxes, or renting a van? I can help you find the right option.'
+      :lang==='sv'
+        ? 'Menar du flytthjälp för bohag, hyra av flyttlådor eller hyra av skåpbil? Jag kan hjälpa dig hitta rätt alternativ.'
+        : 'Tarkoitatko muuttotavaroiden muuttoa, muuttolaatikoiden vuokrausta vai pakettiauton vuokrausta? Voin auttaa oikean palvelun valinnassa.',
+    'Tarkennus'
+  );
+  if(type==='moving_quote')return response(
+    lang==='en' ? 'You can send the details of your move for Mainio to review using the button below. The price, moving date and booking are confirmed by Mainio separately.'
+      :lang==='sv' ? 'Du kan lämna uppgifter om flytten via knappen nedan. Mainio bekräftar pris, datum och bokning separat.'
+      : 'Voit jättää muuttosi tiedot Mainion tarkistettavaksi alla olevasta painikkeesta. Mainio vahvistaa hinnan, ajankohdan ja tilauksen erikseen.',
+    'Muuttotarjouspyyntö'
+  );
+  if(type==='moving_route'){
+    if(classification.route_scope==='domestic'){
+      const grounded=mainioVerifiedMovingRouteReply(rows,'',lang,true);
+      if(grounded)return grounded;
+    }
+    if(classification.route_scope==='international'){
+      const row=(rows||[]).find(x=>x?.id&&x?.source_url&&
+        normalizeSearchText(x.title)==='ulkomaanmuutto' &&
+        /ulkomaille/.test(normalizeSearchText(x.answer)));
+      if(row)return response(
+        lang==='en' ? 'Mainio’s published information mentions international moving services. Mainio must separately confirm whether your specific route and date are possible, as well as the price. You can submit the details using the button below.'
+          :lang==='sv' ? 'Mainios publicerade information nämner internationella flyttar. Mainio bekräftar separat om rutten och datumet är möjliga samt priset. Lämna uppgifterna via knappen nedan.'
+          : 'Mainion julkaistuissa tiedoissa mainitaan myös ulkomaanmuutot. Mainio tarkistaa erikseen, onnistuuko juuri tämä reitti toivottuna ajankohtana ja mitä se maksaa. Voit lähettää muuttotiedot alla olevan painikkeen kautta.',
+        'Muuton toimialue',[row]
+      );
+    }
+    return response(
+      lang==='en' ? 'Mainio can review your route request, but I cannot confirm that the specific move is available. Send your move details below for confirmation.'
+        :lang==='sv' ? 'Mainio kan granska din förfrågan, men jag kan inte bekräfta att just denna flytt kan genomföras. Lämna flyttuppgifterna nedan.'
+        : 'Mainio voi tarkistaa pyytämäsi muuttoreitin, mutta en voi vahvistaa sen toteutumista etukäteen. Jätä muuton tiedot alla olevasta painikkeesta, niin Mainio selvittää asian.',
+      'Muuttotarjouspyyntö'
+    );
+  }
+  if(type==='box_rental'||type==='van_rental'){
+    const boxes=type==='box_rental';
+    return response(
+      boxes
+        ? lang==='en' ? 'See Mainio’s moving-box rental options using the link below.'
+          :lang==='sv' ? 'Se Mainios alternativ för hyra av flyttlådor via länken nedan.'
+          : 'Voit tutustua Mainion muuttolaatikoiden vuokraukseen alla olevasta painikkeesta.'
+        :lang==='en' ? 'See Mainio’s van rental options using the link below.'
+          :lang==='sv' ? 'Se Mainios alternativ för skåpbilsuthyrning via länken nedan.'
+          : 'Voit tutustua Mainion pakettiautojen vuokraukseen alla olevasta painikkeesta.',
+      boxes?'Muuttolaatikot':'Pakettiautot'
+    );
+  }
+  if(type==='service_area'){
+    const area=verifiedServiceAreaValue(rows||[]);
+    return area?response(serviceAreaAnswer(area.value,lang),'Sijainti',[area.row]):null;
+  }
+  return null;
 }
 
 function explicitBusinessLocationQuestion(message) {
