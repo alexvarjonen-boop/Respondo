@@ -4511,7 +4511,7 @@ async function dashboard(options = {}) {
               <div class="bot-avatar-upload-row">
                 <label class="bot-avatar-upload" for="botAvatarUpload">
                   <span>＋</span>
-                  <div><b>${appText('Lataa oma kuva','Ladda upp egen bild','Upload your own image')}</b><small>${appText('PNG, JPG tai WebP · kuva rajataan automaattisesti neliöksi','PNG, JPG eller WebP · bilden beskärs automatiskt till en kvadrat','PNG, JPG or WebP · automatically cropped to a square')}</small></div>
+                  <div><b>${appText('Lataa oma kuva','Ladda upp egen bild','Upload your own image')}</b><small>${appText('PNG, JPG tai WebP · koko kuva sovitetaan kuvakkeeseen','PNG, JPG eller WebP · hela bilden anpassas till ikonen','PNG, JPG or WebP · the entire image fits inside the icon')}</small></div>
                 </label>
                 <input id="botAvatarUpload" type="file" accept="image/png,image/jpeg,image/webp" hidden>
                 <div id="botAvatarMsg"></div>
