@@ -84,3 +84,40 @@ test('Respondo subscription promotion appears only in public demo, not in a paid
  assert.match(workspace,/\$\{demo\s*\?\s*`<div class="respondo-workspace-owner-cta"/);
  assert.match(workspace,/respondo-workspace-subscribe-link/);
 });
+
+test('existing customer can change bot avatar after onboarding in Business & Bot',()=>{
+  assert.match(workspace,/scope==='setup'\s*\?\s*'<fieldset class="rs-avatar-editor"/);
+  assert.match(workspace,/original\.querySelectorAll\('\.bot-avatar-option'\)/);
+  assert.match(workspace,/id="rsAvatarPreview"/);
+  assert.match(workspace,/data-rs-avatar/);
+  assert.match(workspace,/aria-pressed/);
+  assert.match(workspace,/originalButton\?\.click\(\)/);
+  assert.match(workspace,/original\.elements\.botAvatar/);
+  assert.match(workspace,/original\.requestSubmit\(\)/);
+  assert.match(app,/botAvatar: form\.get\('botAvatar'\)/);
+});
+
+test('customer can upload own image using the existing validated crop pipeline',()=>{
+  assert.match(workspace,/id="rsAvatarUpload" type="file" accept="image\/png,image\/jpeg,image\/webp"/);
+  assert.match(workspace,/nativeUpload\.files=selectedFiles/);
+  assert.match(workspace,/nativeUpload\.dispatchEvent\(new Event\('change'/);
+  assert.match(workspace,/MutationObserver\(syncAvatar\)/);
+  assert.match(workspace,/\.bot-avatar-processing:not\(\.success\):not\(\.error\)/);
+  assert.match(workspace,/save\.disabled=processing/);
+  assert.match(app,/async function imageFileToAvatarData\(file\)/);
+  assert.match(app,/canvas\.toDataURL\('image\/webp'/);
+  assert.match(app,/botAvatar: form\.get\('botAvatar'\)/);
+});
+
+test('avatar controls are translated and responsive',()=>{
+  for(const text of ['Botin kuvake','Bottens ikon','Bot icon',
+    'Lataa oma kuva','Ladda upp egen bild','Upload your own image']){
+    assert.ok(workspace.includes(text),text);
+  }
+  assert.match(styles,/\.rs-avatar-choices\{/);
+  assert.match(styles,/\.rs-avatar-preview img/);
+  assert.match(styles,/@media\(max-width:480px\)/);
+  assert.match(styles,/\.rs-avatar-choice\[aria-pressed="true"\]/);
+  assert.match(index,/avatar-after-setup-v41/);
+  assert.match(app,/avatar-after-setup-v41/);
+});

@@ -319,6 +319,154 @@
 #app .respondo-workspace .rs-simple-field input:focus {
   border-color:#b4bdce!important;
 }
+#app .respondo-workspace .rs-avatar-editor{
+  min-width:0;
+  margin:2px 0 0;
+  padding:17px;
+  border:1px solid #424651;
+  border-radius:17px;
+  background:#20232a;
+  color:#f5f6f8;
+}
+#app .respondo-workspace .rs-avatar-editor legend{
+  padding:0 7px;
+  font-size:13px;
+  font-weight:750;
+  color:#f5f6fa;
+}
+#app .respondo-workspace .rs-avatar-editor > p{
+  margin:4px 0 14px;
+  color:#bdc1cc!important;
+  font-size:12px;
+}
+#app .respondo-workspace .rs-avatar-current{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:16px;
+  color:#d7d9e0;
+  font-size:12px;
+}
+#app .respondo-workspace .rs-avatar-preview{
+  display:grid;
+  place-items:center;
+  width:66px;
+  height:66px;
+  flex:none;
+  overflow:hidden;
+  border:1px solid #4f5460;
+  border-radius:20px;
+  background:#12141a;
+}
+#app .respondo-workspace .rs-avatar-preview img,
+#app .respondo-workspace .rs-avatar-preview svg{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+#app .respondo-workspace .rs-avatar-choices{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(76px,1fr));
+  gap:9px;
+  margin:0 0 15px;
+}
+#app .respondo-workspace .rs-avatar-choice{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  padding:9px 3px 8px;
+  min-width:0;
+  min-height:78px;
+  color:#e7e9ef;
+  border:1px solid #434852;
+  border-radius:13px;
+  background:#292d35;
+  cursor:pointer;
+  transition:border-color .15s,background .15s;
+}
+#app .respondo-workspace .rs-avatar-choice[aria-pressed="true"]{
+  border-color:#e7eaf1;
+  background:#373d47;
+  box-shadow:0 0 0 1px #e7eaf155;
+}
+#app .respondo-workspace .rs-avatar-choice:hover{
+  background:#343944;
+}
+#app .respondo-workspace .rs-avatar-choice:focus-visible,
+#app .respondo-workspace .rs-avatar-upload:focus-within{
+  outline:2px solid #d0d8e8;
+  outline-offset:3px;
+}
+#app .respondo-workspace .rs-avatar-thumbnail{
+  display:grid;
+  place-items:center;
+  width:43px;
+  height:43px;
+  overflow:hidden;
+  border-radius:12px;
+}
+#app .respondo-workspace .rs-avatar-thumbnail img,
+#app .respondo-workspace .rs-avatar-thumbnail svg{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+#app .respondo-workspace .rs-avatar-choice small{
+  display:block;
+  color:inherit;
+  font-size:10px;
+  line-height:1.25;
+}
+#app .respondo-workspace .rs-avatar-upload{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:5px 11px;
+  position:relative;
+  padding:11px 14px;
+  border:1px dashed #737986;
+  border-radius:12px;
+  background:#292d35;
+  color:#f2f3f6;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:700;
+}
+#app .respondo-workspace .rs-avatar-upload small{
+  color:#b4b8c4;
+  font-size:11px;
+  font-weight:500;
+}
+#app .respondo-workspace .rs-avatar-upload input{
+  position:absolute;
+  width:1px;
+  height:1px;
+  opacity:0;
+  overflow:hidden;
+}
+#app .respondo-workspace .rs-avatar-choice:disabled,
+#app .respondo-workspace .rs-avatar-upload:has(input:disabled){
+  opacity:.55;
+  cursor:progress;
+}
+#app .respondo-workspace .rs-avatar-message{
+  min-height:1em;
+  margin:9px 0 0!important;
+  color:#dce3ed!important;
+  font-size:12px;
+}
+#app .respondo-workspace .rs-minimal-button:disabled{
+  opacity:.55;
+  cursor:progress;
+}
+@media(max-width:480px){
+  #app .respondo-workspace .rs-avatar-editor{padding:12px}
+  #app .respondo-workspace .rs-avatar-choices{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+}
 #app .respondo-workspace .rs-simple-actions {
   display:flex;
   flex-wrap:wrap;

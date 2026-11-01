@@ -141,7 +141,10 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     card.innerHTML='<div class="rs-minimal-card"><h2>'+safe(heading)+'</h2><p>'+safe(body)+'</p>'+
       (cta?'<a class="rs-minimal-button" href="/tilaus?lang='+encodeURIComponent(workspace.dataset.lang)+'">'+safe(translate('Luo yritystili','Skapa företagskonto','Create a company account'))+' →</a>':'')+'</div>';
   };
+  let currentAvatarObserver=null;
   const showSettings=(scope='settings')=>{
+    currentAvatarObserver?.disconnect();
+    currentAvatarObserver=null;
     park();
     const original=$('#businessProfileForm');
     if(!original){callout(translate('Yrityksen tiedot','Företagsuppgifter','Company details'),translate('Tietoja ei saatavilla.','Inga uppgifter tillgängliga.','Details unavailable.'),false);return;}
@@ -156,16 +159,92 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     const visibleFields=scope==='setup' ? fields.filter(([name])=>['botName','greeting','website'].includes(name)) : fields.filter(([name])=>['website','email','phone','hours'].includes(name));
     const examples={website:translate('https://yritys.fi','https://foretag.se','https://company.fi'),
       email:translate('info@yritys.fi','info@foretag.se','info@company.fi')};
+    // Reuse the native profile avatar selector and uploader. The original
+    // handlers crop the uploaded photo, update the live preview and persist
+    // the resulting avatar together with the company profile.
+    const originalPresets=[...original.querySelectorAll('.bot-avatar-option')];
+    const activeAvatar=String(original.elements.botAvatar?.value||'robot-1');
+    const avatarPanel=scope==='setup'
+      ? '<fieldset class="rs-avatar-editor"><legend>'+safe(translate('Botin kuvake','Bottens ikon','Bot icon'))+'</legend>'+
+        '<p>'+safe(translate('Voit vaihtaa kuvakkeen myös myöhemmin. Valitse valmis kuvake tai lataa oma kuva.','Du kan ändra ikonen även senare. Välj en färdig ikon eller ladda upp en egen bild.','You can change the icon at any time. Choose a preset or upload your own image.'))+'</p>'+
+        '<div class="rs-avatar-current"><span id="rsAvatarPreview" class="rs-avatar-preview">'+
+          ($('#botAvatarCurrent')?.innerHTML||'')+'</span><span>'+safe(translate('Nykyinen kuvake','Nuvarande ikon','Current icon'))+'</span></div>'+
+        '<div class="rs-avatar-choices" role="group" aria-label="'+safe(translate('Valmiit kuvakkeet','Färdiga ikoner','Preset icons'))+'">'+
+          originalPresets.map(button=>{
+            const id=String(button.dataset.avatar||'');
+            const label=String(button.querySelector('small')?.textContent||button.title||id);
+            const markup=button.querySelector('span')?.innerHTML||'';
+            return '<button type="button" class="rs-avatar-choice" data-rs-avatar="'+safe(id)+'" aria-label="'+safe(label)+'" aria-pressed="'+(id===activeAvatar)+'">'+
+              '<span class="rs-avatar-thumbnail">'+markup+'</span><small>'+safe(label)+'</small></button>';
+          }).join('')+
+        '</div><label class="rs-avatar-upload"><span>'+safe(translate('Lataa oma kuva','Ladda upp egen bild','Upload your own image'))+'</span>'+
+          '<small>PNG, JPG, WebP · 10 MB</small><input id="rsAvatarUpload" type="file" accept="image/png,image/jpeg,image/webp"></label>'+
+        '<p class="rs-avatar-message" id="rsAvatarMessage" role="status" aria-live="polite"></p></fieldset>'
+      : '';
     card.innerHTML='<form id="rsSimpleSettingsForm" class="rs-minimal-card rs-settings-card">'+
       '<p class="rs-minimal-intro">'+safe(translate('Muuta vain tarvitsemasi tiedot. Muut botin asetukset säilyvät ennallaan.','Ändra bara de uppgifter du behöver. Övriga inställningar sparas.','Change only what you need. All other bot settings stay saved.'))+'</p>'+
-      visibleFields.map(([key,label,type])=>'<label class="rs-simple-field"><span>'+safe(label)+'</span><input type="'+type+'" name="'+key+'" maxlength="255" placeholder="'+safe(examples[key]||'')+'" value="'+safe(original.elements[key]?.value||'')+'"></label>').join('')+
+      visibleFields.map(([key,label,type])=>'<label class="rs-simple-field"><span>'+safe(label)+'</span><input type="'+type+'" name="'+key+'" maxlength="'+(key==='botName'?'40':'255')+'" placeholder="'+safe(examples[key]||'')+'" value="'+safe(original.elements[key]?.value||'')+'"></label>').join('')+
+      avatarPanel+
       '<div class="rs-simple-actions"><button type="submit" class="rs-minimal-button">'+safe(translate('Tallenna muutokset','Spara ändringar','Save changes'))+'</button>'+
       '<button type="button" class="rs-secondary-button" data-workspace-nav="bot">'+safe(translate('Kokeile bottia','Testa botten','Try the bot'))+' →</button></div>'+
       '<p id="rsSimpleSettingsMessage" role="status" aria-live="polite"></p></form>';
     const form=$('#rsSimpleSettingsForm');
+    const syncAvatar=()=>{
+      const value=String(original.elements.botAvatar?.value||'robot-1');
+      const preview=$('#rsAvatarPreview');
+      const source=$('#botAvatarCurrent');
+      if(preview&&source)preview.innerHTML=source.innerHTML;
+      form?.querySelectorAll('[data-rs-avatar]').forEach(button=>{
+        button.setAttribute('aria-pressed',String(button.dataset.rsAvatar===value));
+      });
+      const nativeMessage=$('#botAvatarMsg');
+      const message=$('#rsAvatarMessage');
+      if(message)message.textContent=nativeMessage?.textContent?.trim()||'';
+      const processing=Boolean(nativeMessage?.querySelector('.bot-avatar-processing:not(.success):not(.error)'));
+      const save=form?.querySelector('button[type="submit"]');
+      if(save)save.disabled=processing;
+      form?.querySelectorAll('[data-rs-avatar],#rsAvatarUpload').forEach(el=>{el.disabled=processing;});
+    };
+    if(avatarPanel){
+      for(const button of form.querySelectorAll('[data-rs-avatar]')){
+        button.addEventListener('click',()=>{
+          const originalButton=originalPresets.find(x=>x.dataset.avatar===button.dataset.rsAvatar);
+          originalButton?.click();
+          syncAvatar();
+        });
+      }
+      // File selection stays visible in the compact view. Forward the
+      // native FileList to the existing validated/cropped uploader so there
+      // are no duplicate image-processing or persistence paths.
+      form.querySelector('#rsAvatarUpload')?.addEventListener('change',(event)=>{
+        const selectedFiles=event.currentTarget.files;
+        if(!selectedFiles?.length)return;
+        const nativeUpload=$('#botAvatarUpload');
+        try{
+          if(!nativeUpload)throw Error('Uploader missing');
+          nativeUpload.files=selectedFiles;
+          nativeUpload.dispatchEvent(new Event('change',{bubbles:true}));
+          syncAvatar();
+        }catch{
+          const message=$('#rsAvatarMessage');
+          if(message)message.textContent=translate('Kuvan avaaminen epäonnistui. Kokeile uudelleen.','Det gick inte att öppna bilden. Försök igen.','Could not open the image. Please try again.');
+        }finally{
+          event.currentTarget.value='';
+        }
+      });
+      currentAvatarObserver=new MutationObserver(syncAvatar);
+      for(const node of [$('#botAvatarCurrent'),$('#botAvatarMsg')]){
+        if(node)currentAvatarObserver.observe(node,{childList:true,subtree:true,characterData:true});
+      }
+      syncAvatar();
+    }
     form?.addEventListener('submit',(event)=>{
       event.preventDefault();
       const message=$('#rsSimpleSettingsMessage');
+      if($('#botAvatarMsg')?.querySelector('.bot-avatar-processing:not(.success):not(.error)')){
+        if(message)message.textContent=translate('Kuvaa käsitellään vielä.','Bilden bearbetas fortfarande.','The image is still processing.');
+        return;
+      }
       if(!form.reportValidity())return;
       for(const [key] of visibleFields){
         const source=original.elements[key], user=form.elements[key];
@@ -249,6 +328,8 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     });
   }
   function selectView(next){
+    currentAvatarObserver?.disconnect();
+    currentAvatarObserver=null;
     selected=Object.hasOwn(pages,next)?next:'bot';
     workspace.dataset.currentView=selected;
     orbit?.sync(selected);
