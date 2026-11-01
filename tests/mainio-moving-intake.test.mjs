@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {isMainioMovingTenant,mainioMoveActions,validateMainioMove,mainioMoveDetails,MAINIO_TENANT_ID,MAINIO_QUOTE_URL} from '../mainio-moving-intake.mjs';
+import {isMainioMovingTenant,mainioMoveActions,validateMainioMove,mainioMoveDetails,mainioBoxEstimate,MAINIO_TENANT_ID,MAINIO_QUOTE_URL} from '../mainio-moving-intake.mjs';
 const good={
  consent:true,name:'Maija Muuttaja',contact:'040 123 4567',serviceType:'home',
  desiredDate:'2026-12-04',originAddress:'Turun katu 1',originCity:'Turku',
@@ -41,4 +41,13 @@ test('optional choices allow unknown and user details cannot escape bounded fiel
  const result=validateMainioMove({...good,originHousing:'detached',originFloor:'',destinationHousing:'detached',destinationFloor:'',notes:'a'.repeat(4000)},{today:'2026-11-01'});
  assert.ok(result.data);
  assert.equal(result.data.notes.length,850);
+});
+
+test('source-backed box guidance is explicitly a range, never a confirmed requirement',()=>{
+ assert.deepEqual(mainioBoxEstimate(50),{min:40,max:50});
+ assert.deepEqual(mainioBoxEstimate(58),{min:47,max:58});
+ assert.equal(mainioBoxEstimate(0),null);
+});
+test('phone validation rejects punctuation-only fake phone numbers',()=>{
+ assert.ok(validateMainioMove({...good,contact:'------'},{today:'2026-11-01'}).error);
 });
