@@ -30,21 +30,21 @@ const families = [
   {name:'returns',
    topic:/\b(?:palaut\w*|palautusoike\w*|return\w*|refund\w*|retur\w*|angerratt\w*|ångerrätt\w*|rahojen\s+palaut\w*)\b/,
    facets:[
-     ['duration',/\b(?:kuinka\s+kauan|montako\s+paiva\w*|how\s+long|how\s+many\s+days|days|paiva\w*|dagar|hur\s+lange|hur\s+länge|deadline|aikaa|time\s+limit)\b/],
+     ['duration',/\b(?:kuinka\s+kauan|palautusaika|montako\s+paiva\w*|how\s+long|how\s+many\s+days|days|paiva\w*|dagar|hur\s+lange|hur\s+länge|deadline|aikaa|time\s+limit)\b/],
      ['cost',/\b(?:hinta\w*|maks\w*|cost\w*|fee\w*|free|ilmain\w*|pris\w*|avgift\w*|gratis)\b/],
      ['method',/\b(?:miten|kuinka|how|hur|ohje\w*|instruction\w*|process\w*|menettely\w*)\b/]
    ]},
   {name:'warranty',
    topic:/\b(?:takuu\w*|takuun\w*|warrant\w*|guarantee\w*|garanti\w*)\b/,
    facets:[
-     ['duration',/\b(?:kuinka\s+kauan|kauanko|pitka\w*|how\s+long|duration|years?|months?|vuott\w*|vuod\w*|kuukau\w*|ar|år|manad\w*|månad\w*|lenge|länge)\b/],
+     ['duration',/\b(?:kuinka\s+kauan|kauanko|kesto|pitka\w*|how\s+long|duration|years?|months?|vuott\w*|vuod\w*|kuukau\w*|ar|år|manad\w*|månad\w*|lenge|länge)\b/],
      ['coverage',/\b(?:katta\w*|sisalta\w*|cover\w*|include\w*|galler\w*|gäller\w*|omfatta\w*|excluded?|poissul\w*)\b/]
    ]},
   {name:'shipping',
    topic:/\b(?:toimitu\w*|lahety\w*|shipping|delivery|deliver\w*|frakt\w*|leverans\w*|postitus\w*)\b/,
    facets:[
-     ['duration',/\b(?:kuinka\s+kauan|milloin|kauanko|time|long|days|paiva\w*|kest\w*|speed|fast|hur\s+lange|hur\s+länge|dagar|nar|när)\b/],
-     ['cost',/\b(?:maks\w*|hinta\w*|ilmain\w*|free|cost\w*|price|fee\w*|avgift\w*|pris\w*|gratis)\b/],
+     ['duration',/\b(?:kuinka\s+kauan|toimitusaika|leveranstid|milloin|kauanko|time|long|days|paiva\w*|kest\w*|speed|fast|hur\s+lange|hur\s+länge|dagar|nar|när)\b/],
+     ['cost',/\b(?:maks\w*|kulut|hinta\w*|ilmain\w*|fraktavgift|free|cost\w*|price|fee\w*|avgift\w*|pris\w*|gratis)\b/],
      ['international',/\b(?:ulkomaa\w*|kansainval\w*|international\w*|abroad|outside|overseas|utomlands|internationell\w*)\b/],
      ['pickup',/\b(?:nouto\w*|noud\w*|pickup|pick\s*up|collect\w*|hamta\w*|hämta\w*|avhamt\w*)\b/]
    ]},
@@ -56,7 +56,7 @@ const families = [
      ['cost',/\b(?:maks\w*|kustann\w*|fee\w*|cost\w*|charge\w*|avgift\w*|pris\w*)\b/]
    ]},
   {name:'payment-methods',
-   topic:/\b(?:maksutap\w*|maksuva\w*|payment\s+methods?|payment\s+options?|accepted\s+payments?|betalsatt\w*|betalsätt\w*|betalningssatt\w*|betalningssätt\w*)\b/,
+   topic:/\b(?:maksutap\w*|maksutav\w*|maksuva\w*|payment\s+methods?|payment\s+options?|accepted\s+payments?|betalsatt\w*|betalsätt\w*|betalningssatt\w*|betalningssätt\w*)\b/,
    facets:[]}
 ];
 function facetsOf(text,family){
