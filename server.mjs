@@ -15192,7 +15192,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     try {
       await q(
         `UPDATE action_requests
-            SET delivery_status=$1,
+            SET delivery_status=CASE WHEN result->'mainioEmail'->>'status'='sent' THEN 'delivered' ELSE $1 END,
                 result=COALESCE(result,'{}'::jsonb) || $2::jsonb,
                 updated_at=NOW()
           WHERE id=$3 AND tenant_id=$4`,
