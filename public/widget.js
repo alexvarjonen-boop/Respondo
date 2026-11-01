@@ -151,7 +151,7 @@
       .panel{width:min(410px,calc(100vw - 24px));height:min(640px,calc(100vh - 92px));background:#fff;border:1px solid rgba(0,0,0,.11);border-radius:24px;box-shadow:0 30px 90px rgba(0,0,0,.24);overflow:hidden;display:none;flex-direction:column;margin-bottom:10px}
       .panel.open{display:flex}
       .head{padding:17px 18px;border-bottom:1px solid #e7e7e9;display:flex;align-items:center;gap:11px;background:#fff}
-      .mark{width:34px;height:34px;border-radius:10px;overflow:hidden;display:grid;place-items:center;flex:0 0 auto}.mark svg,.mark img{display:block;width:34px;height:34px;object-fit:cover}
+      .mark{width:34px;height:34px;border-radius:10px;overflow:hidden;display:grid;place-items:center;flex:0 0 auto}.mark svg,.mark img{display:block;width:34px;height:34px;object-fit:contain}
       .headcopy{min-width:0;flex:1}
       .headcopy b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .headcopy small{display:flex;align-items:center;gap:6px;color:#707075;font-size:11px;margin-top:2px}
@@ -170,7 +170,7 @@
       .launcher:hover{transform:translateY(-2px);box-shadow:0 18px 46px rgba(12,16,20,.22),0 3px 12px rgba(12,16,20,.08);border-color:rgba(20,22,24,.18)}
       .launcher:focus-visible{outline:3px solid var(--bot-accent,#111113);outline-offset:3px}
       .launcher-avatar{width:46px;height:46px;border-radius:14px;position:relative;flex:0 0 46px;background:#f3f3f4;display:grid;place-items:center;overflow:visible}
-      .launcher-avatar svg,.launcher-avatar img{display:block;width:46px;height:46px;border-radius:14px;object-fit:cover}
+      .launcher-avatar svg,.launcher-avatar img{display:block;width:46px;height:46px;border-radius:14px;object-fit:contain}
       .launcher-online{position:absolute;right:-3px;bottom:-3px;width:12px;height:12px;background:#22a366;border:2px solid #fff;border-radius:50%;display:none}
       .launcher.ready .launcher-online{display:block}
       .launcher-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}

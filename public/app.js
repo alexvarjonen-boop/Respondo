@@ -1,3 +1,4 @@
+import { avatarContainRect } from './avatar-contain.js?v=20261101-avatar-fit-v1';
 import { customerPasswordValid, customerPasswordChecks, customerPasswordStrength } from './customer-password-policy.mjs?v=20261029-strength-v1';
 import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41';
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1';
@@ -445,16 +446,18 @@ async function imageFileToAvatarData(file) {
       img.onload = resolve;
       img.onerror = () => reject(new Error('Kuvaa ei voitu lukea.'));
     });
-    const side = Math.min(img.naturalWidth,img.naturalHeight);
-    const sx = Math.max(0,(img.naturalWidth-side)/2);
-    const sy = Math.max(0,(img.naturalHeight-side)/2);
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 256;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(img,sx,sy,side,side,0,0,256,256);
-    let data = canvas.toDataURL('image/webp',0.84);
-    if (!data.startsWith('data:image/webp')) data = canvas.toDataURL('image/jpeg',0.84);
+    if(!ctx)throw new Error('Kuvan käsittely ei onnistunut.');
+    // Transparent margins keep the complete landscape/portrait logo visible
+    // inside a square avatar. Do not crop the source rectangle.
+    const fitted = avatarContainRect(img.naturalWidth,img.naturalHeight,256,10);
+    ctx.clearRect(0,0,256,256);
+    ctx.drawImage(img,fitted.x,fitted.y,fitted.width,fitted.height);
+    let data = canvas.toDataURL('image/webp',0.86);
+    if (!data.startsWith('data:image/webp')) data = canvas.toDataURL('image/png');
     if (data.length > 500000) throw new Error('Kuva jäi liian suureksi. Kokeile toista kuvaa.');
     return data;
   } finally {
