@@ -117,6 +117,7 @@ const textFields={
   specialItems:650,notes:850,
 };
 const values={
+  name:'Asiakkaan nimi',contact:'Yhteystieto',
   serviceType:'Palvelu',desiredDate:'Toivottu muuttopäivä',
   originAddress:'Lähtöosoite',originCity:'Lähtöpaikkakunta',
   originHousing:'Lähtökohteen tyyppi',originFloor:'Lähtökerros',
