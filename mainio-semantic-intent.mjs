@@ -176,6 +176,9 @@ export function interpretMainioLocalIntent(message,previousCustomerQuestion=''){
   const movingNamed=has(/(?:muuttopalvel|muuttofir|muuttoapu|flytthjalp|moving service|moving compan|flyttfirma)/);
   if(box && (!movingNamed || rent))return result('box_rental',95);
   if(van && (!movingNamed || rent))return result('van_rental',95);
+  // Concrete price and service-policy questions belong to the evidence-locked
+  // FAQ matcher; concept routing must not hide the real sourced answer.
+  if(has(/(?:paljonko|hinta|maksaa|kustann|price|cost|pricing|pris|kostar)/))return null;
   const currentMove=moveService||(goods&&transport);
   const prevMove=/(?:muut|flytt|moving|move\b|tavara|huonekal|kam[a-ö])/.test(prev);
   const personOnly=has(/(?:mummo|mummon|a[it]i\b|vanhemm|iso[aä]it|henkilo|ihminen|grandma|person\b)/) && !goods;
@@ -186,7 +189,7 @@ export function interpretMainioLocalIntent(message,previousCustomerQuestion=''){
   // Route without two named cities may still be a specific long-distance
   // request, e.g. "kamat Lapista etelään". Don't invent domestic coverage.
   const directional=has(/(?:lapista|lapin|pohjoisest|pohjosest|etel[aä][aä]n|kauas|toiselle paikkakunnalle|toiselta paikkakunnalta|from .{3,48} to |fran .{3,48} till )/);
-  if(mainioMovingRouteIntent(message))return result('moving_route',96,'domestic');
+  if(mainioMovingRouteIntent(message))return result('moving_route',96);
   if(directional && (goods||transport||asking))return result('moving_route',91);
   // Route without specified cities doesn't warrant availability promise.
   if((goods&&transport&&asking) || (movingNamed&&asking) ||
