@@ -1,5 +1,5 @@
 import { customerPasswordValid, customerPasswordChecks, customerPasswordStrength } from './customer-password-policy.mjs?v=20261029-strength-v1';
-import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39';
+import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40';
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
