@@ -32,7 +32,7 @@
     if (raf) cancelAnimationFrame(raf);
     raf = 0;
     if (section) {
-      section.classList.remove('rs-enhanced', 'rs-fixed-fallback', 'rs-fixed-end', 'rs-intro-past');
+      section.classList.remove('rs-enhanced', 'rs-fixed-fallback', 'rs-fixed-end', 'rs-intro-past', 'rs-first-revealed');
       for (const key of ['--rs-progress','--rs-orbit-fill','--rs-light-shift','--rs-light-scale','--rs-light-strength']) section.style.removeProperty(key);
       for (const icon of icons) icon.classList.remove('is-active');
       for (const card of cards) {
@@ -219,6 +219,14 @@
     wheelGestureReset = setTimeout(() => { wheelGestureUsed = false; wheelDirection = 0; }, 260);
     if (wheelGestureUsed) return;
     wheelGestureUsed = true;
+    // The first downward gesture reveals the complete 24/7 copy instead of
+    // advancing immediately. The next separate gesture moves to chapter two.
+    if (direction > 0 && index === 0 && !section.classList.contains('rs-first-revealed')) {
+      section.classList.add('rs-first-revealed');
+      schedule();
+      return;
+    }
+    if (direction < 0 && index <= 1) section.classList.remove('rs-first-revealed');
     const next = clamp(index + direction, 0, cards.length - 1);
     const sectionTop = scrollY + rect.top;
     const target = sectionTop + travel * next / Math.max(1, cards.length - 1);
@@ -242,6 +250,7 @@
       });
       return;
     }
+    section.classList.toggle('rs-first-revealed', index === 0);
     const rect = section.getBoundingClientRect();
     const travel = Math.max(1, rect.height - innerHeight);
     const target = scrollY + rect.top + travel * index / Math.max(1, cards.length - 1);
