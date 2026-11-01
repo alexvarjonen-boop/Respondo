@@ -180,3 +180,27 @@ test('never returns an answer on missing traceable source',async()=>{
   });
   assert.equal(result,null);assert.equal(calls,0);
 });
+
+test('model cannot reverse explicit negative source policy into positive claim',()=>{
+  const facts=publicFactsForGroundedAI([row('no','No. Dogs are not allowed indoors.')],'Can dogs enter?');
+  assert.equal(verifiedStructuredGroundedAnswer({
+    answerable:true,answer:'Yes, dogs are allowed indoors.',
+    evidence:[{source:'F1',quote:'No. Dogs are not allowed indoors.'}]
+  },facts),null);
+});
+test('model cannot use outdoor permission to invent indoor permission',()=>{
+  const facts=publicFactsForGroundedAI(rows,'Can dogs enter?');
+  assert.equal(verifiedStructuredGroundedAnswer({
+    answerable:true,answer:'Dogs are allowed inside.',
+    evidence:[{source:'F1',quote:'Dogs are permitted on the outdoor terrace.'}]
+  },facts),null);
+});
+test('model may use consistent quoted outdoor scope',()=>{
+  const facts=publicFactsForGroundedAI(rows,'Can dogs enter?');
+  const output=verifiedStructuredGroundedAnswer({
+    answerable:true,answer:'Dogs are permitted on the outdoor terrace.',
+    evidence:[{source:'F1',quote:'Dogs are permitted on the outdoor terrace.'}]
+  },facts);
+  assert.equal(output.handoff,false);
+  assert.deepEqual(output.sourceIds,['r1']);
+});
