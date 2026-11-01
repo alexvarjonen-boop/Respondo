@@ -29,6 +29,10 @@ test('Mainio moving quote is validated with consent, and full contact details ar
     assert.ok(summary.includes(value),value);
   }
   assert.ok(summary.includes('Hinta, muuttopäivän saatavuus'));
+  assert.ok(summary.includes('Palvelu: Kotimuutto'));
+  assert.ok(summary.includes('Lähtökohteen tyyppi: Kerrostalo'));
+  assert.ok(summary.includes('Muutetaanko koko asunto: Kyllä'));
+  assert.ok(!summary.includes('Lähtökohteen tyyppi: apartment'));
   assert.ok(summary.indexOf('Esimerkki Testaaja')<summary.indexOf('Esimerkkikatu 5'));
 });
 
