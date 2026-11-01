@@ -14,10 +14,13 @@
   let pendingMount = false;
   let currentStep = -1;
   let stickyFailed = false;
-  let wheelGestureUsed = false;
-  let wheelLastAt = 0;
-  let wheelGestureReset = 0;
+  // Gesture state is tied to wheel input, never cursor hover or movement.
+  let wheelLastEventAt = 0;
+  let wheelLastMagnitude = 0;
   let wheelDirection = 0;
+  let wheelEnergy = 0;
+  let wheelArmed = true;
+  let wheelLockedUntil = 0;
   let transitionRaf = 0;
 
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -50,10 +53,12 @@
     icons = [];
     currentStep = -1;
     stickyFailed = false;
-    wheelGestureUsed = false;
-    wheelLastAt = 0;
+    wheelLastEventAt = 0;
+    wheelLastMagnitude = 0;
     wheelDirection = 0;
-    if (wheelGestureReset) clearTimeout(wheelGestureReset);
+    wheelEnergy = 0;
+    wheelArmed = true;
+    wheelLockedUntil = 0;
   }
   function setup() {
     pendingMount = false;
@@ -234,18 +239,32 @@
     const index = clamp(Math.round(position), 0, cards.length - 1);
     if ((direction < 0 && index === 0 && position < .08) ||
         (direction > 0 && index === cards.length - 1 && position > cards.length - 1 - .08)) return;
-    // Prevent trackpad inertia from skipping chapters or fighting scrollTo.
+    // The former inactivity timer was reset by every inertial trackpad
+    // packet. It could swallow the next swipe until the pointer moved.
+    // Treat a pause, direction change or renewed physical acceleration as
+    // a new gesture, and never rearm merely because the cooldown expired.
     event.preventDefault();
     const now = performance.now();
-    if (now - wheelLastAt > 260 || (wheelDirection && direction !== wheelDirection)) {
-      wheelGestureUsed = false;
+    const magnitude = Math.abs(event.deltaY) *
+      (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport : 1);
+    const gap = now - wheelLastEventAt;
+    const directionChanged = wheelDirection !== 0 && wheelDirection !== direction;
+    const newSwipe = magnitude >= 16 &&
+      magnitude > wheelLastMagnitude * 2.1 &&
+      now >= wheelLockedUntil;
+    if (gap > 130 || directionChanged || newSwipe) {
+      wheelArmed = true;
+      wheelEnergy = 0;
     }
-    wheelLastAt = now;
+    wheelLastEventAt = now;
+    wheelLastMagnitude = magnitude;
     wheelDirection = direction;
-    clearTimeout(wheelGestureReset);
-    wheelGestureReset = setTimeout(() => { wheelGestureUsed = false; wheelDirection = 0; }, 260);
-    if (wheelGestureUsed) return;
-    wheelGestureUsed = true;
+    if (now < wheelLockedUntil || transitionRaf || !wheelArmed) return;
+    wheelEnergy += magnitude;
+    if (wheelEnergy < 14) return;
+    wheelArmed = false;
+    wheelEnergy = 0;
+    wheelLockedUntil = now + 560;
     // The first downward gesture reveals the complete 24/7 copy instead of
     // advancing immediately. The next separate gesture moves to chapter two.
     if (direction > 0 && index === 0 && !section.classList.contains('rs-first-revealed')) {
@@ -282,10 +301,12 @@
     const target = scrollY + rect.top + travel * index / Math.max(1, cards.length - 1);
     // Clear the previous desktop wheel lock. The next physical scroll gesture
     // is independent from the user's click.
-    wheelGestureUsed = false;
+    wheelArmed = true;
+    wheelEnergy = 0;
     wheelDirection = 0;
-    wheelLastAt = 0;
-    clearTimeout(wheelGestureReset);
+    wheelLastEventAt = 0;
+    wheelLastMagnitude = 0;
+    wheelLockedUntil = 0;
     glideTo(Math.round(target));
     updateStep(index);
     schedule();
