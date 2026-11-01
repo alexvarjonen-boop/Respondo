@@ -112,13 +112,13 @@ const allowed={
   storageNeeded:['yes','no','unknown'],
 };
 const textFields={
-  name:120,contact:220,desiredDate:10,yearsAtCurrentHome:80,originAddress:220,originCity:100,
+  name:120,contact:220,extraContact:220,desiredDate:10,yearsAtCurrentHome:80,originAddress:220,originCity:100,
   originFloor:24,destinationAddress:220,destinationCity:100,
   destinationFloor:24,areaSqm:10,boxCount:6,peopleCount:4,
   specialItems:650,notes:850,
 };
 const values={
-  name:'Asiakkaan nimi',contact:'Yhteystieto',
+  name:'Asiakkaan nimi',contact:'Yhteystieto',extraContact:'Toinen yhteystieto',
   serviceType:'Palvelu',desiredDate:'Toivottu muuttopäivä',
   wholeApartment:'Muutetaanko koko asunto',yearsAtCurrentHome:'Asumisaika nykyisessä asunnossa',
   originAddress:'Lähtöosoite',originCity:'Lähtöpaikkakunta',
@@ -155,6 +155,7 @@ export function validateMainioMove(input,{today}={}) {
   }
   if(data.name.length<2)return {error:'Anna nimesi.'};
   if(!validContact(data.contact))return {error:'Anna puhelinnumero tai sähköpostiosoite.'};
+  if(data.extraContact&&!validContact(data.extraContact))return {error:'Tarkista toinen yhteystieto.'};
   if(!/^\d{4}-\d{2}-\d{2}$/.test(data.desiredDate)||Number.isNaN(Date.parse(data.desiredDate+'T12:00:00Z'))||
     new Date(data.desiredDate+'T12:00:00Z').toISOString().slice(0,10)!==data.desiredDate)
     return {error:'Anna kelvollinen muuttopäivä.'};
