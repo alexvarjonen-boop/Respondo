@@ -67,6 +67,35 @@ export function publicFactsForGroundedAI(rows,question){
   }
   return result;
 }
+// Reject obvious polarity and physical-location contradictions before a model
+// sentence is allowed to leave the source-locked fallback. Cross-language
+// markers are mapped to the same concepts; unknown semantics fail closed via
+// exact-quote + number validation and the deterministic fallback.
+function polarity(text){
+  const t=' '+norm(text)+' ';
+  if(/\b(?:no|not|never|cannot|cant|ei|emme|eivat|eivatkaan|inte|nej|kielletty|suljettu|forbidden)\b/.test(t))return 'negative';
+  if(/\b(?:yes|kylla|sallittu|sallitaan|permitted|allowed|welcome|ja|tillatet)\b/.test(t))return 'positive';
+  return '';
+}
+function area(text){
+  const t=' '+norm(text)+' ';
+  const inside=/\b(?:inside|indoors?|indoor|sisalla|sisalle|sisatilo\w*|inomhus|inne)\b/.test(t);
+  const outdoor=/\b(?:outside|outdoors?|outdoor|terrace|patio|garden|terass\w*|ulkona|ulkotilo\w*|utomhus|terrass\w*|ute)\b/.test(t);
+  return inside&&!outdoor?'inside':outdoor&&!inside?'outside':'';
+}
+function contradictoryClaim(answer,quotes){
+  const source=quotes.join(' ');
+  const sourcePolarity=polarity(source),answerPolarity=polarity(answer);
+  if(sourcePolarity && answerPolarity && sourcePolarity!==answerPolarity)return true;
+  const sourceArea=area(source),answerArea=area(answer);
+  if(sourceArea && answerArea && sourceArea!==answerArea)return true;
+  // A quoted restriction ("only on the terrace") must not become a broad
+  // blanket permission that omits the qualification.
+  if(/\b(?:only|vain|ainoastaan|endast|enbart)\b/.test(norm(source)) &&
+     !/\b(?:only|vain|ainoastaan|endast|enbart)\b/.test(norm(answer)) &&
+     !answerArea)return true;
+  return false;
+}
 function validAnswer(answer,supports){
   if(typeof answer!=='string')return false;
   const text=answer.trim();
@@ -92,7 +121,7 @@ export function verifiedStructuredGroundedAnswer(parsed,facts){
     if(!selected.some(x=>x===fact.row))selected.push(fact.row);
     quotes.push(quote);
   }
-  if(!validAnswer(parsed.answer,quotes))return null;
+  if(!validAnswer(parsed.answer,quotes) || contradictoryClaim(parsed.answer,quotes))return null;
   return {
     answer:parsed.answer.trim(),
     handoff:false,
