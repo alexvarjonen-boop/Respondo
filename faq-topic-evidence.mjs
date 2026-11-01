@@ -18,7 +18,7 @@ const families = [
    topic:/\b(?:lahjakort\w*|presentkort\w*|gift\s+cards?|gift\s+vouchers?|giftcard\w*|värdebevis\w*|vardebevis\w*)\b/,
    facets:[
      ['buy',/\b(?:ost\w*|myyt\w*|myyda\w*|purchase|buy|buying|sell|selling|salj\w*|sälj\w*|kopa|köpa)\b/],
-     ['redeem',/\b(?:kaytta\w*|kayto\w*|kelpaa\w*|lunast\w*|use|using|redeem\w*|accept\w*|betal\w*|anvand\w*|använd\w*)\b/],
+     ['redeem',/\b(?:kaytta\w*|kaytt\w*|kayto\w*|kelpaa\w*|lunast\w*|maks\w*|use|using|redeem\w*|accept\w*|betal\w*|anvand\w*|använd\w*)\b/],
      ['expiry',/\b(?:voimass\w*|vanhen\w*|expires?|expiry|valid\w*|giltig\w*|utgang\w*)\b/]
    ]},
   {name:'wifi',
@@ -32,26 +32,26 @@ const families = [
    facets:[
      ['duration',/\b(?:kuinka\s+kauan|palautusaika|montako\s+paiva\w*|how\s+long|how\s+many\s+days|days|paiva\w*|dagar|hur\s+lange|hur\s+länge|deadline|aikaa|time\s+limit)\b/],
      ['cost',/\b(?:hinta\w*|maks\w*|cost\w*|fee\w*|free|ilmain\w*|pris\w*|avgift\w*|gratis)\b/],
-     ['method',/\b(?:miten|kuinka|how|hur|ohje\w*|instruction\w*|process\w*|menettely\w*)\b/]
+     ['method',/\b(?:miten|ohje\w*|instruction\w*|process\w*|menettely\w*)\b/]
    ]},
   {name:'warranty',
    topic:/\b(?:takuu\w*|takuun\w*|warrant\w*|guarantee\w*|garanti\w*)\b/,
    facets:[
-     ['duration',/\b(?:kuinka\s+kauan|kauanko|kesto|pitka\w*|how\s+long|duration|years?|months?|vuott\w*|vuod\w*|kuukau\w*|ar|år|manad\w*|månad\w*|lenge|länge)\b/],
+     ['duration',/\b(?:kuinka\s+kauan|kauanko|kesto|pitka\w*|how\s+long|duration|years?|months?|vuott\w*|vuod\w*|kuukau\w*|ar|år|lange|länge|manad\w*|månad\w*|lenge|länge)\b/],
      ['coverage',/\b(?:katta\w*|sisalta\w*|cover\w*|include\w*|galler\w*|gäller\w*|omfatta\w*|excluded?|poissul\w*)\b/]
    ]},
   {name:'shipping',
    topic:/\b(?:toimitu\w*|lahety\w*|shipping|delivery|deliver\w*|frakt\w*|leverans\w*|postitus\w*)\b/,
    facets:[
-     ['duration',/\b(?:kuinka\s+kauan|toimitusaika|leveranstid|milloin|kauanko|time|long|days|paiva\w*|kest\w*|speed|fast|hur\s+lange|hur\s+länge|dagar|nar|när)\b/],
-     ['cost',/\b(?:maks\w*|kulut|hinta\w*|ilmain\w*|fraktavgift|free|cost\w*|price|fee\w*|avgift\w*|pris\w*|gratis)\b/],
+     ['duration',/\b(?:kuinka\s+kauan|toimitusaika|leveranstid|milloin|kauanko|when|arrive\w*|time|long|days|paiva\w*|kest\w*|speed|fast|hur\s+lange|hur\s+länge|dagar|nar|när)\b/],
+     ['cost',/\b(?:maks\w*|kulut|toimituskulu\w*|hinta\w*|ilmain\w*|fraktavgift|free|cost\w*|price|fee\w*|avgift\w*|pris\w*|gratis)\b/],
      ['international',/\b(?:ulkomaa\w*|kansainval\w*|international\w*|abroad|outside|overseas|utomlands|internationell\w*)\b/],
      ['pickup',/\b(?:nouto\w*|noud\w*|pickup|pick\s*up|collect\w*|hamta\w*|hämta\w*|avhamt\w*)\b/]
    ]},
   {name:'cancellation',
-   topic:/\b(?:peruu\w*|peruut\w*|cancel\w*|cancell\w*|avboka\w*|avbestall\w*|avbeställ\w*)\b/,
+   topic:/\b(?:peru\w*|peruu\w*|peruut\w*|cancel\w*|cancell\w*|avboka\w*|avbestall\w*|avbeställ\w*)\b/,
    facets:[
-     ['booking',/\b(?:varau\w*|varaus\w*|ajanvarau\w*|appointment\w*|booking\w*|bokning\w*|tid\s+hos)\b/],
+     ['booking',/\b(?:varau\w*|varaus\w*|ajanvarau\w*|appointment\w*|booking\w*|bokning\w*|min\s+tid|tid\s+hos)\b/],
      ['order',/\b(?:tilau\w*|tilaus\w*|order\w*|bestall\w*|beställ\w*)\b/],
      ['cost',/\b(?:maks\w*|kustann\w*|fee\w*|cost\w*|charge\w*|avgift\w*|pris\w*)\b/]
    ]},
