@@ -866,6 +866,38 @@ function escapeEmailHtml(value) {
     .replaceAll("'",'&#39;');
 }
 
+// Optional owner alert for the verified Mainio moving-enquiry workflow.
+// The canonical request is saved first; email is only a secondary notification.
+// Never deliver customer moving details to a third-party/configurable address.
+async function notifyMainioMoveOwner(tenant,requestId,data){
+  if(!isMainioMovingTenant(tenant))return {status:'not_configured'};
+  if(cleanEmail(tenant.contact_email)!=='info@mainiomuuttopalvelu.fi')
+    return {status:'not_configured'};
+  const key=String(process.env.RESEND_API_KEY||'').trim();
+  const from=String(process.env.EMAIL_VERIFICATION_FROM||'').trim();
+  if(!key||!from)return {status:'not_configured'};
+  const details=mainioMoveDetails(data);
+  const html='<div style="font-family:Arial,sans-serif;max-width:680px;margin:auto;color:#18191b">'+
+    '<h2>Uusi muuttotarjouspyyntö – Mainio Muuttopalvelu</h2>'+
+    '<p>Asiakas on hyväksynyt tietojen lähettämisen Mainiolle tarjouspyynnön käsittelyä varten. Tämä EI ole vahvistettu tilaus, muuttopäivä tai hinta.</p>'+
+    '<pre style="white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.65 Arial,sans-serif;background:#f4f4f5;padding:16px;border-radius:12px">'+
+    escapeEmailHtml(details)+'</pre>'+
+    '<p>Hyväksy tai hylkää jatkokäsittelyyn Respondo AI:n <a href="https://www.respondoai.fi/app">hallintapaneelissa</a>, Toiminnot-osiossa.</p>'+
+    '<p>Pyynnön tunniste: '+escapeEmailHtml(requestId)+'</p></div>';
+  const response=await fetch('https://api.resend.com/emails',{
+    method:'POST',
+    headers:{Authorization:'Bearer '+key,'Content-Type':'application/json'},
+    body:JSON.stringify({
+      from,to:['info@mainiomuuttopalvelu.fi'],
+      subject:'Uusi muuttotarjouspyyntö – Mainio Muuttopalvelu',
+      html,
+    }),
+    signal:AbortSignal.timeout(6500),
+  });
+  if(!response.ok)throw new Error('Mainio notification provider rejected request (status '+response.status+')');
+  return {status:'sent'};
+}
+
 async function sendSignupVerificationEmail({ email, code, language = 'en' }) {
   if (!signupEmailVerificationReady()) {
     return { sent:false, reason:'email_verification_not_configured' };
@@ -15093,6 +15125,26 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         // tell the customer submission failed only because the dashboard lead
         // index could not be duplicated at this moment.
         console.error('Action lead index write failed',leadError);
+      }
+    }
+
+    // Persist first, then send a privacy-scoped notification to Mainio's
+    // published company inbox. If email fails, the full enquiry still appears
+    // in the owner's Actions dashboard for follow-up.
+    if(mainioMoveRequest){
+      let mailResult={status:'failed'};
+      try{
+        mailResult=await notifyMainioMoveOwner(tenant,id,validatedMainio.data);
+      }catch(emailError){
+        console.error('Mainio moving enquiry email notification failed:',String(emailError?.message||'unknown').slice(0,120));
+      }
+      try{
+        await q(
+          "UPDATE action_requests SET result=COALESCE(result,'{}'::jsonb)||$1::jsonb,updated_at=NOW() WHERE id=$2 AND tenant_id=$3",
+          [JSON.stringify({mainioEmail:mailResult}),id,tenant.id],
+        );
+      }catch(error){
+        console.error('Mainio moving enquiry notification status save failed:',String(error?.message||'unknown').slice(0,120));
       }
     }
 
