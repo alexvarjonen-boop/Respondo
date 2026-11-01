@@ -19,6 +19,7 @@ import { resolveBranchOpeningHours } from './branch-hours.mjs';
 import {answerBranchException,exceptionQueryDate} from './branch-exceptions.mjs';
 import {faqParaphraseEvidence} from './faq-paraphrase-evidence.mjs';
 import {faqTopicEvidence,faqAnswersMateriallyConflict} from './faq-topic-evidence.mjs';
+import {tryGroundedAIResponse} from './grounded-ai-fallback.mjs';
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
 import {storeAvailabilityAnswer} from './store-availability.mjs';
 import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentAsPage, importCoverage } from './web-document-import.mjs';
@@ -7304,7 +7305,7 @@ async function directlyVerifiedFaqAnswer(rows, question, lang='fi') {
   };
 }
 
-async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {}, multiPart = false }) {
+async function generateRuleGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {}, multiPart = false }) {
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
   rows = (rows || []).filter(usableWebsiteRow).filter(row=>{
     // An imported FAQ without a traceable source must not be treated as an
@@ -8028,6 +8029,26 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
     sourceIds: broadCompanyQuestion ? selected.slice(0,3).map((x)=>x.id).filter(Boolean) : (top.id ? [top.id] : []),
     selected,
   };
+}
+
+// The proven deterministic answer remains authoritative. Only unanswered
+// generic questions may try a budgeted, evidence-locked model fallback.
+// All protected intents (booking/order changes, contact data, stock, prices,
+// sensitive policies, named services) stay on their audited deterministic path.
+async function generateGroundedAnswer(args={}) {
+  const result=await generateRuleGroundedAnswer(args);
+  if(!result?.handoff || String(result.answer||'').trim() ||
+    args.multiPart || !['Asiakaskysymys','Usein kysytyt'].includes(String(result.intent||'')))return result;
+  const original=String(args.message||'').trim();
+  if(!original || original.length>480 || !Array.isArray(args.rows))return result;
+  const safeRows=(args.rows||[]).filter(usableWebsiteRow);
+  const matches=selectRelevantKnowledge(safeRows,original,8);
+  if(!matches.length)return result;
+  const generated=await tryGroundedAIResponse({
+    question:original,rows:matches,
+    lang:['fi','sv','en'].includes(args.lang)?args.lang:'fi'
+  });
+  return generated||result;
 }
 
 function cookies(req) {
