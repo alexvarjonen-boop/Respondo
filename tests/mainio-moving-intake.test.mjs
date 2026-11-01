@@ -65,3 +65,13 @@ test('moving-service requests cannot confuse box rental or van rental',()=>{
  assert.equal(mainioIsSmallTalk('Moi!'),true);
  assert.equal(mainioIsSmallTalk('Moi, paljonko muutto maksaa?'),false);
 });
+
+test('irrelevant Mainio questions never show a moving quote button',()=>{
+ for(const question of ['missä päin toimitte','missä toimitte','Milloin olette auki?','Mikä on puhelinnumeronne?','Hei!']){
+   assert.deepEqual(mainioInquiryActions(question,'fi'),[],question);
+ }
+ assert.equal(mainioInquiryActions('Haluan tilata muuttopalvelun','fi').length,2);
+ assert.equal(mainioInquiryActions('Paljonko muutto maksaa?','fi').length,2);
+ assert.match(mainioInquiryActions('Haluan tilata muuttolaatikoita','fi')[0].url,/muuttolaatikot/);
+ assert.match(mainioInquiryActions('Haluan vuokrata pakettiauton','fi')[0].url,/pakettiautojen-vuokraus/);
+});
