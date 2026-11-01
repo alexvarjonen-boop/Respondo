@@ -25,7 +25,7 @@ test('landscape moving-company logo stays completely visible with original aspec
 test('portrait logo and square icons remain centered and completely visible',()=>{
  const portrait=avatarContainRect(360,1440);
  fits(portrait);
- assert.equal(portrait.width,58);
+ assert.ok(Math.abs(portrait.width-58)<1e-8);
  assert.equal(portrait.height,232);
  assert.equal(portrait.x,99);
  assert.equal(portrait.y,12);
