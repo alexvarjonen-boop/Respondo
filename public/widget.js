@@ -623,6 +623,7 @@
       block(1,origin('origin'))+block(2,origin('destination'))+
       block(3,select('ownBoxes',L.ownBoxes,[['yes',L.yes],['no',L.no],['some',L.some],['unknown',L.unknown]],true)+
         '<small class="mainio-info">'+escapeHtml(L.boxHint)+'</small>'+
+        '<small class="mainio-info" data-mainio-box-estimate></small>'+
         field('boxCount',L.requestedBoxes,'number',false,'min="0" max="9999"')+
         select('carryingHelp',L.carrying,yesNo,true)+select('packingHelp',L.packing,yesNo,true)+
         select('storageNeeded',L.storage,yesNo,true)+
@@ -647,6 +648,19 @@
       back.hidden=step===0;next.hidden=step===steps.length-1;send.hidden=step!==steps.length-1;
       error.textContent='';chat.scrollTop=chat.scrollHeight;
     };
+    const estimateEl=form.querySelector('[data-mainio-box-estimate]');
+    const updateBoxEstimate=()=>{
+      const sqm=Number(form.elements.areaSqm.value);
+      if(!Number.isFinite(sqm)||sqm<=0||sqm>1500){estimateEl.textContent='';return;}
+      const lo=Math.ceil(sqm*0.8),hi=Math.ceil(sqm);
+      estimateEl.textContent=widgetLang==='en'
+        ? 'Based on '+sqm+' m², Mainio’s two guidance figures suggest about '+lo+'–'+hi+' boxes. This is an estimate, not a confirmed number.'
+        : widgetLang==='sv'
+          ? 'För '+sqm+' m² ger Mainios två riktvärden ungefär '+lo+'–'+hi+' lådor. Det är en uppskattning.'
+          : sqm+' m²:n asunnolle Mainion kaksi ohjetta antavat suuntaa-antavaksi arvioksi noin '+lo+'–'+hi+' laatikkoa. Määrä vahvistetaan erikseen.';
+    };
+    form.elements.areaSqm.addEventListener('input',updateBoxEstimate);
+    updateBoxEstimate();
     form.elements.desiredDate.min=new Date().toLocaleDateString('sv-SE');
     function validateStep(){
       const current=steps[step];
