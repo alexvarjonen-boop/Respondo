@@ -544,6 +544,7 @@
         heading:'Muuttokartoitus · tarjouspyyntö',intro:'Kerro muutostasi. Mainio tarkistaa tiedot ja vahvistaa hinnan sekä ajankohdan erikseen.',
         steps:['Muuton perustiedot','Lähtöpaikka','Kohdepaikka','Laatikot ja lisätiedot','Yhteystiedot ja hyväksyntä'],
         type:'Muuton tyyppi',date:'Toivottu muuttopäivä',size:'Asunnon tai toimitilan koko (m²)',people:'Asukkaiden määrä (valinnainen)',
+        wholeApartment:'Muutetaanko koko asunto?',yearsAtCurrentHome:'Kuinka kauan olette asuneet nykyisessä asunnossa? (valinnainen)',
         street:'Katuosoite ja talonumero',city:'Postitoimipaikka',housing:'Kiinteistön tyyppi',floor:'Kerros, jos kerrostalo',
         elevator:'Onko hissi?',parking:'Saako muuttoauton oven eteen?',ownBoxes:'Onko omia muuttolaatikoita?',
         requestedBoxes:'Kuinka monta vuokralaatikkoa toivot? (valinnainen)',carrying:'Tarvitsetko kantoapua?',
@@ -562,6 +563,7 @@
         heading:'Flyttkartläggning · offertförfrågan',intro:'Beskriv flytten. Mainio kontrollerar detaljerna och bekräftar pris och datum separat.',
         steps:['Grunduppgifter','Från','Till','Flyttlådor och tillägg','Kontaktuppgifter och samtycke'],
         type:'Typ av flytt',date:'Önskat flyttdatum',size:'Bostadens eller lokalens storlek (m²)',people:'Antal boende (valfritt)',
+        wholeApartment:'Ska hela bostaden flyttas?',yearsAtCurrentHome:'Hur länge har ni bott i er nuvarande bostad? (valfritt)',
         street:'Gatuadress och nummer',city:'Ort',housing:'Typ av byggnad',floor:'Våning, om höghus',
         elevator:'Finns hiss?',parking:'Kan flyttbilen stå vid dörren?',ownBoxes:'Har du egna flyttlådor?',
         requestedBoxes:'Hur många hyrlådor önskar du? (valfritt)',carrying:'Behöver du bärhjälp?',
@@ -580,6 +582,7 @@
         heading:'Moving enquiry · quote request',intro:'Tell us about your move. Mainio will review the details and separately confirm the price and date.',
         steps:['Move details','Moving from','Moving to','Boxes and extras','Contact and consent'],
         type:'Type of move',date:'Preferred moving date',size:'Property size (m²)',people:'Number of residents (optional)',
+        wholeApartment:'Are you moving the entire home?',yearsAtCurrentHome:'How long have you lived at your current address? (optional)',
         street:'Street address and building number',city:'City',housing:'Property type',floor:'Floor if apartment building',
         elevator:'Is there an elevator?',parking:'Can the moving van park at the entrance?',ownBoxes:'Do you have your own moving boxes?',
         requestedBoxes:'How many rental boxes would you like? (optional)',carrying:'Do you need carrying help?',
@@ -619,7 +622,9 @@
     const body=
       block(0,select('serviceType',L.type,[['home',L.home],['business',L.business],['other',L.other]],true)+
         field('desiredDate',L.date,'date',true)+field('areaSqm',L.size,'number',true,'min="1" max="1500" step="0.5"')+
-        field('peopleCount',L.people,'number',false,'min="1" max="999"'))+
+        field('peopleCount',L.people,'number',false,'min="1" max="999"')+
+        select('wholeApartment',L.wholeApartment,yesNo,false)+
+        field('yearsAtCurrentHome',L.yearsAtCurrentHome,'text',false,'maxlength="80"'))+
       block(1,origin('origin'))+block(2,origin('destination'))+
       block(3,select('ownBoxes',L.ownBoxes,[['yes',L.yes],['no',L.no],['some',L.some],['unknown',L.unknown]],true)+
         '<small class="mainio-info">'+escapeHtml(L.boxHint)+'</small>'+
@@ -661,7 +666,7 @@
     };
     form.elements.areaSqm.addEventListener('input',updateBoxEstimate);
     updateBoxEstimate();
-    form.elements.desiredDate.min=new Date().toLocaleDateString('sv-SE');
+    form.elements.desiredDate.min=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Helsinki'});
     function validateStep(){
       const current=steps[step];
       const prefix=step===1?'origin':step===2?'destination':'';
