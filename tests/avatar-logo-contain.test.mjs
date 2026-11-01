@@ -25,13 +25,14 @@ test('landscape moving-company logo stays completely visible with original aspec
 test('portrait logo and square icons remain centered and completely visible',()=>{
  const portrait=avatarContainRect(360,1440);
  fits(portrait);
- assert.ok(Math.abs(portrait.width-58)<1e-8);
- assert.equal(portrait.height,232);
- assert.equal(portrait.x,99);
- assert.equal(portrait.y,12);
+ for(const [key,value] of Object.entries({width:58,height:232,x:99,y:12})){
+  assert.ok(Math.abs(portrait[key]-value)<1e-8,key+' '+portrait[key]);
+ }
  const square=avatarContainRect(500,500);
  fits(square);
- assert.deepEqual(square,{x:12,y:12,width:232,height:232});
+ for(const [key,value] of Object.entries({x:12,y:12,width:232,height:232})){
+  assert.ok(Math.abs(square[key]-value)<1e-8,key+' '+square[key]);
+ }
 });
 test('extreme wide/narrow logos never crop for any side length',()=>{
  for(const [w,h] of [[16000,100],[100,16000],[4000,900],[900,4000],[4096,4096],[1,10000]]){
