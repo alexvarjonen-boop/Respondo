@@ -3716,7 +3716,7 @@ function directGeneralContactAnswer(rows, lang='fi') {
 
 function explicitServiceAreaQuestion(message) {
   const q=normalizeSearchText(message);
-  return /^(?:missa\s+(?:te\s+)?toimitte|milla\s+alueella\s+(?:te\s+)?toimitte|mille\s+alueelle\s+(?:te\s+)?tulette|mika\s+(?:teidan\s+)?toimialue(?:enne)?|toimialue|palvelualue)$/.test(q)
+  return /^(?:missa\s+(?:(?:pain|kaikkialla)\s+)?(?:te\s+)?toimitte|milla\s+alueella\s+(?:te\s+)?(?:toimitte|palvelette)|milla\s+alueilla\s+(?:te\s+)?toimitte|mille\s+alueelle\s+(?:te\s+)?tulette|mika\s+(?:teidan\s+)?toimialue(?:enne)?|toimialue|palvelualue)$/.test(q)
     || /^(?:where\s+do\s+you\s+(?:operate|work|serve)|what(?:'s| is)\s+your\s+service\s+area|service\s+area)$/.test(q)
     || /^(?:var\s+arbetar\s+ni|vilket\s+omrade\s+(?:arbetar|betjanar)\s+ni\s+i|verksamhetsomrade|serviceomrade)$/.test(q);
 }
@@ -3743,7 +3743,12 @@ function cleanServiceAreaValue(value) {
     /^(?:toimimme|palvelemme|palvelualueemme|toimialueemme|we operate|we serve|our service area|vi arbetar|vi betjänar|vårt serviceområde)\b/i.test(part)
   ) || sentences[0];
 
-  return factual.replace(/[.!?]+$/,'').trim();
+  // Keep an explicit second geographical coverage condition when the
+  // verified source states it (e.g. moves outside the local region).
+  // Do not copy unrelated contact or marketing sentences.
+  const extra=sentences.find(part=>part!==factual &&
+    /^(?:muutot voivat suuntautua|muuttoja tehdään myös|we also serve|flyttar kan även)/i.test(part));
+  return [factual,extra].filter(Boolean).map(part=>part.replace(/[.!?]+$/,'').trim()).join('. ');
 }
 
 function verifiedServiceAreaValue(rows) {
@@ -3754,7 +3759,15 @@ function verifiedServiceAreaValue(rows) {
   ].map(normalizeSearchText));
   const priority=row=>String(row.id||'').startsWith('demo-')?0:
     (row.source_type==='profile'||row.category==='Yrityksen perustiedot')?1:2;
-  const candidates=rows.filter(row=>titleAliases.has(normalizeSearchText(row.title)))
+  // Imported source-bound services often carry scoped titles such as
+  // "Muuton toimialue" rather than the generic "Toimialue". Accept only
+  // titles ending in an explicit service-area label, never generic addresses.
+  const areaTitle=(title)=>{
+    const normalizedTitle=normalizeSearchText(title);
+    return titleAliases.has(normalizedTitle) ||
+      /^(?:[a-z0-9 -]{2,80} )?(?:toimialue|palvelualue|service area|verksamhetsomrade|serviceomrade)$/.test(normalizedTitle);
+  };
+  const candidates=rows.filter(row=>areaTitle(row.title))
     .sort((a,b)=>priority(a)-priority(b));
   for(const row of candidates) {
     const value=cleanServiceAreaValue(row.answer);
@@ -3768,7 +3781,7 @@ function verifiedServiceAreaValue(rows) {
 function serviceAreaAnswer(value, lang='fi') {
   const clean=String(value||'').trim().replace(/[.!?]+$/,'');
   const normalized=normalizeSearchText(clean);
-  const sentenceLike=/^(?:toimimme|palvelemme|palvelumme kattaa|we operate|we serve|our service area|vi arbetar|vi betjanar|vart serviceomrade)/.test(normalized);
+  const sentenceLike=/^(?:toimimme|palvelemme|palvelumme kattaa|[a-z0-9 -]{2,65} palvelee|we operate|we serve|our service area|vi arbetar|vi betjanar|vart serviceomrade)/.test(normalized);
   if(sentenceLike) return clean+'.';
   if(lang==='en') return 'Our service area is '+clean+'.';
   if(lang==='sv') return 'Vårt serviceområde är '+clean+'.';

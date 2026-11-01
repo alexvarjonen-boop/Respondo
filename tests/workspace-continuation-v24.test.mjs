@@ -79,3 +79,8 @@ test('clean workspace uses one header and a compact functional settings form', (
   assert.match(styles,/rs-knowledge-collapsed/);
   assert.match(index,/onboarding-contrast-v25-minimal-v26/);
 });
+
+test('Respondo subscription promotion appears only in public demo, not in a paid owner workspace',()=>{
+ assert.match(workspace,/\$\{demo\s*\?\s*`<div class="respondo-workspace-owner-cta"/);
+ assert.match(workspace,/respondo-workspace-subscribe-link/);
+});

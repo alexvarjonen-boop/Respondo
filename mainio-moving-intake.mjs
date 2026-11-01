@@ -31,11 +31,13 @@ export const MAINIO_VAN_RENTAL_URL='https://www.mainiomuuttopalvelu.fi/pakettiau
 const normalized=(message)=>String(message||'').normalize('NFD')
   .replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
+const mentionsMovingService=(q)=>/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuton\b|muuttoa\b|muutosta\b|muutolle\b|muutto\b|muuttaa\b|muuttamaan\b|moving\s+service|book\s+(?:my|a)\s+move|flytthjalp|flyttfirma)/.test(q);
+
 export function mainioInquiryKind(message){
   const q=normalized(message);
   // Explicit moving-service intent has priority over accessories mentioned
   // in the same sentence, e.g. "tilaa muuttopalvelu ja muuttolaatikot".
-  const actualMove=/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuton\b|muuttoa\b|muutto\b|muuttaa\b|muuttamaan\b|moving\s+service|book\s+(?:my|a)\s+move|flytthjalp|flyttfirma)/.test(q);
+  const actualMove=mentionsMovingService(q);
   if(actualMove)return 'moving';
   if(/(?:muuttolaatik|laatikkovuokra|laatikoiden\s+vuokra|laatikoita|moving\s+box|box\s+rental|flyttkartong|flyttlador)/.test(q))return 'boxes';
   if(/(?:pakettiaut|vuokrapaku|vuokra-auto|rent\s+(?:a\s+)?van|van\s+rental|sk[aå]pbil)/.test(q))return 'van';
@@ -55,13 +57,19 @@ export function mainioInquiryActions(message,lang='fi'){
       label:locale==='en'?'View van rentals':locale==='sv'?'Se hyrbilar':'Katso pakettiautojen vuokraus',
       url:MAINIO_VAN_RENTAL_URL}];
   }
+  // A location, opening-hours or contact question is not a quote request.
+  // Offer the moving form only when the customer expresses actual moving
+  // booking/quote intent or asks about the price of a moving service.
+  const q=normalized(message);
+  const priceOrQuote=/(?:paljonko|hinta|maksa|kusta|tarjou|arvio|price|cost|quote|estimate|pris|kostar|offert)/.test(q);
+  if(!mentionsMovingService(q) || !(mainioMovingOrderIntent(message) || priceOrQuote))return [];
   return mainioMoveActions(locale);
 }
 
 export function mainioMovingOrderIntent(message){
   const q=normalized(message);
   if(mainioInquiryKind(q)!=='moving')return false;
-  const move=/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuton\b|muuttoa\b|muutto\b|muuttaa\b|muuttamaan\b|moving\s+service|book\s+(?:my|a)\s+move|flytthjalp|flyttfirma)/.test(q);
+  const move=mentionsMovingService(q);
   const order=/(?:tilaa|tilaamaan|tilata|tilaisin|varaa|varata|varaisin|tarjouspyyn|hinta-arvio|pyydan\s+tarjou|book|request\s+(?:a\s+)?quote|boka|bestall|offert)/.test(q);
   return move && order;
 }

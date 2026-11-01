@@ -43,10 +43,10 @@ function ensureWorkspace(demo) {
         <p class="respondo-workspace-subtitle">${choose('Kirjoita kysymys alla olevaan keskusteluun. Voit testata bottia samalla, kun verkkosivun tietoja haetaan.','Skriv en fråga i chatten nedan. Du kan testa botten medan webbplatsen skannas.','Ask a question below. You can test your bot while your website is being scanned.')}</p>
         <div class="respondo-workspace-chat-card"><div id="respondoWorkspaceChatHost"></div></div>
         <div class="respondo-workspace-scan" role="status" aria-live="polite"><i aria-hidden="true"></i><div><b id="respondoWorkspaceScanStatus">${choose('Botti valmis kokeiltavaksi','Botten är redo att testas','Bot ready to try')}</b><br><span id="respondoWorkspaceScanDetail"></span></div></div>
-        <div class="respondo-workspace-owner-cta" aria-label="${choose('Tilaa Respondo yrityksellesi','Beställ Respondo till ditt företag','Get Respondo for your business')}">
+        ${demo ? `<div class="respondo-workspace-owner-cta" aria-label="${choose('Tilaa Respondo yrityksellesi','Beställ Respondo till ditt företag','Get Respondo for your business')}">
           <span>${choose('Haluatko tämän botin yrityksellesi?','Vill du ha denna bot till ditt företag?','Want this bot on your website?')}</span>
           <a class="respondo-workspace-subscribe-link" href="/tilaus?lang=${lang}">${choose('Tilaa Respondo','Beställ Respondo','Subscribe to Respondo')}</a>
-        </div>
+        </div>` : ''}
         ${demo?'':'<button type="button" class="respondo-workspace-review-link" data-workspace-nav="settings">'+choose('Tarkista haetut tiedot','Granska hämtade uppgifter','Review imported information')+' →</button>'}
       </div>
       <div data-workspace-page="overview" hidden>
