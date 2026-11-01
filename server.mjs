@@ -1,4 +1,5 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
+import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
@@ -9486,6 +9487,77 @@ app.get('/api/owner/traffic', auth, ownerTrafficOnly, async (req, res) => {
 /* Owner-only company registry for the private traffic dashboard.
    List subscribed/onboarded tenants, not unverified pending signups or owner test checkouts.
    Pagination ensures the dashboard stays fast as the customer base grows. */
+// Only the verified Respondo owner may provision a complimentary customer
+// workspace. The customer does not supply an email address or billing details.
+// A schema-only .invalid placeholder is never used for outbound mail.
+app.post('/api/owner/managed-accounts', auth, ownerTrafficOnly, loginLimiter, async (req,res) => {
+  res.set('Cache-Control','private, no-store');
+  if(!pool)return res.status(503).json({error:'Tietokanta ei ole käytettävissä.'});
+  const origin=String(req.get('origin')||'');
+  const fetchSite=String(req.get('sec-fetch-site')||'');
+  if(fetchSite==='cross-site')return res.status(403).json({error:'Pyyntö ei ole sallittu.'});
+  if(origin){
+    try{
+      if(new URL(origin).host!==String(req.get('host')||''))
+        return res.status(403).json({error:'Pyyntö ei ole sallittu.'});
+    }catch{return res.status(403).json({error:'Pyyntö ei ole sallittu.'});}
+  }
+  const values=validateManagedAccountInput(req.body);
+  if(values.error)return res.status(422).json({error:values.error});
+  const ownerPassword=String(req.body?.ownerPassword||'');
+  if(!ownerPassword||ownerPassword.length>200)
+    return res.status(422).json({error:'Vahvista tilin luonti omalla salasanallasi.'});
+  try {
+    const owner=await q('SELECT password_hash FROM users WHERE id=$1 AND status=$2 LIMIT 1',[req.user.sub,'active']);
+    if(!owner.rowCount||!owner.rows[0].password_hash||
+        !(await bcrypt.compare(ownerPassword,owner.rows[0].password_hash)))
+      return res.status(403).json({error:'Omistajatilin salasana ei täsmää.'});
+
+    const accountId=uid(), tenantId=uid();
+    const {loginCode,temporaryPassword}=createManagedCredentials();
+    const passwordHash=await bcrypt.hash(temporaryPassword,12);
+    const slug=(values.name.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,45)||'customer')+
+      '-'+tenantId.slice(0,8);
+    const botName=(values.name.slice(0,33)+' AI').slice(0,40);
+    const client=await pool.connect();
+    try{
+      await client.query('BEGIN');
+      await client.query(
+        'INSERT INTO users (id,email,setup_login_code,password_hash,full_name,company_name,business_id,role,status,subscription_status,subscription_plan,active_tenant_id,preferred_language) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)',
+        [accountId,managedPlaceholderEmail(accountId),loginCode,passwordHash,
+         values.name,values.name,values.businessId,'owner','active','active',
+         COMPLIMENTARY_ENTERPRISE_PLAN,tenantId,values.language],
+      );
+      await client.query(
+        'INSERT INTO tenants (id,owner_user_id,slug,name,business_id,industry,website,greeting,bot_name,bot_avatar,handoff_message,active,subscription_status,subscription_plan,current_period_end) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)',
+        [tenantId,accountId,slug,values.name,values.businessId,values.industry,values.website,
+         'Hei! Miten voin auttaa?',botName,'robot-1',
+         'En löydä tähän varmaa vastausta. Jätä yhteystietosi, niin yritys voi palata asiaan.',
+         true,'active',COMPLIMENTARY_ENTERPRISE_PLAN,null],
+      );
+      await client.query('COMMIT');
+    }catch(error){
+      await client.query('ROLLBACK').catch(()=>{});
+      throw error;
+    }finally{client.release();}
+    // This is the only time the temporary password is returned. Neither
+    // password nor ownerPassword are stored in plaintext or sent via email.
+    return res.status(201).json({
+      ok:true,companyName:values.name,tenantId,loginCode,temporaryPassword,
+      plan:'Enterprise',priceEur:0,manualDeliveryRequired:true,
+      loginUrl:'/kirjaudu',
+    });
+  }catch(error){
+    console.error('Complimentary managed account creation failed:',error?.code||error?.message);
+    return res.status(error?.code==='23505'?409:503).json({
+      error:error?.code==='23505'
+        ? 'Tunnus on jo käytössä. Yritä uudelleen.'
+        : 'Asiakastilin luominen epäonnistui.',
+    });
+  }
+});
+
 app.get('/api/owner/companies', auth, ownerTrafficOnly, async (req, res) => {
   res.set('Cache-Control','private, no-store');
   try {
@@ -10904,7 +10976,9 @@ app.get('/api/auth/me', auth, async (req, res) => {
     );
     if (!r.rowCount) return res.status(404).json({ error: 'Tiliä ei löytynyt.' });
     const merchantEmail=cleanEmail(process.env.OWNER_EMAIL || process.env.SUPPORT_EMAIL);
-    return res.json({ ...r.rows[0], respondo_setup_admin: Boolean(merchantEmail && cleanEmail(r.rows[0].email)===merchantEmail) });
+    const profile={...r.rows[0]};
+    if(/^managed-[a-f0-9]{32}@accounts\.respondoai\.invalid$/.test(cleanEmail(profile.email))) profile.email='';
+    return res.json({ ...profile, respondo_setup_admin: Boolean(merchantEmail && cleanEmail(r.rows[0].email)===merchantEmail) });
   } catch (e) {
     console.error('Authenticated profile read failed', e);
     return res.status(500).json({ error: 'Tilin tietoja ei voitu ladata.' });

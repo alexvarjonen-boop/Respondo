@@ -145,6 +145,14 @@
  #title{margin-top:12px}
 }
 @media(prefers-reduced-motion:reduce){.traffic-menu-toggle span{transition:none}}
+
+/* Owner-only account creation, without customer email or checkout. */
+.managed-help{font-size:13px;color:#5f6570;line-height:1.55}
+.managed-note{padding:12px 13px;border-radius:12px;background:#f2f5f9;border:1px solid #e0e7f0;color:#3a4c66;font-size:12px;line-height:1.55}
+.managed-result{margin-top:12px}
+.managed-result input{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.015em}
+.managed-create{background:#111114!important;color:#fff!important;border-color:#111114!important;white-space:nowrap}
+@media(max-width:730px){.company-heading{flex-wrap:wrap}.company-heading .managed-create{width:100%}}
 </style>
 </head>
 <body>
@@ -244,6 +252,44 @@ const CM={
  en:{manage:'Manage',edit:'Edit',remove:'Delete',editTitle:'Edit company',deleteTitle:'Delete company',details:'Edit basic company details. This does not change the plan or billing.',warning:'Deletion is permanent. The company bot, answers, conversations and other company data will be erased. Any linked Stripe subscription will be canceled immediately.',name:'Company name',businessId:'Business ID',website:'Website (HTTPS)',confirmName:'Type the exact company name',password:'Your owner account password',cancel:'Cancel',save:'Save changes',confirmRemove:'Delete company and cancel subscription',saving:'Processing…',saved:'Company updated.',deleted:'Company deleted. Any linked subscription was canceled.',error:'Action failed. Please try again.',passwordNote:'If you only use Google sign-in, first set a password for your own account.'}
 };
 const cm=k=>CM[lang]?.[k]||CM.fi[k]||k;
+
+const MANAGED_L={
+  fi:{
+    create:'Luo asiakastili',title:'Uusi maksuton asiakastili',description:'Luo yritykselle maksuton Enterprise-tili. Asiakkaan sähköpostia, maksukorttia tai Stripe-tilausta ei tarvita.',
+    name:'Yrityksen nimi',businessId:'Y-tunnus (valinnainen)',website:'Verkkosivusto (valinnainen)',industry:'Toimiala',
+    ownerPassword:'Oman omistajatilisi salasana',confirm:'Luo Enterprise-tili',cancel:'Sulje',
+    creating:'Luodaan…',failed:'Tilin luonti epäonnistui.',ready:'Asiakastili on luotu',
+    credentials:'Tallenna tunnukset nyt. Salasana näkyy vain tämän kerran eikä sitä lähetetä sähköpostitse.',
+    login:'Käyttäjätunnus',password:'Väliaikainen salasana',copy:'Kopioi molemmat tunnukset',
+    copied:'Tunnukset kopioitu.',copyFailed:'Kopiointi epäonnistui. Kopioi tunnukset kentistä.',
+    ownerNote:'Vahvista tilin luonti omalla Respondo-salasanallasi. Jos kirjaudut vain Googlella, määritä ensin salasana profiilissasi.',
+    success:'Maksuton Enterprise-tili luotiin. Säilytä tunnukset ja toimita ne asiakkaalle henkilökohtaisesti.'
+  },
+  sv:{
+    create:'Skapa kundkonto',title:'Nytt kostnadsfritt kundkonto',description:'Skapa ett gratis Enterprise-konto. Kundens e-post, betalkort och Stripe-prenumeration behövs inte.',
+    name:'Företagsnamn',businessId:'FO-nummer (valfritt)',website:'Webbplats (valfritt)',industry:'Bransch',
+    ownerPassword:'Lösenord för ditt ägarkonto',confirm:'Skapa Enterprise-konto',cancel:'Stäng',
+    creating:'Skapar…',failed:'Kunde inte skapa kontot.',ready:'Kundkontot har skapats',
+    credentials:'Spara inloggningsuppgifterna nu. Lösenordet visas bara en gång och mejlas inte.',
+    login:'Användarnamn',password:'Tillfälligt lösenord',copy:'Kopiera båda uppgifterna',
+    copied:'Uppgifterna har kopierats.',copyFailed:'Kopieringen misslyckades. Kopiera fälten manuellt.',
+    ownerNote:'Bekräfta med ditt eget Respondo-lösenord. Vid endast Google-inloggning ska du först ange ett lösenord i profilen.',
+    success:'Ett gratis Enterprise-konto skapades. Lämna uppgifterna personligen till kunden.'
+  },
+  en:{
+    create:'Create customer account',title:'New complimentary customer account',description:'Create a free Enterprise account without a customer email, payment card, or Stripe subscription.',
+    name:'Company name',businessId:'Business ID (optional)',website:'Website (optional)',industry:'Industry',
+    ownerPassword:'Your Respondo owner password',confirm:'Create Enterprise account',cancel:'Close',
+    creating:'Creating…',failed:'Could not create account.',ready:'Customer account created',
+    credentials:'Save the login details now. The password is shown once only and is not sent by email.',
+    login:'Username',password:'Temporary password',copy:'Copy both credentials',
+    copied:'Credentials copied.',copyFailed:'Could not copy. Copy from the fields instead.',
+    ownerNote:'Confirm using your own Respondo password. If you use Google sign-in only, first set an account password in your profile.',
+    success:'Complimentary Enterprise account created. Deliver the login details to the customer personally.'
+  }
+};
+const ml=key=>MANAGED_L[lang]?.[key]||MANAGED_L.fi[key]||key;
+
 let companyCache=new Map();
 let companyPage=1,companySearch='',companyStatus='all',companyRequest=0,companyTimer;
 const companyDate=value=>{
@@ -254,13 +300,108 @@ const companyPlan=value=>{
   const plan=String(value||'').toLowerCase();
   if(plan.startsWith('basic')||plan.startsWith('starter')) return 'Starter';
   if(plan.startsWith('advanced')) return 'Advanced';
-  if(plan.startsWith('business')) return 'Business';
+  if(plan.startsWith('business')) return 'Enterprise';
   return value||'—';
 };
+
+function managedDialogShell(){
+  return '<dialog id="managedAccountDialog" class="company-dialog" aria-labelledby="managedAccountTitle">'+
+    '<form id="managedAccountForm" autocomplete="off" novalidate>'+
+    '<h3 id="managedAccountTitle">'+e(ml('title'))+'</h3><p>'+e(ml('description'))+'</p>'+
+    '<label class="company-field">'+e(ml('name'))+'<input required maxlength="120" name="name" placeholder="Mainio Muuttopalvelu"></label>'+
+    '<label class="company-field">'+e(ml('businessId'))+'<input maxlength="40" name="businessId"></label>'+
+    '<label class="company-field">'+e(ml('website'))+'<input maxlength="500" name="website" placeholder="https://yritys.fi" inputmode="url"></label>'+
+    '<label class="company-field">'+e(ml('industry'))+'<input maxlength="80" name="industry" value="Palveluyritys"></label>'+
+    '<label class="company-field">'+e(ml('ownerPassword'))+'<input required maxlength="200" type="password" name="ownerPassword" autocomplete="current-password"></label>'+
+    '<div class="managed-note">'+e(ml('ownerNote'))+'</div>'+
+    '<p class="company-dialog-error" id="managedError" role="alert"></p>'+
+    '<div class="company-dialog-actions"><button type="button" data-managed-close>'+e(ml('cancel'))+'</button>'+
+    '<button class="primary" id="managedSubmit" type="submit">'+e(ml('confirm'))+'</button></div></form>'+
+    '<section class="managed-result" id="managedAccountResult" hidden aria-live="polite">'+
+    '<h3>'+e(ml('ready'))+'</h3><p>'+e(ml('credentials'))+'</p>'+
+    '<label class="company-field">'+e(ml('login'))+'<input readonly id="managedLoginCode" aria-label="'+e(ml('login'))+'"></label>'+
+    '<label class="company-field">'+e(ml('password'))+'<input readonly id="managedTemporaryPassword" aria-label="'+e(ml('password'))+'"></label>'+
+    '<p><a href="/kirjaudu" target="_blank" rel="noopener">respondoai.fi/kirjaudu</a></p>'+
+    '<div class="company-dialog-error" id="managedCopyMessage" role="status"></div>'+
+    '<div class="company-dialog-actions"><button type="button" id="managedCopy">'+e(ml('copy'))+'</button>'+
+    '<button type="button" class="primary" data-managed-close>'+e(ml('cancel'))+'</button></div></section></dialog>';
+}
+async function submitManagedAccount(event){
+  event.preventDefault();
+  const form=event.currentTarget;
+  const submit=document.getElementById('managedSubmit');
+  const error=document.getElementById('managedError');
+  error.textContent='';
+  const data=new FormData(form);
+  const payload={
+    name:String(data.get('name')||'').trim(),
+    businessId:String(data.get('businessId')||'').trim(),
+    website:String(data.get('website')||'').trim(),
+    industry:String(data.get('industry')||'').trim(),
+    ownerPassword:String(data.get('ownerPassword')||''),
+    language:lang
+  };
+  submit.disabled=true;
+  const initial=submit.textContent;
+  submit.textContent=ml('creating');
+  try{
+    const response=await fetch('/api/owner/managed-accounts',{
+      method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok||!result.ok)throw new Error(result.error||ml('failed'));
+    form.hidden=true;
+    const reveal=document.getElementById('managedAccountResult');
+    document.getElementById('managedLoginCode').value=String(result.loginCode||'');
+    document.getElementById('managedTemporaryPassword').value=String(result.temporaryPassword||'');
+    reveal.hidden=false;
+    const notice=document.getElementById('companyNotice');
+    if(notice){notice.classList.remove('error');notice.textContent=ml('success');}
+    await loadCompanies();
+  }catch(err){
+    error.textContent=err.message||ml('failed');
+  }finally{
+    submit.disabled=false;
+    submit.textContent=initial;
+  }
+}
+function bindManagedAccount(){
+  const dialog=document.getElementById('managedAccountDialog');
+  document.getElementById('openManagedAccount')?.addEventListener('click',()=>{
+    if(dialog?.showModal)dialog.showModal();
+  });
+  document.getElementById('managedAccountForm')?.addEventListener('submit',submitManagedAccount);
+  dialog?.querySelectorAll('[data-managed-close]').forEach(btn=>btn.addEventListener('click',()=>dialog.close()));
+  dialog?.addEventListener('close',()=>{
+    const form=document.getElementById('managedAccountForm');
+    form?.reset();
+    if(form)form.hidden=false;
+    const result=document.getElementById('managedAccountResult');
+    if(result)result.hidden=true;
+    const login=document.getElementById('managedLoginCode');
+    const password=document.getElementById('managedTemporaryPassword');
+    if(login)login.value='';
+    if(password)password.value='';
+    document.getElementById('managedError').textContent='';
+    document.getElementById('managedCopyMessage').textContent='';
+  });
+  document.getElementById('managedCopy')?.addEventListener('click',async()=>{
+    const login=document.getElementById('managedLoginCode')?.value||'';
+    const password=document.getElementById('managedTemporaryPassword')?.value||'';
+    const message=document.getElementById('managedCopyMessage');
+    try{
+      await navigator.clipboard.writeText(ml('login')+': '+login+'\n'+ml('password')+': '+password+'\nhttps://respondoai.fi/kirjaudu');
+      message.textContent=ml('copied');
+    }catch{message.textContent=ml('copyFailed');}
+  });
+}
+
 function companiesShell(){
   const opts=[['all',ct('all')],['active',ct('active')],['trialing',ct('trialing')],['ended',ct('ended')]];
   return '<section class="company-section" id="companiesSection" aria-labelledby="companiesTitle">'+
-    '<div class="company-heading"><div><span class="company-label">'+ct('eyebrow')+'</span><h2 id="companiesTitle">'+ct('section')+'</h2><p>'+ct('info')+'</p></div></div>'+
+    '<div class="company-heading"><div><span class="company-label">'+ct('eyebrow')+'</span><h2 id="companiesTitle">'+ct('section')+'</h2><p>'+ct('info')+'</p></div><button type="button" class="btn managed-create" id="openManagedAccount">'+e(ml('create'))+'</button></div>'+
     '<div id="companyMetrics" class="company-metrics" aria-live="polite"></div>'+
     '<div class="company-controls"><input id="companySearch" type="search" autocomplete="off" maxlength="100" placeholder="'+e(ct('search'))+'" aria-label="'+e(ct('search'))+'" value="'+e(companySearch)+'">'+
     '<select id="companyFilter" aria-label="'+e(ct('all'))+'">'+opts.map(([value,label])=>'<option value="'+value+'"'+(companyStatus===value?' selected':'')+'>'+e(label)+'</option>').join('')+'</select></div>'+
@@ -270,7 +411,7 @@ function companiesShell(){
       '<form id="companyManageForm" novalidate><h3 id="companyDialogTitle"></h3><p id="companyDialogDescription"></p>'+
       '<div id="companyDialogFields"></div><div id="companyDialogError" class="company-dialog-error" role="alert"></div>'+
       '<div class="company-dialog-actions"><button type="button" id="companyDialogClose">'+e(cm('cancel'))+'</button>'+
-      '<button type="submit" class="primary" id="companyDialogSubmit"></button></div></form></dialog></section>';
+      '<button type="submit" class="primary" id="companyDialogSubmit"></button></div></form></dialog>'+managedDialogShell()+'</section>';
 }
 function companySummaryCards(s){
   const data=[[ct('total'),s.total],[ct('active'),s.active],[ct('trialing'),s.trialing],[ct('ended'),s.ended]];
@@ -783,6 +924,7 @@ async function load(){
       '<div class="traffic-view" id="companyView" hidden>'+companiesShell()+'</div>'+
       '<div class="traffic-view" id="setupView" hidden>'+setupShell()+'</div>';
     bindCompanyControls();
+    bindManagedAccount();
     bindSetupAdmin();
     setActiveTrafficView(viewFromHash());
     loadSetupOrders();
