@@ -9,7 +9,7 @@ const details={
   desiredDate:'2026-12-12',
   areaSqm:'85',
   name:'Esimerkki Testaaja',
-  contact:'test@example.com',
+  contact:'test@example.com',extraContact:'+358 40 123 4567',
   originAddress:'Esimerkkikatu 5',originCity:'Rovaniemi',originHousing:'apartment',
   originFloor:'3',originElevator:'no',originParking:'no',
   destinationAddress:'Koekatu 2',destinationCity:'Turku',destinationHousing:'apartment',
@@ -25,7 +25,7 @@ test('Mainio moving quote is validated with consent, and full contact details ar
   assert.ok(result.data,result.error);
   const summary=mainioMoveDetails(result.data);
   for(const value of ['Esimerkki Testaaja','test@example.com','Rovaniemi','Turku',
-      'Esimerkkikatu 5','Koekatu 2','Piano','Kantoreitti 30 metriä','3 vuotta','Muutetaanko koko asunto']){
+      'Esimerkkikatu 5','Koekatu 2','Piano','Kantoreitti 30 metriä','3 vuotta','Muutetaanko koko asunto','+358 40 123 4567']){
     assert.ok(summary.includes(value),value);
   }
   assert.ok(summary.includes('Hinta, muuttopäivän saatavuus'));
@@ -38,7 +38,8 @@ test('Mainio form blocks missing consent, bad dates, addresses and apartment flo
     {...details,desiredDate:'2026-10-01'},
     {...details,originAddress:'A'},
     {...details,destinationFloor:''},
-    {...details,contact:'bogus'}
+    {...details,contact:'bogus'},
+    {...details,extraContact:'bad'}
   ];
   for(const candidate of cases){
     assert.ok(validateMainioMove(candidate,{today:'2026-11-01'}).error,JSON.stringify(candidate));
