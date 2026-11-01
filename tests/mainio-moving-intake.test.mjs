@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {isMainioMovingTenant,mainioMoveActions,validateMainioMove,mainioMoveDetails,mainioBoxEstimate,MAINIO_TENANT_ID,MAINIO_QUOTE_URL} from '../mainio-moving-intake.mjs';
+import {isMainioMovingTenant,mainioMoveActions,validateMainioMove,mainioMoveDetails,mainioBoxEstimate,mainioInquiryKind,mainioInquiryActions,mainioMovingOrderIntent,mainioIsSmallTalk,MAINIO_TENANT_ID,MAINIO_QUOTE_URL} from '../mainio-moving-intake.mjs';
 const good={
  consent:true,name:'Maija Muuttaja',contact:'040 123 4567',serviceType:'home',
  desiredDate:'2026-12-04',originAddress:'Turun katu 1',originCity:'Turku',
@@ -50,4 +50,18 @@ test('source-backed box guidance is explicitly a range, never a confirmed requir
 });
 test('phone validation rejects punctuation-only fake phone numbers',()=>{
  assert.ok(validateMainioMove({...good,contact:'------'},{today:'2026-11-01'}).error);
+});
+
+test('moving-service requests cannot confuse box rental or van rental',()=>{
+ assert.equal(mainioInquiryKind('Haluan tilata muuttolaatikoita'),'boxes');
+ assert.equal(mainioMovingOrderIntent('Haluan tilata muuttolaatikoita'),false);
+ assert.match(mainioInquiryActions('Haluan tilata muuttolaatikoita','fi')[0].url,/muuttolaatikot-ja-tarvikkeet/);
+ assert.equal(mainioInquiryKind('Haluan varata pakettiauton muuttoon'),'van');
+ assert.equal(mainioMovingOrderIntent('Haluan varata pakettiauton muuttoon'),false);
+ assert.match(mainioInquiryActions('Haluan varata pakettiauton','fi')[0].url,/pakettiautojen-vuokraus/);
+ assert.equal(mainioInquiryKind('Haluan tilata muuttopalvelun ja muuttolaatikot'),'moving');
+ assert.equal(mainioMovingOrderIntent('Haluan tilata muuttopalvelun ja muuttolaatikot'),true);
+ assert.equal(mainioMovingOrderIntent('Book my move'),true);
+ assert.equal(mainioIsSmallTalk('Moi!'),true);
+ assert.equal(mainioIsSmallTalk('Moi, paljonko muutto maksaa?'),false);
 });
