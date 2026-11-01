@@ -142,7 +142,7 @@ test('real answer engine does not need matching language to align verified FAQ t
 test('generic unrelated service page cannot masquerade as a FAQ without a question mark',async()=>{
   const rows=[faq('g1','Lahjakorttien ostaminen','Yes, we sell gift cards.','Palvelut')];
   const r=await generate(rows,'Can I purchase a gift card?');
-  assert.ok(r.handoff || !r.sourceIds.includes('g1'));
+  assert.notEqual(r.intent,'Usein kysytyt');
 });
 test('no approval provenance means no verified FAQ answer',async()=>{
   const rows=[{...faq('w1','WiFi access','Yes, free WiFi.'),source_url:''}];
