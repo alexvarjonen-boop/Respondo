@@ -221,8 +221,8 @@
   // of how many wheel events the browser sends. Leave mobile native scrolling.
   function onWheel(event) {
     if (!section || !section.isConnected || !section.classList.contains('rs-enhanced') ||
-        coarse.matches || innerWidth < 760 || event.ctrlKey || event.defaultPrevented ||
-        event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+        coarse.matches || innerWidth < 760 || event.ctrlKey ||
+        (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"], .respondo-chat, .respondo-widget, .rs-chat-widget'))) return;
     const rect = section.getBoundingClientRect();
     const viewport = innerHeight;
     // Do not hijack the normal page before entering or after leaving this story.
@@ -307,7 +307,8 @@
   new MutationObserver(queueMount).observe(app, { childList:true });
   app.addEventListener('click', onOrbitClick);
   addEventListener('scroll', schedule, { passive:true });
-  addEventListener('wheel', onWheel, { passive:false });
+  // Capture wheel events before orbit buttons/overlays consume them, regardless of pointer position.
+  addEventListener('wheel', onWheel, { passive:false, capture:true });
   addEventListener('resize', () => { queueMount(); schedule(); }, { passive:true });
   addEventListener('pageshow', schedule, { passive:true });
   addEventListener('respondo:languagechange', queueMount, { passive:true });
