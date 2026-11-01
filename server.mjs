@@ -7306,7 +7306,17 @@ async function directlyVerifiedFaqAnswer(rows, question, lang='fi') {
 
 async function generateGroundedAnswer({ companyName, rows, message, history = [], lang = 'fi', pageContext = {}, multiPart = false }) {
   const responseLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase()) ? String(lang).toLowerCase() : 'fi';
-  rows = (rows || []).filter(usableWebsiteRow);
+  rows = (rows || []).filter(usableWebsiteRow).filter(row=>{
+    // An imported FAQ without a traceable source must not be treated as an
+    // approved merchant policy by the general search fallback either.
+    // Handwritten owner Q&A (source_type=manual / absent) is unaffected.
+    const source=String(row?.source_type||row?.sourceType||'').toLowerCase();
+    const category=normalizeSearchText(String(row?.category||''));
+    if(['website','demo_import'].includes(source) &&
+       /^(?:usein kysytyt|faq|frequently asked questions|vanliga fragor)$/.test(category) &&
+       !/^https?:\/\//i.test(String(row?.source_url||row?.sourceUrl||'')))return false;
+    return true;
+  });
   // Interpret frequent typos only inside the answer engine. Keep the
   // original visitor message untouched in chat storage and analytics.
   const originalMessage = String(message || '').trim();
