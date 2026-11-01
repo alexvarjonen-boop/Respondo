@@ -58,7 +58,15 @@ const values={
   specialItems:'Isot tai erityiset esineet',notes:'Lisätiedot',
 };
 const safeValue=(v,max)=>String(v??'').trim().replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,max);
-const validContact=(s)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)||/^\+?[\d\s().-]{6,30}$/.test(s);
+const validContact=(s)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)||(/^[+]?[\d\s().-]{6,30}$/.test(s) && (s.match(/\d/g)||[]).length>=6);
+
+// The two different quantities are explicitly stated on Mainio's own pages
+// (FAQ: 0.8 per m², box rental page: approx. 1 per m²).
+export function mainioBoxEstimate(area){
+  const sqm=Number(area);
+  if(!Number.isFinite(sqm)||sqm<=0||sqm>1500)return null;
+  return {min:Math.ceil(0.8*sqm),max:Math.ceil(sqm)};
+}
 
 export function validateMainioMove(input,{today}={}) {
   if(!input||typeof input!=='object'||Array.isArray(input))return {error:'Virheellinen muuttopyyntö.'};
