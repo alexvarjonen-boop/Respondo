@@ -88,13 +88,13 @@ function evidencedServiceCategory(row){
   const name=credibleServiceName(category);
   if(!name)return '';
   const title=String(row?.title||'').trim();
-  const answer=String(row?.answer||'').replace(/\\s+/g,' ').trim();
-  if(!title || /(?:^|\\b)(?:hinta|hinnasto|price|pricing|cost|maksu|takuuehto|refund|palautusehto)(?:\\b|$)/i.test(title))return '';
+  const answer=String(row?.answer||'').replace(/\s+/g,' ').trim();
+  if(!title || /(?:^|\b)(?:hinta|hinnasto|price|pricing|cost|maksu|takuuehto|refund|palautusehto)(?:\b|$)/i.test(title))return '';
   if(!answer || answer.length<24 || answer.length>1000)return '';
   // Inspect only the opening claim, not later unrelated mentions.
-  const claim=answer.split(/(?<=[.!?])\\s+/)[0].slice(0,190);
-  if(/\\b(?:ei|eivät|emme|not|never|inte|ej)\\s+(?:\\w+\\s+){0,3}(?:tarjoa|tee|hoida|vuokraa|myy|asenn|offer|provide|rent|sell)\\w*/i.test(claim))return '';
-  const directOffer=/\\b(?:tarjoaa|tarjoamme|hoitaa|hoidamme|tekee|teemme|vuokraa|vuokraamme|myy|myymme|asentaa|asennamme|kokoaa|kokoamme|järjestää|järjestämme|tarjoavat|offers?|provides?|rents?|sells?|installs?|assembles?|erbjuder|utför|hyr\\s+ut)\\b/i.test(claim);
+  const claim=answer.split(/(?<=[.!?])\s+/)[0].slice(0,190);
+  if(/\b(?:ei|eivät|emme|not|never|inte|ej)\s+(?:\w+\s+){0,3}(?:tarjoa|tee|hoida|vuokraa|myy|asenn|offer|provide|rent|sell)\w*/i.test(claim))return '';
+  const directOffer=/\b(?:tarjoaa|tarjoamme|hoitaa|hoidamme|tekee|teemme|vuokraa|vuokraamme|myy|myymme|asentaa|asennamme|kokoaa|kokoamme|järjestää|järjestämme|tarjoavat|offers?|provides?|rents?|sells?|installs?|assembles?|erbjuder|utför|hyr\s+ut)\b/i.test(claim);
   if(!directOffer)return '';
   if(pastEvent.test(claim) || staff.test(claim))return '';
   return name;
