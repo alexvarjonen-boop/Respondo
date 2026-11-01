@@ -1,5 +1,5 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
-import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioMoveActions, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
+import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioInquiryActions, mainioMovingOrderIntent, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
@@ -14494,9 +14494,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const widgetSubscribe=firstPartyRespondo
       ? respondoCheckoutAction(message,detectedLang,firstPartyFaq?.id||'',SEO_CANONICAL_ORIGIN)
       : null;
-    const mainioQuoteIntent=isMainioMovingTenant(t) &&
-      /(?:tilaa|tilaamaan|varaa|varaisin|varata|haluan tilata|haluaisin tilata|book|request|boka|beställa|bestalla|offert|tarjouspyyntö|tarjouspyynnon)/i.test(message) &&
-      /(?:muut|muutto|muutt|moving|move|flytt|tarjous|quote|offert)/i.test(message);
+    const mainioQuoteIntent=isMainioMovingTenant(t) && mainioMovingOrderIntent(message);
     const mainioQuoteAnswer=mainioQuoteIntent
       ? (detectedLang==='en'
           ? 'You can send the details of your move for Mainio Muuttopalvelu to review using the button below. Mainio confirms the price, date and booking separately.'
@@ -14504,7 +14502,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
           ? 'Du kan lämna uppgifter om flytten via knappen nedan. Mainio Muuttopalvelu bekräftar pris, datum och bokning separat.'
           : 'Voit kertoa muuttosi tiedot alla olevan painikkeen kautta. Mainio Muuttopalvelu tarkistaa tarjouspyynnön ja vahvistaa hinnan, ajankohdan sekä tilauksen erikseen.')
       : null;
-    const result = mainioQuoteAnswer ? {
+    let result = mainioQuoteAnswer ? {
       answer:mainioQuoteAnswer,handoff:false,confidence:1,
       intent:'Muuttotarjouspyyntö',sourceIds:[],selected:[],
     } : widgetSubscribe ? {
@@ -14531,6 +14529,17 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
           lang: detectedLang,
           pageContext: body.pageContext && typeof body.pageContext === 'object' ? body.pageContext : {},
         });
+
+    // A factual claim without any company-backed source must not be returned
+    // to Mainio customers as a confident answer. Greetings and the verified
+    // human-reviewed moving quote flow are intentionally exempt.
+    if(isMainioMovingTenant(t) && !mainioQuoteIntent && !mainioIsSmallTalk(message) &&
+      (!Array.isArray(result.sourceIds) || result.sourceIds.length===0)){
+      result={
+        answer:'',handoff:true,confidence:0,
+        intent:'Varmennettu lähde puuttuu',sourceIds:[],selected:[],
+      };
+    }
 
     const responseLang = detectedLang;
     const noAnswer = responseLang === 'en'
@@ -14563,7 +14572,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       // enquiry form. Never offer a fake calendar booking or calculated price.
       const contactActions=chatActions(actionRows,message,handoff,responseLang,result.selected)
         .filter(action=>['contact','phone','email'].includes(action.type));
-      actions=[...mainioMoveActions(responseLang),...contactActions].slice(0,4);
+      actions=[...mainioInquiryActions(message,responseLang),...contactActions].slice(0,4);
     }
     if (firstPartyRespondo) {
       const siteActions=respondoSitePageActions(message,responseLang,firstPartyFaq?.id);
