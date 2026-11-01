@@ -18,6 +18,7 @@
   let wheelLastAt = 0;
   let wheelGestureReset = 0;
   let wheelDirection = 0;
+  let transitionRaf = 0;
 
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const ease = v => { v = clamp(v, 0, 1); return v * v * (3 - 2 * v); };
@@ -30,6 +31,8 @@
 
   function teardown() {
     if (raf) cancelAnimationFrame(raf);
+    if (transitionRaf) cancelAnimationFrame(transitionRaf);
+    transitionRaf = 0;
     raf = 0;
     if (section) {
       section.classList.remove('rs-enhanced', 'rs-fixed-fallback', 'rs-fixed-end', 'rs-intro-past', 'rs-first-revealed');
@@ -129,14 +132,19 @@
       // The next chapter rises from the outer edge of the orbit. The smaller
       // mobile arc avoids moving text under Safari's floating chat launcher.
       const cleanDesktop = !mobile && innerWidth >= 1100;
-      const zoom = cleanDesktop ? 1 : (entering ? .83 + .17 * focus : 1 - .25 * curve);
-      const shiftX = cleanDesktop ? 0 : entering
+      // Desktop uses the same restrained depth arc as mobile, without large
+      // 3D rotations or sideways text flights that degrade laptop rendering.
+      const zoom = cleanDesktop ? (entering ? .91 + .09 * focus : 1 - .12 * curve)
+        : (entering ? .83 + .17 * focus : 1 - .25 * curve);
+      const shiftX = cleanDesktop ? (entering ? -13 : 20) * curve : entering
         ? -(mobile ? 12 : 62) * curve
         : (mobile ? 34 : Math.min(320, innerWidth * .22)) * curve;
-      const shiftY = cleanDesktop ? (entering ? 24 : -24) * curve : entering ? (mobile ? 62 : 95) * curve : -(mobile ? 100 : 74) * curve;
-      const turn = cleanDesktop ? 0 : entering ? -(mobile ? 6 : 17) * curve : (mobile ? 7 : 26) * curve;
-      const roll = entering ? 3 * curve : -7 * curve;
-      const depth = -(entering ? 105 : 240) * curve;
+      const shiftY = cleanDesktop ? (entering ? 44 : -49) * curve
+        : entering ? (mobile ? 62 : 95) * curve : -(mobile ? 100 : 74) * curve;
+      const turn = cleanDesktop ? (entering ? -3 : 4) * curve
+        : entering ? -(mobile ? 6 : 17) * curve : (mobile ? 7 : 26) * curve;
+      const roll = cleanDesktop ? (entering ? 1.5 : -2) * curve : entering ? 3 * curve : -7 * curve;
+      const depth = cleanDesktop ? -(entering ? 65 : 115) * curve : -(entering ? 105 : 240) * curve;
       const alpha = entering ? Math.pow(focus, 1.2) : Math.pow(focus, .9);
       panel.style.setProperty('--rs-panel-y', shiftY.toFixed(1) + 'px');
       panel.style.setProperty('--rs-panel-x', shiftX.toFixed(1) + 'px');
@@ -190,6 +198,25 @@
   function schedule() {
     if (!raf && section && section.isConnected && section.classList.contains('rs-enhanced')) raf = requestAnimationFrame(draw);
   }
+  // Animate one chapter over a short, finite ease instead of teleporting.
+  // rAF is active only while transitioning; mobile stays native-scroll.
+  function glideTo(target) {
+    if (transitionRaf) cancelAnimationFrame(transitionRaf);
+    const start = scrollY;
+    const distance = target - start;
+    if (Math.abs(distance) < 2) { scrollTo(0, target); schedule(); return; }
+    const begin = performance.now();
+    const duration = 540;
+    function frame(now) {
+      const t = clamp((now - begin) / duration, 0, 1);
+      const eased = t * t * (3 - 2 * t);
+      scrollTo(0, Math.round(start + distance * eased));
+      schedule();
+      if (t < 1) transitionRaf = requestAnimationFrame(frame);
+      else transitionRaf = 0;
+    }
+    transitionRaf = requestAnimationFrame(frame);
+  }
   // Desktop wheel and trackpad: one chapter per physical gesture, regardless
   // of how many wheel events the browser sends. Leave mobile native scrolling.
   function onWheel(event) {
@@ -231,8 +258,7 @@
     const sectionTop = scrollY + rect.top;
     const target = sectionTop + travel * next / Math.max(1, cards.length - 1);
     // Instant positioning avoids native smooth-scroll queue buildup on trackpads.
-    scrollTo({ top: Math.round(target), behavior: 'instant' });
-    schedule();
+    glideTo(Math.round(target));
   }
   // Clicking a glyph jumps to the exact same chapter position as wheel/touch
   // scrolling, so the heading, description, arrow and active icon never diverge.
@@ -260,7 +286,7 @@
     wheelDirection = 0;
     wheelLastAt = 0;
     clearTimeout(wheelGestureReset);
-    scrollTo({ top: Math.round(target), behavior: 'instant' });
+    glideTo(Math.round(target));
     updateStep(index);
     schedule();
   }
