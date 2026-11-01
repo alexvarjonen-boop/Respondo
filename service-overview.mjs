@@ -77,6 +77,29 @@ function isBrandOnlyServiceLabel(name,row,companyName=''){
   } catch { return false; }
 }
 
+// Imported knowledge can use a business-specific category instead of the
+// generic "Palvelut" heading. Accept that category only when the SAME approved
+// source row explicitly states a present-tense offering. Never infer a service
+// from the company name, category alone, price, question, or project history.
+function evidencedServiceCategory(row){
+  if(row?.approved===false || manualType(row))return '';
+  const category=String(row?.category||'').trim();
+  if(/^(?:yrityksen perustiedot|yritystiedot|yritys|palveluyritys|yleinen|usein kysytyt|faq|hinnat|hinnasto|tuotteet|products|products and services|asiakaspalvelu|customer service|company information)$/i.test(category))return '';
+  const name=credibleServiceName(category);
+  if(!name)return '';
+  const title=String(row?.title||'').trim();
+  const answer=String(row?.answer||'').replace(/\\s+/g,' ').trim();
+  if(!title || /(?:^|\\b)(?:hinta|hinnasto|price|pricing|cost|maksu|takuuehto|refund|palautusehto)(?:\\b|$)/i.test(title))return '';
+  if(!answer || answer.length<24 || answer.length>1000)return '';
+  // Inspect only the opening claim, not later unrelated mentions.
+  const claim=answer.split(/(?<=[.!?])\\s+/)[0].slice(0,190);
+  if(/\\b(?:ei|eivät|emme|not|never|inte|ej)\\s+(?:\\w+\\s+){0,3}(?:tarjoa|tee|hoida|vuokraa|myy|asenn|offer|provide|rent|sell)\\w*/i.test(claim))return '';
+  const directOffer=/\\b(?:tarjoaa|tarjoamme|hoitaa|hoidamme|tekee|teemme|vuokraa|vuokraamme|myy|myymme|asentaa|asennamme|kokoaa|kokoamme|järjestää|järjestämme|tarjoavat|offers?|provides?|rents?|sells?|installs?|assembles?|erbjuder|utför|hyr\\s+ut)\\b/i.test(claim);
+  if(!directOffer)return '';
+  if(pastEvent.test(claim) || staff.test(claim))return '';
+  return name;
+}
+
 function profileNames(row) {
   const answer=String(row?.answer||'').trim();
   if(!answer || answer.length>1100) return [];
@@ -107,6 +130,10 @@ export function verifiedServiceOverview(rows, { lang='fi', limit=7, companyName=
     if(fromManual && /^(?:palvelut|services|tjänster)$/i.test(title) &&
        (category==='yrityksen perustiedot'||category==='palvelut')){
       for(const name of profileNames(row)) if(!isBrandOnlyServiceLabel(name,row,companyName)) candidates.push({name,row,score:105});
+    }
+    const categorizedName=evidencedServiceCategory(row);
+    if(categorizedName && !isBrandOnlyServiceLabel(categorizedName,row,companyName)){
+      candidates.push({name:categorizedName,row,score:18+(serviceUrl.test(path)?20:0)});
     }
   }
   candidates.sort((a,b)=>b.score-a.score);
