@@ -25,6 +25,52 @@ export function mainioMoveActions(lang='fi') {
   ];
 }
 
+export const MAINIO_BOX_RENTAL_URL='https://www.mainiomuuttopalvelu.fi/muuttolaatikot-ja-tarvikkeet';
+export const MAINIO_VAN_RENTAL_URL='https://www.mainiomuuttopalvelu.fi/pakettiautojen-vuokraus';
+
+const normalized=(message)=>String(message||'').normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'').toLowerCase();
+
+export function mainioInquiryKind(message){
+  const q=normalized(message);
+  // Explicit moving-service intent has priority over accessories mentioned
+  // in the same sentence, e.g. "tilaa muuttopalvelu ja muuttolaatikot".
+  const actualMove=/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuton\b|muuttoa\b|muutto\b|muuttaa\b|muuttamaan\b|moving\s+service|book\s+(?:my|a)\s+move|flytthjalp|flyttfirma)/.test(q);
+  if(actualMove)return 'moving';
+  if(/(?:muuttolaatik|laatikkovuokra|laatikoiden\s+vuokra|laatikoita|moving\s+box|box\s+rental|flyttkartong|flyttlador)/.test(q))return 'boxes';
+  if(/(?:pakettiaut|vuokrapaku|vuokra-auto|rent\s+(?:a\s+)?van|van\s+rental|sk[aå]pbil)/.test(q))return 'van';
+  return 'moving';
+}
+
+export function mainioInquiryActions(message,lang='fi'){
+  const locale=['fi','sv','en'].includes(lang)?lang:'fi';
+  const kind=mainioInquiryKind(message);
+  if(kind==='boxes'){
+    return [{type:'quote',
+      label:locale==='en'?'Rent moving boxes':locale==='sv'?'Hyr flyttlådor':'Vuokraa muuttolaatikoita',
+      url:MAINIO_BOX_RENTAL_URL}];
+  }
+  if(kind==='van'){
+    return [{type:'booking',
+      label:locale==='en'?'View van rentals':locale==='sv'?'Se hyrbilar':'Katso pakettiautojen vuokraus',
+      url:MAINIO_VAN_RENTAL_URL}];
+  }
+  return mainioMoveActions(locale);
+}
+
+export function mainioMovingOrderIntent(message){
+  const q=normalized(message);
+  if(mainioInquiryKind(q)!=='moving')return false;
+  const move=/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuton\b|muuttoa\b|muutto\b|muuttaa\b|muuttamaan\b|moving\s+service|book\s+(?:my|a)\s+move|flytthjalp|flyttfirma)/.test(q);
+  const order=/(?:tilaa|tilaamaan|tilata|tilaisin|varaa|varata|varaisin|tarjouspyyn|hinta-arvio|pyydan\s+tarjou|book|request\s+(?:a\s+)?quote|boka|bestall|offert)/.test(q);
+  return move && order;
+}
+
+export function mainioIsSmallTalk(message) {
+  return /^(?:moi|hei|terve|heippa|hello|hi|hey|kiitos|kiitti|thanks|thank you|tack|okei|ok|selva|hyva)[!.? ]*$/.test(normalized(message).trim());
+}
+
+
 const allowed={
   serviceType:['home','business','other'],
   originHousing:['apartment','detached','row','business','other','unknown'],
