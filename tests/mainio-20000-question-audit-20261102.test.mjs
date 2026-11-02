@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {mainioPublicFactAnswer} from '../mainio-public-fact-answer.mjs';
 import {mainioOfficialPublicFacts,mainioPublicKnowledgeWithOfficialFacts} from '../mainio-official-public-facts.mjs';
 import {
-  mainioBoxRentalFollowupIntent,mainioMovingRouteIntent,
+  mainioBoxRentalFollowupIntent,mainioConversationContextQuestion,mainioMovingRouteIntent,
   mainioRecognizedDomesticRoute,mainioInquiryActions
 } from '../mainio-moving-intake.mjs';
 import {interpretMainioLocalIntent,mainioSemanticActions} from '../mainio-semantic-intent.mjs';
@@ -231,6 +231,43 @@ test('Mainio remembers boxes across pronoun-only follow-ups and selects the corr
     assert.ok(actions.some(x=>x.url==='https://www.mainiomuuttopalvelu.fi/muuttolaatikot-ja-tarvikkeet'),q);
   }
 });
+test('Mainio retains moving-box context through multiple pronoun-only turns',()=>{
+  const history=[
+    {question:'Mistä pakettiauto noudetaan ja palautetaan?'},
+    {question:'entä laatikot'},
+    {question:'Paljonko ne maksaa?'}
+  ];
+  const context=mainioConversationContextQuestion(history);
+  assert.match(context,/muuttolaatik/i);
+  const checks=[
+    ['Saako ne kotiin?','Toimitamme muuttolaatikot'],
+    ['Milloin ne tuodaan?','maanantai, keskiviikko ja perjantai'],
+    ['Minkä kokoisia ne ovat?','600 × 400 × 300 mm'],
+    ['Montako niitä tarvitaan?','0,8'],
+    ['Paljonko niiden kuljetus maksaa?','25 euroa ajokerralta'],
+  ];
+  for(const [q,expected] of checks){
+    const reply=mainioPublicFactAnswer(rows,q,'fi',context);
+    assert.ok(reply&&!reply.handoff,q);
+    assert.ok(reply.answer.toLowerCase().includes(expected.toLowerCase()),q+' => '+reply.answer);
+  }
+});
+test('Mainio multi-turn context expires after a new unrelated topic and rejects cardboard-box context',()=>{
+  const unrelated=mainioConversationContextQuestion([
+    {question:'Mistä pakettiauto noudetaan?'},
+    {question:'entä laatikot'},
+    {question:'Mikä on yrityksenne sähköpostiosoite?'}
+  ]);
+  assert.match(unrelated,/sahkopost/i);
+  assert.equal(mainioBoxRentalFollowupIntent('entä laatikot',unrelated),false);
+  const cardboard=mainioConversationContextQuestion([
+    {question:'Miten pahvilaatikot kierrätetään?'},
+    {question:'entä laatikot'}
+  ]);
+  assert.match(cardboard,/pahvilaatikot/i);
+  assert.equal(mainioBoxRentalFollowupIntent('paljonko ne maksaa',cardboard),false);
+});
+
 test('Mainio recognizes box follow-ups after a van price question but not after cardboard recycling',()=>{
   const vanPrevious='Mitä paku maksaa?';
   const boxReply=mainioPublicFactAnswer(rows,'entä laatikot','fi',vanPrevious);
