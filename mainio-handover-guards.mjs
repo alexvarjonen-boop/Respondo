@@ -143,7 +143,7 @@ export function mainioVerifiedHandoverAnswer(rows,message,lang='fi',previousCust
       row,'Muuttolaatikoiden vuokra-aika',[boxAction(lang)]);
   }
   // A bare quote request must actually include the quote URL action.
-  const quote=/\b(?:tarjouspyyn|tarjous|offert|quote|estimate|offer)\b/.test(q) ||
+  const quote=/(?:tarjouspyyn|tarjouksen|tarjousta|\btarjous\b|\boffert\b|\bquote\b|\bestimate\b|\boffer\b)/.test(q) ||
     /(?:begara offert|begar offert|request a quote|pyytaa tarjou)/.test(q);
   if(quote&&!boxName.test(q)&&!vanName.test(q)){
     const row=official(rows,'Muuton hinta',['tarkka tarjous']);
