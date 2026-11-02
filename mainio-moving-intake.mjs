@@ -91,14 +91,14 @@ export function mainioBoxRentalIntent(message){
   const q=normalized(message).replace(/[^a-z0-9\s-]/g,' ');
   const exact=/(?:muuttolaatik|laatikko?vuokra|flyttkartong|flyttlad|moving\s+box|packing\s+box|box\s+rental)/.test(q);
   const generic=/(?:\b(?:laatik|laatiko|box|boxes|crate|crates|lador|kartong)\w*\b)/.test(q);
-  const rental=/(?:vuokra|vuokratt|vuokral|lainaa|lainaksi|rent|rental|hyra|hyr|lana)/.test(q);
+  const rental=/(?:vuokra|vuokratt|vuokral|lainaa|lainat|lainaksi|rent|rental|hire|hyra|hyr|lana)/.test(q);
   return exact || (generic && rental);
 }
 
 export function mainioVanRentalIntent(message){
   const q=normalized(message);
-  if(/(?:pakettiaut|vuokrapaku|vuokra-auto|rent\\s+(?:a\\s+)?van|van\\s+rental|sk[aå]pbil)/.test(q))return true;
-  return /\\b(?:paku|pakun|pakua|pakulla|pakulle|pakusta|pakut|pakuihin)\\b/.test(q) &&
+  if(/(?:pakettiaut|vuokrapaku|vuokra-auto|rent\s+(?:a\s+)?van|van\s+rental|sk[aå]pbil)/.test(q))return true;
+  return /\b(?:paku|pakun|pakua|pakulla|pakulle|pakusta|pakut|pakuihin|van|vans)\b/.test(q) &&
     /(?:vuokra|vuokratt|vuokral|lainaa|lainaksi|rent|rental|hire|hyra|hyr)/.test(q);
 }
 
