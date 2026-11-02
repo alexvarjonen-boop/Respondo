@@ -140,11 +140,11 @@ export function mainioInquiryKind(message){
 
 export function mainioInquiryActions(message,lang='fi'){
   const locale=['fi','sv','en'].includes(lang)?lang:'fi';
-  const q=normalized(message);
+  const combinedQuery=normalized(message);
   // A compound request must expose both real booking pages, not only the
   // first accessory detected by the single-intent classifier.
   if(mainioBoxRentalIntent(message)&&mainioVanRentalIntent(message)&&
-    /(?:vuokra|vuokr|rent|hire|hyra)/.test(q)){
+    /(?:vuokra|vuokr|rent|hire|hyra)/.test(combinedQuery)){
     return [
       {type:'booking',
         label:locale==='en'?'View van rentals':locale==='sv'?'Se hyrbilar':'Katso pakettiautojen vuokraus',
