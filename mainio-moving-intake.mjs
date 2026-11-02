@@ -222,9 +222,9 @@ export function mainioConversationContextQuestion(history=[]){
       /^(?:toimitatteko|tuotteko|haetteko|noudatteko)\s+(?:ne\s+)?(?:kotiin|pois|takaisin|perille)\b/.test(q) ||
       /^(?:mita|paljonko|mika)\s+(?:(?:niiden|laatikoiden)\s+)?(?:kuljetus|toimitus|kotiinkuljetus)(?:maksu|hinta)?(?:\s+(?:maksaa|maksaisi|hinta|maksu|kustannus|on))?(?:\s|$)/.test(q) ||
       /^(?:milloin|miten)\s+(?:(?:ne|niita)\s+)?(?:toimitetaan|kuljetetaan|noudetaan|palautetaan)\b/.test(q) ||
-      /^(?:and\s+)?(?:how much|what does|what is|whats)\s+(?:the\s+)?(?:delivery|shipping|transport|pickup|collection)\b/.test(q) ||
+      /^(?:and\s+)?(?:how much(?:\s+(?:does|is|for))?|what does|what is|whats)\s+(?:the\s+)?(?:delivery|shipping|transport|pickup|collection)\b/.test(q) ||
       /^(?:can|could|do|will)\s+(?:you|they)\s+(?:(?:also|still)\s+)?(?:deliver|ship|collect|pick up|bring)\b/.test(q) ||
-      /^(?:och\s+)?(?:vad kostar|hur mycket kostar|vad ar priset pa)\s+(?:leverans|transport|frakt|hamtning)\b/.test(q) ||
+      /^(?:och\s+)?(?:vad kostar|hur mycket kostar|vad ar priset pa)\s+(?:leverans\w*|transport\w*|frakt\w*|hamtning\w*)\b/.test(q) ||
       /^(?:kan|skulle|levererar|hamtar)\s+(?:ni|man)\s+(?:leverera|hamta|lamna|dem|dom|hem)\b/.test(q)
     );
   const isPronounContinuation=q=>
