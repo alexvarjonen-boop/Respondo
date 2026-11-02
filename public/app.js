@@ -178,7 +178,7 @@ function appendPreviewProductCards(bubble,items,lang='fi') {
       const url=new URL(item?.url||'');
       const name=String(item?.name||'').trim();
       // Never display an already-stored FAQ prompt as a purchasable product.
-      const faqTitle=/^(?:onko|voiko|saako|löytyykö|mita|mitä|mika|mikä|how|what|where|when|why|is|are|do|does|can|has|have|har|finns|är|kan|hur|vad|vilken|vilka)\b/i.test(name) && /[?？]\s*$/.test(name);
+      const faqTitle=/^(?:onko|voiko|saako|löytyykö|mita|mitä|mika|mikä|how|what|where|when|why|is|are|do|does|can|has|have|har|finns|är|kan|hur|vad|vilken|vilka)(?=\s|[?？]|$)/i.test(name) && /[?？]\s*$/.test(name);
       return Boolean(name) && !faqTitle && ['http:','https:'].includes(url.protocol) && !url.username && !url.password;
     }catch{return false;}
   }).slice(0,4);
