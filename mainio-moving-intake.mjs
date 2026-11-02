@@ -140,6 +140,20 @@ export function mainioInquiryKind(message){
 
 export function mainioInquiryActions(message,lang='fi'){
   const locale=['fi','sv','en'].includes(lang)?lang:'fi';
+  const q=normalized(message);
+  // A compound request must expose both real booking pages, not only the
+  // first accessory detected by the single-intent classifier.
+  if(mainioBoxRentalIntent(message)&&mainioVanRentalIntent(message)&&
+    /(?:vuokra|vuokr|rent|hire|hyra)/.test(q)){
+    return [
+      {type:'booking',
+        label:locale==='en'?'View van rentals':locale==='sv'?'Se hyrbilar':'Katso pakettiautojen vuokraus',
+        url:MAINIO_VAN_RENTAL_URL},
+      {type:'quote',
+        label:locale==='en'?'Rent moving boxes':locale==='sv'?'Hyr flyttlådor':'Vuokraa muuttolaatikoita',
+        url:MAINIO_BOX_RENTAL_URL},
+    ];
+  }
   const kind=mainioInquiryKind(message);
   if(kind==='boxes'){
     return [{type:'quote',
