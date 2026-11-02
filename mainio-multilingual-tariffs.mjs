@@ -8,7 +8,10 @@ const evidence={
   h5:{title:'Pakettiauton 5 tunnin vuokrahinnat',match:[/13 m³ pakettiauto 70 euroa/,/17 m³ pakettiauto 90 euroa/,/20 m³ pakettiauto 110 euroa/,/100 km/]},
   day:{title:'Pakettiauton vuorokausivuokra',match:[/13 m³ pakettiauto 90 euroa/,/17 m³ pakettiauto 110 euroa/,/20 m³ pakettiauto 140 euroa/,/150 km/]},
   box:{title:'Muuttolaatikoiden hinta',match:[/0,20 euroa/,/10 euroa/]},
-  delivery:{title:'Laatikoiden kuljetusmaksu',match:[/25 euroa/,/Turkuun/,/Naantaliin/]}
+  delivery:{title:'Laatikoiden kuljetusmaksu',match:[/25 euroa/,/Turkuun/,/Naantaliin/]},
+  boxService:{title:'Laatikoiden toimitus ja palautus',match:[/Toimitamme muuttolaatikot/,/noudamme ne pois/]},
+  boxSize:{title:'Muuttolaatikoiden mitat',match:[/600/,/400/,/300/]},
+  boxDays:{title:'Muuttolaatikkojen noutopäivät',match:[/maanantai/,/keskiviikko/,/perjantai/]}
 };
 const strings={
   fi:{
@@ -17,6 +20,9 @@ const strings={
     day:'Vuorokausi: 13 m³ 90 €, 17 m³ 110 € ja 20 m³ 140 € (150 km sisältyy).',
     box:'Muuttolaatikoiden vuokra maksaa 0,20 €/laatikko/vrk. Minimilaskutus on 10 €.',
     delivery:'Muuttolaatikoiden kuljetus maksaa 25 €/ajokerta Turkuun, Raisioon, Kaarinaan, Maskuun, Lietoon ja Naantaliin. Muihin kuntiin sopimuksen mukaan.',
+    boxService:'Kyllä, toimitamme muuttolaatikot Turkuun ja lähialueille sekä noudamme ne pois. Noudosta toimipisteeltä on sovittava erikseen.',
+    boxSize:'Muuttolaatikoiden mitat ovat 600 × 400 × 300 mm.',
+    boxDays:'Muuttolaatikoita toimitetaan ja noudetaan maanantaisin, keskiviikkoisin ja perjantaisin. Tarkka ajankohta vahvistetaan erikseen.',
     intro:'Pakettiautojen vuokrahinnat:',note:'Saatavuus ja yksittäinen varaus vahvistetaan erikseen.',
     vanAction:'Katso pakettiautojen vuokraus',boxAction:'Vuokraa muuttolaatikoita'},
   sv:{
@@ -25,6 +31,9 @@ const strings={
     day:'Ett dygn: 13 m³ 90 €, 17 m³ 110 € och 20 m³ 140 € (150 km ingår).',
     box:'Hyra av flyttlådor kostar 0,20 € per låda och dygn. Minsta debitering är 10 €.',
     delivery:'Leverans av flyttlådor till Åbo, Reso, S:t Karins, Masku, Lundo och Nådendal kostar 25 € per körning. Andra orter enligt överenskommelse.',
+    boxService:'Ja, vi levererar flyttlådor i Åbo med omnejd och hämtar dem efteråt. Hämtning på plats måste avtalas separat.',
+    boxSize:'Flyttlådornas mått är 600 × 400 × 300 mm.',
+    boxDays:'Flyttlådor levereras och hämtas på måndagar, onsdagar och fredagar. Exakt tidpunkt måste bekräftas separat.',
     intro:'Hyrpriser för skåpbilar:',note:'Tillgänglighet och enskilda bokningar bekräftas separat.',
     vanAction:'Se skåpbilar',boxAction:'Hyr flyttlådor'},
   en:{
@@ -33,6 +42,9 @@ const strings={
     day:'24 hours: 13 m³ €90, 17 m³ €110 and 20 m³ €140 (150 km included).',
     box:'Moving boxes cost €0.20 per box per day, with a €10 minimum charge.',
     delivery:'Moving-box delivery to Turku, Raisio, Kaarina, Masku, Lieto and Naantali costs €25 per trip. Other locations by arrangement.',
+    boxService:'Yes, we deliver moving boxes in Turku and nearby areas and collect them afterward. Self-pickup must be arranged separately.',
+    boxSize:'Our moving boxes measure 600 × 400 × 300 mm.',
+    boxDays:'Moving boxes are delivered and collected on Mondays, Wednesdays and Fridays. Exact arrangements must be confirmed separately.',
     intro:'Van rental prices:',note:'Availability and individual bookings must be confirmed separately.',
     vanAction:'View van rentals',boxAction:'Rent moving boxes'}
 };
@@ -58,7 +70,6 @@ export function mainioMultilingualTariffAnswer(rows,message,lang='fi',previousCu
     :lang==='sv'
       ? /(?:vad kostar|hur mycket|pris|hyrpris|kostnad|kostar)/.test(q)
       :/(?:how much|what does|what is the price|price|cost|rates|rental rate)/.test(q);
-  if(!price)return null;
   const van=lang==='fi'
     ? /(?:pakettiaut|paku|pakun|pakua|vuokrapaku|vuokra auto)/.test(q)
     :lang==='sv'
@@ -75,12 +86,39 @@ export function mainioMultilingualTariffAnswer(rows,message,lang='fi',previousCu
   const otherMove=lang==='fi'?/(?:muuton hinta|muutto maksaa|muuttopalvel)/.test(q)
     :lang==='sv'?/(?:flyttfirma|flytthjalp|flyttens pris)/.test(q)
     :/(?:moving service|house move|moving company|cost of moving)/.test(q);
-  // A delivery/freight price after a van conversation is not automatically
-  // the van hire tariff. Answer delivery only when moving boxes are explicit;
-  // otherwise abstain instead of switching to an unrelated price list.
-  if(!box && /(?:kuljetus|toimitus|kotiinkuljetus|delivery|shipping|transport|leverans)/.test(q))return null;
+  // Resolve short follow-ups only against an explicit, recent moving-box topic
+  // from Mainio's conversational history. Do not carry context through unrelated
+  // questions, cardboard recycling, or a vehicle rental topic.
+  const prevBox=/(?:muuttolaatik|vuokralaatik|flyttlad|flyttkartong|flyttbox|moving box|packing box|box rental)/.test(prev) &&
+    !/(?:pahvilaatik|kierrat|recycl|cardboard|buying boxes|selling boxes)/.test(prev);
+  const activeBox=box || (prevBox&&!van);
+  const deliveryRequest=lang==='fi'
+    ? /(?:toimitatteko|tuotteko|noudatteko|haetteko|saako.*kotiin)/.test(q)
+    :lang==='sv'
+      ? /(?:kan ni leverera|levererar ni|kan ni hamta|hamtar ni|levereras.*hem)/.test(q)
+      :/(?:can you deliver|do you deliver|could you deliver|will you deliver|do you ship|can you bring|can you collect|do you collect|do you offer delivery)/.test(q);
+  const sizeRequest=lang==='fi'?/(?:mink[aä] koko|mitat|kokoisia)/.test(q)
+    :lang==='sv'?/(?:hur stora|vilken storlek|matt|storlek)/.test(q)
+    :/(?:how big|what size|dimensions|measurements)/.test(q);
+  const daysRequest=lang==='fi'?/(?:milloin|mina paivina).*(?:toimit|nout)/.test(q)
+    :lang==='sv'?/(?:vilka dagar|nar.*leverer|nar.*hamt)/.test(q)
+    :/(?:when.*deliver|which days.*deliver|when.*collect|when.*pick up)/.test(q);
+  if(otherMove)return null;
+  // Dates and times of a customer's individual delivery are not verifiable.
+  if((deliveryRequest||daysRequest)&&/(?:tomorrow|today|tonight|imorgon|idag|ikvall|huomenna|tanaan|tana iltana)/.test(q))return null;
+  // A freight/transport price without a box topic is not a van tariff.
+  if(!activeBox && /(?:kuljetus|toimitus|kotiinkuljetus|delivery|shipping|transport|leverans|frakt)/.test(q))return null;
+  if(!price&&!deliveryRequest&&!sizeRequest&&!daysRequest)return null;
   let keys,subject;
-  if(box&&!van){keys=[delivery?'delivery':'box'];subject='box';}
+  if(activeBox){
+    if(delivery&&price)keys=['delivery'];
+    else if(daysRequest)keys=['boxDays'];
+    else if(deliveryRequest)keys=['boxService'];
+    else if(sizeRequest)keys=['boxSize'];
+    else if(price)keys=['box'];
+    else return null;
+    subject='box';
+  }
   else {
     const previousVan=lang==='fi'?/(?:pakettiaut|paku|vuokra auto)/.test(prev)
       :lang==='sv'?/(?:skapbil|hyrbil|flyttbil)/.test(prev)
