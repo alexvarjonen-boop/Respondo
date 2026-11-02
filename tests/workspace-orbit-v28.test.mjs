@@ -21,7 +21,7 @@ test('sphere appears below the real bot test and uses exact homepage orbit eleme
   assert.match(css,/radial-gradient/);
 });
 test('native document scroll moves selected sphere chapter, no wheel interception',()=>{
-  assert.match(orbit,/const progress=pinned\?currentIndex\/\(sections\.length-1\):clamp\(-rect\.top\/range,0,1\)/);
+  assert.match(orbit,/const progress=\(pinned\|\|navigationFreeze\)\?currentIndex\/\(sections\.length-1\):clamp\(-rect\.top\/range,0,1\)/);
   assert.match(orbit,/const position=progress\*\(sections\.length-1\)/);
   assert.match(orbit,/window\.addEventListener\('scroll',onPageScroll,\{passive:true\}\)/);
   assert.match(orbit,/requestAnimationFrame\(draw\)/);

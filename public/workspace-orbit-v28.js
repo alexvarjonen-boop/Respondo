@@ -88,6 +88,7 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
   const icons=[...orb.querySelectorAll('[data-rs-workspace-icon]')];
   const button=orb.querySelector('#rsOrbitOpen');
   let currentIndex=0;
+  let navigationFreeze=false;
   let navigateTo=navigate;
   let frame=0;
   let pinned=false;
@@ -115,11 +116,16 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     if(!orb.isConnected || !workspace.isConnected || workspace.hidden)return;
     const rect=orb.getBoundingClientRect();
     const viewport=Math.max(1,window.innerHeight);
-    if(!pinned && (rect.top>viewport || rect.bottom<0))return;
+    if(!pinned && (rect.top>viewport || rect.bottom<=0)){
+      // After a direct icon click the page scrolls past the orbit. Resume
+      // natural scroll selection only on a later visit to the sphere.
+      navigationFreeze=false;
+      return;
+    }
     const range=Math.max(1,rect.height-viewport);
-    const progress=pinned?currentIndex/(sections.length-1):clamp(-rect.top/range,0,1);
+    const progress=(pinned||navigationFreeze)?currentIndex/(sections.length-1):clamp(-rect.top/range,0,1);
     const position=progress*(sections.length-1);
-    if(!pinned)selectIndex(Math.round(position));
+    if(!pinned && !navigationFreeze)selectIndex(Math.round(position));
     // Share the homepage's native-scroll optical choreography, even in the
     // pinned iPhone mode (one finger swipe advances one chapter).
     // Only viewport-scaled transforms are updated: there is no timer loop.
@@ -251,6 +257,9 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     moveSection(event.deltaY>0?1:-1);
   },{passive:false});
   function openSection(index){
+    // Lock visual and selected chapter while smooth-scrolling to its panel;
+    // otherwise the last scroll frame incorrectly highlights 12/12.
+    navigationFreeze=true;
     // Both the large name button and every icon navigate directly to the
     // actual account module. Never trap a tap in the scroll-only selector.
     selectIndex(index);

@@ -41,6 +41,16 @@ test('the existing visual orbit remains while icon hit testing and focus are ena
   assert.match(css,/rs-orbit-mobile-pinned/);
   assert.match(sphere,/releasePin\(\);[\s\S]*navigateTo\(section\.id\)/);
 });
+test('clicking any icon keeps its correct chapter highlighted during panel smooth scroll',()=>{
+  assert.match(sphere,/let navigationFreeze=false/);
+  assert.match(sphere,/navigationFreeze=true;[\s\S]{0,300}selectIndex\(index\)/);
+  assert.match(sphere,/const progress=\(pinned\|\|navigationFreeze\)\?currentIndex\/\(sections\.length-1\)/);
+  assert.match(sphere,/if\(!pinned && !navigationFreeze\)selectIndex\(Math\.round\(position\)\)/);
+  assert.match(sphere,/navigationFreeze=false;[\s\S]{0,100}return/);
+  assert.match(account,/workspace-orbit-v28\.js\?v=[^'"]*selected-state-v45/);
+  assert.match(app,/workspace-continuation-v24\.js\?v=[^'"]*selected-state-v45/);
+  assert.match(index,/app\.js\?v=[^"]*selected-state-v45/);
+});
 test('real tenant analytics, leads, conversations and staff editor are reachable',()=>{
   assert.match(account,/respondoWorkspaceOverviewStats/);
   assert.match(account,/const overviewMetrics=\['stats','respondo-intelligence','dashboard-insights'\]/);
