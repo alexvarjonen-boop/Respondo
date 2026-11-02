@@ -143,12 +143,17 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   // against the old high-specificity dashboard CSS on iOS Safari.
   const park=()=>{
     if(activePanel){
-      activePanel.style.setProperty('display','none','important');
-      activePanel.hidden=true;
-      // Nested integration forms must return to their original section,
-      // preserving existing handlers and the Actions screen's structure.
-      if(activePlaceholder?.parentNode) activePlaceholder.replaceWith(activePanel);
-      else storage.appendChild(activePanel);
+      // Restore nested panels with their original visibility. Hiding them
+      // would make the next navigation mistake them for plan-locked panels.
+      if(activePlaceholder?.parentNode){
+        activePanel.style.removeProperty('display');
+        activePanel.hidden=false;
+        activePlaceholder.replaceWith(activePanel);
+      }else{
+        activePanel.style.setProperty('display','none','important');
+        activePanel.hidden=true;
+        storage.appendChild(activePanel);
+      }
       activePlaceholder=null;
       activePanel=null;
     }
