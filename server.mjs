@@ -6,6 +6,7 @@ import {mainioPublicKnowledgeWithOfficialFacts} from './mainio-official-public-f
 import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioBookingStatusQuestion, mainioBookingStatusReply, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingIntakeQuestion, mainioMovingConsentQuestion, mainioMovingConsentReply, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, mainioConversationContextQuestion, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
+import { ensureOnboardingCheckupSchema, enqueueOnboardingCheckup, runDueOnboardingCheckups } from './onboarding-checkup.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { firecrawlEnabled, firecrawlMaxPages, maySpendOneFirecrawlCredit, fetchFirecrawlRenderedHtml } from './firecrawl-fallback.mjs';
@@ -11887,7 +11888,7 @@ app.post('/api/app/internal/setup-service-requests/:id/handover', auth, ownerTra
     // Safe migration for setup jobs originally created before this feature.
     await client.query('ALTER TABLE setup_service_requests ADD COLUMN IF NOT EXISTS billing_release_requested_at TIMESTAMPTZ');
     const found=await client.query(
-      `SELECT sr.status,sr.billing_release_requested_at,t.stripe_subscription_id,
+      `SELECT sr.status,sr.billing_release_requested_at,t.stripe_subscription_id,t.id AS tenant_id,
               t.active AS tenant_active,t.subscription_status,u.status AS user_status,
               (u.stripe_subscription_id IS DISTINCT FROM t.stripe_subscription_id) AS additional_workspace
          FROM setup_service_requests sr
@@ -11898,7 +11899,10 @@ app.post('/api/app/internal/setup-service-requests/:id/handover', auth, ownerTra
     );
     job=found.rows[0];
     if(!job) return res.status(404).json({error:'Käyttöönottotilausta ei löytynyt.'});
-    if(job.status==='ready') return res.json({ok:true,alreadyConfirmed:true});
+    if(job.status==='ready') {
+      await enqueueOnboardingCheckup(client,job.tenant_id);
+      return res.json({ok:true,alreadyConfirmed:true});
+    }
     if(!(job.status==='credentials_created' || job.status==='received' && job.additional_workspace) ||
        job.tenant_active!==true || job.user_status!=='active' ||
        !['active','trialing'].includes(job.subscription_status) ||
@@ -11929,6 +11933,8 @@ app.post('/api/app/internal/setup-service-requests/:id/handover', auth, ownerTra
         RETURNING session_id`,[sessionId],
     );
     if(!updated.rowCount) return res.status(409).json({error:'Luovutuksen tilaa ei voitu päivittää.'});
+    // The owner-confirmed handover is the assisted-setup milestone.
+    await enqueueOnboardingCheckup(client,job.tenant_id);
     return res.json({ok:true,manualHandoverConfirmed:true,billingDeferredUntilHandover:deferred,freeOwnerPromotion,trialEndsAt});
   }catch(error){
     console.error('Manual setup handover or Stripe billing release failed:',error?.message);
@@ -12783,6 +12789,8 @@ app.post('/api/app/import-website/approve', auth, ownerOnly, subscribed, async (
       added++;
     }
     if (!added) { await client.query('ROLLBACK'); return res.status(400).json({error:'Valituista tiedoista ei löytynyt hyväksyttäviä yritystietoja.'}); }
+    // The first successful self-service knowledge approval marks onboarding completion.
+    await enqueueOnboardingCheckup(client,tenantId);
     await client.query('COMMIT');
     return res.json({ok:true,added});
   } catch(e) {
@@ -16641,6 +16649,7 @@ async function withOwnerSeedLock(fn) {
 async function start() {
   try {
     await withRuntimeSchemaLock(() => ensureRuntimeSchema());
+    await withRuntimeSchemaLock(() => ensureOnboardingCheckupSchema(q));
     await withRuntimeSchemaLock(async () => {
       await seedAndLoadIntentUtterances();
       await seedIntentPhraseTemplates();
@@ -16666,6 +16675,16 @@ async function start() {
   if(process.env.NODE_ENV==='production'){
     const timer=setInterval(()=>{void runScheduledWebsiteRefresh();},30*60*1000);
     timer.unref();
+    // Persisted outbox allows send recovery after restarts and deploys.
+    const sendDueCheckups=()=>void runDueOnboardingCheckups(pool,{
+      apiKey:process.env.RESEND_API_KEY,
+      trustpilotUrl:process.env.TRUSTPILOT_REVIEW_URL,
+      from:process.env.CHECKUP_EMAIL_FROM||'Respondo AI <info@respondoai.fi>',
+    }).catch((error)=>console.error('Scheduled onboarding checkup failed:',error?.message));
+    const checkupTimer=setInterval(sendDueCheckups,60*1000);
+    checkupTimer.unref();
+    const checkupStartup=setTimeout(sendDueCheckups,10000);
+    checkupStartup.unref();
   }
 }
 
