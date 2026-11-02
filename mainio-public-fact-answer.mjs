@@ -4,6 +4,15 @@
 const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
 const area=(q,rx)=>rx.test(q);
+import {mainioBoxRentalIntent,mainioVanRentalIntent} from './mainio-moving-intake.mjs';
+
+// Accept the common spoken and inflected forms used by customers.
+function vanRentalDuration(q){
+  if(/(?:kolmen tunt|kolme tunt|kolmeksi tunt|kolmeks tunt|3 tunt|3h\b|3 h\b)/.test(q))return 3;
+  if(/(?:viiden tunt|viidelta tunt|viideksi tunt|viideks tunt|viisi tunt|5 tunt|5h\b|5 h\b)/.test(q))return 5;
+  if(/(?:vuorokau|paivavuokra|paivaksi|vuorokaudelta|24 h\b|24h\b|24 tunt)/.test(q))return 24;
+  return 0;
+}
 // Source allowlist for the anonymous Mainio website demo only. This is
 // explicitly not permission to read private Mainio tenant knowledge.
 export function mainioPublicWebsiteEvidence(rows){
@@ -61,11 +70,11 @@ const RULES=[
       /(?:mista.*nout|mista.*hae|mihin.*palaut|nouto osoit|noutopaik|palautuspaik)/.test(q)},
   {title:'Pakettiauton 5 tunnin vuokrahinnat',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
-      /(?:viidelta tunn|viiden tunn|viideksi tunn|viisi tunt|viisi tuntia|5 tunn|5 h\b|5h\b)/.test(q)&&
+      /(?:viidelta tunt|viiden tunt|viideksi tunt|viideks tunt|viisi tunt|5 tunt|5 h\b|5h\b)/.test(q)&&
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Paljonko pakettiauton 3 tunnin vuokra maksaa?',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
-      /(?:kolmen tunn|kolme tunt|3 tunn|3 h)/.test(q)&&
+      /(?:kolmen tunt|kolme tunt|kolmeksi tunt|kolmeks tunt|3 tunt|3 h|3h)/.test(q)&&
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Pakettiauton vuorokausivuokra',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
@@ -142,10 +151,36 @@ const approvedRow=(r)=>r&&r.id&&r.approved!==false &&
 
 // To prevent a false affirmative, an incoming "no/not" about a service
 // does not invert the affirmative response; answers remain exact source facts.
-export function mainioPublicFactAnswer(rows,message,lang='fi'){
+export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQuestion=''){
   if(lang!=='fi')return null; // never reply in Finnish to an English/Swedish user
-  const q=norm(message);
-  if(!q||q.length>420)return null;
+  const currentQ=norm(message);
+  if(!currentQ||currentQ.length>420)return null;
+  const previousQ=norm(previousCustomerQuestion);
+  // Resolve a clear vehicle follow-up only against the immediately preceding
+  // customer question, and only when both turns name the same rental subject.
+  const vehicleFollowup=/(?:enta|entas|sitten|mites|ja)\b/.test(currentQ) &&
+    /(?:pakettiaut|paku)\w*/.test(currentQ) &&
+    /(?:pakettiaut|paku)\w*/.test(previousQ);
+  const q=vehicleFollowup?norm(String(previousCustomerQuestion)+' '+String(message)):currentQ;
+  // A combined van + box request is two separate rental intents. Answer both
+  // from their respective approved Mainio source rows instead of letting the
+  // first matched FAQ topic hide the second.
+  const combinedRental=mainioVanRentalIntent(message)&&mainioBoxRentalIntent(message)&&
+    /(?:vuokra|vuokr|rent|hire|hyra)/.test(currentQ);
+  const duration=vanRentalDuration(currentQ);
+  if(combinedRental&&duration){
+    const vanTitle=duration===3?'Paljonko pakettiauton 3 tunnin vuokra maksaa?':
+      duration===5?'Pakettiauton 5 tunnin vuokrahinnat':'Pakettiauton vuorokausivuokra';
+    const vanRow=(rows||[]).find(row=>approvedRow(row)&&norm(row.title)===norm(vanTitle));
+    const boxRow=(rows||[]).find(row=>approvedRow(row)&&norm(row.title)===norm('Muuttolaatikoiden hinta'));
+    if(vanRow&&boxRow){
+      return {
+        answer:'Kyllä, molempia voi vuokrata. '+String(vanRow.answer).trim().replace(/\s+/g,' ')+' '+String(boxRow.answer).trim().replace(/\s+/g,' '),
+        handoff:false,confidence:1,intent:'Pakettiautojen ja muuttolaatikoiden vuokraus',
+        sourceIds:[vanRow.id,boxRow.id],selected:[vanRow,boxRow],verified:true
+      };
+    }
+  }
   // Booking ownership and availability are dynamic account-level facts.
   // Published tariffs cannot prove that a van/box is reserved or free.
   // An explicit price question may still receive the sourced price without
