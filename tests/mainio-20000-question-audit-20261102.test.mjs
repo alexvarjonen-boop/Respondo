@@ -57,7 +57,7 @@ const factCases=[
  ['Pakkaus- ja kantoapu',[
   'Tarjoatteko pakkaus- ja kantoapua','Onko teillä pakkauspalvelu','Voitteko pakata tavarat','Tarvitsen apua tavaroiden kantamiseen','Saako teiltä kantoapua muuttoon','Autatteko pakkaamisessa ja kantamisessa','Voitteko kantaa huonekalut','Onko pakkaaminen mahdollista tilata teiltä','Tarjoatteko apua muuton pakkaamiseen']],
  ['Hissittömän muuton suunnittelu',[
-  'Onko muutto hissittömään taloon mahdollista','Miten muutto onnistuu ilman hissiä','Muutto kolmanteen kerrokseen ilman hissiä','Miten huomioitte hissittömän talon muutossa','Vaikuttaako hissin puuttuminen muuton hintaan','Voitteko hoitaa muuton kerrostalossa ilman hissiä','Mitä pitää huomioida jos talossa ei ole hissiä','Miten muutto onnistuu viidennestä kerroksesta','Meillä ei ole hissiä, onnistuuko muutto']],
+  'Onko muutto hissittömään taloon mahdollista','Miten muutto onnistuu ilman hissiä','Muutto kolmanteen kerrokseen ilman hissiä','Miten huomioitte hissittömän talon muutossa','Vaikuttaako hissin puuttuminen muuton hintaan','Voitteko hoitaa muuton kerrostalossa ilman hissiä','Mitä pitää huomioida jos talossa ei ole hissiä','Miten muutto onnistuu viidennestä kerroksesta ilman hissiä','Meillä ei ole hissiä, onnistuuko muutto']],
  ['Pakettiauton tavaratilan koko',[
   'Paljonko pakettiauton tavaratilaan mahtuu','Mikä on pakettiauton kuutiotilavuus','Kuinka iso tavaratila pakettiautossa on','Minkä kokoisia pakettiautoja on vuokralla','Onko paku 13 m3','Mitä pakettiauton tavaratilaan mahtuu','Minkä kokoinen on vuokrapakun kuormatila','Mitä eri pakettiautokokoja löytyy','Paljonko kuutioita pakettiautossa on']],
  ['Muuton hinta',[
