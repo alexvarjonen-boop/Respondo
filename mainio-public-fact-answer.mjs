@@ -162,6 +162,11 @@ export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQu
     /(?:pakettiaut|paku)\w*/.test(currentQ) &&
     /(?:pakettiaut|paku)\w*/.test(previousQ);
   const q=vehicleFollowup?norm(String(previousCustomerQuestion)+' '+String(message)):currentQ;
+  // Published tariffs cannot establish personal booking status or live
+  // availability. This guard also applies to compound rental requests.
+  const asksForBookingStatus=/(?:\b(?:vapaa|vapaana|vapaita|saatavilla|saatavuus|varattu|varannut|varaus|vuokrattu|vahvistettu|vahvistitte|varmistettu|varmasti)\b)/.test(q);
+  const asksForPrice=/(?:paljonko|kuinka paljon|hinta|hinnasto|maksaa|maksavat|mita maksaa|kustann|hintainen)/.test(q);
+  if(asksForBookingStatus&&!asksForPrice)return null;
   // A combined van + box request is two separate rental intents. Answer both
   // from their respective approved Mainio source rows instead of letting the
   // first matched FAQ topic hide the second.
@@ -181,13 +186,8 @@ export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQu
       };
     }
   }
-  // Booking ownership and availability are dynamic account-level facts.
-  // Published tariffs cannot prove that a van/box is reserved or free.
   // An explicit price question may still receive the sourced price without
   // implying that a specific vehicle/date is available.
-  const asksForBookingStatus=/(?:\b(?:vapaa|vapaana|vapaita|saatavilla|saatavuus|varattu|varannut|varaus|vuokrattu|vahvistettu|vahvistitte|varmistettu|varmasti)\b)/.test(q);
-  const asksForPrice=/(?:paljonko|kuinka paljon|hinta|hinnasto|maksaa|maksavat|mita maksaa|kustann|hintainen)/.test(q);
-  if(asksForBookingStatus&&!asksForPrice)return null;
   for(const rule of RULES){
     if(!rule.check(q))continue;
     const chosen=(rows||[]).find(row=>approvedRow(row)&&norm(row.title)===norm(rule.title)) ||
