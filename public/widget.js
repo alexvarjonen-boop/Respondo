@@ -541,7 +541,7 @@
     if(chat.querySelector('.actionbox'))return;
     const M={
       fi:{
-        heading:'Muuttokartoitus · tarjouspyyntö',intro:'Kerro muutostasi. Mainio tarkistaa tiedot ja vahvistaa hinnan sekä ajankohdan erikseen.',
+        heading:'Muuttokartoitus · tarjouspyyntö',intro:'Kerro muutostasi, niin tarkistamme tiedot ja vahvistamme hinnan sekä ajankohdan erikseen.',
         steps:['Muuton perustiedot','Lähtöpaikka','Kohdepaikka','Laatikot ja lisätiedot','Yhteystiedot ja hyväksyntä'],
         type:'Muuton tyyppi',date:'Toivottu muuttopäivä',size:'Asunnon tai toimitilan koko (m²)',people:'Asukkaiden määrä (valinnainen)',
         wholeApartment:'Muutetaanko koko asunto?',yearsAtCurrentHome:'Kuinka kauan olette asuneet nykyisessä asunnossa? (valinnainen)',
@@ -555,12 +555,12 @@
         home:'Kotimuutto',business:'Yritysmuutto',other:'Muu kuljetus',apartment:'Kerrostalo',
         detached:'Omakotitalo',row:'Rivitalo',businessPlace:'Yritystila',otherPlace:'Muu',prev:'Edellinen',next:'Seuraava',
         send:'Lähetä Mainion tarkistettavaksi',sending:'Lähetetään…',
-        sent:'Tarjouspyyntösi tallennettiin Mainion käsiteltäväksi. Hinta, ajankohta ja tilaus vahvistetaan erikseen.',
+        sent:'Kiitos! Saimme tarjouspyyntösi ja tarkistamme sen. Vahvistamme hinnan, ajankohdan ja tilauksen erikseen.',
         error:'Lähetys epäonnistui. Tarkista tiedot ja yritä uudelleen.',
-        boxHint:'Mainion sivuilla on kaksi suuntaa antavaa laatikko-ohjetta: 0,8–1 laatikkoa / m². Valitse itse arvioitu määrä, ja Mainio tarkistaa tarpeen.'
+        boxHint:'Laatikko-ohjeemme on suuntaa antava: noin 0,8–1 laatikkoa / m². Arvioi tarvitsemasi määrä, niin tarkistamme sen.'
       },
       sv:{
-        heading:'Flyttkartläggning · offertförfrågan',intro:'Beskriv flytten. Mainio kontrollerar detaljerna och bekräftar pris och datum separat.',
+        heading:'Flyttkartläggning · offertförfrågan',intro:'Beskriv din flytt så granskar vi uppgifterna och bekräftar pris och datum separat.',
         steps:['Grunduppgifter','Från','Till','Flyttlådor och tillägg','Kontaktuppgifter och samtycke'],
         type:'Typ av flytt',date:'Önskat flyttdatum',size:'Bostadens eller lokalens storlek (m²)',people:'Antal boende (valfritt)',
         wholeApartment:'Ska hela bostaden flyttas?',yearsAtCurrentHome:'Hur länge har ni bott i er nuvarande bostad? (valfritt)',
@@ -574,12 +574,12 @@
         home:'Bostadsflytt',business:'Företagsflytt',other:'Annan transport',apartment:'Flervåningshus',
         detached:'Villa',row:'Radhus',businessPlace:'Företagslokal',otherPlace:'Annat',prev:'Tillbaka',next:'Nästa',
         send:'Skicka för granskning',sending:'Skickar…',
-        sent:'Din förfrågan har sparats för Mainios granskning. Pris, datum och bokning bekräftas separat.',
+        sent:'Tack! Vi har tagit emot din förfrågan och granskar den. Vi bekräftar pris, datum och bokning separat.',
         error:'Det gick inte att skicka. Kontrollera uppgifterna och försök igen.',
-        boxHint:'Mainios sidor anger två riktvärden: 0,8–1 låda per m². Välj ett ungefärligt antal. Mainio granskar behovet.'
+        boxHint:'Våra riktvärden är cirka 0,8–1 flyttlåda per m². Ange ett ungefärligt antal, så kontrollerar vi behovet.'
       },
       en:{
-        heading:'Moving enquiry · quote request',intro:'Tell us about your move. Mainio will review the details and separately confirm the price and date.',
+        heading:'Moving enquiry · quote request',intro:'Tell us about your move. We will review the details and confirm the price and date separately.',
         steps:['Move details','Moving from','Moving to','Boxes and extras','Contact and consent'],
         type:'Type of move',date:'Preferred moving date',size:'Property size (m²)',people:'Number of residents (optional)',
         wholeApartment:'Are you moving the entire home?',yearsAtCurrentHome:'How long have you lived at your current address? (optional)',
@@ -593,9 +593,9 @@
         home:'Home move',business:'Business move',other:'Other transport',apartment:'Apartment building',
         detached:'Detached house',row:'Terraced house',businessPlace:'Business premises',otherPlace:'Other',
         prev:'Back',next:'Next',send:'Submit for Mainio’s review',sending:'Sending…',
-        sent:'Your request was saved for Mainio to review. The price, date and booking will be confirmed separately.',
+        sent:'Thanks! We have received your request and will review it. We will confirm the price, date and booking separately.',
         error:'Could not send. Check the details and try again.',
-        boxHint:'Mainio’s website gives two approximate guidelines: 0.8–1 box per m². Choose an estimate; Mainio will check the quantity.'
+        boxHint:'Our guideline is approximately 0.8–1 moving box per m². Enter an estimate and we will check the quantity.'
       }
     };
     const L=M[widgetLang]||M.fi;
