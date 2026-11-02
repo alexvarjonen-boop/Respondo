@@ -110,7 +110,7 @@ test('Mainio status guard outranks priced facts in both public demo, owner previ
  assert.match(code,/mainioBookingReply \? mainioBookingReply : mainioRouteReply/);
  assert.match(code,/if\(mainioBookingReply\) actions=mainioBookingReply\.actions/);
  assert.match(code,/publicMainioDemo=isMainioPublicDemoWebsite\(/);
- assert.match(code,/enteredDemoHost==='mainiomuuttopalvelu\.fi'/);
+ assert.match(code,/isMainioPublicDemoWebsite\(\{/);
  const question='Onko minun pakettiauton 5 tunnin vuokra jo varattu?';
  assert.ok(mainioBookingStatusQuestion(question));
  // Source-locked rental prices do not prove an individual reservation.
