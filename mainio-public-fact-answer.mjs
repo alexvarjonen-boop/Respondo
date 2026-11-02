@@ -10,6 +10,7 @@ const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .replace(/\bajokorti\b/g,'ajokortti').replace(/\bvrk\b/g,'vuorokausi');
 const area=(q,rx)=>rx.test(q);
 import {mainioBoxRentalIntent,mainioBoxRentalFollowupIntent,mainioBoxRentalFollowupKind,mainioVanRentalIntent} from './mainio-moving-intake.mjs';
+import {mainioMultilingualTariffAnswer} from './mainio-multilingual-tariffs.mjs';
 
 // Accept the common spoken and inflected forms used by customers.
 function vanRentalDuration(q){
@@ -175,7 +176,7 @@ const approvedRow=(r)=>r&&r.id&&r.approved!==false &&
 // To prevent a false affirmative, an incoming "no/not" about a service
 // does not invert the affirmative response; answers remain exact source facts.
 export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQuestion=''){
-  if(lang!=='fi')return null; // never reply in Finnish to an English/Swedish user
+  if(lang!=='fi')return mainioMultilingualTariffAnswer(rows,message,lang,previousCustomerQuestion);
   const currentQ=norm(message);
   if(!currentQ||currentQ.length>420)return null;
   const previousQ=norm(previousCustomerQuestion);
@@ -279,5 +280,5 @@ export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQu
       sourceIds:[chosen.id],selected:[chosen],verified:true
     };
   }
-  return null;
+  return mainioMultilingualTariffAnswer(rows,message,lang,previousCustomerQuestion);
 }

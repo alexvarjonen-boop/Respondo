@@ -3,7 +3,7 @@ import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voic
 import {mainioPublicFactAnswer,mainioPublicWebsiteEvidence} from './mainio-public-fact-answer.mjs';
 import {isMainioPublicDemoWebsite} from './mainio-public-demo-identity.mjs';
 import {mainioPublicKnowledgeWithOfficialFacts} from './mainio-official-public-facts.mjs';
-import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioBookingStatusQuestion, mainioBookingStatusReply, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingIntakeQuestion, mainioMovingConsentQuestion, mainioMovingConsentReply, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
+import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioBookingStatusQuestion, mainioBookingStatusReply, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingIntakeQuestion, mainioMovingConsentQuestion, mainioMovingConsentReply, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, mainioConversationContextQuestion, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
@@ -13985,6 +13985,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       }
     }
     const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
+    const mainioPreviousContextQuestion=mainioConversationContextQuestion(history);
     // Only Respondo's own domain may offer a Respondo subscription.
     // A public demo of another company must never leak Respondo sales links.
     const enteredDemoHost=normalizeHost(profile.website);
@@ -14042,9 +14043,9 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // than a generic demo answer. The full five-step intake remains available
     // in the installed widget, while this preview links to Mainio's verified form.
     const mainioInterpretation=(previewMainioTenant||publicMainioDemo) && !mainioIsSmallTalk(message)
-      ? (interpretMainioLocalIntent(message,history.at(-1)?.question||'') ||
+      ? (interpretMainioLocalIntent(message,mainioPreviousContextQuestion) ||
          (previewMainioTenant ? await classifyMainioSemanticIntent({
-           message,lang:detectedLang,previousCustomerQuestion:history.at(-1)?.question||''
+           message,lang:detectedLang,previousCustomerQuestion:mainioPreviousContextQuestion
          }) : null)) : null;
     const mainioSemanticPreview=(previewMainioTenant||publicMainioDemo)
       ? mainioSemanticGroundedReply(mainioPreviewRows,mainioInterpretation,detectedLang,message,true) : null;
@@ -14052,7 +14053,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const mainioRoutePreview=(previewMainioTenant||publicMainioDemo)
       ? mainioPriorityDomesticRouteAnswer(mainioPreviewRows,message,detectedLang,mainioInterpretation) : null;
     const mainioFactPreview=(previewMainioTenant||publicMainioDemo)
-      ? mainioPublicFactAnswer(mainioPreviewRows,message,detectedLang,history.at(-1)?.question||'') : null;
+      ? mainioPublicFactAnswer(mainioPreviewRows,message,detectedLang,mainioPreviousContextQuestion) : null;
     let result = mainioConsentPreview ? mainioConsentPreview : mainioStatusPreview ? mainioStatusPreview : mainioRoutePreview ? mainioRoutePreview : mainioFactPreview ? mainioFactPreview : mainioSemanticPreview ? mainioSemanticPreview : mainioOrderPreview ? {
       answer:detectedLang==='en'
         ? 'Tell us about your move using the quote form below. We will review the details and confirm the price, date and booking separately.'
@@ -14127,7 +14128,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // retry the source-locked factual matcher (not a free-form model guess).
     if(publicMainioDemo && result.handoff){
       const sourceRows=mainioPublicKnowledgeWithOfficialFacts(demoMainioEvidence());
-      const retryFact=mainioPublicFactAnswer(sourceRows,message,detectedLang,history.at(-1)?.question||'');
+      const retryFact=mainioPublicFactAnswer(sourceRows,message,detectedLang,mainioPreviousContextQuestion);
       const retryRoute=mainioPriorityDomesticRouteAnswer(sourceRows,message,detectedLang,mainioInterpretation);
       if(retryFact||retryRoute)result=retryRoute||retryFact;
     }
@@ -14187,7 +14188,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // five-step form is intentionally rendered only by the real customer widget.
     const actions = mainioConsentPreview ? [] : mainioStatusPreview ? mainioStatusPreview.actions : (previewMainioTenant||publicMainioDemo)
       ? (mainioInterpretation
-          ? mainioSemanticActions(mainioInterpretation,detectedLang,message,history.at(-1)?.question||'')
+          ? mainioSemanticActions(mainioInterpretation,detectedLang,message,mainioPreviousContextQuestion)
           : mainioInquiryActions(message,detectedLang)).filter((action)=>action?.url)
       : chatActions(rows, message, handoff, detectedLang, result.selected || [])
           .filter((action) => action?.type !== 'order_status');
@@ -14745,6 +14746,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       );
       history = hr.rows.reverse();
     }
+    const mainioPreviousContextQuestion=mainioConversationContextQuestion(history);
 
     let firstPartyHomepageWidget=false;
     try {
@@ -14774,9 +14776,9 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const mainioBookingReply=mainioTenant && mainioBookingStatusQuestion(message)
       ? mainioBookingStatusReply(detectedLang):null;
     const mainioInterpretation=mainioTenant && !mainioIsSmallTalk(message)
-      ? (interpretMainioLocalIntent(message,history.at(-1)?.question||'') ||
+      ? (interpretMainioLocalIntent(message,mainioPreviousContextQuestion) ||
          await classifyMainioSemanticIntent({
-           message,lang:detectedLang,previousCustomerQuestion:history.at(-1)?.question||''
+           message,lang:detectedLang,previousCustomerQuestion:mainioPreviousContextQuestion
          })) : null;
     const mainioSemanticReply=mainioTenant
       ? mainioSemanticGroundedReply(mainioWidgetRows,mainioInterpretation,detectedLang,message) : null;
@@ -14784,7 +14786,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const mainioRouteReply=mainioTenant
       ? mainioPriorityDomesticRouteAnswer(mainioWidgetRows,message,detectedLang,mainioInterpretation) : null;
     const mainioFactReply=mainioTenant
-      ? mainioPublicFactAnswer(mainioWidgetRows,message,detectedLang,history.at(-1)?.question||'') : null;
+      ? mainioPublicFactAnswer(mainioWidgetRows,message,detectedLang,mainioPreviousContextQuestion) : null;
     const mainioQuoteAnswer=mainioQuoteIntent
       ? (detectedLang==='en'
           ? 'Tell us about your move using the button below. We will review the details and confirm the price, date and booking separately.'
@@ -14871,7 +14873,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       const contactActions=chatActions(actionRows,message,handoff,responseLang,result.selected)
         .filter(action=>['contact','phone','email'].includes(action.type));
       const mainioActions=mainioInterpretation
-        ? mainioSemanticActions(mainioInterpretation,responseLang,message,history.at(-1)?.question||'')
+        ? mainioSemanticActions(mainioInterpretation,responseLang,message,mainioPreviousContextQuestion)
         : mainioInquiryActions(message,responseLang);
       actions=[...mainioActions,...contactActions].slice(0,4);
     }

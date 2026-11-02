@@ -166,6 +166,7 @@ export function mainioBoxRentalFollowupKind(message,previousCustomerQuestion='')
     /(?:moving|move\b|flytt\w*)/.test(previous);
   if(!previousBox&&!previousMove)return null;
   const currentBox=/(?:muuttolaatik|laatik|flyttkartong|flyttlador|lador|box|crate)/.test(q);
+  if(!currentBox&&!previousBox)return null;
   const pronoun=/(?:\bne\b|\bniiden\b|\bniita\b|\bniista\b|\bniille\b|\bniissa\b|\bniissa\b|\bthose\b|\bthem\b|\bthey\b|\bdom\b|\bde\b|\bderas\b)/.test(q);
   const price=/(?:paljonko|kuinka paljon|hinta|maks\w*|veloit\w*|kustann\w*|price|cost|pris|kostar)/.test(q);
   const delivery=/(?:toimit\w*|kuljet\w*|kotiin|palaut\w*|nout\w*|hake\w*|tuo\w*|bring|deliver\w*|return\w*)/.test(q);
@@ -190,6 +191,54 @@ export function mainioBoxRentalFollowupKind(message,previousCustomerQuestion='')
 }
 export function mainioBoxRentalFollowupIntent(message,previousCustomerQuestion=''){
   return Boolean(mainioBoxRentalFollowupKind(message,previousCustomerQuestion));
+}
+
+/**
+ * Resolve the latest stable Mainio topic across several customer turns.
+ * Pronoun-only follow-ups inherit the nearest explicit topic, but a new
+ * unrelated question blocks older context so a cardboard-box question or an
+ * address question cannot accidentally become a moving-box rental.
+ */
+export function mainioConversationContextQuestion(history=[]){
+  const turns=(Array.isArray(history)?history:[])
+    .slice(-6).map(turn=>String(turn?.question||'').trim()).filter(Boolean);
+  if(!turns.length)return '';
+  const clean=value=>normalized(value).normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9\s-]/g,' ').replace(/\s+/g,' ').trim();
+  const isUnrelatedBox=q=>/(?:pahvi|kartonki|kierrat|jate|jatte|ostaa|myy)/.test(q);
+  const isExplicitBox=q=>/(?:muuttolaatik|vuokralaatik|flyttkartong|moving box|box rental|laatik.*vuokra|vuokra.*laatik)/.test(q);
+  const isGenericBoxFollowup=q=>/(?:laatik|box|kartong)/.test(q)&&
+    /(?:^|\s)(?:enta|entas|mites|mitas|ja|sitten)(?:\s|$)/.test(q)&&!isUnrelatedBox(q);
+  const isVan=q=>/(?:pakettiaut|\bpaku\b|\bpakun\b|vuokra auto|van rental)/.test(q);
+  const isMove=q=>mentionsMovingService(q)||mainioMovingRouteIntent(q)||
+    /(?:moving|move\b|flytt\w*)/.test(q);
+  const isPronounContinuation=q=>
+    /(?:\bne\b|\bniiden\b|\bniita\b|\bniista\b|\bniille\b|\bniissa\b|\bse\b|\bsen\b|\bsiita\b|\bthose\b|\bthem\b|\bthey\b|\bdom\b|\bde\b|\bderas\b)/.test(q)||
+    /^(?:no|hei|ja|enta|entas|mites|mitas|sitten|viel|vielä)\b/.test(q)||
+    /(?:paljonko|kuinka paljon|mihin aikaan|milloin|saako|voiko|montako|kuinka monta)\s+(?:ne|niiden|niita|niista|se|sen|those|them)\b/.test(q);
+  for(let i=turns.length-1;i>=0;i--){
+    const q=clean(turns[i]);
+    if(!q)continue;
+    if(isUnrelatedBox(q)&&/(?:laatik|box|kartong)/.test(q))return turns[i];
+    if(isExplicitBox(q))return turns[i];
+    if(isGenericBoxFollowup(q)){
+      for(let j=i-1;j>=0;j--){
+        const older=clean(turns[j]);
+        if(!older)continue;
+        if(isUnrelatedBox(older)&&/(?:laatik|box|kartong)/.test(older))return turns[j];
+        if(isVan(older)||isMove(older))return 'Muutto ja muuttolaatikot';
+        if(isExplicitBox(older))return turns[j];
+        if(isPronounContinuation(older))continue;
+        return turns[j];
+      }
+      return turns[i];
+    }
+    if(isVan(q)||isMove(q))return turns[i];
+    if(isPronounContinuation(q))continue;
+    return turns[i];
+  }
+  return turns[0];
 }
 export function mainioVanRentalIntent(message){
   const q=normalized(message);
