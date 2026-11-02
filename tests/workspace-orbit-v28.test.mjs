@@ -32,7 +32,7 @@ test('native document scroll moves selected sphere chapter, no wheel interceptio
   assert.match(orbit,/stage\.addEventListener\('wheel'/);
 });
 test('localized page name below sphere is clickable and opens each real page',()=>{
-  for(const id of ['bot','overview','setup','answers','customers','automation','install','profile','billing','settings'])
+  for(const id of ['overview','customers','conversations','team','setup','answers','automation','install','integrations','billing','settings','profile'])
     assert.ok(orbit.includes("id:'"+id+"'"),id);
   assert.match(orbit,/id="rsOrbitOpen"/);
   assert.match(orbit,/id="rsOrbitName"/);
