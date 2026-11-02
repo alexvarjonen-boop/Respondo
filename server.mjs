@@ -1,6 +1,7 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voice.mjs';
 import {mainioPublicFactAnswer,mainioPublicWebsiteEvidence} from './mainio-public-fact-answer.mjs';
+import {mainioVerifiedHandoverAnswer} from './mainio-handover-guards.mjs';
 import {isMainioPublicDemoWebsite} from './mainio-public-demo-identity.mjs';
 import {mainioPublicKnowledgeWithOfficialFacts} from './mainio-official-public-facts.mjs';
 import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioBookingStatusQuestion, mainioBookingStatusReply, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingIntakeQuestion, mainioMovingConsentQuestion, mainioMovingConsentReply, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, mainioConversationContextQuestion, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
@@ -13330,6 +13331,9 @@ function detectConversationLanguage(text, hinted='') {
   for(const w of words) for(const lang of ['fi','sv','en']) if(sets[lang].has(w)) score[lang]++;
   if(/[å]/.test(raw)) score.sv+=2;
   if(/[äö]/.test(raw)) score.fi+=1;
+  // A Swedish ä/ö is not Finnish evidence when the sentence explicitly
+  // contains Swedish terms ("Är flytten bekräftad?" etc.).
+  if (/\b(?:är|flytten|imorgon|bekräftad|skåpbil|hyrbilen|behörighet|elinstallationer|körkort|räcker|utför|garanterar|offert|flyttlådor)\b/.test(raw)) score.sv+=3;
   // Definite Swedish plurals such as "putterna" provide a useful signal even
   // when a short question was sent from a Finnish-language storefront.
   if(words.some(w=>w.length>=6 && /(?:arna|erna|orna)$/.test(w))) score.sv+=1;
@@ -14050,6 +14054,8 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // The signed-in Mainio dashboard must show a real quote action rather
     // than a generic demo answer. The full five-step intake remains available
     // in the installed widget, while this preview links to Mainio's verified form.
+    const mainioGuardPreview=(previewMainioTenant||publicMainioDemo)
+      ? mainioVerifiedHandoverAnswer(mainioPreviewRows,message,detectedLang,mainioPreviousContextQuestion) : null;
     const mainioInterpretation=(previewMainioTenant||publicMainioDemo) && !mainioIsSmallTalk(message)
       ? (interpretMainioLocalIntent(message,mainioPreviousContextQuestion) ||
          (previewMainioTenant ? await classifyMainioSemanticIntent({
@@ -14062,7 +14068,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       ? mainioPriorityDomesticRouteAnswer(mainioPreviewRows,message,detectedLang,mainioInterpretation) : null;
     const mainioFactPreview=(previewMainioTenant||publicMainioDemo)
       ? mainioPublicFactAnswer(mainioPreviewRows,message,detectedLang,mainioPreviousContextQuestion) : null;
-    let result = mainioConsentPreview ? mainioConsentPreview : mainioStatusPreview ? mainioStatusPreview : mainioRoutePreview ? mainioRoutePreview : mainioFactPreview ? mainioFactPreview : mainioSemanticPreview ? mainioSemanticPreview : mainioOrderPreview ? {
+    let result = mainioConsentPreview ? mainioConsentPreview : mainioStatusPreview ? mainioStatusPreview : mainioGuardPreview ? mainioGuardPreview : mainioRoutePreview ? mainioRoutePreview : mainioFactPreview ? mainioFactPreview : mainioSemanticPreview ? mainioSemanticPreview : mainioOrderPreview ? {
       answer:detectedLang==='en'
         ? 'Tell us about your move using the quote form below. We will review the details and confirm the price, date and booking separately.'
         :detectedLang==='sv'
@@ -14185,7 +14191,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
 
     // For Mainio, an unsupported factual answer must never appear verified
     // just because a generic demo model inferred it. Source rows are mandatory.
-    if((previewMainioTenant||publicMainioDemo) && !mainioConsentPreview && !mainioStatusPreview && !mainioRoutePreview && !mainioFactPreview && !mainioOrderPreview && !mainioSemanticPreview &&
+    if((previewMainioTenant||publicMainioDemo) && !mainioConsentPreview && !mainioStatusPreview && !mainioGuardPreview && !mainioRoutePreview && !mainioFactPreview && !mainioOrderPreview && !mainioSemanticPreview &&
        !mainioIsSmallTalk(message) &&
        (!Array.isArray(result.sourceIds) || result.sourceIds.length===0)){
       result={answer:'',handoff:true,confidence:0,intent:'Varmennettu lähde puuttuu',sourceIds:[],selected:[]};
@@ -14195,9 +14201,11 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // The dashboard can open the verified external link. The Mainio-specific
     // five-step form is intentionally rendered only by the real customer widget.
     const actions = mainioConsentPreview ? [] : mainioStatusPreview ? mainioStatusPreview.actions : (previewMainioTenant||publicMainioDemo)
-      ? (mainioInterpretation
-          ? mainioSemanticActions(mainioInterpretation,detectedLang,message,mainioPreviousContextQuestion)
-          : mainioInquiryActions(message,detectedLang)).filter((action)=>action?.url)
+      ? (mainioGuardPreview
+          ? mainioGuardPreview.actions
+          : mainioInterpretation
+            ? mainioSemanticActions(mainioInterpretation,detectedLang,message,mainioPreviousContextQuestion)
+            : mainioInquiryActions(message,detectedLang)).filter((action)=>action?.url)
       : chatActions(rows, message, handoff, detectedLang, result.selected || [])
           .filter((action) => action?.type !== 'order_status');
     // A real checkout CTA is first-party UI data, never an untrusted scraped URL.
@@ -14783,6 +14791,8 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       ? mainioMovingConsentReply(detectedLang):null;
     const mainioBookingReply=mainioTenant && mainioBookingStatusQuestion(message)
       ? mainioBookingStatusReply(detectedLang):null;
+    const mainioGuardWidget=mainioTenant
+      ? mainioVerifiedHandoverAnswer(mainioWidgetRows,message,detectedLang,mainioPreviousContextQuestion) : null;
     const mainioInterpretation=mainioTenant && !mainioIsSmallTalk(message)
       ? (interpretMainioLocalIntent(message,mainioPreviousContextQuestion) ||
          await classifyMainioSemanticIntent({
@@ -14802,7 +14812,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
           ? 'Berätta om din flytt via knappen nedan. Vi granskar uppgifterna och bekräftar pris, datum och bokning separat.'
           : 'Kerro meille muuttosi tiedot alla olevan painikkeen kautta. Tarkistamme tarjouspyynnön ja vahvistamme hinnan, ajankohdan sekä tilauksen erikseen.')
       : null;
-    let result = mainioConsentReply ? mainioConsentReply : mainioBookingReply ? mainioBookingReply : mainioRouteReply ? mainioRouteReply : mainioFactReply ? mainioFactReply : mainioSemanticReply ? mainioSemanticReply : mainioQuoteAnswer ? {
+    let result = mainioConsentReply ? mainioConsentReply : mainioBookingReply ? mainioBookingReply : mainioGuardWidget ? mainioGuardWidget : mainioRouteReply ? mainioRouteReply : mainioFactReply ? mainioFactReply : mainioSemanticReply ? mainioSemanticReply : mainioQuoteAnswer ? {
       answer:mainioQuoteAnswer,handoff:false,confidence:1,
       intent:'Muuttotarjouspyyntö',sourceIds:[],selected:[],
     } : widgetSubscribe ? {
@@ -14833,7 +14843,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     // A factual claim without any company-backed source must not be returned
     // to Mainio customers as a confident answer. Greetings and the verified
     // human-reviewed moving quote flow are intentionally exempt.
-    if(mainioTenant && !mainioConsentReply && !mainioBookingReply && !mainioRouteReply && !mainioFactReply && !mainioSemanticReply && !mainioQuoteIntent && !mainioIsSmallTalk(message) &&
+    if(mainioTenant && !mainioConsentReply && !mainioBookingReply && !mainioGuardWidget && !mainioRouteReply && !mainioFactReply && !mainioSemanticReply && !mainioQuoteIntent && !mainioIsSmallTalk(message) &&
       (!Array.isArray(result.sourceIds) || result.sourceIds.length===0)){
       result={
         answer:'',handoff:true,confidence:0,
@@ -14880,10 +14890,12 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       // enquiry form. Never offer a fake calendar booking or calculated price.
       const contactActions=chatActions(actionRows,message,handoff,responseLang,result.selected)
         .filter(action=>['contact','phone','email'].includes(action.type));
-      const mainioActions=mainioInterpretation
-        ? mainioSemanticActions(mainioInterpretation,responseLang,message,mainioPreviousContextQuestion)
-        : mainioInquiryActions(message,responseLang);
-      actions=[...mainioActions,...contactActions].slice(0,4);
+      const mainioActions=mainioGuardWidget
+        ? mainioGuardWidget.actions
+        : mainioInterpretation
+          ? mainioSemanticActions(mainioInterpretation,responseLang,message,mainioPreviousContextQuestion)
+          : mainioInquiryActions(message,responseLang);
+      actions=mainioGuardWidget ? [...mainioActions] : [...mainioActions,...contactActions].slice(0,4);
     }
     if (firstPartyRespondo) {
       const siteActions=respondoSitePageActions(message,responseLang,firstPartyFaq?.id);
