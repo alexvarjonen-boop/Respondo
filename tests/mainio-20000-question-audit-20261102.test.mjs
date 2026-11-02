@@ -171,6 +171,53 @@ const pronounFollowups=[
   ['Milloin ne tuodaan?','maanantai, keskiviikko ja perjantai'],
   ['Entä toimitusmaksu?','25 euroa ajokerralta'],
 ];
+const typoAndAbbreviationCases=[
+ ['Paljoko muuttolaatikoiden vuokra maksaa','Muuttolaatikoiden hinta'],
+ ['Mikä on muuttolatikkojen hinta','Muuttolaatikoiden hinta'],
+ ['Mikä on laatikoiden koko','Muuttolaatikoiden mitat'],
+ ['Paljoko laatikoiden kuljetus maksaa','Laatikoiden kuljetusmaksu'],
+ ['Miten laatikot palautetaan','Laatikoiden toimitus ja palautus'],
+ ['Mille päiville laatikoiden nouto onnistuu','Muuttolaatikkojen noutopäivät'],
+ ['Mikä on paku omavastuu','Pakettiautojen omavastuu'],
+ ['Saako paketiautoa ajaa B-kortilla','Pakettiautojen ajokortti'],
+ ['Voiko pakun vuokrata yoks','Pakettiautojen yövuokraus'],
+ ['Mistä paketiauto noudetaan','Pakettiauton nouto- ja palautusosoite'],
+ ['Paljoko paku maksaa 5h','Pakettiauton 5 tunnin vuokrahinnat'],
+ ['Paljonko paku maksaa 3h','Paljonko pakettiauton 3 tunnin vuokra maksaa?'],
+ ['Paljonko paku maksaa 24h','Pakettiauton vuorokausivuokra'],
+ ['Paljoko kierrätyspalvelu maksaa','Kierrätyksen alkaen hinta'],
+ ['Voiko irtaimiston noutaa ilman pakkaamista','Voiko jätteen noutaa pakkaamatta?'],
+ ['Mitä kierrätyspalveluun kuuluu','Kierrätyspalvelu'],
+ ['Voitteko säilyttää tavaroita muuton ajan','Välivarastointi ennen muuttoa'],
+ ['Asennatteko huonekaluja','Kalusteiden purkaminen ja kokoaminen'],
+ ['Autatteko reitittimen asennuksessa','TV ja reititinasennukset'],
+ ['Kuinka kauan muutto kestää','Muuton kesto'],
+ ['Autatteko pakkaamisessa ja kantamisessa','Pakkaus- ja kantoapu'],
+ ['Miten muutto onnistuu ilman hissiä','Hissittömän muuton suunnittelu'],
+ ['Paljonko pakettiauton tavaratilaan mahtuu','Pakettiauton tavaratilan koko'],
+ ['Paljoko muutto maksaa','Muuton hinta'],
+ ['Voitteko hoitaa pakkaamisen ja koko muuton puolestani','Täyden palvelun avaimet käteen -muutto'],
+];
+let typoTotal=0,typoCorrect=0;
+const typoFailures=[];
+for(const [base,title] of typoAndAbbreviationCases){
+  const expected=byTitle.get(title);
+  assert.ok(expected,'Missing typo benchmark fact: '+title);
+  for(const prefix of ['','Hei, '])for(const suffix of ['?',' kiitos'])for(const changeCase of [s=>s,s=>s.toLowerCase(),s=>s.toUpperCase()]){
+    const q=changeCase(prefix+base+suffix);
+    typoTotal++;
+    const result=mainioPublicFactAnswer(rows,q,'fi');
+    if(result?.sourceIds?.includes(expected.id)&&!result.handoff)typoCorrect++;
+    else if(typoFailures.length<60)typoFailures.push({title,q,sourceIds:result?.sourceIds||[],answer:result?.answer||null});
+  }
+}
+test('Mainio typo and abbreviation coverage uses the correct official fact',()=>{
+  console.log('[MAINIO_TYPO_AUDIT]',JSON.stringify({
+    typoTotal,typoCorrect,accuracy:Number((typoCorrect/typoTotal*100).toFixed(2)),typoFailures
+  }));
+  assert.equal(typoCorrect,typoTotal,'Some common typos or abbreviations did not return the correct fact');
+});
+
 test('Mainio remembers boxes across pronoun-only follow-ups and selects the correct fact',()=>{
   const previous='Haluaisin vuokrata muuttolaatikoita.';
   for(const [q,expected] of pronounFollowups){
@@ -201,9 +248,9 @@ test('Mainio recognizes box follow-ups after a van price question but not after 
 });
 
 test('20,000+ generated Mainio question variants: report factual coverage, contextual follow-ups, routes and false positives',()=>{
-  const total=generated+followupTotal+routeTotal+negativeTotal;
+  const total=generated+typoTotal+followupTotal+routeTotal+negativeTotal;
   console.log('[MAINIO_20K_AUDIT]',JSON.stringify({
-    total,generated,correct,accuracy:Number((correct/generated*100).toFixed(2)),
+    total,generated,correct,accuracy:Number((correct/generated*100).toFixed(2)),typoTotal,typoCorrect,typoAccuracy:Number((typoCorrect/typoTotal*100).toFixed(2)),
     followupTotal,followupCorrect,followupAccuracy:Number((followupCorrect/followupTotal*100).toFixed(2)),
     routeTotal,routeCorrect,routeAccuracy:Number((routeCorrect/routeTotal*100).toFixed(2)),
     negativeTotal,negativeCorrect,negativeAccuracy:Number((negativeCorrect/negativeTotal*100).toFixed(2)),
