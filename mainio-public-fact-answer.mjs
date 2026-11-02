@@ -66,7 +66,7 @@ const RULES=[
     check:q=>/(?:pakettiaut|paku|muuttoaut|vuokra aut)/.test(q)&&
       /(?:yon yli|yoksi|yovuokra|overnight)/.test(q)},
   {title:'Pakettiauton nouto- ja palautusosoite',
-    check:q=>/(?:pakettiaut|paku|vuokra aut|\\bauto\\b)/.test(q)&&
+    check:q=>/(?:pakettiaut|paku|vuokra aut|\bauto\b)/.test(q)&&
       /(?:mista.*nout|mista.*hae|mista.*saa.*(?:aut|paku)|mihin.*palaut|nouto osoit|noutopaik|palautuspaik|miss[aä].*(?:nout|hae|palaut))/.test(q)},
   {title:'Pakettiauton 5 tunnin vuokrahinnat',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
