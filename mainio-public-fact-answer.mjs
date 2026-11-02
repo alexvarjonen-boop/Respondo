@@ -70,7 +70,7 @@ const RULES=[
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&/(?:ajokort|b kort|b-kort|c kort|c-kort|kortilla.*aja|milla kortilla|tavallisella kort|mika kortti|riittaako.*kort|tarvita.*kort|kortti.*tarvit)/.test(q)},
   {title:'Pakettiautojen yövuokraus',
     check:q=>/(?:pakettiaut|paku|muuttoaut|vuokra aut)/.test(q)&&
-      /(?:yon yli|yoksi|yovuokra|overnight|seuraavana aamuna|seuraavana paivana|aamulla)/.test(q)},
+      /(?:yon yli|yoksi|yoks|yovuokra|overnight|seuraavana aamuna|seuraavana paivana|aamulla)/.test(q)},
   {title:'Pakettiauton nouto- ja palautusosoite',
     check:q=>/(?:pakettiaut|paku|vuokra aut|auto\w*)/.test(q)&&
       /(?:mista.*nout|mista.*noud|mista.*(?:hae|hak)|mista.*saa.*(?:aut|paku)|mihin.*palaut|nouto osoit|noutopaik|palautuspaik|miss[aä].*(?:nout|noud|hae|palaut)|auton.*nouto|auto.*nouto)/.test(q)},
