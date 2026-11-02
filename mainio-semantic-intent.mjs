@@ -138,7 +138,12 @@ export function resetMainioSemanticBudgetForTests(){
 }
 
 /** The classifier only picks an allowlisted, already implemented UI action. */
-export function mainioSemanticActions(classification,lang='fi'){
+export function mainioSemanticActions(classification,lang='fi',message=''){
+  const q=String(message||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+  const combinedRental=mainioBoxRentalIntent(message)&&mainioVanRentalIntent(message);
+  const vanFollowup=/(?:enta|entas|sitten|mites|ja)\\b/.test(q)&&
+    /(?:pakettiaut|paku)/.test(q);
+  if(combinedRental||vanFollowup)return mainioInquiryActions(message,lang);
   const kind=classification?.intent;
   if(kind==='moving_quote'||kind==='moving_route')return mainioMoveActions(lang);
   if(kind==='box_rental')return mainioInquiryActions('Haluan vuokrata muuttolaatikoita',lang);
