@@ -73,6 +73,19 @@ test('compound rental and short van follow-up keep the correct action links',()=
  ]);
 });
 
+test('colloquial vehicle pickup question answers with the official address and instructions',()=>{
+ const reply=mainioPublicFactAnswer(rows,'Mistä auto haetaan jos vuokraan?','fi');
+ assert.ok(reply&&!reply.handoff);
+ assert.match(reply.answer,/Tavarakatu 1, 20250 Turku/);
+ assert.match(reply.answer,/tekstiviestillä/);
+ assert.match(reply.answer,/nouto- ja palautusohjeet/);
+ assert.equal(reply.sourceIds[0],'demo-mainio-official-11');
+ const actions=mainioInquiryActions('Mistä auto haetaan jos vuokraan?','fi');
+ assert.deepEqual(actions.map(x=>x.url),[
+  'https://www.mainiomuuttopalvelu.fi/pakettiautojen-vuokraus'
+ ]);
+});
+
 test('contextual tariff answers never imply live booking availability',()=>{
  const reply=mainioPublicFactAnswer(rows,'Onko 3 tunnin pakettiauto huomenna vapaana?','fi',firstQuestion);
  assert.equal(reply,null);
