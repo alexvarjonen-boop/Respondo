@@ -2,6 +2,7 @@ import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voice.mjs';
 import {mainioPublicFactAnswer,mainioPublicWebsiteEvidence} from './mainio-public-fact-answer.mjs';
 import {isMainioPublicDemoWebsite} from './mainio-public-demo-identity.mjs';
+import {mainioPublicKnowledgeWithOfficialFacts} from './mainio-official-public-facts.mjs';
 import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioBookingStatusQuestion, mainioBookingStatusReply, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
@@ -13980,7 +13981,8 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // Public demo facts are never loaded from Mainio's private tenant.
     // Accept only content actually imported from Mainio's own HTTPS site.
     const demoMainioEvidence=()=>mainioPublicWebsiteEvidence(rows);
-    const mainioPreviewRows=publicMainioDemo?demoMainioEvidence():rows;
+    const mainioPreviewRows=publicMainioDemo
+      ? mainioPublicKnowledgeWithOfficialFacts(demoMainioEvidence()) : rows;
     const mainioStatusPreview=(previewMainioTenant||publicMainioDemo) &&
       mainioBookingStatusQuestion(message)
         ? mainioBookingStatusReply(detectedLang) : null;
@@ -14102,7 +14104,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // If a bounded, topic-focused recovery found the official Mainio FAQ,
     // retry the source-locked factual matcher (not a free-form model guess).
     if(publicMainioDemo && result.handoff){
-      const sourceRows=demoMainioEvidence();
+      const sourceRows=mainioPublicKnowledgeWithOfficialFacts(demoMainioEvidence());
       const retryFact=mainioPublicFactAnswer(sourceRows,message,detectedLang);
       const retryRoute=mainioPriorityDomesticRouteAnswer(sourceRows,message,detectedLang,mainioInterpretation);
       if(retryFact||retryRoute)result=retryRoute||retryFact;
