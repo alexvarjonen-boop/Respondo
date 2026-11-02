@@ -44,7 +44,7 @@ const RULES=[
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Kierrätyksen alkaen hinta',
     check:q=>/(?:kierrat|jate|jatte)/.test(q)&&
-      /(?:hinta|alkaen|paljonko|maksaa|kustann)/.test(q)},
+      /(?:hinn|alka|paljonko|maksaa|kustann)/.test(q)},
   {title:'Kuolinpesän tyhjennys',
     check:q=>/(?:kuolinpes|perunkirjoituksen.*tyhjenn)/.test(q)&&
       /(?:tyhjent|nout|hoida|teetteko|voitteko|tarjoa|palvelu)/.test(q)},
