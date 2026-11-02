@@ -6,7 +6,7 @@ const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   // Conservative corrections for frequent one-character customer typos.
   .replace(/\bpaljoko\b/g,'paljonko').replace(/\bkuika\b/g,'kuinka')
   .replace(/\bmite\b/g,'miten').replace(/\bmuuttolatik/g,'muuttolaatik')
-  .replace(/\blaatikoden\b/g,'laatikoiden').replace(/\bpaketiauto\b/g,'pakettiauto')
+  .replace(/\blaatikoden\b/g,'laatikoiden').replace(/\bpaketiauto/g,'pakettiauto')
   .replace(/\bajokorti\b/g,'ajokortti').replace(/\bvrk\b/g,'vuorokausi');
 const area=(q,rx)=>rx.test(q);
 import {mainioBoxRentalIntent,mainioBoxRentalFollowupIntent,mainioBoxRentalFollowupKind,mainioVanRentalIntent} from './mainio-moving-intake.mjs';
@@ -101,7 +101,7 @@ const RULES=[
     check:q=>/(?:valivarast|varastoin|varastoida|varastoon|varasto|sailytt|sailyt)/.test(q)&&
       /(?:muutto|muuton|muuton ajaks|muutossa|tarjoatteko|onko|voiko|saako|ennen uuteen kotiin)/.test(q)},
   {title:'Kalusteiden purkaminen ja kokoaminen',
-    check:q=>/(?:huonekal|kaluste|sohva|sanky|kaap)/.test(q)&&
+    check:q=>/(?:huonekal|kaluste|sohva|sanky|sangy|kaap)/.test(q)&&
       /(?:purka|purku|puratte|purkaa|koota|kokoam|kokoat|kokoatte|kokoami|asent|asenn)/.test(q)},
   {title:'TV ja reititinasennukset',
     check:q=>/(?:luvanvarai|sahkoasen|sahkot|putkit|\btv\b|televis|reitit|router)/.test(q)&&
@@ -117,9 +117,9 @@ const RULES=[
       /(?:kuuti|m3\b|tilavuu|tavaratila|kuorma|mahtu|kokois|kokoja|kokoluokka|kokoluok)/.test(q) &&
       !/(?:hinta|maksaa|vuokra.*hinta|kustann)/.test(q)},
   {title:'Pakkaus- ja kantoapu',
-    check:q=>/(?:pakkausapu|pakkaus\s*ja\s*kantoapu|kantamis|kantoapu|kantaa|kannat|kannatte|kanna|pakkaamis|pakkaatte|pakata|pakkau\w*)/.test(q) &&
+    check:q=>/(?:pakkausapu|pakkaus\s*ja\s*kantoapu|kantamis|kantoapu|kantaa|kannat|kannatte|kanna|pakkaamis|pakkaatte|pakata|pakkaam\w*|pakkau\w*)/.test(q) &&
       /(?:onko|onks|saako|tarjoa|tarvit|voitte|pystyt|teette|teilt|teilla|autat|autatte|autatteko|avuksi|apu\b)/.test(q) &&
-      !/(?:laatik|tarvik|pakkaustarvike|kuplamuov|avaimet kateen|tayden palvelun|koko muuton|kaikki vaiheet|alusta loppuun|pakkaatteko.*kaikki|pakkaamisen.*muuton)/.test(q)},
+      !/(?:laatik|tarvik|pakkaustarvike|kuplamuov|avaimet kateen|tayden palvelun|koko muuton|kaikki vaiheet|alusta loppuun|pakkaatteko.*kaikki|pakkaamisen.*muuton|ettei minun tarvitse pakata)/.test(q)},
   {title:'Hissittömän muuton suunnittelu',
     check:q=>/(?:muutto|muuttaa|muuton|muutossa|muuttamis|kerrostal|talossa)/.test(q) &&
       /(?:hissitt|ilman hissia|ei ole hissia|hissi.*puuttu)/.test(q)},
