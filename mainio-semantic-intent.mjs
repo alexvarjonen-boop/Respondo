@@ -187,6 +187,7 @@ export function interpretMainioLocalIntent(message,previousCustomerQuestion=''){
   if(mainioMovingIntakeQuestion(message))return result('moving_quote',97);
   if(area)return result('service_area',98);
   if(contact&&!moveService&&!goods)return result('contact',94);
+  if(boxFollowup)return result('box_rental',96);
   const rent=has(/(?:vuokra|vuokratt|vuokral|lainaa|lainat|lainak|lainaksi|rent|rental|hire|hyra|hyr)/);
   const movingNamed=has(/(?:muuttopalvel|muuttofir|muuttoapu|flytthjalp|moving service|moving compan|flyttfirma)/);
   // Specific prices, quantities and rental terms must use the approved factual
@@ -197,7 +198,6 @@ export function interpretMainioLocalIntent(message,previousCustomerQuestion=''){
   // Classify the primary move before accessory rentals, but preserve
   // clarification for person-only transport questions further below.
   const asksMovingRoute=mainioMovingRouteIntent(message);
-  if(boxFollowup)return result('box_rental',96);
   if(box && renting && !asksMovingRoute && (!movingNamed || rent))return result('box_rental',95);
   if(van && renting && !asksMovingRoute && (!movingNamed || rent))return result('van_rental',95);
   const currentMove=moveService||(goods&&transport);
