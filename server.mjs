@@ -3832,7 +3832,7 @@ export function mainioVerifiedMovingRouteReply(rows,message,lang='fi',semanticRo
   // State the actual documented geographic coverage before discussing a
   // specific quote. Coverage is verified; an individual date/booking isn't.
   const answer=lang==='en'
-    ? 'Yes, you can request a quote for this route. Mainio handles moves in Turku, across Southwest Finland and elsewhere in Finland. The exact route, date and price are confirmed separately by Mainio.'
+    ? 'Yes, you can request a quote for this route. Mainio handles moves in Turku, across Southwest Finland and elsewhere in Finland. Mainio must confirm the exact route, date and price before booking.'
     :lang==='sv'
       ? 'Ja, du kan begära en offert för den här flytten. Mainio utför flyttar i Åbo, Egentliga Finland och även till andra delar av Finland. Mainio bekräftar rutt, datum och pris separat.'
       : 'Kyllä, tästä muutosta voi pyytää tarjouksen! Mainion vahvistettujen tietojen mukaan muuttoja tehdään Turussa ja Varsinais-Suomessa sekä myös muualle Suomeen. Mainio tarkistaa erikseen reitin toteutuksen, muuttopäivän ja hinnan; en voi vahvistaa niitä etukäteen.';
