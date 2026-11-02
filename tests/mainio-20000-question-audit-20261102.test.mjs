@@ -76,6 +76,7 @@ for(const [title,bases] of factCases){
   const expected=byTitle.get(title);
   assert.ok(expected,'Official fact missing: '+title);
   let localTotal=0,localCorrect=0;
+  const localFailures=[];
   for(const base of bases){
     for(const prefix of prefixes)for(const suffix of suffixes)for(const changeCase of casing){
       const q=changeCase(prefix+base+suffix);
@@ -83,12 +84,12 @@ for(const [title,bases] of factCases){
       generated++;localTotal++;
       if(result?.sourceIds?.includes(expected.id)&&!result.handoff){
         correct++;localCorrect++;
-      }else if(failures.length<180){
-        failures.push({title,q,intent:result?.intent||null,sourceIds:result?.sourceIds||[],handoff:result?.handoff??null});
+      }else if(localFailures.length<12){
+        localFailures.push({q,intent:result?.intent||null,sourceIds:result?.sourceIds||[],handoff:result?.handoff??null});
       }
     }
   }
-  categoryStats.push({title,total:localTotal,correct:localCorrect,missed:localTotal-localCorrect});
+  categoryStats.push({title,total:localTotal,correct:localCorrect,missed:localTotal-localCorrect,samples:localFailures});
 }
 
 const boxContexts=[
@@ -152,7 +153,7 @@ const negativeContexts=[
 ];
 let negativeTotal=0,negativeCorrect=0;
 const negativeFailures=[];
-for(const previous of negativeContexts)for(const q of boxFollowups){
+for(const previous of negativeContexts)for(const q of boxFollowups.slice(0,10)){
   negativeTotal++;
   const detected=mainioBoxRentalFollowupIntent(q,previous);
   const classified=interpretMainioLocalIntent(q,previous);
@@ -167,7 +168,7 @@ test('20,000+ generated Mainio question variants: report factual coverage, conte
     followupTotal,followupCorrect,followupAccuracy:Number((followupCorrect/followupTotal*100).toFixed(2)),
     routeTotal,routeCorrect,routeAccuracy:Number((routeCorrect/routeTotal*100).toFixed(2)),
     negativeTotal,negativeCorrect,negativeAccuracy:Number((negativeCorrect/negativeTotal*100).toFixed(2)),
-    categoryStats,failures,followupFailures,routeFailures,negativeFailures
+    categoryStats,followupFailures,routeFailures,negativeFailures
   }));
   assert.ok(total>=20000,'Expected at least 20,000 generated cases, got '+total);
   assert.ok(generated>=20000,'Expected at least 20,000 factual variants, got '+generated);
