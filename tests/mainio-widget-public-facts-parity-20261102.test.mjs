@@ -43,7 +43,7 @@ test('Mainio official price fallback applies to public demo, signed-in preview a
  assert.match(source,/const mainioPreviewRows=publicMainioDemo\s*\?\s*mainioPublicKnowledgeWithOfficialFacts\(demoMainioEvidence\(\)\)\s*:\s*previewMainioTenant\s*\?\s*mainioPublicKnowledgeWithOfficialFacts\(rows\)\s*:\s*rows/);
  assert.match(source,/const mainioTenant=isMainioMovingTenant\(t\);\s*[\s\S]{0,450}?const mainioWidgetRows=mainioTenant\s*\?\s*mainioPublicKnowledgeWithOfficialFacts\(safeKnowledgeRows\)\s*:\s*safeKnowledgeRows/);
  assert.match(source,/mainioPublicFactAnswer\(mainioWidgetRows,message,detectedLang,history\.at\(-1\)\?\.question\|\|''\)/);
- assert.match(source,/mainioSemanticGroundedReply\(mainioWidgetRows,mainioInterpretation,detectedLang\)/);
+ assert.match(source,/mainioSemanticGroundedReply\(mainioWidgetRows,mainioInterpretation,detectedLang,message\)/);
  assert.match(source,/mainioPriorityDomesticRouteAnswer\(mainioWidgetRows,message,detectedLang,mainioInterpretation\)/);
  assert.match(source,/mainioPublicFactAnswer\(mainioPreviewRows,message,detectedLang,history\.at\(-1\)\?\.question\|\|''\)/);
 });
