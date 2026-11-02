@@ -173,7 +173,7 @@ export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQu
   const combinedRental=mainioVanRentalIntent(message)&&mainioBoxRentalIntent(message)&&
     /(?:vuokra|vuokr|rent|hire|hyra)/.test(currentQ);
   const duration=vanRentalDuration(currentQ);
-  if(combinedRental&&duration){
+  if(combinedRental&&duration&&!asksForBookingStatus){
     const vanTitle=duration===3?'Paljonko pakettiauton 3 tunnin vuokra maksaa?':
       duration===5?'Pakettiauton 5 tunnin vuokrahinnat':'Pakettiauton vuorokausivuokra';
     const vanRow=(rows||[]).find(row=>approvedRow(row)&&norm(row.title)===norm(vanTitle));
