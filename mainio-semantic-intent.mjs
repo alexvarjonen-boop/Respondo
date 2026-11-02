@@ -7,7 +7,7 @@
  * error, timeout, low confidence or disabled feature the old safe matcher wins.
  */
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
-import {mainioMoveActions,mainioInquiryActions,mainioMovingRouteIntent,mainioBoxRentalIntent,mainioVanRentalIntent,mainioMovingIntakeQuestion} from './mainio-moving-intake.mjs';
+import {mainioMoveActions,mainioInquiryActions,mainioMovingRouteIntent,mainioBoxRentalIntent,mainioBoxRentalFollowupIntent,mainioVanRentalIntent,mainioMovingIntakeQuestion} from './mainio-moving-intake.mjs';
 
 const API_URL='https://api.openai.com/v1/responses';
 const INTENTS=['moving_quote','moving_route','moving_information','box_rental','van_rental','service_area','contact','clarify','other'];
@@ -174,6 +174,7 @@ export function interpretMainioLocalIntent(message,previousCustomerQuestion=''){
     ({intent,confidence,route_scope});
   const has=r=>r.test(q);
   const box=mainioBoxRentalIntent(message);
+  const boxFollowup=mainioBoxRentalFollowupIntent(message,previousCustomerQuestion);
   const van=mainioVanRentalIntent(message);
   const moveService=has(/(?:muut|flytt|moving|move\b|relocat|uuteen (?:kotiin|asuntoon)|vanhasta (?:kodista|asunnosta))/);
   const goods=has(/(?:tavara|tavaroi|kam[a-ö]|huonekal|sohva|s[aä]nky|poyta|poydan|irtaimist|bokhyll|furniture|belongings|stuff\b|möbel)/);
@@ -196,6 +197,7 @@ export function interpretMainioLocalIntent(message,previousCustomerQuestion=''){
   // Classify the primary move before accessory rentals, but preserve
   // clarification for person-only transport questions further below.
   const asksMovingRoute=mainioMovingRouteIntent(message);
+  if(boxFollowup)return result('box_rental',96);
   if(box && renting && !asksMovingRoute && (!movingNamed || rent))return result('box_rental',95);
   if(van && renting && !asksMovingRoute && (!movingNamed || rent))return result('van_rental',95);
   const currentMove=moveService||(goods&&transport);
