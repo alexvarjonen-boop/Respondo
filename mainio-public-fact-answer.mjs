@@ -94,6 +94,40 @@ const RULES=[
   {title:'Täyden palvelun avaimet käteen -muutto',
     check:q=>/(?:avaimet kateen|pakkaatteko|hoidatteko koko muuton)/.test(q)},
 ];
+// Website importers can give a correctly sourced fact a descriptive heading
+// different from a curated FAQ title. Permit narrowly checked alternatives,
+// but only when the actual source text spells out the requested fact. Never
+// infer prices, availability, or rental terms from a page URL alone.
+const approvedMainioAlternative=(rows,title)=>{
+  const checks={
+    'Pakettiauton 5 tunnin vuokrahinnat':{
+      path:'/pakettiautojen-vuokraus',
+      verify:text=>/(?:5\s*h\b|5\s*tunn|viiden\s+tunn)/.test(text) &&
+        /\b13\s*m3\s+70\b/.test(text) &&
+        /\b17\s*m3\s+90\b/.test(text) &&
+        /\b20\s*m3\s+110\b/.test(text)
+    },
+    'Pakettiautojen yövuokraus':{
+      path:'/usein-muutosta-kysyttya',
+      verify:text=>/(?:yon\s+yli|yoksi|yovuokra)/.test(text) &&
+        /(?:pakettiaut|vuokra\s+aut|paku)/.test(text) &&
+        /(?:erikseen|asiakaspalvel|netti|verkko)/.test(text)
+    },
+    'Muuttolaatikoiden hinta':{
+      path:'/muuttolaatikot-ja-tarvikkeet',
+      verify:text=>/laatik/.test(text) && /\b0\s+20\b/.test(text) &&
+        /(?:vrk|vuorokau|paiva)/.test(text) && /(?:minimi|vahint|10\s*(?:euro|eur))/i.test(text)
+    }
+  };
+  const spec=checks[title];
+  if(!spec)return null;
+  return (rows||[]).find(row=>{
+    if(!approvedRow(row))return false;
+    const url=new URL(String(row.source_url||''));
+    if(url.pathname.replace(/\/$/,'')!==spec.path)return false;
+    return spec.verify(norm(String(row.title||'')+' '+String(row.answer||'')));
+  })||null;
+};
 const approvedRow=(r)=>r&&r.id&&r.approved!==false &&
   String(r.source_type||'').toLowerCase()==='website'&&
   (()=>{
@@ -118,7 +152,8 @@ export function mainioPublicFactAnswer(rows,message,lang='fi'){
   if(asksForBookingStatus&&!asksForPrice)return null;
   for(const rule of RULES){
     if(!rule.check(q))continue;
-    const chosen=(rows||[]).find(row=>approvedRow(row)&&norm(row.title)===norm(rule.title));
+    const chosen=(rows||[]).find(row=>approvedRow(row)&&norm(row.title)===norm(rule.title)) ||
+      approvedMainioAlternative(rows,rule.title);
     if(!chosen)continue;
     let answer=String(chosen.answer).trim().replace(/\s+/g,' ');
     // If the customer supplies the apartment area, give a useful numerical
