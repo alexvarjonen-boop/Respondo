@@ -68,3 +68,32 @@ test('sender stays idle without a configured verified review link',async()=>{
   assert.equal(outcome.skipped,true);
   assert.equal(called,false);
 });
+
+
+test('due sender uses Resend idempotency and marks a successful delivery sent',async()=>{
+  const calls=[];
+  const previousFetch=globalThis.fetch;
+  globalThis.fetch=async(url,options)=>{
+    calls.push({url,options});
+    return {ok:true,json:async()=>({id:'test-resend-id'})};
+  };
+  const pool={query:async(sql,params)=>{
+    if(sql.startsWith('WITH due AS'))return {rowCount:1,rows:[{tenant_id:'5fd2dc80-6f26-4c11-bf66-f564409beee6',attempt_count:1}]};
+    if(sql.startsWith('SELECT u.email'))return {rows:[{email:'buyer@example.org',full_name:'Test Buyer',preferred_language:'fi'}]};
+    if(sql.includes("status='sent'"))return {rowCount:1,rows:[]};
+    return {rowCount:0,rows:[]};
+  }};
+  try{
+    const result=await runDueOnboardingCheckups(pool,{apiKey:'test-key',trustpilotUrl:TRUSTPILOT_URL});
+    assert.equal(result.processed,1);
+    assert.equal(calls.length,1);
+    assert.equal(calls[0].url,'https://api.resend.com/emails');
+    assert.equal(calls[0].options.headers['Idempotency-Key'],'respondo-week-one-5fd2dc80-6f26-4c11-bf66-f564409beee6');
+    const email=JSON.parse(calls[0].options.body);
+    assert.deepEqual(email.to,['buyer@example.org']);
+    assert.ok(email.subject.includes('ensimmäinen viikko'));
+    assert.ok(email.html.includes(TRUSTPILOT_URL));
+  }finally{
+    globalThis.fetch=previousFetch;
+  }
+});
