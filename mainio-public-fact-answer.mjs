@@ -8,7 +8,7 @@ const area=(q,rx)=>rx.test(q);
 // explicitly not permission to read private Mainio tenant knowledge.
 export function mainioPublicWebsiteEvidence(rows){
   return (rows||[]).filter(row=>{
-    if(String(row?.source_type||'')!=='website')return false;
+    if(row?.approved===false || String(row?.source_type||'')!=='website')return false;
     try{
       const url=new URL(String(row.source_url||''));
       return url.protocol==='https:' &&
