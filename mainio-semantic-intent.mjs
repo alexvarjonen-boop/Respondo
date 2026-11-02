@@ -7,7 +7,7 @@
  * error, timeout, low confidence or disabled feature the old safe matcher wins.
  */
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
-import {mainioMoveActions,mainioInquiryActions,mainioMovingRouteIntent,mainioBoxRentalIntent} from './mainio-moving-intake.mjs';
+import {mainioMoveActions,mainioInquiryActions,mainioMovingRouteIntent,mainioBoxRentalIntent,mainioVanRentalIntent} from './mainio-moving-intake.mjs';
 
 const API_URL='https://api.openai.com/v1/responses';
 const INTENTS=['moving_quote','moving_route','moving_information','box_rental','van_rental','service_area','contact','clarify','other'];
@@ -161,7 +161,7 @@ export function interpretMainioLocalIntent(message,previousCustomerQuestion=''){
     ({intent,confidence,route_scope});
   const has=r=>r.test(q);
   const box=mainioBoxRentalIntent(message);
-  const van=has(/(?:pakettiaut|vuokrapak|vuokra auto|van rental|rent.*van|sk[aå]pbil)/);
+  const van=mainioVanRentalIntent(message);
   const moveService=has(/(?:muut|flytt|moving|move\b|relocat|uuteen (?:kotiin|asuntoon)|vanhasta (?:kodista|asunnosta))/);
   const goods=has(/(?:tavara|tavaroi|kam[a-ö]|huonekal|sohva|s[aä]nky|poyta|poydan|irtaimist|bokhyll|furniture|belongings|stuff\b|möbel)/);
   const transport=has(/(?:hak|nout|kuljet|siirt|vied|saada|kusk|lastat|haeta|nouda|take|bring|transport|carry|pickup|move\b|flytta|k[aä]rr)/);
@@ -174,11 +174,12 @@ export function interpretMainioLocalIntent(message,previousCustomerQuestion=''){
   if(contact&&!moveService&&!goods)return result('contact',94);
   const rent=has(/(?:vuokra|lainaa|vuokral|rent|rental|hyra|hyr)/);
   const movingNamed=has(/(?:muuttopalvel|muuttofir|muuttoapu|flytthjalp|moving service|moving compan|flyttfirma)/);
-  if(box && (!movingNamed || rent))return result('box_rental',95);
-  if(van && (!movingNamed || rent))return result('van_rental',95);
-  // Concrete price and service-policy questions belong to the evidence-locked
-  // FAQ matcher; concept routing must not hide the real sourced answer.
-  if(has(/(?:paljonko|hinta|maksaa|kustann|price|cost|pricing|pris|kostar)/))return null;
+  // Specific prices, quantities and rental terms must use the approved factual
+  // knowledge matcher rather than a generic rental CTA.
+  if(has(/(?:paljonko|hinta|maksaa|kustann|price|cost|pricing|pris|kostar|kuinka monta|hur manga|how many|ajokort|omavastuu|vuokraeht|toimitusmaksu)/))return null;
+  const renting=rent || has(/(?:tilaa|tilata|tilaisin|varaa|varata|varaisin|book|bestall|order)/);
+  if(box && renting && (!movingNamed || rent))return result('box_rental',95);
+  if(van && renting && (!movingNamed || rent))return result('van_rental',95);
   const currentMove=moveService||(goods&&transport);
   const prevMove=/(?:muut|flytt|moving|move\b|tavara|huonekal|kam[a-ö])/.test(prev);
   const personOnly=has(/(?:mummo|mummon|a[it]i\b|vanhemm|iso[aä]it|henkilo|ihminen|grandma|person\b)/) && !goods;
