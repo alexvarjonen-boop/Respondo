@@ -83,6 +83,18 @@ export function mainioRecognizedDomesticRoute(message){
   return finnishRouteTowns.filter(([,pattern])=>pattern.test(q)).length>=2;
 }
 
+// A customer may ask to rent just "laatikot" rather than explicitly
+// "muuttolaatikot". In a moving-company context this is a box-rental enquiry
+// only when rental language accompanies generic boxes. Do not interpret buying,
+// packing or cardboard recycling as rental requests.
+export function mainioBoxRentalIntent(message){
+  const q=normalized(message).replace(/[^a-z0-9\s-]/g,' ');
+  const exact=/(?:muuttolaatik|laatikko?vuokra|flyttkartong|flyttlad|moving\s+box|packing\s+box|box\s+rental)/.test(q);
+  const generic=/(?:\b(?:laatik|laatiko|box|boxes|crate|crates|lador|kartong)\w*\b)/.test(q);
+  const rental=/(?:vuokra|vuokratt|vuokral|lainaa|lainaksi|rent|rental|hyra|hyr|lana)/.test(q);
+  return exact || (generic && rental);
+}
+
 export function mainioInquiryKind(message){
   const q=normalized(message);
   // Explicit moving-service intent has priority over accessories mentioned
@@ -92,7 +104,7 @@ export function mainioInquiryKind(message){
   const explicitMovingService=/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|moving\s+service|flyttfirma|flytthjalp)/.test(q) ||
     /(?:tilaa|tilata|tilaisin|varaa|varata|varaisin|book|bestall)\s+(?:[a-zåäö-]+\s+){0,2}(?:muuton|muuttoa|muutto)\b/.test(q);
   if(explicitMovingService)return 'moving';
-  if(/(?:muuttolaatik|laatikkovuokra|laatikoiden\s+vuokra|laatikoita|moving\s+box|box\s+rental|flyttkartong|flyttlador)/.test(q))return 'boxes';
+  if(mainioBoxRentalIntent(q))return 'boxes';
   if(/(?:pakettiaut|vuokrapaku|vuokra-auto|rent\s+(?:a\s+)?van|van\s+rental|sk[aå]pbil)/.test(q))return 'van';
   return 'moving';
 }
