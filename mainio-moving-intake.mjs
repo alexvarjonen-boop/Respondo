@@ -135,6 +135,20 @@ export function mainioBoxRentalIntent(message){
   return exact || (generic && rental);
 }
 
+// Interpret a terse "and what about the boxes?" only when the immediately
+// preceding customer turn is already about Mainio's move or van rental.
+// Never turn an isolated mention of boxes into a rental or a lead form.
+export function mainioBoxRentalFollowupIntent(message,previousCustomerQuestion=''){
+  const q=normalized(message).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9\s-]/g,' ').replace(/\s+/g,' ').trim();
+  const previous=normalized(previousCustomerQuestion);
+  const shortBox=/^(?:(?:enta(?:s)?|mites|ja|sitten|and|och|what about|how about|och vad galler)\s+)?(?:(?:ne|the|our|those|vara|dom|de)\s+)?(?:muuttolaatik\w*|laatik\w*|flyttkartong\w*|flyttlador|lador(?:na)?|box(?:es)?|crates?)$/.test(q);
+  const priorMainioContext=mainioVanRentalIntent(previous) ||
+    mentionsMovingService(previous) ||
+    /(?:moving|move\b|flytt\w*)/.test(previous);
+  return shortBox && priorMainioContext;
+}
+
 export function mainioVanRentalIntent(message){
   const q=normalized(message);
   if(/(?:pakettiaut|vuokrapaku|vuokra-auto|rent\s+(?:a\s+)?van|van\s+rental|sk[aå]pbil)/.test(q))return true;
