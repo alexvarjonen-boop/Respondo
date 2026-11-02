@@ -72,8 +72,8 @@ test('dark commerce input labels use an accessible light foreground without rede
   assert.match(workspaceCss,/rs-overview-stats/);
 });
 test('asset cache keys refresh every changed browser asset',()=>{
-  assert.match(account,/workspace-orbit-v28\.js\?v=20261102-logical-12-clickable-icons-v40/);
-  assert.match(app,/workspace-continuation-v24\.js\?v=20261102-logical-overview-team-integrations-v40/);
-  assert.match(index,/workspace-continuation-v24\.css\?v=20261102-logical-analytics-label-contrast-v40/);
-  assert.match(index,/workspace-orbit-v28\.css\?v=20261102-clickable-sphere-v40/);
+  assert.match(account,/workspace-orbit-v28\.js\?v=20261028-mobile-pinned-v37-home-parity-v39-logical-12-clickable-icons-v40/);
+  assert.match(app,/workspace-continuation-v24\.js\?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40/);
+  assert.match(index,/workspace-continuation-v24\.css\?v=20261028-dark-workspace-v24-onboarding-contrast-v25-minimal-v26-subscribe-cta-v37-owner-subscribe-v38-avatar-after-setup-v41-avatar-logo-fit-v42-logical-analytics-label-contrast-v40/);
+  assert.match(index,/workspace-orbit-v28\.css\?v=20261028-mobile-pinned-v37-clickable-sphere-v40/);
 });
