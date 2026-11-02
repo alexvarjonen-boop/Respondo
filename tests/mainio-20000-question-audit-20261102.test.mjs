@@ -260,6 +260,7 @@ test('Mainio multi-turn context expires after a new unrelated topic and rejects 
   ]);
   assert.match(unrelated,/sahkopost/i);
   assert.equal(mainioBoxRentalFollowupIntent('entä laatikot',unrelated),false);
+  assert.equal(mainioBoxRentalFollowupIntent('Voitteko hoitaa koko muuton?', 'Mitä paku maksaa?'),false);
   const cardboard=mainioConversationContextQuestion([
     {question:'Miten pahvilaatikot kierrätetään?'},
     {question:'entä laatikot'}
