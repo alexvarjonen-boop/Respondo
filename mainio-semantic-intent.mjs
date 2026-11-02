@@ -172,7 +172,7 @@ export function interpretMainioLocalIntent(message,previousCustomerQuestion=''){
   const contact=has(/(?:puhelin|soitta|sahkopost|email|e post|yhteystiedot|yhteytta|saa kiinni|tavarakatu|phone|contact|kontakta|telefon)/);
   if(area)return result('service_area',98);
   if(contact&&!moveService&&!goods)return result('contact',94);
-  const rent=has(/(?:vuokra|lainaa|vuokral|rent|rental|hyra|hyr)/);
+  const rent=has(/(?:vuokra|vuokratt|vuokral|lainaa|lainat|lainak|lainaksi|rent|rental|hire|hyra|hyr)/);
   const movingNamed=has(/(?:muuttopalvel|muuttofir|muuttoapu|flytthjalp|moving service|moving compan|flyttfirma)/);
   // Specific prices, quantities and rental terms must use the approved factual
   // knowledge matcher rather than a generic rental CTA.
