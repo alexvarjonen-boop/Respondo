@@ -73,6 +73,26 @@ test('consent refusals are answered from the actual app workflow, not an unrelat
   }
   assert.equal(mainioMovingConsentQuestion('Paljonko muuttolaatikot maksaa?'),false);
 });
+test('live moving-day question uses the official FAQ rather than insurance advice',()=>{
+  const a=answer('Miten muuttopäivä yleensä toimii?');
+  assert.match(a,/kattavat muutto-ohjeet/);
+  assert.doesNotMatch(a,/vakuutusyhtiöt|osoitteesi/i);
+});
+test('plain car rental 5-hour price matches van tariffs rather than deductible',()=>{
+  for(const q of ['Mitä maksaa auton vuokra 5 tunniksi?','Paljonko auton vuokra on 5 tunniksi?']){
+    const a=answer(q);
+    assert.match(a,/13 m³ pakettiauto 70 euroa/);
+    assert.match(a,/17 m³ pakettiauto 90 euroa/);
+    assert.match(a,/20 m³ pakettiauto 110 euroa/);
+    assert.doesNotMatch(a,/omavastuu|1300 euroa/i);
+  }
+});
+test('moving duration question uses official duration factors',()=>{
+  const a=answer('Kuinka kauan muutto kestää?');
+  assert.match(a,/tavaramäärä/);
+  assert.match(a,/hissit/);
+  assert.doesNotMatch(a,/minuutissa varmasti/i);
+});
 test('first-person Mainio reply keeps both verbs correctly inflected',()=>{
   const original='Mainio tarkistaa tarjouspyynnön ja vahvistaa hinnan sekä muuttopäivän erikseen.';
   const transformed=mainioCustomerVoice(original,'fi');
