@@ -3854,7 +3854,7 @@ export function mainioPriorityDomesticRouteAnswer(rows,message,lang='fi',interpr
 
 // An AI classification is only a label. Answer content comes exclusively
 // from verified business rows and predetermined, approval-safe workflow text.
-export function mainioSemanticGroundedReply(rows,classification,lang='fi',message='') {
+export function mainioSemanticGroundedReply(rows,classification,lang='fi',message='',preview=false) {
   const type=classification?.intent;
   if(!type || !['fi','sv','en'].includes(lang))return null;
   const response=(answer,intent,selected=[],handoff=false)=>({
@@ -3870,14 +3870,20 @@ export function mainioSemanticGroundedReply(rows,classification,lang='fi',messag
     'Tarkennus'
   );
   if(type==='moving_quote'){
-    if(mainioMovingIntakeQuestion(message))return response(
-      lang==='en'
-        ? 'Yes. You can complete Mainio’s moving questionnaire here in the chat. It asks for the moving date, property size, origin and destination addresses, floors, elevator access, parking for the moving van, moving boxes and any extra help. The details are sent to Mainio only after you consent. Mainio reviews the request and confirms the price and date separately.'
-        :lang==='sv'
-          ? 'Ja. Du kan fylla i Mainios flyttkartläggning här i chatten. Den frågar bland annat efter flyttdatum, bostadens storlek, från- och tilladress, våningar, hiss, parkering för flyttbilen, flyttlådor och eventuell tilläggshjälp. Uppgifterna skickas till Mainio först när du godkänner det. Mainio granskar förfrågan och bekräftar pris och datum separat.'
-          : 'Kyllä. Voit täyttää tässä chatissa Mainion muuttokartoituksen. Siinä kysytään muun muassa muuttopäivä, asunnon koko, lähtö- ja kohdeosoite, kerrokset, hissit, muuttoauton pysäköinti, muuttolaatikot ja tarvittava lisäapu. Tiedot lähetetään Mainiolle vasta, kun hyväksyt lähetyksen. Mainio tarkistaa tarjouspyynnön ja vahvistaa hinnan sekä muuttopäivän erikseen.',
-      'Muuttokartoitus'
-    );
+    if(mainioMovingIntakeQuestion(message)){
+      const intakeAnswer=preview
+        ? lang==='en'
+          ? 'Yes. The live Mainio chat widget opens a five-step moving questionnaire inside the chat. It collects the moving date, property size, origin and destination addresses, floors, elevator access, parking, moving boxes and extra help. In this preview, the button opens Mainio’s official quote form instead. Details are sent to Mainio only after consent; Mainio reviews the request and confirms the price and date separately.'
+          :lang==='sv'
+            ? 'Ja. I Mainios riktiga chatt öppnas en flyttkartläggning i fem steg direkt i chatten. Den samlar in flyttdatum, bostadens storlek, från- och tilladress, våningar, hiss, parkering, flyttlådor och tilläggshjälp. I den här förhandsvisningen öppnar knappen i stället Mainios officiella offertformulär. Uppgifterna skickas först efter ditt samtycke; Mainio granskar förfrågan och bekräftar pris och datum separat.'
+            : 'Kyllä. Mainion varsinaisessa chat-widgetissä avautuu viisivaiheinen muuttokartoitus suoraan keskusteluun. Siinä kerätään muuttopäivä, asunnon koko, lähtö- ja kohdeosoite, kerrokset, hissit, pysäköinti, muuttolaatikot ja lisäavun tarve. Tässä esikatselussa painike avaa sen sijaan Mainion virallisen tarjouslomakkeen. Tiedot lähetetään vasta suostumuksellasi, ja Mainio tarkistaa pyynnön sekä vahvistaa hinnan ja muuttopäivän erikseen.'
+        : lang==='en'
+          ? 'Yes. You can complete Mainio’s moving questionnaire here in the chat. It asks for the moving date, property size, origin and destination addresses, floors, elevator access, parking for the moving van, moving boxes and any extra help. The details are sent to Mainio only after you consent. Mainio reviews the request and confirms the price and date separately.'
+          :lang==='sv'
+            ? 'Ja. Du kan fylla i Mainios flyttkartläggning här i chatten. Den frågar bland annat efter flyttdatum, bostadens storlek, från- och tilladress, våningar, hiss, parkering för flyttbilen, flyttlådor och eventuell tilläggshjälp. Uppgifterna skickas till Mainio först när du godkänner det. Mainio granskar förfrågan och bekräftar pris och datum separat.'
+            : 'Kyllä. Voit täyttää tässä chatissa Mainion muuttokartoituksen. Siinä kysytään muun muassa muuttopäivä, asunnon koko, lähtö- ja kohdeosoite, kerrokset, hissit, muuttoauton pysäköinti, muuttolaatikot ja tarvittava lisäapu. Tiedot lähetetään Mainiolle vasta, kun hyväksyt lähetyksen. Mainio tarkistaa tarjouspyynnön ja vahvistaa hinnan sekä muuttopäivän erikseen.';
+      return response(intakeAnswer,'Muuttokartoitus');
+    }
     return response(
       lang==='en' ? 'Tell us about your move using the button below, so we can review the details. We will confirm the price, moving date and booking separately.'
         :lang==='sv' ? 'Lämna uppgifterna om din flytt via knappen nedan så går vi igenom dem. Vi bekräftar pris, datum och bokning separat.'
@@ -14039,7 +14045,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
            message,lang:detectedLang,previousCustomerQuestion:history.at(-1)?.question||''
          }) : null)) : null;
     const mainioSemanticPreview=(previewMainioTenant||publicMainioDemo)
-      ? mainioSemanticGroundedReply(mainioPreviewRows,mainioInterpretation,detectedLang,message) : null;
+      ? mainioSemanticGroundedReply(mainioPreviewRows,mainioInterpretation,detectedLang,message,true) : null;
     const mainioOrderPreview=(previewMainioTenant||publicMainioDemo) && mainioMovingOrderIntent(message);
     const mainioRoutePreview=(previewMainioTenant||publicMainioDemo)
       ? mainioPriorityDomesticRouteAnswer(mainioPreviewRows,message,detectedLang,mainioInterpretation) : null;
