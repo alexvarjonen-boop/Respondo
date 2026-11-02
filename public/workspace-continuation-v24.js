@@ -1,4 +1,4 @@
-import { createWorkspaceOrbit } from './workspace-orbit-v28.js?v=20261028-mobile-pinned-v37-home-parity-v39-logical-12-clickable-icons-v40-selected-state-v45';
+import { createWorkspaceOrbit } from './workspace-orbit-v28.js?v=20261028-mobile-pinned-v37-home-parity-v39-logical-12-clickable-icons-v40-selected-state-v45-profile-wrap-v46';
 // A single dark workspace after the five-card setup.
 // Keep existing chat, scan and billing DOM nodes intact so their event handlers,
 // authenticated API calls and tenant isolation are not replaced by demo stubs.
