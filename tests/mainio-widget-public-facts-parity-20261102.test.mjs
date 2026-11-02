@@ -45,7 +45,7 @@ test('Mainio official price fallback applies to public demo, signed-in preview a
  assert.match(source,/mainioPublicFactAnswer\(mainioWidgetRows,message,detectedLang,history\.at\(-1\)\?\.question\|\|''\)/);
  assert.match(source,/mainioSemanticGroundedReply\(mainioWidgetRows,mainioInterpretation,detectedLang\)/);
  assert.match(source,/mainioPriorityDomesticRouteAnswer\(mainioWidgetRows,message,detectedLang,mainioInterpretation\)/);
- assert.match(source,/mainioPublicFactAnswer\(mainioPreviewRows,message,detectedLang\)/);
+ assert.match(source,/mainioPublicFactAnswer\(mainioPreviewRows,message,detectedLang,history\.at\(-1\)\?\.question\|\|''\)/);
 });
 test('invalid unrelated or customer-provided sources cannot override verified FAQ facts',()=>{
  const invalid={
