@@ -107,8 +107,13 @@ export function mainioBoxRentalIntent(message){
 export function mainioVanRentalIntent(message){
   const q=normalized(message);
   if(/(?:pakettiaut|vuokrapaku|vuokra-auto|rent\s+(?:a\s+)?van|van\s+rental|sk[aå]pbil)/.test(q))return true;
-  return /\b(?:paku|pakun|pakua|pakulla|pakulle|pakusta|pakut|pakuihin|van|vans)\b/.test(q) &&
-    /(?:vuokra|vuokratt|vuokral|lainaa|lainaksi|rent|rental|hire|hyra|hyr)/.test(q);
+  const rental=/(?:vuokra|vuokratt|vuokral|lainaa|lainaksi|rent|rental|hire|hyra|hyr)/.test(q);
+  const pickup=/(?:mista|nout|hae|palaut|pickup|return)/.test(q);
+  // In the Mainio rental context customers often shorten "pakettiauto" to
+  // "auto", e.g. "mistä auto haetaan jos vuokraan?".
+  if(rental&&/\b(?:auto|auton|autolla|autoon|autosta|autolle)\b/.test(q))return true;
+  if(pickup&&/\b(?:auto|auton|autolla|autoon|autosta|autolle)\b/.test(q))return true;
+  return /\b(?:paku|pakun|pakua|pakulla|pakulle|pakusta|pakut|pakuihin|van|vans)\b/.test(q) && rental;
 }
 
 export function mainioInquiryKind(message){
