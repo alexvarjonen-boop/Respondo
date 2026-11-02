@@ -621,3 +621,83 @@
     gap:12px;margin-top:16px;
   }
 }
+
+
+/* V47: the integrations modules are dark while the legacy form labels were
+   designed for a white dashboard. Keep all changes inside the real workspace
+   so the public demo, checkout and account forms are unaffected. */
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  :is(#booking-calendar,#stripe-connect,#business-integrations,#commerce-integration) .field > label,
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #booking-calendar .booking-duration-custom-heading,
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #booking-calendar .booking-duration-custom > small{
+  color:#eef2f9!important;
+  -webkit-text-fill-color:#eef2f9!important;
+  opacity:1!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  :is(#booking-calendar,#stripe-connect) .panel-head p{
+  color:#b8c3d4!important;
+  -webkit-text-fill-color:#b8c3d4!important;
+  opacity:1!important;
+}
+/* Light date/time/select controls need dark foreground, including the
+   Chromium/Safari native date segments and selected option text. */
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #booking-calendar .booking-slots-form :is(input[type="date"],input[type="time"],input[type="number"],select),
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #stripe-connect #stripeConnectCountry{
+  background:#f7f8fa!important;
+  color:#17202d!important;
+  -webkit-text-fill-color:#17202d!important;
+  border:1px solid #b7c1cf!important;
+  color-scheme:light;
+  opacity:1!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #booking-calendar .booking-slots-form :is(input[type="date"],input[type="time"])::-webkit-datetime-edit{
+  color:#17202d!important;
+  -webkit-text-fill-color:#17202d!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #booking-calendar .booking-slots-form select option,
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #stripe-connect #stripeConnectCountry option{
+  background:#fff!important;
+  color:#17202d!important;
+}
+/* Calendar connection is an information card, not a white input field.
+   Use the same dark surface as the surrounding integrations module. */
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #booking-calendar .calendar-sync-card,
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #booking-calendar .calendar-sync-card.connected{
+  background:#262c35!important;
+  border:1px solid #434e5e!important;
+  color:#eef2f9!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #booking-calendar .calendar-sync-card :is(small,b){
+  color:#eff3fa!important;
+  -webkit-text-fill-color:#eff3fa!important;
+  opacity:1!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #booking-calendar .calendar-sync-card p{
+  color:#c5cedd!important;
+  -webkit-text-fill-color:#c5cedd!important;
+  opacity:1!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #booking-calendar .calendar-sync-actions :is(a,button){
+  color:#18212d!important;
+  -webkit-text-fill-color:#18212d!important;
+  background:#f7f8fa!important;
+  border-color:#dce2eb!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  #booking-calendar .weekday-picker input:not(:checked) + span{
+  color:#424d5c!important;
+  -webkit-text-fill-color:#424d5c!important;
+}
