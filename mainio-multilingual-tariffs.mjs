@@ -112,8 +112,8 @@ export function mainioMultilingualTariffAnswer(rows,message,lang='fi',previousCu
   let keys,subject;
   if(activeBox){
     if(delivery&&price)keys=['delivery'];
-    else if(deliveryRequest)keys=['boxService'];
     else if(daysRequest)keys=['boxDays'];
+    else if(deliveryRequest)keys=['boxService'];
     else if(sizeRequest)keys=['boxSize'];
     else if(price)keys=['box'];
     else return null;
