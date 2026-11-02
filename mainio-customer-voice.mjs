@@ -10,6 +10,20 @@ const sentenceCase=(text,index,input)=>{
 export function mainioCustomerVoice(value,lang='fi'){
   let answer=String(value||'');
   if(lang==='fi'){
+    // Approved public source extracts often speak about Mainio in third
+    // person. Switch only established ownership phrases; preserve numeric
+    // amounts, dates, conditions and the source's affirmative/negative meaning.
+    answer=answer
+      .replace(/Mainion muuttolaatikoiden hinnasto:/gi,'Muuttolaatikoidemme hinnasto:')
+      .replace(/Mainion muuttolaatikoiden (?:koko|mitat)/gi,'Muuttolaatikoidemme koko')
+      .replace(/Mainion muuttolaatikoiden kuljetus/gi,'Muuttolaatikoidemme kuljetus')
+      .replace(/Mainion suomenkielisen pakettiautosivun hinnasto:/gi,'Pakettiautojemme hinnasto:')
+      .replace(/Mainion vuokra-autojen /gi,'Vuokra-autojemme ')
+      .replace(/Mainion UKK:n mukaan /gi,'Ohjeidemme mukaan ')
+      .replace(/Mainion FAQ:n mukaan /gi,'Ohjeidemme mukaan ')
+      .replace(/Mainion kierrätyspalvelussa /gi,'Kierrätyspalvelussamme ')
+      .replace(/Mainion verkkosivujen /gi,'Verkkosivujemme ')
+      .replace(/Mainion verkkosivujen mukaan /gi,'Verkkosivujemme mukaan ');
     const words={tarjoaa:'tarjoamme',tekee:'teemme',palvelee:'palvelemme',
       hoitaa:'hoidamme',vuokraa:'vuokraamme',järjestää:'järjestämme',
       vahvistaa:'vahvistamme',tarkistaa:'tarkistamme',
