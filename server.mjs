@@ -3858,7 +3858,7 @@ export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
     'Tarkennus'
   );
   if(type==='moving_quote')return response(
-    lang==='en' ? 'Kerro meille muuttosi tiedot alla olevan painikkeen kautta, niin tarkistamme ne. Vahvistamme hinnan, muuttopäivän ja tilauksen erikseen.'
+    lang==='en' ? 'Tell us about your move using the button below, so we can review the details. We will confirm the price, moving date and booking separately.'
       :lang==='sv' ? 'Lämna uppgifterna om din flytt via knappen nedan så går vi igenom dem. Vi bekräftar pris, datum och bokning separat.'
       : 'Kerro meille muuttosi tiedot alla olevasta painikkeesta, niin tarkistamme ne ja otamme asian käsittelyyn. Vahvistamme hinnan, ajankohdan ja tilauksen erikseen.',
     'Muuttotarjouspyyntö'
