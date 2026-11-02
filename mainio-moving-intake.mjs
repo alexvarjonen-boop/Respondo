@@ -213,7 +213,18 @@ export function mainioConversationContextQuestion(history=[]){
   const isVan=q=>/(?:pakettiaut|\bpaku\b|\bpakun\b|vuokra auto|van rental)/.test(q);
   const isMove=q=>mentionsMovingService(q)||mainioMovingRouteIntent(q)||
     /(?:moving|move\b|flytt\w*)/.test(q);
+  // In a moving-box conversation, customers often omit the subject after
+  // asking about box delivery: "Toimitatteko kotiin?" -> "Mitä kuljetus maksaa?".
+  // Keep the last explicit box topic for these narrowly scoped logistics
+  // follow-ups; never carry box context through an unrelated service question.
+  const isEllipticalBoxLogistics=q=>
+    !/(?:pakettiaut|paku|muuttopalvel|muuton kuljetus|huonekal|piano|kierrat|jate|pahvi|ostaa|myy)/.test(q) && (
+      /^(?:toimitatteko|tuotteko|haetteko|noudatteko)\s+(?:ne\s+)?(?:kotiin|pois|takaisin|perille)\b/.test(q) ||
+      /^(?:mita|paljonko|mika)\s+(?:(?:niiden|laatikoiden)\s+)?(?:kuljetus|toimitus|kotiinkuljetus)(?:maksu|hinta)?(?:\s+(?:maksaa|maksaisi|hinta|maksu|kustannus|on))?(?:\s|$)/.test(q) ||
+      /^(?:milloin|miten)\s+(?:(?:ne|niita)\s+)?(?:toimitetaan|kuljetetaan|noudetaan|palautetaan)\b/.test(q)
+    );
   const isPronounContinuation=q=>
+    isEllipticalBoxLogistics(q)||
     /(?:\bne\b|\bniiden\b|\bniita\b|\bniista\b|\bniille\b|\bniissa\b|\bse\b|\bsen\b|\bsiita\b|\bthose\b|\bthem\b|\bthey\b|\bdom\b|\bde\b|\bderas\b)/.test(q)||
     /^(?:no|hei|ja|enta|entas|mites|mitas|sitten|viel|vielä)\b/.test(q)||
     /(?:paljonko|kuinka paljon|mihin aikaan|milloin|saako|voiko|montako|kuinka monta)\s+(?:ne|niiden|niita|niista|se|sen|those|them)\b/.test(q);

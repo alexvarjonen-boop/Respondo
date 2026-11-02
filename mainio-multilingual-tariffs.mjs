@@ -75,6 +75,10 @@ export function mainioMultilingualTariffAnswer(rows,message,lang='fi',previousCu
   const otherMove=lang==='fi'?/(?:muuton hinta|muutto maksaa|muuttopalvel)/.test(q)
     :lang==='sv'?/(?:flyttfirma|flytthjalp|flyttens pris)/.test(q)
     :/(?:moving service|house move|moving company|cost of moving)/.test(q);
+  // A delivery/freight price after a van conversation is not automatically
+  // the van hire tariff. Answer delivery only when moving boxes are explicit;
+  // otherwise abstain instead of switching to an unrelated price list.
+  if(!box && /(?:kuljetus|toimitus|kotiinkuljetus|delivery|shipping|transport|leverans)/.test(q))return null;
   let keys,subject;
   if(box&&!van){keys=[delivery?'delivery':'box'];subject='box';}
   else {
