@@ -8,8 +8,8 @@ import {mainioBoxRentalIntent,mainioVanRentalIntent} from './mainio-moving-intak
 
 // Accept the common spoken and inflected forms used by customers.
 function vanRentalDuration(q){
-  if(/(?:kolmen tunt|kolme tunt|kolmeksi tunt|kolmeks tunt|3 tunt|3h\b|3 h\b)/.test(q))return 3;
-  if(/(?:viiden tunt|viidelta tunt|viideksi tunt|viideks tunt|viisi tunt|5 tunt|5h\b|5 h\b)/.test(q))return 5;
+  if(/(?:kolmen tunn|kolme tunt|kolmeksi tunn|kolmeksi tunt|kolmeks tunn|3 tunn|3 tunt|3h\b|3 h\b)/.test(q))return 3;
+  if(/(?:viiden tunn|viidelta tunn|viidelta tunt|viideksi tunn|viideksi tunt|viideks tunn|viisi tunt|5 tunn|5 tunt|5h\b|5 h\b)/.test(q))return 5;
   if(/(?:vuorokau|paivavuokra|paivaksi|vuorokaudelta|24 h\b|24h\b|24 tunt)/.test(q))return 24;
   return 0;
 }
@@ -70,11 +70,11 @@ const RULES=[
       /(?:mista.*nout|mista.*hae|mihin.*palaut|nouto osoit|noutopaik|palautuspaik)/.test(q)},
   {title:'Pakettiauton 5 tunnin vuokrahinnat',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
-      /(?:viidelta tunt|viiden tunt|viideksi tunt|viideks tunt|viisi tunt|5 tunt|5 h\b|5h\b)/.test(q)&&
+      /(?:viiden tunn|viidelta tunn|viidelta tunt|viideksi tunn|viideksi tunt|viideks tunn|viisi tunt|5 tunn|5 tunt|5 h\b|5h\b)/.test(q)&&
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Paljonko pakettiauton 3 tunnin vuokra maksaa?',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
-      /(?:kolmen tunt|kolme tunt|kolmeksi tunt|kolmeks tunt|3 tunt|3 h|3h)/.test(q)&&
+      /(?:kolmen tunn|kolme tunt|kolmeksi tunn|kolmeksi tunt|kolmeks tunn|3 tunn|3 tunt|3 h|3h)/.test(q)&&
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Pakettiauton vuorokausivuokra',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
