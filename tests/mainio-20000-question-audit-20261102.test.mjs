@@ -161,6 +161,45 @@ for(const previous of negativeContexts)for(const q of boxFollowups.slice(0,10)){
   if(ok)negativeCorrect++;else if(negativeFailures.length<80)negativeFailures.push({previous,q,detected,intent:classified?.intent||null});
 }
 
+const pronounFollowups=[
+  ['Paljonko ne maksaa?','0,20 euroa laatikolta'],
+  ['Entä niiden hinta?','0,20 euroa laatikolta'],
+  ['Saako ne kotiin?','Toimitamme muuttolaatikot'],
+  ['Miten ne palautetaan?','noudamme ne pois'],
+  ['Minkä kokoisia ne ovat?','600 × 400 × 300 mm'],
+  ['Montako niitä tarvitaan?','0,8'],
+  ['Milloin ne tuodaan?','maanantai, keskiviikko ja perjantai'],
+  ['Entä toimitusmaksu?','25 euroa ajokerralta'],
+];
+test('Mainio remembers boxes across pronoun-only follow-ups and selects the correct fact',()=>{
+  const previous='Haluaisin vuokrata muuttolaatikoita.';
+  for(const [q,expected] of pronounFollowups){
+    assert.equal(mainioBoxRentalFollowupIntent(q,previous),true,q);
+    const classification=interpretMainioLocalIntent(q,previous);
+    assert.equal(classification?.intent,'box_rental',q);
+    const reply=mainioPublicFactAnswer(rows,q,'fi',previous);
+    assert.ok(reply&&!reply.handoff,q);
+    assert.ok(reply.answer.toLowerCase().includes(expected.toLowerCase()),q+' => '+reply.answer);
+    const actions=mainioSemanticActions(classification,'fi',q,previous);
+    assert.ok(actions.some(x=>x.url==='https://www.mainiomuuttopalvelu.fi/muuttolaatikot-ja-tarvikkeet'),q);
+  }
+});
+test('Mainio recognizes box follow-ups after a van price question but not after cardboard recycling',()=>{
+  const vanPrevious='Mitä paku maksaa?';
+  const boxReply=mainioPublicFactAnswer(rows,'entä laatikot','fi',vanPrevious);
+  assert.equal(interpretMainioLocalIntent('entä laatikot',vanPrevious)?.intent,'box_rental');
+  assert.match(boxReply?.answer||'',/0,20 euroa laatikolta/);
+  for(const previous of [
+    'Miten pahvilaatikot kierrätetään?',
+    'Voinko ostaa pahvilaatikoita?',
+    'Mitä laatikoita myytte?',
+    'Mikä on yrityksenne sähköpostiosoite?'
+  ]){
+    assert.equal(mainioBoxRentalFollowupIntent('entä laatikot',previous),false,previous);
+    assert.equal(interpretMainioLocalIntent('entä laatikot',previous),null,previous);
+  }
+});
+
 test('20,000+ generated Mainio question variants: report factual coverage, contextual follow-ups, routes and false positives',()=>{
   const total=generated+followupTotal+routeTotal+negativeTotal;
   console.log('[MAINIO_20K_AUDIT]',JSON.stringify({
