@@ -3829,11 +3829,13 @@ export function mainioVerifiedMovingRouteReply(rows,message,lang='fi',semanticRo
   const source=verifiedServiceAreaValue(rows||[]);
   if(!source?.row?.id || !source?.row?.source_url ||
      !/muualle suomeen/.test(normalizeSearchText(source.value)))return null;
+  // State the actual documented geographic coverage before discussing a
+  // specific quote. Coverage is verified; an individual date/booking isn't.
   const answer=lang==='en'
-    ? 'You can enquire about this move. Mainio’s verified information says moves to other parts of Finland can be arranged separately. Mainio must confirm whether this particular route and date are possible, as well as the price. Send the move details using the button below.'
+    ? 'Yes, you can request a quote for this route. Mainio handles moves in Turku, across Southwest Finland and elsewhere in Finland. The exact route, date and price are confirmed separately by Mainio.'
     :lang==='sv'
-      ? 'Du kan fråga om denna flytt. Enligt Mainios bekräftade information kan flyttar till andra delar av Finland ordnas enligt separat överenskommelse. Mainio bekräftar om rutten och datumet är möjliga samt priset. Lämna flyttuppgifterna via knappen nedan.'
-      : 'Voit kysyä tarjousta tällaisesta muutosta. Mainion vahvistettujen tietojen mukaan muuttoja voidaan sopia myös muualle Suomeen. Mainio tarkistaa erikseen, onnistuuko juuri tämä reitti toivottuna päivänä ja mitä muutto maksaa. Voit täyttää muuttokartoituksen alla olevasta painikkeesta.';
+      ? 'Ja, du kan begära en offert för den här flytten. Mainio utför flyttar i Åbo, Egentliga Finland och även till andra delar av Finland. Mainio bekräftar rutt, datum och pris separat.'
+      : 'Kyllä, voit pyytää tarjouksen tästä muutosta! Mainio tekee muuttoja Turussa ja Varsinais-Suomessa sekä myös muualle Suomeen. Mainio vahvistaa erikseen juuri tämän reitin toteutuksen, muuttopäivän ja hinnan.';
   return {answer,handoff:false,confidence:1,intent:'Muuton toimialue',
     sourceIds:[source.row.id],selected:[source.row]};
 }
@@ -3862,7 +3864,12 @@ export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
     'Muuttotarjouspyyntö'
   );
   if(type==='moving_route'){
-    if(classification.route_scope==='domestic'){
+    // The intent classifier may label the route_scope "unknown" even for
+    // plain-language domestic routes ("Porista Turkuun"). Unknown is NOT
+    // evidence of missing coverage; use the company's approved countrywide
+    // coverage rather than the generic "we can check" fallback.
+    // International routes use their own separately verified source below.
+    if(classification.route_scope!=='international'){
       const grounded=mainioVerifiedMovingRouteReply(rows,'',lang,true);
       if(grounded)return grounded;
     }
