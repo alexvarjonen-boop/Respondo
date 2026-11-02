@@ -9,7 +9,7 @@ const RULES=[
   {title:'Muuttolaatikoiden hinta',
     check:q=>/laatik/.test(q)&&/(?:hinta|maksaa|paljonko|vuokra.*(?:hinta|maksaa|paljonko)|(?:hinta|maksaa|paljonko).*vuokra)/.test(q)},
   {title:'Muuttolaatikoiden mitat',
-    check:q=>/laatik/.test(q)&&/(?:mitat|mittoja|mittai|kokois|kokoa|kokoisia|millainen koko)/.test(q)},
+    check:q=>/laatik/.test(q)&&/(?:\bmitat\b|\bmittoja\b|\bmitta\w*\b|kokois|\bkokoa\b|kokoisia|millainen koko)/.test(q)},
   {title:'Kuinka monta muuttolaatikkoa tarvitsen?',
     check:q=>/laatik/.test(q)&&/(?:kuinka monta|montako|tarvitse|tarvits|paljonko.*laatik)/.test(q)},
   {title:'Laatikoiden kuljetusmaksu',
