@@ -103,9 +103,9 @@ const approvedMainioAlternative=(rows,title)=>{
     'Pakettiauton 5 tunnin vuokrahinnat':{
       path:'/pakettiautojen-vuokraus',
       verify:text=>/(?:5\s*h\b|5\s*tunn|viiden\s+tunn)/.test(text) &&
-        /\b13\s*m3\s+70\b/.test(text) &&
-        /\b17\s*m3\s+90\b/.test(text) &&
-        /\b20\s*m3\s+110\b/.test(text)
+        /\b13\s*m(?:3)?\s+70\b/.test(text) &&
+        /\b17\s*m(?:3)?\s+90\b/.test(text) &&
+        /\b20\s*m(?:3)?\s+110\b/.test(text)
     },
     'Pakettiautojen yövuokraus':{
       path:'/usein-muutosta-kysyttya',
