@@ -13331,6 +13331,9 @@ function detectConversationLanguage(text, hinted='') {
   for(const w of words) for(const lang of ['fi','sv','en']) if(sets[lang].has(w)) score[lang]++;
   if(/[å]/.test(raw)) score.sv+=2;
   if(/[äö]/.test(raw)) score.fi+=1;
+  // A Swedish ä/ö is not Finnish evidence when the sentence explicitly
+  // contains Swedish terms ("Är flytten bekräftad?" etc.).
+  if (/\b(?:är|flytten|imorgon|bekräftad|skåpbil|hyrbilen|behörighet|elinstallationer|körkort|räcker|utför|garanterar|offert|flyttlådor)\b/.test(raw)) score.sv+=3;
   // Definite Swedish plurals such as "putterna" provide a useful signal even
   // when a short question was sent from a Finnish-language storefront.
   if(words.some(w=>w.length>=6 && /(?:arna|erna|orna)$/.test(w))) score.sv+=1;
