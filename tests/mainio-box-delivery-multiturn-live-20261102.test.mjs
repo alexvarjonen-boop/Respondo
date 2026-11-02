@@ -44,6 +44,7 @@ test('unrelated subject interrupts inherited box logistics: no false box-deliver
   for(const history of [
     [...prior.slice(0,3),{question:'Mikä sähköpostiosoitteenne on?'}],
     [{question:'Mistä pakettiauto haetaan?'}],
+    [{question:'Mistä paku haetaan?'}],
     [{question:'Mitä asunnon tyhjennyksen hinta on?'}],
     [{question:'Miten pahvilaatikot kierrätetään?'}],
   ]){
