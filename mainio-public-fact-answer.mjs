@@ -32,8 +32,11 @@ const RULES=[
     check:q=>/laatik/.test(q)&&
       !/(?:vuokra|hinta|maks\w*|kustann|kuljetus|toimitus)/.test(q)&&(
         /(?:kuinka monta|montako)/.test(q) ||
-        /(?:laatik\w*.*(?:tarvit|riitt|maara|menekki)|(?:tarvit|riitt|maara|menekki).*laatik)/.test(q) ||
-        /(?:paljonko|kuinka paljon).*laatik.*(?:pit|vara)/.test(q)
+        /(?:paljonko|kuinka paljon).*laatik.*(?:tarvit|pit|vara|riitt)/.test(q) ||
+        /(?:laatik.*(?:maara|menekki)|(?:maara|menekki).*laatik)/.test(q) ||
+        (/(?:laatik.*(?:tarvit|riitt)|(?:tarvit|riitt).*laatik)/.test(q) &&
+          /(?:neli|\bm2\b|\basuntoon\b)/.test(q)) ||
+        /riitt.*\b\d+\s*(?:muutto)?laatik/.test(q)
       )},
   {title:'Muuttolaatikoiden hinta',
     check:q=>/laatik/.test(q)&&
