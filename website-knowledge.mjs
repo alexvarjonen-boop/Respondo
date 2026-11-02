@@ -527,12 +527,20 @@ function productKnowledgeAnswer(product) {
   if (product.description) parts.push('Kuvaus: '+product.description.slice(0,520));
   return clean(parts.join(' '));
 }
+// Customer FAQ headings and demo prompts are not purchasable products.
+// Keep the guard at ingestion AND at legacy row parsing, since older imports
+// might already contain a question as a product title.
+export function isCatalogQuestionTitle(value) {
+  const title=clean(decodeHtml(value)).trim();
+  return /^(?:onko|voiko|saako|loytyykö|löytyykö|mita|mitä|mika|mikä|mitka|mitkä|miksi|miten|missä|missa|milloin|paljonko|what|which|how|why|where|when|is|are|do|does|can|could|will|have|has|har|är|ar|finns|kan|hur|vad|vilken|vilka)(?=\s|[?？]|$)/i.test(title) && /[?？]\s*$/.test(title);
+}
+
 export function parseProductKnowledgeRow(row) {
   const category=norm(row?.category || '');
   const answer=String(row?.answer || '');
   if (!/(?:^|\s)(?:tuotteet|tuote|products?|produkter)(?:\s|$)/.test(category+' '+norm(row?.title || '')) && !/^Tuote:\s*/i.test(answer)) return null;
   const name=clean(String(row?.title || '').replace(/^Tuote:\s*/i,'')) || clean(answer.match(/Tuote:\s*([^.]*)/i)?.[1] || '');
-  if (!name) return null;
+  if (!name || isCatalogQuestionTitle(name)) return null;
   const priceMatch=answer.match(/Hinta:\s*([0-9]+(?:[.,][0-9]+)?)(?:\s*[–-]\s*([0-9]+(?:[.,][0-9]+)?))?\s*([A-Z]{3}|€|\$|£)?/i);
   const price=priceMatch?productNumber(priceMatch[1]):null;
   const maxPrice=priceMatch&&priceMatch[2]?productNumber(priceMatch[2]):price;
@@ -860,6 +868,7 @@ function pricedServiceLabel(value) {
 }
 
 function templateDemoProduct(product) {
+  if (isCatalogQuestionTitle(product?.name)) return true;
   const text=norm([product?.name,product?.description,product?.url].filter(Boolean).join(' '));
   if(!text) return true;
   if(/lorem ipsum|hello@example\.com|admin@example\.com|new york,\s*ny\s*05120|brooklyn area/.test(text)) return true;
