@@ -1,4 +1,5 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
+import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voice.mjs';
 import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
@@ -3905,7 +3906,9 @@ export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
   }
   if(type==='service_area'){
     const area=verifiedServiceAreaValue(rows||[]);
-    return area?response(serviceAreaAnswer(area.value,lang),'Sijainti',[area.row]):null;
+    return area?response(
+      mainioServiceAreaVoice(area.value,lang),'Sijainti',[area.row]
+    ):null;
   }
   return null;
 }
@@ -14146,6 +14149,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
           : answer;
     }
     if (handoff && !answer) answer = noAnswer;
+    if(previewMainioTenant)answer=mainioCustomerVoice(answer,detectedLang);
 
     return res.json({
       answer,
@@ -14773,6 +14777,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         ].slice(0,4);
       }
     }
+    if(mainioTenant)answer=mainioCustomerVoice(answer,responseLang);
     if (thread) {
       await appendChatMessage({
         tenantId:t.id,threadId:thread.id,sourceChannel:'website',
