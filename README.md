@@ -80,7 +80,7 @@ The Railway-generated production URL remains a valid fallback. The branded produ
 - Self-service: first successful approval of imported website knowledge starts the seven-day timer.
 - Assisted setup: the owner-confirmed **handover** starts the timer, not the order/Stripe checkout or credential creation.
 - An internal `onboarding_checkups` outbox stores the exact due timestamp, processing status, delivery attempt count and Resend message ID. One message is queued per workspace, with no historical backfill.
-- A production worker checks due messages every minute, performs retries with backoff and uses the same Resend `Idempotency-Key` for repeat attempts. Disabled/canceled workspaces are excluded.
+- A production worker checks due messages every minute, performs retries with backoff and uses the same Resend `Idempotency-Key` for repeat attempts. Canceled subscriptions remain eligible for impartial feedback requests; deactivated user accounts are excluded.
 - The HTML uses the common dark `brandedEmailHtml` layout, approved email-arrow logo, and the account's FI/SV/EN preferred language. It includes both a support check-up and a neutral, optional Trustpilot review link.
 - **Required Railway setting:** `TRUSTPILOT_REVIEW_URL` must contain the actual verified `https://www.trustpilot.com/...` review URL copied from the business account. Until it is set, the worker sends nothing.
 - Reuses existing `RESEND_API_KEY`. Optional `CHECKUP_EMAIL_FROM` overrides the default sender `Respondo AI <info@respondoai.fi>` only if that sender is verified with the email provider.
