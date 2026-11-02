@@ -80,7 +80,16 @@ const finnishRouteTowns=[
 export function mainioRecognizedDomesticRoute(message){
   if(!mainioMovingRouteIntent(message))return false;
   const q=normalized(message).replace(/[^a-z0-9\s-]/g,' ');
-  return finnishRouteTowns.filter(([,pattern])=>pattern.test(q)).length>=2;
+  // Only the actual origin and destination may establish Finnish coverage.
+  // An international route "Helsingistä Tallinnaan Turun kautta" mentions
+  // two Finnish cities, but Turku is a stopover, not the destination.
+  const finnish=q.match(/\b([a-z-]{3,45}(?:sta|lta))[\s,-]+(?:ihan\s+)?([a-z-]{3,45}(?:lle|iin|uun|oon|aan|een|hun))\b/);
+  const englishSwedish=q.match(/\b(?:from|fran)\s+([a-z-]{3,55})\s+(?:to|till)\s+([a-z-]{3,55})\b/);
+  const route=finnish||englishSwedish;
+  if(!route)return false;
+  const resolveTown=(name)=>finnishRouteTowns.find(([,pattern])=>pattern.test(name))?.[0]||'';
+  // Same-town moves (e.g. Turusta Turkuun) are valid domestic enquiries.
+  return Boolean(resolveTown(route[1]) && resolveTown(route[2]));
 }
 
 // A customer may ask to rent just "laatikot" rather than explicitly
