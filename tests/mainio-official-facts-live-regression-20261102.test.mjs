@@ -112,7 +112,7 @@ test('4,500 box-count variants use official 0.8–1 per m², not rental price or
  let count=0;
  for(const n of sizes)for(const q of queries)for(const wrap of wraps){
   const question=wrap(q(n));
-  const reply=check(question,factId('Kuinka monta muuttolaatikkoa tarvitsen?'),/suuntaa-antava/);
+  const reply=check(question,factId('Kuinka monta muuttolaatikkoa tarvitsen?'),/suuntaa-antava/i);
   if(!question.includes('Riittääkö '+n+' muuttolaatikkoa')){
     const low=Math.ceil(n*.8),high=n;
     assert.ok(reply.answer.includes(low+'–'+high+' muuttolaatikkoa') ||
