@@ -47,6 +47,42 @@ export function mainioMovingRouteIntent(message) {
   return fiRoute || enSvRoute;
 }
 
+// Strictly limited confidence check for common Finnish origin + destination
+// pairs. The free intent classifier deliberately leaves route_scope unknown:
+// a Finnish grammatical ending alone does not establish the country.
+// Only use this when both named endpoints match two separate, known places.
+const finnishRouteTowns=[
+  ['turku',/\b(?:turku\w*|turu(?:sta|ssa|un|n)|abo\w*)\b/],
+  ['pori',/\bpori\w*\b/],
+  ['rovaniemi',/\brovaniem\w*\b/],
+  ['helsinki',/\bhelsin\w*\b/],
+  ['tampere',/\btampere\w*\b/],
+  ['oulu',/\boulu\w*\b/],
+  ['kuopio',/\bkuopio\w*\b/],
+  ['joensuu',/\bjoensuu\w*\b/],
+  ['espoo',/\bespoo\w*\b/],
+  ['vantaa',/\bvantaa?\w*\b/],
+  ['jyvaskyla',/\bjyvaskyl\w*\b/],
+  ['lahti',/\b(?:lahte\w*|lahti\w*|lahd\w*)\b/],
+  ['vaasa',/\bvaasa\w*\b/],
+  ['kaarina',/\bkaarina\w*\b/],
+  ['raisio',/\braisio\w*\b/],
+  ['naantali',/\bnaantal\w*\b/],
+  ['salo',/\bsalo\w*\b/],
+  ['kotka',/\bkotka\w*\b/],
+  ['lappeenranta',/\blappeenran\w*\b/],
+  ['seinajoki',/\bseinajo\w*\b/],
+  ['hameenlinna',/\bhameenlin\w*\b/],
+  ['mikkeli',/\bmikkel\w*\b/],
+  ['kouvola',/\bkouvol\w*\b/],
+  ['porvoo',/\bporvoo\w*\b/],
+];
+export function mainioRecognizedDomesticRoute(message){
+  if(!mainioMovingRouteIntent(message))return false;
+  const q=normalized(message).replace(/[^a-z0-9\s-]/g,' ');
+  return finnishRouteTowns.filter(([,pattern])=>pattern.test(q)).length>=2;
+}
+
 export function mainioInquiryKind(message){
   const q=normalized(message);
   // Explicit moving-service intent has priority over accessories mentioned
