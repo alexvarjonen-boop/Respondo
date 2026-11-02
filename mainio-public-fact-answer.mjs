@@ -67,7 +67,7 @@ const RULES=[
       /(?:yon yli|yoksi|yovuokra|overnight)/.test(q)},
   {title:'Pakettiauton nouto- ja palautusosoite',
     check:q=>/(?:pakettiaut|paku|vuokra aut|auto\w*)/.test(q)&&
-      /(?:mista.*nout|mista.*hae|mista.*saa.*(?:aut|paku)|mihin.*palaut|nouto osoit|noutopaik|palautuspaik|miss[aä].*(?:nout|hae|palaut))/.test(q)},
+      /(?:mista.*nout|mista.*(?:hae|hak)|mista.*saa.*(?:aut|paku)|mihin.*palaut|nouto osoit|noutopaik|palautuspaik|miss[aä].*(?:nout|hae|palaut))/.test(q)},
   {title:'Pakettiauton 5 tunnin vuokrahinnat',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
       /(?:viiden tunn|viidelta tunn|viidelta tunt|viideksi tunn|viideksi tunt|viideks tunn|viisi tunt|5 tunn|5 tunt|5 h\b|5h\b)/.test(q)&&
