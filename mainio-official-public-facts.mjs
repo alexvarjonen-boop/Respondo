@@ -30,7 +30,7 @@ const specs=[
  ['Pakettiautot','Pakettiautojen yövuokraus',
   'Kyllä, pakettiauton voi vuokrata yön yli, mutta siitä täytyy sopia erikseen asiakaspalvelumme kanssa. Yön yli vuokraus ei onnistu nettivarauksen kautta.',faq],
  ['Pakettiautot','Pakettiauton nouto- ja palautusosoite',
-  'Pakettiauton nouto ja palautus tapahtuvat osoitteessa Tavarakatu 1, 20250 Turku.',van],
+  'Pakettiauto noudetaan ja palautetaan osoitteesta Tavarakatu 1, 20250 Turku. Vuokrausta edeltävänä päivänä saat tekstiviestillä tarkemmat auton nouto- ja palautusohjeet. Ohjeiden mukaan nouto ja palautus onnistuvat joustavasti.',van],
  ['Pakettiautot','Pakettiauton 5 tunnin vuokrahinnat',
   'Viiden tunnin vuokra: 13 m³ pakettiauto 70 euroa, 17 m³ pakettiauto 90 euroa ja 20 m³ pakettiauto 110 euroa. Hintoihin sisältyy 100 km.',van],
  ['Pakettiautot','Paljonko pakettiauton 3 tunnin vuokra maksaa?',
