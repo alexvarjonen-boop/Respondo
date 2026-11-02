@@ -27,6 +27,13 @@ test('Mainio routes from Pori to Turku and Rovaniemi to Turku use verified natio
     'Onnistuuko muutto Rovaniemeltä Turkuun?',
     'voiko muuttaa Porista Turkuun',
     'ois muutto porista turkuun',
+    'muutatteko rovaniemeltä kuopioon',
+    'Muutatteko Rovaniemeltä Kuopioon?',
+    'muutatteko Porista Turkuun',
+    'muutatteks rovaniemeltä kuopioon',
+    'muuttaisitteko rovaniemeltä kuopioon',
+    'muutatko rovaniemeltä kuopioon',
+    'pystyisittekö muuttamaan rovaniemeltä kuopioon',
   ]){
     assert.equal(mainioMovingRouteIntent(question),true,question);
     const intent=interpretMainioLocalIntent(question);
@@ -45,6 +52,18 @@ test('Mainio routes from Pori to Turku and Rovaniemi to Turku use verified natio
     assert.match(result.answer,/myös muualle Suomeen/);
     assert.match(result.answer,/tarkistamme erikseen/i);
     assert.equal(mainioInquiryActions(question,'fi')[0]?.mode,'mainio_move_form');
+  }
+});
+
+test('changing something else is not automatically a moving route or a moving quote',()=>{
+  for(const question of [
+    'muutatteko aukioloaikoja',
+    'muutatteko hinnastoa',
+    'muutatteko verkkosivujanne',
+    'muutatteko pakettiautojen vuokrahintoja',
+  ]){
+    assert.equal(mainioMovingRouteIntent(question),false,question);
+    assert.equal(mainioRecognizedDomesticRoute(question),false,question);
   }
 });
 
