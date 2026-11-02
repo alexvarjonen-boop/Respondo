@@ -198,7 +198,7 @@ test('chat-based moving intake request is classified and answered with the conse
   assert.match(reply.answer,lang==='en'?/confirms the price and date separately/i:lang==='sv'?/bekräftar pris och datum separat/i:/vahvistaa hinnan sekä muuttopäivän erikseen/i);
   const actions=mainioSemanticActions(classification,lang,question);
   assert.equal(actions[0].mode,'mainio_move_form',question);
- });
+  }
 });
 
 test('free intent layer abstains on uncertain pricing, safety and unrelated topics',()=>{
