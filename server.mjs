@@ -3832,10 +3832,10 @@ export function mainioVerifiedMovingRouteReply(rows,message,lang='fi',semanticRo
   // State the actual documented geographic coverage before discussing a
   // specific quote. Coverage is verified; an individual date/booking isn't.
   const answer=lang==='en'
-    ? 'Yes, you can request a quote for this route. Mainio handles moves in Turku, across Southwest Finland and elsewhere in Finland. Mainio must confirm the exact route, date and price before booking.'
+    ? 'Yes, you can request a quote from us for this move. We handle moves in Turku and Southwest Finland, and we can also discuss moves elsewhere in Finland. Tell us your moving details so we can check the exact route, date and price before confirming a booking.'
     :lang==='sv'
-      ? 'Ja, du kan begära en offert för den här flytten. Mainio utför flyttar i Åbo, Egentliga Finland och även till andra delar av Finland. Mainio bekräftar rutt, datum och pris separat.'
-      : 'Kyllä, tästä muutosta voi pyytää tarjouksen! Mainion vahvistettujen tietojen mukaan muuttoja tehdään Turussa ja Varsinais-Suomessa sekä myös muualle Suomeen. Mainio tarkistaa erikseen reitin toteutuksen, muuttopäivän ja hinnan; en voi vahvistaa niitä etukäteen.';
+      ? 'Ja, du kan be oss om en offert för flytten. Vi utför flyttar i Åbo och Egentliga Finland, och flyttar kan även ordnas till andra delar av Finland. Berätta om flytten så kontrollerar vi rutten, datumet och priset innan vi bekräftar en bokning.'
+      : 'Kyllä, voit pyytää meiltä tarjouksen tästä muutosta! Palvelemme Turussa ja Varsinais-Suomessa, ja muuttoja voidaan järjestää myös muualle Suomeen. Kerro muuton tarkemmat tiedot, niin tarkistamme erikseen reitin toteutuksen, muuttopäivän ja hinnan ennen tilauksen vahvistamista.';
   return {answer,handoff:false,confidence:1,intent:'Muuton toimialue',
     sourceIds:[source.row.id],selected:[source.row]};
 }
@@ -3858,9 +3858,9 @@ export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
     'Tarkennus'
   );
   if(type==='moving_quote')return response(
-    lang==='en' ? 'You can send the details of your move for Mainio to review using the button below. The price, moving date and booking are confirmed by Mainio separately.'
-      :lang==='sv' ? 'Du kan lämna uppgifter om flytten via knappen nedan. Mainio bekräftar pris, datum och bokning separat.'
-      : 'Voit jättää muuttosi tiedot Mainion tarkistettavaksi alla olevasta painikkeesta. Mainio vahvistaa hinnan, ajankohdan ja tilauksen erikseen.',
+    lang==='en' ? 'Kerro meille muuttosi tiedot alla olevan painikkeen kautta, niin tarkistamme ne. Vahvistamme hinnan, muuttopäivän ja tilauksen erikseen.'
+      :lang==='sv' ? 'Lämna uppgifterna om din flytt via knappen nedan så går vi igenom dem. Vi bekräftar pris, datum och bokning separat.'
+      : 'Kerro meille muuttosi tiedot alla olevasta painikkeesta, niin tarkistamme ne ja otamme asian käsittelyyn. Vahvistamme hinnan, ajankohdan ja tilauksen erikseen.',
     'Muuttotarjouspyyntö'
   );
   if(type==='moving_route'){
@@ -3877,16 +3877,16 @@ export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
         normalizeSearchText(x.title)==='ulkomaanmuutto' &&
         /ulkomaille/.test(normalizeSearchText(x.answer)));
       if(row)return response(
-        lang==='en' ? 'Mainio’s published information mentions international moving services. Mainio must separately confirm whether your specific route and date are possible, as well as the price. You can submit the details using the button below.'
-          :lang==='sv' ? 'Mainios publicerade information nämner internationella flyttar. Mainio bekräftar separat om rutten och datumet är möjliga samt priset. Lämna uppgifterna via knappen nedan.'
-          : 'Mainion julkaistuissa tiedoissa mainitaan myös ulkomaanmuutot. Mainio tarkistaa erikseen, onnistuuko juuri tämä reitti toivottuna ajankohtana ja mitä se maksaa. Voit lähettää muuttotiedot alla olevan painikkeen kautta.',
+        lang==='en' ? 'You can also ask us about international moves. Tell us your destination and preferred date using the button below, so we can check the route and provide a quote. We confirm availability and the price separately.'
+          :lang==='sv' ? 'Du kan också fråga oss om flytt utomlands. Berätta vart och när du vill flytta via knappen nedan, så granskar vi rutten och ger en offert. Vi bekräftar tillgänglighet och pris separat.'
+          : 'Voit kysyä meiltä myös ulkomaanmuutosta. Kerro kohdemaa, toivottu muuttopäivä ja muuton tiedot alla olevan painikkeen kautta, niin tarkistamme reitin toteutuksen ja annamme tarjouksen. Vahvistamme hinnan ja ajankohdan erikseen.',
         'Muuton toimialue',[row]
       );
     }
     return response(
-      lang==='en' ? 'Mainio can review your route request, but I cannot confirm that the specific move is available. Send your move details below for confirmation.'
-        :lang==='sv' ? 'Mainio kan granska din förfrågan, men jag kan inte bekräfta att just denna flytt kan genomföras. Lämna flyttuppgifterna nedan.'
-        : 'Mainio voi tarkistaa pyytämäsi muuttoreitin, mutta en voi vahvistaa sen toteutumista etukäteen. Jätä muuton tiedot alla olevasta painikkeesta, niin Mainio selvittää asian.',
+      lang==='en' ? 'Send us the details of your move below so we can check the requested route. We will confirm whether the date and route are possible, along with the price, before any booking.'
+        :lang==='sv' ? 'Lämna uppgifterna om flytten nedan, så kontrollerar vi rutten och det önskade datumet. Vi bekräftar möjligheten och priset innan någon bokning görs.'
+        : 'Kerro meille muuton lähtö- ja kohdepaikka sekä toivottu ajankohta alla olevasta painikkeesta. Tarkistamme reitin toteutuksen ja annamme tarjouksen ennen kuin vahvistamme tilauksen.',
       'Muuttotarjouspyyntö'
     );
   }
@@ -3894,12 +3894,12 @@ export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
     const boxes=type==='box_rental';
     return response(
       boxes
-        ? lang==='en' ? 'See Mainio’s moving-box rental options using the link below.'
-          :lang==='sv' ? 'Se Mainios alternativ för hyra av flyttlådor via länken nedan.'
-          : 'Voit tutustua Mainion muuttolaatikoiden vuokraukseen alla olevasta painikkeesta.'
-        :lang==='en' ? 'See Mainio’s van rental options using the link below.'
-          :lang==='sv' ? 'Se Mainios alternativ för skåpbilsuthyrning via länken nedan.'
-          : 'Voit tutustua Mainion pakettiautojen vuokraukseen alla olevasta painikkeesta.',
+        ? lang==='en' ? 'You can view our moving-box rental options using the link below.'
+          :lang==='sv' ? 'Du kan se våra flyttlådor för uthyrning via länken nedan.'
+          : 'Voit tutustua muuttolaatikoidemme vuokraukseen alla olevasta painikkeesta.'
+        :lang==='en' ? 'You can view our van rental options using the link below.'
+          :lang==='sv' ? 'Du kan se våra skåpbilar för uthyrning via länken nedan.'
+          : 'Voit tutustua pakettiautojemme vuokraukseen alla olevasta painikkeesta.',
       boxes?'Muuttolaatikot':'Pakettiautot'
     );
   }
@@ -13973,10 +13973,10 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       ? mainioVerifiedMovingRouteReply(rows,message,detectedLang) : null;
     let result = mainioRoutePreview ? mainioRoutePreview : mainioSemanticPreview ? mainioSemanticPreview : mainioOrderPreview ? {
       answer:detectedLang==='en'
-        ? 'You can submit the details of your move using Mainio’s official quote form below. Mainio confirms the price, date and booking separately.'
+        ? 'Tell us about your move using the quote form below. We will review the details and confirm the price, date and booking separately.'
         :detectedLang==='sv'
-          ? 'Du kan lämna uppgifter om flytten via Mainios officiella offertformulär nedan. Mainio bekräftar pris, datum och bokning separat.'
-          : 'Voit pyytää muuttotarjouksen Mainion virallisella lomakkeella alla olevasta painikkeesta. Mainio vahvistaa hinnan, ajankohdan ja tilauksen erikseen.',
+          ? 'Berätta om din flytt via offertformuläret nedan. Vi granskar uppgifterna och bekräftar pris, datum och bokning separat.'
+          : 'Kerro meille muutostasi alla olevan tarjouslomakkeen kautta. Tarkistamme tiedot ja vahvistamme hinnan, ajankohdan sekä tilauksen erikseen.',
       handoff:false,confidence:1,intent:'Muuttotarjouspyyntö',sourceIds:[],selected:[],
     } : previewFaq
       ? {answer:previewFaq.answer,handoff:false,confidence:1,intent:'Respondo FAQ',
@@ -14680,10 +14680,10 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       ? mainioVerifiedMovingRouteReply(safeKnowledgeRows,message,detectedLang) : null;
     const mainioQuoteAnswer=mainioQuoteIntent
       ? (detectedLang==='en'
-          ? 'You can send the details of your move for Mainio Muuttopalvelu to review using the button below. Mainio confirms the price, date and booking separately.'
+          ? 'Tell us about your move using the button below. We will review the details and confirm the price, date and booking separately.'
           :detectedLang==='sv'
-          ? 'Du kan lämna uppgifter om flytten via knappen nedan. Mainio Muuttopalvelu bekräftar pris, datum och bokning separat.'
-          : 'Voit kertoa muuttosi tiedot alla olevan painikkeen kautta. Mainio Muuttopalvelu tarkistaa tarjouspyynnön ja vahvistaa hinnan, ajankohdan sekä tilauksen erikseen.')
+          ? 'Berätta om din flytt via knappen nedan. Vi granskar uppgifterna och bekräftar pris, datum och bokning separat.'
+          : 'Kerro meille muuttosi tiedot alla olevan painikkeen kautta. Tarkistamme tarjouspyynnön ja vahvistamme hinnan, ajankohdan sekä tilauksen erikseen.')
       : null;
     let result = mainioRouteReply ? mainioRouteReply : mainioSemanticReply ? mainioSemanticReply : mainioQuoteAnswer ? {
       answer:mainioQuoteAnswer,handoff:false,confidence:1,
