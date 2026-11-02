@@ -3893,6 +3893,24 @@ export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
   }
   if(type==='box_rental'||type==='van_rental'){
     const boxes=type==='box_rental';
+    // A verified, approved Mainio rental row supports a direct yes rather
+    // than an unspecific "learn more" or a needless contact form. Never
+    // quote price, stock or availability without checking its own evidence.
+    const boxEvidence=boxes?(rows||[]).find(row=>
+      row?.id && row?.approved!==false &&
+      String(row.source_url||'').replace(/\/$/,'')===
+        'https://www.mainiomuuttopalvelu.fi/muuttolaatikot-ja-tarvikkeet' &&
+      /(?:muuttolaatikoiden hinta|palvelut: muuttolaatikoiden vuokraus)/i.test(
+        String(row.title||''))
+    ):null;
+    if(boxEvidence)return response(
+      lang==='en'
+        ? 'Yes, you can rent moving boxes from us! See our rental details using the link below.'
+        :lang==='sv'
+          ? 'Ja, du kan hyra flyttlådor av oss! Se våra hyresalternativ via länken nedan.'
+          : 'Kyllä, meiltä voi vuokrata muuttolaatikoita! Voit tutustua muuttolaatikoidemme vuokraukseen alla olevasta painikkeesta.',
+      'Muuttolaatikot',[boxEvidence]
+    );
     return response(
       boxes
         ? lang==='en' ? 'You can view our moving-box rental options using the link below.'
