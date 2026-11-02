@@ -178,8 +178,12 @@ export function interpretMainioLocalIntent(message,previousCustomerQuestion=''){
   // knowledge matcher rather than a generic rental CTA.
   if(has(/(?:paljonko|hinta|maksaa|kustann|price|cost|pricing|pris|kostar|kuinka monta|hur manga|how many|ajokort|omavastuu|vuokraeht|toimitusmaksu)/))return null;
   const renting=rent || has(/(?:tilaa|tilata|tilaisin|varaa|varata|varaisin|book|bestall|order)/);
-  if(box && renting && (!movingNamed || rent))return result('box_rental',95);
-  if(van && renting && (!movingNamed || rent))return result('van_rental',95);
+  // Main route enquiries can also mention rented moving boxes or vehicles.
+  // Classify the primary move before accessory rentals, but preserve
+  // clarification for person-only transport questions further below.
+  const asksMovingRoute=mainioMovingRouteIntent(message);
+  if(box && renting && !asksMovingRoute && (!movingNamed || rent))return result('box_rental',95);
+  if(van && renting && !asksMovingRoute && (!movingNamed || rent))return result('van_rental',95);
   const currentMove=moveService||(goods&&transport);
   const prevMove=/(?:muut|flytt|moving|move\b|tavara|huonekal|kam[a-ö])/.test(prev);
   const personOnly=has(/(?:mummo|mummon|a[it]i\b|vanhemm|iso[aä]it|henkilo|ihminen|grandma|person\b)/) && !goods;
@@ -190,7 +194,7 @@ export function interpretMainioLocalIntent(message,previousCustomerQuestion=''){
   // Route without two named cities may still be a specific long-distance
   // request, e.g. "kamat Lapista etelään". Don't invent domestic coverage.
   const directional=has(/(?:lapista|lapin|pohjoisest|pohjosest|etel[aä][aä]n|kauas|toiselle paikkakunnalle|toiselta paikkakunnalta|from .{3,48} to |fran .{3,48} till )/);
-  if(mainioMovingRouteIntent(message))return result('moving_route',96);
+  if(asksMovingRoute)return result('moving_route',96);
   if(directional && (goods||transport||asking))return result('moving_route',91);
   // Route without specified cities doesn't warrant availability promise.
   if((goods&&transport&&asking) || (movingNamed&&asking) ||
