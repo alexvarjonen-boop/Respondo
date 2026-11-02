@@ -2,15 +2,20 @@
 // identity is confirmed. Semantic intent rules choose an APPROVED known row,
 // never manufacture a fact or reuse a price/availability from another topic.
 const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-  .toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+  .toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim()
+  // Conservative corrections for frequent one-character customer typos.
+  .replace(/\bpaljoko\b/g,'paljonko').replace(/\bkuika\b/g,'kuinka')
+  .replace(/\bmite\b/g,'miten').replace(/\bmuuttolatik/g,'muuttolaatik')
+  .replace(/\blaatikoden\b/g,'laatikoiden').replace(/\bpaketiauto/g,'pakettiauto')
+  .replace(/\bajokorti\b/g,'ajokortti').replace(/\bvrk\b/g,'vuorokausi');
 const area=(q,rx)=>rx.test(q);
-import {mainioBoxRentalIntent,mainioBoxRentalFollowupIntent,mainioVanRentalIntent} from './mainio-moving-intake.mjs';
+import {mainioBoxRentalIntent,mainioBoxRentalFollowupIntent,mainioBoxRentalFollowupKind,mainioVanRentalIntent} from './mainio-moving-intake.mjs';
 
 // Accept the common spoken and inflected forms used by customers.
 function vanRentalDuration(q){
   if(/(?:kolmen tunn|kolme tunt|kolmeksi tunn|kolmeksi tunt|kolmeks tunn|3 tunn|3 tunt|3h\b|3 h\b)/.test(q))return 3;
   if(/(?:viiden tunn|viidelta tunn|viidelta tunt|viideksi tunn|viideksi tunt|viideks tunn|viisi tunt|5 tunn|5 tunt|5h\b|5 h\b)/.test(q))return 5;
-  if(/(?:vuorokau|paivavuokra|paivaksi|vuorokaudelta|24 h\b|24h\b|24 tunt)/.test(q))return 24;
+  if(/(?:vuorokau|paivavuokra|paivaksi|vuorokaudelta|24 h\b|24h\b|24 tunt|24 tunn|vuorokausi|vrk)/.test(q))return 24;
   return 0;
 }
 // Source allowlist for the anonymous Mainio website demo only. This is
@@ -49,79 +54,80 @@ const RULES=[
       )},
   {title:'Muuttolaatikoiden hinta',
     check:q=>/laatik/.test(q)&&
-      /(?:hinta|maks\w*|paljonko|vuokra.*(?:hinta|maks|paljonko)|(?:hinta|maks|paljonko).*vuokra)/.test(q)},
+      !/(?:mitat|mittoja|mitta\w*|koko|isoja|suuria|tilavuus)/.test(q)&&
+      /(?:hinta|hinta|maks\w*|paljonko|minimiveloitus|minimilaskutus|vuokra.*(?:hinta|maks|paljonko)|(?:hinta|maks|paljonko).*vuokra)/.test(q)},
   {title:'Muuttolaatikoiden mitat',
-    check:q=>/laatik/.test(q)&&/(?:\bmitat\b|\bmittoja\b|\bmitta\w*\b|kokois|\bkokoa\b|kokoisia|millainen koko)/.test(q)},
+    check:q=>/laatik/.test(q)&&/(?:\bmitat\b|\bmittoja\b|\bmitta\w*\b|kokois|\bkoko\b|\bkokoa\b|kokoja|kokoisia|isoja|suuria|tilavuus|millainen koko)/.test(q)},
   {title:'Muuttolaatikkojen noutopäivät',
-    check:q=>/laatik/.test(q)&&/(?:milloin|mika paiva|mitka paiva|mihin aikaan|noutopaiv|toimituspaiv)/.test(q)&&
+    check:q=>/laatik/.test(q)&&/(?:milloin|mika paiva|mitka paiva|mille paiva|mille paivi|mihin aikaan|noutopaiv|toimituspaiv)/.test(q)&&
       /(?:toimit|nout|hae|hake|tuod|tuotte|haett)/.test(q)},
   {title:'Laatikoiden toimitus ja palautus',
-    check:q=>/laatik/.test(q)&&/(?:toimit|nout|tuotte|tuoda|palaut|hake|kotiin|kuljet)/.test(q)},
+    check:q=>/laatik/.test(q)&&/(?:toimit|nout|noud|tuotte|tuoda|palaut|hake|kotiin|kuljet)/.test(q)},
   // Specific vehicle pricing/safety must never resolve to pick-up instructions.
   {title:'Pakettiautojen omavastuu',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&/omavastuu/.test(q)},
   {title:'Pakettiautojen ajokortti',
-    check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&/(?:ajokort|b kort|kortilla.*aja|milla kortilla)/.test(q)},
+    check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&/(?:ajokort|b kort|b-kort|c kort|c-kort|kortilla.*aja|milla kortilla|tavallisella kort|mika kortti|riittaako.*kort|tarvita.*kort|kortti.*tarvit)/.test(q)},
   {title:'Pakettiautojen yövuokraus',
     check:q=>/(?:pakettiaut|paku|muuttoaut|vuokra aut)/.test(q)&&
-      /(?:yon yli|yoksi|yovuokra|overnight)/.test(q)},
+      /(?:yon yli|yoksi|yoks|yovuokra|overnight|seuraavana aamuna|seuraavana paivana|aamulla)/.test(q)},
   {title:'Pakettiauton nouto- ja palautusosoite',
     check:q=>/(?:pakettiaut|paku|vuokra aut|auto\w*)/.test(q)&&
-      /(?:mista.*nout|mista.*(?:hae|hak)|mista.*saa.*(?:aut|paku)|mihin.*palaut|nouto osoit|noutopaik|palautuspaik|miss[aä].*(?:nout|hae|palaut))/.test(q)},
+      /(?:mista.*nout|mista.*noud|mista.*(?:hae|hak)|mista.*saa.*(?:aut|paku)|mihin.*palaut|nouto osoit|noutopaik|palautuspaik|miss[aä].*(?:nout|noud|hae|palaut)|auton.*nouto|auto.*nouto)/.test(q)},
   {title:'Pakettiauton 5 tunnin vuokrahinnat',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
       /(?:viiden tunn|viidelta tunn|viidelta tunt|viideksi tunn|viideksi tunt|viideks tunn|viisi tunt|5 tunn|5 tunt|5 h\b|5h\b)/.test(q)&&
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Paljonko pakettiauton 3 tunnin vuokra maksaa?',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
-      /(?:kolmen tunn|kolme tunt|kolmeksi tunn|kolmeksi tunt|kolmeks tunn|3 tunn|3 tunt|3 h|3h)/.test(q)&&
+      /(?:kolmen tunn|kolme tunt|kolmeksi tunn|kolmeksi tunt|kolmeks tunn|kolmelta tunn|3 tunn|3 tunt|3 h|3h)/.test(q)&&
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Pakettiauton vuorokausivuokra',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
-      /(?:vuorokau|paivavuokra|paivaksi|vuorokaudelta|24 h\b|24h\b|24 tunt)/.test(q)&&
+      /(?:vuorokau|paivavuokra|paivaksi|vuorokaudelta|24 h\b|24h\b|24 tunt|24 tunn|vuorokausi|vrk)/.test(q)&&
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Kierrätyksen alkaen hinta',
-    check:q=>/(?:kierrat|jate|jatte)/.test(q)&&
-      /(?:hinn|alka|paljonko|maksaa|kustann)/.test(q)},
+    check:q=>/(?:kierrat|jate|jatte|irtaimist)/.test(q)&&
+      /(?:hinta|hintaa|hinn|alka|paljonko|maksaa|kustann)/.test(q)},
   {title:'Kuolinpesän tyhjennys',
     check:q=>/(?:kuolinpes|perunkirjoituksen.*tyhjenn)/.test(q)&&
       /(?:tyhjent|nout|hoida|teetteko|voitteko|tarjoa|palvelu)/.test(q)},
   {title:'Voiko jätteen noutaa pakkaamatta?',
-    check:q=>/(?:kierrat|jate|jatte)/.test(q)&&
-      /(?:pakkaamatt|pakata|pakkaamista|ilman pakkau)/.test(q)},
+    check:q=>/(?:kierrat|jate|jatte|irtaimist)/.test(q)&&
+      /(?:pakkaamatt|pakata|pakkaamista|ilman pakkau|sellaisenaan)/.test(q)},
   {title:'Kierrätyspalvelu',
-    check:q=>/(?:kierratyspalvel|jate nout|jatteiden nout|kierratysnout)/.test(q)},
+    check:q=>/(?:kierratyspalvel|jate nout|jatteiden nout|kierratysnout|noutaa jatte|noutaa.*kierrat|kierrat.*nout|kierrat.*noud|jatte.*nout|jatte.*noud|kierrat.*kuulu|kierrat.*palvelu|mita.*kierrat|tavaroita.*kierrat|noudettavaksi)/.test(q)},
   {title:'Välivarastointi ennen muuttoa',
-    check:q=>/(?:valivarast|varastoin|varastoida)/.test(q)&&
-      /(?:muutto|muuton|muuton ajaks|muutossa|tarjoatteko|onko|voiko)/.test(q)},
+    check:q=>/(?:valivarast|varastoin|varastoida|varastoon|varasto|sailytt|sailyt)/.test(q)&&
+      /(?:muutto|muuton|muuton ajaks|muutossa|tarjoatteko|onko|voiko|saako|ennen uuteen kotiin)/.test(q)},
   {title:'Kalusteiden purkaminen ja kokoaminen',
-    check:q=>/(?:huonekal|kaluste|sohva|sanky|kaapp)/.test(q)&&
-      /(?:purka|purku|koota|kokoam|asent)/.test(q)},
+    check:q=>/(?:huonekal|kaluste|sohva|sanky|sangy|kaap)/.test(q)&&
+      /(?:purka|purku|puratte|purkaa|koota|kokoam|kokoat|kokoatte|kokoami|asent|asenn)/.test(q)},
   {title:'TV ja reititinasennukset',
-    check:q=>/(?:luvanvarai|sahkoasen|sahkot|putkit)/.test(q)&&
-      /(?:teetteko|tehd|voi|pystyt|onko|asenn)/.test(q)},
+    check:q=>/(?:luvanvarai|sahkoasen|sahkot|putkit|\btv\b|televis|reitit|router)/.test(q)&&
+      /(?:teetteko|tehd|voi|pystyt|onko|asenn|autat|autatte|kytke)/.test(q)},
   {title:'Muuttopäivän kulku',
     check:q=>/(?:muuttopaiva|muuttopaivan|muuton paiva)/.test(q) &&
       /(?:miten|mita|millainen|toim|suj|tapahtu|ohje)/.test(q)},
   {title:'Muuton kesto',
     check:q=>/(?:muutto|muuton|muuttopalvel)/.test(q) &&
-      /(?:kuinka kauan|kauanko|kesto|kestaa|aikaa kuluu)/.test(q)},
+      /(?:kuinka kauan|kauanko|kuinka pitka|kuinka pitkaan|miten pitk[aä]|kesto|kestaa|aikaa.*kuluu)/.test(q)},
   {title:'Pakettiauton tavaratilan koko',
     check:q=>/(?:pakettiaut|paku|vuokra\s*aut)/.test(q) &&
-      /(?:kuuti|m3\b|tilavuu|tavaratila|kuorma|mahtu)/.test(q) &&
-      !/(?:hinta|maksaa|paljonko|vuokra.*hinta|kustann)/.test(q)},
+      /(?:kuuti|m3\b|tilavuu|tavaratila|kuorma|mahtu|kokois|kokoja|kokoluokka|kokoluok)/.test(q) &&
+      !/(?:hinta|maksaa|vuokra.*hinta|kustann)/.test(q)},
   {title:'Pakkaus- ja kantoapu',
-    check:q=>/(?:pakkausapu|pakkaus\s*ja\s*kantoapu|kantamis|kantoapu|pakkaamis|pakkaatte|pakkau\w*)/.test(q) &&
-      /(?:onko|onks|saako|tarjoa|tarvit|voitte|pystyt|teette|teilt|teilla|avuksi|apu\b)/.test(q) &&
-      !/(?:laatik|tarvik|pakkaustarvike|kuplamuov)/.test(q)},
+    check:q=>/(?:pakkausapu|pakkaus\s*ja\s*kantoapu|kantamis|kantoapu|kantaa|kannat|kannatte|kanna|pakkaamis|pakkaatte|pakata|pakkaam\w*|pakkau\w*)/.test(q) &&
+      /(?:onko|onks|saako|tarjoa|tarvit|voitte|pystyt|teette|teilt|teilla|autat|autatte|autatteko|avuksi|apu\b)/.test(q) &&
+      !/(?:laatik|tarvik|pakkaustarvike|kuplamuov|avaimet kateen|tayden palvelun|koko muuton|kaikki vaiheet|alusta loppuun|pakkaatteko.*kaikki|pakkaamisen.*muuton|ettei minun tarvitse pakata)/.test(q)},
   {title:'Hissittömän muuton suunnittelu',
-    check:q=>/(?:muutto|muuttaa|muuton|muuttamis|kerrostal)/.test(q) &&
+    check:q=>/(?:muutto|muuttaa|muuton|muutossa|muuttamis|kerrostal|talossa)/.test(q) &&
       /(?:hissitt|ilman hissia|ei ole hissia|hissi.*puuttu)/.test(q)},
   {title:'Muuton hinta',
     check:q=>/(?:muuton hinta|muutto maksaa|muuttokustann|muuton kustann|muuton hint|mista muuton hinta muodostu|muut(?:to|on|toa|tto)?\s*(?:\w+\s+){0,5}(?:maks|kustan|hinta|hintaa)|(?:paljonko|kuinka paljon|mita)\s*(?:\w+\s+){0,7}muut(?:to|to\w*|on))/i.test(q) &&
       !/(?:laatik|pakettiaut|paku)/.test(q)},
   {title:'Täyden palvelun avaimet käteen -muutto',
-    check:q=>/(?:avaimet kateen|pakkaatteko|hoidatteko koko muuton|voitteko pakata|hoidatteko.*pakkaamisen|tavaroiden pakkaamisen|pakkausapu)/.test(q)},
+    check:q=>/(?:avaimet kateen|pakkaatteko.*kaikki|hoidatteko koko muuton|hoidatteko.*pakkaamisen.*muuton|voitteko hoitaa.*pakkaamisen.*muuton|tavaroiden pakkaamisen.*muuton|tayden palvelun|kaikki vaiheet|alusta loppuun|ettei minun tarvitse pakata)/.test(q)},
 ];
 // Website importers can give a correctly sourced fact a descriptive heading
 // different from a curated FAQ title. Permit narrowly checked alternatives,
@@ -173,7 +179,8 @@ export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQu
   const currentQ=norm(message);
   if(!currentQ||currentQ.length>420)return null;
   const previousQ=norm(previousCustomerQuestion);
-  const boxFollowup=mainioBoxRentalFollowupIntent(message,previousCustomerQuestion);
+  const boxFollowupKind=mainioBoxRentalFollowupKind(message,previousCustomerQuestion);
+  const boxFollowup=Boolean(boxFollowupKind);
   // Resolve a clear vehicle follow-up only against the immediately preceding
   // customer question, and only when both turns name the same rental subject.
   const vehicleFollowup=/(?:enta|entas|sitten|mites|ja)\b/.test(currentQ) &&
@@ -184,12 +191,20 @@ export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQu
   // unrelated vehicle maintenance or ownership questions.
   const genericCarRental=mainioVanRentalIntent(message) &&
     /(?:auton vuokra|auton vuokrahinn|auto vuokra|vuokra aut|vuokraus aut)/.test(currentQ);
-  const q=(boxFollowup?'muuttolaatikoiden hinta':vehicleFollowup?norm(String(previousCustomerQuestion)+' '+String(message)):currentQ) +
+  const boxFollowupQuery={
+    price:'paljonko muuttolaatikoiden vuokra maksaa',
+    delivery:'miten laatikoiden toimitus ja palautus hoidetaan',
+    transport_fee:'paljonko laatikoiden kuljetusmaksu maksaa',
+    size:'mitkä ovat muuttolaatikoiden mitat',
+    quantity:'kuinka monta muuttolaatikkoa tarvitsen',
+    days:'milloin muuttolaatikot toimitetaan ja noudetaan',
+  }[boxFollowupKind]||'';
+  const q=(boxFollowup?boxFollowupQuery:vehicleFollowup?norm(String(previousCustomerQuestion)+' '+String(message)):currentQ) +
     (genericCarRental?' pakettiauto':'');
   // Published tariffs cannot establish personal booking status or live
   // availability. This guard also applies to compound rental requests.
   const asksForBookingStatus=/(?:\b(?:vapaa|vapaana|vapaita|saatavilla|saatavuus|varattu|varannut|varaus|vuokrattu|vahvistettu|vahvistitte|varmistettu|varmasti)\b)/.test(q);
-  const asksForPrice=/(?:paljonko|kuinka paljon|hinta|hinnasto|maksaa|maksavat|mita maksaa|kustann|hintainen)/.test(q);
+  const asksForPrice=/(?:paljonko|kuinka paljon|hinta|hinnasto|maksaa|maksavat|mita maksaa|kustann|hintainen|minimiveloitus|minimilaskutus)/.test(q);
   if(asksForBookingStatus&&!asksForPrice)return null;
   // A combined van + box request is two separate rental intents. Answer both
   // from their respective approved Mainio source rows instead of letting the
