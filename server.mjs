@@ -1,5 +1,5 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
-import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingRouteIntent, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
+import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
@@ -3835,7 +3835,7 @@ export function mainioVerifiedMovingRouteReply(rows,message,lang='fi',semanticRo
     ? 'Yes, you can request a quote for this route. Mainio handles moves in Turku, across Southwest Finland and elsewhere in Finland. The exact route, date and price are confirmed separately by Mainio.'
     :lang==='sv'
       ? 'Ja, du kan begära en offert för den här flytten. Mainio utför flyttar i Åbo, Egentliga Finland och även till andra delar av Finland. Mainio bekräftar rutt, datum och pris separat.'
-      : 'Kyllä, voit pyytää tarjouksen tästä muutosta! Mainio tekee muuttoja Turussa ja Varsinais-Suomessa sekä myös muualle Suomeen. Mainio vahvistaa erikseen juuri tämän reitin toteutuksen, muuttopäivän ja hinnan.';
+      : 'Kyllä, tästä muutosta voi pyytää tarjouksen! Mainion vahvistettujen tietojen mukaan muuttoja tehdään Turussa ja Varsinais-Suomessa sekä myös muualle Suomeen. Mainio tarkistaa erikseen reitin toteutuksen, muuttopäivän ja hinnan; en voi vahvistaa niitä etukäteen.';
   return {answer,handoff:false,confidence:1,intent:'Muuton toimialue',
     sourceIds:[source.row.id],selected:[source.row]};
 }
@@ -3864,12 +3864,11 @@ export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
     'Muuttotarjouspyyntö'
   );
   if(type==='moving_route'){
-    // The intent classifier may label the route_scope "unknown" even for
-    // plain-language domestic routes ("Porista Turkuun"). Unknown is NOT
-    // evidence of missing coverage; use the company's approved countrywide
-    // coverage rather than the generic "we can check" fallback.
+    // Unknown country scope does not establish that an origin and destination
+    // are both in Finland. The caller can separately prioritize the verified
+    // route answer when BOTH towns are conservatively recognized as Finnish.
     // International routes use their own separately verified source below.
-    if(classification.route_scope!=='international'){
+    if(classification.route_scope==='domestic'){
       const grounded=mainioVerifiedMovingRouteReply(rows,'',lang,true);
       if(grounded)return grounded;
     }
@@ -13968,8 +13967,11 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const mainioSemanticPreview=previewMainioTenant
       ? mainioSemanticGroundedReply(rows,mainioInterpretation,detectedLang) : null;
     const mainioOrderPreview=previewMainioTenant && mainioMovingOrderIntent(message);
-    const mainioRoutePreview=previewMainioTenant ? mainioVerifiedMovingRouteReply(rows,message,detectedLang) : null;
-    let result = mainioSemanticPreview ? mainioSemanticPreview : mainioRoutePreview ? mainioRoutePreview : mainioOrderPreview ? {
+    const mainioRoutePreview=previewMainioTenant &&
+      mainioInterpretation?.route_scope!=='international' &&
+      mainioRecognizedDomesticRoute(message)
+      ? mainioVerifiedMovingRouteReply(rows,message,detectedLang) : null;
+    let result = mainioRoutePreview ? mainioRoutePreview : mainioSemanticPreview ? mainioSemanticPreview : mainioOrderPreview ? {
       answer:detectedLang==='en'
         ? 'You can submit the details of your move using Mainio’s official quote form below. Mainio confirms the price, date and booking separately.'
         :detectedLang==='sv'
@@ -14672,7 +14674,10 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const mainioSemanticReply=mainioTenant
       ? mainioSemanticGroundedReply(safeKnowledgeRows,mainioInterpretation,detectedLang) : null;
     const mainioQuoteIntent=mainioTenant && mainioMovingOrderIntent(message);
-    const mainioRouteReply=mainioTenant ? mainioVerifiedMovingRouteReply(safeKnowledgeRows,message,detectedLang) : null;
+    const mainioRouteReply=mainioTenant &&
+      mainioInterpretation?.route_scope!=='international' &&
+      mainioRecognizedDomesticRoute(message)
+      ? mainioVerifiedMovingRouteReply(safeKnowledgeRows,message,detectedLang) : null;
     const mainioQuoteAnswer=mainioQuoteIntent
       ? (detectedLang==='en'
           ? 'You can send the details of your move for Mainio Muuttopalvelu to review using the button below. Mainio confirms the price, date and booking separately.'
@@ -14680,7 +14685,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
           ? 'Du kan lämna uppgifter om flytten via knappen nedan. Mainio Muuttopalvelu bekräftar pris, datum och bokning separat.'
           : 'Voit kertoa muuttosi tiedot alla olevan painikkeen kautta. Mainio Muuttopalvelu tarkistaa tarjouspyynnön ja vahvistaa hinnan, ajankohdan sekä tilauksen erikseen.')
       : null;
-    let result = mainioSemanticReply ? mainioSemanticReply : mainioRouteReply ? mainioRouteReply : mainioQuoteAnswer ? {
+    let result = mainioRouteReply ? mainioRouteReply : mainioSemanticReply ? mainioSemanticReply : mainioQuoteAnswer ? {
       answer:mainioQuoteAnswer,handoff:false,confidence:1,
       intent:'Muuttotarjouspyyntö',sourceIds:[],selected:[],
     } : widgetSubscribe ? {
