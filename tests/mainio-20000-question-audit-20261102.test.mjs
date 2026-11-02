@@ -63,7 +63,7 @@ const factCases=[
  ['Muuton hinta',[
   'Paljonko muutto maksaa','Mikä on muuton hinta','Mistä muuton hinta muodostuu','Paljonko maksaa muutto Turusta Helsinkiin','Miten muuton hinta lasketaan','Mitä kotimuutto maksaa','Kuinka paljon muutto maksaa','Mikä vaikuttaa muuton kustannuksiin','Paljonko muuttopalvelu maksaa']],
  ['Täyden palvelun avaimet käteen -muutto',[
-  'Voitteko hoitaa koko muuton avaimet käteen','Pakkaatteko kaikki tavarat','Voitteko pakata tavarat puolestani','Onko teillä avaimet käteen -muutto','Hoidatteko koko muuton alusta loppuun','Saako muuton kaikki vaiheet samalta yritykseltä','Voitteko hoitaa pakkaamisen ja muuton','Tarjoatteko täyden palvelun muuttoa','Onnistuuko muutto niin ettei minun tarvitse pakata itse']]
+  'Voitteko hoitaa koko muuton avaimet käteen','Pakkaatteko kaikki tavarat','Voitteko hoitaa pakkaamisen ja koko muuton puolestani','Onko teillä avaimet käteen -muutto','Hoidatteko koko muuton alusta loppuun','Saako muuton kaikki vaiheet samalta yritykseltä','Voitteko hoitaa pakkaamisen ja muuton','Tarjoatteko täyden palvelun muuttoa','Onnistuuko muutto niin ettei minun tarvitse pakata itse']]
 ];
 
 const prefixes=['','Hei, ','Moi! ','Anteeksi, ','Yksi kysymys: ','Voitko kertoa: '];
