@@ -13981,8 +13981,12 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // Public demo facts are never loaded from Mainio's private tenant.
     // Accept only content actually imported from Mainio's own HTTPS site.
     const demoMainioEvidence=()=>mainioPublicWebsiteEvidence(rows);
+    // The signed-in Mainio preview and anonymous demo must use the same
+    // source-backed public facts. Never attach these facts to other tenants.
     const mainioPreviewRows=publicMainioDemo
-      ? mainioPublicKnowledgeWithOfficialFacts(demoMainioEvidence()) : rows;
+      ? mainioPublicKnowledgeWithOfficialFacts(demoMainioEvidence())
+      : previewMainioTenant
+        ? mainioPublicKnowledgeWithOfficialFacts(rows) : rows;
     const mainioStatusPreview=(previewMainioTenant||publicMainioDemo) &&
       mainioBookingStatusQuestion(message)
         ? mainioBookingStatusReply(detectedLang) : null;
@@ -14742,6 +14746,11 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       ? respondoCheckoutAction(message,detectedLang,firstPartyFaq?.id||'',SEO_CANONICAL_ORIGIN)
       : null;
     const mainioTenant=isMainioMovingTenant(t);
+    // Imported website data can miss prices rendered inside the booking UI.
+    // Offer Mainio's independently verified public FAQ facts as a fallback
+    // in its actual customer widget, just as in the public Try Bot.
+    const mainioWidgetRows=mainioTenant
+      ? mainioPublicKnowledgeWithOfficialFacts(safeKnowledgeRows) : safeKnowledgeRows;
     const mainioBookingReply=mainioTenant && mainioBookingStatusQuestion(message)
       ? mainioBookingStatusReply(detectedLang):null;
     const mainioInterpretation=mainioTenant && !mainioIsSmallTalk(message)
@@ -14750,12 +14759,12 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
            message,lang:detectedLang,previousCustomerQuestion:history.at(-1)?.question||''
          })) : null;
     const mainioSemanticReply=mainioTenant
-      ? mainioSemanticGroundedReply(safeKnowledgeRows,mainioInterpretation,detectedLang) : null;
+      ? mainioSemanticGroundedReply(mainioWidgetRows,mainioInterpretation,detectedLang) : null;
     const mainioQuoteIntent=mainioTenant && mainioMovingOrderIntent(message);
     const mainioRouteReply=mainioTenant
-      ? mainioPriorityDomesticRouteAnswer(safeKnowledgeRows,message,detectedLang,mainioInterpretation) : null;
+      ? mainioPriorityDomesticRouteAnswer(mainioWidgetRows,message,detectedLang,mainioInterpretation) : null;
     const mainioFactReply=mainioTenant
-      ? mainioPublicFactAnswer(safeKnowledgeRows,message,detectedLang) : null;
+      ? mainioPublicFactAnswer(mainioWidgetRows,message,detectedLang) : null;
     const mainioQuoteAnswer=mainioQuoteIntent
       ? (detectedLang==='en'
           ? 'Tell us about your move using the button below. We will review the details and confirm the price, date and booking separately.'
