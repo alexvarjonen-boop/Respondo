@@ -206,8 +206,8 @@ export function mainioConversationContextQuestion(history=[]){
   const clean=value=>normalized(value).normalize('NFD')
     .replace(/[\u0300-\u036f]/g,'')
     .toLowerCase().replace(/[^a-z0-9\s-]/g,' ').replace(/\s+/g,' ').trim();
-  const isUnrelatedBox=q=>/(?:pahvi|kartonki|kierrat|jate|jatte|ostaa|myy)/.test(q);
-  const isExplicitBox=q=>/(?:muuttolaatik|vuokralaatik|flyttkartong|moving box|box rental|laatik.*vuokra|vuokra.*laatik)/.test(q);
+  const isUnrelatedBox=q=>/(?:pahvi|kartonki|kierrat|jate|jatte|ostaa|myy|cardboard|recycl|selling boxes|buying boxes)/.test(q) || (/kartong/.test(q)&&!/flyttkartong/.test(q));
+  const isExplicitBox=q=>/(?:muuttolaatik|vuokralaatik|flyttlad|flyttkartong|flyttbox|moving box|packing box|box rental|laatik.*vuokra|vuokra.*laatik)/.test(q);
   const isGenericBoxFollowup=q=>/(?:laatik|box|kartong)/.test(q)&&
     /(?:^|\s)(?:enta|entas|mites|mitas|ja|sitten)(?:\s|$)/.test(q)&&!isUnrelatedBox(q);
   const isVan=q=>/(?:pakettiaut|\bpaku\b|\bpakun\b|vuokra auto|van rental)/.test(q);
@@ -221,7 +221,11 @@ export function mainioConversationContextQuestion(history=[]){
     !/(?:pakettiaut|paku|muuttopalvel|muuton kuljetus|huonekal|piano|kierrat|jate|pahvi|ostaa|myy)/.test(q) && (
       /^(?:toimitatteko|tuotteko|haetteko|noudatteko)\s+(?:ne\s+)?(?:kotiin|pois|takaisin|perille)\b/.test(q) ||
       /^(?:mita|paljonko|mika)\s+(?:(?:niiden|laatikoiden)\s+)?(?:kuljetus|toimitus|kotiinkuljetus)(?:maksu|hinta)?(?:\s+(?:maksaa|maksaisi|hinta|maksu|kustannus|on))?(?:\s|$)/.test(q) ||
-      /^(?:milloin|miten)\s+(?:(?:ne|niita)\s+)?(?:toimitetaan|kuljetetaan|noudetaan|palautetaan)\b/.test(q)
+      /^(?:milloin|miten)\s+(?:(?:ne|niita)\s+)?(?:toimitetaan|kuljetetaan|noudetaan|palautetaan)\b/.test(q) ||
+      /^(?:and\s+)?(?:how much|what does|what is|whats)\s+(?:the\s+)?(?:delivery|shipping|transport|pickup|collection)\b/.test(q) ||
+      /^(?:can|could|do|will)\s+(?:you|they)\s+(?:(?:also|still)\s+)?(?:deliver|ship|collect|pick up|bring)\b/.test(q) ||
+      /^(?:och\s+)?(?:vad kostar|hur mycket kostar|vad ar priset pa)\s+(?:leverans|transport|frakt|hamtning)\b/.test(q) ||
+      /^(?:kan|skulle|levererar|hamtar)\s+(?:ni|man)\s+(?:leverera|hamta|lamna|dem|dom|hem)\b/.test(q)
     );
   const isPronounContinuation=q=>
     isEllipticalBoxLogistics(q)||
