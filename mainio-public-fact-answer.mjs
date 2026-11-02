@@ -84,7 +84,7 @@ const RULES=[
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Pakettiauton vuorokausivuokra',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
-      /(?:vuorokau|paivavuokra|paivaksi|vuorokaudelta|24 h\b|24h\b|24 tunt)/.test(q)&&
+      /(?:vuorokau|paivavuokra|paivaksi|vuorokaudelta|24 h\b|24h\b|24 tunt|24 tunn|vuorokausi|vrk)/.test(q)&&
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Kierrätyksen alkaen hinta',
     check:q=>/(?:kierrat|jate|jatte|irtaimist)/.test(q)&&
