@@ -53,6 +53,7 @@ function ensureWorkspace(demo) {
         <small class="respondo-workspace-kicker">RESPONDO OS</small>
         <h1>${choose('Yleisnäkymä','Översikt','Overview')}</h1>
         <p class="respondo-workspace-subtitle">${choose('Kaikki tärkeä yhdessä selkeässä työtilassa.','Allt viktigt i en tydlig arbetsyta.','Everything important in one clear workspace.')}</p>
+        <div id="respondoWorkspaceOverviewStats" class="rs-overview-stats"></div>
         <div class="respondo-workspace-overview-grid">
           <div class="respondo-workspace-overview-card"><b>${choose('Kokeile bottiasi','Testa din bot','Test your bot')}</b><p>${choose('Katso, miten se vastaa kysymyksiin.','Se hur den svarar på frågor.','See how it answers questions.')}</p>${nav('bot','Avaa keskustelu →','Öppna chatten →','Open chat →')}</div>
           <div class="respondo-workspace-overview-card"><b>${choose('Yrityksen tiedot','Företagsuppgifter','Company details')}</b><p>${choose('Täydennä ja tarkista sivustolta löydetyt tiedot.','Komplettera och granska webbplatsens uppgifter.','Complete and review imported website information.')}</p>${nav('settings','Muokkaa tietoja →','Redigera uppgifter →','Edit details →')}</div>
@@ -115,6 +116,28 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   let selected='bot';
   let orbit=null;
   let activePanel=null;
+  let activePlaceholder=null;
+  const overviewMetrics=['stats','respondo-intelligence','dashboard-insights'];
+  const metricsHost=$('#respondoWorkspaceOverviewStats');
+  const restoreOverviewMetrics=()=>{
+    if(!metricsHost)return;
+    for(const panel of [...metricsHost.children]){
+      panel.hidden=true;
+      panel.style.removeProperty('display');
+      modules.appendChild(panel);
+    }
+  };
+  const showOverviewMetrics=()=>{
+    if(!metricsHost)return;
+    // Display the REAL tenant metrics, not demo numbers or a fabricated visitor count.
+    for(const cls of overviewMetrics){
+      const panel=[...modules.children].find(el=>el.classList?.contains(cls));
+      if(!panel)continue;
+      panel.hidden=false;
+      panel.style.setProperty('display','grid','important');
+      metricsHost.appendChild(panel);
+    }
+  };
   const knownSections=[...storage.querySelectorAll('.dashboard-view-section')];
   // Only the selected module may leave storage. Explicit inline display wins
   // against the old high-specificity dashboard CSS on iOS Safari.
@@ -122,7 +145,11 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     if(activePanel){
       activePanel.style.setProperty('display','none','important');
       activePanel.hidden=true;
-      storage.appendChild(activePanel);
+      // Nested integration forms must return to their original section,
+      // preserving existing handlers and the Actions screen's structure.
+      if(activePlaceholder?.parentNode) activePlaceholder.replaceWith(activePanel);
+      else storage.appendChild(activePanel);
+      activePlaceholder=null;
       activePanel=null;
     }
   };
@@ -130,6 +157,12 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     park();
     const target=storage.querySelector('#'+id);
     if(!target)return false;
+    // Enterprise-only integration panels stay locked on lower plans.
+    if(target.parentElement?.id==='actions2' && target.hidden)return false;
+    if(target.parentElement!==storage){
+      activePlaceholder=document.createComment('respondo-module-return:'+id);
+      target.before(activePlaceholder);
+    }
     target.hidden=false;
     target.classList.remove('dashboard-view-hidden');
     target.style.setProperty('display','block','important');
@@ -282,7 +315,10 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     overview:translate('Yleisnäkymä','Översikt','Overview'),
     setup:translate('Yritys ja botti','Företag och bot','Company and bot'),
     answers:translate('Vastaukset','Svar','Answers'),
-    customers:translate('Asiakkaat','Kunder','Customers'),
+    customers:translate('Asiakkaat ja liidit','Kunder och leads','Customers & leads'),
+    conversations:translate('Keskustelut','Konversationer','Conversations'),
+    team:translate('Henkilökunta','Personal','Team'),
+    integrations:translate('Integraatiot','Integrationer','Integrations'),
     automation:translate('Toiminnot','Funktioner','Actions'),
     install:translate('Asennus','Installation','Installation'),
     profile:translate('Profiili','Profil','Profile'),
@@ -291,11 +327,14 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   };
   const tabs={
     answers:[['knowledge',translate('Tietopohja','Kunskapsbas','Knowledge base')],['unanswered',translate('Puuttuvat vastaukset','Saknade svar','Unanswered')]],
-    customers:[['conversations',translate('Keskustelut','Konversationer','Conversations')],['leads',translate('Yhteydenotot','Kontaktförfrågningar','Leads')],['live-inbox',translate('Live-chat','Livechatt','Live chat')]],
+    customers:[['leads',translate('Liidit ja yhteydenotot','Leads och kontakter','Leads & contacts')],['conversations',translate('Keskustelut','Konversationer','Conversations')]],
+    conversations:[['conversations',translate('Keskusteluhistoria','Samtalshistorik','Conversation history')],['live-inbox',translate('Live-keskustelut','Livekonversationer','Live conversations')]],
+    integrations:[['business-integrations',translate('API ja webhookit','API och webhooks','API & webhooks')],['commerce-integration',translate('Verkkokaupat','Webbutiker','Online stores')],['booking-calendar',translate('Kalenteri','Kalender','Calendar')],['stripe-connect',translate('Stripe','Stripe','Stripe')]],
     profile:[['workspaces',translate('Yritykset','Företag','Companies')],['account-security',translate('Tilin asetukset','Kontoinställningar','Account security')]]
   };
   const primary={
-    answers:'knowledge',customers:'conversations',automation:'actions2',install:'install',
+    answers:'knowledge',customers:'leads',conversations:'conversations',team:'support-team',
+    automation:'actions2',install:'install',integrations:'business-integrations',
     profile:'workspaces',billing:'billing'
   };
   let currentTab=null;
@@ -334,6 +373,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     workspace.dataset.currentView=selected;
     orbit?.sync(selected);
     park();
+    restoreOverviewMetrics();
     card.replaceChildren();
     // The real bot preview always stays first. The sphere is immediately below
     // it, and the selected account section appears *below* the sphere.
@@ -348,15 +388,19 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
       button.classList.toggle('active',on);
       if(on)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
     });
+    if(selected==='overview' && !demo)showOverviewMetrics();
     const heading=$('#respondoWorkspaceModuleTitle');
     if(heading)heading.textContent=pages[selected]||pages.bot;
     const empty=$('#respondoWorkspaceEmpty');
     if(empty)empty.hidden=true;
     // Demo has no real customer accounts, Stripe billing, installation or
     // automation records. Show a short truthful CTA, never unrelated data.
-    if(demo && ['customers','automation','install','billing','profile'].includes(selected)){
+    if(demo && ['customers','conversations','team','automation','install','integrations','billing','profile'].includes(selected)){
       const details={
-        customers:translate('Asiakaskeskustelut ja liidit näkyvät omalla yritystilillä.','Kundkonversationer och leads finns på ett företagskonto.','Customer conversations and leads appear in your company account.'),
+        customers:translate('Liidit ja yhteydenotot näkyvät yritystilillä.','Leads och kontakter visas i företagskontot.','Leads and contacts appear in your company account.'),
+        conversations:translate('Asiakaskeskustelut näkyvät yritystilillä.','Kundkonversationer visas i företagskontot.','Customer conversations appear in your company account.'),
+        team:translate('Luo henkilökunnan profiilit yritystilillä.','Skapa personalprofiler i företagskontot.','Create team profiles in your company account.'),
+        integrations:translate('Yhdistä ulkoiset palvelut yritystilillä.','Anslut externa tjänster i företagskontot.','Connect external services in your company account.'),
         automation:translate('Automaatiot ovat käytettävissä yritystilillä.','Automatiseringar finns med företagskonto.','Automations are available with a company account.'),
         install:translate('Asennuskoodi luodaan yritystilillä.','Installationskoden skapas i företagskontot.','Your website installation code is created in a company account.'),
         billing:translate('Demosta ei veloiteta. Valitse yrityksellesi tilaus.','Demon är gratis. Välj abonnemang för företaget.','This demo is free. Choose a plan for your company.'),
