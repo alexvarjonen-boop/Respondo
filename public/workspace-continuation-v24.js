@@ -1,4 +1,4 @@
-import { createWorkspaceOrbit } from './workspace-orbit-v28.js?v=20261102-logical-12-clickable-icons-v40';
+import { createWorkspaceOrbit } from './workspace-orbit-v28.js?v=20261028-mobile-pinned-v37-home-parity-v39-logical-12-clickable-icons-v40';
 // A single dark workspace after the five-card setup.
 // Keep existing chat, scan and billing DOM nodes intact so their event handlers,
 // authenticated API calls and tenant isolation are not replaced by demo stubs.
@@ -377,8 +377,8 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     selected=Object.hasOwn(pages,next)?next:'bot';
     workspace.dataset.currentView=selected;
     orbit?.sync(selected);
-    park();
     restoreOverviewMetrics();
+    park();
     card.replaceChildren();
     // The real bot preview always stays first. The sphere is immediately below
     // it, and the selected account section appears *below* the sphere.
