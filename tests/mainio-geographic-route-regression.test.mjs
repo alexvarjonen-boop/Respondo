@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mainioMovingRouteIntent,mainioInquiryActions} from '../mainio-moving-intake.mjs';
+import {mainioMovingRouteIntent,mainioRecognizedDomesticRoute,mainioInquiryActions} from '../mainio-moving-intake.mjs';
 import {interpretMainioLocalIntent} from '../mainio-semantic-intent.mjs';
 import {mainioVerifiedMovingRouteReply,mainioSemanticGroundedReply} from '../server.mjs';
 
@@ -34,13 +34,16 @@ test('Mainio routes from Pori to Turku and Rovaniemi to Turku use verified natio
     // The free local classifier intentionally leaves the location scope
     // unknown; that must not throw away the already verified nationwide area.
     assert.equal(intent.route_scope,'unknown',question);
-    const result=mainioSemanticGroundedReply([source],intent,'fi');
+    assert.equal(mainioRecognizedDomesticRoute(question),true,question);
+    // A route with two conservatively recognized Finnish cities uses the
+    // direct verified answer before the semantic scope-unknown fallback.
+    const result=mainioVerifiedMovingRouteReply([source],question,'fi');
     assert.ok(result,question);
     assert.equal(result.handoff,false);
     assert.deepEqual(result.sourceIds,[source.id]);
     assert.match(result.answer,/Turussa ja Varsinais-Suomessa/);
     assert.match(result.answer,/myös muualle Suomeen/);
-    assert.doesNotMatch(result.answer,/en voi vahvistaa sen toteutumista etukäteen/);
+    assert.match(result.answer,/Mainio tarkistaa erikseen/);
     assert.equal(mainioInquiryActions(question,'fi')[0]?.mode,'mainio_move_form');
   }
 });
