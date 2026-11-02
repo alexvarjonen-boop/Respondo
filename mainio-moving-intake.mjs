@@ -29,7 +29,8 @@ export const MAINIO_BOX_RENTAL_URL='https://www.mainiomuuttopalvelu.fi/muuttolaa
 export const MAINIO_VAN_RENTAL_URL='https://www.mainiomuuttopalvelu.fi/pakettiautojen-vuokraus';
 
 const normalized=(message)=>String(message||'').normalize('NFD')
-  .replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  .replace(/[\u0300-\u036f]/g,'').toLowerCase()
+  .replace(/\bmuuttolatik/g,'muuttolaatik').replace(/\bpaketiauto/g,'pakettiauto');
 
 const mentionsMovingService=(q)=>/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuttotarjou|muuttotie|muuttoapu\w*|muuttoavun|muuton\b|muuttoon\b|muuttoa\b|muutosta\b|muutolle\b|muutot\b|muuttoja\b|muutto\b|muuttaa\b|muutan\b|muutamme\b|muuttaisin\b|muutasin\b|muutetaan\b|muuttamassa\b|muuttamaan\b|muutatte(?:ko|ks)?\b|muuttaisitte(?:ko)?\b|muuttaisit(?:ko)?\b|muutattehan\b|muutat(?:ko)?\b|muuttaako\b|muutetaanko\b|moving\s+(?:service|details|information|request)|(?:my|our|the)\s+move|book\s+(?:my|a)\s+move|flytt\w*|flytthjalp|flyttfirma)/.test(q);
 
