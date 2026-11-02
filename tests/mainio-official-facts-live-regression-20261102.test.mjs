@@ -17,7 +17,7 @@ function check(q,id,pattern){
 }
 const factId=(title)=>rows.find(row=>row.title===title)?.id;
 test('every curated fact is traceable to official Mainio website and only there',()=>{
- assert.equal(rows.length,25);
+ assert.equal(rows.length,27);
  const ids=new Set();
  for(const row of rows){
    assert.equal(row.source_type,'website');
