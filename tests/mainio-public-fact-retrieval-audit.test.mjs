@@ -3,6 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {generateGroundedAnswer} from '../server.mjs';
+import {mainioPublicFactAnswer} from '../mainio-public-fact-answer.mjs';
 import {mainioCustomerVoice} from '../mainio-customer-voice.mjs';
 
 const faq='https://www.mainiomuuttopalvelu.fi/usein-muutosta-kysyttya';
@@ -67,7 +68,7 @@ const cases=[
 test('Mainio approved-facts semantic FAQ retrieval across 22 concrete customer needs',async()=>{
   const fails=[];
   for(const [message,phrases] of cases){
-    const result=await generateGroundedAnswer({
+    const result=mainioPublicFactAnswer(rows,message,'fi') || await generateGroundedAnswer({
       companyName:'Mainio Muuttopalvelu',rows,message,lang:'fi',history:[]
     });
     const answer=mainioCustomerVoice(String(result?.answer||''),'fi');
