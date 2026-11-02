@@ -14,9 +14,9 @@ export const isMainioMovingTenant = (tenant) =>
 
 export function mainioMoveActions(lang='fi') {
   const labels={
-    fi:['Kartoita muutto ja pyydä tarjous','Mainion virallinen tarjouslomake'],
-    sv:['Beskriv flytten och begär offert','Mainios officiella offertformulär'],
-    en:['Plan your move and request a quote','Mainio’s official quote form'],
+    fi:['Kerro muutostasi ja pyydä tarjous','Avaa tarjouslomake'],
+    sv:['Berätta om din flytt och begär offert','Öppna offertformuläret'],
+    en:['Tell us about your move and request a quote','Open our quote form'],
   };
   const [form,link]=labels[lang]||labels.fi;
   return [
