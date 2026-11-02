@@ -135,12 +135,13 @@ export async function runDueOnboardingCheckups(pool,options={}) {
   processing=true;
   let processed=0;
   try {
-    // Do not send review requests to canceled or disabled accounts.
+    // Keep invitations impartial: canceling a subscription does not prevent a review request.
+    // Explicitly deactivated accounts are skipped.
     await pool.query(
       "UPDATE onboarding_checkups oc SET status='skipped',updated_at=NOW() "+
       "FROM tenants t JOIN users u ON u.id=t.owner_user_id "+
       "WHERE oc.tenant_id=t.id AND oc.status='pending' AND oc.due_at<=NOW() "+
-      "AND (t.active IS NOT TRUE OR t.subscription_status NOT IN ('active','trialing') OR u.status<>'active')"
+      "AND u.status<>'active'"
     );
     const claimed=await pool.query(
       "WITH due AS ("+
@@ -148,7 +149,7 @@ export async function runDueOnboardingCheckups(pool,options={}) {
       " JOIN tenants t ON t.id=oc.tenant_id JOIN users u ON u.id=t.owner_user_id "+
       " WHERE oc.due_at<=NOW() AND oc.next_attempt_at<=NOW() "+
       " AND (oc.status='pending' OR (oc.status='sending' AND oc.claimed_at<NOW()-INTERVAL '15 minutes'))"+
-      " AND t.active=TRUE AND t.subscription_status IN ('active','trialing') AND u.status='active' "+
+      " AND u.status='active' "+
       " ORDER BY oc.due_at LIMIT 5 FOR UPDATE OF oc SKIP LOCKED"+
       ") UPDATE onboarding_checkups oc SET status='sending',claimed_at=NOW(),attempt_count=oc.attempt_count+1,updated_at=NOW() "+
       "FROM due WHERE oc.tenant_id=due.tenant_id RETURNING oc.tenant_id,oc.attempt_count"
@@ -159,8 +160,7 @@ export async function runDueOnboardingCheckups(pool,options={}) {
           "SELECT u.email,u.full_name,u.preferred_language "+
           "FROM onboarding_checkups oc JOIN tenants t ON t.id=oc.tenant_id "+
           "JOIN users u ON u.id=t.owner_user_id "+
-          "WHERE oc.tenant_id=$1 AND oc.status='sending' AND t.active=TRUE "+
-          "AND t.subscription_status IN ('active','trialing') AND u.status='active'",[job.tenant_id]
+          "WHERE oc.tenant_id=$1 AND oc.status='sending' AND u.status='active'",[job.tenant_id]
         );
         const user=target.rows[0];
         if(!user?.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)) {
