@@ -532,7 +532,7 @@ function productKnowledgeAnswer(product) {
 // might already contain a question as a product title.
 export function isCatalogQuestionTitle(value) {
   const title=clean(decodeHtml(value)).trim();
-  return /^(?:onko|voiko|saako|loytyykö|löytyykö|mita|mitä|mika|mikä|mitka|mitkä|miksi|miten|missä|missa|milloin|paljonko|what|which|how|why|where|when|is|are|do|does|can|could|will|have|has|har|är|ar|finns|kan|hur|vad|vilken|vilka)\b/i.test(title) && /[?？]\s*$/.test(title);
+  return /^(?:onko|voiko|saako|loytyykö|löytyykö|mita|mitä|mika|mikä|mitka|mitkä|miksi|miten|missä|missa|milloin|paljonko|what|which|how|why|where|when|is|are|do|does|can|could|will|have|has|har|är|ar|finns|kan|hur|vad|vilken|vilka)(?=\s|[?？]|$)/i.test(title) && /[?？]\s*$/.test(title);
 }
 
 export function parseProductKnowledgeRow(row) {
