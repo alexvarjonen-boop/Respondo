@@ -120,6 +120,15 @@ export function mainioInquiryKind(message){
   const explicitMovingService=/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|moving\s+service|flyttfirma|flytthjalp)/.test(q) ||
     /(?:tilaa|tilata|tilaisin|varaa|varata|varaisin|book|bestall)\s+(?:[a-zåäö-]+\s+){0,2}(?:muuton|muuttoa|muutto)\b/.test(q);
   if(explicitMovingService)return 'moving';
+  // When a customer asks about the route of an actual household move,
+  // mentioning boxes or a moving van as an accessory must not silently turn
+  // the whole request into a box/van RENTAL. Rental-only questions still
+  // follow their separate pages. Avoid recursively calling routeIntent here.
+  const explicitMove=/\b(?:muutto|muuton|muuttoa|muuttoon|muutosta|muuttoja|muuttaa|muuttamaan|muutatte(?:ko|ks)?|muuttaisitteko|moving service|flytt|flytten|flytta)\b/.test(q);
+  const routeBetweenPlaces=/\b[a-zåäö-]{3,45}(?:sta|lta)\b[\s,–-]+(?:ihan\s+)?[a-zåäö-]{3,45}(?:lle|iin|uun|oon|aan|een|hun)\b/.test(q) ||
+    /\b(?:from|fran)\s+[a-zåäö-]{3,55}\s+(?:to|till)\s+[a-zåäö-]{3,55}\b/.test(q);
+  const rentalRequest=/(?:vuokra|vuokral|vuokratt|lainaa|lainaksi|\brent\b|\brental\b|\bhire\b|\bhyra\b|\bhyr\b)/.test(q);
+  if(explicitMove && routeBetweenPlaces && !rentalRequest)return 'moving';
   if(mainioBoxRentalIntent(q))return 'boxes';
   if(mainioVanRentalIntent(q))return 'van';
   return 'moving';
