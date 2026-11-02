@@ -156,8 +156,11 @@ export function mainioBoxRentalFollowupKind(message,previousCustomerQuestion='')
   const q=stripConversationNoise(clean(message));
   const previous=clean(previousCustomerQuestion);
   if(!q||!previous)return null;
-  const previousBox=/(?:muuttolaatik|laatik|flyttkartong|flyttlador|lador|box|crate)/.test(previous);
-  const previousMove=mainioVanRentalIntent(previous) ||
+  const unrelatedBoxContext=/(?:pahvi|kartonki|kartong|kierrat|jate|jatte|ostaa|myytte)/.test(previous);
+  const previousBox=!unrelatedBoxContext&&/(?:muuttolaatik|vuokralaatik|flyttkartong|moving box|box rental|laatik.*vuokra|vuokra.*laatik)/.test(previous);
+  const previousVan=mainioVanRentalIntent(previous) ||
+    /(?:pakettiaut|\bpaku\b|\bpakun\b|\bpakua\b)/.test(previous);
+  const previousMove=previousVan ||
     mentionsMovingService(previous) ||
     /(?:moving|move\b|flytt\w*)/.test(previous);
   if(!previousBox&&!previousMove)return null;
@@ -170,10 +173,10 @@ export function mainioBoxRentalFollowupKind(message,previousCustomerQuestion='')
   const quantity=/(?:montako|kuinka monta|maara|tarvit\w*|riitt\w*|quantity|how many)/.test(q);
   const days=/(?:milloin|mihin aikaan|mika paiva|mitka paiva|paiva\w*|noutopaiv\w*|toimituspaiv\w*|when|which day)/.test(q);
   if(deliveryCost)return 'transport_fee';
-  if(delivery)return 'delivery';
+  if(days)return 'days';
   if(size)return 'size';
   if(quantity)return 'quantity';
-  if(days)return 'days';
+  if(delivery)return 'delivery';
   if(price)return 'price';
   if(previousBox&&pronoun&&/(?:paljonko|kuinka paljon|hinta|maks|veloit|cost|price|pris)/.test(q))return 'price';
   // A bare "entä laatikot?" after a move/van question is a natural enquiry
