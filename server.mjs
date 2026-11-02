@@ -3911,6 +3911,21 @@ export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
       /(?:muuttolaatikoiden hinta|palvelut: muuttolaatikoiden vuokraus)/i.test(
         String(row.title||''))
     ):null;
+    const vanEvidence=!boxes?(rows||[]).find(row=>
+      row?.id && row?.approved!==false &&
+      String(row.source_url||'').replace(/\/$/,'')===
+        'https://www.mainiomuuttopalvelu.fi/pakettiautojen-vuokraus' &&
+      /(?:pakettiauton vuokrauslomake|palvelut: pakettiautojen vuokraus)/i.test(
+        String(row.title||''))
+    ):null;
+    if(vanEvidence)return response(
+      lang==='en'
+        ? 'Yes, you can rent a van from us. See our rental options and send your booking request via the link below. Availability is confirmed separately.'
+        :lang==='sv'
+          ? 'Ja, du kan hyra en skåpbil av oss. Se våra hyresalternativ och skicka din bokningsförfrågan via länken nedan. Tillgängligheten bekräftas separat.'
+          : 'Kyllä, meiltä voi vuokrata pakettiauton! Näet vuokrausvaihtoehdot ja voit lähettää varauspyynnön alla olevasta painikkeesta. Vahvistamme saatavuuden erikseen.',
+      'Pakettiautot',[vanEvidence]
+    );
     if(boxEvidence)return response(
       lang==='en'
         ? 'Yes, you can rent moving boxes from us! See our rental details using the link below.'
