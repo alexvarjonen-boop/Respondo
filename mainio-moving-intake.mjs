@@ -210,7 +210,7 @@ export function mainioConversationContextQuestion(history=[]){
   const isExplicitBox=q=>/(?:muuttolaatik|vuokralaatik|flyttlad|flyttkartong|flyttbox|moving box|packing box|box rental|laatik.*vuokra|vuokra.*laatik)/.test(q);
   const isGenericBoxFollowup=q=>/(?:laatik|box|kartong)/.test(q)&&
     /(?:^|\s)(?:enta|entas|mites|mitas|ja|sitten)(?:\s|$)/.test(q)&&!isUnrelatedBox(q);
-  const isVan=q=>/(?:pakettiaut|\bpaku\b|\bpakun\b|vuokra auto|van rental)/.test(q);
+  const isVan=q=>/(?:pakettiaut|\bpaku\b|\bpakun\b|vuokra auto|van rental|\bvan\b|\bvans\b|sk[aå]pbil|hyrbil)/.test(q);
   const isMove=q=>mentionsMovingService(q)||mainioMovingRouteIntent(q)||
     /(?:moving|move\b|flytt\w*)/.test(q);
   // In a moving-box conversation, customers often omit the subject after
@@ -233,8 +233,13 @@ export function mainioConversationContextQuestion(history=[]){
   const isEllipticalRentalPeriod=q=>
     /(?:how (?:many days|long)|maximum rental|rental period|rental duration|hur lange|hur manga dagar|hur lang tid|hyrestid|hyrperiod|kuinka kauan|kauanko|moneksi paivaksi|montako paivaa|kuinka monta paivaa)/.test(q) &&
     /(?:rent|rental|hire|keep|boxes|them|hyra|hyr|behalla|lador|dem|vuokra|laatik|pitaa|niita|period|duration|paiva)/.test(q);
+  const isShortVanFollowup=q=>
+    !/(?:laatik|flyttlad|flyttkartong|moving box|moving service|muuttopalvel)/.test(q) && (
+      /^(?:enta|entas|no|ja|och|what about|and|how about)\b.*(?:5|viide|viisi|fem|five|3|kolme|tre|three|24|vuorokaus|dygn|hour|timm|tunn)/.test(q) ||
+      /^(?:can|could|may|do|will|kan|far|voiko|saako)\s+(?:i|we|jag|vi|min[a-z]*|se|the|du|ni|it|det|den|man)\b.*(?:overnight|over natten|yon yli|yoksi)/.test(q)
+    );
   const isPronounContinuation=q=>
-    isEllipticalBoxLogistics(q)||isEllipticalRentalPeriod(q)||
+    isEllipticalBoxLogistics(q)||isEllipticalRentalPeriod(q)||isShortVanFollowup(q)||
     /(?:\bne\b|\bniiden\b|\bniita\b|\bniista\b|\bniille\b|\bniissa\b|\bse\b|\bsen\b|\bsiita\b|\bthose\b|\bthem\b|\bthey\b|\bdom\b|\bde\b|\bderas\b)/.test(q)||
     /^(?:no|hei|ja|enta|entas|mites|mitas|sitten|viel|vielä)\b/.test(q)||
     /(?:paljonko|kuinka paljon|mihin aikaan|milloin|saako|voiko|montako|kuinka monta)\s+(?:ne|niiden|niita|niista|se|sen|those|them)\b/.test(q);
