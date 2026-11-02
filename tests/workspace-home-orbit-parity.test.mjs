@@ -66,7 +66,7 @@ test('home parity does not change real authenticated destinations, working bot o
     assert.ok(orbit.includes("id:'"+id+"'"),'Route '+id);
   assert.match(orbit,/botPage\.after\(orb\)/);
   assert.match(orbit,/navigateTo\(section\.id\)/);
-  assert.match(orbit,/next<0 \|\| next>=sections\.length/);
+  assert.match(orbit,/nextWorkspaceOrbitChapter\(currentIndex,direction,sections\.length\)/);
   assert.match(orbit,/selectIndex\(enterFromBottom\?sections\.length-1:0\)/);
   assert.match(orbit,/stage\.addEventListener\('touchend'/);
   assert.match(workspace,/original\.requestSubmit\(\)/);
