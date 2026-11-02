@@ -229,6 +229,14 @@ export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQu
       };
     }
   }
+  // Box-rental period is NOT the same as box delivery weekdays. The public
+  // tariff is per day, but there is no verified maximum hire duration.
+  // Prioritize the source-locked answer before generic FAQ matching, which
+  // could otherwise surface unrelated packing/moving prose.
+  const rentalPeriodQuestion=/(?:kuinka kauan|kauanko|kuinka pitkaksi aikaa|moneksi paivaksi|montako paivaa|kuinka monta paivaa|enimmaisaika|enimmaiskesto|vuokra aika|kauan.*(?:pitaa|vuokrata)|palautus.*(?:milloin|koska))/.test(currentQ);
+  if(rentalPeriodQuestion&&(mainioBoxRentalIntent(message)||boxFollowup)){
+    return mainioMultilingualTariffAnswer(rows,message,lang,previousCustomerQuestion);
+  }
   const duration=vanRentalDuration(currentQ);
   if(combinedRental&&duration&&!asksForBookingStatus){
     const vanTitle=duration===3?'Paljonko pakettiauton 3 tunnin vuokra maksaa?':
