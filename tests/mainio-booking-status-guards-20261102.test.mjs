@@ -106,8 +106,8 @@ test('ordinary price questions and enquiries about how to rent are not treated a
 
 test('Mainio status guard outranks priced facts in both public demo, owner preview and live widget',async()=>{
  const code=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
- assert.match(code,/mainioStatusPreview \? mainioStatusPreview : mainioRoutePreview/);
- assert.match(code,/mainioBookingReply \? mainioBookingReply : mainioRouteReply/);
+ assert.match(code,/mainioStatusPreview \? mainioStatusPreview : mainioGuardPreview \? mainioGuardPreview : mainioRoutePreview/);
+ assert.match(code,/mainioBookingReply \? mainioBookingReply : mainioGuardWidget \? mainioGuardWidget : mainioRouteReply/);
  assert.match(code,/if\(mainioBookingReply\) actions=mainioBookingReply\.actions/);
  assert.match(code,/publicMainioDemo=isMainioPublicDemoWebsite\(/);
  assert.match(code,/isMainioPublicDemoWebsite\(\{/);
