@@ -227,8 +227,14 @@ export function mainioConversationContextQuestion(history=[]){
       /^(?:och\s+)?(?:vad kostar|hur mycket kostar|vad ar priset pa)\s+(?:leverans\w*|transport\w*|frakt\w*|hamtning\w*)\b/.test(q) ||
       /^(?:kan|skulle|levererar|hamtar)\s+(?:ni|man)\s+(?:leverera|hamta|lamna|dem|dom|hem)\b/.test(q)
     );
+  // Rental-duration questions are contextual even when the customer says
+  // only "boxes", "them" or "maximum period". Preserve the nearest explicit
+  // box topic, but never traverse through an unrelated completed question.
+  const isEllipticalRentalPeriod=q=>
+    /(?:how (?:many days|long)|maximum rental|rental period|rental duration|hur lange|hur manga dagar|hur lang tid|hyrestid|hyrperiod|kuinka kauan|kauanko|moneksi paivaksi|montako paivaa|kuinka monta paivaa)/.test(q) &&
+    /(?:rent|rental|hire|keep|boxes|them|hyra|hyr|behalla|lador|dem|vuokra|laatik|pitaa|niita|period|duration|paiva)/.test(q);
   const isPronounContinuation=q=>
-    isEllipticalBoxLogistics(q)||
+    isEllipticalBoxLogistics(q)||isEllipticalRentalPeriod(q)||
     /(?:\bne\b|\bniiden\b|\bniita\b|\bniista\b|\bniille\b|\bniissa\b|\bse\b|\bsen\b|\bsiita\b|\bthose\b|\bthem\b|\bthey\b|\bdom\b|\bde\b|\bderas\b)/.test(q)||
     /^(?:no|hei|ja|enta|entas|mites|mitas|sitten|viel|vielä)\b/.test(q)||
     /(?:paljonko|kuinka paljon|mihin aikaan|milloin|saako|voiko|montako|kuinka monta)\s+(?:ne|niiden|niita|niista|se|sen|those|them)\b/.test(q);
