@@ -96,6 +96,13 @@ export function mainioPublicFactAnswer(rows,message,lang='fi'){
   if(lang!=='fi')return null; // never reply in Finnish to an English/Swedish user
   const q=norm(message);
   if(!q||q.length>420)return null;
+  // Booking ownership and availability are dynamic account-level facts.
+  // Published tariffs cannot prove that a van/box is reserved or free.
+  // An explicit price question may still receive the sourced price without
+  // implying that a specific vehicle/date is available.
+  const asksForBookingStatus=/(?:\b(?:vapaa|vapaana|vapaita|saatavilla|saatavuus|varattu|varannut|varaus|vuokrattu|vahvistettu|vahvistitte|varmistettu|varmasti)\b)/.test(q);
+  const asksForPrice=/(?:paljonko|kuinka paljon|hinta|hinnasto|maksaa|maksavat|mita maksaa|kustann|hintainen)/.test(q);
+  if(asksForBookingStatus&&!asksForPrice)return null;
   for(const rule of RULES){
     if(!rule.check(q))continue;
     const chosen=(rows||[]).find(row=>approvedRow(row)&&norm(row.title)===norm(rule.title));
@@ -106,7 +113,7 @@ export function mainioPublicFactAnswer(rows,message,lang='fi'){
     // calculate from the corresponding approved source evidence; otherwise
     // preserve that source verbatim. A number of boxes is NOT an area.
     if(rule.title==='Kuinka monta muuttolaatikkoa tarvitsen?'){
-      const matched=String(message).match(/\b([1-9]\d{0,3}(?:[.,]\d)?)\s*(?:m²|m2|neliö(?:n|iseen|istä|inen|itä|iä)?|neliomet(?:riä|riä|rin|rin|ri))\b/i);
+      const matched=String(message).match(/\b([1-9]\d{0,3}(?:[.,]\d)?)\s*(?:m²|m2|neliö(?:n|ön|öön|tä|iseen|istä|inen|itä|iä)?|neliometri(?:ä|n|in)?)(?=\W|$)/i);
       const sqm=matched?Number(matched[1].replace(',','.')):NaN;
       if(Number.isFinite(sqm) && sqm>0 && sqm<=1500 &&
          /0[,.]8/.test(answer)){
