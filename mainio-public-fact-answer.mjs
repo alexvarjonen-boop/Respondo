@@ -100,6 +100,12 @@ const RULES=[
   {title:'TV ja reititinasennukset',
     check:q=>/(?:luvanvarai|sahkoasen|sahkot|putkit)/.test(q)&&
       /(?:teetteko|tehd|voi|pystyt|onko|asenn)/.test(q)},
+  {title:'Muuttopäivän kulku',
+    check:q=>/(?:muuttopaiva|muuttopaivan|muuton paiva)/.test(q) &&
+      /(?:miten|mita|millainen|toim|suj|tapahtu|ohje)/.test(q)},
+  {title:'Muuton kesto',
+    check:q=>/(?:muutto|muuton|muuttopalvel)/.test(q) &&
+      /(?:kuinka kauan|kauanko|kesto|kestaa|aikaa kuluu)/.test(q)},
   {title:'Pakettiauton tavaratilan koko',
     check:q=>/(?:pakettiaut|paku|vuokra\s*aut)/.test(q) &&
       /(?:kuuti|m3\b|tilavuu|tavaratila|kuorma|mahtu)/.test(q) &&
@@ -172,7 +178,13 @@ export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQu
   const vehicleFollowup=/(?:enta|entas|sitten|mites|ja)\b/.test(currentQ) &&
     /(?:pakettiaut|paku)\w*/.test(currentQ) &&
     /(?:pakettiaut|paku)\w*/.test(previousQ);
-  const q=vehicleFollowup?norm(String(previousCustomerQuestion)+' '+String(message)):currentQ;
+  // "auton vuokra" is an ordinary synonym for renting Mainio's van. Only
+  // add the vehicle topic for an explicit car rental question, never for
+  // unrelated vehicle maintenance or ownership questions.
+  const genericCarRental=mainioVanRentalIntent(message) &&
+    /(?:auton vuokra|auton vuokrahinn|auto vuokra|vuokra aut|vuokraus aut)/.test(currentQ);
+  const q=(vehicleFollowup?norm(String(previousCustomerQuestion)+' '+String(message)):currentQ) +
+    (genericCarRental?' pakettiauto':'');
   // Published tariffs cannot establish personal booking status or live
   // availability. This guard also applies to compound rental requests.
   const asksForBookingStatus=/(?:\b(?:vapaa|vapaana|vapaita|saatavilla|saatavuus|varattu|varannut|varaus|vuokrattu|vahvistettu|vahvistitte|varmistettu|varmasti)\b)/.test(q);
