@@ -138,14 +138,19 @@ export function resetMainioSemanticBudgetForTests(){
 }
 
 /** The classifier only picks an allowlisted, already implemented UI action. */
-export function mainioSemanticActions(classification,lang='fi',message=''){
+export function mainioSemanticActions(classification,lang='fi',message='',previousCustomerQuestion=''){
   const q=String(message||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const combinedRental=mainioBoxRentalIntent(message)&&mainioVanRentalIntent(message);
   const vanFollowup=/(?:enta|entas|sitten|mites|ja)\b/.test(q)&&
     /(?:pakettiaut|paku)/.test(q);
-  const vanPickupQuestion=/(?:auto|auton|autosta)/.test(q)&&
-    /(?:mista|nout|hae|palaut)/.test(q)&&
-    /(?:vuokra|vuokr|paku|pakettiaut|auto)/.test(q);
+  const vanPickupQuestion=/(?:auto|auton|autosta|paku|pakun|pakettiaut)/.test(q)&&
+    /(?:mista|nout|hae|hak|palaut)/.test(q);
+  const previousPickupContext=mainioVanRentalIntent(previousCustomerQuestion)&&
+    /(?:mista|nout|hae|hak|palaut)/.test(previousCustomerQuestion);
+  const pickupInstructionFollowup=previousPickupContext&&
+    /(?:nouto|ohje|tekstiviest|sms)/.test(q)&&
+    /(?:milloin|koska|saan|saanko|tulee|saap)/.test(q);
+  if(pickupInstructionFollowup)return mainioInquiryActions(previousCustomerQuestion,lang);
   if(combinedRental||vanFollowup||vanPickupQuestion)return mainioInquiryActions(message,lang);
   const kind=classification?.intent;
   if(kind==='moving_quote'||kind==='moving_route')return mainioMoveActions(lang);
