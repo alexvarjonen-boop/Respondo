@@ -42,7 +42,7 @@ export function mainioMovingRouteIntent(message) {
     (/(?:kuljet|siirt|vied|vieda|nout)/.test(q) &&
      /(?:tavarat|tavaroit|huonekalu|kaluste|kamat)/.test(q));
   if(!move || mainioInquiryKind(q)!=='moving')return false;
-  const fiRoute=/\b[a-zåäö-]{3,45}(?:sta|sta|lta)\b[\s,–-]+(?:ihan\s+)?[a-zåäö-]{3,45}(?:lle|iin|uun|oon|aan|een|ään|aan)\b/.test(q);
+  const fiRoute=/\b[a-zåäö-]{3,45}(?:sta|sta|lta)\b[\s,–-]+(?:ihan\s+)?[a-zåäö-]{3,45}(?:lle|iin|uun|oon|aan|een|hun|ään|aan)\b/.test(q);
   const enSvRoute=/\b(?:from|fran)\s+[a-zåäö-]{3,55}\s+(?:to|till)\s+[a-zåäö-]{3,55}\b/.test(q);
   return fiRoute || enSvRoute;
 }
@@ -95,6 +95,13 @@ export function mainioBoxRentalIntent(message){
   return exact || (generic && rental);
 }
 
+export function mainioVanRentalIntent(message){
+  const q=normalized(message);
+  if(/(?:pakettiaut|vuokrapaku|vuokra-auto|rent\\s+(?:a\\s+)?van|van\\s+rental|sk[aå]pbil)/.test(q))return true;
+  return /\\b(?:paku|pakun|pakua|pakulla|pakulle|pakusta|pakut|pakuihin)\\b/.test(q) &&
+    /(?:vuokra|vuokratt|vuokral|lainaa|lainaksi|rent|rental|hire|hyra|hyr)/.test(q);
+}
+
 export function mainioInquiryKind(message){
   const q=normalized(message);
   // Explicit moving-service intent has priority over accessories mentioned
@@ -105,7 +112,7 @@ export function mainioInquiryKind(message){
     /(?:tilaa|tilata|tilaisin|varaa|varata|varaisin|book|bestall)\s+(?:[a-zåäö-]+\s+){0,2}(?:muuton|muuttoa|muutto)\b/.test(q);
   if(explicitMovingService)return 'moving';
   if(mainioBoxRentalIntent(q))return 'boxes';
-  if(/(?:pakettiaut|vuokrapaku|vuokra-auto|rent\s+(?:a\s+)?van|van\s+rental|sk[aå]pbil)/.test(q))return 'van';
+  if(mainioVanRentalIntent(q))return 'van';
   return 'moving';
 }
 
