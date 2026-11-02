@@ -4,7 +4,7 @@
 const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
 const area=(q,rx)=>rx.test(q);
-import {mainioBoxRentalIntent,mainioBoxRentalFollowupIntent,mainioVanRentalIntent} from './mainio-moving-intake.mjs';
+import {mainioBoxRentalIntent,mainioBoxRentalFollowupIntent,mainioBoxRentalFollowupKind,mainioVanRentalIntent} from './mainio-moving-intake.mjs';
 
 // Accept the common spoken and inflected forms used by customers.
 function vanRentalDuration(q){
@@ -49,9 +49,9 @@ const RULES=[
       )},
   {title:'Muuttolaatikoiden hinta',
     check:q=>/laatik/.test(q)&&
-      /(?:hinta|maks\w*|paljonko|vuokra.*(?:hinta|maks|paljonko)|(?:hinta|maks|paljonko).*vuokra)/.test(q)},
+      /(?:hinta|maks\w*|paljonko|minimiveloitus|minimilaskutus|vuokra.*(?:hinta|maks|paljonko)|(?:hinta|maks|paljonko).*vuokra)/.test(q)},
   {title:'Muuttolaatikoiden mitat',
-    check:q=>/laatik/.test(q)&&/(?:\bmitat\b|\bmittoja\b|\bmitta\w*\b|kokois|\bkokoa\b|kokoisia|millainen koko)/.test(q)},
+    check:q=>/laatik/.test(q)&&/(?:\bmitat\b|\bmittoja\b|\bmitta\w*\b|kokois|\bkoko\b|\bkokoa\b|kokoja|kokoisia|isoja|suuria|tilavuus|millainen koko)/.test(q)},
   {title:'Muuttolaatikkojen noutopäivät',
     check:q=>/laatik/.test(q)&&/(?:milloin|mika paiva|mitka paiva|mihin aikaan|noutopaiv|toimituspaiv)/.test(q)&&
       /(?:toimit|nout|hae|hake|tuod|tuotte|haett)/.test(q)},
@@ -173,7 +173,8 @@ export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQu
   const currentQ=norm(message);
   if(!currentQ||currentQ.length>420)return null;
   const previousQ=norm(previousCustomerQuestion);
-  const boxFollowup=mainioBoxRentalFollowupIntent(message,previousCustomerQuestion);
+  const boxFollowupKind=mainioBoxRentalFollowupKind(message,previousCustomerQuestion);
+  const boxFollowup=Boolean(boxFollowupKind);
   // Resolve a clear vehicle follow-up only against the immediately preceding
   // customer question, and only when both turns name the same rental subject.
   const vehicleFollowup=/(?:enta|entas|sitten|mites|ja)\b/.test(currentQ) &&
@@ -184,12 +185,20 @@ export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQu
   // unrelated vehicle maintenance or ownership questions.
   const genericCarRental=mainioVanRentalIntent(message) &&
     /(?:auton vuokra|auton vuokrahinn|auto vuokra|vuokra aut|vuokraus aut)/.test(currentQ);
-  const q=(boxFollowup?'muuttolaatikoiden hinta':vehicleFollowup?norm(String(previousCustomerQuestion)+' '+String(message)):currentQ) +
+  const boxFollowupQuery={
+    price:'paljonko muuttolaatikoiden vuokra maksaa',
+    delivery:'miten laatikoiden toimitus ja palautus hoidetaan',
+    transport_fee:'paljonko laatikoiden kuljetusmaksu maksaa',
+    size:'mitkä ovat muuttolaatikoiden mitat',
+    quantity:'kuinka monta muuttolaatikkoa tarvitsen',
+    days:'milloin muuttolaatikot toimitetaan ja noudetaan',
+  }[boxFollowupKind]||'';
+  const q=(boxFollowup?boxFollowupQuery:vehicleFollowup?norm(String(previousCustomerQuestion)+' '+String(message)):currentQ) +
     (genericCarRental?' pakettiauto':'');
   // Published tariffs cannot establish personal booking status or live
   // availability. This guard also applies to compound rental requests.
   const asksForBookingStatus=/(?:\b(?:vapaa|vapaana|vapaita|saatavilla|saatavuus|varattu|varannut|varaus|vuokrattu|vahvistettu|vahvistitte|varmistettu|varmasti)\b)/.test(q);
-  const asksForPrice=/(?:paljonko|kuinka paljon|hinta|hinnasto|maksaa|maksavat|mita maksaa|kustann|hintainen)/.test(q);
+  const asksForPrice=/(?:paljonko|kuinka paljon|hinta|hinnasto|maksaa|maksavat|mita maksaa|kustann|hintainen|minimiveloitus|minimilaskutus)/.test(q);
   if(asksForBookingStatus&&!asksForPrice)return null;
   // A combined van + box request is two separate rental intents. Answer both
   // from their respective approved Mainio source rows instead of letting the
