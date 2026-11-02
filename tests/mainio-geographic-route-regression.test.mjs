@@ -43,7 +43,7 @@ test('Mainio routes from Pori to Turku and Rovaniemi to Turku use verified natio
     assert.deepEqual(result.sourceIds,[source.id]);
     assert.match(result.answer,/Turussa ja Varsinais-Suomessa/);
     assert.match(result.answer,/myös muualle Suomeen/);
-    assert.match(result.answer,/Mainio tarkistaa erikseen/);
+    assert.match(result.answer,/tarkistamme erikseen/i);
     assert.equal(mainioInquiryActions(question,'fi')[0]?.mode,'mainio_move_form');
   }
 });
@@ -74,6 +74,6 @@ test('explicitly international routes use international evidence, never domestic
   },'fi');
   assert.ok(result);
   assert.deepEqual(result.sourceIds,[international.id]);
-  assert.match(result.answer,/ulkomaanmuutot/);
+  assert.match(result.answer,/ulkomaanmuutosta/);
   assert.doesNotMatch(result.answer,/Turussa ja Varsinais-Suomessa/);
 });
