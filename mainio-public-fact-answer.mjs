@@ -45,7 +45,7 @@ const RULES=[
       /(?:mista.*nout|mista.*hae|mihin.*palaut|nouto osoit|noutopaik|palautuspaik)/.test(q)},
   {title:'Pakettiauton 5 tunnin vuokrahinnat',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
-      /(?:viidelta tunn|viiden tunn|viisi tunt|5 tunn|5 h)/.test(q)&&
+      /(?:viidelta tunn|viiden tunn|viideksi tunn|viisi tunt|viisi tuntia|5 tunn|5 h\b|5h\b)/.test(q)&&
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Paljonko pakettiauton 3 tunnin vuokra maksaa?',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
@@ -53,7 +53,7 @@ const RULES=[
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Pakettiauton vuorokausivuokra',
     check:q=>/(?:pakettiaut|paku|vuokra aut)/.test(q)&&
-      /(?:vuorokau|paivavuokra|paivaksi|vuorokaudelta)/.test(q)&&
+      /(?:vuorokau|paivavuokra|paivaksi|vuorokaudelta|24 h\b|24h\b|24 tunt)/.test(q)&&
       /(?:hinta|maksaa|paljonko|vuokra|kustann)/.test(q)},
   {title:'Kierrätyksen alkaen hinta',
     check:q=>/(?:kierrat|jate|jatte)/.test(q)&&
@@ -101,6 +101,25 @@ export function mainioPublicFactAnswer(rows,message,lang='fi'){
     const chosen=(rows||[]).find(row=>approvedRow(row)&&norm(row.title)===norm(rule.title));
     if(!chosen)continue;
     let answer=String(chosen.answer).trim().replace(/\s+/g,' ');
+    // If the customer supplies the apartment area, give a useful numerical
+    // box estimate rather than just quoting the general 0.8/m² rule. Only
+    // calculate from the corresponding approved source evidence; otherwise
+    // preserve that source verbatim. A number of boxes is NOT an area.
+    if(rule.title==='Kuinka monta muuttolaatikkoa tarvitsen?'){
+      const matched=String(message).match(/\b([1-9]\d{0,3}(?:[.,]\d)?)\s*(?:m²|m2|neliö(?:n|iseen|istä|inen|itä|iä)?|neliomet(?:riä|riä|rin|rin|ri))\b/i);
+      const sqm=matched?Number(matched[1].replace(',','.')):NaN;
+      if(Number.isFinite(sqm) && sqm>0 && sqm<=1500 &&
+         /0[,.]8/.test(answer)){
+        const lower=Math.ceil(sqm*0.8);
+        const bothSources=/0[,.]8\s*[-–]\s*1\b/.test(answer);
+        const upper=Math.ceil(sqm);
+        const band=bothSources && upper>lower ? lower+'–'+upper : String(lower);
+        answer='Noin '+band+' muuttolaatikkoa '+matched[1].replace('.',',')+
+          ' m² asuntoon. Tämä on suuntaa-antava arvio (0,8'+
+          (bothSources?'–1':'')+
+          ' laatikkoa/m²); lopullinen määrä riippuu tavaroiden määrästä.';
+      }
+    }
     // The source states this explicit negative and it must remain negative.
     if(rule.title==='TV ja reititinasennukset'){
       if(!/ei tee luvanvaraisia sahko tai putkitoita/.test(norm(answer)))return null;
