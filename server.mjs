@@ -1,5 +1,6 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voice.mjs';
+import {mainioPublicFactAnswer} from './mainio-public-fact-answer.mjs';
 import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
@@ -14013,7 +14014,9 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const mainioOrderPreview=previewMainioTenant && mainioMovingOrderIntent(message);
     const mainioRoutePreview=previewMainioTenant
       ? mainioPriorityDomesticRouteAnswer(rows,message,detectedLang,mainioInterpretation) : null;
-    let result = mainioRoutePreview ? mainioRoutePreview : mainioSemanticPreview ? mainioSemanticPreview : mainioOrderPreview ? {
+    const mainioFactPreview=previewMainioTenant
+      ? mainioPublicFactAnswer(rows,message,detectedLang) : null;
+    let result = mainioRoutePreview ? mainioRoutePreview : mainioFactPreview ? mainioFactPreview : mainioSemanticPreview ? mainioSemanticPreview : mainioOrderPreview ? {
       answer:detectedLang==='en'
         ? 'Tell us about your move using the quote form below. We will review the details and confirm the price, date and booking separately.'
         :detectedLang==='sv'
@@ -14127,7 +14130,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
 
     // For Mainio, an unsupported factual answer must never appear verified
     // just because a generic demo model inferred it. Source rows are mandatory.
-    if(previewMainioTenant && !mainioRoutePreview && !mainioOrderPreview && !mainioSemanticPreview &&
+    if(previewMainioTenant && !mainioRoutePreview && !mainioFactPreview && !mainioOrderPreview && !mainioSemanticPreview &&
        !mainioIsSmallTalk(message) &&
        (!Array.isArray(result.sourceIds) || result.sourceIds.length===0)){
       result={answer:'',handoff:true,confidence:0,intent:'Varmennettu lähde puuttuu',sourceIds:[],selected:[]};
@@ -14725,6 +14728,8 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const mainioQuoteIntent=mainioTenant && mainioMovingOrderIntent(message);
     const mainioRouteReply=mainioTenant
       ? mainioPriorityDomesticRouteAnswer(safeKnowledgeRows,message,detectedLang,mainioInterpretation) : null;
+    const mainioFactReply=mainioTenant
+      ? mainioPublicFactAnswer(safeKnowledgeRows,message,detectedLang) : null;
     const mainioQuoteAnswer=mainioQuoteIntent
       ? (detectedLang==='en'
           ? 'Tell us about your move using the button below. We will review the details and confirm the price, date and booking separately.'
@@ -14732,7 +14737,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
           ? 'Berätta om din flytt via knappen nedan. Vi granskar uppgifterna och bekräftar pris, datum och bokning separat.'
           : 'Kerro meille muuttosi tiedot alla olevan painikkeen kautta. Tarkistamme tarjouspyynnön ja vahvistamme hinnan, ajankohdan sekä tilauksen erikseen.')
       : null;
-    let result = mainioRouteReply ? mainioRouteReply : mainioSemanticReply ? mainioSemanticReply : mainioQuoteAnswer ? {
+    let result = mainioRouteReply ? mainioRouteReply : mainioFactReply ? mainioFactReply : mainioSemanticReply ? mainioSemanticReply : mainioQuoteAnswer ? {
       answer:mainioQuoteAnswer,handoff:false,confidence:1,
       intent:'Muuttotarjouspyyntö',sourceIds:[],selected:[],
     } : widgetSubscribe ? {
@@ -14763,7 +14768,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     // A factual claim without any company-backed source must not be returned
     // to Mainio customers as a confident answer. Greetings and the verified
     // human-reviewed moving quote flow are intentionally exempt.
-    if(mainioTenant && !mainioRouteReply && !mainioSemanticReply && !mainioQuoteIntent && !mainioIsSmallTalk(message) &&
+    if(mainioTenant && !mainioRouteReply && !mainioFactReply && !mainioSemanticReply && !mainioQuoteIntent && !mainioIsSmallTalk(message) &&
       (!Array.isArray(result.sourceIds) || result.sourceIds.length===0)){
       result={
         answer:'',handoff:true,confidence:0,
