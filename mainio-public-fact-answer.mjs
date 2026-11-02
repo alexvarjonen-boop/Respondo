@@ -5,15 +5,28 @@ const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
 const area=(q,rx)=>rx.test(q);
 const RULES=[
-  // Specific rental data beats generic moving prices, quantities and logistics.
+  // Match the actual question type before amounts. A delivery-fee question
+  // must not receive the 0,20 €/day rental price, and box quantities must
+  // not be misread as monetary "paljonko" questions.
+  {title:'Laatikoiden kuljetusmaksu',
+    check:q=>/laatik/.test(q)&&(
+      /(?:kuljetusmaks|toimitusmaks|kuljetuskulu|toimituskulu|kotiinkuljet)/.test(q) &&
+        /(?:hinta|maks|paljonko|kustann|kulu|ilmain)/.test(q) ||
+      /(?:toimitu|kuljetu|kotiinkuljet).*?(?:hinta|maks|paljonko|kustann|ilmain)/.test(q) ||
+      /(?:hinta|maks|paljonko|kustann).*?(?:toimitu|kuljetu|kotiinkuljet)/.test(q)
+    )},
+  {title:'Kuinka monta muuttolaatikkoa tarvitsen?',
+    check:q=>/laatik/.test(q)&&
+      !/(?:vuokra|hinta|maks\w*|kustann|kuljetus|toimitus)/.test(q)&&(
+        /(?:kuinka monta|montako)/.test(q) ||
+        /(?:laatik\w*.*(?:tarvit|riitt|maara|menekki)|(?:tarvit|riitt|maara|menekki).*laatik)/.test(q) ||
+        /(?:paljonko|kuinka paljon).*laatik.*(?:pit|vara)/.test(q)
+      )},
   {title:'Muuttolaatikoiden hinta',
-    check:q=>/laatik/.test(q)&&/(?:hinta|maksaa|paljonko|vuokra.*(?:hinta|maksaa|paljonko)|(?:hinta|maksaa|paljonko).*vuokra)/.test(q)},
+    check:q=>/laatik/.test(q)&&
+      /(?:hinta|maks\w*|paljonko|vuokra.*(?:hinta|maks|paljonko)|(?:hinta|maks|paljonko).*vuokra)/.test(q)},
   {title:'Muuttolaatikoiden mitat',
     check:q=>/laatik/.test(q)&&/(?:\bmitat\b|\bmittoja\b|\bmitta\w*\b|kokois|\bkokoa\b|kokoisia|millainen koko)/.test(q)},
-  {title:'Kuinka monta muuttolaatikkoa tarvitsen?',
-    check:q=>/laatik/.test(q)&&/(?:kuinka monta|montako|tarvitse|tarvits|paljonko.*laatik)/.test(q)},
-  {title:'Laatikoiden kuljetusmaksu',
-    check:q=>/laatik/.test(q)&&/(?:kuljetusmaks|toimitusmaks|toimitus.*(?:hinta|maksaa)|kuljetus.*(?:hinta|maksaa))/.test(q)},
   {title:'Muuttolaatikkojen noutopäivät',
     check:q=>/laatik/.test(q)&&/(?:milloin|mika paiva|mitka paiva|mihin aikaan|noutopaiv|toimituspaiv)/.test(q)&&
       /(?:toimit|nout|hae|hake|tuod|tuotte|haett)/.test(q)},
