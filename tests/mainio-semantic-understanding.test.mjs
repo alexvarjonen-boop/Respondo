@@ -93,7 +93,8 @@ test('cross-country route answer requires approved Finnish service-area evidence
   assert.doesNotMatch(reply.answer,/onnistuu varmasti/);
   const noEvidence=mainioSemanticGroundedReply([],intent,'fi');
   assert.deepEqual(noEvidence.sourceIds,[]);
-  assert.match(noEvidence.answer,/en voi vahvistaa/);
+  assert.match(noEvidence.answer,/Tarkistamme reitin toteutuksen/);
+  assert.doesNotMatch(noEvidence.answer,/myös muualle Suomeen/);
 });
 test('international moves require separate international evidence, not domestic coverage',()=>{
   const intent={intent:'moving_route',route_scope:'international',confidence:92};
