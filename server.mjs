@@ -3900,7 +3900,7 @@ export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
           : 'Voit tutustua muuttolaatikoidemme vuokraukseen alla olevasta painikkeesta.'
         :lang==='en' ? 'You can view our van rental options using the link below.'
           :lang==='sv' ? 'Du kan se våra skåpbilar för uthyrning via länken nedan.'
-          : 'Voit tutustua pakettiautojemme vuokraukseen alla olevasta painikkeesta.',
+          : 'Näet pakettiautojen vuokrausvaihtoehtomme alla olevasta painikkeesta.',
       boxes?'Muuttolaatikot':'Pakettiautot'
     );
   }
