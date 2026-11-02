@@ -6,6 +6,9 @@ const glyphs={
   setup:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h4"/>',
   answers:'<path d="M7 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z"/><path d="M9 9h7M9 13h7M9 17h4"/>',
   customers:'<circle cx="9" cy="8" r="3"/><path d="M3.5 19v-2a5.5 5.5 0 0 1 11 0v2M17 6a3 3 0 0 1 0 6m1.5 2a4 4 0 0 1 2 4v1"/>',
+  conversations:'<path d="M5 5h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H9l-5 3v-4a3 3 0 0 1-2-3V8a3 3 0 0 1 3-3z"/><path d="M7 10h10M7 14h7"/>',
+  team:'<circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 21v-2a6 6 0 0 1 12 0v2m1-6a5 5 0 0 1 7 4v2"/>',
+  integrations:'<path d="M8 3v5m8-5v5M5 8h14v6a7 7 0 0 1-7 7 7 7 0 0 1-7-7z"/><path d="M12 14v7"/>',
   install:'<path d="M12 3v13m-5-5 5 5 5-5"/><path d="M4 17v3h16v-3"/>',
   billing:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/>',
   profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
@@ -23,17 +26,21 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     older.__orbitApi.setNavigate(navigate);
     return older.__orbitApi;
   }
+  // The chat remains immediately ABOVE the orbit. Arrange account modules by
+  // daily frequency, matching the same twelve sections on all screen sizes.
   const sections=[
-    {id:'bot',label:translate('Kokeile bottia','Testa botten','Try the bot')},
-    {id:'overview',label:translate('Yleisnäkymä','Översikt','Overview')},
-    {id:'setup',label:translate('Botin tiedot','Bottuppgifter','Bot details')},
+    {id:'overview',label:translate('Yleiskatsaus','Översikt','Overview')},
+    {id:'customers',label:translate('Asiakkaat ja liidit','Kunder och leads','Customers & leads')},
+    {id:'conversations',label:translate('Keskustelut','Konversationer','Conversations')},
+    {id:'team',label:translate('Henkilökunta','Personal','Team')},
+    {id:'setup',label:translate('Yritys ja botti','Företag och bot','Business & bot')},
     {id:'answers',label:translate('Vastaukset','Svar','Answers')},
-    {id:'customers',label:translate('Asiakkaat','Kunder','Customers')},
     {id:'automation',label:translate('Toiminnot','Funktioner','Actions')},
     {id:'install',label:translate('Asennus','Installation','Installation')},
-    {id:'profile',label:translate('Profiili','Profil','Profile')},
+    {id:'integrations',label:translate('Integraatiot','Integrationer','Integrations')},
     {id:'billing',label:translate('Laskutus','Fakturering','Billing')},
-    {id:'settings',label:translate('Asetukset','Inställningar','Settings')}
+    {id:'settings',label:translate('Asetukset','Inställningar','Settings')},
+    {id:'profile',label:translate('Profiili','Profil','Profile')}
   ];
   const orb=document.createElement('nav');
   orb.id='rsWorkspaceOrbit';
@@ -44,7 +51,7 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     // haze, sweep, atmospheric ellipses, horizon and scroll-coupled light.
     '<div class="rs-space" aria-hidden="true"><div class="rs-studio-grid"></div><div class="rs-studio-haze"></div><div class="rs-studio-sweep"></div><div class="rs-space-glow"></div><div class="rs-space-ellipse rs-space-ellipse-a"></div><div class="rs-space-ellipse rs-space-ellipse-b"></div><div class="rs-space-horizon"></div><div class="rs-kinetic-light"></div></div>'+
     '<small class="rs-helix-eyebrow">RESPONDO <span>OS</span></small>'+
-    '<div class="rs-studio-orbit-art" aria-hidden="true">'+
+    '<div class="rs-studio-orbit-art">'+
       '<span class="rs-studio-orbit-ring rs-studio-ring-a"></span>'+
       '<span class="rs-studio-orbit-ring rs-studio-ring-b"></span>'+
       '<span class="rs-studio-orbit-ring rs-studio-ring-c"></span>'+
@@ -52,9 +59,10 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
         const a=i*2*Math.PI/sections.length;
         const x=(Math.sin(a)*45).toFixed(2);
         const y=(-Math.cos(a)*45).toFixed(2);
-        return '<span class="rs-studio-orbit-icon'+(i===0?' is-active':'')+
-          '" data-rs-workspace-icon data-index="'+i+'" style="--rs-icon-x:'+x+'%;--rs-icon-y:'+y+
-          '%">'+icon(section.id)+'</span>';
+        return '<button type="button" class="rs-studio-orbit-icon'+(i===0?' is-active':'')+
+          '" data-rs-workspace-icon data-index="'+i+'" data-workspace-target="'+section.id+
+          '" aria-label="'+section.label+'" title="'+section.label+'" style="--rs-icon-x:'+x+'%;--rs-icon-y:'+y+
+          '%">'+icon(section.id)+'</button>';
       }).join('')+
       '<div class="rs-studio-orbit-label">RESPONDO AI</div>'+
     '</div>'+
@@ -65,13 +73,13 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     '</div>'+
     '<svg class="rs-helix-progress" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><circle cx="50" cy="50" r="48" pathLength="100"/></svg>'+
     '<div class="rs-helix-selection" aria-live="polite">'+
-      '<span class="rs-helix-counter" id="rsOrbitCount">01 / 10</span>'+
+      '<span class="rs-helix-counter" id="rsOrbitCount">01 / '+sections.length+'</span>'+
       '<button id="rsOrbitOpen" class="rs-helix-open" type="button" aria-label="'+sections[0].label+'">'+
         '<span id="rsOrbitName">'+sections[0].label+'</span></button>'+
       '<small class="rs-helix-instruction">'+
-        translate('Vieritä valitaksesi osion. Avaa se napauttamalla nimeä.',
-                  'Skrolla för att välja avsnitt. Tryck på namnet för att öppna.',
-                  'Scroll to select a section. Tap its name to open.')+
+        translate('Vieritä tai paina kuvaketta avataksesi osion.',
+                  'Skrolla eller tryck på en ikon för att öppna avsnittet.',
+                  'Scroll or select an icon to open its section.')+
       '</small>'+
     '</div></div>';
   const botPage=content.querySelector('[data-workspace-page="bot"]');
@@ -242,9 +250,13 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     lastWheel=now;
     moveSection(event.deltaY>0?1:-1);
   },{passive:false});
-  button.addEventListener('click',()=>{
+  function openSection(index){
+    // Both the large name button and every icon navigate directly to the
+    // actual account module. Never trap a tap in the scroll-only selector.
+    selectIndex(index);
     releasePin();
-    const section=sections[currentIndex];
+    const section=sections[index];
+    if(!section)return;
     navigateTo(section.id);
     requestAnimationFrame(()=>{
       const view=workspace.dataset.currentView;
@@ -252,7 +264,12 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
       const panel=content.querySelector('[data-workspace-page="'+destination+'"]');
       if(panel && !panel.hidden)panel.scrollIntoView({behavior:reduced.matches?'auto':'smooth',block:'start'});
     });
-  });
+  }
+  button.addEventListener('click',()=>openSection(currentIndex));
+  icons.forEach((item,index)=>item.addEventListener('click',event=>{
+    event.stopPropagation();
+    openSection(index);
+  }));
   // Retain access to every section for keyboard and switch-control users.
   orb.addEventListener('keydown',event=>{
     if(event.key==='ArrowDown'||event.key==='ArrowRight'){
