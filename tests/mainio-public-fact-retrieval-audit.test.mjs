@@ -58,7 +58,7 @@ const cases=[
  ['Mistä kierrätyksen hinnat alkavat?',['25']],
  ['Voitteko tyhjentää kuolinpesän?',['kuolinpes']],
  ['Onko teillä kierrätyspalvelua?',['kierrätys']],
- ['Voiko kierrätystavarat noutaa ilman pakkaamista?',['pakka']],
+ ['Voiko kierrätystavarat noutaa ilman pakkaamista?',['pakata']],
  ['Tarjoatteko välivarastointia?',['välivarast']],
  ['Voitteko purkaa ja koota huonekaluja?',['koko']],
  ['Teettekö luvanvaraisia sähkötöitä?',['ei']],
