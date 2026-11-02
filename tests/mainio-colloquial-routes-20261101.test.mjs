@@ -35,7 +35,7 @@ for(const question of examples){
     assert.equal(result.handoff,false);
     assert.deepEqual(result.sourceIds,[area.id]);
     assert.match(result.answer,/myös muualle Suomeen/);
-    assert.match(result.answer,/Mainio tarkistaa erikseen/);
+    assert.match(result.answer,/tarkistamme erikseen/i);
     assert.doesNotMatch(result.answer,/vahvistettu tilaus|onnistuu varmasti|044 566|tavarakatu/i);
     assert.ok(mainioInquiryActions(question,'fi').some(action=>action.mode==='mainio_move_form'));
   });
@@ -61,7 +61,7 @@ test('national coverage not verified means no national service claim',()=>{
 });
 
 test('same grounded route reply is available in Finnish, Swedish and English without confirmed price/date',()=>{
-  for(const [lang,pattern] of [['fi',/Mainio tarkistaa/],['sv',/Mainio bekräftar/],['en',/Mainio must confirm/]]){
+  for(const [lang,pattern] of [['fi',/tarkistamme erikseen/i],['sv',/kontrollerar vi/i],['en',/we can check/i]]){
     const reply=mainioVerifiedMovingRouteReply([area],examples[0],lang);
     assert.match(reply.answer,pattern);
     assert.deepEqual(reply.sourceIds,[area.id]);
