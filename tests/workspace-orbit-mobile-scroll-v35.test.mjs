@@ -16,15 +16,15 @@ test('iPhone entering from either side pins the sphere before inertial overscrol
  assert.match(css,/touch-action:none!important/);
  assert.match(css,/height:100svh!important/);
 });
-test('each touch/wheel gesture selects one chapter, and last/first swipe exits normally',()=>{
- assert.match(orb,/const next=currentIndex\+direction/);
+test('each touch/wheel gesture selects one chapter, last wraps to first and backward first exits',()=>{
+ assert.match(orb,/nextWorkspaceOrbitChapter\(currentIndex,direction,sections\.length\)/);
  assert.match(orb,/moveSection\(dy<0\?1:-1\)/);
  assert.match(orb,/moveSection\(event\.deltaY>0\?1:-1\)/);
  assert.match(orb,/stage\.addEventListener\('touchmove'/);
  assert.match(orb,/stage\.addEventListener\('touchend'/);
  assert.match(orb,/stage\.addEventListener\('wheel'/);
  assert.match(orb,/releasePin\(\)/);
- assert.match(orb,/next<0 \|\| next>=sections\.length/);
+ assert.match(orb,/if\(next<0\)return exitSphere\(direction\)/);
  assert.match(orb,/navigateTo\(section\.id\)/);
  assert.match(orb,/pagehide',releasePin/);
 });
