@@ -165,6 +165,30 @@ export function mainioMovingOrderIntent(message){
   return move && order;
 }
 
+// Static website facts (prices, opening hours, minimum notice) cannot prove
+// the status of a customer's own reservation or a live free time slot.
+export const MAINIO_CONTACT_URL='https://www.mainiomuuttopalvelu.fi/yhteystiedot';
+export function mainioBookingStatusQuestion(message){
+  const q=normalized(message).replace(/[^a-z0-9\s-]/g,' ');
+  if(!q || q.length>480)return false;
+  const subject=/(?:muutto|muuton|muuttoa|muuttoaj|muuttolaatik|laatik|pakettiaut|paku|vuokra|varaus|varauk|reservation|booking|flytt|sk[aå]pbil|hyrbil|hyra)/.test(q);
+  if(!subject)return false;
+  const status=/(?:\b(?:vapaa|vapaana|vapaita|vapaata|saatavilla|saatavuus|varattu|varannut|varanneet|vuokrattu|vahvistettu|varmistettu|varmasti|vahvistitte|tilausvahvistus)\b|\b(?:booking confirmed|already booked|is it booked|available tomorrow|available today|ledig|lediga|bokat|bokad|bekraftad)\b|\b(?:minun|mulle|minulle|meidan|meille|my|our)\b.{0,45}\b(?:varaus|varattu|vuokra|booking|reservation)\b)/.test(q);
+  if(!status)return false;
+  const asking=/(?:onko|olenko|saanko|voinko|teitteko|vahvistitteko|tarkista|tietaa|nayttaako|mista tied|milloin|varmasti|is |are |do |did |can |have |har ni|ar det|kan ni|finns det)/.test(q);
+  return asking;
+}
+export function mainioBookingStatusReply(lang='fi'){
+  const answer=lang==='en'
+    ? 'I cannot check the status of your reservation or live availability in this chat. Please contact us so we can verify the booking or the requested date.'
+    :lang==='sv'
+      ? 'Jag kan inte kontrollera statusen för din bokning eller lediga tider i den här chatten. Kontakta oss så att vi kan kontrollera bokningen eller önskat datum.'
+      : 'En voi tarkistaa tästä chatista henkilökohtaisen varauksesi tilaa tai vapaita aikoja. Ota meihin yhteyttä, niin tarkistamme varauksen tai toivotun ajankohdan.';
+  const label=lang==='en'?'Contact us':lang==='sv'?'Kontakta oss':'Ota yhteyttä';
+  return {answer,handoff:false,confidence:1,intent:'Varauksen tila',
+    sourceIds:[],selected:[],actions:[{type:'contact',url:MAINIO_CONTACT_URL,label}]};
+}
+
 export function mainioIsSmallTalk(message) {
   return /^(?:moi|hei|terve|heippa|hello|hi|hey|kiitos|kiitti|thanks|thank you|tack|okei|ok|selva|hyva)[!.? ]*$/.test(normalized(message).trim());
 }
