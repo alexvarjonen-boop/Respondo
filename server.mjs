@@ -1,6 +1,6 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voice.mjs';
-import {mainioPublicFactAnswer} from './mainio-public-fact-answer.mjs';
+import {mainioPublicFactAnswer,mainioPublicWebsiteEvidence} from './mainio-public-fact-answer.mjs';
 import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioBookingStatusQuestion, mainioBookingStatusReply, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
@@ -13978,14 +13978,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       (!importedDemoHost || importedDemoHost==='mainiomuuttopalvelu.fi');
     // Public demo facts are never loaded from Mainio's private tenant.
     // Accept only content actually imported from Mainio's own HTTPS site.
-    const demoMainioEvidence=()=>rows.filter(row=>{
-      if(String(row?.source_type||'')!=='website')return false;
-      try {
-        const url=new URL(String(row.source_url||''));
-        return url.protocol==='https:' &&
-          normalizeHost(url.hostname)==='mainiomuuttopalvelu.fi';
-      }catch{return false;}
-    });
+    const demoMainioEvidence=()=>mainioPublicWebsiteEvidence(rows);
     const mainioPreviewRows=publicMainioDemo?demoMainioEvidence():rows;
     const mainioStatusPreview=(previewMainioTenant||publicMainioDemo) &&
       mainioBookingStatusQuestion(message)
