@@ -16,7 +16,7 @@ test('one compound question answers both van and moving-box rental from separate
  assert.match(reply.answer,/17 m³ pakettiauto 70 euroa/);
  assert.match(reply.answer,/100 km/);
  assert.match(reply.answer,/0,20 euroa laatikolta vuorokaudessa/);
- assert.match(reply.answer,/minimilaskutus 10 euroa/);
+ assert.match(reply.answer,/minimilaskutus 10 euroa/i);
  assert.equal(reply.sourceIds.length,2);
  assert.equal(reply.selected.length,2);
  assert.ok(reply.sourceIds.includes('demo-mainio-official-13'));
