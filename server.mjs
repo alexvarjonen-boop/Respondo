@@ -3,7 +3,7 @@ import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voic
 import {mainioPublicFactAnswer,mainioPublicWebsiteEvidence} from './mainio-public-fact-answer.mjs';
 import {isMainioPublicDemoWebsite} from './mainio-public-demo-identity.mjs';
 import {mainioPublicKnowledgeWithOfficialFacts} from './mainio-official-public-facts.mjs';
-import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioBookingStatusQuestion, mainioBookingStatusReply, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
+import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioBookingStatusQuestion, mainioBookingStatusReply, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingIntakeQuestion, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
@@ -3854,7 +3854,7 @@ export function mainioPriorityDomesticRouteAnswer(rows,message,lang='fi',interpr
 
 // An AI classification is only a label. Answer content comes exclusively
 // from verified business rows and predetermined, approval-safe workflow text.
-export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
+export function mainioSemanticGroundedReply(rows,classification,lang='fi',message='') {
   const type=classification?.intent;
   if(!type || !['fi','sv','en'].includes(lang))return null;
   const response=(answer,intent,selected=[],handoff=false)=>({
@@ -3869,12 +3869,22 @@ export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
         : 'Tarkoitatko muuttotavaroiden muuttoa, muuttolaatikoiden vuokrausta vai pakettiauton vuokrausta? Voin auttaa oikean palvelun valinnassa.',
     'Tarkennus'
   );
-  if(type==='moving_quote')return response(
-    lang==='en' ? 'Tell us about your move using the button below, so we can review the details. We will confirm the price, moving date and booking separately.'
-      :lang==='sv' ? 'Lämna uppgifterna om din flytt via knappen nedan så går vi igenom dem. Vi bekräftar pris, datum och bokning separat.'
-      : 'Kerro meille muuttosi tiedot alla olevasta painikkeesta, niin tarkistamme ne ja otamme asian käsittelyyn. Vahvistamme hinnan, ajankohdan ja tilauksen erikseen.',
-    'Muuttotarjouspyyntö'
-  );
+  if(type==='moving_quote'){
+    if(mainioMovingIntakeQuestion(message))return response(
+      lang==='en'
+        ? 'Yes. You can complete Mainio’s moving questionnaire here in the chat. It asks for the moving date, property size, origin and destination addresses, floors, elevator access, parking for the moving van, moving boxes and any extra help. The details are sent to Mainio only after you consent. Mainio reviews the request and confirms the price and date separately.'
+        :lang==='sv'
+          ? 'Ja. Du kan fylla i Mainios flyttkartläggning här i chatten. Den frågar bland annat efter flyttdatum, bostadens storlek, från- och tilladress, våningar, hiss, parkering för flyttbilen, flyttlådor och eventuell tilläggshjälp. Uppgifterna skickas till Mainio först när du godkänner det. Mainio granskar förfrågan och bekräftar pris och datum separat.'
+          : 'Kyllä. Voit täyttää tässä chatissa Mainion muuttokartoituksen. Siinä kysytään muun muassa muuttopäivä, asunnon koko, lähtö- ja kohdeosoite, kerrokset, hissit, muuttoauton pysäköinti, muuttolaatikot ja tarvittava lisäapu. Tiedot lähetetään Mainiolle vasta, kun hyväksyt lähetyksen. Mainio tarkistaa tarjouspyynnön ja vahvistaa hinnan sekä muuttopäivän erikseen.',
+      'Muuttokartoitus'
+    );
+    return response(
+      lang==='en' ? 'Tell us about your move using the button below, so we can review the details. We will confirm the price, moving date and booking separately.'
+        :lang==='sv' ? 'Lämna uppgifterna om din flytt via knappen nedan så går vi igenom dem. Vi bekräftar pris, datum och bokning separat.'
+        : 'Kerro meille muuttosi tiedot alla olevasta painikkeesta, niin tarkistamme ne ja otamme asian käsittelyyn. Vahvistamme hinnan, ajankohdan ja tilauksen erikseen.',
+      'Muuttotarjouspyyntö'
+    );
+  }
   if(type==='moving_route'){
     // Unknown country scope does not establish that an origin and destination
     // are both in Finland. The caller can separately prioritize the verified
@@ -14029,7 +14039,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
            message,lang:detectedLang,previousCustomerQuestion:history.at(-1)?.question||''
          }) : null)) : null;
     const mainioSemanticPreview=(previewMainioTenant||publicMainioDemo)
-      ? mainioSemanticGroundedReply(mainioPreviewRows,mainioInterpretation,detectedLang) : null;
+      ? mainioSemanticGroundedReply(mainioPreviewRows,mainioInterpretation,detectedLang,message) : null;
     const mainioOrderPreview=(previewMainioTenant||publicMainioDemo) && mainioMovingOrderIntent(message);
     const mainioRoutePreview=(previewMainioTenant||publicMainioDemo)
       ? mainioPriorityDomesticRouteAnswer(mainioPreviewRows,message,detectedLang,mainioInterpretation) : null;
@@ -14759,7 +14769,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
            message,lang:detectedLang,previousCustomerQuestion:history.at(-1)?.question||''
          })) : null;
     const mainioSemanticReply=mainioTenant
-      ? mainioSemanticGroundedReply(mainioWidgetRows,mainioInterpretation,detectedLang) : null;
+      ? mainioSemanticGroundedReply(mainioWidgetRows,mainioInterpretation,detectedLang,message) : null;
     const mainioQuoteIntent=mainioTenant && mainioMovingOrderIntent(message);
     const mainioRouteReply=mainioTenant
       ? mainioPriorityDomesticRouteAnswer(mainioWidgetRows,message,detectedLang,mainioInterpretation) : null;

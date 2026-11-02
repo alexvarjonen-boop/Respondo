@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {isMainioMovingTenant,mainioMoveActions,validateMainioMove,mainioMoveDetails,mainioBoxEstimate,mainioInquiryKind,mainioInquiryActions,mainioMovingOrderIntent,mainioIsSmallTalk,MAINIO_TENANT_ID,MAINIO_QUOTE_URL} from '../mainio-moving-intake.mjs';
+import {isMainioMovingTenant,mainioMoveActions,validateMainioMove,mainioMoveDetails,mainioBoxEstimate,mainioInquiryKind,mainioInquiryActions,mainioMovingOrderIntent,mainioMovingIntakeQuestion,mainioIsSmallTalk,MAINIO_TENANT_ID,MAINIO_QUOTE_URL} from '../mainio-moving-intake.mjs';
 const good={
  consent:true,name:'Maija Muuttaja',contact:'040 123 4567',serviceType:'home',
  desiredDate:'2026-12-04',originAddress:'Turun katu 1',originCity:'Turku',
@@ -64,6 +64,22 @@ test('moving-service requests cannot confuse box rental or van rental',()=>{
  assert.equal(mainioMovingOrderIntent('Book my move'),true);
  assert.equal(mainioIsSmallTalk('Moi!'),true);
  assert.equal(mainioIsSmallTalk('Moi, paljonko muutto maksaa?'),false);
+});
+
+test('requests to collect moving details in chat open the consent-gated Mainio intake form',()=>{
+ const questions=[
+  'Voitko kerätä muuton tiedot tässä chatissa ennen kuin lähetät ne työntekijälle?',
+  'Mitä tietoja tarvitsette muuttotarjousta varten?',
+  'Can you collect my moving details in this chat before sending them to an employee?',
+  'Kan ni samla in uppgifter om flytten i chatten innan ni skickar dem till personalen?'
+ ];
+ for(const question of questions){
+  assert.equal(mainioMovingIntakeQuestion(question),true,question);
+  assert.equal(mainioMovingOrderIntent(question),true,question);
+  const actions=mainioInquiryActions(question,'fi');
+  assert.equal(actions[0].mode,'mainio_move_form',question);
+  assert.equal(actions[1].url,MAINIO_QUOTE_URL,question);
+ }
 });
 
 test('irrelevant Mainio questions never show a moving quote button',()=>{
