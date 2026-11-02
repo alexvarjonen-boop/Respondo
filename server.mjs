@@ -16648,10 +16648,8 @@ async function withOwnerSeedLock(fn) {
 
 async function start() {
   try {
-    await withRuntimeSchemaLock(async () => {
-      await ensureRuntimeSchema();
-      await ensureOnboardingCheckupSchema(q);
-    });
+    await withRuntimeSchemaLock(() => ensureRuntimeSchema());
+    await withRuntimeSchemaLock(() => ensureOnboardingCheckupSchema(q));
     await withRuntimeSchemaLock(async () => {
       await seedAndLoadIntentUtterances();
       await seedIntentPhraseTemplates();
