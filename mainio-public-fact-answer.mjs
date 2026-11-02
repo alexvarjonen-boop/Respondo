@@ -4,6 +4,19 @@
 const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
 const area=(q,rx)=>rx.test(q);
+// Source allowlist for the anonymous Mainio website demo only. This is
+// explicitly not permission to read private Mainio tenant knowledge.
+export function mainioPublicWebsiteEvidence(rows){
+  return (rows||[]).filter(row=>{
+    if(String(row?.source_type||'')!=='website')return false;
+    try{
+      const url=new URL(String(row.source_url||''));
+      return url.protocol==='https:' &&
+        ['mainiomuuttopalvelu.fi','www.mainiomuuttopalvelu.fi'].includes(url.hostname);
+    }catch{return false;}
+  });
+}
+
 const RULES=[
   // Match the actual question type before amounts. A delivery-fee question
   // must not receive the 0,20 €/day rental price, and box quantities must
