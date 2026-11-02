@@ -39,7 +39,7 @@ const strings={
 function verified(rows,key){
   const spec=evidence[key];
   return (rows||[]).find(row=>{
-    if(row?.approved===false || row?.source_type!=='website' || row?.title!==spec.title)return false;
+    if(!row?.id || row?.approved!==true || row?.source_type!=='website' || row?.title!==spec.title)return false;
     let url;try{url=new URL(row.source_url);}catch{return false;}
     return url.protocol==='https:' && ['mainiomuuttopalvelu.fi','www.mainiomuuttopalvelu.fi'].includes(url.hostname)
       && spec.match.every(pattern=>pattern.test(String(row.answer||'')));
