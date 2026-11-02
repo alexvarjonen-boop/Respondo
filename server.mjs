@@ -1,6 +1,6 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voice.mjs';
-import {mainioPublicFactAnswer} from './mainio-public-fact-answer.mjs';
+import {mainioPublicFactAnswer,mainioPublicWebsiteEvidence} from './mainio-public-fact-answer.mjs';
 import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioBookingStatusQuestion, mainioBookingStatusReply, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
@@ -13976,6 +13976,10 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const publicMainioDemo=isPublicDemo &&
       enteredDemoHost==='mainiomuuttopalvelu.fi' &&
       (!importedDemoHost || importedDemoHost==='mainiomuuttopalvelu.fi');
+    // Public demo facts are never loaded from Mainio's private tenant.
+    // Accept only content actually imported from Mainio's own HTTPS site.
+    const demoMainioEvidence=()=>mainioPublicWebsiteEvidence(rows);
+    const mainioPreviewRows=publicMainioDemo?demoMainioEvidence():rows;
     const mainioStatusPreview=(previewMainioTenant||publicMainioDemo) &&
       mainioBookingStatusQuestion(message)
         ? mainioBookingStatusReply(detectedLang) : null;
@@ -14012,18 +14016,18 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // The signed-in Mainio dashboard must show a real quote action rather
     // than a generic demo answer. The full five-step intake remains available
     // in the installed widget, while this preview links to Mainio's verified form.
-    const mainioInterpretation=previewMainioTenant && !mainioIsSmallTalk(message)
+    const mainioInterpretation=(previewMainioTenant||publicMainioDemo) && !mainioIsSmallTalk(message)
       ? (interpretMainioLocalIntent(message,history.at(-1)?.question||'') ||
-         await classifyMainioSemanticIntent({
+         (previewMainioTenant ? await classifyMainioSemanticIntent({
            message,lang:detectedLang,previousCustomerQuestion:history.at(-1)?.question||''
-         })) : null;
-    const mainioSemanticPreview=previewMainioTenant
-      ? mainioSemanticGroundedReply(rows,mainioInterpretation,detectedLang) : null;
-    const mainioOrderPreview=previewMainioTenant && mainioMovingOrderIntent(message);
-    const mainioRoutePreview=previewMainioTenant
-      ? mainioPriorityDomesticRouteAnswer(rows,message,detectedLang,mainioInterpretation) : null;
-    const mainioFactPreview=previewMainioTenant
-      ? mainioPublicFactAnswer(rows,message,detectedLang) : null;
+         }) : null)) : null;
+    const mainioSemanticPreview=(previewMainioTenant||publicMainioDemo)
+      ? mainioSemanticGroundedReply(mainioPreviewRows,mainioInterpretation,detectedLang) : null;
+    const mainioOrderPreview=(previewMainioTenant||publicMainioDemo) && mainioMovingOrderIntent(message);
+    const mainioRoutePreview=(previewMainioTenant||publicMainioDemo)
+      ? mainioPriorityDomesticRouteAnswer(mainioPreviewRows,message,detectedLang,mainioInterpretation) : null;
+    const mainioFactPreview=(previewMainioTenant||publicMainioDemo)
+      ? mainioPublicFactAnswer(mainioPreviewRows,message,detectedLang) : null;
     let result = mainioStatusPreview ? mainioStatusPreview : mainioRoutePreview ? mainioRoutePreview : mainioFactPreview ? mainioFactPreview : mainioSemanticPreview ? mainioSemanticPreview : mainioOrderPreview ? {
       answer:detectedLang==='en'
         ? 'Tell us about your move using the quote form below. We will review the details and confirm the price, date and booking separately.'
@@ -14094,6 +14098,15 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       }
     }
 
+    // If a bounded, topic-focused recovery found the official Mainio FAQ,
+    // retry the source-locked factual matcher (not a free-form model guess).
+    if(publicMainioDemo && result.handoff){
+      const sourceRows=demoMainioEvidence();
+      const retryFact=mainioPublicFactAnswer(sourceRows,message,detectedLang);
+      const retryRoute=mainioPriorityDomesticRouteAnswer(sourceRows,message,detectedLang,mainioInterpretation);
+      if(retryFact||retryRoute)result=retryRoute||retryFact;
+    }
+
     // Unverified product availability is not a lead-generation request.
     // If the public demo could not read that product family, be clear about
     // the uncertainty rather than asserting "no" or immediately opening a
@@ -14119,7 +14132,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       };
     }
 
-    const noAnswer = previewMainioTenant
+    const noAnswer = (previewMainioTenant||publicMainioDemo)
       ? (detectedLang==='en'
           ? 'I cannot confirm that from our available information yet. Leave your contact details and we will get back to you.'
           : detectedLang==='sv'
@@ -14138,7 +14151,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
 
     // For Mainio, an unsupported factual answer must never appear verified
     // just because a generic demo model inferred it. Source rows are mandatory.
-    if(previewMainioTenant && !mainioStatusPreview && !mainioRoutePreview && !mainioFactPreview && !mainioOrderPreview && !mainioSemanticPreview &&
+    if((previewMainioTenant||publicMainioDemo) && !mainioStatusPreview && !mainioRoutePreview && !mainioFactPreview && !mainioOrderPreview && !mainioSemanticPreview &&
        !mainioIsSmallTalk(message) &&
        (!Array.isArray(result.sourceIds) || result.sourceIds.length===0)){
       result={answer:'',handoff:true,confidence:0,intent:'Varmennettu lähde puuttuu',sourceIds:[],selected:[]};
@@ -14147,7 +14160,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     let answer = sanitizeUserFacingText(result.answer);
     // The dashboard can open the verified external link. The Mainio-specific
     // five-step form is intentionally rendered only by the real customer widget.
-    const actions = mainioStatusPreview ? mainioStatusPreview.actions : previewMainioTenant
+    const actions = mainioStatusPreview ? mainioStatusPreview.actions : (previewMainioTenant||publicMainioDemo)
       ? (mainioInterpretation
           ? mainioSemanticActions(mainioInterpretation,detectedLang)
           : mainioInquiryActions(message,detectedLang)).filter((action)=>action?.url)
@@ -14205,7 +14218,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
           : answer;
     }
     if (handoff && !answer) answer = noAnswer;
-    if(previewMainioTenant)answer=mainioCustomerVoice(answer,detectedLang);
+    if(previewMainioTenant||publicMainioDemo)answer=mainioCustomerVoice(answer,detectedLang);
 
     return res.json({
       answer,
