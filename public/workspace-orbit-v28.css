@@ -508,3 +508,25 @@
     line-height:1.5!important;
   }
 }
+
+
+/* V40: orbit icons are real navigation controls, not pointer-inert artwork.
+   Preserve every existing ring, color, scale and scroll animation. */
+#app .rs-workspace-scroll-helix .rs-studio-orbit-art{
+  pointer-events:none;
+}
+#app .rs-workspace-scroll-helix .rs-studio-orbit-icon[data-rs-workspace-icon]{
+  appearance:none;-webkit-appearance:none;padding:0;margin:0;
+  z-index:5;pointer-events:auto;cursor:pointer;font:inherit;line-height:1;
+  -webkit-tap-highlight-color:transparent;
+}
+#app .rs-workspace-scroll-helix .rs-studio-orbit-icon[data-rs-workspace-icon]:hover{
+  opacity:1;border-color:rgba(215,233,255,.8);
+}
+#app .rs-workspace-scroll-helix .rs-studio-orbit-icon[data-rs-workspace-icon]:focus-visible{
+  outline:2px solid #e7f2ff!important;outline-offset:5px;
+}
+#app .rs-workspace-scroll-helix .rs-studio-orbit-ring,
+#app .rs-workspace-scroll-helix .rs-studio-orbit-label{
+  pointer-events:none;
+}

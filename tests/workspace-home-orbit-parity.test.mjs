@@ -62,7 +62,7 @@ test('homepage atmospheric light and glass rings are scoped to account orbit',()
 });
 
 test('home parity does not change real authenticated destinations, working bot or mobile chapter trapping',()=>{
-  for(const id of ['bot','overview','setup','answers','customers','automation','install','profile','billing','settings'])
+  for(const id of ['overview','customers','conversations','team','setup','answers','automation','install','integrations','billing','settings','profile'])
     assert.ok(orbit.includes("id:'"+id+"'"),'Route '+id);
   assert.match(orbit,/botPage\.after\(orb\)/);
   assert.match(orbit,/navigateTo\(section\.id\)/);
