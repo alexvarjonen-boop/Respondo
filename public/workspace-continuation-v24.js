@@ -119,9 +119,49 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   let activePlaceholder=null;
   const overviewMetrics=['stats','respondo-intelligence','dashboard-insights'];
   const metricsHost=$('#respondoWorkspaceOverviewStats');
+  let ownerTrafficPromise=null;
+  function showOwnerTrafficWhenAuthorized(){
+    if(demo||!metricsHost)return;
+    // This endpoint enforces ownerTrafficOnly using the authenticated DB
+    // account, so other tenants never see Respondon's internal visitor data.
+    if(!ownerTrafficPromise){
+      ownerTrafficPromise=fetch('/api/owner/traffic',{credentials:'same-origin'})
+        .then(response=>response.ok?response.json():null).catch(()=>null);
+    }
+    ownerTrafficPromise.then(result=>{
+      if(!result?.summary||!metricsHost.isConnected||metricsHost.querySelector('[data-rs-owner-traffic]'))return;
+      const summary=result.summary;
+      const group=document.createElement('div');
+      group.className='stats rs-owner-traffic-metrics';
+      group.dataset.rsOwnerTraffic='1';
+      group.setAttribute('aria-label',translate('Sivuston kävijätilastot','Besöksstatistik för webbplatsen','Website visitor analytics'));
+      for(const [value,label,caption] of [
+        [summary.today_unique,translate('KÄVIJÄT TÄNÄÄN','BESÖKARE IDAG','VISITORS TODAY'),translate('yksilöllistä kävijää','unika besökare','unique visitors')],
+        [summary.month_unique,translate('KÄVIJÄT 30 PV','BESÖKARE 30 DAGAR','VISITORS 30 DAYS'),translate('yksilöllistä kävijää','unika besökare','unique visitors')]
+      ]){
+        const article=document.createElement('article');
+        article.className='stat';
+        const small=document.createElement('small');
+        small.textContent=label;
+        const total=document.createElement('b');
+        total.textContent=String(Math.max(0,Number(value)||0));
+        const note=document.createElement('span');
+        note.textContent=caption;
+        article.append(small,total,note);
+        group.appendChild(article);
+      }
+      const link=document.createElement('a');
+      link.className='respondo-workspace-review-link';
+      link.href='/trafic';
+      link.textContent=translate('Avaa kaikki kävijätilastot →','Visa all besöksstatistik →','View all visitor analytics →');
+      group.appendChild(link);
+      metricsHost.prepend(group);
+    });
+  }
   const restoreOverviewMetrics=()=>{
     if(!metricsHost)return;
     for(const panel of [...metricsHost.children]){
+      if(panel.hasAttribute('data-rs-owner-traffic'))continue;
       panel.hidden=true;
       panel.style.removeProperty('display');
       modules.appendChild(panel);
@@ -129,6 +169,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   };
   const showOverviewMetrics=()=>{
     if(!metricsHost)return;
+    showOwnerTrafficWhenAuthorized();
     // Display the REAL tenant metrics, not demo numbers or a fabricated visitor count.
     for(const cls of overviewMetrics){
       const panel=[...modules.children].find(el=>el.classList?.contains(cls));
