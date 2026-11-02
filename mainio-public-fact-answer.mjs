@@ -2,7 +2,12 @@
 // identity is confirmed. Semantic intent rules choose an APPROVED known row,
 // never manufacture a fact or reuse a price/availability from another topic.
 const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-  .toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+  .toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim()
+  // Conservative corrections for frequent one-character customer typos.
+  .replace(/\bpaljoko\b/g,'paljonko').replace(/\bkuika\b/g,'kuinka')
+  .replace(/\bmite\b/g,'miten').replace(/\bmuuttolatik/g,'muuttolaatik')
+  .replace(/\blaatikoden\b/g,'laatikoiden').replace(/\bpaketiauto\b/g,'pakettiauto')
+  .replace(/\bajokorti\b/g,'ajokortti').replace(/\bvrk\b/g,'vuorokausi');
 const area=(q,rx)=>rx.test(q);
 import {mainioBoxRentalIntent,mainioBoxRentalFollowupIntent,mainioBoxRentalFollowupKind,mainioVanRentalIntent} from './mainio-moving-intake.mjs';
 
@@ -10,7 +15,7 @@ import {mainioBoxRentalIntent,mainioBoxRentalFollowupIntent,mainioBoxRentalFollo
 function vanRentalDuration(q){
   if(/(?:kolmen tunn|kolme tunt|kolmeksi tunn|kolmeksi tunt|kolmeks tunn|3 tunn|3 tunt|3h\b|3 h\b)/.test(q))return 3;
   if(/(?:viiden tunn|viidelta tunn|viidelta tunt|viideksi tunn|viideksi tunt|viideks tunn|viisi tunt|5 tunn|5 tunt|5h\b|5 h\b)/.test(q))return 5;
-  if(/(?:vuorokau|paivavuokra|paivaksi|vuorokaudelta|24 h\b|24h\b|24 tunt|24 tunn)/.test(q))return 24;
+  if(/(?:vuorokau|paivavuokra|paivaksi|vuorokaudelta|24 h\b|24h\b|24 tunt|24 tunn|vuorokausi|vrk)/.test(q))return 24;
   return 0;
 }
 // Source allowlist for the anonymous Mainio website demo only. This is
