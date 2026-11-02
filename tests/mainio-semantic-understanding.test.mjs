@@ -78,7 +78,7 @@ test('semantic model sees short PII-safe customer message and optional safe prio
 test('conversational moving order intent maps to verified quote workflow',()=>{
   const classification={intent:'moving_quote',confidence:95,route_scope:'unknown'};
   const reply=mainioSemanticGroundedReply([fact],classification,'fi');
-  assert.match(reply.answer,/Mainio vahvistaa hinnan/);
+  assert.match(reply.answer,/Vahvistamme hinnan/);
   assert.doesNotMatch(reply.answer,/onnistuu varmasti|tilaus on vahvistettu/);
   const actions=mainioSemanticActions(classification,'fi');
   assert.equal(actions[0].mode,'mainio_move_form');
@@ -88,8 +88,8 @@ test('cross-country route answer requires approved Finnish service-area evidence
   const intent={intent:'moving_route',route_scope:'domestic',confidence:92};
   const reply=mainioSemanticGroundedReply([fact],intent,'fi');
   assert.deepEqual(reply.sourceIds,['approved-mainio-area']);
-  assert.match(reply.answer,/Mainion vahvistettujen tietojen mukaan/);
-  assert.match(reply.answer,/Mainio tarkistaa erikseen/);
+  assert.match(reply.answer,/Palvelemme Turussa/);
+  assert.match(reply.answer,/tarkistamme erikseen/i);
   assert.doesNotMatch(reply.answer,/onnistuu varmasti/);
   const noEvidence=mainioSemanticGroundedReply([],intent,'fi');
   assert.deepEqual(noEvidence.sourceIds,[]);
@@ -101,7 +101,7 @@ test('international moves require separate international evidence, not domestic 
   assert.doesNotMatch(domestic.answer,/onnistuu|voidaan sopia myös muualle Suomeen/);
   const abroad=mainioSemanticGroundedReply([fact,international],intent,'fi');
   assert.deepEqual(abroad.sourceIds,['international-source']);
-  assert.match(abroad.answer,/ulkomaanmuutot/);
+  assert.match(abroad.answer,/ulkomaanmuutosta/);
 });
 test('ambiguous transport receives clarification rather than a moving booking',()=>{
   const intent={intent:'clarify',confidence:98,route_scope:'unknown'};
@@ -114,7 +114,7 @@ test('box and van questions preserve distinct verified destinations',()=>{
   const van={intent:'van_rental',confidence:92,route_scope:'unknown'};
   assert.match(mainioSemanticActions(boxes,'fi')[0].url,/muuttolaatikot-ja-tarvikkeet/);
   assert.match(mainioSemanticActions(van,'fi')[0].url,/pakettiautojen-vuokraus/);
-  assert.match(mainioSemanticGroundedReply([],boxes,'fi').answer,/muuttolaatikoiden/);
+  assert.match(mainioSemanticGroundedReply([],boxes,'fi').answer,/muuttolaatikoidemme/);
   assert.match(mainioSemanticGroundedReply([],van,'fi').answer,/pakettiautojen/);
 });
 test('area question answers with verified service area but never opens irrelevant quote form',()=>{
@@ -151,7 +151,7 @@ test('budget cap is respected even with a higher user setting',async()=>{
   assert.equal(calls,200);
 });
 test('Swedish and English safe moving quote guidance works without inventing prices',()=>{
-  for(const [lang,pattern] of [['sv',/Mainio bekräftar pris/],['en',/confirmed by Mainio/]]){
+  for(const [lang,pattern] of [['sv',/Vi bekräftar pris/],['en',/we will confirm the price/i]]){
     const reply=mainioSemanticGroundedReply([fact],{intent:'moving_quote'},lang);
     assert.match(reply.answer,pattern);
     assert.equal(mainioSemanticActions({intent:'moving_quote'},lang).length,2);
@@ -196,6 +196,6 @@ test('free local layer does not guess that Finnish-looking routes stay inside Fi
   assert.equal(local?.intent,'moving_route');
   assert.equal(local.route_scope,'unknown');
   const reply=mainioSemanticGroundedReply([fact],local,'fi');
-  assert.match(reply.answer,/en voi vahvistaa/);
+  assert.match(reply.answer,/Tarkistamme reitin toteutuksen/);
   assert.deepEqual(reply.sourceIds,[]);
 });
