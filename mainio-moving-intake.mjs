@@ -35,9 +35,9 @@ const mentionsMovingService=(q)=>/(?:muuttopalvel|kotimuut|yritysmuut|toimistomu
 
 export function mainioMovingIntakeQuestion(message){
   const q=normalized(message);
-  const asksToCollect=/(?:ker[aä]t|kartoitt|t[aä]ytt[aä]|mit[aä]\s+tietoja|tarvitse(?:tte|tko)?\s+(?:tiedot|tietoja)|collect|gather|fill(?:\s+in)?|provide|samla|fylla)/.test(q);
+  const asksToCollect=/(?:ker[aä]+|kartoitt|t[aä]ytt[aä]|mit[aä]\s+tietoja|tarvitse(?:tte|tko)?\s+(?:tiedot|tietoja)|collect|gather|fill(?:\s+in)?|provide|samla|fylla)/.test(q);
   const dataContext=/(?:tiedot|tietoja|kartoit|chat|keskustel|ty[oö]ntekij|asiakaspalvel|henkil[oö]|ennen|l[aä]het|details?|information|conversation|staff|employee|medarbet|uppgifter|personal)/.test(q);
-  const moveContext=mentionsMovingService(q)||/(?:moving|move\\b|flytt\\w*)/.test(q);
+  const moveContext=mentionsMovingService(q)||/(?:moving|move\b|flytt\w*)/.test(q);
   return moveContext&&asksToCollect&&dataContext;
 }
 
