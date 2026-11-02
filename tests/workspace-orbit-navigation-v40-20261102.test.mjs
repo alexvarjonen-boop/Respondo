@@ -65,6 +65,15 @@ test('enterprise integration panel reparenting does not destroy form state or by
   assert.match(app,/id="commerceForm"/);
   assert.match(app,/id="integrationsForm"/);
 });
+test('overview surfaces owner-only pseudonymous day and month visitors without leaking analytics',()=>{
+  assert.match(account,/fetch\('\\/api\\/owner\\/traffic',\{credentials:'same-origin'\}\)/);
+  assert.match(account,/response\.ok\?response\.json\(\):null/);
+  assert.match(account,/result\?\.summary/);
+  assert.match(account,/summary\.today_unique/);
+  assert.match(account,/summary\.month_unique/);
+  assert.match(account,/link\.href='\\/trafic'/);
+  assert.match(account,/if\(panel\.hasAttribute\('data-rs-owner-traffic'\)\)continue/);
+});
 test('dark commerce input labels use an accessible light foreground without redesign',()=>{
   assert.match(workspaceCss,/#commerce-integration \.formgrid \.field > label/);
   assert.match(workspaceCss,/color:#e6ebf4!important;-webkit-text-fill-color:#e6ebf4!important/);
