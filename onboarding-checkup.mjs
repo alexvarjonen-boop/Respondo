@@ -149,7 +149,7 @@ export async function runDueOnboardingCheckups(pool,options={}) {
       " WHERE oc.due_at<=NOW() AND oc.next_attempt_at<=NOW() "+
       " AND (oc.status='pending' OR (oc.status='sending' AND oc.claimed_at<NOW()-INTERVAL '15 minutes'))"+
       " AND t.active=TRUE AND t.subscription_status IN ('active','trialing') AND u.status='active' "+
-      " ORDER BY oc.due_at FOR UPDATE OF oc SKIP LOCKED LIMIT 5"+
+      " ORDER BY oc.due_at LIMIT 5 FOR UPDATE OF oc SKIP LOCKED"+
       ") UPDATE onboarding_checkups oc SET status='sending',claimed_at=NOW(),attempt_count=oc.attempt_count+1,updated_at=NOW() "+
       "FROM due WHERE oc.tenant_id=due.tenant_id RETURNING oc.tenant_id,oc.attempt_count"
     );
