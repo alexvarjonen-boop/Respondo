@@ -79,3 +79,36 @@ test('Mainio approved-facts semantic FAQ retrieval across 22 concrete customer n
   }
   assert.deepEqual(fails,[]);
 });
+
+
+test('Mainio fact answer never trusts other tenants, missing approvals or fabricated sources',()=>{
+  const question='Mitä muuttolaatikon vuokra maksaa?';
+  const valid=mainioPublicFactAnswer(rows,question,'fi');
+  assert.ok(valid && valid.sourceIds.length===1);
+  const row=rows.find(x=>x.title==='Muuttolaatikoiden hinta');
+  for(const mutant of [
+    {...row,approved:false},
+    {...row,source_type:'customer'},
+    {...row,source_url:'https://evil.example/muuttolaatikot'},
+    {...row,source_url:'https://mainiomuuttopalvelu.fi.evil.example/boxes'},
+    {...row,answer:''},
+    {...row,id:''},
+  ])assert.equal(mainioPublicFactAnswer([mutant],question,'fi'),null);
+  assert.equal(mainioPublicFactAnswer(rows,question,'en'),null);
+  assert.equal(mainioPublicFactAnswer(rows,question,'sv'),null);
+  assert.match(mainioCustomerVoice(valid.answer,'fi'),/Muuttolaatikoidemme hinnasto:/);
+  assert.match(mainioCustomerVoice(valid.answer,'fi'),/0,20/);
+  assert.match(mainioCustomerVoice(valid.answer,'fi'),/10 euroa/);
+});
+
+test('Mainio fact lookup must not claim stock or moving availability from a rental price row',()=>{
+  for(const message of [
+    'Onko pakettiauto vapaana huomenna?',
+    'Saanko muuttolaatikot varmasti tänään?',
+    'Olenko varannut muuttoauton ensi tiistaille?',
+    'Meneekö muutto varmasti läpi ensi viikolla?',
+  ]){
+    const answer=mainioPublicFactAnswer(rows,message,'fi');
+    assert.equal(answer,null,message);
+  }
+});
