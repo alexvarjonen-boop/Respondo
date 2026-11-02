@@ -195,7 +195,7 @@ test('chat-based moving intake request is classified and answered with the conse
   const reply=mainioSemanticGroundedReply([fact],classification,lang,question);
   assert.match(reply.answer,lang==='en'?/complete Mainio.s moving questionnaire here in the chat/i:lang==='sv'?/fylla i Mainios flyttkartläggning här i chatten/i:/täyttää tässä chatissa Mainion muuttokartoituksen/i);
   assert.match(reply.answer,lang==='en'?/only after you consent/i:lang==='sv'?/först när du godkänner/i:/vasta, kun hyväksyt lähetyksen/i);
-  assert.match(reply.answer,lang==='en'?/confirms the price and date separately/i:lang==='sv'?/bekräftar pris och datum separat/i:/vahvistaa hinnan sekä muuttopäivän erikseen/i);
+  assert.match(reply.answer,lang==='en'?/confirm the price and date separately/i:lang==='sv'?/bekräftar pris och datum separat/i:/vahvistamme hinnan sekä muuttopäivän erikseen/i);
   const actions=mainioSemanticActions(classification,lang,question);
   assert.equal(actions[0].mode,'mainio_move_form',question);
   }
