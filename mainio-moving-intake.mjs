@@ -31,7 +31,14 @@ export const MAINIO_VAN_RENTAL_URL='https://www.mainiomuuttopalvelu.fi/pakettiau
 const normalized=(message)=>String(message||'').normalize('NFD')
   .replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
-const mentionsMovingService=(q)=>/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuton\b|muuttoon\b|muuttoa\b|muutosta\b|muutolle\b|muutot\b|muuttoja\b|muutto\b|muuttaa\b|muutan\b|muutamme\b|muuttaisin\b|muutasin\b|muutetaan\b|muuttamassa\b|muuttamaan\b|muutatte(?:ko|ks)?\b|muuttaisitte(?:ko)?\b|muuttaisit(?:ko)?\b|muutattehan\b|muutat(?:ko)?\b|muuttaako\b|muutetaanko\b|moving\s+service|book\s+(?:my|a)\s+move|flytt\w*|flytthjalp|flyttfirma)/.test(q);
+const mentionsMovingService=(q)=>/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuttotarjou|muuton\b|muuttoon\b|muuttoa\b|muutosta\b|muutolle\b|muutot\b|muuttoja\b|muutto\b|muuttaa\b|muutan\b|muutamme\b|muuttaisin\b|muutasin\b|muutetaan\b|muuttamassa\b|muuttamaan\b|muutatte(?:ko|ks)?\b|muuttaisitte(?:ko)?\b|muuttaisit(?:ko)?\b|muutattehan\b|muutat(?:ko)?\b|muuttaako\b|muutetaanko\b|moving\s+service|book\s+(?:my|a)\s+move|flytt\w*|flytthjalp|flyttfirma)/.test(q);
+
+export function mainioMovingIntakeQuestion(message){
+  const q=normalized(message);
+  const asksToCollect=/(?:ker[aä]t|kartoitt|t[aä]ytt[aä]|mit[aä]\s+tietoja|tarvitse(?:tte|tko)?\s+(?:tiedot|tietoja))/.test(q);
+  const dataContext=/(?:tiedot|tietoja|kartoit|chat|keskustel|ty[oö]ntekij|asiakaspalvel|henkil[oö]|ennen|l[aä]het)/.test(q);
+  return mentionsMovingService(q)&&asksToCollect&&dataContext;
+}
 
 // Identify a *move between places*, including ordinary spoken Finnish:
 // "Onnistuuko muutto Rovaniemeltä Turkuun?" and "Ois muutto Oulusta Helsinkiin".
@@ -186,7 +193,7 @@ export function mainioMovingOrderIntent(message){
   if(mainioInquiryKind(q)!=='moving')return false;
   const move=mentionsMovingService(q);
   const order=/(?:tilaa|tilaamaan|tilata|tilaisin|varaa|varata|varaisin|tarjouspyyn|hinta-arvio|pyydan\s+tarjou|book|request\s+(?:a\s+)?quote|boka|bestall|offert)/.test(q);
-  return move && order;
+  return move && (order || mainioMovingIntakeQuestion(message));
 }
 
 // Static website facts (prices, opening hours, minimum notice) cannot prove
