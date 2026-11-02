@@ -1,6 +1,7 @@
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voice.mjs';
 import {mainioPublicFactAnswer,mainioPublicWebsiteEvidence} from './mainio-public-fact-answer.mjs';
+import {isMainioPublicDemoWebsite} from './mainio-public-demo-identity.mjs';
 import { MAINIO_TENANT_ID, MAINIO_QUOTE_URL, isMainioMovingTenant, mainioBookingStatusQuestion, mainioBookingStatusReply, mainioInquiryActions, mainioMovingOrderIntent, mainioMovingRouteIntent, mainioRecognizedDomesticRoute, mainioIsSmallTalk, validateMainioMove, mainioMoveDetails } from './mainio-moving-intake.mjs';
 import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManagedCredentials, managedPlaceholderEmail } from './managed-accounts.mjs';
 import { brandedEmailHtml } from './email-branding.mjs';
@@ -13973,9 +13974,9 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const importedDemoHost=normalizeHost(trustedImportedDemoWebsite);
     // This is only a public demo of the supplied Mainio website, not access
     // to Mainio's authenticated customer workspace or private reservations.
-    const publicMainioDemo=isPublicDemo &&
-      enteredDemoHost==='mainiomuuttopalvelu.fi' &&
-      (!importedDemoHost || importedDemoHost==='mainiomuuttopalvelu.fi');
+    const publicMainioDemo=isMainioPublicDemoWebsite({
+      isPublicDemo,enteredDemoHost,importedDemoHost
+    });
     // Public demo facts are never loaded from Mainio's private tenant.
     // Accept only content actually imported from Mainio's own HTTPS site.
     const demoMainioEvidence=()=>mainioPublicWebsiteEvidence(rows);
