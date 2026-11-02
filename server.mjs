@@ -14069,7 +14069,13 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       };
     }
 
-    const noAnswer = detectedLang === 'en'
+    const noAnswer = previewMainioTenant
+      ? (detectedLang==='en'
+          ? 'I cannot confirm that from our available information yet. Leave your contact details and we will get back to you.'
+          : detectedLang==='sv'
+            ? 'Jag kan inte bekräfta det utifrån våra tillgängliga uppgifter just nu. Lämna dina kontaktuppgifter så återkommer vi.'
+            : 'En pysty vielä vahvistamaan tätä käytettävissä olevista tiedoistamme. Jätä yhteystietosi, niin palaamme sinulle.')
+      : detectedLang === 'en'
       ? 'I cannot find a reliable answer to this in the company information. Leave your name and phone number or email below, and someone from the company can get back to you.'
       : detectedLang === 'sv'
         ? 'Jag hittar inget säkert svar på detta i företagets information. Lämna ditt namn och telefonnummer eller din e-postadress nedan, så kan någon från företaget kontakta dig.'
@@ -14729,7 +14735,13 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     }
 
     const responseLang = detectedLang;
-    const noAnswer = responseLang === 'en'
+    const noAnswer = mainioTenant
+      ? (responseLang==='en'
+          ? 'I cannot confirm that from our available information yet. Leave your contact details and we will get back to you.'
+          : responseLang==='sv'
+            ? 'Jag kan inte bekräfta det utifrån våra tillgängliga uppgifter just nu. Lämna dina kontaktuppgifter så återkommer vi.'
+            : 'En pysty vielä vahvistamaan tätä käytettävissä olevista tiedoistamme. Jätä yhteystietosi, niin palaamme sinulle.')
+      : responseLang === 'en'
       ? 'I cannot find a reliable answer to this in the company information. Leave your name and phone number or email below, and someone from the company can get back to you.'
       : responseLang === 'sv'
         ? 'Jag hittar inget säkert svar på detta i företagets information. Lämna ditt namn och telefonnummer eller din e-postadress nedan, så kan någon från företaget kontakta dig.'
