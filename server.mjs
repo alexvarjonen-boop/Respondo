@@ -14169,7 +14169,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // five-step form is intentionally rendered only by the real customer widget.
     const actions = mainioStatusPreview ? mainioStatusPreview.actions : (previewMainioTenant||publicMainioDemo)
       ? (mainioInterpretation
-          ? mainioSemanticActions(mainioInterpretation,detectedLang,message)
+          ? mainioSemanticActions(mainioInterpretation,detectedLang,message,history.at(-1)?.question||'')
           : mainioInquiryActions(message,detectedLang)).filter((action)=>action?.url)
       : chatActions(rows, message, handoff, detectedLang, result.selected || [])
           .filter((action) => action?.type !== 'order_status');
@@ -14850,7 +14850,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       const contactActions=chatActions(actionRows,message,handoff,responseLang,result.selected)
         .filter(action=>['contact','phone','email'].includes(action.type));
       const mainioActions=mainioInterpretation
-        ? mainioSemanticActions(mainioInterpretation,responseLang,message)
+        ? mainioSemanticActions(mainioInterpretation,responseLang,message,history.at(-1)?.question||'')
         : mainioInquiryActions(message,responseLang);
       actions=[...mainioActions,...contactActions].slice(0,4);
     }
