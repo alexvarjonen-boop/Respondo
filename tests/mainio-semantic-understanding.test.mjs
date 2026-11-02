@@ -199,6 +199,9 @@ test('chat-based moving intake request is classified and answered with the conse
   const actions=mainioSemanticActions(classification,lang,question);
   assert.equal(actions[0].mode,'mainio_move_form',question);
   }
+ const previewReply=mainioSemanticGroundedReply([fact],interpretMainioLocalIntent(questions[0]),'fi',questions[0],true);
+ assert.match(previewReply.answer,/varsinaisessa chat-widgetissä/);
+ assert.match(previewReply.answer,/Tässä esikatselussa painike avaa.*tarjouslomakkeen/);
 });
 
 test('free intent layer abstains on uncertain pricing, safety and unrelated topics',()=>{
