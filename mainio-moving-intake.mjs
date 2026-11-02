@@ -31,7 +31,7 @@ export const MAINIO_VAN_RENTAL_URL='https://www.mainiomuuttopalvelu.fi/pakettiau
 const normalized=(message)=>String(message||'').normalize('NFD')
   .replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
-const mentionsMovingService=(q)=>/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuton\b|muuttoon\b|muuttoa\b|muutosta\b|muutolle\b|muutot\b|muuttoja\b|muutto\b|muuttaa\b|muuttamaan\b|muutatte(?:ko|ks)?\b|muuttaisitte(?:ko)?\b|muuttaisit(?:ko)?\b|muutattehan\b|muutat(?:ko)?\b|muuttaako\b|muutetaanko\b|moving\s+service|book\s+(?:my|a)\s+move|flytt\w*|flytthjalp|flyttfirma)/.test(q);
+const mentionsMovingService=(q)=>/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuton\b|muuttoon\b|muuttoa\b|muutosta\b|muutolle\b|muutot\b|muuttoja\b|muutto\b|muuttaa\b|muutan\b|muutamme\b|muuttaisin\b|muutasin\b|muutetaan\b|muuttamassa\b|muuttamaan\b|muutatte(?:ko|ks)?\b|muuttaisitte(?:ko)?\b|muuttaisit(?:ko)?\b|muutattehan\b|muutat(?:ko)?\b|muuttaako\b|muutetaanko\b|moving\s+service|book\s+(?:my|a)\s+move|flytt\w*|flytthjalp|flyttfirma)/.test(q);
 
 // Identify a *move between places*, including ordinary spoken Finnish:
 // "Onnistuuko muutto Rovaniemeltä Turkuun?" and "Ois muutto Oulusta Helsinkiin".
@@ -124,11 +124,15 @@ export function mainioInquiryKind(message){
   // mentioning boxes or a moving van as an accessory must not silently turn
   // the whole request into a box/van RENTAL. Rental-only questions still
   // follow their separate pages. Avoid recursively calling routeIntent here.
-  const explicitMove=/\b(?:muutto|muuton|muuttoa|muuttoon|muutosta|muuttoja|muuttaa|muuttamaan|muutatte(?:ko|ks)?|muuttaisitteko|moving service|flytt|flytten|flytta)\b/.test(q);
+  const explicitMove=/\b(?:muutto|muuton|muuttoa|muuttoon|muutosta|muuttoja|muuttaa|muutan|muutamme|muuttaisin|muutasin|muutetaan|muuttamassa|muuttamaan|muutatte(?:ko|ks)?|muuttaisitteko|moving service|flytt|flytten|flytta)\b/.test(q);
   const routeBetweenPlaces=/\b[a-zåäö-]{3,45}(?:sta|lta)\b[\s,–-]+(?:ihan\s+)?[a-zåäö-]{3,45}(?:lle|iin|uun|oon|aan|een|hun)\b/.test(q) ||
     /\b(?:from|fran)\s+[a-zåäö-]{3,55}\s+(?:to|till)\s+[a-zåäö-]{3,55}\b/.test(q);
   const rentalRequest=/(?:vuokra|vuokral|vuokratt|lainaa|lainaksi|\brent\b|\brental\b|\bhire\b|\bhyra\b|\bhyr\b)/.test(q);
-  if(explicitMove && routeBetweenPlaces && !rentalRequest)return 'moving';
+  // When the customer asks about the MOVE first, a separate request to rent
+  // boxes or a van must not hide the route enquiry. A van rented FOR a move
+  // (without asking for a moving service) still stays a van rental.
+  const movingRouteQuestion=/(?:onnistuuko|onnistuisko|onnistuisiko|teetteko|hoidatteko|voitteko|pystytteko|saako|ois|oisko|pitas|pitaisi|haluan|haluaisin)\s+(?:[a-zåäö-]+\s+){0,3}(?:muutto|muuton|muuttoa|muuttoja|muuttaa|muutan|muutamme)\b/.test(q);
+  if(explicitMove && routeBetweenPlaces && (!rentalRequest || movingRouteQuestion))return 'moving';
   if(mainioBoxRentalIntent(q))return 'boxes';
   if(mainioVanRentalIntent(q))return 'van';
   return 'moving';
