@@ -14,6 +14,13 @@ const glyphs={
   profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   settings:'<circle cx="12" cy="12" r="3"/><path d="M10 2h4l.6 2.5 2.2 1.2 2.4-1 2 3.5-1.8 1.8v2.5l1.8 1.8-2 3.5-2.4-1-2.2 1.2L14 22h-4l-.6-2.5-2.2-1.2-2.4 1-2-3.5 1.8-1.8v-2.5L2.8 9.7l2-3.5 2.4 1 2.2-1.2z"/>'
 };
+// A forward gesture on the last chapter restarts the sphere, but an
+// upward gesture at the first chapter still returns to the preceding chat.
+export function nextWorkspaceOrbitChapter(current,direction,count){
+  if(count<1 || direction===0)return current;
+  if(direction>0)return (current+1)%count;
+  return current===0?-1:current-1;
+}
 const icon=(key)=>'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">'+glyphs[key]+'</svg>';
 
 /* Respondo OS reuses the home orbit's light-field layers and exact scroll-film variables.
@@ -89,6 +96,7 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
   const button=orb.querySelector('#rsOrbitOpen');
   let currentIndex=0;
   let navigationFreeze=false;
+  let wrapCooldownUntil=0;
   let navigateTo=navigate;
   let frame=0;
   let pinned=false;
@@ -164,7 +172,7 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     if(!frame && orb.isConnected)frame=requestAnimationFrame(draw);
   }
 
-  // Mobile Safari may carry a fast native flick through all ten sticky
+  // Mobile Safari may carry a fast native flick through all twelve sticky
   // chapters. Capture entry before momentum skips the sphere; freeze only
   // this one screen and move exactly one chapter for every finger swipe.
   const stage=orb.querySelector('.rs-workspace-helix-stage');
@@ -206,14 +214,36 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     previousY=dest;
   }
   function moveSection(direction){
-    const next=currentIndex+direction;
-    if(next<0 || next>=sections.length)return exitSphere(direction);
+    const next=nextWorkspaceOrbitChapter(currentIndex,direction,sections.length);
+    if(next<0)return exitSphere(direction);
     selectIndex(next);
+    schedule();
+  }
+  // Desktop normally uses native scroll. When its last sphere chapter
+  // reaches the edge, restart the same sphere rather than fall into the
+  // footer. This does not change click-through navigation to real modules.
+  function wrapToOverview(){
+    wrapCooldownUntil=performance.now()+900;
+    const top=Math.max(0,window.scrollY+orb.getBoundingClientRect().top);
+    navigationFreeze=false;
+    selectIndex(0);
+    window.scrollTo({top,behavior:'instant'});
+    previousY=top;
     schedule();
   }
   function onPageScroll(){
     schedule();
     const y=window.scrollY;
+    // A trackpad may deliver non-cancelable momentum events. Catch any
+    // crossing of the orbit's last edge before it can expose page bottom.
+    if(!pinned && !phone() && !navigationFreeze && orb.isConnected && !workspace.hidden &&
+       performance.now()>=wrapCooldownUntil && currentIndex===sections.length-1 && y>previousY+1){
+      const rect=orb.getBoundingClientRect();
+      if(rect.top<0 && rect.bottom<=window.innerHeight+8 && rect.bottom>-window.innerHeight*.35){
+        wrapToOverview();
+        return;
+      }
+    }
     if(pinned || !phone() || !orb.isConnected || workspace.hidden){previousY=y;return;}
     const top=orb.getBoundingClientRect().top+y;
     const end=top+orb.offsetHeight;
@@ -249,9 +279,26 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
   stage.addEventListener('touchcancel',()=>{startTouch=null;},{passive:true});
   let lastWheel=0;
   stage.addEventListener('wheel',(event)=>{
-    if(!pinned || Math.abs(event.deltaY)<8)return;
-    if(event.cancelable)event.preventDefault();
+    if(Math.abs(event.deltaY)<8)return;
     const now=performance.now();
+    if(!pinned && !phone()){
+      if(now<wrapCooldownUntil){
+        if(event.cancelable)event.preventDefault();
+        return;
+      }
+      if(event.deltaY>0 && !navigationFreeze && currentIndex===sections.length-1){
+        const rect=orb.getBoundingClientRect();
+        const range=Math.max(1,rect.height-Math.max(1,window.innerHeight));
+        const progress=clamp(-rect.top/range,0,1);
+        if(rect.top<=0 && rect.bottom>0 && progress>=(sections.length-1.5)/(sections.length-1)){
+          if(event.cancelable)event.preventDefault();
+          wrapToOverview();
+        }
+      }
+      return;
+    }
+    if(!pinned)return;
+    if(event.cancelable)event.preventDefault();
     if(now-lastWheel<450)return;
     lastWheel=now;
     moveSection(event.deltaY>0?1:-1);
