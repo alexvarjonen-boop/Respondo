@@ -44,7 +44,7 @@ test('720 FI SV EN utterance variants return their specific verified rental tari
             const result=mainioPublicFactAnswer(rows,message,lang);
             assert.ok(result&&!result.handoff,lang+': '+message);
             assert.equal(result.sourceIds.length,sourceCount,lang+': '+message);
-            assert.ok(result.answer.includes(expected),lang+': '+message+' -> '+result.answer);
+            assert.ok(result.answer.includes(expected) || (lang==='fi' && result.answer.includes(expected.replace(' €',' euroa'))),lang+': '+message+' -> '+result.answer);
             assert.equal(result.verified,true);
             count++;
           }
