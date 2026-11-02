@@ -13,6 +13,11 @@ export function mainioCustomerVoice(value,lang='fi'){
     // Approved public source extracts often speak about Mainio in third
     // person. Switch only established ownership phrases; preserve numeric
     // amounts, dates, conditions and the source's affirmative/negative meaning.
+    // Coordinate two verbs when first-party voice replaces the subject:
+    // “Mainio tarkistaa pyynnön ja vahvistaa” -> “Tarkistamme ... ja vahvistamme”.
+    answer=answer.replace(/\bMainio(?: Muuttopalvelu)?\s+tarkistaa\b([^.!?]{0,160}?)\b(ja|sekä)\s+vahvistaa\b/gi,
+      (_all,middle,conjunction,index,input)=>
+        sentenceCase('tarkistamme'+middle+conjunction+' vahvistamme',index,input));
     answer=answer
       .replace(/Mainion muuttolaatikoiden hinnasto:/gi,'Muuttolaatikoidemme hinnasto:')
       .replace(/Mainion muuttolaatikoiden (?:koko|mitat)/gi,'Muuttolaatikoidemme koko')

@@ -31,7 +31,7 @@ export const MAINIO_VAN_RENTAL_URL='https://www.mainiomuuttopalvelu.fi/pakettiau
 const normalized=(message)=>String(message||'').normalize('NFD')
   .replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
-const mentionsMovingService=(q)=>/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuttotarjou|muuton\b|muuttoon\b|muuttoa\b|muutosta\b|muutolle\b|muutot\b|muuttoja\b|muutto\b|muuttaa\b|muutan\b|muutamme\b|muuttaisin\b|muutasin\b|muutetaan\b|muuttamassa\b|muuttamaan\b|muutatte(?:ko|ks)?\b|muuttaisitte(?:ko)?\b|muuttaisit(?:ko)?\b|muutattehan\b|muutat(?:ko)?\b|muuttaako\b|muutetaanko\b|moving\s+(?:service|details|information|request)|(?:my|our|the)\s+move|book\s+(?:my|a)\s+move|flytt\w*|flytthjalp|flyttfirma)/.test(q);
+const mentionsMovingService=(q)=>/(?:muuttopalvel|kotimuut|yritysmuut|toimistomuut|muuttotarjou|muuttotie|muuton\b|muuttoon\b|muuttoa\b|muutosta\b|muutolle\b|muutot\b|muuttoja\b|muutto\b|muuttaa\b|muutan\b|muutamme\b|muuttaisin\b|muutasin\b|muutetaan\b|muuttamassa\b|muuttamaan\b|muutatte(?:ko|ks)?\b|muuttaisitte(?:ko)?\b|muuttaisit(?:ko)?\b|muutattehan\b|muutat(?:ko)?\b|muuttaako\b|muutetaanko\b|moving\s+(?:service|details|information|request)|(?:my|our|the)\s+move|book\s+(?:my|a)\s+move|flytt\w*|flytthjalp|flyttfirma)/.test(q);
 
 export function mainioMovingIntakeQuestion(message){
   const q=normalized(message);
@@ -44,6 +44,26 @@ export function mainioMovingIntakeQuestion(message){
 // Identify a *move between places*, including ordinary spoken Finnish:
 // "Onnistuuko muutto Rovaniemeltä Turkuun?" and "Ois muutto Oulusta Helsinkiin".
 // This is intent detection only; it never determines actual service availability.
+export function mainioMovingAccessQuestion(message){
+  const q=normalized(message);
+  return /(?:muutto|muuttaa|muuton|muuttaa|muutetaanko|muuttaa|muuttamis)/.test(q) &&
+    /(?:hissitt|ilman hissia|ei ole hissia|hissi.*puuttu|(?:kolmann|neljann|viidenn|kuudenn|3\.|4\.|5\.)\s+kerroks)/.test(q);
+}
+export function mainioMovingConsentQuestion(message){
+  const q=normalized(message);
+  return /(?:tieton|tietoj|henkilotiet|yhteystiet|my details|personal data|uppgifter)/.test(q) &&
+    /(?:lahett|luovut|valitt|jaa\b|send|share|forward|skicka|dela)/.test(q) &&
+    /(?:ilman lupaa|ilman suostumu|lupaa|suostumu|without.*(?:consent|permission)|utan.*(?:samtyck|lov))/.test(q) &&
+    /(?:mainio|muuttopalvel|tyontekij|employee|personal)/.test(q);
+}
+export function mainioMovingConsentReply(lang='fi'){
+  const answer=lang==='en'
+    ? 'No. Your moving request and contact information are sent to Mainio only after you explicitly consent to the submission. Completing the questionnaire does not confirm a booking or a price.'
+    :lang==='sv'
+      ? 'Nej. Dina flytt- och kontaktuppgifter skickas till Mainio först när du uttryckligen samtycker till att skicka förfrågan. Det innebär inte att bokning eller pris har bekräftats.'
+      : 'Ei. Muuttokartoituksen tiedot ja yhteystiedot lähetetään Mainiolle vasta, kun hyväksyt niiden lähettämisen. Lomakkeen täyttäminen ei vahvista tilausta tai hintaa.';
+  return {answer,handoff:false,confidence:1,intent:'Tietojen lähetyksen suostumus',sourceIds:[],selected:[],actions:[]};
+}
 export function mainioMovingRouteIntent(message) {
   const q=normalized(message);
   const move=mentionsMovingService(q) ||
@@ -52,7 +72,10 @@ export function mainioMovingRouteIntent(message) {
   if(!move || mainioInquiryKind(q)!=='moving')return false;
   const fiRoute=/\b[a-zåäö-]{3,45}(?:sta|sta|lta)\b[\s,–-]+(?:ihan\s+)?[a-zåäö-]{3,45}(?:lle|iin|uun|oon|aan|een|hun|ään|aan)\b/.test(q);
   const enSvRoute=/\b(?:from|fran)\s+[a-zåäö-]{3,55}\s+(?:to|till)\s+[a-zåäö-]{3,55}\b/.test(q);
-  return fiRoute || enSvRoute;
+  const colloquialRoute=/\b[a-zåäö-]{4,45}(?:sta|lta|st|lt)\b[\s,–-]+(?:ihan\s+)?[a-zåäö-]{4,45}(?:lle|iin|uun|oon|aan|een|seen|see|se)\b/.test(q);
+  // A fuzzy pair establishes a quote-routing intent, never that both towns
+  // are recognised Finnish destinations or that the route is available.
+  return fiRoute || enSvRoute || colloquialRoute;
 }
 
 // Strictly limited confidence check for common Finnish origin + destination
@@ -185,7 +208,7 @@ export function mainioInquiryActions(message,lang='fi'){
   const q=normalized(message);
   const priceOrQuote=/(?:paljonko|hinta|maksa|kusta|tarjou|arvio|price|cost|quote|estimate|pris|kostar|offert)/.test(q);
   if(!mentionsMovingService(q) && !mainioMovingRouteIntent(message))return [];
-  if(!(mainioMovingOrderIntent(message) || priceOrQuote || mainioMovingRouteIntent(message)))return [];
+  if(!(mainioMovingOrderIntent(message) || priceOrQuote || mainioMovingRouteIntent(message) || mainioMovingAccessQuestion(message)))return [];
   return mainioMoveActions(locale);
 }
 
@@ -205,9 +228,9 @@ export function mainioBookingStatusQuestion(message){
   if(!q || q.length>480)return false;
   const subject=/(?:muutto|muuton|muuttoa|muuttoaj|muuttolaatik|laatik|pakettiaut|paku|vuokra|varaus|varauk|reservation|booking|bokning|flytt|sk[aå]pbil|hyrbil|hyra|\b(?:van|vans|box|boxes|move|moving)\b)/.test(q);
   if(!subject)return false;
-  const status=/(?:\b(?:vapaa|vapaana|vapaita|vapaata|saatavilla|saatavuus|varattu|varannut|varanneet|vuokrattu|vahvistettu|varmistettu|varmasti|vahvistitte|tilausvahvistus|booked|confirmed|available|free|ledig|lediga|bokat|bokad|bekraftad)\b|\b(?:booking confirmed|already booked|is it booked)\b|\b(?:minun|mulle|minulle|meidan|meille|my|our)\b.{0,45}\b(?:varaus|varattu|vuokra|booking|reservation)\b)/.test(q);
+  const status=/(?:\b(?:vapaa|vapaana|vapaita|vapaata|saatavilla|saatavuus|varattu|varannut|varanneet|vuokrattu|vahvistettu|vahvistaa|vahvistatte|vahvistaisitte|varmistettu|varmasti|vahvistitte|tilausvahvistus|booked|confirmed|available|free|ledig|lediga|bokat|bokad|bekraftad)\b|\b(?:booking confirmed|already booked|is it booked)\b|\b(?:minun|mulle|minulle|meidan|meille|my|our)\b.{0,45}\b(?:varaus|varattu|vuokra|booking|reservation)\b)/.test(q);
   if(!status)return false;
-  const asking=/(?:onko|onks|olenko|saanko|voinko|teitteko|vahvistitteko|tarkista|tietaa|nayttaako|mista tied|milloin|varmasti|\b(?:is|are|do|did|can|have|has|har|ar|kan|finns)\b)/.test(q);
+  const asking=/(?:onko|onks|olenko|saanko|voinko|voitteko|pystytteko|voisitteko|teitteko|vahvistitteko|tarkista|tietaa|nayttaako|mista tied|milloin|varmasti|\b(?:is|are|do|did|can|have|has|har|ar|kan|finns)\b)/.test(q);
   return asking;
 }
 export function mainioBookingStatusReply(lang='fi'){

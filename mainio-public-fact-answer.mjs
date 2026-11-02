@@ -100,8 +100,19 @@ const RULES=[
   {title:'TV ja reititinasennukset',
     check:q=>/(?:luvanvarai|sahkoasen|sahkot|putkit)/.test(q)&&
       /(?:teetteko|tehd|voi|pystyt|onko|asenn)/.test(q)},
+  {title:'Pakettiauton tavaratilan koko',
+    check:q=>/(?:pakettiaut|paku|vuokra\s*aut)/.test(q) &&
+      /(?:kuuti|m3\b|tilavuu|tavaratila|kuorma|mahtu)/.test(q) &&
+      !/(?:hinta|maksaa|paljonko|vuokra.*hinta|kustann)/.test(q)},
+  {title:'Pakkaus- ja kantoapu',
+    check:q=>/(?:pakkausapu|pakkaus\s*ja\s*kantoapu|kantamis|kantoapu|pakkaamis|pakkaatte|pakkau\w*)/.test(q) &&
+      /(?:onko|onks|saako|tarjoa|tarvit|voitte|pystyt|teette|teilt|teilla|avuksi|apu\b)/.test(q) &&
+      !/(?:laatik|tarvik|pakkaustarvike|kuplamuov)/.test(q)},
+  {title:'Hissittömän muuton suunnittelu',
+    check:q=>/(?:muutto|muuttaa|muuton|muuttamis|kerrostal)/.test(q) &&
+      /(?:hissitt|ilman hissia|ei ole hissia|hissi.*puuttu)/.test(q)},
   {title:'Muuton hinta',
-    check:q=>/(?:muuton hinta|muutto maksaa|muuttokustann|muuton kustann|muuton hint|mista muuton hinta muodostu)/.test(q) &&
+    check:q=>/(?:muuton hinta|muutto maksaa|muuttokustann|muuton kustann|muuton hint|mista muuton hinta muodostu|muut(?:to|on|toa|tto)?\s*(?:\w+\s+){0,5}(?:maks|kustan|hinta|hintaa)|(?:paljonko|kuinka paljon|mita)\s*(?:\w+\s+){0,7}muut(?:to|to\w*|on))/i.test(q) &&
       !/(?:laatik|pakettiaut|paku)/.test(q)},
   {title:'Täyden palvelun avaimet käteen -muutto',
     check:q=>/(?:avaimet kateen|pakkaatteko|hoidatteko koko muuton|voitteko pakata|hoidatteko.*pakkaamisen|tavaroiden pakkaamisen|pakkausapu)/.test(q)},
