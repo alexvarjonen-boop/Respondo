@@ -114,7 +114,7 @@ const RULES=[
   {title:'Pakkaus- ja kantoapu',
     check:q=>/(?:pakkausapu|pakkaus\s*ja\s*kantoapu|kantamis|kantoapu|kantaa|kannat|kannatte|kanna|pakkaamis|pakkaatte|pakata|pakkau\w*)/.test(q) &&
       /(?:onko|onks|saako|tarjoa|tarvit|voitte|pystyt|teette|teilt|teilla|avuksi|apu\b)/.test(q) &&
-      !/(?:laatik|tarvik|pakkaustarvike|kuplamuov|avaimet kateen|tayden palvelun|koko muuton|kaikki vaiheet|alusta loppuun)/.test(q)},
+      !/(?:laatik|tarvik|pakkaustarvike|kuplamuov|avaimet kateen|tayden palvelun|koko muuton|kaikki vaiheet|alusta loppuun|pakkaatteko.*kaikki|pakkaamisen.*muuton)/.test(q)},
   {title:'Hissittömän muuton suunnittelu',
     check:q=>/(?:muutto|muuttaa|muuton|muutossa|muuttamis|kerrostal)/.test(q) &&
       /(?:hissitt|ilman hissia|ei ole hissia|hissi.*puuttu)/.test(q)},
