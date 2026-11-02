@@ -86,6 +86,26 @@ test('colloquial vehicle pickup question answers with the official address and i
  ]);
 });
 
+test('pickup-instruction timing follow-up inherits the immediately preceding van pickup context',()=>{
+ const previous='Mistä mä voin hakea sen auton?';
+ const reply=mainioPublicFactAnswer(rows,'Milloin saan nouto-ohjeet?','fi',previous);
+ assert.ok(reply&&!reply.handoff);
+ assert.match(reply.answer,/tekstiviestillä vuokrausta edeltävänä päivänä/i);
+ assert.doesNotMatch(reply.answer,/muuttolaatik/);
+ assert.deepEqual(reply.sourceIds,['demo-mainio-official-11']);
+ const actions=mainioSemanticActions({intent:'clarify'},'fi','Milloin saan nouto-ohjeet?',previous);
+ assert.deepEqual(actions.map(x=>x.url),[
+  'https://www.mainiomuuttopalvelu.fi/pakettiautojen-vuokraus'
+ ]);
+});
+
+test('colloquial paku pickup questions also expose the van rental link',()=>{
+ const actions=mainioInquiryActions('Missä pakun nouto tapahtuu?','fi');
+ assert.deepEqual(actions.map(x=>x.url),[
+  'https://www.mainiomuuttopalvelu.fi/pakettiautojen-vuokraus'
+ ]);
+});
+
 test('contextual tariff answers never imply live booking availability',()=>{
  const reply=mainioPublicFactAnswer(rows,'Onko 3 tunnin pakettiauto huomenna vapaana?','fi',firstQuestion);
  assert.equal(reply,null);

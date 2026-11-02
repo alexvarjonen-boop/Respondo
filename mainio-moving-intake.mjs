@@ -113,6 +113,7 @@ export function mainioVanRentalIntent(message){
   // "auto", e.g. "mistä auto haetaan jos vuokraan?".
   if(rental&&/\b(?:auto|auton|autolla|autoon|autosta|autolle)\b/.test(q))return true;
   if(pickup&&/\b(?:auto|auton|autolla|autoon|autosta|autolle)\b/.test(q))return true;
+  if(pickup&&/\b(?:paku|pakun|pakua|pakulla|pakulle|pakusta|pakut|pakuihin)\b/.test(q))return true;
   return /\b(?:paku|pakun|pakua|pakulla|pakulle|pakusta|pakut|pakuihin|van|vans)\b/.test(q) && rental;
 }
 

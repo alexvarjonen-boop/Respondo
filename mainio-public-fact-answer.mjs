@@ -172,6 +172,23 @@ export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQu
   // first matched FAQ topic hide the second.
   const combinedRental=mainioVanRentalIntent(message)&&mainioBoxRentalIntent(message)&&
     /(?:vuokra|vuokr|rent|hire|hyra)/.test(currentQ);
+  // Resolve short follow-ups about the timing of pickup instructions against
+  // the immediately preceding, explicit Mainio vehicle-pickup question.
+  const previousVehiclePickup=/(?:pakettiaut|paku|auto\w*)/.test(previousQ)&&
+    /(?:mista.*(?:hae|hak|nout)|mihin.*palaut|nouto|palautus)/.test(previousQ);
+  const asksPickupInstructionTiming=/(?:nouto|ohje|tekstiviest|sms)/.test(currentQ)&&
+    /(?:milloin|koska|saan|saanko|tulee|saap)/.test(currentQ);
+  if(previousVehiclePickup&&asksPickupInstructionTiming){
+    const pickupRow=(rows||[]).find(row=>approvedRow(row)&&
+      norm(row.title)===norm('Pakettiauton nouto- ja palautusosoite'));
+    if(pickupRow){
+      return {
+        answer:'Saat tarkemmat auton nouto- ja palautusohjeet tekstiviestillä vuokrausta edeltävänä päivänä.',
+        handoff:false,confidence:1,intent:'Pakettiauton nouto-ohjeet',
+        sourceIds:[pickupRow.id],selected:[pickupRow],verified:true
+      };
+    }
+  }
   const duration=vanRentalDuration(currentQ);
   if(combinedRental&&duration&&!asksForBookingStatus){
     const vanTitle=duration===3?'Paljonko pakettiauton 3 tunnin vuokra maksaa?':
