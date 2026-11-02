@@ -5,14 +5,15 @@ import {mainioPublicKnowledgeWithOfficialFacts} from '../mainio-official-public-
 import {
   mainioMovingIntakeQuestion,mainioMovingOrderIntent,mainioInquiryActions,
   mainioMovingRouteIntent,mainioRecognizedDomesticRoute,mainioMovingAccessQuestion,
-  mainioMovingConsentQuestion,mainioMovingConsentReply,mainioBookingStatusQuestion
+  mainioMovingConsentQuestion,mainioMovingConsentReply,mainioBookingStatusQuestion,
+  mainioBoxRentalFollowupIntent
 } from '../mainio-moving-intake.mjs';
-import {interpretMainioLocalIntent} from '../mainio-semantic-intent.mjs';
+import {interpretMainioLocalIntent,mainioSemanticActions} from '../mainio-semantic-intent.mjs';
 import {mainioCustomerVoice} from '../mainio-customer-voice.mjs';
 
 const rows=mainioPublicKnowledgeWithOfficialFacts([]);
-function answer(question){
-  const reply=mainioPublicFactAnswer(rows,question,'fi');
+function answer(question,previous=''){
+  const reply=mainioPublicFactAnswer(rows,question,'fi',previous);
   assert.ok(reply&&!reply.handoff,question);
   assert.equal(reply.sourceIds.length,1,question);
   assert.ok(reply.selected[0].source_url.startsWith('https://www.mainiomuuttopalvelu.fi/'));
@@ -92,6 +93,23 @@ test('moving duration question uses official duration factors',()=>{
   assert.match(a,/tavaramäärä/);
   assert.match(a,/hissit/);
   assert.doesNotMatch(a,/minuutissa varmasti/i);
+});
+test('short box follow-up after a Mainio van pickup question uses the verified box rental price',()=>{
+  const previous='Mistä pakettiauto noudetaan ja palautetaan?';
+  const q='entä laatikot';
+  assert.equal(mainioBoxRentalFollowupIntent(q,previous),true);
+  assert.equal(interpretMainioLocalIntent(q,previous)?.intent,'box_rental');
+  const a=answer(q,previous);
+  assert.match(a,/0,20 euroa laatikolta vuorokaudessa/i);
+  assert.match(a,/minimilaskutus 10 euroa/i);
+  const actions=mainioSemanticActions({intent:'box_rental',confidence:96},'fi',q,previous);
+  assert.equal(actions[0].url,'https://www.mainiomuuttopalvelu.fi/muuttolaatikot-ja-tarvikkeet');
+});
+test('short box follow-up works after a moving-service question but not unrelated context',()=>{
+  assert.equal(mainioBoxRentalFollowupIntent('entä laatikot','Onnistuuko muutto Turusta Helsinkiin?'),true);
+  assert.equal(interpretMainioLocalIntent('entä laatikot','Onnistuuko muutto Turusta Helsinkiin?')?.intent,'box_rental');
+  assert.equal(mainioBoxRentalFollowupIntent('entä laatikot','Mikä on yrityksenne sähköpostiosoite?'),false);
+  assert.equal(interpretMainioLocalIntent('entä laatikot','Mikä on yrityksenne sähköpostiosoite?'),null);
 });
 test('first-person Mainio reply keeps both verbs correctly inflected',()=>{
   const original='Mainio tarkistaa tarjouspyynnön ja vahvistaa hinnan sekä muuttopäivän erikseen.';
