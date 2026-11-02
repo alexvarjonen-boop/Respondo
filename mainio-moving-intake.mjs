@@ -220,7 +220,7 @@ export function mainioConversationContextQuestion(history=[]){
   const isEllipticalBoxLogistics=q=>
     !/(?:pakettiaut|paku|muuttopalvel|muuton kuljetus|huonekal|piano|kierrat|jate|pahvi|ostaa|myy)/.test(q) && (
       /^(?:toimitatteko|tuotteko|haetteko|noudatteko)\s+(?:ne\s+)?(?:kotiin|pois|takaisin|perille)\b/.test(q) ||
-      /^(?:mita|paljonko|mika)\s+(?:(?:niiden|laatikoiden)\s+)?(?:kuljetus|toimitus|kotiinkuljetus)\s+(?:maksaa|maksaisi|hinta|maksu|kustannus)\b/.test(q) ||
+      /^(?:mita|paljonko|mika)\s+(?:(?:niiden|laatikoiden)\s+)?(?:kuljetus|toimitus|kotiinkuljetus)(?:maksu|hinta)?(?:\s+(?:maksaa|maksaisi|hinta|maksu|kustannus|on))?(?:\s|$)/.test(q) ||
       /^(?:milloin|miten)\s+(?:(?:ne|niita)\s+)?(?:toimitetaan|kuljetetaan|noudetaan|palautetaan)\b/.test(q)
     );
   const isPronounContinuation=q=>
