@@ -54,7 +54,7 @@ test('a combined Finland-wide moving route is handled with source evidence or sa
 
 test('public Mainio demo is opt-in by exact website identity and never reads tenant knowledge',async()=>{
  const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
- assert.match(server,/publicMainioDemo=isPublicDemo\s*&&\s*enteredDemoHost==='mainiomuuttopalvelu\.fi'/);
+ assert.match(server,/publicMainioDemo=isMainioPublicDemoWebsite\(/);
  assert.match(server,/mainioPublicWebsiteEvidence\(rows\)/);
  assert.match(server,/mainioPreviewRows=publicMainioDemo\?demoMainioEvidence\(\):rows/);
  assert.match(server,/previewMainioTenant\|\|publicMainioDemo/);
