@@ -176,7 +176,10 @@ function appendPreviewProductCards(bubble,items,lang='fi') {
   const products=(Array.isArray(items)?items:[]).filter((item)=>{
     try{
       const url=new URL(item?.url||'');
-      return Boolean(item?.name) && ['http:','https:'].includes(url.protocol) && !url.username && !url.password;
+      const name=String(item?.name||'').trim();
+      // Never display an already-stored FAQ prompt as a purchasable product.
+      const faqTitle=/^(?:onko|voiko|saako|löytyykö|mita|mitä|mika|mikä|how|what|where|when|why|is|are|do|does|can|has|have|har|finns|är|kan|hur|vad|vilken|vilka)\\b/i.test(name) && /[?？]\\s*$/.test(name);
+      return Boolean(name) && !faqTitle && ['http:','https:'].includes(url.protocol) && !url.username && !url.password;
     }catch{return false;}
   }).slice(0,4);
   if(!bubble || !products.length) return false;
@@ -206,6 +209,22 @@ function appendPreviewProductCards(bubble,items,lang='fi') {
       .preview-product-desc{font-size:11px;line-height:1.35;color:#666;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
       .preview-product-price{font-size:13px;font-weight:800;color:#111}
       .preview-product-go{font-size:10px;font-weight:750;color:#505059}
+      /* -webkit-text-fill-color is inherited independently of color; a dark
+         bot bubble can otherwise force white text inside the white card. */
+      #app .preview-bubble.bot .preview-product-card,
+      #app .preview-bubble.bot .preview-product-card .preview-product-copy,
+      #app .preview-bubble.bot .preview-product-card .preview-product-copy strong{
+        color:#171923!important;-webkit-text-fill-color:#171923!important;
+      }
+      #app .preview-bubble.bot .preview-product-card .preview-product-desc{
+        color:#414653!important;-webkit-text-fill-color:#414653!important;
+      }
+      #app .preview-bubble.bot .preview-product-card .preview-product-price{
+        color:#111827!important;-webkit-text-fill-color:#111827!important;
+      }
+      #app .preview-bubble.bot .preview-product-card .preview-product-go{
+        color:#244d91!important;-webkit-text-fill-color:#244d91!important;
+      }
       @media(max-width:430px){.preview-product-thumb{height:56px;width:56px;flex-basis:56px}}
     `;
     document.head.appendChild(style);
