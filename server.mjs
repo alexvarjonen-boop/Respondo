@@ -13974,7 +13974,8 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     // This is only a public demo of the supplied Mainio website, not access
     // to Mainio's authenticated customer workspace or private reservations.
     const publicMainioDemo=isPublicDemo &&
-      enteredDemoHost==='mainiomuuttopalvelu.fi' &&
+      (enteredDemoHost==='mainiomuuttopalvelu.fi' ||
+        (!enteredDemoHost && importedDemoHost==='mainiomuuttopalvelu.fi')) &&
       (!importedDemoHost || importedDemoHost==='mainiomuuttopalvelu.fi');
     // Public demo facts are never loaded from Mainio's private tenant.
     // Accept only content actually imported from Mainio's own HTTPS site.
