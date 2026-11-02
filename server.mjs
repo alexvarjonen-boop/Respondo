@@ -3841,6 +3841,14 @@ export function mainioVerifiedMovingRouteReply(rows,message,lang='fi',semanticRo
     sourceIds:[source.row.id],selected:[source.row]};
 }
 
+// Shared priority decision for real Mainio previews and installed widgets.
+// The same function is exercised by the large multilingual regression suite.
+export function mainioPriorityDomesticRouteAnswer(rows,message,lang='fi',interpretation=null){
+  if(interpretation?.route_scope==='international' ||
+     !mainioRecognizedDomesticRoute(message))return null;
+  return mainioVerifiedMovingRouteReply(rows,message,lang);
+}
+
 // An AI classification is only a label. Answer content comes exclusively
 // from verified business rows and predetermined, approval-safe workflow text.
 export function mainioSemanticGroundedReply(rows,classification,lang='fi') {
@@ -13988,10 +13996,8 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const mainioSemanticPreview=previewMainioTenant
       ? mainioSemanticGroundedReply(rows,mainioInterpretation,detectedLang) : null;
     const mainioOrderPreview=previewMainioTenant && mainioMovingOrderIntent(message);
-    const mainioRoutePreview=previewMainioTenant &&
-      mainioInterpretation?.route_scope!=='international' &&
-      mainioRecognizedDomesticRoute(message)
-      ? mainioVerifiedMovingRouteReply(rows,message,detectedLang) : null;
+    const mainioRoutePreview=previewMainioTenant
+      ? mainioPriorityDomesticRouteAnswer(rows,message,detectedLang,mainioInterpretation) : null;
     let result = mainioRoutePreview ? mainioRoutePreview : mainioSemanticPreview ? mainioSemanticPreview : mainioOrderPreview ? {
       answer:detectedLang==='en'
         ? 'Tell us about your move using the quote form below. We will review the details and confirm the price, date and booking separately.'
@@ -14106,7 +14112,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
 
     // For Mainio, an unsupported factual answer must never appear verified
     // just because a generic demo model inferred it. Source rows are mandatory.
-    if(previewMainioTenant && !mainioOrderPreview && !mainioSemanticPreview &&
+    if(previewMainioTenant && !mainioRoutePreview && !mainioOrderPreview && !mainioSemanticPreview &&
        !mainioIsSmallTalk(message) &&
        (!Array.isArray(result.sourceIds) || result.sourceIds.length===0)){
       result={answer:'',handoff:true,confidence:0,intent:'Varmennettu lähde puuttuu',sourceIds:[],selected:[]};
@@ -14702,10 +14708,8 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const mainioSemanticReply=mainioTenant
       ? mainioSemanticGroundedReply(safeKnowledgeRows,mainioInterpretation,detectedLang) : null;
     const mainioQuoteIntent=mainioTenant && mainioMovingOrderIntent(message);
-    const mainioRouteReply=mainioTenant &&
-      mainioInterpretation?.route_scope!=='international' &&
-      mainioRecognizedDomesticRoute(message)
-      ? mainioVerifiedMovingRouteReply(safeKnowledgeRows,message,detectedLang) : null;
+    const mainioRouteReply=mainioTenant
+      ? mainioPriorityDomesticRouteAnswer(safeKnowledgeRows,message,detectedLang,mainioInterpretation) : null;
     const mainioQuoteAnswer=mainioQuoteIntent
       ? (detectedLang==='en'
           ? 'Tell us about your move using the button below. We will review the details and confirm the price, date and booking separately.'
@@ -14744,7 +14748,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     // A factual claim without any company-backed source must not be returned
     // to Mainio customers as a confident answer. Greetings and the verified
     // human-reviewed moving quote flow are intentionally exempt.
-    if(mainioTenant && !mainioSemanticReply && !mainioQuoteIntent && !mainioIsSmallTalk(message) &&
+    if(mainioTenant && !mainioRouteReply && !mainioSemanticReply && !mainioQuoteIntent && !mainioIsSmallTalk(message) &&
       (!Array.isArray(result.sourceIds) || result.sourceIds.length===0)){
       result={
         answer:'',handoff:true,confidence:0,
