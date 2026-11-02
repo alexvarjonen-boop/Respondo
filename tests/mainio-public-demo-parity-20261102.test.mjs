@@ -56,7 +56,7 @@ test('public Mainio demo is opt-in by exact website identity and never reads ten
  const server=await readFile(new URL('../server.mjs',import.meta.url),'utf8');
  assert.match(server,/publicMainioDemo=isMainioPublicDemoWebsite\(/);
  assert.match(server,/mainioPublicWebsiteEvidence\(rows\)/);
- assert.match(server,/mainioPreviewRows=publicMainioDemo\?demoMainioEvidence\(\):rows/);
+ assert.match(server,/mainioPreviewRows=publicMainioDemo\s*\?\s*mainioPublicKnowledgeWithOfficialFacts\(demoMainioEvidence\(\)\)\s*:\s*rows/);
  assert.match(server,/previewMainioTenant\|\|publicMainioDemo/);
  assert.match(server,/if\(publicMainioDemo && result\.handoff\)/);
  // Public logic must not enable the external intent classification API.

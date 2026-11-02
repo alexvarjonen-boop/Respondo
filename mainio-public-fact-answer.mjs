@@ -32,8 +32,11 @@ const RULES=[
     check:q=>/laatik/.test(q)&&
       !/(?:vuokra|hinta|maks\w*|kustann|kuljetus|toimitus)/.test(q)&&(
         /(?:kuinka monta|montako)/.test(q) ||
-        /(?:laatik\w*.*(?:tarvit|riitt|maara|menekki)|(?:tarvit|riitt|maara|menekki).*laatik)/.test(q) ||
-        /(?:paljonko|kuinka paljon).*laatik.*(?:pit|vara)/.test(q)
+        /(?:paljonko|kuinka paljon).*laatik.*(?:tarvit|pit|vara|riitt)/.test(q) ||
+        /(?:laatik.*(?:maara|menekki)|(?:maara|menekki).*laatik)/.test(q) ||
+        (/(?:laatik.*(?:tarvit|riitt)|(?:tarvit|riitt).*laatik)/.test(q) &&
+          /(?:neli|\bm2\b|\basuntoon\b)/.test(q)) ||
+        /riitt.*\b\d+\s*(?:muutto)?laatik/.test(q)
       )},
   {title:'Muuttolaatikoiden hinta',
     check:q=>/laatik/.test(q)&&
@@ -92,7 +95,7 @@ const RULES=[
     check:q=>/(?:muuton hinta|muutto maksaa|muuttokustann|muuton kustann|muuton hint|mista muuton hinta muodostu)/.test(q) &&
       !/(?:laatik|pakettiaut|paku)/.test(q)},
   {title:'Täyden palvelun avaimet käteen -muutto',
-    check:q=>/(?:avaimet kateen|pakkaatteko|hoidatteko koko muuton)/.test(q)},
+    check:q=>/(?:avaimet kateen|pakkaatteko|hoidatteko koko muuton|voitteko pakata|hoidatteko.*pakkaamisen|tavaroiden pakkaamisen|pakkausapu)/.test(q)},
 ];
 // Website importers can give a correctly sourced fact a descriptive heading
 // different from a curated FAQ title. Permit narrowly checked alternatives,
