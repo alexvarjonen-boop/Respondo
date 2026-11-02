@@ -181,6 +181,26 @@ test('free local understanding covers colloquial moving requests without API cal
   }
 });
 
+test('chat-based moving intake request is classified and answered with the consent-gated workflow',()=>{
+ const questions=[
+  'Voitko kerätä muuton tiedot tässä chatissa ennen kuin lähetät ne työntekijälle?',
+  'Mitä tietoja tarvitsette muuttotarjousta varten?',
+  'Can you collect my moving details in this chat before sending them to an employee?',
+  'Kan ni samla in uppgifter om flytten i chatten innan ni skickar dem till personalen?'
+ ];
+ for(const [index,question] of questions.entries()){
+  const classification=interpretMainioLocalIntent(question);
+  assert.equal(classification?.intent,'moving_quote',question);
+  const lang=index===2?'en':index===3?'sv':'fi';
+  const reply=mainioSemanticGroundedReply([fact],classification,lang,question);
+  assert.match(reply.answer,lang==='en'?/complete Mainio.s moving questionnaire here in the chat/i:lang==='sv'?/fylla i Mainios flyttkartläggning här i chatten/i:/täyttää tässä chatissa Mainion muuttokartoituksen/i);
+  assert.match(reply.answer,lang==='en'?/only after you consent/i:lang==='sv'?/först när du godkänner/i:/vasta, kun hyväksyt lähetyksen/i);
+  assert.match(reply.answer,lang==='en'?/confirms the price and date separately/i:lang==='sv'?/bekräftar pris och datum separat/i:/vahvistaa hinnan sekä muuttopäivän erikseen/i);
+  const actions=mainioSemanticActions(classification,lang,question);
+  assert.equal(actions[0].mode,'mainio_move_form',question);
+ });
+});
+
 test('free intent layer abstains on uncertain pricing, safety and unrelated topics',()=>{
   for(const q of [
     'Paljonko muutto maksaa?',
