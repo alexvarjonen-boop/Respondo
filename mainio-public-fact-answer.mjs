@@ -95,7 +95,7 @@ const RULES=[
     check:q=>/(?:muuton hinta|muutto maksaa|muuttokustann|muuton kustann|muuton hint|mista muuton hinta muodostu)/.test(q) &&
       !/(?:laatik|pakettiaut|paku)/.test(q)},
   {title:'Täyden palvelun avaimet käteen -muutto',
-    check:q=>/(?:avaimet kateen|pakkaatteko|hoidatteko koko muuton)/.test(q)},
+    check:q=>/(?:avaimet kateen|pakkaatteko|hoidatteko koko muuton|voitteko pakata|hoidatteko.*pakkaamisen|tavaroiden pakkaamisen|pakkausapu)/.test(q)},
 ];
 const approvedRow=(r)=>r&&r.id&&r.approved!==false &&
   String(r.source_type||'').toLowerCase()==='website'&&
