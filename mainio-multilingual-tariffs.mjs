@@ -23,6 +23,7 @@ const strings={
     boxService:'Kyllä, toimitamme muuttolaatikot Turkuun ja lähialueille sekä noudamme ne pois. Noudosta toimipisteeltä on sovittava erikseen.',
     boxSize:'Muuttolaatikoiden mitat ovat 600 × 400 × 300 mm.',
     boxDays:'Muuttolaatikoita toimitetaan ja noudetaan maanantaisin, keskiviikkoisin ja perjantaisin. Tarkka ajankohta vahvistetaan erikseen.',
+    boxPeriod:'Muuttolaatikoiden vuokra on 0,20 €/laatikko/vrk (minimiveloitus 10 €). Enimmäisvuokra-aikaa ei ole ilmoitettu verkkosivuilla. Sovi vuokra-aika ja palautuspäivä erikseen Mainion kanssa.',
     intro:'Pakettiautojen vuokrahinnat:',note:'Saatavuus ja yksittäinen varaus vahvistetaan erikseen.',
     vanAction:'Katso pakettiautojen vuokraus',boxAction:'Vuokraa muuttolaatikoita'},
   sv:{
@@ -34,6 +35,7 @@ const strings={
     boxService:'Ja, vi levererar flyttlådor i Åbo med omnejd och hämtar dem efteråt. Hämtning på plats måste avtalas separat.',
     boxSize:'Flyttlådornas mått är 600 × 400 × 300 mm.',
     boxDays:'Flyttlådor levereras och hämtas på måndagar, onsdagar och fredagar. Exakt tidpunkt måste bekräftas separat.',
+    boxPeriod:'Hyra av flyttlådor kostar 0,20 € per låda och dygn (minst 10 €). Någon längsta hyrestid anges inte på webbplatsen. Kom överens med Mainio om hyrestiden och återlämningen.',
     intro:'Hyrpriser för skåpbilar:',note:'Tillgänglighet och enskilda bokningar bekräftas separat.',
     vanAction:'Se skåpbilar',boxAction:'Hyr flyttlådor'},
   en:{
@@ -45,6 +47,7 @@ const strings={
     boxService:'Yes, we deliver moving boxes in Turku and nearby areas and collect them afterward. Self-pickup must be arranged separately.',
     boxSize:'Our moving boxes measure 600 × 400 × 300 mm.',
     boxDays:'Moving boxes are delivered and collected on Mondays, Wednesdays and Fridays. Exact arrangements must be confirmed separately.',
+    boxPeriod:'Moving boxes cost €0.20 per box per day (minimum €10). The website does not specify a maximum rental period. Please agree the rental duration and return date with Mainio.',
     intro:'Van rental prices:',note:'Availability and individual bookings must be confirmed separately.',
     vanAction:'View van rentals',boxAction:'Rent moving boxes'}
 };
@@ -103,15 +106,22 @@ export function mainioMultilingualTariffAnswer(rows,message,lang='fi',previousCu
   const daysRequest=lang==='fi'?/(?:milloin|mina paivina).*(?:toimit|nout)/.test(q)
     :lang==='sv'?/(?:vilka dagar|nar.*leverer|nar.*hamt)/.test(q)
     :/(?:when.*deliver|which days.*deliver|when.*collect|when.*pick up)/.test(q);
+  const periodRequest=lang==='fi'
+    ? /(?:kuinka (?:kauan|pitkaksi aikaa|moneksi paivaksi)|moneksi paivaksi|montako paivaa|monta paivaa|kuinka monta paivaa|kauanko|vuokra aika|vuokra ajaks|enimmais(?:aika|kesto)|saako.*(?:viikoksi|paivaksi)|kauan.*(?:pitaa|vuokrata)|palautus.*(?:milloin|koska))/.test(q)
+    :lang==='sv'
+      ? /(?:hur lange|hur manga dagar|hur lang tid|hyrestid|hyrperiod|langsta hyres|hyra.*(?:dagar|veckor)|behalla.*(?:dagar|veckor)|nar.*(?:aterlamna|lamna tillbaka))/.test(q)
+      :/(?:how (?:many days|long)|for how (?:many days|long)|what(?: is|'s) the (?:maximum|longest|rental) (?:rental )?(?:period|duration)|maximum rental|rental period|rent.*for\s+(?:\d+|a|one|two|three|four|five|six|seven|ten)\s+(?:days?|weeks?)|keep.*for\s+(?:\d+|a|one|two|three|four|five|six|seven|ten)\s+(?:days?|weeks?)|when.*(?:return|give back)|how long.*(?:keep|rent|hire))/.test(q);
+  const rentalPeriodContext=/(?:rent|rental|hire|keep|return|boxes|box|crate|hyra|hyr|hyrestid|flyttlad|flyttkartong|lador|behalla|aterlamna|vuokra|laatik|pitaa|palaut|paiva|viikko)/.test(q);
   if(otherMove)return null;
   // Dates and times of a customer's individual delivery are not verifiable.
   if((deliveryRequest||daysRequest)&&/(?:tomorrow|today|tonight|imorgon|idag|ikvall|huomenna|tanaan|tana iltana)/.test(q))return null;
   // A freight/transport price without a box topic is not a van tariff.
   if(!activeBox && /(?:kuljetus|toimitus|kotiinkuljetus|delivery|shipping|transport|leverans|frakt)/.test(q))return null;
-  if(!price&&!deliveryRequest&&!sizeRequest&&!daysRequest)return null;
+  if(!price&&!deliveryRequest&&!sizeRequest&&!daysRequest&&!(periodRequest&&rentalPeriodContext))return null;
   let keys,subject;
   if(activeBox){
-    if(delivery&&price)keys=['delivery'];
+    if(periodRequest&&rentalPeriodContext)keys=['box'];
+    else if(delivery&&price)keys=['delivery'];
     else if(daysRequest)keys=['boxDays'];
     else if(deliveryRequest)keys=['boxService'];
     else if(sizeRequest)keys=['boxSize'];
@@ -140,7 +150,7 @@ export function mainioMultilingualTariffAnswer(rows,message,lang='fi',previousCu
   const langData=strings[lang];
   const answer=subject==='van'
     ? (keys.length===3?langData.intro+' ':'')+keys.map(key=>langData[key]).join(' ')+' '+langData.note
-    :langData[keys[0]];
+    :periodRequest&&rentalPeriodContext?langData.boxPeriod:langData[keys[0]];
   return {answer,handoff:false,confidence:1,verified:true,
     intent:subject==='van'?'Pakettiautojen vuokraus':'Muuttolaatikot',
     selected,sourceIds:selected.map(row=>row.id),
