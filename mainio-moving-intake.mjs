@@ -171,11 +171,11 @@ export const MAINIO_CONTACT_URL='https://www.mainiomuuttopalvelu.fi/yhteystiedot
 export function mainioBookingStatusQuestion(message){
   const q=normalized(message).replace(/[^a-z0-9\s-]/g,' ');
   if(!q || q.length>480)return false;
-  const subject=/(?:muutto|muuton|muuttoa|muuttoaj|muuttolaatik|laatik|pakettiaut|paku|vuokra|varaus|varauk|reservation|booking|flytt|sk[aå]pbil|hyrbil|hyra)/.test(q);
+  const subject=/(?:muutto|muuton|muuttoa|muuttoaj|muuttolaatik|laatik|pakettiaut|paku|vuokra|varaus|varauk|reservation|booking|flytt|sk[aå]pbil|hyrbil|hyra|\b(?:van|vans|box|boxes|move|moving)\b)/.test(q);
   if(!subject)return false;
-  const status=/(?:\b(?:vapaa|vapaana|vapaita|vapaata|saatavilla|saatavuus|varattu|varannut|varanneet|vuokrattu|vahvistettu|varmistettu|varmasti|vahvistitte|tilausvahvistus)\b|\b(?:booking confirmed|already booked|is it booked|available tomorrow|available today|ledig|lediga|bokat|bokad|bekraftad)\b|\b(?:minun|mulle|minulle|meidan|meille|my|our)\b.{0,45}\b(?:varaus|varattu|vuokra|booking|reservation)\b)/.test(q);
+  const status=/(?:\b(?:vapaa|vapaana|vapaita|vapaata|saatavilla|saatavuus|varattu|varannut|varanneet|vuokrattu|vahvistettu|varmistettu|varmasti|vahvistitte|tilausvahvistus|booked|confirmed|available|free|ledig|lediga|bokat|bokad|bekraftad)\b|\b(?:booking confirmed|already booked|is it booked)\b|\b(?:minun|mulle|minulle|meidan|meille|my|our)\b.{0,45}\b(?:varaus|varattu|vuokra|booking|reservation)\b)/.test(q);
   if(!status)return false;
-  const asking=/(?:onko|olenko|saanko|voinko|teitteko|vahvistitteko|tarkista|tietaa|nayttaako|mista tied|milloin|varmasti|is |are |do |did |can |have |har ni|ar det|kan ni|finns det)/.test(q);
+  const asking=/(?:onko|onks|olenko|saanko|voinko|teitteko|vahvistitteko|tarkista|tietaa|nayttaako|mista tied|milloin|varmasti|\b(?:is|are|do|did|can|have|has|har|ar|kan|finns)\b)/.test(q);
   return asking;
 }
 export function mainioBookingStatusReply(lang='fi'){
