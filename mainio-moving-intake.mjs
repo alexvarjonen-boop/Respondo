@@ -138,17 +138,55 @@ export function mainioBoxRentalIntent(message){
 // Interpret a terse "and what about the boxes?" only when the immediately
 // preceding customer turn is already about Mainio's move or van rental.
 // Never turn an isolated mention of boxes into a rental or a lead form.
-export function mainioBoxRentalFollowupIntent(message,previousCustomerQuestion=''){
-  const q=normalized(message).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+// Resolve concise follow-ups using the immediately preceding customer turn.
+// The previous turn may be about the move/van (customer introduces boxes), or
+// already about boxes (customer then asks about their price, delivery, size, etc.).
+export function mainioBoxRentalFollowupKind(message,previousCustomerQuestion=''){
+  const clean=value=>normalized(value).normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
     .toLowerCase().replace(/[^a-z0-9\s-]/g,' ').replace(/\s+/g,' ').trim();
-  const previous=normalized(previousCustomerQuestion);
-  const shortBox=/^(?:(?:enta(?:s)?|mites|ja|sitten|and|och|what about|how about|och vad galler)\s+)?(?:(?:ne|the|our|those|vara|dom|de)\s+)?(?:muuttolaatik\w*|laatik\w*|flyttkartong\w*|flyttlador|lador(?:na)?|box(?:es)?|crates?)$/.test(q);
-  const priorMainioContext=mainioVanRentalIntent(previous) ||
+  const stripConversationNoise=value=>{
+    const words=value.split(' ').filter(Boolean);
+    const leading=/^(?:hei|moi|no|ja|mutta|sitten|vielä|viel|enta|entas|mites|mitas|ok|okei|joo|niin|anteeksi|please|and|also|och|men|vad|what|about|how)$/;
+    const trailing=/^(?:kiitos|kiitti|thanks|tack|please|pls|sitten|vielä|viel|joo|ok|okay)$/;
+    while(words.length&&leading.test(words[0]))words.shift();
+    while(words.length&&trailing.test(words[words.length-1]))words.pop();
+    return words.join(' ');
+  };
+  const q=stripConversationNoise(clean(message));
+  const previous=clean(previousCustomerQuestion);
+  if(!q||!previous)return null;
+  const previousBox=/(?:muuttolaatik|laatik|flyttkartong|flyttlador|lador|box|crate)/.test(previous);
+  const previousMove=mainioVanRentalIntent(previous) ||
     mentionsMovingService(previous) ||
     /(?:moving|move\b|flytt\w*)/.test(previous);
-  return shortBox && priorMainioContext;
+  if(!previousBox&&!previousMove)return null;
+  const currentBox=/(?:muuttolaatik|laatik|flyttkartong|flyttlador|lador|box|crate)/.test(q);
+  const pronoun=/(?:\bne\b|\bniiden\b|\bniita\b|\bniista\b|\bniille\b|\bniissa\b|\bniissa\b|\bthose\b|\bthem\b|\bthey\b|\bdom\b|\bde\b|\bderas\b)/.test(q);
+  const price=/(?:paljonko|kuinka paljon|hinta|maks\w*|veloit\w*|kustann\w*|price|cost|pris|kostar)/.test(q);
+  const delivery=/(?:toimit\w*|kuljet\w*|kotiin|palaut\w*|nout\w*|hake\w*|tuo\w*|bring|deliver\w*|return\w*)/.test(q);
+  const deliveryCost=delivery&&price;
+  const size=/(?:\bkoko\w*|\bmitat\b|\bmitto\w*|\biso\w*|\bsuur\w*|\bpieni\w*|dimensions?)/.test(q);
+  const quantity=/(?:montako|kuinka monta|maara|tarvit\w*|riitt\w*|quantity|how many)/.test(q);
+  const days=/(?:milloin|mihin aikaan|mika paiva|mitka paiva|paiva\w*|noutopaiv\w*|toimituspaiv\w*|when|which day)/.test(q);
+  if(deliveryCost)return 'transport_fee';
+  if(delivery)return 'delivery';
+  if(size)return 'size';
+  if(quantity)return 'quantity';
+  if(days)return 'days';
+  if(price)return 'price';
+  if(previousBox&&pronoun&&/(?:paljonko|kuinka paljon|hinta|maks|veloit|cost|price|pris)/.test(q))return 'price';
+  // A bare "entä laatikot?" after a move/van question is a natural enquiry
+  // about Mainio's box rental; default to the published rental tariff.
+  if(currentBox&&(previousMove||previousBox))return 'price';
+  // A pronoun-only continuation is meaningful only after boxes were already
+  // the active subject; do not infer boxes from an unrelated conversation.
+  if(previousBox&&pronoun)return 'price';
+  return null;
 }
-
+export function mainioBoxRentalFollowupIntent(message,previousCustomerQuestion=''){
+  return Boolean(mainioBoxRentalFollowupKind(message,previousCustomerQuestion));
+}
 export function mainioVanRentalIntent(message){
   const q=normalized(message);
   if(/(?:pakettiaut|vuokrapaku|vuokra-auto|rent\s+(?:a\s+)?van|van\s+rental|sk[aå]pbil)/.test(q))return true;
