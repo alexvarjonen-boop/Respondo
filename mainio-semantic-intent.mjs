@@ -7,7 +7,7 @@
  * error, timeout, low confidence or disabled feature the old safe matcher wins.
  */
 import {containsKnowledgeInstructionAttack} from './knowledge-injection-guard.mjs';
-import {mainioMoveActions,mainioInquiryActions,mainioMovingRouteIntent,mainioBoxRentalIntent,mainioVanRentalIntent} from './mainio-moving-intake.mjs';
+import {mainioMoveActions,mainioInquiryActions,mainioMovingRouteIntent,mainioBoxRentalIntent,mainioVanRentalIntent,mainioMovingIntakeQuestion} from './mainio-moving-intake.mjs';
 
 const API_URL='https://api.openai.com/v1/responses';
 const INTENTS=['moving_quote','moving_route','moving_information','box_rental','van_rental','service_area','contact','clarify','other'];
@@ -183,6 +183,7 @@ export function interpretMainioLocalIntent(message,previousCustomerQuestion=''){
   const inquiry=has(/(?:miten|minkalain|onko|milla|millai|tarvits|kannat|kauanko|kuinka|what|how|vilka|hur)/);
   const area=has(/(?:miss[aä] (?:p[aä]in |kaikkialla )?(?:te )?toimitte|milla alue|toimialue|palvelualue|service area|where do you (?:work|operate|serve)|var arbetar ni|var jobbar ni)/);
   const contact=has(/(?:puhelin|soitta|sahkopost|email|e post|yhteystiedot|yhteytta|saa kiinni|tavarakatu|phone|contact|kontakta|telefon)/);
+  if(mainioMovingIntakeQuestion(message))return result('moving_quote',97);
   if(area)return result('service_area',98);
   if(contact&&!moveService&&!goods)return result('contact',94);
   const rent=has(/(?:vuokra|vuokratt|vuokral|lainaa|lainat|lainak|lainaksi|rent|rental|hire|hyra|hyr)/);
