@@ -53,17 +53,19 @@ test('mismatched Checkout address cancels subscription before account activation
   assert.deepEqual(canceled,['sub_test_foreign']);
 });
 
-test('signup and both workspace forms submit FI silently without visible billing country UI',()=>{
-  assert.equal((app.match(/<input type="hidden" name="billingCountry" value="FI">/g)||[]).length,3);
-  assert.equal((app.match(/<select name="billingCountry"/g)||[]).length,0);
-  assert.doesNotMatch(app, /Laskutusmaa','Faktureringsland','Billing country/);
-  assert.match(html,/billing-hidden-v1/);
+test('country selection is visible on signup and both workspace forms without enabling foreign billing',()=>{
+  assert.equal((app.match(/<input type="hidden" name="billingCountry" value="FI">/g)||[]).length,0);
+  assert.equal((app.match(/\$\{checkoutBillingCountryField\(\)\}/g)||[]).length,3);
+  assert.match(app, /<select name="billingCountry" autocomplete="country" required>/);
+  assert.match(app, /Laskutusmaa','Faktureringsland','Billing country/);
+  assert.match(app, /Ask about international ordering/);
   assert.equal((app.match(/billingCountry:(?:form.get|String\(fd.get)/g)||[]).length,3);
   assert.match(app,/billingCountryNotice/);
   assert.match(html,/tax-country-guard-v1/);
   assert.equal((server.match(/tax_country_policy:/g)||[]).length,4);
   assert.match(server,/enforceCompletedCheckoutCountryPolicy\(session\)/);
   assert.match(server,/checkoutCountryPolicy\(req.body\?\.billingCountry\)/);
+  assert.match(app,/String\(fd.get\('billingCountry'\)\|\|''\).toUpperCase\(\)!=='FI'/);
 });
 
 test('business-only order declaration is required for both checkout endpoints',()=>{
