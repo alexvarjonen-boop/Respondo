@@ -3292,17 +3292,43 @@ function checkoutBillingCountryField() {
       ${options.map(([code,label])=>`<option value="${code}" ${code==='FI'?'selected':''}>${esc(label)}</option>`).join('')}
     </select>
     <small>${appText(
-      'Maksullinen tilaus on nyt saatavilla Suomessa. Ulkomailla toimivat yritykset voivat kysyä käyttöönotosta – maakohtaiset verovaatimukset tarkistetaan ennen myynnin avaamista.',
-      'Betalda abonnemang är tills vidare tillgängliga i Finland. Företag utomlands kan kontakta oss – landsspecifika skattekrav kontrolleras innan försäljningen öppnas.',
-      'Paid checkout is currently available in Finland. Businesses abroad can request access; country-specific tax requirements must be verified before sales open.'
+      'Maksullinen tilaus on saatavilla Suomessa ja Yhdysvalloissa toimiville yrityksille. Muut maat voivat kysyä käyttöönotosta.',
+      'Betalda abonnemang kan köpas av företag i Finland och USA. Övriga länder kan kontakta oss.',
+      'Paid checkout is available to businesses in Finland and the United States. Other countries can request access.'
     )} <a href="mailto:info@respondoai.fi?subject=International%20Respondo%20AI%20subscription">${appText('Kysy kansainvälisestä tilauksesta','Fråga om internationell beställning','Ask about international ordering')}</a></small>
+  </label>
+  <label class="field international-us-state-field" data-us-state-field style="display:none">
+    <span>${appText('Osavaltio (USA)','Delstat (USA)','US state')}</span>
+    <select name="billingState" autocomplete="address-level1" disabled>
+      <option value="">${appText('Valitse osavaltio','Välj delstat','Choose state')}</option>
+      ${[["AL","Alabama"],["AK","Alaska"],["AZ","Arizona"],["AR","Arkansas"],["CA","California"],["CO","Colorado"],["CT","Connecticut"],["DE","Delaware"],["FL","Florida"],["GA","Georgia"],["HI","Hawaii"],["ID","Idaho"],["IL","Illinois"],["IN","Indiana"],["IA","Iowa"],["KS","Kansas"],["KY","Kentucky"],["LA","Louisiana"],["ME","Maine"],["MD","Maryland"],["MA","Massachusetts"],["MI","Michigan"],["MN","Minnesota"],["MS","Mississippi"],["MO","Missouri"],["MT","Montana"],["NE","Nebraska"],["NV","Nevada"],["NH","New Hampshire"],["NJ","New Jersey"],["NM","New Mexico"],["NY","New York"],["NC","North Carolina"],["ND","North Dakota"],["OH","Ohio"],["OK","Oklahoma"],["OR","Oregon"],["PA","Pennsylvania"],["RI","Rhode Island"],["SC","South Carolina"],["SD","South Dakota"],["TN","Tennessee"],["TX","Texas"],["UT","Utah"],["VT","Vermont"],["VA","Virginia"],["WA","Washington"],["WV","West Virginia"],["WI","Wisconsin"],["WY","Wyoming"],["DC","District of Columbia"]].map(([code,name])=>`<option value="${code}">${esc(name)}</option>`).join('')}
+    </select>
+    <small>${appText('Anna yrityksen EIN-tunniste (esim. 12-3456789) yllä olevaan yritystunnuskenttään.','Ange företagets EIN-nummer (t.ex. 12-3456789) i fältet för företags-ID ovan.','Enter your business EIN (e.g. 12-3456789) in the Business ID field above.')}</small>
   </label>`;
 }
+// Delegated binding works also when dashboard forms are rendered later.
+document.addEventListener('change',(event)=>{
+  if(!event.target?.matches?.('select[name="billingCountry"]'))return;
+  const form=event.target.closest('form');
+  if(!form)return;
+  const isUS=event.target.value==='US';
+  const stateField=form.querySelector('[data-us-state-field]');
+  const state=stateField?.querySelector('select[name="billingState"]');
+  if(stateField)stateField.style.display=isUS?'':'none';
+  if(state){state.disabled=!isUS;state.required=isUS;if(!isUS)state.value='';}
+  const businessId=form.querySelector('input[name="businessId"]');
+  if(businessId){
+    businessId.required=isUS;
+    businessId.placeholder=isUS?'12-3456789':'1234567-8';
+    if(isUS)businessId.setAttribute('pattern','[0-9]{2}-?[0-9]{7}');
+    else businessId.removeAttribute('pattern');
+  }
+});
 function billingCountryNotice() {
   return appText(
-    'Maksullinen tilaus on toistaiseksi saatavilla vain Suomeen. Ulkomaisen yrityksen laskutusmaan verokäsittely ja mahdolliset rekisteröinnit pitää vahvistaa ennen veloitusta. Kysy kansainvälisestä tilauksesta: info@respondoai.fi.',
-    'Betalda abonnemang är för närvarande endast tillgängliga i Finland. Skatt och registrering i andra länder granskas innan försäljningen öppnas. Frågor: info@respondoai.fi.',
-    'Paid subscriptions are currently available only in Finland. We are reviewing tax and registration requirements before opening sales elsewhere. Contact: info@respondoai.fi.'
+    'Maksulliset tilaukset ovat saatavilla Suomessa ja Yhdysvalloissa toimiville yrityksille. Muiden maiden myynti avataan myöhemmin. Kysy: info@respondoai.fi.',
+    'Betalda abonnemang är tillgängliga för företag i Finland och USA. Andra länder öppnas senare. Kontakt: info@respondoai.fi.',
+    'Paid subscriptions are available to businesses in Finland and the United States. Other countries are not open for paid orders yet. Contact: info@respondoai.fi.'
   );
 }
 
@@ -6527,6 +6553,7 @@ async function route() {
             companyName:form.get('companyName'),
             businessId:form.get('businessId'),
             billingCountry:form.get('billingCountry'),
+            billingState:form.get('billingState'),
             password:form.get('password'),
             plan:form.get('plan'),
             setupService:form.get('setupService')==='1',
@@ -6572,7 +6599,7 @@ async function route() {
       e.preventDefault();
       signupLanguage = currentLang();
       $('#msg').innerHTML = '';
-      if (String(signupForm.elements.billingCountry?.value || '') !== 'FI') {
+      if (!['FI','US'].includes(String(signupForm.elements.billingCountry?.value || ''))) {
         $('#msg').innerHTML='<div class="notice error">'+esc(billingCountryNotice())+'</div>';
         return;
       }
@@ -6872,7 +6899,7 @@ async function route() {
       const button=form.querySelector('button[type="submit"]');
       const msg=$('#emptyWorkspaceMsg');
       const fd=new FormData(form);
-      if(String(fd.get('billingCountry')||'').toUpperCase()!=='FI'){
+      if(!['FI','US'].includes(String(fd.get('billingCountry')||'').toUpperCase())){
         if(msg) msg.innerHTML='<div class="notice error">'+esc(billingCountryNotice())+'</div>';
         return;
       }
@@ -6888,6 +6915,7 @@ async function route() {
             companyName:String(fd.get('companyName')||'').trim(),
             businessId:String(fd.get('businessId')||'').trim(),
             billingCountry:String(fd.get('billingCountry')||'').trim(),
+            billingState:String(fd.get('billingState')||'').trim(),
             plan:String(fd.get('plan')||'basic_monthly'),
             setupService:fd.get('setupService')==='1',
             setupWebsite:String(fd.get('setupWebsite') || '').trim(),
@@ -6912,7 +6940,7 @@ async function route() {
       const button=form.querySelector('button[type="submit"]');
       const msg=$('#workspaceAddMsg');
       const fd=new FormData(form);
-      if(String(fd.get('billingCountry')||'').toUpperCase()!=='FI'){
+      if(!['FI','US'].includes(String(fd.get('billingCountry')||'').toUpperCase())){
         if(msg) msg.innerHTML='<div class="notice error">'+esc(billingCountryNotice())+'</div>';
         return;
       }
@@ -6928,6 +6956,7 @@ async function route() {
             companyName:String(fd.get('companyName')||'').trim(),
             businessId:String(fd.get('businessId')||'').trim(),
             billingCountry:String(fd.get('billingCountry')||'').trim(),
+            billingState:String(fd.get('billingState')||'').trim(),
             plan:String(fd.get('plan')||'basic_monthly'),
             setupService:fd.get('setupService')==='1',
             setupWebsite:String(fd.get('setupWebsite') || '').trim(),
