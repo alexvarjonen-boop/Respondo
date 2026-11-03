@@ -6139,6 +6139,59 @@ async function route() {
               const saved = await api('/api/app/import-website/approve',{method:'POST',body:JSON.stringify(approvalPayload)});
               approveButton.textContent = appText('Lisätty bottiin ✓','Tillagt i botten ✓','Added to bot ✓');
               $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText(String(saved.added || 0) + ' verkkosivulta löydettyä tietoa lisättiin botin tietopohjaan.','Valda webbplatsuppgifter lades till i bottens kunskapsbas.','Selected website information was added to the bot knowledge base.') + '</div>';
+              // Retest automatically after approval, comparing the same FI/SV/EN
+              // questions to the earlier import snapshot. Never block approval.
+              if(result?.jobId){
+                const audit=document.getElementById('websiteImportQualityReport');
+                if(audit){
+                  const old=audit.querySelector('#websiteImportRetestSummary');
+                  old?.remove();
+                  const section=document.createElement('section');
+                  section.id='websiteImportRetestSummary';
+                  section.setAttribute('aria-live','polite');
+                  section.className='notice';
+                  section.textContent=appText('Testataan hyväksytyt tiedot uudelleen…','Testar de godkända uppgifterna igen…','Retesting approved company facts…');
+                  audit.appendChild(section);
+                  api('/api/app/import-website/retest/'+encodeURIComponent(result.jobId),{method:'POST'})
+                    .then(payload=>{
+                      if(!section.isConnected)return;
+                      const comparison=payload?.retest?.comparison||{};
+                      const counts=payload?.retest?.validation?.counts||{};
+                      const improved=Number(comparison.improvedCandidates||0);
+                      const regressions=Number(comparison.regressions||0);
+                      const review=Number(counts.review||0);
+                      const compared=Number(comparison.compared||0);
+                      section.textContent=appText(
+                        'Uudelleentestaus: '+compared+' kysymystä vertailtu. '+improved+' mahdollisesti parantunut, '+regressions+' heikentynyt ja '+review+' tarkistettavaa. Tulokset eivät yksin vahvista vastausten oikeellisuutta.',
+                        'Nytt test: '+compared+' frågor jämförda. '+improved+' möjliga förbättringar, '+regressions+' försämringar och '+review+' att granska. Resultatet bevisar inte att svaren är korrekta.',
+                        'Retest: '+compared+' questions compared. '+improved+' potential improvements, '+regressions+' regressions and '+review+' requiring review. Results do not prove factual correctness.'
+                      );
+                      const changes=Array.isArray(comparison.changes)?comparison.changes:[];
+                      if(changes.length){
+                        const details=document.createElement('details');
+                        const summary=document.createElement('summary');
+                        summary.textContent=appText('Näytä muuttuneet vastaukset','Visa ändrade resultat','Show changed results')+' ('+changes.length+')';
+                        details.appendChild(summary);
+                        const list=document.createElement('ul');
+                        for(const change of changes){
+                          const item=document.createElement('li');
+                          item.textContent='['+String(change.language||'').toUpperCase()+'] '+String(change.question||'')+' — '+String(change.before||'')+' → '+String(change.after||'');
+                          list.appendChild(item);
+                        }
+                        details.appendChild(list);
+                        section.appendChild(details);
+                      }
+                    })
+                    .catch(()=>{
+                      if(section.isConnected)section.textContent=appText(
+                        'Uudelleentestaus epäonnistui. Hyväksytyt tiedot pysyvät tallessa.',
+                        'Det nya testet misslyckades. Godkända uppgifter har sparats.',
+                        'Retest failed. Approved company facts remain saved.'
+                      );
+                    });
+                }
+              }
+
             } catch(err) {
               approveButton.disabled = false;
               approveButton.textContent = previous;
