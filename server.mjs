@@ -548,12 +548,11 @@ const pool = process.env.DATABASE_URL
     })
   : null;
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
-// Respondo is currently not registered for Finnish VAT due to small-scale business activity.
-// This applies to new Finnish domestic subscriptions only; international sales
-// and VAT-registration thresholds require separate monitoring.
-// Do not silently assume an overseas sale is tax-free: the seller has no foreign
-// VAT/GST/sales-tax registrations in Stripe, and Stripe Tax is not enabled.
-// Country approval requires confirming local obligations and updating this policy.
+// Finnish domestic subscriptions continue under the seller's current small-business
+// VAT status. US business subscriptions use active Stripe Tax and verified billing
+// location. Seller reports no US activity or nexus before first sale; this must
+// be re-evaluated with all sales channels and state tax rules over time.
+// Stripe Tax returns zero when unregistered; that result alone is not proof of exemption.
 const TAX_CHECKOUT_COUNTRIES = new Set(['FI','US']);
 const TAX_COUNTRY_POLICY_VERSION = 'fi-only-20261008';
 const US_TAX_COUNTRY_POLICY_VERSION = 'us-b2b-tax-20261103';
@@ -1641,6 +1640,7 @@ function setupServiceCheckoutLineItem(ownerFree=false) {
       product_data:{
         name:ownerFree ? 'Käyttöönottopalvelu (henkilökohtainen kampanjakoodi, 0 €)' : 'Käyttöönottopalvelu',
         description:'Kertaluonteinen käyttöönottopalvelu / One-time setup service',
+        tax_code:'txcd_20030000', // General services: independently supplied human setup
       },
     },
     quantity:1,
@@ -1666,7 +1666,7 @@ async function stripeCheckoutLineItem(plan) {
       currency:'eur',
       unit_amount:CURRENT_PRICE_CENTS[plan],
       recurring:{interval:plan.endsWith('_yearly') ? 'year' : 'month',interval_count:1},
-      product_data:{name:CURRENT_PRODUCT_NAMES[plan]},
+      product_data:{name:CURRENT_PRODUCT_NAMES[plan],tax_code:'txcd_10103001'},
     },
     quantity:1,
   };
@@ -1682,7 +1682,7 @@ function ownerFreeSetupCheckoutLineItem(plan) {
     price_data:{
       currency:'eur',unit_amount:0,
       recurring:{interval:plan.endsWith('_yearly')?'year':'month',interval_count:1},
-      product_data:{name:CURRENT_PRODUCT_NAMES[plan]+' (henkilökohtainen kampanjakoodi, 0 €)'},
+      product_data:{name:CURRENT_PRODUCT_NAMES[plan]+' (henkilökohtainen kampanjakoodi, 0 €)',tax_code:'txcd_10103001'},
     },
     quantity:1,
   };
