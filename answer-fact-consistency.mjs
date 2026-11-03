@@ -13,9 +13,8 @@ function parseClaims(input) {
    const u=after.match(unitPattern)?.[1]||'';
    const unit=/€|eur/.test(u)||before.endsWith('€')?'eur':/\$|usd/.test(u)||before.endsWith('$')?'usd':/kr|sek/.test(u)?'sek':u==='%'?'percent':/^(?:h|hour|tunt)/.test(u)?'hour':/^(?:day|paiv|dag)/.test(u)?'day':/^(?:week|viik)/.test(u)?'week':/^(?:kk|month)/.test(u)?'month':/^(?:year|vuot|vuos)/.test(u)?'year':'';
    // Time stamps are compared as a single clock value, not two stray numbers.
-   const time=/^\d{1,2}:\d{2}$/.test(raw+after.slice(0,3));
    const clock=/^\d{1,2}:\d{2}/.exec(text.slice(start));
-   if(clock){ values.push({value:clock[0],unit:'clock'});numericToken.lastIndex=start+clock[0].length;continue; }
+   if(clock){ values.push({value:clock[0],unit:'clock'});continue; }
    // Skip phone, URLs and identifiers; they are not standalone factual quantities.
    if(/[@/+#\w]/.test(text[start-1]||'') && !before.endsWith('€') && !before.endsWith('$'))continue;
    if(unit){values.push({value:decimals(raw),unit});}
