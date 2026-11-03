@@ -94,6 +94,7 @@ test('thousands of distinct colloquial and formal process questions return the S
   ];
   const seen=new Set();
   const counts={fi:0,sv:0,en:0};
+  const failures=[];
   for(const [lang,subjects,forms] of groups)
     for(const subject of subjects)for(const form of forms)
       for(const wrap of wrappers[lang]){
@@ -101,13 +102,15 @@ test('thousands of distinct colloquial and formal process questions return the S
         const key=lang+'|'+normalized(question);
         if(seen.has(key))continue;
         seen.add(key);
-        auditPositive(question,lang);
+        try{auditPositive(question,lang);}
+        catch(error){failures.push(error.message);}
         counts[lang]++;
       }
   assert.ok(counts.fi>=1000,JSON.stringify(counts));
   assert.ok(counts.sv>=250,JSON.stringify(counts));
   assert.ok(counts.en>=300,JSON.stringify(counts));
   assert.ok(seen.size>=1550,JSON.stringify(counts));
+  assert.equal(failures.length,0,JSON.stringify({counts,failed:failures.length,firstFailures:failures.slice(0,35)},null,2));
 });
 
 test('real Finnish slang, inflections, speech-to-text quirks and typos still identify intent',()=>{
@@ -187,14 +190,18 @@ test('false-positive controls: cost, dates, duration, bookings, availability and
   ];
   const prefix=['','Hei, ','Moi, ','Hello, ','Hej, ','Kysymys: '];
   let count=0;
+  const failures=[];
   for(const question of negatives)for(const before of prefix){
     const q=before+question;
-    assert.equal(mainioBusinessMoveProcessQuestion(q),false,'WRONG_INTENT '+q);
-    const answer=mainioPublicFactAnswer(rows,q,'fi');
-    assert.notEqual(answer?.intent,'Yritysmuuton eteneminen','WRONG_ANSWER '+q);
+    try{
+      assert.equal(mainioBusinessMoveProcessQuestion(q),false,'WRONG_INTENT '+q);
+      const answer=mainioPublicFactAnswer(rows,q,'fi');
+      assert.notEqual(answer?.intent,'Yritysmuuton eteneminen','WRONG_ANSWER '+q);
+    }catch(error){failures.push(error.message);}
     count++;
   }
   assert.equal(count,negatives.length*prefix.length);
+  assert.equal(failures.length,0,JSON.stringify({failed:failures.length,firstFailures:failures.slice(0,35)},null,2));
 });
 
 test('general service capabilities are not misclassified as step-by-step process',()=>{
