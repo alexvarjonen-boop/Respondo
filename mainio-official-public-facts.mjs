@@ -63,6 +63,8 @@ const specs=[
   'Muuton lopullinen hinta riippuu muun muassa asunnon koosta, tavaramäärästä, kerroksista, hissistä, kantomatkasta, muuttomatkasta ja tarvittavasta työstä. Tarkka tarjous vahvistetaan erikseen.',faq],
  ['Muuttopalvelut','Täyden palvelun avaimet käteen -muutto',
   'Kyllä, voimme hoitaa koko muuton myös tavaroiden pakkaamisen kanssa avaimet käteen -periaatteella. Sisältö sovitaan muuton suunnittelussa.',faq],
+ ['Muuttopalvelut','Yritysmuuton eteneminen',
+  'Yritysmuutto alkaa maksuttomalla suunnittelu- ja arviokäynnillä, jolla sovimme urakan yksityiskohdista. Nimeämme muuttovastaavan ja sovimme työn aikataulusta niin, että liiketoiminnan häiriöt minimoidaan. Ohjeistamme henkilöstöä ja toimitamme pakkaustarvikkeet. Sovitun työn mukaan hoidamme pakkaamisen, muuton ja kalusteasennukset. Tarvittaessa voimme tarjota välivarastointia ja tarpeettomien kalusteiden kierrätystä.',site+'yritysmuutot'],
 ];
 const OFFICIAL=Object.freeze(specs.map(([category,title,answer,source_url],i)=>Object.freeze({
   id:'demo-mainio-official-'+String(i+1).padStart(2,'0'),

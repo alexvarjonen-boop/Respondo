@@ -11,6 +11,7 @@ const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
 const area=(q,rx)=>rx.test(q);
 import {mainioBoxRentalIntent,mainioBoxRentalFollowupIntent,mainioBoxRentalFollowupKind,mainioVanRentalIntent} from './mainio-moving-intake.mjs';
 import {mainioMultilingualTariffAnswer} from './mainio-multilingual-tariffs.mjs';
+import {mainioBusinessMoveProcessAnswer} from './mainio-business-move-process.mjs';
 
 // Accept the common spoken and inflected forms used by customers.
 function vanRentalDuration(q){
@@ -176,6 +177,11 @@ const approvedRow=(r)=>r&&r.id&&r.approved!==false &&
 // To prevent a false affirmative, an incoming "no/not" about a service
 // does not invert the affirmative response; answers remain exact source facts.
 export function mainioPublicFactAnswer(rows,message,lang='fi',previousCustomerQuestion=''){
+  // Check the documented business-move *process* before generic FAQ retrieval,
+  // which previously returned only one unrelated furniture-preparation tip.
+  // This also works in Swedish and English; no fixed Finnish-language answer.
+  const businessProcess=mainioBusinessMoveProcessAnswer(rows,message,lang,previousCustomerQuestion);
+  if(businessProcess)return businessProcess;
   if(lang!=='fi')return mainioMultilingualTariffAnswer(rows,message,lang,previousCustomerQuestion);
   const currentQ=norm(message);
   if(!currentQ||currentQ.length>420)return null;
