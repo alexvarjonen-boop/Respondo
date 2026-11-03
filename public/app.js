@@ -3266,11 +3266,41 @@ async function home(){
   </div>`;
 }
 
-// The current checkout accepts Finnish business purchases only. Country is submitted
-// as a hidden default, while Stripe's actual billing country is verified server-side.
+// International B2B buyers may request access, but paid checkout is restricted
+// to countries whose tax/legal readiness has been explicitly completed.
+// Never silently substitute Finland when an overseas buyer selects their country.
+function checkoutBillingCountryField() {
+  const options=[
+    ['FI','Suomi / Finland'],['SE','Sverige / Sweden'],['EE','Eesti / Estonia'],
+    ['DE','Deutschland / Germany'],['FR','France'],['NL','Nederland / Netherlands'],
+    ['DK','Danmark / Denmark'],['NO','Norge / Norway'],['GB','United Kingdom'],
+    ['US','United States'],['CA','Canada'],['AU','Australia'],['AT','Österreich / Austria'],
+    ['BE','Belgium'],['CH','Schweiz / Switzerland'],['CZ','Česko / Czechia'],
+    ['ES','España / Spain'],['IE','Ireland'],['IT','Italia / Italy'],
+    ['LT','Lietuva / Lithuania'],['LV','Latvija / Latvia'],['PL','Polska / Poland'],
+    ['PT','Portugal'],['RO','România / Romania'],['SK','Slovensko / Slovakia'],
+    ['SI','Slovenija / Slovenia'],['HU','Magyarország / Hungary'],
+    ['BG','България / Bulgaria'],['HR','Hrvatska / Croatia'],['GR','Ελλάδα / Greece'],
+    ['CY','Κύπρος / Cyprus'],['MT','Malta'],['LU','Luxembourg'],['IS','Ísland / Iceland'],
+    ['JP','Japan'],['NZ','New Zealand'],['SG','Singapore'],['AE','United Arab Emirates'],
+    ['IN','India'],['BR','Brasil / Brazil'],['MX','México / Mexico'],
+    ['ZA','South Africa']
+  ];
+  return `<label class="field international-checkout-country-field">
+    <span>${appText('Laskutusmaa','Faktureringsland','Billing country')}</span>
+    <select name="billingCountry" autocomplete="country" required>
+      ${options.map(([code,label])=>`<option value="${code}" ${code==='FI'?'selected':''}>${esc(label)}</option>`).join('')}
+    </select>
+    <small>${appText(
+      'Maksullinen tilaus on nyt saatavilla Suomessa. Ulkomailla toimivat yritykset voivat kysyä käyttöönotosta – maakohtaiset verovaatimukset tarkistetaan ennen myynnin avaamista.',
+      'Betalda abonnemang är tills vidare tillgängliga i Finland. Företag utomlands kan kontakta oss – landsspecifika skattekrav kontrolleras innan försäljningen öppnas.',
+      'Paid checkout is currently available in Finland. Businesses abroad can request access; country-specific tax requirements must be verified before sales open.'
+    )} <a href="mailto:info@respondoai.fi?subject=International%20Respondo%20AI%20subscription">${appText('Kysy kansainvälisestä tilauksesta','Fråga om internationell beställning','Ask about international ordering')}</a></small>
+  </label>`;
+}
 function billingCountryNotice() {
   return appText(
-    'Maksulliset tilaukset ovat tällä hetkellä saatavilla vain Suomeen. Muiden maiden verotus ja mahdolliset rekisteröinnit tarkistetaan ennen myynnin avaamista. Kysy: info@respondoai.fi.',
+    'Maksullinen tilaus on toistaiseksi saatavilla vain Suomeen. Ulkomaisen yrityksen laskutusmaan verokäsittely ja mahdolliset rekisteröinnit pitää vahvistaa ennen veloitusta. Kysy kansainvälisestä tilauksesta: info@respondoai.fi.',
     'Betalda abonnemang är för närvarande endast tillgängliga i Finland. Skatt och registrering i andra länder granskas innan försäljningen öppnas. Frågor: info@respondoai.fi.',
     'Paid subscriptions are currently available only in Finland. We are reviewing tax and registration requirements before opening sales elsewhere. Contact: info@respondoai.fi.'
   );
@@ -3479,7 +3509,7 @@ function signup() {
             <div class="field"><label>${appText('Sähköposti','E-post','Email')}</label><input name="email" type="email" autocomplete="email" required placeholder="${appText('sinä@yritys.fi','du@foretag.se','you@company.com')}"></div>
             <div class="field"><label>${appText('Yritys','Företag','Company')}</label><input name="companyName" required placeholder="${appText('Yrityksen nimi','Företagets namn','Company name')}"></div>
             <div class="field"><label>${appText('Y-tunnus','FO-nummer','Business ID')}</label><input name="businessId" placeholder="1234567-8"></div>
-            <input type="hidden" name="billingCountry" value="FI">
+            ${checkoutBillingCountryField()}
             <div class="field full" id="signupPasswordField"><label>${appText('Salasana','Lösenord','Password')}</label><input name="password" type="password" data-customer-password minlength="8" maxlength="200" autocomplete="new-password" required placeholder="${appText('Vähintään 8 merkkiä','Minst 8 tecken','At least 8 characters')}">${passwordStrengthMarkup()}</div>
             <input type="hidden" name="plan" value="${plan}">
             <div class="signup-plan-summary field full" role="note" aria-label="${appText('Valittu paketti','Valt abonnemang','Selected plan')}">
@@ -3874,7 +3904,7 @@ function dashboardWithoutCompany(me, workspaces = []) {
         <form id="emptyWorkspaceForm" class="workspace-add-form">
           <label><span>${appText('Yrityksen nimi','Företagsnamn','Company name')}</span><input name="companyName" required maxlength="120"></label>
           <label><span>${appText('Y-tunnus (valinnainen)','FO-nummer (valfritt)','Business ID (optional)')}</span><input name="businessId" maxlength="40"></label>
-          <input type="hidden" name="billingCountry" value="FI">
+          ${checkoutBillingCountryField()}
           <label><span>${appText('Tilaus','Abonnemang','Subscription')}</span><select name="plan">
             <option value="basic_monthly">Advanced 49 € / kk</option>
             <option value="advanced_monthly">Premium 129 € / kk</option>
@@ -4272,7 +4302,7 @@ async function dashboard(options = {}) {
           <form id="workspaceAddForm" class="workspace-add-form">
             <label><span>${appText('Yrityksen nimi','Företagsnamn','Company name')}</span><input name="companyName" required maxlength="120" placeholder="${appText('Yrityksen nimi','Företagsnamn','Company name')}"></label>
             <label><span>${appText('Y-tunnus (valinnainen)','FO-nummer (valfritt)','Business ID (optional)')}</span><input name="businessId" maxlength="40" placeholder="1234567-8"></label>
-          <input type="hidden" name="billingCountry" value="FI">
+          ${checkoutBillingCountryField()}
             <div class="workspace-plan-grid">
               <label class="workspace-plan-option"><input type="radio" name="plan" value="basic_monthly" checked><span><b>${appText('Advanced · 49 €/kk','Advanced · 49 €/mån','Advanced · €49/month')}</b><small>2 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
               <label class="workspace-plan-option"><input type="radio" name="plan" value="advanced_monthly"><span><b>${appText('Premium · 129 €/kk','Premium · 129 €/mån','Premium · €129/month')}</b><small>10 ${appText('asiakaspalvelijaa','kundservicemedarbetare','support agents')}</small></span></label>
@@ -6842,6 +6872,10 @@ async function route() {
       const button=form.querySelector('button[type="submit"]');
       const msg=$('#emptyWorkspaceMsg');
       const fd=new FormData(form);
+      if(String(fd.get('billingCountry')||'').toUpperCase()!=='FI'){
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(billingCountryNotice())+'</div>';
+        return;
+      }
       const original=button.textContent;
       button.disabled=true;
       button.textContent=appText('Avataan maksua…','Öppnar betalning…','Opening checkout…');
@@ -6878,6 +6912,10 @@ async function route() {
       const button=form.querySelector('button[type="submit"]');
       const msg=$('#workspaceAddMsg');
       const fd=new FormData(form);
+      if(String(fd.get('billingCountry')||'').toUpperCase()!=='FI'){
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(billingCountryNotice())+'</div>';
+        return;
+      }
       const original=button.innerHTML;
       button.disabled=true;
       button.innerHTML=appText('Avataan maksua…','Öppnar betalning…','Opening checkout…');
