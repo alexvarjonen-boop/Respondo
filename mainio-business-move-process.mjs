@@ -16,7 +16,8 @@ export function mainioBusinessMoveProcessQuestion(message,previousCustomerQuesti
   if(businessMove.test(q)&&processCue.test(q))return true;
   // Brief follow-up inherits only the TOPIC of the immediately previous
   // customer turn. Never inherit price, address, dates, or other assertions.
-  if(!businessMove.test(normalize(previousCustomerQuestion)))return false;
+  const previous=normalize(previousCustomerQuestion);
+  if(!businessMove.test(previous) || separateQuestion.test(previous))return false;
   return /^(?:miten (?:se|tama|homma) (?:etenee|sujuu|toimii)|mitka (?:ovat )?(?:sen |ne )?vaiheet|ent[aä] (?:ne )?vaiheet|how (?:does|will) (?:it|that) work|what (?:happens next|are the steps)|hur (?:gar det till|fungerar det)|vilka (?:ar )?stegen)\??$/.test(q);
 }
 
