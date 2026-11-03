@@ -9,6 +9,8 @@ const van=site+'pakettiautojen-vuokraus';
 const faq=site+'usein-muutosta-kysyttya';
 const area=site+'muuttolaatikot-ja-pakkausmateriaalit-panosta-laatuun-ja-suojaa-irtaimistosi-vaurioilta';
 const specs=[
+ ['Muuttopalvelut','Yritysmuuton eteneminen',
+  'Yritysmuutto alkaa maksuttomalla suunnittelu- ja arviokäynnillä, jolla sovimme urakan yksityiskohdista. Nimeämme muuttovastaavan ja sovimme työn aikataulusta niin, että liiketoiminnan häiriöt minimoidaan. Ohjeistamme henkilöstöä ja toimitamme pakkaustarvikkeet. Sovitun työn mukaan hoidamme pakkaamisen, muuton ja kalusteasennukset. Tarvittaessa voimme tarjota välivarastointia ja tarpeettomien kalusteiden kierrätystä.',site+'yritysmuutot'],
  ['Muuttopalvelut','Muuton toimialue',
   'Mainio palvelee Turussa ja Varsinais-Suomessa. Muutot voivat suuntautua myös muualle Suomeen; tarkka reitti, muuttopäivä ja hinta sovitaan erikseen.',area],
  ['Muuttolaatikot','Muuttolaatikoiden hinta',
