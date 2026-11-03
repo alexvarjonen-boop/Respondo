@@ -1666,7 +1666,7 @@ async function stripeCheckoutLineItem(plan) {
       currency:'eur',
       unit_amount:CURRENT_PRICE_CENTS[plan],
       recurring:{interval:plan.endsWith('_yearly') ? 'year' : 'month',interval_count:1},
-      product_data:{name:CURRENT_PRODUCT_NAMES[plan],tax_code:'txcd_10103001'},
+      product_data:{name:CURRENT_PRODUCT_NAMES[plan]},
     },
     quantity:1,
   };
@@ -1682,7 +1682,7 @@ function ownerFreeSetupCheckoutLineItem(plan) {
     price_data:{
       currency:'eur',unit_amount:0,
       recurring:{interval:plan.endsWith('_yearly')?'year':'month',interval_count:1},
-      product_data:{name:CURRENT_PRODUCT_NAMES[plan]+' (henkilökohtainen kampanjakoodi, 0 €)',tax_code:'txcd_10103001'},
+      product_data:{name:CURRENT_PRODUCT_NAMES[plan]+' (henkilökohtainen kampanjakoodi, 0 €)'},
     },
     quantity:1,
   };
