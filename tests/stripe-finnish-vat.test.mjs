@@ -22,7 +22,7 @@ test('new Stripe subscriptions do not charge Finnish VAT when seller is not VAT 
   assert.match(server,/const SETUP_SERVICE_PRICE_CENTS = 19900/);
   assert.match(oneTimeFee,/unit_amount:ownerFree \? 0 : SETUP_SERVICE_PRICE_CENTS/);
   assert.doesNotMatch(oneTimeFee,/recurring:/);
-  assert.equal((server.match(/automatic_tax:\s*\{\s*enabled:\s*checkoutCountry\.automaticTax\s*\}/g)||[]).length,1);
+  assert.equal((server.match(/automatic_tax:\s*\{\s*enabled:\s*checkoutCountry\.automaticTax\s*\}/g)||[]).length,2);
   assert.match(server,/automatic_tax:\{enabled:checkoutCountry\.automaticTax\}/);
   assert.match(server,/return \{ok:true,country,policyVersion:TAX_COUNTRY_POLICY_VERSION,automaticTax:false\}/);
   assert.equal((server.match(/custom_text:\s*\{\s*submit:\s*\{\s*message:\s*taxExemptionMessage/g)||[]).length,2);
