@@ -3300,7 +3300,7 @@ function checkoutBillingCountryField() {
 }
 function billingCountryNotice() {
   return appText(
-    'Maksulliset tilaukset ovat tällä hetkellä saatavilla vain Suomeen. Muiden maiden verotus ja mahdolliset rekisteröinnit tarkistetaan ennen myynnin avaamista. Kysy: info@respondoai.fi.',
+    'Maksullinen tilaus on toistaiseksi saatavilla vain Suomeen. Ulkomaisen yrityksen laskutusmaan verokäsittely ja mahdolliset rekisteröinnit pitää vahvistaa ennen veloitusta. Kysy kansainvälisestä tilauksesta: info@respondoai.fi.',
     'Betalda abonnemang är för närvarande endast tillgängliga i Finland. Skatt och registrering i andra länder granskas innan försäljningen öppnas. Frågor: info@respondoai.fi.',
     'Paid subscriptions are currently available only in Finland. We are reviewing tax and registration requirements before opening sales elsewhere. Contact: info@respondoai.fi.'
   );
@@ -6872,6 +6872,10 @@ async function route() {
       const button=form.querySelector('button[type="submit"]');
       const msg=$('#emptyWorkspaceMsg');
       const fd=new FormData(form);
+      if(String(fd.get('billingCountry')||'').toUpperCase()!=='FI'){
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(billingCountryNotice())+'</div>';
+        return;
+      }
       const original=button.textContent;
       button.disabled=true;
       button.textContent=appText('Avataan maksua…','Öppnar betalning…','Opening checkout…');
@@ -6908,6 +6912,10 @@ async function route() {
       const button=form.querySelector('button[type="submit"]');
       const msg=$('#workspaceAddMsg');
       const fd=new FormData(form);
+      if(String(fd.get('billingCountry')||'').toUpperCase()!=='FI'){
+        if(msg) msg.innerHTML='<div class="notice error">'+esc(billingCountryNotice())+'</div>';
+        return;
+      }
       const original=button.innerHTML;
       button.disabled=true;
       button.innerHTML=appText('Avataan maksua…','Öppnar betalning…','Opening checkout…');
