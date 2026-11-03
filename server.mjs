@@ -126,7 +126,7 @@ const SEO_APP_PATHS = new Set([
 
 const SEO_META = {
   fi: {
-    '/': ['Chatbot yritykselle – AI-asiakaspalvelu 24/7 | Respondo AI', 'Respondo AI vastaa verkkosivusi asiakkaiden kysymyksiin 24/7 yrityksesi tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta. Kokeile 3 päivää maksutta.'],
+    '/': ['Respondo AI | AI-asiakaspalvelubotti yrityksille', 'Respondo AI vastaa verkkosivusi asiakkaiden kysymyksiin 24/7 yrityksesi tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta. Kokeile 3 päivää maksutta.'],
     '/ominaisuudet': ['AI-asiakaspalvelubotin ominaisuudet | Respondo AI', 'Tutustu Respondon ominaisuuksiin: verkkosivubotti, yrityksen oma tietopohja, yhteydenotot, ajanvaraus, keskustelut ja asiakaspalvelun hallinta yhdessä paikassa.'],
     '/kenelle-sopii': ['Kenelle Respondo AI sopii? | Toimialat ja käyttökohteet','Respondo AI sopii autokorjaamoille, LVI-yrityksille, verkkokaupoille sekä asiakaspalvelun ja ajanvarauksen tueksi. Tutustu ratkaisuihin.'],
     '/guides': ['AI-asiakaspalvelun oppaat | Respondo AI','Käytännön oppaita AI-asiakaspalveluboteista ja yrityksen verkkosivun tietopohjan rakentamisesta.'],
@@ -149,7 +149,7 @@ const SEO_META = {
     '/dpa': ['Tietojenkäsittely | Respondo AI', 'Tietoa henkilötietojen käsittelystä, kun Respondo toimii yritysasiakkaan henkilötietojen käsittelijänä.'],
   },
   sv: {
-    '/': ['AI-kundservicebot för företag | Respondo AI', 'Respondo AI svarar på webbplatsens kundfrågor dygnet runt med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar. Prova gratis i 3 dagar.'],
+    '/': ['Respondo AI | AI-kundservicebot för företag', 'Respondo AI svarar på webbplatsens kundfrågor dygnet runt med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar. Prova gratis i 3 dagar.'],
     '/ominaisuudet': ['Funktioner för AI-kundservicebot | Respondo AI', 'Se Respondos funktioner för kundservice, kunskapsbas, kontaktförfrågningar, bokningar och kunddialoger.'],
     '/kenelle-sopii': ['Vem passar Respondo AI för? | Branscher och användning','Respondo AI passar bilverkstäder, VVS-företag och webbutiker och hjälper till med kundservice och bokningsförfrågningar. Upptäck lösningarna.'],
     '/guides': ['Guider till AI-kundservice | Respondo AI','Praktiska guider om AI-kundservice, webbplatsbotar och pålitliga kunskapsbaser.'],
@@ -172,7 +172,7 @@ const SEO_META = {
     '/dpa': ['Databehandling | Respondo AI', 'Information om personuppgiftsbehandling när Respondo fungerar som personuppgiftsbiträde för företagskunden.'],
   },
   en: {
-    '/': ['AI Customer Service Bot for Businesses | Respondo AI', 'Respondo AI answers website customer questions 24/7 using company-approved information, captures contact requests and supports bookings. Try it free for 3 days.'],
+    '/': ['Respondo AI | AI Customer Service Bot for Businesses', 'Respondo AI answers website customer questions 24/7 using company-approved information, captures contact requests and supports bookings. Try it free for 3 days.'],
     '/ominaisuudet': ['AI Customer Service Bot Features | Respondo AI', 'Explore Respondo features for customer service, your knowledge base, contact requests, bookings and customer conversations.'],
     '/kenelle-sopii': ['Who Is Respondo AI For? | Industries and Use Cases','Respondo AI supports auto repair shops, plumbing and HVAC companies, ecommerce stores, customer support and booking enquiries.'],
     '/guides': ['AI Customer Support Guides | Respondo AI','Independent practical guides to website AI chatbots, customer service automation, human handoff and reliable business knowledge.'],
@@ -279,7 +279,7 @@ function seoStructuredData(seo) {
       '@type':'Organization',
       '@id':SEO_CANONICAL_ORIGIN + '/#organization',
       name:'Respondo AI',
-      alternateName:'RESPONDO AI',
+      alternateName:['RESPONDO AI','RespondoAI'],
       url:SEO_CANONICAL_ORIGIN + '/',
       description:'B2B customer service software for websites with automated answers, knowledge-base management, lead capture, bookings and human takeover.',
       logo:{ '@type':'ImageObject', url:SEO_CANONICAL_ORIGIN + '/respondo-approved-arrow-20261012.png' },
