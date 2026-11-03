@@ -74,8 +74,8 @@ const SERVICES = Object.freeze([
   },
 ]);
 
-const QUESTION_CUE = /^(?:teetteko|vaihdatteko|paikkaatteko|korjaatteko|asennatteko|pesetteko|avaatteko|huollatteko|tarjoatteko|onnistuuko|onnistuisiko|pystytteko|voitteko|hoidatteko|saako|saanko|tarvitsen|haluaisin|can you|could you|do you|would you|is it possible|are you able|do you offer|kan ni|kan man|byter ni|lagar ni|fixar ni|reparerar ni|installerar ni|tvattar ni|rengor ni|erbjuder ni|utfor ni|gor ni)\b/;
-const FOLLOW_UP_CUE = /^(?:enta|entapa|mites|what about|how about|and what about|och da|men hur|vad galler)\b/;
+const QUESTION_CUE = /^(?:teetteko|teetteks|teettek|vaihdatteko|vaihdatteks|paikkaatteko|paikkaatteks|korjaatteko|korjaatteks|asennatteko|asennatteks|pesetteko|pesetteks|avaatteko|huollatteko|tarjoatteko|onnistuuko|onnistuisiko|onnistuuks|onnistuks|pystytteko|pystytteks|pystyyko|pystyyks|voitteko|voitteks|voiko|voiks|voisko|hoidatteko|hoidatteks|saako|saanko|saaks|tarvitsen|tarvisin|haluaisin|haluisin|can you|could you|do you|would you|is it possible|are you able|do you offer|can u|do u|kan ni|kan man|kan ni gora|byter ni|lagar ni|fixar ni|reparerar ni|installerar ni|tvattar ni|rengor ni|erbjuder ni|utfor ni|gor ni)\b/;
+const FOLLOW_UP_CUE = /^(?:enta|entas|entapa|mites|mitenkas|mitenkas|no enta|no entas|what about|how about|and what about|och da|men hur|vad galler)\b/;
 const EXCLUDE_QUESTION = /\b(?:how much|hur mycket|kuinka paljon|paljonko|maksaa|hinta|hinnoittel\w*|tarjous|ilmain\w*|alenn\w*|tanaan|huomenna|milloin|aikaisin|how much|price|cost|discount|free|today|tomorrow|when|pris|kostar|gratis|rabatt|idag|imorgon|nar|varata|booking|varaa|boka|kiire)\b|\d/;
 const NOT_OFFERED = /\b(?:emme|eivat|ei|en|et|not|never|dont|do not|does not|cannot|can't|inte|ej|aldrig|erbjuder inte|utfors inte)\b/;
 const IS_PRODUCT = /tuote|product|produkt|katalog|catalog|verkkokaup|webshop|category/;
