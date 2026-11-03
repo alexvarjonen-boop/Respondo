@@ -6012,6 +6012,76 @@ async function route() {
                 <span><b>${esc(item.title || item.category || '')}</b><p>${esc(item.answer)}</p><small>${esc(item.sourceUrl || '')}</small></span>
               </label>`).join('')}
             </div>` : '<div class="notice">' + appText('Sivustolta ei löytynyt luotettavasti poimittavia tuotteita, palveluita, hintoja, yhteystietoja, aukioloaikoja tai tarjouspyyntölinkkiä. Voit lisätä tiedot käsin.','Inga tillförlitliga produkter, tjänster, priser, kontaktuppgifter, öppettider eller offertlänkar kunde hämtas. Du kan lägga till uppgifterna manuellt.','No reliable products, services, prices, contact details, opening hours or quote link could be extracted. You can add the details manually.') + '</div>';
+          // Validate imported knowledge automatically after crawling, without blocking
+          // approval or presenting source citations as proof of factual correctness.
+          if (candidates.length) {
+            const audit=document.createElement('section');
+            audit.id='websiteImportQualityReport';
+            audit.className='website-import-review-head';
+            audit.setAttribute('aria-live','polite');
+            const readiness=result.readiness;
+            const missing=Array.isArray(readiness?.missing)?readiness.missing:[];
+            const topicNames={
+              services:appText('Palvelut','Tjänster','Services'),
+              pricing:appText('Hinnat','Priser','Pricing'),
+              hours:appText('Aukioloajat','Öppettider','Opening hours'),
+              contact:appText('Yhteystiedot','Kontaktuppgifter','Contact'),
+              location:appText('Sijainti','Plats','Location'),
+              quote:appText('Tarjouspyyntö','Offertförfrågan','Quote requests'),
+              delivery:appText('Toimitus','Leverans','Delivery'),
+              returns:appText('Palautukset','Returer','Returns'),
+              warranty:appText('Takuu','Garanti','Warranty'),
+              payment:appText('Maksutavat','Betalningsmetoder','Payment methods')
+            };
+            const coverage=Number(readiness?.coveragePercent||0);
+            audit.innerHTML='<div><b>'+esc(appText('Tietopohjan kattavuus','Kunskapsbasens täckning','Knowledge coverage'))+': '+coverage+'%</b>'+
+              '<small>'+esc(missing.length
+                ? appText('Tarkista puuttuvat tiedot: ','Kontrollera saknade uppgifter: ','Review missing information: ')+missing.map(id=>topicNames[id]||id).join(', ')
+                : appText('Kaikki tarkistettavat tietoryhmät löytyivät.','Alla kontrollerade informationskategorier hittades.','All audited information categories were found.'))+'</small>'+
+              '<small id="websiteImportValidationStatus">'+esc(appText('Bottia testataan automaattisesti…','Boten testas automatiskt…','Testing bot automatically…'))+'</small></div>';
+            review.prepend(audit);
+            const status=audit.querySelector('#websiteImportValidationStatus');
+            if(result.jobId) {
+              api('/api/app/import-website/validate/'+encodeURIComponent(result.jobId),{method:'POST'})
+                .then(payload=>{
+                  if(!audit.isConnected || !status) return;
+                  const counts=payload?.validation?.counts||{};
+                  const grounded=Number(counts.grounded_candidate||0), safe=Number(counts.safe||0), flagged=Number(counts.review||0);
+                  const executed=Number(payload?.validation?.executed||0);
+                  status.textContent=appText(
+                    'Bottitestit: '+executed+' kysymystä. '+grounded+' lähteellistä vastausta, '+safe+' turvallista siirtoa, '+flagged+' tarkistettavaa. Lähdeviite ei yksin takaa vastauksen oikeellisuutta.',
+                    'Bottest: '+executed+' frågor. '+grounded+' källhänvisningar, '+safe+' säkra överlämningar, '+flagged+' att granska. Källhänvisning garanterar inte att svaret är korrekt.',
+                    'Bot tests: '+executed+' questions. '+grounded+' source-backed candidates, '+safe+' safe handoffs, '+flagged+' to review. A citation does not prove factual correctness.'
+                  );
+                  const failed=(payload?.validation?.results||[]).filter(item=>item.status==='review').slice(0,18);
+                  if(failed.length){
+                    const details=document.createElement('details');
+                    const summary=document.createElement('summary');
+                    summary.textContent=appText('Näytä tarkistettavat kysymykset','Visa frågor att granska','Show questions to review')+' ('+failed.length+')';
+                    details.appendChild(summary);
+                    const items=document.createElement('ul');
+                    for(const item of failed){
+                      const li=document.createElement('li');
+                      li.textContent='['+String(item.language||'').toUpperCase()+'] '+String(item.question||'')+' — '+String(item.reason||'');
+                      items.appendChild(li);
+                    }
+                    details.appendChild(items);
+                    audit.appendChild(details);
+                  }
+                })
+                .catch(()=>{
+                  if(status && audit.isConnected) status.textContent=appText(
+                    'Bottitestiä ei voitu suorittaa. Yritystiedot voi silti tarkistaa ja hyväksyä.',
+                    'Bottestet kunde inte slutföras. Företagsuppgifterna kan fortfarande granskas och godkännas.',
+                    'Bot validation could not complete. You can still review and approve company facts.'
+                  );
+                });
+            } else if(status) status.textContent=appText(
+              'Automaattinen bottitesti ei ole käytettävissä suorassa varahaussa.',
+              'Automatiskt bottest är inte tillgängligt vid reservsökning.',
+              'Automated bot validation is unavailable for the fallback scan.'
+            );
+          }
           document.getElementById('selectAllWebsiteImport')?.addEventListener('click', (event) => {
             const boxes=[...review.querySelectorAll('[data-import-index]')];
             const shouldSelect=boxes.some((box)=>!box.checked);
