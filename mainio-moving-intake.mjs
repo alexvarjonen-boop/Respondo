@@ -67,7 +67,11 @@ export function mainioMovingConsentReply(lang='fi'){
 }
 export function mainioMovingRouteIntent(message) {
   const q=normalized(message);
-  const move=mentionsMovingService(q) ||
+  // "a move from A to B" and "moves from A to B" are normal English
+  // moving-company requests. Do not treat "move me from A to B" (moving
+  // a person) as household-goods transport without clarification.
+  const englishRelocation=/(?:\b(?:a|the|our|my|your)\s+move\b|\bmoves\b|\bmoving\s+(?:goods|furniture|belongings)\b|\b(?:office|business|company)\s+move\b).{0,40}\bfrom\b.{0,60}\bto\b/.test(q);
+  const move=mentionsMovingService(q) || englishRelocation ||
     (/(?:kuljet|siirt|vied|vieda|nout)/.test(q) &&
      /(?:tavarat|tavaroit|huonekalu|kaluste|kamat)/.test(q));
   if(!move || mainioInquiryKind(q)!=='moving')return false;
