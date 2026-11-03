@@ -89,3 +89,24 @@ test('do not make a partial affirmative claim for services joined with and',()=>
   const rows=[service('Ikkunanpesu')];
   assert.equal(ask('Pesettekö ikkunat ja aurinkopaneelit?',rows),null);
 });
+
+test('colloquial Finnish question forms resolve verified services without per-company rules',()=>{
+  const rows=[service('Raidetangonpään vaihto'),service('Auton akun vaihto')];
+  for(const q of [
+    'Voisko teillä vaihtaa raidetangon päitä?',
+    'Saaks teiltä raidetangon päiden vaihtoa?',
+    'Onnistuuks raidetangon päiden vaihto?',
+    'Pystyyks teillä vaihtaa raidetangon päitä?',
+    'Vaihdatteks raidetangon päitä?',
+    'Tarvisin raidetangon päiden vaihtoa',
+  ]) assert.equal(ask(q,rows)?.handoff,false,q);
+  const history=[{question:'Vaihdatteko raidetangon päitä?',answer:'Kyllä.'}];
+  assert.equal(ask('Entäs auton akku?',rows,'fi',history)?.handoff,false);
+});
+test('colloquial phrasing never turns unverified or unrelated service into affirmative',()=>{
+  const rows=[service('Raidetangonpään vaihto')];
+  assert.equal(ask('Voisko teillä vaihtaa jarrupaloja?',rows)?.handoff,true);
+  assert.equal(ask('Saaks teiltä renkaiden paikkausta?',rows)?.handoff,true);
+  assert.equal(ask('Onnistuuks raidetangon päiden vaihto huomenna?',rows),null);
+  assert.equal(ask('Paljonko raidetangon päiden vaihto maksaa?',rows),null);
+});
