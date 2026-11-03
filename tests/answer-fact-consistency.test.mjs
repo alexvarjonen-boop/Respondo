@@ -43,3 +43,50 @@ test('never invents confidence when answer contains no comparable numeric claims
   topic:'pricing',answer:'Pyydä tarjous yritykseltä.',sourceRows:[row('p','Hinnat','Hinta pyynnöstä')],
  }).status,'not_checked');
 });
+
+test('recognizes Finnish and Swedish currency words, not just currency symbols',()=>{
+  const source=[row('p','Hinnat','Palvelu maksaa 49 euroa.')];
+  assert.equal(checkCitedNumericalClaims({
+    topic:'pricing',answer:'Palvelun hinta on 59 €.',sourceRows:source,
+  }).status,'review');
+  assert.equal(checkCitedNumericalClaims({
+    topic:'pricing',answer:'Palvelun hinta on 49 €.',sourceRows:source,
+  }).status,'no_numeric_conflict_found');
+  assert.equal(checkCitedNumericalClaims({
+    topic:'pricing',answer:'Det kostar 90 kronor.',sourceRows:[row('s','Priser','Pris 80 kr')],
+  }).status,'review');
+});
+
+test('normalizes conversational Finnish opening-hour ranges and 24h time notation',()=>{
+  const rows=[row('h','Aukioloajat','Ma-pe 09:00–17:00')];
+  assert.equal(checkCitedNumericalClaims({
+    topic:'hours',answer:'Olemme auki klo 9–17.',sourceRows:rows,
+  }).status,'no_numeric_conflict_found');
+  assert.equal(checkCitedNumericalClaims({
+    topic:'hours',answer:'Auki 10–18.',sourceRows:rows,
+  }).status,'review');
+  assert.equal(checkCitedNumericalClaims({
+    topic:'hours',answer:'Öppet kl. 9.00–17.00.',sourceRows:rows,
+  }).status,'no_numeric_conflict_found');
+});
+
+test('checks multilingual shipping durations and ignores phone numbers and plain identifiers',()=>{
+  assert.equal(checkCitedNumericalClaims({
+    topic:'delivery',answer:'Toimitus kestää 5 päivää.',sourceRows:[row('d','Toimitus','Toimitus kestää 3 päivää.')],
+  }).status,'review');
+  assert.equal(checkCitedNumericalClaims({
+    topic:'pricing',answer:'Puhelin 040 123 4567, kysy hintaa.',sourceRows:[row('c','Yhteystiedot','040 123 4567')],
+  }).status,'not_checked');
+});
+
+test('checks both endpoints of euro price and delivery duration ranges',()=>{
+  assert.equal(checkCitedNumericalClaims({
+    topic:'pricing',answer:'49–79 €',sourceRows:[row('p','Hinnat','49–69 €')],
+  }).status,'review');
+  assert.equal(checkCitedNumericalClaims({
+    topic:'pricing',answer:'49–79 €',sourceRows:[row('p','Hinnat','49–79 €')],
+  }).status,'no_numeric_conflict_found');
+  assert.equal(checkCitedNumericalClaims({
+    topic:'delivery',answer:'3–4 päivää',sourceRows:[row('d','Toimitus','2–4 päivää')],
+  }).status,'review');
+});
