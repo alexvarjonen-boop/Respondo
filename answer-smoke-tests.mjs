@@ -6,7 +6,12 @@ const norm=v=>String(v??'').toLowerCase().normalize('NFD').replace(/[\u0300-\u03
 const UNSUPPORTED=/\b(?:kylla|yes|ja|maksaa|costs?|price is|hinta on|on avoinna|open from|oppet fran|toimitus kestaa|delivery takes|garanti(?:n)? ar|warranty is)\b/;
 export function gradeBotAnswer(scenario,answer,knownIds=new Set(),sourceRows=[]) {
   const reply=String(answer?.answer||'').trim();
-  const ids=Array.isArray(answer?.sourceIds)?answer.sourceIds.filter(id=>knownIds.has(String(id))):[];
+  const approvedIds=new Set((Array.isArray(sourceRows)?sourceRows:[])
+    .filter(row=>row && row.approved!==false && row.id!==undefined && row.id!==null && String(row.id).trim())
+    .map(row=>String(row.id)));
+  const ids=Array.isArray(answer?.sourceIds)
+    ?answer.sourceIds.filter(id=>knownIds.has(String(id)) && (!sourceRows.length || approvedIds.has(String(id))))
+    :[];
   const noSource=ids.length===0;
   const handoff=answer?.handoff===true;
   if (!reply && !handoff) return {status:'review',reason:'empty_answer'};
@@ -26,7 +31,9 @@ export function gradeBotAnswer(scenario,answer,knownIds=new Set(),sourceRows=[])
 export async function runImportedAnswerSmokeTests({readiness,rows,answerQuestion,limit=MAX_CASES}={}) {
   if(typeof answerQuestion!=='function') throw new TypeError('answerQuestion required');
   const cases=Array.isArray(readiness?.scenarios)?readiness.scenarios.slice(0,Math.max(0,Math.min(MAX_CASES,Math.floor(Number(limit)||0)))):[];
-  const knownIds=new Set((Array.isArray(rows)?rows:[]).map(r=>String(r.id)).filter(Boolean));
+  const knownIds=new Set((Array.isArray(rows)?rows:[])
+    .filter(row=>row && row.approved!==false && row.id!==undefined && row.id!==null && String(row.id).trim())
+    .map(row=>String(row.id)));
   const results=[];
   for(const scenario of cases) {
     try {
