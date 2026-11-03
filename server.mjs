@@ -1,6 +1,7 @@
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { matchVerifiedSpecialistService } from './service-semantics.mjs';
+import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import express from 'express';
 import path from 'path';
@@ -8510,7 +8511,7 @@ app.post('/api/app/import-website/start', auth, ownerOnly, subscribed, async (re
       });
       const candidates=websiteKnowledgeCandidates(bundle);
       const detectedProfile=extractFreeWebsiteProfile(bundle);
-      job.result={ok:true,jobId,profile:detectedProfile,pagesScanned:bundle.pages.length,factsFound:candidates.length,candidates,extraction:'local'};
+      job.result={ok:true,jobId,profile:detectedProfile,pagesScanned:bundle.pages.length,factsFound:candidates.length,candidates,readiness:auditImportedKnowledge(candidates),extraction:'local'};
       job.scanned=bundle.pages.length; job.total=Math.max(job.total,job.scanned); job.percent=100; job.status='done'; job.updatedAt=Date.now();
     }catch(e){job.status='error';job.error=e?.message||'Verkkosivun tietojen tuonti epäonnistui.';job.updatedAt=Date.now();}
   })();
@@ -8545,6 +8546,7 @@ app.post('/api/app/import-website', auth, ownerOnly, subscribed, async (req, res
       pagesScanned:bundle.pages.length,
       factsFound:candidates.length,
       candidates,
+      readiness:auditImportedKnowledge(candidates),
       extraction:'local',
     });
   } catch (e) {
@@ -8613,7 +8615,7 @@ app.post('/api/app/import-website/approve', auth, ownerOnly, subscribed, async (
     }
     if (!added) { await client.query('ROLLBACK'); return res.status(400).json({error:'Valituista tiedoista ei löytynyt hyväksyttäviä yritystietoja.'}); }
     await client.query('COMMIT');
-    return res.json({ok:true,added});
+    return res.json({ok:true,added,readiness:auditImportedKnowledge(items)});
   } catch(e) {
     try { await client.query('ROLLBACK'); } catch {}
     console.error('Website knowledge approval failed',e);
