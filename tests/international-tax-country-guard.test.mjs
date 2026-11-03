@@ -8,11 +8,11 @@ const app=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const html=fs.readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 
 function loadTaxGuard(stripe) {
-  const start=server.indexOf("const TAX_CHECKOUT_COUNTRIES = new Set(['FI']);");
+  const start=server.indexOf("const TAX_CHECKOUT_COUNTRIES = new Set(['FI','US']);");
   const end=server.indexOf("function checkoutTaxExemptionMessage",start);
   assert.ok(start>0 && end>start,'country guard not found');
   const code=server.slice(start,end);
-  return vm.runInNewContext(code+"\n({checkoutCountryPolicy,checkoutIsCountryPolicyCompliant,enforceCompletedCheckoutCountryPolicy})",{
+  return vm.runInNewContext(code+"\n({checkoutCountryPolicy,checkoutIsCountryPolicyCompliant,enforceCompletedCheckoutCountryPolicy,ensureUSStripeTaxReady})",{
     stripe,console:{error(){}}
   });
 }
@@ -24,6 +24,13 @@ test('international country guard is fail-closed by default',()=>{
     assert.equal(guard.checkoutCountryPolicy(country).ok,false,String(country));
   }
   assert.equal(guard.checkoutCountryPolicy(' fi ').ok,true);
+  const us=guard.checkoutCountryPolicy('US',{state:'CA',businessId:'12-3456789'});
+  assert.equal(us.ok,true);
+  assert.equal(us.automaticTax,true);
+  assert.equal(us.policyVersion,'us-b2b-tax-20261103');
+  assert.equal(guard.checkoutCountryPolicy('US',{state:'CA',businessId:'123456789'}).ok,true);
+  assert.equal(guard.checkoutCountryPolicy('US',{state:'XX',businessId:'12-3456789'}).ok,false);
+  assert.equal(guard.checkoutCountryPolicy('US',{state:'NY',businessId:'invalid'}).ok,false);
 });
 
 test('completed Checkout must use declared and confirmed Finnish billing address',()=>{
@@ -53,19 +60,22 @@ test('mismatched Checkout address cancels subscription before account activation
   assert.deepEqual(canceled,['sub_test_foreign']);
 });
 
-test('country selection is visible on signup and both workspace forms without enabling foreign billing',()=>{
+test('country selection and US state are visible while other countries remain blocked',()=>{
   assert.equal((app.match(/<input type="hidden" name="billingCountry" value="FI">/g)||[]).length,0);
   assert.equal((app.match(/\$\{checkoutBillingCountryField\(\)\}/g)||[]).length,3);
   assert.match(app, /<select name="billingCountry" autocomplete="country" required>/);
   assert.match(app, /Laskutusmaa','Faktureringsland','Billing country/);
   assert.match(app, /Ask about international ordering/);
+  assert.match(app, /name="billingState" autocomplete="address-level1" disabled/);
+  assert.equal((app.match(/billingState:String\(fd.get\('billingState'\)/g)||[]).length,2);
+  assert.match(app, /billingState:form.get\('billingState'\)/);
   assert.equal((app.match(/billingCountry:(?:form.get|String\(fd.get)/g)||[]).length,3);
   assert.match(app,/billingCountryNotice/);
   assert.match(html,/tax-country-guard-v1/);
   assert.equal((server.match(/tax_country_policy:/g)||[]).length,4);
   assert.match(server,/enforceCompletedCheckoutCountryPolicy\(session\)/);
-  assert.match(server,/checkoutCountryPolicy\(req.body\?\.billingCountry\)/);
-  assert.match(app,/String\(fd.get\('billingCountry'\)\|\|''\).toUpperCase\(\)!=='FI'/);
+  assert.match(server,/checkoutCountryPolicy\(req.body\?\.billingCountry,\{state:req.body\?\.billingState,businessId\}\)/);
+  assert.match(app, /\['FI','US'\]\.includes\(String\(fd.get\('billingCountry'\)/);
 });
 
 test('business-only order declaration is required for both checkout endpoints',()=>{
@@ -82,10 +92,32 @@ test('business-only order declaration is required for both checkout endpoints',(
 test('seller is identifiable and domestic VAT status is disclosed',()=>{
   const terms=fs.readFileSync(new URL('../public/legal-content.js',import.meta.url),'utf8');
   assert.match(terms,/Respondo AI, Y-tunnus 3599437-5/);
-  assert.match(terms,/Maksulliset tilaukset ovat toistaiseksi saatavilla vain Suomessa/);
-  assert.match(terms,/Paid subscriptions are presently available only to businesses in Finland/);
+  assert.match(terms,/Maksulliset tilaukset ovat saatavilla Suomessa ja Yhdysvalloissa/);
+  assert.match(terms,/Paid subscriptions are available to businesses in Finland and the United States/);
   assert.match(app,/sellerName: 'Respondo AI'/);
   assert.match(server,/sellerName: 'Respondo AI'/);
-  assert.match(server,/automatic_tax:\s*\{\s*enabled:\s*false\s*\}/);
+  assert.match(server,/automatic_tax:\s*\{\s*enabled:\s*checkoutCountry\.automaticTax\s*\}/);
+  assert.match(server,/automatic_tax:\{enabled:checkoutCountry\.automaticTax\}/);
+  assert.match(server,/settings\?\.defaults\?\.tax_code!=='txcd_10103001'/);
   assert.equal((server.match(/business_purchase:\s*'1'/g)||[]).length,4);
+});
+
+test('US completed checkout enforces exact billing state and Stripe Tax, not merely US country',()=>{
+  const guard=loadTaxGuard(null);
+  const fixture=(state,tax=true,country='US')=>({
+    metadata:{tax_country_policy:'us-b2b-tax-20261103',billing_country:'US',billing_state:'CA',business_purchase:'1'},
+    customer_details:{address:{country,state}},
+    automatic_tax:{enabled:tax}
+  });
+  assert.equal(guard.checkoutIsCountryPolicyCompliant(fixture('CA')),true);
+  assert.equal(guard.checkoutIsCountryPolicyCompliant(fixture('NY')),false);
+  assert.equal(guard.checkoutIsCountryPolicyCompliant(fixture('CA',false)),false);
+  assert.equal(guard.checkoutIsCountryPolicyCompliant(fixture('CA',true,'FI')),false);
+});
+test('US checkout requires live SaaS Stripe Tax configuration',async()=>{
+  const good=loadTaxGuard({tax:{settings:{retrieve:async()=>({status:'active',defaults:{tax_code:'txcd_10103001'}})}}});
+  await good.ensureUSStripeTaxReady('US');
+  const bad=loadTaxGuard({tax:{settings:{retrieve:async()=>({status:'pending',defaults:{tax_code:'txcd_10103001'}})}}});
+  await assert.rejects(()=>bad.ensureUSStripeTaxReady('US'));
+  await bad.ensureUSStripeTaxReady('FI');
 });

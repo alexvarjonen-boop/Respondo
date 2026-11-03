@@ -18,7 +18,8 @@ assert.ok(countryStart>0 && countryEnd>countryStart,'international billing-count
 function renderSignup(plan,locale='fi',extra='') {
   const source=app.slice(countryStart,countryEnd)+'\n'+app.slice(setupStart,setupEnd)+'\n'+app.slice(start,end);
   const t=(fi,sv,en)=>({fi,sv,en}[locale]||fi);
-  const signup=new Function('location','cfg','nav','appText','currentLang','socialAuthButtons','checkoutBusinessTerms','footer','esc','oauthErrorMessage','passwordStrengthMarkup',source+'\nreturn signup;')(
+  const signup=new Function('document','location','cfg','nav','appText','currentLang','socialAuthButtons','checkoutBusinessTerms','footer','esc','oauthErrorMessage','passwordStrengthMarkup',source+'\nreturn signup;')(
+    {addEventListener(){}},
     { pathname:'/tilaus', search:'?plan='+encodeURIComponent(plan)+'&lang='+locale+extra },
     {ownerTestEnabled:false,businessId:'3599437-5',sellerName:'Respondo AI'},
     () => '<header class="nav"></header>',t,()=>locale,

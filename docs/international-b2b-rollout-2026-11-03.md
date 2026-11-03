@@ -1,12 +1,12 @@
 # Respondo AI — international B2B checkout compliance release gate
-**Prepared 2026-11-03. Status: NOT approved for international paid checkout.**
+**Updated 2026-11-03. Status: US first-sale B2B checkout enabled subject to documented seller declarations; other foreign markets blocked. Legal compliance is not independently certified.**
 This is a software and operational checklist, not a legal opinion.
 
 ## Verified starting state
 - Finnish seller: Respondo AI (business ID 3599437-5), Finnish non-VAT-registered domestic sale flow.
 - Stripe production account tax settings: **active**, but **zero Stripe Tax registrations** returned by `GET /v1/tax/registrations` on 2026-11-03.
-- Both new-account and additional-workspace subscriptions currently permit **FI only** in a server-side allowlist; completed Stripe Checkout billing-country mismatch cancels the subscription before activation.
-- The UI displays an explicit country picker and directs foreign buyers to inquiry. This does **not** authorize any foreign payment.
+- Both new-account and additional-workspace subscriptions permit **FI and US** in a server-side allowlist, with US EIN, state and Stripe Tax readiness required; completed Stripe Checkout billing-country mismatch cancels the subscription before activation.
+- The UI shows the selected country and, for the US, an EIN and state field; other countries are directed to inquiry.
 - Do not infer legal registration or sales permission from `Stripe Tax status: active` or a successful card charge.
 
 ## Human compliance work required before opening a country
@@ -22,7 +22,7 @@ This is a software and operational checklist, not a legal opinion.
 10. **Explicit production activation:** independent accountant / legal sign-off, proof of seller registration as applicable, Stripe Tax registration(s), country-specific contract/invoice review, tested webhook enforcement and monitoring. **Only then** change the server-side country allowlist with versioned tests and rollout approval.
 
 ## Current fail-closed policy
-All non-FI billing countries intentionally return 422 from both signup Checkout and new-workspace Checkout. A forged frontend request cannot bypass the backend country restriction. The completion webhook checks the declared and collected billing country, canceling an incompatible new subscription before account activation. Existing historical subscriptions are not retroactively reclassified.
+All non-FI/non-US billing countries intentionally return 422 from both signup Checkout and new-workspace Checkout. A forged frontend request cannot bypass the backend country restriction. The completion webhook checks the declared and collected billing country and, for US orders, exact US state and Stripe Tax enablement, canceling an incompatible new subscription before account activation. Existing historical subscriptions are not retroactively reclassified.
 
 ## Useful references
 - [Verohallinto — International services](https://www.vero.fi/yritykset-ja-yhteisot/verot-ja-maksut/arvonlisaverotus/ulkomaankauppa/kansainvalinen-palvelukauppa/)
@@ -30,3 +30,12 @@ All non-FI billing countries intentionally return 422 from both signup Checkout 
 - [Verohallinto — VAT registration](https://www.vero.fi/yritykset-ja-yhteisot/verot-ja-maksut/arvonlisaverotus/rekisterointi/millaisesta-toiminnasta-pit%C3%A4%C3%A4-tai-voi-rekister%C3%B6ity%C3%A4-alv-rekisteriin/)
 - [Verohallinto — VAT reporting](https://www.vero.fi/yritykset-ja-yhteisot/verot-ja-maksut/arvonlisaverotus/ilmoitus-ja-maksuohjeet/)
 - [Stripe Tax registration docs](https://docs.stripe.com/tax/set-up)
+
+## US first-sales operational basis and stop triggers
+- Seller declared no previous US sales, employees, offices or other activity in the US as of 2026-11-03. This declaration is not independent proof of lack of nexus.
+- Stripe Tax production settings were observed active with default tax code `txcd_10103001` (B2B SaaS). Stripe threshold monitoring returned no locations on the last check, but it does not include sales outside Stripe or substitute for state-by-state review.
+- The US Checkout requires buyer company name, EIN-shaped identifier, billing state and full Checkout billing address, and checks state/country matching on completion. A syntactically valid EIN is **not** proof of actual business status; undertake risk-based company verification and keep records before treating a sale as qualifying B2B.
+- Review Stripe Tax thresholds and ALL off-Stripe US sales **monthly**, along with business physical nexus and SaaS taxability state-by-state. Immediately disable US checkout when nexus is established, registrations are required, tax settings cease to be active, or the seller's declared US activity changes; obtain required permits before collecting tax.
+- Record the tax jurisdiction used and invoice tax amounts in Stripe and accounting. No-tax-collection is not a blanket legal exemption and Stripe Tax without US registrations returns zero.
+- Verify legal counsel/accountant advice for any planned material US sales expansion and privacy obligations. State nexus and consumer laws cannot be guaranteed by application code.
+- Review data processing and security contract requirements before exposing US customer data to support integrations.
