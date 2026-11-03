@@ -6,19 +6,30 @@ const normalize=(value)=>String(value||'').normalize('NFD')
   .replace(/[\u0300-\u036f]/g,'').toLowerCase()
   .replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
 
-const businessMove=/(?:\b(?:yritysmuut\w*|toimistomuut\w*|liikemuut\w*|foretagsflytt\w*|kontorsflytt\w*|verksamhetsflytt\w*)\b|(?:business|company|office|corporate)\s+(?:move|moving|relocat\w*)\b|(?:moving|relocating|relocation)\s+(?:an?\s+|our\s+|the\s+)?(?:office|business|company)\b)/;
-const processCue=/(?:\b(?:miten|mite|kuinka|vaihe\w*|prosessi\w*|etene\w*|edet\w*|suju\w*|hoid\w*|toteut\w*|kulku|jarjest\w*|how|steps?|process|workflow|work|handled?|happens?|hur|steg\w*|funger\w*|genomfor\w*|ordna\w*)\b|gar\s+(?:\w+\s+){0,5}till)/;
-const separateQuestion=/(?:\b(?:hinta\w*|maksaa|maksavat|kustann\w*|paljonko|price|pricing|cost|costs|costing|pris\w*|kostar|budget|tarjous\w*|offert\w*|quote|lasku\w*|invoice|vuokra\w*|rental|pakettiaut\w*|paku\w*|muuttolaatik\w*|laatik\w*|varaus\w*|varata|varattu|vapaana|available|availability|ledig\w*|milloin|when|när|nar|ajankohta|kestaa|kauanko|duration|how long|hur lange|muuttopaiva\w*|muuttopaivan|hissi\w*|elevator|lift\w*)\b)/;
+// Intents are recognized by the whole request, not one exact FAQ sentence.
+// Cover compound nouns, "firman muutto", "moving offices", spoken Finnish,
+// Swedish inflections and English office-relocation terminology. Keep
+// specific price, availability, booking and rental intents out of this rule.
+const businessMove=/(?:\b(?:yritysmuut[a-z]*|yritysmuut[oö][a-z]*|yritys\s+muut[a-z]*|toimistomuut[a-z]*|toimisto\s+muut[a-z]*|liikemuut[a-z]*|firmamuut[a-z]*|firmanmuut[a-z]*|konttorimuut[a-z]*|foretagsflytt[a-z]*|kontorsflytt[a-z]*|verksamhetsflytt[a-z]*)\b|(?:yrityksen|yrityksemme|firmamme|firman|firma|toimiston|toimitilojen|toimitilan|toimitilamme|konttorin|liiketilan|liiketilojen|tyopaikan)\s+(?:\w+\s+){0,2}(?:muut[a-z]*|muuttami[a-z]*|siir[a-z]*|vaih[a-z]*)\b|(?:muut[a-z]*|siir[a-z]*|vaih[a-z]*)\s+(?:\w+\s+){0,2}(?:yritys|yritysta|yrityksen|firma|firmamme|toimisto|toimiston|konttori|toimitiloihin|toimitilat)\b|(?:business|company|corporate|office|workplace)\s+(?:move|moves|moving|relocation|relocating)\b|(?:moving|move|relocating|relocation)\s+(?:an?\s+|our\s+|the\s+)?(?:office|offices|business|company|workplace)\b|(?:flytta|flyttar|flytten|flytt|flyttning|byte)\s+(?:av\s+|vart\s+|ett\s+|en\s+)?(?:foretag|foretaget|kontor|kontoret|arbetsplats|verksamhet|lokal|lokaler)\b|(?:foretaget|kontoret|verksamheten)\s+(?:flyttar|flyttas|byter)\b)/;
+const processCue=/(?:\b(?:miten|mite|mites|mitenka|mitenkas|kuinka|kuis|milla tavalla|vaihe[a-z]*|prosessi[a-z]*|etene[a-z]*|edet[a-z]*|suju[a-z]*|hoid[a-z]*|toteut[a-z]*|kulku|jarjest[a-z]*|organiso[a-z]*|alka[a-z]*|aloit[a-z]*|kaytann[a-z]*|how|what happens|what comes first|steps?|process|workflow|handled?|happens?|organized?|arranged?|planning|start|hur|steg[a-z]*|process[a-z]*|funger[a-z]*|genomfor[a-z]*|ordna[a-z]*|skot[a-z]*|forlopp[a-z]*|borja[a-z]*|borjar[a-z]*)\b|gar\s+(?:\w+\s+){0,5}till|vad\s+(?:hander|händer))/;
+const separateQuestion=/(?:\b(?:hinta[a-z]*|hinnoit[a-z]*|maksaa|maksavat|kustann[a-z]*|paljonko|price|pricing|cost|costs|costing|charges?|pris[a-z]*|kostar|budget|tarjous[a-z]*|offert[a-z]*|quote|lasku[a-z]*|invoice|vuokra[a-z]*|rental|pakettiaut[a-z]*|paku[a-z]*|muuttolaatik[a-z]*|laatik[a-z]*|varaus[a-z]*|varata|varattu|vapaana|saatavilla|available|availability|ledig[a-z]*|milloin|when|nar|ajankohta|kestaa|kauanko|duration|how long|hur lange|muuttopaiva[a-z]*|muuttopaivan|hissi[a-z]*|elevator|lift[a-z]*|huomenna|huomis[a-z]*|tomorrow|imorgon|bokning|boka|tilaa|tilata|tilaaminen|order|book|international|abroad|overseas|ulkomaa[a-z]*|ulkoma[a-z]*|pakkaus[a-z]*|pakkauk[a-z]*|asiakirja[a-z]*|arkaluont[a-z]*|sopimus[a-z]*|saatavuus)\b)/;
+const capabilityOnly=/^(?:voitteko|pystytteko|teetteko|hoidatteko|onnistuuko|tarjoatteko|saako|onko|can you|could you|do you|are you able|does your company|kan ni|gor ni|erbjuder ni)\b/;
+const explicitProcess=/(?:\b(?:miten|mite|mites|mitenkas|mitenka|kuinka|vaihe[a-z]*|prosessi[a-z]*|etene[a-z]*|edet[a-z]*|suju[a-z]*|how|steps?|process|hur|steg[a-z]*|forlopp[a-z]*|funger[a-z]*)\b|gar\s+(?:\w+\s+){0,5}till)/;
 
 export function mainioBusinessMoveProcessQuestion(message,previousCustomerQuestion=''){
   const q=normalize(message);
   if(!q || q.length>420 || separateQuestion.test(q))return false;
-  if(businessMove.test(q)&&processCue.test(q))return true;
-  // Brief follow-up inherits only the TOPIC of the immediately previous
-  // customer turn. Never inherit price, address, dates, or other assertions.
+  if(businessMove.test(q) && processCue.test(q)){
+    // "Can you handle an office move?" asks whether the service exists,
+    // not for the process. "Can you explain how..." does ask for steps.
+    if(capabilityOnly.test(q) && !explicitProcess.test(q))return false;
+    return true;
+  }
+  // A short follow-up inherits the topic only from the immediately previous
+  // customer question. It never inherits pricing, date, booking or other facts.
   const previous=normalize(previousCustomerQuestion);
   if(!businessMove.test(previous) || separateQuestion.test(previous))return false;
-  return /^(?:miten (?:se|tama|homma) (?:etenee|sujuu|toimii)|mitka (?:ovat )?(?:sen |ne )?vaiheet|ent[aä] (?:ne )?vaiheet|how (?:does|will) (?:it|that) work|what (?:happens next|are the steps)|hur (?:gar det till|fungerar det)|vilka (?:ar )?stegen)\??$/.test(q);
+  return /^(?:(?:ja|no|entapa|enta|sitten)\s+)?(?:miten (?:se|tama|homma|toi) (?:etenee|menee|sujuu|toimii)|mitka (?:ovat )?(?:sen |ne )?vaiheet|(?:ne|sen) vaiheet|ent[aä] (?:ne )?vaiheet|mita sen jalkeen tapahtuu|mista aloitetaan|how (?:does|will) (?:it|that) work|how (?:does|will) it proceed|what (?:happens next|are the steps)|hur (?:gar det till|fungerar det)|vilka (?:ar )?stegen)\??$/.test(q);
 }
 
 const answerByLanguage={
