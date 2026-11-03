@@ -554,23 +554,43 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
 // Do not silently assume an overseas sale is tax-free: the seller has no foreign
 // VAT/GST/sales-tax registrations in Stripe, and Stripe Tax is not enabled.
 // Country approval requires confirming local obligations and updating this policy.
-const TAX_CHECKOUT_COUNTRIES = new Set(['FI']);
+const TAX_CHECKOUT_COUNTRIES = new Set(['FI','US']);
 const TAX_COUNTRY_POLICY_VERSION = 'fi-only-20261008';
-function checkoutCountryPolicy(input) {
-  const country = String(input || '').trim().toUpperCase();
-  if (!/^[A-Z]{2}$/.test(country)) {
-    return { ok:false, country, error:'Valitse yrityksen laskutusmaa ennen tilauksen aloittamista.' };
+const US_TAX_COUNTRY_POLICY_VERSION = 'us-b2b-tax-20261103';
+const US_STATE_CODES = new Set('AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC'.split(' '));
+function checkoutCountryPolicy(input,options={}) {
+  const country=String(input||'').trim().toUpperCase();
+  if(!/^[A-Z]{2}$/.test(country)) return {ok:false,country,error:'Valitse yrityksen laskutusmaa.'};
+  if(!TAX_CHECKOUT_COUNTRIES.has(country)) return {ok:false,country,error:'Tämän maan tilaaminen ei ole vielä saatavilla. Ota yhteyttä info@respondoai.fi.'};
+  if(country==='US'){
+    const state=String(options.state||'').trim().toUpperCase();
+    const ein=String(options.businessId||'').trim();
+    if(!US_STATE_CODES.has(state)) return {ok:false,country,error:'Valitse yhdysvaltalaisen yrityksen osavaltio.'};
+    if(!/^\d{2}-?\d{7}$/.test(ein)) return {ok:false,country,error:'Anna yhdysvaltalaisen yrityksen yhdeksännumeroinen EIN (XX-XXXXXXX).'};
+    return {ok:true,country,state,policyVersion:US_TAX_COUNTRY_POLICY_VERSION,automaticTax:true};
   }
-  if (!TAX_CHECKOUT_COUNTRIES.has(country)) {
-    return { ok:false, country, error:'Kansainvälisten tilausten verotus tarkistetaan maakohtaisesti. Tilaus on toistaiseksi saatavilla vain Suomessa. Ota yhteyttä info@respondoai.fi.' };
-  }
-  return { ok:true, country };
+  return {ok:true,country,policyVersion:TAX_COUNTRY_POLICY_VERSION,automaticTax:false};
 }
 function checkoutIsCountryPolicyCompliant(session) {
-  if (session?.metadata?.tax_country_policy !== TAX_COUNTRY_POLICY_VERSION) return true; // Pre-existing checkouts.
-  const stated = String(session.metadata?.billing_country || '').toUpperCase();
-  const actual = String(session.customer_details?.address?.country || '').toUpperCase();
-  return stated && actual && actual === stated && TAX_CHECKOUT_COUNTRIES.has(actual);
+  const policy=String(session?.metadata?.tax_country_policy||'');
+  if(policy!==TAX_COUNTRY_POLICY_VERSION&&policy!==US_TAX_COUNTRY_POLICY_VERSION)return true; // Historical orders
+  const country=String(session?.metadata?.billing_country||'').toUpperCase();
+  const actual=String(session?.customer_details?.address?.country||'').toUpperCase();
+  if(!country||country!==actual||!TAX_CHECKOUT_COUNTRIES.has(country))return false;
+  if(policy===TAX_COUNTRY_POLICY_VERSION)return country==='FI';
+  const expectedState=String(session.metadata?.billing_state||'').toUpperCase();
+  const actualState=String(session.customer_details?.address?.state||'').trim().toUpperCase();
+  return country==='US'&&US_STATE_CODES.has(expectedState)&&expectedState===actualState&&
+    session?.automatic_tax?.enabled===true&&session?.metadata?.business_purchase==='1';
+}
+// Active SaaS Stripe Tax settings are required before any US payment session.
+// With no US registrations Stripe calculates zero; review nexus regularly.
+async function ensureUSStripeTaxReady(country) {
+  if(country!=='US')return;
+  if(!stripe?.tax?.settings?.retrieve)throw new Error('Stripe Tax ei ole käytettävissä.');
+  const settings=await stripe.tax.settings.retrieve();
+  if(settings?.status!=='active'||settings?.defaults?.tax_code!=='txcd_10103001')
+    throw new Error('US SaaS -tilauksen verolaskennan asetukset eivät ole valmiit.');
 }
 async function enforceCompletedCheckoutCountryPolicy(session) {
   if (checkoutIsCountryPolicyCompliant(session)) return true;
@@ -10475,7 +10495,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   const referralCode = normalizeReferralCode(req.body.referralCode);
   const freeReferral = isFreeReferralCode(referralCode);
   if (setupService && normalizedPlan === 'owner_test') return res.status(400).json({error:'Käyttöönottopalvelu on saatavilla vain normaalin maksullisen tilauksen yhteydessä.'});
-  const checkoutCountry = checkoutCountryPolicy(req.body?.billingCountry);
+  const checkoutCountry = checkoutCountryPolicy(req.body?.billingCountry,{state:req.body?.billingState,businessId});
   if (!checkoutCountry.ok) return res.status(422).json({ error:checkoutCountry.error });
   if (req.body?.businessPurchase !== true) return res.status(422).json({ error:'Vahvista, että tilaat palvelun yrityskäyttöön.' });
   const oauthProfile = getOauthProfile(req);
@@ -10507,6 +10527,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   }
 
   try {
+    await ensureUSStripeTaxReady(checkoutCountry.country);
     if (normalizedPlan === 'owner_test') {
       if (!(await ownerTestPlanEnabled()) || !validOwnerTestAccessToken(req.body?.ownerTestAccessToken)) {
         return res.status(404).json({ error: 'Tilausvaihtoehtoa ei löytynyt.' });
@@ -10637,10 +10658,10 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           free: true,
         });
       }
-      const taxExemptionMessage = setupService ? assistedSetupCheckoutNotice(preferredLanguage,freeReferral) : checkoutTaxExemptionMessage(preferredLanguage);
+      const taxExemptionMessage = checkoutCountry.country==='US' ? 'Business-use subscription. US sales tax, if applicable, is calculated at Checkout.' : (setupService ? assistedSetupCheckoutNotice(preferredLanguage,freeReferral) : checkoutTaxExemptionMessage(preferredLanguage));
       session = await stripe.checkout.sessions.create({
         mode: 'subscription',
-        automatic_tax: { enabled: false },
+        automatic_tax: { enabled: checkoutCountry.automaticTax },
         payment_method_collection:freeReferral && setupService ? 'if_required' : 'always',
         customer_email: email,
         line_items:setupService ? [checkoutLineItem,setupServiceCheckoutLineItem(freeReferral)] : [checkoutLineItem],
@@ -10653,8 +10674,9 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             user_id: id,
             tenant_id: tenantId,
             plan: normalizedPlan,
-            tax_country_policy: TAX_COUNTRY_POLICY_VERSION,
+            tax_country_policy: checkoutCountry.policyVersion,
             billing_country: checkoutCountry.country,
+            ...(checkoutCountry.state?{billing_state:checkoutCountry.state}:{}),
             business_purchase: '1',
             setup_service:setupService ? '1' : '0',
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
@@ -10675,8 +10697,9 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           user_id: id,
           tenant_id: tenantId,
           plan: normalizedPlan,
-          tax_country_policy: TAX_COUNTRY_POLICY_VERSION,
+          tax_country_policy: checkoutCountry.policyVersion,
           billing_country: checkoutCountry.country,
+            ...(checkoutCountry.state?{billing_state:checkoutCountry.state}:{}),
           business_purchase: '1',
           setup_service:setupService ? '1' : '0',
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
@@ -11428,7 +11451,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const referralCode=normalizeReferralCode(req.body?.referralCode);
   const freeReferral=isFreeReferralCode(referralCode);
   if(setupService && plan==='owner_test') return res.status(400).json({error:'Käyttöönottopalvelu on saatavilla vain normaalin maksullisen tilauksen yhteydessä.'});
-  const checkoutCountry=checkoutCountryPolicy(req.body?.billingCountry);
+  const checkoutCountry=checkoutCountryPolicy(req.body?.billingCountry,{state:req.body?.billingState,businessId});
   if(!checkoutCountry.ok) return res.status(422).json({error:checkoutCountry.error});
   if(req.body?.businessPurchase!==true) return res.status(422).json({error:'Vahvista, että tilaat palvelun yrityskäyttöön.'});
 
@@ -11437,6 +11460,8 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   if(referralCode && !freeReferral && !planAllowsReferral(plan)) return res.status(400).json({ error:'Suosittelukoodi toimii vain kuukausitilauksessa.' });
   if((!freeReferral || setupService) && !stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
 
+  try { await ensureUSStripeTaxReady(checkoutCountry.country); }
+  catch(e) { return res.status(503).json({error:'US-tilauksen verolaskennan vahvistus epäonnistui.'}); }
   let checkoutLineItem=null;
   if (!freeReferral || setupService) {
     try { checkoutLineItem=freeReferral ? ownerFreeSetupCheckoutLineItem(plan) : await stripeCheckoutLineItem(plan); }
@@ -11540,14 +11565,14 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   );
 
   try {
-    const taxExemptionMessage=setupService ? assistedSetupCheckoutNotice(user.preferred_language||'fi',freeReferral) : checkoutTaxExemptionMessage(user.preferred_language||'fi');
+    const taxExemptionMessage=checkoutCountry.country==='US' ? 'Business-use subscription. US sales tax, if applicable, is calculated at Checkout.' : (setupService ? assistedSetupCheckoutNotice(user.preferred_language||'fi',freeReferral) : checkoutTaxExemptionMessage(user.preferred_language||'fi'));
     const session=await stripe.checkout.sessions.create({
       mode:'subscription',
-      automatic_tax:{enabled:false},
+      automatic_tax:{enabled:checkoutCountry.automaticTax},
       payment_method_collection:freeReferral && setupService ? 'if_required' : 'always',
       ...(user.stripe_customer_id ? {
         customer:user.stripe_customer_id,
-        customer_update:{ name:'auto' },
+        customer_update:{ name:'auto',address:'auto' },
       } : { customer_email:user.email }),
       line_items:setupService ? [checkoutLineItem,setupServiceCheckoutLineItem(freeReferral)] : [checkoutLineItem],
       custom_text:{
@@ -11560,8 +11585,9 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
           tenant_id:tenantId,
           plan,
           additional_workspace:'1',
-          tax_country_policy:TAX_COUNTRY_POLICY_VERSION,
+          tax_country_policy:checkoutCountry.policyVersion,
           billing_country:checkoutCountry.country,
+          ...(checkoutCountry.state?{billing_state:checkoutCountry.state}:{}),
           business_purchase:'1',
           setup_service:setupService ? '1' : '0',
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
@@ -11580,8 +11606,9 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         tenant_id:tenantId,
         plan,
         additional_workspace:'1',
-        tax_country_policy:TAX_COUNTRY_POLICY_VERSION,
+        tax_country_policy:checkoutCountry.policyVersion,
         billing_country:checkoutCountry.country,
+          ...(checkoutCountry.state?{billing_state:checkoutCountry.state}:{}),
         business_purchase:'1',
         setup_service:setupService ? '1' : '0',
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
