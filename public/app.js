@@ -6053,6 +6053,39 @@ async function route() {
                     'Bottest: '+executed+' frågor. '+grounded+' källhänvisningar, '+safe+' säkra överlämningar, '+flagged+' att granska. Källhänvisning garanterar inte att svaret är korrekt.',
                     'Bot tests: '+executed+' questions. '+grounded+' source-backed candidates, '+safe+' safe handoffs, '+flagged+' to review. A citation does not prove factual correctness.'
                   );
+                  const remediations=payload?.validation?.remediations?.recommendations||[];
+                  if(remediations.length){
+                    const panel=document.createElement('details');
+                    const heading=document.createElement('summary');
+                    heading.textContent=appText('Suositellut korjaukset','Rekommenderade åtgärder','Recommended fixes')+' ('+remediations.length+')';
+                    panel.appendChild(heading);
+                    const actionLabels={
+                      verify_and_add_missing_company_fact:appText('Tarkista puuttuva yritystieto ja lisää se tietopohjaan.','Kontrollera och lägg till den saknade företagsuppgiften.','Verify and add the missing company fact.'),
+                      review_value_and_source_matching:appText('Tarkista luvut ja lähteiden kohdistus. Korjaa yhteistä logiikkaa tarvittaessa.','Kontrollera siffrorna och källmatchningen. Förbättra vid behov den gemensamma logiken.','Review numbers and source matching. Fix shared logic if needed.'),
+                      block_unsourced_company_claims:appText('Älä hyväksy vastausta ilman saman yrityksen vahvistettua lähdettä.','Godkänn inte svar utan bekräftad källa från samma företag.','Reject answers lacking verified sources from this company.'),
+                      improve_retrieval_for_verified_fact:appText('Paranna tiedonhaun osuvuutta jo löytyneelle tiedolle.','Förbättra sökningen för redan tillgänglig information.','Improve retrieval for facts already available.'),
+                      investigate_answer_pipeline_error:appText('Tarkista vastausketjun virhe ja lokit.','Granska felet i svarskedjan och loggarna.','Inspect the answering pipeline error and logs.'),
+                      inspect_evidence_and_answer:appText('Vertaa vastausta alkuperäisiin yritystietoihin.','Jämför svaret med företagets ursprungliga uppgifter.','Compare the answer with original company information.'),
+                      resolve_conflicting_source_facts:appText('Varmista oikea tieto ristiriitaisista lähteistä.','Bekräfta rätt uppgift från motstridiga källor.','Confirm the correct fact from conflicting sources.'),
+                      remove_navigation_or_cookie_content:appText('Poista virheellisesti tuotu sivuston käyttöliittymäteksti.','Ta bort felaktigt importerad navigerings- eller cookietext.','Remove incorrectly imported navigation or cookie text.')
+                    };
+                    const ul=document.createElement('ul');
+                    for(const item of remediations.slice(0,20)){
+                      const li=document.createElement('li');
+                      const prefix=item.scope==='shared_logic'
+                        ? appText('Yhteinen bottilogiikka','Gemensam botlogik','Shared bot logic')
+                        : appText('Yrityskohtainen tieto','Företagsuppgifter','Company-specific information');
+                      li.textContent=prefix+' · '+(topicNames[item.topic]||item.topic||'')+' · '+(actionLabels[item.nextStep]||appText('Tarkista ongelma.','Granska problemet.','Review issue.'))+' ('+Number(item.count||0)+')';
+                      ul.appendChild(li);
+                    }
+                    panel.appendChild(ul);
+                    const note=document.createElement('small');
+                    note.textContent=appText('Nämä ovat korjausehdotuksia. Yrityksen tietoja ei muuteta automaattisesti.',
+                      'Det här är förslag. Företagets uppgifter ändras inte automatiskt.',
+                      'These are recommendations. Company facts are not changed automatically.');
+                    panel.appendChild(note);
+                    audit.appendChild(panel);
+                  }
                   const failed=(payload?.validation?.results||[]).filter(item=>item.status==='review').slice(0,18);
                   if(failed.length){
                     const details=document.createElement('details');

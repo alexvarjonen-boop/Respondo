@@ -3,6 +3,7 @@ import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { matchVerifiedSpecialistService } from './service-semantics.mjs';
 import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
+import { suggestBotRemediations } from './bot-remediations.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import express from 'express';
 import path from 'path';
@@ -8553,6 +8554,7 @@ app.post('/api/app/import-website/validate/:jobId', auth, ownerOnly, subscribed,
   });
   try {
     const validation=await job.validationPromise;
+    validation.remediations=suggestBotRemediations({readiness:job.result.readiness,results:validation.results});
     job.validation=validation;
     job.updatedAt=Date.now();
     return res.json({ok:true,validation});
