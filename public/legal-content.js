@@ -1,6 +1,6 @@
 // Reviewed product disclosures, versioned so translations never depend on
 // runtime machine translation and the visible revision date remains stable.
-export const LEGAL_UPDATE_DATE = '2026-10-29';
+export const LEGAL_UPDATE_DATE = '2026-11-03';
 const S = (heading, body) => ({heading, body});
 export const LEGAL_20261008 = {
   kayttoehdot: {
@@ -306,3 +306,59 @@ export const LEGAL_20261008 = {
     ]
   }
 };
+
+
+// 2026-11-03: additions after the original fully translated sections. All
+// statements describe conditional/implemented functionality rather than
+// promising that an integration or AI answer is always available. These
+// public explanations do not replace a separately concluded Article 28 DPA.
+LEGAL_20261008.kayttoehdot.sections.push(
+  S(['15. Tietopohjan tarkistaminen ja automaatioiden rajat','15. Granskning av kunskapsbas och begränsningar i automatisering','15. Knowledge review and automation limits'],[
+    'Verkkosivulta automaattisesti tuodut palvelu-, tuote-, hinta-, aukiolo- ja yhteystiedot voivat olla vanhentuneita, puutteellisia tai ristiriitaisia. Asiakasyrityksen on tarkistettava ne ennen julkaisua ja muutosten jälkeen. Botti pyrkii ymmärtämään kysymysten eri sanamuotoja ja kieliä, mutta yksikään testimäärä ei takaa virheettömyyttä. Vain todelliseen ja ajantasaiseen tietolähteeseen perustuvat hinnat, saatavuustiedot, palautusehdot ja muut yrityskohtaiset väitteet tulee vahvistaa. Botti ei itsessään vahvista tilausta, maksua, varausta tai muuttopäivää ilman kyseiseen toimintoon kuuluvaa erillistä vahvistusta.',
+    'Uppgifter om tjänster, produkter, priser, öppettider och kontakter som hämtats automatiskt från webbplatsen kan vara gamla, ofullständiga eller motstridiga. Företaget ska granska dem före publicering och efter ändringar. Botten försöker förstå olika formuleringar och språk, men ingen mängd tester garanterar felfrihet. Priser, tillgänglighet, returvillkor och andra företagsspecifika påståenden ska stödjas av aktuella, verifierade källor. Botten bekräftar inte i sig en beställning, betalning, bokning eller flyttdag utan särskild bekräftelse genom motsvarande funktion.',
+    'Services, products, prices, opening hours and contacts automatically imported from a website may be outdated, incomplete or conflicting. The business must review them before launch and after changes. The bot attempts to understand varied wording and languages, but no number of tests guarantees error-free answers. Pricing, availability, returns and other business-specific claims require current verified sources. A chat answer alone does not confirm an order, payment, booking or moving date without the applicable separate confirmation.'
+  ]),
+  S(['16. Vapaaehtoiset yhteydet ja tietojen välittäminen','16. Valfria anslutningar och dataöverföring','16. Optional connections and data forwarding'],[
+    'Yritys voi tilauksensa ja teknisen yhteensopivuuden mukaan ottaa käyttöön verkkokaupan, Google Calendarin, maksujen tai CRM-/webhook-viestien välityksen. Käyttöönotto voi edellyttää asiakkaan omia tunnuksia, hyväksyntää ja kyseisen ulkopuolisen palvelun erillisiä ehtoja tai maksuja. Vain asiakkaan erikseen käyttöön ottamien integraatioiden tiedot tulee välittää vastaanottaviin järjestelmiin. Asiakas vastaa vastaanottajajärjestelmien asetuksista, käyttöoikeuksista ja tietosuojaperusteista. Yhteyden ottaminen pois käytöstä ei välttämättä poista tietoja, jotka on jo toimitettu ulkopuoliseen palveluun.',
+    'Företaget kan beroende på abonnemang och teknisk kompatibilitet aktivera anslutningar till webbutik, Google Kalender, betalningar eller CRM-/webhook-meddelanden. Det kan kräva egna konton, godkännande samt externa villkor eller avgifter. Endast aktiverade anslutningar ska användas för att överföra uppgifter till mottagande system. Kunden ansvarar för mottagarens inställningar, behörigheter och rättsliga grunder. Att stänga av en anslutning raderar inte nödvändigtvis uppgifter som redan skickats till en extern tjänst.',
+    'Depending on the plan and technical compatibility, a business may enable ecommerce, Google Calendar, payment or CRM/webhook forwarding. Setup may require its own credentials, authorization and separate third-party terms or charges. Only customer-enabled connections should forward information to receiving systems. The customer manages the recipient systems’ settings, permissions and lawful bases. Disconnecting an integration may not remove data already delivered to an external provider.'
+  ])
+);
+LEGAL_20261008.tietosuoja.sections.push(
+  S(['16. Liidit, henkilöstö ja integraatioiden tietovirrat','16. Leads, personal och dataflöden via integrationer','16. Leads, staff and integration data flows'],[
+    'Yrityksen chatissa annetut yhteystiedot, tarjouspyynnöt, keskusteluhistoria ja tarvittaessa ajanvaraustiedot voidaan tallentaa kyseisen yrityksen työtilaan ja näyttää sen valtuutetuille työntekijöille. Yrityksen käyttöön ottamat CRM-, webhook-, verkkokauppa- tai kalenteriyhteydet voivat välittää vain kyseistä toimintoa varten tarvittavia tietoja vastaanottajalle. Vastaanottavan palvelun oma tietosuojakäytäntö ja säilytys voivat erota Respondosta. Keskusteluissa ei pidä pyytää maksukortin koko numeroa tai tarpeettomia arkaluonteisia henkilötietoja.',
+    'Kontaktuppgifter, offertförfrågningar, chatthistorik och vid behov bokningsuppgifter kan sparas i företagets arbetsyta och visas för behörig personal. CRM-, webhook-, webbutiks- eller kalenderanslutningar som företaget aktiverar kan överföra uppgifter som behövs för respektive funktion. Mottagarens dataskydd och lagring kan skilja sig från Respondos. Chattar ska inte samla in fullständiga betalkortsnummer eller onödiga känsliga personuppgifter.',
+    'Contact details, quote requests, conversation history and, where applicable, booking data may be stored in the relevant business workspace and shown to authorized staff. Customer-enabled CRM, webhook, ecommerce or calendar connections may transmit data needed for the relevant feature. A recipient may apply different privacy and retention practices. Chats should not collect full payment-card numbers or unnecessary sensitive personal information.'
+  ]),
+  S(['17. Yrityksen poistaminen ja ulkopuoliset kopiot','17. Radering av företag och externa kopior','17. Business deletion and external copies'],[
+    'Työtilan tai käyttäjätilin poistaminen voi poistaa palvelussa kyseiseen yritykseen liittyviä tietoja ja estää myöhemmän pääsyn. Maksu-, kirjanpito-, tietoturva- tai lakisääteiset tallenteet voivat edellyttää erillistä säilytystä. Jo CRM:ään, kalenteriin, sähköpostiin tai muuhun ulkoiseen järjestelmään välitettyä kopiota ei välttämättä voida poistaa Respondon kautta. Tietojen vientiä, poistamista ja eri vastaanottajien säilytysaikoja koskevat pyynnöt voi lähettää osoitteeseen info@respondoai.fi.',
+    'Radering av en arbetsyta eller ett användarkonto kan ta bort tillhörande företagsuppgifter från tjänsten och hindra senare åtkomst. Betalnings-, bokförings-, säkerhets- eller lagstadgade uppgifter kan behöva sparas separat. Kopior som redan skickats till CRM, kalender, e-post eller andra externa system kan inte nödvändigtvis raderas via Respondo. Begäran om export, radering och mottagarnas lagringstider kan skickas till info@respondoai.fi.',
+    'Deleting a business workspace or account may remove associated company data from the service and block further access. Payment, accounting, security or legally required records may need separate retention. Copies already sent to CRM, calendars, email or other external systems may not be erasable through Respondo. Requests about export, erasure and recipient-specific retention can be sent to info@respondoai.fi.'
+  ])
+);
+LEGAL_20261008.evasteet.sections.push(
+  S(['Botit ja ulkopuoliset integraatiot','Botar och externa integrationer','Chat widgets and external integrations'],[
+    'Yrityksen verkkosivulle asennettu Respondo-botti voi käsitellä keskustelua ja teknisiä istuntotietoja vastatakseen kysymyksiin. Tämä ei tarkoita, että markkinointisivuston valinnaiset analytiikkatunnisteet olisivat käytössä asiakkaan sivulla. Yritys vastaa oman sivustonsa eväste- ja tietosuojailmoituksista sekä siellä käyttöön otettujen ulkopuolisten palvelujen vaatimuksista. Tarkista evästevalinnat alatunnisteen Evästeasetukset-toiminnosta.',
+    'En Respondo-bot installerad på företagets webbplats kan behandla chatt och tekniska sessionsuppgifter för att svara. Det innebär inte att valfri marknadsföringsanalys används på kundens webbplats. Företaget ansvarar för sin webbplats cookie- och dataskyddsinformation och krav för anslutna externa tjänster. Cookieval kan granskas via Cookieinställningar i sidfoten.',
+    'A Respondo bot embedded on a business website may process conversations and technical session data to answer questions. This does not mean that optional marketing analytics trackers run on the customer’s site. The business is responsible for its own website’s cookie and privacy notices and any third-party integrations it enables. Review cookie choices through Cookie Settings in the footer.'
+  ])
+);
+LEGAL_20261008.dpa.sections.push(
+  S(['Tietojen kulku ja käsittelyn rajat','Dataflöden och begränsningar','Data flow and processing limits'],[
+    'Yritys määrittää tietopohjansa, työntekijöidensä käyttöoikeudet, chatin keräämät yhteystiedot ja aktivoidut integraatiot. Respondo voi käsitellä loppuasiakkaiden kysymyksiä, yhteystietoja, keskusteluhistoriaa, varaus- ja tarjouspyyntötietoja sekä niitä varten tarvittavia teknisiä tunnisteita asiakkaan lukuun. Yrityksen valitsemat ulkoiset järjestelmät voivat muodostaa omia tallenteitaan, joiden käsittelystä ja poistosta on huolehdittava erikseen.',
+    'Företaget styr kunskapsbasen, personalens åtkomst, kontaktuppgifter som samlas in i chatten och aktiverade integrationer. Respondo kan behandla slutkunders frågor, kontakter, chatthistorik, bokningar och offerter samt nödvändiga tekniska identifierare för kundens räkning. Externa system som kunden valt kan skapa egna kopior som kräver separat hantering och radering.',
+    'The business controls its knowledge base, staff permissions, contact details collected in chat and enabled integrations. Respondo may process end-customer questions, contacts, conversations, booking and quote enquiries and required technical identifiers on the business’s behalf. Customer-selected external systems may create separate records requiring independent management and deletion.'
+  ]),
+  S(['Käsittelysopimuksen sopiminen','Avtal om personuppgiftsbehandling','Concluding a data processing agreement'],[
+    'Tämä julkinen kuvaus on yleiskatsaus, eikä se yksinään korvaa GDPR:n 28 artiklassa edellytettyä osapuolia sitovaa henkilötietojen käsittelysopimusta. Ennen henkilötietoja sisältävien asiakaskeskustelujen käyttöönottoa yrityksen tulee varmistaa, että sen ja Respondon välillä on sovittu tarvittavista kirjallisista käsittelyehdoista, alikäsittelijöiden hyväksynnästä, tietoturvasta, avustamisesta, tietojen palautuksesta tai poistosta ja soveltuvista tarkastusoikeuksista. Pyydä ajantasaiset sopimustiedot ja alikäsittelijät osoitteesta info@respondoai.fi.',
+    'Denna offentliga beskrivning är en översikt och ersätter inte i sig ett bindande personuppgiftsbiträdesavtal enligt artikel 28 i GDPR. Innan chattar med personuppgifter tas i bruk ska företaget säkerställa att skriftliga behandlingsvillkor finns om bland annat godkännande av underbiträden, säkerhet, stöd, återlämning eller radering och tillämplig rätt till granskning. Begär aktuella avtalsuppgifter och underbiträdesinformation från info@respondoai.fi.',
+    'This public overview does not itself replace a binding data processing agreement required by GDPR Article 28. Before using customer chats involving personal data, the business should ensure written processing terms are in place covering matters such as subprocessor authorization, security, assistance, data return or deletion and applicable audit rights. Request current agreement details and subprocessor information from info@respondoai.fi.'
+  ])
+);
+LEGAL_20261008.tietoturva.sections.push(
+  S(['Tietojen minimointi ja käyttöoikeudet','Dataminimering och åtkomst','Data minimization and access'],[
+    'Yrityksen on syytä tarkistaa verkkosivulta tuodut tiedot ja rajoittaa työntekijätilien oikeudet työtehtävien mukaan. Keskustelussa ei pidä kerätä tarpeettomia arkaluonteisia tietoja eikä esittää varmistamattomia hintoja tai varaustietoja. Yrityskohtainen erottelu ja suojatut yhteydet vähentävät riskejä mutta eivät poista niitä. Epäillyistä tietoturvaongelmista voi ilmoittaa osoitteeseen info@respondoai.fi.',
+    'Företaget bör granska importerade webbuppgifter och begränsa personalens rättigheter enligt arbetsuppgifter. Samtal bör inte samla in onödiga känsliga uppgifter eller ange obekräftade priser eller bokningar. Isolering mellan företag och skyddade anslutningar minskar risker men eliminerar dem inte. Misstänkta säkerhetsproblem kan rapporteras till info@respondoai.fi.',
+    'Businesses should review imported website data and limit staff permissions to job requirements. Chats should not collect unnecessary sensitive information or assert unconfirmed prices or bookings. Tenant isolation and protected connections reduce, but do not eliminate, risk. Report suspected security problems to info@respondoai.fi.'
+  ])
+);

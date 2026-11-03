@@ -1,7 +1,7 @@
 import { avatarContainRect } from './avatar-contain.js?v=20261101-avatar-fit-v1';
 import { customerPasswordValid, customerPasswordChecks, customerPasswordStrength } from './customer-password-policy.mjs?v=20261029-strength-v1';
 import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46';
-import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1';
+import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1-refresh-20261103-v51';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
@@ -10,7 +10,7 @@ import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS, featureAvailableForPublicPlan, publicPlanFeatureCount } from './features-data.js?v=20261031-plan-scoped-v1';
 import { appleHomeMarkup } from './apple-home.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10-polish-v11-hero-clarity-v17-hero-try-bot-v32-chat-navigation-note-v34-orbit-click-v1';
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
-import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2-pricing-20261014-ape-v1-annual-120-v1-legal-setup-20261029-v1';
+import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2-pricing-20261014-ape-v1-annual-120-v1-legal-setup-20261029-v1-refresh-20261103-v51';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 import { marketingAttributionQuery, marketingLeadVisitorRef, normalizeDemoWebsite, buildDemoRequestMessage } from './marketing-lead.mjs?v=20261027-qualified-demo-v1';
 import { parseBookingDurationMinutes } from './booking-duration.mjs?v=20261009-v1';
@@ -2416,7 +2416,8 @@ function footer() {
         </div>`}
         <div class="foot-col">
           <h4>${appText("Yritys","Företag","Company")}</h4>
-          <a href="/yhteystiedot">${appText("Yhteystiedot","Kontakt","Contact")}</a>
+          <a href="/yhteystiedot?lang=${currentLang()}">${appText("Yhteystiedot","Kontakt","Contact")}</a>
+          ${location.pathname === '/' ? `<a href="/guides?lang=${currentLang()}">${appText('Oppaat','Guider','Guides')}</a>` : ''}
           <a href="/tietoturva?lang=${currentLang()}">${appText("Tietoturva","Informationssäkerhet","Security")}</a>
           <a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a>
           <span>${esc(cfg.sellerName||'Respondo AI')}</span>

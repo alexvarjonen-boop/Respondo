@@ -558,6 +558,122 @@ const guides = {
     }
   }
 };
+// 2026-11-03 editorial refresh: current onboarding and quality-assurance guides.
+// These appear in the existing Guides directory only, never on the landing.
+Object.assign(guides,{
+  '/guides/chatbot-question-testing': {
+    reading:'7',
+    fi:{
+      title:'Miten testaat AI-asiakaspalvelubotin ennen julkaisua?',
+      subtitle:'Testaa samaa tarkoitusta eri sanoilla, kirjoitusvirheillä ja kolmella kielellä – ja erota oikeat vastaukset uskottavista arvauksista.',
+      sections:[
+        ['Testaa tarkoitusta, älä vain valmista kysymystä','Valitse 20–50 todellista asiakaskysymystä ja kirjoita jokaisesta useita muotoja. Esimerkiksi ”Paljonko pakun vuokra maksaa?”, ”Mitä maksaa 3 h pakettiauto?” ja ”Mikä on viiden tunnin hinta?” voivat vaatia saman aiheen eri ehtoja. Vertaa botin vastausta hyväksyttyyn hintaan ja oikeaan lähdesivuun.'],
+        ['Puhekieli, virheet ja jatkokysymykset','Lisää testiin puhekieliset ilmaukset, lyhenteet, kirjoitusvirheet ja aiheen vaihdot. Testaa esimerkiksi ”onnistuuks muutto”, ”mitä sitte”, ”entä 5 tuntia” sekä aiheen vaihto vuokrauksesta muuttolaatikoihin. Varmista, ettei botti peri vanhan kysymyksen hintaa tai varaustietoa uudelle aiheelle.'],
+        ['Suomi, ruotsi ja englanti','Esitä sama tosiasia suomeksi, ruotsiksi ja englanniksi. Vastauksen kielen pitäisi seurata asiakkaan kysymystä, ei tietopohjan alkuperäistä kieltä. Tarkista erityisesti hinta, saatavuus, toimitus, paluu- ja takuuehdot sekä toimipistekohtaiset tiedot.'],
+        ['Tarkista myös kielletyt johtopäätökset','Kysy palvelun saatavuudesta, hinnasta ja varauksesta silloin kun lähdetieto puuttuu. Botti ei saa keksiä tuotteen varastosaldoa, tilauksen valmistumista, vahvistettua muuttopäivää tai asiakkaan henkilötietoja. Ohjaa tilanne tarvittaessa työntekijälle tai tarjouspyyntöön.'],
+        ['Mittaa laatua keskusteluina','Yksittäinen oikein tunnistettu avainsana ei vielä tarkoita onnistunutta palvelua. Testaa 3–5 viestin keskustelut, jossa asiakas aloittaa yleisesti, tarkentaa, muuttaa ehtoja ja päätyy yhteydenottoon. Kirjaa oikea lähde, vastauksen täsmällisyys, kieli, henkilölle siirto ja mahdolliset virheelliset lupaukset.']
+      ],
+      faq:[
+        ['Montako kysymystä pitää testata?','Aloita pienellä mutta riskiperusteisella aineistolla; laajenna erityisesti eri sanamuotoihin ja toistuneisiin asiakasvirheisiin. Suuri testimäärä ei yksin takaa luotettavuutta.'],
+        ['Mitä teen, jos botti vastaa väärään kysymykseen?','Tarkista ensin yrityksen oikea lähdetieto ja sitten, sekoittuuko kysymys toiseen aiheeseen. Lisää virhe ja oikea odotettu vastaus pysyvään regressiotestiin.']
+      ]
+    },
+    sv:{
+      title:'Så testar du en AI-kundservicebot före lansering',
+      subtitle:'Prova omformuleringar, stavfel, följdfrågor och tre språk – och upptäck svar som låter trovärdiga men saknar stöd.',
+      sections:[
+        ['Testa avsikten, inte bara en exakt fråga','Välj 20–50 riktiga kundfrågor och skriv flera varianter av varje. Frågor om skåpbilshyra, timpris eller flyttlådor kan likna varandra men kräva olika källor. Jämför svaret med den godkända informationen.'],
+        ['Talspråk, stavfel och följdfrågor','Testa förkortningar, felskrivningar, korta uppföljningar och ämnesbyten. Botten får inte föra över pris eller bokningsstatus från en tidigare fråga till ett nytt ämne.'],
+        ['Finska, svenska och engelska','Fråga om samma fakta på alla tre språken. Språket i svaret ska följa kundens fråga, inte källtextens språk. Kontrollera särskilt priser, tillgänglighet, returer och uppgifter för olika verksamhetsställen.'],
+        ['Förhindra påhittade bekräftelser','Ställ frågor där uppgift om lagersaldo, datum eller beställning saknas. Botten får inte gissa och bör kunna hänvisa till personal eller en offertförfrågan.'],
+        ['Utvärdera hela samtal','Testa samtal med flera meddelanden, villkorsändringar och kontaktförfrågan. Registrera rätt källa, faktastöd, språk, överlämning och felaktiga löften.']
+      ],
+      faq:[
+        ['Hur många frågor ska testas?','Börja med ett riskbaserat urval och utöka med verkliga kundformuleringar. Många tester garanterar inte felfrihet.'],
+        ['Vad gör vi efter ett fel?','Verifiera den riktiga källan och lägg frågan med förväntat resultat i regressionstesterna.']
+      ]
+    },
+    en:{
+      title:'How to test an AI customer service chatbot before launch',
+      subtitle:'Check paraphrases, typos, follow-up questions and three languages — including convincing but unsupported answers.',
+      sections:[
+        ['Test intent, not only exact sentences','Select 20–50 real customer questions and write multiple versions of each. Van hire, moving-box rental and moving quotes may sound similar but require different verified sources. Compare every answer with approved facts.'],
+        ['Colloquial wording, typos and follow-ups','Include abbreviations, spelling errors, short follow-ups and abrupt topic changes. The bot must not carry a price, rental duration or booking status from one subject to another.'],
+        ['Finnish, Swedish and English','Ask about the same facts in each supported language. The response should follow the customer’s question language rather than the knowledge base language. Pay special attention to prices, availability, returns and location-specific information.'],
+        ['Prevent invented confirmations','Ask about stock, appointments, prices and delivery dates when evidence is missing. The bot should avoid inventing a stock balance, confirmed booking or customer record and should offer a reliable handoff.'],
+        ['Score complete conversations','Test multi-turn conversations with clarifications, changed requirements and lead submission. Track the exact source, answer correctness, language, escalation and any unsupported promises.']
+      ],
+      faq:[
+        ['How many questions should I test?','Start with a risk-based set and extend it using actual customer phrasings. A large test count alone cannot guarantee correctness.'],
+        ['What should happen after a failure?','Verify the intended source and add the wording, expected outcome and failure to a permanent regression test.']
+      ]
+    }
+  },
+  '/guides/respondo-setup-integrations-privacy': {
+    reading:'6',
+    fi:{
+      title:'Respondo AI:n käyttöönotto, integraatiot ja tietosuoja',
+      subtitle:'Opas yritykselle: tietopohjan tarkistaminen, työntekijät, käyttöönottopalvelu, vapaaehtoiset yhteydet ja asiakkaan henkilötiedot.',
+      sections:[
+        ['Valitse käyttöönotto','Voit täyttää yrityksen verkkosivun, botin nimen ja kuvakkeen sekä yhteystiedot käyttöönotossa. Kysymys–vastaustietoja voi täydentää käsin. Valinnainen 199 € käyttöönottopalvelu on erillinen kertamaksu: Respondo käy annetut tiedot läpi ja toimittaa kirjautumistiedot sovitun prosessin mukaan. Maksut ja kokeilun alkaminen riippuvat valitusta tilauspolusta; tarkista ajantasaiset käyttöehdot.'],
+        ['Tarkista tuodut verkkosivutiedot','Hae vain tarpeelliset yritystiedot, kuten palvelut, hinnat, toimipaikat, aukioloajat, tuotteet ja yhteystiedot. Tarkista vanhentuneet hinnat, ristiriitaiset toimitus- ja palautusehdot ja valmistajien yhteystiedot ennen kuin botti käyttää niitä. Verkkosivun automaattinen tuonti ei takaa kaikkien sivujen löytymistä.'],
+        ['Määritä henkilöstö ja toimialueet','Myönnä työntekijöille tehtävän mukaiset käyttöoikeudet ja tarkista, mitä työtilan tietoja he voivat nähdä. Botin tulee erottaa eri toimipisteiden aukioloajat ja asiakaskohtaiset varaukset yleisistä palvelutiedoista. Testaa puhe- ja kysymyskielen vaihdot.'],
+        ['Yhdistä integraatiot harkiten','Google Calendar, verkkokaupan tilaukset, maksut sekä CRM-/webhook-yhteydet edellyttävät valitun paketin, määritykset ja tarvittaessa erillisen ulkoisen tilin. Testaa ensin yhdellä ei-arkaluonteisella tapauksella. Älä pidä chatissa mainittua varausta tai maksua vahvistettuna ilman kyseisen järjestelmän onnistunutta vahvistusta.'],
+        ['Tietosuoja ennen julkaisua','Yritys vastaa yleensä omien loppuasiakkaidensa henkilötietojen rekisterinpitäjän velvoitteista. Päivitä oman sivuston tietosuojailmoitus, minimoi chatissa kysyttävät tiedot ja varmista tarvittavat henkilötietojen käsittelyä koskevat kirjalliset sopimukset. Respondon julkinen DPA-sivu on yleiskuvaus, ei yksin GDPR 28 artiklan mukainen osapuolia sitova sopimus.'],
+        ['Käy läpi viimeinen testi','Tee testit tavallisilla ja virheellisillä sanamuodoilla suomeksi, ruotsiksi ja englanniksi sekä tilanteissa, joissa tietoa ei ole. Tarkista työntekijälle siirto, yhteystietopyynnöt, hinnoittelun rajat ja tietojen poistokäytännöt.']
+      ],
+      faq:[
+        ['Voiko botti vahvistaa varauksen automaattisesti?','Vain, jos kyseiseen toimintoon on liitetty oikea saatavuus- ja vahvistusprosessi. Pelkkä keskustelu ei tarkoita vahvistettua varausta.'],
+        ['Mihin alikäsittelijöihin tietoja siirtyy?','Se riippuu käytössä olevista toiminnoista. Pyydä tarvittaessa ajantasaiset käsittelysopimukset ja alikäsittelijät Respondon yhteysosoitteesta.']
+      ]
+    },
+    sv:{
+      title:'Kom i gång med Respondo AI: integrationer och dataskydd',
+      subtitle:'En företagsguide till webbplatsimport, personal, installation, valfria anslutningar och kunduppgifter.',
+      sections:[
+        ['Välj installation','Ange företagets webbplats, botnamn, ikon och kontaktuppgifter. Du kan komplettera frågor och svar manuellt. Den valfria installationstjänsten kostar 199 € som separat engångsavgift. Abonnemangets fakturering och provperiod följer det valda beställningsflödet och gällande villkor.'],
+        ['Granska importerade uppgifter','Kontrollera tjänster, priser, öppettider, produkter, kontakter och butiksvillkor. En automatisk webbplatsimport garanterar inte att allt innehåll hittas.'],
+        ['Hantera personal och företag','Begränsa personalens behörigheter efter arbetsuppgift. Testa uppgifter för olika verksamhetsställen och samtal på finska, svenska och engelska.'],
+        ['Aktivera anslutningar med omsorg','Kalender, webbutik, betalningar och CRM/webhooks kräver rätt plan, inställningar och ibland ett separat konto. Bekräfta inte en beställning eller bokning utan status från det externa systemet.'],
+        ['Dataskydd före lansering','Företaget är vanligtvis personuppgiftsansvarigt för slutkundernas uppgifter. Uppdatera webbplatsens integritetsinformation, minimera uppgifterna och säkerställ nödvändiga skriftliga biträdesavtal. Respondos offentliga översikt ersätter inte ett bindande avtal enligt GDPR artikel 28.'],
+        ['Slutlig kvalitetssäkring','Testa normala och felstavade formuleringar på alla tre språken, följdfrågor, personalöverlämning, kontaktsamtycke och situationer där källfakta saknas.']
+      ],
+      faq:[
+        ['Är en bokning automatiskt bekräftad?','Inte utan en kopplad funktion som faktiskt kontrollerar tillgänglighet och bekräftar bokningen.'],
+        ['Vilka underbiträden används?','Det beror på aktiverade funktioner. Be Respondo om aktuella avtals- och underbiträdesuppgifter.']
+      ]
+    },
+    en:{
+      title:'Respondo AI setup, integrations and data protection',
+      subtitle:'A practical business guide to website knowledge, staff access, assisted setup, optional connections and end-customer data.',
+      sections:[
+        ['Choose the setup route','Provide your website, bot name and icon, contact details and any custom Q&A. Optional assisted setup is a separate one-time €199 service. Trial and subscription billing follow the selected checkout flow and current terms.'],
+        ['Review imported website knowledge','Check services, prices, locations, opening hours, product information and store policies. Automatic website import does not guarantee that every page or fact is found.'],
+        ['Set up staff permissions','Assign staff access according to duties and test whether the bot distinguishes locations, departments and languages. Do not treat unverified booking information as a confirmed customer record.'],
+        ['Enable integrations selectively','Calendar, ecommerce, payments and CRM/webhooks depend on the selected plan, configuration and sometimes separate vendor accounts. Test with non-sensitive data first; do not claim a confirmed order, payment or booking without the relevant system’s confirmation.'],
+        ['Protect customer data before launch','The business is generally the controller for its own end-customer data. Update your website privacy notice, limit personal-data collection and ensure necessary written processing terms are in place. Respondo’s public DPA overview is not by itself a binding Article 28 agreement.'],
+        ['Run a launch checklist','Test natural and misspelled wording in Finnish, Swedish and English, follow-ups, human handoff, lead consent and unknown cases. Review data removal and external recipient practices.']
+      ],
+      faq:[
+        ['Does a chat answer confirm a booking?','No. A booking is confirmed only through a connected flow that checks availability and successfully confirms the reservation.'],
+        ['How do I review subprocessors?','These depend on enabled features. Request current processor terms and subprocessor information from Respondo.']
+      ]
+    }
+  }
+});
+guides['/guides/ai-chatbot-pricing'].fi.sections.push([
+  'Valinnainen käyttöönottopalvelu ja kokonaiskustannus',
+  'Respondo AI:n valinnainen käyttöönottopalvelu maksaa erikseen 199 € kertaluonteisesti. Se ei sisälly kuukausi- tai vuosipaketin ilmoitettuun hintaan, ellei tilauksessa oleva alennus muuta tätä. Vertaile aina toistuvia maksuja, kertaluonteista käyttöönottoa ja mahdollisia ulkoisten integraatioiden kustannuksia. Kolmen päivän kokeilun alkaminen riippuu käyttöönottopalvelun valinnasta; tarkista tarkat ehdot ennen tilausta.'
+]);
+guides['/guides/ai-chatbot-pricing'].sv.sections.push([
+  'Valfri installation och total kostnad',
+  'Respondo AI erbjuder en valfri installationstjänst som kostar 199 € separat som engångsavgift, om inte en godkänd rabatt påverkar priset. Jämför löpande avgifter, installation och eventuella tredjepartskostnader. Starten för den tre dagar långa provperioden beror på installationsvalet; kontrollera gällande villkor vid beställning.'
+]);
+guides['/guides/ai-chatbot-pricing'].en.sections.push([
+  'Optional assisted setup and total cost',
+  'Respondo AI offers optional assisted setup for a separate one-time €199 charge unless an applied discount changes it. Compare recurring fees, setup and any third-party integration costs. The three-day trial start depends on whether assisted setup is selected; check the current checkout terms before ordering.'
+]);
+
 // Distinct educational resources belong in the existing footer-linked Guides library,
 // not the homepage. Preserve existing guide URLs and add only useful new topics.
 Object.assign(guides, SEO_SPECIALIST_GUIDES);

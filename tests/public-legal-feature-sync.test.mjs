@@ -9,8 +9,8 @@ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
 const html=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 
 test('all five public policy pages have complete human-written FI SV EN headings and bodies',()=>{
-  assert.equal(LEGAL_UPDATE_DATE,'2026-10-29');
-  const expected={kayttoehdot:14,tietosuoja:15,evasteet:6,dpa:9,tietoturva:7};
+  assert.equal(LEGAL_UPDATE_DATE,'2026-11-03');
+  const expected={kayttoehdot:16,tietosuoja:17,evasteet:7,dpa:11,tietoturva:8};
   for(const [page,count] of Object.entries(expected)){
     const document=LEGAL_20261008[page];
     assert.ok(document,'missing '+page);
@@ -88,7 +88,7 @@ test('DPA page does not masquerade as an executed GDPR processing agreement',()=
 });
 
 
-test('2026-10-29 legal update covers paid setup and deferred recurring billing in FI SV EN',()=>{
+test('current legal update retains paid setup and deferred recurring billing in FI SV EN',()=>{
   const policy=LEGAL_20261008;
   for (const index of [0,1,2]){
     const terms=policy.kayttoehdot.sections.map(x=>x.body[index]).join(' ');
@@ -108,7 +108,7 @@ test('2026-10-29 legal update covers paid setup and deferred recurring billing i
     assert.match(security,/aloitussalasan|startlösenord|initial password/,'password delivery language '+index);
   }
   const fi=policy.kayttoehdot.sections.map(x=>x.heading[0]);
-  assert.deepEqual(fi.map(x=>Number(x.match(/^\d+/)?.[0])).filter(Boolean),Array.from({length:14},(_,i)=>i+1));
+  assert.deepEqual(fi.map(x=>Number(x.match(/^\d+/)?.[0])).filter(Boolean),Array.from({length:16},(_,i)=>i+1));
   const privacy=policy.tietosuoja.sections.map(x=>x.heading[0]);
-  assert.deepEqual(privacy.map(x=>Number(x.match(/^\d+/)?.[0])).filter(Boolean),Array.from({length:15},(_,i)=>i+1));
+  assert.deepEqual(privacy.map(x=>Number(x.match(/^\d+/)?.[0])).filter(Boolean),Array.from({length:17},(_,i)=>i+1));
 });
