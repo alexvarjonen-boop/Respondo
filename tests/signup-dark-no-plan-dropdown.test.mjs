@@ -11,9 +11,12 @@ assert.ok(start>0 && end>start);
 const setupStart=app.indexOf('function setupServiceOption() {');
 const setupEnd=app.indexOf('\nfunction bindSetupServiceOptions()',setupStart);
 assert.ok(setupStart>0 && setupEnd>setupStart,'real optional setup-service markup must exist');
+const countryStart=app.indexOf('function checkoutBillingCountryField() {');
+const countryEnd=app.indexOf('\nfunction billingCountryNotice()',countryStart);
+assert.ok(countryStart>0 && countryEnd>countryStart,'international billing-country field must exist');
 
 function renderSignup(plan,locale='fi',extra='') {
-  const source=app.slice(setupStart,setupEnd)+'\n'+app.slice(start,end);
+  const source=app.slice(countryStart,countryEnd)+'\n'+app.slice(setupStart,setupEnd)+'\n'+app.slice(start,end);
   const t=(fi,sv,en)=>({fi,sv,en}[locale]||fi);
   const signup=new Function('location','cfg','nav','appText','currentLang','socialAuthButtons','checkoutBusinessTerms','footer','esc','oauthErrorMessage','passwordStrengthMarkup',source+'\nreturn signup;')(
     { pathname:'/tilaus', search:'?plan='+encodeURIComponent(plan)+'&lang='+locale+extra },
@@ -40,6 +43,8 @@ for(const [plan,name,price,charged] of [
   test('signup keeps exact plan without a dropdown: '+plan,()=>{
     const html=renderSignup(plan);
     assert.match(html,/class="signup-dark-shell"/);
+    assert.match(html,/name="billingCountry" autocomplete="country" required/);
+    assert.match(html,/<option value="FI" selected>/);
     assert.ok(html.includes('type="hidden" name="plan" value="'+plan+'"'));
     assert.ok(!html.includes('<select name="plan"'));
     assert.ok(!html.includes('<optgroup'));
