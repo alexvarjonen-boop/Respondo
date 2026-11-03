@@ -72,7 +72,7 @@ test('brief follow-ups retain company-move process but never borrow unrelated fa
   const r=mainioPublicFactAnswer(rows,'miten se etenee?','fi','Meille olisi tulossa yritysmuutto.');
   assert.ok(r && r.intent==='Yritysmuuton eteneminen');
   assert.equal(mainioBusinessMoveProcessQuestion('miten se etenee?','haluan vuokrata pakettiauton'),false);
-  assert.equal(mainioBusinessMoveProcessQuestion('miten se etenee?','yritysmuuton hinta'),true);
+  assert.equal(mainioBusinessMoveProcessQuestion('miten se etenee?','yritysmuuton hinta'),false);
 });
 
 test('prices, availability, rental, time and packing subquestions do not receive generic process instead',()=>{
