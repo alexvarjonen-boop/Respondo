@@ -4,6 +4,7 @@ import { matchVerifiedSpecialistService } from './service-semantics.mjs';
 import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
+import { compareBotValidationRuns } from './bot-retest-comparison.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import express from 'express';
 import path from 'path';
@@ -8564,6 +8565,72 @@ app.post('/api/app/import-website/validate/:jobId', auth, ownerOnly, subscribed,
   } finally {job.validationPromise=null;}
 });
 
+// Read-only regression test of the exact same prompts, after owner-approved knowledge changes.
+// Restricted to the active tenant and this import job. Results are cached per approval.
+app.post('/api/app/import-website/retest/:jobId', auth, ownerOnly, subscribed, async (req,res)=>{
+  if(!await requirePlanCapability(req,res,'websiteImport')) return;
+  const tr=await q('SELECT id,name FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  const tenant=tr.rows[0];
+  const job=websiteImportJobs.get(req.params.jobId);
+  if(!tenant || !job || job.userId!==req.user.sub || job.tenantId!==tenant.id || job.status!=='done' || !job.result) {
+    return res.status(404).json({error:'Tuontia ei löytynyt tästä työtilasta.'});
+  }
+  const revision=Number(job.approvalRevision||0);
+  if(revision<1) return res.status(409).json({error:'Hyväksy yritystiedot ennen uudelleentestausta.'});
+  if(job.retest?.revision===revision) return res.json({ok:true,retest:job.retest});
+  if(job.retestPromise && job.retestRunningRevision===revision){
+    try{return res.json({ok:true,retest:await job.retestPromise});}
+    catch{return res.status(500).json({error:'Uudelleentestaus epäonnistui.'});}
+  }
+  job.retestRunningRevision=revision;
+  const promise=(async()=>{
+    // Baseline may still be running when the owner approves the import.
+    let before=job.validation;
+    if(!before && job.validationPromise) before=await job.validationPromise;
+    if(!before) {
+      const baselineRows=(job.result.candidates||[]).slice(0,10000).map((r,i)=>({
+        ...r,id:'import-test-'+i,approved:true,source_type:'website',
+        source_url:r.sourceUrl||r.source_url||job.website,
+      }));
+      before=await runImportedAnswerSmokeTests({
+        readiness:job.result.readiness,rows:baselineRows,
+        answerQuestion:(message,lang)=>generateGroundedAnswer({companyName:tenant.name,rows:baselineRows,message,lang,history:[]}),
+      });
+      job.validation=before;
+    }
+    const kr=await q(
+      'SELECT id,category,title,answer,keywords,source_type,source_url,approved FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC LIMIT 10000',
+      [tenant.id]
+    );
+    const rows=kr.rows;
+    const readiness=auditImportedKnowledge(rows,{businessType:job.result.readiness?.type==='ecommerce'?'ecommerce':'services'});
+    const coverage=new Map(readiness.coverage.map(x=>[x.topic,x.available]));
+    const scenarios=(job.result.readiness?.scenarios||[]).map(x=>({
+      ...x,expectedEvidence:coverage.get(x.topic)?'available':'missing',
+      expectedBehavior:coverage.get(x.topic)?'answer_from_verified_source':'do_not_invent',
+    }));
+    const validation=await runImportedAnswerSmokeTests({
+      readiness:{scenarios},rows,
+      answerQuestion:(message,lang)=>generateGroundedAnswer({companyName:tenant.name,rows,message,lang,history:[]}),
+    });
+    validation.remediations=suggestBotRemediations({readiness,results:validation.results});
+    const comparison=compareBotValidationRuns(before,validation);
+    return {revision,readiness,validation,comparison};
+  })();
+  job.retestPromise=promise;
+  try {
+    const retest=await promise;
+    if(Number(job.approvalRevision||0)===revision)job.retest=retest;
+    job.updatedAt=Date.now();
+    return res.json({ok:true,retest});
+  }catch(e){
+    console.warn('Import regression test failed',e?.message||e);
+    return res.status(500).json({error:'Uudelleentestaus epäonnistui.'});
+  }finally{
+    if(job.retestPromise===promise)job.retestPromise=null;
+  }
+});
+
 app.post('/api/app/import-website', auth, ownerOnly, subscribed, async (req, res) => {
   if(!await requirePlanCapability(req,res,'websiteImport')) return;
   try {
@@ -8652,6 +8719,14 @@ app.post('/api/app/import-website/approve', auth, ownerOnly, subscribed, async (
     }
     if (!added) { await client.query('ROLLBACK'); return res.status(400).json({error:'Valituista tiedoista ei löytynyt hyväksyttäviä yritystietoja.'}); }
     await client.query('COMMIT');
+    if(jobId){
+      const job=websiteImportJobs.get(jobId);
+      if(job && job.userId===req.user.sub && job.tenantId===tenantId){
+        job.approvalRevision=Number(job.approvalRevision||0)+1;
+        job.retest=null;
+        job.updatedAt=Date.now();
+      }
+    }
     return res.json({ok:true,added,readiness:auditImportedKnowledge(items)});
   } catch(e) {
     try { await client.query('ROLLBACK'); } catch {}
