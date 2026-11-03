@@ -46,6 +46,15 @@ function numericFacts(value,topic) {
       remember(start,start+m[1].length,{unit:'clock',value:canonicalClock(m[1])});
     }
   }
+  // Price and duration ranges carry one unit after the high endpoint:
+  // "49–79 €", "2–4 päivää". Both endpoints require source support.
+  for(const m of text.matchAll(/\b(\d+(?:[,.]\d+)?)\s*[-–—]\s*(\d+(?:[,.]\d+)?)\s*(€|eur(?:o(?:a|ja|s)?)?|\$|usd|kronor|kruunua|kr|sek|%|hours?|tunt\w*|timm\w*|days?|paiv\w*|dag\w*|weeks?|viik\w*|kk|months?|manad\w*|years?|vuos\w*|ar)(?![a-z])/gi)) {
+    if(used.some(([a,b])=>m.index<b && m.index+m[0].length>a))continue;
+    const kind=unit(m[3]);
+    if(!kind)continue;
+    remember(m.index,m.index+m[0].length,{unit:kind,value:canonicalNumber(m[1])});
+    facts.push({unit:kind,value:canonicalNumber(m[2])});
+  }
   for(const m of text.matchAll(numberRe)) {
     if(used.some(([a,b])=>m.index>=a&&m.index<b))continue;
     const start=m.index,end=start+m[0].length;
