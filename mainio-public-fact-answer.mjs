@@ -40,9 +40,9 @@ const RULES=[
   {title:'Laatikoiden kuljetusmaksu',
     check:q=>/laatik/.test(q)&&(
       /(?:kuljetusmaks|toimitusmaks|kuljetuskulu|toimituskulu|kotiinkuljet)/.test(q) &&
-        /(?:hinta|maks|paljonko|kustann|kulu|ilmain)/.test(q) ||
-      /(?:toimitu|kuljetu|kotiinkuljet).*?(?:hinta|maks|paljonko|kustann|ilmain)/.test(q) ||
-      /(?:hinta|maks|paljonko|kustann).*?(?:toimitu|kuljetu|kotiinkuljet)/.test(q)
+        /(?:hinta|maks|paljonko|kustann|kulu|ilmain|kalli)/.test(q) ||
+      /(?:toimitu|kuljetu|kotiinkuljet).*?(?:hinta|maks|paljonko|kustann|ilmain|kalli)/.test(q) ||
+      /(?:hinta|maks|paljonko|kustann|kalli).*?(?:toimitu|kuljetu|kotiinkuljet)/.test(q)
     )},
   {title:'Kuinka monta muuttolaatikkoa tarvitsen?',
     check:q=>/laatik/.test(q)&&
@@ -56,13 +56,13 @@ const RULES=[
       )},
   {title:'Muuttolaatikoiden hinta',
     check:q=>/laatik/.test(q)&&
-      !/(?:mitat|mittoja|mitta\w*|koko|isoja|suuria|tilavuus)/.test(q)&&
+      !/(?:mitat|mittoja|mitta\w*|koko|isoja|suuria|tilavuu)/.test(q)&&
       /(?:hinta|hinta|maks\w*|paljonko|minimiveloitus|minimilaskutus|vuokra.*(?:hinta|maks|paljonko)|(?:hinta|maks|paljonko).*vuokra)/.test(q)},
   {title:'Muuttolaatikoiden mitat',
-    check:q=>/laatik/.test(q)&&/(?:\bmitat\b|\bmittoja\b|\bmitta\w*\b|kokois|\bkoko\b|\bkokoa\b|kokoja|kokoisia|isoja|suuria|tilavuus|millainen koko)/.test(q)},
+    check:q=>/laatik/.test(q)&&/(?:\bmitat\b|\bmittoja\b|\bmitta\w*\b|kokois|\bkoko\b|\bkokoa\b|kokoja|kokoisia|isoja|suuria|tilavuu|millainen koko)/.test(q)},
   {title:'Muuttolaatikkojen noutopäivät',
-    check:q=>/laatik/.test(q)&&/(?:milloin|mika paiva|mitka paiva|mille paiva|mille paivi|mihin aikaan|noutopaiv|toimituspaiv)/.test(q)&&
-      /(?:toimit|nout|hae|hake|tuod|tuotte|haett)/.test(q)},
+    check:q=>/laatik/.test(q)&&/(?:milloin|koska|mina paiva|mika paiva|mitka paiva|mille paiva|mille paivi|mihin aikaan|noutopaiv|toimituspaiv)/.test(q)&&
+      /(?:toimit|nout|noud|hae|hake|tuod|tuotte|haett)/.test(q)},
   {title:'Laatikoiden toimitus ja palautus',
     check:q=>/laatik/.test(q)&&/(?:toimit|nout|noud|tuotte|tuoda|palaut|hake|kotiin|kuljet)/.test(q)},
   // Specific vehicle pricing/safety must never resolve to pick-up instructions.
@@ -98,7 +98,7 @@ const RULES=[
     check:q=>/(?:kierrat|jate|jatte|irtaimist)/.test(q)&&
       /(?:pakkaamatt|pakata|pakkaamista|ilman pakkau|sellaisenaan)/.test(q)},
   {title:'Kierrätyspalvelu',
-    check:q=>/(?:kierratyspalvel|jate nout|jatteiden nout|kierratysnout|noutaa jatte|noutaa.*kierrat|kierrat.*nout|kierrat.*noud|jatte.*nout|jatte.*noud|kierrat.*kuulu|kierrat.*palvelu|mita.*kierrat|tavaroita.*kierrat|noudettavaksi)/.test(q)},
+    check:q=>/(?:kierratyspalvel|jate nout|jatteiden nout|kierratysnout|noutaa jatte|noutaa.*kierrat|kierrat.*nout|kierrat.*noud|jatte.*nout|jatte.*noud|kierrat.*kuulu|kierrat.*palvelu|mita.*kierrat|tavaroita.*kierrat|(?:nout|noud|hak|hae)\w*.*(?:tavara|irtaimist|huonekal).*kierrat|noudettavaksi)/.test(q)},
   {title:'Välivarastointi ennen muuttoa',
     check:q=>/(?:valivarast|varastoin|varastoida|varastoon|varasto|sailytt|sailyt)/.test(q)&&
       /(?:muutto|muuton|muuton ajaks|muutossa|tarjoatteko|onko|voiko|saako|ennen uuteen kotiin)/.test(q)},
@@ -120,16 +120,16 @@ const RULES=[
       !/(?:hinta|maksaa|vuokra.*hinta|kustann)/.test(q)},
   {title:'Pakkaus- ja kantoapu',
     check:q=>/(?:pakkausapu|pakkaus\s*ja\s*kantoapu|kantamis|kantoapu|kantaa|kannat|kannatte|kanna|pakkaamis|pakkaatte|pakata|pakkaam\w*|pakkau\w*)/.test(q) &&
-      /(?:onko|onks|saako|tarjoa|tarvit|voitte|pystyt|teette|teilt|teilla|autat|autatte|autatteko|avuksi|apu\b)/.test(q) &&
+      /(?:onko|onks|saako|tarjoa|tarvit|voitte|pystyt|teette|teilt|teilla|hoidat|autat|autatte|autatteko|avuksi|apu\b)/.test(q) &&
       !/(?:laatik|tarvik|pakkaustarvike|kuplamuov|avaimet kateen|tayden palvelun|koko muuton|kaikki vaiheet|alusta loppuun|pakkaatteko.*kaikki|pakkaamisen.*muuton|ettei minun tarvitse pakata)/.test(q)},
   {title:'Hissittömän muuton suunnittelu',
     check:q=>/(?:muutto|muuttaa|muuton|muutossa|muuttamis|kerrostal|talossa)/.test(q) &&
-      /(?:hissitt|ilman hissia|ei ole hissia|hissi.*puuttu)/.test(q)},
+      /(?:hissitt|hissiton|ilman hissia|ei ole hissia|hissi.*puuttu)/.test(q)},
   {title:'Muuton hinta',
     check:q=>/(?:muuton hinta|muutto maksaa|muuttokustann|muuton kustann|muuton hint|mista muuton hinta muodostu|muut(?:to|on|toa|tto)?\s*(?:\w+\s+){0,5}(?:maks|kustan|hinta|hintaa)|(?:paljonko|kuinka paljon|mita)\s*(?:\w+\s+){0,7}muut(?:to|to\w*|on))/i.test(q) &&
       !/(?:laatik|pakettiaut|paku)/.test(q)},
   {title:'Täyden palvelun avaimet käteen -muutto',
-    check:q=>/(?:avaimet kateen|pakkaatteko.*kaikki|hoidatteko koko muuton|hoidatteko.*pakkaamisen.*muuton|voitteko hoitaa.*pakkaamisen.*muuton|tavaroiden pakkaamisen.*muuton|tayden palvelun|kaikki vaiheet|alusta loppuun|ettei minun tarvitse pakata)/.test(q)},
+    check:q=>/(?:avaimet kateen|pakkaatteko.*kaikki|hoidatteko koko muuton|hoidatteko.*pakkaamisen.*muuton|voitteko hoitaa.*pakkaamisen.*muuton|voitteko hoitaa.*koko muuton.*pakkaamisen|tavaroiden pakkaamisen.*muuton|tayden palvelun|kaikki vaiheet|alusta loppuun|ettei minun tarvitse pakata)/.test(q)},
 ];
 // Website importers can give a correctly sourced fact a descriptive heading
 // different from a curated FAQ title. Permit narrowly checked alternatives,
