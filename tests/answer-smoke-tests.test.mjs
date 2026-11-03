@@ -35,3 +35,15 @@ test('exceptions become review items and validation stays bounded',async()=>{
   assert.equal(calls,18);assert.equal(report.counts.review,18);
   assert.ok(report.results.every(r=>r.reason==='answer_error'));
 });
+
+test('unapproved knowledge and fabricated undefined IDs cannot make bot answer pass',async()=>{
+  const report=await runImportedAnswerSmokeTests({
+    readiness:{scenarios:[{topic:'services',language:'fi',question:'Mitä palveluja tarjoatte?',expectedEvidence:'available'}]},
+    rows:[{category:'Palvelut',title:'Palvelu',answer:'Palvelua tarjotaan.'}],
+    answerQuestion:async()=>({answer:'Kyllä.',handoff:false,sourceIds:['undefined']}),
+  });
+  assert.equal(report.results[0].status,'review');
+  const unapproved=[{id:'candidate',approved:false,category:'Palvelut',title:'Palvelu',answer:'Palvelua tarjotaan.'}];
+  assert.equal(gradeBotAnswer({expectedEvidence:'available',topic:'services'},
+    {answer:'Kyllä.',handoff:false,sourceIds:['candidate']},new Set(['candidate']),unapproved).status,'review');
+});
