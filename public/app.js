@@ -7573,6 +7573,109 @@ async function route() {
                 <span><b>${esc(item.title || item.category || '')}</b><p>${esc(item.answer)}</p><small>${esc(item.sourceUrl || '')}</small></span>
               </label>`).join('')}
             </div>` : '<div class="notice">' + appText('Sivustolta ei löytynyt luotettavasti poimittavia tuotteita, palveluita, hintoja, yhteystietoja, aukioloaikoja tai tarjouspyyntölinkkiä. Voit lisätä tiedot käsin.','Inga tillförlitliga produkter, tjänster, priser, kontaktuppgifter, öppettider eller offertlänkar kunde hämtas. Du kan lägga till uppgifterna manuellt.','No reliable products, services, prices, contact details, opening hours or quote link could be extracted. You can add the details manually.') + '</div>');
+          // Validate imported knowledge automatically after crawling, without blocking
+          // approval or presenting source citations as proof of factual correctness.
+          if (candidates.length) {
+            const audit=document.createElement('section');
+            audit.id='websiteImportQualityReport';
+            audit.className='website-import-review-head';
+            audit.setAttribute('aria-live','polite');
+            const readiness=result.readiness;
+            const missing=Array.isArray(readiness?.missing)?readiness.missing:[];
+            const topicNames={
+              services:appText('Palvelut','Tjänster','Services'),
+              pricing:appText('Hinnat','Priser','Pricing'),
+              hours:appText('Aukioloajat','Öppettider','Opening hours'),
+              contact:appText('Yhteystiedot','Kontaktuppgifter','Contact'),
+              location:appText('Sijainti','Plats','Location'),
+              quote:appText('Tarjouspyyntö','Offertförfrågan','Quote requests'),
+              delivery:appText('Toimitus','Leverans','Delivery'),
+              returns:appText('Palautukset','Returer','Returns'),
+              warranty:appText('Takuu','Garanti','Warranty'),
+              payment:appText('Maksutavat','Betalningsmetoder','Payment methods')
+            };
+            const coverage=Number(readiness?.coveragePercent||0);
+            audit.innerHTML='<div><b>'+esc(appText('Tietopohjan kattavuus','Kunskapsbasens täckning','Knowledge coverage'))+': '+coverage+'%</b>'+
+              '<small>'+esc(missing.length
+                ? appText('Tarkista puuttuvat tiedot: ','Kontrollera saknade uppgifter: ','Review missing information: ')+missing.map(id=>topicNames[id]||id).join(', ')
+                : appText('Kaikki tarkistettavat tietoryhmät löytyivät.','Alla kontrollerade informationskategorier hittades.','All audited information categories were found.'))+'</small>'+
+              '<small id="websiteImportValidationStatus">'+esc(appText('Bottia testataan automaattisesti…','Boten testas automatiskt…','Testing bot automatically…'))+'</small></div>';
+            review.prepend(audit);
+            const status=audit.querySelector('#websiteImportValidationStatus');
+            if(result.jobId) {
+              api('/api/app/import-website/validate/'+encodeURIComponent(result.jobId),{method:'POST'})
+                .then(payload=>{
+                  if(!audit.isConnected || !status) return;
+                  const counts=payload?.validation?.counts||{};
+                  const grounded=Number(counts.grounded_candidate||0), safe=Number(counts.safe||0), flagged=Number(counts.review||0);
+                  const executed=Number(payload?.validation?.executed||0);
+                  status.textContent=appText(
+                    'Bottitestit: '+executed+' kysymystä. '+grounded+' lähteellistä vastausta, '+safe+' turvallista siirtoa, '+flagged+' tarkistettavaa. Lähdeviite ei yksin takaa vastauksen oikeellisuutta.',
+                    'Bottest: '+executed+' frågor. '+grounded+' källhänvisningar, '+safe+' säkra överlämningar, '+flagged+' att granska. Källhänvisning garanterar inte att svaret är korrekt.',
+                    'Bot tests: '+executed+' questions. '+grounded+' source-backed candidates, '+safe+' safe handoffs, '+flagged+' to review. A citation does not prove factual correctness.'
+                  );
+                  const remediations=payload?.validation?.remediations?.recommendations||[];
+                  if(remediations.length){
+                    const panel=document.createElement('details');
+                    const heading=document.createElement('summary');
+                    heading.textContent=appText('Suositellut korjaukset','Rekommenderade åtgärder','Recommended fixes')+' ('+remediations.length+')';
+                    panel.appendChild(heading);
+                    const actionLabels={
+                      verify_and_add_missing_company_fact:appText('Tarkista puuttuva yritystieto ja lisää se tietopohjaan.','Kontrollera och lägg till den saknade företagsuppgiften.','Verify and add the missing company fact.'),
+                      review_value_and_source_matching:appText('Tarkista luvut ja lähteiden kohdistus. Korjaa yhteistä logiikkaa tarvittaessa.','Kontrollera siffrorna och källmatchningen. Förbättra vid behov den gemensamma logiken.','Review numbers and source matching. Fix shared logic if needed.'),
+                      block_unsourced_company_claims:appText('Älä hyväksy vastausta ilman saman yrityksen vahvistettua lähdettä.','Godkänn inte svar utan bekräftad källa från samma företag.','Reject answers lacking verified sources from this company.'),
+                      improve_retrieval_for_verified_fact:appText('Paranna tiedonhaun osuvuutta jo löytyneelle tiedolle.','Förbättra sökningen för redan tillgänglig information.','Improve retrieval for facts already available.'),
+                      investigate_answer_pipeline_error:appText('Tarkista vastausketjun virhe ja lokit.','Granska felet i svarskedjan och loggarna.','Inspect the answering pipeline error and logs.'),
+                      inspect_evidence_and_answer:appText('Vertaa vastausta alkuperäisiin yritystietoihin.','Jämför svaret med företagets ursprungliga uppgifter.','Compare the answer with original company information.'),
+                      resolve_conflicting_source_facts:appText('Varmista oikea tieto ristiriitaisista lähteistä.','Bekräfta rätt uppgift från motstridiga källor.','Confirm the correct fact from conflicting sources.'),
+                      remove_navigation_or_cookie_content:appText('Poista virheellisesti tuotu sivuston käyttöliittymäteksti.','Ta bort felaktigt importerad navigerings- eller cookietext.','Remove incorrectly imported navigation or cookie text.')
+                    };
+                    const ul=document.createElement('ul');
+                    for(const item of remediations.slice(0,20)){
+                      const li=document.createElement('li');
+                      const prefix=item.scope==='shared_logic'
+                        ? appText('Yhteinen bottilogiikka','Gemensam botlogik','Shared bot logic')
+                        : appText('Yrityskohtainen tieto','Företagsuppgifter','Company-specific information');
+                      li.textContent=prefix+' · '+(topicNames[item.topic]||item.topic||'')+' · '+(actionLabels[item.nextStep]||appText('Tarkista ongelma.','Granska problemet.','Review issue.'))+' ('+Number(item.count||0)+')';
+                      ul.appendChild(li);
+                    }
+                    panel.appendChild(ul);
+                    const note=document.createElement('small');
+                    note.textContent=appText('Nämä ovat korjausehdotuksia. Yrityksen tietoja ei muuteta automaattisesti.',
+                      'Det här är förslag. Företagets uppgifter ändras inte automatiskt.',
+                      'These are recommendations. Company facts are not changed automatically.');
+                    panel.appendChild(note);
+                    audit.appendChild(panel);
+                  }
+                  const failed=(payload?.validation?.results||[]).filter(item=>item.status==='review').slice(0,18);
+                  if(failed.length){
+                    const details=document.createElement('details');
+                    const summary=document.createElement('summary');
+                    summary.textContent=appText('Näytä tarkistettavat kysymykset','Visa frågor att granska','Show questions to review')+' ('+failed.length+')';
+                    details.appendChild(summary);
+                    const items=document.createElement('ul');
+                    for(const item of failed){
+                      const li=document.createElement('li');
+                      li.textContent='['+String(item.language||'').toUpperCase()+'] '+String(item.question||'')+' — '+String(item.reason||'');
+                      items.appendChild(li);
+                    }
+                    details.appendChild(items);
+                    audit.appendChild(details);
+                  }
+                })
+                .catch(()=>{
+                  if(status && audit.isConnected) status.textContent=appText(
+                    'Bottitestiä ei voitu suorittaa. Yritystiedot voi silti tarkistaa ja hyväksyä.',
+                    'Bottestet kunde inte slutföras. Företagsuppgifterna kan fortfarande granskas och godkännas.',
+                    'Bot validation could not complete. You can still review and approve company facts.'
+                  );
+                });
+            } else if(status) status.textContent=appText(
+              'Automaattinen bottitesti ei ole käytettävissä suorassa varahaussa.',
+              'Automatiskt bottest är inte tillgängligt vid reservsökning.',
+              'Automated bot validation is unavailable for the fallback scan.'
+            );
+          }
           document.getElementById('selectAllWebsiteImport')?.addEventListener('click', (event) => {
             const boxes=[...review.querySelectorAll('[data-import-index]')];
             const shouldSelect=boxes.some((box)=>!box.checked);
@@ -7597,6 +7700,60 @@ async function route() {
               const saved = await api('/api/app/import-website/approve',{method:'POST',body:JSON.stringify(approvalPayload)});
               approveButton.textContent = appText('Lisätty bottiin ✓','Tillagt i botten ✓','Added to bot ✓');
               $('#businessProfileMsg').innerHTML = '<div class="notice success">' + appText(String(saved.added || 0) + ' verkkosivulta löydettyä tietoa lisättiin botin tietopohjaan.','Valda webbplatsuppgifter lades till i bottens kunskapsbas.','Selected website information was added to the bot knowledge base.') + '</div>';
+              // Retest automatically after approval, comparing the same FI/SV/EN
+              // questions to the earlier import snapshot. Never block approval.
+              if(result?.jobId){
+                const audit=document.getElementById('websiteImportQualityReport');
+                if(audit){
+                  const old=audit.querySelector('#websiteImportRetestSummary');
+                  old?.remove();
+                  const section=document.createElement('section');
+                  section.id='websiteImportRetestSummary';
+                  section.setAttribute('aria-live','polite');
+                  section.className='notice';
+                  section.textContent=appText('Testataan hyväksytyt tiedot uudelleen…','Testar de godkända uppgifterna igen…','Retesting approved company facts…');
+                  audit.appendChild(section);
+                  api('/api/app/import-website/retest/'+encodeURIComponent(result.jobId),{method:'POST'})
+                    .then(payload=>{
+                      if(!section.isConnected)return;
+                      const comparison=payload?.retest?.comparison||{};
+                      const counts=payload?.retest?.validation?.counts||{};
+                      const improved=Number(comparison.improvedCandidates||0);
+                      const regressions=Number(comparison.regressions||0);
+                      const review=Number(counts.review||0);
+                      const compared=Number(comparison.compared||0);
+                      section.textContent=appText(
+                        'Uudelleentestaus: '+compared+' kysymystä vertailtu. '+improved+' mahdollisesti parantunut, '+regressions+' heikentynyt ja '+review+' tarkistettavaa. Tulokset eivät yksin vahvista vastausten oikeellisuutta.',
+                        'Nytt test: '+compared+' frågor jämförda. '+improved+' möjliga förbättringar, '+regressions+' försämringar och '+review+' att granska. Resultatet bevisar inte att svaren är korrekta.',
+                        'Retest: '+compared+' questions compared. '+improved+' potential improvements, '+regressions+' regressions and '+review+' requiring review. Results do not prove factual correctness.'
+                      );
+                      const changes=Array.isArray(comparison.changes)?comparison.changes:[];
+                      if(changes.length){
+                        const details=document.createElement('details');
+                        const summary=document.createElement('summary');
+                        summary.textContent=appText('Näytä muuttuneet vastaukset','Visa ändrade resultat','Show changed results')+' ('+changes.length+')';
+                        details.appendChild(summary);
+                        const list=document.createElement('ul');
+                        for(const change of changes){
+                          const item=document.createElement('li');
+                          item.textContent='['+String(change.language||'').toUpperCase()+'] '+String(change.question||'')+' — '+String(change.before||'')+' → '+String(change.after||'');
+                          list.appendChild(item);
+                        }
+                        details.appendChild(list);
+                        section.appendChild(details);
+                      }
+                    })
+                    .catch(()=>{
+                      if(section.isConnected)section.textContent=appText(
+                        'Uudelleentestaus epäonnistui. Hyväksytyt tiedot pysyvät tallessa.',
+                        'Det nya testet misslyckades. Godkända uppgifter har sparats.',
+                        'Retest failed. Approved company facts remain saved.'
+                      );
+                    });
+                }
+              }
+
+
             } catch(err) {
               approveButton.disabled = false;
               approveButton.textContent = previous;
