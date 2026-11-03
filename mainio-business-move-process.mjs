@@ -20,9 +20,12 @@ export function mainioBusinessMoveProcessQuestion(message,previousCustomerQuesti
   const q=normalize(message);
   if(!q || q.length>420 || separateQuestion.test(q))return false;
   if(businessMove.test(q) && processCue.test(q)){
+    // A greeting or a short "question:" prefix must not turn a yes/no
+    // capability question into a multi-step service-process explanation.
+    const bareQ=q.replace(/^(?:(?:hei|moi|moikka|terve|hello|hi|hej|kysymys|en fraga|quick question|pikainen kysymys)\s+)+/,'');
     // "Can you handle an office move?" asks whether the service exists,
     // not for the process. "Can you explain how..." does ask for steps.
-    if(capabilityOnly.test(q) && !explicitProcess.test(q))return false;
+    if(capabilityOnly.test(bareQ) && !explicitProcess.test(bareQ))return false;
     return true;
   }
   // A short follow-up inherits the topic only from the immediately previous
