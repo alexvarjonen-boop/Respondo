@@ -676,6 +676,93 @@ guides['/guides/ai-chatbot-pricing'].en.sections.push([
 
 // Distinct educational resources belong in the existing footer-linked Guides library,
 // not the homepage. Preserve existing guide URLs and add only useful new topics.
+// 2026-11-03: public, factual walkthrough of the authenticated 12-part
+// Respondo OS navigation. Order matches workspace-orbit-v28.js exactly.
+// No example metrics or customer data are invented by this guide.
+Object.assign(guides,{
+  '/guides/dashboard-navigation-guide':{
+    reading:'8',
+    fi:{
+      title:'Respondo AI:n hallintapaneelin navigointiopas – pallovalikon 12 osiota',
+      subtitle:'Mistä löydät kävijätilastot, liidit, keskustelut, henkilökunnan, vastaukset, integraatiot ja laskutuksen? Käy läpi Respondo OS:n jokainen osio.',
+      sections:[
+        ['Näin käytät pallovalikkoa','Kirjaudu sisään osoitteessa respondoai.fi/app. Botin kokeilun alapuolella näkyy Respondo OS -pallo, jossa on 12 kuvaketta. Vieritä palloa vaihtaaksesi valittua osiota tai napsauta haluamaasi kuvaketta. Avaa osio painamalla sen alapuolella näkyvää nimeä. Profiilin jälkeen kierto alkaa uudelleen Yleiskatsauksesta. Hallintapaneelissa näytetään vain oman yrityksesi tiedot ja valitun tilauspaketin sekä käyttöoikeuksien sallimat toiminnot.'],
+        ['1. Yleiskatsaus – tulokset ja kävijät','Tämä on yrityksesi tilannekuva. Löydät keskeiset käyttö- ja keskustelutilastot, bottiin liittyvät mittarit ja linkit tärkeisiin toimintoihin. Sivustokävijöiden tarkemmat tilastot sekä Respondo AI:n sisäinen omistajakohtainen kävijäanalytiikka voivat näkyä erillisessä hallintanäkymässä vain oikeutetuilla käyttäjillä; älä sekoita niitä yksittäisen yrityksen chattilukuihin.'],
+        ['2. Asiakkaat ja liidit – yhteydenottopyynnöt','Täältä tarkastelet botin keräämiä liidejä ja yhteydenottoja, esimerkiksi asiakkaan nimeä, sähköpostia tai puhelinnumeroa ja kysymyksen sisältöä silloin, kun tiedot on lähetetty. Osio on oikea paikka tarkistaa uusia tarjouspyyntöjä ja yhteydenottoja.'],
+        ['3. Keskustelut – asiakashistoria ja livechat','Näet asiakaskeskustelujen historian sekä käytettävissä olevat live-keskustelut. Täältä voit seurata, mistä asiakkaat kysyivät ja milloin tarvittiin ihmisen apua. Todelliset viestit ja käsittelymahdollisuudet edellyttävät oikeaa yritystiliä.'],
+        ['4. Henkilökunta – työntekijäprofiilit','Luo ja hallitse asiakaspalvelijoiden omia profiileja ja kirjautumistunnuksia. Tässä osiossa hallitaan työntekijöiden saatavuutta, nimiä ja mahdollisia keskustelujen siirtoja ihmiselle. Käytettävissä olevien asiakaspalvelijapaikkojen määrä riippuu tilauksesta.'],
+        ['5. Yritys ja botti – yrityksen ja botin asetukset','Muuta yrityksen verkkosivua ja muita yritystietoja sekä botin nimeä, kuvaketta ja yrityksen yhteystietoja silloin, kun nämä asetukset ovat käytettävissä. Tarkista myös automaattisesti haetut tiedot, sillä botti ei saa keksiä puuttuvia palveluita tai hintoja.'],
+        ['6. Vastaukset – tietopohja ja puuttuvat vastaukset','Muokkaa botin tietopohjaa ja käsin annettuja kysymys–vastauspareja. Tarkista Puuttuvat vastaukset -välilehti, kun asiakkaan kysymykseen ei löydy luotettavaa vastausta. Lisää oikea lähdetieto ja testaa samaa tarkoitusta eri sanamuodoilla ja kielillä.'],
+        ['7. Toiminnot – botin automaatiot','Tässä osiossa ovat käytössä olevat toiminnallisuudet ja automaatiot, esimerkiksi tarjous- tai ajanvaraukseen liittyvät työnkulut. Toiminnot riippuvat paketista ja määrityksistä. Pelkkä botin viesti ei vielä tarkoita vahvistettua varausta tai maksua.'],
+        ['8. Asennus – botti omille verkkosivuille','Etsi oman yrityksesi asennusohjeet ja upotuskoodi, jolla botin voi lisätä verkkosivustolle. Testaa bottia sekä tietokoneella että puhelimella, ja tarkista kuvakkeen, kielten ja chat-ikkunan toiminta julkaisun jälkeen.'],
+        ['9. Integraatiot – kalenteri, verkkokauppa, API ja Stripe','Tämän osion välilehdiltä löytyvät API ja webhookit, verkkokauppayhteydet, kalenteri sekä Stripe-yhteys silloin, kun ne ovat käytössä. Eri yhteydet vaativat omat asetuksensa ja mahdollisesti ulkopuolisen tilin. Tarkista yhteyden tila ennen kuin annat botin väittää tilausta, varausta tai maksua vahvistetuksi.'],
+        ['10. Laskutus – tilaus ja maksujen hallinta','Katso yrityksen tilaus ja tilausjakso sekä laskutuksen hallintaan liittyvät toiminnot. Stripeä käyttävän tilauksen muutokset ja mahdollinen peruminen tehdään laskutushallinnan kautta. Erillisen käyttöönottopalvelun ehdot ja kokeilun aloitus löytyvät käyttöehdoista.'],
+        ['11. Asetukset – palvelun määritykset','Avaa yritystilillä tarjolla olevat yleiset asetukset ja käyttöön liittyvät määritykset. Tarkista, että oikeudet, yhteystiedot ja käyttöön otetut toiminnot vastaavat yrityksen tarpeita. Tietyn asetuksen sijainti voi muuttua ominaisuuspäivityksessä.'],
+        ['12. Profiili – yritykset ja tilin turvallisuus','Täältä löytyvät omien yritystyötilojen hallinta sekä tilin asetukset ja tietoturva. Käyttäjä voi vaihtaa omia kirjautumistietojaan ja hallita niitä yrityksiä, joihin hänellä on käyttöoikeus. Laskutus on pallossa myös oma erillinen osionsa.'],
+        ['Miten löydän oikean toiminnon nopeasti?','Haluatko nähdä liidit? Valitse Asiakkaat ja liidit. Haluatko lukea viestit? Keskustelut. Tarvitsetko työntekijätunnuksen? Henkilökunta. Muokkaatko botin vastauksia? Vastaukset. Haluatko asentaa botin verkkosivulle? Asennus. Tilaus ja maksut löytyvät Laskutuksesta. Aloita aina Yleiskatsauksesta, jos et ole varma.']
+      ],
+      faq:[
+        ['Mistä näen kävijät ja liidit?','Yleiskatsaus sisältää keskeiset tilastot, mutta lähetetyt yhteystiedot löytyvät Asiakkaat ja liidit -osiosta. Osa omistajan kävijäanalytiikasta on rajattu erilliseen hallintaan.'],
+        ['Miten luon työntekijälle profiilin?','Avaa pallosta Henkilökunta ja käytä työntekijäprofiilien luontitoimintoja. Saatavilla olevat paikat riippuvat tilauksesta.'],
+        ['Voiko pallossa olevaa kuvaketta klikata suoraan?','Kyllä. Voit valita kuvakkeen suoraan tai vierittää palloa; paina valitun osion nimeä avataksesi sen.'],
+        ['Mistä löydän laskutuksen ja tilin asetukset?','Laskutus on erillinen osio. Profiilissa hallitaan yritystyötiloja ja tilin tietoja; yleiset asetukset löytyvät myös Asetukset-osiosta.']
+      ]
+    },
+    sv:{
+      title:'Navigeringsguide till Respondo AI – alla 12 delar av menykulan',
+      subtitle:'Hitta statistik, leads, chattar, personal, kunskapsbas, anslutningar och fakturering i Respondo OS.',
+      sections:[
+        ['Så fungerar menykulan','Logga in på respondoai.fi/app. Under testchatten finns Respondo OS-kulan med 12 ikoner. Skrolla för att välja en annan del eller klicka på en ikon. Öppna delen genom att trycka på namnet nedanför. Efter Profil börjar rundan om från Översikt. Endast uppgifter och funktioner som hör till företagets konto, abonnemang och behörighet visas.'],
+        ['1. Översikt – statistik och resultat','Översikt visar viktiga användnings- och chattmått och genvägar till centrala funktioner. Separat, ägarbegränsad besökarstatistik för själva Respondo-tjänsten är inte samma sak som ett kundföretags chattstatistik.'],
+        ['2. Kunder och leads – kontaktförfrågningar','Granska inkomna leads, kontaktuppgifter och förfrågningar som besökare faktiskt har skickat via chatten. Här kan företaget följa upp förfrågningar och offertönskemål.'],
+        ['3. Konversationer – historik och livechatt','Visa tidigare kundsamtal och aktiva chattar, om funktionen är tillgänglig. Här ser du vilka frågor kunden ställde och när personal kan behöva ta över.'],
+        ['4. Personal – medarbetarprofiler','Skapa och hantera egna användarprofiler för kundservicepersonalen. Hantera närvaro och mänsklig övertagning av chattar. Antalet platser beror på abonnemanget.'],
+        ['5. Företag och bot – grunduppgifter','Redigera företagsuppgifter, webbplats, botnamn, ikon och kontaktuppgifter där inställningarna finns. Granska importerade webbplatsuppgifter innan botten använder dem.'],
+        ['6. Svar – kunskapsbas och saknade svar','Redigera godkända fakta och manuella frågor och svar. Kontrollera Saknade svar när en kundfråga inte kunde besvaras och testa alternativa formuleringar på olika språk.'],
+        ['7. Funktioner – automationer','Här finns tillgängliga åtgärder och arbetsflöden, exempelvis offert- och bokningsfunktioner. Funktionerna beror på plan och konfiguration. Ett chattsvar i sig är ingen boknings- eller betalningsbekräftelse.'],
+        ['8. Installation – lägg botten på webbplatsen','Hitta installationsanvisningar och inbäddningskod. Testa botten efter installation på dator och mobil samt kontrollera språk och utseende.'],
+        ['9. Integrationer – API, webbutik, kalender och Stripe','Flikarna omfattar API och webhooks, webbutiker, kalender och Stripe när de är tillgängliga. Externa konton, behörigheter och inställningar kan krävas. Kontrollera systemets status innan en order eller bokning uppges vara bekräftad.'],
+        ['10. Fakturering – abonnemang och betalningar','Visa företagets abonnemang och faktureringsinställningar. Ändringar och uppsägning av Stripe-abonnemang görs via faktureringshanteringen. Villkor för separat installation och provperiod finns i användarvillkoren.'],
+        ['11. Inställningar – arbetsytans alternativ','Granska allmänna inställningar, behörigheter och konfigurerade funktioner för företagskontot. Vissa inställningar kan flyttas när tjänsten utvecklas.'],
+        ['12. Profil – företag och kontosäkerhet','Hantera företag som du har åtkomst till, egna kontouppgifter och säkerhetsinställningar. Fakturering finns dessutom som en separat del av kulan.'],
+        ['Snabbguide – vart ska jag gå?','Leads: Kunder och leads. Chatthistorik: Konversationer. Medarbetare: Personal. Felfrågor och fakta: Svar. Inbäddningskod: Installation. Abonnemang och betalningar: Fakturering. Börja med Översikt om du är osäker.']
+      ],
+      faq:[
+        ['Var finns besökare och leads?','Viktiga mått visas i Översikt och skickade kundkontakter i Kunder och leads. Viss ägarstatistik är begränsad till en separat vy.'],
+        ['Hur skapar jag en personalprofil?','Öppna Personal och välj funktionen för att skapa en medarbetarprofil. Antalet platser beror på abonnemanget.'],
+        ['Kan jag klicka direkt på en ikon?','Ja. Välj en ikon eller skrolla i kulan och öppna sedan delen genom att trycka på dess namn.'],
+        ['Var finns fakturering och profil?','Fakturering är en separat del. Profil innehåller företag och kontoinställningar; allmänna alternativ finns under Inställningar.']
+      ]
+    },
+    en:{
+      title:'Respondo AI dashboard navigation guide – all 12 sections of the sphere',
+      subtitle:'Find visitor analytics, leads, conversations, employees, bot knowledge, integrations and billing in Respondo OS.',
+      sections:[
+        ['How the navigation sphere works','Sign in at respondoai.fi/app. Below the live bot preview, the Respondo OS sphere shows 12 icons. Scroll the sphere to change the selected section or click an icon. Open the selected section by pressing its name beneath the sphere. After Profile, the cycle starts again at Overview. Your business account only displays the data and functions allowed by its plan and permissions.'],
+        ['1. Overview – metrics and key actions','Overview is the business summary. It shows available usage, conversation and bot-related statistics and shortcuts to key tools. Detailed owner-only visitor analytics for Respondo itself may be available in a separate restricted view; those are not the same as a customer company’s conversation statistics.'],
+        ['2. Customers & leads – contact requests','Review customer contact information and leads actually submitted through the bot, such as a name, phone number, email or quote request. Use this section to follow up on incoming enquiries.'],
+        ['3. Conversations – chat history and live inbox','View past customer conversations and live chats when enabled. See what visitors asked, and whether a conversation requires human follow-up. Actual messages require an authorized business account.'],
+        ['4. Team – employee profiles and human handoff','Create and manage support agent profiles and their sign-in details. Configure employee availability and take over chats where enabled. The number of agent seats depends on the subscription.'],
+        ['5. Business & bot – company details','Manage your website and business details, and configure the bot name, avatar and contact information where available. Review imported company facts so the bot does not invent missing prices or services.'],
+        ['6. Answers – approved knowledge and unanswered questions','Edit the bot’s knowledge base and custom question-and-answer entries. Use the Unanswered tab to investigate gaps, add correct source-backed facts and check multiple ways of asking the same question.'],
+        ['7. Actions – available automation workflows','Manage enabled actions such as quote or appointment-related workflows depending on plan and configuration. A chat message by itself does not confirm a booking or payment without the corresponding system confirmation.'],
+        ['8. Installation – add the bot to your site','Find installation instructions and your company’s embed code. After installation, check the widget on desktop and mobile, including its icon, languages and opening behaviour.'],
+        ['9. Integrations – API, ecommerce, Calendar and Stripe','The tabs cover API and webhooks, online stores, calendars and Stripe where enabled. Connections may require separate accounts and authorization. Verify external system status before telling a customer an order, booking or payment is confirmed.'],
+        ['10. Billing – subscription and payments','Check the business subscription, billing interval and the available Stripe subscription-management functions. Changes and cancellations are made using billing management. Assisted setup and trial start conditions are explained in the Terms of Service.'],
+        ['11. Settings – workspace configuration','Review available workspace settings, account permissions and enabled feature options. Individual settings may move when the product is updated.'],
+        ['12. Profile – companies and account security','Manage the businesses you can access, your account details and security settings. Billing is also a separate section in the sphere.'],
+        ['Quick lookup – where do I click?','Leads: Customers & leads. Chat history: Conversations. Staff accounts: Team. Knowledge gaps: Answers. Embed code: Installation. Subscriptions and payments: Billing. Start from Overview if you are unsure.']
+      ],
+      faq:[
+        ['Where are visitor numbers and leads?','Key available metrics are in Overview; submitted contacts are in Customers & leads. Some owner-only visitor analytics are restricted to a separate screen.'],
+        ['Where do I create support agent profiles?','Open Team and use the employee profile controls. Seat limits depend on your plan.'],
+        ['Can I click a sphere icon directly?','Yes. Click an icon or scroll to select it, then press the section name to open its content.'],
+        ['Where are billing and account settings?','Billing is its own sphere section. Profile contains companies and account security, while general options are also under Settings.']
+      ]
+    }
+  }
+});
+
 Object.assign(guides, SEO_SPECIALIST_GUIDES);
 export const GLOBAL_GUIDE_PATHS = ['/guides', ...Object.keys(guides)];
 export function globalGuideData(path,lang='fi') {
