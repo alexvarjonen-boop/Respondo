@@ -1811,9 +1811,9 @@ function updateDocumentLanguageMeta(lang) {
 
   const metaByPath = {
     '/': {
-      fi:['AI-asiakaspalvelubotti yrityksille | Respondo AI','Respondo AI vastaa verkkosivusi asiakkaiden kysymyksiin 24/7 yrityksesi tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta. Kokeile 3 päivää maksutta.'],
-      sv:['AI-kundservicebot för företag | Respondo AI','Respondo AI svarar på webbplatsens kundfrågor dygnet runt med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar. Prova gratis i 3 dagar.'],
-      en:['AI Customer Service Bot for Businesses | Respondo AI','Respondo AI answers website customer questions 24/7 using company-approved information, captures contact requests and supports bookings. Try it free for 3 days.'],
+      fi:['Respondo AI | AI-asiakaspalvelubotti yrityksille','Respondo AI vastaa verkkosivusi asiakkaiden kysymyksiin 24/7 yrityksesi tiedoilla, kerää yhteydenottoja ja tukee ajanvarausta. Kokeile 3 päivää maksutta.'],
+      sv:['Respondo AI | AI-kundservicebot för företag','Respondo AI svarar på webbplatsens kundfrågor dygnet runt med företagets egna uppgifter, samlar kontaktförfrågningar och stöder bokningar. Prova gratis i 3 dagar.'],
+      en:['Respondo AI | AI Customer Service Bot for Businesses','Respondo AI answers website customer questions 24/7 using company-approved information, captures contact requests and supports bookings. Try it free for 3 days.'],
     },
     '/ominaisuudet': {
       fi:['AI-asiakaspalvelubotin ominaisuudet | Respondo AI','Tutustu Respondon ominaisuuksiin: verkkosivubotti, yrityksen oma tietopohja, yhteydenotot, ajanvaraus, keskustelut ja asiakaspalvelun hallinta yhdessä paikassa.'],
