@@ -2,6 +2,7 @@ import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsitePr
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { matchVerifiedSpecialistService } from './service-semantics.mjs';
 import { auditImportedKnowledge } from './knowledge-readiness.mjs';
+import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import express from 'express';
 import path from 'path';
@@ -8525,6 +8526,40 @@ app.get('/api/app/import-website/status/:jobId', auth, ownerOnly, subscribed, as
   if(!job||job.userId!==req.user.sub||job.tenantId!==tenantId) return res.status(404).json({error:'Hakua ei löytynyt.'});
   res.json({status:job.status,scanned:job.scanned,total:job.total,percent:job.percent,error:job.error,result:job.status==='done'?job.result:null});
   if(job.status!=='running' && Date.now()-job.updatedAt>10*60*1000) websiteImportJobs.delete(job.id);
+});
+
+// Only the owner of the active tenant can run these read-only checks.
+// One finished import job is validated at most once and the result is cached.
+app.post('/api/app/import-website/validate/:jobId', auth, ownerOnly, subscribed, async (req,res)=>{
+  if(!await requirePlanCapability(req,res,'websiteImport')) return;
+  const tenantResult=await q('SELECT id,name FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  const tenant=tenantResult.rows[0];
+  const job=websiteImportJobs.get(req.params.jobId);
+  if(!tenant || !job || job.userId!==req.user.sub || job.tenantId!==tenant.id || job.status!=='done' || !job.result) {
+    return res.status(404).json({error:'Valmista verkkosivuhakua ei löytynyt.'});
+  }
+  if(job.validation) return res.json({ok:true,validation:job.validation});
+  if(job.validationPromise) {
+    try { return res.json({ok:true,validation:await job.validationPromise}); }
+    catch { return res.status(500).json({error:'Bottitesti epäonnistui.'}); }
+  }
+  const rows=(job.result.candidates||[]).slice(0,10000).map((r,i)=>({
+    ...r,id:'import-test-'+i,approved:true,source_type:'website',
+    source_url:r.sourceUrl||r.source_url||job.website,
+  }));
+  job.validationPromise=runImportedAnswerSmokeTests({
+    readiness:job.result.readiness,rows,
+    answerQuestion:(message,lang)=>generateGroundedAnswer({companyName:tenant.name,rows,message,lang,history:[]}),
+  });
+  try {
+    const validation=await job.validationPromise;
+    job.validation=validation;
+    job.updatedAt=Date.now();
+    return res.json({ok:true,validation});
+  } catch(e) {
+    console.warn('Website import validation failed',e?.message||e);
+    return res.status(500).json({error:'Bottitesti epäonnistui.'});
+  } finally {job.validationPromise=null;}
 });
 
 app.post('/api/app/import-website', auth, ownerOnly, subscribed, async (req, res) => {
