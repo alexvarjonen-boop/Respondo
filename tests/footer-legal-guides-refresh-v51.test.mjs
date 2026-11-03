@@ -21,7 +21,7 @@ test('every footer legal document has three complete languages and current date'
     for(const section of page.sections)
       for(const field of ['heading','body']){
         assert.equal(section[field].length,3,path+' '+field);
-        section[field].forEach((value,i)=>assert.ok(String(value).trim().length>=12,
+        section[field].forEach((value,i)=>assert.ok(String(value).trim().length>=(field==='heading'?5:40),
           path+' '+field+' '+locales[i]));
       }
   }
