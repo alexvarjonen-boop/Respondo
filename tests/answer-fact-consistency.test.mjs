@@ -78,3 +78,15 @@ test('checks multilingual shipping durations and ignores phone numbers and plain
     topic:'pricing',answer:'Puhelin 040 123 4567, kysy hintaa.',sourceRows:[row('c','Yhteystiedot','040 123 4567')],
   }).status,'not_checked');
 });
+
+test('checks both endpoints of euro price and delivery duration ranges',()=>{
+  assert.equal(checkCitedNumericalClaims({
+    topic:'pricing',answer:'49–79 €',sourceRows:[row('p','Hinnat','49–69 €')],
+  }).status,'review');
+  assert.equal(checkCitedNumericalClaims({
+    topic:'pricing',answer:'49–79 €',sourceRows:[row('p','Hinnat','49–79 €')],
+  }).status,'no_numeric_conflict_found');
+  assert.equal(checkCitedNumericalClaims({
+    topic:'delivery',answer:'3–4 päivää',sourceRows:[row('d','Toimitus','2–4 päivää')],
+  }).status,'review');
+});
