@@ -59,7 +59,7 @@ test('creating and updating records always includes tenant ID and only allowed s
   await updateNativeTicket(db,TENANT,LEAD,{status:'in_progress'});
   await updateNativeContact(db,TENANT,LEAD,{stage:'contacted'});
   assert.ok(calls.every(x=>x.params[0]===TENANT));
-  assert.throws(()=>updateNativeContact(db,TENANT,'not uuid',{stage:'won'}),TypeError);
+  await assert.rejects(updateNativeContact(db,TENANT,'not uuid',{stage:'won'}),TypeError);
   await assert.rejects(updateNativeTicket(db,TENANT,LEAD,{status:'arbitrary'}),TypeError);
 });
 
