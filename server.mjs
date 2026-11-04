@@ -50,6 +50,7 @@ import { reconstructedConversationHistory, validInboundEventId, claimInboundEven
 import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk, exportFreshdeskTicket } from './freshdesk-helpdesk.mjs';
 import { zendeskConfig, beginZendeskOAuth, completeZendeskOAuth, zendeskStatus, disconnectZendesk, exportZendeskTicket } from './zendesk-oauth.mjs';
 import { qualityRepairOverview, approveQualityRepair, qualityAliasesForTenant } from './quality-source-repair.mjs';
+import { nativeInboxOverview, nativeInboxThread, saveNativeInboxDraft, addNativeInboxNote, closeNativeInboxThread, nativeInboxDraftFromSources, sendNativeWebsiteReply } from './native-inbox.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
 import { compareBotValidationRuns } from './bot-retest-comparison.mjs';
 import express from 'express';
@@ -9677,6 +9678,24 @@ function nativeEndpoint(handler,{quote=false}={}){
 }
 app.get('/api/app/native',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>nativeOverview(pool,id)));
+/* First-party Respondo inbox: no mail server or third-party messaging API.
+   External channels are visible for context; messages can only be delivered
+   to the website widget's own message store. */
+app.get('/api/app/native/inbox',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>nativeInboxOverview(pool,id)));
+app.get('/api/app/native/inbox/:id',auth,ownerOnly,subscribed,nativeEndpoint(
+  (id,req)=>nativeInboxThread(pool,id,req.params.id)));
+app.get('/api/app/native/inbox/:id/suggestion',auth,ownerOnly,subscribed,nativeEndpoint(
+  (id,req)=>nativeInboxDraftFromSources(pool,id,req.params.id)));
+app.put('/api/app/native/inbox/:id/draft',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>saveNativeInboxDraft(pool,id,req.params.id,req.user.sub,req.body||{})));
+app.post('/api/app/native/inbox/:id/notes',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>addNativeInboxNote(pool,id,req.params.id,req.user.sub,req.body||{})));
+app.patch('/api/app/native/inbox/:id/status',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>closeNativeInboxThread(pool,id,req.params.id,req.body?.status)));
+app.post('/api/app/native/inbox/:id/reply',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>sendNativeWebsiteReply(pool,id,req.params.id,req.user.sub,req.body||{})));
+
 app.get('/api/app/native/quality',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>qualityCenterOverview(pool,id,req.query?.days)));
 app.post('/api/app/native/quality/reviews',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
