@@ -15084,8 +15084,14 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         [uid(),t.id,message,answer,visitorRef,
           String(body.pageContext?.url||'').slice(0,1000)||null,
           String(body.pageContext?.title||'').slice(0,300)||null,visitorRef]);
+      const suggestedActions=serviceReply.status==='proposed'? [{
+        type:'booking',mode:'booking_form',
+        label:detectedLang==='en'?'Choose a suitable appointment':
+          detectedLang==='sv'?'Välj en lämplig tid':'Valitse sopiva aika'
+      }] : [];
       return res.json({answer,handoff:false,confidence:1,intent:'Service duration estimate',
-        verified:false,actions:[],products:[],canLeaveContact:serviceReply.status!=='needs_details',
+        verified:false,actions:suggestedActions,products:[],
+        canLeaveContact:serviceReply.status!=='needs_details',
         serviceCapacityStatus:serviceReply.status});
     }
     const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC, created_at DESC', [t.id]);
@@ -15354,7 +15360,7 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
          FROM booking_slots
         WHERE tenant_id=$1 AND status='open' AND starts_at >= NOW()
         ORDER BY starts_at ASC
-        LIMIT 40`,
+        LIMIT 200`,
       [tenant.id],
     );
 
@@ -15390,7 +15396,7 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
       }
     }
 
-    return res.json({ slots });
+    return res.json({ slots:slots.slice(0,40) });
   } catch {
     return res.status(500).json({ error:'Vapaita aikoja ei saatu.' });
   }
