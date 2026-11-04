@@ -7,6 +7,7 @@ import { ensureQualityCenterSchema } from './respondo-quality-center.mjs';
 import { ensureChannelIngressSchema } from './channel-ingress.mjs';
 import { ensureFreshdeskSchema } from './freshdesk-helpdesk.mjs';
 import { ensureZendeskSchema } from './zendesk-oauth.mjs';
+import { ensureQualityRepairSchema } from './quality-source-repair.mjs';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const ssl = isProduction ? { rejectUnauthorized: false } : undefined;
@@ -115,6 +116,7 @@ async function initializeCrmConnectors() {
     await ensureChannelIngressSchema(pool);
     await ensureFreshdeskSchema(pool);
     await ensureZendeskSchema(pool);
+    await ensureQualityRepairSchema(pool);
   } finally {await pool.end();}
 }
 await initializeCrmConnectors();

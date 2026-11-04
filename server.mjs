@@ -49,6 +49,7 @@ import { qualityCenterOverview, createQualityReview, updateQualityReview } from 
 import { reconstructedConversationHistory, validInboundEventId, claimInboundEvent, completeInboundEvent, failInboundEvent } from './channel-ingress.mjs';
 import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk, exportFreshdeskTicket } from './freshdesk-helpdesk.mjs';
 import { zendeskConfig, beginZendeskOAuth, completeZendeskOAuth, zendeskStatus, disconnectZendesk, exportZendeskTicket } from './zendesk-oauth.mjs';
+import { qualityRepairOverview, approveQualityRepair, qualityAliasesForTenant } from './quality-source-repair.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
 import { compareBotValidationRuns } from './bot-retest-comparison.mjs';
 import express from 'express';
@@ -9682,6 +9683,10 @@ app.post('/api/app/native/quality/reviews',auth,ownerOnly,subscribed,nativeWrite
   (id,req)=>createQualityReview(pool,id,req.body||{})));
 app.patch('/api/app/native/quality/reviews/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>updateQualityReview(pool,id,req.params.id,req.body||{})));
+app.get('/api/app/native/quality/repair',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>qualityRepairOverview(pool,id)));
+app.post('/api/app/native/quality/repair',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>approveQualityRepair(pool,id,req.user.sub,req.body||{})));
 app.post('/api/app/native/contacts',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>createNativeContact(pool,id,req.body||{})));
 app.patch('/api/app/native/contacts/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -13753,6 +13758,11 @@ async function processExternalChannelMessage(tenant, channel, contactId, message
     'SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC,created_at DESC',
     [tenant.id],
   );
+  try{
+    kr.rows=await qualityAliasesForTenant(pool,tenant.id,kr.rows);
+  }catch(error){
+    console.error('Tenant quality aliases unavailable',error?.name||'error');
+  }
   const hr = await q(
     `SELECT role,message
        FROM chat_messages
@@ -15135,6 +15145,11 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         serviceCapacityStatus:serviceReply.status});
     }
     const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC, created_at DESC', [t.id]);
+    try{
+      kr.rows=await qualityAliasesForTenant(pool,t.id,kr.rows);
+    }catch(error){
+      console.error('Widget quality aliases unavailable',error?.name||'error');
+    }
     let history = [];
     if (visitorRef) {
       const hr = await q(
