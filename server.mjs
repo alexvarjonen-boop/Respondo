@@ -9,6 +9,7 @@ import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManag
 import { brandedEmailHtml } from './email-branding.mjs';
 import { ensureOnboardingCheckupSchema, enqueueOnboardingCheckup, runDueOnboardingCheckups } from './onboarding-checkup.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
+import { readServiceRule,saveServiceRule,serviceDialogue,estimateWindowDuration,fitServiceSlots } from './service-capacity.mjs';
 import { nativeOverview,createNativeContact,updateNativeContact,createNativeTicket,updateNativeTicket,
   createNativeQuote,updateNativeQuote,setNativeRule,saveNativeDocument,removeNativeDocument,
   runNativeAutomation } from './native-ai-operations.mjs';
@@ -15062,6 +15063,25 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       }
     }
 
+    // Safe, deterministic service dialogue runs before generic AI answers.
+    // If company duration standards are missing, the existing Q&A flow remains.
+    const serviceReply=await serviceDialogue(pool,t.id,visitorRef,message,detectedLang,
+      minutes=>configuredServiceSlots(t,minutes));
+    if(serviceReply){
+      const answer=serviceReply.answer;
+      if(thread)await appendChatMessage({tenantId:t.id,threadId:thread.id,sourceChannel:'website',
+        externalContactId:visitorRef,visitorRef,role:'assistant',text:answer,
+        metadata:{serviceCapacity:true,status:serviceReply.status}});
+      await q(`INSERT INTO conversations
+        (id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,page_url,page_title,source_channel,external_contact_id)
+        VALUES($1,$2,$3,$4,'Service duration estimate',1,'{}',false,$5,$6,$7,'website',$8)`,
+        [uid(),t.id,message,answer,visitorRef,
+          String(body.pageContext?.url||'').slice(0,1000)||null,
+          String(body.pageContext?.title||'').slice(0,300)||null,visitorRef]);
+      return res.json({answer,handoff:false,confidence:1,intent:'Service duration estimate',
+        verified:false,actions:[],products:[],canLeaveContact:serviceReply.status!=='needs_details',
+        serviceCapacityStatus:serviceReply.status});
+    }
     const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC, created_at DESC', [t.id]);
     let history = [];
     if (visitorRef) {
@@ -15269,6 +15289,48 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
 
 
 
+
+/* Owner-managed service duration settings. No auto-enabled guessed time values. */
+app.get('/api/app/service-capacity',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const workspace=await requirePlanCapability(req,res,'allCurrentFeatures');
+    if(!workspace?.tenant)return;
+    const config=await readServiceRule(pool,workspace.tenant.id);
+    return res.json({config,connectedCalendar:Boolean(workspace.tenant.google_calendar_refresh_token ||
+      workspace.tenant.google_calendar_access_token)});
+  }catch(error){
+    console.error('Service capacity read error',error?.name||'error');
+    return res.status(503).json({error:'Service settings unavailable.'});
+  }
+});
+app.put('/api/app/service-capacity',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const workspace=await requirePlanCapability(req,res,'allCurrentFeatures');
+    if(!workspace?.tenant)return;
+    const config=await saveServiceRule(pool,workspace.tenant.id,req.body||{});
+    return res.json({config});
+  }catch(error){
+    if(error instanceof TypeError)return res.status(400).json({error:error.message});
+    console.error('Service capacity save error',error?.name||'error');
+    return res.status(503).json({error:'Unable to save duration settings.'});
+  }
+});
+async function configuredServiceSlots(tenant,requiredMinutes){
+  const result=await q(`SELECT id,starts_at,ends_at FROM booking_slots
+    WHERE tenant_id=$1 AND status='open' AND starts_at>NOW()
+    ORDER BY starts_at ASC LIMIT 200`,[tenant.id]);
+  const slots=result.rows;
+  if(!slots.length)return [];
+  let busy=[];
+  if(planEntitlements(tenant.subscription_plan).googleCalendar &&
+    (tenant.google_calendar_refresh_token||tenant.google_calendar_access_token)){
+    // Failure to read external calendar is NOT interpreted as availability.
+    busy=await googleCalendarEvents(tenant,slots[0].starts_at,slots[slots.length-1].ends_at);
+  }
+  return fitServiceSlots(slots,requiredMinutes,busy);
+}
 
 app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) => {
   try {
