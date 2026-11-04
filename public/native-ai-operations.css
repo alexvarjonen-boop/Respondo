@@ -55,3 +55,16 @@
 #app #native-operations .native-quality-repair-form .native-checkbox input{height:19px;width:19px;accent-color:#7cb3e5}
 #app #native-operations .native-quality-repair-form>.native-button{grid-column:1/-1;justify-self:start}
 @media(max-width:650px){#app #native-operations .native-quality-repair-form{grid-template-columns:1fr}}
+
+/* First-party Respondo inbox. No external sending is exposed from this panel. */
+#app #native-operations .native-inbox-messages{display:grid;gap:9px;max-height:550px;overflow:auto;padding:6px 2px}
+#app #native-operations .native-inbox-message{display:grid;gap:7px;background:#242c3a;border:1px solid #485667;border-radius:12px;padding:12px 14px;min-width:0}
+#app #native-operations .native-inbox-message .native-record-title{flex:auto;color:#f5f8ff!important;-webkit-text-fill-color:#f5f8ff!important}
+#app #native-operations .native-inbox-text{margin:0;color:#e0e8f1!important;-webkit-text-fill-color:#e0e8f1!important;font-size:13px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+#app #native-operations .native-inbox-reply,#app #native-operations .native-inbox-note{display:grid;gap:10px;background:#242c39;border:1px solid #536072;border-radius:12px;padding:14px;min-width:0}
+#app #native-operations .native-inbox-reply .native-label,#app #native-operations .native-inbox-note .native-label{display:grid;gap:7px;color:#f3f6fa!important;-webkit-text-fill-color:#f3f6fa!important;font-size:13px}
+#app #native-operations .native-inbox-actions{display:flex;flex-wrap:wrap;gap:9px}
+#app #native-operations .native-inbox-evidence{display:grid;gap:9px;background:#1d2a35;border:1px solid #657e96;border-radius:12px;padding:14px;min-width:0}
+#app #native-operations .native-inbox-evidence button{justify-self:start}
+#app #native-operations .native-inbox-note>.native-button{justify-self:start}
+#app #native-operations .native-inbox-reply .native-review-note,#app #native-operations .native-inbox-note .native-review-note{width:100%;box-sizing:border-box;background:#f8fafc!important;color:#142536!important;-webkit-text-fill-color:#142536!important}
