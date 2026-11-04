@@ -333,7 +333,7 @@
     const browser = String(navigator.language || '').toLowerCase().split('-')[0];
     if (browser === 'fi' || browser === 'sv') return browser;
     // A Finnish company site defaults to Finnish speech, even if its UI is EN.
-    if (/(?:^|\\.)fi$/i.test(window.location.hostname)) return 'fi';
+    if (window.location.hostname.toLowerCase().endsWith('.fi')) return 'fi';
     return ['fi','sv','en'].includes(browser) ? browser : widgetLang;
   }
   voiceLanguageSelect.value = initialSpeechLanguage();
