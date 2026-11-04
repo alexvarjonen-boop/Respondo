@@ -79,7 +79,7 @@ export async function ensureServiceCapacitySchema(db){
   await db.query(`CREATE TABLE IF NOT EXISTS public.respondo_service_dialogues(
     tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
     visitor_ref TEXT NOT NULL,service_key TEXT NOT NULL,facts JSONB NOT NULL DEFAULT '{}'::jsonb,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    preferred_text TEXT NOT NULL DEFAULT '',updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY(tenant_id,visitor_ref))`);
   for(const table of ['respondo_service_capacity','respondo_service_dialogues']){
     await db.query('ALTER TABLE public.'+table+' ENABLE ROW LEVEL SECURITY');
@@ -99,40 +99,117 @@ export async function saveServiceRule(db,tenantId,value){
     RETURNING config,enabled`,[tenantId,rule.serviceKey,JSON.stringify(rule),rule.enabled]);
   return {...r.rows[0].config,enabled:r.rows[0].enabled};
 }
+
+const appointmentIntent=s=>/(?:\baikaa\b|\bajanvar|\bvapaa.{0,8}aik|\bklo\s*\d|\bkello\s*\d|\bappointment|\bbook|\bfree.{0,10}time|\bledig|\btid\b)/i.test(lower(s));
+function requestedClock(value){
+  const s=lower(value);
+  const weekdays=[/(?:sunnunt|söndag|sunday)/,/(?:maanant|måndag|monday)/,
+    /(?:tiist|tisdag|tuesday)/,/(?:keskiviik|onsdag|wednesday)/,
+    /(?:torst|torsdag|thursday)/,/(?:perjant|fredag|friday)/,
+    /(?:lauant|lördag|saturday)/];
+  const weekday=weekdays.findIndex(x=>x.test(s));
+  const all=[...s.matchAll(/(?:\bklo\.?|\bkello|\bkl\.?|\bat)\s*(\d{1,2})(?::(\d{2}))?/g)];
+  const last=all.at(-1);
+  const hour=last?Number(last[1]):null;
+  const minute=last?Number(last[2]||0):0;
+  const ampm=/\b(?:pm|afternoon|eftermiddag)|iltapäiv|illalla/i.test(s);
+  const morning=/\b(?:am|morning|förmiddag)|aamulla|aamupäiv/i.test(s);
+  const rawHour=ampm&&hour!==null&&hour>=1&&hour<=11?hour+12:hour;
+  return {weekday,hour:rawHour,minute,ambiguous:hour!==null&&hour>=1&&hour<=11&&!ampm&&!morning};
+}
+function slotLocalClock(date){
+  const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Helsinki',
+    weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(date));
+  const fields=Object.fromEntries(parts.map(x=>[x.type,x.value]));
+  return {weekday:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(fields.weekday),
+    hour:Number(fields.hour),minute:Number(fields.minute)};
+}
+function serviceFollowup(lang,key){
+  const values={
+    fi:{service:'Tarkoitatko ikkunanpesua? Kerro palvelu, niin tarkistan työajan.',clock:'Tarkennatko, tarkoititko klo 3 aamulla vai klo 15 iltapäivällä?',unavailable:'Toivomaasi aikaa ei löytynyt koko työmäärälle. '},
+    sv:{service:'Gäller det fönstertvätt? Ange tjänsten så kontrollerar jag arbetstiden.',clock:'Menade du kl. 03 på morgonen eller kl. 15 på eftermiddagen?',unavailable:'Den önskade tiden är inte bekräftad för hela arbetet. '},
+    en:{service:'Is this for window cleaning? Please confirm the service before I check duration.',clock:'Did you mean 3 AM or 3 PM (15:00)?',unavailable:'The requested time was not verified for the full job. '}
+  };
+  return (values[lang]||values.fi)[key];
+}
 export async function serviceDialogue(db,tenantId,visitorRef,message,lang,availableSlots){
   const visitor=tr(visitorRef,160);
   if(!visitor)return null;
   const rule=await readServiceRule(db,tenantId);
   if(!rule?.enabled)return null;
-  const old=await db.query(`SELECT facts FROM respondo_service_dialogues
+  const previous=await db.query(`SELECT facts,preferred_text FROM respondo_service_dialogues
     WHERE tenant_id=$1 AND visitor_ref=$2 AND updated_at>NOW()-INTERVAL '45 minutes'`,[tenantId,visitor]);
-  if(!old.rowCount&&!hasIntent(message))return null;
-  // Do not trap the conversation after the service question has been answered.
-  if (/^(?:kiitos|kiitti|thank you|thanks|tack|hei|moi|bye|heippa)[! .]*$/i.test(lower(message)))
-    return null;
-  const previousFacts=old.rows[0]?.facts||{};
-  if(!hasIntent(message)&&!missingWindowFact(previousFacts)&&
-    !/(?:aika|ajanvar|perjant|lauant|maanant|tiist|keskiviik|torst|sunnunt|klo|huomenna|tomorrow|booking|time|tid|fredag|friday|slot)/i.test(message))
-    return null;
-  const facts=parseWindowFacts(message,previousFacts);
+  const old=previous.rows[0]||{};
+  const isService=hasIntent(message),isAppointment=appointmentIntent(message);
+  if(!previous.rowCount&&!isService&&!isAppointment)return null;
   const words=serviceText(lang);
-  await db.query(`INSERT INTO respondo_service_dialogues(tenant_id,visitor_ref,service_key,facts)
-    VALUES($1,$2,'window_cleaning',$3::jsonb)
-    ON CONFLICT(tenant_id,visitor_ref) DO UPDATE SET facts=EXCLUDED.facts,updated_at=NOW()`,
-    [tenantId,visitor,JSON.stringify(facts)]);
+  if(/^(?:kiitos|kiitti|thank you|thanks|tack|hei|moi|bye|heippa)[! .]*$/i.test(lower(message)))
+    return null;
+  let facts=old.facts||{};
+  let preferredText=tr(old.preferred_text||'',300);
+  if(!previous.rowCount&&!isService){
+    // A generic calendar question does not establish which service is needed.
+    // Ask, rather than assuming that every enquiry is for window cleaning.
+    await db.query(`INSERT INTO respondo_service_dialogues
+      (tenant_id,visitor_ref,service_key,facts,preferred_text)
+      VALUES($1,$2,'window_cleaning',$3::jsonb,$4)`,
+      [tenantId,visitor,JSON.stringify({_servicePending:true}),tr(message,300)]);
+    return {answer:serviceFollowup(lang,'service'),status:'needs_service'};
+  }
+  if(facts._servicePending){
+    if(/^(?:ei|no|nej|not really)/i.test(lower(message))){
+      await db.query('DELETE FROM respondo_service_dialogues WHERE tenant_id=$1 AND visitor_ref=$2',[tenantId,visitor]);
+      return null;
+    }
+    if(!isService&&!/^(?:joo|kyllä|yes|ja|jo|on)\b/i.test(lower(message)))
+      return {answer:serviceFollowup(lang,'service'),status:'needs_service'};
+    facts={};
+  }
+  if(!isService&&!missingWindowFact(facts)&&!isAppointment&&
+    !/(?:perjant|friday|fredag|maanant|monday|måndag|tiist|tuesday|torsdag|torst|lauant|saturday|söndag|sunnunt|huomenna|tomorrow)/i.test(message)&&
+    !/^(?:\s*\d{1,2}\s*|\s*(?:klo|kello|at|kl)\s*\d{1,2})$/i.test(message))
+    return null;
+  facts=parseWindowFacts(message,facts);
+  if(isAppointment&&!preferredText)preferredText=tr(message,250);
+  const preferred=requestedClock(preferredText);
+  if(preferred.ambiguous&&/^(?:\s*\d{1,2}\s*|\s*(?:klo|kello|at|kl)\s*\d{1,2})$/i.test(message)){
+    const num=Number((message.match(/\d{1,2}/)||[])[0]||0);
+    if(num>=0&&num<=23)preferredText=tr(preferredText+' klo '+num,300);
+  }
+  await db.query(`INSERT INTO respondo_service_dialogues
+    (tenant_id,visitor_ref,service_key,facts,preferred_text)
+    VALUES($1,$2,'window_cleaning',$3::jsonb,$4)
+    ON CONFLICT(tenant_id,visitor_ref) DO UPDATE SET
+      facts=EXCLUDED.facts,preferred_text=EXCLUDED.preferred_text,updated_at=NOW()`,
+    [tenantId,visitor,JSON.stringify(facts),preferredText]);
   const missing=missingWindowFact(facts);
   if(missing)return {answer:words[missing],status:'needs_details',facts};
   const estimate=estimateWindowDuration(rule,facts);
   if(estimate.status!=='estimated')return {answer:words.unknown,status:'manual_review',facts};
-  const duration=Math.floor(estimate.minutes/60)+' h '+(estimate.minutes%60?estimate.minutes%60+' min':'');
+  const duration=Math.floor(estimate.minutes/60)+' h '+
+    (estimate.minutes%60?estimate.minutes%60+' min':'');
+  const requested=requestedClock(preferredText);
+  if(requested.ambiguous)return {answer:words.duration+duration+'. '+
+    serviceFollowup(lang,'clock'),status:'needs_time',facts,estimate};
   try{
-    const slots=await availableSlots(estimate.minutes);
-    const dates=slots.slice(0,3).map(slot=>new Date(slot.starts_at).toLocaleString(
+    const available=await availableSlots(estimate.minutes);
+    const matches=requested.weekday>=0&&requested.hour!==null
+      ?available.filter(x=>{
+          const clock=slotLocalClock(x.starts_at);
+          return clock.weekday===requested.weekday&&clock.hour===requested.hour&&clock.minute===requested.minute;
+        })
+      :[];
+    const sorted=[...matches,...available.filter(x=>!matches.includes(x))];
+    const dates=sorted.slice(0,3).map(x=>new Date(x.starts_at).toLocaleString(
       lang==='sv'?'sv-SE':lang==='en'?'en-GB':'fi-FI',
       {timeZone:'Europe/Helsinki',weekday:'long',day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}));
-    return {answer:words.duration+duration+'. '+(dates.length?words.options+dates.join(', ')+'. '+words.unknown:words.none),
+    const missed=requested.weekday>=0&&requested.hour!==null&&!matches.length
+      ?serviceFollowup(lang,'unavailable'):'';
+    return {answer:words.duration+duration+'. '+missed+
+      (dates.length?words.options+dates.join(', ')+'. '+words.unknown:words.none),
       status:dates.length?'proposed':'no_slots',facts,estimate};
   }catch{
-    return {answer:words.duration+duration+'. '+words.unavailable,status:'calendar_unverified',facts,estimate};
+    return {answer:words.duration+duration+'. '+words.unavailable,
+      status:'calendar_unverified',facts,estimate};
   }
 }
