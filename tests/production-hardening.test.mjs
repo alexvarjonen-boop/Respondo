@@ -184,7 +184,7 @@ test('booking serializes the slot before the final Google Calendar conflict chec
   const begin=block.indexOf("await client.query('BEGIN')");
   const lock=block.indexOf('FOR UPDATE');
   const calendarCheck=block.indexOf('googleCalendarHasConflict(');
-  const markBooked=block.indexOf("status='booked'");
+  const markBooked=block.indexOf("UPDATE booking_slots SET status='booked'");
   const commit=block.indexOf("await client.query('COMMIT')");
   assert.ok(begin>=0,'booking transaction missing');
   assert.ok(lock>begin,'booking row lock must happen inside the transaction');
