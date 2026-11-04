@@ -1,0 +1,14 @@
+#app #respondoServiceCapacityMount .respondo-service-config{padding:18px;margin:18px 0;border:1px solid #586478;border-radius:16px;background:#242d3b;color:#edf3ff;display:grid;gap:14px}
+#app #respondoServiceCapacityMount .respondo-service-config h3{font-size:17px;font-weight:800;line-height:1.4;margin:0;color:#f6f9ff!important;-webkit-text-fill-color:#f6f9ff!important}
+#app #respondoServiceCapacityMount .service-desc,#app #respondoServiceCapacityMount .service-note{margin:0;font-size:13px;line-height:1.6;color:#d0dceb!important;-webkit-text-fill-color:#d0dceb!important}
+#app #respondoServiceCapacityMount .service-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#app #respondoServiceCapacityMount .service-field{display:grid;gap:7px;font-size:12px;font-weight:700;color:#f1f6ff!important;-webkit-text-fill-color:#f1f6ff!important}
+#app #respondoServiceCapacityMount .service-field span{color:#e4edfb!important;-webkit-text-fill-color:#e4edfb!important}
+#app #respondoServiceCapacityMount .service-field input{min-width:0;width:100%;height:45px;box-sizing:border-box;border:1px solid #abb9cc!important;border-radius:10px;padding:10px 12px;background:#f7f8fa!important;color:#172638!important;-webkit-text-fill-color:#172638!important;opacity:1!important;color-scheme:light}
+#app #respondoServiceCapacityMount .service-toggle{grid-column:1/-1;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:#eff6ff!important;-webkit-text-fill-color:#eff6ff!important}
+#app #respondoServiceCapacityMount .service-toggle input{width:18px;height:18px;accent-color:#70a3e6}
+#app #respondoServiceCapacityMount .service-save{grid-column:1/-1;padding:12px 15px;min-height:44px;background:#f3f6fb!important;color:#172638!important;-webkit-text-fill-color:#172638!important;border:1px solid #dde8f8!important;border-radius:11px;cursor:pointer;font-weight:800}
+#app #respondoServiceCapacityMount .service-save:disabled{opacity:.55;cursor:default}
+#app #respondoServiceCapacityMount .service-status{font-size:12px;line-height:1.5;color:#cfe2ff!important;-webkit-text-fill-color:#cfe2ff!important;margin:0}
+#app #respondoServiceCapacityMount :is(button,input):focus-visible{outline:3px solid #80b0fd!important;outline-offset:2px}
+@media(max-width:640px){#app #respondoServiceCapacityMount .service-form{grid-template-columns:minmax(0,1fr)}}
