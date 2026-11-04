@@ -2,6 +2,7 @@ import pg from 'pg';
 import { ensureCrmSchema } from './lead-crm-queue.mjs';
 import { ensureCrmCredentialsSchema } from './crm-connectors.mjs';
 import { ensureNativeOperationsSchema } from './native-ai-operations.mjs';
+import { ensureServiceCapacitySchema } from './service-capacity.mjs';
 import { ensureQualityCenterSchema } from './respondo-quality-center.mjs';
 import { ensureChannelIngressSchema } from './channel-ingress.mjs';
 import { ensureFreshdeskSchema } from './freshdesk-helpdesk.mjs';
@@ -108,6 +109,7 @@ async function initializeCrmConnectors() {
     await ensureCrmSchema(pool);
     await ensureCrmCredentialsSchema(pool);
     await ensureNativeOperationsSchema(pool);
+    await ensureServiceCapacitySchema(pool);
     await ensureQualityCenterSchema(pool);
     await ensureChannelIngressSchema(pool);
     await ensureFreshdeskSchema(pool);
