@@ -69,3 +69,15 @@ test('a missing source is not silently replaced with another tenant fact', () =>
   const response=reply('49 €',['not-in-current-tenant']);
   assert.strictEqual(guardCitedNumericFacts(response,[fact('owned','49 €')]),response);
 });
+
+test('compactly concatenated source opening times still support correct weekday answers', () => {
+  const rows=[fact('owned','Ma-Pe : 09:00–19:00La : 09:00 -17:00','Aukioloajat')];
+  assert.equal(guardCitedNumericFacts(reply('Maanantai: 09:00 - 19:00.'),rows).handoff,false);
+  assert.equal(guardCitedNumericFacts(reply('Maanantai: 10:00 - 19:00.'),rows).handoff,true);
+});
+
+test('warranty months remain grounded through Finnish to Swedish translation', () => {
+  const rows=[fact('owned','Puttereilla on 3 kuukauden takuu.','Takuu')];
+  assert.equal(guardCitedNumericFacts(reply('Ja. Puttrarna har 3 månaders garanti.'),rows).handoff,false);
+  assert.equal(guardCitedNumericFacts(reply('Ja. Puttrarna har 6 månaders garanti.'),rows).handoff,true);
+});
