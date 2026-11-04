@@ -10030,6 +10030,7 @@ app.delete('/api/owner/companies/:tenantId', auth, ownerTrafficOnly, loginLimite
       " updated_at=NOW() WHERE id=$1",
       [tenant.owner_user_id,id,next.rows[0]?.id||null,next.rows[0]?.name||'Yritys',next.rows[0]?.business_id||null,subscriptionId||'__no_subscription__']
     );
+    await purgeDeletedAccountArtifacts(client,{tenantId:id});
     await client.query('DELETE FROM tenants WHERE id=$1',[id]);
     await client.query('COMMIT');
     return res.json({ok:true,deletedTenantId:id,canceledSubscriptions});
@@ -11352,7 +11353,10 @@ async function purgeDeletedAccountArtifacts(client,{tenantId=null,userId=null}={
   const exists=await client.query(
     "SELECT to_regclass('public.setup_service_requests') IS NOT NULL AS has_setup, "+
     "to_regclass('public.signup_welcome_emails') IS NOT NULL AS has_welcome, "+
-    "to_regclass('public.setup_intake_images') IS NOT NULL AS has_images",
+    "to_regclass('public.setup_intake_images') IS NOT NULL AS has_images, "+
+    "to_regclass('public.respondo_crm_credentials') IS NOT NULL AS has_crm_credentials, "+
+    "to_regclass('public.respondo_crm_settings') IS NOT NULL AS has_crm_settings, "+
+    "to_regclass('public.respondo_crm_outbox') IS NOT NULL AS has_crm_outbox",
   );
   if(exists.rows[0]?.has_setup) {
     if(exists.rows[0]?.has_images){
@@ -11364,6 +11368,16 @@ async function purgeDeletedAccountArtifacts(client,{tenantId=null,userId=null}={
   }
   if(userId && exists.rows[0]?.has_welcome)
     await client.query('DELETE FROM signup_welcome_emails WHERE user_id=$1',[userId]);
+  if(tenantId) {
+    // Credentials and queued leads have text tenant keys (no FK cascade).
+    // Delete them before tenant removal to prevent orphaned customer secrets.
+    if(exists.rows[0]?.has_crm_outbox)
+      await client.query('DELETE FROM respondo_crm_outbox WHERE tenant_id=$1',[tenantId]);
+    if(exists.rows[0]?.has_crm_credentials)
+      await client.query('DELETE FROM respondo_crm_credentials WHERE tenant_id=$1',[tenantId]);
+    if(exists.rows[0]?.has_crm_settings)
+      await client.query('DELETE FROM respondo_crm_settings WHERE tenant_id=$1',[tenantId]);
+  }
 }
 
 app.delete('/api/app/workspaces/:tenantId', auth, ownerOnly, loginLimiter, async (req,res) => {
