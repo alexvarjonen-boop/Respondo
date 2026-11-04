@@ -1,0 +1,67 @@
+/* V54 — readable form controls in dark Respondo workspace integrations.
+   The legacy .field input rule supplies a very light background while the
+   workspace typography rule supplies white text. Set foreground and
+   background together for every text-like control in these four panels.
+   This deliberately excludes checkboxes, toggles, uploads and buttons.
+   No global or public-site form styling is changed. */
+
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-module-card #respondoWorkspaceCardBody
+  :is(#commerce-integration,#business-integrations,#booking-calendar,#stripe-connect)
+  :is(input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="reset"]),select,textarea){
+  background-color:#f7f8fa!important;
+  color:#172638!important;
+  -webkit-text-fill-color:#172638!important;
+  caret-color:#172638!important;
+  border-color:#b6c3d3!important;
+  color-scheme:light;
+}
+
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-module-card #respondoWorkspaceCardBody
+  :is(#commerce-integration,#business-integrations,#booking-calendar,#stripe-connect)
+  :is(input,textarea)::placeholder{
+  color:#536379!important;
+  -webkit-text-fill-color:#536379!important;
+  opacity:1!important;
+}
+
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-module-card #respondoWorkspaceCardBody
+  :is(#commerce-integration,#business-integrations,#booking-calendar,#stripe-connect)
+  select option{
+  background:#fff!important;
+  color:#172638!important;
+  color-scheme:light;
+}
+
+/* Disabled and read-only credentials remain visibly non-editable and legible. */
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-module-card #respondoWorkspaceCardBody
+  :is(#commerce-integration,#business-integrations,#booking-calendar,#stripe-connect)
+  :is(input,textarea,select):is(:disabled,[readonly]){
+  background-color:#e9edf4!important;
+  color:#34485e!important;
+  -webkit-text-fill-color:#34485e!important;
+  opacity:1!important;
+}
+
+/* Chrome may otherwise insert its default autofill light surface while
+   leaving the inherited dark-workspace text fill in place. */
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-module-card #respondoWorkspaceCardBody
+  :is(#commerce-integration,#business-integrations,#booking-calendar,#stripe-connect)
+  input:-webkit-autofill{
+  -webkit-box-shadow:0 0 0 1000px #f7f8fa inset!important;
+  box-shadow:0 0 0 1000px #f7f8fa inset!important;
+  -webkit-text-fill-color:#172638!important;
+}
+
+/* Do not recolor action buttons; retain a clear keyboard focus outline. */
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-module-card #respondoWorkspaceCardBody
+  :is(#commerce-integration,#business-integrations,#booking-calendar,#stripe-connect)
+  :is(input,select,textarea):focus-visible{
+  outline:3px solid #4a87cf!important;
+  outline-offset:2px!important;
+}
