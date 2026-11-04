@@ -47,7 +47,7 @@ export function estimateWindowDuration(rule,facts){
   const missing=missingWindowFact(facts||{});
   if(missing)return {status:'needs_details',missing};
   if(facts.quantity>config.maxWindows)return {status:'manual_review',reason:'too_many_windows'};
-  const size=facts.size==='large'?config.largeMultiplier:facts.size==='small'?0.75:1;
+  const size=facts.size==='large'?config.largeMultiplier:1; // no unapproved small-window discount
   const sides=facts.sides==='both'?config.doubleSidedMultiplier:1;
   const access=facts.access==='difficult'?config.difficultAccessMinutes:0;
   const minutes=Math.ceil(config.baseMinutes+facts.quantity*config.minutesPerWindow*size*sides+
@@ -107,7 +107,14 @@ export async function serviceDialogue(db,tenantId,visitorRef,message,lang,availa
   const old=await db.query(`SELECT facts FROM respondo_service_dialogues
     WHERE tenant_id=$1 AND visitor_ref=$2 AND updated_at>NOW()-INTERVAL '45 minutes'`,[tenantId,visitor]);
   if(!old.rowCount&&!hasIntent(message))return null;
-  const facts=parseWindowFacts(message,old.rows[0]?.facts||{});
+  // Do not trap the conversation after the service question has been answered.
+  if (/^(?:kiitos|kiitti|thank you|thanks|tack|hei|moi|bye|heippa)[! .]*$/i.test(lower(message)))
+    return null;
+  const previousFacts=old.rows[0]?.facts||{};
+  if(!hasIntent(message)&&!missingWindowFact(previousFacts)&&
+    !/(?:aika|ajanvar|perjant|lauant|maanant|tiist|keskiviik|torst|sunnunt|klo|huomenna|tomorrow|booking|time|tid|fredag|friday|slot)/i.test(message))
+    return null;
+  const facts=parseWindowFacts(message,previousFacts);
   const words=serviceText(lang);
   await db.query(`INSERT INTO respondo_service_dialogues(tenant_id,visitor_ref,service_key,facts)
     VALUES($1,$2,'window_cleaning',$3::jsonb)
