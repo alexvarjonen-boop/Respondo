@@ -51,6 +51,7 @@ import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk
 import { zendeskConfig, beginZendeskOAuth, completeZendeskOAuth, zendeskStatus, disconnectZendesk, exportZendeskTicket } from './zendesk-oauth.mjs';
 import { qualityRepairOverview, approveQualityRepair, qualityAliasesForTenant } from './quality-source-repair.mjs';
 import { nativeInboxOverview, nativeInboxThread, saveNativeInboxDraft, addNativeInboxNote, closeNativeInboxThread, nativeInboxDraftFromSources, sendNativeWebsiteReply } from './native-inbox.mjs';
+import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
 import { compareBotValidationRuns } from './bot-retest-comparison.mjs';
 import express from 'express';
@@ -9695,6 +9696,16 @@ app.patch('/api/app/native/inbox/:id/status',auth,ownerOnly,subscribed,nativeWri
   (id,req)=>closeNativeInboxThread(pool,id,req.params.id,req.body?.status)));
 app.post('/api/app/native/inbox/:id/reply',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>sendNativeWebsiteReply(pool,id,req.params.id,req.user.sub,req.body||{})));
+/* Respondo's own calendar, independent of third-party scheduling. */
+app.get('/api/app/native/calendar',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>nativeCalendarOverview(pool,id)));
+app.post('/api/app/native/calendar/requests/:id/decision',
+  auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+    (id,req)=>decideNativeBooking(pool,id,req.params.id,req.user.sub,req.body||{})));
+app.post('/api/app/native/calendar/events/:id/cancel',
+  auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+    (id,req)=>cancelNativeBooking(pool,id,req.params.id,req.user.sub)));
+
 
 app.get('/api/app/native/quality',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>qualityCenterOverview(pool,id,req.query?.days)));
@@ -15432,8 +15443,15 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
     const rows = await q(
       `SELECT id,starts_at,ends_at
          FROM booking_slots
-        WHERE tenant_id=$1 AND status='open' AND starts_at >= NOW()
-        ORDER BY starts_at ASC
+        WHERE booking_slots.tenant_id=$1 AND booking_slots.status='open'
+          AND booking_slots.starts_at >= NOW()
+          AND NOT EXISTS(
+            SELECT 1 FROM booking_slots occupied
+            WHERE occupied.tenant_id=booking_slots.tenant_id AND occupied.status='booked'
+              AND occupied.starts_at<booking_slots.ends_at
+              AND occupied.ends_at>booking_slots.starts_at
+          )
+        ORDER BY booking_slots.starts_at ASC
         LIMIT 200`,
       [tenant.id],
     );
@@ -15662,6 +15680,8 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
+        // Serialize booking commitments across different overlapping slot IDs.
+        await client.query('SELECT id FROM tenants WHERE id=$1 FOR UPDATE',[tenant.id]);
         const sr = await client.query(
           `SELECT id,starts_at,ends_at,status
              FROM booking_slots
@@ -15672,6 +15692,20 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         if (!sr.rowCount || sr.rows[0].status !== 'open' || new Date(sr.rows[0].starts_at).getTime() < Date.now()) {
           await client.query('ROLLBACK');
           return res.status(409).json({ error:'Tämä aika ei ole enää vapaa. Valitse toinen aika.' });
+        }
+
+        const overlapping = await client.query(
+          `SELECT id FROM booking_slots
+             WHERE tenant_id=$1 AND status='booked'
+               AND starts_at < $3::timestamptz AND ends_at > $2::timestamptz
+             LIMIT 1`,
+          [tenant.id,sr.rows[0].starts_at,sr.rows[0].ends_at],
+        );
+        if (overlapping.rowCount) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({
+            error:'Toinen varaus on jo päällekkäin tämän ajan kanssa. Valitse toinen aika.'
+          });
         }
 
         // A service conversation cannot bypass the approved duration rules.
