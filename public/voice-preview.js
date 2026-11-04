@@ -46,7 +46,7 @@
     '#app #previewForm .respondo-voice-preview-btn svg{height:19px;width:19px;display:block}',
     '#app #previewForm .respondo-voice-preview-btn.listening{background:#fee8e5!important;color:#ab2419!important;border-color:#edada6!important}',
     '#app #previewForm .respondo-voice-preview-btn:focus-visible{outline:3px solid #555!important;outline-offset:2px}',
-    '#app .respondo-voice-preview-note{padding:0 16px 8px;background:#fff;color:#566170;font:12px/1.4 inherit}',
+    '#app .respondo-voice-preview-note{padding:0 16px 8px;background:#fff;color:#566170;font-size:12px;line-height:1.4}',
     '#app .respondo-voice-preview-note[hidden]{display:none!important}'
   ].join('\n');
   document.head.appendChild(style);
