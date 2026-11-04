@@ -375,12 +375,12 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     answers:[['knowledge',translate('Tietopohja','Kunskapsbas','Knowledge base')],['unanswered',translate('Puuttuvat vastaukset','Saknade svar','Unanswered')]],
     customers:[['leads',translate('Liidit ja yhteydenotot','Leads och kontakter','Leads & contacts')],['conversations',translate('Keskustelut','Konversationer','Conversations')]],
     conversations:[['conversations',translate('Keskusteluhistoria','Samtalshistorik','Conversation history')],['live-inbox',translate('Live-keskustelut','Livekonversationer','Live conversations')]],
-    integrations:[['business-integrations',translate('API ja webhookit','API och webhooks','API & webhooks')],['commerce-integration',translate('Verkkokaupat','Webbutiker','Online stores')],['booking-calendar',translate('Kalenteri','Kalender','Calendar')],['stripe-connect',translate('Stripe','Stripe','Stripe')]],
+    integrations:[['crm-integration',translate('CRM-yhteydet','CRM-anslutningar','CRM connectors')],['business-integrations',translate('API ja webhookit','API och webhooks','API & webhooks')],['commerce-integration',translate('Verkkokaupat','Webbutiker','Online stores')],['booking-calendar',translate('Kalenteri','Kalender','Calendar')],['stripe-connect',translate('Stripe','Stripe','Stripe')]],
     profile:[['workspaces',translate('Yritykset','Företag','Companies')],['account-security',translate('Tilin asetukset','Kontoinställningar','Account security')]]
   };
   const primary={
     answers:'knowledge',customers:'leads',conversations:'conversations',team:'support-team',
-    automation:'actions2',install:'install',integrations:'business-integrations',
+    automation:'actions2',install:'install',integrations:'crm-integration',
     profile:'workspaces',billing:'billing'
   };
   let currentTab=null;
