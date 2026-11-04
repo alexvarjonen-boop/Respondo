@@ -119,7 +119,8 @@ test('callback cannot replay state or cross workspaces and verifies actual ticke
     config,{fetchImpl});
   assert.equal(result.connected,true);
   assert.equal(mockCalls.length,2);
-  assert.ok(mockCalls.every(([,params])=>params[1]===TENANT));
+  assert.equal(mockCalls[0][1][1],TENANT); // one-time state delete
+  assert.equal(mockCalls[1][1][0],TENANT); // credential insert
   assert.ok(!JSON.stringify(mockCalls).includes('access-token-12345678'));
   await assert.rejects(completeZendeskOAuth(db,OTHER,USER,'opaque-state-abcdef','same-code',config,{fetchImpl}),TypeError);
 });
