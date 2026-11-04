@@ -1,6 +1,6 @@
 import { avatarContainRect } from './avatar-contain.js?v=20261101-avatar-fit-v1';
 import { customerPasswordValid, customerPasswordChecks, customerPasswordStrength } from './customer-password-policy.mjs?v=20261029-strength-v1';
-import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46-crm-connectors-v1';
+import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46-crm-connectors-v1-native-actions-v1';
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1-refresh-20261103-v51-navigation-v52';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
@@ -4928,6 +4928,17 @@ async function dashboard(options = {}) {
               <p>${appText('Jos vastaan tulee kysymys, johon tietoa ei vielä ole, se ilmestyy tähän.','Om en fråga saknar information visas den här.','If a question has no known answer, it will appear here.')}</p>
             </div>`}
         </div>
+      </section>
+
+      <section class="panel dashboard-view-section dashboard-view-hidden" data-dashboard-view="automation" id="native-operations">
+        <div class="panel-head">
+          <div>
+            <small>${appText('RESPONDON OMA JÄRJESTELMÄ','RESPONDOS EGET SYSTEM','RESPONDO BUILT-IN TOOLS')}</small>
+            <h2>${appText('Oma CRM ja automaatiot','Eget CRM och automatiseringar','Built-in CRM and automations')}</h2>
+            <p>${appText('Asiakkaat, tukipyynnöt, tarjousluonnokset, työnkulut ja hyväksytyt dokumentit samassa tietokannassa.','Kunder, supportärenden, offertutkast, arbetsflöden och godkända dokument i en databas.','Contacts, tickets, quote drafts, workflows and approved documents in one database.')}</p>
+          </div>
+        </div>
+        <div id="respondoNativeOperationsMount"></div>
       </section>
 
       <section class="actions2-layout dashboard-view-section dashboard-view-hidden" data-dashboard-view="automation" id="actions2">
