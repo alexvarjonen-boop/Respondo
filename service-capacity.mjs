@@ -161,7 +161,8 @@ export async function serviceDialogue(db,tenantId,visitorRef,message,lang,availa
       await db.query('DELETE FROM respondo_service_dialogues WHERE tenant_id=$1 AND visitor_ref=$2',[tenantId,visitor]);
       return null;
     }
-    if(!isService&&!/^(?:joo|kyllä|yes|ja|jo|on)\b/i.test(lower(message)))
+    if(!isService&&!/^(?:joo|kyllä|yes|ja|jo|on)\b/i.test(lower(message))&&
+      !(parseWindowFacts(message,{}).quantity>0&&/(?:ikkun|window|fönster)/i.test(message)))
       return {answer:serviceFollowup(lang,'service'),status:'needs_service'};
     facts={};
   }
