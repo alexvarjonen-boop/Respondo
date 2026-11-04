@@ -45,6 +45,7 @@ import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
 import { guardCitedNumericFacts } from './runtime-numeric-evidence-guard.mjs';
 import { qualityCenterOverview, createQualityReview, updateQualityReview } from './respondo-quality-center.mjs';
+import { reconstructedConversationHistory, validInboundEventId, claimInboundEvent, completeInboundEvent, failInboundEvent } from './channel-ingress.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
 import { compareBotValidationRuns } from './bot-retest-comparison.mjs';
 import express from 'express';
@@ -13707,15 +13708,9 @@ async function processExternalChannelMessage(tenant, channel, contactId, message
       ORDER BY created_at DESC LIMIT 12`,
     [tenant.id,thread?.id],
   );
-  const historyRows = hr.rows.reverse();
-  const history = [];
-  for (let i=0;i<historyRows.length;i+=2) {
-    const user = historyRows[i];
-    const assistant = historyRows[i+1];
-    if (user?.role === 'user') {
-      history.push({ question:user.message,answer:assistant?.message || '',handoff:false });
-    }
-  }
+  // Use complete historical pairs only. The new customer message was just
+  // appended and must not be fed back into the model as previous history.
+  const history=reconstructedConversationHistory(hr.rows.reverse());
 
   const result = await generateGroundedAnswer({
     companyName:tenant.name,rows:kr.rows,message,history,lang,pageContext:{},
@@ -16250,8 +16245,26 @@ app.post('/api/channel/:slug/message', channelApiLimiter, async (req,res) => {
       : 'fi';
     if (!contactId || !message) return res.status(400).json({ error:'contactId ja message tarvitaan.' });
 
-    const result = await processExternalChannelMessage(tenant,channel,contactId,message,lang);
-    return res.json(result);
+    const upstreamEventId=req.body.eventId===undefined ? '' : req.body.eventId;
+    if(upstreamEventId!=='' && !validInboundEventId(upstreamEventId))
+      return res.status(400).json({error:'Invalid eventId: use 8–160 alphanumeric or _ . : - characters.'});
+    let claim=null;
+    if(upstreamEventId) {
+      claim=await claimInboundEvent(pool,tenant.id,channel,upstreamEventId);
+      if(claim.status==='completed')return res.json({...claim.response,duplicate:true});
+      if(claim.status==='processing')return res.status(202).json({accepted:true,processing:true});
+      if(claim.status==='failed')return res.status(409).json({error:'Uncertain event state. Check source messages before re-submitting.'});
+    }
+    try {
+      const detectedLang=detectConversationLanguage(message,lang);
+      const result=await processExternalChannelMessage(tenant,channel,contactId,message,detectedLang);
+      if(claim?.status==='new')
+        await completeInboundEvent(pool,tenant.id,channel,upstreamEventId,result);
+      return res.json(result);
+    }catch(error){
+      if(claim?.status==='new')await failInboundEvent(pool,tenant.id,channel,upstreamEventId).catch(()=>{});
+      throw error;
+    }
   } catch (e) {
     console.error('Channels API failed',e);
     return res.status(500).json({ error:'Kanavaviestiä ei voitu käsitellä.' });
