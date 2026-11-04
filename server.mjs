@@ -13350,18 +13350,24 @@ async function googleCalendarEvents(tenant, timeMin, timeMax) {
   }).toString();
 
   const response = await fetch(url, {
-    headers:{ Authorization:'Bearer ' + token },
+    headers:{ Authorization:'Bearer ' + token },redirect:'error',signal:AbortSignal.timeout(9000),
   });
   if (!response.ok) throw new Error('Google Calendar events fetch failed');
   const data = await response.json();
-  return (Array.isArray(data.items) ? data.items : [])
-    .filter((event) => event.status !== 'cancelled' && event.start?.dateTime && event.end?.dateTime)
-    .map((event) => ({
-      id:event.id,
-      start:new Date(event.start.dateTime),
-      end:new Date(event.end.dateTime),
-    }))
-    .filter((event) => Number.isFinite(event.start.getTime()) && Number.isFinite(event.end.getTime()));
+  // Page truncation would hide conflicts; fail closed instead.
+  if (data.nextPageToken) throw new Error('Calendar has more events than can safely be verified');
+  const items=Array.isArray(data.items)?data.items:[];
+  return items.filter(event=>event.status!=='cancelled' && event.transparency!=='transparent' &&
+    event.start && event.end)
+    .map(event=>{
+      // All-day events use dates rather than dateTime. Expand conservatively
+      // across timezone offsets so they cannot become phantom free time.
+      const allDay=Boolean(event.start.date && event.end.date);
+      const start=new Date(allDay?Date.parse(event.start.date+'T00:00:00Z')-12*3600000:event.start.dateTime);
+      const end=new Date(allDay?Date.parse(event.end.date+'T00:00:00Z')+12*3600000:event.end.dateTime);
+      return {id:event.id,start,end};
+    })
+    .filter(event=>Number.isFinite(event.start.getTime())&&Number.isFinite(event.end.getTime()));
 }
 
 async function googleCalendarHasConflict(tenant, start, end) {
@@ -15353,6 +15359,17 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
     );
 
     let slots = rows.rows;
+    const visitorRef=String(req.query.visitorRef||'').slice(0,160);
+    const serviceRule=await readServiceRule(pool,tenant.id);
+    if(serviceRule?.enabled && visitorRef){
+      const state=await q(`SELECT facts FROM respondo_service_dialogues
+        WHERE tenant_id=$1 AND visitor_ref=$2 AND updated_at>NOW()-INTERVAL '45 minutes'`,
+        [tenant.id,visitorRef]);
+      if(state.rowCount){
+        const estimate=estimateWindowDuration(serviceRule,state.rows[0].facts);
+        slots=estimate.status==='estimated'?fitServiceSlots(slots,estimate.minutes):[];
+      }
+    }
     const bookingAccess = planEntitlements(tenant.subscription_plan);
     if (bookingAccess.googleCalendar && slots.length && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token)) {
       try {
@@ -15367,7 +15384,9 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
           return !events.some((event) => event.start.getTime() < end && event.end.getTime() > start);
         });
       } catch (e) {
-        console.error('Google Calendar availability filter failed',e);
+        // Never imply free time when the connected calendar cannot be checked.
+        console.error('Google Calendar availability filter failed',e?.name||'error');
+        return res.status(503).json({error:'Kalenterin vapaita aikoja ei voitu varmistaa.'});
       }
     }
 
@@ -15572,6 +15591,25 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         if (!sr.rowCount || sr.rows[0].status !== 'open' || new Date(sr.rows[0].starts_at).getTime() < Date.now()) {
           await client.query('ROLLBACK');
           return res.status(409).json({ error:'Tämä aika ei ole enää vapaa. Valitse toinen aika.' });
+        }
+
+        // A service conversation cannot bypass the approved duration rules.
+        // Locking the slot protects against competing web reservations.
+        if(visitorRef){
+          const rule=await readServiceRule(client,tenant.id);
+          if(rule?.enabled){
+            const state=await client.query(`SELECT facts FROM respondo_service_dialogues
+              WHERE tenant_id=$1 AND visitor_ref=$2 AND updated_at>NOW()-INTERVAL '45 minutes'`,
+              [tenant.id,visitorRef]);
+            if(state.rowCount){
+              const work=estimateWindowDuration(rule,state.rows[0].facts);
+              const availableMs=new Date(sr.rows[0].ends_at)-new Date(sr.rows[0].starts_at);
+              if(work.status!=='estimated'||availableMs<work.minutes*60000){
+                await client.query('ROLLBACK');
+                return res.status(409).json({error:'Työ ei mahdu valittuun aikaan. Tarkista työn laajuus ja valitse pidempi aika.'});
+              }
+            }
+          }
         }
 
         // Recheck Google Calendar only after this booking slot is row-locked.
@@ -15828,7 +15866,9 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       deliveryStatus:delivery.status,
       quote:computedQuote,
       orderStatus:ecommerceOrder,
-      booking:bookedSlot ? {
+      booking:bookedSlot &&
+        (!(actionAccess.googleCalendar && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token))
+          ||calendarSync.status==='synced') ? {
         startsAt:bookedSlot.starts_at,
         endsAt:bookedSlot.ends_at,
       } : null,
