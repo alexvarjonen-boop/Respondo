@@ -40,6 +40,7 @@ import { mediaCandidates, documentCandidateLimits, mediaTextFromBytes, documentA
 import {autoRefreshEligible,acceptedRefreshCandidate} from './website-refresh-policy.mjs';
 import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
+import { guardCitedNumericFacts } from './runtime-numeric-evidence-guard.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
 import { compareBotValidationRuns } from './bot-retest-comparison.mjs';
 import express from 'express';
@@ -8267,7 +8268,10 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
 // All protected intents (booking/order changes, contact data, stock, prices,
 // sensitive policies, named services) stay on their audited deterministic path.
 async function generateGroundedAnswer(args={}) {
-  const result=await generateRuleGroundedAnswer(args);
+  const rawResult=await generateRuleGroundedAnswer(args);
+  const result=guardCitedNumericFacts(rawResult,args.rows);
+  // A detected factual conflict must not be overridden by AI fallback.
+  if(result!==rawResult)return result;
   if(!result?.handoff || String(result.answer||'').trim() ||
     args.multiPart || !['Asiakaskysymys','Usein kysytyt'].includes(String(result.intent||'')))return result;
   const original=String(args.message||'').trim();
@@ -8279,7 +8283,7 @@ async function generateGroundedAnswer(args={}) {
     question:original,rows:matches,
     lang:['fi','sv','en'].includes(args.lang)?args.lang:'fi'
   });
-  return generated||result;
+  return guardCitedNumericFacts(generated||result,args.rows);
 }
 
 function cookies(req) {
