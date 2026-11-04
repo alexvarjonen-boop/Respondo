@@ -27,3 +27,14 @@
 #app #native-operations .native-subtitle{font-size:14px;color:#f0f6ff!important;-webkit-text-fill-color:#f0f6ff!important}
 #app #native-operations :is(button,input,textarea,select):focus-visible{outline:3px solid #87b5fb!important;outline-offset:2px}
 @media(max-width:650px){#app #native-operations .native-form{grid-template-columns:minmax(0,1fr)}#app #native-operations .native-tabs button{flex:1 1 auto}#app #native-operations .native-form .native-label:has(textarea){grid-column:auto}}
+
+/* Quality review and operational insights; scoped to existing workspace. */
+#app #native-operations .native-quality-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#app #native-operations .native-quality-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#app #native-operations .native-quality-metric{display:grid;gap:6px;border:1px solid #586779;background:#242d3c;border-radius:13px;padding:15px;min-width:0}
+#app #native-operations .native-quality-label{color:#cdd8e7!important;-webkit-text-fill-color:#cdd8e7!important;font-size:12px}
+#app #native-operations .native-quality-value{color:#fff!important;-webkit-text-fill-color:#fff!important;font-size:22px;font-weight:800;overflow-wrap:anywhere}
+#app #native-operations .native-review-note{width:100%;flex:1 1 100%;box-sizing:border-box;border:1px solid #9babbb!important;border-radius:9px;background:#f8fafc!important;color:#182a3d!important;-webkit-text-fill-color:#182a3d!important;padding:10px 12px;min-height:60px;font-size:14px;color-scheme:light}
+#app #native-operations .native-review-note::placeholder{color:#52657a!important;-webkit-text-fill-color:#52657a!important}
+@media(max-width:650px){#app #native-operations .native-quality-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:410px){#app #native-operations .native-quality-metrics{grid-template-columns:1fr}}
