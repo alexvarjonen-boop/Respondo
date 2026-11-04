@@ -8,6 +8,7 @@ import { ensureChannelIngressSchema } from './channel-ingress.mjs';
 import { ensureFreshdeskSchema } from './freshdesk-helpdesk.mjs';
 import { ensureZendeskSchema } from './zendesk-oauth.mjs';
 import { ensureQualityRepairSchema } from './quality-source-repair.mjs';
+import { ensureNativeInboxSchema } from './native-inbox.mjs';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const ssl = isProduction ? { rejectUnauthorized: false } : undefined;
@@ -117,6 +118,7 @@ async function initializeCrmConnectors() {
     await ensureFreshdeskSchema(pool);
     await ensureZendeskSchema(pool);
     await ensureQualityRepairSchema(pool);
+    await ensureNativeInboxSchema(pool);
   } finally {await pool.end();}
 }
 await initializeCrmConnectors();
