@@ -5070,6 +5070,18 @@ async function dashboard(options = {}) {
         </article>
 
 
+        <article class="panel" id="crm-integration" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
+          <div class="panel-head">
+            <div>
+              <small>${appText('CRM-INTEGRAATIOT','CRM-INTEGRATIONER','CRM CONNECTORS')}</small>
+              <h2>${appText('Yhdistä HubSpot tai Pipedrive','Anslut HubSpot eller Pipedrive','Connect HubSpot or Pipedrive')}</h2>
+              <p>${appText('Siirrä asiakkaan hyväksymät liidit turvallisesti omaan CRM-järjestelmääsi.','Skicka kundens godkända leads säkert till ditt CRM-system.','Send consented customer leads securely to your CRM.')}</p>
+            </div>
+            <span class="install-badge">Enterprise</span>
+          </div>
+          <div id="respondoCrmConnectorMount" class="respondo-crm-connector-mount"></div>
+        </article>
+
         <article class="panel" id="business-integrations" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
           <div class="panel-head">
             <div>
