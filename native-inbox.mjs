@@ -1,5 +1,6 @@
 // Respondo first-party inbox. All data stays within this installation.
 // Does NOT fetch mail or send any external-channel message.
+import {randomUUID} from 'node:crypto';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const isUuid=v=>UUID.test(String(v||''));
 const clean=(v,max)=>String(v??'').trim().slice(0,max);
@@ -47,18 +48,25 @@ export async function ensureNativeInboxSchema(db){
       tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
       thread_id UUID NOT NULL REFERENCES public.chat_threads(id) ON DELETE CASCADE,
       note TEXT NOT NULL,created_by TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
+    `CREATE TABLE IF NOT EXISTS public.respondo_native_inbox_deliveries(
+      tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+      thread_id UUID NOT NULL REFERENCES public.chat_threads(id) ON DELETE CASCADE,
+      delivery_id UUID NOT NULL,
+      message_id UUID NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY(tenant_id,delivery_id))`
   ];
   for(const q of sql)await db.query(q);
   await db.query('CREATE INDEX IF NOT EXISTS idx_native_inbox_notes_thread ON public.respondo_native_inbox_notes(tenant_id,thread_id,created_at DESC)');
-  for(const table of ['respondo_native_inbox_drafts','respondo_native_inbox_notes']){
+  for(const table of ['respondo_native_inbox_drafts','respondo_native_inbox_notes','respondo_native_inbox_deliveries']){
     await db.query('ALTER TABLE public.'+table+' ENABLE ROW LEVEL SECURITY');
     await db.query('REVOKE ALL PRIVILEGES ON TABLE public.'+table+' FROM PUBLIC');
   }
   const r=await db.query("SELECT rolname FROM pg_roles WHERE rolname=ANY($1::text[])",[['anon','authenticated','service_role']]);
   for(const item of r.rows||[]){
     if(!['anon','authenticated','service_role'].includes(item.rolname))continue;
-    for(const table of ['respondo_native_inbox_drafts','respondo_native_inbox_notes'])
+    for(const table of ['respondo_native_inbox_drafts','respondo_native_inbox_notes','respondo_native_inbox_deliveries'])
       await db.query('REVOKE ALL PRIVILEGES ON TABLE public.'+table+' FROM '+item.rolname);
   }
 }
@@ -143,4 +151,59 @@ export async function nativeInboxDraftFromSources(db,tenantId,threadId){
   const question=messages.rows[0]?.message;
   if(!question)return {suggestion:null,reason:'no_customer_question'};
   return {suggestion:nativeInboxDraftSuggestion(question,sources.rows,thread.rows[0].language)};
+}
+
+export async function sendNativeWebsiteReply(db,tenantId,threadId,userId,payload={}){
+  ensureThreadId(threadId);
+  if(!isUuid(payload.deliveryId))throw new TypeError('Unique delivery ID required');
+  const message=clean(payload.text,4000);
+  if(!message||String(payload.text||'').trim().length>4000)
+    throw new TypeError('Reply must contain 1–4000 characters');
+  const client=await db.connect();
+  try{
+    await client.query('BEGIN');
+    const t=await client.query(
+      `SELECT source_channel,external_contact_id,visitor_ref,status FROM chat_threads
+        WHERE tenant_id=$1 AND id=$2 FOR UPDATE`,[tenantId,threadId]);
+    if(!t.rows[0]){
+      await client.query('ROLLBACK');return null;
+    }
+    if(t.rows[0].source_channel!=='website')
+      throw new TypeError('External channels cannot be delivered by the native inbox');
+    if(t.rows[0].status==='closed')
+      throw new TypeError('Reopen this conversation before sending');
+    const id=randomUUID();
+    const delivered=await client.query(
+      `INSERT INTO respondo_native_inbox_deliveries(tenant_id,thread_id,delivery_id,message_id)
+        VALUES($1,$2,$3,$4) ON CONFLICT(tenant_id,delivery_id) DO NOTHING
+        RETURNING delivery_id`,[tenantId,threadId,payload.deliveryId,id]);
+    if(!delivered.rowCount){
+      const existing=await client.query(
+        `SELECT thread_id,message_id FROM respondo_native_inbox_deliveries
+        WHERE tenant_id=$1 AND delivery_id=$2`,[tenantId,payload.deliveryId]);
+      if(existing.rows[0]&&String(existing.rows[0].thread_id)!==threadId)
+        throw new TypeError('Delivery ID was used for a different conversation');
+      await client.query('COMMIT');
+      return {sent:true,duplicate:true,channel:'website',messageId:existing.rows[0]?.message_id};
+    }
+    const row=await client.query(
+      `INSERT INTO chat_messages(id,tenant_id,thread_id,source_channel,external_contact_id,
+        visitor_ref,role,message,metadata)
+      VALUES($1,$2,$3,'website',$4,$5,'human',$6,$7::jsonb)
+      RETURNING id,role,message,created_at`,
+      [id,tenantId,threadId,t.rows[0].external_contact_id,
+        t.rows[0].visitor_ref,message,
+        JSON.stringify({origin:'respondo_native_inbox',ownerId:clean(userId,120)})]);
+    await client.query(
+      `UPDATE chat_threads SET mode='human',status='open',last_activity_at=NOW(),
+        updated_at=NOW() WHERE tenant_id=$1 AND id=$2`,[tenantId,threadId]);
+    await client.query(
+      `DELETE FROM respondo_native_inbox_drafts
+        WHERE tenant_id=$1 AND thread_id=$2`,[tenantId,threadId]);
+    await client.query('COMMIT');
+    return {sent:true,duplicate:false,channel:'website',message:row.rows[0]};
+  }catch(error){
+    await client.query('ROLLBACK').catch(()=>{});
+    throw error;
+  }finally{client.release();}
 }
