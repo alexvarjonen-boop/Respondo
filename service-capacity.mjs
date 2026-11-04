@@ -59,6 +59,8 @@ const ms=v=>new Date(v).getTime();
 export function fitServiceSlots(slots,minutes,busy=[],now=Date.now()){
   if(!Number.isFinite(minutes)||minutes<=0)throw new TypeError('Duration required');
   return (Array.isArray(slots)?slots:[]).filter(slot=>{
+    // A slot marked booked/blocked must never be treated as available.
+    if(slot.status && slot.status!=='open')return false;
     const a=ms(slot.starts_at),b=ms(slot.ends_at);
     if(!Number.isFinite(a)||!Number.isFinite(b)||a<=now||b-a<minutes*60000)return false;
     return !busy.some(x=>{
@@ -124,6 +126,33 @@ function slotLocalClock(date){
   return {weekday:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(fields.weekday),
     hour:Number(fields.hour),minute:Number(fields.minute)};
 }
+function amendPreferredTime(previous,utterance){
+  const prior=requestedClock(previous);
+  const next=requestedClock(utterance);
+  const raw=lower(utterance);
+  const bare=raw.match(/^(\d{1,2})(?::(\d{2}))?$/);
+  const isAfternoon=/(?:iltapäiv|illalla|afternoon|eftermiddag|\bpm\b)/i.test(raw);
+  const isMorning=/(?:aamulla|aamupäiv|morning|förmiddag|\bam\b)/i.test(raw);
+  const changedDay=next.weekday>=0;
+  const changedClock=next.hour!==null||Boolean(bare);
+  if(!changedDay&&!changedClock&&!isAfternoon&&!isMorning)return previous;
+  const weekday=changedDay?next.weekday:prior.weekday;
+  let hour=changedClock?(next.hour??Number(bare[1])):changedDay?null:prior.hour;
+  const minute=changedClock?(next.hour!==null?next.minute:Number(bare[2]||0)):
+    changedDay?0:prior.minute;
+  if(isAfternoon&&hour!==null&&hour>=1&&hour<=11)hour+=12;
+  if(isMorning&&hour===12)hour=0;
+  // A changed weekday with no time must not inherit the old day’s clock.
+  // Do not silently reuse a stale appointment when an invalid clock is supplied.
+  if(hour!==null&&(!Number.isInteger(hour)||hour<0||hour>23||
+    !Number.isInteger(minute)||minute<0||minute>59))return '';
+  const days=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const day=weekday>=0?days[weekday]:'';
+  const explicitMorning=isMorning||(!changedClock&&!changedDay&&/\bam\b/i.test(previous));
+  const clock=hour===null?'':'at '+String(hour).padStart(2,'0')+':'+
+    String(minute).padStart(2,'0')+(hour<12&&explicitMorning?' am':'');
+  return [day,clock].filter(Boolean).join(' ');
+}
 function serviceFollowup(lang,key){
   const values={
     fi:{service:'Tarkoitatko ikkunanpesua? Kerro palvelu, niin tarkistan työajan.',clock:'Tarkennatko, tarkoititko klo 3 aamulla vai klo 15 iltapäivällä?',unavailable:'Toivomaasi aikaa ei löytynyt koko työmäärälle. '},
@@ -167,16 +196,13 @@ export async function serviceDialogue(db,tenantId,visitorRef,message,lang,availa
     facts={};
   }
   if(!isService&&!missingWindowFact(facts)&&!isAppointment&&
-    !/(?:perjant|friday|fredag|maanant|monday|måndag|tiist|tuesday|torsdag|torst|lauant|saturday|söndag|sunnunt|huomenna|tomorrow)/i.test(message)&&
-    !/^(?:\s*\d{1,2}\s*|\s*(?:klo|kello|at|kl)\s*\d{1,2})$/i.test(message))
+    !/(?:perjant|friday|fredag|maanant|monday|måndag|tiist|tuesday|tisdag|keskiviik|wednesday|onsdag|torsdag|torst|lauant|saturday|lördag|söndag|sunnunt|sunday|huomenna|tomorrow)/i.test(message)&&
+    !/^(?:\s*\d{1,2}(?::\d{2})?\s*|\s*(?:klo|kello|at|kl)\s*\d{1,2}(?::\d{2})?)$/i.test(message)&&
+    !/(?:iltapäiv|illalla|aamulla|aamupäiv|afternoon|morning|eftermiddag|förmiddag|\bpm\b|\bam\b)/i.test(message))
     return null;
   facts=parseWindowFacts(message,facts);
-  if(isAppointment&&!preferredText)preferredText=tr(message,250);
-  const preferred=requestedClock(preferredText);
-  if(preferred.ambiguous&&/^(?:\s*\d{1,2}\s*|\s*(?:klo|kello|at|kl)\s*\d{1,2})$/i.test(message)){
-    const num=Number((message.match(/\d{1,2}/)||[])[0]||0);
-    if(num>=0&&num<=23)preferredText=tr(preferredText+' klo '+num,300);
-  }
+  if(!preferredText)preferredText=tr(message,250);
+  else preferredText=amendPreferredTime(preferredText,message);
   await db.query(`INSERT INTO respondo_service_dialogues
     (tenant_id,visitor_ref,service_key,facts,preferred_text)
     VALUES($1,$2,'window_cleaning',$3::jsonb,$4)
@@ -194,17 +220,19 @@ export async function serviceDialogue(db,tenantId,visitorRef,message,lang,availa
     serviceFollowup(lang,'clock'),status:'needs_time',facts,estimate};
   try{
     const available=await availableSlots(estimate.minutes);
-    const matches=requested.weekday>=0&&requested.hour!==null
+    const matches=requested.weekday>=0
       ?available.filter(x=>{
           const clock=slotLocalClock(x.starts_at);
-          return clock.weekday===requested.weekday&&clock.hour===requested.hour&&clock.minute===requested.minute;
+          return clock.weekday===requested.weekday&&
+            (requested.hour===null||
+              (clock.hour===requested.hour&&clock.minute===requested.minute));
         })
       :[];
     const sorted=[...matches,...available.filter(x=>!matches.includes(x))];
     const dates=sorted.slice(0,3).map(x=>new Date(x.starts_at).toLocaleString(
       lang==='sv'?'sv-SE':lang==='en'?'en-GB':'fi-FI',
       {timeZone:'Europe/Helsinki',weekday:'long',day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}));
-    const missed=requested.weekday>=0&&requested.hour!==null&&!matches.length
+    const missed=requested.weekday>=0&&!matches.length
       ?serviceFollowup(lang,'unavailable'):'';
     return {answer:words.duration+duration+'. '+missed+
       (dates.length?words.options+dates.join(', ')+'. '+words.unknown:words.none),
