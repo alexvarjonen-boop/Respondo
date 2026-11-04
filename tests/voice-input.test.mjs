@@ -37,11 +37,35 @@ test('microphone errors preserve the ordinary text composer', () => {
 });
 
 test('dashboard preview supports dictation without replacing the demo send flow', () => {
-  assert.match(index, /<script defer src="\/voice-preview\.js\?v=20261104-voice-v1"><\/script>/);
+  assert.match(index, /<script defer src="\/voice-preview\.js\?v=20261104-voice-language-v2"><\/script>/);
   assert.match(preview, /window\.SpeechRecognition \|\| window\.webkitSpeechRecognition/);
   assert.match(preview, /document\.querySelector\('#previewForm'\)/);
   assert.match(preview, /form\.addEventListener\('submit'/);
   assert.match(preview, /input\.value = \[originalText, transcript\]/);
   assert.match(preview, /fi: 'fi-FI', sv: 'sv-SE', en: 'en-US'/);
   assert.match(preview, /new MutationObserver\(scan\)/);
+});
+
+test('speech language is separate from visual UI and is passed to the bot', () => {
+  assert.match(widget, /id="voiceLang" class="voice-lang"/);
+  assert.match(widget, /\[voiceLanguageSelect\.value\] \|\| 'fi-FI'/);
+  assert.match(widget, /lang: voiceMessageLang/);
+  assert.match(preview, /className = 'respondo-voice-lang-picker'/);
+  assert.match(preview, /\[voiceLanguageSelect\.value\]/);
+  assert.match(preview, /input\.dataset\.respondoVoiceLang = voiceLanguageSelect\.value/);
+});
+
+test('initial speech language defaults to Finnish for fi domains even with EN visual UI', () => {
+  for (const source of [widget, preview]) {
+    const match = source.match(/function initialSpeechLanguage\(\) \{([\s\S]*?)\n  \}/);
+    assert.ok(match, 'initialSpeechLanguage present');
+    const create = new Function('navigator','window','localStorage','speechStorageKey','widgetLang','language',
+      'function initialSpeechLanguage() {' + match[1] + '\n}; return initialSpeechLanguage()');
+    const uiEnglish = () => 'en';
+    const storage = { getItem: () => null };
+    assert.equal(create({language:'en-US'},{location:{hostname:'respondoai.fi'}},storage,'respondo_voice_language_v1','en',uiEnglish), 'fi');
+    assert.equal(create({language:'sv-SE'},{location:{hostname:'respondoai.fi'}},storage,'respondo_voice_language_v1','en',uiEnglish), 'sv');
+    assert.equal(create({language:'en-US'},{location:{hostname:'client.com'}},storage,'respondo_voice_language_v1','en',uiEnglish), 'en');
+    assert.equal(create({language:'en-US'},{location:{hostname:'respondoai.fi'}},{getItem:()=> 'en'},'respondo_voice_language_v1','en',uiEnglish), 'en');
+  }
 });
