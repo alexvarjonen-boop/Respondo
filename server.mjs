@@ -15424,9 +15424,25 @@ app.put('/api/app/service-capacity',auth,ownerOnly,subscribed,async(req,res)=>{
   }
 });
 async function configuredServiceSlots(tenant,requiredMinutes){
-  const result=await q(`SELECT id,starts_at,ends_at FROM booking_slots
-    WHERE tenant_id=$1 AND status='open' AND starts_at>NOW()
-    ORDER BY starts_at ASC LIMIT 200`,[tenant.id]);
+  // The chat's suggested appointments must exclude the same occupied windows
+  // that the public booking picker and owner confirmation reject.
+  const result=await q(`SELECT available.id,available.starts_at,available.ends_at
+    FROM booking_slots available
+    WHERE available.tenant_id=$1 AND available.status='open'
+      AND available.starts_at>NOW()
+      AND NOT EXISTS (
+        SELECT 1 FROM booking_slots occupied
+        WHERE occupied.tenant_id=available.tenant_id AND occupied.status='booked'
+          AND occupied.starts_at<available.ends_at
+          AND occupied.ends_at>available.starts_at
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM respondo_native_calendar_events confirmed
+        WHERE confirmed.tenant_id=available.tenant_id AND confirmed.status='confirmed'
+          AND confirmed.starts_at<available.ends_at
+          AND confirmed.ends_at>available.starts_at
+      )
+    ORDER BY available.starts_at ASC LIMIT 200`,[tenant.id]);
   const slots=result.rows;
   if(!slots.length)return [];
   let busy=[];
