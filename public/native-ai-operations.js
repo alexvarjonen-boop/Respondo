@@ -1,0 +1,253 @@
+(() => {
+  'use strict';
+  const API='/api/app/native';
+  const copy={
+    fi:{contacts:'Asiakasrekisteri',tickets:'Tukipyynnöt',quotes:'Tarjoukset',rules:'Automaatiot',docs:'Tietopankki',
+      contactIntro:'Tallennetut asiakkaat ja liidit.',ticketIntro:'Sisäiset palvelupyynnöt työntekijöille.',
+      quoteIntro:'Luonnokset yrityksen tallennetuista hinnoista. Lähetys vaatii ihmisen hyväksynnän.',
+      docsIntro:'Julkaise vain tarkistettua yritystietoa, jota botti saa käyttää vastauksissa.',
+      name:'Nimi',email:'Sähköposti',phone:'Puhelin',note:'Lisätiedot',save:'Tallenna',
+      title:'Otsikko',details:'Kuvaus',priority:'Kiireellisyys',normal:'Normaali',urgent:'Kiireellinen',
+      quantity:'Määrä',create:'Luo',approve:'Hyväksy',remove:'Poista',
+      published:'Julkaistu',publishConsent:'Hyväksyn tiedon julkaisemisen botin tietopohjaan.',
+      documentBody:'Dokumentin tarkistettu sisältö',empty:'Ei vielä tietoja.',
+      loading:'Haetaan tietoja…',saving:'Tallennetaan…',saved:'Tallennettu.',
+      error:'Toiminto epäonnistui.',notConfigured:'Aseta ensin palveluhinnat kohdassa Hintalaskuri.',
+      new:'Uusi',contacted:'Kontaktoitu',qualified:'Kvalifioitu',won:'Voitettu',lost:'Hävitty',
+      open:'Avoin',in_progress:'Käsittelyssä',waiting:'Odottaa',done:'Valmis',
+      draft:'Luonnos',approved:'Hyväksytty',triggerLead:'Uusi liidi → tallenna CRM:ään',
+      triggerAction:'Uusi asiakaspyyntö → luo tiketti',recent:'Viimeaikaiset automaatiot',
+      confirmDelete:'Poistetaanko dokumentti myös botin tietopohjasta?',notice:'Toiminnot suoritetaan Respondon omassa järjestelmässä. Ulkoisia palveluja ei yhdistetä.'},
+    sv:{contacts:'Kundregister',tickets:'Supportärenden',quotes:'Offerter',rules:'Automatiseringar',docs:'Kunskapsbas',
+      contactIntro:'Sparade kunder och leads.',ticketIntro:'Interna serviceärenden för personal.',
+      quoteIntro:'Utkast baserade på företagets sparade priser. Leverans kräver mänskligt godkännande.',
+      docsIntro:'Publicera endast granskade företagsuppgifter som botten får använda.',
+      name:'Namn',email:'E-post',phone:'Telefon',note:'Anteckningar',save:'Spara',
+      title:'Rubrik',details:'Beskrivning',priority:'Prioritet',normal:'Normal',urgent:'Brådskande',
+      quantity:'Antal',create:'Skapa',approve:'Godkänn',remove:'Ta bort',
+      published:'Publicerad',publishConsent:'Jag godkänner publicering i bottens kunskapsbas.',
+      documentBody:'Granskat dokumentinnehåll',empty:'Inga poster ännu.',
+      loading:'Hämtar uppgifter…',saving:'Sparar…',saved:'Sparat.',
+      error:'Åtgärden misslyckades.',notConfigured:'Ange tjänstepriser i prisberäknaren först.',
+      new:'Ny',contacted:'Kontaktad',qualified:'Kvalificerad',won:'Vunnen',lost:'Förlorad',
+      open:'Öppen',in_progress:'Pågår',waiting:'Väntar',done:'Klar',
+      draft:'Utkast',approved:'Godkänd',triggerLead:'Nytt lead → spara i CRM',
+      triggerAction:'Ny kundförfrågan → skapa ärende',recent:'Senaste automatiseringar',
+      confirmDelete:'Ta bort dokumentet även från bottens kunskapsbas?',notice:'Funktionerna körs internt i Respondo. Inga externa tjänster kopplas in.'},
+    en:{contacts:'Customer CRM',tickets:'Support tickets',quotes:'Quote drafts',rules:'Automations',docs:'Knowledge documents',
+      contactIntro:'Saved customers and leads.',ticketIntro:'Internal service requests for your team.',
+      quoteIntro:'Drafts based on your saved service prices. Sending requires human approval.',
+      docsIntro:'Publish only verified business facts that the bot may use in its answers.',
+      name:'Name',email:'Email',phone:'Phone',note:'Notes',save:'Save',
+      title:'Title',details:'Details',priority:'Priority',normal:'Normal',urgent:'Urgent',
+      quantity:'Quantity',create:'Create',approve:'Approve',remove:'Remove',
+      published:'Published',publishConsent:'I approve publishing this content to the bot knowledge base.',
+      documentBody:'Verified document text',empty:'No entries yet.',
+      loading:'Loading data…',saving:'Saving…',saved:'Saved.',
+      error:'The operation failed.',notConfigured:'Configure service prices in the quote calculator first.',
+      new:'New',contacted:'Contacted',qualified:'Qualified',won:'Won',lost:'Lost',
+      open:'Open',in_progress:'In progress',waiting:'Waiting',done:'Done',
+      draft:'Draft',approved:'Approved',triggerLead:'Lead captured → save contact',
+      triggerAction:'Customer action → open ticket',recent:'Recent automations',
+      confirmDelete:'Remove this document from the bot knowledge base as well?',notice:'Actions run in Respondo itself. No external services are connected.'}
+  };
+  function locale(){
+    const value=String(document.querySelector('#respondoWorkspace')?.dataset.lang ||
+      document.documentElement.lang||'en').slice(0,2).toLowerCase();
+    return copy[value]||copy.en;
+  }
+  function el(tag,cls,content){
+    const node=document.createElement(tag);
+    if(cls)node.className=cls;
+    if(content!==undefined)node.textContent=String(content);
+    return node;
+  }
+  function fields(form,items){
+    for(const item of items){
+      const label=el('label','native-label',item.label);
+      const control=item.multiline?document.createElement('textarea'):document.createElement('input');
+      control.name=item.name;
+      if(item.type)control.type=item.type;
+      control.required=item.required!==false;
+      if(item.min!==undefined)control.min=String(item.min);
+      if(item.maxlength)control.maxLength=item.maxlength;
+      if(item.multiline)control.rows=4;
+      label.appendChild(control);
+      form.appendChild(label);
+    }
+  }
+  function button(text,type='submit'){
+    const b=el('button','native-button',text);b.type=type;return b;
+  }
+  function select(options,value,onChange){
+    const node=el('select','native-select');
+    for(const [key,name] of options){
+      const o=el('option','',name);o.value=key;node.appendChild(o);
+    }
+    node.value=value;
+    node.setAttribute('aria-label','Status');
+    node.addEventListener('change',()=>onChange(node.value));
+    return node;
+  }
+  function localStatus(value,t){return t[value]||value;}
+  function idGuard(value){return typeof value==='string'&&/^[0-9a-f-]{36}$/i.test(value);}
+  function init(){
+    const app=document.getElementById('app');
+    if(!app)return;
+    new MutationObserver(mount).observe(app,{childList:true,subtree:true});
+    mount();
+  }
+  function mount(){
+    const target=document.getElementById('respondoNativeOperationsMount');
+    if(!target||target.dataset.bound==='yes')return;
+    target.dataset.bound='yes';
+    const t=locale();
+    const tabs=el('div','native-tabs');
+    tabs.setAttribute('role','tablist');
+    const content=el('div','native-content');
+    const feedback=el('p','native-feedback',t.loading);
+    feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
+    target.append(tabs,content,feedback,el('p','native-disclaimer',t.notice));
+    let active='contacts',data=null,busy=false;
+    const kinds=['contacts','tickets','quotes','rules','docs'];
+    for(const kind of kinds){
+      const b=button(t[kind],'button');
+      b.dataset.tab=kind;b.setAttribute('role','tab');
+      b.addEventListener('click',()=>{active=kind;render();});
+      tabs.appendChild(b);
+    }
+    async function request(method,path=API,payload){
+      const response=await fetch(path,{
+        method,credentials:'same-origin',cache:'no-store',
+        headers:{accept:'application/json','content-type':'application/json'},
+        ...(payload?{body:JSON.stringify(payload)}:{})
+      });
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok)throw Error(String(result.error||t.error).slice(0,200));
+      return result.data;
+    }
+    async function load(){
+      try{data=await request('GET');feedback.textContent='';render();}
+      catch(error){feedback.textContent=error.message||t.error;}
+    }
+    async function perform(method,path,payload){
+      if(busy)return;
+      busy=true;feedback.textContent=t.saving;
+      try{await request(method,path,payload);await load();feedback.textContent=t.saved;}
+      catch(error){feedback.textContent=error.message||t.error;}
+      finally{busy=false;}
+    }
+    function formFor(kind){
+      const form=el('form','native-form');
+      if(kind==='contacts'){
+        fields(form,[{label:t.name,name:'name',maxlength:120},{label:t.email,name:'email',type:'email',required:false,maxlength:254},
+          {label:t.phone,name:'phone',required:false,maxlength:40},{label:t.note,name:'note',required:false,maxlength:1200}]);
+        form.addEventListener('submit',event=>{
+          event.preventDefault();perform('POST',API+'/contacts',Object.fromEntries(new FormData(form)));
+        });
+      }else if(kind==='tickets'){
+        fields(form,[{label:t.title,name:'title',maxlength:160},
+          {label:t.details,name:'details',multiline:true,required:false}]);
+        const label=el('label','native-label',t.priority);
+        const urgent=select([['normal',t.normal],['urgent',t.urgent]],'normal',()=>{});
+        urgent.name='priority';label.appendChild(urgent);form.appendChild(label);
+        form.addEventListener('submit',event=>{
+          event.preventDefault();perform('POST',API+'/tickets',Object.fromEntries(new FormData(form)));
+        });
+      }else if(kind==='quotes'){
+        fields(form,[{label:t.quantity,name:'quantity',type:'number',min:'0.001',required:true},
+          {label:t.note,name:'note',maxlength:700,required:false}]);
+        form.addEventListener('submit',event=>{
+          event.preventDefault();perform('POST',API+'/quotes',Object.fromEntries(new FormData(form)));
+        });
+      }else if(kind==='docs'){
+        fields(form,[{label:t.title,name:'title',maxlength:160},
+          {label:t.documentBody,name:'body',multiline:true}]);
+        const l=el('label','native-checkbox');
+        const check=el('input');check.type='checkbox';check.name='publish';check.required=true;
+        l.append(check,document.createTextNode(t.publishConsent));form.appendChild(l);
+        form.addEventListener('submit',event=>{
+          event.preventDefault();
+          perform('POST',API+'/documents',{
+            title:form.elements.title.value,body:form.elements.body.value,publish:check.checked
+          });
+        });
+      }
+      if(kind!=='rules')form.appendChild(button(kind==='docs'?t.published:t.create));
+      return form;
+    }
+    function recordCard(title,description){
+      const box=el('article','native-record');
+      box.appendChild(el('strong','native-record-title',title));
+      if(description)box.appendChild(el('span','native-record-meta',description));
+      return box;
+    }
+    function render(){
+      if(!data)return;
+      for(const tab of tabs.children){
+        tab.setAttribute('aria-selected',String(tab.dataset.tab===active));
+      }
+      content.replaceChildren(el('p','native-intro',
+        t[active==='contacts'?'contactIntro':active==='tickets'?'ticketIntro':
+          active==='quotes'?'quoteIntro':active==='docs'?'docsIntro':'notice']));
+      if(active!=='rules')content.appendChild(formFor(active));
+      const list=el('div','native-list');
+      const rows=active==='docs'?data.documents:data[active]||[];
+      if(active==='rules'){
+        for(const rule of data.rules||[]){
+          const label=el('label','native-rule');
+          const check=el('input');check.type='checkbox';check.checked=Boolean(rule.enabled);
+          const description=rule.trigger_key==='lead_captured'?t.triggerLead:t.triggerAction;
+          label.append(check,document.createTextNode(description));
+          check.addEventListener('change',()=>perform('PUT',API+'/rules',{
+            trigger:rule.trigger_key,action:rule.action_key,enabled:check.checked
+          }));
+          list.appendChild(label);
+        }
+        list.appendChild(el('h4','native-subtitle',t.recent));
+        const count=el('p','native-recent',String((data.recentRuns||[]).length));
+        list.appendChild(count);
+      }else{
+        for(const item of rows){
+          const row=recordCard(
+            active==='contacts'?item.name:active==='tickets'?item.title:
+              active==='quotes'?item.service:item.title,
+            active==='contacts'?([item.email,item.phone].filter(Boolean).join(' · ')):
+            active==='tickets'?item.details:
+            active==='quotes'?(Number(item.total_cents||0)/100).toLocaleString('fi-FI',{style:'currency',currency:'EUR'}):
+            t.published
+          );
+          if(active==='contacts'){
+            row.appendChild(select(['new','contacted','qualified','won','lost'].map(x=>[x,t[x]]),
+              item.stage,v=>idGuard(item.id)&&perform('PATCH',API+'/contacts/'+item.id,{stage:v})));
+          }else if(active==='tickets'){
+            row.appendChild(select(['open','in_progress','waiting','done'].map(x=>[x,t[x]]),
+              item.status,v=>idGuard(item.id)&&perform('PATCH',API+'/tickets/'+item.id,{status:v})));
+          }else if(active==='quotes'){
+            row.appendChild(el('span','native-record-state',localStatus(item.status,t)));
+            if(item.status==='draft'){
+              const approve=button(t.approve,'button');
+              approve.addEventListener('click',()=>{
+                if(idGuard(item.id))perform('PATCH',API+'/quotes/'+item.id,{status:'approved'});
+              });
+              row.appendChild(approve);
+            }
+          }else if(active==='docs'){
+            const remove=button(t.remove,'button');
+            remove.addEventListener('click',()=>{
+              if(idGuard(item.id)&&window.confirm(t.confirmDelete))
+                perform('DELETE',API+'/documents/'+item.id);
+            });
+            row.appendChild(remove);
+          }
+          list.appendChild(row);
+        }
+        if(!rows.length)list.appendChild(el('p','native-empty',t.empty));
+      }
+      content.appendChild(list);
+    }
+    load();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
+  else init();
+})();
