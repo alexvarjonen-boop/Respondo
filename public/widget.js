@@ -76,7 +76,18 @@
   "Puhelinnumero tai sähköposti": "Telefonnummer eller e-post",
   "Tätä chattia ei ole vielä otettu käyttöön tällä verkkosivulla.": "Den här chatten har ännu inte aktiverats på denna webbplats.",
   "Katso tuote →": "Visa produkt →",
-  "Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.": "Det gick inte att få ett svar just nu. Försök igen om en stund."
+  "Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.": "Det gick inte att få ett svar just nu. Försök igen om en stund.",
+  "Puhu kysymyksesi": "Ställ din fråga med rösten",
+  "Lopeta puhuminen": "Sluta tala",
+  "Kuunnellaan…": "Lyssnar…",
+  "Viimeistellään puhetta…": "Bearbetar tal…",
+  "Tarkista teksti ja lähetä.": "Kontrollera texten och skicka.",
+  "Puhetta ei tunnistettu. Yritä uudelleen.": "Inget tal kunde identifieras. Försök igen.",
+  "Mikrofonin käyttö estetty. Salli mikrofoni selaimesta.": "Mikrofonen är blockerad. Ge åtkomst i webbläsaren.",
+  "Mikrofonia ei löytynyt.": "Ingen mikrofon hittades.",
+  "Puheentunnistus ei ole käytettävissä juuri nyt.": "Taligenkänning är inte tillgänglig just nu.",
+  "Puheentunnistus epäonnistui. Kirjoita kysymyksesi.": "Taligenkänningen misslyckades. Skriv din fråga.",
+  "Puhe voidaan käsitellä selaimesi puhepalvelussa.": "Tal kan behandlas av webbläsarens taltjänst."
 };
   Object.entries(EXTRA_SV_WIDGET).forEach(([fi,sv]) => SV_WIDGET.set(fi,sv));
   function t(fi, en) {
@@ -164,7 +175,14 @@
       .composer{padding:12px;border-top:1px solid #e7e7e9;background:#fff;display:flex;gap:8px}
       .composer input{min-width:0;flex:1;border:1px solid #d9d9dc;border-radius:12px;padding:12px 13px;font:inherit;font-size:14px;outline:none}
       .composer input:focus{border-color:var(--bot-accent,#111113)}
-      .composer button{width:44px;border:0;border-radius:12px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font-size:18px;font-weight:800;cursor:pointer}
+      .composer button{width:44px;flex:0 0 44px;border:0;border-radius:12px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font-size:18px;font-weight:800;cursor:pointer}
+      .composer .voice-btn{display:grid;place-items:center;background:#f2f3f5;color:#27272a;border:1px solid #e3e4e8;font-size:16px}
+      .composer .voice-btn svg{width:19px;height:19px;display:block}
+      .composer .voice-btn[hidden]{display:none}
+      .composer .voice-btn.listening{background:#fee8e5;color:#af241a;border-color:#edada6;box-shadow:0 0 0 3px rgba(175,36,26,.08)}
+      .composer button:focus-visible{outline:3px solid var(--bot-accent,#111113);outline-offset:2px}
+      .voice-note{padding:0 14px 8px;background:#fff;color:#5d6470;font-size:11px;line-height:1.35}
+      .voice-note[hidden]{display:none}
       /* The collapsed widget is the customer's own bot identity, not a generic CTA. */
       .launcher{appearance:none;max-width:min(290px,calc(100vw - 36px));min-height:66px;border:1px solid rgba(20,22,24,.10);border-radius:20px;padding:9px 13px 9px 9px;background:#fff;color:#18191c;cursor:pointer;box-shadow:0 14px 42px rgba(12,16,20,.19),0 2px 10px rgba(12,16,20,.08);display:flex;align-items:center;gap:11px;text-align:left;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
       .launcher:hover{transform:translateY(-2px);box-shadow:0 18px 46px rgba(12,16,20,.22),0 3px 12px rgba(12,16,20,.08);border-color:rgba(20,22,24,.18)}
@@ -259,8 +277,10 @@
         <div class="status" id="status">${t('Yhdistetään…', 'Connecting…')}</div>
         <form class="composer" id="form">
           <input id="input" autocomplete="off" placeholder="${t('Kysy jotain…', 'Type your question…')}" aria-label="${t('Kirjoita kysymyksesi', 'Type your question')}">
+          <button type="button" id="voiceBtn" class="voice-btn" hidden aria-pressed="false" aria-label="${t('Puhu kysymyksesi', 'Speak your question')}" title="${t('Puhu kysymyksesi', 'Speak your question')}"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8"/></svg></button>
           <button type="submit" aria-label="${t('Lähetä', 'Send')}">→</button>
         </form>
+        <div class="voice-note" id="voiceNote" role="status" aria-live="polite" hidden></div>
         <div class="powered">RESPONDO AI</div>
       </section>
       <button class="launcher" id="launcher" type="button" aria-controls="respondo-chat-panel" aria-expanded="false" aria-label="${t('Avaa chat', 'Open chat')}">
@@ -277,6 +297,8 @@
   const status = $('#status');
   const form = $('#form');
   const input = $('#input');
+  const voiceButton = $('#voiceBtn');
+  const voiceNote = $('#voiceNote');
   const name = $('#name');
   const mark = $('.mark');
   const quick = $('#quick');
@@ -289,6 +311,107 @@
   let visitorRef = '';
   let livePollAfter = '';
   let livePollTimer = null;
+
+  // The provider may process microphone audio remotely. Only the text that
+  // the visitor reviews and sends reaches Respondo's existing chat endpoint.
+  const BrowserSpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let activeRecognition = null;
+  let voiceDraft = '';
+  function showVoiceNote(message) {
+    voiceNote.textContent = message || '';
+    voiceNote.hidden = !message;
+  }
+  function resetVoiceButton() {
+    input.readOnly = false;
+    voiceButton.classList.remove('listening');
+    voiceButton.setAttribute('aria-pressed', 'false');
+    voiceButton.setAttribute('aria-label', t('Puhu kysymyksesi', 'Speak your question'));
+    voiceButton.title = t('Puhu kysymyksesi', 'Speak your question');
+  }
+  function cancelVoiceInput() {
+    const recognition = activeRecognition;
+    activeRecognition = null;
+    if (recognition) {
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
+      try { recognition.abort(); } catch {}
+    }
+    resetVoiceButton();
+  }
+  if (BrowserSpeechRecognition && window.isSecureContext) {
+    voiceButton.hidden = false;
+    voiceButton.disabled = true;
+    voiceButton.addEventListener('click', () => {
+      if (activeRecognition) {
+        showVoiceNote(t('Viimeistellään puhetta…', 'Finishing speech recognition…'));
+        try { activeRecognition.stop(); } catch { cancelVoiceInput(); }
+        return;
+      }
+      if (!ready || input.disabled) return;
+      let recognition;
+      try { recognition = new BrowserSpeechRecognition(); }
+      catch {
+        showVoiceNote(t('Puheentunnistus ei ole käytettävissä juuri nyt.', 'Speech recognition is unavailable right now.'));
+        return;
+      }
+      activeRecognition = recognition;
+      voiceDraft = input.value.trim();
+      let heardText = '';
+      let hadError = false;
+      recognition.lang = {fi:'fi-FI', sv:'sv-SE', en:'en-US'}[widgetLang] || 'en-US';
+      recognition.interimResults = true;
+      recognition.continuous = false;
+      recognition.maxAlternatives = 1;
+      recognition.onresult = (event) => {
+        if (activeRecognition !== recognition) return;
+        let finalText = '', interimText = '';
+        for (let i = 0; i < event.results.length; i++) {
+          const part = String(event.results[i]?.[0]?.transcript || '').trim();
+          if (event.results[i].isFinal) finalText += (finalText ? ' ' : '') + part;
+          else interimText += (interimText ? ' ' : '') + part;
+        }
+        heardText = [finalText, interimText].filter(Boolean).join(' ').trim();
+        input.value = [voiceDraft, heardText].filter(Boolean).join(' ');
+      };
+      recognition.onerror = (event) => {
+        if (activeRecognition !== recognition) return;
+        hadError = true;
+        const error = String(event?.error || '');
+        const message = error === 'not-allowed' || error === 'service-not-allowed'
+          ? t('Mikrofonin käyttö estetty. Salli mikrofoni selaimesta.', 'Microphone access was blocked. Enable it in your browser.')
+          : error === 'audio-capture'
+            ? t('Mikrofonia ei löytynyt.', 'No microphone was found.')
+            : error === 'no-speech'
+              ? t('Puhetta ei tunnistettu. Yritä uudelleen.', 'No speech was detected. Try again.')
+              : error === 'network' || error === 'language-not-supported'
+                ? t('Puheentunnistus ei ole käytettävissä juuri nyt.', 'Speech recognition is unavailable right now.')
+                : t('Puheentunnistus epäonnistui. Kirjoita kysymyksesi.', 'Speech recognition failed. Please type your question.');
+        if (error !== 'aborted') showVoiceNote(message);
+      };
+      recognition.onend = () => {
+        if (activeRecognition !== recognition) return;
+        activeRecognition = null;
+        resetVoiceButton();
+        if (!heardText) input.value = voiceDraft;
+        if (!hadError) showVoiceNote(heardText
+          ? t('Tarkista teksti ja lähetä.', 'Review the text and press send.')
+          : t('Puhetta ei tunnistettu. Yritä uudelleen.', 'No speech was detected. Try again.'));
+      };
+      input.readOnly = true;
+      voiceButton.classList.add('listening');
+      voiceButton.setAttribute('aria-pressed', 'true');
+      voiceButton.setAttribute('aria-label', t('Lopeta puhuminen', 'Stop voice input'));
+      voiceButton.title = t('Lopeta puhuminen', 'Stop voice input');
+      showVoiceNote(t('Kuunnellaan…', 'Listening…') + ' ' +
+        t('Puhe voidaan käsitellä selaimesi puhepalvelussa.', 'Your browser speech service may process the audio.'));
+      try { recognition.start(); }
+      catch {
+        cancelVoiceInput();
+        showVoiceNote(t('Puheentunnistus ei ole käytettävissä juuri nyt.', 'Speech recognition is unavailable right now.'));
+      }
+    });
+  }
   const pageContext = {
     url: String(window.location.href || '').slice(0, 1000),
     title: String(document.title || '').slice(0, 300),
@@ -991,6 +1114,7 @@
       const data = await res.json();
       token = data.token;
       ready = true;
+      if (!voiceButton.hidden) voiceButton.disabled = false;
       const botDisplayName=String(data.name||'RESPONDO AI').trim().slice(0,100)||'RESPONDO AI';
       const botAvatar=widgetAvatarMarkup(data.avatar || 'robot-1');
       name.textContent = botDisplayName;
@@ -1022,12 +1146,16 @@
     launcher.setAttribute('aria-expanded',String(open));
     launcher.setAttribute('aria-label',(launcherName.textContent||'RESPONDO AI')+' – '+
       (open?t('Sulje','Close'):t('Avaa chat','Open chat')));
+    if (!open) cancelVoiceInput();
     if (open && ready) setTimeout(() => input.focus(), 50);
   });
 
   async function sendMessage(rawMessage) {
     const message = String(rawMessage || '').trim();
     if (!message || !ready) return;
+    cancelVoiceInput();
+    showVoiceNote('');
+    if (!voiceButton.hidden) voiceButton.disabled = true;
 
     addMessage(message, 'user');
     input.value = '';
@@ -1067,6 +1195,7 @@
       pending.textContent = t('Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.', 'The response failed. Please try again in a moment.');
     } finally {
       input.disabled = false;
+      if (!voiceButton.hidden) voiceButton.disabled = false;
       input.focus();
       chat.scrollTop = chat.scrollHeight;
     }
