@@ -10,6 +10,7 @@ import { ensureZendeskSchema } from './zendesk-oauth.mjs';
 import { ensureQualityRepairSchema } from './quality-source-repair.mjs';
 import { ensureNativeInboxSchema } from './native-inbox.mjs';
 import { ensureNativeCalendarSchema } from './native-calendar.mjs';
+import { ensureNativeTaskSchema } from './native-taskboard.mjs';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const ssl = isProduction ? { rejectUnauthorized: false } : undefined;
@@ -121,6 +122,7 @@ async function initializeCrmConnectors() {
     await ensureQualityRepairSchema(pool);
     await ensureNativeInboxSchema(pool);
     await ensureNativeCalendarSchema(pool);
+    await ensureNativeTaskSchema(pool);
   } finally {await pool.end();}
 }
 await initializeCrmConnectors();
