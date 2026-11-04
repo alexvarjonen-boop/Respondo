@@ -2,7 +2,7 @@
   'use strict';
   const API='/api/app/native';
   const copy={
-    fi:{helpdesk:'Tukijärjestelmä',helpdeskIntro:'Yhdistä Freshdesk turvallisesti. Vain erikseen hyväksytyt tukipyynnöt lähetetään ulkoiseen palveluun.',subdomain:'Freshdesk-osoitteen alkuosa',apiKey:'Freshdesk API-avain',connect:'Yhdistä',test:'Testaa yhteys',disconnect:'Katkaise yhteys',connected:'Yhdistetty',notConnected:'Ei yhdistetty',requesterEmail:'Asiakkaan sähköposti',sendTicket:'Vie tukipyyntö Freshdeskiin',exportApproval:'Hyväksyn tämän asiakasasian lähettämisen ulkoiseen Freshdesk-palveluun.',exported:'Viety Freshdeskiin',exportUnknown:'Vienti voi olla kesken tai epävarma. Tarkista Freshdeskistä ennen uusintaa.',badCredential:'Yhteyttä ei voitu vahvistaa. Tarkista osoite ja API-avain.',confirmDisconnect:'Katkaistaanko Freshdesk-yhteys? Aiempien vientien loki säilyy.',quality:'Laatu',insights:'Tulokset',qualityIntro:'Käsittele puutteelliset vastaukset. Korjaukset eivät muuta botin tietopohjaa ilman erillistä hyväksyntää.',insightsIntro:'Vastaukset, liidit ja toiminnot kanavittain. Automaattinen vastaus ei todista asian ratkaisua.',period:'Ajanjakso',replies:'Viestit',automated:'AI-vastaukset',handoffs:'Siirrot ihmiselle',cited:'Lähteelliset AI-vastaukset',qualityOpen:'Avoimet laatutarkistukset',reviewReason:'Virheen tyyppi',flag:'Merkitse tarkistettavaksi',resolve:'Merkitse korjatuksi',dismiss:'Hylkää havainto',resolution:'Miten virhe korjattiin ja varmistettiin?',flags:'Tarkistettavat keskustelut',recentReviews:'Laatumerkinnät',channels:'Kanavittain',daily:'Päivittäiset keskustelut',disclaimerQuality:'Vastausprosentti ei ole asiakastyytyväisyys- tai oikeellisuusmittari. Virheellinen tieto pitää korjata hyväksyttyyn lähteeseen.',reasonIncorrect:'Virheellinen tieto',reasonOutdated:'Vanhentunut tieto',reasonLanguage:'Väärä kieli',reasonIntent:'Väärin ymmärretty kysymys',reasonHandoff:'Tarpeeton siirto',reasonOther:'Muu',knowledge:'Tietopohja',approvedFacts:'Hyväksytyt tiedot',contacts:'Asiakasrekisteri',tickets:'Tukipyynnöt',quotes:'Tarjoukset',rules:'Automaatiot',docs:'Tietopankki',
+    fi:{zendesk:'Zendesk OAuth',zendeskIntro:'Yhdistä yrityksesi Zendesk-tili OAuth-valtuutuksella. Tukipyynnöt siirtyvät vain omalla hyväksynnälläsi.',zendeskNotConfigured:'Zendesk OAuth -sovellustunnuksia ei ole vielä asetettu. Ota yhteyttä Respondo-ylläpitoon.',zendeskDomain:'Zendesk-aliverkkotunnus',zendeskAuthorize:'Valtuuta Zendesk',zendeskScope:'Pyydettävät käyttöoikeudet: tickets:read ja tickets:write.',zendeskConnected:'Zendesk yhdistetty',zendeskDisconnected:'Zendesk ei yhdistetty',zendeskStartError:'Valtuutuslinkin luonti epäonnistui.',zendeskDisconnect:'Katkaise Zendesk-yhteys',zendeskDisconnectConfirm:'Poistetaanko Zendesk-valtuutus? Aiemmat vientitiedot säilyvät.',zendeskExportConsent:'Hyväksyn tämän asiakasasian lähettämisen Zendesk-palveluun.',zendeskSend:'Vie Zendesk-tukipyynnöksi',zendeskUnknown:'Vienti on epävarma. Tarkista Zendeskistä ennen uutta yritystä.',zendeskSent:'Zendesk-tunnus',zendeskHelp:'Valtuutuksen jälkeen voit viedä yksittäisiä tukipyyntöjä. Asiakkaiden tietoja ei lähetetä automaattisesti.',zendeskCallbackFailed:'Zendesk-valtuutus ei onnistunut. Tarkista yhteys ja käyttöoikeudet.',helpdesk:'Tukijärjestelmä',helpdeskIntro:'Yhdistä Freshdesk turvallisesti. Vain erikseen hyväksytyt tukipyynnöt lähetetään ulkoiseen palveluun.',subdomain:'Freshdesk-osoitteen alkuosa',apiKey:'Freshdesk API-avain',connect:'Yhdistä',test:'Testaa yhteys',disconnect:'Katkaise yhteys',connected:'Yhdistetty',notConnected:'Ei yhdistetty',requesterEmail:'Asiakkaan sähköposti',sendTicket:'Vie tukipyyntö Freshdeskiin',exportApproval:'Hyväksyn tämän asiakasasian lähettämisen ulkoiseen Freshdesk-palveluun.',exported:'Viety Freshdeskiin',exportUnknown:'Vienti voi olla kesken tai epävarma. Tarkista Freshdeskistä ennen uusintaa.',badCredential:'Yhteyttä ei voitu vahvistaa. Tarkista osoite ja API-avain.',confirmDisconnect:'Katkaistaanko Freshdesk-yhteys? Aiempien vientien loki säilyy.',quality:'Laatu',insights:'Tulokset',qualityIntro:'Käsittele puutteelliset vastaukset. Korjaukset eivät muuta botin tietopohjaa ilman erillistä hyväksyntää.',insightsIntro:'Vastaukset, liidit ja toiminnot kanavittain. Automaattinen vastaus ei todista asian ratkaisua.',period:'Ajanjakso',replies:'Viestit',automated:'AI-vastaukset',handoffs:'Siirrot ihmiselle',cited:'Lähteelliset AI-vastaukset',qualityOpen:'Avoimet laatutarkistukset',reviewReason:'Virheen tyyppi',flag:'Merkitse tarkistettavaksi',resolve:'Merkitse korjatuksi',dismiss:'Hylkää havainto',resolution:'Miten virhe korjattiin ja varmistettiin?',flags:'Tarkistettavat keskustelut',recentReviews:'Laatumerkinnät',channels:'Kanavittain',daily:'Päivittäiset keskustelut',disclaimerQuality:'Vastausprosentti ei ole asiakastyytyväisyys- tai oikeellisuusmittari. Virheellinen tieto pitää korjata hyväksyttyyn lähteeseen.',reasonIncorrect:'Virheellinen tieto',reasonOutdated:'Vanhentunut tieto',reasonLanguage:'Väärä kieli',reasonIntent:'Väärin ymmärretty kysymys',reasonHandoff:'Tarpeeton siirto',reasonOther:'Muu',knowledge:'Tietopohja',approvedFacts:'Hyväksytyt tiedot',contacts:'Asiakasrekisteri',tickets:'Tukipyynnöt',quotes:'Tarjoukset',rules:'Automaatiot',docs:'Tietopankki',
       contactIntro:'Tallennetut asiakkaat ja liidit.',ticketIntro:'Sisäiset palvelupyynnöt työntekijöille.',
       quoteIntro:'Luonnokset yrityksen tallennetuista hinnoista. Lähetys vaatii ihmisen hyväksynnän.',
       docsIntro:'Julkaise vain tarkistettua yritystietoa, jota botti saa käyttää vastauksissa.',
@@ -18,7 +18,7 @@
       draft:'Luonnos',approved:'Hyväksytty',triggerLead:'Uusi liidi → tallenna CRM:ään',
       triggerAction:'Uusi asiakaspyyntö → luo tiketti',recent:'Viimeaikaiset automaatiot',
       confirmDelete:'Poistetaanko dokumentti myös botin tietopohjasta?',notice:'Sisäiset toiminnot suoritetaan Respondossa. Freshdesk-yhteys aktivoidaan vain erikseen.'},
-    sv:{helpdesk:'Supportsystem',helpdeskIntro:'Anslut Freshdesk säkert. Endast separat godkända ärenden skickas till tjänsten.',subdomain:'Freshdesk-underdomän',apiKey:'Freshdesk API-nyckel',connect:'Anslut',test:'Testa anslutning',disconnect:'Koppla bort',connected:'Ansluten',notConnected:'Inte ansluten',requesterEmail:'Kundens e-post',sendTicket:'Exportera ärende till Freshdesk',exportApproval:'Jag godkänner att kundärendet skickas till Freshdesk.',exported:'Exporterad till Freshdesk',exportUnknown:'Exportstatus är osäker. Kontrollera i Freshdesk före nytt försök.',badCredential:'Anslutningen kunde inte verifieras. Kontrollera domän och API-nyckel.',confirmDisconnect:'Koppla bort Freshdesk? Tidigare exporthistorik sparas.',quality:'Kvalitet',insights:'Resultat',qualityIntro:'Granska osäkra svar. Ändringar i kunskapsbasen kräver separat godkännande.',insightsIntro:'Svar, leads och åtgärder per kanal. Ett automatiskt svar är inte ett bevis på att ärendet lösts.',period:'Period',replies:'Meddelanden',automated:'AI-svar',handoffs:'Överlämningar',cited:'AI-svar med källor',qualityOpen:'Öppna kvalitetsgranskningar',reviewReason:'Feltyp',flag:'Markera för granskning',resolve:'Markera som åtgärdad',dismiss:'Avfärda',resolution:'Hur rättades och verifierades felet?',flags:'Konversationer att granska',recentReviews:'Kvalitetsrapporter',channels:'Per kanal',daily:'Dagliga konversationer',disclaimerQuality:'Svarsfrekvensen mäter varken kundnöjdhet eller korrekthet. Felaktig information ska korrigeras i en godkänd källa.',reasonIncorrect:'Felaktig information',reasonOutdated:'Inaktuell information',reasonLanguage:'Fel språk',reasonIntent:'Missförstod frågan',reasonHandoff:'Onödig överlämning',reasonOther:'Annat',knowledge:'Kunskapsbas',approvedFacts:'Godkända uppgifter',contacts:'Kundregister',tickets:'Supportärenden',quotes:'Offerter',rules:'Automatiseringar',docs:'Kunskapsbas',
+    sv:{zendesk:'Zendesk OAuth',zendeskIntro:'Anslut företagets Zendesk-konto med OAuth. Supportärenden exporteras endast med ditt uttryckliga godkännande.',zendeskNotConfigured:'Zendesk OAuth-klienten är inte konfigurerad. Kontakta Respondo-administratören.',zendeskDomain:'Zendesk-underdomän',zendeskAuthorize:'Auktorisera Zendesk',zendeskScope:'Begärda behörigheter: tickets:read och tickets:write.',zendeskConnected:'Zendesk ansluten',zendeskDisconnected:'Zendesk inte ansluten',zendeskStartError:'Kunde inte starta auktoriseringen.',zendeskDisconnect:'Koppla bort Zendesk',zendeskDisconnectConfirm:'Ta bort Zendesk-auktoriseringen? Exporthistoriken behålls.',zendeskExportConsent:'Jag godkänner att detta kundärende skickas till Zendesk.',zendeskSend:'Exportera till Zendesk',zendeskUnknown:'Exportstatus oklar. Kontrollera Zendesk före ett nytt försök.',zendeskSent:'Zendesk-ärende',zendeskHelp:'Efter auktorisering kan du exportera enskilda ärenden. Kunddata skickas inte automatiskt.',zendeskCallbackFailed:'Zendesk-auktoriseringen misslyckades. Kontrollera behörigheterna.',helpdesk:'Supportsystem',helpdeskIntro:'Anslut Freshdesk säkert. Endast separat godkända ärenden skickas till tjänsten.',subdomain:'Freshdesk-underdomän',apiKey:'Freshdesk API-nyckel',connect:'Anslut',test:'Testa anslutning',disconnect:'Koppla bort',connected:'Ansluten',notConnected:'Inte ansluten',requesterEmail:'Kundens e-post',sendTicket:'Exportera ärende till Freshdesk',exportApproval:'Jag godkänner att kundärendet skickas till Freshdesk.',exported:'Exporterad till Freshdesk',exportUnknown:'Exportstatus är osäker. Kontrollera i Freshdesk före nytt försök.',badCredential:'Anslutningen kunde inte verifieras. Kontrollera domän och API-nyckel.',confirmDisconnect:'Koppla bort Freshdesk? Tidigare exporthistorik sparas.',quality:'Kvalitet',insights:'Resultat',qualityIntro:'Granska osäkra svar. Ändringar i kunskapsbasen kräver separat godkännande.',insightsIntro:'Svar, leads och åtgärder per kanal. Ett automatiskt svar är inte ett bevis på att ärendet lösts.',period:'Period',replies:'Meddelanden',automated:'AI-svar',handoffs:'Överlämningar',cited:'AI-svar med källor',qualityOpen:'Öppna kvalitetsgranskningar',reviewReason:'Feltyp',flag:'Markera för granskning',resolve:'Markera som åtgärdad',dismiss:'Avfärda',resolution:'Hur rättades och verifierades felet?',flags:'Konversationer att granska',recentReviews:'Kvalitetsrapporter',channels:'Per kanal',daily:'Dagliga konversationer',disclaimerQuality:'Svarsfrekvensen mäter varken kundnöjdhet eller korrekthet. Felaktig information ska korrigeras i en godkänd källa.',reasonIncorrect:'Felaktig information',reasonOutdated:'Inaktuell information',reasonLanguage:'Fel språk',reasonIntent:'Missförstod frågan',reasonHandoff:'Onödig överlämning',reasonOther:'Annat',knowledge:'Kunskapsbas',approvedFacts:'Godkända uppgifter',contacts:'Kundregister',tickets:'Supportärenden',quotes:'Offerter',rules:'Automatiseringar',docs:'Kunskapsbas',
       contactIntro:'Sparade kunder och leads.',ticketIntro:'Interna serviceärenden för personal.',
       quoteIntro:'Utkast baserade på företagets sparade priser. Leverans kräver mänskligt godkännande.',
       docsIntro:'Publicera endast granskade företagsuppgifter som botten får använda.',
@@ -34,7 +34,7 @@
       draft:'Utkast',approved:'Godkänd',triggerLead:'Nytt lead → spara i CRM',
       triggerAction:'Ny kundförfrågan → skapa ärende',recent:'Senaste automatiseringar',
       confirmDelete:'Ta bort dokumentet även från bottens kunskapsbas?',notice:'Interna funktioner körs i Respondo. Freshdesk ansluts endast separat.'},
-    en:{helpdesk:'Helpdesk',helpdeskIntro:'Connect Freshdesk securely. Only individually approved support tickets are sent to this external provider.',subdomain:'Freshdesk subdomain',apiKey:'Freshdesk API key',connect:'Connect',test:'Test connection',disconnect:'Disconnect',connected:'Connected',notConnected:'Not connected',requesterEmail:'Customer email',sendTicket:'Export ticket to Freshdesk',exportApproval:'I approve sending this customer ticket to the external Freshdesk service.',exported:'Exported to Freshdesk',exportUnknown:'Export status is uncertain. Reconcile in Freshdesk before any repeat.',badCredential:'The connection could not be verified. Check the domain and API key.',confirmDisconnect:'Disconnect Freshdesk? Previous export audit records remain.',quality:'Quality',insights:'Outcomes',qualityIntro:'Review uncertain answers. Changing the bot knowledge base requires separate approval.',insightsIntro:'Replies, leads and actions by channel. Automated replies do not prove customer resolution.',period:'Period',replies:'Messages',automated:'AI replies',handoffs:'Human handoffs',cited:'AI replies with sources',qualityOpen:'Open quality reviews',reviewReason:'Review reason',flag:'Flag for review',resolve:'Mark as fixed',dismiss:'Dismiss',resolution:'How was the issue corrected and verified?',flags:'Conversations to review',recentReviews:'Quality reviews',channels:'By channel',daily:'Daily conversations',disclaimerQuality:'Reply rate is not a customer-satisfaction or factual-accuracy metric. Correct false facts in an approved source.',reasonIncorrect:'Incorrect fact',reasonOutdated:'Outdated fact',reasonLanguage:'Wrong language',reasonIntent:'Misunderstood question',reasonHandoff:'Unnecessary handoff',reasonOther:'Other',knowledge:'Knowledge base',approvedFacts:'Approved facts',contacts:'Customer CRM',tickets:'Support tickets',quotes:'Quote drafts',rules:'Automations',docs:'Knowledge documents',
+    en:{zendesk:'Zendesk OAuth',zendeskIntro:'Connect your company Zendesk account using OAuth. Support tickets are exported only with your explicit approval.',zendeskNotConfigured:'The Zendesk OAuth client is not configured yet. Contact your Respondo administrator.',zendeskDomain:'Zendesk subdomain',zendeskAuthorize:'Authorize Zendesk',zendeskScope:'Requested scopes: tickets:read and tickets:write.',zendeskConnected:'Zendesk connected',zendeskDisconnected:'Zendesk disconnected',zendeskStartError:'Could not start Zendesk authorization.',zendeskDisconnect:'Disconnect Zendesk',zendeskDisconnectConfirm:'Remove Zendesk authorization? Previous export audit is retained.',zendeskExportConsent:'I approve sending this customer ticket to Zendesk.',zendeskSend:'Export to Zendesk',zendeskUnknown:'Export status is uncertain. Check Zendesk before retrying.',zendeskSent:'Zendesk ticket',zendeskHelp:'After authorization you can export tickets individually. No customer data is sent automatically.',zendeskCallbackFailed:'Zendesk authorization failed. Check your account permissions.',helpdesk:'Helpdesk',helpdeskIntro:'Connect Freshdesk securely. Only individually approved support tickets are sent to this external provider.',subdomain:'Freshdesk subdomain',apiKey:'Freshdesk API key',connect:'Connect',test:'Test connection',disconnect:'Disconnect',connected:'Connected',notConnected:'Not connected',requesterEmail:'Customer email',sendTicket:'Export ticket to Freshdesk',exportApproval:'I approve sending this customer ticket to the external Freshdesk service.',exported:'Exported to Freshdesk',exportUnknown:'Export status is uncertain. Reconcile in Freshdesk before any repeat.',badCredential:'The connection could not be verified. Check the domain and API key.',confirmDisconnect:'Disconnect Freshdesk? Previous export audit records remain.',quality:'Quality',insights:'Outcomes',qualityIntro:'Review uncertain answers. Changing the bot knowledge base requires separate approval.',insightsIntro:'Replies, leads and actions by channel. Automated replies do not prove customer resolution.',period:'Period',replies:'Messages',automated:'AI replies',handoffs:'Human handoffs',cited:'AI replies with sources',qualityOpen:'Open quality reviews',reviewReason:'Review reason',flag:'Flag for review',resolve:'Mark as fixed',dismiss:'Dismiss',resolution:'How was the issue corrected and verified?',flags:'Conversations to review',recentReviews:'Quality reviews',channels:'By channel',daily:'Daily conversations',disclaimerQuality:'Reply rate is not a customer-satisfaction or factual-accuracy metric. Correct false facts in an approved source.',reasonIncorrect:'Incorrect fact',reasonOutdated:'Outdated fact',reasonLanguage:'Wrong language',reasonIntent:'Misunderstood question',reasonHandoff:'Unnecessary handoff',reasonOther:'Other',knowledge:'Knowledge base',approvedFacts:'Approved facts',contacts:'Customer CRM',tickets:'Support tickets',quotes:'Quote drafts',rules:'Automations',docs:'Knowledge documents',
       contactIntro:'Saved customers and leads.',ticketIntro:'Internal service requests for your team.',
       quoteIntro:'Drafts based on your saved service prices. Sending requires human approval.',
       docsIntro:'Publish only verified business facts that the bot may use in its answers.',
@@ -108,12 +108,12 @@
     const feedback=el('p','native-feedback',t.loading);
     feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
     target.append(tabs,content,feedback,el('p','native-disclaimer',t.notice));
-    let active='contacts',data=null,report=null,helpdesk=null,busy=false,days=30;
-    const kinds=['contacts','tickets','quotes','rules','docs','quality','insights','helpdesk'];
+    let active=new URLSearchParams(location.search).has('zendesk')?'zendesk':'contacts',data=null,report=null,helpdesk=null,zendesk=null,busy=false,days=30;
+    const kinds=['contacts','tickets','quotes','rules','docs','quality','insights','helpdesk','zendesk'];
     for(const kind of kinds){
       const b=button(t[kind],'button');
       b.dataset.tab=kind;b.setAttribute('role','tab');
-      b.addEventListener('click',()=>{active=kind;if(kind==='helpdesk'&&!helpdesk)loadHelpdesk();else if((kind==='quality'||kind==='insights')&&!report)loadQuality();else render();});
+      b.addEventListener('click',()=>{active=kind;if(kind==='zendesk'&&!zendesk)loadZendesk();else if(kind==='helpdesk'&&!helpdesk)loadHelpdesk();else if((kind==='quality'||kind==='insights')&&!report)loadQuality();else render();});
       tabs.appendChild(b);
     }
     async function request(method,path=API,payload){
@@ -126,6 +126,24 @@
       if(!response.ok)throw Error(String(result.error||t.error).slice(0,200));
       return result.data;
     }
+
+    const ZENDESK='/api/app/helpdesk/zendesk';
+    async function loadZendesk(){
+      try{zendesk=await request('GET',ZENDESK);feedback.textContent='';render();}
+      catch(error){feedback.textContent=error.message||t.error;}
+    }
+    async function sendZendesk(method,path,payload){
+      if(busy)return;
+      busy=true;feedback.textContent=t.saving;
+      try{
+        const result=await request(method,path,payload);
+        if(path.includes('/export')&&result.status!=='sent')
+          throw Error(t.zendeskUnknown);
+        await loadZendesk();feedback.textContent=t.saved;
+      }catch(error){feedback.textContent=error.message||t.error;}
+      finally{busy=false;}
+    }
+
     const HELPDESK='/api/app/helpdesk/freshdesk';
     async function loadHelpdesk(){
       try{helpdesk=await request('GET',HELPDESK);feedback.textContent='';render();}
@@ -207,6 +225,74 @@
       const item=el('article','native-quality-metric');
       item.append(el('span','native-quality-label',name),el('strong','native-quality-value',String(value)));
       parent.appendChild(item);
+    }
+
+
+    function renderZendesk(){
+      content.replaceChildren(el('p','native-intro',t.zendeskIntro));
+      if(!zendesk){content.appendChild(el('p','native-empty',t.loading));return;}
+      content.appendChild(el('h4','native-subtitle',
+        zendesk.connected?t.zendeskConnected+': '+zendesk.subdomain+'.zendesk.com':t.zendeskDisconnected));
+      content.appendChild(el('p','native-disclaimer',t.zendeskScope));
+      if(!zendesk.configured){
+        content.appendChild(el('p','native-disclaimer',t.zendeskNotConfigured));
+      }else if(!zendesk.connected){
+        const form=el('form','native-form');
+        fields(form,[{label:t.zendeskDomain,name:'subdomain',maxlength:63}]);
+        form.appendChild(button(t.zendeskAuthorize));
+        form.addEventListener('submit',async event=>{
+          event.preventDefault();if(busy)return;
+          busy=true;feedback.textContent=t.saving;
+          try{
+            const r=await request('POST',ZENDESK+'/start',{
+              subdomain:form.elements.subdomain.value
+            });
+            const uri=new URL(r.authorizationUrl);
+            if(uri.protocol!=='https:'||!uri.hostname.endsWith('.zendesk.com')||
+              uri.pathname!=='/oauth/authorizations/new')
+              throw Error(t.zendeskStartError);
+            window.location.assign(uri.toString());
+          }catch(error){feedback.textContent=error.message||t.zendeskStartError;busy=false;}
+        });
+        content.appendChild(form);
+      }else{
+        const disconnect=button(t.zendeskDisconnect,'button');
+        disconnect.addEventListener('click',()=>{
+          if(window.confirm(t.zendeskDisconnectConfirm))sendZendesk('DELETE',ZENDESK);
+        });
+        content.appendChild(disconnect);
+      }
+      content.appendChild(el('p','native-disclaimer',t.zendeskHelp));
+      if(!zendesk.connected||!data?.tickets?.length)return;
+      const audit=new Map((zendesk.exports||[]).map(x=>[x.native_ticket_id,x]));
+      const list=el('div','native-list');
+      list.appendChild(el('h4','native-subtitle',t.tickets));
+      for(const ticket of data.tickets){
+        const card=recordCard(ticket.title,ticket.details);
+        const prior=audit.get(ticket.id);
+        if(prior){
+          card.appendChild(el('span','native-record-state',
+            prior.status==='sent'?t.zendeskSent+' #'+prior.external_ticket_id:t.zendeskUnknown));
+        }else{
+          const form=el('form','native-helpdesk-export');
+          const email=el('input','native-review-note');
+          email.type='email';email.required=true;email.maxLength=254;
+          email.placeholder=t.requesterEmail;email.setAttribute('aria-label',t.requesterEmail);
+          const label=el('label','native-checkbox');
+          const consent=el('input');consent.type='checkbox';consent.required=true;
+          label.append(consent,document.createTextNode(t.zendeskExportConsent));
+          form.append(email,label,button(t.zendeskSend));
+          form.addEventListener('submit',event=>{
+            event.preventDefault();
+            if(!idGuard(ticket.id)||!consent.checked)return;
+            sendZendesk('POST',ZENDESK+'/tickets/'+ticket.id+'/export',
+              {requesterEmail:email.value,approved:true});
+          });
+          card.appendChild(form);
+        }
+        list.appendChild(card);
+      }
+      content.appendChild(list);
     }
 
     function renderHelpdesk(){
@@ -361,6 +447,7 @@
       }
       if(active==='quality'||active==='insights'){renderQualityCenter();return;}
       if(active==='helpdesk'){renderHelpdesk();return;}
+      if(active==='zendesk'){renderZendesk();return;}
       content.replaceChildren(el('p','native-intro',
         t[active==='contacts'?'contactIntro':active==='tickets'?'ticketIntro':
           active==='quotes'?'quoteIntro':active==='docs'?'docsIntro':'notice']));
@@ -421,6 +508,7 @@
       content.appendChild(list);
     }
     load();
+    if(active==='zendesk')loadZendesk();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
   else init();

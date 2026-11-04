@@ -48,6 +48,7 @@ import { guardCitedNumericFacts } from './runtime-numeric-evidence-guard.mjs';
 import { qualityCenterOverview, createQualityReview, updateQualityReview } from './respondo-quality-center.mjs';
 import { reconstructedConversationHistory, validInboundEventId, claimInboundEvent, completeInboundEvent, failInboundEvent } from './channel-ingress.mjs';
 import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk, exportFreshdeskTicket } from './freshdesk-helpdesk.mjs';
+import { zendeskConfig, beginZendeskOAuth, completeZendeskOAuth, zendeskStatus, disconnectZendesk, exportZendeskTicket } from './zendesk-oauth.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
 import { compareBotValidationRuns } from './bot-retest-comparison.mjs';
 import express from 'express';
@@ -9712,6 +9713,35 @@ app.delete('/api/app/helpdesk/freshdesk',auth,ownerOnly,subscribed,nativeWriteLi
 app.post('/api/app/helpdesk/freshdesk/tickets/:id/export',
   auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>exportFreshdeskTicket(pool,id,req.params.id,req.body||{}),{quote:true}));
+/* Opt-in Zendesk OAuth, scoped to the active subscribed Enterprise workspace.
+   Callback requires the same authenticated owner; state is consumed once. */
+const zendeskOAuthConfiguration=()=>zendeskConfig(process.env,SEO_CANONICAL_ORIGIN);
+app.get('/api/app/helpdesk/zendesk',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>zendeskStatus(pool,id,zendeskOAuthConfiguration()),{quote:true}));
+app.post('/api/app/helpdesk/zendesk/start',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>beginZendeskOAuth(pool,id,req.user.sub,req.body?.subdomain,zendeskOAuthConfiguration()),{quote:true}));
+app.get('/api/app/helpdesk/zendesk/callback',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  const destination=SEO_CANONICAL_ORIGIN+'/app?zendesk=';
+  try{
+    const tenant=await requirePlanCapability(req,res,'allCurrentFeatures');
+    if(!tenant)return;
+    if(req.query?.error)return res.redirect(303,destination+'denied');
+    await completeZendeskOAuth(pool,tenant.tenant.id,req.user.sub,
+      req.query?.state,req.query?.code,zendeskOAuthConfiguration());
+    return res.redirect(303,destination+'connected');
+  }catch(error){
+    console.error('Zendesk OAuth callback could not complete',error?.name||'error');
+    return res.redirect(303,destination+'failed');
+  }
+});
+app.delete('/api/app/helpdesk/zendesk',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  id=>disconnectZendesk(pool,id),{quote:true}));
+app.post('/api/app/helpdesk/zendesk/tickets/:id/export',
+  auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+    (id,req)=>exportZendeskTicket(pool,id,req.params.id,req.body||{},
+      zendeskOAuthConfiguration()),{quote:true}));
+
 
 
 app.get('/api/leads', auth, ownerOnly, requireLeadSchema, async (req, res) => {
