@@ -1,0 +1,170 @@
+/* Respondo contrast accessibility v53 — 2026-11-04.
+   Loaded last to resolve legacy light-mode text styles on newer dark surfaces.
+   Scoped to known components; intentionally does not recolor whole pages or buttons. */
+#app{
+  --ra-text-on-dark:#f5faff;
+  --ra-muted-on-dark:#cbd8ec;
+  --ra-link-on-dark:#bbdaff;
+}
+
+/* Legal pages (FI/SV/EN): dark reading cards and seller identity. */
+#app .legalpage .legal-seller{
+  background:#111d2f!important;
+  border-color:rgba(174,203,244,.25)!important;
+  color:var(--ra-text-on-dark)!important;
+}
+#app .legalpage .legal-seller :is(b,strong){
+  color:var(--ra-text-on-dark)!important;
+  -webkit-text-fill-color:var(--ra-text-on-dark)!important;
+  opacity:1!important;
+}
+#app .legalpage .legal-seller :is(span,small){
+  color:var(--ra-muted-on-dark)!important;
+  -webkit-text-fill-color:var(--ra-muted-on-dark)!important;
+  opacity:1!important;
+}
+#app .legalpage .r-brand-legal-toc{
+  background:#101b2b!important;
+  color:var(--ra-text-on-dark)!important;
+}
+#app .legalpage .r-brand-legal-toc .r-brand-mini-title,
+#app .legalpage .r-brand-toc-links a,
+#app .legalpage .r-brand-toc-links a span{
+  color:#dbe9fc!important;
+  -webkit-text-fill-color:#dbe9fc!important;
+  opacity:1!important;
+}
+#app .legalpage .legalcopy :is(h2,h3,h4){
+  color:var(--ra-text-on-dark)!important;
+  -webkit-text-fill-color:var(--ra-text-on-dark)!important;
+}
+#app .legalpage .legalcopy :is(p,ul,ol,li),
+#app .legalpage .legal-note{
+  color:var(--ra-muted-on-dark)!important;
+  -webkit-text-fill-color:var(--ra-muted-on-dark)!important;
+  opacity:1!important;
+}
+#app .legalpage .legalcopy a,
+#app .legalpage .legal-aside a[href^="mailto:"]{
+  color:var(--ra-link-on-dark)!important;
+  -webkit-text-fill-color:var(--ra-link-on-dark)!important;
+}
+#app .legalpage .legal-seller ::selection,
+#app .legalpage .legalcopy ::selection{
+  background:#c8e2ff;
+  color:#102035;
+  -webkit-text-fill-color:#102035;
+}
+
+/* Preserve legible text in dark post-onboarding workspace cards. */
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-module-card :is(h2,h3,h4,label,.panel-head b,.panel-head strong),
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-overview-card :is(b,strong){
+  color:var(--ra-text-on-dark)!important;
+  -webkit-text-fill-color:var(--ra-text-on-dark)!important;
+  opacity:1!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-module-card :is(.field-hint,.form-security,.panel-head p,small),
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-overview-card p,
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-chat-card .preview-note{
+  color:var(--ra-muted-on-dark)!important;
+  -webkit-text-fill-color:var(--ra-muted-on-dark)!important;
+  opacity:1!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-module-card a:not(.btn):not([role="button"]){
+  color:var(--ra-link-on-dark)!important;
+  -webkit-text-fill-color:var(--ra-link-on-dark)!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active
+  .respondo-workspace-module-card :is(input,textarea)::placeholder,
+#app .guided-setup-active .guided-card :is(input,textarea)::placeholder{
+  color:#b8c4d5!important;
+  -webkit-text-fill-color:#b8c4d5!important;
+  opacity:1!important;
+}
+/* Pale inputs and selected date controls keep their separate dark foreground. */
+
+/* Wizard variants: legible light demo and dark owner setup. */
+#app .guided-setup-progress span:not(.active):not(.done){
+  color:#56606f!important;
+  -webkit-text-fill-color:#56606f!important;
+}
+#app .guided-setup-active .guided-card .guided-avatar-option{
+  color:#edf1f7!important;
+  -webkit-text-fill-color:#edf1f7!important;
+}
+#app .guided-setup-active .guided-card .guided-ready-mark,
+#app .guided-ready-mark{
+  color:#1e5e45!important;
+  -webkit-text-fill-color:#1e5e45!important;
+}
+#app .guided-avatar-option:not(.selected){
+  color:#535c69!important;
+  -webkit-text-fill-color:#535c69!important;
+}
+#app .guided-setup-active .guided-avatar-option:not(.selected){
+  color:#e3e7ed!important;
+  -webkit-text-fill-color:#e3e7ed!important;
+}
+#app .guided-setup-active .guided-card .guided-summary span{
+  color:#cbd4e1!important;
+  -webkit-text-fill-color:#cbd4e1!important;
+}
+
+/* Specific low-contrast controls revealed by the stylesheet audit. */
+#app .dashboard-premium-shell:not(.respondo-workspace-active) .preview-note{
+  color:#566275!important;
+  -webkit-text-fill-color:#566275!important;
+}
+#app .dashboard-premium-shell:not(.respondo-workspace-active) .preview-live,
+#app .dashboard-premium-shell .premium-live-dot{
+  color:#176746!important;
+  -webkit-text-fill-color:#176746!important;
+}
+#app .dashboard-premium-shell .premium-verified>span{
+  background:#1c6949!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+#app .dashboard-premium-shell:not(.respondo-workspace-active)
+  .premium-mobile-more-card header button{color:#485367!important}
+#app .fx-assistant-form button{
+  background:#2458c5!important;
+  color:#fff!important;
+}
+#app .signup-dark-shell .signup-page #signup .checkout-button{
+  background:#1a62bf!important;
+  border-color:#1a62bf!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+#app .login-page .formcard .btn.ink,
+#app .pricing-section .price-btn.pricing-select-btn{
+  background:#245fba!important;
+  border-color:#245fba!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+#app .setup-reference-image input[type=file]::file-selector-button{
+  background:#245fba!important;
+  color:#fff!important;
+}
+#app .dashboard-simple-shell #supportAgentForm
+  .support-agent-language-choice .support-language-check,
+#app .dashboard-simple-shell .booking-duration-custom-indicator{
+  background:#245fba!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+
+/* Maintain clear focus indication on dark backgrounds. */
+#app .legalpage :is(a,button,summary):focus-visible,
+#app .respondo-workspace-active :is(a,button,input,select,textarea):focus-visible{
+  outline:2px solid #c8e2ff!important;
+  outline-offset:3px!important;
+}
