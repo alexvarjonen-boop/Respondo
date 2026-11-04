@@ -9,6 +9,8 @@ import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManag
 import { brandedEmailHtml } from './email-branding.mjs';
 import { ensureOnboardingCheckupSchema, enqueueOnboardingCheckup, runDueOnboardingCheckups } from './onboarding-checkup.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
+import { processCrmOutbox } from './lead-crm-queue.mjs';
+import { deliverCrmProvider } from './lead-crm-providers.mjs';
 import { crmProviderAllowed, crmConnectorStatus, connectCrmCredential, retestCrmCredential, disconnectCrmCredential } from './crm-connectors.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { firecrawlEnabled, firecrawlMaxPages, maySpendOneFirecrawlCredit, fetchFirecrawlRenderedHtml } from './firecrawl-fallback.mjs';
@@ -16898,6 +16900,24 @@ async function start() {
       trustpilotUrl:process.env.TRUSTPILOT_REVIEW_URL,
       from:process.env.CHECKUP_EMAIL_FROM||'Respondo AI <info@respondoai.fi>',
     }).catch((error)=>console.error('Scheduled onboarding checkup failed:',error?.message));
+    // Deliver opted-in CRM leads on the same service that owns the encryption
+    // key. The queue uses SKIP LOCKED so multiple replicas cannot claim the
+    // same pending event. This does not require any third-party scheduler.
+    let crmWorkerRunning=false;
+    const deliverDueCrmLeads=async()=>{
+      if(crmWorkerRunning||!pool||!process.env.DATA_ENCRYPTION_KEY)return;
+      crmWorkerRunning=true;
+      try{
+        await processCrmOutbox(pool,(tenantId,event)=>
+          deliverCrmProvider(tenantId,event,{pool}),{limit:20});
+      }catch(error){
+        console.error('CRM queue delivery failed',error?.name||'error');
+      }finally{crmWorkerRunning=false;}
+    };
+    const crmDeliveryTimer=setInterval(()=>void deliverDueCrmLeads(),60*1000);
+    crmDeliveryTimer.unref();
+    const crmDeliveryStartup=setTimeout(()=>void deliverDueCrmLeads(),15000);
+    crmDeliveryStartup.unref();
     const checkupTimer=setInterval(sendDueCheckups,60*1000);
     checkupTimer.unref();
     const checkupStartup=setTimeout(sendDueCheckups,10000);
