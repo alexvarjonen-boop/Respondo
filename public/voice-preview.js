@@ -154,6 +154,10 @@
       try { current = new SpeechRecognitionClass(); }
       catch { showNote(words.unavailable); return; }
       recognition = current;
+      if (input.dataset.respondoVoiceLang) {
+        input.value = '';
+        delete input.dataset.respondoVoiceLang;
+      }
       originalText = input.value.trim();
       let transcript = '';
       let failed = false;
