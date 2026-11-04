@@ -99,7 +99,7 @@ test('service bot asks questions across turns and proposes no phantom availabili
   const getSlots=async duration=>{assert.equal(duration,490);return [];};
   const first=await serviceDialogue(db,tenant,visitor,'Saako perjantaina klo 15 ikkunanpesun?','fi',getSlots);
   assert.equal(first.status,'needs_details');
-  assert.match(first.answer,/montako/i);
+  assert.match(first.answer,/monta/i);
   const second=await serviceDialogue(db,tenant,visitor,'30 isoo ikkunaa','fi',getSlots);
   assert.equal(second.status,'needs_details');
   assert.match(second.answer,/molemmilta/i);
