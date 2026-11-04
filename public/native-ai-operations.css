@@ -1,0 +1,29 @@
+/* First-party Respondo operations. Scoped to the authenticated dark dashboard. */
+#app #native-operations #respondoNativeOperationsMount{display:grid;gap:16px;padding:8px 0 4px}
+#app #native-operations .native-tabs{display:flex;flex-wrap:wrap;gap:8px}
+#app #native-operations .native-tabs button{border-radius:999px;border:1px solid #647084;background:#242c39!important;color:#f5f7fc!important;-webkit-text-fill-color:#f5f7fc!important;padding:9px 13px;font-size:13px;font-weight:700;cursor:pointer}
+#app #native-operations .native-tabs button[aria-selected="true"]{background:#f3f6fb!important;color:#152638!important;-webkit-text-fill-color:#152638!important;border-color:#f3f6fb}
+#app #native-operations .native-content{display:grid;gap:14px;max-width:100%}
+#app #native-operations .native-intro{margin:0;color:#d4ddea!important;-webkit-text-fill-color:#d4ddea!important;font-size:13px;line-height:1.6}
+#app #native-operations .native-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;border:1px solid #475468;background:#202734;border-radius:14px;padding:16px}
+#app #native-operations .native-form .native-label{display:grid;gap:7px;color:#f1f6ff!important;-webkit-text-fill-color:#f1f6ff!important;font-size:13px;font-weight:700}
+#app #native-operations .native-form .native-label:has(textarea){grid-column:1/-1}
+#app #native-operations .native-form :is(input:not([type=checkbox]),textarea,select){width:100%;box-sizing:border-box;background:#f7f8fa!important;color:#172638!important;-webkit-text-fill-color:#172638!important;border:1px solid #b6c3d3!important;border-radius:10px;padding:10px 12px;min-height:42px;line-height:1.4;font-size:14px;color-scheme:light}
+#app #native-operations .native-form input::placeholder,#app #native-operations .native-form textarea::placeholder{color:#536379!important;-webkit-text-fill-color:#536379!important;opacity:1}
+#app #native-operations .native-form .native-checkbox{grid-column:1/-1;display:flex;gap:10px;align-items:center;color:#ebf2ff!important;-webkit-text-fill-color:#ebf2ff!important;font-size:13px;line-height:1.5}
+#app #native-operations .native-form .native-checkbox input{width:18px;height:18px;accent-color:#629fee}
+#app #native-operations .native-button{min-height:42px;border-radius:10px;background:#f2f5fb!important;border:1px solid #e1e8f4!important;color:#152538!important;-webkit-text-fill-color:#152538!important;padding:9px 14px;font-weight:800;cursor:pointer}
+#app #native-operations .native-button:hover{background:#dfe8f7!important}
+#app #native-operations .native-form>.native-button{align-self:end}
+#app #native-operations .native-list{display:grid;gap:9px}
+#app #native-operations .native-record{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;background:#252d3b;border:1px solid #48556a;border-radius:12px;padding:13px 14px}
+#app #native-operations .native-record-title{color:#f6f9ff!important;-webkit-text-fill-color:#f6f9ff!important;font-size:14px;overflow-wrap:anywhere;flex:1 1 180px}
+#app #native-operations .native-record-meta{color:#c0ccdb!important;-webkit-text-fill-color:#c0ccdb!important;font-size:12px;overflow-wrap:anywhere;flex:2 1 190px}
+#app #native-operations .native-record-state{font-size:12px;color:#dae4f5!important;-webkit-text-fill-color:#dae4f5!important}
+#app #native-operations .native-select{max-width:180px;min-width:125px;background:#f7f8fa!important;color:#172638!important;-webkit-text-fill-color:#172638!important;border:1px solid #b6c3d3!important;border-radius:10px;padding:9px 10px;color-scheme:light}
+#app #native-operations .native-rule{display:flex;align-items:center;gap:12px;border-radius:12px;padding:13px;background:#232c3b;color:#f0f6ff!important;-webkit-text-fill-color:#f0f6ff!important;font-weight:700;font-size:13px}
+#app #native-operations .native-rule input{width:19px;height:19px;accent-color:#699ed9}
+#app #native-operations :is(.native-feedback,.native-disclaimer,.native-empty,.native-recent){color:#c9d6e7!important;-webkit-text-fill-color:#c9d6e7!important;font-size:12px;line-height:1.5;margin:0}
+#app #native-operations .native-subtitle{font-size:14px;color:#f0f6ff!important;-webkit-text-fill-color:#f0f6ff!important}
+#app #native-operations :is(button,input,textarea,select):focus-visible{outline:3px solid #87b5fb!important;outline-offset:2px}
+@media(max-width:650px){#app #native-operations .native-form{grid-template-columns:minmax(0,1fr)}#app #native-operations .native-tabs button{flex:1 1 auto}#app #native-operations .native-form .native-label:has(textarea){grid-column:auto}}
