@@ -21,7 +21,7 @@ export function validateServiceRule(value={}){
 export function parseWindowFacts(message,prior={}){
   const s=lower(message);
   const facts={...prior};
-  const count=s.match(/\b(\d{1,3})\s*(?:isoa|isoja|isoo|suurta|pientä|pienia|ikkunaa|ikkunoita|fönster|windows?)\b/i)
+  const count=s.match(/\b(\d{1,3})\s*(?:isoa|isoja|isoo|suurta|pientä|pienia|large|big|stora|små|small|medium|ikkunaa|ikkunoita|fönster|windows?)\b/i)
     ||s.match(/\b(?:ikkunoita|ikkunaa|ikkunoi|fönster|windows?)\s*(\d{1,3})\b/i);
   if(count&&Number(count[1])>=1&&Number(count[1])<=300)facts.quantity=Number(count[1]);
   if(!facts.quantity&&/^\s*\d{1,3}\s*$/.test(s))facts.quantity=Number(s);
