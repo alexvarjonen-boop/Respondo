@@ -372,6 +372,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     settings:translate('Asetukset','Inställningar','Settings')
   };
   const tabs={
+    automation:[['actions2',translate('Asiakaspyynnöt','Kundförfrågningar','Customer actions')],['native-operations',translate('Omat työkalut','Inbyggda verktyg','Built-in tools')]],
     answers:[['knowledge',translate('Tietopohja','Kunskapsbas','Knowledge base')],['unanswered',translate('Puuttuvat vastaukset','Saknade svar','Unanswered')]],
     customers:[['leads',translate('Liidit ja yhteydenotot','Leads och kontakter','Leads & contacts')],['conversations',translate('Keskustelut','Konversationer','Conversations')]],
     conversations:[['conversations',translate('Keskusteluhistoria','Samtalshistorik','Conversation history')],['live-inbox',translate('Live-keskustelut','Livekonversationer','Live conversations')]],
