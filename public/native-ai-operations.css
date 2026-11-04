@@ -44,3 +44,14 @@
 #app #native-operations .native-helpdesk-export>.native-checkbox{display:flex;align-items:center;gap:9px;flex:1 1 100%;font-size:12px;color:#f4f7fb!important;-webkit-text-fill-color:#f4f7fb!important}
 #app #native-operations .native-helpdesk-export>.native-checkbox>input{width:20px;height:20px;accent-color:#789fe2}
 #app #native-operations .native-helpdesk-export .native-button{flex:0 0 auto}
+
+/* Owner-approved, source-backed response repair. No auto publishing. */
+#app #native-operations .native-quality-repair{display:grid;gap:11px;min-width:0}
+#app #native-operations .native-quality-repair-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;flex:1 1 100%}
+#app #native-operations .native-quality-repair-form .native-label{display:grid;gap:6px;color:#f2f5fb!important;-webkit-text-fill-color:#f2f5fb!important;font-size:13px}
+#app #native-operations .native-review-question{background:#f8fafc!important;color:#162435!important;-webkit-text-fill-color:#162435!important;border:1px solid #8ca0b7!important;border-radius:8px;min-height:44px;padding:9px 12px;width:100%;box-sizing:border-box}
+#app #native-operations .native-repair-evidence{grid-column:1/-1;background:#1d2633;color:#dae5f0!important;-webkit-text-fill-color:#dae5f0!important;border:1px solid #4c6174;border-radius:10px;padding:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font-size:13px}
+#app #native-operations .native-quality-repair-form .native-checkbox{grid-column:1/-1;display:flex;align-items:center;gap:9px;color:#f2f5fb!important;-webkit-text-fill-color:#f2f5fb!important;font-size:12px}
+#app #native-operations .native-quality-repair-form .native-checkbox input{height:19px;width:19px;accent-color:#7cb3e5}
+#app #native-operations .native-quality-repair-form>.native-button{grid-column:1/-1;justify-self:start}
+@media(max-width:650px){#app #native-operations .native-quality-repair-form{grid-template-columns:1fr}}
