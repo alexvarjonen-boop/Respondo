@@ -23,7 +23,7 @@ test('ecommerce buyer-intent content is substantial, factual and localized',()=>
       assert.ok(html.includes('href="'+path+suffix+'"'),lang+' related URL '+path);
     }
     assert.ok(customerServiceLandingMarkup(lang).includes('href="/verkkokauppa-chatbot'+suffix+'"'));
-    assert.ok(globalResourcesMarkup('/guides',lang).includes('href="/verkkokauppa-chatbot'+suffix+'"'));
+    assert.ok(!globalResourcesMarkup('/guides',lang).includes('global-guide-topic-nav'));
   }
 });
 
