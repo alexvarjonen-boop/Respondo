@@ -15,9 +15,8 @@ test('key topical hubs link to the new pages in all three languages', () => {
   for (const lang of ['fi','sv','en']) {
     const suffix=lang==='en'?'':'?lang='+lang;
     const guides=globalResourcesMarkup('/guides',lang);
-    for (const path of groups) {
-      assert.ok(guides.includes('href="'+path+suffix+'"'),lang+' guides missing '+path);
-    }
+    assert.ok(guides.includes('class="global-guide-grid"'),lang+' guide cards missing');
+    assert.ok(!guides.includes('global-guide-topic-nav'),lang+' guide hub shows keyword strip');
     const bot=customerServiceLandingMarkup(lang);
     for (const path of groups.filter(p=>p!=='/shopify-chatbot')) {
       assert.ok(bot.includes('href="'+path+suffix+'"'),lang+' bot page missing '+path);

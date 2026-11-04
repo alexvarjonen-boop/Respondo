@@ -44,9 +44,7 @@ test('guide hub is the discovery page without introducing new homepage sections'
   for(const lang of ['fi','sv','en']){
     const index=globalResourcesMarkup('/guides',lang);
     for(const slug of NEW_PATHS)assert.ok(index.includes(slug),'hub misses '+slug+' in '+lang);
-    assert.ok(index.includes('/tekoaly-asiakaspalvelu'));
-    assert.ok(index.includes('/tekoaly-yrityksille'));
-    assert.ok(index.includes('/asiakaspalvelubotti'));
+    assert.ok(!index.includes('global-guide-topic-nav'),'avoid showing a keyword strip above guide cards');
     assert.equal((index.match(/global-guide-card"/g)||[]).length,GLOBAL_GUIDE_PATHS.length-1);
     assert.ok(!/global-guide-hero[^]*Oppaat.*home/i.test('')); // no marketing-page injection
   }
