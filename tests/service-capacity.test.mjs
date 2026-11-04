@@ -89,7 +89,7 @@ test('service bot asks questions across turns and proposes no phantom availabili
   const db={query:async(query,params)=>{
     queries.push({query,params});
     if(query.includes('SELECT config,enabled'))return {rows:[{config:rule,enabled:true}],rowCount:1};
-    if(query.includes('SELECT facts FROM respondo_service_dialogues'))
+    if(query.includes('SELECT facts,preferred_text FROM respondo_service_dialogues'))
       return {rows:hasSession?[{facts}]:[],rowCount:hasSession?1:0};
     if(query.includes('INSERT INTO respondo_service_dialogues')){
       facts=JSON.parse(params[2]);hasSession=true;return {rows:[],rowCount:1};
@@ -154,4 +154,33 @@ test('owner can configure service rules with translated, readable controls',()=>
   assert.match(index,/service-capacity-ui\.js\?v=/);
   assert.match(index,/service-capacity-ui\.css\?v=/);
   assert.equal((css.match(/\{/g)||[]).length,(css.match(/\}/g)||[]).length);
+});
+
+test('ambiguous 3 oclock availability first asks service and then confirms AM/PM',async()=>{
+  let facts={},preferred_text='',session=false;
+  const db={query:async(query,args)=>{
+    if(query.includes('SELECT config,enabled'))
+      return {rows:[{config:rule,enabled:true}],rowCount:1};
+    if(query.includes('SELECT facts,preferred_text'))
+      return {rows:session?[{facts,preferred_text}]:[],rowCount:session?1:0};
+    if(query.includes('INSERT INTO respondo_service_dialogues')){
+      facts=JSON.parse(args[2]);preferred_text=args[3]||'';session=true;
+      return {rows:[],rowCount:1};
+    }
+    if(query.includes('DELETE FROM respondo_service_dialogues')){session=false;return {rows:[]};}
+    throw Error('Unexpected SQL '+query);
+  }};
+  const start=await serviceDialogue(db,tenant,visitor,'Olisko teillä perjantaina kello 3 aikaa?','fi',async()=>[]);
+  assert.equal(start.status,'needs_service');
+  assert.match(start.answer,/ikkunanpesua/i);
+  const count=await serviceDialogue(db,tenant,visitor,'30 isoo ikkunaa','fi',async()=>[]);
+  assert.equal(count.status,'needs_details');
+  assert.match(count.answer,/molemmilta/i);
+  const clarification=await serviceDialogue(db,tenant,visitor,
+    'joo molemmilt puolilt ja normaalisti pääsee','fi',async()=>[]);
+  assert.equal(clarification.status,'needs_time');
+  assert.match(clarification.answer,/klo 15/i);
+  const final=await serviceDialogue(db,tenant,visitor,'klo 15','fi',async()=>[]);
+  assert.equal(final.status,'no_slots');
+  assert.match(final.answer,/riittävän pitkää/i);
 });
