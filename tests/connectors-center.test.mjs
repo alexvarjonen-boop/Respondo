@@ -123,7 +123,7 @@ test('connector endpoints are tenant-scoped, owner-only, plan-gated and never re
   assert.match(server,/ownerOnly,subscribed,crmConnectorLimiter/);
   assert.match(server,/requirePlanCapability\(req,res,'allCurrentFeatures'\)/);
   assert.match(server,/active_tenant_for_user/);
-  assert.match(server,/ensureCrmCredentialsSchema/);
+  assert.match(boot,/ensureCrmCredentialsSchema/);
   assert.match(boot,/await initializeCrmConnectors\(\)/);
   assert.match(app,/id="crm-integration"/);
   assert.match(workspace,/integrations:'crm-integration'/);
