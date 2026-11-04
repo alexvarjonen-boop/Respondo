@@ -14776,7 +14776,7 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
     // this company's Respondo database; no external subscription is needed.
     try {
       await runNativeAutomation(pool,tenant.id,'lead_captured',{
-        id:capturedLeadId,name,email,phone,note:message
+        id:capturedLeadId,name:name||'Website contact',email,phone,note:message
       });
     }catch(error){
       console.error('Respondo internal lead automation failed',error?.name||'error');
@@ -15573,17 +15573,27 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     if (['quote','booking','callback'].includes(type)) {
       const contact = actionContact(fields);
       try {
+        const actionLeadId=uid();
         await q(
           `INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message,status)
            VALUES($1,$2,$3,$4,$5,$6,$7,'new')`,
           [
-            uid(),tenant.id,visitorRef,
+            actionLeadId,tenant.id,visitorRef,
             String(fields.name || '').slice(0,120) || null,
             contact.email || null,
             contact.phone || null,
             String(fields.details || fields.note || payload.question || '').slice(0,1200) || null,
           ],
         );
+        try{
+          await runNativeAutomation(pool,tenant.id,'lead_captured',{
+            id:actionLeadId,name:String(fields.name||'Website contact').slice(0,120),
+            email:contact.email||'',phone:contact.phone||'',
+            note:String(fields.details||fields.note||payload.question||'').slice(0,1200)
+          });
+        }catch(error){
+          console.error('Internal action lead automation failed',error?.name||'error');
+        }
       } catch (leadError) {
         // The canonical request already contains the contact fields. Do not
         // tell the customer submission failed only because the dashboard lead
