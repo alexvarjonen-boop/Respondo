@@ -9,6 +9,8 @@ import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManag
 import { brandedEmailHtml } from './email-branding.mjs';
 import { ensureOnboardingCheckupSchema, enqueueOnboardingCheckup, runDueOnboardingCheckups } from './onboarding-checkup.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
+import { prepareQualifiedLead } from './lead-service.mjs';
+import { getCrmProvider, enqueueCrmLead } from './lead-crm-queue.mjs';
 import { processCrmOutbox } from './lead-crm-queue.mjs';
 import { deliverCrmProvider } from './lead-crm-providers.mjs';
 import { crmProviderAllowed, crmConnectorStatus, connectCrmCredential, retestCrmCredential, disconnectCrmCredential } from './crm-connectors.mjs';
@@ -14710,10 +14712,25 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
     if (body.consent !== true) return res.status(400).json({ error: 'Yhteystietojen lähettäminen edellyttää suostumusta.' });
     if (!email && !phone) return res.status(400).json({ error: 'Anna sähköposti tai puhelinnumero.' });
 
+    const capturedLeadId=uid();
     await q(
       'INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message) VALUES($1,$2,$3,$4,$5,$6,$7)',
-      [uid(), tenant.id, String(body.visitorRef || '').slice(0, 160) || null, name || null, email || null, phone || null, message || null],
+      [capturedLeadId,tenant.id,String(body.visitorRef || '').slice(0,160)||null,name||null,email||null,phone||null,message||null],
     );
+    // The customer's explicit consent and verified lead qualifications are
+    // required before exporting to any third-party CRM. The website lead must
+    // remain captured even if the optional connector is currently unavailable.
+    try {
+      const setting=await getCrmProvider(pool,tenant.id);
+      if(setting.enabled) {
+        const qualified=prepareQualifiedLead({
+          tenantId:tenant.id,leadId:capturedLeadId,message,name,email,phone,consent:true
+        });
+        if(qualified.accepted) await enqueueCrmLead(pool,qualified.event);
+      }
+    }catch(error){
+      console.error('Consent-based CRM enqueue unavailable',{leadId:capturedLeadId});
+    }
     return res.json({ ok: true });
   } catch (e) {
     console.error('Lead capture failed', e);
