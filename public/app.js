@@ -6237,6 +6237,9 @@ async function route() {
       const input=event.currentTarget.elements.question;
       const question=String(input?.value||'').trim();
       if(!question) return;
+      const speechMessageLang = ['fi','sv','en'].includes(input.dataset.respondoVoiceLang)
+        ? input.dataset.respondoVoiceLang : currentLang();
+      delete input.dataset.respondoVoiceLang;
       const chat=$('#previewChat');
       chat?.insertAdjacentHTML('beforeend','<div class="preview-bubble user"></div>');
       if(chat?.lastElementChild) chat.lastElementChild.textContent=question;
@@ -6249,7 +6252,7 @@ async function route() {
           method:'POST',
           body:JSON.stringify({
             message:question,
-            lang:currentLang(),
+            lang:speechMessageLang,
             publicDemo:true,
             demoImportId,
             profile:{
@@ -7298,6 +7301,9 @@ async function route() {
       const input = e.currentTarget.elements.question;
       const question = String(input?.value || '').trim();
       if (!question) return;
+      const speechMessageLang = ['fi','sv','en'].includes(input.dataset.respondoVoiceLang)
+        ? input.dataset.respondoVoiceLang : currentLang();
+      delete input.dataset.respondoVoiceLang;
       const chat = $('#previewChat');
       chat?.insertAdjacentHTML('beforeend', '<div class="preview-bubble user"></div>');
       if (chat?.lastElementChild) chat.lastElementChild.textContent = question;
@@ -7312,7 +7318,7 @@ async function route() {
           method: 'POST',
           body: JSON.stringify({
             message: question,
-            lang: currentLang(),
+            lang: speechMessageLang,
             dashboardPreview: true,
             profile: {
               companyName: previewCompanyName,
