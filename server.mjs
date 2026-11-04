@@ -46,6 +46,7 @@ import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
 import { guardCitedNumericFacts } from './runtime-numeric-evidence-guard.mjs';
 import { qualityCenterOverview, createQualityReview, updateQualityReview } from './respondo-quality-center.mjs';
 import { reconstructedConversationHistory, validInboundEventId, claimInboundEvent, completeInboundEvent, failInboundEvent } from './channel-ingress.mjs';
+import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk, exportFreshdeskTicket } from './freshdesk-helpdesk.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
 import { compareBotValidationRuns } from './bot-retest-comparison.mjs';
 import express from 'express';
@@ -9697,6 +9698,20 @@ app.post('/api/app/native/documents',auth,ownerOnly,subscribed,nativeWriteLimite
   (id,req)=>saveNativeDocument(pool,id,req.body||{})));
 app.delete('/api/app/native/documents/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>removeNativeDocument(pool,id,req.params.id)));
+/* Explicitly owner-approved Freshdesk exports. Requires Enterprise and a
+   verified tenant-specific credential; no automatic external sends. */
+app.get('/api/app/helpdesk/freshdesk',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>freshdeskStatus(pool,id),{quote:true}));
+app.post('/api/app/helpdesk/freshdesk',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>connectFreshdesk(pool,id,req.body||{}),{quote:true}));
+app.post('/api/app/helpdesk/freshdesk/test',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  id=>retestFreshdesk(pool,id),{quote:true}));
+app.delete('/api/app/helpdesk/freshdesk',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  id=>disconnectFreshdesk(pool,id),{quote:true}));
+app.post('/api/app/helpdesk/freshdesk/tickets/:id/export',
+  auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>exportFreshdeskTicket(pool,id,req.params.id,req.body||{}),{quote:true}));
+
 
 app.get('/api/leads', auth, ownerOnly, requireLeadSchema, async (req, res) => {
   res.set('Cache-Control','private, no-store');
