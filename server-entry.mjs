@@ -2,6 +2,7 @@ import pg from 'pg';
 import { ensureCrmSchema } from './lead-crm-queue.mjs';
 import { ensureCrmCredentialsSchema } from './crm-connectors.mjs';
 import { ensureNativeOperationsSchema } from './native-ai-operations.mjs';
+import { ensureServiceCapacitySchema } from './service-capacity.mjs';
 import { ensureQualityCenterSchema } from './respondo-quality-center.mjs';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -106,6 +107,7 @@ async function initializeCrmConnectors() {
     await ensureCrmSchema(pool);
     await ensureCrmCredentialsSchema(pool);
     await ensureNativeOperationsSchema(pool);
+    await ensureServiceCapacitySchema(pool);
     await ensureQualityCenterSchema(pool);
   } finally {await pool.end();}
 }
