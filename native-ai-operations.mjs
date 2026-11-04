@@ -1,4 +1,5 @@
 import {randomUUID} from 'node:crypto';
+import { enqueueNativeTask } from './native-taskboard.mjs';
 
 const RULES=[['lead_captured','save_contact'],['action_requested','open_ticket']];
 const STATES=new Set(['new','contacted','qualified','won','lost']);
@@ -219,6 +220,12 @@ export async function runNativeAutomation(db,tenantId,trigger,event){
             VALUES($1,$2,$3,$4,$5,$6)
             ON CONFLICT(tenant_id,source_lead_id) DO NOTHING`,
             [tenantId,event.id,contact.name,contact.email,contact.phone,contact.note]);
+          await enqueueNativeTask(client,tenantId,{
+            sourceKind:'lead',sourceId:event.id,taskKey:'lead_followup',
+            title:'Follow up: '+contact.name,
+            details:text(event.note||'Customer lead',1200),
+            dueHours:24,priority:'normal'
+          });
         }else if(trigger==='action_requested'&&rule.action_key==='open_ticket'){
           await client.query(`INSERT INTO respondo_native_tickets
             (tenant_id,source_kind,source_id,title,details,priority)
@@ -226,6 +233,12 @@ export async function runNativeAutomation(db,tenantId,trigger,event){
             ON CONFLICT(tenant_id,source_kind,source_id) DO NOTHING`,
             [tenantId,event.id,text(event.title||'Customer request',160),
               text(event.details,2000),event.priority==='urgent'?'urgent':'normal']);
+          await enqueueNativeTask(client,tenantId,{
+            sourceKind:'action',sourceId:event.id,taskKey:'action_review',
+            title:'Review: '+text(event.title||'Customer request',140),
+            details:text(event.details||'Customer action requires review',1200),
+            dueHours:4,priority:event.priority==='urgent'?'urgent':'normal'
+          });
         }else throw new Error('Unsafe automation action');
         executed++;
       }
