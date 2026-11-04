@@ -4,6 +4,7 @@ import { ensureCrmCredentialsSchema } from './crm-connectors.mjs';
 import { ensureNativeOperationsSchema } from './native-ai-operations.mjs';
 import { ensureQualityCenterSchema } from './respondo-quality-center.mjs';
 import { ensureChannelIngressSchema } from './channel-ingress.mjs';
+import { ensureFreshdeskSchema } from './freshdesk-helpdesk.mjs';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const ssl = isProduction ? { rejectUnauthorized: false } : undefined;
@@ -109,6 +110,7 @@ async function initializeCrmConnectors() {
     await ensureNativeOperationsSchema(pool);
     await ensureQualityCenterSchema(pool);
     await ensureChannelIngressSchema(pool);
+    await ensureFreshdeskSchema(pool);
   } finally {await pool.end();}
 }
 await initializeCrmConnectors();
