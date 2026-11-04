@@ -110,7 +110,7 @@ test('routes require owner and subscription, and dashboard has localized quality
   assert.match(server,/app\.post\('\/api\/app\/native\/quality\/reviews',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint/);
   assert.match(server,/app\.patch\('\/api\/app\/native\/quality\/reviews\/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint/);
   assert.match(entry,/await ensureQualityCenterSchema\(pool\)/);
-  assert.match(ui,/const kinds=\['contacts','tickets','quotes','rules','docs','quality','insights','helpdesk','zendesk'\]/);
+  assert.match(ui,/const kinds=\['contacts','tickets','quotes','rules','docs','inbox','quality','insights','helpdesk','zendesk'\]/);
   assert.match(ui,/wrong_language/);
   assert.match(ui,/qualityIntro:/);
   assert.match(ui,/insightsIntro:/);
