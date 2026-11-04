@@ -50,7 +50,7 @@ export async function readCrmCredential(db, tenantId) {
     'SELECT provider,token_ciphertext FROM respondo_crm_credentials WHERE tenant_id=$1',
     [tenantId]
   );
-  if (!found.rows[0]) return null;
+  if (!found.rows[0]?.token_ciphertext) return null;
   return {
     provider:found.rows[0].provider,
     token:decryptCrmToken(found.rows[0].token_ciphertext)
