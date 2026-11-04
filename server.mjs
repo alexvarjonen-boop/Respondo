@@ -15086,8 +15086,8 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
           String(body.pageContext?.title||'').slice(0,300)||null,visitorRef]);
       const suggestedActions=serviceReply.status==='proposed'? [{
         type:'booking',mode:'booking_form',
-        label:detectedLang==='en'?'Choose a suitable appointment':
-          detectedLang==='sv'?'Välj en lämplig tid':'Valitse sopiva aika'
+        label:detectedLang==='en'?'Request a suitable appointment':
+          detectedLang==='sv'?'Föreslå en lämplig tid':'Pyydä sopivaa aikaa'
       }] : [];
       return res.json({answer,handoff:false,confidence:1,intent:'Service duration estimate',
         verified:false,actions:suggestedActions,products:[],
@@ -15525,6 +15525,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     };
     let computedQuote = null;
     let bookedSlot = null;
+    let serviceManualReview = false;
     let actionInserted = false;
     let ecommerceOrder = null;
     let ecommerceLookupAttempted = false;
@@ -15614,6 +15615,11 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
                 await client.query('ROLLBACK');
                 return res.status(409).json({error:'Työ ei mahdu valittuun aikaan. Tarkista työn laajuus ja valitse pidempi aika.'});
               }
+              // Staff and travel capacity cannot be inferred from one shared
+              // calendar. Record a REQUEST only, never mark this time booked.
+              serviceManualReview=true;
+              payload.serviceCapacity={facts:state.rows[0].facts,durationMinutes:work.minutes,
+                approvalRequired:true};
             }
           }
         }
@@ -15639,16 +15645,24 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
           }
         }
 
-        bookedSlot = sr.rows[0];
-        payload.booking = {
-          slotId:bookedSlot.id,
-          startsAt:bookedSlot.starts_at,
-          endsAt:bookedSlot.ends_at,
-        };
-        await client.query(
-          `UPDATE booking_slots SET status='booked' WHERE id=$1 AND tenant_id=$2`,
-          [fields.slotId,tenant.id],
-        );
+        if(serviceManualReview){
+          // Candidate is not held or confirmed. Employee must approve and
+          // recheck live availability before creating a real reservation.
+          payload.requestedSlot={
+            slotId:sr.rows[0].id,startsAt:sr.rows[0].starts_at,endsAt:sr.rows[0].ends_at
+          };
+        }else{
+          bookedSlot = sr.rows[0];
+          payload.booking = {
+            slotId:bookedSlot.id,
+            startsAt:bookedSlot.starts_at,
+            endsAt:bookedSlot.ends_at,
+          };
+          await client.query(
+            `UPDATE booking_slots SET status='booked' WHERE id=$1 AND tenant_id=$2`,
+            [fields.slotId,tenant.id],
+          );
+        }
         await client.query(
           `INSERT INTO action_requests(id,tenant_id,visitor_ref,request_type,status,payload,result,source_channel,external_contact_id)
            VALUES($1,$2,$3,$4,'new',$5::jsonb,$6::jsonb,$7,$8)`,
@@ -15881,7 +15895,13 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       calendarSync,
       paymentAvailable,
       checkoutUrl,
-      customerMessage: mainioMoveRequest
+      customerMessage: serviceManualReview
+        ? (actionLang==='en'
+          ? 'Your appointment request was received. The team must confirm the job duration, staffing and time before it becomes a booking.'
+          : actionLang==='sv'
+            ? 'Din tidsförfrågan har tagits emot. Personal måste bekräfta arbetsmängd, bemanning och tid innan bokningen gäller.'
+            : 'Aikatoiveesi on vastaanotettu. Yritys vahvistaa työn keston, henkilöstön ja ajankohdan erikseen ennen varausta.')
+        : mainioMoveRequest
         ? (actionLang==='en'
             ? 'Your moving enquiry has been submitted for Mainio Muuttopalvelu to review. The price, date and booking are not confirmed yet.'
             :actionLang==='sv'
