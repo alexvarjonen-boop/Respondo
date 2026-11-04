@@ -917,7 +917,7 @@
       const submitButton = box.querySelector('button[type="submit"]');
       fetch(
         serviceOrigin + '/api/public/' + encodeURIComponent(company) +
-        '/booking-slots?widgetToken=' + encodeURIComponent(token) + '&lang=' + encodeURIComponent(widgetLang),
+        '/booking-slots?widgetToken=' + encodeURIComponent(token) + '&lang=' + encodeURIComponent(widgetLang) + '&visitorRef=' + encodeURIComponent(visitorRef),
         { method:'GET', mode:'cors', credentials:'omit' }
       )
         .then(async (res) => {
