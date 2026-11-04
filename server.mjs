@@ -44,6 +44,7 @@ import {autoRefreshEligible,acceptedRefreshCandidate} from './website-refresh-po
 import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
 import { guardCitedNumericFacts } from './runtime-numeric-evidence-guard.mjs';
+import { qualityCenterOverview, createQualityReview, updateQualityReview } from './respondo-quality-center.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
 import { compareBotValidationRuns } from './bot-retest-comparison.mjs';
 import express from 'express';
@@ -9671,6 +9672,12 @@ function nativeEndpoint(handler,{quote=false}={}){
 }
 app.get('/api/app/native',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>nativeOverview(pool,id)));
+app.get('/api/app/native/quality',auth,ownerOnly,subscribed,nativeEndpoint(
+  (id,req)=>qualityCenterOverview(pool,id,req.query?.days)));
+app.post('/api/app/native/quality/reviews',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>createQualityReview(pool,id,req.body||{})));
+app.patch('/api/app/native/quality/reviews/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>updateQualityReview(pool,id,req.params.id,req.body||{})));
 app.post('/api/app/native/contacts',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>createNativeContact(pool,id,req.body||{})));
 app.patch('/api/app/native/contacts/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(

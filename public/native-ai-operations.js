@@ -2,7 +2,7 @@
   'use strict';
   const API='/api/app/native';
   const copy={
-    fi:{contacts:'Asiakasrekisteri',tickets:'Tukipyynnöt',quotes:'Tarjoukset',rules:'Automaatiot',docs:'Tietopankki',
+    fi:{quality:'Laatu',insights:'Tulokset',qualityIntro:'Käsittele puutteelliset vastaukset. Korjaukset eivät muuta botin tietopohjaa ilman erillistä hyväksyntää.',insightsIntro:'Vastaukset, liidit ja toiminnot kanavittain. Automaattinen vastaus ei todista asian ratkaisua.',period:'Ajanjakso',replies:'Viestit',automated:'AI-vastaukset',handoffs:'Siirrot ihmiselle',cited:'Lähteelliset AI-vastaukset',qualityOpen:'Avoimet laatutarkistukset',reviewReason:'Virheen tyyppi',flag:'Merkitse tarkistettavaksi',resolve:'Merkitse korjatuksi',dismiss:'Hylkää havainto',resolution:'Miten virhe korjattiin ja varmistettiin?',flags:'Tarkistettavat keskustelut',recentReviews:'Laatumerkinnät',channels:'Kanavittain',daily:'Päivittäiset keskustelut',disclaimerQuality:'Vastausprosentti ei ole asiakastyytyväisyys- tai oikeellisuusmittari. Virheellinen tieto pitää korjata hyväksyttyyn lähteeseen.',reasonIncorrect:'Virheellinen tieto',reasonOutdated:'Vanhentunut tieto',reasonLanguage:'Väärä kieli',reasonIntent:'Väärin ymmärretty kysymys',reasonHandoff:'Tarpeeton siirto',reasonOther:'Muu',knowledge:'Tietopohja',approvedFacts:'Hyväksytyt tiedot',contacts:'Asiakasrekisteri',tickets:'Tukipyynnöt',quotes:'Tarjoukset',rules:'Automaatiot',docs:'Tietopankki',
       contactIntro:'Tallennetut asiakkaat ja liidit.',ticketIntro:'Sisäiset palvelupyynnöt työntekijöille.',
       quoteIntro:'Luonnokset yrityksen tallennetuista hinnoista. Lähetys vaatii ihmisen hyväksynnän.',
       docsIntro:'Julkaise vain tarkistettua yritystietoa, jota botti saa käyttää vastauksissa.',
@@ -18,7 +18,7 @@
       draft:'Luonnos',approved:'Hyväksytty',triggerLead:'Uusi liidi → tallenna CRM:ään',
       triggerAction:'Uusi asiakaspyyntö → luo tiketti',recent:'Viimeaikaiset automaatiot',
       confirmDelete:'Poistetaanko dokumentti myös botin tietopohjasta?',notice:'Toiminnot suoritetaan Respondon omassa järjestelmässä. Ulkoisia palveluja ei yhdistetä.'},
-    sv:{contacts:'Kundregister',tickets:'Supportärenden',quotes:'Offerter',rules:'Automatiseringar',docs:'Kunskapsbas',
+    sv:{quality:'Kvalitet',insights:'Resultat',qualityIntro:'Granska osäkra svar. Ändringar i kunskapsbasen kräver separat godkännande.',insightsIntro:'Svar, leads och åtgärder per kanal. Ett automatiskt svar är inte ett bevis på att ärendet lösts.',period:'Period',replies:'Meddelanden',automated:'AI-svar',handoffs:'Överlämningar',cited:'AI-svar med källor',qualityOpen:'Öppna kvalitetsgranskningar',reviewReason:'Feltyp',flag:'Markera för granskning',resolve:'Markera som åtgärdad',dismiss:'Avfärda',resolution:'Hur rättades och verifierades felet?',flags:'Konversationer att granska',recentReviews:'Kvalitetsrapporter',channels:'Per kanal',daily:'Dagliga konversationer',disclaimerQuality:'Svarsfrekvensen mäter varken kundnöjdhet eller korrekthet. Felaktig information ska korrigeras i en godkänd källa.',reasonIncorrect:'Felaktig information',reasonOutdated:'Inaktuell information',reasonLanguage:'Fel språk',reasonIntent:'Missförstod frågan',reasonHandoff:'Onödig överlämning',reasonOther:'Annat',knowledge:'Kunskapsbas',approvedFacts:'Godkända uppgifter',contacts:'Kundregister',tickets:'Supportärenden',quotes:'Offerter',rules:'Automatiseringar',docs:'Kunskapsbas',
       contactIntro:'Sparade kunder och leads.',ticketIntro:'Interna serviceärenden för personal.',
       quoteIntro:'Utkast baserade på företagets sparade priser. Leverans kräver mänskligt godkännande.',
       docsIntro:'Publicera endast granskade företagsuppgifter som botten får använda.',
@@ -34,7 +34,7 @@
       draft:'Utkast',approved:'Godkänd',triggerLead:'Nytt lead → spara i CRM',
       triggerAction:'Ny kundförfrågan → skapa ärende',recent:'Senaste automatiseringar',
       confirmDelete:'Ta bort dokumentet även från bottens kunskapsbas?',notice:'Funktionerna körs internt i Respondo. Inga externa tjänster kopplas in.'},
-    en:{contacts:'Customer CRM',tickets:'Support tickets',quotes:'Quote drafts',rules:'Automations',docs:'Knowledge documents',
+    en:{quality:'Quality',insights:'Outcomes',qualityIntro:'Review uncertain answers. Changing the bot knowledge base requires separate approval.',insightsIntro:'Replies, leads and actions by channel. Automated replies do not prove customer resolution.',period:'Period',replies:'Messages',automated:'AI replies',handoffs:'Human handoffs',cited:'AI replies with sources',qualityOpen:'Open quality reviews',reviewReason:'Review reason',flag:'Flag for review',resolve:'Mark as fixed',dismiss:'Dismiss',resolution:'How was the issue corrected and verified?',flags:'Conversations to review',recentReviews:'Quality reviews',channels:'By channel',daily:'Daily conversations',disclaimerQuality:'Reply rate is not a customer-satisfaction or factual-accuracy metric. Correct false facts in an approved source.',reasonIncorrect:'Incorrect fact',reasonOutdated:'Outdated fact',reasonLanguage:'Wrong language',reasonIntent:'Misunderstood question',reasonHandoff:'Unnecessary handoff',reasonOther:'Other',knowledge:'Knowledge base',approvedFacts:'Approved facts',contacts:'Customer CRM',tickets:'Support tickets',quotes:'Quote drafts',rules:'Automations',docs:'Knowledge documents',
       contactIntro:'Saved customers and leads.',ticketIntro:'Internal service requests for your team.',
       quoteIntro:'Drafts based on your saved service prices. Sending requires human approval.',
       docsIntro:'Publish only verified business facts that the bot may use in its answers.',
@@ -108,12 +108,12 @@
     const feedback=el('p','native-feedback',t.loading);
     feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
     target.append(tabs,content,feedback,el('p','native-disclaimer',t.notice));
-    let active='contacts',data=null,busy=false;
-    const kinds=['contacts','tickets','quotes','rules','docs'];
+    let active='contacts',data=null,report=null,busy=false,days=30;
+    const kinds=['contacts','tickets','quotes','rules','docs','quality','insights'];
     for(const kind of kinds){
       const b=button(t[kind],'button');
       b.dataset.tab=kind;b.setAttribute('role','tab');
-      b.addEventListener('click',()=>{active=kind;render();});
+      b.addEventListener('click',()=>{active=kind;if((kind==='quality'||kind==='insights')&&!report)loadQuality();else render();});
       tabs.appendChild(b);
     }
     async function request(method,path=API,payload){
@@ -126,6 +126,10 @@
       if(!response.ok)throw Error(String(result.error||t.error).slice(0,200));
       return result.data;
     }
+    async function loadQuality(){
+      try{report=await request('GET',API+'/quality?days='+days);feedback.textContent='';render();}
+      catch(error){feedback.textContent=error.message||t.error;}
+    }
     async function load(){
       try{data=await request('GET');feedback.textContent='';render();}
       catch(error){feedback.textContent=error.message||t.error;}
@@ -133,7 +137,7 @@
     async function perform(method,path,payload){
       if(busy)return;
       busy=true;feedback.textContent=t.saving;
-      try{await request(method,path,payload);await load();feedback.textContent=t.saved;}
+      try{await request(method,path,payload);if(active==='quality'||active==='insights')await loadQuality();else await load();feedback.textContent=t.saved;}
       catch(error){feedback.textContent=error.message||t.error;}
       finally{busy=false;}
     }
@@ -182,11 +186,101 @@
       if(description)box.appendChild(el('span','native-record-meta',description));
       return box;
     }
+
+    function qualityMetric(parent,name,value){
+      const item=el('article','native-quality-metric');
+      item.append(el('span','native-quality-label',name),el('strong','native-quality-value',String(value)));
+      parent.appendChild(item);
+    }
+    function renderQualityCenter(){
+      const isQuality=active==='quality';
+      content.replaceChildren(el('p','native-intro',isQuality?t.qualityIntro:t.insightsIntro));
+      const toolbar=el('div','native-quality-toolbar');
+      toolbar.appendChild(el('span','native-quality-label',t.period));
+      toolbar.appendChild(select([['7','7'],['30','30'],['90','90']].map(x=>[x[0],x[1]+' d']),
+        String(days),value=>{days=Number(value);loadQuality();}));
+      content.appendChild(toolbar);
+      if(!report){content.appendChild(el('p','native-empty',t.loading));return;}
+      const summary=report.summary||{};
+      const metrics=el('div','native-quality-metrics');
+      for(const [name,value] of [
+        [t.replies,summary.total||0],
+        [t.automated,summary.automated||0],
+        [t.handoffs,summary.handoffs||0],
+        [t.cited,summary.evidenced||0],
+        [t.qualityOpen,summary.openReviews||0],
+        [t.knowledge+' · '+t.approvedFacts,report.knowledge?.approved||0],
+      ])qualityMetric(metrics,name,value);
+      content.appendChild(metrics);
+      content.appendChild(el('p','native-disclaimer',t.disclaimerQuality));
+      if(!isQuality){
+        const channels=el('div','native-list');
+        channels.appendChild(el('h4','native-subtitle',t.channels));
+        for(const ch of summary.byChannel||[]){
+          channels.appendChild(recordCard(ch.channel,
+            t.replies+': '+ch.total+' · '+t.automated+': '+ch.automated+
+            ' · '+t.handoffs+': '+ch.handoffs));
+        }
+        channels.appendChild(el('h4','native-subtitle',t.daily));
+        for(const day of report.daily||[]){
+          channels.appendChild(recordCard(String(day.day).slice(0,10),
+            t.replies+': '+day.total+' · '+t.handoffs+': '+day.handoffs));
+        }
+        for(const [name,value] of [
+          [t.contacts,summary.leads||0],
+          [t.tickets,summary.tickets||0],
+          [t.rules,summary.actions||0]
+        ])channels.appendChild(recordCard(name,String(value)));
+        content.appendChild(channels);
+        return;
+      }
+      const reasons=[
+        ['incorrect_fact',t.reasonIncorrect],['outdated_fact',t.reasonOutdated],
+        ['wrong_language',t.reasonLanguage],['misunderstood_question',t.reasonIntent],
+        ['unnecessary_handoff',t.reasonHandoff],['other',t.reasonOther]
+      ];
+      const reviews=el('div','native-list');
+      reviews.appendChild(el('h4','native-subtitle',t.recentReviews));
+      for(const review of report.reviews||[]){
+        const card=recordCard(review.question,review.reason+' · '+localStatus(review.status,t));
+        if(review.note)card.appendChild(el('p','native-record-meta',review.note));
+        if(review.status==='open'){
+          const note=el('textarea','native-review-note');note.maxLength=1200;
+          note.placeholder=t.resolution;note.rows=2;note.setAttribute('aria-label',t.resolution);
+          card.appendChild(note);
+          const resolved=button(t.resolve,'button');
+          resolved.addEventListener('click',()=>idGuard(review.id)&&perform('PATCH',
+            API+'/quality/reviews/'+review.id,{status:'resolved',resolutionNote:note.value}));
+          const dismiss=button(t.dismiss,'button');
+          dismiss.addEventListener('click',()=>idGuard(review.id)&&perform('PATCH',
+            API+'/quality/reviews/'+review.id,{status:'dismissed'}));
+          card.append(resolved,dismiss);
+        }
+        reviews.appendChild(card);
+      }
+      if(!report.reviews?.length)reviews.appendChild(el('p','native-empty',t.empty));
+      reviews.appendChild(el('h4','native-subtitle',t.flags));
+      const already=new Set((report.reviews||[]).filter(x=>x.status==='open').map(x=>x.conversationId));
+      for(const gap of (report.gaps||[]).filter(x=>!already.has(x.conversationId))){
+        const card=recordCard(gap.question,gap.channel+' · '+(gap.intent||''));
+        const dropdown=select(reasons,'incorrect_fact',()=>{});
+        dropdown.setAttribute('aria-label',t.reviewReason);
+        const note=el('textarea','native-review-note');note.maxLength=1200;note.rows=2;
+        note.placeholder=t.note;note.setAttribute('aria-label',t.note);
+        const flag=button(t.flag,'button');
+        flag.addEventListener('click',()=>idGuard(gap.conversationId)&&perform('POST',
+          API+'/quality/reviews',{conversationId:gap.conversationId,reason:dropdown.value,note:note.value}));
+        card.append(dropdown,note,flag);reviews.appendChild(card);
+      }
+      content.appendChild(reviews);
+    }
+
     function render(){
       if(!data)return;
       for(const tab of tabs.children){
         tab.setAttribute('aria-selected',String(tab.dataset.tab===active));
       }
+      if(active==='quality'||active==='insights'){renderQualityCenter();return;}
       content.replaceChildren(el('p','native-intro',
         t[active==='contacts'?'contactIntro':active==='tickets'?'ticketIntro':
           active==='quotes'?'quoteIntro':active==='docs'?'docsIntro':'notice']));
