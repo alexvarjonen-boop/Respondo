@@ -43,6 +43,20 @@ export async function ensureCrmCredentialsSchema(db) {
   )`);
   await db.query('ALTER TABLE public.respondo_crm_credentials ENABLE ROW LEVEL SECURITY');
   await db.query('REVOKE ALL PRIVILEGES ON TABLE public.respondo_crm_credentials FROM PUBLIC');
+  // Supabase installations can grant Data API roles directly, independently
+  // of PUBLIC. Revoke those grants when the roles exist without assuming that
+  // every PostgreSQL installation has Supabase-specific roles.
+  const roles=await db.query(
+    "SELECT rolname FROM pg_roles WHERE rolname = ANY($1::text[])",
+    [['anon','authenticated','service_role']]
+  );
+  const allowed=new Set(['anon','authenticated','service_role']);
+  const listed=(roles.rows||[]).map(row=>String(row.rolname||'')).filter(role=>allowed.has(role));
+  if(listed.length) {
+    for(const table of ['respondo_crm_credentials','respondo_crm_settings','respondo_crm_outbox']) {
+      await db.query('REVOKE ALL PRIVILEGES ON TABLE public.'+table+' FROM '+listed.join(', '));
+    }
+  }
 }
 
 export async function readCrmCredential(db, tenantId) {
