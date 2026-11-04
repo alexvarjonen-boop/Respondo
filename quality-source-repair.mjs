@@ -14,7 +14,7 @@ const common=new Set([
 const tokenSet=s=>new Set(fold(s).split(/\s+/).filter(v=>v.length>=4&&!common.has(v)));
 const catTopic=s=>{
   const text=fold(s);
-  if(/hinnat|hinnoittel|pricing|priser|prislist|hinta|kustann|cost|price|pris/.test(text))return 'price';
+  if(/hinnat|hinnoittel|pricing|priser|prislist|hinta|kustann|cost|price|pris|maksaa|paljonko|kostar|how much|how expensive/.test(text))return 'price';
   if(/aukiolo|opening hours|oppettid|opening|hours/.test(text))return 'hours';
   if(/takuu|warranty|garanti/.test(text))return 'warranty';
   if(/palaut|returns|refund|retur/.test(text))return 'returns';
