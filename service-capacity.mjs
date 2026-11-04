@@ -148,8 +148,9 @@ function amendPreferredTime(previous,utterance){
     !Number.isInteger(minute)||minute<0||minute>59))return '';
   const days=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
   const day=weekday>=0?days[weekday]:'';
+  const explicitMorning=isMorning||(!changedClock&&!changedDay&&/\bam\b/i.test(previous));
   const clock=hour===null?'':'at '+String(hour).padStart(2,'0')+':'+
-    String(minute).padStart(2,'0');
+    String(minute).padStart(2,'0')+(hour<12&&explicitMorning?' am':'');
   return [day,clock].filter(Boolean).join(' ');
 }
 function serviceFollowup(lang,key){
