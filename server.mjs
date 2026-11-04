@@ -9,6 +9,7 @@ import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManag
 import { brandedEmailHtml } from './email-branding.mjs';
 import { ensureOnboardingCheckupSchema, enqueueOnboardingCheckup, runDueOnboardingCheckups } from './onboarding-checkup.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
+import { crmProviderAllowed, crmConnectorStatus, connectCrmCredential, retestCrmCredential, disconnectCrmCredential } from './crm-connectors.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { firecrawlEnabled, firecrawlMaxPages, maySpendOneFirecrawlCredit, fetchFirecrawlRenderedHtml } from './firecrawl-fallback.mjs';
 import { assistedSetupCheckoutTrial, holdAssistedSetupBilling, releaseAssistedSetupBilling, assistedSetupBillingMode } from './assisted-setup-billing.mjs';
@@ -9562,6 +9563,69 @@ app.put('/api/leads/crm', auth, ownerOnly, requireLeadSchema, async (req,res)=>{
     return res.status(400).json({error:'Virheelliset CRM-asetukset.'});
   try { return res.json(await leadOperations.updateCrmSettings(req,{provider,enabled})); }
   catch(error) { console.error('CRM settings update failed',error); return res.status(503).json({error:'CRM-asetusten tallennus epäonnistui.'}); }
+});
+
+/* Enterprise CRM connectors. No credential is returned to the browser.
+   Every operation is owner-only, scoped to active tenant and rejects
+   cross-site mutations through existing /api/app CSRF policy. */
+const crmConnectorLimiter=rateLimit({
+  windowMs:15*60*1000,limit:25,standardHeaders:true,legacyHeaders:false,
+  keyGenerator:req=>publicRateKey(req,'crm-connector')
+});
+async function authorizedCrmWorkspace(req,res) {
+  const access=await requirePlanCapability(req,res,'allCurrentFeatures');
+  return access?.tenant?.id || null;
+}
+app.get('/api/app/connectors/crm',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try {
+    const tenantId=await authorizedCrmWorkspace(req,res);
+    if(!tenantId)return;
+    return res.json(await crmConnectorStatus(pool,tenantId));
+  }catch(error){
+    console.error('CRM connector status unavailable',String(error?.message||error));
+    return res.status(503).json({error:'CRM connector status is unavailable.'});
+  }
+});
+app.post('/api/app/connectors/crm',auth,ownerOnly,subscribed,crmConnectorLimiter,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  const {provider,token}=req.body||{};
+  if(!crmProviderAllowed(provider)||typeof token!=='string'||token.trim().length<15||token.length>512)
+    return res.status(400).json({error:'Choose a CRM and provide its API credential.'});
+  try {
+    const tenantId=await authorizedCrmWorkspace(req,res);
+    if(!tenantId)return;
+    const result=await connectCrmCredential(pool,tenantId,provider,token);
+    if(!result.connected)return res.status(422).json({error:'The CRM key could not be verified. Check its scopes and account permissions.',connected:false});
+    return res.json({connected:true,provider});
+  }catch(error){
+    // Never log or return API tokens or raw third-party response bodies.
+    console.error('CRM connector connection failed',error?.name||'error');
+    return res.status(502).json({error:'CRM connection failed. Check the provider and try again.'});
+  }
+});
+app.post('/api/app/connectors/crm/test',auth,ownerOnly,subscribed,crmConnectorLimiter,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const tenantId=await authorizedCrmWorkspace(req,res);
+    if(!tenantId)return;
+    const result=await retestCrmCredential(pool,tenantId);
+    return res.status(result.connected?200:422).json(result);
+  }catch(error){
+    console.error('CRM connector test failed',error?.name||'error');
+    return res.status(502).json({connected:false,error:'Unable to verify the CRM connection.'});
+  }
+});
+app.delete('/api/app/connectors/crm',auth,ownerOnly,subscribed,crmConnectorLimiter,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const tenantId=await authorizedCrmWorkspace(req,res);
+    if(!tenantId)return;
+    return res.json(await disconnectCrmCredential(pool,tenantId));
+  }catch(error){
+    console.error('CRM connector disconnect failed',error?.name||'error');
+    return res.status(503).json({error:'Could not disconnect the CRM.'});
+  }
 });
 app.get('/api/leads', auth, ownerOnly, requireLeadSchema, async (req, res) => {
   res.set('Cache-Control','private, no-store');
