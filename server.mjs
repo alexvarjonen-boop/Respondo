@@ -9,6 +9,9 @@ import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManag
 import { brandedEmailHtml } from './email-branding.mjs';
 import { ensureOnboardingCheckupSchema, enqueueOnboardingCheckup, runDueOnboardingCheckups } from './onboarding-checkup.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
+import { nativeOverview,createNativeContact,updateNativeContact,createNativeTicket,updateNativeTicket,
+  createNativeQuote,updateNativeQuote,setNativeRule,saveNativeDocument,removeNativeDocument,
+  runNativeAutomation } from './native-ai-operations.mjs';
 import { prepareQualifiedLead } from './lead-service.mjs';
 import { getCrmProvider, enqueueCrmLead } from './lead-crm-queue.mjs';
 import { processCrmOutbox } from './lead-crm-queue.mjs';
@@ -9635,6 +9638,58 @@ app.delete('/api/app/connectors/crm',auth,ownerOnly,subscribed,crmConnectorLimit
     return res.status(503).json({error:'Could not disconnect the CRM.'});
   }
 });
+
+/* First-party Respondo CRM, ticket queue, quote drafts, automations and
+   approved text knowledge. Every route is owner-only and tenant-scoped.
+   No paid external action runner or model is required. */
+const nativeWriteLimiter=rateLimit({
+  windowMs:15*60*1000,limit:50,standardHeaders:true,legacyHeaders:false,
+  keyGenerator:req=>publicRateKey(req,'native-actions')
+});
+async function nativeTenant(req,res){
+  const selected=await activeTenantPlan(req.user.sub);
+  if(!selected)res.status(404).json({error:'Workspace not found.'});
+  return selected;
+}
+function nativeEndpoint(handler,{quote=false}={}){
+  return async(req,res)=>{
+    res.set('Cache-Control','private, no-store');
+    try{
+      const tenant=quote
+        ? (await requirePlanCapability(req,res,'allCurrentFeatures'))?.tenant
+        : await nativeTenant(req,res);
+      if(!tenant)return;
+      const value=await handler(tenant.id,req);
+      if(value===null||value===false)return res.status(404).json({error:'Item not found.'});
+      return res.json({ok:true,data:value});
+    }catch(error){
+      if(error instanceof TypeError)return res.status(400).json({error:error.message});
+      console.error('Native actions request failed',error?.name||'error');
+      return res.status(503).json({error:'Native operations are temporarily unavailable.'});
+    }
+  };
+}
+app.get('/api/app/native',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>nativeOverview(pool,id)));
+app.post('/api/app/native/contacts',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>createNativeContact(pool,id,req.body||{})));
+app.patch('/api/app/native/contacts/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>updateNativeContact(pool,id,req.params.id,req.body||{})));
+app.post('/api/app/native/tickets',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>createNativeTicket(pool,id,req.body||{})));
+app.patch('/api/app/native/tickets/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>updateNativeTicket(pool,id,req.params.id,req.body||{})));
+app.post('/api/app/native/quotes',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>createNativeQuote(pool,id,req.body?.quantity,req.body?.note),{quote:true}));
+app.patch('/api/app/native/quotes/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>updateNativeQuote(pool,id,req.params.id,req.body?.status),{quote:true}));
+app.put('/api/app/native/rules',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>setNativeRule(pool,id,req.body?.trigger,req.body?.action,req.body?.enabled)));
+app.post('/api/app/native/documents',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>saveNativeDocument(pool,id,req.body||{})));
+app.delete('/api/app/native/documents/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>removeNativeDocument(pool,id,req.params.id)));
+
 app.get('/api/leads', auth, ownerOnly, requireLeadSchema, async (req, res) => {
   res.set('Cache-Control','private, no-store');
   try { return res.json({leads:await leadOperations.list(req,Number(req.query.limit)||50)}); }
@@ -14721,6 +14776,15 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
       'INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message) VALUES($1,$2,$3,$4,$5,$6,$7)',
       [capturedLeadId,tenant.id,String(body.visitorRef || '').slice(0,160)||null,name||null,email||null,phone||null,message||null],
     );
+    // Consent already checked on this endpoint. Store the contact only in
+    // this company's Respondo database; no external subscription is needed.
+    try {
+      await runNativeAutomation(pool,tenant.id,'lead_captured',{
+        id:capturedLeadId,name:name||'Website contact',email,phone,note:message
+      });
+    }catch(error){
+      console.error('Respondo internal lead automation failed',error?.name||'error');
+    }
     // The customer's explicit consent and verified lead qualifications are
     // required before exporting to any third-party CRM. The website lead must
     // remain captured even if the optional connector is currently unavailable.
@@ -15498,20 +15562,42 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       );
     }
 
+    // Every validated action request can be tracked in the company's own
+    // ticket queue. Only predefined internal actions are allowed.
+    try {
+      await runNativeAutomation(pool,tenant.id,'action_requested',{
+        id,title: type==='quote'?'Quote request':type==='booking'?'Booking request':
+          type==='callback'?'Callback request':'Order status request',
+        details:String(fields.details||fields.note||payload.question||'').slice(0,1200)
+      });
+    }catch(error){
+      console.error('Respondo internal ticket automation failed',error?.name||'error');
+    }
+
     if (['quote','booking','callback'].includes(type)) {
       const contact = actionContact(fields);
       try {
+        const actionLeadId=uid();
         await q(
           `INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message,status)
            VALUES($1,$2,$3,$4,$5,$6,$7,'new')`,
           [
-            uid(),tenant.id,visitorRef,
+            actionLeadId,tenant.id,visitorRef,
             String(fields.name || '').slice(0,120) || null,
             contact.email || null,
             contact.phone || null,
             String(fields.details || fields.note || payload.question || '').slice(0,1200) || null,
           ],
         );
+        try{
+          await runNativeAutomation(pool,tenant.id,'lead_captured',{
+            id:actionLeadId,name:String(fields.name||'Website contact').slice(0,120),
+            email:contact.email||'',phone:contact.phone||'',
+            note:String(fields.details||fields.note||payload.question||'').slice(0,1200)
+          });
+        }catch(error){
+          console.error('Internal action lead automation failed',error?.name||'error');
+        }
       } catch (leadError) {
         // The canonical request already contains the contact fields. Do not
         // tell the customer submission failed only because the dashboard lead
