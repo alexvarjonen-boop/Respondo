@@ -17,7 +17,7 @@
       open:'Avoin',in_progress:'Käsittelyssä',waiting:'Odottaa',done:'Valmis',
       draft:'Luonnos',approved:'Hyväksytty',triggerLead:'Uusi liidi → tallenna CRM:ään',
       triggerAction:'Uusi asiakaspyyntö → luo tiketti',recent:'Viimeaikaiset automaatiot',
-      confirmDelete:'Poistetaanko dokumentti myös botin tietopohjasta?',notice:'Toiminnot suoritetaan Respondon omassa järjestelmässä. Ulkoisia palveluja ei yhdistetä.'},
+      confirmDelete:'Poistetaanko dokumentti myös botin tietopohjasta?',notice:'Sisäiset toiminnot suoritetaan Respondossa. Freshdesk-yhteys aktivoidaan vain erikseen.'},
     sv:{helpdesk:'Supportsystem',helpdeskIntro:'Anslut Freshdesk säkert. Endast separat godkända ärenden skickas till tjänsten.',subdomain:'Freshdesk-underdomän',apiKey:'Freshdesk API-nyckel',connect:'Anslut',test:'Testa anslutning',disconnect:'Koppla bort',connected:'Ansluten',notConnected:'Inte ansluten',requesterEmail:'Kundens e-post',sendTicket:'Exportera ärende till Freshdesk',exportApproval:'Jag godkänner att kundärendet skickas till Freshdesk.',exported:'Exporterad till Freshdesk',exportUnknown:'Exportstatus är osäker. Kontrollera i Freshdesk före nytt försök.',badCredential:'Anslutningen kunde inte verifieras. Kontrollera domän och API-nyckel.',confirmDisconnect:'Koppla bort Freshdesk? Tidigare exporthistorik sparas.',quality:'Kvalitet',insights:'Resultat',qualityIntro:'Granska osäkra svar. Ändringar i kunskapsbasen kräver separat godkännande.',insightsIntro:'Svar, leads och åtgärder per kanal. Ett automatiskt svar är inte ett bevis på att ärendet lösts.',period:'Period',replies:'Meddelanden',automated:'AI-svar',handoffs:'Överlämningar',cited:'AI-svar med källor',qualityOpen:'Öppna kvalitetsgranskningar',reviewReason:'Feltyp',flag:'Markera för granskning',resolve:'Markera som åtgärdad',dismiss:'Avfärda',resolution:'Hur rättades och verifierades felet?',flags:'Konversationer att granska',recentReviews:'Kvalitetsrapporter',channels:'Per kanal',daily:'Dagliga konversationer',disclaimerQuality:'Svarsfrekvensen mäter varken kundnöjdhet eller korrekthet. Felaktig information ska korrigeras i en godkänd källa.',reasonIncorrect:'Felaktig information',reasonOutdated:'Inaktuell information',reasonLanguage:'Fel språk',reasonIntent:'Missförstod frågan',reasonHandoff:'Onödig överlämning',reasonOther:'Annat',knowledge:'Kunskapsbas',approvedFacts:'Godkända uppgifter',contacts:'Kundregister',tickets:'Supportärenden',quotes:'Offerter',rules:'Automatiseringar',docs:'Kunskapsbas',
       contactIntro:'Sparade kunder och leads.',ticketIntro:'Interna serviceärenden för personal.',
       quoteIntro:'Utkast baserade på företagets sparade priser. Leverans kräver mänskligt godkännande.',
@@ -33,7 +33,7 @@
       open:'Öppen',in_progress:'Pågår',waiting:'Väntar',done:'Klar',
       draft:'Utkast',approved:'Godkänd',triggerLead:'Nytt lead → spara i CRM',
       triggerAction:'Ny kundförfrågan → skapa ärende',recent:'Senaste automatiseringar',
-      confirmDelete:'Ta bort dokumentet även från bottens kunskapsbas?',notice:'Funktionerna körs internt i Respondo. Inga externa tjänster kopplas in.'},
+      confirmDelete:'Ta bort dokumentet även från bottens kunskapsbas?',notice:'Interna funktioner körs i Respondo. Freshdesk ansluts endast separat.'},
     en:{helpdesk:'Helpdesk',helpdeskIntro:'Connect Freshdesk securely. Only individually approved support tickets are sent to this external provider.',subdomain:'Freshdesk subdomain',apiKey:'Freshdesk API key',connect:'Connect',test:'Test connection',disconnect:'Disconnect',connected:'Connected',notConnected:'Not connected',requesterEmail:'Customer email',sendTicket:'Export ticket to Freshdesk',exportApproval:'I approve sending this customer ticket to the external Freshdesk service.',exported:'Exported to Freshdesk',exportUnknown:'Export status is uncertain. Reconcile in Freshdesk before any repeat.',badCredential:'The connection could not be verified. Check the domain and API key.',confirmDisconnect:'Disconnect Freshdesk? Previous export audit records remain.',quality:'Quality',insights:'Outcomes',qualityIntro:'Review uncertain answers. Changing the bot knowledge base requires separate approval.',insightsIntro:'Replies, leads and actions by channel. Automated replies do not prove customer resolution.',period:'Period',replies:'Messages',automated:'AI replies',handoffs:'Human handoffs',cited:'AI replies with sources',qualityOpen:'Open quality reviews',reviewReason:'Review reason',flag:'Flag for review',resolve:'Mark as fixed',dismiss:'Dismiss',resolution:'How was the issue corrected and verified?',flags:'Conversations to review',recentReviews:'Quality reviews',channels:'By channel',daily:'Daily conversations',disclaimerQuality:'Reply rate is not a customer-satisfaction or factual-accuracy metric. Correct false facts in an approved source.',reasonIncorrect:'Incorrect fact',reasonOutdated:'Outdated fact',reasonLanguage:'Wrong language',reasonIntent:'Misunderstood question',reasonHandoff:'Unnecessary handoff',reasonOther:'Other',knowledge:'Knowledge base',approvedFacts:'Approved facts',contacts:'Customer CRM',tickets:'Support tickets',quotes:'Quote drafts',rules:'Automations',docs:'Knowledge documents',
       contactIntro:'Saved customers and leads.',ticketIntro:'Internal service requests for your team.',
       quoteIntro:'Drafts based on your saved service prices. Sending requires human approval.',
@@ -49,7 +49,7 @@
       open:'Open',in_progress:'In progress',waiting:'Waiting',done:'Done',
       draft:'Draft',approved:'Approved',triggerLead:'Lead captured → save contact',
       triggerAction:'Customer action → open ticket',recent:'Recent automations',
-      confirmDelete:'Remove this document from the bot knowledge base as well?',notice:'Actions run in Respondo itself. No external services are connected.'}
+      confirmDelete:'Remove this document from the bot knowledge base as well?',notice:'Internal actions run in Respondo. Freshdesk is connected only through a separate approval.'}
   };
   function locale(){
     const value=String(document.querySelector('#respondoWorkspace')?.dataset.lang ||
@@ -136,7 +136,7 @@
       busy=true;feedback.textContent=t.saving;
       try{
         const result=await request(method,path,payload);
-        if(method==='POST'&&path===HELPDESK&&!result.connected)throw Error(t.badCredential);
+        if(method==='POST'&&(path===HELPDESK||path===HELPDESK+'/test')&&!result.connected)throw Error(t.badCredential);
         if(path.includes('/export')&&result.status!=='sent')throw Error(t.exportUnknown);
         await loadHelpdesk();feedback.textContent=t.saved;
       }catch(error){feedback.textContent=error.message||t.error;}
