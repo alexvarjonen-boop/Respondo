@@ -68,3 +68,9 @@
 #app #native-operations .native-inbox-evidence button{justify-self:start}
 #app #native-operations .native-inbox-note>.native-button{justify-self:start}
 #app #native-operations .native-inbox-reply .native-review-note,#app #native-operations .native-inbox-note .native-review-note{width:100%;box-sizing:border-box;background:#f8fafc!important;color:#142536!important;-webkit-text-fill-color:#142536!important}
+
+/* First-party calendar and owner-only reservation decisions. */
+#app #native-operations .native-list>.native-subtitle{margin-top:12px}
+#app #native-operations .native-record>.native-review-note{flex:1 1 100%;min-height:65px}
+#app #native-operations .native-list>.native-record .native-button{flex:0 0 auto}
+#app #native-operations .native-form input[type="datetime-local"]{min-height:45px;background:#f8fafc!important;color:#172638!important;-webkit-text-fill-color:#172638!important;max-width:100%;box-sizing:border-box}
