@@ -383,6 +383,12 @@
         return;
       }
       activeRecognition = recognition;
+      // A fresh recording replaces the previous unsent transcript. Otherwise
+      // a bad recognition such as "books" would stay in the new question.
+      if (input.dataset.respondoVoiceLang) {
+        input.value = '';
+        delete input.dataset.respondoVoiceLang;
+      }
       voiceDraft = input.value.trim();
       let heardText = '';
       let hadError = false;
