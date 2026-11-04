@@ -52,6 +52,7 @@ import { zendeskConfig, beginZendeskOAuth, completeZendeskOAuth, zendeskStatus, 
 import { qualityRepairOverview, approveQualityRepair, qualityAliasesForTenant } from './quality-source-repair.mjs';
 import { nativeInboxOverview, nativeInboxThread, saveNativeInboxDraft, addNativeInboxNote, closeNativeInboxThread, nativeInboxDraftFromSources, sendNativeWebsiteReply } from './native-inbox.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
+import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
 import { compareBotValidationRuns } from './bot-retest-comparison.mjs';
 import express from 'express';
@@ -9705,6 +9706,14 @@ app.post('/api/app/native/calendar/requests/:id/decision',
 app.post('/api/app/native/calendar/events/:id/cancel',
   auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
     (id,req)=>cancelNativeBooking(pool,id,req.params.id,req.user.sub)));
+/* Internal follow-ups live only in Respondo: never send paid/external alerts. */
+app.get('/api/app/native/tasks',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>nativeTaskOverview(pool,id)));
+app.post('/api/app/native/tasks',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>createManualNativeTask(pool,id,req.user.sub,req.body||{})));
+app.patch('/api/app/native/tasks/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>updateNativeTask(pool,id,req.params.id,req.body?.status)));
+
 
 
 app.get('/api/app/native/quality',auth,ownerOnly,subscribed,nativeEndpoint(
