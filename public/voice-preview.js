@@ -41,7 +41,9 @@
   const style = document.createElement('style');
   style.textContent = [
     '#app #previewForm .respondo-voice-input-wrap{display:block;position:relative;min-width:0;width:100%}',
-    '#app #previewForm .respondo-voice-input-wrap>input{width:100%!important;padding-right:54px!important}',
+    '#app #previewForm .respondo-voice-input-wrap>input{width:100%!important;padding-right:110px!important}',
+    '#app #previewForm .respondo-voice-lang-picker{position:absolute!important;top:50%!important;right:54px!important;transform:translateY(-50%)!important;display:block!important;width:47px!important;height:40px!important;min-height:40px!important;padding:0 4px!important;background:#f2f3f5!important;border:1px solid #dde1e8!important;border-radius:11px!important;color:#252830!important;font-size:11px!important;font-weight:750!important;z-index:2}',
+    '#app #previewForm .respondo-voice-lang-picker:focus-visible{outline:3px solid #555!important;outline-offset:2px}',
     '#app #previewForm .respondo-voice-preview-btn{position:absolute!important;top:50%!important;right:5px!important;transform:translateY(-50%)!important;display:grid!important;place-items:center!important;min-height:40px!important;height:40px!important;width:42px!important;border:1px solid #dde1e8!important;border-radius:11px!important;background:#fff!important;color:#252830!important;box-shadow:none!important;z-index:2}',
     '#app #previewForm .respondo-voice-preview-btn svg{height:19px;width:19px;display:block}',
     '#app #previewForm .respondo-voice-preview-btn.listening{background:#fee8e5!important;color:#ab2419!important;border-color:#edada6!important}',
@@ -58,6 +60,19 @@
     const value = String(params.get('lang') || document.documentElement.lang || saved || 'en').toLowerCase().split('-')[0];
     return ['fi', 'sv', 'en'].includes(value) ? value : 'en';
   }
+  // Speech recognition is a separate setting from the visual dashboard language.
+  const speechStorageKey = 'respondo_voice_language_v1';
+  function initialSpeechLanguage() {
+    try {
+      const saved = localStorage.getItem(speechStorageKey);
+      if (['fi','sv','en'].includes(saved)) return saved;
+    } catch {}
+    const browser = String(navigator.language || '').toLowerCase().split('-')[0];
+    if (browser === 'fi' || browser === 'sv') return browser;
+    // Finnish business sites prefer Finnish speech, even in the English UI.
+    if (window.location.hostname.toLowerCase().endsWith('.fi')) return 'fi';
+    return ['fi','sv','en'].includes(browser) ? browser : language();
+  }
   let activeForm = null;
   let activeController = null;
 
@@ -69,6 +84,18 @@
     wrap.className = 'respondo-voice-input-wrap';
     input.before(wrap);
     wrap.appendChild(input);
+    const voiceLanguageSelect = document.createElement('select');
+    voiceLanguageSelect.className = 'respondo-voice-lang-picker';
+    voiceLanguageSelect.setAttribute('aria-label', 'Speech recognition language / Puheen kieli / Talspråk');
+    voiceLanguageSelect.title = 'Speech recognition language / Puheen kieli / Talspråk';
+    [['fi','FI'],['sv','SV'],['en','EN']].forEach(([value,label]) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      voiceLanguageSelect.appendChild(option);
+    });
+    voiceLanguageSelect.value = initialSpeechLanguage();
+    wrap.appendChild(voiceLanguageSelect);
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'respondo-voice-preview-btn';
@@ -108,6 +135,12 @@
       resetButton();
     }
     resetButton();
+    voiceLanguageSelect.addEventListener('change', () => {
+      cancel();
+      showNote('');
+      delete input.dataset.respondoVoiceLang;
+      try { localStorage.setItem(speechStorageKey, voiceLanguageSelect.value); } catch {}
+    });
 
     button.addEventListener('click', () => {
       const words = translations[language()];
@@ -121,10 +154,14 @@
       try { current = new SpeechRecognitionClass(); }
       catch { showNote(words.unavailable); return; }
       recognition = current;
+      if (input.dataset.respondoVoiceLang) {
+        input.value = '';
+        delete input.dataset.respondoVoiceLang;
+      }
       originalText = input.value.trim();
       let transcript = '';
       let failed = false;
-      current.lang = { fi: 'fi-FI', sv: 'sv-SE', en: 'en-US' }[language()];
+      current.lang = { fi: 'fi-FI', sv: 'sv-SE', en: 'en-US' }[voiceLanguageSelect.value];
       current.continuous = false;
       current.interimResults = true;
       current.maxAlternatives = 1;
@@ -138,6 +175,7 @@
         }
         transcript = [finalText, interimText].filter(Boolean).join(' ').trim();
         input.value = [originalText, transcript].filter(Boolean).join(' ');
+        if (transcript) input.dataset.respondoVoiceLang = voiceLanguageSelect.value;
       };
       current.onerror = event => {
         if (recognition !== current) return;
@@ -154,7 +192,10 @@
         if (recognition !== current) return;
         recognition = null;
         resetButton();
-        if (!transcript) input.value = originalText;
+        if (!transcript) {
+          input.value = originalText;
+          delete input.dataset.respondoVoiceLang;
+        }
         if (!failed) showNote(transcript ? words.review : words.noSpeech);
       };
       input.readOnly = true;

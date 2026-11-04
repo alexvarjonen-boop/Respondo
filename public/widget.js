@@ -87,7 +87,8 @@
   "Mikrofonia ei löytynyt.": "Ingen mikrofon hittades.",
   "Puheentunnistus ei ole käytettävissä juuri nyt.": "Taligenkänning är inte tillgänglig just nu.",
   "Puheentunnistus epäonnistui. Kirjoita kysymyksesi.": "Taligenkänningen misslyckades. Skriv din fråga.",
-  "Puhe voidaan käsitellä selaimesi puhepalvelussa.": "Tal kan behandlas av webbläsarens taltjänst."
+  "Puhe voidaan käsitellä selaimesi puhepalvelussa.": "Tal kan behandlas av webbläsarens taltjänst.",
+  "Puheen kieli": "Talspråk"
 };
   Object.entries(EXTRA_SV_WIDGET).forEach(([fi,sv]) => SV_WIDGET.set(fi,sv));
   function t(fi, en) {
@@ -176,6 +177,8 @@
       .composer input{min-width:0;flex:1;border:1px solid #d9d9dc;border-radius:12px;padding:12px 13px;font:inherit;font-size:14px;outline:none}
       .composer input:focus{border-color:var(--bot-accent,#111113)}
       .composer button{width:44px;flex:0 0 44px;border:0;border-radius:12px;background:var(--bot-accent,#111113);color:var(--bot-accent-ink,#fff);font-size:18px;font-weight:800;cursor:pointer}
+      .composer .voice-lang{appearance:none;flex:0 0 44px;width:44px;height:44px;border-radius:12px;border:1px solid #e3e4e8;padding:0 5px;background:#f2f3f5;color:#27272a;font-size:11px;font-weight:700;cursor:pointer}
+      .composer .voice-lang[hidden]{display:none}
       .composer .voice-btn{display:grid;place-items:center;background:#f2f3f5;color:#27272a;border:1px solid #e3e4e8;font-size:16px}
       .composer .voice-btn svg{width:19px;height:19px;display:block}
       .composer .voice-btn[hidden]{display:none}
@@ -277,6 +280,7 @@
         <div class="status" id="status">${t('Yhdistetään…', 'Connecting…')}</div>
         <form class="composer" id="form">
           <input id="input" autocomplete="off" placeholder="${t('Kysy jotain…', 'Type your question…')}" aria-label="${t('Kirjoita kysymyksesi', 'Type your question')}">
+          <select id="voiceLang" class="voice-lang" aria-label="${t('Puheen kieli', 'Speech language')}" title="${t('Puheen kieli', 'Speech language')}" hidden><option value="fi">FI</option><option value="sv">SV</option><option value="en">EN</option></select>
           <button type="button" id="voiceBtn" class="voice-btn" hidden aria-pressed="false" aria-label="${t('Puhu kysymyksesi', 'Speak your question')}" title="${t('Puhu kysymyksesi', 'Speak your question')}"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8"/></svg></button>
           <button type="submit" aria-label="${t('Lähetä', 'Send')}">→</button>
         </form>
@@ -298,6 +302,7 @@
   const form = $('#form');
   const input = $('#input');
   const voiceButton = $('#voiceBtn');
+  const voiceLanguageSelect = $('#voiceLang');
   const voiceNote = $('#voiceNote');
   const name = $('#name');
   const mark = $('.mark');
@@ -317,6 +322,27 @@
   const BrowserSpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let activeRecognition = null;
   let voiceDraft = '';
+  // Speech language must not follow the visual UI language: an English
+  // dashboard can still be used by customers who speak Finnish or Swedish.
+  const speechStorageKey = 'respondo_voice_language_v1';
+  function initialSpeechLanguage() {
+    try {
+      const saved = localStorage.getItem(speechStorageKey);
+      if (['fi','sv','en'].includes(saved)) return saved;
+    } catch {}
+    const browser = String(navigator.language || '').toLowerCase().split('-')[0];
+    if (browser === 'fi' || browser === 'sv') return browser;
+    // A Finnish company site defaults to Finnish speech, even if its UI is EN.
+    if (window.location.hostname.toLowerCase().endsWith('.fi')) return 'fi';
+    return ['fi','sv','en'].includes(browser) ? browser : widgetLang;
+  }
+  voiceLanguageSelect.value = initialSpeechLanguage();
+  voiceLanguageSelect.addEventListener('change', () => {
+    cancelVoiceInput();
+    showVoiceNote('');
+    delete input.dataset.respondoVoiceLang;
+    try { localStorage.setItem(speechStorageKey, voiceLanguageSelect.value); } catch {}
+  });
   function showVoiceNote(message) {
     voiceNote.textContent = message || '';
     voiceNote.hidden = !message;
@@ -341,6 +367,7 @@
   }
   if (BrowserSpeechRecognition && window.isSecureContext) {
     voiceButton.hidden = false;
+    voiceLanguageSelect.hidden = false;
     voiceButton.disabled = true;
     voiceButton.addEventListener('click', () => {
       if (activeRecognition) {
@@ -356,10 +383,16 @@
         return;
       }
       activeRecognition = recognition;
+      // A fresh recording replaces the previous unsent transcript. Otherwise
+      // a bad recognition such as "books" would stay in the new question.
+      if (input.dataset.respondoVoiceLang) {
+        input.value = '';
+        delete input.dataset.respondoVoiceLang;
+      }
       voiceDraft = input.value.trim();
       let heardText = '';
       let hadError = false;
-      recognition.lang = {fi:'fi-FI', sv:'sv-SE', en:'en-US'}[widgetLang] || 'en-US';
+      recognition.lang = {fi:'fi-FI', sv:'sv-SE', en:'en-US'}[voiceLanguageSelect.value] || 'fi-FI';
       recognition.interimResults = true;
       recognition.continuous = false;
       recognition.maxAlternatives = 1;
@@ -373,6 +406,7 @@
         }
         heardText = [finalText, interimText].filter(Boolean).join(' ').trim();
         input.value = [voiceDraft, heardText].filter(Boolean).join(' ');
+        if (heardText) input.dataset.respondoVoiceLang = voiceLanguageSelect.value;
       };
       recognition.onerror = (event) => {
         if (activeRecognition !== recognition) return;
@@ -393,7 +427,10 @@
         if (activeRecognition !== recognition) return;
         activeRecognition = null;
         resetVoiceButton();
-        if (!heardText) input.value = voiceDraft;
+        if (!heardText) {
+          input.value = voiceDraft;
+          delete input.dataset.respondoVoiceLang;
+        }
         if (!hadError) showVoiceNote(heardText
           ? t('Tarkista teksti ja lähetä.', 'Review the text and press send.')
           : t('Puhetta ei tunnistettu. Yritä uudelleen.', 'No speech was detected. Try again.'));
@@ -1153,6 +1190,9 @@
   async function sendMessage(rawMessage) {
     const message = String(rawMessage || '').trim();
     if (!message || !ready) return;
+    const voiceMessageLang = ['fi','sv','en'].includes(input.dataset.respondoVoiceLang) &&
+      message === input.value.trim() ? input.dataset.respondoVoiceLang : widgetLang;
+    delete input.dataset.respondoVoiceLang;
     cancelVoiceInput();
     showVoiceNote('');
     if (!voiceButton.hidden) voiceButton.disabled = true;
@@ -1172,7 +1212,7 @@
           mode: 'cors',
           credentials: 'omit',
           headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-          body: JSON.stringify({ message, widgetToken: token, visitorRef, lang: widgetLang, pageContext }),
+          body: JSON.stringify({ message, widgetToken: token, visitorRef, lang: voiceMessageLang, pageContext }),
         }
       );
       const data = await res.json().catch(() => ({}));
