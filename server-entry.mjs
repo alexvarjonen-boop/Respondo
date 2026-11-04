@@ -1,4 +1,6 @@
 import pg from 'pg';
+import { ensureCrmSchema } from './lead-crm-queue.mjs';
+import { ensureCrmCredentialsSchema } from './crm-connectors.mjs';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const ssl = isProduction ? { rejectUnauthorized: false } : undefined;
@@ -92,6 +94,18 @@ async function clearLegacyPaidChannelState() {
 }
 
 await clearLegacyPaidChannelState();
+
+// Schema is installed before serving traffic. Customer-supplied tokens are
+// encrypted in a tenant-specific table that is inaccessible through Data API.
+async function initializeCrmConnectors() {
+  if (!process.env.DATABASE_URL) return;
+  const pool = new pg.Pool({connectionString:process.env.DATABASE_URL,ssl});
+  try {
+    await ensureCrmSchema(pool);
+    await ensureCrmCredentialsSchema(pool);
+  } finally {await pool.end();}
+}
+await initializeCrmConnectors();
 
 const originalPoolQuery = pg.Pool.prototype.query;
 pg.Pool.prototype.query = function(query, ...args) {

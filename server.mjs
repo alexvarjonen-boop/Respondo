@@ -9,6 +9,11 @@ import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManag
 import { brandedEmailHtml } from './email-branding.mjs';
 import { ensureOnboardingCheckupSchema, enqueueOnboardingCheckup, runDueOnboardingCheckups } from './onboarding-checkup.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
+import { prepareQualifiedLead } from './lead-service.mjs';
+import { getCrmProvider, enqueueCrmLead } from './lead-crm-queue.mjs';
+import { processCrmOutbox } from './lead-crm-queue.mjs';
+import { deliverCrmProvider } from './lead-crm-providers.mjs';
+import { crmProviderAllowed, crmConnectorStatus, connectCrmCredential, retestCrmCredential, disconnectCrmCredential } from './crm-connectors.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { firecrawlEnabled, firecrawlMaxPages, maySpendOneFirecrawlCredit, fetchFirecrawlRenderedHtml } from './firecrawl-fallback.mjs';
 import { assistedSetupCheckoutTrial, holdAssistedSetupBilling, releaseAssistedSetupBilling, assistedSetupBillingMode } from './assisted-setup-billing.mjs';
@@ -9563,6 +9568,69 @@ app.put('/api/leads/crm', auth, ownerOnly, requireLeadSchema, async (req,res)=>{
   try { return res.json(await leadOperations.updateCrmSettings(req,{provider,enabled})); }
   catch(error) { console.error('CRM settings update failed',error); return res.status(503).json({error:'CRM-asetusten tallennus epäonnistui.'}); }
 });
+
+/* Enterprise CRM connectors. No credential is returned to the browser.
+   Every operation is owner-only, scoped to active tenant and rejects
+   cross-site mutations through existing /api/app CSRF policy. */
+const crmConnectorLimiter=rateLimit({
+  windowMs:15*60*1000,limit:25,standardHeaders:true,legacyHeaders:false,
+  keyGenerator:req=>publicRateKey(req,'crm-connector')
+});
+async function authorizedCrmWorkspace(req,res) {
+  const access=await requirePlanCapability(req,res,'allCurrentFeatures');
+  return access?.tenant?.id || null;
+}
+app.get('/api/app/connectors/crm',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try {
+    const tenantId=await authorizedCrmWorkspace(req,res);
+    if(!tenantId)return;
+    return res.json(await crmConnectorStatus(pool,tenantId));
+  }catch(error){
+    console.error('CRM connector status unavailable',String(error?.message||error));
+    return res.status(503).json({error:'CRM connector status is unavailable.'});
+  }
+});
+app.post('/api/app/connectors/crm',auth,ownerOnly,subscribed,crmConnectorLimiter,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  const {provider,token}=req.body||{};
+  if(!crmProviderAllowed(provider)||typeof token!=='string'||token.trim().length<15||token.length>512)
+    return res.status(400).json({error:'Choose a CRM and provide its API credential.'});
+  try {
+    const tenantId=await authorizedCrmWorkspace(req,res);
+    if(!tenantId)return;
+    const result=await connectCrmCredential(pool,tenantId,provider,token);
+    if(!result.connected)return res.status(422).json({error:'The CRM key could not be verified. Check its scopes and account permissions.',connected:false});
+    return res.json({connected:true,provider});
+  }catch(error){
+    // Never log or return API tokens or raw third-party response bodies.
+    console.error('CRM connector connection failed',error?.name||'error');
+    return res.status(502).json({error:'CRM connection failed. Check the provider and try again.'});
+  }
+});
+app.post('/api/app/connectors/crm/test',auth,ownerOnly,subscribed,crmConnectorLimiter,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const tenantId=await authorizedCrmWorkspace(req,res);
+    if(!tenantId)return;
+    const result=await retestCrmCredential(pool,tenantId);
+    return res.status(result.connected?200:422).json(result);
+  }catch(error){
+    console.error('CRM connector test failed',error?.name||'error');
+    return res.status(502).json({connected:false,error:'Unable to verify the CRM connection.'});
+  }
+});
+app.delete('/api/app/connectors/crm',auth,ownerOnly,subscribed,crmConnectorLimiter,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const tenantId=await authorizedCrmWorkspace(req,res);
+    if(!tenantId)return;
+    return res.json(await disconnectCrmCredential(pool,tenantId));
+  }catch(error){
+    console.error('CRM connector disconnect failed',error?.name||'error');
+    return res.status(503).json({error:'Could not disconnect the CRM.'});
+  }
+});
 app.get('/api/leads', auth, ownerOnly, requireLeadSchema, async (req, res) => {
   res.set('Cache-Control','private, no-store');
   try { return res.json({leads:await leadOperations.list(req,Number(req.query.limit)||50)}); }
@@ -9964,6 +10032,7 @@ app.delete('/api/owner/companies/:tenantId', auth, ownerTrafficOnly, loginLimite
       " updated_at=NOW() WHERE id=$1",
       [tenant.owner_user_id,id,next.rows[0]?.id||null,next.rows[0]?.name||'Yritys',next.rows[0]?.business_id||null,subscriptionId||'__no_subscription__']
     );
+    await purgeDeletedAccountArtifacts(client,{tenantId:id});
     await client.query('DELETE FROM tenants WHERE id=$1',[id]);
     await client.query('COMMIT');
     return res.json({ok:true,deletedTenantId:id,canceledSubscriptions});
@@ -11286,7 +11355,10 @@ async function purgeDeletedAccountArtifacts(client,{tenantId=null,userId=null}={
   const exists=await client.query(
     "SELECT to_regclass('public.setup_service_requests') IS NOT NULL AS has_setup, "+
     "to_regclass('public.signup_welcome_emails') IS NOT NULL AS has_welcome, "+
-    "to_regclass('public.setup_intake_images') IS NOT NULL AS has_images",
+    "to_regclass('public.setup_intake_images') IS NOT NULL AS has_images, "+
+    "to_regclass('public.respondo_crm_credentials') IS NOT NULL AS has_crm_credentials, "+
+    "to_regclass('public.respondo_crm_settings') IS NOT NULL AS has_crm_settings, "+
+    "to_regclass('public.respondo_crm_outbox') IS NOT NULL AS has_crm_outbox",
   );
   if(exists.rows[0]?.has_setup) {
     if(exists.rows[0]?.has_images){
@@ -11298,6 +11370,16 @@ async function purgeDeletedAccountArtifacts(client,{tenantId=null,userId=null}={
   }
   if(userId && exists.rows[0]?.has_welcome)
     await client.query('DELETE FROM signup_welcome_emails WHERE user_id=$1',[userId]);
+  if(tenantId) {
+    // Credentials and queued leads have text tenant keys (no FK cascade).
+    // Delete them before tenant removal to prevent orphaned customer secrets.
+    if(exists.rows[0]?.has_crm_outbox)
+      await client.query('DELETE FROM respondo_crm_outbox WHERE tenant_id=$1',[tenantId]);
+    if(exists.rows[0]?.has_crm_credentials)
+      await client.query('DELETE FROM respondo_crm_credentials WHERE tenant_id=$1',[tenantId]);
+    if(exists.rows[0]?.has_crm_settings)
+      await client.query('DELETE FROM respondo_crm_settings WHERE tenant_id=$1',[tenantId]);
+  }
 }
 
 app.delete('/api/app/workspaces/:tenantId', auth, ownerOnly, loginLimiter, async (req,res) => {
@@ -14630,10 +14712,25 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
     if (body.consent !== true) return res.status(400).json({ error: 'Yhteystietojen lähettäminen edellyttää suostumusta.' });
     if (!email && !phone) return res.status(400).json({ error: 'Anna sähköposti tai puhelinnumero.' });
 
+    const capturedLeadId=uid();
     await q(
       'INSERT INTO leads(id,tenant_id,visitor_ref,name,email,phone,message) VALUES($1,$2,$3,$4,$5,$6,$7)',
-      [uid(), tenant.id, String(body.visitorRef || '').slice(0, 160) || null, name || null, email || null, phone || null, message || null],
+      [capturedLeadId,tenant.id,String(body.visitorRef || '').slice(0,160)||null,name||null,email||null,phone||null,message||null],
     );
+    // The customer's explicit consent and verified lead qualifications are
+    // required before exporting to any third-party CRM. The website lead must
+    // remain captured even if the optional connector is currently unavailable.
+    try {
+      const setting=await getCrmProvider(pool,tenant.id);
+      if(setting.enabled) {
+        const qualified=prepareQualifiedLead({
+          tenantId:tenant.id,leadId:capturedLeadId,message,name,email,phone,consent:true
+        });
+        if(qualified.accepted) await enqueueCrmLead(pool,qualified.event);
+      }
+    }catch(error){
+      console.error('Consent-based CRM enqueue unavailable',{leadId:capturedLeadId});
+    }
     return res.json({ ok: true });
   } catch (e) {
     console.error('Lead capture failed', e);
@@ -16834,6 +16931,24 @@ async function start() {
       trustpilotUrl:process.env.TRUSTPILOT_REVIEW_URL,
       from:process.env.CHECKUP_EMAIL_FROM||'Respondo AI <info@respondoai.fi>',
     }).catch((error)=>console.error('Scheduled onboarding checkup failed:',error?.message));
+    // Deliver opted-in CRM leads on the same service that owns the encryption
+    // key. The queue uses SKIP LOCKED so multiple replicas cannot claim the
+    // same pending event. This does not require any third-party scheduler.
+    let crmWorkerRunning=false;
+    const deliverDueCrmLeads=async()=>{
+      if(crmWorkerRunning||!pool||!process.env.DATA_ENCRYPTION_KEY)return;
+      crmWorkerRunning=true;
+      try{
+        await processCrmOutbox(pool,(tenantId,event)=>
+          deliverCrmProvider(tenantId,event,{pool}),{limit:20});
+      }catch(error){
+        console.error('CRM queue delivery failed',error?.name||'error');
+      }finally{crmWorkerRunning=false;}
+    };
+    const crmDeliveryTimer=setInterval(()=>void deliverDueCrmLeads(),60*1000);
+    crmDeliveryTimer.unref();
+    const crmDeliveryStartup=setTimeout(()=>void deliverDueCrmLeads(),15000);
+    crmDeliveryStartup.unref();
     const checkupTimer=setInterval(sendDueCheckups,60*1000);
     checkupTimer.unref();
     const checkupStartup=setTimeout(sendDueCheckups,10000);

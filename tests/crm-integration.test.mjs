@@ -8,7 +8,7 @@ test('Pipedrive creates person before lead and uses returned person ID',async()=
   const pool={query:async()=>({rows:[{provider:'pipedrive',enabled:true}]})};
   const fetchImpl=async(url,options)=>{
     requests.push({url,body:JSON.parse(options.body)});
-    return {ok:true,json:async()=>({data:{id:42}})};
+    return {ok:true,json:async()=>({success:true,data:{id:42}})};
   };
   await deliverCrmProvider('tenant-1',{leadId:'lead-1',contact:{name:'Customer',email:'a@example.com'}},{
     pool,credentials:{'tenant-1':{token:'test-token'}},fetchImpl
@@ -16,6 +16,9 @@ test('Pipedrive creates person before lead and uses returned person ID',async()=
   assert.match(requests[0].url,/\/persons$/);
   assert.match(requests[1].url,/\/leads$/);
   assert.equal(requests[1].body.person_id,42);
+  assert.equal(requests[0].url,'https://api.pipedrive.com/api/v2/persons');
+  assert.equal(requests[1].url,'https://api.pipedrive.com/api/v1/leads');
+  assert.deepEqual(requests[0].body.emails,[{value:'a@example.com'}]);
 });
 test('CRM settings use parameterized tenant scope',async()=>{
   let args;

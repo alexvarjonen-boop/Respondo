@@ -3,10 +3,10 @@ import { processCrmOutbox } from '../lead-crm-queue.mjs';
 import { deliverCrmProvider } from '../lead-crm-providers.mjs';
 
 // Run from an external scheduler every minute; no permanent process needed.
-// Configure DATABASE_URL and tenant-specific CRM credentials in the server environment.
-if(!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL is required');
-  process.exitCode=1;
+// The Railway production service processes encrypted customer connectors.
+// This optional GitHub worker only runs when it also has the encryption key.
+if(!process.env.DATABASE_URL || !process.env.DATA_ENCRYPTION_KEY) {
+  console.log('CRM worker skipped: Railway handles delivery unless both worker secrets are configured.');
 } else {
   const pool=new pg.Pool({connectionString:process.env.DATABASE_URL});
   try {

@@ -59,7 +59,9 @@ test('real tenant analytics, leads, conversations and staff editor are reachable
   assert.match(account,/customers:'leads'/);
   assert.match(account,/conversations:'conversations'/);
   assert.match(account,/team:'support-team'/);
-  assert.match(account,/integrations:'business-integrations'/);
+  assert.match(account,/integrations:'crm-integration'/);
+  assert.match(account,/\['business-integrations',translate\('API ja webhookit'/);
+  assert.match(account,/\['crm-integration',translate\('CRM-yhteydet'/);
   assert.match(account,/\['live-inbox',translate\('Live-keskustelut'/);
   assert.match(app,/id="support-team"/);
   assert.match(app,/id="leads"/);
