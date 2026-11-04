@@ -51,7 +51,9 @@ export function repairSuggestions(gaps=[],sources=[],aliases=[]){
       const sourceTokens=tokenSet(title+' '+(Array.isArray(row.keywords)?row.keywords.join(' '):''));
       const intersection=[...keywords].filter(t=>sourceTokens.has(t)).length;
       const exact=fold(question)===fold(title);
-      if(!exact&&intersection<2)continue;
+      // When the category and question topic agree, one exact service/product
+      // word is sufficient to offer a reviewable candidate. Never auto-approve.
+      if(!exact&&intersection<2&&!(intersection>=1&&topic&&sourceTopic===topic))continue;
       const topicBoost=topic&&sourceTopic===topic?3:0;
       const rank=(exact?100:0)+intersection*5+topicBoost;
       ranked.push({sourceId:row.id,title:text(title,140),excerpt:text(row.answer,240),rank,
