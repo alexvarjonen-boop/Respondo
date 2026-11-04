@@ -9,6 +9,7 @@ import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManag
 import { brandedEmailHtml } from './email-branding.mjs';
 import { ensureOnboardingCheckupSchema, enqueueOnboardingCheckup, runDueOnboardingCheckups } from './onboarding-checkup.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
+import { readServiceRule,saveServiceRule,serviceDialogue,estimateWindowDuration,fitServiceSlots } from './service-capacity.mjs';
 import { nativeOverview,createNativeContact,updateNativeContact,createNativeTicket,updateNativeTicket,
   createNativeQuote,updateNativeQuote,setNativeRule,saveNativeDocument,removeNativeDocument,
   runNativeAutomation } from './native-ai-operations.mjs';
@@ -13365,18 +13366,24 @@ async function googleCalendarEvents(tenant, timeMin, timeMax) {
   }).toString();
 
   const response = await fetch(url, {
-    headers:{ Authorization:'Bearer ' + token },
+    headers:{ Authorization:'Bearer ' + token },redirect:'error',signal:AbortSignal.timeout(9000),
   });
   if (!response.ok) throw new Error('Google Calendar events fetch failed');
   const data = await response.json();
-  return (Array.isArray(data.items) ? data.items : [])
-    .filter((event) => event.status !== 'cancelled' && event.start?.dateTime && event.end?.dateTime)
-    .map((event) => ({
-      id:event.id,
-      start:new Date(event.start.dateTime),
-      end:new Date(event.end.dateTime),
-    }))
-    .filter((event) => Number.isFinite(event.start.getTime()) && Number.isFinite(event.end.getTime()));
+  // Page truncation would hide conflicts; fail closed instead.
+  if (data.nextPageToken) throw new Error('Calendar has more events than can safely be verified');
+  const items=Array.isArray(data.items)?data.items:[];
+  return items.filter(event=>event.status!=='cancelled' && event.transparency!=='transparent' &&
+    event.start && event.end)
+    .map(event=>{
+      // All-day events use dates rather than dateTime. Expand conservatively
+      // across timezone offsets so they cannot become phantom free time.
+      const allDay=Boolean(event.start.date && event.end.date);
+      const start=new Date(allDay?Date.parse(event.start.date+'T00:00:00Z')-12*3600000:event.start.dateTime);
+      const end=new Date(allDay?Date.parse(event.end.date+'T00:00:00Z')+12*3600000:event.end.dateTime);
+      return {id:event.id,start,end};
+    })
+    .filter(event=>Number.isFinite(event.start.getTime())&&Number.isFinite(event.end.getTime()));
 }
 
 async function googleCalendarHasConflict(tenant, start, end) {
@@ -15072,6 +15079,31 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       }
     }
 
+    // Safe, deterministic service dialogue runs before generic AI answers.
+    // If company duration standards are missing, the existing Q&A flow remains.
+    const serviceReply=await serviceDialogue(pool,t.id,visitorRef,message,detectedLang,
+      minutes=>configuredServiceSlots(t,minutes));
+    if(serviceReply){
+      const answer=serviceReply.answer;
+      if(thread)await appendChatMessage({tenantId:t.id,threadId:thread.id,sourceChannel:'website',
+        externalContactId:visitorRef,visitorRef,role:'assistant',text:answer,
+        metadata:{serviceCapacity:true,status:serviceReply.status}});
+      await q(`INSERT INTO conversations
+        (id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,page_url,page_title,source_channel,external_contact_id)
+        VALUES($1,$2,$3,$4,'Service duration estimate',1,'{}',false,$5,$6,$7,'website',$8)`,
+        [uid(),t.id,message,answer,visitorRef,
+          String(body.pageContext?.url||'').slice(0,1000)||null,
+          String(body.pageContext?.title||'').slice(0,300)||null,visitorRef]);
+      const suggestedActions=serviceReply.status==='proposed'? [{
+        type:'booking',mode:'booking_form',
+        label:detectedLang==='en'?'Request a suitable appointment':
+          detectedLang==='sv'?'Föreslå en lämplig tid':'Pyydä sopivaa aikaa'
+      }] : [];
+      return res.json({answer,handoff:false,confidence:1,intent:'Service duration estimate',
+        verified:false,actions:suggestedActions,products:[],
+        canLeaveContact:serviceReply.status!=='needs_details',
+        serviceCapacityStatus:serviceReply.status});
+    }
     const kr = await q('SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true ORDER BY updated_at DESC, created_at DESC', [t.id]);
     let history = [];
     if (visitorRef) {
@@ -15280,6 +15312,48 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
 
 
 
+/* Owner-managed service duration settings. No auto-enabled guessed time values. */
+app.get('/api/app/service-capacity',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const workspace=await requirePlanCapability(req,res,'allCurrentFeatures');
+    if(!workspace?.tenant)return;
+    const config=await readServiceRule(pool,workspace.tenant.id);
+    return res.json({config,connectedCalendar:Boolean(workspace.tenant.google_calendar_refresh_token ||
+      workspace.tenant.google_calendar_access_token)});
+  }catch(error){
+    console.error('Service capacity read error',error?.name||'error');
+    return res.status(503).json({error:'Service settings unavailable.'});
+  }
+});
+app.put('/api/app/service-capacity',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const workspace=await requirePlanCapability(req,res,'allCurrentFeatures');
+    if(!workspace?.tenant)return;
+    const config=await saveServiceRule(pool,workspace.tenant.id,req.body||{});
+    return res.json({config});
+  }catch(error){
+    if(error instanceof TypeError)return res.status(400).json({error:error.message});
+    console.error('Service capacity save error',error?.name||'error');
+    return res.status(503).json({error:'Unable to save duration settings.'});
+  }
+});
+async function configuredServiceSlots(tenant,requiredMinutes){
+  const result=await q(`SELECT id,starts_at,ends_at FROM booking_slots
+    WHERE tenant_id=$1 AND status='open' AND starts_at>NOW()
+    ORDER BY starts_at ASC LIMIT 200`,[tenant.id]);
+  const slots=result.rows;
+  if(!slots.length)return [];
+  let busy=[];
+  if(planEntitlements(tenant.subscription_plan).googleCalendar &&
+    (tenant.google_calendar_refresh_token||tenant.google_calendar_access_token)){
+    // Failure to read external calendar is NOT interpreted as availability.
+    busy=await googleCalendarEvents(tenant,slots[0].starts_at,slots[slots.length-1].ends_at);
+  }
+  return fitServiceSlots(slots,requiredMinutes,busy);
+}
+
 app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) => {
   try {
     const tr = await publicTenant(req.params.slug);
@@ -15296,11 +15370,22 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
          FROM booking_slots
         WHERE tenant_id=$1 AND status='open' AND starts_at >= NOW()
         ORDER BY starts_at ASC
-        LIMIT 40`,
+        LIMIT 200`,
       [tenant.id],
     );
 
     let slots = rows.rows;
+    const visitorRef=String(req.query.visitorRef||'').slice(0,160);
+    const serviceRule=await readServiceRule(pool,tenant.id);
+    if(serviceRule?.enabled && visitorRef){
+      const state=await q(`SELECT facts FROM respondo_service_dialogues
+        WHERE tenant_id=$1 AND visitor_ref=$2 AND updated_at>NOW()-INTERVAL '45 minutes'`,
+        [tenant.id,visitorRef]);
+      if(state.rowCount){
+        const estimate=estimateWindowDuration(serviceRule,state.rows[0].facts);
+        slots=estimate.status==='estimated'?fitServiceSlots(slots,estimate.minutes):[];
+      }
+    }
     const bookingAccess = planEntitlements(tenant.subscription_plan);
     if (bookingAccess.googleCalendar && slots.length && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token)) {
       try {
@@ -15315,11 +15400,13 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
           return !events.some((event) => event.start.getTime() < end && event.end.getTime() > start);
         });
       } catch (e) {
-        console.error('Google Calendar availability filter failed',e);
+        // Never imply free time when the connected calendar cannot be checked.
+        console.error('Google Calendar availability filter failed',e?.name||'error');
+        return res.status(503).json({error:'Kalenterin vapaita aikoja ei voitu varmistaa.'});
       }
     }
 
-    return res.json({ slots });
+    return res.json({ slots:slots.slice(0,40) });
   } catch {
     return res.status(500).json({ error:'Vapaita aikoja ei saatu.' });
   }
@@ -15448,6 +15535,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     };
     let computedQuote = null;
     let bookedSlot = null;
+    let serviceManualReview = false;
     let actionInserted = false;
     let ecommerceOrder = null;
     let ecommerceLookupAttempted = false;
@@ -15522,6 +15610,30 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
           return res.status(409).json({ error:'Tämä aika ei ole enää vapaa. Valitse toinen aika.' });
         }
 
+        // A service conversation cannot bypass the approved duration rules.
+        // Locking the slot protects against competing web reservations.
+        if(visitorRef){
+          const rule=await readServiceRule(client,tenant.id);
+          if(rule?.enabled){
+            const state=await client.query(`SELECT facts FROM respondo_service_dialogues
+              WHERE tenant_id=$1 AND visitor_ref=$2 AND updated_at>NOW()-INTERVAL '45 minutes'`,
+              [tenant.id,visitorRef]);
+            if(state.rowCount){
+              const work=estimateWindowDuration(rule,state.rows[0].facts);
+              const availableMs=new Date(sr.rows[0].ends_at)-new Date(sr.rows[0].starts_at);
+              if(work.status!=='estimated'||availableMs<work.minutes*60000){
+                await client.query('ROLLBACK');
+                return res.status(409).json({error:'Työ ei mahdu valittuun aikaan. Tarkista työn laajuus ja valitse pidempi aika.'});
+              }
+              // Staff and travel capacity cannot be inferred from one shared
+              // calendar. Record a REQUEST only, never mark this time booked.
+              serviceManualReview=true;
+              payload.serviceCapacity={facts:state.rows[0].facts,durationMinutes:work.minutes,
+                approvalRequired:true};
+            }
+          }
+        }
+
         // Recheck Google Calendar only after this booking slot is row-locked.
         // This closes the gap where an external calendar event could appear
         // between the initial availability view and the actual reservation.
@@ -15543,16 +15655,24 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
           }
         }
 
-        bookedSlot = sr.rows[0];
-        payload.booking = {
-          slotId:bookedSlot.id,
-          startsAt:bookedSlot.starts_at,
-          endsAt:bookedSlot.ends_at,
-        };
-        await client.query(
-          `UPDATE booking_slots SET status='booked' WHERE id=$1 AND tenant_id=$2`,
-          [fields.slotId,tenant.id],
-        );
+        if(serviceManualReview){
+          // Candidate is not held or confirmed. Employee must approve and
+          // recheck live availability before creating a real reservation.
+          payload.requestedSlot={
+            slotId:sr.rows[0].id,startsAt:sr.rows[0].starts_at,endsAt:sr.rows[0].ends_at
+          };
+        }else{
+          bookedSlot = sr.rows[0];
+          payload.booking = {
+            slotId:bookedSlot.id,
+            startsAt:bookedSlot.starts_at,
+            endsAt:bookedSlot.ends_at,
+          };
+          await client.query(
+            `UPDATE booking_slots SET status='booked' WHERE id=$1 AND tenant_id=$2`,
+            [fields.slotId,tenant.id],
+          );
+        }
         await client.query(
           `INSERT INTO action_requests(id,tenant_id,visitor_ref,request_type,status,payload,result,source_channel,external_contact_id)
            VALUES($1,$2,$3,$4,'new',$5::jsonb,$6::jsonb,$7,$8)`,
@@ -15776,14 +15896,22 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       deliveryStatus:delivery.status,
       quote:computedQuote,
       orderStatus:ecommerceOrder,
-      booking:bookedSlot ? {
+      booking:bookedSlot &&
+        (!(actionAccess.googleCalendar && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token))
+          ||calendarSync.status==='synced') ? {
         startsAt:bookedSlot.starts_at,
         endsAt:bookedSlot.ends_at,
       } : null,
       calendarSync,
       paymentAvailable,
       checkoutUrl,
-      customerMessage: mainioMoveRequest
+      customerMessage: serviceManualReview
+        ? (actionLang==='en'
+          ? 'Your appointment request was received. The team must confirm the job duration, staffing and time before it becomes a booking.'
+          : actionLang==='sv'
+            ? 'Din tidsförfrågan har tagits emot. Personal måste bekräfta arbetsmängd, bemanning och tid innan bokningen gäller.'
+            : 'Aikatoiveesi on vastaanotettu. Yritys vahvistaa työn keston, henkilöstön ja ajankohdan erikseen ennen varausta.')
+        : mainioMoveRequest
         ? (actionLang==='en'
             ? 'Your moving enquiry has been submitted for Mainio Muuttopalvelu to review. The price, date and booking are not confirmed yet.'
             :actionLang==='sv'
