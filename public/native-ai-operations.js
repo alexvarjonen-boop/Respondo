@@ -2,7 +2,7 @@
   'use strict';
   const API='/api/app/native';
   const copy={
-    fi:{quality:'Laatu',insights:'Tulokset',qualityIntro:'Käsittele puutteelliset vastaukset. Korjaukset eivät muuta botin tietopohjaa ilman erillistä hyväksyntää.',insightsIntro:'Vastaukset, liidit ja toiminnot kanavittain. Automaattinen vastaus ei todista asian ratkaisua.',period:'Ajanjakso',replies:'Viestit',automated:'AI-vastaukset',handoffs:'Siirrot ihmiselle',cited:'Lähteelliset AI-vastaukset',qualityOpen:'Avoimet laatutarkistukset',reviewReason:'Virheen tyyppi',flag:'Merkitse tarkistettavaksi',resolve:'Merkitse korjatuksi',dismiss:'Hylkää havainto',resolution:'Miten virhe korjattiin ja varmistettiin?',flags:'Tarkistettavat keskustelut',recentReviews:'Laatumerkinnät',channels:'Kanavittain',daily:'Päivittäiset keskustelut',disclaimerQuality:'Vastausprosentti ei ole asiakastyytyväisyys- tai oikeellisuusmittari. Virheellinen tieto pitää korjata hyväksyttyyn lähteeseen.',reasonIncorrect:'Virheellinen tieto',reasonOutdated:'Vanhentunut tieto',reasonLanguage:'Väärä kieli',reasonIntent:'Väärin ymmärretty kysymys',reasonHandoff:'Tarpeeton siirto',reasonOther:'Muu',knowledge:'Tietopohja',approvedFacts:'Hyväksytyt tiedot',contacts:'Asiakasrekisteri',tickets:'Tukipyynnöt',quotes:'Tarjoukset',rules:'Automaatiot',docs:'Tietopankki',
+    fi:{helpdesk:'Tukijärjestelmä',helpdeskIntro:'Yhdistä Freshdesk turvallisesti. Vain erikseen hyväksytyt tukipyynnöt lähetetään ulkoiseen palveluun.',subdomain:'Freshdesk-osoitteen alkuosa',apiKey:'Freshdesk API-avain',connect:'Yhdistä',test:'Testaa yhteys',disconnect:'Katkaise yhteys',connected:'Yhdistetty',notConnected:'Ei yhdistetty',requesterEmail:'Asiakkaan sähköposti',sendTicket:'Vie tukipyyntö Freshdeskiin',exportApproval:'Hyväksyn tämän asiakasasian lähettämisen ulkoiseen Freshdesk-palveluun.',exported:'Viety Freshdeskiin',exportUnknown:'Vienti voi olla kesken tai epävarma. Tarkista Freshdeskistä ennen uusintaa.',badCredential:'Yhteyttä ei voitu vahvistaa. Tarkista osoite ja API-avain.',confirmDisconnect:'Katkaistaanko Freshdesk-yhteys? Aiempien vientien loki säilyy.',quality:'Laatu',insights:'Tulokset',qualityIntro:'Käsittele puutteelliset vastaukset. Korjaukset eivät muuta botin tietopohjaa ilman erillistä hyväksyntää.',insightsIntro:'Vastaukset, liidit ja toiminnot kanavittain. Automaattinen vastaus ei todista asian ratkaisua.',period:'Ajanjakso',replies:'Viestit',automated:'AI-vastaukset',handoffs:'Siirrot ihmiselle',cited:'Lähteelliset AI-vastaukset',qualityOpen:'Avoimet laatutarkistukset',reviewReason:'Virheen tyyppi',flag:'Merkitse tarkistettavaksi',resolve:'Merkitse korjatuksi',dismiss:'Hylkää havainto',resolution:'Miten virhe korjattiin ja varmistettiin?',flags:'Tarkistettavat keskustelut',recentReviews:'Laatumerkinnät',channels:'Kanavittain',daily:'Päivittäiset keskustelut',disclaimerQuality:'Vastausprosentti ei ole asiakastyytyväisyys- tai oikeellisuusmittari. Virheellinen tieto pitää korjata hyväksyttyyn lähteeseen.',reasonIncorrect:'Virheellinen tieto',reasonOutdated:'Vanhentunut tieto',reasonLanguage:'Väärä kieli',reasonIntent:'Väärin ymmärretty kysymys',reasonHandoff:'Tarpeeton siirto',reasonOther:'Muu',knowledge:'Tietopohja',approvedFacts:'Hyväksytyt tiedot',contacts:'Asiakasrekisteri',tickets:'Tukipyynnöt',quotes:'Tarjoukset',rules:'Automaatiot',docs:'Tietopankki',
       contactIntro:'Tallennetut asiakkaat ja liidit.',ticketIntro:'Sisäiset palvelupyynnöt työntekijöille.',
       quoteIntro:'Luonnokset yrityksen tallennetuista hinnoista. Lähetys vaatii ihmisen hyväksynnän.',
       docsIntro:'Julkaise vain tarkistettua yritystietoa, jota botti saa käyttää vastauksissa.',
@@ -18,7 +18,7 @@
       draft:'Luonnos',approved:'Hyväksytty',triggerLead:'Uusi liidi → tallenna CRM:ään',
       triggerAction:'Uusi asiakaspyyntö → luo tiketti',recent:'Viimeaikaiset automaatiot',
       confirmDelete:'Poistetaanko dokumentti myös botin tietopohjasta?',notice:'Toiminnot suoritetaan Respondon omassa järjestelmässä. Ulkoisia palveluja ei yhdistetä.'},
-    sv:{quality:'Kvalitet',insights:'Resultat',qualityIntro:'Granska osäkra svar. Ändringar i kunskapsbasen kräver separat godkännande.',insightsIntro:'Svar, leads och åtgärder per kanal. Ett automatiskt svar är inte ett bevis på att ärendet lösts.',period:'Period',replies:'Meddelanden',automated:'AI-svar',handoffs:'Överlämningar',cited:'AI-svar med källor',qualityOpen:'Öppna kvalitetsgranskningar',reviewReason:'Feltyp',flag:'Markera för granskning',resolve:'Markera som åtgärdad',dismiss:'Avfärda',resolution:'Hur rättades och verifierades felet?',flags:'Konversationer att granska',recentReviews:'Kvalitetsrapporter',channels:'Per kanal',daily:'Dagliga konversationer',disclaimerQuality:'Svarsfrekvensen mäter varken kundnöjdhet eller korrekthet. Felaktig information ska korrigeras i en godkänd källa.',reasonIncorrect:'Felaktig information',reasonOutdated:'Inaktuell information',reasonLanguage:'Fel språk',reasonIntent:'Missförstod frågan',reasonHandoff:'Onödig överlämning',reasonOther:'Annat',knowledge:'Kunskapsbas',approvedFacts:'Godkända uppgifter',contacts:'Kundregister',tickets:'Supportärenden',quotes:'Offerter',rules:'Automatiseringar',docs:'Kunskapsbas',
+    sv:{helpdesk:'Supportsystem',helpdeskIntro:'Anslut Freshdesk säkert. Endast separat godkända ärenden skickas till tjänsten.',subdomain:'Freshdesk-underdomän',apiKey:'Freshdesk API-nyckel',connect:'Anslut',test:'Testa anslutning',disconnect:'Koppla bort',connected:'Ansluten',notConnected:'Inte ansluten',requesterEmail:'Kundens e-post',sendTicket:'Exportera ärende till Freshdesk',exportApproval:'Jag godkänner att kundärendet skickas till Freshdesk.',exported:'Exporterad till Freshdesk',exportUnknown:'Exportstatus är osäker. Kontrollera i Freshdesk före nytt försök.',badCredential:'Anslutningen kunde inte verifieras. Kontrollera domän och API-nyckel.',confirmDisconnect:'Koppla bort Freshdesk? Tidigare exporthistorik sparas.',quality:'Kvalitet',insights:'Resultat',qualityIntro:'Granska osäkra svar. Ändringar i kunskapsbasen kräver separat godkännande.',insightsIntro:'Svar, leads och åtgärder per kanal. Ett automatiskt svar är inte ett bevis på att ärendet lösts.',period:'Period',replies:'Meddelanden',automated:'AI-svar',handoffs:'Överlämningar',cited:'AI-svar med källor',qualityOpen:'Öppna kvalitetsgranskningar',reviewReason:'Feltyp',flag:'Markera för granskning',resolve:'Markera som åtgärdad',dismiss:'Avfärda',resolution:'Hur rättades och verifierades felet?',flags:'Konversationer att granska',recentReviews:'Kvalitetsrapporter',channels:'Per kanal',daily:'Dagliga konversationer',disclaimerQuality:'Svarsfrekvensen mäter varken kundnöjdhet eller korrekthet. Felaktig information ska korrigeras i en godkänd källa.',reasonIncorrect:'Felaktig information',reasonOutdated:'Inaktuell information',reasonLanguage:'Fel språk',reasonIntent:'Missförstod frågan',reasonHandoff:'Onödig överlämning',reasonOther:'Annat',knowledge:'Kunskapsbas',approvedFacts:'Godkända uppgifter',contacts:'Kundregister',tickets:'Supportärenden',quotes:'Offerter',rules:'Automatiseringar',docs:'Kunskapsbas',
       contactIntro:'Sparade kunder och leads.',ticketIntro:'Interna serviceärenden för personal.',
       quoteIntro:'Utkast baserade på företagets sparade priser. Leverans kräver mänskligt godkännande.',
       docsIntro:'Publicera endast granskade företagsuppgifter som botten får använda.',
@@ -34,7 +34,7 @@
       draft:'Utkast',approved:'Godkänd',triggerLead:'Nytt lead → spara i CRM',
       triggerAction:'Ny kundförfrågan → skapa ärende',recent:'Senaste automatiseringar',
       confirmDelete:'Ta bort dokumentet även från bottens kunskapsbas?',notice:'Funktionerna körs internt i Respondo. Inga externa tjänster kopplas in.'},
-    en:{quality:'Quality',insights:'Outcomes',qualityIntro:'Review uncertain answers. Changing the bot knowledge base requires separate approval.',insightsIntro:'Replies, leads and actions by channel. Automated replies do not prove customer resolution.',period:'Period',replies:'Messages',automated:'AI replies',handoffs:'Human handoffs',cited:'AI replies with sources',qualityOpen:'Open quality reviews',reviewReason:'Review reason',flag:'Flag for review',resolve:'Mark as fixed',dismiss:'Dismiss',resolution:'How was the issue corrected and verified?',flags:'Conversations to review',recentReviews:'Quality reviews',channels:'By channel',daily:'Daily conversations',disclaimerQuality:'Reply rate is not a customer-satisfaction or factual-accuracy metric. Correct false facts in an approved source.',reasonIncorrect:'Incorrect fact',reasonOutdated:'Outdated fact',reasonLanguage:'Wrong language',reasonIntent:'Misunderstood question',reasonHandoff:'Unnecessary handoff',reasonOther:'Other',knowledge:'Knowledge base',approvedFacts:'Approved facts',contacts:'Customer CRM',tickets:'Support tickets',quotes:'Quote drafts',rules:'Automations',docs:'Knowledge documents',
+    en:{helpdesk:'Helpdesk',helpdeskIntro:'Connect Freshdesk securely. Only individually approved support tickets are sent to this external provider.',subdomain:'Freshdesk subdomain',apiKey:'Freshdesk API key',connect:'Connect',test:'Test connection',disconnect:'Disconnect',connected:'Connected',notConnected:'Not connected',requesterEmail:'Customer email',sendTicket:'Export ticket to Freshdesk',exportApproval:'I approve sending this customer ticket to the external Freshdesk service.',exported:'Exported to Freshdesk',exportUnknown:'Export status is uncertain. Reconcile in Freshdesk before any repeat.',badCredential:'The connection could not be verified. Check the domain and API key.',confirmDisconnect:'Disconnect Freshdesk? Previous export audit records remain.',quality:'Quality',insights:'Outcomes',qualityIntro:'Review uncertain answers. Changing the bot knowledge base requires separate approval.',insightsIntro:'Replies, leads and actions by channel. Automated replies do not prove customer resolution.',period:'Period',replies:'Messages',automated:'AI replies',handoffs:'Human handoffs',cited:'AI replies with sources',qualityOpen:'Open quality reviews',reviewReason:'Review reason',flag:'Flag for review',resolve:'Mark as fixed',dismiss:'Dismiss',resolution:'How was the issue corrected and verified?',flags:'Conversations to review',recentReviews:'Quality reviews',channels:'By channel',daily:'Daily conversations',disclaimerQuality:'Reply rate is not a customer-satisfaction or factual-accuracy metric. Correct false facts in an approved source.',reasonIncorrect:'Incorrect fact',reasonOutdated:'Outdated fact',reasonLanguage:'Wrong language',reasonIntent:'Misunderstood question',reasonHandoff:'Unnecessary handoff',reasonOther:'Other',knowledge:'Knowledge base',approvedFacts:'Approved facts',contacts:'Customer CRM',tickets:'Support tickets',quotes:'Quote drafts',rules:'Automations',docs:'Knowledge documents',
       contactIntro:'Saved customers and leads.',ticketIntro:'Internal service requests for your team.',
       quoteIntro:'Drafts based on your saved service prices. Sending requires human approval.',
       docsIntro:'Publish only verified business facts that the bot may use in its answers.',
@@ -108,12 +108,12 @@
     const feedback=el('p','native-feedback',t.loading);
     feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
     target.append(tabs,content,feedback,el('p','native-disclaimer',t.notice));
-    let active='contacts',data=null,report=null,busy=false,days=30;
-    const kinds=['contacts','tickets','quotes','rules','docs','quality','insights'];
+    let active='contacts',data=null,report=null,helpdesk=null,busy=false,days=30;
+    const kinds=['contacts','tickets','quotes','rules','docs','quality','insights','helpdesk'];
     for(const kind of kinds){
       const b=button(t[kind],'button');
       b.dataset.tab=kind;b.setAttribute('role','tab');
-      b.addEventListener('click',()=>{active=kind;if((kind==='quality'||kind==='insights')&&!report)loadQuality();else render();});
+      b.addEventListener('click',()=>{active=kind;if(kind==='helpdesk'&&!helpdesk)loadHelpdesk();else if((kind==='quality'||kind==='insights')&&!report)loadQuality();else render();});
       tabs.appendChild(b);
     }
     async function request(method,path=API,payload){
@@ -125,6 +125,22 @@
       const result=await response.json().catch(()=>({}));
       if(!response.ok)throw Error(String(result.error||t.error).slice(0,200));
       return result.data;
+    }
+    const HELPDESK='/api/app/helpdesk/freshdesk';
+    async function loadHelpdesk(){
+      try{helpdesk=await request('GET',HELPDESK);feedback.textContent='';render();}
+      catch(error){feedback.textContent=error.message||t.error;}
+    }
+    async function helpdeskAction(method,path,payload){
+      if(busy)return;
+      busy=true;feedback.textContent=t.saving;
+      try{
+        const result=await request(method,path,payload);
+        if(method==='POST'&&path===HELPDESK&&!result.connected)throw Error(t.badCredential);
+        if(path.includes('/export')&&result.status!=='sent')throw Error(t.exportUnknown);
+        await loadHelpdesk();feedback.textContent=t.saved;
+      }catch(error){feedback.textContent=error.message||t.error;}
+      finally{busy=false;}
     }
     async function loadQuality(){
       try{report=await request('GET',API+'/quality?days='+days);feedback.textContent='';render();}
@@ -192,6 +208,69 @@
       item.append(el('span','native-quality-label',name),el('strong','native-quality-value',String(value)));
       parent.appendChild(item);
     }
+
+    function renderHelpdesk(){
+      content.replaceChildren(el('p','native-intro',t.helpdeskIntro));
+      if(!helpdesk){content.appendChild(el('p','native-empty',t.loading));return;}
+      content.appendChild(el('h4','native-subtitle',
+        helpdesk.connected ? (t.connected+': '+helpdesk.subdomain+'.freshdesk.com') : t.notConnected));
+      const connection=el('form','native-form');
+      fields(connection,[{label:t.subdomain,name:'subdomain',required:true,maxlength:63},
+        {label:t.apiKey,name:'apiKey',required:true,maxlength:512}]);
+      connection.elements.subdomain.value=helpdesk.subdomain||'';
+      connection.elements.apiKey.type='password';
+      connection.elements.apiKey.autocomplete='new-password';
+      connection.appendChild(button(t.connect));
+      connection.addEventListener('submit',event=>{
+        event.preventDefault();
+        helpdeskAction('POST',HELPDESK,{
+          subdomain:connection.elements.subdomain.value,apiKey:connection.elements.apiKey.value
+        });
+        connection.elements.apiKey.value='';
+      });
+      content.appendChild(connection);
+      if(helpdesk.connected){
+        const actions=el('div','native-quality-toolbar');
+        const test=button(t.test,'button');
+        test.addEventListener('click',()=>helpdeskAction('POST',HELPDESK+'/test'));
+        const disconnect=button(t.disconnect,'button');
+        disconnect.addEventListener('click',()=>{
+          if(window.confirm(t.confirmDisconnect))helpdeskAction('DELETE',HELPDESK);
+        });
+        actions.append(test,disconnect);content.appendChild(actions);
+      }
+      if(!data?.tickets?.length)return;
+      const audit=new Map((helpdesk.exports||[]).map(x=>[x.native_ticket_id,x]));
+      const list=el('div','native-list');
+      list.appendChild(el('h4','native-subtitle',t.tickets));
+      for(const item of data.tickets){
+        const record=recordCard(item.title,item.details);
+        const previous=audit.get(item.id);
+        if(previous){
+          record.appendChild(el('span','native-record-state',
+            previous.status==='sent'?t.exported+' #'+previous.external_ticket_id:t.exportUnknown));
+        }else if(helpdesk.connected){
+          const form=el('form','native-helpdesk-export');
+          const email=el('input','native-review-note');
+          email.type='email';email.required=true;email.maxLength=254;
+          email.placeholder=t.requesterEmail;email.setAttribute('aria-label',t.requesterEmail);
+          const consent=el('label','native-checkbox');
+          const checked=el('input');checked.type='checkbox';checked.required=true;
+          consent.append(checked,document.createTextNode(t.exportApproval));
+          form.append(email,consent,button(t.sendTicket));
+          form.addEventListener('submit',event=>{
+            event.preventDefault();
+            if(!idGuard(item.id)||!checked.checked)return;
+            helpdeskAction('POST',HELPDESK+'/tickets/'+item.id+'/export',
+              {requesterEmail:email.value,approved:true});
+          });
+          record.appendChild(form);
+        }
+        list.appendChild(record);
+      }
+      content.appendChild(list);
+    }
+
     function renderQualityCenter(){
       const isQuality=active==='quality';
       content.replaceChildren(el('p','native-intro',isQuality?t.qualityIntro:t.insightsIntro));
@@ -281,6 +360,7 @@
         tab.setAttribute('aria-selected',String(tab.dataset.tab===active));
       }
       if(active==='quality'||active==='insights'){renderQualityCenter();return;}
+      if(active==='helpdesk'){renderHelpdesk();return;}
       content.replaceChildren(el('p','native-intro',
         t[active==='contacts'?'contactIntro':active==='tickets'?'ticketIntro':
           active==='quotes'?'quoteIntro':active==='docs'?'docsIntro':'notice']));
