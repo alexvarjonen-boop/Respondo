@@ -209,7 +209,7 @@ function customQuantity(message,rule,old={}){
   const terms=[unit];
   if(/^(?:m²|m2|neliö|neliötä)$/.test(unit))terms.push('m2','m²','neliö','neliötä','neliötä');
   if(/^(?:kpl|pcs|st|pieces)$/.test(unit))terms.push('kpl','pcs','pieces','kappaletta');
-  const escape=x=>x.replace(/[.*+?^{}()|[\]\\]/g,'\\  const escape=x=>x.replace(/[.*+?^{}()|[\]\\]/g,'\\export async function serviceDialogue(db,tenantId,visitorRef,message,lang,availableSlots){');');
+  const escape=x=>x.replace(/[.*+?^{}()|[\]\\]/g,'\\$&');
   const re=new RegExp('(?:^|\\s)(\\d{1,5})\\s*(?:'+terms.map(escape).join('|')+')(?=\\s|$|[.,;!?])','iu');
   const match=value.match(re);
   if(match&&Number(match[1])>0)facts.quantity=Number(match[1]);
