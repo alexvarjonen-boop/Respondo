@@ -1,5 +1,6 @@
 import { estimateServiceDuration, findSuitableStarts } from './booking-intelligence.mjs';
 import { readProvider, readGmailInbox, normalizeProviderItems } from './native-provider-adapters.mjs';
+import { verifyMetaSignature, extractMetaInbound } from './meta-inbound.mjs';
 import { prepareInboundCase, draftResponse, validateIntegrationSettings } from './internal-integrations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
@@ -11156,6 +11157,51 @@ app.get('/api/app/native-integrations/outlook/callback',async(req,res)=>{
     ON CONFLICT(tenant_id,provider) DO UPDATE SET mode='connected',updated_at=NOW()`,[tenant.rows[0].id]);
   return res.redirect(landing+'connected');
  }catch(e){console.error('Outlook OAuth failed',e?.message?.slice(0,80));return res.redirect(landing+'failed')}
+});
+// Signed Meta webhook ingestion (WhatsApp, Instagram and Facebook).
+// Requires META_APP_SECRET and META_VERIFY_TOKEN configured on Respondo server.
+app.get('/api/webhooks/meta', async (req,res)=>{
+ const verification=String(process.env.META_VERIFY_TOKEN||'');
+ const supplied=String(req.query['hub.verify_token']||'');
+ const challenge=String(req.query['hub.challenge']||'');
+ if(req.query['hub.mode']!=='subscribe'||verification.length<16||supplied.length!==verification.length||
+    !crypto.timingSafeEqual(Buffer.from(supplied),Buffer.from(verification))||
+    !/^[A-Za-z0-9._:-]{1,256}$/.test(challenge))return res.status(403).type('text/plain').send('Forbidden');
+ return res.type('text/plain').send(challenge);
+});
+app.post('/api/webhooks/meta', async(req,res)=>{
+ const secret=String(process.env.META_APP_SECRET||'');
+ if(!secret||secret.length<16)return res.status(503).json({error:'Webhook not configured'});
+ if(!verifyMetaSignature(req.rawBody,req.get('x-hub-signature-256'),secret))
+   return res.status(401).json({error:'Invalid webhook signature'});
+ try{
+  const events=extractMetaInbound(req.body);
+  let imported=0;
+  for(const event of events){
+   const connected=await q(`SELECT c.tenant_id FROM native_provider_credentials c
+    JOIN native_integrations i ON i.tenant_id=c.tenant_id AND i.provider=c.provider
+    WHERE c.provider=$1 AND c.resource_id=$2 AND i.mode='connected'
+    ORDER BY c.updated_at DESC LIMIT 1`,[event.provider,event.resourceId]);
+   if(!connected.rowCount)continue;
+   const prepared=prepareInboundCase({
+    source:event.provider,externalMessageId:event.externalMessageId,
+    from:event.from,channelContactId:event.from,body:event.body
+   });
+   if(prepared.status!=='ready')continue;
+   const reply=draftResponse({caseData:prepared});
+   const save=await q(`INSERT INTO native_inbox
+    (id,tenant_id,channel,external_message_id,sender,channel_contact_id,subject,body,intent,language,needs_human,draft,status)
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'review')
+    ON CONFLICT(tenant_id,channel,external_message_id) DO NOTHING RETURNING id`,
+    [uid(),connected.rows[0].tenant_id,prepared.channel,prepared.externalId,
+      prepared.sender,prepared.channelContactId,prepared.subject,prepared.body,
+      prepared.classification.intent,prepared.classification.language,
+      prepared.classification.needsHuman,reply.text]);
+   imported+=save.rowCount;
+  }
+  return res.status(200).json({ok:true,imported});
+ }catch(e){console.error('Meta webhook ingestion failed',e?.message?.slice(0,80));
+  return res.status(503).json({error:'Webhook processing failed'})}
 });
 app.get('/api/app/native-integrations/gmail/start', auth, ownerOnly, subscribed, async(req,res)=>{
  try{
