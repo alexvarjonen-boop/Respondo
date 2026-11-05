@@ -464,6 +464,11 @@
         '<small>' + t('Respondo näyttää vain oikeasti vapaat ajat. Valittu aika poistuu heti muiden varattavista.', 'Respondo only shows truly available times. Once booked, the slot is no longer available to others.') + '</small>' +
         '<input name="name" maxlength="120" placeholder="' + t('Nimi', 'Name') + '">' +
         '<input name="contact" maxlength="220" required placeholder="' + t('Puhelin tai sähköposti', 'Phone or email') + '">' +
+        '<div class="booking-workload" hidden>' +
+        '<label>' + t('Palvelu', 'Service') + '</label><select name="serviceId"><option value="">' + t('Valitse palvelu', 'Select service') + '</option></select>' +
+        '<label>' + t('Työn määrä (esim. ikkunoiden lukumäärä)', 'Work quantity (e.g. number of windows)') + '</label>' +
+        '<input name="quantity" type="number" inputmode="numeric" min="1" max="100000" step="1" placeholder="' + t('Määrä', 'Quantity') + '">' +
+        '</div>' +
         '<select name="slotId" required><option value="">' + t('Haetaan vapaita aikoja…', 'Loading available times…') + '</option></select>' +
         '<textarea name="note" maxlength="1000" placeholder="' + t('Lisätieto', 'Additional note') + '"></textarea>' +
         '<button type="submit" disabled>' + t('Varaa aika', 'Book time') + '</button>' +
@@ -479,41 +484,67 @@
     }
 
     if (action.mode === 'booking_form') {
-      const slotSelect = box.elements.slotId;
-      const submitButton = box.querySelector('button[type="submit"]');
-      fetch(
-        serviceOrigin + '/api/public/' + encodeURIComponent(company) +
-        '/booking-slots?widgetToken=' + encodeURIComponent(token) + '&lang=' + encodeURIComponent(widgetLang),
-        { method:'GET', mode:'cors', credentials:'omit' }
-      )
-        .then(async (res) => {
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data.error || 'Slots failed');
-          const slots = Array.isArray(data.slots) ? data.slots : [];
-          if (!slots.length) {
-            slotSelect.innerHTML = '<option value="">' + t('Ei vapaita aikoja juuri nyt', 'No available times right now') + '</option>';
-            submitButton.disabled = true;
+      const slotSelect=box.elements.slotId;
+      const serviceSelect=box.elements.serviceId;
+      const quantityInput=box.elements.quantity;
+      const workload=box.querySelector('.booking-workload');
+      const submitButton=box.querySelector('button[type="submit"]');
+      let requireWorkload=false;
+      let pending=0;
+      const loadSlots=async()=>{
+        const id=++pending;
+        slotSelect.innerHTML='<option value="">' + t('Haetaan vapaita aikoja…','Loading available times…') + '</option>';
+        submitButton.disabled=true;
+        const params=new URLSearchParams({widgetToken:token,lang:widgetLang});
+        if(requireWorkload) {
+          if(!serviceSelect.value||!Number.isSafeInteger(Number(quantityInput.value))||Number(quantityInput.value)<1){
+            slotSelect.innerHTML='<option value="">' + t('Valitse palvelu ja työn määrä ensin','Select a service and quantity first') + '</option>';
             return;
           }
-          slotSelect.innerHTML =
-            '<option value="">' + t('Valitse vapaa aika', 'Choose an available time') + '</option>' +
-            slots.map((slot) => {
-              const start = new Date(slot.starts_at);
-              const end = new Date(slot.ends_at);
-              const locale = widgetLang === 'en' ? 'en-GB-u-hc-h12' : widgetLang === 'sv' ? 'sv-SE' : 'fi-FI';
-              const date = start.toLocaleDateString(locale, { weekday:'short', day:'2-digit', month:'2-digit' });
-              const startTime = start.toLocaleTimeString(locale, { hour:'2-digit', minute:'2-digit' });
-              const endTime = end.toLocaleTimeString(locale, { hour:'2-digit', minute:'2-digit' });
-              return '<option value="' + escapeHtml(slot.id) + '">' +
-                escapeHtml(date + ' · ' + startTime + '–' + endTime) +
-                '</option>';
+          params.set('serviceId',serviceSelect.value);
+          params.set('quantity',quantityInput.value);
+        }
+        try{
+          const res=await fetch(serviceOrigin+'/api/public/'+encodeURIComponent(company)+'/booking-slots?'+params.toString(),{method:'GET',mode:'cors',credentials:'omit'});
+          const data=await res.json().catch(()=>({}));
+          if(!res.ok)throw new Error(data.error||'Slots failed');
+          if(id!==pending)return;
+          const services=Array.isArray(data.services)?data.services.filter(x=>typeof x.id==='string'&&/^[a-z0-9_-]{1,64}$/.test(x.id)): [];
+          if(services.length&&!requireWorkload){
+            requireWorkload=true;
+            workload.hidden=false;
+            serviceSelect.required=true;
+            quantityInput.required=true;
+            serviceSelect.innerHTML='<option value="">'+t('Valitse palvelu','Select service')+'</option>'+
+              services.map(x=>'<option value="'+escapeHtml(x.id)+'">'+escapeHtml(x.id.replace(/_/g,' '))+'</option>').join('');
+          }
+          const slots=Array.isArray(data.slots)?data.slots:[];
+          if(!slots.length){
+            slotSelect.innerHTML='<option value="">'+
+              (data.needsDetails?t('Anna palvelu ja työn määrä','Enter service and quantity'):t('Ei vapaita sopivia aikoja','No suitable times available'))+
+              '</option>';
+            return;
+          }
+          slotSelect.innerHTML='<option value="">'+t('Valitse vapaa aika','Choose an available time')+'</option>'+
+            slots.map(slot=>{
+              const start=new Date(slot.starts_at),end=new Date(slot.ends_at);
+              const locale=widgetLang==='en'?'en-GB-u-hc-h12':widgetLang==='sv'?'sv-SE':'fi-FI';
+              const day=start.toLocaleDateString(locale,{weekday:'short',day:'2-digit',month:'2-digit'});
+              const a=start.toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'});
+              const b=end.toLocaleTimeString(locale,{hour:'2-digit',minute:'2-digit'});
+              return '<option value="'+escapeHtml(slot.id)+'">'+escapeHtml(day+' · '+a+'–'+b)+'</option>';
             }).join('');
-          submitButton.disabled = false;
-        })
-        .catch(() => {
-          slotSelect.innerHTML = '<option value="">' + t('Vapaita aikoja ei saatu ladattua', 'Available times could not be loaded') + '</option>';
-          submitButton.disabled = true;
-        });
+          submitButton.disabled=false;
+        }catch(err){
+          if(id!==pending)return;
+          slotSelect.innerHTML='<option value="">'+t('Vapaita aikoja ei saatu ladattua','Available times could not be loaded')+'</option>';
+          submitButton.disabled=true;
+        }
+      };
+      serviceSelect.addEventListener('change',loadSlots);
+      quantityInput.addEventListener('change',loadSlots);
+      quantityInput.addEventListener('input',()=>{slotSelect.value='';submitButton.disabled=true;});
+      loadSlots();
     }
 
     box.addEventListener('submit', async (event) => {
