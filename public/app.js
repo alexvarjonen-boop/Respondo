@@ -6960,7 +6960,7 @@ async function route() {
         const result=await api('/api/app/native-integrations/status');
         el.replaceChildren();
         for(const item of result.integrations||[]){
-          const p=document.createElement('p');p.textContent=item.provider+' · '+(item.mode==='disabled'?appText('Ei käytössä','Av','Disabled'):appText('Manuaalinen – ei yhdistetty','Manuell – ej ansluten','Manual – not connected'));
+          const p=document.createElement('p');p.textContent=item.provider+' · '+(item.connected?appText('Yhteys vahvistettu (vain luku)','Anslutningen verifierad (endast läsning)','Verified read-only'):item.mode==='disabled'?appText('Ei käytössä','Av','Disabled'):appText('Ei yhdistetty','Inte ansluten','Not connected'));
           el.appendChild(p);
         }
       }catch(e){el.textContent=e.message;}
