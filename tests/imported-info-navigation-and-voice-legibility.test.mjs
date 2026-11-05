@@ -48,7 +48,7 @@ test('speech-language select remains legible on light composer in Chrome and Saf
 });
 
 test('dark imported review remains readable and cached files are versioned',()=>{
-  assert.match(styles,/#rsWorkspaceImportedReview/);
+  assert.match(styles,/\.rs-imported-review\{/);
   assert.match(styles,/\.rs-imported-review \.website-import-candidate/);
   assert.match(styles,/-webkit-text-fill-color:#cad5e5!important/);
   assert.match(index,/voice-preview\.js\?v=20261105-visible-speech-language-v3/);
