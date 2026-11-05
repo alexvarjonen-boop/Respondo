@@ -4174,6 +4174,41 @@ async function dashboard(options = {}) {
             <div class="field full"><button class="btn dashboard-action" type="submit">${appText('Tallenna tila','Spara läge','Save mode')}</button></div>
             <div class="field full" id="nativeIntegrationMsg" aria-live="polite"></div>
           </form>
+          <form id="nativeProviderConnectForm" class="formgrid" autocomplete="off">
+            <div class="field">
+              <label>${appText('Yhdistettävä palvelu','Tjänst att ansluta','Service to connect')}</label>
+              <select name="provider">
+                ${['gmail','outlook','hubspot','pipedrive','freshdesk','zendesk','google_drive','sharepoint','whatsapp','instagram','facebook','shopify'].map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="field">
+              <label>${appText('Palvelun rajapintatunnus','Tjänstens API-token','Provider API access token')}</label>
+              <input name="accessToken" type="password" minlength="10" maxlength="8192" required autocomplete="new-password" spellcheck="false">
+            </div>
+            <div class="field">
+              <label>${appText('Palvelun verkkotunnus (vain osa palveluista)','Tjänstdomän (endast vissa tjänster)','Provider domain (where required)')}</label>
+              <input name="subdomain" placeholder="yritys.freshdesk.com" maxlength="120" autocomplete="off">
+            </div>
+            <div class="field">
+              <label>${appText('Resurssitunnus (esim. Meta)','Resurs-ID (t.ex. Meta)','Resource ID (e.g. Meta)')}</label>
+              <input name="resourceId" maxlength="180" autocomplete="off">
+            </div>
+            <div class="field full">
+              <small>${appText('Yhteys tarkistetaan palvelun rajapinnasta. Pääsytunnus salataan palvelimella. Tämä on vain luku -yhteys: se ei lähetä viestejä.','Anslutningen verifieras via tjänstens API. Token krypteras på servern. Endast läsåtkomst; inga meddelanden skickas.','The API connection is verified, and the token is encrypted server-side. Read-only connection; no messages are sent.')}</small>
+              <button type="submit" class="btn dashboard-action">${appText('Tarkista ja yhdistä','Verifiera och anslut','Verify and connect')}</button>
+              <div id="nativeProviderConnectMsg" aria-live="polite"></div>
+            </div>
+          </form>
+          <form id="nativeProviderSyncForm" class="formgrid">
+            <div class="field">
+              <label>${appText('Yhdistetty palvelu','Ansluten tjänst','Connected provider')}</label>
+              <select name="provider">
+                ${['gmail','outlook','hubspot','pipedrive','freshdesk','zendesk','google_drive','sharepoint','whatsapp','instagram','facebook','shopify'].map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="field"><button type="submit" class="btn integration-test-btn">${appText('Hae uusimmat tiedot','Hämta senaste data','Fetch latest data')}</button></div>
+            <div class="field full" id="nativeProviderSyncMsg" aria-live="polite"></div>
+          </form>
           <div id="nativeIntegrationList" aria-live="polite"></div>
           <h3>${appText('Tarkistettavat viestiluonnokset','Meddelandeutkast för granskning','Message drafts for review')}</h3>
           <div id="nativeInboxList" aria-live="polite"></div>
@@ -6985,6 +7020,36 @@ async function route() {
         nativeNotice('#nativeIntegrationMsg',appText('Tila tallennettu. Yhteys ei ole vielä käytössä.','Läget sparat. Anslutningen är ännu inte aktiv.','Mode saved. Connection is not active.'));
         await loadNativeStatus();
       }catch(error){nativeNotice('#nativeIntegrationMsg',error.message,true)}
+      finally{button.disabled=false;}
+    });
+    $('#nativeProviderConnectForm')?.addEventListener('submit',async e=>{
+      e.preventDefault();
+      const button=e.currentTarget.querySelector('button[type=submit]');
+      const fd=new FormData(e.currentTarget);
+      button.disabled=true;
+      try{
+        const result=await api('/api/app/native-integrations/connect',{method:'POST',body:JSON.stringify({
+          provider:fd.get('provider'),accessToken:fd.get('accessToken'),
+          subdomain:fd.get('subdomain'),resourceId:fd.get('resourceId')
+        })});
+        e.currentTarget.elements.accessToken.value='';
+        nativeNotice('#nativeProviderConnectMsg',result.connected?
+          appText('Yhteys vahvistettu (vain luku).','Anslutningen verifierad (endast läsning).','Connection verified (read-only).'):
+          appText('Yhteys ei ole valmis.','Anslutningen är inte klar.','Connection not ready.'));
+        await loadNativeStatus();
+      }catch(err){nativeNotice('#nativeProviderConnectMsg',err.message,true)}
+      finally{button.disabled=false;}
+    });
+    $('#nativeProviderSyncForm')?.addEventListener('submit',async e=>{
+      e.preventDefault();const button=e.currentTarget.querySelector('button[type=submit]');
+      const provider=new FormData(e.currentTarget).get('provider');
+      button.disabled=true;
+      try{
+        const data=await api('/api/app/native-integrations/sync',{method:'POST',body:JSON.stringify({provider})});
+        nativeNotice('#nativeProviderSyncMsg',appText('Tietoja haettu: ','Hämtade poster: ','Records fetched: ')+data.records+
+          ' · '+appText('Uusia tarkistettavia luonnoksia: ','Nya utkast för granskning: ','New review drafts: ')+data.imported);
+        await loadNativeInbox();
+      }catch(err){nativeNotice('#nativeProviderSyncMsg',err.message,true)}
       finally{button.disabled=false;}
     });
     $('#nativeInboxRefresh')?.addEventListener('click',loadNativeInbox);
