@@ -97,7 +97,12 @@
     const existingLocks=new Map();
     for(const item of providers){
       const target=$('#'+item.tab);
-      existingLocks.set(item.id,!target || (target.hidden && item.tab!=='native-operations' && item.tab!=='booking-calendar'));
+      const protectedByPlan=Boolean(target?.dataset.respondoPlanLocked==='yes');
+      const googlePlanLocked=item.id==='google_calendar' &&
+        !$('#booking-calendar .calendar-sync-card.connected:not([hidden])') &&
+        !$('#connectGoogleCalendar');
+      existingLocks.set(item.id,!target || protectedByPlan || googlePlanLocked ||
+        (target.hidden && item.tab!=='native-operations' && item.tab!=='booking-calendar'));
     }
     // Server output is the source of truth for the connected state. Unknown is
     // distinct from disconnected, especially when an endpoint is unavailable.
@@ -276,6 +281,12 @@
       ws.classList.remove('rs-integration-configuring');draw();
     });
     refresh.addEventListener('click',reloadStatuses);
+    root.addEventListener('click',event=>{
+      const oauth=event.target.closest?.('a.rs-integration-authorize');
+      if(oauth){
+        try{sessionStorage.setItem('respondo_pending_integration',chosenProvider||'');}catch{}
+      }
+    });
     advanced.addEventListener('click',()=>{
       const visible=ws.classList.toggle('rs-integration-advanced');
       advanced.setAttribute('aria-expanded',String(visible));
@@ -289,6 +300,14 @@
     });
     observation.observe(ws,{attributes:true,attributeFilter:['data-current-view']});
     root.hidden=ws.dataset.currentView!=='integrations';
+    // After OAuth returns, keep the user's selected service in the guide,
+    // without claiming the account connected until the status GET succeeds.
+    const pending=(()=>{try{return sessionStorage.getItem('respondo_pending_integration')}catch{return null}})();
+    const recovered=providers.find(p=>p.id===pending);
+    if(recovered){
+      chosenGroup=recovered.group;chosenProvider=recovered.id;
+      try{sessionStorage.removeItem('respondo_pending_integration')}catch{}
+    }
     draw();
     configureCommerceFields();
     if(!root.hidden){ws.dataset.integrationStatusLoaded='1';reloadStatuses();}
