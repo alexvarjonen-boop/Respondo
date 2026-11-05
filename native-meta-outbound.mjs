@@ -7,11 +7,12 @@ const channels=['whatsapp','instagram','facebook'];
 export function buildApprovedMetaReply({provider,resourceId,recipient,accessToken,text}){
  if(!channels.includes(provider)||!validNum(resourceId)||!validNum(recipient)||
   typeof accessToken!=='string'||accessToken.length<10||typeof text!=='string'||
-  !text.trim()||text.length>4000||text!==text.trim())throw TypeError('Invalid approved Meta reply');
+  !text.trim()||text.length>(provider==='instagram'?1000:4000)||text!==text.trim())throw TypeError('Invalid approved Meta reply');
  const url='https://graph.facebook.com/v24.0/'+encodeURIComponent(resourceId)+'/messages';
  const payload=provider==='whatsapp'
   ?{messaging_product:'whatsapp',to:recipient,type:'text',text:{body:text}}
-  :{recipient:{id:recipient},messaging_type:'RESPONSE',message:{text}};
+  :provider==='facebook'?{recipient:{id:recipient},messaging_type:'RESPONSE',message:{text}}:
+   {recipient:{id:recipient},message:{text}};
  return {url,options:{method:'POST',redirect:'error',
   headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json',Accept:'application/json'},
   body:JSON.stringify(payload)}};
