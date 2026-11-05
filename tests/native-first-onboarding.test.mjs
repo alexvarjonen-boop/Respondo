@@ -11,7 +11,7 @@ const nativeUI=read('public/native-ai-operations.js');
 test('Respondo own database tools are the default, external services are optional',()=>{
   assert.match(ui,/let chosenGroup='respondo',chosenProvider=null/);
   assert.match(ui,/if\(chosenGroup==='respondo'\)\{/);
-  assert.match(ui,/data\.ownTool=item\.id/);
+  assert.match(ui,/const own=event\.target\.closest\('\[data-own-tool\]'\)/);
   assert.match(ui,/dataset\.ownTool=item\.id/);
   assert.match(ui,/externalSwitch\.addEventListener\('click'/);
   assert.match(ui,/chosenGroup=chosenGroup==='respondo'\?null:'respondo'/);
@@ -37,7 +37,7 @@ test('each native tool opens an existing local tab and not a third-party OAuth f
   assert.match(ui,/focusExisting\(\{tab:'native-operations',nativeTab:item\.nativeTab,nativeInternal:true\}\)/);
   assert.match(ui,/const inner=target\?\.querySelector\('\.native-tabs \[data-tab="/);
   assert.match(ui,/inner\.click\(\)/);
-  assert.match(ui,/if\(item\.nativeInternal &&/);
+  assert.match(ui,/item\.nativeInternal &&/);
   assert.doesNotMatch(ui.slice(ui.indexOf('const ownTools='),ui.indexOf('const providers=')),/\/api\/app\/native\/mail\/|api\.hubapi\.com|oauth|\/api\/app\/google-calendar\/start/);
 });
 
@@ -52,7 +52,7 @@ test('native status is read from tenant-scoped database APIs, not optimistic UI 
   }
   assert.match(ui,/ownStatus\.set\(item\.id,result\[item\.probe\]\?\.ok===true\)/);
   assert.match(ui,/ownStatus\.get\(item\.id\)===true\?'local':'unverified'/);
-  assert.match(ui,/data\.respondoPlanLocked==='yes'/);
+  assert.match(ui,/dataset\.respondoPlanLocked==='yes'/);
   assert.match(ui,/if\(chosenGroup!=='respondo'\)\{/);
   assert.match(ui,/method:'GET',credentials:'same-origin',cache:'no-store'/);
   assert.match(backend,/function nativeEndpoint\(handler,/);
