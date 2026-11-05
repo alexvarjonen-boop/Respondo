@@ -395,6 +395,7 @@
         return;
       }
       ws.classList.add('rs-integration-configuring');
+      ws.classList.toggle('rs-integration-native-open',Boolean(item.nativeInternal));
       ws.classList.remove('rs-integration-advanced');
       advanced.setAttribute('aria-expanded','false');
       advanced.textContent=t.technical;
@@ -545,7 +546,7 @@
     externalSwitch.addEventListener('click',()=>{
       chosenGroup=chosenGroup==='respondo'?null:'respondo';
       chosenProvider=null;
-      ws.classList.remove('rs-integration-configuring','rs-integration-advanced');
+      ws.classList.remove('rs-integration-configuring','rs-integration-advanced','rs-integration-native-open');
       advanced.setAttribute('aria-expanded','false');
       advanced.textContent=t.technical;
       draw();
