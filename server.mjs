@@ -10520,6 +10520,8 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     const fields = cleanActionFields(type, body.fields);
     if (type === 'booking') {
       fields.slotId = String(body.fields?.slotId || '').trim().slice(0,80);
+      fields.serviceId = String(body.fields?.serviceId || '').trim().slice(0,64);
+      fields.quantity = Number(body.fields?.quantity);
     }
     if (type === 'quote') {
       fields.quantity = Math.max(0, Number(body.fields?.quantity || 0));
@@ -10590,6 +10592,25 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     }
 
     if (type === 'booking') {
+      // If an exact service is selected, never treat a short fixed slot as sufficient
+      // unless a tenant-approved workload rule proves the entire job fits.
+      let serviceEstimate = null;
+      if (fields.serviceId) {
+        const configured = await q(
+          'SELECT rule FROM service_duration_rules WHERE tenant_id=$1 AND service_id=$2',
+          [tenant.id,fields.serviceId],
+        );
+        serviceEstimate = estimateServiceDuration({
+          serviceId:fields.serviceId,quantity:fields.quantity,
+          rules:configured.rows.map(row=>row.rule),
+        });
+        if (serviceEstimate.status !== 'estimated') {
+          return res.status(422).json({
+            error:'Työn kestoa ei voida varmistaa. Kerro tarkemmin työn laajuus tai pyydä vahvistus yritykseltä.',
+            reason:serviceEstimate.reason || serviceEstimate.status,
+          });
+        }
+      }
       const previewSlot = await q(
         `SELECT id,starts_at,ends_at,status
            FROM booking_slots
@@ -10598,6 +10619,9 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       );
       if (!previewSlot.rowCount || previewSlot.rows[0].status !== 'open') {
         return res.status(409).json({ error:'Tämä aika ei ole enää vapaa. Valitse toinen aika.' });
+      }
+      if (serviceEstimate && new Date(previewSlot.rows[0].ends_at).getTime()-new Date(previewSlot.rows[0].starts_at).getTime() < serviceEstimate.totalMinutes*60000) {
+        return res.status(422).json({error:'Varattu aika ei riitä koko työlle. Valitse pidempi aika.',requiredMinutes:serviceEstimate.totalMinutes});
       }
 
       const client = await pool.connect();
@@ -10613,6 +10637,21 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         if (!sr.rowCount || sr.rows[0].status !== 'open' || new Date(sr.rows[0].starts_at).getTime() < Date.now()) {
           await client.query('ROLLBACK');
           return res.status(409).json({ error:'Tämä aika ei ole enää vapaa. Valitse toinen aika.' });
+        }
+        if (serviceEstimate && new Date(sr.rows[0].ends_at).getTime()-new Date(sr.rows[0].starts_at).getTime() < serviceEstimate.totalMinutes*60000) {
+          await client.query('ROLLBACK');
+          return res.status(422).json({error:'Varattu aika on liian lyhyt työmäärälle.',requiredMinutes:serviceEstimate.totalMinutes});
+        }
+        if (serviceEstimate) {
+          const overlap=await client.query(
+            `SELECT 1 FROM booking_slots WHERE tenant_id=$1 AND status='booked'
+               AND starts_at<$3 AND ends_at>$2 LIMIT 1`,
+            [tenant.id,sr.rows[0].starts_at,sr.rows[0].ends_at],
+          );
+          if (overlap.rowCount) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({error:'Työn ajankohta on jo varattu.'});
+          }
         }
 
         // Recheck Google Calendar only after this booking slot is row-locked.
@@ -10641,6 +10680,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
           slotId:bookedSlot.id,
           startsAt:bookedSlot.starts_at,
           endsAt:bookedSlot.ends_at,
+          ...(serviceEstimate ? {serviceEstimate} : {}),
         };
         await client.query(
           `UPDATE booking_slots SET status='booked' WHERE id=$1 AND tenant_id=$2`,
