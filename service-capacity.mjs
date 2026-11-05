@@ -21,7 +21,8 @@ export function validateServiceRule(value={}){
 export function parseWindowFacts(message,prior={}){
   const s=lower(message);
   const facts={...prior};
-  const count=s.match(/\b(\d{1,3})\s*(?:isoa|isoja|isoo|suurta|pientä|pienia|ikkunaa|ikkunoita|fönster|windows?)\b/i)
+  const count=s.match(/\b(\d{1,3})\s*(?:(?:isoa|isoja|isoo|suurta|pientä|pienia|large|big|small|stora|små)\s+)?(?:ikkunaa|ikkunoita|ikkunoi|fönster|windows?)\b/i)
+    ||s.match(/\b(\d{1,3})\s+(?:isoa|isoja|isoo|suurta|pientä|pienia|large|big|small|stora|små)\b/i)
     ||s.match(/\b(?:ikkunoita|ikkunaa|ikkunoi|fönster|windows?)\s*(\d{1,3})\b/i);
   if(count&&Number(count[1])>=1&&Number(count[1])<=300)facts.quantity=Number(count[1]);
   if(!facts.quantity&&/^\s*\d{1,3}\s*$/.test(s))facts.quantity=Number(s);
@@ -68,6 +69,7 @@ export function fitServiceSlots(slots,minutes,busy=[],now=Date.now()){
   });
 }
 const hasIntent=s=>/(?:ikkunanpes|ikkunoiden pes|ikkunoita pes|window clean|window wash|fönsterputs|fönstertvätt)/i.test(lower(s));
+const wantsScheduling=s=>/(?:aika|ajanvar|varat|vapaa|vapaita|perjant|lauant|maanant|tiist|keskiviik|torst|sunnunt|klo|huomenna|kauanko|kestää|kesto|booking|book|time|availability|available|duration|friday|monday|tomorrow|appointment|ledig|tid|boka|fredag|tidsåtgång)/i.test(lower(s));
 export async function ensureServiceCapacitySchema(db){
   await db.query(`CREATE TABLE IF NOT EXISTS public.respondo_service_capacity(
     tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
@@ -106,7 +108,7 @@ export async function serviceDialogue(db,tenantId,visitorRef,message,lang,availa
   if(!rule?.enabled)return null;
   const old=await db.query(`SELECT facts FROM respondo_service_dialogues
     WHERE tenant_id=$1 AND visitor_ref=$2 AND updated_at>NOW()-INTERVAL '45 minutes'`,[tenantId,visitor]);
-  if(!old.rowCount&&!hasIntent(message))return null;
+  if(!old.rowCount&&!(hasIntent(message)&&wantsScheduling(message)))return null;
   // Do not trap the conversation after the service question has been answered.
   if (/^(?:kiitos|kiitti|thank you|thanks|tack|hei|moi|bye|heippa)[! .]*$/i.test(lower(message)))
     return null;
