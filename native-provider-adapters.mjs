@@ -33,7 +33,9 @@ export function buildProviderRead({provider,token,subdomain,resourceId,limit=20}
  if(typeof token!=='string'||token.length<10||token.length>8192)throw Error('missing_access_token');
  if(!Number.isSafeInteger(limit)||limit<1||limit>100)throw Error('invalid_limit');
  const base=providerOrigin(provider,subdomain);
- const id=resourceId==null?null:strictId(resourceId);
+ const id=provider==='sharepoint'
+  ?(/^[A-Za-z0-9.,_-]{3,180}$/.test(String(resourceId||''))&&!String(resourceId).includes('..')?String(resourceId):null)
+  :resourceId==null?null:strictId(resourceId);
  if(resourceId!=null&&!id)throw Error('invalid_resource');
  let url,auth='Bearer '+token;
  switch(provider){
@@ -44,9 +46,9 @@ export function buildProviderRead({provider,token,subdomain,resourceId,limit=20}
   case 'freshdesk':url=new URL('/api/v2/tickets',base);url.searchParams.set('per_page',String(limit));auth='Basic '+Buffer.from(token+':X').toString('base64');break;
   case 'zendesk':url=new URL('/api/v2/tickets.json',base);url.searchParams.set('per_page',String(limit));break;
   case 'google_drive':url=new URL('/drive/v3/files',base);url.searchParams.set('page_size',String(limit));url.searchParams.set('fields','nextPageToken,files(id,name,mimeType,modifiedTime)');break;
-  case 'sharepoint':url=new URL('/v1.0/me/drive/root/children',base);url.searchParams.set('$top',String(limit));break;
+  case 'sharepoint':if(!id)throw Error('sharepoint_site_id_required');url=new URL('/v1.0/sites/'+encodeURIComponent(id)+'/drive/root/children',base);url.searchParams.set('$top',String(limit));break;
   case 'shopify':url=new URL('/admin/api/2026-10/orders.json',base);url.searchParams.set('limit',String(limit));url.searchParams.set('status','any');break;
-  case 'woocommerce':url=new URL('/wp-json/wc/v3/orders',base);url.searchParams.set('per_page',String(limit));break;
+  case 'woocommerce':throw Error('woocommerce_use_existing_verified_commerce_connector');
   case 'whatsapp':case 'instagram':case 'facebook':
     if(!id)throw Error('resource_id_required');
     url=new URL('/v24.0/'+encodeURIComponent(id),base);
