@@ -331,15 +331,15 @@
         next.set(result.crm.provider,'partial');
       for(const account of result.mail?.connections||[]){
         if(account.connected&&['gmail','outlook'].includes(account.provider))
-          next.set(account.provider,'connected');
+          next.set(account.provider,'partial');
       }
       for(const channel of result.meta?.channels||[]){
         if(['whatsapp','instagram','facebook'].includes(channel.provider)&&channel.configured)
-          next.set(channel.provider,channel.deliveryEnabled?'connected':'partial');
+          next.set(channel.provider,'partial');
       }
       for(const cloud of result.cloud?.connections||[]){
         if(cloud.connected&&['google_drive','sharepoint'].includes(cloud.provider))
-          next.set(cloud.provider,'connected');
+          next.set(cloud.provider,'partial');
       }
       if(result.freshdesk?.data?.connected)next.set('freshdesk','partial');
       if(result.zendesk?.data?.connected)next.set('zendesk','partial');
