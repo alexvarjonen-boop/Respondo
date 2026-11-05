@@ -75,3 +75,19 @@ test('provider UI has connect and sync actions without credential display',()=>{
  assert.match(app,/\/api\/app\/native-integrations\/connect/);
  assert.match(app,/\/api\/app\/native-integrations\/sync/);
 });
+
+test('Gmail OAuth requests least-privilege readonly access with CSRF and tenant verification',()=>{
+ const section=server.slice(server.indexOf("app.get('/api/app/native-integrations/gmail/start'"),server.indexOf("app.post('/api/app/native-integrations/connect'"));
+ assert.match(section,/auth, ownerOnly, subscribed/);
+ assert.match(section,/gmail\.readonly/);
+ assert.match(section,/setOauthState\(res,nonce,'google'\)/);
+ const callback=server.slice(server.indexOf("if \(statePayload.flow === 'native_gmail'\) \{"),server.indexOf("if \(statePayload.flow === 'calendar'\) \{",server.indexOf("if \(statePayload.flow === 'native_gmail'\) \{")) ;
+ assert.match(callback,/sessionUser\.sub!==statePayload\.userId/);
+ assert.match(callback,/encryptSecret\(refreshToken\)/);
+ assert.match(callback,/readProvider\(\{provider:'gmail'/);
+});
+test('Gmail refresh token is encrypted at rest',()=>{
+ assert.match(server,/encrypted_refresh_token TEXT/);
+ assert.match(server,/decryptSecret\(stored\.rows\[0\]\.encrypted_refresh_token\)/);
+ assert.match(server,/https:\/\/oauth2\.googleapis\.com\/token/);
+});
