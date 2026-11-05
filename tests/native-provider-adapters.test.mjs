@@ -44,3 +44,19 @@ test('CRM contacts are normalized without exposing raw provider response',()=>{
  assert.equal(out[0].email,'person@example.com');
  assert.equal(out[0].externalId,'12');
 });
+
+test('Gmail detailed read extracts sender and body preview',async()=>{
+ const {readGmailInbox}=await import('../native-provider-adapters.mjs');
+ const fetcher=async (url,options)=>{
+  assert.equal(options.redirect,'error');
+  const response=url.includes('/messages/abc')?
+   {id:'abc',snippet:'I would like a booking',payload:{headers:[{name:'From',value:'Customer <customer@example.com>'},{name:'Subject',value:'Booking enquiry'}]}}:
+   {messages:[{id:'abc'}]};
+  return {ok:true,headers:{get:()=>null},text:async()=>JSON.stringify(response)};
+ };
+ const out=await readGmailInbox({token,fetcher});
+ assert.equal(out.value[0].from.emailAddress.address,'customer@example.com');
+ assert.equal(out.value[0].subject,'Booking enquiry');
+ const normalized=normalizeProviderItems('gmail',out);
+ assert.equal(normalized[0].snippet,'I would like a booking');
+});
