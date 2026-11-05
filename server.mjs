@@ -10273,7 +10273,7 @@ app.post('/api/app/helpdesk/zendesk/start',auth,ownerOnly,subscribed,nativeWrite
   (id,req)=>beginZendeskOAuth(pool,id,req.user.sub,req.body?.subdomain,zendeskOAuthConfiguration()),{quote:true}));
 app.get('/api/app/helpdesk/zendesk/callback',auth,ownerOnly,subscribed,async(req,res)=>{
   res.set('Cache-Control','private, no-store');
-  const destination=SEO_CANONICAL_ORIGIN+'/app?zendesk=';
+  const destination=SEO_CANONICAL_ORIGIN+'/app?section=integrations&provider=zendesk&zendesk=';
   try{
     const tenant=await requirePlanCapability(req,res,'allCurrentFeatures');
     if(!tenant)return;
@@ -16682,8 +16682,8 @@ app.post('/api/app/stripe-connect/onboard', auth, ownerOnly, subscribed, async (
 
     const link = await stripe.accountLinks.create({
       account:accountId,
-      refresh_url:BASE + '/app?section=automation&stripe=refresh',
-      return_url:BASE + '/app?section=automation&stripe=return',
+      refresh_url:BASE + '/app?section=integrations&provider=stripe&stripe=refresh',
+      return_url:BASE + '/app?section=integrations&provider=stripe&stripe=return',
       type:'account_onboarding',
     });
     return res.json({ url:link.url });
