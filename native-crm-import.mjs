@@ -78,6 +78,8 @@ export async function importNativeCrmContacts(db,tenantId,{approved,provider,ext
   const client=await db.connect();
   try{
    await client.query('BEGIN');
+   // Serialize imports per company to prevent duplicate records across replicas.
+   await client.query('SELECT id FROM tenants WHERE id=$1 FOR UPDATE',[tenantId]);
    const existing=await client.query(`SELECT contact_id FROM respondo_native_crm_imports
      WHERE tenant_id=$1 AND provider=$2 AND external_id=$3`,
      [tenantId,provider,contact.externalId]);
