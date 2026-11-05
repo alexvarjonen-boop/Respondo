@@ -18,7 +18,7 @@ test('simple three-step onboarding supports every provider actually present in R
   for(const id of ids)assert.match(guide,new RegExp("id:'"+id+"'"),id);
   for(const group of ['mail','calendar','crm','commerce','payments','social','support','files','advanced'])
     assert.match(guide,new RegExp("id:'"+group+"',label:"),group);
-  assert.match(guide,/chosenGroup=null,chosenProvider=null/);
+  assert.match(guide,/chosenGroup='respondo',chosenProvider=null/);
   assert.match(guide,/data-integration-group/);
   assert.match(guide,/data-integration-provider/);
   assert.match(guide,/data-integration-open/);
