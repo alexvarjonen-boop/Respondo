@@ -29,7 +29,7 @@ export function providerOrigin(provider,subdomain){
  // WooCommerce custom domains require DNS/public IP verification by caller.
  return 'https://'+sub;
 }
-export function buildProviderRead({provider,token,subdomain,resourceId,limit=20}){
+export function buildProviderRead({provider,token,subdomain,resourceId,limit=20,cursor=null}){
  if(typeof token!=='string'||token.length<10||token.length>8192)throw Error('missing_access_token');
  if(!Number.isSafeInteger(limit)||limit<1||limit>100)throw Error('invalid_limit');
  const base=providerOrigin(provider,subdomain);
@@ -39,8 +39,8 @@ export function buildProviderRead({provider,token,subdomain,resourceId,limit=20}
  if(resourceId!=null&&!id)throw Error('invalid_resource');
  let url,auth='Bearer '+token;
  switch(provider){
-  case 'gmail':url=new URL('/gmail/v1/users/me/messages',base);url.searchParams.set('maxResults',String(limit));url.searchParams.set('q','in:inbox -in:spam -in:trash');break;
-  case 'outlook':url=new URL('/v1.0/me/mailFolders/inbox/messages',base);url.searchParams.set('$top',String(limit));url.searchParams.set('$select','id,subject,from,receivedDateTime,bodyPreview');break;
+  case 'gmail':url=new URL('/gmail/v1/users/me/messages',base);url.searchParams.set('maxResults',String(limit));url.searchParams.set('q','in:inbox -in:spam -in:trash');if(cursor){if(!/^[A-Za-z0-9_=-]{1,512}$/.test(cursor))throw Error('invalid_mail_cursor');url.searchParams.set('pageToken',cursor)}break;
+  case 'outlook':url=new URL('/v1.0/me/mailFolders/inbox/messages',base);url.searchParams.set('$top',String(limit));url.searchParams.set('$select','id,subject,from,receivedDateTime,bodyPreview');if(cursor){const next=new URL(cursor);if(next.protocol!=='https:'||next.host!=='graph.microsoft.com'||next.pathname!=='/v1.0/me/mailFolders/inbox/messages'||next.username||next.password||next.hash||cursor.length>3000)throw Error('invalid_mail_cursor');url=next}break;
   case 'hubspot':url=new URL('/crm/v3/objects/contacts',base);url.searchParams.set('limit',String(limit));url.searchParams.set('properties','email,firstname,lastname');break;
   case 'pipedrive':url=new URL('/api/v2/persons',base);url.searchParams.set('limit',String(limit));break;
   case 'freshdesk':url=new URL('/api/v2/tickets',base);url.searchParams.set('per_page',String(limit));auth='Basic '+Buffer.from(token+':X').toString('base64');break;
@@ -61,8 +61,8 @@ export function buildProviderRead({provider,token,subdomain,resourceId,limit=20}
  else headers.Authorization=auth;
  return {url:url.toString(),headers};
 }
-export async function readProvider({provider,token,subdomain,resourceId,limit=20,fetcher=fetch}){
- const request=buildProviderRead({provider,token,subdomain,resourceId,limit});
+export async function readProvider({provider,token,subdomain,resourceId,limit=20,cursor=null,fetcher=fetch}){
+ const request=buildProviderRead({provider,token,subdomain,resourceId,limit,cursor});
  const response=await fetcher(request.url,{method:'GET',headers:request.headers,redirect:'error',signal:AbortSignal.timeout(9000)});
  if(!response.ok)throw Error('provider_http_'+response.status);
  const size=Number(response.headers?.get?.('content-length')||0);
@@ -88,8 +88,8 @@ export function normalizeProviderItems(provider,data){
 }
 
 /** Gmail list results only carry message IDs. Fetch scoped metadata/snippets individually. */
-export async function readGmailInbox({token,limit=20,fetcher=fetch}){
- const listing=await readProvider({provider:'gmail',token,limit,fetcher});
+export async function readGmailInbox({token,limit=20,cursor=null,fetcher=fetch}){
+ const listing=await readProvider({provider:'gmail',token,limit,cursor,fetcher});
  const messages=Array.isArray(listing.messages)?listing.messages.slice(0,Math.min(limit,20)):[];
  const details=[];
  for(const message of messages){
@@ -124,5 +124,5 @@ export async function readGmailInbox({token,limit=20,fetcher=fetch}){
   details.push({id,subject:header('Subject').slice(0,300),bodyPreview,
    from:{emailAddress:{address:fallbackEmail}}});
  }
- return {value:details};
+ return {value:details,nextPageToken:typeof listing.nextPageToken==='string'?listing.nextPageToken:null};
 }
