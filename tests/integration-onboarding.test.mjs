@@ -89,9 +89,9 @@ test('unneeded commerce credential inputs are hidden without deleting any existi
 });
 
 test('FI/SV/EN, mobile styles, existing asset links and syntax check all wired',()=>{
-  assert.match(guide,/fi:\{title:/);
-  assert.match(guide,/sv:\{title:/);
-  assert.match(guide,/en:\{title:/);
+  assert.match(guide,/fi:\{nativeTitle:/);
+  assert.match(guide,/sv:\{nativeTitle:/);
+  assert.match(guide,/en:\{nativeTitle:/);
   assert.match(css,/@media\(max-width:640px\)/);
   assert.match(index,/\/integration-onboarding\.js\?v=20261105-guided-setup-v5-callbacks-and-preflight/);
   assert.match(index,/\/integration-onboarding\.css\?v=20261105-guided-setup-v1/);
