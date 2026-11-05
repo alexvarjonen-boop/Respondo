@@ -9842,20 +9842,31 @@ app.get('/api/app/native/mail/status',auth,ownerOnly,subscribed,async(req,res)=>
   const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
   if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
   const rows=await q('SELECT provider,expires_at,last_verified_at,last_synced_at,last_sync_error FROM respondo_native_mail_credentials WHERE tenant_id=$1 ORDER BY provider',[tr.rows[0].id]);
-  return res.json({connections:rows.rows.map(x=>({
-   provider:x.provider,connected:true,lastVerifiedAt:x.last_verified_at,lastSyncedAt:x.last_synced_at,
-   expiresAt:x.expires_at,lastSyncError:x.last_sync_error||null
-  }))});
+  // Public-safe readiness flags; never expose client IDs or secrets.
+  return res.json({
+   connections:rows.rows.map(x=>({
+    provider:x.provider,connected:true,lastVerifiedAt:x.last_verified_at,lastSyncedAt:x.last_synced_at,
+    expiresAt:x.expires_at,lastSyncError:x.last_sync_error||null
+   })),
+   oauthAvailable:{
+    gmail:Boolean(nativeMailOauthConfig('gmail')?.clientId&&nativeMailOauthConfig('gmail')?.clientSecret),
+    outlook:Boolean(nativeMailOauthConfig('outlook')?.clientId&&nativeMailOauthConfig('outlook')?.clientSecret)
+   }
+  });
  }catch(e){return res.status(500).json({error:'Sähköpostiyhteyksiä ei voitu hakea.'})}
 });
+// Every OAuth outcome returns to the SAME integration chosen by the owner.
+const nativeMailReturn=(provider,result)=>'/app?'+new URLSearchParams({
+ section:'integrations',provider:provider==='outlook'?'outlook':'gmail',native_mail:result
+}).toString();
 app.get('/api/app/native/mail/:provider/start',auth,ownerOnly,subscribed,async(req,res)=>{
  const provider=String(req.params.provider||'');
  const config=nativeMailOauthConfig(provider);
  if(!config||!config.clientId||!config.clientSecret)
-  return res.redirect('/app?section=automation&native_mail=not_configured');
+  return res.redirect(nativeMailReturn(provider,'not_configured'));
  try{
   const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
-  if(!tr.rowCount)return res.redirect('/app?section=automation&native_mail=missing_tenant');
+  if(!tr.rowCount)return res.redirect(nativeMailReturn(provider,'missing_tenant'));
   const nonce=crypto.randomBytes(20).toString('hex');
   const state=jwt.sign({flow:'native_mail',provider,nonce,userId:req.user.sub,tenantId:tr.rows[0].id},
     JWT,{expiresIn:'10m'});
@@ -9868,28 +9879,28 @@ app.get('/api/app/native/mail/:provider/start',auth,ownerOnly,subscribed,async(r
   }).toString();
   return res.redirect(url.toString());
  }catch(e){console.error('Native mail OAuth start failed',e?.name||'error');
-  return res.redirect('/app?section=automation&native_mail=failed')}
+  return res.redirect(nativeMailReturn(provider,'failed'))}
 });
 app.get('/api/app/native/mail/:provider/callback',async(req,res)=>{
  const provider=String(req.params.provider||'');
  const config=nativeMailOauthConfig(provider);
- const destination='/app?section=automation&native_mail=';
- if(!config||!config.clientId||!config.clientSecret)return res.redirect(destination+'not_configured');
+ const destination=code=>nativeMailReturn(provider,code);
+ if(!config||!config.clientId||!config.clientSecret)return res.redirect(destination('not_configured'));
  try{
   const state=jwt.verify(String(req.query.state||''),JWT);
   const cookie=cookies(req)[NATIVE_MAIL_STATE_COOKIE];
   if(!cookie||state.flow!=='native_mail'||state.provider!==provider||state.nonce!==cookie)
-   return res.redirect(destination+'invalid_state');
+   return res.redirect(destination('invalid_state'));
   res.clearCookie(NATIVE_MAIL_STATE_COOKIE);
   const session=cookies(req)[COOKIE];
   const user=session?jwt.verify(session,JWT):null;
-  if(!user?.sub||user.sub!==state.userId)return res.redirect(destination+'invalid_session');
+  if(!user?.sub||user.sub!==state.userId)return res.redirect(destination('invalid_session'));
   const tenant=await q(`SELECT id FROM tenants WHERE owner_user_id=$1 AND id=$2
    AND active=true AND subscription_status IN ('active','trialing')`,
    [state.userId,state.tenantId]);
-  if(!tenant.rowCount)return res.redirect(destination+'missing_tenant');
+  if(!tenant.rowCount)return res.redirect(destination('missing_tenant'));
   const code=String(req.query.code||'');
-  if(req.query.error||!code)return res.redirect(destination+'cancelled');
+  if(req.query.error||!code)return res.redirect(destination('cancelled'));
   const response=await fetch(config.tokenUrl,{
    method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
    body:new URLSearchParams({
@@ -9916,9 +9927,9 @@ app.get('/api/app/native/mail/:provider/callback',async(req,res)=>{
    [tenant.rows[0].id,provider,encryptSecret(access),
     refresh?encryptSecret(refresh):stored.rows[0].refresh_ciphertext,
     new Date(Date.now()+Number(tokens.expires_in||3600)*1000),grantedScopes]);
-  return res.redirect(destination+'connected');
+  return res.redirect(destination('connected'));
  }catch(e){console.error('Native mailbox OAuth failed',e?.name||'error');
-  return res.redirect(destination+'failed')}
+  return res.redirect(destination('failed'))}
 });
 async function nativeMailRefresh(tenantId,provider,credential){
  let access=decryptSecret(credential.access_ciphertext);
