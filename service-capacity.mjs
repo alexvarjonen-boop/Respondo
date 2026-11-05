@@ -287,8 +287,16 @@ export async function serviceDialogue(db,tenantId,visitorRef,message,lang,availa
   const named=customMatch(message,custom);
   const priorCustom=custom.find(x=>x.serviceKey===old.facts?._serviceKey);
   const isService=hasIntent(message),isAppointment=appointmentIntent(message);
-  if(custom.length&&(named||priorCustom||old.facts?._genericPending||
-    (isAppointment&&!isService))){
+  const raw=lower(message);
+  if(/^(?:kiitos|kiitti|thank you|thanks|tack|hei|moi|bye|heippa)[! .]*$/i.test(raw))return null;
+  const qtyFollowup=priorCustom?.calculation==='quantity'&&
+    Number.isInteger(customQuantity(message,priorCustom,{}).quantity);
+  const timeFollowup=/(?:maanant|måndag|monday|tiist|tisdag|tuesday|keskiviik|onsdag|wednesday|torst|torsdag|thursday|perjant|fredag|friday|lauant|lördag|saturday|sunnunt|söndag|sunday|huomenna|tomorrow|iltapäiv|aamulla|afternoon|morning|eftermiddag|förmiddag)/i.test(raw)||
+    /^(?:\s*\d{1,2}(?::\d{2})?\s*|\s*(?:klo|kello|at|kl)\s*\d{1,2}(?::\d{2})?)$/i.test(raw);
+  if(custom.length&&(named||(!isService&&(
+    (priorCustom&&(isAppointment||qtyFollowup||timeFollowup))||
+    (old.facts?._genericPending&&(isAppointment||timeFollowup))||
+    (!rule&&isAppointment))))){
     return customServiceDialogue(db,tenantId,visitor,message,lang,availableSlots,
       named||priorCustom||null,old,custom);
   }
