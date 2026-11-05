@@ -168,7 +168,7 @@
       if(s==='connected')return t.connected;
       if(s==='notConnected')return t.notConnected;
       if(s==='ready')return t.ready;
-      if(s==='partial')return t.partial;
+      if(s==='partial')return lang==='fi'?'Yhteys tallennettu — toiminta tarkistettava':lang==='sv'?'Anslutning sparad — testa funktionen':'Connection saved — verify operation';
       if(s==='local')return t.noExtra;
       return t.unknown;
     }
@@ -328,7 +328,7 @@
       if(typeof result.freshdesk?.data?.connected==='boolean')next.set('freshdesk','notConnected');
       if(typeof result.zendesk?.data?.connected==='boolean')next.set('zendesk','notConnected');
       if(result.crm?.connected && ['hubspot','pipedrive'].includes(result.crm.provider))
-        next.set(result.crm.provider,'connected');
+        next.set(result.crm.provider,'partial');
       for(const account of result.mail?.connections||[]){
         if(account.connected&&['gmail','outlook'].includes(account.provider))
           next.set(account.provider,'connected');
@@ -341,8 +341,8 @@
         if(cloud.connected&&['google_drive','sharepoint'].includes(cloud.provider))
           next.set(cloud.provider,'connected');
       }
-      if(result.freshdesk?.data?.connected)next.set('freshdesk','connected');
-      if(result.zendesk?.data?.connected)next.set('zendesk','connected');
+      if(result.freshdesk?.data?.connected)next.set('freshdesk','partial');
+      if(result.zendesk?.data?.connected)next.set('zendesk','partial');
       states=next;
       refresh.disabled=false;
       if(ws.dataset.currentView==='integrations')draw();
