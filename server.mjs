@@ -51,6 +51,8 @@ import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk
 import { zendeskConfig, beginZendeskOAuth, completeZendeskOAuth, zendeskStatus, disconnectZendesk, exportZendeskTicket } from './zendesk-oauth.mjs';
 import { qualityRepairOverview, approveQualityRepair, qualityAliasesForTenant } from './quality-source-repair.mjs';
 import { nativeInboxOverview, nativeInboxThread, saveNativeInboxDraft, addNativeInboxNote, closeNativeInboxThread, nativeInboxDraftFromSources, sendNativeWebsiteReply } from './native-inbox.mjs';
+import { readProvider } from './native-provider-adapters.mjs';
+import {verifyMetaSignature,extractMetaInbound} from './meta-inbound.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
 import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
@@ -9697,6 +9699,98 @@ app.patch('/api/app/native/inbox/:id/status',auth,ownerOnly,subscribed,nativeWri
   (id,req)=>closeNativeInboxThread(pool,id,req.params.id,req.body?.status)));
 app.post('/api/app/native/inbox/:id/reply',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>sendNativeWebsiteReply(pool,id,req.params.id,req.user.sub,req.body||{})));
+/* Tenant-scoped external Meta intake, feeding the existing built-in inbox.
+   No response is transmitted externally, and provider tokens remain encrypted. */
+app.post('/api/app/native/meta/connect',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
+ try{
+  const provider=String(req.body?.provider||'').toLowerCase();
+  const resourceId=String(req.body?.resourceId||'').trim();
+  const token=String(req.body?.accessToken||'').trim();
+  if(!['whatsapp','instagram','facebook'].includes(provider)||
+     !/^[0-9]{5,30}$/.test(resourceId)||token.length<10||token.length>8192)
+    return res.status(400).json({error:'Tarkista palvelu, resurssitunnus ja pääsytunnus.'});
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  await readProvider({provider,token,resourceId,limit:1});
+  await q(`INSERT INTO respondo_meta_connections(tenant_id,provider,resource_id,access_token_encrypted)
+   VALUES($1,$2,$3,$4) ON CONFLICT(tenant_id,provider)
+   DO UPDATE SET resource_id=EXCLUDED.resource_id,
+    access_token_encrypted=EXCLUDED.access_token_encrypted,updated_at=NOW()`,
+   [tr.rows[0].id,provider,resourceId,encryptSecret(token)]);
+  return res.json({ok:true,provider,connected:true,receiveOnly:true});
+ }catch(e){console.error('Meta connection verification failed',e?.name||'error');
+  return res.status(400).json({error:'Yhteyttä ei voitu vahvistaa. Tarkista kanavan oikeudet.'})}
+});
+app.get('/api/app/native/meta/status',auth,ownerOnly,subscribed,async(req,res)=>{
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const rows=await q('SELECT provider,resource_id,updated_at FROM respondo_meta_connections WHERE tenant_id=$1 ORDER BY provider',[tr.rows[0].id]);
+  return res.json({channels:rows.rows.map(x=>({provider:x.provider,resourceId:x.resource_id,
+   configured:true,deliveryEnabled:Boolean(process.env.META_APP_SECRET&&process.env.META_VERIFY_TOKEN),updatedAt:x.updated_at}))});
+ }catch(e){return res.status(500).json({error:'Kanavien tilaa ei voitu hakea.'})}
+});
+app.post('/api/app/native/meta/disconnect',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
+ try{
+  const provider=String(req.body?.provider||'');
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  await q('DELETE FROM respondo_meta_connections WHERE tenant_id=$1 AND provider=$2',[tr.rows[0].id,provider]);
+  return res.json({ok:true,connected:false});
+ }catch(e){return res.status(500).json({error:'Yhteyttä ei voitu katkaista.'})}
+});
+app.get('/api/webhooks/respondo-meta',async(req,res)=>{
+ const secret=String(process.env.META_VERIFY_TOKEN||'');
+ const token=String(req.query['hub.verify_token']||'');
+ const challenge=String(req.query['hub.challenge']||'');
+ if(req.query['hub.mode']!=='subscribe'||secret.length<16||token.length!==secret.length||
+  !crypto.timingSafeEqual(Buffer.from(token),Buffer.from(secret))||
+  !/^[A-Za-z0-9._:-]{1,256}$/.test(challenge))
+   return res.status(403).type('text/plain').send('Forbidden');
+ return res.type('text/plain').send(challenge);
+});
+app.post('/api/webhooks/respondo-meta',async(req,res)=>{
+ const secret=String(process.env.META_APP_SECRET||'');
+ if(!verifyMetaSignature(req.rawBody,req.get('x-hub-signature-256'),secret))
+   return res.status(401).json({error:'Invalid webhook signature'});
+ try{
+  let accepted=0;
+  for(const event of extractMetaInbound(req.body)){
+   const row=await q(`SELECT c.tenant_id FROM respondo_meta_connections c
+    JOIN tenants t ON t.id=c.tenant_id
+    WHERE c.provider=$1 AND c.resource_id=$2 AND t.active=true
+    AND t.subscription_status IN ('active','trialing')`,[event.provider,event.resourceId]);
+   if(row.rowCount!==1)continue;
+   const tenantId=row.rows[0].tenant_id;
+   const client=await pool.connect();
+   try{
+    await client.query('BEGIN');
+    const claim=await client.query(`INSERT INTO respondo_meta_inbound_events
+      (tenant_id,provider,external_message_id) VALUES($1,$2,$3)
+      ON CONFLICT DO NOTHING RETURNING external_message_id`,
+      [tenantId,event.provider,event.externalMessageId.slice(0,200)]);
+    if(!claim.rowCount){await client.query('COMMIT');continue;}
+    const from=event.from.slice(0,200),channel=event.provider;
+    const thread=await client.query(`INSERT INTO chat_threads
+      (id,tenant_id,source_channel,external_contact_id,visitor_ref,mode,status,last_activity_at)
+      VALUES($1,$2,$3,$4,$5,'human','open',NOW())
+      ON CONFLICT(tenant_id,source_channel,external_contact_id)
+      DO UPDATE SET last_activity_at=NOW(),updated_at=NOW()
+      RETURNING id`,[uid(),tenantId,channel,from,from]);
+    await client.query(`INSERT INTO chat_messages
+       (id,tenant_id,thread_id,source_channel,external_contact_id,visitor_ref,role,message,metadata)
+       VALUES($1,$2,$3,$4,$5,$6,'user',$7,$8::jsonb)`,
+      [uid(),tenantId,thread.rows[0].id,channel,from,from,event.body,
+       JSON.stringify({provider:channel,providerMessageId:event.externalMessageId})]);
+    await client.query('COMMIT');
+    accepted++;
+   }catch(e){await client.query('ROLLBACK').catch(()=>{});throw e}
+   finally{client.release();}
+  }
+  return res.json({ok:true,accepted});
+ }catch(e){console.error('Signed Meta intake failed',e?.name||'error');
+  return res.status(503).json({error:'Webhook processing failed'})}
+});
 /* Respondo's own calendar, independent of third-party scheduling. */
 app.get('/api/app/native/calendar',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>nativeCalendarOverview(pool,id)));
@@ -17179,6 +17273,26 @@ async function ensureRuntimeSchema() {
     UNIQUE(tenant_id,starts_at)
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_booking_slots_tenant_start ON booking_slots(tenant_id, starts_at)');
+  await q(`CREATE TABLE IF NOT EXISTS respondo_meta_connections(
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL CHECK(provider IN ('whatsapp','instagram','facebook')),
+    resource_id TEXT NOT NULL,
+    access_token_encrypted TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(tenant_id,provider),
+    UNIQUE(provider,resource_id)
+  )`);
+  await q(`CREATE TABLE IF NOT EXISTS respondo_meta_inbound_events(
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL,
+    external_message_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(tenant_id,provider,external_message_id)
+  )`);
+  for(const table of ['respondo_meta_connections','respondo_meta_inbound_events']){
+    await q('ALTER TABLE '+table+' ENABLE ROW LEVEL SECURITY');
+    await q('REVOKE ALL PRIVILEGES ON TABLE '+table+' FROM PUBLIC');
+  }
   await q(`CREATE TABLE IF NOT EXISTS chat_threads (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
