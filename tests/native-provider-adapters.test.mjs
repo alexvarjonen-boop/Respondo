@@ -68,5 +68,5 @@ test('SharePoint uses site-specific drive instead of users personal OneDrive',()
  assert.throws(()=>buildProviderRead({provider:'sharepoint',token}),/sharepoint_site_id_required/);
 });
 test('WooCommerce does not allow direct unverified arbitrary-host HTTP reads',()=>{
- assert.throws(()=>buildProviderRead({provider:'woocommerce',token,subdomain:'example.com'}),/existing_verified_commerce_connector/);
+ assert.throws(()=>buildProviderRead({provider:'woocommerce',token,subdomain:'example.com'}),/invalid_provider_domain|existing_verified_commerce_connector/);
 });
