@@ -51,6 +51,14 @@ import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk
 import { zendeskConfig, beginZendeskOAuth, completeZendeskOAuth, zendeskStatus, disconnectZendesk, exportZendeskTicket } from './zendesk-oauth.mjs';
 import { qualityRepairOverview, approveQualityRepair, qualityAliasesForTenant } from './quality-source-repair.mjs';
 import { nativeInboxOverview, nativeInboxThread, saveNativeInboxDraft, addNativeInboxNote, closeNativeInboxThread, nativeInboxDraftFromSources, sendNativeWebsiteReply } from './native-inbox.mjs';
+import { readProvider } from './native-provider-adapters.mjs';
+import {verifyMetaSignature,extractMetaInbound} from './meta-inbound.mjs';
+import {ensureNativeMailBridgeSchema,getNativeMailboxMessages,storeNativeMailboxMessages,nativeMailboxProvider} from './native-mail-bridge.mjs';
+import {ensureNativeMailDeliverySchema,sendApprovedNativeMail} from './native-mail-outbound.mjs';
+import {ensureNativeMetaOutboundSchema,sendApprovedNativeMeta} from './native-meta-outbound.mjs';
+import {ensureNativeCrmImportSchema,previewNativeCrmImport,importNativeCrmContacts} from './native-crm-import.mjs';
+import {ensureNativeCloudSchema,cloudProvider,validSiteId} from './native-cloud-credentials.mjs';
+import {normalizeCloudFileList,readApprovedCloudText} from './native-cloud-documents.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
 import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
@@ -1019,7 +1027,7 @@ async function sendWelcomeEmailOnce(userId) {
     const user=found.rows[0];
     if (!user?.email) throw new Error('Welcome recipient missing');
     const lang=['fi','sv','en'].includes(user.preferred_language) ? user.preferred_language : 'en';
-    const firstName=String(user.full_name||'').trim().split(/\\s+/)[0];
+    const firstName=String(user.full_name||'').trim().split(/\s+/)[0];
     const greeting=lang==='sv'?'Välkommen till Respondo AI!':lang==='en'?'Welcome to Respondo AI!':'Tervetuloa Respondo AI:hin!';
     const intro=lang==='sv'?'Ditt konto är klart. Du kan nu logga in och börja konfigurera din kundtjänstbot.':lang==='en'?'Your account is ready. You can now sign in and set up your customer service bot.':'Tilisi on nyt valmis. Voit kirjautua sisään ja aloittaa asiakaspalvelubottisi käyttöönoton.';
     const steps=lang==='sv'?'Lägg till företagets uppgifter, anpassa botens utseende och installera den på din webbplats.':lang==='en'?'Add your company details, customize the bot and install it on your website.':'Lisää yrityksesi tiedot, muokkaa botin ulkoasua ja asenna se verkkosivuillesi.';
@@ -9697,6 +9705,467 @@ app.patch('/api/app/native/inbox/:id/status',auth,ownerOnly,subscribed,nativeWri
   (id,req)=>closeNativeInboxThread(pool,id,req.params.id,req.body?.status)));
 app.post('/api/app/native/inbox/:id/reply',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>sendNativeWebsiteReply(pool,id,req.params.id,req.user.sub,req.body||{})));
+/* Tenant-scoped external Meta intake, feeding the existing built-in inbox.
+   No response is transmitted externally, and provider tokens remain encrypted. */
+app.post('/api/app/native/meta/connect',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
+ try{
+  const provider=String(req.body?.provider||'').toLowerCase();
+  const resourceId=String(req.body?.resourceId||'').trim();
+  const token=String(req.body?.accessToken||'').trim();
+  if(!['whatsapp','instagram','facebook'].includes(provider)||
+     !/^[0-9]{5,30}$/.test(resourceId)||token.length<10||token.length>8192)
+    return res.status(400).json({error:'Tarkista palvelu, resurssitunnus ja pääsytunnus.'});
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  await readProvider({provider,token,resourceId,limit:1});
+  await q(`INSERT INTO respondo_meta_connections(tenant_id,provider,resource_id,access_token_encrypted)
+   VALUES($1,$2,$3,$4) ON CONFLICT(tenant_id,provider)
+   DO UPDATE SET resource_id=EXCLUDED.resource_id,
+    access_token_encrypted=EXCLUDED.access_token_encrypted,updated_at=NOW()`,
+   [tr.rows[0].id,provider,resourceId,encryptSecret(token)]);
+  return res.json({ok:true,provider,connected:true,receiveOnly:true});
+ }catch(e){console.error('Meta connection verification failed',e?.name||'error');
+  return res.status(400).json({error:'Yhteyttä ei voitu vahvistaa. Tarkista kanavan oikeudet.'})}
+});
+app.get('/api/app/native/meta/status',auth,ownerOnly,subscribed,async(req,res)=>{
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const rows=await q('SELECT provider,resource_id,updated_at FROM respondo_meta_connections WHERE tenant_id=$1 ORDER BY provider',[tr.rows[0].id]);
+  return res.json({channels:rows.rows.map(x=>({provider:x.provider,resourceId:x.resource_id,
+   configured:true,deliveryEnabled:Boolean(process.env.META_APP_SECRET&&process.env.META_VERIFY_TOKEN),updatedAt:x.updated_at}))});
+ }catch(e){return res.status(500).json({error:'Kanavien tilaa ei voitu hakea.'})}
+});
+app.post('/api/app/native/meta/disconnect',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
+ try{
+  const provider=String(req.body?.provider||'');
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  await q('DELETE FROM respondo_meta_connections WHERE tenant_id=$1 AND provider=$2',[tr.rows[0].id,provider]);
+  return res.json({ok:true,connected:false});
+ }catch(e){return res.status(500).json({error:'Yhteyttä ei voitu katkaista.'})}
+});
+app.get('/api/webhooks/respondo-meta',async(req,res)=>{
+ const secret=String(process.env.META_VERIFY_TOKEN||'');
+ const token=String(req.query['hub.verify_token']||'');
+ const challenge=String(req.query['hub.challenge']||'');
+ if(req.query['hub.mode']!=='subscribe'||secret.length<16||token.length!==secret.length||
+  !crypto.timingSafeEqual(Buffer.from(token),Buffer.from(secret))||
+  !/^[A-Za-z0-9._:-]{1,256}$/.test(challenge))
+   return res.status(403).type('text/plain').send('Forbidden');
+ return res.type('text/plain').send(challenge);
+});
+app.post('/api/webhooks/respondo-meta',async(req,res)=>{
+ const secret=String(process.env.META_APP_SECRET||'');
+ if(!verifyMetaSignature(req.rawBody,req.get('x-hub-signature-256'),secret))
+   return res.status(401).json({error:'Invalid webhook signature'});
+ try{
+  let accepted=0;
+  for(const event of extractMetaInbound(req.body)){
+   const row=await q(`SELECT c.tenant_id FROM respondo_meta_connections c
+    JOIN tenants t ON t.id=c.tenant_id
+    WHERE c.provider=$1 AND c.resource_id=$2 AND t.active=true
+    AND t.subscription_status IN ('active','trialing')`,[event.provider,event.resourceId]);
+   if(row.rowCount!==1)continue;
+   const tenantId=row.rows[0].tenant_id;
+   const client=await pool.connect();
+   try{
+    await client.query('BEGIN');
+    const claim=await client.query(`INSERT INTO respondo_meta_inbound_events
+      (tenant_id,provider,external_message_id) VALUES($1,$2,$3)
+      ON CONFLICT DO NOTHING RETURNING external_message_id`,
+      [tenantId,event.provider,event.externalMessageId.slice(0,200)]);
+    if(!claim.rowCount){await client.query('COMMIT');continue;}
+    const from=event.from.slice(0,200),channel=event.provider;
+    const thread=await client.query(`INSERT INTO chat_threads
+      (id,tenant_id,source_channel,external_contact_id,visitor_ref,mode,status,last_activity_at)
+      VALUES($1,$2,$3,$4,$5,'human','open',NOW())
+      ON CONFLICT(tenant_id,source_channel,external_contact_id)
+      DO UPDATE SET last_activity_at=NOW(),updated_at=NOW()
+      RETURNING id`,[uid(),tenantId,channel,from,from]);
+    await client.query(`INSERT INTO chat_messages
+       (id,tenant_id,thread_id,source_channel,external_contact_id,visitor_ref,role,message,metadata)
+       VALUES($1,$2,$3,$4,$5,$6,'user',$7,$8::jsonb)`,
+      [uid(),tenantId,thread.rows[0].id,channel,from,from,event.body,
+       JSON.stringify({provider:channel,providerMessageId:event.externalMessageId,providerTimestampMs:event.providerTimestampMs})]);
+    await client.query('COMMIT');
+    accepted++;
+   }catch(e){await client.query('ROLLBACK').catch(()=>{});throw e}
+   finally{client.release();}
+  }
+  return res.json({ok:true,accepted});
+ }catch(e){console.error('Signed Meta intake failed',e?.name||'error');
+  return res.status(503).json({error:'Webhook processing failed'})}
+});
+/* Owner-approved Meta replies are never triggered by the incoming webhook. */
+app.post('/api/app/native/inbox/:id/meta-reply',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Workspace not found'});
+  const result=await sendApprovedNativeMeta(pool,{
+    tenantId:tr.rows[0].id,threadId:String(req.params.id||''),
+    deliveryId:req.body?.deliveryId,userId:req.user.sub,
+    text:req.body?.text,approved:req.body?.approved===true,
+    getAccessToken:encrypted=>decryptSecret(encrypted)
+  });
+  return res.status(result.status==='unknown'?202:200).json(result);
+ }catch(e){
+  console.error('Native Meta outbound failed',e?.name||'error');
+  return res.status(e instanceof TypeError?400:500).json({
+   error:'Meta reply not confirmed. Review permissions and message history before trying again.'
+  });
+ }
+});
+/* Consent-based Gmail and Microsoft 365 mailbox read access.
+   Both providers feed the existing Respondo Inbox; no outbound email. */
+const NATIVE_MAIL_STATE_COOKIE='respondo_native_mail_oauth_state';
+function nativeMailOauthConfig(provider){
+ if(provider==='gmail')return {
+  clientId:String(process.env.GOOGLE_CLIENT_ID||'').trim(),
+  clientSecret:String(process.env.GOOGLE_CLIENT_SECRET||'').trim(),
+  authorize:'https://accounts.google.com/o/oauth2/v2/auth',
+  tokenUrl:'https://oauth2.googleapis.com/token',
+  scope:'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send'
+ };
+ if(provider==='outlook')return {
+  clientId:String(process.env.MICROSOFT_CLIENT_ID||'').trim(),
+  clientSecret:String(process.env.MICROSOFT_CLIENT_SECRET||'').trim(),
+  authorize:'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+  tokenUrl:'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+  scope:'offline_access User.Read Mail.Read Mail.Send'
+ };
+ return null;
+}
+const nativeMailRedirect=provider=>BASE+'/api/app/native/mail/'+provider+'/callback';
+app.get('/api/app/native/mail/status',auth,ownerOnly,subscribed,async(req,res)=>{
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const rows=await q('SELECT provider,expires_at,last_verified_at,last_synced_at,last_sync_error FROM respondo_native_mail_credentials WHERE tenant_id=$1 ORDER BY provider',[tr.rows[0].id]);
+  return res.json({connections:rows.rows.map(x=>({
+   provider:x.provider,connected:true,lastVerifiedAt:x.last_verified_at,lastSyncedAt:x.last_synced_at,
+   expiresAt:x.expires_at,lastSyncError:x.last_sync_error||null
+  }))});
+ }catch(e){return res.status(500).json({error:'Sähköpostiyhteyksiä ei voitu hakea.'})}
+});
+app.get('/api/app/native/mail/:provider/start',auth,ownerOnly,subscribed,async(req,res)=>{
+ const provider=String(req.params.provider||'');
+ const config=nativeMailOauthConfig(provider);
+ if(!config||!config.clientId||!config.clientSecret)
+  return res.redirect('/app?section=automation&native_mail=not_configured');
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.redirect('/app?section=automation&native_mail=missing_tenant');
+  const nonce=crypto.randomBytes(20).toString('hex');
+  const state=jwt.sign({flow:'native_mail',provider,nonce,userId:req.user.sub,tenantId:tr.rows[0].id},
+    JWT,{expiresIn:'10m'});
+  res.cookie(NATIVE_MAIL_STATE_COOKIE,nonce,{httpOnly:true,
+   secure:process.env.NODE_ENV==='production',sameSite:'lax',maxAge:600000});
+  const url=new URL(config.authorize);
+  url.search=new URLSearchParams({
+   client_id:config.clientId,redirect_uri:nativeMailRedirect(provider),response_type:'code',
+   scope:config.scope,state,prompt:'consent',access_type:'offline'
+  }).toString();
+  return res.redirect(url.toString());
+ }catch(e){console.error('Native mail OAuth start failed',e?.name||'error');
+  return res.redirect('/app?section=automation&native_mail=failed')}
+});
+app.get('/api/app/native/mail/:provider/callback',async(req,res)=>{
+ const provider=String(req.params.provider||'');
+ const config=nativeMailOauthConfig(provider);
+ const destination='/app?section=automation&native_mail=';
+ if(!config||!config.clientId||!config.clientSecret)return res.redirect(destination+'not_configured');
+ try{
+  const state=jwt.verify(String(req.query.state||''),JWT);
+  const cookie=cookies(req)[NATIVE_MAIL_STATE_COOKIE];
+  if(!cookie||state.flow!=='native_mail'||state.provider!==provider||state.nonce!==cookie)
+   return res.redirect(destination+'invalid_state');
+  res.clearCookie(NATIVE_MAIL_STATE_COOKIE);
+  const session=cookies(req)[COOKIE];
+  const user=session?jwt.verify(session,JWT):null;
+  if(!user?.sub||user.sub!==state.userId)return res.redirect(destination+'invalid_session');
+  const tenant=await q(`SELECT id FROM tenants WHERE owner_user_id=$1 AND id=$2
+   AND active=true AND subscription_status IN ('active','trialing')`,
+   [state.userId,state.tenantId]);
+  if(!tenant.rowCount)return res.redirect(destination+'missing_tenant');
+  const code=String(req.query.code||'');
+  if(req.query.error||!code)return res.redirect(destination+'cancelled');
+  const response=await fetch(config.tokenUrl,{
+   method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+   body:new URLSearchParams({
+    client_id:config.clientId,client_secret:config.clientSecret,
+    code,grant_type:'authorization_code',redirect_uri:nativeMailRedirect(provider)
+   }),signal:AbortSignal.timeout(9000)
+  });
+  if(!response.ok)throw Error('token_exchange_failed');
+  const tokens=await response.json();
+  const access=String(tokens.access_token||''),refresh=String(tokens.refresh_token||'');
+  if(!access)throw Error('missing_access');
+  const grantedScopes=String(tokens.scope||'').trim();
+  const stored=await q(`SELECT refresh_ciphertext FROM respondo_native_mail_credentials
+    WHERE tenant_id=$1 AND provider=$2`,[tenant.rows[0].id,provider]);
+  if(!refresh&&!stored.rows[0]?.refresh_ciphertext)throw Error('missing_refresh');
+  await getNativeMailboxMessages(provider,access,{limit:1});
+  await q(`INSERT INTO respondo_native_mail_credentials
+   (tenant_id,provider,access_ciphertext,refresh_ciphertext,expires_at,granted_scopes,last_verified_at)
+   VALUES($1,$2,$3,$4,$5,$6,NOW()) ON CONFLICT(tenant_id,provider)
+   DO UPDATE SET access_ciphertext=EXCLUDED.access_ciphertext,
+    refresh_ciphertext=EXCLUDED.refresh_ciphertext,
+    expires_at=EXCLUDED.expires_at,granted_scopes=EXCLUDED.granted_scopes,
+    next_cursor=NULL,last_verified_at=NOW()`,
+   [tenant.rows[0].id,provider,encryptSecret(access),
+    refresh?encryptSecret(refresh):stored.rows[0].refresh_ciphertext,
+    new Date(Date.now()+Number(tokens.expires_in||3600)*1000),grantedScopes]);
+  return res.redirect(destination+'connected');
+ }catch(e){console.error('Native mailbox OAuth failed',e?.name||'error');
+  return res.redirect(destination+'failed')}
+});
+async function nativeMailRefresh(tenantId,provider,credential){
+ let access=decryptSecret(credential.access_ciphertext);
+ const expires=credential.expires_at?new Date(credential.expires_at).getTime():0;
+ if(access&&expires>Date.now()+60000)return access;
+ const cfg=nativeMailOauthConfig(provider);
+ const refresh=decryptSecret(credential.refresh_ciphertext);
+ if(!cfg?.clientId||!cfg.clientSecret||!refresh)throw Error('native_mail_refresh_unavailable');
+ const payload={client_id:cfg.clientId,client_secret:cfg.clientSecret,
+  refresh_token:refresh,grant_type:'refresh_token'};
+ if(provider==='outlook')payload.scope=cfg.scope;
+ const response=await fetch(cfg.tokenUrl,{method:'POST',
+  headers:{'Content-Type':'application/x-www-form-urlencoded'},
+  body:new URLSearchParams(payload),signal:AbortSignal.timeout(9000)});
+ if(!response.ok)throw Error('native_mail_refresh_failed');
+ const auth=await response.json();
+ access=String(auth.access_token||'');
+ if(!access)throw Error('native_mail_access_missing');
+ await q(`UPDATE respondo_native_mail_credentials SET access_ciphertext=$1,
+  refresh_ciphertext=COALESCE($2,refresh_ciphertext),expires_at=$3
+  WHERE tenant_id=$4 AND provider=$5`,
+  [encryptSecret(access),auth.refresh_token?encryptSecret(auth.refresh_token):null,
+   new Date(Date.now()+Number(auth.expires_in||3600)*1000),tenantId,provider]);
+ return access;
+}
+app.post('/api/app/native/mail/:provider/sync',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
+ const provider=String(req.params.provider||'');
+ if(!nativeMailboxProvider(provider))return res.status(400).json({error:'Tuntematon palvelu.'});
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const tenantId=tr.rows[0].id;
+  const rows=await q('SELECT * FROM respondo_native_mail_credentials WHERE tenant_id=$1 AND provider=$2',[tenantId,provider]);
+  if(!rows.rowCount)return res.status(409).json({error:'Yhdistä sähköposti ensin.'});
+  const access=await nativeMailRefresh(tenantId,provider,rows.rows[0]);
+  const items=await getNativeMailboxMessages(provider,access,{limit:20});
+  const result=await storeNativeMailboxMessages(pool,tenantId,provider,items);
+  await q('UPDATE respondo_native_mail_credentials SET last_synced_at=NOW(),last_verified_at=NOW(),last_sync_error=NULL WHERE tenant_id=$1 AND provider=$2',[tenantId,provider]);
+  return res.json({...result,reviewRequired:true});
+ }catch(e){console.error('Native mail sync failed',e?.name||'error');
+  return res.status(502).json({error:'Sähköpostien haku epäonnistui. Yhdistä tarvittaessa uudelleen.'})}
+});
+app.delete('/api/app/native/mail/:provider',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
+ const provider=String(req.params.provider||'');
+ if(!nativeMailboxProvider(provider))return res.status(400).json({error:'Tuntematon palvelu.'});
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  await q('DELETE FROM respondo_native_mail_credentials WHERE tenant_id=$1 AND provider=$2',[tr.rows[0].id,provider]);
+  return res.json({ok:true,connected:false});
+ }catch(e){return res.status(500).json({error:'Yhteyttä ei voitu katkaista.'})}
+});
+/* Owner-authorized single email response. Never automatically sent by polling or the AI. */
+app.post('/api/app/native/inbox/:id/mail-reply',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const tenantId=tr.rows[0].id;
+  const threadId=String(req.params.id||'');
+  if(!/^[0-9a-f-]{36}$/i.test(threadId))return res.status(400).json({error:'Invalid thread'});
+  if(req.body?.approved!==true)return res.status(400).json({error:'Explicit reply approval required'});
+  const msg=await q(`SELECT metadata FROM chat_messages WHERE tenant_id=$1 AND thread_id=$2
+    AND role='user' AND source_channel='email' ORDER BY created_at DESC LIMIT 1`,[tenantId,threadId]);
+  const provider=msg.rows[0]?.metadata?.provider;
+  if(!nativeMailboxProvider(provider))return res.status(409).json({error:'Connected mail provider required'});
+  const creds=await q('SELECT * FROM respondo_native_mail_credentials WHERE tenant_id=$1 AND provider=$2',[tenantId,provider]);
+  if(!creds.rowCount)return res.status(409).json({error:'Connect your mailbox first'});
+  const permission=provider==='gmail'?'https://www.googleapis.com/auth/gmail.send':'Mail.Send';
+  if(!String(creds.rows[0].granted_scopes||'').split(/\\s+/).includes(permission))
+   return res.status(409).json({error:'Reconnect the mailbox and approve reply-send permission'});
+  const token=await nativeMailRefresh(tenantId,provider,creds.rows[0]);
+  const result=await sendApprovedNativeMail(pool,{tenantId,threadId,
+   deliveryId:req.body.deliveryId,userId:req.user.sub,
+   text:req.body.text,approved:req.body.approved,token});
+  return res.status(result.status==='unknown'?202:200).json(result);
+ }catch(e){
+  console.error('Native mail outbound',e?.name||'error');
+  return res.status(e instanceof TypeError?400:500).json({error:'Email delivery was not confirmed. Check your mailbox before retrying.'});
+ }
+});
+
+/* Consent-based Google Drive and SharePoint document import.
+   Only owner-approved selected text files become Respondo-native knowledge. */
+const NATIVE_CLOUD_STATE_COOKIE='respondo_native_cloud_oauth_state';
+function cloudOauthConfig(provider){
+ if(provider==='google_drive')return {
+  clientId:String(process.env.GOOGLE_CLIENT_ID||'').trim(),
+  clientSecret:String(process.env.GOOGLE_CLIENT_SECRET||'').trim(),
+  authorize:'https://accounts.google.com/o/oauth2/v2/auth',
+  tokenUrl:'https://oauth2.googleapis.com/token',
+  scope:'https://www.googleapis.com/auth/drive.readonly'
+ };
+ if(provider==='sharepoint')return {
+  clientId:String(process.env.MICROSOFT_CLIENT_ID||'').trim(),
+  clientSecret:String(process.env.MICROSOFT_CLIENT_SECRET||'').trim(),
+  authorize:'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+  tokenUrl:'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+  scope:'offline_access User.Read Files.Read.All Sites.Read.All'
+ };
+ return null;
+}
+const cloudRedirect=provider=>BASE+'/api/app/native/cloud/'+provider+'/callback';
+async function cloudTenant(ownerId){
+ const result=await q(`SELECT id FROM tenants WHERE owner_user_id=$1
+  AND id=active_tenant_for_user($1) AND active=true AND
+  subscription_status IN ('active','trialing')`,[ownerId]);
+ return result.rows[0]?.id||null;
+}
+async function nativeCloudAccess(tenantId,provider,cred){
+ const expires=cred.expires_at?new Date(cred.expires_at).getTime():0;
+ if(expires>Date.now()+60000)return decryptSecret(cred.access_ciphertext);
+ const cfg=cloudOauthConfig(provider);
+ const refresh=decryptSecret(cred.refresh_ciphertext);
+ if(!cfg?.clientId||!cfg.clientSecret||!refresh)throw Error('cloud_refresh_unavailable');
+ const p=new URLSearchParams({grant_type:'refresh_token',refresh_token:refresh,
+  client_id:cfg.clientId,client_secret:cfg.clientSecret});
+ if(provider==='sharepoint')p.set('scope',cfg.scope);
+ const response=await fetch(cfg.tokenUrl,{method:'POST',
+  headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p,
+  redirect:'error',signal:AbortSignal.timeout(9000)});
+ if(!response.ok)throw Error('cloud_refresh_failed');
+ const tokens=await response.json();
+ const access=String(tokens.access_token||'');
+ if(!access)throw Error('cloud_access_missing');
+ await q(`UPDATE respondo_native_cloud_credentials SET access_ciphertext=$1,
+  refresh_ciphertext=COALESCE($2,refresh_ciphertext),expires_at=$3
+  WHERE tenant_id=$4 AND provider=$5`,
+  [encryptSecret(access),tokens.refresh_token?encryptSecret(tokens.refresh_token):null,
+   new Date(Date.now()+Number(tokens.expires_in||3600)*1000),tenantId,provider]);
+ return access;
+}
+app.get('/api/app/native/cloud/status',auth,ownerOnly,subscribed,nativeEndpoint(async id=>{
+ const rows=await q(`SELECT provider,site_id,last_verified_at FROM respondo_native_cloud_credentials
+  WHERE tenant_id=$1 ORDER BY provider`,[id]);
+ return {connections:rows.rows.map(x=>({
+  provider:x.provider,siteId:x.site_id,lastVerifiedAt:x.last_verified_at,connected:true
+ }))};
+}));
+app.get('/api/app/native/cloud/:provider/start',auth,ownerOnly,subscribed,async(req,res)=>{
+ const provider=String(req.params.provider||''),cfg=cloudOauthConfig(provider);
+ if(!cfg?.clientId||!cfg.clientSecret)return res.redirect('/app?section=automation&cloud=not_configured');
+ const site=String(req.query.siteId||'');
+ if(provider==='sharepoint'&&!validSiteId(site))return res.redirect('/app?section=automation&cloud=invalid_site');
+ try{
+  const tenantId=await cloudTenant(req.user.sub);
+  if(!tenantId)return res.redirect('/app?section=automation&cloud=missing_tenant');
+  const nonce=crypto.randomBytes(20).toString('hex');
+  const state=jwt.sign({flow:'native_cloud',provider,nonce,site,
+   userId:req.user.sub,tenantId},JWT,{expiresIn:'10m'});
+  res.cookie(NATIVE_CLOUD_STATE_COOKIE,nonce,{httpOnly:true,
+   secure:process.env.NODE_ENV==='production',sameSite:'lax',maxAge:600000});
+  const url=new URL(cfg.authorize);
+  url.search=new URLSearchParams({client_id:cfg.clientId,
+   redirect_uri:cloudRedirect(provider),response_type:'code',
+   scope:cfg.scope,state,prompt:'consent',access_type:'offline'}).toString();
+  return res.redirect(url.toString());
+ }catch(e){console.error('Cloud OAuth start failed',e?.name||'error');
+  return res.redirect('/app?section=automation&cloud=failed')}
+});
+app.get('/api/app/native/cloud/:provider/callback',async(req,res)=>{
+ const provider=String(req.params.provider||''),cfg=cloudOauthConfig(provider);
+ const dst='/app?section=automation&cloud=';
+ if(!cfg?.clientId||!cfg.clientSecret)return res.redirect(dst+'not_configured');
+ try{
+  const state=jwt.verify(String(req.query.state||''),JWT);
+  const cookie=cookies(req)[NATIVE_CLOUD_STATE_COOKIE];
+  if(!cookie||state.flow!=='native_cloud'||state.provider!==provider||
+   state.nonce!==cookie)return res.redirect(dst+'invalid_state');
+  res.clearCookie(NATIVE_CLOUD_STATE_COOKIE);
+  const session=cookies(req)[COOKIE];
+  const user=session?jwt.verify(session,JWT):null;
+  if(!user?.sub||user.sub!==state.userId)return res.redirect(dst+'invalid_session');
+  const tr=await q(`SELECT id FROM tenants WHERE id=$1 AND owner_user_id=$2
+   AND active=true AND subscription_status IN ('active','trialing')`,
+   [state.tenantId,state.userId]);
+  if(!tr.rowCount)return res.redirect(dst+'missing_tenant');
+  if(provider==='sharepoint'&&!validSiteId(state.site))return res.redirect(dst+'invalid_site');
+  const code=String(req.query.code||'');
+  if(req.query.error||!code)return res.redirect(dst+'cancelled');
+  const response=await fetch(cfg.tokenUrl,{method:'POST',
+   headers:{'Content-Type':'application/x-www-form-urlencoded'},
+   body:new URLSearchParams({client_id:cfg.clientId,client_secret:cfg.clientSecret,
+    code,grant_type:'authorization_code',redirect_uri:cloudRedirect(provider)}),
+   redirect:'error',signal:AbortSignal.timeout(9000)});
+  if(!response.ok)throw Error('cloud_code_exchange_failed');
+  const tokens=await response.json();
+  const access=String(tokens.access_token||''),refresh=String(tokens.refresh_token||'');
+  if(!access)throw Error('cloud_access_missing');
+  const prior=await q(`SELECT refresh_ciphertext FROM respondo_native_cloud_credentials
+   WHERE tenant_id=$1 AND provider=$2`,[state.tenantId,provider]);
+  if(!refresh&&!prior.rows[0]?.refresh_ciphertext)throw Error('cloud_refresh_missing');
+  await readProvider({provider,token:access,resourceId:provider==='sharepoint'?state.site:null,limit:1});
+  await q(`INSERT INTO respondo_native_cloud_credentials
+   (tenant_id,provider,site_id,access_ciphertext,refresh_ciphertext,
+    expires_at,granted_scopes)
+   VALUES($1,$2,$3,$4,$5,$6,$7)
+   ON CONFLICT(tenant_id,provider) DO UPDATE SET
+   site_id=EXCLUDED.site_id,access_ciphertext=EXCLUDED.access_ciphertext,
+   refresh_ciphertext=EXCLUDED.refresh_ciphertext,expires_at=EXCLUDED.expires_at,
+   granted_scopes=EXCLUDED.granted_scopes,last_verified_at=NOW()`,
+   [state.tenantId,provider,provider==='sharepoint'?state.site:null,
+    encryptSecret(access),refresh?encryptSecret(refresh):prior.rows[0].refresh_ciphertext,
+    new Date(Date.now()+Number(tokens.expires_in||3600)*1000),
+    String(tokens.scope||'').slice(0,2000)]);
+  return res.redirect(dst+'connected');
+ }catch(e){console.error('Cloud OAuth callback failed',e?.name||'error');
+  return res.redirect(dst+'failed')}
+});
+async function nativeCloudFiles(id,provider,cursor=null){
+ if(!cloudProvider(provider))throw TypeError('Unsupported cloud provider');
+ const credentials=await q(`SELECT * FROM respondo_native_cloud_credentials
+  WHERE tenant_id=$1 AND provider=$2`,[id,provider]);
+ if(!credentials.rowCount)throw TypeError('Connect the cloud provider first');
+ const cred=credentials.rows[0];
+ const token=await nativeCloudAccess(id,provider,cred);
+ const data=await readProvider({provider,token,resourceId:cred.site_id,limit:40,cursor});
+ const nextCursor=provider==='google_drive'?data.nextPageToken:data['@odata.nextLink'];
+ return {provider,token,site:cred.site_id,files:normalizeCloudFileList(provider,data),
+  nextCursor:typeof nextCursor==='string'&&nextCursor.length<=4000?nextCursor:null};
+}
+app.get('/api/app/native/cloud/:provider/files',auth,ownerOnly,subscribed,nativeEndpoint(async(id,req)=>{
+ const x=await nativeCloudFiles(id,req.params.provider,req.query.cursor||null);
+ return {provider:x.provider,files:x.files,nextCursor:x.nextCursor,requiresApproval:true};
+}));
+app.post('/api/app/native/cloud/:provider/import',auth,ownerOnly,subscribed,nativeWriteLimiter,
+ nativeEndpoint(async(id,req)=>{
+  if(req.body?.approved!==true)throw TypeError('Explicit publication approval required');
+  const provider=String(req.params.provider||'');
+  const fileId=String(req.body.fileId||'');
+  if(!/^[A-Za-z0-9._-]{1,180}$/.test(fileId))throw TypeError('Invalid file ID');
+  const data=await nativeCloudFiles(id,provider,req.body.cursor||null);
+  const file=data.files.find(x=>x.id===fileId);
+  if(!file)throw TypeError('Select an approved text file from the listing');
+  const body=await readApprovedCloudText(provider,data.token,file,{site:data.site});
+  if(body.length<20)throw TypeError('File has no usable factual text');
+  const stored=await saveNativeDocument(pool,id,{
+   title:file.name,body,publish:true
+  });
+  return {provider,fileId,documentId:stored.id,published:true};
+ }));
+app.delete('/api/app/native/cloud/:provider',auth,ownerOnly,subscribed,nativeWriteLimiter,
+ nativeEndpoint(async(id,req)=>{
+  if(!cloudProvider(req.params.provider))throw TypeError('Unsupported provider');
+  await q('DELETE FROM respondo_native_cloud_credentials WHERE tenant_id=$1 AND provider=$2',
+   [id,req.params.provider]);return {connected:false};
+ }));
+
 /* Respondo's own calendar, independent of third-party scheduling. */
 app.get('/api/app/native/calendar',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>nativeCalendarOverview(pool,id)));
@@ -9726,6 +10195,11 @@ app.get('/api/app/native/quality/repair',auth,ownerOnly,subscribed,nativeEndpoin
   id=>qualityRepairOverview(pool,id)));
 app.post('/api/app/native/quality/repair',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>approveQualityRepair(pool,id,req.user.sub,req.body||{})));
+/* Read-only CRM preview and explicit approved subset import to Respondo's own CRM. */
+app.get('/api/app/native/crm/import-preview',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>previewNativeCrmImport(pool,id)));
+app.post('/api/app/native/crm/import',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>importNativeCrmContacts(pool,id,req.body||{})));
 app.post('/api/app/native/contacts',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>createNativeContact(pool,id,req.body||{})));
 app.patch('/api/app/native/contacts/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -17181,6 +17655,32 @@ async function ensureRuntimeSchema() {
     UNIQUE(tenant_id,starts_at)
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_booking_slots_tenant_start ON booking_slots(tenant_id, starts_at)');
+  await q(`CREATE TABLE IF NOT EXISTS respondo_meta_connections(
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL CHECK(provider IN ('whatsapp','instagram','facebook')),
+    resource_id TEXT NOT NULL,
+    access_token_encrypted TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(tenant_id,provider),
+    UNIQUE(provider,resource_id)
+  )`);
+  await q(`CREATE TABLE IF NOT EXISTS respondo_meta_inbound_events(
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL,
+    external_message_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(tenant_id,provider,external_message_id)
+  )`);
+  for(const table of ['respondo_meta_connections','respondo_meta_inbound_events']){
+    await q('ALTER TABLE '+table+' ENABLE ROW LEVEL SECURITY');
+    await q('REVOKE ALL PRIVILEGES ON TABLE '+table+' FROM PUBLIC');
+  }
+  const restricted=await q("SELECT rolname FROM pg_roles WHERE rolname=ANY($1::text[])",[['anon','authenticated','service_role']]);
+  for(const role of restricted.rows||[]){
+    if(!['anon','authenticated','service_role'].includes(role.rolname))continue;
+    for(const table of ['respondo_meta_connections','respondo_meta_inbound_events'])
+      await q('REVOKE ALL PRIVILEGES ON TABLE '+table+' FROM '+role.rolname);
+  }
   await q(`CREATE TABLE IF NOT EXISTS chat_threads (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -17274,9 +17774,59 @@ async function withOwnerSeedLock(fn) {
   }
 }
 
+// Native mailbox polling shares one Postgres advisory lock across Railway replicas.
+// Inbound mail is review-only; this worker never sends email.
+async function runNativeMailPolling(){
+ if(!pool||process.env.NODE_ENV!=='production'||process.env.RESPONDO_NATIVE_MAIL_POLL_ENABLED==='false')return;
+ const lockClient=await pool.connect();
+ let acquired=false;
+ try{
+  const result=await lockClient.query("SELECT pg_try_advisory_lock(hashtext('respondo_native_mail_poll_v1')) AS acquired");
+  acquired=Boolean(result.rows[0]?.acquired);
+  if(!acquired)return;
+  const due=await q(`SELECT c.* FROM respondo_native_mail_credentials c
+   JOIN tenants t ON t.id=c.tenant_id
+   WHERE t.active=true AND t.subscription_status IN ('active','trialing')
+   AND (c.last_synced_at IS NULL OR c.last_synced_at < NOW()-INTERVAL '5 minutes')
+   ORDER BY c.last_synced_at ASC NULLS FIRST LIMIT 20`);
+  for(const connection of due.rows){
+   try{
+    const token=await nativeMailRefresh(connection.tenant_id,connection.provider,connection);
+    const batch=await getNativeMailboxMessages(connection.provider,token,{
+      limit:40,cursor:connection.next_cursor||null,includeCursor:true
+    });
+    await storeNativeMailboxMessages(pool,connection.tenant_id,connection.provider,batch.items);
+    // Advance only AFTER every item has been durably imported or deduplicated.
+    // At end of listing, restart from newest on the next cycle.
+    await q(`UPDATE respondo_native_mail_credentials
+      SET last_synced_at=NOW(),last_verified_at=NOW(),last_sync_error=NULL,next_cursor=$3
+      WHERE tenant_id=$1 AND provider=$2`,
+      [connection.tenant_id,connection.provider,batch.nextCursor]);
+   }catch(e){
+    const category=String(e?.message||'sync_error').slice(0,80).replace(/[\r\n]/g,' ');
+    await q(`UPDATE respondo_native_mail_credentials
+      SET last_synced_at=NOW(),last_sync_error=$3,
+      next_cursor=CASE WHEN $3 IN ('invalid_mail_cursor','provider_http_400','provider_http_410') THEN NULL ELSE next_cursor END
+      WHERE tenant_id=$1 AND provider=$2`,
+      [connection.tenant_id,connection.provider,category]).catch(()=>{});
+    console.error('Native mailbox polling failed',connection.provider,e?.name||'error');
+   }
+  }
+ }catch(e){console.error('Native mail polling cycle failed',e?.name||'error')}
+ finally{
+  if(acquired)await lockClient.query("SELECT pg_advisory_unlock(hashtext('respondo_native_mail_poll_v1'))").catch(()=>{});
+  lockClient.release();
+ }
+}
+
 async function start() {
   try {
     await withRuntimeSchemaLock(() => ensureRuntimeSchema());
+    await withRuntimeSchemaLock(() => ensureNativeMailBridgeSchema(pool));
+    await withRuntimeSchemaLock(() => ensureNativeMailDeliverySchema(pool));
+    await withRuntimeSchemaLock(() => ensureNativeMetaOutboundSchema(pool));
+    await withRuntimeSchemaLock(() => ensureNativeCrmImportSchema(pool));
+    await withRuntimeSchemaLock(() => ensureNativeCloudSchema(pool));
     await withRuntimeSchemaLock(() => ensureOnboardingCheckupSchema(q));
     await withRuntimeSchemaLock(async () => {
       await seedAndLoadIntentUtterances();
@@ -17331,6 +17881,10 @@ async function start() {
     checkupTimer.unref();
     const checkupStartup=setTimeout(sendDueCheckups,10000);
     checkupStartup.unref();
+    const mailPollTimer=setInterval(()=>void runNativeMailPolling(),5*60*1000);
+    mailPollTimer.unref();
+    const mailPollStartup=setTimeout(()=>void runNativeMailPolling(),45000);
+    mailPollStartup.unref();
   }
 }
 

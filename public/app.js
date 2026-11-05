@@ -5095,6 +5095,42 @@ async function dashboard(options = {}) {
           <div id="respondoCrmConnectorMount" class="respondo-crm-connector-mount"></div>
         </article>
 
+        <article class="panel" id="native-mail-connections" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
+          <div class="panel-head">
+            <div>
+              <small>RESPONDO NATIVE MAIL</small>
+              <h2>${appText('Gmail ja Microsoft 365','Gmail och Microsoft 365','Gmail and Microsoft 365')}</h2>
+              <p>${appText('Yhdistä sähköposti sallimalla viestien lukeminen ja erikseen hyväksytyt vastaukset. Respondo hakee saapuvat viestit omaan Inboxiin. Viestejä ei lähetetä automaattisesti; yrityksen omistajan pitää hyväksyä jokainen lähetys.','Anslut e-post med behörighet att läsa och skicka uttryckligen godkända svar. Respondo hämtar inkommande meddelanden till sin inkorg. Varje utgående meddelande kräver ägarens godkännande.','Authorize mailbox read access and individually approved replies. Incoming messages are imported into Respondo Inbox. Each outgoing email requires explicit owner approval; automatic sending is disabled.')}</p>
+            </div>
+          </div>
+          <div class="calendar-sync-actions" style="display:flex;gap:12px;flex-wrap:wrap">
+            <a class="btn dashboard-action" href="/api/app/native/mail/gmail/start">${appText('Yhdistä Gmail','Anslut Gmail','Connect Gmail')}</a>
+            <a class="btn dashboard-action" href="/api/app/native/mail/outlook/start">${appText('Yhdistä Outlook','Anslut Outlook','Connect Outlook')}</a>
+            <button type="button" class="btn integration-test-btn" data-native-mail-sync="gmail">${appText('Hae Gmail-viestit','Hämta Gmail-meddelanden','Fetch Gmail messages')}</button>
+            <button type="button" class="btn integration-test-btn" data-native-mail-sync="outlook">${appText('Hae Outlook-viestit','Hämta Outlook-meddelanden','Fetch Outlook messages')}</button>
+          </div>
+          <div id="nativeMailStatus" aria-live="polite"></div>
+        </article>
+        <article class="panel" id="meta-native-connections" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
+          <div class="panel-head">
+            <div>
+              <small>META BUSINESS</small>
+              <h2>${appText('WhatsApp- ja Instagram-viestit','WhatsApp- och Instagram-meddelanden','WhatsApp and Instagram messages')}</h2>
+              <p>${appText('Yhdistä yrityksesi kanava. Saapuvat viestit näkyvät Respondon omassa Inboxissa tarkistettavina. Tämä ei lähetä vastauksia automaattisesti.','Anslut företagets kanal. Inkommande meddelanden visas i Respondos egna inkorg för granskning. Inga svar skickas automatiskt.','Connect a business channel. Incoming messages appear in the Respondo inbox for review. Automatic outbound replies are disabled.')}</p>
+            </div>
+          </div>
+          <form id="nativeMetaConnectForm" class="formgrid" autocomplete="off">
+            <div class="field">
+              <label>${appText('Kanava','Kanal','Channel')}</label>
+              <select name="provider"><option value="whatsapp">WhatsApp</option><option value="instagram">Instagram</option><option value="facebook">Facebook</option></select>
+            </div>
+            <div class="field"><label>${appText('Kanavatunnus','Kanal-ID','Channel resource ID')}</label><input name="resourceId" required pattern="[0-9]{5,30}" maxlength="30" autocomplete="off"></div>
+            <div class="field"><label>${appText('Meta-pääsytunnus','Meta-åtkomsttoken','Meta access token')}</label><input name="accessToken" type="password" minlength="10" required autocomplete="new-password"></div>
+            <div class="field full"><button class="btn dashboard-action" type="submit">${appText('Vahvista kanava','Verifiera kanalen','Verify channel')}</button></div>
+            <div class="field full" id="nativeMetaConnectMsg" aria-live="polite"></div>
+          </form>
+          <div id="nativeMetaStatus" aria-live="polite"></div>
+        </article>
         <article class="panel" id="business-integrations" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
           <div class="panel-head">
             <div>
@@ -8577,6 +8613,68 @@ async function route() {
       }finally{
         button.disabled=false;
       }
+    });
+
+    const loadNativeMailStatus=async()=>{
+      const el=$('#nativeMailStatus');if(!el)return;
+      try{
+        const response=await api('/api/app/native/mail/status');
+        const list=Array.isArray(response.connections)?response.connections:[];
+        el.replaceChildren();
+        if(!list.length){el.textContent=appText('Sähköposteja ei ole yhdistetty.','Ingen e-post är ansluten.','No mailboxes connected.');return;}
+        for(const item of list){
+          const p=document.createElement('p');
+          p.textContent=item.provider+' · '+appText('Lukuyhteys tallennettu','Läsanslutning sparad','Read connection saved');
+          el.appendChild(p);
+        }
+      }catch(error){el.textContent=error.message;}
+    };
+    if($('#nativeMailStatus'))loadNativeMailStatus();
+    document.querySelectorAll('[data-native-mail-sync]').forEach(button=>{
+      button.addEventListener('click',async()=>{
+        const provider=button.dataset.nativeMailSync;
+        button.disabled=true;
+        const el=$('#nativeMailStatus');
+        try{
+          const result=await api('/api/app/native/mail/'+encodeURIComponent(provider)+'/sync',
+            {method:'POST',body:'{}'});
+          if(el)el.textContent=appText('Uusia tarkistettavia viestejä: ','Nya meddelanden för granskning: ','New messages for review: ')+result.imported;
+        }catch(error){if(el)el.textContent=error.message;}
+        finally{button.disabled=false;}
+      });
+    });
+    const loadNativeMetaStatus=async()=>{
+      const el=$('#nativeMetaStatus');if(!el)return;
+      try{
+        const d=await api('/api/app/native/meta/status');
+        el.replaceChildren();
+        const list=Array.isArray(d.channels)?d.channels:[];
+        if(!list.length){el.textContent=appText('Ei yhdistettyjä kanavia.','Inga anslutna kanaler.','No channels connected.');return;}
+        for(const item of list){
+          const p=document.createElement('p');
+          p.textContent=item.provider+' · '+item.resourceId+' · '+
+            (item.deliveryEnabled?appText('Webhook asetettu','Webhook konfigurerad','Webhook configured'):
+             appText('Webhook-asetukset puuttuvat palvelimelta','Webhook saknas på servern','Webhook server settings missing'));
+          el.appendChild(p);
+        }
+      }catch(error){el.textContent=error.message}
+    };
+    if($('#nativeMetaConnectForm'))loadNativeMetaStatus();
+    $('#nativeMetaConnectForm')?.addEventListener('submit',async e=>{
+      e.preventDefault();const form=new FormData(e.currentTarget);
+      const button=e.currentTarget.querySelector('button[type=submit]');button.disabled=true;
+      const el=$('#nativeMetaConnectMsg');
+      try{
+        const r=await api('/api/app/native/meta/connect',{method:'POST',body:JSON.stringify({
+          provider:form.get('provider'),resourceId:form.get('resourceId'),accessToken:form.get('accessToken')
+        })});
+        e.currentTarget.elements.accessToken.value='';
+        if(el)el.textContent=r.connected?
+          appText('Kanava vahvistettu. Meta webhook täytyy myös määrittää.','Kanalen verifierad. Meta-webhook måste också konfigureras.','Channel verified. Meta webhook setup is also required.'):
+          appText('Yhteys ei ole valmis.','Anslutningen är inte klar.','Connection incomplete.');
+        await loadNativeMetaStatus();
+      }catch(error){if(el)el.textContent=error.message}
+      finally{button.disabled=false;}
     });
 
     $('#integrationsForm')?.addEventListener('submit', async (e) => {
