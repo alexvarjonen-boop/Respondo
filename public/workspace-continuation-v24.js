@@ -291,7 +291,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
               ['setup',translate('Botti ja yritys','Bot och företag','Bot and business'),translate('Nimi, kuvake ja aloitusviesti','Namn, ikon och välkomstmeddelande','Name, icon and greeting')],
               ['answers',translate('Tietopohja','Kunskapsbas','Knowledge base'),translate('Botin vastaukset ja tiedot','Bottens svar och information','Bot answers and information')],
               ['team',translate('Henkilökunta','Personal','Team'),translate('Työntekijät ja käyttöoikeudet','Anställda och åtkomst','Staff and access')],
-              ['integrations',translate('Yhdistetyt palvelut','Anslutna tjänster','Connected services'),translate('Helppo käyttöönotto ja yhteydet','Enkel installation och anslutningar','Guided setup and connections')],
+              ['integrations',translate('Respondon työkalut','Respondos verktyg','Respondo tools'),translate('Asiakkaat, viestit, kalenteri ja automaatiot','Kunder, meddelanden, kalender och automatiseringar','Customers, messages, calendar and automations')],
               ['billing',translate('Laskutus','Fakturering','Billing'),translate('Tilaus ja maksutiedot','Abonnemang och betalningar','Subscription and payments')],
               ['profile',translate('Oma tili','Mitt konto','My account'),translate('Yritykset ja kirjautuminen','Företag och inloggning','Companies and sign-in')]
             ].map(([id,label,description])=>'<button type="button" class="rs-settings-directory-link" data-workspace-nav="'+safe(id)+'"><span><b>'+safe(label)+'</b><small>'+safe(description)+'</small></span><span class="rs-settings-chevron" aria-hidden="true">›</span></button>').join('')+
@@ -401,7 +401,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     customers:translate('Asiakkaat ja liidit','Kunder och leads','Customers & leads'),
     conversations:translate('Keskustelut','Konversationer','Conversations'),
     team:translate('Henkilökunta','Personal','Team'),
-    integrations:translate('Integraatiot','Integrationer','Integrations'),
+    integrations:translate('Respondon työkalut','Respondos verktyg','Respondo tools'),
     automation:translate('Toiminnot','Funktioner','Actions'),
     install:translate('Asennus','Installation','Installation'),
     profile:translate('Profiili','Profil','Profile'),
@@ -413,12 +413,12 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     answers:[['knowledge',translate('Tietopohja','Kunskapsbas','Knowledge base')],['unanswered',translate('Puuttuvat vastaukset','Saknade svar','Unanswered')]],
     customers:[['leads',translate('Liidit ja yhteydenotot','Leads och kontakter','Leads & contacts')],['conversations',translate('Keskustelut','Konversationer','Conversations')]],
     conversations:[['conversations',translate('Keskusteluhistoria','Samtalshistorik','Conversation history')],['live-inbox',translate('Live-keskustelut','Livekonversationer','Live conversations')]],
-    integrations:[['crm-integration',translate('CRM-yhteydet','CRM-anslutningar','CRM connectors')],['business-integrations',translate('API ja webhookit','API och webhooks','API & webhooks')],['commerce-integration',translate('Verkkokaupat','Webbutiker','Online stores')],['booking-calendar',translate('Kalenteri','Kalender','Calendar')],['stripe-connect',translate('Stripe','Stripe','Stripe')],['native-mail-connections',translate('Sähköposti','E-post','Email')],['meta-native-connections',translate('Viestikanavat','Meddelandekanaler','Messaging channels')],['native-operations',translate('Tietopohja ja tukipalvelut','Kunskap och support','Knowledge & support')]],
+    integrations:[['native-operations',translate('Respondon työkalut','Respondos verktyg','Respondo tools')],['crm-integration',translate('CRM-yhteydet','CRM-anslutningar','CRM connectors')],['business-integrations',translate('API ja webhookit','API och webhooks','API & webhooks')],['commerce-integration',translate('Verkkokaupat','Webbutiker','Online stores')],['booking-calendar',translate('Kalenteri','Kalender','Calendar')],['stripe-connect',translate('Stripe','Stripe','Stripe')],['native-mail-connections',translate('Sähköposti','E-post','Email')],['meta-native-connections',translate('Viestikanavat','Meddelandekanaler','Messaging channels')]],
     profile:[['workspaces',translate('Yritykset','Företag','Companies')],['account-security',translate('Tilin asetukset','Kontoinställningar','Account security')]]
   };
   const primary={
     answers:'knowledge',customers:'leads',conversations:'conversations',team:'support-team',
-    automation:'actions2',install:'install',integrations:'crm-integration',
+    automation:'actions2',install:'install',integrations:'native-operations',
     profile:'workspaces',billing:'billing'
   };
   let currentTab=null;
