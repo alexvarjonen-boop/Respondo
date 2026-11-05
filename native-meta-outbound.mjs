@@ -69,9 +69,12 @@ export async function sendApprovedNativeMeta(db,{tenantId,threadId,deliveryId,us
     VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING RETURNING delivery_id`,
     [tenantId,deliveryId,threadId,provider,credential.resource_id,t.external_contact_id,text.trim(),String(userId||'').slice(0,120)]);
   if(!claimed.rowCount){
-   const previous=await client.query(`SELECT thread_id,status FROM respondo_native_meta_deliveries
+   const previous=await client.query(`SELECT thread_id,status,text,provider,recipient FROM respondo_native_meta_deliveries
      WHERE tenant_id=$1 AND delivery_id=$2`,[tenantId,deliveryId]);
-   if(String(previous.rows[0]?.thread_id)!==threadId)throw TypeError('Delivery ID already used elsewhere');
+   if(String(previous.rows[0]?.thread_id)!==threadId||
+      previous.rows[0]?.text!==text.trim()||previous.rows[0]?.provider!==provider||
+      previous.rows[0]?.recipient!==t.external_contact_id)
+      throw TypeError('Delivery ID already used for different content');
    await client.query('COMMIT');return {status:previous.rows[0].status,duplicate:true,autoRetry:false};
   }
   // This callback decrypts a single tenant-bound credential, never exposes it to the client.
