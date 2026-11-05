@@ -8,7 +8,7 @@ const safeHeader=(x,n)=>clean(x,n).replace(/[\r\n\x00-\x1f\x7f]/g,' ');
 export function buildApprovedMailRequest({provider,token,recipient,text,messageId,subject,threadId,originalRfcId}){
  if(!['gmail','outlook'].includes(provider)||typeof token!=='string'||token.length<10)throw TypeError('Invalid provider token');
  if(!email.test(recipient)||!text||text!==text.trim()||text.length>4000||/[\x00]/.test(text))throw TypeError('Invalid recipient or body');
- if(!/^[A-Za-z0-9._-]{1,180}$/.test(String(messageId||'')))throw TypeError('Invalid original message');
+ if(!/^[A-Za-z0-9._=+/-]{1,180}$/.test(String(messageId||'')))throw TypeError('Invalid original message');
  const headers={Authorization:'Bearer '+token,'Content-Type':'application/json',Accept:'application/json'};
  if(provider==='outlook'){
   return {url:'https://graph.microsoft.com/v1.0/me/messages/'+encodeURIComponent(messageId)+'/reply',
