@@ -28,6 +28,12 @@ export async function ensureNativeMailBridgeSchema(db){
   await db.query('ALTER TABLE '+name+' ENABLE ROW LEVEL SECURITY');
   await db.query('REVOKE ALL PRIVILEGES ON TABLE '+name+' FROM PUBLIC');
  }
+ const roleRows=await db.query("SELECT rolname FROM pg_roles WHERE rolname=ANY($1::text[])",[['anon','authenticated','service_role']]);
+ for(const role of roleRows.rows||[]){
+  if(!['anon','authenticated','service_role'].includes(role.rolname))continue;
+  for(const table of ['respondo_native_mail_credentials','respondo_native_mail_events'])
+   await db.query('REVOKE ALL PRIVILEGES ON TABLE '+table+' FROM '+role.rolname);
+ }
 }
 export async function getNativeMailboxMessages(provider,token,{limit=20,fetcher=fetch}={}){
  if(!nativeMailboxProvider(provider))throw new TypeError('Unsupported mailbox');
