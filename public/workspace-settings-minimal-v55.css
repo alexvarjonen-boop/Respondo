@@ -363,3 +363,13 @@
     grid-template-columns:minmax(0,1fr);
   }
 }
+
+
+/* Internal Respondo workspace never advertises external helpdesk providers as
+   native tools. Legacy provider tabs remain accessible via explicit opt-in. */
+#app .respondo-workspace[data-current-view="integrations"].rs-integration-native-open
+  #respondoNativeOperationsMount .native-tabs [data-tab="helpdesk"],
+#app .respondo-workspace[data-current-view="integrations"].rs-integration-native-open
+  #respondoNativeOperationsMount .native-tabs [data-tab="zendesk"]{
+  display:none!important;
+}
