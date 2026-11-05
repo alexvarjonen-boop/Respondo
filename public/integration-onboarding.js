@@ -302,13 +302,34 @@
       if(s==='local')return t.noExtra;
       return t.unknown;
     }
+    function ownToolStatus(item){
+      const panel=$('#native-operations');
+      if(!panel || panel.dataset.respondoPlanLocked==='yes')return 'restricted';
+      return ownStatus.get(item.id)===true?'local':'unverified';
+    }
     function addStepTitle(text){
       content.appendChild(el('h3','rs-integration-step-title',text));
     }
     function draw(){
       content.replaceChildren();
-      back.hidden=!chosenGroup;
-      if(!chosenGroup){
+      back.hidden=chosenGroup==='respondo'&&!chosenProvider;
+      externalSwitch.textContent=chosenGroup==='respondo'?t.externalToggle:t.returnOwn;
+      if(chosenGroup==='respondo'){
+        addStepTitle(t.nativeTitle);
+        content.appendChild(el('p','rs-integration-hint',t.nativeIntro));
+        const list=el('div','rs-integration-provider-grid');
+        for(const item of ownTools){
+          const button=el('button','rs-integration-provider');
+          button.type='button';button.dataset.ownTool=item.id;
+          const i=lang==='fi'?0:lang==='sv'?1:2;
+          const state=ownToolStatus(item);
+          button.append(el('strong','',item.name[i]),el('span','',item.help[i]),
+            el('small','',state==='local'?t.nativeReady:state==='restricted'?t.restricted:t.nativeUnavailable));
+          if(state==='local')button.dataset.status='connected';
+          list.appendChild(button);
+        }
+        content.appendChild(list);
+      }else if(!chosenGroup){
         addStepTitle(t.first);
         const list=el('div','rs-integration-group-grid');
         for(const group of groups){
@@ -368,7 +389,8 @@
     }
     function focusExisting(item){
       const tab=ws.querySelector('[data-workspace-tab="'+item.tab+'"]');
-      if(!tab||existingLocks.get(item.id)){
+      if(!tab||existingLocks.get(item.id) ||
+        (item.nativeInternal && $('#native-operations')?.dataset.respondoPlanLocked==='yes')){
         content.appendChild(el('p','rs-integration-note',t.restricted));
         return;
       }
@@ -420,6 +442,11 @@
     async function reloadStatuses(){
       refresh.disabled=true;
       const endpoints={
+        nativeOverview:'/api/app/native',
+        nativeInbox:'/api/app/native/inbox',
+        nativeCalendar:'/api/app/native/calendar',
+        nativeTasks:'/api/app/native/tasks',
+        nativeQuality:'/api/app/native/quality',
         crm:'/api/app/connectors/crm',
         mail:'/api/app/native/mail/status',
         meta:'/api/app/native/meta/status',
@@ -430,6 +457,7 @@
       };
       const entries=await Promise.all(Object.entries(endpoints).map(async([key,url])=>[key,await readonlyJSON(url)]));
       const result=Object.fromEntries(entries),next=new Map();
+      for(const item of ownTools)ownStatus.set(item.id,result[item.probe]?.ok===true);
       readinessLoaded=Boolean(result.readiness?.prerequisites && typeof result.readiness.prerequisites==='object');
       if(readinessLoaded){
         for(const item of providers){const ready=result.readiness.prerequisites[item.id];
@@ -482,17 +510,38 @@
     root.addEventListener('click',event=>{
       const group=event.target.closest('[data-integration-group]');
       const provider=event.target.closest('[data-integration-provider]');
+      const own=event.target.closest('[data-own-tool]');
       const open=event.target.closest('[data-integration-open]');
       if(group){chosenGroup=group.dataset.integrationGroup;chosenProvider=null;
         ws.classList.remove('rs-integration-configuring');draw();}
       if(provider){chosenProvider=provider.dataset.integrationProvider;
         ws.classList.remove('rs-integration-configuring');draw();}
+      if(own){
+        const item=ownTools.find(x=>x.id===own.dataset.ownTool);
+        if(item){
+          if(ownToolStatus(item)==='restricted'){
+            content.appendChild(el('p','rs-integration-note',t.restricted));
+          }else{
+            focusExisting({tab:'native-operations',nativeTab:item.nativeTab,nativeInternal:true});
+          }
+        }
+      }
       if(open){const item=providers.find(x=>x.id===open.dataset.integrationOpen);
         if(item && !['restricted','notConfigured','unverified'].includes(status(item)))focusExisting(item);}
     });
     back.addEventListener('click',()=>{
-      if(chosenProvider)chosenProvider=null;else chosenGroup=null;
+      if(chosenProvider)chosenProvider=null;
+      else if(chosenGroup&&chosenGroup!=='respondo')chosenGroup=null;
+      else chosenGroup='respondo';
       ws.classList.remove('rs-integration-configuring');draw();
+    });
+    externalSwitch.addEventListener('click',()=>{
+      chosenGroup=chosenGroup==='respondo'?null:'respondo';
+      chosenProvider=null;
+      ws.classList.remove('rs-integration-configuring','rs-integration-advanced');
+      advanced.setAttribute('aria-expanded','false');
+      advanced.textContent=t.technical;
+      draw();
     });
     refresh.addEventListener('click',reloadStatuses);
     root.addEventListener('click',event=>{
