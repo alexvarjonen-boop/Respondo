@@ -1,3 +1,5 @@
+import { estimateServiceDuration, findSuitableStarts } from './booking-intelligence.mjs';
+import { prepareInboundCase, draftResponse, validateIntegrationSettings } from './internal-integrations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { matchVerifiedSpecialistService } from './service-semantics.mjs';
@@ -10428,6 +10430,8 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
         });
       } catch (e) {
         console.error('Google Calendar availability filter failed',e);
+        // External calendar could not be verified: never expose unverified free slots.
+        slots = [];
       }
     }
 
@@ -10972,6 +10976,94 @@ app.post('/api/app/stripe-connect/onboard', auth, ownerOnly, subscribed, async (
     console.error('Stripe Connect onboarding failed', e);
     return res.status(400).json({ error:'Stripe-yhdistämistä ei voitu aloittaa.' });
   }
+});
+
+// Respondo native channel inbox: no provider tokens, AI network calls or automatic sending.
+app.get('/api/app/native-integrations/status', auth, ownerOnly, subscribed, async (req,res)=>{
+ try {
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const result=await q('SELECT provider,mode,updated_at FROM native_integrations WHERE tenant_id=$1 ORDER BY provider',[tr.rows[0].id]);
+  return res.json({integrations:result.rows,externalProviderConnectionsVerified:false});
+ }catch(e){console.error('Native integration status failed',e);return res.status(500).json({error:'Tilaa ei voitu hakea.'})}
+});
+app.post('/api/app/native-integrations/settings', auth, ownerOnly, subscribed, async (req,res)=>{
+ const v=validateIntegrationSettings(req.body);
+ if(v.status!=='valid')return res.status(400).json({error:v.reason});
+ try {
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  await q(`INSERT INTO native_integrations(tenant_id,provider,mode)
+    VALUES($1,$2,$3) ON CONFLICT(tenant_id,provider)
+    DO UPDATE SET mode=EXCLUDED.mode,updated_at=NOW()`,[tr.rows[0].id,v.provider,v.mode]);
+  return res.json({ok:true,provider:v.provider,mode:v.mode,connected:false});
+ }catch(e){console.error('Native integration settings failed',e);return res.status(500).json({error:'Tallennus epäonnistui.'})}
+});
+app.post('/api/app/native-integrations/inbox', auth, ownerOnly, subscribed, async (req,res)=>{
+ const v=prepareInboundCase(req.body);
+ if(v.status!=='ready')return res.status(400).json({error:v.reason});
+ try {
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const draft=draftResponse({caseData:v});
+  const created=await q(`INSERT INTO native_inbox(id,tenant_id,channel,external_message_id,sender,channel_contact_id,subject,body,intent,language,needs_human,draft,status)
+   VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'review')
+   ON CONFLICT(tenant_id,channel,external_message_id) DO NOTHING RETURNING id`,
+   [uid(),tr.rows[0].id,v.channel,v.externalId,v.sender,v.channelContactId,v.subject,v.body,v.classification.intent,v.classification.language,v.classification.needsHuman,draft.text]);
+  return res.status(created.rowCount?201:200).json({ok:true,created:!!created.rowCount,requiresApproval:true,autoSent:false});
+ }catch(e){console.error('Native inbox ingestion failed',e);return res.status(500).json({error:'Viestin tallennus epäonnistui.'})}
+});
+app.get('/api/app/native-integrations/inbox', auth, ownerOnly, subscribed, async (req,res)=>{
+ try {
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const r=await q('SELECT id,channel,sender,subject,body,intent,language,needs_human,draft,status,created_at FROM native_inbox WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 100',[tr.rows[0].id]);
+  return res.json({messages:r.rows});
+ }catch(e){console.error('Native inbox listing failed',e);return res.status(500).json({error:'Viestejä ei voitu hakea.'})}
+});
+app.post('/api/app/service-duration-rules', auth, ownerOnly, subscribed, async (req,res)=>{
+ const rule=req.body?.rule;
+ const estimate=estimateServiceDuration({serviceId:rule?.id,quantity:1,rules:[rule]});
+ if(estimate.status!=='estimated')return res.status(400).json({error:'Tarkista palvelun kestoasetukset. Määritä myös vähintään yksi yksikkö.'});
+ if(!/^[a-z0-9_-]{1,64}$/.test(String(rule.id)))return res.status(400).json({error:'Virheellinen palvelutunnus.'});
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const count=await q('SELECT COUNT(*)::int AS total FROM service_duration_rules WHERE tenant_id=$1',[tr.rows[0].id]);
+  const existing=await q('SELECT 1 FROM service_duration_rules WHERE tenant_id=$1 AND service_id=$2',[tr.rows[0].id,rule.id]);
+  if(!existing.rowCount&&count.rows[0].total>=100)return res.status(400).json({error:'Palveluiden enimmäismäärä täynnä.'});
+  const clean={id:rule.id,baseMinutes:rule.baseMinutes,minutesPerUnit:rule.minutesPerUnit,minUnits:rule.minUnits??1,maxUnits:rule.maxUnits??10000,roundToMinutes:rule.roundToMinutes??1,bufferBeforeMinutes:rule.bufferBeforeMinutes??0,bufferAfterMinutes:rule.bufferAfterMinutes??0,version:String(rule.version??'1').slice(0,30)};
+  await q(`INSERT INTO service_duration_rules(tenant_id,service_id,rule) VALUES($1,$2,$3::jsonb)
+    ON CONFLICT(tenant_id,service_id) DO UPDATE SET rule=EXCLUDED.rule,updated_at=NOW()`,[tr.rows[0].id,rule.id,JSON.stringify(clean)]);
+  return res.json({ok:true,rule:clean});
+ }catch(e){console.error('Service duration rule failed',e);return res.status(500).json({error:'Kestosääntöä ei voitu tallentaa.'})}
+});
+app.post('/api/app/booking-proposals', auth, ownerOnly, subscribed, async(req,res)=>{
+ try{
+  const tr=await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const tenant=tr.rows[0],serviceId=String(req.body?.serviceId||'').slice(0,64);
+  const ruleRows=await q('SELECT rule FROM service_duration_rules WHERE tenant_id=$1 AND service_id=$2',[tenant.id,serviceId]);
+  const estimate=estimateServiceDuration({serviceId,quantity:req.body?.quantity,rules:ruleRows.rows.map(r=>r.rule)});
+  if(estimate.status!=='estimated')return res.json({estimate,availability:{status:'needs_details',starts:[]}});
+  const windows=Array.isArray(req.body?.windows)?req.body.windows.slice(0,60):[];
+  if(!windows.length)return res.status(400).json({error:'Anna tarkistettavat vapaat aikaikkunat.'});
+  const stamp=windows.flatMap(w=>[new Date(w.start).getTime(),new Date(w.end).getTime()]);
+  if(stamp.some(x=>!Number.isFinite(x)))return res.status(400).json({error:'Virheelliset aikaikkunat.'});
+  const low=new Date(Math.min(...stamp)),high=new Date(Math.max(...stamp));
+  if(high.getTime()-low.getTime()>31*86400000)return res.status(400).json({error:'Tarkista enintään 31 päivän jakso.'});
+  const booked=await q(`SELECT starts_at AS start,ends_at AS "end" FROM booking_slots
+   WHERE tenant_id=$1 AND status='booked' AND starts_at<$3 AND ends_at>$2`,[tenant.id,low,high]);
+  const busy=booked.rows;
+  if(tenant.google_calendar_refresh_token||tenant.google_calendar_access_token){
+   try{
+    const events=await googleCalendarEvents(tenant,low,high);
+    busy.push(...events.map(x=>({start:x.start,end:x.end})));
+   }catch(e){console.error('Booking proposal calendar check failed',e);return res.status(503).json({estimate,availability:{status:'availability_unverified',starts:[]}})}
+  }
+  const availability=findSuitableStarts({estimate,windows,busy,requestedStart:req.body?.requestedStart,availabilityVerified:true,maxResults:20});
+  return res.json({estimate,availability,confirmation:'human_approval_required'});
+ }catch(e){console.error('Native booking proposals failed',e);return res.status(500).json({error:'Aikojen laskenta epäonnistui.'})}
 });
 
 app.post('/api/app/integrations', auth, ownerOnly, subscribed, async (req,res) => {
@@ -11881,6 +11973,38 @@ async function ensureRuntimeSchema() {
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_action_requests_tenant_created ON action_requests(tenant_id, created_at DESC)');
+  await q(`CREATE TABLE IF NOT EXISTS native_integrations (
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL,
+    mode TEXT NOT NULL DEFAULT 'manual',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(tenant_id,provider)
+  )`);
+  await q(`CREATE TABLE IF NOT EXISTS native_inbox (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    channel TEXT NOT NULL,
+    external_message_id TEXT NOT NULL,
+    sender TEXT NOT NULL DEFAULT '',
+    channel_contact_id TEXT,
+    subject TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    intent TEXT NOT NULL,
+    language TEXT NOT NULL DEFAULT 'fi',
+    needs_human BOOLEAN NOT NULL DEFAULT FALSE,
+    draft TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'review',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(tenant_id,channel,external_message_id)
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_native_inbox_tenant_created ON native_inbox(tenant_id,created_at DESC)');
+  await q(`CREATE TABLE IF NOT EXISTS service_duration_rules (
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    service_id TEXT NOT NULL,
+    rule JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(tenant_id,service_id)
+  )`);
   await q(`CREATE TABLE IF NOT EXISTS booking_slots (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
