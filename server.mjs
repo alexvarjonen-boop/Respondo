@@ -15602,26 +15602,29 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
 
         // A service conversation cannot bypass the approved duration rules.
         // Locking the slot protects against competing web reservations.
-        if(visitorRef){
-          const rule=await readServiceRule(client,tenant.id);
-          if(rule?.enabled){
-            const state=await client.query(`SELECT facts FROM respondo_service_dialogues
-              WHERE tenant_id=$1 AND visitor_ref=$2 AND updated_at>NOW()-INTERVAL '45 minutes'`,
-              [tenant.id,visitorRef]);
-            if(state.rowCount){
-              const work=estimateWindowDuration(rule,state.rows[0].facts);
-              const availableMs=new Date(sr.rows[0].ends_at)-new Date(sr.rows[0].starts_at);
-              if(work.status!=='estimated'||availableMs<work.minutes*60000){
-                await client.query('ROLLBACK');
-                return res.status(409).json({error:'Työ ei mahdu valittuun aikaan. Tarkista työn laajuus ja valitse pidempi aika.'});
-              }
-              // Staff and travel capacity cannot be inferred from one shared
-              // calendar. Record a REQUEST only, never mark this time booked.
-              serviceManualReview=true;
-              payload.serviceCapacity={facts:state.rows[0].facts,durationMinutes:work.minutes,
-                approvalRequired:true};
-            }
+        const rule=await readServiceRule(client,tenant.id);
+        if(rule?.enabled){
+          // Enabling service-based scheduling requires an evaluated session.
+          // Do not allow a stale form or a missing visitor reference to bypass
+          // approved job duration requirements.
+          const state=visitorRef ? await client.query(`SELECT facts FROM respondo_service_dialogues
+            WHERE tenant_id=$1 AND visitor_ref=$2 AND updated_at>NOW()-INTERVAL '45 minutes'`,
+            [tenant.id,visitorRef]) : {rowCount:0};
+          if(!state.rowCount){
+            await client.query('ROLLBACK');
+            return res.status(409).json({error:'Työn laajuus pitää selvittää chatissa ennen ajan valintaa.'});
           }
+          const work=estimateWindowDuration(rule,state.rows[0].facts);
+          const availableMs=new Date(sr.rows[0].ends_at)-new Date(sr.rows[0].starts_at);
+          if(work.status!=='estimated'||availableMs<work.minutes*60000){
+            await client.query('ROLLBACK');
+            return res.status(409).json({error:'Työ ei mahdu valittuun aikaan. Tarkista työn laajuus ja valitse pidempi aika.'});
+          }
+          // Calendar cannot prove travel or staff availability: only collect
+          // a provisional request and require employee approval.
+          serviceManualReview=true;
+          payload.serviceCapacity={facts:state.rows[0].facts,durationMinutes:work.minutes,
+            approvalRequired:true};
         }
 
         // Recheck Google Calendar only after this booking slot is row-locked.
