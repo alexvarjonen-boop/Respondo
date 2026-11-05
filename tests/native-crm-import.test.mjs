@@ -43,3 +43,51 @@ test('import rejects missing approval and mismatched selections before any provi
  await assert.rejects(importNativeCrmContacts(db,tenant,{approved:false,provider:'hubspot',externalIds:['1']}),/Explicit approval/);
  await assert.rejects(importNativeCrmContacts(db,tenant,{approved:true,provider:'hubspot',externalIds:[]}),/Explicit approval/);
 });
+
+test('approved selected HubSpot contacts are imported transactionally with tenant isolation',async()=>{
+ const original=process.env.DATA_ENCRYPTION_KEY;
+ process.env.DATA_ENCRYPTION_KEY='unit-test-only-encryption-key-32-bytes';
+ try{
+  const {encryptCrmToken}=await import('../crm-connectors.mjs');
+  const encrypted=encryptCrmToken('fake-valid-crm-access-token');
+  const writes=[];
+  const client={
+   query:async(sql,params)=>{
+    writes.push({sql,params});
+    if(sql.includes('FROM respondo_native_crm_imports'))return {rowCount:0,rows:[]};
+    if(sql.includes('FROM respondo_native_contacts'))return {rowCount:0,rows:[]};
+    if(sql.includes('INSERT INTO respondo_native_contacts'))
+     return {rowCount:1,rows:[{id:'33333333-3333-4333-8333-333333333333'}]};
+    return {rowCount:1,rows:[]};
+   },release:()=>{}
+  };
+  const db={
+   connect:async()=>client,
+   query:async(sql,params)=>{
+    if(sql.includes('FROM respondo_crm_settings'))
+     return {rowCount:1,rows:[{provider:'hubspot',enabled:true}]};
+    if(sql.includes('FROM respondo_crm_credentials'))
+     return {rowCount:1,rows:[{provider:'hubspot',token_ciphertext:encrypted}]};
+    throw Error('Unexpected SQL '+sql);
+   }
+  };
+  const fetcher=async(url,options)=>{
+   assert.equal(new URL(url).hostname,'api.hubapi.com');
+   assert.equal(options.method,'GET');
+   return {ok:true,text:async()=>JSON.stringify({results:[{id:'remote-1',properties:{
+    firstname:'Anna',lastname:'Laine',email:'anna@example.com',phone:'0401234567'
+   }}]})};
+  };
+  const result=await importNativeCrmContacts(db,tenant,{
+   approved:true,provider:'hubspot',externalIds:['remote-1']},{fetcher});
+  assert.equal(result.imported,1);
+  assert.equal(result.externalUpdates,0);
+  assert(writes.some(c=>c.sql.includes('FOR UPDATE')&&c.params[0]===tenant));
+  assert(writes.some(c=>c.sql.includes('INSERT INTO respondo_native_crm_imports')&&
+    c.params[0]===tenant&&c.params[2]==='remote-1'));
+  assert(writes.some(c=>c.sql.includes('COMMIT')));
+ }finally{
+  if(original===undefined)delete process.env.DATA_ENCRYPTION_KEY;
+  else process.env.DATA_ENCRYPTION_KEY=original;
+ }
+});
