@@ -39,7 +39,7 @@ test('OAuth readiness uses server environment flags but never reveals Microsoft 
 test('returned OAuth errors are accessible and provider-specific in FI/SV/EN',()=>{
   assert.match(guide,/const oauthCode=urlParams\.get\('native_mail'\)/);
   assert.match(guide,/const oauthProvider=urlParams\.get\('provider'\)/);
-  assert.match(guide,/notice\.setAttribute\('role',oauthCode==='connected'\?'status':'alert'\)/);
+  assert.match(guide,/notice\.setAttribute\('role',\(callbackOutcome==='connected'\|\|stripeCode==='return'\)\?'status':'alert'\)/);
   assert.match(guide,/const fromCallback=oauthCode&&\['gmail','outlook'\]\.includes\(oauthProvider\)/);
   assert.match(guide,/Vaatii ylläpidon asetukset/);
   assert.match(guide,/Kräver administratör/);
