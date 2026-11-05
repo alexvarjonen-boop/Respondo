@@ -123,6 +123,7 @@
     advanced.type='button';advanced.setAttribute('aria-expanded','false');
     footer.append(back,refresh,advanced);
     let chosenGroup=null,chosenProvider=null,states=new Map(),oauthAvailable=new Map(),prerequisites=new Map();
+    let readinessLoaded=false;
     const existingLocks=new Map();
     for(const item of providers){
       const target=$('#'+item.tab);
@@ -137,7 +138,7 @@
     // distinct from disconnected, especially when an endpoint is unavailable.
     function domStatus(item){
       if(item.id==='google_calendar'){
-        if($('#booking-calendar .calendar-sync-card.connected:not([hidden])'))return 'connected';
+        if($('#booking-calendar .calendar-sync-card.connected:not([hidden])'))return 'partial';
         return $('#connectGoogleCalendar')?'notConnected':null;
       }
       if(item.id==='stripe'){
@@ -148,7 +149,7 @@
       if(['shopify','woocommerce'].includes(item.id)){
         const form=$('#commerceForm'),badge=$('#commerce-integration .install-badge');
         const provider=form?.elements.provider?.value;
-        if(provider===item.id && badge && /Yhdistetty|Ansluten|Connected/i.test(badge.textContent))return 'connected';
+        if(provider===item.id && badge && /Yhdistetty|Ansluten|Connected/i.test(badge.textContent))return 'partial';
         return form?'notConnected':null;
       }
       if(item.id==='webhooks')return ($('#integrationsForm')?.elements.webhookUrl?.value||'').trim()?'partial':'notConnected';
@@ -157,6 +158,10 @@
     }
     function status(item){
       if(existingLocks.get(item.id))return 'restricted';
+      if(item.id==='native_calendar')return 'local';
+      // Fail closed until the authenticated readiness endpoint answers.
+      // No consent page or external connector is launched on an unknown state.
+      if(!readinessLoaded || !prerequisites.has(item.id))return 'unverified';
       if(prerequisites.get(item.id)===false)return 'notConfigured';
       if(['gmail','outlook'].includes(item.id)&&oauthAvailable.get(item.id)===false)
         return 'notConfigured';
@@ -165,6 +170,7 @@
     function statusLabel(s){
       if(s==='restricted')return t.restricted;
       if(s==='notConfigured')return lang==='fi'?'Vaatii ylläpidon asetukset':lang==='sv'?'Kräver administratör':'Needs administrator setup';
+      if(s==='unverified')return lang==='fi'?'Yhteyden tilaa tarkistetaan':lang==='sv'?'Kontrollerar anslutning':'Checking connection availability';
       if(s==='connected')return t.connected;
       if(s==='notConnected')return t.notConnected;
       if(s==='ready')return t.ready;
@@ -209,8 +215,9 @@
         const info=el('div','rs-integration-selected');
         info.append(el('p','',word(item.step)),el('p','rs-integration-current-status',statusLabel(status(item))));
         content.appendChild(info);
-        if(status(item)==='restricted' || status(item)==='notConfigured'){
+        if(['restricted','notConfigured','unverified'].includes(status(item))){
           const text=status(item)==='restricted'?t.restricted:
+            status(item)==='unverified'?t.statusError:
             ['gmail','outlook'].includes(item.id)
             ? mailboxFeedback(lang,'not_configured',item.id)
             : lang==='fi'
@@ -219,7 +226,7 @@
                 ? 'Tjänsten är inte aktiverad. Respondo-administratören måste konfigurera leverantörens app eller webhook.'
                 : 'This provider is not configured. Respondo administration must set up the provider app or webhook before accounts can connect.';
           const alert=el('p','rs-integration-note',text);
-          if(status(item)==='notConfigured')alert.setAttribute('role','alert');
+          if(status(item)!=='restricted')alert.setAttribute('role','alert');
           content.appendChild(alert);
           ws.classList.remove('rs-integration-configuring');
           return;
@@ -299,7 +306,8 @@
       };
       const entries=await Promise.all(Object.entries(endpoints).map(async([key,url])=>[key,await readonlyJSON(url)]));
       const result=Object.fromEntries(entries),next=new Map();
-      if(result.readiness?.prerequisites){
+      readinessLoaded=Boolean(result.readiness?.prerequisites && typeof result.readiness.prerequisites==='object');
+      if(readinessLoaded){
         for(const item of providers){const ready=result.readiness.prerequisites[item.id];
           if(typeof ready==='boolean')prerequisites.set(item.id,ready);
         }
@@ -356,7 +364,7 @@
       if(provider){chosenProvider=provider.dataset.integrationProvider;
         ws.classList.remove('rs-integration-configuring');draw();}
       if(open){const item=providers.find(x=>x.id===open.dataset.integrationOpen);
-        if(item)focusExisting(item);}
+        if(item && !['restricted','notConfigured','unverified'].includes(status(item)))focusExisting(item);}
     });
     back.addEventListener('click',()=>{
       if(chosenProvider)chosenProvider=null;else chosenGroup=null;
