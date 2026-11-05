@@ -4182,6 +4182,14 @@ async function dashboard(options = {}) {
             </div>
             <a class="btn dashboard-action" href="/api/app/native-integrations/gmail/start">${appText('Yhdistä Gmail','Anslut Gmail','Connect Gmail')}</a>
           </div>
+          <div class="calendar-sync-card">
+            <div>
+              <small>MICROSOFT 365 / OUTLOOK</small>
+              <b>${appText('Yhdistä Outlook turvallisesti','Anslut Outlook säkert','Connect Outlook securely')}</b>
+              <p>${appText('Microsoftin lukuoikeus viestien perustietoihin. Respondo ei lähetä sähköpostia tällä yhteydellä.','Microsoft tillåter läsning av grundläggande meddelandedata. Ingen e-post skickas.','Microsoft authorization grants read access to basic message details only. No email is sent.')}</p>
+            </div>
+            <a class="btn dashboard-action" href="/api/app/native-integrations/outlook/start">${appText('Yhdistä Outlook','Anslut Outlook','Connect Outlook')}</a>
+          </div>
           <form id="nativeProviderConnectForm" class="formgrid" autocomplete="off">
             <div class="field">
               <label>${appText('Yhdistettävä palvelu','Tjänst att ansluta','Service to connect')}</label>
