@@ -61,3 +61,37 @@ test('mail pagination has a hard bound',async()=>{
  await assert.rejects(getNativeMailboxMessages('gmail','test-fake-oauth-token',{limit:61}),
   /Mailbox limit/);
 });
+
+test('large Gmail inbox resumes from saved page checkpoint without losing the tail',async()=>{
+ const scans=[];
+ const fetcher=async(url)=>{
+  const u=new URL(url);
+  if(!u.pathname.endsWith('/messages')){
+   const id=u.pathname.split('/').at(-1);
+   return reply({payload:{headers:[{name:'From',value:'buyer@example.com'},{name:'Subject',value:id}]},snippet:id});
+  }
+  const next=u.searchParams.get('pageToken');
+  scans.push(next);
+  const page=next==='pageB'?{messages:[{id:'mailB'}],nextPageToken:'pageC'}:
+   next==='pageC'?{messages:[{id:'mailC'}]}:
+   {messages:[{id:'mailA'}],nextPageToken:'pageB'};
+  return reply(page);
+ };
+ const first=await getNativeMailboxMessages('gmail','test-fake-oauth-token',{
+  limit:1,includeCursor:true,fetcher});
+ assert.deepEqual(first.items.map(x=>x.externalId),['mailA']);
+ assert.equal(first.nextCursor,'pageB');
+ const second=await getNativeMailboxMessages('gmail','test-fake-oauth-token',{
+  limit:1,includeCursor:true,cursor:first.nextCursor,fetcher});
+ assert.deepEqual(second.items.map(x=>x.externalId),['mailB']);
+ assert.equal(second.nextCursor,'pageC');
+ const third=await getNativeMailboxMessages('gmail','test-fake-oauth-token',{
+  limit:1,includeCursor:true,cursor:second.nextCursor,fetcher});
+ assert.deepEqual(third.items.map(x=>x.externalId),['mailC']);
+ assert.equal(third.nextCursor,null);
+ assert.deepEqual(scans,[null,'pageB','pageC']);
+});
+test('rejects invalid persisted mailbox cursors',async()=>{
+ await assert.rejects(getNativeMailboxMessages('gmail','test-fake-oauth-token',{
+   cursor:{url:'https://evil.example'},includeCursor:true}),/Invalid mailbox cursor/);
+});
