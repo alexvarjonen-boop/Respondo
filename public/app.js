@@ -5095,6 +5095,22 @@ async function dashboard(options = {}) {
           <div id="respondoCrmConnectorMount" class="respondo-crm-connector-mount"></div>
         </article>
 
+        <article class="panel" id="native-mail-connections" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
+          <div class="panel-head">
+            <div>
+              <small>RESPONDO NATIVE MAIL</small>
+              <h2>${appText('Gmail ja Microsoft 365','Gmail och Microsoft 365','Gmail and Microsoft 365')}</h2>
+              <p>${appText('Yhdistä yrityksen sähköposti hyväksymällä lukuoikeus. Saapuvat viestit voidaan hakea Respondon omaan Inboxiin tarkistettaviksi. Automaattinen lähetys ei ole käytössä.','Anslut e-post med läsbehörighet. Inkommande meddelanden kan hämtas till Respondos inkorg för granskning. Automatisk sändning är avstängd.','Authorize mailbox read access. Incoming messages can be imported into Respondo Inbox for review. Automatic outbound mail is disabled.')}</p>
+            </div>
+          </div>
+          <div class="calendar-sync-actions" style="display:flex;gap:12px;flex-wrap:wrap">
+            <a class="btn dashboard-action" href="/api/app/native/mail/gmail/start">${appText('Yhdistä Gmail','Anslut Gmail','Connect Gmail')}</a>
+            <a class="btn dashboard-action" href="/api/app/native/mail/outlook/start">${appText('Yhdistä Outlook','Anslut Outlook','Connect Outlook')}</a>
+            <button type="button" class="btn integration-test-btn" data-native-mail-sync="gmail">${appText('Hae Gmail-viestit','Hämta Gmail-meddelanden','Fetch Gmail messages')}</button>
+            <button type="button" class="btn integration-test-btn" data-native-mail-sync="outlook">${appText('Hae Outlook-viestit','Hämta Outlook-meddelanden','Fetch Outlook messages')}</button>
+          </div>
+          <div id="nativeMailStatus" aria-live="polite"></div>
+        </article>
         <article class="panel" id="meta-native-connections" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
           <div class="panel-head">
             <div>
@@ -8599,6 +8615,34 @@ async function route() {
       }
     });
 
+    const loadNativeMailStatus=async()=>{
+      const el=$('#nativeMailStatus');if(!el)return;
+      try{
+        const response=await api('/api/app/native/mail/status');
+        const list=Array.isArray(response.connections)?response.connections:[];
+        el.replaceChildren();
+        if(!list.length){el.textContent=appText('Sähköposteja ei ole yhdistetty.','Ingen e-post är ansluten.','No mailboxes connected.');return;}
+        for(const item of list){
+          const p=document.createElement('p');
+          p.textContent=item.provider+' · '+appText('Lukuyhteys tallennettu','Läsanslutning sparad','Read connection saved');
+          el.appendChild(p);
+        }
+      }catch(error){el.textContent=error.message;}
+    };
+    if($('#nativeMailStatus'))loadNativeMailStatus();
+    document.querySelectorAll('[data-native-mail-sync]').forEach(button=>{
+      button.addEventListener('click',async()=>{
+        const provider=button.dataset.nativeMailSync;
+        button.disabled=true;
+        const el=$('#nativeMailStatus');
+        try{
+          const result=await api('/api/app/native/mail/'+encodeURIComponent(provider)+'/sync',
+            {method:'POST',body:'{}'});
+          if(el)el.textContent=appText('Uusia tarkistettavia viestejä: ','Nya meddelanden för granskning: ','New messages for review: ')+result.imported;
+        }catch(error){if(el)el.textContent=error.message;}
+        finally{button.disabled=false;}
+      });
+    });
     const loadNativeMetaStatus=async()=>{
       const el=$('#nativeMetaStatus');if(!el)return;
       try{
