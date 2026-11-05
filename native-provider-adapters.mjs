@@ -75,6 +75,7 @@ export function normalizeProviderItems(provider,data){
   provider==='hubspot'?data?.results:
   provider==='pipedrive'?data?.data:
   provider==='google_drive'?data?.files:
+  provider==='zendesk'?data?.tickets:
   provider==='shopify'?data?.orders:data;
  return (Array.isArray(list)?list:[]).slice(0,100).map(item=>({
   externalId:String(item.id??'').slice(0,180),
