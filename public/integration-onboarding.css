@@ -1,0 +1,34 @@
+/* One-step-at-a-time setup on the existing authenticated Respondo workspace. */
+#app .respondo-workspace[data-current-view="integrations"]:not(.rs-integration-advanced) .rs-module-tabs{display:none!important}
+#app .respondo-workspace[data-current-view="integrations"]:not(.rs-integration-configuring):not(.rs-integration-advanced) .respondo-workspace-module-card{display:none!important}
+#app .respondo-workspace .rs-integration-onboarding{width:100%;box-sizing:border-box;margin:12px 0 0;padding:clamp(16px,3vw,26px);background:#1c222b;border:1px solid #414d5f;border-radius:20px;display:grid;gap:16px}
+#app .respondo-workspace .rs-integration-onboarding[hidden]{display:none!important}
+#app .respondo-workspace .rs-integration-guide-heading h2{font-size:clamp(22px,3vw,30px);letter-spacing:-.035em;margin:0 0 8px;color:#fff!important;-webkit-text-fill-color:#fff!important;line-height:1.2}
+#app .respondo-workspace .rs-integration-guide-heading p,#app .respondo-workspace .rs-integration-hint{font-size:14px;line-height:1.6;color:#c2d0df!important;-webkit-text-fill-color:#c2d0df!important;margin:0}
+#app .respondo-workspace .rs-integration-step-title{font-size:15px;color:#f3f7ff!important;-webkit-text-fill-color:#f3f7ff!important;margin:4px 0 12px;font-weight:750}
+#app .respondo-workspace .rs-integration-guide-content{min-height:110px}
+#app .respondo-workspace .rs-integration-group-grid,#app .respondo-workspace .rs-integration-provider-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider){text-align:left;display:grid;align-content:start;gap:7px;min-width:0;padding:17px;border:1px solid #4a5567!important;border-radius:14px;background:#262e3a!important;color:#f4f7ff!important;-webkit-text-fill-color:#f4f7ff!important;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider):hover{border-color:#b2c7e4!important;background:#2c3849!important}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider):focus-visible{outline:3px solid #90baf5!important;outline-offset:2px}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider) strong{color:#fff!important;-webkit-text-fill-color:#fff!important;font-size:16px;font-weight:780;overflow-wrap:anywhere}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider) span{color:#d0d9e8!important;-webkit-text-fill-color:#d0d9e8!important;font-size:12px;font-weight:500;line-height:1.5;overflow-wrap:anywhere}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider) small{color:#aebfd2!important;-webkit-text-fill-color:#aebfd2!important;font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+#app .respondo-workspace .rs-integration-provider[data-status="connected"]{border-color:#5f9e7c!important}
+#app .respondo-workspace .rs-integration-selected{padding:16px;border:1px solid #46556b;background:#252f3d;border-radius:13px}
+#app .respondo-workspace .rs-integration-selected p{color:#ebf0f8!important;-webkit-text-fill-color:#ebf0f8!important;font-size:14px;line-height:1.6;margin:0}
+#app .respondo-workspace .rs-integration-selected .rs-integration-current-status{color:#b6cde6!important;-webkit-text-fill-color:#b6cde6!important;margin-top:12px;font-size:12px;font-weight:700}
+#app .respondo-workspace .rs-integration-guide-footer,#app .respondo-workspace .rs-integration-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+#app .respondo-workspace .rs-integration-guide-footer{border-top:1px solid #394657;padding-top:15px}
+#app .respondo-workspace .rs-integration-actions{margin-top:14px}
+#app .respondo-workspace .rs-integration-primary,#app .respondo-workspace .rs-integration-quiet{border:1px solid #e5ebf4!important;background:#f3f6fa!important;color:#182435!important;-webkit-text-fill-color:#182435!important;border-radius:11px;min-height:44px;padding:10px 15px;font-weight:760;font-size:13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+#app .respondo-workspace .rs-integration-quiet{border-color:#526075!important;background:#252e3c!important;color:#ebf1fa!important;-webkit-text-fill-color:#ebf1fa!important}
+#app .respondo-workspace :is(.rs-integration-primary,.rs-integration-quiet):focus-visible{outline:3px solid #9ec6ff!important;outline-offset:2px}
+#app .respondo-workspace :is(.rs-integration-primary,.rs-integration-quiet):disabled{opacity:.6;cursor:wait}
+#app .respondo-workspace .rs-integration-note{margin:14px 0 0;color:#b9c6d8!important;-webkit-text-fill-color:#b9c6d8!important;line-height:1.55;font-size:12px}
+#app .respondo-workspace[data-current-view="integrations"].rs-integration-configuring .respondo-workspace-module-card{scroll-margin-top:20px}
+#app .respondo-workspace[data-current-view="integrations"] #commerce-integration .field[hidden]{display:none!important}
+@media(max-width:640px){
+  #app .respondo-workspace .rs-integration-group-grid,#app .respondo-workspace .rs-integration-provider-grid{grid-template-columns:minmax(0,1fr)}
+  #app .respondo-workspace .rs-integration-primary,#app .respondo-workspace .rs-integration-authorize{flex:1 1 100%}
+}
