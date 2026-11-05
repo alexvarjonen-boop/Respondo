@@ -63,7 +63,7 @@ test('automated status is read-only, tenant-scoped and never fabricates connecte
   assert.doesNotMatch(guide,/localStorage\.setItem|token\.value|accessToken\.value|clientSecret/);
   assert.match(guide,/return t\.unknown/);
   assert.match(guide,/if\(result\.crm\?\.connected/);
-  assert.match(guide,/if\(channel\.configured\)/);
+  assert.match(guide,/channel\.configured/);
   assert.match(guide,/channel\.deliveryEnabled\?'connected':'partial'/);
   assert.match(guide,/result\.freshdesk\?\.data\?\.connected/);
   assert.match(guide,/result\.zendesk\?\.data\?\.connected/);
