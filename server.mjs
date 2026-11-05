@@ -9844,7 +9844,7 @@ app.get('/api/app/integrations/readiness',auth,ownerOnly,subscribed,(req,res)=>{
  const has=(...keys)=>keys.every(k=>Boolean(String(process.env[k]||'').trim()));
  const google=has('GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET');
  const microsoft=has('MICROSOFT_CLIENT_ID','MICROSOFT_CLIENT_SECRET');
- const meta=has('META_APP_SECRET','META_VERIFY_TOKEN');
+ const meta=has('META_APP_SECRET','META_VERIFY_TOKEN')&&String(process.env.META_VERIFY_TOKEN||'').length>=16;
  const zendesk=Boolean(zendeskConfig(process.env,SEO_CANONICAL_ORIGIN));
  return res.json({prerequisites:{
   gmail:google,outlook:microsoft,
@@ -10086,14 +10086,18 @@ app.get('/api/app/native/cloud/status',auth,ownerOnly,subscribed,nativeEndpoint(
   provider:x.provider,siteId:x.site_id,lastVerifiedAt:x.last_verified_at,connected:true
  }))};
 }));
+// Return the customer to the exact service settings after OAuth (also on error).
+const nativeCloudReturn=(provider,status)=>'/app?'+new URLSearchParams({
+ section:'integrations',provider:provider==='sharepoint'?'sharepoint':'google_drive',cloud:status
+}).toString();
 app.get('/api/app/native/cloud/:provider/start',auth,ownerOnly,subscribed,async(req,res)=>{
  const provider=String(req.params.provider||''),cfg=cloudOauthConfig(provider);
- if(!cfg?.clientId||!cfg.clientSecret)return res.redirect('/app?section=automation&cloud=not_configured');
+ if(!cfg?.clientId||!cfg.clientSecret)return res.redirect(nativeCloudReturn(provider,'not_configured'));
  const site=String(req.query.siteId||'');
- if(provider==='sharepoint'&&!validSiteId(site))return res.redirect('/app?section=automation&cloud=invalid_site');
+ if(provider==='sharepoint'&&!validSiteId(site))return res.redirect(nativeCloudReturn(provider,'invalid_site'));
  try{
   const tenantId=await cloudTenant(req.user.sub);
-  if(!tenantId)return res.redirect('/app?section=automation&cloud=missing_tenant');
+  if(!tenantId)return res.redirect(nativeCloudReturn(provider,'missing_tenant'));
   const nonce=crypto.randomBytes(20).toString('hex');
   const state=jwt.sign({flow:'native_cloud',provider,nonce,site,
    userId:req.user.sub,tenantId},JWT,{expiresIn:'10m'});
@@ -10105,28 +10109,28 @@ app.get('/api/app/native/cloud/:provider/start',auth,ownerOnly,subscribed,async(
    scope:cfg.scope,state,prompt:'consent',access_type:'offline'}).toString();
   return res.redirect(url.toString());
  }catch(e){console.error('Cloud OAuth start failed',e?.name||'error');
-  return res.redirect('/app?section=automation&cloud=failed')}
+  return res.redirect(nativeCloudReturn(provider,'failed'))}
 });
 app.get('/api/app/native/cloud/:provider/callback',async(req,res)=>{
  const provider=String(req.params.provider||''),cfg=cloudOauthConfig(provider);
- const dst='/app?section=automation&cloud=';
- if(!cfg?.clientId||!cfg.clientSecret)return res.redirect(dst+'not_configured');
+ const dst=status=>nativeCloudReturn(provider,status);
+ if(!cfg?.clientId||!cfg.clientSecret)return res.redirect(dst('not_configured'));
  try{
   const state=jwt.verify(String(req.query.state||''),JWT);
   const cookie=cookies(req)[NATIVE_CLOUD_STATE_COOKIE];
   if(!cookie||state.flow!=='native_cloud'||state.provider!==provider||
-   state.nonce!==cookie)return res.redirect(dst+'invalid_state');
+   state.nonce!==cookie)return res.redirect(dst('invalid_state'));
   res.clearCookie(NATIVE_CLOUD_STATE_COOKIE);
   const session=cookies(req)[COOKIE];
   const user=session?jwt.verify(session,JWT):null;
-  if(!user?.sub||user.sub!==state.userId)return res.redirect(dst+'invalid_session');
+  if(!user?.sub||user.sub!==state.userId)return res.redirect(dst('invalid_session'));
   const tr=await q(`SELECT id FROM tenants WHERE id=$1 AND owner_user_id=$2
    AND active=true AND subscription_status IN ('active','trialing')`,
    [state.tenantId,state.userId]);
-  if(!tr.rowCount)return res.redirect(dst+'missing_tenant');
-  if(provider==='sharepoint'&&!validSiteId(state.site))return res.redirect(dst+'invalid_site');
+  if(!tr.rowCount)return res.redirect(dst('missing_tenant'));
+  if(provider==='sharepoint'&&!validSiteId(state.site))return res.redirect(dst('invalid_site'));
   const code=String(req.query.code||'');
-  if(req.query.error||!code)return res.redirect(dst+'cancelled');
+  if(req.query.error||!code)return res.redirect(dst('cancelled'));
   const response=await fetch(cfg.tokenUrl,{method:'POST',
    headers:{'Content-Type':'application/x-www-form-urlencoded'},
    body:new URLSearchParams({client_id:cfg.clientId,client_secret:cfg.clientSecret,
@@ -10152,9 +10156,9 @@ app.get('/api/app/native/cloud/:provider/callback',async(req,res)=>{
     encryptSecret(access),refresh?encryptSecret(refresh):prior.rows[0].refresh_ciphertext,
     new Date(Date.now()+Number(tokens.expires_in||3600)*1000),
     String(tokens.scope||'').slice(0,2000)]);
-  return res.redirect(dst+'connected');
+  return res.redirect(dst('connected'));
  }catch(e){console.error('Cloud OAuth callback failed',e?.name||'error');
-  return res.redirect(dst+'failed')}
+  return res.redirect(dst('failed'))}
 });
 async function nativeCloudFiles(id,provider,cursor=null){
  if(!cloudProvider(provider))throw TypeError('Unsupported cloud provider');
