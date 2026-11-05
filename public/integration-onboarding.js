@@ -446,15 +446,22 @@
         nativeInbox:'/api/app/native/inbox',
         nativeCalendar:'/api/app/native/calendar',
         nativeTasks:'/api/app/native/tasks',
-        nativeQuality:'/api/app/native/quality',
-        crm:'/api/app/connectors/crm',
-        mail:'/api/app/native/mail/status',
-        meta:'/api/app/native/meta/status',
-        cloud:'/api/app/native/cloud/status',
-        freshdesk:'/api/app/helpdesk/freshdesk',
-        zendesk:'/api/app/helpdesk/zendesk',
-        readiness:'/api/app/integrations/readiness'
+        nativeQuality:'/api/app/native/quality'
       };
+      // No third-party setup is touched during normal native onboarding.
+      // External account status is checked only after deliberately choosing
+      // the optional external-services screen.
+      if(chosenGroup!=='respondo'){
+        Object.assign(endpoints,{
+          crm:'/api/app/connectors/crm',
+          mail:'/api/app/native/mail/status',
+          meta:'/api/app/native/meta/status',
+          cloud:'/api/app/native/cloud/status',
+          freshdesk:'/api/app/helpdesk/freshdesk',
+          zendesk:'/api/app/helpdesk/zendesk',
+          readiness:'/api/app/integrations/readiness'
+        });
+      }
       const entries=await Promise.all(Object.entries(endpoints).map(async([key,url])=>[key,await readonlyJSON(url)]));
       const result=Object.fromEntries(entries),next=new Map();
       for(const item of ownTools)ownStatus.set(item.id,result[item.probe]?.ok===true);
@@ -542,6 +549,7 @@
       advanced.setAttribute('aria-expanded','false');
       advanced.textContent=t.technical;
       draw();
+      reloadStatuses();
     });
     refresh.addEventListener('click',reloadStatuses);
     root.addEventListener('click',event=>{
