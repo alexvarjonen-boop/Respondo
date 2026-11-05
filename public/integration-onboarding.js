@@ -122,7 +122,7 @@
     const advanced=el('button','rs-integration-quiet',t.technical);
     advanced.type='button';advanced.setAttribute('aria-expanded','false');
     footer.append(back,refresh,advanced);
-    let chosenGroup=null,chosenProvider=null,states=new Map(),oauthAvailable=new Map();
+    let chosenGroup=null,chosenProvider=null,states=new Map(),oauthAvailable=new Map(),prerequisites=new Map();
     const existingLocks=new Map();
     for(const item of providers){
       const target=$('#'+item.tab);
@@ -157,6 +157,7 @@
     }
     function status(item){
       if(existingLocks.get(item.id))return 'restricted';
+      if(prerequisites.get(item.id)===false)return 'notConfigured';
       if(['gmail','outlook'].includes(item.id)&&oauthAvailable.get(item.id)===false)
         return 'notConfigured';
       return states.get(item.id)||domStatus(item)||'unknown';
@@ -287,10 +288,16 @@
         meta:'/api/app/native/meta/status',
         cloud:'/api/app/native/cloud/status',
         freshdesk:'/api/app/helpdesk/freshdesk',
-        zendesk:'/api/app/helpdesk/zendesk'
+        zendesk:'/api/app/helpdesk/zendesk',
+        readiness:'/api/app/integrations/readiness'
       };
       const entries=await Promise.all(Object.entries(endpoints).map(async([key,url])=>[key,await readonlyJSON(url)]));
       const result=Object.fromEntries(entries),next=new Map();
+      if(result.readiness?.prerequisites){
+        for(const item of providers){const ready=result.readiness.prerequisites[item.id];
+          if(typeof ready==='boolean')prerequisites.set(item.id,ready);
+        }
+      }
       if(result.mail?.oauthAvailable && typeof result.mail.oauthAvailable==='object'){
         for(const id of ['gmail','outlook']){
           if(typeof result.mail.oauthAvailable[id]==='boolean')
