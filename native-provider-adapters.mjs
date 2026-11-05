@@ -70,7 +70,7 @@ export async function readProvider({provider,token,subdomain,resourceId,limit=20
  return JSON.parse(raw);
 }
 export function normalizeProviderItems(provider,data){
- const list=provider==='gmail'?data?.messages:
+ const list=provider==='gmail'?(data?.value??data?.messages):
   provider==='outlook'||provider==='sharepoint'?data?.value:
   provider==='hubspot'?data?.results:
   provider==='pipedrive'?data?.data:
