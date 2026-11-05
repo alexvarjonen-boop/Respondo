@@ -1,6 +1,7 @@
 // Respondo first-party inbox. All data stays within this installation.
 // Does NOT fetch mail or send any external-channel message.
 import {randomUUID} from 'node:crypto';
+import {triageNativeMail} from './native-mail-triage.mjs';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const isUuid=v=>UUID.test(String(v||''));
 const clean=(v,max)=>String(v??'').trim().slice(0,max);
@@ -138,7 +139,7 @@ export async function closeNativeInboxThread(db,tenantId,threadId,status){
   return r.rows[0]||null;
 }
 export async function nativeInboxDraftFromSources(db,tenantId,threadId){
-  const thread=await db.query(`SELECT language FROM chat_threads WHERE tenant_id=$1 AND id=$2`,
+  const thread=await db.query(`SELECT language,source_channel FROM chat_threads WHERE tenant_id=$1 AND id=$2`,
     [tenantId,ensureThreadId(threadId)]);
   if(!thread.rows[0])return null;
   const [messages,sources]=await Promise.all([
@@ -150,7 +151,21 @@ export async function nativeInboxDraftFromSources(db,tenantId,threadId){
   ]);
   const question=messages.rows[0]?.message;
   if(!question)return {suggestion:null,reason:'no_customer_question'};
-  return {suggestion:nativeInboxDraftSuggestion(question,sources.rows,thread.rows[0].language)};
+  const sourceSuggestion=nativeInboxDraftSuggestion(question,sources.rows,thread.rows[0].language);
+  // Email is always a human-approved draft. Booking and pricing messages must
+  // not inherit a generic answer that could promise a slot or an unverified price.
+  if(thread.rows[0].source_channel==='email'){
+    const triage=triageNativeMail(question,thread.rows[0].language);
+    const requiresConservativeReply=triage.intent==='booking'||triage.intent==='pricing';
+    return {suggestion:requiresConservativeReply||!sourceSuggestion
+      ?(triage.suggestion?{suggestedText:triage.suggestion,languageRequested:triage.language,
+          sourceId:null,sourceTitle:null,requiresLanguageAndFactReview:true,
+          approvedForSend:false}:null)
+      :sourceSuggestion,
+      intent:triage.intent,reviewRequired:true,externalDeliveryConnected:false,
+      confirmedBooking:false,verifiedPrice:false};
+  }
+  return {suggestion:sourceSuggestion};
 }
 
 export async function sendNativeWebsiteReply(db,tenantId,threadId,userId,payload={}){
