@@ -16,7 +16,9 @@ export function buildApprovedMailRequest({provider,token,recipient,text,messageI
  }
  if(!/^[A-Za-z0-9_-]{1,180}$/.test(String(threadId||'')))throw TypeError('Missing Gmail thread');
  if(!/^<[^<>\r\n]{3,250}>$/.test(String(originalRfcId||'')))throw TypeError('Missing original Message-ID');
- const subjectLine=safeHeader(subject||'',180).replace(/^re:\s*/i,'');
+ const subjectPlain=safeHeader(subject||'',180).replace(/^re:\s*/i,'');
+ const subjectLine=/[^\\x20-\\x7e]/.test(subjectPlain)
+  ?'=?UTF-8?B?'+Buffer.from(subjectPlain,'utf8').toString('base64')+'?=':subjectPlain;
  const mime=['To: '+recipient,'Subject: Re: '+subjectLine,
   'In-Reply-To: '+originalRfcId,'References: '+originalRfcId,
   'MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8',
@@ -100,8 +102,29 @@ export async function sendApprovedNativeMail(db,{tenantId,threadId,deliveryId,us
  if(data.provider==='gmail')try{
   const reply=await response.json();remoteId=clean(reply?.id,180);
  }catch{}
- await db.query(`UPDATE respondo_native_mail_deliveries
-   SET status='sent',provider_response_id=$3,updated_at=NOW()
-   WHERE tenant_id=$1 AND delivery_id=$2 AND status='unknown'`,[tenantId,deliveryId,remoteId]);
+ const audit=await db.connect();
+ try{
+  await audit.query('BEGIN');
+  const updated=await audit.query(`UPDATE respondo_native_mail_deliveries
+    SET status='sent',provider_response_id=$3,updated_at=NOW()
+    WHERE tenant_id=$1 AND delivery_id=$2 AND status='unknown'
+    RETURNING thread_id,provider,recipient,text`,[tenantId,deliveryId,remoteId]);
+  if(updated.rowCount){
+   const item=updated.rows[0];
+   await audit.query(`INSERT INTO chat_messages(
+     id,tenant_id,thread_id,source_channel,external_contact_id,visitor_ref,role,message,metadata)
+     VALUES($1,$2,$3,'email',$4,$5,'human',$6,$7::jsonb)`,
+     [randomUUID(),tenantId,threadId,item.provider+':'+item.recipient,
+      (item.provider+':'+item.recipient).slice(0,160),item.text,
+      JSON.stringify({origin:'respondo_native_mail_reply',provider:item.provider,
+       deliveryId,providerResponseId:remoteId})]);
+   await audit.query(`UPDATE chat_threads SET last_activity_at=NOW(),updated_at=NOW()
+     WHERE tenant_id=$1 AND id=$2`,[tenantId,threadId]);
+   await audit.query(`DELETE FROM respondo_native_inbox_drafts
+     WHERE tenant_id=$1 AND thread_id=$2`,[tenantId,threadId]);
+  }
+  await audit.query('COMMIT');
+ }catch(e){await audit.query('ROLLBACK').catch(()=>{});throw e}
+ finally{audit.release()}
  return {status:'sent',duplicate:false,autoRetry:false};
 }
