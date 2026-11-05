@@ -37,7 +37,7 @@ test('microphone errors preserve the ordinary text composer', () => {
 });
 
 test('dashboard preview supports dictation without replacing the demo send flow', () => {
-  assert.match(index, /<script defer src="\/voice-preview\.js\?v=20261104-voice-language-v2"><\/script>/);
+  assert.match(index, /<script defer src="\/voice-preview\.js\?v=20261105-visible-speech-language-v3"><\/script>/);
   assert.match(preview, /window\.SpeechRecognition \|\| window\.webkitSpeechRecognition/);
   assert.match(preview, /document\.querySelector\('#previewForm'\)/);
   assert.match(preview, /form\.addEventListener\('submit'/);
