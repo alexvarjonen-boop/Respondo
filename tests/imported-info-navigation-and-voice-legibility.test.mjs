@@ -8,6 +8,7 @@ const styles=read('public/workspace-continuation-v24.css');
 const voice=read('public/voice-preview.js');
 const index=read('public/index.html');
 const app=read('public/app.js');
+const orbit=read('public/workspace-orbit-v28.js');
 
 test('bot Review imported information opens the real import review, not settings or Overview',()=>{
   assert.match(workspace,/data-workspace-import-review="true"/);
@@ -55,4 +56,10 @@ test('dark imported review remains readable and cached files are versioned',()=>
   assert.match(index,/workspace-continuation-v24\.css\?v=[^"]*imported-review-v48/);
   assert.match(app,/workspace-continuation-v24\.js\?v=[^']*import-review-v2/);
   assert.match(index,/app\.js\?v=[^"]*imported-review-v2/);
+});
+
+test('direct imported-info jump does not get intercepted by the pinned mobile sphere',()=>{
+  assert.match(workspace,/orbit\?\.suspendPin\?\.\(\)/);
+  assert.match(orbit,/suspendPin\(\)\{inhibitUntil=performance\.now\(\)\+1200;navigationFreeze=true;/);
+  assert.match(workspace,/heading\.scrollIntoView\(\{behavior:'auto',block:'start'\}\)/);
 });

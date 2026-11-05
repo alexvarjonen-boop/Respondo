@@ -336,6 +336,9 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
   });
   const api={
     sync(id){const index=sections.findIndex(section=>section.id===id);if(index>=0)selectIndex(index);},
+    // Links to account modules intentionally jump past the sphere. Mobile
+    // scroll handlers must not misinterpret that jump as a swipe into Overview.
+    suspendPin(){inhibitUntil=performance.now()+1200;navigationFreeze=true;},
     setNavigate(callback){navigateTo=callback;}
   };
   orb.__orbitApi=api;

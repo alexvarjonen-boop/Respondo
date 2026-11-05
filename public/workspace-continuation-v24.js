@@ -1,4 +1,4 @@
-import { createWorkspaceOrbit } from './workspace-orbit-v28.js?v=20261028-mobile-pinned-v37-home-parity-v39-logical-12-clickable-icons-v40-selected-state-v45-profile-wrap-v46';
+import { createWorkspaceOrbit } from './workspace-orbit-v28.js?v=20261028-mobile-pinned-v37-home-parity-v39-logical-12-clickable-icons-v40-selected-state-v45-profile-wrap-v46-programmatic-jump-v2';
 // A single dark workspace after the five-card setup.
 // Keep existing chat, scan and billing DOM nodes intact so their event handlers,
 // authenticated API calls and tenant isolation are not replaced by demo stubs.
@@ -89,6 +89,16 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   // Move, rather than clone, the original working chat. Event listeners keep
   // operating, and the preview still uses the authenticated/demo answer path.
   if(preview.parentElement!==chatHost) chatHost.appendChild(preview);
+  // Preserve server-rendered plan locks before relocating the old sections.
+  // Reparenting a protected form must never make it appear available.
+  if(!workspace.dataset.integrationLocksStamped){
+    workspace.dataset.integrationLocksStamped='yes';
+    for(const id of ['crm-integration','native-mail-connections','meta-native-connections',
+      'business-integrations','commerce-integration','stripe-connect']){
+      const pane=shell.querySelector('#'+id);
+      if(pane?.hidden)pane.dataset.respondoPlanLocked='yes';
+    }
+  }
   const allSections=[...shell.querySelectorAll('.dashboard-view-section')].filter(node=>!workspace.contains(node));
   for(const section of allSections){
     section.classList.remove('dashboard-view-hidden');
@@ -215,6 +225,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     park();
     const target=storage.querySelector('#'+id);
     if(!target)return false;
+    if(target.dataset.respondoPlanLocked==='yes')return false;
     // Enterprise-only integration panels stay locked on lower plans.
     if(target.parentElement?.id==='actions2' && target.hidden)return false;
     if(target.parentElement!==storage){
@@ -388,7 +399,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     answers:[['knowledge',translate('Tietopohja','Kunskapsbas','Knowledge base')],['unanswered',translate('Puuttuvat vastaukset','Saknade svar','Unanswered')]],
     customers:[['leads',translate('Liidit ja yhteydenotot','Leads och kontakter','Leads & contacts')],['conversations',translate('Keskustelut','Konversationer','Conversations')]],
     conversations:[['conversations',translate('Keskusteluhistoria','Samtalshistorik','Conversation history')],['live-inbox',translate('Live-keskustelut','Livekonversationer','Live conversations')]],
-    integrations:[['crm-integration',translate('CRM-yhteydet','CRM-anslutningar','CRM connectors')],['business-integrations',translate('API ja webhookit','API och webhooks','API & webhooks')],['commerce-integration',translate('Verkkokaupat','Webbutiker','Online stores')],['booking-calendar',translate('Kalenteri','Kalender','Calendar')],['stripe-connect',translate('Stripe','Stripe','Stripe')]],
+    integrations:[['crm-integration',translate('CRM-yhteydet','CRM-anslutningar','CRM connectors')],['business-integrations',translate('API ja webhookit','API och webhooks','API & webhooks')],['commerce-integration',translate('Verkkokaupat','Webbutiker','Online stores')],['booking-calendar',translate('Kalenteri','Kalender','Calendar')],['stripe-connect',translate('Stripe','Stripe','Stripe')],['native-mail-connections',translate('Sähköposti','E-post','Email')],['meta-native-connections',translate('Viestikanavat','Meddelandekanaler','Messaging channels')],['native-operations',translate('Tietopohja ja tukipalvelut','Kunskap och support','Knowledge & support')]],
     profile:[['workspaces',translate('Yritykset','Företag','Companies')],['account-security',translate('Tilin asetukset','Kontoinställningar','Account security')]]
   };
   const primary={
@@ -521,6 +532,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     // chapter (Overview) during smooth movement across the orbit.
     requestAnimationFrame(()=>{
       if(heading.isConnected && !heading.closest('[hidden]')){
+        orbit?.suspendPin?.();
         heading.scrollIntoView({behavior:'auto',block:'start'});
         heading.setAttribute('tabindex','-1');
         heading.focus({preventScroll:true});
@@ -545,7 +557,10 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
         requestAnimationFrame(()=>{
           const view=workspace.dataset.currentView;
           const destination=workspace.querySelector('[data-workspace-page="'+(view==='bot'?'bot':view==='overview'?'overview':'modules')+'"]');
-          if(destination && !destination.hidden)destination.scrollIntoView({behavior:'auto',block:'start'});
+          if(destination && !destination.hidden){
+            orbit?.suspendPin?.();
+            destination.scrollIntoView({behavior:'auto',block:'start'});
+          }
         });
       }
     });
