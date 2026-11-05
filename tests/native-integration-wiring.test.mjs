@@ -50,3 +50,28 @@ test('embedded chat requests available slots using service and quantity',()=>{
  assert.match(widget,/params\.set\('serviceId',serviceSelect\.value\)/);
  assert.match(widget,/params\.set\('quantity',quantityInput\.value\)/);
 });
+
+test('provider secrets are encrypted server-side and never listed or returned',()=>{
+ assert.match(server,/native_provider_credentials/);
+ assert.match(server,/encryptSecret\(token\)/);
+ const status=server.slice(server.indexOf("app.get('/api/app/native-integrations/status'"),
+   server.indexOf("app.post('/api/app/native-integrations/settings'"));
+ assert.doesNotMatch(status,/encrypted_token/);
+ const connect=server.slice(server.indexOf("app.post('/api/app/native-integrations/connect'"),
+   server.indexOf("app.post('/api/app/native-integrations/disconnect'"));
+ assert.match(connect,/ownerOnly/);
+ assert.doesNotMatch(connect,/accessToken:token|token:token/);
+});
+test('provider inbox sync requires a verified connection and only creates review drafts',()=>{
+ const sync=server.slice(server.indexOf("app.post('/api/app/native-integrations/sync'"),
+  server.indexOf("app.get('/api/app/native-integrations/status'"));
+ assert.match(sync,/i\.mode='connected'/);
+ assert.match(sync,/ON CONFLICT\(tenant_id,channel,external_message_id\) DO NOTHING/);
+ assert.match(sync,/autoSent:false/);
+});
+test('provider UI has connect and sync actions without credential display',()=>{
+ assert.match(app,/id="nativeProviderConnectForm"/);
+ assert.match(app,/id="nativeProviderSyncForm"/);
+ assert.match(app,/\/api\/app\/native-integrations\/connect/);
+ assert.match(app,/\/api\/app\/native-integrations\/sync/);
+});
