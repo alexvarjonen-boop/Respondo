@@ -55,6 +55,7 @@ import { readProvider } from './native-provider-adapters.mjs';
 import {verifyMetaSignature,extractMetaInbound} from './meta-inbound.mjs';
 import {ensureNativeMailBridgeSchema,getNativeMailboxMessages,storeNativeMailboxMessages,nativeMailboxProvider} from './native-mail-bridge.mjs';
 import {ensureNativeMailDeliverySchema,sendApprovedNativeMail} from './native-mail-outbound.mjs';
+import {ensureNativeMetaOutboundSchema,sendApprovedNativeMeta} from './native-meta-outbound.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
 import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
@@ -9793,6 +9794,25 @@ app.post('/api/webhooks/respondo-meta',async(req,res)=>{
  }catch(e){console.error('Signed Meta intake failed',e?.name||'error');
   return res.status(503).json({error:'Webhook processing failed'})}
 });
+/* Owner-approved Meta replies are never triggered by the incoming webhook. */
+app.post('/api/app/native/inbox/:id/meta-reply',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Workspace not found'});
+  const result=await sendApprovedNativeMeta(pool,{
+    tenantId:tr.rows[0].id,threadId:String(req.params.id||''),
+    deliveryId:req.body?.deliveryId,userId:req.user.sub,
+    text:req.body?.text,approved:req.body?.approved===true,
+    getAccessToken:encrypted=>decryptSecret(encrypted)
+  });
+  return res.status(result.status==='unknown'?202:200).json(result);
+ }catch(e){
+  console.error('Native Meta outbound failed',e?.name||'error');
+  return res.status(e instanceof TypeError?400:500).json({
+   error:'Meta reply not confirmed. Review permissions and message history before trying again.'
+  });
+ }
+});
 /* Consent-based Gmail and Microsoft 365 mailbox read access.
    Both providers feed the existing Respondo Inbox; no outbound email. */
 const NATIVE_MAIL_STATE_COOKIE='respondo_native_mail_oauth_state';
@@ -17619,6 +17639,7 @@ async function start() {
     await withRuntimeSchemaLock(() => ensureRuntimeSchema());
     await withRuntimeSchemaLock(() => ensureNativeMailBridgeSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMailDeliverySchema(pool));
+    await withRuntimeSchemaLock(() => ensureNativeMetaOutboundSchema(pool));
     await withRuntimeSchemaLock(() => ensureOnboardingCheckupSchema(q));
     await withRuntimeSchemaLock(async () => {
       await seedAndLoadIntentUtterances();
