@@ -9784,7 +9784,7 @@ app.post('/api/webhooks/respondo-meta',async(req,res)=>{
        (id,tenant_id,thread_id,source_channel,external_contact_id,visitor_ref,role,message,metadata)
        VALUES($1,$2,$3,$4,$5,$6,'user',$7,$8::jsonb)`,
       [uid(),tenantId,thread.rows[0].id,channel,from,from,event.body,
-       JSON.stringify({provider:channel,providerMessageId:event.externalMessageId})]);
+       JSON.stringify({provider:channel,providerMessageId:event.externalMessageId,providerTimestampMs:event.providerTimestampMs})]);
     await client.query('COMMIT');
     accepted++;
    }catch(e){await client.query('ROLLBACK').catch(()=>{});throw e}
