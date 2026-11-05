@@ -1,4 +1,5 @@
 import { estimateServiceDuration, findSuitableStarts } from './booking-intelligence.mjs';
+import { readProvider, normalizeProviderItems } from './native-provider-adapters.mjs';
 import { prepareInboundCase, draftResponse, validateIntegrationSettings } from './internal-integrations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
@@ -11049,6 +11050,83 @@ app.post('/api/app/stripe-connect/onboard', auth, ownerOnly, subscribed, async (
 });
 
 // Respondo native channel inbox: no provider tokens, AI network calls or automatic sending.
+// Provider read-only connections: per-tenant encrypted token, verified before persistence.
+// No credentials are ever sent to the browser after setup.
+app.post('/api/app/native-integrations/connect', auth, ownerOnly, subscribed, async (req,res)=>{
+ const provider=String(req.body?.provider||'').trim();
+ const approved=new Set(['gmail','outlook','hubspot','pipedrive','freshdesk','zendesk','google_drive','sharepoint','whatsapp','instagram','facebook','shopify']);
+ if(!approved.has(provider))return res.status(400).json({error:'Palvelua ei tueta tässä yhteystavassa.'});
+ const token=String(req.body?.accessToken||'').trim();
+ const subdomain=String(req.body?.subdomain||'').trim().toLowerCase();
+ const resourceId=String(req.body?.resourceId||'').trim();
+ if(token.length<10||token.length>8192)return res.status(400).json({error:'Tarkista palvelun pääsytunnus.'});
+ try{
+  // Test provider's real endpoint before reporting successful connection.
+  const data=await readProvider({provider,token,subdomain,resourceId:resourceId||undefined,limit:1});
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  await q(`INSERT INTO native_provider_credentials(tenant_id,provider,encrypted_token,subdomain,resource_id,last_verified_at)
+   VALUES($1,$2,$3,$4,$5,NOW()) ON CONFLICT(tenant_id,provider)
+   DO UPDATE SET encrypted_token=EXCLUDED.encrypted_token,subdomain=EXCLUDED.subdomain,
+     resource_id=EXCLUDED.resource_id,last_verified_at=NOW(),updated_at=NOW()`,
+   [tr.rows[0].id,provider,encryptSecret(token),subdomain||null,resourceId||null]);
+  await q(`INSERT INTO native_integrations(tenant_id,provider,mode) VALUES($1,$2,'connected')
+   ON CONFLICT(tenant_id,provider) DO UPDATE SET mode='connected',updated_at=NOW()`,[tr.rows[0].id,provider]);
+  return res.json({ok:true,provider,connected:true,previewCount:normalizeProviderItems(provider,data).length});
+ }catch(e){
+  // Do not log secrets, tokens, request URLs or raw remote error content.
+  console.error('Provider connection verification failed',provider,e?.message?.slice(0,90));
+  return res.status(400).json({error:'Palvelun yhteyttä ei voitu todentaa. Tarkista käyttöoikeudet ja tunnus.'});
+ }
+});
+app.post('/api/app/native-integrations/disconnect', auth, ownerOnly, subscribed, async(req,res)=>{
+ const provider=String(req.body?.provider||'');
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  await q('DELETE FROM native_provider_credentials WHERE tenant_id=$1 AND provider=$2',[tr.rows[0].id,provider]);
+  await q(`UPDATE native_integrations SET mode='disabled',updated_at=NOW()
+   WHERE tenant_id=$1 AND provider=$2`,[tr.rows[0].id,provider]);
+  return res.json({ok:true,connected:false});
+ }catch(e){console.error('Provider disconnect failed');return res.status(500).json({error:'Yhteyttä ei voitu poistaa.'})}
+});
+app.post('/api/app/native-integrations/sync', auth, ownerOnly, subscribed, async(req,res)=>{
+ const provider=String(req.body?.provider||'');
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const stored=await q(`SELECT c.encrypted_token,c.subdomain,c.resource_id
+   FROM native_provider_credentials c JOIN native_integrations i
+   ON i.tenant_id=c.tenant_id AND i.provider=c.provider
+   WHERE c.tenant_id=$1 AND c.provider=$2 AND i.mode='connected'`,[tr.rows[0].id,provider]);
+  if(!stored.rowCount)return res.status(409).json({error:'Palvelu ei ole yhdistetty.'});
+  const token=decryptSecret(stored.rows[0].encrypted_token);
+  if(!token)throw Error('missing_decrypted_token');
+  const data=await readProvider({provider,token,subdomain:stored.rows[0].subdomain,
+     resourceId:stored.rows[0].resource_id,limit:40});
+  const items=normalizeProviderItems(provider,data);
+  let imported=0;
+  for(const item of items){
+   // Never fabricate a customer message from metadata-only provider records.
+   if(!item.snippet||!['outlook','freshdesk','zendesk'].includes(provider))continue;
+   const prepared=prepareInboundCase({source:provider,externalMessageId:item.externalId,
+     from:item.email,subject:item.title,body:item.snippet});
+   if(prepared.status!=='ready')continue;
+   const reply=draftResponse({caseData:prepared});
+   const saved=await q(`INSERT INTO native_inbox
+    (id,tenant_id,channel,external_message_id,sender,channel_contact_id,subject,body,intent,language,needs_human,draft,status)
+    VALUES($1,$2,$3,$4,$5,NULL,$6,$7,$8,$9,$10,$11,'review')
+    ON CONFLICT(tenant_id,channel,external_message_id) DO NOTHING RETURNING id`,
+    [uid(),tr.rows[0].id,provider,prepared.externalId,prepared.sender,prepared.subject,
+     prepared.body,prepared.classification.intent,prepared.classification.language,
+     prepared.classification.needsHuman,reply.text]);
+   imported+=saved.rowCount;
+  }
+  return res.json({ok:true,provider,records:items.length,imported,autoSent:false,
+     note:'Read-only import. Messages are review drafts; no external mutations.'});
+ }catch(e){console.error('Provider sync failed',provider,e?.message?.slice(0,90));
+  return res.status(502).json({error:'Tietojen nouto epäonnistui. Tarkista yhteyden oikeudet.'})}
+});
 app.get('/api/app/native-integrations/status', auth, ownerOnly, subscribed, async (req,res)=>{
  try {
   const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
@@ -12064,6 +12142,16 @@ async function ensureRuntimeSchema() {
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_action_requests_tenant_created ON action_requests(tenant_id, created_at DESC)');
+  await q(`CREATE TABLE IF NOT EXISTS native_provider_credentials (
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL,
+    encrypted_token TEXT NOT NULL,
+    subdomain TEXT,
+    resource_id TEXT,
+    last_verified_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(tenant_id,provider)
+  )`);
   await q(`CREATE TABLE IF NOT EXISTS native_integrations (
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     provider TEXT NOT NULL,
