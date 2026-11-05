@@ -29,3 +29,19 @@ test('Instagram and Facebook text DMs produce tenant lookup keys, echoes ignored
  }
 });
 test('unsupported payloads are ignored',()=>assert.deepEqual(extractMetaInbound({object:'unknown',entry:[]}),[]));
+
+test('Meta event timestamps are preserved, webhook arrival cannot renew a 24-hour window',()=>{
+ const oldSeconds=Math.floor((Date.now()-25*3600000)/1000);
+ const event=extractMetaInbound({object:'whatsapp_business_account',entry:[{changes:[{value:{
+  metadata:{phone_number_id:'12345678901'},messages:[{
+   id:'wamid.timestamp',from:'358401234567',type:'text',
+   text:{body:'Hello'},timestamp:String(oldSeconds)}]
+ }}]}]});
+ assert.equal(event.length,1);
+ assert.equal(event[0].providerTimestampMs,oldSeconds*1000);
+ const untrusted=extractMetaInbound({object:'whatsapp_business_account',entry:[{changes:[{value:{
+  metadata:{phone_number_id:'12345678901'},messages:[{
+   id:'wamid.missing',from:'358401234567',type:'text',text:{body:'Hello'}}]
+ }}]}]});
+ assert.equal(untrusted[0].providerTimestampMs,null);
+});
