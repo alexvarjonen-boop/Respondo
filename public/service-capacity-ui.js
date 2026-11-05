@@ -1,11 +1,11 @@
 (() => {
   'use strict';
   const words={
-    fi:{title:'Älykäs työajan arviointi',subtitle:'Määritä yrityksesi omat palvelut ja hyväksytyt työaikanormit. Respondo kysyy tarvittavat määrät ja tarkistaa koko työn pituisen vapaan ajan.',add:'Lisää palvelu',choose:'Valitse palvelu',name:'Palvelun nimi',aliases:'Muut nimet (pilkuilla erotettuna)',calculation:'Laskentatapa',fixed:'Kiinteä kesto',quantity:'Määrän perusteella',unit:'Laskentayksikkö (esim. kpl, m², käynti)',perUnit:'Minuuttia per yksikkö',base:'Valmisteluaika, min',buffer:'Siirtymä- ja varoaika, min',maximum:'Suurin automaattisesti arvioitava määrä',active:'Käytä automaattista työajan arviointia',save:'Tallenna palvelun työaikasäännöt',loading:'Ladataan palveluja…',saved:'Säännöt tallennettu.',failed:'Asetuksia ei voitu tallentaa.',unconfigured:'Ei käytössä – täytä ja tarkista työaikanormit ennen käyttöönottoa.',configured:'Käytössä – arviointi tehdään vain yrityksen hyväksymillä säännöillä.',warning:'Liian monimutkaiset tai puutteellisesti kuvatut työt ohjataan työntekijälle. Vapaata aikaa ei luvata, jos kalenteria ei voida tarkistaa. Arvio ei ole sitova tarjous.',
+    fi:{advanced:'Lisäasetukset',duration:'Palvelun kesto, minuuttia',title:'Älykäs työajan arviointi',subtitle:'Määritä yrityksesi omat palvelut ja hyväksytyt työaikanormit. Respondo kysyy tarvittavat määrät ja tarkistaa koko työn pituisen vapaan ajan.',add:'Lisää palvelu',choose:'Valitse palvelu',name:'Palvelun nimi',aliases:'Muut nimet (pilkuilla erotettuna)',calculation:'Laskentatapa',fixed:'Kiinteä kesto',quantity:'Määrän perusteella',unit:'Laskentayksikkö (esim. kpl, m², käynti)',perUnit:'Minuuttia per yksikkö',base:'Valmisteluaika, min',buffer:'Siirtymä- ja varoaika, min',maximum:'Suurin automaattisesti arvioitava määrä',active:'Käytä automaattista työajan arviointia',save:'Tallenna palvelun työaikasäännöt',loading:'Ladataan palveluja…',saved:'Säännöt tallennettu.',failed:'Asetuksia ei voitu tallentaa.',unconfigured:'Ei käytössä – täytä ja tarkista työaikanormit ennen käyttöönottoa.',configured:'Käytössä – arviointi tehdään vain yrityksen hyväksymillä säännöillä.',warning:'Liian monimutkaiset tai puutteellisesti kuvatut työt ohjataan työntekijälle. Vapaata aikaa ei luvata, jos kalenteria ei voida tarkistaa. Arvio ei ole sitova tarjous.',
       windowSubtitle:'Tätä ikkunanpesusääntöä käytetään vain, jos yrityksesi on ottanut sen erikseen käyttöön.',windowUnit:'Minuuttia per tavallinen ikkuna (yksi puoli)',large:'Ison ikkunan kerroin',both:'Molempien puolien kerroin',access:'Vaikean pääsyn lisäminuutit',windows:'Enimmäisikkunamäärä'},
-    sv:{title:'Smart arbetstidsberäkning',subtitle:'Lägg till företagets egna tjänster och godkända tidsnormer. Respondo frågar efter arbetsmängd och kontrollerar ett sammanhängande ledigt tidsintervall.',add:'Lägg till tjänst',choose:'Välj tjänst',name:'Tjänstens namn',aliases:'Andra namn (kommaseparerade)',calculation:'Beräkningsmetod',fixed:'Fast tid',quantity:'Enligt mängd',unit:'Enhet (t.ex. st, m², besök)',perUnit:'Minuter per enhet',base:'Förberedelse, minuter',buffer:'Restid och buffert, minuter',maximum:'Maximal mängd för automatisk beräkning',active:'Aktivera automatisk arbetstidsberäkning',save:'Spara tjänstens tidsregler',loading:'Laddar tjänster…',saved:'Regler sparade.',failed:'Kunde inte spara inställningarna.',unconfigured:'Inte aktiv – granska tidsnormerna innan du aktiverar.',configured:'Aktiv – endast företagets godkända tidsnormer används.',warning:'Komplicerade arbeten eller bristfällig information skickas till personalen. Ingen tid utlovas utan verifierad kalender. Uppskattningar är inte bindande offerter.',
+    sv:{advanced:'Avancerade inställningar',duration:'Tjänstens längd, minuter',title:'Smart arbetstidsberäkning',subtitle:'Lägg till företagets egna tjänster och godkända tidsnormer. Respondo frågar efter arbetsmängd och kontrollerar ett sammanhängande ledigt tidsintervall.',add:'Lägg till tjänst',choose:'Välj tjänst',name:'Tjänstens namn',aliases:'Andra namn (kommaseparerade)',calculation:'Beräkningsmetod',fixed:'Fast tid',quantity:'Enligt mängd',unit:'Enhet (t.ex. st, m², besök)',perUnit:'Minuter per enhet',base:'Förberedelse, minuter',buffer:'Restid och buffert, minuter',maximum:'Maximal mängd för automatisk beräkning',active:'Aktivera automatisk arbetstidsberäkning',save:'Spara tjänstens tidsregler',loading:'Laddar tjänster…',saved:'Regler sparade.',failed:'Kunde inte spara inställningarna.',unconfigured:'Inte aktiv – granska tidsnormerna innan du aktiverar.',configured:'Aktiv – endast företagets godkända tidsnormer används.',warning:'Komplicerade arbeten eller bristfällig information skickas till personalen. Ingen tid utlovas utan verifierad kalender. Uppskattningar är inte bindande offerter.',
       windowSubtitle:'Den här inställningen gäller endast om företaget själv har aktiverat fönstertvätt.',windowUnit:'Minuter per vanligt fönster (ena sidan)',large:'Faktor för stora fönster',both:'Faktor för båda sidor',access:'Extra minuter för svår åtkomst',windows:'Maxantal fönster'},
-    en:{title:'Smart service duration estimates',subtitle:'Add your company’s services and approved duration standards. Respondo asks for the required workload and checks a continuous available time slot.',add:'Add a service',choose:'Select service',name:'Service name',aliases:'Alternative names (comma-separated)',calculation:'Duration method',fixed:'Fixed duration',quantity:'Quantity-based duration',unit:'Unit (e.g. item, m², visit)',perUnit:'Minutes per unit',base:'Setup time, minutes',buffer:'Travel / safety buffer, minutes',maximum:'Maximum units for automatic estimates',active:'Enable automatic job duration estimates',save:'Save service duration rules',loading:'Loading services…',saved:'Settings saved.',failed:'Could not save service rules.',unconfigured:'Not enabled — review your own time standards before enabling.',configured:'Enabled — only your approved time standards are used.',warning:'Complex jobs and incomplete details must be reviewed by staff. No slot is promised without verified calendar availability. Estimates are nonbinding.',
+    en:{advanced:'Advanced settings',duration:'Service duration, minutes',title:'Smart service duration estimates',subtitle:'Add your company’s services and approved duration standards. Respondo asks for the required workload and checks a continuous available time slot.',add:'Add a service',choose:'Select service',name:'Service name',aliases:'Alternative names (comma-separated)',calculation:'Duration method',fixed:'Fixed duration',quantity:'Quantity-based duration',unit:'Unit (e.g. item, m², visit)',perUnit:'Minutes per unit',base:'Setup time, minutes',buffer:'Travel / safety buffer, minutes',maximum:'Maximum units for automatic estimates',active:'Enable automatic job duration estimates',save:'Save service duration rules',loading:'Loading services…',saved:'Settings saved.',failed:'Could not save service rules.',unconfigured:'Not enabled — review your own time standards before enabling.',configured:'Enabled — only your approved time standards are used.',warning:'Complex jobs and incomplete details must be reviewed by staff. No slot is promised without verified calendar availability. Estimates are nonbinding.',
       windowSubtitle:'This legacy setting applies only if your company explicitly enabled window cleaning.',windowUnit:'Minutes per standard window (one side)',large:'Large-window multiplier',both:'Both-sides multiplier',access:'Additional minutes for difficult access',windows:'Maximum windows for automatic estimates'}
   };
   const locale=()=>{
@@ -36,7 +36,14 @@
     const status=document.createElement('p');status.className='service-status';
     status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.textContent=t.loading;
     section.append(title,intro,toolbar,form,note,status);root.appendChild(section);
-    let configs=[],current=fresh(),save,checkbox,fields={};
+    let configs=[],current=fresh(),save,checkbox,fields={},fieldTarget=form;
+    const extra=(label)=>{
+      const details=document.createElement('details');details.className='rs-service-advanced';
+      const summary=document.createElement('summary');summary.textContent=label;
+      const body=document.createElement('div');body.className='rs-service-advanced-fields';
+      details.append(summary,body);form.append(details);
+      return body;
+    };
     function field(key,label,value,type='number',min,max,step){
       const wrap=document.createElement('label');wrap.className='service-field';
       const caption=document.createElement('span');caption.textContent=label;
@@ -45,7 +52,7 @@
       if(max!==undefined)input.max=String(max);
       if(step!==undefined)input.step=String(step);
       input.value=String(value??'');input.required=true;
-      wrap.append(caption,input);form.appendChild(wrap);fields[key]=input;
+      wrap.append(caption,input);fieldTarget.appendChild(wrap);fields[key]=input;
       return input;
     }
     function addSelect(key,label,options,value){
@@ -54,7 +61,7 @@
       const el=document.createElement('select');el.name=key;
       for(const [v,name] of options){const op=document.createElement('option');
         op.value=v;op.textContent=name;el.appendChild(op);}
-      el.value=value;wrap.append(caption,el);form.appendChild(wrap);fields[key]=el;
+      el.value=value;wrap.append(caption,el);fieldTarget.appendChild(wrap);fields[key]=el;
       return el;
     }
     function options(){
@@ -71,12 +78,13 @@
       select.value=current.serviceKey;
     }
     function render(){
-      form.replaceChildren();fields={};
+      form.replaceChildren();fields={};fieldTarget=form;
       const isWindow=current.serviceKey==='window_cleaning';
       if(isWindow){
         const windowNote=document.createElement('p');windowNote.className='service-note';
         windowNote.style.gridColumn='1/-1';windowNote.textContent=t.windowSubtitle;form.append(windowNote);
         field('minutesPerWindow',t.windowUnit,current.minutesPerWindow, 'number',1,180,.5);
+        fieldTarget=extra(t.advanced);
         field('baseMinutes',t.base,current.baseMinutes,'number',0,360,1);
         field('bufferMinutes',t.buffer,current.bufferMinutes,'number',0,180,1);
         field('largeMultiplier',t.large,current.largeMultiplier,'number',1,4,.05);
@@ -85,10 +93,17 @@
         field('maxWindows',t.windows,current.maxWindows,'number',1,300,1);
       }else{
         field('serviceName',t.name,current.serviceName,'text');
+        const method=addSelect('calculation',t.calculation,[['fixed',t.fixed],['quantity',t.quantity]],current.calculation);
+        const unit=field('unitLabel',t.unit,current.unitLabel,'text');
+        const durationInput=field('minutesPerUnit',t.perUnit,current.minutesPerUnit,'number',1,720,1);
+        const reflectMethod=()=>{
+          unit.closest('.service-field').hidden=method.value==='fixed';
+          durationInput.closest('.service-field').querySelector('span').textContent=
+            method.value==='fixed'?t.duration:t.perUnit;
+        };
+        method.addEventListener('change',reflectMethod);reflectMethod();
+        fieldTarget=extra(t.advanced);
         field('aliases',t.aliases,current.aliases,'text').required=false;
-        addSelect('calculation',t.calculation,[['fixed',t.fixed],['quantity',t.quantity]],current.calculation);
-        field('unitLabel',t.unit,current.unitLabel,'text');
-        field('minutesPerUnit',t.perUnit,current.minutesPerUnit,'number',1,720,1);
         field('baseMinutes',t.base,current.baseMinutes,'number',0,360,1);
         field('bufferMinutes',t.buffer,current.bufferMinutes,'number',0,180,1);
         field('maxUnits',t.maximum,current.maxUnits,'number',1,10000,1);
