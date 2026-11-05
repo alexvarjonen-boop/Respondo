@@ -18,7 +18,7 @@ export function classifyInboundMessage(input) {
  return {status:'classified',intent,language:lang,needsHuman:intent==='complaint'||intent==='human',requiresApproval:true};
 }
 export function prepareInboundCase({source,externalMessageId,from,subject,body,channelContactId}) {
- const allowed=new Set(['email','website','whatsapp','instagram','facebook','sms','zendesk','freshdesk','hubspot','pipedrive','shopify','woocommerce','manual']);
+ const allowed=new Set(['email','gmail','outlook','website','whatsapp','instagram','facebook','sms','zendesk','freshdesk','hubspot','pipedrive','shopify','woocommerce','manual']);
  const channel=norm(source).toLowerCase();
  if(!allowed.has(channel))return {status:'invalid',reason:'unsupported_channel'};
  const externalId=norm(externalMessageId);
