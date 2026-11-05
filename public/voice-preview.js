@@ -41,9 +41,10 @@
   const style = document.createElement('style');
   style.textContent = [
     '#app #previewForm .respondo-voice-input-wrap{display:block;position:relative;min-width:0;width:100%}',
-    '#app #previewForm .respondo-voice-input-wrap>input{width:100%!important;padding-right:110px!important}',
-    '#app #previewForm .respondo-voice-lang-picker{position:absolute!important;top:50%!important;right:54px!important;transform:translateY(-50%)!important;display:block!important;width:47px!important;height:40px!important;min-height:40px!important;padding:0 4px!important;background:#f2f3f5!important;border:1px solid #dde1e8!important;border-radius:11px!important;color:#252830!important;font-size:11px!important;font-weight:750!important;z-index:2}',
+    '#app #previewForm .respondo-voice-input-wrap>input{width:100%!important;padding-right:144px!important}',
+    '#app #previewForm .respondo-voice-lang-picker{position:absolute!important;top:50%!important;right:54px!important;transform:translateY(-50%)!important;display:block!important;appearance:menulist!important;-webkit-appearance:menulist!important;box-sizing:border-box!important;width:66px!important;min-width:66px!important;height:42px!important;min-height:42px!important;padding:0 7px!important;background:#f7f8fb!important;border:1px solid #c7ced8!important;border-radius:11px!important;color:#172638!important;-webkit-text-fill-color:#172638!important;font-size:13px!important;font-weight:800!important;line-height:normal!important;opacity:1!important;color-scheme:light!important;z-index:3}',
     '#app #previewForm .respondo-voice-lang-picker:focus-visible{outline:3px solid #555!important;outline-offset:2px}',
+    '#app #previewForm .respondo-voice-lang-picker option{background:#fff!important;color:#172638!important;-webkit-text-fill-color:#172638!important;opacity:1!important}',
     '#app #previewForm .respondo-voice-preview-btn{position:absolute!important;top:50%!important;right:5px!important;transform:translateY(-50%)!important;display:grid!important;place-items:center!important;min-height:40px!important;height:40px!important;width:42px!important;border:1px solid #dde1e8!important;border-radius:11px!important;background:#fff!important;color:#252830!important;box-shadow:none!important;z-index:2}',
     '#app #previewForm .respondo-voice-preview-btn svg{height:19px;width:19px;display:block}',
     '#app #previewForm .respondo-voice-preview-btn.listening{background:#fee8e5!important;color:#ab2419!important;border-color:#edada6!important}',
