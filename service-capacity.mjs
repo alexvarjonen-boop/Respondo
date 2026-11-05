@@ -289,6 +289,10 @@ export async function serviceDialogue(db,tenantId,visitorRef,message,lang,availa
   const isService=hasIntent(message),isAppointment=appointmentIntent(message);
   const raw=lower(message);
   if(/^(?:kiitos|kiitti|thank you|thanks|tack|hei|moi|bye|heippa)[! .]*$/i.test(raw))return null;
+  // A named service in an ordinary FAQ is not itself a booking request.
+  if(named&&!isAppointment&&!old.facts?._genericPending&&!priorCustom&&
+    /(?:teettekö|tarjoatteko|onko teillä|do you offer|do you provide|har ni|erbjuder ni)/i.test(raw))
+    return null;
   const qtyFollowup=priorCustom?.calculation==='quantity'&&
     Number.isInteger(customQuantity(message,priorCustom,{}).quantity);
   const timeFollowup=/(?:maanant|måndag|monday|tiist|tisdag|tuesday|keskiviik|onsdag|wednesday|torst|torsdag|thursday|perjant|fredag|friday|lauant|lördag|saturday|sunnunt|söndag|sunday|huomenna|tomorrow|iltapäiv|aamulla|afternoon|morning|eftermiddag|förmiddag)/i.test(raw)||
