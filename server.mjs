@@ -11106,7 +11106,7 @@ app.get('/api/app/native-integrations/outlook/start', auth, ownerOnly, subscribe
   const url=new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
   url.search=new URLSearchParams({
     client_id:clientId,redirect_uri:BASE+'/api/app/native-integrations/outlook/callback',
-    response_type:'code',response_mode:'query',scope:'offline_access User.Read Mail.ReadBasic',
+    response_type:'code',response_mode:'query',scope:'offline_access User.Read Mail.Read',
     state,prompt:'select_account'
   }).toString();
   return res.redirect(url.toString());
@@ -11255,7 +11255,7 @@ app.post('/api/app/native-integrations/sync', auth, ownerOnly, subscribed, async
     const response=await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token',{
       method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
       body:new URLSearchParams({client_id:clientId,client_secret:clientSecret,refresh_token:refresh,
-        grant_type:'refresh_token',scope:'offline_access User.Read Mail.ReadBasic'}),
+        grant_type:'refresh_token',scope:'offline_access User.Read Mail.Read'}),
       signal:AbortSignal.timeout(9000)
     });
     if(!response.ok)throw Error('microsoft_token_refresh_failed');
