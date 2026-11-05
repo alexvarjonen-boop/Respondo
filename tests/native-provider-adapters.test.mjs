@@ -60,3 +60,13 @@ test('Gmail detailed read extracts sender and body preview',async()=>{
  const normalized=normalizeProviderItems('gmail',out);
  assert.equal(normalized[0].snippet,'I would like a booking');
 });
+
+test('SharePoint uses site-specific drive instead of users personal OneDrive',()=>{
+ const id='contoso.sharepoint.com,abc-def,ghi-jkl';
+ const req=buildProviderRead({provider:'sharepoint',token,resourceId:id});
+ assert.match(req.url,/sites\/contoso\.sharepoint\.com%2Cabc-def%2Cghi-jkl\/drive\/root\/children/);
+ assert.throws(()=>buildProviderRead({provider:'sharepoint',token}),/sharepoint_site_id_required/);
+});
+test('WooCommerce does not allow direct unverified arbitrary-host HTTP reads',()=>{
+ assert.throws(()=>buildProviderRead({provider:'woocommerce',token,subdomain:'example.com'}),/existing_verified_commerce_connector/);
+});
