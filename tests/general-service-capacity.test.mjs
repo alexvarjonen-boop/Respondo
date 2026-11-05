@@ -27,7 +27,7 @@ function memoryDB(ruleList=[rule]){
       return {rows:state?[state]:[],rowCount:state?1:0};
     }
     if(sql.includes('INSERT INTO respondo_service_dialogues')){
-      state={facts:JSON.parse(args[2]==='pending'?args[3]:args[2]),
+      state={facts:JSON.parse(args.length===5?args[3]:args[2]),
         preferred_text:args.length===5?args[4]:args[3]};
       return {rows:[],rowCount:1};
     }
