@@ -51,3 +51,35 @@ test('saved browser connection hints are not proof of successful external operat
  assert.match(ui,/badge\.textContent\)\)return 'partial'/);
  assert.doesNotMatch(ui,/badge\.textContent\)\)return 'connected'/);
 });
+
+test('cloud provider OAuth callbacks always return to integration setup',()=>{
+ assert.match(backend,/const nativeCloudReturn=\(provider,status\)=>'\/app\?'\+new URLSearchParams/);
+ assert.match(backend,/section:'integrations',provider:provider==='sharepoint'\?'sharepoint':'google_drive',cloud:status/);
+ assert.match(backend,/res\.redirect\(nativeCloudReturn\(provider,'not_configured'\)\)/);
+ assert.match(backend,/const dst=status=>nativeCloudReturn\(provider,status\)/);
+ assert.doesNotMatch(backend,/\/app\?section=automation&cloud=/);
+ assert.match(ui,/const cloudCode=urlParams\.get\('cloud'\)/);
+ assert.match(ui,/cloudFeedback\(lang,cloudCode,oauthProvider\)/);
+});
+
+test('calendar, Zendesk and Stripe callbacks keep selected provider and show safe status',()=>{
+ assert.doesNotMatch(backend,/\/app\?section=automation&calendar=/);
+ assert.match(backend,/\/app\?section=integrations&provider=google_calendar&calendar=/);
+ assert.match(backend,/\/app\?section=integrations&provider=zendesk&zendesk=/);
+ assert.match(backend,/\/app\?section=integrations&provider=stripe&stripe=refresh/);
+ assert.match(backend,/\/app\?section=integrations&provider=stripe&stripe=return/);
+ assert.match(ui,/const calendarCode=urlParams\.get\('calendar'\)/);
+ assert.match(ui,/const zendeskCode=urlParams\.get\('zendesk'\)/);
+ assert.match(ui,/const stripeCode=urlParams\.get\('stripe'\)/);
+ assert.match(ui,/callbackOutcome=oauthCode\|\|cloudCode\|\|calendarCode\|\|zendeskCode\|\|stripeCode/);
+ assert.match(ui,/stripeCode==='return'\?'info':'error'/);
+ assert.match(ui,/calendarCode&&oauthProvider==='google_calendar'/);
+});
+
+test('Meta readiness respects webhook verification token length',()=>{
+ const from=backend.indexOf("app.get('/api/app/integrations/readiness'");
+ const to=backend.indexOf("app.get('/api/app/native/mail/status'",from);
+ const route=backend.slice(from,to);
+ assert.match(route,/META_VERIFY_TOKEN/);
+ assert.match(route,/length>=16/);
+});
