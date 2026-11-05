@@ -133,7 +133,7 @@ test('connector endpoints are tenant-scoped, owner-only, plan-gated and never re
   assert.match(read('crm-connectors.mjs'),/pg_roles/);
   assert.match(boot,/await initializeCrmConnectors\(\)/);
   assert.match(app,/id="crm-integration"/);
-  assert.match(workspace,/integrations:'crm-integration'/);
+  assert.match(workspace,/integrations:'native-operations'/);
   assert.match(workspace,/CRM connectors/);
   assert.match(html,/crm-connectors\.js\?v=/);
   assert.match(html,/crm-connectors\.css\?v=/);
