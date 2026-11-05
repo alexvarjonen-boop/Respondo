@@ -37,16 +37,28 @@ export async function ensureNativeMailBridgeSchema(db){
 }
 export async function getNativeMailboxMessages(provider,token,{limit=20,fetcher=fetch}={}){
  if(!nativeMailboxProvider(provider))throw new TypeError('Unsupported mailbox');
- const data=provider==='gmail'?await readGmailInbox({token,limit,fetcher}):
-  await readProvider({provider,token,limit,fetcher});
- return normalizeProviderItems(provider,data);
+ if(!Number.isSafeInteger(limit)||limit<1||limit>60)throw new RangeError('Mailbox limit must be 1–60');
+ const results=[],seen=new Set();
+ let cursor=null;
+ // At most three bounded pages; never follow a provider-supplied URL without host/path validation.
+ for(let page=0;page<3&&results.length<limit;page++){
+  const pageLimit=Math.min(20,limit-results.length);
+  const data=provider==='gmail'
+   ?await readGmailInbox({token,limit:pageLimit,cursor,fetcher})
+   :await readProvider({provider,token,limit:pageLimit,cursor,fetcher});
+  results.push(...normalizeProviderItems(provider,data).slice(0,pageLimit));
+  const next=provider==='gmail'?data?.nextPageToken:data?.['@odata.nextLink'];
+  if(typeof next!=='string'||!next||seen.has(next))break;
+  seen.add(next);cursor=next;
+ }
+ return results.slice(0,limit);
 }
 export async function storeNativeMailboxMessages(db,tenantId,provider,items){
  if(!nativeMailboxProvider(provider)||!/^[a-f\d-]{36}$/i.test(String(tenantId||'')))
   throw new TypeError('Invalid mailbox');
  if(!Array.isArray(items))throw new TypeError('Messages required');
  let imported=0;
- for(const item of items.slice(0,30)){
+ for(const item of items.slice(0,60)){
   const id=clean(item?.externalId,180),email=clean(item?.email,254).toLowerCase(),
    subject=clean(item?.title,250),snippet=clean(item?.snippet,1900);
   if(!id||!safeEmail(email)||(!snippet&&!subject))continue;
