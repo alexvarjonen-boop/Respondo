@@ -11132,8 +11132,15 @@ app.get('/api/app/native-integrations/status', auth, ownerOnly, subscribed, asyn
  try {
   const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
   if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
-  const result=await q('SELECT provider,mode,updated_at FROM native_integrations WHERE tenant_id=$1 ORDER BY provider',[tr.rows[0].id]);
-  return res.json({integrations:result.rows,externalProviderConnectionsVerified:false});
+  const result=await q(`SELECT i.provider,i.mode,i.updated_at,c.last_verified_at
+   FROM native_integrations i LEFT JOIN native_provider_credentials c
+   ON c.tenant_id=i.tenant_id AND c.provider=i.provider
+   WHERE i.tenant_id=$1 ORDER BY i.provider`,[tr.rows[0].id]);
+  return res.json({integrations:result.rows.map(row=>({
+    provider:row.provider,mode:row.mode,updated_at:row.updated_at,
+    connected:row.mode==='connected'&&Boolean(row.last_verified_at),
+    lastVerifiedAt:row.last_verified_at||null
+  }))});
  }catch(e){console.error('Native integration status failed',e);return res.status(500).json({error:'Tilaa ei voitu hakea.'})}
 });
 app.post('/api/app/native-integrations/settings', auth, ownerOnly, subscribed, async (req,res)=>{
