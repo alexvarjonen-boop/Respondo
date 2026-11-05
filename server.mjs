@@ -1,5 +1,5 @@
 import { estimateServiceDuration, findSuitableStarts } from './booking-intelligence.mjs';
-import { readProvider, normalizeProviderItems } from './native-provider-adapters.mjs';
+import { readProvider, readGmailInbox, normalizeProviderItems } from './native-provider-adapters.mjs';
 import { prepareInboundCase, draftResponse, validateIntegrationSettings } from './internal-integrations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
@@ -11102,13 +11102,14 @@ app.post('/api/app/native-integrations/sync', auth, ownerOnly, subscribed, async
   if(!stored.rowCount)return res.status(409).json({error:'Palvelu ei ole yhdistetty.'});
   const token=decryptSecret(stored.rows[0].encrypted_token);
   if(!token)throw Error('missing_decrypted_token');
-  const data=await readProvider({provider,token,subdomain:stored.rows[0].subdomain,
+  const data=provider==='gmail' ? await readGmailInbox({token,limit:20}) :
+    await readProvider({provider,token,subdomain:stored.rows[0].subdomain,
      resourceId:stored.rows[0].resource_id,limit:40});
   const items=normalizeProviderItems(provider,data);
   let imported=0;
   for(const item of items){
    // Never fabricate a customer message from metadata-only provider records.
-   if(!item.snippet||!['outlook','freshdesk','zendesk'].includes(provider))continue;
+   if(!item.snippet||!['gmail','outlook','freshdesk','zendesk'].includes(provider))continue;
    const prepared=prepareInboundCase({source:provider,externalMessageId:item.externalId,
      from:item.email,subject:item.title,body:item.snippet});
    if(prepared.status!=='ready')continue;
