@@ -12375,6 +12375,9 @@ async function ensureRuntimeSchema() {
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY(tenant_id,provider)
   )`);
+  await q(`CREATE UNIQUE INDEX IF NOT EXISTS uq_native_provider_meta_resource
+    ON native_provider_credentials(provider,resource_id)
+    WHERE resource_id IS NOT NULL AND resource_id<>'' AND provider IN ('whatsapp','instagram','facebook')`);
   await q(`CREATE TABLE IF NOT EXISTS native_integrations (
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     provider TEXT NOT NULL,
