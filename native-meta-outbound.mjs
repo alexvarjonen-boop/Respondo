@@ -51,12 +51,14 @@ export async function sendApprovedNativeMeta(db,{tenantId,threadId,deliveryId,us
   if(!t||!channels.includes(t.source_channel)||t.status!=='open'||!validNum(t.external_contact_id))
    throw TypeError('Open Meta channel conversation required');
   provider=t.source_channel;
-  const last=await client.query(`SELECT created_at FROM chat_messages
+  const last=await client.query(`SELECT created_at,metadata FROM chat_messages
     WHERE tenant_id=$1 AND thread_id=$2 AND source_channel=$3 AND role='user'
     ORDER BY created_at DESC LIMIT 1`,[tenantId,threadId,provider]);
-  const received=new Date(last.rows[0]?.created_at).getTime();
+  // Use the timestamp inside Meta's authenticated event, not local webhook arrival.
+  // An old or delayed webhook must not start a fresh 24-hour reply window.
+  const received=Number(last.rows[0]?.metadata?.providerTimestampMs);
   // Safely refuse out-of-window free-form responses. Approved templates require a separate flow.
-  if(!Number.isFinite(received)||received>now+60000||now-received>=23*3600000)
+  if(!Number.isSafeInteger(received)||received<1577836800000||received>now+60000||now-received>=23*3600000)
    throw TypeError('Meta customer care reply window expired');
   const connection=await client.query(`SELECT resource_id,access_token_encrypted
     FROM respondo_meta_connections WHERE tenant_id=$1 AND provider=$2`,[tenantId,provider]);
