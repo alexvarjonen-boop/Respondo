@@ -7,7 +7,7 @@ const trim=(v,max)=>String(v??'').trim().slice(0,max);
 const SOURCES=new Set(['manual','shopify','woocommerce']);
 const STATUSES=new Set(['pending','paid','processing','shipped','delivered','cancelled','refunded']);
 const EMAIL=/^[^\s@]{1,128}@[^\s@]{1,160}\.[^\s@]{2,24}$/;
-const REF=/^[A-Za-z0-9][A-Za-z0-9._#-]{2,79}$/;
+const REF=/^#?[A-Za-z0-9][A-Za-z0-9._-]{2,78}$/;
 function verifiedOrderRef(value){
  const ref=trim(value,80);
  if(!REF.test(ref))throw new TypeError('Valid order reference is required');
