@@ -22,8 +22,8 @@ function urlForDocument(provider,{fileId,site,exportType}){
  if(!id.test(fileId))throw TypeError('Invalid cloud file reference');
  if(provider==='google_drive'){
   const url=new URL('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(fileId)+
-    (exportType?' /export':''));
-  if(exportType){url.pathname=url.pathname.replace('%20/export','/export');url.searchParams.set('mimeType','text/plain');}
+    (exportType?'/export':''));
+  if(exportType)url.searchParams.set('mimeType','text/plain');
   else url.searchParams.set('alt','media');
   return url.toString();
  }
