@@ -64,8 +64,8 @@ test('minimal design is scoped to authenticated workspace and keeps the orbit an
   assert.match(css,/\.rs-integration-group-grid/);
   assert.match(css,/@media\(max-width:640px\)/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(index,/\/workspace-settings-minimal-v55\.css\?v=20261105-apple-settings-v55-outlook-fix-v2/);
-  assert.match(index,/\/integration-onboarding\.js\?v=20261105-guided-setup-v6-native-first/);
+  assert.match(index,/\/workspace-settings-minimal-v55\.css\?v=20261105-apple-settings-v55-native-first-v3/);
+  assert.match(index,/\/integration-onboarding\.js\?v=20261105-guided-setup-v7-native-private/);
   assert.match(app,/guided-integrations-v1-apple-settings-v55/);
   assert.match(index,/settings-directory-v55-outlook-v1/);
 });
