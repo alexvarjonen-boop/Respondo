@@ -36,7 +36,7 @@ function fakeDb({claimed=true,age=1000}={}){
   statements.push({sql,params:p});
   if(sql.includes('FROM chat_threads'))return {rows:[{source_channel:'whatsapp',
     external_contact_id:'358401234567',status:'open'}],rowCount:1};
-  if(sql.includes('FROM chat_messages'))return {rows:[{created_at:new Date(1700000000000-age)}],rowCount:1};
+  if(sql.includes('FROM chat_messages'))return {rows:[{created_at:new Date(1700000000000),metadata:{providerTimestampMs:1700000000000-age}}],rowCount:1};
   if(sql.includes('FROM respondo_meta_connections'))return {rows:[{resource_id:'12345678901',access_token_encrypted:'ciphertext'}],rowCount:1};
   if(sql.includes('INSERT INTO respondo_native_meta_deliveries'))return {rows:claimed?[{delivery_id:ids.deliveryId}]:[],rowCount:claimed?1:0};
   if(sql.includes('SELECT thread_id,status'))return {rows:[{thread_id:ids.threadId,status:'unknown'}],rowCount:1};
