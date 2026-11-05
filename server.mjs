@@ -61,6 +61,7 @@ import {ensureNativeCloudSchema,cloudProvider,validSiteId} from './native-cloud-
 import {ensureFreeWorkflowSchema,freeWorkflowOverview,createFreeWorkflow,
  setFreeWorkflowEnabled,markFreeWorkflowApproval,previewFreeWorkflow} from './respondo-free-actions.mjs';
 import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-gates.mjs';
+import {ensureFreeCommerceSchema,putFreeOrderSnapshot,freeOrderOverview,lookupFreeOrderStatus} from './respondo-free-commerce.mjs';
 import {normalizeCloudFileList,readApprovedCloudText} from './native-cloud-documents.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
 import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
@@ -9692,6 +9693,32 @@ function nativeEndpoint(handler,{quote=false}={}){
 app.get('/api/app/native',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>nativeOverview(pool,id)));
 /* Zero-added-service-cost workflow rule editor. Owner only; no external effects. */
+/* Company-supplied order statuses. Read-only for verified customers, no provider fees. */
+const freeOrderHmacSecret=()=>String(process.env.RESPONDO_ORDER_HMAC_KEY||
+ process.env.DATA_ENCRYPTION_KEY||'');
+app.get('/api/app/native/orders',auth,ownerOnly,subscribed,nativeEndpoint(
+ id=>freeOrderOverview(pool,id)));
+app.post('/api/app/native/orders',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+ (id,req)=>putFreeOrderSnapshot(pool,id,req.body||{},{secret:freeOrderHmacSecret()})));
+app.post('/api/public/:slug/order-status',publicChatLimiter,async(req,res)=>{
+ res.set('Cache-Control','private, no-store');
+ try{
+  const tr=await publicTenant(req.params.slug);
+  if(!tr.rowCount)return res.status(404).json({error:'Order not found'});
+  const tenant=tr.rows[0];
+  if(!validWidgetToken(req,tenant,req.body?.widgetToken))
+   return res.status(403).json({error:'Widget authorization required'});
+  setWidgetCors(req,res);
+  const order=await lookupFreeOrderStatus(pool,tenant.id,
+   req.body?.reference,req.body?.email,{secret:freeOrderHmacSecret()});
+  if(!order)return res.status(404).json({error:'Order not found'});
+  return res.json({order});
+ }catch(e){
+  if(e instanceof TypeError)return res.status(404).json({error:'Order not found'});
+  console.error('Free order status lookup failed',e?.name||'error');
+  return res.status(503).json({error:'Order status unavailable'});
+ }
+});
 app.get('/api/app/native/free-workflows',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>freeWorkflowOverview(pool,id)));
 app.post('/api/app/native/free-workflows/preview',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -17847,6 +17874,7 @@ async function start() {
     await withRuntimeSchemaLock(() => ensureNativeCrmImportSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeCloudSchema(pool));
     await withRuntimeSchemaLock(() => ensureFreeWorkflowSchema(pool));
+    await withRuntimeSchemaLock(() => ensureFreeCommerceSchema(pool));
     await withRuntimeSchemaLock(() => ensureOnboardingCheckupSchema(q));
     await withRuntimeSchemaLock(async () => {
       await seedAndLoadIntentUtterances();
