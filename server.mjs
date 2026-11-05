@@ -11061,9 +11061,17 @@ app.get('/api/app/native-integrations/inbox', auth, ownerOnly, subscribed, async
   return res.json({messages:r.rows});
  }catch(e){console.error('Native inbox listing failed',e);return res.status(500).json({error:'Viestejä ei voitu hakea.'})}
 });
+app.get('/api/app/service-duration-rules', auth, ownerOnly, subscribed, async(req,res)=>{
+ try {
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const rules=await q('SELECT rule FROM service_duration_rules WHERE tenant_id=$1 ORDER BY service_id LIMIT 100',[tr.rows[0].id]);
+  return res.json({rules:rules.rows.map(x=>x.rule)});
+ }catch(e){console.error('Service duration list failed',e);return res.status(500).json({error:'Kestosääntöjen haku epäonnistui.'})}
+});
 app.post('/api/app/service-duration-rules', auth, ownerOnly, subscribed, async (req,res)=>{
  const rule=req.body?.rule;
- const estimate=estimateServiceDuration({serviceId:rule?.id,quantity:1,rules:[rule]});
+ const estimate=estimateServiceDuration({serviceId:rule?.id,quantity:rule?.minUnits??1,rules:[rule]});
  if(estimate.status!=='estimated')return res.status(400).json({error:'Tarkista palvelun kestoasetukset. Määritä myös vähintään yksi yksikkö.'});
  if(!/^[a-z0-9_-]{1,64}$/.test(String(rule.id)))return res.status(400).json({error:'Virheellinen palvelutunnus.'});
  try{
@@ -11086,15 +11094,28 @@ app.post('/api/app/booking-proposals', auth, ownerOnly, subscribed, async(req,re
   const ruleRows=await q('SELECT rule FROM service_duration_rules WHERE tenant_id=$1 AND service_id=$2',[tenant.id,serviceId]);
   const estimate=estimateServiceDuration({serviceId,quantity:req.body?.quantity,rules:ruleRows.rows.map(r=>r.rule)});
   if(estimate.status!=='estimated')return res.json({estimate,availability:{status:'needs_details',starts:[]}});
-  const windows=Array.isArray(req.body?.windows)?req.body.windows.slice(0,60):[];
-  if(!windows.length)return res.status(400).json({error:'Anna tarkistettavat vapaat aikaikkunat.'});
-  const stamp=windows.flatMap(w=>[new Date(w.start).getTime(),new Date(w.end).getTime()]);
-  if(stamp.some(x=>!Number.isFinite(x)))return res.status(400).json({error:'Virheelliset aikaikkunat.'});
-  const low=new Date(Math.min(...stamp)),high=new Date(Math.max(...stamp));
-  if(high.getTime()-low.getTime()>31*86400000)return res.status(400).json({error:'Tarkista enintään 31 päivän jakso.'});
-  const booked=await q(`SELECT starts_at AS start,ends_at AS "end" FROM booking_slots
-   WHERE tenant_id=$1 AND status='booked' AND starts_at<$3 AND ends_at>$2`,[tenant.id,low,high]);
-  const busy=booked.rows;
+  // Never trust client-provided availability. Use tenant-owned saved slots only.
+  const from=new Date(req.body?.from),to=new Date(req.body?.to);
+  if(!Number.isFinite(from.getTime())||!Number.isFinite(to.getTime())||
+     to<=from||to.getTime()-from.getTime()>31*86400000||
+     from.getTime()<Date.now()-60000)return res.status(400).json({error:'Anna kelvollinen enintään 31 päivän tarkistusjakso.'});
+  const low=from,high=to;
+  const slotRows=await q(`SELECT starts_at,ends_at,status FROM booking_slots
+    WHERE tenant_id=$1 AND starts_at<$3 AND ends_at>$2
+    AND status IN ('open','booked') ORDER BY starts_at ASC LIMIT 1000`,[tenant.id,low,high]);
+  const open=slotRows.rows.filter(x=>x.status==='open')
+   .map(x=>({start:new Date(x.starts_at).getTime(),end:new Date(x.ends_at).getTime()}))
+   .sort((a,b)=>a.start-b.start);
+  // Adjacent availability slots constitute a continuous work window.
+  const merged=[];
+  for(const slot of open){
+   const last=merged.at(-1);
+   if(last&&slot.start<=last.end)last.end=Math.max(last.end,slot.end);
+   else merged.push({...slot});
+  }
+  const windows=merged.map(x=>({start:new Date(x.start).toISOString(),end:new Date(x.end).toISOString()}));
+  const busy=slotRows.rows.filter(x=>x.status==='booked')
+   .map(x=>({start:x.starts_at,end:x.ends_at}));
   if(tenant.google_calendar_refresh_token||tenant.google_calendar_access_token){
    try{
     const events=await googleCalendarEvents(tenant,low,high);
