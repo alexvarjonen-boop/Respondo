@@ -201,8 +201,8 @@
     heading.append(el('h2','',t.title),el('p','',t.intro));
     if(callbackMsg){
       const notice=el('div','rs-integration-oauth-feedback',callbackMsg);
-      notice.setAttribute('role',callbackOutcome==='connected'?'status':'alert');
-      notice.dataset.kind=callbackOutcome==='connected'?'success':'error';
+      notice.setAttribute('role',(callbackOutcome==='connected'||stripeCode==='return')?'status':'alert');
+      notice.dataset.kind=callbackOutcome==='connected'?'success':stripeCode==='return'?'info':'error';
       heading.appendChild(notice);
     }
     const back=el('button','rs-integration-quiet',t.back);
