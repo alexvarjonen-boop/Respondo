@@ -17447,6 +17447,12 @@ async function ensureRuntimeSchema() {
     await q('ALTER TABLE '+table+' ENABLE ROW LEVEL SECURITY');
     await q('REVOKE ALL PRIVILEGES ON TABLE '+table+' FROM PUBLIC');
   }
+  const restricted=await q("SELECT rolname FROM pg_roles WHERE rolname=ANY($1::text[])",[['anon','authenticated','service_role']]);
+  for(const role of restricted.rows||[]){
+    if(!['anon','authenticated','service_role'].includes(role.rolname))continue;
+    for(const table of ['respondo_meta_connections','respondo_meta_inbound_events'])
+      await q('REVOKE ALL PRIVILEGES ON TABLE '+table+' FROM '+role.rolname);
+  }
   await q(`CREATE TABLE IF NOT EXISTS chat_threads (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
