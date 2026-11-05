@@ -60,6 +60,7 @@ import {ensureNativeCrmImportSchema,previewNativeCrmImport,importNativeCrmContac
 import {ensureNativeCloudSchema,cloudProvider,validSiteId} from './native-cloud-credentials.mjs';
 import {ensureFreeWorkflowSchema,freeWorkflowOverview,createFreeWorkflow,
  setFreeWorkflowEnabled,markFreeWorkflowApproval,previewFreeWorkflow} from './respondo-free-actions.mjs';
+import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-gates.mjs';
 import {normalizeCloudFileList,readApprovedCloudText} from './native-cloud-documents.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
 import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
@@ -10198,6 +10199,11 @@ app.patch('/api/app/native/tasks/:id',auth,ownerOnly,subscribed,nativeWriteLimit
 
 
 
+/* Deterministic safety regression checks. No external AI, no customer messages sent. */
+app.get('/api/app/native/quality/free-examples',auth,ownerOnly,subscribed,nativeEndpoint(
+  ()=>({cases:freeQualityScenarios()})));
+app.post('/api/app/native/quality/free-suite',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (_id,req)=>runFreeQualitySuite({cases:req.body?.cases})));
 app.get('/api/app/native/quality',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>qualityCenterOverview(pool,id,req.query?.days)));
 app.post('/api/app/native/quality/reviews',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
