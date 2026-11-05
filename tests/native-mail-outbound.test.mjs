@@ -38,7 +38,7 @@ function mockDb({claimed=true}={}){
    if(sql.includes('FROM chat_threads WHERE id='))return {rows:[{id:ids.threadId,source_channel:'email',external_contact_id:'outlook:client@example.com',status:'open'}],rowCount:1};
    if(sql.includes('FROM chat_messages'))return {rows:[{metadata:{provider:'outlook',providerMessageId:'msg123',subject:'Request'}}],rowCount:1};
    if(sql.includes('INSERT INTO respondo_native_mail_deliveries'))return {rows:claimed?[{delivery_id:ids.deliveryId}]:[],rowCount:claimed?1:0};
-   if(sql.includes('SELECT thread_id,status'))return {rows:[{thread_id:ids.threadId,status:'unknown'}],rowCount:1};
+   if(sql.includes('SELECT thread_id,status'))return {rows:[{thread_id:ids.threadId,status:'unknown',text:'Please confirm.',provider:'outlook',recipient:'client@example.com'}],rowCount:1};
    if(sql.includes("SET status='sent'"))return {rows:[{thread_id:ids.threadId,provider:'outlook',recipient:'client@example.com',text:'Please specify the number of windows.'}],rowCount:1};
    return {rows:[],rowCount:1};
   },release:()=>{}};
@@ -70,4 +70,24 @@ test('never send without explicit approval',async()=>{
  const {db}=mockDb();await assert.rejects(
   sendApprovedNativeMail(db,{...ids,userId:'owner',approved:false,text:'Hello',token:'fake-valid-auth-token'}),
   /Explicit owner approval/);
+});
+
+test('cannot reuse an email delivery identifier for different content',async()=>{
+ const {db}=mockDb({claimed:false});let called=0;
+ await assert.rejects(sendApprovedNativeMail(db,{...ids,userId:'owner',approved:true,
+   text:'Different reply',token:'fake-valid-auth-token',
+   fetcher:async()=>{called++;return {ok:true}}}),/reused for different content/);
+ assert.equal(called,0);
+});
+test('Gmail subject encoding preserves ASCII and encodes non-ASCII',()=>{
+ const request=buildApprovedMailRequest({provider:'gmail',token:'fake-valid-auth-token',
+   recipient:'customer@example.com',text:'Thanks',messageId:'ab123',
+   threadId:'thread123',originalRfcId:'<original@example.com>',subject:'Ikkunanpesu Turku'});
+ const raw=Buffer.from(JSON.parse(request.options.body).raw,'base64url').toString('utf8');
+ assert.match(raw,/Subject: Re: Ikkunanpesu Turku/);
+ const unicode=buildApprovedMailRequest({provider:'gmail',token:'fake-valid-auth-token',
+   recipient:'customer@example.com',text:'Thanks',messageId:'ab123',
+   threadId:'thread123',originalRfcId:'<original@example.com>',subject:'Hinta pääsiäisenä'});
+ const mime=Buffer.from(JSON.parse(unicode.options.body).raw,'base64url').toString('utf8');
+ assert.match(mime,/Subject: Re: =\?UTF-8\?B\?/);
 });
