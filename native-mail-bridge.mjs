@@ -13,6 +13,7 @@ export async function ensureNativeMailBridgeSchema(db){
    expires_at TIMESTAMPTZ,
    last_verified_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
    last_synced_at TIMESTAMPTZ,
+   last_sync_error TEXT,
    PRIMARY KEY(tenant_id,provider)
  )`);
  await db.query(`CREATE TABLE IF NOT EXISTS respondo_native_mail_events(
