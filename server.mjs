@@ -17629,7 +17629,7 @@ async function runNativeMailPolling(){
     const category=String(e?.message||'sync_error').slice(0,80).replace(/[\r\n]/g,' ');
     await q(`UPDATE respondo_native_mail_credentials
       SET last_synced_at=NOW(),last_sync_error=$3,
-      next_cursor=CASE WHEN $3='invalid_mail_cursor' THEN NULL ELSE next_cursor END
+      next_cursor=CASE WHEN $3 IN ('invalid_mail_cursor','provider_http_400','provider_http_410') THEN NULL ELSE next_cursor END
       WHERE tenant_id=$1 AND provider=$2`,
       [connection.tenant_id,connection.provider,category]).catch(()=>{});
     console.error('Native mailbox polling failed',connection.provider,e?.name||'error');
