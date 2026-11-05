@@ -58,6 +58,8 @@ import {ensureNativeMailDeliverySchema,sendApprovedNativeMail} from './native-ma
 import {ensureNativeMetaOutboundSchema,sendApprovedNativeMeta} from './native-meta-outbound.mjs';
 import {ensureNativeCrmImportSchema,previewNativeCrmImport,importNativeCrmContacts} from './native-crm-import.mjs';
 import {ensureNativeCloudSchema,cloudProvider,validSiteId} from './native-cloud-credentials.mjs';
+import {ensureFreeWorkflowSchema,freeWorkflowOverview,createFreeWorkflow,
+ setFreeWorkflowEnabled,markFreeWorkflowApproval,previewFreeWorkflow} from './respondo-free-actions.mjs';
 import {normalizeCloudFileList,readApprovedCloudText} from './native-cloud-documents.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
 import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
@@ -9688,6 +9690,17 @@ function nativeEndpoint(handler,{quote=false}={}){
 }
 app.get('/api/app/native',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>nativeOverview(pool,id)));
+/* Zero-added-service-cost workflow rule editor. Owner only; no external effects. */
+app.get('/api/app/native/free-workflows',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>freeWorkflowOverview(pool,id)));
+app.post('/api/app/native/free-workflows/preview',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (_id,req)=>previewFreeWorkflow(req.body?.workflow||{},req.body?.sample||{})));
+app.post('/api/app/native/free-workflows',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>createFreeWorkflow(pool,id,req.body||{})));
+app.patch('/api/app/native/free-workflows/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>setFreeWorkflowEnabled(pool,id,req.params.id,req.body?.enabled)));
+app.patch('/api/app/native/free-workflows/approvals/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>markFreeWorkflowApproval(pool,id,req.params.id,req.body?.status)));
 /* First-party Respondo inbox: no mail server or third-party messaging API.
    External channels are visible for context; messages can only be delivered
    to the website widget's own message store. */
@@ -17827,6 +17840,7 @@ async function start() {
     await withRuntimeSchemaLock(() => ensureNativeMetaOutboundSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeCrmImportSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeCloudSchema(pool));
+    await withRuntimeSchemaLock(() => ensureFreeWorkflowSchema(pool));
     await withRuntimeSchemaLock(() => ensureOnboardingCheckupSchema(q));
     await withRuntimeSchemaLock(async () => {
       await seedAndLoadIntentUtterances();
