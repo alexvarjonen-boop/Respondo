@@ -89,6 +89,52 @@
     };
     return all[code]?.[language==='fi'?0:language==='sv'?1:2]||null;
   };
+  const cloudFeedback=(lang,code,provider)=>{
+    const name=provider==='sharepoint'?'Microsoft SharePoint':'Google Drive';
+    const messages={
+      not_configured:[
+        name+' ei ole vielä käytettävissä: Respondon ylläpidon OAuth-asetukset puuttuvat.',
+        name+' är inte tillgängligt än: Respondos OAuth-konfiguration saknas.',
+        name+' is not available yet: Respondo OAuth setup is missing.'
+      ],
+      invalid_site:[
+        'SharePointin sivustotunnus puuttuu tai on virheellinen. Tarkista tunnus ja yritä uudelleen.',
+        'SharePoints webbplats-ID saknas eller är ogiltigt. Kontrollera ID och försök igen.',
+        'The SharePoint site ID is missing or invalid. Check it and try again.'
+      ],
+      missing_tenant:[
+        'Yrityksen työtilaa ei löytynyt. Valitse yritys ja yritä uudelleen.',
+        'Företagets arbetsyta kunde inte hittas. Välj företag och försök igen.',
+        'Company workspace not found. Select a company and try again.'
+      ],
+      invalid_state:[
+        'Valtuutus vanheni tai keskeytyi. Aloita yhdistäminen uudelleen.',
+        'Auktoriseringen har gått ut. Starta anslutningen på nytt.',
+        'Authorization expired or was interrupted. Start again.'
+      ],
+      invalid_session:[
+        'Kirjaudu Respondoon uudelleen ennen yhdistämistä.',
+        'Logga in på Respondo på nytt innan du ansluter.',
+        'Sign in to Respondo again before connecting.'
+      ],
+      cancelled:[
+        'Valtuutusta ei hyväksytty. Yhteyttä ei luotu.',
+        'Auktoriseringen avbröts. Ingen anslutning skapades.',
+        'Authorization was cancelled. No connection was created.'
+      ],
+      failed:[
+        'Yhdistämistä ei voitu vahvistaa. Tarkista käyttöoikeudet ja palveluntarjoajan sovellusasetukset.',
+        'Anslutningen kunde inte verifieras. Kontrollera behörigheter och appkonfiguration.',
+        'Could not verify the connection. Check the provider permissions and app configuration.'
+      ],
+      connected:[
+        'Yhteys tarkistettiin ja tallennettiin. Varmista vielä tiedostojen näkyminen.',
+        'Anslutningen verifierades och sparades. Kontrollera sedan att filerna syns.',
+        'Connection verified and saved. Check that your files are visible.'
+      ]
+    };
+    return messages[code]?.[lang==='fi'?0:lang==='sv'?1:2]||null;
+  };
   function mount(){
     const ws=$('#respondoWorkspace');
     const moduleCard=$('#respondoWorkspaceCardBody')?.closest('.respondo-workspace-module-card');
@@ -106,13 +152,17 @@
     const footer=$('.rs-integration-guide-footer',root);
     const urlParams=new URLSearchParams(location.search);
     const oauthCode=urlParams.get('native_mail');
+    const cloudCode=urlParams.get('cloud');
     const oauthProvider=urlParams.get('provider');
-    const callbackMsg=mailboxFeedback(lang,oauthCode,oauthProvider);
+    const callbackOutcome=oauthCode||cloudCode;
+    const callbackMsg=oauthCode
+      ?mailboxFeedback(lang,oauthCode,oauthProvider)
+      :cloudCode?cloudFeedback(lang,cloudCode,oauthProvider):null;
     heading.append(el('h2','',t.title),el('p','',t.intro));
     if(callbackMsg){
       const notice=el('div','rs-integration-oauth-feedback',callbackMsg);
-      notice.setAttribute('role',oauthCode==='connected'?'status':'alert');
-      notice.dataset.kind=oauthCode==='connected'?'success':'error';
+      notice.setAttribute('role',callbackOutcome==='connected'?'status':'alert');
+      notice.dataset.kind=callbackOutcome==='connected'?'success':'error';
       heading.appendChild(notice);
     }
     const back=el('button','rs-integration-quiet',t.back);
@@ -393,8 +443,10 @@
     // After OAuth returns, keep the user's selected service in the guide,
     // without claiming the account connected until the status GET succeeds.
     const pending=(()=>{try{return sessionStorage.getItem('respondo_pending_integration')}catch{return null}})();
-    const fromCallback=oauthCode&&['gmail','outlook'].includes(oauthProvider)?
-      oauthProvider:null;
+    const fromCallback=(
+      (oauthCode&&['gmail','outlook'].includes(oauthProvider))||
+      (cloudCode&&['google_drive','sharepoint'].includes(oauthProvider))
+    )?oauthProvider:null;
     const recovered=providers.find(p=>p.id===(fromCallback||pending));
     if(recovered){
       chosenGroup=recovered.group;chosenProvider=recovered.id;
