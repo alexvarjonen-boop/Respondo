@@ -45,7 +45,7 @@ export function buildProviderRead({provider,token,subdomain,resourceId,limit=20,
   case 'pipedrive':url=new URL('/api/v2/persons',base);url.searchParams.set('limit',String(limit));break;
   case 'freshdesk':url=new URL('/api/v2/tickets',base);url.searchParams.set('per_page',String(limit));auth='Basic '+Buffer.from(token+':X').toString('base64');break;
   case 'zendesk':url=new URL('/api/v2/tickets.json',base);url.searchParams.set('per_page',String(limit));break;
-  case 'google_drive':url=new URL('/drive/v3/files',base);url.searchParams.set('page_size',String(limit));url.searchParams.set('fields','nextPageToken,files(id,name,mimeType,modifiedTime)');break;
+  case 'google_drive':url=new URL('/drive/v3/files',base);url.searchParams.set('pageSize',String(limit));url.searchParams.set('fields','nextPageToken,files(id,name,mimeType,size,trashed,modifiedTime)');url.searchParams.set('q','trashed = false');break;
   case 'sharepoint':if(!id)throw Error('sharepoint_site_id_required');url=new URL('/v1.0/sites/'+encodeURIComponent(id)+'/drive/root/children',base);url.searchParams.set('$top',String(limit));break;
   case 'shopify':url=new URL('/admin/api/2026-10/orders.json',base);url.searchParams.set('limit',String(limit));url.searchParams.set('status','any');break;
   case 'woocommerce':throw Error('woocommerce_use_existing_verified_commerce_connector');
