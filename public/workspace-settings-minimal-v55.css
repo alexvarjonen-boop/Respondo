@@ -1,0 +1,323 @@
+/*
+  Respondo OS / settings-first visual system.
+  Scope: authenticated workspace only. Keep the original DOM and event handlers,
+  integration approvals, booking checks, accessibility, and the 3D orbit intact.
+*/
+#app .dashboard-premium-shell.respondo-workspace-active .respondo-workspace{
+  --rs-settings-bg:#0e0e11;
+  --rs-settings-surface:#1c1c20;
+  --rs-settings-surface-raised:#232328;
+  --rs-settings-line:#36363d;
+  --rs-settings-label:#f4f4f6;
+  --rs-settings-muted:#b3b3bf;
+  background:var(--rs-settings-bg)!important;
+  color:var(--rs-settings-label)!important;
+  -webkit-font-smoothing:antialiased;
+}
+#app .respondo-workspace .respondo-workspace-content{
+  width:min(100%,920px);
+  padding-inline:clamp(4px,2.3vw,12px);
+}
+#app .respondo-workspace .respondo-workspace-kicker{
+  font-size:10px!important;
+  font-weight:650!important;
+  letter-spacing:.12em!important;
+  color:var(--rs-settings-muted)!important;
+  -webkit-text-fill-color:var(--rs-settings-muted)!important;
+}
+#app .respondo-workspace .respondo-workspace-content h1{
+  font-size:clamp(29px,3.8vw,44px)!important;
+  letter-spacing:-.055em!important;
+  font-weight:680!important;
+}
+#app .respondo-workspace .respondo-workspace-subtitle{
+  max-width:650px;
+  font-size:14px!important;
+  color:var(--rs-settings-muted)!important;
+  -webkit-text-fill-color:var(--rs-settings-muted)!important;
+}
+#app .respondo-workspace :is(.respondo-workspace-module-card,.respondo-workspace-chat-card,.respondo-workspace-overview-card){
+  background:var(--rs-settings-surface)!important;
+  border:1px solid var(--rs-settings-line)!important;
+  border-radius:20px!important;
+  box-shadow:none!important;
+}
+#app .respondo-workspace .respondo-workspace-overview-card{
+  padding:clamp(18px,2.5vw,24px)!important;
+}
+#app .respondo-workspace .respondo-workspace-overview-card b{
+  font-weight:700!important;
+  color:var(--rs-settings-label)!important;
+  -webkit-text-fill-color:var(--rs-settings-label)!important;
+}
+#app .respondo-workspace .respondo-workspace-overview-card p{
+  color:var(--rs-settings-muted)!important;
+  -webkit-text-fill-color:var(--rs-settings-muted)!important;
+}
+#app .respondo-workspace .rs-module-tabs{
+  display:flex;
+  flex-wrap:nowrap!important;
+  overflow-x:auto;
+  scrollbar-width:thin;
+  -webkit-overflow-scrolling:touch;
+  gap:4px!important;
+  max-width:100%;
+  padding:5px!important;
+  margin:18px 0 10px!important;
+  background:var(--rs-settings-surface)!important;
+  border:1px solid var(--rs-settings-line)!important;
+  border-radius:14px!important;
+}
+#app .respondo-workspace .rs-module-tabs button{
+  flex:0 0 auto;
+  min-height:40px!important;
+  padding:8px 14px!important;
+  background:transparent!important;
+  border:1px solid transparent!important;
+  border-radius:10px!important;
+  font-size:12px!important;
+  font-weight:650!important;
+  color:var(--rs-settings-muted)!important;
+  -webkit-text-fill-color:var(--rs-settings-muted)!important;
+}
+#app .respondo-workspace .rs-module-tabs button.active{
+  background:#37373e!important;
+  border-color:#474750!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+#app .respondo-workspace .rs-module-tabs button:focus-visible{
+  outline:2px solid #cad9fa!important;outline-offset:2px!important;
+}
+#app .respondo-workspace .rs-settings-directory{
+  background:var(--rs-settings-surface)!important;
+  border:1px solid var(--rs-settings-line)!important;
+  border-radius:18px!important;
+  padding:18px 18px 10px!important;
+  margin:0 0 18px;
+}
+#app .respondo-workspace .rs-settings-directory-kicker{
+  margin:0 0 8px!important;
+  font-size:11px!important;
+  font-weight:720!important;
+  letter-spacing:.11em!important;
+  color:var(--rs-settings-muted)!important;
+  -webkit-text-fill-color:var(--rs-settings-muted)!important;
+}
+#app .respondo-workspace .rs-settings-directory-list{
+  display:grid;grid-template-columns:minmax(0,1fr);
+}
+#app .respondo-workspace .rs-settings-directory-link{
+  width:100%;
+  min-height:67px;
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  gap:14px;
+  text-align:left!important;
+  padding:12px 4px!important;
+  border:0!important;
+  border-bottom:1px solid var(--rs-settings-line)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  cursor:pointer;
+  box-shadow:none!important;
+}
+#app .respondo-workspace .rs-settings-directory-link:last-child{border-bottom:0!important}
+#app .respondo-workspace .rs-settings-directory-link>span:first-child{
+  display:grid;gap:5px;min-width:0;
+}
+#app .respondo-workspace .rs-settings-directory-link b{
+  color:var(--rs-settings-label)!important;
+  -webkit-text-fill-color:var(--rs-settings-label)!important;
+  font-size:15px!important;
+  font-weight:650!important;
+}
+#app .respondo-workspace .rs-settings-directory-link small{
+  font-size:12px!important;
+  font-weight:450!important;
+  color:var(--rs-settings-muted)!important;
+  -webkit-text-fill-color:var(--rs-settings-muted)!important;
+  overflow-wrap:anywhere;
+}
+#app .respondo-workspace .rs-settings-chevron{
+  font-size:26px!important;
+  color:#9d9da8!important;
+  -webkit-text-fill-color:#9d9da8!important;
+  line-height:1;
+}
+#app .respondo-workspace .rs-settings-directory-link:is(:hover,:focus-visible){
+  background:#2a2a30!important;
+}
+#app .respondo-workspace .rs-settings-directory-link:focus-visible{
+  outline:2px solid #c7d8fc!important;
+  outline-offset:-2px!important;
+}
+#app .respondo-workspace .rs-settings-card{
+  background:var(--rs-settings-surface)!important;
+  border:1px solid var(--rs-settings-line)!important;
+  border-radius:18px!important;
+  padding:clamp(16px,2.5vw,23px)!important;
+  gap:14px!important;
+}
+#app .respondo-workspace .rs-settings-card .rs-simple-field span{
+  color:#d1d1dc!important;
+  -webkit-text-fill-color:#d1d1dc!important;
+  font-weight:590!important;
+}
+#app .respondo-workspace .rs-settings-card .rs-simple-field input{
+  border-radius:11px!important;
+  background:#29292f!important;
+  border:1px solid #484852!important;
+  color:#f6f6fa!important;
+  -webkit-text-fill-color:#f6f6fa!important;
+  font-weight:490!important;
+}
+#app .respondo-workspace .rs-settings-card .rs-simple-field input:focus{
+  border-color:#d0d5e0!important;
+  outline:2px solid #868c99!important;
+  outline-offset:1px!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody :is(
+  #booking-calendar,#commerce-integration,#crm-integration,#business-integrations,
+  #stripe-connect,#native-mail-connections,#meta-native-connections,#native-operations
+) :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),select,textarea){
+  background:#29292f!important;
+  color:#f6f6fa!important;
+  -webkit-text-fill-color:#f6f6fa!important;
+  caret-color:#fff!important;
+  border:1px solid #484852!important;
+  border-radius:11px!important;
+  color-scheme:dark!important;
+  opacity:1!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody :is(
+  #booking-calendar,#commerce-integration,#crm-integration,#business-integrations,
+  #stripe-connect,#native-mail-connections,#meta-native-connections,#native-operations
+) :is(input,textarea)::placeholder{
+  color:#a7a7b5!important;
+  -webkit-text-fill-color:#a7a7b5!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody :is(
+  #booking-calendar,#commerce-integration,#crm-integration,#business-integrations,
+  #stripe-connect,#native-mail-connections,#meta-native-connections,#native-operations
+) :is(label,.field>label,.service-field>span){
+  color:#e5e5eb!important;
+  -webkit-text-fill-color:#e5e5eb!important;
+}
+#app .dashboard-premium-shell.respondo-workspace-active #respondoWorkspaceCardBody
+  :is(#booking-calendar,#commerce-integration,#crm-integration,#business-integrations,#native-operations)
+  :is(input,select,textarea):focus-visible{
+  outline:2px solid #c6d6f8!important;outline-offset:2px!important;
+}
+#app .respondo-workspace #respondoServiceCapacityMount .service-form{
+  gap:14px!important;
+}
+#app .respondo-workspace #respondoServiceCapacityMount .service-field input,
+#app .respondo-workspace #respondoServiceCapacityMount .service-field select,
+#app .respondo-workspace #respondoServiceCapacityMount .service-toolbar select{
+  background:#29292f!important;
+  color:#f6f6fa!important;
+  -webkit-text-fill-color:#f6f6fa!important;
+  border:1px solid #484852!important;
+  color-scheme:dark!important;
+}
+#app .respondo-workspace #respondoServiceCapacityMount .respondo-service-config,
+#app .respondo-workspace .rs-integration-onboarding{
+  border-radius:18px!important;
+  background:var(--rs-settings-surface)!important;
+  border:1px solid var(--rs-settings-line)!important;
+  box-shadow:none!important;
+}
+#app .respondo-workspace .rs-integration-group-grid,
+#app .respondo-workspace .rs-integration-provider-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:0!important;
+  overflow:hidden;
+  border:1px solid var(--rs-settings-line)!important;
+  border-radius:14px!important;
+  background:#242429!important;
+}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider){
+  position:relative;
+  min-height:67px!important;
+  padding:14px 42px 14px 17px!important;
+  border:0!important;
+  border-bottom:1px solid var(--rs-settings-line)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  gap:4px!important;
+}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider):last-child{
+  border-bottom:0!important;
+}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider):after{
+  content:'›';
+  position:absolute;right:18px;top:50%;
+  transform:translateY(-50%);
+  font-size:24px;font-weight:500;color:#a4a4ad;
+}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider):hover{
+  background:#303037!important;
+}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider) strong{
+  font-size:15px!important;
+  font-weight:660!important;
+}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider) span{
+  color:#bcbcc8!important;
+  -webkit-text-fill-color:#bcbcc8!important;
+  font-size:12px!important;
+}
+#app .respondo-workspace .rs-integration-oauth-feedback{
+  margin-top:14px;
+  padding:14px 16px;
+  border:1px solid #50505c;
+  border-radius:12px;
+  background:#282830;
+  color:#f5f5fa!important;
+  -webkit-text-fill-color:#f5f5fa!important;
+  font-size:13px;
+  line-height:1.55;
+}
+#app .respondo-workspace .rs-integration-oauth-feedback[data-kind=error]{
+  border-color:#846b6b;
+}
+#app .respondo-workspace .rs-integration-oauth-feedback[data-kind=success]{
+  border-color:#5f806d;
+}
+#app .respondo-workspace .rs-integration-guide-heading h2{
+  font-size:clamp(22px,3vw,29px)!important;
+  font-weight:680!important;
+}
+#app .respondo-workspace .rs-integration-selected{
+  border:1px solid var(--rs-settings-line)!important;
+  border-radius:13px!important;
+  background:#25252c!important;
+}
+#app .respondo-workspace :is(.rs-integration-quiet,.rs-secondary-button){
+  background:#303037!important;
+  border:1px solid #4c4c56!important;
+  color:#f4f4f8!important;
+  -webkit-text-fill-color:#f4f4f8!important;
+}
+#app .respondo-workspace :is(.rs-integration-primary,.rs-minimal-button,.rs-service-save,.service-save){
+  border-radius:11px!important;
+  box-shadow:none!important;
+}
+#app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider,.rs-settings-directory-link){
+  transition:background-color .12s ease!important;
+}
+@media(max-width:640px){
+  #app .respondo-workspace .respondo-workspace-content{padding-inline:0!important}
+  #app .respondo-workspace .respondo-workspace-content h1{font-size:32px!important}
+  #app .respondo-workspace .rs-settings-directory{padding:16px 13px 6px!important}
+  #app .respondo-workspace .rs-settings-directory-link{min-height:66px!important}
+  #app .respondo-workspace .rs-integration-onboarding{padding:16px!important}
+  #app .respondo-workspace .rs-module-tabs button{font-size:12px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  #app .respondo-workspace :is(.rs-integration-group,.rs-integration-provider,.rs-settings-directory-link){transition:none!important}
+}
