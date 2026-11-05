@@ -10644,9 +10644,9 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         }
         if (serviceEstimate) {
           const overlap=await client.query(
-            `SELECT 1 FROM booking_slots WHERE tenant_id=$1 AND status='booked'
+            `SELECT 1 FROM booking_slots WHERE tenant_id=$1 AND status=$4
                AND starts_at<$3 AND ends_at>$2 LIMIT 1`,
-            [tenant.id,sr.rows[0].starts_at,sr.rows[0].ends_at],
+            [tenant.id,sr.rows[0].starts_at,sr.rows[0].ends_at,'booked'],
           );
           if (overlap.rowCount) {
             await client.query('ROLLBACK');
