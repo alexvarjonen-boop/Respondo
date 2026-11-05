@@ -24,6 +24,7 @@ export async function ensureNativeMailBridgeSchema(db){
    PRIMARY KEY(tenant_id,provider,message_id)
  )`);
  await db.query('ALTER TABLE respondo_native_mail_credentials ADD COLUMN IF NOT EXISTS last_sync_error TEXT');
+ await db.query("ALTER TABLE respondo_native_mail_credentials ADD COLUMN IF NOT EXISTS granted_scopes TEXT NOT NULL DEFAULT ''");
  for(const name of ['respondo_native_mail_credentials','respondo_native_mail_events']){
   await db.query('ALTER TABLE '+name+' ENABLE ROW LEVEL SECURITY');
   await db.query('REVOKE ALL PRIVILEGES ON TABLE '+name+' FROM PUBLIC');
@@ -79,7 +80,8 @@ export async function storeNativeMailboxMessages(db,tenantId,provider,items){
       (id,tenant_id,thread_id,source_channel,external_contact_id,visitor_ref,role,message,metadata)
       VALUES($1,$2,$3,'email',$4,$5,'user',$6,$7::jsonb)`,
       [randomUUID(),tenantId,thread.rows[0].id,contact,contact.slice(0,160),
-       (subject?subject+'\n':'')+snippet,JSON.stringify({provider,providerMessageId:id})]);
+       (subject?subject+'\n':'')+snippet,JSON.stringify({provider,providerMessageId:id,subject,
+        providerThreadId:clean(item?.providerThreadId,180),originalRfcId:clean(item?.originalRfcId,250)})]);
    await client.query('COMMIT');
    imported++;
   }catch(error){await client.query('ROLLBACK').catch(()=>{});throw error}
