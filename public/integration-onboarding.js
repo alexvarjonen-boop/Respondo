@@ -107,14 +107,22 @@
     // Server output is the source of truth for the connected state. Unknown is
     // distinct from disconnected, especially when an endpoint is unavailable.
     function domStatus(item){
-      if(item.id==='google_calendar')return Boolean($('#booking-calendar .calendar-sync-card.connected:not([hidden])'))?'connected':null;
-      if(item.id==='stripe')return Boolean($('#stripe-connect .stripe-connect-status.ready'))?'ready':null;
+      if(item.id==='google_calendar'){
+        if($('#booking-calendar .calendar-sync-card.connected:not([hidden])'))return 'connected';
+        return $('#connectGoogleCalendar')?'notConnected':null;
+      }
+      if(item.id==='stripe'){
+        if($('#stripe-connect .stripe-connect-status.ready'))return 'ready';
+        const state=$('#stripe-connect .stripe-connect-status')?.textContent||'';
+        return /Viimeistele|Complete|Slutför/i.test(state)?'partial':state?'notConnected':null;
+      }
       if(['shopify','woocommerce'].includes(item.id)){
         const form=$('#commerceForm'),badge=$('#commerce-integration .install-badge');
         const provider=form?.elements.provider?.value;
         if(provider===item.id && badge && /Yhdistetty|Ansluten|Connected/i.test(badge.textContent))return 'connected';
+        return form?'notConnected':null;
       }
-      if(item.id==='webhooks' && ($('#integrationsForm')?.elements.webhookUrl?.value||'').trim())return 'partial';
+      if(item.id==='webhooks')return ($('#integrationsForm')?.elements.webhookUrl?.value||'').trim()?'partial':'notConnected';
       if(item.id==='native_calendar')return 'local';
       return null;
     }
@@ -125,6 +133,7 @@
     function statusLabel(s){
       if(s==='restricted')return t.restricted;
       if(s==='connected')return t.connected;
+      if(s==='notConnected')return t.notConnected;
       if(s==='ready')return t.ready;
       if(s==='partial')return t.partial;
       if(s==='local')return t.noExtra;
@@ -209,6 +218,7 @@
       }
       if(item.id==='shopify'||item.id==='woocommerce')configureCommerceFields();
       requestAnimationFrame(()=>{
+        ws.querySelector('#rsWorkspaceOrbit')?.__orbitApi?.suspendPin?.();
         const card=$('#respondoWorkspaceCardBody');
         if(!card || !ws.classList.contains('rs-integration-configuring'))return;
         card.scrollIntoView({behavior:'auto',block:'start'});
@@ -245,6 +255,23 @@
       };
       const entries=await Promise.all(Object.entries(endpoints).map(async([key,url])=>[key,await readonlyJSON(url)]));
       const result=Object.fromEntries(entries),next=new Map();
+      if(result.crm&&typeof result.crm.connected==='boolean'){
+        next.set('hubspot','notConnected');
+        next.set('pipedrive','notConnected');
+      }
+      if(Array.isArray(result.mail?.connections)){
+        next.set('gmail','notConnected');
+        next.set('outlook','notConnected');
+      }
+      if(Array.isArray(result.meta?.channels)){
+        for(const id of ['whatsapp','instagram','facebook'])next.set(id,'notConnected');
+      }
+      if(Array.isArray(result.cloud?.connections)){
+        next.set('google_drive','notConnected');
+        next.set('sharepoint','notConnected');
+      }
+      if(typeof result.freshdesk?.data?.connected==='boolean')next.set('freshdesk','notConnected');
+      if(typeof result.zendesk?.data?.connected==='boolean')next.set('zendesk','notConnected');
       if(result.crm?.connected && ['hubspot','pipedrive'].includes(result.crm.provider))
         next.set(result.crm.provider,'connected');
       for(const account of result.mail?.connections||[]){
