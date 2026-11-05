@@ -95,8 +95,6 @@ export async function readGmailInbox({token,limit=20,fetcher=fetch}){
   if(!id)continue;
   const url=new URL('/gmail/v1/users/me/messages/'+encodeURIComponent(id),'https://gmail.googleapis.com');
   url.searchParams.set('format','full');
-  url.searchParams.append('metadataHeaders','From');
-  url.searchParams.append('metadataHeaders','Subject');
   const response=await fetcher(url.toString(),{method:'GET',redirect:'error',
    headers:{Authorization:'Bearer '+token,Accept:'application/json'},signal:AbortSignal.timeout(9000)});
   if(!response.ok)throw Error('gmail_message_http_'+response.status);
