@@ -12,3 +12,10 @@
 #app #respondoServiceCapacityMount .service-status{font-size:12px;line-height:1.5;color:#cfe2ff!important;-webkit-text-fill-color:#cfe2ff!important;margin:0}
 #app #respondoServiceCapacityMount :is(button,input):focus-visible{outline:3px solid #80b0fd!important;outline-offset:2px}
 @media(max-width:640px){#app #respondoServiceCapacityMount .service-form{grid-template-columns:minmax(0,1fr)}}
+
+#app #respondoServiceCapacityMount .service-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#app #respondoServiceCapacityMount .service-toolbar select{min-width:200px;flex:1}
+#app #respondoServiceCapacityMount .service-toolbar .service-add{min-height:44px;border:1px solid #d8e3f2;border-radius:10px;background:#f3f6fb;color:#172638;-webkit-text-fill-color:#172638;cursor:pointer;font-weight:750;padding:9px 15px}
+#app #respondoServiceCapacityMount .service-field select,
+#app #respondoServiceCapacityMount .service-toolbar select{width:100%;box-sizing:border-box;min-height:45px;padding:10px 12px;border:1px solid #abb9cc!important;border-radius:10px;background:#f7f8fa!important;color:#172638!important;-webkit-text-fill-color:#172638!important;color-scheme:light}
+@media(max-width:640px){#app #respondoServiceCapacityMount .service-toolbar{flex-direction:column;align-items:stretch}}
