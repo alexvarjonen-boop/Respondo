@@ -9837,6 +9837,24 @@ function nativeMailOauthConfig(provider){
  return null;
 }
 const nativeMailRedirect=provider=>BASE+'/api/app/native/mail/'+provider+'/callback';
+/* Owner-only capability inventory. This describes which provider app registrations
+   exist in production; it does NOT assert any customer's account is connected. */
+app.get('/api/app/integrations/readiness',auth,ownerOnly,subscribed,(req,res)=>{
+ res.set('Cache-Control','private, no-store');
+ const has=(...keys)=>keys.every(k=>Boolean(String(process.env[k]||'').trim()));
+ const google=has('GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET');
+ const microsoft=has('MICROSOFT_CLIENT_ID','MICROSOFT_CLIENT_SECRET');
+ const meta=has('META_APP_SECRET','META_VERIFY_TOKEN');
+ const zendesk=Boolean(zendeskConfig(process.env,SEO_CANONICAL_ORIGIN));
+ return res.json({prerequisites:{
+  gmail:google,outlook:microsoft,
+  google_calendar:google,google_drive:google,sharepoint:microsoft,
+  whatsapp:meta,instagram:meta,facebook:meta,
+  zendesk, stripe:Boolean(stripe),
+  hubspot:true,pipedrive:true,shopify:true,woocommerce:true,
+  freshdesk:true,native_calendar:true,webhooks:true
+ },meaning:'Provider configuration only. Tenant authorization and connection tests are separate.'});
+});
 app.get('/api/app/native/mail/status',auth,ownerOnly,subscribed,async(req,res)=>{
  try{
   const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
