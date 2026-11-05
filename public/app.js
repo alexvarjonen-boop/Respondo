@@ -4129,6 +4129,56 @@ async function dashboard(options = {}) {
         </article>
 
 
+        <article class="panel" id="native-service-duration">
+          <div class="panel-head">
+            <div>
+              <small>RESPONDO SCHEDULING</small>
+              <h2>${appText('Älykäs työnkeston laskenta','Smart beräkning av arbetstid','Smart job duration estimates')}</h2>
+              <p>${appText('Määritä yrityksen omat kestot. Respondo ei arvaa työn vaatimaa aikaa eikä lupaa varausta ennen tarkistusta.','Ange företagets egna tidsregler. Respondo gissar inte tiden eller lovar en bokning innan den har kontrollerats.','Set your own service durations. Respondo does not guess or promise unverified bookings.')}</p>
+            </div>
+          </div>
+          <form id="nativeDurationForm" class="formgrid">
+            <div class="field"><label>${appText('Palvelutunnus','Tjänste-ID','Service ID')}</label><input name="id" maxlength="64" pattern="[a-z0-9_-]+" required placeholder="window_cleaning"></div>
+            <div class="field"><label>${appText('Perusaika (min)','Grundtid (min)','Base time (min)')}</label><input name="baseMinutes" type="number" min="0" max="10080" value="60" required></div>
+            <div class="field"><label>${appText('Minuutteja / yksikkö','Minuter / enhet','Minutes per unit')}</label><input name="minutesPerUnit" type="number" min="0" max="1440" value="6" required></div>
+            <div class="field"><label>${appText('Varausväli / pyöristys (min)','Avrundning (min)','Round up to (min)')}</label><input name="roundToMinutes" type="number" min="1" max="1440" value="15" required></div>
+            <div class="field"><label>${appText('Valmistelu (min)','Förberedelse (min)','Preparation (min)')}</label><input name="bufferBeforeMinutes" type="number" min="0" max="1440" value="0" required></div>
+            <div class="field"><label>${appText('Jälkityö (min)','Efterarbete (min)','After-work buffer (min)')}</label><input name="bufferAfterMinutes" type="number" min="0" max="1440" value="15" required></div>
+            <div class="field full"><button class="btn dashboard-action" type="submit">${appText('Tallenna kestosääntö','Spara tidsregel','Save duration rule')}</button></div>
+            <div class="field full" id="nativeDurationMsg" aria-live="polite"></div>
+          </form>
+          <div id="nativeDurationList" aria-live="polite"></div>
+          <form id="nativeProposalForm" class="formgrid">
+            <div class="field"><label>${appText('Palvelutunnus','Tjänste-ID','Service ID')}</label><input name="serviceId" required placeholder="window_cleaning"></div>
+            <div class="field"><label>${appText('Työn määrä','Arbetsmängd','Quantity')}</label><input name="quantity" type="number" min="1" max="100000" required value="30"></div>
+            <div class="field"><label>${appText('Ajanjakso alkaa','Period börjar','From')}</label><input name="from" type="datetime-local" required></div>
+            <div class="field"><label>${appText('Ajanjakso päättyy','Period slutar','Until')}</label><input name="to" type="datetime-local" required></div>
+            <div class="field full"><button type="submit" class="btn dashboard-action">${appText('Tarkista sopivat ajat','Kontrollera lämpliga tider','Check suitable times')}</button></div>
+            <div class="field full" id="nativeProposalMsg" aria-live="polite"></div>
+          </form>
+        </article>
+
+        <article class="panel" id="native-integrations">
+          <div class="panel-head">
+            <div>
+              <small>RESPONDO NATIVE CHANNELS</small>
+              <h2>${appText('Viestit ja yhteydet','Meddelanden och anslutningar','Messages and connections')}</h2>
+              <p>${appText('Viestien luokittelu ja luonnokset tehdään Respondon omassa järjestelmässä. Palveluun yhdistämätön kanava ei lähetä tai vastaanota automaattisesti.','Klassificering och utkast görs i Respondo. Ej anslutna kanaler kan inte skicka eller ta emot automatiskt.','Classification and drafts run inside Respondo. Unconnected channels cannot send or receive automatically.')}</p>
+            </div>
+          </div>
+          <form id="nativeIntegrationForm" class="formgrid">
+            <div class="field"><label>${appText('Palvelu','Tjänst','Provider')}</label><select name="provider">
+              ${['email','outlook','hubspot','pipedrive','freshdesk','zendesk','whatsapp','instagram','facebook','google_drive','sharepoint','shopify','woocommerce'].map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}
+            </select></div>
+            <div class="field"><label>${appText('Käyttötila','Läge','Mode')}</label><select name="mode"><option value="manual">${appText('Manuaalinen','Manuell','Manual')}</option><option value="disabled">${appText('Ei käytössä','Av','Disabled')}</option></select></div>
+            <div class="field full"><button class="btn dashboard-action" type="submit">${appText('Tallenna tila','Spara läge','Save mode')}</button></div>
+            <div class="field full" id="nativeIntegrationMsg" aria-live="polite"></div>
+          </form>
+          <div id="nativeIntegrationList" aria-live="polite"></div>
+          <h3>${appText('Tarkistettavat viestiluonnokset','Meddelandeutkast för granskning','Message drafts for review')}</h3>
+          <div id="nativeInboxList" aria-live="polite"></div>
+          <button type="button" class="btn integration-test-btn" id="nativeInboxRefresh">${appText('Päivitä viestit','Uppdatera meddelanden','Refresh messages')}</button>
+        </article>
         <article class="panel" id="business-integrations" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
           <div class="panel-head">
             <div>
@@ -6855,6 +6905,89 @@ async function route() {
         button.disabled=false;
       }
     });
+
+    const nativeNotice=(id,text,isError=false)=>{const el=$(id);if(el){el.textContent=text;el.style.color=isError?'#e87b7b':'inherit';}};
+    const loadNativeRules=async()=>{
+      const el=$('#nativeDurationList');if(!el)return;
+      try{
+        const result=await api('/api/app/service-duration-rules');
+        el.replaceChildren();
+        for(const r of result.rules||[]){
+          const p=document.createElement('p');
+          p.textContent=r.id+' · '+r.baseMinutes+' min + '+r.minutesPerUnit+' min / '+appText('yksikkö','enhet','unit')+' · '+appText('puskurit','buffertar','buffers')+' '+r.bufferBeforeMinutes+'/'+r.bufferAfterMinutes+' min';
+          el.appendChild(p);
+        }
+      }catch(e){el.textContent=e.message;}
+    };
+    const loadNativeStatus=async()=>{
+      const el=$('#nativeIntegrationList');if(!el)return;
+      try{
+        const result=await api('/api/app/native-integrations/status');
+        el.replaceChildren();
+        for(const item of result.integrations||[]){
+          const p=document.createElement('p');p.textContent=item.provider+' · '+(item.mode==='disabled'?appText('Ei käytössä','Av','Disabled'):appText('Manuaalinen – ei yhdistetty','Manuell – ej ansluten','Manual – not connected'));
+          el.appendChild(p);
+        }
+      }catch(e){el.textContent=e.message;}
+    };
+    const loadNativeInbox=async()=>{
+      const el=$('#nativeInboxList');if(!el)return;
+      try{
+        const result=await api('/api/app/native-integrations/inbox');
+        el.replaceChildren();
+        const messages=result.messages||[];
+        if(!messages.length){el.textContent=appText('Ei viestejä odottamassa.','Inga meddelanden väntar.','No pending messages.');return;}
+        for(const item of messages){
+          const article=document.createElement('article');
+          article.className='action-request-item';
+          const heading=document.createElement('b');heading.textContent=item.channel+' · '+item.sender+' · '+item.intent;
+          const message=document.createElement('p');message.textContent=item.subject+' — '+item.body;
+          const label=document.createElement('small');label.textContent=appText('Vastausluonnos (ei lähetetty)','Svarsutkast (inte skickat)','Draft (not sent)');
+          const draft=document.createElement('p');draft.textContent=item.draft;
+          article.append(heading,message,label,draft);el.appendChild(article);
+        }
+      }catch(e){el.textContent=e.message;}
+    };
+    if($('#nativeDurationForm')){
+      loadNativeRules();loadNativeStatus();loadNativeInbox();
+    }
+    $('#nativeDurationForm')?.addEventListener('submit',async e=>{
+      e.preventDefault();const data=new FormData(e.currentTarget);
+      const keys=['baseMinutes','minutesPerUnit','roundToMinutes','bufferBeforeMinutes','bufferAfterMinutes'];
+      const rule={id:String(data.get('id')||'').trim()};
+      keys.forEach(k=>rule[k]=Number(data.get(k)));
+      const button=e.currentTarget.querySelector('button[type=submit]');button.disabled=true;
+      try{
+        await api('/api/app/service-duration-rules',{method:'POST',body:JSON.stringify({rule})});
+        nativeNotice('#nativeDurationMsg',appText('Sääntö tallennettu.','Regeln sparad.','Rule saved.'));
+        await loadNativeRules();
+      }catch(error){nativeNotice('#nativeDurationMsg',error.message,true)}
+      finally{button.disabled=false;}
+    });
+    $('#nativeProposalForm')?.addEventListener('submit',async e=>{
+      e.preventDefault();const data=new FormData(e.currentTarget);
+      const localIso=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?d.toISOString():null;};
+      const payload={serviceId:String(data.get('serviceId')||''),quantity:Number(data.get('quantity')),from:localIso(data.get('from')),to:localIso(data.get('to'))};
+      const button=e.currentTarget.querySelector('button[type=submit]');button.disabled=true;
+      try{
+        const r=await api('/api/app/booking-proposals',{method:'POST',body:JSON.stringify(payload)});
+        const dates=(r.availability?.starts||[]).slice(0,12).map(x=>new Date(x).toLocaleString(appLocale(),{dateStyle:'short',timeStyle:'short'}));
+        nativeNotice('#nativeProposalMsg',r.estimate?.status==='estimated'
+          ? appText('Arvioitu työaika: ','Beräknad arbetstid: ','Estimated duration: ')+r.estimate.totalMinutes+' min. '+(dates.length?dates.join(' · '):appText('Ei sopivia vahvistettuja aikoja.','Inga lämpliga verifierade tider.','No matching verified times.'))
+          :appText('Lisätietoja tai kestoasetuksia tarvitaan.','Mer information eller tidsregler behövs.','More details or duration rules required.'));
+      }catch(error){nativeNotice('#nativeProposalMsg',error.message,true)}
+      finally{button.disabled=false;}
+    });
+    $('#nativeIntegrationForm')?.addEventListener('submit',async e=>{
+      e.preventDefault();const data=new FormData(e.currentTarget),button=e.currentTarget.querySelector('button[type=submit]');button.disabled=true;
+      try{
+        await api('/api/app/native-integrations/settings',{method:'POST',body:JSON.stringify({provider:data.get('provider'),mode:data.get('mode')})});
+        nativeNotice('#nativeIntegrationMsg',appText('Tila tallennettu. Yhteys ei ole vielä käytössä.','Läget sparat. Anslutningen är ännu inte aktiv.','Mode saved. Connection is not active.'));
+        await loadNativeStatus();
+      }catch(error){nativeNotice('#nativeIntegrationMsg',error.message,true)}
+      finally{button.disabled=false;}
+    });
+    $('#nativeInboxRefresh')?.addEventListener('click',loadNativeInbox);
 
     $('#integrationsForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
