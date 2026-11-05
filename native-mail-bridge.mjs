@@ -14,6 +14,7 @@ export async function ensureNativeMailBridgeSchema(db){
    last_verified_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
    last_synced_at TIMESTAMPTZ,
    last_sync_error TEXT,
+   next_cursor TEXT,
    PRIMARY KEY(tenant_id,provider)
  )`);
  await db.query(`CREATE TABLE IF NOT EXISTS respondo_native_mail_events(
@@ -24,6 +25,7 @@ export async function ensureNativeMailBridgeSchema(db){
    PRIMARY KEY(tenant_id,provider,message_id)
  )`);
  await db.query('ALTER TABLE respondo_native_mail_credentials ADD COLUMN IF NOT EXISTS last_sync_error TEXT');
+ await db.query('ALTER TABLE respondo_native_mail_credentials ADD COLUMN IF NOT EXISTS next_cursor TEXT');
  await db.query("ALTER TABLE respondo_native_mail_credentials ADD COLUMN IF NOT EXISTS granted_scopes TEXT NOT NULL DEFAULT ''");
  for(const name of ['respondo_native_mail_credentials','respondo_native_mail_events']){
   await db.query('ALTER TABLE '+name+' ENABLE ROW LEVEL SECURITY');
@@ -36,23 +38,29 @@ export async function ensureNativeMailBridgeSchema(db){
    await db.query('REVOKE ALL PRIVILEGES ON TABLE '+table+' FROM '+role.rolname);
  }
 }
-export async function getNativeMailboxMessages(provider,token,{limit=20,fetcher=fetch}={}){
+export async function getNativeMailboxMessages(provider,token,{
+ limit=20,cursor=null,includeCursor=false,fetcher=fetch
+}={}){
  if(!nativeMailboxProvider(provider))throw new TypeError('Unsupported mailbox');
  if(!Number.isSafeInteger(limit)||limit<1||limit>60)throw new RangeError('Mailbox limit must be 1–60');
+ if(cursor!=null&&(typeof cursor!=='string'||cursor.length>3000))throw TypeError('Invalid mailbox cursor');
  const results=[],seen=new Set();
- let cursor=null;
- // At most three bounded pages; never follow a provider-supplied URL without host/path validation.
+ let nextCursor=cursor;
+ // A bounded scan can resume from the persisted provider cursor on the next poll.
  for(let page=0;page<3&&results.length<limit;page++){
   const pageLimit=Math.min(20,limit-results.length);
   const data=provider==='gmail'
-   ?await readGmailInbox({token,limit:pageLimit,cursor,fetcher})
-   :await readProvider({provider,token,limit:pageLimit,cursor,fetcher});
+   ?await readGmailInbox({token,limit:pageLimit,cursor:nextCursor,fetcher})
+   :await readProvider({provider,token,limit:pageLimit,cursor:nextCursor,fetcher});
   results.push(...normalizeProviderItems(provider,data).slice(0,pageLimit));
   const next=provider==='gmail'?data?.nextPageToken:data?.['@odata.nextLink'];
-  if(typeof next!=='string'||!next||seen.has(next))break;
-  seen.add(next);cursor=next;
+  if(typeof next!=='string'||!next||seen.has(next)){
+   nextCursor=null;break;
+  }
+  seen.add(next);nextCursor=next;
  }
- return results.slice(0,limit);
+ const items=results.slice(0,limit);
+ return includeCursor?{items,nextCursor}:items;
 }
 export async function storeNativeMailboxMessages(db,tenantId,provider,items){
  if(!nativeMailboxProvider(provider)||!/^[a-f\d-]{36}$/i.test(String(tenantId||'')))
