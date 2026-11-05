@@ -70,6 +70,25 @@
     return fetch(path,{method:'GET',credentials:'same-origin',cache:'no-store',headers:{accept:'application/json'}})
       .then(response=>response.ok?response.json():null).catch(()=>null);
   }
+  // OAuth return codes are intentionally non-sensitive. Provider secrets never
+  // enter the URL, local storage, the DOM or client-side status objects.
+  const mailboxFeedback=(language,code,provider)=>{
+    const name=provider==='outlook'?'Microsoft 365 / Outlook':'Gmail';
+    const all={
+      not_configured:[
+        name+'-yhdistämistä ei ole vielä määritetty Respondon palvelimelle. Ylläpitäjän täytyy lisätä palveluntarjoajan sovellustunnukset ennen yhdistämistä.',
+        name+'-anslutningen är inte konfigurerad på Respondos server. Administratören måste lägga till OAuth-uppgifter innan anslutningen kan användas.',
+        name+' is not yet configured on the Respondo server. An administrator must add the provider OAuth credentials before you can connect.'
+      ],
+      missing_tenant:['Yrityksen työtilaa ei löytynyt. Valitse yritys ja yritä uudelleen.','Företagets arbetsyta kunde inte hittas.','Company workspace not found. Select a company and try again.'],
+      invalid_state:['Kirjautumispyyntö vanheni. Aloita yhdistäminen uudelleen.','Inloggningsförfrågan har gått ut. Försök igen.','Authorization expired. Start the connection again.'],
+      invalid_session:['Kirjaudu Respondoon uudelleen ennen yhdistämistä.','Logga in på Respondo på nytt.','Sign into Respondo again before connecting.'],
+      cancelled:['Valtuutusta ei hyväksytty. Yhteyttä ei luotu.','Godkännandet avbröts. Ingen anslutning skapades.','Authorization was cancelled. No connection was created.'],
+      failed:['Yhdistäminen epäonnistui. Tarkista palveluntarjoajan oikeudet tai pyydä Respondo-ylläpitoa tarkistamaan sovelluksen asetukset.','Anslutningen misslyckades. Kontrollera behörigheterna eller kontakta administratören.','Connection failed. Check provider permissions or have the Respondo administrator check the application setup.'],
+      connected:['Yhteys vahvistettu. Voit tarkistaa tilan alempaa.','Anslutningen har verifierats. Kontrollera statusen nedan.','Connection verified. Check the status below.']
+    };
+    return all[code]?.[language==='fi'?0:language==='sv'?1:2]||null;
+  };
   function mount(){
     const ws=$('#respondoWorkspace');
     const moduleCard=$('#respondoWorkspaceCardBody')?.closest('.respondo-workspace-module-card');
@@ -85,7 +104,17 @@
     const heading=$('.rs-integration-guide-heading',root);
     const content=$('.rs-integration-guide-content',root);
     const footer=$('.rs-integration-guide-footer',root);
+    const urlParams=new URLSearchParams(location.search);
+    const oauthCode=urlParams.get('native_mail');
+    const oauthProvider=urlParams.get('provider');
+    const callbackMsg=mailboxFeedback(lang,oauthCode,oauthProvider);
     heading.append(el('h2','',t.title),el('p','',t.intro));
+    if(callbackMsg){
+      const notice=el('div','rs-integration-oauth-feedback',callbackMsg);
+      notice.setAttribute('role',oauthCode==='connected'?'status':'alert');
+      notice.dataset.kind=oauthCode==='connected'?'success':'error';
+      heading.appendChild(notice);
+    }
     const back=el('button','rs-integration-quiet',t.back);
     back.type='button';back.hidden=true;
     const refresh=el('button','rs-integration-quiet',t.check);
@@ -93,7 +122,7 @@
     const advanced=el('button','rs-integration-quiet',t.technical);
     advanced.type='button';advanced.setAttribute('aria-expanded','false');
     footer.append(back,refresh,advanced);
-    let chosenGroup=null,chosenProvider=null,states=new Map();
+    let chosenGroup=null,chosenProvider=null,states=new Map(),oauthAvailable=new Map();
     const existingLocks=new Map();
     for(const item of providers){
       const target=$('#'+item.tab);
@@ -128,10 +157,13 @@
     }
     function status(item){
       if(existingLocks.get(item.id))return 'restricted';
+      if(['gmail','outlook'].includes(item.id)&&oauthAvailable.get(item.id)===false)
+        return 'notConfigured';
       return states.get(item.id)||domStatus(item)||'unknown';
     }
     function statusLabel(s){
       if(s==='restricted')return t.restricted;
+      if(s==='notConfigured')return mailboxFeedback(lang,'not_configured',chosenProvider);
       if(s==='connected')return t.connected;
       if(s==='notConnected')return t.notConnected;
       if(s==='ready')return t.ready;
@@ -176,8 +208,12 @@
         const info=el('div','rs-integration-selected');
         info.append(el('p','',word(item.step)),el('p','rs-integration-current-status',statusLabel(status(item))));
         content.appendChild(info);
-        if(status(item)==='restricted'){
-          content.appendChild(el('p','rs-integration-note',t.restricted));
+        if(status(item)==='restricted' || status(item)==='notConfigured'){
+          const text=status(item)==='restricted'?t.restricted:
+            mailboxFeedback(lang,'not_configured',item.id);
+          const alert=el('p','rs-integration-note',text);
+          if(status(item)==='notConfigured')alert.setAttribute('role','alert');
+          content.appendChild(alert);
           ws.classList.remove('rs-integration-configuring');
           return;
         }
@@ -255,6 +291,12 @@
       };
       const entries=await Promise.all(Object.entries(endpoints).map(async([key,url])=>[key,await readonlyJSON(url)]));
       const result=Object.fromEntries(entries),next=new Map();
+      if(result.mail?.oauthAvailable && typeof result.mail.oauthAvailable==='object'){
+        for(const id of ['gmail','outlook']){
+          if(typeof result.mail.oauthAvailable[id]==='boolean')
+            oauthAvailable.set(id,result.mail.oauthAvailable[id]);
+        }
+      }
       if(result.crm&&typeof result.crm.connected==='boolean'){
         next.set('hubspot','notConnected');
         next.set('pipedrive','notConnected');
@@ -330,7 +372,9 @@
     // After OAuth returns, keep the user's selected service in the guide,
     // without claiming the account connected until the status GET succeeds.
     const pending=(()=>{try{return sessionStorage.getItem('respondo_pending_integration')}catch{return null}})();
-    const recovered=providers.find(p=>p.id===pending);
+    const fromCallback=oauthCode&&['gmail','outlook'].includes(oauthProvider)?
+      oauthProvider:null;
+    const recovered=providers.find(p=>p.id===(fromCallback||pending));
     if(recovered){
       chosenGroup=recovered.group;chosenProvider=recovered.id;
       try{sessionStorage.removeItem('respondo_pending_integration')}catch{}
