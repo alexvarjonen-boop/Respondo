@@ -10127,19 +10127,21 @@ app.get('/api/app/native/cloud/:provider/callback',async(req,res)=>{
  }catch(e){console.error('Cloud OAuth callback failed',e?.name||'error');
   return res.redirect(dst+'failed')}
 });
-async function nativeCloudFiles(id,provider){
+async function nativeCloudFiles(id,provider,cursor=null){
  if(!cloudProvider(provider))throw TypeError('Unsupported cloud provider');
  const credentials=await q(`SELECT * FROM respondo_native_cloud_credentials
   WHERE tenant_id=$1 AND provider=$2`,[id,provider]);
  if(!credentials.rowCount)throw TypeError('Connect the cloud provider first');
  const cred=credentials.rows[0];
  const token=await nativeCloudAccess(id,provider,cred);
- const data=await readProvider({provider,token,resourceId:cred.site_id,limit:40});
- return {provider,token,site:cred.site_id,files:normalizeCloudFileList(provider,data)};
+ const data=await readProvider({provider,token,resourceId:cred.site_id,limit:40,cursor});
+ const nextCursor=provider==='google_drive'?data.nextPageToken:data['@odata.nextLink'];
+ return {provider,token,site:cred.site_id,files:normalizeCloudFileList(provider,data),
+  nextCursor:typeof nextCursor==='string'&&nextCursor.length<=4000?nextCursor:null};
 }
 app.get('/api/app/native/cloud/:provider/files',auth,ownerOnly,subscribed,nativeEndpoint(async(id,req)=>{
- const x=await nativeCloudFiles(id,req.params.provider);
- return {provider:x.provider,files:x.files,requiresApproval:true};
+ const x=await nativeCloudFiles(id,req.params.provider,req.query.cursor||null);
+ return {provider:x.provider,files:x.files,nextCursor:x.nextCursor,requiresApproval:true};
 }));
 app.post('/api/app/native/cloud/:provider/import',auth,ownerOnly,subscribed,nativeWriteLimiter,
  nativeEndpoint(async(id,req)=>{
@@ -10147,7 +10149,7 @@ app.post('/api/app/native/cloud/:provider/import',auth,ownerOnly,subscribed,nati
   const provider=String(req.params.provider||'');
   const fileId=String(req.body.fileId||'');
   if(!/^[A-Za-z0-9._-]{1,180}$/.test(fileId))throw TypeError('Invalid file ID');
-  const data=await nativeCloudFiles(id,provider);
+  const data=await nativeCloudFiles(id,provider,req.body.cursor||null);
   const file=data.files.find(x=>x.id===fileId);
   if(!file)throw TypeError('Select an approved text file from the listing');
   const body=await readApprovedCloudText(provider,data.token,file,{site:data.site});
