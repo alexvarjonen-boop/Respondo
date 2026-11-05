@@ -1023,7 +1023,7 @@ async function sendWelcomeEmailOnce(userId) {
     const user=found.rows[0];
     if (!user?.email) throw new Error('Welcome recipient missing');
     const lang=['fi','sv','en'].includes(user.preferred_language) ? user.preferred_language : 'en';
-    const firstName=String(user.full_name||'').trim().split(/\\s+/)[0];
+    const firstName=String(user.full_name||'').trim().split(/\s+/)[0];
     const greeting=lang==='sv'?'Välkommen till Respondo AI!':lang==='en'?'Welcome to Respondo AI!':'Tervetuloa Respondo AI:hin!';
     const intro=lang==='sv'?'Ditt konto är klart. Du kan nu logga in och börja konfigurera din kundtjänstbot.':lang==='en'?'Your account is ready. You can now sign in and set up your customer service bot.':'Tilisi on nyt valmis. Voit kirjautua sisään ja aloittaa asiakaspalvelubottisi käyttöönoton.';
     const steps=lang==='sv'?'Lägg till företagets uppgifter, anpassa botens utseende och installera den på din webbplats.':lang==='en'?'Add your company details, customize the bot and install it on your website.':'Lisää yrityksesi tiedot, muokkaa botin ulkoasua ja asenna se verkkosivuillesi.';
