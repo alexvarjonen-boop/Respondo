@@ -5100,7 +5100,7 @@ async function dashboard(options = {}) {
             <div>
               <small>RESPONDO NATIVE MAIL</small>
               <h2>${appText('Gmail ja Microsoft 365','Gmail och Microsoft 365','Gmail and Microsoft 365')}</h2>
-              <p>${appText('Yhdistä yrityksen sähköposti hyväksymällä lukuoikeus. Saapuvat viestit voidaan hakea Respondon omaan Inboxiin tarkistettaviksi. Automaattinen lähetys ei ole käytössä.','Anslut e-post med läsbehörighet. Inkommande meddelanden kan hämtas till Respondos inkorg för granskning. Automatisk sändning är avstängd.','Authorize mailbox read access. Incoming messages can be imported into Respondo Inbox for review. Automatic outbound mail is disabled.')}</p>
+              <p>${appText('Yhdistä sähköposti sallimalla viestien lukeminen ja erikseen hyväksytyt vastaukset. Respondo hakee saapuvat viestit omaan Inboxiin. Viestejä ei lähetetä automaattisesti; yrityksen omistajan pitää hyväksyä jokainen lähetys.','Anslut e-post med behörighet att läsa och skicka uttryckligen godkända svar. Respondo hämtar inkommande meddelanden till sin inkorg. Varje utgående meddelande kräver ägarens godkännande.','Authorize mailbox read access and individually approved replies. Incoming messages are imported into Respondo Inbox. Each outgoing email requires explicit owner approval; automatic sending is disabled.')}</p>
             </div>
           </div>
           <div class="calendar-sync-actions" style="display:flex;gap:12px;flex-wrap:wrap">
