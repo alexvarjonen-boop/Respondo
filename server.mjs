@@ -8713,16 +8713,16 @@ async function finishOauth(req, res, code, state) {
         sessionUser = sessionToken ? jwt.verify(sessionToken, JWT) : null;
       } catch {}
       if (!sessionUser?.sub || sessionUser.sub !== statePayload.userId) {
-        return res.redirect('/app?section=automation&calendar=auth_error');
+        return res.redirect('/app?section=integrations&provider=google_calendar&calendar=auth_error');
       }
 
       const tenantId=String(statePayload.tenantId || '');
-      if (!tenantId) return res.redirect('/app?section=automation&calendar=missing_tenant');
+      if (!tenantId) return res.redirect('/app?section=integrations&provider=google_calendar&calendar=missing_tenant');
       const tr = await q(
         'SELECT * FROM tenants WHERE owner_user_id=$1 AND id=$2 AND active=true AND subscription_status IN (\'active\',\'trialing\')',
         [statePayload.userId,tenantId],
       );
-      if (!tr.rowCount) return res.redirect('/app?section=automation&calendar=missing_tenant');
+      if (!tr.rowCount) return res.redirect('/app?section=integrations&provider=google_calendar&calendar=missing_tenant');
       const tenant = tr.rows[0];
 
       const accessToken = String(token.access_token || '');
@@ -8731,7 +8731,7 @@ async function finishOauth(req, res, code, state) {
       const existingRefresh = tenant.google_calendar_refresh_token || null;
 
       if (!accessToken || (!refreshToken && !existingRefresh)) {
-        return res.redirect('/app?section=automation&calendar=no_refresh_token');
+        return res.redirect('/app?section=integrations&provider=google_calendar&calendar=no_refresh_token');
       }
 
       await q(
@@ -8751,7 +8751,7 @@ async function finishOauth(req, res, code, state) {
           tenant.id,
         ],
       );
-      return res.redirect('/app?section=automation&calendar=connected');
+      return res.redirect('/app?section=integrations&provider=google_calendar&calendar=connected');
     }
 
     if (statePayload.flow === 'password_setup') {
@@ -8777,7 +8777,7 @@ async function finishOauth(req, res, code, state) {
   } catch (e) {
     console.error('Google OAuth failed', e);
     if (statePayload.flow === 'calendar') {
-      return res.redirect('/app?section=automation&calendar=failed');
+      return res.redirect('/app?section=integrations&provider=google_calendar&calendar=failed');
     }
     return res.redirect(
       '/' + (statePayload.flow === 'signup' ? 'tilaus' : 'kirjaudu') +
@@ -10852,13 +10852,13 @@ app.get('/api/app/google-calendar/start', auth, ownerOnly, subscribed, async (re
   }
   if(!await requirePlanCapability(req,res,'googleCalendar')) return;
   const cfg = oauthConfig('google');
-  if (!cfg.configured) return res.redirect('/app?section=automation&calendar=not_configured');
+  if (!cfg.configured) return res.redirect('/app?section=integrations&provider=google_calendar&calendar=not_configured');
 
   const activeTenant=await q(
     'SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1) LIMIT 1',
     [req.user.sub],
   );
-  if (!activeTenant.rowCount) return res.redirect('/app?section=automation&calendar=missing_tenant');
+  if (!activeTenant.rowCount) return res.redirect('/app?section=integrations&provider=google_calendar&calendar=missing_tenant');
 
   const nonce = crypto.randomBytes(20).toString('hex');
   const state = jwt.sign({
@@ -10989,7 +10989,7 @@ app.get('/api/auth/oauth/google/callback', async (req, res) => {
     try {
       const statePayload = jwt.verify(state,JWT);
       if (statePayload.flow === 'calendar') {
-        return res.redirect('/app?section=automation&calendar=cancelled');
+        return res.redirect('/app?section=integrations&provider=google_calendar&calendar=cancelled');
       }
     } catch {}
     return res.redirect('/kirjaudu?oauth_error=failed&provider=google');
