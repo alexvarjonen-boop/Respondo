@@ -163,7 +163,7 @@
     }
     function statusLabel(s){
       if(s==='restricted')return t.restricted;
-      if(s==='notConfigured')return mailboxFeedback(lang,'not_configured',chosenProvider);
+      if(s==='notConfigured')return lang==='fi'?'Vaatii ylläpidon asetukset':lang==='sv'?'Kräver administratör':'Needs administrator setup';
       if(s==='connected')return t.connected;
       if(s==='notConnected')return t.notConnected;
       if(s==='ready')return t.ready;
