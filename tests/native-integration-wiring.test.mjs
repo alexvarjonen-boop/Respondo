@@ -31,3 +31,22 @@ test('dashboard exposes booking duration configuration and native channel review
  assert.match(app,/\/api\/app\/service-duration-rules/);
  assert.match(app,/\/api\/app\/native-integrations\/inbox/);
 });
+
+test('public booking refuses bypassing configured service duration rules',()=>{
+ const block=server.slice(server.indexOf("app.post('/api/public/:slug/action-request'"),server.indexOf("app.post('/api/app/booking-slots/generate'"));
+ assert.match(block,/anyRules\.rowCount && !fields\.serviceId/);
+ assert.match(block,/serviceEstimate\.totalMinutes\*60000/);
+});
+test('public availability filters out shorter slots and asks for quantity',()=>{
+ const block=server.slice(server.indexOf("app.get('/api/public/:slug/booking-slots'"),server.indexOf("app.get('/api/public/payment/verify'"));
+ assert.match(block,/needsDetails:true/);
+ assert.match(block,/estimateServiceDuration/);
+ assert.match(block,/estimate\.totalMinutes\*60000/);
+});
+test('embedded chat requests available slots using service and quantity',()=>{
+ const widget=fs.readFileSync(new URL('../public/widget.js',import.meta.url),'utf8');
+ assert.match(widget,/name="serviceId"/);
+ assert.match(widget,/name="quantity"/);
+ assert.match(widget,/params\.set\('serviceId',serviceSelect\.value\)/);
+ assert.match(widget,/params\.set\('quantity',quantityInput\.value\)/);
+});
