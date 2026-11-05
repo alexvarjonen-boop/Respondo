@@ -10,6 +10,20 @@ export const serviceText=lang=>phrases[lang]||phrases.fi;
 const number=(v,min,max,name)=>{const n=Number(v);if(!Number.isFinite(n)||n<min||n>max)throw new TypeError('Invalid '+name);return n;};
 export function validateServiceRule(value={}){
   const serviceKey=tr(value.serviceKey||'window_cleaning',40);
+  if(/^custom_[a-z0-9_]{3,40}$/.test(serviceKey)){
+    const serviceName=tr(value.serviceName,100),unitLabel=tr(value.unitLabel,32);
+    const calculation=value.calculation==='quantity'?'quantity':'fixed';
+    if(serviceName.length<3||!unitLabel)throw new TypeError('Service name and unit are required');
+    const aliases=tr(value.aliases,480).split(',').map(x=>x.trim()).filter(Boolean);
+    if(aliases.length>8||aliases.some(x=>x.length<2||x.length>60))
+      throw new TypeError('Invalid service aliases');
+    return {serviceKey,serviceName,unitLabel,calculation,aliases:aliases.join(', '),
+      minutesPerUnit:number(value.minutesPerUnit,1,720,'minutesPerUnit'),
+      maxUnits:Math.floor(number(value.maxUnits,1,10000,'maxUnits')),
+      baseMinutes:number(value.baseMinutes,0,360,'baseMinutes'),
+      bufferMinutes:number(value.bufferMinutes,0,180,'bufferMinutes'),
+      enabled:value.enabled===true};
+  }
   if(!services.includes(serviceKey))throw new TypeError('Unsupported service');
   return {serviceKey,minutesPerWindow:number(value.minutesPerWindow,1,180,'minutesPerWindow'),
     baseMinutes:number(value.baseMinutes,0,360,'baseMinutes'),bufferMinutes:number(value.bufferMinutes,0,180,'bufferMinutes'),
@@ -55,6 +69,19 @@ export function estimateWindowDuration(rule,facts){
   if(!Number.isFinite(minutes)||minutes<1||minutes>1440)return {status:'manual_review',reason:'unsafe_duration'};
   return {status:'estimated',minutes,requiredMinutes:minutes,approximate:true};
 }
+/** A duration is derived from an explicitly approved company rule, not guessed. */
+export function estimateServiceDuration(rule,facts={}){
+  if(!rule?.enabled)throw new TypeError('Capacity estimate disabled');
+  if(rule.serviceKey==='window_cleaning')return estimateWindowDuration(rule,facts);
+  const config=validateServiceRule(rule);
+  const quantity=config.calculation==='fixed'?1:facts.quantity;
+  if(!Number.isInteger(quantity)||quantity<1)return {status:'needs_details',missing:'quantity'};
+  if(quantity>config.maxUnits)return {status:'manual_review',reason:'too_many_units'};
+  const minutes=Math.ceil(config.baseMinutes+config.bufferMinutes+quantity*config.minutesPerUnit);
+  if(!Number.isFinite(minutes)||minutes<1||minutes>1440)
+    return {status:'manual_review',reason:'unsafe_duration'};
+  return {status:'estimated',minutes,requiredMinutes:minutes,approximate:true};
+}
 const ms=v=>new Date(v).getTime();
 export function fitServiceSlots(slots,minutes,busy=[],now=Date.now()){
   if(!Number.isFinite(minutes)||minutes<=0)throw new TypeError('Duration required');
@@ -73,11 +100,13 @@ const hasIntent=s=>/(?:ikkunanpes|ikkunoiden pes|ikkunoita pes|window clean|wind
 export async function ensureServiceCapacitySchema(db){
   await db.query(`CREATE TABLE IF NOT EXISTS public.respondo_service_capacity(
     tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
-    service_key TEXT NOT NULL CHECK(service_key='window_cleaning'),
+    service_key TEXT NOT NULL,
     config JSONB NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY(tenant_id,service_key))`);
+  // Upgrade the original window-cleaning-only schema without deleting its data.
+  await db.query('ALTER TABLE public.respondo_service_capacity DROP CONSTRAINT IF EXISTS respondo_service_capacity_service_key_check');
   await db.query(`CREATE TABLE IF NOT EXISTS public.respondo_service_dialogues(
     tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
     visitor_ref TEXT NOT NULL,service_key TEXT NOT NULL,facts JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -88,9 +117,10 @@ export async function ensureServiceCapacitySchema(db){
     await db.query('REVOKE ALL PRIVILEGES ON TABLE public.'+table+' FROM PUBLIC,anon,authenticated,service_role');
   }
 }
-export async function readServiceRule(db,tenantId){
+export async function readServiceRule(db,tenantId,serviceKey='window_cleaning'){
+  if(serviceKey!=='window_cleaning'&&!/^custom_[a-z0-9_]{3,40}$/.test(serviceKey))return null;
   const r=await db.query(`SELECT config,enabled FROM respondo_service_capacity
-    WHERE tenant_id=$1 AND service_key='window_cleaning'`,[tenantId]);
+    WHERE tenant_id=$1 AND service_key=$2`,[tenantId,serviceKey]);
   return r.rows[0]?{...r.rows[0].config,enabled:r.rows[0].enabled}:null;
 }
 export async function saveServiceRule(db,tenantId,value){
@@ -161,15 +191,108 @@ function serviceFollowup(lang,key){
   };
   return (values[lang]||values.fi)[key];
 }
+
+export async function listServiceRules(db,tenantId){
+  const r=await db.query('SELECT config,enabled FROM respondo_service_capacity WHERE tenant_id=$1 ORDER BY updated_at DESC LIMIT 50',[tenantId]);
+  return (r.rows||[]).map(x=>({...x.config,enabled:x.enabled}));
+}
+function customMatch(message,rules){
+  const content=lower(message);
+  return rules.find(rule=>
+    [rule.serviceName,...String(rule.aliases||'').split(',')].some(name=>
+      name.trim().length>=3&&content.includes(lower(name.trim()))));
+}
+function customQuantity(message,rule,old={}){
+  const facts={...old,_serviceKey:rule.serviceKey};
+  if(rule.calculation==='fixed')return {...facts,quantity:1};
+  const value=lower(message),unit=lower(rule.unitLabel);
+  const terms=[unit];
+  if(/^(?:m²|m2|neliö|neliötä)$/.test(unit))terms.push('m2','m²','neliö','neliötä','neliötä');
+  if(/^(?:kpl|pcs|st|pieces)$/.test(unit))terms.push('kpl','pcs','pieces','kappaletta');
+  const escape=x=>x.replace(/[.*+?^{}()|[\]\\]/g,'\\export async function serviceDialogue(db,tenantId,visitorRef,message,lang,availableSlots){');
+  const re=new RegExp('(?:^|\\s)(\\d{1,5})\\s*(?:'+terms.map(escape).join('|')+')(?=\\s|$|[.,;!?])','iu');
+  const match=value.match(re);
+  if(match&&Number(match[1])>0)facts.quantity=Number(match[1]);
+  else if(/^\d{1,5}$/.test(value)&&Number(value)>0)facts.quantity=Number(value);
+  return facts;
+}
+function customWords(lang){
+  const all={
+    fi:{service:'Minkä palvelun haluat varata?',quantity:'Paljonko työtä on? Ilmoita määrä yksikössä',duration:'Arvioitu työaika on ',none:'Riittävän pitkää yhtäjaksoista aikaa ei löytynyt. Voit jättää yhteydenottopyynnön.',options:'Mahdollisia aloitusaikoja: ',review:'Työaika vahvistetaan työntekijän tarkistuksen jälkeen.',unavailable:'Kalenteria ei voitu tarkistaa, joten en voi luvata aikaa.'},
+    sv:{service:'Vilken tjänst vill du boka?',quantity:'Hur stor är arbetsmängden? Ange mängden i enheten',duration:'Uppskattad arbetstid är ',none:'Ingen tillräckligt lång sammanhängande tid hittades. Du kan skicka en förfrågan.',options:'Möjliga starttider: ',review:'Personalen måste granska arbetstiden före bekräftelse.',unavailable:'Kalendern kunde inte kontrolleras, så jag kan inte lova en tid.'},
+    en:{service:'Which service would you like to book?',quantity:'How much work is needed? Give the quantity in',duration:'The estimated duration is ',none:'No sufficiently long continuous slot was found. You can submit an enquiry.',options:'Possible starting times: ',review:'Staff must review the duration before confirmation.',unavailable:'The calendar could not be checked, so I cannot promise a time.'}
+  };
+  return all[lang]||all.fi;
+}
+async function customServiceDialogue(db,tenantId,visitor,message,lang,availableSlots,rule,old={},rules=[]){
+  const words=customWords(lang);
+  const previousService=old.facts?._serviceKey;
+  const facts=previousService===rule?.serviceKey?{...old.facts}:{};
+  let preferred=tr(old.preferred_text||'',300);
+  if(!rule){
+    const names=rules.map(x=>x.serviceName).slice(0,8).join(', ');
+    await db.query(`INSERT INTO respondo_service_dialogues
+      (tenant_id,visitor_ref,service_key,facts,preferred_text)
+      VALUES($1,$2,'pending',$3::jsonb,$4)
+      ON CONFLICT(tenant_id,visitor_ref) DO UPDATE SET service_key=EXCLUDED.service_key,
+        facts=EXCLUDED.facts,preferred_text=EXCLUDED.preferred_text,updated_at=NOW()`,
+      [tenantId,visitor,JSON.stringify({_genericPending:true}),preferred||tr(message,300)]);
+    return {answer:words.service+' '+names+'.',status:'needs_service'};
+  }
+  preferred=preferred?amendPreferredTime(preferred,message):tr(message,300);
+  const updated=customQuantity(message,rule,facts);
+  await db.query(`INSERT INTO respondo_service_dialogues
+    (tenant_id,visitor_ref,service_key,facts,preferred_text)
+    VALUES($1,$2,$3,$4::jsonb,$5)
+    ON CONFLICT(tenant_id,visitor_ref) DO UPDATE SET service_key=EXCLUDED.service_key,
+      facts=EXCLUDED.facts,preferred_text=EXCLUDED.preferred_text,updated_at=NOW()`,
+    [tenantId,visitor,rule.serviceKey,JSON.stringify(updated),preferred]);
+  const estimate=estimateServiceDuration(rule,updated);
+  if(estimate.status==='needs_details')return {answer:words.quantity+' '+rule.unitLabel+'?',status:'needs_details',facts:updated};
+  if(estimate.status!=='estimated')return {answer:words.review,status:'manual_review',facts:updated};
+  const duration=Math.floor(estimate.minutes/60)+' h '+
+    (estimate.minutes%60?estimate.minutes%60+' min':'');
+  const requested=requestedClock(preferred);
+  if(requested.ambiguous)return {answer:words.duration+duration+'. '+serviceFollowup(lang,'clock'),status:'needs_time',facts:updated,estimate};
+  try{
+    const slots=await availableSlots(estimate.minutes);
+    const matches=requested.weekday>=0?slots.filter(x=>{
+      const clock=slotLocalClock(x.starts_at);
+      return clock.weekday===requested.weekday&&
+        (requested.hour===null||(clock.hour===requested.hour&&clock.minute===requested.minute));
+    }):[];
+    const sorted=[...matches,...slots.filter(x=>!matches.includes(x))];
+    const times=sorted.slice(0,3).map(x=>new Date(x.starts_at).toLocaleString(
+      lang==='sv'?'sv-SE':lang==='en'?'en-GB':'fi-FI',
+      {timeZone:'Europe/Helsinki',weekday:'long',day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}));
+    return {answer:words.duration+duration+'. '+
+      (times.length?words.options+times.join(', ')+'. '+words.review:words.none),
+      status:times.length?'proposed':'no_slots',facts:updated,estimate};
+  }catch{
+    return {answer:words.duration+duration+'. '+words.unavailable,
+      status:'calendar_unverified',facts:updated,estimate};
+  }
+}
+
 export async function serviceDialogue(db,tenantId,visitorRef,message,lang,availableSlots){
   const visitor=tr(visitorRef,160);
   if(!visitor)return null;
-  const rule=await readServiceRule(db,tenantId);
-  if(!rule?.enabled)return null;
+  const rules=await listServiceRules(db,tenantId);
+  const rule=rules.find(x=>x.serviceKey==='window_cleaning'&&x.enabled);
+  const custom=rules.filter(x=>x.serviceKey?.startsWith('custom_')&&x.enabled);
+  if(!rule&&!custom.length)return null;
   const previous=await db.query(`SELECT facts,preferred_text FROM respondo_service_dialogues
     WHERE tenant_id=$1 AND visitor_ref=$2 AND updated_at>NOW()-INTERVAL '45 minutes'`,[tenantId,visitor]);
   const old=previous.rows[0]||{};
+  const named=customMatch(message,custom);
+  const priorCustom=custom.find(x=>x.serviceKey===old.facts?._serviceKey);
   const isService=hasIntent(message),isAppointment=appointmentIntent(message);
+  if(custom.length&&(named||priorCustom||old.facts?._genericPending||
+    (isAppointment&&!isService))){
+    return customServiceDialogue(db,tenantId,visitor,message,lang,availableSlots,
+      named||priorCustom||null,old,custom);
+  }
+  if(!rule)return null;
   if(!previous.rowCount&&!isService&&!isAppointment)return null;
   const words=serviceText(lang);
   if(/^(?:kiitos|kiitti|thank you|thanks|tack|hei|moi|bye|heippa)[! .]*$/i.test(lower(message)))
