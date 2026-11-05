@@ -54,6 +54,7 @@ import { nativeInboxOverview, nativeInboxThread, saveNativeInboxDraft, addNative
 import { readProvider } from './native-provider-adapters.mjs';
 import {verifyMetaSignature,extractMetaInbound} from './meta-inbound.mjs';
 import {ensureNativeMailBridgeSchema,getNativeMailboxMessages,storeNativeMailboxMessages,nativeMailboxProvider} from './native-mail-bridge.mjs';
+import {ensureNativeMailDeliverySchema,sendApprovedNativeMail} from './native-mail-outbound.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
 import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
@@ -9801,14 +9802,14 @@ function nativeMailOauthConfig(provider){
   clientSecret:String(process.env.GOOGLE_CLIENT_SECRET||'').trim(),
   authorize:'https://accounts.google.com/o/oauth2/v2/auth',
   tokenUrl:'https://oauth2.googleapis.com/token',
-  scope:'openid email profile https://www.googleapis.com/auth/gmail.readonly'
+  scope:'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send'
  };
  if(provider==='outlook')return {
   clientId:String(process.env.MICROSOFT_CLIENT_ID||'').trim(),
   clientSecret:String(process.env.MICROSOFT_CLIENT_SECRET||'').trim(),
   authorize:'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
   tokenUrl:'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-  scope:'offline_access User.Read Mail.Read'
+  scope:'offline_access User.Read Mail.Read Mail.Send'
  };
  return null;
 }
@@ -9877,19 +9878,20 @@ app.get('/api/app/native/mail/:provider/callback',async(req,res)=>{
   const tokens=await response.json();
   const access=String(tokens.access_token||''),refresh=String(tokens.refresh_token||'');
   if(!access)throw Error('missing_access');
+  const grantedScopes=String(tokens.scope||'').trim();
   const stored=await q(`SELECT refresh_ciphertext FROM respondo_native_mail_credentials
     WHERE tenant_id=$1 AND provider=$2`,[tenant.rows[0].id,provider]);
   if(!refresh&&!stored.rows[0]?.refresh_ciphertext)throw Error('missing_refresh');
   await getNativeMailboxMessages(provider,access,{limit:1});
   await q(`INSERT INTO respondo_native_mail_credentials
-   (tenant_id,provider,access_ciphertext,refresh_ciphertext,expires_at,last_verified_at)
-   VALUES($1,$2,$3,$4,$5,NOW()) ON CONFLICT(tenant_id,provider)
+   (tenant_id,provider,access_ciphertext,refresh_ciphertext,expires_at,granted_scopes,last_verified_at)
+   VALUES($1,$2,$3,$4,$5,$6,NOW()) ON CONFLICT(tenant_id,provider)
    DO UPDATE SET access_ciphertext=EXCLUDED.access_ciphertext,
     refresh_ciphertext=EXCLUDED.refresh_ciphertext,
-    expires_at=EXCLUDED.expires_at,last_verified_at=NOW()`,
+    expires_at=EXCLUDED.expires_at,granted_scopes=EXCLUDED.granted_scopes,last_verified_at=NOW()`,
    [tenant.rows[0].id,provider,encryptSecret(access),
     refresh?encryptSecret(refresh):stored.rows[0].refresh_ciphertext,
-    new Date(Date.now()+Number(tokens.expires_in||3600)*1000)]);
+    new Date(Date.now()+Number(tokens.expires_in||3600)*1000),grantedScopes]);
   return res.redirect(destination+'connected');
  }catch(e){console.error('Native mailbox OAuth failed',e?.name||'error');
   return res.redirect(destination+'failed')}
@@ -9944,6 +9946,34 @@ app.delete('/api/app/native/mail/:provider',auth,ownerOnly,subscribed,nativeWrit
   await q('DELETE FROM respondo_native_mail_credentials WHERE tenant_id=$1 AND provider=$2',[tr.rows[0].id,provider]);
   return res.json({ok:true,connected:false});
  }catch(e){return res.status(500).json({error:'Yhteyttä ei voitu katkaista.'})}
+});
+/* Owner-authorized single email response. Never automatically sent by polling or the AI. */
+app.post('/api/app/native/inbox/:id/mail-reply',auth,ownerOnly,subscribed,nativeWriteLimiter,async(req,res)=>{
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const tenantId=tr.rows[0].id;
+  const threadId=String(req.params.id||'');
+  if(!/^[0-9a-f-]{36}$/i.test(threadId))return res.status(400).json({error:'Invalid thread'});
+  if(req.body?.approved!==true)return res.status(400).json({error:'Explicit reply approval required'});
+  const msg=await q(`SELECT metadata FROM chat_messages WHERE tenant_id=$1 AND thread_id=$2
+    AND role='user' AND source_channel='email' ORDER BY created_at DESC LIMIT 1`,[tenantId,threadId]);
+  const provider=msg.rows[0]?.metadata?.provider;
+  if(!nativeMailboxProvider(provider))return res.status(409).json({error:'Connected mail provider required'});
+  const creds=await q('SELECT * FROM respondo_native_mail_credentials WHERE tenant_id=$1 AND provider=$2',[tenantId,provider]);
+  if(!creds.rowCount)return res.status(409).json({error:'Connect your mailbox first'});
+  const permission=provider==='gmail'?'https://www.googleapis.com/auth/gmail.send':'Mail.Send';
+  if(!String(creds.rows[0].granted_scopes||'').split(/\\s+/).includes(permission))
+   return res.status(409).json({error:'Reconnect the mailbox and approve reply-send permission'});
+  const token=await nativeMailRefresh(tenantId,provider,creds.rows[0]);
+  const result=await sendApprovedNativeMail(pool,{tenantId,threadId,
+   deliveryId:req.body.deliveryId,userId:req.user.sub,
+   text:req.body.text,approved:req.body.approved,token});
+  return res.status(result.status==='unknown'?202:200).json(result);
+ }catch(e){
+  console.error('Native mail outbound',e?.name||'error');
+  return res.status(e instanceof TypeError?400:500).json({error:'Email delivery was not confirmed. Check your mailbox before retrying.'});
+ }
 });
 /* Respondo's own calendar, independent of third-party scheduling. */
 app.get('/api/app/native/calendar',auth,ownerOnly,subscribed,nativeEndpoint(
@@ -17588,6 +17618,7 @@ async function start() {
   try {
     await withRuntimeSchemaLock(() => ensureRuntimeSchema());
     await withRuntimeSchemaLock(() => ensureNativeMailBridgeSchema(pool));
+    await withRuntimeSchemaLock(() => ensureNativeMailDeliverySchema(pool));
     await withRuntimeSchemaLock(() => ensureOnboardingCheckupSchema(q));
     await withRuntimeSchemaLock(async () => {
       await seedAndLoadIntentUtterances();
