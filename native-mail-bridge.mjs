@@ -23,6 +23,7 @@ export async function ensureNativeMailBridgeSchema(db){
    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
    PRIMARY KEY(tenant_id,provider,message_id)
  )`);
+ await db.query('ALTER TABLE respondo_native_mail_credentials ADD COLUMN IF NOT EXISTS last_sync_error TEXT');
  for(const name of ['respondo_native_mail_credentials','respondo_native_mail_events']){
   await db.query('ALTER TABLE '+name+' ENABLE ROW LEVEL SECURITY');
   await db.query('REVOKE ALL PRIVILEGES ON TABLE '+name+' FROM PUBLIC');
