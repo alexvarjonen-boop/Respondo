@@ -5462,6 +5462,43 @@ async function finishOauth(req, res, code, state) {
       name: String(user.name || ''),
     };
 
+    if (statePayload.flow === 'native_gmail') {
+      let sessionUser=null;
+      try {
+        const sessionToken=cookies(req)[COOKIE];
+        sessionUser=sessionToken?jwt.verify(sessionToken,JWT):null;
+      }catch{}
+      if(!sessionUser?.sub||sessionUser.sub!==statePayload.userId)
+        return res.redirect('/app?section=automation&gmail=auth_error');
+      const tr=await q(`SELECT id FROM tenants WHERE owner_user_id=$1 AND id=$2
+        AND active=true AND subscription_status IN ('active','trialing')`,
+        [statePayload.userId,statePayload.tenantId]);
+      if(!tr.rowCount)return res.redirect('/app?section=automation&gmail=missing_tenant');
+      const accessToken=String(token.access_token||'');
+      const refreshToken=String(token.refresh_token||'');
+      const existing=await q(`SELECT encrypted_refresh_token FROM native_provider_credentials
+        WHERE tenant_id=$1 AND provider='gmail'`,[tr.rows[0].id]);
+      const savedRefresh=existing.rows[0]?.encrypted_refresh_token||null;
+      if(!accessToken||(!refreshToken&&!savedRefresh))
+        return res.redirect('/app?section=automation&gmail=no_refresh_token');
+      // Authorization succeeded, verify real Gmail inbox scope before accepting.
+      await readProvider({provider:'gmail',token:accessToken,limit:1});
+      await q(`INSERT INTO native_provider_credentials
+        (tenant_id,provider,encrypted_token,encrypted_refresh_token,token_expires_at,last_verified_at)
+        VALUES($1,'gmail',$2,$3,$4,NOW())
+        ON CONFLICT(tenant_id,provider) DO UPDATE SET
+        encrypted_token=EXCLUDED.encrypted_token,
+        encrypted_refresh_token=EXCLUDED.encrypted_refresh_token,
+        token_expires_at=EXCLUDED.token_expires_at,
+        last_verified_at=NOW(),updated_at=NOW()`,
+        [tr.rows[0].id,encryptSecret(accessToken),
+         refreshToken?encryptSecret(refreshToken):savedRefresh,
+         new Date(Date.now()+Number(token.expires_in||3600)*1000)]);
+      await q(`INSERT INTO native_integrations(tenant_id,provider,mode) VALUES($1,'gmail','connected')
+        ON CONFLICT(tenant_id,provider) DO UPDATE SET mode='connected',updated_at=NOW()`,[tr.rows[0].id]);
+      return res.redirect('/app?section=automation&gmail=connected');
+    }
+
     if (statePayload.flow === 'calendar') {
       let sessionUser = null;
       try {
@@ -5522,6 +5559,7 @@ async function finishOauth(req, res, code, state) {
     return res.redirect('/tilaus?oauth=google');
   } catch (e) {
     console.error('Google OAuth failed', e);
+    if (statePayload.flow === 'native_gmail') return res.redirect('/app?section=automation&gmail=failed');
     if (statePayload.flow === 'calendar') {
       return res.redirect('/app?section=automation&calendar=failed');
     }
@@ -6738,6 +6776,7 @@ app.get('/api/auth/oauth/google/callback', async (req, res) => {
   if (!code) {
     try {
       const statePayload = jwt.verify(state,JWT);
+      if (statePayload.flow === 'native_gmail') return res.redirect('/app?section=automation&gmail=cancelled');
       if (statePayload.flow === 'calendar') {
         return res.redirect('/app?section=automation&calendar=cancelled');
       }
@@ -11052,6 +11091,25 @@ app.post('/api/app/stripe-connect/onboard', auth, ownerOnly, subscribed, async (
 // Respondo native channel inbox: no provider tokens, AI network calls or automatic sending.
 // Provider read-only connections: per-tenant encrypted token, verified before persistence.
 // No credentials are ever sent to the browser after setup.
+app.get('/api/app/native-integrations/gmail/start', auth, ownerOnly, subscribed, async(req,res)=>{
+ try{
+  const cfg=oauthConfig('google');
+  if(!cfg.configured)return res.redirect('/app?section=automation&gmail=not_configured');
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.redirect('/app?section=automation&gmail=missing_tenant');
+  const nonce=crypto.randomBytes(20).toString('hex');
+  const state=jwt.sign({provider:'google',flow:'native_gmail',nonce,userId:req.user.sub,tenantId:tr.rows[0].id},JWT,{expiresIn:'10m'});
+  setOauthState(res,nonce,'google');
+  const url=new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  url.search=new URLSearchParams({
+   client_id:cfg.clientId,redirect_uri:cfg.redirectUri,response_type:'code',
+   scope:'openid email profile https://www.googleapis.com/auth/gmail.readonly',
+   state,prompt:'consent',access_type:'offline',include_granted_scopes:'true',
+  }).toString();
+  return res.redirect(url.toString());
+ }catch(e){console.error('Gmail authorization start failed');
+  return res.redirect('/app?section=automation&gmail=failed')}
+});
 app.post('/api/app/native-integrations/connect', auth, ownerOnly, subscribed, async (req,res)=>{
  const provider=String(req.body?.provider||'').trim();
  const approved=new Set(['gmail','outlook','hubspot','pipedrive','freshdesk','zendesk','google_drive','sharepoint','whatsapp','instagram','facebook','shopify']);
@@ -11095,12 +11153,32 @@ app.post('/api/app/native-integrations/sync', auth, ownerOnly, subscribed, async
  try{
   const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
   if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
-  const stored=await q(`SELECT c.encrypted_token,c.subdomain,c.resource_id
+  const stored=await q(`SELECT c.encrypted_token,c.encrypted_refresh_token,c.token_expires_at,c.subdomain,c.resource_id
    FROM native_provider_credentials c JOIN native_integrations i
    ON i.tenant_id=c.tenant_id AND i.provider=c.provider
    WHERE c.tenant_id=$1 AND c.provider=$2 AND i.mode='connected'`,[tr.rows[0].id,provider]);
   if(!stored.rowCount)return res.status(409).json({error:'Palvelu ei ole yhdistetty.'});
-  const token=decryptSecret(stored.rows[0].encrypted_token);
+  let token=decryptSecret(stored.rows[0].encrypted_token);
+  if(provider==='gmail'&&stored.rows[0].encrypted_refresh_token&&
+     (!stored.rows[0].token_expires_at||
+      new Date(stored.rows[0].token_expires_at).getTime()<=Date.now()+60000)){
+    const cfg=oauthConfig('google');
+    if(!cfg.configured)throw Error('gmail_oauth_not_configured');
+    const refreshToken=decryptSecret(stored.rows[0].encrypted_refresh_token);
+    const response=await fetch('https://oauth2.googleapis.com/token',{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({client_id:cfg.clientId,client_secret:cfg.clientSecret,
+        refresh_token:refreshToken,grant_type:'refresh_token'}),
+      signal:AbortSignal.timeout(9000)
+    });
+    if(!response.ok)throw Error('gmail_token_refresh_failed');
+    const refreshed=await response.json();
+    token=String(refreshed.access_token||'');
+    if(!token)throw Error('gmail_token_missing');
+    await q(`UPDATE native_provider_credentials SET encrypted_token=$1,token_expires_at=$2,
+      updated_at=NOW() WHERE tenant_id=$3 AND provider='gmail'`,
+      [encryptSecret(token),new Date(Date.now()+Number(refreshed.expires_in||3600)*1000),tr.rows[0].id]);
+  }
   if(!token)throw Error('missing_decrypted_token');
   const data=provider==='gmail' ? await readGmailInbox({token,limit:20}) :
     await readProvider({provider,token,subdomain:stored.rows[0].subdomain,
@@ -12154,6 +12232,8 @@ async function ensureRuntimeSchema() {
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     provider TEXT NOT NULL,
     encrypted_token TEXT NOT NULL,
+    encrypted_refresh_token TEXT,
+    token_expires_at TIMESTAMPTZ,
     subdomain TEXT,
     resource_id TEXT,
     last_verified_at TIMESTAMPTZ,
