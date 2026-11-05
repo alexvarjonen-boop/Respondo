@@ -89,6 +89,16 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   // Move, rather than clone, the original working chat. Event listeners keep
   // operating, and the preview still uses the authenticated/demo answer path.
   if(preview.parentElement!==chatHost) chatHost.appendChild(preview);
+  // Preserve server-rendered plan locks before relocating the old sections.
+  // Reparenting a protected form must never make it appear available.
+  if(!workspace.dataset.integrationLocksStamped){
+    workspace.dataset.integrationLocksStamped='yes';
+    for(const id of ['crm-integration','native-mail-connections','meta-native-connections',
+      'business-integrations','commerce-integration','stripe-connect']){
+      const pane=shell.querySelector('#'+id);
+      if(pane?.hidden)pane.dataset.respondoPlanLocked='yes';
+    }
+  }
   const allSections=[...shell.querySelectorAll('.dashboard-view-section')].filter(node=>!workspace.contains(node));
   for(const section of allSections){
     section.classList.remove('dashboard-view-hidden');
@@ -215,6 +225,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     park();
     const target=storage.querySelector('#'+id);
     if(!target)return false;
+    if(target.dataset.respondoPlanLocked==='yes')return false;
     // Enterprise-only integration panels stay locked on lower plans.
     if(target.parentElement?.id==='actions2' && target.hidden)return false;
     if(target.parentElement!==storage){
