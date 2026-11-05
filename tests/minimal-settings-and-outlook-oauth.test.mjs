@@ -31,7 +31,7 @@ test('OAuth readiness uses server environment flags but never reveals Microsoft 
   assert.match(status,/connections:rows\.rows\.map/);
   assert.doesNotMatch(status,/clientId:|clientSecret:/);
   assert.match(guide,/oauthAvailable\.get\(item\.id\)===false/);
-  assert.match(guide,/status\(item\)==='notConfigured'/);
+  assert.match(guide,/\['restricted','notConfigured','unverified'\]\.includes\(status\(item\)\)/);
   assert.match(guide,/mailboxFeedback\(lang,'not_configured',item\.id\)/);
   assert.match(guide,/if\(result\.mail\?\.oauthAvailable/);
 });
