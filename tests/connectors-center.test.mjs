@@ -18,7 +18,12 @@ test('CRM tokens use authenticated encryption and never survive tampering or the
   assert.equal(decryptCrmToken(ciphertext),token);
   assert.notEqual(encryptCrmToken(token),ciphertext,'unique IV');
   assert.throws(()=>decryptCrmToken(ciphertext,{DATA_ENCRYPTION_KEY:'another-long-and-different-encryption-secret'}));
-  const tampered=ciphertext.slice(0,-2)+'ZZ';
+  // Flip an actual ciphertext byte. Replacing trailing base64url characters
+  // can change only unused padding bits and accidentally preserve the bytes.
+  const pieces=ciphertext.split('.');
+  const bytes=Buffer.from(pieces[2],'base64url');
+  bytes[0]^=0x01;
+  const tampered=[pieces[0],pieces[1],bytes.toString('base64url')].join('.');
   assert.throws(()=>decryptCrmToken(tampered));
   assert.equal(crmProviderAllowed('hubspot'),true);
   assert.equal(crmProviderAllowed('pipedrive'),true);
