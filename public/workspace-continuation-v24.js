@@ -1,4 +1,4 @@
-import { createWorkspaceOrbit } from './workspace-orbit-v28.js?v=20261028-mobile-pinned-v37-home-parity-v39-logical-12-clickable-icons-v40-selected-state-v45-profile-wrap-v46';
+import { createWorkspaceOrbit } from './workspace-orbit-v28.js?v=20261028-mobile-pinned-v37-home-parity-v39-logical-12-clickable-icons-v40-selected-state-v45-profile-wrap-v46-programmatic-jump-v2';
 // A single dark workspace after the five-card setup.
 // Keep existing chat, scan and billing DOM nodes intact so their event handlers,
 // authenticated API calls and tenant isolation are not replaced by demo stubs.
@@ -521,6 +521,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     // chapter (Overview) during smooth movement across the orbit.
     requestAnimationFrame(()=>{
       if(heading.isConnected && !heading.closest('[hidden]')){
+        orbit?.suspendPin?.();
         heading.scrollIntoView({behavior:'auto',block:'start'});
         heading.setAttribute('tabindex','-1');
         heading.focus({preventScroll:true});
@@ -545,7 +546,10 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
         requestAnimationFrame(()=>{
           const view=workspace.dataset.currentView;
           const destination=workspace.querySelector('[data-workspace-page="'+(view==='bot'?'bot':view==='overview'?'overview':'modules')+'"]');
-          if(destination && !destination.hidden)destination.scrollIntoView({behavior:'auto',block:'start'});
+          if(destination && !destination.hidden){
+            orbit?.suspendPin?.();
+            destination.scrollIntoView({behavior:'auto',block:'start'});
+          }
         });
       }
     });
