@@ -57,6 +57,8 @@ import {ensureNativeMailBridgeSchema,getNativeMailboxMessages,storeNativeMailbox
 import {ensureNativeMailDeliverySchema,sendApprovedNativeMail} from './native-mail-outbound.mjs';
 import {ensureNativeMetaOutboundSchema,sendApprovedNativeMeta} from './native-meta-outbound.mjs';
 import {ensureNativeCrmImportSchema,previewNativeCrmImport,importNativeCrmContacts} from './native-crm-import.mjs';
+import {ensureNativeCloudSchema,cloudProvider,validSiteId} from './native-cloud-credentials.mjs';
+import {normalizeCloudFileList,readApprovedCloudText} from './native-cloud-documents.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
 import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
@@ -9997,6 +9999,171 @@ app.post('/api/app/native/inbox/:id/mail-reply',auth,ownerOnly,subscribed,native
   return res.status(e instanceof TypeError?400:500).json({error:'Email delivery was not confirmed. Check your mailbox before retrying.'});
  }
 });
+
+/* Consent-based Google Drive and SharePoint document import.
+   Only owner-approved selected text files become Respondo-native knowledge. */
+const NATIVE_CLOUD_STATE_COOKIE='respondo_native_cloud_oauth_state';
+function cloudOauthConfig(provider){
+ if(provider==='google_drive')return {
+  clientId:String(process.env.GOOGLE_CLIENT_ID||'').trim(),
+  clientSecret:String(process.env.GOOGLE_CLIENT_SECRET||'').trim(),
+  authorize:'https://accounts.google.com/o/oauth2/v2/auth',
+  tokenUrl:'https://oauth2.googleapis.com/token',
+  scope:'https://www.googleapis.com/auth/drive.readonly'
+ };
+ if(provider==='sharepoint')return {
+  clientId:String(process.env.MICROSOFT_CLIENT_ID||'').trim(),
+  clientSecret:String(process.env.MICROSOFT_CLIENT_SECRET||'').trim(),
+  authorize:'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+  tokenUrl:'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+  scope:'offline_access User.Read Files.Read.All Sites.Read.All'
+ };
+ return null;
+}
+const cloudRedirect=provider=>BASE+'/api/app/native/cloud/'+provider+'/callback';
+async function cloudTenant(ownerId){
+ const result=await q(`SELECT id FROM tenants WHERE owner_user_id=$1
+  AND id=active_tenant_for_user($1) AND active=true AND
+  subscription_status IN ('active','trialing')`,[ownerId]);
+ return result.rows[0]?.id||null;
+}
+async function nativeCloudAccess(tenantId,provider,cred){
+ const expires=cred.expires_at?new Date(cred.expires_at).getTime():0;
+ if(expires>Date.now()+60000)return decryptSecret(cred.access_ciphertext);
+ const cfg=cloudOauthConfig(provider);
+ const refresh=decryptSecret(cred.refresh_ciphertext);
+ if(!cfg?.clientId||!cfg.clientSecret||!refresh)throw Error('cloud_refresh_unavailable');
+ const p=new URLSearchParams({grant_type:'refresh_token',refresh_token:refresh,
+  client_id:cfg.clientId,client_secret:cfg.clientSecret});
+ if(provider==='sharepoint')p.set('scope',cfg.scope);
+ const response=await fetch(cfg.tokenUrl,{method:'POST',
+  headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p,
+  redirect:'error',signal:AbortSignal.timeout(9000)});
+ if(!response.ok)throw Error('cloud_refresh_failed');
+ const tokens=await response.json();
+ const access=String(tokens.access_token||'');
+ if(!access)throw Error('cloud_access_missing');
+ await q(`UPDATE respondo_native_cloud_credentials SET access_ciphertext=$1,
+  refresh_ciphertext=COALESCE($2,refresh_ciphertext),expires_at=$3
+  WHERE tenant_id=$4 AND provider=$5`,
+  [encryptSecret(access),tokens.refresh_token?encryptSecret(tokens.refresh_token):null,
+   new Date(Date.now()+Number(tokens.expires_in||3600)*1000),tenantId,provider]);
+ return access;
+}
+app.get('/api/app/native/cloud/status',auth,ownerOnly,subscribed,nativeEndpoint(async id=>{
+ const rows=await q(`SELECT provider,site_id,last_verified_at FROM respondo_native_cloud_credentials
+  WHERE tenant_id=$1 ORDER BY provider`,[id]);
+ return {connections:rows.rows.map(x=>({
+  provider:x.provider,siteId:x.site_id,lastVerifiedAt:x.last_verified_at,connected:true
+ }))};
+}));
+app.get('/api/app/native/cloud/:provider/start',auth,ownerOnly,subscribed,async(req,res)=>{
+ const provider=String(req.params.provider||''),cfg=cloudOauthConfig(provider);
+ if(!cfg?.clientId||!cfg.clientSecret)return res.redirect('/app?section=automation&cloud=not_configured');
+ const site=String(req.query.siteId||'');
+ if(provider==='sharepoint'&&!validSiteId(site))return res.redirect('/app?section=automation&cloud=invalid_site');
+ try{
+  const tenantId=await cloudTenant(req.user.sub);
+  if(!tenantId)return res.redirect('/app?section=automation&cloud=missing_tenant');
+  const nonce=crypto.randomBytes(20).toString('hex');
+  const state=jwt.sign({flow:'native_cloud',provider,nonce,site,
+   userId:req.user.sub,tenantId},JWT,{expiresIn:'10m'});
+  res.cookie(NATIVE_CLOUD_STATE_COOKIE,nonce,{httpOnly:true,
+   secure:process.env.NODE_ENV==='production',sameSite:'lax',maxAge:600000});
+  const url=new URL(cfg.authorize);
+  url.search=new URLSearchParams({client_id:cfg.clientId,
+   redirect_uri:cloudRedirect(provider),response_type:'code',
+   scope:cfg.scope,state,prompt:'consent',access_type:'offline'}).toString();
+  return res.redirect(url.toString());
+ }catch(e){console.error('Cloud OAuth start failed',e?.name||'error');
+  return res.redirect('/app?section=automation&cloud=failed')}
+});
+app.get('/api/app/native/cloud/:provider/callback',async(req,res)=>{
+ const provider=String(req.params.provider||''),cfg=cloudOauthConfig(provider);
+ const dst='/app?section=automation&cloud=';
+ if(!cfg?.clientId||!cfg.clientSecret)return res.redirect(dst+'not_configured');
+ try{
+  const state=jwt.verify(String(req.query.state||''),JWT);
+  const cookie=cookies(req)[NATIVE_CLOUD_STATE_COOKIE];
+  if(!cookie||state.flow!=='native_cloud'||state.provider!==provider||
+   state.nonce!==cookie)return res.redirect(dst+'invalid_state');
+  res.clearCookie(NATIVE_CLOUD_STATE_COOKIE);
+  const session=cookies(req)[COOKIE];
+  const user=session?jwt.verify(session,JWT):null;
+  if(!user?.sub||user.sub!==state.userId)return res.redirect(dst+'invalid_session');
+  const tr=await q(`SELECT id FROM tenants WHERE id=$1 AND owner_user_id=$2
+   AND active=true AND subscription_status IN ('active','trialing')`,
+   [state.tenantId,state.userId]);
+  if(!tr.rowCount)return res.redirect(dst+'missing_tenant');
+  if(provider==='sharepoint'&&!validSiteId(state.site))return res.redirect(dst+'invalid_site');
+  const code=String(req.query.code||'');
+  if(req.query.error||!code)return res.redirect(dst+'cancelled');
+  const response=await fetch(cfg.tokenUrl,{method:'POST',
+   headers:{'Content-Type':'application/x-www-form-urlencoded'},
+   body:new URLSearchParams({client_id:cfg.clientId,client_secret:cfg.clientSecret,
+    code,grant_type:'authorization_code',redirect_uri:cloudRedirect(provider)}),
+   redirect:'error',signal:AbortSignal.timeout(9000)});
+  if(!response.ok)throw Error('cloud_code_exchange_failed');
+  const tokens=await response.json();
+  const access=String(tokens.access_token||''),refresh=String(tokens.refresh_token||'');
+  if(!access)throw Error('cloud_access_missing');
+  const prior=await q(`SELECT refresh_ciphertext FROM respondo_native_cloud_credentials
+   WHERE tenant_id=$1 AND provider=$2`,[state.tenantId,provider]);
+  if(!refresh&&!prior.rows[0]?.refresh_ciphertext)throw Error('cloud_refresh_missing');
+  await readProvider({provider,token:access,resourceId:provider==='sharepoint'?state.site:null,limit:1});
+  await q(`INSERT INTO respondo_native_cloud_credentials
+   (tenant_id,provider,site_id,access_ciphertext,refresh_ciphertext,
+    expires_at,granted_scopes)
+   VALUES($1,$2,$3,$4,$5,$6,$7)
+   ON CONFLICT(tenant_id,provider) DO UPDATE SET
+   site_id=EXCLUDED.site_id,access_ciphertext=EXCLUDED.access_ciphertext,
+   refresh_ciphertext=EXCLUDED.refresh_ciphertext,expires_at=EXCLUDED.expires_at,
+   granted_scopes=EXCLUDED.granted_scopes,last_verified_at=NOW()`,
+   [state.tenantId,provider,provider==='sharepoint'?state.site:null,
+    encryptSecret(access),refresh?encryptSecret(refresh):prior.rows[0].refresh_ciphertext,
+    new Date(Date.now()+Number(tokens.expires_in||3600)*1000),
+    String(tokens.scope||'').slice(0,2000)]);
+  return res.redirect(dst+'connected');
+ }catch(e){console.error('Cloud OAuth callback failed',e?.name||'error');
+  return res.redirect(dst+'failed')}
+});
+async function nativeCloudFiles(id,provider){
+ if(!cloudProvider(provider))throw TypeError('Unsupported cloud provider');
+ const credentials=await q(`SELECT * FROM respondo_native_cloud_credentials
+  WHERE tenant_id=$1 AND provider=$2`,[id,provider]);
+ if(!credentials.rowCount)throw TypeError('Connect the cloud provider first');
+ const cred=credentials.rows[0];
+ const token=await nativeCloudAccess(id,provider,cred);
+ const data=await readProvider({provider,token,resourceId:cred.site_id,limit:40});
+ return {provider,token,site:cred.site_id,files:normalizeCloudFileList(provider,data)};
+}
+app.get('/api/app/native/cloud/:provider/files',auth,ownerOnly,subscribed,nativeEndpoint(async(id,req)=>{
+ const x=await nativeCloudFiles(id,req.params.provider);
+ return {provider:x.provider,files:x.files,requiresApproval:true};
+}));
+app.post('/api/app/native/cloud/:provider/import',auth,ownerOnly,subscribed,nativeWriteLimiter,
+ nativeEndpoint(async(id,req)=>{
+  if(req.body?.approved!==true)throw TypeError('Explicit publication approval required');
+  const provider=String(req.params.provider||'');
+  const fileId=String(req.body.fileId||'');
+  if(!/^[A-Za-z0-9._-]{1,180}$/.test(fileId))throw TypeError('Invalid file ID');
+  const data=await nativeCloudFiles(id,provider);
+  const file=data.files.find(x=>x.id===fileId);
+  if(!file)throw TypeError('Select an approved text file from the listing');
+  const body=await readApprovedCloudText(provider,data.token,file,{site:data.site});
+  if(body.length<20)throw TypeError('File has no usable factual text');
+  const stored=await saveNativeDocument(pool,id,{
+   title:file.name,body,publish:true
+  });
+  return {provider,fileId,documentId:stored.id,published:true};
+ }));
+app.delete('/api/app/native/cloud/:provider',auth,ownerOnly,subscribed,nativeWriteLimiter,
+ nativeEndpoint(async(id,req)=>{
+  if(!cloudProvider(req.params.provider))throw TypeError('Unsupported provider');
+  await q('DELETE FROM respondo_native_cloud_credentials WHERE tenant_id=$1 AND provider=$2',
+   [id,req.params.provider]);return {connected:false};
+ }));
+
 /* Respondo's own calendar, independent of third-party scheduling. */
 app.get('/api/app/native/calendar',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>nativeCalendarOverview(pool,id)));
@@ -17655,6 +17822,7 @@ async function start() {
     await withRuntimeSchemaLock(() => ensureNativeMailDeliverySchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMetaOutboundSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeCrmImportSchema(pool));
+    await withRuntimeSchemaLock(() => ensureNativeCloudSchema(pool));
     await withRuntimeSchemaLock(() => ensureOnboardingCheckupSchema(q));
     await withRuntimeSchemaLock(async () => {
       await seedAndLoadIntentUtterances();
