@@ -283,7 +283,21 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
           '<small>PNG, JPG, WebP · 10 MB</small><input id="rsAvatarUpload" type="file" accept="image/png,image/jpeg,image/webp"></label>'+
         '<p class="rs-avatar-message" id="rsAvatarMessage" role="status" aria-live="polite"></p></fieldset>'
       : '';
-    card.innerHTML='<form id="rsSimpleSettingsForm" class="rs-minimal-card rs-settings-card">'+
+    const shortcuts=scope==='settings'
+      ? '<section class="rs-settings-directory" aria-label="'+safe(translate('Hallinnan osiot','Administrationsavsnitt','Management sections'))+'">'+
+          '<p class="rs-settings-directory-kicker">'+safe(translate('ASETUKSET','INSTÄLLNINGAR','SETTINGS'))+'</p>'+
+          '<div class="rs-settings-directory-list">'+
+            [
+              ['setup',translate('Botti ja yritys','Bot och företag','Bot and business'),translate('Nimi, kuvake ja aloitusviesti','Namn, ikon och välkomstmeddelande','Name, icon and greeting')],
+              ['answers',translate('Tietopohja','Kunskapsbas','Knowledge base'),translate('Botin vastaukset ja tiedot','Bottens svar och information','Bot answers and information')],
+              ['team',translate('Henkilökunta','Personal','Team'),translate('Työntekijät ja käyttöoikeudet','Anställda och åtkomst','Staff and access')],
+              ['integrations',translate('Yhdistetyt palvelut','Anslutna tjänster','Connected services'),translate('Helppo käyttöönotto ja yhteydet','Enkel installation och anslutningar','Guided setup and connections')],
+              ['billing',translate('Laskutus','Fakturering','Billing'),translate('Tilaus ja maksutiedot','Abonnemang och betalningar','Subscription and payments')],
+              ['profile',translate('Oma tili','Mitt konto','My account'),translate('Yritykset ja kirjautuminen','Företag och inloggning','Companies and sign-in')]
+            ].map(([id,label,description])=>'<button type="button" class="rs-settings-directory-link" data-workspace-nav="'+safe(id)+'"><span><b>'+safe(label)+'</b><small>'+safe(description)+'</small></span><span class="rs-settings-chevron" aria-hidden="true">›</span></button>').join('')+
+          '</div></section>'
+      : '';
+    card.innerHTML=shortcuts+'<form id="rsSimpleSettingsForm" class="rs-minimal-card rs-settings-card">'+
       '<p class="rs-minimal-intro">'+safe(translate('Muuta vain tarvitsemasi tiedot. Muut botin asetukset säilyvät ennallaan.','Ändra bara de uppgifter du behöver. Övriga inställningar sparas.','Change only what you need. All other bot settings stay saved.'))+'</p>'+
       visibleFields.map(([key,label,type])=>'<label class="rs-simple-field"><span>'+safe(label)+'</span><input type="'+type+'" name="'+key+'" maxlength="'+(key==='botName'?'40':'255')+'" placeholder="'+safe(examples[key]||'')+'" value="'+safe(original.elements[key]?.value||'')+'"></label>').join('')+
       avatarPanel+
