@@ -53,7 +53,8 @@ test('automated status is read-only, tenant-scoped and never fabricates connecte
   for(const endpoint of [
     '/api/app/connectors/crm','/api/app/native/mail/status',
     '/api/app/native/meta/status','/api/app/native/cloud/status',
-    '/api/app/helpdesk/freshdesk','/api/app/helpdesk/zendesk'
+    '/api/app/helpdesk/freshdesk','/api/app/helpdesk/zendesk',
+    '/api/app/integrations/readiness'
   ]){
     assert.ok(guide.includes(endpoint),endpoint);
     assert.ok(server.includes(endpoint),endpoint+' exists on server');
@@ -64,7 +65,7 @@ test('automated status is read-only, tenant-scoped and never fabricates connecte
   assert.match(guide,/return t\.unknown/);
   assert.match(guide,/if\(result\.crm\?\.connected/);
   assert.match(guide,/channel\.configured/);
-  assert.match(guide,/channel\.deliveryEnabled\?'connected':'partial'/);
+  assert.match(guide,/next\.set\(channel\.provider,'partial'\)/);
   assert.match(guide,/result\.freshdesk\?\.data\?\.connected/);
   assert.match(guide,/result\.zendesk\?\.data\?\.connected/);
   assert.match(guide,/respondo_pending_integration/);
