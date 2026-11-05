@@ -94,7 +94,7 @@ export async function readGmailInbox({token,limit=20,fetcher=fetch}){
   const id=strictId(message?.id);
   if(!id)continue;
   const url=new URL('/gmail/v1/users/me/messages/'+encodeURIComponent(id),'https://gmail.googleapis.com');
-  url.searchParams.set('format','metadata');
+  url.searchParams.set('format','full');
   url.searchParams.append('metadataHeaders','From');
   url.searchParams.append('metadataHeaders','Subject');
   const response=await fetcher(url.toString(),{method:'GET',redirect:'error',
@@ -108,7 +108,20 @@ export async function readGmailInbox({token,limit=20,fetcher=fetch}){
   const from=header('from');
   const email=(from.match(/<([^<>\s]+@[^<>\s]+)>/)||from.match(/[^\s<>]+@[^\s<>]+/))?.[1]||'';
   const fallbackEmail=email||((from.match(/[^\s<>]+@[^\s<>]+/)||[])[0]||'');
-  details.push({id,subject:header('Subject').slice(0,300),bodyPreview:String(data.snippet||'').slice(0,2000),
+  const extractText=(part,depth=0)=>{
+    if(!part||depth>5)return '';
+    if(part.mimeType==='text/plain'&&typeof part.body?.data==='string'){
+      const b64=part.body.data.replace(/-/g,'+').replace(/_/g,'/');
+      try{return Buffer.from(b64,'base64').toString('utf8').slice(0,2000)}catch{return ''}
+    }
+    for(const child of Array.isArray(part.parts)?part.parts:[]){
+      const found=extractText(child,depth+1);
+      if(found)return found;
+    }
+    return '';
+  };
+  const bodyPreview=extractText(data.payload)||String(data.snippet||'').slice(0,2000);
+  details.push({id,subject:header('Subject').slice(0,300),bodyPreview,
    from:{emailAddress:{address:fallbackEmail}}});
  }
  return {value:details};
