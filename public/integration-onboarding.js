@@ -211,7 +211,13 @@
         content.appendChild(info);
         if(status(item)==='restricted' || status(item)==='notConfigured'){
           const text=status(item)==='restricted'?t.restricted:
-            mailboxFeedback(lang,'not_configured',item.id);
+            ['gmail','outlook'].includes(item.id)
+            ? mailboxFeedback(lang,'not_configured',item.id)
+            : lang==='fi'
+              ? 'Tämä yhteys ei ole käytössä. Respondo-ylläpidon täytyy määrittää palveluntarjoajan sovellus tai webhook ennen tilin yhdistämistä.'
+              : lang==='sv'
+                ? 'Tjänsten är inte aktiverad. Respondo-administratören måste konfigurera leverantörens app eller webhook.'
+                : 'This provider is not configured. Respondo administration must set up the provider app or webhook before accounts can connect.';
           const alert=el('p','rs-integration-note',text);
           if(status(item)==='notConfigured')alert.setAttribute('role','alert');
           content.appendChild(alert);
