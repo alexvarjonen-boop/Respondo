@@ -23,7 +23,7 @@ test('provider readiness is owner-only, no-store and never claims a tenant conne
 test('missing prerequisites block OAuth and report truthful reasons',()=>{
  assert.match(ui,/readiness:'\/api\/app\/integrations\/readiness'/);
  assert.match(ui,/prerequisites\.get\(item\.id\)===false/);
- assert.match(ui,/status\(item\)==='notConfigured'/);
+ assert.match(ui,/\['restricted','notConfigured','unverified'\]\.includes\(status\(item\)\)/);
  assert.match(ui,/\['gmail','outlook'\]\.includes\(item\.id\)/);
  assert.match(ui,/Respondo-ylläpidon täytyy määrittää/);
  assert.match(ui,/const link=el\('a','rs-integration-primary rs-integration-authorize'/);
