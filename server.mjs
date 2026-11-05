@@ -62,6 +62,8 @@ import {ensureFreeWorkflowSchema,freeWorkflowOverview,createFreeWorkflow,
  setFreeWorkflowEnabled,markFreeWorkflowApproval,previewFreeWorkflow} from './respondo-free-actions.mjs';
 import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-gates.mjs';
 import {ensureFreeCommerceSchema,putFreeOrderSnapshot,freeOrderOverview,lookupFreeOrderStatus} from './respondo-free-commerce.mjs';
+import {ensureFreeWebhookSchema,freeWebhookStatus,rotateFreeWebhookKey,
+ disableFreeWebhookKey,acceptFreeWebhookEvent} from './respondo-free-webhooks.mjs';
 import {normalizeCloudFileList,readApprovedCloudText} from './native-cloud-documents.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
 import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
@@ -9696,6 +9698,36 @@ app.get('/api/app/native',auth,ownerOnly,subscribed,nativeEndpoint(
 /* Company-supplied order statuses. Read-only for verified customers, no provider fees. */
 const freeOrderHmacSecret=()=>String(process.env.RESPONDO_ORDER_HMAC_KEY||
  process.env.DATA_ENCRYPTION_KEY||'');
+/* First-party webhook channel. Owner-generated signing key; no paid relay. */
+app.get('/api/app/native/free-webhook',auth,ownerOnly,subscribed,nativeEndpoint(
+ id=>freeWebhookStatus(pool,id)));
+app.post('/api/app/native/free-webhook/rotate',auth,ownerOnly,subscribed,nativeWriteLimiter,
+ nativeEndpoint((id,req)=>{
+  if(req.body?.confirm!==true)throw new TypeError('Confirm key rotation');
+  return rotateFreeWebhookKey(pool,id,freeOrderHmacSecret());
+ }));
+app.delete('/api/app/native/free-webhook',auth,ownerOnly,subscribed,nativeWriteLimiter,
+ nativeEndpoint((id,req)=>{
+  if(req.body?.confirm!==true)throw new TypeError('Confirm key revocation');
+  return disableFreeWebhookKey(pool,id);
+ }));
+app.post('/api/webhooks/respondo-native/:tenantId',publicChatLimiter,async(req,res)=>{
+ res.set('Cache-Control','private, no-store');
+ try{
+  const result=await acceptFreeWebhookEvent(pool,{
+   tenantId:String(req.params.tenantId||''),rawBody:req.rawBody,
+   eventId:req.get('x-respondo-event-id'),
+   timestamp:req.get('x-respondo-timestamp'),
+   signature:req.get('x-respondo-signature'),
+   master:freeOrderHmacSecret()
+  });
+  return res.status(202).json(result);
+ }catch(error){
+  if(error instanceof TypeError)return res.status(401).json({error:'Webhook rejected'});
+  console.error('Native integration event failed',error?.name||'error');
+  return res.status(503).json({error:'Webhook unavailable'});
+ }
+});
 app.get('/api/app/native/orders',auth,ownerOnly,subscribed,nativeEndpoint(
  id=>freeOrderOverview(pool,id)));
 app.post('/api/app/native/orders',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -17875,6 +17907,7 @@ async function start() {
     await withRuntimeSchemaLock(() => ensureNativeCloudSchema(pool));
     await withRuntimeSchemaLock(() => ensureFreeWorkflowSchema(pool));
     await withRuntimeSchemaLock(() => ensureFreeCommerceSchema(pool));
+    await withRuntimeSchemaLock(() => ensureFreeWebhookSchema(pool));
     await withRuntimeSchemaLock(() => ensureOnboardingCheckupSchema(q));
     await withRuntimeSchemaLock(async () => {
       await seedAndLoadIntentUtterances();
