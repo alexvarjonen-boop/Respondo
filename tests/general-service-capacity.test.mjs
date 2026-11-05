@@ -104,3 +104,18 @@ test('backend checks approved service-specific durations before requests',()=>{
   assert.match(ui,/calculation/);
   assert.doesNotMatch(ui,/subtitle:'Window cleaning:/);
 });
+
+test('service FAQ stays in normal bot rather than being hijacked by scheduling',async()=>{
+  const state=memoryDB();
+  const answer=await serviceDialogue(state.db,tenant,'visitor4',
+    'Teettekö kotisiivousta?','fi',async()=>[]);
+  assert.equal(answer,null);
+});
+
+test('enabled custom service uses tenant-scoped rules and safely exposes all configured services',async()=>{
+  const state=memoryDB();
+  const list=await listServiceRules(state.db,tenant);
+  assert.equal(list[0].serviceName,'Kotisiivous');
+  assert.equal((await readServiceRule(state.db,tenant,'custom_kotisiivous')).enabled,true);
+  assert.ok(state.history.every(({args})=>args[0]===tenant));
+});

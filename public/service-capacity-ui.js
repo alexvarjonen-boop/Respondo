@@ -130,8 +130,9 @@
         const response=await fetch('/api/app/service-capacity',{credentials:'same-origin',cache:'no-store'});
         const data=await response.json();
         if(!response.ok)throw Error(data.error||t.failed);
-        configs=Array.isArray(data.configs)?data.configs:
-          data.config?[data.config]:[];
+        configs=(Array.isArray(data.configs)?data.configs:
+          data.config?[data.config]:[]).filter(item=>
+          item.serviceKey!=='window_cleaning'||item.enabled===true);
         current=configs[0]||fresh();render();
       }catch(error){render();status.textContent=error.message||t.failed;}
     }
