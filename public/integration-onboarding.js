@@ -147,6 +147,28 @@
     };
     return messages[code]?.[lang==='fi'?0:lang==='sv'?1:2]||null;
   };
+  const providerReturnFeedback=(lang,provider,code)=>{
+    const texts={
+      zendesk:{
+        connected:['Zendesk-yhteys hyväksyttiin. Tarkista vielä, että tukipyynnöt näkyvät.',
+                   'Zendesk anslöts. Kontrollera att ärendena visas.',
+                   'Zendesk authorized. Verify that tickets are accessible.'],
+        denied:['Zendesk-yhteyttä ei hyväksytty.','Zendesk-anslutningen nekades.','Zendesk authorization was declined.'],
+        failed:['Zendesk-yhteys epäonnistui. Tarkista käyttöoikeudet ja sovellusasetukset.',
+                'Zendesk-anslutningen misslyckades. Kontrollera åtkomst och appen.',
+                'Zendesk setup failed. Check permissions and app configuration.']
+      },
+      stripe:{
+        return:['Stripe-palvelusta palattiin. Tarkista maksutilin vahvistus ja maksujen vastaanotto ennen käyttöönottoa.',
+                'Du har återvänt från Stripe. Kontrollera kontoverifiering och betalningsstatus.',
+                'Returned from Stripe. Check account verification and charges status before accepting payments.'],
+        refresh:['Stripe vaatii lisätietoja. Jatka tilin vahvistamista Stripe-asetuksissa.',
+                 'Stripe behöver mer information. Slutför verifieringen.',
+                 'Stripe needs more information. Continue verification in the Stripe settings.']
+      }
+    };
+    return texts[provider]?.[code]?.[lang==='fi'?0:lang==='sv'?1:2]||null;
+  };
   function mount(){
     const ws=$('#respondoWorkspace');
     const moduleCard=$('#respondoWorkspaceCardBody')?.closest('.respondo-workspace-module-card');
@@ -166,12 +188,16 @@
     const oauthCode=urlParams.get('native_mail');
     const cloudCode=urlParams.get('cloud');
     const calendarCode=urlParams.get('calendar');
+    const zendeskCode=urlParams.get('zendesk');
+    const stripeCode=urlParams.get('stripe');
     const oauthProvider=urlParams.get('provider');
-    const callbackOutcome=oauthCode||cloudCode||calendarCode;
+    const callbackOutcome=oauthCode||cloudCode||calendarCode||zendeskCode||stripeCode;
     const callbackMsg=oauthCode
       ?mailboxFeedback(lang,oauthCode,oauthProvider)
       :cloudCode?cloudFeedback(lang,cloudCode,oauthProvider)
-      :calendarCode?calendarFeedback(lang,calendarCode):null;
+      :calendarCode?calendarFeedback(lang,calendarCode)
+      :zendeskCode?providerReturnFeedback(lang,'zendesk',zendeskCode)
+      :stripeCode?providerReturnFeedback(lang,'stripe',stripeCode):null;
     heading.append(el('h2','',t.title),el('p','',t.intro));
     if(callbackMsg){
       const notice=el('div','rs-integration-oauth-feedback',callbackMsg);
@@ -460,7 +486,9 @@
     const fromCallback=(
       (oauthCode&&['gmail','outlook'].includes(oauthProvider))||
       (cloudCode&&['google_drive','sharepoint'].includes(oauthProvider))||
-      (calendarCode&&oauthProvider==='google_calendar')
+      (calendarCode&&oauthProvider==='google_calendar')||
+      (zendeskCode&&oauthProvider==='zendesk')||
+      (stripeCode&&oauthProvider==='stripe')
     )?oauthProvider:null;
     const recovered=providers.find(p=>p.id===(fromCallback||pending));
     if(recovered){
