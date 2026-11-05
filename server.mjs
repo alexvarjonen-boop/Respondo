@@ -10415,6 +10415,29 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
     );
 
     let slots = rows.rows;
+    const durationRules = await q(
+      'SELECT rule FROM service_duration_rules WHERE tenant_id=$1 ORDER BY service_id LIMIT 100',
+      [tenant.id],
+    );
+    const rules = durationRules.rows.map(row => row.rule);
+    let estimate = null;
+    if (rules.length) {
+      const serviceId = String(req.query.serviceId || '').slice(0,64);
+      const quantityRaw = String(req.query.quantity || '').trim();
+      if (!serviceId || !quantityRaw) {
+        return res.json({ slots:[], needsDetails:true, services:rules.map(rule => ({id:rule.id})),
+          reason:'service_and_quantity_required' });
+      }
+      const quantity = Number(quantityRaw);
+      estimate = estimateServiceDuration({ serviceId,quantity,rules });
+      if (estimate.status !== 'estimated') {
+        return res.json({ slots:[], needsDetails:true, services:rules.map(rule => ({id:rule.id})),
+          reason:estimate.reason || estimate.status });
+      }
+      slots = slots.filter(slot =>
+        new Date(slot.ends_at).getTime()-new Date(slot.starts_at).getTime() >= estimate.totalMinutes*60000
+      );
+    }
     const bookingAccess = planEntitlements(tenant.subscription_plan);
     if (bookingAccess.googleCalendar && slots.length && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token)) {
       try {
@@ -10435,7 +10458,8 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
       }
     }
 
-    return res.json({ slots });
+    return res.json({ slots, ...(estimate ? { estimatedMinutes:estimate.totalMinutes } : {}),
+      services:rules.map(rule=>({id:rule.id})) });
   } catch {
     return res.status(500).json({ error:'Vapaita aikoja ei saatu.' });
   }
@@ -10592,6 +10616,12 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     }
 
     if (type === 'booking') {
+      // Workload rules are mandatory for businesses that configured services.
+      // Do not let a caller omit the service identifier to bypass duration checks.
+      const anyRules = await q('SELECT service_id FROM service_duration_rules WHERE tenant_id=$1 LIMIT 1',[tenant.id]);
+      if (anyRules.rowCount && !fields.serviceId) {
+        return res.status(422).json({ error:'Valitse palvelu ja anna työn määrä ennen ajanvarausta.' });
+      }
       // If an exact service is selected, never treat a short fixed slot as sufficient
       // unless a tenant-approved workload rule proves the entire job fits.
       let serviceEstimate = null;
