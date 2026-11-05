@@ -4174,6 +4174,14 @@ async function dashboard(options = {}) {
             <div class="field full"><button class="btn dashboard-action" type="submit">${appText('Tallenna tila','Spara läge','Save mode')}</button></div>
             <div class="field full" id="nativeIntegrationMsg" aria-live="polite"></div>
           </form>
+          <div class="calendar-sync-card">
+            <div>
+              <small>GMAIL</small>
+              <b>${appText('Yhdistä Gmail turvallisesti','Anslut Gmail säkert','Connect Gmail securely')}</b>
+              <p>${appText('Googlelta pyydetään vain viestien lukemiseen tarvittava oikeus. Respondo ei lähetä sähköpostia tällä yhteydellä.','Google ber om enbart läsåtkomst till e-post. Respondo skickar inte e-post via denna anslutning.','Google authorization grants inbox read access only. Respondo will not send mail with this connection.')}</p>
+            </div>
+            <a class="btn dashboard-action" href="/api/app/native-integrations/gmail/start">${appText('Yhdistä Gmail','Anslut Gmail','Connect Gmail')}</a>
+          </div>
           <form id="nativeProviderConnectForm" class="formgrid" autocomplete="off">
             <div class="field">
               <label>${appText('Yhdistettävä palvelu','Tjänst att ansluta','Service to connect')}</label>
