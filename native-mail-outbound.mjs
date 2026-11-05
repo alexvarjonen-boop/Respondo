@@ -17,7 +17,7 @@ export function buildApprovedMailRequest({provider,token,recipient,text,messageI
  if(!/^[A-Za-z0-9_-]{1,180}$/.test(String(threadId||'')))throw TypeError('Missing Gmail thread');
  if(!/^<[^<>\r\n]{3,250}>$/.test(String(originalRfcId||'')))throw TypeError('Missing original Message-ID');
  const subjectPlain=safeHeader(subject||'',180).replace(/^re:\s*/i,'');
- const subjectLine=/[^\\x20-\\x7e]/.test(subjectPlain)
+ const subjectLine=/[^\x20-\x7e]/.test(subjectPlain)
   ?'=?UTF-8?B?'+Buffer.from(subjectPlain,'utf8').toString('base64')+'?=':subjectPlain;
  const mime=['To: '+recipient,'Subject: Re: '+subjectLine,
   'In-Reply-To: '+originalRfcId,'References: '+originalRfcId,
@@ -80,9 +80,12 @@ export async function sendApprovedNativeMail(db,{tenantId,threadId,deliveryId,us
    VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING delivery_id`,
    [tenantId,deliveryId,threadId,provider,recipient,text.trim(),clean(userId,120)]);
   if(!claimed.rowCount){
-   const old=await client.query(`SELECT thread_id,status FROM respondo_native_mail_deliveries
+   const old=await client.query(`SELECT thread_id,status,text,provider,recipient FROM respondo_native_mail_deliveries
     WHERE tenant_id=$1 AND delivery_id=$2`,[tenantId,deliveryId]);
-   if(String(old.rows[0]?.thread_id)!==threadId)throw TypeError('Delivery identifier reused');
+   if(String(old.rows[0]?.thread_id)!==threadId||
+      old.rows[0]?.text!==text.trim()||old.rows[0]?.provider!==provider||
+      old.rows[0]?.recipient!==recipient)
+      throw TypeError('Delivery identifier reused for different content');
    await client.query('COMMIT');
    return {status:old.rows[0].status,duplicate:true,autoRetry:false};
   }
