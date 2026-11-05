@@ -92,7 +92,7 @@ test('FI/SV/EN, mobile styles, existing asset links and syntax check all wired',
   assert.match(guide,/sv:\{title:/);
   assert.match(guide,/en:\{title:/);
   assert.match(css,/@media\(max-width:640px\)/);
-  assert.match(index,/\/integration-onboarding\.js\?v=20261105-guided-setup-v1/);
+  assert.match(index,/\/integration-onboarding\.js\?v=20261105-guided-setup-v2/);
   assert.match(index,/\/integration-onboarding\.css\?v=20261105-guided-setup-v1/);
   assert.match(app,/guided-integrations-v1/);
   assert.match(pkg.scripts.check,/node --check public\/integration-onboarding\.js/);
