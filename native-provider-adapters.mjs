@@ -83,7 +83,9 @@ export function normalizeProviderItems(provider,data){
   externalId:String(item.id??'').slice(0,180),
   title:String(item.subject??item.name??item.title??item.properties?.email??'').slice(0,300),
   snippet:String(item.bodyPreview??item.description_text??item.description??item.snippet??'').slice(0,2000),
-  email:String(item.from?.emailAddress?.address??item.properties?.email??'').slice(0,254)
+  email:String(item.from?.emailAddress?.address??item.properties?.email??'').slice(0,254),
+  providerThreadId:String(item.threadId??'').slice(0,180),
+  originalRfcId:String(item.originalRfcId??'').slice(0,250)
  })).filter(x=>x.externalId);
 }
 
@@ -122,6 +124,7 @@ export async function readGmailInbox({token,limit=20,cursor=null,fetcher=fetch})
   };
   const bodyPreview=extractText(data.payload)||String(data.snippet||'').slice(0,2000);
   details.push({id,subject:header('Subject').slice(0,300),bodyPreview,
+   threadId:String(data.threadId||'').slice(0,180),originalRfcId:header('Message-ID').slice(0,250),
    from:{emailAddress:{address:fallbackEmail}}});
  }
  return {value:details,nextPageToken:typeof listing.nextPageToken==='string'?listing.nextPageToken:null};
