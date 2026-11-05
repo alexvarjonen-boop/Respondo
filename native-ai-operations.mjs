@@ -248,6 +248,7 @@ export async function runNativeAutomation(db,tenantId,trigger,event){
     finally{client.release();}
   }
   // Additional owner-configured workflows run only first-party actions.
-  const extra=await runFreeWorkflowEvent(db,tenantId,trigger,event);
-  return {executed,freeWorkflows:extra.executed,pendingApprovals:extra.approvals};
+  await runFreeWorkflowEvent(db,tenantId,trigger,event);
+  // Preserve the existing public API response for older dashboard clients.
+  return {executed};
 }
