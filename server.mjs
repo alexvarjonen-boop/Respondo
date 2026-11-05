@@ -9908,7 +9908,8 @@ app.get('/api/app/native/mail/:provider/callback',async(req,res)=>{
    VALUES($1,$2,$3,$4,$5,$6,NOW()) ON CONFLICT(tenant_id,provider)
    DO UPDATE SET access_ciphertext=EXCLUDED.access_ciphertext,
     refresh_ciphertext=EXCLUDED.refresh_ciphertext,
-    expires_at=EXCLUDED.expires_at,granted_scopes=EXCLUDED.granted_scopes,last_verified_at=NOW()`,
+    expires_at=EXCLUDED.expires_at,granted_scopes=EXCLUDED.granted_scopes,
+    next_cursor=NULL,last_verified_at=NOW()`,
    [tenant.rows[0].id,provider,encryptSecret(access),
     refresh?encryptSecret(refresh):stored.rows[0].refresh_ciphertext,
     new Date(Date.now()+Number(tokens.expires_in||3600)*1000),grantedScopes]);
@@ -17614,15 +17615,22 @@ async function runNativeMailPolling(){
   for(const connection of due.rows){
    try{
     const token=await nativeMailRefresh(connection.tenant_id,connection.provider,connection);
-    const items=await getNativeMailboxMessages(connection.provider,token,{limit:20});
-    await storeNativeMailboxMessages(pool,connection.tenant_id,connection.provider,items);
+    const batch=await getNativeMailboxMessages(connection.provider,token,{
+      limit:40,cursor:connection.next_cursor||null,includeCursor:true
+    });
+    await storeNativeMailboxMessages(pool,connection.tenant_id,connection.provider,batch.items);
+    // Advance only AFTER every item has been durably imported or deduplicated.
+    // At end of listing, restart from newest on the next cycle.
     await q(`UPDATE respondo_native_mail_credentials
-      SET last_synced_at=NOW(),last_verified_at=NOW(),last_sync_error=NULL
-      WHERE tenant_id=$1 AND provider=$2`,[connection.tenant_id,connection.provider]);
+      SET last_synced_at=NOW(),last_verified_at=NOW(),last_sync_error=NULL,next_cursor=$3
+      WHERE tenant_id=$1 AND provider=$2`,
+      [connection.tenant_id,connection.provider,batch.nextCursor]);
    }catch(e){
     const category=String(e?.message||'sync_error').slice(0,80).replace(/[\r\n]/g,' ');
     await q(`UPDATE respondo_native_mail_credentials
-      SET last_synced_at=NOW(),last_sync_error=$3 WHERE tenant_id=$1 AND provider=$2`,
+      SET last_synced_at=NOW(),last_sync_error=$3,
+      next_cursor=CASE WHEN $3='invalid_mail_cursor' THEN NULL ELSE next_cursor END
+      WHERE tenant_id=$1 AND provider=$2`,
       [connection.tenant_id,connection.provider,category]).catch(()=>{});
     console.error('Native mailbox polling failed',connection.provider,e?.name||'error');
    }
