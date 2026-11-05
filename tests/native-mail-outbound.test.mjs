@@ -39,6 +39,7 @@ function mockDb({claimed=true}={}){
    if(sql.includes('FROM chat_messages'))return {rows:[{metadata:{provider:'outlook',providerMessageId:'msg123',subject:'Request'}}],rowCount:1};
    if(sql.includes('INSERT INTO respondo_native_mail_deliveries'))return {rows:claimed?[{delivery_id:ids.deliveryId}]:[],rowCount:claimed?1:0};
    if(sql.includes('SELECT thread_id,status'))return {rows:[{thread_id:ids.threadId,status:'unknown'}],rowCount:1};
+   if(sql.includes("SET status='sent'"))return {rows:[{thread_id:ids.threadId,provider:'outlook',recipient:'client@example.com',text:'Please specify the number of windows.'}],rowCount:1};
    return {rows:[],rowCount:1};
   },release:()=>{}};
  return {db:{connect:async()=>client,query:async(sql,p)=>{statements.push({sql,params:p});return {rowCount:1}}},statements,getSends:()=>sends};
