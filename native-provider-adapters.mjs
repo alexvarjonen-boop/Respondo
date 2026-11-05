@@ -80,7 +80,36 @@ export function normalizeProviderItems(provider,data){
  return (Array.isArray(list)?list:[]).slice(0,100).map(item=>({
   externalId:String(item.id??'').slice(0,180),
   title:String(item.subject??item.name??item.title??item.properties?.email??'').slice(0,300),
-  snippet:String(item.bodyPreview??item.description_text??item.snippet??'').slice(0,2000),
+  snippet:String(item.bodyPreview??item.description_text??item.description??item.snippet??'').slice(0,2000),
   email:String(item.from?.emailAddress?.address??item.properties?.email??'').slice(0,254)
  })).filter(x=>x.externalId);
+}
+
+/** Gmail list results only carry message IDs. Fetch scoped metadata/snippets individually. */
+export async function readGmailInbox({token,limit=20,fetcher=fetch}){
+ const listing=await readProvider({provider:'gmail',token,limit,fetcher});
+ const messages=Array.isArray(listing.messages)?listing.messages.slice(0,Math.min(limit,20)):[];
+ const details=[];
+ for(const message of messages){
+  const id=strictId(message?.id);
+  if(!id)continue;
+  const url=new URL('/gmail/v1/users/me/messages/'+encodeURIComponent(id),'https://gmail.googleapis.com');
+  url.searchParams.set('format','metadata');
+  url.searchParams.append('metadataHeaders','From');
+  url.searchParams.append('metadataHeaders','Subject');
+  const response=await fetcher(url.toString(),{method:'GET',redirect:'error',
+   headers:{Authorization:'Bearer '+token,Accept:'application/json'},signal:AbortSignal.timeout(9000)});
+  if(!response.ok)throw Error('gmail_message_http_'+response.status);
+  const raw=await response.text();
+  if(raw.length>250000)throw Error('gmail_message_too_large');
+  const data=JSON.parse(raw);
+  const headers=Array.isArray(data.payload?.headers)?data.payload.headers:[];
+  const header=name=>String(headers.find(h=>h.name?.toLowerCase()===name.toLowerCase())?.value||'');
+  const from=header('from');
+  const email=(from.match(/<([^<>\s]+@[^<>\s]+)>/)||from.match(/[^\s<>]+@[^\s<>]+/))?.[1]||'';
+  const fallbackEmail=email||((from.match(/[^\s<>]+@[^\s<>]+/)||[])[0]||'');
+  details.push({id,subject:header('Subject').slice(0,300),bodyPreview:String(data.snippet||'').slice(0,2000),
+   from:{emailAddress:{address:fallbackEmail}}});
+ }
+ return {value:details};
 }
