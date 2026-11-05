@@ -2,7 +2,7 @@
 const normalize = value => String(value ?? '').normalize('NFKC').trim().slice(0,3000);
 const match = (text, terms) => terms.some(x => x.test(text));
 const booking = [
- /\b(ajanvaraus|ajanvarausta|varaus|varata|aika(a|a|na)?|vapaata|perjantai|maanantai|tiistai|keskiviikko|torstai|lauantai|sunnuntai)\b/i,
+ /\b(ajanvaraus|ajanvarausta|varaus|varata|aikaa|aika|aikana|vapaata|perjantai(?:na)?|maanantai(?:na)?|tiistai(?:na)?|keskiviikko(?:na)?|torstai(?:na)?|lauantai(?:na)?|sunnuntai(?:na)?)\b/i,
  /\b(boka|bokning|ledig|tid|fredag|måndag|tisdag|onsdag|torsdag|lördag|söndag)\b/i,
  /\b(book|booking|appointment|available|availability|friday|monday|tuesday|wednesday|thursday|saturday|sunday)\b/i
 ];
