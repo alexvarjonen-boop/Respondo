@@ -39,7 +39,7 @@ function fakeDb({claimed=true,age=1000}={}){
   if(sql.includes('FROM chat_messages'))return {rows:[{created_at:new Date(1700000000000),metadata:{providerTimestampMs:1700000000000-age}}],rowCount:1};
   if(sql.includes('FROM respondo_meta_connections'))return {rows:[{resource_id:'12345678901',access_token_encrypted:'ciphertext'}],rowCount:1};
   if(sql.includes('INSERT INTO respondo_native_meta_deliveries'))return {rows:claimed?[{delivery_id:ids.deliveryId}]:[],rowCount:claimed?1:0};
-  if(sql.includes('SELECT thread_id,status'))return {rows:[{thread_id:ids.threadId,status:'unknown'}],rowCount:1};
+  if(sql.includes('SELECT thread_id,status'))return {rows:[{thread_id:ids.threadId,status:'unknown',text:'Thanks',provider:'whatsapp',recipient:'358401234567'}],rowCount:1};
   if(sql.includes("SET status='sent'"))return {rows:[{provider:'whatsapp',recipient:'358401234567',text:'Thanks'}],rowCount:1};
   return {rows:[],rowCount:1};
  },release:()=>{}};
@@ -63,4 +63,12 @@ test('Meta sent reply is audited and unknown deliveries never automatically retr
   text:'Thanks',now:1700000000000,getAccessToken:()=> 'valid-fake-token',
   fetcher:async()=>{sent++;throw Error('must not send')}});
  assert.equal(second.status,'unknown');assert.equal(second.duplicate,true);assert.equal(sent,0);
+});
+
+test('cannot reuse Meta delivery identifier with different reply text',async()=>{
+ const {db}=fakeDb({claimed:false});let called=0;
+ await assert.rejects(sendApprovedNativeMeta(db,{...ids,userId:'owner',approved:true,
+   text:'Different answer',now:1700000000000,getAccessToken:()=> 'valid-fake-token',
+   fetcher:async()=>{called++;return {ok:true}}}),/different content/);
+ assert.equal(called,0);
 });
