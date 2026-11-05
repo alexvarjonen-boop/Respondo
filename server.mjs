@@ -9,7 +9,7 @@ import { COMPLIMENTARY_ENTERPRISE_PLAN, validateManagedAccountInput, createManag
 import { brandedEmailHtml } from './email-branding.mjs';
 import { ensureOnboardingCheckupSchema, enqueueOnboardingCheckup, runDueOnboardingCheckups } from './onboarding-checkup.mjs';
 import { createLeadOperations } from './lead-operations.mjs';
-import { readServiceRule,saveServiceRule,serviceDialogue,estimateWindowDuration,fitServiceSlots } from './service-capacity.mjs';
+import { readServiceRule,listServiceRules,saveServiceRule,serviceDialogue,estimateServiceDuration,fitServiceSlots } from './service-capacity.mjs';
 import { nativeOverview,createNativeContact,updateNativeContact,createNativeTicket,updateNativeTicket,
   createNativeQuote,updateNativeQuote,setNativeRule,saveNativeDocument,removeNativeDocument,
   runNativeAutomation } from './native-ai-operations.mjs';
@@ -15403,7 +15403,8 @@ app.get('/api/app/service-capacity',auth,ownerOnly,subscribed,async(req,res)=>{
     const workspace=await requirePlanCapability(req,res,'allCurrentFeatures');
     if(!workspace?.tenant)return;
     const config=await readServiceRule(pool,workspace.tenant.id);
-    return res.json({config,connectedCalendar:Boolean(workspace.tenant.google_calendar_refresh_token ||
+    const configs=await listServiceRules(pool,workspace.tenant.id);
+    return res.json({config,configs,connectedCalendar:Boolean(workspace.tenant.google_calendar_refresh_token ||
       workspace.tenant.google_calendar_access_token)});
   }catch(error){
     console.error('Service capacity read error',error?.name||'error');
@@ -15483,15 +15484,17 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
 
     let slots = rows.rows;
     const visitorRef=String(req.query.visitorRef||'').slice(0,160);
-    const serviceRule=await readServiceRule(pool,tenant.id);
-    if(serviceRule?.enabled && visitorRef){
-      const state=await q(`SELECT facts FROM respondo_service_dialogues
+    const activeServiceRules=(await listServiceRules(pool,tenant.id)).filter(x=>x.enabled);
+    if(activeServiceRules.length){
+      // A booking without an identified service and approved duration is NOT free capacity.
+      const state=visitorRef?await q(`SELECT facts FROM respondo_service_dialogues
         WHERE tenant_id=$1 AND visitor_ref=$2 AND updated_at>NOW()-INTERVAL '45 minutes'`,
-        [tenant.id,visitorRef]);
-      if(state.rowCount){
-        const estimate=estimateWindowDuration(serviceRule,state.rows[0].facts);
-        slots=estimate.status==='estimated'?fitServiceSlots(slots,estimate.minutes):[];
-      }
+        [tenant.id,visitorRef]):{rows:[]};
+      const facts=state.rows[0]?.facts;
+      const matchedRule=activeServiceRules.find(x=>
+        x.serviceKey===(facts?._serviceKey||'window_cleaning'));
+      const estimate=matchedRule?estimateServiceDuration(matchedRule,facts):null;
+      slots=estimate?.status==='estimated'?fitServiceSlots(slots,estimate.minutes):[];
     }
     const bookingAccess = planEntitlements(tenant.subscription_plan);
     if (bookingAccess.googleCalendar && slots.length && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token)) {
@@ -15735,25 +15738,24 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
 
         // A service conversation cannot bypass the approved duration rules.
         // Locking the slot protects against competing web reservations.
-        if(visitorRef){
-          const rule=await readServiceRule(client,tenant.id);
-          if(rule?.enabled){
-            const state=await client.query(`SELECT facts FROM respondo_service_dialogues
+        {
+          const enabledRules=(await listServiceRules(client,tenant.id)).filter(x=>x.enabled);
+          if(enabledRules.length){
+            const state=visitorRef?await client.query(`SELECT facts FROM respondo_service_dialogues
               WHERE tenant_id=$1 AND visitor_ref=$2 AND updated_at>NOW()-INTERVAL '45 minutes'`,
-              [tenant.id,visitorRef]);
-            if(state.rowCount){
-              const work=estimateWindowDuration(rule,state.rows[0].facts);
-              const availableMs=new Date(sr.rows[0].ends_at)-new Date(sr.rows[0].starts_at);
-              if(work.status!=='estimated'||availableMs<work.minutes*60000){
-                await client.query('ROLLBACK');
-                return res.status(409).json({error:'Työ ei mahdu valittuun aikaan. Tarkista työn laajuus ja valitse pidempi aika.'});
-              }
-              // Staff and travel capacity cannot be inferred from one shared
-              // calendar. Record a REQUEST only, never mark this time booked.
-              serviceManualReview=true;
-              payload.serviceCapacity={facts:state.rows[0].facts,durationMinutes:work.minutes,
-                approvalRequired:true};
+              [tenant.id,visitorRef]):{rows:[]};
+            const facts=state.rows[0]?.facts;
+            const rule=enabledRules.find(x=>x.serviceKey===(facts?._serviceKey||'window_cleaning'));
+            const work=rule?estimateServiceDuration(rule,facts):null;
+            const availableMs=new Date(sr.rows[0].ends_at)-new Date(sr.rows[0].starts_at);
+            if(work?.status!=='estimated'||availableMs<work.minutes*60000){
+              await client.query('ROLLBACK');
+              return res.status(409).json({error:'Työn laajuutta ja sopivaa aikaa ei voitu vahvistaa. Kerro ensin tarvittavat palvelutiedot.'});
             }
+            // Every estimated service becomes a REQUEST for owner approval.
+            serviceManualReview=true;
+            payload.serviceCapacity={serviceKey:rule.serviceKey,facts,
+              durationMinutes:work.minutes,approvalRequired:true};
           }
         }
 
