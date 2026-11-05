@@ -81,7 +81,8 @@ test('Gmail OAuth requests least-privilege readonly access with CSRF and tenant 
  assert.match(section,/auth, ownerOnly, subscribed/);
  assert.match(section,/gmail\.readonly/);
  assert.match(section,/setOauthState\(res,nonce,'google'\)/);
- const callback=server.slice(server.indexOf("if \(statePayload.flow === 'native_gmail'\) \{"),server.indexOf("if \(statePayload.flow === 'calendar'\) \{",server.indexOf("if \(statePayload.flow === 'native_gmail'\) \{")) ;
+ const callbackStart=server.indexOf("if (statePayload.flow === 'native_gmail') {");
+ const callback=server.slice(callbackStart,server.indexOf("if (statePayload.flow === 'calendar') {",callbackStart));
  assert.match(callback,/sessionUser\.sub!==statePayload\.userId/);
  assert.match(callback,/encryptSecret\(refreshToken\)/);
  assert.match(callback,/readProvider\(\{provider:'gmail'/);
