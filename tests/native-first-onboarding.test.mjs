@@ -7,6 +7,7 @@ const workspace=read('public/workspace-continuation-v24.js');
 const backend=read('server.mjs');
 const native=read('native-ai-operations.mjs');
 const nativeUI=read('public/native-ai-operations.js');
+const minimalCSS=read('public/workspace-settings-minimal-v55.css');
 
 test('Respondo own database tools are the default, external services are optional',()=>{
   assert.match(ui,/let chosenGroup='respondo',chosenProvider=null/);
@@ -69,4 +70,12 @@ test('native tools are tenant-owned, separate from Outlook, Meta, external payme
   assert.match(nativeUI,/const API='\/api\/app\/native'/);
   assert.match(ui,/Ei ulkoista sähköpostia/);
   assert.match(ui,/ei maksamista/);
+});
+
+test('native tool navigation conceals external Zendesk/Freshdesk tabs, leaving them opt-in',()=>{
+ assert.match(ui,/rs-integration-native-open',Boolean\(item\.nativeInternal\)/);
+ assert.match(ui,/rs-integration-configuring','rs-integration-advanced','rs-integration-native-open'/);
+ assert.match(minimalCSS,/\.rs-integration-native-open/);
+ assert.match(minimalCSS,/\[data-tab="helpdesk"\]/);
+ assert.match(minimalCSS,/\[data-tab="zendesk"\]/);
 });
