@@ -9817,10 +9817,10 @@ app.get('/api/app/native/mail/status',auth,ownerOnly,subscribed,async(req,res)=>
  try{
   const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
   if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
-  const rows=await q('SELECT provider,expires_at,last_verified_at,last_synced_at FROM respondo_native_mail_credentials WHERE tenant_id=$1 ORDER BY provider',[tr.rows[0].id]);
+  const rows=await q('SELECT provider,expires_at,last_verified_at,last_synced_at,last_sync_error FROM respondo_native_mail_credentials WHERE tenant_id=$1 ORDER BY provider',[tr.rows[0].id]);
   return res.json({connections:rows.rows.map(x=>({
    provider:x.provider,connected:true,lastVerifiedAt:x.last_verified_at,lastSyncedAt:x.last_synced_at,
-   expiresAt:x.expires_at
+   expiresAt:x.expires_at,lastSyncError:x.last_sync_error||null
   }))});
  }catch(e){return res.status(500).json({error:'Sähköpostiyhteyksiä ei voitu hakea.'})}
 });
@@ -9930,7 +9930,7 @@ app.post('/api/app/native/mail/:provider/sync',auth,ownerOnly,subscribed,nativeW
   const access=await nativeMailRefresh(tenantId,provider,rows.rows[0]);
   const items=await getNativeMailboxMessages(provider,access,{limit:20});
   const result=await storeNativeMailboxMessages(pool,tenantId,provider,items);
-  await q('UPDATE respondo_native_mail_credentials SET last_synced_at=NOW(),last_verified_at=NOW() WHERE tenant_id=$1 AND provider=$2',[tenantId,provider]);
+  await q('UPDATE respondo_native_mail_credentials SET last_synced_at=NOW(),last_verified_at=NOW(),last_sync_error=NULL WHERE tenant_id=$1 AND provider=$2',[tenantId,provider]);
   return res.json({...result,reviewRequired:true});
  }catch(e){console.error('Native mail sync failed',e?.name||'error');
   return res.status(502).json({error:'Sähköpostien haku epäonnistui. Yhdistä tarvittaessa uudelleen.'})}
@@ -17540,6 +17540,44 @@ async function withOwnerSeedLock(fn) {
   }
 }
 
+// Native mailbox polling shares one Postgres advisory lock across Railway replicas.
+// Inbound mail is review-only; this worker never sends email.
+async function runNativeMailPolling(){
+ if(!pool||process.env.NODE_ENV!=='production'||process.env.RESPONDO_NATIVE_MAIL_POLL_ENABLED==='false')return;
+ const lockClient=await pool.connect();
+ let acquired=false;
+ try{
+  const result=await lockClient.query("SELECT pg_try_advisory_lock(hashtext('respondo_native_mail_poll_v1')) AS acquired");
+  acquired=Boolean(result.rows[0]?.acquired);
+  if(!acquired)return;
+  const due=await q(`SELECT c.* FROM respondo_native_mail_credentials c
+   JOIN tenants t ON t.id=c.tenant_id
+   WHERE t.active=true AND t.subscription_status IN ('active','trialing')
+   AND (c.last_synced_at IS NULL OR c.last_synced_at < NOW()-INTERVAL '5 minutes')
+   ORDER BY c.last_synced_at ASC NULLS FIRST LIMIT 20`);
+  for(const connection of due.rows){
+   try{
+    const token=await nativeMailRefresh(connection.tenant_id,connection.provider,connection);
+    const items=await getNativeMailboxMessages(connection.provider,token,{limit:20});
+    await storeNativeMailboxMessages(pool,connection.tenant_id,connection.provider,items);
+    await q(`UPDATE respondo_native_mail_credentials
+      SET last_synced_at=NOW(),last_verified_at=NOW(),last_sync_error=NULL
+      WHERE tenant_id=$1 AND provider=$2`,[connection.tenant_id,connection.provider]);
+   }catch(e){
+    const category=String(e?.message||'sync_error').slice(0,80).replace(/[\r\n]/g,' ');
+    await q(`UPDATE respondo_native_mail_credentials
+      SET last_synced_at=NOW(),last_sync_error=$3 WHERE tenant_id=$1 AND provider=$2`,
+      [connection.tenant_id,connection.provider,category]).catch(()=>{});
+    console.error('Native mailbox polling failed',connection.provider,e?.name||'error');
+   }
+  }
+ }catch(e){console.error('Native mail polling cycle failed',e?.name||'error')}
+ finally{
+  if(acquired)await lockClient.query("SELECT pg_advisory_unlock(hashtext('respondo_native_mail_poll_v1'))").catch(()=>{});
+  lockClient.release();
+ }
+}
+
 async function start() {
   try {
     await withRuntimeSchemaLock(() => ensureRuntimeSchema());
@@ -17598,6 +17636,10 @@ async function start() {
     checkupTimer.unref();
     const checkupStartup=setTimeout(sendDueCheckups,10000);
     checkupStartup.unref();
+    const mailPollTimer=setInterval(()=>void runNativeMailPolling(),5*60*1000);
+    mailPollTimer.unref();
+    const mailPollStartup=setTimeout(()=>void runNativeMailPolling(),45000);
+    mailPollStartup.unref();
   }
 }
 
