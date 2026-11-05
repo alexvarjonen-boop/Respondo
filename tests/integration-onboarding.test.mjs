@@ -77,7 +77,7 @@ test('plan-gated connectors remain locked when the old dashboard panels are relo
   assert.match(workspace,/if\(target\.dataset\.respondoPlanLocked==='yes'\)return false/);
   assert.match(guide,/target\?\.dataset\.respondoPlanLocked==='yes'/);
   assert.match(guide,/googlePlanLocked/);
-  assert.match(guide,/status\(item\)==='restricted'\s*\|\|\s*status\(item\)==='notConfigured'/);
+  assert.match(guide,/\['restricted','notConfigured','unverified'\]\.includes\(status\(item\)\)/);
 });
 
 test('unneeded commerce credential inputs are hidden without deleting any existing values',()=>{
