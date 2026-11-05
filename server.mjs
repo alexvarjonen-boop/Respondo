@@ -56,6 +56,7 @@ import {verifyMetaSignature,extractMetaInbound} from './meta-inbound.mjs';
 import {ensureNativeMailBridgeSchema,getNativeMailboxMessages,storeNativeMailboxMessages,nativeMailboxProvider} from './native-mail-bridge.mjs';
 import {ensureNativeMailDeliverySchema,sendApprovedNativeMail} from './native-mail-outbound.mjs';
 import {ensureNativeMetaOutboundSchema,sendApprovedNativeMeta} from './native-meta-outbound.mjs';
+import {ensureNativeCrmImportSchema,previewNativeCrmImport,importNativeCrmContacts} from './native-crm-import.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
 import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
@@ -10025,6 +10026,11 @@ app.get('/api/app/native/quality/repair',auth,ownerOnly,subscribed,nativeEndpoin
   id=>qualityRepairOverview(pool,id)));
 app.post('/api/app/native/quality/repair',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>approveQualityRepair(pool,id,req.user.sub,req.body||{})));
+/* Read-only CRM preview and explicit approved subset import to Respondo's own CRM. */
+app.get('/api/app/native/crm/import-preview',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>previewNativeCrmImport(pool,id)));
+app.post('/api/app/native/crm/import',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>importNativeCrmContacts(pool,id,req.body||{})));
 app.post('/api/app/native/contacts',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>createNativeContact(pool,id,req.body||{})));
 app.patch('/api/app/native/contacts/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -17648,6 +17654,7 @@ async function start() {
     await withRuntimeSchemaLock(() => ensureNativeMailBridgeSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMailDeliverySchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMetaOutboundSchema(pool));
+    await withRuntimeSchemaLock(() => ensureNativeCrmImportSchema(pool));
     await withRuntimeSchemaLock(() => ensureOnboardingCheckupSchema(q));
     await withRuntimeSchemaLock(async () => {
       await seedAndLoadIntentUtterances();
