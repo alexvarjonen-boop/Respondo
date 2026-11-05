@@ -47,7 +47,7 @@ function ensureWorkspace(demo) {
           <span>${choose('Haluatko tämän botin yrityksellesi?','Vill du ha denna bot till ditt företag?','Want this bot on your website?')}</span>
           <a class="respondo-workspace-subscribe-link" href="/tilaus?lang=${lang}">${choose('Tilaa Respondo','Beställ Respondo','Subscribe to Respondo')}</a>
         </div>` : ''}
-        ${demo?'':'<button type="button" class="respondo-workspace-review-link" data-workspace-nav="settings">'+choose('Tarkista haetut tiedot','Granska hämtade uppgifter','Review imported information')+' →</button>'}
+        ${demo?'':'<button type="button" class="respondo-workspace-review-link" data-workspace-import-review="true">'+choose('Tarkista haetut tiedot','Granska hämtade uppgifter','Review imported information')+' →</button>'}
       </div>
       <div data-workspace-page="overview" hidden>
         <small class="respondo-workspace-kicker">RESPONDO OS</small>
@@ -117,6 +117,18 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   let orbit=null;
   let activePanel=null;
   let activePlaceholder=null;
+  let importedReviewNode=null;
+  let importedReviewMarker=null;
+  // Move the original website-import review, not a clone: its approve/select
+  // handlers are attached to the original nodes and must continue to work.
+  function restoreImportedReview(){
+    if(importedReviewNode && importedReviewMarker?.parentNode){
+      importedReviewMarker.replaceWith(importedReviewNode);
+    }
+    importedReviewNode=null;
+    importedReviewMarker=null;
+    $('#rsWorkspaceImportedReview')?.remove();
+  }
   const overviewMetrics=['stats','respondo-intelligence','dashboard-insights'];
   const metricsHost=$('#respondoWorkspaceOverviewStats');
   let ownerTrafficPromise=null;
@@ -386,6 +398,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   };
   let currentTab=null;
   function showModuleTab(id){
+    restoreImportedReview();
     currentTab=id;
     const container=$('#respondoWorkspaceCardBody');
     if(!container)return;
@@ -414,6 +427,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     });
   }
   function selectView(next){
+    restoreImportedReview();
     currentAvatarObserver?.disconnect();
     currentAvatarObserver=null;
     selected=Object.hasOwn(pages,next)?next:'bot';
@@ -475,9 +489,54 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     if(!primary[selected])workspace.querySelectorAll('.rs-module-tabs').forEach(old=>old.remove());
   }
 
+  function openImportedReview(){
+    selectView('answers');
+    showModuleTab('knowledge');
+    const source=$('#websiteImportReview');
+    const heading=document.createElement('section');
+    heading.id='rsWorkspaceImportedReview';
+    heading.className='rs-imported-review';
+    const title=document.createElement('h2');
+    title.textContent=translate('Verkkosivulta haetut tiedot',
+      'Importerad information från webbplatsen','Information imported from the website');
+    const description=document.createElement('p');
+    const hasPending=Boolean(source?.querySelector('.website-import-candidate'));
+    description.textContent=hasPending
+      ?translate('Tarkista alla olevat tiedot ja hyväksy oikeat tiedot bottiin. Hyväksytyt vastaukset näkyvät tietopohjassa tämän osion alla.',
+        'Granska uppgifterna nedan och godkänn rätt information. Godkända svar visas i kunskapsbasen nedanför.',
+        'Review the items below and approve accurate information for your bot. Approved answers appear in the knowledge base below.')
+      :translate('Tällä hetkellä ei ole odottavia tuotuja tietoja. Botin tallennetut vastaukset näkyvät alla.',
+        'Det finns inga importerade uppgifter som väntar på granskning. Sparade svar visas nedan.',
+        'There are no imported items awaiting approval. The bot’s saved answers are shown below.');
+    heading.append(title,description);
+    if(source && source.textContent.trim()){
+      // Keep live importer checkboxes and approve handlers operational.
+      importedReviewMarker=document.createComment('restore website import review');
+      source.before(importedReviewMarker);
+      importedReviewNode=source;
+      heading.append(source);
+    }
+    card.prepend(heading);
+    // An instant jump avoids triggering the sphere's scroll-driven first
+    // chapter (Overview) during smooth movement across the orbit.
+    requestAnimationFrame(()=>{
+      if(heading.isConnected && !heading.closest('[hidden]')){
+        heading.scrollIntoView({behavior:'auto',block:'start'});
+        heading.setAttribute('tabindex','-1');
+        heading.focus({preventScroll:true});
+      }
+    });
+  }
+
   if(!workspace.dataset.initialized){
     workspace.dataset.initialized='1';
     workspace.addEventListener('click',(event)=>{
+      const review=event.target.closest?.('[data-workspace-import-review]');
+      if(review && workspace.contains(review)){
+        event.preventDefault();
+        openImportedReview();
+        return;
+      }
       const tab=event.target.closest?.('[data-workspace-tab]');
       if(tab && workspace.contains(tab)){showModuleTab(tab.dataset.workspaceTab);return;}
       const button=event.target.closest?.('[data-workspace-nav]');
@@ -486,7 +545,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
         requestAnimationFrame(()=>{
           const view=workspace.dataset.currentView;
           const destination=workspace.querySelector('[data-workspace-page="'+(view==='bot'?'bot':view==='overview'?'overview':'modules')+'"]');
-          if(destination && !destination.hidden)destination.scrollIntoView({behavior:'smooth',block:'start'});
+          if(destination && !destination.hidden)destination.scrollIntoView({behavior:'auto',block:'start'});
         });
       }
     });
