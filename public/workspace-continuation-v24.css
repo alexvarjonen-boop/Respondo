@@ -623,6 +623,61 @@
 }
 
 
+/* Original imported website facts stay interactive inside the dark workspace. */
+#app .respondo-workspace .rs-imported-review{
+  scroll-margin-top:20px;
+  margin:0 0 22px;
+  padding:clamp(16px,2vw,24px);
+  border:1px solid #414957;
+  border-radius:18px;
+  background:#1d232e;
+  color:#f4f6fa!important;
+}
+#app .respondo-workspace .rs-imported-review>h2{
+  margin:0 0 8px;
+  color:#f5f7fc!important;
+  -webkit-text-fill-color:#f5f7fc!important;
+  font-size:clamp(18px,2.4vw,24px);
+}
+#app .respondo-workspace .rs-imported-review>p{
+  margin:0 0 12px;
+  color:#c4ccdc!important;
+  -webkit-text-fill-color:#c4ccdc!important;
+  font-size:13px;
+  line-height:1.6;
+}
+#app .respondo-workspace .rs-imported-review #websiteImportReview{margin-top:12px}
+#app .respondo-workspace .rs-imported-review .website-import-review-head,
+#app .respondo-workspace .rs-imported-review .website-import-candidate,
+#app .respondo-workspace .rs-imported-review .notice{
+  background:#262e3b!important;
+  border:1px solid #455165!important;
+  color:#f3f6fc!important;
+}
+#app .respondo-workspace .rs-imported-review .website-import-candidate b,
+#app .respondo-workspace .rs-imported-review .website-import-review-head b{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+#app .respondo-workspace .rs-imported-review .website-import-candidate p,
+#app .respondo-workspace .rs-imported-review .website-import-candidate small,
+#app .respondo-workspace .rs-imported-review .website-import-review-head small{
+  color:#cad5e5!important;
+  -webkit-text-fill-color:#cad5e5!important;
+}
+#app .respondo-workspace .rs-imported-review :is(#selectAllWebsiteImport,#approveWebsiteImport){
+  color:#172638!important;
+  -webkit-text-fill-color:#172638!important;
+  background:#f1f4fa!important;
+  border:1px solid #dce4ee!important;
+  min-height:44px;
+  border-radius:10px;
+}
+#app .respondo-workspace .rs-imported-review .website-import-candidate input[type="checkbox"]{
+  accent-color:#90bafa;
+  opacity:1!important;
+}
+
 /* V47: the integrations modules are dark while the legacy form labels were
    designed for a white dashboard. Keep all changes inside the real workspace
    so the public demo, checkout and account forms are unaffected. */
@@ -700,60 +755,4 @@
   #booking-calendar .weekday-picker input:not(:checked) + span{
   color:#424d5c!important;
   -webkit-text-fill-color:#424d5c!important;
-}
-
-
-/* Original imported website facts stay interactive inside the dark workspace. */
-#app .respondo-workspace .rs-imported-review{
-  scroll-margin-top:20px;
-  margin:0 0 22px;
-  padding:clamp(16px,2vw,24px);
-  border:1px solid #414957;
-  border-radius:18px;
-  background:#1d232e;
-  color:#f4f6fa!important;
-}
-#app .respondo-workspace .rs-imported-review>h2{
-  margin:0 0 8px;
-  color:#f5f7fc!important;
-  -webkit-text-fill-color:#f5f7fc!important;
-  font-size:clamp(18px,2.4vw,24px);
-}
-#app .respondo-workspace .rs-imported-review>p{
-  margin:0 0 12px;
-  color:#c4ccdc!important;
-  -webkit-text-fill-color:#c4ccdc!important;
-  font-size:13px;
-  line-height:1.6;
-}
-#app .respondo-workspace .rs-imported-review #websiteImportReview{margin-top:12px}
-#app .respondo-workspace .rs-imported-review .website-import-review-head,
-#app .respondo-workspace .rs-imported-review .website-import-candidate,
-#app .respondo-workspace .rs-imported-review .notice{
-  background:#262e3b!important;
-  border:1px solid #455165!important;
-  color:#f3f6fc!important;
-}
-#app .respondo-workspace .rs-imported-review .website-import-candidate b,
-#app .respondo-workspace .rs-imported-review .website-import-review-head b{
-  color:#fff!important;
-  -webkit-text-fill-color:#fff!important;
-}
-#app .respondo-workspace .rs-imported-review .website-import-candidate p,
-#app .respondo-workspace .rs-imported-review .website-import-candidate small,
-#app .respondo-workspace .rs-imported-review .website-import-review-head small{
-  color:#cad5e5!important;
-  -webkit-text-fill-color:#cad5e5!important;
-}
-#app .respondo-workspace .rs-imported-review :is(#selectAllWebsiteImport,#approveWebsiteImport){
-  color:#172638!important;
-  -webkit-text-fill-color:#172638!important;
-  background:#f1f4fa!important;
-  border:1px solid #dce4ee!important;
-  min-height:44px;
-  border-radius:10px;
-}
-#app .respondo-workspace .rs-imported-review .website-import-candidate input[type="checkbox"]{
-  accent-color:#90bafa;
-  opacity:1!important;
 }
