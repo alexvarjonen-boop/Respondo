@@ -135,6 +135,18 @@
     };
     return messages[code]?.[lang==='fi'?0:lang==='sv'?1:2]||null;
   };
+  const calendarFeedback=(lang,code)=>{
+    const messages={
+      not_configured:['Google Calendar -yhteyttä ei ole vielä määritetty Respondon palvelimelle.','Google Calendar är inte konfigurerat på Respondos server.','Google Calendar has not been configured on Respondo yet.'],
+      auth_error:['Kirjaudu uudelleen ja aloita yhdistäminen.','Logga in igen och börja om.','Sign in again and start over.'],
+      missing_tenant:['Valitse yritys ja yritä uudelleen.','Välj företag och försök igen.','Select a company and try again.'],
+      no_refresh_token:['Google ei palauttanut tarvittavaa pitkäaikaista käyttöoikeutta. Yritä uudelleen ja hyväksy käyttöoikeudet.','Google gav ingen långvarig åtkomst. Försök igen och godkänn rättigheterna.','Google did not grant the required long-term access. Try again and approve access.'],
+      cancelled:['Kalenterin käyttöoikeutta ei hyväksytty. Yhteyttä ei luotu.','Kalenderbehörigheten godkändes inte. Ingen anslutning skapades.','Calendar authorization was cancelled. No connection was made.'],
+      failed:['Kalenterin yhdistäminen epäonnistui. Tarkista Google-tilin oikeudet.','Kalenderanslutningen misslyckades. Kontrollera Googles behörigheter.','Calendar connection failed. Check Google account permissions.'],
+      connected:['Google Calendar -yhteys tallennettu. Tarkista kalenterin tiedot ja vapaat ajat ennen ajanvarausten käyttöönottoa.','Google Calendar sparades. Kontrollera lediga tider före bokningsstart.','Google Calendar connection saved. Verify calendar availability before enabling bookings.']
+    };
+    return messages[code]?.[lang==='fi'?0:lang==='sv'?1:2]||null;
+  };
   function mount(){
     const ws=$('#respondoWorkspace');
     const moduleCard=$('#respondoWorkspaceCardBody')?.closest('.respondo-workspace-module-card');
@@ -153,11 +165,13 @@
     const urlParams=new URLSearchParams(location.search);
     const oauthCode=urlParams.get('native_mail');
     const cloudCode=urlParams.get('cloud');
+    const calendarCode=urlParams.get('calendar');
     const oauthProvider=urlParams.get('provider');
-    const callbackOutcome=oauthCode||cloudCode;
+    const callbackOutcome=oauthCode||cloudCode||calendarCode;
     const callbackMsg=oauthCode
       ?mailboxFeedback(lang,oauthCode,oauthProvider)
-      :cloudCode?cloudFeedback(lang,cloudCode,oauthProvider):null;
+      :cloudCode?cloudFeedback(lang,cloudCode,oauthProvider)
+      :calendarCode?calendarFeedback(lang,calendarCode):null;
     heading.append(el('h2','',t.title),el('p','',t.intro));
     if(callbackMsg){
       const notice=el('div','rs-integration-oauth-feedback',callbackMsg);
@@ -445,7 +459,8 @@
     const pending=(()=>{try{return sessionStorage.getItem('respondo_pending_integration')}catch{return null}})();
     const fromCallback=(
       (oauthCode&&['gmail','outlook'].includes(oauthProvider))||
-      (cloudCode&&['google_drive','sharepoint'].includes(oauthProvider))
+      (cloudCode&&['google_drive','sharepoint'].includes(oauthProvider))||
+      (calendarCode&&oauthProvider==='google_calendar')
     )?oauthProvider:null;
     const recovered=providers.find(p=>p.id===(fromCallback||pending));
     if(recovered){
