@@ -37,3 +37,17 @@ test('saved credentials are not reported as proven working connections',()=>{
  assert.match(ui,/next\.set\(result\.crm\.provider,'partial'\)/);
  assert.doesNotMatch(ui,/channel\.deliveryEnabled\?'connected'/);
 });
+
+test('connection actions fail closed while readiness endpoint is pending or unavailable',()=>{
+ assert.match(ui,/let readinessLoaded=false/);
+ assert.match(ui,/if\(!readinessLoaded \|\| !prerequisites\.has\(item\.id\)\)return 'unverified'/);
+ assert.match(ui,/readinessLoaded=Boolean\(result\.readiness\?\.prerequisites/);
+ assert.match(ui,/if\(\['restricted','notConfigured','unverified'\]\.includes\(status\(item\)\)\)/);
+ assert.match(ui,/item && !\['restricted','notConfigured','unverified'\]\.includes\(status\(item\)\)/);
+ assert.match(ui,/if\(s==='unverified'\)/);
+});
+test('saved browser connection hints are not proof of successful external operations',()=>{
+ assert.match(ui,/calendar-sync-card\.connected[^\n]*return 'partial'/);
+ assert.match(ui,/badge\.textContent\)\)return 'partial'/);
+ assert.doesNotMatch(ui,/badge\.textContent\)\)return 'connected'/);
+});
