@@ -1,5 +1,10 @@
 import crypto from 'node:crypto';
 const s=v=>String(v??'');
+const safeEventTime=(value,now=Date.now())=>{
+ const raw=Number(value);if(!Number.isFinite(raw))return null;
+ const ms=raw<1e11?raw*1000:raw;
+ return Number.isSafeInteger(ms)&&ms>=1577836800000&&ms<=now+60000?ms:null;
+};
 export function verifyMetaSignature(rawBody,header,appSecret){
  if(!Buffer.isBuffer(rawBody)||rawBody.length>1024*1024||rawBody.length===0||
    typeof appSecret!=='string'||appSecret.length<16||typeof header!=='string')return false;
@@ -23,7 +28,7 @@ export function extractMetaInbound(payload){
      const id=s(message?.id),sender=s(message?.from),body=s(message?.text?.body).trim();
      if(message?.type!=='text'||!body||!id||!sender)continue;
      result.push({provider:'whatsapp',resourceId,externalMessageId:id,from:sender,
-       body:body.slice(0,4000)});
+       body:body.slice(0,4000),providerTimestampMs:safeEventTime(message.timestamp)});
     }
    }
   }else{
@@ -33,7 +38,8 @@ export function extractMetaInbound(payload){
     const resourceId=s(event?.recipient?.id||entry.id);
     const sender=s(event?.sender?.id),id=s(event?.message?.mid),body=s(event?.message?.text).trim();
     if(!/^[0-9]{5,30}$/.test(resourceId)||!id||!sender||!body)continue;
-    result.push({provider,resourceId,externalMessageId:id,from:sender,body:body.slice(0,4000)});
+    result.push({provider,resourceId,externalMessageId:id,from:sender,
+      body:body.slice(0,4000),providerTimestampMs:safeEventTime(event.timestamp)});
    }
   }
   if(result.length>=150)break;
