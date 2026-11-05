@@ -14,6 +14,38 @@
     {id:'files',label:['Tiedostot ja tietopohja','Filer och kunskapsbas','Files & knowledge'],help:['Tuo vain tarkistetut dokumentit botin käyttöön.','Importera endast granskade dokument till botten.','Import only reviewed documents into your bot.']},
     {id:'advanced',label:['Muut yhteydet','Andra anslutningar','Other connections'],help:['Webhookit ja omat rajapinnat edistyneille käyttäjille.','Webhookar och API:er för avancerade användare.','Webhooks and custom APIs for advanced users.']}
   ];
+
+  // Respondo first-party modules. All data is tenant-scoped in PostgreSQL.
+  // A native website inbox is NOT Outlook/Gmail; quotes are NOT payments.
+  const ownTools=[
+    {id:'rs_contacts',nativeTab:'contacts',probe:'nativeOverview',
+      name:['Asiakasrekisteri','Kundregister','Customer register'],
+      help:['Asiakkaat ja liidien käsittelyvaiheet.','Kunder, leads och status.','Customers, leads and stages.']},
+    {id:'rs_inbox',nativeTab:'inbox',probe:'nativeInbox',
+      name:['Verkkosivun viestit','Webbplatsmeddelanden','Website messages'],
+      help:['Botin ja verkkosivun keskustelut. Ei ulkoista sähköpostia.','Webbplatschattar, inte extern e-post.','Website conversations, not external email.']},
+    {id:'rs_calendar',nativeTab:'calendar',probe:'nativeCalendar',
+      name:['Ajanvaraus ja kalenteri','Bokningar och kalender','Bookings and calendar'],
+      help:['Varauspyynnöt ja vahvistukset Respondossa.','Bokningsförfrågningar och bekräftelser i Respondo.','Booking requests and confirmations inside Respondo.']},
+    {id:'rs_tickets',nativeTab:'tickets',probe:'nativeOverview',
+      name:['Tukipyynnöt','Supportärenden','Support tickets'],
+      help:['Asiakaspyynnöt ja niiden tila.','Kundärenden och status.','Customer requests and ticket status.']},
+    {id:'rs_quotes',nativeTab:'quotes',probe:'nativeOverview',
+      name:['Tarjoukset','Offerter','Quotes'],
+      help:['Tarjousten laskenta ja hyväksyminen, ei maksamista.','Offerter och godkännande, inga betalningar.','Calculated quotes and approval, not payment processing.']},
+    {id:'rs_documents',nativeTab:'docs',probe:'nativeOverview',
+      name:['Dokumentit ja tietopohja','Dokument och kunskap','Documents and knowledge'],
+      help:['Hyväksytyt yritystiedot botin käyttöön.','Godkända företagsfakta för botten.','Approved company facts for the bot.']},
+    {id:'rs_tasks',nativeTab:'tasks',probe:'nativeTasks',
+      name:['Työtehtävät','Uppgifter','Tasks'],
+      help:['Sisäiset tehtävät ja jatkotoimet.','Interna uppgifter och uppföljning.','Internal tasks and follow-ups.']},
+    {id:'rs_rules',nativeTab:'rules',probe:'nativeOverview',
+      name:['Automaatiot','Automatiseringar','Automations'],
+      help:['Turvalliset tietokantaan tallentuvat säännöt.','Säkra interna databasregler.','Safe internal database rules.']},
+    {id:'rs_quality',nativeTab:'quality',probe:'nativeQuality',
+      name:['Vastausten laadun seuranta','Svarskvalitet','Answer quality'],
+      help:['Tarkista epävarmat vastaukset ja korjaa tietoja.','Granska osäkra svar och korrigera fakta.','Review uncertain replies and correct facts.']}
+  ];
   const providers=[
     {id:'gmail',group:'mail',name:'Gmail',tab:'native-mail-connections',href:'/api/app/native/mail/gmail/start',
       step:['Valitse Yhdistä Google-tili ja hyväksy oikeudet Googlen sivulla. Saapuneet viestit tulevat Respondon inboxiin. Lähetys vaatii erillisen hyväksynnän.','Välj Anslut Google-konto och godkänn behörigheterna hos Google. Utgående svar kräver godkännande.','Connect your Google account and approve access at Google. Incoming mail goes to Respondo; each outgoing reply needs approval.']},
@@ -56,9 +88,9 @@
     return ['fi','sv','en'].includes(raw)?raw:'en';
   };
   const dict={
-    fi:{title:'Yhdistä palvelut helposti',intro:'Et tarvitse kaikkia integraatioita. Valitse, mitä haluat Respondon tekevän, ja seuraa yhtä vaihetta kerrallaan.',first:'1. Mitä haluat tehdä?',second:'2. Valitse käyttämäsi palvelu',third:'3. Viimeistele yhdistäminen',back:'Takaisin',open:'Avaa yhdistämisasetukset',authorize:'Yhdistä ja hyväksy oikeudet',oauthNotice:'Avautuvalla palveluntarjoajan sivulla kirjaudut ja hyväksyt yhteyden itse.',technical:'Näytä tekniset asetukset',hideTechnical:'Piilota tekniset asetukset',check:'Päivitä yhteyksien tilat',connected:'Yhteys tallennettu',ready:'Maksut käytössä',partial:'Määritetty — tarkista viestien vastaanotto',unknown:'Tila tarkistettava',notConnected:'Ei yhdistetty',restricted:'Tämä yhteys ei sisälly nykyiseen tilaukseen.',needsPermission:'Kirjautumista tai käyttöoikeuksia ei voi ohittaa automaattisesti.',noExtra:'Respondon omat toiminnot eivät tarvitse ulkoista integraatiota.',statusError:'Yhteyksien tilaa ei voitu tarkistaa kokonaan. Aiemmat asetukset säilyvät.',list:'Palvelut',example:'Valitse alta käyttämäsi järjestelmä. Näet vain sen asetukset.',groupCount:'palvelua'},
-    sv:{title:'Anslut tjänster enkelt',intro:'Du behöver inte alla integrationer. Välj vad du vill göra och följ ett steg i taget.',first:'1. Vad vill du göra?',second:'2. Välj din tjänst',third:'3. Slutför anslutningen',back:'Tillbaka',open:'Öppna anslutningsinställningar',authorize:'Anslut och ge behörighet',oauthNotice:'Du loggar in och godkänner åtkomst på leverantörens sida.',technical:'Visa tekniska inställningar',hideTechnical:'Dölj tekniska inställningar',check:'Uppdatera anslutningsstatus',connected:'Anslutning sparad',ready:'Betalningar aktiva',partial:'Konfigurerad – kontrollera meddelandemottagning',unknown:'Status behöver kontrolleras',notConnected:'Inte ansluten',restricted:'Anslutningen ingår inte i din plan.',needsPermission:'Inloggning och behörighet kan inte hoppas över automatiskt.',noExtra:'Respondos egna verktyg kräver ingen extern anslutning.',statusError:'Alla statusar kunde inte kontrolleras. Inställningarna har inte ändrats.',list:'Tjänster',example:'Välj det system du använder. Endast relevanta inställningar visas.',groupCount:'tjänster'},
-    en:{title:'Connect services, without the complexity',intro:'You do not need every integration. Choose what you want Respondo to do, then follow one step at a time.',first:'1. What do you want to do?',second:'2. Choose your service',third:'3. Complete connection',back:'Back',open:'Open connection settings',authorize:'Connect and authorize',oauthNotice:'You sign in and approve access on the provider’s website.',technical:'Show advanced settings',hideTechnical:'Hide advanced settings',check:'Refresh connection status',connected:'Connection saved',ready:'Payments enabled',partial:'Configured — check incoming messages',unknown:'Status needs checking',notConnected:'Not connected',restricted:'This connection is not part of your plan.',needsPermission:'Account permissions and sign-in cannot be bypassed automatically.',noExtra:'Respondo built-in tools need no external connection.',statusError:'Some statuses could not be checked. Your existing settings are unchanged.',list:'Services',example:'Choose the system you use. Only its settings will be shown.',groupCount:'services'}
+    fi:{nativeTitle:'Respondon omat työkalut',nativeIntro:'Nämä toimivat Respondon omassa tietokannassa. Et tarvitse ulkoisia käyttäjätunnuksia tai API-avaimia.',nativeOpen:'Avaa työkalu',nativeReady:'Respondon sisäinen työkalu käytettävissä',nativeUnavailable:'Työkalun tilaa ei voitu vahvistaa. Yritä päivittää tila.',externalToggle:'Ulkoiset palvelut (valinnainen)',returnOwn:'Takaisin Respondon työkaluihin',title:'Respondon omat työkalut',intro:'Et tarvitse kaikkia integraatioita. Valitse, mitä haluat Respondon tekevän, ja seuraa yhtä vaihetta kerrallaan.',first:'1. Mitä haluat tehdä?',second:'2. Valitse käyttämäsi palvelu',third:'3. Viimeistele yhdistäminen',back:'Takaisin',open:'Avaa yhdistämisasetukset',authorize:'Yhdistä ja hyväksy oikeudet',oauthNotice:'Avautuvalla palveluntarjoajan sivulla kirjaudut ja hyväksyt yhteyden itse.',technical:'Näytä tekniset asetukset',hideTechnical:'Piilota tekniset asetukset',check:'Päivitä yhteyksien tilat',connected:'Yhteys tallennettu',ready:'Maksut käytössä',partial:'Määritetty — tarkista viestien vastaanotto',unknown:'Tila tarkistettava',notConnected:'Ei yhdistetty',restricted:'Tämä yhteys ei sisälly nykyiseen tilaukseen.',needsPermission:'Kirjautumista tai käyttöoikeuksia ei voi ohittaa automaattisesti.',noExtra:'Respondon omat toiminnot eivät tarvitse ulkoista integraatiota.',statusError:'Yhteyksien tilaa ei voitu tarkistaa kokonaan. Aiemmat asetukset säilyvät.',list:'Palvelut',example:'Valitse alta käyttämäsi järjestelmä. Näet vain sen asetukset.',groupCount:'palvelua'},
+    sv:{nativeTitle:'Respondos egna verktyg',nativeIntro:'Dessa använder Respondos egen databas. Inga externa inloggningar eller API-nycklar krävs.',nativeOpen:'Öppna verktyg',nativeReady:'Respondos interna verktyg tillgängligt',nativeUnavailable:'Verktygets status kunde inte verifieras. Uppdatera.',externalToggle:'Externa tjänster (valfritt)',returnOwn:'Tillbaka till Respondos verktyg',title:'Respondos egna verktyg',intro:'Du behöver inte alla integrationer. Välj vad du vill göra och följ ett steg i taget.',first:'1. Vad vill du göra?',second:'2. Välj din tjänst',third:'3. Slutför anslutningen',back:'Tillbaka',open:'Öppna anslutningsinställningar',authorize:'Anslut och ge behörighet',oauthNotice:'Du loggar in och godkänner åtkomst på leverantörens sida.',technical:'Visa tekniska inställningar',hideTechnical:'Dölj tekniska inställningar',check:'Uppdatera anslutningsstatus',connected:'Anslutning sparad',ready:'Betalningar aktiva',partial:'Konfigurerad – kontrollera meddelandemottagning',unknown:'Status behöver kontrolleras',notConnected:'Inte ansluten',restricted:'Anslutningen ingår inte i din plan.',needsPermission:'Inloggning och behörighet kan inte hoppas över automatiskt.',noExtra:'Respondos egna verktyg kräver ingen extern anslutning.',statusError:'Alla statusar kunde inte kontrolleras. Inställningarna har inte ändrats.',list:'Tjänster',example:'Välj det system du använder. Endast relevanta inställningar visas.',groupCount:'tjänster'},
+    en:{nativeTitle:'Respondo built-in tools',nativeIntro:'These work in Respondo’s own database. No external sign-in or API key required.',nativeOpen:'Open tool',nativeReady:'Respondo internal tool available',nativeUnavailable:'Tool status could not be verified. Try refreshing.',externalToggle:'External services (optional)',returnOwn:'Back to Respondo tools',title:'Respondo built-in tools',intro:'You do not need every integration. Choose what you want Respondo to do, then follow one step at a time.',first:'1. What do you want to do?',second:'2. Choose your service',third:'3. Complete connection',back:'Back',open:'Open connection settings',authorize:'Connect and authorize',oauthNotice:'You sign in and approve access on the provider’s website.',technical:'Show advanced settings',hideTechnical:'Hide advanced settings',check:'Refresh connection status',connected:'Connection saved',ready:'Payments enabled',partial:'Configured — check incoming messages',unknown:'Status needs checking',notConnected:'Not connected',restricted:'This connection is not part of your plan.',needsPermission:'Account permissions and sign-in cannot be bypassed automatically.',noExtra:'Respondo built-in tools need no external connection.',statusError:'Some statuses could not be checked. Your existing settings are unchanged.',list:'Services',example:'Choose the system you use. Only its settings will be shown.',groupCount:'services'}
   };
   const el=(tag,cls,text)=>{
     const node=document.createElement(tag);
@@ -211,8 +243,10 @@
     refresh.type='button';
     const advanced=el('button','rs-integration-quiet',t.technical);
     advanced.type='button';advanced.setAttribute('aria-expanded','false');
-    footer.append(back,refresh,advanced);
-    let chosenGroup=null,chosenProvider=null,states=new Map(),oauthAvailable=new Map(),prerequisites=new Map();
+    const externalSwitch=el('button','rs-integration-quiet',t.externalToggle);
+    externalSwitch.type='button';
+    footer.append(back,refresh,externalSwitch,advanced);
+    let chosenGroup='respondo',chosenProvider=null,states=new Map(),oauthAvailable=new Map(),prerequisites=new Map(),ownStatus=new Map();
     let readinessLoaded=false;
     const existingLocks=new Map();
     for(const item of providers){
