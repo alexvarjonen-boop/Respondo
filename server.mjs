@@ -1,3 +1,7 @@
+import { estimateServiceDuration, findSuitableStarts } from './booking-intelligence.mjs';
+import { readProvider, readGmailInbox, normalizeProviderItems } from './native-provider-adapters.mjs';
+import { verifyMetaSignature, extractMetaInbound } from './meta-inbound.mjs';
+import { prepareInboundCase, draftResponse, validateIntegrationSettings } from './internal-integrations.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { matchVerifiedSpecialistService } from './service-semantics.mjs';
@@ -5459,6 +5463,43 @@ async function finishOauth(req, res, code, state) {
       name: String(user.name || ''),
     };
 
+    if (statePayload.flow === 'native_gmail') {
+      let sessionUser=null;
+      try {
+        const sessionToken=cookies(req)[COOKIE];
+        sessionUser=sessionToken?jwt.verify(sessionToken,JWT):null;
+      }catch{}
+      if(!sessionUser?.sub||sessionUser.sub!==statePayload.userId)
+        return res.redirect('/app?section=automation&gmail=auth_error');
+      const tr=await q(`SELECT id FROM tenants WHERE owner_user_id=$1 AND id=$2
+        AND active=true AND subscription_status IN ('active','trialing')`,
+        [statePayload.userId,statePayload.tenantId]);
+      if(!tr.rowCount)return res.redirect('/app?section=automation&gmail=missing_tenant');
+      const accessToken=String(token.access_token||'');
+      const refreshToken=String(token.refresh_token||'');
+      const existing=await q(`SELECT encrypted_refresh_token FROM native_provider_credentials
+        WHERE tenant_id=$1 AND provider='gmail'`,[tr.rows[0].id]);
+      const savedRefresh=existing.rows[0]?.encrypted_refresh_token||null;
+      if(!accessToken||(!refreshToken&&!savedRefresh))
+        return res.redirect('/app?section=automation&gmail=no_refresh_token');
+      // Authorization succeeded, verify real Gmail inbox scope before accepting.
+      await readProvider({provider:'gmail',token:accessToken,limit:1});
+      await q(`INSERT INTO native_provider_credentials
+        (tenant_id,provider,encrypted_token,encrypted_refresh_token,token_expires_at,last_verified_at)
+        VALUES($1,'gmail',$2,$3,$4,NOW())
+        ON CONFLICT(tenant_id,provider) DO UPDATE SET
+        encrypted_token=EXCLUDED.encrypted_token,
+        encrypted_refresh_token=EXCLUDED.encrypted_refresh_token,
+        token_expires_at=EXCLUDED.token_expires_at,
+        last_verified_at=NOW(),updated_at=NOW()`,
+        [tr.rows[0].id,encryptSecret(accessToken),
+         refreshToken?encryptSecret(refreshToken):savedRefresh,
+         new Date(Date.now()+Number(token.expires_in||3600)*1000)]);
+      await q(`INSERT INTO native_integrations(tenant_id,provider,mode) VALUES($1,'gmail','connected')
+        ON CONFLICT(tenant_id,provider) DO UPDATE SET mode='connected',updated_at=NOW()`,[tr.rows[0].id]);
+      return res.redirect('/app?section=automation&gmail=connected');
+    }
+
     if (statePayload.flow === 'calendar') {
       let sessionUser = null;
       try {
@@ -5519,6 +5560,7 @@ async function finishOauth(req, res, code, state) {
     return res.redirect('/tilaus?oauth=google');
   } catch (e) {
     console.error('Google OAuth failed', e);
+    if (statePayload.flow === 'native_gmail') return res.redirect('/app?section=automation&gmail=failed');
     if (statePayload.flow === 'calendar') {
       return res.redirect('/app?section=automation&calendar=failed');
     }
@@ -6735,6 +6777,7 @@ app.get('/api/auth/oauth/google/callback', async (req, res) => {
   if (!code) {
     try {
       const statePayload = jwt.verify(state,JWT);
+      if (statePayload.flow === 'native_gmail') return res.redirect('/app?section=automation&gmail=cancelled');
       if (statePayload.flow === 'calendar') {
         return res.redirect('/app?section=automation&calendar=cancelled');
       }
@@ -10413,6 +10456,29 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
     );
 
     let slots = rows.rows;
+    const durationRules = await q(
+      'SELECT rule FROM service_duration_rules WHERE tenant_id=$1 ORDER BY service_id LIMIT 100',
+      [tenant.id],
+    );
+    const rules = durationRules.rows.map(row => row.rule);
+    let estimate = null;
+    if (rules.length) {
+      const serviceId = String(req.query.serviceId || '').slice(0,64);
+      const quantityRaw = String(req.query.quantity || '').trim();
+      if (!serviceId || !quantityRaw) {
+        return res.json({ slots:[], needsDetails:true, services:rules.map(rule => ({id:rule.id})),
+          reason:'service_and_quantity_required' });
+      }
+      const quantity = Number(quantityRaw);
+      estimate = estimateServiceDuration({ serviceId,quantity,rules });
+      if (estimate.status !== 'estimated') {
+        return res.json({ slots:[], needsDetails:true, services:rules.map(rule => ({id:rule.id})),
+          reason:estimate.reason || estimate.status });
+      }
+      slots = slots.filter(slot =>
+        new Date(slot.ends_at).getTime()-new Date(slot.starts_at).getTime() >= estimate.totalMinutes*60000
+      );
+    }
     const bookingAccess = planEntitlements(tenant.subscription_plan);
     if (bookingAccess.googleCalendar && slots.length && (tenant.google_calendar_refresh_token || tenant.google_calendar_access_token)) {
       try {
@@ -10428,10 +10494,13 @@ app.get('/api/public/:slug/booking-slots', publicChatLimiter, async (req,res) =>
         });
       } catch (e) {
         console.error('Google Calendar availability filter failed',e);
+        // External calendar could not be verified: never expose unverified free slots.
+        slots = [];
       }
     }
 
-    return res.json({ slots });
+    return res.json({ slots, ...(estimate ? { estimatedMinutes:estimate.totalMinutes } : {}),
+      services:rules.map(rule=>({id:rule.id})) });
   } catch {
     return res.status(500).json({ error:'Vapaita aikoja ei saatu.' });
   }
@@ -10516,6 +10585,8 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     const fields = cleanActionFields(type, body.fields);
     if (type === 'booking') {
       fields.slotId = String(body.fields?.slotId || '').trim().slice(0,80);
+      fields.serviceId = String(body.fields?.serviceId || '').trim().slice(0,64);
+      fields.quantity = Number(body.fields?.quantity);
     }
     if (type === 'quote') {
       fields.quantity = Math.max(0, Number(body.fields?.quantity || 0));
@@ -10586,6 +10657,31 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     }
 
     if (type === 'booking') {
+      // Workload rules are mandatory for businesses that configured services.
+      // Do not let a caller omit the service identifier to bypass duration checks.
+      const anyRules = await q('SELECT service_id FROM service_duration_rules WHERE tenant_id=$1 LIMIT 1',[tenant.id]);
+      if (anyRules.rowCount && !fields.serviceId) {
+        return res.status(422).json({ error:'Valitse palvelu ja anna työn määrä ennen ajanvarausta.' });
+      }
+      // If an exact service is selected, never treat a short fixed slot as sufficient
+      // unless a tenant-approved workload rule proves the entire job fits.
+      let serviceEstimate = null;
+      if (fields.serviceId) {
+        const configured = await q(
+          'SELECT rule FROM service_duration_rules WHERE tenant_id=$1 AND service_id=$2',
+          [tenant.id,fields.serviceId],
+        );
+        serviceEstimate = estimateServiceDuration({
+          serviceId:fields.serviceId,quantity:fields.quantity,
+          rules:configured.rows.map(row=>row.rule),
+        });
+        if (serviceEstimate.status !== 'estimated') {
+          return res.status(422).json({
+            error:'Työn kestoa ei voida varmistaa. Kerro tarkemmin työn laajuus tai pyydä vahvistus yritykseltä.',
+            reason:serviceEstimate.reason || serviceEstimate.status,
+          });
+        }
+      }
       const previewSlot = await q(
         `SELECT id,starts_at,ends_at,status
            FROM booking_slots
@@ -10594,6 +10690,9 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       );
       if (!previewSlot.rowCount || previewSlot.rows[0].status !== 'open') {
         return res.status(409).json({ error:'Tämä aika ei ole enää vapaa. Valitse toinen aika.' });
+      }
+      if (serviceEstimate && new Date(previewSlot.rows[0].ends_at).getTime()-new Date(previewSlot.rows[0].starts_at).getTime() < serviceEstimate.totalMinutes*60000) {
+        return res.status(422).json({error:'Varattu aika ei riitä koko työlle. Valitse pidempi aika.',requiredMinutes:serviceEstimate.totalMinutes});
       }
 
       const client = await pool.connect();
@@ -10609,6 +10708,21 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         if (!sr.rowCount || sr.rows[0].status !== 'open' || new Date(sr.rows[0].starts_at).getTime() < Date.now()) {
           await client.query('ROLLBACK');
           return res.status(409).json({ error:'Tämä aika ei ole enää vapaa. Valitse toinen aika.' });
+        }
+        if (serviceEstimate && new Date(sr.rows[0].ends_at).getTime()-new Date(sr.rows[0].starts_at).getTime() < serviceEstimate.totalMinutes*60000) {
+          await client.query('ROLLBACK');
+          return res.status(422).json({error:'Varattu aika on liian lyhyt työmäärälle.',requiredMinutes:serviceEstimate.totalMinutes});
+        }
+        if (serviceEstimate) {
+          const overlap=await client.query(
+            `SELECT 1 FROM booking_slots WHERE tenant_id=$1 AND status=$4
+               AND starts_at<$3 AND ends_at>$2 LIMIT 1`,
+            [tenant.id,sr.rows[0].starts_at,sr.rows[0].ends_at,'booked'],
+          );
+          if (overlap.rowCount) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({error:'Työn ajankohta on jo varattu.'});
+          }
         }
 
         // Recheck Google Calendar only after this booking slot is row-locked.
@@ -10637,6 +10751,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
           slotId:bookedSlot.id,
           startsAt:bookedSlot.starts_at,
           endsAt:bookedSlot.ends_at,
+          ...(serviceEstimate ? {serviceEstimate} : {}),
         };
         await client.query(
           `UPDATE booking_slots SET status='booked' WHERE id=$1 AND tenant_id=$2`,
@@ -10972,6 +11087,373 @@ app.post('/api/app/stripe-connect/onboard', auth, ownerOnly, subscribed, async (
     console.error('Stripe Connect onboarding failed', e);
     return res.status(400).json({ error:'Stripe-yhdistämistä ei voitu aloittaa.' });
   }
+});
+
+// Respondo native channel inbox: no provider tokens, AI network calls or automatic sending.
+// Provider read-only connections: per-tenant encrypted token, verified before persistence.
+// No credentials are ever sent to the browser after setup.
+// Microsoft 365 OAuth for Outlook mail read access (Graph, delegated, offline).
+app.get('/api/app/native-integrations/outlook/start', auth, ownerOnly, subscribed, async(req,res)=>{
+ try {
+  const clientId=String(process.env.MICROSOFT_CLIENT_ID||'').trim();
+  const clientSecret=String(process.env.MICROSOFT_CLIENT_SECRET||'').trim();
+  if(!clientId||!clientSecret)return res.redirect('/app?section=automation&outlook=not_configured');
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.redirect('/app?section=automation&outlook=missing_tenant');
+  const nonce=crypto.randomBytes(20).toString('hex');
+  const state=jwt.sign({provider:'microsoft',flow:'native_outlook',nonce,userId:req.user.sub,
+    tenantId:tr.rows[0].id},JWT,{expiresIn:'10m'});
+  setOauthState(res,nonce,'google');
+  const url=new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+  url.search=new URLSearchParams({
+    client_id:clientId,redirect_uri:BASE+'/api/app/native-integrations/outlook/callback',
+    response_type:'code',response_mode:'query',scope:'offline_access User.Read Mail.Read',
+    state,prompt:'select_account'
+  }).toString();
+  return res.redirect(url.toString());
+ }catch(e){console.error('Outlook OAuth start failed');
+  return res.redirect('/app?section=automation&outlook=failed')}
+});
+app.get('/api/app/native-integrations/outlook/callback',async(req,res)=>{
+ const landing='/app?section=automation&outlook=';
+ let state;
+ try{
+  state=jwt.verify(String(req.query.state||''),JWT);
+  const nonce=cookies(req)[OAUTH_STATE_COOKIE];
+  if(!nonce||nonce!==state.nonce||state.provider!=='microsoft'||state.flow!=='native_outlook')throw Error('state_invalid');
+  res.clearCookie(OAUTH_STATE_COOKIE);
+  const sessionToken=cookies(req)[COOKIE];
+  const session=sessionToken?jwt.verify(sessionToken,JWT):null;
+  if(!session?.sub||session.sub!==state.userId)throw Error('session_invalid');
+  const tenant=await q(`SELECT id FROM tenants WHERE owner_user_id=$1 AND id=$2
+    AND active=true AND subscription_status IN ('active','trialing')`,[state.userId,state.tenantId]);
+  if(!tenant.rowCount)throw Error('tenant_invalid');
+  const code=String(req.query.code||'');
+  if(req.query.error||!code)return res.redirect(landing+'cancelled');
+  const clientId=String(process.env.MICROSOFT_CLIENT_ID||'').trim();
+  const clientSecret=String(process.env.MICROSOFT_CLIENT_SECRET||'').trim();
+  if(!clientId||!clientSecret)throw Error('microsoft_oauth_unconfigured');
+  const response=await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token',{
+    method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({
+      client_id:clientId,client_secret:clientSecret,grant_type:'authorization_code',code,
+      redirect_uri:BASE+'/api/app/native-integrations/outlook/callback'
+    }),signal:AbortSignal.timeout(9000)
+  });
+  if(!response.ok)throw Error('microsoft_token_exchange_failed');
+  const auth=await response.json();
+  const token=String(auth.access_token||''),refresh=String(auth.refresh_token||'');
+  if(!token||!refresh)throw Error('microsoft_refresh_missing');
+  await readProvider({provider:'outlook',token,limit:1});
+  await q(`INSERT INTO native_provider_credentials
+    (tenant_id,provider,encrypted_token,encrypted_refresh_token,token_expires_at,last_verified_at)
+    VALUES($1,'outlook',$2,$3,$4,NOW())
+    ON CONFLICT(tenant_id,provider) DO UPDATE SET
+    encrypted_token=EXCLUDED.encrypted_token,encrypted_refresh_token=EXCLUDED.encrypted_refresh_token,
+    token_expires_at=EXCLUDED.token_expires_at,last_verified_at=NOW(),updated_at=NOW()`,
+    [tenant.rows[0].id,encryptSecret(token),encryptSecret(refresh),
+     new Date(Date.now()+Number(auth.expires_in||3600)*1000)]);
+  await q(`INSERT INTO native_integrations(tenant_id,provider,mode) VALUES($1,'outlook','connected')
+    ON CONFLICT(tenant_id,provider) DO UPDATE SET mode='connected',updated_at=NOW()`,[tenant.rows[0].id]);
+  return res.redirect(landing+'connected');
+ }catch(e){console.error('Outlook OAuth failed',e?.message?.slice(0,80));return res.redirect(landing+'failed')}
+});
+// Signed Meta webhook ingestion (WhatsApp, Instagram and Facebook).
+// Requires META_APP_SECRET and META_VERIFY_TOKEN configured on Respondo server.
+app.get('/api/webhooks/meta', async (req,res)=>{
+ const verification=String(process.env.META_VERIFY_TOKEN||'');
+ const supplied=String(req.query['hub.verify_token']||'');
+ const challenge=String(req.query['hub.challenge']||'');
+ if(req.query['hub.mode']!=='subscribe'||verification.length<16||supplied.length!==verification.length||
+    !crypto.timingSafeEqual(Buffer.from(supplied),Buffer.from(verification))||
+    !/^[A-Za-z0-9._:-]{1,256}$/.test(challenge))return res.status(403).type('text/plain').send('Forbidden');
+ return res.type('text/plain').send(challenge);
+});
+app.post('/api/webhooks/meta', async(req,res)=>{
+ const secret=String(process.env.META_APP_SECRET||'');
+ if(!secret||secret.length<16)return res.status(503).json({error:'Webhook not configured'});
+ if(!verifyMetaSignature(req.rawBody,req.get('x-hub-signature-256'),secret))
+   return res.status(401).json({error:'Invalid webhook signature'});
+ try{
+  const events=extractMetaInbound(req.body);
+  let imported=0;
+  for(const event of events){
+   const connected=await q(`SELECT c.tenant_id FROM native_provider_credentials c
+    JOIN native_integrations i ON i.tenant_id=c.tenant_id AND i.provider=c.provider
+    WHERE c.provider=$1 AND c.resource_id=$2 AND i.mode='connected'
+    ORDER BY c.updated_at DESC LIMIT 1`,[event.provider,event.resourceId]);
+   if(!connected.rowCount)continue;
+   const prepared=prepareInboundCase({
+    source:event.provider,externalMessageId:event.externalMessageId,
+    from:event.from,channelContactId:event.from,body:event.body
+   });
+   if(prepared.status!=='ready')continue;
+   const reply=draftResponse({caseData:prepared});
+   const save=await q(`INSERT INTO native_inbox
+    (id,tenant_id,channel,external_message_id,sender,channel_contact_id,subject,body,intent,language,needs_human,draft,status)
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'review')
+    ON CONFLICT(tenant_id,channel,external_message_id) DO NOTHING RETURNING id`,
+    [uid(),connected.rows[0].tenant_id,prepared.channel,prepared.externalId,
+      prepared.sender,prepared.channelContactId,prepared.subject,prepared.body,
+      prepared.classification.intent,prepared.classification.language,
+      prepared.classification.needsHuman,reply.text]);
+   imported+=save.rowCount;
+  }
+  return res.status(200).json({ok:true,imported});
+ }catch(e){console.error('Meta webhook ingestion failed',e?.message?.slice(0,80));
+  return res.status(503).json({error:'Webhook processing failed'})}
+});
+app.get('/api/app/native-integrations/gmail/start', auth, ownerOnly, subscribed, async(req,res)=>{
+ try{
+  const cfg=oauthConfig('google');
+  if(!cfg.configured)return res.redirect('/app?section=automation&gmail=not_configured');
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.redirect('/app?section=automation&gmail=missing_tenant');
+  const nonce=crypto.randomBytes(20).toString('hex');
+  const state=jwt.sign({provider:'google',flow:'native_gmail',nonce,userId:req.user.sub,tenantId:tr.rows[0].id},JWT,{expiresIn:'10m'});
+  setOauthState(res,nonce,'google');
+  const url=new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  url.search=new URLSearchParams({
+   client_id:cfg.clientId,redirect_uri:cfg.redirectUri,response_type:'code',
+   scope:'openid email profile https://www.googleapis.com/auth/gmail.readonly',
+   state,prompt:'consent',access_type:'offline',include_granted_scopes:'true',
+  }).toString();
+  return res.redirect(url.toString());
+ }catch(e){console.error('Gmail authorization start failed');
+  return res.redirect('/app?section=automation&gmail=failed')}
+});
+app.post('/api/app/native-integrations/connect', auth, ownerOnly, subscribed, async (req,res)=>{
+ const provider=String(req.body?.provider||'').trim();
+ const approved=new Set(['gmail','outlook','hubspot','pipedrive','freshdesk','zendesk','google_drive','sharepoint','whatsapp','instagram','facebook','shopify']);
+ if(!approved.has(provider))return res.status(400).json({error:'Palvelua ei tueta tässä yhteystavassa.'});
+ const token=String(req.body?.accessToken||'').trim();
+ const subdomain=String(req.body?.subdomain||'').trim().toLowerCase();
+ const resourceId=String(req.body?.resourceId||'').trim();
+ if(token.length<10||token.length>8192)return res.status(400).json({error:'Tarkista palvelun pääsytunnus.'});
+ try{
+  // Test provider's real endpoint before reporting successful connection.
+  const data=await readProvider({provider,token,subdomain,resourceId:resourceId||undefined,limit:1});
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  await q(`INSERT INTO native_provider_credentials(tenant_id,provider,encrypted_token,subdomain,resource_id,last_verified_at)
+   VALUES($1,$2,$3,$4,$5,NOW()) ON CONFLICT(tenant_id,provider)
+   DO UPDATE SET encrypted_token=EXCLUDED.encrypted_token,subdomain=EXCLUDED.subdomain,
+     resource_id=EXCLUDED.resource_id,last_verified_at=NOW(),updated_at=NOW()`,
+   [tr.rows[0].id,provider,encryptSecret(token),subdomain||null,resourceId||null]);
+  await q(`INSERT INTO native_integrations(tenant_id,provider,mode) VALUES($1,$2,'connected')
+   ON CONFLICT(tenant_id,provider) DO UPDATE SET mode='connected',updated_at=NOW()`,[tr.rows[0].id,provider]);
+  return res.json({ok:true,provider,connected:true,previewCount:normalizeProviderItems(provider,data).length});
+ }catch(e){
+  // Do not log secrets, tokens, request URLs or raw remote error content.
+  console.error('Provider connection verification failed',provider,e?.message?.slice(0,90));
+  return res.status(400).json({error:'Palvelun yhteyttä ei voitu todentaa. Tarkista käyttöoikeudet ja tunnus.'});
+ }
+});
+app.post('/api/app/native-integrations/disconnect', auth, ownerOnly, subscribed, async(req,res)=>{
+ const provider=String(req.body?.provider||'');
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  await q('DELETE FROM native_provider_credentials WHERE tenant_id=$1 AND provider=$2',[tr.rows[0].id,provider]);
+  await q(`UPDATE native_integrations SET mode='disabled',updated_at=NOW()
+   WHERE tenant_id=$1 AND provider=$2`,[tr.rows[0].id,provider]);
+  return res.json({ok:true,connected:false});
+ }catch(e){console.error('Provider disconnect failed');return res.status(500).json({error:'Yhteyttä ei voitu poistaa.'})}
+});
+app.post('/api/app/native-integrations/sync', auth, ownerOnly, subscribed, async(req,res)=>{
+ const provider=String(req.body?.provider||'');
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const stored=await q(`SELECT c.encrypted_token,c.encrypted_refresh_token,c.token_expires_at,c.subdomain,c.resource_id
+   FROM native_provider_credentials c JOIN native_integrations i
+   ON i.tenant_id=c.tenant_id AND i.provider=c.provider
+   WHERE c.tenant_id=$1 AND c.provider=$2 AND i.mode='connected'`,[tr.rows[0].id,provider]);
+  if(!stored.rowCount)return res.status(409).json({error:'Palvelu ei ole yhdistetty.'});
+  let token=decryptSecret(stored.rows[0].encrypted_token);
+  if(provider==='gmail'&&stored.rows[0].encrypted_refresh_token&&
+     (!stored.rows[0].token_expires_at||
+      new Date(stored.rows[0].token_expires_at).getTime()<=Date.now()+60000)){
+    const cfg=oauthConfig('google');
+    if(!cfg.configured)throw Error('gmail_oauth_not_configured');
+    const refreshToken=decryptSecret(stored.rows[0].encrypted_refresh_token);
+    const response=await fetch('https://oauth2.googleapis.com/token',{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({client_id:cfg.clientId,client_secret:cfg.clientSecret,
+        refresh_token:refreshToken,grant_type:'refresh_token'}),
+      signal:AbortSignal.timeout(9000)
+    });
+    if(!response.ok)throw Error('gmail_token_refresh_failed');
+    const refreshed=await response.json();
+    token=String(refreshed.access_token||'');
+    if(!token)throw Error('gmail_token_missing');
+    await q(`UPDATE native_provider_credentials SET encrypted_token=$1,token_expires_at=$2,
+      updated_at=NOW() WHERE tenant_id=$3 AND provider='gmail'`,
+      [encryptSecret(token),new Date(Date.now()+Number(refreshed.expires_in||3600)*1000),tr.rows[0].id]);
+  }
+  if(provider==='outlook'&&stored.rows[0].encrypted_refresh_token&&
+    (!stored.rows[0].token_expires_at||
+     new Date(stored.rows[0].token_expires_at).getTime()<=Date.now()+60000)){
+    const clientId=String(process.env.MICROSOFT_CLIENT_ID||'').trim();
+    const clientSecret=String(process.env.MICROSOFT_CLIENT_SECRET||'').trim();
+    if(!clientId||!clientSecret)throw Error('microsoft_oauth_unconfigured');
+    const refresh=decryptSecret(stored.rows[0].encrypted_refresh_token);
+    const response=await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token',{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({client_id:clientId,client_secret:clientSecret,refresh_token:refresh,
+        grant_type:'refresh_token',scope:'offline_access User.Read Mail.Read'}),
+      signal:AbortSignal.timeout(9000)
+    });
+    if(!response.ok)throw Error('microsoft_token_refresh_failed');
+    const renewed=await response.json();
+    token=String(renewed.access_token||'');
+    if(!token)throw Error('microsoft_access_token_missing');
+    await q(`UPDATE native_provider_credentials SET encrypted_token=$1,
+      encrypted_refresh_token=COALESCE($2,encrypted_refresh_token),token_expires_at=$3,
+      updated_at=NOW() WHERE tenant_id=$4 AND provider='outlook'`,
+      [encryptSecret(token),renewed.refresh_token?encryptSecret(renewed.refresh_token):null,
+       new Date(Date.now()+Number(renewed.expires_in||3600)*1000),tr.rows[0].id]);
+  }
+  if(!token)throw Error('missing_decrypted_token');
+  const data=provider==='gmail' ? await readGmailInbox({token,limit:20}) :
+    await readProvider({provider,token,subdomain:stored.rows[0].subdomain,
+     resourceId:stored.rows[0].resource_id,limit:40});
+  const items=normalizeProviderItems(provider,data);
+  let imported=0;
+  for(const item of items){
+   // Never fabricate a customer message from metadata-only provider records.
+   if(!item.snippet||!['gmail','outlook','freshdesk','zendesk'].includes(provider))continue;
+   const prepared=prepareInboundCase({source:provider,externalMessageId:item.externalId,
+     from:item.email,subject:item.title,body:item.snippet});
+   if(prepared.status!=='ready')continue;
+   const reply=draftResponse({caseData:prepared});
+   const saved=await q(`INSERT INTO native_inbox
+    (id,tenant_id,channel,external_message_id,sender,channel_contact_id,subject,body,intent,language,needs_human,draft,status)
+    VALUES($1,$2,$3,$4,$5,NULL,$6,$7,$8,$9,$10,$11,'review')
+    ON CONFLICT(tenant_id,channel,external_message_id) DO NOTHING RETURNING id`,
+    [uid(),tr.rows[0].id,provider,prepared.externalId,prepared.sender,prepared.subject,
+     prepared.body,prepared.classification.intent,prepared.classification.language,
+     prepared.classification.needsHuman,reply.text]);
+   imported+=saved.rowCount;
+  }
+  return res.json({ok:true,provider,records:items.length,imported,autoSent:false,
+     note:'Read-only import. Messages are review drafts; no external mutations.'});
+ }catch(e){console.error('Provider sync failed',provider,e?.message?.slice(0,90));
+  return res.status(502).json({error:'Tietojen nouto epäonnistui. Tarkista yhteyden oikeudet.'})}
+});
+app.get('/api/app/native-integrations/status', auth, ownerOnly, subscribed, async (req,res)=>{
+ try {
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const result=await q(`SELECT i.provider,i.mode,i.updated_at,c.last_verified_at
+   FROM native_integrations i LEFT JOIN native_provider_credentials c
+   ON c.tenant_id=i.tenant_id AND c.provider=i.provider
+   WHERE i.tenant_id=$1 ORDER BY i.provider`,[tr.rows[0].id]);
+  return res.json({integrations:result.rows.map(row=>({
+    provider:row.provider,mode:row.mode,updated_at:row.updated_at,
+    connected:row.mode==='connected'&&Boolean(row.last_verified_at),
+    lastVerifiedAt:row.last_verified_at||null
+  }))});
+ }catch(e){console.error('Native integration status failed',e);return res.status(500).json({error:'Tilaa ei voitu hakea.'})}
+});
+app.post('/api/app/native-integrations/settings', auth, ownerOnly, subscribed, async (req,res)=>{
+ const v=validateIntegrationSettings(req.body);
+ if(v.status!=='valid')return res.status(400).json({error:v.reason});
+ try {
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  await q(`INSERT INTO native_integrations(tenant_id,provider,mode)
+    VALUES($1,$2,$3) ON CONFLICT(tenant_id,provider)
+    DO UPDATE SET mode=EXCLUDED.mode,updated_at=NOW()`,[tr.rows[0].id,v.provider,v.mode]);
+  return res.json({ok:true,provider:v.provider,mode:v.mode,connected:false});
+ }catch(e){console.error('Native integration settings failed',e);return res.status(500).json({error:'Tallennus epäonnistui.'})}
+});
+app.post('/api/app/native-integrations/inbox', auth, ownerOnly, subscribed, async (req,res)=>{
+ const v=prepareInboundCase(req.body);
+ if(v.status!=='ready')return res.status(400).json({error:v.reason});
+ try {
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const draft=draftResponse({caseData:v});
+  const created=await q(`INSERT INTO native_inbox(id,tenant_id,channel,external_message_id,sender,channel_contact_id,subject,body,intent,language,needs_human,draft,status)
+   VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'review')
+   ON CONFLICT(tenant_id,channel,external_message_id) DO NOTHING RETURNING id`,
+   [uid(),tr.rows[0].id,v.channel,v.externalId,v.sender,v.channelContactId,v.subject,v.body,v.classification.intent,v.classification.language,v.classification.needsHuman,draft.text]);
+  return res.status(created.rowCount?201:200).json({ok:true,created:!!created.rowCount,requiresApproval:true,autoSent:false});
+ }catch(e){console.error('Native inbox ingestion failed',e);return res.status(500).json({error:'Viestin tallennus epäonnistui.'})}
+});
+app.get('/api/app/native-integrations/inbox', auth, ownerOnly, subscribed, async (req,res)=>{
+ try {
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const r=await q('SELECT id,channel,sender,subject,body,intent,language,needs_human,draft,status,created_at FROM native_inbox WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 100',[tr.rows[0].id]);
+  return res.json({messages:r.rows});
+ }catch(e){console.error('Native inbox listing failed',e);return res.status(500).json({error:'Viestejä ei voitu hakea.'})}
+});
+app.get('/api/app/service-duration-rules', auth, ownerOnly, subscribed, async(req,res)=>{
+ try {
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const rules=await q('SELECT rule FROM service_duration_rules WHERE tenant_id=$1 ORDER BY service_id LIMIT 100',[tr.rows[0].id]);
+  return res.json({rules:rules.rows.map(x=>x.rule)});
+ }catch(e){console.error('Service duration list failed',e);return res.status(500).json({error:'Kestosääntöjen haku epäonnistui.'})}
+});
+app.post('/api/app/service-duration-rules', auth, ownerOnly, subscribed, async (req,res)=>{
+ const rule=req.body?.rule;
+ const estimate=estimateServiceDuration({serviceId:rule?.id,quantity:rule?.minUnits??1,rules:[rule]});
+ if(estimate.status!=='estimated')return res.status(400).json({error:'Tarkista palvelun kestoasetukset. Määritä myös vähintään yksi yksikkö.'});
+ if(!/^[a-z0-9_-]{1,64}$/.test(String(rule.id)))return res.status(400).json({error:'Virheellinen palvelutunnus.'});
+ try{
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const count=await q('SELECT COUNT(*)::int AS total FROM service_duration_rules WHERE tenant_id=$1',[tr.rows[0].id]);
+  const existing=await q('SELECT 1 FROM service_duration_rules WHERE tenant_id=$1 AND service_id=$2',[tr.rows[0].id,rule.id]);
+  if(!existing.rowCount&&count.rows[0].total>=100)return res.status(400).json({error:'Palveluiden enimmäismäärä täynnä.'});
+  const clean={id:rule.id,baseMinutes:rule.baseMinutes,minutesPerUnit:rule.minutesPerUnit,minUnits:rule.minUnits??1,maxUnits:rule.maxUnits??10000,roundToMinutes:rule.roundToMinutes??1,bufferBeforeMinutes:rule.bufferBeforeMinutes??0,bufferAfterMinutes:rule.bufferAfterMinutes??0,version:String(rule.version??'1').slice(0,30)};
+  await q(`INSERT INTO service_duration_rules(tenant_id,service_id,rule) VALUES($1,$2,$3::jsonb)
+    ON CONFLICT(tenant_id,service_id) DO UPDATE SET rule=EXCLUDED.rule,updated_at=NOW()`,[tr.rows[0].id,rule.id,JSON.stringify(clean)]);
+  return res.json({ok:true,rule:clean});
+ }catch(e){console.error('Service duration rule failed',e);return res.status(500).json({error:'Kestosääntöä ei voitu tallentaa.'})}
+});
+app.post('/api/app/booking-proposals', auth, ownerOnly, subscribed, async(req,res)=>{
+ try{
+  const tr=await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.status(404).json({error:'Työtilaa ei löytynyt.'});
+  const tenant=tr.rows[0],serviceId=String(req.body?.serviceId||'').slice(0,64);
+  const ruleRows=await q('SELECT rule FROM service_duration_rules WHERE tenant_id=$1 AND service_id=$2',[tenant.id,serviceId]);
+  const estimate=estimateServiceDuration({serviceId,quantity:req.body?.quantity,rules:ruleRows.rows.map(r=>r.rule)});
+  if(estimate.status!=='estimated')return res.json({estimate,availability:{status:'needs_details',starts:[]}});
+  // Never trust client-provided availability. Use tenant-owned saved slots only.
+  const from=new Date(req.body?.from),to=new Date(req.body?.to);
+  if(!Number.isFinite(from.getTime())||!Number.isFinite(to.getTime())||
+     to<=from||to.getTime()-from.getTime()>31*86400000||
+     from.getTime()<Date.now()-60000)return res.status(400).json({error:'Anna kelvollinen enintään 31 päivän tarkistusjakso.'});
+  const low=from,high=to;
+  const slotRows=await q(`SELECT starts_at,ends_at,status FROM booking_slots
+    WHERE tenant_id=$1 AND starts_at<$3 AND ends_at>$2
+    AND status IN ('open','booked') ORDER BY starts_at ASC LIMIT 1000`,[tenant.id,low,high]);
+  const open=slotRows.rows.filter(x=>x.status==='open')
+   .map(x=>({start:new Date(x.starts_at).getTime(),end:new Date(x.ends_at).getTime()}))
+   .sort((a,b)=>a.start-b.start);
+  // Adjacent availability slots constitute a continuous work window.
+  const merged=[];
+  for(const slot of open){
+   const last=merged.at(-1);
+   if(last&&slot.start<=last.end)last.end=Math.max(last.end,slot.end);
+   else merged.push({...slot});
+  }
+  const windows=merged.map(x=>({start:new Date(x.start).toISOString(),end:new Date(x.end).toISOString()}));
+  const busy=slotRows.rows.filter(x=>x.status==='booked')
+   .map(x=>({start:x.starts_at,end:x.ends_at}));
+  if(tenant.google_calendar_refresh_token||tenant.google_calendar_access_token){
+   try{
+    const events=await googleCalendarEvents(tenant,low,high);
+    busy.push(...events.map(x=>({start:x.start,end:x.end})));
+   }catch(e){console.error('Booking proposal calendar check failed',e);return res.status(503).json({estimate,availability:{status:'availability_unverified',starts:[]}})}
+  }
+  const availability=findSuitableStarts({estimate,windows,busy,requestedStart:req.body?.requestedStart,availabilityVerified:true,maxResults:20});
+  return res.json({estimate,availability,confirmation:'human_approval_required'});
+ }catch(e){console.error('Native booking proposals failed',e);return res.status(500).json({error:'Aikojen laskenta epäonnistui.'})}
 });
 
 app.post('/api/app/integrations', auth, ownerOnly, subscribed, async (req,res) => {
@@ -11881,6 +12363,53 @@ async function ensureRuntimeSchema() {
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`);
   await q('CREATE INDEX IF NOT EXISTS idx_action_requests_tenant_created ON action_requests(tenant_id, created_at DESC)');
+  await q(`CREATE TABLE IF NOT EXISTS native_provider_credentials (
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL,
+    encrypted_token TEXT NOT NULL,
+    encrypted_refresh_token TEXT,
+    token_expires_at TIMESTAMPTZ,
+    subdomain TEXT,
+    resource_id TEXT,
+    last_verified_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(tenant_id,provider)
+  )`);
+  await q(`CREATE UNIQUE INDEX IF NOT EXISTS uq_native_provider_meta_resource
+    ON native_provider_credentials(provider,resource_id)
+    WHERE resource_id IS NOT NULL AND resource_id<>'' AND provider IN ('whatsapp','instagram','facebook')`);
+  await q(`CREATE TABLE IF NOT EXISTS native_integrations (
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL,
+    mode TEXT NOT NULL DEFAULT 'manual',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(tenant_id,provider)
+  )`);
+  await q(`CREATE TABLE IF NOT EXISTS native_inbox (
+    id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    channel TEXT NOT NULL,
+    external_message_id TEXT NOT NULL,
+    sender TEXT NOT NULL DEFAULT '',
+    channel_contact_id TEXT,
+    subject TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    intent TEXT NOT NULL,
+    language TEXT NOT NULL DEFAULT 'fi',
+    needs_human BOOLEAN NOT NULL DEFAULT FALSE,
+    draft TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'review',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(tenant_id,channel,external_message_id)
+  )`);
+  await q('CREATE INDEX IF NOT EXISTS idx_native_inbox_tenant_created ON native_inbox(tenant_id,created_at DESC)');
+  await q(`CREATE TABLE IF NOT EXISTS service_duration_rules (
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    service_id TEXT NOT NULL,
+    rule JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(tenant_id,service_id)
+  )`);
   await q(`CREATE TABLE IF NOT EXISTS booking_slots (
     id UUID PRIMARY KEY,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,

@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {classifyInboundMessage,prepareInboundCase,draftResponse,validateIntegrationSettings} from '../internal-integrations.mjs';
+test('email booking becomes safe draft',()=>{const c=prepareInboundCase({source:'email',externalMessageId:'abc',from:'test@example.com',body:'Onko teillä vapaata aikaa perjantaina?' });assert.equal(c.status,'ready');assert.equal(c.classification.intent,'booking');const d=draftResponse({caseData:c});assert.equal(d.sendAllowed,false);assert.match(d.text,/työn laajuuden/);});
+test('repeated message ID remains stable for dedupe',()=>{const input={source:'email',externalMessageId:'same',from:'test@example.com',body:'Hei'};assert.equal(prepareInboundCase(input).externalId,prepareInboundCase(input).externalId)});
+test('invalid source fails closed',()=>assert.equal(prepareInboundCase({source:'unknown',externalMessageId:'1',body:'hi'}).status,'invalid'));
+test('invalid mail sender fails closed',()=>assert.equal(prepareInboundCase({source:'email',externalMessageId:'1',from:'bad',body:'hi'}).reason,'sender_email_required'));
+test('customer cannot claim provider is connected',()=>assert.equal(validateIntegrationSettings({provider:'hubspot',mode:'connected'}).status,'invalid'));
+test('CRM provider manual setup is valid',()=>assert.equal(validateIntegrationSettings({provider:'pipedrive',mode:'manual'}).status,'valid'));
+test('complaints need human review',()=>assert.equal(classifyInboundMessage({body:'reklamaatio tuotteesta'}).needsHuman,true));
+test('no invented pricing',()=>assert.doesNotMatch(draftResponse({caseData:prepareInboundCase({source:'email',externalMessageId:'price',from:'hi@example.com',body:'Mikä on hinta?'})}).text,/\d+ €/));
