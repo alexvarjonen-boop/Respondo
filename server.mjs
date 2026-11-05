@@ -11091,6 +11091,72 @@ app.post('/api/app/stripe-connect/onboard', auth, ownerOnly, subscribed, async (
 // Respondo native channel inbox: no provider tokens, AI network calls or automatic sending.
 // Provider read-only connections: per-tenant encrypted token, verified before persistence.
 // No credentials are ever sent to the browser after setup.
+// Microsoft 365 OAuth for Outlook mail read access (Graph, delegated, offline).
+app.get('/api/app/native-integrations/outlook/start', auth, ownerOnly, subscribed, async(req,res)=>{
+ try {
+  const clientId=String(process.env.MICROSOFT_CLIENT_ID||'').trim();
+  const clientSecret=String(process.env.MICROSOFT_CLIENT_SECRET||'').trim();
+  if(!clientId||!clientSecret)return res.redirect('/app?section=automation&outlook=not_configured');
+  const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+  if(!tr.rowCount)return res.redirect('/app?section=automation&outlook=missing_tenant');
+  const nonce=crypto.randomBytes(20).toString('hex');
+  const state=jwt.sign({provider:'microsoft',flow:'native_outlook',nonce,userId:req.user.sub,
+    tenantId:tr.rows[0].id},JWT,{expiresIn:'10m'});
+  setOauthState(res,nonce,'google');
+  const url=new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+  url.search=new URLSearchParams({
+    client_id:clientId,redirect_uri:BASE+'/api/app/native-integrations/outlook/callback',
+    response_type:'code',response_mode:'query',scope:'offline_access User.Read Mail.ReadBasic',
+    state,prompt:'select_account'
+  }).toString();
+  return res.redirect(url.toString());
+ }catch(e){console.error('Outlook OAuth start failed');
+  return res.redirect('/app?section=automation&outlook=failed')}
+});
+app.get('/api/app/native-integrations/outlook/callback',async(req,res)=>{
+ const landing='/app?section=automation&outlook=';
+ let state;
+ try{
+  state=jwt.verify(String(req.query.state||''),JWT);
+  const nonce=cookies(req)[OAUTH_STATE_COOKIE];
+  if(!nonce||nonce!==state.nonce||state.provider!=='microsoft'||state.flow!=='native_outlook')throw Error('state_invalid');
+  res.clearCookie(OAUTH_STATE_COOKIE);
+  const sessionToken=cookies(req)[COOKIE];
+  const session=sessionToken?jwt.verify(sessionToken,JWT):null;
+  if(!session?.sub||session.sub!==state.userId)throw Error('session_invalid');
+  const tenant=await q(`SELECT id FROM tenants WHERE owner_user_id=$1 AND id=$2
+    AND active=true AND subscription_status IN ('active','trialing')`,[state.userId,state.tenantId]);
+  if(!tenant.rowCount)throw Error('tenant_invalid');
+  const code=String(req.query.code||'');
+  if(req.query.error||!code)return res.redirect(landing+'cancelled');
+  const clientId=String(process.env.MICROSOFT_CLIENT_ID||'').trim();
+  const clientSecret=String(process.env.MICROSOFT_CLIENT_SECRET||'').trim();
+  if(!clientId||!clientSecret)throw Error('microsoft_oauth_unconfigured');
+  const response=await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token',{
+    method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({
+      client_id:clientId,client_secret:clientSecret,grant_type:'authorization_code',code,
+      redirect_uri:BASE+'/api/app/native-integrations/outlook/callback'
+    }),signal:AbortSignal.timeout(9000)
+  });
+  if(!response.ok)throw Error('microsoft_token_exchange_failed');
+  const auth=await response.json();
+  const token=String(auth.access_token||''),refresh=String(auth.refresh_token||'');
+  if(!token||!refresh)throw Error('microsoft_refresh_missing');
+  await readProvider({provider:'outlook',token,limit:1});
+  await q(`INSERT INTO native_provider_credentials
+    (tenant_id,provider,encrypted_token,encrypted_refresh_token,token_expires_at,last_verified_at)
+    VALUES($1,'outlook',$2,$3,$4,NOW())
+    ON CONFLICT(tenant_id,provider) DO UPDATE SET
+    encrypted_token=EXCLUDED.encrypted_token,encrypted_refresh_token=EXCLUDED.encrypted_refresh_token,
+    token_expires_at=EXCLUDED.token_expires_at,last_verified_at=NOW(),updated_at=NOW()`,
+    [tenant.rows[0].id,encryptSecret(token),encryptSecret(refresh),
+     new Date(Date.now()+Number(auth.expires_in||3600)*1000)]);
+  await q(`INSERT INTO native_integrations(tenant_id,provider,mode) VALUES($1,'outlook','connected')
+    ON CONFLICT(tenant_id,provider) DO UPDATE SET mode='connected',updated_at=NOW()`,[tenant.rows[0].id]);
+  return res.redirect(landing+'connected');
+ }catch(e){console.error('Outlook OAuth failed',e?.message?.slice(0,80));return res.redirect(landing+'failed')}
+});
 app.get('/api/app/native-integrations/gmail/start', auth, ownerOnly, subscribed, async(req,res)=>{
  try{
   const cfg=oauthConfig('google');
@@ -11178,6 +11244,29 @@ app.post('/api/app/native-integrations/sync', auth, ownerOnly, subscribed, async
     await q(`UPDATE native_provider_credentials SET encrypted_token=$1,token_expires_at=$2,
       updated_at=NOW() WHERE tenant_id=$3 AND provider='gmail'`,
       [encryptSecret(token),new Date(Date.now()+Number(refreshed.expires_in||3600)*1000),tr.rows[0].id]);
+  }
+  if(provider==='outlook'&&stored.rows[0].encrypted_refresh_token&&
+    (!stored.rows[0].token_expires_at||
+     new Date(stored.rows[0].token_expires_at).getTime()<=Date.now()+60000)){
+    const clientId=String(process.env.MICROSOFT_CLIENT_ID||'').trim();
+    const clientSecret=String(process.env.MICROSOFT_CLIENT_SECRET||'').trim();
+    if(!clientId||!clientSecret)throw Error('microsoft_oauth_unconfigured');
+    const refresh=decryptSecret(stored.rows[0].encrypted_refresh_token);
+    const response=await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token',{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({client_id:clientId,client_secret:clientSecret,refresh_token:refresh,
+        grant_type:'refresh_token',scope:'offline_access User.Read Mail.ReadBasic'}),
+      signal:AbortSignal.timeout(9000)
+    });
+    if(!response.ok)throw Error('microsoft_token_refresh_failed');
+    const renewed=await response.json();
+    token=String(renewed.access_token||'');
+    if(!token)throw Error('microsoft_access_token_missing');
+    await q(`UPDATE native_provider_credentials SET encrypted_token=$1,
+      encrypted_refresh_token=COALESCE($2,encrypted_refresh_token),token_expires_at=$3,
+      updated_at=NOW() WHERE tenant_id=$4 AND provider='outlook'`,
+      [encryptSecret(token),renewed.refresh_token?encryptSecret(renewed.refresh_token):null,
+       new Date(Date.now()+Number(renewed.expires_in||3600)*1000),tr.rows[0].id]);
   }
   if(!token)throw Error('missing_decrypted_token');
   const data=provider==='gmail' ? await readGmailInbox({token,limit:20}) :
