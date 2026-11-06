@@ -42,7 +42,7 @@ test('connection actions fail closed while readiness endpoint is pending or unav
  assert.match(ui,/let readinessLoaded=false/);
  assert.match(ui,/if\(!readinessLoaded \|\| !prerequisites\.has\(item\.id\)\)return 'unverified'/);
  assert.match(ui,/readinessLoaded=Boolean\(result\.readiness\?\.prerequisites/);
- assert.match(ui,/if\(\['restricted','notConfigured','unverified'\]\.includes\(status\(item\)\)\)/);
+ assert.match(ui,/if\(\['restricted','notConfigured','unverified'\]\.includes\(availability\)\)/);
  assert.match(ui,/item && !\['restricted','notConfigured','unverified'\]\.includes\(status\(item\)\)/);
  assert.match(ui,/if\(s==='unverified'\)/);
 });
