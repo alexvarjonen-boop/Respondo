@@ -58,6 +58,12 @@ import {ensureNativeMailDeliverySchema,sendApprovedNativeMail} from './native-ma
 import {ensureNativeMetaOutboundSchema,sendApprovedNativeMeta} from './native-meta-outbound.mjs';
 import {ensureNativeCrmImportSchema,previewNativeCrmImport,importNativeCrmContacts} from './native-crm-import.mjs';
 import {ensureNativeCloudSchema,cloudProvider,validSiteId} from './native-cloud-credentials.mjs';
+import {ensureFreeWorkflowSchema,freeWorkflowOverview,createFreeWorkflow,
+ setFreeWorkflowEnabled,markFreeWorkflowApproval,previewFreeWorkflow} from './respondo-free-actions.mjs';
+import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-gates.mjs';
+import {ensureFreeCommerceSchema,putFreeOrderSnapshot,freeOrderOverview,lookupFreeOrderStatus} from './respondo-free-commerce.mjs';
+import {ensureFreeWebhookSchema,freeWebhookStatus,rotateFreeWebhookKey,
+ disableFreeWebhookKey,acceptFreeWebhookEvent} from './respondo-free-webhooks.mjs';
 import {normalizeCloudFileList,readApprovedCloudText} from './native-cloud-documents.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
 import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
@@ -9688,6 +9694,73 @@ function nativeEndpoint(handler,{quote=false}={}){
 }
 app.get('/api/app/native',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>nativeOverview(pool,id)));
+/* Zero-added-service-cost workflow rule editor. Owner only; no external effects. */
+/* Company-supplied order statuses. Read-only for verified customers, no provider fees. */
+const freeOrderHmacSecret=()=>String(process.env.RESPONDO_ORDER_HMAC_KEY||
+ process.env.DATA_ENCRYPTION_KEY||'');
+/* First-party webhook channel. Owner-generated signing key; no paid relay. */
+app.get('/api/app/native/free-webhook',auth,ownerOnly,subscribed,nativeEndpoint(
+ id=>freeWebhookStatus(pool,id)));
+app.post('/api/app/native/free-webhook/rotate',auth,ownerOnly,subscribed,nativeWriteLimiter,
+ nativeEndpoint((id,req)=>{
+  if(req.body?.confirm!==true)throw new TypeError('Confirm key rotation');
+  return rotateFreeWebhookKey(pool,id,freeOrderHmacSecret());
+ }));
+app.delete('/api/app/native/free-webhook',auth,ownerOnly,subscribed,nativeWriteLimiter,
+ nativeEndpoint((id,req)=>{
+  if(req.body?.confirm!==true)throw new TypeError('Confirm key revocation');
+  return disableFreeWebhookKey(pool,id);
+ }));
+app.post('/api/webhooks/respondo-native/:tenantId',publicChatLimiter,async(req,res)=>{
+ res.set('Cache-Control','private, no-store');
+ try{
+  const result=await acceptFreeWebhookEvent(pool,{
+   tenantId:String(req.params.tenantId||''),rawBody:req.rawBody,
+   eventId:req.get('x-respondo-event-id'),
+   timestamp:req.get('x-respondo-timestamp'),
+   signature:req.get('x-respondo-signature'),
+   master:freeOrderHmacSecret()
+  });
+  return res.status(202).json(result);
+ }catch(error){
+  if(error instanceof TypeError)return res.status(401).json({error:'Webhook rejected'});
+  console.error('Native integration event failed',error?.name||'error');
+  return res.status(503).json({error:'Webhook unavailable'});
+ }
+});
+app.get('/api/app/native/orders',auth,ownerOnly,subscribed,nativeEndpoint(
+ id=>freeOrderOverview(pool,id)));
+app.post('/api/app/native/orders',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+ (id,req)=>putFreeOrderSnapshot(pool,id,req.body||{},{secret:freeOrderHmacSecret()})));
+app.post('/api/public/:slug/order-status',publicChatLimiter,async(req,res)=>{
+ res.set('Cache-Control','private, no-store');
+ try{
+  const tr=await publicTenant(req.params.slug);
+  if(!tr.rowCount)return res.status(404).json({error:'Order not found'});
+  const tenant=tr.rows[0];
+  if(!validWidgetToken(req,tenant,req.body?.widgetToken))
+   return res.status(403).json({error:'Widget authorization required'});
+  setWidgetCors(req,res);
+  const order=await lookupFreeOrderStatus(pool,tenant.id,
+   req.body?.reference,req.body?.email,{secret:freeOrderHmacSecret()});
+  if(!order)return res.status(404).json({error:'Order not found'});
+  return res.json({order});
+ }catch(e){
+  if(e instanceof TypeError)return res.status(404).json({error:'Order not found'});
+  console.error('Free order status lookup failed',e?.name||'error');
+  return res.status(503).json({error:'Order status unavailable'});
+ }
+});
+app.get('/api/app/native/free-workflows',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>freeWorkflowOverview(pool,id)));
+app.post('/api/app/native/free-workflows/preview',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (_id,req)=>previewFreeWorkflow(req.body?.workflow||{},req.body?.sample||{})));
+app.post('/api/app/native/free-workflows',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>createFreeWorkflow(pool,id,req.body||{})));
+app.patch('/api/app/native/free-workflows/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>setFreeWorkflowEnabled(pool,id,req.params.id,req.body?.enabled)));
+app.patch('/api/app/native/free-workflows/approvals/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>markFreeWorkflowApproval(pool,id,req.params.id,req.body?.status)));
 /* First-party Respondo inbox: no mail server or third-party messaging API.
    External channels are visible for context; messages can only be delivered
    to the website widget's own message store. */
@@ -10218,6 +10291,11 @@ app.patch('/api/app/native/tasks/:id',auth,ownerOnly,subscribed,nativeWriteLimit
 
 
 
+/* Deterministic safety regression checks. No external AI, no customer messages sent. */
+app.get('/api/app/native/quality/free-examples',auth,ownerOnly,subscribed,nativeEndpoint(
+  ()=>({cases:freeQualityScenarios()})));
+app.post('/api/app/native/quality/free-suite',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (_id,req)=>runFreeQualitySuite({cases:req.body?.cases})));
 app.get('/api/app/native/quality',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>qualityCenterOverview(pool,id,req.query?.days)));
 app.post('/api/app/native/quality/reviews',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -17860,6 +17938,9 @@ async function start() {
     await withRuntimeSchemaLock(() => ensureNativeMetaOutboundSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeCrmImportSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeCloudSchema(pool));
+    await withRuntimeSchemaLock(() => ensureFreeWorkflowSchema(pool));
+    await withRuntimeSchemaLock(() => ensureFreeCommerceSchema(pool));
+    await withRuntimeSchemaLock(() => ensureFreeWebhookSchema(pool));
     await withRuntimeSchemaLock(() => ensureOnboardingCheckupSchema(q));
     await withRuntimeSchemaLock(async () => {
       await seedAndLoadIntentUtterances();
