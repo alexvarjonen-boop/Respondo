@@ -73,7 +73,7 @@ function liveShippingThresholdExpectation(site,rows){
 }
 function liveContactEmailExpectation(site,rows){
   const emails=[...new Set(rows.filter(row=>row.title==='Sähköposti')
-    .map(row=>String(row.answer||'').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i)?.[0])
+    .map(row=>String(row.answer||'').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0])
     .filter(Boolean))];
   assert.ok(emails.length,site.name+' has no published email contact evidence');
   return new RegExp(emails.map(regexpEscape).join('|'),'i');
