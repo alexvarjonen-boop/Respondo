@@ -53,7 +53,7 @@
       step:['Kirjaudu Microsoft-tilille ja hyväksy pyydetyt oikeudet. Viestit haetaan Respondoon, mutta niitä ei lähetetä ilman hyväksyntää.','Logga in hos Microsoft och godkänn åtkomst. Utgående meddelanden kräver godkännande.','Sign in with Microsoft and approve access. Respondo imports mail; sending always requires approval.']},
     {id:'google_calendar',group:'calendar',name:'Google Calendar',tab:'booking-calendar',href:'/api/app/google-calendar/start',
       step:['Yhdistä Google-tili ja hyväksy kalenterin käyttö. Määritä sen jälkeen palvelujen kestot ja työajat. Respondo ei vahvista varausta ilman tarkistusta.','Godkänn kalenderåtkomst hos Google och ange sedan tjänsternas tidsåtgång.','Authorize calendar access, then set your service durations and working hours. Respondo does not promise unverified bookings.']},
-    {id:'native_calendar',group:'calendar',name:'Respondo Calendar',tab:'booking-calendar',
+    {id:'native_calendar',group:'calendar',name:'Respondo Calendar',tab:'native-operations',nativeTab:'calendar',nativeInternal:true,
       step:['Tämä toimii ilman ulkoista palvelua. Luo vapaat ajat ja hyväksy varauspyynnöt Respondossa.','Fungerar utan extern tjänst. Skapa lediga tider och godkänn bokningar i Respondo.','Works without another service. Create available slots and approve booking requests in Respondo.']},
     {id:'hubspot',group:'crm',name:'HubSpot',tab:'crm-integration',provider:'hubspot',
       step:['Luo HubSpotissa Private App, jolla on yhteystietojen luku- ja kirjoitusoikeus. Kopioi token alla olevaan kenttään. Respondo testaa yhteyden ennen tallennusta.','Skapa en Private App med kontaktbehörighet i HubSpot, klistra in token och verifiera.','Create a HubSpot Private App with contact read/write permissions. Paste its token into the form; Respondo verifies it before saving.']},
@@ -99,8 +99,13 @@
     return node;
   };
   function readonlyJSON(path){
-    return fetch(path,{method:'GET',credentials:'same-origin',cache:'no-store',headers:{accept:'application/json'}})
-      .then(response=>response.ok?response.json():null).catch(()=>null);
+    // A stalled status request cannot freeze the entire integration guide.
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),9000);
+    return fetch(path,{method:'GET',credentials:'same-origin',cache:'no-store',
+      headers:{accept:'application/json'},signal:controller.signal})
+      .then(response=>response.ok?response.json():null)
+      .catch(()=>null).finally(()=>clearTimeout(timer));
   }
   // OAuth return codes are intentionally non-sensitive. Provider secrets never
   // enter the URL, local storage, the DOM or client-side status objects.
@@ -247,7 +252,7 @@
     externalSwitch.type='button';
     footer.append(back,refresh,externalSwitch,advanced);
     let chosenGroup='respondo',chosenProvider=null,states=new Map(),oauthAvailable=new Map(),prerequisites=new Map(),ownStatus=new Map();
-    let readinessLoaded=false;
+    let readinessLoaded=false,reloadSerial=0;
     const existingLocks=new Map();
     for(const item of providers){
       const target=$('#'+item.tab);
@@ -277,18 +282,20 @@
         return form?'notConnected':null;
       }
       if(item.id==='webhooks')return ($('#integrationsForm')?.elements.webhookUrl?.value||'').trim()?'partial':'notConnected';
-      if(item.id==='native_calendar')return 'local';
+      if(item.id==='native_calendar')return ownStatus.get('rs_calendar')===true?'local':'unverified';
       return null;
     }
     function status(item){
       if(existingLocks.get(item.id))return 'restricted';
-      if(item.id==='native_calendar')return 'local';
+      if(item.id==='native_calendar')return ownStatus.get('rs_calendar')===true?'local':'unverified';
       // Fail closed until the authenticated readiness endpoint answers.
       // No consent page or external connector is launched on an unknown state.
       if(!readinessLoaded || !prerequisites.has(item.id))return 'unverified';
       if(prerequisites.get(item.id)===false)return 'notConfigured';
-      if(['gmail','outlook'].includes(item.id)&&oauthAvailable.get(item.id)===false)
-        return 'notConfigured';
+      if(['gmail','outlook'].includes(item.id)){
+        if(oauthAvailable.get(item.id)===false)return 'notConfigured';
+        if(oauthAvailable.get(item.id)!==true)return 'unverified';
+      }
       return states.get(item.id)||domStatus(item)||'unknown';
     }
     function statusLabel(s){
@@ -441,6 +448,7 @@
       update();
     }
     async function reloadStatuses(){
+      const serial=++reloadSerial;
       refresh.disabled=true;
       const endpoints={
         nativeOverview:'/api/app/native',
@@ -464,7 +472,9 @@
         });
       }
       const entries=await Promise.all(Object.entries(endpoints).map(async([key,url])=>[key,await readonlyJSON(url)]));
+      if(serial!==reloadSerial)return;
       const result=Object.fromEntries(entries),next=new Map();
+      ownStatus=new Map();prerequisites=new Map();oauthAvailable=new Map();
       for(const item of ownTools)ownStatus.set(item.id,result[item.probe]?.ok===true);
       readinessLoaded=Boolean(result.readiness?.prerequisites && typeof result.readiness.prerequisites==='object');
       if(readinessLoaded){
@@ -527,8 +537,11 @@
       if(own){
         const item=ownTools.find(x=>x.id===own.dataset.ownTool);
         if(item){
-          if(ownToolStatus(item)==='restricted'){
-            content.appendChild(el('p','rs-integration-note',t.restricted));
+          const toolState=ownToolStatus(item);
+          if(toolState!=='local'){
+            const reason=toolState==='restricted'?t.restricted:t.nativeUnavailable;
+            const notice=el('p','rs-integration-note',reason);
+            notice.setAttribute('role','alert');content.appendChild(notice);
           }else{
             focusExisting({tab:'native-operations',nativeTab:item.nativeTab,nativeInternal:true});
           }
