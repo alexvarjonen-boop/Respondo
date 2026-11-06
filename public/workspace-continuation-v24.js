@@ -603,6 +603,23 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   // than the legacy dashboard. Demo data is intentionally ephemeral.
   orbit=createWorkspaceOrbit({workspace,navigate:selectView,translate});
   selectView(view);
+  // OAuth redirects and deep links must land on the requested module rather
+  // than leaving the permanently bot-first workspace at the top of the page.
+  const initialSection=new URLSearchParams(location.search).get('section');
+  if(!demo && initialSection==='integrations' && workspace.dataset.currentView==='integrations'){
+    requestAnimationFrame(()=>{
+      const target=workspace.querySelector('[data-workspace-page="modules"]');
+      if(!target || target.hidden)return;
+      orbit?.suspendPin?.();
+      target.scrollIntoView({behavior:'auto',block:'start'});
+      const feedback=workspace.querySelector('.rs-integration-oauth-feedback');
+      const focusTarget=feedback||workspace.querySelector('#respondoWorkspaceModuleTitle');
+      if(focusTarget){
+        focusTarget.setAttribute('tabindex','-1');
+        focusTarget.focus({preventScroll:true});
+      }
+    });
+  }
   if(status && importButton?.disabled)status.textContent=workspace.dataset.lang==='sv'?'Hämtar webbplatsuppgifter…':workspace.dataset.lang==='en'?'Scanning website…':'Haetaan verkkosivun tietoja…';
   return true;
 }
