@@ -6480,13 +6480,13 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     for (const url of retailPolicySampleUrls(storefrontProducts,first.finalUrl,3)) {
       const remaining=timeBudgetMs-(Date.now()-crawlStartedAt);
       if (pages.length>=maxPages || remaining<3500)break;
-      const candidateKey=new URL(url).origin+new URL(url).pathname.replace(/\\/$/,'');
+      const candidateKey=new URL(url).origin+new URL(url).pathname.replace(/\/$/,'');
       if(pages.some(page=>page.key===candidateKey))continue;
       try {
         const sample=await fetchPublicHtml(url,Math.min(6500,remaining-1200),4_000_000);
         const resolved=new URL(sample.finalUrl);
         if(resolved.hostname.toLowerCase()!==base.hostname.toLowerCase())continue;
-        const key=resolved.origin+resolved.pathname.replace(/\\/$/,'')+resolved.search;
+        const key=resolved.origin+resolved.pathname.replace(/\/$/,'')+resolved.search;
         if(pages.some(page=>page.key===key))continue;
         const document=extractBusinessDocument(sample.html,sample.finalUrl);
         pages.push({url:sample.finalUrl,key,document});
