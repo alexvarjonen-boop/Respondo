@@ -5016,6 +5016,29 @@ function directReturnPolicyAnswer(rows,message,lang='fi') {
   const best=candidates[0];
   if(!best) return null;
   const target=['fi','sv','en'].includes(String(lang||'').toLowerCase())?String(lang).toLowerCase():'fi';
+  // Published conditional-return policies take precedence over a generic
+  // numeric window. A 14-day notice period is not a blanket return right.
+  const conditional=candidates.find((item)=>
+    /(?:\b(?:do\s+not|don't|cannot|can't)\s+accept\s+returns?\s+unless\b|\breturns?\s+are\s+only\s+accepted\s+(?:if|when)\b)/i.test(item.answer) &&
+    /\b(?:flaw|mistake|defect)\b/i.test(item.answer));
+  if(conditional){
+    const days=conditional.days || best.days || candidates.find((item)=>item.days)?.days || '';
+    const message=target==='en'
+      ? 'According to the seller\'s published policy, returns are accepted only if the product has a clear defect or mistake.'
+      : target==='sv'
+        ? 'Enligt säljarens publicerade villkor godtas returer endast om produkten har ett tydligt fel.'
+        : 'Myyjän julkaisemien ehtojen mukaan palautus hyväksytään vain, jos tuotteessa on selvä virhe.';
+    const followup=days
+      ? (target==='en'
+        ? ' Contact the company within '+days+' days of purchase.'
+        : target==='sv'
+          ? ' Kontakta företaget inom '+days+' dagar efter köpet.'
+          : ' Ota yhteyttä yritykseen '+days+' päivän kuluessa ostosta.')
+      : '';
+    const selected=[conditional.row,best.row].filter((row,index,all)=>row&&all.findIndex((other)=>other?.id===row.id)===index);
+    return {answer:message+followup,handoff:false,confidence:0.98,intent:'Palautukset',
+      sourceIds:selected.map((row)=>row.id).filter(Boolean),selected};
+  }
   const sourceLanguage=detectConversationLanguage(best.answer,'fi');
 
   // Preserve a complete same-language policy, but never echo a FAQ question
