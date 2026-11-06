@@ -5104,8 +5104,8 @@ async function dashboard(options = {}) {
             </div>
           </div>
           <div class="calendar-sync-actions" style="display:flex;gap:12px;flex-wrap:wrap">
-            <a class="btn dashboard-action" href="/api/app/native/mail/gmail/start">${appText('Yhdistä Gmail','Anslut Gmail','Connect Gmail')}</a>
-            <a class="btn dashboard-action" href="/api/app/native/mail/outlook/start">${appText('Yhdistä Outlook','Anslut Outlook','Connect Outlook')}</a>
+            <button type="button" class="btn dashboard-action" data-native-mail-connect="gmail">${appText('Yhdistä Gmail','Anslut Gmail','Connect Gmail')}</button>
+            <button type="button" class="btn dashboard-action" data-native-mail-connect="outlook">${appText('Yhdistä Outlook','Anslut Outlook','Connect Outlook')}</button>
             <button type="button" class="btn integration-test-btn" data-native-mail-sync="gmail">${appText('Hae Gmail-viestit','Hämta Gmail-meddelanden','Fetch Gmail messages')}</button>
             <button type="button" class="btn integration-test-btn" data-native-mail-sync="outlook">${appText('Hae Outlook-viestit','Hämta Outlook-meddelanden','Fetch Outlook messages')}</button>
           </div>
@@ -8615,19 +8615,60 @@ async function route() {
       }
     });
 
+    // Native mailbox OAuth is only launched after its provider registration
+    // has been verified. A missing Microsoft app must not redirect back to
+    // the bot preview with no explanation.
+    const nativeMailOauthReady={gmail:false,outlook:false};
+    const nativeMailSetupNotice=(provider)=>provider==='outlook'
+      ?appText('Outlook-yhdistäminen vaatii Microsoft-sovelluksen tunnukset Respondon palvelimelle. Yhteyttä ei ole vielä määritetty.',
+        'Outlook kräver Microsoft-appens klientuppgifter på Respondos server. Anslutningen är inte konfigurerad.',
+        'Outlook needs Microsoft app credentials configured on the Respondo server before connecting.')
+      :appText('Gmail-yhteyttä ei voitu vahvistaa. Tarkista Respondon Google-yhdistämisen asetukset.',
+        'Gmail-anslutningen kunde inte verifieras. Kontrollera Respondos Google-inställningar.',
+        'Gmail authorization could not be verified. Check the Google connection settings.');
+    document.querySelectorAll('[data-native-mail-connect]').forEach(button=>{
+      button.addEventListener('click',()=>{
+        const provider=button.dataset.nativeMailConnect;
+        if(!['gmail','outlook'].includes(provider))return;
+        if(nativeMailOauthReady[provider]!==true){
+          const status=$('#nativeMailStatus');
+          if(status)status.textContent=nativeMailSetupNotice(provider);
+          return;
+        }
+        location.assign('/api/app/native/mail/'+provider+'/start');
+      });
+    });
     const loadNativeMailStatus=async()=>{
       const el=$('#nativeMailStatus');if(!el)return;
       try{
         const response=await api('/api/app/native/mail/status');
+        nativeMailOauthReady.gmail=response?.oauthAvailable?.gmail===true;
+        nativeMailOauthReady.outlook=response?.oauthAvailable?.outlook===true;
         const list=Array.isArray(response.connections)?response.connections:[];
         el.replaceChildren();
-        if(!list.length){el.textContent=appText('Sähköposteja ei ole yhdistetty.','Ingen e-post är ansluten.','No mailboxes connected.');return;}
+        if(!list.length){
+          el.appendChild(Object.assign(document.createElement('p'),{
+            textContent:appText('Sähköposteja ei ole yhdistetty.','Ingen e-post är ansluten.','No mailboxes connected.')
+          }));
+        }
         for(const item of list){
           const p=document.createElement('p');
           p.textContent=item.provider+' · '+appText('Lukuyhteys tallennettu','Läsanslutning sparad','Read connection saved');
           el.appendChild(p);
         }
-      }catch(error){el.textContent=error.message;}
+        if(!nativeMailOauthReady.outlook){
+          const notice=document.createElement('p');
+          notice.setAttribute('role','status');
+          notice.textContent=nativeMailSetupNotice('outlook');
+          el.appendChild(notice);
+        }
+      }catch(error){
+        nativeMailOauthReady.gmail=false;
+        nativeMailOauthReady.outlook=false;
+        el.textContent=appText('Sähköpostiyhteyksiä ei voitu tarkistaa. Yhdistäminen on tilapäisesti estetty.',
+          'E-postanslutningarna kunde inte verifieras. Anslutning är tillfälligt blockerad.',
+          'Mailbox status could not be verified. Connecting is temporarily disabled.');
+      }
     };
     if($('#nativeMailStatus'))loadNativeMailStatus();
     document.querySelectorAll('[data-native-mail-sync]').forEach(button=>{
