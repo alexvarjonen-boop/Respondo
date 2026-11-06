@@ -113,9 +113,9 @@
     const name=provider==='outlook'?'Microsoft 365 / Outlook':'Gmail';
     const all={
       not_configured:[
-        name+'-yhdistämistä ei ole vielä määritetty Respondon palvelimelle. Ylläpitäjän täytyy lisätä palveluntarjoajan sovellustunnukset ennen yhdistämistä.',
-        name+'-anslutningen är inte konfigurerad på Respondos server. Administratören måste lägga till OAuth-uppgifter innan anslutningen kan användas.',
-        name+' is not yet configured on the Respondo server. An administrator must add the provider OAuth credentials before you can connect.'
+        name+'-yhteys ei ole vielä käytettävissä. Respondo ottaa yhteyden käyttöön keskitetysti. Sinun ei tarvitse määrittää sovellustunnuksia tai API-avaimia.',
+        name+'-anslutningen är ännu inte tillgänglig. Respondo aktiverar anslutningen centralt. Du behöver inte konfigurera appuppgifter eller API-nycklar.',
+        name+' connection is not available yet. Respondo must activate it centrally. You do not need to configure app credentials or API keys.'
       ],
       missing_tenant:['Yrityksen työtilaa ei löytynyt. Valitse yritys ja yritä uudelleen.','Företagets arbetsyta kunde inte hittas.','Company workspace not found. Select a company and try again.'],
       invalid_state:['Kirjautumispyyntö vanheni. Aloita yhdistäminen uudelleen.','Inloggningsförfrågan har gått ut. Försök igen.','Authorization expired. Start the connection again.'],
