@@ -196,7 +196,7 @@ function automaticScenarioVariants(scenario){
   return [...new Set(variants.filter((value)=>norm(value)!==norm(scenario?.message)))];
 }
 
-async function ask(site,rows,{lang,message,expect,history=[],label}){
+async function ask(site,rows,{lang,message,expect,expectHandoff=false,history=[],label}){
   const result=await generateGroundedAnswer({
     companyName:site.name,
     rows,
@@ -204,7 +204,7 @@ async function ask(site,rows,{lang,message,expect,history=[],label}){
     history,
     lang,
   });
-  assert.equal(result.handoff,false,site.name+' '+label+' handed off: '+JSON.stringify(result));
+  assert.equal(result.handoff,expectHandoff,site.name+' '+label+' handoff mismatch: '+JSON.stringify(result));
   assert.ok(String(result.answer||'').trim(),site.name+' '+label+' empty answer');
   if(expect) assert.match(String(result.answer||''),expect,site.name+' '+label+' wrong answer: '+result.answer);
   return result;
@@ -447,9 +447,9 @@ const ecommerceSites=[
       {label:'returns-fi',lang:'fi',message:'Voinko palauttaa tuotteen?',expect:/14/},
       {label:'returns-en',lang:'en',message:'Can I return an item?',expect:/14/},
       {label:'returns-sv',lang:'sv',message:'Kan jag returnera en produkt?',expect:/14/},
-      {label:'location-fi',lang:'fi',message:'Missä yritys sijaitsee?',expect:/Turku|Finland|Suom/i},
-      {label:'location-en',lang:'en',message:'Where are you based?',expect:/Turku|Finland/i},
-      {label:'location-sv',lang:'sv',message:'Var finns företaget?',expect:/Turku|Finland|Finland/i},
+      {label:'location-fi',lang:'fi',message:'Missä yritys sijaitsee?',expectHandoff:true,expect:/käyntiosoitetta ei ole vahvistettu/i},
+      {label:'location-en',lang:'en',message:'Where are you based?',expectHandoff:true,expect:/visiting address has not been verified/i},
+      {label:'location-sv',lang:'sv',message:'Var finns företaget?',expectHandoff:true,expect:/besöksadress har inte bekräftats/i},
       {label:'followup-fi',lang:'fi',message:'Paljonko musta putteri maksaa?',productPriceTitle:'JAG J1 Blade Putter – Black',followups:[
         {label:'followup-bronze-fi',lang:'fi',message:'Entä pronssinen?',productPriceTitle:'JAG J1 Blade Putter – Bronze'},
       ]},

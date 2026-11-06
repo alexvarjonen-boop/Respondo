@@ -7830,6 +7830,15 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
         selected:[location.row],
       };
     }
+    // An assembly/design city or marketing copy is not a verified visiting
+    // address. Never silently hand off with an empty answer or invent a HQ.
+    const answer=responseLang==='en'
+      ? 'The company\'s visiting address has not been verified. Please contact the company to confirm its location.'
+      : responseLang==='sv'
+        ? 'Företagets besöksadress har inte bekräftats. Kontakta företaget för att få rätt adress.'
+        : 'Yrityksen käyntiosoitetta ei ole vahvistettu. Ota yhteyttä yritykseen sijainnin varmistamiseksi.';
+    return {answer,handoff:true,confidence:0.2,intent:'Sijainti',
+      sourceIds:[],selected:[]};
   }
 
   const dateException=answerBranchException({rows,message:cleanMessage,history,lang:responseLang});
