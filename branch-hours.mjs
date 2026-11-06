@@ -68,6 +68,9 @@ function variants(name) {
   if(base.endsWith('ku'))forms.add(base.slice(0,-2)+'un'); // Turku -> Turun
   if(base.endsWith('i'))forms.add(base+'n'); // Raisio handled by default below
   if(base.endsWith('a') || base.endsWith('o') || base.endsWith('e'))forms.add(base+'n');
+  if(base.endsWith('katu'))forms.add(base.slice(0,-4)+'kadun'); // Kauppakatu -> Kauppakadun
+  if(base.endsWith('tie'))forms.add(base.slice(0,-3)+'tien'); // Keskustie -> Keskustien
+  if(base.endsWith('kuja'))forms.add(base+'n'); // Puistokuja -> Puistokujan
   if(base==='turku')forms.add('abo'); // Swedish name Åbo
   return [...forms];
 }
