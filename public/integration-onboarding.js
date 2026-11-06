@@ -241,7 +241,9 @@
       :zendeskCode?providerReturnFeedback(lang,'zendesk',zendeskCode)
       :stripeCode?providerReturnFeedback(lang,'stripe',stripeCode):null;
     heading.append(el('h2','',t.title),el('p','',t.intro));
-    if(callbackMsg){
+    // For an unavailable mailbox provider the selected service card already
+    // explains the blocker. Do not render the identical OAuth error twice.
+    if(callbackMsg && !(oauthCode==='not_configured'&&['gmail','outlook'].includes(oauthProvider))){
       const notice=el('div','rs-integration-oauth-feedback',callbackMsg);
       notice.setAttribute('role',(callbackOutcome==='connected'||stripeCode==='return')?'status':'alert');
       notice.dataset.kind=callbackOutcome==='connected'?'success':stripeCode==='return'?'info':'error';
@@ -368,13 +370,13 @@
       }else{
         const item=providers.find(p=>p.id===chosenProvider);
         if(!item)return;
-        addStepTitle(t.third+' · '+item.name);
-        const info=el('div','rs-integration-selected');
-        info.append(el('p','',word(item.step)),el('p','rs-integration-current-status',statusLabel(status(item))));
-        content.appendChild(info);
-        if(['restricted','notConfigured','unverified'].includes(status(item))){
-          const text=status(item)==='restricted'?t.restricted:
-            status(item)==='unverified'?t.statusError:
+        const availability=status(item);
+        if(['restricted','notConfigured','unverified'].includes(availability)){
+          // Do not announce "Complete connection" or ask for a Microsoft
+          // sign-in while no Microsoft authorization page can be opened.
+          addStepTitle(item.name);
+          const text=availability==='restricted'?t.restricted:
+            availability==='unverified'?t.statusError:
             ['gmail','outlook'].includes(item.id)
             ? mailboxFeedback(lang,'not_configured',item.id)
             : lang==='fi'
@@ -383,11 +385,15 @@
                 ? 'Tjänsten är inte aktiverad. Respondo-administratören måste konfigurera leverantörens app eller webhook.'
                 : 'This provider is not configured. Respondo administration must set up the provider app or webhook before accounts can connect.';
           const alert=el('p','rs-integration-note',text);
-          if(status(item)!=='restricted')alert.setAttribute('role','alert');
+          if(availability!=='restricted')alert.setAttribute('role','alert');
           content.appendChild(alert);
           ws.classList.remove('rs-integration-configuring');
           return;
         }
+        addStepTitle(t.third+' · '+item.name);
+        const info=el('div','rs-integration-selected');
+        info.append(el('p','',word(item.step)),el('p','rs-integration-current-status',statusLabel(availability)));
+        content.appendChild(info);
         const options=el('div','rs-integration-actions');
         const open=el('button','rs-integration-primary',t.open);
         open.type='button';open.dataset.integrationOpen=item.id;options.appendChild(open);
