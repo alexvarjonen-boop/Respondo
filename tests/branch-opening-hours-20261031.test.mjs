@@ -106,3 +106,55 @@ test('choosing a Finnish branch preserves Finnish despite English UI fallback',a
   assert.match(r.answer,/Turku: Maanantai:/);
   assert.doesNotMatch(r.answer,/Monday/);
 });
+
+test('a verified single barbershop location answers hours directly in FI SV EN',async()=>{
+  const location={
+    id:'maariankatu',category:'Aukioloajat',title:'Aukioloajat',
+    answer:'Ma: 11:00 - 19:00, Ti: 11:00 - 19:00, La: 09:00 - 16:00',
+    keywords:['aukioloajat','opening hours','öppettider'],
+    source_type:'website',
+    source_url:'https://mroom.com/fi/parturit/turku/maariankatu/'
+  };
+  assert.equal(branchNameFromHoursRow(location),'Maariankatu');
+  for(const [lang,message,day] of [
+    ['fi','Mihin aikaan olette auki maanantaina?','Maanantai'],
+    ['en','What are your opening hours on Monday?','Monday'],
+    ['sv','Vilka öppettider har ni på måndag?','Måndag']
+  ]){
+    const r=await generateGroundedAnswer({
+      companyName:'M Room Maariankatu',rows:[location],message,lang
+    });
+    assert.equal(r.intent,'Aukioloajat',JSON.stringify(r));
+    assert.match(r.answer,new RegExp(day+':\\s*11:00 - 19:00'));
+    assert.deepEqual(r.sourceIds,['maariankatu']);
+    assert.equal(r.branchChoices,undefined);
+  }
+});
+
+test('outlet named by the company selects only its own hours; chain bot remains ambiguous',async()=>{
+  const stores=[
+    {id:'m',category:'Aukioloajat',title:'Aukioloajat',
+      answer:'Ma: 11:00 - 19:00, La: 09:00 - 16:00',
+      keywords:['aukioloajat'],source_type:'website',
+      source_url:'https://mroom.com/fi/parturit/turku/maariankatu/'},
+    {id:'k',category:'Aukioloajat',title:'Aukioloajat',
+      answer:'Ma: 08:00 - 20:00, La: 08:00 - 18:00',
+      keywords:['aukioloajat'],source_type:'website',
+      source_url:'https://mroom.com/fi/parturit/turku/kauppakatu/'}
+  ];
+  const dedicated=await generateGroundedAnswer({
+    companyName:'M Room Maariankatu',rows:stores,
+    message:'Mihin aikaan olette auki maanantaina?',lang:'fi'});
+  assert.deepEqual(dedicated.sourceIds,['m']);
+  assert.match(dedicated.answer,/11:00 - 19:00/);
+  assert.doesNotMatch(dedicated.answer,/08:00 - 20:00/);
+  const explicit=await generateGroundedAnswer({
+    companyName:'M Room Maariankatu',rows:stores,
+    message:'Kauppakadun liikkeen aukioloajat maanantaina?',lang:'fi'});
+  assert.deepEqual(explicit.sourceIds,['k']);
+  assert.match(explicit.answer,/08:00 - 20:00/);
+  const chain=await generateGroundedAnswer({
+    companyName:'M Room',rows:stores,message:'Mihin aikaan olette auki maanantaina?',lang:'fi'});
+  assert.equal(chain.intent,'Toimipisteen valinta');
+  assert.deepEqual(chain.branchChoices,['Kauppakatu','Maariankatu']);
+});

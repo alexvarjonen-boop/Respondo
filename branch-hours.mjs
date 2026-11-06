@@ -45,6 +45,16 @@ export function branchNameFromHoursRow(row) {
     if(!['https:','http:'].includes(u.protocol))return '';
     const path=u.pathname.split('/').filter(Boolean);
     const tokens=path.map(x=>norm(decodeURIComponent(x)));
+    // Some service chains identify a single outlet by /barbers/<city>/<outlet>.
+    // The city segment alone is not the shop: use the final, explicitly nested
+    // outlet only when both city and outlet slugs are concrete.
+    const nestedLocationRoots=new Set(['parturit','barbers','barbershops','frisorer','salons']);
+    const nested=tokens.findIndex(x=>nestedLocationRoots.has(x));
+    if(nested>=0 && nested+2<path.length){
+      const city=displaySlug(path[nested+1]);
+      const outlet=displaySlug(path[nested+2]);
+      if(city && outlet && !locations.has(norm(city)) && !locations.has(norm(outlet)))return outlet;
+    }
     const i=tokens.findIndex(x=>markers.has(x));
     if(i<0 || i+1>=tokens.length)return '';
     const candidate=displaySlug(path[i+1]);
@@ -89,7 +99,7 @@ function previousBranch(history, names) {
   return '';
 }
 
-export function resolveBranchOpeningHours({rows,message,history=[],lang='fi',isHoursQuestion,parseHours,usableRow}){
+export function resolveBranchOpeningHours({rows,message,history=[],lang='fi',companyName='',isHoursQuestion,parseHours,usableRow}){
   const eligible=(rows||[]).filter(row=>usableRow(row) &&
     /(?:aukiolo|opening hours|oppettid|öppettid|business hours)/i.test(
       norm(String(row.category||'')+' '+String(row.title||'')+' '+String((row.keywords||[]).join(' ')))));
@@ -110,7 +120,16 @@ export function resolveBranchOpeningHours({rows,message,history=[],lang='fi',isH
   const isDayFollowup=/^(?:ent[aä]\s+)?(?:maanantaina|tiistaina|keskiviikkona|torstaina|perjantaina|lauantaina|sunnuntaina|huomenna|t[aä]n[aä][aä]n|viikonloppuna|monday|tuesday|wednesday|thursday|friday|saturday|sunday|weekend|imorgon|idag)(?:\s+.*)?[?.!]?$/i.test(String(message||'').trim());
   if(!isHoursQuestion && !(isFollowup&&exact.length) && !isDayFollowup)return null;
   const inherited=exact.length===0 && !isFollowup ? previousBranch(history,names) : '';
-  const selected=exact.length===1?exact[0]:branches.find(b=>norm(b.name)===norm(inherited));
+  // A verified outlet explicitly present in the configured company's name
+  // is a safe default for a dedicated location bot, not for a chain-wide bot.
+  const namedCompany=' '+norm(companyName)+' ';
+  const companyMatches=branches.filter(b=>norm(b.name).length>=4 &&
+    namedCompany.includes(' '+norm(b.name)+' '));
+  // Never override a branch explicitly named in the visitor's question.
+  const selected=exact.length>1?null:exact[0] ||
+    branches.find(b=>norm(b.name)===norm(inherited)) ||
+    (companyMatches.length===1?companyMatches[0]:null) ||
+    (branches.length===1?branches[0]:null);
   const language=['fi','sv','en'].includes(lang)?lang:'fi';
   if(!selected){
     const prompt=language==='en'?'Which location’s opening hours would you like to know?'
