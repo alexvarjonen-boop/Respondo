@@ -7805,7 +7805,7 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
   const dateException=answerBranchException({rows,message:cleanMessage,history,lang:responseLang});
   if(dateException)return dateException;
   const branchHours=resolveBranchOpeningHours({
-    rows,message:cleanMessage,history,lang:responseLang,
+    rows,message:cleanMessage,history,lang:responseLang,companyName,
     isHoursQuestion:queryTopic(cleanMessage)==='hours' ||
       /(?:auki|avoinna|sulke|sulj|opening|hours|close|closing|oppettid|öppettid|stanger|stänger)/i.test(cleanMessage),
     parseHours:openingHoursSegments,usableRow:usableWebsiteRow,
