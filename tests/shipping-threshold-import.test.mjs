@@ -21,3 +21,12 @@ test('progress widgets, scripts and vague advertising do not invent shipping con
  assert.deepEqual(explicitShippingThresholdFacts(html),[]);
  assert.deepEqual(explicitShippingThresholdFacts('<button>Free shipping available on orders over 280</button>'),[]);
 });
+
+test('published Finnish-only free delivery amount remains scoped and is not inferred worldwide',()=>{
+ const html='<html><body><div role="region" aria-label="Announcement"><p><span>Free shipping in 🇫🇮 on orders over 250€</span></p></div></body></html>';
+ assert.deepEqual(explicitShippingThresholdFacts(html),['Free shipping in 🇫🇮 on orders over 250€']);
+ const doc=extractBusinessDocument(html,url);
+ const facts=essentialWebsiteCandidates({finalUrl:'https://shop.example',products:[],pageDocuments:[doc]});
+ assert.ok(facts.some(x=>x.answer==='Free shipping in 🇫🇮 on orders over 250€' && x.sourceUrl===url));
+ assert.ok(!facts.some(x=>x.answer.includes('280')));
+});
