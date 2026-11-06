@@ -69,7 +69,7 @@ function liveShippingThresholdExpectation(site,rows){
   assert.ok(numbers.length,site.name+' missing independently sourced free-shipping order threshold');
   const unique=[...new Set(numbers)];
   assert.equal(unique.length,1,site.name+' has different shipping thresholds; country-specific audit required');
-  return new RegExp('(?:^|\\\\D)'+unique[0]+'(?:\\\\D|$)');
+  return new RegExp('(?<![0-9])'+unique[0]+'(?![0-9])');
 }
 function scenarioWithLiveExpectation(site,rows,scenario){
   if(scenario?.shippingThreshold) return {
