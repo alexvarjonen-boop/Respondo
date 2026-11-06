@@ -9971,7 +9971,18 @@ function nativeMailOauthConfig(provider){
  };
  return null;
 }
-const nativeMailRedirect=provider=>BASE+'/api/app/native/mail/'+provider+'/callback';
+// Each allowed production hostname needs its own Microsoft Web redirect URI.
+ // Keep the callback on the hostname where the owner started OAuth so both
+ // the signed-in session cookie and the CSRF state cookie survive the roundtrip.
+ // Never derive an OAuth redirect from an untrusted arbitrary Host header.
+const nativeMailRedirect=(provider,req)=>{
+ const suffix='/api/app/native/mail/'+provider+'/callback';
+ const hostname=String(req?.hostname||'').toLowerCase();
+ if(process.env.NODE_ENV==='production' &&
+    (hostname==='respondoai.fi'||hostname==='www.respondoai.fi'))
+   return 'https://'+hostname+suffix;
+ return BASE+suffix;
+};
 /* Owner-only capability inventory. This describes which provider app registrations
    exist in production; it does NOT assert any customer's account is connected. */
 app.get('/api/app/integrations/readiness',auth,ownerOnly,subscribed,(req,res)=>{
@@ -10027,7 +10038,7 @@ app.get('/api/app/native/mail/:provider/start',auth,ownerOnly,subscribed,async(r
    secure:process.env.NODE_ENV==='production',sameSite:'lax',maxAge:600000});
   const url=new URL(config.authorize);
   url.search=new URLSearchParams({
-   client_id:config.clientId,redirect_uri:nativeMailRedirect(provider),response_type:'code',
+   client_id:config.clientId,redirect_uri:nativeMailRedirect(provider,req),response_type:'code',
    scope:config.scope,state,prompt:'consent',access_type:'offline'
   }).toString();
   return res.redirect(url.toString());
@@ -10053,12 +10064,17 @@ app.get('/api/app/native/mail/:provider/callback',async(req,res)=>{
    [state.userId,state.tenantId]);
   if(!tenant.rowCount)return res.redirect(destination('missing_tenant'));
   const code=String(req.query.code||'');
-  if(req.query.error||!code)return res.redirect(destination('cancelled'));
+  if(req.query.error||!code){
+   const description=String(req.query.error_description||'').slice(0,1000);
+   const adminApproval=provider==='outlook'&&
+     /AADSTS(?:90094|65001|65004|650056)|admin(?:istrator)?\s+(?:consent|approval)\s+(?:is\s+)?required/i.test(description);
+   return res.redirect(destination(adminApproval?'admin_approval_required':'cancelled'));
+  }
   const response=await fetch(config.tokenUrl,{
    method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
    body:new URLSearchParams({
     client_id:config.clientId,client_secret:config.clientSecret,
-    code,grant_type:'authorization_code',redirect_uri:nativeMailRedirect(provider)
+    code,grant_type:'authorization_code',redirect_uri:nativeMailRedirect(provider,req)
    }),signal:AbortSignal.timeout(9000)
   });
   if(!response.ok)throw Error('token_exchange_failed');

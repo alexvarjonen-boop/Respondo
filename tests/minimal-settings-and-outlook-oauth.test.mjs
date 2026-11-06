@@ -16,7 +16,7 @@ test('Outlook OAuth missing configuration does not drop owner back into bot prev
   assert.match(server,/return res.redirect\(nativeMailReturn\(provider,'not_configured'\)\)/);
   assert.match(server,/const destination=code=>nativeMailReturn\(provider,code\)/);
   assert.match(server,/destination\('connected'\)/);
-  assert.match(server,/destination\('cancelled'\)/);
+  assert.match(server,/destination\(adminApproval\?'admin_approval_required':'cancelled'\)/);
   assert.doesNotMatch(server.slice(server.indexOf("app.get('/api/app/native/mail/:provider/start'"),
     server.indexOf("async function nativeMailRefresh")),
     /\/app\?section=automation&native_mail=/);
@@ -65,7 +65,7 @@ test('minimal design is scoped to authenticated workspace and keeps the orbit an
   assert.match(css,/@media\(max-width:640px\)/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
   assert.match(index,/\/workspace-settings-minimal-v55\.css\?v=20261105-apple-settings-v55-native-first-v3/);
-  assert.match(index,/\/integration-onboarding\.js\?v=20261106-verified-native-gates-v8/);
+  assert.match(index,/\/integration-onboarding\.js\?v=20261106-verified-native-gates-v8-ms-consent-v1/);
   assert.match(app,/guided-integrations-v1-apple-settings-v55/);
   assert.match(index,/settings-directory-v55-outlook-v1/);
 });
