@@ -16,7 +16,7 @@ test('Outlook OAuth missing configuration does not drop owner back into bot prev
   assert.match(server,/return res.redirect\(nativeMailReturn\(provider,'not_configured'\)\)/);
   assert.match(server,/const destination=code=>nativeMailReturn\(provider,code\)/);
   assert.match(server,/destination\('connected'\)/);
-  assert.match(server,/destination\('cancelled'\)/);
+  assert.match(server,/destination\(adminApproval\?'admin_approval_required':'cancelled'\)/);
   assert.doesNotMatch(server.slice(server.indexOf("app.get('/api/app/native/mail/:provider/start'"),
     server.indexOf("async function nativeMailRefresh")),
     /\/app\?section=automation&native_mail=/);
