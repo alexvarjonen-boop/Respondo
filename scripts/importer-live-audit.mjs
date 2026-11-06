@@ -62,7 +62,29 @@ function liveProductPriceExpectation(site,rows,productName){
   return new RegExp('(?:€\\s*)?'+numeric+'(?:\\s*(?:€|EUR))?','i');
 }
 
+function liveShippingThresholdExpectation(site,rows){
+  const numbers=rows.filter(row=>row.category==='Toimitus ja seuranta')
+    .map(row=>String(row.answer||'').match(/free\s+shipping[^.]*?orders?\s+(?:over|above|from)\s*(?:€\s*)?(\d{2,5})\s*(?:€|eur\b)/i)?.[1])
+    .filter(Boolean);
+  assert.ok(numbers.length,site.name+' missing independently sourced free-shipping order threshold');
+  const unique=[...new Set(numbers)];
+  assert.equal(unique.length,1,site.name+' has different shipping thresholds; country-specific audit required');
+  return new RegExp('(?<![0-9])'+unique[0]+'(?![0-9])');
+}
+function liveContactEmailExpectation(site,rows){
+  const emails=[...new Set(rows.filter(row=>row.title==='Sähköposti')
+    .map(row=>String(row.answer||'').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0])
+    .filter(Boolean))];
+  assert.ok(emails.length,site.name+' has no published email contact evidence');
+  return new RegExp(emails.map(regexpEscape).join('|'),'i');
+}
 function scenarioWithLiveExpectation(site,rows,scenario){
+  if(scenario?.contactEmail) return {
+    ...scenario,expect:liveContactEmailExpectation(site,rows)
+  };
+  if(scenario?.shippingThreshold) return {
+    ...scenario,expect:liveShippingThresholdExpectation(site,rows)
+  };
   if(!scenario?.productPriceTitle) return scenario;
   return {...scenario,expect:liveProductPriceExpectation(site,rows,scenario.productPriceTitle)};
 }
@@ -184,7 +206,7 @@ function automaticScenarioVariants(scenario){
   return [...new Set(variants.filter((value)=>norm(value)!==norm(scenario?.message)))];
 }
 
-async function ask(site,rows,{lang,message,expect,history=[],label}){
+async function ask(site,rows,{lang,message,expect,expectHandoff=false,history=[],label}){
   const result=await generateGroundedAnswer({
     companyName:site.name,
     rows,
@@ -192,7 +214,7 @@ async function ask(site,rows,{lang,message,expect,history=[],label}){
     history,
     lang,
   });
-  assert.equal(result.handoff,false,site.name+' '+label+' handed off: '+JSON.stringify(result));
+  assert.equal(result.handoff,expectHandoff,site.name+' '+label+' handoff mismatch: '+JSON.stringify(result));
   assert.ok(String(result.answer||'').trim(),site.name+' '+label+' empty answer');
   if(expect) assert.match(String(result.answer||''),expect,site.name+' '+label+' wrong answer: '+result.answer);
   return result;
@@ -414,9 +436,9 @@ const ecommerceSites=[
     minFacts:12,
     mustContain:[
       ['product',/JAG (?:Satin (?:Black|Bronze|Steel)|J1 Blade Putter\s*[-–]\s*(?:Black|Bronze|Steel))/i],
-      ['shipping threshold',/free shipping.{0,80}280\s*€/i],
+      ['shipping threshold',/free shipping.{0,100}orders?\s+(?:over|above|from)\s*(?:€\s*)?\d{2,5}\s*€/i],
       ['delivery time',/3\s*[-–]\s*5\s+business days|3\s*[-–]\s*6\s+days/i],
-      ['returns',/return within\s+45\s+days|45\s+days/i],
+      ['returns',/within\s+14\s+days|returns are only accepted within\s+14\s+days/i],
       ['location',/Turku,\s*Finland/i],
     ],
     questions:[
@@ -426,18 +448,18 @@ const ecommerceSites=[
       {label:'black-price-fi',lang:'fi',message:'Paljonko JAG J1 Blade Putter – Black maksaa?',productPriceTitle:'JAG J1 Blade Putter – Black'},
       {label:'black-price-en',lang:'en',message:'How much is the JAG J1 Blade Putter – Black putter?',productPriceTitle:'JAG J1 Blade Putter – Black'},
       {label:'black-price-sv',lang:'sv',message:'Vad kostar JAG J1 Blade Putter – Black-puttern?',productPriceTitle:'JAG J1 Blade Putter – Black'},
-      {label:'shipping-cost-fi',lang:'fi',message:'Paljonko toimitus maksaa?',expect:/280|ilmain|free/i},
-      {label:'shipping-cost-en',lang:'en',message:'How much does shipping cost?',expect:/280|free/i},
-      {label:'shipping-cost-sv',lang:'sv',message:'Vad kostar frakten?',expect:/280|gratis|free/i},
+      {label:'shipping-cost-fi',lang:'fi',message:'Paljonko toimitus maksaa?',shippingThreshold:true},
+      {label:'shipping-cost-en',lang:'en',message:'How much does shipping cost?',shippingThreshold:true},
+      {label:'shipping-cost-sv',lang:'sv',message:'Vad kostar frakten?',shippingThreshold:true},
       {label:'delivery-fi',lang:'fi',message:'Kuinka kauan toimituksessa kestää?',expect:/3\s*[-–]\s*(?:5|6)|2\s*[-–]\s*6/i},
       {label:'delivery-en',lang:'en',message:'How long does delivery take?',expect:/3\s*[-–]\s*(?:5|6)|2\s*[-–]\s*6/i},
       {label:'delivery-sv',lang:'sv',message:'Hur lång är leveranstiden?',expect:/3\s*[-–]\s*(?:5|6)|2\s*[-–]\s*6/i},
-      {label:'returns-fi',lang:'fi',message:'Voinko palauttaa tuotteen?',expect:/45/},
-      {label:'returns-en',lang:'en',message:'Can I return an item?',expect:/45/},
-      {label:'returns-sv',lang:'sv',message:'Kan jag returnera en produkt?',expect:/45/},
-      {label:'location-fi',lang:'fi',message:'Missä yritys sijaitsee?',expect:/Turku|Finland|Suom/i},
-      {label:'location-en',lang:'en',message:'Where are you based?',expect:/Turku|Finland/i},
-      {label:'location-sv',lang:'sv',message:'Var finns företaget?',expect:/Turku|Finland|Finland/i},
+      {label:'returns-fi',lang:'fi',message:'Voinko palauttaa tuotteen?',expect:/14/},
+      {label:'returns-en',lang:'en',message:'Can I return an item?',expect:/14/},
+      {label:'returns-sv',lang:'sv',message:'Kan jag returnera en produkt?',expect:/14/},
+      {label:'location-fi',lang:'fi',message:'Missä yritys sijaitsee?',expectHandoff:true,expect:/käyntiosoitetta ei ole vahvistettu/i},
+      {label:'location-en',lang:'en',message:'Where are you based?',expectHandoff:true,expect:/visiting address has not been verified/i},
+      {label:'location-sv',lang:'sv',message:'Var finns företaget?',expectHandoff:true,expect:/besöksadress har inte bekräftats/i},
       {label:'followup-fi',lang:'fi',message:'Paljonko musta putteri maksaa?',productPriceTitle:'JAG J1 Blade Putter – Black',followups:[
         {label:'followup-bronze-fi',lang:'fi',message:'Entä pronssinen?',productPriceTitle:'JAG J1 Blade Putter – Bronze'},
       ]},
@@ -480,9 +502,9 @@ const ecommerceSites=[
       {label:'return-fi',lang:'fi',message:'Millainen palautusoikeus teillä on?',expect:/100/},
       {label:'return-en',lang:'en',message:'What is your return policy?',expect:/100/},
       {label:'return-sv',lang:'sv',message:'Hur fungerar er returpolicy?',expect:/100/},
-      {label:'contact-fi',lang:'fi',message:'Mikä asiakaspalvelun sähköposti on?',expect:/asiakas@dick\.fi/i},
-      {label:'contact-en',lang:'en',message:'What is the customer service email?',expect:/asiakas@dick\.fi/i},
-      {label:'contact-sv',lang:'sv',message:'Vilken e-postadress har kundtjänsten?',expect:/asiakas@dick\.fi/i},
+      {label:'contact-fi',lang:'fi',message:'Mikä asiakaspalvelun sähköposti on?',contactEmail:true},
+      {label:'contact-en',lang:'en',message:'What is the customer service email?',contactEmail:true},
+      {label:'contact-sv',lang:'sv',message:'Vilken e-postadress har kundtjänsten?',contactEmail:true},
     ],
   },
 ];

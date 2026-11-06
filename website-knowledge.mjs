@@ -645,7 +645,7 @@ export function explicitShippingThresholdFacts(html) {
     .replace(/<(script|style|noscript|template|svg)\b[^>]*>[^]*?<\/\1\s*>/gi,'');
   const text=clean(decodeHtml(source.replace(/<[^>]*>/g,' ')));
   const found=[],seen=new Set();
-  const pattern=/\bfree\s+shipping\s+(?:is\s+)?available\s+on\s+orders?\s+(?:over|above|from)\s*(?:€\s*)?\d{2,5}(?:[.,]\d{1,2})?\s*(?:€|eur\b)?/gi;
+  const pattern=/\bfree\s+shipping(?:\s+in\s+(?:[\p{L}]+(?:\s+[\p{L}]+){0,2}|[\p{Regional_Indicator}]{2}))?\s+(?:(?:is\s+)?available\s+)?on\s+orders?\s+(?:over|above|from)\s*(?:€\s*)?\d{2,5}(?:[.,]\d{1,2})?\s*(?:€|eur\b)?/giu;
   for(const match of text.matchAll(pattern)){
     const claim=clean(match[0]);
     if(!/(?:€|eur\b)/i.test(claim)||junk.test(claim)||seen.has(norm(claim)))continue;

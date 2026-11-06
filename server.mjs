@@ -18,6 +18,7 @@ import { getCrmProvider, enqueueCrmLead } from './lead-crm-queue.mjs';
 import { processCrmOutbox } from './lead-crm-queue.mjs';
 import { deliverCrmProvider } from './lead-crm-providers.mjs';
 import { crmProviderAllowed, crmConnectorStatus, connectCrmCredential, retestCrmCredential, disconnectCrmCredential } from './crm-connectors.mjs';
+import { retailPolicySampleUrls } from './retail-policy-samples.mjs';
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, extractProducts, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { firecrawlEnabled, firecrawlMaxPages, maySpendOneFirecrawlCredit, fetchFirecrawlRenderedHtml } from './firecrawl-fallback.mjs';
 import { assistedSetupCheckoutTrial, holdAssistedSetupBilling, releaseAssistedSetupBilling, assistedSetupBillingMode } from './assisted-setup-billing.mjs';
@@ -6469,6 +6470,35 @@ async function fetchWebsiteBundle(value, maxPages = 10000, timeBudgetMs = 65000,
     } catch {}
   }
 
+  // Shopify and WooCommerce catalogs supply products, but product-page-only
+  // shipping/returns policies may be missed when the general queue exhausts its
+  // budget. Read up to three same-origin, catalog-confirmed product detail pages
+  // before that queue. No third-party renderer, no paid middleware, no guessed
+  // policies; the ordinary pinned-HTTP / private-network protections still apply.
+  if (storefrontProducts.length && !locationDetailSeed &&
+      !pages.some(page=>page.document?.shippingThresholdFacts?.length)) {
+    for (const url of retailPolicySampleUrls(storefrontProducts,first.finalUrl,3)) {
+      const remaining=timeBudgetMs-(Date.now()-crawlStartedAt);
+      if (pages.length>=maxPages || remaining<3500)break;
+      const candidateKey=new URL(url).origin+new URL(url).pathname.replace(/\/$/,'');
+      if(pages.some(page=>page.key===candidateKey))continue;
+      try {
+        const sample=await fetchPublicHtml(url,Math.min(6500,remaining-1200),4_000_000);
+        const resolved=new URL(sample.finalUrl);
+        if(resolved.hostname.toLowerCase()!==base.hostname.toLowerCase())continue;
+        const key=resolved.origin+resolved.pathname.replace(/\/$/,'')+resolved.search;
+        if(pages.some(page=>page.key===key))continue;
+        const document=extractBusinessDocument(sample.html,sample.finalUrl);
+        pages.push({url:sample.finalUrl,key,document});
+        collectMedia(sample.html,sample.finalUrl);
+        enqueue(sample.html,sample.finalUrl);
+        if(document.shippingThresholdFacts?.length)break;
+      }catch {
+        // A blocked or inaccessible sample must never abort the ordinary crawl.
+      }
+    }
+  }
+
   const totalTarget = Math.max(1, Math.min(maxPages, pages.length + queue.length));
   if (onProgress) onProgress({scanned:pages.length,total:totalTarget});
 
@@ -7800,6 +7830,15 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
         selected:[location.row],
       };
     }
+    // An assembly/design city or marketing copy is not a verified visiting
+    // address. Never silently hand off with an empty answer or invent a HQ.
+    const answer=responseLang==='en'
+      ? 'The company\'s visiting address has not been verified. Please contact the company to confirm its location.'
+      : responseLang==='sv'
+        ? 'Företagets besöksadress har inte bekräftats. Kontakta företaget för att få rätt adress.'
+        : 'Yrityksen käyntiosoitetta ei ole vahvistettu. Ota yhteyttä yritykseen sijainnin varmistamiseksi.';
+    return {answer,handoff:true,confidence:0.2,intent:'Sijainti',
+      sourceIds:[],selected:[]};
   }
 
   const dateException=answerBranchException({rows,message:cleanMessage,history,lang:responseLang});
