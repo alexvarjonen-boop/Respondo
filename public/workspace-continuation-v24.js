@@ -612,6 +612,9 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
       if(!target || target.hidden)return;
       orbit?.suspendPin?.();
       target.scrollIntoView({behavior:'auto',block:'start'});
+      // A direct integrations callback should also select the matching
+      // chapter in the visible orbit rather than retaining 01/12 Overview.
+      orbit?.sync('integrations');
       const feedback=workspace.querySelector('.rs-integration-oauth-feedback');
       const focusTarget=feedback||workspace.querySelector('#respondoWorkspaceModuleTitle');
       if(focusTarget){
