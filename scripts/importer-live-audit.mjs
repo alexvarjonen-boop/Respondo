@@ -62,7 +62,19 @@ function liveProductPriceExpectation(site,rows,productName){
   return new RegExp('(?:€\\s*)?'+numeric+'(?:\\s*(?:€|EUR))?','i');
 }
 
+function liveShippingThresholdExpectation(site,rows){
+  const numbers=rows.filter(row=>row.category==='Toimitus ja seuranta')
+    .map(row=>String(row.answer||'').match(/free\s+shipping[^.]*?orders?\s+(?:over|above|from)\s*(?:€\s*)?(\d{2,5})\s*(?:€|eur\b)/i)?.[1])
+    .filter(Boolean);
+  assert.ok(numbers.length,site.name+' missing independently sourced free-shipping order threshold');
+  const unique=[...new Set(numbers)];
+  assert.equal(unique.length,1,site.name+' has different shipping thresholds; country-specific audit required');
+  return new RegExp('(?:^|\\\\D)'+unique[0]+'(?:\\\\D|$)');
+}
 function scenarioWithLiveExpectation(site,rows,scenario){
+  if(scenario?.shippingThreshold) return {
+    ...scenario,expect:liveShippingThresholdExpectation(site,rows)
+  };
   if(!scenario?.productPriceTitle) return scenario;
   return {...scenario,expect:liveProductPriceExpectation(site,rows,scenario.productPriceTitle)};
 }
@@ -414,7 +426,7 @@ const ecommerceSites=[
     minFacts:12,
     mustContain:[
       ['product',/JAG (?:Satin (?:Black|Bronze|Steel)|J1 Blade Putter\s*[-–]\s*(?:Black|Bronze|Steel))/i],
-      ['shipping threshold',/free shipping.{0,80}280\s*€/i],
+      ['shipping threshold',/free shipping.{0,100}orders?\s+(?:over|above|from)\s*(?:€\s*)?\d{2,5}\s*€/i],
       ['delivery time',/3\s*[-–]\s*5\s+business days|3\s*[-–]\s*6\s+days/i],
       ['returns',/return within\s+45\s+days|45\s+days/i],
       ['location',/Turku,\s*Finland/i],
@@ -426,9 +438,9 @@ const ecommerceSites=[
       {label:'black-price-fi',lang:'fi',message:'Paljonko JAG J1 Blade Putter – Black maksaa?',productPriceTitle:'JAG J1 Blade Putter – Black'},
       {label:'black-price-en',lang:'en',message:'How much is the JAG J1 Blade Putter – Black putter?',productPriceTitle:'JAG J1 Blade Putter – Black'},
       {label:'black-price-sv',lang:'sv',message:'Vad kostar JAG J1 Blade Putter – Black-puttern?',productPriceTitle:'JAG J1 Blade Putter – Black'},
-      {label:'shipping-cost-fi',lang:'fi',message:'Paljonko toimitus maksaa?',expect:/280|ilmain|free/i},
-      {label:'shipping-cost-en',lang:'en',message:'How much does shipping cost?',expect:/280|free/i},
-      {label:'shipping-cost-sv',lang:'sv',message:'Vad kostar frakten?',expect:/280|gratis|free/i},
+      {label:'shipping-cost-fi',lang:'fi',message:'Paljonko toimitus maksaa?',shippingThreshold:true},
+      {label:'shipping-cost-en',lang:'en',message:'How much does shipping cost?',shippingThreshold:true},
+      {label:'shipping-cost-sv',lang:'sv',message:'Vad kostar frakten?',shippingThreshold:true},
       {label:'delivery-fi',lang:'fi',message:'Kuinka kauan toimituksessa kestää?',expect:/3\s*[-–]\s*(?:5|6)|2\s*[-–]\s*6/i},
       {label:'delivery-en',lang:'en',message:'How long does delivery take?',expect:/3\s*[-–]\s*(?:5|6)|2\s*[-–]\s*6/i},
       {label:'delivery-sv',lang:'sv',message:'Hur lång är leveranstiden?',expect:/3\s*[-–]\s*(?:5|6)|2\s*[-–]\s*6/i},
