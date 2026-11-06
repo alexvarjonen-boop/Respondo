@@ -120,6 +120,11 @@
       missing_tenant:['Yrityksen työtilaa ei löytynyt. Valitse yritys ja yritä uudelleen.','Företagets arbetsyta kunde inte hittas.','Company workspace not found. Select a company and try again.'],
       invalid_state:['Kirjautumispyyntö vanheni. Aloita yhdistäminen uudelleen.','Inloggningsförfrågan har gått ut. Försök igen.','Authorization expired. Start the connection again.'],
       invalid_session:['Kirjaudu Respondoon uudelleen ennen yhdistämistä.','Logga in på Respondo på nytt.','Sign into Respondo again before connecting.'],
+      admin_approval_required:[
+        'Organisaatiosi Microsoft 365 -ylläpitäjän pitää hyväksyä Respondon sähköpostioikeudet ennen yhdistämistä. Pyydä ylläpitäjää hyväksymään sovellus ja yritä uudelleen.',
+        'Organisationens Microsoft 365-administratör måste godkänna Respondos e-postbehörigheter. Be administratören godkänna appen och försök igen.',
+        'Your Microsoft 365 administrator must approve Respondo mailbox permissions before connecting. Ask the administrator to approve the app and try again.'
+      ],
       cancelled:['Valtuutusta ei hyväksytty. Yhteyttä ei luotu.','Godkännandet avbröts. Ingen anslutning skapades.','Authorization was cancelled. No connection was created.'],
       failed:['Yhdistäminen epäonnistui. Tarkista palveluntarjoajan oikeudet tai pyydä Respondo-ylläpitoa tarkistamaan sovelluksen asetukset.','Anslutningen misslyckades. Kontrollera behörigheterna eller kontakta administratören.','Connection failed. Check provider permissions or have the Respondo administrator check the application setup.'],
       connected:['Yhteys vahvistettu. Voit tarkistaa tilan alempaa.','Anslutningen har verifierats. Kontrollera statusen nedan.','Connection verified. Check the status below.']
