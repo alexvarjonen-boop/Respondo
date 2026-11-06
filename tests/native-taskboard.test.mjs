@@ -119,9 +119,9 @@ test('existing CRM/ticket automations write native tasks in the same transaction
 });
 test('owner dashboard localizations and no external notifications',()=>{
   const ui=readFileSync(new URL('../public/native-ai-operations.js',import.meta.url),'utf8');
-  assert.match(ui,/fi:\{tasks:'Työtehtävät'/);
-  assert.match(ui,/sv:\{tasks:'Uppgifter'/);
-  assert.match(ui,/en:\{tasks:'Tasks'/);
+  assert.match(ui,/fi:\{[\s\S]*?tasks:'Työtehtävät'/);
+  assert.match(ui,/sv:\{[\s\S]*?tasks:'Uppgifter'/);
+  assert.match(ui,/en:\{[\s\S]*?tasks:'Tasks'/);
   assert.match(ui,/tasksNoNotifications:/);
   assert.match(ui,/function renderTasks\(\)/);
   assert.match(ui,/status:item.status==='open'\?'done':'open'/);

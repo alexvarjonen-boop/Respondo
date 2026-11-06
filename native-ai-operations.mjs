@@ -1,5 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import { enqueueNativeTask } from './native-taskboard.mjs';
+import {runFreeWorkflowEvent} from './respondo-free-actions.mjs';
 
 const RULES=[['lead_captured','save_contact'],['action_requested','open_ticket']];
 const STATES=new Set(['new','contacted','qualified','won','lost']);
@@ -246,5 +247,8 @@ export async function runNativeAutomation(db,tenantId,trigger,event){
     } catch(error){await client.query('ROLLBACK');throw error;}
     finally{client.release();}
   }
+  // Additional owner-configured workflows run only first-party actions.
+  await runFreeWorkflowEvent(db,tenantId,trigger,event);
+  // Preserve the existing public API response for older dashboard clients.
   return {executed};
 }
