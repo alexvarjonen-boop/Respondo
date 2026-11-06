@@ -71,7 +71,17 @@ function liveShippingThresholdExpectation(site,rows){
   assert.equal(unique.length,1,site.name+' has different shipping thresholds; country-specific audit required');
   return new RegExp('(?<![0-9])'+unique[0]+'(?![0-9])');
 }
+function liveContactEmailExpectation(site,rows){
+  const emails=[...new Set(rows.filter(row=>row.title==='Sähköposti')
+    .map(row=>String(row.answer||'').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i)?.[0])
+    .filter(Boolean))];
+  assert.ok(emails.length,site.name+' has no published email contact evidence');
+  return new RegExp(emails.map(regexpEscape).join('|'),'i');
+}
 function scenarioWithLiveExpectation(site,rows,scenario){
+  if(scenario?.contactEmail) return {
+    ...scenario,expect:liveContactEmailExpectation(site,rows)
+  };
   if(scenario?.shippingThreshold) return {
     ...scenario,expect:liveShippingThresholdExpectation(site,rows)
   };
@@ -492,9 +502,9 @@ const ecommerceSites=[
       {label:'return-fi',lang:'fi',message:'Millainen palautusoikeus teillä on?',expect:/100/},
       {label:'return-en',lang:'en',message:'What is your return policy?',expect:/100/},
       {label:'return-sv',lang:'sv',message:'Hur fungerar er returpolicy?',expect:/100/},
-      {label:'contact-fi',lang:'fi',message:'Mikä asiakaspalvelun sähköposti on?',expect:/asiakas@dick\.fi/i},
-      {label:'contact-en',lang:'en',message:'What is the customer service email?',expect:/asiakas@dick\.fi/i},
-      {label:'contact-sv',lang:'sv',message:'Vilken e-postadress har kundtjänsten?',expect:/asiakas@dick\.fi/i},
+      {label:'contact-fi',lang:'fi',message:'Mikä asiakaspalvelun sähköposti on?',contactEmail:true},
+      {label:'contact-en',lang:'en',message:'What is the customer service email?',contactEmail:true},
+      {label:'contact-sv',lang:'sv',message:'Vilken e-postadress har kundtjänsten?',contactEmail:true},
     ],
   },
 ];
