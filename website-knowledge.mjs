@@ -636,6 +636,26 @@ function semanticDefinitionSpecifications(html,url) {
   return specs;
 }
 
+// Preserve explicit, public shipping thresholds sometimes placed in offer
+// buttons which are correctly excluded from generic paragraph extraction.
+// Do not turn progress counters ("€X more to unlock shipping") into policy.
+export function explicitShippingThresholdFacts(html) {
+  const source=String(html||'').slice(0,2_000_000)
+    .replace(/<!--[^]*?-->/g,'')
+    .replace(/<(script|style|noscript|template|svg)\\b[^>]*>[^]*?<\\/\\1\\s*>/gi,'');
+  const text=clean(decodeHtml(source.replace(/<[^>]*>/g,' ')));
+  const found=[],seen=new Set();
+  const pattern=/\\bfree\\s+shipping\\s+(?:is\\s+)?available\\s+on\\s+orders?\\s+(?:over|above|from)\\s*(?:€\\s*)?\\d{2,5}(?:[.,]\\d{1,2})?\\s*(?:€|eur\\b)?/gi;
+  for(const match of text.matchAll(pattern)){
+    const claim=clean(match[0]);
+    if(!/(?:€|eur\\b)/i.test(claim)||junk.test(claim)||seen.has(norm(claim)))continue;
+    seen.add(norm(claim));
+    found.push(claim);
+    if(found.length>=3)break;
+  }
+  return found;
+}
+
 export function extractBusinessDocument(html, url) {
   const products = extractProducts(html, url);
   const hydration=hydratedBusinessData(html);
@@ -653,6 +673,7 @@ export function extractBusinessDocument(html, url) {
   };
   // Strip raw-text elements first, so code containing '<' cannot corrupt parsing.
   const source = String(html || '').replace(/<!--[^]*?-->/g,'').replace(/<(script|style|noscript|svg|template)\b[^>]*>[^]*?<\/\1\s*>/gi,'');
+  const shippingThresholdFacts=explicitShippingThresholdFacts(source);
 
   // Some page builders put contact text inside buttons/widgets that are
   // intentionally excluded from ordinary content extraction. Recover literal
@@ -738,7 +759,7 @@ export function extractBusinessDocument(html, url) {
     if (!/^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag) && !/\/\s*>$/.test(token)) stack.push({tag,skip,href,text:'',cells:tag === 'tr' ? [] : undefined});
   }
   flush();
-  return {url, blocks, links, products, faqPairs, servicePairs, specPairs, structuredFacts, storeAvailabilityFacts, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
+  return {url, blocks, links, products, faqPairs, servicePairs, specPairs, structuredFacts, storeAvailabilityFacts, shippingThresholdFacts, contactForm:hasContactForm(html), text:blocks.map(x=>x.text).join('\n')};
 }
 
 export function businessFactKind(text, context = '') {
@@ -1011,6 +1032,10 @@ export function essentialWebsiteCandidates(bundle) {
     if (/arvostel|reviews|testimonial/.test(docPath) || blockedLegalDoc) continue;
     if(doc.contactForm && httpUrl(doc.url)) contactLinks.push({url:doc.url,sourceUrl:doc.url,score:30,hasForm:true});
     const docProducts=Array.isArray(doc.products)?doc.products:[];
+    for(const threshold of (Array.isArray(doc.shippingThresholdFacts)?doc.shippingThresholdFacts:[]).slice(0,3)){
+      if(typeof threshold==='string' && threshold.length<=160)
+        add('delivery','Toimitus',threshold,doc.url);
+    }
     const blocks = doc.blocks || String(doc.text || '').split('\n').map(text=>({text,heading:''}));
     for(const availability of (Array.isArray(doc.storeAvailabilityFacts)?doc.storeAvailabilityFacts:[])){
       const url=httpUrl(availability.sourceUrl,doc.url);
