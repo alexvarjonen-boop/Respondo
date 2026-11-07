@@ -10,7 +10,7 @@ import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs
 import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS, featureAvailableForPublicPlan, publicPlanFeatureCount } from './features-data.js?v=20261031-plan-scoped-v1';
 import { appleHomeMarkup } from './apple-home.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10-polish-v11-hero-clarity-v17-hero-try-bot-v32-chat-navigation-note-v34-orbit-click-v1';
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
-import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261010-subscription-prices-v2-pricing-20261014-ape-v1-annual-120-v1-legal-setup-20261029-v1-refresh-20261103-v51';
+import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261107-movexa-v1';
 import { chooseImportedContactEmail } from './import-email.mjs?v=20261001-v1';
 import { marketingAttributionQuery, marketingLeadVisitorRef, normalizeDemoWebsite, buildDemoRequestMessage } from './marketing-lead.mjs?v=20261027-qualified-demo-v1';
 import { parseBookingDurationMinutes } from './booking-duration.mjs?v=20261009-v1';
@@ -488,7 +488,7 @@ let cfg = {
   brand: 'RESPONDO AI',
   supportEmail: 'info@respondoai.fi',
   businessId: '3599437-5',
-  sellerName: 'Respondo AI',
+  sellerName: 'Movexa',
   sellerPostalAddress: '',
   trialDays: 3,
   monthlyNet: 49,
@@ -1895,6 +1895,11 @@ function updateDocumentLanguageMeta(lang) {
       sv:['Datasäkerhet och integritet | Respondo AI','Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
       en:['Security and Privacy | Respondo AI','See how Respondo protects company and customer data, sign-ins, integrations and service usage.'],
     },
+    '/yritystiedot': {
+      fi:['Yritystiedot | Respondo AI','Respondo AI on Movexan tarjoama palvelu. Viralliset yritys- ja yhteystiedot.'],
+      sv:['Företagsuppgifter | Respondo AI','Respondo AI tillhandahålls av Movexa. Företagets officiella uppgifter och kontaktinformation.'],
+      en:['Company Information | Respondo AI','Respondo AI is provided by Movexa. Official business and contact details.'],
+    },
     '/kayttoehdot': {
       fi:['Käyttöehdot | Respondo AI','Respondo AI -palvelun käyttöehdot yritysasiakkaille.'],
       sv:['Användarvillkor | Respondo AI','Användarvillkor för Respondo AI:s företagstjänst.'],
@@ -1942,7 +1947,7 @@ function updateDocumentLanguageMeta(lang) {
     },
   };
 
-  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', ...AI_TOPIC_PATHS, ...SEO_INTENT_PATHS, '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa']);
+  const indexable = new Set(['/', '/ominaisuudet', '/features', '/funktioner', '/kenelle-sopii', ...GLOBAL_GUIDE_PATHS, '/asiakaspalvelubotti', ...AI_TOPIC_PATHS, ...SEO_INTENT_PATHS, '/verkkokauppa-chatbot', '/ajanvaraus-chatbot', '/autokorjaamo-chatbot', '/lvi-chatbot', ...VERTICAL_LANDING_PATHS, '/hinnat', '/yhteystiedot', '/tietoturva', '/kayttoehdot', '/yritystiedot', '/tietosuoja', '/evasteet', '/dpa']);
   const guideMeta = GLOBAL_GUIDE_PATHS.includes(metaPath) ? Object.fromEntries(['fi','sv','en'].map(l => { const article=globalGuideData(metaPath,l); return [l,article?[article.title+' | Respondo AI',article.subtitle]:null]; })) : null;
   const baseMeta = metaByPath[metaPath] || (guideMeta?.fi ? guideMeta : null) || verticalMetaForPath(metaPath) || (AI_TOPIC_PATHS.includes(metaPath) ? Object.fromEntries(['fi','sv','en'].map(l => [l,aiTopicMeta(metaPath,l)])) : null) || (SEO_INTENT_PATHS.includes(metaPath) ? Object.fromEntries(['fi','sv','en'].map(l => [l,seoIntentMeta(metaPath,l)])) : null) || metaByPath['/'];
   const pair = baseMeta[lang] || baseMeta.fi;
@@ -2416,12 +2421,11 @@ function footer() {
         </div>`}
         <div class="foot-col">
           <h4>${appText("Yritys","Företag","Company")}</h4>
+          <a href="/yritystiedot?lang=${currentLang()}">${appText("Yritystiedot","Företagsuppgifter","Company information")}</a>
           <a href="/yhteystiedot?lang=${currentLang()}">${appText("Yhteystiedot","Kontakt","Contact")}</a>
           ${location.pathname === '/' ? `<a href="/guides?lang=${currentLang()}">${appText('Oppaat','Guider','Guides')}</a>` : ''}
           <a href="/tietoturva?lang=${currentLang()}">${appText("Tietoturva","Informationssäkerhet","Security")}</a>
           <a href="mailto:${esc(cfg.supportEmail)}">${esc(cfg.supportEmail)}</a>
-          <span>${esc(cfg.sellerName||'Respondo AI')}</span>
-          ${cfg.sellerPostalAddress?'<span>'+esc(cfg.sellerPostalAddress)+'</span>':''}
           <span>${appText("Suomi","Finland","Finland")}</span>
         </div>
         <div class="foot-col">
@@ -2435,6 +2439,7 @@ function footer() {
       </div>
       <div class="legalbar">
         <span>© ${new Date().getFullYear()} RESPONDO AI · ${appText("Kaikki oikeudet pidätetään.","Alla rättigheter förbehållna.","All rights reserved.")}</span>
+        <span class="footer-movexa">A MOVEXA BRAND</span>
       </div>
     </div>
   </footer>`;
@@ -3574,7 +3579,7 @@ function signup() {
           <div id="msg">${oauthErrorMessage() ? `<div class="notice error">${esc(oauthErrorMessage())}</div>` : ''}</div>
         </form>
         <div class="signup-seller-note">
-          <small>${appText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')} · ${esc(cfg.sellerName || 'Respondo AI')} · ${appText('Suomi','Finland','Finland')}</small>
+          <small>${appText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')} · ${esc(cfg.sellerName || 'Movexa')} · ${appText('Suomi','Finland','Finland')}</small>
         </div>
       </div>
     </main>
@@ -3689,7 +3694,7 @@ const LEGAL = {
     title: 'Käyttöehdot',
     intro: 'Näissä ehdoissa kerrotaan, millä ehdoilla yritysasiakkaat voivat käyttää Respondo AI -palvelua.',
     sections: [
-      ['1. Palveluntarjoaja', `Respondo AI, Y-tunnus ${cfg.businessId || '3599437-5'}, Suomi. Yhteydenotot: ${cfg.supportEmail}.`],
+      ['1. Palveluntarjoaja', `Respondo AI on Movexan tarjoama palvelu. Sopimuskumppani on Movexa, Y-tunnus ${cfg.businessId || '3599437-5'}, Suomi. Yhteydenotot: ${cfg.supportEmail}.`],
       ['2. Palvelu', 'Respondo AI on yrityksille tarkoitettu asiakaspalvelu- ja ajanvarauspalvelu. Palveluun voi kuulua verkkosivubotti, yrityksen tietopohja, asiakasviestien käsittely, live-asiakaspalvelu erillisillä työntekijätileillä, kielitaitoon perustuva keskustelujen ohjaus, tarjous- ja yhteydenottopyynnöt, ajanvaraukset sekä asiakkaan erikseen yhdistämät ulkopuoliset palvelut, kuten Google Calendar. Käytettävissä olevat ominaisuudet voivat riippua asiakkaan asetuksista ja tilauksesta.'],
       ['3. Automaattiset vastaukset', 'Respondo AI tuottaa asiakasvastauksia yrityksen palveluun lisäämien tietojen ja käytössä olevien toimintojen perusteella. Automaattinen vastaus voi olla virheellinen tai puutteellinen, joten asiakasyritys vastaa omien tietojensa oikeellisuudesta ja siitä, missä tilanteissa automaattisia vastauksia käytetään. Palvelua ei tule käyttää lainvastaisiin tarkoituksiin tai sellaisiin korkean riskin päätöksiin, joissa automaattinen vastaus yksin voi aiheuttaa olennaista vahinkoa.'],
       ['4. Google Calendar ja muut integraatiot', 'Asiakas voi vapaaehtoisesti yhdistää Google Calendarin tai muun tuetun palvelun. Respondo käyttää asiakkaan myöntämiä oikeuksia vain kyseisen käyttäjälle näkyvän toiminnon toteuttamiseen, kuten varausten saatavuuden tarkistamiseen ja kalenteritapahtumien luomiseen. Asiakas voi poistaa integraation käytöstä palvelun asetuksista tai kyseisen ulkopuolisen palvelun tiliasetuksista.'],
@@ -3709,7 +3714,7 @@ const LEGAL = {
     title: 'Tietosuojaseloste',
     intro: 'Tässä kerrotaan, mitä henkilötietoja Respondo AI käsittelee, miksi niitä käsitellään ja miten Google-käyttäjädataa käytetään.',
     sections: [
-      ['1. Rekisterinpitäjä', `Respondo AI, Y-tunnus ${cfg.businessId || '3599437-5'}. Tietosuoja- ja muut yhteydenotot: ${cfg.supportEmail}.`],
+      ['1. Rekisterinpitäjä', `Movexa (Y-tunnus ${cfg.businessId || '3599437-5'}) tarjoaa Respondo AI:n. Tietosuoja- ja muut yhteydenotot: ${cfg.supportEmail}.`],
       ['2. Käsiteltävät tiedot', 'Voimme käsitellä käyttäjän nimeä, sähköpostiosoitetta, kirjautumis- ja tilitietoja, yrityksen nimeä, yhteystietoja ja Y-tunnusta, tilaus- ja laskutustunnisteita, yrityksen tietopohjaan lisäämiä tietoja, palvelun asetuksia sekä asiakkaiden chat-, yhteydenotto-, tarjous- ja ajanvaraustietoja siltä osin kuin yritys käyttää näitä toimintoja. Markkinointisivun kävijätilastointia varten käsitellään lisäksi vierailun ajankohtaa, avattua sivupolkua, viittaavaa verkkotunnusta, mahdollisia UTM-kampanjatietoja ja yksisuuntaisesti pseudonymisoitua kävijätunnistetta. Raakaa IP-osoitetta ei tallenneta kävijätilastotauluun.'],
       ['3. Käsittelyn tarkoitukset ja perusteet', 'Tietoja käsitellään palvelun toimittamiseen ja sopimuksen täyttämiseen, käyttäjän tunnistamiseen, asiakaspalveluun, tilausten ja maksujen hallintaan, ajanvarausten toteuttamiseen, palvelun turvallisuuden ylläpitämiseen, väärinkäytösten ehkäisyyn sekä lakisääteisten velvoitteiden hoitamiseen. Pseudonyymia, palvelinpuolista kävijätilastointia käytetään käyttäjän suostumuksella sivuston käytön, markkinointikanavien ja teknisen toimivuuden ymmärtämiseen. Ilman suostumusta valinnaista kävijätilastointia ei käynnistetä. Tarvittaessa muu käsittely voi perustua myös käyttäjän suostumukseen.'],
       ['4. Google-tili ja Google Calendar', 'Kun käyttäjä yhdistää Google Calendarin, Respondo pyytää Google OAuth -oikeuden calendar.events sekä kirjautumiseen tarvittavat openid-, email- ja profile-oikeudet. Calendar-oikeus mahdollistaa kalenteritapahtumien tarkastelun ja muokkaamisen. Respondo käyttää kalenteritietoja vain käyttäjälle näkyvien ajanvaraustoimintojen toteuttamiseen: olemassa olevia tapahtumia tarkastetaan päällekkäisten varausten estämiseksi ja hyväksytyistä varauksista voidaan luoda tapahtumia käyttäjän kalenteriin. Google Calendarin yhdistäminen on vapaaehtoista.'],
@@ -3788,7 +3793,7 @@ function legal(type) {
       <aside class="legal-aside"><div class="section-kicker">${select(revised.label)}</div>
         <h1>${select(revised.title)}</h1><p>${select(revised.intro)}</p>
         <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span>
-          <b>Respondo AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId||'3599437-5')}</small>
+          <b>${esc(cfg.sellerName||'Movexa')}</b><small class="legal-brand-subline">Respondo AI · A Movexa Brand</small><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId||'3599437-5')}</small>
           ${cfg.sellerPostalAddress?'<small>'+esc(cfg.sellerPostalAddress)+'</small>':''}
         </div>
       </aside>
@@ -3886,7 +3891,7 @@ function legal(type) {
           <div class="section-kicker">${page.label}</div>
           <h1>${page.title}</h1>
           <p>${page.intro}</p>
-          <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span><b>Respondo AI</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')}</small></div>
+          <div class="legal-seller"><span>${uiText('PALVELUNTARJOAJA','TJÄNSTELEVERANTÖR','SERVICE PROVIDER')}</span><b>${esc(cfg.sellerName||'Movexa')}</b><small>${uiText('Y-tunnus','FO-nummer','Business ID')} ${esc(cfg.businessId || '3599437-5')}</small></div>
         </aside>
         <article class="legalcopy">
           ${page.sections.map(([h, p]) => `<section><h2>${h}</h2><p>${p}</p></section>`).join('')}
@@ -5655,7 +5660,7 @@ async function route() {
   else if (path === '/kayttoonotto-vahvistettu') html = setupOrderConfirmation();
   else if (path === '/maksu-valmis') html = await paymentSuccess();
   else if (path === '/app') html = await dashboard();
-  else if (['/kayttoehdot', '/tietosuoja', '/evasteet', '/dpa', '/tietoturva'].includes(path)) html = legal(path.slice(1));
+  else if (['/kayttoehdot', '/yritystiedot', '/tietosuoja', '/evasteet', '/dpa', '/tietoturva'].includes(path)) html = legal(path.slice(1));
   else html = `<div>${nav()}<main class="notfound"><div class="container"><div class="section-kicker">404</div><h1>${appText('Tätä sivua ei löytynyt.','Sidan hittades inte.','Page not found.')}</h1><a class="btn ink" href="/">${appText('Palaa etusivulle','Till startsidan','Back to home')}</a></div></main>${footer()}</div>`;
 
   $('#app').innerHTML = html;

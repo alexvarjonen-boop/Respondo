@@ -15,7 +15,7 @@ test('configured postal address appears in checkout, legal disclosures and foote
   assert.match(app,/function footer\(\)/);
   assert.match(app,/function legal\(type\)/);
   assert.match(app,/sellerPostalAddress\?'<small>'\+esc\(cfg\.sellerPostalAddress\)/);
-  assert.match(app,/sellerPostalAddress\?'<span>'\+esc\(cfg\.sellerPostalAddress\)/);
+  assert.match(app,/\/yritystiedot\?lang=/);
   assert.match(app,/sellerPostalAddress\?'<p>'\+esc\(cfg\.sellerPostalAddress\)/);
-  assert.match(app,/sellerName\|\|'Respondo AI'/);
+  assert.match(app,/sellerName\|\|'Movexa'/);
 });

@@ -68,3 +68,31 @@
 @media (max-width:600px) {
   #app .footer .foot-brand .brand-slogan { font-size:13px; }
 }
+
+/* A quiet brand attribution, secondary to Respondo AI. */
+#app .footer .legalbar {
+  display:flex;
+  justify-content:space-between !important;
+  align-items:center;
+  gap:12px 24px;
+  flex-wrap:wrap;
+}
+#app .footer .legalbar .footer-movexa {
+  color:inherit;
+  opacity:.7;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:.1em;
+  white-space:nowrap;
+}
+#app .legalpage .legal-brand-subline {
+  display:block;
+  font-size:12px;
+  font-weight:400;
+  opacity:.72;
+  letter-spacing:.01em;
+}
+@media(max-width:600px) {
+  #app .footer .legalbar { align-items:flex-start; gap:8px; }
+  #app .footer .legalbar .footer-movexa { font-size:10px; }
+}
