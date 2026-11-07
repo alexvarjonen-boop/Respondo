@@ -55,11 +55,12 @@
   -webkit-text-fill-color:var(--rs-settings-muted)!important;
 }
 #app .respondo-workspace .rs-module-tabs{
-  display:flex;
-  flex-wrap:nowrap!important;
-  overflow-x:auto;
-  scrollbar-width:thin;
-  -webkit-overflow-scrolling:touch;
+  /* Show every category without sideways scrolling, at any viewport width. */
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,175px),1fr));
+  align-items:stretch;
+  overflow:visible;
+  min-width:0;
   gap:4px!important;
   max-width:100%;
   padding:5px!important;
@@ -69,7 +70,12 @@
   border-radius:14px!important;
 }
 #app .respondo-workspace .rs-module-tabs button{
-  flex:0 0 auto;
+  min-width:0;
+  width:100%;
+  white-space:normal;
+  overflow-wrap:break-word;
+  line-height:1.35;
+  text-align:center;
   min-height:40px!important;
   padding:8px 14px!important;
   background:transparent!important;
@@ -311,6 +317,7 @@
   transition:background-color .12s ease!important;
 }
 @media(max-width:640px){
+  #app .respondo-workspace .rs-module-tabs{grid-template-columns:repeat(2,minmax(0,1fr));}
   #app .respondo-workspace .respondo-workspace-content{padding-inline:0!important}
   #app .respondo-workspace .respondo-workspace-content h1{font-size:32px!important}
   #app .respondo-workspace .rs-settings-directory{padding:16px 13px 6px!important}
