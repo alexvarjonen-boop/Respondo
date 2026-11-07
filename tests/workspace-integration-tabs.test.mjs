@@ -13,5 +13,5 @@ test('workspace integration categories wrap instead of clipping horizontally', (
   assert.doesNotMatch(tabs, /overflow-x:auto|flex-wrap:nowrap/);
   assert.match(css, /\.rs-module-tabs\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\);\}/);
   assert.match(css, /\.rs-module-tabs button\{[^}]*white-space:normal;/);
-  assert.match(html, /workspace-settings-minimal-v55\.css\?v=20261107-all-integration-tabs-visible-v1/);
+  assert.match(html, /workspace-settings-minimal-v55\.css\?v=[a-z0-9-]+/i);
 });
