@@ -1,8 +1,29 @@
 // Reviewed product disclosures, versioned so translations never depend on
 // runtime machine translation and the visible revision date remains stable.
-export const LEGAL_UPDATE_DATE = '2026-11-03';
+export const LEGAL_UPDATE_DATE = '2026-11-07';
 const S = (heading, body) => ({heading, body});
 export const LEGAL_20261008 = {
+  yritystiedot: {
+    label:['YRITYS / 01','FÖRETAG / 01','COMPANY / 01'],
+    title:['Yritystiedot','Företagsuppgifter','Company Information'],
+    intro:[
+      'Respondo AI on Movexan tarjoama tekoälypohjainen asiakaspalvelualusta.',
+      'Respondo AI är en AI-baserad kundserviceplattform från Movexa.',
+      'Respondo AI is an AI-powered customer service platform provided by Movexa.'
+    ],
+    sections:[
+      S(['Palveluntarjoaja','Tjänsteleverantör','Service Provider'],[
+        'Movexa · Y-tunnus 3599437-5 · Turku, Suomi.',
+        'Movexa · FO-nummer 3599437-5 · Åbo, Finland.',
+        'Movexa · Business ID 3599437-5 · Turku, Finland.'
+      ]),
+      S(['Respondo AI','Respondo AI','Respondo AI'],[
+        'Respondo AI on Movexan brändi. Movexa on palvelun myyjä ja sopimuskumppani.',
+        'Respondo AI är ett varumärke som tillhör Movexa. Movexa är säljare och avtalspart.',
+        'Respondo AI is a brand of Movexa. Movexa is the seller and contracting party.'
+      ])
+    ]
+  },
   kayttoehdot: {
     label:['LAKIASIAT / 01','JURIDIK / 01','LEGAL / 01'],
     title:['Käyttöehdot','Användarvillkor','Terms of Service'],
@@ -13,9 +34,9 @@ export const LEGAL_20261008 = {
     ],
     sections: [
       S(['1. Palveluntarjoaja','1. Tjänsteleverantör','1. Service provider'],[
-        'Respondo AI, Y-tunnus 3599437-5, Suomi. Yhteydenotot: info@respondoai.fi.',
-        'Respondo AI, FO-nummer 3599437-5, Finland. Kontakt: info@respondoai.fi.',
-        'Respondo AI, Business ID 3599437-5, Finland. Contact: info@respondoai.fi.'
+        'Respondo AI on Movexan tarjoama palvelu. Palvelun myyjä ja sopimuskumppani on Movexa (Y-tunnus 3599437-5), Suomi. Yhteydenotot: info@respondoai.fi.',
+        'Respondo AI tillhandahålls av Movexa. Säljare och avtalspart är Movexa (FO-nummer 3599437-5), Finland. Kontakt: info@respondoai.fi.',
+        'Respondo AI is provided by Movexa. The seller and contracting party is Movexa (Business ID 3599437-5), Finland. Contact: info@respondoai.fi.'
       ]),
       S(['2. Yrityskäyttö ja palvelun tarkoitus','2. Företagsanvändning och tjänstens syfte','2. Business-only use and service purpose'],[
         'Respondo AI on tarkoitettu yksinomaan yrityksille ja elinkeinotoimintaa harjoittaville tilaajille yritystoiminnan käyttöön, ei yksityiseen kuluttajakäyttöön. Hyväksymällä käyttöehdot tilaaja vahvistaa hankkivansa palvelun yritystoimintaansa tai edustamansa yrityksen käyttöön ja että hänellä on oikeus tehdä tilaus kyseisen yrityksen puolesta. Jos tilaus tehdään yksityiskäyttöön, tilaajan tulee jättää tilaus tekemättä. Respondo on yritysten verkkosivuille tarkoitettu asiakaspalvelu- ja ajanvarausohjelmisto. Toimintoja ovat esimerkiksi chat, hyväksytty tietopohja, verkkosivujen tietojen tuonti, asiakasviestien ja yhteydenottojen käsittely, tarjouspyynnöt, ajanvaraukset sekä erikseen käyttöön otettavat työntekijä- ja integraatiotoiminnot. Osa ominaisuuksista edellyttää tiettyä tilauspakettia tai erillisiä tunnuksia.',
@@ -94,9 +115,9 @@ export const LEGAL_20261008 = {
     ],
     sections: [
       S(['1. Rekisterinpitäjä ja yhteys','1. Personuppgiftsansvarig och kontakt','1. Controller and contact'],[
-        'Respondo AI, Y-tunnus 3599437-5. Tietosuojapyynnöt: info@respondoai.fi. Respondo toimii yleensä rekisterinpitäjänä omien käyttäjätiliensä, maksuhallintansa ja sivustonsa osalta. Yritysasiakas on lähtökohtaisesti rekisterinpitäjä oman bottinsa loppuasiakkaiden tiedoille, jolloin Respondo toimii henkilötietojen käsittelijänä.',
-        'Respondo AI, FO-nummer 3599437-5. Dataskyddsförfrågningar: info@respondoai.fi. Respondo är i regel personuppgiftsansvarig för sina egna konton, sin fakturering och webbplats. Företagskunden är normalt ansvarig för uppgifter om slutkunder i den egna botten, medan Respondo är personuppgiftsbiträde.',
-        'Respondo AI, Business ID 3599437-5. Privacy requests: info@respondoai.fi. Respondo is generally the controller for its own user accounts, billing and website. The business customer is generally controller for end-customer information collected by its bot, with Respondo acting as processor.'
+        'Movexa (Y-tunnus 3599437-5) tarjoaa Respondo AI -palvelua. Tietosuojapyynnöt: info@respondoai.fi. Respondo toimii yleensä rekisterinpitäjänä omien käyttäjätiliensä, maksuhallintansa ja sivustonsa osalta. Yritysasiakas on lähtökohtaisesti rekisterinpitäjä oman bottinsa loppuasiakkaiden tiedoille, jolloin Respondo toimii henkilötietojen käsittelijänä.',
+        'Movexa (FO-nummer 3599437-5) tillhandahåller Respondo AI. Dataskyddsförfrågningar: info@respondoai.fi. Respondo är i regel personuppgiftsansvarig för sina egna konton, sin fakturering och webbplats. Företagskunden är normalt ansvarig för uppgifter om slutkunder i den egna botten, medan Respondo är personuppgiftsbiträde.',
+        'Movexa (Business ID 3599437-5) provides Respondo AI. Privacy requests: info@respondoai.fi. Respondo is generally the controller for its own user accounts, billing and website. The business customer is generally controller for end-customer information collected by its bot, with Respondo acting as processor.'
       ]),
       S(['2. Käsiteltävät tiedot','2. Uppgifter som behandlas','2. Data categories'],[
         'Tietoja voivat olla nimi, sähköposti, puhelinnumero, yritys ja Y-tunnus, käyttäjä- ja työntekijätilit, tunnistautumis- ja tilaustunnisteet, yrityksen verkkosivulta tuodut ja itse lisätyt tietopohjatiedot, botin asetukset, keskustelut, yhteydenottopyynnöt, tarjoukset, ajanvaraukset, kävijätunnisteet, tekniset lokit ja vapaaehtoisiin integraatioihin liittyvät tunnisteet. Chat-viesti tai tuotu verkkosivu voi sisältää henkilötietoja.',

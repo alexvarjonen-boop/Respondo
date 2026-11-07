@@ -6,12 +6,13 @@ const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
 const index=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 test('public site does not display the sole proprietor personal name in signup, footer, or legal page chrome',()=>{
   assert.doesNotMatch(app,/Alex Varjonen/i);
-  assert.match(app,/sellerName: 'Respondo AI'/);
+  assert.match(app,/sellerName: 'Movexa'/);
   assert.match(app,/function footer\(\)/);
-  assert.match(app,/<b>Respondo AI<\/b>/);
+  assert.match(app,/esc\(cfg\.sellerName\|\|'Movexa'\)/);
+  assert.match(app,/A MOVEXA BRAND/);
   assert.match(index,/seller-brand-v1/);
 });
 test('the public configuration is brand-only, while statutory invoice seller identity remains accurate',()=>{
-  assert.match(server,/sellerName: 'Respondo AI'/);
-  assert.match(server,/Myyjä \/ Seller: Respondo AI/);
+  assert.match(server,/sellerName: 'Movexa'/);
+  assert.match(server,/Myyjä \/ Seller: Movexa/);
 });

@@ -46,5 +46,5 @@ test('oauth return skips bot-first preview and scrolls the real integrations mod
 
 test('updated module and app URL versions bypass browser caches',()=>{
   assert.match(app,/workspace-continuation-v24\.js\?v=[^']+-outlook-module-return-v1-outlook-unavailable-ux-v1'/);
-  assert.match(html,/app\.js\?v=[^"]+-outlook-module-return-v1-outlook-unavailable-ux-v1"/);
+  assert.match(html,/app\.js\?v=[^"]+-outlook-module-return-v1-outlook-unavailable-ux-v1-movexa-v1"/);
 });

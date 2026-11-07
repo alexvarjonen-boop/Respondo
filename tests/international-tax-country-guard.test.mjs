@@ -91,11 +91,11 @@ test('business-only order declaration is required for both checkout endpoints',(
 
 test('seller is identifiable and domestic VAT status is disclosed',()=>{
   const terms=fs.readFileSync(new URL('../public/legal-content.js',import.meta.url),'utf8');
-  assert.match(terms,/Respondo AI, Y-tunnus 3599437-5/);
+  assert.match(terms,/Movexa \(Y-tunnus 3599437-5\)/);
   assert.match(terms,/Maksulliset tilaukset ovat saatavilla Suomessa ja Yhdysvalloissa/);
   assert.match(terms,/Paid subscriptions are available to businesses in Finland and the United States/);
-  assert.match(app,/sellerName: 'Respondo AI'/);
-  assert.match(server,/sellerName: 'Respondo AI'/);
+  assert.match(app,/sellerName: 'Movexa'/);
+  assert.match(server,/sellerName: 'Movexa'/);
   assert.match(server,/automatic_tax:\s*\{\s*enabled:\s*checkoutCountry\.automaticTax\s*\}/);
   assert.match(server,/automatic_tax:\{enabled:checkoutCountry\.automaticTax\}/);
   assert.match(server,/settings\?\.defaults\?\.tax_code!=='txcd_10103001'/);

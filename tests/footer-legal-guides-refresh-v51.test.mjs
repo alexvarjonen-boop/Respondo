@@ -9,7 +9,7 @@ const locales=['fi','sv','en'], legalPaths=['kayttoehdot','tietosuoja','evasteet
 const guidePaths=['/guides/chatbot-question-testing','/guides/respondo-setup-integrations-privacy'];
 
 test('every footer legal document has three complete languages and current date',()=>{
-  assert.equal(LEGAL_UPDATE_DATE,'2026-11-03');
+  assert.equal(LEGAL_UPDATE_DATE,'2026-11-07');
   for(const path of legalPaths){
     const page=LEGAL_20261008[path];
     assert.ok(page,'Missing '+path);
@@ -80,7 +80,7 @@ test('homepage footer has Guides and legal links and refreshed assets',()=>{
   assert.ok(app.includes('href="/yhteystiedot?lang='));
   for(const path of ['/kayttoehdot','/tietosuoja','/evasteet','/dpa'])
     assert.ok(app.includes('href="'+path+'?lang='),path);
-  assert.match(app,/legal-content\.js\?v=[^']*refresh-20261103-v51/);
+  assert.match(app,/legal-content\.js\?v=20261107-movexa-v1/);
   assert.match(app,/global-resources\.mjs\?v=[^']*refresh-20261103-v51/);
   assert.match(html,/app\.js\?v=[^"]*legal-guides-v51/);
 });

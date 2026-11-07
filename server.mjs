@@ -147,6 +147,7 @@ const SEO_INDEXABLE_PATHS = new Set([
   '/yhteystiedot',
   '/tietoturva',
   '/kayttoehdot',
+  '/yritystiedot',
   '/tietosuoja',
   '/evasteet',
   '/dpa',
@@ -180,6 +181,7 @@ const SEO_META = {
     '/hinnat': ["AI-asiakaspalvelubotin hinnat yrityksille | Respondo AI", "Paljonko AI-asiakaspalvelubotti maksaa? Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vertaa myös vuositilauksia ja kokeile 3 päivää maksutta."],
     '/yhteystiedot': ['Yhteystiedot | Respondo AI', 'Ota yhteyttä Respondo AI:hin. Asiakaspalvelu, verkkosivujen chatbotin käyttöönotto ja yritysten tarjouspyynnöt.'],
     '/tietoturva': ['Tietoturva ja tietosuoja | Respondo AI', 'Näin Respondo suojaa yrityksen ja asiakkaiden tietoja, kirjautumisia, integraatioita ja palvelun käyttöä.'],
+    '/yritystiedot': ['Yritystiedot | Respondo AI', 'Respondo AI on Movexan tarjoama palvelu. Viralliset yritys- ja yhteystiedot.'],
     '/kayttoehdot': ['Käyttöehdot | Respondo AI', 'Respondo AI -palvelun käyttöehdot yritysasiakkaille.'],
     '/tietosuoja': ['Tietosuojaseloste | Respondo AI', 'Tietosuojaseloste kertoo, mitä henkilötietoja Respondo käsittelee, miksi niitä käsitellään ja miten tiedot suojataan.'],
     '/evasteet': ['Evästeet | Respondo AI', 'Tietoa Respondon välttämättömistä evästeistä, valinnaisesta kävijätilastoinnista ja evästevalintojen hallinnasta.'],
@@ -203,6 +205,7 @@ const SEO_META = {
     '/hinnat': ["Priser för AI-kundservicebot till företag | Respondo AI", "Jämför Respondo AI Advanced 49 €/mån, Premium 129 €/mån och Enterprise 149 €/mån. Se årspriser och testa gratis i tre dagar."],
     '/yhteystiedot': ['Kontakt | Respondo AI', 'Kontakta Respondo AI om kundservicebot för företag, funktioner, priser och att komma igång.'],
     '/tietoturva': ['Datasäkerhet och integritet | Respondo AI', 'Så skyddar Respondo företags- och kunddata, inloggningar, integrationer och användningen av tjänsten.'],
+    '/yritystiedot': ['Företagsuppgifter | Respondo AI', 'Respondo AI tillhandahålls av Movexa. Företagets officiella uppgifter och kontaktinformation.'],
     '/kayttoehdot': ['Användarvillkor | Respondo AI', 'Användarvillkor för Respondo AI:s företagstjänst.'],
     '/tietosuoja': ['Integritetspolicy | Respondo AI', 'Information om vilka personuppgifter Respondo behandlar, varför de behandlas och hur de skyddas.'],
     '/evasteet': ['Cookies | Respondo AI', 'Information om nödvändiga cookies, valfri besöksstatistik och hantering av cookieinställningar.'],
@@ -226,6 +229,7 @@ const SEO_META = {
     '/hinnat': ["AI Customer Service Chatbot Pricing | Respondo AI", "Compare Respondo AI Advanced €49/month, Premium €129/month and Enterprise €149/month. View annual plans and the three-day free trial."],
     '/yhteystiedot': ['Contact Respondo AI | Support and Sales', 'Contact Respondo AI about the business customer service chatbot, product information and getting started.'],
     '/tietoturva': ['Security and Privacy | Respondo AI', 'See how Respondo protects company and customer data, sign-ins, integrations and service usage.'],
+    '/yritystiedot': ['Company Information | Respondo AI', 'Respondo AI is provided by Movexa. Official business and contact details.'],
     '/kayttoehdot': ['Terms of Service | Respondo AI', 'Terms of service for Respondo AI business customers.'],
     '/tietosuoja': ['Privacy Policy | Respondo AI', 'Learn what personal data Respondo processes, why it is processed and how it is protected.'],
     '/evasteet': ['Cookies | Respondo AI', 'Information about necessary cookies, optional visitor analytics and cookie preference management.'],
@@ -644,7 +648,7 @@ async function enforceCompletedCheckoutCountryPolicy(session) {
 // Applies only to newly created, verified Finnish B2B subscriptions.
 // Do not silently rewrite finalized invoices or historical subscriptions.
 const RESPONDO_DOMESTIC_INVOICE_FOOTER =
-  'Myyjä / Seller: Respondo AI. Y-tunnus / Business ID: 3599437-5. ' +
+  'Myyjä / Seller: Movexa. Y-tunnus / Business ID: 3599437-5. ' +
   'Myyjä ei ole arvonlisäverorekisterissä; arvonlisäveroa ei peritä vähäisen toiminnan vuoksi. ' +
   'The seller is not VAT-registered; no Finnish VAT is charged.';
 async function ensureNewDomesticSubscriptionSellerFooter(subscriptionId, session) {
@@ -10891,6 +10895,7 @@ app.get('/sitemap.xml', (req, res) => {
     { path:'/tietoturva', changefreq:'monthly', priority:'0.7' },
     { path:'/tietosuoja', changefreq:'monthly', priority:'0.5' },
     { path:'/kayttoehdot', changefreq:'monthly', priority:'0.5' },
+    { path:'/yritystiedot', changefreq:'monthly', priority:'0.5' },
     { path:'/evasteet', changefreq:'monthly', priority:'0.4' },
     { path:'/dpa', changefreq:'monthly', priority:'0.5' },
   ];
@@ -11236,7 +11241,7 @@ app.get('/api/public/config', publicReadLimiter, async (req, res) => {
   }
   return res.json({
     brand: 'RESPONDO AI',
-    sellerName: 'Respondo AI',
+    sellerName: 'Movexa',
     // Optional publicly displayed business mailing address. Do not populate from private payment/KYC data.
     sellerPostalAddress: String(process.env.RESPONDO_SELLER_POSTAL_ADDRESS || '').trim().slice(0,200),
     supportEmail: process.env.SUPPORT_EMAIL || 'info@respondoai.fi',
