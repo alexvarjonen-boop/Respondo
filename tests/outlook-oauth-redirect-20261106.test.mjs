@@ -34,7 +34,7 @@ test('Outlook OAuth redirects return to matching provider and integrations secti
 
 test('oauth return skips bot-first preview and scrolls the real integrations module into view',()=>{
   assert.match(app,/const section=new URLSearchParams\(location.search\)\.get\('section'\)/);
-  assert.match(app,/activateRespondoWorkspace\(\{view:view\|\|'bot'\}\)/);
+  assert.match(app,/activateRespondoWorkspace\(\{view\}\)/);
   assert.match(workspace,/selectView\(view\)/);
   assert.match(workspace,/initialSection==='integrations' && workspace\.dataset\.currentView==='integrations'/);
   assert.match(workspace,/workspace\.querySelector\('\[data-workspace-page="modules"\]'\)/);
