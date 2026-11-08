@@ -90,7 +90,7 @@ test('every dashboard button with an ID has at least one runtime reference',()=>
   assert.match(app,/document\.querySelectorAll\('\[data-dashboard-nav\]'\)/);
   assert.match(app,/document\.querySelectorAll\('\[data-dashboard-open\]'\)/);
   assert.match(app,/document\.querySelectorAll\('\[data-dashboard-jump\]'\)/);
-  assert.match(app,/workspace\.addEventListener/); // checked below in workspace
+  assert.match(workspace,/workspace\.addEventListener\('click'/);
 });
 
 test('built-in tools bind every tab and use a real render path',()=>{
