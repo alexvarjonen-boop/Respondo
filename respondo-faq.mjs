@@ -104,21 +104,21 @@ const FAQ = [
         "Mitä Respondo maksaa kuukaudessa?",
         "Paljonko kuukausitilaus maksaa?"
       ],
-      "a": "Kuukausihinnat ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vuositilaukset ovat Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi) ja Enterprise 139 €/kk (1 668 €/vuosi). Säästät 10 €/kk. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi."
+      "a": "Kuukausihinnat ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Vuositilaukset ovat Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi) ja Enterprise 139 €/kk (1 668 €/vuosi). Säästät 10 €/kk. Suomen kotimaan myynnissä hinnat sisältävät ALV:n 25,5 %."
     },
     "sv": {
       "q": [
         "Vad kostar Respondo per månad?",
         "Vad kostar månadsabonnemanget?"
       ],
-      "a": "Månadspriserna är Advanced 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Årsplanerna är Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år) och Enterprise 139 €/mån (1 668 €/år). Spara 10 €/mån. Ingen moms debiteras på grund av verksamhet i liten skala."
+      "a": "Månadspriserna är Advanced 49 €/månad, Premium 129 €/månad och Enterprise 149 €/månad. Årsplanerna är Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år) och Enterprise 139 €/mån (1 668 €/år). Spara 10 €/mån. Priserna inkluderar finsk moms på 25,5 % vid inhemsk försäljning."
     },
     "en": {
       "q": [
         "How much does Respondo cost per month?",
         "What is the monthly plan price?"
       ],
-      "a": "Monthly pricing is Advanced €49/month, Premium €129/month, and Enterprise €149/month. Annual plans are Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year), saving €10/month. No VAT is charged due to the small-scale business exemption."
+      "a": "Monthly pricing is Advanced €49/month, Premium €129/month, and Enterprise €149/month. Annual plans are Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year), saving €10/month. Prices include 25.5% Finnish VAT on domestic sales."
     }
   },
   {
@@ -128,21 +128,21 @@ const FAQ = [
         "Mitä vuositilaus maksaa?",
         "Paljonko vuosipaketti maksaa?"
       ],
-      "a": "Vuositilaukset ovat Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi) ja Enterprise 139 €/kk (1 668 €/vuosi). Säästät 10 €/kk. Kuukausitilaukset ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Aiemmat vuositilaukset jatkuvat vanhoilla sopimusehdoillaan. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi."
+      "a": "Vuositilaukset ovat Advanced 39 €/kk (468 €/vuosi), Premium 119 €/kk (1 428 €/vuosi) ja Enterprise 139 €/kk (1 668 €/vuosi). Säästät 10 €/kk. Kuukausitilaukset ovat Advanced 49 €/kk, Premium 129 €/kk ja Enterprise 149 €/kk. Aiemmat vuositilaukset jatkuvat vanhoilla sopimusehdoillaan. Suomen kotimaan myynnissä hinnat sisältävät ALV:n 25,5 %."
     },
     "sv": {
       "q": [
         "Vad kostar årsabonnemanget?",
         "Hur mycket kostar årsplanen?"
       ],
-      "a": "Årsabonnemang är 10 €/månad billigare: Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år), Enterprise 139 €/mån (1 668 €/år). Årsbeloppet betalas på en gång. Befintliga avtal gäller som avtalat. Ingen moms debiteras på grund av verksamhet i liten skala."
+      "a": "Årsabonnemang är 10 €/månad billigare: Advanced 39 €/mån (468 €/år), Premium 119 €/mån (1 428 €/år), Enterprise 139 €/mån (1 668 €/år). Årsbeloppet betalas på en gång. Befintliga avtal gäller som avtalat. Priserna inkluderar finsk moms på 25,5 % vid inhemsk försäljning."
     },
     "en": {
       "q": [
         "How much is the annual plan?",
         "What does the yearly subscription cost?"
       ],
-      "a": "Annual billing costs €10/month less: Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year). The full amount is billed once a year. Existing contracts keep their agreed terms. No VAT is charged due to the small-scale business exemption."
+      "a": "Annual billing costs €10/month less: Advanced €39/month (€468/year), Premium €119/month (€1,428/year) and Enterprise €139/month (€1,668/year). The full amount is billed once a year. Existing contracts keep their agreed terms. Prices include 25.5% Finnish VAT on domestic sales."
     }
   },
   {
@@ -152,21 +152,21 @@ const FAQ = [
         "Sisältääkö hinta ALV:n?",
         "Tuleeko hinnan päälle vielä veroja?"
       ],
-      "a": "Advanced-, Premium- ja Enterprise-hinnoista ei peritä arvonlisäveroa vähäisen liiketoiminnan vuoksi. Ennen maksamista Stripe näyttää valitun paketin kokonaishinnan ja laskutusjakson."
+      "a": "Advanced-, Premium- ja Enterprise-hinnat sisältävät Suomen ALV:n 25,5 %. Vero eritellään Stripe-laskulla, eikä sitä lisätä ilmoitetun hinnan päälle."
     },
     "sv": {
       "q": [
         "Ingår moms i priset?",
         "Tillkommer skatt på priset?"
       ],
-      "a": "Ingen moms debiteras för Advanced, Premium eller Enterprise på grund av verksamhet i liten skala. Stripe visar totalpriset och faktureringsperioden före betalning."
+      "a": "Priserna för Advanced, Premium och Enterprise inkluderar finsk moms på 25,5 % vid inhemsk försäljning. Momsen specificeras på Stripe-fakturan utan att totalpriset höjs."
     },
     "en": {
       "q": [
         "Does the price include VAT?",
         "Are taxes added on top of the price?"
       ],
-      "a": "No VAT is charged for Advanced, Premium, or Enterprise due to the small-scale business exemption. Stripe shows the selected plan's total price and billing period before payment."
+      "a": "Advanced, Premium and Enterprise prices include 25.5% Finnish VAT on domestic sales. VAT is itemized on the Stripe invoice without increasing the listed total."
     }
   },
   {
