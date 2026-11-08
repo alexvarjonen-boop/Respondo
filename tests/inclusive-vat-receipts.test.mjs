@@ -57,7 +57,7 @@ test('VAT rate is inclusive, fixed at 25.5%, created once, and not applied to US
 
 test('Checkout paths use the domestic VAT helper without changing advertised prices',()=>{
   assert.equal((source.match(/line_items:checkoutLineItems,/g)||[]).length,2);
-  assert.equal((source.match(/await checkoutItemsWithDomesticVat\\(/g)||[]).length,2);
+  assert.equal((source.match(/await checkoutItemsWithDomesticVat\(/g)||[]).length,2);
   assert.match(source,/basic_monthly:4900, advanced_monthly:12900, business_monthly:14900/);
   assert.match(source,/basic_yearly:46800, advanced_yearly:142800, business_yearly:166800/);
   assert.match(source,/const SETUP_SERVICE_PRICE_CENTS = 19900;/);
