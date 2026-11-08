@@ -43,7 +43,8 @@ test('new customer: free promo setup waits for Checkout and costs zero',()=>{
   assert.match(code,/const initialStatus = freeReferral && !setupService \? 'active' : 'pending'/);
   assert.match(code,/const initialSubscriptionStatus = freeReferral && !setupService \? 'active' : null/);
   assert.match(code,/if \(freeReferral && !setupService\) \{/);
-  assert.match(code,/line_items:setupService \? \[checkoutLineItem,setupServiceCheckoutLineItem\(freeReferral\)\] : \[checkoutLineItem\]/);
+  assert.match(code,/line_items:checkoutLineItems,/);
+  assert.match(code,/checkoutItemsWithDomesticVat\(/);
   assert.match(code,/trial_period_days|assistedSetupCheckoutTrial\(setupService\)/);
   assert.equal((code.match(/owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'/g)||[]).length,2);
   assert.match(code,/payment_method_collection:freeReferral && setupService \? 'if_required' : 'always'/);
@@ -59,7 +60,8 @@ test('existing customer: founder setup costs zero, without premature activation'
   assert.match(code,/if \(!freeReferral \|\| setupService\) \{/);
   assert.match(code,/checkoutLineItem=freeReferral \? ownerFreeSetupCheckoutLineItem\(plan\)/);
   assert.match(code,/if\(freeReferral && !setupService\)\{/);
-  assert.match(code,/line_items:setupService \? \[checkoutLineItem,setupServiceCheckoutLineItem\(freeReferral\)\] : \[checkoutLineItem\]/);
+  assert.match(code,/line_items:checkoutLineItems,/);
+  assert.match(code,/checkoutItemsWithDomesticVat\(/);
   assert.match(code,/assistedSetupCheckoutTrial\(setupService\)/);
   assert.equal((code.match(/owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'/g)||[]).length,2);
   assert.match(code,/payment_method_collection:freeReferral && setupService \? 'if_required' : 'always'/);
