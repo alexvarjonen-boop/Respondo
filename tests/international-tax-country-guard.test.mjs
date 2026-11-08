@@ -9,7 +9,7 @@ const html=fs.readFileSync(new URL('../public/index.html',import.meta.url),'utf8
 
 function loadTaxGuard(stripe) {
   const start=server.indexOf("const TAX_CHECKOUT_COUNTRIES = new Set(['FI','US']);");
-  const end=server.indexOf("function checkoutTaxExemptionMessage",start);
+  const end=server.indexOf("if (process.env.NODE_ENV === 'production')",start);
   assert.ok(start>0 && end>start,'country guard not found');
   const code=server.slice(start,end);
   return vm.runInNewContext(code+"\n({checkoutCountryPolicy,checkoutIsCountryPolicyCompliant,enforceCompletedCheckoutCountryPolicy,ensureUSStripeTaxReady})",{

@@ -24,6 +24,7 @@ function harness({country='US',state='CA',taxStatus='active',subscriptionStatus=
   const stateValue={status:taxStatus,defaults:{tax_code:'txcd_10103001'}};
   const stripe={
     tax:{settings:{retrieve:async()=>{activity.taxChecks++;return stateValue;}}},
+    taxRates:{list:async()=>({data:[{id:'txr_test_fi',active:true,country:'FI',inclusive:true,percentage:25.5,display_name:'ALV'}]})},
     checkout:{sessions:{
       create:async(args)=>{
         activity.createArgs=args;
@@ -210,6 +211,7 @@ test('Finnish signup retains disabled automatic tax and does not require US stat
   const result=await h.begin({businessId:'3599437-5'});
   assert.equal(result.statusCode,200);
   assert.equal(h.activity.createArgs.automatic_tax.enabled,false);
+  assert.deepEqual(Array.from(h.activity.createArgs.line_items[0].tax_rates),['txr_test_fi']);
   assert.equal(h.activity.createArgs.subscription_data.trial_period_days,3);
   assert.equal(h.activity.taxChecks,0);
 });

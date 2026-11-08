@@ -7,7 +7,7 @@ const code=fs.readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
 
 function loadFooterUpdater(stripe){
   const start=code.indexOf('const RESPONDO_DOMESTIC_INVOICE_FOOTER =');
-  const end=code.indexOf("function checkoutTaxExemptionMessage(lang='fi')",start);
+  const end=code.indexOf("function assistedSetupCheckoutNotice(",start);
   assert.ok(start>0 && end>start,'seller footer helper must exist');
   return vm.runInNewContext(
     "const TAX_COUNTRY_POLICY_VERSION='fi-only-20261008';\n"+
@@ -27,7 +27,7 @@ test('verified new domestic business subscription gets seller footer on future i
   assert.equal(changes.length,1);
   assert.equal(changes[0].id,'sub_new');
   const footer=changes[0].params.invoice_settings.footer;
-  for(const text of ['Movexa','3599437-5','ei ole arvonlisäverorekisterissä']){
+  for(const text of ['Movexa','3599437-5','ALV 25,5 % mukana']){
     assert.ok(footer.includes(text),text);
   }
 });

@@ -585,11 +585,10 @@ const pool = process.env.DATABASE_URL
     })
   : null;
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
-// Finnish domestic subscriptions continue under the seller's current small-business
-// VAT status. US business subscriptions use active Stripe Tax and verified billing
-// location. Seller reports no US activity or nexus before first sale; this must
-// be re-evaluated with all sales channels and state tax rules over time.
-// Stripe Tax returns zero when unregistered; that result alone is not proof of exemption.
+// Finnish B2B checkout prices are VAT-inclusive. The domestic manual VAT rate
+// is applied to every new subscription and optional setup line without increasing
+// the published price. US business subscriptions continue to use Stripe Tax.
+// Review the correct tax treatment separately before enabling other countries.
 const TAX_CHECKOUT_COUNTRIES = new Set(['FI','US']);
 const TAX_COUNTRY_POLICY_VERSION = 'fi-only-20261008';
 const US_TAX_COUNTRY_POLICY_VERSION = 'us-b2b-tax-20261103';
@@ -645,12 +644,48 @@ async function enforceCompletedCheckoutCountryPolicy(session) {
   });
   return false;
 }
+// The fixed Finnish VAT rate is included in (not added to) every checkout amount.
+// Manual Stripe tax rates are free and persist on subscription invoice line items.
+// Do not silently rewrite finalized historical invoices or subscriptions.
+let finnishInclusiveVatRatePromise = null;
+async function finnishInclusiveVatRateId() {
+  if (!stripe) throw new Error('Stripe is not configured.');
+  if (!finnishInclusiveVatRatePromise) {
+    finnishInclusiveVatRatePromise = (async () => {
+      const list = await stripe.taxRates.list({active:true,limit:100});
+      const existing = list.data?.find(rate =>
+        rate.active && rate.country === 'FI' && rate.inclusive === true &&
+        Number(rate.percentage) === 25.5 && rate.display_name === 'ALV'
+      );
+      if (existing?.id) return existing.id;
+      const created = await stripe.taxRates.create({
+        display_name:'ALV',
+        description:'Suomen yleinen arvonlisävero, hintaan sisältyvä 25,5 %',
+        percentage:25.5,
+        inclusive:true,
+        country:'FI',
+        jurisdiction:'Suomi',
+      }, {idempotencyKey:'respondo-fi-inclusive-alv-25-5-20261108'});
+      if (!created?.id || !created.inclusive || Number(created.percentage) !== 25.5) {
+        throw new Error('Finnish inclusive VAT rate could not be confirmed.');
+      }
+      return created.id;
+    })();
+  }
+  try { return await finnishInclusiveVatRatePromise; }
+  catch (error) { finnishInclusiveVatRatePromise = null; throw error; }
+}
+async function checkoutItemsWithDomesticVat(country, items) {
+  if (country !== 'FI') return items;
+  const rateId = await finnishInclusiveVatRateId();
+  return items.map(item => ({...item,tax_rates:[rateId]}));
+}
 // Applies only to newly created, verified Finnish B2B subscriptions.
 // Do not silently rewrite finalized invoices or historical subscriptions.
 const RESPONDO_DOMESTIC_INVOICE_FOOTER =
   'Myyjä / Seller: Movexa. Y-tunnus / Business ID: 3599437-5. ' +
-  'Myyjä ei ole arvonlisäverorekisterissä; arvonlisäveroa ei peritä vähäisen toiminnan vuoksi. ' +
-  'The seller is not VAT-registered; no Finnish VAT is charged.';
+  'Suomen verollisten palvelujen hinnoissa on ALV 25,5 % mukana; vero eritellään laskulla. ' +
+  'Finnish VAT is included in the total and itemized on the invoice.';
 async function ensureNewDomesticSubscriptionSellerFooter(subscriptionId, session) {
   if (!stripe || !subscriptionId ||
       session?.metadata?.tax_country_policy !== TAX_COUNTRY_POLICY_VERSION ||
@@ -662,7 +697,6 @@ async function ensureNewDomesticSubscriptionSellerFooter(subscriptionId, session
   return true;
 }
 function assistedSetupCheckoutNotice(lang='fi', ownerFree=false) {
-  const vat=checkoutTaxExemptionMessage(lang);
   const freeNote=lang==='sv'
     ? 'Din personliga kampanjkod ger både installationen och abonnemanget för 0 €. Ingen avgift tas ut nu eller efter överlämningen.'
     : lang==='en'
@@ -673,14 +707,7 @@ function assistedSetupCheckoutNotice(lang='fi', ownerFree=false) {
     : lang==='en'
       ? 'The €199 setup fee is payable now. Subscription charges are held until we personally deliver your login details and confirm handover, followed by a 3-day free trial.'
       : '199 €:n käyttöönottopalvelu veloitetaan nyt. Tilauspaketin laskutus on keskeytetty, kunnes toimitamme kirjautumistiedot henkilökohtaisesti ja vahvistamme luovutuksen. Tämän jälkeen alkaa 3 päivän maksuton kokeilu.';
-  return vat+' '+note;
-}
-function checkoutTaxExemptionMessage(lang='fi') {
-  const safeLang = ['fi','sv','en'].includes(String(lang || '').toLowerCase())
-    ? String(lang).toLowerCase() : 'fi';
-  if (safeLang === 'sv') return 'Ingen moms debiteras. Säljaren är inte momsregistrerad på grund av verksamhet i liten skala.';
-  if (safeLang === 'en') return 'No VAT is charged. The seller is not VAT-registered due to small-scale business activity.';
-  return 'Arvonlisäveroa ei peritä. Myyjä ei ole alv-rekisterissä vähäisen liiketoiminnan vuoksi.';
+  return note;
 }
 if (process.env.NODE_ENV === 'production') {
   if (!String(process.env.JWT_SECRET || '').trim()) {
@@ -11552,16 +11579,20 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           free: true,
         });
       }
-      const taxExemptionMessage = checkoutCountry.country==='US' ? 'Business-use subscription. US sales tax, if applicable, is calculated at Checkout.' : (setupService ? assistedSetupCheckoutNotice(preferredLanguage,freeReferral) : checkoutTaxExemptionMessage(preferredLanguage));
+      const checkoutNoticeMessage = checkoutCountry.country==='US'
+        ? 'Business-use subscription. US sales tax, if applicable, is calculated at Checkout.'
+        : (setupService ? assistedSetupCheckoutNotice(preferredLanguage,freeReferral) : '');
+      const checkoutLineItems = await checkoutItemsWithDomesticVat(
+        checkoutCountry.country,
+        setupService ? [checkoutLineItem,setupServiceCheckoutLineItem(freeReferral)] : [checkoutLineItem],
+      );
       session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         automatic_tax: { enabled: checkoutCountry.automaticTax },
         payment_method_collection:freeReferral && setupService ? 'if_required' : 'always',
         customer_email: email,
-        line_items:setupService ? [checkoutLineItem,setupServiceCheckoutLineItem(freeReferral)] : [checkoutLineItem],
-        custom_text: {
-          submit: { message: taxExemptionMessage },
-        },
+        line_items:checkoutLineItems,
+        ...(checkoutNoticeMessage ? {custom_text:{submit:{message:checkoutNoticeMessage}}} : {}),
         subscription_data: {
           ...(normalizedPlan === 'owner_test' ? {} : assistedSetupCheckoutTrial(setupService)),
           metadata: {
@@ -12472,7 +12503,13 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   );
 
   try {
-    const taxExemptionMessage=checkoutCountry.country==='US' ? 'Business-use subscription. US sales tax, if applicable, is calculated at Checkout.' : (setupService ? assistedSetupCheckoutNotice(user.preferred_language||'fi',freeReferral) : checkoutTaxExemptionMessage(user.preferred_language||'fi'));
+    const checkoutNoticeMessage=checkoutCountry.country==='US'
+      ? 'Business-use subscription. US sales tax, if applicable, is calculated at Checkout.'
+      : (setupService ? assistedSetupCheckoutNotice(user.preferred_language||'fi',freeReferral) : '');
+    const checkoutLineItems=await checkoutItemsWithDomesticVat(
+      checkoutCountry.country,
+      setupService ? [checkoutLineItem,setupServiceCheckoutLineItem(freeReferral)] : [checkoutLineItem],
+    );
     const session=await stripe.checkout.sessions.create({
       mode:'subscription',
       automatic_tax:{enabled:checkoutCountry.automaticTax},
@@ -12481,10 +12518,8 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         customer:user.stripe_customer_id,
         customer_update:{ name:'auto',address:'auto' },
       } : { customer_email:user.email }),
-      line_items:setupService ? [checkoutLineItem,setupServiceCheckoutLineItem(freeReferral)] : [checkoutLineItem],
-      custom_text:{
-        submit:{message: taxExemptionMessage},
-      },
+      line_items:checkoutLineItems,
+      ...(checkoutNoticeMessage ? {custom_text:{submit:{message:checkoutNoticeMessage}}} : {}),
       subscription_data:{
         ...assistedSetupCheckoutTrial(setupService),
         metadata:{

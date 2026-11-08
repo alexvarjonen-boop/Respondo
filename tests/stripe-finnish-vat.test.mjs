@@ -8,33 +8,27 @@ const terms=fs.readFileSync(new URL('../public/legal-content.js',import.meta.url
 const respondoFaq=fs.readFileSync(new URL('../respondo-faq.mjs',import.meta.url),'utf8');
 const effects=fs.readFileSync(new URL('../public/effects.js',import.meta.url),'utf8');
 
-test('new Stripe subscriptions do not charge Finnish VAT when seller is not VAT registered',()=>{
-  assert.match(server,/function checkoutTaxExemptionMessage\(lang='fi'\)/);
-  assert.match(server,/Arvonlisäveroa ei peritä/);
-  assert.match(server,/Ingen moms debiteras/);
-  assert.match(server,/No VAT is charged/);
-  assert.doesNotMatch(server,/ensureFinnishVatTaxRate|FINNISH_VAT_PERCENT|finnishVatTaxRateId|finnishVatMessage/);
-  assert.equal((server.match(/line_items:\s*setupService \? \[checkoutLineItem,setupServiceCheckoutLineItem\(freeReferral\)\] : \[checkoutLineItem\]/g)||[]).length,2);
-  const setupStart=server.indexOf('function setupServiceCheckoutLineItem(ownerFree=false)');
-  const setupEnd=server.indexOf('async function stripeCheckoutLineItem(',setupStart);
-  assert.ok(setupStart>0 && setupEnd>setupStart,'one-time fee helper exists');
-  const oneTimeFee=server.slice(setupStart,setupEnd);
+test('new Finnish subscriptions include 25.5% VAT in prices without any extra charge',()=>{
+  assert.match(server,/async function finnishInclusiveVatRateId\(/);
+  assert.match(server,/percentage:25\.5,/);
+  assert.match(server,/inclusive:true,/);
+  assert.match(server,/country:'FI'/);
+  assert.equal((server.match(/await checkoutItemsWithDomesticVat\(/g)||[]).length,2);
+  assert.equal((server.match(/line_items:checkoutLineItems,/g)||[]).length,2);
   assert.match(server,/const SETUP_SERVICE_PRICE_CENTS = 19900/);
-  assert.match(oneTimeFee,/unit_amount:ownerFree \? 0 : SETUP_SERVICE_PRICE_CENTS/);
-  assert.doesNotMatch(oneTimeFee,/recurring:/);
-  assert.equal((server.match(/automatic_tax:\s*\{\s*enabled:\s*checkoutCountry\.automaticTax\s*\}/g)||[]).length,2);
-  assert.match(server,/automatic_tax:\{enabled:checkoutCountry\.automaticTax\}/);
+  assert.match(server,/unit_amount:ownerFree \? 0 : SETUP_SERVICE_PRICE_CENTS/);
+  assert.match(server,/automatic_tax:\s*\{\s*enabled:\s*checkoutCountry\.automaticTax\s*\}/);
   assert.match(server,/return \{ok:true,country,policyVersion:TAX_COUNTRY_POLICY_VERSION,automaticTax:false\}/);
-  assert.equal((server.match(/custom_text:\s*\{\s*submit:\s*\{\s*message:\s*taxExemptionMessage/g)||[]).length,2);
+  assert.doesNotMatch(server,/Myyjä ei ole arvonlisäverorekisterissä|No VAT is charged/);
 });
 
-test('prices and terms do not falsely describe VAT as included',()=>{
-  for(const s of [server,app,terms]){
-    assert.doesNotMatch(s,/25[.,]5\s*%/);
-  }
+test('approved public pricing remains unchanged and invoices disclose Finnish VAT inclusively',()=>{
+  assert.match(server,/basic_monthly:4900, advanced_monthly:12900, business_monthly:14900/);
+  assert.match(server,/basic_yearly:46800, advanced_yearly:142800, business_yearly:166800/);
   assert.match(app,/card\('Advanced',49,2/);
   assert.match(app,/card\('Premium',129,10/);
   assert.match(app,/card\('Enterprise',149,20/);
+  assert.match(terms,/25,5 %/);
 });
 
 test('historical inclusive-tax Stripe prices stay associated with their plans',()=>{
@@ -50,11 +44,9 @@ test('historical inclusive-tax Stripe prices stay associated with their plans',(
   for(const id of legacy) assert.ok(mapping.includes(id),'missing '+id);
 });
 
-test('Respondo FAQ answers and homepage trial banner do not claim VAT-inclusive prices',()=>{
-  for(const source of [respondoFaq,effects]){
-    assert.doesNotMatch(source,/25[.,]5\s*%/);
-  }
-  assert.match(respondoFaq,/Arvonlisäveroa ei peritä/);
-  assert.match(respondoFaq,/No VAT is charged/);
-  assert.match(effects,/No VAT is charged/);
+test('FAQ and marketing pages do not advertise a false VAT exemption',()=>{
+  assert.doesNotMatch(respondoFaq,/Arvonlisäveroa ei peritä|No VAT is charged/);
+  assert.doesNotMatch(effects,/No VAT is charged|Ingen moms debiteras/);
+  assert.match(respondoFaq,/sisältävät Suomen ALV:n 25,5 %/);
+  assert.match(effects,/Price includes VAT/);
 });

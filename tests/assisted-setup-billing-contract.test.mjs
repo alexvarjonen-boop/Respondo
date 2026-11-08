@@ -6,7 +6,8 @@ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const server=read('server.mjs'),app=read('public/app.js'),traffic=read('public/traffic.html');
 
 test('new setup checkout prices paid setup at 199 and free founder setup at zero',()=>{
-  assert.equal((server.match(/line_items:setupService\s*\?\s*\[checkoutLineItem,setupServiceCheckoutLineItem\(freeReferral\)\]\s*:\s*\[checkoutLineItem\]/g)||[]).length,2);
+  assert.equal((server.match(/line_items:checkoutLineItems,/g)||[]).length,2);
+  assert.equal((server.match(/await checkoutItemsWithDomesticVat\(/g)||[]).length,2);
   assert.match(server,/SETUP_SERVICE_PRICE_CENTS\s*=\s*19900/);
   assert.match(server,/assistedSetupCheckoutTrial\(setupService\)/);
   assert.match(server,/setup_billing_mode:'after_handover'/);
