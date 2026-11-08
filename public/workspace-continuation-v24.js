@@ -430,8 +430,16 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     container.replaceChildren();
     workspace.classList.toggle('rs-knowledge-collapsed',id==='knowledge');
     if(!showPanel(id)){
-      callout(translate('Ei vielä tietoja','Inga uppgifter ännu','Nothing here yet'),
-              translate('Tämä osio on tyhjä.','Det här avsnittet är tomt.','This section is empty.'),false);
+      const locked=storage.querySelector('#'+id)?.dataset.respondoPlanLocked==='yes';
+      callout(
+        locked
+          ?translate('Ominaisuus ei ole käytettävissä','Funktionen är inte tillgänglig','Feature unavailable')
+          :translate('Ei vielä tietoja','Inga uppgifter ännu','Nothing here yet'),
+        locked
+          ?translate('Tämä toiminto vaatii Enterprise-käyttöoikeuden. Tarkista työtilan paketti laskutuksesta.','Den här funktionen kräver Enterprise-behörighet. Kontrollera arbetsytans abonnemang under Fakturering.','This feature requires Enterprise access. Check the workspace plan under Billing.')
+          :translate('Tämä osio on tyhjä.','Det här avsnittet är tomt.','This section is empty.'),
+        false
+      );
     }else if(id==='knowledge'){
       const list=$('#knowledgeList');
       if((list?.querySelectorAll('.knowledge-item').length||0)>6){

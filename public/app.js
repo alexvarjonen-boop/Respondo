@@ -8969,8 +8969,19 @@ async function route() {
     // Existing customers always return to the clear, dark bot-first workspace.
     if (!$('#guidedSetup')) {
       const section=new URLSearchParams(location.search).get('section');
-      const view=section==='account'?'profile':(section==='setup'?'bot':section);
-      activateRespondoWorkspace({view:view||'bot'});
+      // Preserve deep-link intent. Business & bot must open its editable setup,
+      // never silently redirect to the bot preview.
+      const legacySectionAliases={
+        account:'profile',
+        'business-profile':'settings',
+        'live-preview':'bot',
+        knowledge:'answers',
+        unanswered:'answers',
+        leads:'customers',
+        actions2:'automation'
+      };
+      const view=legacySectionAliases[section]||section||'bot';
+      activateRespondoWorkspace({view});
     }
   }
 }
