@@ -15,7 +15,8 @@ test('199-euro assisted setup is opt-in, one-time and separately listed in both 
   assert.match(server,/SETUP_SERVICE_PRICE_CENTS\s*=\s*19900/);
   assert.match(item,/unit_amount:ownerFree \? 0 : SETUP_SERVICE_PRICE_CENTS/);
   assert.doesNotMatch(item,/recurring\s*:/);
-  assert.equal((server.match(/line_items:setupService\s*\?\s*\[checkoutLineItem,setupServiceCheckoutLineItem\(freeReferral\)\]\s*:\s*\[checkoutLineItem\]/g)||[]).length,2);
+  assert.equal((server.match(/line_items:checkoutLineItems,/g)||[]).length,2);
+  assert.equal((server.match(/await checkoutItemsWithDomesticVat\(/g)||[]).length,2);
   assert.match(app,/type="checkbox" name="setupService" value="1"/);
   assert.doesNotMatch(app.slice(app.indexOf('function setupServiceOption()'),app.indexOf('function bindSetupServiceOptions()')),/type="checkbox"[^>]*checked/);
 });
