@@ -73,7 +73,7 @@ test('Try Bot answers catalog questions in the actual question language across p
     for(const [page,question,expected,wrong] of [
       ['en','Vad säljer ni?',/^I vårt sortiment finns bland annat:/,/^Our selection|^Valikoimassamme/],
       ['sv','What do you sell?',/^Our selection includes, for example:/,/^I vårt sortiment|^Valikoimassamme/],
-      ['en','Mitä myytte?',/^Valikoimassamme/,/^I vårt sortiment|^Our selection/],
+      ['en','Mitä myytte?',/^Valikoimastamme/,/^I vårt sortiment|^Our selection/],
     ]){
       const response=await fetch(endpoint,{
         method:'POST',headers:{'content-type':'application/json'},
