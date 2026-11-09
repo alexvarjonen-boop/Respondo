@@ -92,12 +92,12 @@ test('live-first experience submits the actual visitor question through existing
   assert.match(experience,/form\.addEventListener\('submit',focusChat,true\)/);
   assert.match(experience,/form\.requestSubmit\(\)/);
   assert.doesNotMatch(experience,/experienceOpeningSent|new Event\('submit'/);
-  assert.match(effects,/if\(clean===lastSubmittedText && Date\.now\(\)-lastSubmittedAt<3500\)return/);
-  assert.match(effects,/form\.message\.disabled = true/);
+  assert.match(effects,/if\(!retryBubble && clean===lastSubmittedText && Date\.now\(\)-lastSubmittedAt<3500\)return/);
+  assert.match(effects,/form\.message\.disabled\s*=\s*true/);
   assert.match(effects,/\/api\/public\/respondo-assistant\/chat/);
 });
 
 test('changed marketing assistant and experience files carry new asset versions',()=>{
   assert.match(index,/respondo-experience\.mjs\?v=20261109-live-first-single-surface-v3/);
-  assert.match(index,/firstparty-smart-assist-v1-customer-benefits-v2-clean-chat-v3-mobile-simplify-v9/);
+  assert.match(index,/firstparty-smart-assist-v1-customer-benefits-v2-clean-chat-v3-mobile-simplify-v9-retry-copy-reset-v4/);
 });
