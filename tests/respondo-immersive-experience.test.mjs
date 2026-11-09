@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
   experienceLocale,experienceCopy,experienceRecommendations,
-  minimalExperienceCopy,mountRespondoExperience
+  minimalExperienceCopy,liveFirstExperienceCopy,mountRespondoExperience
 } from '../public/respondo-experience.mjs';
 
 const read=file=>readFileSync(new URL('../public/'+file,import.meta.url),'utf8');
@@ -13,10 +13,14 @@ const html=read('index.html');
 const legacy=read('effects.js');
 const packageJson=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
 
-test('the visitor sees concise, localized copy and exactly three main actions',()=>{
+test('visitor can immediately ask a real question with localized text and two secondary links',()=>{
   for(const lang of ['fi','sv','en']){
     const c=minimalExperienceCopy(lang);
+    const live=liveFirstExperienceCopy(lang);
     assert.equal(experienceLocale(lang),lang);
+    for(const k of ['heading','description','placeholder','send','fit','demo','pricing','discover']){
+      assert.ok(live[k]?.trim(),lang+' : '+k);
+    }
     for(const key of [
       'heading','description','ask','askDetail','fit','fitDetail','demo','demoDetail',
       'question1','question2','example','visitor','bot','next','exampleNote','resultTitle','resultNote'
@@ -124,73 +128,88 @@ function mountFake(language='fi'){
   };
   return {d,box,form,input,launch,body};
 }
-test('interactive minimal home renders three purposeful actions without auto-sending canned questions',()=>{
+test('home has one genuine editable question input, not three fake demo cards',()=>{
   const previous=globalThis.MutationObserver;
   globalThis.MutationObserver=class{observe(){}};
   try{
-    const {d,box,form}=mountFake('en');
-    let submitCount=0;form.addEventListener('submit',()=>submitCount++);
+    const {d,box,form,input}=mountFake('en');
+    let sent=0;
+    form.requestSubmit=()=>{sent++;};
     assert.equal(mountRespondoExperience(d),true);
     assert.equal(mountRespondoExperience(d),false,'cannot mount twice');
     const stage=box.querySelector('.rx-experience-stage');
     assert.ok(stage);
-    const choices=stage.querySelectorAll('.rx-choice');
-    assert.equal(choices.length,3);
-    assert.equal(choices[0].tagName,'BUTTON');
-    assert.equal(choices[1].tagName,'BUTTON');
-    assert.equal(choices[2].tagName,'A');
-    assert.match(choices[2].href,/\/assistant\?lang=en/);
-    choices[0].click();
+    assert.equal(stage.querySelectorAll('.rx-ask-form').length,1);
+    assert.equal(stage.querySelectorAll('.rx-ask-input').length,1);
+    assert.equal(stage.querySelectorAll('.rx-experience-visual').length,0);
+    assert.equal(stage.querySelectorAll('.rx-preview-card').length,0);
+    assert.equal(stage.querySelectorAll('.rx-choice').length,0);
+    const question=stage.querySelector('.rx-ask-input');
+    question.value='How can Respondo help customers on my website?';
+    const submit=stage.querySelector('.rx-ask-form').listeners.get('submit')[0];
+    submit({preventDefault(){}});
+    assert.equal(sent,1,'actual existing chat form gets exactly one submit');
+    assert.equal(input.value,'How can Respondo help customers on my website?');
     assert.ok(box.classList.contains('rx-conversation-mode'));
-    assert.equal(submitCount,0,'Ask about Respondo should OPEN chat without silently submitting');
+    assert.equal(question.value,'');
     const returnButton=box.querySelector('.rx-experience-return');
-    assert.ok(returnButton);
     returnButton.click();
     assert.ok(box.classList.contains('rx-stage-mode'));
-    const newChoices=stage.querySelectorAll('.rx-choice');
-    assert.equal(newChoices.length,3);
-    assert.equal(submitCount,0,'returning to stage cannot duplicate the welcome question');
+    assert.equal(sent,1,'returning does not resubmit any canned question');
+    assert.ok(stage.querySelector('.rx-ask-input'));
   }finally{globalThis.MutationObserver=previous;}
 });
 
-test('guided solution path accepts business and goal; updates illustrative example without a fake booking',()=>{
+test('empty questions and a busy assistant cannot generate an API request',()=>{
   const previous=globalThis.MutationObserver;
   globalThis.MutationObserver=class{observe(){}};
   try{
-    const {d,box}=mountFake('fi');
+    const {d,box,form,input}=mountFake('fi');
+    let submitted=0;
+    form.requestSubmit=()=>submitted++;
     assert.equal(mountRespondoExperience(d),true);
-    const stage=box.querySelector('.rx-experience-stage');
-    stage.querySelectorAll('.rx-choice')[1].click();
-    let options=stage.querySelectorAll('.rx-fit-option');
-    assert.equal(options.length,3);
-    assert.match(stage.querySelector('.rx-hero-heading').textContent,/Millainen yritys/);
-    options[1].click(); // online store
-    assert.match(stage.querySelector('.rx-hero-heading').textContent,/tarvitset/);
-    options=stage.querySelectorAll('.rx-fit-option');
-    options[1].click(); // quote requests
-    assert.ok(stage.querySelector('.rx-fit-result'));
-    assert.match(stage.querySelector('.rx-result-main').textContent,/yhteydenottoa tai tarjouspyyntöä/);
-    assert.equal(stage.querySelector('.rx-visual-title').textContent,'Verkkokauppa');
-    assert.match(stage.querySelector('.rx-preview-demo').href,/\/assistant\?lang=fi/);
-    stage.querySelector('.rx-back').click();
-    assert.equal(stage.querySelectorAll('.rx-fit-option').length,3,'restart returns to step one');
+    let ask=box.querySelector('.rx-ask-form');
+    let question=box.querySelector('.rx-ask-input');
+    const submit=ask.listeners.get('submit')[0];
+    question.value='   ';
+    submit({preventDefault(){}});
+    assert.equal(submitted,0);
+    question.value='Paljonko Respondo maksaa?';
+    input.disabled=true;
+    submit({preventDefault(){}});
+    assert.equal(submitted,0);
+    input.disabled=false;
+    submit({preventDefault(){}});
+    assert.equal(submitted,1);
+    assert.ok(box.classList.contains('rx-conversation-mode'));
   }finally{globalThis.MutationObserver=previous;}
 });
 
-test('right-hand examples can switch without sending a request, making clear that they are examples',()=>{
+test('guided solution remains working on the single surface without mock conversation',()=>{
   const previous=globalThis.MutationObserver;
   globalThis.MutationObserver=class{observe(){}};
   try{
     const {d,box}=mountFake('sv');
     assert.equal(mountRespondoExperience(d),true);
     const stage=box.querySelector('.rx-experience-stage');
-    const samples=stage.querySelectorAll('.rx-sample-option');
-    assert.equal(samples.length,3);
-    const initial=stage.querySelector('.rx-card-message').textContent;
-    samples[2].click();
-    assert.notEqual(initial,stage.querySelector('.rx-card-message').textContent);
-    assert.equal(samples[2].getAttribute('aria-pressed'),'true');
-    assert.match(stage.querySelector('.rx-preview-kicker').textContent,/EXEMPEL/);
+    const links=stage.querySelectorAll('.rx-utility-links');
+    assert.equal(links.length,1);
+    const utilities=stage.querySelectorAll('.rx-utility-links')[0];
+    const fit=utilities.querySelector('.rx-action');
+    fit.click();
+    let options=stage.querySelectorAll('.rx-fit-option');
+    assert.equal(options.length,3);
+    options[1].click(); // Online store
+    options=stage.querySelectorAll('.rx-fit-option');
+    assert.equal(options.length,3);
+    options[1].click(); // Quote requests
+    assert.ok(stage.querySelector('.rx-fit-result'));
+    assert.match(stage.querySelector('.rx-result-main').textContent,/kontakt eller offert/);
+    assert.equal(stage.querySelectorAll('.rx-preview-card').length,0);
+    const demoLink=stage.querySelectorAll('.rx-fit-actions')[0].children.find(el=>el.tagName==='A');
+    assert.match(demoLink.href,/\/assistant\?lang=sv/);
+    stage.querySelector('.rx-back').click();
+    assert.equal(stage.querySelectorAll('.rx-fit-option').length,3);
   }finally{globalThis.MutationObserver=previous;}
 });
 
@@ -209,13 +228,17 @@ test('standalone demo, account dashboard, and customer embed remain untouched',(
 });
 
 test('design is clean, responsive and accessible rather than a rotating 3D slideshow',()=>{
-  assert.match(css,/background:linear-gradient\(140deg,#fafafb,#ececf0\)/);
-  assert.match(css,/\.rx-choice:first-child/);
+  assert.match(css,/background:#0B0D12!important/);
+  assert.match(css,/\.rx-ask-form/);
+  assert.match(css,/\.rx-ask-submit/);
+  assert.match(css,/\.rx-hero-mark/);
+  assert.doesNotMatch(css,/\.rx-experience-visual|\.rx-preview-card|background:linear-gradient\(140deg,#fafafb/);
   assert.match(css,/\.rx-fit-option/);
   assert.match(css,/\.rx-experience-backdrop/);
   assert.match(css,/@media\(max-width:610px\)/);
   assert.match(css,/height:100dvh!important/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(css,/\.rx-ask-input\{[\s\S]*?font-size:16px!important/);
   assert.doesNotMatch(css,/@keyframes rx-ring-turn|\.rx-orbit-ring/);
   assert.doesNotMatch(js,/rx-orbit|rx-tab|rx-scene-selector|rx-plan-cards/);
   assert.match(js,/isOpen|opened\?'dialog':'region'/);
@@ -225,8 +248,8 @@ test('design is clean, responsive and accessible rather than a rotating 3D slide
 });
 
 test('CSS and JS caches were bumped and full syntax checked in CI',()=>{
-  assert.match(html,/respondo-experience\.css\?v=20261109-clean-minimal-v2/);
-  assert.match(html,/respondo-experience\.mjs\?v=20261109-clean-minimal-v2/);
+  assert.match(html,/respondo-experience\.css\?v=20261109-live-first-single-surface-v3/);
+  assert.match(html,/respondo-experience\.mjs\?v=20261109-live-first-single-surface-v3/);
   assert.match(html,/firstparty-smart-assist-v1-customer-benefits-v2-clean-chat-v3-mobile-simplify-v9/);
   assert.match(packageJson.scripts.check,/node --check public\/respondo-experience\.mjs/);
   assert.match(legacy,/box\.classList\.add\('rx-has-user-message'\)/);
