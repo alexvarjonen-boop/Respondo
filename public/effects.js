@@ -499,6 +499,8 @@
       </aside>`);
     const launch = $('.fx-assistant-launch'), box = $('.fx-assistant'), close = $('.fx-assistant-close'), messages = $('.fx-assistant-messages'), form = $('.fx-assistant-form');
     const siteAssistantHistory = [];
+    let lastSubmittedText='';
+    let lastSubmittedAt=0;
     const smartHome=box.querySelector('.fx-smart-home');
     const expandButton=box.querySelector('.fx-smart-expand');
     const assistantTopic=box.querySelector('.fx-smart-context');
@@ -534,6 +536,11 @@
     const send = async text => {
       const clean = String(text || '').trim();
       if (!clean || form.message.disabled) return;
+      // Debounce accidental repeated submits (double-click, keyboard or
+      // duplicate delegated controls) without blocking later follow-ups.
+      if(clean===lastSubmittedText && Date.now()-lastSubmittedAt<3500)return;
+      lastSubmittedText=clean;
+      lastSubmittedAt=Date.now();
       if(smartHome)smartHome.hidden=true;
       messages.insertAdjacentHTML('beforeend', `<div class="fx-chat-bubble user"></div>`); messages.lastElementChild.textContent = clean;
       messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot typing">•••</div>');
