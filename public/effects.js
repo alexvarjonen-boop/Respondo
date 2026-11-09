@@ -503,7 +503,7 @@
     const expandButton=box.querySelector('.fx-smart-expand');
     const assistantTopic=box.querySelector('.fx-smart-context');
     const standAlone=()=>document.body.classList.contains('assistant-standalone');
-    const open = () => { box.classList.add('open'); launch.setAttribute('aria-expanded','true'); if(!standAlone())setTimeout(() => form.message.focus(), 180); };
+    const open = () => { box.classList.add('open'); launch.setAttribute('aria-expanded','true'); if(!standAlone() && !box.classList.contains('rx-experience-ready'))setTimeout(() => form.message.focus(), 180); };
     const shut = () => { if(standAlone())return;box.classList.remove('open');launch.setAttribute('aria-expanded','false'); };
     expandButton?.addEventListener('click',()=>{
       if(standAlone())return;
