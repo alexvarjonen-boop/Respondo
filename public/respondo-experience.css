@@ -1,385 +1,361 @@
-/* Respondo Experience v2 — calm, clear and minimal.
-   Strictly first-party: customer installs and dashboard remain untouched. */
+/*
+ Respondo AI — one surface, actual help first.
+ No fake preview, no second color panel, no decorative glass.
+ Scoped to the first-party public assistant.
+*/
 body.rx-experience-open{overflow:hidden!important}
 .rx-experience-backdrop{
-  position:fixed;inset:0;z-index:10007;background:rgba(3,4,7,.78);
-  backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px);
+  position:fixed;inset:0;z-index:10007;
+  background:rgba(3,4,8,.86);
   opacity:0;visibility:hidden;pointer-events:none;
-  transition:opacity .25s ease,visibility .25s ease;
+  transition:opacity .22s ease,visibility .22s ease;
 }
-body.rx-experience-open .rx-experience-backdrop{opacity:1;visibility:visible;pointer-events:auto}
+body.rx-experience-open .rx-experience-backdrop{
+  opacity:1;visibility:visible;pointer-events:auto
+}
+body.rx-experience-open .fx-firstparty-launch{
+  opacity:0;pointer-events:none
+}
 .fx-firstparty-launch.fx-assistant-launch{
-  background:#111114!important;color:#fff!important;
-  border:1px solid #343439!important;border-radius:999px!important;
-  box-shadow:0 14px 42px rgba(0,0,0,.22)!important;
-  padding:7px 15px 7px 7px!important;
-  transition:transform .2s ease,box-shadow .2s ease!important;
+  background:#0B0D12!important;color:#F5F7FA!important;
+  border:1px solid rgba(245,247,250,.22)!important;
+  border-radius:999px!important;box-shadow:0 16px 38px rgba(0,0,0,.25)!important;
 }
-.fx-firstparty-launch.fx-assistant-launch:hover{
-  transform:translateY(-2px)!important;box-shadow:0 20px 56px rgba(0,0,0,.28)!important;
-}
-.fx-firstparty-launch .fx-smart-launch-copy strong{color:#fff!important}
-.fx-firstparty-launch .fx-smart-launch-copy small{color:#a8a8b0!important}
-.fx-firstparty-launch .fx-smart-launch-mark{color:#c9c9d0!important}
-body.rx-experience-open .fx-firstparty-launch{opacity:0;pointer-events:none}
+.fx-firstparty-launch .fx-smart-launch-copy strong{color:#F5F7FA!important}
+.fx-firstparty-launch .fx-smart-launch-copy small{color:#afb3c1!important}
 body:not(.assistant-standalone) #respondo-site-chat.rx-experience-ready.fx-firstparty-smart{
-  position:fixed!important;z-index:10008!important;
-  inset:50% auto auto 50%!important;
-  width:min(970px,calc(100vw - 44px))!important;
-  height:min(670px,calc(100dvh - 44px))!important;
+  position:fixed!important;inset:50% auto auto 50%!important;
+  width:min(740px,calc(100vw - 36px))!important;
+  height:min(620px,calc(100dvh - 36px))!important;
   max-width:none!important;max-height:none!important;
-  display:grid!important;grid-template-rows:65px minmax(0,1fr)!important;
+  z-index:10008!important;
+  display:grid!important;grid-template-rows:62px minmax(0,1fr)!important;
   padding:0!important;
-  background:#0e0e11!important;color:#fff!important;
-  border:1px solid rgba(255,255,255,.17)!important;border-radius:25px!important;
-  box-shadow:0 40px 115px rgba(0,0,0,.56)!important;
-  transform:translate(-50%,-47%) scale(.985)!important;
-  transform-origin:center!important;
-  opacity:0!important;visibility:hidden!important;pointer-events:none!important;
-  transition:transform .31s cubic-bezier(.21,.72,.22,1),opacity .25s ease,visibility .25s ease!important;
+  border:1px solid rgba(245,247,250,.18)!important;
+  border-radius:23px!important;
+  background:#0B0D12!important;color:#F5F7FA!important;
+  box-shadow:0 40px 110px rgba(0,0,0,.52)!important;
   overflow:hidden!important;
+  transform:translate(-50%,-48%) scale(.99)!important;
+  opacity:0!important;visibility:hidden!important;pointer-events:none!important;
+  transition:transform .27s ease,opacity .25s ease,visibility .25s ease!important;
 }
 body:not(.assistant-standalone) #respondo-site-chat.rx-experience-ready.fx-firstparty-smart.open{
   transform:translate(-50%,-50%) scale(1)!important;
   opacity:1!important;visibility:visible!important;pointer-events:auto!important;
 }
 body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode{
-  grid-template-rows:65px minmax(0,1fr) auto!important;
+  grid-template-rows:62px minmax(0,1fr) auto!important;
 }
 #respondo-site-chat.rx-experience-ready .fx-assistant-head{
-  position:relative;z-index:2;min-height:65px!important;
-  padding:11px 23px!important;
-  border:0!important;border-bottom:1px solid #2b2b30!important;
-  background:#0e0e11!important;
+  min-height:62px!important;padding:10px 20px!important;z-index:2;position:relative;
+  border:0!important;border-bottom:1px solid rgba(245,247,250,.10)!important;
+  background:#0B0D12!important;box-shadow:none!important
 }
 #respondo-site-chat.rx-experience-ready .fx-assistant-id b{
-  color:#fff!important;font-size:13px!important;letter-spacing:-.01em
+  color:#F5F7FA!important;font-size:13px!important;font-weight:690!important
 }
 #respondo-site-chat.rx-experience-ready .fx-assistant-id small{
-  color:#9b9ba6!important;font-size:11px!important
+  color:#a7adbb!important;font-size:11px!important
 }
 #respondo-site-chat.rx-experience-ready .fx-assistant-avatar.fx-brand-mark{
-  width:39px!important;height:39px!important;border-radius:12px!important;
-  background:#050507!important;border:1px solid #3a3a43!important;
+  width:37px!important;height:37px!important;
+  border-radius:11px!important;background:#08090d!important;
+  border:1px solid rgba(245,247,250,.24)!important;
 }
 #respondo-site-chat.rx-experience-ready .fx-smart-expand{display:none!important}
 #respondo-site-chat.rx-experience-ready .fx-smart-panel-tools{
-  gap:8px!important;align-items:center!important;display:flex!important
+  display:flex!important;gap:8px!important;align-items:center!important
 }
-#respondo-site-chat.rx-experience-ready .fx-smart-panel-tools .fx-assistant-close,
+#respondo-site-chat.rx-experience-ready .fx-assistant-close,
 #respondo-site-chat.rx-experience-ready .rx-experience-return{
-  appearance:none;display:inline-flex!important;align-items:center;justify-content:center;
-  height:35px!important;min-width:35px!important;padding:0 10px!important;
-  border-radius:11px!important;border:1px solid #323238!important;
-  background:#1d1d21!important;color:#e8e8eb!important;
-  font:inherit;font-size:12px!important;cursor:pointer;
-  transition:background .16s ease!important;
+  appearance:none!important;display:inline-flex!important;
+  align-items:center!important;justify-content:center!important;
+  min-width:36px!important;min-height:36px!important;
+  padding:7px 10px!important;border-radius:10px!important;
+  border:1px solid rgba(245,247,250,.16)!important;
+  background:rgba(245,247,250,.055)!important;
+  color:#F5F7FA!important;font:inherit;font-size:12px!important;cursor:pointer
 }
-#respondo-site-chat.rx-experience-ready .fx-smart-panel-tools .fx-assistant-close{font-size:19px!important}
-#respondo-site-chat.rx-experience-ready .fx-smart-panel-tools .fx-assistant-close:hover,
-#respondo-site-chat.rx-experience-ready .rx-experience-return:hover{background:#33333a!important}
+#respondo-site-chat.rx-experience-ready .fx-assistant-close{
+  font-size:20px!important
+}
+#respondo-site-chat.rx-experience-ready .fx-assistant-close:hover,
+#respondo-site-chat.rx-experience-ready .rx-experience-return:hover{
+  background:rgba(245,247,250,.11)!important
+}
 #respondo-site-chat.rx-stage-mode .rx-experience-return{display:none!important}
 #respondo-site-chat.rx-experience-ready .rx-experience-stage{
-  width:100%;min-width:0;min-height:0;overflow:hidden;
-  display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
-  background:#0e0e11;
+  display:flex;min-height:0;min-width:0;overflow-y:auto;
+  width:100%;background:#0B0D12!important;
 }
 #respondo-site-chat.rx-conversation-mode .rx-experience-stage{display:none!important}
 #respondo-site-chat.rx-stage-mode .fx-assistant-messages,
 #respondo-site-chat.rx-stage-mode .fx-assistant-form{display:none!important}
 #respondo-site-chat.rx-experience-ready .rx-experience-main{
-  min-height:0;min-width:0;display:flex;flex-direction:column;overflow-y:auto;
-  overscroll-behavior:contain;padding:clamp(24px,3.5vw,46px) clamp(24px,4.1vw,52px) 24px;
-  background:
-    radial-gradient(ellipse at 0% 0%,rgba(255,255,255,.045),transparent 49%),
-    #0e0e11;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  flex:1;min-height:100%;min-width:0;
+  width:min(100%,620px);
+  padding:32px clamp(22px,6.5vw,64px) 22px!important;
+  margin:0 auto;
+  text-align:center;
 }
-#respondo-site-chat .rx-experience-top{
-  display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:39px
+#respondo-site-chat .rx-hero-mark{
+  width:64px;height:64px;display:grid;place-items:center;
+  margin:0 auto 23px;
+  border-radius:18px;
+  background:rgba(245,247,250,.055);
+  border:1px solid rgba(245,247,250,.15);
 }
-#respondo-site-chat .rx-kicker{color:#aaaab3;font-size:10px;letter-spacing:.14em;font-weight:780}
-#respondo-site-chat .rx-ready{
-  color:#9b9ca3;font-size:9px;letter-spacing:.09em;font-weight:730;
-  white-space:nowrap;display:flex;align-items:center;gap:7px
+#respondo-site-chat .rx-hero-mark[hidden]{display:none!important}
+#respondo-site-chat .rx-hero-logo{
+  display:block;width:54px;height:54px;object-fit:contain;
 }
-#respondo-site-chat .rx-ready::before{
-  content:'';display:block;width:6px;height:6px;border-radius:50%;background:#a9cdb6;
+#respondo-site-chat .rx-kicker{
+  color:#afb2c1!important;font-size:10px;font-weight:740;
+  letter-spacing:.19em;margin-bottom:13px
 }
 #respondo-site-chat .rx-hero-heading{
-  color:#fff!important;font-size:clamp(31px,3.8vw,47px);line-height:1.07;
-  margin:0 0 14px;font-weight:750;letter-spacing:-.055em;
-  max-width:520px
+  margin:0!important;
+  color:#F5F7FA!important;
+  font-size:clamp(32px,5vw,47px)!important;
+  font-weight:720!important;line-height:1.11!important;
+  letter-spacing:-.05em!important;
+  text-wrap:balance;
 }
 #respondo-site-chat .rx-hero-copy{
-  color:#a7a7b0;font-size:13px;line-height:1.64;
-  margin:0;max-width:375px
+  margin:14px auto 0!important;
+  color:#b8bdca!important;max-width:435px;
+  font-size:14px!important;line-height:1.6!important;
+  font-weight:440;text-wrap:pretty;
 }
 #respondo-site-chat .rx-content{
-  min-height:0;display:flex;flex-direction:column;margin-top:29px;flex:0 0 auto;gap:13px
+  display:flex;flex-direction:column;
+  width:100%;margin:33px auto 0!important;gap:18px;
+  max-width:510px;
 }
-#respondo-site-chat .rx-choice-list{display:grid;gap:10px}
-#respondo-site-chat .rx-choice{
-  appearance:none;display:grid;grid-template-columns:42px minmax(0,1fr) 16px;
-  align-items:center;gap:13px;width:100%;min-height:83px;
-  padding:14px 17px;border:1px solid #33343a;border-radius:16px;
-  background:#19191e;color:#f1f1f3;text-align:left;text-decoration:none!important;
-  font:inherit;cursor:pointer;
-  transition:background .16s,border-color .16s,transform .16s
+#respondo-site-chat .rx-ask-form{
+  display:flex;align-items:center;gap:10px;
+  min-height:62px;width:100%;
+  padding:7px 7px 7px 19px;
+  border:1px solid rgba(245,247,250,.28);
+  border-radius:17px;
+  background:rgba(245,247,250,.075);
+  transition:border-color .16s ease,background .16s ease;
 }
-#respondo-site-chat .rx-choice:first-child{
-  background:#f4f4f6;color:#151519;border-color:#fff;
+#respondo-site-chat .rx-ask-form:focus-within{
+  border-color:#7C8CFF;background:rgba(245,247,250,.09)
 }
-#respondo-site-chat .rx-choice:hover{
-  transform:translateX(3px);background:#25252c;border-color:#656570
+#respondo-site-chat .rx-ask-input{
+  appearance:none!important;flex:1;min-width:0;width:100%;
+  height:44px!important;padding:0!important;margin:0!important;
+  background:transparent!important;border:0!important;
+  outline:none!important;box-shadow:none!important;
+  color:#F5F7FA!important;-webkit-text-fill-color:#F5F7FA!important;
+  font:inherit!important;font-size:16px!important;font-weight:490!important;
 }
-#respondo-site-chat .rx-choice:first-child:hover{background:#e8e8ec;border-color:#fff}
-#respondo-site-chat .rx-choice-icon{
-  width:40px;height:40px;display:grid;place-items:center;
-  background:rgba(255,255,255,.09);border-radius:12px;
-  font-size:19px;font-weight:500;line-height:1
+#respondo-site-chat .rx-ask-input::placeholder{
+  color:#a3aab9!important;-webkit-text-fill-color:#a3aab9!important;
+  opacity:1!important
 }
-#respondo-site-chat .rx-choice:first-child .rx-choice-icon{background:#e2e2e5}
-#respondo-site-chat .rx-choice-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
-#respondo-site-chat .rx-choice-title{
-  display:block;font-size:14px;line-height:1.26;font-weight:760;
-  overflow-wrap:anywhere
+#respondo-site-chat .rx-ask-submit{
+  appearance:none!important;
+  display:grid!important;place-items:center!important;
+  flex:0 0 47px!important;width:47px!important;height:47px!important;
+  padding:0!important;margin:0!important;border:0!important;
+  border-radius:12px!important;background:#7C8CFF!important;
+  color:#0B0D12!important;font:inherit!important;font-size:21px!important;
+  cursor:pointer!important;transition:filter .16s ease,transform .16s ease;
 }
-#respondo-site-chat .rx-choice-description{
-  display:block;color:#a7a7af;font-size:11px;line-height:1.45;
-  font-weight:470;overflow-wrap:anywhere
+#respondo-site-chat .rx-ask-submit:hover{
+  filter:brightness(1.10)!important;transform:translateY(-1px)
 }
-#respondo-site-chat .rx-choice:first-child .rx-choice-description{color:#64656d}
-#respondo-site-chat .rx-choice-arrow{font-size:15px;color:#a5a5ae}
-#respondo-site-chat .rx-choice:first-child .rx-choice-arrow{color:#323339}
+#respondo-site-chat .rx-utility-links{
+  display:flex;align-items:center;justify-content:center;
+  flex-wrap:wrap;gap:9px 17px;
+}
+#respondo-site-chat .rx-utility-links .rx-action{
+  min-height:34px!important;
+  background:transparent!important;color:#d5d8e0!important;
+  border:0!important;border-bottom:1px solid rgba(245,247,250,.25)!important;
+  border-radius:0!important;padding:6px 1px!important;
+  text-decoration:none!important;box-shadow:none!important;
+  font:inherit!important;font-size:12px!important;font-weight:600!important;
+  cursor:pointer
+}
+#respondo-site-chat .rx-utility-links .rx-action:hover{
+  color:#F5F7FA!important;border-color:#F5F7FA!important
+}
+#respondo-site-chat .rx-utility-separator{
+  width:3px;height:3px;border-radius:50%;background:#7d8390
+}
 #respondo-site-chat .rx-footer{
-  display:flex;justify-content:space-between;align-items:flex-end;
-  flex-wrap:wrap;gap:10px;padding-top:25px;margin-top:auto
+  width:100%;
+  margin-top:auto;padding-top:23px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:8px 16px;
 }
-#respondo-site-chat .rx-footer-mark{font-size:10px;color:#6d6e78}
-#respondo-site-chat .rx-footer-links{display:flex;flex-wrap:wrap;gap:12px}
+#respondo-site-chat .rx-footer-mark{
+  color:#767d8b;font-size:10px;line-height:1.4
+}
+#respondo-site-chat .rx-footer-links{
+  display:flex;align-items:center;gap:14px
+}
 #respondo-site-chat .rx-simple-link{
-  color:#bdbdc6!important;font-size:10px;text-decoration:none!important;
-  border-bottom:1px solid #44454c;padding-bottom:2px;
+  color:#abb1be!important;font-size:10px!important;
+  text-decoration:none!important;border-bottom:1px solid rgba(245,247,250,.20);
+  padding-bottom:3px
 }
-#respondo-site-chat .rx-simple-link:hover{color:#fff!important;border-color:#ddd}
-#respondo-site-chat .rx-progress{display:flex;gap:6px;margin:0 0 6px}
+#respondo-site-chat .rx-simple-link:hover{color:#F5F7FA!important}
+#respondo-site-chat .rx-progress{
+  display:flex;gap:6px;justify-content:center;margin:0 auto 5px;
+  width:min(165px,100%)
+}
 #respondo-site-chat .rx-progress-dot{
-  height:3px;max-width:74px;flex:1;background:#373740;border-radius:999px
+  flex:1;height:3px;border-radius:99px;background:rgba(245,247,250,.17)
 }
-#respondo-site-chat .rx-progress-active{background:#eeedf1}
-#respondo-site-chat .rx-fit-choices{display:grid;gap:9px}
+#respondo-site-chat .rx-progress-active{background:#F5F7FA}
+#respondo-site-chat .rx-fit-choices{
+  display:grid;gap:9px;width:100%
+}
 #respondo-site-chat .rx-fit-option{
-  appearance:none;min-height:60px;width:100%;display:flex;
-  align-items:center;justify-content:space-between;gap:12px;
-  padding:15px 17px;
-  background:#1b1b20;color:#f5f5f6;border:1px solid #38383f;
-  border-radius:13px;font:inherit;font-size:13px;font-weight:710;
+  appearance:none!important;display:flex;justify-content:space-between;
+  align-items:center;gap:12px;min-height:58px;
+  padding:15px 18px;
+  width:100%;background:rgba(245,247,250,.065);
+  border:1px solid rgba(245,247,250,.15);
+  border-radius:13px;color:#F5F7FA;
+  font:inherit;font-size:13px;font-weight:650;
   cursor:pointer;text-align:left;
-  transition:background .16s,border-color .16s
 }
-#respondo-site-chat .rx-fit-option:hover{background:#292930;border-color:#888892}
-#respondo-site-chat .rx-fit-chevron{color:#a5a5ad;font-weight:450}
-#respondo-site-chat .rx-back{
-  display:inline-flex;align-items:center;width:fit-content;
-  color:#a8a8b1;border:0;background:none;padding:8px 0;
-  font:inherit;font-size:11px;cursor:pointer
+#respondo-site-chat .rx-fit-option:hover{
+  border-color:rgba(245,247,250,.5);
+  background:rgba(245,247,250,.1)
 }
-#respondo-site-chat .rx-back:hover{color:#fff;text-decoration:underline}
+#respondo-site-chat .rx-fit-chevron{color:#b0b6c3}
 #respondo-site-chat .rx-fit-result{
-  display:grid;gap:16px;border:1px solid #3b3b43;
-  background:linear-gradient(145deg,#222229,#17171b);
-  border-radius:17px;padding:22px
+  display:grid;gap:15px;text-align:left;
+  padding:23px;border-radius:15px;
+  border:1px solid rgba(245,247,250,.22);
+  background:rgba(245,247,250,.055);
 }
 #respondo-site-chat .rx-result-eyebrow{
-  color:#c3c3ca;letter-spacing:.05em;font-size:11px;font-weight:700
+  font-size:11px;color:#c8ccd6;font-weight:710
 }
-#respondo-site-chat .rx-result-main{margin:0;color:#fff;font-size:16px;line-height:1.56;font-weight:590}
-#respondo-site-chat .rx-result-note{color:#93939d;font-size:11px;line-height:1.6}
-#respondo-site-chat .rx-fit-actions{display:flex;gap:9px;flex-wrap:wrap}
-#respondo-site-chat .rx-action{
-  appearance:none;display:inline-flex;align-items:center;justify-content:center;
-  min-height:43px;padding:10px 16px;border-radius:11px;
-  border:1px solid #55565d;text-decoration:none!important;
-  color:#fff!important;background:#29292f;font:inherit;
-  font-size:12px;font-weight:720;cursor:pointer;transition:background .16s
+#respondo-site-chat .rx-result-main{
+  color:#F5F7FA!important;font-size:17px!important;line-height:1.5!important;
+  margin:0!important;letter-spacing:-.01em
 }
-#respondo-site-chat .rx-primary{color:#151517!important;background:#f2f2f4;border-color:#fff}
-#respondo-site-chat .rx-action:hover{background:#39393f}
-#respondo-site-chat .rx-primary:hover{background:#e4e4e7}
-#respondo-site-chat.rx-experience-ready .rx-experience-visual{
-  position:relative;min-width:0;min-height:0;overflow-y:auto;
-  padding:38px clamp(19px,2.4vw,33px) 29px;
-  display:flex;flex-direction:column;gap:0;
-  background:linear-gradient(140deg,#fafafb,#ececf0);
-  color:#151518;border-left:1px solid #dfdfe4
+#respondo-site-chat .rx-result-note{
+  color:#a4aab8!important;font-size:11px!important;line-height:1.6!important
 }
-#respondo-site-chat .rx-visual-head{
-  display:flex;align-items:center;justify-content:space-between;
-  gap:13px;margin-bottom:36px
+#respondo-site-chat .rx-fit-actions{
+  display:flex;justify-content:center;flex-wrap:wrap;gap:10px
 }
-#respondo-site-chat .rx-visual-logo{
-  width:39px;height:39px;flex:0 0 39px;
-  display:grid;place-items:center;border-radius:12px;
-  background:#0e0e11;box-shadow:0 6px 22px rgba(15,15,25,.14)
-}
-#respondo-site-chat .rx-visual-logo-img{display:block;width:31px;height:31px;object-fit:contain}
-#respondo-site-chat .rx-preview-kicker{
-  color:#7a7b84;font-size:9px;font-weight:770;letter-spacing:.075em;
-  text-align:right;line-height:1.4
-}
-#respondo-site-chat .rx-visual-title{
-  color:#1b1c20!important;font-size:27px;font-weight:750;
-  line-height:1.16;letter-spacing:-.045em;margin:0 0 16px
-}
-#respondo-site-chat .rx-sample-selector{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:24px}
-#respondo-site-chat .rx-sample-option{
-  appearance:none;border-radius:999px;border:1px solid #d2d2d9;
-  background:transparent;color:#7b7b85;padding:7px 10px;
-  font:inherit;font-size:10px;font-weight:720;cursor:pointer
-}
-#respondo-site-chat .rx-sample-option.rx-active{background:#19191d;color:#fff;border-color:#19191d}
-#respondo-site-chat .rx-sample-option:hover{border-color:#686874}
-#respondo-site-chat .rx-preview-thread{display:grid;gap:10px;margin-bottom:17px}
-#respondo-site-chat .rx-preview-card{
-  display:grid;gap:7px;padding:14px 16px;border:1px solid #dddde3;
-  border-radius:15px;background:#fff;box-shadow:0 3px 12px rgba(8,9,15,.025)
-}
-#respondo-site-chat .rx-preview-answer{
-  background:#202026;color:#fff;border-color:#202026;
-}
-#respondo-site-chat .rx-card-label{
-  color:#8e8f9a;font-size:9px;font-weight:800;letter-spacing:.11em
-}
-#respondo-site-chat .rx-preview-answer .rx-card-label{color:#aaaab5}
-#respondo-site-chat .rx-card-message{
-  color:#22232a;font-size:12px;line-height:1.54;margin:0
-}
-#respondo-site-chat .rx-preview-answer .rx-card-message{color:#f5f5f7}
-#respondo-site-chat .rx-preview-next{
-  display:flex;align-items:center;justify-content:space-between;gap:9px;
-  padding:13px 14px;background:#e3e3e8;border-radius:11px
-}
-#respondo-site-chat .rx-next-title{
-  color:#7b7c87;font-size:9px;letter-spacing:.085em;font-weight:790
-}
-#respondo-site-chat .rx-next-value{font-size:11px;font-weight:770;color:#34343b;text-align:right}
-#respondo-site-chat .rx-preview-note{
-  color:#81828d;font-size:10px;line-height:1.5;
-  margin:0 0 14px
-}
-#respondo-site-chat .rx-preview-demo{
+#respondo-site-chat .rx-fit-actions .rx-action{
   display:inline-flex;align-items:center;justify-content:center;
-  width:fit-content;color:#202126!important;
-  border-bottom:1px solid #9a9aa3;text-decoration:none!important;
-  margin-top:auto;padding:10px 0 3px;font-size:11px;font-weight:770
+  min-height:44px;border-radius:10px;
+  padding:10px 16px;text-decoration:none!important;
+  border:1px solid rgba(245,247,250,.25);
+  background:rgba(245,247,250,.07);
+  color:#F5F7FA;font:inherit;font-size:12px;font-weight:650;
+  cursor:pointer
 }
-#respondo-site-chat .rx-preview-demo:hover{color:#646470!important}
+#respondo-site-chat .rx-fit-actions .rx-primary{
+  color:#0B0D12!important;background:#7C8CFF!important;
+  border-color:#7C8CFF!important
+}
+#respondo-site-chat .rx-back{
+  appearance:none;align-self:center;min-height:37px;
+  color:#aeb3bf!important;padding:8px 5px;border:0;
+  background:none;font:inherit;font-size:12px;cursor:pointer
+}
+#respondo-site-chat .rx-back:hover{color:#F5F7FA!important}
 body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-assistant-messages{
-  background:#101014!important;min-height:0;overflow-y:auto;
-  padding:27px max(20px,calc((100% - 710px)/2))!important;gap:12px!important
+  min-height:0;overflow-y:auto;
+  padding:23px max(20px,calc((100% - 585px)/2))!important;
+  background:#0B0D12!important;gap:12px!important
 }
 body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-chat-bubble.bot{
-  background:#212127!important;color:#f0f0f3!important;
-  border:1px solid #36363e!important;border-radius:16px!important;
-  font-size:13px!important;line-height:1.55!important;max-width:88%
+  max-width:88%!important;color:#F5F7FA!important;
+  background:rgba(245,247,250,.075)!important;
+  border:1px solid rgba(245,247,250,.15)!important;
+  border-radius:15px!important;
+  font-size:13px!important;line-height:1.6!important
 }
 body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-chat-bubble.user{
-  background:#f0f0f3!important;color:#1c1c22!important;
-  border-radius:16px!important;max-width:83%!important
+  max-width:86%!important;color:#0B0D12!important;
+  background:#F5F7FA!important;
+  border-radius:15px!important;font-size:13px!important;line-height:1.55!important
 }
 body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-quick button{
-  background:#27272d!important;color:#e5e5ea!important;
-  border:1px solid #393940!important;border-radius:999px!important;
-  font-size:11px!important
+  color:#cfd3dc!important;background:rgba(245,247,250,.07)!important;
+  border:1px solid rgba(245,247,250,.16)!important;border-radius:999px!important
 }
 body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-assistant-form{
-  display:flex!important;background:#141417!important;
-  border-top:1px solid #2e2e34!important;
-  padding:13px max(20px,calc((100% - 710px)/2))!important
+  display:flex!important;gap:8px;
+  padding:12px max(20px,calc((100% - 585px)/2))!important;
+  border-top:1px solid rgba(245,247,250,.14)!important;
+  background:#0B0D12!important
 }
 body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-assistant-form input{
-  min-height:47px!important;background:#232329!important;color:#fafafa!important;
-  border:1px solid #42424d!important;border-radius:12px!important
+  min-height:45px!important;
+  color:#F5F7FA!important;background:rgba(245,247,250,.09)!important;
+  border:1px solid rgba(245,247,250,.23)!important;
+  border-radius:11px!important;font-size:16px!important
 }
 body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-assistant-form button{
-  background:#f2f2f4!important;color:#111115!important;border-radius:12px!important
+  color:#0B0D12!important;background:#7C8CFF!important;
+  border-radius:11px!important
 }
 #respondo-site-chat.rx-experience-ready .fx-smart-home{display:none!important}
 #respondo-site-chat.rx-has-user-message .fx-quick{display:none!important}
-#respondo-site-chat.rx-experience-ready button:focus-visible,
-#respondo-site-chat.rx-experience-ready a:focus-visible,
-#respondo-site-chat.rx-experience-ready input:focus-visible{
-  outline:2px solid #9e9eb5!important;outline-offset:3px!important
-}
-@media(max-width:780px){
-  body:not(.assistant-standalone) #respondo-site-chat.rx-experience-ready.fx-firstparty-smart{
-    width:calc(100vw - 22px)!important;height:calc(100dvh - 22px)!important;
-  }
-  #respondo-site-chat .rx-experience-stage{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
-  #respondo-site-chat.rx-experience-ready .rx-experience-main{padding:27px 24px}
-  #respondo-site-chat .rx-experience-top{margin-bottom:25px}
-  #respondo-site-chat.rx-experience-ready .rx-experience-visual{padding:26px 17px}
-  #respondo-site-chat .rx-visual-head{margin-bottom:23px}
-  #respondo-site-chat .rx-preview-card{padding:11px}
-  #respondo-site-chat .rx-hero-heading{font-size:36px}
+#respondo-site-chat.rx-experience-ready :is(button,a,input):focus-visible{
+  outline:2px solid #7C8CFF!important;outline-offset:3px!important
 }
 @media(max-width:610px){
   body:not(.assistant-standalone) #respondo-site-chat.rx-experience-ready.fx-firstparty-smart{
     inset:0!important;width:100vw!important;height:100dvh!important;
-    border:0!important;border-radius:0!important;
-    transform:translateY(12px)!important
+    border:0!important;border-radius:0!important;transform:translateY(12px)!important
   }
   body:not(.assistant-standalone) #respondo-site-chat.rx-experience-ready.fx-firstparty-smart.open{
-    transform:translateY(0)!important;
+    transform:translateY(0)!important
   }
   #respondo-site-chat.rx-experience-ready .fx-assistant-head{
-    min-height:60px!important;padding:8px 15px!important
-  }
-  #respondo-site-chat.rx-experience-ready .rx-experience-stage{
-    display:block!important;overflow-y:auto!important;overscroll-behavior:contain
+    min-height:61px!important;padding:10px 16px!important
   }
   #respondo-site-chat.rx-experience-ready .rx-experience-main{
-    min-height:0;overflow:visible;padding:29px 22px 26px!important
+    padding:26px 21px max(20px,env(safe-area-inset-bottom))!important;
   }
-  #respondo-site-chat .rx-experience-top{margin-bottom:26px}
-  #respondo-site-chat .rx-hero-heading{font-size:40px!important}
-  #respondo-site-chat .rx-content{margin-top:25px}
-  #respondo-site-chat .rx-choice{min-height:77px;padding:11px 13px;gap:10px}
-  #respondo-site-chat .rx-choice-title{font-size:13px}
-  #respondo-site-chat .rx-footer{margin-top:23px;padding-top:0}
-  #respondo-site-chat.rx-experience-ready .rx-experience-visual{
-    border:0;border-top:1px solid #d6d6dc;padding:23px 22px!important;
-    overflow:visible;min-height:auto
+  #respondo-site-chat .rx-hero-mark{
+    width:57px;height:57px;margin-bottom:21px
   }
-  #respondo-site-chat .rx-visual-head{margin-bottom:17px}
-  #respondo-site-chat .rx-visual-title{font-size:23px}
-  #respondo-site-chat .rx-sample-selector{margin-bottom:15px}
-  #respondo-site-chat .rx-preview-thread{gap:7px}
-  #respondo-site-chat .rx-preview-card{padding:12px 14px}
-  #respondo-site-chat .rx-preview-demo{margin-top:4px}
+  #respondo-site-chat .rx-hero-logo{width:48px;height:48px}
+  #respondo-site-chat .rx-hero-heading{font-size:37px!important}
+  #respondo-site-chat .rx-hero-copy{font-size:13px!important}
+  #respondo-site-chat .rx-content{margin-top:27px!important}
+  #respondo-site-chat .rx-ask-form{min-height:60px}
+  #respondo-site-chat .rx-footer{justify-content:center}
   body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-assistant-messages{
-    padding:16px!important
+    padding:15px!important
   }
   body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-assistant-form{
-    padding:12px 12px max(12px,env(safe-area-inset-bottom))!important
-  }
-  body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-assistant-form input{
-    font-size:16px!important
+    padding:11px 12px max(11px,env(safe-area-inset-bottom))!important
   }
 }
-@media(max-height:580px) and (min-width:611px){
-  #respondo-site-chat.rx-experience-ready .rx-experience-main{padding-top:23px;padding-bottom:15px}
-  #respondo-site-chat .rx-experience-top{margin-bottom:17px}
-  #respondo-site-chat .rx-content{margin-top:17px}
-  #respondo-site-chat .rx-choice{min-height:65px;padding:9px 12px}
-  #respondo-site-chat .rx-visual-head{margin-bottom:14px}
-  #respondo-site-chat .rx-preview-card{padding:9px 12px}
+@media(max-height:600px) and (min-width:611px){
+  #respondo-site-chat.rx-experience-ready .rx-experience-main{
+    padding-top:20px!important;padding-bottom:14px!important
+  }
+  #respondo-site-chat .rx-hero-mark{width:45px;height:45px;margin-bottom:12px}
+  #respondo-site-chat .rx-hero-logo{width:38px;height:38px}
+  #respondo-site-chat .rx-content{margin-top:18px!important}
+  #respondo-site-chat .rx-footer{padding-top:12px}
 }
 @media(prefers-reduced-motion:reduce){
   .rx-experience-backdrop,
   body:not(.assistant-standalone) #respondo-site-chat.rx-experience-ready,
-  .fx-firstparty-launch.fx-assistant-launch,
-  #respondo-site-chat .rx-choice,
-  #respondo-site-chat .rx-fit-option{animation:none!important;transition:none!important}
-  #respondo-site-chat .rx-choice:hover{transform:none}
+  #respondo-site-chat .rx-ask-submit,
+  #respondo-site-chat .rx-ask-form{transition:none!important;animation:none!important}
+  #respondo-site-chat .rx-ask-submit:hover{transform:none!important}
 }

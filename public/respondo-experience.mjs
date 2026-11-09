@@ -246,10 +246,40 @@ const MINIMAL = {
 export function minimalExperienceCopy(language){
   return MINIMAL[experienceLocale(language)];
 }
+// Keep all actual visitor questions on Respondo's existing, grounded chat API.
+// No fake conversation is shown on the first screen.
+const LIVE_FIRST_COPY={
+  fi:{
+    label:'RESPONDO AI',heading:'Miten voin auttaa?',
+    description:'Kysy ominaisuuksista, hinnoista tai siitä, miten Respondo toimisi yrityksessäsi.',
+    placeholder:'Kirjoita kysymyksesi…',send:'Lähetä kysymys',
+    fit:'Löydä sopiva ratkaisu',demo:'Kokeile bottia käytännössä',
+    pricing:'Hinnasto',discover:'Ominaisuudet',back:'Takaisin',status:'Valmiina auttamaan',
+    progress:'Kysymys',footer:'Älykkäämpää asiakaspalvelua'
+  },
+  sv:{
+    label:'RESPONDO AI',heading:'Hur kan jag hjälpa?',
+    description:'Fråga om funktioner, priser eller hur Respondo kan hjälpa ditt företag.',
+    placeholder:'Skriv din fråga…',send:'Skicka frågan',
+    fit:'Hitta rätt lösning',demo:'Testa botten själv',
+    pricing:'Priser',discover:'Funktioner',back:'Tillbaka',status:'Redo att hjälpa',
+    progress:'Fråga',footer:'Smartare kundservice'
+  },
+  en:{
+    label:'RESPONDO AI',heading:'How can I help?',
+    description:'Ask about features, pricing, or how Respondo could work for your business.',
+    placeholder:'Type your question…',send:'Send question',
+    fit:'Find your solution',demo:'Try the live bot',
+    pricing:'Pricing',discover:'Features',back:'Back',status:'Ready to help',
+    progress:'Question',footer:'Smarter customer service'
+  }
+};
+export function liveFirstExperienceCopy(language){return LIVE_FIRST_COPY[experienceLocale(language)];}
+
 export function mountRespondoExperience(documentRef){
   if(!documentRef || !documentRef.body ||
-     ['/assistant','/app','/demo'].includes(documentRef.location?.pathname||'') ||
-     documentRef.body.classList.contains('assistant-standalone'))return false;
+    ['/assistant','/app','/demo'].includes(documentRef.location?.pathname||'') ||
+    documentRef.body.classList.contains('assistant-standalone'))return false;
   const box=documentRef.querySelector('#respondo-site-chat.fx-firstparty-smart');
   if(!box || box.querySelector('.rx-experience-stage'))return false;
   const query=new URLSearchParams(documentRef.location?.search||'');
@@ -257,87 +287,42 @@ export function mountRespondoExperience(documentRef){
   try{saved=documentRef.defaultView?.localStorage?.getItem('respondo_lang')||'en';}catch{}
   const lang=experienceLocale(query.get('lang')||saved);
   const c=minimalExperienceCopy(lang);
+  const ui=liveFirstExperienceCopy(lang);
   const launch=documentRef.querySelector('.fx-firstparty-launch');
   const close=box.querySelector('.fx-assistant-close');
   const form=box.querySelector('.fx-assistant-form');
   const messages=box.querySelector('.fx-assistant-messages');
-  if(!launch||!close||!form||!messages)return false;
+  const realInput=form?.querySelector('input[name="message"]');
+  if(!launch||!close||!form||!messages||!realInput)return false;
 
   documentRef.querySelectorAll('.rx-experience-backdrop').forEach(el=>el.remove());
   const backdrop=make(documentRef,'div','rx-experience-backdrop');
   backdrop.setAttribute('aria-hidden','true');
   documentRef.body.appendChild(backdrop);
-
   const stage=make(documentRef,'section','rx-experience-stage');
-  stage.setAttribute('aria-label',c.eyebrow);
+  stage.setAttribute('aria-label',ui.label);
+
   const main=make(documentRef,'div','rx-experience-main');
-  const top=make(documentRef,'div','rx-experience-top');
-  const eyebrow=make(documentRef,'span','rx-kicker',c.eyebrow);
-  const ready=make(documentRef,'span','rx-ready',c.ready);
-  top.append(eyebrow,ready);
-  const heading=make(documentRef,'h2','rx-hero-heading',c.heading);
-  const intro=make(documentRef,'p','rx-hero-copy',c.description);
+  const mark=make(documentRef,'div','rx-hero-mark');
+  mark.setAttribute('aria-hidden','true');
+  const logo=make(documentRef,'img','rx-hero-logo');
+  logo.src='/respondo-approved-arrow-20261012.png';
+  logo.alt='';
+  mark.appendChild(logo);
+
+  const eyebrow=make(documentRef,'span','rx-kicker',ui.label);
+  const heading=make(documentRef,'h2','rx-hero-heading',ui.heading);
+  const intro=make(documentRef,'p','rx-hero-copy',ui.description);
   const content=make(documentRef,'div','rx-content');
   content.setAttribute('aria-live','polite');
   const footer=make(documentRef,'footer','rx-footer');
-  const brand=make(documentRef,'span','rx-footer-mark',c.copyFooter);
+  footer.appendChild(make(documentRef,'span','rx-footer-mark',ui.footer));
   const footerLinks=make(documentRef,'div','rx-footer-links');
-  appendAction(footerLinks,documentRef,c.prices,linkTo('/hinnat',lang),'rx-simple-link');
-  appendAction(footerLinks,documentRef,c.features,linkTo(lang==='sv'?'/funktioner':lang==='en'?'/features':'/ominaisuudet',lang),'rx-simple-link');
-  footer.append(brand,footerLinks);
-  main.append(top,heading,intro,content,footer);
-
-  const visual=make(documentRef,'aside','rx-experience-visual');
-  visual.setAttribute('aria-label',c.example);
-  const visualHead=make(documentRef,'div','rx-visual-head');
-  const smallLogo=make(documentRef,'span','rx-visual-logo');
-  const image=make(documentRef,'img','rx-visual-logo-img');
-  image.src='/respondo-approved-arrow-20261012.png';
-  image.alt='';image.setAttribute('aria-hidden','true');
-  smallLogo.appendChild(image);
-  visualHead.append(smallLogo,make(documentRef,'span','rx-preview-kicker',c.example));
-  const previewTitle=make(documentRef,'h3','rx-visual-title',c.sampleTabs[0]);
-  const sampleSelector=make(documentRef,'div','rx-sample-selector');
-  sampleSelector.setAttribute('role','group');
-  sampleSelector.setAttribute('aria-label',c.example);
-  const thread=make(documentRef,'div','rx-preview-thread');
-  const previewCustomer=make(documentRef,'div','rx-preview-card');
-  previewCustomer.appendChild(make(documentRef,'span','rx-card-label',c.visitor));
-  const customerQuestion=make(documentRef,'p','rx-card-message','');
-  previewCustomer.appendChild(customerQuestion);
-  const previewBot=make(documentRef,'div','rx-preview-card rx-preview-answer');
-  previewBot.appendChild(make(documentRef,'span','rx-card-label',c.bot));
-  const botResponse=make(documentRef,'p','rx-card-message','');
-  previewBot.appendChild(botResponse);
-  const next=make(documentRef,'div','rx-preview-next');
-  const nextTitle=make(documentRef,'span','rx-next-title',c.next);
-  const nextValue=make(documentRef,'strong','rx-next-value','');
-  next.append(nextTitle,nextValue);
-  thread.append(previewCustomer,previewBot,next);
-  const note=make(documentRef,'p','rx-preview-note',c.exampleNote);
-  const demo=appendAction(visual,documentRef,c.tryButton,linkTo('/assistant',lang),'rx-preview-demo');
-  visual.replaceChildren(visualHead,previewTitle,sampleSelector,thread,note,demo);
-
-  function showSample(i){
-    const item=c.samples[i]||c.samples[0];
-    previewTitle.textContent=c.sampleTabs[i]||c.sampleTabs[0];
-    customerQuestion.textContent=item[0];
-    botResponse.textContent=item[1];
-    nextValue.textContent=item[2];
-    sampleSelector.querySelectorAll('button').forEach((btn,idx)=>{
-      const active=idx===i;
-      btn.classList.toggle('rx-active',active);
-      btn.setAttribute('aria-pressed',String(active));
-    });
-  }
-  c.sampleTabs.forEach((name,i)=>{
-    const b=make(documentRef,'button','rx-sample-option',name);
-    b.type='button';b.setAttribute('aria-pressed',String(i===0));
-    b.addEventListener('click',()=>showSample(i));
-    sampleSelector.appendChild(b);
-  });
-  showSample(0);
-  stage.append(main,visual);
+  appendAction(footerLinks,documentRef,ui.pricing,linkTo('/hinnat',lang),'rx-simple-link');
+  appendAction(footerLinks,documentRef,ui.discover,linkTo(lang==='sv'?'/funktioner':lang==='en'?'/features':'/ominaisuudet',lang),'rx-simple-link');
+  footer.appendChild(footerLinks);
+  main.append(mark,eyebrow,heading,intro,content,footer);
+  stage.appendChild(main);
   box.insertBefore(stage,messages);
 
   const returnBtn=make(documentRef,'button','rx-experience-return',c.stageBack);
@@ -349,68 +334,83 @@ export function mountRespondoExperience(documentRef){
     const button=make(documentRef,'button',primary?'rx-action rx-primary':'rx-action rx-secondary',label);
     button.type='button';
     button.addEventListener('click',handler);
-    parent.appendChild(button);return button;
+    parent.appendChild(button);
+    return button;
   }
   function linkAction(parent,label,href,primary=false){
     return appendAction(parent,documentRef,label,href,primary?'rx-action rx-primary':'rx-action rx-secondary');
   }
-  function resetBody(){
-    content.replaceChildren();
-    content.scrollTop=0;
-  }
+  function resetBody(){content.replaceChildren();content.scrollTop=0;}
   function focusChat(){
     box.classList.remove('rx-stage-mode');
     box.classList.add('rx-conversation-mode');
-    if(box.classList.contains('open'))form.querySelector('input[name="message"]')?.focus();
+    if(box.classList.contains('open'))realInput.focus();
   }
   function showStage(){
     box.classList.add('rx-stage-mode');
     box.classList.remove('rx-conversation-mode');
     render();
-    if(box.classList.contains('open'))content.querySelector('button,a')?.focus();
+    if(box.classList.contains('open'))content.querySelector('input,button,a')?.focus();
   }
-  function showHome(){
-    state.view='home';state.step=0;state.business='';state.goal='';
-    render();
+  function showHome(){state.view='home';state.step=0;state.business='';state.goal='';render();}
+  function submitQuestion(text){
+    const clean=String(text||'').trim();
+    if(!clean||realInput.disabled)return false;
+    realInput.value=clean;
+    focusChat();
+    // Trigger the already-installed submit handler, preserving its history,
+    // deduplication, loading state, server-side grounding and secure actions.
+    if(typeof form.requestSubmit==='function')form.requestSubmit();
+    else form.querySelector('button[type="submit"]')?.click();
+    return true;
   }
   function renderHome(){
-    heading.textContent=c.heading;intro.textContent=c.description;
+    heading.textContent=ui.heading;intro.textContent=ui.description;
+    mark.hidden=false;
     resetBody();
-    const actions=[
-      {title:c.ask,detail:c.askDetail,icon:'↗',onClick:focusChat},
-      {title:c.fit,detail:c.fitDetail,icon:'◇',onClick:()=>{state.view='fit';state.step=0;render();}},
-      {title:c.demo,detail:c.demoDetail,icon:'⌁',href:linkTo('/assistant',lang)}
-    ];
-    const list=make(documentRef,'div','rx-choice-list');
-    actions.forEach((item,i)=>{
-      const node=make(documentRef,item.href?'a':'button','rx-choice');
-      if(item.href)node.href=item.href;
-      else {node.type='button';node.addEventListener('click',item.onClick);}
-      node.appendChild(make(documentRef,'span','rx-choice-icon',item.icon));
-      const label=make(documentRef,'span','rx-choice-copy');
-      label.append(make(documentRef,'strong','rx-choice-title',item.title),make(documentRef,'small','rx-choice-description',item.detail));
-      node.append(label,make(documentRef,'span','rx-choice-arrow','↗'));
-      list.appendChild(node);
+    const askForm=make(documentRef,'form','rx-ask-form');
+    askForm.setAttribute('aria-label',ui.progress);
+    const askInput=make(documentRef,'input','rx-ask-input');
+    askInput.type='text';askInput.name='question';askInput.placeholder=ui.placeholder;
+    askInput.autocomplete='off';askInput.maxLength=1200;
+    askInput.setAttribute('aria-label',ui.placeholder);
+    const askButton=make(documentRef,'button','rx-ask-submit','↗');
+    askButton.type='submit';askButton.setAttribute('aria-label',ui.send);
+    askForm.append(askInput,askButton);
+    askForm.addEventListener('submit',event=>{
+      event.preventDefault();
+      if(submitQuestion(askInput.value))askInput.value='';
     });
-    content.appendChild(list);
+    const utilities=make(documentRef,'div','rx-utility-links');
+    action(utilities,ui.fit,()=>{state.view='fit';state.step=0;render();});
+    const separator=make(documentRef,'span','rx-utility-separator');
+    separator.setAttribute('aria-hidden','true');
+    utilities.appendChild(separator);
+    linkAction(utilities,ui.demo,linkTo('/assistant',lang));
+    content.append(askForm,utilities);
   }
   function fitOption(parent,name,handler){
     const btn=make(documentRef,'button','rx-fit-option',name);
     btn.type='button';
-    const mark=make(documentRef,'span','rx-fit-chevron','↗');
-    btn.appendChild(mark);
+    btn.appendChild(make(documentRef,'span','rx-fit-chevron','↗'));
     btn.addEventListener('click',handler);
-    parent.appendChild(btn);return btn;
+    parent.appendChild(btn);
+    return btn;
   }
   function renderFit(){
     resetBody();
-    eyebrow.textContent=c.eyebrow;
+    mark.hidden=true;
+    if(state.step<2){
+      heading.textContent=state.step===0?c.question1:c.question2;
+      intro.textContent=state.step===0?c.fitDetail:c.question2;
+    }else{
+      heading.textContent=c.resultTitle;
+      intro.textContent='';
+    }
     const progress=make(documentRef,'div','rx-progress');
     for(let i=0;i<3;i++)progress.appendChild(make(documentRef,'span','rx-progress-dot'+(i<=state.step?' rx-progress-active':'')));
     content.appendChild(progress);
     if(state.step<2){
-      heading.textContent=state.step===0?c.question1:c.question2;
-      intro.textContent=state.step===0?c.fitDetail:c.question2;
       const choices=make(documentRef,'div','rx-fit-choices');
       const options=state.step===0?[
         ['services',c.service],['ecommerce',c.commerce],['bookings',c.appointments]
@@ -419,13 +419,11 @@ export function mountRespondoExperience(documentRef){
       ];
       for(const [id,label] of options)fitOption(choices,label,()=>{
         if(state.step===0){state.business=id;state.step=1;}
-        else {state.goal=id;state.step=2;}
+        else{state.goal=id;state.step=2;}
         renderFit();
       });
       content.appendChild(choices);
     }else{
-      heading.textContent=c.resultTitle;
-      intro.textContent='';
       const result=experienceRecommendations(state.business,state.goal,lang);
       const resultCard=make(documentRef,'div','rx-fit-result');
       resultCard.appendChild(make(documentRef,'span','rx-result-eyebrow',result.categoryText+' / '+result.goalText));
@@ -433,24 +431,20 @@ export function mountRespondoExperience(documentRef){
       resultCard.appendChild(make(documentRef,'small','rx-result-note',c.resultNote));
       content.appendChild(resultCard);
       const buttons=make(documentRef,'div','rx-fit-actions');
-      linkAction(buttons,c.goDemo,linkTo('/assistant',lang),true);
-      action(buttons,c.talk,focusChat,false);
+      action(buttons,c.talk,focusChat,true);
+      linkAction(buttons,c.goDemo,linkTo('/assistant',lang));
       content.appendChild(buttons);
-      showSample(result.category==='ecommerce'?1:result.category==='bookings'?2:0);
     }
-    const back=make(documentRef,'button','rx-back',state.step===0?c.stageBack:state.step===2?c.reset:c.previous);
+    const back=make(documentRef,'button','rx-back',state.step===0?ui.back:state.step===2?c.reset:c.previous);
     back.type='button';
     back.addEventListener('click',()=>{
       if(state.step===0)showHome();
       else if(state.step===2){state.step=0;state.business='';state.goal='';renderFit();}
-      else {state.step=0;renderFit();}
+      else{state.step=0;renderFit();}
     });
     content.appendChild(back);
   }
-  function render(){
-    if(state.view==='fit')renderFit();
-    else renderHome();
-  }
+  function render(){if(state.view==='fit')renderFit();else renderHome();}
   returnBtn.addEventListener('click',showStage);
   backdrop.addEventListener('click',()=>close.click());
   close.addEventListener('click',()=>setTimeout(()=>launch.focus(),60));
@@ -461,8 +455,8 @@ export function mountRespondoExperience(documentRef){
       .filter(el=>el.getClientRects().length && el.getAttribute('aria-hidden')!=='true');
     if(!focusables.length)return;
     const first=focusables[0],last=focusables[focusables.length-1];
-    if(event.shiftKey && documentRef.activeElement===first){event.preventDefault();last.focus();}
-    else if(!event.shiftKey && documentRef.activeElement===last){event.preventDefault();first.focus();}
+    if(event.shiftKey&&documentRef.activeElement===first){event.preventDefault();last.focus();}
+    else if(!event.shiftKey&&documentRef.activeElement===last){event.preventDefault();first.focus();}
   });
   const sync=()=>{
     const opened=box.classList.contains('open');
@@ -470,8 +464,8 @@ export function mountRespondoExperience(documentRef){
     box.setAttribute('role',opened?'dialog':'region');
     if(opened)box.setAttribute('aria-modal','true');
     else box.removeAttribute('aria-modal');
-    if(opened && box.classList.contains('rx-stage-mode')){
-      setTimeout(()=>content.querySelector('button,a')?.focus(),160);
+    if(opened&&box.classList.contains('rx-stage-mode')){
+      setTimeout(()=>content.querySelector('input,button,a')?.focus(),110);
     }
   };
   new MutationObserver(sync).observe(box,{attributes:true,attributeFilter:['class']});

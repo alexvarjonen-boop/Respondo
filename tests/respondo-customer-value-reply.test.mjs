@@ -83,17 +83,21 @@ test('site assistant resolves outcome question before tenant lookup and broad we
   assert.match(server,/if\(isRespondoCustomerValueQuestion\(message\)\)/);
 });
 
-test('minimal experience opens chat without sending a canned duplicate question',()=>{
+test('live-first experience submits the actual visitor question through existing first-party chat',()=>{
   assert.match(experience,/function focusChat\(\)/);
-  assert.match(experience,/onClick:focusChat/);
+  assert.match(experience,/function submitQuestion\(text\)/);
+  assert.match(experience,/const clean=String\(text\|\|''\)\.trim\(\)/);
+  assert.match(experience,/realInput\.value=clean/);
+  assert.match(experience,/if\(submitQuestion\(askInput\.value\)\)askInput\.value=''/);
   assert.match(experience,/form\.addEventListener\('submit',focusChat,true\)/);
-  assert.doesNotMatch(experience,/form\.requestSubmit\(\)|experienceOpeningSent|new Event\('submit'/);
+  assert.match(experience,/form\.requestSubmit\(\)/);
+  assert.doesNotMatch(experience,/experienceOpeningSent|new Event\('submit'/);
   assert.match(effects,/if\(clean===lastSubmittedText && Date\.now\(\)-lastSubmittedAt<3500\)return/);
   assert.match(effects,/form\.message\.disabled = true/);
   assert.match(effects,/\/api\/public\/respondo-assistant\/chat/);
 });
 
 test('changed marketing assistant and experience files carry new asset versions',()=>{
-  assert.match(index,/respondo-experience\.mjs\?v=20261109-clean-minimal-v2/);
+  assert.match(index,/respondo-experience\.mjs\?v=20261109-live-first-single-surface-v3/);
   assert.match(index,/firstparty-smart-assist-v1-customer-benefits-v2-clean-chat-v3-mobile-simplify-v9/);
 });
