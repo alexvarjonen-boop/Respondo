@@ -107,6 +107,16 @@
     const viewport = Math.max(innerHeight, 1);
     if (rect.bottom < -70 || rect.top > viewport + 70) return;
     const mobile = coarse.matches || innerWidth < 760;
+    // Touch/narrow screens scroll natively, without the desktop wheel handler.
+    // Reveal 24/7 only after actual downward movement, and restore the
+    // uncluttered hero when the visitor scrolls back to the beginning.
+    if (mobile) {
+      const firstScrollThreshold = Math.min(viewport * .10, 72);
+      section.classList.toggle('rs-first-revealed', -rect.top >= firstScrollThreshold);
+    } else if (-rect.top >= Math.min(viewport * .10, 72)) {
+      // Keyboard, scrollbar and assistive-technology scrolling still work.
+      section.classList.add('rs-first-revealed');
+    }
     // On iOS Safari, preserve the existing sticky-position fallback.
     if (mobile) {
       const stage = section.querySelector('.rs-spiral-stage');
@@ -237,8 +247,17 @@
     const direction = Math.sign(event.deltaY);
     if (!direction) return;
     const index = clamp(Math.round(position), 0, cards.length - 1);
-    if ((direction < 0 && index === 0 && position < .08) ||
-        (direction > 0 && index === cards.length - 1 && position > cards.length - 1 - .08)) return;
+    if (direction < 0 && index === 0 && position < .08) {
+      // One upward gesture returns from the first feature to the hero.
+      // No document-scroll jump is needed: both are the first chapter.
+      if (section.classList.contains('rs-first-revealed')) {
+        event.preventDefault();
+        section.classList.remove('rs-first-revealed');
+        schedule();
+      }
+      return;
+    }
+    if (direction > 0 && index === cards.length - 1 && position > cards.length - 1 - .08) return;
     // The former inactivity timer was reset by every inertial trackpad
     // packet. It could swallow the next swipe until the pointer moved.
     // Treat a pause, direction change or renewed physical acceleration as
