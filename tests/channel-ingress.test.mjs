@@ -103,7 +103,7 @@ test('server and startup wire safe ingress, with backward compatible legacy call
   assert.match(server,/reconstructedConversationHistory\(hr\.rows\.reverse\(\)\)/);
   assert.match(server,/claimInboundEvent\(pool,tenant\.id,channel,upstreamEventId\)/);
   assert.match(server,/completeInboundEvent\(pool,tenant\.id,channel,upstreamEventId,result\)/);
-  assert.match(server,/detectConversationLanguage\(message,lang\)/);
+  assert.match(server,/detectCustomerQuestionLanguage\(message,lang/);
   assert.match(server,/if\(upstreamEventId\)/);
   assert.match(server,/if\(claim\.status==='completed'\)/);
   assert.doesNotMatch(server,/channel = String\(req\.body\.channel[^;]+whatsapp/i);
