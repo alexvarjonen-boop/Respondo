@@ -74,5 +74,5 @@ test('dashboard presents all 3 appearance choices and only changes the selected 
   assert.match(app,/code\.textContent=String\(code\.textContent\|\|''\)\.replace/);
   assert.match(app,/localStorage\.setItem\('respondo-install-experience-'/);
   assert.match(app,/widget\.js\?v=20261109-smart-experience-v1/);
-  assert.match(widget,/\/api\/public\/.*\/widget-token/);
+  assert.match(widget,/\/widget-token\?lang=/);
 });
