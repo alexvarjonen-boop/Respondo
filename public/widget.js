@@ -1349,8 +1349,8 @@
         const focusable=[...productSheet.querySelectorAll('button,a[href]')];
         if(focusable.length){
           const first=focusable[0],last=focusable.at(-1);
-          if(event.shiftKey && document.activeElement===first){event.preventDefault();last.focus();}
-          else if(!event.shiftKey && document.activeElement===last){event.preventDefault();first.focus();}
+          if(event.shiftKey && shadow.activeElement===first){event.preventDefault();last.focus();}
+          else if(!event.shiftKey && shadow.activeElement===last){event.preventDefault();first.focus();}
         }
       }
       return;
