@@ -713,7 +713,7 @@
         retry.className='fx-assistant-retry';
         retry.textContent=at('Yritä uudelleen','Försök igen','Retry');
         retry.setAttribute('aria-label',retry.textContent);
-        retry.addEventListener('click',()=>void send(clean,{retryBubble:typing}));
+        retry.addEventListener('click',()=>send(clean,{retryBubble:typing}));
         typing.appendChild(retry);
         if(followBottom)messages.scrollTop=messages.scrollHeight;
         updateJump();
