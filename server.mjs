@@ -50,6 +50,7 @@ import {autoRefreshEligible,acceptedRefreshCandidate} from './website-refresh-po
 import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
 import { guardCitedNumericFacts } from './runtime-numeric-evidence-guard.mjs';
+import { verifyRetailAnswer } from './product-reply-integrity.mjs';
 import { qualityCenterOverview, createQualityReview, updateQualityReview } from './respondo-quality-center.mjs';
 import { reconstructedConversationHistory, validInboundEventId, claimInboundEvent, completeInboundEvent, failInboundEvent } from './channel-ingress.mjs';
 import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk, exportFreshdeskTicket } from './freshdesk-helpdesk.mjs';
@@ -8498,7 +8499,8 @@ async function generateGroundedAnswer(args={}) {
     }
   }
 
-  const result=guardCitedNumericFacts(rawResult,args.rows);
+  const retailChecked=verifyRetailAnswer(rawResult,args.rows,message,args.lang,parseProductKnowledgeRow,requestedProductFamily,productMatchesFamily);
+  const result=guardCitedNumericFacts(retailChecked,args.rows);
   // A detected factual conflict must not be overridden by AI fallback.
   if(result!==rawResult)return result;
   if(!result?.handoff || String(result.answer||'').trim() ||
@@ -8512,7 +8514,7 @@ async function generateGroundedAnswer(args={}) {
     question:original,rows:matches,
     lang:['fi','sv','en'].includes(args.lang)?args.lang:'fi'
   });
-  return guardCitedNumericFacts(generated||result,args.rows);
+  return guardCitedNumericFacts(verifyRetailAnswer(generated||result,args.rows,message,args.lang,parseProductKnowledgeRow,requestedProductFamily,productMatchesFamily),args.rows);
 }
 
 function cookies(req) {
