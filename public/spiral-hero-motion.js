@@ -22,6 +22,7 @@
   let wheelArmed = true;
   let wheelLockedUntil = 0;
   let transitionRaf = 0;
+  let firstChapterManuallyRevealed = false;
 
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const ease = v => { v = clamp(v, 0, 1); return v * v * (3 - 2 * v); };
@@ -59,6 +60,7 @@
     wheelEnergy = 0;
     wheelArmed = true;
     wheelLockedUntil = 0;
+    firstChapterManuallyRevealed = false;
   }
   function setup() {
     pendingMount = false;
@@ -110,12 +112,18 @@
     // Touch/narrow screens scroll natively, without the desktop wheel handler.
     // Reveal 24/7 only after actual downward movement, and restore the
     // uncluttered hero when the visitor scrolls back to the beginning.
+    const firstScrollThreshold = Math.min(viewport * .10, 72);
     if (mobile) {
-      const firstScrollThreshold = Math.min(viewport * .10, 72);
       section.classList.toggle('rs-first-revealed', -rect.top >= firstScrollThreshold);
-    } else if (-rect.top >= Math.min(viewport * .10, 72)) {
+      firstChapterManuallyRevealed = false;
+    } else if (-rect.top >= firstScrollThreshold) {
       // Keyboard, scrollbar and assistive-technology scrolling still work.
       section.classList.add('rs-first-revealed');
+      firstChapterManuallyRevealed = false;
+    } else if (rect.top >= -1 && !firstChapterManuallyRevealed) {
+      // A real return to page top restores the uncluttered intro, unless a
+      // deliberate wheel or orbit-icon click just opened chapter one there.
+      section.classList.remove('rs-first-revealed');
     }
     // On iOS Safari, preserve the existing sticky-position fallback.
     if (mobile) {
@@ -258,6 +266,7 @@
       if (section.classList.contains('rs-first-revealed')) {
         event.preventDefault();
         section.classList.remove('rs-first-revealed');
+        firstChapterManuallyRevealed = false;
         schedule();
       }
       return;
@@ -293,6 +302,7 @@
     // advancing immediately. The next separate gesture moves to chapter two.
     if (direction > 0 && index === 0 && !section.classList.contains('rs-first-revealed')) {
       section.classList.add('rs-first-revealed');
+      firstChapterManuallyRevealed = true;
       schedule();
       return;
     }
@@ -320,6 +330,7 @@
       return;
     }
     section.classList.toggle('rs-first-revealed', index === 0);
+    firstChapterManuallyRevealed = index === 0;
     const rect = section.getBoundingClientRect();
     const travel = Math.max(1, rect.height - innerHeight);
     const target = scrollY + rect.top + travel * index / Math.max(1, cards.length - 1);
