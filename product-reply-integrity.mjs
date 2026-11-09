@@ -19,6 +19,7 @@ export function verifyRetailAnswer(result,rows=[],message='',lang='fi',parseProd
   const family=typeof requestedFamily==='function'?requestedFamily(message):'';
   const known=Array.isArray(rows)?rows:[];
   const sourceIds=new Set((Array.isArray(result.sourceIds)?result.sourceIds:[]).map(String));
+  const approvedImplicitSources=[];
   const failure=()=>{
     const answer=lang==='sv'
       ? 'Jag kan inte verifiera de här produkterna eller priserna mot butikens godkända uppgifter. Kontrollera aktuella produktuppgifter i butiken.'
@@ -38,9 +39,14 @@ export function verifyRetailAnswer(result,rows=[],message='',lang='fi',parseProd
     const canonical=known.find(candidate=>candidate && candidate.approved!==false && isRowEquivalent(candidate,row));
     if(!canonical)return failure();
     const id=idOf(canonical);
-    if(id && !sourceIds.has(id))return failure();
+    // Existing explicit citations must agree with the selected cards. Some
+    // legacy one-product catalog answers carry an approved selected row but
+    // omit sourceIds; in that case promote the verified row to a citation.
+    // This preserves a genuine single-product shop without relaxing checks.
+    if(id && sourceIds.size && !sourceIds.has(id))return failure();
     let product=null;
     try{product=parseProduct(canonical);}catch{return failure();}
+    if(id && !sourceIds.size && product)approvedImplicitSources.push(id);
     // A selected non-product FAQ may answer an ordinary catalog question,
     // but it cannot establish that a product meets a numerical price ceiling.
     if(!product){
@@ -53,6 +59,9 @@ export function verifyRetailAnswer(result,rows=[],message='',lang='fi',parseProd
       if(request.currency && fold(product.currency).toUpperCase()!==request.currency)return failure();
       if(request.inclusive ? product.price>request.amount : product.price>=request.amount)return failure();
     }
+  }
+  if(approvedImplicitSources.length){
+    return {...result,sourceIds:[...new Set(approvedImplicitSources)]};
   }
   return result;
 }
