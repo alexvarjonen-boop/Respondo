@@ -70,6 +70,19 @@ test('full grounded answer engine selects matching product rows only',async()=>{
   assert.equal(result.intent,'Tuotteet');
   assert.deepEqual(verifiedProductCards(result).map(p=>p.name),['JAG Satin Black Blade Putter']);
 });
+test('unpriced club yes/no question never presents the imported gift card as a club',async()=>{
+  const giftOnly={
+    id:'jag-gift',category:'Tuotteet',approved:true,
+    title:'JAG Putters Gift Card',
+    answer:'Tuote: JAG Putters Gift Card. Hinta: 25.00 EUR. Linkki: https://jagputters.fi/products/gift-card.',
+    source_url:'https://jagputters.fi/products/gift-card'
+  };
+  const result=await generateGroundedAnswer({companyName:'JAG Putters',rows:[giftOnly],message:'onko teillä mailoja?',lang:'fi'});
+  assert.equal(result.intent,'Tuotteet');
+  assert.equal(verifiedProductCards(result).length,0);
+  assert.doesNotMatch(result.answer,/Gift Card/);
+});
+
 test('preview CTA is readable in dark themes and localized using reply language',async()=>{
   const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
   assert.match(app,/#app \.preview-bubble\.bot \.preview-product-open/);
