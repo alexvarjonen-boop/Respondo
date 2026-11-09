@@ -36,7 +36,7 @@ export function approvedProductLinkAnswer(rows,message,lang='fi',parseProduct) {
       : lang==='en'
         ? 'Here is the product from the store’s approved information. Check the latest price on the product page.'
         : 'Tässä on tuote verkkokaupan hyväksytyistä tiedoista. Tarkista ajantasainen hinta tuotesivulta.';
-    return {answer,handoff:false,confidence:0.99,intent:'Tuotteet',sourceIds:[row?.id].filter(Boolean),selected:[row]};
+    return {answer:String(product.name).slice(0,160)+'. '+answer,handoff:false,confidence:0.99,intent:'Tuotteet',sourceIds:[row?.id].filter(Boolean),selected:[row]};
   }
   // A normal website/document URL is not necessarily an ecommerce question.
   const question=String(message||'');
