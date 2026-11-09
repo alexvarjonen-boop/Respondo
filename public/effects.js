@@ -542,6 +542,9 @@
       lastSubmittedText=clean;
       lastSubmittedAt=Date.now();
       if(smartHome)smartHome.hidden=true;
+      // Remove suggestion chips after the first real visitor question.
+      // Keep the existing grounded API and human/website actions intact.
+      box.classList.add('rx-has-user-message');
       messages.insertAdjacentHTML('beforeend', `<div class="fx-chat-bubble user"></div>`); messages.lastElementChild.textContent = clean;
       messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot typing">•••</div>');
       const typing = messages.lastElementChild;
