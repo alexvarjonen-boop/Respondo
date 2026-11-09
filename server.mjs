@@ -3098,6 +3098,19 @@ function directProductAnswer(rows,message,lang='fi',history=[]) {
   const candidates=requestedFamily
     ? familyMatches
     : (strongMatches.length?strongMatches:(weakMatches.length?weakMatches:ranked));
+  // An unsupported requested product family is not permission to list an
+  // unrelated item. In particular, a gift card is never a golf club.
+  if(requestedFamily && !familyMatches.length && requestedProductFamilyAvailability(message)){
+    const subject=lang==='en'?(requestedFamily==='club'?'clubs':'that product category')
+      :lang==='sv'?(requestedFamily==='club'?'klubbor':'den produktkategorin')
+      :(requestedFamily==='club'?'mailoja':'tätä tuoteryhmää');
+    const answer=lang==='en'
+      ? 'I could not verify '+subject+' in the store’s approved product information. Check the current catalog.'
+      :lang==='sv'
+        ? 'Jag kunde inte bekräfta '+subject+' i butikens godkända produktuppgifter. Kontrollera det aktuella sortimentet.'
+        : 'En pystynyt vahvistamaan '+subject+' verkkokaupan hyväksytyistä tuotetiedoista. Tarkista ajantasainen valikoima verkkokaupasta.';
+    return {answer,handoff:false,confidence:0.35,intent:'Tuotteet',sourceIds:[],selected:[]};
+  }
   const cheapest=/\b(?:halvin|edullisin|cheapest|lowest price|billigast|billigaste)\b/.test(q);
   const expensive=/\b(?:kallein|most expensive|highest price|dyrast|dyraste)\b/.test(q);
   const popularAsk=/\b(?:suosituin|suosituimmat|myydyin|myydyimmat|myydyimmät|most popular|best seller|bestseller|best-selling|top seller|populärast|bastsaljare|bästsäljare|mest sålda|mest salda)\b/.test(q);
