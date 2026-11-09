@@ -1194,6 +1194,101 @@
     $('.dot').style.background=accent;
   }
 
+
+  // The visitor sees context-aware starting points, not unsupported business
+  // claims. Clicking a tile sends a normal customer question through the
+  // existing tenant-scoped grounded-answer path.
+  let experienceConversationStarted = false;
+  function currentPageTopic() {
+    const heading = document.querySelector('main h1, h1');
+    const candidate = String(heading?.textContent || document.title || '').replace(/\s+/g,' ').trim();
+    if (candidate.length < 5 || candidate.length > 78) return '';
+    if (/^(?:etusivu|home|hem|welcome|välkommen|tervetuloa|menu|valikko)$/i.test(candidate)) return '';
+    return candidate;
+  }
+  function renderExperienceHome() {
+    if (experienceMode === 'classic' || !ready || experienceConversationStarted) {
+      experienceHome.hidden = true;
+      return;
+    }
+    const topic = currentPageTopic();
+    experienceHome.hidden = false;
+    experienceHeading.textContent = experienceText('Miten voin auttaa?', 'Hur kan jag hjälpa dig?', 'How can I help?');
+    experienceNote.textContent = topic
+      ? experienceText('Autan sinua myös tämän sivun aiheessa: ', 'Jag kan också hjälpa till med sidan: ', 'I can also help with this page: ') + topic
+      : experienceText('Valitse aihe tai kirjoita oma kysymyksesi.', 'Välj ett ämne eller skriv din fråga.', 'Choose a topic or ask your own question.');
+    // Only contextual labeling uses the host page heading. Product prices,
+    // availability, promises and actions still come from approved tenant data.
+    const first = topic ? {
+      icon:'⌕',
+      title:experienceText('Tämä sivu', 'Den här sidan', 'This page'),
+      description:topic,
+      question:experienceText('Kerro lisää aiheesta: ', 'Berätta mer om: ', 'Tell me more about: ') + topic,
+    } : {
+      icon:'◇',
+      title:experienceText('Palvelut', 'Tjänster', 'Services'),
+      description:experienceText('Mitä tarjoatte?', 'Vad erbjuder ni?', 'What do you offer?'),
+      question:experienceText('Mitä palveluita tarjoatte?', 'Vilka tjänster erbjuder ni?', 'What services do you offer?'),
+    };
+    const options = [
+      first,
+      {
+        icon:'◈',
+        title:experienceText('Hinnat', 'Priser', 'Prices'),
+        description:experienceText('Kysy hinnoittelusta', 'Fråga om priser', 'Ask about pricing'),
+        question:experienceText('Mistä löydän palvelujenne hinnat?', 'Var hittar jag era priser?', 'Where can I find your prices?'),
+      },
+      {
+        icon:'↗',
+        title:experienceText('Yhteystiedot', 'Kontakt', 'Contact'),
+        description:experienceText('Ota yhteyttä', 'Ta kontakt', 'Get in touch'),
+        question:experienceText('Miten saan teihin yhteyttä?', 'Hur kontaktar jag er?', 'How can I contact you?'),
+      },
+    ];
+    experienceTiles.replaceChildren();
+    for (const option of options) {
+      const tile = document.createElement('button');
+      tile.type='button';
+      tile.className='experience-tile';
+      const icon=document.createElement('span');
+      icon.className='experience-tile-icon';
+      icon.setAttribute('aria-hidden','true');
+      icon.textContent=option.icon;
+      const heading=document.createElement('span');
+      heading.className='experience-tile-title';
+      heading.textContent=option.title;
+      const desc=document.createElement('span');
+      desc.className='experience-tile-description';
+      desc.textContent=option.description;
+      tile.append(icon,heading,desc);
+      tile.setAttribute('aria-label',option.title+(topic&&option===first?' — '+topic:''));
+      tile.addEventListener('click',()=>{
+        if (!ready || input.disabled) return;
+        void sendMessage(option.question);
+      });
+      experienceTiles.appendChild(tile);
+    }
+    if (topic) launcherSubtitle.textContent = experienceText('Kysy tästä sivusta', 'Fråga om sidan', 'Ask about this page');
+  }
+  panelClose.addEventListener('click',()=>{
+    if(panel.classList.contains('open')) launcher.click();
+    launcher.focus();
+  });
+  panelExpand.addEventListener('click',()=>{
+    const expanded=wrap.classList.toggle('experience-expanded');
+    panelExpand.setAttribute('aria-pressed',String(expanded));
+    panelExpand.setAttribute('aria-label',expanded
+      ? experienceText('Pienennä näkymää','Minska vyn','Reduce view')
+      : experienceText('Laajenna näkymää','Utöka vyn','Expand view'));
+  });
+  shadow.addEventListener('keydown',(event)=>{
+    if(event.key==='Escape' && panel.classList.contains('open')){
+      event.preventDefault();
+      launcher.click();
+      launcher.focus();
+    }
+  });
+
   async function pollLiveTakeover() {
     if (!ready || !token || !visitorRef) return;
     try {
@@ -1260,6 +1355,7 @@
       status.classList.add('ready');
       renderQuickReplies(data.quickReplies || []);
       addMessage(data.greeting || t('Hei! Miten voin auttaa?', 'Hi! How can I help?'));
+      renderExperienceHome();
       startLivePolling();
     } catch {
       ready = false;
@@ -1278,12 +1374,22 @@
     launcher.setAttribute('aria-label',(launcherName.textContent||'RESPONDO AI')+' – '+
       (open?t('Sulje','Close'):t('Avaa chat','Open chat')));
     if (!open) cancelVoiceInput();
-    if (open && ready) setTimeout(() => input.focus(), 50);
+    if (open && ready) {
+      renderExperienceHome();
+      setTimeout(() => input.focus(), 50);
+    }
   });
 
   async function sendMessage(rawMessage) {
     const message = String(rawMessage || '').trim();
-    if (!message || !ready) return;
+    if (!message || !ready || input.disabled) return;
+    experienceConversationStarted = true;
+    experienceHome.hidden = true;
+    // In SPA storefronts the visitor may have navigated to another product
+    // since the widget loaded. Refresh only page context, not customer facts.
+    pageContext.url = String(window.location.href || '').slice(0, 1000);
+    pageContext.title = String(document.title || '').slice(0, 300);
+    pageContext.path = String(window.location.pathname || '').slice(0, 500);
     const voiceMessageLang = ['fi','sv','en'].includes(input.dataset.respondoVoiceLang) &&
       message === input.value.trim() ? input.dataset.respondoVoiceLang : widgetLang;
     delete input.dataset.respondoVoiceLang;
