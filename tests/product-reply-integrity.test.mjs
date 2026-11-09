@@ -28,6 +28,20 @@ test('approved on-budget same-tenant product goes through without rewriting',()=
   const result=answer([club]);
   assert.strictEqual(audit(result,[club,gift,expensive]),result);
 });
+test('single-product catalog without explicit citation gets the exact approved source',()=>{
+  const uncited=answer([club],[]);
+  const guarded=audit(uncited,[club,gift]);
+  assert.deepEqual(guarded.sourceIds,['blade']);
+  assert.equal(guarded.selected[0],club);
+  assert.equal(guarded.handoff,false);
+  assert.notEqual(guarded.qualityFlag,'product_integrity_conflict');
+});
+test('a product from another tenant cannot create an implicit citation',()=>{
+  const uncited=answer([club],[]);
+  const guarded=audit(uncited,[gift]);
+  assert.equal(guarded.qualityFlag,'product_integrity_conflict');
+  assert.deepEqual(guarded.selected,[]);
+});
 test('different tenant row cannot borrow matching product ID',()=>{
   const impostor={...club,answer:club.answer.replace('199','99')};
   const result=audit(answer([impostor]),[club]);
