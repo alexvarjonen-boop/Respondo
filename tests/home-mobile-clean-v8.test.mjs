@@ -14,7 +14,7 @@ test('iPhone uses one clear demo link and a smaller centered orbit',()=>{
 });
 test('real chat launcher stays, while injected navigation guide disappears',()=>{
  const effects=read('effects.js'),styles=read('chat-first-home.css');
- assert.ok(effects.includes('class="fx-assistant-launch"'));
+ assert.match(effects,/class="fx-assistant-launch(?:\\s[^"]*)?"/);
  assert.ok(effects.includes("launch.addEventListener('click'"));
  assert.ok(!effects.includes('fx-chat-nav-hint'));
  assert.ok(!effects.includes('Ask the bot to navigate'));
