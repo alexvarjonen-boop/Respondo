@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import {isRespondoCustomerValueQuestion} from '../respondo-capability-intent.mjs';
 
 const read=(name)=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 const server=read('server.mjs');
@@ -28,6 +29,7 @@ test('buying Respondo gets the current short answer rather than outdated promo o
   const fn=vm.runInNewContext(server.slice(start,end)+'\nrespondoProductFaqMatch',{
     normalizeSearchText,
     isRespondoCapabilityQuestion:()=>false,
+    isRespondoCustomerValueQuestion,
     broadProductQuestion:()=>false,
   });
   for(const [message,lang] of [['Miten tämän voi ostaa?','fi'],['How can I subscribe to Respondo?','en'],['Hur beställer jag Respondo?','sv']]){
