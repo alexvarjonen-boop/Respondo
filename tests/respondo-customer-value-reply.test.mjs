@@ -83,17 +83,17 @@ test('site assistant resolves outcome question before tenant lookup and broad we
   assert.match(server,/if\(isRespondoCustomerValueQuestion\(message\)\)/);
 });
 
-test('experience Ask AI does not resend the identical automatic demo prompt on return',()=>{
-  assert.match(experience,/let experienceOpeningSent=false/);
-  assert.match(experience,/if\(text===c\.startPrompt && experienceOpeningSent\)\{input\.focus\(\);return;\}/);
-  assert.match(experience,/if\(text===c\.startPrompt\)experienceOpeningSent=true/);
-  assert.match(experience,/form\.requestSubmit\(\)/);
+test('minimal experience opens chat without sending a canned duplicate question',()=>{
+  assert.match(experience,/function focusChat\(\)/);
+  assert.match(experience,/onClick:focusChat/);
+  assert.match(experience,/form\.addEventListener\('submit',focusChat,true\)/);
+  assert.doesNotMatch(experience,/form\.requestSubmit\(\)|experienceOpeningSent|new Event\('submit'/);
   assert.match(effects,/if\(clean===lastSubmittedText && Date\.now\(\)-lastSubmittedAt<3500\)return/);
   assert.match(effects,/form\.message\.disabled = true/);
   assert.match(effects,/\/api\/public\/respondo-assistant\/chat/);
 });
 
 test('changed marketing assistant and experience files carry new asset versions',()=>{
-  assert.match(index,/respondo-experience\.mjs\?v=20261109-immersive-stage-v1-visitor-value-v2/);
-  assert.match(index,/firstparty-smart-assist-v1-customer-benefits-v2-mobile-simplify-v9/);
+  assert.match(index,/respondo-experience\.mjs\?v=20261109-clean-minimal-v2/);
+  assert.match(index,/firstparty-smart-assist-v1-customer-benefits-v2-clean-chat-v3-mobile-simplify-v9/);
 });
