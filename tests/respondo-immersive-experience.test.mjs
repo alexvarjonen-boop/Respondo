@@ -89,9 +89,10 @@ class FakeElement{
     const answer=[];
     const isClass=selector.startsWith('.');
     const isInput=selector==='input[name="message"]';
+    const isButton=selector==='button';
     const walk=node=>{
       for(const child of node.children){
-        if(isClass&&child.classList.contains(selector.slice(1)) || isInput&&child.tagName==='INPUT')answer.push(child);
+        if(isClass&&child.classList.contains(selector.slice(1)) || isInput&&child.tagName==='INPUT' || isButton&&child.tagName==='BUTTON')answer.push(child);
         walk(child);
       }
     };
