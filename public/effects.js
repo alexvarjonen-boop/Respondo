@@ -501,6 +501,23 @@
     const siteAssistantHistory = [];
     let lastSubmittedText='';
     let lastSubmittedAt=0;
+    const originalPlaceholder=form.message.placeholder;
+    const followupPlaceholder=at('Kysy jatkokysymys…','Ställ en följdfråga…','Ask a follow-up…');
+    const initialGreeting=messages.querySelector('.fx-chat-bubble.bot');
+    // The log stays accessible while responses arrive and includes navigation
+    // actions as real links. Do not duplicate messages on retry.
+    messages.setAttribute('role','log');
+    messages.setAttribute('aria-label',at('Keskustelu','Konversation','Conversation'));
+    messages.setAttribute('aria-live','polite');
+    messages.setAttribute('aria-relevant','additions text');
+    const nearBottom=()=>messages.scrollHeight-messages.scrollTop-messages.clientHeight<140;
+    const newConversation=document.createElement('button');
+    newConversation.type='button';
+    newConversation.className='fx-assistant-new';
+    newConversation.textContent='↻';
+    newConversation.setAttribute('aria-label',at('Uusi keskustelu','Ny konversation','New conversation'));
+    newConversation.title=at('Aloita uusi keskustelu','Starta en ny konversation','Start a new conversation');
+    box.querySelector('.fx-smart-panel-tools')?.prepend(newConversation);
     const smartHome=box.querySelector('.fx-smart-home');
     const expandButton=box.querySelector('.fx-smart-expand');
     const assistantTopic=box.querySelector('.fx-smart-context');
@@ -533,23 +550,47 @@
       if (event.target.closest?.('[data-open-site-assistant]') && !isWorkspacePage()) open();
     });
     box.addEventListener('keydown', event => { if (event.key==='Escape') { shut(); launch.focus(); } });
-    const send = async text => {
+    newConversation.addEventListener('click',()=>{
+      if(form.message.disabled || standAlone())return;
+      siteAssistantHistory.length=0;
+      lastSubmittedText='';
+      lastSubmittedAt=0;
+      messages.querySelectorAll('.fx-chat-bubble').forEach(bubble=>{
+        if(bubble!==initialGreeting)bubble.remove();
+      });
+      if(smartHome)smartHome.hidden=false;
+      box.classList.remove('rx-has-user-message');
+      form.message.value='';
+      form.message.placeholder=originalPlaceholder;
+      messages.scrollTop=0;
+      if(box.classList.contains('open') && !window.matchMedia?.('(pointer:coarse)').matches)form.message.focus();
+    });
+    const send = async (text,{retryBubble=null}={}) => {
       const clean = String(text || '').trim();
       if (!clean || form.message.disabled) return;
       // Debounce accidental repeated submits (double-click, keyboard or
       // duplicate delegated controls) without blocking later follow-ups.
-      if(clean===lastSubmittedText && Date.now()-lastSubmittedAt<3500)return;
-      lastSubmittedText=clean;
-      lastSubmittedAt=Date.now();
+      if(!retryBubble && clean===lastSubmittedText && Date.now()-lastSubmittedAt<3500)return;
+      if(!retryBubble){
+        lastSubmittedText=clean;
+        lastSubmittedAt=Date.now();
+      }
       if(smartHome)smartHome.hidden=true;
       // Remove suggestion chips after the first real visitor question.
       // Keep the existing grounded API and human/website actions intact.
       box.classList.add('rx-has-user-message');
-      messages.insertAdjacentHTML('beforeend', `<div class="fx-chat-bubble user"></div>`); messages.lastElementChild.textContent = clean;
-      messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot typing">•••</div>');
-      const typing = messages.lastElementChild;
-      messages.scrollTop = messages.scrollHeight;
-      form.message.disabled = true;
+      if(!retryBubble){
+        messages.insertAdjacentHTML('beforeend', `<div class="fx-chat-bubble user"></div>`);
+        messages.lastElementChild.textContent=clean;
+        messages.insertAdjacentHTML('beforeend','<div class="fx-chat-bubble bot typing"></div>');
+      }
+      const typing=retryBubble || messages.lastElementChild;
+      typing.classList.add('typing');
+      typing.setAttribute('role','status');
+      typing.textContent=at('Etsin vastausta…','Söker efter ett svar…','Finding an answer…');
+      messages.scrollTop=messages.scrollHeight;
+      form.message.disabled=true;
+      newConversation.disabled=true;
       try {
         const response = await fetch('/api/public/respondo-assistant/chat', {
           method:'POST',
@@ -565,7 +606,9 @@
         if (!response.ok) throw new Error(data.error || 'Chat failed');
         const answer = String(data.answer || '').trim();
         if (!answer) throw new Error('Empty answer');
+        const followBottom=nearBottom();
         typing.classList.remove('typing');
+        typing.removeAttribute('role');
         // Render only allowlisted destinations supplied by Respondo's own
         // public assistant API. Never turn incidental answer words into links.
         typing.textContent = answer;
@@ -617,20 +660,58 @@
         }
         siteAssistantHistory.push({question:clean,answer:displayedAnswer});
         if (siteAssistantHistory.length > 12) siteAssistantHistory.splice(0,siteAssistantHistory.length-12);
+        form.message.placeholder=followupPlaceholder;
+        // Copy the verified answer only, not attached navigation links.
+        const copy=document.createElement('button');
+        copy.type='button';
+        copy.className='fx-assistant-copy';
+        copy.textContent=at('Kopioi vastaus','Kopiera svaret','Copy answer');
+        copy.setAttribute('aria-label',copy.textContent);
+        copy.addEventListener('click',async()=>{
+          try{
+            if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');
+            await navigator.clipboard.writeText(displayedAnswer);
+            copy.textContent=at('Kopioitu','Kopierat','Copied');
+          }catch{
+            copy.textContent=at('Kopiointi epäonnistui','Kopieringen misslyckades','Could not copy');
+          }
+          copy.setAttribute('aria-label',copy.textContent);
+        });
+        typing.appendChild(copy);
+        if(followBottom)messages.scrollTop=messages.scrollHeight;
       } catch (err) {
+        const followBottom=nearBottom();
         typing.classList.remove('typing');
-        typing.textContent = at(
-          'Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.',
-          'Det gick inte att få ett svar just nu. Försök igen om en stund.',
-          'The response failed. Please try again in a moment.'
+        typing.removeAttribute('role');
+        typing.textContent=at(
+          'Vastausta ei saatu juuri nyt. Voit yrittää uudelleen.',
+          'Det gick inte att få ett svar just nu. Du kan försöka igen.',
+          'I could not get an answer just now. You can retry.'
         );
+        const retry=document.createElement('button');
+        retry.type='button';
+        retry.className='fx-assistant-retry';
+        retry.textContent=at('Yritä uudelleen','Försök igen','Retry');
+        retry.setAttribute('aria-label',retry.textContent);
+        retry.addEventListener('click',()=>void send(clean,{retryBubble:typing}));
+        typing.appendChild(retry);
+        if(followBottom)messages.scrollTop=messages.scrollHeight;
       } finally {
-        form.message.disabled = false;
-        form.message.focus();
+        form.message.disabled=false;
+        newConversation.disabled=false;
+        // Reopening the keyboard automatically after a reply is intrusive
+        // on touch screens; desktop retains quick keyboard follow-ups.
+        if(box.classList.contains('open') && !window.matchMedia?.('(pointer:coarse)').matches)form.message.focus();
       }
-      messages.scrollTop = messages.scrollHeight;
     };
-    form.addEventListener('submit', e => { e.preventDefault(); const text = form.message.value; form.reset(); send(text); });
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const text=String(form.message.value||'').trim();
+      if(!text || form.message.disabled)return;
+      if(text===lastSubmittedText && Date.now()-lastSubmittedAt<3500)return;
+      form.message.value='';
+      void send(text);
+    });
     document.querySelectorAll('.fx-quick button').forEach(b => b.addEventListener('click', () => send(b.textContent)));
     box.addEventListener('click',event=>{
       const quick=event.target.closest?.('[data-fx-smart-question]');
