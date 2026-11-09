@@ -90,7 +90,7 @@ test('Try Bot asset version is updated for previously opened iOS clients',async(
   const html=await readFile(new URL('../public/index.html',import.meta.url),'utf8');
   const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
   assert.match(html,/ecommerce-product-cards-20261011/);
-  assert.match(app,/appendPreviewProductCards\(bubble,result\.products,currentLang\(\)\)/);
+  assert.match(app,/appendPreviewProductCards\(bubble,result\.products,result\.language\|\|currentLang\(\)\)/);
   assert.match(app,/!hasProducts\|\|action\.type!=='product'/);
 });
 
