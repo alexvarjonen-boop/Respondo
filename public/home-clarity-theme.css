@@ -111,7 +111,7 @@
   box-shadow:none!important;
 }
 #app .apple-home-page .rs-studio-orbit-icon[data-rs-icon]{
-  background:#17191F!important;
+  background:rgba(245,247,250,.055)!important;
   color:var(--rh-light)!important;
   border:1px solid rgba(245,247,250,.24)!important;
   box-shadow:none!important;
