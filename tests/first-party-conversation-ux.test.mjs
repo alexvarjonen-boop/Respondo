@@ -92,13 +92,15 @@ function harness(fetchImpl){
     document:{title:'Respondo AI',createElement:tag=>new FakeControl(tag)},
     URL, Date, JSON, Set
   };
-  const api=vm.runInNewContext(sendSource+'\n({send})',ctx);
+  const instrumented=sendSource.replace('      } catch (err) {',
+    "      } catch (err) { globalThis.__caughtError=String(err?.stack||err);");
+  const api=vm.runInNewContext(instrumented+'\n({send})',ctx);
   const submit=value=>{
     form.message.value=value;
     form.handlers.submit({preventDefault(){}});
   };
   return {send:api.send,submit,form,input,messages,elements,box,history,
-    newConversation,getCopied:()=>copyValue};
+    newConversation,getCopied:()=>copyValue,getError:()=>ctx.__caughtError};
 }
 
 test('live answer is sent once and can be copied without including navigation controls',async()=>{
@@ -120,7 +122,7 @@ test('live answer is sent once and can be copied without including navigation co
   assert.equal(h.history.length,1);
   assert.equal(h.elements.filter(x=>x.kind==='user').length,1);
   const reply=h.elements.find(x=>x.kind==='bot');
-  assert.ok(reply.textContent.includes('approved company facts'));
+  assert.ok(reply.textContent.includes('approved company facts'),String(h.getError()||reply.textContent));
   assert.equal(reply.children.filter(x=>x.tagName==='A').length,1,'only first-party links are actions');
   assert.equal(reply.children.filter(x=>x.tagName==='A')[0].href,'/features?lang=en');
   const copy=reply.children.find(x=>x.className==='fx-assistant-copy');
@@ -151,7 +153,7 @@ test('failed answer gets one-click retry that reuses the same bubble and history
   assert.equal(h.history.length,1);
   assert.equal(h.elements.filter(x=>x.kind==='user').length,1,'retry must not duplicate user question');
   assert.equal(h.elements.filter(x=>x.kind==='bot').length,1,'retry must reuse original response bubble');
-  assert.ok(reply.textContent.includes('available 24/7'));
+  assert.ok(reply.textContent.includes('available 24/7'),String(h.getError()||reply.textContent));
   assert.equal(reply.children.some(x=>x.className==='fx-assistant-retry'),false);
 });
 
