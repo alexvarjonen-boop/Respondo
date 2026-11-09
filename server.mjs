@@ -2279,6 +2279,19 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     'Advanced - €49/month\nPremium - €129/month\nEnterprise - €149/month'
   );
 
+  // Superlative price questions need the cheapest plan, not a generic
+  // checkout link or an unsorted list of all plans.
+  if (/\b(?:cheapest|least expensive|most affordable|lowest (?:price|cost)|halvin|halvimm\w*|edullisin|edullisimm\w*|billigast\w*|for\s*manligast\w*|billigaste)\b/.test(q)) {
+    return {
+      id:'respondo-faq-cheapest-pricing',
+      answer:answer(
+        'Halvin paketti on Advanced: 49 €/kk kuukausitilauksella tai 39 €/kk vuositilauksella (468 € laskutetaan kerran vuodessa). Voit kokeilla palvelua 3 päivää maksutta.',
+        'Det billigaste paketet är Advanced: 49 €/mån vid månadsbetalning eller 39 €/mån vid årsbetalning (468 € faktureras en gång per år). Du kan prova tjänsten gratis i 3 dagar.',
+        'Our cheapest plan is Advanced: €49/month with monthly billing, or €39/month with annual billing (€468 charged once per year). You can try it free for 3 days.'
+      )
+    };
+  }
+
   // Visitors ask what they can actually GET DONE, not how the crawler works.
   // Answer this before any website-keyword / imported-site retrieval can
   // hijack the question and describe the website importer instead.
@@ -15242,7 +15255,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       ? respondoCheckoutAction(message,detectedLang,previewFaq?.id||'',SEO_CANONICAL_ORIGIN)
       : null;
     if(directSubscribe){
-      const priceFaq=previewFaq && /^respondo-faq-(?:pricing|monthly-pricing|annual-pricing|basic|advanced|business)$/.test(previewFaq.id);
+      const priceFaq=previewFaq && /^respondo-faq-(?:cheapest-pricing|pricing|monthly-pricing|annual-pricing|basic|advanced|business)$/.test(previewFaq.id);
       const concise=priceFaq && String(previewFaq.answer||'').length<=360
         ? sanitizeUserFacingText(previewFaq.answer)
         : detectedLang==='en'
@@ -16074,12 +16087,16 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       answer:mainioQuoteAnswer,handoff:false,confidence:1,
       intent:'Muuttotarjouspyyntö',sourceIds:[],selected:[],
     } : widgetSubscribe ? {
-      answer:detectedLang==='en'
+      // The first-party FAQ owns factual price claims. An attached checkout
+      // action must never replace the answer with "choose a plan below".
+      answer:firstPartyFaq?.answer || (detectedLang==='en'
         ? 'Choose a Respondo subscription plan using the button below.'
         :detectedLang==='sv'
           ? 'Välj ett Respondo-abonnemang via knappen nedan.'
-          : 'Tilaa Respondo valitsemalla paketti alla olevasta painikkeesta.',
-      handoff:false,confidence:1,intent:'Respondo subscription',sourceIds:[],selected:[],
+          : 'Tilaa Respondo valitsemalla paketti alla olevasta painikkeesta.'),
+      handoff:false,confidence:1,
+      intent:firstPartyFaq ? 'Respondo FAQ' : 'Respondo subscription',
+      sourceIds:firstPartyFaq ? [firstPartyFaq.id] : [],selected:[],
     } : firstPartyFaq
       ? {
           answer:firstPartyFaq.answer,
