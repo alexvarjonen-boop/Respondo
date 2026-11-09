@@ -84,7 +84,7 @@ function harness(fetchImpl){
     form, messages, smartHome,box,newConversation,updateJump(){},
     nearBottom:()=>true, siteAssistantHistory:history,
     lastSubmittedText:'',lastSubmittedAt:0,
-    at:(fi,sv,en)=>en,uiLang:'en',
+    at:(fi,sv,en)=>en,uiLang:'en',followupPlaceholder:'Ask a follow-up…',
     fetch:fetchImpl,
     window:{matchMedia:()=>({matches:false})},
     navigator:{clipboard:{async writeText(value){copyValue=value;}}},
