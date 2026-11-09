@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import { isRespondoCapabilityQuestion } from '../respondo-capability-intent.mjs';
+import { isRespondoCapabilityQuestion, isRespondoCustomerValueQuestion } from '../respondo-capability-intent.mjs';
 import { respondoSiteNavigationActions } from '../respondo-site-navigation.mjs';
 
 const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
@@ -15,6 +15,7 @@ const normalizeSearchText=value=>String(value||'').toLowerCase().normalize('NFD'
 const match=vm.runInNewContext(server.slice(begin,end)+'\nrespondoProductFaqMatch',{
   normalizeSearchText,
   isRespondoCapabilityQuestion,
+  isRespondoCustomerValueQuestion,
   broadProductQuestion:()=>false
 });
 const examples=[
