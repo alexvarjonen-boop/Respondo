@@ -1446,7 +1446,8 @@
     launcher.setAttribute('aria-expanded',String(open));
     launcher.setAttribute('aria-label',(launcherName.textContent||'RESPONDO AI')+' – '+
       (open?t('Sulje','Close'):t('Avaa chat','Open chat')));
-    if (!open){cancelVoiceInput();closeProductSheet(false);}
+    if (!open) cancelVoiceInput();
+    if (!open) closeProductSheet(false);
     if (open && ready) {
       renderExperienceHome();
       setTimeout(() => input.focus(), 50);
