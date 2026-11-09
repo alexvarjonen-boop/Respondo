@@ -38,7 +38,10 @@ function ensureWorkspace(demo) {
     </header>
     <div class="respondo-workspace-content">
       <div data-workspace-page="bot">
-        <small class="respondo-workspace-kicker">${choose('BOTTISI ON TÄSSÄ','DIN BOTT ÄR HÄR','YOUR BOT IS HERE')}</small>
+        <div class="respondo-workspace-bot-topline">
+          <small class="respondo-workspace-kicker">${choose('BOTTISI ON TÄSSÄ','DIN BOTT ÄR HÄR','YOUR BOT IS HERE')}</small>
+          <a class="respondo-workspace-bot-home" href="/" aria-label="${choose('Takaisin Respondon etusivulle','Tillbaka till Respondos startsida','Back to Respondo homepage')}"><span aria-hidden="true">←</span><span>${choose('Takaisin etusivulle','Tillbaka till startsidan','Back to homepage')}</span></a>
+        </div>
         <h1>${choose('Kokeile bottiasi.','Testa din bot.','Try your bot.')}</h1>
         <p class="respondo-workspace-subtitle">${choose('Kirjoita kysymys alla olevaan keskusteluun. Voit testata bottia samalla, kun verkkosivun tietoja haetaan.','Skriv en fråga i chatten nedan. Du kan testa botten medan webbplatsen skannas.','Ask a question below. You can test your bot while your website is being scanned.')}</p>
         <div class="respondo-workspace-chat-card"><div id="respondoWorkspaceChatHost"></div></div>
