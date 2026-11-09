@@ -465,14 +465,30 @@
     }
     if ($('.fx-assistant-launch')) return;
     const qLang = new URLSearchParams(location.search).get('lang');
-    const uiLang = ['fi','sv','en'].includes(qLang) ? qLang : (localStorage.getItem('respondo_lang') || 'en');
+    const storedSiteLang = localStorage.getItem('respondo_lang') || 'en';
+    const uiLang = ['fi','sv','en'].includes(qLang) ? qLang : (['fi','sv','en'].includes(storedSiteLang) ? storedSiteLang : 'en');
     const at = (fi,sv,en) => uiLang === 'sv' ? sv : uiLang === 'en' ? en : fi;
     const onDemo = false;
     document.body.insertAdjacentHTML('beforeend', `
-      <button class="fx-assistant-launch" type="button" aria-controls="respondo-site-chat" aria-expanded="false" aria-label="${at('Avaa Respondo','Öppna Respondo','Open Respondo')}"><i class="fx-brand-mark"><img src="/respondo-approved-arrow-20261012.png" alt="" aria-hidden="true" width="32" height="32" style="display:block;width:100%;height:100%;object-fit:contain"></i><span>Respondo</span><b class="fx-live"></b></button>
-      <aside class="fx-assistant" id="respondo-site-chat" aria-label="Respondo">
-        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar fx-brand-mark"><img src="/respondo-approved-arrow-20261012.png" alt="" aria-hidden="true" width="32" height="32" style="display:block;width:100%;height:100%;object-fit:contain"></span><div><b>Respondo</b><small>${onDemo ? at('sama vastausmoottori kuin oikeassa botissa','samma svarsmotor som i den riktiga botten','the same response engine as the real bot') : at('valmis vastaamaan','redo att svara','ready to answer')}</small></div></div><button class="fx-assistant-close" type="button" aria-label="${at('Sulje','Stäng','Close')}">×</button></div>
-        <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">${onDemo ? at('Moi 👋 Testaa nyt yrityksen omilla tiedoilla. Kysy esimerkiksi hinnasta, aukioloajoista, palveluista tai omista lisäämistäsi kysymyksistä.','Hej 👋 Testa nu med företagets egna uppgifter. Fråga till exempel om priser, öppettider, tjänster eller frågor som du själv har lagt till.','Hi 👋 Test with your company details. Ask about prices, opening hours, services, or questions you added yourself.') : at('Hei! Kysy minulta mitä tahansa Respondosta: hinnat, ominaisuudet, kirjautuminen, kokeilu, yhteystiedot tai muut sivut. Vastaan ja ohjaan tarvittaessa oikeaan paikkaan.','Hej! Fråga mig om Respondo: priser, funktioner, inloggning, demo, kontakt eller andra sidor. Jag svarar och visar vägen.','Hi! Ask me about Respondo: pricing, features, sign-in, the demo, contact or any site page. I will answer and guide you.')}</div>${onDemo ? '' : `<div class="fx-quick" aria-label="${at('Esimerkkikysymyksiä','Exempelfrågor','Suggested questions')}">
+      <button class="fx-assistant-launch fx-firstparty-launch" type="button" aria-controls="respondo-site-chat" aria-expanded="false" aria-label="${at('Avaa Respondo','Öppna Respondo','Open Respondo')}"><i class="fx-brand-mark"><img src="/respondo-approved-arrow-20261012.png" alt="" aria-hidden="true" width="32" height="32" style="display:block;width:100%;height:100%;object-fit:contain"></i><span class="fx-smart-launch-copy"><strong>Respondo AI</strong><small>${at('Oma AI-avustajasi','Din AI-assistent','Your AI assistant')}</small></span><b class="fx-live" aria-hidden="true"></b><span class="fx-smart-launch-mark" aria-hidden="true">✦</span></button>
+      <aside class="fx-assistant fx-firstparty-smart" id="respondo-site-chat" aria-label="${at('Respondo AI -avustaja','Respondo AI-assistent','Respondo AI assistant')}" role="region">
+        <div class="fx-assistant-head"><div class="fx-assistant-id"><span class="fx-assistant-avatar fx-brand-mark"><img src="/respondo-approved-arrow-20261012.png" alt="" aria-hidden="true" width="32" height="32" style="display:block;width:100%;height:100%;object-fit:contain"></span><div><b>Respondo AI</b><small>${onDemo ? at('sama vastausmoottori kuin oikeassa botissa','samma svarsmotor som i den riktiga botten','the same response engine as the real bot') : at('valmis vastaamaan','redo att svara','ready to answer')}</small></div></div><div class="fx-smart-panel-tools"><button class="fx-smart-expand" type="button" aria-pressed="false" aria-label="${at('Laajenna näkymää','Utöka vyn','Expand view')}" title="${at('Laajenna näkymää','Utöka vyn','Expand view')}">⤢</button><button class="fx-assistant-close" type="button" aria-label="${at('Sulje','Stäng','Close')}">×</button></div></div>
+        <div class="fx-assistant-messages"><div class="fx-chat-bubble bot">${onDemo ? at('Moi 👋 Testaa nyt yrityksen omilla tiedoilla. Kysy esimerkiksi hinnasta, aukioloajoista, palveluista tai omista lisäämistäsi kysymyksistä.','Hej 👋 Testa nu med företagets egna uppgifter. Fråga till exempel om priser, öppettider, tjänster eller frågor som du själv har lagt till.','Hi 👋 Test with your company details. Ask about prices, opening hours, services, or questions you added yourself.') : at('Hei! Kysy minulta mitä tahansa Respondosta: hinnat, ominaisuudet, kirjautuminen, kokeilu, yhteystiedot tai muut sivut. Vastaan ja ohjaan tarvittaessa oikeaan paikkaan.','Hej! Fråga mig om Respondo: priser, funktioner, inloggning, demo, kontakt eller andra sidor. Jag svarar och visar vägen.','Hi! Ask me about Respondo: pricing, features, sign-in, the demo, contact or any site page. I will answer and guide you.')}</div>${onDemo ? '' : `<section class="fx-smart-home" aria-label="${at('Miten voin auttaa','Hur kan jag hjälpa','How I can help')}">
+  <span class="fx-smart-eyebrow">${at('SINUN AVUSTAJASI','DIN ASSISTENT','YOUR ASSISTANT')}</span>
+  <h2>${at('Mitä haluaisit tehdä?','Vad vill du göra?','What would you like to do?')}</h2>
+  <p>${at('Kysy omin sanoin tai valitse sopiva aloitus.','Ställ en egen fråga eller välj ett alternativ.','Ask in your own words or choose a starting point.')}</p>
+  <div class="fx-smart-tiles" role="group" aria-label="${at('Aloita tästä','Börja här','Start here')}">
+    <button type="button" class="fx-smart-tile" data-fx-smart-question="${at('Mitä paketit maksavat?','Vad kostar abonnemangen?','What do the plans cost?')}"><span class="fx-smart-tile-mark" aria-hidden="true">◈</span><strong>${at('Hinnat','Priser','Pricing')}</strong><small>${at('Vertaile paketteja','Jämför abonnemang','Compare plans')}</small></button>
+    <button type="button" class="fx-smart-tile" data-fx-smart-question="${at('Mitä Respondo osaa?','Vad kan Respondo göra?','What can Respondo do?')}"><span class="fx-smart-tile-mark" aria-hidden="true">⌘</span><strong>${at('Ominaisuudet','Funktioner','Features')}</strong><small>${at('Tutustu palveluun','Utforska tjänsten','Explore capabilities')}</small></button>
+    <a class="fx-smart-tile" href="/assistant?lang=${uiLang}"><span class="fx-smart-tile-mark" aria-hidden="true">↗</span><strong>${at('Kokeile','Testa','Try it')}</strong><small>${at('Testaa itse','Testa själv','Try the demo')}</small></a>
+  </div>
+  <div class="fx-smart-guide" aria-label="${at('Sivuston pikalinkit','Snabblänkar på webbplatsen','Website shortcuts')}">
+    <a href="/hinnat?lang=${uiLang}">${at('Hinnasto','Prislista','Plans')}</a>
+    <a href="${uiLang==='sv'?'/funktioner':uiLang==='en'?'/features':'/ominaisuudet'}?lang=${uiLang}">${at('Kaikki ominaisuudet','Alla funktioner','All features')}</a>
+    <a href="/yhteystiedot?lang=${uiLang}">${at('Yhteystiedot','Kontakt','Contact')}</a>
+  </div>
+  <button type="button" class="fx-smart-context" hidden></button>
+</section><div class="fx-quick" aria-label="${at('Esimerkkikysymyksiä','Exempelfrågor','Suggested questions')}">
   <button type="button">${at('Mitä paketit maksavat?','Vad kostar abonnemangen?','What do the plans cost?')}</button>
   <button type="button">${at('Mitä Respondo osaa?','Vad kan Respondo göra?','What can Respondo do?')}</button>
   <button type="button">${at('Haluan kirjautua','Jag vill logga in','I want to sign in')}</button>
@@ -483,8 +499,31 @@
       </aside>`);
     const launch = $('.fx-assistant-launch'), box = $('.fx-assistant'), close = $('.fx-assistant-close'), messages = $('.fx-assistant-messages'), form = $('.fx-assistant-form');
     const siteAssistantHistory = [];
-    const open = () => { box.classList.add('open'); launch.setAttribute('aria-expanded','true'); setTimeout(() => form.message.focus(), 180); };
-    const shut = () => { box.classList.remove('open'); launch.setAttribute('aria-expanded','false'); };
+    const smartHome=box.querySelector('.fx-smart-home');
+    const expandButton=box.querySelector('.fx-smart-expand');
+    const assistantTopic=box.querySelector('.fx-smart-context');
+    const standAlone=()=>document.body.classList.contains('assistant-standalone');
+    const open = () => { box.classList.add('open'); launch.setAttribute('aria-expanded','true'); if(!standAlone())setTimeout(() => form.message.focus(), 180); };
+    const shut = () => { if(standAlone())return;box.classList.remove('open');launch.setAttribute('aria-expanded','false'); };
+    expandButton?.addEventListener('click',()=>{
+      if(standAlone())return;
+      const expanded=box.classList.toggle('fx-expanded');
+      expandButton.setAttribute('aria-pressed',String(expanded));
+      expandButton.setAttribute('aria-label',expanded
+        ? at('Pienennä näkymää','Minska vyn','Reduce view')
+        : at('Laajenna näkymää','Utöka vyn','Expand view'));
+    });
+    // The visible page title is a context hint only, never verified product
+    // knowledge. The prompt goes through the existing grounded assistant API.
+    const updatePageHint=()=>{
+      const heading=document.querySelector('#app main h1,#app h1');
+      const title=String(heading?.textContent||'').replace(/\s+/g,' ').trim();
+      if(!assistantTopic || title.length<8 || title.length>90 || standAlone() || /^Respondo AI$/i.test(title))return;
+      assistantTopic.textContent=at('Kysy tästä sivusta: ','Fråga om sidan: ','Ask about this page: ')+title;
+      assistantTopic.dataset.fxSmartQuestion=at('Kerro tästä sivusta: ','Berätta om denna sida: ','Tell me about this page: ')+title;
+      assistantTopic.hidden=false;
+    };
+    updatePageHint();
     launch.addEventListener('click', () => box.classList.contains('open') ? shut() : open());
     close.addEventListener('click', shut);
     // Footer can be replaced during navigation; delegation keeps its open button working.
@@ -493,7 +532,9 @@
     });
     box.addEventListener('keydown', event => { if (event.key==='Escape') { shut(); launch.focus(); } });
     const send = async text => {
-      const clean = String(text || '').trim(); if (!clean) return;
+      const clean = String(text || '').trim();
+      if (!clean || form.message.disabled) return;
+      if(smartHome)smartHome.hidden=true;
       messages.insertAdjacentHTML('beforeend', `<div class="fx-chat-bubble user"></div>`); messages.lastElementChild.textContent = clean;
       messages.insertAdjacentHTML('beforeend', '<div class="fx-chat-bubble bot typing">•••</div>');
       const typing = messages.lastElementChild;
@@ -581,6 +622,12 @@
     };
     form.addEventListener('submit', e => { e.preventDefault(); const text = form.message.value; form.reset(); send(text); });
     document.querySelectorAll('.fx-quick button').forEach(b => b.addEventListener('click', () => send(b.textContent)));
+    box.addEventListener('click',event=>{
+      const quick=event.target.closest?.('[data-fx-smart-question]');
+      if(!quick || !box.contains(quick))return;
+      const question=String(quick.dataset.fxSmartQuestion||'').trim().slice(0,160);
+      if(question)void send(question);
+    });
   }
 
 
