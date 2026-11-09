@@ -28,7 +28,7 @@ const match=vm.runInNewContext(server.slice(begin,end)+'\nrespondoProductFaqMatc
 
 const questions=[
   ['How can Respondo help customers on my business website?','en',
-    ['visitors','services and products','prices and opening hours','contact and quote requests','booking flows','human']],
+    ['visitors','services and products','prices and opening hours','contact and quote requests','booking flows','staff']],
   ['How does Respondo help my website visitors?','en',['visitors','company-approved']],
   ['What can this chatbot do for my customers?','en',['contact and quote requests']],
   ['How will the bot help our customers?','en',['Finnish, Swedish and English']],
