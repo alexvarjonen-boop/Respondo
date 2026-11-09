@@ -467,3 +467,18 @@ body:has(#app .apple-home-page) .apple-menu-links a:hover{
     filter:none!important;
   }
 }
+
+/* First viewport is the hero + orbit only.
+   The 24/7 feature chapter is revealed by the first downward wheel gesture,
+   or by the first native touch/keyboard scroll. Do not alter later chapters,
+   reduced-motion/static fallbacks, or the original 10-step scroll story. */
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced:not(.rs-first-revealed) .rs-spiral-card:first-child{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+#app .apple-home-page .rs-spiral-section[data-rs-mode="fullscreen"].rs-enhanced.rs-first-revealed .rs-spiral-heading{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}

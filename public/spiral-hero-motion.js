@@ -22,6 +22,7 @@
   let wheelArmed = true;
   let wheelLockedUntil = 0;
   let transitionRaf = 0;
+  let firstChapterManuallyRevealed = false;
 
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const ease = v => { v = clamp(v, 0, 1); return v * v * (3 - 2 * v); };
@@ -59,6 +60,7 @@
     wheelEnergy = 0;
     wheelArmed = true;
     wheelLockedUntil = 0;
+    firstChapterManuallyRevealed = false;
   }
   function setup() {
     pendingMount = false;
@@ -107,6 +109,22 @@
     const viewport = Math.max(innerHeight, 1);
     if (rect.bottom < -70 || rect.top > viewport + 70) return;
     const mobile = coarse.matches || innerWidth < 760;
+    // Touch/narrow screens scroll natively, without the desktop wheel handler.
+    // Reveal 24/7 only after actual downward movement, and restore the
+    // uncluttered hero when the visitor scrolls back to the beginning.
+    const firstScrollThreshold = Math.min(viewport * .10, 72);
+    if (mobile) {
+      section.classList.toggle('rs-first-revealed', -rect.top >= firstScrollThreshold);
+      firstChapterManuallyRevealed = false;
+    } else if (-rect.top >= firstScrollThreshold) {
+      // Keyboard, scrollbar and assistive-technology scrolling still work.
+      section.classList.add('rs-first-revealed');
+      firstChapterManuallyRevealed = false;
+    } else if (rect.top >= -1 && !firstChapterManuallyRevealed) {
+      // A real return to page top restores the uncluttered intro, unless a
+      // deliberate wheel or orbit-icon click just opened chapter one there.
+      section.classList.remove('rs-first-revealed');
+    }
     // On iOS Safari, preserve the existing sticky-position fallback.
     if (mobile) {
       const stage = section.querySelector('.rs-spiral-stage');
@@ -121,6 +139,11 @@
     const position = normalized * (cards.length - 1);
     const closestIndex = clamp(Math.round(position), 0, cards.length - 1);
     updateStep(closestIndex);
+    // The first feature is not yet part of the visible or announced screen
+    // until the visitor has actively moved past the opening hero.
+    if (closestIndex === 0 && !section.classList.contains('rs-first-revealed')) {
+      cards[0].setAttribute('aria-hidden', 'true');
+    }
 
     // Near-camera scenes grow towards the viewer and drift out sideways.
     // Next scenes emerge small and slightly rotated from the opposite depth.
@@ -237,8 +260,18 @@
     const direction = Math.sign(event.deltaY);
     if (!direction) return;
     const index = clamp(Math.round(position), 0, cards.length - 1);
-    if ((direction < 0 && index === 0 && position < .08) ||
-        (direction > 0 && index === cards.length - 1 && position > cards.length - 1 - .08)) return;
+    if (direction < 0 && index === 0 && position < .08) {
+      // One upward gesture returns from the first feature to the hero.
+      // No document-scroll jump is needed: both are the first chapter.
+      if (section.classList.contains('rs-first-revealed')) {
+        event.preventDefault();
+        section.classList.remove('rs-first-revealed');
+        firstChapterManuallyRevealed = false;
+        schedule();
+      }
+      return;
+    }
+    if (direction > 0 && index === cards.length - 1 && position > cards.length - 1 - .08) return;
     // The former inactivity timer was reset by every inertial trackpad
     // packet. It could swallow the next swipe until the pointer moved.
     // Treat a pause, direction change or renewed physical acceleration as
@@ -269,6 +302,7 @@
     // advancing immediately. The next separate gesture moves to chapter two.
     if (direction > 0 && index === 0 && !section.classList.contains('rs-first-revealed')) {
       section.classList.add('rs-first-revealed');
+      firstChapterManuallyRevealed = true;
       schedule();
       return;
     }
@@ -296,6 +330,7 @@
       return;
     }
     section.classList.toggle('rs-first-revealed', index === 0);
+    firstChapterManuallyRevealed = index === 0;
     const rect = section.getBoundingClientRect();
     const travel = Math.max(1, rect.height - innerHeight);
     const target = scrollY + rect.top + travel * index / Math.max(1, cards.length - 1);

@@ -20,7 +20,7 @@ test('homepage has exactly two main brand colors and one visible CTA accent',()=
 
 test('last stylesheet wins over the old layered blue hero without changing its markup',()=>{
   const experienceLink='/respondo-experience.css?v=';
-  const clarityLink='/home-clarity-theme.css?v=20261109-graphite-white-violet-v1';
+  const clarityLink='/home-clarity-theme.css?v=20261109-graphite-white-violet-v1-first-scroll-247-v2';
   assert.ok(html.indexOf(experienceLink)>0);
   assert.ok(html.indexOf(clarityLink)>html.indexOf(experienceLink));
   assert.ok(html.indexOf(clarityLink)<html.indexOf('</head>'));
