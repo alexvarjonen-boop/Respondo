@@ -31,6 +31,7 @@ import { focusMultiPriceAnswer } from './multi-price-grounding.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
 import { detectContextualFollowup, followupCanonicalQuestion } from './followup-variants.mjs';
 import { interpretCustomerQuestion } from './query-typos.mjs';
+import { detectCustomerQuestionLanguage } from './question-language.mjs';
 import { verifiedIndustryServiceAnswer } from './industry-service-intelligence.mjs';
 import { industryServiceAnswer, isExplicitAutomotiveServiceQuestion, isExplicitVerifiedTradeQuestion, resolveIndustryServiceFollowup, canonicalProfessionalServiceQuestion } from './industry-service-engine.mjs';
 import { verifiedTechnicalFaqAnswer } from './verified-technical-faq.mjs';
@@ -14994,7 +14995,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
     const lang = ['fi','sv','en'].includes(String(body.lang || '').toLowerCase()) ? String(body.lang).toLowerCase() : 'fi';
     const message = String(body.message || '').trim().slice(0, 1200);
     if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : lang === 'sv' ? 'Skriv en fråga.' : 'Kirjoita kysymys.' });
-    const detectedLang=detectConversationLanguage(message,lang);
+    let detectedLang=detectCustomerQuestionLanguage(message,lang);
     requestLang=detectedLang;
     let rows = buildProfileKnowledge(profile).slice(0, 160);
     const demoImportId=String(body.demoImportId||'').trim().slice(0,80);
@@ -15157,6 +15158,8 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       }
     }
     const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
+    detectedLang=detectCustomerQuestionLanguage(message,lang,history);
+    requestLang=detectedLang;
     const mainioPreviousContextQuestion=mainioConversationContextQuestion(history);
     // Only Respondo's own domain may offer a Respondo subscription.
     // A public demo of another company must never leak Respondo sales links.
@@ -15756,7 +15759,8 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
 
     // Answer verified first-party FAQs independently of owner account and subscription state.
     // The public marketing assistant must not fail with 404 when an owner tenant is absent.
-    const detectedFaqLang=detectConversationLanguage(message,lang);
+    const faqHistory=Array.isArray(body.history)?body.history.slice(-6):[];
+    const detectedFaqLang=detectCustomerQuestionLanguage(message,lang,faqHistory);
     // Explicit "where is login / create an account / try the demo" requests
     // should always work without a tenant DB, including if the FAQ is absent.
     const navigation=respondoSiteNavigationAnswer(message,detectedFaqLang,SEO_CANONICAL_ORIGIN);
@@ -15764,7 +15768,6 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
       return res.json({answer:navigation.answer,handoff:false,confidence:1,
         intent:'Respondo site navigation',verified:true,actions:navigation.actions});
     }
-    const faqHistory=Array.isArray(body.history)?body.history.slice(-6):[];
     const directFaq=respondoProductFaqMatch(message,detectedFaqLang,faqHistory);
     if(directFaq){
       return res.json({answer:sanitizeUserFacingText(directFaq.answer),handoff:false,confidence:1,intent:'Respondo FAQ',verified:true,actions:respondoSitePageActions(message,detectedFaqLang,directFaq.id)});
@@ -15807,7 +15810,7 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
     }
 
     const t=tr.rows[0];
-    const detectedLang=detectConversationLanguage(message,lang);
+    const detectedLang=detectCustomerQuestionLanguage(message,lang,faqHistory);
     const kr=await q(
       "SELECT * FROM knowledge WHERE tenant_id=$1 AND approved=true AND source_type='respondo_seed' ORDER BY updated_at DESC,created_at DESC",
       [t.id],
@@ -15898,8 +15901,21 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
     const message = String(body.message || '').trim().slice(0, 1200);
     if (!message) return res.status(400).json({ error: lang === 'en' ? 'Type a question.' : lang === 'sv' ? 'Skriv en fråga.' : 'Kirjoita kysymys.' });
     const visitorRef = String(body.visitorRef || '').trim().slice(0, 160);
-    const detectedLang=detectConversationLanguage(message,lang);
     const thread = visitorRef ? await getOrCreateThread(t.id,'website',visitorRef,visitorRef) : null;
+    let history = [];
+    if (visitorRef) {
+      const hr = await q(
+        `SELECT question, answer, handoff
+           FROM conversations
+          WHERE tenant_id=$1 AND visitor_ref=$2
+          ORDER BY created_at DESC
+          LIMIT 6`,
+        [t.id, visitorRef],
+      );
+      history = hr.rows.reverse();
+    }
+    const detectedLang=detectCustomerQuestionLanguage(message,lang,history);
+    requestLang=detectedLang;
     if (thread && thread.language !== detectedLang && !thread.assigned_agent_id) {
       await q('UPDATE chat_threads SET language=$1,updated_at=NOW() WHERE id=$2 AND tenant_id=$3',[detectedLang,thread.id,t.id]);
       thread.language=detectedLang;
@@ -15911,7 +15927,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         metadata:{ pageContext:body.pageContext || {} },
       });
       if (thread.mode === 'human') {
-        const humanMessage = lang === 'en'
+        const humanMessage = detectedLang === 'en'
           ? 'Your message was sent to a person from the company.'
           : detectedLang === 'sv'
             ? 'Ditt meddelande skickades till företagets kundtjänst.'
@@ -15963,18 +15979,6 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
       kr.rows=await qualityAliasesForTenant(pool,t.id,kr.rows);
     }catch(error){
       console.error('Widget quality aliases unavailable',error?.name||'error');
-    }
-    let history = [];
-    if (visitorRef) {
-      const hr = await q(
-        `SELECT question, answer, handoff
-           FROM conversations
-          WHERE tenant_id=$1 AND visitor_ref=$2
-          ORDER BY created_at DESC
-          LIMIT 6`,
-        [t.id, visitorRef],
-      );
-      history = hr.rows.reverse();
     }
     const mainioPreviousContextQuestion=mainioConversationContextQuestion(history);
 
@@ -16079,7 +16083,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         : 'Tähän en löydä varmaa vastausta yrityksen tiedoista. Jätä alle nimesi ja puhelinnumerosi tai sähköpostisi, niin yrityksen henkilö voi palata sinulle.';
     const translationUnavailable = responseLang === 'en'
       ? 'I found the relevant company information, but could not translate the answer reliably right now. Leave your contact details below or try again in a moment.'
-      : lang === 'sv'
+      : responseLang === 'sv'
         ? 'Jag hittade relevant företagsinformation men kunde inte översätta svaret tillförlitligt just nu. Lämna dina kontaktuppgifter nedan eller försök igen om en stund.'
         : noAnswer;
 
@@ -17299,7 +17303,7 @@ app.post('/api/channel/:slug/message', channelApiLimiter, async (req,res) => {
       if(claim.status==='failed')return res.status(409).json({error:'Uncertain event state. Check source messages before re-submitting.'});
     }
     try {
-      const detectedLang=detectConversationLanguage(message,lang);
+      const detectedLang=detectCustomerQuestionLanguage(message,lang);
       const result=await processExternalChannelMessage(tenant,channel,contactId,message,detectedLang);
       if(claim?.status==='new')
         await completeInboundEvent(pool,tenant.id,channel,upstreamEventId,result);
