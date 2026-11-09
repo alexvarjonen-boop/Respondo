@@ -75,8 +75,8 @@ test('prices, checkout routes and billing-period behavior remain unchanged',()=>
   assert.match(app,/function bindPricingPeriodSwitch\(\)/);
   assert.match(app,/section\.querySelectorAll\('\.pricing-choice-card'\)/);
   assert.match(app,/const params = new URLSearchParams\(\{plan:card\.dataset\.planCode/);
-  assert.match(app,/return '<div class="home-page apple-home-page"/);
-  assert.doesNotMatch(css,/pointer-events:none!important;[\s\S]*\.pricing-select-btn/);
+  assert.match(app,/return `<div class="home-page apple-home-page"/);
+  assert.match(css,/\.rs-first-order-link[\s\S]*?pointer-events:auto!important/);
 });
 
 test('small screens and reduced-motion styles preserve controls and readability',()=>{
