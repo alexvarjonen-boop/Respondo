@@ -1,6 +1,7 @@
 import { extractBusinessDocument, essentialWebsiteCandidates, essentialWebsiteProfile, usableWebsiteRow, parseProductKnowledgeRow, decodeHtml, isConcreteServiceLabel } from './website-knowledge.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { matchVerifiedSpecialistService } from './service-semantics.mjs';
+import { focusMultiPriceAnswer } from './multi-price-grounding.mjs';
 import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
@@ -5070,6 +5071,25 @@ async function generateGroundedAnswer({ companyName, rows, message, history = []
   if (!finalAnswer) {
     return { answer:'', handoff:true, confidence:0.25, intent, sourceIds:[], selected };
   }
+
+  // A single imported pricing row can contain several unrelated service prices.
+  // Match the specific priced clause before translating or returning the row;
+  // never quote the first price as if it belonged to a different service.
+  if (queryTopic(localQuery) === 'pricing') {
+    const focused = focusMultiPriceAnswer(finalAnswer, retrievalQuery);
+    if (focused.status === 'focused') finalAnswer = focused.answer;
+    else if (focused.status === 'unmatched') {
+      return { answer:'', handoff:true, confidence:0.2, intent:'Hinta', sourceIds:[], selected:[] };
+    } else if (focused.status === 'ambiguous') {
+      const question=responseLang==='en'
+        ? 'Which service or price option do you mean?'
+        :responseLang==='sv'
+          ? 'Vilken tjänst eller vilket prisalternativ menar du?'
+          : 'Minkä palvelun tai hintavaihtoehdon tarkoitat?';
+      return { answer:question, handoff:false, confidence:0.75, intent:'Tarkennus', sourceIds:[], selected:[] };
+    }
+  }
+
   finalAnswer = cleanKnowledgeText(finalAnswer);
   const sourceLanguage = detectConversationLanguage(finalAnswer, 'fi');
   const localizedAnswer = sourceLanguage === responseLang ? finalAnswer : await forceAnswerLanguage(finalAnswer, responseLang);
