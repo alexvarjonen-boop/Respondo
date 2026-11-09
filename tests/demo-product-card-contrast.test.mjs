@@ -16,5 +16,5 @@ test('demo products keep readable text on light cards even under dark chat style
 test('Finnish shopping questions are recognized despite English demo UI', () => {
   assert.match(server, /'löytyykö','myytte','myyttekö','myymme','myydä','valikoima','tuotteita','tuotteet','tuote','putterit'/);
   assert.match(server, /function broadProductQuestion\(value\)/);
-  assert.match(server, /const detectedLang=detectConversationLanguage\(message,lang\)/);
+  assert.match(server, /let detectedLang=detectCustomerQuestionLanguage\(message,lang\)/);
 });
