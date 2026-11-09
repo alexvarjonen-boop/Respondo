@@ -465,7 +465,8 @@
     }
     if ($('.fx-assistant-launch')) return;
     const qLang = new URLSearchParams(location.search).get('lang');
-    const uiLang = ['fi','sv','en'].includes(qLang) ? qLang : (localStorage.getItem('respondo_lang') || 'en');
+    const storedSiteLang = localStorage.getItem('respondo_lang') || 'en';
+    const uiLang = ['fi','sv','en'].includes(qLang) ? qLang : (['fi','sv','en'].includes(storedSiteLang) ? storedSiteLang : 'en');
     const at = (fi,sv,en) => uiLang === 'sv' ? sv : uiLang === 'en' ? en : fi;
     const onDemo = false;
     document.body.insertAdjacentHTML('beforeend', `
@@ -516,7 +517,7 @@
     // knowledge. The prompt goes through the existing grounded assistant API.
     const updatePageHint=()=>{
       const heading=document.querySelector('#app main h1,#app h1');
-      const title=String(heading?.textContent||'').replace(/\\s+/g,' ').trim();
+      const title=String(heading?.textContent||'').replace(/\s+/g,' ').trim();
       if(!assistantTopic || title.length<8 || title.length>90 || standAlone() || /^Respondo AI$/i.test(title))return;
       assistantTopic.textContent=at('Kysy tästä sivusta: ','Fråga om sidan: ','Ask about this page: ')+title;
       assistantTopic.dataset.fxSmartQuestion=at('Kerro tästä sivusta: ','Berätta om denna sida: ','Tell me about this page: ')+title;
