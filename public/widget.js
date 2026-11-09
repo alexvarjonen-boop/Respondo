@@ -173,12 +173,12 @@
       .panel.open{display:flex}
       /* The original chat remains available as data-experience="classic". */
       .experience-smart .panel,.experience-immersive .panel{
-        width:min(492px,calc(100vw - 24px));height:min(720px,calc(100dvh - 88px));
+        width:min(492px,calc(100vw - 24px));height:min(720px,calc(100dvh - 112px));
         border-radius:28px;border:1px solid rgba(32,35,42,.09);
         box-shadow:0 36px 100px rgba(8,12,20,.25),0 6px 28px rgba(8,12,20,.09);
       }
       .experience-immersive .panel,.experience-smart.experience-expanded .panel{
-        width:min(650px,calc(100vw - 24px));height:min(800px,calc(100dvh - 70px));
+        width:min(650px,calc(100vw - 24px));height:min(800px,calc(100dvh - 100px));
       }
       .experience-smart .panel.open,.experience-immersive .panel.open{animation:respondoExperienceIn .28s cubic-bezier(.2,.8,.25,1) both}
       @keyframes respondoExperienceIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
@@ -189,7 +189,7 @@
       }
       .panel-close:hover,.panel-expand:hover{background:#ededf0}
       .panel-close:focus-visible,.panel-expand:focus-visible{outline:2px solid var(--bot-accent,#111113);outline-offset:2px}
-      .experience-classic .panel-expand,.experience-immersive .panel-expand{display:none}
+      .experience-classic .panel-expand,.experience-classic .panel-close,.experience-immersive .panel-expand{display:none}
       .experience-home{background:#fff;padding:16px 17px 15px;border-bottom:1px solid #f0f0f2;display:grid;gap:13px}
       .experience-home[hidden],.experience-classic .experience-home{display:none!important}
       .experience-eyebrow{display:block;color:#81838c;font-size:10px;font-weight:770;letter-spacing:.13em;text-transform:uppercase}
@@ -230,7 +230,7 @@
       .launcher[aria-expanded="true"] .launcher-spark{display:none}
       @media(max-width:520px){
         .experience-smart .panel,.experience-immersive .panel,.experience-smart.experience-expanded .panel{
-          width:calc(100vw - 12px);height:calc(100dvh - 76px);border-radius:21px}
+          width:calc(100vw - 12px);height:calc(100dvh - 112px);border-radius:21px}
         .experience-home{padding:13px 12px 12px;gap:11px}
         .experience-home h2{font-size:19px}
         .experience-tile{min-height:76px;padding:10px 8px}
