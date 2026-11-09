@@ -226,6 +226,24 @@ function appendPreviewProductCards(bubble,items,lang='fi') {
         color:#244d91!important;-webkit-text-fill-color:#244d91!important;
       }
       @media(max-width:430px){.preview-product-thumb{height:56px;width:56px;flex-basis:56px}}
+      .preview-product-open{appearance:none;border:1px solid #d3d4da;background:#fff;color:#171923;border-radius:999px;padding:9px 13px;font:inherit;font-size:12px;font-weight:750;cursor:pointer;margin-top:10px}
+      .preview-product-open:focus-visible,.preview-product-modal-close:focus-visible{outline:3px solid #222;outline-offset:2px}
+      .preview-product-modal{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Arial,sans-serif}
+      .preview-product-modal-backdrop{position:absolute;inset:0;border:0;padding:0;background:rgba(16,17,19,.48);cursor:pointer}
+      .preview-product-modal-panel{position:relative;width:min(520px,100%);max-height:min(82dvh,710px);background:#fff;color:#191a1e;border-radius:24px 24px 0 0;box-shadow:0 -12px 52px #0003;display:flex;flex-direction:column;overflow:hidden}
+      .preview-product-modal-head{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 19px;border-bottom:1px solid #eeeef0}
+      .preview-product-modal-head strong{font-size:16px;color:#191a1e}
+      .preview-product-modal-close{border:1px solid #e0e1e5;background:#f8f8f9;color:#222;border-radius:50%;width:35px;height:35px;font-size:21px;cursor:pointer}
+      .preview-product-modal .preview-product-cards{display:flex;gap:13px;overflow-x:auto;scroll-snap-type:x mandatory;padding:16px;flex:1;min-height:0}
+      .preview-product-modal .preview-product-card{flex:0 0 min(86%,320px);scroll-snap-align:start;display:flex;flex-direction:column;gap:10px;align-self:stretch;background:#fff!important;border-radius:16px}
+      .preview-product-modal .preview-product-card:only-child{flex-basis:100%}
+      .preview-product-modal .preview-product-thumb{width:100%;height:150px;flex:0 0 150px;object-fit:contain}
+      .preview-product-modal .preview-product-copy strong{font-size:14px;color:#171923}
+      .preview-product-modal .preview-product-price{font-size:17px;color:#111827}
+      .preview-product-modal .preview-product-go{padding:9px 12px;align-self:flex-start;background:#16171b;border-radius:9px;color:#fff}
+      .preview-product-modal-note{padding:0 19px 16px;color:#71727a;font-size:11px}
+      @media(prefers-reduced-motion:reduce){.preview-product-modal-panel{scroll-behavior:auto}}
+
     `;
     document.head.appendChild(style);
   }
@@ -269,7 +287,52 @@ function appendPreviewProductCards(bubble,items,lang='fi') {
     go.textContent=lang==='en'?'View product →':lang==='sv'?'Visa produkt →':'Katso tuote →';content.appendChild(go);
     a.append(thumb,content);section.appendChild(a);
   }
-  bubble.appendChild(section);
+  const opener=document.createElement('button');
+  opener.type='button';opener.className='preview-product-open';
+  opener.textContent=lang==='sv'?'Visa '+products.length+' produkter':lang==='en'?'View '+products.length+' products':'Näytä '+products.length+' tuotetta';
+  bubble.appendChild(opener);
+  function showProducts(){
+    const modal=document.createElement('div');
+    modal.className='preview-product-modal';
+    const backdrop=document.createElement('button');
+    backdrop.type='button';backdrop.className='preview-product-modal-backdrop';
+    backdrop.setAttribute('aria-label',lang==='sv'?'Stäng':lang==='en'?'Close':'Sulje');
+    const panel=document.createElement('section');
+    panel.className='preview-product-modal-panel';
+    panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');
+    panel.setAttribute('aria-label',lang==='sv'?'Produkter för dig':lang==='en'?'Products for you':'Tuotteet sinulle');
+    const head=document.createElement('header');head.className='preview-product-modal-head';
+    const title=document.createElement('strong');title.textContent=lang==='sv'?'Produkter för dig':lang==='en'?'Products for you':'Tuotteet sinulle';
+    const closeButton=document.createElement('button');
+    closeButton.type='button';closeButton.className='preview-product-modal-close';
+    closeButton.setAttribute('aria-label',lang==='sv'?'Stäng':lang==='en'?'Close':'Sulje');closeButton.textContent='×';
+    head.append(title,closeButton);
+    const note=document.createElement('small');note.className='preview-product-modal-note';
+    note.textContent=lang==='sv'?'Kontrollera aktuellt pris och lagerstatus i webbutiken.':lang==='en'?'Check current price and availability in the store.':'Tarkista ajantasainen hinta ja saatavuus verkkokaupasta.';
+    panel.append(head,section,note);
+    modal.append(backdrop,panel);
+    const dismiss=()=>{
+      modal.remove();
+      opener.setAttribute('aria-expanded','false');
+      if(opener.isConnected)opener.focus();
+    };
+    backdrop.addEventListener('click',dismiss);
+    closeButton.addEventListener('click',dismiss);
+    modal.addEventListener('keydown',(event)=>{
+      if(event.key==='Escape'){event.preventDefault();dismiss();}
+      if(event.key==='Tab'){
+        const focusable=[...panel.querySelectorAll('button,a[href]')];
+        if(!focusable.length)return;
+        if(event.shiftKey&&document.activeElement===focusable[0]){event.preventDefault();focusable.at(-1).focus();}
+        else if(!event.shiftKey&&document.activeElement===focusable.at(-1)){event.preventDefault();focusable[0].focus();}
+      }
+    });
+    document.body.appendChild(modal);
+    opener.setAttribute('aria-expanded','true');
+    closeButton.focus();
+  }
+  opener.addEventListener('click',showProducts);
+  showProducts();
   return true;
 }
 
