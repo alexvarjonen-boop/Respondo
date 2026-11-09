@@ -9,6 +9,11 @@
 
   const serviceOrigin = new URL(script.src).origin;
   const side = script.dataset.side === 'left' ? 'left' : 'right';
+  // Existing embeds automatically receive Smart Assist; Classic and
+  // Immersive can be selected with data-experience on the same script.
+  const requestedExperience = String(script.dataset.experience || 'smart').toLowerCase();
+  const experienceMode = ['classic','smart','immersive'].includes(requestedExperience)
+    ? requestedExperience : 'smart';
   const fallbackAccent = script.dataset.accent || '#111113';
   const normalizeLang = (value) => {
     const lang = String(value || '').toLowerCase().split('-')[0];
@@ -97,6 +102,10 @@
     return fi;
   }
 
+  function experienceText(fi, sv, en) {
+    return widgetLang === 'sv' ? sv : widgetLang === 'en' ? en : fi;
+  }
+
   const ROBOT_AVATARS = [
     ['robot-1','#111114','#ffffff','#63e6a5'],
     ['robot-2','#172554','#dbeafe','#60a5fa'],
@@ -162,6 +171,73 @@
       .wrap{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Arial,sans-serif;color:#111113}
       .panel{width:min(410px,calc(100vw - 24px));height:min(640px,calc(100vh - 92px));background:#fff;border:1px solid rgba(0,0,0,.11);border-radius:24px;box-shadow:0 30px 90px rgba(0,0,0,.24);overflow:hidden;display:none;flex-direction:column;margin-bottom:10px}
       .panel.open{display:flex}
+      /* The original chat remains available as data-experience="classic". */
+      .experience-smart .panel,.experience-immersive .panel{
+        width:min(492px,calc(100vw - 24px));height:min(720px,calc(100dvh - 112px));
+        border-radius:28px;border:1px solid rgba(32,35,42,.09);
+        box-shadow:0 36px 100px rgba(8,12,20,.25),0 6px 28px rgba(8,12,20,.09);
+      }
+      .experience-immersive .panel,.experience-smart.experience-expanded .panel{
+        width:min(650px,calc(100vw - 24px));height:min(800px,calc(100dvh - 100px));
+      }
+      .experience-smart .panel.open,.experience-immersive .panel.open{animation:respondoExperienceIn .28s cubic-bezier(.2,.8,.25,1) both}
+      @keyframes respondoExperienceIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+      .panel-close,.panel-expand{
+        appearance:none;border:1px solid #ebebed;background:#f7f7f8;color:#4d5159;
+        border-radius:11px;width:35px;height:35px;display:grid;place-items:center;
+        font-size:19px;line-height:1;cursor:pointer;flex:0 0 auto;
+      }
+      .panel-close:hover,.panel-expand:hover{background:#ededf0}
+      .panel-close:focus-visible,.panel-expand:focus-visible{outline:2px solid var(--bot-accent,#111113);outline-offset:2px}
+      .experience-classic .panel-expand,.experience-classic .panel-close,.experience-immersive .panel-expand{display:none}
+      .experience-home{background:#fff;padding:16px 17px 15px;border-bottom:1px solid #f0f0f2;display:grid;gap:13px}
+      .experience-home[hidden],.experience-classic .experience-home{display:none!important}
+      .experience-eyebrow{display:block;color:#81838c;font-size:10px;font-weight:770;letter-spacing:.13em;text-transform:uppercase}
+      .experience-home h2{font-size:21px;font-weight:760;letter-spacing:-.045em;line-height:1.15;margin:5px 0 4px;color:#17191e}
+      .experience-home p{font-size:12px;line-height:1.5;color:#777982;margin:0}
+      .experience-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+      .experience-tile{appearance:none;min-width:0;min-height:85px;padding:11px 10px;display:flex;flex-direction:column;gap:5px;
+        border:1px solid #e6e7e9;background:linear-gradient(150deg,#fff,#fafafb);
+        border-radius:16px;text-align:left;cursor:pointer;color:#17191d;transition:transform .18s,border-color .18s,box-shadow .18s}
+      .experience-tile:hover{border-color:#a5a7ad;transform:translateY(-2px);box-shadow:0 10px 24px rgba(12,16,22,.07)}
+      .experience-tile:focus-visible{outline:2px solid var(--bot-accent,#111113);outline-offset:2px}
+      .experience-tile-icon{font-size:16px;line-height:1;color:#777983}
+      .experience-tile-title{font-size:12px;font-weight:780;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+      .experience-tile-description{font-size:10px;line-height:1.25;color:#858790;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+      .experience-smart .head,.experience-immersive .head{padding:14px 17px}
+      .experience-smart .chat,.experience-immersive .chat{background:linear-gradient(180deg,#f8f9fa,#f5f5f7)}
+      .experience-smart .msg,.experience-immersive .msg{border-radius:17px;line-height:1.5}
+      .experience-smart .actions,.experience-immersive .actions{align-self:stretch;max-width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+      .experience-smart .actions a,.experience-smart .actions button,.experience-immersive .actions a,.experience-immersive .actions button{
+        min-height:54px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+        background:#fff;border:1px solid #e1e2e5;border-radius:15px;padding:12px;
+        font-size:12px;font-weight:730;line-height:1.35;overflow-wrap:anywhere;
+      }
+      .experience-smart .actions a:hover,.experience-smart .actions button:hover,
+      .experience-immersive .actions a:hover,.experience-immersive .actions button:hover{
+        background:#fafafa;border-color:#999ba3;
+      }
+      .experience-smart .launcher,.experience-immersive .launcher{
+        border-radius:999px;min-height:61px;padding:7px 15px 7px 7px;
+        background:rgba(255,255,255,.97);backdrop-filter:blur(16px);
+        box-shadow:0 18px 48px rgba(12,16,20,.17),0 3px 10px rgba(12,16,20,.06);
+      }
+      .experience-smart .launcher-avatar,.experience-immersive .launcher-avatar,
+      .experience-smart .launcher-avatar svg,.experience-immersive .launcher-avatar svg,
+      .experience-smart .launcher-avatar img,.experience-immersive .launcher-avatar img{border-radius:999px}
+      .launcher-spark{display:none;color:#777983;font-size:19px;font-weight:500;margin-left:4px}
+      .experience-smart .launcher-spark,.experience-immersive .launcher-spark{display:block}
+      .launcher[aria-expanded="true"] .launcher-spark{display:none}
+      @media(max-width:520px){
+        .experience-smart .panel,.experience-immersive .panel,.experience-smart.experience-expanded .panel{
+          width:calc(100vw - 12px);height:calc(100dvh - 112px);border-radius:21px}
+        .experience-home{padding:13px 12px 12px;gap:11px}
+        .experience-home h2{font-size:19px}
+        .experience-tile{min-height:76px;padding:10px 8px}
+        .experience-tiles{gap:6px}
+      }
+      @media(max-height:580px){.experience-home{padding:10px;gap:8px}.experience-home p{display:none}.experience-tile{min-height:62px}}
+      @media(prefers-reduced-motion:reduce){.experience-smart .panel.open,.experience-immersive .panel.open{animation:none}.experience-tile{transition:none}.experience-tile:hover{transform:none}}
       .head{padding:17px 18px;border-bottom:1px solid #e7e7e9;display:flex;align-items:center;gap:11px;background:#fff}
       .mark{width:34px;height:34px;border-radius:10px;overflow:hidden;display:grid;place-items:center;flex:0 0 auto}.mark svg,.mark img{display:block;width:34px;height:34px;object-fit:contain}
       .headcopy{min-width:0;flex:1}
@@ -269,12 +345,22 @@
         .panel{width:calc(100vw - 12px);height:calc(100dvh - 72px);border-radius:20px}
       }
     </style>
-    <div class="wrap">
+    <div class="wrap experience-${experienceMode}">
       <section class="panel" id="respondo-chat-panel" aria-label="${t('Respondon asiakaspalvelu', 'RESPONDO AI customer service')}">
         <header class="head">
           <div class="mark" aria-hidden="true">${widgetAvatarMarkup('robot-1')}</div>
           <div class="headcopy"><b id="name">RESPONDO AI</b><small><span class="dot"></span> ${t('Paikalla nyt', 'Online now')}</small></div>
+          <button class="panel-expand" id="panelExpand" type="button" aria-pressed="false" aria-label="${experienceText('Laajenna näkymää','Utöka vyn','Expand view')}" title="${experienceText('Laajenna näkymää','Utöka vyn','Expand view')}">⤢</button>
+          <button class="panel-close" id="panelClose" type="button" aria-label="${experienceText('Sulje avustaja','Stäng assistenten','Close assistant')}">×</button>
         </header>
+        <section class="experience-home" id="experienceHome" aria-label="${experienceText('Avustajan aloitus','Assistentens start','Assistant welcome')}" hidden>
+          <div>
+            <small class="experience-eyebrow">${experienceText('OMA AVUSTAJASI','DIN ASSISTENT','YOUR ASSISTANT')}</small>
+            <h2 id="experienceHeading">${experienceText('Miten voin auttaa?','Hur kan jag hjälpa dig?','How can I help?')}</h2>
+            <p id="experienceNote">${experienceText('Valitse aihe tai kirjoita oma kysymyksesi.','Välj ett ämne eller skriv din fråga.','Choose a topic or ask your own question.')}</p>
+          </div>
+          <div class="experience-tiles" id="experienceTiles"></div>
+        </section>
         <div class="chat" id="chat"></div>
         <div class="quick" id="quick"></div>
         <div class="status" id="status">${t('Yhdistetään…', 'Connecting…')}</div>
@@ -290,6 +376,7 @@
       <button class="launcher" id="launcher" type="button" aria-controls="respondo-chat-panel" aria-expanded="false" aria-label="${t('Avaa chat', 'Open chat')}">
         <span class="launcher-avatar" aria-hidden="true">${widgetAvatarMarkup('robot-1')}<span class="launcher-online"></span></span>
         <span class="launcher-copy"><span class="launcher-name">RESPONDO AI</span><span class="launcher-subtitle">${t('Yhdistetään…', 'Connecting…')}</span></span>
+        <span class="launcher-spark" aria-hidden="true">✦</span>
         <span class="launcher-close" aria-hidden="true">×</span>
       </button>
     </div>`;
@@ -310,6 +397,13 @@
   const launcherAvatar = $('.launcher-avatar');
   const launcherName = $('.launcher-name');
   const launcherSubtitle = $('.launcher-subtitle');
+  const experienceHome = $('#experienceHome');
+  const experienceHeading = $('#experienceHeading');
+  const experienceNote = $('#experienceNote');
+  const experienceTiles = $('#experienceTiles');
+  const panelClose = $('#panelClose');
+  const panelExpand = $('#panelExpand');
+  const wrap = $('.wrap');
 
   let token = '';
   let ready = false;
@@ -1100,6 +1194,101 @@
     $('.dot').style.background=accent;
   }
 
+
+  // The visitor sees context-aware starting points, not unsupported business
+  // claims. Clicking a tile sends a normal customer question through the
+  // existing tenant-scoped grounded-answer path.
+  let experienceConversationStarted = false;
+  function currentPageTopic() {
+    const heading = document.querySelector('main h1, h1');
+    const candidate = String(heading?.textContent || document.title || '').replace(/\s+/g,' ').trim();
+    if (candidate.length < 5 || candidate.length > 78) return '';
+    if (/^(?:etusivu|home|hem|welcome|välkommen|tervetuloa|menu|valikko)$/i.test(candidate)) return '';
+    return candidate;
+  }
+  function renderExperienceHome() {
+    if (experienceMode === 'classic' || !ready || experienceConversationStarted) {
+      experienceHome.hidden = true;
+      return;
+    }
+    const topic = currentPageTopic();
+    experienceHome.hidden = false;
+    experienceHeading.textContent = experienceText('Miten voin auttaa?', 'Hur kan jag hjälpa dig?', 'How can I help?');
+    experienceNote.textContent = topic
+      ? experienceText('Autan sinua myös tämän sivun aiheessa: ', 'Jag kan också hjälpa till med sidan: ', 'I can also help with this page: ') + topic
+      : experienceText('Valitse aihe tai kirjoita oma kysymyksesi.', 'Välj ett ämne eller skriv din fråga.', 'Choose a topic or ask your own question.');
+    // Only contextual labeling uses the host page heading. Product prices,
+    // availability, promises and actions still come from approved tenant data.
+    const first = topic ? {
+      icon:'⌕',
+      title:experienceText('Tämä sivu', 'Den här sidan', 'This page'),
+      description:topic,
+      question:experienceText('Kerro lisää aiheesta: ', 'Berätta mer om: ', 'Tell me more about: ') + topic,
+    } : {
+      icon:'◇',
+      title:experienceText('Palvelut', 'Tjänster', 'Services'),
+      description:experienceText('Mitä tarjoatte?', 'Vad erbjuder ni?', 'What do you offer?'),
+      question:experienceText('Mitä palveluita tarjoatte?', 'Vilka tjänster erbjuder ni?', 'What services do you offer?'),
+    };
+    const options = [
+      first,
+      {
+        icon:'◈',
+        title:experienceText('Hinnat', 'Priser', 'Prices'),
+        description:experienceText('Kysy hinnoittelusta', 'Fråga om priser', 'Ask about pricing'),
+        question:experienceText('Mistä löydän palvelujenne hinnat?', 'Var hittar jag era priser?', 'Where can I find your prices?'),
+      },
+      {
+        icon:'↗',
+        title:experienceText('Yhteystiedot', 'Kontakt', 'Contact'),
+        description:experienceText('Ota yhteyttä', 'Ta kontakt', 'Get in touch'),
+        question:experienceText('Miten saan teihin yhteyttä?', 'Hur kontaktar jag er?', 'How can I contact you?'),
+      },
+    ];
+    experienceTiles.replaceChildren();
+    for (const option of options) {
+      const tile = document.createElement('button');
+      tile.type='button';
+      tile.className='experience-tile';
+      const icon=document.createElement('span');
+      icon.className='experience-tile-icon';
+      icon.setAttribute('aria-hidden','true');
+      icon.textContent=option.icon;
+      const heading=document.createElement('span');
+      heading.className='experience-tile-title';
+      heading.textContent=option.title;
+      const desc=document.createElement('span');
+      desc.className='experience-tile-description';
+      desc.textContent=option.description;
+      tile.append(icon,heading,desc);
+      tile.setAttribute('aria-label',option.title+(topic&&option===first?' — '+topic:''));
+      tile.addEventListener('click',()=>{
+        if (!ready || input.disabled) return;
+        void sendMessage(option.question);
+      });
+      experienceTiles.appendChild(tile);
+    }
+    if (topic) launcherSubtitle.textContent = experienceText('Kysy tästä sivusta', 'Fråga om sidan', 'Ask about this page');
+  }
+  panelClose.addEventListener('click',()=>{
+    if(panel.classList.contains('open')) launcher.click();
+    launcher.focus();
+  });
+  panelExpand.addEventListener('click',()=>{
+    const expanded=wrap.classList.toggle('experience-expanded');
+    panelExpand.setAttribute('aria-pressed',String(expanded));
+    panelExpand.setAttribute('aria-label',expanded
+      ? experienceText('Pienennä näkymää','Minska vyn','Reduce view')
+      : experienceText('Laajenna näkymää','Utöka vyn','Expand view'));
+  });
+  shadow.addEventListener('keydown',(event)=>{
+    if(event.key==='Escape' && panel.classList.contains('open')){
+      event.preventDefault();
+      launcher.click();
+      launcher.focus();
+    }
+  });
+
   async function pollLiveTakeover() {
     if (!ready || !token || !visitorRef) return;
     try {
@@ -1166,6 +1355,7 @@
       status.classList.add('ready');
       renderQuickReplies(data.quickReplies || []);
       addMessage(data.greeting || t('Hei! Miten voin auttaa?', 'Hi! How can I help?'));
+      renderExperienceHome();
       startLivePolling();
     } catch {
       ready = false;
@@ -1184,12 +1374,22 @@
     launcher.setAttribute('aria-label',(launcherName.textContent||'RESPONDO AI')+' – '+
       (open?t('Sulje','Close'):t('Avaa chat','Open chat')));
     if (!open) cancelVoiceInput();
-    if (open && ready) setTimeout(() => input.focus(), 50);
+    if (open && ready) {
+      renderExperienceHome();
+      setTimeout(() => input.focus(), 50);
+    }
   });
 
   async function sendMessage(rawMessage) {
     const message = String(rawMessage || '').trim();
-    if (!message || !ready) return;
+    if (!message || !ready || input.disabled) return;
+    experienceConversationStarted = true;
+    experienceHome.hidden = true;
+    // In SPA storefronts the visitor may have navigated to another product
+    // since the widget loaded. Refresh only page context, not customer facts.
+    pageContext.url = String(window.location.href || '').slice(0, 1000);
+    pageContext.title = String(document.title || '').slice(0, 300);
+    pageContext.path = String(window.location.pathname || '').slice(0, 500);
     const voiceMessageLang = ['fi','sv','en'].includes(input.dataset.respondoVoiceLang) &&
       message === input.value.trim() ? input.dataset.respondoVoiceLang : widgetLang;
     delete input.dataset.respondoVoiceLang;
