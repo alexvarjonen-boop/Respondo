@@ -1,4 +1,5 @@
 import { approvedProductLinkAnswer } from './product-url-match.mjs';
+import { isPhysicalClubProduct, groundedBudgetProductAnswer } from './product-budget.mjs';
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voice.mjs';
 import {mainioPublicFactAnswer,mainioPublicWebsiteEvidence} from './mainio-public-fact-answer.mjs';
@@ -2857,6 +2858,7 @@ function productNameMatchScore(product,tokens,family='') {
 function requestedProductFamily(value) {
   const q=normalizeSearchText(value);
   if (/\bputter\w*\b/.test(q)) return 'putter';
+  if (/\b(?:maila\w*|mailo\w*|golfmail\w*|clubs?|golfklubb\w*|klubbor)\b/.test(q) && !/\bmailansuoj\w*\b/.test(q)) return 'club';
   if (/\b(?:headcover|head cover|mailansuoja\w*)\b/.test(q)) return 'headcover';
   if (/\bgrip\w*\b/.test(q)) return 'grip';
   if (/\b(?:towel\w*|pyyhe\w*|handduk\w*)\b/.test(q)) return 'towel';
@@ -2871,6 +2873,7 @@ function productMatchesFamily(product,family) {
   const name=normalizeSearchText(product?.name||'');
   const type=normalizeSearchText(product?.productType||'');
   const text=(name+' '+type).trim();
+  if(family==='club') return isPhysicalClubProduct(product);
   if(family==='putter'){
     if(/\b(?:gift card|lahjakort|headcover|head cover|mailansuoja|grip|towel|pyyhe|cover)\b/.test(text)) return false;
     return /\bputter\w*\b/.test(type) || /\bputter\b/.test(name);
@@ -3059,6 +3062,10 @@ function directEcommerceOrderingAnswer(rows,message,lang='fi') {
 
 function directProductAnswer(rows,message,lang='fi',history=[]) {
   const products=productCatalog(rows);
+  // A numeric product budget must be honored before general product browsing.
+  // An incomplete catalog must never suggest a gift card as a golf club.
+  const budgetAnswer=groundedBudgetProductAnswer(products,message,lang);
+  if(budgetAnswer) return budgetAnswer;
   if(!products.length) return null;
   const inheritedPriceQuestion=contextualProductPriceQuestion(products,message,history);
   if(inheritedPriceQuestion){
@@ -3091,6 +3098,19 @@ function directProductAnswer(rows,message,lang='fi',history=[]) {
   const candidates=requestedFamily
     ? familyMatches
     : (strongMatches.length?strongMatches:(weakMatches.length?weakMatches:ranked));
+  // An unsupported requested product family is not permission to list an
+  // unrelated item. In particular, a gift card is never a golf club.
+  if(requestedFamily && !familyMatches.length && requestedProductFamilyAvailability(message)){
+    const subject=lang==='en'?(requestedFamily==='club'?'clubs':'that product category')
+      :lang==='sv'?(requestedFamily==='club'?'klubbor':'den produktkategorin')
+      :(requestedFamily==='club'?'mailoja':'tätä tuoteryhmää');
+    const answer=lang==='en'
+      ? 'I could not verify '+subject+' in the store’s approved product information. Check the current catalog.'
+      :lang==='sv'
+        ? 'Jag kunde inte bekräfta '+subject+' i butikens godkända produktuppgifter. Kontrollera det aktuella sortimentet.'
+        : 'En pystynyt vahvistamaan '+subject+' verkkokaupan hyväksytyistä tuotetiedoista. Tarkista ajantasainen valikoima verkkokaupasta.';
+    return {answer,handoff:false,confidence:0.35,intent:'Tuotteet',sourceIds:[],selected:[]};
+  }
   const cheapest=/\b(?:halvin|edullisin|cheapest|lowest price|billigast|billigaste)\b/.test(q);
   const expensive=/\b(?:kallein|most expensive|highest price|dyrast|dyraste)\b/.test(q);
   const popularAsk=/\b(?:suosituin|suosituimmat|myydyin|myydyimmat|myydyimmät|most popular|best seller|bestseller|best-selling|top seller|populärast|bastsaljare|bästsäljare|mest sålda|mest salda)\b/.test(q);
@@ -15335,6 +15355,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
       const family=requestedProductFamilyAvailability(message);
       const label={
         giftcard:['lahjakorteista','presentkort','gift cards'],
+        club:['mailoista','klubbor','clubs'],
         putter:['puttereista','putters','putters'],
         headcover:['mailansuojista','headcovers','headcovers'],
         grip:['gripeistä','grepp','grips'],

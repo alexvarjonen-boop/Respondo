@@ -226,7 +226,16 @@ function appendPreviewProductCards(bubble,items,lang='fi') {
         color:#244d91!important;-webkit-text-fill-color:#244d91!important;
       }
       @media(max-width:430px){.preview-product-thumb{height:56px;width:56px;flex-basis:56px}}
-      .preview-product-open{appearance:none;border:1px solid #d3d4da;background:#fff;color:#171923;border-radius:999px;padding:9px 13px;font:inherit;font-size:12px;font-weight:750;cursor:pointer;margin-top:10px}
+      /* Dark previews apply -webkit-text-fill-color globally; set both text properties explicitly. */
+      #app .preview-bubble.bot .preview-product-open,
+      .preview-bubble.bot .preview-product-open{
+        appearance:none!important;display:inline-flex!important;align-items:center!important;
+        border:1px solid #363945!important;background:#181b23!important;
+        color:#fff!important;-webkit-text-fill-color:#fff!important;
+        opacity:1!important;filter:none!important;text-shadow:none!important;
+        border-radius:999px;padding:9px 13px;font:inherit;font-size:12px!important;
+        font-weight:750!important;line-height:1.3!important;cursor:pointer;margin-top:10px;
+      }
       .preview-product-open:focus-visible,.preview-product-modal-close:focus-visible{outline:3px solid #222;outline-offset:2px}
       .preview-product-modal{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Arial,sans-serif}
       .preview-product-modal-backdrop{position:absolute;inset:0;border:0;padding:0;background:rgba(16,17,19,.48);cursor:pointer}
@@ -240,7 +249,7 @@ function appendPreviewProductCards(bubble,items,lang='fi') {
       .preview-product-modal .preview-product-thumb{width:100%;height:150px;flex:0 0 150px;object-fit:contain}
       .preview-product-modal .preview-product-copy strong{font-size:14px;color:#171923}
       .preview-product-modal .preview-product-price{font-size:17px;color:#111827}
-      .preview-product-modal .preview-product-go{padding:9px 12px;align-self:flex-start;background:#16171b;border-radius:9px;color:#fff}
+      .preview-product-modal .preview-product-go{padding:9px 12px;align-self:flex-start;background:#16171b;border-radius:9px;color:#fff!important;-webkit-text-fill-color:#fff!important}
       .preview-product-modal-note{padding:0 19px 16px;color:#71727a;font-size:11px}
       @media(prefers-reduced-motion:reduce){.preview-product-modal-panel{scroll-behavior:auto}}
 
@@ -289,7 +298,9 @@ function appendPreviewProductCards(bubble,items,lang='fi') {
   }
   const opener=document.createElement('button');
   opener.type='button';opener.className='preview-product-open';
-  opener.textContent=lang==='sv'?'Visa '+products.length+' produkter':lang==='en'?'View '+products.length+' products':'Näytä '+products.length+' tuotetta';
+  opener.textContent=lang==='sv'?'Visa '+products.length+(products.length===1?' produkt':' produkter')
+    :lang==='en'?'View '+products.length+(products.length===1?' product':' products')
+    :'Näytä '+products.length+(products.length===1?' tuote':' tuotetta');
   bubble.appendChild(opener);
   function showProducts(){
     const modal=document.createElement('div');
@@ -332,7 +343,6 @@ function appendPreviewProductCards(bubble,items,lang='fi') {
     closeButton.focus();
   }
   opener.addEventListener('click',showProducts);
-  showProducts();
   return true;
 }
 
@@ -6472,7 +6482,7 @@ async function route() {
             draw();
             bubble.appendChild(wrap);
           }
-          const hasProducts=appendPreviewProductCards(bubble,result.products,currentLang());
+          const hasProducts=appendPreviewProductCards(bubble,result.products,result.language||currentLang());
           const actions=previewWithOwnerSubscribe(result.actions,question,currentLang()).filter(action=>action?.url&&/^(?:https?:\/\/|tel:|mailto:)/i.test(action.url)&&(!hasProducts||action.type!=='product'));
           if(actions.length){
             const wrap=document.createElement('div');wrap.className='preview-actions';
@@ -7490,7 +7500,7 @@ async function route() {
         if (bubble) {
           bubble.classList.remove('preview-thinking');
           bubble.textContent = result.answer || appText('En löydä tähän vielä varmaa vastausta.','Jag hittar inget säkert svar på detta ännu.','I cannot find a reliable answer to this yet.');
-          const hasProducts = appendPreviewProductCards(bubble,result.products,currentLang());
+          const hasProducts = appendPreviewProductCards(bubble,result.products,result.language||currentLang());
           const actions = previewWithOwnerSubscribe(result.actions,question,currentLang()).filter((action)=>!hasProducts || action?.type!=='product');
           // Phone and email actions must appear in dashboard preview too,
           // not just https links. The server sends only validated contact URLs.
