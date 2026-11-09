@@ -89,5 +89,5 @@ test('explicit annual pricing keeps annual billing details; general monthly pric
   assert.match(annual?.answer||'',/vuosi/);
   const css=read('effects.css');
   assert.match(css,/#respondo-site-chat \.fx-chat-bubble\.bot \{ white-space: pre-line!important; \}/);
-  assert.match(index,/effects\.css\?v=20261027-price-lines-v1/);
+  assert.match(index,/effects\.css\?v=20261109-firstparty-smart-assist-v1/);
 });
