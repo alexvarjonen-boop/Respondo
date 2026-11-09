@@ -37,6 +37,13 @@ test('back link has readable dark-mode text and a keyboard focus treatment on mo
   assert.match(css,/min-height:42px/);
 });
 
+test('Try Bot navigation styling does not modify integration-specific V47 selectors',()=>{
+  const navigation=css.indexOf('/* Clear exit from the real Respondo OS Try Bot page');
+  const integrations=css.indexOf('/* V47:');
+  assert.ok(navigation>=0 && integrations>navigation);
+  assert.doesNotMatch(css.slice(integrations),/respondo-workspace-bot-home/);
+});
+
 test('navigation belongs to the real workspace and preserves existing chat and orbit',()=>{
   assert.match(js,/const workspace=ensureWorkspace\(demo\)/);
   assert.match(js,/chatHost\.appendChild\(preview\)/);
