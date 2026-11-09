@@ -35,14 +35,27 @@ export function focusMultiPriceAnswer(answer, query) {
   const subjects = subjectTokens(query);
   // "What are your prices?" requests a list. Leave it unchanged.
   if (!subjects.length) return { status: 'unchanged', answer: raw };
-  const matched = priced.filter(clause => {
+  const matches = priced.map(clause => {
     const words = subjectTokens(clause);
-    return subjects.some(subject => words.some(word => subjectMatch(subject, word)));
+    return { clause, subjects:subjects.filter(subject =>
+      words.some(word => subjectMatch(subject, word))) };
   });
-  if (matched.length === 1) return { status: 'focused', answer: matched[0] };
+  const strongest = Math.max(...matches.map(match => match.subjects.length));
   // With no matching priced clause, never return the first unrelated amount.
-  if (matched.length === 0) return { status: 'unmatched', answer: '' };
-  // Multiple matching facts may be a list or distinct variants; do not guess
-  // which value the customer intended.
+  if (!strongest) return { status: 'unmatched', answer: '' };
+
+  const best = matches.filter(match => match.subjects.length === strongest);
+  if (best.length === 1) return { status: 'focused', answer: best[0].clause };
+
+  // Explicit requests for multiple distinct services may include their
+  // matching price clauses together. A single service with separate weekday
+  // and weekend prices remains ambiguous until a variant is specified.
+  const covered = matches.filter(match => match.subjects.length > 0);
+  const disjoint = covered.every((a, i) => covered.every((b, j) =>
+    i === j || !a.subjects.some(subject => b.subjects.includes(subject))));
+  if (covered.length <= 4 && disjoint &&
+      subjects.every(subject => covered.some(match => match.subjects.includes(subject)))) {
+    return { status: 'focused', answer: covered.map(match => match.clause).join(' ') };
+  }
   return { status: 'ambiguous', answer: '' };
 }
