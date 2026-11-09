@@ -25,6 +25,9 @@ export function isRespondoCapabilityQuestion(value){
 export function isRespondoCustomerValueQuestion(value){
   const q=normalize(value);
   if(!q)return false;
+  // A visitor seeking Respondo support or a price is not asking what
+  // the bot does for THEIR customers.
+  if(/\b(?:how (?:do|can) i (?:contact|reach|email|call)|how much|what (?:is|are) (?:the )?(?:price|cost)|paljonko|mita (?:respondo )?maksaa|vad kostar|hur mycket kostar)\b/.test(q))return false;
   if(/\b(?:import\w*|crawl\w*|scrap\w*|scan\w*|skann\w*|indeks\w*|tuonti|tietojen\s+tuonti|hae\s+tiedot|hamta\s+information)\b/.test(q))return false;
   const subject=/(?:\b(?:respondo\w*(?: ai)?|chatbot\w*|bot\w*|assistant\w*|botti\w*|chatbotti\w*|tekoaly\w*|assistent\w*|se|it|den|botten)\b)/.test(q);
   const audience=/\b(?:customers?\b|clients?\b|visitors?\b|shoppers?\b|customer\s+service\b|customer\s+support\b|asiakk\w*|kavij\w*|sivukavij\w*|kund\w*|besok\w*|kundtjanst\w*)\b/.test(q);
