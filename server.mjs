@@ -8434,7 +8434,15 @@ async function generateGroundedAnswer(args={}) {
   const message=String(args.message||'');
   const normalized=normalizeSearchText(message);
   const isPriceRequest=queryTopic(message)==='pricing' || rawResult?.intent==='Hinta';
-  if(isPriceRequest && !rawResult?.handoff && rawResult?.sourceIds?.length &&
+  const citedIds=new Set((rawResult?.sourceIds||[]).map(String));
+  const citedRows=(Array.isArray(args.rows)?args.rows:[])
+    .filter(row=>citedIds.has(String(row?.id)));
+  // Product-price comparisons and shipping thresholds are separate business
+  // intents. Only re-scope a multi-price paragraph if every cited row is
+  // actually approved *pricing* evidence, never products or delivery policy.
+  const servicePriceSources=citedRows.length>0 &&
+    citedRows.every(row=>knowledgeRowTopic(row)==='pricing');
+  if(isPriceRequest && servicePriceSources && !rawResult?.handoff &&
       String(rawResult?.answer||'').trim()) {
     const refersBack=/\b(?:se|sen|sita|siita|tama|tuo|it|that|this|det|den|detta)\b/.test(normalized);
     const priorQuestion=refersBack?meaningfulConversationTurn(args.history)?.question:'';
