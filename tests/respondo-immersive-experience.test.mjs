@@ -38,7 +38,7 @@ test('recommendations remain source-grounded examples, not invented quotes or bo
     {category:'services',priority:'leads',categoryText:'Palveluyritys',goalText:'Yhteydenotot'}
   );
   assert.equal(experienceRecommendations('ecommerce','answers','sv').categoryText,'Webbutik');
-  assert.equal(experienceRecommendations('bookings','bookings','en').goalText,'Bookings');
+  assert.equal(experienceRecommendations('bookings','bookings','en').goalText,'Booking requests');
   assert.equal(experienceRecommendations('invalid','invalid','en').priority,'answers');
   assert.match(minimalExperienceCopy('en').resultNote,/company-approved information/);
   assert.match(minimalExperienceCopy('fi').samples[2][1],/jos kalenteri on yhdistetty/);
