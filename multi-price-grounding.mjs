@@ -9,7 +9,9 @@ const noise = /^(?:mita|mika|mitka|minkalainen|paljonko|paljoko|kuinka|paljon|ma
 
 function subjectTokens(value) {
   return [...new Set(normalize(value).split(' ')
-    .filter(word => word.length >= 5 && !noise.test(word) && !/^\d+$/.test(word)))];
+    .filter(word => word.length >= 5 && !noise.test(word)
+      && !/^(?:maks|hinn|hint|palvel|kustann|tarjo|servic|pric|cost|kost|tjanst|euro|mycket)/.test(word)
+      && !/^\d+$/.test(word)))];
 }
 
 const money = /(?:[€$]\s*\d+(?:[.,]\d+)?|\b\d+(?:[.,]\d+)?\s*(?:€|\$|eur(?:oa|on|o)?\b|usd\b|sek\b|kr\b))/i;
