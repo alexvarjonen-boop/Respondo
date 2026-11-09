@@ -3649,3 +3649,154 @@ html.static-workspace #app :is(.fx-depth,.fx-depth-card,.btn)::after{content:non
 /* Respondo price-list line breaks: preserve the bot's deliberately concise
    three-line monthly pricing answer on both iPhone and desktop. */
 #respondo-site-chat .fx-chat-bubble.bot { white-space: pre-line!important; }
+
+/* Respondo first-party Smart Assist — visual parity with tenant Smart Assist.
+   Scoped to the marketing assistant so tenant dashboards remain unchanged. */
+.fx-firstparty-launch.fx-assistant-launch{
+  min-height:62px!important;display:flex!important;gap:10px!important;
+  padding:7px 14px 7px 8px!important;max-width:min(290px,calc(100vw - 22px));
+  border-radius:999px!important;background:rgba(255,255,255,.97)!important;
+  box-shadow:0 18px 50px rgba(12,16,22,.17),0 4px 16px rgba(12,16,22,.07)!important;
+}
+.fx-firstparty-launch .fx-brand-mark{
+  display:grid!important;place-items:center!important;
+  width:43px!important;height:43px!important;min-width:43px!important;
+  border-radius:50%!important;background:#101113!important;overflow:hidden;
+}
+.fx-firstparty-launch .fx-brand-mark img{width:34px!important;height:34px!important;object-fit:contain!important}
+.fx-firstparty-launch .fx-smart-launch-copy{display:flex;flex-direction:column;gap:2px;align-items:flex-start;min-width:0}
+.fx-firstparty-launch .fx-smart-launch-copy strong{font-size:13px;font-weight:790;color:#17191c;line-height:1.2;white-space:nowrap}
+.fx-firstparty-launch .fx-smart-launch-copy small{font-size:11px;font-weight:520;color:#777b84;line-height:1.1;white-space:nowrap}
+.fx-firstparty-launch .fx-live{margin-left:auto}
+.fx-firstparty-launch .fx-smart-launch-mark{color:#8b8d96;font-size:15px;margin-left:2px}
+#respondo-site-chat.fx-firstparty-smart{
+  width:min(492px,calc(100vw - 24px))!important;
+  height:min(720px,calc(100dvh - 116px))!important;
+  grid-template-rows:auto minmax(0,1fr) auto!important;
+  border-radius:27px!important;
+  border:1px solid rgba(25,28,35,.09)!important;
+  background:#fff!important;
+  box-shadow:0 36px 105px rgba(14,19,26,.23),0 7px 24px rgba(14,19,26,.08)!important;
+  transform-origin:bottom right;
+}
+body:not(.assistant-standalone) #respondo-site-chat.fx-firstparty-smart.fx-expanded{
+  width:min(650px,calc(100vw - 24px))!important;
+  height:min(810px,calc(100dvh - 104px))!important;
+}
+#respondo-site-chat.fx-firstparty-smart .fx-assistant-head{
+  padding:13px 17px!important;min-height:67px!important;
+  background:#fff!important;border-bottom:1px solid #e9eaed!important;
+}
+#respondo-site-chat .fx-smart-panel-tools{display:flex;gap:7px;align-items:center}
+#respondo-site-chat .fx-smart-expand,
+#respondo-site-chat .fx-smart-panel-tools .fx-assistant-close{
+  appearance:none;display:grid;place-items:center;width:35px;height:35px;
+  padding:0;border:1px solid #e7e8eb!important;border-radius:11px;
+  background:#f7f8f9!important;color:#555a64!important;
+  font:inherit;font-size:19px;line-height:1;cursor:pointer;transition:background .16s;
+}
+#respondo-site-chat .fx-smart-expand:hover,
+#respondo-site-chat .fx-smart-panel-tools .fx-assistant-close:hover{background:#eeeff2!important}
+#respondo-site-chat .fx-smart-expand:focus-visible,
+#respondo-site-chat .fx-smart-panel-tools .fx-assistant-close:focus-visible,
+#respondo-site-chat .fx-smart-tile:focus-visible,
+#respondo-site-chat .fx-smart-guide a:focus-visible,
+#respondo-site-chat .fx-smart-context:focus-visible{outline:3px solid #4b5668;outline-offset:2px}
+#respondo-site-chat.fx-firstparty-smart .fx-assistant-messages{
+  min-height:0;overflow-y:auto;
+  background:linear-gradient(180deg,#f8f9fa 0%,#f5f6f8 100%)!important;
+  padding:17px!important;gap:11px;
+}
+#respondo-site-chat.fx-firstparty-smart .fx-chat-bubble.bot{
+  background:#fff!important;color:#202127!important;border:1px solid #e5e6e9!important;
+  border-radius:16px!important;max-width:91%;line-height:1.52;
+}
+#respondo-site-chat.fx-firstparty-smart .fx-chat-bubble.user{
+  background:#18191c!important;color:#fff!important;border-radius:16px!important;
+}
+#respondo-site-chat.fx-firstparty-smart .fx-assistant-form{
+  background:#fff!important;border-top:1px solid #e8e9ed!important;padding:12px!important;
+}
+#respondo-site-chat.fx-firstparty-smart .fx-assistant-form input{
+  border-radius:13px!important;border:1px solid #e0e1e5!important;
+  background:#fff!important;color:#1b1d21!important;min-height:45px;
+}
+#respondo-site-chat.fx-firstparty-smart .fx-assistant-form button{
+  background:#18191c!important;color:#fff!important;
+  border-radius:13px!important;min-width:44px;cursor:pointer;
+}
+#respondo-site-chat.fx-firstparty-smart .fx-smart-home{
+  display:grid;gap:9px;flex:0 0 auto;align-self:stretch;
+  border:1px solid #e6e7ea;border-radius:20px;
+  padding:16px 14px 14px;background:#fff;
+  box-shadow:0 4px 16px rgba(10,13,20,.025);
+}
+#respondo-site-chat.fx-firstparty-smart .fx-smart-home[hidden],
+#respondo-site-chat.fx-firstparty-smart .fx-smart-context[hidden]{display:none!important}
+#respondo-site-chat .fx-smart-eyebrow{
+  font-size:10px;line-height:1.3;font-weight:780;letter-spacing:.13em;color:#83868d;
+}
+#respondo-site-chat .fx-smart-home h2{
+  margin:0;color:#17181b;font-size:20px;line-height:1.2;
+  letter-spacing:-.04em;font-weight:770;
+}
+#respondo-site-chat .fx-smart-home p{margin:0 0 2px;font-size:12px;line-height:1.5;color:#747780}
+#respondo-site-chat .fx-smart-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:4px}
+#respondo-site-chat .fx-smart-tile{
+  display:flex;flex-direction:column;align-items:flex-start;gap:5px;
+  text-decoration:none!important;min-width:0;min-height:90px;padding:11px 9px;
+  border:1px solid #e4e5e9!important;border-radius:15px;background:#fbfbfc!important;
+  color:#17191e!important;cursor:pointer;text-align:left;
+  font:inherit;transition:transform .18s,border-color .18s,box-shadow .18s;
+}
+#respondo-site-chat .fx-smart-tile:hover{transform:translateY(-2px);border-color:#aeb0b7!important;box-shadow:0 7px 19px rgba(12,15,19,.07)}
+#respondo-site-chat .fx-smart-tile-mark{font-size:17px;line-height:1.1;color:#676b73}
+#respondo-site-chat .fx-smart-tile strong{display:block;font-size:12px;font-weight:780;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#respondo-site-chat .fx-smart-tile small{display:block;font-size:10px;line-height:1.25;color:#7c8089;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#respondo-site-chat .fx-smart-guide{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:3px}
+#respondo-site-chat .fx-smart-guide a{
+  text-decoration:none!important;font-size:11px;font-weight:640;color:#555962!important;
+  padding:3px 0;border-bottom:1px solid #cfd0d5;
+}
+#respondo-site-chat .fx-smart-guide a:hover{color:#16181d!important;border-color:#555962}
+#respondo-site-chat .fx-smart-context{
+  border:1px solid #e4e6e9;border-radius:12px;
+  background:#f8f9fa;color:#30323a;
+  padding:9px 10px;font-size:11px;text-align:left;line-height:1.45;cursor:pointer;
+  overflow-wrap:anywhere;
+}
+#respondo-site-chat .fx-site-action{
+  display:inline-flex!important;align-items:center;justify-content:center;
+  padding:9px 12px;margin:9px 6px 0 0;
+  border:1px solid #dadce1;border-radius:12px;background:#f7f8fa;
+  color:#242630!important;text-decoration:none!important;
+  font-size:12px;font-weight:720;line-height:1.3;
+}
+#respondo-site-chat .fx-site-action:hover{background:#eceef1;border-color:#b2b5bc}
+body.assistant-standalone #respondo-site-chat.fx-firstparty-smart{
+  width:100%!important;max-width:none!important;
+}
+body.assistant-standalone #respondo-site-chat .fx-smart-expand{display:none!important}
+body.assistant-standalone #respondo-site-chat .fx-smart-panel-tools .fx-assistant-close{display:none!important}
+@media(max-width:620px){
+  body:not(.assistant-standalone) #respondo-site-chat.fx-firstparty-smart,
+  body:not(.assistant-standalone) #respondo-site-chat.fx-firstparty-smart.fx-expanded{
+    right:6px!important;bottom:80px!important;
+    width:calc(100vw - 12px)!important;
+    height:calc(100dvh - 100px)!important;
+    border-radius:21px!important;
+  }
+  #respondo-site-chat.fx-firstparty-smart .fx-assistant-messages{padding:12px!important}
+  #respondo-site-chat.fx-firstparty-smart .fx-smart-home{padding:13px 11px}
+  #respondo-site-chat .fx-smart-tile{min-height:79px;padding:9px 7px}
+  #respondo-site-chat .fx-smart-tiles{gap:6px}
+  #respondo-site-chat.fx-firstparty-smart .fx-assistant-form input{font-size:16px!important}
+}
+@media(max-height:530px){
+  #respondo-site-chat .fx-smart-home p{display:none}
+  #respondo-site-chat .fx-smart-tile{min-height:65px}
+}
+@media(prefers-reduced-motion:reduce){
+  #respondo-site-chat .fx-smart-tile{transition:none}
+  #respondo-site-chat .fx-smart-tile:hover{transform:none}
+}
