@@ -26,10 +26,10 @@ export function isRespondoCustomerValueQuestion(value){
   const q=normalize(value);
   if(!q)return false;
   if(/\b(?:import\w*|crawl\w*|scrap\w*|scan\w*|skann\w*|indeks\w*|tuonti|tietojen\s+tuonti|hae\s+tiedot|hamta\s+information)\b/.test(q))return false;
-  const subject=/(?:\b(?:respondo(?: ai)?|chatbot\w*|bot\w*|assistant\w*|botti\w*|chatbotti\w*|tekoaly\w*|assistent\w*|se|it|den|botten)\b)/.test(q);
+  const subject=/(?:\b(?:respondo\w*(?: ai)?|chatbot\w*|bot\w*|assistant\w*|botti\w*|chatbotti\w*|tekoaly\w*|assistent\w*|se|it|den|botten)\b)/.test(q);
   const audience=/\b(?:customers?\b|clients?\b|visitors?\b|shoppers?\b|customer\s+service\b|customer\s+support\b|asiakk\w*|kavij\w*|sivukavij\w*|kund\w*|besok\w*|kundtjanst\w*)\b/.test(q);
   if(!subject||!audience)return false;
   const asks=/\b(?:how|what|why|miten|kuinka|mita|mika|mill[a]?|hur|vad|varfor)\b/.test(q);
-  const benefits=/\b(?:help\w*|assist\w*|benefit\w*|support\w*|do\b|work\b|improv\w*|achiev\w*|autta\w*|palvel\w*|hyody\w*|teke\w*|saa\w*|pysty\w*|hjalp\w*|nytta\w*|gora\b|g[o]r\b|kan\b)\b/.test(q);
+  const benefits=/\b(?:help\w*|assist\w*|benefit\w*|support\w*|answer\w*|do\b|work\b|improv\w*|achiev\w*|autta\w*|vastaa\w*|palvel\w*|hyoty\w*|hyody\w*|tehd\w*|teke\w*|saa\w*|voi\b|pysty\w*|hjalp\w*|besvar\w*|nytta\w*|gora\b|g[o]r\b|kan\b)\b/.test(q);
   return asks&&benefits;
 }
