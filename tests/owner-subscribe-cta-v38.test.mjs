@@ -24,7 +24,7 @@ test('only an explicit Respondo platform buying intent gets fallback in owner pr
   assert.equal((app.match(/previewWithOwnerSubscribe\(result\.actions,question,currentLang\(\)\)/g)||[]).length,2);
 });
 test('real merchant product cards and existing support links remain distinct',()=>{
-  assert.match(app,/appendPreviewProductCards\(bubble,result\.products,currentLang\(\)\)/);
+  assert.match(app,/appendPreviewProductCards\(bubble,result\.products,result\.language\|\|currentLang\(\)\)/);
   assert.match(app,/actionWrap\.appendChild\(link\)/);
   assert.match(app,/wrap\.appendChild\(link\)/);
   assert.match(app,/link\.href=action\.url/);

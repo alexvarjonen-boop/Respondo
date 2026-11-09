@@ -60,11 +60,13 @@ export function groundedBudgetProductAnswer(products,message,lang='fi') {
   }
   const chosen=pool.slice(0,4);
   const details=chosen.map(product=>product.name+' ('+fmt(product.price,product.currency||'')+')').join(', ');
+  // The visitor's spending limit is not a product-source fact. Refer to it
+  // implicitly so the numeric contradiction guard only validates sourced prices.
   const answer=lang==='en'
-    ? 'Yes. The approved catalog lists '+familyWord+' '+bound+amount+': '+details+'.'
+    ? 'Yes. These '+familyWord+' in the approved catalog match your price limit: '+details+'.'
     :lang==='sv'
-      ? 'Ja. I de godkända produktuppgifterna finns '+familyWord+' för '+bound+amount+': '+details+'.'
-      : 'Kyllä. Hyväksytyistä tuotetiedoista löytyi '+familyWord+' hintaan '+bound+amount+': '+details+'.';
+      ? 'Ja. Följande '+familyWord+' i de godkända produktuppgifterna passar din prisgräns: '+details+'.'
+      : 'Kyllä. Nämä hyväksyttyjen tuotetietojen '+familyWord+' sopivat hintarajaasi: '+details+'.';
   return {answer,handoff:false,confidence:0.98,intent:'Tuotteet',
     sourceIds:chosen.map(product=>product.row?.id).filter(Boolean),
     selected:chosen.map(product=>product.row).filter(Boolean)};
