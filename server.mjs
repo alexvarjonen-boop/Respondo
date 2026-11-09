@@ -8425,7 +8425,33 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
 // All protected intents (booking/order changes, contact data, stock, prices,
 // sensitive policies, named services) stay on their audited deterministic path.
 async function generateGroundedAnswer(args={}) {
-  const rawResult=await generateRuleGroundedAnswer(args);
+  let rawResult=await generateRuleGroundedAnswer(args);
+
+  // Final answer boundary: older, higher-priority service-price handlers may
+  // still return an entire multi-service pricing paragraph. Re-scope once
+  // before sending anything to the customer, using their own question/history
+  // rather than facts repeated by the assistant.
+  const message=String(args.message||'');
+  const normalized=normalizeSearchText(message);
+  const isPriceRequest=queryTopic(message)==='pricing' || rawResult?.intent==='Hinta';
+  if(isPriceRequest && !rawResult?.handoff && rawResult?.sourceIds?.length &&
+      String(rawResult?.answer||'').trim()) {
+    const refersBack=/\b(?:se|sen|sita|siita|tama|tuo|it|that|this|det|den|detta)\b/.test(normalized);
+    const priorQuestion=refersBack?meaningfulConversationTurn(args.history)?.question:'';
+    const sourceQuestion=priorQuestion || message;
+    const focus=focusMultiPriceAnswer(rawResult.answer,sourceQuestion);
+    if(focus.status==='focused') rawResult={...rawResult,answer:focus.answer};
+    else if(focus.status==='unmatched') {
+      rawResult={...rawResult,answer:'',handoff:true,confidence:0.2,sourceIds:[],selected:[]};
+    } else if(focus.status==='ambiguous') {
+      const language=['fi','sv','en'].includes(args.lang)?args.lang:'fi';
+      const question=language==='en'?'Which service or price option do you mean?'
+        :language==='sv'?'Vilken tjänst eller vilket prisalternativ menar du?'
+        :'Minkä palvelun tai hintavaihtoehdon tarkoitat?';
+      rawResult={...rawResult,answer:question,handoff:false,confidence:0.75,intent:'Tarkennus',sourceIds:[],selected:[]};
+    }
+  }
+
   const result=guardCitedNumericFacts(rawResult,args.rows);
   // A detected factual conflict must not be overridden by AI fallback.
   if(result!==rawResult)return result;
