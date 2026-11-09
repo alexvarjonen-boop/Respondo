@@ -131,6 +131,11 @@
     const position = normalized * (cards.length - 1);
     const closestIndex = clamp(Math.round(position), 0, cards.length - 1);
     updateStep(closestIndex);
+    // The first feature is not yet part of the visible or announced screen
+    // until the visitor has actively moved past the opening hero.
+    if (closestIndex === 0 && !section.classList.contains('rs-first-revealed')) {
+      cards[0].setAttribute('aria-hidden', 'true');
+    }
 
     // Near-camera scenes grow towards the viewer and drift out sideways.
     // Next scenes emerge small and slightly rotated from the opposite depth.
