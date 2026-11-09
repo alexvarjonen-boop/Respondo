@@ -595,6 +595,16 @@ function appText(fi, sv, en) {
   const lang = currentLang();
   return lang === 'sv' ? (sv ?? fi) : lang === 'en' ? (en ?? fi) : fi;
 }
+// Installation appearance travels with the embed code, so there is no
+// new account permission or database migration. A mode choice is remembered
+// locally while preparing that code; after installation it lives in HTML.
+function installExperienceMode(tenantId) {
+  try {
+    const stored = localStorage.getItem('respondo-install-experience-' + String(tenantId || ''));
+    if (['classic','smart','immersive'].includes(stored)) return stored;
+  } catch {}
+  return 'smart';
+}
 
 function previewContactVisitorRef() {
   try {
@@ -5260,7 +5270,16 @@ async function dashboard(options = {}) {
           <b>${t.website ? esc(t.website) : 'Et ole vielä lisännyt verkkosivua'}</b>
           <small>${t.website ? 'Tämä asennuskoodi toimii vain yllä olevalla verkkosivulla.' : 'Lisää ensin verkkosivusi osoite yllä. Sen jälkeen botti toimii vain sillä sivulla.'}</small>
         </div>
-        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261011-branded-sites-v5" data-company="${esc(t.slug)}" data-lang="${currentLang()}"${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
+        <div class="install-mode-field" style="display:grid;gap:10px;margin:20px 0 14px;max-width:480px">
+          <label for="installExperienceMode" style="display:block;font-size:14px;font-weight:750">${appText('Asiakaskokemuksen tyyli','Kundupplevelsens stil','Customer experience style')}</label>
+          <select id="installExperienceMode" data-tenant-id="${esc(t.id)}" style="display:block;width:100%;min-height:46px;border:1px solid #c9ccd2;border-radius:13px;padding:11px 13px;background:#fff;color:#15171c;font:inherit;font-size:14px">
+            <option value="smart"${installExperienceMode(t.id)==='smart'?' selected':''}>Smart Assist — ${appText('suositeltu','rekommenderad','recommended')}</option>
+            <option value="immersive"${installExperienceMode(t.id)==='immersive'?' selected':''}>Immersive — ${appText('laaja AI-näkymä','utökad AI-vy','expanded AI view')}</option>
+            <option value="classic"${installExperienceMode(t.id)==='classic'?' selected':''}>Classic — ${appText('perinteinen chat','klassisk chatt','traditional chat')}</option>
+          </select>
+          <small style="line-height:1.5;opacity:.76">${appText('Valinta päivittää alla olevan asennuskoodin. Smart Assist toimii myös jo asennetuissa boteissa automaattisesti.','Valet uppdaterar installationskoden nedan. Smart Assist fungerar också automatiskt i befintliga installationer.','Your choice updates the embed code below. Existing installations also receive Smart Assist automatically.')}</small>
+        </div>
+        <div class="code-row"><code id="installCode">&lt;script src="${location.origin}/widget.js?v=20261109-smart-experience-v1" data-company="${esc(t.slug)}" data-lang="${currentLang()}" data-experience="${esc(installExperienceMode(t.id))}"${(String(t.website||'').includes('sites.google.com/view/') || String(t.website||'').includes('sites.google.com/site/')) && t.google_sites_install_key ? ' data-sites-key="'+esc(t.google_sites_install_key)+'"' : ''}&gt;&lt;/script&gt;</code><button type="button" id="copyCode">${appText('Kopioi','Kopiera','Copy')}</button></div>
         <button type="button" class="install-done ${installedDone ? 'done' : ''}" id="installDone" data-tenant-id="${esc(t.id)}">${installedDone ? appText('✓ Asennus valmis','✓ Installationen är klar','✓ Installation complete') : appText('Olen asentanut botin','Jag har installerat botten','I have installed the bot')}</button>
         <div class="license-lock" style="margin-top:20px">
           <b>${appText('Google Sites -asennus','Google Sites-installation','Google Sites installation')}</b>
@@ -8941,7 +8960,7 @@ async function route() {
           if(!html.includes('data-sites-key=')){
             html=html.replace('></script>',' data-sites-key="'+key+'"></script>');
           }
-          html=html.replace(/widget\\.js\\?v=[^" ]+/, 'widget.js?v=20261011-branded-sites-v5');
+          html=html.replace(/widget\\.js\\?v=[^" ]+/, 'widget.js?v=20261109-smart-experience-v1');
           code.textContent=html;
         }
         if(message)message.innerHTML='<div class="notice success">'+appText(
@@ -8954,6 +8973,16 @@ async function route() {
         if(message)message.innerHTML='<div class="notice error">'+esc(err.message)+'</div>';
         button.disabled=false;
       }
+    });
+
+    $('#installExperienceMode')?.addEventListener('change',(event)=>{
+      const select=event.currentTarget;
+      const mode=['classic','smart','immersive'].includes(select.value)?select.value:'smart';
+      const code=$('#installCode');
+      if(code){
+        code.textContent=String(code.textContent||'').replace(/data-experience="(?:classic|smart|immersive)"/,'data-experience="'+mode+'"');
+      }
+      try{localStorage.setItem('respondo-install-experience-'+String(select.dataset.tenantId||''),mode);}catch{}
     });
 
     $('#copyCode')?.addEventListener('click', async (e) => {
