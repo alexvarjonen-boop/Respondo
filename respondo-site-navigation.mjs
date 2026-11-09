@@ -60,6 +60,14 @@ const pages=[
    labels:['Etusivu','Startsida','Home']},
 ];
 const genericPages=/\b(sivut\b|sivusto\w*|linkit\b|linkkilista\w*|valikko\w*|navigointi\w*|page list|site pages|menu\b|navigation\b|webbplatsens sidor|webbsidor\w*)\b/;
+
+// Answer questions about money BEFORE showing a checkout-only instruction.
+// "How much does your cheapest package cost?" is a price enquiry, not an
+// instruction to start a purchase. Kept first-party only by its call sites.
+export function respondoPricingQuestion(message='') {
+  const q=normalize(message);
+  return /\b(?:prices?|pricing|costs?|costing|cheapest|least expensive|most affordable|lowest\s+(?:price|cost)|how much|hinnat|hinta\w*|hinnoittel\w*|maksaa|maksavat|paljonko|halvin|halvimm\w*|edullis\w*|priser|pris\w*|kostar|vad kostar|hur mycket|billigast\w*|billig\w*|formanligast\w*)\b/.test(q);
+}
 function localPath(page,lang){
   if(page.path==='/ominaisuudet')return lang==='sv'?'/funktioner':lang==='en'?'/features':'/ominaisuudet';
   return page.path;
@@ -126,7 +134,10 @@ export function respondoSiteNavigationAnswer(message,lang='fi',origin='https://w
   }else if(genericPages.test(q)&&/\b(mita|mitka|miss[a]?|nayta|lista\w*|haluan|kaikki|where|show|list|which|what|vilka|visa|alla|var)\b/.test(q)){
     answer=tr(language,'Tällä sivulla voit kysyä suoraan chatbotilta hinnoista, ominaisuuksista, kirjautumisesta, kokeilusta ja yhteystiedoista. Vastaan kysymykseen ja näytän tarvittaessa painikkeen oikealle sivulle.','Här kan du fråga chatten om priser, funktioner, inloggning, demo och kontaktuppgifter. Jag svarar och visar en knapp till rätt sida när det behövs.','Ask this chatbot about pricing, features, sign-in, the demo or contact details. I will answer and show a button to the right page when useful.');
   }
-  if(!answer && respondoCheckoutAction(message,language,'',origin)){
+  // A price question must reach the verified price FAQ. The page/action
+  // directory still offers pricing and signup links with that answer.
+  if(!answer && !respondoPricingQuestion(message) &&
+     respondoCheckoutAction(message,language,'',origin)){
     answer=tr(language,
       'Voit tilata Respondon valitsemalla sopivan paketin alla olevasta painikkeesta.',
       'Du kan beställa Respondo genom att välja ett abonnemang via knappen nedan.',
