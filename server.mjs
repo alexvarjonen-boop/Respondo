@@ -24,7 +24,7 @@ import { firecrawlEnabled, firecrawlMaxPages, maySpendOneFirecrawlCredit, fetchF
 import { assistedSetupCheckoutTrial, holdAssistedSetupBilling, releaseAssistedSetupBilling, assistedSetupBillingMode } from './assisted-setup-billing.mjs';
 import { serviceOverviewQuestion, verifiedServiceOverview } from './service-overview.mjs';
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
-import { isRespondoCapabilityQuestion } from './respondo-capability-intent.mjs';
+import { isRespondoCapabilityQuestion, isRespondoCustomerValueQuestion } from './respondo-capability-intent.mjs';
 import { respondoSiteNavigationActions, respondoSiteNavigationAnswer, respondoCheckoutAction } from './respondo-site-navigation.mjs';
 import { matchVerifiedSpecialistService, matchVerifiedCompoundSpecialistServices, resolveSpecialistConversationReference } from './service-semantics.mjs';
 import { focusMultiPriceAnswer } from './multi-price-grounding.mjs';
@@ -2275,6 +2275,17 @@ function respondoProductFaqMatch(message, lang = 'fi', history = []) {
     'Advanced - 49 €/mån\nPremium - 129 €/mån\nEnterprise - 149 €/mån',
     'Advanced - €49/month\nPremium - €129/month\nEnterprise - €149/month'
   );
+
+  // Visitors ask what they can actually GET DONE, not how the crawler works.
+  // Answer this before any website-keyword / imported-site retrieval can
+  // hijack the question and describe the website importer instead.
+  if(isRespondoCustomerValueQuestion(message)){
+    return {id:'respondo-faq-customer-value',answer:answer(
+      'Respondo auttaa verkkosivujesi kävijöitä löytämään palvelut ja tuotteet sekä saamaan vastauksia esimerkiksi hinnoista ja aukioloajoista ilman etsimistä. Se voi kerätä yhteydenottoja ja tarjouspyyntöjä, ohjata käyttöön otetussa ajanvarauspolussa ja siirtää keskustelun tarvittaessa asiakaspalvelijalle. Vastaukset perustuvat yrityksesi hyväksyttyihin tietoihin, ja asiakas voi kysyä suomeksi, ruotsiksi tai englanniksi.',
+      'Respondo hjälper besökare på din webbplats att hitta tjänster och produkter och få svar om exempelvis priser och öppettider utan att leta runt. Den kan samla in kontakt- och offertförfrågningar, guida genom bokningsflöden som ditt företag har aktiverat och vid behov lämna över samtalet till personalen. Svaren bygger på företagets godkända uppgifter och fungerar på finska, svenska och engelska.',
+      'Respondo helps visitors to your website find services and products and get answers about prices and opening hours without searching through pages. It can collect contact and quote requests, guide visitors through enabled booking flows and hand conversations over to staff when needed. Replies use your company-approved information in Finnish, Swedish and English.'
+    )};
+  }
 
   const previousQuestion = normalizeSearchText(
     Array.isArray(history) && history.length ? history[history.length - 1]?.question : ''

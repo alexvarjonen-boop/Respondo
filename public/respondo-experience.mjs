@@ -273,11 +273,17 @@ export function mountRespondoExperience(documentRef) {
     draw(state.view);
     box.querySelector('.rx-tab[aria-selected="true"]')?.focus();
   }
+  // "Ask AI" comes from multiple experience screens. Only the first
+  // activation may automatically submit the canned opening question.
+  // Returning to the experience must not send that same question again.
+  let experienceOpeningSent=false;
   function ask(text){
     if(!text || form.querySelector('input[name="message"]')?.disabled)return;
     focusChat();
     const input=form.querySelector('input[name="message"]');
     if(!input)return;
+    if(text===c.startPrompt && experienceOpeningSent){input.focus();return;}
+    if(text===c.startPrompt)experienceOpeningSent=true;
     input.value=text;
     if(typeof form.requestSubmit==='function')form.requestSubmit();
     else form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
