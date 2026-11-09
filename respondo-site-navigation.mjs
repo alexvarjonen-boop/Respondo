@@ -19,7 +19,7 @@ const pages=[
   {type:'site_features',path:'/ominaisuudet',ids:['respondo-faq-features-overview','respondo-faq-customer-value','respondo-faq-benefits','respondo-faq-knowledge-base','respondo-faq-appearance'],
    match:/\b(ominaisu\w*|toiminnall\w*|mit[a]? kaikkea|mita osaa|tietopohj\w*|features?|capabilit\w*|functions?|funktioner|egenskaper|kunskapsbas\w*)\b/,
    labels:['Tutustu ominaisuuksiin','Se funktionerna','Explore features']},
-  {type:'site_pricing',path:'/hinnat',ids:['respondo-faq-pricing','respondo-faq-monthly-pricing','respondo-faq-annual-pricing','respondo-faq-basic','respondo-faq-advanced','respondo-faq-business'],
+  {type:'site_pricing',path:'/hinnat',ids:['respondo-faq-cheapest-pricing','respondo-faq-pricing','respondo-faq-monthly-pricing','respondo-faq-annual-pricing','respondo-faq-basic','respondo-faq-advanced','respondo-faq-business'],
    match:/\b(hinta\w*|hinnat|hinnoittel\w*|paljonko maks\w*|maksaa\b|maksavat\b|paket\w*|price\w*|pricing|cost\w*|priser|prisplan\w*|kostar|abonnemang\w*)\b/,
    labels:['Katso hinnat ja paketit','Se priser och paket','View pricing and plans']},
   {type:'site_contact',path:'/yhteystiedot',ids:['respondo-faq-company-contact'],
@@ -80,7 +80,7 @@ export function respondoCheckoutAction(message,lang='fi',faqId='',origin='https:
   const buying=/(?:\b(?:tilaa\w*|tilat\w*|tilau\w*|ostaa|osta|ostaminen|hankkia|hanki|kayttoon|kayttoonotto|kokeilujakso|aloita kokeilu|aloittaa|aloitan|rekisteroidy|register|signup|sign up|subscribe|subscription|order|purchase|buy|trial|start using|get started|borja|bestall\w*|kop\w*|abonnera|prenumerera|skaffa)\b|how (?:can|do) i (?:start|order|buy|get)|hur (?:kan|gor) jag (?:bestall|kop|borja)|miten (?:saan|voin|paasen|otan) (?:sen |taman |respondo\w* )?kayttoon)/.test(q);
   const pricing=/(?:\b(?:hinta\w*|hinnat|hinna\w*|hinnoittel\w*|maksaa|maksavat|paket\w*|price\w*|pricing|cost\w*|priser|prisplan\w*|kostar|abonnemang\w*)\b|paljonko maks\w*)/.test(q);
   const faqBuying=new Set([
-    'respondo-faq-buy','respondo-faq-trial','respondo-faq-pricing',
+    'respondo-faq-buy','respondo-faq-trial','respondo-faq-cheapest-pricing','respondo-faq-pricing',
     'respondo-faq-monthly-pricing','respondo-faq-annual-pricing',
     'respondo-faq-basic','respondo-faq-advanced','respondo-faq-business'
   ]).has(faqId);
