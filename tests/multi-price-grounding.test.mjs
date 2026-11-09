@@ -52,3 +52,18 @@ test('multiple possible price facts do not produce an arbitrary single price',()
   assert.equal(result.status,'ambiguous');
   assert.equal(result.answer,'');
 });
+
+test('named weekend variant selects only its own amount',()=>{
+  const raw='Ikkunanpesu arkena maksaa 49 €. Ikkunanpesu viikonloppuna maksaa 69 €.';
+  const result=focusMultiPriceAnswer(raw,'Paljonko ikkunanpesu viikonloppuna maksaa?');
+  assert.equal(result.status,'focused');
+  assert.match(result.answer,/69/);
+  assert.doesNotMatch(result.answer,/49/);
+});
+
+test('explicit question about two different services returns both cited prices',()=>{
+  const result=focusMultiPriceAnswer(multiPrice,'Mitä ikkunanpesu ja katonpesu maksavat?');
+  assert.equal(result.status,'focused');
+  assert.match(result.answer,/49/);
+  assert.match(result.answer,/199/);
+});
