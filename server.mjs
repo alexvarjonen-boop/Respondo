@@ -1,3 +1,4 @@
+import { approvedProductLinkAnswer } from './product-url-match.mjs';
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voice.mjs';
 import {mainioPublicFactAnswer,mainioPublicWebsiteEvidence} from './mainio-public-fact-answer.mjs';
@@ -7707,6 +7708,11 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
     question:interpretCustomerQuestion(String(turn?.question||''),responseLang).text
   }));
   if (!cleanMessage) return { answer: '', handoff: true, confidence: 0, intent: responseLang === 'en' ? 'Empty' : responseLang === 'sv' ? 'Tom' : 'Tyhjä', sourceIds: [], selected: [] };
+
+  // Customer-shared URLs are resolved only against this tenant's approved products.
+  // An unknown merchant URL never triggers an untrusted live fetch or a guessed price.
+  const linkedProduct=approvedProductLinkAnswer(rows,originalMessage,responseLang,parseProductKnowledgeRow);
+  if(linkedProduct) return linkedProduct;
 
   // Each sub-answer traverses exactly the same grounded-answer engine with
   // the same tenant-scoped rows. There is no network-wide search, no inferred
