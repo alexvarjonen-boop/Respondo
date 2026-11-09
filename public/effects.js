@@ -518,6 +518,23 @@
     newConversation.setAttribute('aria-label',at('Uusi keskustelu','Ny konversation','New conversation'));
     newConversation.title=at('Aloita uusi keskustelu','Starta en ny konversation','Start a new conversation');
     box.querySelector('.fx-smart-panel-tools')?.prepend(newConversation);
+    const jumpToLatest=document.createElement('button');
+    jumpToLatest.type='button';
+    jumpToLatest.className='fx-assistant-jump';
+    jumpToLatest.textContent=at('↓ Uusimmat viestit','↓ Senaste meddelandena','↓ Latest messages');
+    jumpToLatest.hidden=true;
+    box.appendChild(jumpToLatest);
+    const updateJump=()=>{
+      jumpToLatest.hidden=!box.classList.contains('open') ||
+        box.classList.contains('rx-stage-mode') ||
+        messages.scrollHeight-messages.scrollTop-messages.clientHeight<=165;
+    };
+    messages.addEventListener('scroll',updateJump,{passive:true});
+    jumpToLatest.addEventListener('click',()=>{
+      messages.scrollTop=messages.scrollHeight;
+      updateJump();
+      if(!window.matchMedia?.('(pointer:coarse)').matches)form.message.focus();
+    });
     const smartHome=box.querySelector('.fx-smart-home');
     const expandButton=box.querySelector('.fx-smart-expand');
     const assistantTopic=box.querySelector('.fx-smart-context');
@@ -563,6 +580,7 @@
       form.message.value='';
       form.message.placeholder=originalPlaceholder;
       messages.scrollTop=0;
+      updateJump();
       if(box.classList.contains('open') && !window.matchMedia?.('(pointer:coarse)').matches)form.message.focus();
     });
     const send = async (text,{retryBubble=null}={}) => {
@@ -589,6 +607,7 @@
       typing.setAttribute('role','status');
       typing.textContent=at('Etsin vastausta…','Söker efter ett svar…','Finding an answer…');
       messages.scrollTop=messages.scrollHeight;
+      updateJump();
       form.message.disabled=true;
       newConversation.disabled=true;
       try {
@@ -679,6 +698,7 @@
         });
         typing.appendChild(copy);
         if(followBottom)messages.scrollTop=messages.scrollHeight;
+        updateJump();
       } catch (err) {
         const followBottom=nearBottom();
         typing.classList.remove('typing');
@@ -696,6 +716,7 @@
         retry.addEventListener('click',()=>void send(clean,{retryBubble:typing}));
         typing.appendChild(retry);
         if(followBottom)messages.scrollTop=messages.scrollHeight;
+        updateJump();
       } finally {
         form.message.disabled=false;
         newConversation.disabled=false;
