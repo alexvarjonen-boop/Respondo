@@ -282,6 +282,28 @@
       .quick:empty{display:none}
       .quick button{position:relative;z-index:2;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border:1px solid #dedee2;background:#fff;border-radius:999px;padding:8px 10px;font:inherit;font-size:12px;color:#343438;cursor:pointer}
       .quick button:hover{border-color:#a9a9af}
+      /* A self-contained product bottom sheet; all styles remain in the widget shadow DOM. */
+      .panel{position:relative}
+      .product-sheet[hidden]{display:none!important}
+      .product-sheet{position:absolute;inset:0;z-index:18;display:flex;align-items:flex-end;justify-content:center}
+      .product-sheet-backdrop{position:absolute;inset:0;background:rgba(17,18,21,.44);backdrop-filter:blur(3px)}
+      .product-sheet-panel{position:relative;width:100%;max-height:83%;display:flex;flex-direction:column;overflow:hidden;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -14px 44px #0002;animation:product-sheet-enter .22s ease-out}
+      .product-sheet-header{display:flex;align-items:center;gap:12px;padding:16px 18px 12px;border-bottom:1px solid #eeeef0}
+      .product-sheet-header strong{flex:1;min-width:0;font-size:15px;line-height:1.3;color:#17181b}
+      .product-sheet-close{appearance:none;border:1px solid #e0e0e4;border-radius:50%;background:#f7f7f8;color:#232429;width:34px;height:34px;flex:0 0 34px;font:inherit;font-size:21px;cursor:pointer}
+      .product-sheet-content{min-height:0;overflow-y:auto;padding:16px}
+      .product-sheet .product-results{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 8px;padding-bottom:5px;overscroll-behavior-x:contain}
+      .product-sheet .product-card{flex:0 0 min(86%,290px);scroll-snap-align:start;display:flex;flex-direction:column;gap:10px;background:#fff;border-color:#e2e2e6;border-radius:17px;padding:12px}
+      .product-sheet .product-card:only-child{flex-basis:100%}
+      .product-sheet .product-image{width:100%;height:142px;flex:0 0 142px;object-fit:contain}
+      .product-sheet .product-name{font-size:14px}
+      .product-sheet .product-price{font-size:17px}
+      .product-sheet .product-open{display:inline-flex;align-self:flex-start;padding:9px 12px;border-radius:9px;background:#17181b;color:#fff;font-size:12px}
+      .product-sheet-note{padding:0 18px 14px;color:#717178;font-size:11px;line-height:1.4}
+      .product-reopen{appearance:none;align-self:flex-start;border:1px solid #d8d8de;border-radius:999px;padding:9px 13px;background:#fff;color:#22242a;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+      .product-reopen:focus-visible,.product-sheet-close:focus-visible{outline:3px solid var(--bot-accent,#17181b);outline-offset:2px}
+      @keyframes product-sheet-enter{from{transform:translateY(18px);opacity:.65}to{transform:translateY(0);opacity:1}}
+      @media(prefers-reduced-motion:reduce){.product-sheet-panel{animation:none}}
       .product-results{display:grid;gap:9px;align-self:stretch;min-width:0}
       .product-card{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:16px;background:#fff;border:1px solid #e3e3e7;color:#1b1b1f!important;text-decoration:none!important;min-width:0}
       .product-card:hover,.product-card:focus-visible{border-color:#aaa;box-shadow:0 4px 16px #0001;outline:none}
@@ -361,6 +383,17 @@
           </div>
           <div class="experience-tiles" id="experienceTiles"></div>
         </section>
+        <div class="product-sheet" id="productSheet" hidden>
+          <div class="product-sheet-backdrop" id="productSheetBackdrop"></div>
+          <section class="product-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="productSheetTitle">
+            <header class="product-sheet-header">
+              <strong id="productSheetTitle">${experienceText('Tuotteet sinulle','Produkter för dig','Products for you')}</strong>
+              <button class="product-sheet-close" id="productSheetClose" type="button" aria-label="${experienceText('Sulje tuotteet','Stäng produkter','Close products')}">×</button>
+            </header>
+            <div class="product-sheet-content" id="productSheetContent"></div>
+            <small class="product-sheet-note">${experienceText('Tarkista ajantasainen hinta ja saatavuus verkkokaupasta.','Kontrollera aktuellt pris och lagerstatus i butiken.','Check current price and availability in the store.')}</small>
+          </section>
+        </div>
         <div class="chat" id="chat"></div>
         <div class="quick" id="quick"></div>
         <div class="status" id="status">${t('Yhdistetään…', 'Connecting…')}</div>
@@ -385,6 +418,24 @@
   const panel = $('.panel');
   const launcher = $('#launcher');
   const chat = $('#chat');
+  const productSheet=$('#productSheet');
+  const productSheetContent=$('#productSheetContent');
+  const productSheetClose=$('#productSheetClose');
+  let productReturnFocus=null;
+  function closeProductSheet(restoreFocus=true) {
+    if(productSheet.hidden) return;
+    productSheet.hidden=true;
+    if(restoreFocus && productReturnFocus?.isConnected) productReturnFocus.focus();
+  }
+  function openProductSheet(opener) {
+    if(opener) productReturnFocus=opener;
+    input.blur(); // avoid opening the iPhone keyboard over the product popup
+    productSheet.hidden=false;
+    productSheetClose.focus();
+  }
+  productSheetClose.addEventListener('click',()=>closeProductSheet());
+  $('#productSheetBackdrop').addEventListener('click',()=>closeProductSheet());
+
   const status = $('#status');
   const form = $('#form');
   const input = $('#input');
@@ -755,7 +806,17 @@
       card.addEventListener('click',()=>trackAction({type:'product',label:item.name,url:item.url}));
       wrap.appendChild(card);
     }
-    chat.appendChild(wrap);
+    productSheetContent.replaceChildren(wrap);
+    const opener=document.createElement('button');
+    opener.type='button';opener.className='product-reopen';
+    opener.textContent=experienceText(
+      'Näytä '+valid.length+(valid.length===1?' tuote':' tuotetta'),
+      'Visa '+valid.length+(valid.length===1?' produkt':' produkter'),
+      'View '+valid.length+(valid.length===1?' product':' products')
+    );
+    opener.addEventListener('click',()=>openProductSheet(opener));
+    chat.appendChild(opener);
+    openProductSheet(opener);
     return true;
   }
 
@@ -1282,6 +1343,18 @@
       : experienceText('Laajenna näkymää','Utöka vyn','Expand view'));
   });
   shadow.addEventListener('keydown',(event)=>{
+    if(!productSheet.hidden){
+      if(event.key==='Escape'){event.preventDefault();closeProductSheet();return;}
+      if(event.key==='Tab'){
+        const focusable=[...productSheet.querySelectorAll('button,a[href]')];
+        if(focusable.length){
+          const first=focusable[0],last=focusable.at(-1);
+          if(event.shiftKey && document.activeElement===first){event.preventDefault();last.focus();}
+          else if(!event.shiftKey && document.activeElement===last){event.preventDefault();first.focus();}
+        }
+      }
+      return;
+    }
     if(event.key==='Escape' && panel.classList.contains('open')){
       event.preventDefault();
       launcher.click();
@@ -1373,7 +1446,7 @@
     launcher.setAttribute('aria-expanded',String(open));
     launcher.setAttribute('aria-label',(launcherName.textContent||'RESPONDO AI')+' – '+
       (open?t('Sulje','Close'):t('Avaa chat','Open chat')));
-    if (!open) cancelVoiceInput();
+    if (!open){cancelVoiceInput();closeProductSheet(false);}
     if (open && ready) {
       renderExperienceHome();
       setTimeout(() => input.focus(), 50);
@@ -1436,7 +1509,7 @@
     } finally {
       input.disabled = false;
       if (!voiceButton.hidden) voiceButton.disabled = false;
-      input.focus();
+      if(productSheet.hidden) input.focus();
       chat.scrollTop = chat.scrollHeight;
     }
   }
