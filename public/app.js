@@ -3740,6 +3740,7 @@ function login() {
               <div id="passwordResetConfirmMsg" role="status" aria-live="polite"></div>
             </div>
           </div>
+          <div class="respondo-signup-prompt">${appText('Eikö sinulla ole vielä tiliä?','Har du inget konto ännu?',"Don't have an account yet?")} <a href="/tilaus" class="respondo-signup-link">${appText('Rekisteröidy tästä','Registrera dig här','Sign up here')}</a></div>
           <div id="msg">${passwordResetDone
             ? `<div class="notice success">${appText('Salasana vaihdettu. Voit nyt kirjautua uudella salasanalla.','Lösenordet har ändrats. Du kan nu logga in med det nya lösenordet.','Password changed. You can now log in with your new password.')}</div>`
             : oauthErrorMessage()
