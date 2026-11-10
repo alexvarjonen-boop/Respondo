@@ -12,6 +12,7 @@ import { ensureNativeInboxSchema } from './native-inbox.mjs';
 import { ensureNativeCalendarSchema } from './native-calendar.mjs';
 import { ensureConversationFeedbackSchema } from './conversation-feedback.mjs';
 import { ensureBookingNoticesSchema } from './booking-customer-notices.mjs';
+import { ensureWebsiteRefreshReviewSchema } from './website-refresh-review.mjs';
 import { ensureNativeTaskSchema } from './native-taskboard.mjs';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -126,6 +127,7 @@ async function initializeCrmConnectors() {
     await ensureNativeCalendarSchema(pool);
     await ensureConversationFeedbackSchema(pool);
     await ensureBookingNoticesSchema(pool);
+    await ensureWebsiteRefreshReviewSchema(pool);
     await ensureNativeTaskSchema(pool);
   } finally {await pool.end();}
 }
