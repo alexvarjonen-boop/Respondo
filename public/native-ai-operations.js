@@ -110,7 +110,7 @@
     const feedback=el('p','native-feedback',t.loading);
     feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
     target.append(tabs,content,feedback,el('p','native-disclaimer',t.notice));
-    let active=new URLSearchParams(location.search).has('zendesk')?'zendesk':'contacts',data=null,report=null,conversions=null,feedbackSummary=null,repair=null,helpdesk=null,zendesk=null,taskboard=null,flows=null,orders=null,schedule=null,inbox=null,threadDetail=null,selectedThread=null,suggestion=null,busy=false,days=30,pendingDeliveryId=null,pendingReplyText='';
+    let active=new URLSearchParams(location.search).has('zendesk')?'zendesk':'contacts',data=null,report=null,conversions=null,feedbackSummary=null,repair=null,helpdesk=null,zendesk=null,taskboard=null,flows=null,orders=null,schedule=null,scheduleNotices=null,inbox=null,threadDetail=null,selectedThread=null,suggestion=null,busy=false,days=30,pendingDeliveryId=null,pendingReplyText='';
     const kinds=['contacts','tickets','quotes','rules','docs','inbox','calendar','tasks','flows','orders','quality','insights','helpdesk','zendesk'];
     for(const kind of kinds){
       const b=button(t[kind],'button');
@@ -331,16 +331,25 @@
       );}catch{return String(value||'');}
     };
     async function loadSchedule(){
-      try{schedule=await request('GET',SCHEDULE);feedback.textContent='';render();}
-      catch(error){feedback.textContent=error.message||t.error;}
+      try{
+        schedule=await request('GET',SCHEDULE);
+        try{scheduleNotices=await request('GET',SCHEDULE+'/notices');}
+        catch{scheduleNotices=null;}
+        feedback.textContent='';render();
+      }catch(error){feedback.textContent=error.message||t.error;}
     }
     async function scheduleAction(method,path,payload){
       if(busy)return;
       busy=true;feedback.textContent=t.saving;
       try{
-        await request(method,path,payload);
+        const result=await request(method,path,payload);
         await loadSchedule();
-        feedback.textContent=t.saved+' '+t.calendarNotifyManually;
+        const notice=result?.notification?.status;
+        feedback.textContent=notice==='sent'
+          ? (language==='fi'?'Tallennettu. Asiakkaalle lähetettiin vahvistus.'
+            :language==='sv'?'Sparat. Bekräftelsen skickades till kunden.'
+            :'Saved. Customer notification sent.')
+          :t.saved+' '+t.calendarNotifyManually;
       }catch(error){feedback.textContent=error.message||t.error;}
       finally{busy=false;}
     }
@@ -552,6 +561,22 @@
       content.replaceChildren(el('p','native-intro',t.calendarIntro),
         el('p','native-disclaimer',t.calendarExternalWarning));
       if(!schedule){content.appendChild(el('p','native-empty',t.loading));return;}
+      const notices=scheduleNotices?.notices||[];
+      if(notices.length){
+        const section=el('section','native-list');
+        section.appendChild(el('h4','native-subtitle',language==='fi'?'Vahvistusviestien toimitus'
+          :language==='sv'?'Leverans av bokningsmeddelanden'
+          :'Booking notification delivery'));
+        for(const notice of notices.slice(0,8)){
+          const state=notice.status==='sent'
+            ?(language==='fi'?'Lähetetty':language==='sv'?'Skickad':'Sent')
+            :(language==='fi'?'Vaatii erillisen asiakasilmoituksen'
+              :language==='sv'?'Meddela kunden separat':'Notify the customer separately');
+          section.appendChild(recordCard(String(notice.kind||'')+' · '+state,
+            String(notice.created_at||'').slice(0,16)));
+        }
+        content.appendChild(section);
+      }
       const addForm=el('form','native-form');
       const startLabel=el('label','native-label',t.calendarStart);
       const endLabel=el('label','native-label',t.calendarEnd);
