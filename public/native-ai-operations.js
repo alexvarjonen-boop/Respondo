@@ -101,6 +101,8 @@
     const target=document.getElementById('respondoNativeOperationsMount');
     if(!target||target.dataset.bound==='yes')return;
     target.dataset.bound='yes';
+    const language=String(document.querySelector('#respondoWorkspace')?.dataset.lang||
+      document.documentElement.lang||'en').slice(0,2).toLowerCase();
     const t=locale();
     const tabs=el('div','native-tabs');
     tabs.setAttribute('role','tablist');
