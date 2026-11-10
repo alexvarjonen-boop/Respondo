@@ -110,7 +110,7 @@
     const feedback=el('p','native-feedback',t.loading);
     feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
     target.append(tabs,content,feedback,el('p','native-disclaimer',t.notice));
-    let active=new URLSearchParams(location.search).has('zendesk')?'zendesk':'contacts',data=null,report=null,conversions=null,repair=null,helpdesk=null,zendesk=null,taskboard=null,flows=null,orders=null,schedule=null,inbox=null,threadDetail=null,selectedThread=null,suggestion=null,busy=false,days=30,pendingDeliveryId=null,pendingReplyText='';
+    let active=new URLSearchParams(location.search).has('zendesk')?'zendesk':'contacts',data=null,report=null,conversions=null,feedbackSummary=null,repair=null,helpdesk=null,zendesk=null,taskboard=null,flows=null,orders=null,schedule=null,inbox=null,threadDetail=null,selectedThread=null,suggestion=null,busy=false,days=30,pendingDeliveryId=null,pendingReplyText='';
     const kinds=['contacts','tickets','quotes','rules','docs','inbox','calendar','tasks','flows','orders','quality','insights','helpdesk','zendesk'];
     for(const kind of kinds){
       const b=button(t[kind],'button');
@@ -410,6 +410,8 @@
     async function loadQuality(){
       try{
         report=await request('GET',API+'/quality?days='+days);
+        try{feedbackSummary=await request('GET',API+'/feedback?days='+days);}
+        catch(error){feedbackSummary=null;}
         if(active==='insights'){
           try{conversions=await request('GET',API+'/conversions?days='+days);}
           catch(error){conversions=null;feedback.textContent=error.message||t.error;}
@@ -1024,6 +1026,23 @@
         [t.knowledge+' · '+t.approvedFacts,report.knowledge?.approved||0],
       ])qualityMetric(metrics,name,value);
       content.appendChild(metrics);
+      if(feedbackSummary){
+        const label=(fi,sv,en)=>language==='fi'?fi:language==='sv'?sv:en;
+        const feedbackMetrics=el('div','native-quality-metrics');
+        for(const [name,value] of [
+          [label('Palautteita','Antal svar','Customer ratings'),feedbackSummary.total||0],
+          [label('Hyödylliseksi arvioitu','Ansågs hjälpsamma','Marked helpful'),feedbackSummary.helpful||0],
+          [label('Ei auttanut','Inte hjälpsamma','Marked unhelpful'),feedbackSummary.unhelpful||0],
+          [label('Myönteinen palaute','Positiv feedback','Positive ratings'),
+            feedbackSummary.positivePercent==null?'—':feedbackSummary.positivePercent+' %'],
+        ])qualityMetric(feedbackMetrics,name,value);
+        content.appendChild(feedbackMetrics);
+        content.appendChild(el('p','native-disclaimer',label(
+          'Vain asiakkaiden itse antamat arviot. Tulos ei mittaa automaattisesti todellista asian ratkaisua.',
+          'Endast frivillig feedback. Mätningen bevisar inte att kundens ärende löstes.',
+          'Opt-in customer ratings only; these are not proof of resolved cases.'
+        )));
+      }
       content.appendChild(el('p','native-disclaimer',t.disclaimerQuality));
       if(!isQuality && conversions?.summary){
         const funnel=conversions.summary;
