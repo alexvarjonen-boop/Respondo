@@ -63,3 +63,19 @@
     font-size: 21px!important;
   }
 }
+
+
+/* Accessible and clearly discoverable registration link beneath login. */
+#app .login-card .respondo-signup-prompt{
+  margin:20px 0 1px;padding-top:17px;
+  border-top:1px solid rgba(223,230,247,.2);
+  color:#d8deea!important;font-size:13px;line-height:1.6;
+}
+#app .login-card .respondo-signup-link{
+  margin-left:5px;color:#a6acff!important;text-decoration:underline;
+  text-underline-offset:3px;font-weight:700;
+}
+#app .login-card .respondo-signup-link:hover{color:#fff!important}
+#app .login-card .respondo-signup-link:focus-visible{
+  outline:2px solid #a6acff;outline-offset:4px;border-radius:3px;
+}
