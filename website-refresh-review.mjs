@@ -14,7 +14,7 @@ export async function ensureWebsiteRefreshReviewSchema(db){
     title TEXT NOT NULL,
     category TEXT NOT NULL,
     answer TEXT NOT NULL,
-    keywords TEXT NOT NULL DEFAULT '',
+    keywords JSONB NOT NULL DEFAULT '[]'::jsonb,
     status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','dismissed')),
     reviewed_by TEXT,
     reviewed_at TIMESTAMPTZ,
@@ -32,8 +32,8 @@ export async function stageWebsiteRefresh(db,tenantId,candidate){
   if(!uuid(tenantId))throw TypeError('Valid tenant required');
   const sourceUrl=trim(candidate?.sourceUrl,2048),title=trim(candidate?.title,250);
   const category=trim(candidate?.category,100),answer=trim(candidate?.answer,8000),
-    keywords=trim(candidate?.keywords,2000);
-  if(!/^https:\/\//i.test(sourceUrl)||title.length<2||answer.length<8)
+    keywords=Array.isArray(candidate?.keywords)?candidate.keywords.map(x=>trim(x,65)).slice(0,18):[];
+  if(!/^https?:\/\//i.test(sourceUrl)||title.length<2||answer.length<8)
     throw TypeError('Verified website candidate required');
   const existing=await db.query(`SELECT id,answer FROM knowledge WHERE tenant_id=$1
     AND source_type='website' AND source_url=$2 AND LOWER(title)=LOWER($3) LIMIT 1`,
@@ -43,13 +43,13 @@ export async function stageWebsiteRefresh(db,tenantId,candidate){
   const fp=websiteCandidateFingerprint({sourceUrl,title});
   const result=await db.query(`INSERT INTO respondo_website_refresh_reviews
     (tenant_id,fingerprint,source_url,title,category,answer,keywords,status)
-    VALUES($1,$2,$3,$4,$5,$6,$7,'pending')
+    VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,'pending')
     ON CONFLICT(tenant_id,fingerprint) DO UPDATE SET
       category=EXCLUDED.category,answer=EXCLUDED.answer,keywords=EXCLUDED.keywords,
       status=CASE WHEN respondo_website_refresh_reviews.answer=EXCLUDED.answer
         THEN respondo_website_refresh_reviews.status ELSE 'pending' END,
       updated_at=NOW()
-    RETURNING id,status`,[tenantId,fp,sourceUrl,title,category,answer,keywords]);
+    RETURNING id,status`,[tenantId,fp,sourceUrl,title,category,answer,JSON.stringify(keywords)]);
   return {status:result.rows?.[0]?.status||'pending'};
 }
 export async function websiteRefreshReviewOverview(db,tenantId){
