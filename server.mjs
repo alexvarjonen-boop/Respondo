@@ -56,6 +56,7 @@ import { qualityCenterOverview, createQualityReview, updateQualityReview } from 
 import { conversionOverview } from './respondo-conversion-analytics.mjs';
 import { saveConversationFeedback, feedbackOverview } from './conversation-feedback.mjs';
 import { queueBookingNotice,sendBookingNotice,bookingNoticesOverview } from './booking-customer-notices.mjs';
+import { stageWebsiteRefresh,websiteRefreshReviewOverview,decideWebsiteRefreshReview } from './website-refresh-review.mjs';
 import { reconstructedConversationHistory, validInboundEventId, claimInboundEvent, completeInboundEvent, failInboundEvent } from './channel-ingress.mjs';
 import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk, exportFreshdeskTicket } from './freshdesk-helpdesk.mjs';
 import { zendeskConfig, beginZendeskOAuth, completeZendeskOAuth, zendeskStatus, disconnectZendesk, exportZendeskTicket } from './zendesk-oauth.mjs';
@@ -13743,6 +13744,30 @@ app.post('/api/app/import-website/auto-refresh',auth,ownerOnly,subscribed,async(
     return res.json({ok:true,enabled:r.rows[0].auto_refresh_enabled});
   }catch(e){console.error('Refresh settings write failed',e);return res.status(500).json({error:'Päivitysasetuksia ei voitu tallentaa.'});}
 });
+// Owner-reviewed website changes. Scheduled imports never overwrite approved facts.
+app.get('/api/app/import-website/refresh-reviews',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+    if(!tr.rowCount)return res.status(404).json({error:'Workspace not found'});
+    return res.json(await websiteRefreshReviewOverview(pool,tr.rows[0].id));
+  }catch(error){console.error('Refresh review read failed',error?.name||'error');return res.status(503).json({error:'Review unavailable'});}
+});
+app.post('/api/app/import-website/refresh-reviews/:id/decision',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const tr=await q('SELECT id FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)',[req.user.sub]);
+    if(!tr.rowCount)return res.status(404).json({error:'Workspace not found'});
+    const result=await decideWebsiteRefreshReview(pool,tr.rows[0].id,req.params.id,req.user.sub,req.body?.decision);
+    if(!result)return res.status(409).json({error:'Review already handled or unavailable'});
+    return res.json(result);
+  }catch(error){
+    if(error instanceof TypeError)return res.status(400).json({error:'Invalid decision'});
+    console.error('Refresh review decision failed',error?.name||'error');
+    return res.status(503).json({error:'Unable to save approval'});
+  }
+});
+
 let scheduledRefreshRunning=false;
 async function runScheduledWebsiteRefresh(){
   if(scheduledRefreshRunning)return;
@@ -13765,23 +13790,20 @@ async function runScheduledWebsiteRefresh(){
     const items=all.map(x=>acceptedRefreshCandidate(x,website,usableWebsiteRow)).filter(Boolean).slice(0,500);
     if(!items.length)throw Error('no verified website facts');
     const client=await pool.connect();
+    let reviewCount=0,unchanged=0;
     try{
       await client.query('BEGIN');
       for(const item of items){
-        const found=await client.query("SELECT id FROM knowledge WHERE tenant_id=$1 AND source_type='website' AND source_url=$2 AND lower(title)=lower($3) LIMIT 1",[tenant.id,item.sourceUrl,item.title]);
-        if(found.rowCount){
-          await client.query("UPDATE knowledge SET category=$1,answer=$2,keywords=$3,updated_at=NOW(),verified_at=NOW() WHERE id=$4 AND tenant_id=$5 AND source_type='website'",
-            [item.category,item.answer,item.keywords,found.rows[0].id,tenant.id]);
-        }else{
-          await client.query("INSERT INTO knowledge(id,tenant_id,category,title,answer,keywords,source_type,source_url,approved,verified_at) VALUES($1,$2,$3,$4,$5,$6,'website',$7,true,NOW())",
-            [uid(),tenant.id,item.category,item.title,item.answer,item.keywords,item.sourceUrl]);
-        }
+        // All new or changed information requires explicit company approval.
+        const result=await stageWebsiteRefresh(client,tenant.id,item);
+        if(result.status==='pending')reviewCount++;
+        else unchanged++;
       }
       await client.query('COMMIT');
     }catch(e){await client.query('ROLLBACK').catch(()=>{});throw e;}
     finally{client.release();}
-    await q("UPDATE tenants SET last_refresh_status='success',last_refreshed_at=NOW(),last_refresh_coverage=$2::jsonb,last_refresh_error=NULL WHERE id=$1",
-      [tenant.id,JSON.stringify(websiteImportCoverage(bundle,all))]);
+    await q("UPDATE tenants SET last_refresh_status=$3,last_refreshed_at=NOW(),last_refresh_coverage=$2::jsonb,last_refresh_error=NULL WHERE id=$1",
+      [tenant.id,JSON.stringify({...websiteImportCoverage(bundle,all),changesRequiringReview:reviewCount,unchanged}),reviewCount?'review_pending':'unchanged']);
   }catch(e){
     if(tenant)await q("UPDATE tenants SET last_refresh_status='failed',last_refresh_error=$2 WHERE id=$1",
       [tenant.id,String(e?.message||'refresh failed').slice(0,250)]).catch(()=>{});
