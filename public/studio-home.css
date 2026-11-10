@@ -364,3 +364,29 @@
   }
   #app .apple-home-page .rs-studio-orbit-icon[data-rs-icon] svg{transform:none!important}
 }
+
+/* Improve legibility of the chat navigation hint below the hero CTA. */
+#app .apple-home-page .rs-chat-navigation-note{
+  display:inline-block;
+  width:fit-content;
+  max-width:100%;
+  margin-top:12px;
+  padding:9px 13px;
+  border:1px solid rgba(128,157,205,.35);
+  border-radius:999px;
+  background:rgba(28,46,72,.72);
+  color:#f3f6ff!important;
+  font-size:13px;
+  font-weight:500;
+  line-height:1.5;
+  letter-spacing:0;
+  text-wrap:pretty;
+  box-shadow:0 3px 16px rgba(0,0,0,.14);
+}
+@media(max-width:600px){
+  #app .apple-home-page .rs-chat-navigation-note{
+    font-size:12px;
+    padding:8px 12px;
+    border-radius:14px;
+  }
+}
