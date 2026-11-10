@@ -646,7 +646,69 @@
     else el.textContent = text;
     chat.appendChild(el);
     chat.scrollTop = chat.scrollHeight;
+    rememberSessionMessage(text,who);
     return el;
+  }
+
+  // Tab-only continuity: no third-party storage, no permanent browser history.
+  // Keep a small transcript for the current visitor and discard it after 2h.
+  const SESSION_HISTORY_KEY = 'respondo-tab-chat-v1:' +
+    encodeURIComponent(serviceOrigin) + ':' + encodeURIComponent(company);
+  const SESSION_HISTORY_TTL_MS = 2 * 60 * 60 * 1000;
+  let sessionTranscript = [];
+  let replayingSession = false;
+
+  function storeSessionSnapshot() {
+    if (!visitorRef || !sessionTranscript.length) return;
+    try {
+      sessionStorage.setItem(SESSION_HISTORY_KEY, JSON.stringify({
+        version:1, visitorRef, savedAt:Date.now(),
+        turns:sessionTranscript.slice(-12), liveAfter:livePollAfter
+      }));
+    } catch {} // Disabled storage must never prevent a chat reply.
+  }
+
+  function rememberSessionMessage(text, who) {
+    if (replayingSession || !experienceConversationStarted ||
+        !['user','bot'].includes(who)) return;
+    const clean=String(text||'').trim().slice(0,1500);
+    if (!clean) return;
+    sessionTranscript.push({who,text:clean});
+    sessionTranscript=sessionTranscript.slice(-12);
+    storeSessionSnapshot();
+  }
+
+  function restoreSessionTranscript() {
+    try {
+      const raw=sessionStorage.getItem(SESSION_HISTORY_KEY);
+      if (!raw) return false;
+      const saved=JSON.parse(raw);
+      if (saved.version!==1 || saved.visitorRef!==visitorRef ||
+          !Number.isFinite(saved.savedAt) ||
+          saved.savedAt>Date.now()+60000 ||
+          Date.now()-saved.savedAt>SESSION_HISTORY_TTL_MS ||
+          !Array.isArray(saved.turns)) {
+        sessionStorage.removeItem(SESSION_HISTORY_KEY);
+        return false;
+      }
+      const turns=saved.turns.slice(-12).filter(item=>
+        item && ['user','bot'].includes(item.who) &&
+        typeof item.text==='string' &&
+        item.text.trim().length>0 && item.text.length<=1500);
+      if (!turns.length) return false;
+      sessionTranscript=turns;
+      if (typeof saved.liveAfter==='string' &&
+          Number.isFinite(Date.parse(saved.liveAfter))) livePollAfter=saved.liveAfter;
+      replayingSession=true;
+      chat.replaceChildren();
+      for (const item of turns) addMessage(item.text,item.who);
+      replayingSession=false;
+      experienceConversationStarted=true;
+      return true;
+    } catch {
+      replayingSession=false;
+      return false;
+    }
   }
 
   function safeActionUrl(value) {
@@ -1432,7 +1494,10 @@
           (agentName ? agentName + ': ' : t('Asiakaspalvelija: ', 'Support: ')) + String(item.message || ''),
           'bot'
         );
-        if (created) livePollAfter = created;
+        if (created) {
+          livePollAfter = created;
+          storeSessionSnapshot();
+        }
       }
     } catch {}
   }
@@ -1472,6 +1537,7 @@
       status.classList.add('ready');
       renderQuickReplies(data.quickReplies || []);
       addMessage(data.greeting || t('Hei! Miten voin auttaa?', 'Hi! How can I help?'));
+      restoreSessionTranscript();
       renderExperienceHome();
       startLivePolling();
     } catch {
@@ -1535,7 +1601,9 @@
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Chat failed');
-      pending.innerHTML = linkify(data.answer || t('En löytänyt tähän varmaa vastausta.', 'I cannot find a reliable answer to this yet.'));
+      const shownAnswer = data.answer || t('En löytänyt tähän varmaa vastausta.', 'I cannot find a reliable answer to this yet.');
+      pending.innerHTML = linkify(shownAnswer);
+      rememberSessionMessage(shownAnswer,'bot');
       // A quick, voluntary answer rating is tied to this actual conversation.
       // It never makes claims about verified customer resolution.
       if(/^[a-f0-9-]{36}$/i.test(String(data.conversationId||''))){
