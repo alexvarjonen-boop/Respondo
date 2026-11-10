@@ -1,7 +1,7 @@
 // Existing first-party booking decision -> transactional email outbox.
 // No new provider or subscription. Delivery requires existing transactional
 // email configuration; absence leaves a visible undelivered record.
-const validUuid=s=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(String(s||''));
+const validUuid=s=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s||''));
 const clean=s=>String(s||'').trim().slice(0,254);
 const email=s=>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clean(s))?clean(s):null;
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
