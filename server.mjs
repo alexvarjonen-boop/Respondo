@@ -53,6 +53,7 @@ import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
 import { guardCitedNumericFacts } from './runtime-numeric-evidence-guard.mjs';
 import { verifyRetailAnswer } from './product-reply-integrity.mjs';
 import { qualityCenterOverview, createQualityReview, updateQualityReview } from './respondo-quality-center.mjs';
+import {growthOverview,growthSettings,saveGrowthSettings,recordWidgetActivation,previewGrowthQuote,growthWeeklyReport,isPostcodeQuestion,serviceAreaResponse,suggestedGreeting,customerIntentStage,compareAnswerDrafts} from './respondo-growth-ops.mjs';
 import { conversionOverview } from './respondo-conversion-analytics.mjs';
 import { saveConversationFeedback, feedbackOverview } from './conversation-feedback.mjs';
 import { queueBookingNotice,sendBookingNotice,bookingNoticesOverview } from './booking-customer-notices.mjs';
@@ -10571,6 +10572,17 @@ app.get('/api/app/native/quality',auth,ownerOnly,subscribed,nativeEndpoint(
 /* Owner-only funnel metrics: verified submissions, not claimed sales. */
 app.get('/api/app/native/conversions',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>conversionOverview(pool,id,req.query?.days)));
+/* Read-only owner progress and explicitly approved first-party growth settings. */
+app.get('/api/app/native/growth',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>growthOverview(pool,id)));
+app.put('/api/app/native/growth/settings',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>saveGrowthSettings(pool,id,req.body||{})));
+app.get('/api/app/native/growth/quote-preview',auth,ownerOnly,subscribed,nativeEndpoint(
+  (id,req)=>previewGrowthQuote(pool,id,req.query?.quantity)));
+app.get('/api/app/native/growth/weekly-report',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>growthWeeklyReport(pool,id)));
+app.post('/api/app/native/growth/compare',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (_id,req)=>compareAnswerDrafts(req.body||{})));
 app.get('/api/app/native/feedback',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>feedbackOverview(pool,id,req.query?.days)));
 app.post('/api/app/native/quality/reviews',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -14986,12 +14998,22 @@ app.get('/api/public/:slug/widget-token', publicReadLimiter, async (req, res) =>
       : (await Promise.all(sourceQuickReplies.map((title) => forceAnswerLanguage(title, lang)))).filter(Boolean);
 
     const sourceGreeting = String(tenant.greeting || 'Hei! Miten voin auttaa?').trim();
+    const ownerGrowth=await growthSettings(pool,tenant.id);
     const translatedGreeting = lang === 'fi' ? sourceGreeting : await forceAnswerLanguage(sourceGreeting, lang);
-    const greeting = translatedGreeting || (lang === 'en'
+    const regularGreeting = translatedGreeting || (lang === 'en'
       ? 'Hi! How can I help?'
       : lang === 'sv'
         ? 'Hej! Hur kan jag hjälpa?'
         : 'Hei! Miten voin auttaa?');
+    // Only adapt the default greeting. Never overwrite an owner's custom copy.
+    const customGreeting=Boolean(tenant.greeting) && ![
+      'Hei! Miten voin auttaa?','Hi! How can I help?','Hej! Hur kan jag hjälpa?'
+    ].includes(sourceGreeting);
+    const greeting=suggestedGreeting(ownerGrowth.tone,lang,regularGreeting,customGreeting);
+    // A permitted widget-token request is evidence of script initialization,
+    // not proof that every visitor saw or used the chat.
+    void recordWidgetActivation(pool,tenant.id,origin.hostname).catch(error=>
+      console.error('Widget activation monitoring unavailable',error?.name||'error'));
 
     return res.json({
       token,
@@ -16149,6 +16171,28 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
           answer:humanMessage,handoff:true,humanTakeover:true,verified:false,
           actions:[],canLeaveContact:false,
         });
+      }
+    }
+
+    // A postcode answer is only allowed from the owner's explicit five-digit list.
+    // An unlisted postcode is unknown, not a claim that service is unavailable.
+    if(isPostcodeQuestion(message)){
+      const coverage=await growthSettings(pool,t.id);
+      const areaReply=serviceAreaResponse(message,detectedLang,coverage.postalCodes);
+      if(areaReply){
+        if(thread)await appendChatMessage({tenantId:t.id,threadId:thread.id,
+          sourceChannel:'website',externalContactId:visitorRef,visitorRef,
+          role:'assistant',text:areaReply.answer,metadata:{serviceArea:true,postcode:areaReply.postcode}});
+        await q("INSERT INTO conversations "+
+          "(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,page_url,page_title,source_channel,external_contact_id) "+
+          "VALUES($1,$2,$3,$4,'Service area',0.9,'{}',false,$5,$6,$7,'website',$8)",
+          [uid(),t.id,message,areaReply.answer,visitorRef||null,
+            String(body.pageContext?.url||'').slice(0,1000)||null,
+            String(body.pageContext?.title||'').slice(0,300)||null,visitorRef||null]);
+        return res.json({answer:areaReply.answer,verified:false,confidence:0.9,
+          intent:'Service area',serviceAreaListed:areaReply.listed,
+          canLeaveContact:true,bookingConfirmed:false,actions:[],
+          intentStage:customerIntentStage(message).stage});
       }
     }
 

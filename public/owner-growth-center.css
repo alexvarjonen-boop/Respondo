@@ -1,0 +1,31 @@
+/* Quiet, high-contrast Respondo owner next-action panel. */
+#respondoGrowthCenter{max-width:1080px;margin:22px 0 30px;padding:22px;border:1px solid rgba(255,255,255,.15);border-radius:20px;background:#141416;color:#f7f7f7}
+#respondoGrowthCenter .rs-growth-head{display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap}
+#respondoGrowthCenter .rs-growth-head h2{font-size:clamp(20px,2.2vw,25px);letter-spacing:-.035em;margin:0;flex:1}
+#respondoGrowthCenter .rs-growth-kicker{font-size:11px;letter-spacing:.14em;color:#b0b0b6;font-weight:700}
+#respondoGrowthCenter .rs-growth-summary{font-size:15px;line-height:1.6;color:#eee;margin:16px 0}
+#respondoGrowthCenter .rs-growth-action{display:flex;gap:10px;margin-bottom:18px}
+#respondoGrowthCenter .rs-growth-button,#respondoGrowthCenter .rs-growth-secondary{display:inline-flex;align-items:center;justify-content:center;min-height:42px;min-width:110px;padding:10px 15px;border-radius:11px;font-size:13px;font-weight:650;cursor:pointer;transition:background .2s,border-color .2s;line-height:1.25}
+#respondoGrowthCenter .rs-growth-button{border:1px solid #fff;background:#fff;color:#111}
+#respondoGrowthCenter .rs-growth-button:hover{background:#dedee2}
+#respondoGrowthCenter .rs-growth-secondary{border:1px solid #606065;background:#212124;color:#fff}
+#respondoGrowthCenter .rs-growth-secondary:hover{background:#313135}
+#respondoGrowthCenter button:focus-visible,#respondoGrowthCenter input:focus-visible,#respondoGrowthCenter textarea:focus-visible,#respondoGrowthCenter select:focus-visible,#respondoGrowthCenter summary:focus-visible{outline:2px solid #89a7ff;outline-offset:3px}
+#respondoGrowthCenter button:disabled{opacity:.55;cursor:wait}
+#respondoGrowthCenter .rs-growth-indicators{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 12px}
+#respondoGrowthCenter .rs-growth-stat{padding:14px;border:1px solid #363639;border-radius:13px;display:flex;flex-direction:column;gap:2px;background:#1d1d20}
+#respondoGrowthCenter .rs-growth-stat strong{color:#fff;font-size:21px;font-variant-numeric:tabular-nums}
+#respondoGrowthCenter .rs-growth-stat span{color:#b9b9be;font-size:12px}
+#respondoGrowthCenter .rs-growth-status{font-size:12px;line-height:1.5;color:#b9b9be;margin:5px 0 16px}
+#respondoGrowthCenter .rs-growth-details{border-top:1px solid #3c3c40;padding-top:10px}
+#respondoGrowthCenter .rs-growth-toggle{cursor:pointer;padding:9px 0;font-size:13px;font-weight:700}
+#respondoGrowthCenter .rs-growth-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding-top:12px}
+#respondoGrowthCenter .rs-growth-section{background:#1d1d20;border:1px solid #37373b;border-radius:15px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+#respondoGrowthCenter .rs-growth-section h3{font-size:15px;color:#fff;margin:0 0 2px}
+#respondoGrowthCenter .rs-growth-label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650;color:#d5d5db}
+#respondoGrowthCenter .rs-growth-field{display:block;box-sizing:border-box;width:100%;min-height:42px;background:#101012;color:#fff;border:1px solid #5b5b60;border-radius:10px;padding:10px;font:inherit;font-size:14px}
+#respondoGrowthCenter .rs-growth-field::placeholder{color:#96969d}
+#respondoGrowthCenter .rs-growth-note,#respondoGrowthCenter .rs-growth-response{font-size:12px;line-height:1.6;color:#cacad0;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+#respondoGrowthCenter .rs-growth-response{color:#f0f0f3}
+@media(max-width:680px){#respondoGrowthCenter{padding:16px;border-radius:16px;margin:18px 0}#respondoGrowthCenter .rs-growth-columns{grid-template-columns:1fr}#respondoGrowthCenter .rs-growth-stat{padding:11px}#respondoGrowthCenter .rs-growth-stat strong{font-size:18px}#respondoGrowthCenter .rs-growth-stat span{font-size:11px}}
+@media(prefers-reduced-motion:reduce){#respondoGrowthCenter button{transition:none}}
