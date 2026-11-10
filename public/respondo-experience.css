@@ -564,3 +564,68 @@ body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-cha
   #respondo-site-chat .fx-chat-bubble.bot .fx-answer-actions{flex-direction:column}
   #respondo-site-chat .fx-chat-bubble.bot .fx-answer-actions .fx-site-action{width:100%}
 }
+
+
+/* Keep the existing, fully tested chat rendering. Browser flex layout
+   separates anonymous response text from navigation and copy controls. */
+body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode
+.fx-assistant-messages .fx-chat-bubble.bot:not(.typing){
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  gap:0!important;
+  white-space:pre-line!important;
+  overflow-wrap:anywhere!important;
+}
+body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode
+.fx-assistant-messages .fx-chat-bubble.bot:not(.typing) > .fx-site-action{
+  display:flex!important;
+  align-items:center!important;
+  position:static!important;
+  float:none!important;
+  clear:both!important;
+  align-self:flex-start!important;
+  width:fit-content!important;
+  max-width:100%!important;
+  min-height:41px!important;
+  box-sizing:border-box!important;
+  margin:10px 0 0!important;
+  padding:10px 15px!important;
+  color:#e6eaff!important;
+  background:rgba(124,140,255,.10)!important;
+  border:1px solid rgba(148,165,236,.32)!important;
+  border-radius:11px!important;
+  white-space:normal!important;
+  text-align:left!important;
+  text-decoration:none!important;
+  font-size:12px!important;
+  font-weight:650!important;
+  line-height:1.35!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode
+.fx-chat-bubble.bot > .fx-site-action:first-of-type{margin-top:18px!important}
+body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode
+.fx-chat-bubble.bot > .fx-site-action:hover{
+  border-color:#9daaff!important;background:rgba(124,140,255,.2)!important;
+}
+body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode
+.fx-chat-bubble.bot > .fx-assistant-copy{
+  align-self:flex-start!important;
+  position:static!important;
+  float:none!important;
+  clear:both!important;
+  margin:16px 0 0!important;
+  padding:4px 0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  color:#aeb6c9!important;
+}
+@media(max-width:610px){
+  body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode
+  .fx-chat-bubble.bot > .fx-site-action{
+    width:100%!important;justify-content:center!important;
+  }
+}
