@@ -705,3 +705,46 @@ body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-cha
 @media(prefers-reduced-motion:reduce){
   #respondo-site-chat .fx-contextual-question{transition:none!important}
 }
+
+
+/* Explicit, bounded preview of a visitor's public homepage in Try the Bot. */
+#respondo-site-chat .rx-instant-website-demo{
+  display:grid;gap:11px;width:100%;max-width:720px;box-sizing:border-box;
+  margin:24px auto 0;padding:18px;border-radius:17px;
+  border:1px solid rgba(181,194,235,.24);
+  background:linear-gradient(150deg,rgba(47,57,86,.42),rgba(21,25,38,.82));
+}
+#respondo-site-chat .rx-instant-demo-title{font-size:13px;font-weight:750;color:#f8faff}
+#respondo-site-chat .rx-instant-demo-desc{margin:0;color:#bfc8d9;font-size:12px;line-height:1.55}
+#respondo-site-chat .rx-instant-demo-form{display:flex;gap:8px;min-width:0}
+#respondo-site-chat .rx-instant-demo-input{
+  flex:1 1 auto;min-width:0;padding:12px;border:1px solid #596684;border-radius:11px;
+  background:#111727;color:#fff!important;-webkit-text-fill-color:#fff!important;
+  font:inherit;font-size:14px;line-height:1.4;
+}
+#respondo-site-chat .rx-instant-demo-submit{
+  flex:0 0 auto;border:0;border-radius:11px;padding:10px 15px;
+  font:inherit;font-size:12px;font-weight:700;background:#aab4ff;color:#091225;cursor:pointer;
+}
+#respondo-site-chat .rx-instant-demo-submit:disabled{opacity:.6;cursor:wait}
+#respondo-site-chat .rx-instant-demo-input:focus-visible,
+#respondo-site-chat .rx-instant-demo-submit:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#respondo-site-chat .rx-instant-demo-result{display:grid;gap:8px;overflow-wrap:anywhere}
+#respondo-site-chat .rx-instant-demo-company{color:#f7f8ff;font-size:13px}
+#respondo-site-chat .rx-instant-demo-question{
+  color:#c3caf0;font-size:12px;margin:0;padding:10px 12px;border-radius:10px;
+  background:rgba(135,151,255,.09);
+}
+#respondo-site-chat .rx-instant-demo-answer{
+  color:#f2f4fa;font-size:13px;line-height:1.6;margin:0;
+  border:1px solid rgba(150,165,217,.2);border-radius:11px;padding:13px;
+}
+#respondo-site-chat .rx-instant-demo-disclaimer{font-size:11px;color:#b5bfd2;line-height:1.5}
+#respondo-site-chat .rx-instant-demo-visit{color:#b7c0ff;text-decoration:underline;font-size:12px}
+#respondo-site-chat .rx-instant-demo-error{color:#ffd3cf;font-size:12px}
+@media(max-width:580px){
+  #respondo-site-chat .rx-instant-website-demo{padding:12px}
+  #respondo-site-chat .rx-instant-demo-form{flex-direction:column}
+  #respondo-site-chat .rx-instant-demo-input{font-size:16px}
+  #respondo-site-chat .rx-instant-demo-submit{min-height:44px}
+}
