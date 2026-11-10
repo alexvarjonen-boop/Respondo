@@ -53,6 +53,7 @@ import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
 import { guardCitedNumericFacts } from './runtime-numeric-evidence-guard.mjs';
 import { verifyRetailAnswer } from './product-reply-integrity.mjs';
 import { qualityCenterOverview, createQualityReview, updateQualityReview } from './respondo-quality-center.mjs';
+import { conversionOverview } from './respondo-conversion-analytics.mjs';
 import { reconstructedConversationHistory, validInboundEventId, claimInboundEvent, completeInboundEvent, failInboundEvent } from './channel-ingress.mjs';
 import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk, exportFreshdeskTicket } from './freshdesk-helpdesk.mjs';
 import { zendeskConfig, beginZendeskOAuth, completeZendeskOAuth, zendeskStatus, disconnectZendesk, exportZendeskTicket } from './zendesk-oauth.mjs';
@@ -10533,6 +10534,9 @@ app.post('/api/app/native/quality/free-suite',auth,ownerOnly,subscribed,nativeWr
   (_id,req)=>runFreeQualitySuite({cases:req.body?.cases})));
 app.get('/api/app/native/quality',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>qualityCenterOverview(pool,id,req.query?.days)));
+/* Owner-only funnel metrics: verified submissions, not claimed sales. */
+app.get('/api/app/native/conversions',auth,ownerOnly,subscribed,nativeEndpoint(
+  (id,req)=>conversionOverview(pool,id,req.query?.days)));
 app.post('/api/app/native/quality/reviews',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>createQualityReview(pool,id,req.body||{})));
 app.patch('/api/app/native/quality/reviews/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
