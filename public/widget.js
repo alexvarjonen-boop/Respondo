@@ -1049,13 +1049,13 @@
         '<div class="action-ok"></div>';
     } else if (action.mode === 'booking_form') {
       box.innerHTML =
-        '<b>' + t('Varaa vapaa aika', 'Book an available time') + '</b>' +
-        '<small>' + t('Respondo näyttää vain oikeasti vapaat ajat. Valittu aika poistuu heti muiden varattavista.', 'Respondo only shows truly available times. Once booked, the slot is no longer available to others.') + '</small>' +
+        '<b>' + experienceText('Pyydä sopivaa aikaa', 'Fråga efter en lämplig tid', 'Request an appointment time') + '</b>' +
+        '<small>' + experienceText('Näet mahdolliset ajat. Yritys tarkistaa työn keston ja vahvistaa varauksen erikseen. Ajan valinta ei vielä varaa sitä.', 'Tiderna är preliminära. Företaget kontrollerar arbetets längd och bekräftar bokningen separat. Ett valt alternativ är ingen bekräftad bokning.', 'Times are tentative. The business must verify the job duration and confirm the booking separately. Selecting a slot does not reserve it.') + '</small>' +
         '<input name="name" maxlength="120" placeholder="' + t('Nimi', 'Name') + '">' +
         '<input name="contact" maxlength="220" required placeholder="' + t('Puhelin tai sähköposti', 'Phone or email') + '">' +
         '<select name="slotId" required><option value="">' + t('Haetaan vapaita aikoja…', 'Loading available times…') + '</option></select>' +
         '<textarea name="note" maxlength="1000" placeholder="' + t('Lisätieto', 'Additional note') + '"></textarea>' +
-        '<button type="submit" disabled>' + t('Varaa aika', 'Book time') + '</button>' +
+        '<button type="submit" disabled>' + experienceText('Lähetä aikatoive', 'Skicka tidsförfrågan', 'Send appointment request') + '</button>' +
         '<div class="action-ok"></div>';
     } else {
       box.innerHTML =
