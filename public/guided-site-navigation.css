@@ -1,0 +1,17 @@
+/* Short, dismissible visual cue only after a real user clicks a page link. */
+.respondo-guided-arrival{
+ position:fixed;z-index:2147482900;left:50%;bottom:24px;
+ transform:translateX(-50%);width:max-content;max-width:min(90vw,470px);
+ box-sizing:border-box;display:flex;align-items:center;gap:14px;
+ padding:12px 14px;border:1px solid rgba(165,181,238,.45);
+ border-radius:14px;background:#171d2e;color:#f9faff;
+ box-shadow:0 12px 44px rgba(0,0,0,.28);
+ font:500 12px/1.5 system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+}
+.respondo-guided-arrival button{
+ display:grid;place-items:center;width:26px;height:26px;flex:0 0 auto;
+ border:1px solid #657299;border-radius:50%;background:transparent;
+ color:#fff;cursor:pointer;font-size:18px;
+}
+.respondo-guided-arrival button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media(max-width:600px){.respondo-guided-arrival{bottom:96px;font-size:11px;padding:10px 12px}}
