@@ -26,13 +26,16 @@ export async function checkSite(origin = defaultOrigin) {
   await request(origin, '/api/public/config');
   // A healthy homepage is insufficient if the embeddable bot or onboarding
   // scripts return a 404 or an HTML error document after deployment.
-  const criticalAssets=['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js'];
+  const criticalAssets=['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js','/owner-growth-center.js'];
   for (const path of criticalAssets) {
     const {response,body}=await request(origin,path);
     assert.match(response.headers.get('content-type')||'',/javascript|ecmascript/i,
       path+' must be a JavaScript asset');
     assert.ok(body.length>500,path+' must not be empty or an error page');
   }
+  const {response:styleResponse}=await request(origin,'/owner-growth-center.css');
+  assert.match(styleResponse.headers.get('content-type')||'',/text\/css/i,
+    'Growth Center stylesheet must load');
   const {response:logoResponse}=await request(origin,'/respondo-symbol.svg');
   assert.match(logoResponse.headers.get('content-type')||'',/image\/svg\+xml/i,
     'Approved brand symbol must load as SVG');
@@ -82,7 +85,7 @@ export async function checkSite(origin = defaultOrigin) {
   assert.match(robots, /^Sitemap:\s*https:\/\//im, 'robots.txt must disclose the sitemap URL');
   await request(origin, '/__respondo_smoke_unknown_route_404', { expectedStatus: 404 });
 
-  return { ok: true, checkedPages: publicPages.length, checkedLanguages: 3, checkedAssets: 4 };
+  return { ok: true, checkedPages: publicPages.length, checkedLanguages: 3, checkedAssets: 6 };
 }
 
 async function run() {
