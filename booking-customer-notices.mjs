@@ -78,7 +78,13 @@ export async function sendBookingNotice(db,tenantId,requestId,kind,{apiKey,from,
       WHERE ar.tenant_id=$1 AND ar.id=$2`,[tenantId,requestId]);
     if(!r.rowCount)throw Error('Original booking request missing');
     const {name,payload,result}=r.rows[0];
-    const confirmed=result?.internalBooking?.decision==='confirmed';
+    // The pending message must still match the owner's committed decision.
+    // Never notify a visitor of a booking state merely because an outbox
+    // entry exists (for example after a cancellation or concurrent retry).
+    const actualDecision=String(result?.internalBooking?.decision||'');
+    if(actualDecision!==kind)
+      throw Error('Booking decision changed; notification withheld');
+    const confirmed=actualDecision==='confirmed';
     const requested=payload?.requestedSlot;
     const content=bookingNoticeContent({kind,language:notice.language,companyName:name,
       startsAt:confirmed?requested?.startsAt:null,endsAt:confirmed?requested?.endsAt:null});
