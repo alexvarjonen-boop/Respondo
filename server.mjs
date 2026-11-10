@@ -16597,6 +16597,12 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
             serviceManualReview=true;
             payload.serviceCapacity={serviceKey:rule.serviceKey,facts,
               durationMinutes:work.minutes,approvalRequired:true};
+          } else {
+            // Without approved duration rules, a visitor may request a time but
+            // MUST NOT book or hold it. Owner explicitly verifies the duration.
+            serviceManualReview=true;
+            payload.serviceCapacity={durationMinutes:null,approvalRequired:true,
+              manualVerificationRequired:true};
           }
         }
 
@@ -16741,7 +16747,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     };
 
     let calendarSync = { status:'not_configured' };
-    if (type === 'booking' && actionAccess.googleCalendar) {
+    if (type === 'booking' && !serviceManualReview && actionAccess.googleCalendar) {
       try {
         calendarSync = await createGoogleCalendarBooking(tenant,actionRequest);
       } catch (e) {
@@ -16869,6 +16875,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         endsAt:bookedSlot.ends_at,
       } : null,
       calendarSync,
+      approvalRequired: type==='booking' && serviceManualReview,
       paymentAvailable,
       checkoutUrl,
       customerMessage: serviceManualReview
