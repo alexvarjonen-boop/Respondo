@@ -78,3 +78,21 @@
 /* Task board deadlines and completion status remain first-party. */
 #app #native-operations .native-form input[type="datetime-local"]{min-height:45px;background:#f8fafc!important;color:#172638!important;-webkit-text-fill-color:#172638!important;border:1px solid #b6c3d3;border-radius:10px;padding:10px;box-sizing:border-box}
 #app #native-operations .native-list .native-record>.native-record-meta{overflow-wrap:anywhere;white-space:pre-wrap}
+
+
+/* Booking decisions: verified service duration must be plainly editable. */
+#app #native-operations .native-manual-duration{
+  flex:1 1 180px;max-width:280px;min-width:0;box-sizing:border-box;
+  min-height:45px;padding:10px 12px;
+  border:1px solid #a9b9cb;border-radius:11px;
+  background:#f8fafc!important;color:#172638!important;
+  -webkit-text-fill-color:#172638!important;
+  font:inherit;font-size:14px;
+}
+#app #native-operations .native-manual-duration:focus-visible{
+  outline:2px solid #7c8cff;outline-offset:3px;
+}
+#app #native-operations .native-list .native-record>.native-disclaimer{
+  flex:1 1 100%;margin:3px 0 9px;color:#d8e1ee!important;
+  -webkit-text-fill-color:#d8e1ee!important;font-size:12px;line-height:1.5;
+}
