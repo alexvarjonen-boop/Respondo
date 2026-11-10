@@ -110,7 +110,7 @@
     const feedback=el('p','native-feedback',t.loading);
     feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
     target.append(tabs,content,feedback,el('p','native-disclaimer',t.notice));
-    let active=new URLSearchParams(location.search).has('zendesk')?'zendesk':'contacts',data=null,report=null,conversions=null,feedbackSummary=null,repair=null,helpdesk=null,zendesk=null,taskboard=null,flows=null,orders=null,schedule=null,scheduleNotices=null,inbox=null,threadDetail=null,selectedThread=null,suggestion=null,busy=false,days=30,pendingDeliveryId=null,pendingReplyText='';
+    let active=new URLSearchParams(location.search).has('zendesk')?'zendesk':'contacts',data=null,report=null,conversions=null,feedbackSummary=null,websiteChanges=null,repair=null,helpdesk=null,zendesk=null,taskboard=null,flows=null,orders=null,schedule=null,scheduleNotices=null,inbox=null,threadDetail=null,selectedThread=null,suggestion=null,busy=false,days=30,pendingDeliveryId=null,pendingReplyText='';
     const kinds=['contacts','tickets','quotes','rules','docs','inbox','calendar','tasks','flows','orders','quality','insights','helpdesk','zendesk'];
     for(const kind of kinds){
       const b=button(t[kind],'button');
@@ -125,6 +125,7 @@
         else if(kind==='quality'){
           if(!report)loadQuality();
           if(!repair)loadRepair();
+          if(!websiteChanges)loadWebsiteChanges();
           else render();
         }else if(kind==='zendesk'&&!zendesk)loadZendesk();
         else if(kind==='helpdesk'&&!helpdesk)loadHelpdesk();
@@ -415,6 +416,25 @@
     async function loadRepair(){
       try{repair=await request('GET',API+'/quality/repair');feedback.textContent='';render();}
       catch(error){feedback.textContent=error.message||t.error;}
+    }
+    const WEBSITE_REVIEWS='/api/app/import-website/refresh-reviews';
+    async function loadWebsiteChanges(){
+      try{websiteChanges=await request('GET',WEBSITE_REVIEWS);render();}
+      catch(error){feedback.textContent=error.message||t.error;}
+    }
+    async function decideWebsiteChange(id,decision){
+      if(!idGuard(id)||busy)return;
+      if(decision==='approve'&&!window.confirm(
+        language==='fi'?'Hyväksytäänkö tämä verkkosivulta löytynyt tieto botin tietopohjaan?'
+        :language==='sv'?'Godkänn den här informationen för botten?'
+        :'Approve this website information for the bot knowledge base?'))return;
+      busy=true;feedback.textContent=t.saving;
+      try{
+        await request('POST',WEBSITE_REVIEWS+'/'+id+'/decision',{decision});
+        websiteChanges=await request('GET',WEBSITE_REVIEWS);
+        feedback.textContent=t.saved;render();
+      }catch(error){feedback.textContent=error.message||t.error;}
+      finally{busy=false;}
     }
     async function loadQuality(){
       try{
@@ -1117,6 +1137,34 @@
         ['wrong_language',t.reasonLanguage],['misunderstood_question',t.reasonIntent],
         ['unnecessary_handoff',t.reasonHandoff],['other',t.reasonOther]
       ];
+      const changeRows=(websiteChanges?.reviews||[]).filter(x=>x.status==='pending');
+      if(changeRows.length){
+        const reviewPanel=el('section','native-list');
+        reviewPanel.appendChild(el('h4','native-subtitle',
+          language==='fi'?'Verkkosivuilta havaitut muutokset'
+          :language==='sv'?'Upptäckta ändringar på webbplatsen'
+          :'Detected website changes'));
+        reviewPanel.appendChild(el('p','native-disclaimer',
+          language==='fi'?'Mitään uutta tai muuttunutta tietoa ei julkaista ilman hyväksyntää.'
+          :language==='sv'?'Ingen ny eller ändrad information publiceras utan ditt godkännande.'
+          :'New or changed facts are not published without your approval.'));
+        for(const item of changeRows.slice(0,30)){
+          const card=recordCard(item.title||'Website information',
+            (item.source_url||'').slice(0,180));
+          if(item.current_answer)card.appendChild(recordCard(
+            language==='fi'?'Nykyinen vastaus':language==='sv'?'Nuvarande svar':'Current answer',
+            String(item.current_answer).slice(0,400)));
+          card.appendChild(recordCard(
+            language==='fi'?'Ehdotettu muutos':language==='sv'?'Föreslagen ändring':'Proposed change',
+            String(item.answer||'').slice(0,700)));
+          const approve=button(language==='fi'?'Hyväksy tieto':language==='sv'?'Godkänn':'Approve','button');
+          approve.addEventListener('click',()=>decideWebsiteChange(item.id,'approve'));
+          const decline=button(language==='fi'?'Hylkää':language==='sv'?'Avvisa':'Dismiss','button');
+          decline.addEventListener('click',()=>decideWebsiteChange(item.id,'dismiss'));
+          card.append(approve,decline);reviewPanel.appendChild(card);
+        }
+        content.appendChild(reviewPanel);
+      }
       const prioritized=Array.isArray(report.recurringGaps)?report.recurringGaps:[];
       if(prioritized.length){
         const priorityList=el('section','native-list');
