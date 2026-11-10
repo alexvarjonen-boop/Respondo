@@ -15,7 +15,7 @@ export function validateGrowthSettings(payload={}){
   if(!TONES.has(tone))throw new TypeError('Invalid greeting style');
   const input=payload.postalCodes;
   if(!Array.isArray(input)||input.length>200)throw new TypeError('Provide up to 200 Finnish postal codes');
-  const postcodes=[...new Set(input.map(v=>clean(v,5)))];
+  const postcodes=[...new Set(input.map(v=>String(v??'').trim()))];
   if(postcodes.some(v=>!/^\d{5}$/.test(v)))throw new TypeError('Each postal code must contain exactly five digits');
   return {tone,postalCodes:postcodes,source:'owner_approved_exact_codes',country:'FI'};
 }
