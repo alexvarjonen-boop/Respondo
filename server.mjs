@@ -15541,7 +15541,6 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
 
     return res.json({
       answer,
-      conversationId,
       handoff,
       confidence: handoff ? Math.min(result.confidence, 0.35) : result.confidence,
       intent: result.intent,
@@ -16339,6 +16338,7 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
 
     return res.json({
       answer,
+      conversationId,
       handoff,
       confidence: handoff ? Math.min(result.confidence, 0.35) : result.confidence,
       intent: result.intent,
