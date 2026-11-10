@@ -1,6 +1,6 @@
 // Scheduled website refresh never silently publishes changed or new facts.
 import {createHash} from 'node:crypto';
-const uuid=s=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(String(s||''));
+const uuid=s=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s||''));
 const trim=(s,n)=>String(s||'').trim().slice(0,n);
 export function websiteCandidateFingerprint(candidate){
   return createHash('sha256').update(trim(candidate.sourceUrl,2048)+'\n'+trim(candidate.title,250).toLowerCase()).digest('hex');
