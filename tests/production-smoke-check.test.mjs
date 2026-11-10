@@ -21,9 +21,12 @@ function fakeResponse(url, init, { unhealthy = false, brokenSwedish = false, ape
   } else if (u.pathname === '/api/public/config') {
     contentType = 'application/json';
     body = '{}';
-  } else if (['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js'].includes(u.pathname)) {
+  } else if (['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js','/owner-growth-center.js'].includes(u.pathname)) {
     contentType = brokenAsset && u.pathname === '/widget.js' ? 'text/html' : 'application/javascript';
     body = '/* smoke test JavaScript */' + 'function ready(){return true;}\n'.repeat(22);
+  } else if (u.pathname === '/owner-growth-center.css') {
+    contentType = 'text/css';
+    body = '#respondoGrowthCenter { color: white; }';
   } else if (u.pathname === '/respondo-symbol.svg') {
     contentType = 'image/svg+xml';
     body = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"></svg>';
