@@ -32,8 +32,8 @@ export function productBudgetRequest(message='') {
     green:['green','vihrea','vihreät','gron','grön'],
   };
   const color=Object.entries(colorAliases).find(([,aliases])=>
-    aliases.some(alias=>new RegExp('\\\\b'+alias+'\\\\b','i').test(raw)))?.[0]||null;
-  const sizeMatch=raw.match(/\\b(?:size|koko|storlek)\\s*(\\d{1,3}(?:[.,]\\d)?)\\b/i);
+    aliases.some(alias=>new RegExp('\\b'+alias+'\\b','i').test(raw)))?.[0]||null;
+  const sizeMatch=raw.match(/\b(?:size|koko|storlek)\s*(\d{1,3}(?:[.,]\d)?)\b/i);
   return {amount,currency,inclusive,family,color,size:sizeMatch?.[1]||null};
 }
 
@@ -49,22 +49,22 @@ export function groundedBudgetProductAnswer(products,message,lang='fi') {
     }
     if(request.family==='club' && !isPhysicalClubProduct(product))return false;
     const productText=String(product.name||'')+' '+String(product.productType||'');
-    if(request.family==='shoe' && !/\\b(?:shoes?|sneakers?|trainers?|kenga\\w*|kenka\\w*|skor|sko)\\b/i.test(productText))return false;
-    if(request.family==='clothing' && !/\\b(?:shirts?|clothing|clothes|jackets?|vaatt\\w*|paita\\w*|takki\\w*|klader|kläder|jackor)\\b/i.test(productText))return false;
+    if(request.family==='shoe' && !/\b(?:shoes?|sneakers?|trainers?|kenga\w*|kenka\w*|skor|sko)\b/i.test(productText))return false;
+    if(request.family==='clothing' && !/\b(?:shirts?|clothing|clothes|jackets?|vaatt\w*|paita\w*|takki\w*|klader|kläder|jackor)\b/i.test(productText))return false;
     if(request.color){
       const synonyms={
-        black:/\\b(?:black|musta|mustat|svart|svarta)\\b/i,
-        white:/\\b(?:white|valkoinen|valkoiset|vit|vita)\\b/i,
-        blue:/\\b(?:blue|sininen|siniset|bla|blå)\\b/i,
-        red:/\\b(?:red|punainen|punaiset|rod|röd)\\b/i,
-        green:/\\b(?:green|vihrea|vihreä|gron|grön)\\b/i
+        black:/\b(?:black|musta|mustat|svart|svarta)\b/i,
+        white:/\b(?:white|valkoinen|valkoiset|vit|vita)\b/i,
+        blue:/\b(?:blue|sininen|siniset|bla|blå)\b/i,
+        red:/\b(?:red|punainen|punaiset|rod|röd)\b/i,
+        green:/\b(?:green|vihrea|vihreä|gron|grön)\b/i
       };
       const colors=[product.name,...(product.colors||[])].join(' ');
       if(!synonyms[request.color]?.test(colors))return false;
     }
     if(request.size){
       const sizes=[product.name,...(product.sizes||[])].join(' ');
-      if(!new RegExp('\\\\b'+request.size.replace('.','\\\\.')+'\\\\b').test(sizes))return false;
+      if(!new RegExp('\\b'+request.size.replace('.','\\.')+'\\b').test(sizes))return false;
     }
     if(!Number.isFinite(product.price)||product.price<0)return false;
     if(request.currency && String(product.currency||'').toUpperCase()!==request.currency)return false;
