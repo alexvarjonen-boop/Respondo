@@ -748,3 +748,30 @@ body:not(.assistant-standalone) #respondo-site-chat.rx-conversation-mode .fx-cha
   #respondo-site-chat .rx-instant-demo-input{font-size:16px}
   #respondo-site-chat .rx-instant-demo-submit{min-height:44px}
 }
+
+
+/* Source-grounded interactive website preview, not a simulated full chatbot. */
+#respondo-site-chat .rx-instant-demo-interactive{display:grid;gap:10px;min-width:0}
+#respondo-site-chat .rx-instant-demo-prompts{
+  display:flex;flex-wrap:wrap;gap:7px;
+}
+#respondo-site-chat .rx-instant-demo-prompt{
+  appearance:none;display:inline-flex;align-items:center;min-height:36px;
+  padding:8px 11px;border:1px solid rgba(175,190,230,.28);
+  background:rgba(145,157,255,.06);color:#e9eeff;
+  border-radius:12px;font:inherit;font-size:11px;font-weight:620;
+  line-height:1.35;text-align:left;white-space:normal;cursor:pointer;
+}
+#respondo-site-chat .rx-instant-demo-prompt[aria-pressed="true"]{
+  border-color:#a3afff;background:rgba(145,157,255,.18);color:#fff;
+}
+#respondo-site-chat .rx-instant-demo-prompt:hover{
+  border-color:rgba(177,191,255,.75);background:rgba(145,157,255,.15);
+}
+#respondo-site-chat .rx-instant-demo-prompt:focus-visible{
+  outline:2px solid #c7ccff;outline-offset:3px;
+}
+@media(max-width:580px){
+  #respondo-site-chat .rx-instant-demo-prompts{display:grid;grid-template-columns:1fr}
+  #respondo-site-chat .rx-instant-demo-prompt{min-height:42px}
+}
