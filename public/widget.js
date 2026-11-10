@@ -364,6 +364,13 @@
       .handoff-request:disabled{opacity:.7;cursor:default}
       .handoff-request:focus-visible{outline:2px solid #687cfc;outline-offset:2px}
       .handoff-request[hidden]{display:none!important}
+      .answer-feedback{display:flex;align-items:center;flex-wrap:wrap;gap:7px;
+        margin:0 8px 12px;color:#6a7280;font-size:11px;line-height:1.4}
+      .answer-feedback-choice{padding:6px 12px;border-radius:999px;border:1px solid #d8deeb;
+        background:#fff;color:#28364e;font-size:11px;font-weight:700;cursor:pointer}
+      .answer-feedback-choice:hover{background:#edf1fa;border-color:#8292e6}
+      .answer-feedback-choice:focus-visible{outline:2px solid #7181df;outline-offset:2px}
+      .answer-feedback-choice:disabled{opacity:.65;cursor:default}
       .powered{padding:0 12px 10px;text-align:center;background:#fff;color:#9a9aa0;font-size:10px;letter-spacing:.02em}
       /* iOS Safari: preserve viewport scale when keyboard opens. */
       @media(max-width:1024px), (hover:none) and (pointer:coarse){
@@ -1529,6 +1536,46 @@
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Chat failed');
       pending.innerHTML = linkify(data.answer || t('En löytänyt tähän varmaa vastausta.', 'I cannot find a reliable answer to this yet.'));
+      // A quick, voluntary answer rating is tied to this actual conversation.
+      // It never makes claims about verified customer resolution.
+      if(/^[a-f0-9-]{36}$/i.test(String(data.conversationId||''))){
+        const box=document.createElement('div');
+        box.className='answer-feedback';box.setAttribute('role','group');
+        box.setAttribute('aria-label',experienceText('Oliko vastauksesta apua?','Var svaret hjälpsamt?','Was this answer helpful?'));
+        const label=document.createElement('span');
+        label.textContent=experienceText('Oliko tästä apua?','Var detta till hjälp?','Was this helpful?');
+        box.appendChild(label);
+        for(const [helpful,caption] of [
+          [true,experienceText('Kyllä','Ja','Yes')],
+          [false,experienceText('Ei','Nej','No')]
+        ]){
+          const b=document.createElement('button');
+          b.type='button';b.className='answer-feedback-choice';
+          b.textContent=caption;
+          b.addEventListener('click',async()=>{
+            for(const button of box.querySelectorAll('button'))button.disabled=true;
+            try{
+              const response=await fetch(serviceOrigin+'/api/public/'+encodeURIComponent(company)+'/feedback',{
+                method:'POST',mode:'cors',credentials:'omit',
+                headers:{'Content-Type':'text/plain;charset=UTF-8'},
+                body:JSON.stringify({widgetToken:token,visitorRef,
+                  conversationId:data.conversationId,helpful})
+              });
+              if(!response.ok)throw Error('Feedback not saved');
+              box.replaceChildren(document.createTextNode(
+                experienceText('Kiitos palautteesta!','Tack för din feedback!','Thanks for your feedback!')
+              ));
+            }catch{
+              for(const button of box.querySelectorAll('button'))button.disabled=false;
+              label.textContent=experienceText('Tallennus epäonnistui, yritä uudelleen.',
+                'Kunde inte spara. Försök igen.','Could not save. Try again.');
+            }
+          });
+          box.appendChild(b);
+        }
+        chat.appendChild(box);
+      }
+
       if (data.verified) {
         const note = document.createElement('div');
         note.className = 'truth-note';
