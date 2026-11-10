@@ -1,7 +1,7 @@
 // Explicit customer feedback only, stored in this tenant's first-party DB.
 // A widget token + matching conversation visitor ref are required by the route.
 const reasons=new Set(['not_helpful','incorrect','unclear','other']);
-const uuid=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(String(v||''));
+const uuid=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v||''));
 export function validateConversationFeedback(payload={}){
   if(!uuid(payload.conversationId))throw TypeError('Valid conversation required');
   if(typeof payload.helpful!=='boolean')throw TypeError('Select whether the answer was helpful');
