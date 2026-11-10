@@ -24,6 +24,18 @@ export async function checkSite(origin = defaultOrigin) {
   assert.equal(health.database, true, 'Health endpoint must verify its database connection');
 
   await request(origin, '/api/public/config');
+  // A healthy homepage is insufficient if the embeddable bot or onboarding
+  // scripts return a 404 or an HTML error document after deployment.
+  const criticalAssets=['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js'];
+  for (const path of criticalAssets) {
+    const {response,body}=await request(origin,path);
+    assert.match(response.headers.get('content-type')||'',/javascript|ecmascript/i,
+      path+' must be a JavaScript asset');
+    assert.ok(body.length>500,path+' must not be empty or an error page');
+  }
+  const {response:logoResponse}=await request(origin,'/respondo-symbol.svg');
+  assert.match(logoResponse.headers.get('content-type')||'',/image\/svg\+xml/i,
+    'Approved brand symbol must load as SVG');
 
   // Both the apex and www domains are advertised publicly. Their health
   // must be tested independently so DNS/certificate/redirect regressions
@@ -70,7 +82,7 @@ export async function checkSite(origin = defaultOrigin) {
   assert.match(robots, /^Sitemap:\s*https:\/\//im, 'robots.txt must disclose the sitemap URL');
   await request(origin, '/__respondo_smoke_unknown_route_404', { expectedStatus: 404 });
 
-  return { ok: true, checkedPages: publicPages.length, checkedLanguages: 3 };
+  return { ok: true, checkedPages: publicPages.length, checkedLanguages: 3, checkedAssets: 4 };
 }
 
 async function run() {
