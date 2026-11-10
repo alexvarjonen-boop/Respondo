@@ -27,7 +27,7 @@
   }
   function build(){
     const page=document.querySelector('#respondoWorkspace [data-workspace-page="overview"]');
-    if(!page||page.querySelector('#respondoGrowthCenter'))return;
+    if(!page||document.getElementById('respondoWorkspace')?.dataset.demo==='true'||page.querySelector('#respondoGrowthCenter'))return;
     const lang=document.getElementById('respondoWorkspace')?.dataset.lang||'en';
     const t=(fi,sv,en)=>tr(lang,fi,sv,en);
     const root=node('section','rs-growth-center');
@@ -149,8 +149,9 @@
     const question=node('textarea','rs-growth-field');
     question.rows=2;question.maxLength=1200;question.required=true;
     question.placeholder=t('Asiakkaan kysymys','Kundfråga','Customer question');
-    const answerA=node('textarea','rs-growth-field');answerA.rows=2;answerA.required=true;answerA.maxLength=3000;answerA.placeholder='A';
-    const answerB=node('textarea','rs-growth-field');answerB.rows=2;answerB.required=true;answerB.maxLength=3000;answerB.placeholder='B';
+    question.setAttribute('aria-label',question.placeholder);
+    const answerA=node('textarea','rs-growth-field');answerA.rows=2;answerA.required=true;answerA.maxLength=3000;answerA.placeholder='A';answerA.setAttribute('aria-label',t('Vastaus A','Svar A','Answer A'));
+    const answerB=node('textarea','rs-growth-field');answerB.rows=2;answerB.required=true;answerB.maxLength=3000;answerB.placeholder='B';answerB.setAttribute('aria-label',t('Vastaus B','Svar B','Answer B'));
     const checkBtn=node('button','rs-growth-secondary',t('Vertaile turvallisuutta','Jämför säkerhet','Compare safety checks'));checkBtn.type='submit';
     const comparison=node('p','rs-growth-response');comparison.setAttribute('role','status');
     compare.append(question,answerA,answerB,checkBtn,comparison,node('p','rs-growth-note',
