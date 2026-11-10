@@ -687,7 +687,7 @@
           && pricePresentation.items.length===3
           && ['Advanced','Premium','Enterprise'].every((plan,i)=>
             pricePresentation.items[i]?.name===plan
-            && /^\\d{1,4}(?:[.]\\d{1,2})?$/.test(String(pricePresentation.items[i]?.price||'')));
+            && /^\d{1,4}(?:[.]\d{1,2})?$/.test(String(pricePresentation.items[i]?.price||'')));
         if(trustedPrices){
           const language=['fi','sv','en'].includes(replyPresentation.language)?replyPresentation.language:uiLang;
           if(typing.firstChild?.nodeType===3){
