@@ -86,7 +86,7 @@ export function respondoCheckoutAction(message,lang='fi',faqId='',origin='https:
   ]).has(faqId);
   if(!buying && !pricing && !faqBuying)return null;
   const url=new URL('/tilaus',origin);
-  if(language!=='fi')url.searchParams.set('lang',language);
+  url.searchParams.set('lang',language);
   return {type:'site_signup',label:tr(language,'Tilaa Respondo','Beställ Respondo','Subscribe to Respondo'),url:url.href};
 }
 
@@ -101,7 +101,7 @@ export function respondoSiteNavigationActions(message,lang='fi',faqId='',origin=
   const actions=matched.filter(p=>{if(!p||used.has(p.path))return false;used.add(p.path);return true;})
     .slice(0,4).map(p=>{
       const url=new URL(localPath(p,language),origin);
-      if(language!=='fi')url.searchParams.set('lang',language);
+      url.searchParams.set('lang',language);
       return {type:p.type,label:tr(language,...p.labels),url:url.href};
     });
   // Pricing is a buying path: show a real order button as well as plan details.
@@ -147,7 +147,7 @@ export function respondoSiteNavigationAnswer(message,lang='fi',origin='https://w
   const actions=respondoSiteNavigationActions(message,language,'',origin);
   if(/\b(kirjau[dt]\w*|logga in|inloggn\w*|login|log in|sign in)\b/.test(q)&&!actions.some(a=>a.type==='site_signup')){
     const signup=pages.find(p=>p.type==='site_signup');const url=new URL(signup.path,origin);
-    if(language!=='fi')url.searchParams.set('lang',language);
+    url.searchParams.set('lang',language);
     actions.push({type:signup.type,label:tr(language,...signup.labels),url:url.href});
   }
   return {answer,actions:actions.slice(0,4)};
