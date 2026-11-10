@@ -15746,6 +15746,50 @@ app.post('/api/public/:slug/lead', publicChatLimiter, async (req, res) => {
 });
 
 
+// Explicit, tenant-scoped human handoff. The visitor's existing thread and
+// full chat history are kept; requesting a human never implies staff are online.
+app.post('/api/public/:slug/handoff', publicChatLimiter, async (req,res) => {
+  try {
+    const tr=await publicTenant(req.params.slug);
+    if(!tr.rowCount)return res.status(404).json({error:'Business not found.'});
+    const tenant=tr.rows[0];
+    let body=req.body;
+    if(typeof body==='string'){try{body=JSON.parse(body);}catch{body={};}}
+    body=body&&typeof body==='object'&&!Array.isArray(body)?body:{};
+    if(!validWidgetToken(req,tenant,body.widgetToken))
+      return res.status(403).json({error:'Widget authorization required.'});
+    setWidgetCors(req,res);
+    const visitorRef=String(body.visitorRef||'').trim();
+    if(visitorRef.length<8||visitorRef.length>160||/[<>\\\x00-\x1f]/.test(visitorRef))
+      return res.status(400).json({error:'Valid conversation reference required.'});
+    const requestedLang=['fi','sv','en'].includes(body.lang)?body.lang:'fi';
+    const thread=await getOrCreateThread(tenant.id,'website',visitorRef,visitorRef);
+    if(!thread)return res.status(400).json({error:'Conversation not available.'});
+    const agentRows=await q(`SELECT id FROM support_agents
+      WHERE tenant_id=$1 AND status='online'
+        AND $2=ANY(COALESCE(languages,ARRAY['fi']::TEXT[]))
+      LIMIT 1`,[tenant.id,requestedLang]);
+    await q(`UPDATE chat_threads
+      SET mode='human',status='open',language=$3,updated_at=NOW(),last_activity_at=NOW()
+      WHERE id=$1 AND tenant_id=$2`,[thread.id,tenant.id,requestedLang]);
+    const seen=(await q(`SELECT id FROM chat_messages
+      WHERE tenant_id=$1 AND thread_id=$2 AND role='system'
+      AND metadata->>'kind'='handoff_requested'
+      ORDER BY created_at DESC LIMIT 1`,[tenant.id,thread.id])).rowCount>0;
+    if(!seen)await appendChatMessage({
+      tenantId:tenant.id,threadId:thread.id,sourceChannel:'website',
+      externalContactId:visitorRef,visitorRef,role:'system',
+      text:'Visitor requested a human agent. Review the conversation history before replying.',
+      metadata:{kind:'handoff_requested',language:requestedLang}
+    });
+    return res.json({requested:true,availableNow:agentRows.rowCount>0,
+      conversationPreserved:true,customerNotified:false});
+  }catch(error){
+    console.error('Widget handoff failed',error?.name||'error');
+    return res.status(503).json({error:'Unable to request human assistance.'});
+  }
+});
+
 app.get('/api/public/:slug/live', publicChatLimiter, async (req,res) => {
   try {
     const tr = await publicTenant(req.params.slug);
