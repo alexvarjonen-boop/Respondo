@@ -414,6 +414,70 @@ export function mountRespondoExperience(documentRef){
     demoSuggestion.href=linkTo('/assistant',lang);
     suggestions.appendChild(demoSuggestion);
     content.append(askForm,suggestions,utilities);
+    // Opt-in website preview on the actual Try the bot page. No account,
+    // storage, site-wide crawl, LLM invocation or new paid service.
+    if(location.pathname==='/assistant'){
+      const panel=make(documentRef,'section','rx-instant-website-demo');
+      const title=make(documentRef,'strong','rx-instant-demo-title',
+        lang==='fi'?'Kokeile esikatselua omalla sivustollasi'
+        :lang==='sv'?'Förhandsgranska med din webbplats'
+        :'Preview with your website');
+      const explanation=make(documentRef,'p','rx-instant-demo-desc',
+        lang==='fi'?'Syötä osoite. Näytämme turvallisen esimerkin sivusi julkisesta kuvauksesta. Täysi botti tarvitsee käyttöönoton.'
+        :lang==='sv'?'Ange adressen. Vi visar ett exempel baserat på den offentliga beskrivningen. En riktig bot kräver installation.'
+        :'Enter a website. See a safe sample from its public description. A fully working bot requires setup.');
+      const form=make(documentRef,'form','rx-instant-demo-form');
+      const field=make(documentRef,'input','rx-instant-demo-input');
+      field.type='url';field.placeholder='https://company.example';field.required=true;
+      field.maxLength=260;field.setAttribute('aria-label',lang==='fi'?'Verkkosivun osoite':lang==='sv'?'Webbadress':'Website URL');
+      const submit=make(documentRef,'button','rx-instant-demo-submit',
+        lang==='fi'?'Esikatsele':lang==='sv'?'Förhandsgranska':'Preview');
+      submit.type='submit';
+      form.append(field,submit);
+      const output=make(documentRef,'div','rx-instant-demo-result');
+      output.setAttribute('aria-live','polite');
+      form.addEventListener('submit',async event=>{
+        event.preventDefault();
+        submit.disabled=true;
+        output.replaceChildren(make(documentRef,'span','rx-instant-demo-loading',
+          lang==='fi'?'Haetaan julkista sivukuvausta…':lang==='sv'?'Hämtar offentlig sidbeskrivning…':'Reading the public site description…'));
+        try{
+          const response=await fetch('/api/public/website-demo-preview',{
+            method:'POST',credentials:'omit',headers:{'Content-Type':'text/plain;charset=UTF-8'},
+            body:JSON.stringify({website:field.value.trim()})
+          });
+          const data=await response.json().catch(()=>({}));
+          if(!response.ok)throw Error('Preview unavailable');
+          output.replaceChildren();
+          const company=make(documentRef,'strong','rx-instant-demo-company',data.heading||data.title||'Website');
+          const question=make(documentRef,'p','rx-instant-demo-question',
+            lang==='fi'?'Asiakas: Mitä yrityksenne tekee?'
+            :lang==='sv'?'Kund: Vad erbjuder ert företag?'
+            :'Visitor: What does your business offer?');
+          const answer=make(documentRef,'p','rx-instant-demo-answer',
+            data.description||(
+              lang==='fi'?'Sivusto ei julkaise tähän riittäviä kuvailutietoja. Tietopohja on tarkistettava ennen vastaamista.'
+              :lang==='sv'?'Webbplatsen saknar tillräcklig information för ett verifierat svar.'
+              :'The homepage has insufficient public description for a verified answer.'
+            ));
+          const disclaimer=make(documentRef,'small','rx-instant-demo-disclaimer',
+            lang==='fi'?'Esimerkkivastaus julkisista metatiedoista – ei valmis asiakaspalvelubotti. Hintoja tai aikoja ei arvata.'
+            :lang==='sv'?'Exempelsvar från offentlig metadata – ingen installerad bot. Vi gissar inte priser eller tider.'
+            :'Sample from public metadata, not an installed bot. Prices and bookings are never guessed.');
+          const link=make(documentRef,'a','rx-instant-demo-visit',
+            lang==='fi'?'Avaa lähdesivu':lang==='sv'?'Öppna källsidan':'Open source page');
+          link.href=data.finalUrl;link.target='_blank';link.rel='noopener noreferrer';
+          output.append(company,question,answer,disclaimer,link);
+        }catch{
+          output.replaceChildren(make(documentRef,'p','rx-instant-demo-error',
+            lang==='fi'?'Esikatselua ei voitu ladata. Tarkista julkinen osoite ja yritä uudelleen.'
+            :lang==='sv'?'Förhandsgranskningen kunde inte laddas. Kontrollera adressen.'
+            :'Could not load the preview. Check the public website address.'));
+        }finally{submit.disabled=false;}
+      });
+      panel.append(title,explanation,form,output);
+      content.appendChild(panel);
+    }
   }
   function fitOption(parent,name,handler){
     const btn=make(documentRef,'button','rx-fit-option',name);
