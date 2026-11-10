@@ -11,6 +11,7 @@ import { ensureQualityRepairSchema } from './quality-source-repair.mjs';
 import { ensureNativeInboxSchema } from './native-inbox.mjs';
 import { ensureNativeCalendarSchema } from './native-calendar.mjs';
 import { ensureConversationFeedbackSchema } from './conversation-feedback.mjs';
+import { ensureBookingNoticesSchema } from './booking-customer-notices.mjs';
 import { ensureNativeTaskSchema } from './native-taskboard.mjs';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -124,6 +125,7 @@ async function initializeCrmConnectors() {
     await ensureNativeInboxSchema(pool);
     await ensureNativeCalendarSchema(pool);
     await ensureConversationFeedbackSchema(pool);
+    await ensureBookingNoticesSchema(pool);
     await ensureNativeTaskSchema(pool);
   } finally {await pool.end();}
 }
