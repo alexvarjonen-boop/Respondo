@@ -1073,6 +1073,28 @@
         ['wrong_language',t.reasonLanguage],['misunderstood_question',t.reasonIntent],
         ['unnecessary_handoff',t.reasonHandoff],['other',t.reasonOther]
       ];
+      const prioritized=Array.isArray(report.recurringGaps)?report.recurringGaps:[];
+      if(prioritized.length){
+        const priorityList=el('section','native-list');
+        priorityList.appendChild(el('h4','native-subtitle',
+          language==='fi'?'Useimmin toistuvat korjaustarpeet'
+          :language==='sv'?'Återkommande frågor att granska'
+          :'Recurring questions to review'));
+        for(const item of prioritized){
+          const label=(item.intent||'')+' · '+(item.channel||'website');
+          const reason=(language==='fi'
+            ?'Kysymyksiä: '+Number(item.count||0)+' · Vastaukset tarkistettava yrityksen hyväksytyistä lähteistä.'
+            :language==='sv'
+              ?'Frågor: '+Number(item.count||0)+' · Kontrollera svaren mot godkända företagskällor.'
+              :'Questions: '+Number(item.count||0)+' · Verify answers against approved company sources.');
+          priorityList.appendChild(recordCard(label,reason));
+        }
+        priorityList.appendChild(el('p','native-disclaimer',
+          language==='fi'?'Ehdotukset muodostetaan keskusteluista. Vastauksia ei julkaista automaattisesti.'
+          :language==='sv'?'Förslagen bygger på konversationer. Inga svar publiceras automatiskt.'
+          :'Suggestions come from conversations. No answers are published automatically.'));
+        content.appendChild(priorityList);
+      }
       const reviews=el('div','native-list');
       reviews.appendChild(el('h4','native-subtitle',t.recentReviews));
       for(const review of report.reviews||[]){
