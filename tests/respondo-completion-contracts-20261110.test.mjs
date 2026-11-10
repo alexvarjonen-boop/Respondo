@@ -131,6 +131,6 @@ test('core safety and UI flow remain included in standard build tests',()=>{
  const pkg=JSON.parse(root('package.json'));
  assert.ok(pkg.scripts.test.includes('node --test')||pkg.scripts.test.includes('scripts/'));
  assert.match(root('public/widget.js'),/answer-feedback-choice/);
- assert.match(root('public/respondo-experience.mjs'),/website-demo-preview/);
+ assert.match(root('public/instant-website-demo-ui.js'),/website-demo-preview/);
  assert.match(root('public/native-ai-operations.js'),/WEBSITE_REVIEWS/);
 });
