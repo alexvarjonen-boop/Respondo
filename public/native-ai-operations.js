@@ -110,7 +110,7 @@
     const feedback=el('p','native-feedback',t.loading);
     feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');
     target.append(tabs,content,feedback,el('p','native-disclaimer',t.notice));
-    let active=new URLSearchParams(location.search).has('zendesk')?'zendesk':'contacts',data=null,report=null,repair=null,helpdesk=null,zendesk=null,taskboard=null,flows=null,orders=null,schedule=null,inbox=null,threadDetail=null,selectedThread=null,suggestion=null,busy=false,days=30,pendingDeliveryId=null,pendingReplyText='';
+    let active=new URLSearchParams(location.search).has('zendesk')?'zendesk':'contacts',data=null,report=null,conversions=null,repair=null,helpdesk=null,zendesk=null,taskboard=null,flows=null,orders=null,schedule=null,inbox=null,threadDetail=null,selectedThread=null,suggestion=null,busy=false,days=30,pendingDeliveryId=null,pendingReplyText='';
     const kinds=['contacts','tickets','quotes','rules','docs','inbox','calendar','tasks','flows','orders','quality','insights','helpdesk','zendesk'];
     for(const kind of kinds){
       const b=button(t[kind],'button');
@@ -128,7 +128,7 @@
           else render();
         }else if(kind==='zendesk'&&!zendesk)loadZendesk();
         else if(kind==='helpdesk'&&!helpdesk)loadHelpdesk();
-        else if(kind==='insights'&&!report)loadQuality();
+        else if(kind==='insights'&&(!report||conversions?.days!==days))loadQuality();
         else render();
       });
       tabs.appendChild(b);
@@ -408,8 +408,15 @@
       catch(error){feedback.textContent=error.message||t.error;}
     }
     async function loadQuality(){
-      try{report=await request('GET',API+'/quality?days='+days);feedback.textContent='';render();}
-      catch(error){feedback.textContent=error.message||t.error;}
+      try{
+        report=await request('GET',API+'/quality?days='+days);
+        if(active==='insights'){
+          try{conversions=await request('GET',API+'/conversions?days='+days);}
+          catch(error){conversions=null;feedback.textContent=error.message||t.error;}
+        }
+        if(active!=='insights'||conversions)feedback.textContent='';
+        render();
+      }catch(error){feedback.textContent=error.message||t.error;}
     }
     async function load(){
       try{data=await request('GET');feedback.textContent='';render();}
@@ -1018,6 +1025,28 @@
       ])qualityMetric(metrics,name,value);
       content.appendChild(metrics);
       content.appendChild(el('p','native-disclaimer',t.disclaimerQuality));
+      if(!isQuality && conversions?.summary){
+        const funnel=conversions.summary;
+        const label=(fi,sv,en)=>language==='fi'?fi:language==='sv'?sv:en;
+        content.appendChild(el('h4','native-subtitle',
+          label('Todelliset yhteydenotot ja varausvahvistukset','Verkliga förfrågningar och bokningar','Recorded requests and bookings')));
+        const funnelMetrics=el('div','native-quality-metrics');
+        for(const [name,value] of [
+          [label('Keskustelleet kävijät','Besökare med konversation','Visitors with conversations'),funnel.engagedVisitors],
+          [label('Pyynnön lähettäneet','Besökare som skickade en förfrågan','Visitors submitting a request'),funnel.actionSubmittingVisitors],
+          [label('Keskustelu → pyyntö','Konversation → förfrågan','Conversation → request'),
+            funnel.actionRatePercent==null?'—':String(funnel.actionRatePercent)+' %'],
+          [label('Lähetetyt pyynnöt','Skickade förfrågningar','Submitted requests'),funnel.submittedRequests],
+          [label('Vahvistetut varaukset','Bekräftade bokningar','Confirmed bookings'),funnel.confirmedBookings],
+          [label('Maksullisiksi vahvistetut tarjoukset','Verifierat betalda offerter','Verified paid quotes'),funnel.verifiedPayments],
+        ])qualityMetric(funnelMetrics,name,value);
+        content.appendChild(funnelMetrics);
+        content.appendChild(el('p','native-disclaimer',label(
+          'Luvut perustuvat saman kanavan kävijätunnisteisiin sekä tallennettuihin pyyntöihin. Puuttuvat tunnisteet eivät kuulu prosenttiin. Lähetetty pyyntö ei ole myynti eikä automaattinen vastaus todista onnistunutta palvelua.',
+          'Mätningen bygger på matchande besökarreferenser och inskickade förfrågningar inom samma kanal. Saknade referenser utesluts. En förfrågan är inte en försäljning.',
+          'The rate covers matched visitor references with a conversation and a request in the same channel; missing references are excluded. Submitting a request is not a sale or verified resolution.'
+        )));
+      }
       if(!isQuality){
         const channels=el('div','native-list');
         channels.appendChild(el('h4','native-subtitle',t.channels));
