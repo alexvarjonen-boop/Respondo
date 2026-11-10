@@ -28,6 +28,7 @@ import { serviceOverviewQuestion, verifiedServiceOverview } from './service-over
 import { buildRespondoFaqRows } from './respondo-faq.mjs';
 import { isRespondoCapabilityQuestion, isRespondoCustomerValueQuestion } from './respondo-capability-intent.mjs';
 import { respondoSiteNavigationActions, respondoSiteNavigationAnswer, respondoCheckoutAction } from './respondo-site-navigation.mjs';
+import { respondoAssistantPresentation } from './respondo-assistant-presentation.mjs';
 import { matchVerifiedSpecialistService, matchVerifiedCompoundSpecialistServices, resolveSpecialistConversationReference } from './service-semantics.mjs';
 import { focusMultiPriceAnswer } from './multi-price-grounding.mjs';
 import { buildIntentUtteranceSeed, classifyIntentByGrammar, INTENT_UTTERANCE_SEED_VERSION, normalizeIntentPhrase } from './intent-utterances.mjs';
@@ -15819,11 +15820,13 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
     const navigation=respondoSiteNavigationAnswer(message,detectedFaqLang,SEO_CANONICAL_ORIGIN);
     if(navigation) {
       return res.json({answer:navigation.answer,handoff:false,confidence:1,
-        intent:'Respondo site navigation',verified:true,actions:navigation.actions});
+        intent:'Respondo site navigation',verified:true,actions:navigation.actions,
+        presentation:respondoAssistantPresentation({question:message,language:detectedFaqLang,answer:navigation.answer,verified:true})});
     }
     const directFaq=respondoProductFaqMatch(message,detectedFaqLang,faqHistory);
     if(directFaq){
-      return res.json({answer:sanitizeUserFacingText(directFaq.answer),handoff:false,confidence:1,intent:'Respondo FAQ',verified:true,actions:respondoSitePageActions(message,detectedFaqLang,directFaq.id)});
+      return res.json({answer:sanitizeUserFacingText(directFaq.answer),handoff:false,confidence:1,intent:'Respondo FAQ',verified:true,actions:respondoSitePageActions(message,detectedFaqLang,directFaq.id),
+        presentation:respondoAssistantPresentation({question:message,language:detectedFaqLang,answer:directFaq.answer,verified:true,faqId:directFaq.id})});
     }
 
     const ownerEmail=cleanEmail(process.env.OWNER_EMAIL||process.env.SUPPORT_EMAIL);
@@ -15859,7 +15862,8 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
           ? 'I can help with Respondo pricing, the free trial, installation and features. What would you like to know?'
           : 'Voin auttaa Respondon hinnoittelussa, kokeilujaksossa, asennuksessa ja ominaisuuksissa. Mitä haluaisit tietää?';
       return res.json({answer:fallback,handoff:false,confidence:0,intent:'Respondo assistant fallback',
-        verified:false,actions:respondoSitePageActions(message,detectedFaqLang)});
+        verified:false,actions:respondoSitePageActions(message,detectedFaqLang),
+        presentation:respondoAssistantPresentation({question:message,language:detectedFaqLang,answer:fallback,verified:false})});
     }
 
     const t=tr.rows[0];
@@ -15918,6 +15922,7 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
       intent:result.intent||'',
       verified:!result.handoff && Array.isArray(result.sourceIds) && result.sourceIds.length>0,
       actions:respondoSitePageActions(message,detectedLang,firstPartyFaq?.id),
+      presentation:respondoAssistantPresentation({question:message,language:detectedLang,answer,verified:!result.handoff && Array.isArray(result.sourceIds) && result.sourceIds.length>0,faqId:firstPartyFaq?.id||'',handoff:Boolean(result.handoff)}),
     });
   } catch(e) {
     console.error('Respondo public assistant chat failed',e);
