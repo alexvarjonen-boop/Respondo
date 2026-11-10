@@ -250,24 +250,24 @@ export function minimalExperienceCopy(language){
 // No fake conversation is shown on the first screen.
 const LIVE_FIRST_COPY={
   fi:{
-    label:'RESPONDO AI',heading:'Miten voin auttaa?',
-    description:'Kysy ominaisuuksista, hinnoista tai siitä, miten Respondo toimisi yrityksessäsi.',
+    label:'RESPONDO AI',heading:'Yrityksesi AI-asiakaspalvelija.',
+    description:'Kysy Respondo AI:n ominaisuuksista, hinnoista ja käyttöönotosta. Saat vastauksen suoraan avustajalta.',
     placeholder:'Kirjoita kysymyksesi…',send:'Lähetä kysymys',
     fit:'Löydä sopiva ratkaisu',demo:'Kokeile bottia käytännössä',
     pricing:'Hinnasto',discover:'Ominaisuudet',back:'Takaisin',status:'Valmiina auttamaan',
     progress:'Kysymys',footer:'Älykkäämpää asiakaspalvelua'
   },
   sv:{
-    label:'RESPONDO AI',heading:'Hur kan jag hjälpa?',
-    description:'Fråga om funktioner, priser eller hur Respondo kan hjälpa ditt företag.',
+    label:'RESPONDO AI',heading:'Din AI-kundtjänstassistent.',
+    description:'Fråga om funktioner, priser och hur Respondo kan hjälpa ditt företag. Få ett svar direkt.',
     placeholder:'Skriv din fråga…',send:'Skicka frågan',
     fit:'Hitta rätt lösning',demo:'Testa botten själv',
     pricing:'Priser',discover:'Funktioner',back:'Tillbaka',status:'Redo att hjälpa',
     progress:'Fråga',footer:'Smartare kundservice'
   },
   en:{
-    label:'RESPONDO AI',heading:'How can I help?',
-    description:'Ask about features, pricing, or how Respondo could work for your business.',
+    label:'RESPONDO AI',heading:'Your AI customer service agent.',
+    description:'Get instant answers about features, pricing, and how Respondo can support your business — straight from our AI assistant.',
     placeholder:'Type your question…',send:'Send question',
     fit:'Find your solution',demo:'Try the live bot',
     pricing:'Pricing',discover:'Features',back:'Back',status:'Ready to help',
@@ -387,7 +387,33 @@ export function mountRespondoExperience(documentRef){
     separator.setAttribute('aria-hidden','true');
     utilities.appendChild(separator);
     linkAction(utilities,ui.demo,linkTo('/assistant',lang));
-    content.append(askForm,utilities);
+    const suggestions=make(documentRef,'div','rx-suggested-questions');
+    suggestions.setAttribute('role','group');
+    suggestions.setAttribute('aria-label',lang==='fi'?'Esimerkkikysymykset':lang==='sv'?'Exempelfrågor':'Suggested questions');
+    const questions=lang==='fi'?[
+      'Paljonko Respondo maksaa?',
+      'Miten käyttöönotto toimii?',
+      'Vastaako botti suomeksi, ruotsiksi ja englanniksi?'
+    ]:lang==='sv'?[
+      'Vad kostar Respondo?',
+      'Hur fungerar installationen?',
+      'Kan botten svara på finska, svenska och engelska?'
+    ]:[
+      'How much does Respondo cost?',
+      'How does onboarding work?',
+      'Can it answer in Finnish, Swedish and English?'
+    ];
+    for(const question of questions){
+      const suggestion=make(documentRef,'button','rx-suggestion',question);
+      suggestion.type='button';
+      suggestion.addEventListener('click',()=>submitQuestion(question));
+      suggestions.appendChild(suggestion);
+    }
+    const demoSuggestion=make(documentRef,'a','rx-suggestion rx-suggestion-demo',
+      lang==='fi'?'Kokeile oikeaa bottia':lang==='sv'?'Testa den riktiga botten':'Show me the live bot');
+    demoSuggestion.href=linkTo('/assistant',lang);
+    suggestions.appendChild(demoSuggestion);
+    content.append(askForm,suggestions,utilities);
   }
   function fitOption(parent,name,handler){
     const btn=make(documentRef,'button','rx-fit-option',name);
