@@ -28,6 +28,27 @@ export function qualitySummary({channels=[],leads=0,actions=0,tickets=0,reviews=
     evidenceRate:automated?Math.round(100*evidenced/automated):null,
     byChannel,customerResolutionVerified:false,accuracyVerified:false,revenueAttributed:false};
 }
+// Read-only triage: recurring gaps become owner review priorities, never
+// automatically approved answers or inferred proof of factual inaccuracy.
+export function summarizeQualityGaps(gaps=[]){
+  const groups=new Map();
+  for(const gap of Array.isArray(gaps)?gaps:[]){
+    const intent=short(gap?.intent||'Unclassified',80)||'Unclassified';
+    const channel=short(gap?.channel||'website',40)||'website';
+    const key=intent.toLowerCase()+'|'+channel.toLowerCase();
+    const item=groups.get(key)||{intent,channel,count:0,lowConfidence:0,handoffs:0};
+    item.count++;
+    if(gap?.reason==='low_confidence')item.lowConfidence++;
+    if(gap?.reason==='handoff')item.handoffs++;
+    groups.set(key,item);
+  }
+  return [...groups.values()].sort((a,b)=>b.count-a.count||b.lowConfidence-a.lowConfidence)
+    .slice(0,12).map(item=>({...item,
+      recommendation:item.handoffs?'Review unanswered questions and approved knowledge':
+        'Verify factual sources and check why confidence is low',
+      requiresOwnerApproval:true
+    }));
+}
 export async function ensureQualityCenterSchema(db){
   await db.query(`CREATE TABLE IF NOT EXISTS public.respondo_quality_reviews(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -92,10 +113,10 @@ export async function qualityCenterOverview(db,tenantId,requestedDays=30){
       COUNT(*) FILTER(WHERE handoff=TRUE)::int AS handoffs
       FROM conversations WHERE tenant_id=$1 AND created_at >= NOW()-($2::int * INTERVAL '1 day')
       GROUP BY 1 ORDER BY 1`,params),
-    db.query(`SELECT id,question,intent,source_channel,created_at
-      FROM conversations WHERE tenant_id=$1 AND handoff=TRUE
+    db.query(`SELECT id,question,intent,source_channel,created_at,confidence,handoff
+      FROM conversations WHERE tenant_id=$1 AND (handoff=TRUE OR confidence<0.45)
       AND created_at >= NOW()-($2::int * INTERVAL '1 day')
-      ORDER BY created_at DESC LIMIT 30`,params),
+      ORDER BY created_at DESC LIMIT 40`,params),
     db.query(`SELECT r.id,r.conversation_id,r.reason,r.note,r.status,r.resolution_note,r.created_at,
       c.question,c.source_channel
       FROM respondo_quality_reviews r
@@ -116,14 +137,18 @@ export async function qualityCenterOverview(db,tenantId,requestedDays=30){
       FROM knowledge WHERE tenant_id=$1`,[tenantId])
   ]);
   const rawReviews=reviews.rows||[];
+  const rawGaps=(unanswered.rows||[]).map(r=>({
+    conversationId:r.id,question:redactQualityQuestion(r.question),intent:short(r.intent,100),
+    channel:short(r.source_channel||'website',40),createdAt:r.created_at,
+    reason:r.handoff===false?'low_confidence':'handoff'
+  }));
   return {
     days,
+    recurringGaps:summarizeQualityGaps(rawGaps),
     summary:qualitySummary({channels:channels.rows,leads:leads.rows[0]?.total,
       actions:actions.rows[0]?.total,tickets:tickets.rows[0]?.total,reviews:rawReviews}),
     daily:(daily.rows||[]).map(r=>({day:r.day,total:count(r.total),handoffs:count(r.handoffs)})),
-    gaps:(unanswered.rows||[]).map(r=>({conversationId:r.id,
-      question:redactQualityQuestion(r.question),intent:short(r.intent,100),
-      channel:short(r.source_channel||'website',40),createdAt:r.created_at})),
+    gaps:rawGaps,
     reviews:rawReviews.map(r=>({id:r.id,conversationId:r.conversation_id,reason:r.reason,
       note:short(r.note,1200),status:r.status,resolutionNote:short(r.resolution_note,1200),
       question:redactQualityQuestion(r.question),channel:r.source_channel||'website',
