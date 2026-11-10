@@ -6,12 +6,16 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const validId=x=>UUID.test(String(x||''));
 const text=(x,n)=>String(x??'').trim().slice(0,n);
 const date=x=>new Date(x).getTime();
-export function validateInternalReservation(request,slot,now=Date.now()){
+export function validateInternalReservation(request,slot,now=Date.now(),manualDurationMinutes=null){
   const requested=request?.payload?.requestedSlot;
   const workload=request?.payload?.serviceCapacity;
   if(!requested||!workload||workload.approvalRequired!==true)
     throw new TypeError('This request requires a validated service duration');
-  const minutes=Number(workload.durationMinutes);
+  const verifiedMinutes=Number(workload.durationMinutes);
+  const requiresManual=workload.manualVerificationRequired===true && workload.durationMinutes==null;
+  // A company representative can explicitly verify the duration of a service
+  // without a configured formula. Customer input is never trusted as a duration.
+  const minutes=requiresManual ? Number(manualDurationMinutes) : verifiedMinutes;
   if(!Number.isInteger(minutes)||minutes<1||minutes>1440)
     throw new TypeError('The required service duration is not verified');
   if(!slot||slot.status!=='open'||String(slot.id)!==String(requested.slotId))
@@ -73,7 +77,8 @@ export async function nativeCalendarOverview(db,tenantId){
       requestedSlot:x.requested_slot,
       serviceCapacity:{
         durationMinutes:Number(x.service_capacity?.durationMinutes)||null,
-        approvalRequired:x.service_capacity?.approvalRequired===true
+        approvalRequired:x.service_capacity?.approvalRequired===true,
+        manualVerificationRequired:x.service_capacity?.manualVerificationRequired===true
       }
     })),
     events:events.rows||[],slots:slots.rows||[],
@@ -117,7 +122,10 @@ export async function decideNativeBooking(db,tenantId,requestId,userId,input={})
     const sr=await client.query(
       'SELECT id,starts_at,ends_at,status FROM booking_slots WHERE tenant_id=$1 AND id=$2 FOR UPDATE',
       [tenantId,slotId]);
-    const capacity=validateInternalReservation(request,sr.rows[0]);
+    const capacity=validateInternalReservation(request,sr.rows[0],Date.now(),input.durationMinutes);
+    const manualVerified=request.payload?.serviceCapacity?.manualVerificationRequired===true;
+    if(manualVerified && note.length<8)
+      throw new TypeError('Document the verified workload and staff availability before approving');
     const clash=await client.query(
       `SELECT id FROM booking_slots WHERE tenant_id=$1 AND status='booked'
       AND starts_at < $3::timestamptz AND ends_at > $2::timestamptz LIMIT 1`,
@@ -143,7 +151,8 @@ export async function decideNativeBooking(db,tenantId,requestId,userId,input={})
       result=COALESCE(result,'{}'::jsonb)||$3::jsonb,updated_at=NOW()
       WHERE tenant_id=$1 AND id=$2`,[tenantId,requestId,JSON.stringify({
       internalBooking:{decision:'confirmed',decidedAt:now,decidedBy:text(userId,120),
-        eventId:inserted.rows[0].id,note,customerNotified:false,
+        eventId:inserted.rows[0].id,note,durationSource:manualVerified?'owner_verified':'company_rule',
+        customerNotified:false,
         externalCalendarSynchronized:false}
     })]);
     await client.query('COMMIT');
