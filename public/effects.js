@@ -630,13 +630,7 @@
         typing.removeAttribute('role');
         // Render only allowlisted destinations supplied by Respondo's own
         // public assistant API. Never turn incidental answer words into links.
-        typing.replaceChildren();
-        const answerText=document.createElement('div');
-        answerText.className='fx-answer-text';
-        answerText.textContent=answer;
-        typing.appendChild(answerText);
-        const actionsRow=document.createElement('div');
-        actionsRow.className='fx-answer-actions';
+        typing.textContent = answer;
         const allowedPaths = new Set([
           '/', '/asiakaspalvelubotti', '/ominaisuudet', '/funktioner', '/features',
           '/assistant', '/verkkokauppa-chatbot', '/ajanvaraus-chatbot',
@@ -660,7 +654,7 @@
           action.className='fx-site-action';
           action.textContent=String(candidate.label).slice(0,90)+' →';
           action.setAttribute('aria-label',action.textContent);
-          actionsRow.appendChild(action);
+          typing.appendChild(action);
           if (used.size>=4) break;
         }
         // Display an offered first-party destination as a button only. Older
@@ -678,10 +672,11 @@
             displayedAnswer = displayedAnswer
               .replace(/(?:Katso kaikki ominaisuudet|Se alla funktioner|Explore all features)\s*:\s*$/i, '')
               .trim();
-            answerText.textContent = displayedAnswer;
+            if (typing.firstChild && typing.firstChild.nodeType === 3) {
+              typing.firstChild.nodeValue = displayedAnswer;
+            }
           }
         }
-        if(actionsRow.childElementCount)typing.appendChild(actionsRow);
         siteAssistantHistory.push({question:clean,answer:displayedAnswer});
         if (siteAssistantHistory.length > 12) siteAssistantHistory.splice(0,siteAssistantHistory.length-12);
         form.message.placeholder=followupPlaceholder;
@@ -701,10 +696,7 @@
           }
           copy.setAttribute('aria-label',copy.textContent);
         });
-        const answerFooter=document.createElement('div');
-        answerFooter.className='fx-answer-footer';
-        answerFooter.appendChild(copy);
-        typing.appendChild(answerFooter);
+        typing.appendChild(copy);
         if(followBottom)messages.scrollTop=messages.scrollHeight;
         updateJump();
       } catch (err) {
