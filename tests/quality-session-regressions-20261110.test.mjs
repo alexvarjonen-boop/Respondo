@@ -36,9 +36,12 @@ test('FI, SV, EN tentative appointments are not silently presented as confirmed 
     const without=evaluateFreeQualityScenario({language,question,answer});
     assert.ok(without.flags.some(f=>f.code==='unverified_availability'));
     const withProof=evaluateFreeQualityScenario({language,question,answer,
-      proof:{availabilityVerified:true}});
+      proof:{availabilityVerified:true,durationVerified:true}});
     assert.ok(!withProof.flags.some(f=>f.code==='unverified_availability'));
     assert.equal(withProof.factualCorrectnessProven,false);
+    const noDuration=evaluateFreeQualityScenario({language,question,answer,
+      proof:{availabilityVerified:true}});
+    assert.ok(noDuration.flags.some(f=>f.code==='unverified_availability'));
   }
 });
 
