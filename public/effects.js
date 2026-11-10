@@ -677,6 +677,53 @@
             }
           }
         }
+        // Optional first-party presentation. Prices come exclusively from the
+        // verified answer returned by the Respondo backend, never from input.
+        const replyPresentation=data.presentation && typeof data.presentation==='object'
+          ? data.presentation : null;
+        const pricePresentation=replyPresentation?.cards;
+        const trustedPrices=pricePresentation?.kind==='pricing'
+          && Array.isArray(pricePresentation.items)
+          && pricePresentation.items.length===3
+          && ['Advanced','Premium','Enterprise'].every((plan,i)=>
+            pricePresentation.items[i]?.name===plan
+            && /^\\d{1,4}(?:[.]\\d{1,2})?$/.test(String(pricePresentation.items[i]?.price||'')));
+        if(trustedPrices){
+          const language=['fi','sv','en'].includes(replyPresentation.language)?replyPresentation.language:uiLang;
+          if(typing.firstChild?.nodeType===3){
+            typing.firstChild.nodeValue=language==='fi'
+              ? 'Tässä pakettien vahvistetut hinnat. Tarkemmat tilausehdot löydät hinnastosta.'
+              : language==='sv'
+                ? 'Här är de bekräftade abonnemangspriserna. Läs mer om villkoren på prissidan.'
+                : 'Here are the verified plan prices. See the pricing page for full billing details.';
+          }
+          const grid=document.createElement('div');
+          grid.className='fx-verified-pricing';
+          grid.setAttribute('role','group');
+          grid.setAttribute('aria-label',String(pricePresentation.heading||'').slice(0,80));
+          for(const item of pricePresentation.items){
+            const card=document.createElement('div');
+            card.className='fx-verified-plan';
+            const title=document.createElement('strong');
+            title.className='fx-verified-plan-title';
+            title.textContent=item.name;
+            const amount=document.createElement('span');
+            amount.className='fx-verified-plan-amount';
+            amount.textContent=String(item.price).replace('.',',')+' €';
+            const period=document.createElement('small');
+            period.className='fx-verified-plan-period';
+            period.textContent=String(pricePresentation.period||'').slice(0,16);
+            card.append(title,amount,period);
+            grid.appendChild(card);
+          }
+          if(pricePresentation.note){
+            const note=document.createElement('small');
+            note.className='fx-verified-pricing-note';
+            note.textContent=String(pricePresentation.note).slice(0,100);
+            grid.appendChild(note);
+          }
+          typing.appendChild(grid);
+        }
         siteAssistantHistory.push({question:clean,answer:displayedAnswer});
         if (siteAssistantHistory.length > 12) siteAssistantHistory.splice(0,siteAssistantHistory.length-12);
         form.message.placeholder=followupPlaceholder;
@@ -697,6 +744,33 @@
           copy.setAttribute('aria-label',copy.textContent);
         });
         typing.appendChild(copy);
+        // Suggested prompts are questions, not implied promises or automatic actions.
+        if(Array.isArray(replyPresentation?.suggestions)){
+          const questions=replyPresentation.suggestions.filter(value=>
+            typeof value==='string' && value.trim() && value.length<=180
+            && value.toLowerCase().trim()!==clean.toLowerCase()).slice(0,3);
+          if(questions.length){
+            const group=document.createElement('div');
+            group.className='fx-contextual-followups';
+            group.setAttribute('role','group');
+            group.setAttribute('aria-label',at('Jatka keskustelua','Fortsätt samtalet','Continue the conversation'));
+            const caption=document.createElement('span');
+            caption.className='fx-contextual-heading';
+            caption.textContent=at('Voit kysyä myös','Du kan också fråga','You can also ask');
+            group.appendChild(caption);
+            for(const question of questions){
+              const button=document.createElement('button');
+              button.type='button';
+              button.className='fx-contextual-question';
+              button.textContent=question;
+              button.addEventListener('click',()=>{
+                if(!form.message.disabled)void send(question);
+              });
+              group.appendChild(button);
+            }
+            typing.appendChild(group);
+          }
+        }
         if(followBottom)messages.scrollTop=messages.scrollHeight;
         updateJump();
       } catch (err) {
