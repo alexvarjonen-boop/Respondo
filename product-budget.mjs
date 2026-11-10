@@ -34,7 +34,7 @@ export function productBudgetRequest(message='') {
   const color=Object.entries(colorAliases).find(([,aliases])=>
     aliases.some(alias=>new RegExp('\\b'+alias+'\\b','i').test(raw)))?.[0]||null;
   const sizeMatch=raw.match(/\b(?:size|koko|storlek)\s*(\d{1,3}(?:[.,]\d)?)\b/i);
-  return {amount,currency,inclusive,family,color,size:sizeMatch?.[1]||null};
+  return {amount,currency,inclusive,family,...(color?{color}:{}),...(sizeMatch?.[1]?{size:sizeMatch[1]}:{})};
 }
 
 export function groundedBudgetProductAnswer(products,message,lang='fi') {
