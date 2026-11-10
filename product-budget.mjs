@@ -20,9 +20,21 @@ export function productBudgetRequest(message='') {
   const inclusive=!/^(?:alle|under|below|less|cheaper|billigare)/.test(m[1]);
   const family=/\bputter\w*\b/.test(raw)?'putter'
     :/\b(?:maila\w*|mailo\w*|golfmail\w*|clubs?|golfklubb\w*|klubbor)\b/.test(raw)?'club'
+    :/\b(?:shoes?|sneakers?|trainers?|kenga\w*|kenka\w*|skor|sko)\b/.test(raw)?'shoe'
+    :/\b(?:shirts?|clothing|clothes|jackets?|vaatt\w*|paita\w*|takki\w*|klader|kläder|jackor)\b/.test(raw)?'clothing'
     :/\b(?:tuot\w*|product\w*|produkt\w*|valikoima\w*|sortiment\w*|selection\w*|items?|products?)\b/.test(raw)?'product':'';
   if(!family)return null; // service-price questions belong to the service engine.
-  return {amount,currency,inclusive,family};
+  const colorAliases={
+    black:['black','musta','mustat','svart','svarta'],
+    white:['white','valkoinen','valkoiset','vit','vita'],
+    blue:['blue','sininen','siniset','bla','blå'],
+    red:['red','punainen','punaiset','rod','röd'],
+    green:['green','vihrea','vihreät','gron','grön'],
+  };
+  const color=Object.entries(colorAliases).find(([,aliases])=>
+    aliases.some(alias=>new RegExp('\\\\b'+alias+'\\\\b','i').test(raw)))?.[0]||null;
+  const sizeMatch=raw.match(/\\b(?:size|koko|storlek)\\s*(\\d{1,3}(?:[.,]\\d)?)\\b/i);
+  return {amount,currency,inclusive,family,color,size:sizeMatch?.[1]||null};
 }
 
 export function groundedBudgetProductAnswer(products,message,lang='fi') {
@@ -36,6 +48,24 @@ export function groundedBudgetProductAnswer(products,message,lang='fi') {
       if(!/\bputter\w*\b/.test(t))return false;
     }
     if(request.family==='club' && !isPhysicalClubProduct(product))return false;
+    const productText=String(product.name||'')+' '+String(product.productType||'');
+    if(request.family==='shoe' && !/\\b(?:shoes?|sneakers?|trainers?|kenga\\w*|kenka\\w*|skor|sko)\\b/i.test(productText))return false;
+    if(request.family==='clothing' && !/\\b(?:shirts?|clothing|clothes|jackets?|vaatt\\w*|paita\\w*|takki\\w*|klader|kläder|jackor)\\b/i.test(productText))return false;
+    if(request.color){
+      const synonyms={
+        black:/\\b(?:black|musta|mustat|svart|svarta)\\b/i,
+        white:/\\b(?:white|valkoinen|valkoiset|vit|vita)\\b/i,
+        blue:/\\b(?:blue|sininen|siniset|bla|blå)\\b/i,
+        red:/\\b(?:red|punainen|punaiset|rod|röd)\\b/i,
+        green:/\\b(?:green|vihrea|vihreä|gron|grön)\\b/i
+      };
+      const colors=[product.name,...(product.colors||[])].join(' ');
+      if(!synonyms[request.color]?.test(colors))return false;
+    }
+    if(request.size){
+      const sizes=[product.name,...(product.sizes||[])].join(' ');
+      if(!new RegExp('\\\\b'+request.size.replace('.','\\\\.')+'\\\\b').test(sizes))return false;
+    }
     if(!Number.isFinite(product.price)||product.price<0)return false;
     if(request.currency && String(product.currency||'').toUpperCase()!==request.currency)return false;
     return request.inclusive ? product.price<=request.amount : product.price<request.amount;
@@ -46,9 +76,9 @@ export function groundedBudgetProductAnswer(products,message,lang='fi') {
     return new Intl.NumberFormat(locale,{style:'currency',currency:code}).format(value);
   };
   const amount=fmt(request.amount,request.currency);
-  const familyWord=lang==='en'?(request.family==='club'?'clubs':request.family==='putter'?'putters':'products')
-    :lang==='sv'?(request.family==='club'?'klubbor':request.family==='putter'?'putters':'produkter')
-    :(request.family==='club'?'mailoja':request.family==='putter'?'puttereita':'tuotteita');
+  const familyWord=lang==='en'?(request.family==='club'?'clubs':request.family==='putter'?'putters':request.family==='shoe'?'shoes':request.family==='clothing'?'clothing':'products')
+    :lang==='sv'?(request.family==='club'?'klubbor':request.family==='putter'?'putters':request.family==='shoe'?'skor':request.family==='clothing'?'kläder':'produkter')
+    :(request.family==='club'?'mailoja':request.family==='putter'?'puttereita':request.family==='shoe'?'kenkiä':request.family==='clothing'?'vaatteita':'tuotteita');
   const bound=lang==='en'?(request.inclusive?'at or below ':'under '):lang==='sv'?(request.inclusive?'högst ':'under '):(request.inclusive?'enintään ':'alle ');
   if(!pool.length){
     const answer=lang==='en'
