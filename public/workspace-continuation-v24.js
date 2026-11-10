@@ -25,6 +25,7 @@ function ensureWorkspace(demo) {
   workspace.className='respondo-workspace';
   workspace.hidden=true;
   workspace.dataset.lang=lang;
+  workspace.dataset.demo=demo?'true':'false';
   workspace.setAttribute('aria-label',choose('Respondo-työtila','Respondo-arbetsyta','Respondo workspace'));
   const nav=(id,fi,sv,en)=>'<button type="button" data-workspace-nav="'+id+'">'+choose(fi,sv,en)+'</button>';
   workspace.innerHTML=`
