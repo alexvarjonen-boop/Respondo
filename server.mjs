@@ -57,6 +57,7 @@ import { conversionOverview } from './respondo-conversion-analytics.mjs';
 import { saveConversationFeedback, feedbackOverview } from './conversation-feedback.mjs';
 import { queueBookingNotice,sendBookingNotice,bookingNoticesOverview } from './booking-customer-notices.mjs';
 import { stageWebsiteRefresh,websiteRefreshReviewOverview,decideWebsiteRefreshReview } from './website-refresh-review.mjs';
+import { summarizeInstantDemoHtml } from './instant-website-demo.mjs';
 import { reconstructedConversationHistory, validInboundEventId, claimInboundEvent, completeInboundEvent, failInboundEvent } from './channel-ingress.mjs';
 import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk, exportFreshdeskTicket } from './freshdesk-helpdesk.mjs';
 import { zendeskConfig, beginZendeskOAuth, completeZendeskOAuth, zendeskStatus, disconnectZendesk, exportZendeskTicket } from './zendesk-oauth.mjs';
@@ -15562,6 +15563,25 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
   }
 });
 
+
+// Opt-in and deliberately shallow zero-cost demo. No AI API, data storage,
+// Firecrawl credit, site-wide crawl or customer claims.
+app.post('/api/public/website-demo-preview',publicContactLimiter,async(req,res)=>{
+  res.set('Cache-Control','no-store');
+  try{
+    let body=req.body;
+    if(typeof body==='string'){try{body=JSON.parse(body);}catch{body={};}}
+    const raw=String(body?.website||'').trim();
+    if(raw.length<4||raw.length>260)return res.status(400).json({error:'Enter a website address.'});
+    const url=normalizeWebUrl(raw,false);
+    if(!url)return res.status(400).json({error:'Invalid website address'});
+    const snapshot=await fetchPublicHtml(url,6500,150000);
+    return res.json(summarizeInstantDemoHtml(snapshot.html,snapshot.finalUrl));
+  }catch(error){
+    console.warn('Instant website preview failed',error?.name||'error');
+    return res.status(422).json({error:'Could not read that public website safely. Try another URL.'});
+  }
+});
 
 app.post('/api/public/demo-lead', publicContactLimiter, async (req,res)=>{
   let lang='fi';
