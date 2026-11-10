@@ -51,7 +51,48 @@
           'A public metadata preview, not an installed bot. Prices and bookings are not guessed.'));
         const link=make('a','rx-instant-demo-visit',t('Avaa lähdesivu','Visa källsidan','Open source page'));
         link.href=source.href;link.rel='noopener noreferrer';link.target='_blank';
-        result.replaceChildren(heading,question,answer,note,link);
+        // Small real interaction, intentionally limited to the public homepage
+        // fields actually returned by the safety-checked preview endpoint.
+        const demo=document.createElement('div');
+        demo.className='rx-instant-demo-interactive';
+        const prompts=document.createElement('div');
+        prompts.className='rx-instant-demo-prompts';
+        prompts.setAttribute('role','group');
+        prompts.setAttribute('aria-label',t('Kokeilukysymykset','Exempelfrågor','Demo questions'));
+        const liveQuestion=make('div','rx-instant-demo-question','');
+        const liveAnswer=make('div','rx-instant-demo-answer','');
+        liveAnswer.setAttribute('role','status');
+        const cases=[
+          [t('Mitä yritys tarjoaa?','Vad erbjuder företaget?','What does the company offer?'),
+           data.description||t('Etusivun julkiset metatiedot eivät kerro tätä varmuudella.',
+             'Den offentliga sidbeskrivningen innehåller inga bekräftade tjänster.',
+             'This public page summary does not verify the company’s services.')],
+          [t('Paljonko palvelut maksavat?','Vad kostar tjänsterna?','How much do services cost?'),
+           t('Hintoja ei voitu varmistaa etusivun metatiedoista. Respondo tarkistaisi hyväksytyn hinnaston ennen hintavastausta.',
+             'Priser kan inte verifieras från startsidans metadata. Respondo kräver en godkänd prislista.',
+             'Prices cannot be verified from homepage metadata. Respondo needs approved pricing sources.')],
+          [t('Voinko varata ajan?','Kan jag boka en tid?','Can I book an appointment?'),
+           t('Saatavuutta ei voida varmistaa tästä esikatselusta. Oikea botti tarkistaa yrityksen hyväksymän kalenterin ja tarvittavan työajan.',
+             'Tillgänglighet kan inte verifieras i denna förhandsgranskning. Den riktiga botten behöver godkända kalender- och tidsregler.',
+             'Availability cannot be verified in this preview. A configured bot checks actual calendar slots and required service duration.')]
+        ];
+        function selectDemo(index){
+          const pair=cases[index];
+          if(!pair)return;
+          liveQuestion.textContent=pair[0];
+          liveAnswer.textContent=pair[1];
+          [...prompts.querySelectorAll('button')].forEach((b,i)=>
+            b.setAttribute('aria-pressed',String(i===index)));
+        }
+        cases.forEach((pair,i)=>{
+          const choice=make('button','rx-instant-demo-prompt',pair[0]);
+          choice.type='button';choice.setAttribute('aria-pressed','false');
+          choice.addEventListener('click',()=>selectDemo(i));
+          prompts.appendChild(choice);
+        });
+        demo.append(prompts,liveQuestion,liveAnswer);
+        result.replaceChildren(heading,demo,note,link);
+        selectDemo(0);
       }catch{
         result.replaceChildren(make('p','rx-instant-demo-error',t(
           'Esikatselua ei voitu hakea. Tarkista julkinen URL.','Kunde inte förhandsgranska adressen.',
