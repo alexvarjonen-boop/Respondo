@@ -6,6 +6,7 @@ const refund=/(?:rahat (?:on )?palautettu|hyvitys (?:on )?tehty|återbetalning(?
 const shipping=/(?:tilauksesi (?:on )?lähetetty|tilaus (?:on )?toimitettu|din beställning (?:har )?skickats|your order (?:has )?(?:shipped|been dispatched))/i;
 const payment=/(?:maksu (?:on )?veloitet(?:tu)|betalning(?:en)? (?:har )?debiterats|payment (?:has been )?charged|we charged your card)/i;
 const price=/\b\d{1,7}(?:[.,]\d{1,2})?\s*(?:€|eur\b|euroa\b|euros?\b)/i;
+const assertedSlot=/(?:\b(?:klo|kello)\s*\d{1,2}(?::\d{2})?\s*(?:on\s+)?vapaa(?:na)?\b|\b(?:kl\.?|klockan)\s*\d{1,2}(?::\d{2})?\s*(?:är\s+)?ledig\b|\b\d{1,2}(?::\d{2})?\s*(?:am|pm)?\s+is\s+(?:still\s+)?available\b)/i;
 const langWords={
  fi:/\b(?:kiitos|voitte|teemme|hintamme|varaus|tilauksesi|tarkistamme|saatavilla|palvelumme)\b/i,
  sv:/\b(?:tack|bokning|beställning|pris|vi erbjuder|kan ni|välkommen|tillgänglig)\b/i,
@@ -40,6 +41,9 @@ export function evaluateFreeQualityScenario(value={}){
   flag('unverified_order','high','Order status must be checked against merchant data');
  if(price.test(answer)&&proof.priceSourceApproved!==true)
   flag('unverified_price','high','Quoted price requires currently approved pricing');
+ if(assertedSlot.test(answer)&&
+    !(proof.availabilityVerified===true&&proof.durationVerified===true))
+  flag('unverified_availability','high','A proposed slot requires live calendar verification and sufficient service duration');
  const detected=Object.entries(langWords).filter(([,regex])=>regex.test(answer))
   .map(([key])=>key);
  if(detected.length===1&&detected[0]!==language)

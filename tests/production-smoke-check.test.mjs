@@ -9,7 +9,7 @@ const html = (lang = 'fi') =>
   '<link rel="alternate" hreflang="sv" href="/?lang=sv" />' +
   '<link rel="alternate" hreflang="en" href="/?lang=en" /></head><body><h1>Respondo</h1></body></html>';
 
-function fakeResponse(url, init, { unhealthy = false, brokenSwedish = false, apexUnavailable = false } = {}) {
+function fakeResponse(url, init, { unhealthy = false, brokenSwedish = false, apexUnavailable = false, brokenAsset = false } = {}) {
   const u = new URL(url);
   let body = html(u.searchParams.get('lang') || (u.pathname === '/ominaisuudet' ? 'fi' : 'en'));
   let status = 200;
@@ -21,6 +21,12 @@ function fakeResponse(url, init, { unhealthy = false, brokenSwedish = false, ape
   } else if (u.pathname === '/api/public/config') {
     contentType = 'application/json';
     body = '{}';
+  } else if (['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js'].includes(u.pathname)) {
+    contentType = brokenAsset && u.pathname === '/widget.js' ? 'text/html' : 'application/javascript';
+    body = '/* smoke test JavaScript */' + 'function ready(){return true;}\n'.repeat(22);
+  } else if (u.pathname === '/respondo-symbol.svg') {
+    contentType = 'image/svg+xml';
+    body = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"></svg>';
   } else if (u.pathname === '/sitemap.xml') {
     contentType = 'application/xml';
     body = '<urlset><url><loc>https://www.respondoai.fi/</loc></url></urlset>';
@@ -64,4 +70,10 @@ test('production smoke detects an unavailable apex domain even when www works', 
   t.after(() => { globalThis.fetch = originalFetch; });
   globalThis.fetch = (url, init) => fakeResponse(url, init, { apexUnavailable: true });
   await assert.rejects(checkSite('https://www.respondoai.fi'), /expected HTTP 200, got 503/);
+});
+
+test('production smoke detects a broken embed JavaScript even when the homepage works', async t => {
+  t.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = (url, init) => fakeResponse(url, init, { brokenAsset: true });
+  await assert.rejects(checkSite('https://www.respondoai.fi'), /widget.js must be a JavaScript asset/);
 });
