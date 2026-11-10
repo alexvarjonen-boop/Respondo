@@ -358,6 +358,12 @@
       .typing-dots i{width:5px;height:5px;border-radius:50%;background:#77777c;animation:rblink 1s infinite ease-in-out}
       .typing-dots i:nth-child(2){animation-delay:.15s}.typing-dots i:nth-child(3){animation-delay:.3s}
       @keyframes rblink{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
+      .handoff-request{flex:0 0 auto;margin-left:auto;padding:7px 10px;border:1px solid #d2d6df;
+        border-radius:999px;background:#fff;color:#2a3445;font-size:11px;font-weight:750;cursor:pointer}
+      .handoff-request:hover{background:#edf0f8;border-color:#9aabd1}
+      .handoff-request:disabled{opacity:.7;cursor:default}
+      .handoff-request:focus-visible{outline:2px solid #687cfc;outline-offset:2px}
+      .handoff-request[hidden]{display:none!important}
       .powered{padding:0 12px 10px;text-align:center;background:#fff;color:#9a9aa0;font-size:10px;letter-spacing:.02em}
       /* iOS Safari: preserve viewport scale when keyboard opens. */
       @media(max-width:1024px), (hover:none) and (pointer:coarse){
@@ -372,6 +378,7 @@
         <header class="head">
           <div class="mark" aria-hidden="true">${widgetAvatarMarkup('robot-1')}</div>
           <div class="headcopy"><b id="name">RESPONDO AI</b><small><span class="dot"></span> ${t('Paikalla nyt', 'Online now')}</small></div>
+          <button class="handoff-request" id="humanHelp" type="button" hidden aria-label="${experienceText('Pyydä asiakaspalvelijaa','Prata med kundtjänst','Talk to a person')}" title="${experienceText('Pyydä asiakaspalvelijaa','Prata med kundtjänst','Talk to a person')}">${experienceText('Ihminen','Personal','Human')}</button>
           <button class="panel-expand" id="panelExpand" type="button" aria-pressed="false" aria-label="${experienceText('Laajenna näkymää','Utöka vyn','Expand view')}" title="${experienceText('Laajenna näkymää','Utöka vyn','Expand view')}">⤢</button>
           <button class="panel-close" id="panelClose" type="button" aria-label="${experienceText('Sulje avustaja','Stäng assistenten','Close assistant')}">×</button>
         </header>
@@ -454,6 +461,8 @@
   const experienceTiles = $('#experienceTiles');
   const panelClose = $('#panelClose');
   const panelExpand = $('#panelExpand');
+  const humanHelp=$('#humanHelp');
+  let humanRequestPending=false;
   const wrap = $('.wrap');
 
   let token = '';
@@ -1362,6 +1371,32 @@
     }
   });
 
+  // Explicit consent by click; messages stay in the same tenant thread.
+  humanHelp.addEventListener('click',async()=>{
+    if(!ready||!token||!visitorRef||humanRequestPending)return;
+    humanRequestPending=true;humanHelp.disabled=true;
+    try{
+      const res=await fetch(serviceOrigin+'/api/public/'+encodeURIComponent(company)+'/handoff',{
+        method:'POST',mode:'cors',credentials:'omit',
+        headers:{'Content-Type':'text/plain;charset=UTF-8'},
+        body:JSON.stringify({widgetToken:token,visitorRef,lang:widgetLang})
+      });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok||!data.requested)throw new Error('Handoff not available');
+      status.textContent=data.availableNow
+        ?experienceText('Pyyntö lähetetty asiakaspalvelijalle','Begäran har skickats till kundtjänsten','Request sent to the team')
+        :experienceText('Pyyntö tallennettu. Työntekijä ei ole juuri nyt paikalla.','Begäran registrerad. Ingen är tillgänglig just nu.','Request saved. No staff member is currently online.');
+      addMessage(status.textContent);
+      if(!data.availableNow)showLeadForm(experienceText('Haluan asiakaspalvelijan yhteydenoton',
+        'Jag vill bli kontaktad av en medarbetare','I would like a team member to contact me'));
+    }catch{
+      humanHelp.disabled=false;
+      status.textContent=experienceText('Siirto ei onnistunut. Yritä uudelleen.',
+        'Det gick inte att skicka begäran. Försök igen.',
+        'Could not request a person. Please try again.');
+    }finally{humanRequestPending=false;}
+  });
+
   async function pollLiveTakeover() {
     if (!ready || !token || !visitorRef) return;
     try {
@@ -1375,7 +1410,8 @@
 
       if (data.mode === 'human') {
         const agentName = String(data.agent?.display_name || '').trim();
-        status.textContent = agentName ? agentName + ' · ' + t('paikalla', 'online') : t('Asiakaspalvelija mukana', 'Human agent joined');
+        status.textContent = agentName ? agentName + ' · ' + t('paikalla', 'online') :
+          experienceText('Odottaa asiakaspalvelijaa','Väntar på kundtjänst','Waiting for a team member');
         status.classList.add('ready');
       } else if (ready) {
         status.textContent = t('Valmis auttamaan', 'Ready');
@@ -1413,6 +1449,7 @@
       const data = await res.json();
       token = data.token;
       ready = true;
+      humanHelp.hidden=false;
       if (!voiceButton.hidden) voiceButton.disabled = false;
       const botDisplayName=String(data.name||'RESPONDO AI').trim().slice(0,100)||'RESPONDO AI';
       const botAvatar=widgetAvatarMarkup(data.avatar || 'robot-1');
