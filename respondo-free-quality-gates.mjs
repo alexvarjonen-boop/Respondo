@@ -41,7 +41,8 @@ export function evaluateFreeQualityScenario(value={}){
   flag('unverified_order','high','Order status must be checked against merchant data');
  if(price.test(answer)&&proof.priceSourceApproved!==true)
   flag('unverified_price','high','Quoted price requires currently approved pricing');
- if(assertedSlot.test(answer)&&proof.availabilityVerified!==true)
+ if(assertedSlot.test(answer)&&
+    !(proof.availabilityVerified===true&&proof.durationVerified===true))
   flag('unverified_availability','high','A proposed slot requires live calendar verification and sufficient service duration');
  const detected=Object.entries(langWords).filter(([,regex])=>regex.test(answer))
   .map(([key])=>key);
