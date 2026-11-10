@@ -573,11 +573,38 @@
         const note=el('textarea','native-review-note');note.maxLength=600;note.rows=2;
         note.placeholder=t.calendarNote;note.setAttribute('aria-label',t.calendarNote);
         card.appendChild(note);
+        // A service without an approved duration formula needs an explicit
+        // employee-verified number of minutes before a slot can be reserved.
+        let manualDuration=null;
+        if(item.serviceCapacity?.manualVerificationRequired===true){
+          manualDuration=el('input','native-manual-duration');
+          manualDuration.type='number';manualDuration.min='1';manualDuration.max='1440';
+          manualDuration.step='1';manualDuration.required=true;
+          manualDuration.placeholder=t.calendarDuration+' ('+t.calendarMinutes+')';
+          manualDuration.setAttribute('aria-label',t.calendarDuration+' ('+t.calendarMinutes+')');
+          card.appendChild(manualDuration);
+          card.appendChild(el('p','native-disclaimer',
+            language==='fi'?'Tarkista työn kesto ja henkilöstö ennen vahvistamista. Kirjaa tarkistus päätöksen lisätietoihin.'
+            :language==='sv'?'Kontrollera arbetets längd och personal före bekräftelse. Dokumentera kontrollen i anteckningen.'
+            :'Verify the duration and staff availability before confirming. Document the check in the decision note.'));
+        }
         const confirm=button(t.calendarConfirm,'button');
         confirm.addEventListener('click',()=>{
-          if(!idGuard(item.id)||!window.confirm(t.calendarConfirmPrompt))return;
+          if(!idGuard(item.id))return;
+          if(manualDuration && (!Number.isInteger(Number(manualDuration.value))||
+            Number(manualDuration.value)<1||Number(manualDuration.value)>1440||
+            note.value.trim().length<8)){
+            feedback.textContent=language==='fi'
+              ?'Anna tarkistettu työn kesto (1–1440 min) ja vähintään 8 merkin perustelu.'
+              :language==='sv'
+                ?'Ange verifierad längd (1–1440 min) och en motivering på minst 8 tecken.'
+                :'Enter a verified duration (1–1440 min) and a note of at least 8 characters.';
+            return;
+          }
+          if(!window.confirm(t.calendarConfirmPrompt))return;
           scheduleAction('POST',SCHEDULE+'/requests/'+item.id+'/decision',{
-            decision:'confirm',note:note.value
+            decision:'confirm',note:note.value,
+            ...(manualDuration?{durationMinutes:Number(manualDuration.value)}:{})
           });
         });
         const reject=button(t.calendarReject,'button');
