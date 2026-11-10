@@ -54,6 +54,7 @@ import { guardCitedNumericFacts } from './runtime-numeric-evidence-guard.mjs';
 import { verifyRetailAnswer } from './product-reply-integrity.mjs';
 import { qualityCenterOverview, createQualityReview, updateQualityReview } from './respondo-quality-center.mjs';
 import { conversionOverview } from './respondo-conversion-analytics.mjs';
+import { saveConversationFeedback, feedbackOverview } from './conversation-feedback.mjs';
 import { reconstructedConversationHistory, validInboundEventId, claimInboundEvent, completeInboundEvent, failInboundEvent } from './channel-ingress.mjs';
 import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk, exportFreshdeskTicket } from './freshdesk-helpdesk.mjs';
 import { zendeskConfig, beginZendeskOAuth, completeZendeskOAuth, zendeskStatus, disconnectZendesk, exportZendeskTicket } from './zendesk-oauth.mjs';
@@ -10537,6 +10538,8 @@ app.get('/api/app/native/quality',auth,ownerOnly,subscribed,nativeEndpoint(
 /* Owner-only funnel metrics: verified submissions, not claimed sales. */
 app.get('/api/app/native/conversions',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>conversionOverview(pool,id,req.query?.days)));
+app.get('/api/app/native/feedback',auth,ownerOnly,subscribed,nativeEndpoint(
+  (id,req)=>feedbackOverview(pool,id,req.query?.days)));
 app.post('/api/app/native/quality/reviews',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>createQualityReview(pool,id,req.body||{})));
 app.patch('/api/app/native/quality/reviews/:id',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -15485,6 +15488,7 @@ app.post('/api/public/demo-chat', demoChatLimiter, async (req, res) => {
 
     return res.json({
       answer,
+      conversationId,
       handoff,
       confidence: handoff ? Math.min(result.confidence, 0.35) : result.confidence,
       intent: result.intent,
@@ -15787,6 +15791,27 @@ app.post('/api/public/:slug/handoff', publicChatLimiter, async (req,res) => {
   }catch(error){
     console.error('Widget handoff failed',error?.name||'error');
     return res.status(503).json({error:'Unable to request human assistance.'});
+  }
+});
+
+// Opt-in feedback linked to the actual answer, not inferred from messages.
+app.post('/api/public/:slug/feedback',publicChatLimiter,async(req,res)=>{
+  try{
+    const tr=await publicTenant(req.params.slug);
+    if(!tr.rowCount)return res.status(404).json({error:'Business not found'});
+    const tenant=tr.rows[0];
+    let body=req.body;
+    if(typeof body==='string'){try{body=JSON.parse(body);}catch{body={};}}
+    if(!body||typeof body!=='object'||Array.isArray(body))return res.status(400).json({error:'Invalid feedback'});
+    if(!validWidgetToken(req,tenant,body.widgetToken))return res.status(403).json({error:'Widget authorization required'});
+    setWidgetCors(req,res);
+    const result=await saveConversationFeedback(pool,tenant.id,String(body.visitorRef||''),body);
+    if(!result.recorded)return res.status(409).json({error:'Feedback already saved or conversation unavailable'});
+    return res.json({recorded:true});
+  }catch(error){
+    if(error instanceof TypeError)return res.status(400).json({error:'Invalid feedback details'});
+    console.error('Feedback submission failed',error?.name||'error');
+    return res.status(503).json({error:'Feedback unavailable'});
   }
 });
 
@@ -16246,11 +16271,12 @@ app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
         metadata:{ handoff,intent:result.intent,verified:!handoff },
       });
     }
+    const conversationId=uid();
     await q(
       `INSERT INTO conversations(id,tenant_id,question,answer,intent,confidence,source_ids,handoff,visitor_ref,page_url,page_title,source_channel,external_contact_id)
        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'website',$12)`,
       [
-        uid(), t.id, message, answer, result.intent, handoff ? Math.min(result.confidence, 0.35) : result.confidence, result.sourceIds, handoff,
+        conversationId, t.id, message, answer, result.intent, handoff ? Math.min(result.confidence, 0.35) : result.confidence, result.sourceIds, handoff,
         visitorRef || null,
         String(body.pageContext?.url || '').slice(0, 1000) || null,
         String(body.pageContext?.title || '').slice(0, 300) || null,
