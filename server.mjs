@@ -55,6 +55,7 @@ import { verifyRetailAnswer } from './product-reply-integrity.mjs';
 import { qualityCenterOverview, createQualityReview, updateQualityReview } from './respondo-quality-center.mjs';
 import { conversionOverview } from './respondo-conversion-analytics.mjs';
 import { saveConversationFeedback, feedbackOverview } from './conversation-feedback.mjs';
+import { queueBookingNotice,sendBookingNotice,bookingNoticesOverview } from './booking-customer-notices.mjs';
 import { reconstructedConversationHistory, validInboundEventId, claimInboundEvent, completeInboundEvent, failInboundEvent } from './channel-ingress.mjs';
 import { connectFreshdesk, freshdeskStatus, retestFreshdesk, disconnectFreshdesk, exportFreshdeskTicket } from './freshdesk-helpdesk.mjs';
 import { zendeskConfig, beginZendeskOAuth, completeZendeskOAuth, zendeskStatus, disconnectZendesk, exportZendeskTicket } from './zendesk-oauth.mjs';
@@ -10512,12 +10513,42 @@ app.delete('/api/app/native/cloud/:provider',auth,ownerOnly,subscribed,nativeWri
 /* Respondo's own calendar, independent of third-party scheduling. */
 app.get('/api/app/native/calendar',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>nativeCalendarOverview(pool,id)));
+app.get('/api/app/native/calendar/notices',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>bookingNoticesOverview(pool,id)));
 app.post('/api/app/native/calendar/requests/:id/decision',
-  auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
-    (id,req)=>decideNativeBooking(pool,id,req.params.id,req.user.sub,req.body||{})));
+  auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(async(id,req)=>{
+    const result=await decideNativeBooking(pool,id,req.params.id,req.user.sub,req.body||{});
+    let notification={status:'not_queued'};
+    try{
+      const kind=result.confirmed?'confirmed':'rejected';
+      const queued=await queueBookingNotice(pool,id,req.params.id,kind);
+      if(queued.queued){
+        notification=await sendBookingNotice(pool,id,req.params.id,kind,{
+          apiKey:String(process.env.RESEND_API_KEY||'').trim(),
+          from:String(process.env.EMAIL_VERIFICATION_FROM||'').trim()
+        });
+      }else notification={status:queued.reason};
+    }catch(error){console.error('Booking notification enqueue failed',error?.name||'error');notification={status:'failed'};}
+    return {...result,notification};
+  }));
 app.post('/api/app/native/calendar/events/:id/cancel',
-  auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
-    (id,req)=>cancelNativeBooking(pool,id,req.params.id,req.user.sub)));
+  auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(async(id,req)=>{
+    const result=await cancelNativeBooking(pool,id,req.params.id,req.user.sub);
+    let notification={status:'not_queued'};
+    try{
+      const row=await pool.query(`SELECT action_request_id FROM respondo_native_calendar_events
+        WHERE tenant_id=$1 AND id=$2`,[id,req.params.id]);
+      const requestId=row.rows?.[0]?.action_request_id;
+      if(requestId){
+        const queued=await queueBookingNotice(pool,id,requestId,'cancelled');
+        notification=queued.queued?await sendBookingNotice(pool,id,requestId,'cancelled',{
+          apiKey:String(process.env.RESEND_API_KEY||'').trim(),
+          from:String(process.env.EMAIL_VERIFICATION_FROM||'').trim()
+        }):{status:queued.reason};
+      }
+    }catch(error){console.error('Cancellation notice enqueue failed',error?.name||'error');notification={status:'failed'};}
+    return {...result,notification};
+  }));
 /* Internal follow-ups live only in Respondo: never send paid/external alerts. */
 app.get('/api/app/native/tasks',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>nativeTaskOverview(pool,id)));
@@ -16546,6 +16577,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     const pageUrl = String(body.pageContext?.url || '').slice(0,1000) || null;
     const payload = {
       fields,
+      customerLanguage:actionLang,
       question: String(body.question || '').trim().slice(0,1200),
       pageUrl,
       pageTitle: String(body.pageContext?.title || '').slice(0,300) || null,
