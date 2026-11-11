@@ -3,7 +3,7 @@
   // Visible page transition only after the visitor clicks a trusted, same-site
   // answer link. Never browse, submit forms, purchase or change settings.
   const KEY='respondo-guided-path-v1';
-  const validPath=path=>/^\/(?:asiakaspalvelubotti|ominaisuudet|funktioner|features|assistant|verkkokauppa-chatbot|ajanvaraus-chatbot|hinnat|tietoturva|tietosuoja|kayttoehdot|yhteystiedot|tilaus|kenelle-sopii|guides|kirjaudu|)$/.test(path);
+  const validPath=path=>/^\/(?:asiakaspalvelubotti|ominaisuudet|funktioner|features|assistant|verkkokauppa-chatbot|ajanvaraus-chatbot|hinnat|tietoturva|tietosuoja|kayttoehdot|yhteystiedot|tilaus|kenelle-sopii|guides(?:\/[a-z0-9-]{1,80})?|kirjaudu|)$/.test(path);
   function translated(fi,sv,en){
     const value=new URLSearchParams(location.search).get('lang')||
       document.documentElement.lang||'en';
@@ -38,7 +38,27 @@
       'You opened the page suggested by the assistant.');
     const close=document.createElement('button');close.type='button';close.textContent='×';
     close.setAttribute('aria-label',translated('Sulje opaste','Stäng meddelandet','Dismiss notice'));
-    close.addEventListener('click',()=>guide.remove());
+    const suggested=app.querySelector(
+      'main a.fx-site-action[href],main a[href="/tilaus"],main a[href^="/tilaus?"],main a[href="/assistant"]');
+    const validTarget=Boolean(suggested&&suggested instanceof HTMLElement&&
+      !suggested.hasAttribute('disabled')&&!suggested.closest('[hidden]'));
+    if(validTarget){
+      suggested.classList.add('respondo-guided-target');
+      const find=document.createElement('button');find.type='button';
+      find.className='respondo-guided-find';
+      find.textContent=translated('Näytä seuraava toiminto','Visa nästa steg','Show next action');
+      find.addEventListener('click',()=>{
+        // Only scroll and focus a trusted element. Never click a CTA,
+        // submit a form, modify prices or trigger a purchase.
+        suggested.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'center'});
+        suggested.focus({preventScroll:true});
+      });
+      guide.append(find);
+    }
+    close.addEventListener('click',()=>{
+      suggested?.classList.remove('respondo-guided-target');
+      guide.remove();
+    });
     guide.append(label,close);document.body.appendChild(guide);
     // This is a navigational cue, not an automatic simulated customer action.
     heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true});

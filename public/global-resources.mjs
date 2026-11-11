@@ -1,4 +1,4 @@
-import { SEO_SPECIALIST_GUIDES } from './seo-specialist-guides.mjs';
+import { SEO_SPECIALIST_GUIDES } from './seo-specialist-guides.mjs?v=20261111-customer-ops-v1';
 // Editorial guides shared by the browser and the server-rendered search fallback.
 // No customer data, API access or marketing tracking is used in this module.
 const guides = {

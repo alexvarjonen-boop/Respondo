@@ -491,5 +491,405 @@ export const SEO_SPECIALIST_GUIDES = {
         ]
       ]
     }
+  },
+  "/guides/asiakasprosessit-ja-tyonkulut": {
+    "reading": "7",
+    "topic": "implementation",
+    "fi": {
+      "title": "Asiointiprosessit Respondo AI:ssa – ohjatut tarjous- ja ajanvarauspyynnöt",
+      "subtitle": "Kuinka otat käyttöön yrityksesi palveluprosessin ilman ohjelmointia ja vältät vahvistamattomat lupaukset?",
+      "sections": [
+        [
+          "1. Valitse yrityksen prosessi",
+          "Avaa kirjautuneena Overview ja Customer workflows. Ota käyttöön vain ne prosessit, jotka sopivat yrityksellesi: muuttopalvelun kartoitus, yleinen palvelutarjouspyyntö tai ajanvarauksen kartoitus. Näitä ei käynnistetä automaattisesti ilman omistajan hyväksyntää."
+        ],
+        [
+          "2. Asiakas antaa tiedot vaiheittain",
+          "Botti tarjoaa asiaankuuluvan kolmivaiheisen lomakkeen, kun asiakas kysyy palvelusta. Muuttoprosessi kerää esimerkiksi lähtö- ja kohdeosoitteen, koon, kerroksen, hissitiedon ja päivämäärätoiveen. Tiedot voi antaa ennalta määriteltyihin kenttiin; tämä ei vielä ole vapaa AI:n ohjaama keskusteluprosessi."
+        ],
+        [
+          "3. Tarkista pyyntö ennen lupausta",
+          "Vastaanotettu pyyntö tallennetaan työntekijän käsiteltäväksi. Tarjous, työn kesto, kalenteritilanne ja lopullinen varaus vahvistetaan erikseen. Tämä estää tilanteen, jossa pelkkä asiakkaan toive muuttuu automaattisesti sitovaksi lupaukseksi."
+        ],
+        [
+          "4. Opasta verkkosivulla",
+          "Respondon omalla sivustolla assistantin sivulinkki voi näyttää navigointivihjeen. Muiden yritysten verkkosivuilla käytetään niiden omia sallittuja linkkejä ja upotuswidgetin toimintoja; botti ei hallitse sivuston jokaista painiketta tai lomaketta."
+        ]
+      ],
+      "faq": [
+        [
+          "Lähteekö asiakkaalle automaattinen sitova tarjous?",
+          "Ei. Ohjattu prosessi tallentaa tarkistettavan pyynnön, jonka yritys käsittelee."
+        ],
+        [
+          "Voinko muuttaa kartoituksen kysymykset vapaasti?",
+          "Tässä versiossa on kolme hyväksyttävää pohjaa. Vapaata monimutkaisten työnkulkujen editoria ei vielä ole."
+        ]
+      ]
+    },
+    "sv": {
+      "title": "Kundprocesser i Respondo AI – guidade offert- och bokningsförfrågningar",
+      "subtitle": "Aktivera passande kundprocesser och undvik obekräftade löften.",
+      "sections": [
+        [
+          "1. Aktivera rätt process",
+          "Öppna Overview och Customer workflows. Aktivera flyttförfrågan, serviceoffert eller bokningsförfrågan för det aktuella företaget. Ägaren godkänner aktiveringen."
+        ],
+        [
+          "2. Samla in uppgifter i flera steg",
+          "Widgeten visar ett strukturerat formulär. För flytt behövs bland annat adresser, bostadens storlek, våning, hiss och önskat datum. Formuläret är inte ett fritt AI-styrt arbetsflöde."
+        ],
+        [
+          "3. Granska innan du lovar något",
+          "Förfrågan sparas för företaget. Pris, arbetstid och tillgänglighet måste kontrolleras separat. En inskickad förfrågan är inte automatiskt en bokning."
+        ],
+        [
+          "4. Navigering på webbplatsen",
+          "På Respondos egen webbplats kan assistentens sidlänkar ge navigeringshjälp. Widgeten styr inte godtyckliga formulär på alla kundwebbplatser."
+        ]
+      ],
+      "faq": [
+        [
+          "Bekräftar Respondo bokningen automatiskt?",
+          "Nej, den guidade processen är en förfrågan som företaget granskar."
+        ],
+        [
+          "Kan jag skapa helt fria processer?",
+          "Denna version stöder tre fördefinierade formulär, inte en helt fri editor."
+        ]
+      ]
+    },
+    "en": {
+      "title": "Customer procedures in Respondo AI – guided quote and booking enquiries",
+      "subtitle": "Enable approved service intake without automatic booking or pricing promises.",
+      "sections": [
+        [
+          "1. Choose a company procedure",
+          "Open Overview and Customer workflows. Enable moving-service intake, general quote requests or appointment enquiries for the correct company. The owner must approve each switch."
+        ],
+        [
+          "2. Collect details in stages",
+          "The widget opens a structured three-stage form. A moving enquiry asks for addresses, home size, floor, elevator access and preferred date. This is guided intake rather than an unrestricted AI conversation builder."
+        ],
+        [
+          "3. Review before confirming",
+          "Submitted information becomes an internal request. The company must separately verify the price, staff capacity, calendar and final booking. A visitor preference is never treated as a confirmed commitment."
+        ],
+        [
+          "4. Guide the website journey",
+          "On the Respondo website, assistant page links provide a navigation cue. On customer websites, the embed uses supported links and actions; it does not take arbitrary control of external forms."
+        ]
+      ],
+      "faq": [
+        [
+          "Does the workflow automatically confirm bookings?",
+          "No. The workflow captures information for human review."
+        ],
+        [
+          "Can I add arbitrary workflow steps?",
+          "This version offers three fixed templates, not a fully custom drag-and-drop process builder."
+        ]
+      ]
+    }
+  },
+  "/guides/verkkokaupan-tuotevertailu": {
+    "reading": "6",
+    "topic": "commerce",
+    "fi": {
+      "title": "Tuotevertailu asiakaspalvelubotissa – käytännön opas verkkokaupalle",
+      "subtitle": "Näin asiakkaalle näytetään kahden tuotteen erot ilman keksittyjä varastosaldoja.",
+      "sections": [
+        [
+          "1. Tuotetiedot ensin",
+          "Varmista, että yrityksen tuotenimet, tuoteosoitteet, hinnat ja kuvaukset on haettu luotettavasti ja hyväksytty. Tuotevertailu ei korjaa virheellistä tietopohjaa."
+        ],
+        [
+          "2. Vertaile kahta tuotetta",
+          "Kun botti näyttää useita tuotekortteja, asiakas voi valita kaksi vertailuun. Respondo asettaa vierekkäin olemassa olevat nimet, kuvaukset ja hinnat. Puuttuva hinta näytetään puuttuvana, ei arvata."
+        ],
+        [
+          "3. Tarkista varasto ja vaihtoehdot kaupassa",
+          "Värit, koot, saatavuus ja toimituskulut täytyy tarkistaa varsinaisessa verkkokaupassa, ellei integraatio anna niitä vahvistetusti. Vertailu ei lisää tuotetta automaattisesti ostoskoriin."
+        ],
+        [
+          "4. Mittaa hyötyä oikein",
+          "Vertailu voi helpottaa valintaa. Tuotekortin avaaminen tai yhteydenottopyyntö ei kuitenkaan ole todiste maksetusta tilauksesta."
+        ]
+      ],
+      "faq": [
+        [
+          "Voiko tuotevertailusta ostaa suoraan?",
+          "Tässä versiossa käyttäjä avaa varsinaisen tuotesivun. Yleistä ostoskoriin lisäystä ei ole toteutettu."
+        ],
+        [
+          "Monta tuotetta voi vertailla?",
+          "Asiakas voi valita kaksi samalla kertaa näytetyistä tuotekorteista."
+        ]
+      ]
+    },
+    "sv": {
+      "title": "Produktjämförelse med AI-chatbot i webbutiken",
+      "subtitle": "Låt kunden jämföra två produkter utan påhittad lagertillgänglighet.",
+      "sections": [
+        [
+          "1. Godkänn produktuppgifterna",
+          "Kontrollera att namn, priser, beskrivningar och produktlänkar är aktuella och korrekta."
+        ],
+        [
+          "2. Välj två produkter",
+          "När botten visar flera produktkort kan besökaren välja två för jämförelse. Endast befintliga namn, beskrivningar och priser visas."
+        ],
+        [
+          "3. Kontrollera lagerstatus i butiken",
+          "Storlek, färg, lagersaldo och leveransvillkor måste bekräftas av butiken. Funktionen lägger inte automatiskt varor i kundvagnen."
+        ],
+        [
+          "4. Tolka resultat försiktigt",
+          "En produktöppning eller lead är inte samma sak som ett bekräftat köp."
+        ]
+      ],
+      "faq": [
+        [
+          "Kan kunden köpa direkt från jämförelsen?",
+          "Kunden kan öppna produktsidan. Allmän kundvagnsintegration ingår inte här."
+        ],
+        [
+          "Hur många produkter går att jämföra?",
+          "Två produkter åt gången."
+        ]
+      ]
+    },
+    "en": {
+      "title": "Product comparison inside a website AI assistant",
+      "subtitle": "Help customers compare two products without inventing inventory, sizes or prices.",
+      "sections": [
+        [
+          "1. Approve product information",
+          "Start with trustworthy product names, URLs, descriptions and prices. Comparison cannot fix stale or unsupported product facts."
+        ],
+        [
+          "2. Compare two product cards",
+          "When multiple products are displayed, the visitor can choose two. Respondo shows their recorded names, descriptions and prices side by side. Missing facts remain missing."
+        ],
+        [
+          "3. Confirm stock and variants at checkout",
+          "Inventory, color, size and shipping options must be confirmed on the actual store unless a connected source provides verified information. Comparison does not automatically add an item to the cart."
+        ],
+        [
+          "4. Measure genuine outcomes",
+          "A viewed product or captured lead is not a completed paid order. Track real orders separately."
+        ]
+      ],
+      "faq": [
+        [
+          "Does comparing products add them to the cart?",
+          "No. The visitor can open the product page; universal add-to-cart is not part of this version."
+        ],
+        [
+          "How many products can be compared?",
+          "Two of the displayed product cards at a time."
+        ]
+      ]
+    }
+  },
+  "/guides/tarjouslaskenta-ja-asiointiseuranta": {
+    "reading": "7",
+    "topic": "sales",
+    "fi": {
+      "title": "Tarjouslaskenta ja asiakkaan seurantalinkki – Respondo AI",
+      "subtitle": "Näin hyödynnät hyväksyttyä hintakaavaa ja turvallista tarjouspyynnön seurantaa.",
+      "sections": [
+        [
+          "1. Määritä hinnat ensin",
+          "Yritys määrittelee perushinnan, yksikköhinnan, minimihinnan ja sovellettavan veroprosentin. Respondo voi näyttää eritellyn, ei-sitovan hinta-arvion näillä säännöillä. Matka- ja lisäpalvelukulut eivät kuulu arvioon, ellei niitä ole erikseen määritelty."
+        ],
+        [
+          "2. Kerää asiakkaan yhteydenottopyyntö",
+          "Asiakas lähettää pyynnön yritykselle hyväksyttyä toimintoa tai asiointilomaketta käyttäen. Pelkkä laskelma ei takaa saatavuutta eikä vahvista varausta."
+        ],
+        [
+          "3. Säilytä oma yksityinen seurantalinkki",
+          "Pyynnön lähettämisen jälkeen käyttäjä saa erillisen linkin, jonka salainen tunniste on osoitteen fragmentissa. Linkki on voimassa 30 päivää. Sen haltija voi nähdä yleisen käsittelytilan; yhteystiedot ja sisäiset huomautukset eivät näy seurantasivulla."
+        ],
+        [
+          "4. Täydennä pyyntöä turvallisesti",
+          "Seurantasivulla asiakas voi lähettää enintään viisi lisätietoviestiä yritykselle. Niiden lähettäminen ei ole tarjoushyväksyntä, maksusuoritus tai varausvahvistus. Älä jaa seurantalinkkiä ulkopuolisille."
+        ]
+      ],
+      "faq": [
+        [
+          "Lähteekö seurantalinkki automaattisesti sähköpostiin?",
+          "Ei. Se näytetään pyynnön lähettäneelle käyttäjälle, joka voi tallentaa linkin."
+        ],
+        [
+          "Onko hinta-arvio sitova tarjous?",
+          "Ei. Yrityksen tulee hyväksyä lopullinen tarjous ja mahdolliset muut kulut erikseen."
+        ]
+      ]
+    },
+    "sv": {
+      "title": "Offertberäkning och privat ärendeuppföljning i Respondo",
+      "subtitle": "Beräkna en preliminär kostnad med godkända priser och följ upp förfrågningar säkert.",
+      "sections": [
+        [
+          "1. Ange prisregler",
+          "Företaget anger grundpris, styckepris, minimipris och moms. Beräkningen är preliminär och omfattar inte okända resekostnader eller tillägg."
+        ],
+        [
+          "2. Kunden skickar en förfrågan",
+          "En offert- eller bokningsförfrågan registreras men betyder inte en bekräftad bokning eller bindande offert."
+        ],
+        [
+          "3. En privat länk i 30 dagar",
+          "Kunden ser en privat länk efter inskickandet. Länken ger statusinformation utan kontaktuppgifter eller interna anteckningar. Länken är giltig i 30 dagar."
+        ],
+        [
+          "4. Komplettera uppgifterna",
+          "Via länken kan kunden skicka högst fem tillägg. Tillägg bekräftar inte betalning eller bokning."
+        ]
+      ],
+      "faq": [
+        [
+          "Skickas länken automatiskt via e-post?",
+          "Nej, kunden sparar länken som visas efter inskickandet."
+        ],
+        [
+          "Är beräknat pris bindande?",
+          "Nej, priset måste granskas och godkännas av företaget."
+        ]
+      ]
+    },
+    "en": {
+      "title": "Quote calculation and private customer request tracking",
+      "subtitle": "Use approved pricing rules and a secure 30-day link to track request status.",
+      "sections": [
+        [
+          "1. Configure approved pricing",
+          "Set base price, per-unit price, minimum and VAT in the owner dashboard. Respondo can show a transparent non-binding estimate. Unverified travel or extra charges are not included."
+        ],
+        [
+          "2. Receive the request",
+          "The visitor submits a quote, booking or callback request. A captured request is not an approved quote, real payment or confirmed appointment."
+        ],
+        [
+          "3. Save the private 30-day link",
+          "Once the request is saved, a private tracking link may appear. The secret is in the URL fragment. The page shows the request status only, not phone numbers, email addresses or internal case notes. The link expires after 30 days."
+        ],
+        [
+          "4. Add information without changing status",
+          "The visitor may send up to five follow-up notes. The company reads them in the owner dashboard. Notes do not accept offers, charge customers or confirm appointments."
+        ]
+      ],
+      "faq": [
+        [
+          "Is the tracking link sent automatically by email?",
+          "No. The link is displayed to the visitor after request submission and must be saved."
+        ],
+        [
+          "Is the estimate legally binding?",
+          "No. The company must independently approve the final quote and any extra costs."
+        ]
+      ]
+    }
+  },
+  "/guides/usean-yrityksen-hallinta": {
+    "reading": "5",
+    "topic": "management",
+    "fi": {
+      "title": "Usean yrityksen hallinta Respondo AI:ssa",
+      "subtitle": "Yksi omistaja, useita erillisiä työtiloja ja todellisiin tapahtumiin perustuvat yhteenvedot.",
+      "sections": [
+        [
+          "1. Yritykset pidetään erillään",
+          "Omistajan eri yrityksillä on omat tietopohjat, botit, pyynnöt ja käyttöoikeudet. Yhden yrityksen asiakastietoja ei saa näyttää toiselle yritykselle."
+        ],
+        [
+          "2. Tarkista yritysten tulokset",
+          "Overview-näkymän yritysyhteenveto näyttää saman omistajan työtilojen pyynnöt ja liidit viimeiseltä 30 päivältä. Raportti ei oleta liidistä syntyneen kauppaa."
+        ],
+        [
+          "3. Ota uudet yritykset käyttöön erikseen",
+          "Luo jokaiselle yritykselle oma työtila, tarkista verkkosivutiedot ja asenna sen widget oikealle verkkosivulle. Varmista, että toimialueet, kielivalinnat ja yhteystiedot ovat yrityskohtaisia."
+        ],
+        [
+          "4. Ymmärrä kumppanitilan rajat",
+          "Tämä versio auttaa omistajaa hallitsemaan useita omia yrityksiä. Erilliset toimistoasiakkaiden käyttöoikeudet, white label -brändäys ja automaattinen provisioseuranta eivät vielä ole käytössä."
+        ]
+      ],
+      "faq": [
+        [
+          "Näkeekö yritys toisen yrityksen asiakastiedot?",
+          "Ei. Työtilat erotetaan yritystunnisteen ja omistajan käyttöoikeuksien perusteella."
+        ],
+        [
+          "Onko tämä valmis jälleenmyyjäohjelma?",
+          "Ei. Se on monen yrityksen omistajan näkymä, ei vielä kumppanipalkkioiden tai asiakastilien hallintaohjelma."
+        ]
+      ]
+    },
+    "sv": {
+      "title": "Hantera flera företag i Respondo AI",
+      "subtitle": "Separata arbetsytor och uppföljning för företag med samma ägare.",
+      "sections": [
+        [
+          "1. Håll kunddata separata",
+          "Varje företag har sin egen bot, sina egna uppgifter och kundärenden. Data får inte blandas mellan arbetsytorna."
+        ],
+        [
+          "2. Granska 30 dagars aktivitet",
+          "Ägaren kan se leads och registrerade förfrågningar för sina företag. Det innebär inte att en försäljning är bekräftad."
+        ],
+        [
+          "3. Konfigurera varje företag",
+          "Skapa en separat arbetsyta och kontrollera hemsida, kontaktuppgifter, språk och installerad widget för varje företag."
+        ],
+        [
+          "4. Känn till begränsningarna",
+          "Läget är en översikt för samma ägare. Delegerad byrååtkomst, white label och automatiska partnerprovisioner ingår ännu inte."
+        ]
+      ],
+      "faq": [
+        [
+          "Kan andra företag se varandras uppgifter?",
+          "Nej, uppgifter isoleras per företag och ägare."
+        ],
+        [
+          "Är detta ett komplett byråprogram?",
+          "Nej. Det är en ägaröversikt över flera företag."
+        ]
+      ]
+    },
+    "en": {
+      "title": "Managing multiple companies with Respondo AI",
+      "subtitle": "Keep company workspaces isolated while reviewing 30-day request and lead activity.",
+      "sections": [
+        [
+          "1. Separate every workspace",
+          "Each company keeps its own knowledge, bot settings and customer requests. Never reuse a tenant identity or share customer records across companies."
+        ],
+        [
+          "2. Review the owner-wide overview",
+          "The owner dashboard can show request counts and lead counts over the last 30 days for companies owned by the signed-in user. Recorded leads are not verified paid sales."
+        ],
+        [
+          "3. Onboard each client site carefully",
+          "Create a company-specific workspace, verify website facts and contact details, then install and test the corresponding widget."
+        ],
+        [
+          "4. Understand partner-mode limits",
+          "The current overview supports businesses belonging to the same owner. Delegated agency permissions, white labeling and automated commissions are not yet enabled."
+        ]
+      ],
+      "faq": [
+        [
+          "Can one company access another company’s customer records?",
+          "No. Company and owner authorization must be enforced on every request."
+        ],
+        [
+          "Is a full reseller program available?",
+          "Not yet. The feature is a multi-company owner overview rather than a complete partner payout system."
+        ]
+      ]
+    }
   }
 };

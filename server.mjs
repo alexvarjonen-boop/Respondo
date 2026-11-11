@@ -75,6 +75,7 @@ import {ensureFreeWorkflowSchema,freeWorkflowOverview,createFreeWorkflow,
  setFreeWorkflowEnabled,markFreeWorkflowApproval,previewFreeWorkflow} from './respondo-free-actions.mjs';
 import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-gates.mjs';
 import {reliabilityOverview} from './respondo-reliability-lab.mjs';
+import {tenantProcedures,saveTenantProcedure,customerOpsOverview,agencyWorkspaceSummary,quoteBreakdown,validateProcedureSubmission,issueRequestTrackingLink,requestTrackingStatus,addCustomerTrackingNote,ownerRequestUpdates} from './respondo-customer-operations.mjs';
 import {listManualVersions,createManualVersion,restoreManualVersion} from './respondo-manual-versions.mjs';
 import {workflowTemplateCatalog,workflowFromTemplate} from './respondo-workflow-templates.mjs';
 import {conversationEvidence} from './respondo-evidence-handoff.mjs';
@@ -10619,6 +10620,66 @@ app.get('/api/app/native/conversions',auth,ownerOnly,subscribed,nativeEndpoint(
 /* Read-only owner progress and explicitly approved first-party growth settings. */
 app.get('/api/app/native/growth',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>growthOverview(pool,id)));
+
+/* Public procedure read requires a valid, site-origin-authorized widget token. */
+app.get('/api/public/:slug/procedures',publicChatLimiter,async(req,res)=>{
+  res.set('Cache-Control','no-store');
+  try{
+    const r=await publicTenant(req.params.slug);
+    if(!r.rowCount)return res.status(404).json({error:'Company not found'});
+    const tenant=r.rows[0];
+    if(!validWidgetToken(req,tenant,req.query?.widgetToken))
+      return res.status(403).json({error:'Widget authorization required'});
+    setWidgetCors(req,res);
+    const all=await tenantProcedures(pool,tenant.id);
+    return res.json({procedures:all.filter(x=>x.enabled)});
+  }catch(error){console.error('Public procedures unavailable',error?.name||'error');
+    return res.status(503).json({error:'Procedures unavailable'});}
+});
+/* Secret request links grant status-only access, never personal details.
+   The capability is in the URL fragment, not server access logs. */
+app.post('/api/public/request-status',publicChatLimiter,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  res.set('X-Robots-Tag','noindex, nofollow');
+  try{
+    const status=await requestTrackingStatus(pool,String(req.body?.token||''));
+    if(!status)return res.status(404).json({error:'Request link unavailable or expired'});
+    return res.json({ok:true,data:status});
+  }catch(error){console.error('Tracking lookup failed',error?.name||'error');
+    return res.status(503).json({error:'Tracking unavailable'});}
+});
+app.post('/api/public/request-status/note',publicChatLimiter,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const result=await addCustomerTrackingNote(pool,
+      String(req.body?.token||''),req.body?.note);
+    return res.json({ok:true,data:result});
+  }catch(error){
+    if(error instanceof TypeError)return res.status(422).json({error:error.message});
+    console.error('Tracking update failed',error?.name||'error');
+    return res.status(503).json({error:'Update unavailable'});
+  }
+});
+
+/* Owner-controlled procedures, triage, quote breakdown and multi-workspace agency readout. */
+app.get('/api/app/native/customer-ops',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>customerOpsOverview(pool,id)));
+app.put('/api/app/native/customer-ops/procedure',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>saveTenantProcedure(pool,id,req.body||{})));
+app.get('/api/app/native/customer-ops/quote-breakdown',auth,ownerOnly,subscribed,nativeEndpoint(
+  async(id,req)=>{
+    const r=await pool.query('SELECT quote_base_price,quote_unit_price,quote_min_price,quote_vat_percent,quote_service_name FROM tenants WHERE id=$1',[id]);
+    if(!r.rowCount)return null;
+    return quoteBreakdown(r.rows[0],req.query?.quantity);
+  }));
+app.get('/api/app/native/customer-ops/requests/:id/updates',auth,ownerOnly,subscribed,nativeEndpoint(
+  (id,req)=>ownerRequestUpdates(pool,id,req.params.id)));
+app.get('/api/app/native/agency/summary',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{return res.json({ok:true,data:await agencyWorkspaceSummary(pool,req.user.sub)});}
+  catch(error){console.error('Agency summary unavailable',error?.name);return res.status(503).json({error:'Workspace summary unavailable'});}
+});
+
 app.put('/api/app/native/growth/settings',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>saveGrowthSettings(pool,id,req.body||{})));
 app.get('/api/app/native/growth/quote-preview',auth,ownerOnly,subscribed,nativeEndpoint(
@@ -16702,7 +16763,25 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       return res.status(403).json({ error:'Tilaustietojen automaattinen tarkistus vaatii Enterprise-tilauksen.', upgradeRequired:true });
     }
 
+    // Structured customer intake is enabled only for this company.
+    // Prices, calendar availability and payments are never approved here.
+    let procedureSubmission=null;
+    if(body.procedureCode){
+      if(body.procedureConsent!==true)
+        return res.status(422).json({error:'Consent is required for customer procedure intake.'});
+      const enabled=await tenantProcedures(pool,tenant.id);
+      const selected=enabled.find(p=>p.code===body.procedureCode&&p.enabled);
+      if(!selected||mainioMoveRequest||type!==selected.actionType)
+        return res.status(403).json({error:'This procedure is unavailable for this company.'});
+      try{procedureSubmission=validateProcedureSubmission(selected.code,body.procedureAnswers||{});}
+      catch(error){return res.status(422).json({error:String(error.message).slice(0,140)});}
+    }
     const fields = cleanActionFields(type, body.fields);
+    if(procedureSubmission){
+      if(!fields.contact)return res.status(400).json({error:'Contact details are required.'});
+      if(type==='quote')fields.details=procedureSubmission.details;
+      else fields.note=procedureSubmission.details.slice(0,1000);
+    }
     if(mainioMoveRequest){
       fields.name=validatedMainio.data.name;
       fields.contact=validatedMainio.data.contact;
@@ -16725,6 +16804,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     const pageUrl = String(body.pageContext?.url || '').slice(0,1000) || null;
     const payload = {
       fields,
+      ...(procedureSubmission?{procedure:{code:procedureSubmission.code,answers:procedureSubmission.fields,humanReviewRequired:true}}:{}),
       customerLanguage:actionLang,
       question: String(body.question || '').trim().slice(0,1200),
       pageUrl,
@@ -16755,7 +16835,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       }
     }
 
-    if (type === 'quote' && actionAccess.allCurrentFeatures && !mainioMoveRequest) {
+    if (type === 'quote' && actionAccess.allCurrentFeatures && !mainioMoveRequest && !procedureSubmission) {
       const base = Number(tenant.quote_base_price || 0);
       const perUnit = Number(tenant.quote_unit_price || 0);
       const minimum = Number(tenant.quote_min_price || 0);
@@ -17115,10 +17195,20 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       }
     }
 
+    let trackingLink=null;
+    if(['quote','booking','callback'].includes(type)){
+      try{
+        const access=await issueRequestTrackingLink(pool,tenant.id,id);
+        // Hash fragment is intentionally not part of the HTTP request.
+        trackingLink='/request-status.html#token='+access.token;
+      }catch(error){console.error('Customer tracking unavailable',error?.name||'error');}
+    }
     return res.json({
       ok:true,
       id,
       status:'new',
+      trackingLink,
+      procedureAccepted:Boolean(procedureSubmission),
       deliveryStatus:delivery.status,
       quote:computedQuote,
       orderStatus:ecommerceOrder,
@@ -17132,7 +17222,13 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       approvalRequired: type==='booking' && serviceManualReview,
       paymentAvailable,
       checkoutUrl,
-      customerMessage: serviceManualReview
+      customerMessage: procedureSubmission
+        ? (actionLang==='fi'
+          ? 'Pyyntösi on tallennettu yrityksen käsiteltäväksi. Hinta, saatavuus ja varaus vahvistetaan erikseen.'
+          : actionLang==='sv'
+            ? 'Din förfrågan har sparats för företagets granskning. Pris, tillgänglighet och bokning bekräftas separat.'
+            : 'Your enquiry has been saved for company review. Price, availability and booking must be confirmed separately.')
+        : serviceManualReview
         ? (actionLang==='en'
           ? 'Your appointment request was received. The team must confirm the job duration, staffing and time before it becomes a booking.'
           : actionLang==='sv'

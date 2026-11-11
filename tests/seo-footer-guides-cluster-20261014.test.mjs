@@ -15,7 +15,7 @@ const NEW_PATHS=[
 ];
 
 test('three unique intent-led guides belong to the footer-linked library, with original multilingual copy',()=>{
-  assert.deepEqual(Object.keys(SEO_SPECIALIST_GUIDES),NEW_PATHS);
+  assert.deepEqual(Object.keys(SEO_SPECIALIST_GUIDES).slice(0,NEW_PATHS.length),NEW_PATHS);
   for(const path of NEW_PATHS){
     assert.ok(GLOBAL_GUIDE_PATHS.includes(path),'guide missing from hub');
     for(const lang of ['fi','sv','en']){

@@ -38,7 +38,9 @@ test('Smart Assist tiles are prompts through existing chat, not unauthorized quo
   assert.match(widget,/experienceConversationStarted = true/);
   assert.match(widget,/experienceHome\.hidden = true/);
   assert.match(widget,/const hasProducts=renderProducts\(data\.products \|\| \[\]\)/);
-  assert.match(widget,/renderActions\(\(data\.actions \|\| \[\]\)/);
+  assert.match(widget,/const existing=\(data\.actions\|\|\[\]\)\.filter/);
+  assert.match(widget,/renderActions\(filtered,message\)/);
+  assert.match(widget,/renderActions\(existing,message\)/);
   assert.match(widget,/showMainioMovingForm\(question\)/);
 });
 

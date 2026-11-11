@@ -379,6 +379,20 @@
       @media(max-width:520px){
         .panel{width:calc(100vw - 12px);height:calc(100dvh - 72px);border-radius:20px}
       }
+    
+      .product-compare-toggle{display:block;width:100%;padding:9px 12px;margin:5px 0 11px;border-radius:10px;border:1px solid #aeb6c6;background:#f6f7fa;color:#151923;font-weight:650;cursor:pointer}
+      .product-compare-toggle[aria-pressed="true"]{background:#202b3c;color:#fff;border-color:#202b3c}
+      .product-compare-panel{padding:11px;border-radius:12px;background:#f1f3f7;border:1px solid #d4dae5;color:#1b2431;display:grid;gap:10px;font-size:12px;line-height:1.5}
+      .product-compare-row{border-top:1px solid #cbd3df;padding-top:8px;display:grid;gap:3px}
+      .product-compare-row strong,.product-compare-row span{font-size:12px;color:#101723}
+      .customer-procedure-box fieldset[hidden]{display:none!important}
+      .customer-procedure-box fieldset{margin:10px 0;border:0;padding:0}
+      .customer-procedure-box .procedure-controls{display:flex;gap:8px;justify-content:space-between;margin-top:9px}
+      .customer-procedure-box .procedure-progress{font-size:11px;color:#506178;margin:8px 0}
+      .customer-procedure-box .action-ok a{color:#174ea6;font-weight:700;display:inline-block;margin-top:10px}
+      .customer-procedure-box label{line-height:1.4}
+      .customer-procedure-box textarea{width:100%;border-radius:10px;padding:10px;min-height:72px;resize:vertical}
+
     </style>
     <div class="wrap experience-${experienceMode}">
       <section class="panel" id="respondo-chat-panel" aria-label="${t('Respondon asiakaspalvelu', 'RESPONDO AI customer service')}">
@@ -474,6 +488,7 @@
 
   let token = '';
   let ready = false;
+  let customerProcedures=[];
   let visitorRef = '';
   let livePollAfter = '';
   let livePollTimer = null;
@@ -740,7 +755,7 @@
     const valid = (Array.isArray(actions) ? actions : [])
       .filter((x) => x?.label && (
         safeActionUrl(x?.url) ||
-        ['lead','contact_form','quote_form','booking_form','order_form','mainio_move_form'].includes(x?.mode)
+        ['lead','contact_form','quote_form','booking_form','order_form','mainio_move_form','procedure_form'].includes(x?.mode)
       ))
       .slice(0, 4);
     if (!valid.length) return;
@@ -748,6 +763,14 @@
     wrap.className = 'actions';
 
     valid.forEach((action) => {
+      if(action.mode==='procedure_form'){
+        const p=customerProcedures.find(x=>x.code===action.code&&x.enabled);
+        if(!p)return;
+        const button=document.createElement('button');button.type='button';
+        button.textContent=action.label+' →';
+        button.addEventListener('click',()=>showProcedureForm(p,question));
+        wrap.append(button);return;
+      }
       if (action.mode === 'mainio_move_form') {
         const button = document.createElement('button');
         button.type = 'button';
@@ -853,7 +876,10 @@
       try {if(/^[A-Z]{3}$/.test(code||'')) return new Intl.NumberFormat(locale,{style:'currency',currency:code}).format(value);} catch {}
       return new Intl.NumberFormat(locale,{maximumFractionDigits:2}).format(value);
     }
-    for(const item of valid){
+    const selectedForCompare=new Set();
+    const comparePanel=document.createElement('div');
+    comparePanel.className='product-compare-panel';
+    for(const [index,item] of valid.entries()){
       const card=document.createElement('a');
       card.className='product-card'; card.href=item.url;card.target='_blank';card.rel='noopener noreferrer';
       const image=document.createElement(item.imageUrl&&/^https?:\/\//i.test(item.imageUrl)?'img':'span');
@@ -883,7 +909,51 @@
       card.append(image,details);
       card.addEventListener('click',()=>trackAction({type:'product',label:item.name,url:item.url}));
       wrap.appendChild(card);
+      if(valid.length>1){
+        const toggle=document.createElement('button');
+        toggle.type='button';toggle.className='product-compare-toggle';
+        toggle.textContent=experienceText('Vertaa tätä','Jämför denna','Compare this');
+        toggle.setAttribute('aria-pressed','false');
+        toggle.addEventListener('click',()=>{
+          if(selectedForCompare.has(index))selectedForCompare.delete(index);
+          else{
+            if(selectedForCompare.size>=2)selectedForCompare.clear();
+            selectedForCompare.add(index);
+          }
+          for(const node of wrap.querySelectorAll('[data-product-compare-index]'))
+            node.setAttribute('aria-pressed',String(selectedForCompare.has(Number(node.dataset.productCompareIndex))));
+          comparePanel.replaceChildren();
+          const chosen=[...selectedForCompare].map(i=>valid[i]);
+          if(chosen.length!==2){
+            const hint=document.createElement('p');
+            hint.textContent=experienceText('Valitse kaksi tuotetta vertailuun.',
+              'Välj två produkter att jämföra.','Select two products to compare.');
+            comparePanel.append(hint);return;
+          }
+          const title=document.createElement('strong');
+          title.textContent=experienceText('Tuotevertailu','Produktjämförelse','Product comparison');
+          comparePanel.append(title);
+          for(const p of chosen){
+            const row=document.createElement('div');row.className='product-compare-row';
+            const name=document.createElement('strong');name.textContent=String(p.name||'');
+            const price=document.createElement('span');
+            price.textContent=Number.isFinite(p.price)?formatPrice(p.price,p.currency):
+              experienceText('Hintaa ei vahvistettu','Priset är inte verifierat','Price not verified');
+            const description=document.createElement('small');
+            description.textContent=String(p.description||'').slice(0,220);
+            row.append(name,price,description);comparePanel.append(row);
+          }
+          const note=document.createElement('small');
+          note.textContent=experienceText('Vertailu perustuu yrityksen tuotetietoihin. Tarkista varastotilanne ja valittu vaihtoehto kaupassa.',
+            'Jämförelsen bygger på företagets produktuppgifter. Kontrollera lagerstatus i butiken.',
+            'Comparison uses company product information. Check stock and options in the store.');
+          comparePanel.append(note);
+        });
+        toggle.dataset.productCompareIndex=String(index);
+        wrap.appendChild(toggle);
+      }
     }
+    if(valid.length>1)wrap.appendChild(comparePanel);
     productSheetContent.replaceChildren(wrap);
     const opener=document.createElement('button');
     opener.type='button';opener.className='product-reopen';
@@ -1108,6 +1178,135 @@
     show(0);
   }
 
+  function procedureForQuestion(question){
+    const q=String(question||'').toLowerCase();
+    const match=/\b(muutto|muuttotarjous|flytt|moving|relocation)\b/i.test(q)
+      ? 'moving_quote'
+      : /\b(ajanvaraus|varaa|boka|booking|appointment|tid)\b/i.test(q)
+        ? 'booking_request'
+        : /\b(tarjous|hinta|offert|quote|estimate|pris)\b/i.test(q)
+          ? 'service_quote':null;
+    return customerProcedures.find(p=>p.code===match&&p.enabled)||null;
+  }
+  function showProcedureForm(procedure,question=''){
+    if(chat.querySelector('.actionbox')||!procedure||
+       !customerProcedures.some(x=>x.code===procedure.code&&x.enabled))return;
+    const languageIndex=widgetLang==='fi'?0:widgetLang==='sv'?1:2;
+    const word=(fi,sv,en)=>[fi,sv,en][languageIndex];
+    const box=document.createElement('form');box.className='actionbox customer-procedure-box';
+    const heading=document.createElement('b');
+    heading.textContent=String(procedure.title?.[languageIndex]||procedure.title?.[2]||'Request');
+    const note=document.createElement('small');
+    note.textContent=word('Täytä tarvittavat tiedot. Yritys vahvistaa hinnan ja ajankohdan erikseen.',
+      'Fyll i uppgifterna. Företaget bekräftar pris och tid separat.',
+      'Provide the details. The company must separately confirm prices and availability.');
+    box.append(heading,note);
+    const specs=Array.isArray(procedure.fields)?procedure.fields.slice(0,10):[];
+    const steps=[document.createElement('fieldset'),document.createElement('fieldset'),document.createElement('fieldset')];
+    const split=Math.max(1,Math.ceil(specs.length/2));
+    for(const [i,spec] of specs.entries()){
+      if(!/^[a-z_]{2,24}$/.test(String(spec.key||'')))continue;
+      const group=document.createElement('label');
+      group.style.display='block';group.style.marginTop='11px';
+      group.textContent=String(spec.label?.[languageIndex]||spec.label?.[2]||spec.key);
+      const tag=spec.type==='textarea'?'textarea':'input';
+      const input=document.createElement(tag);
+      if(tag==='input')input.type=['text','number','date'].includes(spec.type)?spec.type:'text';
+      input.name=spec.key;input.required=spec.required===true;
+      input.maxLength=spec.type==='textarea'?500:180;
+      if(input.type==='number'){input.min='0.001';input.max='100000';input.step='any';}
+      group.append(input);steps[i<split?0:1].append(group);
+    }
+    for(const key of ['name','contact']){
+      const label=document.createElement('label');label.style.display='block';
+      label.textContent=key==='name'?word('Nimi','Namn','Name'):
+        word('Puhelin tai sähköposti','Telefon eller e-post','Phone or email');
+      const input=document.createElement('input');input.name=key;input.required=key==='contact';
+      input.maxLength=key==='name'?120:220;
+      label.append(input);steps[2].append(label);
+    }
+    const consent=document.createElement('label');
+    consent.style.display='flex';consent.style.gap='8px';consent.style.alignItems='flex-start';
+    const check=document.createElement('input');check.type='checkbox';
+    check.required=true;check.name='consent';check.style.width='auto';
+    consent.append(check,document.createTextNode(word(
+      'Hyväksyn tietojen lähettämisen tälle yritykselle pyyntöni käsittelyä varten.',
+      'Jag samtycker till att uppgifterna delas med företaget för min förfrågan.',
+      'I agree to share these details with the company to process my request.')));
+    steps[2].append(consent);
+    steps.forEach((section,i)=>{section.style.border='0';section.style.padding='0';section.hidden=i!==0;box.append(section);});
+    const progress=document.createElement('p');progress.className='procedure-progress';
+    progress.setAttribute('role','status');
+    const controls=document.createElement('div');controls.className='procedure-controls';
+    const back=document.createElement('button');back.type='button';
+    back.textContent=word('Edellinen','Föregående','Back');
+    const next=document.createElement('button');next.type='button';
+    const feedback=document.createElement('div');feedback.setAttribute('role','status');
+    feedback.className='action-ok';
+    controls.append(back,next);box.append(progress,controls,feedback);
+    let active=0,sending=false;
+    function show(index){
+      active=index;steps.forEach((step,i)=>{step.hidden=i!==index;});
+      progress.textContent=word('Vaihe ','Steg ','Step ')+(index+1)+' / 3';
+      back.hidden=index===0;
+      next.textContent=index===2?word('Lähetä pyyntö','Skicka förfrågan','Send request'):
+        word('Seuraava','Nästa','Next');
+    }
+    back.addEventListener('click',()=>{if(!sending)show(Math.max(0,active-1));});
+    // Each wizard step validates only its visible controls; native requestSubmit
+    // would otherwise block on required inputs in later hidden steps.
+    next.addEventListener('click',()=>{if(!sending)box.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});
+    box.addEventListener('submit',async event=>{
+      event.preventDefault();
+      if(sending)return;
+      for(const input of steps[active].querySelectorAll('input,textarea')){
+        if(!input.checkValidity()){input.reportValidity();return;}
+      }
+      if(active<2){show(active+1);return;}
+      sending=true;next.disabled=true;back.disabled=true;
+      feedback.textContent=word('Lähetetään…','Skickar…','Sending…');
+      const data=new FormData(box),answers={};
+      for(const spec of specs)answers[spec.key]=String(data.get(spec.key)||'').trim();
+      try{
+        const res=await fetch(serviceOrigin+'/api/public/'+encodeURIComponent(company)+'/action-request',{
+          method:'POST',mode:'cors',credentials:'omit',
+          headers:{'Content-Type':'text/plain;charset=UTF-8'},
+          body:JSON.stringify({type:procedure.actionType,procedureCode:procedure.code,
+            procedureAnswers:answers,procedureConsent:check.checked,
+            fields:{name:data.get('name'),contact:data.get('contact')},
+            question,widgetToken:token,visitorRef,lang:widgetLang,pageContext})
+        });
+        const result=await res.json().catch(()=>({}));
+        if(!res.ok||!result.ok)throw Error(result.error||'Request unavailable');
+        steps.forEach(step=>{step.hidden=true;});
+        controls.hidden=true;progress.hidden=true;
+        feedback.textContent=result.customerMessage||word(
+          'Pyyntö on vastaanotettu ja odottaa yrityksen käsittelyä.',
+          'Förfrågan har tagits emot för granskning.',
+          'Your request was received for company review.');
+        if(result.trackingLink){
+          try{
+            const link=new URL(result.trackingLink,serviceOrigin);
+            if(link.origin===serviceOrigin && link.pathname==='/request-status.html' &&
+               /^#token=[a-f0-9]{64}$/i.test(link.hash)){
+              const a=document.createElement('a');a.href=link.href;
+              a.target='_blank';a.rel='noopener noreferrer';
+              a.textContent=word('Seuraa pyynnön käsittelyä →',
+                'Följ din förfrågan →','Track your request →');
+              feedback.append(document.createElement('div'),a);
+            }
+          }catch{}
+        }
+      }catch(error){
+        feedback.textContent=String(error.message||word('Lähetys epäonnistui',
+          'Sändningen misslyckades','Sending failed')).slice(0,160);
+        sending=false;next.disabled=false;back.disabled=false;
+      }
+      chat.scrollTop=chat.scrollHeight;
+    });
+    show(0);chat.append(box);chat.scrollTop=chat.scrollHeight;
+  }
+
   function showActionForm(action, question) {
     if (chat.querySelector('.actionbox')) return;
 
@@ -1263,6 +1462,17 @@
             '</strong><span>' + escapeHtml(formatted) + '</span></div>';
         }
 
+        if(data.trackingLink){
+          try{
+            const link=new URL(data.trackingLink,serviceOrigin);
+            if(link.origin===serviceOrigin && link.pathname==='/request-status.html' &&
+                /^#token=[a-f0-9]{64}$/i.test(link.hash)){
+              resultHtml+='<a class="action-pay" href="'+escapeHtml(link.href)+
+                '" target="_blank" rel="noopener noreferrer">'+
+                escapeHtml(experienceText('Seuraa pyynnön käsittelyä','Följ din förfrågan','Track your request'))+'</a>';
+            }
+          }catch{}
+        }
         ok.innerHTML = resultHtml;
         box.querySelectorAll('input,textarea,select,button').forEach((el) => el.disabled = true);
         button.textContent = t('Valmis ✓', 'Done ✓');
@@ -1521,6 +1731,14 @@
       const data = await res.json();
       token = data.token;
       ready = true;
+      // Tenant owner-approved structured procedures only. Failing discovery
+      // never prevents ordinary chat from working.
+      void fetch(serviceOrigin+'/api/public/'+encodeURIComponent(company)+
+        '/procedures?widgetToken='+encodeURIComponent(token),{
+          method:'GET',mode:'cors',credentials:'omit',cache:'no-store'
+        }).then(r=>r.ok?r.json():null).then(result=>{
+          customerProcedures=Array.isArray(result?.procedures)?result.procedures:[];
+        }).catch(()=>{customerProcedures=[];});
       humanHelp.hidden=false;
       if (!voiceButton.hidden) voiceButton.disabled = false;
       const botDisplayName=String(data.name||'RESPONDO AI').trim().slice(0,100)||'RESPONDO AI';
@@ -1651,7 +1869,16 @@
         chat.appendChild(note);
       }
       const hasProducts=renderProducts(data.products || []);
-      renderActions((data.actions || []).filter((action)=>!hasProducts || action?.type!=='product'), message);
+      const procedure=procedureForQuestion(message);
+      const existing=(data.actions||[]).filter(action=>!hasProducts||action?.type!=='product');
+      if(procedure){
+        // Prefer one owner-approved intake over duplicate quote/booking buttons.
+        const filtered=existing.filter(a=>!['quote_form','booking_form'].includes(a.mode));
+        filtered.unshift({mode:'procedure_form',code:procedure.code,
+          label:String(procedure.title?.[widgetLang==='fi'?0:widgetLang==='sv'?1:2]||
+            procedure.title?.[2]||'Request')});
+        renderActions(filtered,message);
+      }else renderActions(existing,message);
       renderBranchChoices(data.branchChoices || []);
       if ((data.canLeaveContact || data.handoff) && !data.humanTakeover) showLeadForm(message);
       if (data.humanTakeover) {
