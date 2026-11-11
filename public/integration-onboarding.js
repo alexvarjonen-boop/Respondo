@@ -268,7 +268,8 @@
         !$('#booking-calendar .calendar-sync-card.connected:not([hidden])') &&
         !$('#connectGoogleCalendar');
       existingLocks.set(item.id,!target || protectedByPlan || googlePlanLocked ||
-        (target.hidden && item.tab!=='native-operations' && item.tab!=='booking-calendar'));
+        (target.hidden && item.tab!=='native-operations' && item.tab!=='booking-calendar' &&
+         !(target.dataset.respondoProviderGated==='yes' && target.dataset.respondoPlanAllowed==='yes')));
     }
     // Server output is the source of truth for the connected state. Unknown is
     // distinct from disconnected, especially when an endpoint is unavailable.
@@ -304,6 +305,13 @@
         if(oauthAvailable.get(item.id)!==true)return 'unverified';
       }
       return states.get(item.id)||domStatus(item)||'unknown';
+    }
+    // No unusable service may be advertised as a choice. Unknown or missing
+    // readiness is hidden, not merely displayed as a clickable gray card.
+    function providerVisible(item){
+      if(!readinessLoaded || prerequisites.get(item.id)!==true || existingLocks.get(item.id))return false;
+      if(['gmail','outlook'].includes(item.id) && oauthAvailable.get(item.id)!==true)return false;
+      return true;
     }
     function statusLabel(s){
       if(s==='restricted')return t.restricted;
@@ -346,10 +354,10 @@
       }else if(!chosenGroup){
         addStepTitle(t.first);
         const list=el('div','rs-integration-group-grid');
-        for(const group of groups){
+        for(const group of groups.filter(g=>providers.some(p=>p.group===g.id && providerVisible(p)))){
           const button=el('button','rs-integration-group');
           button.type='button';button.dataset.integrationGroup=group.id;
-          const count=providers.filter(item=>item.group===group.id).length;
+          const count=providers.filter(item=>item.group===group.id && providerVisible(item)).length;
           button.append(el('strong','',word(group.label)),el('span','',word(group.help)),
             el('small','',String(count)+' '+t.groupCount));
           list.append(button);
@@ -359,7 +367,7 @@
         addStepTitle(t.second);
         content.appendChild(el('p','rs-integration-hint',t.example));
         const list=el('div','rs-integration-provider-grid');
-        for(const item of providers.filter(x=>x.group===chosenGroup)){
+        for(const item of providers.filter(x=>x.group===chosenGroup && providerVisible(x))){
           const button=el('button','rs-integration-provider');
           button.type='button';button.dataset.integrationProvider=item.id;
           button.append(el('strong','',item.name),el('small','',statusLabel(status(item))));
@@ -541,9 +549,9 @@
       const provider=event.target.closest('[data-integration-provider]');
       const own=event.target.closest('[data-own-tool]');
       const open=event.target.closest('[data-integration-open]');
-      if(group){chosenGroup=group.dataset.integrationGroup;chosenProvider=null;
+      if(group && providers.some(p=>p.group===group.dataset.integrationGroup && providerVisible(p))){chosenGroup=group.dataset.integrationGroup;chosenProvider=null;
         ws.classList.remove('rs-integration-configuring');draw();}
-      if(provider){chosenProvider=provider.dataset.integrationProvider;
+      if(provider && providers.some(p=>p.id===provider.dataset.integrationProvider && providerVisible(p))){chosenProvider=provider.dataset.integrationProvider;
         ws.classList.remove('rs-integration-configuring');draw();}
       if(own){
         const item=ownTools.find(x=>x.id===own.dataset.ownTool);
@@ -559,7 +567,7 @@
         }
       }
       if(open){const item=providers.find(x=>x.id===open.dataset.integrationOpen);
-        if(item && !['restricted','notConfigured','unverified'].includes(status(item)))focusExisting(item);}
+        if(item && providerVisible(item) && !['restricted','notConfigured','unverified'].includes(status(item)))focusExisting(item);}
     });
     back.addEventListener('click',()=>{
       if(chosenProvider)chosenProvider=null;
