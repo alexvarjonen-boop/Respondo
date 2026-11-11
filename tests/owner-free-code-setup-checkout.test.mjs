@@ -65,14 +65,14 @@ test('existing customer: founder setup costs zero, without premature activation'
   assert.match(code,/assistedSetupCheckoutTrial\(setupService\)/);
   assert.equal((code.match(/owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'/g)||[]).length,2);
   assert.match(code,/payment_method_collection:freeReferral && setupService \? 'if_required' : 'always'/);
-  assert.match(code,/if\(referralCode && !freeReferral\)\{/);
+  assert.match(code,/if\(referralCode && !freeReferral && !usFirstYearCampaign\)\{/);
   assert.match(code,/allow_promotion_codes:false/);
 });
 
 test('normal 20% customer referral remains separate from free founder promo',()=>{
-  assert.match(server,/if \(referralCode && !freeReferral\) \{/);
+  assert.match(server,/if \(referralCode && !freeReferral && !usFirstYearCampaign\) \{/);
   assert.match(server,/applyReferralDiscountIfEligible\(userId, subscriptionId/);
   assert.match(server,/percent_off: 20,\s*duration: 'once'/);
   assert.match(server,/const FREE_REFERRAL_CODE = normalizeReferralCode\(process\.env\.OWNER_FREE_CODE \|\| ''\)/);
-  assert.match(server,/if\(referralCode && !freeReferral && !planAllowsReferral\(plan\)\)/);
+  assert.match(server,/if\(referralCode && !freeReferral && !usFirstYearCampaign && !planAllowsReferral\(plan\)\)/);
 });
