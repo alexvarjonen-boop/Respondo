@@ -5043,6 +5043,10 @@ async function dashboard(options = {}) {
             <span>${actionRequests.filter((x) => x.status !== 'done').length} ${appText('avoinna','öppna','open')}</span>
           </div>
 
+          ${!isDemo ? `<div class="portal-preview-shortcut" style="margin:0 0 18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+            <a class="btn ghost" href="/api/app/customer-portal-preview?lang=${esc(currentLang())}" target="_blank" rel="noopener noreferrer">${appText('Näytä Customer Portal -esikatselu','Visa förhandsvisning av kundportalen','Preview Customer Portal')} ↗</a>
+            <small>${appText('Esimerkki asiakkaan seurantasivusta. Ei lähetä oikeaa pyyntöä.','Exempel på kundens statussida. Ingen riktig förfrågan skickas.','Example of the customer status page. No real request is sent.')}</small>
+          </div>` : ''}
           <div class="action-request-list">
             ${actionRequests.length ? actionRequests.map((x) => `
               <article class="action-request-item ${x.status === 'done' ? 'done' : ''}" data-action-id="${esc(x.id)}">
