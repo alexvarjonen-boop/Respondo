@@ -2,7 +2,7 @@
 // external delivery, or claim that the visitor will buy.
 const fold=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().slice(0,1600);
 const urgent=[
- /\b(?:urgent|asap|immediately|today|tomorrow|within\s+24\s+hours|this\s+afternoon)\b/i,
+ /\b(?:urgent(?:ly)?|asap|immediately|today|tomorrow|within\s+24\s+hours|this\s+afternoon)\b/i,
  /\b(?:kiireellinen|kiireesti|heti|tanaan|huomenna|mahdollisimman\s+pian)\b/i,
  /\b(?:bradskande|akut|snarast|omedelbart|idag|imorgon)\b/i
 ];
