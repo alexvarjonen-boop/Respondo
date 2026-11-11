@@ -114,7 +114,7 @@ export const FEATURE_GROUPS = [
       ['Alkuperäisen asiakaskysymyksen tallentaminen','Lagring av den ursprungliga kundfrågan','Stores the original customer question'],
       ['Yhteydenoton tallentaminen liidiksi','Sparar kontaktförfrågan som lead','Stores contact request as a lead'],
       ['Liidin yhdistäminen oikeaan kävijään','Kopplar lead till rätt besökare','Links lead to the correct visitor'],
-      ['Liidien näyttäminen hallintapaneelissa','Visar leads i kontrollpanelen','Shows leads in the dashboard'],
+      ['Liidien ja kiireellisten asiakaspyyntöjen näyttäminen hallintapaneelissa','Visar leads och uttryckligen brådskande kundförfrågningar i kontrollpanelen','Shows leads and explicitly urgent customer requests in the dashboard'],
       ['Takaisinsoittopyynnön tarjoaminen','Erbjuder återuppringning','Offers callback request'],
       ['Suoran soittotoiminnon tarjoaminen','Erbjuder direkt samtalsfunktion','Offers direct call action'],
       ['Suoran sähköpostitoiminnon tarjoaminen','Erbjuder direkt e-postfunktion','Offers direct email action'],
