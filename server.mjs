@@ -16767,6 +16767,8 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     // Prices, calendar availability and payments are never approved here.
     let procedureSubmission=null;
     if(body.procedureCode){
+      if(body.procedureConsent!==true)
+        return res.status(422).json({error:'Consent is required for customer procedure intake.'});
       const enabled=await tenantProcedures(pool,tenant.id);
       const selected=enabled.find(p=>p.code===body.procedureCode&&p.enabled);
       if(!selected||mainioMoveRequest||type!==selected.actionType)
@@ -17198,7 +17200,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       try{
         const access=await issueRequestTrackingLink(pool,tenant.id,id);
         // Hash fragment is intentionally not part of the HTTP request.
-        trackingLink=BASE+'/request-status.html#token='+access.token;
+        trackingLink='/request-status.html#token='+access.token;
       }catch(error){console.error('Customer tracking unavailable',error?.name||'error');}
     }
     return res.json({
