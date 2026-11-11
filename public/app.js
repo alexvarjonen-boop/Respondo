@@ -3642,7 +3642,7 @@ function signup() {
             ${testBilling ? '' : setupServiceOption()}
             <div class="field full referral-signup-field">
               <label>${appText('Suosittelukoodi','Rekommendationskod','Referral code')} <span>${appText('valinnainen','valfri','optional')}</span></label>
-              <input name="referralCode" maxlength="32" autocomplete="off" value="${esc(referralCode)}" placeholder="US20YEAR / RESPONDO-XXXXXXXX">
+              <input name="referralCode" maxlength="32" autocomplete="off" value="${esc(referralCode)}" placeholder="${appText('Syötä suosittelukoodi','Ange rekommendationskod','Enter referral code')}">
               <small id="referralHint">${isUSOfferReferral ? appText('USA-koodi US20YEAR: −20 % ensimmäiset 12 kuukautta, kaikilla paketeilla ja laskutusjaksoilla. Alennus näkyy Stripe-kassalla.','USA-kod US20YEAR: 20 % rabatt de första 12 månaderna på alla paket och faktureringsperioder. Rabatten syns i Stripe-kassan.','US code US20YEAR: 20% off the first 12 months on all plans, monthly or annual. Discount appears in Stripe Checkout.') : appText('Saat voimassa olevalla suosittelukoodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','En giltig rekommendationskod ger 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid referral code gives 20% off the first paid month. Monthly plans only.')}</small>
             </div>
             ${checkoutBusinessTerms('terms', 'checkrow field full')}
@@ -6665,7 +6665,7 @@ async function route() {
           ? appText('USA-koodi US20YEAR: −20 % ensimmäiset 12 kuukautta, kuukausi- ja vuositilauksille. Vain yhdysvaltalaisille yrityksille.','USA-kod US20YEAR: 20 % rabatt under de första 12 månaderna på månads- och årsabonnemang för amerikanska företag.','US20YEAR: 20% off for the first 12 months on monthly and annual subscriptions for US businesses.')
           : monthly
             ? appText('Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','Med en giltig kod får du 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid referral code gives 20% off the first paid month on monthly plans.')
-            : appText('Tavallinen suosittelualennus on vain kuukausitilaukseen. USA-koodi US20YEAR käy myös vuositilaukseen.','Vanliga rekommendationskoder gäller bara månadsabonnemang. USA-koden US20YEAR fungerar även årsvis.','Standard referral codes are monthly-only. US20YEAR also works with annual billing.');
+            : appText('Tavalliset suosittelukoodit käyvät vain kuukausitilaukseen.','Vanliga rekommendationskoder gäller bara månadsabonnemang.','Standard referral codes are valid for monthly subscriptions only.');
       }
     };
     signupReferral?.addEventListener('input', syncReferralField);
