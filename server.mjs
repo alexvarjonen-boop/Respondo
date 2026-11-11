@@ -16723,7 +16723,23 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       return res.status(403).json({ error:'Tilaustietojen automaattinen tarkistus vaatii Enterprise-tilauksen.', upgradeRequired:true });
     }
 
+    // Structured customer intake is enabled only for this company.
+    // Prices, calendar availability and payments are never approved here.
+    let procedureSubmission=null;
+    if(body.procedureCode){
+      const enabled=await tenantProcedures(pool,tenant.id);
+      const selected=enabled.find(p=>p.code===body.procedureCode&&p.enabled);
+      if(!selected||mainioMoveRequest||type!==selected.actionType)
+        return res.status(403).json({error:'This procedure is unavailable for this company.'});
+      try{procedureSubmission=validateProcedureSubmission(selected.code,body.procedureAnswers||{});}
+      catch(error){return res.status(422).json({error:String(error.message).slice(0,140)});}
+    }
     const fields = cleanActionFields(type, body.fields);
+    if(procedureSubmission){
+      if(!fields.contact)return res.status(400).json({error:'Contact details are required.'});
+      if(type==='quote')fields.details=procedureSubmission.details;
+      else fields.note=procedureSubmission.details.slice(0,1000);
+    }
     if(mainioMoveRequest){
       fields.name=validatedMainio.data.name;
       fields.contact=validatedMainio.data.contact;
@@ -16746,6 +16762,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     const pageUrl = String(body.pageContext?.url || '').slice(0,1000) || null;
     const payload = {
       fields,
+      ...(procedureSubmission?{procedure:{code:procedureSubmission.code,answers:procedureSubmission.fields,humanReviewRequired:true}}:{}),
       customerLanguage:actionLang,
       question: String(body.question || '').trim().slice(0,1200),
       pageUrl,
@@ -16776,7 +16793,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       }
     }
 
-    if (type === 'quote' && actionAccess.allCurrentFeatures && !mainioMoveRequest) {
+    if (type === 'quote' && actionAccess.allCurrentFeatures && !mainioMoveRequest && !procedureSubmission) {
       const base = Number(tenant.quote_base_price || 0);
       const perUnit = Number(tenant.quote_unit_price || 0);
       const minimum = Number(tenant.quote_min_price || 0);
@@ -17136,10 +17153,20 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       }
     }
 
+    let trackingLink=null;
+    if(['quote','booking','callback'].includes(type)){
+      try{
+        const access=await issueRequestTrackingLink(pool,tenant.id,id);
+        // Hash fragment is intentionally not part of the HTTP request.
+        trackingLink=BASE+'/request-status.html#token='+access.token;
+      }catch(error){console.error('Customer tracking unavailable',error?.name||'error');}
+    }
     return res.json({
       ok:true,
       id,
       status:'new',
+      trackingLink,
+      procedureAccepted:Boolean(procedureSubmission),
       deliveryStatus:delivery.status,
       quote:computedQuote,
       orderStatus:ecommerceOrder,
