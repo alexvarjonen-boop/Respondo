@@ -118,14 +118,14 @@ test('Business integration controls are available in the dashboard',()=>{
   assert.match(app,/id="testCommerce"/);
   assert.match(app,/api\/app\/commerce/);
   assert.match(app,/api\/app\/commerce\/test/);
-  assert.match(app,/Shopify- ja WooCommerce-tilaushaku/);
-  assert.match(app,/Webhook- ja API-integraatiot/);
+  assert.match(app,/Tarjouspyyntöjen seuranta ja käsittely/);
+  assert.match(app,/Respondon omat asiakas- ja toimintotyökalut/);
 });
 
 test('pricing copy does not promise undefined analytics tiers',()=>{
   assert.doesNotMatch(app,/Laajempi analytiikka|Täysi analytiikka/);
-  assert.match(app,/Automaattinen hintalaskuri ja Stripe-maksulinkit/);
-  assert.match(app,/Shopify- ja WooCommerce-tilaushaku/);
+  assert.match(app,/Turvallinen automaattinen tarjouslaskuri/);
+  assert.match(app,/Tarjouspyyntöjen seuranta ja käsittely/);
 });
 
 test('Advanced Premium Enterprise all include automatic website import',()=>{
