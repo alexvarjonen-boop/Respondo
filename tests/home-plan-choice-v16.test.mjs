@@ -14,7 +14,7 @@ test('v16 presents grounded, localized audience guidance instead of an invented 
   assert.ok(pricing.includes("tier==='Premium'"));
   assert.ok(pricing.includes('AI-asiakaspalvelun aloittamiseen.'));
   assert.ok(pricing.includes('För kundserviceteam som arbetar tillsammans.'));
-  assert.ok(pricing.includes('For commerce and broader integrations.'));
+  assert.ok(pricing.includes('For larger support teams and quote workflows.'));
   assert.match(pricing,/class="pricing-plan-fit">\$\{planFit\}<\/p>/);
   assert.ok(pricing.includes("appText('TIIMEILLE','FÖR TEAM','FOR TEAMS')"));
   assert.doesNotMatch(pricing,/SUOSITUIN|POPULÄRAST|MOST POPULAR/);
