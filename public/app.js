@@ -1,13 +1,13 @@
 import { avatarContainRect } from './avatar-contain.js?v=20261101-avatar-fit-v1';
 import { customerPasswordValid, customerPasswordChecks, customerPasswordStrength } from './customer-password-policy.mjs?v=20261029-strength-v1';
-import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46-crm-connectors-v1-native-actions-v1-service-capacity-v1-import-review-v2-mobile-jump-v3-guided-integrations-v1-apple-settings-v55-native-first-v1-outlook-module-return-v1-outlook-unavailable-ux-v1-profile-scroll-no-jump-v47';
+import { activateRespondoWorkspace } from './workspace-continuation-v24.js?v=20261028-owner-subscribe-v38-orbit-home-parity-v39-owner-cta-demo-only-v40-avatar-after-setup-v41-logical-overview-team-integrations-v40-selected-state-v45-profile-wrap-v46-crm-connectors-v1-native-actions-v1-service-capacity-v1-import-review-v2-mobile-jump-v3-guided-integrations-v1-apple-settings-v55-native-first-v1-outlook-module-return-v1-outlook-unavailable-ux-v1-profile-scroll-no-jump-v47-provider-gate-v2';
 import { globalResourcesMarkup, GLOBAL_GUIDE_PATHS, globalGuideData } from './global-resources.mjs?v=20261012-world-guides-multi-v2-scorecard-v1-interactive-v1-comparison-v1-pricing-v1-pricing-20261014-ape-v1-annual-120-v1-guides-three-20261014-v1-refresh-20261103-v51-navigation-v52-verified-only-v1';
 import { VERTICAL_LANDING_PATHS, verticalMetaForPath, verticalLandingMarkup } from './vertical-landing.mjs?v=20261013-salon-cleaning-v1';
 import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=20261013-buyers-intent-v1-ai-links-v1-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-pages.mjs?v=20261016-intents-v1';
 import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs?v=20261016-gsc-en-fi-ecommerce-v1';
-import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS, featureAvailableForPublicPlan, publicPlanFeatureCount } from './features-data.js?v=20261031-plan-scoped-v1-verified-only-v1';
+import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS, featureAvailableForPublicPlan, publicPlanFeatureCount } from './features-data.js?v=20261031-plan-scoped-v1-verified-only-v1-booking-request-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10-polish-v11-hero-clarity-v17-hero-try-bot-v32-chat-navigation-note-v34-orbit-click-v1';
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261107-movexa-v1';
@@ -8732,11 +8732,21 @@ async function route() {
     // the bot preview with no explanation.
     // Fail closed: no unconfigured mailbox connection or sync CTA is displayed.
     const nativeMailOauthReady={gmail:false,outlook:false};
+    // Gated forms are present in the HTML but must not appear as active until
+    // the server confirms provider prerequisites for this workspace.
+    const setProviderPanelAvailability=(panel,ready)=>{
+      if(!panel)return;
+      const next=ready===true?'yes':'no';
+      const changed=panel.dataset.respondoConnectorAvailable!==next;
+      panel.dataset.respondoConnectorAvailable=next;
+      panel.hidden=ready!==true;
+      if(changed)panel.dispatchEvent(new CustomEvent('respondo:provider-availability',{bubbles:true}));
+    };
     const mailPanel=$('#native-mail-connections');
     const applyMailAvailability=(connections=[])=>{
       const permitted=mailPanel?.dataset.respondoPlanAllowed==='yes';
       const enabled=permitted&&(nativeMailOauthReady.gmail||nativeMailOauthReady.outlook);
-      if(mailPanel)mailPanel.hidden=!enabled;
+      setProviderPanelAvailability(mailPanel,enabled);
       for(const provider of ['gmail','outlook']){
         const ready=enabled&&nativeMailOauthReady[provider]===true;
         document.querySelectorAll('[data-native-mail-connect="'+provider+'"]').forEach(el=>{el.hidden=!ready;});
@@ -8821,9 +8831,9 @@ async function route() {
         const ready=readiness?.prerequisites?.whatsapp===true &&
           readiness?.prerequisites?.instagram===true &&
           readiness?.prerequisites?.facebook===true;
-        if(!ready){if(panel)panel.hidden=true;return;}
+        if(!ready){setProviderPanelAvailability(panel,false);return;}
         const d=await api('/api/app/native/meta/status');
-        if(panel)panel.hidden=panel.dataset.respondoPlanAllowed!=='yes';
+        setProviderPanelAvailability(panel,panel?.dataset.respondoPlanAllowed==='yes');
         el.replaceChildren();
         const list=Array.isArray(d.channels)?d.channels:[];
         if(!list.length){el.textContent=appText('Ei yhdistettyjä kanavia.','Inga anslutna kanaler.','No channels connected.');return;}
@@ -8834,7 +8844,7 @@ async function route() {
              appText('Webhook-asetukset puuttuvat palvelimelta','Webhook saknas på servern','Webhook server settings missing'));
           el.appendChild(p);
         }
-      }catch(error){if(panel)panel.hidden=true;el.textContent=error.message}
+      }catch(error){setProviderPanelAvailability(panel,false);el.textContent=error.message}
     };
     if($('#nativeMetaConnectForm'))loadNativeMetaStatus();
     $('#nativeMetaConnectForm')?.addEventListener('submit',async e=>{

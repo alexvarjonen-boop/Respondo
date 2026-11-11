@@ -37,7 +37,7 @@ test('integration OAuth return highlights Integrations in workspace orbit',()=>{
 });
 
 test('outlook UX fixes have updated browser scripts to bypass stale pages',()=>{
-  assert.match(app,/workspace-continuation-v24\.js\?v=[^']+-outlook-unavailable-ux-v1-profile-scroll-no-jump-v47'/);
+  assert.match(app,/workspace-continuation-v24\.js\?v=[^']+-outlook-unavailable-ux-v1-profile-scroll-no-jump-v47-provider-gate-v2'/);
   assert.match(html,/integration-onboarding\.js\?v=[^"]+-outlook-unavailable-ux-v1-hide-unready-v1"/);
-  assert.match(html,/app\.js\?v=[^"]+-outlook-unavailable-ux-v1-movexa-v1-profile-scroll-no-jump-v47-verified-only-v1"/);
+  assert.match(html,/app\.js\?v=[^"]+-outlook-unavailable-ux-v1-movexa-v1-profile-scroll-no-jump-v47-verified-only-v1-provider-gate-v2"/);
 });
