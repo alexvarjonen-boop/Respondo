@@ -214,6 +214,30 @@ export const FEATURE_GROUPS = [
   }
 ];
 
+// Customer Operations 2026: describe the implemented scope, not planned
+// autonomous payments, arbitrary website control or partner commission plans.
+FEATURE_GROUPS.push({
+  key:'customer_operations',
+  title:['Asiointiprosessit & yritysverkosto','Kundprocesser & flera företag','Customer workflows & multi-company'],
+  intro:[
+    'Yrityksen hyväksymät asiointiprosessit, turvalliset seurantalinkit ja nykyisiin tietoihin perustuva vertailu.',
+    'Godkända kundprocesser, privata uppföljningslänkar och jämförelser av befintliga företagsuppgifter.',
+    'Owner-approved intake procedures, private request links and comparisons based on existing business information.'
+  ],
+  items:[
+    ['Kolmivaiheinen muuttopalvelun kartoitus (erikseen käyttöön otettava)','Trestegs flyttförfrågan (aktiveras separat)','Three-stage moving-service enquiry (owner-enabled)'],
+    ['Palvelutarjouspyynnön ohjattu tietojen keruu','Guidad insamling för offertförfrågan','Guided service quote intake'],
+    ['Ajanvaraustarpeen kartoitus ilman automaattista varausvahvistusta','Bokningsförfrågan utan automatisk bekräftelse','Appointment enquiry without automatic booking confirmation'],
+    ['Asiakkaalle turvallinen 30 päivän asioinnin seurantalinkki','Privat ärendelänk giltig i 30 dagar','Private 30-day request status link'],
+    ['Asiakkaan enintään viisi lisätietopäivitystä asiointilinkillä','Upp till fem tillägg till en kundförfrågan','Up to five customer updates per request link'],
+    ['Kahden tarjotun tuotteen tietopohjaan perustuva vertailu','Jämförelse av två produkter utifrån befintliga uppgifter','Two-product comparison using existing product facts'],
+    ['Yrityksen määrittämien hintojen eritelty, ei-sitova esikatselu','Specificerad icke-bindande prisberäkning utifrån sparade priser','Non-binding quote breakdown based on configured company pricing'],
+    ['Tallennettujen tarjous- ja yhteydenottopyyntöjen luokittelu','Klassificering av sparade förfrågningar','Intent grouping for recorded quote and contact requests'],
+    ['Samalle omistajalle kuuluvien työtilojen 30 päivän yhteenveto','30-dagarsöversikt för samma ägares arbetsytor','30-day multi-company owner overview'],
+    ['Respondon oman sivuston opastettu siirtymä botin ehdottamaan osioon','Guidad sidnavigering på Respondos egen webbplats','Guided navigation on Respondo’s own website']
+  ]
+});
+
 export const FEATURE_COUNT = FEATURE_GROUPS.reduce((sum, group) => sum + group.items.length, 0);
 
 
