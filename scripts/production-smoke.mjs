@@ -21,12 +21,12 @@ async function request(origin, path, { method = 'GET', expectedStatus = 200 } = 
 // browser tests and are deliberately not included in this result.
 export function discoverPublicLinks(html, origin, maximum = 45) {
   const found = new Set();
-  for(const match of String(html||'').matchAll(/<a\\b[^>]*\\bhref\\s*=\\s*(['"])(.*?)\\1/gi)) {
+  for(const match of String(html||'').matchAll(/<a\b[^>]*\bhref\s*=\s*(['"])(.*?)\1/gi)) {
     let url;
     try { url = new URL(match[2].replace(/&amp;/gi,'&'), origin); } catch { continue; }
     if(url.origin !== new URL(origin).origin) continue;
-    if(/^\\/(?:api|app|dashboard|logout|request-status)(?:\\/|$)/i.test(url.pathname)) continue;
-    if(/\\.(?:svg|png|webp|jpe?g|pdf|css|js|zip|mp4)$/i.test(url.pathname)) continue;
+    if(/^\/(?:api|app|dashboard|logout|request-status)(?:\/|$)/i.test(url.pathname)) continue;
+    if(/\.(?:svg|png|webp|jpe?g|pdf|css|js|zip|mp4)$/i.test(url.pathname)) continue;
     found.add(url.pathname + (url.searchParams.has('lang') ? '?lang='+encodeURIComponent(url.searchParams.get('lang')) : ''));
     if(found.size >= maximum) break;
   }
@@ -80,15 +80,15 @@ export async function checkSite(origin = defaultOrigin) {
   const discoveredLinks = new Set();
   for (const path of publicPages) {
     const { response, body } = await request(origin, path);
-    assert.match(response.headers.get('content-type') || '', /text\\/html/i, path + ' must serve HTML');
-    assert.match(body, /<title>[^<]+<\\/title>/i, path + ' needs a server-rendered title');
+    assert.match(response.headers.get('content-type') || '', /text\/html/i, path + ' must serve HTML');
+    assert.match(body, /<title>[^<]+<\/title>/i, path + ' needs a server-rendered title');
     for (const href of discoverPublicLinks(body, origin)) discoveredLinks.add(href);
   }
   // A broken link in the public SSR navigation is a deploy regression.
   const linkedPages = [...discoveredLinks].filter(path => !publicPages.includes(path)).slice(0, 55);
   for (const path of linkedPages) {
     const { response } = await request(origin, path);
-    assert.match(response.headers.get('content-type') || '', /text\\/html/i,
+    assert.match(response.headers.get('content-type') || '', /text\/html/i,
       path + ' is a public navigation target and must serve HTML');
   }
 
