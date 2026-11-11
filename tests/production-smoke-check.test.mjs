@@ -24,6 +24,9 @@ function fakeResponse(url, init, { unhealthy = false, brokenSwedish = false, ape
   } else if (['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js','/owner-growth-center.js'].includes(u.pathname)) {
     contentType = brokenAsset && u.pathname === '/widget.js' ? 'text/html' : 'application/javascript';
     body = '/* smoke test JavaScript */' + 'function ready(){return true;}\n'.repeat(22);
+  } else if (u.pathname === '/operational-clarity.css') {
+    contentType = 'text/css';
+    body = '.native-guided-workflows { color: white; }';
   } else if (u.pathname === '/owner-growth-center.css') {
     contentType = 'text/css';
     body = '#respondoGrowthCenter { color: white; }';
