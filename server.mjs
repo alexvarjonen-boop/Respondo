@@ -74,6 +74,8 @@ import {ensureNativeCloudSchema,cloudProvider,validSiteId} from './native-cloud-
 import {ensureFreeWorkflowSchema,freeWorkflowOverview,createFreeWorkflow,
  setFreeWorkflowEnabled,markFreeWorkflowApproval,previewFreeWorkflow} from './respondo-free-actions.mjs';
 import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-gates.mjs';
+import {reliabilityOverview} from './respondo-reliability-lab.mjs';
+import {listManualVersions,createManualVersion,restoreManualVersion} from './respondo-manual-versions.mjs';
 import {workflowTemplateCatalog,workflowFromTemplate} from './respondo-workflow-templates.mjs';
 import {conversationEvidence} from './respondo-evidence-handoff.mjs';
 import {ensureFreeCommerceSchema,putFreeOrderSnapshot,freeOrderOverview,lookupFreeOrderStatus} from './respondo-free-commerce.mjs';
@@ -10576,6 +10578,17 @@ app.post('/api/app/native/quality/free-suite',auth,ownerOnly,subscribed,nativeWr
   (_id,req)=>runFreeQualitySuite({cases:req.body?.cases})));
 app.get('/api/app/native/quality',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>qualityCenterOverview(pool,id,req.query?.days)));
+/* Tenant-private reliability and source coverage. These are risk signals,
+   not proof of answer correctness, regulatory compliance or paid sales. */
+app.get('/api/app/native/reliability',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>reliabilityOverview(pool,id)));
+app.get('/api/app/native/manual-versions',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>listManualVersions(pool,id)));
+app.post('/api/app/native/manual-versions',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>createManualVersion(pool,id,req.user.sub,req.body||{})));
+app.post('/api/app/native/manual-versions/:versionId/restore',
+  auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>restoreManualVersion(pool,id,req.params.versionId,req.user.sub,req.body||{})));
 /* Authenticated evidence: recorded IDs matched to currently approved tenant facts. */
 app.get('/api/app/native/quality/evidence/:conversationId',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>conversationEvidence(pool,id,req.params.conversationId)));
