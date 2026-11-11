@@ -104,7 +104,7 @@ test('English Try Bot locale does not override Finnish Mainio quote-request word
       method:'POST',headers:{'content-type':'application/json'},
       body:JSON.stringify({
         lang:'en',message:'haluan pyytää tarjouksen',publicDemo:true,
-        profile:{companyName:'Mainio Muuttopalvelu',website:'https://mainiomuutt.fi'},
+        profile:{companyName:'Mainio Muuttopalvelu',website:'https://www.mainiomuuttopalvelu.fi'},
       }),
     });
     assert.equal(response.status,200);
