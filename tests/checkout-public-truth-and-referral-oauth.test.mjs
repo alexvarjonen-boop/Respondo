@@ -15,7 +15,8 @@ test('checkout only offers tax-approved FI and US as selectable countries',()=>{
   const html=vm.runInNewContext(app.slice(start,end)+'\ncheckoutBillingCountryField()',{
     appText:(fi)=>fi,esc:value=>String(value).replace(/&/g,'&amp;')
   });
-  const countries=[...html.matchAll(/<option value="([A-Z]{2})"/g)].map(match=>match[1]);
+  const billingSelect=html.split('<label class="field international-us-state-field"')[0];
+  const countries=[...billingSelect.matchAll(/<option value="([A-Z]{2})"/g)].map(match=>match[1]);
   assert.deepEqual(countries,['FI','US']);
   assert.match(html,/Ask about international ordering|Kysy kansainvälisestä tilauksesta/);
   assert.match(app,/!\['FI','US'\]\.includes\(String\(signupForm\.elements\.billingCountry/);
