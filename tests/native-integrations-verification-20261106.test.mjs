@@ -23,7 +23,7 @@ test('unknown Gmail or Microsoft readiness cannot expose OAuth start links',()=>
   assert.match(ui,/if\(oauthAvailable\.get\(item\.id\)===false\)return 'notConfigured'/);
   assert.match(ui,/if\(oauthAvailable\.get\(item\.id\)!==true\)return 'unverified'/);
   assert.match(ui,/if\(\['restricted','notConfigured','unverified'\]\.includes\(availability\)\)/);
-  assert.match(ui,/if\(item && !\['restricted','notConfigured','unverified'\]\.includes\(status\(item\)\)\)focusExisting\(item\)/);
+  assert.match(ui,/if\(item && providerVisible\(item\) && !\['restricted','notConfigured','unverified'\]\.includes\(status\(item\)\)\)focusExisting\(item\)/);
 });
 
 test('readiness probes have deadlines, ignore stale responses and clear old status flags',()=>{
