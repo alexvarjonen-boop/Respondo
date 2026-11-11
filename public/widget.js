@@ -474,6 +474,7 @@
 
   let token = '';
   let ready = false;
+  let customerProcedures=[];
   let visitorRef = '';
   let livePollAfter = '';
   let livePollTimer = null;
@@ -853,7 +854,10 @@
       try {if(/^[A-Z]{3}$/.test(code||'')) return new Intl.NumberFormat(locale,{style:'currency',currency:code}).format(value);} catch {}
       return new Intl.NumberFormat(locale,{maximumFractionDigits:2}).format(value);
     }
-    for(const item of valid){
+    const selectedForCompare=new Set();
+    const comparePanel=document.createElement('div');
+    comparePanel.className='product-compare-panel';
+    for(const [index,item] of valid.entries()){
       const card=document.createElement('a');
       card.className='product-card'; card.href=item.url;card.target='_blank';card.rel='noopener noreferrer';
       const image=document.createElement(item.imageUrl&&/^https?:\/\//i.test(item.imageUrl)?'img':'span');
@@ -883,7 +887,51 @@
       card.append(image,details);
       card.addEventListener('click',()=>trackAction({type:'product',label:item.name,url:item.url}));
       wrap.appendChild(card);
+      if(valid.length>1){
+        const toggle=document.createElement('button');
+        toggle.type='button';toggle.className='product-compare-toggle';
+        toggle.textContent=experienceText('Vertaa tätä','Jämför denna','Compare this');
+        toggle.setAttribute('aria-pressed','false');
+        toggle.addEventListener('click',()=>{
+          if(selectedForCompare.has(index))selectedForCompare.delete(index);
+          else{
+            if(selectedForCompare.size>=2)selectedForCompare.clear();
+            selectedForCompare.add(index);
+          }
+          for(const node of wrap.querySelectorAll('[data-product-compare-index]'))
+            node.setAttribute('aria-pressed',String(selectedForCompare.has(Number(node.dataset.productCompareIndex))));
+          comparePanel.replaceChildren();
+          const chosen=[...selectedForCompare].map(i=>valid[i]);
+          if(chosen.length!==2){
+            const hint=document.createElement('p');
+            hint.textContent=experienceText('Valitse kaksi tuotetta vertailuun.',
+              'Välj två produkter att jämföra.','Select two products to compare.');
+            comparePanel.append(hint);return;
+          }
+          const title=document.createElement('strong');
+          title.textContent=experienceText('Tuotevertailu','Produktjämförelse','Product comparison');
+          comparePanel.append(title);
+          for(const p of chosen){
+            const row=document.createElement('div');row.className='product-compare-row';
+            const name=document.createElement('strong');name.textContent=String(p.name||'');
+            const price=document.createElement('span');
+            price.textContent=Number.isFinite(p.price)?formatPrice(p.price,p.currency):
+              experienceText('Hintaa ei vahvistettu','Priset är inte verifierat','Price not verified');
+            const description=document.createElement('small');
+            description.textContent=String(p.description||'').slice(0,220);
+            row.append(name,price,description);comparePanel.append(row);
+          }
+          const note=document.createElement('small');
+          note.textContent=experienceText('Vertailu perustuu yrityksen tuotetietoihin. Tarkista varastotilanne ja valittu vaihtoehto kaupassa.',
+            'Jämförelsen bygger på företagets produktuppgifter. Kontrollera lagerstatus i butiken.',
+            'Comparison uses company product information. Check stock and options in the store.');
+          comparePanel.append(note);
+        });
+        toggle.dataset.productCompareIndex=String(index);
+        wrap.appendChild(toggle);
+      }
     }
+    if(valid.length>1)wrap.appendChild(comparePanel);
     productSheetContent.replaceChildren(wrap);
     const opener=document.createElement('button');
     opener.type='button';opener.className='product-reopen';
@@ -1263,6 +1311,17 @@
             '</strong><span>' + escapeHtml(formatted) + '</span></div>';
         }
 
+        if(data.trackingLink){
+          try{
+            const link=new URL(data.trackingLink);
+            if(link.origin===serviceOrigin && link.pathname==='/request-status.html' &&
+                /^#token=[a-f0-9]{64}$/i.test(link.hash)){
+              resultHtml+='<a class="action-pay" href="'+escapeHtml(link.href)+
+                '" target="_blank" rel="noopener noreferrer">'+
+                escapeHtml(experienceText('Seuraa pyynnön käsittelyä','Följ din förfrågan','Track your request'))+'</a>';
+            }
+          }catch{}
+        }
         ok.innerHTML = resultHtml;
         box.querySelectorAll('input,textarea,select,button').forEach((el) => el.disabled = true);
         button.textContent = t('Valmis ✓', 'Done ✓');
@@ -1521,6 +1580,14 @@
       const data = await res.json();
       token = data.token;
       ready = true;
+      // Tenant owner-approved structured procedures only. Failing discovery
+      // never prevents ordinary chat from working.
+      void fetch(serviceOrigin+'/api/public/'+encodeURIComponent(company)+
+        '/procedures?widgetToken='+encodeURIComponent(token),{
+          method:'GET',mode:'cors',credentials:'omit',cache:'no-store'
+        }).then(r=>r.ok?r.json():null).then(result=>{
+          customerProcedures=Array.isArray(result?.procedures)?result.procedures:[];
+        }).catch(()=>{customerProcedures=[];});
       humanHelp.hidden=false;
       if (!voiceButton.hidden) voiceButton.disabled = false;
       const botDisplayName=String(data.name||'RESPONDO AI').trim().slice(0,100)||'RESPONDO AI';
