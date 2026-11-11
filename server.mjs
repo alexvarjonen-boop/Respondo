@@ -16,6 +16,7 @@ import { nativeOverview,createNativeContact,updateNativeContact,createNativeTick
   createNativeQuote,updateNativeQuote,setNativeRule,saveNativeDocument,removeNativeDocument,
   runNativeAutomation } from './native-ai-operations.mjs';
 import { prepareQualifiedLead } from './lead-service.mjs';
+import { parseQuoteQuantity, computeSafeQuote } from './smart-quote-guard.mjs';
 import { getCrmProvider, enqueueCrmLead } from './lead-crm-queue.mjs';
 import { processCrmOutbox } from './lead-crm-queue.mjs';
 import { deliverCrmProvider } from './lead-crm-providers.mjs';
@@ -16712,7 +16713,11 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       fields.slotId = String(body.fields?.slotId || '').trim().slice(0,80);
     }
     if (type === 'quote') {
-      fields.quantity = Math.max(0, Number(body.fields?.quantity || 0));
+      try {
+        fields.quantity = parseQuoteQuantity(body.fields?.quantity);
+      } catch {
+        return res.status(422).json({ error:'Virheellinen määrä tarjouslaskentaan.' });
+      }
     }
     if (type === 'quote' && !fields.contact) return res.status(400).json({ error:'Anna sähköposti tai puhelinnumero.' });
     if (type === 'booking' && (!fields.contact || !fields.slotId)) return res.status(400).json({ error:'Valitse vapaa aika ja anna yhteystieto.' });
@@ -16756,15 +16761,20 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
     }
 
     if (type === 'quote' && actionAccess.allCurrentFeatures && !mainioMoveRequest) {
-      const base = Number(tenant.quote_base_price || 0);
-      const perUnit = Number(tenant.quote_unit_price || 0);
-      const minimum = Number(tenant.quote_min_price || 0);
-      const vatPercent = Number(tenant.quote_vat_percent || 0);
-      const quantity = Number(fields.quantity || 0);
-      if (base > 0 || perUnit > 0 || minimum > 0) {
-        const net = Math.max(minimum, base + (perUnit * quantity));
-        const vat = net * (vatPercent / 100);
-        const total = net + vat;
+      let safeEstimate;
+      try {
+        safeEstimate = computeSafeQuote({
+          base:tenant.quote_base_price || 0,
+          unit:tenant.quote_unit_price || 0,
+          minimum:tenant.quote_min_price || 0,
+          vatPercent:tenant.quote_vat_percent || 0,
+          quantity:fields.quantity,
+        });
+      } catch (error) {
+        console.error('Unsafe quote pricing configuration',error);
+        return res.status(503).json({ error:'Tarjouslaskenta ei ole tällä hetkellä käytettävissä. Pyydä henkilökunnalta tarjous.' });
+      }
+      if (safeEstimate) {
         const sourceServiceName = String(tenant.quote_service_name || 'Tarjous').trim();
         const sourceUnitLabel = String(tenant.quote_unit_label || 'kpl').trim();
         const localizedServiceName = actionLang === 'fi'
@@ -16778,13 +16788,7 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         computedQuote = {
           serviceName:localizedServiceName,
           unitLabel:localizedUnitLabel,
-          quantity,
-          net:Number(net.toFixed(2)),
-          vatPercent,
-          vat:Number(vat.toFixed(2)),
-          total:Number(total.toFixed(2)),
-          totalCents:Math.max(50,Math.round(total * 100)),
-          currency:'EUR',
+          ...safeEstimate,
         };
       }
     }
