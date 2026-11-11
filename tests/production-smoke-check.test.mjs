@@ -21,10 +21,16 @@ function fakeResponse(url, init, { unhealthy = false, brokenSwedish = false, ape
   } else if (u.pathname === '/api/public/config') {
     contentType = 'application/json';
     body = '{}';
-  } else if (['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js','/owner-growth-center.js','/reliability-console.js'].includes(u.pathname)) {
+  } else if (['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js','/owner-growth-center.js','/reliability-console.js','/customer-operations-owner.js','/request-status.js'].includes(u.pathname)) {
     contentType = brokenAsset && u.pathname === '/widget.js' ? 'text/html' : 'application/javascript';
     body = '/* smoke test JavaScript */' + 'function ready(){return true;}\n'.repeat(22);
-   } else if (u.pathname === '/reliability-console.css') {
+   } else if (u.pathname === '/request-status.html') {
+    contentType = 'text/html';
+    body = '<html><head><meta name="robots" content="noindex,nofollow,noarchive"></head><body>Request status</body></html>';
+  } else if (u.pathname === '/request-status.css' || u.pathname === '/customer-operations-owner.css') {
+    contentType = 'text/css';
+    body = '#respondoCustomerOps { color: white; }';
+  } else if (u.pathname === '/reliability-console.css') {
     contentType = 'text/css';
     body = '#respondoReliabilityConsole { color: white; }';
   } else if (u.pathname === '/operational-clarity.css') {
