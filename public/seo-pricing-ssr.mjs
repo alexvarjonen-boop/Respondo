@@ -21,7 +21,7 @@ const labels={
       ['Voinko ottaa yhteyttä ennen tilausta?','Kyllä. Voit tutustua ominaisuuksiin ja pyytää lisätietoja ennen paketin valintaa.']
     ],
     linksHeading:'Tutustu ennen tilausta',features:'Kaikki ominaisuudet',bot:'Mikä on asiakaspalvelijabotti?',automation:'Asiakaspalvelun automatisointi',contact:'Ota yhteyttä',
-    notice:'Maksulliset Respondo AI -yritystilaukset ovat tällä hetkellä saatavilla Suomessa.'
+    notice:'Maksulliset Respondo AI -yritystilaukset ovat tällä hetkellä saatavilla Suomessa ja Yhdysvalloissa. Muista maista voi kysyä lisätietoja.'
   },
   sv:{
     heading:'Priser för AI-kundservicebot till företag',
@@ -38,7 +38,7 @@ const labels={
       ['Kan jag kontakta er före köpet?','Ja. Läs om funktionerna och kontakta oss om företagets behov innan du väljer paket.']
     ],
     linksHeading:'Läs mer före beställning',features:'Alla funktioner',bot:'Vad är en kundservicebot?',automation:'Automatiserad kundservice',contact:'Kontakta oss',
-    notice:'Betalda Respondo AI-abonnemang för företag finns för närvarande tillgängliga i Finland.'
+    notice:'Betalda Respondo AI-abonnemang för företag finns för närvarande tillgängliga i Finland och USA. Företag i andra länder kan kontakta oss.'
   },
   en:{
     heading:'AI customer service chatbot pricing for businesses',
@@ -55,7 +55,7 @@ const labels={
       ['Can I ask questions before signing up?','Yes. Explore features and contact Respondo AI before choosing a plan.']
     ],
     linksHeading:'Explore before you subscribe',features:'All features',bot:'What is a customer service chatbot?',automation:'Customer service automation',contact:'Contact us',
-    notice:'Respondo AI paid business subscriptions are currently available in Finland.'
+    notice:'Respondo AI paid business subscriptions are currently available in Finland and the United States. Businesses in other countries can contact us.'
   }
 };
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');

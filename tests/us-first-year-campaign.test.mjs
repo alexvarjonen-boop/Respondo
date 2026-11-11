@@ -40,6 +40,8 @@ test('signup and added-workspace flows skip one-month referral restrictions for 
   assert.match(server,/checkoutCountry\.country !== 'US' \|\| normalizedPlan === 'owner_test'/);
   assert.match(server,/checkoutCountry\.country!=='US' \|\| plan==='owner_test'/);
   assert.match(app,/value="\$\{esc\(referralCode\)\}"/);
-  assert.match(app,/US20YEAR: 20% off for the first 12 months/);
-  assert.match(app,/ref=US20YEAR/);
+  // Private campaign codes must not be discoverable in generic public JavaScript.
+  assert.doesNotMatch(app,/US20YEAR/);
+  assert.match(app,/if \(referral\) params\.set\('ref', referral\)/);
+  assert.match(app,/if \(selectedReferral\) url\.searchParams\.set\('ref', selectedReferral\)/);
 });

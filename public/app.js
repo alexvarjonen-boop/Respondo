@@ -1456,7 +1456,7 @@ const SV_TEXT = new Map(Object.entries({
   "maksa kuukausittain":"betala månadsvis",
   "Kuukausi":"Månad",
   "VUOSITILAUS":"ÅRSABONNEMANG",
-  "vuosilaskutus":"spara 60 €",
+  "vuosilaskutus":"årsfakturering",
   "Kaikki samat ominaisuudet kuin kuukausitilauksessa":"Alla samma funktioner som i månadsabonnemanget",
   "Maksu kerran vuodessa":"Betalning en gång per år",
   "Voit käyttää palvelua maksetun kauden loppuun":"Du kan använda tjänsten till slutet av den betalda perioden",
@@ -2794,7 +2794,7 @@ function pricingSection() {
       </ul>
       <div class="price-actions">
         <a class="pricing-feature-link" href="/ominaisuudet?plan=${tier.toLowerCase()}&amp;lang=${currentLang()}" aria-label="${esc(appText('Katso '+tier+'-paketin ominaisuudet','Se funktionerna i '+tier,'See '+tier+' features'))}">${appText('Katso ominaisuudet','Se funktioner','See features')} <span aria-hidden="true">↗</span></a>
-        <a class="btn price-btn pricing-select-btn" href="/tilaus?plan=${code}_monthly&amp;lang=${currentLang()}${new URLSearchParams(location.search).get('ref')?.toUpperCase()==='US20YEAR' ? '&amp;ref=US20YEAR' : ''}">${appText('Valitse','Välj','Choose')} ${tier} <span aria-hidden="true">→</span></a>
+        <a class="btn price-btn pricing-select-btn" href="/tilaus?plan=${code}_monthly&amp;lang=${currentLang()}${new URLSearchParams(location.search).get('ref') ? '&amp;ref=' + encodeURIComponent(new URLSearchParams(location.search).get('ref')) : ''}">${appText('Valitse','Välj','Choose')} ${tier} <span aria-hidden="true">→</span></a>
       </div>
     </article>`;
   };
@@ -2865,7 +2865,8 @@ function bindPricingPeriodSwitch() {
         if (note) note.textContent = yearly ? card.dataset.yearlyNote : card.dataset.monthlyNote;
         if (link) {
           const params = new URLSearchParams({plan:card.dataset.planCode + (yearly ? '_yearly' : '_monthly'),lang:currentLang()});
-          if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('ref')?.toUpperCase()==='US20YEAR') params.set('ref','US20YEAR');
+          const referral = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('ref') : null;
+          if (referral) params.set('ref', referral);
           link.href = '/tilaus?' + params.toString();
         }
       });
@@ -3359,21 +3360,10 @@ async function home(){
 // to countries whose tax/legal readiness has been explicitly completed.
 // Never silently substitute Finland when an overseas buyer selects their country.
 function checkoutBillingCountryField() {
+  // Offer only checkout countries cleared for paid subscriptions. Other visitors may enquire by email.
   const options=[
-    ['FI','Suomi / Finland'],['SE','Sverige / Sweden'],['EE','Eesti / Estonia'],
-    ['DE','Deutschland / Germany'],['FR','France'],['NL','Nederland / Netherlands'],
-    ['DK','Danmark / Denmark'],['NO','Norge / Norway'],['GB','United Kingdom'],
-    ['US','United States'],['CA','Canada'],['AU','Australia'],['AT','Österreich / Austria'],
-    ['BE','Belgium'],['CH','Schweiz / Switzerland'],['CZ','Česko / Czechia'],
-    ['ES','España / Spain'],['IE','Ireland'],['IT','Italia / Italy'],
-    ['LT','Lietuva / Lithuania'],['LV','Latvija / Latvia'],['PL','Polska / Poland'],
-    ['PT','Portugal'],['RO','România / Romania'],['SK','Slovensko / Slovakia'],
-    ['SI','Slovenija / Slovenia'],['HU','Magyarország / Hungary'],
-    ['BG','България / Bulgaria'],['HR','Hrvatska / Croatia'],['GR','Ελλάδα / Greece'],
-    ['CY','Κύπρος / Cyprus'],['MT','Malta'],['LU','Luxembourg'],['IS','Ísland / Iceland'],
-    ['JP','Japan'],['NZ','New Zealand'],['SG','Singapore'],['AE','United Arab Emirates'],
-    ['IN','India'],['BR','Brasil / Brazil'],['MX','México / Mexico'],
-    ['ZA','South Africa']
+    ['FI','Suomi / Finland'],
+    ['US','United States']
   ];
   return `<label class="field international-checkout-country-field">
     <span>${appText('Laskutusmaa','Faktureringsland','Billing country')}</span>
@@ -3589,6 +3579,31 @@ function bindSetupServiceOptions() {
   });
 }
 
+function checkoutSignupErrorMessage(err) {
+  const message = String(err?.message || '');
+  const translations = {
+    'Valitse yrityksen laskutusmaa.': ['Valitse yrityksen laskutusmaa.','Välj företagets faktureringsland.','Choose your company billing country.'],
+    'Tämän maan tilaaminen ei ole vielä saatavilla. Ota yhteyttä info@respondoai.fi.': ['Tämän maan tilaaminen ei ole vielä saatavilla. Ota yhteyttä info@respondoai.fi.','Betalda beställningar stöds ännu inte för detta land. Kontakta info@respondoai.fi.','Paid checkout is not available in this country. Contact info@respondoai.fi.'],
+    'Valitse yhdysvaltalaisen yrityksen osavaltio.': ['Valitse yhdysvaltalaisen yrityksen osavaltio.','Välj delstat för det amerikanska företaget.','Choose the US state for your business.'],
+    'Anna yhdysvaltalaisen yrityksen yhdeksännumeroinen EIN (XX-XXXXXXX).': ['Anna yhdysvaltalaisen yrityksen yhdeksännumeroinen EIN (XX-XXXXXXX).','Ange företagets niosiffriga amerikanska EIN (XX-XXXXXXX).','Enter your company nine-digit EIN (XX-XXXXXXX).'],
+    'Vahvista, että tilaat palvelun yrityskäyttöön.': ['Vahvista, että tilaat palvelun yrityskäyttöön.','Bekräfta att beställningen görs för företagets bruk.','Confirm that this subscription is for business use.'],
+    'Anna yrityksen nimi.': ['Anna yrityksen nimi.','Ange företagets namn.','Enter the company name.'],
+    'Suosittelukoodi toimii vain kuukausitilauksessa.': ['Suosittelukoodi toimii vain kuukausitilauksessa.','Vanliga rekommendationskoder gäller bara månadsabonnemang.','Standard referral codes work with monthly billing only.'],
+    'Suosittelukoodi ei ole voimassa.': ['Suosittelukoodi ei ole voimassa.','Rekommendationskoden är ogiltig.','This referral code is invalid.'],
+    'Et voi käyttää omaa suosittelukoodiasi.': ['Et voi käyttää omaa suosittelukoodiasi.','Du kan inte använda din egen rekommendationskod.','You cannot use your own referral code.'],
+    'Tämä suosittelukoodi on jo käytetty.': ['Tämä suosittelukoodi on jo käytetty.','Den här rekommendationskoden har redan använts.','This referral code has already been used.'],
+    'Vahvista sähköpostiosoitteesi ennen tilauksen aloittamista.': ['Vahvista sähköpostiosoitteesi ennen tilauksen aloittamista.','Bekräfta din e-postadress innan du startar beställningen.','Verify your email address before starting checkout.'],
+    'Stripe-maksuja ei ole yhdistetty.': ['Maksupalvelu ei ole tällä hetkellä käytettävissä.','Betaltjänsten är för närvarande inte tillgänglig.','Payments are currently unavailable.'],
+  };
+  if (Object.hasOwn(translations, message)) return appText(...translations[message]);
+  if (message.endsWith(' is only valid for US business subscriptions on Advanced, Premium and Enterprise.'))
+    return appText('Tämä kampanjakoodi on tarkoitettu vain yhdysvaltalaisille Advanced-, Premium- ja Enterprise-yritystilauksille.','Den här kampanjkoden gäller endast amerikanska företagsabonnemang på Advanced, Premium och Enterprise.','This promotion is valid only for US business subscriptions on Advanced, Premium and Enterprise.');
+  // Unknown server errors may be English, Finnish, or technical; never display
+  // untranslated checkout diagnostics to a customer in the wrong language.
+  if (currentLang() === 'fi') return message || 'Tilauksen aloittaminen epäonnistui.';
+  return appText('Tilauksen aloittaminen epäonnistui. Yritä uudelleen tai ota yhteyttä info@respondoai.fi.','Beställningen kunde inte startas. Försök igen eller kontakta info@respondoai.fi.','Checkout could not be started. Try again or contact info@respondoai.fi.');
+}
+
 function signup() {
   const params = new URLSearchParams(location.search);
   const ownerTestAccessToken = String(params.get('owner-test-token') || '').trim();
@@ -3599,7 +3614,6 @@ function signup() {
   const safeRequestedPlan = allowedPlans.has(normalizedRequestedPlan) ? normalizedRequestedPlan : 'basic_monthly';
   const plan = safeRequestedPlan === 'owner_test' && !ownerTestAccess ? 'basic_monthly' : safeRequestedPlan;
   const referralCode = String(params.get('ref') || '').trim().toUpperCase();
-  const isUSOfferReferral = referralCode === 'US20YEAR';
   const planDetails = {
     basic: { name:'Advanced', monthly:49, yearly:39, yearlyTotal:468 },
     advanced: { name:'Premium', monthly:129, yearly:119, yearlyTotal:1428 },
@@ -3631,7 +3645,7 @@ function signup() {
             <div class="signup-plan-summary field full" role="note" aria-label="${appText('Valittu paketti','Valt abonnemang','Selected plan')}">
               <div class="signup-plan-summary-top">
                 <span>${appText('VALITSEMASI PAKETTI','DITT VALDA ABONNEMANG','YOUR SELECTED PLAN')}</span>
-                <a href="/hinnat?lang=${currentLang()}${isUSOfferReferral ? '&amp;ref=US20YEAR' : ''}" class="signup-change-plan">${appText('Vaihda pakettia','Byt abonnemang','Change plan')} <span aria-hidden="true">↗</span></a>
+                <a href="/hinnat?lang=${currentLang()}${referralCode ? '&amp;ref=' + encodeURIComponent(referralCode) : ''}" class="signup-change-plan">${appText('Vaihda pakettia','Byt abonnemang','Change plan')} <span aria-hidden="true">↗</span></a>
               </div>
               <div class="signup-plan-summary-main">
                 <strong>${testBilling ? appText('Omistajan testi','Ägarens test','Owner test') : planDetails.name}</strong>
@@ -3643,7 +3657,7 @@ function signup() {
             <div class="field full referral-signup-field">
               <label>${appText('Suosittelukoodi','Rekommendationskod','Referral code')} <span>${appText('valinnainen','valfri','optional')}</span></label>
               <input name="referralCode" maxlength="32" autocomplete="off" value="${esc(referralCode)}" placeholder="${appText('Syötä suosittelukoodi','Ange rekommendationskod','Enter referral code')}">
-              <small id="referralHint">${isUSOfferReferral ? appText('USA-koodi US20YEAR: −20 % ensimmäiset 12 kuukautta, kaikilla paketeilla ja laskutusjaksoilla. Alennus näkyy Stripe-kassalla.','USA-kod US20YEAR: 20 % rabatt de första 12 månaderna på alla paket och faktureringsperioder. Rabatten syns i Stripe-kassan.','US code US20YEAR: 20% off the first 12 months on all plans, monthly or annual. Discount appears in Stripe Checkout.') : appText('Saat voimassa olevalla suosittelukoodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','En giltig rekommendationskod ger 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid referral code gives 20% off the first paid month. Monthly plans only.')}</small>
+              <small id="referralHint">${appText('Tavalliset suosittelukoodit koskevat ensimmäistä maksullista kuukautta. Muiden kampanjoiden ehdot tarkistetaan tilauksen yhteydessä.','Vanliga rekommendationskoder gäller den första betalda månaden. Villkor för andra kampanjer kontrolleras vid beställning.','Standard referral codes apply to the first paid month. Other promotion terms are checked during checkout.')}</small>
             </div>
             ${checkoutBusinessTerms('terms', 'checkrow field full')}
           </div>
@@ -3785,7 +3799,7 @@ const LEGAL = {
       ['3. Automaattiset vastaukset', 'Respondo AI tuottaa asiakasvastauksia yrityksen palveluun lisäämien tietojen ja käytössä olevien toimintojen perusteella. Automaattinen vastaus voi olla virheellinen tai puutteellinen, joten asiakasyritys vastaa omien tietojensa oikeellisuudesta ja siitä, missä tilanteissa automaattisia vastauksia käytetään. Palvelua ei tule käyttää lainvastaisiin tarkoituksiin tai sellaisiin korkean riskin päätöksiin, joissa automaattinen vastaus yksin voi aiheuttaa olennaista vahinkoa.'],
       ['4. Google Calendar ja muut integraatiot', 'Asiakas voi vapaaehtoisesti yhdistää Google Calendarin tai muun tuetun palvelun. Respondo käyttää asiakkaan myöntämiä oikeuksia vain kyseisen käyttäjälle näkyvän toiminnon toteuttamiseen, kuten varausten saatavuuden tarkistamiseen ja kalenteritapahtumien luomiseen. Asiakas voi poistaa integraation käytöstä palvelun asetuksista tai kyseisen ulkopuolisen palvelun tiliasetuksista.'],
       ['5. Kokeilu ja tilaus', `Palvelua voi kokeilla ${cfg.trialDays || 3} päivää ilmaiseksi. Maksutapa voidaan lisätä kokeilun alussa. Ellei tilausta peruta ennen kokeilun päättymistä, tilaus jatkuu valitun laskutusjakson mukaisena maksullisena tilauksena.`],
-      ['6. Hinnat ja verot', 'Respondo tarjoaa Advanced-, Premium- ja Enterprise-paketit kuukausi- tai vuositilauksina. Kuukausihinnat ovat 49 €/kk, 129 €/kk ja 149 €/kk. Vuositilauksen kuukausivastaavat hinnat ovat 39 €, 119 € tai 139 €/kk, ja vuosiveloitukset 468 €, 1 428 € tai 1 668 €. Vuositilauksella säästää 120 € vuodessa. Aiemmat tilaukset jatkuvat sopimusehtojensa mukaisesti. Arvonlisäveroa ei peritä vähäisen toiminnan vuoksi. Ennen maksamista asiakkaalle näytetään valittu paketti, kokonaishinta ja laskutusjakso.'],
+      ['6. Hinnat ja verot', 'Respondo tarjoaa Advanced-, Premium- ja Enterprise-paketit kuukausi- tai vuositilauksina. Kuukausihinnat ovat 49 €/kk, 129 €/kk ja 149 €/kk. Vuositilauksen kuukausivastaavat hinnat ovat 39 €, 119 € tai 139 €/kk, ja vuosiveloitukset 468 €, 1 428 € tai 1 668 €. Vuositilauksella säästää 120 € vuodessa. Aiemmat tilaukset jatkuvat sopimusehtojensa mukaisesti. Suomessa verollisen kotimaan myynnin hinnat sisältävät 25,5 % arvonlisäveron. Ennen maksamista asiakkaalle näytetään valittu paketti, kokonaishinta ja laskutusjakso.'],
       ['7. Maksaminen ja uusiminen', 'Maksut käsitellään Stripen kautta. Jatkuva tilaus uusiutuu valitun laskutusjakson mukaisesti, kunnes se perutaan. Maksun epäonnistuminen voi johtaa palvelun rajoittamiseen tai keskeyttämiseen.'],
       ['8. Peruminen', 'Tilauksen voi perua milloin tahansa. Peruminen estää seuraavan laskutusjakson uusiutumisen. Jo maksettu laskutuskausi jatkuu normaalisti kauden loppuun, ellei pakottava lainsäädäntö tai erikseen sovittu ehto edellytä muuta.'],
       ['9. Asiakkaan vastuu', 'Asiakas vastaa käyttäjätilinsä suojaamisesta, palveluun lisäämiensä tietojen oikeellisuudesta, tarvittavista oikeuksista ja suostumuksista sekä siitä, että palvelun käyttö, asiakasviestintä ja henkilötietojen käsittely ovat sovellettavan lain mukaisia.'],
@@ -6638,6 +6652,12 @@ async function route() {
           form.elements.email.readOnly = true;
           form.elements.email.classList.add('oauth-locked');
           form.dataset.oauthVerified = 'true';
+          // The server restores the code from an HTTP-only OAuth handoff cookie.
+          // This also survives www -> apex redirects, unlike sessionStorage.
+          if (profile.referralCode && !form.elements.referralCode?.value) {
+            form.elements.referralCode.value = profile.referralCode;
+            form.elements.referralCode.dispatchEvent(new Event('input', {bubbles:true}));
+          }
           const passwordField = $('#signupPasswordField');
           if (passwordField) passwordField.hidden = true;
           if (form.elements.password) form.elements.password.required = false;
@@ -6660,11 +6680,11 @@ async function route() {
       // Keep annual plans available for the private founder code.
       signupReferral.disabled = false;
       if (referralHint) {
-        const campaign = String(signupReferral.value || '').trim().toUpperCase() === 'US20YEAR';
-        referralHint.textContent = campaign
-          ? appText('USA-koodi US20YEAR: −20 % ensimmäiset 12 kuukautta, kuukausi- ja vuositilauksille. Vain yhdysvaltalaisille yrityksille.','USA-kod US20YEAR: 20 % rabatt under de första 12 månaderna på månads- och årsabonnemang för amerikanska företag.','US20YEAR: 20% off for the first 12 months on monthly and annual subscriptions for US businesses.')
+        const entered = String(signupReferral.value || '').trim();
+        referralHint.textContent = entered
+          ? appText('Koodi tarkistetaan tilauksen yhteydessä. Tavalliset suosittelukoodit käyvät kuukausitilaukseen; kampanjakoodien ehdot voivat poiketa.','Koden kontrolleras vid beställning. Vanliga rekommendationskoder gäller månadsabonnemang; kampanjer kan ha andra villkor.','The code is verified during checkout. Standard referral codes apply to monthly billing; other promotions may have different terms.')
           : monthly
-            ? appText('Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','Med en giltig kod får du 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid referral code gives 20% off the first paid month on monthly plans.')
+            ? appText('Tavallisella suosittelukoodilla saat 20 % pois ensimmäisestä maksullisesta kuukaudesta.','En vanlig rekommendationskod ger 20 % rabatt på den första betalda månaden.','A standard referral code gives 20% off your first paid month.')
             : appText('Tavalliset suosittelukoodit käyvät vain kuukausitilaukseen.','Vanliga rekommendationskoder gäller bara månadsabonnemang.','Standard referral codes are valid for monthly subscriptions only.');
       }
     };
@@ -6678,7 +6698,10 @@ async function route() {
       const url = new URL(googleLink.getAttribute('href'), location.origin);
       url.searchParams.set('plan',signupPlan.value);
       url.searchParams.set('lang',currentLang());
-      if (String(signupReferral?.value||'').trim().toUpperCase() === 'US20YEAR') url.searchParams.set('ref','US20YEAR');
+      const selectedReferral = String(signupReferral?.value || '').trim().toUpperCase();
+      // Preserve any customer-entered referral through Google sign-up, not just campaign codes.
+      if (selectedReferral) url.searchParams.set('ref', selectedReferral);
+      else url.searchParams.delete('ref');
       googleLink.setAttribute('href',url.pathname + url.search);
     };
     signupReferral?.addEventListener('input',syncGoogleSignupPlan);
@@ -6749,7 +6772,7 @@ async function route() {
           signupSubmitButton.disabled = false;
           signupSubmitButton.innerHTML = signupSubmitOriginal;
         }
-        $('#msg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+        $('#msg').innerHTML = `<div class="notice error">${esc(checkoutSignupErrorMessage(err))}</div>`;
       }
     };
     const requestSignupVerification = async () => {
@@ -6787,7 +6810,7 @@ async function route() {
       try {
         await requestSignupVerification();
       } catch (err) {
-        $('#msg').innerHTML = `<div class="notice error">${esc(err.message)}</div>`;
+        $('#msg').innerHTML = `<div class="notice error">${esc(checkoutSignupErrorMessage(err))}</div>`;
       } finally {
         if (signupSubmitButton) signupSubmitButton.disabled = false;
       }
