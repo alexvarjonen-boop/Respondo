@@ -1272,7 +1272,8 @@
           method:'POST',mode:'cors',credentials:'omit',
           headers:{'Content-Type':'text/plain;charset=UTF-8'},
           body:JSON.stringify({type:procedure.actionType,procedureCode:procedure.code,
-            procedureAnswers:answers,fields:{name:data.get('name'),contact:data.get('contact')},
+            procedureAnswers:answers,procedureConsent:check.checked,
+            fields:{name:data.get('name'),contact:data.get('contact')},
             question,widgetToken:token,visitorRef,lang:widgetLang,pageContext})
         });
         const result=await res.json().catch(()=>({}));
@@ -1285,7 +1286,7 @@
           'Your request was received for company review.');
         if(result.trackingLink){
           try{
-            const link=new URL(result.trackingLink);
+            const link=new URL(result.trackingLink,serviceOrigin);
             if(link.origin===serviceOrigin && link.pathname==='/request-status.html' &&
                /^#token=[a-f0-9]{64}$/i.test(link.hash)){
               const a=document.createElement('a');a.href=link.href;
@@ -1463,7 +1464,7 @@
 
         if(data.trackingLink){
           try{
-            const link=new URL(data.trackingLink);
+            const link=new URL(data.trackingLink,serviceOrigin);
             if(link.origin===serviceOrigin && link.pathname==='/request-status.html' &&
                 /^#token=[a-f0-9]{64}$/i.test(link.hash)){
               resultHtml+='<a class="action-pay" href="'+escapeHtml(link.href)+
