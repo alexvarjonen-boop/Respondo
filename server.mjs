@@ -75,6 +75,7 @@ import {ensureFreeWorkflowSchema,freeWorkflowOverview,createFreeWorkflow,
  setFreeWorkflowEnabled,markFreeWorkflowApproval,previewFreeWorkflow} from './respondo-free-actions.mjs';
 import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-gates.mjs';
 import {reliabilityOverview} from './respondo-reliability-lab.mjs';
+import {tenantProcedures,saveTenantProcedure,customerOpsOverview,agencyWorkspaceSummary,quoteBreakdown,validateProcedureSubmission,issueRequestTrackingLink,requestTrackingStatus,addCustomerTrackingNote,ownerRequestUpdates} from './respondo-customer-operations.mjs';
 import {listManualVersions,createManualVersion,restoreManualVersion} from './respondo-manual-versions.mjs';
 import {workflowTemplateCatalog,workflowFromTemplate} from './respondo-workflow-templates.mjs';
 import {conversationEvidence} from './respondo-evidence-handoff.mjs';
@@ -10619,6 +10620,26 @@ app.get('/api/app/native/conversions',auth,ownerOnly,subscribed,nativeEndpoint(
 /* Read-only owner progress and explicitly approved first-party growth settings. */
 app.get('/api/app/native/growth',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>growthOverview(pool,id)));
+
+/* Owner-controlled procedures, triage, quote breakdown and multi-workspace agency readout. */
+app.get('/api/app/native/customer-ops',auth,ownerOnly,subscribed,nativeEndpoint(
+  id=>customerOpsOverview(pool,id)));
+app.put('/api/app/native/customer-ops/procedure',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>saveTenantProcedure(pool,id,req.body||{})));
+app.get('/api/app/native/customer-ops/quote-breakdown',auth,ownerOnly,subscribed,nativeEndpoint(
+  async(id,req)=>{
+    const r=await pool.query('SELECT quote_base_price,quote_unit_price,quote_min_price,quote_vat_percent,quote_service_name FROM tenants WHERE id=$1',[id]);
+    if(!r.rowCount)return null;
+    return quoteBreakdown(r.rows[0],req.query?.quantity);
+  }));
+app.get('/api/app/native/customer-ops/requests/:id/updates',auth,ownerOnly,subscribed,nativeEndpoint(
+  (id,req)=>ownerRequestUpdates(pool,id,req.params.id)));
+app.get('/api/app/native/agency/summary',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{return res.json({ok:true,data:await agencyWorkspaceSummary(pool,req.user.sub)});}
+  catch(error){console.error('Agency summary unavailable',error?.name);return res.status(503).json({error:'Workspace summary unavailable'});}
+});
+
 app.put('/api/app/native/growth/settings',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (id,req)=>saveGrowthSettings(pool,id,req.body||{})));
 app.get('/api/app/native/growth/quote-preview',auth,ownerOnly,subscribed,nativeEndpoint(
