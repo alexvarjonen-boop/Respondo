@@ -148,8 +148,8 @@ export const FEATURE_GROUPS = [
   },
   {
     key: 'booking',
-    title: ['Ajanvaraus & Google Calendar','Bokning & Google Kalender','Bookings & Google Calendar'],
-    intro: ['Asiakas voi valita vapaan ajan chatista ja varaus voidaan synkronoida Google Calendariin.','Kunden kan välja en ledig tid i chatten och bokningen kan synkroniseras med Google Kalender.','Customers can select an available time in chat and sync the booking to Google Calendar.'],
+    title: ['Ajanvaraus & Respondo Calendar','Bokning & Respondo Calendar','Bookings & Respondo Calendar'],
+    intro: ['Respondo käsittelee ajanvarauspyynnöt ja vapaat ajat omassa järjestelmässään. Ulkoisia kalentereita ei luvata ilman erikseen vahvistettua yhteyttä.','Respondo hanterar bokningsförfrågningar och lediga tider i sitt eget system. Externa kalendrar utlovas inte utan en verifierad anslutning.','Respondo handles appointment requests and available slots in its own system. External calendar sync is not promised without a separately verified connection.'],
     items: [
       ['Ajanvarausaikeen tunnistaminen','Identifiering av bokningsavsikt','Booking-intent detection'],
       ['Ajanvarauslomakkeen näyttäminen chatissa','Visar bokningsformulär i chatten','Shows booking form in chat'],
@@ -159,14 +159,9 @@ export const FEATURE_GROUPS = [
       ['Jo varatun ajan uudelleenvarauksen esto','Förhindrar dubbelbokning av redan bokad tid','Prevents booking an already-booked slot'],
       ['Menneeseen aikaan varaamisen esto','Förhindrar bokning av förfluten tid','Prevents booking past times'],
       ['Tietokantatason lukitus päällekkäisten varausten estämiseksi','Databaslås för att förhindra dubbelbokningar','Database locking to prevent race-condition double bookings'],
-      ['Google Calendar -yhteyden yhdistäminen','Anslutning till Google Kalender','Connect Google Calendar'],
-      ['Google Calendar -päällekkäisyyden tarkistus','Kontroll av konflikter i Google Kalender','Google Calendar conflict check'],
-      ['Varauksen hylkääminen, jos kalenterissa on päällekkäisyys','Avvisar bokning vid kalenderkonflikt','Rejects booking when calendar conflict exists'],
-      ['Google Calendar -tapahtuman luominen varauksesta','Skapar Google Kalender-händelse från bokning','Creates Google Calendar event from booking'],
       ['Varausvahvistuksen näyttäminen asiakkaalle','Visar bokningsbekräftelse för kunden','Shows booking confirmation to customer'],
       ['Varauksen tallentaminen toimintopyynnöksi','Sparar bokningen som åtgärdsbegäran','Stores booking as an action request'],
       ['Varauksen yhteydessä liidin luominen','Skapar lead i samband med bokning','Creates a lead with booking'],
-      ['Google Calendar -yhteyden katkaiseminen hallinnasta','Koppla bort Google Kalender från kontrollpanelen','Disconnect Google Calendar from dashboard']
     ]
   },
   {
@@ -221,15 +216,14 @@ export const FEATURE_COUNT = FEATURE_GROUPS.reduce((sum, group) => sum + group.i
  * Public pricing feature eligibility. Internal billing tiers are:
  * basic = Advanced, advanced = Premium, business = Enterprise.
  * Only explicitly gated capabilities are elevated: the quote calculator and
- * Stripe payment links require Enterprise; Google Calendar requires Premium.
+ * payment links require Enterprise. Unverified external calendar features
+ * are not included in the public catalogue.
  * All other catalog items are shared, subject to configuration and seat limits.
  */
 export const PUBLIC_PLAN_FEATURE_LEVELS = Object.freeze({
   advanced: 0, premium: 1, enterprise: 2
 });
-const PREMIUM_FEATURES = Object.freeze({
-  booking: new Set([8,9,10,11,15])
-});
+const PREMIUM_FEATURES = Object.freeze({});
 const ENTERPRISE_FEATURES = Object.freeze({
   quotes: new Set([1,4,5,6,7,8,9,10,11,12,15])
 });
