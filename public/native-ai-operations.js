@@ -215,6 +215,43 @@
       content.replaceChildren(el('p','native-intro',t.flowsIntro),
         el('p','native-disclaimer',t.flowsLocalOnly));
       if(!flows){content.appendChild(el('p','native-empty',t.loading));return;}
+      // Reuse the existing first-party execution engine. Templates create
+      // multi-action workflows DISABLED until explicit owner activation.
+      const examplePanel=el('section','native-guided-workflows');
+      const languageLabel=(fi,sv,en)=>language==='fi'?fi:language==='sv'?sv:en;
+      const showExamples=button(languageLabel(
+        'Valmiit työnkulkupohjat','Färdiga arbetsflöden','Guided workflow templates'),'button');
+      examplePanel.appendChild(showExamples);
+      const templatesHost=el('div','native-guided-workflow-content');
+      examplePanel.appendChild(templatesHost);
+      showExamples.addEventListener('click',async()=>{
+        showExamples.disabled=true;
+        try{
+          const result=await request('GET',FLOWS+'/templates');
+          templatesHost.replaceChildren();
+          for(const template of result.templates||[]){
+            const lang=['fi','sv','en'].includes(language)?language:'en';
+            const title=template.name?.[lang]||template.name?.en||template.id;
+            const card=recordCard(title,(template.steps?.[lang]||[]).join(' → '));
+            card.appendChild(el('p','native-disclaimer',languageLabel(
+              'Vain Respondon sisäiset tehtävät ja hyväksyntäpyynnöt. Ei automaattisia viestejä, maksuja tai asiakaslomaketta.',
+              'Endast interna uppgifter och godkännanden. Inga automatiska meddelanden eller betalningar.',
+              'Internal tasks and approvals only. No automatic messages, payments or customer intake forms.')));
+            const create=button(languageLabel(
+              'Luo pois käytöstä','Skapa inaktiverat','Create disabled workflow'),'button');
+            create.addEventListener('click',()=>{
+              if(busy||!window.confirm(languageLabel(
+                'Luodaanko tämä työnkulku pois käytöstä? Sen käynnistäminen vaatii erillisen hyväksynnän.',
+                'Skapa detta arbetsflöde inaktiverat? Det måste aktiveras separat.',
+                'Create this workflow disabled? Activation requires a separate approval.')))return;
+              flowAction('POST',FLOWS+'/from-template',{templateId:template.id,approved:true});
+            });
+            card.appendChild(create);templatesHost.appendChild(card);
+          }
+        }catch(error){feedback.textContent=error.message||t.error;}
+        finally{showExamples.disabled=false;}
+      });
+      content.appendChild(examplePanel);
       const form=el('form','native-form');
       const nameLabel=el('label','native-label',t.flowsNew);
       const name=el('input','native-input');name.required=true;name.minLength=3;
@@ -734,6 +771,28 @@
       content.appendChild(el('h4','native-subtitle',
         String(thread.source_channel||'website')+' · '+
         (thread.status==='closed'?t.inboxStatusClosed:t.inboxStatusOpen)));
+      // Factual transcript extract, not an AI guess or a confirmed resolution.
+      if(threadDetail.handoffBrief){
+        const brief=threadDetail.handoffBrief;
+        const local=(fi,sv,en)=>language==='fi'?fi:language==='sv'?sv:en;
+        const panel=el('section','native-handoff-brief');
+        panel.appendChild(el('strong','native-record-title',local(
+          'Yhteenveto työntekijälle','Sammanfattning för medarbetaren','Human handoff brief')));
+        if(brief.lastCustomerMessage)
+          panel.appendChild(recordCard(local('Viimeisin asiakkaan viesti','Senaste kundmeddelande','Latest customer message'),
+            brief.lastCustomerMessage));
+        if(brief.previousCustomerMessages?.length)
+          panel.appendChild(recordCard(local('Aiemmat asiakkaan viestit','Tidigare kundmeddelanden','Earlier customer messages'),
+            brief.previousCustomerMessages.join(' · ')));
+        if(brief.lastRecordedReply)
+          panel.appendChild(recordCard(local('Viimeisin kirjattu vastaus','Senaste registrerade svar','Last recorded reply'),
+            brief.lastRecordedReply));
+        panel.appendChild(el('p','native-disclaimer',local(
+          'Kooste perustuu tallennettuihin viesteihin. Tarkista faktat, hinta ja varaustilanne ennen vastaamista.',
+          'Sammanfattningen bygger på sparade meddelanden. Kontrollera fakta, pris och bokning före svar.',
+          'Extracted from recorded messages. Verify facts, prices and booking status before replying.')));
+        content.appendChild(panel);
+      }
       const statusButton=button(thread.status==='closed'?t.inboxReopen:t.inboxMarkClosed,'button');
       statusButton.addEventListener('click',()=>inboxAction('PATCH',INBOX+'/'+selectedThread+'/status',{
         status:thread.status==='closed'?'open':'closed'
@@ -1035,6 +1094,55 @@
       return block;
     }
 
+    function addEvidenceInspector(card,conversationId){
+      if(!idGuard(conversationId))return;
+      const wrap=el('div','native-answer-evidence');
+      const open=button(language==='fi'?'Tarkista vastauksen lähteet':
+        language==='sv'?'Granska svarets källor':'Inspect answer sources','button');
+      const details=el('div','native-answer-evidence-details');
+      open.addEventListener('click',async()=>{
+        open.disabled=true;details.textContent=t.loading;
+        try{
+          const result=await request('GET',API+'/quality/evidence/'+conversationId);
+          details.replaceChildren();
+          details.appendChild(el('p','native-disclaimer',language==='fi'
+            ?'Tallennettuja lähteitä: '+result.sourceIdsRecorded+' · Nyt hyväksyttyjä: '+result.currentlyApprovedSources.length
+            :language==='sv'
+            ?'Registrerade källor: '+result.sourceIdsRecorded+' · Godkända nu: '+result.currentlyApprovedSources.length
+            :'Recorded sources: '+result.sourceIdsRecorded+' · Currently approved: '+result.currentlyApprovedSources.length));
+          if(!result.currentlyApprovedSources?.length)
+            details.appendChild(el('p','native-disclaimer',language==='fi'
+              ?'Hyväksyttyä lähdettä ei löytynyt. Älä oleta, että vastaus on tarkistettu.'
+              :language==='sv'?'Ingen godkänd källa hittades. Svaret är inte verifierat.'
+              :'No approved source was found. The answer is not independently verified.'));
+          for(const source of result.currentlyApprovedSources||[]){
+            const item=recordCard(source.title,
+              (source.excerpt||'')+(source.lastVerifiedAt
+                ?' · '+String(source.lastVerifiedAt).slice(0,10):''));
+            // Treat source URLs as untrusted, and never navigate to javascript:.
+            if(source.sourceUrl){
+              try{
+                const parsed=new URL(source.sourceUrl);
+                if(['http:','https:'].includes(parsed.protocol)){
+                  const link=el('a','native-source-link',language==='fi'?'Avaa lähde':
+                    language==='sv'?'Visa källan':'Open source');
+                  link.href=parsed.href;link.target='_blank';link.rel='noopener noreferrer';
+                  item.appendChild(link);
+                }
+              }catch{}
+            }
+            details.appendChild(item);
+          }
+          details.appendChild(el('p','native-disclaimer',language==='fi'
+            ?'Lähdeviitteet ovat tallennushetken tunnisteita, joita verrataan nykyiseen hyväksyttyyn tietopohjaan. Ne eivät todista vastauksen oikeellisuutta.'
+            :language==='sv'
+            ?'Käll-ID:n jämförs med nuvarande godkända fakta; de garanterar inte ett korrekt svar.'
+            :'Recorded IDs are matched to currently approved sources, not a historical snapshot or a guarantee of correctness.'));
+        }catch(error){details.textContent=error.message||t.error;}
+        finally{open.disabled=false;}
+      });
+      wrap.append(open,details);card.appendChild(wrap);
+    }
     function renderQualityCenter(){
       const isQuality=active==='quality';
       content.replaceChildren(el('p','native-intro',isQuality?t.qualityIntro:t.insightsIntro));
@@ -1191,6 +1299,7 @@
       reviews.appendChild(el('h4','native-subtitle',t.recentReviews));
       for(const review of report.reviews||[]){
         const card=recordCard(review.question,review.reason+' · '+localStatus(review.status,t));
+        addEvidenceInspector(card,review.conversationId);
         if(review.note)card.appendChild(el('p','native-record-meta',review.note));
         if(review.status==='open'){
           const note=el('textarea','native-review-note');note.maxLength=1200;
@@ -1211,6 +1320,7 @@
       const already=new Set((report.reviews||[]).filter(x=>x.status==='open').map(x=>x.conversationId));
       for(const gap of (report.gaps||[]).filter(x=>!already.has(x.conversationId))){
         const card=recordCard(gap.question,gap.channel+' · '+(gap.intent||''));
+        addEvidenceInspector(card,gap.conversationId);
         const dropdown=select(reasons,'incorrect_fact',()=>{});
         dropdown.setAttribute('aria-label',t.reviewReason);
         const note=el('textarea','native-review-note');note.maxLength=1200;note.rows=2;

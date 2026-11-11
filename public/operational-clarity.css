@@ -1,0 +1,16 @@
+/* First-party operator clarity. Scoped to existing panels, no global theme changes. */
+#app .native-guided-workflows,#app .native-handoff-brief,#app .native-answer-evidence{min-width:0;overflow-wrap:anywhere}
+#app .native-guided-workflows{display:grid;gap:12px;padding:15px;margin:0 0 16px;border:1px solid rgba(255,255,255,.19);border-radius:15px;background:#1b1b20;color:#f7f7f8}
+#app .native-guided-workflow-content{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+#app .native-guided-workflow-content .native-record-card{background:#24242a;border-radius:12px;padding:14px}
+#app .native-handoff-brief{display:grid;gap:10px;margin:12px 0 16px;padding:15px;border:1px solid rgba(255,255,255,.18);border-radius:15px;background:#1d1d22;color:#f7f7f7}
+#app .native-handoff-brief .native-record-card{padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:#27272c}
+#app .native-handoff-brief .native-record-title,#app .native-guided-workflows .native-record-title{color:#fff}
+#app .native-answer-evidence{display:grid;gap:8px;margin:10px 0}
+#app .native-answer-evidence-details{display:grid;gap:8px}
+#app .native-answer-evidence-details .native-record-card{padding:10px;border:1px solid rgba(255,255,255,.14);border-radius:9px}
+#app .native-answer-evidence .native-source-link{color:#c8d9ff;text-decoration:underline;text-underline-offset:3px}
+#app .native-answer-evidence .native-disclaimer,#app .native-handoff-brief .native-disclaimer,#app .native-guided-workflows .native-disclaimer{color:#ceced7;line-height:1.6}
+#respondo-site-chat .rx-instant-demo-share{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:12px}
+#respondo-site-chat .rx-instant-demo-share .rx-instant-demo-input{width:100%;font-size:12px;min-width:0}
+@media(max-width:560px){#app .native-guided-workflow-content{grid-template-columns:1fr}#respondo-site-chat .rx-instant-demo-share>*{max-width:100%}}
