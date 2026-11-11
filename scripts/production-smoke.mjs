@@ -33,6 +33,9 @@ export async function checkSite(origin = defaultOrigin) {
       path+' must be a JavaScript asset');
     assert.ok(body.length>500,path+' must not be empty or an error page');
   }
+  const {response:clarityCss}=await request(origin,'/operational-clarity.css');
+  assert.match(clarityCss.headers.get('content-type')||'',/text\/css/i,
+    'Operator workflow and evidence styles must load');
   const {response:styleResponse}=await request(origin,'/owner-growth-center.css');
   assert.match(styleResponse.headers.get('content-type')||'',/text\/css/i,
     'Growth Center stylesheet must load');
@@ -85,7 +88,7 @@ export async function checkSite(origin = defaultOrigin) {
   assert.match(robots, /^Sitemap:\s*https:\/\//im, 'robots.txt must disclose the sitemap URL');
   await request(origin, '/__respondo_smoke_unknown_route_404', { expectedStatus: 404 });
 
-  return { ok: true, checkedPages: publicPages.length, checkedLanguages: 3, checkedAssets: 6 };
+  return { ok: true, checkedPages: publicPages.length, checkedLanguages: 3, checkedAssets: 7 };
 }
 
 async function run() {
