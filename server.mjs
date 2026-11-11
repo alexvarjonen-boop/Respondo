@@ -1,4 +1,5 @@
 import { approvedProductLinkAnswer } from './product-url-match.mjs';
+import { approvedCurrentPageProduct } from './page-context-product.mjs';
 import { isPhysicalClubProduct, groundedBudgetProductAnswer } from './product-budget.mjs';
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voice.mjs';
@@ -7782,6 +7783,12 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
   // An unknown merchant URL never triggers an untrusted live fetch or a guessed price.
   const linkedProduct=approvedProductLinkAnswer(rows,originalMessage,responseLang,parseProductKnowledgeRow);
   if(linkedProduct) return linkedProduct;
+  // A visitor asking about "this product" on a merchant page can resolve
+  // that reference from approved, tenant-local catalog rows. The page URL
+  // is never fetched and never supplies an unapproved price or availability.
+  const pageProduct=approvedCurrentPageProduct(
+    rows,originalMessage,pageContext,responseLang,parseProductKnowledgeRow);
+  if(pageProduct) return pageProduct;
 
   // Each sub-answer traverses exactly the same grounded-answer engine with
   // the same tenant-scoped rows. There is no network-wide search, no inferred

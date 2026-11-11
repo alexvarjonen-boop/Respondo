@@ -17,6 +17,22 @@ async function request(origin, path, { method = 'GET', expectedStatus = 200 } = 
   return { response, body: method === 'HEAD' ? '' : await response.text() };
 }
 
+// Public anchor links only. Protected dashboard buttons need authenticated
+// browser tests and are deliberately not included in this result.
+export function discoverPublicLinks(html, origin, maximum = 45) {
+  const found = new Set();
+  for(const match of String(html||'').matchAll(/<a\b[^>]*\bhref\s*=\s*(['"])(.*?)\1/gi)) {
+    let url;
+    try { url = new URL(match[2].replace(/&amp;/gi,'&'), origin); } catch { continue; }
+    if(url.origin !== new URL(origin).origin) continue;
+    if(/^\/(?:api|app|dashboard|logout|request-status)(?:\/|$)/i.test(url.pathname)) continue;
+    if(/\.(?:svg|png|webp|jpe?g|pdf|css|js|zip|mp4)$/i.test(url.pathname)) continue;
+    found.add(url.pathname + (url.searchParams.has('lang') ? '?lang='+encodeURIComponent(url.searchParams.get('lang')) : ''));
+    if(found.size >= maximum) break;
+  }
+  return [...found];
+}
+
 export async function checkSite(origin = defaultOrigin) {
   const { body: healthText } = await request(origin, '/api/health');
   const health = JSON.parse(healthText);
@@ -61,10 +77,19 @@ export async function checkSite(origin = defaultOrigin) {
     '/tietosuoja', '/kayttoehdot', '/assistant',
     '/asiakaspalvelubotti', '/verkkokauppa-chatbot',
   ];
+  const discoveredLinks = new Set();
   for (const path of publicPages) {
     const { response, body } = await request(origin, path);
     assert.match(response.headers.get('content-type') || '', /text\/html/i, path + ' must serve HTML');
     assert.match(body, /<title>[^<]+<\/title>/i, path + ' needs a server-rendered title');
+    for (const href of discoverPublicLinks(body, origin)) discoveredLinks.add(href);
+  }
+  // A broken link in the public SSR navigation is a deploy regression.
+  const linkedPages = [...discoveredLinks].filter(path => !publicPages.includes(path)).slice(0, 55);
+  for (const path of linkedPages) {
+    const { response } = await request(origin, path);
+    assert.match(response.headers.get('content-type') || '', /text\/html/i,
+      path + ' is a public navigation target and must serve HTML');
   }
 
   for (const lang of ['fi', 'sv', 'en']) {
@@ -91,7 +116,7 @@ export async function checkSite(origin = defaultOrigin) {
   assert.match(robots, /^Sitemap:\s*https:\/\//im, 'robots.txt must disclose the sitemap URL');
   await request(origin, '/__respondo_smoke_unknown_route_404', { expectedStatus: 404 });
 
-  return { ok: true, checkedPages: publicPages.length, checkedLanguages: 3, checkedAssets: 9 };
+  return { ok: true, checkedPages: publicPages.length + linkedPages.length, checkedLanguages: 3, checkedAssets: 9 };
 }
 
 async function run() {

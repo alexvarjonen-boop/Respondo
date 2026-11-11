@@ -51,15 +51,18 @@ test('conversion queries are authenticated-tenant scoped and no personal data is
     if(sql.includes('WITH engaged'))return {rows:[{channel:'website',engaged:4,converted:1}]};
     if(sql.includes('FROM action_requests'))return {rows:[{request_type:'booking',submitted:1,confirmed_bookings:0,paid_quotes:0}]};
     if(sql.includes('FROM leads'))return {rows:[{total:1}]};
+    if(sql.includes('FROM respondo_native_contacts'))return {rows:[{stage:'won',total:1}]};
     throw Error('Unexpected query');
   }};
   const r=await conversionOverview(db,tenant,7);
   assert.equal(r.days,7);assert.equal(r.summary.actionRatePercent,25);
-  assert.equal(qs.length,3);
+  assert.equal(qs.length,4);
+  assert.equal(r.summary.crmWonContacts,1);
   assert.ok(qs.every(([sql,args])=>args[0]===tenant&&args[1]===7&&sql.includes('tenant_id=$1')));
   assert.ok(!JSON.stringify(r).includes('email'));
   assert.ok(qs[0][0].includes('e.channel=c.channel'));
-  assert.ok(qs[1][0].includes("result->>'paid'='true'"));
+  assert.ok(qs[1][0].includes("a.result->>'paid'='true'"));
+  assert.ok(qs[1][0].includes("e.status='confirmed'"));
 });
 
 test('recurring low-confidence and handoff patterns are read-only owner suggestions',()=>{
