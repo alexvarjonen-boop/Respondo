@@ -83,3 +83,26 @@ test('Meta readiness respects webhook verification token length',()=>{
  assert.match(route,/META_VERIFY_TOKEN/);
  assert.match(route,/length>=16/);
 });
+
+test('unconfigured provider panels stay hidden until authenticated server readiness permits them',()=>{
+ const app=read('public/app.js');
+ assert.match(app,/id="native-mail-connections" data-respondo-provider-gated="yes"[^>]* hidden>/);
+ assert.match(app,/id="meta-native-connections" data-respondo-provider-gated="yes"[^>]* hidden>/);
+ assert.match(app,/const enabled=permitted&&\(nativeMailOauthReady\.gmail\|\|nativeMailOauthReady\.outlook\)/);
+ assert.match(app,/if\(mailPanel\)mailPanel\.hidden=!enabled/);
+ assert.match(app,/data-native-mail-connect="outlook" hidden/);
+ assert.match(app,/data-native-mail-connect="gmail" hidden/);
+ assert.match(app,/data-native-mail-sync="outlook" hidden/);
+ assert.match(app,/data-native-mail-sync="gmail" hidden/);
+ assert.match(app,/el\.hidden=!ready\|\|!saved/);
+ assert.match(app,/const readiness=await api\('\/api\/app\/integrations\/readiness'\)/);
+ assert.match(app,/if\(!ready\)\{if\(panel\)panel\.hidden=true;return;\}/);
+});
+test('onboarding only offers integrations that pass server prerequisites and plan access',()=>{
+ assert.match(ui,/function providerVisible\(item\)/);
+ assert.match(ui,/!readinessLoaded \|\| prerequisites\.get\(item\.id\)!==true \|\| existingLocks\.get\(item\.id\)/);
+ assert.match(ui,/oauthAvailable\.get\(item\.id\)!==true/);
+ assert.match(ui,/groups\.filter\(g=>providers\.some\(p=>p\.group===g\.id && providerVisible\(p\)\)\)/);
+ assert.match(ui,/providers\.filter\(x=>x\.group===chosenGroup && providerVisible\(x\)\)/);
+ assert.match(ui,/providerVisible\(item\) && !\['restricted','notConfigured','unverified'\]/);
+});
