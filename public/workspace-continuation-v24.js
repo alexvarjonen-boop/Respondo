@@ -438,7 +438,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
   // Do not show connector tabs simply because the server rendered their
   // forms. The configured, tenant-accessible provider probe must succeed.
   const moduleTabAvailable=id=>{
-    const target=storage.querySelector('#'+id);
+    const target=storage.querySelector('#'+id)||card.querySelector('#'+id);
     if(!target || target.dataset.respondoPlanLocked==='yes')return false;
     if(target.dataset.respondoProviderGated==='yes')
       return target.dataset.respondoConnectorAvailable==='yes';
@@ -453,6 +453,9 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     const visible=tabs.integrations.filter(([id])=>moduleTabAvailable(id));
     const previous=[...header.querySelectorAll('[data-workspace-tab]')].map(b=>b.dataset.workspaceTab).join('|');
     if(previous===visible.map(([id])=>id).join('|'))return;
+    // If the currently open provider becomes unavailable, return to an
+    // actual working Respondo module instead of leaving an empty form visible.
+    if(currentTab && !moduleTabAvailable(currentTab))showModuleTab('native-operations');
     header.replaceChildren();
     for(const [id,label] of visible){
       const button=document.createElement('button');
