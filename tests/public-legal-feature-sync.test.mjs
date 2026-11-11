@@ -49,7 +49,7 @@ test('privacy explains chat leads website import translation and controller role
 });
 
 test('plans and features are synchronized to the server access gates',()=>{
-  assert.equal(FEATURE_COUNT,145);
+  assert.equal(FEATURE_COUNT,140);
   assert.equal(FEATURE_HIGHLIGHTS.length,10);
   const allFeatures=FEATURE_GROUPS.flatMap(group=>group.items);
   assert.equal(allFeatures.length,FEATURE_COUNT);
@@ -64,7 +64,7 @@ test('plans and features are synchronized to the server access gates',()=>{
   }
   const advanced=app.slice(app.indexOf("card('Premium'"),app.indexOf("card('Enterprise'"));
   assert.doesNotMatch(advanced,/Hae tiedot automaattisesti verkkosivulta/);
-  assert.match(advanced,/Google Calendar -synkronointi/);
+  assert.match(advanced,/Tiimikäyttö 10 asiakaspalvelijalle/);
   assert.match(server,/basic_monthly:\{[^}]*agentSeats:2,websiteImport:true,googleCalendar:false/);
   assert.match(server,/advanced_monthly:\{[^}]*agentSeats:10,websiteImport:true,googleCalendar:true/);
   assert.match(server,/business_monthly:\{[^}]*agentSeats:20,websiteImport:true,googleCalendar:true/);
