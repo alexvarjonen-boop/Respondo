@@ -26,13 +26,24 @@ export async function checkSite(origin = defaultOrigin) {
   await request(origin, '/api/public/config');
   // A healthy homepage is insufficient if the embeddable bot or onboarding
   // scripts return a 404 or an HTML error document after deployment.
-  const criticalAssets=['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js','/owner-growth-center.js','/reliability-console.js'];
+  const criticalAssets=['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js','/owner-growth-center.js','/reliability-console.js','/customer-operations-owner.js','/request-status.js'];
   for (const path of criticalAssets) {
     const {response,body}=await request(origin,path);
     assert.match(response.headers.get('content-type')||'',/javascript|ecmascript/i,
       path+' must be a JavaScript asset');
     assert.ok(body.length>500,path+' must not be empty or an error page');
   }
+  const {response:customerCss}=await request(origin,'/customer-operations-owner.css');
+  assert.match(customerCss.headers.get('content-type')||'',/text\/css/i,
+    'Customer Operations styles must load');
+  const {response:portalCss}=await request(origin,'/request-status.css');
+  assert.match(portalCss.headers.get('content-type')||'',/text\/css/i,
+    'Private customer tracking styles must load');
+  const {response:portalPage,body:portalHtml}=await request(origin,'/request-status.html');
+  assert.match(portalPage.headers.get('content-type')||'',/text\/html/i,
+    'Private tracking page must be HTML');
+  assert.match(portalHtml,/name="robots" content="noindex,nofollow,noarchive"/,
+    'Tracking pages must be marked noindex');
   const {response:reliabilityCss}=await request(origin,'/reliability-console.css');
   assert.match(reliabilityCss.headers.get('content-type')||'',/text\/css/i,
     'Reliability Console styles must load');
@@ -91,7 +102,7 @@ export async function checkSite(origin = defaultOrigin) {
   assert.match(robots, /^Sitemap:\s*https:\/\//im, 'robots.txt must disclose the sitemap URL');
   await request(origin, '/__respondo_smoke_unknown_route_404', { expectedStatus: 404 });
 
-  return { ok: true, checkedPages: publicPages.length, checkedLanguages: 3, checkedAssets: 9 };
+  return { ok: true, checkedPages: publicPages.length, checkedLanguages: 3, checkedAssets: 14 };
 }
 
 async function run() {
