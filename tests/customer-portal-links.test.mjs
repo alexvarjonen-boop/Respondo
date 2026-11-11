@@ -29,3 +29,13 @@ test('tracking page is localized, private and does not promise a booking or paym
  assert.match(html,/method="post"/);
  assert.match(html,/does not mean a confirmed price, booking or payment/);
 });
+
+test('preview status page is explicit, read-only, localized and has no live request action',()=>{
+ for(const [lang,label] of [['fi','ESIKATSELU'],['sv','FÖRHANDSVISNING'],['en','PREVIEW']]){
+   const page=renderRequestStatusPage({lang,preview:true,type:'quote',status:'in_progress'});
+   assert.match(page,new RegExp(label));
+   assert.match(page,/noindex,nofollow,noarchive/);
+   assert.doesNotMatch(page,/<form|method="post"|\/request-status\//);
+   assert.match(page,/In progress|Käsittelyssä|Under behandling/);
+ }
+});
