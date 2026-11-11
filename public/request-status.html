@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark">
+  <title>Request status | Respondo AI</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/request-status.css?v=20261111-v1">
+  <script src="/request-status.js?v=20261111-v1" defer></script>
+</head>
+<body>
+  <header class="header"><a href="/" class="brand" aria-label="Respondo AI">RESPONDO AI</a><span class="header-note" data-i18n="private">Private request status</span></header>
+  <main>
+    <div class="eyebrow">RESPONDO OS</div>
+    <h1 data-i18n="title">Your request</h1>
+    <p class="intro" data-i18n="intro">View the status of your request or provide additional information. This link is private—do not forward it.</p>
+    <section class="card" aria-label="Request status">
+      <p class="sub" data-i18n="statusTitle">Current status</p>
+      <h2 id="requestStatus" role="status" aria-live="polite">Checking…</h2>
+      <div class="details" id="requestDetails"></div>
+      <p class="notice" data-i18n="disclaimer">A received request is not a confirmed booking, approved quote or completed payment.</p>
+    </section>
+    <section class="card" id="notesPanel" hidden>
+      <h2 data-i18n="addInfo">Add information</h2>
+      <p class="sub" data-i18n="noteDisclaimer">Your message will be visible to the business handling this request. Do not include passwords or payment card numbers.</p>
+      <form id="addNoteForm">
+        <label for="note" data-i18n="noteLabel">Additional details</label>
+        <textarea id="note" name="note" rows="4" maxlength="650" required minlength="3"></textarea>
+        <button type="submit" id="noteButton" data-i18n="submit">Send update</button>
+        <p id="noteFeedback" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+    <footer><a href="https://respondoai.fi" rel="noopener noreferrer">RESPONDO AI</a> · <span data-i18n="footer">Link expires after 30 days.</span></footer>
+  </main>
+</body>
+</html>
