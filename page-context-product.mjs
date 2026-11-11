@@ -18,6 +18,6 @@ export function approvedCurrentPageProduct(rows,message,pageContext={},lang='fi'
   }catch{return null;}
   // The existing catalog matcher requires a URL exactly matching an approved
   // product. A path/title from pageContext can never create product evidence.
-  const result=approvedProductLinkAnswer(rows,question+' '+page.href,lang,parseProduct);
+  const result=approvedProductLinkAnswer(rows.filter(row=>row?.approved===true),question+' '+page.href,lang,parseProduct);
   return result?.sourceIds?.length>0?result:null;
 }
