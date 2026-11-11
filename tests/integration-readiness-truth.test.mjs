@@ -43,7 +43,7 @@ test('connection actions fail closed while readiness endpoint is pending or unav
  assert.match(ui,/if\(!readinessLoaded \|\| !prerequisites\.has\(item\.id\)\)return 'unverified'/);
  assert.match(ui,/readinessLoaded=Boolean\(result\.readiness\?\.prerequisites/);
  assert.match(ui,/if\(\['restricted','notConfigured','unverified'\]\.includes\(availability\)\)/);
- assert.match(ui,/item && !\['restricted','notConfigured','unverified'\]\.includes\(status\(item\)\)/);
+ assert.match(ui,/item && providerVisible\(item\) && !\['restricted','notConfigured','unverified'\]\.includes\(status\(item\)\)/);
  assert.match(ui,/if\(s==='unverified'\)/);
 });
 test('saved browser connection hints are not proof of successful external operations',()=>{
