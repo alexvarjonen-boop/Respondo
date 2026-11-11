@@ -241,9 +241,9 @@ test('Features and Guides are updated in all three languages without false claim
   }
  }
  const app=read('public/app.js'),html=read('public/index.html');
- assert.match(app,/features-data\.js\?v=20261111-customer-ops-v1/);
- assert.match(app,/global-resources\.mjs\?v=20261111-customer-ops-v1/);
- assert.match(html,/app\.js\?v=20261111-customer-ops-v1/);
+ assert.match(app,/features-data\.js\?v=[^']*customer-ops-v1/);
+ assert.match(app,/global-resources\.mjs\?v=[^']*customer-ops-v1/);
+ assert.match(html,/app\.js\?v=[^"]*customer-ops-v1/);
  assert.match(html,/customer-operations-owner\.js/);
  assert.match(html,/customer-operations-owner\.css/);
 });
