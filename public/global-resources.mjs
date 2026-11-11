@@ -674,6 +674,20 @@ guides['/guides/ai-chatbot-pricing'].en.sections.push([
   'Respondo AI offers optional assisted setup for a separate one-time €199 charge unless an applied discount changes it. Compare recurring fees, setup and any third-party integration costs. The three-day trial start depends on whether assisted setup is selected; check the current checkout terms before ordering.'
 ]);
 
+// Smart Quote Engine: safeguards reflect the verified server-side calculator.
+guides['/guides/ai-chatbot-pricing'].fi.sections.push([
+  'Turvallinen tarjouslaskenta keskustelussa',
+  'Jos yritys on määrittänyt tarjouslaskennan perushinnan, yksikköhinnan, vähimmäishinnan ja veroprosentin, Respondo voi laskea summan syötetyn määrän perusteella. Virheelliset, äärettömät ja kohtuuttoman suuret määrät hylätään; myös virheellinen hinnoittelumääritys pysäyttää laskennan. Ellei yrityksen hyväksymää hintasääntöä ole, botti ei saa keksiä hintaa. Tarjouspyynnön käsittely, varausvahvistus ja mahdollinen maksu ovat erillisiä toimintoja.'
+]);
+guides['/guides/ai-chatbot-pricing'].sv.sections.push([
+  'Säker offertberäkning i chatten',
+  'Om företaget har angett grundpris, enhetspris, minimipris och skattesats kan Respondo räkna ut ett belopp utifrån kundens mängd. Ogiltiga, oändliga eller orimligt stora mängder stoppas, liksom felaktiga prisinställningar. Utan en godkänd prisregel ska botten inte hitta på något pris. En offertförfrågan, en bokningsbekräftelse och en eventuell betalning är separata åtgärder.'
+]);
+guides['/guides/ai-chatbot-pricing'].en.sections.push([
+  'Safer quote calculations in chat',
+  'When a business configures a base price, unit price, minimum price and tax rate, Respondo can calculate an amount using the quantity entered. Invalid, non-finite and unreasonably large quantities are rejected, as are invalid pricing settings. Without a business-approved pricing rule, the bot should not invent a price. Processing a quote request, confirming an appointment and collecting payment are separate actions.'
+]);
+
 // Distinct educational resources belong in the existing footer-linked Guides library,
 // not the homepage. Preserve existing guide URLs and add only useful new topics.
 // 2026-11-03: public, factual walkthrough of the authenticated 12-part
