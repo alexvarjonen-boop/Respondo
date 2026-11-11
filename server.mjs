@@ -74,6 +74,8 @@ import {ensureNativeCloudSchema,cloudProvider,validSiteId} from './native-cloud-
 import {ensureFreeWorkflowSchema,freeWorkflowOverview,createFreeWorkflow,
  setFreeWorkflowEnabled,markFreeWorkflowApproval,previewFreeWorkflow} from './respondo-free-actions.mjs';
 import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-gates.mjs';
+import {workflowTemplateCatalog,workflowFromTemplate} from './respondo-workflow-templates.mjs';
+import {conversationEvidence} from './respondo-evidence-handoff.mjs';
 import {ensureFreeCommerceSchema,putFreeOrderSnapshot,freeOrderOverview,lookupFreeOrderStatus} from './respondo-free-commerce.mjs';
 import {ensureFreeWebhookSchema,freeWebhookStatus,rotateFreeWebhookKey,
  disableFreeWebhookKey,acceptFreeWebhookEvent} from './respondo-free-webhooks.mjs';
@@ -9978,6 +9980,11 @@ app.post('/api/public/:slug/order-status',publicChatLimiter,async(req,res)=>{
 });
 app.get('/api/app/native/free-workflows',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>freeWorkflowOverview(pool,id)));
+/* Owner creates an inactive multi-step rule and must separately activate it. */
+app.get('/api/app/native/free-workflows/templates',auth,ownerOnly,subscribed,nativeEndpoint(
+  ()=>({templates:workflowTemplateCatalog()})));
+app.post('/api/app/native/free-workflows/from-template',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
+  (id,req)=>createFreeWorkflow(pool,id,workflowFromTemplate(req.body||{}))));
 app.post('/api/app/native/free-workflows/preview',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
   (_id,req)=>previewFreeWorkflow(req.body?.workflow||{},req.body?.sample||{})));
 app.post('/api/app/native/free-workflows',auth,ownerOnly,subscribed,nativeWriteLimiter,nativeEndpoint(
@@ -10569,6 +10576,9 @@ app.post('/api/app/native/quality/free-suite',auth,ownerOnly,subscribed,nativeWr
   (_id,req)=>runFreeQualitySuite({cases:req.body?.cases})));
 app.get('/api/app/native/quality',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>qualityCenterOverview(pool,id,req.query?.days)));
+/* Authenticated evidence: recorded IDs matched to currently approved tenant facts. */
+app.get('/api/app/native/quality/evidence/:conversationId',auth,ownerOnly,subscribed,nativeEndpoint(
+  (id,req)=>conversationEvidence(pool,id,req.params.conversationId)));
 /* Owner-only funnel metrics: verified submissions, not claimed sales. */
 app.get('/api/app/native/conversions',auth,ownerOnly,subscribed,nativeEndpoint(
   (id,req)=>conversionOverview(pool,id,req.query?.days)));
