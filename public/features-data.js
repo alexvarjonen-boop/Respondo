@@ -141,7 +141,7 @@ export const FEATURE_GROUPS = [
       ['Veron automaattinen laskenta','Automatisk skatteberäkning','Automatic tax calculation'],
       ['Kokonaishinnan automaattinen laskenta','Automatisk totalprisberäkning','Automatic total calculation'],
       ['Lasketun tarjouksen näyttäminen chatissa','Visar beräknad offert i chatten','Displays calculated quote in chat'],
-      ['Tarjouspyynnön tallentaminen toimintopyynnöksi','Sparar offertförfrågan som åtgärdsbegäran','Stores quote as an action request'],
+      ['Tarjouspyynnön tallennus ja turvallinen seurantalinkki','Sparar offertförfrågan med säker uppföljningslänk','Stores quote request with a secure status-tracking link'],
       ['Tarjouspyynnön muuttaminen samalla liidiksi','Skapar samtidigt ett lead från offerten','Creates a lead from the quote'],
       ['Stripe Checkout -maksun avaaminen tarjouksesta','Öppnar Stripe Checkout från offerten','Opens Stripe Checkout from quote']
     ]
