@@ -741,7 +741,7 @@
     const valid = (Array.isArray(actions) ? actions : [])
       .filter((x) => x?.label && (
         safeActionUrl(x?.url) ||
-        ['lead','contact_form','quote_form','booking_form','order_form','mainio_move_form'].includes(x?.mode)
+        ['lead','contact_form','quote_form','booking_form','order_form','mainio_move_form','procedure_form'].includes(x?.mode)
       ))
       .slice(0, 4);
     if (!valid.length) return;
@@ -749,6 +749,14 @@
     wrap.className = 'actions';
 
     valid.forEach((action) => {
+      if(action.mode==='procedure_form'){
+        const p=customerProcedures.find(x=>x.code===action.code&&x.enabled);
+        if(!p)return;
+        const button=document.createElement('button');button.type='button';
+        button.textContent=action.label+' →';
+        button.addEventListener('click',()=>showProcedureForm(p,question));
+        wrap.append(button);return;
+      }
       if (action.mode === 'mainio_move_form') {
         const button = document.createElement('button');
         button.type = 'button';
@@ -1154,6 +1162,132 @@
       }catch(err){error.textContent=err.message||L.error;send.disabled=false;send.textContent=old;}
     });
     show(0);
+  }
+
+  function procedureForQuestion(question){
+    const q=String(question||'').toLowerCase();
+    const match=/\b(muutto|muuttotarjous|flytt|moving|relocation)\b/i.test(q)
+      ? 'moving_quote'
+      : /\b(ajanvaraus|varaa|boka|booking|appointment|tid)\b/i.test(q)
+        ? 'booking_request'
+        : /\b(tarjous|hinta|offert|quote|estimate|pris)\b/i.test(q)
+          ? 'service_quote':null;
+    return customerProcedures.find(p=>p.code===match&&p.enabled)||null;
+  }
+  function showProcedureForm(procedure,question=''){
+    if(chat.querySelector('.actionbox')||!procedure||
+       !customerProcedures.some(x=>x.code===procedure.code&&x.enabled))return;
+    const languageIndex=widgetLang==='fi'?0:widgetLang==='sv'?1:2;
+    const word=(fi,sv,en)=>[fi,sv,en][languageIndex];
+    const box=document.createElement('form');box.className='actionbox customer-procedure-box';
+    const heading=document.createElement('b');
+    heading.textContent=String(procedure.title?.[languageIndex]||procedure.title?.[2]||'Request');
+    const note=document.createElement('small');
+    note.textContent=word('Täytä tarvittavat tiedot. Yritys vahvistaa hinnan ja ajankohdan erikseen.',
+      'Fyll i uppgifterna. Företaget bekräftar pris och tid separat.',
+      'Provide the details. The company must separately confirm prices and availability.');
+    box.append(heading,note);
+    const specs=Array.isArray(procedure.fields)?procedure.fields.slice(0,10):[];
+    const steps=[document.createElement('fieldset'),document.createElement('fieldset'),document.createElement('fieldset')];
+    const split=Math.max(1,Math.ceil(specs.length/2));
+    for(const [i,spec] of specs.entries()){
+      if(!/^[a-z_]{2,24}$/.test(String(spec.key||'')))continue;
+      const group=document.createElement('label');
+      group.style.display='block';group.style.marginTop='11px';
+      group.textContent=String(spec.label?.[languageIndex]||spec.label?.[2]||spec.key);
+      const tag=spec.type==='textarea'?'textarea':'input';
+      const input=document.createElement(tag);
+      if(tag==='input')input.type=['text','number','date'].includes(spec.type)?spec.type:'text';
+      input.name=spec.key;input.required=spec.required===true;
+      input.maxLength=spec.type==='textarea'?500:180;
+      if(input.type==='number'){input.min='0.001';input.max='100000';input.step='any';}
+      group.append(input);steps[i<split?0:1].append(group);
+    }
+    for(const key of ['name','contact']){
+      const label=document.createElement('label');label.style.display='block';
+      label.textContent=key==='name'?word('Nimi','Namn','Name'):
+        word('Puhelin tai sähköposti','Telefon eller e-post','Phone or email');
+      const input=document.createElement('input');input.name=key;input.required=key==='contact';
+      input.maxLength=key==='name'?120:220;
+      label.append(input);steps[2].append(label);
+    }
+    const consent=document.createElement('label');
+    consent.style.display='flex';consent.style.gap='8px';consent.style.alignItems='flex-start';
+    const check=document.createElement('input');check.type='checkbox';
+    check.required=true;check.name='consent';check.style.width='auto';
+    consent.append(check,document.createTextNode(word(
+      'Hyväksyn tietojen lähettämisen tälle yritykselle pyyntöni käsittelyä varten.',
+      'Jag samtycker till att uppgifterna delas med företaget för min förfrågan.',
+      'I agree to share these details with the company to process my request.')));
+    steps[2].append(consent);
+    steps.forEach((section,i)=>{section.style.border='0';section.style.padding='0';section.hidden=i!==0;box.append(section);});
+    const progress=document.createElement('p');progress.className='procedure-progress';
+    progress.setAttribute('role','status');
+    const controls=document.createElement('div');controls.className='procedure-controls';
+    const back=document.createElement('button');back.type='button';
+    back.textContent=word('Edellinen','Föregående','Back');
+    const next=document.createElement('button');next.type='button';
+    const feedback=document.createElement('div');feedback.setAttribute('role','status');
+    feedback.className='action-ok';
+    controls.append(back,next);box.append(progress,controls,feedback);
+    let active=0,sending=false;
+    function show(index){
+      active=index;steps.forEach((step,i)=>{step.hidden=i!==index;});
+      progress.textContent=word('Vaihe ','Steg ','Step ')+(index+1)+' / 3';
+      back.hidden=index===0;
+      next.textContent=index===2?word('Lähetä pyyntö','Skicka förfrågan','Send request'):
+        word('Seuraava','Nästa','Next');
+    }
+    back.addEventListener('click',()=>{if(!sending)show(Math.max(0,active-1));});
+    next.addEventListener('click',()=>{if(!sending)box.requestSubmit();});
+    box.addEventListener('submit',async event=>{
+      event.preventDefault();
+      if(sending)return;
+      for(const input of steps[active].querySelectorAll('input,textarea')){
+        if(!input.checkValidity()){input.reportValidity();return;}
+      }
+      if(active<2){show(active+1);return;}
+      sending=true;next.disabled=true;back.disabled=true;
+      feedback.textContent=word('Lähetetään…','Skickar…','Sending…');
+      const data=new FormData(box),answers={};
+      for(const spec of specs)answers[spec.key]=String(data.get(spec.key)||'').trim();
+      try{
+        const res=await fetch(serviceOrigin+'/api/public/'+encodeURIComponent(company)+'/action-request',{
+          method:'POST',mode:'cors',credentials:'omit',
+          headers:{'Content-Type':'text/plain;charset=UTF-8'},
+          body:JSON.stringify({type:procedure.actionType,procedureCode:procedure.code,
+            procedureAnswers:answers,fields:{name:data.get('name'),contact:data.get('contact')},
+            question,widgetToken:token,visitorRef,lang:widgetLang,pageContext})
+        });
+        const result=await res.json().catch(()=>({}));
+        if(!res.ok||!result.ok)throw Error(result.error||'Request unavailable');
+        steps.forEach(step=>{step.hidden=true;});
+        controls.hidden=true;progress.hidden=true;
+        feedback.textContent=result.customerMessage||word(
+          'Pyyntö on vastaanotettu ja odottaa yrityksen käsittelyä.',
+          'Förfrågan har tagits emot för granskning.',
+          'Your request was received for company review.');
+        if(result.trackingLink){
+          try{
+            const link=new URL(result.trackingLink);
+            if(link.origin===serviceOrigin && link.pathname==='/request-status.html' &&
+               /^#token=[a-f0-9]{64}$/i.test(link.hash)){
+              const a=document.createElement('a');a.href=link.href;
+              a.target='_blank';a.rel='noopener noreferrer';
+              a.textContent=word('Seuraa pyynnön käsittelyä →',
+                'Följ din förfrågan →','Track your request →');
+              feedback.append(document.createElement('div'),a);
+            }
+          }catch{}
+        }
+      }catch(error){
+        feedback.textContent=String(error.message||word('Lähetys epäonnistui',
+          'Sändningen misslyckades','Sending failed')).slice(0,160);
+        sending=false;next.disabled=false;back.disabled=false;
+      }
+      chat.scrollTop=chat.scrollHeight;
+    });
+    show(0);chat.append(box);chat.scrollTop=chat.scrollHeight;
   }
 
   function showActionForm(action, question) {
@@ -1718,7 +1852,16 @@
         chat.appendChild(note);
       }
       const hasProducts=renderProducts(data.products || []);
-      renderActions((data.actions || []).filter((action)=>!hasProducts || action?.type!=='product'), message);
+      const procedure=procedureForQuestion(message);
+      const existing=(data.actions||[]).filter(action=>!hasProducts||action?.type!=='product');
+      if(procedure){
+        // Prefer one owner-approved intake over duplicate quote/booking buttons.
+        const filtered=existing.filter(a=>!['quote_form','booking_form'].includes(a.mode));
+        filtered.unshift({mode:'procedure_form',code:procedure.code,
+          label:String(procedure.title?.[widgetLang==='fi'?0:widgetLang==='sv'?1:2]||
+            procedure.title?.[2]||'Request')});
+        renderActions(filtered,message);
+      }else renderActions(existing,message);
       renderBranchChoices(data.branchChoices || []);
       if ((data.canLeaveContact || data.handoff) && !data.humanTakeover) showLeadForm(message);
       if (data.humanTakeover) {
