@@ -18,6 +18,7 @@ import { nativeOverview,createNativeContact,updateNativeContact,createNativeTick
 import { prepareQualifiedLead } from './lead-service.mjs';
 import { parseQuoteQuantity, computeSafeQuote } from './smart-quote-guard.mjs';
 import { createRequestTrackingToken, verifyRequestTrackingToken, renderRequestStatusPage } from './customer-portal-links.mjs';
+import {classifyRequestPriority} from './lead-priority.mjs';
 import { getCrmProvider, enqueueCrmLead } from './lead-crm-queue.mjs';
 import { processCrmOutbox } from './lead-crm-queue.mjs';
 import { deliverCrmProvider } from './lead-crm-providers.mjs';
@@ -16784,6 +16785,14 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
         fulfilment:'quote-request-only',
       } : {}),
     };
+    if (['quote','booking','callback'].includes(type)) {
+      payload.qualification = classifyRequestPriority({
+        type,
+        message:payload.question,
+        details:fields.details||fields.note||'',
+      });
+    }
+
     let computedQuote = null;
     let bookedSlot = null;
     let serviceManualReview = false;
