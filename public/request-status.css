@@ -1,0 +1,22 @@
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:dark;background:#0d0e10;color:#f6f7f9}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 0,#18243d,#0d0e10 58%);min-height:100vh}
+.header{display:flex;justify-content:space-between;align-items:center;gap:1rem;border-bottom:1px solid #283144;padding:18px max(20px,calc((100% - 920px)/2));font-size:12px;color:#b3becd}
+.brand{color:#fff;letter-spacing:.1em;font-weight:800;text-decoration:none}
+main{max-width:680px;margin:8vh auto 0;padding:0 20px 60px}
+.eyebrow{font-size:11px;letter-spacing:.18em;font-weight:800;color:#adbcd9}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.1;letter-spacing:-.04em;margin:12px 0}
+.intro{color:#c4cad3;font-size:15px;line-height:1.7;max-width:600px}
+.card{background:#1a1d23;border:1px solid #363b47;border-radius:19px;padding:24px;margin-top:22px;box-shadow:0 15px 50px #0002}
+.card h2{font-size:clamp(20px,3vw,25px);letter-spacing:-.03em;margin:9px 0 18px}
+.sub,.notice{color:#bbc3d0;line-height:1.6;font-size:13px}
+.notice{border-top:1px solid #353944;padding-top:14px;margin-top:24px}
+.details{display:grid;gap:10px;color:#e4e7ea;font-size:13px}
+.details div{padding:11px 13px;border-radius:10px;background:#242830}
+label{display:block;color:#e9edf2;font-size:13px;font-weight:650;margin:14px 0 8px}
+textarea{width:100%;padding:12px;min-height:100px;border-radius:11px;background:#101217;border:1px solid #626c80;color:#fff;font:inherit;resize:vertical}
+button{margin-top:12px;background:#fff;color:#15171a;border:1px solid #fff;border-radius:11px;padding:12px 17px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+button:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #8caeff;outline-offset:3px}
+footer{margin-top:42px;font-size:12px;color:#9da7b5}footer a{color:#cdd8e7}
+@media(max-width:600px){main{margin-top:5vh}.card{padding:18px}.header{padding:16px 20px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
