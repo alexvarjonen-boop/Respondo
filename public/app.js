@@ -2794,7 +2794,7 @@ function pricingSection() {
       </ul>
       <div class="price-actions">
         <a class="pricing-feature-link" href="/ominaisuudet?plan=${tier.toLowerCase()}&amp;lang=${currentLang()}" aria-label="${esc(appText('Katso '+tier+'-paketin ominaisuudet','Se funktionerna i '+tier,'See '+tier+' features'))}">${appText('Katso ominaisuudet','Se funktioner','See features')} <span aria-hidden="true">↗</span></a>
-        <a class="btn price-btn pricing-select-btn" href="/tilaus?plan=${code}_monthly&amp;lang=${currentLang()}">${appText('Valitse','Välj','Choose')} ${tier} <span aria-hidden="true">→</span></a>
+        <a class="btn price-btn pricing-select-btn" href="/tilaus?plan=${code}_monthly&amp;lang=${currentLang()}${new URLSearchParams(location.search).get('ref')?.toUpperCase()==='US20YEAR' ? '&amp;ref=US20YEAR' : ''}">${appText('Valitse','Välj','Choose')} ${tier} <span aria-hidden="true">→</span></a>
       </div>
     </article>`;
   };
@@ -2865,6 +2865,7 @@ function bindPricingPeriodSwitch() {
         if (note) note.textContent = yearly ? card.dataset.yearlyNote : card.dataset.monthlyNote;
         if (link) {
           const params = new URLSearchParams({plan:card.dataset.planCode + (yearly ? '_yearly' : '_monthly'),lang:currentLang()});
+          if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('ref')?.toUpperCase()==='US20YEAR') params.set('ref','US20YEAR');
           link.href = '/tilaus?' + params.toString();
         }
       });
@@ -3598,6 +3599,7 @@ function signup() {
   const safeRequestedPlan = allowedPlans.has(normalizedRequestedPlan) ? normalizedRequestedPlan : 'basic_monthly';
   const plan = safeRequestedPlan === 'owner_test' && !ownerTestAccess ? 'basic_monthly' : safeRequestedPlan;
   const referralCode = String(params.get('ref') || '').trim().toUpperCase();
+  const isUSOfferReferral = referralCode === 'US20YEAR';
   const planDetails = {
     basic: { name:'Advanced', monthly:49, yearly:39, yearlyTotal:468 },
     advanced: { name:'Premium', monthly:129, yearly:119, yearlyTotal:1428 },
@@ -3629,7 +3631,7 @@ function signup() {
             <div class="signup-plan-summary field full" role="note" aria-label="${appText('Valittu paketti','Valt abonnemang','Selected plan')}">
               <div class="signup-plan-summary-top">
                 <span>${appText('VALITSEMASI PAKETTI','DITT VALDA ABONNEMANG','YOUR SELECTED PLAN')}</span>
-                <a href="/hinnat?lang=${currentLang()}" class="signup-change-plan">${appText('Vaihda pakettia','Byt abonnemang','Change plan')} <span aria-hidden="true">↗</span></a>
+                <a href="/hinnat?lang=${currentLang()}${isUSOfferReferral ? '&amp;ref=US20YEAR' : ''}" class="signup-change-plan">${appText('Vaihda pakettia','Byt abonnemang','Change plan')} <span aria-hidden="true">↗</span></a>
               </div>
               <div class="signup-plan-summary-main">
                 <strong>${testBilling ? appText('Omistajan testi','Ägarens test','Owner test') : planDetails.name}</strong>
@@ -3640,8 +3642,8 @@ function signup() {
             ${testBilling ? '' : setupServiceOption()}
             <div class="field full referral-signup-field">
               <label>${appText('Suosittelukoodi','Rekommendationskod','Referral code')} <span>${appText('valinnainen','valfri','optional')}</span></label>
-              <input name="referralCode" maxlength="32" autocomplete="off" value="${esc(referralCode)}" placeholder="RESPONDO-XXXXXXXX">
-              <small id="referralHint">${appText('Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','Med en giltig kod får du 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid code gives you 20% off the first paid month. Monthly subscription only.')}</small>
+              <input name="referralCode" maxlength="32" autocomplete="off" value="${esc(referralCode)}" placeholder="US20YEAR / RESPONDO-XXXXXXXX">
+              <small id="referralHint">${isUSOfferReferral ? appText('USA-koodi US20YEAR: −20 % ensimmäiset 12 kuukautta, kaikilla paketeilla ja laskutusjaksoilla. Alennus näkyy Stripe-kassalla.','USA-kod US20YEAR: 20 % rabatt de första 12 månaderna på alla paket och faktureringsperioder. Rabatten syns i Stripe-kassan.','US code US20YEAR: 20% off the first 12 months on all plans, monthly or annual. Discount appears in Stripe Checkout.') : appText('Saat voimassa olevalla suosittelukoodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','En giltig rekommendationskod ger 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid referral code gives 20% off the first paid month. Monthly plans only.')}</small>
             </div>
             ${checkoutBusinessTerms('terms', 'checkrow field full')}
           </div>
@@ -6652,11 +6654,15 @@ async function route() {
       // Keep annual plans available for the private founder code.
       signupReferral.disabled = false;
       if (referralHint) {
-        referralHint.textContent = monthly
-          ? appText('Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','Med en giltig kod får du 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid code gives you 20% off the first paid month. Monthly subscription only.')
-          : appText('Suosittelualennus toimii vain normaalissa kuukausitilauksessa.','Rekommendationsrabatten gäller endast det vanliga månadsabonnemanget.','The referral discount only applies to the standard monthly subscription.');
+        const campaign = String(signupReferral.value || '').trim().toUpperCase() === 'US20YEAR';
+        referralHint.textContent = campaign
+          ? appText('USA-koodi US20YEAR: −20 % ensimmäiset 12 kuukautta, kuukausi- ja vuositilauksille. Vain yhdysvaltalaisille yrityksille.','USA-kod US20YEAR: 20 % rabatt under de första 12 månaderna på månads- och årsabonnemang för amerikanska företag.','US20YEAR: 20% off for the first 12 months on monthly and annual subscriptions for US businesses.')
+          : monthly
+            ? appText('Saat voimassa olevalla koodilla 20 % pois ensimmäisestä maksullisesta kuukaudesta. Vain kuukausitilaukseen.','Med en giltig kod får du 20 % rabatt på den första betalda månaden. Gäller endast månadsabonnemang.','A valid referral code gives 20% off the first paid month on monthly plans.')
+            : appText('Tavallinen suosittelualennus on vain kuukausitilaukseen. USA-koodi US20YEAR käy myös vuositilaukseen.','Vanliga rekommendationskoder gäller bara månadsabonnemang. USA-koden US20YEAR fungerar även årsvis.','Standard referral codes are monthly-only. US20YEAR also works with annual billing.');
       }
     };
+    signupReferral?.addEventListener('input', syncReferralField);
     signupPlan?.addEventListener('change', syncReferralField);
     syncReferralField();
     // Preserve the selected plan (including annual billing) across the Google OAuth redirect.
@@ -6666,8 +6672,10 @@ async function route() {
       const url = new URL(googleLink.getAttribute('href'), location.origin);
       url.searchParams.set('plan',signupPlan.value);
       url.searchParams.set('lang',currentLang());
+      if (String(signupReferral?.value||'').trim().toUpperCase() === 'US20YEAR') url.searchParams.set('ref','US20YEAR');
       googleLink.setAttribute('href',url.pathname + url.search);
     };
+    signupReferral?.addEventListener('input',syncGoogleSignupPlan);
     signupPlan?.addEventListener('change',syncGoogleSignupPlan);
     syncGoogleSignupPlan();
 
