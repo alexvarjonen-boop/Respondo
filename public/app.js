@@ -8732,11 +8732,21 @@ async function route() {
     // the bot preview with no explanation.
     // Fail closed: no unconfigured mailbox connection or sync CTA is displayed.
     const nativeMailOauthReady={gmail:false,outlook:false};
+    // Gated forms are present in the HTML but must not appear as active until
+    // the server confirms provider prerequisites for this workspace.
+    const setProviderPanelAvailability=(panel,ready)=>{
+      if(!panel)return;
+      const next=ready===true?'yes':'no';
+      const changed=panel.dataset.respondoConnectorAvailable!==next;
+      panel.dataset.respondoConnectorAvailable=next;
+      panel.hidden=ready!==true;
+      if(changed)panel.dispatchEvent(new CustomEvent('respondo:provider-availability',{bubbles:true}));
+    };
     const mailPanel=$('#native-mail-connections');
     const applyMailAvailability=(connections=[])=>{
       const permitted=mailPanel?.dataset.respondoPlanAllowed==='yes';
       const enabled=permitted&&(nativeMailOauthReady.gmail||nativeMailOauthReady.outlook);
-      if(mailPanel)mailPanel.hidden=!enabled;
+      setProviderPanelAvailability(mailPanel,enabled);
       for(const provider of ['gmail','outlook']){
         const ready=enabled&&nativeMailOauthReady[provider]===true;
         document.querySelectorAll('[data-native-mail-connect="'+provider+'"]').forEach(el=>{el.hidden=!ready;});
@@ -8821,9 +8831,9 @@ async function route() {
         const ready=readiness?.prerequisites?.whatsapp===true &&
           readiness?.prerequisites?.instagram===true &&
           readiness?.prerequisites?.facebook===true;
-        if(!ready){if(panel)panel.hidden=true;return;}
+        if(!ready){setProviderPanelAvailability(panel,false);return;}
         const d=await api('/api/app/native/meta/status');
-        if(panel)panel.hidden=panel.dataset.respondoPlanAllowed!=='yes';
+        setProviderPanelAvailability(panel,panel?.dataset.respondoPlanAllowed==='yes');
         el.replaceChildren();
         const list=Array.isArray(d.channels)?d.channels:[];
         if(!list.length){el.textContent=appText('Ei yhdistettyjä kanavia.','Inga anslutna kanaler.','No channels connected.');return;}
@@ -8834,7 +8844,7 @@ async function route() {
              appText('Webhook-asetukset puuttuvat palvelimelta','Webhook saknas på servern','Webhook server settings missing'));
           el.appendChild(p);
         }
-      }catch(error){if(panel)panel.hidden=true;el.textContent=error.message}
+      }catch(error){setProviderPanelAvailability(panel,false);el.textContent=error.message}
     };
     if($('#nativeMetaConnectForm'))loadNativeMetaStatus();
     $('#nativeMetaConnectForm')?.addEventListener('submit',async e=>{
