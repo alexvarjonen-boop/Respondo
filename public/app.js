@@ -5192,7 +5192,7 @@ async function dashboard(options = {}) {
           <div id="respondoCrmConnectorMount" class="respondo-crm-connector-mount"></div>
         </article>
 
-        <article class="panel" id="native-mail-connections" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
+        <article class="panel" id="native-mail-connections" data-respondo-provider-gated="yes" data-respondo-plan-allowed="${planAccess.allCurrentFeatures ? 'yes' : 'no'}" hidden>
           <div class="panel-head">
             <div>
               <small>RESPONDO NATIVE MAIL</small>
@@ -5201,14 +5201,14 @@ async function dashboard(options = {}) {
             </div>
           </div>
           <div class="calendar-sync-actions" style="display:flex;gap:12px;flex-wrap:wrap">
-            <button type="button" class="btn dashboard-action" data-native-mail-connect="gmail">${appText('Yhdistä Gmail','Anslut Gmail','Connect Gmail')}</button>
-            <button type="button" class="btn dashboard-action" data-native-mail-connect="outlook">${appText('Yhdistä Outlook','Anslut Outlook','Connect Outlook')}</button>
-            <button type="button" class="btn integration-test-btn" data-native-mail-sync="gmail">${appText('Hae Gmail-viestit','Hämta Gmail-meddelanden','Fetch Gmail messages')}</button>
-            <button type="button" class="btn integration-test-btn" data-native-mail-sync="outlook">${appText('Hae Outlook-viestit','Hämta Outlook-meddelanden','Fetch Outlook messages')}</button>
+            <button type="button" class="btn dashboard-action" data-native-mail-connect="gmail" hidden>${appText('Yhdistä Gmail','Anslut Gmail','Connect Gmail')}</button>
+            <button type="button" class="btn dashboard-action" data-native-mail-connect="outlook" hidden>${appText('Yhdistä Outlook','Anslut Outlook','Connect Outlook')}</button>
+            <button type="button" class="btn integration-test-btn" data-native-mail-sync="gmail" hidden>${appText('Hae Gmail-viestit','Hämta Gmail-meddelanden','Fetch Gmail messages')}</button>
+            <button type="button" class="btn integration-test-btn" data-native-mail-sync="outlook" hidden>${appText('Hae Outlook-viestit','Hämta Outlook-meddelanden','Fetch Outlook messages')}</button>
           </div>
           <div id="nativeMailStatus" aria-live="polite"></div>
         </article>
-        <article class="panel" id="meta-native-connections" ${planAccess.allCurrentFeatures ? '' : 'hidden'}>
+        <article class="panel" id="meta-native-connections" data-respondo-provider-gated="yes" data-respondo-plan-allowed="${planAccess.allCurrentFeatures ? 'yes' : 'no'}" hidden>
           <div class="panel-head">
             <div>
               <small>META BUSINESS</small>
@@ -8730,7 +8730,21 @@ async function route() {
     // Native mailbox OAuth is only launched after its provider registration
     // has been verified. A missing Microsoft app must not redirect back to
     // the bot preview with no explanation.
+    // Fail closed: no unconfigured mailbox connection or sync CTA is displayed.
     const nativeMailOauthReady={gmail:false,outlook:false};
+    const mailPanel=$('#native-mail-connections');
+    const applyMailAvailability=(connections=[])=>{
+      const permitted=mailPanel?.dataset.respondoPlanAllowed==='yes';
+      const enabled=permitted&&(nativeMailOauthReady.gmail||nativeMailOauthReady.outlook);
+      if(mailPanel)mailPanel.hidden=!enabled;
+      for(const provider of ['gmail','outlook']){
+        const ready=enabled&&nativeMailOauthReady[provider]===true;
+        document.querySelectorAll('[data-native-mail-connect="'+provider+'"]').forEach(el=>{el.hidden=!ready;});
+        const saved=connections.some(x=>x.provider===provider&&x.connected===true);
+        document.querySelectorAll('[data-native-mail-sync="'+provider+'"]').forEach(el=>{el.hidden=!ready||!saved;});
+      }
+    };
+    applyMailAvailability();
     const nativeMailSetupNotice=(provider)=>provider==='outlook'
       ?appText('Outlook-yhdistäminen vaatii Microsoft-sovelluksen tunnukset Respondon palvelimelle. Yhteyttä ei ole vielä määritetty.',
         'Outlook kräver Microsoft-appens klientuppgifter på Respondos server. Anslutningen är inte konfigurerad.',
@@ -8757,6 +8771,7 @@ async function route() {
         nativeMailOauthReady.gmail=response?.oauthAvailable?.gmail===true;
         nativeMailOauthReady.outlook=response?.oauthAvailable?.outlook===true;
         const list=Array.isArray(response.connections)?response.connections:[];
+        applyMailAvailability(list);
         el.replaceChildren();
         if(!list.length){
           el.appendChild(Object.assign(document.createElement('p'),{
@@ -8777,6 +8792,7 @@ async function route() {
       }catch(error){
         nativeMailOauthReady.gmail=false;
         nativeMailOauthReady.outlook=false;
+        applyMailAvailability();
         el.textContent=appText('Sähköpostiyhteyksiä ei voitu tarkistaa. Yhdistäminen on tilapäisesti estetty.',
           'E-postanslutningarna kunde inte verifieras. Anslutning är tillfälligt blockerad.',
           'Mailbox status could not be verified. Connecting is temporarily disabled.');
@@ -8798,8 +8814,16 @@ async function route() {
     });
     const loadNativeMetaStatus=async()=>{
       const el=$('#nativeMetaStatus');if(!el)return;
+      const panel=$('#meta-native-connections');
       try{
+        // A saved Meta token does not make inbound webhooks usable.
+        const readiness=await api('/api/app/integrations/readiness');
+        const ready=readiness?.prerequisites?.whatsapp===true &&
+          readiness?.prerequisites?.instagram===true &&
+          readiness?.prerequisites?.facebook===true;
+        if(!ready){if(panel)panel.hidden=true;return;}
         const d=await api('/api/app/native/meta/status');
+        if(panel)panel.hidden=panel.dataset.respondoPlanAllowed!=='yes';
         el.replaceChildren();
         const list=Array.isArray(d.channels)?d.channels:[];
         if(!list.length){el.textContent=appText('Ei yhdistettyjä kanavia.','Inga anslutna kanaler.','No channels connected.');return;}
@@ -8810,7 +8834,7 @@ async function route() {
              appText('Webhook-asetukset puuttuvat palvelimelta','Webhook saknas på servern','Webhook server settings missing'));
           el.appendChild(p);
         }
-      }catch(error){el.textContent=error.message}
+      }catch(error){if(panel)panel.hidden=true;el.textContent=error.message}
     };
     if($('#nativeMetaConnectForm'))loadNativeMetaStatus();
     $('#nativeMetaConnectForm')?.addEventListener('submit',async e=>{
