@@ -44,6 +44,7 @@ test('regular referral codes survive social sign-up without being added to Googl
   assert.match(app,/if \(selectedReferral\) url\.searchParams\.set\('ref', selectedReferral\)/);
   assert.match(app,/else url\.searchParams\.delete\('ref'\)/);
   assert.match(app,/profile\.referralCode && !form\.elements\.referralCode\?\.value/);
+  assert.doesNotMatch(app,/US20YEAR/, 'private campaign code should never be embedded in public UI source');
   assert.match(server,/OAUTH_SIGNUP_REFERRAL_COOKIE/);
   assert.match(server,/res\.cookie\(OAUTH_SIGNUP_REFERRAL_COOKIE,/);
   assert.match(server,/profile\.referralCode = oauthSignupReferral\(req,statePayload\.nonce\)/);
