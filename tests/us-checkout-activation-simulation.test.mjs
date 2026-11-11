@@ -71,6 +71,7 @@ function harness({country='US',state='CA',taxStatus='active',subscriptionStatus=
     q:query,uid:()=>('simulated-id-'+(++ids)),
     slug:x=>x.toLowerCase().replace(/[^a-z0-9]+/g,'-'),
     normalizeCheckoutPlan:x=>x,normalizeReferralCode:code=>String(code||'').trim().toUpperCase(),isFreeReferralCode:()=>false,
+    US_FIRST_YEAR_CAMPAIGN_CODE:'US20YEAR',
     isUSFirstYearCampaign:code=>code==='US20YEAR',
     usFirstYearCheckoutDiscounts:enabled=>enabled?{discounts:[{promotion_code:'promo_1UaYwqV05brJ7mTPYIVaciD1'}]}:{},
     assertUSFirstYearCheckoutPrice:async item=>assert.ok(item.price?.startsWith('price_test_')),
