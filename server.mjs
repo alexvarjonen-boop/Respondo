@@ -17,6 +17,7 @@ import { nativeOverview,createNativeContact,updateNativeContact,createNativeTick
   runNativeAutomation } from './native-ai-operations.mjs';
 import { prepareQualifiedLead } from './lead-service.mjs';
 import { parseQuoteQuantity, computeSafeQuote } from './smart-quote-guard.mjs';
+import { createRequestTrackingToken, verifyRequestTrackingToken, renderRequestStatusPage } from './customer-portal-links.mjs';
 import { getCrmProvider, enqueueCrmLead } from './lead-crm-queue.mjs';
 import { processCrmOutbox } from './lead-crm-queue.mjs';
 import { deliverCrmProvider } from './lead-crm-providers.mjs';
@@ -16665,6 +16666,46 @@ app.get('/api/public/payment/verify', paymentVerifyLimiter, async (req,res) => {
   }
 });
 
+// Public status view for a bearer token that expires after 30 days.
+// Never return request payloads, contact information, prices, payment or booking claims.
+app.get('/request-status/:token',publicChatLimiter,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  res.set('Referrer-Policy','no-referrer');
+  res.set('X-Robots-Tag','noindex, nofollow, noarchive');
+  res.set('Content-Security-Policy',"default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
+  const claims=verifyRequestTrackingToken(req.params.token,process.env.JWT_SECRET);
+  if(!claims)return res.status(404).type('text').send('Not found');
+  try{
+    const result=await q("SELECT request_type,status FROM action_requests WHERE id=$1 AND tenant_id=$2 AND request_type IN ('quote','booking','callback') LIMIT 1",[claims.requestId,claims.tenantId]);
+    if(!result.rowCount)return res.status(404).type('text').send('Not found');
+    const row=result.rows[0];
+    return res.type('html').send(renderRequestStatusPage({
+      token:req.params.token,lang:req.query.lang,type:row.request_type,status:row.status,
+    }));
+  }catch(error){
+    console.error('Customer request status lookup failed',error?.name||'error');
+    return res.status(503).type('text').send('Status temporarily unavailable');
+  }
+});
+app.post('/request-status/:token',publicChatLimiter,express.urlencoded({extended:false,limit:'4kb'}),async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  res.set('Referrer-Policy','no-referrer');
+  const claims=verifyRequestTrackingToken(req.params.token,process.env.JWT_SECRET);
+  if(!claims)return res.status(404).type('text').send('Not found');
+  const note=typeof req.body?.note==='string'?req.body.note.trim():'';
+  if(note.length<2||note.length>700||/[\u0000-\u0008\u000b-\u001f\u007f]/.test(note))
+    return res.status(422).type('text').send('Invalid update');
+  try{
+    const saved=await q("UPDATE action_requests SET payload=jsonb_set(COALESCE(payload,'{}'::jsonb),'{customerSupplement}',jsonb_build_object('message',$3::text,'receivedAt',NOW()),true),updated_at=NOW() WHERE id=$1 AND tenant_id=$2 AND status IN ('new','in_progress') AND request_type IN ('quote','booking','callback') RETURNING id",[claims.requestId,claims.tenantId,note]);
+    if(!saved.rowCount)return res.status(409).type('text').send('Request is no longer open');
+    const lang=['fi','sv','en'].includes(req.query.lang)?req.query.lang:'en';
+    return res.redirect(303,'/request-status/'+encodeURIComponent(req.params.token)+'?lang='+lang);
+  }catch(error){
+    console.error('Customer request supplement failed',error?.name||'error');
+    return res.status(503).type('text').send('Update unavailable');
+  }
+});
+
 app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res) => {
   try {
     const tr = await publicTenant(req.params.slug);
@@ -17119,11 +17160,22 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       }
     }
 
+    let trackingUrl = null;
+    if (['quote','booking','callback'].includes(type) && String(process.env.JWT_SECRET || '').length >= 32) {
+      try {
+        const token = createRequestTrackingToken({ tenantId:tenant.id,requestId:id,secret:process.env.JWT_SECRET });
+        trackingUrl = SEO_CANONICAL_ORIGIN + '/request-status/' + encodeURIComponent(token) + '?lang=' + actionLang;
+      } catch (error) {
+        console.error('Customer request link generation unavailable',error?.name||'error');
+      }
+    }
+
     return res.json({
       ok:true,
       id,
       status:'new',
       deliveryStatus:delivery.status,
+      trackingUrl,
       quote:computedQuote,
       orderStatus:ecommerceOrder,
       booking:bookedSlot &&
