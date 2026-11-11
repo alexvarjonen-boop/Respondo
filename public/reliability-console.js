@@ -114,7 +114,7 @@
         try{
           const title=t('Käsin tallennettu','Manuellt sparad','Owner checkpoint')+' '+new Date().toLocaleDateString();
           await api('/manual-versions','POST',{label:title,confirm:true});
-          loaded=false;await load();
+          busy=false;loaded=false;await load();
         }catch(err){notice.textContent=err.message;}finally{busy=false;create.disabled=false;}
       });
       for(const version of data.versions?.versions||[]){
@@ -135,7 +135,7 @@
           if(phrase!=='RESTORE MANUAL ANSWERS')return;
           busy=true;restore.disabled=true;
           try{await api('/manual-versions/'+encodeURIComponent(version.id)+'/restore','POST',
-            {confirm:true,phrase});loaded=false;await load();}
+            {confirm:true,phrase});busy=false;loaded=false;await load();}
           catch(error){notice.textContent=error.message;}
           finally{busy=false;restore.disabled=false;}
         });
