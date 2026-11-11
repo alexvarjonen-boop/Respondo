@@ -2,7 +2,7 @@
 // No paid API, no automatic external delivery or binding booking.
 import {randomBytes,createHash} from 'node:crypto';
 import {classifyLeadIntent} from './lead-qualification.mjs';
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const uuid=value=>UUID.test(String(value||''));
 const clean=(v,max=160)=>String(v??'').replace(/[\x00-\x1f\x7f]/g,' ').trim().slice(0,max);
 const codes=['moving_quote','service_quote','booking_request'];
