@@ -133,7 +133,7 @@ test('public status returns only non-sensitive request metadata',async()=>{
  const result=await requestTrackingStatus(db,token);
  assert.equal(result.companyName,'Company');
  assert.equal(result.status,'in_progress');
- assert.equal(result.bookingConfirmed,false);
+ assert.equal(result.confirmedAppointment,false);
  assert.equal(result.verifiedSale,false);
  assert.equal(result.email,undefined);
  assert.equal(result.contact,undefined);
@@ -209,12 +209,12 @@ test('public portal and widget never claim automatic purchase or confirmed booki
   '/api/app/native/agency/summary'])assert.ok(server.includes(path));
  assert.match(server,/customer-ops',auth,ownerOnly,subscribed/);
  assert.match(server,/agency\/summary',auth,ownerOnly,subscribed/);
- assert.match(server,/procedureSubmission\?null/);
+ assert.match(server,/!procedureSubmission/);
  assert.match(entry,/ensureCustomerOperationsSchema\(pool\)/);
  assert.match(widget,/function showProcedureForm\(/);
  assert.match(widget,/product-compare-panel/);
  assert.match(widget,/Track your request/);
- assert.match(ui,/approved/);
+ assert.match(ui,/Approved customer procedures/);
  assert.match(portal,/location\.hash\.slice\(1\)/);
  assert.match(portal,/referrerPolicy:'no-referrer'/);
  assert.match(page,/name="robots" content="noindex,nofollow,noarchive"/);
