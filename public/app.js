@@ -7,7 +7,7 @@ import { customerServiceLandingMarkup } from './customer-service-landing.mjs?v=2
 import { AI_TOPIC_PATHS, aiTopicMeta, aiTopicMarkup } from './ai-topic-pages.mjs?v=20261013-topics-v2-fi-test-v1-pricing-20261014-ape-v1-annual-120-v1';
 import { SEO_INTENT_PATHS, seoIntentMeta, seoIntentMarkup } from './seo-intent-pages.mjs?v=20261016-intents-v1';
 import { ecommerceCustomerServiceMarkup } from './ecommerce-customer-service.mjs?v=20261016-gsc-en-fi-ecommerce-v1';
-import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS, featureAvailableForPublicPlan, publicPlanFeatureCount } from './features-data.js?v=20261031-plan-scoped-v1-verified-only-v1';
+import { FEATURE_GROUPS, FEATURE_COUNT, FEATURE_HIGHLIGHTS, featureAvailableForPublicPlan, publicPlanFeatureCount } from './features-data.js?v=20261031-plan-scoped-v1-verified-only-v1-booking-request-v2';
 import { appleHomeMarkup } from './apple-home.js?v=20261026-orbit10-v1-observatory-v1-no-hero-ask-v1-guided-orbit-v3-helix-v4-optical-v5-journey-v6-first-order-v1-24-7-v1-studio-v7-mobile-simplify-v9-icons-v10-polish-v11-hero-clarity-v17-hero-try-bot-v32-chat-navigation-note-v34-orbit-click-v1';
 // Public site navigation is handled by the Respondo assistant; keep legal footer links.
 import { LEGAL_20261008, LEGAL_UPDATE_DATE } from './legal-content.js?v=20261107-movexa-v1';
