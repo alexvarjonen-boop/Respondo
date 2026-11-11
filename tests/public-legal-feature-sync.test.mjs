@@ -49,7 +49,7 @@ test('privacy explains chat leads website import translation and controller role
 });
 
 test('plans and features are synchronized to the server access gates',()=>{
-  assert.equal(FEATURE_COUNT,145);
+  assert.equal(FEATURE_COUNT,155);
   assert.equal(FEATURE_HIGHLIGHTS.length,10);
   const allFeatures=FEATURE_GROUPS.flatMap(group=>group.items);
   assert.equal(allFeatures.length,FEATURE_COUNT);
