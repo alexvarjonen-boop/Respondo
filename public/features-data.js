@@ -129,7 +129,7 @@ export const FEATURE_GROUPS = [
     intro: ['Tarjous voidaan kerätä, laskea ja tarvittaessa maksaa suoraan keskustelusta.','En offert kan samlas in, beräknas och vid behov betalas direkt från chatten.','A quote can be collected, calculated and, when configured, paid directly from chat.'],
     items: [
       ['Tarjousaikeen tunnistaminen ja tarjouslomakkeen avaaminen','Identifierar offertavsikt och öppnar offertformulär','Detects quote intent and opens quote form'],
-      ['Määrän syöttäminen tarjouslaskentaan','Ange mängd för offertberäkning','Quantity input for quote calculation'],
+      ['Tarjousmäärän syöttö ja virheellisten määrien tarkistus','Ange mängd och kontrollera felaktiga offertvärden','Quote quantity input with invalid-value safeguards'],
       ['Tarjouksen lisätietojen syöttäminen','Ange tilläggsinformation för offert','Additional quote details'],
       ['Yhteystietojen kerääminen tarjouksen yhteydessä','Samlar kontaktuppgifter med offerten','Collects contact information with quote'],
       ['Tarjouksen perushinnan määrittäminen','Ange grundpris för offert','Set quote base price'],
