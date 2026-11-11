@@ -1221,13 +1221,14 @@
             funnel.actionRatePercent==null?'—':String(funnel.actionRatePercent)+' %'],
           [label('Lähetetyt pyynnöt','Skickade förfrågningar','Submitted requests'),funnel.submittedRequests],
           [label('Vahvistetut varaukset','Bekräftade bokningar','Confirmed bookings'),funnel.confirmedBookings],
+          [label('Voitetuksi merkityt CRM-asiakkuudet','CRM-kontakter markerade vunna','CRM contacts marked won'),funnel.crmWonContacts||0],
           [label('Maksullisiksi vahvistetut tarjoukset','Verifierat betalda offerter','Verified paid quotes'),funnel.verifiedPayments],
         ])qualityMetric(funnelMetrics,name,value);
         content.appendChild(funnelMetrics);
         content.appendChild(el('p','native-disclaimer',label(
-          'Luvut perustuvat saman kanavan kävijätunnisteisiin sekä tallennettuihin pyyntöihin. Puuttuvat tunnisteet eivät kuulu prosenttiin. Lähetetty pyyntö ei ole myynti eikä automaattinen vastaus todista onnistunutta palvelua.',
-          'Mätningen bygger på matchande besökarreferenser och inskickade förfrågningar inom samma kanal. Saknade referenser utesluts. En förfrågan är inte en försäljning.',
-          'The rate covers matched visitor references with a conversation and a request in the same channel; missing references are excluded. Submitting a request is not a sale or verified resolution.'
+          'Luvut perustuvat saman kanavan kävijätunnisteisiin sekä tallennettuihin pyyntöihin. Puuttuvat tunnisteet eivät kuulu prosenttiin. Lähetetty pyyntö ei ole myynti eikä automaattinen vastaus todista onnistunutta palvelua. Voitetuksi merkitty CRM-asiakkuus on yrityksen oma tilamerkintä, ei varmistettu maksu.',
+          'Mätningen bygger på matchande besökarreferenser och inskickade förfrågningar inom samma kanal. Saknade referenser utesluts. En förfrågan är inte en försäljning. CRM-statusen vunnen är företagets egen markering, inte en verifierad betalning.',
+          'The rate covers matched visitor references with a conversation and a request in the same channel; missing references are excluded. Submitting a request is not a sale or verified resolution. A CRM contact marked won is a company-entered status, not verified payment.'
         )));
       }
       if(!isQuality){
