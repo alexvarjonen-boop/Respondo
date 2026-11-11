@@ -2865,6 +2865,7 @@ function bindPricingPeriodSwitch() {
         if (note) note.textContent = yearly ? card.dataset.yearlyNote : card.dataset.monthlyNote;
         if (link) {
           const params = new URLSearchParams({plan:card.dataset.planCode + (yearly ? '_yearly' : '_monthly'),lang:currentLang()});
+          if (new URLSearchParams(location.search).get('ref')?.toUpperCase()==='US20YEAR') params.set('ref','US20YEAR');
           link.href = '/tilaus?' + params.toString();
         }
       });
