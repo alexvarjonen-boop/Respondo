@@ -1100,7 +1100,23 @@
         });
         const data=await response.json().catch(()=>({}));
         if(!response.ok||!data.ok)throw new Error(data.error||L.error);
-        form.querySelector('.mainio-success').textContent=data.customerMessage||L.sent;
+        const success=form.querySelector('.mainio-success');
+        success.textContent=data.customerMessage||L.sent;
+        if(data.trackingUrl){
+          try{
+            const tracking=new URL(String(data.trackingUrl));
+            if(tracking.protocol==='https:'&&tracking.hostname==='respondoai.fi'&&
+              tracking.pathname.startsWith('/request-status/')){
+              const link=document.createElement('a');
+              link.href=tracking.href;
+              link.target='_blank';
+              link.rel='noopener noreferrer';
+              link.textContent=experienceText('Seuraa pyyntöä','Följ förfrågan','Track request');
+              success.appendChild(document.createTextNode(' '));
+              success.appendChild(link);
+            }
+          }catch{}
+        }
         form.querySelectorAll('input,select,textarea,button').forEach(el=>{el.disabled=true;});
         send.hidden=true;back.hidden=true;
       }catch(err){error.textContent=err.message||L.error;send.disabled=false;send.textContent=old;}
@@ -1221,6 +1237,17 @@
         let resultHtml = '<div class="action-confirmed">✓ ' +
           escapeHtml(data.customerMessage || t('Pyyntö vastaanotettu', 'Request received')) +
           '</div>';
+        if (data.trackingUrl) {
+          try {
+            const tracking = new URL(String(data.trackingUrl));
+            if (tracking.protocol === 'https:' && tracking.hostname === 'respondoai.fi' &&
+                tracking.pathname.startsWith('/request-status/')) {
+              resultHtml += '<a class="action-pay" href="' + escapeHtml(tracking.href) +
+                '" target="_blank" rel="noopener noreferrer">' +
+                experienceText('Seuraa pyyntösi tilaa', 'Följ din förfrågans status', 'Track your request') + '</a>';
+            }
+          } catch {}
+        }
 
         if (data.quote) {
           const q = data.quote;
