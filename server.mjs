@@ -8750,6 +8750,7 @@ async function subscribed(req, res, next) {
 
 const OAUTH_PROFILE_COOKIE = 'respondo_oauth_profile';
 const OAUTH_STATE_COOKIE = 'respondo_oauth_state';
+const OAUTH_SIGNUP_REFERRAL_COOKIE = 'respondo_oauth_signup_referral';
 
 function oauthConfig(provider) {
   if (provider === 'google') {
@@ -8912,6 +8913,20 @@ function getOauthProfile(req) {
   }
 }
 
+// Keep referral codes on our server, never in the Google/Apple OAuth state URL.
+// Bind each code to the signed OAuth nonce and expire it after ten minutes.
+function oauthSignupReferral(req, nonce) {
+  try {
+    const token = cookies(req)[OAUTH_SIGNUP_REFERRAL_COOKIE];
+    if (!token) return '';
+    const data = jwt.verify(token, JWT, {algorithms:['HS256']});
+    if (data?.type !== 'oauth-signup-referral' || data?.nonce !== nonce) return '';
+    return normalizeReferralCode(data.code).slice(0,32);
+  } catch {
+    return '';
+  }
+}
+
 function oauthSignupReturnUrl(provider, statePayload) {
   const params = new URLSearchParams({oauth:provider});
   if (Object.hasOwn(PLAN_DEFINITIONS,String(statePayload?.plan || ''))) {
@@ -9038,6 +9053,8 @@ async function finishOauth(req, res, code, state) {
       return res.redirect('/app');
     }
 
+    if (statePayload.flow === 'signup') profile.referralCode = oauthSignupReferral(req,statePayload.nonce);
+    res.clearCookie(OAUTH_SIGNUP_REFERRAL_COOKIE);
     setOauthProfile(res, profile);
     return res.redirect(oauthSignupReturnUrl('google',statePayload));
   } catch (e) {
@@ -11365,6 +11382,15 @@ app.get('/api/auth/oauth/:provider/start', async (req, res) => {
   const nonce = crypto.randomBytes(20).toString('hex');
   const state = jwt.sign({ provider, flow, nonce, ...(oauthPlan ? {plan:oauthPlan} : {}), ...(oauthLang ? {lang:oauthLang} : {}), ...(passwordSetupUser ? { userId:passwordSetupUser.id } : {}) }, JWT, { expiresIn: '10m' });
   setOauthState(res, nonce, provider);
+  const oauthReferral = flow === 'signup' ? normalizeReferralCode(req.query.ref).slice(0,32) : '';
+  if (oauthReferral) {
+    res.cookie(OAUTH_SIGNUP_REFERRAL_COOKIE,
+      jwt.sign({type:'oauth-signup-referral',code:oauthReferral,nonce}, JWT, {expiresIn:'10m'}),
+      {httpOnly:true,secure:provider==='apple' || process.env.NODE_ENV==='production',
+       sameSite:provider==='apple'?'none':'lax',maxAge:10 * 60 * 1000});
+  } else {
+    res.clearCookie(OAUTH_SIGNUP_REFERRAL_COOKIE);
+  }
 
   if (provider === 'apple') {
     const url = new URL('https://appleid.apple.com/auth/authorize');
@@ -11473,6 +11499,8 @@ app.post('/api/auth/oauth/apple/callback', async (req, res) => {
       return res.redirect('/app');
     }
 
+    if (statePayload.flow === 'signup') profile.referralCode = oauthSignupReferral(req,statePayload.nonce);
+    res.clearCookie(OAUTH_SIGNUP_REFERRAL_COOKIE);
     setOauthProfile(res, profile);
     return res.redirect(oauthSignupReturnUrl('apple',statePayload));
   } catch (e) {
@@ -11484,10 +11512,12 @@ app.post('/api/auth/oauth/apple/callback', async (req, res) => {
 app.get('/api/auth/oauth-profile', (req, res) => {
   const profile = getOauthProfile(req);
   if (!profile) return res.status(404).json({ error: 'OAuth-profiilia ei löytynyt.' });
+  res.set('Cache-Control','private, no-store');
   return res.json({
     provider: profile.provider,
     email: profile.email,
     name: profile.name || '',
+    referralCode: profile.referralCode || '',
   });
 });
 
