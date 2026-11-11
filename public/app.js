@@ -5057,6 +5057,7 @@ async function dashboard(options = {}) {
                   ${actionFieldEntries(x.payload).map(([key,value]) => `<div><small>${esc(key)}</small><b>${esc(value)}</b></div>`).join('')}
                 </div>
                 ${x.payload?.question ? `<p class="action-origin">“${esc(x.payload.question)}”</p>` : ''}
+                ${x.payload?.customerSupplement?.message ? `<p class="action-origin"><strong>${appText('Asiakkaan lisätiedot','Kundens tilläggsuppgifter','Additional customer information')}:</strong> ${esc(x.payload.customerSupplement.message)}</p>` : ''}
                 ${x.result?.quote ? `
                   <div class="action-quote-summary">
                     <span>${appText('RESPONDO-TARJOUS','RESPONDO-OFFERT','RESPONDO QUOTE')}</span>
