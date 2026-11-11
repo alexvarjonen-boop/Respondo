@@ -2,6 +2,7 @@
 // Does NOT fetch mail or send any external-channel message.
 import {randomUUID} from 'node:crypto';
 import {triageNativeMail} from './native-mail-triage.mjs';
+import {summarizeHandoff} from './respondo-evidence-handoff.mjs';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const isUuid=v=>UUID.test(String(v||''));
 const clean=(v,max)=>String(v??'').trim().slice(0,max);
@@ -106,7 +107,8 @@ export async function nativeInboxThread(db,tenantId,threadId){
       WHERE tenant_id=$1 AND thread_id=$2`,[tenantId,threadId])
   ]);
   return {thread:{...r.rows[0],canDeliverWithinRespondo:r.rows[0].source_channel==='website'},
-    messages:messages.rows,notes:notes.rows,draft:draft.rows[0]||null};
+    messages:messages.rows,notes:notes.rows,draft:draft.rows[0]||null,
+    handoffBrief:summarizeHandoff(messages.rows,r.rows[0].language)};
 }
 export async function saveNativeInboxDraft(db,tenantId,threadId,userId,payload={}){
   ensureThreadId(threadId);
