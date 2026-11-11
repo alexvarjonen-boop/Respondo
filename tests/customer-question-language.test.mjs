@@ -4,6 +4,12 @@ import {detectCustomerQuestionLanguage} from '../question-language.mjs';
 
 test('FI/SV/EN customer text overrides the website locale, including informal and mistyped questions',()=>{
   const cases=[
+    ['haluan pyytää tarjouksen', 'en','fi'],
+    ['Haluan tarjouksen muuttopalvelusta', 'en','fi'],
+    ['Voinko pyytää tarjouspyynnön?', 'en','fi'],
+    ['Pyydän tarjousta muutosta', 'sv','fi'],
+    ['I would like a moving quote', 'fi','en'],
+    ['Jag vill be om en offert', 'en','sv'],
     ['Onko teillä ajanvaraus?', 'en','fi'],
     ['Paljoks tää maksaa?', 'sv','fi'],
     ['Kauanko toimitus kestää?', 'en','fi'],
@@ -85,5 +91,25 @@ test('Try Bot answers catalog questions in the actual question language across p
       assert.match(body.answer,expected,question);
       assert.doesNotMatch(body.answer,wrong,question);
     }
+  }finally{await new Promise(resolve=>server.close(resolve));}
+});
+
+// Regression: the demo page may be English while the customer switches to Finnish.
+test('English Try Bot locale does not override Finnish Mainio quote-request wording',async()=>{
+  const {app}=await import('../server.mjs');
+  const server=app.listen(0,'127.0.0.1');
+  await new Promise(resolve=>server.once('listening',resolve));
+  try{
+    const response=await fetch('http://127.0.0.1:'+server.address().port+'/api/public/demo-chat',{
+      method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({
+        lang:'en',message:'haluan pyytää tarjouksen',publicDemo:true,
+        profile:{companyName:'Mainio Muuttopalvelu',website:'https://mainiomuutt.fi'},
+      }),
+    });
+    assert.equal(response.status,200);
+    const body=await response.json();
+    assert.equal(body.language,'fi',JSON.stringify(body));
+    assert.doesNotMatch(String(body.answer||''),/\\b(?:You can request|Tell us about your move|Open our quote form)\\b/i);
   }finally{await new Promise(resolve=>server.close(resolve));}
 });
