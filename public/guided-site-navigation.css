@@ -15,3 +15,8 @@
 }
 .respondo-guided-arrival button:focus-visible{outline:2px solid #fff;outline-offset:3px}
 @media(max-width:600px){.respondo-guided-arrival{bottom:96px;font-size:11px;padding:10px 12px}}
+
+/* Target only an authorized Respondo website CTA after a user-selected link. */
+#app .respondo-guided-target{outline:3px solid #b4c8ff!important;outline-offset:5px;border-radius:8px}
+.respondo-guided-arrival .respondo-guided-find{width:auto;height:auto;white-space:nowrap;padding:7px 11px;background:#fff;color:#101722;border:1px solid #fff;border-radius:9px;font-size:11px;font-weight:700}
+@media(max-width:520px){.respondo-guided-arrival{flex-wrap:wrap}.respondo-guided-arrival .respondo-guided-find{white-space:normal}}
