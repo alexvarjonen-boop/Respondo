@@ -2770,7 +2770,7 @@ function pricingSection() {
       ? appText('AI-asiakaspalvelun aloittamiseen.','För företag som börjar med AI-kundservice.','Start with AI customer service.')
       : tier==='Premium'
         ? appText('Asiakaspalvelutiimin yhteiseen käyttöön.','För kundserviceteam som arbetar tillsammans.','For customer service teams.')
-        : appText('Verkkokauppaan ja laajempiin integraatioihin.','För e-handel och fler integrationer.','For commerce and broader integrations.');
+        : appText('Laajempaan asiakaspalveluun ja tarjousten käsittelyyn.','För mer omfattande kundservice och offertarbete.','For larger support teams and quote workflows.');
     const yearlyMonthly=monthly-10;
     const yearlyTotal=yearlyMonthly*12;
     const code=tier==='Advanced'?'basic':tier==='Premium'?'advanced':'business';
@@ -2821,15 +2821,15 @@ function pricingSection() {
         ])}
         ${card('Premium',129,10,[
           appText('Kaikki Advanced-ominaisuudet','Alla Advanced-funktioner','Everything in Advanced'),
-          appText('Google Calendar -synkronointi','Google Calendar-synkronisering','Google Calendar sync'),
-          appText('Varausten yhdistäminen kalenteritapahtumiin','Koppla bokningar till kalenderhändelser','Connect bookings to calendar events'),
+          appText('Tiimikäyttö 10 asiakaspalvelijalle','Teamarbete för 10 kundservicemedarbetare','Team access for 10 support agents'),
+          appText('Työntekijöiden omat kirjautumiset ja keskustelut','Egna inloggningar och konversationer för medarbetare','Individual staff logins and conversations'),
           appText('Useamman asiakaspalvelijan tiimikäyttö','Teamstöd för flera kundservicemedarbetare','Multi-agent team use'),
         ],true)}
         ${card('Enterprise',149,20,[
           appText('Kaikki Respondon nykyiset ominaisuudet','Alla nuvarande Respondo-funktioner','All current Respondo features'),
-          appText('Automaattinen hintalaskuri ja Stripe-maksulinkit','Automatisk prisberäkning och Stripe-betalningslänkar','Automatic quote calculator and Stripe payment links'),
-          appText('Shopify- ja WooCommerce-tilaushaku','Orderuppslag för Shopify och WooCommerce','Shopify and WooCommerce order lookup'),
-          appText('Webhook- ja API-integraatiot','Webhook- och API-integrationer','Webhook and API integrations'),
+          appText('Turvallinen automaattinen tarjouslaskuri','Säker automatisk offertkalkylator','Safe automatic quote calculator'),
+          appText('Tarjouspyyntöjen seuranta ja käsittely','Uppföljning och hantering av offertförfrågningar','Quote request tracking and review'),
+          appText('Respondon omat asiakas- ja toimintotyökalut','Respondos egna kund- och arbetsverktyg','Respondo built-in customer and workflow tools'),
           appText('Suurin kapasiteetti kasvavalle tiimille','Högsta kapacitet för växande team','Highest capacity for growing teams')
         ])}
       </div>
@@ -3092,12 +3092,12 @@ function featuresPage() {
   const signupTier = {advanced:'basic',premium:'advanced',enterprise:'business'}[plan] || '';
   const signupHref = plan ? '/tilaus?plan='+signupTier+'_monthly&amp;lang='+lang : '/tilaus?lang='+lang;
   const planIntro = plan === 'advanced'
-    ? appText('Advanced sisältää 2 asiakaspalvelijapaikkaa, verkkosivujen tietojen tuonnin ja Respondon oman ajanvarauksen. Google Calendar -synkronointi ja tarjouslaskuri eivät kuulu tähän pakettiin.','Advanced innehåller 2 kundserviceplatser, webbplatsimport och Respondos egen bokning. Google Kalender-synkronisering och offertkalkylatorn ingår inte.','Advanced includes 2 support-agent seats, website import and native bookings. Google Calendar sync and the quote calculator are not included.')
+    ? appText('Advanced sisältää 2 asiakaspalvelijapaikkaa, verkkosivujen tietojen tuonnin ja Respondon oman ajanvarauksen. Yritystason tarjouslaskuri ei kuulu pakettiin.','Advanced innehåller 2 kundserviceplatser, webbplatsimport och Respondos egen bokning. Offertkalkylatorn för Enterprise ingår inte.','Advanced includes 2 support-agent seats, website import and native bookings. The Enterprise quote calculator is not included.')
     : plan === 'premium'
-      ? appText('Premium sisältää Advanced-ominaisuudet, 10 asiakaspalvelijapaikkaa ja Google Calendar -synkronoinnin. Yritystason tarjouslaskuri ja Stripe-maksulinkit eivät kuulu tähän pakettiin.','Premium innehåller Advanced-funktionerna, 10 kundserviceplatser och Google Kalender. Offertkalkylatorn och Stripe-betalningslänkar ingår inte.','Premium includes Advanced features, 10 support-agent seats and Google Calendar sync. The Enterprise quote calculator and Stripe payment links are not included.')
+      ? appText('Premium sisältää Advanced-ominaisuudet ja 10 asiakaspalvelijapaikkaa. Yritystason tarjouslaskuri ei kuulu pakettiin.','Premium innehåller Advanced-funktionerna och 10 kundserviceplatser. Offertkalkylatorn för Enterprise ingår inte.','Premium includes Advanced features and 10 support-agent seats. The Enterprise quote calculator is not included.')
       : plan === 'enterprise'
-        ? appText('Enterprise sisältää kaikkien alempien pakettien ominaisuudet, 20 asiakaspalvelijapaikkaa, tarjouslaskurin ja laajemmat integraatiot.','Enterprise innehåller funktionerna i de lägre nivåerna, 20 kundserviceplatser, offertkalkylator och fler integrationer.','Enterprise includes all lower-tier features, 20 support-agent seats, the quote calculator and broader integrations.')
-        : appText('Ominaisuuksien saatavuus riippuu tilauspaketista ja yrityksen tekemistä asetuksista. Advanced: 2 asiakaspalvelijapaikkaa, tuonti ja oma ajanvaraus. Premium: 10 paikkaa ja Google Calendar. Enterprise: 20 paikkaa ja laajemmat automaatiot.','Tillgängligheten beror på abonnemang och företagets inställningar. Advanced: 2 platser, import och egna bokningar. Premium: 10 platser och Google Kalender. Enterprise: 20 platser och avancerad automatisering.','Availability depends on the subscription and configuration. Advanced: 2 seats, website import and native bookings. Premium: 10 seats and Google Calendar. Enterprise: 20 seats and advanced automations.');
+        ? appText('Enterprise sisältää alempien pakettien ominaisuudet, 20 asiakaspalvelijapaikkaa sekä tarjouslaskurin. Ulkoiset yhteydet näkyvät erikseen vasta käyttövalmiina.','Enterprise innehåller funktionerna i de lägre nivåerna, 20 kundserviceplatser och en offertkalkylator. Externa anslutningar visas separat först när de är tillgängliga.','Enterprise includes lower-tier features, 20 support-agent seats and the quote calculator. External connections appear separately only when available.')
+        : appText('Saatavuus riippuu paketista ja yrityksen asetuksista. Advanced: 2 asiakaspalvelijapaikkaa, tuonti ja oma ajanvaraus. Premium: 10 paikkaa. Enterprise: 20 paikkaa ja tarjouslaskuri. Ulkoiset integraatiot eivät kuulu tähän luetteloon ilman vahvistettua käyttöönottoa.','Tillgänglighet beror på paket och inställningar. Advanced: 2 platser, webbplatsimport och egen bokning. Premium: 10 platser. Enterprise: 20 platser och offertkalkylator. Externa integrationer utlovas inte utan verifierad aktivering.','Availability depends on the plan and setup. Advanced: 2 seats, website import and native bookings. Premium: 10 seats. Enterprise: 20 seats and quote calculator. External integrations are not promised without verified activation.');
   const pick = (triple) => triple[lang === 'sv' ? 1 : lang === 'en' ? 2 : 0];
   let featureNo = 0;
   const restGroups = FEATURE_GROUPS.map((group) => ({
