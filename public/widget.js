@@ -1658,7 +1658,15 @@
         status.textContent = t('Asiakaspalvelija mukana', 'Human agent joined');
       }
     } catch {
-      pending.textContent = t('Vastausta ei saatu juuri nyt. Yritä hetken päästä uudelleen.', 'The response failed. Please try again in a moment.');
+      // A network or server error is NOT a successful answer or a confirmed
+      // lead. Give a retry path plus an optional consent-based contact form.
+      pending.textContent = experienceText(
+        'Vastaus ei nyt onnistunut. Voit yrittää uudelleen tai jättää yhteydenottopyynnön.',
+        'Svaret kunde inte hämtas. Försök igen eller lämna en frivillig kontaktförfrågan.',
+        'The answer could not be retrieved. Please retry or leave an optional contact request.'
+      );
+      rememberSessionMessage(pending.textContent,'bot');
+      showLeadForm(message);
     } finally {
       input.disabled = false;
       if (!voiceButton.hidden) voiceButton.disabled = false;
