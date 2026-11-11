@@ -70,7 +70,10 @@ function harness({country='US',state='CA',taxStatus='active',subscriptionStatus=
     stripe, console:{error(){},warn(){}},
     q:query,uid:()=>('simulated-id-'+(++ids)),
     slug:x=>x.toLowerCase().replace(/[^a-z0-9]+/g,'-'),
-    normalizeCheckoutPlan:x=>x,normalizeReferralCode:()=>'',isFreeReferralCode:()=>false,
+    normalizeCheckoutPlan:x=>x,normalizeReferralCode:code=>String(code||'').trim().toUpperCase(),isFreeReferralCode:()=>false,
+    isUSFirstYearCampaign:code=>code==='US20YEAR',
+    usFirstYearCheckoutDiscounts:enabled=>enabled?{discounts:[{promotion_code:'promo_1UaYwqV05brJ7mTPYIVaciD1'}]}:{},
+    assertUSFirstYearCheckoutPrice:async item=>assert.ok(item.price?.startsWith('price_test_')),
     planAllowsReferral:()=>true,
     setupServiceWebsiteUrl:()=>'',setupGreetingInput:()=>'',validateSetupImageToken:async()=>'',bindSetupImageToSession:async()=>{},
     cleanEmail:x=>String(x||'').trim().toLowerCase(),
@@ -235,4 +238,33 @@ test('a completed checkout cannot be auto-logged in again using the consumed ses
   assert.equal(first.to,'/app?welcome=1');
   const second=await h.activate(started.setCookies);
   assert.equal(second.to,'/kirjaudu?checkout_error=1');
+});
+
+test('US20YEAR gives a 12-month campaign discount on both monthly and yearly checkout',async()=>{
+  for(const plan of ['basic_monthly','basic_yearly','advanced_yearly','business_monthly']){
+    const h=harness();
+    const result=await h.begin({referralCode:'US20YEAR',plan});
+    assert.equal(result.statusCode,200,plan+' promotion signup should succeed');
+    assert.equal(h.activity.createArgs.discounts[0].promotion_code,'promo_1UaYwqV05brJ7mTPYIVaciD1');
+    assert.equal(h.activity.createArgs.metadata.campaign_code,'US20YEAR');
+    assert.equal(h.activity.createArgs.subscription_data.metadata.campaign_code,'US20YEAR');
+    assert.equal(h.activity.createArgs.allow_promotion_codes,false);
+    assert.equal(h.activity.sql.some(x=>x.sql.includes('referral_redemptions')),false);
+  }
+});
+
+test('US20YEAR is rejected for Finnish checkout, without creating a customer',async()=>{
+  const h=harness({country:'FI',state:''});
+  const result=await h.begin({referralCode:'US20YEAR',businessId:'3599437-5'});
+  assert.equal(result.statusCode,400);
+  assert.equal(h.activity.createArgs,null);
+  assert.equal(h.activity.sql.some(x=>x.sql.includes('INSERT INTO users(')),false);
+});
+
+test('no campaign never opens Checkout generic promotion-code field',async()=>{
+  const h=harness();
+  const result=await h.begin();
+  assert.equal(result.statusCode,200);
+  assert.equal(h.activity.createArgs.allow_promotion_codes,false);
+  assert.equal(h.activity.createArgs.discounts,undefined);
 });
