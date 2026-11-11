@@ -1537,6 +1537,27 @@ const normalizeReferralCode = (value) =>
     .replace(/[^A-Z0-9-]/g, '')
     .slice(0, 32);
 
+// Use an explicit promotion ID rather than exposing private owner discounts
+// via the generic Stripe Checkout promotion-code entry field.
+const US_FIRST_YEAR_CAMPAIGN_CODE = 'US20YEAR';
+const US_FIRST_YEAR_PROMOTION_ID = 'promo_1UaYwqV05brJ7mTPYIVaciD1';
+const US_FIRST_YEAR_PRODUCT_IDS = new Set([
+  'prod_VRMDqWr2kAow8M',
+  'prod_VRMEf8AWTzx8eu',
+  'prod_VRMEB6TmV771gr',
+]);
+const isUSFirstYearCampaign = code => normalizeReferralCode(code) === US_FIRST_YEAR_CAMPAIGN_CODE;
+function usFirstYearCheckoutDiscounts(enabled) {
+  return enabled ? { discounts: [{ promotion_code:US_FIRST_YEAR_PROMOTION_ID }] } : {};
+}
+async function assertUSFirstYearCheckoutPrice(lineItem) {
+  if (!lineItem?.price)
+    throw Object.assign(new Error('A saved Stripe subscription price is required for the US offer.'),{publicStatus:503});
+  const price=await stripe.prices.retrieve(lineItem.price);
+  const productId=typeof price.product==='string' ? price.product : price.product?.id;
+  if (!US_FIRST_YEAR_PRODUCT_IDS.has(productId))
+    throw Object.assign(new Error('The selected Stripe plan is not eligible for this campaign.'),{publicStatus:503});
+}
 const FREE_REFERRAL_CODE = normalizeReferralCode(process.env.OWNER_FREE_CODE || '');
 const isFreeReferralCode = (value) => Boolean(FREE_REFERRAL_CODE) && normalizeReferralCode(value) === FREE_REFERRAL_CODE;
 
@@ -11616,9 +11637,13 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
   const normalizedPlan = normalizeCheckoutPlan(plan);
   const referralCode = normalizeReferralCode(req.body.referralCode);
   const freeReferral = isFreeReferralCode(referralCode);
+  const usFirstYearCampaign = isUSFirstYearCampaign(referralCode);
   if (setupService && normalizedPlan === 'owner_test') return res.status(400).json({error:'Käyttöönottopalvelu on saatavilla vain normaalin maksullisen tilauksen yhteydessä.'});
   const checkoutCountry = checkoutCountryPolicy(req.body?.billingCountry,{state:req.body?.billingState,businessId});
   if (!checkoutCountry.ok) return res.status(422).json({ error:checkoutCountry.error });
+  if (usFirstYearCampaign && (checkoutCountry.country !== 'US' || normalizedPlan === 'owner_test')) {
+    return res.status(400).json({error:'US20YEAR is only valid for US business subscriptions on Advanced, Premium and Enterprise.'});
+  }
   if (req.body?.businessPurchase !== true) return res.status(422).json({ error:'Vahvista, että tilaat palvelun yrityskäyttöön.' });
   const oauthProfile = getOauthProfile(req);
   const socialSignup = Boolean(
@@ -11640,7 +11665,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
     return res.status(403).json({ error:'Vahvista sähköpostiosoitteesi ennen tilauksen aloittamista.' });
   }
 
-  if (referralCode && !freeReferral && !planAllowsReferral(normalizedPlan)) {
+  if (referralCode && !freeReferral && !usFirstYearCampaign && !planAllowsReferral(normalizedPlan)) {
     return res.status(400).json({ error: 'Suosittelukoodi toimii vain kuukausitilauksessa.' });
   }
 
@@ -11659,6 +11684,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
     const checkoutLineItem = freeReferral
       ? (setupService ? ownerFreeSetupCheckoutLineItem(normalizedPlan) : null)
       : await stripeCheckoutLineItem(normalizedPlan);
+    if(usFirstYearCampaign) await assertUSFirstYearCheckoutPrice(checkoutLineItem);
 
     const existing = await q(
       'SELECT id,status,stripe_customer_id,stripe_subscription_id FROM users WHERE lower(email)=lower($1)',
@@ -11684,7 +11710,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
       if (freeReferral) await consumeOwnerFreeCode(client, referralCode);
 
       let referrer = null;
-      if (referralCode && !freeReferral) {
+      if (referralCode && !freeReferral && !usFirstYearCampaign) {
         const ref = await client.query(
           `SELECT id,email,status,subscription_status,subscription_plan
              FROM users
@@ -11793,6 +11819,7 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
         payment_method_collection:freeReferral && setupService ? 'if_required' : 'always',
         customer_email: email,
         line_items:checkoutLineItems,
+        ...usFirstYearCheckoutDiscounts(usFirstYearCampaign),
         ...(checkoutNoticeMessage ? {custom_text:{submit:{message:checkoutNoticeMessage}}} : {}),
         subscription_data: {
           ...(normalizedPlan === 'owner_test' ? {} : assistedSetupCheckoutTrial(setupService)),
@@ -11807,7 +11834,8 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
             setup_service:setupService ? '1' : '0',
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
             ...(setupService ? { setup_website:setupWebsite,setup_image_token:setupImageToken,setup_greeting:setupGreeting } : {}),
-            ...(referralCode ? { referral_code: referralCode } : {}),
+            ...(usFirstYearCampaign ? {campaign_code:US_FIRST_YEAR_CAMPAIGN_CODE} : {}),
+            ...(!usFirstYearCampaign && referralCode ? {referral_code:referralCode} : {}),
             ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'} : {}),
           },
         },
@@ -11830,7 +11858,8 @@ app.post('/api/auth/start-checkout', checkoutLimiter, async (req, res) => {
           setup_service:setupService ? '1' : '0',
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
           ...(setupService ? { setup_website:setupWebsite,setup_image_token:setupImageToken,setup_greeting:setupGreeting } : {}),
-          ...(referralCode ? { referral_code: referralCode } : {}),
+          ...(usFirstYearCampaign ? {campaign_code:US_FIRST_YEAR_CAMPAIGN_CODE} : {}),
+            ...(!usFirstYearCampaign && referralCode ? {referral_code:referralCode} : {}),
             ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'} : {}),
         },
       });
@@ -12589,21 +12618,28 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
   const plan=normalizeCheckoutPlan(req.body?.plan);
   const referralCode=normalizeReferralCode(req.body?.referralCode);
   const freeReferral=isFreeReferralCode(referralCode);
+  const usFirstYearCampaign=isUSFirstYearCampaign(referralCode);
   if(setupService && plan==='owner_test') return res.status(400).json({error:'Käyttöönottopalvelu on saatavilla vain normaalin maksullisen tilauksen yhteydessä.'});
   const checkoutCountry=checkoutCountryPolicy(req.body?.billingCountry,{state:req.body?.billingState,businessId});
   if(!checkoutCountry.ok) return res.status(422).json({error:checkoutCountry.error});
+  if(usFirstYearCampaign && (checkoutCountry.country!=='US' || plan==='owner_test')) {
+    return res.status(400).json({error:'US20YEAR is only valid for US business subscriptions on Advanced, Premium and Enterprise.'});
+  }
   if(req.body?.businessPurchase!==true) return res.status(422).json({error:'Vahvista, että tilaat palvelun yrityskäyttöön.'});
 
   if(!companyName) return res.status(400).json({ error:'Anna yrityksen nimi.' });
   if(req.body?.acceptedTerms!==true) return res.status(400).json({ error:'Hyväksy käyttöehdot ja tietosuojaseloste.' });
-  if(referralCode && !freeReferral && !planAllowsReferral(plan)) return res.status(400).json({ error:'Suosittelukoodi toimii vain kuukausitilauksessa.' });
+  if(referralCode && !freeReferral && !usFirstYearCampaign && !planAllowsReferral(plan)) return res.status(400).json({ error:'Suosittelukoodi toimii vain kuukausitilauksessa.' });
   if((!freeReferral || setupService) && !stripe) return res.status(503).json({ error:'Stripe ei ole käytettävissä.' });
 
   try { await ensureUSStripeTaxReady(checkoutCountry.country); }
   catch(e) { return res.status(503).json({error:'US-tilauksen verolaskennan vahvistus epäonnistui.'}); }
   let checkoutLineItem=null;
   if (!freeReferral || setupService) {
-    try { checkoutLineItem=freeReferral ? ownerFreeSetupCheckoutLineItem(plan) : await stripeCheckoutLineItem(plan); }
+    try {
+      checkoutLineItem=freeReferral ? ownerFreeSetupCheckoutLineItem(plan) : await stripeCheckoutLineItem(plan);
+      if(usFirstYearCampaign) await assertUSFirstYearCheckoutPrice(checkoutLineItem);
+    }
     catch(e) { console.error('Stripe checkout price validation failed:',e?.message); return res.status(503).json({error:'Tilauksen hintaa ei voitu vahvistaa. Yritä myöhemmin uudelleen.'}); }
   }
 
@@ -12653,7 +12689,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
 
   let referrer=null;
   let existingReferralReservation=false;
-  if(referralCode && !freeReferral){
+  if(referralCode && !freeReferral && !usFirstYearCampaign){
     const ref=await q(
       `SELECT id,email,status,subscription_status,subscription_plan
          FROM users
@@ -12720,6 +12756,7 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         customer_update:{ name:'auto',address:'auto' },
       } : { customer_email:user.email }),
       line_items:checkoutLineItems,
+        ...usFirstYearCheckoutDiscounts(usFirstYearCampaign),
       ...(checkoutNoticeMessage ? {custom_text:{submit:{message:checkoutNoticeMessage}}} : {}),
       subscription_data:{
         ...assistedSetupCheckoutTrial(setupService),
@@ -12735,7 +12772,8 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
           setup_service:setupService ? '1' : '0',
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
           ...(setupService ? { setup_website:setupWebsite,setup_image_token:setupImageToken,setup_greeting:setupGreeting } : {}),
-          ...(referralCode ? { referral_code:referralCode } : {}),
+          ...(usFirstYearCampaign ? {campaign_code:US_FIRST_YEAR_CAMPAIGN_CODE} : {}),
+          ...(!usFirstYearCampaign && referralCode ? {referral_code:referralCode} : {}),
           ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'} : {}),
         },
       },
@@ -12756,7 +12794,8 @@ app.post('/api/app/workspaces/checkout', auth, ownerOnly, async (req,res) => {
         setup_service:setupService ? '1' : '0',
             ...(setupService ? {setup_billing_mode:'after_handover'} : {}),
         ...(setupService ? { setup_website:setupWebsite,setup_image_token:setupImageToken,setup_greeting:setupGreeting } : {}),
-        ...(referralCode ? { referral_code:referralCode } : {}),
+        ...(usFirstYearCampaign ? {campaign_code:US_FIRST_YEAR_CAMPAIGN_CODE} : {}),
+          ...(!usFirstYearCampaign && referralCode ? {referral_code:referralCode} : {}),
           ...(freeReferral && setupService ? {owner_promo_zero_recurring:'1',owner_promo_zero_setup:'1'} : {}),
       },
     });
