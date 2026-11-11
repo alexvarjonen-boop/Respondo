@@ -21,6 +21,19 @@
     const form=make('form','rx-instant-demo-form');
     const field=make('input','rx-instant-demo-input');field.type='url';field.required=true;
     field.maxLength=260;field.placeholder='https://company.example';
+    // A share link carries ONLY the public website URL and language.
+    // Never persist a private tenant knowledge base or visitor details.
+    const shared=new URLSearchParams(location.search);
+    const candidate=String(shared.get('website')||'').trim();
+    const shareable=(()=>{
+      if(candidate.length<9||candidate.length>260)return false;
+      try{
+        const url=new URL(candidate);
+        return ['https:','http:'].includes(url.protocol)&&!url.username&&!url.password&&
+          !/^(?:localhost|127\.|10\.|192\.168\.|0\.|169\.254\.|\[?::1\]?)/i.test(url.hostname);
+      }catch{return false;}
+    })();
+    if(shareable)field.value=candidate;
     field.setAttribute('aria-label',t('Verkkosivun osoite','Webbadress','Website URL'));
     const button=make('button','rx-instant-demo-submit',t('Esikatsele','Förhandsgranska','Preview'));button.type='submit';
     form.append(field,button);
@@ -91,7 +104,32 @@
           prompts.appendChild(choice);
         });
         demo.append(prompts,liveQuestion,liveAnswer);
-        result.replaceChildren(heading,demo,note,link);
+        const share=new URL('/assistant',location.origin);
+        share.searchParams.set('lang',lang());
+        share.searchParams.set('website',source.href);
+        share.searchParams.set('preview','1');
+        const sharePanel=make('div','rx-instant-demo-share');
+        const copy=make('button','rx-instant-demo-submit',t(
+          'Kopioi esittelylinkki','Kopiera demolänk','Copy demo link'));
+        copy.type='button';
+        const shareLink=make('a','rx-instant-demo-visit',t(
+          'Avaa jaettava esikatselu','Öppna delbar förhandsvisning','Open shareable preview'));
+        shareLink.href=share.href;shareLink.rel='noopener noreferrer';shareLink.target='_blank';
+        copy.addEventListener('click',async()=>{
+          try{
+            if(!navigator.clipboard?.writeText)throw Error('Unavailable');
+            await navigator.clipboard.writeText(share.href);
+            copy.textContent=t('Kopioitu','Kopierad','Copied');
+          }catch{
+            // Browsers without Clipboard permission still get a selectable URL.
+            const fallback=make('input','rx-instant-demo-input');
+            fallback.readOnly=true;fallback.value=share.href;
+            fallback.setAttribute('aria-label',t('Jaettava esittelylinkki','Delbar demolänk','Shareable demo link'));
+            sharePanel.appendChild(fallback);fallback.focus();fallback.select();
+          }
+        });
+        sharePanel.append(copy,shareLink);
+        result.replaceChildren(heading,demo,note,link,sharePanel);
         selectDemo(0);
       }catch{
         result.replaceChildren(make('p','rx-instant-demo-error',t(
@@ -101,6 +139,10 @@
     });
     panel.append(title,explanation,form,result);
     content.appendChild(panel);
+    // Only an explicit, public demo link requests the metadata preview.
+    // The existing backend rate limit and SSRF-safe fetch still apply.
+    if(shareable&&shared.get('preview')==='1')
+      queueMicrotask(()=>{if(panel.isConnected)form.requestSubmit();});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});
   else mount();
