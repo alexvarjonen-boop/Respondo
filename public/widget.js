@@ -1239,7 +1239,9 @@
         word('Seuraava','Nästa','Next');
     }
     back.addEventListener('click',()=>{if(!sending)show(Math.max(0,active-1));});
-    next.addEventListener('click',()=>{if(!sending)box.requestSubmit();});
+    // Each wizard step validates only its visible controls; native requestSubmit
+    // would otherwise block on required inputs in later hidden steps.
+    next.addEventListener('click',()=>{if(!sending)box.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});
     box.addEventListener('submit',async event=>{
       event.preventDefault();
       if(sending)return;
