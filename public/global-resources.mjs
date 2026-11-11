@@ -702,6 +702,20 @@ guides['/guides/respondo-setup-integrations-privacy'].en.sections.push([
   'After submitting a quote, appointment or callback request in chat, a customer may receive a private link that expires after at most 30 days. It shows only the handling status and lets the customer add information while the request is open. Personal and contact details are not displayed in the public status view. Processed does not mean a confirmed price, booking or payment. The company can see the follow-up information in its Actions dashboard.'
 ]);
 
+// AI Lead Qualification: rules-based priority marks urgency in customer words only.
+guides['/guides/respondo-setup-integrations-privacy'].fi.sections.push([
+  'Kiireellisten asiakaspyyntöjen tunnistaminen',
+  'Respondo voi nostaa Toiminnot-näkymässä esiin kiireellisen tarjous-, ajanvaraus- tai yhteydenottopyynnön, kun asiakas kirjoittaa selkeän kiireellisyyttä ilmaisevan sanan. Tunnistus perustuu asiakkaan omiin sanoihin, ei arvioituun ostotodennäköisyyteen. Esimerkiksi “ei kiirettä” ei saa nostaa pyyntöä kiireelliseksi. Yritys käsittelee pyynnöt itse eikä kiireellisyysmerkintä automaattisesti vahvista ajanvarausta, maksua tai tarjousta.'
+]);
+guides['/guides/respondo-setup-integrations-privacy'].sv.sections.push([
+  'Hitta brådskande kundförfrågningar',
+  'Respondo kan lyfta fram uttryckligen brådskande offert-, tids- och kontaktförfrågningar i företagets ärendevy. Klassificeringen bygger bara på kundens egna formuleringar, inte på uppskattad sannolikhet att köpa. Ett uttryck som “inte bråttom” ska inte klassas som brådskande. Företaget fattar själv beslut; märkningen bekräftar inte automatiskt bokningar, betalningar eller offerter.'
+]);
+guides['/guides/respondo-setup-integrations-privacy'].en.sections.push([
+  'Spot explicitly urgent customer requests',
+  'Respondo can highlight quote, appointment and contact requests marked urgent by the customer’s own wording. This is a transparent, first-party rule, not a prediction of purchase likelihood. Phrases such as “not urgent” should not trigger the flag. Employees review the requests; a priority flag never automatically confirms a booking, payment or quote.'
+]);
+
 // Distinct educational resources belong in the existing footer-linked Guides library,
 // not the homepage. Preserve existing guide URLs and add only useful new topics.
 // 2026-11-03: public, factual walkthrough of the authenticated 12-part
