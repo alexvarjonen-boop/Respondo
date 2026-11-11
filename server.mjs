@@ -17220,7 +17220,13 @@ app.post('/api/public/:slug/action-request', publicChatLimiter, async (req, res)
       approvalRequired: type==='booking' && serviceManualReview,
       paymentAvailable,
       checkoutUrl,
-      customerMessage: serviceManualReview
+      customerMessage: procedureSubmission
+        ? (actionLang==='fi'
+          ? 'Pyyntösi on tallennettu yrityksen käsiteltäväksi. Hinta, saatavuus ja varaus vahvistetaan erikseen.'
+          : actionLang==='sv'
+            ? 'Din förfrågan har sparats för företagets granskning. Pris, tillgänglighet och bokning bekräftas separat.'
+            : 'Your enquiry has been saved for company review. Price, availability and booking must be confirmed separately.')
+        : serviceManualReview
         ? (actionLang==='en'
           ? 'Your appointment request was received. The team must confirm the job duration, staffing and time before it becomes a booking.'
           : actionLang==='sv'
