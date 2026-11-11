@@ -688,6 +688,20 @@ guides['/guides/ai-chatbot-pricing'].en.sections.push([
   'When a business configures a base price, unit price, minimum price and tax rate, Respondo can calculate an amount using the quantity entered. Invalid, non-finite and unreasonably large quantities are rejected, as are invalid pricing settings. Without a business-approved pricing rule, the bot should not invent a price. Processing a quote request, confirming an appointment and collecting payment are separate actions.'
 ]);
 
+// Customer Portal: this is a request status view, never a booking, quote acceptance or payment confirmation.
+guides['/guides/respondo-setup-integrations-privacy'].fi.sections.push([
+  'Asiakkaan turvallinen pyyntölinkki',
+  'Kun asiakas lähettää chatissa tarjous-, ajanvaraus- tai yhteydenottopyynnön, hänelle voidaan näyttää yksityinen seurantalinkki. Linkki on voimassa enintään 30 päivää. Se näyttää ainoastaan käsittelytilan ja sallii lisätietojen antamisen avoimeen pyyntöön. Henkilö- ja yhteystietoja ei näytetä julkisessa seurantanäkymässä. Käsitelty-tila ei vahvista hintaa, varausta tai maksua. Yritys näkee asiakkaan täydennyksen omassa Toiminnot-näkymässään.'
+]);
+guides['/guides/respondo-setup-integrations-privacy'].sv.sections.push([
+  'Privat uppföljningslänk för kunden',
+  'Efter en offertförfrågan, tidsförfrågan eller kontaktförfrågan i chatten kan kunden få en privat uppföljningslänk som gäller i högst 30 dagar. Där visas bara handläggningsstatus och kunden kan komplettera ett öppet ärende. Person- och kontaktuppgifter visas inte offentligt. Statusen behandlad innebär inte att pris, bokning eller betalning har bekräftats. Företaget ser kompletteringen i sin egen ärendevy.'
+]);
+guides['/guides/respondo-setup-integrations-privacy'].en.sections.push([
+  'Private customer request tracking',
+  'After submitting a quote, appointment or callback request in chat, a customer may receive a private link that expires after at most 30 days. It shows only the handling status and lets the customer add information while the request is open. Personal and contact details are not displayed in the public status view. Processed does not mean a confirmed price, booking or payment. The company can see the follow-up information in its Actions dashboard.'
+]);
+
 // Distinct educational resources belong in the existing footer-linked Guides library,
 // not the homepage. Preserve existing guide URLs and add only useful new topics.
 // 2026-11-03: public, factual walkthrough of the authenticated 12-part
