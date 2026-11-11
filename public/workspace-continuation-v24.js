@@ -100,7 +100,12 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     for(const id of ['crm-integration','native-mail-connections','meta-native-connections',
       'business-integrations','commerce-integration','stripe-connect']){
       const pane=shell.querySelector('#'+id);
-      if(pane?.hidden)pane.dataset.respondoPlanLocked='yes';
+      // Provider-gated panels start hidden while readiness is checked.
+      // This is NOT evidence that the subscribed customer lacks access.
+      // Only the actual plan entitlement may lock those panels.
+      if(pane?.dataset.respondoProviderGated==='yes'){
+        if(pane.dataset.respondoPlanAllowed!=='yes')pane.dataset.respondoPlanLocked='yes';
+      }else if(pane?.hidden)pane.dataset.respondoPlanLocked='yes';
     }
   }
   const allSections=[...shell.querySelectorAll('.dashboard-view-section')].filter(node=>!workspace.contains(node));
@@ -214,7 +219,8 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
       // would make the next navigation mistake them for plan-locked panels.
       if(activePlaceholder?.parentNode){
         activePanel.style.removeProperty('display');
-        activePanel.hidden=false;
+        activePanel.hidden=activePanel.dataset.respondoProviderGated==='yes' &&
+          activePanel.dataset.respondoConnectorAvailable!=='yes';
         activePlaceholder.replaceWith(activePanel);
       }else{
         activePanel.style.setProperty('display','none','important');
@@ -230,6 +236,10 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     const target=storage.querySelector('#'+id);
     if(!target)return false;
     if(target.dataset.respondoPlanLocked==='yes')return false;
+    // An allowed plan is not sufficient: hidden OAuth/Meta panels are
+    // unavailable until the live provider prerequisite check succeeds.
+    if(target.dataset.respondoProviderGated==='yes' &&
+       target.dataset.respondoConnectorAvailable!=='yes')return false;
     // Enterprise-only integration panels stay locked on lower plans.
     if(target.parentElement?.id==='actions2' && target.hidden)return false;
     if(target.parentElement!==storage){
@@ -425,6 +435,33 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     automation:'actions2',install:'install',integrations:'native-operations',
     profile:'workspaces',billing:'billing'
   };
+  // Do not show connector tabs simply because the server rendered their
+  // forms. The configured, tenant-accessible provider probe must succeed.
+  const moduleTabAvailable=id=>{
+    const target=storage.querySelector('#'+id);
+    if(!target || target.dataset.respondoPlanLocked==='yes')return false;
+    if(target.dataset.respondoProviderGated==='yes')
+      return target.dataset.respondoConnectorAvailable==='yes';
+    return true;
+  };
+  // Gmail/Meta status resolves asynchronously after the workspace appears.
+  // Refresh only the available tab buttons; never interrupt the current form.
+  function refreshProviderTabs(){
+    if(selected!=='integrations')return;
+    const header=workspace.querySelector('.rs-module-tabs');
+    if(!header)return;
+    const visible=tabs.integrations.filter(([id])=>moduleTabAvailable(id));
+    const previous=[...header.querySelectorAll('[data-workspace-tab]')].map(b=>b.dataset.workspaceTab).join('|');
+    if(previous===visible.map(([id])=>id).join('|'))return;
+    header.replaceChildren();
+    for(const [id,label] of visible){
+      const button=document.createElement('button');
+      button.type='button';button.dataset.workspaceTab=id;button.textContent=label;
+      button.classList.toggle('active',id===currentTab);
+      button.setAttribute('aria-pressed',String(id===currentTab));
+      header.appendChild(button);
+    }
+  }
   let currentTab=null;
   function showModuleTab(id){
     restoreImportedReview();
@@ -434,14 +471,20 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     container.replaceChildren();
     workspace.classList.toggle('rs-knowledge-collapsed',id==='knowledge');
     if(!showPanel(id)){
-      const locked=storage.querySelector('#'+id)?.dataset.respondoPlanLocked==='yes';
+      const target=storage.querySelector('#'+id);
+      const locked=target?.dataset.respondoPlanLocked==='yes';
+      const notConfigured=target?.dataset.respondoProviderGated==='yes' && !locked;
       callout(
         locked
           ?translate('Ominaisuus ei ole käytettävissä','Funktionen är inte tillgänglig','Feature unavailable')
-          :translate('Ei vielä tietoja','Inga uppgifter ännu','Nothing here yet'),
+          :notConfigured
+            ?translate('Yhteyttä ei ole vielä käytettävissä','Anslutningen är inte tillgänglig ännu','Connection not available yet')
+            :translate('Ei vielä tietoja','Inga uppgifter ännu','Nothing here yet'),
         locked
           ?translate('Tämä toiminto vaatii Enterprise-käyttöoikeuden. Tarkista työtilan paketti laskutuksesta.','Den här funktionen kräver Enterprise-behörighet. Kontrollera arbetsytans abonnemang under Fakturering.','This feature requires Enterprise access. Check the workspace plan under Billing.')
-          :translate('Tämä osio on tyhjä.','Det här avsnittet är tomt.','This section is empty.'),
+          :notConfigured
+            ?translate('Palveluntarjoajan asetukset tai yhteyden tarkistus puuttuvat. Tarkista saatavilla olevat yhteydet Respondon työkalujen kautta.','Leverantörsinställningar eller anslutningskontroll saknas. Kontrollera tillgängliga anslutningar i Respondo-verktygen.','The provider registration or readiness check is not complete. View available connections in Respondo tools.')
+            :translate('Tämä osio on tyhjä.','Det här avsnittet är tomt.','This section is empty.'),
         false
       );
     }else if(id==='knowledge'){
@@ -508,7 +551,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
     }else if(['settings','setup'].includes(selected)){
       showSettings(selected);
     }else if(primary[selected]){
-      const available=tabs[selected]?.filter(([id])=>storage.querySelector('#'+id));
+      const available=tabs[selected]?.filter(([id])=>moduleTabAvailable(id));
       if(available?.length){
         const header=document.createElement('nav');
         header.className='rs-module-tabs';
@@ -568,6 +611,7 @@ export function activateRespondoWorkspace({demo=false, view='bot'}={}) {
 
   if(!workspace.dataset.initialized){
     workspace.dataset.initialized='1';
+    workspace.addEventListener('respondo:provider-availability',refreshProviderTabs);
     workspace.addEventListener('click',(event)=>{
       const review=event.target.closest?.('[data-workspace-import-review]');
       if(review && workspace.contains(review)){
