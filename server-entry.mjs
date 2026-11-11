@@ -15,6 +15,7 @@ import { ensureBookingNoticesSchema } from './booking-customer-notices.mjs';
 import { ensureWebsiteRefreshReviewSchema } from './website-refresh-review.mjs';
 import { ensureNativeTaskSchema } from './native-taskboard.mjs';
 import { ensureGrowthOperationsSchema } from './respondo-growth-ops.mjs';
+import { ensureManualVersionSchema } from './respondo-manual-versions.mjs';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const ssl = isProduction ? { rejectUnauthorized: false } : undefined;
@@ -131,6 +132,7 @@ async function initializeCrmConnectors() {
     await ensureWebsiteRefreshReviewSchema(pool);
     await ensureNativeTaskSchema(pool);
     await ensureGrowthOperationsSchema(pool);
+    await ensureManualVersionSchema(pool);
   } finally {await pool.end();}
 }
 await initializeCrmConnectors();

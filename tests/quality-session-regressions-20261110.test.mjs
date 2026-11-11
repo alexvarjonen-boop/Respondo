@@ -22,9 +22,9 @@ test('widget restores only bounded same-visitor same-tab conversations',()=>{
 test('critical website assets are checked during production smoke',()=>{
   const code=read('scripts/production-smoke.mjs');
   for(const path of ['/widget.js','/instant-website-demo-ui.js',
-    '/integration-onboarding.js','/owner-growth-center.js',
-    '/owner-growth-center.css','/operational-clarity.css','/respondo-symbol.svg']) assert.ok(code.includes(path));
-  assert.match(code,/checkedAssets:\s*7/);
+    '/integration-onboarding.js','/owner-growth-center.js','/reliability-console.js',
+    '/owner-growth-center.css','/operational-clarity.css','/reliability-console.css','/respondo-symbol.svg']) assert.ok(code.includes(path));
+  assert.match(code,/checkedAssets:\s*9/);
 });
 
 test('FI, SV, EN tentative appointments are not silently presented as confirmed availability',()=>{
