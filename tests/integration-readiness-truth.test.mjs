@@ -89,14 +89,17 @@ test('unconfigured provider panels stay hidden until authenticated server readin
  assert.match(app,/id="native-mail-connections" data-respondo-provider-gated="yes"[^>]* hidden>/);
  assert.match(app,/id="meta-native-connections" data-respondo-provider-gated="yes"[^>]* hidden>/);
  assert.match(app,/const enabled=permitted&&\(nativeMailOauthReady\.gmail\|\|nativeMailOauthReady\.outlook\)/);
- assert.match(app,/if\(mailPanel\)mailPanel\.hidden=!enabled/);
+ assert.match(app,/setProviderPanelAvailability\(mailPanel,enabled\)/);
+ assert.match(app,/panel\.dataset\.respondoConnectorAvailable=next/);
+ assert.match(app,/panel\.hidden=ready!==true/);
  assert.match(app,/data-native-mail-connect="outlook" hidden/);
  assert.match(app,/data-native-mail-connect="gmail" hidden/);
  assert.match(app,/data-native-mail-sync="outlook" hidden/);
  assert.match(app,/data-native-mail-sync="gmail" hidden/);
  assert.match(app,/el\.hidden=!ready\|\|!saved/);
  assert.match(app,/const readiness=await api\('\/api\/app\/integrations\/readiness'\)/);
- assert.match(app,/if\(!ready\)\{if\(panel\)panel\.hidden=true;return;\}/);
+ assert.match(app,/if\(!ready\)\{setProviderPanelAvailability\(panel,false\);return;\}/);
+ assert.match(app,/setProviderPanelAvailability\(panel,panel\?\.dataset\.respondoPlanAllowed==='yes'\)/);
 });
 test('onboarding only offers integrations that pass server prerequisites and plan access',()=>{
  assert.match(ui,/function providerVisible\(item\)/);
