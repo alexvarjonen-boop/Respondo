@@ -13,10 +13,9 @@ test('Advanced, Premium and Enterprise have strictly tier-scoped feature lists',
   const a=publicPlanFeatureCount('advanced');
   const p=publicPlanFeatureCount('premium');
   const e=publicPlanFeatureCount('enterprise');
-  assert.ok(a>0 && a<p && p<e,'Plans must expand capabilities in order');
+  assert.ok(a>0 && a===p && p<e,'Only verified features are counted: Premium increases seats, Enterprise adds quote capabilities');
   assert.equal(e,FEATURE_COUNT,'Only Enterprise includes every currently documented feature');
-  assert.ok(!featureAvailableForPublicPlan('advanced','booking',8),'Google Calendar is not Advanced');
-  assert.ok(featureAvailableForPublicPlan('premium','booking',8),'Google Calendar is Premium');
+  assert.ok(FEATURE_GROUPS.find(g=>g.key==='booking').items.every(x=>!x.join(' ').includes('Google Calendar')),'Unverified Google Calendar operations are not advertised');
   assert.ok(!featureAvailableForPublicPlan('premium','quotes',11),'Automatic quote calculation requires Enterprise');
   assert.ok(featureAvailableForPublicPlan('enterprise','quotes',11),'Enterprise includes quote calculations');
   assert.ok(!featureAvailableForPublicPlan('advanced','quotes',15),'Stripe quote payments are not Advanced');
