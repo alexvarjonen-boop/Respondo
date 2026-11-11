@@ -115,6 +115,7 @@
     for(const kind of kinds){
       const b=button(t[kind],'button');
       b.dataset.tab=kind;b.setAttribute('role','tab');
+      if(kind==='zendesk'){b.hidden=true;b.style.display='none';}
       b.addEventListener('click',()=>{
         active=kind;
         if(kind==='tasks'&&!taskboard)loadTasks();
@@ -419,8 +420,18 @@
 
     const ZENDESK='/api/app/helpdesk/zendesk';
     async function loadZendesk(){
-      try{zendesk=await request('GET',ZENDESK);feedback.textContent='';render();}
-      catch(error){feedback.textContent=error.message||t.error;}
+      const tab=tabs.querySelector('[data-tab="zendesk"]');
+      try{
+        zendesk=await request('GET',ZENDESK);
+        const available=zendesk?.configured===true;
+        if(tab){tab.hidden=!available;tab.style.display=available?'':'none';}
+        if(!available&&active==='zendesk')active='contacts';
+        feedback.textContent='';render();
+      }catch(error){
+        if(tab){tab.hidden=true;tab.style.display='none';}
+        if(active==='zendesk')active='contacts';
+        feedback.textContent=error.message||t.error;render();
+      }
     }
     async function sendZendesk(method,path,payload){
       if(busy)return;
@@ -1353,14 +1364,19 @@
       if(active!=='rules')content.appendChild(formFor(active));
       if(active==='docs'){
         const cloud=el('div','native-cloud-docs');
-        const google=button(t.cloudGoogle,'button');
+        // Cloud controls are not displayed before server configuration and
+        // per-company authorization have been checked.
+        const cloudButton=(button)=>{button.hidden=true;button.style.display='none';return button;};
+        const cloudShow=(element,visible)=>{element.hidden=!visible;element.style.display=visible?'':'none';};
+        const google=cloudButton(button(t.cloudGoogle,'button'));
         google.addEventListener('click',()=>{
           window.location.assign('/api/app/native/cloud/google_drive/start');
         });
         const site=el('input','native-cloud-site');
+        cloudButton(site);
         site.type='text';site.placeholder=t.cloudSite;site.maxLength=180;
         site.setAttribute('aria-label',t.cloudSite);
-        const microsoft=button(t.cloudMicrosoft,'button');
+        const microsoft=cloudButton(button(t.cloudMicrosoft,'button'));
         microsoft.addEventListener('click',()=>{
           if(!/^[A-Za-z0-9.,_-]{3,180}$/.test(site.value)||site.value.includes('..')){
             feedback.textContent=t.cloudSite;return;
@@ -1369,9 +1385,11 @@
             encodeURIComponent(site.value));
         });
         cloud.append(google,site,microsoft);
+        const fileListButtons=new Map();
         for(const [provider,label] of [
           ['google_drive',t.cloudListGoogle],['sharepoint',t.cloudListSharePoint]]){
-          const list=button(label,'button');
+          const list=cloudButton(button(label,'button'));
+          fileListButtons.set(provider,list);
           const loadPage=async(cursor=null)=>{
             if(busy)return;busy=true;feedback.textContent=t.loading;
             try{
@@ -1409,6 +1427,26 @@
           cloud.appendChild(list);
         }
         content.appendChild(cloud);
+        const getReadiness=async(url)=>{
+          const response=await fetch(url,{credentials:'same-origin',cache:'no-store',headers:{accept:'application/json'}});
+          if(!response.ok)throw Error('connection status unavailable');
+          return response.json();
+        };
+        void Promise.all([
+          getReadiness('/api/app/integrations/readiness'),
+          getReadiness('/api/app/native/cloud/status')
+        ]).then(([readiness,account])=>{
+          if(!cloud.isConnected)return;
+          const allowed=readiness?.prerequisites||{};
+          const saved=Array.isArray(account?.data?.connections)?account.data.connections:[];
+          const connected=(provider)=>saved.some(x=>x.provider===provider&&x.connected===true);
+          cloudShow(google,allowed.google_drive===true);
+          cloudShow(site,allowed.sharepoint===true);
+          cloudShow(microsoft,allowed.sharepoint===true);
+          for(const [provider,element] of fileListButtons){
+            cloudShow(element,allowed[provider]===true&&connected(provider));
+          }
+        }).catch(()=>{});
       }
       if(active==='contacts'){
         const preview=button(t.crmImportPreview,'button');
@@ -1507,7 +1545,7 @@
       content.appendChild(list);
     }
     load();
-    if(active==='zendesk')loadZendesk();
+    loadZendesk();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
   else init();
