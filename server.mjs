@@ -10621,6 +10621,46 @@ app.get('/api/app/native/conversions',auth,ownerOnly,subscribed,nativeEndpoint(
 app.get('/api/app/native/growth',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>growthOverview(pool,id)));
 
+/* Public procedure read requires a valid, site-origin-authorized widget token. */
+app.get('/api/public/:slug/procedures',publicChatLimiter,async(req,res)=>{
+  res.set('Cache-Control','no-store');
+  try{
+    const r=await publicTenant(req.params.slug);
+    if(!r.rowCount)return res.status(404).json({error:'Company not found'});
+    const tenant=r.rows[0];
+    if(!validWidgetToken(req,tenant,req.query?.widgetToken))
+      return res.status(403).json({error:'Widget authorization required'});
+    setWidgetCors(req,res);
+    const all=await tenantProcedures(pool,tenant.id);
+    return res.json({procedures:all.filter(x=>x.enabled)});
+  }catch(error){console.error('Public procedures unavailable',error?.name||'error');
+    return res.status(503).json({error:'Procedures unavailable'});}
+});
+/* Secret request links grant status-only access, never personal details.
+   The capability is in the URL fragment, not server access logs. */
+app.post('/api/public/request-status',publicChatLimiter,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  res.set('X-Robots-Tag','noindex, nofollow');
+  try{
+    const status=await requestTrackingStatus(pool,String(req.body?.token||''));
+    if(!status)return res.status(404).json({error:'Request link unavailable or expired'});
+    return res.json({ok:true,data:status});
+  }catch(error){console.error('Tracking lookup failed',error?.name||'error');
+    return res.status(503).json({error:'Tracking unavailable'});}
+});
+app.post('/api/public/request-status/note',publicChatLimiter,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  try{
+    const result=await addCustomerTrackingNote(pool,
+      String(req.body?.token||''),req.body?.note);
+    return res.json({ok:true,data:result});
+  }catch(error){
+    if(error instanceof TypeError)return res.status(422).json({error:error.message});
+    console.error('Tracking update failed',error?.name||'error');
+    return res.status(503).json({error:'Update unavailable'});
+  }
+});
+
 /* Owner-controlled procedures, triage, quote breakdown and multi-workspace agency readout. */
 app.get('/api/app/native/customer-ops',auth,ownerOnly,subscribed,nativeEndpoint(
   id=>customerOpsOverview(pool,id)));
