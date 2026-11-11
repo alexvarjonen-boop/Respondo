@@ -106,3 +106,15 @@ test('onboarding only offers integrations that pass server prerequisites and pla
  assert.match(ui,/providers\.filter\(x=>x\.group===chosenGroup && providerVisible\(x\)\)/);
  assert.match(ui,/providerVisible\(item\) && !\['restricted','notConfigured','unverified'\]/);
 });
+
+test('native operations never show Zendesk or cloud connection controls before readiness',()=>{
+ const native=read('public/native-ai-operations.js');
+ assert.match(native,/if\(kind==='zendesk'\)\{b\.hidden=true;b\.style\.display='none';\}/);
+ assert.match(native,/const available=zendesk\?\.configured===true/);
+ assert.match(native,/if\(!available&&active==='zendesk'\)active='contacts'/);
+ assert.match(native,/const cloudButton=\(button\)=>\{button\.hidden=true;button\.style\.display='none'/);
+ assert.match(native,/getReadiness\('\/api\/app\/integrations\/readiness'\)/);
+ assert.match(native,/getReadiness\('\/api\/app\/native\/cloud\/status'\)/);
+ assert.match(native,/cloudShow\(microsoft,allowed\.sharepoint===true\)/);
+ assert.match(native,/cloudShow\(element,allowed\[provider\]===true&&connected\(provider\)\)/);
+});
