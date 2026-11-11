@@ -44,8 +44,8 @@ test('all templates compile into safe multi-action disabled workflows',()=>{
 test('cannot select template without approval or inject custom actions',()=>{
  assert.throws(()=>workflowFromTemplate({templateId:'booking_request'}),/approval/);
  assert.throws(()=>workflowFromTemplate({templateId:'transfer_all_money',approved:true}),/Unknown/);
- assert.throws(()=>workflowFromTemplate({templateId:'booking_request',approved:true,actions:[{type:'charge'}]})
-   .actions.some(x=>x.type==='charge'));
+ assert.equal(workflowFromTemplate({templateId:'booking_request',approved:true,actions:[{type:'charge'}]})
+   .actions.some(x=>x.type==='charge'),false);
  const created=workflowFromTemplate({templateId:'booking_request',approved:true});
  assert.equal(created.actions.some(x=>x.type==='charge'),false);
  assert.ok(created.actions.some(x=>x.type==='request_approval'&&x.purpose==='booking'));
