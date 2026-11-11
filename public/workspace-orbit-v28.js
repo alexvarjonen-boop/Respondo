@@ -21,6 +21,13 @@ export function nextWorkspaceOrbitChapter(current,direction,count){
   if(direction>0)return (current+1)%count;
   return current===0?-1:current-1;
 }
+// Cycling is an interaction for the sphere's standalone bot entry only.
+// When a real account module (especially the long Profile form) is open,
+// downward scrolling must continue through its content rather than jump back
+// to the sphere. The mobile pinned sphere still keeps one-gesture navigation.
+export function allowWorkspaceOrbitWrap(activeView){
+  return activeView==='bot';
+}
 const icon=(key)=>'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">'+glyphs[key]+'</svg>';
 
 /* Respondo OS reuses the home orbit's light-field layers and exact scroll-film variables.
@@ -234,9 +241,11 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
   function onPageScroll(){
     schedule();
     const y=window.scrollY;
-    // A trackpad may deliver non-cancelable momentum events. Catch any
-    // crossing of the orbit's last edge before it can expose page bottom.
+    // Only cycle the introductory sphere when no account module is open.
+    // In Profile, Billing, Answers and all other account pages, allow
+    // ordinary document scrolling through their full forms and controls.
     if(!pinned && !phone() && !navigationFreeze && orb.isConnected && !workspace.hidden &&
+       allowWorkspaceOrbitWrap(workspace.dataset.currentView) &&
        performance.now()>=wrapCooldownUntil && currentIndex===sections.length-1 && y>previousY+1){
       const rect=orb.getBoundingClientRect();
       if(rect.top<0 && rect.bottom<=window.innerHeight+8 && rect.bottom>-window.innerHeight*.35){
@@ -282,11 +291,12 @@ export function createWorkspaceOrbit({workspace,navigate,translate}) {
     if(Math.abs(event.deltaY)<8)return;
     const now=performance.now();
     if(!pinned && !phone()){
-      if(now<wrapCooldownUntil){
+      if(now<wrapCooldownUntil && allowWorkspaceOrbitWrap(workspace.dataset.currentView)){
         if(event.cancelable)event.preventDefault();
         return;
       }
-      if(event.deltaY>0 && !navigationFreeze && currentIndex===sections.length-1){
+      if(event.deltaY>0 && !navigationFreeze && currentIndex===sections.length-1 &&
+         allowWorkspaceOrbitWrap(workspace.dataset.currentView)){
         const rect=orb.getBoundingClientRect();
         const range=Math.max(1,rect.height-Math.max(1,window.innerHeight));
         const progress=clamp(-rect.top/range,0,1);
