@@ -5049,6 +5049,7 @@ async function dashboard(options = {}) {
                 <div class="action-request-top">
                   <div>
                     <span class="action-kind">${esc(actionTypeLabel(x.request_type))}</span>
+                    ${x.payload?.qualification?.tier === 'urgent' ? `<span class="action-state">${appText('Kiireellinen','Brådskande','Urgent')}</span>` : ''}
                     <small>${new Date(x.created_at).toLocaleString(appLocale(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} · ${esc(x.source_channel || 'website')}</small>
                   </div>
                   <span class="action-state">${esc(actionStatusLabel(x.status))}</span>
