@@ -112,3 +112,13 @@ test('current legal update retains paid setup and deferred recurring billing in 
   const privacy=policy.tietosuoja.sections.map(x=>x.heading[0]);
   assert.deepEqual(privacy.map(x=>Number(x.match(/^\d+/)?.[0])).filter(Boolean),Array.from({length:17},(_,i)=>i+1));
 });
+
+test('public feature directory and pricing do not advertise unverified third-party connections',()=>{
+  const catalog=FEATURE_GROUPS.map(group=>[...group.title,...group.intro,...group.items.flat()]).flat().join('\n');
+  assert.doesNotMatch(catalog,/Google Calendar|Google Kalender|Outlook|Gmail|WhatsApp|Instagram|Zendesk|SharePoint/i);
+  const pricing=app.slice(app.indexOf('function pricingSection()'),app.indexOf('function pricingSection()')+16000);
+  assert.doesNotMatch(pricing,/Google Calendar|Google Kalender|broader integrations|fler integrationer|laajemmat integraatiot|Shopify- ja WooCommerce-tilaushaku/);
+  assert.match(pricing,/Tiimikäyttö 10 asiakaspalvelijalle/);
+  assert.match(pricing,/Turvallinen automaattinen tarjouslaskuri/);
+  assert.equal(FEATURE_COUNT,140);
+});
