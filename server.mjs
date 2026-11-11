@@ -13334,6 +13334,17 @@ app.get('/api/app/agent-dashboard', auth, agentOrOwner, async (req,res) => {
   } catch(e){ return res.status(500).json({ error:'Asiakaspalvelunäkymää ei voitu ladata.' }); }
 });
 
+// Owner-only read-only Customer Portal preview. This is not an action request,
+// does not create a link, and cannot collect or change customer information.
+app.get('/api/app/customer-portal-preview',auth,ownerOnly,subscribed,(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  res.set('Referrer-Policy','no-referrer');
+  res.set('X-Robots-Tag','noindex, nofollow, noarchive');
+  res.set('Content-Security-Policy',"default-src 'none'; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'");
+  const lang=['fi','sv','en'].includes(req.query.lang)?req.query.lang:'en';
+  return res.type('html').send(renderRequestStatusPage({lang,type:'quote',status:'in_progress',preview:true}));
+});
+
 app.get('/api/app/dashboard', auth, ownerOnly, subscribed, async (req, res) => {
   try {
     const t = await q('SELECT * FROM tenants WHERE owner_user_id=$1 AND id=active_tenant_for_user($1)', [req.user.sub]);
