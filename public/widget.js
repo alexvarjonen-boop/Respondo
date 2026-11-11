@@ -379,6 +379,20 @@
       @media(max-width:520px){
         .panel{width:calc(100vw - 12px);height:calc(100dvh - 72px);border-radius:20px}
       }
+    
+      .product-compare-toggle{display:block;width:100%;padding:9px 12px;margin:5px 0 11px;border-radius:10px;border:1px solid #aeb6c6;background:#f6f7fa;color:#151923;font-weight:650;cursor:pointer}
+      .product-compare-toggle[aria-pressed="true"]{background:#202b3c;color:#fff;border-color:#202b3c}
+      .product-compare-panel{padding:11px;border-radius:12px;background:#f1f3f7;border:1px solid #d4dae5;color:#1b2431;display:grid;gap:10px;font-size:12px;line-height:1.5}
+      .product-compare-row{border-top:1px solid #cbd3df;padding-top:8px;display:grid;gap:3px}
+      .product-compare-row strong,.product-compare-row span{font-size:12px;color:#101723}
+      .customer-procedure-box fieldset[hidden]{display:none!important}
+      .customer-procedure-box fieldset{margin:10px 0;border:0;padding:0}
+      .customer-procedure-box .procedure-controls{display:flex;gap:8px;justify-content:space-between;margin-top:9px}
+      .customer-procedure-box .procedure-progress{font-size:11px;color:#506178;margin:8px 0}
+      .customer-procedure-box .action-ok a{color:#174ea6;font-weight:700;display:inline-block;margin-top:10px}
+      .customer-procedure-box label{line-height:1.4}
+      .customer-procedure-box textarea{width:100%;border-radius:10px;padding:10px;min-height:72px;resize:vertical}
+
     </style>
     <div class="wrap experience-${experienceMode}">
       <section class="panel" id="respondo-chat-panel" aria-label="${t('Respondon asiakaspalvelu', 'RESPONDO AI customer service')}">
