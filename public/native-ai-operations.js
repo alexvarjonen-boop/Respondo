@@ -1222,7 +1222,7 @@
           [label('Lähetetyt pyynnöt','Skickade förfrågningar','Submitted requests'),funnel.submittedRequests],
           [label('Vahvistetut varaukset','Bekräftade bokningar','Confirmed bookings'),funnel.confirmedBookings],
           [label('Voitetuksi merkityt CRM-asiakkuudet','CRM-kontakter markerade vunna','CRM contacts marked won'),funnel.crmWonContacts||0],
-          [label('Maksullisiksi vahvistetut tarjoukset','Verifierat betalda offerter','Verified paid quotes'),funnel.verifiedPayments],
+          [label('Maksetuiksi merkityt tarjoukset (ei vahvistettu)','Offerter markerade som betalda (ej verifierat)','Quotes marked paid (unverified)'),funnel.reportedPaidQuotes||0],
         ])qualityMetric(funnelMetrics,name,value);
         content.appendChild(funnelMetrics);
         content.appendChild(el('p','native-disclaimer',label(

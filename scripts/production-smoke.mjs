@@ -33,6 +33,33 @@ export function discoverPublicLinks(html, origin, maximum = 45) {
   return [...found];
 }
 
+
+/**
+ * Read-only capability smoke: each owner-only API must exist and reject a
+ * visitor without a session. This does NOT test authenticated button flows.
+ */
+export async function checkProtectedCapabilityRoutes(origin = defaultOrigin, fetcher = fetch) {
+  const routes = [
+    '/api/app/native/reliability',
+    '/api/app/native/quality',
+    '/api/app/import-website/auto-refresh',
+    '/api/app/import-website/refresh-reviews',
+    '/api/app/native/free-workflows',
+    '/api/app/native/conversions',
+  ];
+  for (const path of routes) {
+    const response = await fetcher(new URL(path, origin), {
+      method: 'GET',
+      redirect: 'manual',
+      signal: AbortSignal.timeout(15_000),
+      headers: { 'user-agent': 'Respondo-Capability-Smoke/1.0' },
+    });
+    assert.equal(response.status, 401, 'Protected API missing or accessible anonymously: ' + path);
+    assert.match(response.headers.get('content-type') || '', /application\/json/i, path + ' must return JSON');
+  }
+  return { tested: routes.length, authenticatedWorkflowsVerified: false };
+}
+
 export async function checkSite(origin = defaultOrigin) {
   const { body: healthText } = await request(origin, '/api/health');
   const health = JSON.parse(healthText);
@@ -40,6 +67,7 @@ export async function checkSite(origin = defaultOrigin) {
   assert.equal(health.database, true, 'Health endpoint must verify its database connection');
 
   await request(origin, '/api/public/config');
+  const capabilitySmoke = await checkProtectedCapabilityRoutes(origin);
   // A healthy homepage is insufficient if the embeddable bot or onboarding
   // scripts return a 404 or an HTML error document after deployment.
   const criticalAssets=['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js','/owner-growth-center.js','/reliability-console.js'];
@@ -116,7 +144,7 @@ export async function checkSite(origin = defaultOrigin) {
   assert.match(robots, /^Sitemap:\s*https:\/\//im, 'robots.txt must disclose the sitemap URL');
   await request(origin, '/__respondo_smoke_unknown_route_404', { expectedStatus: 404 });
 
-  return { ok: true, checkedPages: publicPages.length + linkedPages.length, checkedLanguages: 3, checkedAssets: 9 };
+  return { ok: true, checkedPages: publicPages.length + linkedPages.length, checkedLanguages: 3, checkedAssets: 9, protectedCapabilityRoutes: capabilitySmoke.tested, authenticatedWorkflowsVerified: false };
 }
 
 async function run() {

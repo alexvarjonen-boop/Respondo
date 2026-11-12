@@ -21,6 +21,11 @@ function fakeResponse(url, init, { unhealthy = false, brokenSwedish = false, ape
   } else if (u.pathname === '/api/public/config') {
     contentType = 'application/json';
     body = '{}';
+  } else if (u.pathname.startsWith('/api/app/native/') ||
+             u.pathname.startsWith('/api/app/import-website/')) {
+    status = 401;
+    contentType = 'application/json';
+    body = JSON.stringify({ error: 'Authentication required' });
   } else if (['/widget.js','/instant-website-demo-ui.js','/integration-onboarding.js','/owner-growth-center.js','/reliability-console.js'].includes(u.pathname)) {
     contentType = brokenAsset && u.pathname === '/widget.js' ? 'text/html' : 'application/javascript';
     body = '/* smoke test JavaScript */' + 'function ready(){return true;}\n'.repeat(22);

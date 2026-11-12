@@ -67,7 +67,12 @@ export function knowledgeAuditSummary(rows=[]){
   partialSample:rows.length>=1500,notModelAccuracy:true,automaticChanges:0};
 }
 
-export function screenRecordedAnswers(rows=[]){
+export function screenRecordedAnswers(rows=[],approvedFacts=[]){
+ // Price comparisons are review signals, never conclusive error findings.
+ // Only compare against currently approved sources cited by that reply.
+ const sources=new Map((Array.isArray(approvedFacts)?approvedFacts:[])
+  .filter(item=>item?.approved===true&&valid(item.id))
+  .map(item=>[item.id.toLowerCase(),item]));
  const records=(Array.isArray(rows)?rows:[]).slice(0,300);
  const counts=new Map(),reviews=[];let examined=0,flagged=0;
  for(const row of records){
@@ -80,6 +85,14 @@ export function screenRecordedAnswers(rows=[]){
   });}catch{continue;}
   examined++;
   const flags=result.flags.filter(x=>x.code!=='possible_wrong_language');
+  const cited=(Array.isArray(row.source_ids)?row.source_ids:[]).slice(0,30)
+   .filter(valid).map(id=>sources.get(String(id).toLowerCase())).filter(Boolean);
+  const answerPrices=money(row.answer);
+  const approvedPrices=[...new Set(cited.flatMap(item=>money(item.answer)))];
+  if(answerPrices.length&&approvedPrices.length&&
+     answerPrices.some(value=>!approvedPrices.some(approved=>Math.abs(value-approved)<0.005))){
+   flags.push({code:'possible_cited_price_mismatch',severity:'review'});
+  }
   if(flags.length){flagged++;
    if(reviews.length<30)reviews.push({conversationId:valid(row.id)?row.id:null,
     question:redactQualityQuestion(row.question),
@@ -152,7 +165,7 @@ export async function reliabilityOverview(db,tenantId){
  ]);
  const summary=knowledgeAuditSummary(knowledge.rows||[]);
  const cases=conversations.rows||[];
- return {knowledge:summary,testLab:screenRecordedAnswers(cases),
+ return {knowledge:summary,testLab:screenRecordedAnswers(cases,knowledge.rows||[]),
   journey:groupedJourney(cases),alerts:ownerAlerts({
    overdue:tasks.rows?.[0]?.overdue||0,approvals:approvals.rows?.[0]?.pending||0,
    uncertain:cases.filter(x=>x.handoff===true||Number(x.confidence)<0.45).length,
