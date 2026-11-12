@@ -668,6 +668,39 @@
           (item.priority==='urgent'?t.tasksUrgent:t.tasksNormal)+
           (isLate?' · '+t.tasksLate:''));
         if(item.details)card.appendChild(el('p','native-record-meta',item.details));
+        // Review uploaded visitor photos only through an authenticated owner
+        // request. The public widget never reveals a direct image URL.
+        const photoId=String(item.source_id||'');
+        if(item.source_kind==='action'&&item.task_key==='action_review'&&
+          item.details?.endsWith('Photo ID: '+photoId)&&idGuard(photoId)){
+          const view=button(languageLabel('Näytä asiakkaan kuva','Visa kundbild','View visitor photo'),'button');
+          view.addEventListener('click',async()=>{
+            view.disabled=true;
+            try{
+              const response=await fetch('/api/app/visitor-photo/'+encodeURIComponent(photoId),{
+                credentials:'same-origin',cache:'no-store'
+              });
+              if(!response.ok)throw new Error('expired or unavailable');
+              const type=response.headers.get('content-type')?.split(';')[0]||'';
+              if(!['image/png','image/jpeg','image/webp'].includes(type))
+                throw new Error('unsupported photo');
+              const photoUrl=URL.createObjectURL(await response.blob());
+              const image=el('img','native-review-photo');
+              image.src=photoUrl;
+              image.alt=languageLabel('Asiakkaan lähettämä kuva','Bild från kunden','Photo from customer');
+              image.style.cssText='display:block;max-width:100%;max-height:320px;object-fit:contain;border-radius:12px;margin-top:12px';
+              image.addEventListener('load',()=>URL.revokeObjectURL(photoUrl),{once:true});
+              image.addEventListener('error',()=>URL.revokeObjectURL(photoUrl),{once:true});
+              card.appendChild(image);view.remove();
+            }catch{
+              feedback.textContent=languageLabel('Kuvaa ei voitu näyttää tai sen 7 päivän säilytysaika päättyi.',
+                'Bilden kunde inte visas eller dess lagringstid på 7 dagar har gått ut.',
+                'The photo could not be loaded or its 7-day retention period has ended.');
+              view.disabled=false;
+            }
+          });
+          card.appendChild(view);
+        }
         const change=button(item.status==='open'?t.tasksDone:t.tasksReopen,'button');
         change.addEventListener('click',()=>{
           if(!idGuard(item.id))return;
