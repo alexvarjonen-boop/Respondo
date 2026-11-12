@@ -100,6 +100,6 @@ export async function scheduledQualityOverview(db,tenantId){
   FROM public.respondo_scheduled_quality_runs WHERE tenant_id=$1
   ORDER BY period_day DESC LIMIT 14`,[tenantId]);
  return {runs:r.rows||[],schedule:'once_per_day_per_active_company',
-  botEngineExecuted:true,accuracyVerified:false,
+  botEngineExecuted:(r.rows||[]).some(x=>x.status==='complete'&&x.executed>0),accuracyVerified:false,
   automatedFactCorrections:false,customerMessagesSent:false};
 }
