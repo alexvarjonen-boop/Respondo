@@ -1,11 +1,11 @@
 // First-party, tenant-scoped operational conversions. No cookies, client
 // fingerprints, personal contact details, guessed revenue or third-party APIs.
 const boundedDays=value=>[7,30,90].includes(Number(value))?Number(value):30;
-const asCount=value=>Math.max(0,Number(value)||0);
+const asCount=value=>{const n=Number(value);return Number.isSafeInteger(n)&&n>=0?n:0;};
 const cleanChannel=value=>String(value||'website').slice(0,40);
 const kinds=['quote','booking','callback','order_status'];
 export function summarizeConversionData(channels=[],requests=[],leads=[],crmStages=[]) {
-  let visitors=0,converters=0,submissions=0,confirmedBookings=0,verifiedPayments=0;
+  let visitors=0,converters=0,submissions=0,confirmedBookings=0,reportedPaidQuotes=0;
   const byChannel=(Array.isArray(channels)?channels:[]).map(row=>{
     const engaged=asCount(row.engaged),converted=Math.min(engaged,asCount(row.converted));
     visitors+=engaged;converters+=converted;
@@ -19,7 +19,8 @@ export function summarizeConversionData(channels=[],requests=[],leads=[],crmStag
     if(kinds.includes(type))byAction[type]+=total;
     submissions+=total;
     confirmedBookings+=asCount(row.confirmed_bookings);
-    verifiedPayments+=asCount(row.paid_quotes);
+    // The action's result.paid flag is not a Stripe/payment-ledger receipt.
+    reportedPaidQuotes+=asCount(row.paid_quotes);
   }
   const leadsReceived=(Array.isArray(leads)?leads:[]).reduce((n,row)=>n+asCount(row.total),0);
   // These are explicit CRM stage changes entered by the company, not payment
@@ -33,7 +34,8 @@ export function summarizeConversionData(channels=[],requests=[],leads=[],crmStag
     actionSubmittingVisitors:converters,
     actionRatePercent:visitors?Math.round(100*converters/visitors):null,
     submittedRequests:submissions,
-    confirmedBookings,verifiedPayments,leadsReceived,crmWonContacts:stages.won,crmStages:stages,byAction,byChannel,
+    confirmedBookings,verifiedPayments:0,reportedPaidQuotes,
+    paymentsLedgerVerified:false,leadsReceived,crmWonContacts:stages.won,crmStages:stages,byAction,byChannel,
     attribution:'Only visitors with a recorded conversation and a submitted request sharing the same channel and visitor reference are included in the rate.',
     salesConversionVerified:false,revenueAttributed:false,
   };
@@ -75,6 +77,7 @@ export async function conversionOverview(db,tenantId,days=30) {
            )
          )
        )::int AS confirmed_bookings,
+       -- Self-reported paid status, never independent settlement proof.
        COUNT(*) FILTER(WHERE a.request_type='quote' AND a.result->>'paid'='true')::int AS paid_quotes
       FROM action_requests a
       WHERE a.tenant_id=$1 AND a.created_at >= NOW()-($2::int * INTERVAL '1 day')
