@@ -253,6 +253,51 @@
         finally{showExamples.disabled=false;}
       });
       content.appendChild(examplePanel);
+      // Local description parser supports only existing internal workflow
+      // actions. A suggestion never activates or executes automatically.
+      const assisted=el('section','native-guided-workflows');
+      assisted.appendChild(el('h4','native-subtitle',languageLabel(
+        'Kuvaile työnkulku','Beskriv ett arbetsflöde','Describe a workflow')));
+      assisted.appendChild(el('p','native-disclaimer',languageLabel(
+        'Esimerkki: Kun tarjouspyyntö saapuu, luo tehtävä ja pyydä hyväksyntä. Vain sisäiset tehtävät, tiketit ja hyväksynnät.',
+        'Exempel: När en offertförfrågan kommer, skapa en uppgift och begär godkännande.',
+        'Example: When a quote request arrives, create a task and request approval. Only internal actions are supported.')));
+      const description=el('textarea','native-input');description.rows=3;
+      description.maxLength=600;description.setAttribute('aria-label',languageLabel(
+        'Työnkulun kuvaus','Beskrivning av arbetsflödet','Workflow description'));
+      assisted.appendChild(description);
+      const preview=button(languageLabel(
+        'Ehdota turvallista työnkulkua','Föreslå säkert arbetsflöde','Preview a safe workflow'),'button');
+      const suggestions=el('div','native-guided-workflow-content');
+      assisted.append(preview,suggestions);
+      preview.addEventListener('click',async()=>{
+        if(busy)return;
+        busy=true;preview.disabled=true;
+        try{
+          const idea=await request('POST',FLOWS+'/describe',{description:description.value});
+          suggestions.replaceChildren();
+          const rule=idea.rule;
+          const card=recordCard(rule.name,rule.trigger+' · '+
+            rule.actions.map(a=>a.type+(a.purpose?' ('+a.purpose+')':'')).join(' + '));
+          card.appendChild(el('p','native-disclaimer',languageLabel(
+            'Tämä on sääntöihin perustuva ehdotus, ei vapaa AI-toiminto. Ulkoisia viestejä tai maksuja ei lähetetä.',
+            'Detta är ett regelbaserat förslag, inte en fri AI-åtgärd. Inga externa meddelanden eller betalningar.',
+            'This is a rule-based suggestion, not an unrestricted AI action. No external messages or payments.')));
+          const create=button(languageLabel(
+            'Tallenna pois käytöstä','Spara inaktiverat','Save disabled'),'button');
+          create.addEventListener('click',()=>{
+            if(!window.confirm(languageLabel(
+              'Luodaanko juuri näytetty sääntö pois käytöstä? Aktivointi tehdään erikseen.',
+              'Spara det visade arbetsflödet inaktiverat? Aktivering görs separat.',
+              'Save this reviewed workflow disabled? Activation is separate.')))return;
+            flowAction('POST',FLOWS,rule);
+          });
+          card.appendChild(create);suggestions.appendChild(card);
+          feedback.textContent='';
+        }catch(error){suggestions.replaceChildren();feedback.textContent=error.message||t.error;}
+        finally{busy=false;preview.disabled=false;}
+      });
+      content.appendChild(assisted);
       const form=el('form','native-form');
       const nameLabel=el('label','native-label',t.flowsNew);
       const name=el('input','native-input');name.required=true;name.minLength=3;
