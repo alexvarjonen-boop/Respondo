@@ -79,8 +79,8 @@ import {ensureFreeWorkflowSchema,freeWorkflowOverview,createFreeWorkflow,
  setFreeWorkflowEnabled,markFreeWorkflowApproval,previewFreeWorkflow} from './respondo-free-actions.mjs';
 import {freeQualityScenarios,runFreeQualitySuite} from './respondo-free-quality-gates.mjs';
 import {reliabilityOverview} from './respondo-reliability-lab.mjs';
-import {claimScheduledQualityRun,executeScheduledQualityRun,scheduledQualityOverview} from './respondo-scheduled-quality.mjs';
-import {ownerSalesOverview,recordOwnerSale,retractOwnerSale} from './respondo-sales-evidence.mjs';
+import {ensureScheduledQualitySchema,claimScheduledQualityRun,executeScheduledQualityRun,scheduledQualityOverview} from './respondo-scheduled-quality.mjs';
+import {ensureOwnerSalesSchema,ownerSalesOverview,recordOwnerSale,retractOwnerSale} from './respondo-sales-evidence.mjs';
 import {capabilityHealthOverview} from './respondo-capability-health.mjs';
 import {listManualVersions,createManualVersion,restoreManualVersion} from './respondo-manual-versions.mjs';
 import {workflowTemplateCatalog,workflowFromTemplate} from './respondo-workflow-templates.mjs';
@@ -18595,6 +18595,8 @@ async function runScheduledQualityCycle(){
 async function start() {
   try {
     await withRuntimeSchemaLock(() => ensureRuntimeSchema());
+    await withRuntimeSchemaLock(() => ensureScheduledQualitySchema(pool));
+    await withRuntimeSchemaLock(() => ensureOwnerSalesSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMailBridgeSchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMailDeliverySchema(pool));
     await withRuntimeSchemaLock(() => ensureNativeMetaOutboundSchema(pool));
