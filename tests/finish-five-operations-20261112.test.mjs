@@ -129,7 +129,7 @@ test('owner sale SQL binds request, owner and tenant and never counts subscripti
  assert.doesNotMatch(calls[0][0],/stripe_subscription|subscription_price/);
 });
 
-test('retraction retains an audit trail and cannot affect another owner's sales',async()=>{
+test('retraction retains an audit trail and cannot affect a different owner account',async()=>{
  const calls=[];
  const db={query:async(sql,args)=>{calls.push([sql,args]);return {rows:[{id:other,status:'retracted'}]}}};
  assert.equal((await retractOwnerSale(db,company,other,owner,'Refunded invoice')).status,'retracted');
