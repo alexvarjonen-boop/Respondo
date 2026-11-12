@@ -16,6 +16,8 @@ import { ensureWebsiteRefreshReviewSchema } from './website-refresh-review.mjs';
 import { ensureNativeTaskSchema } from './native-taskboard.mjs';
 import { ensureGrowthOperationsSchema } from './respondo-growth-ops.mjs';
 import { ensureManualVersionSchema } from './respondo-manual-versions.mjs';
+import {ensureScheduledQualitySchema} from './respondo-scheduled-quality.mjs';
+import {ensureOwnerSalesSchema} from './respondo-sales-evidence.mjs';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const ssl = isProduction ? { rejectUnauthorized: false } : undefined;
@@ -133,6 +135,8 @@ async function initializeCrmConnectors() {
     await ensureNativeTaskSchema(pool);
     await ensureGrowthOperationsSchema(pool);
     await ensureManualVersionSchema(pool);
+    await ensureScheduledQualitySchema(pool);
+    await ensureOwnerSalesSchema(pool);
   } finally {await pool.end();}
 }
 await initializeCrmConnectors();
