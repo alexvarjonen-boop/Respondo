@@ -202,7 +202,9 @@ test('booking slot and action request commit atomically and Calendar creation is
   const block=server.slice(bookingStart,bookingEnd);
   const markBooked=block.indexOf("UPDATE booking_slots SET status='booked'");
   const insertAction=block.indexOf('INSERT INTO action_requests');
-  const commit=block.indexOf("client.query('COMMIT')");
+  // Locate the commit *after* the booking action insert, not a different
+  // transaction introduced earlier in the service for another feature.
+  const commit=block.indexOf("client.query('COMMIT')",insertAction);
   assert.ok(markBooked>=0 && insertAction>markBooked && commit>insertAction,
     'slot booking and action request must commit in the same transaction');
   assert.match(server, /calendarEventId=\('respondo' \+ String\(actionRequest\.id/);
