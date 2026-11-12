@@ -46,6 +46,9 @@ export async function checkProtectedCapabilityRoutes(origin = defaultOrigin, fet
     '/api/app/import-website/refresh-reviews',
     '/api/app/native/free-workflows',
     '/api/app/native/conversions',
+    '/api/app/native/quality/scheduled',
+    '/api/app/native/capability-health',
+    '/api/app/native/sales',
   ];
   for (const path of routes) {
     const response = await fetcher(new URL(path, origin), {
