@@ -14,6 +14,7 @@ import { ensureConversationFeedbackSchema } from './conversation-feedback.mjs';
 import { ensureBookingNoticesSchema } from './booking-customer-notices.mjs';
 import { ensureWebsiteRefreshReviewSchema } from './website-refresh-review.mjs';
 import { ensureNativeTaskSchema } from './native-taskboard.mjs';
+import {ensureVisitorPhotoSchema} from './verified-photo-assist.mjs';
 import { ensureGrowthOperationsSchema } from './respondo-growth-ops.mjs';
 import { ensureManualVersionSchema } from './respondo-manual-versions.mjs';
 
@@ -131,6 +132,7 @@ async function initializeCrmConnectors() {
     await ensureBookingNoticesSchema(pool);
     await ensureWebsiteRefreshReviewSchema(pool);
     await ensureNativeTaskSchema(pool);
+    await ensureVisitorPhotoSchema(pool);
     await ensureGrowthOperationsSchema(pool);
     await ensureManualVersionSchema(pool);
   } finally {await pool.end();}
