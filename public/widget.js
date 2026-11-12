@@ -258,6 +258,10 @@
       .composer .voice-btn{display:grid;place-items:center;background:#f2f3f5;color:#27272a;border:1px solid #e3e4e8;font-size:16px}
       .composer .voice-btn svg{width:19px;height:19px;display:block}
       .composer .voice-btn[hidden]{display:none}
+      .composer .photo-btn{display:grid;place-items:center;background:#f2f3f5;color:#27272a;border:1px solid #e3e4e8;font-size:19px;font-weight:500}
+      .composer .photo-btn[hidden],.composer .photo-file[hidden]{display:none!important}
+      .composer .photo-btn:disabled{opacity:.45;cursor:not-allowed}
+      .msg.user .visitor-photo-thumb{display:block;max-width:160px;max-height:140px;width:auto;height:auto;border-radius:10px;margin-top:8px;object-fit:contain}
       .composer .voice-btn.listening{background:#fee8e5;color:#af241a;border-color:#edada6;box-shadow:0 0 0 3px rgba(175,36,26,.08)}
       .composer button:focus-visible{outline:3px solid var(--bot-accent,#111113);outline-offset:2px}
       .voice-note{padding:0 14px 8px;background:#fff;color:#5d6470;font-size:11px;line-height:1.35}
@@ -414,6 +418,8 @@
         <form class="composer" id="form">
           <input id="input" autocomplete="off" placeholder="${t('Kysy jotain…', 'Type your question…')}" aria-label="${t('Kirjoita kysymyksesi', 'Type your question')}">
           <select id="voiceLang" class="voice-lang" aria-label="${t('Puheen kieli', 'Speech language')}" title="${t('Puheen kieli', 'Speech language')}" hidden><option value="fi">FI</option><option value="sv">SV</option><option value="en">EN</option></select>
+          <input type="file" id="photoFile" class="photo-file" accept="image/jpeg,image/png,image/webp" hidden aria-label="${experienceText('Valitse kuva','Välj bild','Choose a photo')}">
+          <button type="button" id="photoBtn" class="photo-btn" hidden aria-label="${experienceText('Lähetä kuva tarkistettavaksi','Skicka bild för granskning','Send photo for review')}" title="${experienceText('Lähetä kuva tarkistettavaksi','Skicka bild för granskning','Send photo for review')}">＋</button>
           <button type="button" id="voiceBtn" class="voice-btn" hidden aria-pressed="false" aria-label="${t('Puhu kysymyksesi', 'Speak your question')}" title="${t('Puhu kysymyksesi', 'Speak your question')}"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8"/></svg></button>
           <button type="submit" aria-label="${t('Lähetä', 'Send')}">→</button>
         </form>
@@ -454,6 +460,83 @@
   const form = $('#form');
   const input = $('#input');
   const voiceButton = $('#voiceBtn');
+  const photoButton = $('#photoBtn');
+  const photoFile = $('#photoFile');
+  let photoUploading = false;
+  photoButton.addEventListener('click',()=>{
+    if(!ready||photoUploading||input.disabled)return;
+    photoFile.click();
+  });
+  photoFile.addEventListener('change',async()=>{
+    const file=photoFile.files?.[0];
+    photoFile.value='';
+    if(!file||!ready||photoUploading)return;
+    const L=(fi,sv,en)=>experienceText(fi,sv,en);
+    if(!['image/jpeg','image/png','image/webp'].includes(String(file.type||'').toLowerCase())||file.size>8*1024*1024){
+      showVoiceNote(L('Valitse alle 8 Mt:n kuvatiedosto.','Välj en bild under 8 MB.','Choose an image under 8 MB.'));
+      return;
+    }
+    if(!window.confirm(L(
+      'Lähetetäänkö kuva yrityksen tarkistettavaksi? Kuva säilytetään Respondossa enintään 7 päivää. Älä lähetä arkaluonteisia tietoja.',
+      'Vill du skicka bilden till företaget för granskning? Den sparas i högst 7 dagar i Respondo. Skicka inte känsliga uppgifter.',
+      'Share the photo with the company for review? It is stored in Respondo for up to 7 days. Do not upload sensitive information.'
+    )))return;
+    photoUploading=true;photoButton.disabled=true;input.disabled=true;
+    if(!voiceButton.hidden)voiceButton.disabled=true;
+    try{
+      const imageData=await new Promise((resolve,reject)=>{
+        const source=new Image();
+        const url=URL.createObjectURL(file);
+        source.onload=()=>{
+          URL.revokeObjectURL(url);
+          try{
+            const scale=Math.min(1,1440/Math.max(source.naturalWidth,source.naturalHeight));
+            if(!source.naturalWidth||!source.naturalHeight||source.naturalWidth*source.naturalHeight>24_000_000)throw new Error('Invalid photo size');
+            const canvas=document.createElement('canvas');
+            canvas.width=Math.round(source.naturalWidth*scale);
+            canvas.height=Math.round(source.naturalHeight*scale);
+            const context=canvas.getContext('2d',{alpha:false});
+            if(!context)throw new Error('Image processing unavailable');
+            context.drawImage(source,0,0,canvas.width,canvas.height);
+            const data=canvas.toDataURL('image/jpeg',0.76);
+            if(data.length>2_450_000)throw new Error('Image too large');
+            resolve(data);
+          }catch(error){reject(error);}
+        };
+        source.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Unreadable photo'));};
+        source.src=url;
+      });
+      const caption=input.value.trim().slice(0,600);
+      addMessage(L('Kuva liitetty','Bild bifogad','Photo attached')+(caption?': '+caption:''),'user');
+      const preview=chat.lastElementChild;
+      const image=document.createElement('img');
+      image.className='visitor-photo-thumb';image.src=imageData;
+      image.alt=L('Lähettämäsi kuva','Din inskickade bild','Your submitted photo');
+      preview?.appendChild(image);
+      input.value='';
+      const pending=addMessage(L('Kuva lähetetään tarkistettavaksi…','Bilden skickas för granskning…','Sending photo for review…'));
+      const res=await fetch(serviceOrigin+'/api/public/'+encodeURIComponent(company)+'/chat-photo',{
+        method:'POST',mode:'cors',credentials:'omit',
+        headers:{'Content-Type':'text/plain;charset=UTF-8'},
+        body:JSON.stringify({widgetToken:token,visitorRef,lang:widgetLang,question:caption,
+          image:imageData,consent:true})
+      });
+      const result=await res.json().catch(()=>({}));
+      if(!res.ok)throw new Error(result.error||'Photo upload failed');
+      pending.textContent=String(result.answer||L('Kuva vastaanotettu.','Bilden mottagen.','Photo received.'));
+      rememberSessionMessage(pending.textContent,'bot');
+      showVoiceNote('');
+    }catch(error){
+      addMessage(L('Kuvan lähetys epäonnistui. Kokeile uudelleen.',
+        'Det gick inte att skicka bilden. Försök igen.',
+        'Could not send the photo. Please try again.'));
+      showVoiceNote('');
+    }finally{
+      photoUploading=false;photoButton.disabled=false;input.disabled=false;
+      if(!voiceButton.hidden)voiceButton.disabled=false;
+      chat.scrollTop=chat.scrollHeight;
+    }
+  });
   const voiceLanguageSelect = $('#voiceLang');
   const voiceNote = $('#voiceNote');
   const name = $('#name');
@@ -1549,6 +1632,7 @@
       token = data.token;
       ready = true;
       humanHelp.hidden=false;
+      photoButton.hidden=false;
       if (!voiceButton.hidden) voiceButton.disabled = false;
       const botDisplayName=String(data.name||'RESPONDO AI').trim().slice(0,100)||'RESPONDO AI';
       const botAvatar=widgetAvatarMarkup(data.avatar || 'robot-1');
@@ -1569,6 +1653,7 @@
       startLivePolling();
     } catch {
       ready = false;
+      photoButton.hidden=true;
       launcher.classList.remove('ready');
       launcherSubtitle.textContent = t('Ei käytettävissä', 'Unavailable');
       status.textContent = t('Chat ei ole käytössä tällä verkkosivulla.', 'The widget is not active on this website.');

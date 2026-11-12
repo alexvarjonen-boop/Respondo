@@ -1,5 +1,7 @@
 import { approvedProductLinkAnswer } from './product-url-match.mjs';
 import { approvedCurrentPageProduct } from './page-context-product.mjs';
+import { compareApprovedProducts } from './verified-product-comparison.mjs';
+import { decodeVisitorPhoto, visitorPhotoMessage, validPhotoId, ensureVisitorPhotoSchema, saveVisitorPhoto, purgeExpiredVisitorPhotos } from './verified-photo-assist.mjs';
 import { isPhysicalClubProduct, groundedBudgetProductAnswer } from './product-budget.mjs';
 import { customerPasswordValid } from './public/customer-password-policy.mjs';
 import {mainioCustomerVoice,mainioServiceAreaVoice} from './mainio-customer-voice.mjs';
@@ -55,6 +57,7 @@ import {autoRefreshEligible,acceptedRefreshCandidate} from './website-refresh-po
 import { auditImportedKnowledge } from './knowledge-readiness.mjs';
 import { runImportedAnswerSmokeTests } from './answer-smoke-tests.mjs';
 import { guardCitedNumericFacts } from './runtime-numeric-evidence-guard.mjs';
+import { guardUnverifiedPromises } from './unverified-promise-guard.mjs';
 import { verifyRetailAnswer } from './product-reply-integrity.mjs';
 import { qualityCenterOverview, createQualityReview, updateQualityReview } from './respondo-quality-center.mjs';
 import {growthOverview,growthSettings,saveGrowthSettings,recordWidgetActivation,previewGrowthQuote,growthWeeklyReport,isPostcodeQuestion,serviceAreaResponse,suggestedGreeting,customerIntentStage,compareAnswerDrafts} from './respondo-growth-ops.mjs';
@@ -91,7 +94,7 @@ import {ensureFreeWebhookSchema,freeWebhookStatus,rotateFreeWebhookKey,
  disableFreeWebhookKey,acceptFreeWebhookEvent} from './respondo-free-webhooks.mjs';
 import {normalizeCloudFileList,readApprovedCloudText} from './native-cloud-documents.mjs';
 import { nativeCalendarOverview, decideNativeBooking, cancelNativeBooking } from './native-calendar.mjs';
-import { nativeTaskOverview,createManualNativeTask,updateNativeTask } from './native-taskboard.mjs';
+import { nativeTaskOverview,createManualNativeTask,updateNativeTask,enqueueNativeTask } from './native-taskboard.mjs';
 import { suggestBotRemediations } from './bot-remediations.mjs';
 import { compareBotValidationRuns } from './bot-retest-comparison.mjs';
 import express from 'express';
@@ -7785,6 +7788,8 @@ async function generateRuleGroundedAnswer({ companyName, rows, message, history 
 
   // Customer-shared URLs are resolved only against this tenant's approved products.
   // An unknown merchant URL never triggers an untrusted live fetch or a guessed price.
+  const comparison=compareApprovedProducts(rows,originalMessage,responseLang,parseProductKnowledgeRow);
+  if(comparison)return comparison;
   const linkedProduct=approvedProductLinkAnswer(rows,originalMessage,responseLang,parseProductKnowledgeRow);
   if(linkedProduct) return linkedProduct;
   // A visitor asking about "this product" on a merchant page can resolve
@@ -8559,7 +8564,9 @@ async function generateGroundedAnswer(args={}) {
   }
 
   const retailChecked=verifyRetailAnswer(rawResult,args.rows,message,args.lang,parseProductKnowledgeRow,requestedProductFamily,productMatchesFamily);
-  const result=guardCitedNumericFacts(retailChecked,args.rows);
+  const result=guardUnverifiedPromises(guardCitedNumericFacts(retailChecked,args.rows),{
+    question:message,lang:args.lang
+  });
   // A detected factual conflict must not be overridden by AI fallback.
   if(result!==rawResult)return result;
   if(args.disableAIFallback===true || !result?.handoff || String(result.answer||'').trim() ||
@@ -8573,7 +8580,9 @@ async function generateGroundedAnswer(args={}) {
     question:original,rows:matches,
     lang:['fi','sv','en'].includes(args.lang)?args.lang:'fi'
   });
-  return guardCitedNumericFacts(verifyRetailAnswer(generated||result,args.rows,message,args.lang,parseProductKnowledgeRow,requestedProductFamily,productMatchesFamily),args.rows);
+  return guardUnverifiedPromises(guardCitedNumericFacts(verifyRetailAnswer(generated||result,
+    args.rows,message,args.lang,parseProductKnowledgeRow,requestedProductFamily,
+    productMatchesFamily),args.rows),{question:message,lang:args.lang});
 }
 
 function cookies(req) {
@@ -9446,6 +9455,9 @@ function rejectCrossSiteAuthenticatedMutation(req,res,next) {
 
 app.use(rejectCrossSiteAuthenticatedMutation);
 
+// The widget sends a resized photo as a text/plain JSON envelope to avoid
+// cross-site preflight. Limit this route BEFORE the global 20 KB text parser.
+app.use('/api/public/:slug/chat-photo', express.text({type:'text/plain',limit:'2.6mb'}));
 app.use('/api/public/setup-image-upload', express.raw({
   type:['image/png','image/jpeg','image/webp'],limit:'8mb',
 }));
@@ -16237,6 +16249,100 @@ app.post('/api/public/respondo-assistant/chat', demoChatLimiter, async (req,res)
 });
 
 
+// Photos require an explicit visitor action and consent. Data is stored only
+// in this tenant's database, expires in seven days and is never public.
+const visitorPhotoLimiter=rateLimit({
+  windowMs:15*60*1000,limit:6,standardHeaders:true,legacyHeaders:false,
+  keyGenerator:req=>publicRateKey(req,'chat-photo'),
+  message:{error:'Too many images. Please try again later.'}
+});
+app.post('/api/public/:slug/chat-photo',visitorPhotoLimiter,async(req,res)=>{
+  res.set('Cache-Control','no-store');
+  let lang='fi';
+  try{
+    const raw=typeof req.body==='string'?req.body:'';
+    if(!raw||raw.length>2_500_000)return res.status(413).json({error:'Image is too large.'});
+    let body;
+    try{body=JSON.parse(raw);}catch{return res.status(400).json({error:'Invalid image request.'});}
+    if(!body||typeof body!=='object'||Array.isArray(body)||body.consent!==true)
+      return res.status(422).json({error:'Explicit image sharing consent is required.'});
+    lang=['fi','sv','en'].includes(body.lang)?body.lang:'fi';
+    const tr=await publicTenant(req.params.slug);
+    if(!tr.rowCount)return res.status(404).json({error:'Business not found.'});
+    const t=tr.rows[0];
+    if(!validWidgetToken(req,t,body.widgetToken))
+      return res.status(403).json({error:'Widget authorization required.'});
+    setWidgetCors(req,res);
+    const visitorRef=String(body.visitorRef||'').trim();
+    if(!/^[a-z0-9._:-]{8,160}$/i.test(visitorRef))
+      return res.status(422).json({error:'Invalid conversation reference.'});
+    let photo;
+    try{photo=decodeVisitorPhoto(body.image);}catch(e){
+      return res.status(422).json({error:e.message||'Unsupported image.'});
+    }
+    const question=String(body.question||'').replace(/[\x00-\x1f]/g,' ').trim().slice(0,600);
+    const thread=await getOrCreateThread(t.id,'website',visitorRef,visitorRef);
+    // OCR is optional and never runs in the user's browser or a paid cloud API.
+    // OCR does not identify objects, products, injuries or defects.
+    let ocrText='';
+    if(process.env.RESPONDO_CHAT_IMAGE_OCR_ENABLED==='true'){
+      try{ocrText=(await mediaTextFromBytes(photo.bytes,'image',{ocrEnabled:true})).slice(0,1200);}
+      catch(error){console.error('Photo OCR unavailable',error?.name||'error');}
+    }
+    // Persist the photo and owner review task in one transaction. Without
+    // both records, no successful delivery can be shown to the visitor.
+    const client=await pool.connect();
+    let photoId;
+    try{
+      await client.query('BEGIN');
+      photoId=await saveVisitorPhoto(client,{tenantId:t.id,visitorRef,photo,question,ocrText});
+      const task=await enqueueNativeTask(client,t.id,{
+        sourceKind:'action',sourceId:photoId,taskKey:'action_review',
+        title:lang==='en'?'Review visitor photo':lang==='sv'?'Granska kundbild':'Tarkista asiakkaan kuva',
+        details:(question||'Customer image attached.')+' | Photo ID: '+photoId,
+        dueHours:24,priority:'normal'
+      });
+      if(!task)throw new Error('Photo review task missing');
+      await client.query('COMMIT');
+    }catch(error){
+      await client.query('ROLLBACK').catch(()=>{});
+      if(error instanceof RangeError)return res.status(429).json({error:'Photo limit reached.'});
+      throw error;
+    }finally{client.release();}
+    const answer=visitorPhotoMessage(lang,{ocrText,reviewQueued:true});
+    if(thread){
+      await appendChatMessage({tenantId:t.id,threadId:thread.id,sourceChannel:'website',
+        externalContactId:visitorRef,visitorRef,role:'user',text:question||'[Photo attachment]',
+        metadata:{kind:'visitor_photo',photoId,photoType:photo.mimeType,expiresDays:7}});
+      await appendChatMessage({tenantId:t.id,threadId:thread.id,sourceChannel:'website',
+        externalContactId:visitorRef,visitorRef,role:'assistant',text:answer,
+        metadata:{kind:'photo_review_reply',photoId,ocrIsUnverified:true}});
+    }
+    return res.json({ok:true,answer,photoId,reviewTaskCreated:true,verified:false,
+      visionRecognition:false,ocrTextAvailable:Boolean(ocrText)});
+  }catch(error){
+    console.error('Visitor photo intake failed',error?.name||'error');
+    return res.status(503).json({error:lang==='en'?'Could not receive the photo. Please retry.':
+      lang==='sv'?'Bilden kunde inte tas emot. Försök igen.':'Kuvaa ei voitu vastaanottaa. Yritä uudelleen.'});
+  }
+});
+// Private owner view. A photo ID alone never authorizes access.
+app.get('/api/app/visitor-photo/:photoId',auth,ownerOnly,subscribed,async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  res.set('X-Content-Type-Options','nosniff');
+  if(!validPhotoId(req.params.photoId))return res.status(404).end();
+  try{
+    const rows=await q(`SELECT mime_type,photo_bytes FROM public.respondo_visitor_photos
+      WHERE id=$1 AND tenant_id=active_tenant_for_user($2) AND expires_at>NOW()`,
+      [req.params.photoId,req.user.sub]);
+    if(!rows.rowCount)return res.status(404).end();
+    res.type(rows.rows[0].mime_type).send(rows.rows[0].photo_bytes);
+  }catch(error){
+    console.error('Private visitor photo read failed',error?.name||'error');
+    return res.status(503).end();
+  }
+});
+
 app.post('/api/public/:slug/chat', publicChatLimiter, async (req, res) => {
   let requestLang = 'fi';
   try {
@@ -18669,6 +18775,22 @@ async function start() {
     checkupTimer.unref();
     const checkupStartup=setTimeout(sendDueCheckups,10000);
     checkupStartup.unref();
+    // Purge expired customer photo bytes even when nobody uploads a new photo.
+    // This runs independently of chat traffic and never exposes image content.
+    let photoPurgeBusy=false;
+    const runPhotoPurge=async()=>{
+      if(!pool||photoPurgeBusy)return;
+      photoPurgeBusy=true;
+      try{
+        await ensureVisitorPhotoSchema(pool);
+        await purgeExpiredVisitorPhotos(pool);
+      }catch(error){console.error('Visitor photo retention cleanup failed',error?.name||'error');}
+      finally{photoPurgeBusy=false;}
+    };
+    const photoPurgeTimer=setInterval(()=>void runPhotoPurge(),60*60*1000);
+    photoPurgeTimer.unref();
+    const photoPurgeStartup=setTimeout(()=>void runPhotoPurge(),5*60*1000);
+    photoPurgeStartup.unref();
     const mailPollTimer=setInterval(()=>void runNativeMailPolling(),5*60*1000);
     mailPollTimer.unref();
     const mailPollStartup=setTimeout(()=>void runNativeMailPolling(),45000);
