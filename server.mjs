@@ -16289,24 +16289,27 @@ app.post('/api/public/:slug/chat-photo',visitorPhotoLimiter,async(req,res)=>{
       try{ocrText=(await mediaTextFromBytes(photo.bytes,'image',{ocrEnabled:true})).slice(0,1200);}
       catch(error){console.error('Photo OCR unavailable',error?.name||'error');}
     }
-    await ensureVisitorPhotoSchema(pool);
+    // Persist the photo and owner review task in one transaction. Without
+    // both records, no successful delivery can be shown to the visitor.
+    const client=await pool.connect();
     let photoId;
-    try{photoId=await saveVisitorPhoto(pool,{tenantId:t.id,visitorRef,photo,question,ocrText});}
-    catch(error){
-      if(error instanceof RangeError)return res.status(429).json({error:'Photo limit reached.'});
-      throw error;
-    }
-    let queued=false;
     try{
-      await enqueueNativeTask(pool,t.id,{
+      await client.query('BEGIN');
+      photoId=await saveVisitorPhoto(client,{tenantId:t.id,visitorRef,photo,question,ocrText});
+      const task=await enqueueNativeTask(client,t.id,{
         sourceKind:'action',sourceId:photoId,taskKey:'action_review',
         title:lang==='en'?'Review visitor photo':lang==='sv'?'Granska kundbild':'Tarkista asiakkaan kuva',
         details:(question||'Customer image attached.')+' | Photo ID: '+photoId,
         dueHours:24,priority:'normal'
       });
-      queued=true;
-    }catch(error){console.error('Photo review task not queued',error?.name||'error');}
-    const answer=visitorPhotoMessage(lang,{ocrText,reviewQueued:queued});
+      if(!task)throw new Error('Photo review task missing');
+      await client.query('COMMIT');
+    }catch(error){
+      await client.query('ROLLBACK').catch(()=>{});
+      if(error instanceof RangeError)return res.status(429).json({error:'Photo limit reached.'});
+      throw error;
+    }finally{client.release();}
+    const answer=visitorPhotoMessage(lang,{ocrText,reviewQueued:true});
     if(thread){
       await appendChatMessage({tenantId:t.id,threadId:thread.id,sourceChannel:'website',
         externalContactId:visitorRef,visitorRef,role:'user',text:question||'[Photo attachment]',
@@ -16315,7 +16318,7 @@ app.post('/api/public/:slug/chat-photo',visitorPhotoLimiter,async(req,res)=>{
         externalContactId:visitorRef,visitorRef,role:'assistant',text:answer,
         metadata:{kind:'photo_review_reply',photoId,ocrIsUnverified:true}});
     }
-    return res.json({ok:true,answer,photoId,reviewTaskCreated:queued,verified:false,
+    return res.json({ok:true,answer,photoId,reviewTaskCreated:true,verified:false,
       visionRecognition:false,ocrTextAvailable:Boolean(ocrText)});
   }catch(error){
     console.error('Visitor photo intake failed',error?.name||'error');
