@@ -21,7 +21,7 @@ test('all six sensitive capability APIs reject anonymous access in live smoke',a
  const result=await checkProtectedCapabilityRoutes('https://www.respondoai.fi',anonymous);
  assert.equal(result.tested,6);
  assert.equal(result.authenticatedWorkflowsVerified,false);
- assert(seen.every(x=>x.init.method==='GET'&&x.init.redirect==='manual'));
+ assert(seen.every(x=>x.init.method==='GET'&&x.init.redirect==='follow'));
  assert(seen.some(x=>x.url==='/api/app/native/free-workflows'));
  await assert.rejects(checkProtectedCapabilityRoutes('https://www.respondoai.fi',
   async()=>({status:404,headers:{get:()=> 'application/json'}})),/Protected API missing/);
@@ -120,4 +120,26 @@ test('paid action flags remain unverified until matched with a payment ledger',(
  const ui=readFileSync(new URL('../public/native-ai-operations.js',import.meta.url),'utf8');
  assert.match(ui,/Quotes marked paid \(unverified\)/);
  assert.doesNotMatch(ui,/Verified paid quotes/);
+});
+
+
+test('protected API smoke accepts only the two branded hosts after redirect', async()=>{
+ const canonical=async(url)=>({
+  url:'https://respondoai.fi'+url.pathname,
+  status:401,
+  headers:{get:()=> 'application/json'}
+ });
+ assert.equal((await checkProtectedCapabilityRoutes('https://www.respondoai.fi',canonical)).tested,6);
+ const foreign=async(url)=>({
+  url:'https://evil.example'+url.pathname,
+  status:401,
+  headers:{get:()=> 'application/json'}
+ });
+ await assert.rejects(checkProtectedCapabilityRoutes('https://www.respondoai.fi',foreign),/Off-site/);
+ const loginPage=async()=>({
+  url:'https://respondoai.fi/login',
+  status:401,
+  headers:{get:()=> 'application/json'}
+ });
+ await assert.rejects(checkProtectedCapabilityRoutes('https://www.respondoai.fi',loginPage),/redirect path/);
 });
