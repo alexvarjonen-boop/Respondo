@@ -16,7 +16,9 @@ test('CRM wins are company-marked status, never inferred payment or revenue',()=
   assert.equal(summary.actionRatePercent,25);
   assert.equal(summary.submittedRequests,11);
   assert.equal(summary.confirmedBookings,2);
-  assert.equal(summary.verifiedPayments,1);
+  assert.equal(summary.verifiedPayments,0);
+  assert.equal(summary.reportedPaidQuotes,1);
+  assert.equal(summary.paymentsLedgerVerified,false);
   assert.equal(summary.crmWonContacts,3);
   assert.equal(summary.crmStages.qualified,4);
   assert.equal(summary.salesConversionVerified,false);
