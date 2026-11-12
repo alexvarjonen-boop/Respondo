@@ -19,7 +19,7 @@ export function compileWorkflowDescription(input={}){
  const raw=clean(input.description);
  if(raw.length<12||raw.length>600)throw new TypeError('Describe one supported workflow in 12–600 characters');
  // Fold accents so JavaScript ASCII word boundaries also work with FI/SV words.
- const folded=raw.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+ const folded=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
  if(forbidden.test(folded))throw new TypeError('External delivery, payments and booking confirmations are not supported');
  const isLead=lead.test(folded),isRequest=request.test(folded);
  if(isLead===isRequest)throw new TypeError('Specify exactly one supported trigger: new lead or customer request');
