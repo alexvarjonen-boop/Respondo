@@ -35,18 +35,30 @@ export async function stageWebsiteRefresh(db,tenantId,candidate){
     keywords=Array.isArray(candidate?.keywords)?candidate.keywords.map(x=>trim(x,65)).slice(0,18):[];
   if(!/^https?:\/\//i.test(sourceUrl)||title.length<2||answer.length<8)
     throw TypeError('Verified website candidate required');
-  const existing=await db.query(`SELECT id,answer FROM knowledge WHERE tenant_id=$1
-    AND source_type='website' AND source_url=$2 AND LOWER(title)=LOWER($3) LIMIT 1`,
+  const existing=await db.query(`SELECT id,answer,category,keywords FROM knowledge WHERE tenant_id=$1
+    AND approved=TRUE AND source_type='website' AND source_url=$2 AND LOWER(title)=LOWER($3) LIMIT 1`,
     [tenantId,sourceUrl,title]);
-  // Reverification with identical content is safe. No new facts were published.
-  if(existing.rows?.[0]?.answer===answer)return {status:'unchanged'};
+  // Only an *approved*, fully unchanged fact can be reverified without review.
+  // An unapproved record must never suppress the review queue.
+  const old=existing.rows?.[0];
+  if(old?.answer===answer && old.category===category &&
+     JSON.stringify(old.keywords||[])===JSON.stringify(keywords)){
+    await db.query(`UPDATE knowledge SET verified_at=NOW()
+      WHERE tenant_id=$1 AND id=$2 AND approved=TRUE AND source_type='website'`,
+      [tenantId,old.id]);
+    return {status:'unchanged'};
+  }
   const fp=websiteCandidateFingerprint({sourceUrl,title});
   const result=await db.query(`INSERT INTO respondo_website_refresh_reviews
     (tenant_id,fingerprint,source_url,title,category,answer,keywords,status)
     VALUES($1,$2,$3,$4,$5,$6,$7::jsonb,'pending')
     ON CONFLICT(tenant_id,fingerprint) DO UPDATE SET
       category=EXCLUDED.category,answer=EXCLUDED.answer,keywords=EXCLUDED.keywords,
-      status=CASE WHEN respondo_website_refresh_reviews.answer=EXCLUDED.answer
+      status=CASE WHEN respondo_website_refresh_reviews.status='approved'
+        THEN 'pending'
+        WHEN respondo_website_refresh_reviews.answer=EXCLUDED.answer
+         AND respondo_website_refresh_reviews.category=EXCLUDED.category
+         AND respondo_website_refresh_reviews.keywords=EXCLUDED.keywords
         THEN respondo_website_refresh_reviews.status ELSE 'pending' END,
       updated_at=NOW()
     RETURNING id,status`,[tenantId,fp,sourceUrl,title,category,answer,JSON.stringify(keywords)]);
