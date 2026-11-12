@@ -98,6 +98,10 @@ export async function ensureVisitorPhotoSchema(db){
   for(const item of roles.rows||[])if(['anon','authenticated','service_role'].includes(item.rolname))
     await db.query('REVOKE ALL PRIVILEGES ON TABLE public.respondo_visitor_photos FROM '+item.rolname);
 }
+export async function purgeExpiredVisitorPhotos(db){
+  const deleted=await db.query('DELETE FROM public.respondo_visitor_photos WHERE expires_at<NOW()');
+  return Number(deleted.rowCount||0);
+}
 export async function saveVisitorPhoto(db,{tenantId,visitorRef,photo,question='',ocrText=''}){
   if(!validPhotoId(tenantId)||!photo?.bytes||!visitorRef||visitorRef.length>160)
     throw new TypeError('Invalid tenant or visitor photo');
