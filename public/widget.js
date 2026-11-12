@@ -472,7 +472,7 @@
     photoFile.value='';
     if(!file||!ready||photoUploading)return;
     const L=(fi,sv,en)=>experienceText(fi,sv,en);
-    if(!String(file.type||'').startsWith('image/')||file.size>8*1024*1024){
+    if(!['image/jpeg','image/png','image/webp'].includes(String(file.type||'').toLowerCase())||file.size>8*1024*1024){
       showVoiceNote(L('Valitse alle 8 Mt:n kuvatiedosto.','Välj en bild under 8 MB.','Choose an image under 8 MB.'));
       return;
     }
@@ -491,7 +491,7 @@
           URL.revokeObjectURL(url);
           try{
             const scale=Math.min(1,1440/Math.max(source.naturalWidth,source.naturalHeight));
-            if(!source.naturalWidth||!source.naturalHeight)throw new Error('Invalid photo');
+            if(!source.naturalWidth||!source.naturalHeight||source.naturalWidth*source.naturalHeight>24_000_000)throw new Error('Invalid photo size');
             const canvas=document.createElement('canvas');
             canvas.width=Math.round(source.naturalWidth*scale);
             canvas.height=Math.round(source.naturalHeight*scale);
