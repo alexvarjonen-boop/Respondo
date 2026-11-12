@@ -109,6 +109,7 @@ export async function ownerSalesOverview(db,tenantId,period=30){
   ORDER BY a.created_at DESC LIMIT 30`,[tenantId])
  ]);
  return {days:windowDays,summary:summarizeOwnerSales(sales.rows),
+  partialSample:(sales.rows||[]).length>=500,
   recentSales:(sales.rows||[]).slice(0,30).map(x=>({
    id:x.id,actionRequestId:x.action_request_id,status:x.status,
    amountCents:Number(x.amount_cents),attributed:Boolean(x.attributed),
