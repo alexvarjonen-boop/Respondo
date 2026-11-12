@@ -56,7 +56,7 @@ export async function enqueueNativeTask(client,tenantId,task){
 }
 export async function nativeTaskOverview(db,tenantId){
   const [tasks,counts]=await Promise.all([
-    db.query(`SELECT id,source_kind,task_key,title,details,status,priority,due_at,
+    db.query(`SELECT id,source_kind,source_id,task_key,title,details,status,priority,due_at,
       created_at,completed_at FROM respondo_native_tasks
       WHERE tenant_id=$1 ORDER BY (status='open') DESC,
         (priority='urgent') DESC,due_at ASC LIMIT 100`,[tenantId]),
